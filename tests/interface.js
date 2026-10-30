@@ -75,7 +75,7 @@ const FICHIER = P.fichierDemande();
       await page.click('#fi-epingle'); await page.waitForTimeout(500); await posee();
       const ep = await page.evaluate(() => ({ cls: document.body.className, droite: marges().droite, bord: Math.round(innerWidth - $('inspecteur').getBoundingClientRect().right), haut: Math.round($('inspecteur').getBoundingClientRect().top) }));
       r = await recouvre(['inspecteur']);
-      ok(/insp-epingle/.test(ep.cls) && !/insp-flotte/.test(ep.cls) && ep.droite > 300 && ep.bord <= 12 && ep.haut === 52 && !r.length, 'l’épingle en fait le volet de droite, et la feuille se recadre à côté', JSON.stringify(ep) + ' ' + r.join(' '));
+      ok(/insp-epingle/.test(ep.cls) && !/insp-flotte/.test(ep.cls) && ep.droite > 300 && ep.bord <= 12 && ep.haut === 62 && !r.length, 'l’épingle en fait le volet de droite, et la feuille se recadre à côté', JSON.stringify(ep) + ' ' + r.join(' '));
       await page.click('#fi-epingle'); await page.waitForTimeout(500); await posee();
       cc = await cache('103RL1');
       ok(await page.evaluate(() => document.body.classList.contains('insp-flotte') && marges().droite === 24 && !CARTE.epingle) && !cc, 'détachée, elle redevient une carte à côté de son bloc, le plan reprend toute la place', cc);
@@ -389,8 +389,8 @@ const FICHIER = P.fichierDemande();
   const M = await page.evaluate(() => { const lignes = p => [...$(p).querySelectorAll('button[role="menuitem"]:not([data-retour])')].map(b => b.dataset.act || '›' + b.dataset.sous).join(',');
     return { principal: lignes('mp-principal'), exporter: lignes('mp-exporter'), plus: lignes('mp-plus'), fichiers: $('mp-principal').querySelector('[data-act="fichiers"]').textContent,
       bulles: [...document.querySelectorAll('#menu button[role="menuitem"]:not([data-retour])')].every(b => { const a = b.dataset.aide || ''; return a.length > 30 && a.length <= 160 && !!$(b.getAttribute('aria-describedby')); }) }; });
-  ok(M.principal === 'bibliotheque,ouvrir,fichiers,recapitulatif,nomenclature,dejafait,›exporter,›plus' && M.exporter === 'svg,png,imprimer,dossierpdf,vsdx,retestcorrige,suivi,nomenclaturecsv' && M.plus === 'coller,exemple,pdf,visio,bible,normes,hypotheses,cartouche,raccourcis' && M.bulles && /contrats déjà faits/.test(M.fichiers),
-    'le menu en huit lignes (la bibliothèque, ouvrir, vos fichiers — « contrats déjà faits » écrit dessous —, récapitulatif, nomenclature, comparer au déjà-fait, Exporter ›, Plus ›), le reste dans ses deux sous-menus (Exporter : le folio en SVG, en PNG, l’impression ; le plan entier : le dossier en PDF, les folios en Visio, le retest corrigé en Excel, le suivi, la nomenclature ; Plus : « Lire un PDF de schéma… » et « Lire un schéma Visio… » après l’exemple, les raccourcis clavier en dernier) — plus de « Tout effacer » : on supprime dans la bibliothèque ; chaque ligne a sa bulle courte, dite aussi au lecteur d’écran', JSON.stringify(M));
+  ok(M.principal === 'bibliotheque,ouvrir,fichiers,recapitulatif,nomenclature,dejafait,›exporter,›plus' && M.exporter === 'retestcorrige,svg,png,imprimer,dossierpdf,suivi,nomenclaturecsv,vsdx' && M.plus === 'coller,exemple,pdf,visio,bible,normes,hypotheses,cartouche,raccourcis' && M.bulles && /retests · base · bible · normes/.test(M.fichiers),
+    'le menu en huit lignes (la bibliothèque, ouvrir, vos fichiers — « retests · base · bible · normes » écrit dessous —, récapitulatif, nomenclature, comparer au déjà-fait, Exporter ›, Plus ›), le reste dans ses deux sous-menus (Exporter : D’ABORD le retest corrigé en Excel, le livrable, seul dans son groupe (v73) ; le folio en SVG, en PNG, l’impression ; le plan entier : le dossier en PDF, le suivi, la nomenclature, les folios en Visio ; Plus : « Lire un PDF de schéma… » et « Lire un schéma Visio… » après l’exemple, les raccourcis clavier en dernier) — plus de « Tout effacer » : on supprime dans la bibliothèque ; chaque ligne a sa bulle courte, dite aussi au lecteur d’écran', JSON.stringify(M));
   // au clavier : ↓ ↓ jusqu'à « Vos fichiers… », sa bulle tout de suite, à gauche du menu ; → n'y fait rien (ni folio suivant)
   const plan0 = await page.evaluate(() => app.plan), montre = () => page.evaluate(() => [...document.querySelectorAll('#menu .menu-panneau')].filter(p => !p.hidden).map(p => p.id).join());
   await page.click('#btnMenu'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(350);
@@ -404,8 +404,8 @@ const FICHIER = P.fichierDemande();
   const S1 = await page.evaluate(() => ({ act: document.activeElement.dataset.act, large: Math.round($('menu').getBoundingClientRect().width), ouvert: $('menu').querySelector('[data-sous="exporter"]').getAttribute('aria-expanded') }));
   const m1 = await montre(); await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(250);
   const S2 = await page.evaluate(() => ({ sous: document.activeElement.dataset.sous, plan: app.plan })), m2 = await montre();
-  ok(m1 === 'mp-exporter' && S1.act === 'svg' && S1.large === large0 && S1.ouvert === 'true' && m2 === 'mp-principal' && S2.sous === 'exporter' && S2.plan === plan0,
-    '→ ouvre « Exporter » en place (le menu garde sa largeur), le clavier sur « Folio en SVG » ; ← y revient, sur « Exporter » ; les flèches ne changent pas de folio', JSON.stringify({ m1, S1, m2, S2, large0 }));
+  ok(m1 === 'mp-exporter' && S1.act === 'retestcorrige' && S1.large === large0 && S1.ouvert === 'true' && m2 === 'mp-principal' && S2.sous === 'exporter' && S2.plan === plan0,
+    '→ ouvre « Exporter » en place (le menu garde sa largeur), le clavier sur « Le retest corrigé » ; ← y revient, sur « Exporter » ; les flèches ne changent pas de folio', JSON.stringify({ m1, S1, m2, S2, large0 }));
   await page.keyboard.press('ArrowRight'); await page.keyboard.press('Escape'); await page.waitForTimeout(200); const m3 = await montre();
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   ok(m3 === 'mp-principal' && await page.evaluate(() => $('menu').hidden && document.activeElement === $('btnMenu')), 'Échap dans un sous-menu y revient ; Échap encore ferme le menu, le clavier sur ⋮');

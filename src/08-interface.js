@@ -410,9 +410,10 @@ function avancement(a) { const est = dureeEstimee(a.L.length);
   return { p, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : 'presque fini' }; }
 // le nom du folio et sa place : « 3 / 20 », ou « MEE…003A (3 / 20) »
 function folioEtRang(plan) { const P = plans(), i = P.indexOf(plan) + 1; if (!i) return String(plan); return String(plan) === String(i) ? i + ' / ' + P.length : plan + ' (' + i + ' / ' + P.length + ')'; }
-// ce qu'on peut faire pendant ce temps : les problèmes du contrat (l'index « à reprendre »), le récapitulatif
-function libelleProblemes() { const xs = (typeof CONTROLE !== 'undefined' && CONTROLE.items) || [], nko = xs.filter(x => x.niveau === 'ko').length;
-  return nko ? 'Les ' + pluriel(nko, 'problème') : xs.length ? 'Les ' + xs.length + ' points à voir' : 'Les repères'; }
+// ce qu'on peut faire pendant ce temps : les problèmes du contrat (l'index « à reprendre »), le récapitulatif — comptés
+// comme partout (« 5 problèmes · 9 à voir », `compteProblemes`, 08-controle)
+function libelleProblemes() { const c = compteProblemes();
+  return c.ko ? 'Les ' + c.mot : c.att ? (c.att > 1 ? 'Les ' + c.att + ' points à voir' : 'Le point à voir') : 'Les repères'; }
 const gestesDeLAttente = () => `<span class="at-gestes">Pendant ce temps : <button type="button" data-at="problemes">${libelleProblemes()}</button><button type="button" data-at="recap">Le récapitulatif</button></span>`;
 /* L'attente, visible : au milieu de la place libre du plan, le folio, ses câbles, la durée, une barre ; et ce qu'on peut
    faire pendant. Dans la barre du bas, la puce du folio qui se calcule respire ; les folios pas encore prêts sont pâles.
@@ -2509,11 +2510,24 @@ function ajusterFolios() { if (app.nFolios) return 0;
 /* ---- historique et enregistrement ------------------------------------- */
 /* L'historique photographie le contrat entier — les liaisons, les choix (désignations, sexes, raccords, profils de
    charge), le cartouche — et le PLAN de la bibliothèque qui était sur la table : défaire un chargement rend aussi les
-   choix, le cartouche et le plan d'avant (le plan ouvert entre-temps reste dans la bibliothèque). */
-function histPush(quoi, retouche) { app.hist.push({ quoi, retouche: !!retouche, planId: app.planId, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
+   choix, le cartouche et le plan d'avant (le plan ouvert entre-temps reste dans la bibliothèque).
+   REFAIRE (le panel v73 : « refaire impossible, et Ctrl+Maj+Z défait une deuxième fois ») : défaire photographie d'abord
+   ce qu'il quitte, sur une seconde pile ; refaire la reprend, et photographie à son tour ce qu'il quitte, sur l'historique.
+   Un geste neuf vide la pile à refaire : on ne refait pas ce qu'un autre geste a remplacé. La pile suit l'historique
+   qu'elle double — un plan qu'on ouvre lui en donne un neuf (`app.hist = []`, 08-bibliotheque), elle repart vide. */
+const photo = (quoi, retouche) => ({ quoi, retouche: !!retouche, planId: app.planId, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
   nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations), sexes: new Map(app.contrat.sexes || []), raccords: new Map([...(app.contrat.raccords || [])].map(([k, v]) => [k, { ...v }])), charges: new Map([...(app.contrat.charges || [])].map(([k, v]) => [k, JSON.parse(JSON.stringify(v))])), cartouche: { ...app.contrat.cartouche }, retouches: new Map(app.retouches) });
-  if (app.hist.length > 40) app.hist.shift(); synchroniserHistorique(); }
-function annuler() { const p = app.hist.pop(); if (!p) return null; const plan = app.plan;
+const REFAIRE = { hist: null, pile: [] }, HISTOIRE = { recit: '' };
+function pileRefaire() { if (REFAIRE.hist !== app.hist) { REFAIRE.hist = app.hist; REFAIRE.pile = []; } return REFAIRE.pile; }
+const borner = (xs, n) => { while (xs.length > n) xs.shift(); };
+function histPush(quoi, retouche) { app.hist.push(photo(quoi, retouche)); borner(app.hist, 40); pileRefaire().length = 0; synchroniserHistorique(); }
+// défaire : la photo du dessus revient ; ce qu'on quitte part sur la pile à refaire. Rend le nom du geste défait.
+function annuler() { const p = app.hist.pop(); if (!p) return null; const ici = photo(p.quoi, p.retouche), pile = pileRefaire(); pile.push(ici); borner(pile, 40);
+  poserPhoto(p); HISTOIRE.recit = recitDuGeste(ici, p, p, 'revient'); return p.quoi; }
+// refaire : la photo du dessus de la pile à refaire revient ; ce qu'on quitte retourne sur l'historique
+function refaire() { const pile = pileRefaire(), p = pile.pop(); if (!p) return null; const ici = photo(p.quoi, p.retouche); app.hist.push(ici); borner(app.hist, 40);
+  poserPhoto(p); HISTOIRE.recit = recitDuGeste(ici, p, p, 'passe'); return p.quoi; }
+function poserPhoto(p) { const plan = app.plan;
   // un autre plan était sur la table : ce qu'on vient d'y faire se garde d'abord, puis il revient
   if (p.planId !== undefined && p.planId !== app.planId) { sauverMaintenant(); app.planId = p.planId; }
   app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations; app.contrat.sexes = p.sexes || new Map(); app.contrat.charges = p.charges || new Map(); app.contrat.raccords = p.raccords || new Map();
@@ -2525,7 +2539,77 @@ function annuler() { const p = app.hist.pop(); if (!p) return null; const plan =
   // défaire une retouche ne recadre pas la vue : on regardait ce qu'on retouchait ; le récapitulatif en moitié non plus,
   // sur le même folio (P1-3 : il garde l'échelle du plan, on y corrige en regardant le plan)
   const garder = p.plan === plan && (p.retouche || (app.base.ouvert && app.base.taille === 'moitie'));
-  redessiner(); if (!garder) ajuster(true); sauver(); return p.quoi; }
+  redessiner(); if (!garder) ajuster(true); sauver(); }
+/* LE GESTE EN MOTS (le panel v73 : « Annulé : calibre de 102CB1 : automatique » se lisait à l'envers — on croyait le
+   calibre revenu à l'automatique, c'était l'inverse). Deux états du contrat comparés — deux photos, ou une photo et la
+   table — et ce qui a changé, dit comme on le lit sur le plan : un câble, un repère, un calibre. `sens` dit le verbe :
+   'revient' (défaire : « W-012 revient en DR20 »), 'passe' (refaire : « W-012 passe en DR12 »), 'court' (la bulle du
+   rail : « W-012 en DR12 »). `vers` est l'état où l'on arrive ; `p` la photo du geste (son nom, s'il touche le dessin).
+   Les câbles d'un même champ se disent ensemble (« W-011, W-012 et W-015 reviennent en DR16, DR20 et DR24 ») ; au-delà de
+   trois phrases, le compte ; ce qui ne se compare pas (un autre plan, une retouche du dessin) se dit par le geste. */
+const etatSurLaTable = () => ({ planId: app.planId, nom: app.nom, liaisons: app.contrat.liaisons, charges: app.contrat.charges || new Map(), designations: app.contrat.designations, sexes: app.contrat.sexes || new Map(), raccords: app.contrat.raccords || new Map() });
+const etListe = xs => xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' et ' + xs[xs.length - 1];
+function recitDuGeste(de, vers, p, sens) { const quoi = (p && p.quoi) || '', V = { revient: ['revient', 'reviennent'], passe: ['passe', 'passent'], court: ['', ''] }[sens];
+  const dire2 = (sujets, apres) => sujets.join('') && (etListe(sujets) + (V[0] ? ' ' + V[sujets.length > 1 ? 1 : 0] : '') + ' ' + apres).trim();
+  // un autre plan sur la table (une ouverture, un chargement) : celui où l'on arrive
+  if (de.planId !== vers.planId || (de.nom || '') !== (vers.nom || '') && Math.abs(de.liaisons.length - vers.liaisons.length) > 2) return sens === 'court' ? quoi : guillemets(vers.nom || 'le plan d’avant') + ' revient sur la table';
+  // une retouche du dessin : le geste la nomme (« déplacer 103RL1 », « pousser 103RL1 », « rendre 103RL1 au dessin automatique »)
+  if (p && p.retouche) { const m = /^(?:déplacer|pousser) (.+)$/.exec(quoi), r = /^rendre (.+) au dessin automatique$/.exec(quoi);
+    if (m) return sens === 'court' ? m[1] + ' déplacé' : sens === 'revient' ? m[1] + ' revient à sa place' : m[1] + ' reprend sa nouvelle place';
+    if (r) return sens === 'court' ? r[1] + ' rendu au dessin automatique' : sens === 'revient' ? r[1] + ' retrouve sa place retouchée' : r[1] + ' revient au dessin automatique';
+    if (/^retouche de ce folio/.test(quoi)) return sens === 'court' ? 'le dessin automatique de ce folio' : sens === 'revient' ? 'vos retouches reviennent sur ce folio' : 'le dessin automatique revient sur ce folio';
+    return sens === 'court' ? quoi : quoi + (sens === 'revient' ? ' : défait' : ' : refait'); }
+  const phrases = [], A = de.liaisons || [], B = vers.liaisons || [];
+  const nomC = l => l.cable || (l.de && l.vers ? l.de + ' → ' + l.vers : 'une liaison');
+  // des liaisons en plus ou en moins : lesquelles (par leurs bouts et leur numéro)
+  if (A.length !== B.length) { const cle = l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable].join('|'), cles = xs => xs.reduce((m, l) => m.set(cle(l), (m.get(cle(l)) || 0) + 1), new Map());
+    const plus = B.length > A.length, [grand, petit] = plus ? [B, A] : [A, B], reste = cles(petit), xs = grand.filter(l => { const n = reste.get(cle(l)) || 0; if (n) { reste.set(cle(l), n - 1); return false; } return true; });
+    const n = xs.length || Math.abs(B.length - A.length), qui = n === 1 && xs[0] ? 'la liaison ' + nomC(xs[0]) : pluriel(n, 'liaison');
+    // plus de liaisons à l'arrivée : défaire rend ce qu'on avait supprimé, refaire rajoute ce qu'on avait ajouté
+    const verbe = plus ? { revient: n > 1 ? 'reviennent' : 'revient', passe: n > 1 ? 'sont ajoutées' : 'est ajoutée', court: n > 1 ? 'ajoutées' : 'ajoutée' } : { revient: n > 1 ? 's’en vont' : 's’en va', passe: n > 1 ? 'sont supprimées' : 'est supprimée', court: n > 1 ? 'supprimées' : 'supprimée' };
+    phrases.push(qui + ' ' + verbe[sens]); }
+  else { // les champs changés, liaison par liaison ; un même champ se dit pour tous ses câbles (ou ses repères)
+    const groupes = new Map(), noter = (cleG, sujet, val, fmt) => { const g = groupes.get(cleG) || groupes.set(cleG, { cle: cleG, fmt, xs: [] }).get(cleG); if (!g.xs.some(x => x.sujet === sujet)) g.xs.push({ sujet, val }); };
+    const vide = v => v == null || v === '';
+    B.forEach((b, i) => { const a = A[i]; if (!a) return;
+      ['type', 'pnDe', 'pnVers', 'longueur', 'route', 'cable', 'de', 'borneDe', 'vers', 'borneVers', 'contactDe', 'contactVers', 'plan'].forEach(ch => { const va = a[ch] == null ? '' : a[ch], vb = b[ch] == null ? '' : b[ch]; if (va === vb) return;
+        if (ch === 'type') noter('type', nomC(b), vide(vb) ? 'sans type' : 'en ' + vb);
+        // le part number d'un disjoncteur porte son calibre : on dit le calibre (« 102CB1 revient à 10 A (MS3320-10) »)
+        else if (ch === 'pnDe' || ch === 'pnVers') { const c = !vide(vb) && typeof calibreDuPn === 'function' ? calibreDuPn(vb) : null;
+          noter('pn', ch === 'pnDe' ? b.de : b.vers, vide(vb) ? 'sans part number' : c > 0 ? 'à ' + amperes(c) + ' (' + vb + ')' : 'en ' + vb); }
+        else if (ch === 'longueur') noter('longueur', nomC(b), vide(vb) ? 'sans longueur' : 'à ' + nombre(Math.round(vb * 100) / 100) + ' m');
+        else if (ch === 'route') noter('route', nomC(b), vide(vb) ? 'sans route' : 'sur la route ' + vb);
+        else if (ch === 'cable') noter('cable', va || nomC(a), vide(vb) ? 'sans numéro' : vb, 'numero');
+        else if (ch === 'contactDe' || ch === 'contactVers') noter('contact', nomC(b), vide(vb) ? 'au contact automatique' : 'au contact ' + vb);
+        else if (ch === 'plan') noter('plan', nomC(b), 'au folio ' + (vb || '—'));
+        else noter('bout', nomC(b), 'sur ' + (ch.endsWith('De') || ch === 'de' ? b.de + (b.borneDe ? ':' + b.borneDe : '') : b.vers + (b.borneVers ? ':' + b.borneVers : ''))); }); });
+    // le calibre d'un disjoncteur (son profil) : il dit aussi son part number, qu'on ne répète pas
+    const calibres = new Set(), ca = de.charges || new Map(), cb = vers.charges || new Map();
+    new Set([...ca.keys(), ...cb.keys()]).forEach(nom => { const x = ca.get(nom) || {}, y = cb.get(nom) || {}; if (JSON.stringify(x) === JSON.stringify(y)) return;
+      if ((x.calibre || null) !== (y.calibre || null)) { calibres.add(nom); const auto = typeof calibreDe === 'function' && sens !== 'court' ? calibreDe(nom) : null;
+        noter('calibre', nom, y.calibre > 0 ? (sens === 'court' ? amperes(y.calibre) + ' à la main' : 'à ' + amperes(y.calibre) + ' à la main') : (sens === 'court' ? 'calibre automatique' : 'au calibre automatique') + (auto > 0 ? ', ' + amperes(auto) : '')); }
+      else noter('profil', 'le profil de charge de ' + nom, sens === 'court' ? 'récrit' : sens === 'revient' ? 'comme avant' : 'récrit', 'etat'); });
+    const pn = groupes.get('pn'); if (pn) { pn.xs = pn.xs.filter(x => !calibres.has(x.sujet)); if (!pn.xs.length) groupes.delete('pn'); }
+    // les choix écrits à la main : un contact à sertir, une nature, une désignation ou une référence ; un raccord, un sexe
+    const da = de.designations || new Map(), db = vers.designations || new Map();
+    new Set([...da.keys(), ...db.keys()]).forEach(k => { const va = da.get(k) || '', vb = db.get(k) || ''; if (va === vb) return; const xs = k.split('|');
+      if (xs[0] === 'sertir') noter('contact', 'le contact de ' + xs[1] + ':' + xs.slice(2).join('|'), vb ? 'à ' + vb : 'à l’automatique');
+      else if (xs[1] === 'nature') noter('nature', 'la nature de ' + xs[0], vb ? 'à ' + guillemets(vb) : 'au type du repère');
+      else noter('choix', xs[0], vb ? 'à ' + guillemets(vb.split('|')[0] || vb) : 'au choix de l’outil'); });
+    [['raccords', 'le raccord de '], ['sexes', 'le sexe des contacts de ']].forEach(([m, mot]) => { const x = de[m] || new Map(), y = vers[m] || new Map();
+      new Set([...x.keys(), ...y.keys()]).forEach(k => { if (JSON.stringify(x.get(k) || null) !== JSON.stringify(y.get(k) || null)) noter(m, mot + k, sens === 'court' ? 'changé' : sens === 'revient' ? 'comme avant' : 'changé', 'etat'); }); });
+    // le disjoncteur d'abord (la cause), puis ses câbles, puis le reste
+    const ORDRE = ['calibre', 'pn', 'profil', 'type', 'contact', 'longueur', 'route', 'cable', 'bout', 'plan', 'choix', 'nature', 'raccords', 'sexes'], rangG = g => { const i = ORDRE.indexOf(g.cle); return i < 0 ? ORDRE.length : i; };
+    [...groupes.values()].sort((a, b) => rangG(a) - rangG(b)).forEach(g => { const memes = g.xs.every(x => x.val === g.xs[0].val), sujets = g.xs.map(x => x.sujet);
+      if (g.fmt === 'numero') g.xs.forEach(x => phrases.push(sens === 'court' ? x.sujet + ' → ' + x.val : x.sujet + (sens === 'revient' ? ' redevient ' : ' devient ') + x.val));
+      else if (g.fmt === 'etat') g.xs.forEach(x => phrases.push(sens === 'court' ? x.sujet + ' ' + x.val : x.sujet + (sens === 'revient' ? ' revient ' + x.val : ' est ' + x.val)));
+      else if (g.xs.length > 4 && !memes) phrases.push(sujets.length + ' ' + (/^(pn|calibre|choix)$/.test(g.cle) ? 'repères' : 'câbles') + ' ' + { revient: 'reviennent comme avant', passe: 'changent', court: 'changés' }[sens]);
+      else if (memes) phrases.push(dire2(sujets.length > 4 ? [sujets.length + ' ' + (/^(pn|calibre|choix)$/.test(g.cle) ? 'repères' : 'câbles')] : sujets, g.xs[0].val));
+      // des valeurs différentes : « W-011, W-012 et W-015 reviennent en DR16, DR20 et DR24 »
+      else { const t = g.xs.map(x => x.val), pre = /^(en|à|sur|au|sans) /.exec(t[0]), tous = pre && t.every(v => v.startsWith(pre[0]));
+        phrases.push(dire2(sujets, tous ? pre[0] + etListe(t.map(v => v.slice(pre[0].length))) : etListe(t))); } }); }
+  const ph = phrases.filter(Boolean); if (!ph.length) return sens === 'court' ? quoi : quoi ? quoi + (sens === 'revient' ? ' : défait' : ' : refait') : '';
+  const n = ph.length - 2; return ph.length > 3 ? ph.slice(0, 2).join(' · ') + ' et ' + n + (n > 1 ? ' autres changements' : ' autre changement') : ph.join(' · '); }
 /* LA MÉMOIRE DU CONTRAT. Ce qui se garde d'un contrat (`etatDuContrat`) : ses liaisons, ses folios, ses choix, son
    cartouche, le plan de la bibliothèque qu'il est. Il se garde 400 ms après le dernier geste, à deux endroits : ce
    navigateur (localStorage : le plan qui est sur la table, relu au lancement, derrière la bibliothèque) et la
@@ -2624,13 +2708,58 @@ function synchroniserContexte() { const n = app.contrat.liaisons.length, P = pla
   // les nombres liés à leur mot (l'audit des pages : « 67 / repères » coupé au bout de la ligne du menu)
   const sous = n ? (exemple ? 'l’exemple embarqué · ' : '') + plurielLie(n, 'liaison') + ' · ' + plurielLie(reperesDuContrat().length, 'repère') + (P.length > 1 ? ' · ' + plurielLie(P.length, 'folio') : '') : '';
   $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous; $('ctx-nom').title = nom;
-  if (typeof synchroniserBibliotheque === 'function') synchroniserBibliotheque(); }
-/* Annuler reste à sa place, éteint quand il n'y a rien à annuler ; sa bulle
-   dit ce qu'il déferait. */
-function synchroniserHistorique() { const b = $('btnUndo'), d = app.hist[app.hist.length - 1]; b.disabled = !d;
-  const quoi = d ? 'Annuler : ' + d.quoi : 'Annuler';
-  b.setAttribute('aria-label', quoi + ' (Ctrl+Z)'); b.querySelector('.bulle').innerHTML = esc(quoi) + '<kbd>Ctrl+Z</kbd>'; }
-function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
+  if (typeof synchroniserBibliotheque === 'function') synchroniserBibliotheque();
+  // « Comparer au déjà-fait » sans base déposée ne dit rien (le technicien) : éteint au gris lisible, sa bulle dit pourquoi
+  // et où la déposer ; un clic l'ouvre quand même, qui le redit
+  const df = document.querySelector('#menu [data-act="dejafait"]'); if (df) { const sans = !app.references;
+    if (!df.dataset.aideBase) df.dataset.aideBase = df.dataset.aide || '';
+    if (sans) df.setAttribute('aria-disabled', 'true');
+    const t = 'Aucune base des contrats déjà faits pour l’instant : déposez-la dans Vos fichiers, puis comparez le plan aux contrats les plus proches.', aide = sans ? (typeof typo === 'function' ? typo(t) : t) : df.dataset.aideBase;
+    if (df.dataset.aide !== aide) { df.dataset.aide = aide; const s = $(df.getAttribute('aria-describedby') || ''); if (s) s.textContent = aide; } } }
+/* Défaire ↶ et refaire ↷ restent à leur place, éteints quand leur pile est vide. Leur bulle dit ce qu'ils feraient
+   (« W-012 en DR12 ») : elle s'écrit quand elle paraît (l'événement `bulle`, 08-menu), pas à chaque geste — comparer deux
+   états du contrat ne coûte rien une fois, mais rien n'oblige à le faire à chaque frappe. */
+function synchroniserHistorique() { const u = $('btnUndo'), r = $('btnRedo'); u.disabled = !app.hist.length; if (r) r.disabled = !pileRefaire().length; }
+function bulleDuGeste(b, refaire_) { const s = b.querySelector('.bulle-s'), d = b.querySelector('.bulle-detail'), p = refaire_ ? pileRefaire()[pileRefaire().length - 1] : app.hist[app.hist.length - 1];
+  const t = !p ? '' : refaire_ ? recitDuGeste(etatSurLaTable(), p, p, 'court') : recitDuGeste(p, etatSurLaTable(), p, 'court');
+  if (s) s.textContent = t; if (d) d.textContent = (refaire_ ? 'Refaire' : 'Défaire') + (t ? ' : ' + t : ''); }
+/* LES COMPTES (le panel v73, le technicien : « je ne sais plus combien il m'en reste, donc je ne sais pas quand j'ai fini »).
+   UNE règle partout : « problème » = rouge seulement, « à voir » = ambre, séparés par « · ». La source est le contrôle
+   (08-controle, `compteProblemes` : sur tout le plan) ; il pose aussi la pastille du rail (`rendreControle`) et mène P
+   (`problemeSuivant`). Ici, la BULLE des repères : replié, « Repères et problèmes R » et dessous « 5 problèmes · 9 à voir » ;
+   déplié, « Repères et problèmes · 5 problèmes · 9 à voir ». Elle s'écrit quand elle paraît (et à chaque synchronisation). */
+function bulleDesReperes() { const s = $('bulle-index'), d = $('bulle-index-detail'); if (!s && !d) return; const c = compteProblemes(), rien = !c.ko && !c.att;
+  if (s) s.textContent = rien ? '' : c.mot; if (d) d.textContent = 'Repères et problèmes · ' + (rien ? 'rien à reprendre' : c.mot); }
+/* LE RETEST CORRIGÉ, le vrai livrable (le technicien : « le bouton Exporter le plus visible sort un CSV, le retest corrigé
+   est la 6ᵉ ligne d'un sous-menu »). Dès que le plan porte un changement, la pilule de la barre du haut le dit (« 3
+   changements · Retest corrigé ») ; dans ⋮ › Exporter, sa ligne vient en tête avec son compte. Le compte est celui du
+   retest corrigé (08-export, `nombreDeChangements`, `motChangements` : les liaisons dont une case diffère du fichier), lu,
+   pas refait ; un clic ouvre son relevé (`exporterRetestCorrige`). */
+function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDeChangements() : 0, b = $('btnRetest'); if (!b) return;
+  const avant = b.hidden, mod = plurielLie(n, 'liaison') + ' modifiée' + (n > 1 ? 's' : ''); b.hidden = !n;
+  if (n) { $('en-retest-n').textContent = motChangements(n); b.setAttribute('aria-label', 'Le retest corrigé — ' + mod + ' ; relire ce qui part, puis l’enregistrer');
+    b.querySelector('.bulle').textContent = 'Le retest corrigé : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
+    // elle paraît : elle tombe d'un rien, une fois
+    if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }
+  const m = $('mn-retest'); if (m) m.textContent = n ? mod : 'aucune modification pour l’instant';
+  const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'le retest corrigé · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
+/* LE RAIL SE DÉPLIE (le technicien : « la liste à puces avec une pastille, je la prends pour des notifications ; le ⊸+ pour un
+   curseur de réglage ») : au survol prolongé — 250 ms, une main qui passe ne l'ouvre pas —, il montre le mot et la touche
+   de chaque outil (style.css, `#rail.deplie`). Il se replie dès qu'on clique (et ne se rouvre pas sous la main restée là :
+   il faut sortir et revenir), dès qu'on le quitte. Au clavier il reste plié : la bulle de chaque outil dit son nom, sa
+   touche et son état, tout de suite (08-menu) — un palet qui s'élargit à chaque Tab couvrirait ce qu'on lit à côté.
+   Seulement à la souris d'un ordinateur : au doigt, le rail est en bas, replié. */
+const DEPLI = { tempo: 0, muet: false };
+function lierRail() { const r = $('rail'); if (!r) return; const peut = () => matchMedia('(min-width: 701px) and (hover: hover)').matches;
+  const plier = () => { clearTimeout(DEPLI.tempo); r.classList.remove('deplie'); }, deplier = () => { clearTimeout(DEPLI.tempo); if (peut()) r.classList.add('deplie'); };
+  r.addEventListener('pointerenter', e => { if (e.pointerType === 'touch' || DEPLI.muet) return; clearTimeout(DEPLI.tempo); DEPLI.tempo = setTimeout(deplier, 250); });
+  r.addEventListener('pointerleave', () => { DEPLI.muet = false; plier(); });
+  r.addEventListener('pointerdown', () => { DEPLI.muet = true; plier(); });
+  // un clic replie, et fait taire le rail jusqu'à ce que la main en sorte
+  r.addEventListener('click', e => { if (e.detail > 0) DEPLI.muet = true; plier(); });
+  $('btnUndo').addEventListener('bulle', e => bulleDuGeste(e.currentTarget, false)); $('btnIndex').addEventListener('bulle', bulleDesReperes);
+  const redo = $('btnRedo'); if (redo) redo.addEventListener('bulle', e => bulleDuGeste(e.currentTarget, true)); }
 /* LE MOT QUI PASSE (le toast) : une ligne, en haut, au milieu de la place du plan. Trois sortes :
    · l'information : elle passe (2,8 s) ;
    · l'erreur : elle RESTE jusqu'au clic (sur elle, ou n'importe où ailleurs) — on ne la perd pas en clignant des yeux ;
@@ -2640,23 +2769,50 @@ function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchron
      (08-fichiers, « Voir ») et `direAvecGeste` (08-bibliothèque) passent par le même bouton (`.toast-voir`). */
 let toastT = null; const TOAST = { erreur: false, t: 0 };
 const cacherToast = () => { clearTimeout(toastT); $('toast').classList.remove('on', 'action'); TOAST.erreur = false; };
+/* Le temps qu'il reste : 2,8 s pour une ligne ; un mot plus long se lit plus longtemps (le technicien : « deux lignes
+   effacées en 2,8 s, je n'ai pas eu le temps de lire le nom du fichier »), 6 s au plus ; 8 s quand il offre un geste. */
+const dureeDuMot = (msg, geste) => geste ? 8000 : Math.min(6000, Math.max(2800, 1400 + String(msg).length * 45));
 function dire(msg, erreur, o) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.remove('action'); t.classList.add('on');
   clearTimeout(toastT); TOAST.erreur = !!erreur; TOAST.t = Date.now();
   if (o && o.geste && typeof o.faire === 'function') { const b = document.createElement('button'); b.type = 'button'; b.className = 'toast-voir toast-geste'; b.textContent = o.geste;
     b.addEventListener('click', e => { e.stopPropagation(); cacherToast(); o.faire(); }); t.appendChild(b); t.classList.add('action'); }
-  if (!erreur) toastT = setTimeout(() => t.classList.remove('on', 'action'), o && o.geste ? 8000 : 2800);
+  placerToast(t);
+  if (!erreur) toastT = setTimeout(() => t.classList.remove('on', 'action'), dureeDuMot(msg, o && o.geste));
   if (!TOAST.lie) { TOAST.lie = true;
     // l'erreur s'en va au premier clic qui la suit (pas celui qui l'a fait naître) ; sur un de ses boutons, il fait d'abord le sien
     document.addEventListener('pointerdown', e => { if (!TOAST.erreur || Date.now() - TOAST.t < 400 || (e.target.closest && e.target.closest('#toast button'))) return; cacherToast(); }, true); } }
-// Ctrl+Z, le bouton du rail : le dernier geste défait, dit ; rien à défaire, dit aussi (on ne se demande pas si ça a marché)
-function defaire() { const q = annuler(); dire(q ? 'Annulé : ' + q + '.' : 'Rien à défaire.'); return q; }
+/* Où il se pose : au milieu de la place du plan (style.css) ; une CARTE flottante est sous lui (le designer : « Problème
+   1 / 10 chevauche la carte de 21 px », sur ses flèches ‹ ›) — il passe dans la plus grande place libre à côté d'elle,
+   à 16 px d'elle, plus étroit s'il le faut. Seulement là : un document, le volet, la base SEE, la visionneuse ont leur
+   règle (les feuilles de style). */
+function placerToast(t) { t.classList.remove('evite'); const b = document.body, insp = $('inspecteur');
+  if (innerWidth <= 700 || !b.classList.contains('insp-flotte') || b.matches('.fiche-ouverte, .pdf-ouvert, .visio-ouvert') || !insp || insp.hidden) return;
+  const c = insp.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight, haut = t.getBoundingClientRect().top, rail = $('rail').getBoundingClientRect().right + 12;
+  const x0 = rail + (innerWidth - rail) / 2; if (c.top > haut + h + 8 || c.bottom < haut || x0 + w / 2 < c.left - 16 || x0 - w / 2 > c.right + 16) return;
+  const zones = [[rail, c.left - 16], [c.right + 16, innerWidth - 12]].map(([a, z]) => ({ a, z, l: z - a })).sort((p, q) => q.l - p.l), Z = zones[0]; if (Z.l < 220) return;
+  t.style.setProperty('--toast-x', Math.round(Z.a + Z.l / 2) + 'px'); t.style.setProperty('--toast-max', Math.round(Math.min(560, Z.l)) + 'px'); t.classList.add('evite'); }
+/* DÉFAIRE, REFAIRE — Ctrl+Z, Ctrl+Y (ou Ctrl+Maj+Z), ↶ et ↷ du rail : le mot dit l'ÉTAT D'ARRIVÉE (« Défait : W-012 revient en
+   DR20 »), pas le nom du geste, et offre le geste inverse (« Refaire », « Défaire ») ; rien à faire, il le dit aussi (on
+   ne se demande pas si ça a marché). La fiche ouverte se rouvre sur le même objet (08-fiche, `garderLaFiche`). */
+const garderFiche = () => { if (typeof garderLaFiche === 'function') garderLaFiche(); };
+function defaire() { garderFiche(); const q = annuler(); if (!q) { dire('Rien à défaire.'); return q; }
+  dire('Défait : ' + (HISTOIRE.recit || q) + '.', false, { geste: 'Refaire', faire: refaireEtDire }); return q; }
+function refaireEtDire() { garderFiche(); const q = refaire(); if (!q) { dire('Rien à refaire.'); return q; }
+  dire('Refait : ' + (HISTOIRE.recit || q) + '.', false, { geste: 'Défaire', faire: defaire }); return q; }
 /* ---- le menu ⋮ : peu de lignes ; Exporter et Plus s'ouvrent EN PLACE (page.html) -----------------------------------
    `montrerPanneau(nom)` : '' le menu, sinon un sous-menu, qui prend sa place (le menu garde sa largeur). Le clavier va à la
    première ligne du panneau montré — au retour, à la ligne qui avait ouvert le sous-menu. */
 function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); montrerPanneau(''); }
-// fermé, le menu revient à son panneau principal : il se rouvrira sur lui, le clavier sur sa première ligne
-function fermerMenu() { const m = $('menu'); m.hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false');
+/* fermé, le menu revient à son panneau principal : il se rouvrira sur lui, le clavier sur sa première ligne. Il est fermé
+   TOUT DE SUITE (le clavier, les tests, le geste qu'on vient de choisir n'attendent pas) ; ce qui s'efface en 120 ms est son
+   DOUBLE, une image sans identifiants ni clavier (`.menu-part`, style.css) — sauf sous le mouvement réduit. */
+function fermerMenu() { const m = $('menu'); if (!m.hidden) partirMenu(m); m.hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false');
   m.querySelectorAll('.menu-panneau').forEach(p => { p.hidden = p.id !== 'mp-principal'; }); m.querySelectorAll('[data-sous]').forEach(b => b.setAttribute('aria-expanded', 'false')); }
+function partirMenu(m) { if (matchMedia('(prefers-reduced-motion: reduce)').matches || !m.offsetParent) return;
+  document.querySelectorAll('.menu-part').forEach(d => d.remove());
+  const d = m.cloneNode(true); d.removeAttribute('id'); d.querySelectorAll('[id]').forEach(e => e.removeAttribute('id')); d.querySelectorAll('[role]').forEach(e => e.removeAttribute('role')); d.removeAttribute('role');
+  d.classList.add('menu-part'); d.setAttribute('aria-hidden', 'true'); d.inert = true; m.after(d); d.scrollTop = m.scrollTop;
+  const fin = () => d.remove(); d.addEventListener('animationend', fin, { once: true }); setTimeout(fin, 1000); }
 const panneauDuMenu = () => [...$('menu').querySelectorAll('.menu-panneau')].find(p => !p.hidden);
 function montrerPanneau(nom) { const m = $('menu'), avant = panneauDuMenu(), vise = $(nom ? 'mp-' + nom : 'mp-principal'); if (!vise) return;
   m.querySelectorAll('.menu-panneau').forEach(p => { p.hidden = p !== vise; });
@@ -2703,29 +2859,40 @@ function entreeDuMenu(o) { if (!MENU) MENU = { actions: {} }; const D = id => do
   return b; }
 /* ---- LA FEUILLE DES RACCOURCIS (« ? ») -------------------------------------------------------------------------------
    L'audit v72 (P2-13) : « les raccourcis existent, ne se découvrent pas » — /, R, B, N au survol du rail, Ctrl+O dans ⋮,
-   Maj+B, Alt+← →, F2 nulle part. Une feuille, posée sur la table comme une carte : ce qu'on fait au clavier, en quatre
-   groupes ; « ? » l'ouvre (et Plus › Raccourcis clavier), Échap, « ? » ou un clic dehors la referment. */
+   Maj+B, Alt+← →, F2 nulle part. Une feuille, posée sur la table comme une carte : ce qu'on fait au clavier, en cinq
+   groupes ; « ? » l'ouvre (et Plus › Raccourcis clavier), Échap, « ? » ou un clic dehors la referment. Le panel v73 : elle
+   dit TOUT — refaire, la palette (Ctrl+K), les touches d'une fiche et du cadran — et le clavier ne s'en échappe plus
+   (aria-modal : Tab tourne dans la feuille). Une touche qui ne vaut qu'à un endroit le dit sous sa ligne. */
 const RACCOURCIS = [
-  ['Se repérer', [['Chercher un repère, un câble, un part number, une borne', ['/']], ['Les repères et les problèmes', ['R']], ['Le problème suivant, le précédent', ['P'], ['Maj', 'P']],
+  ['Se repérer', [['Chercher un repère, un câble, un part number, une borne', ['/']], ['Chercher un objet ou une action (« pdf », « hypothèses »…)', ['Ctrl', 'K']], ['Les repères et les problèmes', ['R']],
+    ['Le problème suivant, le précédent (les problèmes, puis ce qui est à voir)', ['P'], ['Maj', 'P']],
     ['Folio précédent, suivant', ['←'], ['→']], ['La feuille entière, puis le dessin au plus près', ['0']], ['Zoomer, dézoomer', ['+'], ['−']], ['À 100 %, à 200 %', ['1'], ['2']],
-    ['Déplacer la vue (en glissant ; le bouton du milieu aussi)', ['Espace']], ['Fiche d’avant, d’après ; revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']]]],
+    ['Déplacer la vue (en glissant ; le bouton du milieu aussi)', ['Espace']]]],
   ['Lire en tableaux', [['Le récapitulatif, en moitié', ['B']], ['Le récapitulatif, en page', ['Maj', 'B']], ['La nomenclature', ['N']], ['Corriger une case', ['Entrée'], ['F2']], ['La case suivante', ['Tab']]]],
-  ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Pousser le bloc choisi d’un carreau (cinq avec Maj)', ['↑'], ['↓']], ['Renommer le repère de la fiche', ['F2']], ['Fermer, revenir', ['Échap']]]],
-  ['Ouvrir, sortir', [['Ouvrir un retest', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Cette feuille', ['?']]]]];
+  ['Dans une fiche', [['La fiche d’avant, d’après ; revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']], ['Renommer le repère', ['F2']],
+    ['Le calibre : le cran d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre ; rendre l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche, revenir au plan', ['Échap']]]],
+  ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire ce qu’on vient de défaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['Pousser le bloc choisi d’un carreau (cinq avec Maj)', ['↑'], ['↓']]]],
+  ['Ouvrir, sortir', [['Ouvrir un retest', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert, revenir', ['Échap']], ['Cette feuille', ['?']]]]];
 const raccourcisOuverts = () => { const el = $('raccourcis'); return !!el && !el.hidden; };
 function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
   if (!el) { el = document.createElement('div'); el.id = 'raccourcis'; el.className = 'raccourcis'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'rk-titre');
-    const touches = ks => ks.map(k => `<kbd>${esc(k)}</kbd>`).join('');
-    el.innerHTML = `<div class="rk-feuille"><header class="rk-tete"><h2 id="rk-titre">Raccourcis clavier</h2><button type="button" class="fi-x" id="rk-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
-      + `<div class="rk-groupes">${RACCOURCIS.map(([t, xs]) => `<section class="rk-groupe"><h3>${esc(t)}</h3><dl>${xs.map(([quoi, ...ks]) => `<div class="rk-ligne"><dt>${esc(quoi)}</dt><dd>${ks.map(touches).join('<span class="rk-ou">ou</span>')}</dd></div>`).join('')}</dl></section>`).join('')}</div>`
-      + `<p class="rk-pied">Chaque bouton du rail et de la barre du bas dit aussi son raccourci au survol ; dans un champ, les touches s’écrivent.</p></div>`;
+    const touches = ks => ks.map(k => `<kbd>${esc(k)}</kbd>`).join(''), dt = q => { const [t, ou] = q.split('|'); return esc(t) + (ou ? `<small>${esc(ou)}</small>` : ''); };
+    el.innerHTML = `<div class="rk-feuille"><header class="rk-tete"><h2 id="rk-titre">Raccourcis clavier</h2><button type="button" class="fi-x" id="rk-fermer" aria-label="Fermer (Échap)">${ico('fermer')}<span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button></header>`
+      + `<div class="rk-groupes">${RACCOURCIS.map(([t, xs]) => `<section class="rk-groupe"><h3>${esc(t)}</h3><dl>${xs.map(([quoi, ...ks]) => `<div class="rk-ligne"><dt>${dt(quoi)}</dt><dd>${ks.map(touches).join('<span class="rk-ou">ou</span>')}</dd></div>`).join('')}</dl></section>`).join('')}</div>`
+      + `<p class="rk-pied">Le rail se déplie au survol : chaque outil y dit son nom et sa touche. Dans un champ, les touches s’écrivent.</p></div>`;
     document.body.appendChild(el);
     el.addEventListener('pointerdown', e => { if (!e.target.closest('.rk-feuille')) fermerRaccourcis(); });
-    el.querySelector('#rk-fermer').onclick = fermerRaccourcis; }
-  RACCOURCIS.avant = document.activeElement; el.hidden = false; el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre');
+    el.querySelector('#rk-fermer').onclick = fermerRaccourcis;
+    // Tab tourne dans la feuille, d'où que parte le clavier (la page derrière comprise) : du dernier élément au premier, et
+    // l'inverse (la croix, seule, garde le clavier)
+    document.addEventListener('keydown', e => { if (e.key !== 'Tab' || !raccourcisOuverts()) return; const xs = [...el.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.offsetParent); if (!xs.length) return;
+      const i = xs.indexOf(document.activeElement), j = i < 0 ? (e.shiftKey ? xs.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + xs.length) % xs.length; e.preventDefault(); e.stopPropagation(); xs[j].focus(); }, true); }
+  RACCOURCIS.avant = document.activeElement; el.hidden = false;
+  // elle se pose comme tout ce qui paraît (la règle d'entrée commune, style.css) — le voile, lui, est déjà là
+  const f = el.querySelector('.rk-feuille'); f.classList.remove('entre-v'); void f.offsetWidth; f.classList.add('entre-v');
   // le clavier sur la feuille (Tab mène à la croix), sans l'anneau d'un bouton pressé
-  const f = el.querySelector('.rk-feuille'); f.tabIndex = -1; try { f.focus({ preventScroll: true }); } catch (_) { f.focus(); } }
-function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a.focus && a.isConnected) try { a.focus(); } catch (_) { } }
+  f.tabIndex = -1; try { f.focus({ preventScroll: true }); } catch (_) { f.focus(); } }
+function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a.focus && a.isConnected) try { rendreLeClavier(a); } catch (_) { } }
 function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
 /* ---- tout relier -------------------------------------------------------- */
@@ -2749,18 +2916,23 @@ function lierPanneau() {
     svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), dossierpdf: surLePlan(exporterDossierPdf), retestcorrige: surLePlan(exporterRetestCorrige), suivi: surLePlan(exporterSuivi),
     nomenclaturecsv: surLePlan(() => { if (!verite().length) { dire('Aucun plan ouvert : rien à compter.'); return; } exporterNomenclature(); }),
     coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: surLePlan(ficheCartouche), raccourcis: montrerRaccourcis });
-  o('btnUndo', defaire);
+  o('btnUndo', defaire); o('btnRedo', refaireEtDire);
+  // la pilule du retest corrigé : le relevé de ce qui part, puis l'Excel (08-export)
+  o('btnRetest', surLePlan(exporterRetestCorrige));
   o('btnAuto', revenirAutomatique);
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));
+  lierRail(); if (typeof lierBullesDuChrome === 'function') lierBullesDuChrome();
   const strip = $('fo-strip'); strip.addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
   // le nom entier d'un folio, dans la bulle de la planche (pas l'infobulle du système) : une bulle pour toute la bande,
-  // posée au-dessus de la puce survolée — dans la puce, elle serait rognée par la bande qui défile
+  // posée au-dessus de la puce survolée — dans la puce, elle serait rognée par la bande qui défile. Elle suit la règle des
+  // bulles du chrome (08-menu) : 400 ms la première, tout de suite si une bulle vient de se fermer, éteinte au clic
   const bulle = document.createElement('span'); bulle.className = 'bulle fo-bulle'; bulle.setAttribute('aria-hidden', 'true'); $('folios').appendChild(bulle);
-  let tempo = 0; const cacher = () => { clearTimeout(tempo); bulle.classList.remove('on'); };
+  let tempo = 0; const cacher = () => { clearTimeout(tempo); if (bulle.classList.contains('on') && typeof bulleEteinte === 'function') bulleEteinte(); bulle.classList.remove('on'); };
   strip.addEventListener('pointerover', e => { const c = e.target.closest('.chip'); if (!c || e.pointerType === 'touch') return; clearTimeout(tempo);
+    const vite = bulle.classList.contains('on') || (typeof bulleChaude === 'function' && bulleChaude());
     tempo = setTimeout(() => { const r = c.getBoundingClientRect(), f = $('folios').getBoundingClientRect(); bulle.textContent = c.dataset.nom;
-      bulle.style.left = Math.max(4, Math.min(r.left + r.width / 2 - f.left, f.width - 4)) + 'px'; bulle.classList.add('on'); }, bulle.classList.contains('on') ? 0 : 450); });
-  strip.addEventListener('pointerleave', cacher); strip.addEventListener('scroll', cacher, { passive: true });
+      bulle.style.left = Math.max(4, Math.min(r.left + r.width / 2 - f.left, f.width - 4)) + 'px'; bulle.classList.add('on'); }, vite ? 0 : 400); });
+  strip.addEventListener('pointerleave', cacher); strip.addEventListener('pointerdown', cacher); strip.addEventListener('scroll', cacher, { passive: true });
   // la bande des folios défile à la molette (elle n'a pas de barre), la liste déroulante y va d'un choix
   strip.addEventListener('wheel', e => { if (!e.deltaY || e.deltaX || strip.scrollWidth <= strip.clientWidth) return; e.preventDefault(); strip.scrollLeft += e.deltaY; }, { passive: false });
   const sel = $('fo-select'); if (sel) sel.addEventListener('change', () => allerAuPlan(sel.value));
@@ -2777,17 +2949,23 @@ function lierPanneau() {
     // Échap ferme d'abord ce qui est ouvert par-dessus : la feuille des raccourcis, le menu ⋮, la recherche, le « ⋯ »
     // d'une fiche, les colonnes du récapitulatif (puis la fiche, au second appui ; puis le récapitulatif)
     const plusFiche = $('fi-menu-liste'), colonnes = $('ba-colonnes-menu');
-    if (e.key === 'Escape') { if (raccourcisOuverts()) fermerRaccourcis(); else if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
+    // (le clavier rendu au ⋮ ne fait pas paraître sa bulle : elle couvrait la croix du document ouvert — `rendreLeClavier`)
+    if (e.key === 'Escape') { if (raccourcisOuverts()) fermerRaccourcis(); else if (!$('menu').hidden) { fermerMenu(); rendreLeClavier($('btnMenu')); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
       else if (plusFiche && !plusFiche.hidden) { plusFiche.hidden = true; const m = $('fi-menu'); if (m) { m.setAttribute('aria-expanded', 'false'); m.focus(); } }
       else if (colonnes && !colonnes.hidden) { fermerMenuColonnes(); $('ba-colonnes').focus(); }
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
       else if (app.fiche) fermerFiche(true); else if (app.cible || !$('inspecteur').hidden) deselectionner(); else fermerBase(); return; }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); defaire(); return; }
+    // Ctrl+Z défait ; Ctrl+Y et Ctrl+Maj+Z (⌘⇧Z) REFONT — jamais ne défont (le panel v73 : Ctrl+Maj+Z défaisait un second geste)
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !dansChamp && (e.key.toLowerCase() === 'y' || e.key.toLowerCase() === 'z' && e.shiftKey)) { e.preventDefault(); refaireEtDire(); return; }
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); defaire(); return; }
+    // Ctrl+K : la palette des objets et des actions (la recherche, `ouvrirPalette`), quand elle est là
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k' && typeof ouvrirPalette === 'function') { e.preventDefault(); ouvrirPalette(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); imprimer(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') { e.preventDefault(); choisirFichier(); return; }
     if (dansChamp || e.ctrlKey || e.metaKey || e.altKey) return;
     if (raccourcisOuverts()) { if (e.key === '?') fermerRaccourcis(); return; }   // la feuille ouverte : seule Échap (ou ?) la ferme
     if (e.key === '?') { e.preventDefault(); montrerRaccourcis(); return; }
+    // P : un pas par POINT, les problèmes puis ce qui est à voir (08-controle) — les nombres de la pastille
     if (e.key === 'p' || e.key === 'P') { e.preventDefault(); problemeSuivant(e.key === 'P' ? -1 : 1); return; }
     if (e.key === '/') { e.preventDefault(); ouvrirRecherche(); }
     else if (e.key === 'b') basculerBase();

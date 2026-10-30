@@ -267,7 +267,9 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
   font-size:var(--f-13);font-weight:500;letter-spacing:-.005em;white-space:nowrap;background:none;
   transition:background var(--rapide),border-color var(--rapide),color var(--rapide),box-shadow var(--rapide),transform var(--rapide),text-decoration-color var(--rapide)}
 .btn svg.ico{width:16px;height:16px}
-.btn:active:not(:disabled){transform:scale(.98)}
+/* PRESSÉ, il s'enfonce à peine (`--presse`) en 90 ms, et revient en 140 ms : la transition du pressé est la sienne, celle
+   du retour est celle du bouton — un seul geste pour tous (.btn, .rond, .rd, la pilule du retest, la marque) */
+.btn:active:not(:disabled),.rond:active,.rd:active:not(:disabled),.en-retest:active,.en-volta:active{transform:scale(var(--presse));transition-duration:var(--d-instant)}
 .btn.dense{height:var(--h-btn-dense);padding:0 12px}
 .btn.cuivre{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 1px 2px rgba(0,0,0,.2)}
 .btn.cuivre:hover{background:var(--accent-2);border-color:var(--accent-2)}
@@ -292,7 +294,6 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 /* le bouton à icône seule (fermer une feuille, replier) : un carré adouci qui paraît au survol */
 .rond{width:32px;height:32px;border-radius:var(--r-btn);display:grid;place-items:center;border:none;background:none;color:var(--t-2);padding:0;flex:none;transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
 .rond:hover{background:var(--s-hover);color:var(--t-1)}
-.rond:active{transform:scale(.94)}
 .rond svg.ico{width:18px;height:18px}
 .fermer{color:var(--t-2)}
 /* le bouton d'outil : un carré adouci, une icône, une bulle au survol ; pressé, il s'allume d'un voile */
@@ -300,26 +301,34 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
   display:grid;place-items:center;padding:0;flex:none;transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
 .rd svg.ico{width:20px;height:20px}
 .rd:hover:not(:disabled){background:var(--s-hover);color:var(--t-1)}
-.rd:active:not(:disabled){transform:scale(.94)}
 .rd:disabled{opacity:.32;cursor:default}
 .rd.sobre{color:var(--t-3)}
 .bascule[aria-pressed="true"],.rd[aria-expanded="true"]{background:var(--accent-soft);color:var(--t-1)}
 .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--t-1) 12%,var(--s-surface));color:var(--t-1)}
 /* LA BULLE — une seule : claire (sur la nuit comme sur le papier : un anneau d'encre la détache du blanc, `--sh-bulle`),
-   12 px / 400, coin 8, après un instant de survol (`--bulle-delai`), tout de suite au clavier ; 160 signes au plus. Deux
-   emplois, une matière : `.bulle` (le nom d'un outil et son raccourci, à côté de l'icône) et `.bulle-texte` (le pourquoi
-   d'une valeur ou d'un geste : `data-bulle`, posée par `lierBulles`, 08-fiche ; `.menu-bulle` pour une ligne du menu).
-   Plus de `title=` sur un contrôle visible — seulement sur ce qui est tronqué, pour en donner le nom entier */
+   12 px / 400, coin 8 ; 160 signes au plus. Deux emplois, une matière : `.bulle` (le nom d'un outil et son raccourci, à
+   côté de l'icône) et `.bulle-texte` (le pourquoi d'une valeur ou d'un geste : `data-bulle`, posée par `lierBulles`,
+   08-fiche ; `.menu-bulle` pour une ligne du menu). Plus de `title=` sur un contrôle visible — seulement sur ce qui est
+   tronqué, pour en donner le nom entier.
+   LE TEMPS D'UNE BULLE (le panel v73, 08-menu `lierBullesDuChrome`) : une classe la montre, `.bulle-on` sur son bouton —
+   la première après 400 ms de survol, les suivantes TOUT DE SUITE pendant `--bulle-chaude` (on balaie le rail, les noms
+   se suivent, comme sur macOS), tout de suite au clavier ; elle s'éteint au premier appui et se tait jusqu'à ce que la
+   main quitte le bouton. Elle glisse de 3 px en paraissant, vive et freinée ; elle part plus vite qu'elle ne vient. */
 .bulle{position:absolute;left:calc(100% + 12px);top:50%;transform:translate(-3px,-50%);white-space:nowrap;pointer-events:none;z-index:5;
-  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);border-radius:var(--r-bulle);padding:5px 10px;font-size:var(--f-12);font-weight:400;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);
-  display:flex;align-items:center;gap:8px;opacity:0;transition:opacity var(--rapide),transform var(--rapide)}
+  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);border-radius:var(--r-bulle);padding:5px 10px;font-size:var(--f-12);font-weight:400;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);text-align:left;
+  display:flex;align-items:center;gap:8px;opacity:0;visibility:hidden;transition:opacity var(--d-instant) var(--courbe-sortie),transform var(--d-instant) var(--courbe-sortie),visibility 0s linear var(--d-instant)}
 .bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-4px;border:4px solid transparent;border-right-color:var(--bulle)}
 .bulle kbd{font-size:var(--f-11);color:var(--bulle-t);background:rgba(15,26,46,.08);border-radius:4px;padding:0 5px;line-height:1.5}
-.rd:hover .bulle{opacity:1;transform:translate(0,-50%);transition-delay:var(--bulle-delai)}
+.bulle-on>.bulle{opacity:1;visibility:visible;transform:translate(0,-50%);transition:opacity var(--d-rapide) var(--courbe-entree),transform var(--d-moyen) var(--courbe-entree),visibility 0s}
+/* une bulle à deux étages : le nom et sa touche, puis l'état en plus petit (« 4 problèmes · 8 à voir ») ; ce que l'outil
+   fait (`.bulle-detail`) ne se lit que dans le rail déplié, où le nom est déjà écrit */
+.bulle:has(.bulle-l){flex-direction:column;align-items:flex-start;gap:1px}
+.bulle-l{display:flex;align-items:center;gap:8px}
+.bulle-s{color:#46536b}
+.bulle-s:empty,.bulle-detail{display:none}
 /* la bulle d'un texte (le pourquoi) : la même matière, sur plusieurs lignes */
 .bulle-texte{position:fixed;z-index:200;max-width:320px;padding:8px 12px;border-radius:var(--r-bulle);background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);
   font:400 var(--f-12)/1.5 var(--sans);letter-spacing:0;white-space:pre-line;text-align:left;pointer-events:none}
-.rd:focus-visible .bulle{opacity:1;transform:translate(0,-50%)}
 .rd:disabled .bulle{display:none}
 @media (hover:none){.bulle{display:none}}
 /* LE CHAMP — 34 px, coin 10, un filet `--s-line-2`, `--anneau` quand il a le clavier ; dans une ligne de tableau, 28 px,
@@ -446,10 +455,13 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
   display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:var(--sur-h) max(var(--jeu),var(--sur-d)) 0 max(var(--jeu),var(--sur-g))}
 /* la marque et le nom de l'outil — un bouton : la bibliothèque —, puis le fil discret (l'installation, le plan) */
 .en-contrat{display:flex;align-items:center;gap:4px;min-width:0}
-.en-volta{position:relative;flex:none;display:flex;align-items:center;gap:10px;height:36px;padding:0 10px 0 4px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-1);transition:background var(--rapide)}
+/* la marque se centre sur la colonne du rail (32 px du bord : le jeu et la moitié du palet) ; sa bulle tombe à DROITE du
+   rail, alignée sur le nom — sous la marque, elle cachait le premier outil */
+.en-volta{position:relative;flex:none;display:flex;align-items:center;gap:10px;height:36px;padding:0 10px 0 7px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-1);transition:background var(--rapide),transform var(--rapide)}
 .en-volta:hover{background:var(--voile-1)}
-.en-volta:hover .bulle{opacity:1;transform:translate(-50%,0);transition-delay:.4s}
-.en-volta:focus-visible .bulle{opacity:1;transform:translate(-50%,0)}
+#entete .en-volta .bulle{left:47px;transform:translate(0,-3px)}
+#entete .en-volta .bulle::before{left:14px}
+#entete .en-volta.bulle-on .bulle{transform:none}
 /* la marque : un fil en V entre deux bornes, gravé dans une pièce de verre clair, une lueur froide dessous */
 .en-marque{flex:none;width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,#f4f7ff 0%,#bdd0f4 100%);color:#13203a;display:grid;place-items:center;
   box-shadow:0 0 0 1px rgba(255,255,255,.35),0 6px 18px -4px rgba(120,165,255,.55);transition:transform var(--moyen)}
@@ -470,8 +482,25 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 .en-actions .rd svg.ico{width:18px;height:18px}
 #menuBoite{position:relative}
 #entete .bulle{left:50%;top:calc(100% + 10px);transform:translate(-50%,-3px)}
-#entete .rd:hover .bulle,#entete .rd:focus-visible .bulle{transform:translate(-50%,0)}
+#entete .bulle-on>.bulle{transform:translate(-50%,0)}
 #entete .bulle::before{right:auto;top:auto;bottom:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-bottom-color:var(--bulle)}
+/* le ⋮ au bord droit : sa bulle s'aligne sur lui au lieu de déborder de l'écran */
+#entete #btnMenu .bulle{left:auto;right:-2px;transform:translate(0,-3px)}
+#entete #btnMenu.bulle-on .bulle{transform:none}
+#entete #btnMenu .bulle::before{left:auto;right:15px;margin:0}
+/* LE RETEST CORRIGÉ : une pilule de verre, à gauche du menu — « 3 changements · Retest corrigé » ; elle paraît dès que le
+   plan porte un changement (08-interface, `synchroniserRetest`), tombe d'un rien, et un clic ouvre le relevé de ce qui part */
+.en-retest{position:relative;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 13px 0 11px;border:none;border-radius:var(--r-btn);
+  background:var(--voile-2);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),inset 0 0 0 1px var(--voile-3);color:var(--t-1);font:500 var(--f-13)/1 var(--sans);white-space:nowrap;
+  transition:background var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
+.en-retest:hover{background:var(--voile-3);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 0 0 1px var(--voile-4)}
+.en-retest svg.ico{width:16px;height:16px;color:var(--glace)}
+.en-retest-n{color:var(--t-2);font-variant-numeric:tabular-nums}
+.en-retest-n::after{content:"·";margin-left:8px;color:var(--t-3)}
+.en-retest-mot{font-weight:600}
+.en-retest.entre-v{--entre-y:-4px;animation-duration:var(--d-lent)}
+body.biblio .en-retest{display:none}
+@media (max-width:1100px){ .en-retest-n{display:none} }
 /* les outils posés sur la table (la barre du haut, le rail, les folios) : l'encre douce ; au survol un voile, pressés un
    voile plus franc et l'encre pleine */
 #entete .rd,#rail .rd,#folios .rd{color:var(--t-2)}
@@ -479,10 +508,11 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 #entete .rd[aria-expanded="true"],#rail .bascule[aria-pressed="true"]{background:rgba(190,212,255,.2);color:var(--accent-2);box-shadow:inset 0 0 0 1px rgba(190,212,255,.22)}
 #entete .rd[aria-expanded="true"]:hover:not(:disabled),#rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:var(--voile-4);color:var(--accent-2)}
 #btnMenu[aria-expanded="true"] .bulle{display:none}
-/* la recherche : un champ de verre au milieu de la barre ; il s'éclaire quand on y écrit ; la liste tombe dessous */
+/* la recherche : un champ de verre au milieu de la barre ; il s'éclaire quand on y écrit ; la liste tombe dessous. Son
+   filet se voit sur la nuit (3,4:1 — à 17 % de glace, il tombait à 1,45:1 : on ne voyait pas qu'on pouvait y écrire) */
 .recherche{position:relative;width:min(420px,30vw);height:34px;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;
-  background:rgba(170,200,255,.08);border:1px solid rgba(170,200,255,.17);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);border-radius:var(--r-btn);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
-.recherche:hover{background:rgba(170,200,255,.11);border-color:rgba(170,200,255,.26)}
+  background:rgba(170,200,255,.08);border:1px solid rgba(170,200,255,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);border-radius:var(--r-btn);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
+.recherche:hover{background:rgba(170,200,255,.11);border-color:rgba(170,200,255,.62)}
 body.cherche .recherche{background:rgba(26,38,64,.9);border-color:rgba(159,194,255,.55);box-shadow:0 0 0 3px rgba(159,194,255,.14)}
 .recherche svg.ico{width:16px;height:16px;color:var(--t-3)}
 .recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--t-1);font-family:var(--mono);font-size:var(--f-13);height:100%}
@@ -494,7 +524,8 @@ body.cherche .recherche .rc-fermer{display:inline}
 /* la croix de la recherche : seulement au doigt (au clavier, Échap) */
 .rc-x{display:none;width:32px;height:32px;margin-right:-4px;border:none;background:none;border-radius:var(--r-1);color:var(--t-2);place-items:center;padding:0;flex:none}
 .rc-x:hover{background:var(--voile-2);color:var(--t-1)}
-.q-liste{position:absolute;top:calc(100% + 8px);left:0;width:max(100%,min(460px,calc(100vw - 24px)));background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:6px;max-height:min(60vh,440px);overflow:auto;z-index:40;color:var(--t-1);
+/* la liste, plus large que le champ, se centre dessous (elle le dépassait de 40 px d'un seul côté : deux bords) */
+.q-liste{position:absolute;top:calc(100% + 8px);left:calc((100% - max(100%,min(460px,calc(100vw - 24px)))) / 2);width:max(100%,min(460px,calc(100vw - 24px)));background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:6px;max-height:min(60vh,440px);overflow:auto;z-index:40;color:var(--t-1);
   animation:tombe var(--moyen)}
 @keyframes tombe{from{opacity:0;transform:translateY(-4px) scale(.985)}to{opacity:1;transform:none}}
 .q-item{display:flex;align-items:center;gap:12px;height:var(--h-menu-ligne);padding:0 12px;border-radius:8px;width:100%;background:none;border:none;text-align:left;color:var(--t-1)}
@@ -508,13 +539,24 @@ body.cherche .recherche .rc-fermer{display:inline}
 /* LE MENU ⋮ : sous son bouton, un verre de nuit dense — un filet de lumière le détache de la table —, peu de lignes. En tête, ce qui est ouvert (à lire) ;
    puis l'essentiel, une icône au trait et un mot par ligne ; deux sous-menus (Exporter, Plus) s'ouvrent EN PLACE — le
    panneau glisse, une ligne « ‹ » ramène —, si bien que le menu garde sa largeur et ne déborde jamais de l'écran */
+/* il TOMBE DE SON BOUTON : 200 ms, vif et très freiné, d'une échelle de .96 dont l'origine est le ⋮ lui-même (18 px du
+   bord, 26 px au-dessus) ; il se FERME en 120 ms — son double s'efface (`.menu-part`, 08-interface `fermerMenu`), le vrai
+   est déjà fermé : le clavier et les tests n'attendent pas */
 .menu{position:absolute;top:calc(100% + 8px);right:0;width:280px;color:var(--t-1);background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:6px;z-index:40;
-  max-height:calc(100vh - var(--entete) - var(--sur-h) - 16px);overflow-y:auto;overscroll-behavior:contain;transform-origin:top right;animation:tombe var(--moyen)}
-.menu-panneau{animation:menu-glisse var(--moyen)}
+  max-height:calc(100vh - var(--entete) - var(--sur-h) - 16px);overflow-y:auto;overscroll-behavior:contain;transform-origin:calc(100% - 18px) -26px;animation:menu-tombe 200ms var(--courbe-entree)}
+@keyframes menu-tombe{from{opacity:0;transform:translateY(-4px) scale(.96)}}
+.menu-part{pointer-events:none;animation:menu-part 120ms var(--courbe-sortie) forwards}
+.menu-part .menu-panneau{animation:none}
+@keyframes menu-part{from{opacity:1}to{opacity:0;transform:scale(.985)}}
+.menu-panneau{animation:menu-glisse var(--d-moyen) var(--courbe-entree)}
 .menu-panneau#mp-principal{animation-name:menu-revient}
 @keyframes menu-glisse{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
 @keyframes menu-revient{from{opacity:.4;transform:translateX(-8px)}to{opacity:1;transform:none}}
-.menu button{display:flex;width:100%;align-items:center;gap:11px;min-height:34px;padding:0 10px;border-radius:8px;background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400;line-height:1.3;transition:background var(--rapide)}
+/* LE LIVRABLE en tête d'Exporter : le retest corrigé, son compte dessous ; son icône prend la glace, un filet le sépare des
+   formats de dessin */
+.menu .menu-livrable button>svg.ico{color:var(--glace)}
+.menu .menu-livrable small{color:var(--t-2)}
+.menu button{display:flex;width:100%;align-items:center;gap:11px;min-height:34px;padding:0 10px;border-radius:8px;background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400;line-height:1.3;transition:background var(--rapide),transform var(--rapide)}
 .menu button:hover,.menu button:focus-visible{background:var(--voile-2);outline:none}
 .menu button>svg.ico{width:16px;height:16px;color:#a9bde0;transition:color var(--rapide)}
 .menu button:hover>svg.ico,.menu button:focus-visible>svg.ico{color:#dbe7ff}
@@ -529,6 +571,8 @@ body.cherche .recherche .rc-fermer{display:inline}
 .menu button.menu-retour>svg.ico{color:var(--t-1)}
 /* les blocs, séparés d'un filet */
 .menu-bloc+.menu-bloc,.menu .ctx+.menu-bloc,.menu-retour+.menu-bloc{border-top:1px solid var(--voile-2);margin-top:5px;padding-top:5px}
+/* une ligne pressée s'enfonce à peine, comme tout bouton */
+.menu button:active:not([aria-disabled="true"]){transform:scale(.985);transition-duration:var(--d-instant)}
 /* sa bulle : ce que la ligne fait, en une ou deux phrases — UNE bulle sur la page (08-menu, `lierBullesDuMenu`), à
    gauche du menu, à la hauteur de la ligne, après un temps de survol, tout de suite au clavier */
 .menu-bulle{position:fixed;top:0;right:0;z-index:45;width:max-content;max-width:280px;padding:9px 12px;border-radius:var(--r-bulle);background:var(--bulle);color:var(--bulle-t);
@@ -548,17 +592,45 @@ body.cherche .recherche .rc-fermer{display:inline}
 .sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 18%,transparent)}
 .sauve.ko::before{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 18%,transparent)}
 
-/* ─── LE RAIL : un palet de verre à gauche, posé sur la table — les outils de tous les instants ─── */
-#rail{position:fixed;top:calc(var(--entete) + var(--sur-h));left:calc(var(--jeu) + var(--sur-g));width:44px;z-index:27;
+/* ─── LE RAIL : un palet de verre à gauche, posé sur la table — les outils de tous les instants ───
+   À un jeu de la barre du haut, comme de tous les bords. Il SE DÉPLIE (08-interface, `lierRail`) : au survol prolongé
+   (250 ms), 44 → 176 px en 220 ms, vif et freiné ; puis les mots et les touches entrent, d'un
+   rien de côté, quand la place est faite ; il se replie en 140 ms, plus vite qu'il ne s'ouvre, dès qu'on clique ou qu'on
+   le quitte. L'icône ne bouge jamais : elle est à la même place, plié ou déplié ; le palet passe AU-DESSUS du plan, il
+   ne le pousse pas. */
+#rail{position:fixed;top:calc(var(--entete) + var(--jeu) + var(--sur-h));left:calc(var(--jeu) + var(--sur-g));width:44px;z-index:27;
   background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);border-radius:var(--r-palet);box-shadow:var(--sh-palet);
-  display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px}
-#rail .rd{width:36px;height:36px;border-radius:var(--r-btn)}
+  display:flex;flex-direction:column;align-items:stretch;gap:2px;padding:4px;transition:width var(--d-rapide) var(--courbe-sortie) 20ms}
+#rail.deplie{width:176px;transition:width var(--d-moyen) var(--courbe-entree)}
+/* déplié, ou une bulle dehors : le rail passe au-dessus d'une carte posée près de lui (sa bulle passait dessous) — sous la
+   barre du haut, ses menus et le mot qui passe */
+#rail.deplie,#rail:has(.bulle-on){z-index:32}
+#rail .rd{width:auto;height:36px;border-radius:var(--r-btn);display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:0 0 0 8.5px}
 #rail .rd svg.ico{width:19px;height:19px}
-#rail .rd:focus-visible{outline-offset:-2px}
-#rail hr{width:20px;border:none;border-top:1px solid var(--voile-2);margin:4px 0}
-/* le compte de ce qu'il y a à reprendre, sur le bouton des repères : une pastille de sa couleur d'état */
-.rd-point{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 var(--f-11)/16px var(--sans);font-style:normal;text-align:center;color:#2a1a00;background:var(--p-warn);box-shadow:0 0 0 2px #31446a;pointer-events:none}
-.rd-point.ko{background:#cc3127;color:#ffffff}
+/* l'anneau sur le bord du bouton, dans le jeu du palet : sur le verre sombre (en dedans, il tombait sur le voile clair d'un
+   outil pressé — 2,8:1) */
+#rail .rd:focus-visible{outline-offset:0}
+#rail .rd:disabled{opacity:1;color:rgba(184,198,224,.42)}
+#rail hr{width:20px;align-self:center;border:none;border-top:1px solid var(--voile-2);margin:4px 0;transition:width var(--d-rapide) var(--courbe-sortie)}
+#rail.deplie hr{width:calc(100% - 16px);transition:width var(--d-moyen) var(--courbe-entree)}
+/* le mot et la touche : invisibles plié (ils ne se coupent pas, ils n'existent pas), ils entrent quand la place est faite ;
+   au repli, ils partent AVANT que le palet ne rétrécisse (50 ms, le palet attend 20 ms) — et un mot pris de court se coupe
+   à sa boîte, il ne chevauche jamais sa touche */
+.rd-mot,.rd-touche{opacity:0;visibility:hidden;transform:translateX(-4px);transition:opacity 50ms linear,transform 50ms linear,visibility 0s linear 50ms}
+.rd-mot{flex:1;min-width:0;overflow:hidden;font:500 var(--f-13)/1.2 var(--sans);letter-spacing:-.005em;color:inherit;white-space:nowrap;text-align:left}
+.rd-touche{flex:none;margin-right:7px;padding:3px 5px;border-radius:5px;font:500 var(--f-11)/1 var(--mono);color:var(--t-2);background:var(--voile-1);box-shadow:inset 0 0 0 1px var(--voile-2);white-space:nowrap}
+#rail.deplie :is(.rd-mot,.rd-touche){opacity:1;visibility:visible;transform:none;transition:opacity var(--d-rapide) var(--courbe-entree) 60ms,transform var(--d-moyen) var(--courbe-entree) 40ms,visibility 0s linear 40ms}
+#rail.deplie .rd:disabled .rd-touche{opacity:.6}
+/* déplié, le nom est écrit : la bulle dit ce que l'outil fait, à droite du palet déplié (sa place finale : elle ne suit pas
+   le bord qui s'élargit) */
+#rail.deplie .bulle{left:180px}
+#rail.deplie :is(.bulle-l,.bulle-s){display:none}
+#rail.deplie .bulle-detail{display:block;white-space:normal;width:max-content;max-width:260px}
+/* le compte de ce qu'il y a à reprendre, sur le bouton des repères : les PROBLÈMES du plan (rouges), une pastille accrochée
+   à l'icône (elle ne suit pas le palet qui se déplie) ; sans problème rouge, ce qui est à voir, en ambre (08-controle). Sa
+   bulle dit tout : « 4 problèmes · 8 à voir » */
+.rd-point{position:absolute;top:-3px;left:19px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 var(--f-11)/16px var(--sans);font-style:normal;text-align:center;color:#2a1a00;background:var(--p-warn);box-shadow:0 0 0 2px #263656;pointer-events:none}
+.rd-point.ko{background:var(--pastille-ko);color:var(--pastille-ko-t)}
 
 /* les palets passent au-dessus des feuilles (l'ombre d'une feuille ne les grise pas : ils ne se chevauchent jamais) ; la
    bibliothèque, elle, couvre la table : ses palets s'effacent */
@@ -568,7 +640,8 @@ body.biblio #rail,body.biblio #folios{visibility:hidden}
    Le palet des folios (‹, la bande, ›, le compte) à gauche, celui de la vue (cadrer, zoomer) à droite ; au milieu,
    l'affinage en cours et le folio retouché, chacun son petit palet. La bande défile et s'estompe à ses bords ; trop
    étroite (un document large ouvert), la barre garde les folios et le cadrage. */
-#folios{position:fixed;left:var(--rail);right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));height:40px;z-index:27;color:var(--t-2);pointer-events:none;
+/* une seule marge gauche, celle du rail : le palet des folios s'aligne sous lui, à un jeu du bord */
+#folios{position:fixed;left:calc(var(--jeu) + var(--sur-g));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));height:40px;z-index:27;color:var(--t-2);pointer-events:none;
   display:flex;align-items:center;gap:8px;transition:right var(--moyen);container-type:inline-size}
 body.insp-epingle #folios{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d))}
 body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--sur-d))}
@@ -579,15 +652,17 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
 .fo-part,.fo-zoom{pointer-events:auto;height:40px;padding:0 4px;background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);border-radius:12px;box-shadow:var(--sh-palet)}
 /* dans la barre du bas, la bulle se lit au-dessus du bouton ; aux deux bouts, elle s'aligne sur le bouton au lieu de déborder */
 #folios .bulle{left:50%;top:auto;bottom:calc(100% + 12px);transform:translate(-50%,3px)}
-#folios .rd:hover .bulle,#folios .rd:focus-visible .bulle{transform:translate(-50%,0)}
+#folios .bulle-on>.bulle{transform:translate(-50%,0)}
 #folios .bulle::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--bulle)}
-#folios #fo-prev .bulle{left:-4px;transform:none}
+#folios #fo-prev .bulle{left:-4px;transform:translate(0,3px)}
+#folios #fo-prev.bulle-on .bulle{transform:none}
 #fo-prev .bulle::before{left:14px;margin:0}
-#folios #zin .bulle{left:auto;right:-4px;transform:none}
+#folios #zin .bulle{left:auto;right:-4px;transform:translate(0,3px)}
+#folios #zin.bulle-on .bulle{transform:none}
 #zin .bulle::before{left:auto;right:14px;margin:0}
 /* la bulle d'une puce de folio : une pour toute la bande, posée par l'interface au-dessus de la puce survolée */
-#folios .fo-bulle{left:0;bottom:calc(100% + 12px);transform:none}
-#folios .fo-bulle.on{opacity:1}
+#folios .fo-bulle{left:0;bottom:calc(100% + 12px);transform:translate(0,3px)}
+#folios .fo-bulle.on{opacity:1;visibility:visible;transform:none;transition:opacity var(--d-rapide) var(--courbe-entree),transform var(--d-moyen) var(--courbe-entree),visibility 0s}
 .fo-part{display:flex;align-items:center;gap:2px;flex:0 1 auto;min-width:0}
 .fo-milieu{display:flex;align-items:center;gap:8px;flex:1 0 auto;justify-content:center;min-width:0}
 .fo-milieu>*{pointer-events:auto}
@@ -599,9 +674,12 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 10px,#000 calc(100% - 10px),transparent);mask-image:linear-gradient(90deg,transparent,#000 10px,#000 calc(100% - 10px),transparent)}
 .fo-strip::-webkit-scrollbar{display:none}
 .chip{position:relative;flex:none;height:30px;min-width:30px;max-width:180px;padding:0 9px;border-radius:8px;border:none;background:none;color:var(--t-2);font-family:var(--sans);font-weight:500;font-size:var(--f-13);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide)}
+  transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
 .chip:hover{background:var(--voile-2);color:var(--t-1)}
 .chip:focus-visible{outline-offset:-2px}
+.chip:active{transform:scale(var(--presse));transition-duration:var(--d-instant)}
+/* le folio courant est une pièce presque blanche : la glace ne s'y voyait pas (1,58:1) — l'anneau y prend l'encre, en dedans */
+.chip.on:focus-visible{outline-color:#1b1f27;outline-offset:-4px}
 /* le folio courant : une pièce de verre dépoli presque blanche, une lueur dessous */
 .chip.on{background:#e9f0fd;color:#10192c;font-weight:600;box-shadow:0 0 0 1px rgba(255,255,255,.55),0 4px 14px -4px rgba(140,180,255,.6)}
 .chip-pre{display:none}
@@ -642,9 +720,10 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
 body.fiche-ouverte:has(#fiche[data-mode="see"]) #folios{visibility:hidden}
 @media (min-width:701px){ html body.fiche-ouverte:has(#fiche[data-mode="see"]) #toast{left:calc(var(--rail) + (100vw - var(--rail)) / 2);max-width:min(60vw,560px)} }
 
-/* ─── LES FEUILLES : l'inspecteur ÉPINGLÉ et les documents, posés à droite sur la table, détachés des bords (le
-   récapitulatif : style-recap.css) ; l'inspecteur flottant est une CARTE (plus bas) ─── */
-#inspecteur,#fiche{position:fixed;top:calc(var(--entete) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));max-width:calc(100vw - var(--rail) - var(--jeu));
+/* ─── LES FEUILLES : l'inspecteur ÉPINGLÉ et les documents, posés à droite sur la table, détachés des bords — de la barre
+   du haut aussi, du même jeu que le rail et la carte (le panel v73 : collées à son filet, elles étaient à 0 px de lui et à
+   10 px des autres bords) (le récapitulatif : style-recap.css) ; l'inspecteur flottant est une CARTE (plus bas) ─── */
+#inspecteur,#fiche{position:fixed;top:calc(var(--entete) + var(--jeu) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));max-width:calc(100vw - var(--rail) - var(--jeu));
   background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-panneau);z-index:25;display:flex;flex-direction:column;overflow:hidden}
 #inspecteur{width:var(--insp-l);z-index:26}
 #fiche{width:var(--fiche-l)}
@@ -687,7 +766,7 @@ body.base-ouverte .fi-epingle{display:none}
 #carte-lien .cl-bloc{fill:var(--lien)}
 #carte-lien .cl-carte{fill:var(--s-surface);stroke:var(--lien);stroke-width:1.25px}
 /* LE QUAI : portée au bord droit, la carte montre où elle s'épinglera (le volet) */
-#carte-quai{position:fixed;top:calc(var(--entete) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));width:var(--insp-l);z-index:28;pointer-events:none;
+#carte-quai{position:fixed;top:calc(var(--entete) + var(--jeu) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));width:var(--insp-l);z-index:28;pointer-events:none;
   border-radius:var(--r-3);border:1.5px dashed rgba(159,194,255,.6);background:rgba(159,194,255,.09);
   display:grid;align-content:center;justify-items:start;padding-left:18px;opacity:0;transform:translateX(12px);transition:opacity var(--moyen),transform var(--moyen)}
 #carte-quai span{font:600 var(--f-13)/1 var(--sans);color:#10192c;padding:8px 12px;border-radius:var(--r-btn);background:#e9f0fd;box-shadow:0 8px 24px -6px rgba(0,6,18,.6)}
@@ -1079,11 +1158,16 @@ body.fiche-ouverte .vide{right:calc(var(--fiche-l) + 2 * var(--jeu))}
 body.depot-actif .depot{display:grid}
 body.depot-actif:has(#bibliotheque:not([hidden])) .depot{display:none}
 
-/* ─── LE MOT QUI PASSE : un palet sous la barre du haut, au milieu de ce qui reste du plan ; il descend d'un rien ─── */
+/* ─── LE MOT QUI PASSE : un palet sous la barre du haut, au milieu de ce qui reste du plan ; il descend d'un rien ───
+   Il ENTRE en 340 ms, vif et très freiné (8 px plus haut, d'une échelle de .98) ; il SORT en 200 ms, il accélère et ne traîne
+   pas. Une carte flottante est là : il se pose dans la plus grande place libre à côté d'elle (`.evite`, 08-interface
+   `placerToast`), jamais sur ses flèches. La liste de la recherche ouverte, il se tait (il passait dessous). */
 #toast{position:fixed;left:calc(var(--rail) + (100vw - var(--rail)) / 2);top:calc(var(--entete) + var(--sur-h) + 12px);transform:translateX(-50%) translateY(-8px) scale(.98);padding:10px 16px;border-radius:12px;z-index:35;max-width:min(60vw,560px);
-  background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);color:var(--t-1);box-shadow:var(--sh-palet);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
-
-#toast.on{opacity:1;transform:translateX(-50%)}
+  background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);color:var(--t-1);box-shadow:var(--sh-palet);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;
+  transition:opacity 200ms var(--courbe-sortie),transform 200ms var(--courbe-sortie)}
+#toast.on{opacity:1;transform:translateX(-50%);transition:opacity var(--d-lent) var(--courbe-entree),transform var(--d-lent) var(--courbe-entree)}
+html body #toast.evite{left:var(--toast-x);max-width:var(--toast-max)}
+body.cherche #toast{opacity:0;pointer-events:none}
 body.insp-epingle #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l) - 2 * var(--jeu)) / 2)}
 /* un document ouvert : le mot reste dans la place libre à côté de lui (plus étroit s'il le faut), il ne couvre pas sa tête */
 body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l) - 2 * var(--jeu)) / 2);max-width:min(560px,calc(100vw - var(--rail) - var(--fiche-l) - 2 * var(--jeu) - 32px))}
@@ -1092,6 +1176,19 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
    une suppression offre « Rétablir » (`.toast-voir`, style-fichiers.css) */
 #toast.erreur{padding-left:32px;background:linear-gradient(var(--ko-soft),var(--ko-soft)),var(--palet);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(255,122,110,.55),0 16px 36px -10px rgba(0,6,18,.7),0 2px 6px rgba(0,6,18,.35)}
 #toast.erreur::before{content:"";position:absolute;left:14px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--ko);box-shadow:0 0 0 3px color-mix(in srgb,var(--ko) 22%,transparent)}
+
+/* ─── LA FEUILLE DES RACCOURCIS (« ? », 08-interface ; son dessin est dans style-carte.css) : elle se pose comme tout ce qui
+   paraît (`.entre-v`) ; sa croix dit sa touche, dans sa bulle, dessous ; une touche qu'on ne lit qu'à un endroit (« sur le
+   cadran ») le dit en petit sous sa ligne ─── */
+#rk-fermer{position:relative}
+#rk-fermer .bulle{left:auto;right:-4px;top:calc(100% + 8px);transform:translate(0,-3px)}
+#rk-fermer.bulle-on .bulle{transform:none}
+#rk-fermer .bulle::before{right:14px;top:auto;bottom:100%;left:auto;margin:0;border-color:transparent;border-bottom-color:var(--bulle)}
+.rk-ligne dt small{display:block;font-size:var(--f-12);color:var(--t-2);margin-top:1px}
+/* cinq groupes en deux colonnes équilibrées : un groupe ne se coupe jamais d'une colonne à l'autre */
+.raccourcis .rk-groupes{display:block;columns:2 300px;column-gap:32px}
+.raccourcis .rk-groupe{break-inside:avoid;padding:16px 0 4px}
+.raccourcis .rk-groupe h3{margin-top:0}
 
 /* ─── ÉCRAN BAS : le rail se serre pour tenir (à la souris seulement : au doigt, les cibles gardent leurs 40 px) ─── */
 @media (max-height:660px) and (min-width:701px) and (pointer:fine){
@@ -1130,13 +1227,15 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
   body.cherche .recherche{display:flex}
   body.cherche .rc-x{display:grid}
   .recherche .raccourci{display:none}
-  .q-liste{width:100%}
+  .q-liste{width:100%;left:0}
   .menu{width:min(280px,calc(100vw - 16px))}
   /* le rail : en bas, toujours au même endroit ; ce que le geste fait déjà (pincer, toucher un folio) n'y est pas */
   #rail{top:auto;left:0;right:0;bottom:0;width:auto;height:var(--rail-tel);border-radius:0;box-shadow:0 -1px 0 var(--p-ligne);flex-direction:row;justify-content:space-around;padding:0 max(4px,var(--sur-d)) var(--sur-b) max(4px,var(--sur-g));gap:0}
-  #rail .rd{width:40px;height:40px}
+  #rail .rd{width:40px;height:40px;justify-content:center;padding:0}
   #rail hr{display:none}
-  .bulle{display:none}
+  .bulle,.rd-mot,.rd-touche{display:none}
+  .en-retest{height:40px;padding:0 10px}
+  .en-retest-mot{display:none}
   /* la bande des folios : au-dessus du rail, ou au-dessus du tiroir ouvert (sa hauteur, --insp-h, est mesurée ; le récapitulatif : --base-h) */
   #folios,body.insp-ouvert #folios{left:0;right:0;height:44px;bottom:var(--rail-tel);padding:0 max(8px,var(--sur-d)) 0 max(8px,var(--sur-g));background:var(--palet);box-shadow:0 -1px 0 var(--p-ligne);pointer-events:auto;gap:2px;transition:bottom var(--moyen)}
   .fo-part,.fo-zoom{height:auto;padding:0;background:none;box-shadow:none;border-radius:0}
@@ -4939,6 +5038,14 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
     </div>
 
     <div class="en-actions">
+      <!-- LE RETEST CORRIGÉ, le vrai livrable : dès que le plan porte un changement, une pilule de verre le dit (« 3 changements
+           · Retest corrigé ») ; un clic ouvre le relevé de ce qui part, puis l'enregistre (08-export). 08-interface la tient à
+           jour (`synchroniserRetest`). -->
+      <button type="button" class="en-retest" id="btnRetest" hidden aria-label="Enregistrer le retest corrigé">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/><path d="m14.5 16.5 1.5 1.5 3-3"/></svg>
+        <span class="en-retest-n" id="en-retest-n"></span><span class="en-retest-mot">Retest corrigé</span>
+        <span class="bulle" aria-hidden="true"></span>
+      </button>
       <div id="menuBoite">
         <button class="rd" id="btnMenu" aria-label="Menu" aria-haspopup="menu" aria-expanded="false">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
@@ -4957,24 +5064,28 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
             <div class="menu-bloc" role="group" aria-label="Les plans">
               <button role="menuitem" data-act="bibliotheque" class="menu-2l" data-aide="Vos installations et leurs plans : on choisit l’installation, puis le plan à ouvrir. Tout reste dans ce navigateur."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span class="menu-l">Bibliothèque<small id="mn-biblio">installations · plans</small></span></button>
               <button role="menuitem" data-act="ouvrir" data-aide="Un retest Excel ou CSV, une ligne par câble (Device1, Pin1, Device2, Pin2 au moins). Il devient un plan de l’installation ouverte ; Ctrl+Z revient en arrière."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 18v-6M9.5 14.5 12 12l2.5 2.5"/></svg><span class="menu-l">Ouvrir un retest…</span><span class="raccourci">Ctrl+O</span></button>
-              <button role="menuitem" data-act="fichiers" class="menu-2l" data-aide="Où déposer chaque fichier : vos retests (des plans), la base des contrats déjà faits (un seul Excel, Harness rempli), la bible, les normes."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg><span class="menu-l">Vos fichiers<small>retests · contrats déjà faits · bible · normes</small></span></button>
+              <button role="menuitem" data-act="fichiers" class="menu-2l" data-aide="Où déposer chaque fichier : vos retests (des plans), la base des contrats déjà faits (un seul Excel, Harness rempli), la bible, les normes."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg><span class="menu-l">Vos fichiers<small>retests · base · bible · normes</small></span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Lire et sortir">
               <button role="menuitem" data-act="recapitulatif" data-aide="Tout le plan en tableaux : liaisons, équipements, disjoncteurs, câbles, raccords, problèmes… On y corrige comme sur la fiche."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg><span class="menu-l">Récapitulatif</span><span class="raccourci">B</span></button>
               <button role="menuitem" data-act="nomenclature" data-aide="Ce qu’il faut commander, compté sur tout le plan : contacts, modules, connecteurs, câbles. S’enregistre en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">Nomenclature</span><span class="raccourci">N</span></button>
               <button role="menuitem" data-act="dejafait" data-aide="Les contrats de la base les plus proches du plan ouvert : ce qui est pareil, ce qui diffère, dessin par dessin."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M6 9h2M6 13h2M16 9h2M16 13h2"/></svg><span class="menu-l">Comparer au déjà-fait</span></button>
-              <button role="menuitem" data-sous="exporter" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-exporter" data-aide="Le folio affiché (SVG, PNG, A3) ; le plan entier : le dossier en PDF, les folios en Visio, le retest corrigé en Excel, le suivi, la nomenclature."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg><span class="menu-l">Exporter</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+              <button role="menuitem" data-sous="exporter" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-exporter" data-aide="D’abord le retest corrigé, en Excel : ce que vous renvoyez. Puis le folio affiché (SVG, PNG, A3) et le plan entier (PDF, Visio, suivi, nomenclature)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg><span class="menu-l">Exporter<small id="mn-exporter" hidden></small></span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Le reste">
               <button role="menuitem" data-sous="plus" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-plus" data-aide="Coller des lignes, l’exemple, un schéma en PDF ou en Visio, la bible, les normes, les hypothèses, le cartouche, les raccourcis."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu-l">Plus</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
             </div>
           </div>
-          <!-- EXPORTER : rangé en deux groupes — le folio affiché (vectoriel, image, papier), puis le plan entier (le retest
-               corrigé, 08-export ; le suivi ; la nomenclature). Un module y pose ses lignes sans toucher à cette page
-               (`entreeDuMenu`, 08-interface : le dossier en PDF, le folio pour Visio…), dans le groupe qu'il nomme
-               (data-groupe), ou dans un groupe à lui. -->
+          <!-- EXPORTER : d'abord LE RETEST CORRIGÉ — le livrable, ce que le lecteur renvoie (08-export) —, seul dans son
+               groupe, son compte dessous (« 3 liaisons modifiées », 08-interface `synchroniserRetest`) ; un filet ; puis le
+               folio affiché (vectoriel, image, papier) ; puis le plan entier (le dossier en PDF, le suivi, la nomenclature).
+               Un module y pose ses lignes sans toucher à cette page (`entreeDuMenu`, 08-interface : le folio pour Visio…),
+               dans le groupe qu'il nomme (data-groupe), ou dans un groupe à lui. -->
           <div class="menu-panneau" id="mp-exporter" role="group" aria-label="Exporter" hidden>
             <button role="menuitem" class="menu-retour" data-retour><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span class="menu-l">Exporter</span></button>
+            <div class="menu-bloc menu-livrable" role="group" aria-label="Le livrable" data-groupe="retest">
+              <button role="menuitem" data-act="retestcorrige" class="menu-2l" data-aide="Ce qui part dans votre retest, relu avant d’enregistrer : chaque case changée dit ce qu’elle portait, et si c’est vous ou une proposition de Volta."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/><path d="m14.5 16.5 1.5 1.5 3-3"/></svg><span class="menu-l">Le retest corrigé (Excel)<small id="mn-retest">aucune modification pour l’instant</small></span></button>
+            </div>
             <div class="menu-bloc" role="group" aria-label="Le folio affiché" data-groupe="folio">
               <button role="menuitem" data-act="svg" data-aide="Le folio affiché et son cartouche, en vectoriel : net à toute échelle."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 18.5C6 11 11 6 18.5 5.5"/><rect x="3" y="17" width="4" height="4" rx="1"/><rect x="17" y="3" width="4" height="4" rx="1"/></svg><span class="menu-l">Folio en SVG</span></button>
               <button role="menuitem" data-act="png" data-aide="Le folio affiché et son cartouche, en image : pour un mail ou une présentation."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 15.5-5-5-9 9"/></svg><span class="menu-l">Folio en PNG</span></button>
@@ -4982,7 +5093,6 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
             </div>
             <div class="menu-bloc" role="group" aria-label="Le plan entier" data-groupe="contrat">
               <button role="menuitem" data-act="dossierpdf" data-aide="Tous les folios en A3 avec leur cartouche, une page de garde (ce qui reste à reprendre), la nomenclature : un PDF vectoriel que Volta sait relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l4 4v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M16 3v4h4M4 7v13a1 1 0 0 0 1 1h11M10.5 11h6M10.5 14.5h6"/></svg><span class="menu-l">Le dossier en PDF (tous les folios)</span></button>
-              <button role="menuitem" data-act="retestcorrige" data-aide="Votre retest tel qu’il est maintenant, dans ses seize colonnes : chaque case changée dit ce qu’elle portait, une feuille Modifications les liste."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/><path d="m14.5 16.5 1.5 1.5 3-3"/></svg><span class="menu-l">Le retest corrigé (Excel)</span></button>
               <button role="menuitem" data-act="suivi" data-aide="Une ligne par pièce posée — barrette, prise, connecteur — avec sa référence, ses contacts et ses câbles, en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg><span class="menu-l">Suivi de fabrication (CSV)</span></button>
               <button role="menuitem" data-act="nomenclaturecsv" data-aide="Ce qu’il faut commander pour tout le plan — contacts, modules, connecteurs, câbles —, en CSV, sans ouvrir la nomenclature."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">La nomenclature (CSV)</span></button>
             </div>
@@ -5030,33 +5140,50 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
     </div>
   </main>
 
-  <!-- LE RAIL : les outils de tous les instants, une icône chacun, le nom et le raccourci au survol. Ce qu'on fait une fois
-       (ouvrir, exporter, effacer) est dans la barre du haut et son menu. Sur téléphone, le rail passe en bas. -->
+  <!-- LE RAIL : les outils de tous les instants, une icône chacun. Au survol prolongé (250 ms), il SE DÉPLIE (44 → 176
+       px) : chaque icône suivie de son mot et de sa touche ; il se replie dès qu'on clique (08-interface, `lierRail`). Replié
+       (au clavier), la bulle dit le nom et la touche (`.bulle-l`), et l'état quand il y en a un (`.bulle-s` : « 4 problèmes ·
+       8 à voir », « W-012 en DR12 ») ; déplié, ce que l'outil fait (`.bulle-detail`). Défaire ↶ et refaire ↷ l'un
+       sous l'autre, éteints quand il n'y a rien. Ce qu'on fait une fois (ouvrir, exporter) est dans la barre du haut et son
+       menu. Sur téléphone, le rail passe en bas, replié. -->
   <nav id="rail" aria-label="Outils">
     <button class="rd bascule" id="btnBase" aria-pressed="false" aria-label="Récapitulatif (B)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>
-      <span class="bulle" aria-hidden="true">Récapitulatif<kbd>B</kbd></span>
+      <span class="rd-mot" aria-hidden="true">Récapitulatif</span><kbd class="rd-touche" aria-hidden="true">B</kbd>
+      <span class="bulle" aria-hidden="true"><span class="bulle-l">Récapitulatif<kbd>B</kbd></span><span class="bulle-detail">Tout le plan en tableaux, corrigé sur place. Maj+B le met en page.</span></span>
     </button>
-    <button class="rd bascule" id="btnIndex" aria-pressed="false" aria-label="Repères du contrat (R)">
+    <button class="rd bascule" id="btnIndex" aria-pressed="false" aria-label="Repères et problèmes (R)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg>
-      <span class="bulle" aria-hidden="true">Repères<kbd>R</kbd></span>
+      <span class="rd-mot" aria-hidden="true">Repères</span><kbd class="rd-touche" aria-hidden="true">R</kbd>
+      <span class="bulle" aria-hidden="true"><span class="bulle-l">Repères et problèmes<kbd>R</kbd></span><span class="bulle-s" id="bulle-index"></span><span class="bulle-detail" id="bulle-index-detail">Les repères du plan et ce qu’il y a à reprendre.</span></span>
     </button>
     <button class="rd bascule" id="btnCherche" aria-pressed="false" aria-label="Rechercher un repère, un câble, un part number (/)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <span class="bulle" aria-hidden="true">Rechercher<kbd>/</kbd></span>
+      <span class="rd-mot" aria-hidden="true">Rechercher</span><kbd class="rd-touche" aria-hidden="true">/</kbd>
+      <span class="bulle" aria-hidden="true"><span class="bulle-l">Rechercher<kbd>/</kbd></span><span class="bulle-detail">Un repère, un câble, un part number, une borne (300XC1:B5).</span></span>
     </button>
-    <button class="rd" id="btnUndo" disabled aria-label="Annuler la dernière action (Ctrl+Z)">
+    <button class="rd" id="btnUndo" disabled aria-label="Défaire (Ctrl+Z)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
-      <span class="bulle" aria-hidden="true">Annuler<kbd>Ctrl+Z</kbd></span>
+      <span class="rd-mot" aria-hidden="true">Défaire</span><kbd class="rd-touche" aria-hidden="true">Ctrl Z</kbd>
+      <span class="bulle" aria-hidden="true"><span class="bulle-l">Défaire<kbd>Ctrl+Z</kbd></span><span class="bulle-s"></span><span class="bulle-detail"></span></span>
+    </button>
+    <button class="rd" id="btnRedo" disabled aria-label="Refaire (Ctrl+Y)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>
+      <span class="rd-mot" aria-hidden="true">Refaire</span><kbd class="rd-touche" aria-hidden="true">Ctrl Y</kbd>
+      <span class="bulle" aria-hidden="true"><span class="bulle-l">Refaire<kbd>Ctrl+Y</kbd></span><span class="bulle-s"></span><span class="bulle-detail"></span></span>
     </button>
     <hr>
+    <!-- deux bornes reliées, et un plus : le câble de la fiche, une liaison de plus -->
     <button class="rd" id="btnLiaison" aria-label="Ajouter une liaison">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16h6"/><circle cx="11" cy="16" r="2"/><path d="M13 16h8"/><path d="M17 3v7M13.5 6.5h7"/></svg>
-      <span class="bulle" aria-hidden="true">Ajouter une liaison</span>
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="4.5" cy="16" r="2.2"/><circle cx="15.5" cy="16" r="2.2"/><path d="M6.7 16h6.6"/><path d="M19.5 3.5v6M16.5 6.5h6"/></svg>
+      <span class="rd-mot" aria-hidden="true">Ajouter une liaison</span>
+      <span class="bulle" aria-hidden="true"><span class="bulle-l">Ajouter une liaison</span><span class="bulle-detail">Une ligne de plus au plan, à écrire dans le récapitulatif : ses deux bouts, son câble.</span></span>
     </button>
+    <!-- le symbole de la barrette (trois contacts reliés), celui de sa fiche : la bible des barrettes -->
     <button class="rd bascule" id="btnBible" aria-pressed="false" aria-label="Bible des barrettes">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/><path d="M9 7h7M9 10.5h5"/></svg>
-      <span class="bulle" aria-hidden="true">Bible des barrettes</span>
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="8" width="19" height="8" rx="2"/><circle cx="7" cy="12" r="1.45"/><circle cx="12" cy="12" r="1.45"/><circle cx="17" cy="12" r="1.45"/><path d="M8.45 12h2.1M13.45 12h2.1"/></svg>
+      <span class="rd-mot" aria-hidden="true">Bible</span>
+      <span class="bulle" aria-hidden="true"><span class="bulle-l">Bible des barrettes</span><span class="bulle-detail">Les barrettes, prises et connecteurs que l’outil sait choisir, et leurs références.</span></span>
     </button>
   </nav>
 
@@ -20375,9 +20502,10 @@ function avancement(a) { const est = dureeEstimee(a.L.length);
   return { p, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : 'presque fini' }; }
 // le nom du folio et sa place : « 3 / 20 », ou « MEE…003A (3 / 20) »
 function folioEtRang(plan) { const P = plans(), i = P.indexOf(plan) + 1; if (!i) return String(plan); return String(plan) === String(i) ? i + ' / ' + P.length : plan + ' (' + i + ' / ' + P.length + ')'; }
-// ce qu'on peut faire pendant ce temps : les problèmes du contrat (l'index « à reprendre »), le récapitulatif
-function libelleProblemes() { const xs = (typeof CONTROLE !== 'undefined' && CONTROLE.items) || [], nko = xs.filter(x => x.niveau === 'ko').length;
-  return nko ? 'Les ' + pluriel(nko, 'problème') : xs.length ? 'Les ' + xs.length + ' points à voir' : 'Les repères'; }
+// ce qu'on peut faire pendant ce temps : les problèmes du contrat (l'index « à reprendre »), le récapitulatif — comptés
+// comme partout (« 5 problèmes · 9 à voir », `compteProblemes`, 08-controle)
+function libelleProblemes() { const c = compteProblemes();
+  return c.ko ? 'Les ' + c.mot : c.att ? (c.att > 1 ? 'Les ' + c.att + ' points à voir' : 'Le point à voir') : 'Les repères'; }
 const gestesDeLAttente = () => `<span class="at-gestes">Pendant ce temps : <button type="button" data-at="problemes">${libelleProblemes()}</button><button type="button" data-at="recap">Le récapitulatif</button></span>`;
 /* L'attente, visible : au milieu de la place libre du plan, le folio, ses câbles, la durée, une barre ; et ce qu'on peut
    faire pendant. Dans la barre du bas, la puce du folio qui se calcule respire ; les folios pas encore prêts sont pâles.
@@ -22164,11 +22292,24 @@ function ajusterFolios() { if (app.nFolios) return 0;
 /* ---- historique et enregistrement ------------------------------------- */
 /* L'historique photographie le contrat entier — les liaisons, les choix (désignations, sexes, raccords, profils de
    charge), le cartouche — et le PLAN de la bibliothèque qui était sur la table : défaire un chargement rend aussi les
-   choix, le cartouche et le plan d'avant (le plan ouvert entre-temps reste dans la bibliothèque). */
-function histPush(quoi, retouche) { app.hist.push({ quoi, retouche: !!retouche, planId: app.planId, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
+   choix, le cartouche et le plan d'avant (le plan ouvert entre-temps reste dans la bibliothèque).
+   REFAIRE (le panel v73 : « refaire impossible, et Ctrl+Maj+Z défait une deuxième fois ») : défaire photographie d'abord
+   ce qu'il quitte, sur une seconde pile ; refaire la reprend, et photographie à son tour ce qu'il quitte, sur l'historique.
+   Un geste neuf vide la pile à refaire : on ne refait pas ce qu'un autre geste a remplacé. La pile suit l'historique
+   qu'elle double — un plan qu'on ouvre lui en donne un neuf (`app.hist = []`, 08-bibliotheque), elle repart vide. */
+const photo = (quoi, retouche) => ({ quoi, retouche: !!retouche, planId: app.planId, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
   nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations), sexes: new Map(app.contrat.sexes || []), raccords: new Map([...(app.contrat.raccords || [])].map(([k, v]) => [k, { ...v }])), charges: new Map([...(app.contrat.charges || [])].map(([k, v]) => [k, JSON.parse(JSON.stringify(v))])), cartouche: { ...app.contrat.cartouche }, retouches: new Map(app.retouches) });
-  if (app.hist.length > 40) app.hist.shift(); synchroniserHistorique(); }
-function annuler() { const p = app.hist.pop(); if (!p) return null; const plan = app.plan;
+const REFAIRE = { hist: null, pile: [] }, HISTOIRE = { recit: '' };
+function pileRefaire() { if (REFAIRE.hist !== app.hist) { REFAIRE.hist = app.hist; REFAIRE.pile = []; } return REFAIRE.pile; }
+const borner = (xs, n) => { while (xs.length > n) xs.shift(); };
+function histPush(quoi, retouche) { app.hist.push(photo(quoi, retouche)); borner(app.hist, 40); pileRefaire().length = 0; synchroniserHistorique(); }
+// défaire : la photo du dessus revient ; ce qu'on quitte part sur la pile à refaire. Rend le nom du geste défait.
+function annuler() { const p = app.hist.pop(); if (!p) return null; const ici = photo(p.quoi, p.retouche), pile = pileRefaire(); pile.push(ici); borner(pile, 40);
+  poserPhoto(p); HISTOIRE.recit = recitDuGeste(ici, p, p, 'revient'); return p.quoi; }
+// refaire : la photo du dessus de la pile à refaire revient ; ce qu'on quitte retourne sur l'historique
+function refaire() { const pile = pileRefaire(), p = pile.pop(); if (!p) return null; const ici = photo(p.quoi, p.retouche); app.hist.push(ici); borner(app.hist, 40);
+  poserPhoto(p); HISTOIRE.recit = recitDuGeste(ici, p, p, 'passe'); return p.quoi; }
+function poserPhoto(p) { const plan = app.plan;
   // un autre plan était sur la table : ce qu'on vient d'y faire se garde d'abord, puis il revient
   if (p.planId !== undefined && p.planId !== app.planId) { sauverMaintenant(); app.planId = p.planId; }
   app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations; app.contrat.sexes = p.sexes || new Map(); app.contrat.charges = p.charges || new Map(); app.contrat.raccords = p.raccords || new Map();
@@ -22180,7 +22321,77 @@ function annuler() { const p = app.hist.pop(); if (!p) return null; const plan =
   // défaire une retouche ne recadre pas la vue : on regardait ce qu'on retouchait ; le récapitulatif en moitié non plus,
   // sur le même folio (P1-3 : il garde l'échelle du plan, on y corrige en regardant le plan)
   const garder = p.plan === plan && (p.retouche || (app.base.ouvert && app.base.taille === 'moitie'));
-  redessiner(); if (!garder) ajuster(true); sauver(); return p.quoi; }
+  redessiner(); if (!garder) ajuster(true); sauver(); }
+/* LE GESTE EN MOTS (le panel v73 : « Annulé : calibre de 102CB1 : automatique » se lisait à l'envers — on croyait le
+   calibre revenu à l'automatique, c'était l'inverse). Deux états du contrat comparés — deux photos, ou une photo et la
+   table — et ce qui a changé, dit comme on le lit sur le plan : un câble, un repère, un calibre. `sens` dit le verbe :
+   'revient' (défaire : « W-012 revient en DR20 »), 'passe' (refaire : « W-012 passe en DR12 »), 'court' (la bulle du
+   rail : « W-012 en DR12 »). `vers` est l'état où l'on arrive ; `p` la photo du geste (son nom, s'il touche le dessin).
+   Les câbles d'un même champ se disent ensemble (« W-011, W-012 et W-015 reviennent en DR16, DR20 et DR24 ») ; au-delà de
+   trois phrases, le compte ; ce qui ne se compare pas (un autre plan, une retouche du dessin) se dit par le geste. */
+const etatSurLaTable = () => ({ planId: app.planId, nom: app.nom, liaisons: app.contrat.liaisons, charges: app.contrat.charges || new Map(), designations: app.contrat.designations, sexes: app.contrat.sexes || new Map(), raccords: app.contrat.raccords || new Map() });
+const etListe = xs => xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' et ' + xs[xs.length - 1];
+function recitDuGeste(de, vers, p, sens) { const quoi = (p && p.quoi) || '', V = { revient: ['revient', 'reviennent'], passe: ['passe', 'passent'], court: ['', ''] }[sens];
+  const dire2 = (sujets, apres) => sujets.join('') && (etListe(sujets) + (V[0] ? ' ' + V[sujets.length > 1 ? 1 : 0] : '') + ' ' + apres).trim();
+  // un autre plan sur la table (une ouverture, un chargement) : celui où l'on arrive
+  if (de.planId !== vers.planId || (de.nom || '') !== (vers.nom || '') && Math.abs(de.liaisons.length - vers.liaisons.length) > 2) return sens === 'court' ? quoi : guillemets(vers.nom || 'le plan d’avant') + ' revient sur la table';
+  // une retouche du dessin : le geste la nomme (« déplacer 103RL1 », « pousser 103RL1 », « rendre 103RL1 au dessin automatique »)
+  if (p && p.retouche) { const m = /^(?:déplacer|pousser) (.+)$/.exec(quoi), r = /^rendre (.+) au dessin automatique$/.exec(quoi);
+    if (m) return sens === 'court' ? m[1] + ' déplacé' : sens === 'revient' ? m[1] + ' revient à sa place' : m[1] + ' reprend sa nouvelle place';
+    if (r) return sens === 'court' ? r[1] + ' rendu au dessin automatique' : sens === 'revient' ? r[1] + ' retrouve sa place retouchée' : r[1] + ' revient au dessin automatique';
+    if (/^retouche de ce folio/.test(quoi)) return sens === 'court' ? 'le dessin automatique de ce folio' : sens === 'revient' ? 'vos retouches reviennent sur ce folio' : 'le dessin automatique revient sur ce folio';
+    return sens === 'court' ? quoi : quoi + (sens === 'revient' ? ' : défait' : ' : refait'); }
+  const phrases = [], A = de.liaisons || [], B = vers.liaisons || [];
+  const nomC = l => l.cable || (l.de && l.vers ? l.de + ' → ' + l.vers : 'une liaison');
+  // des liaisons en plus ou en moins : lesquelles (par leurs bouts et leur numéro)
+  if (A.length !== B.length) { const cle = l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable].join('|'), cles = xs => xs.reduce((m, l) => m.set(cle(l), (m.get(cle(l)) || 0) + 1), new Map());
+    const plus = B.length > A.length, [grand, petit] = plus ? [B, A] : [A, B], reste = cles(petit), xs = grand.filter(l => { const n = reste.get(cle(l)) || 0; if (n) { reste.set(cle(l), n - 1); return false; } return true; });
+    const n = xs.length || Math.abs(B.length - A.length), qui = n === 1 && xs[0] ? 'la liaison ' + nomC(xs[0]) : pluriel(n, 'liaison');
+    // plus de liaisons à l'arrivée : défaire rend ce qu'on avait supprimé, refaire rajoute ce qu'on avait ajouté
+    const verbe = plus ? { revient: n > 1 ? 'reviennent' : 'revient', passe: n > 1 ? 'sont ajoutées' : 'est ajoutée', court: n > 1 ? 'ajoutées' : 'ajoutée' } : { revient: n > 1 ? 's’en vont' : 's’en va', passe: n > 1 ? 'sont supprimées' : 'est supprimée', court: n > 1 ? 'supprimées' : 'supprimée' };
+    phrases.push(qui + ' ' + verbe[sens]); }
+  else { // les champs changés, liaison par liaison ; un même champ se dit pour tous ses câbles (ou ses repères)
+    const groupes = new Map(), noter = (cleG, sujet, val, fmt) => { const g = groupes.get(cleG) || groupes.set(cleG, { cle: cleG, fmt, xs: [] }).get(cleG); if (!g.xs.some(x => x.sujet === sujet)) g.xs.push({ sujet, val }); };
+    const vide = v => v == null || v === '';
+    B.forEach((b, i) => { const a = A[i]; if (!a) return;
+      ['type', 'pnDe', 'pnVers', 'longueur', 'route', 'cable', 'de', 'borneDe', 'vers', 'borneVers', 'contactDe', 'contactVers', 'plan'].forEach(ch => { const va = a[ch] == null ? '' : a[ch], vb = b[ch] == null ? '' : b[ch]; if (va === vb) return;
+        if (ch === 'type') noter('type', nomC(b), vide(vb) ? 'sans type' : 'en ' + vb);
+        // le part number d'un disjoncteur porte son calibre : on dit le calibre (« 102CB1 revient à 10 A (MS3320-10) »)
+        else if (ch === 'pnDe' || ch === 'pnVers') { const c = !vide(vb) && typeof calibreDuPn === 'function' ? calibreDuPn(vb) : null;
+          noter('pn', ch === 'pnDe' ? b.de : b.vers, vide(vb) ? 'sans part number' : c > 0 ? 'à ' + amperes(c) + ' (' + vb + ')' : 'en ' + vb); }
+        else if (ch === 'longueur') noter('longueur', nomC(b), vide(vb) ? 'sans longueur' : 'à ' + nombre(Math.round(vb * 100) / 100) + ' m');
+        else if (ch === 'route') noter('route', nomC(b), vide(vb) ? 'sans route' : 'sur la route ' + vb);
+        else if (ch === 'cable') noter('cable', va || nomC(a), vide(vb) ? 'sans numéro' : vb, 'numero');
+        else if (ch === 'contactDe' || ch === 'contactVers') noter('contact', nomC(b), vide(vb) ? 'au contact automatique' : 'au contact ' + vb);
+        else if (ch === 'plan') noter('plan', nomC(b), 'au folio ' + (vb || '—'));
+        else noter('bout', nomC(b), 'sur ' + (ch.endsWith('De') || ch === 'de' ? b.de + (b.borneDe ? ':' + b.borneDe : '') : b.vers + (b.borneVers ? ':' + b.borneVers : ''))); }); });
+    // le calibre d'un disjoncteur (son profil) : il dit aussi son part number, qu'on ne répète pas
+    const calibres = new Set(), ca = de.charges || new Map(), cb = vers.charges || new Map();
+    new Set([...ca.keys(), ...cb.keys()]).forEach(nom => { const x = ca.get(nom) || {}, y = cb.get(nom) || {}; if (JSON.stringify(x) === JSON.stringify(y)) return;
+      if ((x.calibre || null) !== (y.calibre || null)) { calibres.add(nom); const auto = typeof calibreDe === 'function' && sens !== 'court' ? calibreDe(nom) : null;
+        noter('calibre', nom, y.calibre > 0 ? (sens === 'court' ? amperes(y.calibre) + ' à la main' : 'à ' + amperes(y.calibre) + ' à la main') : (sens === 'court' ? 'calibre automatique' : 'au calibre automatique') + (auto > 0 ? ', ' + amperes(auto) : '')); }
+      else noter('profil', 'le profil de charge de ' + nom, sens === 'court' ? 'récrit' : sens === 'revient' ? 'comme avant' : 'récrit', 'etat'); });
+    const pn = groupes.get('pn'); if (pn) { pn.xs = pn.xs.filter(x => !calibres.has(x.sujet)); if (!pn.xs.length) groupes.delete('pn'); }
+    // les choix écrits à la main : un contact à sertir, une nature, une désignation ou une référence ; un raccord, un sexe
+    const da = de.designations || new Map(), db = vers.designations || new Map();
+    new Set([...da.keys(), ...db.keys()]).forEach(k => { const va = da.get(k) || '', vb = db.get(k) || ''; if (va === vb) return; const xs = k.split('|');
+      if (xs[0] === 'sertir') noter('contact', 'le contact de ' + xs[1] + ':' + xs.slice(2).join('|'), vb ? 'à ' + vb : 'à l’automatique');
+      else if (xs[1] === 'nature') noter('nature', 'la nature de ' + xs[0], vb ? 'à ' + guillemets(vb) : 'au type du repère');
+      else noter('choix', xs[0], vb ? 'à ' + guillemets(vb.split('|')[0] || vb) : 'au choix de l’outil'); });
+    [['raccords', 'le raccord de '], ['sexes', 'le sexe des contacts de ']].forEach(([m, mot]) => { const x = de[m] || new Map(), y = vers[m] || new Map();
+      new Set([...x.keys(), ...y.keys()]).forEach(k => { if (JSON.stringify(x.get(k) || null) !== JSON.stringify(y.get(k) || null)) noter(m, mot + k, sens === 'court' ? 'changé' : sens === 'revient' ? 'comme avant' : 'changé', 'etat'); }); });
+    // le disjoncteur d'abord (la cause), puis ses câbles, puis le reste
+    const ORDRE = ['calibre', 'pn', 'profil', 'type', 'contact', 'longueur', 'route', 'cable', 'bout', 'plan', 'choix', 'nature', 'raccords', 'sexes'], rangG = g => { const i = ORDRE.indexOf(g.cle); return i < 0 ? ORDRE.length : i; };
+    [...groupes.values()].sort((a, b) => rangG(a) - rangG(b)).forEach(g => { const memes = g.xs.every(x => x.val === g.xs[0].val), sujets = g.xs.map(x => x.sujet);
+      if (g.fmt === 'numero') g.xs.forEach(x => phrases.push(sens === 'court' ? x.sujet + ' → ' + x.val : x.sujet + (sens === 'revient' ? ' redevient ' : ' devient ') + x.val));
+      else if (g.fmt === 'etat') g.xs.forEach(x => phrases.push(sens === 'court' ? x.sujet + ' ' + x.val : x.sujet + (sens === 'revient' ? ' revient ' + x.val : ' est ' + x.val)));
+      else if (g.xs.length > 4 && !memes) phrases.push(sujets.length + ' ' + (/^(pn|calibre|choix)$/.test(g.cle) ? 'repères' : 'câbles') + ' ' + { revient: 'reviennent comme avant', passe: 'changent', court: 'changés' }[sens]);
+      else if (memes) phrases.push(dire2(sujets.length > 4 ? [sujets.length + ' ' + (/^(pn|calibre|choix)$/.test(g.cle) ? 'repères' : 'câbles')] : sujets, g.xs[0].val));
+      // des valeurs différentes : « W-011, W-012 et W-015 reviennent en DR16, DR20 et DR24 »
+      else { const t = g.xs.map(x => x.val), pre = /^(en|à|sur|au|sans) /.exec(t[0]), tous = pre && t.every(v => v.startsWith(pre[0]));
+        phrases.push(dire2(sujets, tous ? pre[0] + etListe(t.map(v => v.slice(pre[0].length))) : etListe(t))); } }); }
+  const ph = phrases.filter(Boolean); if (!ph.length) return sens === 'court' ? quoi : quoi ? quoi + (sens === 'revient' ? ' : défait' : ' : refait') : '';
+  const n = ph.length - 2; return ph.length > 3 ? ph.slice(0, 2).join(' · ') + ' et ' + n + (n > 1 ? ' autres changements' : ' autre changement') : ph.join(' · '); }
 /* LA MÉMOIRE DU CONTRAT. Ce qui se garde d'un contrat (`etatDuContrat`) : ses liaisons, ses folios, ses choix, son
    cartouche, le plan de la bibliothèque qu'il est. Il se garde 400 ms après le dernier geste, à deux endroits : ce
    navigateur (localStorage : le plan qui est sur la table, relu au lancement, derrière la bibliothèque) et la
@@ -22279,13 +22490,58 @@ function synchroniserContexte() { const n = app.contrat.liaisons.length, P = pla
   // les nombres liés à leur mot (l'audit des pages : « 67 / repères » coupé au bout de la ligne du menu)
   const sous = n ? (exemple ? 'l’exemple embarqué · ' : '') + plurielLie(n, 'liaison') + ' · ' + plurielLie(reperesDuContrat().length, 'repère') + (P.length > 1 ? ' · ' + plurielLie(P.length, 'folio') : '') : '';
   $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous; $('ctx-nom').title = nom;
-  if (typeof synchroniserBibliotheque === 'function') synchroniserBibliotheque(); }
-/* Annuler reste à sa place, éteint quand il n'y a rien à annuler ; sa bulle
-   dit ce qu'il déferait. */
-function synchroniserHistorique() { const b = $('btnUndo'), d = app.hist[app.hist.length - 1]; b.disabled = !d;
-  const quoi = d ? 'Annuler : ' + d.quoi : 'Annuler';
-  b.setAttribute('aria-label', quoi + ' (Ctrl+Z)'); b.querySelector('.bulle').innerHTML = esc(quoi) + '<kbd>Ctrl+Z</kbd>'; }
-function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
+  if (typeof synchroniserBibliotheque === 'function') synchroniserBibliotheque();
+  // « Comparer au déjà-fait » sans base déposée ne dit rien (le technicien) : éteint au gris lisible, sa bulle dit pourquoi
+  // et où la déposer ; un clic l'ouvre quand même, qui le redit
+  const df = document.querySelector('#menu [data-act="dejafait"]'); if (df) { const sans = !app.references;
+    if (!df.dataset.aideBase) df.dataset.aideBase = df.dataset.aide || '';
+    if (sans) df.setAttribute('aria-disabled', 'true');
+    const t = 'Aucune base des contrats déjà faits pour l’instant : déposez-la dans Vos fichiers, puis comparez le plan aux contrats les plus proches.', aide = sans ? (typeof typo === 'function' ? typo(t) : t) : df.dataset.aideBase;
+    if (df.dataset.aide !== aide) { df.dataset.aide = aide; const s = $(df.getAttribute('aria-describedby') || ''); if (s) s.textContent = aide; } } }
+/* Défaire ↶ et refaire ↷ restent à leur place, éteints quand leur pile est vide. Leur bulle dit ce qu'ils feraient
+   (« W-012 en DR12 ») : elle s'écrit quand elle paraît (l'événement `bulle`, 08-menu), pas à chaque geste — comparer deux
+   états du contrat ne coûte rien une fois, mais rien n'oblige à le faire à chaque frappe. */
+function synchroniserHistorique() { const u = $('btnUndo'), r = $('btnRedo'); u.disabled = !app.hist.length; if (r) r.disabled = !pileRefaire().length; }
+function bulleDuGeste(b, refaire_) { const s = b.querySelector('.bulle-s'), d = b.querySelector('.bulle-detail'), p = refaire_ ? pileRefaire()[pileRefaire().length - 1] : app.hist[app.hist.length - 1];
+  const t = !p ? '' : refaire_ ? recitDuGeste(etatSurLaTable(), p, p, 'court') : recitDuGeste(p, etatSurLaTable(), p, 'court');
+  if (s) s.textContent = t; if (d) d.textContent = (refaire_ ? 'Refaire' : 'Défaire') + (t ? ' : ' + t : ''); }
+/* LES COMPTES (le panel v73, le technicien : « je ne sais plus combien il m'en reste, donc je ne sais pas quand j'ai fini »).
+   UNE règle partout : « problème » = rouge seulement, « à voir » = ambre, séparés par « · ». La source est le contrôle
+   (08-controle, `compteProblemes` : sur tout le plan) ; il pose aussi la pastille du rail (`rendreControle`) et mène P
+   (`problemeSuivant`). Ici, la BULLE des repères : replié, « Repères et problèmes R » et dessous « 5 problèmes · 9 à voir » ;
+   déplié, « Repères et problèmes · 5 problèmes · 9 à voir ». Elle s'écrit quand elle paraît (et à chaque synchronisation). */
+function bulleDesReperes() { const s = $('bulle-index'), d = $('bulle-index-detail'); if (!s && !d) return; const c = compteProblemes(), rien = !c.ko && !c.att;
+  if (s) s.textContent = rien ? '' : c.mot; if (d) d.textContent = 'Repères et problèmes · ' + (rien ? 'rien à reprendre' : c.mot); }
+/* LE RETEST CORRIGÉ, le vrai livrable (le technicien : « le bouton Exporter le plus visible sort un CSV, le retest corrigé
+   est la 6ᵉ ligne d'un sous-menu »). Dès que le plan porte un changement, la pilule de la barre du haut le dit (« 3
+   changements · Retest corrigé ») ; dans ⋮ › Exporter, sa ligne vient en tête avec son compte. Le compte est celui du
+   retest corrigé (08-export, `nombreDeChangements`, `motChangements` : les liaisons dont une case diffère du fichier), lu,
+   pas refait ; un clic ouvre son relevé (`exporterRetestCorrige`). */
+function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDeChangements() : 0, b = $('btnRetest'); if (!b) return;
+  const avant = b.hidden, mod = plurielLie(n, 'liaison') + ' modifiée' + (n > 1 ? 's' : ''); b.hidden = !n;
+  if (n) { $('en-retest-n').textContent = motChangements(n); b.setAttribute('aria-label', 'Le retest corrigé — ' + mod + ' ; relire ce qui part, puis l’enregistrer');
+    b.querySelector('.bulle').textContent = 'Le retest corrigé : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
+    // elle paraît : elle tombe d'un rien, une fois
+    if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }
+  const m = $('mn-retest'); if (m) m.textContent = n ? mod : 'aucune modification pour l’instant';
+  const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'le retest corrigé · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
+/* LE RAIL SE DÉPLIE (le technicien : « la liste à puces avec une pastille, je la prends pour des notifications ; le ⊸+ pour un
+   curseur de réglage ») : au survol prolongé — 250 ms, une main qui passe ne l'ouvre pas —, il montre le mot et la touche
+   de chaque outil (style.css, `#rail.deplie`). Il se replie dès qu'on clique (et ne se rouvre pas sous la main restée là :
+   il faut sortir et revenir), dès qu'on le quitte. Au clavier il reste plié : la bulle de chaque outil dit son nom, sa
+   touche et son état, tout de suite (08-menu) — un palet qui s'élargit à chaque Tab couvrirait ce qu'on lit à côté.
+   Seulement à la souris d'un ordinateur : au doigt, le rail est en bas, replié. */
+const DEPLI = { tempo: 0, muet: false };
+function lierRail() { const r = $('rail'); if (!r) return; const peut = () => matchMedia('(min-width: 701px) and (hover: hover)').matches;
+  const plier = () => { clearTimeout(DEPLI.tempo); r.classList.remove('deplie'); }, deplier = () => { clearTimeout(DEPLI.tempo); if (peut()) r.classList.add('deplie'); };
+  r.addEventListener('pointerenter', e => { if (e.pointerType === 'touch' || DEPLI.muet) return; clearTimeout(DEPLI.tempo); DEPLI.tempo = setTimeout(deplier, 250); });
+  r.addEventListener('pointerleave', () => { DEPLI.muet = false; plier(); });
+  r.addEventListener('pointerdown', () => { DEPLI.muet = true; plier(); });
+  // un clic replie, et fait taire le rail jusqu'à ce que la main en sorte
+  r.addEventListener('click', e => { if (e.detail > 0) DEPLI.muet = true; plier(); });
+  $('btnUndo').addEventListener('bulle', e => bulleDuGeste(e.currentTarget, false)); $('btnIndex').addEventListener('bulle', bulleDesReperes);
+  const redo = $('btnRedo'); if (redo) redo.addEventListener('bulle', e => bulleDuGeste(e.currentTarget, true)); }
 /* LE MOT QUI PASSE (le toast) : une ligne, en haut, au milieu de la place du plan. Trois sortes :
    · l'information : elle passe (2,8 s) ;
    · l'erreur : elle RESTE jusqu'au clic (sur elle, ou n'importe où ailleurs) — on ne la perd pas en clignant des yeux ;
@@ -22295,23 +22551,50 @@ function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchron
      (08-fichiers, « Voir ») et `direAvecGeste` (08-bibliothèque) passent par le même bouton (`.toast-voir`). */
 let toastT = null; const TOAST = { erreur: false, t: 0 };
 const cacherToast = () => { clearTimeout(toastT); $('toast').classList.remove('on', 'action'); TOAST.erreur = false; };
+/* Le temps qu'il reste : 2,8 s pour une ligne ; un mot plus long se lit plus longtemps (le technicien : « deux lignes
+   effacées en 2,8 s, je n'ai pas eu le temps de lire le nom du fichier »), 6 s au plus ; 8 s quand il offre un geste. */
+const dureeDuMot = (msg, geste) => geste ? 8000 : Math.min(6000, Math.max(2800, 1400 + String(msg).length * 45));
 function dire(msg, erreur, o) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.remove('action'); t.classList.add('on');
   clearTimeout(toastT); TOAST.erreur = !!erreur; TOAST.t = Date.now();
   if (o && o.geste && typeof o.faire === 'function') { const b = document.createElement('button'); b.type = 'button'; b.className = 'toast-voir toast-geste'; b.textContent = o.geste;
     b.addEventListener('click', e => { e.stopPropagation(); cacherToast(); o.faire(); }); t.appendChild(b); t.classList.add('action'); }
-  if (!erreur) toastT = setTimeout(() => t.classList.remove('on', 'action'), o && o.geste ? 8000 : 2800);
+  placerToast(t);
+  if (!erreur) toastT = setTimeout(() => t.classList.remove('on', 'action'), dureeDuMot(msg, o && o.geste));
   if (!TOAST.lie) { TOAST.lie = true;
     // l'erreur s'en va au premier clic qui la suit (pas celui qui l'a fait naître) ; sur un de ses boutons, il fait d'abord le sien
     document.addEventListener('pointerdown', e => { if (!TOAST.erreur || Date.now() - TOAST.t < 400 || (e.target.closest && e.target.closest('#toast button'))) return; cacherToast(); }, true); } }
-// Ctrl+Z, le bouton du rail : le dernier geste défait, dit ; rien à défaire, dit aussi (on ne se demande pas si ça a marché)
-function defaire() { const q = annuler(); dire(q ? 'Annulé : ' + q + '.' : 'Rien à défaire.'); return q; }
+/* Où il se pose : au milieu de la place du plan (style.css) ; une CARTE flottante est sous lui (le designer : « Problème
+   1 / 10 chevauche la carte de 21 px », sur ses flèches ‹ ›) — il passe dans la plus grande place libre à côté d'elle,
+   à 16 px d'elle, plus étroit s'il le faut. Seulement là : un document, le volet, la base SEE, la visionneuse ont leur
+   règle (les feuilles de style). */
+function placerToast(t) { t.classList.remove('evite'); const b = document.body, insp = $('inspecteur');
+  if (innerWidth <= 700 || !b.classList.contains('insp-flotte') || b.matches('.fiche-ouverte, .pdf-ouvert, .visio-ouvert') || !insp || insp.hidden) return;
+  const c = insp.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight, haut = t.getBoundingClientRect().top, rail = $('rail').getBoundingClientRect().right + 12;
+  const x0 = rail + (innerWidth - rail) / 2; if (c.top > haut + h + 8 || c.bottom < haut || x0 + w / 2 < c.left - 16 || x0 - w / 2 > c.right + 16) return;
+  const zones = [[rail, c.left - 16], [c.right + 16, innerWidth - 12]].map(([a, z]) => ({ a, z, l: z - a })).sort((p, q) => q.l - p.l), Z = zones[0]; if (Z.l < 220) return;
+  t.style.setProperty('--toast-x', Math.round(Z.a + Z.l / 2) + 'px'); t.style.setProperty('--toast-max', Math.round(Math.min(560, Z.l)) + 'px'); t.classList.add('evite'); }
+/* DÉFAIRE, REFAIRE — Ctrl+Z, Ctrl+Y (ou Ctrl+Maj+Z), ↶ et ↷ du rail : le mot dit l'ÉTAT D'ARRIVÉE (« Défait : W-012 revient en
+   DR20 »), pas le nom du geste, et offre le geste inverse (« Refaire », « Défaire ») ; rien à faire, il le dit aussi (on
+   ne se demande pas si ça a marché). La fiche ouverte se rouvre sur le même objet (08-fiche, `garderLaFiche`). */
+const garderFiche = () => { if (typeof garderLaFiche === 'function') garderLaFiche(); };
+function defaire() { garderFiche(); const q = annuler(); if (!q) { dire('Rien à défaire.'); return q; }
+  dire('Défait : ' + (HISTOIRE.recit || q) + '.', false, { geste: 'Refaire', faire: refaireEtDire }); return q; }
+function refaireEtDire() { garderFiche(); const q = refaire(); if (!q) { dire('Rien à refaire.'); return q; }
+  dire('Refait : ' + (HISTOIRE.recit || q) + '.', false, { geste: 'Défaire', faire: defaire }); return q; }
 /* ---- le menu ⋮ : peu de lignes ; Exporter et Plus s'ouvrent EN PLACE (page.html) -----------------------------------
    `montrerPanneau(nom)` : '' le menu, sinon un sous-menu, qui prend sa place (le menu garde sa largeur). Le clavier va à la
    première ligne du panneau montré — au retour, à la ligne qui avait ouvert le sous-menu. */
 function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); montrerPanneau(''); }
-// fermé, le menu revient à son panneau principal : il se rouvrira sur lui, le clavier sur sa première ligne
-function fermerMenu() { const m = $('menu'); m.hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false');
+/* fermé, le menu revient à son panneau principal : il se rouvrira sur lui, le clavier sur sa première ligne. Il est fermé
+   TOUT DE SUITE (le clavier, les tests, le geste qu'on vient de choisir n'attendent pas) ; ce qui s'efface en 120 ms est son
+   DOUBLE, une image sans identifiants ni clavier (`.menu-part`, style.css) — sauf sous le mouvement réduit. */
+function fermerMenu() { const m = $('menu'); if (!m.hidden) partirMenu(m); m.hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false');
   m.querySelectorAll('.menu-panneau').forEach(p => { p.hidden = p.id !== 'mp-principal'; }); m.querySelectorAll('[data-sous]').forEach(b => b.setAttribute('aria-expanded', 'false')); }
+function partirMenu(m) { if (matchMedia('(prefers-reduced-motion: reduce)').matches || !m.offsetParent) return;
+  document.querySelectorAll('.menu-part').forEach(d => d.remove());
+  const d = m.cloneNode(true); d.removeAttribute('id'); d.querySelectorAll('[id]').forEach(e => e.removeAttribute('id')); d.querySelectorAll('[role]').forEach(e => e.removeAttribute('role')); d.removeAttribute('role');
+  d.classList.add('menu-part'); d.setAttribute('aria-hidden', 'true'); d.inert = true; m.after(d); d.scrollTop = m.scrollTop;
+  const fin = () => d.remove(); d.addEventListener('animationend', fin, { once: true }); setTimeout(fin, 1000); }
 const panneauDuMenu = () => [...$('menu').querySelectorAll('.menu-panneau')].find(p => !p.hidden);
 function montrerPanneau(nom) { const m = $('menu'), avant = panneauDuMenu(), vise = $(nom ? 'mp-' + nom : 'mp-principal'); if (!vise) return;
   m.querySelectorAll('.menu-panneau').forEach(p => { p.hidden = p !== vise; });
@@ -22358,29 +22641,40 @@ function entreeDuMenu(o) { if (!MENU) MENU = { actions: {} }; const D = id => do
   return b; }
 /* ---- LA FEUILLE DES RACCOURCIS (« ? ») -------------------------------------------------------------------------------
    L'audit v72 (P2-13) : « les raccourcis existent, ne se découvrent pas » — /, R, B, N au survol du rail, Ctrl+O dans ⋮,
-   Maj+B, Alt+← →, F2 nulle part. Une feuille, posée sur la table comme une carte : ce qu'on fait au clavier, en quatre
-   groupes ; « ? » l'ouvre (et Plus › Raccourcis clavier), Échap, « ? » ou un clic dehors la referment. */
+   Maj+B, Alt+← →, F2 nulle part. Une feuille, posée sur la table comme une carte : ce qu'on fait au clavier, en cinq
+   groupes ; « ? » l'ouvre (et Plus › Raccourcis clavier), Échap, « ? » ou un clic dehors la referment. Le panel v73 : elle
+   dit TOUT — refaire, la palette (Ctrl+K), les touches d'une fiche et du cadran — et le clavier ne s'en échappe plus
+   (aria-modal : Tab tourne dans la feuille). Une touche qui ne vaut qu'à un endroit le dit sous sa ligne. */
 const RACCOURCIS = [
-  ['Se repérer', [['Chercher un repère, un câble, un part number, une borne', ['/']], ['Les repères et les problèmes', ['R']], ['Le problème suivant, le précédent', ['P'], ['Maj', 'P']],
+  ['Se repérer', [['Chercher un repère, un câble, un part number, une borne', ['/']], ['Chercher un objet ou une action (« pdf », « hypothèses »…)', ['Ctrl', 'K']], ['Les repères et les problèmes', ['R']],
+    ['Le problème suivant, le précédent (les problèmes, puis ce qui est à voir)', ['P'], ['Maj', 'P']],
     ['Folio précédent, suivant', ['←'], ['→']], ['La feuille entière, puis le dessin au plus près', ['0']], ['Zoomer, dézoomer', ['+'], ['−']], ['À 100 %, à 200 %', ['1'], ['2']],
-    ['Déplacer la vue (en glissant ; le bouton du milieu aussi)', ['Espace']], ['Fiche d’avant, d’après ; revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']]]],
+    ['Déplacer la vue (en glissant ; le bouton du milieu aussi)', ['Espace']]]],
   ['Lire en tableaux', [['Le récapitulatif, en moitié', ['B']], ['Le récapitulatif, en page', ['Maj', 'B']], ['La nomenclature', ['N']], ['Corriger une case', ['Entrée'], ['F2']], ['La case suivante', ['Tab']]]],
-  ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Pousser le bloc choisi d’un carreau (cinq avec Maj)', ['↑'], ['↓']], ['Renommer le repère de la fiche', ['F2']], ['Fermer, revenir', ['Échap']]]],
-  ['Ouvrir, sortir', [['Ouvrir un retest', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Cette feuille', ['?']]]]];
+  ['Dans une fiche', [['La fiche d’avant, d’après ; revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']], ['Renommer le repère', ['F2']],
+    ['Le calibre : le cran d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre ; rendre l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche, revenir au plan', ['Échap']]]],
+  ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire ce qu’on vient de défaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['Pousser le bloc choisi d’un carreau (cinq avec Maj)', ['↑'], ['↓']]]],
+  ['Ouvrir, sortir', [['Ouvrir un retest', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert, revenir', ['Échap']], ['Cette feuille', ['?']]]]];
 const raccourcisOuverts = () => { const el = $('raccourcis'); return !!el && !el.hidden; };
 function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
   if (!el) { el = document.createElement('div'); el.id = 'raccourcis'; el.className = 'raccourcis'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'rk-titre');
-    const touches = ks => ks.map(k => `<kbd>${esc(k)}</kbd>`).join('');
-    el.innerHTML = `<div class="rk-feuille"><header class="rk-tete"><h2 id="rk-titre">Raccourcis clavier</h2><button type="button" class="fi-x" id="rk-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
-      + `<div class="rk-groupes">${RACCOURCIS.map(([t, xs]) => `<section class="rk-groupe"><h3>${esc(t)}</h3><dl>${xs.map(([quoi, ...ks]) => `<div class="rk-ligne"><dt>${esc(quoi)}</dt><dd>${ks.map(touches).join('<span class="rk-ou">ou</span>')}</dd></div>`).join('')}</dl></section>`).join('')}</div>`
-      + `<p class="rk-pied">Chaque bouton du rail et de la barre du bas dit aussi son raccourci au survol ; dans un champ, les touches s’écrivent.</p></div>`;
+    const touches = ks => ks.map(k => `<kbd>${esc(k)}</kbd>`).join(''), dt = q => { const [t, ou] = q.split('|'); return esc(t) + (ou ? `<small>${esc(ou)}</small>` : ''); };
+    el.innerHTML = `<div class="rk-feuille"><header class="rk-tete"><h2 id="rk-titre">Raccourcis clavier</h2><button type="button" class="fi-x" id="rk-fermer" aria-label="Fermer (Échap)">${ico('fermer')}<span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button></header>`
+      + `<div class="rk-groupes">${RACCOURCIS.map(([t, xs]) => `<section class="rk-groupe"><h3>${esc(t)}</h3><dl>${xs.map(([quoi, ...ks]) => `<div class="rk-ligne"><dt>${dt(quoi)}</dt><dd>${ks.map(touches).join('<span class="rk-ou">ou</span>')}</dd></div>`).join('')}</dl></section>`).join('')}</div>`
+      + `<p class="rk-pied">Le rail se déplie au survol : chaque outil y dit son nom et sa touche. Dans un champ, les touches s’écrivent.</p></div>`;
     document.body.appendChild(el);
     el.addEventListener('pointerdown', e => { if (!e.target.closest('.rk-feuille')) fermerRaccourcis(); });
-    el.querySelector('#rk-fermer').onclick = fermerRaccourcis; }
-  RACCOURCIS.avant = document.activeElement; el.hidden = false; el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre');
+    el.querySelector('#rk-fermer').onclick = fermerRaccourcis;
+    // Tab tourne dans la feuille, d'où que parte le clavier (la page derrière comprise) : du dernier élément au premier, et
+    // l'inverse (la croix, seule, garde le clavier)
+    document.addEventListener('keydown', e => { if (e.key !== 'Tab' || !raccourcisOuverts()) return; const xs = [...el.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.offsetParent); if (!xs.length) return;
+      const i = xs.indexOf(document.activeElement), j = i < 0 ? (e.shiftKey ? xs.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + xs.length) % xs.length; e.preventDefault(); e.stopPropagation(); xs[j].focus(); }, true); }
+  RACCOURCIS.avant = document.activeElement; el.hidden = false;
+  // elle se pose comme tout ce qui paraît (la règle d'entrée commune, style.css) — le voile, lui, est déjà là
+  const f = el.querySelector('.rk-feuille'); f.classList.remove('entre-v'); void f.offsetWidth; f.classList.add('entre-v');
   // le clavier sur la feuille (Tab mène à la croix), sans l'anneau d'un bouton pressé
-  const f = el.querySelector('.rk-feuille'); f.tabIndex = -1; try { f.focus({ preventScroll: true }); } catch (_) { f.focus(); } }
-function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a.focus && a.isConnected) try { a.focus(); } catch (_) { } }
+  f.tabIndex = -1; try { f.focus({ preventScroll: true }); } catch (_) { f.focus(); } }
+function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a.focus && a.isConnected) try { rendreLeClavier(a); } catch (_) { } }
 function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
 /* ---- tout relier -------------------------------------------------------- */
@@ -22404,18 +22698,23 @@ function lierPanneau() {
     svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), dossierpdf: surLePlan(exporterDossierPdf), retestcorrige: surLePlan(exporterRetestCorrige), suivi: surLePlan(exporterSuivi),
     nomenclaturecsv: surLePlan(() => { if (!verite().length) { dire('Aucun plan ouvert : rien à compter.'); return; } exporterNomenclature(); }),
     coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: surLePlan(ficheCartouche), raccourcis: montrerRaccourcis });
-  o('btnUndo', defaire);
+  o('btnUndo', defaire); o('btnRedo', refaireEtDire);
+  // la pilule du retest corrigé : le relevé de ce qui part, puis l'Excel (08-export)
+  o('btnRetest', surLePlan(exporterRetestCorrige));
   o('btnAuto', revenirAutomatique);
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));
+  lierRail(); if (typeof lierBullesDuChrome === 'function') lierBullesDuChrome();
   const strip = $('fo-strip'); strip.addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
   // le nom entier d'un folio, dans la bulle de la planche (pas l'infobulle du système) : une bulle pour toute la bande,
-  // posée au-dessus de la puce survolée — dans la puce, elle serait rognée par la bande qui défile
+  // posée au-dessus de la puce survolée — dans la puce, elle serait rognée par la bande qui défile. Elle suit la règle des
+  // bulles du chrome (08-menu) : 400 ms la première, tout de suite si une bulle vient de se fermer, éteinte au clic
   const bulle = document.createElement('span'); bulle.className = 'bulle fo-bulle'; bulle.setAttribute('aria-hidden', 'true'); $('folios').appendChild(bulle);
-  let tempo = 0; const cacher = () => { clearTimeout(tempo); bulle.classList.remove('on'); };
+  let tempo = 0; const cacher = () => { clearTimeout(tempo); if (bulle.classList.contains('on') && typeof bulleEteinte === 'function') bulleEteinte(); bulle.classList.remove('on'); };
   strip.addEventListener('pointerover', e => { const c = e.target.closest('.chip'); if (!c || e.pointerType === 'touch') return; clearTimeout(tempo);
+    const vite = bulle.classList.contains('on') || (typeof bulleChaude === 'function' && bulleChaude());
     tempo = setTimeout(() => { const r = c.getBoundingClientRect(), f = $('folios').getBoundingClientRect(); bulle.textContent = c.dataset.nom;
-      bulle.style.left = Math.max(4, Math.min(r.left + r.width / 2 - f.left, f.width - 4)) + 'px'; bulle.classList.add('on'); }, bulle.classList.contains('on') ? 0 : 450); });
-  strip.addEventListener('pointerleave', cacher); strip.addEventListener('scroll', cacher, { passive: true });
+      bulle.style.left = Math.max(4, Math.min(r.left + r.width / 2 - f.left, f.width - 4)) + 'px'; bulle.classList.add('on'); }, vite ? 0 : 400); });
+  strip.addEventListener('pointerleave', cacher); strip.addEventListener('pointerdown', cacher); strip.addEventListener('scroll', cacher, { passive: true });
   // la bande des folios défile à la molette (elle n'a pas de barre), la liste déroulante y va d'un choix
   strip.addEventListener('wheel', e => { if (!e.deltaY || e.deltaX || strip.scrollWidth <= strip.clientWidth) return; e.preventDefault(); strip.scrollLeft += e.deltaY; }, { passive: false });
   const sel = $('fo-select'); if (sel) sel.addEventListener('change', () => allerAuPlan(sel.value));
@@ -22432,17 +22731,23 @@ function lierPanneau() {
     // Échap ferme d'abord ce qui est ouvert par-dessus : la feuille des raccourcis, le menu ⋮, la recherche, le « ⋯ »
     // d'une fiche, les colonnes du récapitulatif (puis la fiche, au second appui ; puis le récapitulatif)
     const plusFiche = $('fi-menu-liste'), colonnes = $('ba-colonnes-menu');
-    if (e.key === 'Escape') { if (raccourcisOuverts()) fermerRaccourcis(); else if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
+    // (le clavier rendu au ⋮ ne fait pas paraître sa bulle : elle couvrait la croix du document ouvert — `rendreLeClavier`)
+    if (e.key === 'Escape') { if (raccourcisOuverts()) fermerRaccourcis(); else if (!$('menu').hidden) { fermerMenu(); rendreLeClavier($('btnMenu')); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
       else if (plusFiche && !plusFiche.hidden) { plusFiche.hidden = true; const m = $('fi-menu'); if (m) { m.setAttribute('aria-expanded', 'false'); m.focus(); } }
       else if (colonnes && !colonnes.hidden) { fermerMenuColonnes(); $('ba-colonnes').focus(); }
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
       else if (app.fiche) fermerFiche(true); else if (app.cible || !$('inspecteur').hidden) deselectionner(); else fermerBase(); return; }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); defaire(); return; }
+    // Ctrl+Z défait ; Ctrl+Y et Ctrl+Maj+Z (⌘⇧Z) REFONT — jamais ne défont (le panel v73 : Ctrl+Maj+Z défaisait un second geste)
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !dansChamp && (e.key.toLowerCase() === 'y' || e.key.toLowerCase() === 'z' && e.shiftKey)) { e.preventDefault(); refaireEtDire(); return; }
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); defaire(); return; }
+    // Ctrl+K : la palette des objets et des actions (la recherche, `ouvrirPalette`), quand elle est là
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k' && typeof ouvrirPalette === 'function') { e.preventDefault(); ouvrirPalette(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); imprimer(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') { e.preventDefault(); choisirFichier(); return; }
     if (dansChamp || e.ctrlKey || e.metaKey || e.altKey) return;
     if (raccourcisOuverts()) { if (e.key === '?') fermerRaccourcis(); return; }   // la feuille ouverte : seule Échap (ou ?) la ferme
     if (e.key === '?') { e.preventDefault(); montrerRaccourcis(); return; }
+    // P : un pas par POINT, les problèmes puis ce qui est à voir (08-controle) — les nombres de la pastille
     if (e.key === 'p' || e.key === 'P') { e.preventDefault(); problemeSuivant(e.key === 'P' ? -1 : 1); return; }
     if (e.key === '/') { e.preventDefault(); ouvrirRecherche(); }
     else if (e.key === 'b') basculerBase();
@@ -22457,31 +22762,69 @@ function lierPanneau() {
 
 /* ───────── 08-menu.js ───────── */
 /* ===========================================================================
-   08 — LES BULLES DU MENU ⋮
-   Chaque ligne du menu dit ce qu'elle fait, en une ou deux phrases : ses
-   mots sont écrits dans page.html (`data-aide`) ; ici, la typographie
-   française qu'un attribut n'a pas d'office, la même phrase pour un lecteur
-   d'écran, et la bulle posée à gauche du menu. Le clavier du menu et ses
-   sous-menus : 08-interface, `lierMenu`.
+   08 — LES BULLES DU CHROME : le menu ⋮, le rail, la barre du haut, la barre des folios
+   Chaque ligne du menu dit ce qu'elle fait, en une ou deux phrases : ses mots sont écrits dans page.html (`data-aide`) ;
+   ici, la typographie française qu'un attribut n'a pas d'office, la même phrase pour un lecteur d'écran, et la bulle
+   posée à gauche du menu. Chaque outil du rail, de la barre du haut et de la barre des folios porte sa bulle (un `.bulle`
+   dans son bouton) : ici, QUAND elle paraît. Le clavier du menu et ses sous-menus : 08-interface, `lierMenu`.
    =========================================================================== */
 
-/* La typographie française (une espace insécable avant « : ; ? ! » — un attribut n'est pas du texte, `typographieVivante`
-   ne le voit pas), et la même phrase pour un lecteur d'écran (`aria-describedby`). La bulle est UNE (`#menu-bulle`, posée
-   sur la page, pas dans le menu) : le menu peut défiler quand il ne tient pas dans l'écran sans la rogner. Elle se pose à
-   gauche du menu, à la hauteur de la ligne — dans un sous-menu comme dans le menu —, après 300 ms de survol (on traverse
-   le menu sans qu'elle clignote ; d'une ligne à l'autre, elle suit aussitôt), tout de suite au clavier. */
+/* LA RÈGLE DU TEMPS, une pour toutes les bulles du chrome (le panel v73 : le designer, § 5.4 ; l'ergonome) :
+     · la première paraît après 400 ms de survol — une main qui passe ne fait rien clignoter ;
+     · tant qu'une bulle vient de s'éteindre (`--bulle-chaude`, 1,2 s), la suivante paraît TOUT DE SUITE : on balaie le
+       rail, les noms se suivent, comme sur macOS ;
+     · au clavier, tout de suite — sauf quand le clavier est RENDU par programme (Échap ferme le menu et rend le clavier
+       au ⋮ : sa bulle couvrait la croix du document ouvert ; `rendreLeClavier`) ;
+     · au premier appui elle s'éteint, et se tait jusqu'à ce que la main quitte le bouton (elle couvrait ce que le clic
+       venait d'ouvrir).
+   Un bouton qui porte une `.bulle` enfant — le rail, la barre du haut, les folios, la visionneuse d'un PDF, la feuille des
+   raccourcis — la montre par la classe `.bulle-on` (style.css). Juste avant de paraître, la bulle prévient son bouton
+   (l'événement `bulle`) : il peut l'écrire à ce moment-là (↶ et ↷ disent ce qu'ils feraient, 08-interface). */
+const BULLES = { vise: null, attend: null, tempo: 0, chaud: 0, muette: null, taire: null, lie: false };
+const DELAI_BULLE = 400, BULLE_CHAUDE = 1200;
+const bulleChaude = () => Date.now() < BULLES.chaud;
+const bulleEteinte = () => { BULLES.chaud = Date.now() + BULLE_CHAUDE; };
+// rendre le clavier à un bouton sans faire paraître sa bulle (Échap, la fermeture d'une feuille)
+function rendreLeClavier(el) { if (!el || !el.focus) return; BULLES.taire = el; try { el.focus({ preventScroll: true }); } catch (_) { el.focus(); }
+  setTimeout(() => { if (BULLES.taire === el) BULLES.taire = null; }, 0); }
+function lierBullesDuChrome() { if (BULLES.lie) return; BULLES.lie = true;
+  const porteur = t => { const b = t && t.closest ? t.closest('button, [role="button"]') : null; return b && b.querySelector(':scope > .bulle') ? b : null; };
+  const eteindre = b => { if (!b) return; if (b.classList.contains('bulle-on')) bulleEteinte(); b.classList.remove('bulle-on'); if (BULLES.vise === b) BULLES.vise = null; };
+  const montrer = b => { clearTimeout(BULLES.tempo); BULLES.attend = null; if (BULLES.vise && BULLES.vise !== b) eteindre(BULLES.vise);
+    if (b.disabled || !b.isConnected) return; b.dispatchEvent(new CustomEvent('bulle')); b.classList.add('bulle-on'); BULLES.vise = b; };
+  const attendre = () => { clearTimeout(BULLES.tempo); BULLES.attend = null; };
+  document.addEventListener('pointerover', e => { if (e.pointerType === 'touch') return; const b = porteur(e.target); if (!b || b === BULLES.vise || b === BULLES.attend) return;
+    attendre(); if (BULLES.vise) eteindre(BULLES.vise); if (b === BULLES.muette) return;
+    // sur le rail replié, la bulle attend toujours : le rail se déplie avant elle (250 ms), elle paraît déjà dans sa forme
+    // dépliée — sinon elle changerait de texte sous les yeux
+    const rail = b.closest('#rail'), attendLeRail = rail && !rail.classList.contains('deplie') && matchMedia('(min-width: 701px) and (hover: hover)').matches;
+    if (bulleChaude() && !attendLeRail) montrer(b); else { BULLES.attend = b; BULLES.tempo = setTimeout(() => { BULLES.attend = null; if (b.matches(':hover')) montrer(b); }, DELAI_BULLE); } }, true);
+  document.addEventListener('pointerout', e => { const b = porteur(e.target); if (!b || b.contains(e.relatedTarget)) return; if (BULLES.muette === b) BULLES.muette = null;
+    if (BULLES.attend === b) attendre(); if (b === BULLES.vise && !b.matches(':focus-visible')) eteindre(b); }, true);
+  document.addEventListener('pointerdown', e => { attendre(); if (BULLES.vise) eteindre(BULLES.vise); BULLES.muette = porteur(e.target); }, true);
+  document.addEventListener('focusin', e => { const b = porteur(e.target); if (!b || e.target !== b) return; if (BULLES.taire === b) { BULLES.taire = null; return; } if (b.matches(':focus-visible')) montrer(b); });
+  document.addEventListener('focusout', e => { const b = porteur(e.target); if (b && b === BULLES.vise && !b.matches(':hover')) eteindre(b); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && BULLES.vise) eteindre(BULLES.vise); }, true);
+  window.addEventListener('scroll', () => { if (BULLES.vise) eteindre(BULLES.vise); }, { capture: true, passive: true }); }
+
+/* LE MENU ⋮. La typographie française (une espace insécable avant « : ; ? ! » — un attribut n'est pas du texte,
+   `typographieVivante` ne le voit pas), et la même phrase pour un lecteur d'écran (`aria-describedby`). La bulle est UNE
+   (`#menu-bulle`, posée sur la page, pas dans le menu) : le menu peut défiler quand il ne tient pas dans l'écran sans la
+   rogner. Elle se pose à gauche du menu, à la hauteur de la ligne — dans un sous-menu comme dans le menu —, après 300 ms
+   de survol (on traverse le menu sans qu'elle clignote ; d'une ligne à l'autre, ou juste après une autre bulle, elle suit
+   aussitôt), tout de suite au clavier ; un appui l'éteint. */
 function lierBullesDuMenu() { const m = $('menu'); if (!m || $('menu-bulle')) return; const boite = document.createElement('div'); boite.hidden = true; boite.id = 'menu-aides'; m.after(boite);
   m.querySelectorAll('button[data-aide]').forEach(b => { b.dataset.aide = typo(b.dataset.aide); const s = document.createElement('span'), id = 'aide-' + (b.dataset.act || b.dataset.sous);
     s.id = id; s.textContent = b.dataset.aide; boite.appendChild(s); b.setAttribute('aria-describedby', id); });
   const bulle = document.createElement('div'); bulle.id = 'menu-bulle'; bulle.className = 'menu-bulle'; bulle.setAttribute('aria-hidden', 'true'); document.body.appendChild(bulle);
   let tempo = 0;
-  const cacher = () => { clearTimeout(tempo); bulle.classList.remove('on'); };
+  const cacher = () => { clearTimeout(tempo); if (bulle.classList.contains('on')) bulleEteinte(); bulle.classList.remove('on'); };
   const montrer = (b, vite) => { clearTimeout(tempo); tempo = setTimeout(() => { if (m.hidden || !b.isConnected || !b.offsetParent) return;
     bulle.textContent = b.dataset.aide; bulle.classList.add('on'); const r = b.getBoundingClientRect(), g = m.getBoundingClientRect(), h = bulle.offsetHeight;
     bulle.style.right = Math.round(innerWidth - g.left + 12) + 'px'; bulle.style.top = Math.round(Math.max(8, Math.min(r.top + r.height / 2 - 16, innerHeight - h - 8))) + 'px'; }, vite ? 0 : 300); };
   m.addEventListener('pointerover', e => { const b = e.target.closest && e.target.closest('button'); if (e.pointerType === 'touch') return;
-    if (!b || !b.dataset.aide) { cacher(); return; } montrer(b, bulle.classList.contains('on')); });
-  m.addEventListener('pointerleave', cacher); m.addEventListener('scroll', cacher, { passive: true });
+    if (!b || !b.dataset.aide) { cacher(); return; } montrer(b, bulle.classList.contains('on') || bulleChaude()); });
+  m.addEventListener('pointerleave', cacher); m.addEventListener('pointerdown', cacher); m.addEventListener('scroll', cacher, { passive: true });
   m.addEventListener('focusin', e => { const b = e.target.closest && e.target.closest('button[data-aide]'); if (b && b.matches(':focus-visible')) montrer(b, true); else if (!b) cacher(); });
   m.addEventListener('focusout', e => { if (!m.contains(e.relatedTarget)) cacher(); });
   new MutationObserver(() => { if (m.hidden) cacher(); }).observe(m, { attributes: true, attributeFilter: ['hidden'] }); }

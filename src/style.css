@@ -237,7 +237,9 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
   font-size:var(--f-13);font-weight:500;letter-spacing:-.005em;white-space:nowrap;background:none;
   transition:background var(--rapide),border-color var(--rapide),color var(--rapide),box-shadow var(--rapide),transform var(--rapide),text-decoration-color var(--rapide)}
 .btn svg.ico{width:16px;height:16px}
-.btn:active:not(:disabled){transform:scale(.98)}
+/* PRESSÉ, il s'enfonce à peine (`--presse`) en 90 ms, et revient en 140 ms : la transition du pressé est la sienne, celle
+   du retour est celle du bouton — un seul geste pour tous (.btn, .rond, .rd, la pilule du retest, la marque) */
+.btn:active:not(:disabled),.rond:active,.rd:active:not(:disabled),.en-retest:active,.en-volta:active{transform:scale(var(--presse));transition-duration:var(--d-instant)}
 .btn.dense{height:var(--h-btn-dense);padding:0 12px}
 .btn.cuivre{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 1px 2px rgba(0,0,0,.2)}
 .btn.cuivre:hover{background:var(--accent-2);border-color:var(--accent-2)}
@@ -262,7 +264,6 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 /* le bouton à icône seule (fermer une feuille, replier) : un carré adouci qui paraît au survol */
 .rond{width:32px;height:32px;border-radius:var(--r-btn);display:grid;place-items:center;border:none;background:none;color:var(--t-2);padding:0;flex:none;transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
 .rond:hover{background:var(--s-hover);color:var(--t-1)}
-.rond:active{transform:scale(.94)}
 .rond svg.ico{width:18px;height:18px}
 .fermer{color:var(--t-2)}
 /* le bouton d'outil : un carré adouci, une icône, une bulle au survol ; pressé, il s'allume d'un voile */
@@ -270,26 +271,34 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
   display:grid;place-items:center;padding:0;flex:none;transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
 .rd svg.ico{width:20px;height:20px}
 .rd:hover:not(:disabled){background:var(--s-hover);color:var(--t-1)}
-.rd:active:not(:disabled){transform:scale(.94)}
 .rd:disabled{opacity:.32;cursor:default}
 .rd.sobre{color:var(--t-3)}
 .bascule[aria-pressed="true"],.rd[aria-expanded="true"]{background:var(--accent-soft);color:var(--t-1)}
 .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--t-1) 12%,var(--s-surface));color:var(--t-1)}
 /* LA BULLE — une seule : claire (sur la nuit comme sur le papier : un anneau d'encre la détache du blanc, `--sh-bulle`),
-   12 px / 400, coin 8, après un instant de survol (`--bulle-delai`), tout de suite au clavier ; 160 signes au plus. Deux
-   emplois, une matière : `.bulle` (le nom d'un outil et son raccourci, à côté de l'icône) et `.bulle-texte` (le pourquoi
-   d'une valeur ou d'un geste : `data-bulle`, posée par `lierBulles`, 08-fiche ; `.menu-bulle` pour une ligne du menu).
-   Plus de `title=` sur un contrôle visible — seulement sur ce qui est tronqué, pour en donner le nom entier */
+   12 px / 400, coin 8 ; 160 signes au plus. Deux emplois, une matière : `.bulle` (le nom d'un outil et son raccourci, à
+   côté de l'icône) et `.bulle-texte` (le pourquoi d'une valeur ou d'un geste : `data-bulle`, posée par `lierBulles`,
+   08-fiche ; `.menu-bulle` pour une ligne du menu). Plus de `title=` sur un contrôle visible — seulement sur ce qui est
+   tronqué, pour en donner le nom entier.
+   LE TEMPS D'UNE BULLE (le panel v73, 08-menu `lierBullesDuChrome`) : une classe la montre, `.bulle-on` sur son bouton —
+   la première après 400 ms de survol, les suivantes TOUT DE SUITE pendant `--bulle-chaude` (on balaie le rail, les noms
+   se suivent, comme sur macOS), tout de suite au clavier ; elle s'éteint au premier appui et se tait jusqu'à ce que la
+   main quitte le bouton. Elle glisse de 3 px en paraissant, vive et freinée ; elle part plus vite qu'elle ne vient. */
 .bulle{position:absolute;left:calc(100% + 12px);top:50%;transform:translate(-3px,-50%);white-space:nowrap;pointer-events:none;z-index:5;
-  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);border-radius:var(--r-bulle);padding:5px 10px;font-size:var(--f-12);font-weight:400;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);
-  display:flex;align-items:center;gap:8px;opacity:0;transition:opacity var(--rapide),transform var(--rapide)}
+  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);border-radius:var(--r-bulle);padding:5px 10px;font-size:var(--f-12);font-weight:400;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);text-align:left;
+  display:flex;align-items:center;gap:8px;opacity:0;visibility:hidden;transition:opacity var(--d-instant) var(--courbe-sortie),transform var(--d-instant) var(--courbe-sortie),visibility 0s linear var(--d-instant)}
 .bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-4px;border:4px solid transparent;border-right-color:var(--bulle)}
 .bulle kbd{font-size:var(--f-11);color:var(--bulle-t);background:rgba(15,26,46,.08);border-radius:4px;padding:0 5px;line-height:1.5}
-.rd:hover .bulle{opacity:1;transform:translate(0,-50%);transition-delay:var(--bulle-delai)}
+.bulle-on>.bulle{opacity:1;visibility:visible;transform:translate(0,-50%);transition:opacity var(--d-rapide) var(--courbe-entree),transform var(--d-moyen) var(--courbe-entree),visibility 0s}
+/* une bulle à deux étages : le nom et sa touche, puis l'état en plus petit (« 4 problèmes · 8 à voir ») ; ce que l'outil
+   fait (`.bulle-detail`) ne se lit que dans le rail déplié, où le nom est déjà écrit */
+.bulle:has(.bulle-l){flex-direction:column;align-items:flex-start;gap:1px}
+.bulle-l{display:flex;align-items:center;gap:8px}
+.bulle-s{color:#46536b}
+.bulle-s:empty,.bulle-detail{display:none}
 /* la bulle d'un texte (le pourquoi) : la même matière, sur plusieurs lignes */
 .bulle-texte{position:fixed;z-index:200;max-width:320px;padding:8px 12px;border-radius:var(--r-bulle);background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);
   font:400 var(--f-12)/1.5 var(--sans);letter-spacing:0;white-space:pre-line;text-align:left;pointer-events:none}
-.rd:focus-visible .bulle{opacity:1;transform:translate(0,-50%)}
 .rd:disabled .bulle{display:none}
 @media (hover:none){.bulle{display:none}}
 /* LE CHAMP — 34 px, coin 10, un filet `--s-line-2`, `--anneau` quand il a le clavier ; dans une ligne de tableau, 28 px,
@@ -416,10 +425,13 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
   display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:var(--sur-h) max(var(--jeu),var(--sur-d)) 0 max(var(--jeu),var(--sur-g))}
 /* la marque et le nom de l'outil — un bouton : la bibliothèque —, puis le fil discret (l'installation, le plan) */
 .en-contrat{display:flex;align-items:center;gap:4px;min-width:0}
-.en-volta{position:relative;flex:none;display:flex;align-items:center;gap:10px;height:36px;padding:0 10px 0 4px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-1);transition:background var(--rapide)}
+/* la marque se centre sur la colonne du rail (32 px du bord : le jeu et la moitié du palet) ; sa bulle tombe à DROITE du
+   rail, alignée sur le nom — sous la marque, elle cachait le premier outil */
+.en-volta{position:relative;flex:none;display:flex;align-items:center;gap:10px;height:36px;padding:0 10px 0 7px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-1);transition:background var(--rapide),transform var(--rapide)}
 .en-volta:hover{background:var(--voile-1)}
-.en-volta:hover .bulle{opacity:1;transform:translate(-50%,0);transition-delay:.4s}
-.en-volta:focus-visible .bulle{opacity:1;transform:translate(-50%,0)}
+#entete .en-volta .bulle{left:47px;transform:translate(0,-3px)}
+#entete .en-volta .bulle::before{left:14px}
+#entete .en-volta.bulle-on .bulle{transform:none}
 /* la marque : un fil en V entre deux bornes, gravé dans une pièce de verre clair, une lueur froide dessous */
 .en-marque{flex:none;width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,#f4f7ff 0%,#bdd0f4 100%);color:#13203a;display:grid;place-items:center;
   box-shadow:0 0 0 1px rgba(255,255,255,.35),0 6px 18px -4px rgba(120,165,255,.55);transition:transform var(--moyen)}
@@ -440,8 +452,25 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 .en-actions .rd svg.ico{width:18px;height:18px}
 #menuBoite{position:relative}
 #entete .bulle{left:50%;top:calc(100% + 10px);transform:translate(-50%,-3px)}
-#entete .rd:hover .bulle,#entete .rd:focus-visible .bulle{transform:translate(-50%,0)}
+#entete .bulle-on>.bulle{transform:translate(-50%,0)}
 #entete .bulle::before{right:auto;top:auto;bottom:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-bottom-color:var(--bulle)}
+/* le ⋮ au bord droit : sa bulle s'aligne sur lui au lieu de déborder de l'écran */
+#entete #btnMenu .bulle{left:auto;right:-2px;transform:translate(0,-3px)}
+#entete #btnMenu.bulle-on .bulle{transform:none}
+#entete #btnMenu .bulle::before{left:auto;right:15px;margin:0}
+/* LE RETEST CORRIGÉ : une pilule de verre, à gauche du menu — « 3 changements · Retest corrigé » ; elle paraît dès que le
+   plan porte un changement (08-interface, `synchroniserRetest`), tombe d'un rien, et un clic ouvre le relevé de ce qui part */
+.en-retest{position:relative;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 13px 0 11px;border:none;border-radius:var(--r-btn);
+  background:var(--voile-2);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),inset 0 0 0 1px var(--voile-3);color:var(--t-1);font:500 var(--f-13)/1 var(--sans);white-space:nowrap;
+  transition:background var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
+.en-retest:hover{background:var(--voile-3);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 0 0 1px var(--voile-4)}
+.en-retest svg.ico{width:16px;height:16px;color:var(--glace)}
+.en-retest-n{color:var(--t-2);font-variant-numeric:tabular-nums}
+.en-retest-n::after{content:"·";margin-left:8px;color:var(--t-3)}
+.en-retest-mot{font-weight:600}
+.en-retest.entre-v{--entre-y:-4px;animation-duration:var(--d-lent)}
+body.biblio .en-retest{display:none}
+@media (max-width:1100px){ .en-retest-n{display:none} }
 /* les outils posés sur la table (la barre du haut, le rail, les folios) : l'encre douce ; au survol un voile, pressés un
    voile plus franc et l'encre pleine */
 #entete .rd,#rail .rd,#folios .rd{color:var(--t-2)}
@@ -449,10 +478,11 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 #entete .rd[aria-expanded="true"],#rail .bascule[aria-pressed="true"]{background:rgba(190,212,255,.2);color:var(--accent-2);box-shadow:inset 0 0 0 1px rgba(190,212,255,.22)}
 #entete .rd[aria-expanded="true"]:hover:not(:disabled),#rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:var(--voile-4);color:var(--accent-2)}
 #btnMenu[aria-expanded="true"] .bulle{display:none}
-/* la recherche : un champ de verre au milieu de la barre ; il s'éclaire quand on y écrit ; la liste tombe dessous */
+/* la recherche : un champ de verre au milieu de la barre ; il s'éclaire quand on y écrit ; la liste tombe dessous. Son
+   filet se voit sur la nuit (3,4:1 — à 17 % de glace, il tombait à 1,45:1 : on ne voyait pas qu'on pouvait y écrire) */
 .recherche{position:relative;width:min(420px,30vw);height:34px;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;
-  background:rgba(170,200,255,.08);border:1px solid rgba(170,200,255,.17);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);border-radius:var(--r-btn);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
-.recherche:hover{background:rgba(170,200,255,.11);border-color:rgba(170,200,255,.26)}
+  background:rgba(170,200,255,.08);border:1px solid rgba(170,200,255,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);border-radius:var(--r-btn);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
+.recherche:hover{background:rgba(170,200,255,.11);border-color:rgba(170,200,255,.62)}
 body.cherche .recherche{background:rgba(26,38,64,.9);border-color:rgba(159,194,255,.55);box-shadow:0 0 0 3px rgba(159,194,255,.14)}
 .recherche svg.ico{width:16px;height:16px;color:var(--t-3)}
 .recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--t-1);font-family:var(--mono);font-size:var(--f-13);height:100%}
@@ -464,7 +494,8 @@ body.cherche .recherche .rc-fermer{display:inline}
 /* la croix de la recherche : seulement au doigt (au clavier, Échap) */
 .rc-x{display:none;width:32px;height:32px;margin-right:-4px;border:none;background:none;border-radius:var(--r-1);color:var(--t-2);place-items:center;padding:0;flex:none}
 .rc-x:hover{background:var(--voile-2);color:var(--t-1)}
-.q-liste{position:absolute;top:calc(100% + 8px);left:0;width:max(100%,min(460px,calc(100vw - 24px)));background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:6px;max-height:min(60vh,440px);overflow:auto;z-index:40;color:var(--t-1);
+/* la liste, plus large que le champ, se centre dessous (elle le dépassait de 40 px d'un seul côté : deux bords) */
+.q-liste{position:absolute;top:calc(100% + 8px);left:calc((100% - max(100%,min(460px,calc(100vw - 24px)))) / 2);width:max(100%,min(460px,calc(100vw - 24px)));background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:6px;max-height:min(60vh,440px);overflow:auto;z-index:40;color:var(--t-1);
   animation:tombe var(--moyen)}
 @keyframes tombe{from{opacity:0;transform:translateY(-4px) scale(.985)}to{opacity:1;transform:none}}
 .q-item{display:flex;align-items:center;gap:12px;height:var(--h-menu-ligne);padding:0 12px;border-radius:8px;width:100%;background:none;border:none;text-align:left;color:var(--t-1)}
@@ -478,13 +509,24 @@ body.cherche .recherche .rc-fermer{display:inline}
 /* LE MENU ⋮ : sous son bouton, un verre de nuit dense — un filet de lumière le détache de la table —, peu de lignes. En tête, ce qui est ouvert (à lire) ;
    puis l'essentiel, une icône au trait et un mot par ligne ; deux sous-menus (Exporter, Plus) s'ouvrent EN PLACE — le
    panneau glisse, une ligne « ‹ » ramène —, si bien que le menu garde sa largeur et ne déborde jamais de l'écran */
+/* il TOMBE DE SON BOUTON : 200 ms, vif et très freiné, d'une échelle de .96 dont l'origine est le ⋮ lui-même (18 px du
+   bord, 26 px au-dessus) ; il se FERME en 120 ms — son double s'efface (`.menu-part`, 08-interface `fermerMenu`), le vrai
+   est déjà fermé : le clavier et les tests n'attendent pas */
 .menu{position:absolute;top:calc(100% + 8px);right:0;width:280px;color:var(--t-1);background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:6px;z-index:40;
-  max-height:calc(100vh - var(--entete) - var(--sur-h) - 16px);overflow-y:auto;overscroll-behavior:contain;transform-origin:top right;animation:tombe var(--moyen)}
-.menu-panneau{animation:menu-glisse var(--moyen)}
+  max-height:calc(100vh - var(--entete) - var(--sur-h) - 16px);overflow-y:auto;overscroll-behavior:contain;transform-origin:calc(100% - 18px) -26px;animation:menu-tombe 200ms var(--courbe-entree)}
+@keyframes menu-tombe{from{opacity:0;transform:translateY(-4px) scale(.96)}}
+.menu-part{pointer-events:none;animation:menu-part 120ms var(--courbe-sortie) forwards}
+.menu-part .menu-panneau{animation:none}
+@keyframes menu-part{from{opacity:1}to{opacity:0;transform:scale(.985)}}
+.menu-panneau{animation:menu-glisse var(--d-moyen) var(--courbe-entree)}
 .menu-panneau#mp-principal{animation-name:menu-revient}
 @keyframes menu-glisse{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
 @keyframes menu-revient{from{opacity:.4;transform:translateX(-8px)}to{opacity:1;transform:none}}
-.menu button{display:flex;width:100%;align-items:center;gap:11px;min-height:34px;padding:0 10px;border-radius:8px;background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400;line-height:1.3;transition:background var(--rapide)}
+/* LE LIVRABLE en tête d'Exporter : le retest corrigé, son compte dessous ; son icône prend la glace, un filet le sépare des
+   formats de dessin */
+.menu .menu-livrable button>svg.ico{color:var(--glace)}
+.menu .menu-livrable small{color:var(--t-2)}
+.menu button{display:flex;width:100%;align-items:center;gap:11px;min-height:34px;padding:0 10px;border-radius:8px;background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400;line-height:1.3;transition:background var(--rapide),transform var(--rapide)}
 .menu button:hover,.menu button:focus-visible{background:var(--voile-2);outline:none}
 .menu button>svg.ico{width:16px;height:16px;color:#a9bde0;transition:color var(--rapide)}
 .menu button:hover>svg.ico,.menu button:focus-visible>svg.ico{color:#dbe7ff}
@@ -499,6 +541,8 @@ body.cherche .recherche .rc-fermer{display:inline}
 .menu button.menu-retour>svg.ico{color:var(--t-1)}
 /* les blocs, séparés d'un filet */
 .menu-bloc+.menu-bloc,.menu .ctx+.menu-bloc,.menu-retour+.menu-bloc{border-top:1px solid var(--voile-2);margin-top:5px;padding-top:5px}
+/* une ligne pressée s'enfonce à peine, comme tout bouton */
+.menu button:active:not([aria-disabled="true"]){transform:scale(.985);transition-duration:var(--d-instant)}
 /* sa bulle : ce que la ligne fait, en une ou deux phrases — UNE bulle sur la page (08-menu, `lierBullesDuMenu`), à
    gauche du menu, à la hauteur de la ligne, après un temps de survol, tout de suite au clavier */
 .menu-bulle{position:fixed;top:0;right:0;z-index:45;width:max-content;max-width:280px;padding:9px 12px;border-radius:var(--r-bulle);background:var(--bulle);color:var(--bulle-t);
@@ -518,17 +562,45 @@ body.cherche .recherche .rc-fermer{display:inline}
 .sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 18%,transparent)}
 .sauve.ko::before{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 18%,transparent)}
 
-/* ─── LE RAIL : un palet de verre à gauche, posé sur la table — les outils de tous les instants ─── */
-#rail{position:fixed;top:calc(var(--entete) + var(--sur-h));left:calc(var(--jeu) + var(--sur-g));width:44px;z-index:27;
+/* ─── LE RAIL : un palet de verre à gauche, posé sur la table — les outils de tous les instants ───
+   À un jeu de la barre du haut, comme de tous les bords. Il SE DÉPLIE (08-interface, `lierRail`) : au survol prolongé
+   (250 ms), 44 → 176 px en 220 ms, vif et freiné ; puis les mots et les touches entrent, d'un
+   rien de côté, quand la place est faite ; il se replie en 140 ms, plus vite qu'il ne s'ouvre, dès qu'on clique ou qu'on
+   le quitte. L'icône ne bouge jamais : elle est à la même place, plié ou déplié ; le palet passe AU-DESSUS du plan, il
+   ne le pousse pas. */
+#rail{position:fixed;top:calc(var(--entete) + var(--jeu) + var(--sur-h));left:calc(var(--jeu) + var(--sur-g));width:44px;z-index:27;
   background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);border-radius:var(--r-palet);box-shadow:var(--sh-palet);
-  display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px}
-#rail .rd{width:36px;height:36px;border-radius:var(--r-btn)}
+  display:flex;flex-direction:column;align-items:stretch;gap:2px;padding:4px;transition:width var(--d-rapide) var(--courbe-sortie) 20ms}
+#rail.deplie{width:176px;transition:width var(--d-moyen) var(--courbe-entree)}
+/* déplié, ou une bulle dehors : le rail passe au-dessus d'une carte posée près de lui (sa bulle passait dessous) — sous la
+   barre du haut, ses menus et le mot qui passe */
+#rail.deplie,#rail:has(.bulle-on){z-index:32}
+#rail .rd{width:auto;height:36px;border-radius:var(--r-btn);display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:0 0 0 8.5px}
 #rail .rd svg.ico{width:19px;height:19px}
-#rail .rd:focus-visible{outline-offset:-2px}
-#rail hr{width:20px;border:none;border-top:1px solid var(--voile-2);margin:4px 0}
-/* le compte de ce qu'il y a à reprendre, sur le bouton des repères : une pastille de sa couleur d'état */
-.rd-point{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 var(--f-11)/16px var(--sans);font-style:normal;text-align:center;color:#2a1a00;background:var(--p-warn);box-shadow:0 0 0 2px #31446a;pointer-events:none}
-.rd-point.ko{background:#cc3127;color:#ffffff}
+/* l'anneau sur le bord du bouton, dans le jeu du palet : sur le verre sombre (en dedans, il tombait sur le voile clair d'un
+   outil pressé — 2,8:1) */
+#rail .rd:focus-visible{outline-offset:0}
+#rail .rd:disabled{opacity:1;color:rgba(184,198,224,.42)}
+#rail hr{width:20px;align-self:center;border:none;border-top:1px solid var(--voile-2);margin:4px 0;transition:width var(--d-rapide) var(--courbe-sortie)}
+#rail.deplie hr{width:calc(100% - 16px);transition:width var(--d-moyen) var(--courbe-entree)}
+/* le mot et la touche : invisibles plié (ils ne se coupent pas, ils n'existent pas), ils entrent quand la place est faite ;
+   au repli, ils partent AVANT que le palet ne rétrécisse (50 ms, le palet attend 20 ms) — et un mot pris de court se coupe
+   à sa boîte, il ne chevauche jamais sa touche */
+.rd-mot,.rd-touche{opacity:0;visibility:hidden;transform:translateX(-4px);transition:opacity 50ms linear,transform 50ms linear,visibility 0s linear 50ms}
+.rd-mot{flex:1;min-width:0;overflow:hidden;font:500 var(--f-13)/1.2 var(--sans);letter-spacing:-.005em;color:inherit;white-space:nowrap;text-align:left}
+.rd-touche{flex:none;margin-right:7px;padding:3px 5px;border-radius:5px;font:500 var(--f-11)/1 var(--mono);color:var(--t-2);background:var(--voile-1);box-shadow:inset 0 0 0 1px var(--voile-2);white-space:nowrap}
+#rail.deplie :is(.rd-mot,.rd-touche){opacity:1;visibility:visible;transform:none;transition:opacity var(--d-rapide) var(--courbe-entree) 60ms,transform var(--d-moyen) var(--courbe-entree) 40ms,visibility 0s linear 40ms}
+#rail.deplie .rd:disabled .rd-touche{opacity:.6}
+/* déplié, le nom est écrit : la bulle dit ce que l'outil fait, à droite du palet déplié (sa place finale : elle ne suit pas
+   le bord qui s'élargit) */
+#rail.deplie .bulle{left:180px}
+#rail.deplie :is(.bulle-l,.bulle-s){display:none}
+#rail.deplie .bulle-detail{display:block;white-space:normal;width:max-content;max-width:260px}
+/* le compte de ce qu'il y a à reprendre, sur le bouton des repères : les PROBLÈMES du plan (rouges), une pastille accrochée
+   à l'icône (elle ne suit pas le palet qui se déplie) ; sans problème rouge, ce qui est à voir, en ambre (08-controle). Sa
+   bulle dit tout : « 4 problèmes · 8 à voir » */
+.rd-point{position:absolute;top:-3px;left:19px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 var(--f-11)/16px var(--sans);font-style:normal;text-align:center;color:#2a1a00;background:var(--p-warn);box-shadow:0 0 0 2px #263656;pointer-events:none}
+.rd-point.ko{background:var(--pastille-ko);color:var(--pastille-ko-t)}
 
 /* les palets passent au-dessus des feuilles (l'ombre d'une feuille ne les grise pas : ils ne se chevauchent jamais) ; la
    bibliothèque, elle, couvre la table : ses palets s'effacent */
@@ -538,7 +610,8 @@ body.biblio #rail,body.biblio #folios{visibility:hidden}
    Le palet des folios (‹, la bande, ›, le compte) à gauche, celui de la vue (cadrer, zoomer) à droite ; au milieu,
    l'affinage en cours et le folio retouché, chacun son petit palet. La bande défile et s'estompe à ses bords ; trop
    étroite (un document large ouvert), la barre garde les folios et le cadrage. */
-#folios{position:fixed;left:var(--rail);right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));height:40px;z-index:27;color:var(--t-2);pointer-events:none;
+/* une seule marge gauche, celle du rail : le palet des folios s'aligne sous lui, à un jeu du bord */
+#folios{position:fixed;left:calc(var(--jeu) + var(--sur-g));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));height:40px;z-index:27;color:var(--t-2);pointer-events:none;
   display:flex;align-items:center;gap:8px;transition:right var(--moyen);container-type:inline-size}
 body.insp-epingle #folios{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d))}
 body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--sur-d))}
@@ -549,15 +622,17 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
 .fo-part,.fo-zoom{pointer-events:auto;height:40px;padding:0 4px;background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);border-radius:12px;box-shadow:var(--sh-palet)}
 /* dans la barre du bas, la bulle se lit au-dessus du bouton ; aux deux bouts, elle s'aligne sur le bouton au lieu de déborder */
 #folios .bulle{left:50%;top:auto;bottom:calc(100% + 12px);transform:translate(-50%,3px)}
-#folios .rd:hover .bulle,#folios .rd:focus-visible .bulle{transform:translate(-50%,0)}
+#folios .bulle-on>.bulle{transform:translate(-50%,0)}
 #folios .bulle::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--bulle)}
-#folios #fo-prev .bulle{left:-4px;transform:none}
+#folios #fo-prev .bulle{left:-4px;transform:translate(0,3px)}
+#folios #fo-prev.bulle-on .bulle{transform:none}
 #fo-prev .bulle::before{left:14px;margin:0}
-#folios #zin .bulle{left:auto;right:-4px;transform:none}
+#folios #zin .bulle{left:auto;right:-4px;transform:translate(0,3px)}
+#folios #zin.bulle-on .bulle{transform:none}
 #zin .bulle::before{left:auto;right:14px;margin:0}
 /* la bulle d'une puce de folio : une pour toute la bande, posée par l'interface au-dessus de la puce survolée */
-#folios .fo-bulle{left:0;bottom:calc(100% + 12px);transform:none}
-#folios .fo-bulle.on{opacity:1}
+#folios .fo-bulle{left:0;bottom:calc(100% + 12px);transform:translate(0,3px)}
+#folios .fo-bulle.on{opacity:1;visibility:visible;transform:none;transition:opacity var(--d-rapide) var(--courbe-entree),transform var(--d-moyen) var(--courbe-entree),visibility 0s}
 .fo-part{display:flex;align-items:center;gap:2px;flex:0 1 auto;min-width:0}
 .fo-milieu{display:flex;align-items:center;gap:8px;flex:1 0 auto;justify-content:center;min-width:0}
 .fo-milieu>*{pointer-events:auto}
@@ -569,9 +644,12 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 10px,#000 calc(100% - 10px),transparent);mask-image:linear-gradient(90deg,transparent,#000 10px,#000 calc(100% - 10px),transparent)}
 .fo-strip::-webkit-scrollbar{display:none}
 .chip{position:relative;flex:none;height:30px;min-width:30px;max-width:180px;padding:0 9px;border-radius:8px;border:none;background:none;color:var(--t-2);font-family:var(--sans);font-weight:500;font-size:var(--f-13);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide)}
+  transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
 .chip:hover{background:var(--voile-2);color:var(--t-1)}
 .chip:focus-visible{outline-offset:-2px}
+.chip:active{transform:scale(var(--presse));transition-duration:var(--d-instant)}
+/* le folio courant est une pièce presque blanche : la glace ne s'y voyait pas (1,58:1) — l'anneau y prend l'encre, en dedans */
+.chip.on:focus-visible{outline-color:#1b1f27;outline-offset:-4px}
 /* le folio courant : une pièce de verre dépoli presque blanche, une lueur dessous */
 .chip.on{background:#e9f0fd;color:#10192c;font-weight:600;box-shadow:0 0 0 1px rgba(255,255,255,.55),0 4px 14px -4px rgba(140,180,255,.6)}
 .chip-pre{display:none}
@@ -612,9 +690,10 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
 body.fiche-ouverte:has(#fiche[data-mode="see"]) #folios{visibility:hidden}
 @media (min-width:701px){ html body.fiche-ouverte:has(#fiche[data-mode="see"]) #toast{left:calc(var(--rail) + (100vw - var(--rail)) / 2);max-width:min(60vw,560px)} }
 
-/* ─── LES FEUILLES : l'inspecteur ÉPINGLÉ et les documents, posés à droite sur la table, détachés des bords (le
-   récapitulatif : style-recap.css) ; l'inspecteur flottant est une CARTE (plus bas) ─── */
-#inspecteur,#fiche{position:fixed;top:calc(var(--entete) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));max-width:calc(100vw - var(--rail) - var(--jeu));
+/* ─── LES FEUILLES : l'inspecteur ÉPINGLÉ et les documents, posés à droite sur la table, détachés des bords — de la barre
+   du haut aussi, du même jeu que le rail et la carte (le panel v73 : collées à son filet, elles étaient à 0 px de lui et à
+   10 px des autres bords) (le récapitulatif : style-recap.css) ; l'inspecteur flottant est une CARTE (plus bas) ─── */
+#inspecteur,#fiche{position:fixed;top:calc(var(--entete) + var(--jeu) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));max-width:calc(100vw - var(--rail) - var(--jeu));
   background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-panneau);z-index:25;display:flex;flex-direction:column;overflow:hidden}
 #inspecteur{width:var(--insp-l);z-index:26}
 #fiche{width:var(--fiche-l)}
@@ -657,7 +736,7 @@ body.base-ouverte .fi-epingle{display:none}
 #carte-lien .cl-bloc{fill:var(--lien)}
 #carte-lien .cl-carte{fill:var(--s-surface);stroke:var(--lien);stroke-width:1.25px}
 /* LE QUAI : portée au bord droit, la carte montre où elle s'épinglera (le volet) */
-#carte-quai{position:fixed;top:calc(var(--entete) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));width:var(--insp-l);z-index:28;pointer-events:none;
+#carte-quai{position:fixed;top:calc(var(--entete) + var(--jeu) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));width:var(--insp-l);z-index:28;pointer-events:none;
   border-radius:var(--r-3);border:1.5px dashed rgba(159,194,255,.6);background:rgba(159,194,255,.09);
   display:grid;align-content:center;justify-items:start;padding-left:18px;opacity:0;transform:translateX(12px);transition:opacity var(--moyen),transform var(--moyen)}
 #carte-quai span{font:600 var(--f-13)/1 var(--sans);color:#10192c;padding:8px 12px;border-radius:var(--r-btn);background:#e9f0fd;box-shadow:0 8px 24px -6px rgba(0,6,18,.6)}
@@ -1049,11 +1128,16 @@ body.fiche-ouverte .vide{right:calc(var(--fiche-l) + 2 * var(--jeu))}
 body.depot-actif .depot{display:grid}
 body.depot-actif:has(#bibliotheque:not([hidden])) .depot{display:none}
 
-/* ─── LE MOT QUI PASSE : un palet sous la barre du haut, au milieu de ce qui reste du plan ; il descend d'un rien ─── */
+/* ─── LE MOT QUI PASSE : un palet sous la barre du haut, au milieu de ce qui reste du plan ; il descend d'un rien ───
+   Il ENTRE en 340 ms, vif et très freiné (8 px plus haut, d'une échelle de .98) ; il SORT en 200 ms, il accélère et ne traîne
+   pas. Une carte flottante est là : il se pose dans la plus grande place libre à côté d'elle (`.evite`, 08-interface
+   `placerToast`), jamais sur ses flèches. La liste de la recherche ouverte, il se tait (il passait dessous). */
 #toast{position:fixed;left:calc(var(--rail) + (100vw - var(--rail)) / 2);top:calc(var(--entete) + var(--sur-h) + 12px);transform:translateX(-50%) translateY(-8px) scale(.98);padding:10px 16px;border-radius:12px;z-index:35;max-width:min(60vw,560px);
-  background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);color:var(--t-1);box-shadow:var(--sh-palet);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
-
-#toast.on{opacity:1;transform:translateX(-50%)}
+  background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);color:var(--t-1);box-shadow:var(--sh-palet);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;
+  transition:opacity 200ms var(--courbe-sortie),transform 200ms var(--courbe-sortie)}
+#toast.on{opacity:1;transform:translateX(-50%);transition:opacity var(--d-lent) var(--courbe-entree),transform var(--d-lent) var(--courbe-entree)}
+html body #toast.evite{left:var(--toast-x);max-width:var(--toast-max)}
+body.cherche #toast{opacity:0;pointer-events:none}
 body.insp-epingle #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l) - 2 * var(--jeu)) / 2)}
 /* un document ouvert : le mot reste dans la place libre à côté de lui (plus étroit s'il le faut), il ne couvre pas sa tête */
 body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l) - 2 * var(--jeu)) / 2);max-width:min(560px,calc(100vw - var(--rail) - var(--fiche-l) - 2 * var(--jeu) - 32px))}
@@ -1062,6 +1146,19 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
    une suppression offre « Rétablir » (`.toast-voir`, style-fichiers.css) */
 #toast.erreur{padding-left:32px;background:linear-gradient(var(--ko-soft),var(--ko-soft)),var(--palet);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(255,122,110,.55),0 16px 36px -10px rgba(0,6,18,.7),0 2px 6px rgba(0,6,18,.35)}
 #toast.erreur::before{content:"";position:absolute;left:14px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--ko);box-shadow:0 0 0 3px color-mix(in srgb,var(--ko) 22%,transparent)}
+
+/* ─── LA FEUILLE DES RACCOURCIS (« ? », 08-interface ; son dessin est dans style-carte.css) : elle se pose comme tout ce qui
+   paraît (`.entre-v`) ; sa croix dit sa touche, dans sa bulle, dessous ; une touche qu'on ne lit qu'à un endroit (« sur le
+   cadran ») le dit en petit sous sa ligne ─── */
+#rk-fermer{position:relative}
+#rk-fermer .bulle{left:auto;right:-4px;top:calc(100% + 8px);transform:translate(0,-3px)}
+#rk-fermer.bulle-on .bulle{transform:none}
+#rk-fermer .bulle::before{right:14px;top:auto;bottom:100%;left:auto;margin:0;border-color:transparent;border-bottom-color:var(--bulle)}
+.rk-ligne dt small{display:block;font-size:var(--f-12);color:var(--t-2);margin-top:1px}
+/* cinq groupes en deux colonnes équilibrées : un groupe ne se coupe jamais d'une colonne à l'autre */
+.raccourcis .rk-groupes{display:block;columns:2 300px;column-gap:32px}
+.raccourcis .rk-groupe{break-inside:avoid;padding:16px 0 4px}
+.raccourcis .rk-groupe h3{margin-top:0}
 
 /* ─── ÉCRAN BAS : le rail se serre pour tenir (à la souris seulement : au doigt, les cibles gardent leurs 40 px) ─── */
 @media (max-height:660px) and (min-width:701px) and (pointer:fine){
@@ -1100,13 +1197,15 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
   body.cherche .recherche{display:flex}
   body.cherche .rc-x{display:grid}
   .recherche .raccourci{display:none}
-  .q-liste{width:100%}
+  .q-liste{width:100%;left:0}
   .menu{width:min(280px,calc(100vw - 16px))}
   /* le rail : en bas, toujours au même endroit ; ce que le geste fait déjà (pincer, toucher un folio) n'y est pas */
   #rail{top:auto;left:0;right:0;bottom:0;width:auto;height:var(--rail-tel);border-radius:0;box-shadow:0 -1px 0 var(--p-ligne);flex-direction:row;justify-content:space-around;padding:0 max(4px,var(--sur-d)) var(--sur-b) max(4px,var(--sur-g));gap:0}
-  #rail .rd{width:40px;height:40px}
+  #rail .rd{width:40px;height:40px;justify-content:center;padding:0}
   #rail hr{display:none}
-  .bulle{display:none}
+  .bulle,.rd-mot,.rd-touche{display:none}
+  .en-retest{height:40px;padding:0 10px}
+  .en-retest-mot{display:none}
   /* la bande des folios : au-dessus du rail, ou au-dessus du tiroir ouvert (sa hauteur, --insp-h, est mesurée ; le récapitulatif : --base-h) */
   #folios,body.insp-ouvert #folios{left:0;right:0;height:44px;bottom:var(--rail-tel);padding:0 max(8px,var(--sur-d)) 0 max(8px,var(--sur-g));background:var(--palet);box-shadow:0 -1px 0 var(--p-ligne);pointer-events:auto;gap:2px;transition:bottom var(--moyen)}
   .fo-part,.fo-zoom{height:auto;padding:0;background:none;box-shadow:none;border-radius:0}
