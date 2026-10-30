@@ -23,6 +23,8 @@ const SEE = { lu: null, vue: 'import', exemples: true, import: null };
 const estExcel = f => /\.xls[xmb]?$/i.test((f && f.name) || '') || /sheet|excel/i.test((f && f.type) || '');
 // une feuille de la base SEE : nommée d'après sa vue ou sa table (EED_ViewCablesAndWires, EED_OBJ_Wires…) ou une fonction d'export
 const estFeuilleSEE = n => /^(EED_|Export_)/i.test(String(n || ''));
+// (v74, fusion du lot E) la v73 en pause ôtait ici OBJ_, LNK_, SET_ : `nomCourtSEE` reconnaît aussi les feuilles à l'import
+// et dans la cohérence (« OBJ_END_Fitting_Rules… ») — la cohérence perdait ses exemples. Rendu tel que la v74 l'avait.
 const nomCourtSEE = n => String(n).replace(/^EED_(e?Cat_)?View_?/i, '').replace(/^EED_/i, '') || String(n);
 // le nom d'une feuille sur son ONGLET (v73, domaine E) : sans OBJ_, LNK_, SET_ non plus — le nom entier est dans la bulle. Seulement
 // là : nomCourtSEE reconnaît les feuilles à l'import (OBJ_Wires…) et nomme les liens de la cohérence (LNK_Equi_Mating…).

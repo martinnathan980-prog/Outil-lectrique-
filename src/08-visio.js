@@ -44,10 +44,13 @@ async function ouvrirVisio(fichier) { if (!fichier) return; const nom = fichier.
   const n = VISIO.L.length, c = VISIO.L.filter(l => l.colle).length;
   dire(n ? pluriel(n, 'liaison') + ' lue' + (n > 1 ? 's' : '') + ' dans ' + guillemets(nom) + (c ? ' · ' + (c === n ? 'tous les câbles collés' : c + ' collée' + (c > 1 ? 's' : '') + ' à leurs bornes') : '') + (VISIO.n > 1 ? ' · ' + pluriel(VISIO.n, 'page') : '') + '.'
     : 'Aucune liaison lue dans ' + guillemets(nom) + ' : ni connecteur collé, ni trait qui relie deux bornes.'); }
-function montrerVisio() { const el = $('visio'); if (typeof fermerFiche === 'function') fermerFiche(); if (typeof fermerMenu === 'function') fermerMenu();
+// (le clavier, comme la pièce du PDF : pris à l'ouverture, rendu à l'ouvreur — 08-pdf, `ouvreurDePiece`)
+function montrerVisio() { const el = $('visio'); if (el.hidden) VISIO.ouvreur = ouvreurDePiece(el); if (typeof fermerFiche === 'function') fermerFiche(); if (typeof fermerMenu === 'function') fermerMenu();
   if (typeof fermerPdf === 'function') fermerPdf();
-  el.hidden = false; el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre'); document.body.classList.add('visio-ouvert'); VISIO.ouvert = true; $('visio-q').value = VISIO.q; }
-function fermerVisio() { const el = $('visio'); if (!el || el.hidden) return; el.hidden = true; document.body.classList.remove('visio-ouvert'); VISIO.ouvert = false; }
+  el.hidden = false; el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre'); document.body.classList.add('visio-ouvert'); VISIO.ouvert = true; $('visio-q').value = VISIO.q;
+  el.tabIndex = -1; if (!el.contains(document.activeElement)) el.focus({ preventScroll: true }); }
+function fermerVisio() { const el = $('visio'); if (!el || el.hidden) return; const garde = el.contains(document.activeElement) || document.activeElement === document.body;
+  el.hidden = true; document.body.classList.remove('visio-ouvert'); VISIO.ouvert = false; if (garde) rendreClavierDePiece(el, VISIO.ouvreur); }
 const choisirVisio = () => { construireVisio(); $('fichier-visio').click(); };
 
 /* ---- la page : sa place sur la table ; le dessin est un SVG (09-visio), net à tout zoom --------------------------- */
@@ -113,7 +116,7 @@ const COLS_VISIO = [['de', 'De'], ['borneDe', 'Borne'], ['vers', 'Vers'], ['born
 function lignesVuesVisio() { return VISIO.L.map((l, i) => [l, i]).filter(([l]) => VISIO.filtre === 'tout' || (VISIO.filtre === 'revoir' ? !l.main.size && l.conf < 0.9 : VISIO.filtre === 'page' ? (l.page === VISIO.page - 1 || l.pageVers === VISIO.page - 1) : true)); }
 function rendreRelectureVisio() { const box = $('visio-relecture'); if (!box || !VISIO.lu) return; const L = VISIO.lu, n = VISIO.L.length, revoir = VISIO.L.filter(l => !l.main.size && l.conf < 0.9).length, colles = VISIO.L.filter(l => l.colle).length;
   const etat = lies([pluriel(VISIO.n, 'page'), pluriel(n, 'liaison'), colles ? (colles === n ? 'toutes collées' : colles + ' collée' + (colles > 1 ? 's' : '')) : '', revoir ? revoir + ' à revoir' : '']);
-  const tete = `<div class="fiche-tete"><div class="min0"><div class="sur">Schéma Visio</div><h2 class="titre">${esc(VISIO.nom)}</h2></div><button class="rond fermer" id="visio-fermer" aria-label="Fermer le schéma (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
+  const tete = `<div class="fiche-tete"><div class="min0"><div class="sur">Schéma Visio</div><h2 class="titre">${esc(VISIO.nom)}</h2></div><button class="rond fermer" id="visio-fermer" aria-label="Fermer le schéma (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button></div>`;
   const P = L.pages[VISIO.page - 1] || {}, ch = P.champs || {}, cart = [ch.numero || L.numero, ch.folio ? 'folio ' + ch.folio : '', ch.indice || L.indice ? 'indice ' + (ch.indice || L.indice) : ''].filter(Boolean);
   let haut = `<p class="pdf-etat" id="visio-etat" role="status">${etat}</p>` + (cart.length ? `<p class="pdf-cart">Cartouche : <span class="id">${cart.map(esc).join('</span>' + POINT + '<span class="id">')}</span></p>` : '') + (P.nom ? `<p class="pdf-cart">Page : <span class="id">${esc(P.nom)}</span>${P.plan && P.plan !== P.nom ? POINT + 'plan <span class="id">' + esc(P.plan) + '</span>' : ''}</p>` : ''), corps = '';
   haut += `<div class="pdf-filtres segment" role="group" aria-label="Lignes montrées">${[['tout', 'Toutes', n], ['revoir', 'À revoir', revoir], ['page', 'Cette page', VISIO.L.filter(l => l.page === VISIO.page - 1 || l.pageVers === VISIO.page - 1).length]].map(([k, t, c]) => `<button data-filtre="${k}" aria-pressed="${VISIO.filtre === k}">${t}<i>${c}</i></button>`).join('')}</div>`;
@@ -281,7 +284,7 @@ function lierEntreesVisio() {
     const pdf = document.querySelector('#mp-plus [data-act="pdf"]'), vide = lire && lire.parentElement;
     if (lire && pdf && pdf.parentElement !== vide) { pdf.after(lire); if (vide && !vide.querySelector('[role="menuitem"]')) vide.remove(); }
     // Exporter › le plan entier : « Les folios en Visio (.vsdx) », en tête
-    entreeDuMenu({ act: 'vsdx', panneau: 'exporter', groupe: 'contrat', avant: 'retestcorrige', libelle: 'Les folios en Visio (.vsdx)', icone: ICONE_VISIO, surLePlan: true, faire: exporterVisio,
+    entreeDuMenu({ act: 'vsdx', panneau: 'exporter', groupe: 'contrat', avant: 'suivi', libelle: 'Les folios en Visio (.vsdx)', icone: ICONE_VISIO, surLePlan: true, faire: exporterVisio,
       aide: 'Tous les folios du plan, à retoucher dans Visio : une page par folio, chaque bloc avec ses bornes, chaque câble collé aux deux bouts, le cartouche.' }); }
   window.addEventListener('drop', e => { const fs = e.dataTransfer && e.dataTransfer.files ? [...e.dataTransfer.files] : [], f = fs.find(x => estVisio(x) || estVisioAncien(x)); if (!f) return;
     e.preventDefault(); e.stopImmediatePropagation(); window.dispatchEvent(new Event('drop')); ouvrirVisio(f); }, true); }

@@ -137,7 +137,8 @@ const FICHIER = P.fichierDemande();
     await page.evaluate(() => { app.plan = '1'; redessiner(); ajuster(); }); await page.keyboard.press('b'); await page.waitForTimeout(500);
     const entetes = () => page.evaluate(() => [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent.replace(/[▲▼]/g, '').trim()).filter(Boolean).join(' · '));
     const onglets = await page.evaluate(() => [...document.querySelectorAll('#ba-onglets .rc-onglet span')].map(s => s.textContent).join(' · '));
-    ok(onglets === 'Liaisons · Équipements · Disjoncteurs · Barrettes · Prises · Câbles · Raccords · Problèmes · Normes', 'neuf onglets, chaque objet dans un seul (plus de « Contacts » : la nomenclature les compte)', onglets);
+    // (v74 : le rail en trois groupes — Câblage, Matériel, Contrôle —, les Câbles avec les Liaisons — MIS À JOUR)
+    ok(onglets === 'Liaisons · Câbles · Équipements · Disjoncteurs · Barrettes · Prises · Raccords · Problèmes · Normes', 'neuf onglets, chaque objet dans un seul (plus de « Contacts » : la nomenclature les compte), rangés en trois groupes', onglets);
     ok(await entetes() === 'De · Câble · Vers · Longueur · État', 'Liaisons, d’office : de, le câble, vers, la longueur, l’état', await entetes());
     // les mots du lecteur : partout où le récapitulatif parle (les phrases du contrôle et les titres des normes viennent d'ailleurs)
     const mots = await page.evaluate(() => { const vus = []; for (const [k] of ONGLETS) { changerOnglet(k); ouvrirMenuColonnes();
@@ -162,11 +163,13 @@ const FICHIER = P.fichierDemande();
     await page.evaluate(() => changerOnglet('disjoncteurs')); await page.waitForTimeout(200);
     const D = await page.evaluate(() => { const d = disjonctionDe('102CB1'), tr = document.querySelector('#ba-tbody tr[data-k="102CB1"]');
       return { entetes: [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent).filter(Boolean).join(' · '), cal: tr.querySelector('[data-f="calibre"]').textContent, calibre: d.calibre, attendu: nombre(d.calibre), pn: pnDuRepere('102CB1'),
-        verdict: tr.querySelector('td.rc-c-etat .rc-etat').textContent, juge: !d.valide ? 'déclenche' : d.serre ? 'touche la courbe' : 'tient', ideal: d.calibreIdeal, retenir: !!tr.querySelector('[data-retenir]'), gamme: d.gamme.map(g => g.calibre) }; });
-    ok(D.entetes === 'Repère · Calibre · Verdict · Meilleur · Problèmes' && D.cal === D.attendu && D.verdict === D.juge && D.retenir === (D.ideal !== D.calibre), 'Disjoncteurs : le calibre retenu, son verdict tel que le moteur le rend, le meilleur (« Retenir » quand il diffère)', JSON.stringify(D));
+        verdict: tr.querySelector('td.rc-c-etat .rc-etat').textContent, juge: verdictDeCalibre(d).mot, ideal: d.calibreIdeal, retenir: !!tr.querySelector('[data-retenir]'), gamme: d.gamme.map(g => g.calibre) }; });
+    // (v73, domaine E : le calibre du fichier d'office, le verdict en trois mots — passe, juste, déclenche —, le meilleur en colonne au choix ; v74 : la colonne se dit « Installation » — MIS À JOUR)
+    ok(D.entetes === 'Repère · Calibre · Installation · Verdict · Problèmes' && D.cal === D.attendu && D.verdict === D.juge && ['passe', 'juste', 'déclenche'].includes(D.verdict), 'Disjoncteurs : le calibre retenu, celui de l’installation, son verdict en trois mots (celui du moteur)', JSON.stringify(D));
     const autre = D.retenir ? D.ideal : D.gamme.find(c => c !== D.calibre);
     if (D.retenir) await page.click('#ba-tbody tr[data-k="102CB1"] [data-retenir]');
-    else { await page.dblclick('#ba-tbody tr[data-k="102CB1"] [data-f="calibre"]'); await page.selectOption('#ba-tbody select[data-f="calibre"]', String(autre)); }
+    // (v73 : la case Calibre ouvre toute la gamme, le composant de la fiche — MIS À JOUR : plus de liste du navigateur)
+    else { await page.dblclick('#ba-tbody tr[data-k="102CB1"] [data-f="calibre"]'); await page.waitForSelector('#rc-gamme'); await page.click(`#rc-gamme .rc-g-l[data-cal="${autre}"]`); }
     await page.waitForTimeout(700);
     ok(await page.evaluate(a => calibreDe('102CB1') === a && document.querySelector('#ba-tbody tr[data-k="102CB1"] [data-f="calibre"]').textContent === nombre(a), autre), 'retenir un autre calibre d’ici : ' + autre + ' A, comme dans la fiche');
     await page.evaluate(() => annuler()); await page.waitForTimeout(500);
@@ -191,7 +194,7 @@ const FICHIER = P.fichierDemande();
     ok(await page.evaluate(() => !(verite().find(l => l.cable === 'W-013').longueur > 0)), '↺ rend la longueur de l’installation (ici, l’hypothèse)');
     // la mémoire de l'onglet, l'export de ce qu'on voit
     ok(await page.evaluate(() => { changerOnglet('cables'); const o = JSON.parse(localStorage.getItem('atelier.recap.v2') || '{}'); changerOnglet('liaisons'); return o.onglet === 'cables'; }), 'l’onglet ouvert se garde dans ce navigateur');
-    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#ba-csv')]);
+    await page.click('#ba-csv'); const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#ba-csv-vu')]);
     const csv = require('fs').readFileSync(await dl.path(), 'utf8').replace(/^﻿/, '').split('\n');
     ok(csv[0] === 'De;Câble;Vers;Longueur;État' && csv.length === 9, 'le CSV de l’onglet : ses colonnes, ses lignes (les huit du folio 1)', csv[0] + ' · ' + (csv.length - 1) + ' lignes');
     ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
@@ -389,10 +392,12 @@ const FICHIER = P.fichierDemande();
   // le menu ⋮ allégé (le lecteur : « on n'en utilise que 10-20 % ») : l'essentiel en tête — ouvrir, vos fichiers (où l'on
   // dépose aussi la base des contrats déjà faits, écrit dessous), le récapitulatif, la nomenclature —, deux sous-menus qui
   // s'ouvrent en place (Exporter, Plus) ; chaque ligne a sa bulle courte, dite aussi au lecteur d'écran
+  // (v73, la demande E-2 d'A2 : les folios en Visio se rangent avec les dessins du plan entier, après le dossier PDF et
+  // avant le suivi — `avant: 'suivi'`, 08-visio — MIS À JOUR : ils venaient en dernier)
   const M = await page.evaluate(() => { const lignes = p => [...$(p).querySelectorAll('button[role="menuitem"]:not([data-retour])')].map(b => b.dataset.act || '›' + b.dataset.sous).join(',');
     return { principal: lignes('mp-principal'), exporter: lignes('mp-exporter'), plus: lignes('mp-plus'), fichiers: $('mp-principal').querySelector('[data-act="fichiers"]').textContent,
       bulles: [...document.querySelectorAll('#menu button[role="menuitem"]:not([data-retour])')].every(b => { const a = b.dataset.aide || ''; return a.length > 30 && a.length <= 160 && !!$(b.getAttribute('aria-describedby')); }) }; });
-  ok(M.principal === 'bibliotheque,ouvrir,fichiers,recapitulatif,nomenclature,dejafait,›exporter,›plus' && M.exporter === 'retestcorrige,svg,png,imprimer,dossierpdf,suivi,nomenclaturecsv,vsdx' && M.plus === 'coller,exemple,pdf,visio,bible,normes,hypotheses,cartouche,comprendre,raccourcis' && M.bulles && /installations · base · bible · normes/.test(M.fichiers),
+  ok(M.principal === 'bibliotheque,ouvrir,fichiers,recapitulatif,nomenclature,dejafait,›exporter,›plus' && M.exporter === 'retestcorrige,svg,png,imprimer,dossierpdf,vsdx,suivi,nomenclaturecsv' && M.plus === 'coller,exemple,pdf,visio,bible,normes,hypotheses,cartouche,comprendre,raccourcis' && M.bulles && /installations · base · bible · normes/.test(M.fichiers),
     'le menu en huit lignes (la bibliothèque, ouvrir, vos fichiers — « installations · base · bible · normes » écrit dessous —, récapitulatif, nomenclature, comparer au déjà-fait, Exporter ›, Plus ›), le reste dans ses deux sous-menus (Exporter : D’ABORD l’installation corrigée en Excel, le livrable, seul dans son groupe (v73) ; le folio en SVG, en PNG, l’impression ; le plan entier : le dossier en PDF, le suivi, la nomenclature, les folios en Visio ; Plus : « Lire un PDF de schéma… » et « Lire un schéma Visio… » après l’exemple, « Comment Volta réfléchit » (v74) juste avant les raccourcis clavier, en dernier) — plus de « Tout effacer » : on supprime dans la bibliothèque ; chaque ligne a sa bulle courte, dite aussi au lecteur d’écran', JSON.stringify(M));
   // au clavier : ↓ ↓ jusqu'à « Vos fichiers… », sa bulle tout de suite, à gauche du menu ; → n'y fait rien (ni folio suivant)
   const plan0 = await page.evaluate(() => app.plan), montre = () => page.evaluate(() => [...document.querySelectorAll('#menu .menu-panneau')].filter(p => !p.hidden).map(p => p.id).join());
@@ -421,8 +426,8 @@ const FICHIER = P.fichierDemande();
   const VF = await page.evaluate(() => ({ mode: app.fiche && app.fiche.mode, cartes: [...document.querySelectorAll('#fiche-corps .vf-carte')].map(c => c.dataset.entree + ':' + (c.className.match(/e-(\w+)/) || [])[1]).join(' '), apercus: [...document.querySelectorAll('#fiche-corps .vf-carte')].filter(c => c.querySelectorAll('.vf-apercu tbody tr').length === 3).length, ouverts: [...document.querySelectorAll('#fiche-corps details.vf-attend[open]')].map(d => d.dataset.volet).join(' '),
     zones: [...document.querySelectorAll('#fiche-corps .vf-zone')].map(z => z.closest('.vf-carte').dataset.entree).join(' '), cles: [...document.querySelectorAll('#vf-base .vf-cles div')].map(d => d.textContent).join(' · ') }));
   // (la bibliothèque a déjà une install : « À ranger », où sont allés les fichiers ouverts plus haut hors de toute install)
-  ok(VF.mode === 'fichiers' && VF.cartes === 'bibliotheque:ok retest:vide base:vide bible:ok normes:ok hypotheses:ok' && VF.apercus === 4 && VF.ouverts === '' && VF.zones === 'retest base' && VF.cles === 'Harnessla machine · FWDle dessin · Appareille contrat',
-    '« Vos fichiers » : six cartes et leur état, la bibliothèque en tête ; l’installation et la base disent en une ligne ce qu’ils attendent (la base : Harness la machine, FWD le dessin, Appareil le contrat) et ont leur zone de dépôt ; trois lignes d’exemple (installation, base, bible, une norme) repliées dans « Ce que j’attends »', JSON.stringify(VF));
+  ok(VF.mode === 'fichiers' && VF.cartes === 'bibliotheque:ok retest:vide base:vide bible:ok normes:ok hypotheses:ok' && VF.apercus === 4 && VF.ouverts === '' && VF.zones === 'retest' && VF.cles === 'Harnessla machine · FWDle dessin · Appareille contrat',
+    '« Vos fichiers » : six cartes et leur état, la bibliothèque en tête ; l’installation et la base disent en une ligne ce qu’ils attendent (la base : Harness la machine, FWD le dessin, Appareil le contrat) ; une seule zone de dépôt, celle de l’installation (v73) ; trois lignes d’exemple (installation, base, bible, une norme) repliées dans « Ce que j’attends »', JSON.stringify(VF));
   const nEx = await page.evaluate(() => verite().length);
   await depot('#fichier', 'compta.csv', 'Date;Montant;Libellé\n03/10/2026;1250,00;Fournitures\n05/10/2026;318,40;Câbles\n');
   const E1 = await page.evaluate(() => ({ toast: $('toast').textContent, erreur: $('toast').classList.contains('erreur'), voir: !!document.querySelector('#toast .toast-voir'), n: verite().length, nom: app.nom }));
@@ -513,10 +518,12 @@ const FICHIER = P.fichierDemande();
     ok(R.genres.length === 8 && R.premier === 8 && R.genres[0] === 'connecteur qu’aucun arrangement ne loge' && R.gestes.includes('Leur donner leur repère'), 'l’onglet Problèmes range ses lignes par genre : un intercalaire chacun, « Voir le premier », son geste', R.genres.join(' | '));
     // l'export dit sa portée et propose « Tout »
     await page.evaluate(() => { app.base.portee = 'folio'; changerOnglet('liaisons'); allerAuPlan('1'); rendreBase(true); }); await page.waitForTimeout(400);
-    const X = await page.evaluate(() => ({ dit: $('ba-csv').textContent.trim(), tout: !$('ba-csv-tout').hidden && $('ba-csv-tout').textContent }));
+    // (v73 : « Tableau en CSV » ouvre un menu qui dit ce qu'il sort, et le retest corrigé en dernier — MIS À JOUR)
+    await page.click('#ba-csv'); await page.waitForTimeout(150);
+    const X = await page.evaluate(() => ({ dit: $('ba-csv-vu').textContent.replace(/\s+/g, ' ').trim(), tout: $('ba-csv-tout') ? $('ba-csv-tout').textContent.replace(/\s+/g, ' ').trim() : '', retest: !!$('ba-csv-retest') }));
     const [dlt] = await Promise.all([page.waitForEvent('download'), page.click('#ba-csv-tout')]);
     const csvt = require('fs').readFileSync(await dlt.path(), 'utf8').replace(/^﻿/, '').trim().split('\n');
-    ok(/^Exporter 8 liaisons · folio 1$/.test(X.dit) && X.tout === 'Tout (201)' && csvt.length === 202, 'l’export dit ce qu’il sort (« Exporter 8 liaisons · folio 1 ») ; « Tout (201) » sort tout l’onglet', X.dit + ' · ' + X.tout + ' · ' + (csvt.length - 1) + ' lignes');
+    ok(/^Ce qui est montré ?8 liaisons · folio 1/.test(X.dit) && /^Tout l’onglet Liaisons ?201 liaisons, sans folio ni filtre/.test(X.tout) && X.retest && csvt.length === 202, '« Tableau en CSV » dit ce qu’il sort (« Ce qui est montré : 8 liaisons · folio 1 ») ; « Tout l’onglet » sort les 201 ; le retest corrigé est au bas du menu', X.dit + ' · ' + X.tout + ' · ' + (csvt.length - 1) + ' lignes');
     // le récapitulatif en moitié garde l'échelle ; fermé, la vue d'avant revient
     await page.evaluate(() => { fermerBase(); ajuster(); }); await page.waitForTimeout(400);
     const v0 = await page.evaluate(() => ({ ...app.vue })); await page.keyboard.press('b'); await page.waitForTimeout(600);

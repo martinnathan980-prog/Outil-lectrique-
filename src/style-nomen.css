@@ -36,8 +36,11 @@ table.no-table{width:100%;font-size:var(--f-12)}
 /* où va la pièce : ses repères à l'encre seconde ; « +11 » dit le reste (entier au survol) */
 .no-ou{font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
 .no-arr{display:block;font:500 var(--f-11)/1.4 var(--mono);color:var(--t-1);margin-top:1px}
-.no-plus{font:500 var(--f-11) var(--sans);font-style:normal;color:var(--t-1);background:var(--s-sunken);border-radius:4px;padding:1px 5px;margin-left:2px;white-space:nowrap}
-.no-ou[data-bulle]{cursor:help}
+/* « +11 » : un bouton (v74) — un clic déplie les repères en place ; sa cible fait 24 px (la pastille reste petite) */
+.no-plus{position:relative;border:none;font:500 var(--f-11) var(--sans);color:var(--t-1);background:var(--s-sunken);border-radius:4px;padding:1px 5px;margin-left:2px;white-space:nowrap;cursor:pointer;transition:background var(--rapide)}
+.no-plus::before{content:"";position:absolute;inset:-5px -3px}
+.no-plus:hover{background:var(--s-hover)}
+.no-plus[aria-expanded="true"]{background:none;text-decoration:underline;text-underline-offset:2px;color:var(--t-2)}
 /* une note sous la référence : « à confirmer », un statut, une cote — un mot ambre précédé d'un point */
 .no-note-l{display:flex;align-items:baseline;gap:6px;margin-top:3px;font:500 var(--f-11)/1.4 var(--sans);font-style:normal;color:var(--warn);letter-spacing:0;white-space:normal}
 .no-note-l::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex:none;transform:translateY(-1px)}
