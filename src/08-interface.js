@@ -1768,6 +1768,16 @@ function champHypotheseHtml(c, H) {
   if (c.genre === 'choix') return `<label class="hyp-n"><span>${esc(c.lib)}</span><select id="${c.id}" aria-label="${escA(c.aria + ' (hypothèse)')}">${c.options.map(([v, t]) => `<option value="${escA(v)}"${String(v) === String(c.valeur) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
   return `<label class="hyp-n"${c.titre ? ` title="${escA(c.titre)}"` : ''}><span>${esc(c.lib)}</span><input id="${c.id}" type="number" inputmode="decimal" step="${c.pas}"${c.min != null ? ` min="${c.min}"` : ''} value="${H[c.k] == null ? '' : H[c.k]}"${c.vide ? ` placeholder="${escA(c.vide)}"` : ''} aria-label="${escA(c.lib + ' (hypothèse)')}"><span class="u">${esc(c.unite)}</span></label>`; }
 const GROUPES_HYPOTHESES = [['fil', 'Le câble'], ['temperature', 'La température'], ['chute', 'La chute en ligne'], ['reseau', 'Le réseau'], ['declassement', 'Le déclassement'], ['tableau', 'Les disjoncteurs']];
+/* CE QUE FAIT CHAQUE RÉGLAGE, EN UNE PHRASE (l'ergonome v73 : « 232 mots à lire : chaque réglage porte un paragraphe ») ; le
+   paragraphe entier — la règle, la source, la valeur par défaut — se lit dans le « ? » de sa ligne. */
+const COURT_HYPOTHESES = { longueur: 'La longueur d’un câble que le retest ne mesure pas.', courant: 'Le courant d’un câble qu’aucun disjoncteur n’alimente.', tension: 'La tension du réseau.',
+  ambiante: 'L’air autour des câbles : ce qu’un câble admet en dépend.', tconducteur: 'La température qui donne sa résistance à un câble.', retour: 'Par où le courant revient : la structure, ou un câble.',
+  regime: 'Continu, monophasé ou triphasé.', cosphi: 'Le facteur de puissance, en alternatif.', reactance: 'La réactance d’un gros câble, en alternatif.', charge: 'La part de ce que le faisceau admet qui y circule vraiment.',
+  altitude: 'L’altitude de vol.', tableauMin: 'L’ambiante la plus basse du tableau de disjoncteurs.', tableauMax: 'L’ambiante la plus haute du tableau de disjoncteurs.',
+  chuteMono: 'La chute en ligne admise : votre règle, 2 V.', chuteTri: 'En triphasé, la chute admise entre phases : votre règle, 4 V.', chuteConducteur: 'La température des câbles, pour la chute en ligne.',
+  chuteDisjoncteur: 'La chute propre du disjoncteur compte dans la chute en ligne.', frequence: 'La fréquence du réseau alternatif.', marge: 'La marge du meilleur calibre sur chaque courant du profil.',
+  margeTemps: 'Ce qu’une pointe peut consommer du temps de déclenchement.', prechauffage: 'Un état en service trouve le bilame chaud.', calibresPreferes: 'Les calibres que vous posez : le meilleur se choisit parmi eux.' };
+const courtDe = c => c.genre === 'condition' ? (c.c === 'faisceau' ? 'Des câbles en faisceau admettent moins qu’un câble seul.' : c.c === 'altitude' ? 'L’air raréfié refroidit moins les câbles.' : 'Un déclassement de la norme.') : COURT_HYPOTHESES[c.k] || c.sert;
 /* Une ligne de la fiche : le champ, ce qu'il fait ; réglée ici (autre que `HYPOTHESES`), « ↺ » et la valeur de l'outil
    la rendent, d'un clic. */
 const valeurDeLOutil = c => { const v = HYPOTHESES[c.k]; if (c.genre === 'choix') { const o = c.options.find(([x]) => String(x) === String(v)); return o ? o[1] : String(v); }
@@ -1775,8 +1785,8 @@ const valeurDeLOutil = c => { const v = HYPOTHESES[c.k]; if (c.genre === 'choix'
   return v == null ? 'vide' : nombre(v) + (c.unite ? ' ' + c.unite : ''); };
 const ligneHypotheseHtml = (c, H) => { const reglee = c.k && c.k in HYPOTHESES && JSON.stringify(H[c.k]) !== JSON.stringify(HYPOTHESES[c.k]);
   return `<div class="hy-ligne${reglee ? ' reglee' : ''}"><div class="hy-champ">${champHypotheseHtml(c, H)}</div>`
-    + (reglee ? `<button class="hy-rendre" data-hy-rendre="${escA(c.k)}" title="${escA('Revenir à la valeur de l’outil : ' + valeurDeLOutil(c))}">↺ ${esc(valeurDeLOutil(c))}</button>` : '')
-    + `<p class="hy-sert">${esc(c.sert)}${c.genre === 'condition' && c.titre ? ` <i>· ${esc(c.titre)}</i>` : ''}</p></div>`; };
+    + (reglee ? `<button class="hy-rendre" data-hy-rendre="${escA(c.k)}" data-bulle="${escA('Revenir à la valeur de l’outil : ' + valeurDeLOutil(c))}">↺ ${esc(valeurDeLOutil(c))}</button>` : '')
+    + `<p class="hy-sert">${esc(courtDe(c))}<button type="button" class="hy-q" data-bulle="${escA(c.sert + (c.genre === 'condition' && c.titre ? ' — ' + c.titre : ''))}" aria-label="${escA('Ce que fait « ' + c.lib + ' » : ' + c.sert)}">?</button></p></div>`; };
 /* LA FICHE DES HYPOTHÈSES : un document à droite (mode `hypotheses`), comme des réglages — un groupe par thème, une ligne
    par hypothèse : son nom, son champ aligné à droite, ce qu'elle fait en petit (style.css, `.hy-*`) ; le pied dit où l'on
    en est (les valeurs de l'outil, ou combien sont réglées ici) et « Revenir aux valeurs de l'outil » rend `HYPOTHESES`.
@@ -1784,7 +1794,9 @@ const ligneHypotheseHtml = (c, H) => { const reglee = c.k && c.k in HYPOTHESES &
    disjoncteur. */
 function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }), N = app.norme || normeVide(), cs = hypothesesDe(N, H, { fiche: true });
   const reglees = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k])).length, defaut = !reglees;
-  const corps = tete('Simulation', 'Hypothèses') + '<p class="note">Ce que le retest ne porte pas, l’outil le suppose. Chaque fiche qui s’en sert le dit (<b>hypothèse</b>) ; ce qu’on règle ici rejuge tout — le contrôle, les fiches, la nomenclature — et se garde dans ce navigateur, pas avec le contrat.</p>'
+  // le chapeau dit où vont ces réglages (l'ingénieur v73 : « si j'envoie le dossier, on ne peut pas refaire le calcul ») : ils
+  // partent avec chaque export — la page « Hypothèses et sources » du dossier PDF, la feuille « Volta » du retest corrigé
+  const corps = tete('Simulation', 'Hypothèses') + '<p class="note">Ce que le retest ne porte pas, Volta le suppose ; chaque fiche qui s’en sert le dit (<b>hypothèse</b>). <b>Ces réglages sont écrits dans chaque export</b> — la page « Hypothèses et sources » du dossier PDF, la feuille « Volta » du retest corrigé.</p>'
     + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><h3 class="hy-titre">${esc(t)}</h3>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
   const pied = `<span class="hy-etat${defaut ? '' : ' regle'}">${defaut ? 'Les valeurs de l’outil' : `<b>${pluriel(reglees, 'hypothèse')}</b> réglée${reglees > 1 ? 's' : ''} ici`}</span><span class="espace"></span>`
     + `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de l’outil</button>`;
@@ -2085,7 +2097,10 @@ function fermerFiche(recadrer) { const f = $('fiche'); if (f.hidden && !app.fich
   document.body.classList.remove('fiche-ouverte'); synchroniserRail(); if (!recadrer) return;
   if (app.cible && $('inspecteur').hidden) ouvrirInspecteur(); else ajuster(true);
   // fermé pour lui-même : le clavier revient à ce qui l'avait ouvert (le ⋮ pour un document du menu), sans sa bulle
-  if (avait && (document.activeElement === document.body || !document.activeElement) && o) { if (typeof rendreLeClavier === 'function') rendreLeClavier(o); else o.focus(); } }
+  // (la carte que le document avait remplacée revient — elle prend le clavier en naissant : le ⋮ le reprend, c'est de lui
+  // qu'on venait)
+  // (le titre caché garde le focus jusqu'à la prochaine image : il compte comme « personne »)
+  const a = document.activeElement; if (avait && o && (!a || a === document.body || f.contains(a) || $('inspecteur').contains(a))) { if (typeof rendreLeClavier === 'function') rendreLeClavier(o); else o.focus(); } }
 /* La croix d'un document : sa bulle dit le geste et sa touche, comme celle de la feuille des raccourcis (une bulle du chrome,
    `.bulle` : au survol après 400 ms, tout de suite au clavier) — le même geste, le même mot partout. */
 const CROIX_DOC = `<button class="rond fermer" id="fi-fermer" aria-label="Fermer (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button>`;

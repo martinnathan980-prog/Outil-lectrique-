@@ -211,7 +211,7 @@ function montrerLecture() { if (typeof document === 'undefined') return; const L
     gestes = '<button class="btn lien" data-lb="arreter">Arrêter</button>'; }
   else if (F) { titre = guillemets(F.nom) + ' est lue';
     detail = lies([nombreLie(F.n, 'liaison'), nombreLie(F.contrats, 'contrat'), F.installs ? nombreLie(F.installs, 'installation') : '', 'en ' + secondesLues(F.ms)]);
-    gestes = '<button class="btn papier" data-lb="chercher">Chercher dans la base</button><button class="btn cuivre" data-lb="bibliotheque">Voir la bibliothèque</button><button class="lb-x" data-lb="fermer" aria-label="Fermer">' + ico('fermer') + '</button>'; }
+    gestes = '<button class="btn papier" data-lb="chercher">Chercher dans la base</button><button class="btn cuivre" data-lb="bibliotheque">Voir la bibliothèque</button><button class="lb-x" data-lb="fermer" aria-label="Fermer la carte">' + ico('fermer') + '<span class="bulle" aria-hidden="true">Fermer la carte</span></button>'; }
   else titre = 'Contrats déjà faits';
   // ce qui continue derrière : l'écriture sur le PC, l'index « Déjà fait »
   const suite = [G ? 'Gardée sur ce PC : morceau ' + G.k + ' / ' + G.n : '', K ? '« Déjà fait » s’indexe : ' + pc(K.total ? K.fait / K.total : 0) + ' %' : ''].filter(Boolean);
@@ -387,7 +387,7 @@ const icoFwd = k => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${I
 function assurerFwd() { if ($('fwd')) return; const d = document.createElement('div'); d.id = 'fwd'; d.className = 'fwd'; d.hidden = true; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-labelledby', 'fw-titre');
   d.innerHTML = `<div class="fw-boite"><header class="fw-tete"><div class="min0"><div class="sur" id="fw-sur"></div><h2 class="titre" id="fw-titre"></h2></div>`
     + `<div class="fw-outils"><button class="fi-bouton" id="fw-comparer" hidden data-bulle="La comparaison de ce dessin entier avec notre contrat">${icoFwd('comparer')}<span>Comparer</span></button><button class="fi-bouton" id="fw-ajuster" data-bulle="Ajuster le dessin à l’écran (0)">${icoFwd('ajuster')}<span>Ajuster</span></button><button class="fi-bouton" id="fw-svg" data-bulle="Enregistrer ce dessin en SVG">${icoFwd('enregistrer')}<span>SVG</span></button></div>`
-    + `<button class="fi-x" id="fw-fermer" aria-label="Fermer le dessin (Échap)">${ico('fermer')}</button></header>`
+    + `<button class="fi-x" id="fw-fermer" aria-label="Fermer le dessin (Échap)">${ico('fermer')}<span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button></header>`
     + `<div class="fw-corps"><div class="fw-scene" id="fw-scene" data-bulle="Molette pour zoomer, glisser pour déplacer"></div><aside class="fw-colonne" id="fw-colonne" aria-label="Ce que le dessin contient"></aside></div></div>`;
   document.body.appendChild(d); lierFwd(); lierBulles(d); }
 /* Ouvrir un dessin : `harness` et `fwd` le nomment ; `repere` (dans la machine) et `notre` (chez nous) disent ce qu'on

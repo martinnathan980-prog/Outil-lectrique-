@@ -57,9 +57,17 @@ async function ouvrirPdf(fichier) { if (!fichier) return;
   const vp1 = (await doc.getPage(1)).getViewport({ scale: 1 }); PDF.tailles[0] = [vp1.width, vp1.height];
   construirePdf(); montrerPdf(); PDF.vue.cadre = true; PDF.rendu = { tache: null, s: 0, t: 0, page: 0 }; cadrerPdf(); rendreVignettes(false); rendreRelecture();
   await rendrePagePdf(); vignettesEnVue(); analyserPdf(); }
-function montrerPdf() { const el = $('pdf'); if (typeof fermerFiche === 'function') fermerFiche(); if (typeof fermerMenu === 'function') fermerMenu();
-  el.hidden = false; el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre'); document.body.classList.add('pdf-ouvert'); PDF.ouvert = true; $('pdf-q').value = PDF.q; }
-function fermerPdf() { const el = $('pdf'); if (!el || el.hidden) return; el.hidden = true; document.body.classList.remove('pdf-ouvert'); PDF.ouvert = false; fermerSaisie(); if (PDF.rendu.tache) try { PDF.rendu.tache.cancel(); } catch (_) { } }
+/* La pièce prend le clavier en s'ouvrant (Tab commence dans elle), et le rend en se fermant à ce qui l'avait ouverte — le ⋮
+   pour une ligne du menu — sans en faire paraître la bulle (v73 : « les documents prennent le clavier, Échap rend au ⋮ »). */
+const ouvreurDePiece = el => { const a = document.activeElement; return a && a !== document.body && !el.contains(a) ? (a.closest('#menu') ? $('btnMenu') : a) : $('btnMenu'); };
+function rendreClavierDePiece(el, o) { const a = document.activeElement; if (!(a === document.body || !a || el.contains(a))) return; const c = o && o.isConnected && o.getClientRects().length ? o : $('btnMenu'); if (!c) return;
+  if (typeof rendreLeClavier === 'function') rendreLeClavier(c); else c.focus(); }
+function montrerPdf() { const el = $('pdf'); if (el.hidden) PDF.ouvreur = ouvreurDePiece(el); if (typeof fermerFiche === 'function') fermerFiche(); if (typeof fermerMenu === 'function') fermerMenu();
+  el.hidden = false; el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre'); document.body.classList.add('pdf-ouvert'); PDF.ouvert = true; $('pdf-q').value = PDF.q;
+  el.tabIndex = -1; if (!el.contains(document.activeElement)) el.focus({ preventScroll: true }); }
+function fermerPdf() { const el = $('pdf'); if (!el || el.hidden) return; const garde = el.contains(document.activeElement) || document.activeElement === document.body;
+  el.hidden = true; document.body.classList.remove('pdf-ouvert'); PDF.ouvert = false; fermerSaisie(); if (PDF.rendu.tache) try { PDF.rendu.tache.cancel(); } catch (_) { }
+  if (garde) rendreClavierDePiece(el, PDF.ouvreur); }
 const choisirPdf = () => { construirePdf(); $('fichier-pdf').click(); };
 
 /* ---- le moteur, page par page, sans figer l'écran ------------------------------------------------------------------ */
@@ -180,7 +188,7 @@ function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; c
   const etat = PDF.erreur ? `<span class="pdf-e ko"><i></i>${esc(PDF.erreur)}</span>`
     : PDF.analyse ? `<i class="pdf-respire" aria-hidden="true"></i>Lecture des traits : page ${PDF.analyse.fait || 0} sur ${PDF.n}…`
     : !L ? '' : lies([pluriel(PDF.n, 'page'), tout ? 'scanné' : scan ? pluriel(scan, 'page') + ' scannée' + (scan > 1 ? 's' : '') : 'vectoriel', pluriel(n, 'liaison'), revoir ? revoir + ' à revoir' : '']);
-  const tete = `<div class="fiche-tete"><div class="min0"><div class="sur">PDF de schéma</div><h2 class="titre">${esc(PDF.nom)}</h2></div><button class="rond fermer" id="pdf-fermer" aria-label="Fermer le PDF (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
+  const tete = `<div class="fiche-tete"><div class="min0"><div class="sur">PDF de schéma</div><h2 class="titre">${esc(PDF.nom)}</h2></div><button class="rond fermer" id="pdf-fermer" aria-label="Fermer le PDF (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button></div>`;
   const champs = L && L.pages[PDF.page - 1] && L.pages[PDF.page - 1].champs || {}, cart = [champs.numero || (L && L.numero), champs.folio ? 'folio ' + champs.folio : '', champs.indice || (L && L.indice) ? 'indice ' + (champs.indice || L.indice) : ''].filter(Boolean);
   let haut = `<p class="pdf-etat" id="pdf-etat" role="status">${etat}</p>` + (cart.length ? `<p class="pdf-cart">Cartouche : <span class="id">${cart.map(esc).join('</span>' + POINT + '<span class="id">')}</span></p>` : ''), corps = '';
   const lisible = tout && L.pages.every(r => r.texte), vectorise = tout && L.pages.every(r => r.vectorise);

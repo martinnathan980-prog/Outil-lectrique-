@@ -537,8 +537,9 @@ const COLONNES_NORME_TEXTE = 'une table <b>Familles</b> (Famille, Pas, Gauge min
 function ficheBible(ref, ancre) { const B = app.bible || [], nom = app.bibleNom, n = B.length, familles = [...new Set(B.filter(e => e.module).map(e => e.famille))]; ref = typeof ref === 'string' ? ref : '';
   const zoom = ref ? B.find(e => e.reference === ref) || null : null, deja = !!(app.fiche && app.fiche.mode === 'bible'), y = deja ? $('fiche-corps').scrollTop : 0, avant = deja ? app.fiche.ref || '' : '';
   const etat = nom ? `<div class="bible-etat"><span><b>${esc(nom)}</b>\u00a0· ${plurielLie(n, 'référence')}\u00a0· gardée dans ce navigateur</span></div>`
-    : (() => { const compte = fs => fs.map(f => plurielLie(B.filter(e => e.module && e.famille === f).length, 'module') + ' ' + nomDeFamille(app.norme, f)).join(' et '), bar = famillesDeModules(app.norme), con = famillesDeModules(app.norme, 'connecteur');
-        return `<div class="bible-etat exemple"><span><b>Bible de l’outil</b>\u00a0· pour les barrettes, ${compte(bar.filter(f => familles.includes(f)))}${con.length ? ` ; pour les connecteurs et les prises de coupure, ${compte(con.filter(f => familles.includes(f)))}` : ''} — et ${pluriel(B.filter(e => !e.module).length, 'référence')} d’exemple (coupures, connecteurs).</span></div>`; })();
+    // l'état en une ligne : les comptes par norme sont sur les puces, dessous (le technicien v73 : « je lis beaucoup de petites lignes »)
+    : (() => { const bar = new Set(famillesDeModules(app.norme)), nBar = B.filter(e => e.module && bar.has(e.famille)).length, nCon = B.filter(e => e.module && !bar.has(e.famille)).length, nEx = B.filter(e => !e.module).length;
+        return `<div class="bible-etat exemple"><span><b>Bible de l’outil</b>\u00a0· ${plurielLie(nBar, 'module')} de barrette, ${plurielLie(nCon, 'module')} de connecteur et de prise${nEx ? ', ' + plurielLie(nEx, 'référence') + ' d’exemple' : ''} — le détail par norme sur les puces.</span></div>`; })();
   // un filtre par norme : les modules d'une norme, ou le reste (coupures, connecteurs) ; et une RECHERCHE (l'ingénieur v73 :
   // « 306 références et pas de champ de recherche ; je veux taper “12-8” ou “#16” ») sur la référence, la nature, la famille,
   // les bornes et la gauge (« #16 » ou « 16 » : une gauge que la référence admet)
@@ -549,7 +550,9 @@ function ficheBible(ref, ancre) { const B = app.bible || [], nom = app.bibleNom,
   // une colonne que les lignes montrées ne remplissent pas ne s'écrit pas (l'intensité, le blindage : « — » sur les 306 lignes
   // de la bible de l'outil) ; une case sans valeur reste blanche ; une ligne, et sous la ligne choisie, la référence en grand ;
   // la note tient sur une ligne (entière au survol)
-  const avecInt = vus.some(e => e.intensite != null), avecBlinde = vus.some(e => e.blindage), avecNote = vus.some(e => e.note), nCols = 5 + avecInt + avecBlinde + avecNote;
+  // (une colonne que quatre références sur trois cents remplissent paraît vide à l'écran — le technicien v73 : elle attend
+  // qu'un quart des lignes montrées la remplissent ; la référence en grand dit toujours tout)
+  const assez = f => vus.filter(f).length * 4 >= vus.length, avecInt = assez(e => e.intensite != null), avecBlinde = assez(e => e.blindage), avecNote = vus.some(e => e.note), nCols = 5 + avecInt + avecBlinde + avecNote;
   const ligne = e => `<tr class="${e === zoom ? 'on' : ''}"><td class="pict">${pictoBible(e)}</td><td class="ref"><button class="ref-btn" data-ref="${escA(e.reference)}" aria-pressed="${e === zoom}">${esc(e.reference)}</button></td>
     <td class="sans c-nature">${esc(e.nature)}</td><td class="d">${nombre(e.bornes)}</td><td class="d">${jaugeEntree(e)}</td>`
     + (avecInt ? `<td class="d">${e.intensite != null ? nombre(e.intensite) + '\u00a0A' : ''}</td>` : '') + (avecBlinde ? `<td class="c-blinde">${e.blindage ? 'oui' : ''}</td>` : '')
@@ -624,7 +627,7 @@ function zoomBible(e) { if (e.module && moduleDeReference(app.norme, e.reference
     ['intensité', e.intensite != null ? nombre(e.intensite) + ' A' : '—'], ['blindage', e.blindage ? 'oui' : 'non'], e.mobile ? ['partie mobile', e.mobile] : null, e.note ? ['note', e.note] : null,
     ['norme', F ? F.norme + (F.pas != null ? ' · pas ' + nombre(F.pas) + ' mm' : '') + (F.resistance != null ? ' · ' + nombre(F.resistance) + ' mΩ' : '') + ' · ' + pluriel(F.filsParCote, 'câble') + ' par côté' : 'aucune pour cette famille']].filter(Boolean);
   return `<div class="bible-zoom"><div class="bz-tete"><div class="min0"><div class="sur">${esc(P.nature)}</div><div class="bz-ref">${esc(e.reference)}</div></div>
-      <button class="rond fermer" id="bz-fermer" aria-label="Replier la référence"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+      <button class="rond fermer" id="bz-fermer" aria-label="Replier la référence"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="bulle" aria-hidden="true">Replier la référence</span></button></div>
     ${dessinPhysique('', P, largeurFiche(), { forme })}
     <div class="bar-faits">${carac.map(([k, v]) => `<span>${esc(k)}</span><span>${esc(v)}</span>`).join('')}</div></div>`; }
 /* Importer une bible : ce qui ne convient pas s'écrit dans la carte de la bible de « Vos fichiers » (ce qui a été lu, ce

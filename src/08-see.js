@@ -23,7 +23,7 @@ const SEE = { lu: null, vue: 'import', exemples: true, import: null };
 const estExcel = f => /\.xls[xmb]?$/i.test((f && f.name) || '') || /sheet|excel/i.test((f && f.type) || '');
 // une feuille de la base SEE : nommée d'après sa vue ou sa table (EED_ViewCablesAndWires, EED_OBJ_Wires…) ou une fonction d'export
 const estFeuilleSEE = n => /^(EED_|Export_)/i.test(String(n || ''));
-const nomCourtSEE = n => String(n).replace(/^EED_(e?Cat_)?View_?/i, '').replace(/^EED_/i, '') || String(n);
+const nomCourtSEE = n => String(n).replace(/^EED_(e?Cat_)?View_?/i, '').replace(/^EED_/i, '').replace(/^(OBJ|LNK|SET)_/i, '') || String(n);
 const GUID_SEE = /^\{?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}?$/i, OUI_NON_SEE = /^(true|false|vrai|faux|yes|no|oui|non)$/i;
 const cleGuidSEE = s => String(s).replace(/[{}]/g, '').toUpperCase();
 const cleTexteSEE = s => String(s).toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -176,15 +176,19 @@ function baseSEEHtml() { const L = SEE.lu, v = SEE.vue, I = baseMontreeSEE();
   const imp = onglet('import', 'Import', null, 'Ce que Volta prend de la base, et ce qui change dans ses tables');
   const coh = I && I.coherence ? onglet('coherence', 'Cohérence', String(aReprendreSEE(I)), 'La base vérifiée ligne par ligne : ce qui cloche, et ce que Volta en fait') : '';
   const corpsBase = v === 'coherence' && coh ? coherenceSEEHtml() : importSEEHtml();
-  if (!L) return `<div class="see">${nmTitre('Base SEE · gardée sur ce PC, rien n’en sort', I.nom)}`
-    + `<p class="see-mode">Volta se sert de cette base à la place de ses tables. Pour la mettre à jour, déposez le nouvel Excel de SEE (Données → Actualiser tout, puis enregistrer).</p>`
+  /* LE VERDICT D'ABORD (le technicien v73 : « beaucoup de paragraphes avant le premier chiffre ») : « 1 contrôle en erreur,
+     2 à voir » sous le titre, quel que soit l'onglet ; la façon de lire la page, repliée. */
+  const verdict = lienCoherenceSEEHtml(I, v === 'coherence'), lire = t => `<details class="see-lire"><summary>Comment lire cette page</summary><p class="see-mode">${t}</p></details>`;
+  if (!L) return `<div class="see">${nmTitre('Base SEE · gardée sur ce PC, rien n’en sort', I.nom)}${verdict}`
+    + lire('Volta se sert de cette base à la place de ses tables. Pour la mettre à jour, déposez le nouvel Excel de SEE (Données → Actualiser tout, puis enregistrer).')
     + `<div class="see-barre"><div class="see-onglets" role="tablist" aria-label="La base">${imp}${coh}</div></div>${corpsBase}</div>`;
   const nl = L.liens.filter(x => x.cibles.length).length;
-  const onglets = `<div class="see-onglets" role="tablist" aria-label="Le classeur">${imp}${coh}${onglet('liens', 'Liens', String(nl), 'Ce qui se relie à quoi, d’une feuille à l’autre')}${onglet('codes', 'Codes', null, 'Les valeurs des colonnes de codes, et le plan ouvert face à SEE')}<span class="see-sep" aria-hidden="true"></span>`
+  // les feuilles du classeur, après un filet et leur nom de groupe ; chacune sous un nom court (sans EED_, OBJ_, LNK_), le nom entier dans sa bulle
+  const onglets = `<div class="see-onglets" role="tablist" aria-label="Le classeur">${imp}${coh}${onglet('liens', 'Liens', String(nl), 'Ce qui se relie à quoi, d’une feuille à l’autre')}${onglet('codes', 'Codes', null, 'Les valeurs des colonnes de codes, et le plan ouvert face à SEE')}<span class="see-sep" aria-hidden="true"></span><span class="see-groupe-t" aria-hidden="true">Feuilles du classeur</span>`
     + L.feuilles.map((f, i) => onglet(i, nomCourtSEE(f.nom), milliers(f.lignes), '', f.nom)).join('') + '</div>';
   const corps = v === 'import' || v === 'coherence' ? corpsBase : v === 'liens' ? liensSEEHtml() : v === 'codes' ? codesSEEHtml() : feuilleSEEHtml(L.feuilles[v] || L.feuilles[0]);
-  return `<div class="see">${nmTitre('Base SEE · lue sur ce poste, rien n’en sort', L.nom)}`
-    + `<p class="see-mode">Volta a lu votre Excel ici, en entier, et l’a vérifié ligne par ligne. <b>Import</b> dit ce qu’il en prend et ce qui change dans ses tables : « Garder dans Volta » le garde sur ce PC, et rien ne sort. <b>Cohérence</b> dit ce qui cloche dans la base. Les autres onglets montrent le classeur tel quel.</p>`
+  return `<div class="see">${nmTitre('Base SEE · lue sur ce poste, rien n’en sort', L.nom)}${verdict}`
+    + lire('Volta a lu votre Excel ici, en entier, et l’a vérifié ligne par ligne. <b>Import</b> dit ce qu’il en prend et ce qui change dans ses tables : « Garder dans Volta » le garde sur ce PC, et rien ne sort. <b>Cohérence</b> dit ce qui cloche dans la base. Les autres onglets montrent le classeur tel quel.')
     + `<div class="see-barre">${onglets}${v === 'import' || v === 'coherence' ? '' : `<label class="see-ex"><input type="checkbox" id="see-ex"${SEE.exemples ? ' checked' : ''}> Exemples de valeurs</label>`}</div>${corps}</div>`; }
 /* Une colonne d'une feuille, sur une ligne : son nom, son taux, deux exemples (la gauge AWG d'une section en mm²) ; un
    identifiant dit où il mène. */
@@ -349,9 +353,9 @@ function apporteSEEHtml(I) { const A = apporteSEE(I), m = milliers;
     + `</ul>${formes ? `<p class="see-note">Les références de contact, par famille : ${esc(formes)}.</p>` : ''}</div>`;
   return `<div class="see-bloc see-apporte"><h3>Ce que la base apporte <span>à côté de ce que Volta tenait de vos photos des tables de SEE (EN 2997 v6, EN 3645 v2, EN 3646 v13, EN 4165 v49)</span></h3><div class="see-ap">${photos}${plus}</div></div>`; }
 /* Le lien de l'onglet Import vers la cohérence : une ligne, le compte de ce qui est à reprendre. */
-function lienCoherenceSEEHtml(I) { if (!I || !I.coherence) return ''; const X = controlesSEE(I), ko = X.filter(x => x.n && x.gravite === 'ko'), att = X.filter(x => x.n && x.gravite === 'att');
+function lienCoherenceSEEHtml(I, ici) { if (!I || !I.coherence) return ''; const X = controlesSEE(I), ko = X.filter(x => x.n && x.gravite === 'ko'), att = X.filter(x => x.n && x.gravite === 'att');
   const mots = [ko.length ? `<b class="see-t-ko">${esc(plurielLie(ko.length, 'contrôle'))} en erreur</b>` : '', att.length ? `<b class="see-t-att">${esc(plurielLie(att.length, 'contrôle'))} à voir</b>` : ''].filter(Boolean).join(', ');
-  return `<p class="see-coh-l"><span>Volta a vérifié la base ligne par ligne : ${mots || 'aucun contrôle n’a rien à redire'}.</span><button type="button" class="btn lien" id="see-voir-coh">Voir la cohérence</button></p>`; }
+  return `<p class="see-coh-l"><span>Volta a vérifié la base ligne par ligne : ${mots || 'aucun contrôle n’a rien à redire'}.</span>${ici ? '' : '<button type="button" class="btn lien" id="see-voir-coh">Voir la cohérence</button>'}</p>`; }
 
 /* ---- le rapport de cohérence, en texte : à montrer à qui le demande. Des références de catalogue et des comptes —
    jamais le plan ouvert, ni le nom du classeur, ni le nom des programmes (« programme A ») quand il se copie. */

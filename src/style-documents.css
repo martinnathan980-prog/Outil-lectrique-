@@ -1,0 +1,40 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES DOCUMENTS (v73, le domaine E) — ce que la coquille commune (style.css, « LES DOCUMENTS ») ne disait pas encore :
+     · LA CROIX dit son geste et sa touche, dans la bulle du chrome (`.bulle` : au survol après 400 ms, tout de suite au
+       clavier) — la même que celle de la feuille des raccourcis ;
+     · LE CLAVIER entre par le titre (08-interface, `prendreLeClavierDuDoc`) : le titre le reçoit sans anneau — c'est une
+       place, pas un geste ; Tab mène au premier geste, qui montre l'anneau commun ;
+     · CE QUI S'ÉCRIT SE VOIT COMME UN CHAMP : un filet qui passe 3:1 sur la feuille, le jour comme le soir (l'ergonome :
+       `--s-line-2` faisait 1,46:1 et 1,81:1) — la recherche, les champs du cartouche, du collage, des hypothèses ;
+     · LES HYPOTHÈSES se règlent comme des réglages : une phrase sous le libellé, son « ? » (le paragraphe entier), un champ
+       de 34 px, coin 10 — la liste « Retour » aussi, avec son chevron au trait (le designer : un `select` natif au milieu
+       de champs dessinés).
+   ═══════════════════════════════════════════════════════════════════════ */
+/* le filet d'un champ : `--t-3` à 74 % sur la feuille, écrit en clair (3,3:1 le jour, 3,9:1 le soir) — un `color-mix`
+   se lit `color(srgb …)` et le juge (tests/ux.js) n'y voyait « pas de bord » ; le récapitulatif prend le même */
+:root{--filet-champ:#898e97}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--filet-champ:#7282a0} }
+:root[data-theme="dark"]{--filet-champ:#7282a0}
+#fiche .filtre,#fiche .champ input,#fiche .champ textarea,#fiche .hy-champ :is(input,select),#fiche .nm-champ,#fiche .nm-cible select,#fiche .vf-col select{border-color:var(--filet-champ)}
+#fiche .filtre:hover,#fiche .champ input:hover,#fiche .hy-champ :is(input,select):hover{border-color:color-mix(in srgb,var(--t-1) 60%,var(--s-surface))}
+#fiche .filtre svg.ico{color:var(--t-2)}
+
+/* ─── la croix et sa bulle (sous elle, alignée à droite : elle ne sort pas de la feuille) ─── */
+#fi-fermer,#bz-fermer{position:relative}
+:is(#fi-fermer,#bz-fermer) .bulle{left:auto;right:-4px;top:calc(100% + 8px);transform:translate(0,-3px)}
+#fi-fermer.bulle-on .bulle,#bz-fermer.bulle-on .bulle{transform:none}
+:is(#fi-fermer,#bz-fermer) .bulle::before{right:14px;top:auto;bottom:100%;left:auto;margin:0;border-color:transparent;border-bottom-color:var(--bulle)}
+/* le titre reçoit le clavier sans anneau (une place, pas un geste) */
+.fiche-tete .titre:focus{outline:none}
+
+/* ─── les hypothèses : une phrase, son « ? », un champ de 34 px ─── */
+.hy-sert{display:flex;align-items:center;gap:6px;max-width:none}
+.hy-q{position:relative;flex:none;display:inline-grid;place-items:center;width:18px;height:18px;padding:0;border:none;border-radius:50%;background:none;box-shadow:inset 0 0 0 1px var(--s-line-2);
+  font:600 var(--f-11)/1 var(--sans);color:var(--t-2);cursor:help;transition:box-shadow var(--d-rapide) var(--courbe),color var(--d-rapide) var(--courbe)}
+.hy-q::before{content:"";position:absolute;inset:-5px;border-radius:50%}
+.hy-q:hover,.hy-q:focus-visible{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
+#fiche .hy-champ .hyp-n input{height:34px;border-radius:var(--r-btn)}
+#fiche .hy-champ .hyp-n select{height:34px;border-radius:var(--r-btn);padding:0 32px 0 12px;-webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7488' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;background-size:14px 14px}
+.hy-ligne{grid-template-columns:minmax(0,1fr) auto auto 38px;padding:12px 0}

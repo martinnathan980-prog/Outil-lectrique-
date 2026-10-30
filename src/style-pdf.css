@@ -5,11 +5,19 @@
 .pdf{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;z-index:30;color:var(--t-table);
   background:var(--points) 0 0/24px 24px,var(--table-fond);background-color:var(--s-app);background-attachment:fixed;
   --pdf-vig:132px;--pdf-rel:clamp(460px,34vw,600px)}
-.pdf.entre{animation:pdf-entre var(--lent)}
-@keyframes pdf-entre{from{opacity:0}to{opacity:1}}
+.pdf.entre{animation:entre var(--d-lent) var(--courbe-entree) both;--entre-y:0px}
 body.pdf-ouvert #rail,body.pdf-ouvert #folios{visibility:hidden}
 /* le message se pose au-dessus de la page, entre les vignettes et la relecture, pas sur la tête de la fiche */
 html body.pdf-ouvert #toast{left:calc((100vw + 132px - clamp(460px,34vw,600px)) / 2);max-width:min(560px,calc(100vw - 132px - clamp(460px,34vw,600px) - 6 * var(--jeu)))}
+/* v73 : la relecture se pose à un jeu sous la barre, comme toute feuille ; le mot qui passe dans la place libre, au-dessus
+   des palets du bas (l'ergonome : il se posait sur le haut de la page) ; la pièce reçoit le clavier sans anneau (une place,
+   pas un geste) ; la croix dit son geste et sa touche, comme celle des documents */
+@media (min-width:701px){ html body:is(.pdf-ouvert,.visio-ouvert) #toast{top:auto;bottom:calc(var(--jeu) + 64px)} }
+.pdf:focus{outline:none}
+:is(#pdf-fermer,#visio-fermer){position:relative}
+:is(#pdf-fermer,#visio-fermer) .bulle{left:auto;right:-4px;top:calc(100% + 8px);transform:translate(0,-3px)}
+:is(#pdf-fermer,#visio-fermer).bulle-on .bulle{transform:none}
+:is(#pdf-fermer,#visio-fermer) .bulle::before{right:14px;top:auto;bottom:100%;left:auto;margin:0;border-color:transparent;border-bottom-color:var(--bulle)}
 
 /* la scène : la table où la page se déplace ; la page, sa toile, son calque */
 .pdf-scene{position:absolute;inset:0;z-index:0;overflow:hidden;cursor:grab;touch-action:none}
@@ -65,7 +73,7 @@ html body.pdf-ouvert #toast{left:calc((100vw + 132px - clamp(460px,34vw,600px)) 
 .pdf-q-n.rien{color:var(--p-warn)}
 
 /* la relecture : une feuille à droite, comme l'inspecteur — la tête et les filtres en haut, la liste qui défile, le pied */
-.pdf-relecture{position:absolute;top:0;right:var(--jeu);bottom:var(--jeu);width:var(--pdf-rel);max-width:calc(100vw - var(--pdf-vig) - 4 * var(--jeu) - 240px);
+.pdf-relecture{position:absolute;top:var(--jeu);right:var(--jeu);bottom:var(--jeu);width:var(--pdf-rel);max-width:calc(100vw - var(--pdf-vig) - 4 * var(--jeu) - 240px);
   display:flex;flex-direction:column;background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-panneau);overflow:hidden}
 .pdf-haut{flex:none;padding:0 20px 4px}
 .pdf-haut .fiche-tete{position:static;margin:0 -20px;padding:18px 14px 6px 20px}

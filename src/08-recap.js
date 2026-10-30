@@ -435,22 +435,37 @@ function infoDisj(nom) { return memo('dj|' + nom, () => { const d = disjonctionD
   const pointe = d.points.find(p => p.t !== Infinity) || null, perm = etatsDuProfil(d.profil).find(e => e.k === 'perm');
   const o = origineDuCalibre(nom, d);
   return { d, pire, ok, n: d.fils.length, pointe, perm: perm && perm.i > 0 ? perm.i : null, pn: pnDuRepere(nom), origine: o.origine, rendu: o.calRetest ? 'celui du retest (' + amperes(o.calRetest) + ')' : 'l’automatique' + (d.calibreIdeal ? ' (' + amperes(d.calibreIdeal) + ')' : '') }; }); }
-/* Le verdict du calibre retenu, tel que le moteur le rend : il tient, il touche la courbe (sans sa marge), il déclenche ;
-   la bulle dit chaque état du profil contre la courbe. */
+/* LE VERDICT du calibre retenu, en TROIS MOTS — passe, juste, déclenche —, ceux de la fiche, du cadran, des problèmes et du
+   dossier (v73, l'ingénieur n° 8 : « tient », « touche la courbe » ici, « passe » là ; la table unique est celle du moteur,
+   `VERDICTS_CALIBRE`, 09-disjoncteurs) ; « touche la courbe », « sans la marge » vont dans la bulle, avec le pourquoi
+   chiffré du moteur (`pourquoiDuCalibre`) et chaque état du profil contre la courbe. */
+const MOTS_TROIS = { passe: { mot: 'passe', etat: 'ok', bulle: 'Il ne déclenche pas, avec la marge.' }, juste: { mot: 'juste', etat: 'att', bulle: 'Il touche la courbe : il passe, mais sans la marge.' }, declenche: { mot: 'déclenche', etat: 'ko', bulle: 'Il déclenche.' } };
+const verdictTrois = g => { if (typeof verdictDeCalibre === 'function') { try { return verdictDeCalibre(g); } catch (_) { return null; } }
+  if (!g || g.valide == null) return null; return g.valide === false ? MOTS_TROIS.declenche : (g.marge != null ? g.marge : g.avecMarge) ? MOTS_TROIS.passe : MOTS_TROIS.juste; };
 function verdictDuCalibre(d) { if (!d.calibre) return { n: '', mot: '' };
   if (d.sansProfil) return { n: 'att', mot: 'sans profil', bulle: 'Le profil de charge est à renseigner : sans lui, le calibre ne se juge pas' };
   if (d.sansCourbe) return { n: '', mot: '' };
-  const bulle = d.points.filter(p => p.ok != null).map(p => `${majuscule(p.nom || 'état')} ${amperes(p.i)}${p.t === Infinity ? ' en permanent' : ' pendant ' + secondes(p.t)} : ${p.ok === false ? 'déclenche' : p.serre ? 'tient, mais touche la courbe' : 'tient'}`).join('\n');
-  return !d.valide ? { n: 'ko', mot: 'déclenche', bulle } : d.serre ? { n: 'att', mot: 'touche la courbe', bulle } : { n: 'ok', mot: 'tient', bulle }; }
+  const v = verdictTrois(d) || (!d.valide ? MOTS_TROIS.declenche : d.serre ? MOTS_TROIS.juste : MOTS_TROIS.passe);
+  let pq = null; try { pq = typeof pourquoiDuCalibre === 'function' ? pourquoiDuCalibre(app.norme, d, d.calibre) : null; } catch (_) { pq = null; }
+  const motPoint = p => p.ok === false ? 'déclenche' : p.serre ? 'juste (touche la courbe)' : 'passe';
+  const etats = d.points.filter(p => p.ok != null).map(p => `${majuscule(p.nom || 'état')} ${amperes(p.i)}${p.t === Infinity ? ' en permanent' : ' pendant ' + secondes(p.t)} : ${motPoint(p)}`).join('\n');
+  return { n: v.etat, mot: v.mot, bulle: [pq ? majuscule(pq.phrase) + '.' : v.bulle, etats].filter(Boolean).join('\n') }; }
+/* Le calibre que le RETEST écrit (son part number, celui du fichier quand on l'a changé ici) : à côté du retenu, barré quand
+   Volta en retient un autre (l'ingénieur v73 : « le 10 A du retest est invisible ici, alors que la fiche l'écrit barré »). */
+const calibreDuRetest = r => { const D = infoDisj(r.nom), o = origineDuCalibre(r.nom, D.d); return o.calRetest || D.d.pn || null; };
 const COLONNES_DISJ = [COL_REPERE,
-  { k: 'calibre', t: 'Calibre', cls: 'rc-c-mesure', html: r => { const D = infoDisj(r.nom), d = D.d, main = D.origine === 'main';
-      return `<span class="rc-mesure">${chiffre(val('calibre', d.calibre ? fmt(d.calibre, 2) : '', { cls: 'rc-n rc-fort', ph: '—', titre: (main ? 'Choisi à la main' : 'Choisi automatiquement') + ' — double-clic pour le choisir dans la gamme' }), d.calibre ? 'A' : '')}${main ? orig('main') + rond('calibre', D.rendu) : ''}</span>`; },
+  { k: 'calibre', t: 'Calibre', cls: 'rc-c-mesure', html: r => { const D = infoDisj(r.nom), d = D.d, main = D.origine === 'main', propose = typeof propositionNonEcrite === 'function' && propositionNonEcrite(d);
+      return `<span class="rc-mesure">${chiffre(val('calibre', d.calibre ? fmt(d.calibre, 2) : '', { cls: 'rc-n rc-fort rc-gamme-v', ph: '—', titre: (main ? 'Choisi à la main' : propose ? 'Proposé par Volta, pas encore écrit au retest' : 'Choisi automatiquement') + ' — un clic, Entrée ou un double-clic : toute la gamme' }), d.calibre ? 'A' : '')}`
+        + `${main ? orig('main') + rond('calibre', D.rendu) : propose ? '<i class="rc-o rc-propose" data-bulle="Volta le retient ; le retest garde le sien tant que « Passer en … » (la fiche) ou le relevé du retest corrigé ne l’écrit pas">proposé</i>' : ''}</span>`; },
     tri: r => infoDisj(r.nom).d.calibre || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibre ? amperes(d.calibre) : ''; } },
+  { k: 'retest', t: 'Retest', cls: 'rc-c-mesure', html: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; if (!c) return rien; const autre = d.calibre && c !== d.calibre;
+      return `<span class="rc-mesure rc-retest${autre ? ' autre' : ''}" data-bulle="${escA('Le retest porte ' + (pnDuRepere(r.nom) || 'son part number') + (autre ? ' : ' + amperes(c) + ' — Volta retient ' + amperes(d.calibre) : ''))}">${autre ? chiffre(`<s class="rc-n">${fmt(c, 2)}${unite('A')}</s>`) : chiffre(`<b class="rc-n">${fmt(c, 2)}</b>`, 'A')}</span>`; },
+    tri: r => calibreDuRetest(r) || 0, texte: r => { const c = calibreDuRetest(r); return c ? amperes(c) : ''; } },
   { k: 'verdict', t: 'Verdict', cls: 'rc-c-etat', html: r => { const v = verdictDuCalibre(infoDisj(r.nom).d); return etatHtml(v.n, v.mot, v.bulle); }, tri: r => rangEtat(verdictDuCalibre(infoDisj(r.nom).d).n), texte: r => verdictDuCalibre(infoDisj(r.nom).d).mot },
-  { k: 'ideal', t: 'Meilleur', cls: 'rc-c-mesure', html: r => { const d = infoDisj(r.nom).d; if (!d.calibreIdeal) return rien; const pq = d.meilleur && d.meilleur.pourquoi;
+  COL_PROBLEMES,
+  { k: 'ideal', t: 'Meilleur', cls: 'rc-c-mesure', option: true, html: r => { const d = infoDisj(r.nom).d; if (!d.calibreIdeal) return rien; const pq = d.meilleur && d.meilleur.pourquoi;
       return `<span class="rc-mesure"${pq ? ` data-bulle="${escA(majuscule(pq))}"` : ''}>${chiffre(`<i class="rc-etoile" aria-label="le meilleur">${ico('etoile')}</i><b class="rc-n">${fmt(d.calibreIdeal, 2)}</b>`, 'A')}${d.calibre !== d.calibreIdeal ? `<button type="button" class="rc-lien" data-retenir="${d.calibreIdeal}" data-bulle="${escA('Retenir ' + amperes(d.calibreIdeal))}">Retenir</button>` : ''}</span>`; },
     tri: r => infoDisj(r.nom).d.calibreIdeal || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibreIdeal ? amperes(d.calibreIdeal) : ''; } },
-  COL_PROBLEMES,
   { k: 'pn', t: 'Part number', option: true, html: r => valT('pn:', infoDisj(r.nom).pn, { cls: 'rc-pn', ph: 'part number', titre: 'Double-clic : toutes ses liaisons le prennent' }), tri: r => infoDisj(r.nom).pn, texte: r => infoDisj(r.nom).pn },
   { k: 'profil', t: 'Permanent', cls: 'rc-c-mesure', w: 72, option: true, html: r => { const D = infoDisj(r.nom);
       return `<span class="rc-mesure">${chiffre(val('perm', D.perm != null ? fmt(D.perm, 2) : '', { cls: 'rc-n', ph: 'A', titre: 'Le courant permanent du profil de charge — double-clic pour l’écrire' }), D.perm != null ? 'A' : '')}${D.pointe ? `<small class="rc-pointe">pointe ${esc(amperes(D.pointe.i))} · ${esc(secondes(D.pointe.t))}</small>` : ''}</span>`; },
@@ -468,8 +483,8 @@ const DISJONCTEURS = { ...ONGLET_REPERES, colonnes: COLONNES_DISJ, lignes: disjo
   editeur: (r, f) => { const D = infoDisj(r.nom), d = D.d;
     if (f === 'rep') return { valeur: r.nom };
     if (f === 'pn:') return { valeur: D.pn, liste: 'pns', aide: 'toutes ses liaisons suivent' };
-    // la gamme, le retenu choisi ; « rendre » en tête quand il a été choisi à la main
-    if (f === 'calibre') return { valeur: d.calibre ? String(d.calibre) : '', options: [...(D.origine === 'main' ? [['', 'Rendre ' + D.rendu]] : []), ...d.gamme.map(g => [String(g.calibre), amperes(g.calibre) + (g.ideal ? ' ★ le meilleur' : '') + (g.valide === false ? ' — déclenche' : g.serre ? ' — touche la courbe' : ' — tient')])] };
+    // TOUTE la gamme, dans le composant de la fiche (`choixDuCalibre`, 08-disjoncteurs) : la liste qui tombe de la case
+    if (f === 'calibre') return d.sansCourbe || !(d.gamme || []).length ? null : { gamme: true };
     if (f === 'perm') return { valeur: D.perm != null ? fmt(D.perm, 2) : '', ph: 'A', aide: 'le courant permanent, en ampères' };
     return null; },
   ecrire: (r, f, v) => { const nom = r.nom;
@@ -479,6 +494,60 @@ const DISJONCTEURS = { ...ONGLET_REPERES, colonnes: COLONNES_DISJ, lignes: disjo
     if (f === 'perm') { const x = v ? nombreLu(v) : null; if (v && x == null) { dire('Écrivez un courant en ampères (3,5).', true); return false; } return ecrireCharge(nom, c => { c.perm = { ...(c.perm || {}), i: x }; }, 'profil de charge de ' + nom); }
     return false; },
   rendre: (r, f) => { if (f !== 'calibre') return false; rendreCalibre(r.nom); return true; } };
+/* ---- LE CHOIX DU CALIBRE : la liste qui tombe de la case (v73) ---------------------------------------------------------
+   Le lecteur : « sur un disjoncteur, je ne peux choisir que les calibres du dessus ; je dois TOUT pouvoir sélectionner ».
+   La case Calibre ouvre TOUTE la gamme — le même composant que le cadran et « À la main » de la fiche (`choixDuCalibre`,
+   08-disjoncteurs : un calibre, sa clé et son mot — passe, juste, déclenche —, sa raison sur une ligne, le retenu,
+   l'automatique, celui du retest, ceux hors des calibres préférés) — dans le verre des menus : la marque et le mot dans la
+   couleur de leur état, la raison dessous ; TOUS se choisissent (un calibre qui déclenche se retient, rouge partout, Ctrl+Z
+   le rend) ; « Tout le catalogue MS3320 (13) » ajoute ceux que les Hypothèses écartent ; « Rendre l'automatique » quand
+   le calibre a été choisi à la main. ↑ ↓ parcourent, Entrée retient, Échap rend le clavier à la case. */
+const GAMME = { el: null, nom: '', cle: null, tout: {} };
+// sans le composant de la fiche, la même liste, lue dans la gamme jugée du moteur
+function calibresDuChoix(nom, tout) { if (typeof choixDuCalibre === 'function') { try { return choixDuCalibre(nom, tout); } catch (_) { } }
+  const d = disjonctionDe(nom); if (d.sansCourbe) return [];
+  return (d.gamme || []).slice().sort((a, b) => a.calibre - b.calibre).map(g => { const v = verdictTrois(g) || {}, cle = Object.keys(MOTS_TROIS).find(k => MOTS_TROIS[k].mot === v.mot) || '';
+    let pq = null; try { pq = typeof pourquoiDuCalibre === 'function' ? pourquoiDuCalibre(app.norme, d, g.calibre) : null; } catch (_) { }
+    return { calibre: g.calibre, cle, mot: v.mot || '', etat: v.etat || '', raison: pq ? pq.phrase.replace(/^[^—]*—\s*[^:]*:?\s*/, '') : '', retenu: g.calibre === d.calibre, auto: g.calibre === d.passe, retest: g.calibre === d.pn, hors: false, bulle: pq ? pq.phrase : '' }; }); }
+const MARQUE_GAMME = { passe: '<path d="m5 12.5 4.5 4.5L19 7.5"/>', juste: '<path d="M4.5 13.5c2.2-3.2 4.3-3.2 6.5 0s4.3 3.2 6.5 0"/>', declenche: '<path d="M6 6l12 12M18 6 6 18"/>' };
+const marqueGamme = k => MARQUE_GAMME[k] ? `<svg class="ico rc-g-marque" viewBox="0 0 24 24" aria-hidden="true">${MARQUE_GAMME[k]}</svg>` : '<i class="rc-g-marque"></i>';
+function gammeHtml(nom) { const tout = !!GAMME.tout[nom], xs = calibresDuChoix(nom, tout), D = infoDisj(nom), d = D.d, F = d.famille, fam = (F && (F.famille || F.nom)) || '';
+  const nPref = (d.catalogue || d.gamme || []).length, nTout = typeof catalogueDeLaFamille === 'function' && F ? catalogueDeLaFamille(F).length : nPref;
+  const ligne = x => `<button type="button" role="option" class="rc-g-l ${x.cle || 'inconnu'}${x.hors ? ' hors' : ''}" data-cal="${x.calibre}" aria-selected="${!!x.retenu}" tabindex="-1"`
+    + ` aria-label="${escA(amperes(x.calibre) + (x.mot ? ', ' + x.mot : '') + (x.retenu ? ', retenu' : '') + (x.auto ? ', l’automatique' : '') + (x.retest ? ', celui du retest' : ''))}"${x.bulle ? ` aria-description="${escA(x.bulle)}"` : ''}>`
+    + `<span class="rc-g-h">${marqueGamme(x.cle)}<b>${esc(nombre(x.calibre))}<small>A</small></b><em>${esc(x.mot || 'pas jugé')}</em>`
+    + `<span class="rc-g-tags">${x.auto ? `<i class="rc-g-tag auto">${ico('etoile')}${x.propose || (x.retenu && typeof propositionNonEcrite === 'function' && propositionNonEcrite(d)) ? 'proposé' : 'automatique'}</i>` : ''}${x.retest && !x.retenu ? '<i class="rc-g-tag">retest</i>' : ''}${x.hors ? '<i class="rc-g-tag hors">hors préférés</i>' : ''}</span></span>`
+    + (x.raison ? `<span class="rc-g-r">${esc(majuscule(x.raison))}</span>` : '') + '</button>';
+  return `<div class="rc-g-tete"><b>${esc(nom)}</b><span>${esc(fam ? 'Gamme ' + fam : 'La gamme')}${xs.length ? ' · ' + pluriel(xs.length, 'calibre') : ''}</span></div>`
+    + `<div class="rc-g-liste" role="listbox" aria-label="${escA('Le calibre de ' + nom)}">${xs.map(ligne).join('')}</div>`
+    + `<div class="rc-g-pied">${nTout > nPref ? `<button type="button" class="rc-g-cat" data-g-tout="${tout ? 0 : 1}">${tout ? `Seulement vos calibres préférés (${nPref})` : `Tout le catalogue ${esc(fam)} (${nTout})`}</button>` : ''}`
+    + `${D.origine === 'main' ? `<button type="button" class="rc-g-cat" data-g-rendre="1">Rendre ${esc(D.rendu)}</button>` : ''}</div>`; }
+function ouvrirGamme(cellule, nom) { fermerGamme(); const tr = cellule.closest('tr[data-k]');
+  const el = document.createElement('div'); el.id = 'rc-gamme'; el.className = 'rc-gamme menu-verre entre-v'; el.innerHTML = gammeHtml(nom); document.body.appendChild(el);
+  GAMME.el = el; GAMME.nom = nom; GAMME.cle = tr ? { k: tr.dataset.k, f: 'calibre' } : null; cellule.setAttribute('aria-expanded', 'true');
+  placerGamme(cellule); lierGamme(el, nom);
+  const b = el.querySelector('.rc-g-l[aria-selected="true"]') || el.querySelector('.rc-g-l'); if (b) { b.tabIndex = 0; b.focus({ preventScroll: true }); b.scrollIntoView({ block: 'nearest' }); } }
+function placerGamme(cellule) { const el = GAMME.el; if (!el) return; const r = cellule.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight, W = innerWidth, H = innerHeight;
+  const bas = r.bottom + 6 + h <= H - 8, y = bas ? r.bottom + 6 : Math.max(8, r.top - 6 - h);
+  el.style.left = Math.max(8, Math.min(r.left - 14, W - w - 8)) + 'px'; el.style.top = y + 'px'; el.style.setProperty('--entre-y', bas ? '-4px' : '4px'); }
+function fermerGamme(rendre) { const el = GAMME.el; if (!el) return; GAMME.el = null; el.remove(); document.querySelectorAll('#ba-tbody [aria-expanded="true"][data-f="calibre"]').forEach(c => c.removeAttribute('aria-expanded'));
+  if (rendre && GAMME.cle) { const c = elementDe(GAMME.cle); if (c) { try { c.focus({ preventScroll: true }); } catch (_) { c.focus(); } } } }
+function retenirDeLaGamme(nom, cal) { const x = calibresDuChoix(nom, !!GAMME.tout[nom]).find(y => y.calibre === cal), cle = GAMME.cle; fermerGamme();
+  const rendre = () => { const c = cle && elementDe(cle); if (c) { try { c.focus({ preventScroll: true }); } catch (_) { c.focus(); } } };
+  if (!x || x.retenu) { rendre(); return; }
+  retenirCalibre(nom, cal); requestAnimationFrame(rendre); }
+function lierGamme(el, nom) { const lignes = () => [...el.querySelectorAll('.rc-g-l, .rc-g-cat')];
+  el.addEventListener('click', e => { const l = e.target.closest('.rc-g-l'); if (l) { retenirDeLaGamme(nom, +l.dataset.cal); return; }
+    const t = e.target.closest('[data-g-tout]'); if (t) { GAMME.tout[nom] = t.dataset.gTout === '1'; const c = GAMME.cle && elementDe(GAMME.cle); if (c) { ouvrirGamme(c, nom); const n = GAMME.el && GAMME.el.querySelector('[data-g-tout]'); if (n) n.focus(); } return; }
+    if (e.target.closest('[data-g-rendre]')) { fermerGamme(); rendreCalibre(nom); requestAnimationFrame(() => { const c = GAMME.cle && elementDe(GAMME.cle); if (c) c.focus({ preventScroll: true }); }); } });
+  el.addEventListener('keydown', e => { const xs = lignes(), i = xs.indexOf(document.activeElement);
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermerGamme(true); return; }
+    if (e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); fermerGamme(true); return; }
+    const pas = { ArrowDown: 1, ArrowUp: -1, Home: -Infinity, End: Infinity }[e.key]; if (pas == null || !xs.length) return; e.preventDefault(); e.stopPropagation();
+    const j = pas === -Infinity ? 0 : pas === Infinity ? xs.length - 1 : Math.max(0, Math.min(xs.length - 1, (i < 0 ? 0 : i) + pas)); xs.forEach(x => { x.tabIndex = -1; }); xs[j].tabIndex = 0; xs[j].focus(); xs[j].scrollIntoView({ block: 'nearest' }); }); }
+// un appui ailleurs, la table qui défile, la fenêtre qui change : la liste se replie
+document.addEventListener('pointerdown', e => { if (GAMME.el && !GAMME.el.contains(e.target)) { GAMME.ferme = Date.now(); fermerGamme(); } }, true);
+window.addEventListener('resize', () => fermerGamme());
 function ecrireCharge(nom, f, quoi) { const avant = chargeDe(nom), c = JSON.parse(JSON.stringify(avant || {})); f(c);
   if (JSON.stringify(c) === JSON.stringify(avant || {})) return false; histPush(quoi); if (!app.contrat.charges) app.contrat.charges = new Map(); app.contrat.charges.set(nom, c); apresEdition(); return true; }
 
@@ -630,12 +699,13 @@ const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, 
 function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.exec(t) || /un ([\d,.]+ A) suffirait/.exec(t);
   if (/^à poser sur/.test(t)) return ['Poser la barrette au contrat : lui donner son vrai repère (onglet Barrettes, « Poser »)', 'connecteur'];
   if (/profil de charge est à renseigner/.test(t)) return ['Renseigner le profil de charge du disjoncteur : l’outil trouve le calibre', 'profil'];
-  if (/déclenche|aucun calibre/.test(t)) return [ideal ? 'Retenir ' + ideal[1] + ' (onglet Disjoncteurs, « Retenir »)' : 'Alléger le profil ou changer de famille de disjoncteur', 'calibre'];
-  if (/suffirait|touche la courbe|l’idéal est/.test(t)) return [ideal ? 'Retenir ' + ideal[1] : 'Retenir le meilleur calibre', 'calibre'];
+  if (/déclenche|aucun calibre/.test(t)) return [ideal ? 'Retenir ' + ideal[1] + ' (sa fiche, ou la case Calibre de l’onglet Disjoncteurs)' : 'Alléger le profil ou changer de famille de disjoncteur', 'calibre'];
+  if (/suffirait|touche la courbe|l’idéal est|\bjuste\b/.test(t)) return [ideal ? 'Retenir ' + ideal[1] : 'Retenir le calibre que Volta propose', 'calibre'];
   if (/sélectivité/.test(t)) return ['L’amont au moins au double de l’aval : changer l’un des deux calibres', 'calibre'];
   if (/chute en ligne/.test(t)) return [/hypothèse/.test(t) ? 'Écrire les longueurs mesurées (onglet Liaisons, puce « Sans longueur »)' : 'Une gauge plus forte, ou un chemin plus court', 'chute'];
   if (/maximum de l’AC|table 11-3/.test(t)) return ['Un calibre plus petit, ou un câble plus gros (la table 11-3 de l’AC 43.13-1B)', 'fils'];
-  if (/admis|pas protégé/.test(t)) return ['Un câble plus gros (onglet Liaisons, son type), ou un calibre plus petit', 'fils'];
+  // (plus « ou un calibre plus petit » : sous un profil qui déclenche déjà le calibre, c'est faux — l'ingénieur v73)
+  if (/admis|pas protégé/.test(t)) return ['Un câble plus gros : sa fiche propose le plus fin qui tient', 'fils'];
   if (/contact taille|dépasse le contact/.test(t)) return ['Un contact plus gros, ou un courant moindre', 'contacts'];
   if (/refusé|aucun contact|jauge|gauge/.test(t)) return ['Changer le type du câble, ou l’arrangement du connecteur (sa fiche, « Changer »)', 'contacts'];
   if (/aucun arrangement|aucun module|ne loge/.test(t)) return ['Choisir un autre arrangement ou une autre norme (sa fiche, « Changer »)', 'connecteur'];
@@ -646,13 +716,19 @@ function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.
   if (/ambiante/.test(t)) return ['Un câble de plus haute température, ou revoir l’ambiante (menu ⋮ → Hypothèses)', ''];
   if (/CCA/.test(t)) return ['Qualifier le contact pour l’aluminium cuivré, ou un câble cuivre', 'contacts'];
   return ['Ouvrir la fiche', 'problemes']; }
+// les gestes d'un point du contrôle (08-controle), une fois par état du contrat
+const gestesDuPb = p => memo('gestes|' + RECAP.itemsN + '|' + p.k, () => { try { return typeof gestesDuPoint === 'function' ? gestesDuPoint(p.x) : []; } catch (_) { return []; } });
 const problemes = () => memo('problemes:' + RECAP.itemsN, () => (CONTROLE.items || []).map((x, k) => { const [que, sec] = remede(x); return { k: 'p' + k, x, idx: k, que, sec, plans: x.plan && x.plan !== '*' ? [x.plan] : [] }; }));
 const COLONNES_PROBLEMES = [
   { k: 'niveau', t: 'Niveau', cls: 'rc-c-etat', html: p => etatHtml(p.x.niveau === 'ko' ? 'ko' : 'att'), tri: p => p.x.niveau === 'ko' ? 0 : 1, texte: p => p.x.niveau === 'ko' ? 'problème' : 'à voir' },
   { k: 'objet', t: 'Objet', cls: 'rc-c-rep', html: p => p.x.nom ? `<span class="rc-r">${esc(p.x.nom)}</span>` : '<span class="rc-mot">le contrat</span>', tri: p => p.x.nom || '', texte: p => p.x.nom || 'contrat' },
   { k: 'texte', t: 'Ce qui ne va pas', cls: 'rc-c-phrase', html: p => `<span class="rc-phrase">${insecable(esc(majuscule(p.x.texte)))}</span>`, tri: p => p.x.texte, texte: p => p.x.texte },
-  { k: 'que', t: 'Ce qu’il faut faire', cls: 'rc-c-phrase', html: p => `<span class="rc-phrase rc-fort">${esc(p.que)}</span>`, tri: p => p.que, texte: p => p.que },
-  { k: 'aller', t: '', cls: 'rc-c-aller', html: () => '<button type="button" class="rc-lien" data-aller="1">Aller</button>', texte: () => '' },
+  /* CE QU'IL FAUT FAIRE : le GESTE de la fiche, en bouton (v73, l'ingénieur n° 8 ; le domaine C, `gestesDuPoint`) — « Tout
+     régler : 102CB1 en 15 A et 3 câbles en DR12 », « Unifier sur MS3320-15 », « La poser » — le premier au trait, les autres
+     en lien ; quand le seul geste est d'aller voir, la phrase dit d'abord quoi y faire. */
+  { k: 'que', t: 'Ce qu’il faut faire', cls: 'rc-c-phrase rc-c-que', html: p => { const G = gestesDuPb(p), repare = G.some(g => !/^Voir /.test(g.mot));
+      return `<span class="rc-que">${repare ? '' : `<span class="rc-phrase">${esc(p.que)}</span>`}${G.length ? `<span class="rc-gestes">${G.map((g, i) => `<button type="button" class="btn ${g.principal ? 'papier' : 'lien'} dense" data-geste-pb="${i}" data-bulle="${escA(g.aide || '')}">${esc(g.mot)}</button>`).join('')}</span>` : ''}</span>`; },
+    tri: p => p.que, texte: p => { const G = gestesDuPb(p); return G.some(g => !/^Voir /.test(g.mot)) ? G.map(g => g.mot).join(' · ') : p.que; } },
   { k: 'folio', t: 'Folio', cls: 'rc-c-folio', option: true, html: p => p.plans.length ? `<span class="rc-folios">f.${INSECABLE}${esc(p.plans[0])}</span>` : rien, tri: p => p.plans[0] || '', texte: p => p.plans.join(' ') },
   { k: 'section', t: 'Dans la fiche', option: true, html: p => p.sec && p.x.nom && SECTIONS[p.sec] ? `<span class="rc-mot">${esc(SECTIONS[p.sec])}</span>` : rien, tri: p => p.sec, texte: p => SECTIONS[p.sec] || '' }];
 const PROBLEMES = { colonnes: COLONNES_PROBLEMES, portee: true, lignes: problemes, surFolio: p => app.plan === '*' || !p.plans.length || p.plans.includes(app.plan), exact: (p, f) => p.x.nom === f, cherche: 'Chercher : repère, câble, mot…',
@@ -704,9 +780,9 @@ const colonnesVues = O => { const choix = app.base.colonnes[app.base.onglet] || 
   return O.colonnes.filter(c => (!c.si || c.si()) && (c.k in choix ? choix[c.k] : !c.option)); };
 const pucesDe = O => (O.puces ? O.puces() : []).map(([k, t, test, avant, groupe, aide, lourd]) => ({ k, t, test, avant: avant || '', groupe: groupe || k, aide: aide || '', lourd: !!lourd }));
 function pucesActives(O) { const P = pucesDe(O), on = new Set(app.base.puces[app.base.onglet] || []); return P.filter(p => on.has(p.k)); }
-function lignesDe(O, sansPuces) { const b = app.base, f = b.filtre.trim().toLowerCase();
+function lignesDe(O, sansPuces, sansPortee) { const b = app.base, f = b.filtre.trim().toLowerCase();
   let L = O.lignes();
-  if (portee(O) && b.portee === 'folio' && O.surFolio) L = L.filter(O.surFolio);
+  if (!sansPortee && portee(O) && b.portee === 'folio' && O.surFolio) L = L.filter(O.surFolio);
   // un bloc choisi sur le plan filtre sur lui-même, là où il veut dire quelque chose (pas les câbles, ni les normes)
   if (f && b.filtreAuto) { if (O.exact) L = L.filter(r => O.exact(r, b.filtre.trim())); }
   else if (f) L = L.filter(r => O.colonnes.some(c => c.texte && String(c.texte(r)).toLowerCase().includes(f)));
@@ -731,7 +807,9 @@ function compteOnglet(k) { const items = CONTROLE.items || [];
     case 'prises': { const R = prises(); return { n: String(R.length), etat: etatNoms(R) }; }
     case 'cables': { const C = cables(); return { n: String(C.length), etat: C.some(etatCable) ? 'att' : '' }; }
     case 'raccords': return { n: String(raccords().length), etat: '' };
-    case 'problemes': { const ko = items.filter(x => x.niveau === 'ko').length, att = items.length - ko; return { n: ko && att ? ko + ' · ' + att : String(items.length), etat: ko ? 'ko' : att ? 'att' : '', titre: pluriel(ko, 'problème') + ', ' + att + ' à voir' }; }
+    // le compte des problèmes : la source unique (08-controle, `compteProblemes`) — les rouges · ce qui est à voir
+    case 'problemes': { const C = typeof compteProblemes === 'function' ? compteProblemes() : { ko: items.filter(x => x.niveau === 'ko').length, att: items.filter(x => x.niveau !== 'ko').length }, ko = C.ko, att = C.att;
+      return { n: ko && att ? ko + ' · ' + att : String(ko + att), etat: ko ? 'ko' : att ? 'att' : '', titre: C.mot || pluriel(ko, 'problème') + ' · ' + att + ' à voir' }; }
     case 'normes': return { n: String(NORMES_ONGLET.lignes().length), etat: '' };
   } } catch (_) { } return { n: '', etat: '' }; }
 
@@ -768,20 +846,28 @@ function rendreOnglets() { const b = app.base;
 const AU_REPOS = !(typeof navigator !== 'undefined' && navigator.webdriver);
 function rendreOutils(O) { const b = app.base, pt = portee(O);
   $('ba-portee').hidden = !pt;
-  if (pt) { const tous = O.lignes(); $('ba-n-folio').textContent = tous.filter(O.surFolio).length; $('ba-n-tout').textContent = tous.length; $('ba-lib-folio').textContent = 'Folio ' + app.plan;
+  // la portée : « Ce folio · Tout le plan » (le technicien v73 : « Folio 1 · Tout », je ne comprenais pas le segment) ; le
+  // folio se lit dans la bulle et dans la barre des folios
+  if (pt) { const tous = O.lignes(); $('ba-n-folio').textContent = tous.filter(O.surFolio).length; $('ba-n-tout').textContent = tous.length; $('ba-lib-folio').textContent = 'Ce folio';
+    $('ba-lib-folio').parentElement.dataset.bulle = 'Les lignes du folio ' + app.plan + ', celui qu’on regarde';
     $('ba-portee').querySelectorAll('[data-portee]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.portee === b.portee))); }
   const fi = $('ba-filtre'); if (fi.value !== b.filtre && document.activeElement !== fi) fi.value = b.filtre; $('ba-vider').hidden = !b.filtre; fi.placeholder = O.cherche || 'Chercher dans l’onglet';
   const on = new Set(b.puces[b.onglet] || []), P = pucesDe(O), base = P.length ? lignesDe(O, true) : [], petit = base.length <= PAQUET * 2;
+  /* « À REPRENDRE » COMPTE TOUT LE PLAN, le folio en second (le technicien v73 : « À reprendre 3 » sur le folio 1, 4 sur le
+     plan — « je ne sais plus combien il m'en reste ») : « À reprendre 4 · 3 sur ce folio ». */
+  const surCeFolio = pt && b.portee === 'folio', plan = surCeFolio && P.some(p => p.k === 'probleme') ? lignesDe(O, true, true) : base, petitPlan = plan.length <= PAQUET * 2;
   // une puce qui lit les plans (l'état, les contacts) se compte tout de suite sur une petite portée, au repos sur une grande ;
   // à zéro, elle s'efface d'un cran (elle reste un choix)
-  const puce = p => { const n = p.lourd && !petit ? '' : base.filter(p.test).length;
-    return `<button class="rc-chip${n === 0 ? ' zero' : ''}" data-puce="${escA(p.k)}" aria-pressed="${on.has(p.k)}"${p.aide ? ` data-bulle="${escA(p.aide)}"` : ''}>${p.avant}<span>${esc(p.t)}</span><small>${n}</small></button>`; };
+  const compte = p => { const touP = p.k === 'probleme' && surCeFolio, n = p.lourd && !(touP ? petitPlan : petit) ? '' : (touP ? plan : base).filter(p.test).length, ici = touP && n !== '' ? base.filter(p.test).length : null;
+    return `<small>${n}</small>${ici != null && ici !== n ? `<small class="rc-chip-ici">· ${ici} sur ce folio</small>` : ''}`; };
+  const puce = p => { const html = compte(p), zero = /^<small>0<\/small>$/.test(html);
+    return `<button class="rc-chip${zero ? ' zero' : ''}" data-puce="${escA(p.k)}" aria-pressed="${on.has(p.k)}"${p.aide ? ` data-bulle="${escA(p.aide)}"` : ''}>${p.avant}<span>${esc(p.t)}</span>${html}</button>`; };
   // les puces d'un même groupe (les routes, les niveaux : l'une OU l'autre) se joignent en un seul creux, comme un segment
   const G = []; P.forEach(p => { const g = G.find(x => x.k === p.groupe); if (g) g.ps.push(p); else G.push({ k: p.groupe, ps: [p] }); });
   $('ba-puces').innerHTML = G.map(g => g.ps.length > 1 ? `<span class="rc-puces-g" role="group" aria-label="${escA(g.k === 'route' ? 'Route' : g.k === 'niveau' ? 'Niveau' : g.k)}">${g.ps.map(puce).join('')}</span>` : puce(g.ps[0])).join('');
   bordDesPuces();
-  if (!petit && P.some(p => p.lourd) && AU_REPOS) { const jeton = RECAP.jeton, go = () => { if (jeton !== RECAP.jeton || $('base').hidden || app.base.edition) return;
-      P.filter(p => p.lourd).forEach(p => { const x = $('ba-puces').querySelector(`[data-puce="${CSS.escape(p.k)}"]`); if (!x) return; const n = base.filter(p.test).length; x.querySelector('small').textContent = n; x.classList.toggle('zero', !n); }); };
+  if ((!petit || !petitPlan) && P.some(p => p.lourd) && AU_REPOS) { const jeton = RECAP.jeton, go = () => { if (jeton !== RECAP.jeton || $('base').hidden || app.base.edition) return;
+      P.filter(p => p.lourd).forEach(p => { const x = $('ba-puces').querySelector(`[data-puce="${CSS.escape(p.k)}"]`); if (!x) return; x.querySelectorAll('small').forEach(s => s.remove()); x.insertAdjacentHTML('beforeend', compte({ ...p, lourd: false })); x.classList.toggle('zero', /^0$/.test(x.querySelector('small').textContent)); }); };
     if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 3000 }); else setTimeout(go, 500); } }
 /* Les puces et les onglets tiennent sur une ligne : quand ils débordent, ils défilent (la molette aussi) et s'effacent au
    bord qui cache quelque chose — à droite, et à gauche dès qu'on a défilé. */
@@ -810,7 +896,7 @@ const FLECHE_TRI = '<svg class="ico rc-sens" viewBox="0 0 24 24" aria-hidden="tr
 const largeurCol = c => c.w ? ` style="--w:${c.w}px"` : '';
 // les intercalaires par genre : l'onglet Problèmes lu tel quel (ni tri, ni recherche, ni puce)
 const groupesParGenre = () => app.base.onglet === 'problemes' && !app.base.tri && !app.base.filtre.trim() && !pucesActives(PROBLEMES).length && typeof genresDuControle === 'function';
-function rendreTable(O, C) { const b = app.base, tri = b.tri, n = C.length + 1, jeton = ++RECAP.jeton;
+function rendreTable(O, C) { const b = app.base, tri = b.tri, n = C.length + 1, jeton = ++RECAP.jeton; if (GAMME.el) fermerGamme();
   $('ba-tab').dataset.onglet = b.onglet;
   $('ba-thead').innerHTML = '<tr>' + C.map(c => { const t = tri && tri.k === c.k, triable = !!c.tri;
     return `<th data-k="${c.k}" class="${c.cls || ''}${t ? ' tri' + (tri.sens > 0 ? '' : ' desc') : ''}"${largeurCol(c)}${triable ? ` tabindex="0" role="button" aria-label="${escA('Trier par ' + (c.titre || c.t).toLowerCase())}" aria-sort="${t ? (tri.sens > 0 ? 'ascending' : 'descending') : 'none'}"` : ''}>${c.t ? `<span class="rc-th-l">${esc(c.t)}${triable ? FLECHE_TRI : ''}</span>` : ''}</th>`; }).join('') + '<th class="rc-suppr"></th></tr>';
@@ -914,6 +1000,7 @@ function datalist(nom) { const V = verite(), xs = nom === 'reperes' ? reperesDe(
 function editer(el) { const b = app.base, O = onglet(), c = caseDe(el); if (!c || b.edition) return false; const r = RECAP.vues.get(c.k); if (!r || !O.editeur) return false;
   const E = O.editeur(r, c.f); if (!E) return false;
   if (E.action) { E.action(); return true; }
+  if (E.gamme) { ouvrirGamme(el, r.nom); return true; }
   if (typeof cacherBulle === 'function') cacherBulle();
   if (r.l) { app.actif = r.l; if (!(app.cible && app.cible.type === 'bloc')) app.cible = { type: 'fil', l: r.l }; rallumer(); }
   let inp;
@@ -975,8 +1062,12 @@ function laisserLePlan(deja) { const d = app.dessin; if (!deja || !RECAP.vueAvan
   const c = app.cible, k = c && c.type === 'bloc' && d.compDe.get(c.nom), w = c && c.type === 'fil' && filDe(c.l);
   if (k || w) { const xs = w ? w.pts.map(p => p.x) : [], ys = w ? w.pts.map(p => p.y) : [];
     montrerSiCache(k ? { x: k.x, y: k.y, w: k.w, h: k.h } : { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) }); }
-  else { const m = marges(), s = app.vue.s, haut = app.vue.ty + d.bbox.y * s, dy = Math.max(0, Math.min(haut - m.haut, $('base').offsetHeight));
-    if (dy > 1) animerVue({ s, tx: app.vue.tx, ty: app.vue.ty - dy }, true); }
+  /* sans rien de choisi, LE DESSIN vient au milieu de la place libre (v73, l'ergonome : « le tiroir glisse sur le dessin, on ne
+     voit que le haut blanc de la feuille ») : l'échelle reste, la vue glisse — et si le plan revient d'une page (l'ingénieur :
+     « le plan reste à 7 % »), il reprend au moins l'échelle de la feuille entière dans la place libre. */
+  else { const v = anim && vueVisee ? vueVisee : app.vue, P = placeDuPlan(), F = cadrageDe('feuille'), s = Math.max(v.s, F.s), b = typeof boiteDuDessin === 'function' ? boiteDuDessin(d) : d.bbox;
+    const tx = s === v.s ? v.tx : P.X - (b.x + b.w / 2) * s, ty = b.h * s <= P.H ? P.Y - (b.y + b.h / 2) * s : P.m.haut + 8 - b.y * s;
+    if (s !== v.s || Math.abs(ty - v.ty) > 1) animerVue({ s, tx, ty }, true); }
   RECAP.vuePosee = { ...(anim && vueVisee ? vueVisee : app.vue) }; }
 function rendreLePlan() { const A = RECAP.vueAvant, P = RECAP.vuePosee; RECAP.vueAvant = RECAP.vuePosee = null;
   if (A && vueIntacte(app.vue, P) && !vueIntacte(A, P)) animerVue(A, true); }
@@ -991,7 +1082,7 @@ function ouvrirBase(taille) { const b = app.base, t = taille === 'page' ? 'page'
   basculerModeCarte();   // la fiche ouverte se range en volet : le tableau s'arrête à côté d'elle (08-carte)
   rendreBase(true); memoriserBase(); laisserLePlan(etait); }
 function fermerBase() { const b = app.base; if (!b.ouvert) return; if (b.edition) finirEdition('annule', null);
-  b.ouvert = false; b.neuves = []; b.neufs = []; b.nouveau = false; b.toutes = false; fermerMenuColonnes(); if (typeof cacherBulle === 'function') cacherBulle();
+  b.ouvert = false; b.neuves = []; b.neufs = []; b.nouveau = false; b.toutes = false; fermerMenuColonnes(); fermerGamme(); const m = $('ba-csv-menu'); if (m) m.open = false; if (typeof cacherBulle === 'function') cacherBulle();
   const el = $('base'); el.hidden = true; el.classList.remove('page'); document.body.classList.remove('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'false');
   memoriserBase(); rendreLePlan(); basculerModeCarte(); }   // la fiche redevient une carte, près de son bloc
 /* B : ouvre en moitié, ou ferme ; Maj+B : passe en page, et de la page revient en moitié. */
@@ -1018,10 +1109,15 @@ const MOT_LIGNE = { liaisons: 'liaison', equipements: 'équipement', disjoncteur
 function porteeDeLExport(O) { const b = app.base, M = lignesMontrees(O), n = M.tete.filter(r => !r.nouveau).length + M.L.length, total = O.lignes().length, mot = MOT_LIGNE[b.onglet] || 'ligne';
   const folio = portee(O) && b.portee === 'folio', filtre = !!b.filtre.trim() || pucesActives(O).length > 0;
   return { n, total, mot, dit: (folio ? 'folio ' + app.plan : '') + (filtre ? (folio ? ', ' : '') + 'filtrées' : ''), partiel: n !== total }; }
-function rendreExport(O) { const P = porteeDeLExport(O), b = $('ba-csv'), t = $('ba-csv-tout'); if (!b) return;
-  const mot = b.querySelector('.rc-csv-mot'); if (mot) mot.textContent = 'Exporter ' + pluriel(P.n, P.mot) + (P.dit ? ' · ' + P.dit : '');
-  b.dataset.bulle = 'En CSV : ' + plurielLie(P.n, P.mot) + (P.dit ? ' (' + P.dit + ')' : '') + ', les colonnes affichées, dans l’ordre du tri'; b.disabled = !P.n;
-  if (t) { t.hidden = !P.partiel; t.textContent = 'Tout (' + P.total + ')'; t.dataset.bulle = 'Tout l’onglet en CSV : ' + plurielLie(P.total, P.mot) + ', sans folio ni filtre'; } }
+/* LE MENU « TABLEAU EN CSV » : ce qui est montré (son compte, sa portée), tout l'onglet quand on en voit moins, puis — sous un
+   filet — le retest corrigé, le livrable (08-export, `exporterRetestCorrige` : son relevé d'abord). Chaque ligne dit ce
+   qu'elle sort ; plus jamais un « Tout » qui exporte à côté d'un « Tout » qui filtre. */
+function rendreExport(O) { const P = porteeDeLExport(O), l = $('ba-csv-l'); if (!l) return; const plural = n => plurielLie(n, P.mot), nom = (ONGLETS.find(([k]) => k === app.base.onglet) || [])[1] || '';
+  const lignes = [P.n ? ['ba-csv-vu', P.partiel ? 'Ce qui est montré' : 'Tout l’onglet ' + nom, plural(P.n) + (P.dit ? ' · ' + P.dit : '') + ', les colonnes affichées'] : ['ba-csv-vu', 'Rien à mettre en CSV', 'l’onglet ne montre aucune ligne', ' aria-disabled="true"'],
+    P.partiel ? ['ba-csv-tout', 'Tout l’onglet ' + nom, plural(P.total) + ', sans folio ni filtre'] : null,
+    typeof exporterRetestCorrige === 'function' && verite().length ? null : false,
+    typeof exporterRetestCorrige === 'function' && verite().length ? ['ba-csv-retest', 'Le retest corrigé (Excel)', 'le livrable à renvoyer : relu avant d’enregistrer'] : false].filter(x => x !== false);
+  l.innerHTML = lignes.map(g => g === null ? '<hr>' : `<button role="menuitem" id="${g[0]}"${g[3] || ''}>${esc(g[1])}<small>${esc(g[2])}</small></button>`).join('').replace(/^<hr>|<hr>$/g, ''); }
 function exporterRecap(tout) { assurerModele(); const O = onglet(), C = colonnesVues(O).filter(c => c.texte && (c.t || c.titre)), M = lignesMontrees(O);
   const lignes = tout === true ? O.lignes() : [...M.tete.filter(r => !r.nouveau), ...M.L];
   if (!lignes.length) { dire('Rien à exporter : l’onglet est vide.'); return; }
@@ -1042,13 +1138,15 @@ function fermerMenuColonnes() { const m = $('ba-colonnes-menu'); if (!m || m.hid
 /* ---- TOUT RELIER --------------------------------------------------------------- */
 function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody'), fi = $('ba-filtre'); let fT;
   $('ba-taille').addEventListener('click', e => { const x = e.target.closest('[data-taille]'); if (!x) return; if (x.dataset.taille === 'plan') fermerBase(); else ouvrirBase(x.dataset.taille); });
-  $('ba-csv').onclick = () => exporterRecap(false); $('ba-csv-tout').onclick = () => exporterRecap(true);
-  // l'export porte son icône et dit ce qu'il sort (`rendreExport`) ; le mot « Colonnes » se range quand la barre se resserre (la flèche reste)
-  $('ba-csv').innerHTML = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="rc-csv-mot">Exporter CSV</span>';
+  // le menu du tableau en CSV : ses lignes (`rendreExport`) ; il se ferme au geste choisi, à Échap, d'un clic ailleurs (08-normes)
+  $('ba-csv-l').addEventListener('click', e => { const x = e.target.closest('button'); if (!x || x.getAttribute('aria-disabled') === 'true') return;
+    if (x.id === 'ba-csv-vu') exporterRecap(false); else if (x.id === 'ba-csv-tout') exporterRecap(true); else if (x.id === 'ba-csv-retest') exporterRetestCorrige(); });
+  if (typeof lierMenusDoc === 'function') lierMenusDoc($('base'));
+  // le mot « Colonnes » se range quand la barre se resserre (la flèche reste)
   const col = $('ba-colonnes'), mot = [...col.childNodes].find(n => n.nodeType === 3 && n.textContent.trim());
   if (mot) { const s = document.createElement('span'); s.className = 'rc-col-mot'; s.textContent = mot.textContent; col.replaceChild(s, mot); col.dataset.bulle = 'Les colonnes de cet onglet'; }
   // la table virtuelle se repeint en défilant (une image au plus)
-  let raf = 0; $('ba-corps').addEventListener('scroll', () => { if (RECAP.virtuel && !raf) raf = requestAnimationFrame(() => { raf = 0; peindreFenetre(); }); }, { passive: true });
+  let raf = 0; $('ba-corps').addEventListener('scroll', () => { if (GAMME.el) fermerGamme(); if (RECAP.virtuel && !raf) raf = requestAnimationFrame(() => { raf = 0; peindreFenetre(); }); }, { passive: true });
   $('ba-ajouter').onclick = () => { const O = onglet(); if (O.ajouter) O.ajouter(); };
   // le pourquoi d'un état, d'une norme, d'une origine : la bulle de la fiche, au survol (08-fiche)
   if (typeof lierBulles === 'function') lierBulles($('base'));
@@ -1097,7 +1195,14 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
     if (e.target.closest('[data-voir-fils]')) { if (O.voirFils) O.voirFils(r); return; }
     const re = e.target.closest('[data-retenir]'); if (re) { retenirCalibre(r.nom, +re.dataset.retenir); return; }
     if (e.target.closest('[data-poser]')) { editerCase(r.k, 'rep'); return; }
-    if (O.choisir) O.choisir(r); });
+    const gp = e.target.closest('[data-geste-pb]'); if (gp) { const g = gestesDuPb(r)[+gp.dataset.gestePb]; if (g && g.faire) g.faire(); return; }
+    /* UN SEUL GESTE POUR ÉCRIRE, PARTOUT (l'ergonome v73 : « on corrige au double-clic ici, d'un clic dans la fiche ») : sur
+       la ligne qu'on a choisie, un clic sur une valeur l'écrit, comme dans la fiche ; ailleurs, le premier clic choisit la
+       ligne et pose le clavier sur la valeur — une touche, Entrée ou un second clic l'écrivent. Le double-clic reste. */
+    const v = e.target.closest('.rc-v[data-f]'); if (e.detail > 1) return;   // le second appui d'un double-clic : l'appui l'a déjà traité (plus bas)
+    if (v && !v.classList.contains('rc-calc') && O.choisie(r) && !(v.dataset.f === 'calibre' && Date.now() - (GAMME.ferme || 0) < 350)) { editer(v); return; }
+    if (O.choisir) O.choisir(r);
+    if (v) { const c = caseDe(v); requestAnimationFrame(() => { const n = elementDe(c); if (n && document.activeElement !== n && !b.edition) { try { n.focus({ preventScroll: true }); } catch (_) { n.focus(); } } }); } });
   /* LE DOUBLE APPUI se reconnaît ici, pas au « dblclick » : le premier clic choisit la ligne, ouvre sa fiche à droite (le
      tableau se resserre) ou change de folio (le tableau se refait) — sous un pointeur immobile, le second appui tombe
      sur un autre élément et le navigateur n'émet plus de double-clic ; le second appui garde pourtant son rang (`detail`,
@@ -1107,7 +1212,7 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
     if (p && e.detail === 2 && Math.abs(e.clientX - p.x) < 8 && Math.abs(e.clientY - p.y) < 8) { premier = null; const v = elementDe(p.c);
       if (v && !v.classList.contains('edite') && !b.edition) { e.preventDefault(); editer(v); } return; }
     const c = caseDe(e.target); premier = c && e.detail <= 1 ? { c, x: e.clientX, y: e.clientY } : null; });
-  corps.addEventListener('dblclick', e => { const v = e.target.closest('[data-f]'); if (v && !v.classList.contains('edite') && !b.edition) { e.preventDefault(); editer(v); } });
+  corps.addEventListener('dblclick', e => { const v = e.target.closest('[data-f]'); if (v && !v.classList.contains('edite') && !b.edition && !GAMME.el) { e.preventDefault(); editer(v); } });
   corps.addEventListener('mouseover', e => { if (b.edition) return; const tr = e.target.closest('tr[data-k]'), r = tr && RECAP.vues.get(tr.dataset.k), O = onglet(); if (r && !r.nouveau && O.survol) O.survol(r); });
   corps.addEventListener('mouseleave', () => { if (!b.edition) rallumer(); });
   // le clavier dans la table : en édition, Entrée écrit et descend, Tab passe à la case suivante, Échap annule, Ctrl+Z
@@ -1118,10 +1223,15 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
       if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); finirEdition('ok', e.shiftKey ? 'dessus' : 'dessous'); }
       else if (e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); finirEdition('ok', e.shiftKey ? 'precedente' : 'suivante'); }
       else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finirEdition('annule', 'meme'); }
-      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && (ed.inp.value === ed.avant || ed.avant == null)) { e.preventDefault(); e.stopPropagation(); finirEdition('annule', null); defaire(); }
+      // Ctrl+Z sur une case qu'on n'a pas touchée défait ; Ctrl+Y et Ctrl+Maj+Z REFONT (la Maj ne doit pas défaire : le chrome v73)
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey && (ed.inp.value === ed.avant || ed.avant == null)) { e.preventDefault(); e.stopPropagation(); finirEdition('annule', null); defaire(); }
+      else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || e.key.toLowerCase() === 'z' && e.shiftKey) && (ed.inp.value === ed.avant || ed.avant == null)) { e.preventDefault(); e.stopPropagation(); finirEdition('annule', null); if (typeof refaireEtDire === 'function') refaireEtDire(); }
       return; }
     const v = e.target.closest && e.target.closest('[data-f]'); if (!v || !corps.contains(v)) return;
     if (e.key === 'Enter' || e.key === 'F2') { e.preventDefault(); e.stopPropagation(); editer(v); return; }
+    // une touche qu'on écrit, sur une valeur qui a le clavier : son champ s'ouvre et la reçoit (comme un tableur)
+    if (e.key.length === 1 && e.key !== ' ' && !e.ctrlKey && !e.metaKey && !e.altKey && !v.classList.contains('rc-calc')) { const k = e.key;
+      if (editer(v)) { e.preventDefault(); e.stopPropagation(); const ed = b.edition; if (ed && ed.inp.tagName === 'INPUT') { ed.inp.value = k; ed.inp.dispatchEvent(new Event('input')); } } return; }
     const pas = { ArrowRight: 'suivante', ArrowLeft: 'precedente', ArrowDown: 'dessous', ArrowUp: 'dessus' }[e.key]; if (!pas || e.ctrlKey || e.metaKey || e.altKey) return;
     e.preventDefault(); e.stopPropagation(); const c = caseDe(v), n = elementDe(voisine({ k: c.k, f: c.f, el: v }, pas)); if (n) { n.focus(); n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } });
   // le focus sur une case de liaison : son câble s'allume (le clavier comme la souris)

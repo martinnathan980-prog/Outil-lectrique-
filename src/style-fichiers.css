@@ -49,7 +49,7 @@
 .vf-cles dt{display:inline-block;padding-bottom:3px;font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);box-shadow:inset 0 -2px 0 var(--t-1)}
 .vf-cles dd{margin:5px 0 0;font-size:var(--f-12);line-height:1.3;color:var(--t-2)}
 /* la zone de dépôt, tant que l'entrée est vide : un cadre en pointillé, une ligne ; l'entrée survolée par un fichier l'allume */
-.vf-zone{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - var(--vf-retrait));min-height:44px;margin:12px 0 0 var(--vf-retrait);padding:8px 12px;border:1px dashed var(--s-line-2);border-radius:var(--r-2);background:none;color:var(--t-2);font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+.vf-zone{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - var(--vf-retrait));min-height:52px;margin:12px 0 0 var(--vf-retrait);padding:8px 12px;border:1.5px dashed color-mix(in srgb,var(--t-3) 74%,var(--s-surface));border-radius:var(--r-2);background:none;color:var(--t-2);font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
 .vf-zone svg.ico{width:17px;height:17px;color:var(--t-1)}
 .vf-zone b{font-size:var(--f-13);color:var(--t-1);font-weight:600}
 body.depot-actif .vf-zone{border-color:var(--t-3)}
@@ -89,7 +89,7 @@ body.depot-actif .vf-zone{border-color:var(--t-3)}
 .vf-col-ex{color:var(--t-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vf-col select{height:28px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font-size:var(--f-12);padding:0 6px}
 .vf-col select:focus-visible{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
-/* « Ce que j'attends » : un repli discret sous le titre — trois lignes d'exemple, ce qui se passe ensuite, le modèle */
+/* « Ce que j'attends » : un repli discret sous le titre — une ligne de lien, sans cadre — trois lignes d'exemple, ce qui se passe ensuite, le modèle */
 details.vf-attend{margin:8px 0 0 calc(var(--vf-retrait) - 8px)}
 .vf-attend>summary{display:flex;align-items:center;gap:8px;width:max-content;max-width:100%;height:30px;padding:0 8px;border-radius:var(--r-1);cursor:pointer;list-style:none;transition:background var(--rapide)}
 .vf-attend>summary::-webkit-details-marker{display:none}
@@ -99,8 +99,7 @@ details.vf-attend{margin:8px 0 0 calc(var(--vf-retrait) - 8px)}
 .vf-attend-s{min-width:0;font-size:var(--f-12);color:var(--t-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vf-chevron{width:14px;height:14px;color:var(--t-2);transition:transform var(--rapide)}
 .vf-attend[open] .vf-chevron{transform:rotate(180deg)}
-.vf-corps{display:flex;flex-direction:column;gap:10px;padding:8px 0 2px 8px;font-size:var(--f-13);line-height:1.55;color:var(--t-2);animation:vf-ouvre var(--moyen) both}
-@keyframes vf-ouvre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.vf-corps{display:flex;flex-direction:column;gap:10px;padding:8px 0 2px 8px;font-size:var(--f-13);line-height:1.55;color:var(--t-2);animation:entre var(--d-moyen) var(--courbe-entree) both;--entre-y:-4px}
 .vf-format,.vf-ensuite{margin:0}
 .vf-format b{color:var(--t-1);font-weight:600}
 .vf-format .id{font-family:var(--mono);font-size:var(--f-12);white-space:nowrap}
@@ -138,7 +137,7 @@ body.depot-actif:has(#fiche [data-depot]) .depot{display:none}
 #co-champ>.co-etiquette{display:flex;margin:0 0 8px;font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
 #co-champ textarea{height:150px;padding:10px 12px;border-radius:var(--r-btn);font:400 var(--f-12)/1.6 var(--mono);background:var(--s-surface)}
 #co-champ.erreur>.co-etiquette{color:var(--ko)}
-.co-apercu{margin-top:22px;animation:vf-ouvre var(--moyen) both}
+.co-apercu{margin-top:22px;animation:entre var(--d-moyen) var(--courbe-entree) both;--entre-y:-4px}
 .co-apercu:empty{display:none}
 .co-dit{display:flex;align-items:baseline;gap:8px;margin:0 0 10px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
 .co-point{width:7px;height:7px;flex:none;border-radius:50%;background:var(--ok);transform:translateY(-1px)}

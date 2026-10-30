@@ -216,7 +216,10 @@ function socle() {
       else if (coupe) { // un nœud texte qui dépasse la boîte qui coupe (pas une décoration ; en hauteur, plus que le jambage d'une lettre)
         const q = e.getBoundingClientRect(), bx0 = q.left + e.clientLeft, by0 = q.top + e.clientTop, bx1 = bx0 + e.clientWidth, by1 = by0 + e.clientHeight, cx = s.overflowX !== 'visible', cy = s.overflowY !== 'visible';
         const w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
-        for (let n; !rogne && (n = w.nextNode());) { if (!n.data.trim() || !n.parentElement.checkVisibility() || opacite(n.parentElement) < 0.1) continue;
+        // (un dessin — le folio, qu'on zoome et qu'on glisse — n'est pas un texte coupé : le relevé saute déjà ce qui est
+        // dans un svg ; la marche des nœuds, partie de la planche, y redescendait — le récapitulatif en moitié, qui glisse
+        // le dessin au-dessus du tiroir, rognait le cadre de la feuille « en haut »)
+        for (let n; !rogne && (n = w.nextNode());) { if (!n.data.trim() || n.parentElement.closest('svg') || !n.parentElement.checkVisibility() || opacite(n.parentElement) < 0.1) continue;
           const rg = document.createRange(), tol = Math.max(3, 0.3 * parseFloat(getComputedStyle(n.parentElement).fontSize)); rg.selectNodeContents(n);
           for (const r of rg.getClientRects()) { if (r.width < 2) continue;
             const ou = cx && r.right > bx1 + 1.5 ? 'à droite' : cx && r.left < bx0 - 1.5 ? 'à gauche' : cy && r.bottom > by1 + tol ? 'en bas' : cy && r.top < by0 - tol ? 'en haut' : '';

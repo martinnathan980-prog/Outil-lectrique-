@@ -192,7 +192,11 @@ async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichie
     if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, nom); baseRecue(nom, avis, rangerLesContrats(app.references.base, nom));
       ficheHarnais(r, nom); signaler(pluriel(r.harnais.length, 'harness') + ' dans ' + guillemets(nom) + ' : gardés comme contrats déjà faits — lequel ouvrir sur la table ?', 'base'); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest', avis);
-    const msg = pluriel(r.liaisons.length, 'liaison') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + (ig.length ? ' · ' + pluriel(ig.length, 'feuille') + ' ignorée' + (ig.length > 1 ? 's' : '') : '') + '.';
+    // les feuilles laissées de côté se NOMMENT (le technicien v73 : « 1 feuille ignorée » m'inquiète : laquelle ?) ; le journal
+    // d'un retest corrigé (« Modifications ») n'en est plus une : la lecture le reconnaît et le dit (02, domaine C)
+    const noms = (L.lu && L.lu.ignorees) || [], n = r.liaisons.length;
+    const msg = pluriel(n, 'liaison') + ' lue' + (n > 1 ? 's' : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '')
+      + (noms.length === 1 ? ' · la feuille ' + guillemets(noms[0]) + ' est laissée de côté (pas les en-têtes du retest)' : noms.length ? ' · ' + noms.length + ' feuilles laissées de côté : ' + noms.slice(0, 3).map(guillemets).join(', ') + (noms.length > 3 ? '…' : '') : '') + '.';
     if (ig.length) signaler(msg, 'retest'); else dire(msg);
     proposerDejaFait();
   } catch (e) { echecImport('retest', { texte: `${guillemets(esc(nom))} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
@@ -370,11 +374,16 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
    l'essentiel), ouvert sur la carte qu'on vient chercher ; l'outil se souvient de ce qu'on ouvre ou ferme à la main */
 function carteHtml(o, etat, focus, primaire) { const ouvert = FICHIERS.volets.has(o.cle) ? FICHIERS.volets.get(o.cle) : focus === o.cle;
   const A = o.attend;
+  /* ALLÉGÉ (v73 : « trois zones pointillées et deux « Ce que j'attends » d'un coup » — le designer ; « deux façons d'ouvrir le
+     retest l'une sous l'autre » — le technicien) : seule l'entrée qu'on vient chercher (la première qui manque) garde sa
+     zone de dépôt, et elle EST son geste (« ou cliquez ») ; les autres gardent leur bouton au trait, et toute l'entrée reçoit
+     encore un fichier qu'on y glisse (`data-depot`). */
+  const zone = o.zone && etat.niveau !== 'ok' && primaire;
   return `<section class="vf-carte e-${etat.niveau}${o.grande ? ' vf-grande' : ''}${focus === o.cle ? ' vf-vise' : ''}" id="vf-${o.cle}" data-entree="${o.cle}"${o.depot ? ` data-depot="${o.depot}"` : ''} aria-labelledby="vf-t-${o.cle}">`
     + `<div class="vf-tete"><span class="vf-ic">${icoVf(o.cle)}</span><div class="vf-titres"><h3 id="vf-t-${o.cle}">${esc(o.titre)}</h3><div class="vf-etat"><i aria-hidden="true"></i><span class="sr">${{ ok: 'reçu et lu', vide: 'rien', att: 'en attente', ko: 'erreur' }[etat.niveau]} : </span><span>${esc(etat.dit)}</span></div></div>`
-    + (o.action ? `<button class="btn ${primaire ? 'cuivre' : 'papier'} vf-action" data-vf="${o.action[0]}">${esc(o.action[1])}</button>` : '') + '</div>'
+    + (o.action && !zone ? `<button class="btn ${primaire ? 'cuivre' : 'papier'} vf-action" data-vf="${o.action[0]}">${esc(o.action[1])}</button>` : '') + '</div>'
     + (o.une ? `<div class="vf-une">${o.une}</div>` : '')
-    + (o.zone && etat.niveau !== 'ok' ? `<button type="button" class="vf-zone" data-vf="${o.zone[0]}">${icoVf('depot')}<span><b>Glissez ${o.zone[1]} ici</b> ou cliquez</span></button>` : '')
+    + (zone ? `<button type="button" class="vf-zone" data-vf="${o.zone[0]}">${icoVf('depot')}<span><b>Glissez ${o.zone[1]} ici</b> ou cliquez</span></button>` : '')
     + (o.liens && o.liens.length ? `<div class="vf-liens">${o.liens.map(([vf, t]) => `<button class="btn lien" data-vf="${vf}">${esc(t)}</button>`).join('')}</div>` : '')
     + (o.boites || '')
     + (A ? `<details class="vf-attend" data-volet="${o.cle}"${ouvert ? ' open' : ''}><summary><span class="vf-attend-t">Ce que j’attends</span><span class="vf-attend-s">${esc(A.sous || 'trois lignes d’exemple, un modèle')}</span>${ico('bas', 'vf-chevron')}</summary><div class="vf-corps">`
@@ -437,7 +446,7 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
     { cle: 'hypotheses', titre: 'Hypothèses', action: ['hypotheses', 'Régler…'] }];
   return C.map(o => (o.cle === 'bible' ? '<h3 class="vf-groupe">Facultatif<span>l’outil a les siens</span></h3>' : '') + carteHtml(o, E[o.cle], focus, primaire === o.cle)).join(''); }
 function fichiersHtml(focus) { return tete('Ce que l’outil a reçu', 'Vos fichiers')
-  + '<p class="vf-lead">Vos retests suffisent pour commencer : glissez chaque fichier sur son entrée.</p>'
+  + '<p class="vf-lead">Vos retests suffisent pour commencer : glissez un fichier sur son entrée, ou n’importe où.</p>'
   + `<div class="vf-cartes">${cartesFichiers(focus)}</div>`; }
 /* Ouvrir « Vos fichiers », sur une carte (`focus`) s'il y a lieu : elle vient sous les yeux, son volet ouvert. */
 function ficheFichiers(focus) { const deja = app.fiche && app.fiche.mode === 'fichiers', y = deja ? $('fiche-corps').scrollTop : 0;
