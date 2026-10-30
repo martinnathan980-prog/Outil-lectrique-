@@ -49,6 +49,14 @@ node tests/dessin.js           LE FOLIO ET LE GESTE SUR LE PLAN (l'audit du dess
                                référence croisée ; choisir un bloc ne réécrit plus le folio ; l'export sans quadrillage
 node tests/relief.js           la vue en relief de chaque barrette (modules E0599) et prise de l'exemple : un fil par contact pris, aucune étiquette
                                sur une autre, tourner, survoler, Échap, double-clic
+node tests/chrome.js           LE CHROME ET LES GESTES COMMUNS (v73), à la vraie souris et au clavier : défaire et refaire (Ctrl+Z ;
+                               Ctrl+Y et Ctrl+Maj+Z refont, jamais ne défont ; ↶ ↷ du rail ; le mot dit l'état d'arrivée et offre le
+                               geste inverse) ; le rail qui se déplie (250 ms, 176 px, le mot et la touche ; replié au clic) ; la pastille
+                               (les problèmes rouges du plan, « N problèmes · M à voir ») et P (les problèmes, puis ce qui est à voir) ;
+                               la pilule du retest corrigé et sa ligne en tête d'Exporter ; les bulles (400 ms, chaudes, au clavier,
+                               éteintes à l'appui ; la marque ne tombe plus sur le rail) ; le menu qui tombe de son bouton et son double
+                               qui s'efface, le mot qui entre et sort, le bouton pressé ; la feuille des raccourcis (refaire, Ctrl+K, la
+                               fiche ; Tab n'en sort plus)
 node tests/interface.js        à la vraie souris (grand écran, téléphone) : la fiche épurée dans l'inspecteur, le tableau en
                                tiroir (« Ce folio »), la feuille jamais recouverte ; chaque dédoublement est une barrette à poser
                                au ras de sa borne, une borne par fil, chacune à sa hauteur, son repère écrit ; un clic l'ouvre,
