@@ -17510,14 +17510,14 @@ function ecranAnonyme() { try {
     : app.base && app.base.ouvert ? 'récapitulatif ' + (app.base.taille === 'page' ? 'en page' : 'en moitié') + (app.base.onglet ? ', onglet ' + app.base.onglet : '') : 'plan';
   return [ici, folio].filter(Boolean).join(' · '); } catch (_) { return 'écran inconnu'; } }
 
-/* LA BARRE DU CARNET : elle naît au-dessus du plan, en bas au milieu ; Entrée garde, Maj+Entrée va à la ligne, Échap
+/* LA BARRE DU CARNET : elle naît au-dessus du plan, en bas au milieu ; Entrée garde (Maj+Entrée va à la ligne), Échap
    ferme et rend le clavier d'où il venait. L'écran est lu à l'ouverture (là où l'hésitation est née). */
 const CARNET = { ouvreur: null, ou: '' };
 function ouvrirCarnet() { let el = $('carnet'); if (typeof fermerMenu === 'function') fermerMenu();
   if (!el) { el = document.createElement('div'); el.id = 'carnet'; el.className = 'carnet'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-labelledby', 'cn-titre');
     el.innerHTML = `<div class="cn-tete"><b id="cn-titre">Carnet de séance</b><span class="cn-ou" id="cn-ou"></span><button type="button" class="fi-x cn-x" id="cn-fermer" aria-label="Fermer le carnet (Échap)" data-bulle="Fermer · Échap">${ico('fermer')}</button></div>`
       + `<textarea id="cn-texte" rows="2" spellcheck="true" aria-label="La note" placeholder="Une hésitation, un chiffre qui étonne, une idée…"></textarea>`
-      + `<div class="cn-pied"><span class="cn-aide"><kbd>Entrée</kbd> garde · <kbd>Maj</kbd>+<kbd>Entrée</kbd> à la ligne · <kbd>Échap</kbd> ferme</span><span class="cn-compte" id="cn-compte"></span><button type="button" class="btn cuivre dense" id="cn-garder">Garder la note</button></div>`;
+      + `<div class="cn-pied"><span class="cn-aide"><kbd>Entrée</kbd> garde · <kbd>Échap</kbd> ferme</span><span class="cn-compte" id="cn-compte"></span><button type="button" class="btn cuivre dense" id="cn-garder">Garder la note</button></div>`;
     document.body.appendChild(el);
     $('cn-fermer').onclick = fermerCarnet; $('cn-garder').onclick = garderNote;
     $('cn-texte').addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermerCarnet(); }
