@@ -1328,30 +1328,33 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
 /* ═══════════════════════════════════════════════════════════════════════════
    LA BIBLIOTHÈQUE (08-bibliotheque) — l'ouverture de Volta, posée sur la table bleu nuit.
    Ce qui s'écrit à même la table prend son encre (--t-table, --t-table-2) et ses filets (--l-table) : la table est la
-   même dans les deux thèmes, si bien que la bibliothèque aussi. Trois sortes de pièces, et rien d'autre :
-     · le PAPIER, dans les deux thèmes (v72 : l'audit voyait trois matières, et le soir les cartes fondues dans la table) :
-       ce qu'on choisit est une feuille blanche posée sur la nuit, comme le folio — une installation est une PILE de
-       feuilles (une carte, et dessous une ou deux feuilles qui dépassent d'un rien, chacune son filet), ses plans se lisent
-       sur une feuille, une ligne chacun ; « Reprendre » et la base à ranger aussi ;
-     · le TRAIT : l'Exemple, discret, un cadre de lumière sur la table ; le « ⋯ » ouvert, le verre des menus ;
-     · le PAPIER : la vignette d'un plan (une petite feuille blanche, son dessin à l'encre, deux fils aux couleurs des
-       routes) — sur l'Exemple, « Reprendre », l'accueil.
-   UNE action principale, claire sur la nuit (« Nouvelle installation », « Ajouter un plan ») ; le reste est au trait. Rien
-   encore : l'accueil, une seule composition au milieu de la table. Survoler une carte la soulève d'un rien et ses feuilles
-   s'écartent.
+   même dans les deux thèmes, si bien que la bibliothèque aussi. Trois matières, et rien d'autre :
+     · le PAPIER, dans les deux thèmes, réservé à ce qu'on choisit : une installation est une PILE de feuilles (une carte,
+       et dessous une ou deux vraies feuilles, chacune son filet, qui s'éventent au survol), ses plans se lisent sur une
+       feuille, une ligne chacun ; la vignette d'un plan (une petite feuille blanche, son dessin à l'encre, deux fils aux
+       couleurs des routes) ; la base à ranger ;
+     · le VERRE des palets, ce qui sert sans se choisir : « Reprendre », le dock de l'accueil, le second geste ;
+     · le TRAIT : l'Exemple, discret, un cadre de lumière sur la table ; le « ⋯ » ouvert, le verre des menus.
+   UNE action principale, claire sur la nuit (« Ouvrir une installation… », « Nouvelle installation », « Ajouter un plan ») ; le
+   reste au verre ou au trait. Rien encore : l'accueil, une vitrine au centre optique de la table, et son dock (le designer
+   v73, § 5.5 ; la bibliothèque pleine, § 5.6). Ce qui s'écrit à même la table prend ses encres mesurées (--t-table-ko,
+   --kbd-clair-t, --halo-geste) ; l'anneau du clavier est la glace sur la nuit, l'encre sur le papier (--anneau-c).
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ─── les jetons de la bibliothèque : le bord d'une carte et les feuilles de sa pile, dans les deux thèmes ─── */
-:root{--bi-bord:rgba(255,255,255,.55);--bi-pile-1:#e6eaf2;--bi-pile-2:#d3d9e6;--bi-pile-bord:rgba(15,26,46,.25);
-  --bi-ombre:0 16px 34px -12px rgba(0,6,18,.75),0 3px 8px rgba(0,6,18,.4);--bi-ombre-haute:0 26px 48px -14px rgba(0,6,18,.85),0 6px 14px rgba(0,6,18,.45)}
+:root{--bi-bord:rgba(255,255,255,.55);--bi-pile-1:#dfe6f3;--bi-pile-2:#c9d3e6;--bi-pile-bord:rgba(15,26,46,.22);--bi-pile-bord-2:rgba(15,26,46,.25);
+  --bi-ombre:0 18px 36px -14px rgba(0,6,18,.8),0 3px 8px rgba(0,6,18,.4);--bi-ombre-haute:0 30px 54px -16px rgba(0,6,18,.9),0 8px 16px rgba(0,6,18,.45);
+  /* le verre posé sur la table (« Reprendre », le dock, le second geste) : le bleu des palets, un filet de lumière en haut */
+  --bi-verre:rgba(38,54,86,.62);--bi-verre-2:rgba(50,70,108,.72);--bi-verre-dock:rgba(38,54,86,.9);
+  --bi-sh-verre:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1px rgba(186,212,255,.2),0 20px 44px -18px rgba(0,6,18,.8)}
 /* le papier de la bibliothèque : les jetons du jour sur chaque pièce qu'on choisit, dans les deux thèmes (le « ⋯ » ouvert,
    `.ilot-sombre`, reprend les siens) */
-.biblio :is(.bi-carte:not(.bi-demo),.bi-feuille,.bi-reprendre,.bi-bandeau,.bi-lot),.lecture-base{
+.biblio :is(.bi-carte:not(.bi-demo),.bi-feuille,.bi-bandeau,.bi-lot),.lecture-base{
   --s-surface:#ffffff; --s-sunken:#f4f5f8; --s-hover:#eff1f6; --s-line:#e3e6ee; --s-line-2:#cfd4df; --s-flottant:#ffffff;
-  --t-1:#141c2c; --t-2:#465068; --t-3:#5d6780; --t-inverse:#ffffff;
-  --accent:#141c2c; --accent-2:#000000; --accent-soft:#e9edf6; --accent-line:#c3c9d4; --on-accent:#ffffff;
+  --t-1:#1b1f27; --t-2:#465068; --t-3:#5d6780; --t-inverse:#ffffff;
+  --accent:#1b1f27; --accent-2:#000000; --accent-soft:#e9edf6; --accent-line:#c3c9d4; --on-accent:#ffffff;
   --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#465068; --info-soft:#eff1f6;
-  --t-table:#141c2c; --t-table-2:#465068; --t-table-warn:#965800; --voile-1:rgba(15,26,46,.035); --voile-2:rgba(15,26,46,.06); --voile-3:rgba(15,26,46,.09);
+  --t-table:#1b1f27; --t-table-2:#465068; --t-table-warn:#965800; --voile-1:rgba(15,26,46,.035); --voile-2:rgba(15,26,46,.06); --voile-3:rgba(15,26,46,.09);
   --sh-panneau:0 0 0 1px rgba(255,255,255,.5),0 24px 60px -18px rgba(0,6,18,.75),0 6px 16px rgba(0,6,18,.35); --anneau:0 0 0 3px rgba(27,31,39,.09);
   color-scheme:light }
 
@@ -1366,42 +1369,49 @@ body.fiche-ouverte .biblio{right:calc(var(--fiche-l) + var(--jeu))}
 body.biblio #svg,body.biblio #ombre{visibility:hidden}
 /* la barre du haut, sur la bibliothèque : la marque et le menu ; la recherche des repères attend le plan */
 body.biblio #recherche{visibility:hidden}
-.bi-page{width:min(1240px,100%);margin:0 auto;padding:48px 40px 80px}
-@media (min-width:1700px){ .bi-page{width:min(1480px,100%);padding-top:64px} }
+.bi-page{width:min(1240px,100%);margin:0 auto;padding:56px 40px 96px}
+@media (min-width:1700px){ .bi-page{width:min(1320px,100%);padding-top:72px} }
 /* la largeur du contenu décide des colonnes d'une feuille de plans (un document ouvert à côté la resserre) */
 .bi-contenu{container-type:inline-size}
-.biblio :focus-visible{outline:2px solid var(--t-table);outline-offset:2px}
-.biblio .bi-feuille :focus-visible,.biblio .bi-carte:not(.bi-demo) .bi-plus:focus-visible{outline-color:var(--accent)}
+/* l'anneau du clavier : la glace sur la nuit (« Reprendre », une carte, le dock : il se pose sur la table), l'encre dans le
+   papier (l'ergonome v73 : l'encre autour de « Reprendre », dehors sur la nuit, ne faisait que 1,02:1) */
+.biblio :focus-visible{outline:2px solid var(--anneau-c);outline-offset:2px}
+.biblio .bi-feuille :focus-visible,.biblio .bi-carte:not(.bi-demo) .bi-plus:focus-visible,.biblio .bi-carte-corps :focus-visible{outline-color:var(--accent)}
 /* un champ a son propre focus (son cadre s'éclaire) : pas d'anneau en plus */
 .biblio input:not([type=checkbox]):focus-visible,.biblio select:focus-visible{outline:none}
 
 /* ─── la tête : le titre, les comptes ; la recherche et le geste qui compte ─── */
-.bi-tete{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px}
-.bi-titres{min-width:0}
-.bi-titre{margin:0;font:600 var(--f-28)/1.1 var(--titre);letter-spacing:-.028em;color:var(--t-table);overflow-wrap:anywhere;text-wrap:balance}
-.bi-compte{margin:8px 0 0;font-size:var(--f-14);color:var(--t-table-2);font-variant-numeric:tabular-nums}
+/* (le designer v73 : le titre en affiche, 34 px ; la recherche et le geste à 38 px, sur la même ligne de pied ; un document
+   ouvert à côté resserre la tête : les outils passent dessous, le titre ne se coupe jamais au milieu d'un mot) */
+.bi-tete{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px 24px;margin-bottom:32px}
+.bi-titres{flex:1 1 260px;min-width:0}
+.bi-titre{margin:0;font:600 var(--f-34)/1.1 var(--titre);letter-spacing:-.028em;color:var(--t-table);overflow-wrap:break-word;text-wrap:balance}
+.bi-compte{margin:8px 0 0;font-size:var(--f-14);color:var(--t-table-2)}
 .bi-pas-garde{color:var(--t-table-warn)}
-.bi-outils{display:flex;align-items:center;gap:8px;flex:none}
-/* la recherche : un champ en creux sur la table */
-.bi-cherche{display:flex;align-items:center;gap:8px;width:320px;height:34px;padding:0 6px 0 11px;border:1px solid var(--l-table);border-radius:var(--r-btn);background:var(--s-table-champ);color:var(--t-table-2);cursor:text;transition:border-color var(--rapide),box-shadow var(--rapide)}
+.bi-outils{display:flex;align-items:center;gap:10px;flex:0 1 auto;min-width:0}
+/* la recherche : un champ en creux sur la table, son bord assez franc pour se lire comme un champ (3:1 sur la nuit) */
+.bi-cherche{display:flex;align-items:center;gap:8px;width:300px;min-width:0;height:38px;padding:0 8px 0 12px;border:1px solid rgba(170,200,255,.6);border-radius:var(--r-2);background:var(--s-table-champ);color:var(--t-table-2);cursor:text;transition:border-color var(--rapide),box-shadow var(--rapide)}
 .bi-cherche.bi-cherche-large{width:min(420px,38vw)}
-.bi-cherche:hover{border-color:var(--l-table-2)}
-.bi-cherche:focus-within{border-color:var(--t-table-2);box-shadow:0 0 0 3px var(--voile-1)}
+.bi-cherche:hover{border-color:rgba(170,200,255,.74)}
+.bi-cherche:focus-within{border-color:var(--glace);box-shadow:0 0 0 3px rgba(159,194,255,.16)}
 .bi-cherche .ico{width:16px;height:16px}
 .bi-cherche input{flex:1;min-width:0;height:100%;border:none;background:none;outline:none;color:var(--t-table);font-size:var(--f-13)}
 .bi-cherche input::placeholder{color:var(--t-table-2)}
 .bi-cherche input::-webkit-search-cancel-button{filter:invert(1) grayscale(1) opacity(.6)}
 .bi-cherche kbd{font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);background:var(--voile-2);border-radius:5px;padding:3px 6px}
 .bi-cherche:focus-within kbd{display:none}
-/* le geste clair sur la table (la même dans les deux thèmes) ; le second, au trait */
-.bi-btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 11px;border:1px solid var(--t-table);border-radius:var(--r-btn);background:var(--t-table);color:var(--s-app);font:500 var(--f-13)/1 var(--sans);letter-spacing:-.005em;white-space:nowrap;
-  box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 -1px 0 rgba(0,0,0,.08);transition:background var(--rapide),border-color var(--rapide),transform var(--rapide)}
-.bi-btn:hover{background:var(--s-papier);border-color:var(--s-papier)}
-.bi-btn:active{transform:scale(.98)}
-.bi-btn .ico{width:16px;height:16px;stroke-width:1.8}
-.bi-btn.bi-btn-2{background:transparent;color:var(--t-table);border-color:var(--l-table-2);box-shadow:none}
-.bi-btn.bi-btn-2:hover{background:var(--voile-1);border-color:var(--t-table-2)}
-.bi-btn.bi-btn-2 .ico{stroke-width:1.5;color:var(--t-table-2)}
+/* le geste clair sur la table (le même dans les deux thèmes) : survolé, il monte d'un pixel dans un halo froid (le designer
+   v73 : de #e9eef9 à #fff, 1,16:1, on ne voyait rien) ; pressé, il s'enfonce. Le second : du verre. */
+.bi-btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 12px;border:1px solid transparent;border-radius:11px;background:var(--t-table);color:var(--s-app);font:500 var(--f-13)/1 var(--sans);letter-spacing:-.006em;white-space:nowrap;
+  box-shadow:inset 0 -1px 0 rgba(15,26,46,.1),0 1px 2px rgba(0,0,0,.45),0 10px 28px -12px rgba(120,165,255,.45);
+  transition:transform var(--d-rapide) var(--courbe),background var(--d-rapide) var(--courbe),box-shadow var(--d-moyen) var(--courbe),border-color var(--d-rapide) var(--courbe)}
+.bi-btn:hover:not(:disabled){background:var(--s-papier);transform:translateY(-1px);box-shadow:inset 0 -1px 0 rgba(15,26,46,.1),0 2px 4px rgba(0,0,0,.4),var(--halo-geste)}
+.bi-btn:active:not(:disabled){transform:scale(var(--presse));transition-duration:var(--d-instant)}
+.bi-btn .ico{width:16px;height:16px;stroke-width:1.7}
+.bi-btn.bi-btn-2{background:rgba(170,200,255,.08);color:var(--t-table);border-color:rgba(170,200,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.bi-btn.bi-btn-2:hover:not(:disabled){background:rgba(170,200,255,.13);border-color:rgba(170,200,255,.34);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.bi-btn.bi-btn-2[aria-pressed="true"]{background:rgba(190,212,255,.2);border-color:rgba(190,212,255,.4)}
+.bi-btn.bi-btn-2 .ico{stroke-width:1.6;color:#b8c6e0}
 .bi-lien-table{height:30px;padding:0 8px;border:none;background:none;color:var(--t-table-2);font-size:var(--f-13);border-radius:var(--r-1);transition:color var(--rapide),background var(--rapide)}
 .bi-lien-table:hover{color:var(--t-table);background:var(--voile-1)}
 /* une installation : le retour (discret), son ECP et son nom (un clic les modifie), le « ⋯ » de la tête */
@@ -1413,33 +1423,36 @@ body.biblio #recherche{visibility:hidden}
 .bi-titre-nom:not(:disabled):hover{text-decoration:underline;text-decoration-color:var(--l-table-2);text-decoration-thickness:2px;text-underline-offset:7px}
 .bi-titre-nom:disabled{cursor:default}
 .bi-pop-ancre{position:relative;display:flex}
-.bi-plus.bi-plus-tete{position:static;opacity:1;width:34px;height:34px;transform:none;color:var(--t-table-2);border:1px solid var(--l-table-2);border-radius:var(--r-btn)}
-.bi-plus.bi-plus-tete:hover,.bi-plus.bi-plus-tete[aria-expanded="true"]{background:var(--voile-1);color:var(--t-table);border-color:var(--t-table-2)}
+.bi-plus.bi-plus-tete{position:relative;top:auto;right:auto;opacity:1;width:38px;height:38px;transform:none;color:#b8c6e0;background:rgba(170,200,255,.08);border:1px solid rgba(170,200,255,.22);border-radius:11px}
+.bi-plus.bi-plus-tete:hover,.bi-plus.bi-plus-tete[aria-expanded="true"]{background:rgba(170,200,255,.13);color:var(--t-table);border-color:rgba(170,200,255,.34)}
 .bi-pop-ancre .bi-pop{top:calc(100% + 6px);right:0}
-.bi-ecp-tete{display:flex;width:max-content;margin:0 0 6px -6px;padding:4px 6px;border:none;border-radius:var(--r-1);background:none;cursor:text;transition:background var(--rapide)}
+.bi-ecp-tete{display:flex;align-items:center;width:max-content;min-height:28px;margin:0 0 4px -6px;padding:4px 6px;border:none;border-radius:var(--r-1);background:none;cursor:text;transition:background var(--rapide)}
 .bi-ecp-tete:hover{background:var(--voile-1)}
 .bi-ecp-tete .bi-ecp b{color:var(--t-table)}
 .bi-ecp-tete .bi-ecp small{color:var(--t-table-2)}
-.bi-ecp-tete .bi-ecp-vide b{color:var(--t-table-warn)}
+/* pas encore d'ECP : une invitation calme, pas une alerte (« N° ECP (facultatif) ») */
+.bi-ecp-tete .bi-ecp-vide b{font:400 var(--f-13)/1 var(--sans);letter-spacing:0;color:var(--t-table-2)}
 .bi-titre-edite{margin-top:2px}
 
-/* ─── les palets de la racine : reprendre le plan resté sur la table, la base à ranger ─── */
-.bi-reprendre{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;margin:0 0 32px;padding:9px 16px 9px 10px;border:none;border-radius:var(--r-palet);background:var(--s-surface);color:var(--t-table);box-shadow:var(--sh-panneau);text-align:left;
-  transition:background var(--rapide),transform var(--rapide)}
-.bi-reprendre:hover{background:#f6f8fb}
-.bi-reprendre:active{transform:scale(.995)}
-.bi-reprendre .bi-folio{width:64px}
-.bi-rep-textes{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
-.bi-rep-mot{font:500 var(--f-12)/1.2 var(--sans);color:var(--t-table-2)}
-.bi-rep-nom{display:flex;align-items:baseline;gap:7px;min-width:0;white-space:nowrap;overflow:hidden;font-size:var(--f-13);color:var(--t-table-2)}
-.bi-rep-nom b{flex:0 1 auto;min-width:0;font:600 var(--f-14)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-table);overflow:hidden;text-overflow:ellipsis}
-.bi-rep-nom i{font-style:normal}
-.bi-rep-nom>span{overflow:hidden;text-overflow:ellipsis}
-.bi-rep-ecp{font:500 var(--f-12)/1 var(--mono);letter-spacing:.03em;font-variant-numeric:tabular-nums}
-.bi-rep-n{flex:none;font-size:var(--f-12);color:var(--t-table-2)}
-.bi-reprendre kbd,.bi-rail-titre kbd{flex:none;font:500 var(--f-11)/1 var(--mono);color:var(--t-table);background:var(--voile-2);border-radius:5px;padding:4px 6px}
-.bi-rep-fleche{width:18px;height:18px;color:var(--t-table-2);transition:transform var(--rapide),color var(--rapide)}
-.bi-reprendre:hover .bi-rep-fleche{transform:translateX(2px);color:var(--t-table)}
+/* ─── « REPRENDRE » : un palet de verre (le papier est réservé à ce qu'on choisit) — la vignette, « Reprendre où vous en
+   étiez », le nom et son installation, les folios (le courant en clair), Échap ─── */
+.bi-reprendre{display:flex;align-items:center;gap:16px;width:100%;min-height:76px;margin:0 0 40px;padding:12px 18px 12px 12px;border:none;border-radius:18px;background:var(--bi-verre);color:var(--t-table);box-shadow:var(--bi-sh-verre);text-align:left;
+  transition:background var(--d-rapide) var(--courbe),transform var(--d-rapide) var(--courbe)}
+.bi-reprendre:hover{background:var(--bi-verre-2)}
+.bi-reprendre:active{transform:scale(.995);transition-duration:var(--d-instant)}
+.bi-reprendre .bi-folio{width:72px;filter:drop-shadow(0 8px 12px rgba(0,0,0,.55))}
+.bi-rep-textes{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.bi-rep-mot{font:500 var(--f-12)/1.3 var(--sans);color:var(--t-table-2)}
+.bi-rep-nom{display:flex;align-items:baseline;gap:0;min-width:0;white-space:nowrap;overflow:hidden;font-size:var(--f-16);color:var(--t-table-2)}
+.bi-rep-nom b{flex:0 1 auto;min-width:0;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.012em;color:var(--t-table);overflow:hidden;text-overflow:ellipsis}
+.bi-rep-nom>span{overflow:hidden;text-overflow:ellipsis;font-weight:400}
+.bi-rep-ecp{font:500 var(--f-13)/1 var(--mono);letter-spacing:.03em;font-variant-numeric:tabular-nums}
+.bi-rep-n{flex:none;font-size:var(--f-12);color:var(--t-table-2);font-variant-numeric:tabular-nums}
+/* les folios du plan : des puces de verre, le courant presque blanc (comme dans la barre des folios) */
+.bi-rep-folios{flex:none;display:flex;gap:4px;margin-right:8px}
+.bi-rep-folios i{display:grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:6px;font:500 var(--f-11)/1 var(--sans);font-style:normal;color:#cdd8eb;background:rgba(170,200,255,.08);font-variant-numeric:tabular-nums}
+.bi-rep-folios i.on{background:#e9f0fd;color:#10192c;font-weight:600}
+.bi-reprendre kbd,.bi-rail-titre kbd{flex:none;font:500 var(--f-11)/1 var(--mono);color:var(--t-table);background:var(--voile-2);border-radius:5px;padding:5px 7px}
 .bi-bandeau{display:flex;align-items:center;gap:12px;margin:0 0 32px;padding:10px 10px 10px 16px;border-radius:var(--r-palet);background:var(--s-surface);box-shadow:var(--sh-panneau);color:var(--t-table-2);font-size:var(--f-13);line-height:1.45}
 .bi-reprendre+.bi-bandeau{margin-top:-22px}
 .bi-bandeau>.ico{width:18px;height:18px;color:var(--t-table)}
@@ -1465,94 +1478,118 @@ body.biblio #recherche{visibility:hidden}
 .bi-ranger-nom{width:220px}
 .bi-ranger-nom:focus,.bi-ranger-vers select:focus{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
 
-/* ─── l'ECP : « ECP » en petit, les cinq chiffres à la machine ; pas encore saisi, « à saisir », en ambre ─── */
+/* ─── l'ECP : « ECP » en petit, les cinq chiffres à la machine ; pas encore saisi, un tiret calme ─── */
 .bi-ecp{display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap}
 .bi-ecp small{font:500 var(--f-11)/1 var(--sans);letter-spacing:.02em;color:var(--t-3)}
-.bi-ecp b{font:600 var(--f-13)/1 var(--mono);letter-spacing:.05em;color:var(--t-2);font-variant-numeric:tabular-nums}
-.bi-ecp.bi-ecp-vide b{font:500 var(--f-12)/1 var(--sans);letter-spacing:0;color:var(--warn)}
+.bi-ecp b{font:500 var(--f-13)/1 var(--mono);letter-spacing:.05em;color:var(--t-2);font-variant-numeric:tabular-nums}
+.bi-ecp.bi-ecp-vide b{font:500 var(--f-13)/1 var(--sans);letter-spacing:0;color:var(--t-3)}
 .bi-ecp-tete .bi-ecp b{font-size:var(--f-14)}
 
-/* ─── le rangement des installations, au-dessus des cartes : un segment posé sur la table ─── */
-.bi-tri{display:flex;align-items:center;gap:10px;margin:0 0 20px;font-size:var(--f-12);color:var(--t-table-2)}
-.bi-tri-seg{display:inline-flex;gap:2px;padding:3px;border-radius:var(--r-btn);background:var(--s-table-champ);box-shadow:inset 0 0 0 1px var(--l-table)}
-.bi-tri button{height:26px;padding:0 11px;border:none;border-radius:7px;background:none;color:var(--t-table-2);font:500 var(--f-12)/1 var(--sans);transition:color var(--rapide),background var(--rapide),box-shadow var(--rapide)}
-.bi-tri button:hover{color:var(--t-table)}
-.bi-tri button[aria-pressed="true"]{background:var(--palet-2);color:var(--t-table);box-shadow:0 0 0 1px var(--voile-2),0 1px 2px rgba(0,0,0,.5)}
+/* ─── l'intertitre posé sur la table : un mot, un filet jusqu'au bord, le rangement à droite (« Installations, par n° ECP »,
+   « Pour essayer ») ─── */
+.bi-intertitre{display:flex;align-items:center;gap:14px;margin:0 0 20px}
+.bi-intertitre .bi-sous{display:block;flex:none;margin:0}
+.bi-intertitre::after{content:"";order:1;flex:1;min-width:24px;height:1px;background:var(--l-table)}
+.bi-sous .bi-sous-par{font:inherit;color:inherit;background:none;padding:0;border-radius:0}
+.bi-tri-seg{order:2;flex:none;display:inline-flex;gap:2px;padding:3px;border-radius:var(--r-btn);background:var(--s-table-champ);box-shadow:inset 0 0 0 1px var(--l-table)}
+.bi-tri-seg button{height:26px;padding:0 11px;border:none;border-radius:7px;background:none;color:var(--t-table-2);font:500 var(--f-12)/1 var(--sans);transition:color var(--d-rapide) var(--courbe),background var(--d-rapide) var(--courbe),box-shadow var(--d-rapide) var(--courbe)}
+.bi-tri-seg button:hover{color:var(--t-table)}
+.bi-tri-seg button[aria-pressed="true"]{background:var(--palet-2);color:var(--t-table);box-shadow:0 0 0 1px var(--voile-2),0 1px 2px rgba(0,0,0,.5)}
 
-/* ─── LES INSTALLATIONS : une grille de piles de feuilles ───
-   La carte, et dessous ses feuilles (deux plans : une ; trois et plus : deux) qui dépassent de 4 px, chacune plus étroite,
-   chacune son filet — des ombres décalées, rien de plus. Au survol, la carte se soulève de 3 px et ses feuilles s'écartent. */
-.bi-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:36px 24px}
-.bi-carte{--bi-anneau:0 0 0 1px var(--bi-bord);--bi-pile:0 0 transparent;--bi-ombre-carte:var(--bi-ombre);
-  position:relative;display:flex;min-width:0;border-radius:var(--r-2);background:var(--s-surface);color:var(--t-1);
-  box-shadow:var(--bi-anneau),var(--bi-pile),var(--bi-ombre-carte);transition:transform var(--moyen),box-shadow var(--moyen)}
-.bi-carte.pile-2{--bi-pile:0 8px 0 -4px var(--bi-pile-1),0 8px 0 -3px var(--bi-pile-bord)}
-.bi-carte.pile-3{--bi-pile:0 8px 0 -4px var(--bi-pile-1),0 8px 0 -3px var(--bi-pile-bord),0 16px 0 -8px var(--bi-pile-2),0 16px 0 -7px var(--bi-pile-bord)}
-.bi-carte:not(.bi-demo):not(.bi-confirmant):not(.bi-carte-neuve):hover{transform:translateY(-3px);--bi-ombre-carte:var(--bi-ombre-haute)}
-.bi-carte.pile-2:not(.bi-confirmant):hover{--bi-pile:0 10px 0 -4px var(--bi-pile-1),0 10px 0 -3px var(--bi-pile-bord)}
-.bi-carte.pile-3:not(.bi-confirmant):hover{--bi-pile:0 10px 0 -4px var(--bi-pile-1),0 10px 0 -3px var(--bi-pile-bord),0 20px 0 -8px var(--bi-pile-2),0 20px 0 -7px var(--bi-pile-bord)}
-.bi-carte:not(.bi-demo):has(>button.bi-carte-corps:active){transform:translateY(-1px) scale(.995)}
+/* ─── LES INSTALLATIONS : une grille de piles de feuilles (le designer v73, § 3 et 5.6) ───
+   La carte est une PILE : dessous, de vraies feuilles de papier (deux plans : une ; trois et plus : deux), un peu plus
+   étroites, chacune son filet ; dessus, la face — la carte qu'on lit et qu'on clique. Au survol, la face monte de 4 px et
+   les feuilles s'éventent (l'une tourne de 2°, l'autre de −3°), en 420 ms, vives puis freinées. Quatre colonnes. */
+.bi-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:36px 28px}
+@container (min-width:1080px){ .bi-grille:not(.bi-grille-demo){grid-template-columns:repeat(4,minmax(0,1fr))} }
+.bi-carte{position:relative;display:flex;min-width:0;color:var(--t-1)}
 .bi-carte.bi-pop-ouvert{z-index:4}
-.bi-carte-corps{flex:1;display:flex;flex-direction:column;align-items:stretch;min-width:0;min-height:180px;padding:16px 16px 14px 18px;border:none;border-radius:inherit;background:none;color:inherit;text-align:left}
+/* les feuilles de la pile : posées derrière la face (elles viennent avant elle), centrées, un peu plus bas */
+.bi-f{position:absolute;inset:0;border-radius:14px;pointer-events:none;transition:transform var(--d-pose) var(--courbe-entree)}
+.bi-f2{background:var(--bi-pile-1);box-shadow:0 0 0 1px var(--bi-pile-bord);transform:translate(0,6px) scale(.97)}
+.bi-f3{background:var(--bi-pile-2);box-shadow:0 0 0 1px var(--bi-pile-bord-2),0 18px 30px -18px rgba(0,6,18,.7);transform:translate(0,12px) scale(.94)}
+.bi-carte:not(.bi-confirmant):not(.bi-carte-neuve):hover .bi-f2{transform:translate(7px,7px) rotate(2deg) scale(.97)}
+.bi-carte:not(.bi-confirmant):not(.bi-carte-neuve):hover .bi-f3{transform:translate(-8px,13px) rotate(-3deg) scale(.94)}
+/* la face : le papier, coin 14, un filet de lumière, une ombre longue ; elle monte au survol, s'enfonce à la pression */
+.bi-carte-corps{position:relative;flex:1;display:flex;flex-direction:column;align-items:stretch;min-width:0;min-height:200px;padding:18px 18px 16px 20px;border:none;border-radius:14px;
+  background:var(--s-surface);color:inherit;text-align:left;box-shadow:0 0 0 1px var(--bi-bord),var(--bi-ombre);
+  transition:transform var(--d-pose) var(--courbe-entree),box-shadow var(--d-pose) var(--courbe-entree)}
 button.bi-carte-corps{cursor:pointer}
+.bi-carte:not(.bi-demo):not(.bi-confirmant):not(.bi-carte-neuve):hover .bi-carte-corps{transform:translateY(-4px);box-shadow:0 0 0 1px rgba(255,255,255,.6),var(--bi-ombre-haute)}
+.bi-carte:not(.bi-demo) button.bi-carte-corps:active{transform:translateY(-2px) scale(.99);transition-duration:var(--d-instant)}
 .bi-carte-corps:focus-visible{outline-offset:4px}
-.bi-carte-ecp{height:20px;align-items:center;margin-bottom:10px}
+.bi-carte-ecp{height:20px;align-items:center;margin-bottom:12px}
 .bi-carte-ico{width:32px;height:32px;flex:none;border-radius:var(--r-1);display:grid;place-items:center;background:var(--s-sunken);color:var(--t-2);margin-bottom:10px}
 .bi-carte-ico .ico{width:18px;height:18px}
-.bi-carte-textes{display:flex;flex-direction:column;gap:3px;min-width:0;padding-right:22px;margin-bottom:14px}
-.bi-carte-nom{font:600 var(--f-16)/1.3 var(--titre);letter-spacing:-.015em;color:var(--t-1);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* son état, en pastille en haut à droite (le rouge ne dit que les problèmes), à côté du « ⋯ » */
+.bi-carte-etat{position:absolute;top:17px;right:46px;display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 8px;border-radius:999px;font:500 var(--f-11)/1 var(--sans);white-space:nowrap}
+.bi-carte-etat::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.bi-carte-etat.ko{color:var(--ko);background:var(--ko-soft)}
+.bi-carte-textes{display:flex;flex-direction:column;gap:4px;min-width:0;padding-right:8px;margin-bottom:16px}
+.bi-carte-nom{font:600 17px/1.25 var(--titre);letter-spacing:-.016em;color:var(--t-1);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .bi-carte-meta{font-size:var(--f-12);line-height:1.45;color:var(--t-2)}
-/* ses premiers plans, un par ligne, sous un filet — la suite comptée ; d'une carte à l'autre, les filets s'alignent */
-.bi-carte-plans{display:flex;flex-direction:column;gap:1px;padding-top:10px;border-top:1px solid var(--s-line)}
-.bi-pn{display:flex;align-items:center;gap:8px;min-width:0;height:20px;font:500 var(--f-12)/1 var(--mono);color:var(--t-2)}
-.bi-pn .ico{width:14px;height:14px;color:var(--t-3)}
+/* ses premiers plans, un par ligne, sous un filet, en mots (une mini-feuille devant) — la suite comptée */
+.bi-carte-plans{display:flex;flex-direction:column;gap:2px;padding-top:12px;border-top:1px solid var(--s-line)}
+.bi-pn{display:flex;align-items:center;gap:8px;min-width:0;height:20px;font:500 var(--f-12)/1 var(--sans);color:#2b3447}
+.bi-pn i{flex:none;width:12px;height:9px;border-radius:2px;box-shadow:inset 0 0 0 1.2px #8a94aa}
 .bi-pn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bi-pn-plus{height:20px;padding-left:22px;font:500 var(--f-12)/20px var(--sans);color:var(--t-3)}
+.bi-pn-plus{height:20px;padding-left:20px;font:400 var(--f-12)/20px var(--sans);color:var(--t-3)}
 .bi-carte-plans-vide{font-size:var(--f-12);line-height:1.45;color:var(--t-2);border-top-style:dashed;border-top-color:var(--s-line-2)}
-/* le « ⋯ » d'une carte, d'une ligne : il paraît au survol, au clavier, ouvert */
-.bi-plus{position:absolute;top:10px;right:10px;width:28px;height:28px;padding:0;border:none;border-radius:var(--r-1);background:none;color:var(--t-2);display:grid;place-items:center;opacity:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
+/* le « ⋯ » : sur une carte, il paraît au survol, au clavier, ouvert ; sur une ligne de plan, il se devine au repos (le
+   technicien v73 : invisible, on ne savait pas qu'on pouvait renommer) ; sa bulle dit ce qu'il cache */
+.bi-plus{position:absolute;top:14px;right:12px;width:28px;height:28px;padding:0;border:none;border-radius:var(--r-1);background:none;color:var(--t-2);display:grid;place-items:center;opacity:0;
+  transition:opacity var(--d-rapide) var(--courbe),background var(--d-rapide) var(--courbe),color var(--d-rapide) var(--courbe),transform var(--d-pose) var(--courbe-entree)}
 .bi-plus .ico{width:18px;height:18px}
+.bi-plan .bi-plus{opacity:1;color:var(--t-3)}
 .bi-carte:hover .bi-plus,.bi-carte:focus-within .bi-plus,.bi-plan:hover .bi-plus,.bi-plan:focus-within .bi-plus,.bi-plus[aria-expanded="true"]{opacity:1}
+.bi-carte:not(.bi-demo):not(.bi-confirmant):hover>.bi-plus{transform:translateY(-4px)}
 .bi-plus:hover,.bi-plus[aria-expanded="true"]{background:var(--s-hover);color:var(--t-1)}
+/* sa bulle : dessous, alignée à droite (la règle commune `.bulle` : au survol après un instant, tout de suite au clavier) */
+.bi-plus .bulle,.bi-plus-tete .bulle{left:auto;right:0;top:calc(100% + 8px);transform:translateY(-3px)}
+.bi-plus .bulle::before,.bi-plus-tete .bulle::before{right:10px;top:auto;bottom:100%;margin:0;border-color:transparent;border-bottom-color:var(--bulle)}
+.bi-plus.bulle-on>.bulle{transform:none}
+.bi-plus[aria-expanded="true"] .bulle{display:none}
 /* l'installation qu'on nomme (une neuve, ou renommée) : la carte cerclée de l'encre de la table, les champs à l'encre */
-.bi-carte.bi-carte-neuve{--bi-anneau:0 0 0 2px var(--t-table)}
+.bi-carte.bi-carte-neuve .bi-carte-corps{box-shadow:0 0 0 2px var(--t-table),var(--bi-ombre)}
 .bi-nommer{display:block;width:100%}
-.bi-nommer.bi-nommer-install{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.bi-nommer.bi-nommer-install{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
 .bi-champ-ecp{display:flex;align-items:center;gap:8px;font:500 var(--f-11)/1 var(--sans);letter-spacing:.02em;color:var(--t-3)}
 .bi-champ-ecp span{flex:none}
 .bi-nommer input{width:100%;height:36px;padding:0 10px;border:1px solid var(--t-1);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:600 var(--f-16)/1 var(--titre);letter-spacing:-.01em;box-shadow:var(--anneau);outline:none;transition:border-color var(--rapide),box-shadow var(--rapide)}
-.bi-nommer .bi-champ-ecp input{width:92px;height:30px;padding:0 8px;font:600 var(--f-13)/1 var(--mono);letter-spacing:.06em;font-variant-numeric:tabular-nums;border-color:var(--s-line-2);box-shadow:none}
+.bi-nommer .bi-champ-ecp input{width:92px;height:30px;padding:0 8px;font:600 var(--f-13)/1 var(--mono);letter-spacing:.06em;font-variant-numeric:tabular-nums;border-color:#8a919e;box-shadow:none}
 .bi-nommer .bi-champ-ecp input:focus{border-color:var(--t-1);box-shadow:var(--anneau)}
 .bi-nommer .bi-champ-ecp input.complet{border-color:var(--ok)}
 .bi-nommer .bi-champ-ecp input.faux{border-color:var(--ko);box-shadow:0 0 0 3px var(--ko-soft)}
 .bi-nommer .bi-champ-ecp input::placeholder{font:500 var(--f-12)/1 var(--sans);letter-spacing:0;color:var(--t-3)}
 .bi-nommer input::placeholder{color:var(--t-3);font-weight:500}
 .bi-carte .bi-carte-corps>.bi-nommer+.bi-carte-meta{margin-top:12px}
-.bi-touches{display:flex;align-items:center;gap:6px;padding-top:12px;color:var(--t-2)}
-.bi-carte-neuve .bi-carte-corps>.bi-nommer+.bi-touches{margin-top:auto}
+.bi-touches{display:flex;align-items:center;gap:6px;padding-top:14px;color:var(--t-2)}
+.bi-carte-neuve .bi-carte-corps>.bi-nommer+.bi-touches{margin-top:0}
 .bi-touches kbd{margin-left:6px;font:500 var(--f-11)/1 var(--mono);color:var(--t-1);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);border-radius:5px;padding:3px 6px}
 .bi-touches kbd:first-child{margin-left:0}
 /* le nom d'une installation qu'on modifie dans sa tête : à même la table */
-.bi-titre .bi-nommer input{height:46px;width:min(560px,100%);font:600 30px/1 var(--titre);letter-spacing:-.025em;background:var(--s-table-champ);color:var(--t-table);border-color:var(--l-table-2);box-shadow:0 0 0 3px var(--voile-1)}
+.bi-titre .bi-nommer input{height:48px;width:min(560px,100%);font:600 var(--f-28)/1 var(--titre);letter-spacing:-.025em;background:var(--s-table-champ);color:var(--t-table);border-color:rgba(170,200,255,.42);box-shadow:0 0 0 3px var(--voile-1)}
 .bi-titre .bi-champ-ecp{color:var(--t-table-2)}
-.bi-titre .bi-nommer .bi-champ-ecp input{width:104px;height:32px;font:600 var(--f-14)/1 var(--mono);letter-spacing:.06em;background:var(--s-table-champ);color:var(--t-table);border-color:var(--l-table-2);box-shadow:none}
-.bi-titre .bi-nommer .bi-champ-ecp input:focus{border-color:var(--t-table-2);box-shadow:0 0 0 3px var(--voile-1)}
+.bi-titre .bi-nommer .bi-champ-ecp input{width:104px;height:32px;font:600 var(--f-14)/1 var(--mono);letter-spacing:.06em;background:var(--s-table-champ);color:var(--t-table);border-color:rgba(170,200,255,.42);box-shadow:none}
+.bi-titre .bi-nommer .bi-champ-ecp input:focus{border-color:var(--glace);box-shadow:0 0 0 3px rgba(159,194,255,.16)}
 .bi-titre .bi-nommer .bi-champ-ecp input.complet{border-color:var(--p-ok)}
 .bi-titre .bi-nommer .bi-champ-ecp input.faux{border-color:var(--p-ko);box-shadow:0 0 0 3px color-mix(in srgb,var(--p-ko) 25%,transparent)}
 
-/* ─── L'EXEMPLE : un palet, discret, en dernier — la vignette de son plan, son nom ; la flèche au survol ─── */
-.bi-essai{margin-top:52px}
-.bi-grille-demo{grid-template-columns:minmax(0,360px)}
-/* l'Exemple : discret, un cadre de lumière au trait sur la table (DESIGN : « un cadre au trait ») */
-.bi-carte.bi-demo{background:transparent;color:var(--t-table);border-radius:var(--r-palet);box-shadow:0 0 0 1px rgba(186,212,255,.3);transition:background var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
-.bi-carte.bi-demo:hover{background:rgba(170,200,255,.07);box-shadow:0 0 0 1px rgba(186,212,255,.45)}
-.bi-carte.bi-demo:has(>button.bi-carte-corps:active){transform:scale(.99)}
-.bi-demo .bi-carte-corps{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:14px;min-height:0;padding:9px 46px 9px 9px}
+/* ─── L'EXEMPLE : discret, en dernier, au trait — un cadre de lumière sur la table, la vignette de son plan, son nom ; ses
+   problèmes à l'encre rouge de la table (--t-table-ko : le rouge des feuilles n'y faisait que 2,9:1) ; la flèche au survol ─── */
+.bi-essai{margin-top:56px}
+.bi-grille-demo{grid-template-columns:minmax(0,380px)}
+.bi-carte.bi-demo{color:var(--t-table)}
+.bi-demo .bi-carte-corps{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:14px;min-height:0;padding:10px 46px 10px 10px;border-radius:16px;background:transparent;color:var(--t-table);box-shadow:0 0 0 1px rgba(186,212,255,.3);
+  transition:background var(--d-rapide) var(--courbe),box-shadow var(--d-rapide) var(--courbe),transform var(--d-rapide) var(--courbe)}
+.bi-demo:hover .bi-carte-corps{background:rgba(170,200,255,.07);box-shadow:0 0 0 1px rgba(186,212,255,.45)}
+.bi-demo button.bi-carte-corps:active{transform:scale(var(--presse));transition-duration:var(--d-instant)}
 .bi-demo .bi-folio{width:60px}
 .bi-demo .bi-carte-textes{padding:0;margin:0;gap:2px}
 .bi-demo .bi-carte-nom{font-size:var(--f-14);color:var(--t-table)}
 .bi-demo .bi-carte-meta{color:var(--t-table-2)}
-.bi-demo-fleche{width:16px;height:16px;color:var(--t-table-2);opacity:0;transform:translateX(-4px);transition:opacity var(--rapide),transform var(--rapide)}
+.bi-carte-pb{color:var(--t-table-ko);font-weight:500}
+.bi-demo-fleche{width:16px;height:16px;color:var(--t-table-2);opacity:0;transform:translateX(-4px);transition:opacity var(--d-rapide) var(--courbe),transform var(--d-rapide) var(--courbe)}
 .bi-demo:hover .bi-demo-fleche,.bi-demo .bi-carte-corps:focus-visible .bi-demo-fleche{opacity:1;transform:none}
 .bi-demo .bi-plus{top:50%;right:8px;transform:translateY(-50%);color:var(--t-table-2)}
 .bi-demo .bi-plus:hover,.bi-demo .bi-plus[aria-expanded="true"]{background:var(--voile-2);color:var(--t-table)}
@@ -1643,7 +1680,6 @@ button.bi-plan-ouvrir:hover .bi-plan-ico{background:var(--s-surface);color:var(-
 .bi-pb.ok{color:var(--ok);background:var(--ok-soft)}
 .bi-pb.bi-pb-rien{padding:0 0 0 1px;height:auto;line-height:1.4;color:var(--t-3);background:none;font-weight:400}
 .bi-pb.bi-pb-rien::before{display:none}
-.bi-carte-pb{display:block;margin-top:2px;color:var(--ko);font-weight:500}
 .bi-jamais{color:var(--t-3)}
 /* « sur la table », « nouveau » : une pastille, un point et un mot */
 .bi-table,.bi-neuf{flex:none;display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 7px;border-radius:999px;font:500 var(--f-11)/1 var(--sans);font-style:normal;white-space:nowrap}
@@ -1717,24 +1753,78 @@ body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(
 .bi-rien{margin:8px 0 0;font-size:var(--f-14);color:var(--t-table-2)}
 .bi-rien-feuille{margin:0;padding:18px 14px;color:var(--t-2)}
 
-/* ─── RIEN ENCORE : l'accueil — une seule composition au milieu de la table : la pile de feuilles, le titre, une phrase,
-   deux gestes ; l'Exemple dessous, entre deux filets ─── */
-.bi-page.bi-accueil{display:flex;flex-direction:column;justify-content:center;width:min(720px,100%);min-height:100%;padding-top:40px;padding-bottom:max(80px,12vh)}
-.bi-vide{display:flex;flex-direction:column;align-items:center;text-align:center;color:var(--t-table)}
-.bi-pile-dessin{display:block;width:168px;height:auto;margin-bottom:30px;overflow:visible;filter:drop-shadow(0 18px 26px rgba(0,0,0,.55))}
-.bi-pile-dessin .bp-2{fill:color-mix(in srgb,var(--s-papier) 90%,var(--s-app));stroke:color-mix(in srgb,var(--s-app) 45%,transparent);stroke-width:1}
-.bi-pile-dessin .bp-3{fill:color-mix(in srgb,var(--s-papier) 76%,var(--s-app));stroke:color-mix(in srgb,var(--s-app) 45%,transparent);stroke-width:1}
-.bi-pile-dessin .bf-cadre{stroke-width:1}
-.bi-pile-dessin .bf-bloc{stroke-width:1.3}
-.bi-pile-dessin .bf-fil{stroke-width:1.6}
-.bi-vide>p{margin:12px 0 0;max-width:46ch;font-size:var(--f-14);line-height:1.55;color:var(--t-table-2);text-wrap:balance}
-.bi-vide>p.bi-vide-note{margin-top:6px;font-size:var(--f-12)}
-.bi-vide-gestes{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:28px}
-.bi-accueil .bi-essai{display:flex;flex-direction:column;align-items:center;margin-top:64px}
-.bi-accueil .bi-essai .bi-sous{width:100%;max-width:440px;gap:14px}
-.bi-accueil .bi-essai .bi-sous::before,.bi-accueil .bi-essai .bi-sous::after{content:"";flex:1;border-top:1px solid var(--l-table)}
-.bi-accueil .bi-grille-demo{width:min(360px,100%);grid-template-columns:minmax(0,1fr)}
-.bi-accueil .bi-reprendre,.bi-accueil .bi-bandeau,.bi-accueil .bi-ranger{margin-bottom:48px}
+/* ─── RIEN ENCORE : L'ACCUEIL, une vitrine (le designer v73, § 5.5) — au centre optique de la table, une composition : la
+   pile de feuilles (sa flaque de lumière dessous), « Ouvrez votre installation » en affiche, une phrase, deux gestes, une ligne ;
+   en bas, le dock de verre. Les mesures à 1440 × 900 : la pile 236 × 167 (300 × 212 à 1920), ↕ 44, le titre 40 px (52 à
+   1920), ↕ 14, la phrase 15 px, ↕ 34, les gestes 44 px, ↕ 18, la ligne ; le dock à 28 px du bas ─── */
+.bi-page.bi-accueil{display:flex;flex-direction:column;width:100%;min-height:100%;padding:0 24px}
+.bi-accueil>.bi-contenu{flex:1;display:flex;flex-direction:column}
+.bi-vide{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;color:var(--t-table)}
+.bi-vide-centre{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:min(760px,100%);padding:36px 0 2vh}
+/* la pile : trois feuilles — deux de papier bleuté dessous, un peu tournées, la vignette d'un plan dessus */
+.bi-pile{position:relative;flex:none;width:clamp(220px,16.4vw,320px);aspect-ratio:236/167;margin-bottom:44px}
+.bi-pile::before{content:"";position:absolute;left:50%;bottom:-23%;width:186%;height:66%;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(120,162,255,.2),rgba(120,162,255,0));pointer-events:none}
+.bi-pf{position:absolute;inset:0;border-radius:4px}
+.bi-pf3{background:var(--bi-pile-2);transform:translate(-3.4%,7.2%) rotate(-3.4deg);box-shadow:0 0 0 1px rgba(15,26,46,.22),0 18px 40px -16px rgba(0,6,18,.7)}
+.bi-pf2{background:var(--bi-pile-1);transform:translate(3%,4.2%) rotate(2.2deg);box-shadow:0 0 0 1px rgba(15,26,46,.2),0 18px 40px -16px rgba(0,6,18,.6)}
+.bi-pf1{display:block;width:100%;height:100%;background:var(--s-papier);box-shadow:0 0 0 1px rgba(255,255,255,.6),0 30px 60px -22px rgba(0,6,18,.85),0 8px 20px rgba(0,6,18,.45)}
+.bi-pf1 .bp-cadre{fill:none;stroke:var(--s-line-2);stroke-width:1}
+.bi-pf1 .bp-cart{fill:var(--s-sunken);stroke:var(--s-line-2);stroke-width:.8}
+.bi-pf1 .bp-bloc{fill:var(--s-papier);stroke:var(--t-papier);stroke-width:1.3}
+.bi-pf1 .bp-fil{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bi-pf1 .bp-noeud{fill:var(--t-papier)}
+/* le titre en affiche, la phrase, les gestes, la ligne du dépôt. Le titre tient sur UNE ligne (v74 : « Ouvrez votre
+   installation », plus long que « retest », se cassait en deux à 1920) ; il ne passe à la ligne que dans une fenêtre
+   étroite, équilibré. La phrase suit la taille de l'affiche (15 px à 1440, 17 à 1920) */
+.bi-titre.bi-affiche{max-width:100%;font:600 var(--f-44)/1.1 var(--titre);letter-spacing:-.032em;color:var(--t-table)}
+.bi-chapeau{margin:14px 0 0;max-width:44ch;font:400 clamp(var(--f-15),.9vw,17px)/1.6 var(--sans);color:var(--t-table-2);text-wrap:balance}
+.bi-vide-note{margin:6px 0 0;font-size:var(--f-12);color:var(--t-table-2)}
+.bi-vide-gestes{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:34px}
+.bi-vide-gestes .bi-btn{height:44px;gap:10px;border-radius:12px;font-size:var(--f-14);letter-spacing:-.006em}
+.bi-vide-gestes .bi-btn .ico{width:18px;height:18px}
+.bi-btn.bi-btn-ouvrir{padding:0 10px 0 16px}
+.bi-vide-gestes .bi-btn-2{padding:0 16px 0 13px}
+/* ses touches : deux, « Ctrl » et « O », à l'encre sur le bouton clair (l'ergonome v73 : 1,47:1, un fantôme) ; le « + » se
+   lit aux lecteurs d'écran, il ne se voit pas */
+.bi-touches-k{position:relative;display:inline-flex;gap:3px;margin-left:6px;padding:0;background:none;font:inherit}
+.bi-touches-k span{font:500 var(--f-11)/1 var(--mono);color:var(--kbd-clair-t);background:var(--kbd-clair-fond);box-shadow:inset 0 0 0 1px rgba(15,26,46,.1);border-radius:5px;padding:4px 5px}
+.bi-touches-k i{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.bi-vide-depot{display:flex;align-items:center;gap:8px;margin:18px 0 0;font:400 var(--f-13)/1.4 var(--sans);color:var(--t-table-2)}
+.bi-vide-depot .ico{flex:none;width:16px;height:16px;opacity:.85}
+.biblio.survol-depot .bi-vide-depot{color:var(--t-table)}
+/* LE DOCK : le verre des palets, en bas au milieu ; des tuiles de 56 px — l'Exemple (sa vignette), la base des contrats (son
+   icône), « Reprendre » quand un plan est resté sur la table — séparées d'un filet. Pas de flou : la table qui dérive
+   dessous le ferait recalculer à chaque pas (le verre presque opaque, le même coût que le designer a mesuré) */
+.bi-dock{flex:none;display:flex;align-items:center;gap:4px;max-width:100%;margin:20px 0 28px;padding:8px;border-radius:20px;background:var(--bi-verre-dock);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(186,212,255,.22),0 24px 48px -16px rgba(0,6,18,.8)}
+.bi-dock hr{flex:none;align-self:center;width:1px;height:32px;margin:0 4px;border:none;background:rgba(170,200,255,.18)}
+.bi-tuile{position:relative;display:flex;align-items:center;gap:12px;min-width:0;height:56px;padding:0 18px 0 8px;border:none;border-radius:13px;background:none;color:var(--t-table);text-align:left;cursor:pointer;
+  transition:background var(--d-rapide) var(--courbe),transform var(--d-rapide) var(--courbe)}
+.bi-tuile:hover{background:rgba(170,200,255,.1)}
+.bi-tuile:active{transform:scale(var(--presse));transition-duration:var(--d-instant)}
+.bi-tuile .bi-folio{width:56px}
+.bi-tuile-ico{flex:none;width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:rgba(170,200,255,.12);box-shadow:inset 0 0 0 1px rgba(170,200,255,.18)}
+.bi-tuile-ico .ico{width:20px;height:20px;color:#cdd8eb;stroke-width:1.5}
+.bi-tuile-t{display:flex;flex-direction:column;gap:1px;min-width:0}
+.bi-tuile-t b{font:600 var(--f-13)/1.3 var(--sans);letter-spacing:-.006em;white-space:nowrap}
+.bi-tuile-t small{font:400 var(--f-12)/1.35 var(--sans);color:var(--t-table-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-tuile kbd{flex:none;margin-left:4px;font:500 var(--f-11)/1 var(--mono);color:var(--t-table);background:var(--voile-2);border-radius:5px;padding:5px 7px}
+/* l'Exemple dans le dock : la même carte que sur la bibliothèque pleine, sans son cadre — une tuile */
+.bi-dock .bi-carte.bi-demo{display:block;min-width:0}
+.bi-dock .bi-demo .bi-carte-corps.bi-tuile{display:flex;flex-direction:row;align-items:center;min-height:0;padding:0 18px 0 8px;border-radius:13px;background:none;box-shadow:none}
+.bi-dock .bi-demo:hover .bi-carte-corps.bi-tuile{background:rgba(170,200,255,.1);box-shadow:none}
+/* la bulle d'une tuile : au-dessus (la phrase de la base des contrats) */
+.bulle.bi-bulle-haut{display:block;left:50%;top:auto;bottom:calc(100% + 14px);width:max-content;max-width:300px;transform:translate(-50%,3px);white-space:normal;text-align:left}
+.bulle.bi-bulle-haut::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--bulle)}
+.bi-tuile.bulle-on>.bi-bulle-haut{transform:translate(-50%,0)}
+/* sur l'accueil, la barre du haut s'efface : la marque et le menu flottent sur la table ; elle revient ailleurs */
+body.biblio #entete{transition:background var(--d-moyen) var(--courbe),box-shadow var(--d-moyen) var(--courbe)}
+body.biblio-accueil #entete{background:transparent;box-shadow:none}
+/* le fil de la barre du haut : l'installation porte sa bulle (la règle des bulles du chrome) — le nom seul s'élide, la
+   bulle déborde du bouton ; le bouton lui-même ne coupe rien (v74 : il gardait les points de suspension du chrome, et sa
+   bulle, qui déborde, le faisait lire comme un texte rogné — tests/ux.js, « ExempleExemple : ses plans ») */
+#en-install{position:relative;overflow:visible;text-overflow:clip;display:inline-flex;align-items:center}
+#en-install .en-install-nom{min-width:0;overflow:hidden;text-overflow:ellipsis}
 
 /* ─── LE RAIL : toutes les installations, à gauche d'une installation — un clic passe de l'une à l'autre ─── */
 .bi-page.bi-avec-rail{display:grid;grid-template-columns:224px minmax(0,1fr);column-gap:40px;align-items:start;width:min(1400px,100%)}
@@ -1755,26 +1845,21 @@ body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(
 .bi-rail-demo{color:var(--t-table-2)}
 .bi-rail li:has(.bi-rail-demo){margin-top:8px;padding-top:8px;border-top:1px solid var(--l-table)}
 
-/* ─── l'arrivée : les cartes et la feuille se posent, l'une après l'autre (une fois, pas à chaque lettre cherchée) ─── */
-.bi-entre .bi-carte,.bi-entre .bi-feuille,.bi-entre .bi-vide,.bi-entre .bi-reprendre,.bi-entre .bi-bandeau,.bi-entre .bi-essai,.bi-entre .bi-rail{animation:bi-pose var(--lent) both}
-.bi-entre .bi-carte:nth-child(2){animation-delay:.03s}.bi-entre .bi-carte:nth-child(3){animation-delay:.06s}.bi-entre .bi-carte:nth-child(4){animation-delay:.09s}
-.bi-entre .bi-carte:nth-child(5){animation-delay:.12s}.bi-entre .bi-carte:nth-child(n+6){animation-delay:.15s}
-.bi-entre .bi-essai{animation-delay:.12s}
-@keyframes bi-pose{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-
-/* ─── L'ACCUEIL (« Ouvrez votre retest ») : le geste n°1 clair sur la nuit, son raccourci ; le dépôt dit, au pointillé ;
-   la base des contrats déjà faits en lien ─── */
-.bi-btn.bi-btn-ouvrir{height:42px;padding:0 10px 0 14px;gap:9px;font-size:var(--f-14)}
-.bi-btn-ouvrir kbd{margin-left:4px;font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);background:rgba(15,26,46,.08);box-shadow:inset 0 0 0 1px rgba(15,26,46,.12);border-radius:5px;padding:4px 6px}
-.bi-vide-gestes .bi-btn-2{height:42px}
-.bi-vide>p.bi-vide-depot{display:flex;flex-direction:column;gap:3px;width:min(520px,100%);max-width:none;margin:22px 0 0;padding:14px 20px;border:1px dashed var(--l-table-2);border-radius:var(--r-2);font-size:var(--f-13);line-height:1.5}
-.bi-vide-depot b{color:var(--t-table);font-weight:600}
-.bi-vide>p.bi-vide-base{max-width:64ch;margin-top:18px;font-size:var(--f-13)}
-.bi-vide-base span{display:block}
-.bi-lien-vide{padding:0 2px;border:none;background:none;color:var(--t-table);font:600 var(--f-13)/1.5 var(--sans);text-decoration:underline;text-decoration-color:var(--l-table-2);text-underline-offset:3px;cursor:pointer}
-.bi-lien-vide:hover{text-decoration-color:var(--t-table)}
-.biblio.survol-depot .bi-vide-depot{border-style:solid;border-color:var(--t-table)}
+/* ─── L'ARRIVÉE (08-bibliotheque, `poser`) : une fois par session, ce qu'on voit se pose en cascade — la règle commune
+   `.entre-v` (style.css : 420 ms, de --monte, 40 ms d'écart, posée élément par élément) —, puis les deux câbles de la pile
+   se tracent (640 ms, à +260 et +380 ms). Ensuite (le retour du plan, une autre vue) : un fondu de 220 ms, rien ne bouge ─── */
+.bi-page.entre-v.bi-fondu{--entre-y:0px;animation-duration:var(--d-moyen)}
+.bi-trace .bp-fil{stroke-dasharray:1;stroke-dashoffset:1;animation:bi-trace var(--d-trace) var(--courbe-entree) both;animation-delay:calc(260ms + var(--j,0) * 120ms)}
+@keyframes bi-trace{to{stroke-dashoffset:0}}
+.bi-trace .bp-noeud{animation:entre var(--d-moyen) var(--courbe-entree) 380ms both;--entre-y:0px}
 .bi-compte-base{color:var(--t-table-2)}
+/* le mot qui passe, sur la bibliothèque : en bas, au milieu de ce qu'elle laisse (l'ergonome v73 : en haut, il se posait sur
+   le titre « Bibliothèque ») ; sur l'accueil, au-dessus du dock */
+body.biblio #toast{top:auto;left:50%;bottom:calc(var(--jeu) + 22px)}
+body.biblio.fiche-ouverte #toast{left:calc((100vw - var(--fiche-l) - var(--jeu)) / 2)}
+body.biblio-accueil #toast{bottom:calc(var(--jeu) + 112px)}
+/* posé en bas, il monte en paraissant (en haut, il descend) */
+body.biblio #toast:not(.on){transform:translateX(-50%) translateY(8px) scale(.98)}
 
 /* ─── CHERCHER DANS TOUT : les contrats que la base porte, une carte chacun sur la feuille, leurs lignes dessous ─── */
 .bi-trouve{margin-top:44px}
@@ -1784,6 +1869,10 @@ body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(
 .bi-trouve-sous{flex:1;min-width:0;margin:0;font-size:var(--f-12);color:var(--t-table-2)}
 .bi-trouve-lot{align-self:center;height:30px}
 .bi-trouves{display:flex;flex-direction:column;gap:0;padding:6px}
+/* ses filtres, en tête de la feuille : une famille par installation, appareil, année — les puces communes (`.puce`) */
+.bi-filtres{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin-bottom:4px;padding:6px 8px 12px;border-bottom:1px solid var(--s-line)}
+.bi-filtres-g{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
+.bi-filtres-mot{margin-right:2px;font:500 var(--f-12)/1 var(--sans);color:var(--t-2)}
 .bi-tc+.bi-tc{border-top:1px solid var(--s-line)}
 .bi-tc-tete{display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;align-items:center;column-gap:14px;width:100%;min-height:54px;padding:6px 12px;border:none;border-radius:var(--r-2);background:none;color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide)}
 .bi-tc-tete:hover{background:var(--s-hover)}
@@ -1815,7 +1904,7 @@ body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(
 .bi-coche-tous{padding:0;border:none;background:none;cursor:pointer;justify-self:start}
 .bi-en-lot .bi-plan-ouvrir:hover .bi-coche{border-color:var(--t-2)}
 .bi-lot-place{position:sticky;bottom:16px;z-index:8;margin-top:24px}
-.bi-lot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 10px 8px 18px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-panneau);font-size:var(--f-13);animation:bi-pose var(--moyen) both}
+.bi-lot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 10px 8px 18px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-panneau);font-size:var(--f-13);animation:entre var(--d-moyen) var(--courbe-entree) both}
 .bi-lot-n{white-space:nowrap}
 .bi-lot-n b{font-variant-numeric:tabular-nums}
 .bi-lot-o{display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap}
@@ -1839,7 +1928,7 @@ body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(
 .bi-lot-nom{font:500 var(--f-12)/1 var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40ch}
 
 /* ─── LA CARTE DE LECTURE d'une grande base : du papier, en bas à droite, au-dessus de tout ; la barre dit le travail fait ─── */
-.lecture-base{position:fixed;right:16px;bottom:16px;z-index:60;width:min(380px,calc(100vw - 32px));padding:14px 16px 12px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-panneau);font-size:var(--f-13);animation:bi-pose var(--moyen) both}
+.lecture-base{position:fixed;right:16px;bottom:16px;z-index:60;width:min(380px,calc(100vw - 32px));padding:14px 16px 12px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-panneau);font-size:var(--f-13);animation:entre var(--d-moyen) var(--courbe-entree) both}
 .lb-tete{display:flex;align-items:center;gap:8px;min-width:0}
 .lb-tete .ico{flex:none;width:16px;height:16px;color:var(--t-2)}
 .lb-tete b{min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1904,8 +1993,14 @@ body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(
   .bi-ligne.avec-install>:nth-child(3){display:none}.bi-ligne.avec-install>:nth-child(4){display:block}
   .bi-page.bi-avec-rail{display:block}
   .bi-rail{display:none}
-  .bi-rep-n,.bi-reprendre kbd{display:none}
+  .bi-rep-n,.bi-rep-folios,.bi-reprendre kbd{display:none}
   .bi-reprendre .bi-folio{width:48px}
+  /* l'accueil étroit : la pile plus petite, le dock passe à la ligne */
+  .bi-page.bi-accueil{padding:0 12px}
+  .bi-pile{width:180px;margin-bottom:28px}
+  .bi-titre.bi-affiche{font-size:30px}
+  .bi-dock{flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+  .bi-dock hr,.bi-tuile kbd{display:none}
 }
 
 /* ───────── style-carte.css ───────── */
@@ -5088,24 +5183,43 @@ details[open]>summary .see-ctl-g::after{transform:translateY(1px) rotate(-135deg
 .see-m1-c li b{font:600 var(--f-12)/1.5 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
 
 /* ───────── style-table.css ───────── */
-/* ───────── LA TABLE SOBRE, ET CE QUI S'Y ÉCRIT PENDANT QU'UN FOLIO SE DESSINE (08-table, 08-interface) ─────────
-   La table « Nuit bleue » telle que style.css la pose (ses jetons : le fond, le souffle, les points, la lueur), conduite
-   sobrement : au repos, rien ne tourne (l'audit de fluidité : un cœur entier brûlé à ne rien faire, 1 % maintenant), et
-   à l'œil, la même. Puis l'attente d'un folio (la barre, ce qu'on peut faire pendant), le fondu d'un dessin qui en
-   remplace un autre, la petite bande qui dit ce qui travaille. */
-
-/* le souffle : une respiration d'opacité seule (le calque plein écran ne s'agrandit plus : il se rééchantillonnait à chaque
-   image), figée au milieu de son cycle — sa lumière reste —, vivante seulement quand on est là (08-table, `.respire`), et
-   jamais pendant un geste ni sous une feuille qui prend la page */
-#table .ta-souffle{animation:ta-souffle 16s ease-in-out -8s infinite alternate;animation-play-state:paused;will-change:opacity;transform:none}
-@keyframes ta-souffle{from{opacity:.45}to{opacity:1}}
-#table.respire:not(.geste) .ta-souffle{animation-play-state:running}
-body:has(#base.page:not([hidden])) #table .ta-souffle,body:has(#fiche[data-mode="see"]:not([hidden])) #table .ta-souffle{animation-play-state:paused}
+/* ───────── LA TABLE VIVANTE, ET CE QUI S'Y ÉCRIT PENDANT QU'UN FOLIO SE DESSINE (08-table, 08-interface) ─────────
+   La table « Nuit bleue » (v73 : le lecteur la voulait « qui bouge un peu ») : le fond de style.css, puis deux NAPPES de
+   lumière qui dérivent, les POINTS plus discrets et estompés vers les bords, la LUEUR qui suit la souris et, sous elle, la
+   grille RÉVÉLÉE, le COURANT qui court parfois une rangée de points. Tout se déplace par `transform` (le compositeur, rien
+   à repeindre) ; 08-table les conduit, à 10 Hz, et les endort au repos. Spécification et mesures : le designer v73 (§ 6,
+   maquettes/accueil-vivant.html). Puis l'attente d'un folio (la barre, ce qu'on peut faire pendant), le fondu d'un dessin
+   qui en remplace un autre, la petite bande qui dit ce qui travaille. */
+:root{
+  /* les nappes : deux ellipses de lumière froide, rastérisées une fois, que la dérive déplace */
+  --nappe-a:radial-gradient(closest-side,rgba(92,138,226,.34),rgba(92,138,226,.12) 45%,rgba(92,138,226,0));
+  --nappe-b:radial-gradient(closest-side,rgba(40,112,170,.30),rgba(40,112,170,.10) 50%,rgba(40,112,170,0));
+  /* les points au repos (16 % : la grille se devine), sous la lueur (55 % : elle se révèle), estompés vers les bords */
+  --grille-repos:rgba(160,188,240,.16); --s-grille-revele:rgba(190,212,255,.55);
+  --points-vignette:radial-gradient(ellipse 72% 68% at 50% 46%,#000 35%,rgba(0,0,0,.35) 75%,transparent);
+  /* le courant : un trait de glace qui s'éclaire vers sa tête */
+  --courant:linear-gradient(90deg,rgba(159,194,255,0),rgba(190,214,255,.85) 70%,#ebf3ff)}
+/* les nappes : centrées sur l'écran, plus grandes que lui ; la dérive (08-table) les pose à leur place et les promène */
+#table .ta-nappe{inset:auto;left:50%;top:50%;will-change:transform,opacity}
+#table .ta-nappe-a{width:120vmax;height:90vmax;margin:-45vmax 0 0 -60vmax;background:var(--nappe-a)}
+#table .ta-nappe-b{width:110vmax;height:80vmax;margin:-40vmax 0 0 -55vmax;background:var(--nappe-b)}
 /* les points : un calque d'un pas plus grand que l'écran, que la parallaxe glisse (un transform, rien à repeindre) */
-#table .ta-points{inset:-24px;will-change:transform}
-/* la lueur : un peu plus petite, elle se pose vite (moins d'images à composer) ; cachée sous une feuille qui prend la page */
-#table .ta-lueur{width:640px;height:640px;margin:-320px 0 0 -320px;transition:opacity .6s ease}
-body:has(#base.page:not([hidden])) #table .ta-lueur,body:has(#fiche[data-mode="see"]:not([hidden])) #table .ta-lueur{display:none}
+#table .ta-points{inset:-24px;will-change:transform;background-image:radial-gradient(circle at 1px 1px,var(--grille-repos) 1px,transparent 1.5px);
+  -webkit-mask-image:var(--points-vignette);mask-image:var(--points-vignette)}
+/* la lueur : un disque de lumière froide, posé par un ressort ; elle paraît quand la souris est vue */
+#table .ta-lueur{width:760px;height:760px;margin:-380px 0 0 -380px;transition:opacity .8s ease}
+/* ce qu'elle révèle : les mêmes points, plus vifs, dans un disque estompé qui la suit (08-table les recale sur la grille) */
+#table .ta-revele{inset:auto;left:0;top:0;width:420px;height:420px;margin:-210px 0 0 -210px;overflow:hidden;border-radius:50%;opacity:0;transition:opacity .8s ease;will-change:transform;
+  -webkit-mask-image:radial-gradient(closest-side,#000,rgba(0,0,0,.45) 55%,transparent);mask-image:radial-gradient(closest-side,#000,rgba(0,0,0,.45) 55%,transparent)}
+#table .ta-revele i{position:absolute;left:-24px;top:-24px;width:468px;height:468px;will-change:transform;
+  background-image:radial-gradient(circle at 1px 1px,var(--s-grille-revele) 1.1px,transparent 1.6px);background-size:24px 24px}
+#table.vue:not(.sur-lu) .ta-revele{opacity:1}
+#table.sur-lu .ta-revele{transition-duration:.35s}
+/* le courant : 150 × 1,5 px et sa tête (un point de glace, un halo) ; 08-table le fait courir (Web Animations) */
+#table .ta-courant{inset:auto;left:0;top:0;width:150px;height:1.5px;border-radius:1px;opacity:0;will-change:transform,opacity;background:var(--courant);box-shadow:0 0 6px 1px rgba(140,180,255,.35)}
+#table .ta-courant::after{content:"";position:absolute;right:-2px;top:-1.5px;width:4.5px;height:4.5px;border-radius:50%;background:#eef4ff;box-shadow:0 0 8px 2px rgba(150,190,255,.6)}
+/* sous une feuille qui prend la page, la table ne se voit plus : la lueur, ce qu'elle révèle et le courant s'éteignent */
+body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),body:has(#fiche[data-mode="see"]:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant){display:none}
 
 /* ─── L'ATTENTE D'UN FOLIO (08-interface, `montrerAttente`) : le folio, ses câbles, la durée, une barre, et deux gestes ─── */
 .attente .at-barre{display:block;width:min(240px,60%);height:3px;margin-top:8px;border-radius:2px;background:var(--l-table-2);overflow:hidden}
@@ -5125,7 +5239,8 @@ body:has(#base.page:not([hidden])) #table .ta-lueur,body:has(#fiche[data-mode="s
 .chip.a-venir:not(.on){opacity:.5}
 
 @media (prefers-reduced-motion:reduce){
-  #table .ta-souffle{animation:none;opacity:.75}
+  /* la même lumière, immobile : les nappes posées au temps zéro (08-table), ni lueur, ni révélation, ni courant */
+  #table :is(.ta-lueur,.ta-revele,.ta-courant){display:none}
   #table .ta-points{transform:none!important}
   .dessin-fondu{display:none}
 }
@@ -5154,9 +5269,10 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 </style>
 </head>
 <body>
-<!-- LA TABLE, sous tout : l'encre bleu nuit dégradée, une lumière qui respire, les points (en légère parallaxe du plan), une
-     lueur qui suit la souris de loin (08-table). Leurs dessins sont des jetons de style.css ; le mouvement réduit les fige. -->
-<div id="table" aria-hidden="true"><div class="ta-fond"></div><div class="ta-souffle"></div><div class="ta-points"></div><div class="ta-lueur"></div></div>
+<!-- LA TABLE VIVANTE, sous tout : l'encre bleu nuit dégradée, deux nappes de lumière qui dérivent, les points (en légère
+     parallaxe du plan), la lueur qui suit la souris et la grille qu'elle révèle, le courant qui court parfois une rangée
+     (08-table, style-table.css). Le mouvement réduit les fige ; au repos, elle s'endort. -->
+<div id="table" aria-hidden="true"><div class="ta-fond"></div><div class="ta-nappe ta-nappe-a"></div><div class="ta-nappe ta-nappe-b"></div><div class="ta-points"></div><div class="ta-lueur"></div><div class="ta-revele"><i></i></div><div class="ta-courant"></div></div>
 <div id="app">
   <!-- LA BARRE DU HAUT : la marque, la recherche, le menu — rien d'autre (le lecteur : le contrat, ses comptes et son
        état « ne servent à rien » ici ; ils sont dans le menu, et l'état sur le bouton des repères du rail). La marque mène
@@ -15687,10 +15803,20 @@ function formatDuDessin(dessin) {
        retest : son nom, ses folios, créé, modifié, ouvert), « Ajouter un plan »
        (un ou plusieurs retests, Excel ou CSV, choisis ou déposés) ; un clic
        ouvre le plan sur la table, avec ses folios.
-   L'ACCUEIL (rien encore) : une seule composition au milieu de la table — une
-   pile de feuilles, « Ouvrez votre retest », « Ouvrir un retest… Ctrl+O » (clair
-   sur la nuit) puis « Nouvelle installation », le dépôt dit, la base en lien ;
-   l'Exemple dessous, « Pour essayer », qui s'ouvre d'un clic.
+   L'ACCUEIL (rien encore) : une VITRINE (le lecteur, v73 : « comme l'écran
+   d'accueil d'un iPhone, stylisé, travaillé ») — au centre optique de la table,
+   une pile de trois feuilles, « Ouvrez votre installation » en affiche (v74 :
+   le fichier du lecteur s'appelle une installation), une phrase, deux gestes
+   (« Ouvrir une installation… » clair sur la nuit, ses touches Ctrl O ;
+   « Nouvelle installation » au verre), une ligne (« ou glissez-le n'importe où
+   dans la fenêtre ») ; en bas, le DOCK de verre : l'Exemple et la base des
+   contrats déjà faits, comme deux applications (« Reprendre » le plan resté sur
+   la table s'y ajoute). Elle se pose en cascade, une fois, puis les deux câbles
+   de la vignette se tracent ; la barre du haut s'efface : la marque flotte.
+   LA BIBLIOTHÈQUE PLEINE : la tête en affiche, « Reprendre » en verre (le papier
+   est réservé à ce qu'on choisit), « Installations, par n° ECP » et son filet,
+   les cartes en grille — chacune une vraie pile de feuilles, qui s'évente au
+   survol, son état en pastille —, l'Exemple au trait, en dernier.
    Ce qui est un plan se montre en VIGNETTE (une petite feuille blanche, son
    dessin à l'encre, deux fils aux couleurs des routes) : l'Exemple,
    « Reprendre », l'accueil.
@@ -15769,6 +15895,7 @@ const ICONES_BI = {
   install: '<path d="M8 3.5h10a1.5 1.5 0 0 1 1.5 1.5v12.5"/><rect x="4.5" y="6.5" width="12" height="14" rx="1.5"/><path d="M4.5 16h12"/>',
   loupe: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   depot: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+  glisser: '<path d="M12 3v10M8 9l4 4 4-4"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>',
   retour: '<path d="m14.5 6-6 6 6 6"/>',
   points: '<circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
   ouvrir: '<path d="M5 12h13M13 7l5 5-5 5"/>',
@@ -15786,9 +15913,13 @@ const DESSIN_FOLIO = '<rect class="bf-papier" x=".5" y=".5" width="63" height="4
   + '<path class="bf-cadre" d="M41 33.5h19.5M47.5 33.5v7"/><rect class="bf-bloc" x="8.5" y="10.5" width="9" height="11" rx="1"/><rect class="bf-bloc" x="42.5" y="8.5" width="12" height="9" rx="1"/><rect class="bf-bloc" x="42.5" y="21.5" width="12" height="9" rx="1"/>'
   + '<path class="bf-fil bf-a" d="M17.5 13H42.5"/><path class="bf-fil bf-b" d="M17.5 18.5h11v7.5h14"/><circle class="bf-noeud" cx="28.5" cy="18.5" r="1.1"/>';
 const folioMini = cls => `<svg class="bi-folio ilot-clair${cls ? ' ' + cls : ''}" viewBox="0 0 64 44" aria-hidden="true">${DESSIN_FOLIO}</svg>`;
-/* L'accueil : une installation est une pile de feuilles — deux feuilles sombres dessous, la vignette d'un plan dessus. */
-const pileAccueil = () => `<svg class="bi-pile-dessin" viewBox="0 0 168 124" aria-hidden="true"><rect class="bp-3" x="26.5" y="17.5" width="115" height="103" rx="6"/><rect class="bp-2" x="17.5" y="10.5" width="133" height="103" rx="6"/>`
-  + `<svg class="ilot-clair" x="8" y="2" width="152" height="104.5" viewBox="0 0 64 44">${DESSIN_FOLIO}</svg></svg>`;
+/* L'accueil : une installation est une PILE DE FEUILLES — deux feuilles de papier dessous, un peu tournées, la vignette d'un
+   plan dessus (son cadre, son cartouche, un disjoncteur, deux équipements, deux câbles aux couleurs des routes, qui se
+   tracent quand l'accueil se pose : `pathLength` les mesure). Une flaque de lumière dessous la pose sur la table. */
+const pileAccueil = () => `<div class="bi-pile ilot-clair" aria-hidden="true"><i class="bi-pf bi-pf3"></i><i class="bi-pf bi-pf2"></i><svg class="bi-pf bi-pf1" viewBox="0 0 236 167">`
+  + '<rect class="bp-cadre" x="9.5" y="9.5" width="217" height="148" rx="1"/><rect class="bp-cart" x="140.5" y="132.5" width="86" height="25"/><path class="bp-cadre" d="M170 132.5v25"/>'
+  + '<rect class="bp-bloc" x="28.5" y="44.5" width="36" height="46" rx="1.5"/><rect class="bp-bloc" x="160.5" y="30.5" width="44" height="30" rx="1.5"/><rect class="bp-bloc" x="160.5" y="76.5" width="44" height="30" rx="1.5"/>'
+  + '<path class="bp-fil bf-a" pathLength="1" d="M64.5 56.5H112.5V45.5H160.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M64.5 78.5H120.5V91.5H160.5"/><circle class="bp-noeud" cx="112.5" cy="56.5" r="2.2"/></svg></div>';
 
 /* ---- ce que la bibliothèque sait d'un plan -------------------------------------------------------------------------- */
 /* Le résumé d'un contrat (gardé ou neuf) : combien de liaisons, de folios, ses harness, ses dessins, son appareil — ce que
@@ -15829,11 +15960,12 @@ const installNommee = nom => { const k = cleTexte(nom); return installsVraies().
 // « À ranger » : là où va ce qui n'a pas d'installation (un fichier ouvert hors de toute installation, un contrat d'avant la bibliothèque)
 const installARanger = () => BIB.installs.get(ID_A_RANGER) || creerInstall(NOM_A_RANGER, { id: ID_A_RANGER });
 /* Un plan : son installation, son nom, son résumé ; son contrat, quand on le donne (`liaisons`), se garde « neuf » — à sa
-   première ouverture il se charge comme un fichier (les folios se découpent s'il le faut, les choix partent de zéro). */
+   première ouverture il se charge comme un fichier (les folios se découpent s'il le faut, les choix partent de zéro, sauf
+   ce que garde la feuille « Volta » d'un retest corrigé : `o.volta`, repris à l'ouverture). */
 function creerPlan(installId, nom, liaisons, o) { o = o || {}; const t = Date.now();
   const p = { id: o.id || nouvelId('p'), install: installId, nom: String(nom || '').trim() || 'Sans nom', source: o.source || 'fichier', cree: t, vu: 0, modifie: t, ...resumeDe({ liaisons: liaisons || [] }) };
   BIB.plans.set(p.id, p); BIB.supprimes.delete(p.id); garderPlan(p);
-  if (liaisons && o.contrat !== false) ecrireBiblio('contrats', p.id, { planId: p.id, nom: p.nom, liaisons: liaisons.map(l => ({ ...l })), neuf: true, t });
+  if (liaisons && o.contrat !== false) ecrireBiblio('contrats', p.id, { planId: p.id, nom: p.nom, liaisons: liaisons.map(l => ({ ...l })), neuf: true, t, ...(o.volta ? { volta: o.volta } : {}) });
   return p; }
 /* L'installation où va un plan neuf : celle qu'on regarde, sinon celle du plan sur la table, sinon « À ranger » — jamais
    l'Exemple, qui reste tel qu'il est livré. */
@@ -15863,8 +15995,9 @@ function planPour(o, nom, L) { let p;
 /* Le plan sur la table vient d'être enregistré (08-interface, `ecrireContrat`) : son contrat et son résumé se gardent. */
 function garderLePlan(o) { const p = o.planId && BIB.plans.get(o.planId); if (!p) return;
   Object.assign(p, resumeDe(o), { nom: o.nom || p.nom, modifie: o.t });
-  // ce qu'il reste à faire : le compte du contrôle (08-controle) tel qu'il est quand le plan se garde — la bibliothèque le dit
-  if (typeof CONTROLE !== 'undefined' && CONTROLE.cle) { const ko = CONTROLE.items.filter(x => x.niveau === 'ko').length; p.problemes = { ko, att: CONTROLE.items.length - ko }; }
+  // ce qu'il reste à faire : le compte du contrôle tel qu'il est quand le plan se garde, lu à sa source unique (08-controle,
+  // `compteProblemes` : les nombres de la pastille du rail) — la bibliothèque le dit
+  if (typeof compteProblemes === 'function' && typeof CONTROLE !== 'undefined' && CONTROLE.cle) { const c = compteProblemes(); p.problemes = { ko: c.ko, att: c.att }; }
   garderPlan(p); ecrireBiblio('contrats', p.id, o);
   if (bibliothequeOuverte() && !BIB.edition) rendreContenuBibliotheque(); }
 
@@ -15880,7 +16013,7 @@ async function chargerBibliotheque() { const [I, P] = await Promise.all([toutLir
     if (app.nom === NOM_EXEMPLE) { assurerExemple(true); app.planId = ID_EXEMPLE; }
     else app.planId = creerPlan(installARanger().id, app.nom || 'Plan sans nom', verite(), { contrat: false }).id;
     sauver(); }
-  BIB.aAdopter = false; BIB.pret = true; synchroniserBibliotheque(); if (bibliothequeOuverte()) { rendreBibliotheque(); poser(); } }
+  BIB.aAdopter = false; BIB.pret = true; synchroniserBibliotheque(); if (bibliothequeOuverte()) { rendreBibliotheque({ arrivee: true }); poser(); } }
 
 /* ---- aller de la bibliothèque au plan, et retour ------------------------------------------------------------------- */
 /* Montrer la bibliothèque — la racine, ou une installation (`id`). Le plan reste sur la table, dessous : ce qu'on y a fait est
@@ -15892,12 +16025,12 @@ function montrerBibliotheque(vue, id) { const venait = BIB.vue === 'plan';
   BIB.vue = vue || 'racine'; BIB.install = BIB.vue === 'install' ? id : ''; BIB.pop = null; BIB.edition = null; BIB.confirme = null;
   if (BIB.vue === 'install') { const i = BIB.installs.get(id); i.vu = Date.now(); garderInstall(i); BIB.ranger = null; }
   const el = $('bibliotheque'); el.hidden = false; document.body.classList.add('biblio');
-  rendreBibliotheque(); poser(); synchroniserFil(); el.scrollTop = 0; }
+  rendreBibliotheque({ arrivee: true }); poser(); synchroniserFil(); el.scrollTop = 0; }
 function quitterLePlan() { if (app.cible || app.choisi) { app.cible = null; app.choisi = null; eteindre(); peindre(); }
   fermerInspecteur(); fermerBase(); fermerFiche(); fermerRecherche(); fermerMenu(); }
 /* Le plan sur la table, la bibliothèque s'efface (un plan ouvert, chargé, repris). */
 function montrerLePlan() { if (typeof retirerCarteLecture === 'function') retirerCarteLecture(); if (BIB.vue === 'plan') return; BIB.vue = 'plan'; BIB.pop = null; BIB.edition = null; BIB.confirme = null; BIB.ranger = null; BIB.nouveaux.clear();
-  $('bibliotheque').hidden = true; document.body.classList.remove('biblio'); synchroniserBibliotheque(); }
+  $('bibliotheque').hidden = true; document.body.classList.remove('biblio', 'biblio-accueil'); synchroniserBibliotheque(); }
 // ce qui porte sur le plan (le récapitulatif, la nomenclature, les exports, le cartouche) le remet sur la table d'abord
 const surLePlan = fn => (...a) => { if (bibliothequeOuverte()) { if (!planSurLaTable()) { dire('Aucun plan ouvert : choisissez une installation, puis un plan.'); return; } montrerLePlan(); } return fn(...a); };
 /* OUVRIR UN PLAN : le sien, tel qu'on l'a laissé (ses liaisons, ses choix, son folio) ; un plan jamais ouvert se charge
@@ -15912,7 +16045,13 @@ async function ouvrirPlan(id, apres) { const p = BIB.plans.get(id); if (!p) retu
     if (!L || !L.length) { dire(guillemets(nomAffiche(p.nom)) + ' vient de la base des contrats déjà faits, qui n’est plus dans ce navigateur : redéposez-la.', true); return; }
     chargerContrat(L, 'ouverture de ' + p.nom, p.nom, { planId: id }); app.hist = []; synchroniserHistorique(); if (apres) aller(apres); return; }
   if (!o || !o.liaisons) { dire(guillemets(nomAffiche(p.nom)) + ' n’a plus ses liaisons dans ce navigateur.', true); return; }
-  if (o.neuf) { chargerContrat(o.liaisons, 'ouverture de ' + p.nom, p.nom, { planId: id }); app.hist = []; synchroniserHistorique(); if (apres) aller(apres); return; }
+  // un retest corrigé déposé, ouvert pour la première fois (même un autre jour) : ce que garde sa feuille « Volta » — les
+  // profils, les choix des fiches ; les hypothèses, dites et offertes — se reprend une fois (08-export, `reprendreVolta`).
+  // La reprise en attente de la même lecture (`VOLTA.attente`) est la même : elle ne se dit pas deux fois.
+  if (o.neuf) { const v = o.volta && typeof reprendreVolta === 'function' ? o.volta : null; if (v && typeof VOLTA !== 'undefined') VOLTA.attente = null;
+    chargerContrat(o.liaisons, 'ouverture de ' + p.nom, p.nom, { planId: id }); app.hist = []; synchroniserHistorique();
+    if (v) { const dit = reprendreVolta(v, []); if (dit) dire(dit.msg, false, dit.geste ? { geste: dit.geste, faire: dit.faire } : null); }
+    if (apres) aller(apres); return; }
   poserEtat({ ...o, planId: id }); app.hist = []; app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false; $('q').value = '';
   fermerFiche(); fermerMenu(); montrerLePlan(); redessiner(); retrouverVue(); heureSauve(o.t); sauver(); if (apres) aller(apres); }
 // la table vide : le plan qu'elle portait vient d'être supprimé
@@ -15985,8 +16124,10 @@ async function plansDuFichier(f) { const nom = f.name || 'le fichier', L = await
     if (lu && lu.liaisons.length) return { plans: [{ nom, liaisons: lu.liaisons }], devine: texteBrut(comprisHtml(D)) };
     return { erreur: nom + ' n’a pas les en-têtes de l’installation : il me faut au moins Device1, Pin1, Device2 et Pin2.', lu: L }; }
   const r = lireTexte(L.texte); if (!r.liaisons.length) return { erreur: nom + ' : les en-têtes de l’installation sont là, mais aucune liaison dessous.' };
-  if (r.harnais.length > 1) return { plans: r.harnais.map(h => ({ nom: h, liaisons: r.liaisons.filter(l => l.harness === h) })) };
-  return { plans: [{ nom, liaisons: r.liaisons }] }; }
+  // la feuille « Volta » d'une installation corrigée (02-lecture) suit le plan qu'elle devient : elle se reprend à son ouverture
+  const volta = r.volta || null;
+  if (r.harnais.length > 1) return { plans: r.harnais.map(h => ({ nom: h, liaisons: r.liaisons.filter(l => l.harness === h), volta })) };
+  return { plans: [{ nom, liaisons: r.liaisons, volta }] }; }
 /* AJOUTER DES PLANS à une installation (celle qu'on regarde, sinon celle du plan sur la table) : chaque fichier se lit dans
    sa ligne (« Lecture… »), puis devient un plan — marqué « nouveau » — ou dit ce qui ne va pas. Rien ne s'ouvre : un clic le
    fera. Un PDF de schéma n'est pas un retest : il va au lecteur de PDF (08-pdf), un schéma Visio à sa relecture (08-visio) ;
@@ -16011,7 +16152,7 @@ async function ajouterPlans(fichiers, installId) { fichiers = [...(fichiers || [
     // le premier plan fait : l'installation qu'il lui faut (« À ranger » au besoin), sous les yeux
     if (!id) { id = installCourante(); montrerBibliotheque('install', id); }
     if (r.devine) devines.push(a.nom + ' : ' + r.devine);
-    r.plans.forEach(x => { const p = creerPlan(id, x.nom, x.liaisons, { source: 'fichier' }); BIB.nouveaux.add(p.id); faits.push(p); });
+    r.plans.forEach(x => { const p = creerPlan(id, x.nom, x.liaisons, { source: 'fichier', volta: x.volta }); BIB.nouveaux.add(p.id); faits.push(p); });
     rendreContenuBibliotheque(); }
   if (!id) return;
   rendreBibliotheque(); const p = faits[0], ins = BIB.installs.get(id);
@@ -16098,20 +16239,43 @@ const planCorrespond = (p, t) => planCorrespondNom(p, t) || !!(p.contrat && cont
 const installCorrespond = (i, t) => !t || cleTexte(i.nom).includes(t) || (i.ecp && i.ecp.includes(t.replace(/^ecp\s*/, '').replace(/\s/g, ''))) || plansDeInstall(i.id).some(p => planCorrespondNom(p, t));
 /* L'écran entier : la tête (son titre, ses comptes, la recherche, l'action), puis le contenu, qui se refait seul quand on
    cherche (`rendreContenuBibliotheque`) — le champ garde le clavier. Une installation a, à sa gauche, toutes les autres. */
-function rendreBibliotheque() { const el = $('bi-page'); if (!el || BIB.vue === 'plan') return;
+function rendreBibliotheque(o) { const el = $('bi-page'); if (!el || BIB.vue === 'plan') return;
   if (!BIB.pret) { el.innerHTML = ''; return; }
+  const glisser = o && o.arrivee ? () => { } : glisserLesCartes();
   avecGroupes(() => { const corps = (BIB.vue === 'install' ? teteInstallHtml() : teteRacineHtml()) + `<div class="bi-contenu" id="bi-contenu">${contenuHtml()}</div>`
       + `<div class="bi-lot-place" id="bi-lot"${BIB.lot ? '' : ' hidden'}>${lotHtml()}</div>`;
     const rail = BIB.vue === 'install' ? railHtml() : '';
     el.classList.toggle('bi-avec-rail', !!rail); el.classList.toggle('bi-accueil', accueil()); el.classList.toggle('bi-en-lot', !!BIB.lot);
     el.innerHTML = rail ? rail + `<div class="bi-principal">${corps}</div>` : corps; });
+  // l'accueil : la barre du haut s'efface, la marque flotte sur la table (style-bibliotheque.css)
+  document.body.classList.toggle('biblio-accueil', accueil());
   // ce que dit la bibliothèque quand on y glisse un fichier : où il va
   $('bibliotheque').dataset.depotDit = 'Déposez vos installations : elles deviennent des plans de ' + guillemets(nomInstallCible());
-  apresRendu(); }
-// l'arrivée sur une vue : les cartes et la feuille se posent (une fois, pas à chaque lettre cherchée)
-function poser() { const p = $('bi-page'); if (!p || mouvementReduit()) return; p.classList.remove('bi-entre'); void p.offsetWidth; p.classList.add('bi-entre');
-  clearTimeout(BIB.poseT); BIB.poseT = setTimeout(() => p.classList.remove('bi-entre'), 700); }
-function rendreContenuBibliotheque() { const c = $('bi-contenu'); if (!c || BIB.vue === 'plan' || !BIB.pret) return; c.innerHTML = avecGroupes(contenuHtml); apresRendu(); }
+  glisser(); apresRendu(); }
+/* L'ARRIVÉE, une fois par session : ce qu'on voit se pose en cascade (la règle commune `.entre-v` : 420 ms, de --monte,
+   40 ms d'écart, six crans au plus) — l'accueil : la pile, le titre, la phrase, les gestes, la ligne, le dock, puis les
+   deux câbles de la vignette se tracent ; la bibliothèque : la tête, « Reprendre », l'intertitre, les cartes. Ensuite (le
+   retour du plan, une installation, la racine) : un fondu de 220 ms, rien ne bouge. Jamais à chaque lettre cherchée. */
+const ARRIVEE = ['.bi-pile', '.bi-vide-centre > h1', '.bi-chapeau', '.bi-vide-gestes', '.bi-vide-depot', '.bi-dock', '.bi-rail', '.bi-tete', '.bi-reprendre', '.bi-bandeau', '.bi-intertitre', '.bi-grille:not(.bi-grille-demo) > .bi-carte', '.bi-feuille', '.bi-essai'].join(', ');
+function poser() { const p = $('bi-page'); if (!p || mouvementReduit()) return; clearTimeout(BIB.poseT); p.classList.remove('entre-v', 'bi-fondu', 'bi-trace');
+  const fin = [...p.querySelectorAll('.entre-v')]; fin.forEach(e => e.classList.remove('entre-v'));
+  if (BIB.arrive) { void p.offsetWidth; p.classList.add('entre-v', 'bi-fondu'); BIB.poseT = setTimeout(() => p.classList.remove('entre-v', 'bi-fondu'), 400); return; }
+  BIB.arrive = true; const X = [...p.querySelectorAll(ARRIVEE)].filter(e => e.offsetParent && e.getBoundingClientRect().top < innerHeight);
+  X.forEach((e, k) => { e.style.setProperty('--k', Math.min(k, 6)); e.classList.add('entre-v'); });
+  if (p.querySelector('.bi-pile')) p.classList.add('bi-trace');
+  BIB.poseT = setTimeout(() => { X.forEach(e => { e.classList.remove('entre-v'); e.style.removeProperty('--k'); }); p.classList.remove('bi-trace'); }, 1600); }
+function rendreContenuBibliotheque() { const c = $('bi-contenu'); if (!c || BIB.vue === 'plan' || !BIB.pret) return; const glisser = glisserLesCartes(); c.innerHTML = avecGroupes(contenuHtml); glisser(); apresRendu(); }
+/* LES CARTES GLISSENT À LEUR NOUVELLE PLACE (une installation neuve pousse la grille, une recherche la resserre) : leurs
+   places avant le rendu, puis chacune part de l'ancienne et glisse à la nouvelle (300 ms, --courbe-glisse) ; une carte qui
+   n'était pas là paraît. Seulement dans la même vue ; le mouvement réduit coupe. */
+function glisserLesCartes() { const p = $('bi-page'); if (!p || mouvementReduit() || p.classList.contains('bi-trace')) return () => { };
+  const vue = BIB.vue + '|' + BIB.install, avant = new Map(); p.querySelectorAll('.bi-grille .bi-carte[data-install], .bi-grille .bi-carte-neuve').forEach(c => avant.set(c.dataset.install || 'neuve', c.getBoundingClientRect()));
+  if (!avant.size || [...avant.values()].every(r => !r.width)) return () => { };
+  return () => { if (BIB.vue + '|' + BIB.install !== vue) return; const courbe = getComputedStyle(document.documentElement).getPropertyValue('--courbe-glisse').trim() || 'ease';
+    p.querySelectorAll('.bi-grille .bi-carte[data-install], .bi-grille .bi-carte-neuve').forEach(c => { const a = avant.get(c.dataset.install || 'neuve'), b = c.getBoundingClientRect();
+      if (!a) { c.animate([{ opacity: 0, transform: 'scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: courbe, delay: 60 }); return; }
+      const dx = a.left - b.left, dy = a.top - b.top; if (Math.abs(dx) + Math.abs(dy) < 1) return;
+      c.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 300, easing: courbe }); }); }; }
 const contenuHtml = () => BIB.vue === 'install' ? installHtml() : racineHtml();
 // ce qui s'écrit sur place prend le clavier (le champ demandé : l'ECP ou le nom) ; le « ⋯ » ouvert, sa première ligne
 function apresRendu() { const champ = document.querySelector('#bibliotheque .bi-nommer [data-premier]') || document.querySelector('#bibliotheque .bi-nommer input');
@@ -16119,8 +16283,10 @@ function apresRendu() { const champ = document.querySelector('#bibliotheque .bi-
   const pop = document.querySelector('#bibliotheque .bi-pop'); if (pop && !pop.contains(document.activeElement)) { const b = pop.querySelector('button'); if (b) b.focus(); return; }
   const oui = document.querySelector('#bibliotheque .bi-confirme [data-bi="oui"]'); if (oui && document.activeElement !== oui && !document.querySelector('#bibliotheque .bi-confirme').contains(document.activeElement)) oui.focus(); }
 
-/* L'ECP d'une installation, tel qu'on le montre : « ECP » en petit, les cinq chiffres ; pas encore saisi, « à saisir ». */
-const ecpHtml = (i, cls) => `<span class="bi-ecp${i.ecp ? '' : ' bi-ecp-vide'}${cls ? ' ' + cls : ''}"><small>ECP</small><b>${i.ecp ? esc(i.ecp) : 'à saisir'}</b></span>`;
+/* L'ECP d'une installation, tel qu'on le montre : « ECP » en petit, les cinq chiffres ; pas encore saisi, un tiret calme
+   (le technicien v73 : « à saisir », en ambre, inquiétait — « j'ai oublié quelque chose ? ») ; dans la tête de
+   l'installation, où un clic l'écrit, « N° ECP (facultatif) ». */
+const ecpHtml = (i, cls, tete) => `<span class="bi-ecp${i.ecp ? '' : ' bi-ecp-vide'}${cls ? ' ' + cls : ''}">${i.ecp ? `<small>ECP</small><b>${esc(i.ecp)}</b>` : tete ? '<small>N° ECP</small><b>(facultatif)</b>' : '<small>ECP</small><b>—</b>'}</span>`;
 const aUnEcp = i => !i.demo && i.id !== ID_A_RANGER;
 
 /* LA RACINE : ses comptes, la recherche, « Nouvelle installation » ; le plan resté sur la table ; la base à ranger ; le
@@ -16131,15 +16297,18 @@ const accueil = () => BIB.vue === 'racine' && !installsVraies().length && !BIB.q
 const pasGardeHtml = () => BIB.garde ? '' : '<span class="bi-pas-garde">pas gardée dans ce navigateur</span>';
 function teteRacineHtml() { const V = installsVraies(), nP = plansVrais().length, B = baseDeReferences(); if (accueil()) return '';
   return `<header class="bi-tete"><div class="bi-titres"><h1 class="bi-titre">Bibliothèque</h1>`
-    + `<p class="bi-compte">${V.length ? esc(lies([plurielLie(V.length, 'installation'), plurielLie(nP, 'plan')])) : 'Vos installations et leurs plans'}${B ? `<span class="bi-compte-base">${esc(POINT + 'base de ' + milliers(B.meta.n) + ' lignes')}</span>` : ''}${BIB.garde ? '' : POINT + pasGardeHtml()}</p></div>`
+    + `<p class="bi-compte">${V.length ? esc(lies([plurielLie(V.length, 'installation'), nPlans(nP)])) : 'Vos installations et leurs plans'}${B ? `<span class="bi-compte-base">${esc(POINT + 'base de ' + milliers(B.meta.n) + ' lignes')}</span>` : ''}${BIB.garde ? '' : POINT + pasGardeHtml()}</p></div>`
     + (V.length || B ? `<div class="bi-outils">${chercheBiHtml(B ? 'Chercher partout : part number, repère, câble, ECP…' : 'Chercher un ECP, une installation…', !!B)}<button class="bi-btn" id="bi-nouvelle" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>` : '') + '</header>'; }
-// ranger les installations : par ECP, par nom, les plus récentes d'abord (le choix se garde) — un segment posé sur la table
-const triHtml = () => `<div class="bi-tri" role="group" aria-label="Ranger les installations"><span>Rangées par</span><span class="bi-tri-seg">${TRIS.map(([k, mot]) => `<button data-bi="tri" data-tri="${k}" aria-pressed="${triChoisi() === k}">${mot}</button>`).join('')}</span></div>`;
+/* L'intertitre des cartes, au filet (le designer v73 : le segment flottait entre deux blocs) : « Installations, par n° ECP »,
+   et à droite le rangement — par ECP, par nom, les plus récentes d'abord (le choix se garde). */
+const TRI_DIT = { ecp: 'par n° ECP', nom: 'par nom', recentes: 'les plus récentes d’abord' };
+const triHtml = () => `<div class="bi-intertitre"><h2 class="bi-sous">Installations${installsVraies().length > 1 ? `<span class="bi-sous-par">, ${TRI_DIT[triChoisi()]}</span>` : ''}</h2>`
+  + (installsVraies().length > 1 ? `<span class="bi-tri-seg" role="group" aria-label="Ranger les installations">${TRIS.map(([k, mot]) => `<button data-bi="tri" data-tri="${k}" aria-pressed="${triChoisi() === k}">${mot}</button>`).join('')}</span>` : '') + '</div>';
 function racineHtml() { const t = cleTexte(BIB.q), toutes = installsTriees(), I = toutes.filter(i => installCorrespond(i, t)), vraies = I.filter(i => !i.demo), demo = I.filter(i => i.demo);
+  if (accueil()) return videHtml(demo[0]);
   let h = reprendreHtml() + bandeauBaseHtml() + rangerHtml();
-  if (accueil()) h += videHtml();
-  else { const nouvelle = BIB.edition && BIB.edition.quoi === 'nouvelle' ? carteNouvelleHtml() : '';
-    if (installsVraies().length > 1 && !t) h += triHtml();
+  { const nouvelle = BIB.edition && BIB.edition.quoi === 'nouvelle' ? carteNouvelleHtml() : '';
+    if ((installsVraies().length || nouvelle) && !t) h += triHtml();
     // une recherche que seules les lignes de la base portent (un part number, un câble) : ce qu'elles disent d'abord
     const trouve = t ? trouvesHtml() : '', base = !!(BIB.trouve && BIB.trouve.R && BIB.trouve.R.n);
     if (t && base && !vraies.length) h += trouve;
@@ -16148,42 +16317,66 @@ function racineHtml() { const t = cleTexte(BIB.q), toutes = installsTriees(), I 
     if (t) { const P = [...BIB.plans.values()].filter(p => planCorrespondNom(p, t)).sort((a, b) => TRI_NOMS(nomAffiche(a.nom), nomAffiche(b.nom)));
       if (P.length) h += `<h2 class="bi-sous">Plans<span>${P.length}</span></h2><div class="bi-feuille">${listePlansHtml(P.slice(0, 60), true)}</div>`;
       if (!(base && !vraies.length)) h += trouve; } }
-  // l'Exemple ferme la marche, discret : « Pour essayer »
-  if (demo.length) h += `<section class="bi-essai"><h2 class="bi-sous">Pour essayer</h2><div class="bi-grille bi-grille-demo" role="list">${demo.map(carteInstallHtml).join('')}</div></section>`;
+  // l'Exemple ferme la marche, discret, au trait : « Pour essayer »
+  if (demo.length) h += `<section class="bi-essai"><div class="bi-intertitre"><h2 class="bi-sous">Pour essayer</h2></div><div class="bi-grille bi-grille-demo" role="list">${demo.map(carteInstallHtml).join('')}</div></section>`;
   return h; }
-// le plan resté sur la table : sa vignette, « Reprendre », où il est rangé ; un clic le reprend (Échap aussi)
-function reprendreHtml() { if (!planSurLaTable()) return ''; const p = BIB.plans.get(app.planId), i = p && BIB.installs.get(p.install), P = plans().length;
-  return `<button class="bi-reprendre" id="bi-reprendre" data-bi="reprendre">${folioMini()}<span class="bi-rep-textes"><span class="bi-rep-mot">Reprendre</span>`
-    + `<span class="bi-rep-nom"><b>${esc(nomAffiche(app.nom))}</b>${i ? `<i>dans</i><span>${i.ecp ? `<span class="bi-rep-ecp">${esc(i.ecp)}</span> ` : ''}${esc(i.nom)}</span>` : ''}</span></span>`
-    + `<span class="bi-rep-n">${P > 1 ? esc(plurielLie(P, 'folio')) : ''}</span><kbd>Échap</kbd>${icoBi('ouvrir', 'bi-rep-fleche')}</button>`; }
-/* RIEN ENCORE : l'accueil (audit v72, parcours P1-1 : le lecteur arrive avec son Excel, on lui proposait une installation et
-   une base) — « Ouvrez votre retest » : le geste n°1 en premier, clair sur la nuit, avec son raccourci ; une installation
-   neuve, au trait ; ce que le dépôt fait, dans un cadre pointillé (on peut glisser le fichier n'importe où) ; la base des
-   contrats déjà faits, en lien. */
-function videHtml() { return `<section class="bi-vide">${pileAccueil()}<h1 class="bi-titre">Ouvrez votre installation</h1>`
-  + `<p>Un fichier Excel ou CSV, une ligne par câble : Volta dessine les folios et vérifie chaque calibre, contact et câble.</p>${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
-  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir">${icoBi('depot')}<span>Ouvrir une installation…</span><kbd>Ctrl+O</kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
-  + `<p class="bi-vide-depot"><b>…ou glissez-le n’importe où dans la fenêtre.</b><span>Il s’ouvre tout de suite ; vous le rangerez dans une installation quand vous voudrez.</span></p>`
-  + `<p class="bi-vide-base">Vous avez la base des contrats déjà faits ? <button class="bi-lien-vide" data-bi="base">La déposer</button><span>— chaque installation se crée avec ses contrats, même à 300 000 lignes.</span></p></section>`; }
-/* Une carte d'installation : une pile de feuilles (deux ou trois selon ses plans), son ECP, son nom, ses comptes, ses
-   premiers plans, un par ligne ; le « ⋯ » (le nom et l'ECP, supprimer) ; modifiée sur place ; la confirmation d'une
-   suppression s'écrit dedans. L'Exemple : un palet, la vignette de son plan. */
+/* Les folios du plan resté sur la table, en puces numérotées : où l'on en était (le courant, clair). Au-delà de huit,
+   « 3 / 12 ». */
+function foliosRepris() { const P = plans(), k = Math.max(0, P.indexOf(app.plan)); if (P.length < 2) return '';
+  if (P.length > 8) return `<span class="bi-rep-n">${esc((k + 1) + INSECABLE + '/' + INSECABLE + P.length)}</span>`;
+  return `<span class="bi-rep-folios" aria-hidden="true">${P.map((x, j) => `<i${j === k ? ' class="on"' : ''}>${j + 1}</i>`).join('')}</span>`; }
+/* « REPRENDRE » le plan resté sur la table : un palet de VERRE (le designer v73 : une bande de papier blanc pleine largeur
+   concurrençait les cartes ; le papier est réservé à ce qu'on choisit) — la vignette, « Reprendre où vous en étiez », son
+   nom et son installation, ses folios (le courant en clair), Échap. Un clic le reprend (Échap aussi). */
+function reprendreHtml() { if (!planSurLaTable()) return ''; const p = BIB.plans.get(app.planId), i = p && BIB.installs.get(p.install);
+  return `<button class="bi-reprendre" id="bi-reprendre" data-bi="reprendre">${folioMini()}<span class="bi-rep-textes"><span class="bi-rep-mot">Reprendre où vous en étiez</span>`
+    + `<span class="bi-rep-nom"><b>${esc(nomAffiche(app.nom))}</b>${i ? `<span>${INSECABLE}·${INSECABLE}${i.ecp ? `<span class="bi-rep-ecp">${esc(i.ecp)}</span> ` : ''}${esc(i.nom)}</span>` : ''}</span></span>`
+    + `${foliosRepris()}<kbd>Échap</kbd></button>`; }
+/* RIEN ENCORE : L'ACCUEIL, une vitrine (le designer v73, § 5.5 : « une composition, un objet, un titre, un geste, et un
+   dock ») — au centre optique de la table : la pile de feuilles, « Ouvrez votre installation » en affiche (v74 : le mot
+   du lecteur, plus « retest »), une phrase, les deux gestes (« Ouvrir une installation… » clair, ses deux touches Ctrl O ;
+   « Nouvelle installation » au verre), une ligne pour le dépôt (la fenêtre entière le reçoit) ; en bas, le DOCK. Plus
+   d'encadré pointillé ni de « Pour essayer » : l'Exemple et la base des contrats déjà faits sont deux tuiles du dock (la
+   phrase de la base, dans sa bulle). */
+function videHtml(demo) { return `<section class="bi-vide"><div class="bi-vide-centre">${pileAccueil()}<h1 class="bi-titre bi-affiche">Ouvrez votre installation</h1>`
+  + `<p class="bi-chapeau">Une ligne par câble, en Excel ou en CSV. Volta dessine les folios et vérifie chaque calibre, chaque contact, chaque câble.</p>${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
+  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir">${icoBi('depot')}<span>Ouvrir une installation…</span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
+  + `<p class="bi-vide-depot">${icoBi('glisser')}<span>ou glissez-le n’importe où dans la fenêtre</span></p></div>${dockHtml(demo)}</section>`; }
+/* LE DOCK : le verre des palets, en bas au milieu — « Reprendre » le plan resté sur la table (s'il y en a un), l'Exemple,
+   la base des contrats déjà faits : comme des applications. Une tuile : son image (une vignette, une icône), son nom, ce
+   qu'elle fait. */
+const BULLE_BASE = 'Un seul Excel qui porte tous vos contrats (Harness rempli) : chaque installation se crée avec ses contrats, même à 300 000 lignes.';
+function dockHtml(demo) { const rep = planSurLaTable() ? tuileReprendreHtml() : '', ex = demo ? tuileExempleHtml(demo) : '';
+  const base = `<button class="bi-tuile" data-bi="base" aria-describedby="bi-bulle-base"><span class="bi-tuile-ico">${icoBi('base')}</span><span class="bi-tuile-t"><b>Base des contrats</b><small>déposer les contrats déjà faits</small></span><span class="bulle bi-bulle-haut" id="bi-bulle-base" aria-hidden="true">${esc(BULLE_BASE)}</span></button>`;
+  return `<nav class="bi-dock" aria-label="Pour commencer autrement">${rep}${rep ? '<hr>' : ''}${ex}${ex ? '<hr>' : ''}${base}</nav>`; }
+function tuileReprendreHtml() { return `<button class="bi-tuile bi-tuile-reprendre" id="bi-reprendre" data-bi="reprendre">${folioMini('bi-tuile-vi')}<span class="bi-tuile-t"><b>Reprendre</b><small>${esc(nomAffiche(app.nom))}</small></span><kbd>Échap</kbd></button>`; }
+// l'Exemple, une tuile du dock : sa carte ouvre son plan d'un clic (la même `.bi-carte.bi-demo` que sur la bibliothèque pleine)
+function tuileExempleHtml(i) { const p = plansDeInstall(i.id)[0], f = p && p.folios ? plurielLie(p.folios, 'folio') : nPlans(plansDeInstall(i.id).length), pb = p && p.problemes && p.problemes.ko;
+  return `<div class="bi-carte bi-demo bi-tuile-carte" data-install="${escA(i.id)}"><button class="bi-carte-corps bi-tuile" data-bi="exemple" aria-label="${escA(lies(['Ouvrir l’exemple', 'démonstration', f, pb ? plurielLie(pb, 'problème') : '']))}">${folioMini('bi-tuile-vi')}<span class="bi-tuile-t"><b>Exemple</b><small>${esc(lies(['démonstration', f]))}${pb ? `${POINT}<span class="bi-carte-pb">${esc(plurielLie(pb, 'problème'))}</span>` : ''}</small></span></button></div>`; }
+/* UNE CARTE D'INSTALLATION (le designer v73, § 5.6) : une VRAIE pile de feuilles — dessous, une ou deux feuilles de papier
+   (deux plans : une ; trois et plus : deux), chacune son filet —, dessus la carte : son ECP, son état en pastille (« 2
+   problèmes » : le rouge ne dit que les problèmes), son nom, ses comptes, ses premiers plans, un par ligne, en mots (une
+   mini-feuille devant). Au survol, la carte se soulève et ses feuilles s'éventent. Le « ⋯ » (le nom et l'ECP, supprimer) ;
+   modifiée sur place ; la confirmation d'une suppression s'écrit dedans. L'Exemple : au trait, la vignette de son plan. */
 function carteInstallHtml(i) { const P = plansDeInstall(i.id), vu = vueLe(i), pile = P.length >= 3 ? 3 : P.length, t = cleTexte(BIB.q);
   const edite = BIB.edition && BIB.edition.quoi === 'install' && BIB.edition.id === i.id, confirme = BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id;
   const meta = i.demo ? lies(['démonstration', nPlans(P.length)]) : lies([nPlans(P.length), vu ? 'ouverte ' + quand(vu) : 'créée ' + leJour(i.cree)]);
   const montres = (t ? P.filter(p => planCorrespond(p, t)) : P).slice(0, 3), reste = P.length - montres.length;
-  const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn">${icoBi('plan')}<span>${esc(nomAffiche(p.nom))}</span></span>`).join('')}${reste > 0 ? `<span class="bi-pn-plus">+${INSECABLE}${esc(plurielLie(reste, 'autre'))}</span>` : ''}</span>`
+  const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn"><i aria-hidden="true"></i><span>${esc(nomAffiche(p.nom))}</span></span>`).join('')}${reste > 0 ? `<span class="bi-pn-plus">+${INSECABLE}${esc(plurielLie(reste, 'autre'))}</span>` : ''}</span>`
     : `<span class="bi-carte-plans bi-carte-plans-vide">Aucun plan : un clic, puis déposez vos installations.</span>`;
   const haut = i.demo ? folioMini() : aUnEcp(i) ? ecpHtml(i, 'bi-carte-ecp') : `<span class="bi-carte-ico">${icoBi('install')}</span>`;
   // l'Exemple : sa carte OUVRE son plan, d'un clic (audit v72, parcours P2-2 : une page pour une ligne, c'était un clic de trop)
   const geste = i.demo ? 'data-bi="exemple"' : `data-bi="install" data-id="${escA(i.id)}"`;
   // ce qu'il reste à faire dans ses plans (le compte gardé de chacun) : on voit d'un coup d'œil où il y a du travail
-  const aReprendre = P.reduce((s, p) => s + (p.problemes ? p.problemes.ko : 0), 0), nAReprendre = P.filter(p => p.problemes && p.problemes.ko).length;
-  const plus = `<button class="bi-plus" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === i.id)}">${icoBi('points')}</button>`;
-  if (confirme) return `<article class="bi-carte bi-confirmant pile-${pile}" role="listitem" data-install="${escA(i.id)}">${confirmeInstallHtml(i, P)}</article>`;
-  return `<article class="bi-carte${i.demo ? ' bi-demo' : ''} pile-${pile}${BIB.pop && BIB.pop.id === i.id ? ' bi-pop-ouvert' : ''}" role="listitem" data-install="${escA(i.id)}">`
+  const aReprendre = P.reduce((s, p) => s + (p.problemes ? p.problemes.ko : 0), 0), pb = aReprendre ? plurielLie(aReprendre, 'problème') : '';
+  const etat = pb && !i.demo ? `<span class="bi-carte-etat ko">${esc(pb)}</span>` : '';
+  const feuilles = (pile >= 3 ? '<i class="bi-f bi-f3" aria-hidden="true"></i>' : '') + (pile >= 2 ? '<i class="bi-f bi-f2" aria-hidden="true"></i>' : '');
+  const plus = `<button class="bi-plus" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === i.id)}">${icoBi('points')}<span class="bulle" aria-hidden="true">${i.demo ? 'Retirer l’exemple' : aUnEcp(i) ? 'Nom et ECP, supprimer' : 'Renommer, supprimer'}</span></button>`;
+  const article = cls => `<article class="bi-carte${cls} pile-${pile}${BIB.pop && BIB.pop.id === i.id ? ' bi-pop-ouvert' : ''}" role="listitem" data-install="${escA(i.id)}">${feuilles}`;
+  if (confirme) return article(' bi-confirmant') + `<div class="bi-carte-corps">${confirmeInstallHtml(i, P)}</div></article>`;
+  return article(i.demo ? ' bi-demo' : '')
     + (edite ? `<div class="bi-carte-corps">${nommerInstallHtml('install', i)}<span class="bi-carte-meta">${esc(meta)}</span></div>`
-      : `<button class="bi-carte-corps" ${geste} aria-label="${escA(lies([i.demo ? 'Ouvrir l’exemple' : '', i.ecp ? 'ECP ' + i.ecp : '', i.nom, meta]))}">${haut}<span class="bi-carte-textes"><span class="bi-carte-nom">${esc(i.nom)}</span><span class="bi-carte-meta">${esc(meta)}${aReprendre ? `<span class="bi-carte-pb">${esc(plurielLie(aReprendre, 'problème'))} dans ${esc(plurielLie(nAReprendre, 'plan'))}</span>` : ''}</span></span>${i.demo ? icoBi('ouvrir', 'bi-demo-fleche') : noms}</button>`)
+      : `<button class="bi-carte-corps" ${geste} aria-label="${escA(lies([i.demo ? 'Ouvrir l’exemple' : '', i.ecp ? 'ECP ' + i.ecp : '', i.nom, meta, pb]))}">${haut}${etat}<span class="bi-carte-textes"><span class="bi-carte-nom">${esc(i.nom)}</span><span class="bi-carte-meta">${esc(meta)}${pb && i.demo ? `${POINT}<span class="bi-carte-pb">${esc(pb)}</span>` : ''}</span></span>${i.demo ? icoBi('ouvrir', 'bi-demo-fleche') : noms}</button>`)
     + (edite ? '' : plus) + popHtml('install', i) + '</article>'; }
 function carteNouvelleHtml() { return `<article class="bi-carte bi-carte-neuve" role="listitem"><div class="bi-carte-corps">${nommerInstallHtml('nouvelle', null)}<span class="bi-carte-meta bi-touches"><kbd>Entrée</kbd> la crée<kbd>Échap</kbd> renonce</span></div></article>`; }
 /* Ce qui s'écrit sur place. Un plan : son nom. Une installation (neuve ou modifiée) : son ECP — cinq chiffres, le clavier
@@ -16213,8 +16406,8 @@ function popHtml(quoi, x) { if (!(BIB.pop && BIB.pop.quoi === quoi && BIB.pop.id
    celle qu'on regarde est marquée. L'Exemple ferme la liste, discret. */
 function railHtml() { const T = ordreDuRail(); if (T.length < 2) return '';
   const ligne = i => { const n = plansDeInstall(i.id).length, ici = i.id === BIB.install;
-    return `<li><button class="bi-rail-l${i.demo ? ' bi-rail-demo' : ''}" data-bi="install" data-id="${escA(i.id)}"${ici ? ' aria-current="page"' : ''} title="${escA(lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom, nPlans(n)]))}">`
-      + `<span class="bi-rail-ecp">${aUnEcp(i) ? (i.ecp ? esc(i.ecp) : '·····') : ''}</span><span class="bi-rail-nom">${esc(i.nom)}</span><span class="bi-rail-n">${n || ''}</span></button></li>`; };
+    return `<li><button class="bi-rail-l${i.demo ? ' bi-rail-demo' : ''}" data-bi="install" data-id="${escA(i.id)}"${ici ? ' aria-current="page"' : ''} data-bulle="${escA(lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom, nPlans(n)]))}">`
+      + `<span class="bi-rail-ecp">${aUnEcp(i) ? (i.ecp ? esc(i.ecp) : '—') : ''}</span><span class="bi-rail-nom">${esc(i.nom)}</span><span class="bi-rail-n">${n || ''}</span></button></li>`; };
   return `<nav class="bi-rail" aria-label="Les installations"><p class="bi-rail-titre"><span>Installations</span><kbd data-bulle="Alt+↑ · Alt+↓ : l’installation d’avant, d’après">Alt ↑↓</kbd></p><ul>${T.map(ligne).join('')}</ul></nav>`; }
 
 /* UNE INSTALLATION : son ECP et son nom (un clic les modifie), créée quand, modifiée quand, la recherche, « Ajouter un
@@ -16223,11 +16416,11 @@ function teteInstallHtml() { const i = BIB.installs.get(BIB.install), P = plansD
   const edite = BIB.edition && BIB.edition.quoi === 'install' && BIB.edition.id === i.id;
   return `<header class="bi-tete"><div class="bi-titres"><button class="bi-retour" id="bi-retour" data-bi="racine" aria-label="Retour à la bibliothèque">${icoBi('retour')}<span>Bibliothèque</span></button>`
     + (edite ? `<div class="bi-titre bi-titre-edite">${nommerInstallHtml('install', i)}</div>`
-      : (aUnEcp(i) ? `<button class="bi-ecp-tete" data-bi="renommer" data-quoi="install" data-id="${escA(i.id)}" data-champ="ecp" data-bulle="${i.ecp ? 'Modifier l’ECP' : 'Saisir l’ECP'}">${ecpHtml(i)}</button>` : '')
+      : (aUnEcp(i) ? `<button class="bi-ecp-tete" data-bi="renommer" data-quoi="install" data-id="${escA(i.id)}" data-champ="ecp" data-bulle="${i.ecp ? 'Modifier l’ECP' : 'Saisir l’ECP : il range l’installation parmi les autres'}">${ecpHtml(i, '', true)}</button>` : '')
         + `<h1 class="bi-titre"><button class="bi-titre-nom" data-bi="renommer" data-quoi="install" data-id="${escA(i.id)}" data-champ="nom" data-bulle="${i.demo ? '' : 'Renommer'}"${i.demo ? ' disabled' : ''}>${esc(i.nom)}</button></h1>`)
     + `<p class="bi-compte">${esc(lies([i.demo ? 'démonstration' : '', nPlans(P.length), 'créée ' + leJour(i.cree), mod ? 'modifiée ' + quand(mod) : '']))}</p></div>`
     + `<div class="bi-outils">${P.length > 6 ? chercheBiHtml(baseDeReferences() ? 'Un plan, un part number, un câble…' : 'Chercher un plan, un harness, un dessin') : ''}${P.length && !i.demo ? `<button class="bi-btn bi-btn-2" id="bi-convertir" data-bi="lot" aria-pressed="${!!BIB.lot}">${icoBi('depot')}<span>Convertir…</span></button>` : ''}${i.demo ? '' : `<button class="bi-btn" id="bi-ajouter" data-bi="choisir">${icoBi('plus')}<span>Ajouter un plan</span></button>`}`
-    + `<span class="bi-pop-ancre${BIB.pop && BIB.pop.id === i.id ? ' bi-pop-ouvert' : ''}"><button class="bi-plus bi-plus-tete" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu">${icoBi('points')}</button>${popHtml('install', i)}</span></div></header>`
+    + `<span class="bi-pop-ancre${BIB.pop && BIB.pop.id === i.id ? ' bi-pop-ouvert' : ''}"><button class="bi-plus bi-plus-tete" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu">${icoBi('points')}<span class="bulle" aria-hidden="true">${i.demo ? 'Retirer l’exemple' : 'Renommer, supprimer l’installation'}</span></button>${popHtml('install', i)}</span></div></header>`
     + (BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id ? `<div class="bi-feuille bi-confirme-tete">${confirmeInstallHtml(i, P)}</div>` : ''); }
 function installHtml() { const i = BIB.installs.get(BIB.install); if (!i) return ''; const t = cleTexte(BIB.q), P = plansDeInstall(i.id), montres = P.filter(p => planCorrespond(p, t));
   // la zone de dépôt : une ligne au bas de la feuille ; l'installation vide, elle seule — une icône, une phrase, ce qu'elle attend
@@ -16269,7 +16462,7 @@ function lignePlanHtml(p, avecInstall) { const i = BIB.installs.get(p.install), 
   return `<li class="bi-plan${table ? ' sur-table' : ''}${neuf ? ' nouveau' : ''}${choisi ? ' choisi' : ''}${BIB.pop && BIB.pop.id === p.id ? ' bi-pop-ouvert' : ''}" data-plan="${escA(p.id)}">`
     + (edite ? `<span class="bi-ligne${avecInstall ? ' avec-install' : ''}">${cellules(nommerHtml('plan', p.id, nomAffiche(p.nom), 'Nom du plan'))}</span>`
       : `<button class="bi-ligne${avecInstall ? ' avec-install' : ''} bi-plan-ouvrir" data-bi="plan" data-id="${escA(p.id)}"${lot ? ` aria-pressed="${choisi}"` : ''} aria-label="${escA((lot ? (choisi ? 'Choisi : ' : 'Choisir ') : 'Ouvrir ') + nomAffiche(p.nom) + ' : ' + plurielLie(p.folios || 0, 'folio'))}">${cellules(`<span class="bi-plan-nom"><span class="bi-plan-l1"><b>${esc(nomAffiche(p.nom))}</b>${etiquette}</span>${sous ? `<span class="bi-plan-l2">${esc(sous)}</span>` : ''}</span>`)}</button>`)
-    + (edite || p.id === ID_EXEMPLE || lot ? '' : `<button class="bi-plus" data-bi="pop" data-quoi="plan" data-id="${escA(p.id)}" aria-label="${escA('Gestes pour ' + nomAffiche(p.nom))}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === p.id)}">${icoBi('points')}</button>`)
+    + (edite || p.id === ID_EXEMPLE || lot ? '' : `<button class="bi-plus" data-bi="pop" data-quoi="plan" data-id="${escA(p.id)}" aria-label="${escA('Gestes pour ' + nomAffiche(p.nom))}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === p.id)}">${icoBi('points')}<span class="bulle" aria-hidden="true">Renommer, déplacer, supprimer</span></button>`)
     + popHtml('plan', p) + '</li>'; }
 
 /* LA BASE À RANGER : une base sans colonne d'installation a des harness qu'aucun plan ne porte ; la bibliothèque le dit en
@@ -16295,6 +16488,7 @@ function rangerHtml() { const R = BIB.ranger; if (!R) return ''; const H = harne
 function lancerRecherche() { clearTimeout(BIB.chercheT); const q = BIB.q.trim(), B = baseDeReferences();
   if (!B || q.replace(/["\s:]/g, '').length < 2) { BIB.trouve = null; return; }
   if (BIB.trouve && BIB.trouve.q === q && BIB.trouve.B === B && !BIB.trouve.enCours) return;
+  BIB.filtreTrouve = null;   // une autre recherche : les filtres repartent de zéro
   BIB.trouve = { q, B, R: BIB.trouve && BIB.trouve.B === B ? BIB.trouve.R : null, enCours: true, genres: BIB.trouve ? BIB.trouve.genres : [] };
   BIB.chercheT = setTimeout(() => { if (BIB.q.trim() !== q || baseDeReferences() !== B) return; const t0 = performance.now(), R = chercherDansLaBase(B, q, { parContrat: 3 });
     BIB.trouve = { q, B, R, enCours: false, ms: Math.max(1, Math.round(performance.now() - t0)), genres: R ? genreTrouve(B, R) : [], contrats: R ? new Set(R.contrats.map(x => B.meta.contrats[x.k].h)) : new Set() };
@@ -16314,14 +16508,26 @@ function trouvesHtml() { const T = BIB.trouve, B = baseDeReferences(); if (!T ||
   if (!T.R) return `<section class="bi-trouve en-cours">${tete('', esc('Recherche dans ' + milliers(B.meta.n) + ' lignes…'))}</div></section>`;
   const R = T.R, C = B.meta.contrats;
   if (!R.n) return `<section class="bi-trouve">${tete('', '')}</div><p class="bi-rien">Aucune des ${esc(milliers(B.meta.n))} lignes de la base ne porte ${esc(guillemets(R.q))}.</p></section>`;
-  const MAX = 40, montres = R.contrats.slice(0, MAX);
+  // les filtres (l'ingénieur v73 : 1 573 lignes dans 571 contrats, sans pouvoir les trier) : par installation, appareil, année
+  const L = contratsFiltres(R, C), MAX = 40, montres = L.slice(0, MAX), filtre = L.length !== R.contrats.length;
   const carte = x => { const c = C[x.k], i = c.install, p = planDuContrat(c.h), ou = lies([i ? (c.ecp ? c.ecp + ' ' : '') + i : 'pas encore rangé', c.appareil, c.retest ? 'installation du ' + c.retest : '']);
     return `<article class="bi-tc"><button class="bi-tc-tete" data-bi="contrat" data-h="${escA(c.h)}" data-g="${x.lignes[0]}"><span class="bi-plan-ico${p && p.id === app.planId && planSurLaTable() ? ' sur-table' : ''}">${icoBi('plan')}</span>`
       + `<span class="bi-tc-nom"><b>${esc(c.h)}</b><span>${esc(ou)}</span></span><span class="bi-tc-n">${esc(plurielLie(x.n, 'ligne'))}</span><span class="bi-tc-ouvrir">Ouvrir${icoBi('ouvrir')}</span></button>`
       + `<ul class="bi-tc-lignes">${x.lignes.map(g => ligneTrouveeHtml(B, g, R)).join('')}${x.n > x.lignes.length ? `<li class="bi-tc-plus">+${INSECABLE}${esc(autres(x.n - x.lignes.length, 'ligne'))}</li>` : ''}</ul></article>`; };
-  const sous = lies([T.genres.length ? T.genres.slice(0, 2).join(', ') : '', plurielLie(R.contrats.length, 'contrat'), R.borne ? 'la borne exactement' : R.exact ? 'la case entière' : '', T.ms + INSECABLE + 'ms']);
-  return `<section class="bi-trouve${T.enCours ? ' en-cours' : ''}">${tete(milliers(R.n) + ' ligne' + (R.n > 1 ? 's' : ''), esc(sous))}<button class="bi-btn bi-btn-2 bi-trouve-lot" data-bi="lot-trouves">Convertir ${R.contrats.length > 1 ? 'ces ' + milliers(R.contrats.length) + ' contrats' : 'ce contrat'}…</button></div>`
-    + `<div class="bi-feuille bi-trouves">${montres.map(carte).join('')}</div>${R.contrats.length > MAX ? `<p class="bi-rien">… et ${esc(autres(R.contrats.length - MAX, 'contrat'))} : précisez la recherche (un part number entier, « 300XC1:B5 », « "W-012" »).</p>` : ''}</section>`; }
+  const sous = lies([T.genres.length ? T.genres.slice(0, 2).join(', ') : '', filtre ? plurielLie(L.length, 'contrat') + ' sur ' + milliers(R.contrats.length) : plurielLie(R.contrats.length, 'contrat'), R.borne ? 'la borne exactement' : R.exact ? 'la case entière' : '', T.ms + INSECABLE + 'ms']);
+  return `<section class="bi-trouve${T.enCours ? ' en-cours' : ''}">${tete(milliers(R.n) + ' ligne' + (R.n > 1 ? 's' : ''), esc(sous))}<button class="bi-btn bi-btn-2 bi-trouve-lot" data-bi="lot-trouves">Convertir ${L.length > 1 ? 'ces ' + milliers(L.length) + ' contrats' : 'ce contrat'}…</button></div>`
+    + `<div class="bi-feuille bi-trouves">${filtresTrouveHtml(R, C)}${montres.map(carte).join('')}</div>${L.length > MAX ? `<p class="bi-rien">… et ${esc(autres(L.length - MAX, 'contrat'))} : précisez la recherche (un part number entier, « 300XC1:B5 », « "W-012" »).</p>` : ''}</section>`; }
+/* Les filtres de ce que la base porte : une puce par installation, par appareil, par année du retest (les six plus
+   fréquentes de chaque, une famille n'en montre que si elle en a deux au moins) ; une puce pressée filtre, pressée encore
+   rend tout. « Convertir… » prend ce qui est montré. */
+const FILTRES_TROUVE = [['install', 'Installation', c => c.install || 'pas encore rangé'], ['appareil', 'Appareil', c => c.appareil || ''], ['annee', 'Année', c => (/(\d{4})\s*$/.exec(c.retest || '') || [])[1] || '']];
+// (`sauf` : une famille qu'on ne filtre pas — ses puces comptent ce que les AUTRES filtres laissent)
+const contratsFiltres = (R, C, sauf) => { const F = BIB.filtreTrouve || {}; return R.contrats.filter(x => FILTRES_TROUVE.every(([k, , f]) => k === sauf || !F[k] || f(C[x.k]) === F[k])); };
+function filtresTrouveHtml(R, C) { const F = BIB.filtreTrouve || {};
+  const G = FILTRES_TROUVE.map(([k, mot, f]) => { const n = new Map(); contratsFiltres(R, C, k).forEach(x => { const v = f(C[x.k]); if (v) n.set(v, (n.get(v) || 0) + 1); }); if (n.size < 2 && !F[k]) return '';
+    const top = [...n].sort((a, b) => b[1] - a[1] || TRI_NOMS(a[0], b[0])).slice(0, 6); if (F[k] && !top.some(([v]) => v === F[k])) top.push([F[k], n.get(F[k]) || 0]);
+    return `<span class="bi-filtres-g" role="group" aria-label="${escA(mot)}"><span class="bi-filtres-mot">${esc(mot)}</span>${top.map(([v, c]) => `<button class="puce" data-bi="trouve-filtre" data-cle="${k}" data-val="${escA(v)}" aria-pressed="${F[k] === v}">${esc(v)}<span class="puce-n">${c}</span></button>`).join('')}</span>`; }).filter(Boolean);
+  return G.length ? `<div class="bi-filtres">${G.join('')}</div>` : ''; }
 /* Ouvrir un contrat trouvé : le plan qui le porte (créé s'il n'existe pas encore, dans son installation — sinon « À ranger »),
    puis le repère ou le câble de la ligne trouvée. */
 function ouvrirContratTrouve(h, g) { const B = baseDeReferences(), c = B && contratDeLaBase(B, h); if (!c) return;
@@ -16401,8 +16607,10 @@ function synchroniserFil() { const fil = $('en-fil'); if (!fil) return; const su
   const p = BIB.plans.get(app.planId), i = BIB.vue === 'install' ? BIB.installs.get(BIB.install) : surTable && p ? BIB.installs.get(p.install) : null;
   const plan = surTable && (app.nom || p) ? nomAffiche(app.nom || p.nom) : '';
   fil.hidden = !i && !plan; const bi = $('en-install'), bp = $('en-plan');
-  bi.hidden = !i; bi.innerHTML = i ? (i.ecp ? `<span class="en-ecp">${esc(i.ecp)}</span>` : '') + `<span class="en-install-nom">${esc(i.nom)}</span>` : '';
-  bi.title = i ? lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom]) + ' : ses plans' : ''; bi.disabled = BIB.vue === 'install'; bi.dataset.id = i ? i.id : '';
+  // sa bulle suit la règle des bulles du chrome (08-menu) : elle s'écrit quand elle paraît (l'événement `bulle`, lié une
+  // fois dans `lierBibliotheque`) — le fil ne se lit pas deux fois
+  bi.hidden = !i; bi.innerHTML = i ? (i.ecp ? `<span class="en-ecp">${esc(i.ecp)}</span>` : '') + `<span class="en-install-nom">${esc(i.nom)}</span><span class="bulle" aria-hidden="true"></span>` : '';
+  bi.removeAttribute('title'); bi.disabled = BIB.vue === 'install'; bi.dataset.id = i ? i.id : '';
   bp.hidden = !plan; bp.textContent = plan; bp.title = plan; }
 function synchroniserBibliotheque() { synchroniserFil();
   const m = $('mn-biblio'); if (m) { const V = installsVraies(); m.textContent = V.length ? pluriel(V.length, 'installation') + ' · ' + pluriel(plansVrais().length, 'plan') : 'installations · plans'; }
@@ -16430,7 +16638,8 @@ function echapBibliotheque() {
   if (BIB.ranger) { BIB.ranger = null; rendreBibliotheque(); return; }
   if (BIB.lot) { if (BIB.lot.encours) arreterLot(); else { BIB.lot = null; rendreBibliotheque(); } return; }
   if (BIB.q) { BIB.q = ''; BIB.trouve = null; rendreBibliotheque(); return; }
-  if (BIB.vue === 'install') { montrerBibliotheque('racine'); return; }
+  // d'une installation, on remonte à la racine — le clavier sur sa carte (on ne le perd pas)
+  if (BIB.vue === 'install') { const id = BIB.install; montrerBibliotheque('racine'); const c = document.querySelector(`#bibliotheque .bi-carte[data-install="${CSS.escape(id)}"] .bi-carte-corps`); if (c) c.focus({ preventScroll: false }); return; }
   if (planSurLaTable()) montrerLePlan(); }
 
 /* ---- tout relier, une fois ------------------------------------------------------------------------------------------ */
@@ -16461,7 +16670,8 @@ function lierBibliotheque() { if (BIB.lie) return; BIB.lie = true; const el = $(
       lot: () => { if (BIB.lot) { if (!BIB.lot.encours) { BIB.lot = null; rendreBibliotheque(); } } else commencerLot(); },
       // tous les plans que la feuille montre (une installation, ou ceux que la recherche a trouvés)
       'lot-tous': () => { const L = BIB.lot; if (!L || L.encours) return; const P = [...el.querySelectorAll('#bi-contenu .bi-plan[data-plan]')].map(li => li.dataset.plan).filter(id => id !== ID_EXEMPLE), tous = P.every(id => L.ids.has(id)); P.forEach(id => tous ? L.ids.delete(id) : L.ids.add(id)); rendreContenuBibliotheque(); rendreLot(); },
-      'lot-trouves': () => { const T = BIB.trouve, B = baseDeReferences(); if (!T || !T.R || !B) return; commencerLot(T.R.contrats.map(x => 'c:' + B.meta.contrats[x.k].h)); },
+      'lot-trouves': () => { const T = BIB.trouve, B = baseDeReferences(); if (!T || !T.R || !B) return; commencerLot(contratsFiltres(T.R, B.meta.contrats).map(x => 'c:' + B.meta.contrats[x.k].h)); },
+      'trouve-filtre': () => { const F = BIB.filtreTrouve = BIB.filtreTrouve || {}, k = b.dataset.cle; F[k] = F[k] === b.dataset.val ? '' : b.dataset.val; rendreContenuBibliotheque(); },
       'lot-zip': () => { if (BIB.lot) { BIB.lot.zip = b.dataset.zip === '1'; rendreLot(); } },
       'lot-annuler': () => { BIB.lot = null; rendreBibliotheque(); }, 'lot-convertir': () => convertirLeLot(), 'lot-arreter': arreterLot,
       pop: () => { BIB.pop = { quoi, id }; BIB.confirme = null; BIB.edition = null; rendreBibliotheque(); },
@@ -16506,6 +16716,8 @@ function lierBibliotheque() { if (BIB.lie) return; BIB.lie = true; const el = $(
   // la barre du haut : la marque mène à la bibliothèque, l'installation du fil à ses plans
   $('en-biblio').addEventListener('click', () => montrerBibliotheque('racine'));
   $('en-install').addEventListener('click', e => { const id = e.currentTarget.dataset.id; if (id) montrerBibliotheque('install', id); });
+  $('en-install').addEventListener('bulle', e => { const b = e.currentTarget, s = b.querySelector(':scope > .bulle'), i = BIB.installs.get(b.dataset.id);
+    if (s && i) s.textContent = lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom]) + ' : ses plans'; });
   // plusieurs retests à la fois, choisis : des plans
   $('fichier-plans').addEventListener('change', e => { const xs = [...(e.target.files || [])]; e.target.value = ''; if (xs.length) ajouterPlans(xs); });
   // le plan vide : un retest, des lignes collées, la bibliothèque ; « Reprendre » défait ce qui l'a vidé
@@ -28934,49 +29146,134 @@ function rapportCoherenceSEE(I, copie) { const K = I && I.coherence; if (!K) ret
 
 /* ───────── 08-table.js ───────── */
 /* ===========================================================================
-   08 — LA TABLE : le fond qui vit, à peine (v72, « Nuit bleue »)
-   Le lecteur : « un fond pas que noir, un peu dégradé, un petit peu interactif, qui bouge comme une application un peu
-   futuriste — mais pas trop, pas m'as-tu-vu ». La table est en quatre couches, sous tout (page.html, `#table` ; leurs
-   dessins sont des jetons de style.css, leur conduite dans style-table.css) : l'encre bleu nuit dégradée, une lumière
-   qui RESPIRE très lentement, les points, et une LUEUR froide qui suit la souris de loin.
-   SOBRE (l'audit de fluidité : telle quelle, la table brûlait un cœur entier quand on ne faisait rien — 100 % contre 1 %
-   —, et doublait le coût de chaque image d'un geste, en rendu logiciel) :
-   · le souffle ne respire que quand on est là — la souris ou le clavier, et six secondes après — et que la table se
-     voit ; il se fige au repos, pendant un geste (glisser le plan, la molette, tenir un bloc), sous une feuille qui prend
-     la page. Il respire en opacité seule (un calque plein écran agrandi se rééchantillonnait à chaque image) ;
-   · la lueur rattrape la souris en un tiers de seconde et s'arrête avec elle ; pendant un geste, elle attend ;
-   · la parallaxe des points glisse le calque (un `transform`, que le compositeur déplace), elle ne repeint plus l'écran ;
-   · le mouvement réduit coupe tout ; au doigt, pas de lueur.
+   08 — LA TABLE VIVANTE (v73, « Nuit bleue » sublimée)
+   Le lecteur (v72) : « un fond pas que noir, un peu dégradé, un petit peu interactif, qui bouge comme une application un
+   peu futuriste — mais pas trop, pas m'as-tu-vu ». Puis (v73) : « le fond est statique, sauf la lumière qui suit la souris :
+   il doit bouger un peu ». La table vit donc, doucement, même quand la main se repose — et s'endort quand on n'est plus là.
+   Ses couches (page.html `#table`, leur dessin dans style-table.css), de bas en haut :
+   · le FOND, l'encre bleu nuit dégradée (la lumière du coin haut-droit) : immobile ;
+   · deux NAPPES de lumière qui DÉRIVENT — translation seule, sur des périodes premières entre elles (47 s et 61 s : ça ne
+     se répète jamais à l'œil), ±4 vw et ±3 vh ; la seconde respire aussi (24 s, son opacité seule). Elles remplacent le
+     souffle d'avant. Écrites à 10 Hz, pas à 60 : à quelques pixels par seconde l'œil ne voit pas la différence, et deux
+     calques déjà peints que le compositeur déplace ne coûtent presque rien (le designer, v73 : 2 % du fil principal au
+     repos ; la rotation de calques plein écran, essayée, faisait tomber la cadence à 30 images/s : écartée) ;
+   · les POINTS, un tous les 24 px, plus discrets au repos et estompés vers les bords ; ils glissent d'un dixième sous le
+     plan (la parallaxe) ;
+   · la LUEUR froide qui suit la souris, sur un ressort amorti critique (posée en une demi-seconde, sans dépassement) et
+     qui s'arrête avec la main ; sous elle, la grille se RÉVÈLE (les mêmes points, plus vifs, recalés sur la grille) : la
+     souris est une lampe posée sur la table ;
+   · le COURANT : de temps en temps (14 à 22 s), un éclat de glace court le long d'une rangée de points — l'électricité,
+     discrète —, seulement sur la bibliothèque, dans une bande libre, jamais sous ce qu'on lit, jamais deux à la fois.
+   SOBRE : 90 s sans la main, la dérive ralentit jusqu'à l'arrêt (2 s) et plus rien ne tourne ; un geste la relance (1,2 s).
+   Pendant un long travail (la conversion en lot, le dossier PDF, le placement d'un folio), elle attend aussi.
+   Page cachée : tout s'arrête. Pendant un geste sur le plan (glisser, la molette, tenir un bloc), elle attend. Sous une
+   feuille qui prend la page (le récapitulatif en page, la base SEE), elle se fige et la lueur s'éteint. Le mouvement réduit
+   pose les nappes une fois pour toutes, sans lueur ni courant ; au doigt, pas de lueur.
    =========================================================================== */
 
-const TABLE = { x: 0, y: 0, vx: 0, vy: 0, anim: 0, vue: false, eveil: 0, geste: 0 };
 const TABLE_PARALLAXE = .1, TABLE_PAS = 24;   // les points, un tous les 24 px : leur parallaxe glisse modulo un pas
-const TABLE_EVEIL = 6000;                     // le souffle respire tant qu'on est là, et six secondes après
-function lierTable() { const t = $('table'), el = t && t.querySelector('.ta-lueur'); if (!el) return;
-  TABLE.x = TABLE.vx = window.innerWidth * .7; TABLE.y = TABLE.vy = window.innerHeight * .3;
-  const poser = () => { el.style.transform = `translate3d(${TABLE.vx.toFixed(1)}px,${TABLE.vy.toFixed(1)}px,0)`; };
-  // elle rattrape la souris d'un cinquième du chemin par image (un tiers de seconde), puis s'arrête
-  const pas = () => { TABLE.vx += (TABLE.x - TABLE.vx) * .2; TABLE.vy += (TABLE.y - TABLE.vy) * .2; poser();
-    TABLE.anim = Math.abs(TABLE.x - TABLE.vx) + Math.abs(TABLE.y - TABLE.vy) > .8 ? requestAnimationFrame(pas) : 0; };
-  // on est là : le souffle respire ; six secondes sans rien, il se fige où il en est
-  const reveiller = () => { if (mouvementReduit() || document.hidden) return; if (!t.classList.contains('respire')) t.classList.add('respire');   // (ajouter une classe déjà là réécrit l'attribut : un restyle à chaque mouvement)
-    clearTimeout(TABLE.eveil); TABLE.eveil = setTimeout(() => t.classList.remove('respire'), TABLE_EVEIL); };
-  // un geste (un appui, la molette, un glisser) : le souffle et la lueur attendent qu'il finisse
-  const geste = () => { if (!t.classList.contains('geste')) t.classList.add('geste'); clearTimeout(TABLE.geste); TABLE.geste = setTimeout(() => t.classList.remove('geste'), 350); };
-  window.addEventListener('pointermove', e => { reveiller(); if (e.buttons) { geste(); return; }
-    if (mouvementReduit() || e.pointerType === 'touch') return; TABLE.x = e.clientX; TABLE.y = e.clientY;
-    if (!TABLE.vue) { TABLE.vue = true; t.classList.add('vue'); } if (!TABLE.anim) TABLE.anim = requestAnimationFrame(pas); }, { passive: true });
-  window.addEventListener('pointerdown', geste, { passive: true, capture: true });
-  window.addEventListener('wheel', () => { reveiller(); geste(); }, { passive: true, capture: true });
-  window.addEventListener('keydown', reveiller, { passive: true, capture: true });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { t.classList.remove('respire'); if (TABLE.anim) { cancelAnimationFrame(TABLE.anim); TABLE.anim = 0; } } });
-  document.addEventListener('pointerleave', () => { TABLE.vue = false; t.classList.remove('vue'); });
-  poser(); }
-// appelée à chaque vue posée (08-interface, `appliquerVue`) : les points glissent d'un dixième, modulo leur pas
+/* La dérive s'écrit à 10 Hz (v74 ; le designer en voulait 15) : à 7,7 px/s au plus (10 à 1920), un pas fait un pixel au plus sur une
+   lumière très floue — l'œil n'y voit aucune marche —, et le fil principal y passe quatre à cinq fois moins de temps
+   (banc v74, 15 et 10 Hz en alternance dans la même page : 4,1 % contre 0,8 %). La lueur : un ressort de 9 rad/s. */
+const TABLE_HZ = 10, TABLE_RESSORT = 9;
+const TABLE_REVELE = 420;                     // le disque où la grille se révèle (style-table.css, `.ta-revele`)
+// ce qu'on lit, posé sur la table : la grille ne s'y révèle pas
+const TABLE_LU = '#bi-page :is(.bi-vide-centre > *, .bi-dock, .bi-carte, .bi-tete, .bi-reprendre, .bi-feuille, .bi-intertitre, .bi-rail, .bi-bandeau, .bi-lot, .bi-sous), #fiche, #base, #inspecteur, #menu, #entete, #rail, #folios';
+const TABLE = {
+  el: null, nA: null, nB: null, lueur: null, revele: null, reveleI: null, courant: null,
+  // la lueur : la souris (x, y), où elle est (px, py), sa vitesse (vx, vy) ; la parallaxe des points (ox, oy)
+  x: 0, y: 0, px: 0, py: 0, vx: 0, vy: 0, anim: 0, t: 0, vue: false, ox: 0, oy: 0,
+  // la dérive : son temps, sa vitesse (0 endormie, 1 éveillée) qui rejoint sa cible, la minuterie, le dernier geste
+  temps: 0, vitesse: 0, cible: 0, derniere: 0, minuterie: 0, main: 0, veilleApres: 90000, hz: TABLE_HZ,
+  geste: 0, enGeste: false, courantT: 0, surLu: false };
+
+/* LES NAPPES au temps t (en secondes) : deux Lissajous lents, déphasés ; la seconde respire (.55 ↔ 1). Un pas qui ne les
+   déplace pas d'un tiers de pixel (ou ne change pas leur lumière d'un rien) ne s'écrit pas : pas d'image pour rien — près
+   des retournements, la dérive ne coûte presque plus. */
+const NAPPES = { a: [NaN, NaN], b: [NaN, NaN], o: NaN };
+function poserNappes(t, toujours) { const T = TABLE; if (!T.nA) return; const vw = innerWidth / 100, vh = innerHeight / 100, s = Math.sin, D = 2 * Math.PI, N = NAPPES;
+  const ax = 18 * vw + 4 * vw * s(D * t / 47), ay = -22 * vh + 3 * vh * s(D * t / 61 + 1.1), bx = -30 * vw - 4 * vw * s(D * t / 61 + .4), by = 30 * vh - 3 * vh * s(D * t / 47 + 2), o = .775 + .225 * s(D * t / 24);
+  const loin = (p, x, y) => toujours || !(Math.abs(p[0] - x) < .33 && Math.abs(p[1] - y) < .33);
+  if (loin(N.a, ax, ay)) { N.a = [ax, ay]; T.nA.style.transform = `translate3d(${ax.toFixed(1)}px,${ay.toFixed(1)}px,0)`; }
+  if (loin(N.b, bx, by)) { N.b = [bx, by]; T.nB.style.transform = `translate3d(${bx.toFixed(1)}px,${by.toFixed(1)}px,0)`; }
+  if (toujours || !(Math.abs(N.o - o) < .006)) { N.o = o; T.nB.style.opacity = o.toFixed(3); } }
+// une feuille prend la page (le récapitulatif en page, la base SEE) : la table, dessous, ne se voit plus
+const tableCouverte = () => !!document.querySelector('#base.page:not([hidden]), #fiche[data-mode="see"]:not([hidden])');
+// un long travail (la conversion en lot, le dossier PDF, le placement d'un folio au loin) : la table attend, le processeur
+// est à lui (en rendu logiciel, chaque pas de la dérive recompose l'écran : il ralentissait la conversion d'un tiers)
+const tableOccupee = () => !!((typeof BIB !== 'undefined' && BIB.lot && BIB.lot.encours) || (typeof DOSSIER !== 'undefined' && DOSSIER.encours) || (typeof placement !== 'undefined' && placement.encours));
+/* UN PAS DE LA DÉRIVE (10 Hz) : la vitesse rejoint sa cible (la veille la met à 0 en 2 s, un geste à 1 en 1,2 s) ; le
+   temps avance d'autant — sauf pendant un geste ou sous une feuille. Endormie, la minuterie s'arrête : plus rien ne tourne. */
+function deriver() { const T = TABLE, n = performance.now(), dt = Math.min(.25, (n - T.derniere) / 1000); T.derniere = n;
+  if (document.hidden) { arreterDerive(); return; }
+  if (T.cible && n - T.main > T.veilleApres) { T.cible = 0; T.el.classList.add('dort'); }
+  T.vitesse += (T.cible - T.vitesse) * Math.min(1, dt * 2.2);
+  if (!T.cible && T.vitesse < .002) { T.vitesse = 0; arreterDerive(); return; }
+  if (T.enGeste || tableCouverte() || tableOccupee()) return;
+  T.temps += dt * T.vitesse; poserNappes(T.temps); }
+function arreterDerive() { clearInterval(TABLE.minuterie); TABLE.minuterie = 0; }
+/* On est là (la souris, le clavier, la molette) : la dérive s'éveille, ou reste éveillée 90 s de plus. */
+function eveillerTable() { const T = TABLE; if (!T.el || mouvementReduit() || document.hidden) return; T.main = performance.now();
+  if (!T.cible) { T.cible = 1; T.el.classList.remove('dort'); }
+  if (!T.minuterie) { T.derniere = performance.now(); T.minuterie = setInterval(deriver, Math.round(1000 / T.hz)); }
+  if (!T.courantT) planifierCourant(); }
+
+/* LA LUEUR, sur un ressort amorti critique ; le disque de la révélation la suit, ses points recalés sur la grille (la
+   contre-translation modulo un pas, parallaxe comprise). */
+function poserLueur() { const T = TABLE, tr = `translate3d(${T.px.toFixed(1)}px,${T.py.toFixed(1)}px,0)`; T.lueur.style.transform = tr; T.revele.style.transform = tr;
+  const r = TABLE_REVELE / 2, m = (v, o) => (((v - r - o) % TABLE_PAS) + TABLE_PAS) % TABLE_PAS;
+  T.reveleI.style.transform = `translate3d(${(-m(T.px, T.ox)).toFixed(1)}px,${(-m(T.py, T.oy)).toFixed(1)}px,0)`; }
+function pasDeLaLueur(n) { const T = TABLE, dt = Math.min(.05, (n - (T.t || n)) / 1000) || .016, w = TABLE_RESSORT; T.t = n;
+  const ax = w * w * (T.x - T.px) - 2 * w * T.vx, ay = w * w * (T.y - T.py) - 2 * w * T.vy;
+  T.vx += ax * dt; T.vy += ay * dt; T.px += T.vx * dt; T.py += T.vy * dt; poserLueur();
+  T.anim = Math.abs(T.x - T.px) + Math.abs(T.y - T.py) > .4 || Math.abs(T.vx) + Math.abs(T.vy) > 2 ? requestAnimationFrame(pasDeLaLueur) : 0; if (!T.anim) T.t = 0; }
+
+/* LE COURANT : un éclat de glace sur une rangée de points, dans une bande que rien ne couvre (la bibliothèque : sa
+   composition, ses cartes, le dock ; la barre du haut). Sur le plan, la table se tait : on y travaille. */
+function planifierCourant() { clearTimeout(TABLE.courantT); TABLE.courantT = setTimeout(courir, 14000 + Math.random() * 8000); }
+function rangeesLibres() { const H = innerHeight, haut = (typeof $ === 'function' && $('entete') ? $('entete').getBoundingClientRect().bottom : 52) + 20;
+  const pris = [...document.querySelectorAll('#bi-page :is(.bi-tete, .bi-reprendre, .bi-bandeau, .bi-intertitre, .bi-carte, .bi-feuille, .bi-sous, .bi-rien, .bi-rail, .bi-lot, .bi-vide-centre > *, .bi-dock), #fiche:not([hidden])')]
+    .map(e => e.getBoundingClientRect()).filter(r => r.height && r.width);
+  const libre = y => y > haut && y < H - 24 && !pris.some(r => y > r.top - 28 && y < r.bottom + 28), Y = [];
+  for (let k = Math.ceil((haut - TABLE.oy + 23) / TABLE_PAS); ; k++) { const y = TABLE.oy - 23 + k * TABLE_PAS; if (y > H) break; if (libre(y)) Y.push(y); }
+  return Y; }
+function courir() { const T = TABLE; T.courantT = 0;
+  if (!T.cible) return;   // endormie : le prochain geste le replanifie
+  const biblio = typeof BIB !== 'undefined' && BIB.vue !== 'plan' && !$('bibliotheque').hidden;
+  if (!document.hidden && !mouvementReduit() && biblio && T.vitesse > .5 && !T.enGeste && !tableCouverte() && !tableOccupee()) { const Y = rangeesLibres();
+    if (Y.length) { const y = Y[Math.floor(Math.random() * Y.length)] - .75, W = innerWidth, long = 360 + Math.random() * 220, sens = Math.random() < .5 ? 1 : -1;
+      const x0 = Math.round((40 + Math.random() * Math.max(40, W - long - 230)) / TABLE_PAS) * TABLE_PAS + ((T.ox - 23) % TABLE_PAS), a = sens > 0 ? x0 : x0 + long, b = sens > 0 ? x0 + long : x0;
+      T.courant.animate([{ transform: `translate3d(${a}px,${y}px,0) scaleX(${sens})`, opacity: 0 }, { opacity: .9, offset: .15 }, { opacity: .7, offset: .7 }, { transform: `translate3d(${b}px,${y}px,0) scaleX(${sens})`, opacity: 0 }],
+        { duration: 1800, easing: 'cubic-bezier(.45,0,.25,1)' }); } }
+  planifierCourant(); }
+
+function lierTable() { const T = TABLE, t = $('table'); if (!t) return; const q = s => t.querySelector(s);
+  Object.assign(T, { el: t, nA: q('.ta-nappe-a'), nB: q('.ta-nappe-b'), lueur: q('.ta-lueur'), revele: q('.ta-revele'), courant: q('.ta-courant') });
+  if (!T.nA || !T.lueur || !T.revele) return; T.reveleI = T.revele.querySelector('i');
+  T.x = T.px = innerWidth * .7; T.y = T.py = innerHeight * .3; poserLueur(); poserNappes(0);
+  // le mouvement réduit : les nappes posées une fois pour toutes (la même lumière, immobile) ; ni lueur ni courant (CSS)
+  if (mouvementReduit()) { T.nB.style.opacity = '.75'; return; }
+  // un geste (un appui, la molette, un glisser) : la dérive et la lueur attendent qu'il finisse
+  const geste = () => { T.enGeste = true; if (!t.classList.contains('geste')) t.classList.add('geste'); clearTimeout(T.geste); T.geste = setTimeout(() => { T.enGeste = false; t.classList.remove('geste'); }, 350); };
+  addEventListener('pointermove', e => { eveillerTable(); if (e.buttons) { geste(); return; }
+    if (e.pointerType === 'touch') return; T.x = e.clientX; T.y = e.clientY;
+    if (!T.vue) { T.vue = true; t.classList.add('vue'); } if (!T.anim) T.anim = requestAnimationFrame(pasDeLaLueur);
+    // la lampe éclaire la table, pas ce qu'on lit : sur la composition, les cartes, une feuille, la grille ne se révèle pas
+    // (ses points passeraient entre les lettres) ; la lueur, elle, reste
+    const lu = !!(e.target && e.target.closest && e.target.closest(TABLE_LU)); if (lu !== T.surLu) { T.surLu = lu; t.classList.toggle('sur-lu', lu); } }, { passive: true });
+  addEventListener('pointerdown', () => { eveillerTable(); geste(); }, { passive: true, capture: true });
+  addEventListener('wheel', () => { eveillerTable(); geste(); }, { passive: true, capture: true });
+  addEventListener('keydown', eveillerTable, { passive: true, capture: true });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { arreterDerive(); clearTimeout(T.courantT); T.courantT = 0; if (T.anim) { cancelAnimationFrame(T.anim); T.anim = 0; T.t = 0; } } else eveillerTable(); });
+  document.addEventListener('pointerleave', () => { T.vue = false; t.classList.remove('vue'); });
+  // à l'ouverture, la table s'éveille d'elle-même (on vient d'arriver) : elle dérive déjà quand l'accueil se pose
+  eveillerTable(); }
+// appelée à chaque vue posée (08-interface, `appliquerVue`) : les points glissent d'un dixième, modulo leur pas ; la grille
+// révélée sous la lueur les suit
 function parallaxeTable() { const p = document.querySelector('#table .ta-points'); if (!p) return;
   if (mouvementReduit()) { if (p.style.transform) p.style.transform = ''; return; }
-  const m = v => (((v * TABLE_PARALLAXE) % TABLE_PAS) + TABLE_PAS) % TABLE_PAS;
-  p.style.transform = `translate3d(${m(app.vue.tx).toFixed(1)}px,${m(app.vue.ty).toFixed(1)}px,0)`; }
+  const m = v => (((v * TABLE_PARALLAXE) % TABLE_PAS) + TABLE_PAS) % TABLE_PAS; TABLE.ox = m(app.vue.tx); TABLE.oy = m(app.vue.ty);
+  p.style.transform = `translate3d(${TABLE.ox.toFixed(1)}px,${TABLE.oy.toFixed(1)}px,0)`; if (TABLE.reveleI) poserLueur(); }
 
 /* ───────── 08-visio.js ───────── */
 /* ===========================================================================
