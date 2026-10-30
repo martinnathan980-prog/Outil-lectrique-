@@ -713,9 +713,9 @@ function designationDe(n) { const d = app.contrat.designations.get(n);
    (`app.choisi = …; peindre()`, partout dans l'outil) ne réécrit plus tout le folio pour quatre crochets (l'audit de
    fluidité v72 : 290 ms par clic, dont la moitié à refaire le SVG). */
 let peint = { dessin: null, sig: '' };
-/* Le calibre qu'un disjoncteur écrit au folio : le retenu, et celui du retest quand le part number écrit en dit un autre
-   (08-export, `calibresAuFolio` : « 15 A » et « (retest 10 A) » dessous — l'écran, l'impression, le SVG, le PNG et le
-   dossier PDF disent la même chose). */
+/* Le calibre qu'un disjoncteur écrit au folio : le retenu, et celui de l'installation quand le part number écrit en dit un
+   autre (08-export, `calibresAuFolio` : « 15 A » et « (installation 10 A) » dessous — l'écran, l'impression, le SVG,
+   le PNG et le dossier PDF disent la même chose). */
 const calibresDuFolio = n => typeof calibresAuFolio === 'function' ? calibresAuFolio(n) : { calibre: calibreAuFolio(n), retest: null };
 function peindre() {
   const svg = $('svg');
@@ -790,7 +790,7 @@ function marges() { const tel = telephone(), folios = !$('folios').hidden, vu = 
   if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16 + entete, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
   return { haut: 24 + entete, bas: (bas ? bas.offsetHeight + 16 : 0) + (folios ? pied + 24 : 24), gauche: rail + 24, droite: 24 + (droite ? droite.offsetWidth + 8 : 0) }; }
 let anim = null, vueVisee = null;   // l'animation de la vue en cours, et la vue où elle va (la carte s'y place d'avance : 08-carte)
-/* LA VUE GLISSE_FOLIO vers sa cible (260 ms). L'échelle va d'un pas égal en proportion (son logarithme) et le point du dessin au
+/* LA VUE GLISSE vers sa cible (260 ms). L'échelle va d'un pas égal en proportion (son logarithme) et le point du dessin au
    centre de la planche glisse droit vers le sien : l'interpolation de tx, ty et s chacun pour soi faisait d'abord fuir ce
    qu'on allait voir, puis le ramenait (un zoom fort « en S »). La première image ne revient jamais en arrière (l'instant
    d'une image peut précéder celui de l'appel). */
@@ -1439,7 +1439,7 @@ function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => 
   const n = D.fils.filter(w => !w.shunt && (w.de === nom || w.vers === nom)).length, ail = rangsDesFolios(plansDuRepere(nom).filter(p => p !== app.plan));
   const genre = estMasse(nom) ? 'masse' : c.kind === 'tag' && estBarrette(nom) ? 'morceau de barrette' : estCoupure(nom) ? 'prise de coupure' : estBarrette(nom) ? 'barrette' : estDisjoncteur(nom) ? 'disjoncteur' : '';
   const d = c.kind === 'tag' ? '' : designationDe(nom), cc = estDisjoncteur(nom) && c.kind === 'equip' ? calibresDuFolio(nom) : null, cal = cc && cc.calibre;
-  return T(nom) + ((genre || d || cal) ? l_(esc([genre, cal ? amperesCb(cal) + (cc.retest ? ' (retest ' + amperesCb(cc.retest) + ')' : '') : '', d].filter(Boolean).join(' · '))) : '')
+  return T(nom) + ((genre || d || cal) ? l_(esc([genre, cal ? amperesCb(cal) + (cc.retest ? ' (installation ' + amperesCb(cc.retest) + ')' : '') : '', d].filter(Boolean).join(' · '))) : '')
     + l_(pluriel(n, 'câble') + ' sur ce folio' + (ail.length ? ' · aussi sur f. ' + ail.join(' · ') : ''))
     + (estRenvoi(nom) || c.rail ? '' : l_('Clic : sa fiche · glisser : le déplacer')); }
 let appuiDuPlan = null;   // le dernier appui simple sur la planche (l'instant, l'endroit, le bloc) : un double-clic peut finir ailleurs
@@ -1617,7 +1617,7 @@ function rendreIndex(box) { const etats = new Map();
   box.querySelectorAll('.ix-item[data-nom]').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan));
   box.querySelectorAll('.ix-item[data-cable]').forEach(b => b.onclick = () => aller({ type: 'fil', nom: b.dataset.cable })); }
 /* LE SURVOL QUI SUIT (v68 : « très fluide, très naturel ») : une seule teinte, posée sous la ligne que la souris survole
-   (ou qui a le clavier), qui GLISSE_FOLIO d'une ligne à l'autre au lieu de s'éteindre et de se rallumer ; elle s'efface quand on
+   (ou qui a le clavier), qui GLISSE d'une ligne à l'autre au lieu de s'éteindre et de se rallumer ; elle s'efface quand on
    quitte les lignes. Posée dans la fiche (elle défile avec la liste), refaite à chaque rendu de l'index ; les écouteurs, une
    fois pour toutes sur l'inspecteur, ne valent que pour l'index (`.ix`). */
 function survolQuiSuit(box) { const s = document.createElement('span'); s.className = 'ix-survol'; s.setAttribute('aria-hidden', 'true'); box.prepend(s); box.classList.add('suit');
@@ -1672,7 +1672,7 @@ function allerAuPlan(plan) { if (plan === app.plan) return;
   finirGlisse(); finirRangement(); const photo = sens && app.dessin && !mouvementReduit() ? photoDuFolio() : null;
   garderVue(); app.plan = plan; app.choisi = null; fermerFiche(); redessiner(); retrouverVue(); sauver();
   if (photo) glisserFolio(photo, sens); }
-/* LE FOLIO GLISSE_FOLIO (v73, le designer § 5.4 : « une coupe franche ») : le DESSIN qu'on quitte sort de 32 px du côté d'où
+/* LE FOLIO GLISSE (v73, le designer § 5.4 : « une coupe franche ») : le DESSIN qu'on quitte sort de 32 px du côté d'où
    l'on vient, en 120 ms (`--courbe-sortie`) ; le nouveau entre de 32 px du côté où l'on va, en 260 ms (`--courbe-entree`),
    quand l'ancien est presque effacé — jamais deux dessins à la fois. La FEUILLE, elle, ne clignote pas : elle reste (cadrée
    sur le dessin, elle couvre la table d'un folio à l'autre ; un fondu la faisait passer par la nuit), et si sa place
@@ -1705,6 +1705,11 @@ function glisserFolio(photo, sens) { finirGlisse(); const svg = $('svg'), sc = $
   if (f && Math.abs(R0.x - R1.x) + Math.abs(R0.y - R1.y) + Math.abs(R0.w - R1.w) > 1.5) { const k = bb.k || bb.w / PAGE_W, glisse = { duration: 300, easing: 'cubic-bezier(.65,0,.35,1)' };
     GLISSE_FOLIO.anims.push(f.animate([{ transform: `translate(${(R0.x - app.vue.tx) / s}px,${(R0.y - app.vue.ty) / s}px) scale(${k * R0.w / R1.w})` }, { transform: `translate(${bb.x}px,${bb.y}px) scale(${k})` }], glisse));
     if (o && o.style.display !== 'none') GLISSE_FOLIO.anims.push(o.animate([{ transform: `translate(${R0.x}px,${R0.y}px)`, width: R0.w + 'px', height: R0.h + 'px' }, { transform: o.style.transform, width: o.style.width, height: o.style.height }], glisse)); } }
+/* LES FLÈCHES ← → vont au folio voisin (rien de choisi : un bloc choisi, elles le poussent, `lierPlanche`) — mais pas
+   quand le clavier est sur un CONTRÔLE d'un panneau (un bouton de la carte, une case du récapitulatif, une ligne de
+   l'index, la palette, le menu) : la flèche y est à lui, ou à rien ; changer de folio fermait la carte sous la main
+   (v74). La carte qui tient le clavier sur elle-même, elle, laisse les flèches au plan. */
+function flechesAuFolio(t) { return !(t && t.closest && t.id !== 'inspecteur' && t.closest('#inspecteur,#fiche,#base,#palette,#menu,#raccourcis,[role="listbox"],[role="menu"],[role="tablist"],[role="radiogroup"],[role="slider"],[role="dialog"]')); }
 function allerAuFolio(pas) { const P = plans(); let i = P.indexOf(app.plan);
   if (i < 0) i = pas > 0 ? -1 : P.length; i += pas; if (i < 0 || i >= P.length) return; allerAuPlan(P[i]); }
 function plansDuRepere(nom) { return [...new Set(app.contrat.liaisons.filter(l => l.de === nom || l.vers === nom).map(l => l.plan).filter(Boolean))]; }
@@ -1733,7 +1738,7 @@ function synchroniserFolios() { const P = plans(), strip = $('fo-strip'), sel = 
   // une seule feuille : les flèches n'ont nulle part où aller
   const seul = P.length < 2; $('fo-prev').disabled = seul || i === 0; $('fo-next').disabled = seul || (i >= 0 && i >= P.length - 1);
   const on = strip.querySelector('.chip.on'); if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (_) { } } }
-/* LA PASTILLE GLISSE_FOLIO (v73, le designer) : la pièce claire du folio courant va d'une puce à l'autre en 220 ms
+/* LA PASTILLE GLISSE (v73, le designer) : la pièce claire du folio courant va d'une puce à l'autre en 220 ms
    (`--courbe-glisse`) au lieu de sauter. Une pastille de la matière de la puce courante (lue sur elle) passe sous les
    puces ; les mots changent d'encre en chemin (sombre sur la pastille, clair sur le verre). Le mouvement réduit coupe. */
 function glisserPastille(strip, deP, deX, deW) { const on = strip.querySelector('.chip.on'), de = strip.querySelector(`.chip[data-plan="${CSS.escape(deP)}"]`);
@@ -1822,6 +1827,8 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   info.forEach((x, n) => { const des = D.get(n) || ''; let r = rang(n), dit = des || [...x.descs][0] || '';
     if (r === 2 && natures.includes(codeDe(n))) { r = 1.5; dit = CODES[codeDe(n)].nom + (estDisjoncteur(n) && typeof calibreAuFolio === 'function' && calibreAuFolio(n) ? ' · ' + amperesCb(calibreAuFolio(n)) : '') + (dit ? ' · ' + dit : ''); }
     if (r === 2) { const d = contient(des) ? des : [...x.descs].find(contient), pn = d ? null : [...x.pns].find(contient); if (!d && !pn) return; dit = d || pn; r = d ? 2 : 3; }
+    // ni désignation ni description : sa nature (« disjoncteur · 15 A »), plutôt qu'une ligne vide
+    if (!dit) dit = natureDe(n) + (estDisjoncteur(n) && typeof calibreAuFolio === 'function' && calibreAuFolio(n) ? ' · ' + amperesCb(calibreAuFolio(n)) : '');
     rep.push({ type: 'repere', nom: n, des: dit, n: x.n, r }); });
   rep.sort((a, b) => a.r - b.r || b.n - a.n || triNaturel(a.nom, b.nom));
   // la nature entière : « tous les disjoncteurs », dans le récapitulatif
@@ -1849,11 +1856,13 @@ function proposition(Q, info, L) { const Qz = sansZeros(Q), max = Qz.length <= 3
   return [{ type: best.quoi, nom: best.t, propose: true, des: best.quoi === 'fil' ? l.de + ' → ' + l.vers : best.quoi === 'type' ? 'tous les câbles de ce type' : (app.contrat.designations.get(best.t) || natureDe(best.t)) }]; }
 let qSel = 0, qCands = [];
 const GENRE_CANDIDAT = { repere: 'repère', fil: 'câble', borne: 'borne', type: 'type', nature: 'nature' };
+/* Les lignes de la liste ne prennent pas Tab (v74) : ↑ ↓ les parcourent depuis le champ (`aria-activedescendant`), un clic
+   les prend ; Tab quitte la recherche — il menait à une ligne que la recherche, fermée en perdant le clavier, cachait aussitôt. */
 function montrerCandidats() { const box = $('q-liste'), q = $('q').value; qCands = candidats(q);
   if (!q.trim()) { box.hidden = true; return; } box.hidden = false; qSel = Math.min(qSel, Math.max(0, qCands.length - 1));
   const propose = qCands.length && qCands[0].propose;
   box.innerHTML = (propose ? `<div class="q-rien q-rien-tete">Rien qui s’écrive « ${esc(q.trim())} ».</div>` : '')
-    + (qCands.length ? qCands.map((c, i) => `<button class="q-item${i === qSel ? ' on' : ''}${c.propose ? ' q-propose' : ''}" role="option" id="q-opt-${i}" data-i="${i}" aria-selected="${i === qSel}">
+    + (qCands.length ? qCands.map((c, i) => `<button class="q-item${i === qSel ? ' on' : ''}${c.propose ? ' q-propose' : ''}" role="option" id="q-opt-${i}" data-i="${i}" tabindex="-1" aria-selected="${i === qSel}">
       <span class="genre">${c.propose ? 'Vouliez-vous dire' : GENRE_CANDIDAT[c.type] || c.type}</span><span class="nom">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.nom)}${c.propose ? ' ?' : ''}</span><span class="des${c.type === 'fil' || c.type === 'borne' ? ' mono' : ''}">${esc(c.des)}</span>${c.n ? `<span class="cpt">${esc(c.sansCable ? String(c.n) : pluriel(c.n, 'câble'))}</span>` : ''}</button>`).join('')
     : '<div class="q-rien">Rien qui corresponde — un repère, un câble, un part number, un type, une nature (« disjoncteur »), une description, ou « repère:borne ».</div>');
   $('q').setAttribute('aria-activedescendant', qCands.length ? 'q-opt-' + qSel : ''); }
@@ -1889,12 +1898,12 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
    Entrée, Échap (le clavier revient d'où il venait), Ctrl+K encore. Ctrl+K l'ouvre depuis la touche globale (A2). */
 const PALETTE = { el: null, sel: 0, lignes: [], avant: null };
 // ce qu'on tape aussi pour trouver une action (ses mots d'atelier, sans accent)
-const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx retest corrige modifications envoyer livrable', svg: 'image vectorielle dessin',
+const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx installation corrigee retest modifications envoyer livrable', svg: 'image vectorielle dessin',
   png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge', normes: 'tables sources', bible: 'barrettes modules references',
-  nomenclature: 'bom pieces commander liste magasin', nomenclaturecsv: 'bom csv pieces', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base retests contrats deposer',
-  bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger retest', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
+  nomenclature: 'bom pieces commander liste magasin', nomenclaturecsv: 'bom csv pieces', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
+  bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
   raccourcis: 'clavier touches aide', suivi: 'csv barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft' };
-const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'hypotheses', 'nomenclature', 'raccourcis'];
+const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);
     const l = b.querySelector('.menu-l'), mot = (l ? [...l.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('') : b.textContent).trim();
@@ -1918,6 +1927,12 @@ function actionsDeLaPalette() { const xs = [], vu = new Set();
   if (app.hist && app.hist.length) en('defaire', 'Défaire : ' + app.hist[app.hist.length - 1].quoi, 'Ctrl+Z', defaire, { mots: 'annuler defaire retour', ico: I('btnUndo') });
   const aRefaire = typeof pileRefaire === 'function' ? pileRefaire() : [];
   if (aRefaire.length && typeof refaireEtDire === 'function') en('refaire', 'Refaire : ' + aRefaire[aRefaire.length - 1].quoi, 'Ctrl+Y', refaireEtDire, { mots: 'refaire retablir', ico: I('btnRedo') });
+  /* « COMMENT VOLTA RÉFLÉCHIT » (v74, la page du lot N, `ficheComprendre`) : la palette l'offre dès qu'elle existe, avec ou
+     sans plan. Si le menu la porte déjà (une ligne de ⋮ › Plus), c'est elle qu'on garde — sous la clé `comprendre`, pour
+     qu'elle soit des premières actions —, sinon la palette l'appelle elle-même. */
+  const comprendre = xs.find(a => /comment volta r[ée]fl[ée]chit/i.test(a.mot)), motsComprendre = 'comprendre comment ca marche pourquoi aide explication novice cuisinier fonctionnement volta reflechit';
+  if (comprendre) Object.assign(comprendre, { act: 'comprendre', mots: (comprendre.mots + ' ' + motsComprendre).trim(), ico: comprendre.ico || ICONE_OBJET.comprendre });
+  else if (typeof ficheComprendre === 'function') en('comprendre', 'Comment Volta réfléchit', '', () => ficheComprendre(), { des: 'ce que Volta lit, d’où viennent ses pièces, comment il choisit', mots: motsComprendre, ico: ICONE_OBJET.comprendre });
   return xs; }
 // les gestes concrets du contrôle : un par point, le principal (« Tout régler… », « Unifier sur… », « La poser »)
 function gestesDeLaPalette() { if (typeof gestesDuPoint !== 'function' || !CONTROLE || !CONTROLE.items) return []; const out = [], vus = new Set();
@@ -1959,6 +1974,8 @@ function construirePalette() { if (PALETTE.el) return PALETTE.el;
     else if (e.key === 'Escape' || ((e.ctrlKey || e.metaKey) && (e.key || '').toLowerCase() === 'k')) { e.preventDefault(); e.stopPropagation(); fermerPalette(); }
     else if (e.key === 'Tab') { e.preventDefault(); pas(e.shiftKey ? -1 : 1); } });   // le clavier reste dans la palette
   liste.addEventListener('pointerdown', e => e.preventDefault());   // le champ garde le clavier
+  // une ligne longue (le pourquoi d'un point à reprendre) tient sur deux lignes ; au-delà, sa bulle la donne entière (08-fiche)
+  if (typeof lierBulles === 'function') lierBulles(liste);
   liste.addEventListener('pointermove', e => { const b = e.target.closest('[data-i]'); if (b && +b.dataset.i !== PALETTE.sel) { PALETTE.sel = +b.dataset.i; marquerPalette(false); } });
   liste.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) faireDeLaPalette(+b.dataset.i); });
   el.addEventListener('pointerdown', e => { if (!e.target.closest('.pa-boite')) { e.preventDefault(); fermerPalette(); } });
@@ -1971,17 +1988,18 @@ function ouvrirPalette() { const el = construirePalette(); if (rechercheOuverte(
 function fermerPalette(rendre) { const el = PALETTE.el; if (!el || el.hidden) return; el.hidden = true; document.body.classList.remove('palette-ouverte');
   const a = PALETTE.avant; PALETTE.avant = null; if (rendre !== false && a && a.isConnected && a.focus) try { a.focus({ preventScroll: true }); } catch (_) { } else if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
 const ICONE_OBJET = { repere: '<rect x="5" y="6" width="14" height="12" rx="1.5"/><path d="M2.5 10h2.5M2.5 14h2.5M19 10h2.5M19 14h2.5"/>', fil: '<path d="M3 16c4 0 4-8 9-8s5 8 9 8"/>', borne: '<circle cx="12" cy="12" r="3.2"/><path d="M3 12h5.8M15.2 12H21"/>',
-  type: '<path d="M4 7h16M4 12h16M4 17h10"/>', nature: '<path d="M4 6h16v4H4zM4 14h16v4H4z"/>', action: '<path d="m13 3-7 10h5l-1 8 7-10h-5z"/>', geste: '<path d="M4.5 12h13M13 6.5l5.5 5.5-5.5 5.5"/>', folio: '<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/>' };
+  type: '<path d="M4 7h16M4 12h16M4 17h10"/>', nature: '<path d="M4 6h16v4H4zM4 14h16v4H4z"/>', action: '<path d="m13 3-7 10h5l-1 8 7-10h-5z"/>', geste: '<path d="M4.5 12h13M13 6.5l5.5 5.5-5.5 5.5"/>', folio: '<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/>',
+  comprendre: '<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.6a2.4 2.4 0 1 1 3.3 2.2c-.6.3-1 .8-1 1.5v.6M12 16.6v.3"/>' };
 function rendrePalette() { const el = PALETTE.el; if (!el) return; const q = el.querySelector('#pa-q').value, liste = el.querySelector('#pa-liste');
   const L = lignesDeLaPalette(q); PALETTE.lignes = L.filter(x => !x.titre); PALETTE.sel = Math.min(PALETTE.sel, Math.max(0, PALETTE.lignes.length - 1));
   let i = 0;
   liste.innerHTML = L.length ? L.map(x => { if (x.titre) return `<div class="pa-groupe" role="presentation">${esc(x.titre)}</div>`; const k = i++;
       if (x.objet) { const c = x.objet; return `<div class="pa-l" role="option" id="pa-o-${k}" data-i="${k}" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONE_OBJET[c.type] || ICONE_OBJET.repere}</svg>`
-        + `<span class="pa-mot"><b class="pa-id">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.nom)}</b><small>${c.propose ? 'Vouliez-vous dire ? · ' : ''}${esc(GENRE_CANDIDAT[c.type] || c.type)} · ${esc(c.des || '')}</small></span>`
+        + `<span class="pa-mot"><b class="pa-id">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.nom)}</b><small>${c.propose ? 'Vouliez-vous dire ? · ' : ''}${esc([GENRE_CANDIDAT[c.type] || c.type, c.des].filter(Boolean).join(' · '))}</small></span>`
         + `${c.n ? `<span class="pa-cpt">${esc(c.sansCable ? String(c.n) : pluriel(c.n, 'câble'))}</span>` : ''}</div>`; }
       const a = x, ico = a.ico || ICONE_OBJET[a.act === 'geste' ? 'geste' : /^folio:/.test(a.act) ? 'folio' : 'action'];
       return `<div class="pa-l${a.eteint ? ' eteint' : ''}${a.act === 'geste' ? ' pa-geste ' + (a.niveau || '') : ''}" role="option" id="pa-o-${k}" data-i="${k}" aria-selected="false"${a.eteint ? ' aria-disabled="true"' : ''}><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ico}</svg>`
-        + `<span class="pa-mot">${a.ou ? `<i class="pa-ou">${esc(a.ou)} ›</i> ` : ''}${esc(a.mot)}${a.des ? `<small title="${escA(a.des)}">${esc(a.des)}</small>` : ''}</span>`
+        + `<span class="pa-mot">${a.ou ? `<i class="pa-ou">${esc(a.ou)} ›</i> ` : ''}${esc(a.mot)}${a.des ? `<small${a.des.length > 70 ? ` data-bulle="${escA(a.des)}"` : ''}>${esc(a.des)}</small>` : ''}</span>`
         + (a.touche ? `<span class="pa-touche">${a.touche.split('+').map(t => `<kbd>${esc(t)}</kbd>`).join('')}</span>` : '') + '</div>'; }).join('')
     : `<div class="pa-rien">Rien pour « ${esc(q.trim())} » — une action (« pdf », « hypo », « exporter »), un repère, un câble, un type, une nature.</div>`;
   marquerPalette(true); }
@@ -2973,7 +2991,8 @@ function lierPanneau() {
     else if (e.key === 'b') basculerBase();
     else if (e.key === 'r') { e.preventDefault(); basculerIndex(); }   // sinon le « r » s'écrit dans le champ de l'index qui vient de prendre le focus
     else if (e.key === 'n') { if (app.fiche && app.fiche.mode === 'nomenclature') fermerFiche(true); else if (verite().length) ficheNomenclature(); }
-    else if (e.key === 'ArrowLeft') allerAuFolio(-1); else if (e.key === 'ArrowRight') allerAuFolio(+1);
+    // ← → : le folio voisin, sauf le clavier sur un contrôle d'un panneau (`flechesAuFolio`, « les folios », v74)
+    else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && flechesAuFolio(e.target)) allerAuFolio(e.key === 'ArrowLeft' ? -1 : 1);
     else if (e.key === '+' || e.key === '=') zoomer(1.25); else if (e.key === '-') zoomer(1 / 1.25); else if (e.key === '0' || e.key === 'f') ajuster(true); });
   let rT; window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (telephone()) ajuster(); else appliquerVue();
     rafraichirCarte(); if (app.fiche && app.fiche.mode === 'bible' && app.fiche.ref) ficheBible(app.fiche.ref); }, 160); });

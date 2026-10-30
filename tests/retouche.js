@@ -25,7 +25,8 @@
      · pendant l'appui, rien ne se sélectionne (user-select: none) ;
      · Alt : le bloc suit la souris sans carreau ni aimant ;
      · un bloc choisi se pousse aux flèches (un carreau ; Maj : cinq), une série
-       se défait d'un Ctrl+Z ; sans bloc choisi, la flèche change de folio.
+       se défait d'un Ctrl+Z ; sans bloc choisi, la flèche change de folio —
+       pas quand le clavier est sur un bouton de la carte (v74).
    TOUT BOUGE (le lecteur : « bornier, fil, borne, tout »), à la vraie souris,
    chaque prise annoncée au survol (ce que la planche dit qu'on prend, ce qui
    s'allume, le curseur) :
@@ -178,6 +179,15 @@ const FICHIER = P.fichierDemande();
   await page.evaluate(() => { app.choisi = null; app.cible = null; peindre(); });
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(400);
   ok(await page.evaluate(() => app.plan === '2'), 'sans bloc choisi, la flèche droite va au folio suivant');
+  // v74 : le clavier sur un CONTRÔLE de la carte ouverte (sa croix) — la flèche ne change pas de folio (elle fermait la carte
+  // sous la main) et ne pousse rien
+  const surCarte = await page.evaluate(() => { const c = app.dessin.comps.find(k => k.kind !== 'tag' && !estRenvoi(k.name)); choisirBloc(c);
+    const b = $('in-fermer'); if (b) b.focus(); return { plan: app.plan, nom: c.name, x: c.x, y: c.y, focus: document.activeElement && document.activeElement.id }; });
+  await page.keyboard.press('ArrowRight'); await page.waitForTimeout(400);
+  const apresCarte = await page.evaluate(n => { const c = app.dessin.comps.find(k => k.name === n && k.kind !== 'tag'); return { plan: app.plan, ouverte: !$('inspecteur').hidden, choisi: app.choisi, x: c ? c.x : null, y: c ? c.y : null }; }, surCarte.nom);
+  ok(surCarte.focus === 'in-fermer' && apresCarte.plan === surCarte.plan && apresCarte.ouverte && apresCarte.choisi === surCarte.nom && apresCarte.x === surCarte.x && apresCarte.y === surCarte.y,
+    'le clavier sur un bouton de la carte : la flèche ne change pas de folio, la carte reste, le bloc ne bouge pas', JSON.stringify([surCarte, apresCarte]));
+  await page.evaluate(() => { deselectionner(); fermerInspecteur(); });
   await ouvrir('1', false); await page.click('#btnAuto'); await page.waitForTimeout(300);
   ok(!(await auto()), 'folio 1 rendu au moteur');
 

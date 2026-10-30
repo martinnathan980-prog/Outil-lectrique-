@@ -35,13 +35,15 @@
      · LE FOLIO SE LIT (v73) : il s'ouvre cadré sur le dessin ; à 100 %, un
        numéro de câble fait 11 px et aucune écriture moins de 9 ; la feuille
        entière se lit comme une carte (les petites écritures se taisent) ; le
-       câble choisi lève son numéro (la loupe) ; « (retest 10 A) » sous le
-       calibre retenu ; le folio glisse (une photo, puis tout à sa place) ;
+       câble choisi lève son numéro (la loupe) ; « (installation 10 A) » sous
+       le calibre retenu quand le fichier en dit un autre (v74 : le mot du
+       lecteur) ; le folio glisse (une photo, puis tout à sa place) ;
        l'objet trouvé pulse ; la carte épinglée, le dessin se recadre à côté ;
        la main qui montre sur un bloc, la main fermée une fois le glisser commencé ;
      · LA RECHERCHE (v73) : elle pardonne (« w012 », « W 012 », « w12 »,
        « disjoncteur », « 300xc1b5 », « Vouliez-vous dire ») ; la palette
        Ctrl+K cherche les actions et les objets, Entrée fait, Échap ferme ;
+       elle offre « Comment Volta réfléchit » dès que la page existe (v74) ;
        l'index se parcourt au clavier ;
      · L'EXPORT : sans le quadrillage fin.
    Rend 1 au premier échec.
@@ -280,11 +282,16 @@ const FICHIER = P.fichierDemande();
   ok(lu334.mot === 'W-334' && Math.abs(lu334.px - 11) < 0.3 && lu334.natif === 1, 'le câble choisi parle : son numéro se lève à 11 px (la loupe), le sien reste allumé dessous', JSON.stringify(lu334));
   const sansLoupe = await page.evaluate(() => { deselectionner(); const a = !document.querySelector('#scene .loupe'); choisirFil(app.dessin.fils.find(w => w.cable === 'W-334')); zoomerA(1); const b = !document.querySelector('#scene .loupe'); deselectionner(); return { eteint: a, cent: b }; });
   ok(sansLoupe.eteint && sansLoupe.cent, 'la loupe s’en va avec le choix, et à 100 % (le numéro se lit seul)', JSON.stringify(sansLoupe));
-  // « (retest 10 A) » sous le calibre retenu (le domaine C, D-1 : le folio dit ce que le dossier PDF dit)
+  // le calibre de l'installation sous le calibre retenu (le domaine C, D-1 : le folio dit ce que le dossier PDF dit). v74 : la règle
+  // du calibre a déjà écrit MS3320-15 dans l'installation — le folio n'écrit qu'« 15 A » ; l'écart se juge plus bas, sur l'exemple
+  // sans la règle (« (installation 10 A) »)
   await folio('1');
-  const ret = await page.evaluate(() => { const c = calibresDuFolio('102CB1'), t = [...document.querySelectorAll('#scene .comp')].find(g => g.dataset.name === '102CB1');
-    return { c, attendu: c.retest ? '(retest ' + amperesCb(c.retest) + ')' : null, ecrit: t && t.querySelector('.cb-ret') ? t.querySelector('.cb-ret').textContent : null, cal: t && t.querySelector('.cb-cal') ? t.querySelector('.cb-cal').textContent : null, svg: /\(retest 10 A\)/.test(svgDuFolio().txt) }; });
-  ok(ret.attendu ? ret.ecrit === ret.attendu && ret.svg : !ret.ecrit, 'le folio écrit le calibre retenu (' + ret.cal + ') et, s’il diffère, celui du retest dessous — à l’écran comme à l’export', JSON.stringify(ret));
+  const lireRet = () => page.evaluate(() => { const c = calibresDuFolio('102CB1'), t = [...document.querySelectorAll('#scene .comp')].find(g => g.dataset.name === '102CB1'), S = svgDuFolio().txt;
+    // (une ou deux lignes : « (installation 10 A) », ou « installation » puis « 10 A »)
+    const lu = xs => xs.length ? xs.join(' ') : null;
+    return { c, ecrit: t ? lu([...t.querySelectorAll('.cb-ret')].map(e => e.textContent)) : null, cal: t && t.querySelector('.cb-cal') ? t.querySelector('.cb-cal').textContent : null, svg: lu([...S.matchAll(/class="cb-ret"[^>]*>([^<]*)</g)].map(m => m[1])), retest: /retest/i.test(S) }; });
+  const ret = await lireRet();
+  ok(ret.cal && !ret.c.retest && !ret.ecrit && !ret.retest, 'le calibre que la règle a écrit (' + ret.cal + ') : rien dessous, à l’écran comme à l’export', JSON.stringify(ret));
   // le folio glisse : le dessin qu'on quitte (une photo sans identifiants), le nouveau qui attend ; la feuille ne clignote pas
   const glisse = await page.evaluate(() => { allerAuPlan('2'); const r = { photo: !!document.querySelector('#planche .folio-part'), vient: !!document.querySelector('#scene .folio-vient'), scenes: document.querySelectorAll('[id="scene"]').length,
       ids: [...document.querySelectorAll('#planche .folio-part [id]')].length, pastille: !!document.querySelector('#fo-strip .fo-pastille'), feuilleFixe: !document.querySelector('#planche .folio-part g.feuille') }; return r; });
@@ -316,6 +323,13 @@ const FICHIER = P.fichierDemande();
   await page.mouse.move(700, 450); await page.keyboard.press('/'); await page.keyboard.type('w012'); await page.waitForTimeout(150); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
   ok(await page.evaluate(() => !!app.cible && app.cible.type === 'fil' && app.cible.l.cable === 'W-012'), '/ w012 Entrée : la fiche de W-012');
   await page.evaluate(() => { deselectionner(); fermerInspecteur(); }); await page.mouse.move(700, 450);
+  // v74 : les lignes de la liste ne prennent pas Tab (↓ les choisit depuis le champ) — Tab quitte la recherche, jamais vers une ligne cachée
+  await page.keyboard.press('/'); await page.keyboard.type('W-01'); await page.waitForTimeout(200); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(80);
+  const qa = await page.evaluate(() => ({ actif: document.activeElement.id, choisie: $('q').getAttribute('aria-activedescendant') }));
+  await page.keyboard.press('Tab'); await page.waitForTimeout(300);
+  const qt = await page.evaluate(() => ({ dansLaListe: !!document.activeElement.closest('#q-liste'), liste: !$('q-liste').hidden }));
+  ok(qa.actif === 'q' && qa.choisie === 'q-opt-1' && !qt.dansLaListe && !qt.liste, 'la recherche au clavier : ↓ choisit une ligne sans quitter le champ, Tab quitte la recherche (la liste se ferme)', JSON.stringify([qa, qt]));
+  await page.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }); await page.mouse.move(700, 450);
   await page.keyboard.press('Control+k'); await page.waitForTimeout(250);
   const pal0 = await page.evaluate(() => ({ ouverte: paletteOuverte(), clavier: document.activeElement && document.activeElement.id, actions: [...document.querySelectorAll('#palette .pa-l')].length }));
   await page.keyboard.type('pdf'); await page.waitForTimeout(150);
@@ -336,6 +350,27 @@ const FICHIER = P.fichierDemande();
   await page.keyboard.press('Enter'); await page.waitForTimeout(400);
   ok(ix.actif && ix.clavier && await page.evaluate(n => !!app.cible && app.cible.nom === n, ix.nom), 'l’index au clavier : ↓ parcourt ses lignes sans quitter sa recherche, Entrée ouvre la ligne choisie', JSON.stringify(ix));
   await page.evaluate(() => { deselectionner(); fermerInspecteur(); });
+
+  /* « COMMENT VOLTA RÉFLÉCHIT » dans la palette (v74 : la page du lot N, `ficheComprendre`) — tant qu'elle n'existe pas,
+     la palette ne l'offre pas ; une page de remplacement le temps du contrôle, si elle manque */
+  const comp = await page.evaluate(() => { const vraie = typeof ficheComprendre === 'function'; window.__comprise = 0;
+    const sans = !vraie && !actionsDeLaPalette().some(a => a.act === 'comprendre');
+    if (!vraie) window.ficheComprendre = () => { window.__comprise++; };
+    return { vraie, sans }; });
+  await page.mouse.move(700, 450); await page.keyboard.press('Control+k'); await page.waitForTimeout(200);
+  const compVide = await page.evaluate(() => [...document.querySelectorAll('#palette .pa-l')].some(l => /Comment Volta réfléchit/.test(l.textContent)));
+  await page.keyboard.type('comment'); await page.waitForTimeout(150);
+  const compMot = await page.evaluate(() => { const l = document.querySelector('#palette .pa-l.on'); return l && l.textContent; });
+  if (!comp.vraie) { await page.keyboard.press('Enter'); await page.waitForTimeout(200); } else { await page.keyboard.press('Escape'); }
+  const compFait = await page.evaluate(v => { const n = window.__comprise; if (!v) delete window.ficheComprendre; return { n, ferme: !paletteOuverte() }; }, comp.vraie);
+  ok((comp.vraie || comp.sans) && compVide && /Comment Volta réfléchit/.test(compMot || '') && (comp.vraie || compFait.n === 1) && compFait.ferme,
+    'la palette offre « Comment Volta réfléchit » (parmi ses premières actions, et à « comment ») et l’ouvre — absente tant que la page n’existe pas', JSON.stringify({ comp, compVide, compMot, compFait }));
+  if (comp.vraie) await page.evaluate(() => { if (typeof fermerFiche === 'function') fermerFiche(true); });
+  // l'exemple sans la règle du calibre (le 10 A de l'installation gardé, 15 A proposé) : « (installation 10 A) » sous « 15 A »
+  await page.evaluate(() => atelier.exempleSansCalibreAuto()); await page.waitForFunction(() => !!app.dessin); await folio('1');
+  const ret10 = await lireRet();
+  ok(ret10.c.retest === 10 && /^\(?install(ation|\.) 10 A\)?$/.test(ret10.ecrit || '') && ret10.svg === ret10.ecrit && !ret10.retest,
+    'le folio écrit le calibre retenu (' + ret10.cal + ') et, s’il diffère, celui de l’installation dessous — « installation », jamais « retest » — à l’écran comme à l’export', JSON.stringify(ret10));
 
   /* ---- L'EXPORT ---- */
   const exp = await page.evaluate(() => { const S = svgDuFolio(); return { grille: /url\(#gfine\)/.test(S.txt.replace(/<pattern[\s\S]*?<\/pattern>/, '')), cables: /câbles?</.test(S.txt) }; });

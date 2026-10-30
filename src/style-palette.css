@@ -40,7 +40,8 @@
 .pa-l.on .ico{color:var(--t-1)}
 .pa-l.eteint{cursor:default;color:var(--t-2)}
 .pa-mot{flex:1;min-width:0;font:500 var(--f-14)/1.3 var(--sans);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pa-mot small{display:block;font:400 var(--f-12)/1.35 var(--sans);color:var(--t-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* la ligne qui explique : deux lignes au plus (le pourquoi d'un point à reprendre se coupait au milieu d'une phrase) */
+.pa-mot small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font:400 var(--f-12)/1.35 var(--sans);color:var(--t-2);overflow:hidden;white-space:normal}
 .pa-mot .pa-ou{font-style:normal;color:var(--t-2)}
 .pa-mot .pa-id{font:600 var(--f-13)/1.3 var(--mono);letter-spacing:-.01em}
 .pa-touche{flex:none;display:inline-flex;gap:3px}

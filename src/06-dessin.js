@@ -626,8 +626,8 @@ function polesDuDisjoncteur(bs) {
   return G.map(g => { const s = g.slice().sort((u, v) => u.y - v.y); return { p: s[0], q: s[1] || null }; }).sort((a, b) => a.p.y - b.p.y);
 }
 /* LE DISJONCTEUR, en coordonnées du bloc ; null s'il ne tient pas (le bloc garde alors la boîte). `info` : ce que
-   l'interface en sait — { calibre (en A, le retenu), retest (en A : celui du part number écrit, quand il en diffère —
-   « (retest 10 A) » s'écrit sous « 15 A », 08-export `calibresAuFolio`), tableau (« 121VU B05 », quand la nomenclature du
+   l'interface en sait — { calibre (en A, le retenu), retest (en A : celui du part number écrit dans l'installation, quand
+   il en diffère — « (installation 10 A) » s'écrit sous « 15 A », 08-export `calibresAuFolio`), tableau (« 121VU B05 », quand la nomenclature du
    lecteur viendra) } ;
    `aGauche(y)`, `aDroite(y)` : la couleur du fil qui arrive à cette hauteur (absolue), comme pour un équipement. */
 function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
@@ -715,15 +715,18 @@ function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
      inachevé (le technicien v73) */
   const ligneDes = (t, W, n) => { t = String(t); const fs = Math.max(5.6, Math.min(6.8, W / Math.max(1, Math.min(n, t.length)) / (CAR + 0.4 / 6.8)));
     return { cls: 'des', t: tient(t, fs, 0.4 * fs / 6.8, W, n), fs, ls: 0.4 * fs / 6.8 }; };
-  /* le calibre du retest, quand le part number écrit en dit un autre (l'ingénieur v73, n° 6 : « 15 A » et « (retest 10 A) »
-     dessous) : il se resserre jusqu'à 5,4 (9 px d'écran à 100 %), puis perd ses parenthèses ; sans place, il se tait — le
-     symbole du disjoncteur passe avant (`avecRetest`) */
-  const ligneRet = W => { for (const t of ['(retest ' + amperesCb(retest) + ')', 'retest ' + amperesCb(retest)]) { const fs = Math.min(6, (W / t.length - 0.3) / CAR);
-      if (fs >= 5.4) return { cls: 'cb-ret', t, fs: Math.floor(fs * 10) / 10, ls: 0.3 }; } return null; };
-  let avecRetest = !!(calibre && retest);
+  /* le calibre de l'installation, quand le part number écrit en dit un autre (l'ingénieur v73, n° 6 : « 15 A » et, dessous,
+     « (installation 10 A) » — v74 : le lecteur lit « installation », plus « retest ») : il se resserre jusqu'à 5,4 (9 px
+     d'écran à 100 %), perd ses parenthèses, passe sur deux lignes (« installation », « 10 A » : le mot entier tient où tient
+     le repère) ; si rien de cela ne trouve de place, il s'abrège (« install. 10 A ») ; sinon il se tait — le symbole du
+     disjoncteur passe avant. `niveau` : 0 le mot entier, 1 l'abrégé, 2 rien. */
+  const ligneRet = (W, niveau) => { const a = amperesCb(retest), fsDe = t => Math.min(6, (W / t.length - 0.3) / CAR);
+    for (const f of niveau === 0 ? [['(installation ' + a + ')'], ['installation ' + a], ['installation', a]] : niveau === 1 ? [['install. ' + a]] : []) { const fs = Math.min(...f.map(fsDe));
+      if (fs >= 5.4) return f.map(t => ({ cls: 'cb-ret', t, fs: Math.floor(fs * 10) / 10, ls: 0.3 })); } return []; };
+  let niveau = calibre && retest ? 0 : 2;
   const lignes = W => { const L = [{ cls: 'rep-big', t: nom, fs: Math.max(7, Math.min(10.5, (W / nom.length - 1.15) / CAR)), ls: 1.15 }];
     if (calibre) L.push({ cls: 'cb-cal', t: amperesCb(calibre), fs: 8, ls: 0.5 });
-    const r = avecRetest ? ligneRet(W) : null; if (r) L.push(r);
+    L.push(...ligneRet(W, niveau));
     if (tableau) L.push(ligneDes(tableau, W, 14));
     if (designation) L.push(ligneDes(designation, W, 18));
     return L; };
@@ -749,7 +752,7 @@ function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
   const Lc = lignes(X1 - X0);
   cands.push(empiler(Lc, mid, 'middle', yHaut - 3 - hauteur(Lc)), empiler(Lc, mid, 'middle', yBas + 3));
   choix = cands.find(L => L.every(l => dedans(l.b) && !traits.some(t => touche(l.b, t, 1)) && !symboles.some(s => touche(l.b, s, 1.2)) && !nums.some(n => touche(l.b, n.b, 1))));
-  if (choix || !avecRetest) break; avecRetest = false; }   // le retest ne tient nulle part : le symbole sans lui, plutôt que la boîte
+  if (choix || niveau >= 2) break; niveau++; }   // le calibre de l'installation ne tient nulle part : abrégé, puis le symbole sans lui, plutôt que la boîte
   if (!choix) return null;
 
   /* la ZONE : le corps, invisible sur le folio (mais on peut y cliquer, comme dans le corps d'un équipement) ; le calque
