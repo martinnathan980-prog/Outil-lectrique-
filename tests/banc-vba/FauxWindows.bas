@@ -21,6 +21,10 @@ Public gWinProcessusApresQuit As Long ' combien en tournent encore après Quit (
 Public gWinWMIMuet As Boolean         ' Win32_Process ne répond pas
 Public gWinFichier As String          ' ce que rend ChoisirFichier : « = » le départ (le réglage Projet), "" Annuler, sinon ce chemin
 Public gWinConfirme As Boolean        ' la réponse aux questions OK / Annuler (ConfirmerOK)
+Public gWinTenuParExcel As Boolean    ' SEE.exe ne s'arrête pas tant qu'Excel tient un objet de SEE (gApp) : compté en marche
+Public gWinProcessusAuChoix As Long   ' >= 0 : le technicien ouvre SEE pendant la fenêtre « Ouvrir » (gWinProcessus prend cette valeur)
+Public gWinBloqueDeclare As Boolean   ' Windows arrête la macro au premier appel d'une fonction déclarée (règle de Defender) : End
+Public gPanneClasseur As Boolean      ' InitialiserClasseur lève 1004 une fois (sous Excel : feuille Reglages protégée ; banc.py)
 
 Public Sub InitWindows()
     Set gWinTrace = New Collection
@@ -38,6 +42,10 @@ Public Sub InitWindows()
     gWinWMIMuet = False
     gWinFichier = "="
     gWinConfirme = True
+    gWinTenuParExcel = False
+    gWinProcessusAuChoix = -1
+    gWinBloqueDeclare = False
+    gPanneClasseur = False
 End Sub
 
 Private Sub Prete()
@@ -135,6 +143,8 @@ End Function
 
 Public Function ObjetActifParCLSID(ByVal clsid As String, ByRef o As Object, ByRef code As Long, ByRef texte As String) As Boolean
     TraceWin "GetActiveObject|" & clsid
+    ' le vrai appelle CLSIDFromString et GetActiveObject (Declare) : la règle de Defender arrête la macro ici, sans On Error
+    If gWinBloqueDeclare Then End
     Set o = Nothing
     code = 0
     texte = ""
@@ -217,7 +227,10 @@ Public Function ProcessusEnCours(ByVal nomExe As String, ByRef nb As Long, ByRef
         erreur = "WMI refusé : -2147217405 Accès refusé (panne simulée)"
         Exit Function
     End If
-    If UCase(nomExe) = UCase(gWinNomExe) Then nb = gWinProcessus
+    If UCase(nomExe) = UCase(gWinNomExe) Then
+        nb = gWinProcessus
+        If gWinTenuParExcel And Not gApp Is Nothing Then nb = nb + 1
+    End If
     ProcessusEnCours = True
 End Function
 
@@ -227,6 +240,7 @@ End Sub
 
 Public Function ChoisirFichier(ByVal filtre As String, ByVal titre As String, ByVal depart As String) As String
     TraceWin "ChoisirFichier|" & titre
+    If gWinProcessusAuChoix >= 0 Then gWinProcessus = gWinProcessusAuChoix
     If gWinFichier = "=" Then ChoisirFichier = depart Else ChoisirFichier = gWinFichier
 End Function
 

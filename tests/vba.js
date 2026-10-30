@@ -59,7 +59,19 @@
    seulement l'essai volontaire (après « If Not lancerPermis ») et le bouton 3
    (après SEE fermé, le projet choisi, la copie de sécurité) ; Quit,
    CloseProject, Close : seulement FermerNotreSEE, sur le SEE que le bouton 3
-   a créé ; jamais Login.
+   a créé ; jamais Login. Et, depuis la relecture de la v3 : GetObject et
+   CreateObject seulement dans SEE_Windows (hors Scripting.Dictionary et
+   ADODB.Stream) ; le registre jamais écrit, dans aucun module ; CreerNotreSEE
+   appelé par le seul bouton 3, qui lâche d'abord TOUTE connexion gardée,
+   revoit Windows avant de refuser et juste avant la création ; gSansDialogue
+   remis même sur une erreur (InitialiserSansBoite) ; les boutons 1 et 2
+   n'ouvrent jamais de projet (SEE_Projet sans ouvrirPermis) et le bouton 2
+   ne crée son sous-groupe qu'après sa question ; Annuler par défaut
+   (ConfirmerOK, la question du bouton 2) ; GetActiveObject, une fonction de
+   Windows déclarée, essayé en dernier, après un bloc PROVISOIRE ; le
+   paramètre de sortie de SeeAutomation (V4) : un Variant, puis une variable
+   Object si SEE refuse le type ; aucun chemin entier dans le bloc ni le
+   journal (MasquerChemins).
    Puis le contrôleur s'éprouve lui-même : des fautes sont injectées une à
    une dans une copie des modules (mutations), chacune doit être attrapée
    par le contrôle attendu ; et une écriture dans le classeur (feuille,
@@ -847,7 +859,62 @@ function controler(entrees) {
       fermer.length === 1 && fermer[0] === 'SEE_Pilote.EssaiSansFenetre' && /If mNotreSEE Then FermerNotreSEE\b/.test(essB)
         && poseNotre.length === 1 && poseNotre[0] === 'CreerNotreSEE' && cns.indexOf('If CreerParCLSID(') >= 0 && cns.indexOf('mNotreSEE = True') > cns.indexOf('If CreerParCLSID('),
       `appelée par ${fermer.join(', ') || 'personne'} ; mNotreSEE = True dans ${poseNotre.join(', ') || 'aucune'}`);
+    // --- la relecture de la v3 : chaque constat corrigé a son contrôle (et sa mutation, plus bas)
+    const creerNotre = appelants('CreerNotreSEE');
+    ok('le bouton 3 seul crée son SEE : CreerNotreSEE n\'est appelé que par EssaiSansFenetre', creerNotre.length === 1 && creerNotre[0] === 'SEE_Pilote.EssaiSansFenetre',
+      creerNotre.join(', ') || 'personne');
+    const lacher = texteBrut(procDe('SEE_Commun', 'LacherConnexion')), sf = texteBrut(procDe('SEE_Pilote', 'SEEFerme'));
+    const iLacher = essB.search(/^\s*LacherConnexion "/m), iFerme = essB.indexOf('If Not SEEFerme() Then GoTo Fin');
+    ok('le bouton 3 lâche TOUTE connexion gardée (rejointe aussi : SEE.exe ne s\'arrête pas tant qu\'Excel la tient) avant l\'étape 1, qui revoit Windows avant de refuser',
+      /Set gApp = Nothing/.test(lacher) && iLacher >= 0 && iFerme > iLacher && /For i = 1 To \d+[\s\S]*Patienter[\s\S]*SEEEnMarche\(/.test(sf),
+      `LacherConnexion ${iLacher}, SEEFerme ${iFerme}`);
+    const stf = texteBrut(procDe('SEE_Pilote', 'SEEToujoursFerme')), iRevu = cns.indexOf('If Not SEEToujoursFerme() Then Exit Function');
+    ok('le bouton 3 revoit Windows juste avant la création (SEE a pu être rouvert pendant le choix du projet)',
+      /SEEEnMarche\(/.test(stf) && iRevu >= 0 && cns.indexOf('CreerParCLSID(') > iRevu, `SEEToujoursFerme ${iRevu}, CreerParCLSID ${cns.indexOf('CreerParCLSID(')}`);
+    const isb = procDe('SEE_Commun', 'InitialiserSansBoite'), isbB = texteBrut(isb);
+    const boutons23 = [edr, essB], posent = boutons23.filter(x => /gSansDialogue\s*=\s*True/.test(x)).length;
+    ok('boutons 2 et 3 : gSansDialogue remis même sur une erreur (InitialiserSansBoite, qui le remet dans son gestionnaire puis relève l\'erreur)',
+      isb && posent === 0 && boutons23.every(x => /^\s*InitialiserSansBoite\s*$/m.test(x))
+        && /Echec:[\s\S]*gSansDialogue = ancien[\s\S]*Err\.Raise/.test(isbB) && (isbB.match(/gSansDialogue = ancien/g) || []).length === 2,
+      isb ? `${posent} bouton(s) qui posent gSansDialogue = True eux-mêmes` : 'InitialiserSansBoite absente');
+    const sp = texteBrut(procDe('SEE_Commun', 'SEE_Projet')), prep = texteBrut(procDe('SEE_Pilote', 'PreparerSEE'));
+    const appelsSonde = toutCode.filter(x => x.m === 'SEE_Sonde' && /\bSEE_Projet\(/.test(x.code)), sondesOuvrent = appelsSonde.filter(x => !/SEE_Projet\(True, Not mEnchaine\)/.test(x.code));
+    ok('boutons 1 et 2 : jamais de projet ouvert dans le SEE rejoint (SEE_Projet sans ouvrirPermis : les sondes enchaînées, le bouton 2)',
+      /If Not ouvrirPermis Then chemin = ""/.test(sp) && sp.indexOf('If Not ouvrirPermis Then chemin = ""') < sp.indexOf('OpenProject')
+        && appelsSonde.length >= 2 && !sondesOuvrent.length && /SEE_Projet\(gSimulation, Not mBouton2\)/.test(prep),
+      sondesOuvrent.map(x => `${x.p}:${x.n}`).join(', ') || 'SEE_Projet ou PreparerSEE');
+    const iQuestion = edr.indexOf("Est-ce bien ton projet d'essai"), iGroupe = edr.indexOf('GroupeCible()');
+    ok('bouton 2 : le sous-groupe (réglage Groupe) n\'est cherché et créé qu\'APRÈS la question',
+      iQuestion >= 0 && iGroupe > iQuestion && prep.search(/If mBouton2 Then\s*\n\s*PreparerSEE = True\s*\n\s*Exit Function/) >= 0
+        && prep.search(/If mBouton2 Then\s*\n\s*PreparerSEE = True/) < prep.indexOf('GroupeCible()'), `question ${iQuestion}, GroupeCible ${iGroupe}`);
+    const confirmer = texteBrut(procDe('SEE_Windows', 'ConfirmerOK'));
+    ok('Annuler par défaut : ConfirmerOK (vbDefaultButton2) et la question du bouton 2', /vbOKCancel \+ vbQuestion \+ vbDefaultButton2/.test(confirmer)
+      && /vbOKCancel \+ vbQuestion \+ vbDefaultButton2/.test(edr), 'ConfirmerOK ou EssaiDessinReel');
+    const ix = texteBrut(procDe('SEE_Commun', 'ConnecterSEE')), dernierNom = ix.lastIndexOf('EssayerParNom('), premierClsid = ix.indexOf('EssayerParCLSID(');
+    const tstB = texteBrut(procDe('SEE_Sonde', 'TesterSEE')), debut = texteBrut(procDe('SEE_Sonde', 'DebutSonde'));
+    ok('GetActiveObject (une fonction de Windows déclarée) en DERNIER, et TesterSEE pose un bloc PROVISOIRE avant le registre et avant la recherche de SEE',
+      dernierNom >= 0 && premierClsid > dernierNom && tstB.indexOf('EcrireBlocEnCours') >= 0 && tstB.indexOf('EcrireBlocEnCours') < tstB.indexOf('EtapeDuTest "SondeRegistre"')
+        && /If mBlocEnCours Then EcrireBlocEnCours[\s\S]*ConnecterSEE\(False\)/.test(debut), `GetObject ${dernierNom}, GetActiveObject ${premierClsid}`);
+    const opa = texteBrut(procDe('SEE_Commun', 'SEE_OuvrirProjetAutomation')), ec = texteBrut(procDe('SEE_Commun', 'EssaiCreation'));
+    const iVar = opa.indexOf('gApp.OpenProject chemin, mdp, r\n'), iRefus = opa.indexOf('ElseIf TypeRefuse(numErr) Then'), iObj = opa.indexOf('gApp.OpenProject chemin, mdp, prj');
+    ok('SeeAutomation (V4) : le paramètre de sortie d\'OpenProject et de CreateObject : un Variant, puis une variable Object seulement si SEE refuse le type',
+      iVar >= 0 && iRefus > iVar && iObj > iRefus && /gApp\.CreateObject typeObjet, r\b/.test(ec) && /gApp\.CreateObject typeObjet, x\b/.test(ec)
+        && /If Not TypeRefuse\(numErr\) And numErr <> -1 Then Exit For/.test(texteBrut(procDe('SEE_Commun', 'AppelCreation'))), `Variant ${iVar}, refus ${iRefus}, Object ${iObj}`);
+    ok('le bloc à photographier et le journal ne montrent pas le chemin entier (MasquerChemins)',
+      /MasquerChemins\(texte\)/.test(texteBrut(procDe('SEE_Commun', 'LigneResultat'))) && /MasquerChemins\(appel\)/.test(texteBrut(procDe('SEE_Commun', 'Journal'))),
+      'LigneResultat ou Journal');
   }
+  // --- créer ou rejoindre un objet par GetObject / CreateObject : seulement dans SEE_Windows (sauf les deux objets de
+  //     Windows dont le classeur se sert : Scripting.Dictionary et ADODB.Stream) ; le registre : aucune écriture, dans
+  //     AUCUN module (ni Set…Value, CreateKey, Delete…, RegWrite, SaveSetting)
+  const objetsHors = toutCode.filter(x => x.m !== MODULE_WINDOWS).filter(x => {
+    const s = sansChaines(x.code);
+    return [...s.matchAll(/(^|[^.\w])(GetObject|CreateObject)\s*\(/gi)].some(g => {
+      const arg = x.code.slice(g.index + g[0].length).trimStart();
+      return !(g[2].toLowerCase() === 'createobject' && /^"(Scripting\.Dictionary|ADODB\.Stream)"/i.test(arg)); }); }).map(x => `${x.m}.${x.p}:${x.n}`);
+  ok('GetObject et CreateObject (un objet de Windows ou de SEE) : seulement dans SEE_Windows (hors Scripting.Dictionary, ADODB.Stream)', !objetsHors.length, objetsHors.join(' ; '));
+  const registre = toutCode.filter(x => /\.(Set\w*Value|CreateKey|DeleteKey|DeleteValue)\b|\b(RegWrite|RegDelete|SaveSetting|DeleteSetting)\b/i.test(sansChaines(x.code))).map(x => `${x.m}.${x.p}:${x.n}`);
+  ok('le registre en lecture seule dans TOUS les modules (ni Set…Value, CreateKey, Delete…, RegWrite, SaveSetting)', !registre.length, registre.join(' ; '));
   const fermetures = toutCode.filter(x => !(x.m === 'SEE_Pilote' && x.p === 'FermerNotreSEE')
     && (/\.(Quit|CloseProject)\b|\b(gApp|prj|mPrj)\.Close\b/i.test(sansChaines(x.code)) || /"(Quit|CloseProject|Close)"/i.test(x.code))).map(x => `${x.m}.${x.p}:${x.n}`);
   ok('fermer SEE (Quit, CloseProject, Close du projet) : seulement dans FermerNotreSEE (le SEE créé par le bouton 3)', !fermetures.length, fermetures.join(' ; '));
@@ -1064,6 +1131,43 @@ if (Object.keys(entrees).length === MODULES.length && Object.keys(analyses).leng
     ['Login sur SEE', 'jamais Login (SEE Access Control) : ni appel, ni nom en chaîne', ajout('SEE_Pilote', ['gApp.Login "a", "b"'])],
     ['TesterSEE qui joint SEE avant de lire le registre', 'SEE_Sonde : TesterSEE lit le registre (SondeRegistre) AVANT de joindre SEE (ses ProgID servent à le rejoindre)',
       remplacer('SEE_Sonde', /    EtapeDuTest "SondeRegistre"\r\n/, '')],
+    // --- la relecture de la v3 (constats SU5, EX1 à EX4, SU1 à SU4, SU7)
+    ['une sonde qui crée SEE elle-même (GetObject new:)', 'GetObject et CreateObject (un objet de Windows ou de SEE) : seulement dans SEE_Windows (hors Scripting.Dictionary, ADODB.Stream)',
+      ajout('SEE_Sonde', ['Dim zzO As Object', 'Set zzO = GetObject("new:{B0B9DD73-EE81-473F-9C3C-D8910C7E2D59}")'])],
+    ['une sonde qui crée SEE elle-même (CreateObject)', 'GetObject et CreateObject (un objet de Windows ou de SEE) : seulement dans SEE_Windows (hors Scripting.Dictionary, ADODB.Stream)',
+      ajout('SEE_Sonde', ['Dim zzO As Object', 'Set zzO = CreateObject("SEEExpert.SeeAutomation")'])],
+    ['le bouton 2 qui crée son SEE (CreerNotreSEE)', 'le bouton 3 seul crée son SEE : CreerNotreSEE n\'est appelé que par EssaiSansFenetre',
+      remplacer('SEE_Pilote', /(    If Not PreparerSEE\(False\) Then\r\n)/, '    If CreerNotreSEE() Then Beep\r\n$1')],
+    ['une sonde qui écrit le registre', 'le registre en lecture seule dans TOUS les modules (ni Set…Value, CreateKey, Delete…, RegWrite, SaveSetting)',
+      ajout('SEE_Sonde', ['Dim zzR As Object', 'zzR.SetStringValue 1, "a", "b", "c"'])],
+    ['Annuler n\'est plus le bouton par défaut de ConfirmerOK', 'Annuler par défaut : ConfirmerOK (vbDefaultButton2) et la question du bouton 2',
+      remplacer('SEE_Windows', /vbOKCancel \+ vbQuestion \+ vbDefaultButton2, titre\)/, 'vbOKCancel + vbQuestion + vbDefaultButton1, titre)')],
+    ['la question du bouton 2 sans Annuler par défaut', 'Annuler par défaut : ConfirmerOK (vbDefaultButton2) et la question du bouton 2',
+      remplacer('SEE_Pilote', /"OK : dessiner ; Annuler : ne rien faire\.", vbOKCancel \+ vbQuestion \+ vbDefaultButton2/, '"OK : dessiner ; Annuler : ne rien faire.", vbOKCancel + vbQuestion')],
+    ['le bouton 3 qui ne lâche qu\'une connexion créée (EX1)', 'le bouton 3 lâche TOUTE connexion gardée (rejointe aussi : SEE.exe ne s\'arrête pas tant qu\'Excel la tient) avant l\'étape 1, qui revoit Windows avant de refuser',
+      remplacer('SEE_Pilote', /    LacherConnexion "le bouton 3 veut SEE fermé"\r\n/, '    LacherConnexionCreee\r\n')],
+    ['l\'étape 1 qui refuse sans revoir Windows', 'le bouton 3 lâche TOUTE connexion gardée (rejointe aussi : SEE.exe ne s\'arrête pas tant qu\'Excel la tient) avant l\'étape 1, qui revoit Windows avant de refuser',
+      remplacer('SEE_Pilote', /        Patienter 2\r\n        etat = SEEEnMarche\(nb, detail\)\r\n    Next i\r\n    If etat = 0 Then\r\n        NoterEtape3 1/, '        etat = SEEEnMarche(nb, detail)\r\n    Next i\r\n    If etat = 0 Then\r\n        NoterEtape3 1')],
+    ['la création sans revoir Windows (SU1)', 'le bouton 3 revoit Windows juste avant la création (SEE a pu être rouvert pendant le choix du projet)',
+      remplacer('SEE_Pilote', /    If Not SEEToujoursFerme\(\) Then Exit Function\r\n/, '')],
+    ['gSansDialogue non remis sur une erreur (SU4)', 'boutons 2 et 3 : gSansDialogue remis même sur une erreur (InitialiserSansBoite, qui le remet dans son gestionnaire puis relève l\'erreur)',
+      remplacer('SEE_Commun', /    descErr = Err\.Description\r\n    gSansDialogue = ancien\r\n    On Error GoTo 0\r\n/, '    descErr = Err.Description\r\n    On Error GoTo 0\r\n')],
+    ['le bouton 2 qui pose gSansDialogue lui-même (SU4)', 'boutons 2 et 3 : gSansDialogue remis même sur une erreur (InitialiserSansBoite, qui le remet dans son gestionnaire puis relève l\'erreur)',
+      remplacer('SEE_Pilote', /(Public Sub EssaiDessinReel\(\)[\s\S]*?)    InitialiserSansBoite\r\n/, '$1    gSansDialogue = True\r\n    InitialiserClasseur\r\n')],
+    ['le bouton 1 qui ouvre le projet du réglage Projet (SU2)', 'boutons 1 et 2 : jamais de projet ouvert dans le SEE rejoint (SEE_Projet sans ouvrirPermis : les sondes enchaînées, le bouton 2)',
+      remplacer('SEE_Sonde', /SEE_Projet\(True, Not mEnchaine\)/, 'SEE_Projet(True)')],
+    ['le bouton 2 qui ouvre le projet du réglage Projet (SU2)', 'boutons 1 et 2 : jamais de projet ouvert dans le SEE rejoint (SEE_Projet sans ouvrirPermis : les sondes enchaînées, le bouton 2)',
+      remplacer('SEE_Pilote', /SEE_Projet\(gSimulation, Not mBouton2\)/, 'SEE_Projet(gSimulation)')],
+    ['le bouton 2 qui crée le sous-groupe avant la question (SU7)', 'bouton 2 : le sous-groupe (réglage Groupe) n\'est cherché et créé qu\'APRÈS la question',
+      remplacer('SEE_Pilote', /    If mBouton2 Then\r\n        PreparerSEE = True\r\n        Exit Function\r\n    End If\r\n/, '')],
+    ['GetActiveObject avant les GetObject (EX3)', 'GetActiveObject (une fonction de Windows déclarée) en DERNIER, et TesterSEE pose un bloc PROVISOIRE avant le registre et avant la recherche de SEE',
+      remplacer('SEE_Commun', /(    ' b\. la fenêtre ouverte, par GetObject[^\r]*\r\n(?:.*\r\n){10})(    ' c\. la fenêtre ouverte, par CLSID[^\r]*\r\n(?:.*\r\n){10})/, '$2$1')],
+    ['TesterSEE sans bloc provisoire avant la recherche de SEE (EX3)', 'GetActiveObject (une fonction de Windows déclarée) en DERNIER, et TesterSEE pose un bloc PROVISOIRE avant le registre et avant la recherche de SEE',
+      remplacer('SEE_Sonde', /        If mBlocEnCours Then EcrireBlocEnCours /, '        If False Then EcrireBlocEnCours ')],
+    ['OpenProject en V4 avec une variable Object d\'abord (EX2)', 'SeeAutomation (V4) : le paramètre de sortie d\'OpenProject et de CreateObject : un Variant, puis une variable Object seulement si SEE refuse le type',
+      remplacer('SEE_Commun', /        gApp\.OpenProject chemin, mdp, r\r\n/, '        gApp.OpenProject chemin, mdp, prj\r\n')],
+    ['le bloc à photographier qui montre le chemin entier (SU3)', 'le bloc à photographier et le journal ne montrent pas le chemin entier (MasquerChemins)',
+      remplacer('SEE_Commun', /EcrireLigne ws, l, Array\(rubrique, MasquerChemins\(texte\)\)/, 'EcrireLigne ws, l, Array(rubrique, texte)')],
   ];
   let attrapees = 0;
   for (const [nom, attendu, mut] of mutations) {

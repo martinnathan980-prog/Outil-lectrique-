@@ -148,7 +148,16 @@ la même architecture `[nso-inv]` *(déduction technique)*.
   essayés avant en `new:` ont échoué, dont l'`Application` V4R3 {A55015A3-…} : elle n'est sans doute pas
   créable. Que cet objet vive dans un SEE caché ou dans le SEE ouvert (serveur « multi-use ») n'est pas
   établi : le bouton 3 ne crée donc rien tant qu'un programme SEE tourne ;
-- reste à voir : `OpenProject` sur cet objet, la signature de son `CreateObject`, et s'il se referme.
+- reste à voir : `OpenProject` sur cet objet, la signature de son `CreateObject`, et s'il se referme ; et
+  le TYPE de leurs paramètres de sortie en V4. L'interop du SDK des plugins V4R3 déclare les « out object »
+  d'`ISEEView.GetContent` et d'`IPluginRoot.CreateObject` `[MarshalAs(UnmanagedType.IDispatch)]`, donc des
+  `IDispatch**`, et les objets typés (`GetMainGroup`) en `SEEGroup**` `[nso-v4r3-cn]` ; pour `ISeeAutomation`,
+  seuls les noms des paramètres sont connus (`OpenProject(A_Path, A_Password, A_Object)`,
+  `CreateObject(A_ObjectType, A_Object, A_ppiObject)`). Un argument passé par référence n'est pas converti
+  par Automation : le pilote passe un `Variant`, puis une variable `Object` si SEE refuse le type
+  *(déduction technique)* ;
+- reste à voir aussi : si le poste applique la règle de Defender « Bloquer les appels d'API Win32 à partir
+  de macros Office » (elle arrêterait le bouton 1 sur `GetActiveObject`, essayé en dernier).
 
 **Les objets et méthodes clés (V5R2)** `[nso-index]` `[nso-comnet]` `[nso-enums]` :
 

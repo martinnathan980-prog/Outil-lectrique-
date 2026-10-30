@@ -14,10 +14,13 @@ Attribute VB_Name = "SEE_Commun"
 '      boutons 1 et 2 ne démarrent jamais SEE ; seul l'essai volontaire
 '      LancerSEE = O des macros lancées par Alt+F8 en crée un (le bouton 3,
 '      SEE_Pilote, crée le sien après ses vérifications) ;
+'      une connexion gardée se lâche sans rien fermer (LacherConnexionCreee,
+'      LacherConnexion) ;
 '    - ce que Windows dit de SEE : les programmes SEE en marche (SEEEnMarche) ;
 '    - le bloc « À PHOTOGRAPHIER » en tête de la feuille Resultat_Test
 '      (FeuilleEnTete, LigneResultat, SurlignerPhoto) : le technicien ne
-'      renvoie que des photos de l'écran ;
+'      renvoie que des photos de l'écran ; ni ce bloc ni le journal ne
+'      montrent le chemin entier d'un fichier (MasquerChemins) ;
 '    - la version de l'API (V5 : les méthodes Get* RENDENT l'objet ; V4 : elles
 '      le donnent par un paramètre de sortie) et la COUCHE D'ADAPTATION : une
 '      petite fonction par appel COM qui rend un objet, pour que le reste du
@@ -66,6 +69,12 @@ Public Const FEUILLE_REGLAGES As String = "Reglages"
 Public Const FEUILLE_JOURNAL As String = "Journal"
 Public Const FEUILLE_RESULTAT As String = "Resultat_Test"   ' en tête du classeur : le bloc « À PHOTOGRAPHIER »
 
+' --- Où sont les boutons, et la consigne qui envoie au bouton 3 (les messages
+'     des boutons 1 et 2 la citent mot pour mot) : une fois un bouton passé, la
+'     feuille devant le technicien est Resultat_Test ou Journal, sans bouton
+Public Const OU_BOUTONS As String = "en bas d'Excel, onglet « Accueil »"
+Public Const CONSIGNE_BOUTON3 As String = "Essaie le bouton 3 : enregistre et ferme SEE. Puis, en bas d'Excel, clique sur l'onglet « Accueil », et sur le bouton orange « 3. SEE FERMÉ »."
+
 ' --- Les natures de blocs du paquet (FORMAT-PAQUET.md, feuille Blocs)
 Public Const NATURES As String = "EQUIPEMENT;BARRETTE;BARRETTE_A_POSER;PRISE;MASSE;RAIL;COLLECTEUR;RENVOI"
 
@@ -110,6 +119,7 @@ Private mCodesDits As Object          ' les codes de Windows déjà expliqués dans
 ' --- le CreateObject de la coclasse SeeAutomation (signature non établie : essayée, voir NouvelObjet)
 Private mFormeCreation As Integer     ' 0 pas encore essayée, 1 la forme d'Application, 2 un paramètre de plus, -1 refusée
 Private mCodesCreation As String      ' les réponses des formes essayées (le bloc « À PHOTOGRAPHIER » du bouton 3)
+Private mSortieCreation As String     ' la variable de sortie qui a marché : "Variant", "Object" ("" : l'objet est rendu)
 
 ' --- La conversion des coordonnées (PreparerConversion)
 Private mEchelle As Double
@@ -183,6 +193,27 @@ Public Sub InitialiserClasseur()
         FEUILLE_REGLAGES & "." & vbCrLf & _
         "Commence par SondeApplication (lecture seule), puis remplis les réglages.", _
         vbInformation, "Pilote SEE"
+End Sub
+
+' InitialiserClasseur SANS sa boîte (elle va au journal), pour les boutons 2 et
+' 3 : gSansDialogue reprend sa valeur QUOI QU'IL ARRIVE. Sur une erreur (sous
+' Excel, une feuille Reglages protégée : 1004), elle est remise puis l'erreur
+' est relevée à l'appelant : sinon gSansDialogue resterait Vrai jusqu'à la
+' fermeture d'Excel, et chaque question de sécurité répondrait seule « OK ».
+Public Sub InitialiserSansBoite()
+    Dim ancien As Boolean, numErr As Long, descErr As String
+    ancien = gSansDialogue
+    gSansDialogue = True
+    On Error GoTo Echec
+    InitialiserClasseur
+    gSansDialogue = ancien
+    Exit Sub
+Echec:
+    numErr = Err.Number
+    descErr = Err.Description
+    gSansDialogue = ancien
+    On Error GoTo 0
+    Err.Raise numErr, "InitialiserClasseur", descErr
 End Sub
 
 ' La liste des réglages : Array(Cle, Valeur par défaut, Aide). Les valeurs par
@@ -446,15 +477,46 @@ Public Sub Journal(ByVal etape As String, ByVal objet As String, ByVal appel As 
     ws.Cells(mLigneJournal, 1).Value = "'" & Format$(Now, "yyyy-mm-dd hh:mm:ss")
     ws.Cells(mLigneJournal, 2).Value = "'" & Left$(etape, 250)
     ws.Cells(mLigneJournal, 3).Value = "'" & Left$(objet, 250)
-    ws.Cells(mLigneJournal, 4).Value = "'" & Left$(appel, 1000)
-    ws.Cells(mLigneJournal, 5).Value = "'" & Left$(resultat, 1000)
+    ws.Cells(mLigneJournal, 4).Value = "'" & Left$(MasquerChemins(appel), 1000)
+    ws.Cells(mLigneJournal, 5).Value = "'" & Left$(MasquerChemins(resultat), 1000)
     If numErr <> 0 Then
         ws.Cells(mLigneJournal, 6).Value = numErr
-        ws.Cells(mLigneJournal, 7).Value = "'" & Left$(descErr, 1000)
+        ws.Cells(mLigneJournal, 7).Value = "'" & Left$(MasquerChemins(descErr), 1000)
         gNbLignesErreur = gNbLignesErreur + 1
     End If
 Fin:
 End Sub
+
+' Un texte sans chemin qui nomme l'utilisateur de Windows (une photo sort du
+' bureau) : le dossier qui contient celui du projet d'essai (réglage Projet,
+' « C:\Users\<nom>\Desktop\ ») devient « ...\ », et tout « \Users\<nom>\ »
+' restant devient « \Users\...\ ». Restent le nom du dossier (Robot) et du fichier.
+Public Function MasquerChemins(ByVal s As String) As String
+    Dim projet As String, p As Long, q As Long, u As String
+    MasquerChemins = s
+    If Len(s) = 0 Then Exit Function
+    ' (le cache des réglages seulement : relire la feuille ici remettrait gSimulation à sa valeur au milieu d'une macro)
+    If Not mReglages Is Nothing Then
+        If mReglages.Exists("Projet") Then projet = CStr(mReglages.Item("Projet"))
+    End If
+    p = InStrRev(Replace(projet, "/", "\"), "\")
+    If p > 1 Then
+        q = InStrRev(Replace(projet, "/", "\"), "\", p - 1)
+        If q > 1 Then s = Replace(s, Left$(projet, q), "..." & Mid$(projet, q, 1), 1, -1, vbTextCompare)
+    End If
+    u = LCase$(Replace(s, "/", "\"))
+    p = InStr(1, u, "\users\", vbBinaryCompare)
+    Do While p > 0
+        q = InStr(p + 7, u, "\", vbBinaryCompare)
+        If q = 0 Then q = Len(s) + 1
+        If Mid$(s, p + 7, q - p - 7) <> "..." Then
+            s = Left$(s, p + 6) & "..." & Mid$(s, q)
+            u = LCase$(Replace(s, "/", "\"))
+        End If
+        p = InStr(p + 8, u, "\users\", vbBinaryCompare)
+    Loop
+    MasquerChemins = s
+End Function
 
 ' Une boîte de dialogue (MsgBox). Si gSansDialogue : rien ne s'affiche, le
 ' message va au journal et la réponse est celle qui ne détruit rien (OK, ou
@@ -591,7 +653,7 @@ End Sub
 ' Une ligne : la rubrique en gras (colonne A), le texte (colonne B).
 Public Sub LigneResultat(ByVal ws As Object, ByRef l As Long, ByVal rubrique As String, ByVal texte As String)
     l = l + 1
-    EcrireLigne ws, l, Array(rubrique, texte)
+    EcrireLigne ws, l, Array(rubrique, MasquerChemins(texte))
     If Len(rubrique) > 0 Then ws.Cells(l, 1).Font.Bold = True
 End Sub
 
@@ -772,8 +834,13 @@ End Function
 ' gEssais (le bloc « À PHOTOGRAPHIER » de Resultat_Test) :
 '   a. GetObject(, ProgID)       ceux du réglage ProgID, puis ceux que
 '                                SondeRegistre a trouvés (gProgIDsRegistre)
-'   b. GetActiveObject(CLSID)    par le CLSID, sans aucun ProgID (SEE_Windows)
-'   c. GetObject(, "{CLSID}")
+'   b. GetObject(, "{CLSID}")
+'   c. GetActiveObject(CLSID)    par le CLSID, sans aucun ProgID (SEE_Windows) :
+'                                EN DERNIER, parce que c'est une fonction de
+'                                Windows déclarée (Declare) ; sur un poste où la
+'                                règle de Defender « bloquer les appels d'API
+'                                Win32 depuis les macros » est active, Windows
+'                                arrête la macro là, sans On Error possible
 ' Application d'abord, puis SeeAutomation (V5R2 puis V4R3). Aucun ne démarre
 ' SEE. Puis, SEULEMENT si lancerPermis (une macro lancée par Alt+F8, jamais
 ' les boutons 1 et 2) ET l'essai volontaire LancerSEE = O :
@@ -834,24 +901,24 @@ Public Function ConnecterSEE(ByVal lancerPermis As Boolean) As Boolean
             GoTo Connecte
         End If
     Next p
-    ' b. la fenêtre ouverte, par CLSID, sans ProgID (GetActiveObject)
-    i = 0
-    For Each p In clsids
-        i = i + 1
-        If EssayerParCLSID(CStr(p), o) Then
-            Set gApp = o
-            gStrategie = "GetActiveObject(" & CStr(p) & ")"
-            gEstAutomation = (i > nbApp)
-            GoTo Connecte
-        End If
-    Next p
-    ' c. la fenêtre ouverte, par GetObject(, "{CLSID}")
+    ' b. la fenêtre ouverte, par GetObject(, "{CLSID}")
     i = 0
     For Each p In clsids
         i = i + 1
         If EssayerParNom(CStr(p), o) Then
             Set gApp = o
             gStrategie = "GetObject(, """ & CStr(p) & """)"
+            gEstAutomation = (i > nbApp)
+            GoTo Connecte
+        End If
+    Next p
+    ' c. la fenêtre ouverte, par CLSID, sans ProgID (GetActiveObject, une fonction de Windows : en dernier)
+    i = 0
+    For Each p In clsids
+        i = i + 1
+        If EssayerParCLSID(CStr(p), o) Then
+            Set gApp = o
+            gStrategie = "GetActiveObject(" & CStr(p) & ")"
             gEstAutomation = (i > nbApp)
             GoTo Connecte
         End If
@@ -912,6 +979,23 @@ Public Sub LacherConnexionCreee()
     If Not ConnexionCreeeParExcel() Then Exit Sub
     Journal "Connexion", "SEE", gStrategie, "connexion gardée d'une macro précédente, mais c'est Excel qui avait CRÉÉ cet " & _
         "objet SEE : il est lâché (Set gApp = Nothing, rien n'est fermé dans SEE) ; Excel cherchera ta fenêtre SEE ouverte"
+    Set gApp = Nothing
+    gStrategie = ""
+    gEstAutomation = False
+    gVersionAPI = 0
+    OublierCreation
+End Sub
+
+' TOUTE connexion gardée, créée OU rejointe, est lâchée : Set gApp = Nothing,
+' sans Quit ni Close (rien n'est fermé dans SEE). Tant qu'Excel tient un objet
+' de SEE, SEE.exe ne s'arrête pas : File > Exit cache sa fenêtre, mais le
+' programme tourne encore. Le bouton 3 commence donc par là (son étape 1 veut
+' SEE fermé), et les boutons 1 et 2 y finissent quand ils envoient au bouton 3.
+' raison : ce que le journal en dit.
+Public Sub LacherConnexion(ByVal raison As String)
+    If Not gApp Is Nothing Then
+        Journal "Connexion", "SEE", gStrategie, "connexion gardée lâchée (Set gApp = Nothing, rien n'est fermé dans SEE) : " & raison
+    End If
     Set gApp = Nothing
     gStrategie = ""
     gEstAutomation = False
@@ -1401,12 +1485,15 @@ End Function
 ' établie (les bibliothèques de types disent V5 : type, objet en sortie ;
 ' V4 : type, ?, objet). La première fois, elle est ESSAYÉE, au journal :
 ' d'abord la forme d'Application (V4 : type, objet en sortie ; V5 : l'objet
-' rendu) ; si SEE répond « nombre d'arguments » (450) ou « argument non
-' facultatif » (449), la forme à un paramètre de plus (V4 : type, ?, objet ;
-' V5 : type, objet en sortie). La forme qui marche est retenue pour la suite
-' de la macro ; si aucune ne marche, la création est dite refusée et n'est
-' plus essayée (CreationDObjets le dit). Rien d'autre n'est deviné : un objet
-' créé n'existe qu'en mémoire, l'essai est sans risque.
+' rendu) ; si SEE répond « nombre d'arguments » (450, 8002000E) ou « argument
+' non facultatif » (449), la forme à un paramètre de plus (V4 : type, ?,
+' objet ; V5 : type, objet en sortie). Le TYPE du paramètre de sortie n'est
+' pas établi non plus (un VARIANT, ou un IDispatch**) : chaque forme essaie un
+' Variant, puis une variable Object (AppelCreation). La forme et la variable
+' qui marchent sont retenues pour la suite de la macro ; si rien ne marche, la
+' création est dite refusée et n'est plus essayée (CreationDObjets le dit).
+' Rien d'autre n'est deviné : un objet créé n'existe qu'en mémoire, l'essai
+' est sans risque.
 Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
     Dim o As Object, numErr As Long, descErr As String, forme As Integer
     Set NouvelObjetAutomation = Nothing
@@ -1416,8 +1503,8 @@ Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
         Exit Function
     End If
     If mFormeCreation > 0 Then
-        ' la forme retenue
-        If AppelCreation(mFormeCreation, typeObjet, o, numErr, descErr) Then
+        ' la forme retenue, avec la variable retenue
+        If EssaiCreation(mFormeCreation, typeObjet, mSortieCreation = "Object", o, numErr, descErr) Then
             Set NouvelObjetAutomation = o
             NoterAppel "CreateObject(" & typeObjet & ") " & FormeCreation(mFormeCreation), o
         Else
@@ -1425,18 +1512,15 @@ Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
         End If
         Exit Function
     End If
-    ' la première fois : les formes, dans l'ordre
+    ' la première fois : les formes, dans l'ordre (chacune : un Variant, puis une variable Object)
     For forme = 1 To 2
         If AppelCreation(forme, typeObjet, o, numErr, descErr) Then
             mFormeCreation = forme
-            Journal gEtape, gObjet, "CreateObject(" & typeObjet & ") " & FormeCreation(forme), "ok (" & TypeName(o) & ") : forme " & _
-                "retenue pour la coclasse SeeAutomation"
+            Journal gEtape, gObjet, "CreateObject(" & typeObjet & ") " & FormeCreation(forme) & IIf(Len(mSortieCreation) > 0, ", variable " & _
+                mSortieCreation, ""), "ok (" & TypeName(o) & ") : forme retenue pour la coclasse SeeAutomation"
             Set NouvelObjetAutomation = o
             Exit Function
         End If
-        mCodesCreation = mCodesCreation & IIf(Len(mCodesCreation) > 0, " ; ", "") & "forme " & forme & " : " & CodeDeWindows(numErr)
-        Journal gEtape, gObjet, "CreateObject(" & typeObjet & ") " & FormeCreation(forme), "échec : " & ReponseDeWindows(numErr, descErr), _
-            numErr, descErr
         ' une autre forme seulement si SEE dit que les arguments ne vont pas
         If numErr <> 449 And numErr <> 450 And numErr <> &H8002000E Then Exit For
     Next forme
@@ -1447,39 +1531,86 @@ Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
         "plus aucun essai dans cette macro", -1, "création d'objets refusée"
 End Function
 
-' Un appel de CreateObject sous une forme : 1, celle d'Application ; 2, un
-' paramètre de plus. Vrai et l'objet ; sinon Faux, le code et sa description.
+' Une forme de CreateObject (1, celle d'Application ; 2, un paramètre de
+' plus), essayée la première fois. Avec un paramètre de sortie, d'abord un
+' Variant (un « out » déclaré VARIANT* n'accepte que lui), puis une variable
+' Object (un IDispatch** n'accepte qu'elle) : seulement si SEE refuse le TYPE
+' de l'argument (13, DISP_E_TYPEMISMATCH : refusé AVANT que la méthode tourne)
+' ou si le Variant revient vide. Chaque échec est au journal et dans
+' mCodesCreation (le bloc à photographier). Vrai, l'objet, et mSortieCreation ;
+' sinon Faux, le dernier code et sa description.
 Private Function AppelCreation(ByVal forme As Integer, ByVal typeObjet As Long, ByRef o As Object, ByRef numErr As Long, _
         ByRef descErr As String) As Boolean
-    Dim v As Variant
+    Dim parObjet As Boolean, essai As Integer
+    For essai = 1 To 2
+        parObjet = (essai = 2)
+        If forme = 1 And Not EstV4() Then
+            ' V5, la forme d'Application : l'objet est rendu, pas de variable de sortie
+            mSortieCreation = ""
+        Else
+            mSortieCreation = IIf(parObjet, "Object", "Variant")
+        End If
+        If EssaiCreation(forme, typeObjet, parObjet, o, numErr, descErr) Then
+            AppelCreation = True
+            Exit Function
+        End If
+        mCodesCreation = mCodesCreation & IIf(Len(mCodesCreation) > 0, " ; ", "") & "forme " & forme & _
+            IIf(Len(mSortieCreation) > 0, ", " & mSortieCreation, "") & " : " & CodeDeWindows(numErr)
+        Journal gEtape, gObjet, "CreateObject(" & typeObjet & ") " & FormeCreation(forme) & IIf(Len(mSortieCreation) > 0, _
+            ", variable " & mSortieCreation, ""), "échec : " & ReponseDeWindows(numErr, descErr), numErr, descErr
+        If Len(mSortieCreation) = 0 Then Exit For
+        If Not TypeRefuse(numErr) And numErr <> -1 Then Exit For
+    Next essai
+    mSortieCreation = ""
+End Function
+
+' Un appel de CreateObject sous une forme, avec un Variant ou une variable
+' Object en sortie (parObjet). Vrai et l'objet ; sinon Faux, le code (-1 :
+' rien rendu) et sa description.
+Private Function EssaiCreation(ByVal forme As Integer, ByVal typeObjet As Long, ByVal parObjet As Boolean, ByRef o As Object, _
+        ByRef numErr As Long, ByRef descErr As String) As Boolean
+    Dim v As Variant, r As Variant, x As Object
     Set o = Nothing
     numErr = 0
     descErr = ""
     On Error GoTo Echec
-    If forme = 1 Then
-        If EstV4() Then
-            gApp.CreateObject typeObjet, o
+    If forme = 1 And Not EstV4() Then
+        Set o = gApp.CreateObject(typeObjet)
+    ElseIf forme = 2 And EstV4() Then
+        ' (type, ?, objet en sortie) : le paramètre du milieu reste un Variant
+        If parObjet Then
+            gApp.CreateObject typeObjet, v, x
+            Set o = x
         Else
-            Set o = gApp.CreateObject(typeObjet)
+            gApp.CreateObject typeObjet, v, r
+            If IsObject(r) Then Set o = r
         End If
-    ElseIf EstV4() Then
-        gApp.CreateObject typeObjet, v, o
         If o Is Nothing And IsObject(v) Then Set o = v
+    ElseIf parObjet Then
+        gApp.CreateObject typeObjet, x
+        Set o = x
     Else
-        gApp.CreateObject typeObjet, o
+        gApp.CreateObject typeObjet, r
+        If IsObject(r) Then Set o = r
     End If
     If o Is Nothing Then
         numErr = -1
         descErr = "rien rendu (Nothing)"
         Exit Function
     End If
-    AppelCreation = True
+    EssaiCreation = True
     Exit Function
 Echec:
     numErr = Err.Number
     descErr = Err.Description
     Set o = Nothing
-    AppelCreation = False
+    EssaiCreation = False
+End Function
+
+' Vrai si SEE (Windows) a refusé le TYPE d'un argument : 13 (Type mismatch)
+' ou DISP_E_TYPEMISMATCH. Ce refus vient AVANT que la méthode tourne.
+Public Function TypeRefuse(ByVal numErr As Long) As Boolean
+    TypeRefuse = (numErr = 13 Or numErr = &H80020005)
 End Function
 
 ' La forme d'un appel de CreateObject, en clair.
@@ -1492,12 +1623,14 @@ Private Function FormeCreation(ByVal forme As Integer) As String
 End Function
 
 ' Ce que la création d'objets de la coclasse SeeAutomation a donné, pour une
-' photo : « pas essayée », « oui, forme ... », « refusée (codes ...) ».
+' photo : « pas essayée », « oui, forme ..., variable ... », « refusée (codes
+' ...) » (chaque forme et chaque variable essayées, avec leur code).
 Public Function CreationDObjets() As String
     If mFormeCreation = 0 Then
         CreationDObjets = "pas essayée"
     ElseIf mFormeCreation > 0 Then
-        CreationDObjets = "oui, CreateObject" & FormeCreation(mFormeCreation) & IIf(Len(mCodesCreation) > 0, " (avant : " & mCodesCreation & ")", "")
+        CreationDObjets = "oui, CreateObject" & FormeCreation(mFormeCreation) & IIf(Len(mSortieCreation) > 0, ", variable " & _
+            mSortieCreation, "") & IIf(Len(mCodesCreation) > 0, " (avant : " & mCodesCreation & ")", "")
     Else
         CreationDObjets = "REFUSÉE (codes : " & mCodesCreation & ")"
     End If
@@ -1507,6 +1640,7 @@ End Function
 Public Sub OublierCreation()
     mFormeCreation = 0
     mCodesCreation = ""
+    mSortieCreation = ""
 End Sub
 
 ' Un SEEPoint aux coordonnées SEE données.
@@ -1530,17 +1664,24 @@ End Function
 ' Le projet : celui ouvert dans SEE, ou celui du réglage Projet, ouvert en
 ' lecture seule si lectureSeule (la sonde, la simulation). Un projet ouvert
 ' par la macro reste ouvert dans SEE, et le journal le dit.
+' ouvrirPermis : Faux pour les boutons 1 et 2 (le bouton 3 note son projet
+' d'essai dans le réglage Projet) : ils ne changent JAMAIS le projet ouvert
+' dans le SEE du technicien ; ils rendent celui qui y est ouvert (que la
+' question du bouton 2 nomme), ou Nothing. Vrai : les macros lancées par
+' Alt+F8 (DessinerPaquet, les sondes seules...).
 ' Coclasse SeeAutomation : elle n'a pas de GetProject, et son OpenProject n'a
 ' pas de paramètre « lecture seule » (V5 : chemin, mot de passe ; V4 : chemin,
 ' mot de passe, projet en sortie) : en lecture seule, elle n'ouvre rien.
-Public Function SEE_Projet(Optional ByVal lectureSeule As Boolean = False) As Object
-    Dim prj As Object, chemin As String, mdp As String, numErr As Long, descErr As String
+Public Function SEE_Projet(Optional ByVal lectureSeule As Boolean = False, Optional ByVal ouvrirPermis As Boolean = True) As Object
+    Dim prj As Object, chemin As String, mdp As String, numErr As Long, descErr As String, sortie As String
     chemin = Reglage("Projet", "")
     mdp = Reglage("MotDePasse", "")
+    If Not ouvrirPermis Then chemin = ""
     If gEstAutomation Then
         Set SEE_Projet = Nothing
         If Len(chemin) = 0 Then
-            Journal gEtape, "projet", "", "coclasse SeeAutomation : pas de GetProject ; il faudrait le réglage Projet", -1, "pas de projet"
+            Journal gEtape, "projet", "", "coclasse SeeAutomation : pas de GetProject" & IIf(ouvrirPermis, " ; il faudrait le réglage Projet", _
+                " ; ce bouton n'ouvre jamais de projet"), -1, "pas de projet"
             Exit Function
         End If
         If lectureSeule Then
@@ -1548,7 +1689,7 @@ Public Function SEE_Projet(Optional ByVal lectureSeule As Boolean = False) As Ob
                 "PAS ouvert ici (connecte-toi à la coclasse Application : réglages ProgID / CLSID_Application)", -1, "pas de projet"
             Exit Function
         End If
-        Set SEE_Projet = SEE_OuvrirProjetAutomation(chemin, mdp, numErr, descErr)
+        Set SEE_Projet = SEE_OuvrirProjetAutomation(chemin, mdp, numErr, descErr, sortie)
         Exit Function
     End If
     On Error GoTo EchecGet
@@ -1560,6 +1701,10 @@ Public Function SEE_Projet(Optional ByVal lectureSeule As Boolean = False) As Ob
     NoterAppel "GetProject()", prj
 SuiteGet:
     On Error GoTo EchecOpen
+    If Not ouvrirPermis And prj Is Nothing Then
+        Journal gEtape, "projet", "", "aucun projet ouvert dans SEE ; ce bouton n'en ouvre jamais (le réglage Projet n'est pas utilisé)", _
+            -1, "pas de projet"
+    End If
     If Len(chemin) > 0 Then
         If Not prj Is Nothing Then
             If StrComp(LireProp(prj, "Name"), DernierNom(chemin), vbTextCompare) = 0 Then
@@ -1591,33 +1736,61 @@ End Function
 
 ' La coclasse SeeAutomation : OpenProject(chemin, mot de passe), le projet
 ' rendu (V5) ou par un paramètre de sortie (V4) ; il est ouvert EN ÉCRITURE.
-' Journalisé ; Nothing, numErr et descErr si SEE refuse. Jamais de Login.
+' V4 : le type du paramètre de sortie n'est pas établi (VARIANT ou
+' IDispatch**) : d'abord un Variant ; SEULEMENT si SEE refuse le type de
+' l'argument (13, DISP_E_TYPEMISMATCH : refusé avant que la méthode tourne, le
+' projet n'a donc pas été ouvert), une variable Object. sortie reçoit celle qui
+' a servi (« Variant », « Object », "" en V5). Journalisé ; Nothing, numErr et
+' descErr si SEE refuse. Jamais de Login.
 Public Function SEE_OuvrirProjetAutomation(ByVal chemin As String, ByVal mdp As String, ByRef numErr As Long, _
-        ByRef descErr As String) As Object
-    Dim prj As Object
+        ByRef descErr As String, ByRef sortie As String) As Object
+    Dim prj As Object, r As Variant
     Set SEE_OuvrirProjetAutomation = Nothing
     numErr = 0
     descErr = ""
-    On Error GoTo Echec
+    sortie = ""
     If EstV4() Then
-        gApp.OpenProject chemin, mdp, prj
+        sortie = "Variant"
+        On Error Resume Next
+        gApp.OpenProject chemin, mdp, r
+        numErr = Err.Number
+        descErr = Err.Description
+        On Error GoTo 0
+        If numErr = 0 Then
+            If IsObject(r) Then Set prj = r
+        ElseIf TypeRefuse(numErr) Then
+            Journal gEtape, "projet", "SeeAutomation.OpenProject(""" & chemin & """), variable Variant", "type refusé (avant toute " & _
+                "ouverture) : on passe une variable Object", numErr, descErr
+            sortie = "Object"
+            numErr = 0
+            descErr = ""
+            On Error GoTo Echec
+            gApp.OpenProject chemin, mdp, prj
+            On Error GoTo 0
+        Else
+            JournalErreur "SeeAutomation.OpenProject(""" & chemin & """), variable Variant", numErr, descErr
+            Exit Function
+        End If
     Else
+        On Error GoTo Echec
         Set prj = gApp.OpenProject(chemin, mdp)
+        On Error GoTo 0
     End If
-    On Error GoTo 0
     If prj Is Nothing Then
         numErr = -1
         descErr = "OpenProject n'a rendu aucun projet (Nothing)"
-        Journal gEtape, "projet", "SeeAutomation.OpenProject(""" & chemin & """)", "Nothing", numErr, descErr
+        Journal gEtape, "projet", "SeeAutomation.OpenProject(""" & chemin & """)" & IIf(Len(sortie) > 0, ", variable " & sortie, ""), _
+            "Nothing", numErr, descErr
         Exit Function
     End If
-    Journal gEtape, "projet", "SeeAutomation.OpenProject(""" & chemin & """)", "ouvert par la macro, en écriture"
+    Journal gEtape, "projet", "SeeAutomation.OpenProject(""" & chemin & """)" & IIf(Len(sortie) > 0, ", variable " & sortie, ""), _
+        "ouvert par la macro, en écriture"
     Set SEE_OuvrirProjetAutomation = prj
     Exit Function
 Echec:
     numErr = Err.Number
     descErr = Err.Description
-    JournalErreur "SeeAutomation.OpenProject(""" & chemin & """)", numErr, descErr
+    JournalErreur "SeeAutomation.OpenProject(""" & chemin & """)" & IIf(Len(sortie) > 0, ", variable " & sortie, ""), numErr, descErr
     Set SEE_OuvrirProjetAutomation = Nothing
 End Function
 
@@ -1678,13 +1851,26 @@ Echec:
 End Function
 
 ' Ce que montre une vue (normalement le folio). En V4, le paramètre de sortie
-' est déclaré « out object » (un VARIANT) : on passe donc un Variant.
+' est un « out object » : un VARIANT ou un IDispatch** (l'interop du SDK des
+' plugins V4R3 le marque IDispatch ; non établi) : d'abord un Variant, puis,
+' si SEE refuse le type (TypeRefuse, avant que la méthode tourne), une
+' variable Object.
 Public Function SEE_ContenuVue(ByVal vue As Object) As Object
     Dim o As Object, v As Variant
     On Error GoTo Echec
     If EstV4() Then
+        On Error Resume Next
         vue.GetContent v
-        If IsObject(v) Then Set o = v
+        If TypeRefuse(Err.Number) Then
+            Err.Clear
+            On Error GoTo Echec
+            vue.GetContent o
+        ElseIf Err.Number <> 0 Then
+            GoTo Echec
+        ElseIf IsObject(v) Then
+            Set o = v
+        End If
+        On Error GoTo Echec
     Else
         Set o = vue.GetContent()
     End If
@@ -1968,15 +2154,26 @@ Echec:
 End Function
 
 ' GetMethodsXML : l'objet XML (ou le texte) d'une méthode de l'environnement,
-' en lecture. Le type rendu n'est pas établi (V4 : « out object », un VARIANT) :
-' v reçoit un objet ou une valeur.
+' en lecture. Le type rendu n'est pas établi (V4 : « out object », un VARIANT
+' ou un IDispatch**) : v reçoit un objet ou une valeur ; si SEE refuse le type
+' du Variant (TypeRefuse), une variable Object.
 Public Function SEE_MethodesXML(ByVal env As Object, ByVal typeMethode As Long, ByRef v As Variant) As Boolean
     Dim o As Object
     SEE_MethodesXML = False
     v = Empty
     On Error GoTo PasUnObjet
     If EstV4() Then
+        On Error Resume Next
         env.GetMethodsXML typeMethode, v
+        If TypeRefuse(Err.Number) Then
+            Err.Clear
+            On Error GoTo PasUnObjet
+            env.GetMethodsXML typeMethode, o
+            Set v = o
+        ElseIf Err.Number <> 0 Then
+            GoTo PasUnObjet
+        End If
+        On Error GoTo PasUnObjet
     Else
         Set o = env.GetMethodsXML(typeMethode)
         Set v = o

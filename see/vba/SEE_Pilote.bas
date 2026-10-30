@@ -89,6 +89,8 @@ Private mFolioCree As Boolean   ' un folio a été créé dans SEE (AddSheet sans er
 Private mEtapes3(1 To 8) As String ' le bouton 3 : ce que chaque étape a donné (le bloc « À PHOTOGRAPHIER »)
 Private mConsigne3 As String    ' le bouton 3 : ce que le technicien doit faire ensuite
 Private mNotreSEE As Boolean    ' le bouton 3 a créé gApp, SEE fermé : lui seul le ferme (FermerNotreSEE)
+Private mFermeDit As Integer    ' le bouton 3, étape 1 : 0 Windows a dit SEE fermé ; 2 le technicien l'a dit (Windows muet) ; -1 non
+Private mFolioRelu As Boolean   ' le bouton 3 a relu son folio dans Sonde_Folio (la photo à demander)
 
 ' trois folios de suite non créés : l'échec est systématique, le lot s'arrête
 Private Const ECHECS_MAX As Long = 3
@@ -131,17 +133,18 @@ End Sub
 ' Il ne démarre JAMAIS SEE (quel que soit le réglage LancerSEE) : une
 ' connexion qu'Excel avait CRÉÉE est lâchée au début (LacherConnexionCreee) ;
 ' sans fenêtre SEE rejointe, la boîte de fin dit quoi faire (le bouton 3).
+' Il n'ouvre JAMAIS de projet (le réglage Projet, que le bouton 3 remplit,
+' n'est pas utilisé) : il prend celui qui est ouvert dans SEE, que la question
+' nomme ; le sous-groupe du réglage Groupe n'est cherché (et créé) qu'après OK.
 ' Le technicien ne renvoie que des photos : la fin dit lesquelles.
 Public Sub EssaiDessinReel()
-    Dim nomProjet As String, nomFolio As String, ancien As Boolean
+    Dim nomProjet As String, nomFolio As String
     On Error GoTo Plantage
     mMessageFin = ""
     mCoordProvisoires = False
-    ' les feuilles Reglages et Journal, si le bouton 1 n'a pas encore tourné (sans sa boîte : elle va au journal)
-    ancien = gSansDialogue
-    gSansDialogue = True
-    InitialiserClasseur
-    gSansDialogue = ancien
+    ' les feuilles Reglages et Journal, si le bouton 1 n'a pas encore tourné (sans sa boîte : elle va au journal ;
+    ' gSansDialogue reprend sa valeur même sur une erreur)
+    InitialiserSansBoite
     OuvrirJournal "EssaiDessinReel"
     gSimulation = False
     Journal "EssaiDessinReel", "", "", "bouton 2 : dessin POUR DE VRAI (Simulation = N pour cet essai seulement ; " & _
@@ -154,12 +157,15 @@ Public Sub EssaiDessinReel()
     If Not PreparerSEE(False) Then
         If gApp Is Nothing Then
             AjouterMessageFin "Rien n'a été dessiné : Excel n'a pas trouvé ta fenêtre SEE (ce bouton n'en démarre jamais)." & vbCrLf & _
-                "Essaie le bouton 3 : enregistre et ferme SEE, puis clique sur 3."
+                CONSIGNE_BOUTON3
         ElseIf gEstAutomation Then
             AjouterMessageFin "Rien n'a été dessiné : SEE répond par sa partie « SeeAutomation », qui ne lit pas le projet ouvert." & _
-                vbCrLf & "Essaie le bouton 3 : enregistre et ferme SEE, puis clique sur 3."
-        Else
-            AjouterMessageFin "Rien n'a été dessiné : prends une photo du haut de la feuille Journal et envoie-la-moi."
+                vbCrLf & CONSIGNE_BOUTON3
+            ' le bouton 3 veut SEE fermé : tant qu'Excel tient cet objet, File > Exit ne ferait que cacher SEE
+            LacherConnexion "le bouton 2 envoie au bouton 3 (SEE fermé)"
+        ElseIf Len(mMessageFin) = 0 Then
+            AjouterMessageFin "Rien n'a été dessiné : en bas d'Excel, clique sur l'onglet « Journal », prends une photo de son haut " & _
+                "et envoie-la-moi."
         End If
         GoTo Fin
     End If
@@ -171,20 +177,33 @@ Public Sub EssaiDessinReel()
             vbCrLf & vbCrLf & "Est-ce bien ton projet d'essai, et pas un vrai projet ?" & vbCrLf & _
             "OK : dessiner ; Annuler : ne rien faire.", vbOKCancel + vbQuestion + vbDefaultButton2, "Pilote SEE") <> vbOK Then
         Journal gEtape, gObjet, "", "arrêté avant tout dessin (réponse Annuler) : rien n'est écrit dans SEE"
-        AjouterMessageFin "Rien n'a été dessiné. Ouvre ton projet d'essai dans SEE, puis reclique sur le bouton 2."
+        AjouterMessageFin "Rien n'a été dessiné. Ouvre ton projet d'essai dans SEE, puis reclique sur le bouton bleu 2 (" & OU_BOUTONS & ")."
+        GoTo Fin
+    End If
+    ' le groupe APRÈS la réponse OK : le sous-groupe du réglage Groupe peut être créé
+    Set mGrp = GroupeCible()
+    If mGrp Is Nothing Then
+        AjouterMessageFin "Rien n'a été dessiné : le groupe du projet est introuvable (réglage Groupe). En bas d'Excel, clique sur " & _
+            "l'onglet « Journal », prends une photo de son haut et envoie-la-moi."
         GoTo Fin
     End If
     If Not OuvrirFolioEssai() Then
-        AjouterMessageFin "Le folio « " & nomFolio & " » n'a pas pu être ouvert ni créé : prends une photo du haut de la feuille " & _
-            "Journal et envoie-la-moi."
+        If mArret Then
+            AjouterMessageFin "Rien n'a été dessiné : tu as répondu Annuler à la question sur le folio « " & nomFolio & " »." & vbCrLf & _
+                "Reclique sur le bouton bleu 2 (" & OU_BOUTONS & ") et réponds Oui : le folio est refait à neuf."
+        Else
+            AjouterMessageFin "Le folio « " & nomFolio & " » n'a pas pu être ouvert ni créé : en bas d'Excel, clique sur l'onglet " & _
+                "« Journal », prends une photo de son haut et envoie-la-moi."
+        End If
         GoTo Fin
     End If
     If Not DessinerMotifEssai() Then GoTo Fin
     If Not mSh Is Nothing Then RelireFolio mSh
     AjouterMessageFin "Regarde dans SEE le folio « " & nomFolio & " » (double-clic sur son nom dans l'arbre du projet) : " & _
         "un grand cadre, un trait en biais parti du coin en haut à gauche, un rectangle et des textes." & vbCrLf & _
-        "Prends une photo de l'écran de SEE, puis une du haut de la feuille Sonde_Folio, et envoie-moi les photos, même si le " & _
-        "dessin n'est pas à sa place."
+        "1. Prends une photo de l'écran de SEE, même si le dessin n'est pas à sa place." & vbCrLf & _
+        "2. Dans Excel, en bas, clique sur l'onglet « Sonde_Folio » et prends une photo de son haut." & vbCrLf & _
+        "3. Envoie-moi les photos."
 Fin:
     mBouton2 = False
     Terminer "L'essai de dessin"
@@ -254,6 +273,10 @@ End Function
 '       puis Quit, chacun essayé et dit ; les objets lâchés ; Windows revu
 '       quelques secondes : un SEE qui reste est dit, avec la manière de
 '       l'arrêter. L'instance fermée est la NÔTRE : SEE était fermé à l'étape 1.
+'  Avant tout, il LÂCHE toute connexion gardée (rejointe aussi : tant qu'Excel
+'  tient un objet de SEE, SEE.exe ne s'arrête pas) ; et Windows est revu juste
+'  avant la création (étape 4) : SEE a pu être rouvert pendant le choix du
+'  projet. Pendant le travail, un bloc « EN COURS » est devant le technicien.
 '  Puis le bloc « À PHOTOGRAPHIER » en tête de Resultat_Test : chaque étape et
 '  son résultat, la copie de sécurité, et la consigne. Il n'écrit que dans le
 '  fichier choisi et confirmé, et ne tourne jamais si SEE est ouvert.
@@ -263,26 +286,28 @@ End Function
 '  alors, et le journal le dit.
 ' ============================================================================
 Public Sub EssaiSansFenetre()
-    Dim ancien As Boolean, chemin As String, copie As String, prj As Object, imprevu As String
+    Dim chemin As String, copie As String, prj As Object, imprevu As String
     Dim nomFolio As String, i As Long
     On Error GoTo Plantage
     mNotreSEE = False
+    mFermeDit = -1
+    mFolioRelu = False
     mMessageFin = ""
     mConsigne3 = ""
     For i = 1 To 8
         mEtapes3(i) = "pas fait"
     Next i
-    ' les feuilles Reglages et Journal, si le bouton 1 n'a pas encore tourné (sans sa boîte : elle va au journal)
-    ancien = gSansDialogue
-    gSansDialogue = True
-    InitialiserClasseur
-    gSansDialogue = ancien
+    ' les feuilles Reglages et Journal, si le bouton 1 n'a pas encore tourné (sans sa boîte : elle va au journal ;
+    ' gSansDialogue reprend sa valeur même sur une erreur)
+    InitialiserSansBoite
     OuvrirJournal "EssaiSansFenetre"
     gSimulation = False
     Journal "EssaiSansFenetre", "", "", "bouton 3 : SEE fermé, Excel ouvre lui-même le projet d'essai et y dessine POUR DE VRAI " & _
         "(Simulation = N pour cet essai seulement ; la feuille Reglages n'est pas changée)"
-    ' une connexion qu'Excel avait créée est lâchée (une fenêtre SEE rejointe reste : l'étape 1 dira que SEE tourne)
-    LacherConnexionCreee
+    BlocEnCours3
+    ' TOUTE connexion gardée est lâchée, créée OU rejointe (par les boutons 1 et 2) : tant qu'Excel tient un objet de
+    ' SEE, SEE.exe ne s'arrête pas (File > Exit ne fait que cacher sa fenêtre), et l'étape 1 le verrait en marche
+    LacherConnexion "le bouton 3 veut SEE fermé"
     Set gPaquet = Nothing
     Set gEntete = Nothing
     RemettreEtat
@@ -329,11 +354,56 @@ Private Function TitreEtape3(ByVal i As Long) As String
         "7. Enregistré", "8. SEE refermé")
 End Function
 
-' L'étape en cours, dans la barre d'état d'Excel (SEE est caché : le technicien attend).
+' L'étape en cours, dans la barre d'état d'Excel et dans le bloc « EN COURS »
+' (SEE est caché : le technicien attend).
 Private Sub EnCours3(ByVal i As Long)
+    Dim ws As Object
     On Error Resume Next
     Application.StatusBar = "Pilote SEE, bouton 3 : " & TitreEtape3(i) & " (attends, ne touche à rien)"
+    Set ws = FeuilleExistante(FEUILLE_RESULTAT)
+    If Not ws Is Nothing Then
+        If CStr(ws.Cells(2, 1).Value) = "En cours" Then ws.Cells(2, 2).Value = "'" & TitreEtape3(i) & " (attends, ne touche à rien)"
+    End If
 End Sub
+
+' Le bloc PROVISOIRE de Resultat_Test, au début du bouton 3 : il dit que le
+' bouton travaille (EnCours3 y met l'étape) et, si la macro est arrêtée avant
+' la fin (par Windows, ou Excel fermé de force), quoi photographier. Le bloc
+' final (FinirBouton3) le remplace.
+Private Sub BlocEnCours3()
+    Dim ws As Object, l As Long
+    On Error Resume Next
+    Set ws = FeuilleEnTete(FEUILLE_RESULTAT)
+    l = 0
+    LigneResultat ws, l, "À PHOTOGRAPHIER", "Bouton 3 du " & Format$(Now, "yyyy-mm-dd hh:mm") & ", EN COURS : attends le message de fin."
+    LigneResultat ws, l, "En cours", "début (attends, ne touche à rien)"
+    LigneResultat ws, l, "Et maintenant", "Si tu lis encore ceci alors qu'Excel ne travaille plus, le bouton 3 a été arrêté avant la fin. " & _
+        "Prends en photo cette partie jaune ET le message de Windows s'il y en a un (par exemple « Sécurité Windows »), et envoie-les-moi."
+    SurlignerPhoto ws, l
+    MontrerFeuille ws
+End Sub
+
+' Où est le bouton 3, pour une consigne (après un bouton, la feuille devant le
+' technicien n'a pas de bouton).
+Private Function Bouton3Ici() As String
+    Bouton3Ici = "le bouton orange « 3. SEE FERMÉ » (" & OU_BOUTONS & ")"
+End Function
+
+' Comment arrêter un SEE caché (sans fenêtre). Le Gestionnaire des tâches de
+' Windows 10 s'ouvre souvent en petit (« Moins de détails ») : il ne montre
+' alors que les programmes qui ont une fenêtre. Un SEE caché est plus bas,
+' sous « Processus en arrière-plan », ou dans l'onglet « Détails » sous le nom
+' de son programme (le registre le dit : ProgrammesSEE).
+Private Function ConsigneFinDeTache() As String
+    Dim noms As String, p As Variant
+    For Each p In ProgrammesSEE()
+        noms = noms & IIf(Len(noms) > 0, " ou ", "") & CStr(p)
+    Next p
+    ConsigneFinDeTache = "Pour arrêter SEE caché : 1. Appuie ensemble sur Ctrl + Maj + Échap (le Gestionnaire des tâches). " & _
+        "2. Si la fenêtre est petite, clique en bas sur « Plus de détails ». 3. Descends jusqu'à « Processus en arrière-plan » et " & _
+        "clique sur SEE (ou, dans l'onglet « Détails » : " & noms & "). 4. Clique sur « Fin de tâche ». Ne termine PAS Excel. " & _
+        "Si tu ne trouves pas SEE : enregistre et ferme Excel, puis redémarre l'ordinateur."
+End Function
 
 ' Ce qu'une étape a donné : au journal, et pour le bloc à photographier.
 Private Sub NoterEtape3(ByVal i As Long, ByVal texte As String)
@@ -342,28 +412,75 @@ Private Sub NoterEtape3(ByVal i As Long, ByVal texte As String)
 End Sub
 
 ' 1. Vrai si aucun programme SEE ne tourne (ou si le technicien le dit, quand
-' Windows ne répond pas).
+' Windows ne répond pas). Un SEE qu'on vient de fermer (File > Exit), ou que
+' tenait la connexion lâchée au début, met quelques secondes à s'arrêter :
+' Windows est revu cinq fois, à deux secondes d'écart, avant de refuser.
 Private Function SEEFerme() As Boolean
-    Dim nb As Long, detail As String, etat As Integer
+    Dim nb As Long, detail As String, etat As Integer, i As Long
     Contexte "Bouton 3", "SEE fermé ?"
     EnCours3 1
     etat = SEEEnMarche(nb, detail)
+    For i = 1 To 5
+        If etat <> 1 Then Exit For
+        Patienter 2
+        etat = SEEEnMarche(nb, detail)
+    Next i
     If etat = 0 Then
         NoterEtape3 1, "oui : " & detail & " (d'après Windows)"
+        mFermeDit = 0
         SEEFerme = True
     ElseIf etat = 1 Then
-        NoterEtape3 1, "NON : " & detail & " ; rien n'a été fait"
-        mConsigne3 = "Enregistre et ferme SEE (File > Exit), puis reclique sur 3."
+        NoterEtape3 1, "NON : " & detail & ", encore après 10 secondes ; rien n'a été fait"
+        mConsigne3 = "SEE tourne encore : rien n'a été fait." & vbLf & _
+            "1. Si tu vois SEE : enregistre et ferme-le (File > Exit), attends 10 secondes, puis reclique sur " & Bouton3Ici() & "." & vbLf & _
+            "2. Si tu ne vois pas SEE : enregistre et ferme Excel, rouvre Pilote-SEE.xlsm, puis reclique sur le bouton 3." & vbLf & _
+            "3. Si Excel dit encore NON : " & ConsigneFinDeTache() & " Puis reclique sur le bouton 3."
     ElseIf gSansDialogue Then
         NoterEtape3 1, "on ne sait pas : " & detail & " ; sans boîte, personne ne peut dire que SEE est fermé : rien n'a été fait"
-        mConsigne3 = "Enregistre et ferme SEE (File > Exit), puis reclique sur 3."
+        mConsigne3 = "Enregistre et ferme SEE (File > Exit), puis reclique sur " & Bouton3Ici() & "."
     ElseIf ConfirmerOK("Excel ne peut pas voir si SEE est ouvert (" & detail & ")." & vbCrLf & vbCrLf & _
             "SEE est-il bien fermé ?" & vbCrLf & "OK : oui, il est fermé ; Annuler : je vérifie d'abord.", "Pilote SEE - bouton 3") Then
         NoterEtape3 1, "on ne sait pas (" & detail & ") ; tu as répondu qu'il est fermé"
+        mFermeDit = 2
         SEEFerme = True
     Else
         NoterEtape3 1, "on ne sait pas (" & detail & ") ; tu as répondu Annuler : rien n'a été fait"
-        mConsigne3 = "Enregistre et ferme SEE (File > Exit), puis reclique sur 3."
+        mConsigne3 = "Enregistre et ferme SEE (File > Exit), puis reclique sur " & Bouton3Ici() & "."
+    End If
+End Function
+
+' 4, avant la création : SEE est-il TOUJOURS fermé ? Le technicien a pu le
+' rouvrir pendant le choix du projet (la fenêtre « Ouvrir », la question, sans
+' limite de temps) ; un serveur « multi-use » donnerait alors un objet DANS ce
+' SEE, que l'étape 8 fermerait. Windows est donc revu juste avant le premier
+' « new: ». Windows muet : la réponse du technicien à l'étape 1 tient ; sinon,
+' la même règle qu'à l'étape 1 (sans boîte, rien n'est fait).
+Private Function SEEToujoursFerme() As Boolean
+    Dim nb As Long, detail As String, etat As Integer
+    etat = SEEEnMarche(nb, detail)
+    If etat = 0 Then
+        Journal gEtape, gObjet, "WMI Win32_Process", "SEE toujours fermé, revu juste avant la création : " & detail
+        SEEToujoursFerme = True
+    ElseIf etat = 1 Then
+        NoterEtape3 4, "NON : SEE a été ouvert pendant le choix du projet (" & detail & ") ; rien n'a été créé ni ouvert"
+        mConsigne3 = "SEE a été ouvert pendant le bouton 3 : rien n'a été fait. Enregistre et ferme SEE (File > Exit), attends 10 " & _
+            "secondes, puis reclique sur " & Bouton3Ici() & ". Ne rouvre pas SEE pendant le bouton 3 : Excel s'en charge."
+    ElseIf mFermeDit = 2 Then
+        Journal gEtape, gObjet, "WMI Win32_Process", "Windows ne répond toujours pas (" & detail & ") : ta réponse de l'étape 1 tient (SEE fermé)"
+        SEEToujoursFerme = True
+    ElseIf Not gSansDialogue Then
+        If ConfirmerOK("Excel ne peut plus voir si SEE est ouvert (" & detail & ")." & vbCrLf & vbCrLf & _
+                "SEE est-il toujours fermé ?" & vbCrLf & "OK : oui, il est fermé ; Annuler : ne rien faire.", "Pilote SEE - bouton 3") Then
+            Journal gEtape, gObjet, "WMI Win32_Process", "Windows ne répond plus (" & detail & ") ; tu as répondu que SEE est fermé"
+            SEEToujoursFerme = True
+        Else
+            NoterEtape3 4, "NON : Windows ne répond plus (" & detail & ") ; tu as répondu Annuler : rien n'a été créé"
+            mConsigne3 = "Vérifie que SEE est fermé, puis reclique sur " & Bouton3Ici() & "."
+        End If
+    Else
+        NoterEtape3 4, "NON : Windows ne répond plus (" & detail & ") ; sans boîte, personne ne peut dire que SEE est encore fermé : " & _
+            "rien n'a été créé"
+        mConsigne3 = "Vérifie que SEE est fermé, puis reclique sur " & Bouton3Ici() & "."
     End If
 End Function
 
@@ -377,19 +494,28 @@ Private Function ProjetDEssaiChoisi(ByVal nomFolio As String) As String
     If Len(chemin) = 0 Then
         NoterEtape3 2, IIf(gSansDialogue And Len(Reglage("Projet", "")) = 0, "aucun : le réglage Projet est vide", "aucun choisi (Annuler)") & _
             " ; rien n'a été fait"
-        mConsigne3 = "Reclique sur 3 et choisis ton projet d'ESSAI (son fichier .seeprj)."
+        mConsigne3 = "Reclique sur " & Bouton3Ici() & " et choisis ton projet d'ESSAI (son fichier .seeprj)."
         Exit Function
     End If
     If LCase$(Right$(chemin, 7)) <> ".seeprj" Then
         NoterEtape3 2, NomDeFichier(chemin) & " : ce n'est pas un projet SEE (.seeprj) ; rien n'a été fait"
-        mConsigne3 = "Reclique sur 3 et choisis ton projet d'ESSAI (son fichier .seeprj)."
+        mConsigne3 = "Reclique sur " & Bouton3Ici() & " et choisis ton projet d'ESSAI (son fichier .seeprj)."
+        Exit Function
+    End If
+    ' une copie de sécurité d'un passage précédent est rangée à côté du projet : ce n'est pas lui
+    If InStr(1, NomDeFichier(chemin), ".avant-pilote-", vbTextCompare) > 0 Then
+        NoterEtape3 2, NomDeFichier(chemin) & " : c'est une copie de sécurité, pas ton projet ; rien n'a été fait"
+        mConsigne3 = "Reclique sur " & Bouton3Ici() & " et choisis ton projet d'ESSAI : son nom ne contient pas « avant-pilote »."
         Exit Function
     End If
     If Not ConfirmerOK("Excel va ouvrir ce projet, y dessiner le folio « " & nomFolio & " », l'enregistrer et le refermer :" & _
             vbCrLf & vbCrLf & NomDeFichier(chemin) & vbCrLf & "(dans le dossier « " & DossierDuFichier(chemin) & " »)" & vbCrLf & vbCrLf & _
-            "C'est bien ton projet d'essai, pas un vrai projet ?" & vbCrLf & "OK : oui ; Annuler : ne rien faire.", "Pilote SEE - bouton 3") Then
+            "C'est bien ton projet d'essai, pas un vrai projet ?" & vbCrLf & vbCrLf & _
+            "Ensuite, SEE peut s'ouvrir tout seul pendant une minute : c'est Excel qui travaille. Ne le ferme pas et ne clique pas " & _
+            "dedans : Excel le refermera. S'il te pose une question : prends-la en photo, puis clique sur Annuler (ou Non)." & vbCrLf & vbCrLf & _
+            "OK : oui ; Annuler : ne rien faire.", "Pilote SEE - bouton 3") Then
         NoterEtape3 2, NomDeFichier(chemin) & " : tu as répondu Annuler ; rien n'a été fait"
-        mConsigne3 = "Rien n'a été fait. Reclique sur 3 et choisis ton projet d'ESSAI."
+        mConsigne3 = "Rien n'a été fait. Reclique sur " & Bouton3Ici() & " et choisis ton projet d'ESSAI."
         Exit Function
     End If
     If Not EcrireReglage("Projet", chemin) Then Journal gEtape, gObjet, "", "le réglage Projet n'a pas pu être noté"
@@ -416,15 +542,18 @@ Echec:
     Journal gEtape, gObjet, "FileCopy", "copie de sécurité RATÉE : " & copie, numErr, descErr
     gNbErreurs = gNbErreurs + 1
     NoterEtape3 3, "RATÉE : " & ReponseDeWindows(numErr, descErr) & " ; rien n'a été ouvert"
-    mConsigne3 = "Rien n'a été ouvert. Vérifie que SEE est fermé et que ton projet est bien là, puis reclique sur 3."
+    mConsigne3 = "Rien n'a été ouvert. Vérifie que SEE est fermé et que ton projet est bien là, puis reclique sur " & Bouton3Ici() & "."
     CopieDeSecurite = ""
 End Function
 
 ' 4. L'objet SEE, créé par la coclasse SeeAutomation : Vrai s'il l'est (gApp).
+' Windows est revu d'abord (SEEToujoursFerme) : rien n'est créé si SEE a été
+' rouvert depuis l'étape 1.
 Private Function CreerNotreSEE() As Boolean
     Dim p As Variant, clsid As String, o As Object, visible As String
     Contexte "Bouton 3", "SEE créé"
     EnCours3 4
+    If Not SEEToujoursFerme() Then Exit Function
     Set gApp = Nothing
     gStrategie = ""
     gEstAutomation = False
@@ -465,17 +594,17 @@ End Function
 
 ' 5. Le projet ouvert dans notre SEE (Nothing s'il ne l'est pas).
 Private Function OuvrirProjetDEssai(ByVal chemin As String) As Object
-    Dim prj As Object, numErr As Long, descErr As String
+    Dim prj As Object, numErr As Long, descErr As String, sortie As String
     Contexte "Bouton 3", "projet"
     EnCours3 5
-    Set prj = SEE_OuvrirProjetAutomation(chemin, Reglage("MotDePasse", ""), numErr, descErr)
+    Set prj = SEE_OuvrirProjetAutomation(chemin, Reglage("MotDePasse", ""), numErr, descErr, sortie)
     If prj Is Nothing Then
         gNbErreurs = gNbErreurs + 1
-        NoterEtape3 5, "NON : " & ReponseDeWindows(numErr, descErr)
+        NoterEtape3 5, "NON : " & ReponseDeWindows(numErr, descErr) & IIf(Len(sortie) > 0, " (variable de sortie : " & sortie & ")", "")
         mConsigne3 = "SEE n'a pas ouvert ton projet : envoie-moi la photo."
         Exit Function
     End If
-    NoterEtape3 5, "oui : « " & LireProp(prj, "Name") & " »"
+    NoterEtape3 5, "oui : « " & LireProp(prj, "Name") & " »" & IIf(Len(sortie) > 0, " (variable de sortie : " & sortie & ")", "")
     Set OuvrirProjetDEssai = prj
 End Function
 
@@ -494,7 +623,10 @@ Private Sub DessinerSansFenetre(ByVal prj As Object, ByVal nomFolio As String)
     End If
     If OuvrirFolioEssai() Then
         If DessinerMotifEssai() Then
-            If Not mSh Is Nothing Then RelireFolio mSh
+            If Not mSh Is Nothing Then
+                RelireFolio mSh
+                mFolioRelu = True
+            End If
         End If
     End If
     If mNbPoses > 0 Then
@@ -503,6 +635,9 @@ Private Sub DessinerSansFenetre(ByVal prj As Object, ByVal nomFolio As String)
     ElseIf mFolioCree Then
         NoterEtape3 6, "folio « " & nomFolio & " » créé, mais vide ; création d'objets : " & CreationDObjets()
         mConsigne3 = "Le folio est vide : envoie-moi la photo."
+    ElseIf mArret Then
+        NoterEtape3 6, "rien dessiné : tu as répondu Annuler (le folio « " & nomFolio & " » existait déjà)"
+        mConsigne3 = "Reclique sur " & Bouton3Ici() & " et réponds Oui à la question sur le folio « " & nomFolio & " » : il est refait à neuf."
     Else
         NoterEtape3 6, "rien dessiné : projet ouvert : oui ; création d'objets : " & CreationDObjets()
         mConsigne3 = "Rien n'a été dessiné : envoie-moi la photo, c'est ce que je dois savoir."
@@ -555,12 +690,10 @@ Private Sub FermerNotreSEE(ByRef prj As Object)
         NoterEtape3 8, "oui : " & detail & vbLf & s
     ElseIf etat = 1 Then
         NoterEtape3 8, "NON : " & detail & " après 10 secondes" & vbLf & s
-        mConsigne3 = "SEE tourne encore, caché. Pour l'arrêter : 1. Appuie ensemble sur Ctrl + Maj + Échap. " & _
-            "2. Dans la liste, clique sur SEE. 3. Clique sur « Fin de tâche »." & vbLf & mConsigne3
+        mConsigne3 = "SEE tourne encore, caché (" & detail & "). " & ConsigneFinDeTache() & vbLf & mConsigne3
     Else
         NoterEtape3 8, "on ne sait pas : " & detail & vbLf & s
-        mConsigne3 = "Si SEE est encore dans le Gestionnaire des tâches (Ctrl + Maj + Échap), clique sur SEE, puis sur " & _
-            "« Fin de tâche »." & vbLf & mConsigne3
+        mConsigne3 = "SEE tourne peut-être encore, caché. " & ConsigneFinDeTache() & vbLf & mConsigne3
     End If
 End Sub
 
@@ -580,12 +713,16 @@ End Function
 ' puis UNE boîte courte, qui dit la même chose que sa ligne « Et maintenant ».
 Private Sub FinirBouton3(ByVal copie As String, ByVal nomFolio As String, ByVal imprevu As String)
     Dim ws As Object, l As Long, i As Long, resultat As String, consigne As String, photo As String, e As Variant, rubrique As String
+    Dim boite As String
     On Error Resume Next
     Application.StatusBar = False
     Application.ScreenUpdating = True
-    photo = "Prends une photo de la partie jaune de la feuille " & FEUILLE_RESULTAT & " et envoie-la-moi."
+    ' la boîte cache le milieu du bloc : d'abord OK, puis la photo
+    photo = "Clique sur OK, puis prends une photo de la partie jaune de la feuille " & FEUILLE_RESULTAT & " et envoie-la-moi."
     consigne = photo
-    If Len(imprevu) > 0 Then consigne = consigne & vbLf & "Puis une photo du haut de la feuille Journal."
+    ' le folio relu : l'origine, le sens de y et l'échelle se lisent sur Sonde_Folio
+    If mFolioRelu Then consigne = consigne & vbLf & "Puis, en bas d'Excel, clique sur l'onglet « Sonde_Folio » et prends une photo de son haut."
+    If Len(imprevu) > 0 Then consigne = consigne & vbLf & "Puis, en bas d'Excel, clique sur l'onglet « Journal » et prends une photo de son haut."
     ' d'abord ce qui ne va pas (un SEE caché qui tourne encore s'arrête AVANT de rouvrir SEE)
     If Len(mConsigne3) > 0 Then consigne = consigne & vbLf & mConsigne3
     If Len(imprevu) > 0 Then
@@ -597,8 +734,8 @@ Private Sub FinirBouton3(ByVal copie As String, ByVal nomFolio As String, ByVal 
         resultat = "pas de dessin enregistré (voir les étapes)"
     End If
     If Len(copie) > 0 Then
-        consigne = consigne & vbLf & "La copie de sécurité de ton projet, à remettre à sa place si besoin : " & NomDeFichier(copie) & _
-            " (même dossier)."
+        consigne = consigne & vbLf & "Une copie de sécurité de ton projet est dans le même dossier : " & NomDeFichier(copie) & _
+            ". N'y touche pas : je te dirai si on s'en sert."
     End If
     Journal "Fin", "EssaiSansFenetre", "", "terminé ; " & resultat & " ; " & gNbErreurs & " erreur(s)"
     Set ws = FeuilleEnTete(FEUILLE_RESULTAT)
@@ -619,7 +756,10 @@ Private Sub FinirBouton3(ByVal copie As String, ByVal nomFolio As String, ByVal 
     l = l + 1
     LigneResultat ws, l, "Détail", "la feuille Journal dit chaque appel ; Sonde_Folio relit le folio dessiné"
     MontrerFeuille ws
-    Dialogue "Bouton 3 : " & resultat & "." & vbCrLf & vbCrLf & Replace(consigne, vbLf, vbCrLf), vbInformation, "Pilote SEE - bouton 3"
+    ' une boîte de Windows ne montre qu'environ 1 000 caractères : la suite est dans le bloc
+    boite = "Bouton 3 : " & resultat & "." & vbCrLf & vbCrLf & Replace(consigne, vbLf, vbCrLf)
+    If Len(boite) > 950 Then boite = Left$(boite, 850) & "..." & vbCrLf & vbCrLf & "(La suite est dans la partie jaune, ligne « Et maintenant ».)"
+    Dialogue boite, vbInformation, "Pilote SEE - bouton 3"
 End Sub
 
 ' « C:\...\Robot\TEST.seeprj » -> « TEST.seeprj » (une photo ne montre pas le chemin entier).
@@ -817,8 +957,8 @@ Private Function PreparerSEE(ByVal lancerPermis As Boolean) As Boolean
             PreparerSEE = True
         ElseIf Not mBouton2 Then
             ' (le bouton 2 le dit dans sa boîte de fin)
-            Dialogue "Excel n'a pas trouvé ta fenêtre SEE (voir la feuille Journal) : clique d'abord sur le bouton 1 ; s'il ne " & _
-                "la trouve pas, essaie le bouton 3 (SEE fermé).", vbExclamation, "Pilote SEE"
+            Dialogue "Excel n'a pas trouvé ta fenêtre SEE (voir la feuille Journal) : clique d'abord sur le bouton 1 (" & OU_BOUTONS & _
+                ") ; s'il ne la trouve pas, essaie le bouton 3 (SEE fermé).", vbExclamation, "Pilote SEE"
         End If
         Exit Function
     End If
@@ -836,23 +976,35 @@ Private Function PreparerSEE(ByVal lancerPermis As Boolean) As Boolean
             gNbErreurs = gNbErreurs + 1
             If Not mBouton2 Then
                 Dialogue "SEE répond par la coclasse SeeAutomation, qui ne lit pas le projet ouvert. Rien n'a été écrit." & vbCrLf & _
-                    "Essaie le bouton 3 : enregistre et ferme SEE, puis clique sur 3.", vbExclamation, "Pilote SEE"
+                    CONSIGNE_BOUTON3, vbExclamation, "Pilote SEE"
             End If
         End If
         Exit Function
     End If
-    ' en simulation, un projet à ouvrir l'est en lecture seule
-    Set mPrj = SEE_Projet(gSimulation)
+    ' en simulation, un projet à ouvrir l'est en lecture seule ; le bouton 2 n'en ouvre JAMAIS (le réglage Projet,
+    ' que le bouton 3 remplit, n'est pas utilisé) : il prend celui qui est ouvert dans SEE, que sa question nomme
+    Set mPrj = SEE_Projet(gSimulation, Not mBouton2)
     If mPrj Is Nothing Then
-        Journal gEtape, gObjet, "", "aucun projet : ouvre-le dans SEE ou remplis le réglage Projet", -1, "pas de projet"
+        Journal gEtape, gObjet, "", IIf(mBouton2, "aucun projet ouvert dans SEE (le bouton 2 n'en ouvre jamais)", _
+            "aucun projet : ouvre-le dans SEE ou remplis le réglage Projet"), -1, "pas de projet"
         If Not gSimulation Then
-            Dialogue "Aucun projet SEE ouvert (voir la feuille Journal).", vbExclamation, "Pilote SEE"
+            If mBouton2 Then
+                AjouterMessageFin "Rien n'a été dessiné : aucun projet n'est ouvert dans SEE. Dans SEE, ouvre ton projet d'essai, puis " & _
+                    "reclique sur le bouton bleu 2 (" & OU_BOUTONS & ")."
+            Else
+                Dialogue "Aucun projet SEE ouvert (voir la feuille Journal).", vbExclamation, "Pilote SEE"
+            End If
             Exit Function
         End If
     Else
         Journal gEtape, "projet", "", "« " & LireProp(mPrj, "Name") & " »"
     End If
     Set mEnv = SEE_Environnement()
+    ' le bouton 2 cherche (et crée, si le réglage Groupe le dit) son groupe APRÈS sa question
+    If mBouton2 Then
+        PreparerSEE = True
+        Exit Function
+    End If
     If Not mPrj Is Nothing Then Set mGrp = GroupeCible()
     If mGrp Is Nothing And Not gSimulation Then
         Dialogue "Groupe cible introuvable (voir la feuille Journal).", vbExclamation, "Pilote SEE"
@@ -1010,7 +1162,12 @@ Private Function OuvrirFolioEssai() As Boolean
                 vbOKCancel + vbQuestion + vbDefaultButton2, "Pilote SEE")
             If rep = vbOK Then rep = vbNo
         End If
-        If rep = vbCancel Then Exit Function
+        If rep = vbCancel Then
+            ' (dit au journal, et pour les boutons 2 et 3 : ce n'est pas un échec de SEE)
+            mArret = True
+            Journal gEtape, gObjet, "", "arrêté : réponse Annuler (le folio existe déjà) ; rien n'est écrit dans SEE"
+            Exit Function
+        End If
         If rep = vbYes Then
             If Not SupprimerFolio(existant, nom, "folio d'essai supprimé pour être recréé") Then Exit Function
             Set existant = Nothing

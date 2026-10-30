@@ -27,6 +27,11 @@ def projet_essai():
     p = os.path.join(ESSAI, 'TEST_SEE.seeprj')
     with open(p, 'wb') as f: f.write(b'faux projet SEE du banc\n')
     return p
+def sans_texte(d, macro, args=()):
+    """Lance une macro qu'on s'attend à voir ARRÊTÉE (End) : son texte n'est pas le résultat du scénario."""
+    s = d.getScriptProvider().getScript(f"vnd.sun.star.script:Standard.{macro}?language=Basic&location=document")
+    try: s.invoke(args, (), ())
+    except Exception as e: print('    (arrêt :', str(e)[:200], ')')
 def dossier_essai():
     return 'dossier du projet : ' + ', '.join(sorted(os.listdir(ESSAI)))
 def angles(paquet):
@@ -71,6 +76,10 @@ SCEN = [
     # V5 et la forme d'Application ; projet_essai() pose un faux projet dans le dossier de travail
     ('bouton 3 V4', lambda d: lancer(d, 'BancR.BancBouton3', (True, 2, projet_essai())), lambda: dossier_essai()),
     ('bouton 3 V5', lambda d: lancer(d, 'BancR.BancBouton3', (False, 1, projet_essai())), lambda: dossier_essai()),
+    # Windows arrête TesterSEE au premier appel d'une fonction déclarée (GetActiveObject) : le bloc PROVISOIRE reste
+    ('arret Windows', lambda d: (sans_texte(d, 'BancR.BancArret'), lancer(d, 'BancR.ApresArret', ())), None),
+    # InitialiserClasseur qui lève une erreur : gSansDialogue reprend sa valeur
+    ('panne classeur', lambda d: lancer(d, 'BancR.BancPanneClasseur', ()), None),
 ]
 if __name__ == "__main__":
  inconnus = [c for c in choisis if c not in [n for n, _, _ in SCEN]]

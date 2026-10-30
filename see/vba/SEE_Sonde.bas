@@ -87,6 +87,7 @@ Private mProgIDsAutres As Collection  ' les autres ProgID de SEE (SEE..., IGE...
 Private mProgIDsVus As Object         ' les ProgID déjà notés
 Private mEnMarche As String           ' TesterSEE : les programmes SEE en marche, d'après Windows (SEEEnMarche)
 Private mEtatMarche As Integer        ' 1 SEE en marche, 0 aucun, -1 Windows ne répond pas
+Private mBlocEnCours As Boolean       ' TesterSEE en cours : un bloc PROVISOIRE précède ce qui demande à Windows
 
 Private Const FEUILLE_XML As String = "Sonde_XML"
 Private Const TAILLE_MORCEAU As Long = 30000   ' caractères de XML par cellule (Excel en tient 32 767)
@@ -121,6 +122,9 @@ Private Function DebutSonde(ByVal titre As String, ByVal nomFeuille As String) A
         End If
     Else
         If mEnchaine Then mConnexionEssayee = True
+        ' (la feuille de la sonde vient d'être créée : le bloc provisoire repasse devant)
+        If mBlocEnCours Then EcrireBlocEnCours "SondeApplication : Excel cherche ta fenêtre SEE (en dernier par GetActiveObject, " & _
+            "une fonction de Windows)"
         ' une sonde ne crée jamais de SEE : elle REJOINT la fenêtre ouverte, ou rien
         connecte = ConnecterSEE(False)
         If Not connecte Then
@@ -200,7 +204,15 @@ End Function
 '  (pas de projet ouvert...), le bouton 3 (SEE fermé : Excel ouvre lui-même
 '  le projet d'essai) si aucune fenêtre SEE n'a été rejointe, ou, « BRAVO »
 '  (SEE joint, un projet ouvert, même vide), le bouton 2 (EssaiDessinReel).
-'  La même consigne finit le bloc (« Et maintenant »).
+'  La même consigne finit le bloc (« Et maintenant »). Avant ce qui demande
+'  quelque chose à Windows (le registre, puis la recherche de SEE), un bloc
+'  PROVISOIRE « EN COURS » est mis devant le technicien (EcrireBlocEnCours) :
+'  si Windows arrête la macro (règle de Defender sur les appels d'API Win32
+'  depuis une macro), il reste, et dit quoi photographier.
+'  Il n'ouvre JAMAIS de projet dans SEE (le réglage Projet n'est pas utilisé) :
+'  il lit celui qui y est ouvert. S'il envoie au bouton 3 après avoir rejoint
+'  SEE par sa coclasse SeeAutomation, il lâche cette connexion (sinon File >
+'  Exit ne ferait que cacher SEE).
 '  LECTURE SEULE : il n'appelle que les sondes ; rien n'est écrit dans SEE.
 ' ============================================================================
 Public Sub TesterSEE()
@@ -209,6 +221,7 @@ Public Sub TesterSEE()
     ancien = gSansDialogue
     gSansDialogue = True
     mEnchaine = True
+    mBlocEnCours = True
     RemettreLesLectures
     OuvrirJournal "TesterSEE"
     Journal "TesterSEE", "", "", "le test enchaîne les sondes, en LECTURE SEULE : rien n'est écrit dans SEE"
@@ -218,6 +231,7 @@ Public Sub TesterSEE()
     ' le bouton 1 ne garde que la fenêtre SEE rejointe : un objet SEE créé par Excel est lâché
     LacherConnexionCreee
     ' le registre d'abord (lecture seule) : les ProgID qu'il donne servent à rejoindre SEE
+    EcrireBlocEnCours "SondeRegistre : Excel lit le registre de Windows"
     EtapeDuTest "SondeRegistre"
     ' les programmes SEE en marche, d'après Windows (lecture seule)
     Contexte "TesterSEE", "programmes en marche"
@@ -269,13 +283,45 @@ Private Sub FinirTest(ByVal ancienSansDialogue As Boolean, ByVal imprevu As Stri
     Dim consigne As String
     On Error Resume Next
     mEnchaine = False
+    mBlocEnCours = False
     Application.ScreenUpdating = True
     Application.StatusBar = False
     consigne = ConsigneFinale(imprevu)
     EcrireResultatTest imprevu, consigne
     Journal "Fin", "TesterSEE", "", "terminé ; " & gNbLignesErreur & " réponse(s) en erreur au journal ; voir la feuille " & FEUILLE_RESULTAT
+    ' rejoint par la coclasse SeeAutomation, le test envoie au bouton 3, qui veut SEE fermé : tant qu'Excel tient cet
+    ' objet, File > Exit ne ferait que cacher SEE
+    If gEstAutomation Then LacherConnexion "le bouton 1 envoie au bouton 3 (SEE fermé)"
     gSansDialogue = ancienSansDialogue
     Dialogue consigne, vbInformation, "Test de SEE"
+End Sub
+
+' Le bloc PROVISOIRE de Resultat_Test, écrit avant ce qui demande quelque
+' chose à Windows (le registre par WMI ; la recherche de SEE, dont
+' GetActiveObject, une fonction de Windows déclarée) : sur un poste où Windows
+' bloque ces appels depuis une macro (règle de Defender « Bloquer les appels
+' d'API Win32 à partir de macros Office »), la macro s'arrête là sans rien
+' pouvoir écrire, et ce bloc reste devant le technicien. Le bloc final
+' (EcrireResultatTest) le remplace.
+Private Sub EcrireBlocEnCours(ByVal etape As String)
+    Dim ws As Object, l As Long, e As Variant, rubrique As String
+    On Error Resume Next
+    Set ws = FeuilleEnTete(FEUILLE_RESULTAT)
+    l = 0
+    LigneResultat ws, l, "À PHOTOGRAPHIER", "Test du " & Format$(Now, "yyyy-mm-dd hh:mm") & ", EN COURS : " & etape & "."
+    If Len(mEnMarche) > 0 Then LigneResultat ws, l, "SEE en marche ?", mEnMarche & " (d'après Windows)"
+    rubrique = "Registre"
+    For Each e In Split(mRegistreResume, vbLf)
+        If Len(CStr(e)) > 0 Then
+            LigneResultat ws, l, rubrique, CStr(e)
+            rubrique = ""
+        End If
+    Next e
+    LigneResultat ws, l, "Et maintenant", "Si tu lis encore ceci alors qu'Excel ne travaille plus, le test a été arrêté pendant « " & _
+        etape & " ». Prends en photo cette partie jaune ET le message de Windows s'il y en a un (par exemple « Sécurité Windows »), " & _
+        "et envoie-les-moi."
+    SurlignerPhoto ws, l
+    MontrerFeuille ws
 End Sub
 
 ' Ce que le technicien doit faire maintenant, d'après ce que le test a lu (la
@@ -285,27 +331,28 @@ End Sub
 ' fenêtre SEE n'a été rejointe par la coclasse Application.
 Private Function ConsigneFinale(ByVal imprevu As String) As String
     Dim photo As String, bouton3 As String
-    photo = "Prends une photo de la partie jaune de la feuille " & FEUILLE_RESULTAT & " (elle est devant toi) et envoie-la-moi."
-    bouton3 = "Essaie le bouton 3 : enregistre et ferme SEE, puis clique sur 3."
+    ' la boîte cache le milieu du bloc : d'abord OK, puis la photo
+    photo = "Clique sur OK, puis prends une photo de la partie jaune de la feuille " & FEUILLE_RESULTAT & " et envoie-la-moi."
+    bouton3 = CONSIGNE_BOUTON3
     If Len(imprevu) > 0 Then
         ConsigneFinale = "Le test s'est arrêté sur une erreur imprévue (" & imprevu & ")." & vbCrLf & _
-            "1. " & photo & vbCrLf & "2. Puis une photo du haut de la feuille Journal."
+            "1. " & photo & vbCrLf & "2. Puis, en bas d'Excel, clique sur l'onglet « Journal » et prends une photo de son haut."
     ElseIf Not mJoint Then
         ConsigneFinale = "Excel n'a pas trouvé ta fenêtre SEE." & vbCrLf & "1. " & photo & vbCrLf & "2. " & bouton3
     ElseIf Len(mPerdu) > 0 Then
         ConsigneFinale = "SEE a cessé de répondre pendant le test (avant " & mPerdu & ")." & vbCrLf & "1. " & photo & vbCrLf & _
-            "2. Si tu as fermé SEE : rouvre-le sur ton projet d'essai, puis reclique sur le bouton 1."
+            "2. Si tu as fermé SEE : rouvre-le sur ton projet d'essai, puis reclique sur le bouton vert 1 (" & OU_BOUTONS & ")."
     ElseIf gEstAutomation And Not mProjetOuvert Then
         ConsigneFinale = "Excel a rejoint SEE, mais par sa partie « SeeAutomation », qui ne sait pas lire le projet ouvert." & vbCrLf & _
             "1. " & photo & vbCrLf & "2. " & bouton3
     ElseIf Not mProjetOuvert Then
         ConsigneFinale = "Presque : Excel parle à ta fenêtre SEE, mais aucun projet n'y est ouvert." & vbCrLf & _
-            "1. " & photo & vbCrLf & "2. Dans SEE, ouvre ton projet d'essai (même vide), puis reclique sur le bouton 1."
+            "1. " & photo & vbCrLf & "2. Dans SEE, ouvre ton projet d'essai (même vide), puis reclique sur le bouton vert 1 (" & OU_BOUTONS & ")."
     Else
         ' l'étape 1 est faite : SEE est joint et un projet est ouvert (un projet vide suffit)
         ConsigneFinale = "BRAVO : l'étape 1 est réussie, Excel parle à ta fenêtre SEE (projet " & mProjetLu & ")." & vbCrLf & _
             "1. " & photo & vbCrLf & _
-            "2. Si c'est bien ton projet d'essai : clique sur le bouton bleu « 2. SEE DESSINE » (feuille Accueil)."
+            "2. Si c'est bien ton projet d'essai : clique sur le bouton bleu « 2. SEE DESSINE » (" & OU_BOUTONS & ")."
     End If
 End Function
 
@@ -924,9 +971,9 @@ Public Sub SondeApplication()
             mUnite = u
         End If
     End If
-    ' --- projet
+    ' --- projet (enchaînée par TesterSEE, le bouton 1 : jamais de projet ouvert dans SEE, celui qui y est est lu)
     Contexte "SondeApplication", "Projet"
-    Set prj = SEE_Projet(True)
+    Set prj = SEE_Projet(True, Not mEnchaine)
     If prj Is Nothing Then
         Ecrire Array("Projet", "GetProject", "aucun projet ouvert (ou erreur : " & gDerniereErreur & ")")
         mProjetLu = "aucun projet ouvert dans le SEE joint" & IIf(Len(gDerniereErreur) > 0, " (dernière erreur : " & gDerniereErreur & ")", "")
@@ -1088,7 +1135,7 @@ Private Sub SondeFolioDe(ByVal parLaVue As Boolean)
     If Not DebutSonde(TITRE_SONDE, "Sonde_Folio") Then GoTo Fin
     If Not parLaVue Then nom = Reglage("SondeFolio", "")
     Contexte "SondeFolio", nom
-    Set prj = SEE_Projet(True)
+    Set prj = SEE_Projet(True, Not mEnchaine)
     If Len(nom) > 0 Then
         If Not prj Is Nothing Then Set sh = FolioDuProjet(prj, nom)
     Else

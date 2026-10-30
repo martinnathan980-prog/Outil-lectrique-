@@ -267,12 +267,22 @@ rep('FauxSEE', 'Public gMuet As Boolean\n', '''Public gMuet As Boolean
 Public gAutoForme As Long
 Public gAutoSansVisible As Boolean
 Public gAutoOuvertureRefusee As Boolean
+Public gAutoSortie As Long
+
+' Le type du paramètre de sortie de SeeAutomation (V4) n'est pas établi : gAutoSortie = 0, tout est accepté ; 1, VARIANT*
+' seulement (une variable Object est refusée) ; 2, IDispatch** seulement (un Variant est refusé). Le refus (13, « Type
+' mismatch ») vient AVANT que la méthode tourne, comme le ferait IDispatch::Invoke.
+Public Sub SortieAcceptee(ByVal parObjet As Boolean)
+    If gAutoSortie = 1 And parObjet Then Err.Raise 13, , "Type mismatch : VARIANT* attendu (panne simulée)"
+    If gAutoSortie = 2 And Not parObjet Then Err.Raise 13, , "Type mismatch : IDispatch** attendu (panne simulée)"
+End Sub
 ''')
 rep('FauxSEE', '''    gMuet = False
 End Sub''', '''    gMuet = False
     gAutoForme = 1
     gAutoSansVisible = True
     gAutoOuvertureRefusee = False
+    gAutoSortie = 0
     InitWindows
 End Sub''')
 MOD['FauxAuto'] = faux.CL + '''Public Property Get ApplicationName() As String
@@ -288,6 +298,7 @@ Public Property Let Visible(ByVal v As Boolean)
 End Property
 Public Function OpenProject(ByVal chemin As String, ByVal mdp As String, Optional ByRef p As Variant) As Object
     Style "SeeAutomation.OpenProject", Not IsMissing(p)
+    If Not IsMissing(p) Then SortieAcceptee IsObject(p)
     If gAutoOuvertureRefusee Then Err.Raise 1130, , "projet refusé (panne simulée)"
     Trace "OpenProject|" & chemin
     If IsMissing(p) Then Set OpenProject = gProjet Else Set p = gProjet
@@ -302,6 +313,8 @@ Public Function CreateObject(ByVal t As Long, Optional ByRef a As Variant, Optio
         Err.Raise 13, , "Type mismatch (panne simulée)"
     End If
     If n <> gAutoForme + IIf(gMockV4, 1, 0) Then Err.Raise 450, , "Wrong number of arguments or invalid property assignment (faux)"
+    If n = 2 Then SortieAcceptee IsObject(a)
+    If n = 3 Then SortieAcceptee IsObject(b)
     Set o = NouveauFaux(t)
     If n = 1 Then
         Set CreateObject = o

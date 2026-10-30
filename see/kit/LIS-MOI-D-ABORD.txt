@@ -48,56 +48,79 @@ Garde-le et passe à l'étape C.
    Si c'est une barre ROUGE : va plus bas, à « SI ÇA BLOQUE ».
    Si Excel dit « Produit sans licence » : ce n'est pas grave, continue.
 5. Clique sur le gros bouton vert « 1. TESTER SEE ».
-6. Attends le message. Ne touche à rien pendant ce temps.
-7. Prends une photo de la partie jaune de la feuille Resultat_Test.
-8. Puis, d'après le message :
-   - il commence par « BRAVO » : clique sur OK et va à l'étape D ;
-   - il dit « Essaie le bouton 3 » : clique sur OK et va à l'étape E ;
-   - sinon : fais ce qu'il dit.
+6. Attends le message. Ne touche à rien pendant ce temps. Lis le message.
+7. Clique sur OK (le message cache le milieu de la partie jaune).
+8. Prends une photo de la partie jaune de la feuille Resultat_Test.
+   Sa dernière ligne, « Et maintenant », redit le message.
+9. Puis, d'après le message :
+   - il commence par « BRAVO » : va à l'étape D ;
+   - il dit « Essaie le bouton 3 » : va à l'étape E ;
+   - sinon : fais ce que dit « Et maintenant ».
+Si Windows affiche un message (par exemple « Sécurité Windows », ou une
+action bloquée) : prends ce message en photo, puis la partie jaune.
 
 
 ÉTAPE D : LE BOUTON 2, « SEE DESSINE » (seulement après BRAVO)
 --------------------------------------------------------------
-1. Clique sur le gros bouton bleu « 2. SEE DESSINE ».
-2. Une question te montre le nom du projet ouvert dans SEE.
+1. En bas d'Excel, clique sur l'onglet « Accueil » : les boutons sont là.
+2. Clique sur le gros bouton bleu « 2. SEE DESSINE ».
+3. Une question te montre le nom du projet ouvert dans SEE.
    C'est bien ton projet d'essai : clique sur OK.
    (Si c'est un vrai projet : clique sur Annuler. Rien ne sera dessiné.)
-3. Attends le message de fin, puis clique sur OK.
-4. Dans SEE, ouvre le folio « ESSAI_PILOTE » : double-clic sur son nom
+   Si Excel dit que le folio « ESSAI_PILOTE » existe déjà : clique sur
+   Oui (il est refait à neuf).
+4. Attends le message de fin, puis clique sur OK.
+5. Dans SEE, ouvre le folio « ESSAI_PILOTE » : double-clic sur son nom
    dans l'arbre du projet, à gauche. Tu dois y voir un grand cadre, un
    trait en biais, un rectangle et des textes, dessinés par Excel.
-5. Prends une photo de l'écran de SEE, même si le dessin est de travers
+6. Prends une photo de l'écran de SEE, même si le dessin est de travers
    ou vide : c'est justement ce que je veux voir.
-6. Dans Excel, prends aussi une photo du haut de la feuille Sonde_Folio.
-7. Va à l'étape F.
+7. Dans Excel, en bas, clique sur l'onglet « Sonde_Folio », puis prends
+   une photo du haut de cette feuille.
+8. Va à l'étape F.
 
 
 ÉTAPE E : LE BOUTON 3, « SEE FERMÉ » (si le bouton 1 te l'a dit)
 ----------------------------------------------------------------
 Ici, c'est Excel qui ouvre lui-même ton projet d'essai, pendant que
-SEE est FERMÉ. Tu ne verras pas SEE travailler : c'est normal.
+SEE est FERMÉ. SEE peut s'ouvrir tout seul pendant une minute : c'est
+Excel qui travaille. Ne le ferme pas et ne clique pas dedans : Excel le
+refermera. S'il te pose une question : prends-la en photo, puis clique
+sur Annuler (ou Non).
 1. Dans SEE : menu File, puis Exit. Si SEE demande d'enregistrer :
-   clique sur Oui. SEE se ferme. Ne le rouvre pas tout de suite.
-2. Dans Excel, clique sur le gros bouton orange « 3. SEE FERMÉ ».
-   (Si SEE est encore ouvert, Excel le voit et ne fait rien : ferme
-   SEE, puis reclique sur 3.)
+   clique sur Oui. SEE se ferme. Ne le rouvre pas toi-même : Excel s'en
+   charge.
+2. Dans Excel, en bas, clique sur l'onglet « Accueil ». Le bouton orange
+   est plus bas : fais descendre la feuille avec la molette de la
+   souris. Clique sur le gros bouton orange « 3. SEE FERMÉ ».
+   (Si SEE tourne encore, Excel attend 10 secondes, ne fait rien et te
+   le dit. Si tu vois SEE : enregistre et ferme-le (File > Exit), puis
+   reclique sur 3. Si tu ne le vois pas : enregistre et ferme Excel,
+   rouvre Pilote-SEE.xlsm, puis reclique sur 3. Si Excel dit encore
+   NON : va à « SI SEE TOURNE CACHÉ », puis reclique sur 3.)
 3. Une fenêtre « Choisis ton projet d'ESSAI » s'ouvre. Va dans le
    dossier « Robot » de ton Bureau, clique sur ton projet d'essai
    (par exemple TEST_SEE.seeprj), puis sur « Ouvrir ».
+   Clique sur ton projet, PAS sur un fichier dont le nom contient
+   « avant-pilote » (ce sont les copies de sécurité).
 4. Une question te montre le nom du fichier.
    C'est bien ton projet d'essai : clique sur OK.
    (Si c'est un vrai projet : clique sur Annuler. Rien ne sera fait.)
+   Si Excel dit que le folio « ESSAI_PILOTE » existe déjà : clique sur
+   Oui (il est refait à neuf).
 5. Attends le message de fin : une minute, parfois plus. Ne touche à
    rien. Si Excel reste bloqué : va à « SI EXCEL RESTE BLOQUÉ ».
 6. Clique sur OK. Prends une photo de la partie jaune de la feuille
-   Resultat_Test.
+   Resultat_Test. Puis, si le message le demande, en bas d'Excel, clique
+   sur l'onglet « Sonde_Folio » et prends une photo du haut de cette
+   feuille.
 7. Fais ce que dit sa ligne « Et maintenant ». Le plus souvent : ouvre
    SEE, ouvre ton projet d'essai, double-clic sur le folio
    « ESSAI_PILOTE », et prends une photo de l'écran.
 Avant de toucher à ton projet, Excel en fait une copie dans le même
 dossier, par exemple TEST_SEE.avant-pilote-20261030-142501.seeprj.
-Si ton projet d'essai était abîmé, elle le remplace. N'efface rien sans
-me demander.
+Si ton projet d'essai était abîmé, on pourrait le remplacer par elle :
+je te dirai comment. N'y touche pas, et n'efface rien sans me demander.
 
 
 ÉTAPE F : M'ENVOYER LES PHOTOS (2 minutes)
@@ -110,19 +133,34 @@ me demander.
 
 SI EXCEL RESTE BLOQUÉ
 ---------------------
-Avec le bouton 3, SEE travaille caché. S'il ouvre une fenêtre que tu ne
-vois pas, Excel attend, et peut afficher : « Microsoft Excel attend
-qu'une autre application termine une action OLE ».
+Avec le bouton 3, SEE peut travailler caché. S'il ouvre une fenêtre que
+tu ne vois pas, Excel attend, et peut afficher : « Microsoft Excel
+attend qu'une autre application termine une action OLE ».
 1. Attends 2 minutes.
-2. Toujours bloqué : appuie ensemble sur Ctrl + Maj + Échap.
-   Le Gestionnaire des tâches s'ouvre.
-3. Dans la liste, clique sur SEE (SEE Electrical Expert).
-4. Clique sur « Fin de tâche ».
-5. Excel reprend tout seul et finit son message. Prends la photo de la
+2. Toujours bloqué : arrête SEE comme le dit « SI SEE TOURNE CACHÉ »,
+   juste en dessous (Ctrl + Maj + Échap, puis SEE, puis « Fin de
+   tâche »).
+3. Excel reprend tout seul et finit son message. Prends la photo de la
    partie jaune de la feuille Resultat_Test : elle dit où il s'était
    arrêté.
 Ton projet d'essai a sa copie de sécurité dans le même dossier
 (…avant-pilote-….seeprj).
+
+
+SI SEE TOURNE CACHÉ
+-------------------
+Excel te le dit (« SEE tourne encore, caché »), ou Excel reste bloqué.
+1. Appuie ensemble sur Ctrl + Maj + Échap.
+   Le Gestionnaire des tâches s'ouvre.
+2. Si sa fenêtre est petite, clique en bas sur « Plus de détails ».
+3. Descends jusqu'à « Processus en arrière-plan » : SEE peut être là,
+   plus bas dans la liste. Clique sur SEE (SEE Electrical Expert).
+   Ou bien : onglet « Détails », puis SEE.exe.
+4. Clique sur « Fin de tâche ».
+5. Ne termine PAS Excel, même s'il est marqué « Ne répond pas » : la
+   partie jaune serait perdue.
+6. Tu ne trouves pas SEE : enregistre et ferme Excel, puis redémarre
+   l'ordinateur.
 
 
 SI ÇA BLOQUE
@@ -154,11 +192,14 @@ LES PHOTOS À PRENDRE
 --------------------
 - Après le bouton 1 : la partie jaune de la feuille Resultat_Test.
 - Après le bouton 2 : l'écran de SEE avec le folio « ESSAI_PILOTE »,
-  puis le haut de la feuille Sonde_Folio.
+  puis le haut de la feuille Sonde_Folio (son onglet est en bas d'Excel).
 - Après le bouton 3 : la partie jaune de la feuille Resultat_Test, puis
-  l'écran de SEE avec le folio « ESSAI_PILOTE » (ouvert par toi).
-- Tout message d'erreur ou de refus, tel quel.
-Si une photo coupe le texte : prends-en deux, l'une sous l'autre.
+  le haut de la feuille Sonde_Folio (son onglet est en bas d'Excel),
+  puis l'écran de SEE avec le folio « ESSAI_PILOTE » (ouvert par toi).
+- Tout message d'erreur ou de refus, tel quel, même un message de
+  Windows (par exemple « Sécurité Windows »).
+Si une photo coupe le texte : prends la première photo, fais descendre
+la feuille avec la molette de la souris, puis prends la deuxième.
 
 Un doute sur ce qu'on a le droit de faire sortir du bureau :
 montre d'abord les photos à ton responsable.

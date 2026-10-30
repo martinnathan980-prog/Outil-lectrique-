@@ -306,6 +306,16 @@ function controler(parties) {
       && /BRAVO.*bouton bleu 2.*OK/.test(etapes[1]) && /^Sinon.*ferme SEE.*bouton orange 3/.test(cellule(18))
       && /photo.*Resultat_Test/.test(etapes[2]) && /photos/.test(cellule(25)) && !/Ctrl\+S|renvoie-le/.test(etapes.join(' ') + cellule(25)),
     [...etapes, cellule(18)].map(c => c.slice(0, 24)).join(' | '));
+  // la relecture de la v3 (TE8) : l'Accueil dit la même chose que le mode d'emploi et que les messages
+  verif('l\'Accueil suit le mode d\'emploi : le bouton 1, OK, PUIS la photo ; « Sinon : fais ce que dit le message » ; l\'étape 3 vaut pour les boutons 2 et 3 (les photos du message de fin) ; SEE n\'est pas rouvert à la main',
+    /bouton vert 1.*clique sur OK.*photo/.test(cellule(6)) && /^Sinon : fais ce que dit le message/.test(cellule(18)) && /Ne rouvre pas SEE toi-même/.test(cellule(19))
+      && /Après le bouton 2 ou 3.*photos.*message de fin/.test(etapes[2]) && !/SEE doit rester fermé/.test(partage.join(' ')),
+    [6, 18, 19, 24].map(cellule).map(c => c.slice(0, 30)).join(' | '));
+  // TE10 : le bouton 3 tient sur un écran de portable (zoom 80 %, lignes de bouton basses)
+  const vue = premier(ws, 'sheetView'), hauteurs = new Map([...ws.matchAll(/<row r="(\d+)" ht="([\d.]+)"/g)].map(m => [+m[1], +m[2]]));
+  const basBouton3 = Array.from({ length: 22 }, (_, i) => hauteurs.get(i + 1) || 15).reduce((s, h) => s + h, 0) * 4 / 3 * (+vue.zoomScale || 100) / 100;
+  verif('l\'Accueil : le bas du bouton orange 3 à moins de 540 pixels du haut de la feuille (zoom compris : un écran de portable)', basBouton3 < 540,
+    `${Math.round(basBouton3)} px, zoom ${vue.zoomScale || 100} %`);
   // chaque bouton couvre des lignes vides de la feuille, sous la consigne de son étape et au-dessus de la suivante
   const sousEtape = [[5, 12], [12, 18], [18, 24]], lignesTexte = new Set([...ws.matchAll(/<c r="B(\d+)"/g)].map(m => +m[1]));
   verif('chaque bouton sur des lignes vides, entre la consigne de son étape et la suivante (ancres de ligne 0 : la ligne r est r-1)',
@@ -512,6 +522,20 @@ try { const k = K.kit({ dossierVba: AVEC }), z = lireZip(k.zip), ref = C.classeu
       && /LES PHOTOS À PRENDRE[\s\S]*bouton 1[\s\S]*Resultat_Test[\s\S]*bouton 2[\s\S]*bouton 3[\s\S]*Resultat_Test/.test(t));
   ok('LIS-MOI-D-ABORD.txt : « SI EXCEL RESTE BLOQUÉ » (action OLE : attendre 2 minutes, Ctrl + Maj + Échap, SEE, Fin de tâche)',
     /SI EXCEL RESTE BLOQUÉ[\s\S]*action OLE[\s\S]*2 minutes[\s\S]*Ctrl \+ Maj \+ Échap[\s\S]*SEE[\s\S]*Fin de tâche/.test(t));
+  // la relecture de la v3 (TE1 à TE10, EX5, SU6)
+  const etape = (de, a) => t.slice(t.indexOf(de), a ? t.indexOf(a) : undefined);
+  const C_ = etape('ÉTAPE C', 'ÉTAPE D'), D_ = etape('ÉTAPE D', 'ÉTAPE E'), E_ = etape('ÉTAPE E', 'ÉTAPE F'), cache = etape('SI SEE TOURNE CACHÉ\r\n---', 'SI ÇA BLOQUE\r\n---');
+  ok('LIS-MOI-D-ABORD.txt, étape C : OK AVANT la photo (le message cache le bloc), puis « Et maintenant » ; un message de Windows se photographie',
+    /Clique sur OK[\s\S]*Prends une photo de la partie jaune[\s\S]*sinon : fais ce que dit « Et maintenant »/.test(C_) && /Sécurité Windows/.test(C_));
+  ok('LIS-MOI-D-ABORD.txt, étapes D et E : l\'onglet « Accueil » avant le bouton, l\'onglet « Sonde_Folio » pour sa photo, Oui si le folio existe déjà',
+    [D_, E_].every(s => /onglet « Accueil »/.test(s) && /onglet[\s\S]{0,5}« Sonde_Folio »/.test(s) && /existe déjà[\s\S]*Oui \(il est refait à neuf\)/.test(s))
+      && D_.search(/onglet « Accueil »/) < D_.indexOf('2. SEE DESSINE') && E_.search(/onglet « Accueil »/) < E_.indexOf('3. SEE FERMÉ'));
+  ok('LIS-MOI-D-ABORD.txt, étape E : SEE peut s\'ouvrir tout seul (n\'y touche pas, Annuler à une question) ; SEE qui tourne encore (le voir, fermer Excel, sinon caché) ; le bouton plus bas (molette) ; pas un fichier « avant-pilote » ; la copie : n\'y touche pas',
+    /SEE peut s'ouvrir tout seul[\s\S]*ne clique pas dedans[\s\S]*Annuler \(ou Non\)/.test(E_) && !/Tu ne verras pas SEE travailler/.test(t)
+      && /Si tu vois SEE[\s\S]*Si tu ne le vois pas : enregistre et ferme Excel[\s\S]*SI SEE TOURNE CACHÉ/.test(E_) && /molette/.test(E_)
+      && /PAS sur un fichier dont le nom contient\s+« avant-pilote »/.test(E_) && /je te dirai comment\. N'y touche pas/.test(E_) && !/elle le remplace/.test(t));
+  ok('LIS-MOI-D-ABORD.txt, « SI SEE TOURNE CACHÉ » : Ctrl + Maj + Échap, « Plus de détails », « Processus en arrière-plan », Fin de tâche, ne pas terminer Excel, sinon redémarrer',
+    /Ctrl \+ Maj \+ Échap[\s\S]*Plus de détails[\s\S]*Processus en arrière-plan[\s\S]*Fin de tâche[\s\S]*Ne termine PAS Excel[\s\S]*redémarre/.test(cache));
   ok('LIS-MOI-D-ABORD.txt : les textes des boutons sont ceux du classeur', C.BOUTONS.every(b => t.includes('« ' + b.texte + ' »')));
   ok('le kit passe par courriel : aucun fichier d\'un type que la messagerie refuse, même zippé (.cmd, .ps1, .js...)',
     z.every(p => !K.REFUSES_PAR_COURRIEL.test(p.nom)) && K.REFUSES_PAR_COURRIEL.test('a/diagnostic.ps1') && K.REFUSES_PAR_COURRIEL.test('x.CMD'), z.filter(p => K.REFUSES_PAR_COURRIEL.test(p.nom)).map(p => p.nom).join(', '));
@@ -558,6 +582,8 @@ const MUTATIONS = [
   ['la consigne « Excel bloqué » effacée de la feuille', 'en petit, dans l\'ordre des barres', avecTexte('xl/sharedStrings.xml', 'Fin de tâche', 'Fermer')],
   ['le recours du mode protégé effacé de la feuille', 'en petit, dans l\'ordre des barres', avecTexte('xl/sharedStrings.xml', '« MODE PROTÉGÉ »', '« MODE NORMAL »')],
   ['une balise mal fermée', 'chaque partie XML est bien formée', avecTexte('xl/styles.xml', '</fonts>', '</font>')],
+  ['l\'Accueil sans son zoom (le bouton 3 sous le bord d\'un écran de portable)', 'l\'Accueil : le bas du bouton orange 3', avecTexte('xl/worksheets/sheet1.xml', ' zoomScale="80" zoomScaleNormal="80"', '')],
+  ['l\'Accueil qui envoie au bouton 3 pour tout message autre que BRAVO', 'l\'Accueil suit le mode d\'emploi', avecTexte('xl/sharedStrings.xml', 'Sinon : fais ce que dit le message. Souvent : ferme SEE', 'Sinon : ferme SEE')],
   ['les éléments de la feuille dans le désordre', 'sheet1.xml : ses éléments', (() => { const p = new Map(parties), t = Buffer.from(p.get('xl/worksheets/sheet1.xml')).toString('utf8'), m = /<pageMargins[^>]*\/>/.exec(t);
     p.set('xl/worksheets/sheet1.xml', new Uint8Array(Buffer.from(t.replace(m[0], '').replace('<sheetData>', m[0] + '<sheetData>'), 'utf8'))); return p; })()],
 ];
