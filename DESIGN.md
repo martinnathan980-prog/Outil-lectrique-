@@ -83,8 +83,15 @@ commune ; chaque domaine la décline dans son propre fichier de style.
   Tout reste dans le navigateur (IndexedDB). Le reste des fichiers se retrouve dans « Vos fichiers ».
 - **Le récapitulatif** est le tiroir du bas (B), en moitié ou en page : neuf onglets, chaque objet dans un seul
   (liaisons, équipements, disjoncteurs, barrettes, prises, câbles, raccords, problèmes, normes), peu de colonnes
-  d'office — celles du quotidien —, le reste dans « Colonnes ». Une liaison s'y lit comme une phrase : de → le câble
-  (numéro, type, gauge, une flèche à la couleur de sa route) → vers, sa longueur, un état (un point et un mot).
+  d'office — celles du quotidien —, le reste dans « Colonnes » (rangé par rubriques). Une liaison s'y lit comme une
+  phrase : de → le câble (numéro, type, une flèche à la couleur de sa route) → vers, sa longueur, un état (un point ;
+  « ok » ne s'écrit pas). **Le rail (v74)** : les onglets sont une colonne à gauche, en trois groupes — Câblage
+  (liaisons, câbles), Matériel (équipements, disjoncteurs, barrettes, prises, raccords), Contrôle (problèmes, normes) —,
+  chacun avec son compte aligné à droite et un point rouge seulement s'il porte un problème ; la fiche épinglée amincit
+  le rail, une feuille étroite le rend en bande d'onglets. La tête : le titre, le plan, « Moitié · Page », la croix. La
+  barre : la portée, la recherche, « À reprendre », « Filtrer » (les routes, sans longueur, sans contact), « Colonnes ».
+  En moitié, le dessin vient au milieu de la place libre au-dessus du tiroir ; une vue posée par l'outil qui n'y tient
+  pas se resserre juste assez.
 
 ## 2. Les principes
 
