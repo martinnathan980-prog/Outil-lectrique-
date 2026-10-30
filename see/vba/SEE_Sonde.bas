@@ -12,10 +12,16 @@ Attribute VB_Name = "SEE_Sonde"
 '                      Il crée les feuilles Reglages et Journal si elles
 '                      manquent, enchaîne les sondes ci-dessous sans aucune
 '                      boîte, écrit la feuille Resultat_Test en tête du
-'                      classeur (ce qui a marché, en clair), puis UNE boîte
-'                      qui dit quoi faire D'APRÈS CE QUI A ÉTÉ LU : relancer
-'                      (SEE fermé, pas de projet ouvert...) ou, « BRAVO »,
-'                      passer au bouton 2 (ou enregistrer et me l'envoyer).
+'                      classeur (en haut, le bloc « À PHOTOGRAPHIER » : le
+'                      technicien ne renvoie que des photos), puis UNE boîte
+'                      courte qui dit quoi faire D'APRÈS CE QUI A ÉTÉ LU :
+'                      la photo, puis relancer (pas de projet ouvert...), le
+'                      bouton 3 (SEE fermé) si sa fenêtre SEE n'est pas
+'                      trouvée, ou, « BRAVO », passer au bouton 2.
+'    SondeRegistre     comment SEE est inscrit dans le registre de Windows
+'                      (CLSID, ProgID, serveur, .seeprj), par WMI ; ses
+'                      ProgID servent à rejoindre SEE (TesterSEE la lance
+'                      avant de joindre SEE)
 '    SondeApplication  versions, chemins, environnement (Unit !), projet,
 '                      cartouches (zone de travail), stratégie de connexion
 '    SondeSymboles     familles et symboles de l'environnement
@@ -28,10 +34,10 @@ Attribute VB_Name = "SEE_Sonde"
 '    SondeMethodes     les XML des méthodes (points de connexion, câblage,
 '                      types de câbles, connecteurs, symboles par défaut),
 '                      dans des fichiers à côté du classeur ET dans la feuille
-'                      Sonde_XML (le classeur seul suffit à tout renvoyer)
-'    RelireFolio       (appelée par le bouton 2, EssaiDessinReel) relit le
-'                      folio que le pilote vient de dessiner, dans Sonde_Folio,
-'                      sans boîte et sans vider le journal
+'                      Sonde_XML (le classeur garde tout)
+'    RelireFolio       (appelée par les boutons 2 et 3) relit le folio que le
+'                      pilote vient de dessiner, dans Sonde_Folio, sans boîte,
+'                      sans vider le journal, avec la connexion déjà là
 '
 '  But : connaître l'unité, l'origine et le sens de y, les formes que le
 '  bureau utilise, la chaîne de type de connexion, la sémantique des repères,
@@ -71,10 +77,21 @@ Private mClasses As Object            ' Class -> nombre de matériels du folio lu
 Private mLignesMateriel As Collection ' les lignes de la section « Matériel associé » de la sonde en cours
 Private mPorteursVus As Object        ' les connecteurs déjà dans cette section
 Private mEtapesTest As String         ' les étapes de TesterSEE, une par ligne
+Private mRegistreResume As String     ' ce que SondeRegistre a lu, en quelques lignes (le bloc « À PHOTOGRAPHIER »)
+Private mRegistreLu As Boolean        ' SondeRegistre a pu lire le registre
+Private mNbClsidInscrits As Long      ' CLSID des réglages trouvés au registre (une vue au moins)
+Private mNbClsidLus As Long           ' CLSID des réglages cherchés
+Private mProgIDsTrouves As Collection ' « ProgID = CLSID » trouvés par SondeRegistre
+Private mProgIDsConnus As Collection  ' ProgID d'un CLSID des réglages (essayés d'abord)
+Private mProgIDsAutres As Collection  ' les autres ProgID de SEE (SEE..., IGE..., ...XAO...)
+Private mProgIDsVus As Object         ' les ProgID déjà notés
+Private mEnMarche As String           ' TesterSEE : les programmes SEE en marche, d'après Windows (SEEEnMarche)
+Private mEtatMarche As Integer        ' 1 SEE en marche, 0 aucun, -1 Windows ne répond pas
 
-Private Const FEUILLE_RESULTAT As String = "Resultat_Test"
 Private Const FEUILLE_XML As String = "Sonde_XML"
 Private Const TAILLE_MORCEAU As Long = 30000   ' caractères de XML par cellule (Excel en tient 32 767)
+Private Const FEUILLE_REGISTRE As String = "Sonde_Registre"
+Private Const PROGID_MAXI As Long = 8          ' ProgID du registre essayés au plus par ConnecterSEE
 
 ' ----------------------------------------------------------------------------
 '  Début et fin communs
@@ -95,18 +112,20 @@ Private Function DebutSonde(ByVal titre As String, ByVal nomFeuille As String) A
     Application.ScreenUpdating = False
     Dim connecte As Boolean
     If mEnchaine And mJoint Then
-        ' TesterSEE : SEE a été joint par SondeApplication ; on vérifie qu'il répond, sans jamais se
-        ' reconnecter (ConnecterSEE pourrait démarrer un autre SEE au milieu d'un test en lecture seule)
+        ' SEE a déjà été joint (par SondeApplication, ou par la macro qui relit son folio) : on vérifie
+        ' qu'il répond, sans jamais se reconnecter au milieu d'un test en lecture seule
         connecte = SEERepond()
         If Not connecte Then
             Journal "TesterSEE", titre, "ApplicationName", "SEE ne répond plus : sonde sautée", -1, "SEE ne répond plus"
-            Ecrire Array("Connexion", "ÉCHEC", "SEE ne répond plus (il a répondu plus tôt dans le test) : voir la feuille Journal")
+            Ecrire Array("Connexion", "ÉCHEC", "SEE ne répond plus (il a répondu plus tôt) : voir la feuille Journal")
         End If
     Else
         If mEnchaine Then mConnexionEssayee = True
-        connecte = ConnecterSEE()
+        ' une sonde ne crée jamais de SEE : elle REJOINT la fenêtre ouverte, ou rien
+        connecte = ConnecterSEE(False)
         If Not connecte Then
-            Ecrire Array("Connexion", "ÉCHEC", "aucune stratégie n'a marché : voir la feuille Journal et diagnostic.ps1")
+            Ecrire Array("Connexion", "ÉCHEC", "Excel n'a pas trouvé ta fenêtre SEE : voir " & FEUILLE_RESULTAT & " (À PHOTOGRAPHIER) " & _
+                "et Sonde_Registre ; le bouton 3 travaille SEE fermé")
         End If
     End If
     mConnecte = connecte
@@ -164,18 +183,24 @@ End Function
 ' ============================================================================
 '  TesterSEE : LE bouton du premier essai au bureau. Un clic, rien à régler,
 '  rien à savoir. Il crée les feuilles Reglages et Journal si elles manquent
-'  (sans boîte), puis enchaîne, sans aucune boîte et dans un seul journal :
-'  SondeApplication ; si SEE est joint : SondeSymboles, SondeFolio (le folio
+'  (sans boîte), lâche une connexion qu'Excel aurait CRÉÉE (LacherConnexionCreee :
+'  il ne garde que la fenêtre SEE rejointe), puis enchaîne, sans aucune boîte
+'  et dans un seul journal : SondeRegistre (ses ProgID servent à rejoindre
+'  SEE), ce que Windows dit des programmes SEE en marche (SEEEnMarche),
+'  SondeApplication (elle REJOINT la fenêtre SEE ouverte : ConnecterSEE ; le
+'  bouton 1 n'en démarre jamais, quel que soit le réglage LancerSEE) ; si SEE
+'  est joint : SondeSymboles, SondeFolio (le folio
 '  de la vue active), SondeSelection (s'il y a une sélection), SondeMethodes
 '  (ses XML vont aussi dans la feuille Sonde_XML). SEE n'est joint qu'une
 '  fois, par SondeApplication : s'il cesse de répondre ensuite, les sondes
 '  suivantes sont sautées (aucun autre SEE n'est démarré en cours de test).
 '  Il finit par la feuille Resultat_Test, en tête du classeur, qui dit en
-'  clair ce qui a été lu, puis UNE boîte, choisie d'après ce qui a été lu :
-'  relancer (SEE fermé, pas de projet ouvert...) ou, « BRAVO » (SEE joint, un
-'  projet ouvert, même vide), passer au bouton 2 du classeur (EssaiDessinReel),
-'  ou enregistrer le classeur et me l'envoyer. La même consigne finit
-'  Resultat_Test.
+'  clair ce qui a été lu (en haut, le bloc « À PHOTOGRAPHIER »), puis UNE
+'  boîte courte, choisie d'après ce qui a été lu : la photo, puis relancer
+'  (pas de projet ouvert...), le bouton 3 (SEE fermé : Excel ouvre lui-même
+'  le projet d'essai) si aucune fenêtre SEE n'a été rejointe, ou, « BRAVO »
+'  (SEE joint, un projet ouvert, même vide), le bouton 2 (EssaiDessinReel).
+'  La même consigne finit le bloc (« Et maintenant »).
 '  LECTURE SEULE : il n'appelle que les sondes ; rien n'est écrit dans SEE.
 ' ============================================================================
 Public Sub TesterSEE()
@@ -190,6 +215,14 @@ Public Sub TesterSEE()
     ' les feuilles Reglages et Journal, si elles manquent (sa boîte va au journal)
     InitialiserClasseur
     ChargerReglages
+    ' le bouton 1 ne garde que la fenêtre SEE rejointe : un objet SEE créé par Excel est lâché
+    LacherConnexionCreee
+    ' le registre d'abord (lecture seule) : les ProgID qu'il donne servent à rejoindre SEE
+    EtapeDuTest "SondeRegistre"
+    ' les programmes SEE en marche, d'après Windows (lecture seule)
+    Contexte "TesterSEE", "programmes en marche"
+    mEtatMarche = SEEEnMarche(0, mEnMarche)
+    Journal "TesterSEE", "programmes en marche", "WMI Win32_Process", mEnMarche
     EtapeDuTest "SondeApplication"
     mJoint = mConnecte
     If mJoint Then
@@ -242,85 +275,38 @@ Private Sub FinirTest(ByVal ancienSansDialogue As Boolean, ByVal imprevu As Stri
     EcrireResultatTest imprevu, consigne
     Journal "Fin", "TesterSEE", "", "terminé ; " & gNbLignesErreur & " réponse(s) en erreur au journal ; voir la feuille " & FEUILLE_RESULTAT
     gSansDialogue = ancienSansDialogue
-    If mJoint Then
-        consigne = consigne & vbCrLf & vbCrLf & "(Le classeur contient ce qu'Excel a lu dans SEE : vérifie sur la feuille " & _
-            FEUILLE_RESULTAT & " que le projet lu est bien ton projet d'essai.)"
-    End If
     Dialogue consigne, vbInformation, "Test de SEE"
 End Sub
 
 ' Ce que le technicien doit faire maintenant, d'après ce que le test a lu (la
-' boîte de fin et la dernière ligne de Resultat_Test).
+' boîte de fin, courte, et la ligne « Et maintenant » du bloc à photographier).
+' Il ne renvoie que des PHOTOS : chaque consigne commence par celle de la
+' feuille Resultat_Test. Le bouton 3 (SEE fermé) est proposé quand aucune
+' fenêtre SEE n'a été rejointe par la coclasse Application.
 Private Function ConsigneFinale(ByVal imprevu As String) As String
-    Dim enregistrer As String
-    enregistrer = ConsigneEnregistrer()
+    Dim photo As String, bouton3 As String
+    photo = "Prends une photo de la partie jaune de la feuille " & FEUILLE_RESULTAT & " (elle est devant toi) et envoie-la-moi."
+    bouton3 = "Essaie le bouton 3 : enregistre et ferme SEE, puis clique sur 3."
     If Len(imprevu) > 0 Then
-        ConsigneFinale = "Le test s'est arrêté sur une erreur imprévue (" & imprevu & "). " & enregistrer & _
-            ", ferme-le et envoie-le-moi tel quel : la feuille Journal dit où il s'est arrêté."
+        ConsigneFinale = "Le test s'est arrêté sur une erreur imprévue (" & imprevu & ")." & vbCrLf & _
+            "1. " & photo & vbCrLf & "2. Puis une photo du haut de la feuille Journal."
     ElseIf Not mJoint Then
-        ConsigneFinale = "Excel n'a pas trouvé SEE." & vbCrLf & _
-            "- Si SEE était fermé : ouvre-le sur ton projet d'essai, puis relance TesterSEE (le bouton 1, ou " & _
-            "Alt+F8, TesterSEE, Exécuter)." & vbCrLf & _
-            "- S'il était ouvert : " & LCase$(Left$(enregistrer, 1)) & Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi : " & _
-            "la feuille Journal dit chaque manière essayée et la réponse de Windows, c'est ce qu'il me faut."
-    ElseIf SEELanceParLaMacro() Then
-        ConsigneFinale = "Excel n'a pas trouvé de SEE ouvert : il en a démarré un lui-même, sans ton projet." & vbCrLf & _
-            "- Si ton SEE était fermé : ferme ce SEE-là, ouvre SEE sur ton projet d'essai, " & _
-            "puis relance TesterSEE (le bouton 1)." & vbCrLf & _
-            "- S'il était déjà ouvert : ferme la seconde fenêtre de SEE, puis " & LCase$(Left$(enregistrer, 1)) & _
-            Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi."
+        ConsigneFinale = "Excel n'a pas trouvé ta fenêtre SEE." & vbCrLf & "1. " & photo & vbCrLf & "2. " & bouton3
     ElseIf Len(mPerdu) > 0 Then
-        ConsigneFinale = "SEE a cessé de répondre pendant le test (avant " & mPerdu & ") ; ce qui a été lu avant est gardé." & vbCrLf & _
-            "- Si tu as fermé SEE : rouvre-le sur ton projet d'essai, puis relance TesterSEE (le bouton 1)." & vbCrLf & _
-            "- Sinon : " & LCase$(Left$(enregistrer, 1)) & Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi tel quel."
+        ConsigneFinale = "SEE a cessé de répondre pendant le test (avant " & mPerdu & ")." & vbCrLf & "1. " & photo & vbCrLf & _
+            "2. Si tu as fermé SEE : rouvre-le sur ton projet d'essai, puis reclique sur le bouton 1."
+    ElseIf gEstAutomation And Not mProjetOuvert Then
+        ConsigneFinale = "Excel a rejoint SEE, mais par sa partie « SeeAutomation », qui ne sait pas lire le projet ouvert." & vbCrLf & _
+            "1. " & photo & vbCrLf & "2. " & bouton3
     ElseIf Not mProjetOuvert Then
-        ConsigneFinale = "Presque : Excel parle bien à SEE, mais aucun projet n'y est ouvert." & vbCrLf & _
-            "Dans SEE, ouvre ton projet d'essai (même vide), puis relance TesterSEE (le bouton 1)."
+        ConsigneFinale = "Presque : Excel parle à ta fenêtre SEE, mais aucun projet n'y est ouvert." & vbCrLf & _
+            "1. " & photo & vbCrLf & "2. Dans SEE, ouvre ton projet d'essai (même vide), puis reclique sur le bouton 1."
     Else
-        ' l'étape 1 est faite : SEE est joint et un projet est ouvert (un projet vide suffit ; un folio lu est un plus)
-        ConsigneFinale = "BRAVO : l'étape 1 est réussie, Excel parle à SEE (projet " & mProjetLu & _
-            IIf(Len(mFolioLu) > 0, ", folio « " & mFolioLu & " » lu", "") & ")." & vbCrLf & _
-            "Étape 2 : si c'est bien ton projet d'essai, clique maintenant sur le bouton bleu « 2. SEE DESSINE »." & vbCrLf & _
-            "(Pour t'arrêter là : " & LCase$(Left$(enregistrer, 1)) & Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi.)"
+        ' l'étape 1 est faite : SEE est joint et un projet est ouvert (un projet vide suffit)
+        ConsigneFinale = "BRAVO : l'étape 1 est réussie, Excel parle à ta fenêtre SEE (projet " & mProjetLu & ")." & vbCrLf & _
+            "1. " & photo & vbCrLf & _
+            "2. Si c'est bien ton projet d'essai : clique sur le bouton bleu « 2. SEE DESSINE » (feuille Accueil)."
     End If
-End Function
-
-' Comment enregistrer ce classeur : jamais enregistré, ou enregistré dans un
-' format sans macros (les modules seraient perdus à la fermeture) : « Enregistrer
-' sous » au format .xlsm ; sinon Ctrl+S, en le nommant.
-Private Function ConsigneEnregistrer() As String
-    Dim chemin As String, nom As String
-    On Error Resume Next
-    chemin = ThisWorkbook.Path
-    nom = ThisWorkbook.Name
-    On Error GoTo 0
-    If Len(chemin) = 0 Or Not ClasseurAvecMacros(nom) Then
-        ConsigneEnregistrer = "Enregistre ce classeur par Fichier > Enregistrer sous, type « Classeur Excel (prenant en " & _
-            "charge les macros) (*.xlsm) », nom « Pilote SEE »"
-    Else
-        ConsigneEnregistrer = "Enregistre le classeur « " & nom & " » (Ctrl+S)"
-    End If
-End Function
-
-' Vrai si le classeur est d'un format qui garde les macros : FileFormat 52
-' (.xlsm), 50 (.xlsb) ou 56 (.xls) ; si FileFormat est illisible, d'après
-' l'extension de son nom.
-Private Function ClasseurAvecMacros(ByVal nom As String) As Boolean
-    Dim ff As Long, ext As String
-    On Error GoTo ParLeNom
-    ff = ThisWorkbook.FileFormat
-    ClasseurAvecMacros = (ff = 52 Or ff = 50 Or ff = 56)
-    Exit Function
-ParLeNom:
-    Resume LireLeNom
-LireLeNom:
-    ext = LCase$(Mid$(nom, InStrRev(nom, ".") + 1))
-    ClasseurAvecMacros = (ext = "xlsm" Or ext = "xlsb" Or ext = "xls")
-End Function
-
-' Vrai si c'est la macro qui a démarré SEE (stratégies « new: » et CreateObject).
-Private Function SEELanceParLaMacro() As Boolean
-    SEELanceParLaMacro = (InStr(1, gStrategie, "new:", vbTextCompare) > 0 Or Left$(gStrategie, 13) = "CreateObject(")
 End Function
 
 ' Une sonde du test : une erreur imprévue l'arrête, pas le test. L'étape dit
@@ -332,7 +318,9 @@ Private Sub EtapeDuTest(ByVal nom As String)
     mSondesFaites = mSondesFaites & "|" & nom & "|"
     On Error GoTo Echec
     Application.StatusBar = "Test de SEE (lecture seule) : " & nom
-    If nom = "SondeApplication" Then
+    If nom = "SondeRegistre" Then
+        SondeRegistre
+    ElseIf nom = "SondeApplication" Then
         SondeApplication
     ElseIf nom = "SondeSymboles" Then
         SondeSymboles
@@ -357,6 +345,13 @@ End Sub
 ' Ce qu'une sonde a lu : « faite : ... » si elle a lu quelque chose, sinon « rien lu : ... ».
 Private Function CeQuiAEteLu(ByVal nom As String) As String
     Select Case nom
+        Case "SondeRegistre"
+            If mRegistreLu Then
+                CeQuiAEteLu = "faite : " & mProgIDsTrouves.Count & " ProgID de SEE, " & mNbClsidInscrits & " CLSID sur " & _
+                    mNbClsidLus & " inscrits (feuille " & FEUILLE_REGISTRE & ")"
+            Else
+                CeQuiAEteLu = "rien lu : registre illisible (feuille " & FEUILLE_REGISTRE & ")"
+            End If
         Case "SondeApplication"
             If Not mConnecte Then
                 CeQuiAEteLu = "rien lu : SEE n'est pas joint"
@@ -446,36 +441,61 @@ Private Sub RemettreLesLectures()
     mNbXML = 0
     mNbMateriels = 0
     mEtapesTest = ""
+    mRegistreResume = ""
+    mRegistreLu = False
+    mNbClsidInscrits = 0
+    mNbClsidLus = 0
+    Set mProgIDsTrouves = New Collection
+    Set gEssais = Nothing
+    mEnMarche = ""
+    mEtatMarche = -1
     Set mClasses = NouveauDicoExact()
 End Sub
 
-' La feuille Resultat_Test, en tête du classeur : ce que le test a lu, en
-' clair ; sa dernière ligne (« Et maintenant ») est la consigne de la boîte de fin.
+' La feuille Resultat_Test, en tête du classeur. En haut, sur fond jaune, le
+' bloc court « À PHOTOGRAPHIER » (le technicien ne renvoie que des photos) :
+' SEE rejoint ou non, et comment ; chaque essai de connexion avec la réponse
+' de Windows (code et phrase) ; ce que le registre dit de SEE ; le projet lu ;
+' la consigne (« Et maintenant », celle de la boîte de fin). Dessous, le détail.
 Private Sub EcrireResultatTest(ByVal imprevu As String, ByVal consigne As String)
     Dim ws As Object, l As Long, s As String, k As Variant, e As Variant, etapes As Variant, erreurs As Collection, nb As Long
+    Dim rubrique As String
     Set ws = FeuilleEnTete(FEUILLE_RESULTAT)
     l = 0
-    LigneResultat ws, l, "Test de SEE", "fait le " & Format$(Now, "yyyy-mm-dd hh:mm") & " par la macro TesterSEE, en lecture seule : " & _
-        "rien n'a été écrit dans SEE"
-    If mJoint Then
-        If SEELanceParLaMacro() Then
-            s = "OUI, mais c'est Excel qui l'a démarré (" & gStrategie & ") : ce SEE-là est neuf, sans ton projet"
-        ElseIf Len(gStrategie) > 0 Then
-            s = "OUI, joint par " & gStrategie
-        Else
-            s = "OUI, par la connexion gardée d'une macro précédente"
-        End If
-        If gEstAutomation Then s = s & " (coclasse SeeAutomation : la lecture du projet est limitée)"
-    ElseIf mConnexionEssayee Then
-        s = "NON : Excel n'a pas pu joindre SEE. La feuille Journal dit chaque manière essayée et la réponse de Windows."
-    Else
-        s = "pas essayé : le test s'est arrêté avant (voir « Arrêt imprévu »)"
-    End If
-    LigneResultat ws, l, "SEE joint ?", s
+    LigneResultat ws, l, "À PHOTOGRAPHIER", "Prends en photo cette partie jaune, jusqu'à « Et maintenant », et envoie-la-moi. " & _
+        "Test du " & Format$(Now, "yyyy-mm-dd hh:mm") & ", en lecture seule : rien n'a été écrit dans SEE."
+    LigneResultat ws, l, "SEE rejoint ?", TexteSEERejoint()
+    LigneResultat ws, l, "SEE en marche ?", IIf(Len(mEnMarche) > 0, mEnMarche, "non vu") & " (d'après Windows)"
     If Len(mPerdu) > 0 Then
         LigneResultat ws, l, "SEE perdu", "SEE ne répondait plus avant " & mPerdu & " : " & mPerdu & " et les sondes suivantes sont " & _
-            "sautées (aucune nouvelle connexion en cours de test) ; ce qui a été lu avant est ci-dessous"
+            "sautées (aucune nouvelle connexion en cours de test) ; ce qui a été lu avant est gardé"
     End If
+    rubrique = "Essais"
+    If Not gEssais Is Nothing Then
+        For Each e In gEssais
+            nb = nb + 1
+            LigneResultat ws, l, rubrique, nb & ". " & CStr(e)
+            rubrique = ""
+        Next e
+    End If
+    If nb = 0 Then LigneResultat ws, l, rubrique, IIf(mConnexionEssayee, "aucun", "pas essayé : le test s'est arrêté avant")
+    rubrique = "Registre"
+    For Each e In Split(mRegistreResume, vbLf)
+        If Len(CStr(e)) > 0 Then
+            LigneResultat ws, l, rubrique, CStr(e)
+            rubrique = ""
+        End If
+    Next e
+    If rubrique = "Registre" Then LigneResultat ws, l, rubrique, "non lu"
+    If mJoint Then
+        LigneResultat ws, l, "Projet lu", mProjetLu
+    Else
+        LigneResultat ws, l, "Projet lu", "non lu : SEE n'est pas rejoint"
+    End If
+    LigneResultat ws, l, "Et maintenant", Replace(consigne, vbCrLf, vbLf)
+    SurlignerPhoto ws, l
+    l = l + 1
+    LigneResultat ws, l, "Détail", "ce qui suit n'est à photographier que si je te le demande"
     If mJoint Then
         LigneResultat ws, l, "Version", mVersion & " ; l'API est lue en V" & gVersionAPI & " (réglage VersionAPI = " & _
             Reglage("VersionAPI", "auto") & ")"
@@ -543,50 +563,26 @@ Private Sub EcrireResultatTest(ByVal imprevu As String, ByVal consigne As String
             LigneResultat ws, l, "", CStr(e)
         Next e
     End If
-    LigneResultat ws, l, "À vérifier", "Ce classeur contient ce qu'Excel a lu dans SEE (le projet ouvert, son folio actif, les " & _
-        "symboles et les réglages de l'environnement). Si ce n'était pas ton projet d'essai, dis-le-moi avant de l'envoyer."
-    LigneResultat ws, l, "Et maintenant", Replace(consigne, vbCrLf, vbLf)
-    ws.Cells(1, 1).Font.Bold = True
-    ws.Columns(1).ColumnWidth = 20
-    ws.Columns(2).ColumnWidth = 130
-    ws.Columns(2).WrapText = True
-    Montrer ws
+    MontrerFeuille ws
 End Sub
 
-' Montre une feuille : son classeur d'abord (Excel peut avoir un autre classeur actif).
-Private Sub Montrer(ByVal ws As Object)
-    On Error Resume Next
-    ThisWorkbook.Activate
-    ws.Activate
-End Sub
-
-Private Sub LigneResultat(ByVal ws As Object, ByRef l As Long, ByVal rubrique As String, ByVal texte As String)
-    l = l + 1
-    EcrireLigne ws, l, Array(rubrique, texte)
-    If Len(rubrique) > 0 Then ws.Cells(l, 1).Font.Bold = True
-End Sub
-
-' La feuille nommée, vidée, placée en tête du classeur (créée si besoin).
-Private Function FeuilleEnTete(ByVal nom As String) As Object
-    Dim ws As Object
-    Set ws = FeuilleExistante(nom)
-    If ws Is Nothing Then
-        Set ws = ThisWorkbook.Worksheets.Add(Before:=ThisWorkbook.Worksheets(1))
-        ws.Name = nom
+' La ligne « SEE rejoint ? » : OUI et comment, ou NON.
+Private Function TexteSEERejoint() As String
+    Dim s As String
+    If mJoint Then
+        If Len(gStrategie) > 0 Then
+            s = "OUI, ta fenêtre SEE ouverte, rejointe par " & gStrategie
+        Else
+            s = "OUI, par la connexion gardée d'une macro précédente"
+        End If
+        If gEstAutomation Then s = s & " ; mais par la coclasse SeeAutomation, qui ne sait pas lire le projet ouvert"
+    ElseIf mConnexionEssayee Then
+        s = "NON : Excel n'a pas trouvé ta fenêtre SEE (chaque essai ci-dessous, avec la réponse de Windows)"
     Else
-        ws.Cells.Clear
-        If ws.Index <> 1 Then MettreEnTete ws
+        s = "pas essayé : le test s'est arrêté avant (voir « Arrêt imprévu »)"
     End If
-    Set FeuilleEnTete = ws
+    TexteSEERejoint = s
 End Function
-
-Private Sub MettreEnTete(ByVal ws As Object)
-    On Error GoTo Echec
-    ws.Move Before:=ThisWorkbook.Worksheets(1)
-    Exit Sub
-Echec:
-    Journal "TesterSEE", ws.Name, "Worksheet.Move", "la feuille n'a pas pu être mise en tête du classeur", Err.Number, Err.Description
-End Sub
 
 ' Les erreurs du journal (les lignes qui ont un Err.Number), regroupées par
 ' appel et message : « 3 x appel : message », les plus fréquentes d'abord (à
@@ -638,6 +634,242 @@ Private Function ErreursDuJournal(ByVal maxi As Long, ByRef total As Long) As Co
     Next k
     If reste > 0 Then res.Add "et " & reste & " autre(s) : voir la feuille Journal (colonnes Err.Number et Err.Description)"
 End Function
+
+' ============================================================================
+'  SondeRegistre : comment SEE est inscrit dans le registre de Windows, en
+'  LECTURE SEULE (WMI, module SEE_Windows), dans la feuille Sonde_Registre :
+'    - chaque CLSID des réglages CLSID_Application et CLSID_Automation, dans
+'      les deux vues (HKCR\CLSID et HKCR\WOW6432Node\CLSID) : (défaut),
+'      ProgID, VersionIndependentProgID, LocalServer32, InprocServer32,
+'      TypeLib, AppID ;
+'    - les ProgID inscrits dont le nom parle de SEE (SEE, IGE, XAO), avec
+'      leur CLSID : HKLM\SOFTWARE\Classes, sa vue WOW6432Node, et
+'      HKCU\SOFTWARE\Classes ;
+'    - l'association de l'extension .seeprj.
+'  Les ProgID trouvés vont dans gProgIDsRegistre (ceux d'un CLSID des
+'  réglages d'abord, PROGID_MAXI au plus) : ConnecterSEE les essaie. Toute
+'  erreur (WMI refusé, clé absente) est dite, jamais fatale. Un chemin de
+'  serveur s'affiche ; un chemin dans un profil utilisateur est masqué.
+'  Elle ne joint pas SEE : TesterSEE la lance AVANT de le joindre.
+' ============================================================================
+Public Sub SondeRegistre()
+    Const TITRE_SONDE As String = "SondeRegistre"
+    If mEnchaine Then
+        Journal "Début", TITRE_SONDE, "", "sonde enchaînée par TesterSEE (lecture seule)"
+    Else
+        OuvrirJournal TITRE_SONDE
+    End If
+    Set mFeuille = FeuilleCreee(FEUILLE_REGISTRE, True)
+    mLigne = 0
+    Application.ScreenUpdating = False
+    Contexte "SondeRegistre", "registre"
+    LireRegistreSEE
+    FinSonde TITRE_SONDE
+End Sub
+
+Private Sub LireRegistreSEE()
+    Dim p As Variant, clsid As String, vue As Variant, dit As String, racine As Variant, noms As Collection
+    Dim nom As Variant, pourquoi As String, t As String, nbLignes As Long, nbAutres As Long, nbNoms As Long, s As String
+    Set mProgIDsTrouves = New Collection
+    Set mProgIDsConnus = New Collection
+    Set mProgIDsAutres = New Collection
+    Set mProgIDsVus = NouveauDico()
+    mRegistreResume = ""
+    mNbClsidInscrits = 0
+    mNbClsidLus = 0
+    mRegistreLu = False
+    ' --- le registre se lit-il ? (WMI peut être refusé par l'informatique ; une clé quelconque, souvent absente)
+    If Not RegistreSousCles("HKCR\CLSID\{00000000-0000-0000-0000-000000000000}", noms, pourquoi) Then
+        If Left$(pourquoi, 3) = "WMI" Or Left$(pourquoi, 7) = "lecture" Then
+            Ecrire Array("Registre", "ILLISIBLE", pourquoi)
+            Journal gEtape, gObjet, "WMI StdRegProv", "registre illisible : " & pourquoi, -1, pourquoi
+            mRegistreResume = "illisible : " & pourquoi
+            Set gProgIDsRegistre = New Collection
+            Exit Sub
+        End If
+    End If
+    mRegistreLu = True
+    ' --- 1. les CLSID des réglages, dans les deux vues
+    TitreSection "Les CLSID des réglages, dans HKCR\CLSID et dans sa vue 32 bits HKCR\WOW6432Node\CLSID"
+    Entetes Array("CLSID", "Nom", "Vue", "Inscrit ?", "(défaut)", "ProgID", "VersionIndependentProgID", "LocalServer32", _
+        "InprocServer32", "TypeLib", "AppID")
+    For Each p In Split(Reglage("CLSID_Application", "") & ";" & Reglage("CLSID_Automation", ""), ";")
+        clsid = Trim$(CStr(p))
+        If Len(clsid) > 0 Then
+            mNbClsidLus = mNbClsidLus + 1
+            dit = ""
+            For Each vue In Array("CLSID", "WOW6432Node\CLSID")
+                DecrireCLSID clsid, CStr(vue), dit
+            Next vue
+            If InStr(1, dit, "inscrit", vbBinaryCompare) > 0 Then mNbClsidInscrits = mNbClsidInscrits + 1
+            AjouterResume Trim$(NomDuCLSID(clsid) & " " & CLSIDCourt(clsid)) & " : " & dit
+        End If
+    Next p
+    ' --- 2. les ProgID qui parlent de SEE
+    TitreSection ""
+    TitreSection "Les ProgID inscrits dont le nom contient SEE, IGE ou XAO (avec leur CLSID)"
+    Entetes Array("Racine", "ProgID", "CLSID", "Nom du CLSID")
+    For Each racine In Array("HKLM\SOFTWARE\Classes", "HKLM\SOFTWARE\WOW6432Node\Classes", "HKCU\SOFTWARE\Classes")
+        If RegistreSousCles(CStr(racine), noms, pourquoi) Then
+            nbNoms = nbNoms + noms.Count
+            For Each nom In noms
+                If NomQuiParleDeSEE(CStr(nom)) Then
+                    t = TexteDuRegistre(CStr(racine) & "\" & CStr(nom) & "\CLSID", "")
+                    If Len(t) > 0 Then
+                        nbLignes = nbLignes + 1
+                        If nbLignes <= 60 Then Ecrire Array(CStr(racine), CStr(nom), t, NomDuCLSID(t))
+                        NoterProgID CStr(nom), t
+                    Else
+                        nbAutres = nbAutres + 1
+                    End If
+                End If
+            Next nom
+        Else
+            Ecrire Array(CStr(racine), "(illisible : " & pourquoi & ")")
+        End If
+    Next racine
+    If nbLignes > 60 Then Ecrire Array("", "(et " & (nbLignes - 60) & " autre(s))")
+    Ecrire Array("", "(" & nbNoms & " clés lues ; " & nbAutres & " clé(s) qui parlent de SEE sans CLSID : pas des ProgID)")
+    If mProgIDsTrouves.Count = 0 Then
+        AjouterResume "ProgID : aucun dont le nom contient SEE, IGE ou XAO (" & nbNoms & " clés lues)"
+    Else
+        s = ""
+        nbLignes = 0
+        For Each p In mProgIDsTrouves
+            nbLignes = nbLignes + 1
+            If nbLignes <= 6 Then s = s & IIf(Len(s) > 0, " ; ", "") & CStr(p)
+        Next p
+        If nbLignes > 6 Then s = s & " ; et " & (nbLignes - 6) & " autre(s) (feuille " & FEUILLE_REGISTRE & ")"
+        AjouterResume "ProgID trouvés : " & s
+    End If
+    ' les ProgID que ConnecterSEE essaiera : ceux d'un CLSID des réglages d'abord
+    Set gProgIDsRegistre = New Collection
+    For Each p In mProgIDsConnus
+        If gProgIDsRegistre.Count < PROGID_MAXI Then gProgIDsRegistre.Add CStr(p)
+    Next p
+    For Each p In mProgIDsAutres
+        If gProgIDsRegistre.Count < PROGID_MAXI Then gProgIDsRegistre.Add CStr(p)
+    Next p
+    ' --- 3. l'extension des projets
+    TitreSection ""
+    TitreSection "L'extension .seeprj (les projets SEE)"
+    t = TexteDuRegistre("HKCR\.seeprj", "")
+    If Len(t) = 0 Then
+        Ecrire Array("HKCR\.seeprj", "(absente)")
+        AjouterResume ".seeprj : aucune association"
+    Else
+        s = CheminAffichable(TexteDuRegistre("HKCR\" & t & "\shell\open\command", ""))
+        Ecrire Array("HKCR\.seeprj", t, "shell\open\command", IIf(Len(s) > 0, s, "(absente)"))
+        AjouterResume ".seeprj : " & t & IIf(Len(s) > 0, ", ouvert par " & s, "")
+    End If
+    Journal gEtape, gObjet, "", Replace(mRegistreResume, vbLf, " / ")
+End Sub
+
+' Une vue d'un CLSID : une ligne de la feuille, et ce qu'elle dit, ajouté à dit.
+Private Sub DecrireCLSID(ByVal clsid As String, ByVal vue As String, ByRef dit As String)
+    Dim cleCLSID As String, sous As Collection, pourquoi As String, v(1 To 7) As String, serveur As String, quoi As String
+    cleCLSID = "HKCR\" & vue & "\" & clsid
+    quoi = IIf(vue = "CLSID", "CLSID", "WOW6432Node")
+    If Len(dit) > 0 Then dit = dit & " ; "
+    If Not RegistreSousCles(cleCLSID, sous, pourquoi) Then
+        Ecrire Array(clsid, NomDuCLSID(clsid), vue, "NON (" & pourquoi & ")")
+        dit = dit & quoi & " : " & IIf(pourquoi = "absente", "absent", pourquoi)
+        Exit Sub
+    End If
+    v(1) = LuDuRegistre(cleCLSID, "")
+    v(2) = LuDuRegistre(cleCLSID & "\ProgID", "")
+    v(3) = LuDuRegistre(cleCLSID & "\VersionIndependentProgID", "")
+    v(4) = LuDuRegistre(cleCLSID & "\LocalServer32", "")
+    v(5) = LuDuRegistre(cleCLSID & "\InprocServer32", "")
+    v(6) = LuDuRegistre(cleCLSID & "\TypeLib", "")
+    v(7) = LuDuRegistre(cleCLSID, "AppID")
+    Ecrire Array(clsid, NomDuCLSID(clsid), vue, "OUI", v(1), v(2), v(3), v(4), v(5), v(6), v(7))
+    If Left$(v(2), 1) <> "(" Then NoterProgID v(2), clsid
+    If Left$(v(3), 1) <> "(" Then NoterProgID v(3), clsid
+    serveur = v(4)
+    If Left$(serveur, 1) = "(" Then serveur = v(5)
+    dit = dit & quoi & " : inscrit" & IIf(Left$(v(2), 1) <> "(", ", ProgID " & v(2), ", sans ProgID") & _
+        IIf(Left$(serveur, 1) <> "(", ", serveur " & serveur, ", sans serveur")
+End Sub
+
+' Une valeur du registre pour la feuille : son texte (chemin de profil masqué), ou « (absente) ».
+Private Function LuDuRegistre(ByVal chemin As String, ByVal valeur As String) As String
+    Dim t As String, pourquoi As String
+    If RegistreTexte(chemin, valeur, t, pourquoi) Then
+        LuDuRegistre = CheminAffichable(t)
+    Else
+        LuDuRegistre = "(" & pourquoi & ")"
+    End If
+End Function
+
+' Une valeur du registre, ou "" si elle n'a pas pu être lue.
+Private Function TexteDuRegistre(ByVal chemin As String, ByVal valeur As String) As String
+    Dim t As String, pourquoi As String
+    If RegistreTexte(chemin, valeur, t, pourquoi) Then TexteDuRegistre = t
+End Function
+
+' Un ProgID trouvé (nom = CLSID), une fois : pour la photo, et pour ConnecterSEE.
+Private Sub NoterProgID(ByVal nom As String, ByVal clsid As String)
+    Dim u As String
+    nom = Trim$(nom)
+    If Len(nom) = 0 Then Exit Sub
+    If mProgIDsVus.Exists(nom) Then Exit Sub
+    mProgIDsVus.Add nom, True
+    mProgIDsTrouves.Add nom & " = " & Trim$(NomDuCLSID(clsid) & " " & CLSIDCourt(clsid))
+    If Len(NomDuCLSID(clsid)) > 0 And Left$(NomDuCLSID(clsid), 1) <> "(" Then
+        mProgIDsConnus.Add nom
+    Else
+        ' un autre ProgID n'est essayé que s'il commence comme ceux de SEE ou d'IGE+XAO
+        u = UCase$(nom)
+        If Left$(u, 3) = "SEE" Or Left$(u, 3) = "IGE" Or InStr(1, u, "XAO", vbBinaryCompare) > 0 Then mProgIDsAutres.Add nom
+    End If
+End Sub
+
+' Vrai pour un nom de clé qui parle de SEE ou d'IGE+XAO : il contient SEE ou
+' XAO, ou IGE en début de mot (pas « Privilege »). Ni une extension, ni un CLSID.
+Private Function NomQuiParleDeSEE(ByVal nom As String) As Boolean
+    Dim u As String, p As Long
+    u = UCase$(nom)
+    If Left$(u, 1) = "." Or Left$(u, 1) = "{" Then Exit Function
+    If InStr(1, u, "SEE", vbBinaryCompare) > 0 Or InStr(1, u, "XAO", vbBinaryCompare) > 0 Then
+        NomQuiParleDeSEE = True
+        Exit Function
+    End If
+    p = InStr(1, u, "IGE", vbBinaryCompare)
+    Do While p > 0
+        If p = 1 Then
+            NomQuiParleDeSEE = True
+            Exit Function
+        End If
+        If Not (Mid$(u, p - 1, 1) Like "[A-Z]") Then
+            NomQuiParleDeSEE = True
+            Exit Function
+        End If
+        p = InStr(p + 1, u, "IGE", vbBinaryCompare)
+    Loop
+End Function
+
+' Un chemin lu au registre, s'il peut s'afficher : celui d'un programme oui ;
+' celui d'un profil utilisateur (C:\Users\<nom>\..., %USERPROFILE%...) non.
+Private Function CheminAffichable(ByVal s As String) As String
+    Dim u As String, nomUtil As String
+    u = LCase$(s)
+    On Error Resume Next
+    nomUtil = LCase$(Environ$("USERNAME"))
+    On Error GoTo 0
+    If (InStr(1, u, "\users\", vbBinaryCompare) > 0 And InStr(1, u, "\users\public", vbBinaryCompare) = 0) Or _
+            InStr(1, u, "documents and settings", vbBinaryCompare) > 0 Or InStr(1, u, "%userprofile%", vbBinaryCompare) > 0 Or _
+            InStr(1, u, "%appdata%", vbBinaryCompare) > 0 Or InStr(1, u, "%localappdata%", vbBinaryCompare) > 0 Or _
+            InStr(1, u, "%homepath%", vbBinaryCompare) > 0 Or (Len(nomUtil) >= 4 And InStr(1, u, nomUtil, vbBinaryCompare) > 0) Then
+        CheminAffichable = "(chemin dans un profil utilisateur : masqué)"
+    Else
+        CheminAffichable = s
+    End If
+End Function
+
+Private Sub AjouterResume(ByVal texte As String)
+    mRegistreResume = mRegistreResume & texte & vbLf
+End Sub
 
 ' ============================================================================
 '  SondeApplication
@@ -874,10 +1106,10 @@ End Sub
 
 ' ============================================================================
 '  RelireFolio : relit UN folio donné dans la feuille Sonde_Folio, sans boîte
-'  et sans vider le journal (comme une sonde enchaînée). Le bouton 2
-'  (EssaiDessinReel, SEE_Pilote) l'appelle sur le folio qu'il vient de
-'  dessiner : les positions que SEE a gardées disent l'origine, le sens de y
-'  et l'échelle. LECTURE SEULE.
+'  et sans vider le journal (comme une sonde enchaînée). Les boutons 2 et 3
+'  (EssaiDessinReel, EssaiSansFenetre, SEE_Pilote) l'appellent sur le folio
+'  qu'ils viennent de dessiner : les positions que SEE a gardées disent
+'  l'origine, le sens de y et l'échelle. LECTURE SEULE.
 ' ============================================================================
 Public Sub RelireFolio(ByVal sh As Object)
     Dim ancien As Boolean
@@ -885,7 +1117,9 @@ Public Sub RelireFolio(ByVal sh As Object)
     ancien = mEnchaine
     On Error GoTo Echec
     mEnchaine = True
-    mJoint = False
+    ' la macro qui a dessiné le folio tient déjà SEE : la relecture s'en sert (elle vérifie qu'il répond),
+    ' sans reconnexion (le bouton 3 tient un SEE qu'il a créé : une reconnexion le lâcherait)
+    mJoint = Not (gApp Is Nothing)
     mFolioLu = ""
     mFolioRaison = "non lu"
     If DebutSonde(TITRE_RELECTURE, "Sonde_Folio") Then
@@ -1331,7 +1565,7 @@ End Function
 '  30 CablesTypeDefinition, 36 Connector, 37 ConnectorSymbols, 21 DefaultSymbols.
 '  Chaque XML est écrit dans un fichier à côté du classeur, et AUSSI dans la
 '  feuille Sonde_XML, en morceaux de 30 000 caractères (une cellule chacun,
-'  dans l'ordre) : le classeur seul suffit à tout me renvoyer.
+'  dans l'ordre) : le classeur garde tout.
 ' ============================================================================
 Public Sub SondeMethodes()
     Dim env As Object, types As Variant, noms As Variant, i As Long, v As Variant, texte As String

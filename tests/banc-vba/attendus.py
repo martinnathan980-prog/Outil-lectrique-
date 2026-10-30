@@ -265,18 +265,18 @@ def tester():
     c = [egal('sans SEE : pas de feuille Reglages avant le test', dans('sans SEE', r'Reglages avant (\w+)'), 'non'),
          au_moins('sans SEE : Reglages créée (au moins 100 clés)', nombres(r'réglages créés (\d+)', 'sans SEE'), 100),
          egal('sans SEE : Resultat_Test en tête du classeur', dans('sans SEE', r'feuille 1 = (\w+)'), 'Resultat_Test'),
-         egal('sans SEE : « SEE joint ? = NON »', dans('sans SEE', r'SEE joint \? = (\w+)'), 'NON'),
+         egal('sans SEE : « SEE rejoint ? = NON »', dans('sans SEE', r'SEE rejoint \? = (\w+)'), 'NON'),
          egal('sans SEE : aucune trace', nombres(r'traces (\d+)', 'sans SEE'), 0),
          egal('sans SEE : une seule boîte, celle de la fin', nombres(r'boîte de fin dite (\d+)', 'sans SEE'), 1),
          # R1, R6 : la boîte dit quoi faire d'après ce qui a été lu ; les étapes comptent ce que compte « Ce qui a échoué »
-         ('sans SEE : la boîte dit que SEE n\'est pas trouvé et de relancer TesterSEE s\'il était fermé', dans('sans SEE', r'boîte = (.*?) ; Sonde_XML'),
-          lambda s: bool(s) and "Excel n'a pas trouvé SEE" in s and 'relance TesterSEE' in s and "normal à ce stade" not in s),
+         ('sans SEE : la boîte dit que la fenêtre SEE n\'est pas trouvée, la photo, et le bouton 3 (SEE fermé)', dans('sans SEE', r'boîte = (.*?) ; Sonde_XML'),
+          lambda s: bool(s) and "Excel n'a pas trouvé ta fenêtre SEE" in s and 'photo' in s and 'Essaie le bouton 3 : enregistre et ferme SEE, puis clique sur 3.' in s),
          ('sans SEE : « Et maintenant » = la boîte', boite_et_suite('sans SEE'), lambda p: p[0] is not None and p[0] == p[1]),
          ('sans SEE : erreurs des étapes = erreurs du journal', etapes_et_echecs('sans SEE'), lambda p: p is not None and p[0] == p[1] and p[1] > 0)]
     for v, version_lue in (('V5', '5.20'), ('V4', '4.8')):
         c += [egal(f'{v} : écritures dans SEE pendant le test 0', nombres(r'écritures pendant le test (\d+)', v), 0),
               egal(f'{v} : Resultat_Test en tête du classeur', dans(v, r'feuille 1 = (\w+)'), 'Resultat_Test'),
-              egal(f'{v} : « SEE joint ? = OUI »', dans(v, r'SEE joint \? = (\w+)'), 'OUI'),
+              egal(f'{v} : « SEE rejoint ? = OUI »', dans(v, r'SEE rejoint \? = (\w+)'), 'OUI'),
               egal(f'{v} : version lue {version_lue}', dans(v, r'Version = [^;]*?(\d+\.\d+)'), version_lue),
               egal(f'{v} : unité lue (0 = millimètres)', dans(v, r'Unité = ([^;]+?) ;'), '0 = millimètres'),
               au_moins(f'{v} : symboles du folio lus', nombres(r'Folio lu = « [^»]* » : (\d+) symbole', v), 1),
@@ -291,13 +291,13 @@ def tester():
               (f'{v} : les cinq sondes faites', dans(v, r'(Étapes = .*)'),
                lambda s: bool(s) and all(f'{n} : faite' in s for n in ('SondeApplication', 'SondeSymboles', 'SondeFolio', 'SondeSelection', 'SondeMethodes'))),
               egal(f'{v} : une seule boîte, celle de la fin', nombres(r'boîte de fin dite (\d+)', v), 1),
-              (f'{v} : la boîte dit « BRAVO », le bouton 2, et, le classeur jamais enregistré, « Enregistrer sous » .xlsm', dans(v, r'boîte = (.*?) ; Sonde_XML'),
-               lambda s: bool(s) and s.startswith('BRAVO') and '2. SEE DESSINE' in s and 'Enregistrer sous' in s and '*.xlsm' in s),
+              (f'{v} : la boîte dit « BRAVO », la photo de Resultat_Test, puis le bouton 2 (aucun fichier à renvoyer)', dans(v, r'boîte = (.*?) ; Sonde_XML'),
+               lambda s: bool(s) and s.startswith('BRAVO') and 'photo' in s and 'Resultat_Test' in s and '2. SEE DESSINE' in s and 'Enregistre' not in s),
               (f'{v} : « Et maintenant » = la boîte', boite_et_suite(v), lambda p: p[0] is not None and p[0] == p[1]),
               (f'{v} : erreurs des étapes = erreurs du journal', etapes_et_echecs(v), lambda p: p is not None and p[0] == p[1] and p[1] > 0)]
     # SEE joint, un projet ouvert sans aucun folio affiché : c'est assez pour l'étape 1 (un projet vide suffit), la boîte dit
     # « BRAVO » et envoie au bouton 2
-    c += [egal('sans folio : « SEE joint ? = OUI »', dans('sans folio', r'SEE joint \? = (\w+)'), 'OUI'),
+    c += [egal('sans folio : « SEE rejoint ? = OUI »', dans('sans folio', r'SEE rejoint \? = (\w+)'), 'OUI'),
           egal('sans folio : « Folio lu = aucun »', dans('sans folio', r'Folio lu = (\w+)'), 'aucun'),
           ('sans folio : l\'étape SondeFolio dit « rien lu » (pas « faite »)', dans('sans folio', r'(Étapes = .*?) ; Ce qui a échoué'),
            lambda s: bool(s) and 'SondeFolio : rien lu' in s and 'SondeFolio : faite' not in s),
@@ -307,7 +307,7 @@ def tester():
           egal('sans folio : une seule boîte', nombres(r'boîte de fin dite (\d+)', 'sans folio'), 1)]
     # R3 : SEE cesse de répondre quand la sélection est lue : pas de reconnexion, ce qui a été lu reste dit
     c += [egal('muet : aucune reconnexion pendant le test (ni GetObject ni « nouvelle connexion »)', nombres(r'reconnexions (\d+)', 'muet'), 0),
-          egal('muet : « SEE joint ? = OUI » (joint par SondeApplication)', dans('muet', r'SEE joint \? = (\w+)'), 'OUI'),
+          egal('muet : « SEE rejoint ? = OUI » (joint par SondeApplication)', dans('muet', r'SEE rejoint \? = (\w+)'), 'OUI'),
           egal('muet : la version lue reste dite', dans('muet', r'Version = [^;]*?(\d+\.\d+)'), '5.20'),
           ('muet : « SEE perdu » nomme la sonde (SondeSelection)', dans('muet', r'SEE perdu = ([^;]*)'), lambda s: bool(s) and 'SondeSelection' in s),
           au_moins('muet : le folio lu avant la panne reste dit', nombres(r'Folio lu = « [^»]* » : (\d+) symbole', 'muet'), 1),
@@ -336,6 +336,89 @@ def bouton2():
             egal('sans SEE : rien d\'écrit', nombres(r'sans SEE : traces (\d+)'), 0),
             egal('sans SEE : aucune question', nombres(r'question posée (\d+)'), 0),
             au_moins('sans SEE : « Rien n\'a été dessiné » dit', nombres(r'rien dessiné dit (\d+)'), 1)]
+
+def connexion():
+    """INTENTION (SEE_Commun, ConnecterSEE ; la v3) : les boutons 1 et 2 REJOIGNENT la fenêtre SEE ouverte et n'en créent
+    jamais, que LancerSEE vaille N (le défaut) ou O ; le bloc à photographier dit chaque essai avec son code et sa phrase ;
+    un ProgID lu au registre, ou le CLSID (GetActiveObject), rejoint la fenêtre ; une connexion CRÉÉE par une macro
+    d'avant est lâchée au début des boutons 1 et 2, sans Quit."""
+    return [egal('a : LancerSEE vaut N dans un classeur neuf', dans('a :', r'LancerSEE par défaut (\w+)'), 'N'),
+            egal('a : bouton 1 : aucun objet SEE créé (ni new:, ni CreateObject)', nombres(r'bouton 1 : créations (\d+)', 'a :'), 0),
+            egal('a : bloc à photographier : 10 essais, chacun avec son code (et sa phrase, ou « voir plus haut »)',
+                 nombres(r'essais (\d+), avec code et phrase (\d+)', 'a :'), (10, 10)),
+            egal('a : « SEE rejoint ? = NON »', dans('a :', r'SEE rejoint \? = (\w+)'), 'NON'),
+            ('a : les codes de Windows en clair : 429 (800A01AD) et 800401E3 (MK_E_UNAVAILABLE)', dans('a :', r'(Essais = .*?) ; Registre ='),
+             lambda s: bool(s) and '429 (800A01AD) = ' in s and '800401E3 = MK_E_UNAVAILABLE' in s),
+            ('a : « Et maintenant » : la photo, puis « Essaie le bouton 3 : enregistre et ferme SEE, puis clique sur 3. »',
+             dans('a :', r'(?s)Et maintenant = (.*?) ; Détail'), lambda s: bool(s) and 'photo' in s and 'Essaie le bouton 3 : enregistre et ferme SEE, puis clique sur 3.' in s),
+            egal('a : bouton 2 : aucun objet SEE créé', nombres(r'bouton 2 : créations (\d+)', 'a :'), 0),
+            egal('a : bouton 2 : rien d\'écrit', nombres(r'bouton 2 : créations \d+ ; écritures (\d+)', 'a :'), 0),
+            au_moins('a : bouton 2 : la fin propose le bouton 3', nombres(r'bouton 3 proposé (\d+)', 'a :'), 1),
+            egal('b : LancerSEE = O : bouton 1 : aucun objet SEE créé', nombres(r'bouton 1 : créations (\d+)', 'b :'), 0),
+            egal('b : LancerSEE = O : bouton 2 : aucun objet SEE créé, rien dessiné', nombres(r'bouton 2 : créations (\d+) ; AddSheet (\d+)', 'b :'), (0, 0)),
+            egal('c : Sonde_Registre nomme le ProgID SEEExpert.Application.48', dans('c :', r'Sonde_Registre nomme le ProgID (\w+)'), 'oui'),
+            egal('c : rejoint par le ProgID lu au registre', dans('c :', r'SEE rejoint \? = OUI, ta fenêtre SEE ouverte, rejointe par ([^;]*?) ; '),
+                 'GetObject(, "SEEExpert.Application.48")'),
+            ('c : le bloc dit les ProgID trouvés au registre', dans('c :', r'(ProgID trouvés : [^;]*)'), lambda s: bool(s) and 'SEEExpert.Application.48 = Application V4R3' in s),
+            egal('c : aucun objet SEE créé', nombres(r'créations (\d+)', 'c :'), 0),
+            egal('d : rejoint par le CLSID (GetActiveObject)', dans('d :', r'SEE rejoint \? = OUI, ta fenêtre SEE ouverte, rejointe par ([^;]*?) ; '),
+                 'GetActiveObject({A55015A3-0E82-4694-87D9-DB82B6620532})'),
+            egal('d : aucun objet SEE créé', nombres(r'créations (\d+)', 'd :'), 0),
+            au_moins('e : EssaiDessin (Alt+F8, LancerSEE = O) a créé un objet SEE', nombres(r'EssaiDessin \(Alt\+F8, LancerSEE = O\) : créations (\d+)', 'e :'), 1),
+            egal('e : la connexion est dite CRÉÉE par Excel', dans('e :', r'créée par Excel (\w+)'), 'oui'),
+            au_moins('e : bouton 1 : la connexion créée est lâchée, et le journal le dit', nombres(r'bouton 1 : lâchée (\d+)', 'e :'), 1),
+            egal('e : bouton 1 : ni Quit, ni objet créé de plus', nombres(r'bouton 1 : lâchée \d+ ; Quit (\d+) ; créations de plus (\d+)', 'e :'), (0, 0)),
+            egal('e : bouton 1 : la fenêtre ouverte est rejointe', dans('e :', r'SEE rejoint \? = OUI, ta fenêtre SEE ouverte, rejointe par ([^;]*?) ; '),
+                 'GetObject(, "SEEExpert.Application")'),
+            egal('e2 : bouton 2 : la connexion créée est lâchée, sans Quit, et le folio dessiné dans la fenêtre rejointe',
+                 nombres(r'lâchée (\d+) ; Quit (\d+) ; AddSheet (\d+)', 'e2 :'), (1, 0, 1)),
+            egal('e2 : bouton 2 : rejoint par GetObject(, "SEEExpert.Application")', dans('e2 :', r'stratégie (.*)$'), 'GetObject(, "SEEExpert.Application")')]
+
+def bouton3(v, forme):
+    """INTENTION (SEE_Pilote, EssaiSansFenetre ; la v3) : SEE ouvert, Windows muet (sans boîte), copie ratée, Annuler :
+    rien n'est fait (ni objet SEE créé, ni copie, ni projet ouvert), et le bloc dit pourquoi ; le parcours complet :
+    copie, création, ouverture, dessin, Save, fermeture, le projet noté ; CreateObject refusé : projet ouvert, rien
+    dessiné, pas de Save, et le bloc le dit ; un SEE qui reste après Quit : la manière de l'arrêter."""
+    rien = lambda ou: egal(f'{ou} : rien de fait (new:, copie, OpenProject, AddSheet, Save, Quit : 0)',
+                           (lambda t, o=ou: tuple(nombres(rf'{m} (\d+)', o)(t) for m in ('new:', 'copies', 'OpenProject', 'AddSheet', 'Save', 'Quit'))), (0,) * 6)
+    forme_lue = 'CreateObject(type, ?, objet en sortie)' if (v, forme) == ('V4', 2) else 'CreateObject(type) -> objet rendu'
+    return [rien('SEE ouvert'),
+            ('SEE ouvert : « 1. SEE fermé ? = NON », et « Enregistre et ferme SEE (File > Exit), puis reclique sur 3. »', lambda t: partie(t, 'SEE ouvert'),
+             lambda s: '1. SEE fermé ? = NON : 1 SEE_Faux.exe en marche' in s and 'Enregistre et ferme SEE (File > Exit), puis reclique sur 3.' in s),
+            egal('SEE ouvert : le nom du programme compté vient du registre (LocalServer32 : SEE_Faux.exe)', dans('SEE ouvert', r'programme compté (\S+)'), 'SEE_Faux.exe'),
+            rien('Windows muet'),
+            ('Windows muet : « on ne sait pas », rien n\'est fait sans boîte', lambda t: partie(t, 'Windows muet'),
+             lambda s: '1. SEE fermé ? = on ne sait pas' in s and 'rien n\'a été fait' in s),
+            rien('copie ratée'),
+            ('copie ratée : « 3. Copie = RATÉE », rien n\'a été ouvert', lambda t: partie(t, 'copie ratée'), lambda s: '3. Copie = RATÉE' in s and "rien n'a été ouvert" in s),
+            rien('Annuler fichier'),
+            ('Annuler fichier : « aucun choisi (Annuler) »', lambda t: partie(t, 'Annuler fichier'), lambda s: '2. Projet d\'essai = aucun choisi (Annuler)' in s),
+            rien('Annuler question'),
+            egal('Annuler question : une question posée', nombres(r'questions (\d+)', 'Annuler question'), 1),
+            ('Annuler question : « tu as répondu Annuler »', lambda t: partie(t, 'Annuler question'), lambda s: 'tu as répondu Annuler' in s),
+            egal('complet : le projet choisi est noté dans le réglage Projet', dans('complet', r'Projet noté (\w+)'), 'oui'),
+            egal('complet : copie 1, OpenProject 1, AddSheet 1, Save 1, Quit 1',
+                 (lambda t: tuple(nombres(rf'{m} (\d+)', 'complet')(t) for m in ('copies', 'OpenProject', 'AddSheet', 'Save', 'Quit'))), (1, 1, 1, 1, 1)),
+            au_moins('complet : le motif dessiné (au moins 5 objets graphiques)', nombres(r'graphiques (\d+)', 'complet'), 5),
+            egal('complet : SEE V5R2 « classe non inscrite », puis V4R3 créé (2 new:)', nombres(r'new: (\d+)', 'complet'), 2),
+            egal('complet : gApp lâché (aucun objet SEE gardé)', dans('complet', r'gApp lâché (\w+)'), 'oui'),
+            egal('complet : Simulation reprend sa valeur (O)', dans('complet', r'Simulation après (\w)'), 'O'),
+            egal('complet : Sonde_Folio relit ESSAI_PILOTE', dans('complet', r'Sonde_Folio ESSAI_PILOTE (\w+)'), 'oui'),
+            ('complet : le bloc : DESSINÉ ET ENREGISTRÉ, la forme retenue, Save, SEE refermé, la consigne, la copie nommée', lambda t: partie(t, 'complet'),
+             lambda s, f=forme_lue: 'Résultat = DESSINÉ ET ENREGISTRÉ' in s and f'création d\'objets : oui, {f}' in s and '7. Enregistré = oui (Project.Save)' in s
+                 and '8. SEE refermé = oui' in s and 'Ouvre SEE, ouvre ton projet d\'essai, double-clic sur le folio ESSAI_PILOTE, et prends une photo.' in s
+                 and re.search(r'TEST_SEE\.avant-pilote-\d{8}-\d{6}\.seeprj', s) is not None and 'Visible : 438' in s),
+            ('complet : chaque objet posé est compté (n sur n)', dans('complet', r'(\d+ objet\(s\) dessiné\(s\) sur \d+)'),
+             lambda s: bool(s) and len(set(re.findall(r'\d+', s))) == 1),
+            egal('refusé : copie 1, OpenProject 1, AddSheet 0, graphiques 0, Save 0, Quit 1',
+                 (lambda t: tuple(nombres(rf'{m} (\d+)', 'refusé')(t) for m in ('copies', 'OpenProject', 'AddSheet', 'graphiques', 'Save', 'Quit'))), (1, 1, 0, 0, 0, 1)),
+            ('refusé : le bloc dit « projet ouvert : oui ; création d\'objets : REFUSÉE (codes …) », et pas d\'enregistrement', lambda t: partie(t, 'refusé'),
+             lambda s: 'projet ouvert : oui, création d\'objets : REFUSÉE (codes : forme 1 : 450' in s and '7. Enregistré = non : rien n\'a été dessiné' in s
+                 and 'Résultat = pas de dessin enregistré' in s),
+            egal('reste : Windows revu cinq fois (Patienter 5), Quit 1', nombres(r'reste : Patienter (\d+) ; .*?Quit (\d+)', 'reste'), (5, 1)),
+            ('reste : « SEE refermé = NON », et d\'abord comment l\'arrêter (Ctrl + Maj + Échap, SEE, Fin de tâche), puis rouvrir SEE', lambda t: partie(t, 'reste'),
+             lambda s: '8. SEE refermé = NON' in s and s.find('Ctrl + Maj + Échap') >= 0 and s.find('Fin de tâche') > s.find('Ctrl + Maj + Échap')
+                 and s.find('Ouvre SEE, ouvre ton projet') > s.find('Fin de tâche'))]
 
 ATTENDUS = {
     # ---- relecture.py (BancR.bas) ----
@@ -386,6 +469,10 @@ ATTENDUS = {
     'tester': tester(),                                     # INTENTION (TesterSEE)
     'bouton 2 V5': bouton2(),                               # INTENTION (EssaiDessinReel, le bouton 2 du classeur)
     'bouton 2 V4': bouton2(),                               # idem, API V4
+    'connexion V5': connexion(),                            # INTENTION (la v3 : rejoindre, jamais créer par surprise)
+    'connexion V4': connexion(),                            # idem, API V4
+    'bouton 3 V4': bouton3('V4', 2),                        # INTENTION (EssaiSansFenetre ; V4 : un paramètre de plus, le cas probable)
+    'bouton 3 V5': bouton3('V5', 1),                        # idem, V5 et la forme d'Application
     # ---- regression.py (BancFaux, dans faux.py) ----
     'simulation sans SEE': [                                # INTENTION : une simulation ne dessine rien
         tous('bilan tout SIMULE', bilan_regression, 'SIMULE')],

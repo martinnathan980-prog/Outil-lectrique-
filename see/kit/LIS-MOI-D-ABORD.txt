@@ -2,9 +2,10 @@
 ========================
 
 Ce kit sert à automatiser tes plans dans SEE, une marche après l'autre.
-Aujourd'hui : la marche 1 (Excel parle à SEE) et la marche 2 (SEE dessine
-tout seul). Un seul fichier à ouvrir : Pilote-SEE.xlsm. Compte 15 minutes.
+Aujourd'hui : Excel parle à SEE, puis SEE dessine tout seul un folio
+d'essai. Un seul fichier à ouvrir : Pilote-SEE.xlsm. Compte 20 minutes.
 Tout se fait dans un projet d'essai VIDE, jamais dans un vrai projet.
+Tu ne m'envoies que des PHOTOS de l'écran (ton téléphone, c'est très bien).
 
 
 ÉTAPE A : SORTIR LE KIT DU ZIP (2 minutes)
@@ -19,40 +20,44 @@ Tout se fait dans un projet d'essai VIDE, jamais dans un vrai projet.
    N'ouvre rien directement depuis le zip : ça ne marcherait pas.
 
 
-ÉTAPE B : CRÉER UN PROJET D'ESSAI VIDE DANS SEE (3 minutes)
------------------------------------------------------------
-1. Ouvre SEE Electrical Expert, comme d'habitude.
-2. Menu File, puis New Project.
-3. Name : un nom SANS espace ni accent, par exemple TEST_SEE.
-4. Location : NE LA CHANGE PAS. Laisse le dossier que SEE propose : c'est
-   celui où sont déjà vos projets. Ne mets pas le Bureau : SEE le refuse
-   (« Project cannot be created in given location »).
-   Si la case est vide : clique sur le bouton « ... » à côté, et va dans
-   le dossier où sont déjà vos projets (il commence par
-   C:\Users\Public\Documents\IGE+XAO\SEE Electrical Expert V4R3\4.8\Projects).
-5. Le reste : laisse ce que SEE propose. Clique sur OK.
-6. Le projet vide s'ouvre : c'est tout. Pas besoin de dessiner quoi que
-   ce soit. Laisse SEE ouvert sur ce projet.
-   Si SEE refuse encore : prends son message en photo et envoie-la-moi.
+ÉTAPE B : UN PROJET D'ESSAI VIDE DANS SEE (3 minutes)
+-----------------------------------------------------
+Tu as déjà ton projet d'essai dans le dossier « Robot » de ton Bureau ?
+Garde-le et passe à l'étape C.
+1. Sur ton Bureau, fais un clic droit sur un endroit vide, puis
+   « Nouveau », puis « Dossier ». Appelle-le Robot (sans espace).
+2. Ouvre SEE Electrical Expert, comme d'habitude.
+3. Menu File, puis New Project.
+4. Name : un nom SANS espace ni accent, par exemple TEST_SEE.
+5. Location : clique sur le bouton « ... » à côté, et choisis le
+   dossier « Robot » de ton Bureau. C'est ce qui a marché au bureau :
+   un dossier sur le Bureau, avec un nom sans espace.
+6. Le reste : laisse ce que SEE propose. Clique sur OK.
+7. Le projet vide s'ouvre : c'est tout. Pas besoin de dessiner quoi que
+   ce soit.
+   Si SEE refuse : prends son message en photo et envoie-la-moi.
 
 
 ÉTAPE C : LE BOUTON 1, « EXCEL PARLE À SEE » (2 minutes)
 --------------------------------------------------------
-1. Dans le dossier « Kit-SEE », double-clique sur « Pilote-SEE.xlsm ».
-2. Si une barre jaune dit « MODE PROTÉGÉ » :
+1. Laisse SEE ouvert sur ton projet d'essai.
+2. Dans le dossier « Kit-SEE », double-clique sur « Pilote-SEE.xlsm ».
+3. Si une barre jaune dit « MODE PROTÉGÉ » :
    clique sur son bouton « Activer la modification ».
-3. Si une barre jaune a un bouton « Activer le contenu » : clique dessus.
+4. Si une barre jaune a un bouton « Activer le contenu » : clique dessus.
    Si c'est une barre ROUGE : va plus bas, à « SI ÇA BLOQUE ».
-4. Clique sur le gros bouton vert « 1. TESTER SEE ».
-5. Attends le message. Ne touche à rien pendant ce temps.
-   - Il commence par « BRAVO » : clique sur OK et passe à l'étape D.
-   - Sinon : fais ce qu'il dit (le plus souvent : ouvrir le projet
-     d'essai dans SEE, puis recliquer sur le bouton 1). Si ça ne passe
-     toujours pas : clique sur OK et va directement à l'étape E.
+   Si Excel dit « Produit sans licence » : ce n'est pas grave, continue.
+5. Clique sur le gros bouton vert « 1. TESTER SEE ».
+6. Attends le message. Ne touche à rien pendant ce temps.
+7. Prends une photo de la partie jaune de la feuille Resultat_Test.
+8. Puis, d'après le message :
+   - il commence par « BRAVO » : clique sur OK et va à l'étape D ;
+   - il dit « Essaie le bouton 3 » : clique sur OK et va à l'étape E ;
+   - sinon : fais ce qu'il dit.
 
 
-ÉTAPE D : LE BOUTON 2, « SEE DESSINE TOUT SEUL » (3 minutes)
-------------------------------------------------------------
+ÉTAPE D : LE BOUTON 2, « SEE DESSINE » (seulement après BRAVO)
+--------------------------------------------------------------
 1. Clique sur le gros bouton bleu « 2. SEE DESSINE ».
 2. Une question te montre le nom du projet ouvert dans SEE.
    C'est bien ton projet d'essai : clique sur OK.
@@ -61,17 +66,63 @@ Tout se fait dans un projet d'essai VIDE, jamais dans un vrai projet.
 4. Dans SEE, ouvre le folio « ESSAI_PILOTE » : double-clic sur son nom
    dans l'arbre du projet, à gauche. Tu dois y voir un grand cadre, un
    trait en biais, un rectangle et des textes, dessinés par Excel.
-5. Prends l'écran de SEE en photo (ton téléphone, c'est très bien),
-   même si le dessin est de travers ou vide : c'est justement ce que je
-   veux voir.
+5. Prends une photo de l'écran de SEE, même si le dessin est de travers
+   ou vide : c'est justement ce que je veux voir.
+6. Dans Excel, prends aussi une photo du haut de la feuille Sonde_Folio.
+7. Va à l'étape F.
 
 
-ÉTAPE E : ME RENVOYER LE FICHIER (2 minutes)
---------------------------------------------
-1. Dans Excel, appuie sur Ctrl+S pour enregistrer, puis ferme Excel.
-2. Fais un clic droit sur « Pilote-SEE.xlsm », puis « Envoyer vers »,
-   puis « Dossier compressé » : un « Pilote-SEE.zip » apparaît à côté.
-3. Envoie-moi ce zip, et la photo de l'écran de SEE.
+ÉTAPE E : LE BOUTON 3, « SEE FERMÉ » (si le bouton 1 te l'a dit)
+----------------------------------------------------------------
+Ici, c'est Excel qui ouvre lui-même ton projet d'essai, pendant que
+SEE est FERMÉ. Tu ne verras pas SEE travailler : c'est normal.
+1. Dans SEE : menu File, puis Exit. Si SEE demande d'enregistrer :
+   clique sur Oui. SEE se ferme. Ne le rouvre pas tout de suite.
+2. Dans Excel, clique sur le gros bouton orange « 3. SEE FERMÉ ».
+   (Si SEE est encore ouvert, Excel le voit et ne fait rien : ferme
+   SEE, puis reclique sur 3.)
+3. Une fenêtre « Choisis ton projet d'ESSAI » s'ouvre. Va dans le
+   dossier « Robot » de ton Bureau, clique sur ton projet d'essai
+   (par exemple TEST_SEE.seeprj), puis sur « Ouvrir ».
+4. Une question te montre le nom du fichier.
+   C'est bien ton projet d'essai : clique sur OK.
+   (Si c'est un vrai projet : clique sur Annuler. Rien ne sera fait.)
+5. Attends le message de fin : une minute, parfois plus. Ne touche à
+   rien. Si Excel reste bloqué : va à « SI EXCEL RESTE BLOQUÉ ».
+6. Clique sur OK. Prends une photo de la partie jaune de la feuille
+   Resultat_Test.
+7. Fais ce que dit sa ligne « Et maintenant ». Le plus souvent : ouvre
+   SEE, ouvre ton projet d'essai, double-clic sur le folio
+   « ESSAI_PILOTE », et prends une photo de l'écran.
+Avant de toucher à ton projet, Excel en fait une copie dans le même
+dossier, par exemple TEST_SEE.avant-pilote-20261030-142501.seeprj.
+Si ton projet d'essai était abîmé, elle le remplace. N'efface rien sans
+me demander.
+
+
+ÉTAPE F : M'ENVOYER LES PHOTOS (2 minutes)
+------------------------------------------
+1. Envoie-moi les photos (voir « LES PHOTOS À PRENDRE » plus bas).
+2. Pas besoin de m'envoyer le fichier Excel.
+3. Ferme Excel. S'il demande d'enregistrer : clique sur « Enregistrer »
+   (le fichier garde le journal, si je te demande une autre photo).
+
+
+SI EXCEL RESTE BLOQUÉ
+---------------------
+Avec le bouton 3, SEE travaille caché. S'il ouvre une fenêtre que tu ne
+vois pas, Excel attend, et peut afficher : « Microsoft Excel attend
+qu'une autre application termine une action OLE ».
+1. Attends 2 minutes.
+2. Toujours bloqué : appuie ensemble sur Ctrl + Maj + Échap.
+   Le Gestionnaire des tâches s'ouvre.
+3. Dans la liste, clique sur SEE (SEE Electrical Expert).
+4. Clique sur « Fin de tâche ».
+5. Excel reprend tout seul et finit son message. Prends la photo de la
+   partie jaune de la feuille Resultat_Test : elle dit où il s'était
+   arrêté.
+Ton projet d'essai a sa copie de sécurité dans le même dossier
+(…avant-pilote-….seeprj).
 
 
 SI ÇA BLOQUE
@@ -89,13 +140,25 @@ Le bouton ne fait rien :
    (« Activer la modification » ou « Activer le contenu »),
    puis reclique sur le bouton.
 2. S'il n'y a plus de barre : appuie sur Alt+F8.
-3. Choisis « TesterSEE » (le bouton 1) ou « EssaiDessinReel » (le bouton 2).
+3. Choisis « TesterSEE » (le bouton 1), « EssaiDessinReel » (le
+   bouton 2) ou « EssaiSansFenetre » (le bouton 3).
 4. Clique sur « Exécuter ».
 
 Toujours la barre rouge, un refus, ou un message d'erreur :
 1. Ne force rien.
-2. Prends l'écran en photo (avec ton téléphone, c'est très bien).
+2. Prends l'écran en photo.
 3. Envoie-moi la photo.
 
+
+LES PHOTOS À PRENDRE
+--------------------
+- Après le bouton 1 : la partie jaune de la feuille Resultat_Test.
+- Après le bouton 2 : l'écran de SEE avec le folio « ESSAI_PILOTE »,
+  puis le haut de la feuille Sonde_Folio.
+- Après le bouton 3 : la partie jaune de la feuille Resultat_Test, puis
+  l'écran de SEE avec le folio « ESSAI_PILOTE » (ouvert par toi).
+- Tout message d'erreur ou de refus, tel quel.
+Si une photo coupe le texte : prends-en deux, l'une sous l'autre.
+
 Un doute sur ce qu'on a le droit de faire sortir du bureau :
-montre d'abord le fichier à ton responsable.
+montre d'abord les photos à ton responsable.

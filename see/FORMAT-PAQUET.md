@@ -195,10 +195,13 @@ bureau dessine. `InitialiserClasseur` crée la feuille `Reglages` (une ligne
 prudentes : simulation, tout en `DESSIN`. On la remplit une fois au bureau,
 après la sonde. La liste qui fait foi est dans la feuille ; en résumé :
 
-- **Connexion** : `ProgID` (candidats séparés par `;`), `CLSID_Application`,
-  `CLSID_Automation`, `LancerSEE` (essayer aussi de lancer SEE),
+- **Connexion** : `ProgID` (candidats séparés par `;` ; TesterSEE essaie aussi
+  ceux du registre), `CLSID_Application`, `CLSID_Automation` (le bouton 3 crée
+  cette coclasse, SEE fermé), `LancerSEE` (`N` par défaut ; `O` : un essai
+  volontaire, pour les macros lancées par `Alt+F8` seulement, de créer un objet
+  SEE quand aucune fenêtre n'est rejointe ; jamais les boutons 1 et 2),
   `VersionAPI` (`auto`, `V5`, `V4`), `Projet` (chemin du projet, vide = celui
-  ouvert dans SEE), `MotDePasse`.
+  ouvert dans SEE ; le bouton 3 y note le projet d'essai choisi), `MotDePasse`.
 - **Où écrire** : `Groupe` (vide = le groupe principal), `TypeFolio` (9 =
   schéma), `Cartouche` (nom du cartouche SEE), `NomFolio` (modèle, par défaut
   `{Nom}`), `Remplacer` (`N` : un folio fini qui existe déjà est sauté),

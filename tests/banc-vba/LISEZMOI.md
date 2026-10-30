@@ -1,10 +1,14 @@
 # Le banc des macros VBA du pilote SEE
 
-Les macros de `see/vba/` (`SEE_Commun.bas`, `SEE_Sonde.bas`, `SEE_Pilote.bas`) pilotent SEE Electrical
-Expert par COM depuis Excel. Ni Excel ni SEE ne tournent ici. Ce banc fait donc tourner **le vrai code VBA
-du dépôt** dans LibreOffice Calc (Basic en mode `VBASupport`), face à un **faux SEE** : des classes Basic,
-générées par `faux.py` et `faux2.py`, qui imitent l'API COM de SEE et tracent chacun de leurs appels
-(`AddSheet|…`, `AddWireConnection|…`, `SetPosition|…`). Chaque scénario lance une macro du pilote,
+Les macros de `see/vba/` (`SEE_Commun.bas`, `SEE_Sonde.bas`, `SEE_Pilote.bas`, `SEE_Windows.bas`) pilotent
+SEE Electrical Expert par COM depuis Excel. Ni Excel ni SEE ne tournent ici. Ce banc fait donc tourner **le
+vrai code VBA du dépôt** dans LibreOffice Calc (Basic en mode `VBASupport`), face à un **faux SEE** : des
+classes Basic, générées par `faux.py` et `faux2.py`, qui imitent l'API COM de SEE et tracent chacun de leurs
+appels (`AddSheet|…`, `AddWireConnection|…`, `SetPosition|…`). `SEE_Windows` ne se charge pas dans
+LibreOffice (`PtrSafe`, `StrPtr`, WMI) : **son faux**, `FauxWindows.bas`, aux mêmes fonctions publiques
+(`tests/vba.js` le vérifie), dit ce que Windows « répond » (la table des objets actifs, les objets créés,
+le registre, les programmes en marche, les fenêtres du bouton 3) et note ses appels à part
+(`gWinTrace` : `Windows|new:|{CLSID}`, `Windows|Processus|SEE.exe`…). Chaque scénario lance une macro du pilote,
 puis relit ce qu'elle a fait : le texte rendu, les feuilles `Journal` et `Bilan` du classeur, la trace
 du faux SEE, confrontée au paquet par `verifier.py`.
 
@@ -28,6 +32,11 @@ Il prouve **la cohérence du code VBA** :
 - **avec lui-même, pour TesterSEE** (le bouton du bureau) : sur un classeur neuf, sans SEE puis avec le
   faux SEE, il crée ses feuilles, enchaîne les sondes sans rien écrire dans SEE, et finit par la feuille
   `Resultat_Test` en tête du classeur ;
+- **avec lui-même, pour la connexion et le bouton 3** : les boutons 1 et 2 rejoignent le SEE ouvert (par
+  un ProgID lu au registre, par son CLSID) et n'en créent jamais, même à `LancerSEE = O` ; une connexion
+  créée par une macro d'avant est lâchée sans `Quit` ; le bouton 3 ne fait rien si SEE tourne, si
+  Windows ne répond pas, si la copie de sécurité rate ou si le technicien annule, et sinon copie, crée,
+  ouvre, dessine, enregistre, referme et le dit dans le bloc à photographier ;
 - **avec les signatures de l'API telles que le faux SEE les imite** : les noms des méthodes, le nombre
   d'arguments et les codes des objets créés (`CreateObject`). Le faux vérifie aussi le style d'appel :
   en V4, un paramètre de sortie (le faux lève une erreur si l'objet est rendu) ; en V5, une valeur rendue
@@ -48,8 +57,12 @@ Il **ne prouve pas** :
   `EssaiDessin`, `EssaiSymboles`) le dit ;
 - **Excel**. L'émulation VBA de LibreOffice n'est pas Excel. Elle ne fournit ni `Scripting.Dictionary`
   (remplacé), ni `ThisWorkbook.ReadOnly`, ni `ADODB.Stream`, ni les boîtes de dialogue (`gSansDialogue`).
-  Le code de connexion (`GetObject` / `CreateObject` de SEE) n'est pas joué : le banc pose `gApp` sur
-  le faux. L'interface du classeur pilote (boutons, mise en forme) n'est pas jouée non plus ;
+  La logique de connexion (`ConnecterSEE`) et le bouton 3 sont joués contre le faux `SEE_Windows` ; le
+  vrai (`GetObject(, nom)`, `GetActiveObject`, `GetObject("new:…")`, WMI, `GetOpenFilename`,
+  `Application.Wait`) ne l'est **pas** : il ne tourne que sous Windows. Ni ce que fait le vrai SEE caché
+  (une fenêtre qui bloquerait Excel, un `Quit` qu'il ignore), ni la vraie signature du `CreateObject` de
+  `SeeAutomation` (le faux en joue trois). L'interface du classeur pilote (boutons, mise en forme) n'est
+  pas jouée non plus ;
 - la compilation par Excel : c'est le rôle de `node tests/vba.js` (le contrôle statique : encodage,
   blocs, déclarations, appels).
 
@@ -148,8 +161,10 @@ C12 et VBA-1 à VBA-9 renvoient aux constats de relecture que cite `BancR.bas`.
 | unite | une unité rendue en texte (VBA-7) | va au bout (le texte rendu est à lire) |
 | materiel V5, materiel V4 | le paquet variante `pn` entier avec du matériel : `EQUIPEMENT.ClasseMateriel` et `.ClasseConnecteur`, `PRISE.ClasseConnecteur`, `MASSE.ClasseMateriel` (les masses n'ont pas de PN), `BARRETTE.ClasseMateriel` (en `BORNIER`, corps dessiné) ; le faux catalogue refuse les codes qui commencent par « * » ; puis la sonde du folio 1, puis une simulation (`Remplacer = O`) | **intention**, nombres **calculés** par `verifier.py --materiel` depuis le paquet : 6 folios SAUVE ; la géométrie de « complet » (210 fils, 0 bout faux, 0 segment oblique, 309 broches) ; associations lues = attendues (118), classe ou code faux 0, manquantes 0, en trop 0 ; refus (2), corps sans PN (44), corps dessinés (20), connecteur sans PN (1), connecteur à deux PN (1) dits au journal comme attendu ; « matériel non relu » 0, « relecture différente » 0 ; colonne `Materiels` du bilan = associés ; la sonde relit le matériel du folio 1 comme attendu (9) sans rien écrire ; la simulation n'écrit rien : elle lit les connecteurs que le passage réel a associés (« déjà associé », 66 = connecteurs associés) et dit chaque autre tentative, 54 + 66 = 120 tentatives |
 | materiel existant | un connecteur repris du projet qui porte DÉJÀ un matériel (constats C1, R2) : le folio 1 dessiné une fois, puis trois de ses connecteurs reçoivent « à la main » c1 un autre matériel, c2 le sien et un accessoire, c3 un accessoire ; puis une simulation, `MaterielExistant` = `GARDER`, `AJOUTER`, une relance en `AJOUTER`, `REMPLACER` sur c1 remis à la main, et une lecture du matériel qui échoue | **intention** : simulation : 0 écriture, c1 et c3 « gardés » dits ; `GARDER` : 0 association, les trois inchangés ; `AJOUTER` : 2 associations, c1 et c3 = ce qu'ils portaient + leur PN, c2 inchangé, rien de perdu ni de non relu ; relance : 0 association, aucun doublon (2, 2, 2) ; `REMPLACER` : c1 ne garde que son PN, le retrait est dit ; lecture ratée : 0 association, « matériel existant illisible » dit, le folio va au bout |
-| tester | `TesterSEE` : sur le classeur neuf sans SEE, puis avec le faux SEE en V5 et en V4 après un lot de deux folios avec matériel ; puis SEE joint sans aucun folio affiché ; SEE qui cesse de répondre quand la sélection est lue ; `GetEquipmentCollection` qui rend Nothing pour un objet sans matériel | **intention** : sans SEE : `Reglages` créée (138 clés), « SEE joint ? = NON », aucune trace, la boîte dit « Excel n'a pas trouvé SEE » et de relancer s'il était fermé ; avec le faux : aucune écriture pendant le test, « OUI », version, unité, symboles et matériel du folio lus (classes `CL_EQUIPEMENT` et `CL_CONNECTEUR`), autant de matériel par la sélection que par le folio, 6 XML dans `Sonde_XML`, les cinq sondes faites, la boîte dit « BRAVO », nomme le bouton 2 et, le classeur jamais enregistré, « Enregistrer sous » en `.xlsm` ; les erreurs des étapes = celles de « Ce qui a échoué » ; sans folio : « Folio lu = aucun », l'étape dit « rien lu », mais un projet ouvert suffit : la boîte dit « BRAVO » et le bouton 2, sans demander de relancer ; SEE muet : aucune reconnexion, « OUI » et ce qui a été lu avant restent dits, ligne « SEE perdu » (SondeSelection), XML « non lues », la boîte le dit ; Nothing : aucune cellule « #ERR » dans les colonnes du matériel de `Sonde_Folio`, « (aucun : Nothing) » à la place ; dans chaque passage, `Resultat_Test` est la première feuille, la seule boîte est celle de la fin et « Et maintenant » en reprend la consigne |
+| tester | `TesterSEE` : sur le classeur neuf sans SEE, puis avec le faux SEE en V5 et en V4 après un lot de deux folios avec matériel ; puis SEE joint sans aucun folio affiché ; SEE qui cesse de répondre quand la sélection est lue ; `GetEquipmentCollection` qui rend Nothing pour un objet sans matériel | **intention** : sans SEE : `Reglages` créée (138 clés), « SEE rejoint ? = NON », aucune trace, la boîte dit « Excel n'a pas trouvé ta fenêtre SEE », la photo, et « Essaie le bouton 3 » ; avec le faux : aucune écriture pendant le test, « OUI », version, unité, symboles et matériel du folio lus (classes `CL_EQUIPEMENT` et `CL_CONNECTEUR`), autant de matériel par la sélection que par le folio, 6 XML dans `Sonde_XML`, les cinq sondes faites, la boîte dit « BRAVO », la photo de `Resultat_Test`, et nomme le bouton 2 (aucun fichier à renvoyer) ; les erreurs des étapes = celles de « Ce qui a échoué » ; sans folio : « Folio lu = aucun », l'étape dit « rien lu », mais un projet ouvert suffit : la boîte dit « BRAVO » et le bouton 2, sans demander de relancer ; SEE muet : aucune reconnexion, « OUI » et ce qui a été lu avant restent dits, ligne « SEE perdu » (SondeSelection), XML « non lues », la boîte le dit ; Nothing : aucune cellule « #ERR » dans les colonnes du matériel de `Sonde_Folio`, « (aucun : Nothing) » à la place ; dans chaque passage, `Resultat_Test` est la première feuille, la seule boîte est celle de la fin et « Et maintenant » en reprend la consigne |
 | bouton 2 V5, bouton 2 V4 | `EssaiDessinReel` (le bouton 2 du classeur) avec le faux SEE, le réglage `Simulation` à O ; puis sans SEE (aucun ouvert, `LancerSEE = N`) | **intention** : dessiné pour de vrai malgré `Simulation = O` : un folio créé (`AddSheet` 1), le motif (au moins 5 objets graphiques) ; une seule question, qui nomme le projet ouvert ; le journal du dessin n'est pas vidé par la relecture ; `Sonde_Folio` décrit `ESSAI_PILOTE` ; la fin dit de regarder le folio dans SEE ; `Simulation` reprend sa valeur (O) après ; sans SEE : aucune écriture, aucune question, « Rien n'a été dessiné » dit |
+| connexion V5, connexion V4 | les boutons 1 et 2 face au faux `SEE_Windows` : a. rien d'ouvert, classeur neuf ; b. `LancerSEE = O` ; c. SEE inscrit au registre (`SEEExpert.Application.48`) et ouvert sous ce ProgID ; d. ouvert sous son CLSID seulement ; e. une connexion CRÉÉE par `EssaiDessin` (`Alt+F8`, `LancerSEE = O`), puis les boutons 1 et 2 | **intention** : `LancerSEE` vaut N dans un classeur neuf ; aucun objet SEE créé par les boutons 1 et 2 (a, b, c, d) ; le bloc à photographier liste les 10 essais, chacun avec son code (`429 (800A01AD)`, `800401E3`) et sa phrase, et dit « Essaie le bouton 3 » ; c : rejoint par `GetObject(, "SEEExpert.Application.48")`, ProgID nommé dans `Sonde_Registre` et dans le bloc ; d : rejoint par `GetActiveObject({A55015A3-…})` ; e : la connexion créée est lâchée au début du bouton 1 puis du bouton 2, sans `Quit`, la fenêtre ouverte rejointe, le folio du bouton 2 dessiné dedans |
+| bouton 3 V4, bouton 3 V5 | `EssaiSansFenetre` (le bouton 3), un SEE V4R3 inscrit (programme `SEE_Faux.exe`), un faux projet `.seeprj` dans le dossier de travail ; le `CreateObject` du faux `SeeAutomation` : V4, un paramètre de plus ; V5, la forme d'Application | **intention** : SEE ouvert, Windows muet (sans boîte), copie ratée, Annuler (la fenêtre « Ouvrir », puis la question) : ni objet SEE créé, ni copie, ni projet ouvert, et le bloc dit pourquoi ; le nom du programme compté vient du registre ; parcours complet : `new:` V5R2 refusé puis V4R3 créé, une copie `TEST_SEE.avant-pilote-<date>.seeprj`, `OpenProject` 1, `AddSheet` 1, chaque objet posé compté, `Save` 1, `Quit` 1, la forme retenue dite, le projet noté dans `Projet`, `gApp` lâché, la consigne « Ouvre SEE… ESSAI_PILOTE » ; `CreateObject` refusé : projet ouvert, rien dessiné, pas de `Save`, `Quit` 1, « projet ouvert : oui ; création d'objets : REFUSÉE (codes : forme 1 : 450 …) » ; un SEE qui reste après `Quit` : Windows revu cinq fois, « SEE refermé = NON », et d'abord Ctrl + Maj + Échap, SEE, *Fin de tâche*, puis rouvrir SEE |
 
 Les scénarios ci-dessous viennent de `regression.py`, les scénarios d'origine du banc. Ce sont les macros
 `BancFaux.*`, écrites dans `faux.py`.
@@ -210,6 +225,10 @@ comportement est le bon (en le disant).
   Elle accepte un objet `nom` ou `nom(i)` et une clé avec deux niveaux de parenthèses. Une ligne d'une
   autre forme (`Set x.Item(k) = o`, une parenthèse dans une chaîne) ne serait pas réécrite et
   échouerait dans le banc seulement.
+- **`Base` est un mot de la langue.** LibreOffice refuse une variable nommée `base` (`Option Base`) : tout
+  le module ne compile plus, et chaque macro du banc rend `None` en 0,1 s. Excel l'accepte : le contrôle
+  statique ne le voit pas. Pour trouver la procédure fautive : charger le module seul, sans telle ou telle
+  procédure, et appeler une fonction triviale.
 - **`.Type` ne peut pas être déclaré.** Une classe Basic ne peut pas avoir de propriété nommée `Type`
   (mot réservé). Le faux folio n'en a donc pas, et les `.Type = 9` du pilote échouent dans le banc. Ils
   sont rattrapés et journalisés (« .Type = 9 », 6 fois dans « modes » et « journal NORMAL »). C'est
@@ -242,7 +261,8 @@ comportement est le bon (en le disant).
 | `chemins.py` | les chemins (dépôt, dossier de travail, trace, port), calculés depuis l'emplacement des fichiers |
 | `lo_run.py` | la connexion à soffice ; `attendre` et `arreter` pour `lancer.sh` |
 | `banc.py` | il charge les modules du dépôt (avec les réécritures ci-dessus), lance une macro et lit une feuille ; seul, il joue `Banc.BancSimulation` |
-| `faux.py`, `faux2.py` | le faux SEE (modules Basic générés) et les macros `BancFaux.*` ; `faux2.py` y ajoute les pannes |
+| `faux.py`, `faux2.py` | le faux SEE (modules Basic générés) et les macros `BancFaux.*` ; `faux2.py` y ajoute les pannes, et le faux `SeeAutomation` du bouton 3 (`FauxAuto`) |
+| `FauxWindows.bas` | le faux `SEE_Windows`, aux mêmes fonctions publiques que le vrai : ce que Windows répond se règle par ses variables `gWin*`, remises à zéro par `InitFaux` |
 | `DicoTest.bas` | le substitut de `Scripting.Dictionary` |
 | `Banc.bas`, `BancR.bas` | les macros des scénarios (`FixerReglage`, `BancSimulation` ; les scénarios de la relecture) |
 | `relecture.py`, `regression.py` | ils lancent les scénarios (`SCEN`), un nom de scénario en argument |

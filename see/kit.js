@@ -3,9 +3,9 @@
        node see/kit.js [--sortie=Kit-SEE.zip] [--vba=DOSSIER] [--sans-bouton]
    Le zip contient, dans un dossier Kit-SEE/, DEUX fichiers :
      Pilote-SEE.xlsm              LE fichier à ouvrir : le classeur pilote, macros
-                                  déjà dedans, boutons « 1. TESTER SEE » et
-                                  « 2. SEE DESSINE » (écrit à la volée par
-                                  see/classeur.js, en tête du zip)
+                                  déjà dedans, boutons « 1. TESTER SEE »,
+                                  « 2. SEE DESSINE » et « 3. SEE FERMÉ » (écrit
+                                  à la volée par see/classeur.js, en tête du zip)
      LIS-MOI-D-ABORD.txt          les étapes, en clair (see/kit/)
    Le kit voyage par courriel, jusqu'à une messagerie d'entreprise : rien dedans
    qu'elle refuse, même dans un zip (ni .cmd, ni .bat, ni .ps1, ni .js, ni .vbs ;

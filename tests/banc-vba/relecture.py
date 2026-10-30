@@ -3,7 +3,7 @@ import sys, os, json, subprocess
 sys.dont_write_bytecode = True   # pas de __pycache__ dans le dépôt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from banc import charger, lancer, feuille
-from chemins import ICI, TRACE, XLSX
+from chemins import ICI, TRACE, XLSX, TRAVAIL
 import faux2
 PAQUET, VARIANTE = (sys.argv[1], sys.argv[2]) if __name__ == '__main__' else ('', '')
 choisis = sys.argv[3:]
@@ -19,6 +19,16 @@ MATERIEL = ('corps=EQUIPEMENT:CL_EQUIPEMENT,MASSE:CL_MASSE,BARRETTE:CL_BARRETTE;
             'symboles=EQUIPEMENT,MASSE;broche=EQUIPEMENT,PRISE;refuse=*;folio=1')
 def materiel(paquet):
     return verifier(paquet, '--materiel=' + MATERIEL)
+# le projet d'essai du bouton 3 : un fichier .seeprj (son contenu n'importe pas au faux SEE), seul dans son dossier
+ESSAI = os.path.join(TRAVAIL, 'robot')
+def projet_essai():
+    os.makedirs(ESSAI, exist_ok=True)
+    for f in os.listdir(ESSAI): os.remove(os.path.join(ESSAI, f))
+    p = os.path.join(ESSAI, 'TEST_SEE.seeprj')
+    with open(p, 'wb') as f: f.write(b'faux projet SEE du banc\n')
+    return p
+def dossier_essai():
+    return 'dossier du projet : ' + ', '.join(sorted(os.listdir(ESSAI)))
 def angles(paquet):
     js = '''const XLSX=require('''+json.dumps(XLSX)+'''),fs=require('fs');const wb=XLSX.read(fs.readFileSync(process.argv[1]),{type:'buffer'});
 console.log(JSON.stringify(XLSX.utils.sheet_to_json(wb.Sheets.Blocs,{defval:null}).filter(b=>b.Nature==='MASSE').map(b=>b.Sens)));'''
@@ -54,6 +64,13 @@ SCEN = [
     # le bouton 2 du classeur (EssaiDessinReel) : pour de vrai malgré Simulation = O, une question, le folio relu ; puis sans SEE
     ('bouton 2 V5', lambda d: lancer(d, 'BancR.BancBouton2', (False,)), None),
     ('bouton 2 V4', lambda d: lancer(d, 'BancR.BancBouton2', (True,)), None),
+    # la v3 : les boutons 1 et 2 rejoignent la fenêtre SEE et n'en créent jamais (faux SEE_Windows : FauxWindows.bas)
+    ('connexion V5', lambda d: lancer(d, 'BancR.BancConnexion', (False,)), None),
+    ('connexion V4', lambda d: lancer(d, 'BancR.BancConnexion', (True,)), None),
+    # le bouton 3 (EssaiSansFenetre), SEE fermé : V4 et la forme à un paramètre de plus (le cas probable au bureau),
+    # V5 et la forme d'Application ; projet_essai() pose un faux projet dans le dossier de travail
+    ('bouton 3 V4', lambda d: lancer(d, 'BancR.BancBouton3', (True, 2, projet_essai())), lambda: dossier_essai()),
+    ('bouton 3 V5', lambda d: lancer(d, 'BancR.BancBouton3', (False, 1, projet_essai())), lambda: dossier_essai()),
 ]
 if __name__ == "__main__":
  inconnus = [c for c in choisis if c not in [n for n, _, _ in SCEN]]

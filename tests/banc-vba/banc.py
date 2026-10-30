@@ -17,7 +17,8 @@ def charger(extra):
     libs=doc.BasicLibraries
     libs.VBACompatibilityMode=True
     lib=libs.getByName("Standard")
-    mods=[('DicoTest',open(f'{ICI}/DicoTest.bas', encoding='utf-8').read())]+[(m,module(m)) for m in ['SEE_Commun','SEE_Sonde','SEE_Pilote']]+extra
+    # SEE_Windows (PtrSafe, StrPtr, WMI) ne se charge pas dans LibreOffice : son faux, aux mêmes fonctions publiques, le remplace
+    mods=[('DicoTest',open(f'{ICI}/DicoTest.bas', encoding='utf-8').read()),('FauxWindows',open(f'{ICI}/FauxWindows.bas', encoding='utf-8').read())]+[(m,module(m)) for m in ['SEE_Commun','SEE_Sonde','SEE_Pilote']]+extra
     for n,c in mods: lib.insertByName(n,c)
     return doc
 def lancer(doc, macro, args=()):
