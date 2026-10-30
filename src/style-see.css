@@ -31,6 +31,20 @@
 .see-onglets button[aria-selected="true"] b{font-weight:600}
 .see-onglets button[aria-selected="true"]::after{background:var(--t-1)}
 .see-sep{flex:none;width:1px;height:18px;align-self:center;margin:0 6px;background:var(--s-line-2)}
+/* le nom du groupe des feuilles, après le filet (l'ingénieur v73 : « un séparateur et un sous-titre avant les feuilles ») */
+.see-groupe-t{flex:none;align-self:center;margin:0 4px 0 2px;font:500 var(--f-11)/1 var(--sans);color:var(--t-2);white-space:nowrap}
+/* sous le titre : le verdict de la cohérence d'abord, puis « Comment lire cette page », replié (le technicien v73) */
+.see>.see-coh-l{margin:0}
+.see-lire{margin:-6px 0 0}
+.see-lire>summary{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 8px;margin-left:-8px;border-radius:var(--r-1);list-style:none;cursor:pointer;font:500 var(--f-12) var(--sans);color:var(--t-2);transition:background var(--d-rapide) var(--courbe),color var(--d-rapide) var(--courbe)}
+.see-lire>summary::-webkit-details-marker{display:none}
+.see-lire>summary::after{content:"";width:6px;height:6px;margin-left:2px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform var(--d-rapide) var(--courbe)}
+.see-lire[open]>summary::after{transform:translateY(1px) rotate(-135deg)}
+.see-lire>summary:hover{background:var(--s-hover);color:var(--t-1)}
+.see-lire>.see-mode{margin:4px 0 0}
+/* le mot qui passe, sur cette feuille pleine page : en bas, au milieu de la feuille, au-dessus de son pied — il ne couvre plus
+   le titre ni la croix (l'ingénieur v73) */
+@media (min-width:701px){ html body.fiche-ouverte:has(#fiche[data-mode="see"]) #toast{top:auto;bottom:calc(var(--jeu) + 76px)} }
 /* les exemples de valeurs : une PUCE qu'on presse (style.css, `.puce` — l'outil n'a pas d'autre interrupteur à cet endroit),
    une coche dedans */
 .see-ex{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:7px;height:var(--h-puce);padding:0 10px 0 8px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);
@@ -45,8 +59,7 @@
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.5l4.5-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.5l4.5-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
 /* ── une feuille, les liens, les codes : à même la feuille du document ── */
-.see-feuille{min-width:0;padding:4px 0 0;animation:see-entre var(--moyen)}
-@keyframes see-entre{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.see-feuille{min-width:0;padding:4px 0 0;animation:entre var(--d-moyen) var(--courbe-entree) both;--entre-y:4px}
 .see-tete{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--s-line)}
 .see-nom{font:600 var(--f-16)/1.3 var(--mono);letter-spacing:-.01em;color:var(--t-1);overflow-wrap:anywhere}
 /* le nom d'une feuille est un identifiant (chasse fixe) ; Import, Liens, Codes sont des titres (linéale) */
@@ -252,7 +265,7 @@ summary.see-ctl-l:focus-visible{outline:none;box-shadow:var(--anneau)}
 summary .see-ctl-g::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--t-2);border-bottom:1.5px solid var(--t-2);transform:translateY(-2px) rotate(45deg);transition:transform var(--rapide)}
 details[open]>summary .see-ctl-g::after{transform:translateY(1px) rotate(-135deg)}
 /* les exemples, en retrait sous le titre : la référence (chasse fixe), ce qui cloche, la ligne de la feuille */
-.see-exs{list-style:none;margin:0 0 10px;padding:0 0 0 20px;display:grid;grid-template-columns:minmax(120px,.9fr) minmax(0,2fr) auto;column-gap:16px;animation:see-entre var(--moyen)}
+.see-exs{list-style:none;margin:0 0 10px;padding:0 0 0 20px;display:grid;grid-template-columns:minmax(120px,.9fr) minmax(0,2fr) auto;column-gap:16px;animation:entre var(--d-moyen) var(--courbe-entree) both;--entre-y:4px}
 .see-exs li{display:contents}
 .see-exs li>*{padding:5px 0;border-top:1px solid var(--s-line)}
 .see-ex-r{font:600 var(--f-12)/1.45 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
@@ -292,3 +305,46 @@ details[open]>summary .see-ctl-g::after{transform:translateY(1px) rotate(-135deg
 .see-m1-c li{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px solid var(--s-line);font-size:var(--f-12)}
 .see-m1-c li span{min-width:0;overflow-wrap:anywhere;color:var(--t-1)}
 .see-m1-c li b{font:600 var(--f-12)/1.5 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
+/* ── « SEUL VOLTA », CLIQUABLE (v74) : le nombre se presse (une cible de 28 px, à l'encre, souligné de points) ; la liste
+   se déplie sous les deux colonnes — une puce par famille, une ligne par contact : la clé, le contact de Volta, d'où il
+   vient (une puce), ce que dit la base, et ce que donnerait « ne prendre que la base » (couverte, ou sans équivalent) ;
+   dessous, la case de la base unique, décochée d'office ── */
+.see-seul-c{white-space:nowrap}
+.see-seul-n{min-width:28px;height:28px;margin:-6px -8px -6px 0;padding:0 8px;border:none;border-radius:var(--r-1);background:none;font:600 var(--f-12)/1 var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums;cursor:pointer;
+  text-decoration:underline dotted var(--t-2);text-underline-offset:4px;transition:background var(--d-rapide) var(--courbe)}
+.see-seul-n:hover{background:var(--s-hover)}
+.see-seul-n[aria-expanded="true"]{background:var(--accent-soft);text-decoration:none;box-shadow:inset 0 0 0 1px var(--accent-line)}
+.see-ap-t .see-table tfoot td{border-bottom:none;padding-top:9px;color:var(--t-2);font-weight:500}
+.see-ap-t .see-table tfoot td:first-child{text-align:right}
+.see-seul{margin-top:22px;padding:18px 20px 16px;border-radius:var(--r-2);background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line-2),0 6px 20px -8px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:12px;
+  animation:entre var(--d-moyen) var(--courbe-entree) both;--entre-y:-4px}
+.see-seul-tete{display:flex;align-items:flex-start;gap:12px}
+.see-seul-tete h4{flex:1;min-width:0;margin:0;font:600 var(--f-15, 15px)/1.35 var(--sans);color:var(--t-1)}
+.see-seul-tete h4 span{display:block;margin-top:2px;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+.see-seul-tete .fermer{margin:-4px -6px 0 0}
+.see-seul-puces{display:flex;flex-wrap:wrap;gap:6px}
+.see-seul .see-note{margin:0}
+.see-seul-t{width:100%}
+.see-seul-t :is(th,td){text-align:left!important;vertical-align:top;padding-right:16px}
+.see-seul-t td{line-height:1.45}
+.see-seul-t td small{display:block;margin-top:2px;font-size:var(--f-11);color:var(--t-2);font-family:var(--sans);font-weight:400;overflow-wrap:anywhere}
+.see-seul-t tr.see-seul-f th{padding-top:14px;font-weight:600;color:var(--t-1);border-bottom:1px solid var(--s-line)}
+.see-seul-t tr.perdue td:last-child{box-shadow:inset 2px 0 0 var(--warn);padding-left:10px}
+.see-seul-t tr.couverte td:last-child{box-shadow:inset 2px 0 0 var(--ok);padding-left:10px}
+.see-t-ok{color:var(--ok);font-weight:600}
+/* d'où vient une ligne : une puce — de vos photos (au trait), ajoutée par Volta (l'ambre doux), ajoutée ici (le doux de l'action) */
+.see-orig{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;font:500 var(--f-12)/1 var(--sans);white-space:nowrap;color:var(--t-1);box-shadow:inset 0 0 0 1px var(--s-line-2);cursor:help}
+.see-orig.ajoutee{background:var(--warn-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 45%,transparent)}
+.see-orig.ici{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent-line)}
+/* LA BASE UNIQUE : la case, et ce qu'elle ferait en une phrase */
+.see-unique{display:flex;flex-direction:column;gap:6px;margin-top:18px;padding-top:14px;border-top:1px solid var(--s-line)}
+.see-seul .see-unique{margin-top:4px}
+.see-unique .see-note{margin:0}
+.see-unique .see-note .btn.lien{vertical-align:baseline}
+.see-seule{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;min-height:32px;padding:0 12px 0 8px;margin-left:-8px;border-radius:var(--r-btn);font:600 var(--f-13) var(--sans);color:var(--t-1);cursor:pointer;
+  transition:background var(--d-rapide) var(--courbe)}
+.see-seule:hover{background:var(--s-hover)}
+.see-seule input{width:18px;height:18px;margin:0;accent-color:var(--t-1);cursor:pointer}
+.see-seule.eteinte{cursor:default;color:var(--t-2)}
+.see-seule.eteinte:hover{background:none}
+.see-unique.oui .see-seule{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent-line)}

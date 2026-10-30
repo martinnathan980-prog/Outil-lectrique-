@@ -91,7 +91,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
 
   // 2. les liens, l'onglet d'office
   const L = S.liens.map(sp).join(' || ').replace(/\s*→\s*/g, ' → ');
-  ok('l’écran s’ouvre sur « Import », puis « Cohérence » (ses contrôles à reprendre), « Liens », « Codes », un onglet par feuille (son nom court, toutes ses lignes)', S0.choisi === 'Import' && S.choisi === 'Liens' && sp(S.onglets) === 'Import | Cohérence=11 | Liens=8 | Codes | EndFittingRules=1 297 | CablesAndWires=748 | ConnectiveEquipments=2 310 | ContactLayouts=229 | Accessories=1 104 | Equipments=7 091 | OBJ_END_Fitting_Rules_Conta=6 000 | OBJ_PlugMapPin=3 000 | OBJ_Wires=1 492 | LNK_Equi_Mating=500 | OBJ_Categories=50 | LNK_EndFitting_ProductFamil=3 000 | SET_ProductFamilies=3', sp(S.onglets));
+  ok('l’écran s’ouvre sur « Import », puis « Cohérence » (ses contrôles à reprendre), « Liens », « Codes », un onglet par feuille (son nom court, sans OBJ_ ni LNK_, toutes ses lignes)', S0.choisi === 'Import' && S.choisi === 'Liens' && sp(S.onglets) === 'Import | Cohérence=11 | Liens=8 | Codes | EndFittingRules=1 297 | CablesAndWires=748 | ConnectiveEquipments=2 310 | ContactLayouts=229 | Accessories=1 104 | Equipments=7 091 | END_Fitting_Rules_Conta=6 000 | PlugMapPin=3 000 | Wires=1 492 | Equi_Mating=500 | Categories=50 | EndFitting_ProductFamil=3 000 | ProductFamilies=3', sp(S.onglets));   // v73 (domaine E, repris en v74) : l’onglet porte le nom court, sans OBJ_, LNK_, SET_ — le nom entier dans sa bulle
   ok('les identifiants se relient d’eux-mêmes : les contacts à leur règle, les broches et les connecteurs à leur arrangement, les paires fiche ↔ embase à leurs connecteurs — chaque fois la part retrouvée', [
       'OBJ_END_Fitting_Rules_Conta : IDEquipment → EndFittingRules.IDEquipment 1 297 / 1 297 (100 %)',
       'OBJ_PlugMapPin : IDPlugMap → ContactLayouts.ID 229 / 229 (100 %)',
@@ -423,6 +423,42 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
       formes: [...new Set((K['c-forme'] || { ex: [] }).ex.map(x => x.r))].join(' ') }; });
   ok('les tables de Volta passées comme des lignes de SEE (442 contacts EN 2997, 3645, 3646, 4165 ; 226 câbles) : aucune ligne écartée, aucun sexe, taille, fût, paire, conflit, physique, Ø ou sœur en défaut — seuls ses noms courts (KB1600…) sont d’une forme inconnue',
     Sa.lignes === 442 && Sa.retenus === 442 && Sa.ecartees === 0 && Sa.cables === 226 && !Sa.zero.length && /^[KL][BC]\d{4}( [KL][BC]\d{4})*$/.test(Sa.formes), Sa.zero.join(' | ') + ' · ' + Sa.formes);
+  // v74 — LA BASE UNIQUE (le lecteur : « un seul fichier propre : la base SEE comme seule source des pièces, si elle couvre
+  // tout ») : une base faite des quatre tables des photos, sans les lignes que Volta a ajoutées de ses sources (normes/
+  // contacts.csv les range en fin de table) et sans une ligne EN 4165 — le cas du lecteur : 6, 2, 0, 7 « seulement dans Volta »
+  const Bu = await p.evaluate(() => { const G = i => ('00000000' + i.toString(16)).slice(-8).toUpperCase() + '-0000-4000-8000-000000000000', fams = ['EN2997', 'EN3645', 'EN3646', 'EN4165'], N = normeEmbarqueeLue();
+    const tous = N.contacts, fin = tous.findIndex(c => !fams.includes(c.famille)), photos = tous.filter((c, i) => fams.includes(c.famille) && i < fin), retiree = photos.find(c => c.famille === 'EN4165' && c.typeFil !== '*');
+    const regles = [['ID', 'IDEquipment', 'PartNo', 'ClassName', 'LCStatusName', 'Version'], ...fams.map((f, i) => [G(1 + i), G(1 + i), f, 'Contact', 'Release', [7, 2, 13, 49][i]])];
+    const contacts = [['ID', 'IDEquipment', 'RuleNum', 'ContactType', 'ContactGauge', 'WireType', 'WireGauge', 'PartNo1', 'Quantity1', 'PartNo2', 'Quantity2']];
+    photos.filter(c => c !== retiree).forEach((c, n) => contacts.push([G(1000 + n), G(1 + fams.indexOf(c.famille)), 100, c.sexe === 'M' ? 'Male' : 'Female', sectionAwg(parseFloat(c.taille)), c.typeFil, c.jauge == null ? -1 : sectionAwg(c.jauge), c.reference, 1, c.accessoire || '', c.accessoire ? 1 : '']));
+    const I = importerSEE({ regles, contacts }, 'base-unique.xlsx'); I.quand = Date.now(); window.__baseUnique = I;
+    const A = apporteSEE(I), L = seulVoltaSEE(I), cle = x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge == null ? '*' : x.jauge].join('/');
+    return { seul: A.photos.map(q => q.seulVolta).join(','), n: L.length, aj: L.filter(y => y.origine.genre === 'ajoutee').map(y => y.famille + ' ' + y.x.taille + ' ' + y.base.genre), ph: L.filter(y => y.origine.genre === 'photo').map(y => cle(y.x) + ' — ' + y.base.mot),
+      retiree: cle(retiree), sources: [...new Set(L.filter(y => y.origine.genre === 'ajoutee').map(y => y.origine.source))] }; });
+  ok('« Seul Volta » : 6 · 2 · 0 · 7 (le cas du lecteur) — 14 lignes que Volta a ajoutées de ses sources (EN 2997 taille 22, EN 3645 taille 10, EN 4165 taille 23 : « aucun contact de cette taille » dans la base), 1 de vos photos que la base n’a plus ; chacune sa raison et sa source, sans adresse',
+    Bu.seul === '6,2,0,7' && Bu.n === 15 && Bu.aj.length === 14 && Bu.aj.every(a => /^(EN2997 22|EN3645 10|EN4165 23) taille$/.test(a)) && Bu.ph.length === 1 && Bu.ph[0].startsWith(Bu.retiree) && Bu.sources.length >= 3 && Bu.sources.every(s => s && !/https?:/.test(s)), JSON.stringify(Bu).slice(0, 420));
+  await p.evaluate(async () => { SEE.import = window.__baseUnique; await adopterBaseSEE(); SEE.vue = 'coherence'; SEE.seulVolta = ''; ficheBaseSEE(); rendreBaseSEE(); });
+  await p.waitForFunction(() => BASE_SEE.base && BASE_SEE.base.nom === 'base-unique.xlsx' && !!document.querySelector('#fiche-corps .see-seul-n'));
+  const Bv = await p.evaluate(() => ({ boutons: [...document.querySelectorAll('#fiche-corps .see-seul-n')].map(b => b.dataset.seulVolta + ':' + b.textContent).join(' '), caseOk: (x => !!x && !x.checked && !x.disabled)($('see-seule')), sansPanneau: !$('see-seul'), avant: app.norme.contacts.filter(c => c.famille === 'EN2997' && c.taille === '22').length }));
+  ok('les nombres « Seul Volta » se pressent (6, 2, 7 et le total 15) ; la case « Ne prendre les pièces que dans la base SEE gardée » est là, décochée ; les lignes de Volta servent encore en secours', Bv.boutons === 'EN2997:6 EN3645:2 EN4165:7 *:15' && Bv.caseOk && Bv.sansPanneau && Bv.avant === 6, JSON.stringify(Bv));
+  await p.click('#fiche-corps .see-seul-n[data-seul-volta="EN2997"]'); await p.waitForTimeout(300);
+  const Bp = await p.evaluate(() => { const s = $('see-seul'); return s ? { lignes: [...s.querySelectorAll('tbody tr:not(.see-seul-f)')].map(tr => tr.textContent.replace(/\s+/g, ' ').trim()), puces: [...s.querySelectorAll('.puce')].map(b => b.textContent.replace(/\s+/g, ' ').trim() + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')).join(' | '), bulle: (s.querySelector('.see-orig') || { dataset: {} }).dataset.bulle } : null; });
+  ok('un clic sur 6 : les 6 lignes EN 2997, chacune son contact, d’où elle vient (« ajoutée par Volta », sa source dans la bulle), ce que dit la base (« aucun contact de taille 22 ») et ce que donnerait la base seule', !!Bp && Bp.lignes.length === 6
+    && Bp.lignes.every(t => /taille 22/.test(t) && /EN3155-07[89][MF]2222/.test(t) && /ajoutée par Volta/.test(t) && /aucun contact de taille 22/.test(t) && /sans équivalent|couverte/.test(t)) && /EN 2997-002\s*6\*/.test(Bp.puces) && !!Bp.bulle, JSON.stringify(Bp).slice(0, 500));
+  await p.click('#see-seul .puce[data-seul-volta="*"]'); await p.waitForTimeout(300);
+  ok('« toutes » : les 15 lignes, rangées par famille', await p.evaluate(() => $('see-seul').querySelectorAll('tbody tr:not(.see-seul-f)').length === 15 && $('see-seul').querySelectorAll('tr.see-seul-f').length === 3));
+  // l'option : cochée, les lignes que la base n'a pas ne servent plus (pour les familles qu'elle connaît) ; décochée, elles reviennent
+  await p.click('#see-seule'); await p.waitForTimeout(500);
+  const Bo = await p.evaluate(() => ({ cochee: seuleBaseSEE() && localStorage.getItem('atelier.see.seule') === '1' && !!$('see-seule') && $('see-seule').checked, en2997: app.norme.contacts.filter(c => c.famille === 'EN2997' && c.taille === '22').length,
+    en4165: app.norme.contacts.filter(c => c.famille === 'EN4165' && c.taille === '23').length, nsa: app.norme.contacts.filter(c => c.famille === 'NSA937901').length, toast: $('toast').textContent, rapport: /La base, seule source des pièces : oui/.test(rapportCoherenceSEE(BASE_SEE.base, true)) }));
+  ok('cochée : les pièces ne viennent plus que de la base — plus de taille 22 pour l’EN 2997 ni de 23 pour l’EN 4165 ; une famille que la base ignore (NSA937901) garde les lignes de Volta ; gardée sur ce PC ; le mot qui passe offre « Rétablir »', Bo.cochee && Bo.en2997 === 0 && Bo.en4165 === 0 && Bo.nsa > 0 && /Rétablir/.test(Bo.toast) && Bo.rapport, JSON.stringify(Bo));
+  await p.click('#see-seule'); await p.waitForTimeout(500);
+  ok('décochée : Volta reprend ses lignes en secours', await p.evaluate(() => !seuleBaseSEE() && app.norme.contacts.filter(c => c.famille === 'EN2997' && c.taille === '22').length === 6));
+  const Br = await p.evaluate(() => rapportCoherenceSEE(BASE_SEE.base, true));
+  ok('le rapport de cohérence dit ce que seul Volta a, ligne par ligne (des références de catalogue), et si la base est seule source des pièces', /Seulement dans Volta, ligne par ligne :/.test(Br) && /EN3155-078M2222 — ajoutée par Volta/.test(Br) && /La base, seule source des pièces : non/.test(Br), Br.split('\n').filter(l => /Seulement dans Volta|ajoutée par Volta/.test(l)).slice(0, 2).join(' | '));
+  await p.evaluate(() => ficheNormes()); await p.waitForTimeout(300);
+  ok('la page Normes porte la même case, la base gardée, décochée', await p.evaluate(() => !!$('nm-seule') && !$('nm-seule').checked));
+  await p.evaluate(() => { fermerFiche(true); return oublierBaseSEE(); }); await p.waitForFunction(() => !BASE_SEE.base);
   ok('aucune erreur dans la page, après la cohérence', !e.length, e.slice(0, 2).join(' | '));
   R.forEach(x => console.log(x));
   const ko = R.filter(x => x.startsWith('  KO')).length;
