@@ -667,13 +667,17 @@ def controles_fabriques(tmp, garder):
     ok(entete == list(S.COLONNES_TSV), 'TSV : les colonnes du contrat (%s)' % ', '.join(entete))
     lignes = [l.split('\t') for l in tsv[1:] if l]
     ok(all(len(l) == len(entete) for l in lignes), 'chaque ligne a %d colonnes' % len(entete))
-    motifs = [l[16] for l in lignes if l[2] == 'texte']
+    K = dict((nom, i) for i, nom in enumerate(entete))
+    motifs = [l[K['motif']] for l in lignes if l[2] == 'texte']
     ok('999AA9' in motifs and 'A-9999-99' in motifs and u'Aaaaa aaaaaa' in motifs,
        'motifs : 601RC1 -> 999AA9, W-1234-22 -> A-9999-99, Câble blindé -> Aaaaa aaaaaa')
     rect = [l for l in lignes if l[2] == 'rectangle' and l[3:7] == ['50.00', '40.00', '80.00', '60.00']]
     ok(len(rect) == 1, 'le rectangle connu dans le TSV : 50.00 40.00 80.00 60.00')
-    invis = [l for l in lignes if l[2] == 'texte' and l[12] == 'N']
-    ok(len(invis) == 6 and set(l[13] for l in invis) == set(INVISIBLES.values()), 'les six textes invisibles et leurs raisons dans le TSV')
+    invis = [l for l in lignes if l[2] == 'texte' and l[K['visible']] == 'N']
+    ok(len(invis) == 6 and set(l[K['raison']] for l in invis) == set(INVISIBLES.values()), 'les six textes invisibles et leurs raisons dans le TSV')
+    blocs = sorted(set(l[K['bloc']] for l in lignes if l[K['bloc']]))
+    ok(blocs == ['X1.1', 'X1.2'] and sum(1 for l in lignes if l[K['bloc']] == 'X1.1') == 3,
+       'le formulaire pose deux fois : ses elements portent X1.1 et X1.2 (rectangle, diagonale, texte)')
     # --clair
     sortie2 = os.path.join(tmp, 'clair')
     code, ecran = lancer_sonde([chemins[0]], sortie2, '--lecteur=standard', '--clair')
@@ -722,6 +726,9 @@ def controles_pymupdf(pdfs):
         vis_b = sorted((e['texte'], e['visible']) for e in textes_de(b))
         ok(pareil and vis_a == vis_b, '%s : %s' % (nom, ', '.join('%s %d/%d/%d (ecart %.3f mm)' % (
             k, y[0], y[1], y[2], y[3] / MM) for k, y in sorted(tot.items()))))
+        if nom == 'schema':
+            blocs = sorted(set(e.get('bloc') for p in b.pages for e in p['elements'] if e.get('bloc')))
+            ok(blocs == ['X1.1', 'X1.2'], 'PyMuPDF lit, et les elements du formulaire portent quand meme leur bloc (%s)' % blocs)
 
 
 def controles_corpus(dossier):

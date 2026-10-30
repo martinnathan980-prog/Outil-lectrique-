@@ -2113,13 +2113,15 @@ class Collecteur(object):
         self.marques = {}        # etiquette du contenu marque -> nombre
         self.cles_marques = {}   # cle des proprietes (hors MCID) -> nombre
         self.textes_marques = [] # (cle, texte) : ActualText, Alt, E et autres chaines cachees dans le contenu marque
+        self.bloc = None         # le formulaire (XObject) en cours : « X3.12 » = le formulaire X3, sa 12e pose
+        self.usages = {}         # formulaire -> nombre de poses dans la page (imbriquees comprises)
 
     def chemin(self, items, trait, fond, ep, at, af, calque, tirets, ordre=None):
         if not items:
             return
         self.ordre += 1
         c = {'items': items, 'trait': trait, 'fond': fond, 'ep': ep, 'at': at, 'af': af,
-             'calque': calque, 'tirets': tirets, 'ordre': self.ordre if ordre is None else ordre}
+             'calque': calque, 'tirets': tirets, 'ordre': self.ordre if ordre is None else ordre, 'bloc': self.bloc}
         # un remplissage suivi du trait du meme chemin : un seul element (comme PyMuPDF)
         if self.chemins and trait is not None and fond is None:
             p = self.chemins[-1]
@@ -2133,12 +2135,12 @@ class Collecteur(object):
 
     def glyphe(self, g, ordre=None):
         self.ordre += 1
-        self.glyphes.append(g + (self.ordre if ordre is None else ordre,))
+        self.glyphes.append(g + (self.ordre if ordre is None else ordre, self.bloc))
 
     def image(self, coins, l, h, info, calque, ordre=None):
         self.ordre += 1
         self.images.append({'coins': coins, 'l': l, 'h': h, 'info': info, 'calque': calque,
-                            'ordre': self.ordre if ordre is None else ordre})
+                            'ordre': self.ordre if ordre is None else ordre, 'bloc': self.bloc})
 
 
 # ===========================================================================
@@ -2302,6 +2304,8 @@ class Machine(object):
         self.calques = calques
         self.polices = {}        # cle -> Police
         self.espaces = {}
+        self.noms_formes = {}    # numero d'objet d'un formulaire -> « X1 », « X2 »... (dans l'ordre de premiere pose)
+        self.poses = {}          # « X1 » -> nombre de poses de premier niveau dans la page
 
     # -- une page ------------------------------------------------------------
     def page(self, dico_page, ressources, ctm_page, collecteur):
@@ -2325,6 +2329,7 @@ class Machine(object):
         etat = Etat()
         etat.ctm = ctm_page
         self.pile_formes = []
+        self.poses = {}
         self.executer(data, ressources, etat, 0, [])
 
     # -- les ressources --------------------------------------------------------
@@ -2912,11 +2917,22 @@ class Machine(object):
             pile_mc = list(mc)
             if entree is not None:
                 pile_mc.append(entree)
+            nom_f = self.noms_formes.get(cle)
+            if nom_f is None:
+                nom_f = self.noms_formes[cle] = 'X%d' % (len(self.noms_formes) + 1)
+            self.col.usages[nom_f] = self.col.usages.get(nom_f, 0) + 1
+            premier = not self.pile_formes
+            if premier:
+                # les elements d'une pose de premier niveau portent son nom : un symbole pose plusieurs fois
+                self.poses[nom_f] = self.poses.get(nom_f, 0) + 1
+                self.col.bloc = '%s.%d' % (nom_f, self.poses[nom_f])
             self.pile_formes.append(cle)
             try:
                 self.executer(data, res, e2, profondeur + 1, pile_mc)
             finally:
                 self.pile_formes.pop()
+                if premier:
+                    self.col.bloc = None
         elif st == 'PS':
             self.notes.ajouter('XObject PostScript ignore')
 
@@ -3173,7 +3189,7 @@ def elements_des_chemins(col, stats):
         num = k + 1
         base = {'trait': c['trait'], 'fond': c['fond'], 'ep': c['ep'] if c['trait'] is not None else None,
                 'at': c['at'], 'af': c['af'], 'calque': c['calque'], 'chemin': num, 'ordre': c['ordre'],
-                'tirets': c['tirets']}
+                'tirets': c['tirets'], 'bloc': c.get('bloc')}
         for ch in _chaines(normaliser(c['items'], stats)):
             if ch[0][0] == 're':
                 _, x0, y0, x1, y1 = ch[0]
@@ -3214,7 +3230,7 @@ def elements_des_glyphes(glyphes):
     textes = []
     cour = None
     for g in glyphes:
-        u, ox, oy, ux, uy, taille, avance, police, mode, couleur, alpha, calque, ordre = g
+        u, ox, oy, ux, uy, taille, avance, police, mode, couleur, alpha, calque, ordre, bloc = g
         if cour is not None:
             (fx, fy) = cour['fin']
             meme = (police == cour['police'] and abs(taille - cour['taille']) <= 0.01 * max(taille, cour['taille'])
@@ -3232,7 +3248,7 @@ def elements_des_glyphes(glyphes):
             textes.append(cour)
         cour = {'police': police, 'taille': taille, 'mode': mode, 'couleur': couleur, 'calque': calque,
                 'alpha': alpha, 'ux': ux, 'uy': uy, 'glyphes': [(u, ox, oy, avance, 0.0)],
-                'fin': (ox + avance * ux, oy + avance * uy), 'ordre': ordre}
+                'fin': (ox + avance * ux, oy + avance * uy), 'ordre': ordre, 'bloc': bloc}
     if cour is not None:
         textes.append(cour)
     sortie = []
@@ -3265,7 +3281,7 @@ def elements_des_glyphes(glyphes):
                        'angle': angle_de(t['ux'], t['uy']), 'taille': t['taille'], 'trait': None,
                        'fond': None, 'couleur': t['couleur'], 'mode': t['mode'], 'police': t['police'],
                        'texte': texte, 'calque': t['calque'], 'alpha': t['alpha'], 'chemin': None,
-                       'ordre': t['ordre'], 'ux': t['ux'], 'uy': t['uy']})
+                       'ordre': t['ordre'], 'ux': t['ux'], 'uy': t['uy'], 'bloc': t['bloc']})
     return sortie
 
 
@@ -3278,7 +3294,7 @@ def elements_des_images(col):
         sortie.append({'type': 'image', 'x1': min(xs), 'y1': min(ys), 'x2': max(xs), 'y2': max(ys),
                        'angle': angle_de(bx - ax, by - ay), 'l': im['l'], 'h': im['h'], 'info': im['info'],
                        'calque': im['calque'], 'ordre': im['ordre'], 'trait': None, 'fond': None,
-                       'chemin': None, 'coins': im['coins']})
+                       'chemin': None, 'coins': im['coins'], 'bloc': im.get('bloc')})
     return sortie
 
 
@@ -3442,6 +3458,11 @@ cad harness wiring diagram designer builder studio suite manager viewer generato
 unix sun java jdk net framework ms rendering engine image images tiff jpeg png postscript ps eps svg dxf html
 xml xps opc scansoft nuance ocr textbridge itextpdf ironpdf pdftron apryse docotic syncfusion telerik devexpress
 crystal reports ssrs sap business objects tibco jaspersoft birt fastreport stimulsoft activereports
+macintosh cc staroffice star pour for core api sdk lib kit toolkit engine anglais francais français english french
+german deutsch espanol español italiano poppler xpdf cairographics pdfium pdfjs ghostscript gs tcpdf fpdf dompdf
+mpdf prawn wkhtmltopdf weasyprint jasperreports pdfsam scribus quarkxpress quark framemaker distiller elements
+solidedge zw3d draftsight bricscad nanocad progecad intellicad vectorworks archicad revit navisworks smartplant
+aveva wscad elcad ruplan promis e-plan cimatron see-electrical caneco elec calc trace-software ige-xao xelec
 '''.split())
 
 
@@ -3901,6 +3922,24 @@ class DocumentPyMuPDF(object):
                     items.append(('l', ll, lr))
                     items.append(('l', lr, ur))
                     items.append(('l', ur, ul))
+            if d.get('closePath'):
+                # PyMuPDF avant 1.24 ne donne pas le trait de fermeture (h) : il le dit par closePath ; on le
+                # remet au bout de chaque chaine ouverte (comme le lecteur standard le trace)
+                fermes = []
+                debut = None
+                for k2, it in enumerate(items):
+                    if it[0] == 're':
+                        fermes.append(it)
+                        debut = None
+                        continue
+                    if debut is None or (fermes and fermes[-1][0] != 're' and fermes[-1][-1] != it[1]):
+                        if debut is not None and fermes[-1][-1] != debut:
+                            fermes.append(('l', fermes[-1][-1], debut))
+                        debut = it[1]
+                    fermes.append(it)
+                if debut is not None and fermes and fermes[-1][0] != 're' and fermes[-1][-1] != debut:
+                    fermes.append(('l', fermes[-1][-1], debut))
+                items = fermes
             trait = tuple(d.get('color')) if genre in ('s', 'fs') and d.get('color') is not None else None
             fond = tuple(d.get('fill')) if genre in ('f', 'fs') and d.get('fill') is not None else None
             if genre in ('s', 'fs') and trait is None:
@@ -4027,6 +4066,7 @@ def analyser_page(col, W, H):
     juger_visibilite(els, W, H)
     stats['degrades'] = col.nb_degrades
     stats['motifs'] = col.nb_motifs
+    stats['usages'] = dict(col.usages)
     return els, stats
 
 
@@ -4203,8 +4243,14 @@ def relever(data, options, fitz):
         if col2 is not None:
             try:
                 els2, _ = analyser_page(col2, W2, H2)
-                rel.comparaison.append(comparer_elements(els, els2))
+                comp = comparer_elements(els, els2)
+                rel.comparaison.append(comp)
                 col_marques = col2
+                # PyMuPDF ne dit pas de quel formulaire vient un element : le lecteur standard, si
+                for (ea, eb) in comp['paires']:
+                    if eb.get('bloc') and not ea.get('bloc'):
+                        ea['bloc'] = eb['bloc']
+                stats['usages'] = dict(col2.usages)
             except Exception as e:
                 rel.notes.ajouter('lecteur standard, page %d : %s (comparaison impossible)' % (i + 1, e))
         c = comptes_page(els, W, H)
@@ -4293,6 +4339,7 @@ def comparer_elements(a, b, tol=0.1 / MM):
     pris = set()
     resultat = {}
     ecarts = []
+    paires = []
     for e in a:
         t = cle(e)
         r_ = resultat.setdefault(t, {'a': 0, 'b': 0, 'ensemble': 0, 'ecart_max': 0.0})
@@ -4317,6 +4364,7 @@ def comparer_elements(a, b, tol=0.1 / MM):
                         trouve = j
         if trouve is not None:
             pris.add(trouve)
+            paires.append((e, b[trouve]))
             r_['ensemble'] += 1
             r_['ecart_max'] = max(r_['ecart_max'], meilleur)
         else:
@@ -4327,7 +4375,7 @@ def comparer_elements(a, b, tol=0.1 / MM):
         r_['b'] += 1
         if j not in pris:
             ecarts.append(('seul_b', f))
-    return {'types': resultat, 'ecarts': ecarts}
+    return {'types': resultat, 'ecarts': ecarts, 'paires': paires}
 
 
 # ===========================================================================
@@ -4335,7 +4383,7 @@ def comparer_elements(a, b, tol=0.1 / MM):
 # ===========================================================================
 
 COLONNES_TSV = ('page', 'n', 'type', 'x1', 'y1', 'x2', 'y2', 'angle', 'epaisseur', 'taille', 'couleur', 'fond',
-                'visible', 'raison', 'calque', 'chemin', 'motif', 'police', 'details')
+                'visible', 'raison', 'calque', 'chemin', 'bloc', 'motif', 'police', 'details')
 
 
 def index_des_calques(rel):
@@ -4396,7 +4444,7 @@ def ligne_tsv(num_page, n, e, index_calques, clair):
               fmt(e['taille'], 2) if t == 'texte' else '',
               couleur, hexa(e.get('fond')),
               'O' if e['visible'] else 'N', ','.join(e['raisons']), nom_calque(e.get('calque'), index_calques),
-              str(e['chemin']) if e.get('chemin') is not None else '', m,
+              str(e['chemin']) if e.get('chemin') is not None else '', e.get('bloc') or '', m,
               nettoyer_nom_police(e.get('police')) if t == 'texte' else '', details.strip()]
     if clair:
         champs.append(e['texte'] if t in ('texte', 'annotation') else '')
@@ -4552,6 +4600,11 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
         w(u'')
         ecrire_communs(w, rel)
         ecrire_motifs(w, rel, clair)
+        try:
+            ecrire_structure(w, rel)
+        except Exception as e:                        # une analyse en plus ne doit jamais coûter le rapport
+            w(u'(analyse de la structure impossible : %s)' % e)
+            w(u'')
         ecrire_caches(w, rel, clair)
     if rel.polices:
         w(u'== POLICES (déclarées dans les pages lues) ==')
@@ -4637,6 +4690,198 @@ def ecrire_communs(w, rel):
             h, n = histogramme([round((e['x2'] - e['x1']) * MM * 10) / 10 for e in cercles], 10)
             w(u'Cercles fréquents (diamètre mm, au 0,1) : ' + ', '.join(u'%s : %d' % (fr(k, 1), v) for k, v in h))
         w(u'')
+
+
+def mediane(xs):
+    xs = sorted(xs)
+    return xs[len(xs) // 2] if xs else 0
+
+
+def ecrire_structure(w, rel):
+    """Ce qui aidera a lire les liaisons : les symboles poses comme formulaires,
+    comment les traits se touchent, ou les textes se posent par rapport aux
+    traits et aux rectangles."""
+    # -- les formulaires poses (des symboles, probablement)
+    poses = {}
+    for p in rel.pages:
+        for e in p['elements']:
+            b = e.get('bloc')
+            if b:
+                poses.setdefault((b.split('.')[0]), {}).setdefault((p['num'], b), []).append(e)
+    usages = {}
+    for p in rel.pages:
+        for k, v in (p['stats'].get('usages') or {}).items():
+            usages[k] = usages.get(k, 0) + v
+    w(u'== FORMULAIRES (XObject) : DES SYMBOLES PROBABLES ==')
+    if not poses:
+        if usages:
+            w(u'Formulaires utilisés (%d) mais sans élément relevé dedans.' % len(usages))
+        else:
+            w(u'Aucun formulaire : les symboles (s\'il y en a) sont dessinés trait par trait, ou PyMuPDF a lu seul.')
+    else:
+        w(u'%d formulaire(s) utilisé(s) (imbriqués compris), %d posé(s) au premier niveau, %d pose(s) de premier niveau '
+          u'(colonne « bloc » du TSV : X3.12 = formulaire X3, 12e pose dans la page).'
+          % (len(usages), len(poses), sum(len(v) for v in poses.values())))
+        w(u'formulaire\tposes\téléments par pose\tcontenu d\'une pose\ttaille (mm)\tmotifs des textes dedans')
+        tri = sorted(poses.items(), key=lambda kv: (-len(kv[1]), int(kv[0][1:]) if kv[0][1:].isdigit() else 0))
+        for nom, inst in tri[:30]:
+            tailles = []
+            nbs = []
+            contenus = {}
+            motifs_ = {}
+            for (_, _), els in inst.items():
+                bs = [e.get('boite') or boite(e) for e in els]
+                tailles.append(((max(b[2] for b in bs) - min(b[0] for b in bs)) * MM, (max(b[3] for b in bs) - min(b[1] for b in bs)) * MM))
+                nbs.append(len(els))
+                for e in els:
+                    contenus[e['type']] = contenus.get(e['type'], 0) + 1
+                    if e['type'] == 'texte':
+                        m = motif(e['texte'])
+                        motifs_[m] = motifs_.get(m, 0) + 1
+            n = len(inst)
+            contenu = ', '.join(u'%s %s' % (fr(v / float(n), 1), k) for k, v in sorted(contenus.items(), key=lambda x: -x[1]))
+            tl = mediane([t[0] for t in tailles])
+            th = mediane([t[1] for t in tailles])
+            mt = ', '.join(u'%s (%d)' % (k, v) for k, v in sorted(motifs_.items(), key=lambda x: -x[1])[:4])
+            w(u'%s\t%d\t%d\t%s\t%s x %s\t%s' % (nom, n, mediane(nbs), contenu, fr(tl), fr(th), mt))
+        if len(tri) > 30:
+            w(u'... et %d formulaires posés moins souvent' % (len(tri) - 30))
+    w(u'')
+    # -- les traits qui se touchent
+    segs = [e for p in rel.pages for e in p['elements'] if e['type'] == 'segment' and e['visible']]
+    w(u'== COMMENT LES TRAITS SE TOUCHENT (segments visibles) ==')
+    if not segs:
+        w(u'Aucun segment visible.')
+        w(u'')
+    else:
+        tol = 0.05 / MM
+        bouts = {}
+        for p in rel.pages:
+            for e in p['elements']:
+                if e['type'] == 'segment' and e['visible']:
+                    for (x, y) in ((e['x1'], e['y1']), (e['x2'], e['y2'])):
+                        k = (p['num'], int(round(x / tol)), int(round(y / tol)))
+                        bouts[k] = bouts.get(k, 0) + 1
+        h = {}
+        for v in bouts.values():
+            k = v if v < 4 else 4
+            h[k] = h.get(k, 0) + 1
+        w(u'Extrémités : %d points distincts ; seuls (bout libre) : %d, partagés par 2 : %d, par 3 : %d, par 4 ou plus : %d'
+          % (len(bouts), h.get(1, 0), h.get(2, 0), h.get(3, 0), h.get(4, 0)))
+        # les bouts poses au milieu d'un trait horizontal ou vertical (piquages en T)
+        t_jonctions = 0
+        for p in rel.pages:
+            hs, vs = {}, {}
+            ps = [e for e in p['elements'] if e['type'] == 'segment' and e['visible']]
+            for e in ps:
+                o = orientation_segment(e['angle'])
+                if o == 'H':
+                    hs.setdefault(int(round(e['y1'] / tol)), []).append((min(e['x1'], e['x2']), max(e['x1'], e['x2'])))
+                elif o == 'V':
+                    vs.setdefault(int(round(e['x1'] / tol)), []).append((min(e['y1'], e['y2']), max(e['y1'], e['y2'])))
+            for e in ps:
+                for (x, y) in ((e['x1'], e['y1']), (e['x2'], e['y2'])):
+                    trouve = False
+                    for ky in (int(round(y / tol)) - 1, int(round(y / tol)), int(round(y / tol)) + 1):
+                        for (a, b) in hs.get(ky, ()):
+                            if a + tol < x < b - tol:
+                                trouve = True
+                                break
+                        if trouve:
+                            break
+                    if not trouve:
+                        for kx in (int(round(x / tol)) - 1, int(round(x / tol)), int(round(x / tol)) + 1):
+                            for (a, b) in vs.get(kx, ()):
+                                if a + tol < y < b - tol:
+                                    trouve = True
+                                    break
+                            if trouve:
+                                break
+                    if trouve:
+                        t_jonctions += 1
+        points = sum(1 for p in rel.pages for e in p['elements'] if e['type'] == 'cercle' and e['visible']
+                     and e.get('fond') not in (None, 'motif') and (e['x2'] - e['x1']) * MM <= 2.0)
+        w(u'Bouts posés au milieu d\'un trait horizontal ou vertical (piquages en T) : %d' % t_jonctions)
+        w(u'Petits cercles pleins (diamètre <= 2 mm, points de jonction probables) : %d' % points)
+        w(u'')
+    # -- ou se posent les textes
+    w(u'== OÙ SE POSENT LES TEXTES (textes visibles, par motif) ==')
+    w(u'(dans un rect. = la boîte du texte tient dans un rectangle de moins d\'une demi-page ; sur un trait = un trait horizontal passe sous'
+      u' le texte ou le traverse, à 2 mm au plus de la ligne de base, sous le milieu du texte ; près d\'un bout ='
+      u' une extrémité de segment à 2 mm au plus de la boîte du texte)')
+    stats_m = {}
+    case = 5.0 / MM
+    for p in rel.pages:
+        rects = Grille()
+        hseg = Grille()
+        bouts = {}
+        for e in p['elements']:
+            if not e['visible']:
+                continue
+            if e['type'] == 'rectangle':
+                rb = e.get('boite') or boite(e)
+                # pas le cadre ni le cartouche : un rectangle de moins de la moitie de la page dans chaque sens
+                if rb[2] - rb[0] < 0.5 * p['W'] and rb[3] - rb[1] < 0.5 * p['H']:
+                    rects.ajouter(rb, e)
+            elif e['type'] == 'segment':
+                if orientation_segment(e['angle']) == 'H':
+                    hseg.ajouter(e.get('boite') or boite(e), e)
+                for (x, y) in ((e['x1'], e['y1']), (e['x2'], e['y2'])):
+                    bouts.setdefault((int(x // case), int(y // case)), []).append((x, y))
+        for e in p['elements']:
+            if e['type'] != 'texte' or not e['visible']:
+                continue
+            m = motif(e['texte'])
+            x = stats_m.setdefault(m, [0, 0, 0, 0])
+            x[0] += 1
+            b = e.get('boite') or boite(e)
+            cx, cy = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
+            for r_ in rects.autour(cx, cy):
+                rb = r_.get('boite') or boite(r_)
+                if rb[0] <= b[0] + 0.5 and rb[1] <= b[1] + 0.5 and rb[2] >= b[2] - 0.5 and rb[3] >= b[3] - 0.5:
+                    x[1] += 1
+                    break
+            sur = False
+            if abs(e['uy']) < 0.01:          # texte horizontal
+                yb = e['y1']
+                bas, haut = (yb + 2 / MM, yb - 0.8 * e['taille']) if e['ux'] > 0 else (yb + 0.8 * e['taille'], yb - 2 / MM)
+                vus = set()
+                for py in (yb, bas, haut):
+                    for s_ in hseg.autour(cx, py):
+                        if id(s_) in vus:
+                            continue
+                        vus.add(id(s_))
+                        if min(haut, bas) <= s_['y1'] <= max(haut, bas) and min(s_['x1'], s_['x2']) <= cx <= max(s_['x1'], s_['x2']):
+                            sur = True
+                            break
+                    if sur:
+                        break
+            if sur:
+                x[2] += 1
+            else:
+                d2 = (2 / MM) ** 2
+                pres = False
+                for i in range(int((b[0] - 2 / MM) // case), int((b[2] + 2 / MM) // case) + 1):
+                    for j in range(int((b[1] - 2 / MM) // case), int((b[3] + 2 / MM) // case) + 1):
+                        for (px, py) in bouts.get((i, j), ()):
+                            dx = max(b[0] - px, 0, px - b[2])
+                            dy = max(b[1] - py, 0, py - b[3])
+                            if dx * dx + dy * dy <= d2:
+                                pres = True
+                                break
+                        if pres:
+                            break
+                    if pres:
+                        break
+                if pres:
+                    x[3] += 1
+    if not stats_m:
+        w(u'Aucun texte visible.')
+    else:
+        w(u'motif\ttextes\tdans un rect.\tsur un trait\tprès d\'un bout')
+        for m, (n, dr, st, pb) in sorted(stats_m.items(), key=lambda kv: (-kv[1][0], kv[0]))[:40]:
+            w(u'%s\t%d\t%d %%\t%d %%\t%d %%' % (m.replace('\t', ' '), n, round(100.0 * dr / n), round(100.0 * st / n), round(100.0 * pb / n)))
+    w(u'')
 
 
 def ecrire_caches(w, rel, clair):

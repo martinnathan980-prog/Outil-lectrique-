@@ -90,6 +90,11 @@ python sonde_pdf.py --clair "C:\chemin\vers\plan-public.pdf"
 - le **dictionnaire des motifs** : chaque forme de texte et son nombre
   (`999AA9` : 312 fois, `A99` : 290 fois…). C'est lui qui dira comment
   reconnaître un repère, une broche, un numéro de fil ;
+- les **symboles** que le logiciel a posés comme des tampons (le même dessin
+  posé plusieurs fois), comment les traits se touchent (bouts libres,
+  piquages en T, points de jonction) et **où se posent les textes** de chaque
+  forme (sur un fil, dans un rectangle, au bout d'un trait) : c'est ce qui
+  dira quel texte est un numéro de fil, une broche, un repère ;
 - les textes **cachés** qui ne se dessinent pas (dans les annotations ou dans
   le « contenu marqué » du PDF) : si tes normes et références sont dans le PDF
   sans se voir, c'est là qu'elles apparaîtront (en motifs) ;
@@ -104,8 +109,10 @@ python sonde_pdf.py --clair "C:\chemin\vers\plan-public.pdf"
 choix : PyMuPDF (`import pymupdf`, puis `import fitz`) s'il est importable,
 sinon le lecteur écrit ici. `--lecteur=standard|pymupdf|auto`. Quand PyMuPDF
 lit, le lecteur standard relit aussi chaque page : le rapport dit alors si les
-deux sont d'accord (section « LES DEUX LECTEURS ») et le contenu marqué vient
-du lecteur standard.
+deux sont d'accord (section « LES DEUX LECTEURS ») ; le contenu marqué, l'état
+par défaut des calques, la colonne `bloc` et le tri des images sans objet
+(une image en ligne, ou le rendu d'un dégradé ou d'un masque doux que MuPDF
+présente comme une image) viennent du lecteur standard.
 
 Options : `--clair`, `--sortie=DOSSIER`, `--pages=1-3,7`,
 `--mot-de-passe=XXX`, `--lecteur=…`, `--aide`. Code de sortie 0 si au moins
@@ -157,9 +164,10 @@ rotation de la page (`/Rotate`) et le recadrage (`CropBox`).
 | `couleur` | `#rrggbb` du trait (ou du texte) ; `motif` pour un motif ; vide si non tracé |
 | `fond` | `#rrggbb` du remplissage ; vide si non rempli |
 | `visible` | `O` ou `N` |
-| `raison` | si `N` : `mode3` (texte rendu invisible, Tr 3 ou 7), `horspage`, `blanc` (blanc sans fond coloré dessous), `calque` (calque masqué par défaut), `transparent` (opacité nulle), `minuscule` (corps < 1 pt), `recouvert` (entièrement sous un rectangle plein et opaque peint après lui), et pour une annotation `cachee`, `sansapparence` ; plusieurs raisons séparées par des virgules |
+| `raison` | si `N` : `mode3` (texte rendu invisible, Tr 3), `mode7` (texte qui ne sert qu'à découper, Tr 7), `horspage`, `blanc` (blanc sans fond coloré dessous), `calque` (calque masqué par défaut), `transparent` (opacité nulle), `minuscule` (corps < 1 pt), `recouvert` (entièrement sous un rectangle plein et opaque peint après lui), et pour une annotation `cachee`, `sansapparence` ; plusieurs raisons séparées par des virgules |
 | `calque` | `C1`, `C2`… (dans l'ordre des numéros d'objet des calques ; le rapport donne pour chacun la forme de son nom et son état par défaut) ; vide hors calque |
 | `chemin` | numéro du chemin dans la page : les segments d'une même polyligne ou d'un même chemin le partagent |
+| `bloc` | l'élément vient d'un formulaire (XObject) posé dans la page : `X3.12` = le formulaire `X3` (numérotés dans l'ordre de leur première pose dans le document), sa 12e pose de premier niveau dans la page ; un symbole posé plusieurs fois se reconnaît là ; vide sinon |
 | `motif` | texte ou annotation : le texte réduit à sa forme (`A`, `a`, `9`, signes gardés, espaces gardés ; `¤` = glyphe sans caractère connu) |
 | `police` | texte : le nom de la police, sans le préfixe de sous-ensemble (`ABCDEF+`) |
 | `details` | courbe : les deux points de contrôle (`x y x y`, mm) ; image : `LxH px, filtre, espace, bits`, `dans un motif` ; texte : nombre de caractères, `(texte en contour)` ; annotation : sa sorte et la source de son texte (`Contents`, `V`, `TU`, `T`, `URI`) ; `tirets` pour un trait pointillé |
@@ -167,19 +175,26 @@ rotation de la page (`/Rotate`) et le recadrage (`CropBox`).
 
 Règles de construction (les mêmes pour les deux lecteurs) :
 
-- un chemin est coupé en **chaînes** contiguës ; une chaîne de quatre segments
+- un chemin est d'abord **normalisé** : un trait de moins de 0,01 pt, une
+  courbe dont les points se confondent sont jetés (comptés « points ») ; une
+  courbe droite (p0 = p1 et p2 = p3, ou trois points confondus) devient un
+  trait ; puis il est coupé en **chaînes** contiguës ; une chaîne de quatre segments
   fermée, horizontaux et verticaux en alternance (un `re`, ou `m l l l h`) est
   un **rectangle** ; une chaîne fermée de courbes de Bézier qui tient sur un
   cercle (à 3 % près) est un **cercle** ; tout le reste est décomposé en
   **segments** (droites) et **courbes** (Bézier cubiques) ; un trait plus
   court que 0,01 pt est compté comme « point » dans le rapport, pas écrit ;
 - un remplissage suivi du trait du même chemin donne **un** élément (`couleur`
-  et `fond`) ;
+  et `fond`) ; une surface peinte par un **motif** (`Pattern` : hachures,
+  dégradé, trame) n'est pas un élément (comme dans MuPDF : c'est une découpe
+  puis le motif) : seul son trait reste ; le rapport compte ces surfaces page
+  par page ;
 - les glyphes se regroupent en **textes** : même police, même corps, même
   sens, même couleur, même calque, sur la même ligne de base (à 0,05 corps),
   à moins d'un demi-corps l'un de l'autre ; un écart de plus de 0,12 corps
   au-delà de l'écart ordinaire du texte (pour un texte espacé lettre à
-  lettre) devient une espace ; les espaces de bout sont retirées ;
+  lettre) devient une espace ; les espaces de bout sont retirées ; les
+  ligatures (ﬀ, ﬁ, ﬂ, ﬃ, ﬄ, ﬅ, ﬆ) sont écrites en lettres ;
 - la **boîte** d'un texte (pour hors page, blanc, recouvert) est
   conventionnelle : de la ligne de base, 0,8 corps au-dessus, 0,2 au-dessous ;
 - horizontal, vertical : à 0,5° près.
@@ -193,6 +208,12 @@ fichier, lecteur utilisé), `LE DOCUMENT`, `VERDICT`, `PAGE PAR PAGE`,
 `CE QUE LES TEXTES ONT EN COMMUN`, `CE QUE LES TRAITS ONT EN COMMUN`,
 `DICTIONNAIRE DES MOTIFS` (motif, occurrences, corps le plus fréquent, angles,
 invisibles ; tabulations ; 3 000 motifs au plus, tous sont dans le TSV),
+`FORMULAIRES (XObject) : DES SYMBOLES PROBABLES` (chaque formulaire posé :
+poses, éléments et contenu d'une pose, taille, motifs des textes dedans),
+`COMMENT LES TRAITS SE TOUCHENT` (extrémités seules ou partagées, piquages en
+T, petits cercles pleins), `OÙ SE POSENT LES TEXTES` (par motif : dans un
+rectangle de moins d'une demi-page, sur un trait horizontal, près d'un bout
+de segment),
 `ANNOTATIONS`, `CONTENU MARQUÉ (BDC / BMC)` (étiquettes, clés des propriétés,
 motifs des textes cachés : `ActualText`, `Alt`, `E` et clés propres d'un
 logiciel), `POLICES`, `LES DEUX LECTEURS` (si PyMuPDF a lu), `CE QUI N'EST
@@ -205,7 +226,7 @@ PAS GÉRÉ`.
 - le contenu d'un **motif** (`Pattern` : hachures, quadrillage, image
   tramée) n'est pas parcouru ; une image dans un motif à pavé est relevée sur
   la boîte de la surface peinte (approché) ; les dégradés (`sh`) sont comptés,
-  pas relevés ;
+  pas relevés ; les masques doux (`SMask`) sont ignorés ;
 - les apparences des annotations ne sont pas lues (leur rectangle et leur
   texte, oui) ;
 - les programmes de police (TrueType, CFF) ne sont pas lus : une police
@@ -218,6 +239,22 @@ PAS GÉRÉ`.
 - chiffrement : seul le gestionnaire standard ; un PDF à mot de passe
   d'ouverture inconnu donne un rapport « illisible » (`--mot-de-passe=`) ;
 - `/AS` des calques (états automatiques) ignoré : l'état par défaut fait foi.
+
+### Les deux lecteurs, mesurés
+
+Sur le corpus d'essai et les PDF fabriqués par le test, le lecteur standard
+et PyMuPDF (1.23.26 sous Python 3.8, 2.0 sous Python 3.13) donnent les mêmes
+éléments à 0,1 mm près (écart maximal mesuré : 0,000 mm). Sur 34 PDF réels
+variés (Word, InDesign/Adobe PDF Library, Skia, iLovePDF, PDFCreator,
+StarOffice ; 6 premières pages), 30 sont identiques ; les 4 autres diffèrent
+d'un texte chacun : une ligature `f_t` que MuPDF lit `f` et le lecteur
+standard `ft`. Avec PyMuPDF 1.23 (avant 1.24, PyMuPDF ne donne pas le trait de
+fermeture `h` d'un chemin, seulement un drapeau `closePath` pour tout le
+chemin : la sonde ferme chaque chaîne ouverte), 25 sur 34 sont identiques ;
+les autres diffèrent de quelques segments sur des milliers (sous-chemins
+ouverts et fermés mêlés). La comparaison ne retient pas les traits et courbes de moins
+de 0,05 mm (MuPDF, en simple précision, garde ou jette autrement les cas
+dégénérés) ni les textes de découpe (Tr 7, que PyMuPDF ne rend pas).
 
 ### Les tests
 
