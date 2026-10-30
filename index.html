@@ -229,6 +229,12 @@ kbd{font-family:var(--mono)}
 #entete,#rail,#folios,.ilot-sombre,#bibliotheque,:root[data-theme="dark"]{--anneau-c:var(--glace)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--anneau-c:var(--glace)}}
 .menu button:focus-visible,.doc-menu-l button:focus-visible{box-shadow:inset 0 0 0 2px var(--glace)}
+/* UNE entrée pour tout ce qui paraît (le panel v73 : elle remplace peu à peu les vingt-deux @keyframes d'entrée) : du
+   bas de --monte, ou de côté (--entre-x: var(--glisse); --entre-y: 0), vive et très freinée ; --k décale les éléments
+   d'une même arrivée de --decale chacun. Les sorties font le même chemin à l'envers, en 0,7 × la durée, --courbe-sortie. */
+@keyframes entre{from{opacity:0;transform:translate(var(--entre-x,0),var(--entre-y,var(--monte)))}}
+.entre-v{animation:entre var(--d-pose) var(--courbe-entree) both;animation-delay:calc(var(--k,0) * var(--decale))}
+@media (prefers-reduced-motion:reduce){.entre-v{animation:none}}
 ::selection{background:color-mix(in srgb,var(--accent) 18%,transparent)}
 /* ce qui défile : une barre fine et arrondie, de l'encre de son fond, qui s'affirme au survol */
 *{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--t-1) 22%,transparent) transparent}
