@@ -1903,3 +1903,38 @@ function connecteursEnModules(repere, liaisons, norme, retenue, sexes) { const b
 /* La prise de coupure en module : ses contacts, un fil de chaque côté (fiche et embase). `sexe` : celui de la fiche. */
 function coupureEnModule(repere, liaisons, norme, choix, sexe) { const b = besoinsDeBarrette(repere, liaisons), points = pointsDe(b, b.bornes);
   return { besoins: b, points, plan: remplirContacts(points, norme, { choix, pn: b.pn, prise: true, sexe }) }; }
+
+/* ---- v74, lot F (les fiches) : AJOUT — LES ARRANGEMENTS RECOMMANDÉS d'une prise de coupure (ou d'un connecteur) --------
+   Le lecteur (oct. 2026) : « Changer la référence marche mais pas fluide : je veux des RECOMMANDATIONS, les mêmes types,
+   les contacts admissibles, ultra pensé pour un novice. Je veux le POURQUOI : pourquoi ce choix et pas les autres. »
+   Dans UNE norme (`famille` : celle de la référence), les arrangements qui logent TOUS ces points (`arrangementsQuiLogent` :
+   chaque borne a son contact, chaque câble un contact de la table qui l'admet, de chaque côté pour une prise), rangés du
+   plus proche de l'arrangement retenu (`opts.actuel`) au plus loin :
+     · le retenu d'abord ;
+     · le même BOÎTIER (un insert circulaire : les chiffres de tête de l'arrangement, « 12 » de 12-08 — le raccord, la
+       bande, le manchon ne changent pas) ;
+     · les mêmes CONTACTS À SERTIR (ceux que la table donne à ces câbles, côté fiche et côté embase : rien à racheter) ;
+     · le moins de contacts libres (chacun demande un obturateur), puis le plus petit.
+   Chacun porte SES CONTACTS ADMISSIBLES — pour chaque côté, chaque contact de la table, compté : [{ cote ('fiche',
+   'embase', '' pour un connecteur), sexe, reference, accessoire, n, confiance }] — et sa RAISON, en mots courts (le moteur
+   ne connaît pas la page : la fiche, 08, les met en forme). `opts` : { sexe (celui de la fiche, F d'office), prise,
+   actuel (le module retenu), nomme (la référence le nomme) }. Rend [{ m, contacts, pris, libres, boitier, memeBoitier,
+   memesContacts, retenu, raisons }]. */
+const boitierDe = m => m && m.corps === 'circulaire' ? ((/^(\d{1,2})/.exec(String(m.variante || '')) || [])[1] || '') : '';
+function contactsAdmissibles(norme, m, points, sexeFil, prise) { const N = normeDesModules(norme), r = poserPoints(N, m, points, sexeFil), par = new Map();
+  r.pl.forEach(x => x.p.fils.forEach(f => { const sx = sexeFil(f), st = f.jauge == null ? null : contactDuFil(N, m.famille, x.c.taille, sx, f.type, f.jauge), cote = prise ? (f.amont ? 'fiche' : 'embase') : '';
+    const k = cote + '|' + (st ? st.reference + '|' + (st.accessoire || '') : '?'), y = par.get(k) || { cote, sexe: sx, reference: st ? st.reference : '', accessoire: st ? st.accessoire || '' : '', confiance: st ? st.confiance || '' : '', n: 0 };
+    y.n++; par.set(k, y); }));
+  const rang = c => c === 'fiche' ? 0 : c === 'embase' ? 1 : 2;
+  return { liste: [...par.values()].sort((a, b) => rang(a.cote) - rang(b.cote) || b.n - a.n || triBornes(a.reference, b.reference)), pris: new Set(r.pl.map(x => x.c.lettre)).size }; }
+function arrangementsRecommandes(points, norme, famille, opts) { opts = opts || {}; const N = normeDesModules(norme), s0 = opts.sexe === 'M' ? 'M' : 'F', prise = !!opts.prise;
+  const sexeFil = f => prise && !f.amont ? autreSexe(s0) : s0, actuel = opts.actuel || null, A = actuel ? contactsAdmissibles(N, actuel, points, sexeFil, prise) : null;
+  const cleC = L => L.map(y => y.cote + '|' + y.reference + '|' + y.accessoire).sort().join(), bA = boitierDe(actuel);
+  return arrangementsQuiLogent(points, N, famille, sexeFil).map(m => { const C = contactsAdmissibles(N, m, points, sexeFil, prise), b = boitierDe(m), retenu = !!actuel && m.reference === actuel.reference;
+    const memeBoitier = !!(bA && b && b === bA), memesContacts = !!(A && A.liste.length && cleC(C.liste) === cleC(A.liste)), libres = Math.max(0, m.contacts.length - C.pris), raisons = [];
+    if (retenu) raisons.push(opts.nomme ? 'celui de l’installation : sa référence le nomme' : 'le choix de Volta : le plus petit qui loge tout');
+    else { if (b) raisons.push(memeBoitier ? 'même boîtier (taille ' + b + ') : le même raccord' : 'boîtier ' + b + (bA ? ' au lieu de ' + bA : '') + ' : un autre raccord');
+      raisons.push(memesContacts ? 'les mêmes contacts à sertir' : 'd’autres contacts à sertir'); }
+    raisons.push(libres ? libres + ' contact' + (libres > 1 ? 's' : '') + ' libre' + (libres > 1 ? 's (un obturateur chacun)' : ' (un obturateur)') : 'aucun contact libre');
+    return { m, contacts: C.liste, pris: C.pris, libres, boitier: b, memeBoitier, memesContacts, retenu, raisons }; })
+    .sort((a, b) => (b.retenu - a.retenu) || (b.memeBoitier - a.memeBoitier) || (b.memesContacts - a.memesContacts) || a.libres - b.libres || a.m.contacts.length - b.m.contacts.length); }

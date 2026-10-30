@@ -89,7 +89,8 @@ input.fi-nom:focus{outline:none;background:var(--s-surface);box-shadow:inset 0 0
 /* LES TUILES d'un câble (sous les problèmes) : une seule bande au filet, quatre cases de même largeur séparées d'un filet —
    une étiquette, une valeur forte (ou le champ qui l'écrit), une ligne dessous ; la case qui pose problème se teinte de son
    état ; ce qui est supposé s'écrit en italique */
-.fi-tuiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:6px 0 18px;border:1px solid var(--s-line);border-radius:var(--r-2);overflow:hidden}
+/* (v74 : trois tuiles — le type, la gauge, la longueur ; l'intensité se lit dans sa section — deux pour un câble à créer) */
+.fi-tuiles{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);margin:6px 0 18px;border:1px solid var(--s-line);border-radius:var(--r-2);overflow:hidden}
 .fi-tuile{min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:10px 8px 11px;color:var(--t-1);font:inherit;text-align:left}
 .fi-tuile+.fi-tuile{border-left:1px solid var(--s-line)}
 .fi-tuile-k{font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2);white-space:nowrap}
@@ -104,7 +105,7 @@ input.fi-nom:focus{outline:none;background:var(--s-surface);box-shadow:inset 0 0
 .fi-tuiles .fi-tuile .fc-in{flex:1 1 auto;height:28px;margin:0;padding:0 7px;font:600 var(--f-14)/1 var(--mono);min-width:0;width:100%;max-width:none;field-sizing:fixed}
 .fi-tuiles .fi-tuile .fc-in.court{text-align:left;font-family:var(--sans)}
 .fi-tuiles .fi-tuile .fc-in::placeholder{color:var(--t-1);font:inherit}
-.fi-tuile.supp .fi-tuile-v,.fi-tuile.supp .fc-in::placeholder{font-style:italic;font-weight:500}
+.fi-tuiles .fi-tuile.supp .fc-in::placeholder{color:var(--t-2);font-weight:500}
 .fi-tuile .cb-sel{flex:1 1 auto;min-width:0}
 .fi-tuile .cb-sel select{width:100%;height:28px;font:600 var(--f-14)/1 var(--mono);color:var(--t-1)}
 .fi-tuile.att{background:color-mix(in srgb,var(--warn-soft) 70%,transparent)}
@@ -549,12 +550,14 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .cb-i-v{font:500 var(--f-12)/1.1 var(--sans);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums}
 .cb-i-v b{font-weight:600;color:var(--t-1)}
 .cb-i.att .cb-i-v b{color:var(--warn)} .cb-i.ko .cb-i-v b{color:var(--ko)}
-.cb-i.supp .cb-i-v{font-style:italic}
+/* (v74, lot F — le lecteur : « l'italique, c'est compliqué » : plus d'italique pour ce qui est supposé ; la note sous le
+   tableau le dit une fois, en clair — `noteSupposes`) */
 .cb-carte .fi-u{justify-self:start;font:600 var(--f-12) var(--sans)}
-.fi-u.supp{font-style:italic}
-/* la longueur : supposée, en italique (la valeur des hypothèses en filigrane) */
+/* la longueur supposée : la case vide montre la valeur des hypothèses en gris, sans plus */
 .cb-lg .fc-in{width:100%;min-width:0;max-width:none;field-sizing:fixed;padding:0 4px;text-align:right;font-family:var(--sans)}
-.cb-lg.supp .fc-in::placeholder{color:var(--t-2);font-style:italic;font-weight:500}
+.cb-lg.supp .fc-in::placeholder{color:var(--t-2);font-weight:500}
+.cb-note b{font-weight:600;color:var(--t-1)}
+.fi-note-hyp .fi-hyp{font-size:inherit}
 .cb-ouvrir{flex:none;width:28px;height:28px;display:grid;place-items:center;padding:0;border:none;border-radius:var(--r-1);background:none;color:var(--t-3);transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
 .cb-ouvrir svg.ico{width:15px;height:15px}
 .cb-carte:hover .cb-ouvrir{color:var(--t-2)}
@@ -609,23 +612,31 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .fi-masse .fi-dest i{color:var(--t-2);font-style:normal}
 .fi-masse .fi-jg small{font:500 var(--f-11) var(--sans);color:var(--t-2)}
 .fi-masse .fi-entetes span:last-child,.fi-masse .fi-jg{justify-self:end}
-/* L'INTENSITÉ ET LA CHUTE d'un câble : une ligne chacune, une barre fine contre l'admis */
-/* (la liste porte la grille, chaque ligne la partage : les deux barres commencent et finissent au même endroit) */
-.fi-mesures{display:grid;grid-template-columns:minmax(96px,max-content) minmax(80px,1fr) auto;column-gap:16px}
-.fi-mesures>.fi-note{grid-column:1/-1}
-.fi-mes{grid-column:1/-1;display:grid;grid-template-columns:subgrid;align-items:center;min-height:52px;padding:6px 0}
+/* L'INTENSITÉ ET LA CHUTE d'un câble (v74, lot F — le lecteur : « c'est bien, mais pas présenté de façon fluide ») : chaque
+   mesure se lit comme une phrase — son nom et son « ? » à gauche, sa valeur « sur » ce qui est admis à droite, la barre sur
+   toute la largeur, puis d'où elle vient, en clair (le disjoncteur en puce, le chemin, la pointe) ; plus d'italique */
+.fi-mesures{display:flex;flex-direction:column}
+.fi-mes{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"k v" "b b" "d d";align-items:baseline;column-gap:12px;row-gap:7px;padding:10px 0 12px}
 .fi-mes+.fi-mes{border-top:1px solid var(--s-line)}
-.fi-mes-k{display:flex;flex-direction:column;align-items:flex-start;gap:1px;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.fi-mes-k{grid-area:k;display:flex;align-items:center;font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
 .fi-mes-k>span{display:inline-flex;align-items:center}
-.fi-mes-k small{font:500 var(--f-11)/1.3 var(--sans);color:var(--t-2)}
-.fi-mes-k small .fi-lien,.fi-mes-k small .fi-hyp{min-height:0;padding:0 3px;margin:0 -3px;font-size:var(--f-11);color:var(--t-2);text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:2px}
-.fi-mes-v{font:500 var(--f-13) var(--sans);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums}
-.fi-mes-v b{font-weight:600;color:var(--t-1)}
+.fi-mes-v{grid-area:v;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fi-mes-v b{font:600 var(--f-16)/1.2 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
 .fi-mes.ko .fi-mes-v b{color:var(--ko)}
 .fi-mes.att .fi-mes-v b{color:var(--warn)}
-.fi-mes-v em{font-style:normal;font-size:var(--f-11);margin-left:4px}
-/* une valeur calculée sur des longueurs (ou un courant) supposés : en italique, comme dans le tableau des câbles */
-.fi-mes-v .supp,.fi-mes-v em.supp{font-style:italic}
+.fi-mes>.fi-barre{grid-area:b;height:5px;border-radius:3px}
+.fi-mes>.fi-barre i{border-radius:3px}
+.fi-mes-d{grid-area:d;margin:0;font:400 var(--f-12)/1.55 var(--sans);color:var(--t-2)}
+.fi-mes-d .fi-dj-puce{display:inline-flex;vertical-align:baseline;height:22px;font-size:var(--f-11)}
+.fi-mes-d .fi-hyp{font-size:inherit}
+.fi-mes-pointe{font-weight:600}
+.fi-mes-pointe.ko{color:var(--ko)} .fi-mes-pointe.att{color:var(--warn)} .fi-mes-pointe.ok{color:var(--t-1)}
+/* ce qui est supposé, dit une fois sous les tuiles d'un câble (« Longueur supposée : 5 m, à écrire dans l'installation ») */
+.fi-hyp-l{display:flex;align-items:flex-start;gap:8px;margin:-8px 0 16px;padding:8px 10px;border-radius:var(--r-1);background:var(--info-soft);font:400 var(--f-12)/1.5 var(--sans);color:var(--t-1)}
+.fi-hyp-l>svg.ico{width:15px;height:15px;flex:none;margin-top:2px;color:var(--t-2)}
+.fi-hyp-l>span{flex:1;min-width:0}
+.fi-hyp-l b{font-weight:600}
+.fi-hyp-l .fi-hyp{flex:none;align-self:center;min-height:24px;padding:0 6px;font-size:var(--f-12)}
 
 /* ─── LE RACCORD : une nomenclature nette par connecteur (ou par côté d'une prise) — une pièce par ligne, un filet entre ─── */
 .fi-hab{display:flex;flex-direction:column;gap:6px}
@@ -872,7 +883,7 @@ details.fs:last-of-type{margin-bottom:var(--sp-5)}
 .fi-conso-c{display:inline-flex;align-items:center;gap:5px}
 .fi-conso-c .fc-in{width:8ch;flex:none;text-align:right}
 .fi-conso-c i,.fi-conso-mot{font:500 var(--f-12)/1 var(--sans);font-style:normal;color:var(--t-3)}
-.fi-a-ecrire{color:var(--t-3);font-style:italic}
+.fi-a-ecrire{color:var(--t-3)}
 
 /* ─── D'OÙ VIENT CHAQUE PIÈCE (v74) : la chaîne d'un connecteur, un maillon par ligne, sa table en petit ─── */
 .fi-trace{margin:14px 0 4px;border-top:1px solid var(--s-line);padding-top:10px}
@@ -889,3 +900,99 @@ details.fs:last-of-type{margin-bottom:var(--sp-5)}
 .fi-tr-fil{display:grid;grid-template-columns:40px repeat(3,minmax(0,auto));column-gap:10px;align-items:baseline;font-size:var(--f-12);color:var(--t-1)}
 .fi-tr-fil small{grid-column:2 / -1;color:var(--t-3)}
 .fi-tr-fil .id{white-space:nowrap}
+
+/* ═══ v74, LOT F — LES FICHES : le contact ouvert, le récit d'une référence, la prise rangée, le pourquoi d'un « manque » ═══ */
+/* LA GAUGE (et le contact) d'une ligne de contacts se cliquent : ils ouvrent le contact, sa norme, sa table, sa source */
+button.fi-jg{min-height:26px;padding:0 6px;margin-left:-6px;border:none;background:none;border-radius:var(--r-1);cursor:pointer;transition:background var(--rapide)}
+button.fi-jg:hover{background:var(--fi-voile-2)}
+button.fi-jg:focus-visible,.fi-cote button.fi-sertir:focus-visible{outline:2px solid var(--anneau-c);outline-offset:0}
+.fi-cote button.fi-sertir{min-height:24px;padding:0 4px;margin:0;flex:none;max-width:none;overflow:visible}
+.ct-cote-bas button.fi-jg{min-height:24px;margin-left:2px}
+/* LA CARTE DU CONTACT, sous sa ligne : ce qu'il est, sa norme, sa table, sa source, ce câble, sa place, l'outillage */
+.fi-choix.ct-carte{gap:8px;padding:12px 14px 10px}
+.fi-choix.ct-carte.ko{border-color:color-mix(in srgb,var(--ko) 45%,var(--s-line))}
+.ct-carte-tete{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px}
+.ct-carte-k{font:500 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.ct-carte-tete b.id{font:600 var(--f-14)/1.3 var(--mono);color:var(--t-1)}
+.ct-carte-main{font:600 var(--f-11)/1.3 var(--sans);font-style:normal;color:var(--warn)}
+.ct-carte-l{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:8px;margin:2px 0 0}
+.ct-carte-l dt{font:500 var(--f-12)/1.5 var(--sans);color:var(--t-2);white-space:nowrap}
+.ct-carte-l dd{margin:0;min-width:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-1)}
+.ct-carte-l dd .id{font-size:var(--f-12)}
+.ct-carte-l dd small{display:block;margin-top:1px;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+.ct-carte-l .fi-conf{margin-right:7px;vertical-align:1px}
+.ct-carte-l .fi-muet{color:var(--t-2)}
+.ct-carte-ok{font-weight:600;color:var(--ok)}
+.ct-carte-gestes{display:flex;flex-wrap:wrap;gap:2px 12px;padding-top:6px;border-top:1px solid var(--s-line)}
+.ct-carte-gestes .fi-lien{margin:0 -4px;padding:0 6px;min-height:28px}
+.ct-carte-gestes svg.ico{width:14px;height:14px}
+.ct-carte-autres{display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px solid var(--s-line)}
+/* LE RÉCIT DE LA RÉFÉRENCE (« Pourquoi cette norme ») : cinq pas numérotés, les voisines écartées et leur raison */
+.fi-choix.recit-recit .fi-choix-corps{max-height:none;gap:10px}
+.recit-t{margin:0}
+.recit-etapes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.recit-etapes>li{display:grid;grid-template-columns:22px minmax(0,1fr);column-gap:10px;align-items:start}
+.recit-n{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent-soft);font:600 var(--f-11)/1 var(--sans);color:var(--t-1)}
+.recit-c{min-width:0}
+.recit-k{margin:2px 0 0;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.recit-v{margin-left:4px;font-weight:500}
+.recit-v b{font-weight:600}
+.recit-d{margin:3px 0 0;font:400 var(--f-12)/1.55 var(--sans);color:var(--t-2)}
+.recit-voisines{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.recit-voisines li{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:10px;align-items:baseline;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+.recit-voisines b.id{font:600 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap}
+.recit-reste{display:block;margin-top:6px;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+.recit-d .recit-lien{display:inline-flex;align-items:center;gap:2px;margin:0 -4px;padding:0 4px;min-height:24px;text-decoration:underline;text-decoration-color:var(--accent-line);text-underline-offset:3px}
+.recit-d .recit-lien svg.ico{width:13px;height:13px}
+/* LA PRISE DE COUPURE RANGÉE : le pourquoi sous la référence, la partie mobile et la fixe, le sexe et son pourquoi */
+.fc-sous .pr-pq{flex:1 1 100%;color:var(--t-2)}
+.fc-sous .pr-recit{display:inline-flex;align-items:center;gap:2px}
+.fc-sous .pr-recit .fi-chevron{width:12px;height:12px;transition:transform var(--rapide)}
+.fc-sous .pr-recit[aria-expanded="true"] .fi-chevron{transform:rotate(180deg)}
+.fi-face-tete .pr-partie{margin-left:8px;font:500 var(--f-11) var(--sans);color:var(--t-2)}
+.fi-note.pr-sexe{margin:0 0 8px}
+/* « Changer », rangé : la norme en tête, Automatique, les recommandés dessinés, puis trois plis */
+.fi-choix.pr-changer .fi-choix-corps{max-height:min(560px,62vh)}
+.pr-tete{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;padding:0 2px 2px}
+.pr-tete-k{font:500 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.pr-tete>b{font:600 var(--f-14)/1.3 var(--sans);color:var(--t-1)}
+.pr-tete-d{font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.pr-tete .fi-lien{margin-left:auto}
+.pr-t{margin:4px 0 0}
+.pr-recos{display:flex;flex-direction:column;gap:6px}
+.fi .cand.cand-r{grid-template-columns:76px minmax(0,1fr);align-items:start;column-gap:12px;padding:8px 10px 9px 8px}
+.fi .cand.cand-r .cand-face{width:76px;height:66px;padding:3px}
+.fi .cand.cand-r .cand-face svg{max-height:60px}
+.fi .cand.cand-r .pr-c{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fi .cand.cand-r .pr-c-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px}
+.fi .cand.cand-r .pr-c-t b{font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1)}
+.fi .cand.cand-r .pr-c-t em{font:600 var(--f-11)/1.3 var(--sans);font-style:normal;color:var(--t-1)}
+.fi .cand.cand-r .pr-c-t em::before{content:"";display:inline-block;width:6px;height:6px;margin:0 5px 1px 0;border-radius:50%;background:var(--ok)}
+.fi .cand.cand-r .pr-c-t small{font:500 var(--f-11)/1.3 var(--sans);color:var(--t-2)}
+.fi .cand.cand-r .pr-c-r{font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.fi .cand.cand-r .pr-c-ct{display:flex;flex-direction:column;gap:2px;margin-top:2px}
+.fi .cand.cand-r .pr-ct{display:flex;flex-wrap:wrap;align-items:baseline;gap:1px 6px;font:400 var(--f-11)/1.45 var(--sans);color:var(--t-2)}
+.fi .cand.cand-r .pr-ct i{font-style:normal;font-weight:500;min-width:92px;color:var(--t-2)}
+.fi .cand.cand-r .pr-ct b.id{font:600 var(--f-11)/1.45 var(--mono);color:var(--t-1)}
+.fi .cand.cand-r .pr-ct small{font:500 var(--f-11)/1.45 var(--sans);color:var(--t-2)}
+.pr-pli{border-top:1px solid var(--s-line)}
+.pr-pli>summary{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 4px;border-radius:var(--r-1);cursor:pointer;list-style:none;font:500 var(--f-12)/1.3 var(--sans);color:var(--t-1)}
+.pr-pli>summary::-webkit-details-marker{display:none}
+.pr-pli>summary:hover{background:var(--s-hover)}
+.pr-pli>summary:focus-visible{outline:2px solid var(--anneau-c);outline-offset:-2px}
+.pr-pli>summary i{margin-left:auto;font:600 var(--f-11)/1 var(--sans);font-style:normal;color:var(--t-2)}
+.pr-pli-ch{width:14px;height:14px;flex:none;transform:rotate(-90deg);transition:transform var(--rapide);color:var(--t-2)}
+.pr-pli[open] .pr-pli-ch{transform:none}
+.pr-pli-c{padding:0 0 8px}
+.pr-pli-c .pr-pq{margin:2px 4px 6px;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+.pr-norme{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;padding:6px 4px;border-top:1px solid var(--s-line)}
+.pr-norme-t{display:flex;flex-direction:column;gap:1px;min-width:0}
+.pr-norme-t b{font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.pr-norme-t small{font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.pr-norme-b{min-height:28px;text-decoration:underline;text-decoration-color:var(--accent-line);text-underline-offset:3px}
+/* LE POURQUOI D'UNE PIÈCE QUI MANQUE, sous elle, en clair (jamais un « manque » muet) */
+.fi-piece-pq{grid-column:1/-1;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+.fi-piece-pq b{font-weight:600;color:var(--ko)}
+/* les cibles d'au moins 24 px (le juge) : le contact d'une ligne, devenu bouton (il ouvre le contact) ; le titre de la chaîne */
+button.fi-sertir.ct-ref{min-height:24px}
+.fi-trace>summary{display:flex;align-items:center;min-height:28px;border-radius:var(--r-1)}

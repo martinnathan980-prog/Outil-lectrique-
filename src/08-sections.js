@@ -51,9 +51,10 @@ const ORDRE_SECTIONS = Object.keys(SECTIONS);
 // ouvertes d'office : dans la carte flottante, presque aucune — une fiche s'ouvre pliée, chaque ligne dit l'essentiel —, sauf
 // le CALIBRE d'un disjoncteur (v73 : le cadran est le moment de l'outil, l'ingénieur et le designer le veulent en vue dès
 // l'ouverture) et les câbles d'une masse (une masse n'a que ça à montrer) ; dans le volet épinglé (la place y est), celle qui
-// définit l'objet
-const OUVERTES_D_OFFICE = { disjoncteur: ['disjoncteur'], masse: ['fils'] };
-const OUVERTES_DANS_LE_VOLET = { equipement: ['connecteur'], disjoncteur: ['disjoncteur'], barrette: ['connecteur'], prise: ['connecteur'], fil: ['trajet'] };
+// définit l'objet. v74 (lot F — le lecteur : « intensité et chute, c'est bien, mais pas présenté de façon fluide ») : celles
+// d'un câble s'ouvrent d'office — elles sont sa seule place (plus de tuile Intensité), elles se lisent sans un clic
+const OUVERTES_D_OFFICE = { disjoncteur: ['disjoncteur'], masse: ['fils'], fil: ['fils'] };
+const OUVERTES_DANS_LE_VOLET = { equipement: ['connecteur'], disjoncteur: ['disjoncteur'], barrette: ['connecteur'], prise: ['connecteur'], fil: ['trajet', 'fils'] };
 const voletEpingle = () => typeof CARTE === 'object' && !!CARTE && !!CARTE.epingle;
 
 /* La mémoire des sections, par type : ce que l'ingénieur a ouvert ou fermé (dans ce navigateur ; une mémoire
