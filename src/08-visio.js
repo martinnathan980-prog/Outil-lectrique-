@@ -181,10 +181,11 @@ function dessinPourVisio(plan) { const L = liaisonsDe(plan); if (!L.length) retu
   const routes = couleursDesRoutes(), routeDe = w => (L[w.i] && L[w.i].route) || ''; d.couleurDe = w => routes.get(routeDe(w)) || null;
   d.legende = legendeDesRoutes(d.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes); nommerBarrettesAPoser(d.barrettes, L);
   // le folio se compose comme à l'écran (les connecteurs de chaque équipement, la place des repères), puis chaque bloc seul
-  const disj = n => ({ calibre: calibreAuFolio(n) }), P2 = plans(), folio = P2.length > 1 ? plan + ' / ' + P2.length : '1 / 1';
+  // le calibre que le folio écrit, et celui de l'installation quand Volta en retient un autre (« 15 A (installation 10 A) »)
+  const disj = n => typeof calibresAuFolio === 'function' ? calibresAuFolio(n) : { calibre: calibreAuFolio(n) }, P2 = plans(), folio = P2.length > 1 ? plan + ' / ' + P2.length : '1 / 1';
   const scene = sceneSvg(d, app.contrat.cartouche, folio, designationDe, null, disj);
   // la place que le folio a trouvée pour le numéro de chaque câble (06, `reperesDeFil`) : le texte du connecteur s'y pose
-  const places = new Map(); scene.replace(/<text class="filnum"(?: transform="rotate\(-90 [^)]*\)")? x="(-?[\d.]+)" y="(-?[\d.]+)"[^>]*>([^<]*)<\/text>/g, (m, x, y, nom) => {
+  const places = new Map(); scene.replace(/<text class="filnum"(?: data-i="[^"]*")?(?: transform="rotate\(-90 [^)]*\)")? x="(-?[\d.]+)" y="(-?[\d.]+)"[^>]*>([^<]*)<\/text>/g, (m, x, y, nom) => {
     const debout = /rotate\(-90/.test(m), A = 0.365 * FS_FIL, n = nom.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
     (places.get(n) || places.set(n, []).get(n)).push(debout ? { x: +x - A, y: +y, debout } : { x: +x, y: +y - A, debout }); return m; });
   const couleurBout = couleursDesBouts(d.fils.filter(w => !w.shunt), d.couleurDe);
