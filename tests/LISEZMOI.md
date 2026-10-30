@@ -56,6 +56,14 @@ node tests/chrome.js           LE CHROME ET LES GESTES COMMUNS (v73), à la vrai
                                éteintes à l'appui ; la marque ne tombe plus sur le rail) ; le menu qui tombe de son bouton et son double
                                qui s'efface, le mot qui entre et sort, le bouton pressé ; la feuille des raccourcis (refaire, Ctrl+K, la
                                fiche ; Tab n'en sort plus)
+node tests/documents.js        LES DOCUMENTS ET LE RÉCAPITULATIF (v73), à la vraie souris et au clavier : « Tableau en CSV » (un menu qui
+                               dit ce qu'il sort, le retest corrigé au bas) ; « Ce folio · Tout le plan » ; « À reprendre 4 · 3 sur ce
+                               folio » ; le dessin au-dessus du tiroir en moitié ; l'onglet Disjoncteurs (le retest, trois mots) et sa
+                               gamme entière (le composant de la fiche, ↑ ↓ Entrée, un calibre qui déclenche se retient, Ctrl+Z, tout le
+                               catalogue, Échap) ; écrire d'un clic sur la ligne choisie, d'une touche ; Ctrl+Maj+Z refait ; « Ce qu'il
+                               faut faire » en gestes ; les documents prennent le clavier, Échap le rend au ⋮, la croix a sa bulle ;
+                               Normes et Bible (les onglets font le titre, ← →, « / », la recherche de la bible) ; une seule zone dans
+                               Vos fichiers ; les Hypothèses écrites dans chaque export ; le schéma Visio prend et rend le clavier
 node tests/interface.js        à la vraie souris (grand écran, téléphone) : la fiche épurée dans l'inspecteur, le tableau en
                                tiroir (« Ce folio »), la feuille jamais recouverte ; chaque dédoublement est une barrette à poser
                                au ras de sa borne, une borne par fil, chacune à sa hauteur, son repère écrit ; un clic l'ouvre,

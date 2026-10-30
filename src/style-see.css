@@ -31,6 +31,20 @@
 .see-onglets button[aria-selected="true"] b{font-weight:600}
 .see-onglets button[aria-selected="true"]::after{background:var(--t-1)}
 .see-sep{flex:none;width:1px;height:18px;align-self:center;margin:0 6px;background:var(--s-line-2)}
+/* le nom du groupe des feuilles, après le filet (l'ingénieur v73 : « un séparateur et un sous-titre avant les feuilles ») */
+.see-groupe-t{flex:none;align-self:center;margin:0 4px 0 2px;font:500 var(--f-11)/1 var(--sans);color:var(--t-2);white-space:nowrap}
+/* sous le titre : le verdict de la cohérence d'abord, puis « Comment lire cette page », replié (le technicien v73) */
+.see>.see-coh-l{margin:0}
+.see-lire{margin:-6px 0 0}
+.see-lire>summary{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 8px;margin-left:-8px;border-radius:var(--r-1);list-style:none;cursor:pointer;font:500 var(--f-12) var(--sans);color:var(--t-2);transition:background var(--d-rapide) var(--courbe),color var(--d-rapide) var(--courbe)}
+.see-lire>summary::-webkit-details-marker{display:none}
+.see-lire>summary::after{content:"";width:6px;height:6px;margin-left:2px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform var(--d-rapide) var(--courbe)}
+.see-lire[open]>summary::after{transform:translateY(1px) rotate(-135deg)}
+.see-lire>summary:hover{background:var(--s-hover);color:var(--t-1)}
+.see-lire>.see-mode{margin:4px 0 0}
+/* le mot qui passe, sur cette feuille pleine page : en bas, au milieu de la feuille, au-dessus de son pied — il ne couvre plus
+   le titre ni la croix (l'ingénieur v73) */
+@media (min-width:701px){ html body.fiche-ouverte:has(#fiche[data-mode="see"]) #toast{top:auto;bottom:calc(var(--jeu) + 76px)} }
 /* les exemples de valeurs : une PUCE qu'on presse (style.css, `.puce` — l'outil n'a pas d'autre interrupteur à cet endroit),
    une coche dedans */
 .see-ex{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:7px;height:var(--h-puce);padding:0 10px 0 8px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);
@@ -45,8 +59,7 @@
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.5l4.5-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.5l4.5-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
 /* ── une feuille, les liens, les codes : à même la feuille du document ── */
-.see-feuille{min-width:0;padding:4px 0 0;animation:see-entre var(--moyen)}
-@keyframes see-entre{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.see-feuille{min-width:0;padding:4px 0 0;animation:entre var(--d-moyen) var(--courbe-entree) both;--entre-y:4px}
 .see-tete{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--s-line)}
 .see-nom{font:600 var(--f-16)/1.3 var(--mono);letter-spacing:-.01em;color:var(--t-1);overflow-wrap:anywhere}
 /* le nom d'une feuille est un identifiant (chasse fixe) ; Import, Liens, Codes sont des titres (linéale) */
@@ -252,7 +265,7 @@ summary.see-ctl-l:focus-visible{outline:none;box-shadow:var(--anneau)}
 summary .see-ctl-g::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--t-2);border-bottom:1.5px solid var(--t-2);transform:translateY(-2px) rotate(45deg);transition:transform var(--rapide)}
 details[open]>summary .see-ctl-g::after{transform:translateY(1px) rotate(-135deg)}
 /* les exemples, en retrait sous le titre : la référence (chasse fixe), ce qui cloche, la ligne de la feuille */
-.see-exs{list-style:none;margin:0 0 10px;padding:0 0 0 20px;display:grid;grid-template-columns:minmax(120px,.9fr) minmax(0,2fr) auto;column-gap:16px;animation:see-entre var(--moyen)}
+.see-exs{list-style:none;margin:0 0 10px;padding:0 0 0 20px;display:grid;grid-template-columns:minmax(120px,.9fr) minmax(0,2fr) auto;column-gap:16px;animation:entre var(--d-moyen) var(--courbe-entree) both;--entre-y:4px}
 .see-exs li{display:contents}
 .see-exs li>*{padding:5px 0;border-top:1px solid var(--s-line)}
 .see-ex-r{font:600 var(--f-12)/1.45 var(--mono);color:var(--t-1);overflow-wrap:anywhere}

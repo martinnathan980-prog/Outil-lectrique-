@@ -754,7 +754,7 @@ function importSEEHtml() { const I = baseMontreeSEE(); if (!I) return '<p class=
     + P.familles.map(([f, x]) => `<tr><td class="mono">${esc(f)}</td><td>${x.n}</td><td class="${x.dans < x.n ? 'att' : ''}">${x.dans}</td><td class="${x.obsoletes ? 'att' : ''}">${x.obsoletes}</td>${P.programme ? `<td class="${x.hors ? 'att' : ''}">${x.hors}</td>` : ''}</tr>`).join('')
     + `</tbody></table><p class="see-note">${esc(plurielLie(P.typesDans, 'type'))} de câble sur ${P.types} retrouvé${P.typesDans > 1 ? 's' : ''} dans les câbles de SEE.</p></div>` : '<p class="see-note">Ouvrez une installation pour le voir face à la base.</p>';
   return `<section class="see-feuille see-import" aria-label="Import"><div class="see-tete"><b class="see-nom">Ce que Volta prend de ${esc(I.nom)}</b><span class="see-compte">qui a fait quoi et les dates ne sont jamais pris</span></div>`
-    + `<div class="see-gestes">${etat}${prog}</div>${tuiles}${lienCoherenceSEEHtml(I)}${diffs}`
+    + `<div class="see-gestes">${etat}${prog}</div>${tuiles}${diffs}`
     + (dehors.length ? `<div class="see-bloc"><h3>Ce qui n’est pas pris</h3><ul class="see-dehors">${dehors.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '') + moinsUn + plan + '</section>'; }
 /* Le bilan en texte, pour le résumé. */
 function resumeImportSEE() { const I = baseMontreeSEE(); if (!I) return ''; const C = comparaisonSEE(I), B = I.bilan || {}, bc = B.contacts || {};
