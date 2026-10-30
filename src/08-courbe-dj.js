@@ -25,7 +25,7 @@
        entre les courbes, la bande où cela dépend de la température (gris) ;
        à droite de la plus lente, il « déclenche » (rouge) — ; le profil de
        charge en escalier, chaque marche et chaque point de la couleur de son
-       sort (passe en vert, ne passe pas en rouge), nommés court ; plus de
+       sort (passe en vert, juste en ambre, déclenche en rouge), nommés court ; plus de
        limite de dommage du câble (version 61 : elle se juge, elle ne se
        dessine plus) ;
      · aucune légende à part, aucune étiquette sur une autre, pas de carte
@@ -356,9 +356,11 @@ function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg 
   const cartePoint = pt => { const m0 = pt.marges[0], titre = esc(amperes(pt.i)) + (pt.t === Infinity ? ' · toujours' : ' · ' + esc(secondes(pt.t))); if (!m0) return carteTip(titre, esc(pt.nom), 'pas jugé', 'info');
     const rates = pt.marges.filter(m => !m.ok).map(m => m.courbe), bilan = pt.t === Infinity ? '' : ' · ' + esc(motFraction(m0.somme)) + ' du temps consommé';
     const sous = esc(pt.nom) + (!cal ? '' : ' — le ' + esc(amperes(cal)) + (pt.t === Infinity ? ' garantit ' + esc(amperes(m0.admis)) : m0.temps === Infinity ? ' ne déclenche pas' : ' tient ' + esc(secondes(m0.temps))) + ' à ' + esc(m0.courbe));
-    // deux mots, comme le calibre (le lecteur : « soit ça passe, soit ça passe pas ») : toucher la courbe ne passe pas
-    const verdict = pt.ok === false ? `<em>ne passe pas</em> : déclenche à ${rates.length === pt.marges.length ? 'toute température' : esc(rates.join(', '))}${bilan}` : pt.serre ? (pt.t === Infinity ? '<em>ne passe pas</em> : sans ' + esc(nombre(d.marges.marge)) + ' % de marge' : '<em>ne passe pas</em> : touche la courbe' + bilan) : (pt.t === Infinity ? 'passe : ne déclenche jamais' : 'passe à toute température' + bilan);
-    return carteTip(titre, sous, verdict, pt.ok === false || pt.serre ? 'ko' : 'ok'); };
+    // LES TROIS MOTS, comme le calibre (v73, l'ingénieur, point 8 : « les mots changent d'un écran à l'autre ») : déclenche, juste
+    // (il touche la courbe, sans la marge), passe — la table du domaine C (`motDuVerdict`, 08-disjoncteurs)
+    const M = k => typeof motDuVerdict === 'function' ? motDuVerdict(k) : { passe: 'passe', juste: 'juste', declenche: 'déclenche' }[k];
+    const verdict = pt.ok === false ? `<em>${esc(M('declenche'))}</em> à ${rates.length === pt.marges.length ? 'toute température' : esc(rates.join(', '))}${bilan}` : pt.serre ? (pt.t === Infinity ? `<em>${esc(M('juste'))}</em> : sans ` + esc(nombre(d.marges.marge)) + ' % de marge' : `<em>${esc(M('juste'))}</em> : touche la courbe` + bilan) : (pt.t === Infinity ? esc(M('passe')) + ' : ne déclenche jamais' : esc(M('passe')) + ' à toute température' + bilan);
+    return carteTip(titre, sous, verdict, pt.ok === false ? 'ko' : pt.serre ? 'serre' : 'ok'); };
   // le réticule : à ce courant (et ce multiple de In), ce que le calibre retenu tient à la courbe qui juge
   const carteReticule = (i, t) => { if (!cal) return carteTip(esc(amperes(i)) + ' · ' + esc(secondes(t)), '', '', '');
     const tt = tempsDeDeclenchement(C[0], i / cal); return carteTip(esc(motIn(i, cal)) + ' · ' + esc(secondes(t)), 'soit ' + esc(amperes(i)) + ' — le ' + esc(amperes(cal)) + (tt === Infinity ? ' n’y déclenche jamais' : ' y tient ' + esc(secondes(tt))) + ' à ' + esc(C[0].nom), '', ''); };
