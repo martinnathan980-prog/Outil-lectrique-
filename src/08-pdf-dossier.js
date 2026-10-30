@@ -78,7 +78,8 @@ async function pdfDuPlan(liaisons, nom, options) { const o = options || {}, ouve
   const today = new Date().toISOString().slice(0, 10), pns = new Map(), des = new Map();
   if (!ouvert) L0.forEach(l => { [[l.de, l.pnDe, l.descriptionDe], [l.vers, l.pnVers, l.descriptionVers]].forEach(([r, pn, d]) => { if (pn && !pns.has(r)) pns.set(r, pn); if (d && !des.has(r)) des.set(r, d); }); });
   const routesDe = () => { const m = new Map(); [...new Set(L0.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, PALETTE_ROUTES[i % PALETTE_ROUTES.length])); return m; };
-  const ctx = ouvert ? { cartouche: app.contrat.cartouche, routes: couleursDesRoutes(), designation: designationDe, disjoncteur: n => ({ calibre: calibreAuFolio(n) }) }
+  // le calibre d'un disjoncteur au folio : le retenu, et celui du retest quand il diffère (08-export, `calibresAuFolio`)
+  const ctx = ouvert ? { cartouche: app.contrat.cartouche, routes: couleursDesRoutes(), designation: designationDe, disjoncteur: n => typeof calibresAuFolio === 'function' ? calibresAuFolio(n) : { calibre: calibreAuFolio(n) } }
     : { cartouche: { titre: nom, auteur: '', indice: 'A', date: today, echelle: '—', ...(o.cartouche || {}) }, routes: routesDe(), designation: n => des.get(n) || '',
         disjoncteur: n => { const f = pns.has(n) && typeof familleDuPn === 'function' ? familleDuPn(pns.get(n), app.norme) : null; return { calibre: f && f.calibre ? f.calibre : null }; } };
   ctx.folio = f => f.plan === '*' || total < 2 ? '1 / 1' : f.plan + ' / ' + total;
@@ -86,18 +87,24 @@ async function pdfDuPlan(liaisons, nom, options) { const o = options || {}, ouve
   for (let i = 0; i < total; i++) { verifier(); const f = folios[i], nomF = f.plan === '*' ? '1' : f.plan;
     annoncer(PLACER + (1 - PLACER) * 0.9 * i / total, `Écriture du folio ${nomF} (${i + 1} sur ${total})…`, prets);
     const S = svgDuFolioPdf(f, ctx); pagesFolios.push({ ops: svgEnOpsPdf(S.svg, S.bb), signet: 'Folio ' + nomF }); await pausePdf(); }
-  // 3. les pages écrites : la garde (elle connaît la page de chacun), la nomenclature et les modifications à la fin
+  // 3. les pages écrites : la garde (elle connaît la page de chacun), les hypothèses et sources juste après elle (v73,
+  // l'ingénieur, n° 9 : « le dossier ne dit pas sur quelles hypothèses il repose »), la nomenclature et les modifications à la fin
   verifier(); annoncer(PLACER + (1 - PLACER) * 0.92, 'La page de garde, la nomenclature…', prets);
-  const garde = o.garde !== false, debut = garde ? 2 : 1, annexes = [];
+  const garde = o.garde !== false, hypo = ouvert ? pagesHypothesesPdf(nom) : [], debut = (garde ? 2 : 1) + hypo.length, annexes = [];
   let suite = debut + total; const ajouter = (pages, titre, mot) => { if (!pages.length) return []; annexes.push({ titre, mot, page: suite, pages }); suite += pages.length; return pages; };
   if (ouvert) { ajouter(pagesNomenclaturePdf(nom), 'la nomenclature', 'la nomenclature'); ajouter(pagesModificationsPdf(nom), 'les modifications du retest', 'les modifications du retest'); }
   const nPages = suite - 1, ecrites = [];
-  if (garde) { let problemes = null; if (ouvert && typeof controleDuContrat === 'function') { try { if (typeof rendreControle === 'function') rendreControle(); problemes = (CONTROLE.items || []).slice(); } catch (_) { problemes = null; } }
-    const modifiees = ouvert && typeof modificationsDe === 'function' ? verite().filter(l => liaisonComplete(l) && modificationsDe(l).length).length : null;
-    const p = pageDeGardePdf({ nom, cart: ctx.cartouche, quand: dateLonguePdf(new Date()), pages: nPages, n: L0.length, reperes: reperesDe(L0).filter(r => !estRenvoi(r)).length,
-      folios: folios.map((f, i) => ({ plan: f.plan === '*' ? '1' : f.plan, n: f.orig.length, reperes: reperesDe(f.orig).filter(r => !estRenvoi(r)).length, page: debut + i })),
-      problemes, modifiees, annexes: annexes.map(a => ({ titre: a.titre, mot: a.mot, page: a.page })) });
+  if (garde) { let problemes = null; if (ouvert && typeof controleDuContrat === 'function') { try { problemes = (typeof controleAJour === 'function' ? controleAJour() : (rendreControle(), CONTROLE.items) || []).slice(); } catch (_) { problemes = null; } }
+    const modifiees = ouvert && typeof nombreDeChangements === 'function' ? nombreDeChangements() : null;
+    // un seul compte de repères : celui du menu et du récapitulatif (08-nomenclature, `nombreDeReperes`)
+    const nR = (f) => typeof nombreDeReperes !== 'function' ? reperesDe(f ? f.orig : L0).filter(r => !estRenvoi(r)).length : ouvert ? nombreDeReperes(f ? (f.plan === '*' ? null : f.plan) : null) : nombreDeReperes(null, f ? f.orig : L0);
+    const un = k => [...new Set(L0.map(l => l[k]).filter(Boolean))], ap = un('appareil'), hs = un('harness'), rt = un('retest');
+    const p = pageDeGardePdf({ nom, cart: ctx.cartouche, quand: dateLonguePdf(new Date()), pages: nPages, n: L0.length, reperes: nR(null),
+      origine: [ap.length ? (ap.length > 1 ? ap.length + ' appareils' : 'Appareil ' + ap[0]) : '', hs.length ? (hs.length > 1 ? hs.length + ' harness' : 'Harness ' + hs[0]) : '', rt.length === 1 ? 'Retest du ' + rt[0] : ''].filter(Boolean).join(' · '),
+      folios: folios.map((f, i) => ({ plan: f.plan === '*' ? '1' : f.plan, n: f.orig.length, reperes: nR(f), page: debut + i })),
+      problemes, modifiees, hypotheses: hypo.length ? 2 : 0, annexes: annexes.map(a => ({ titre: a.titre, mot: a.mot, page: a.page })) });
     p.pied(nom, 1, nPages); ecrites.push({ ops: p.ops(), signet: 'Page de garde' }); }
+  hypo.forEach((p, k) => { p.pied(nom, (garde ? 2 : 1) + k, nPages); ecrites.push({ ops: p.ops(), signet: 'Hypothèses et sources' + (hypo.length > 1 ? ' (' + (k + 1) + ')' : '') }); });
   const pages = [...ecrites, ...pagesFolios];
   annexes.forEach(a => a.pages.forEach((p, k) => { p.pied(nom, a.page + k, nPages); pages.push({ ops: p.ops(), signet: (a.titre.charAt(0).toUpperCase() + a.titre.slice(1)) + (a.pages.length > 1 ? ' (' + (k + 1) + ')' : '') }); }));
   // 4. le fichier
@@ -127,6 +134,15 @@ function largeurPdf(b, police, corps, ls) { let w = 0; if (police >= 3) w = b.le
 // un texte trop long pour sa place : coupé, « … » au bout
 function couperPdf(b, police, corps, ls, max) { if (largeurPdf(b, police, corps, ls) <= max) return b; let k = b.length;
   while (k > 1 && largeurPdf(b.slice(0, k) + '\x85', police, corps, ls) > max) k--; return b.slice(0, k).replace(/\s+$/, '') + '\x85'; }
+/* v73 — UN TEXTE SUR PLUSIEURS LIGNES plutôt que coupé (l'ingénieur, n° 6 : « des textes coupés par … dans un document
+   imprimé ») : les mots se rangent dans la largeur, jusqu'à `n` lignes ; un mot plus long que la place se casse ; la
+   dernière ligne ne se coupe qu'au-delà (une liste de deux cents repères). Rend les lignes, en texte (pas encore WinAnsi). */
+function lignesPdf(s, police, corps, ls, max, n) { const w = t => largeurPdf(enWinAnsi(t), police, corps, ls), mots = String(s == null ? '' : s).replace(/\s+/g, ' ').trim().split(' ').filter(Boolean), L = []; let cur = '';
+  const pousser = m => { while (w(m) > max && m.length > 1) { let k = m.length; while (k > 1 && w(m.slice(0, k)) > max) k--; L.push(m.slice(0, k)); m = m.slice(k); } return m; };
+  mots.forEach(m => { const essai = cur ? cur + ' ' + m : m; if (w(essai) <= max) { cur = essai; return; } if (cur) L.push(cur); cur = pousser(m); });
+  if (cur) L.push(cur); if (!L.length) return [''];
+  if (n && L.length > n) { const reste = L.slice(n - 1).join(' '); L.length = n - 1; L.push(reste); }
+  return L; }
 // un nombre comme le PDF l'écrit : sans exposant, au centième (ou à la précision demandée)
 const nbPdf = (v, d = 2) => { const k = Math.pow(10, d), r = Math.round((+v || 0) * k) / k; return Math.abs(r) < 1 / k ? '0' : String(r); };
 const octetsPdf = s => { const b = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i) & 255; return b; };
@@ -301,6 +317,9 @@ function pageEcrite() { const ops = [], H = A3_PDF.h; let rg = '', tc = '';
       const k = nbPdf(ls, 3); if (k !== tc) { tc = k; ops.push(k + ' Tc'); }
       ops.push(`BT /F${police} ${nbPdf(t)} Tf 1 0 0 1 ${nbPdf(X)} ${nbPdf(H - y)} Tm ${chaineLitPdf(b)} Tj ET`); return w; },
     largeur: (s, o = {}) => largeurPdf(enWinAnsi(s), (o.mono ? 3 : 1) + (o.gras ? 1 : 0), o.corps || 10, o.ls || 0),
+    // un texte sur plusieurs lignes (jamais coupé avant `o.lignes`) : rend le nombre de lignes posées
+    bloc(x, y, s, o = {}) { const L = lignesPdf(s, (o.mono ? 3 : 1) + (o.gras ? 1 : 0), o.corps || 10, o.ls || 0, o.max || 1e9, o.lignes || 0), h = o.interligne || (o.corps || 10) * 1.3;
+      L.forEach((t, k) => P.texte(x, y + k * h, t, { ...o, max: k === L.length - 1 ? o.max : undefined })); return L.length; },
     // un aplat clair, son coin haut-gauche à (x, y)
     bande(x, y, w, h, c) { couleur(c || BANDE_PDF); ops.push(`${nbPdf(x)} ${nbPdf(H - y - h)} ${nbPdf(w)} ${nbPdf(h)} re f`); },
     // le pied : le plan à gauche, la page à droite
@@ -315,18 +334,20 @@ const motPdf = (n, un, des) => n + ' ' + (n > 1 ? des : un);
 function pageDeGardePdf(D) { const p = pageEcrite(), X = MARGE_PDF, W = A3_PDF.w - 2 * X;
   p.texte(X, 66, 'VOLTA · DOSSIER DE CÂBLAGE', { corps: 9, gras: true, ls: 0.6, couleur: GRIS_PDF });
   p.texte(X, 112, D.nom, { corps: 34, gras: true, max: W });
-  const c = D.cart || {}, sous = [c.titre, c.indice ? 'indice ' + c.indice : '', c.auteur ? 'dessiné par ' + c.auteur : ''].filter(Boolean).join(' · ');
-  if (sous) p.texte(X, 140, sous, { corps: 14, couleur: GRIS2_PDF, max: W });
-  p.texte(X, 164, `Exporté le ${D.quand} · ${motPdf(D.pages, 'page', 'pages')} : cette garde, ${D.folios.length > 1 ? 'les ' + D.folios.length + ' folios' : 'le folio'} en A3 paysage` + (D.annexes.length ? ', ' + D.annexes.map(a => a.mot).join(', ') : ''), { corps: 11, couleur: GRIS_PDF, max: W });
-  // les chiffres, des tuiles sur un aplat clair
-  const nko = D.problemes ? D.problemes.filter(x => x.niveau === 'ko').length : 0, natt = D.problemes ? D.problemes.length - nko : 0;
+  // dessous : le cartouche, puis d'où vient le plan (l'appareil, le harness, la date du retest — l'ingénieur, § 3.7) ; une
+  // ligne de trop passe à la suivante, tout ce qui est dessous descend d'autant (rien ne se coupe)
+  const c = D.cart || {}, sous = [c.titre, c.indice ? 'indice ' + c.indice : '', c.auteur ? 'dessiné par ' + c.auteur : '', D.origine || ''].filter(Boolean).join(' · ');
+  let yt = 140; if (sous) yt += 18 * p.bloc(X, yt, sous, { corps: 14, couleur: GRIS2_PDF, max: W, lignes: 2, interligne: 18 }) - 18;
+  yt += 24; yt += 15 * p.bloc(X, yt, `Exporté le ${D.quand} · ${motPdf(D.pages, 'page', 'pages')} : cette garde${D.hypotheses ? ', les hypothèses et sources (p. ' + D.hypotheses + ')' : ''}, ${D.folios.length > 1 ? 'les ' + D.folios.length + ' folios' : 'le folio'} en A3 paysage` + (D.annexes.length ? ', ' + D.annexes.map(a => a.mot).join(', ') : ''), { corps: 11, couleur: GRIS_PDF, max: W, lignes: 2, interligne: 15 }) - 15;
+  // les chiffres, des tuiles sur un aplat clair (les problèmes et ce qui est à voir : le compte unique du contrôle)
+  const nko = D.problemes ? D.problemes.filter(x => x.niveau === 'ko').length : 0, natt = D.problemes ? D.problemes.length - nko : 0, yT = Math.max(192, yt + 28);
   const tuiles = [[D.n, 'liaison', 'liaisons'], [D.folios.length, 'folio', 'folios'], [D.reperes, 'repère', 'repères']];
   if (D.problemes) tuiles.push([nko, 'problème', 'problèmes', nko ? KO_PDF : null], [natt, 'point à voir', 'points à voir', natt ? ATT_PDF : null]);
   if (D.modifiees != null) tuiles.push([D.modifiees, 'liaison modifiée', 'liaisons modifiées']);
-  const tw = W / tuiles.length; tuiles.forEach(([n, un, des, coul], i) => { const x = X + i * tw; p.bande(x, 192, tw - 12, 76);
-    p.texte(x + 18, 238, String(n), { corps: 30, gras: true, couleur: coul || ENCRE_PDF }); p.texte(x + 18, 257, n > 1 ? des : un, { corps: 10, couleur: GRIS2_PDF, max: tw - 40 }); });
+  const tw = W / tuiles.length; tuiles.forEach(([n, un, des, coul], i) => { const x = X + i * tw; p.bande(x, yT, tw - 12, 76);
+    p.texte(x + 18, yT + 46, String(n), { corps: 30, gras: true, couleur: coul || ENCRE_PDF }); p.texte(x + 18, yT + 65, n > 1 ? des : un, { corps: 10, couleur: GRIS2_PDF, max: tw - 40 }); });
   // les folios : leur page dans le dossier (une, deux… colonnes)
-  const y0 = 316, haut = BAS_PDF - 30 - y0, larg = D.problemes ? 520 : W, ligne = 17, parCol = Math.floor(haut / ligne);
+  const y0 = yT + 124, haut = BAS_PDF - 30 - y0, larg = D.problemes ? 520 : W, ligne = 17, parCol = Math.floor(haut / ligne);
   p.texte(X, y0, 'Les folios', { corps: 14, gras: true });
   const ncol = Math.min(D.problemes ? 2 : 4, Math.max(1, Math.ceil(D.folios.length / parCol))), cw = larg / ncol, tient = ncol * parCol;
   D.folios.slice(0, D.folios.length > tient ? tient - 1 : tient).forEach((f, i) => { const x = X + Math.floor(i / parCol) * cw, y = y0 + 26 + (i % parCol) * ligne;
@@ -348,23 +369,40 @@ function pageDeGardePdf(D) { const p = pageEcrite(), X = MARGE_PDF, W = A3_PDF.w
         // un ou deux points : chacun dit ce qu'il est (son repère, sa phrase) ; davantage : leurs repères à la suite
         const noms = [...new Set(ys.map(x => x.nom).filter(Boolean))];
         const dits = ys.length <= 2 ? ys.map(x => (x.nom ? x.nom + ' — ' : '') + x.texte) : [noms.length ? noms.slice(0, 14).join(', ') + (noms.length > 14 ? ` (+${noms.length - 14})` : '') : ys[0].texte];
-        dits.forEach(dit => { if (y + 12 > BAS_PDF) return; p.texte(xr + 12, y, dit, { corps: 9, couleur: GRIS2_PDF, max: wr - 12 }); y += 12; }); y += 6; });
+        // chaque point sur deux lignes au plus (plus de « … » au milieu d'une phrase)
+        dits.forEach(dit => { if (y + 12 > BAS_PDF) return; y += 12 * p.bloc(xr + 12, y, dit, { corps: 9, couleur: GRIS2_PDF, max: wr - 12, lignes: 2, interligne: 12 }); }); y += 6; });
       y += 8; });
     if (coupe) p.texte(xr, BAS_PDF - 6, '… la suite dans l’index des repères de Volta (R).', { corps: 9, couleur: GRIS_PDF }); }
   return p; }
 /* DES TABLES sur des pages A3 : un titre, une ligne qui résume, puis chaque section — son titre, ses en-têtes sur un
    aplat, ses lignes (une sur deux légèrement teintée) ; une section qui ne tient pas continue page suivante, ses
-   en-têtes répétés. `colonnes` : [titre, part de la largeur, { droite, mono, gris }]. */
-function pagesDeTablesPdf(titre, resume, sections) { const pages = [], X = MARGE_PDF, W = A3_PDF.w - 2 * X; let p = null, y = 0;
-  const nouvelle = suite => { p = pageEcrite(); pages.push(p); p.texte(X, 70, titre + (suite ? ' (suite)' : ''), { corps: 22, gras: true, max: W }); if (!suite && resume) p.texte(X, 94, resume, { corps: 10, couleur: GRIS2_PDF, max: W }); y = suite ? 100 : 124; };
-  const entetes = S => { p.bande(X, y, W, 19); let x = X; S.colonnes.forEach(([t, part, o = {}]) => { const cw = part * W; p.texte(o.droite ? x + cw - 8 : x + 8, y + 13, t, { corps: 8.5, gras: true, couleur: GRIS2_PDF, ancre: o.droite ? 'end' : undefined, max: cw - 16 }); x += cw; }); y += 19; };
+   en-têtes répétés. `colonnes` : [titre, part de la largeur, { droite, mono, gris }]. v73 (l'ingénieur, n° 6) : une case
+   trop longue passe sur deux ou trois lignes (la ligne grandit), jamais « … » au milieu ; une colonne que les lignes de
+   sa section ne remplissent pas ne s'écrit pas (sa largeur va aux autres). `o.deux` : deux colonnes de sections par page
+   (la page des hypothèses tient sur une page). */
+function pagesDeTablesPdf(titre, resume, sections, o) { o = o || {}; const pages = [], X0 = MARGE_PDF, W0 = A3_PDF.w - 2 * X0, G = 40, nCol = o.deux ? 2 : 1, WC = (W0 - (nCol - 1) * G) / nCol;
+  let p = null, y = 0, col = 0, haut = 0, X = X0, W = WC;
+  const nouvelle = suite => { p = pageEcrite(); pages.push(p); p.texte(X0, 70, titre + (suite ? ' (suite)' : ''), { corps: 22, gras: true, max: W0 });
+    haut = suite ? 100 : 124; if (!suite && resume) haut = 94 + 13 * p.bloc(X0, 94, resume, { corps: 10, couleur: GRIS2_PDF, max: W0, lignes: 3, interligne: 13 }) + 17; col = 0; X = X0; y = haut; };
+  // la place manque : la colonne suivante de la même page, sinon une page neuve
+  const plusDePlace = () => { if (col + 1 < nCol) { col++; X = X0 + col * (WC + G); y = haut; } else nouvelle(true); };
+  const MAXL = 8, LH = 11;
   nouvelle(false);
-  sections.filter(S => S.lignes.length).forEach(S => { if (y + 26 + 19 + 15 * Math.min(3, S.lignes.length) > BAS_PDF) nouvelle(true);
-    p.texte(X, y + 16, S.titre, { corps: 13, gras: true }); if (S.compte) p.texte(X + p.largeur(S.titre, { corps: 13, gras: true }) + 10, y + 16, S.compte, { corps: 10, couleur: GRIS_PDF }); y += 26; entetes(S);
-    S.lignes.forEach((L, i) => { if (y + 15 > BAS_PDF) { nouvelle(true); p.texte(X, y + 16, S.titre + ' (suite)', { corps: 13, gras: true }); y += 26; entetes(S); }
-      if (i % 2) p.bande(X, y, W, 15, ZEBRE_PDF); let x = X;
-      S.colonnes.forEach(([, part, o = {}], k) => { const cw = part * W, v = L[k] == null ? '' : String(L[k]); p.texte(o.droite ? x + cw - 8 : x + 8, y + 11, v, { corps: 9, mono: !!o.mono, ancre: o.droite ? 'end' : undefined, max: cw - 16, couleur: o.gris ? GRIS2_PDF : ENCRE_PDF }); x += cw; });
-      y += 15; });
+  sections.filter(S => S.lignes.length).forEach(S => {
+    // les colonnes qui ont quelque chose à dire, leur largeur rendue aux autres
+    const garde = S.colonnes.map((c, k) => S.lignes.some(L => L[k] != null && String(L[k]).trim() !== '' && String(L[k]).trim() !== '—')), parts = S.colonnes.filter((_, k) => garde[k]), tot = parts.reduce((s, c) => s + c[1], 0);
+    const cols = S.colonnes.map((c, k) => garde[k] ? [c[0], c[1] / tot, c[2] || {}, k] : null).filter(Boolean);
+    const entetes = () => { p.bande(X, y, W, 19); let x = X; cols.forEach(([t, part, oc]) => { const cw = part * W; p.texte(oc.droite ? x + cw - 8 : x + 8, y + 13, t, { corps: 8.5, gras: true, couleur: GRIS2_PDF, ancre: oc.droite ? 'end' : undefined, max: cw - 16 }); x += cw; }); y += 19; };
+    const cases = L => cols.map(([, part, oc, k]) => { const v = L[k] == null ? '' : String(L[k]); return oc.droite ? [v] : lignesPdf(v, (oc.mono ? 3 : 1), 9, 0, part * W - 16, MAXL); });
+    const hauteur = cs => 15 + LH * (Math.max(1, ...cs.map(c => c.length)) - 1);
+    const premieres = S.lignes.slice(0, 3).reduce((s, L) => s + hauteur(cases(L)), 0);
+    if (y + 26 + 19 + premieres > BAS_PDF) plusDePlace();
+    p.texte(X, y + 16, S.titre, { corps: 13, gras: true }); if (S.compte) p.texte(X + p.largeur(S.titre, { corps: 13, gras: true }) + 10, y + 16, S.compte, { corps: 10, couleur: GRIS_PDF, max: W - p.largeur(S.titre, { corps: 13, gras: true }) - 10 }); y += 26; entetes();
+    S.lignes.forEach((L, i) => { const cs = cases(L), h = hauteur(cs);
+      if (y + h > BAS_PDF) { plusDePlace(); p.texte(X, y + 16, S.titre + ' (suite)', { corps: 13, gras: true }); y += 26; entetes(); }
+      if (i % 2) p.bande(X, y, W, h, ZEBRE_PDF); let x = X;
+      cols.forEach(([, part, oc], j) => { const cw = part * W; cs[j].forEach((t, k) => p.texte(oc.droite ? x + cw - 8 : x + 8, y + 11 + k * LH, t, { corps: 9, mono: !!oc.mono, ancre: oc.droite ? 'end' : undefined, max: cw - 16, couleur: oc.gris ? GRIS2_PDF : oc.couleur || ENCRE_PDF })); x += cw; });
+      y += h; });
     y += 22; });
   return pages; }
 // la nomenclature du plan ouvert (08-nomenclature), en tables ; rien s'il n'y a rien à commander
@@ -377,6 +415,8 @@ function pagesNomenclaturePdf(nom) { let N; try { N = nomenclatureDuContrat(); }
       lignes: N.modules.map(x => [x.reference, x.famille || '', x.n, ou(x.ou)]) },
     { titre: 'Connecteurs et prises', compte: motPdf(somme(N.connecteurs), 'pièce', 'pièces'), colonnes: [['Part number', 0.2, { mono: true }], ['Nature', 0.3], ['Qté', 0.07, { droite: true }], ['Repères', 0.43, { gris: true }]],
       lignes: N.connecteurs.map(x => [x.reference, x.nature || '', x.n, ou(x.ou)]) },
+    { titre: 'Disjoncteurs', compte: motPdf((N.disjoncteurs || []).length, 'pièce', 'pièces'), colonnes: [['Repère', 0.12, { mono: true }], ['Part number à commander', 0.22, { mono: true }], ['Calibre', 0.1, { droite: true }], ['Retest', 0.2, { mono: true, gris: true }], ['État', 0.36]],
+      lignes: (N.disjoncteurs || []).map(x => [x.repere, x.reference + (x.construit ? ' (construit, à vérifier au catalogue)' : ''), x.calibre ? nombre(x.calibre) + ' A' : '—', x.retest ? x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat]) },
     { titre: 'Autour des connecteurs', compte: motPdf(somme(N.habits), 'article', 'articles'), colonnes: [['Quoi', 0.2], ['Référence', 0.3, { mono: true }], ['Qté', 0.07, { droite: true }], ['Où', 0.43, { gris: true }]],
       lignes: N.habits.map(x => [x.quoi, x.reference + (x.note ? ' · ' + x.note : ''), x.n, ou(x.ou)]) },
     { titre: 'Câbles', compte: motPdf(N.cables.length, 'type', 'types') + ' · ' + nombre(Math.round(N.longueur)) + ' m', colonnes: [['Type', 0.2, { mono: true }], ['Câbles', 0.1, { droite: true }], ['Longueur', 0.12, { droite: true }], ['Masse', 0.12, { droite: true }], ['Base', 0.46, { gris: true }]],
@@ -389,10 +429,43 @@ function pagesNomenclaturePdf(nom) { let N; try { N = nomenclatureDuContrat(); }
 // les modifications du retest (08-export : ce que portait le fichier là où on l'a changé), en une table
 function pagesModificationsPdf(nom) { if (typeof modificationsDe !== 'function') return [];
   const lignes = []; let n = 0; verite().filter(liaisonComplete).forEach(l => { const m = modificationsDe(l); if (!m.length) return; n++;
-    m.forEach(([col, ch, av, ap]) => lignes.push([l.cable || '—', l.de + (l.borneDe ? ':' + l.borneDe : ''), l.vers + (l.borneVers ? ':' + l.borneVers : ''), col, motAvant(ch, av), motAvant(ch, ap)])); });
+    m.forEach(([col, ch, av, ap]) => lignes.push([l.cable || '—', l.de + (l.borneDe ? ':' + l.borneDe : ''), l.vers + (l.borneVers ? ':' + l.borneVers : ''), col, motAvant(ch, av), motAvant(ch, ap), typeof origineDeCase === 'function' ? ORIGINES_MOTS[origineDeCase(l, ch, true)] : ''])); });
   if (!lignes.length) return [];
-  return pagesDeTablesPdf('Modifications du retest — ' + nom, `${motPdf(n, 'liaison modifiée', 'liaisons modifiées')} · ${motPdf(lignes.length, 'case', 'cases')} : ce que portait le fichier, ce que Volta y a mis.`,
-    [{ titre: 'Les cases changées', colonnes: [['Câble', 0.12, { mono: true }], ['De', 0.15, { mono: true }], ['Vers', 0.15, { mono: true }], ['Colonne', 0.14], ['Avant', 0.22, { gris: true }], ['Après', 0.22]], lignes }]); }
+  return pagesDeTablesPdf('Modifications du retest — ' + nom, `${motPdf(n, 'liaison modifiée', 'liaisons modifiées')} · ${motPdf(lignes.length, 'case', 'cases')} : ce que portait le fichier, ce que Volta y a mis, et d’où vient le changement (à la main, ou une proposition de Volta acceptée).`,
+    [{ titre: 'Les cases changées', colonnes: [['Câble', 0.1, { mono: true }], ['De', 0.13, { mono: true }], ['Vers', 0.13, { mono: true }], ['Colonne', 0.12], ['Avant', 0.15, { gris: true, mono: true }], ['Après', 0.15, { mono: true }], ['Origine', 0.22]], lignes }]); }
+/* LES HYPOTHÈSES ET LES SOURCES (v73, l'ingénieur, n° 9 : « si j'envoie le dossier à un vérificateur, il ne peut pas refaire
+   le calcul ») : juste après la garde, en deux colonnes — les RÉGLAGES (ceux de la page des hypothèses, `hypothesesDe` :
+   leur valeur, celle de l'outil quand elle diffère, d'où elle vient), les PROFILS DE CHARGE (un par disjoncteur : ses
+   états, le calibre retenu et celui du retest), le STATUT DES TABLES (combien de lignes vérifiées par deux sources,
+   déduites, à confirmer, venues du lecteur). */
+const SOURCE_DE = t => { const m = String(t || '').match(/\(([^()]*(?:AC 43|EN \d|MIL|NASA|R2|CEI|AS\d|figure|fig\.|table|§)[^()]*)\)/); return m ? m[1] : ''; };
+function pagesHypothesesPdf(nom) { if (typeof hypothesesDe !== 'function') return [];
+  const N = app.norme || (typeof normeVide === 'function' ? normeVide() : {}), H = { ...HYPOTHESES, ...(app.simu || {}) }; let cs = [];
+  try { cs = hypothesesDe(N, H, { fiche: true }); } catch (_) { cs = []; }
+  const valeur = (c, h) => { const v = h[c.k];
+    if (Array.isArray(v)) return v.length ? v.map(x => typeof x === 'number' ? nombre(x) : String(x)).join(' · ') + (c.unite ? ' ' + c.unite : '') : '—';
+    if (c.genre === 'nombre') return v == null || v === '' ? (c.vide || '—') : nombre(v) + (c.unite ? ' ' + c.unite : '');
+    if (c.genre === 'choix') { const o = (c.options || []).find(x => String(x[0]) === String(v)); return o ? o[1] : v == null ? '—' : String(v); }
+    if (c.genre === 'case') return v === false ? 'non' : 'oui';
+    if (c.genre === 'condition') return (h.conditions || []).includes(c.c) ? 'oui · × ' + nombre(Math.round(c.facteur * 100) / 100) : 'non';
+    return v == null ? '—' : String(v); };
+  const reglages = cs.filter(c => c.genre !== 'condition' || c.lib).map(c => { const v = valeur(c, H), d = valeur(c, HYPOTHESES);
+    return [majuscule(c.lib || c.c || c.k || ''), v, d !== v ? d : '', SOURCE_DE(c.sert)]; });
+  if (Array.isArray(H.calibresPreferes) && !cs.some(c => c.k === 'calibresPreferes')) reglages.push(['Calibres préférés', H.calibresPreferes.map(nombre).join(' · ') + ' A', JSON.stringify(H.calibresPreferes) !== JSON.stringify(HYPOTHESES.calibresPreferes) ? HYPOTHESES.calibresPreferes.map(nombre).join(' · ') + ' A' : '', 'le lecteur']);
+  // les profils de charge : un par disjoncteur du plan
+  const etat = (e, k) => e && e[k] && e[k].i != null ? nombre(e[k].i) + ' A' + (k !== 'perm' && e[k].t != null ? ' · ' + nombre(e[k].t) + ' s' : '') : '—';
+  const profils = reperesDe(verite()).filter(estDisjoncteur).sort(triNaturel).map(r => { const c = chargeDe(r); let d = null; try { d = disjonctionDe(r); } catch (_) { }
+    const F = d && d.famille, retest = F && F.calibre > 0 && d.calibre > 0 && Math.abs(F.calibre - d.calibre) > 1e-9 ? nombre(F.calibre) + ' A' : '';
+    return [r, d && d.calibre > 0 ? nombre(d.calibre) + ' A' : '—', retest, etat(c, 'dem'), etat(c, 'trans'), etat(c, 'perm'), c && c.plus && c.plus.length ? c.plus.map(x => (x.nom || 'état') + ' ' + nombre(x.i) + ' A' + (x.t != null ? ' · ' + nombre(x.t) + ' s' : '')).join(' ; ') : c ? '' : 'profil à écrire']; });
+  // le statut des tables : leurs lignes, par confiance
+  const statuts = (typeof TABLES_NORME !== 'undefined' ? TABLES_NORME : []).map(t => { const xs = (N[t] || []); if (!xs.length) return null; const k = { v: 0, d: 0, c: 0, l: 0 };
+    xs.forEach(x => { const f = String(x.confiance || ''); if (f === 'vérifié') k.v++; else if (f === 'déduit' || f === 'structure') k.d++; else if (f) k.c++; else k.l++; });
+    return [(typeof TITRES_NORME !== 'undefined' && TITRES_NORME[t]) || t, xs.length, k.v || '', k.d || '', k.c || '', k.l || '']; }).filter(Boolean);
+  const reglees = reglages.filter(r => r[2]).length;
+  return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que le retest ne porte pas, Volta le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de l’outil est à côté)' : ', les valeurs de l’outil'}, les profils de charge des disjoncteurs et d’où viennent les tables. Le retest corrigé les garde dans sa feuille « Volta ».`, [
+    { titre: 'Les réglages', compte: motPdf(reglages.length, 'réglage', 'réglages'), colonnes: [['Réglage', 0.3], ['Valeur', 0.24], ['Valeur de l’outil', 0.18, { gris: true }], ['Source', 0.28, { gris: true }]], lignes: reglages },
+    { titre: 'Les profils de charge', compte: motPdf(profils.length, 'disjoncteur', 'disjoncteurs'), colonnes: [['Repère', 0.14, { mono: true }], ['Calibre', 0.11, { droite: true }], ['Retest', 0.11, { droite: true, gris: true }], ['Démarrage', 0.15], ['Transition', 0.15], ['Permanent', 0.12], ['Autres états', 0.22]], lignes: profils },
+    { titre: 'Le statut des tables', compte: motPdf(statuts.length, 'table', 'tables'), colonnes: [['Table', 0.3], ['Lignes', 0.12, { droite: true }], ['Vérifiées', 0.14, { droite: true }], ['Déduites', 0.14, { droite: true }], ['À confirmer', 0.15, { droite: true }], ['Vos tables', 0.15, { droite: true }]], lignes: statuts }], { deux: true }); }
 
 /* ---- les folios : leurs liaisons, leur placement (le cache, sinon au loin), leur dessin --------------------------- */
 const DOSSIER = { url: null, encours: null, historique: [] };
@@ -443,7 +516,7 @@ function svgDuFolioPdf(f, ctx) { const P = f.P, L = f.L;
 async function exporterDossierPdf() { const n = app.contrat.liaisons.filter(liaisonComplete).length;
   if (!n) { dire('Aucun plan ouvert : rien à mettre en PDF.', true); return null; }
   if (DOSSIER.encours) { montrerBarreDossier(true); return null; }
-  const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null; DOSSIER.encours = { ctl, etat: null }; DOSSIER.historique = [];
+  const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null; DOSSIER.encours = { ctl, etat: null, t0: performance.now() }; DOSSIER.historique = [];
   const tempo = setTimeout(() => montrerBarreDossier(true), 250);
   try { const octets = await pdfDuPlan(app.contrat.liaisons, app.nom || 'Plan', { ouvert: true, signal: ctl ? ctl.signal : null,
       avancement: e => { DOSSIER.encours.etat = e; DOSSIER.historique.push({ part: e.part, prets: e.prets, total: e.total }); majBarreDossier(e); } });
@@ -458,4 +531,9 @@ function montrerBarreDossier(on) { let el = $('pdf-dossier');
       + '<div class="pdf-barre" id="pdf-dossier-barre" role="progressbar" aria-label="Avancement du dossier en PDF" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div><small id="pdf-dossier-mot">Les folios déjà dessinés…</small>';
     document.body.appendChild(el); $('pdf-dossier-stop').onclick = () => { const x = DOSSIER.encours; if (x && x.ctl) x.ctl.abort(); }; }
   if (!el) return; el.hidden = !on; if (on && DOSSIER.encours && DOSSIER.encours.etat) majBarreDossier(DOSSIER.encours.etat); }
-function majBarreDossier(e) { const b = $('pdf-dossier-barre'); if (!b) return; const v = Math.round(e.part * 100); b.setAttribute('aria-valuenow', v); b.firstElementChild.style.width = v + '%'; $('pdf-dossier-mot').textContent = e.mot; }
+/* v73 (l'ingénieur, § 3.7 : « ajouter le temps restant estimé ») : passé deux secondes et un dixième du chemin, la barre dit
+   « environ 8 s » — le temps déjà pris, au prorata de ce qui reste ; arrondi, jamais au dixième. */
+function majBarreDossier(e) { const b = $('pdf-dossier-barre'); if (!b) return; const v = Math.round(e.part * 100); b.setAttribute('aria-valuenow', v); b.firstElementChild.style.width = v + '%';
+  const E = DOSSIER.encours, t = E && E.t0 ? (performance.now() - E.t0) / 1000 : 0, reste = e.part > 0.1 && e.part < 0.98 && t > 2 ? t * (1 - e.part) / e.part : null;
+  const mot = reste == null ? '' : reste < 4 ? 'quelques secondes' : 'environ ' + (reste < 60 ? Math.round(reste / (reste < 20 ? 1 : 5)) * (reste < 20 ? 1 : 5) + ' s' : Math.round(reste / 60) + ' min');
+  $('pdf-dossier-mot').textContent = e.mot + (mot ? ' · ' + mot : ''); }

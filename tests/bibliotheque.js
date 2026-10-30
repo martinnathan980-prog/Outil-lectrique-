@@ -229,7 +229,10 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   /* ---- le dépôt devine ; chaque plan dit ce qu'il reste à faire, et quand il a été exporté ------------------------- */
   console.log('\nle dépôt devine les en-têtes français ; un plan dit ce qu’il reste à faire, et « exporté le … »');
   await page.waitForTimeout(800);
-  const [dlX] = await Promise.all([page.waitForEvent('download', { timeout: 20000 }), page.evaluate(() => exporterRetestCorrige())]);
+  // (v73 : « Le retest corrigé » ouvre d'abord le relevé ; son bouton plein enregistre)
+  await page.evaluate(() => exporterRetestCorrige()); await page.waitForSelector('#fiche[data-mode="releve"] #rv-enregistrer');
+  const [dlX] = await Promise.all([page.waitForEvent('download', { timeout: 20000 }), page.click('#rv-enregistrer')]);
+  await page.evaluate(() => fermerFiche());
   await page.evaluate(id => montrerBibliotheque('install', BIB.plans.get(id).install), idVhf); await page.waitForTimeout(250);
   const R7 = await page.evaluate(id => { const li = document.querySelector(`#bibliotheque .bi-plan[data-plan="${id}"]`), p = BIB.plans.get(id); return { pb: (li.querySelector('.bi-pb') || {}).className || '', texte: li.textContent, exporte: !!p.exporte, problemes: p.problemes }; }, idVhf);
   ok(/bi-pb (ko|att|ok)/.test(R7.pb) && R7.problemes && /exporté le/.test(R7.texte) && R7.exporte && /retest-corrige\.xlsx$/.test(dlX.suggestedFilename()), 'un plan ouvert garde ce qu’il reste à faire (le compte du contrôle) ; exporté, sa ligne dit « exporté le … » (pages, idée 7)', JSON.stringify(R7.problemes) + ' · ' + R7.pb);

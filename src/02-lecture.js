@@ -117,13 +117,16 @@ function lireTexte(texte) {
 
   const rt = trouverEnteteRetest(brutes);
   if (rt) {
-    let c = rt.col, entetes = 1; const g = (row, i) => (i != null && row[i] != null) ? row[i] : '';
+    let c = rt.col, entetes = 1, volta = null; const g = (row, i) => (i != null && row[i] != null) ? row[i] : '', journaux = [];
     // la longueur : des mm quand l'en-tête le dit (« Cable length (mm) »)
     const mm = entete => c.length != null && /mm/i.test(entete[c.length] || '');
     let enMm = mm(cellules(brutes[rt.ligne] || ''));
     const liaisons = [];
     for (let r = rt.ligne + 1; r < brutes.length; r++) {
       if (!brutes[r].trim()) continue;
+      // ce que `lectureDuFichier` a lu d'un retest corrigé par Volta : sa feuille « Volta », ses journaux
+      if (brutes[r].startsWith(MARQUE_VOLTA)) { try { volta = JSON.parse(brutes[r].slice(MARQUE_VOLTA.length)); } catch (_) { volta = null; } continue; }
+      if (brutes[r].startsWith(MARQUE_JOURNAL)) { journaux.push(brutes[r].slice(MARQUE_JOURNAL.length)); continue; }
       const row = cellules(brutes[r]);
       // une autre ligne d'en-tête (la feuille suivante d'un classeur, un extrait collé à la suite) : ses colonnes prennent le relais
       const e = colonnesRetest(row); if (e) { c = e.col; enMm = mm(row); entetes++; continue; }
@@ -140,7 +143,12 @@ function lireTexte(texte) {
       const ecp = String(g(row, c.ecp)).trim(); if (ecp) l.ecp = ecp;
       if (liaisonComplete(l)) liaisons.push(l);
     }
-    return { liaisons, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))], installs: [...new Set(liaisons.map(l => l.install).filter(Boolean))] };
+    // les contacts choisis à la main vivent sur la liaison : ils y reviennent ici, quel que soit le chemin du fichier ; le
+    // reste (les profils de charge, les choix du contrat) se reprend sur le plan qu'il devient (08-export, `retenirVolta`)
+    if (volta && Array.isArray(volta.contacts) && volta.contacts.length) { const par = new Map(volta.contacts.map(x => [x.cle, x]));
+      liaisons.forEach(l => { const x = par.get([l.de, l.borneDe, l.vers, l.borneVers, l.cable].join('|')); if (!x) return; if (x.contactDe) l.contactDe = x.contactDe; if (x.contactVers) l.contactVers = x.contactVers; }); }
+    if ((volta || journaux.length) && typeof retenirVolta === 'function') retenirVolta(volta, liaisons, journaux);
+    return { liaisons, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))], installs: [...new Set(liaisons.map(l => l.install).filter(Boolean))], volta, journaux };
   }
 
   let map = null, debut = 0; const premiere = cellules(pleines[0]);
@@ -166,18 +174,41 @@ function lireTexte(texte) {
    dise. Sans aucune feuille de retest (une bible, une norme, un tableau
    libre) : la première feuille seule, comme avant. Excel passe par SheetJS,
    embarqué dans la page : rien ne part sur le réseau. */
+/* v73 — LE RETEST CORRIGÉ RELU (l'ingénieur, n° 2 : « rouvert, 207 liaisons au lieu de 201 : les six lignes de la feuille
+   Modifications sont devenues des liaisons ; et le profil de charge est perdu ») : la feuille « Modifications » qu'écrit
+   Volta (08-export) porte Device1, Pin1, Device2, Pin2 — elle a l'air d'un retest. Elle se reconnaît à son NOM, ou à son
+   en-tête « Colonne · Avant · Après » : c'est un JOURNAL, laissé de côté et nommé (`journaux`) pour qu'on le dise. La
+   feuille cachée « Volta » (`volta`) garde ce que les colonnes ne disent pas — profils de charge, hypothèses, choix des
+   fiches — : elle se lit à part. Les deux passent aussi dans le texte, sur des lignes marquées que `lireTexte` reconnaît
+   (le texte est ce que chaque chemin d'ouverture se transmet). */
+const MARQUE_VOLTA = '⁣VOLTA⁣', MARQUE_JOURNAL = '⁣JOURNAL⁣';
+const estJournal = (nom, rows) => NORM(nom) === 'modifications' || rows.slice(0, 12).some(r => { const k = new Set(r.map(NORM)); return k.has('colonne') && k.has('avant') && k.has('apres'); });
+/* La feuille « Volta » : ses lignes [sorte, clé, valeur en mots, donnée JSON], sous l'en-tête « Sorte · Clé · Valeur · Donnée ». */
+function lireFeuilleVolta(rows) { const v = { charges: [], hypotheses: {}, contacts: [], designations: [], sexes: [], raccords: [] }; let entete = false, format = '';
+  const J = t => { try { return JSON.parse(t); } catch (_) { return undefined; } };
+  rows.forEach(r => { const [s, k, , d] = r.map(x => String(x == null ? '' : x)); if (!entete) { entete = NORM(s) === 'sorte' && NORM(d) === 'donnee'; return; }
+    const x = J(d); if (x === undefined) return;
+    if (s === 'format') format = k; else if (s === 'charge') v.charges.push([k, x]); else if (s === 'hypothese') v.hypotheses[k] = x;
+    else if (s === 'contact') v.contacts.push({ cle: k, contactDe: x.contactDe || '', contactVers: x.contactVers || '' });
+    else if (s === 'designation') v.designations.push([k, x]); else if (s === 'sexe') v.sexes.push([k, x]); else if (s === 'raccord') v.raccords.push([k, x]); });
+  return entete && /^volta/.test(format) ? { format, ...v } : null; }
 async function lectureDuFichier(fichier) {
   const nom = (fichier.name || '').toLowerCase();
   const excel = /\.xls[xm]?$/.test(nom) || /sheet|excel/.test(fichier.type || '');
-  if (!excel) return { texte: await fichier.text(), feuilles: [], lues: [], ignorees: [] };
+  if (!excel) return { texte: await fichier.text(), feuilles: [], lues: [], ignorees: [], journaux: [], volta: null };
   if (typeof XLSX === 'undefined') throw new Error('bibliothèque Excel absente');
   const wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array' });
+  let volta = null; const journaux = [];
   const feuilles = wb.SheetNames.map(n => {
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: true, defval: '' }).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c)));
-    return { nom: n, retest: !!trouverEnteteRetest(rows), lignes: rows.filter(r => r.some(Boolean)).length, texte: rows.map(r => r.join('\t')).join('\n') }; });
+    if (NORM(n) === 'volta') { const v = lireFeuilleVolta(rows); if (v) { volta = v; return null; } }
+    if (estJournal(n, rows)) { journaux.push(n); return null; }
+    return { nom: n, retest: !!trouverEnteteRetest(rows), lignes: rows.filter(r => r.some(Boolean)).length, texte: rows.map(r => r.join('\t')).join('\n') }; }).filter(Boolean);
   const retests = feuilles.filter(f => f.retest), lues = retests.length ? retests : feuilles.slice(0, 1);
-  return { texte: lues.map(f => f.texte).join('\n'), feuilles: feuilles.map(({ nom, retest, lignes }) => ({ nom, retest, lignes })),
-           lues: lues.map(f => f.nom), ignorees: feuilles.filter(f => !lues.includes(f)).map(f => f.nom) };
+  // un retest relu porte, après ses liaisons, ce qu'on a lu à part : la feuille « Volta », les journaux laissés de côté
+  const marques = retests.length ? [volta ? MARQUE_VOLTA + JSON.stringify(volta) : '', ...journaux.map(j => MARQUE_JOURNAL + j)].filter(Boolean) : [];
+  return { texte: lues.map(f => f.texte).concat(marques).join('\n'), feuilles: feuilles.map(({ nom, retest, lignes }) => ({ nom, retest, lignes })),
+           lues: lues.map(f => f.nom), ignorees: feuilles.filter(f => !lues.includes(f)).map(f => f.nom), journaux, volta };
 }
 async function texteDuFichier(fichier) { return (await lectureDuFichier(fichier)).texte; }
 /* Un fichier lu : les liaisons, et les feuilles lues ou ignorées, pour le dire. */

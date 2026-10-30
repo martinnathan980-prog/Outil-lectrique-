@@ -94,12 +94,43 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     const R = classeurRetestCorrige(verite(), app.nom), ws = R.wb.Sheets.Retest, rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }), i = rows.findIndex(x => x[6] === 'W-012');
     const com = (ws[XLSX.utils.encode_cell({ r: i, c: 5 })].c || [])[0], M = XLSX.utils.sheet_to_json(R.wb.Sheets.Modifications, { header: 1 }).slice(1).map(x => x.join('|'));
     ok('le retest corrigé : les seize colonnes (en-têtes en ligne 4), la case changée commentée de ce qu’elle disait', rows[3].slice(0, 16).join('|') === 'Harness|Device1|Pin1|PN1|Description1|Cable T/G|Cable Tag|Route|Device2|Pin2|PN2|Description2|FWD|Cable length (mm)|Appareil|Date retest' && rows[i][5] === 'DR16' && com && com.t === 'Avant : DR20' && rows[i][16] === 'Cable T/G', rows[i].join('|'));
-    ok('la feuille Modifications : une ligne par case changée (le type, la longueur en mm)', M.join(' / ') === '|W-012|102CB1|2|103RL1|A1|Cable T/G|DR20|DR16 / |W-013|103RL1|A2|104LP1|1|Cable length (mm)|vide|3250 mm' && R.modifiees === 2, M.join(' / '));
+    // (v73 : la feuille dit aussi l'ORIGINE de chaque case — ici deux écritures à la main)
+    ok('la feuille Modifications : une ligne par case changée (le type, la longueur en mm) et son origine', M.join(' / ') === '|W-012|102CB1|2|103RL1|A1|Cable T/G|DR20|DR16|à la main / |W-013|103RL1|A2|104LP1|1|Cable length (mm)|vide|3250 mm|à la main' && R.modifiees === 2, M.join(' / '));
     const lu = lireTexte(XLSX.utils.sheet_to_csv(XLSX.read(XLSX.write(R.wb, { type: 'array', bookType: 'xlsx' })).Sheets.Retest, { FS: ';' }));
     ok('Volta le relit : le format retest, les 201 liaisons, les valeurs corrigées', lu.format === 'retest' && lu.liaisons.length === 201 && lu.liaisons.find(x => x.cable === 'W-012').type === 'DR16' && lu.liaisons.find(x => x.cable === 'W-013').longueur === 3.25, lu.format + ' · ' + lu.liaisons.length);
     return out;
   });
   R.push(...R3);
+  /* v73 — LE RETEST CORRIGÉ ROUVERT NE SE CORROMPT PLUS (l'ingénieur, n° 2 : « 207 liaisons au lieu de 201, le profil
+     perdu ») : « Passer en 15 A et grossir les câbles » (une proposition de Volta), un contact choisi à la main ; on
+     enregistre (le bouton du relevé), on rouvre le fichier comme Ctrl+O le rouvre : 201 liaisons, la feuille
+     Modifications laissée de côté (et dite), la feuille cachée « Volta » reprise — le profil, le contact —, et le même
+     verdict pour 102CB1. */
+  const R4 = await p.evaluate(async () => {
+    const out = []; const ok = (n, c, d) => out.push((c ? '  ok   ' : '  KO   ') + n.padEnd(52) + (d || ''));
+    atelier.exemple(); await new Promise(r => setTimeout(r, 500));
+    const avantD = disjonctionDe('102CB1'), avant = { pn: pnDuRepere('102CB1'), calibre: avantD.calibre, verdict: (verdictDeCalibre(avantD) || {}).cle };
+    toutRegler('102CB1');
+    const l = verite().find(x => x.cable === 'W-013'); changerLiaison(l, 'contactDe', 'EN3155-016M2018', 'un contact choisi à la main');
+    const D0 = disjonctionDe('102CB1'), v0 = { pn: pnDuRepere('102CB1'), calibre: D0.calibre, verdict: (verdictDeCalibre(D0) || {}).cle, profil: JSON.stringify(chargeDe('102CB1')) };
+    // l'enregistrement : le bouton plein du relevé
+    let blob = null; const tel = telecharger; telecharger = b => { blob = b; };
+    exporterRetestCorrige(); const releve = !!document.querySelector('#fiche[data-mode="releve"] #rv-enregistrer') && !blob;
+    document.getElementById('rv-enregistrer').click(); telecharger = tel; fermerFiche();
+    const wb = XLSX.read(new Uint8Array(await blob.arrayBuffer()), { type: 'array' }), M = XLSX.utils.sheet_to_json(wb.Sheets.Modifications, { header: 1 });
+    const origines = [...new Set(M.slice(1).filter(r => r[1] !== 'W-013').map(r => r[9]))].join(','), cachee = ((wb.Workbook || {}).Sheets || [])[2] || {};
+    ok('le relevé d’abord (rien ne part), puis l’Excel : Retest, Modifications (avec Origine), la feuille « Volta » cachée', releve && wb.SheetNames.join() === 'Retest,Modifications,Volta' && cachee.Hidden === 1 && M[0][9] === 'Origine' && origines === 'proposition de Volta acceptée', wb.SheetNames.join() + ' · cachée ' + cachee.Hidden + ' · ' + origines);
+    // rouvrir comme Ctrl+O : un fichier, le plan neuf
+    const f = new File([blob], 'Contrat-d-exemple-retest-corrige.xlsx', { type: blob.type }), lu = await lectureDuFichier(f);
+    await ouvrirFichier(f); await new Promise(r => setTimeout(r, 900));
+    const D1 = disjonctionDe('102CB1'), v1 = { pn: pnDuRepere('102CB1'), calibre: D1.calibre, verdict: (verdictDeCalibre(D1) || {}).cle, profil: JSON.stringify(chargeDe('102CB1')) };
+    const l1 = verite().find(x => x.cable === 'W-013'), toast = document.getElementById('toast').textContent;
+    ok('la feuille Modifications est un journal, laissée de côté : 201 liaisons, aucune sans type', lu.journaux.join() === 'Modifications' && !lu.ignorees.includes('Modifications') && verite().length === 201 && !verite().some(x => liaisonComplete(x) && !x.type), lu.journaux.join() + ' · ' + verite().length + ' liaisons');
+    ok('la feuille « Volta » reprise : le profil de charge de 102CB1, le contact choisi à la main ; le mot qui passe le dit', v1.profil === v0.profil && v1.profil !== 'null' && l1 && l1.contactDe === 'EN3155-016M2018' && /feuille «\s*Volta\s*»/.test(toast) && /journal/.test(toast), toast.slice(0, 160) + ' · contact ' + (l1 && l1.contactDe) + ' · profil ' + (v1.profil === v0.profil ? 'le même' : v0.profil + ' ≠ ' + v1.profil));
+    ok('le même verdict pour 102CB1 : le part number écrit, le calibre, « passe »', v1.pn === v0.pn && v1.calibre === v0.calibre && v1.verdict === v0.verdict && v0.verdict === 'passe' && avant.pn !== v0.pn, `avant ${avant.pn} ${avant.calibre} A ${avant.verdict} → écrit ${v0.pn} ${v0.calibre} A ${v0.verdict} → rouvert ${v1.pn} ${v1.calibre} A ${v1.verdict}`);
+    return out;
+  });
+  R.push(...R4);
   R.forEach(x => console.log(x));
   const ko = R.filter(x => x.startsWith('  KO')).length;
   console.log('\n  ' + (R.length - ko) + ' / ' + R.length + (ko ? '  — ' + ko + ' PROBLÈME(S)' : '  — tout tient'));

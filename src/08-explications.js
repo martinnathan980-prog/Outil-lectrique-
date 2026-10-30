@@ -63,13 +63,19 @@ const EXPLICATIONS = {
     const best = c && exPositif(c.meilleur) ? c.meilleur : m && exPositif(m.calibre) ? m.calibre : null, origine = (c && c.origine) || (d && d.origine) || (c && c.main ? 'main' : '');
     const perm = c && exPositif(c.permanent) ? c.permanent : exPositif(mg.permanent) ? mg.permanent : null, garanti = c && exPositif(c.garanti) ? c.garanti : exPositif(mg.garanti) ? mg.garanti : null;
     const marge = c && c.marge != null && isFinite(+c.marge) ? +c.marge : mg.courant != null ? mg.courant : +H.marge, T = c && c.temperature != null && isFinite(+c.temperature) ? +c.temperature : isFinite(mg.temperature) ? mg.temperature : +H.tableauMax;
-    const fam = (c && typeof c.famille === 'string' ? c.famille : '') || (m && m.famille) || '', gamme = exGamme(H), autre = best && cal && Math.abs(best - cal) > 1e-9;
+    // la gamme ESSAYÉE (v73, l'ingénieur : « il cite 25 A dans la gamme MS3320 ») : celle de la famille du part number, filtrée
+    // par vos calibres préférés — le cadran la montre ; le catalogue entier de la famille, quand il en a plus
+    const F = d && d.famille && typeof d.famille === 'object' ? d.famille : null, essayes = d && Array.isArray(d.catalogue) && d.catalogue.length ? d.catalogue : null;
+    const tout = F && typeof catalogueDeLaFamille === 'function' ? catalogueDeLaFamille(F) : null;
+    const gamme = essayes ? essayes.map(exN).join(' · ') + ' A' : exGamme(H), filtre = essayes && tout && tout.length > essayes.length ? ` (${essayes.length} sur ${tout.length} : vos préférés)` : '';
+    const essaie = essayes ? `Essaie la gamme${F && F.famille ? ' ' + F.famille : ''}, du plus petit au plus grand : ${gamme}${filtre}` : `Essaie chaque calibre de votre gamme${gamme ? ' (' + gamme + ')' : ''}, du plus petit au plus grand`;
+    const fam = (c && typeof c.famille === 'string' ? c.famille : '') || (m && m.famille) || '', autre = best && cal && Math.abs(best - cal) > 1e-9;
     const phrase = !cal ? `Le plus petit calibre de votre gamme qui passe votre profil, avec ${exN(marge)} % de marge.`
       : origine === 'main' ? `${exA(cal)}, choisi à la main${autre ? ` — « Automatique » prend ${exA(best)}` : ''}.`
       : autre ? `Le meilleur est ${exA(best)} : le plus petit de votre gamme${fam ? ' ' + fam : ''} qui passe ; le ${exA(cal)} ${cal < best ? 'ne passe pas' : 'est plus gros que nécessaire'}.`
       : best ? `${exA(cal)} : le plus petit de votre gamme${fam ? ' ' + fam : ''} qui passe votre profil.` : origine === 'pn' ? `${exA(cal)} : lu dans la référence du disjoncteur.` : `${exA(cal)}.`;
     return exE('Le calibre', phrase, [['Permanent', perm ? exA(perm) : null, ''], ['Marge', exN(marge) + ' %', ''], ['Juge à', exN(T) + ' °C', ''], ['Garanti', garanti ? exA(garanti) : null, 'ok']],
-      [`Essaie chaque calibre de votre gamme${gamme ? ' (' + gamme + ')' : ''}, du plus petit au plus grand`, `Garde le premier qui ne déclenche pas à ${exN(+H.tableauMax)} °C, avec ${exN(+H.marge)} % de marge : il passe`, 'Un câble trop fin, il le grossit — il ne monte jamais le calibre pour lui', 'Il reste à 2:1 de ses voisins'],
+      [essaie, `Garde le premier qui ne déclenche pas à ${exN(+H.tableauMax)} °C, avec ${exN(+H.marge)} % de marge : il passe ; sans la marge, il est juste`, 'Un câble trop fin, il le grossit — il ne monte jamais le calibre pour lui', 'Il reste à 2:1 de ses voisins'],
       'Les courbes de votre Excel (un E-T-A 483 / 4120) et des constructeurs, la garantie MS3320N, la méthode NASA TM-102179, la FAA AC 43.13-1B.'); },
 
   courbe: c => { const H = exHypotheses(c), tmin = c && c.tableauMin != null ? +c.tableauMin : +H.tableauMin, tmax = c && c.tableauMax != null ? +c.tableauMax : +H.tableauMax;

@@ -97,7 +97,9 @@ const pct = x => (100 * x).toFixed(1).replace('.', ',') + ' %';
   const Dd = await p.evaluate(async b64 => { const doc = await pdfjsPret().getDocument({ data: Uint8Array.from(atob(b64), c => c.charCodeAt(0)), isEvalSupported: false }).promise;
     const txt = async i => (await (await doc.getPage(i)).getTextContent()).items.map(x => x.str).join(' '), vp = (await doc.getPage(2)).getViewport({ scale: 1 });
     const net = s => s.replace(/\s+/g, ' ');   // pdf.js glisse des morceaux vides entre les textes
-    return { n: doc.numPages, w: Math.round(vp.width), h: Math.round(vp.height), garde: net(await txt(1)), folio: net(await txt(4)), fin: net(await txt(doc.numPages)), toast: net($('toast').textContent) }; }, brut.toString('base64'));
+    // (v73 : la page « Hypothèses et sources » suit la garde — le folio 3 est la page qui dit « 3 / 6 »)
+    let folio = ''; for (let i = 2; i <= doc.numPages && !folio; i++) { const t = net(await txt(i)); if (/FOLIO/.test(t) && /3 \/ 6/.test(t)) folio = t; }
+    return { n: doc.numPages, w: Math.round(vp.width), h: Math.round(vp.height), garde: net(await txt(1)), hypotheses: net(await txt(2)), folio, fin: net(await txt(doc.numPages)), toast: net($('toast').textContent) }; }, brut.toString('base64'));
   const polices = [...new Set((latin.match(/\/BaseFont \/[\w-]+/g) || []).map(x => x.slice(11)))].sort().join(',');
   ok('Excel → PDF : ⋮ › Exporter › « Le dossier en PDF » écrit un vrai PDF — la page de garde, un A3 paysage par folio avec son cartouche, la nomenclature à la fin',
     /-dossier\.pdf$/.test(telD.suggestedFilename()) && latin.startsWith('%PDF-') && Dd.n >= 8 && Dd.w === 1191 && Dd.h === 842 && /FOLIO/.test(Dd.folio) && /3 \/ 6/.test(Dd.folio) && /Nomenclature/.test(Dd.fin) && /dossier est enregistré/.test(Dd.toast),

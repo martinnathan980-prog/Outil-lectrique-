@@ -16,6 +16,23 @@
 function compteur() { const m = new Map();
   return { plus(cle, champs, ou, n) { const e = m.get(cle) || m.set(cle, { ...champs, n: 0, ou: new Set() }).get(cle); e.n += n == null ? 1 : n; if (ou) e.ou.add(ou); if (champs.confiance === 'à confirmer') e.confiance = 'à confirmer'; },
            lignes() { return [...m.values()].map(e => ({ ...e, ou: [...e.ou].sort(triNaturel) })).sort((a, b) => b.n - a.n || triNaturel(a.reference, b.reference)); } }; }
+/* LES DISJONCTEURS (v73, l'ingénieur, n° 6 : « MS3320-10 · connecteur — un disjoncteur n'est pas un connecteur » ; « le
+   folio écrit 15 A, la nomenclature commande un MS3320-10 ») : un groupe à eux, une ligne par repère — le part number à
+   COMMANDER (celui du calibre que Volta retient : une désignation construite dans la famille du part number, à vérifier
+   au catalogue, quand il diffère du retest), le calibre retenu, le retest barré s'il diffère, l'état (le verdict, la table
+   unique de 09 bis ; « pas écrit au retest » tant que le retest dit un autre calibre). Une borne de disjoncteur se
+   raccorde par une cosse : ni contact à sertir, ni raccord. */
+function disjoncteursDeLaNomenclature(V) { return reperesDe(V || verite()).filter(estDisjoncteur).sort(triNaturel).map(r => { const pn = pnDuRepere(r); let d = null; try { d = disjonctionDe(r); } catch (_) { d = null; }
+  const F = d && d.famille, cal = d && d.calibre > 0 ? d.calibre : null, calPn = F && F.calibre > 0 ? F.calibre : null, differe = !!(cal && calPn && Math.abs(cal - calPn) > 1e-9);
+  const commande = differe && F ? pnAvecCalibre(pn, F, cal) || pn : pn, v = d ? verdictDeCalibre(d) : null;
+  const etat = !d || d.sansProfil ? 'profil de charge à écrire' : v ? v.mot + (differe ? ' · pas écrit au retest' : '') : '';
+  return { repere: r, reference: commande || '—', pnRetest: differe ? pn : '', calibre: cal, retest: differe ? calPn : null, verdict: v, etat, construit: differe, n: 1, ou: [r] }; }); }
+/* UN SEUL COMPTE DE REPÈRES (v73, l'ingénieur : « la garde annonce 77 repères, le récapitulatif 67 ») : celui du menu et du
+   récapitulatif (`reperesDuContrat`, 08-interface : sans les masses, les rails, les renvois ; les barrettes à poser
+   comprises) — d'un folio, ceux qui y paraissent. Pour des liaisons qui ne sont pas le plan ouvert (l'API du dossier), la
+   même règle sur elles. */
+function nombreDeReperes(folio, L) { if (!L && typeof reperesDuContrat === 'function') { const R = reperesDuContrat(); return folio == null ? R.length : R.filter(r => (r.plans || []).includes(folio)).length; }
+  return reperesDe(L || verite()).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).length; }
 /* La nomenclature : relue depuis le contrat, les normes et les choix (références, sexes, raccords). */
 function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESES, contacts = compteur(), modules = compteur(), connecteurs = compteur(), habits = compteur(), cables = compteur();
   // le contact écrit à la main à un bout (le récapitulatif ou la fiche : `contactMain`) passe devant celui du plan ;
@@ -47,7 +64,7 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
     if (h.bandit) habits.plus('collier|' + (B ? B.reference : '?'), { quoi: 'band-it', reference: B ? B.reference : 'aucun ne va au toron', note: B && B.equivalent ? '≈ ' + B.equivalent.reference : '' }, ou);
     if (h.manchon) habits.plus('manchon|' + (M ? M.designation : '?'), { quoi: 'manchon' + (h.colle === 'précollé' ? ' précollé' : ''), reference: M ? M.designation : 'aucun ne va au toron', note: M ? [M.reference, h.colle && h.colle !== 'précollé' ? h.colle : ''].filter(Boolean).join(' — ') : '' }, ou);
     if (h.choix.gaine) habits.plus('gaine|' + (G ? G.reference : h.choix.gaine), { quoi: 'gaine ' + h.choix.gaine + (G ? ' (' + G.role + ')' : ''), reference: G ? G.reference : 'aucune ne va au toron', note: G ? (G.role === 'surblindage' ? 'Ø int. ' + nombre(G.dint) + ' mm' : 'toron ' + nombre(G.dmin) + '–' + nombre(G.dmax) + ' mm') : '' }, ou); };
-  reperesDe(V).forEach(r => { if (estMasse(r) || estRenvoi(r) || estRail(r)) return;
+  reperesDe(V).forEach(r => { if (estMasse(r) || estRenvoi(r) || estRail(r) || estDisjoncteur(r)) return;
     try {
       if (barretteEnModules(r)) { const Q = planDeBarrette(r).plan; Q.modules.forEach(M => modules.plus(M.reference, { reference: M.reference, famille: nomDeFamille(app.norme, M.module.famille) }, r)); sertir(Q.fils, r); }
       else if (coupureEnModules(r)) { const { besoins: b, plan: Q } = planDeCoupure(r); if (Q.reference) connecteurs.plus(Q.reference, { reference: Q.reference, nature: 'prise de coupure' }, r);
@@ -63,7 +80,7 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
     cables.plus(l.type, { reference: l.type, cable: cableDuType(app.norme, l.type) }, null, 1);
     longueurs.set(l.type, (longueurs.get(l.type) || 0) + L); if (l.longueur > 0) reelles.set(l.type, (reelles.get(l.type) || 0) + 1); });
   const lc = cables.lignes().map(c => ({ ...c, longueur: longueurs.get(c.reference) || 0, reelles: reelles.get(c.reference) || 0, masse: c.cable && c.cable.masse != null ? c.cable.masse * (longueurs.get(c.reference) || 0) : null }));
-  return { contacts: contacts.lignes(), modules: modules.lignes(), connecteurs: connecteurs.lignes(), habits: habits.lignes(), cables: lc,
+  return { contacts: contacts.lignes(), modules: modules.lignes(), connecteurs: connecteurs.lignes(), disjoncteurs: disjoncteursDeLaNomenclature(V), habits: habits.lignes(), cables: lc,
            fils: V.filter(l => liaisonComplete(l) && l.de !== l.vers).length, longueur: lc.reduce((s, c) => s + c.longueur, 0), masse: lc.reduce((s, c) => s + (c.masse || 0), 0), hypothese: H.longueur }; }
 
 /* ---- le document ---------------------------------------------------------------
@@ -81,28 +98,43 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
   const tuile = (v, u, t) => `<div class="no-tuile"><b>${v}${u ? `<small>${INSECABLE}${u}</small>` : ''}</b><span>${t}</span></div>`;
   const resume = `<div class="no-resume">${tuile(somme(N.contacts), '', 'contacts à sertir')}${tuile(somme(N.modules), '', 'modules de jonction')}${tuile(somme(N.connecteurs), '', 'connecteurs et prises')}`
     + `${tuile(N.fils, '', N.fils > 1 ? 'câbles' : 'câble')}${tuile(nombre(Math.round(N.longueur)), 'm', 'de câble')}${N.masse > 0 ? tuile(nombre(Math.round(N.masse / 100) / 10), 'kg', 'de câble (masse)') : ''}</div>`;
-  // une table : son titre et ce qu'elle compte ; les colonnes de chiffres se rangent à droite, leur en-tête avec elles
-  const table = (titre, compte, tete, lignes) => lignes.length ? `<section class="no-section"><h3 class="sous-titre no-st">${titre}<small>${compte}</small></h3><div class="norme-defile no-defile"><table class="norme no-table tableau normal"><thead><tr>${tete.map(t => `<th${/^(Qté|Longueur|Masse)$/.test(t) ? ' class="d"' : ''}>${t}</th>`).join('')}</tr></thead><tbody>${lignes}</tbody></table></div></section>` : '';
+  /* une table : son titre et ce qu'elle compte ; les colonnes de chiffres se rangent à droite, leur en-tête avec elles ; une
+     colonne que ses lignes ne remplissent pas ne s'écrit pas (DESIGN.md ; l'ingénieur : « la colonne Fourreau est vide de
+     haut en bas »). `lignes` : des rangs de cases [html, vide?] */
+  const table = (titre, compte, tete, lignes) => { if (!lignes.length) return ''; const garde = tete.map((_, k) => lignes.some(L => !L[k][1]));
+    const th = tete.filter((_, k) => garde[k]).map(t => `<th${/^(Qté|Longueur|Masse|Calibre|Retest)$/.test(t) ? ' class="d"' : ''}>${t}</th>`).join('');
+    return `<section class="no-section"><h3 class="sous-titre no-st">${titre}<small>${compte}</small></h3><div class="norme-defile no-defile"><table class="norme no-table tableau normal"><thead><tr>${th}</tr></thead><tbody>${lignes.map(L => `<tr>${L.filter((_, k) => garde[k]).map(c => c[0]).join('')}</tr>`).join('')}</tbody></table></div></section>`; };
+  const td = (cls, html, vide) => [`<td${cls ? ` class="${cls}"` : ''}>${html}</td>`, !!vide];
   const refs = (xs, mot) => plurielLie(xs.length, mot) + ' · ' + plurielLie(somme(xs), 'pièce');
   // la nature d'un connecteur et l'arrangement que la norme lui donne : le mot, puis la référence dessous en chasse fixe
   const natureHtml = t => { const [n, ...r] = String(t || '').split(' · '); return esc(n) + (r.length ? `<span class="no-arr">${esc(r.join(' · '))}</span>` : ''); };
-  const corps = tete('Le contrat', 'Nomenclature', true) + resume + `<p class="note no-intro">Ce qu’il faut commander et sertir, relu depuis le contrat, les normes et les choix des fiches. Les longueurs sont celles du retest ; sans longueur, l’hypothèse de la simulation (${esc(nombre(N.hypothese))} m par câble).</p>`
-    + table('Contacts à sertir', refs(N.contacts, 'référence'), ['Contact', 'Fourreau', 'Qté', 'Où'], N.contacts.map(x => `<tr><td class="ref">${esc(x.reference)}${x.confiance === 'à confirmer' ? note('à confirmer') : ''}</td><td>${x.accessoire ? esc(x.accessoire) : rien}</td><td class="d">${x.n}</td><td class="sans">${ou(x.ou)}</td></tr>`).join(''))
-    + table('Modules de jonction', refs(N.modules, 'référence'), ['Module', 'Norme', 'Qté', 'Barrettes'], N.modules.map(x => `<tr><td class="ref">${esc(x.reference)}</td><td class="sans">${esc(x.famille || '')}</td><td class="d">${x.n}</td><td class="sans">${ou(x.ou)}</td></tr>`).join(''))
-    + table('Connecteurs et prises', refs(N.connecteurs, 'part number'), ['Part number', 'Nature', 'Qté', 'Repères'], N.connecteurs.map(x => `<tr><td class="ref">${esc(x.reference)}</td><td class="sans">${natureHtml(x.nature)}</td><td class="d">${x.n}</td><td class="sans">${ou(x.ou)}</td></tr>`).join(''))
-    + table('Autour des connecteurs', refs(N.habits, 'article'), ['Quoi', 'Référence', 'Qté', 'Où'], N.habits.map(x => `<tr><td class="sans no-quoi">${esc(x.quoi)}</td><td class="ref">${esc(x.reference)}${x.note ? note(x.note) : ''}</td><td class="d">${x.n}</td><td class="sans">${ou(x.ou)}</td></tr>`).join(''))
-    + table('Câbles', plurielLie(N.cables.length, 'type') + ' · ' + nombre(Math.round(N.longueur)) + ' m', ['Type', 'Qté', 'Longueur', 'Masse', 'Base'], N.cables.map(x => `<tr><td class="ref">${esc(x.reference)}</td><td class="d">${x.n}</td><td class="d">${x.reelles < x.n ? `<i class="no-hyp" data-bulle="${escA(pluriel(x.n - x.reelles, 'câble') + ' sans longueur dans le retest : l’hypothèse de la simulation')}">≈</i>` : ''}${esc((Math.round(x.longueur * 10) / 10).toFixed(1).replace(".", ","))} m</td><td class="d">${x.masse != null ? esc(nombre(Math.round(x.masse))) + ' g' : rien}</td><td class="sans">${x.cable ? esc([x.cable.nature, x.cable.diametre != null ? 'Ø ' + nombre(x.cable.diametre) : '', x.cable.section != null ? nombre(x.cable.section) + ' mm²' : ''].filter(Boolean).join(' · ')) : '<span class="no-ko">inconnu de la base</span>'}</td></tr>`).join(''));
+  // l'état d'un disjoncteur : le verdict à sa couleur (la table unique, 09 bis), « pas écrit au retest » en ambre dessous
+  const etatDj = x => x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>${x.retest ? note('pas écrit au retest') : ''}` : `<span class="no-rien">${esc(x.etat || '—')}</span>`;
+  const corps = tete('Le contrat', 'Nomenclature', true) + resume + `<p class="note no-intro">Ce qu’il faut commander et sertir, relu depuis le contrat, les normes et les choix des fiches. Les longueurs sont celles du retest ; sans longueur, l’hypothèse de la simulation (${esc(nombre(N.hypothese))} m par câble).</p>`
+    + table('Contacts à sertir', refs(N.contacts, 'référence'), ['Contact', 'Fourreau', 'Qté', 'Où'], N.contacts.map(x => [td('ref', esc(x.reference) + (x.confiance === 'à confirmer' ? note('à confirmer') : '')), td('', x.accessoire ? esc(x.accessoire) : rien, !x.accessoire), td('d', x.n), td('sans', ou(x.ou))]))
+    + table('Modules de jonction', refs(N.modules, 'référence'), ['Module', 'Norme', 'Qté', 'Barrettes'], N.modules.map(x => [td('ref', esc(x.reference)), td('sans', esc(x.famille || ''), !x.famille), td('d', x.n), td('sans', ou(x.ou))]))
+    + table('Connecteurs et prises', refs(N.connecteurs, 'part number'), ['Part number', 'Nature', 'Qté', 'Repères'], N.connecteurs.map(x => [td('ref', esc(x.reference)), td('sans', natureHtml(x.nature), !x.nature), td('d', x.n), td('sans', ou(x.ou))]))
+    + table('Disjoncteurs', plurielLie(N.disjoncteurs.length, 'disjoncteur'), ['Repère', 'Part number à commander', 'Calibre', 'Retest', 'État'], N.disjoncteurs.map(x => [td('ref', esc(x.repere)),
+      td('ref', esc(x.reference) + (x.construit ? `<i class="no-note-l no-construit" data-bulle="Le part number du calibre que Volta retient, construit dans la famille du retest : à vérifier au catalogue">construit · à vérifier</i>` : '')),
+      td('d', x.calibre ? esc(nombre(x.calibre)) + INSECABLE + 'A' : rien, !x.calibre), td('d', x.retest ? `<s class="no-barre" data-bulle="${escA('Le retest dit ' + x.pnRetest)}">${esc(nombre(x.retest))}${INSECABLE}A</s>` : rien, !x.retest), td('sans no-etat-c', etatDj(x))]))
+    + table('Autour des connecteurs', refs(N.habits, 'article'), ['Quoi', 'Référence', 'Qté', 'Où'], N.habits.map(x => [td('sans no-quoi', esc(x.quoi)), td('ref', esc(x.reference) + (x.note ? note(x.note) : '')), td('d', x.n), td('sans', ou(x.ou))]))
+    + table('Câbles', plurielLie(N.cables.length, 'type') + ' · ' + nombre(Math.round(N.longueur)) + ' m', ['Type', 'Qté', 'Longueur', 'Masse', 'Base'], N.cables.map(x => [td('ref', esc(x.reference)), td('d', x.n),
+      td('d', `${x.reelles < x.n ? `<i class="no-hyp" data-bulle="${escA(pluriel(x.n - x.reelles, 'câble') + ' sans longueur dans le retest : l’hypothèse de la simulation')}">≈</i>` : ''}${esc((Math.round(x.longueur * 10) / 10).toFixed(1).replace('.', ','))} m`),
+      td('d', x.masse != null ? esc(nombre(Math.round(x.masse))) + ' g' : rien, x.masse == null), td('sans', x.cable ? esc([x.cable.nature, x.cable.diametre != null ? 'Ø ' + nombre(x.cable.diametre) : '', x.cable.section != null ? nombre(x.cable.section) + ' mm²' : ''].filter(Boolean).join(' · ')) : '<span class="no-ko">inconnu de la base</span>')]));
   // le pied : le classeur Excel, plein (on commande avec) ; le CSV au trait, comme partout ; le suivi en lien
   const pied = '<button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : une ligne par article, sa section, sa quantité, où il va">Exporter Excel</button><button class="btn papier" id="no-csv">Exporter CSV</button><span class="espace"></span><button class="btn lien" id="no-suivi">Le suivi (barrettes, prises)</button>';
   ouvrirFiche({ mode: 'nomenclature', large: true }, corps, pied);
   $('no-xlsx').onclick = () => exporterNomenclatureExcel(N); $('no-csv').onclick = () => exporterNomenclature(N); $('no-suivi').onclick = exporterSuivi;
-  if (typeof lierBullesDoc === 'function') lierBullesDoc(); }
+  if (typeof lierBullesDoc === 'function') lierBullesDoc();
+  // le document prend le clavier : son action pleine (Tab mène au reste, Échap le ferme)
+  const b = $('no-xlsx'); if (b) setTimeout(() => { if (b.isConnected && !b.closest('[hidden]')) b.focus({ preventScroll: true }); }, 30); }
 /* Les lignes, une par article, avec sa section — pour le CSV et pour le classeur ; la quantité reste un nombre. */
 const ENTETES_NOMEN = ['Section', 'Référence', 'Détail', 'Quantité', 'Unité', 'Où'];
 function lignesNomenclature(N) { const L = [];
   N.contacts.forEach(x => L.push(['Contacts', x.reference, [x.accessoire, x.confiance === 'à confirmer' ? 'à confirmer' : ''].filter(Boolean).join(' — '), x.n, 'pièce', x.ou.join(', ')]));
   N.modules.forEach(x => L.push(['Modules', x.reference, x.famille || '', x.n, 'pièce', x.ou.join(', ')]));
   N.connecteurs.forEach(x => L.push(['Connecteurs', x.reference, x.nature || '', x.n, 'pièce', x.ou.join(', ')]));
+  (N.disjoncteurs || []).forEach(x => L.push(['Disjoncteurs', x.reference, [x.calibre ? 'calibre ' + nombre(x.calibre) + ' A' : '', x.retest ? 'retest ' + x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat, x.construit ? 'part number construit, à vérifier au catalogue' : ''].filter(Boolean).join(' — '), 1, 'pièce', x.repere]));
   N.habits.forEach(x => L.push(['Habillage', x.reference, x.quoi + (x.note ? ' — ' + x.note : ''), x.n, 'pièce', x.ou.join(', ')]));
   N.cables.forEach(x => L.push(['Câbles', x.reference, pluriel(x.n, 'câble'), Math.round(x.longueur * 10) / 10, 'm', '']));
   return L; }

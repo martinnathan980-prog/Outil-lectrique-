@@ -207,6 +207,57 @@ function titre(t) { console.log('\n' + t); }
   ok('les espaces parasites ne dédoublent plus un repère', pieges.espaces === 2, pieges.espaces + ' bloc(s) pour 2 repères');
   ok('le SVG exporté est un XML valide', pieges.svgOk && pieges.svgXml && !pieges.svgCtrl, pieges.svgOk ? (pieges.svgFils + ' fils · caractère de contrôle : ' + (pieges.svgCtrl ? 'OUI' : 'aucun')) : 'pas de SVG produit');
 
+  /* ---- 8. LA VÉRITÉ (v73, domaine C) : un seul compte, une seule chute, les problèmes du câble et leur cause, deux part
+     numbers, trois mots de verdict, le disjoncteur rangé à part dans la nomenclature, le dossier qui dit ses hypothèses */
+  titre('8. LA VÉRITÉ : UN COMPTE, UNE CHUTE, LE CÂBLE ET SA CAUSE');
+  const V8 = await page.evaluate(async () => { const r = {}; atelier.exemple(); await new Promise(f => setTimeout(f, 600)); rendreControle();
+    const C = compteProblemes(), xs = CONTROLE.items, p = document.querySelector('#btnIndex .rd-point');
+    r.compte = { ko: C.ko, att: C.att, mot: C.mot, items: xs.length, nko: xs.filter(x => x.niveau === 'ko').length, pastille: p ? p.textContent : '', aria: document.getElementById('btnIndex').getAttribute('aria-label') };
+    CONTROLE.pas = null; problemeSuivant(1); r.p1 = document.getElementById('toast').textContent;
+    // P va jusqu'au premier « à voir » : son rang dit « À voir 1 / att »
+    for (let i = 1; i < C.ko; i++) problemeSuivant(1); problemeSuivant(1); r.p2 = document.getElementById('toast').textContent;
+    // la chute de W-012 : la fiche du câble, la ligne de la fiche du disjoncteur, le contrôle (l'onglet Problèmes et le PDF le lisent)
+    const l = verite().find(x => x.cable === 'W-012'), ch = chuteDuFil(l), pointe = ch.pointe ? volts(ch.pointe.dU) : '';
+    const ligneDj = lignesFilsDisjoncteur('102CB1').find(x => x.l === l), item = xs.find(x => x.nom === '102CB1' && /chute en ligne vers 103RL1:A1/.test(x.texte));
+    r.chute = { fiche: pointe, dj: ligneDj ? (ligneDj.bulle.match(/en pointe : ([\d,]+ V)/) || [])[1] : '', controle: item ? (item.texte.match(/en pointe : ([\d,]+ V)/) || [])[1] : '' };
+    const o = await pdfDuPlan(app.contrat.liaisons, app.nom, { ouvert: true }); let s = ''; for (let i = 0; i < o.length; i += 8192) s += String.fromCharCode.apply(null, o.subarray(i, i + 8192));
+    const doc = await pdfjsPret().getDocument({ data: o, isEvalSupported: false }).promise, txt = async i => (await (await doc.getPage(i)).getTextContent()).items.map(x => x.str).join(' ').replace(/\s+/g, ' ');
+    const garde = await txt(1), page2 = await txt(2); r.pdf = { chute: (garde.match(/103RL1:A1 en pointe : ([\d,]+ V)/) || [])[1] || '', reperes: (garde.match(/(\d+) repères/) || [])[1], hyp: /Hypothèses et sources/.test(page2) && /Les profils de charge/.test(page2) && /102CB1/.test(page2), coupes: 0 };
+    for (const i of [1, 2, doc.numPages - 1, doc.numPages]) if (/…/.test(await txt(i))) r.pdf.coupes++;
+    r.reperes = reperesDuContrat().length;
+    // les problèmes du câble : après « Passer en DR12 » seul, la CAUSE (le 10 A du retest) reste, avec « Tout régler »
+    r.w012 = problemesDuCable(l).map(x => x.niveau + ' ' + x.texte);
+    changerLiaison(l, 'type', 'DR12', 'W-012 en DR12'); rendreControle();
+    const P2 = problemesDuCable(verite().find(x => x.cable === 'W-012')), cause = P2.find(x => x.cause);
+    r.cause = cause ? { niveau: cause.niveau, texte: cause.texte, geste: (cause.gestes.find(g => g.principal) || {}).mot } : null;
+    r.w015 = problemesDuCable(verite().find(x => x.cable === 'W-015')).filter(x => !x.cause).map(x => x.niveau).join(',');
+    // tout régler : la cause s'en va, le geste écrit le part number marqué « proposition de Volta »
+    cause.gestes.find(g => g.principal).faire(); rendreControle();
+    r.apres = { cause: problemesDuCable(verite().find(x => x.cable === 'W-012')).some(x => x.cause), pn: pnDuRepere('102CB1'), origine: changementsDuRetest().ecrits.filter(e => e.objet === '102CB1').map(e => e.origine).join() };
+    // deux part numbers sur 102CB1 : un problème, « Unifier sur… »
+    const l11 = verite().find(x => x.cable === 'W-011'), champ = l11.de === '102CB1' ? 'pnDe' : 'pnVers'; changerLiaison(l11, champ, '4120-F-10A', 'un autre part number'); rendreControle();
+    const pn = CONTROLE.items.find(x => x.genre === 'pn'), g = pn ? gestesDuPoint(pn) : [];
+    r.pn = { niveau: pn && pn.niveau, texte: pn && pn.texte, gestes: g.map(x => x.mot).join(' | ') };
+    if (g[0]) g[0].faire(); rendreControle(); r.pnApres = CONTROLE.items.some(x => x.genre === 'pn');
+    return r; });
+  ok('UN compte : la pastille = les problèmes rouges du plan, « P » dit « Problème 1 / ko » puis « À voir 1 / att »', V8.compte.ko === V8.compte.nko && V8.compte.ko + V8.compte.att === V8.compte.items && V8.compte.pastille === String(V8.compte.ko) && V8.compte.aria.includes(V8.compte.mot) && new RegExp('Problème 1 / ' + V8.compte.ko).test(V8.p1) && new RegExp('À voir 1 / ' + V8.compte.att).test(V8.p2), `${V8.compte.mot} · pastille ${V8.compte.pastille} · ${V8.p1.slice(0, 40)} · ${V8.p2.slice(0, 40)}`);
+  ok('UNE chute : la fiche du câble, la fiche du disjoncteur, le contrôle (onglet Problèmes) et le PDF portent le même nombre', !!V8.chute.fiche && V8.chute.fiche === V8.chute.dj && V8.chute.dj === V8.chute.controle && V8.chute.controle === V8.pdf.chute, `fiche ${V8.chute.fiche} · disjoncteur ${V8.chute.dj} · contrôle ${V8.chute.controle} · PDF ${V8.pdf.chute}`);
+  ok('le dossier PDF : un seul compte de repères (celui du menu), la page « Hypothèses et sources » après la garde, aucun « … »', +V8.pdf.reperes === V8.reperes && V8.pdf.hyp && V8.pdf.coupes === 0, `${V8.pdf.reperes} repères (menu ${V8.reperes}) · hypothèses ${V8.pdf.hyp} · pages coupées ${V8.pdf.coupes}`);
+  ok('la fiche du câble a SES problèmes (W-012 : la charge, la protection, la chute)', V8.w012.some(t => /^ko Démarrage/.test(t)) && V8.w012.some(t => /Chute en ligne/.test(t)), V8.w012.slice(0, 3).join(' | '));
+  ok('« Passer en DR12 » seul : W-012 garde la CAUSE en ambre (le 10 A du retest), avec « Tout régler »', !!V8.cause && V8.cause.niveau === 'att' && /102CB1 : le 10 A du retest/.test(V8.cause.texte) && /^Tout régler : 102CB1 en 15 A/.test(V8.cause.geste || '') && /ko/.test(V8.w015), V8.cause ? V8.cause.texte + ' · ' + V8.cause.geste : 'aucune cause');
+  ok('« Tout régler » écrit le 15 A — une proposition de Volta (l’origine) — et la cause s’en va', !V8.apres.cause && V8.apres.pn === 'MS3320-15' && /volta/.test(V8.apres.origine), JSON.stringify(V8.apres));
+  ok('deux part numbers sur 102CB1 : un problème, « Unifier sur… » qui le règle', V8.pn.niveau === 'ko' && /deux part numbers/.test(V8.pn.texte || '') && /^Unifier sur /.test(V8.pn.gestes) && !V8.pnApres, (V8.pn.texte || '') + ' · ' + V8.pn.gestes);
+  const V9 = await page.evaluate(async () => { const r = {}; atelier.exemple(); await new Promise(f => setTimeout(f, 400));
+    const d = disjonctionDe('102CB1'), mot = c => { const g = d.gamme.find(x => x.calibre === c); return (verdictDeCalibre(g) || {}).mot; };
+    r.mots = [5, 10, 15].map(mot); r.pourquoi = (pourquoiDuCalibre(app.norme, d, 5) || {}).phrase || '';
+    const E = explication('calibre', { verdict: d, calibre: d.calibre, origine: d.origine, meilleur: d.passe }); r.gamme = (E.etapes || []).join(' ');
+    const N = nomenclatureDuContrat(); r.nomen = { connecteur: N.connecteurs.some(x => /^MS3320/.test(x.reference)), dj: N.disjoncteurs.map(x => [x.repere, x.reference, x.calibre, x.retest, x.etat].join(' ')) };
+    ficheNomenclature(); await new Promise(f => setTimeout(f, 300)); r.fourreau = [...document.querySelectorAll('#fiche th')].some(th => th.textContent === 'Fourreau'); r.titres = [...document.querySelectorAll('#fiche .no-st')].map(h => h.firstChild.textContent).join(','); fermerFiche();
+    return r; });
+  ok('trois mots de verdict (la table unique) : 5 A déclenche, 10 A juste, 15 A passe ; le pourquoi chiffré', V9.mots.join() === 'déclenche,juste,passe' && /^5 A — déclenche : démarrage et transition, 9,31 A pendant 2,1 min/.test(V9.pourquoi), V9.mots.join(' · ') + ' · ' + V9.pourquoi);
+  ok('le « ? » du calibre lit la gamme de la famille (MS3320 s’arrête à 20 A : pas de 25 A)', /gamme 2TC|gamme MS3320/i.test(V9.gamme) && !/25 A/.test(V9.gamme), V9.gamme.slice(0, 160));
+  ok('la nomenclature : un groupe « Disjoncteurs » (MS3320-15 à commander, retest 10 A), plus de disjoncteur en connecteur, plus de colonne vide', !V9.nomen.connecteur && V9.nomen.dj.length === 1 && /^102CB1 MS3320-15 15 10 /.test(V9.nomen.dj[0]) && !V9.fourreau && /Disjoncteurs/.test(V9.titres), V9.nomen.dj.join(' | ') + ' · ' + V9.titres);
+
   titre('BILAN');
   ok('aucune erreur console', erreurs.length === 0, erreurs.length ? erreurs.slice(0, 3).join(' | ') : 'aucune');
   console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));

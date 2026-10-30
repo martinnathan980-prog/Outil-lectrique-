@@ -336,6 +336,47 @@ function verdictDisjonction(norme, famille, calibre, profil, contexte) { context
   return { courbes, points, valide, serre: !!(J && valide && J.serre), avecMarge: !!(J && J.avecMarge), somme: J ? J.somme : null, bilans: J ? J.bilans : [], gamme, catalogue, calibreMini, calibreIdeal, reserve, pire, meilleur,
     famille: F, tenue, marges: M, chauffe: J ? J.chauffe : 1, calibre: calibre > 0 ? calibre : null, autres, sansProfil: !pts.length, sansCourbe: !courbes.length }; }
 
+/* LES TROIS MOTS DU VERDICT (v73, l'ingénieur : « les mots du verdict changent d'un écran à l'autre » — la fiche disait
+   « passe / ne passe pas — il touche la courbe », le récapitulatif « tient / touche la courbe / déclenche », les
+   problèmes « calibre à revoir ») : UNE table, que la fiche, le récapitulatif, les problèmes, le PDF et l'export lisent.
+     · PASSE : il ne déclenche pas, avec la marge (`--ok`) ;
+     · JUSTE : il ne déclenche pas, mais sans la marge — il touche la courbe (`--warn`) ;
+     · DÉCLENCHE : le bilan thermique déborde, ou le permanent dépasse ce qu'il garantit (`--ko`).
+   « Touche la courbe », « sans la marge » vont dans la bulle, jamais à la place du mot. `verdictDeCalibre(g)` : une ligne
+   de la gamme ({ valide, marge }) ou le verdict d'ensemble (`verdictDisjonction`, `disjonctionDe` : celui du calibre
+   retenu) ; null quand rien ne se juge (pas de profil, pas de courbe). */
+const VERDICTS_CALIBRE = Object.freeze({
+  passe: Object.freeze({ cle: 'passe', mot: 'passe', encre: '--ok', etat: 'ok', bulle: 'Il ne déclenche pas, avec la marge.' }),
+  juste: Object.freeze({ cle: 'juste', mot: 'juste', encre: '--warn', etat: 'att', bulle: 'Il touche la courbe : il passe, mais sans la marge.' }),
+  declenche: Object.freeze({ cle: 'declenche', mot: 'déclenche', encre: '--ko', etat: 'ko', bulle: 'Il déclenche.' }) });
+function verdictDeCalibre(g) { if (!g || g.sansProfil || g.sansCourbe) return null;
+  // le verdict d'ensemble d'un disjoncteur : celui de la ligne de sa gamme qui porte le calibre retenu
+  if (Array.isArray(g.gamme) && g.calibre > 0) { const x = g.gamme.find(y => Math.abs(y.calibre - g.calibre) < 1e-9); if (x) return verdictDeCalibre(x); }
+  const v = g.valide, m = g.marge != null && typeof g.marge !== 'object' ? g.marge : g.avecMarge; if (v == null) return null;
+  return v === false ? VERDICTS_CALIBRE.declenche : m ? VERDICTS_CALIBRE.passe : VERDICTS_CALIBRE.juste; }
+/* LE POURQUOI CHIFFRÉ d'un calibre de la gamme, en une ligne (la bulle d'un cran, d'une puce, d'une ligne du
+   récapitulatif) : « 5 A — déclenche : démarrage et transition, 9,31 A pendant 2,1 min », « 10 A — juste : ses pointes
+   consomment 82 % du temps de déclenchement (75 % au plus) », « 15 A — passe : ses pointes consomment 31 % du temps de
+   déclenchement ». `d` : le verdict d'un disjoncteur (`disjonctionDe`, 08 : son profil, sa courbe, son contexte). Rend
+   { verdict, phrase } ou null. */
+function pourquoiDuCalibre(norme, d, cal) { if (!d || !(cal > 0) || d.sansProfil || d.sansCourbe) return null;
+  const g = (d.gamme || []).find(x => Math.abs(x.calibre - cal) < 1e-9); let j = null;
+  try { j = verdictDisjonction(norme, d.courbe || '', cal, d.profil, d.contexte || {}); } catch (_) { j = null; }
+  const v = verdictDeCalibre(g || (j ? { valide: j.valide, avecMarge: j.avecMarge } : null)); if (!v) return null;
+  const A = motA(cal), M = (j && j.marges) || margesDuMeilleur(null), p = j ? j.pire : null, s = g ? g.somme : j ? j.somme : null, sm = g ? g.sommeMarge : null;
+  const quand = q => q.t === Infinity ? `le permanent, ${motA(q.i)} pour toujours` : `${q.nom}, ${motA(q.i)} pendant ${motDuree(q.t)}`;
+  let suite = '';
+  if (v === VERDICTS_CALIBRE.declenche) suite = p ? quand(p) + (p.t === Infinity && g && g.tenu ? ` : il ne garantit que ${motA(g.tenu)}` : '') : '';
+  else if (v === VERDICTS_CALIBRE.juste) suite = g && !g.permanentMargeOk ? `le permanent, sans ${nombreFr(M.marge)} % de marge sous les ${motA(g.tenu)} qu’il garantit`
+    : s != null && sm != null ? `ses pointes consomment ${motPct(s)} du temps de déclenchement, ${motPct(sm)} avec ${nombreFr(M.marge)} % de marge (${nombreFr(Math.round(M.fraction * 100))} % au plus)` : 'il touche la courbe, sans la marge';
+  else suite = s != null && s > 0 ? `ses pointes consomment ${motPct(s)} du temps de déclenchement` : 'le profil reste sous sa courbe, avec la marge';
+  if (g && g.fils === false && v !== VERDICTS_CALIBRE.declenche) suite += (suite ? ' ; ' : '') + 'des câbles à grossir';
+  return { verdict: v, phrase: `${A} — ${v.mot}${suite ? ' : ' + suite : ''}` }; }
+/* LE CATALOGUE ENTIER d'une famille, sans la liste préférée du lecteur (« Tout le catalogue MS3320 (13) ») : ses calibres
+   (une plage « 1 à 25 » prend la série d'aéronef qu'elle couvre) ; sans famille, la gamme du lecteur. */
+function catalogueDeLaFamille(F) { const cs = !F || !F.calibres || !F.calibres.length ? CALIBRES.slice() : F.plage ? SERIE_CALIBRES.filter(c => c >= F.calibres[0] - 1e-9 && c <= F.calibres[1] + 1e-9) : F.calibres.slice();
+  return [...new Set(cs)].sort((a, b) => a - b); }
+
 /* LE MEILLEUR CALIBRE, et ses fils (R2 § 3.1 ; NASA TM-102179 étapes 3 à 7 ; AC 43.13-1B § 11-48, § 11-67) :
      1. le calibre : le plus petit du catalogue qui tient le permanent (courant majoré de la marge, sous ce qu'il garantit
         à la température max du tableau) et les pointes (courant majoré, au plus `margeTemps` de son temps de
