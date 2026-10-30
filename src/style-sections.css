@@ -118,3 +118,6 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
 @keyframes q-etape{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:none}}
 .q-sources{margin:0;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
 @media (prefers-reduced-motion:reduce){.q-etapes li,.fi-q-bulle{animation:none}}
+
+/* v74 : le « ? » d'un titre de groupe garde l'air de sa zone de clic (30 px) : rien ne se colle à lui */
+.fs-st .fi-q{margin-right:6px}

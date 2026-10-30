@@ -260,7 +260,7 @@ const etatDesProblemes = probs => probs.some(p => p.niveau === 'ko') ? 'ko' : pr
 /* UNE TUILE (la fiche d'un câble seulement) : une étiquette (avec sa majuscule), une valeur forte — ou le champ qui
    l'écrit ; un état (son bord et sa valeur) quand la valeur pose problème. La valeur est du HTML déjà échappé. */
 const tuile = (k, v, o) => { o = o || {};
-  return `<div class="fi-tuile${o.etat ? ' ' + o.etat : ''}${o.mono ? ' mono' : ''}${o.edit ? ' edit' : ''}"${o.titre ? ` title="${escA(o.titre)}"` : ''}><span class="fi-tuile-k">${esc(k)}</span><span class="fi-tuile-v">${v}</span>${o.sous != null ? `<span class="fi-tuile-s">${o.sous || '&nbsp;'}</span>` : ''}</div>`; };
+  return `<div class="fi-tuile${o.etat ? ' ' + o.etat : ''}${o.mono ? ' mono' : ''}${o.edit ? ' edit' : ''}"${o.titre ? ` title="${escA(o.titre)}"` : ''}><span class="fi-tuile-k">${esc(k)}</span><span class="fi-tuile-v">${v}</span>${o.sous != null ? `<span class="fi-tuile-s"${o.sous ? ` data-bulle="${escA(String(o.sous).replace(/<[^>]*>/g, ''))}"` : ''}>${o.sous || '&nbsp;'}</span>` : ''}</div>`; };
 /* L'en-tête (le lecteur : « pas besoin de mettre disjoncteur ni batterie, ni de liste déroulante — personne ne s'en
    servira ; juste un texte qu'on tape à la main, qu'on peut modifier ; le repère élec en priorité ») : le symbole ; le
    REPÈRE d'abord — un champ qui a l'air d'un titre, son crayon (clic ou F2), qu'on renomme en écrivant dedans — ; dessous,

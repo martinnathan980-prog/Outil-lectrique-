@@ -379,3 +379,7 @@ b.rc-n{font-weight:500}
   .rc-chip,.rc-onglet{height:36px}
   .rc-suppr button{width:36px;height:36px}
 }
+
+/* v74 : le ↺ d'une case changée par Volta — 22 px dessinés, 26 px au clic (WCAG 2.5.8) */
+.rc-auto{position:relative}
+.rc-auto::before{content:"";position:absolute;inset:-2px;border-radius:50%}
