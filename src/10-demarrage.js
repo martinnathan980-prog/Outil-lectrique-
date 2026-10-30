@@ -16,6 +16,9 @@ const atelier = {
   /* l'exemple embarqué, tel qu'il est livré, avec son profil de charge, comme si on venait de l'ouvrir (sans historique) :
      les batteries qui le lisent le demandent — l'outil, lui, s'ouvre sur la bibliothèque */
   exemple() { ouvrirExemple(true); return app.dessin; },
+  /* l'exemple tel que la v73 l'ouvrait : le 10 A du fichier PROPOSÉ en 15 A, pas encore écrit (l'hypothèse « Volta écrit
+     lui-même le calibre qui passe » décochée) — les batteries qui jugent la carte de décision le demandent */
+  exempleSansCalibreAuto() { HYPOTHESES.calibreAuto = false; if (app.simu) app.simu.calibreAuto = false; ouvrirExemple(true); return app.dessin; },
   /* la bibliothèque (sa racine), et le retour au plan resté sur la table */
   bibliotheque() { montrerBibliotheque('racine'); return BIB.pret; },
   reprendre() { montrerLePlan(); return app.dessin; },

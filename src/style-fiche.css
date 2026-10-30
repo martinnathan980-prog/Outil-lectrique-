@@ -867,3 +867,9 @@ details.fs:last-of-type{margin-bottom:var(--sp-5)}
   .fi-fil[data-i]:hover{background:none}
   .fi-fil.ko[data-i]:hover{background:var(--ko-soft)}
 }
+
+/* ─── LA CONSOMMATION d'un équipement (v74) : deux champs courts, leur unité, « pendant » entre les deux ─── */
+.fi-conso-c{display:inline-flex;align-items:center;gap:5px}
+.fi-conso-c .fc-in{width:8ch;flex:none;text-align:right}
+.fi-conso-c i,.fi-conso-mot{font:500 var(--f-12)/1 var(--sans);font-style:normal;color:var(--t-3)}
+.fi-a-ecrire{color:var(--t-3);font-style:italic}

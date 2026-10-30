@@ -22,6 +22,9 @@
 /* L'ordre naturel du français (1, 2, 10 ; A1, A2, B1), UN collateur pour tout l'outil : `localeCompare` avec options en
    refait un à chaque comparaison — sur un retest de 100 000 lignes, c'est l'essentiel du temps d'un tri. */
 const COLLATEUR_FR = new Intl.Collator('fr', { numeric: true });
+/* LE CÔTÉ D'UNE ROUTE (le lecteur, v74 : « les routes 1MO, 2MO, 1HO, 2HO… — impair à gauche de l'hélicoptère, pair à
+   droite, pour la ségrégation ») : le nombre en tête de la route ; 'gauche', 'droite', ou '' sans nombre. */
+const coteDeRoute = r => { const m = /^\s*(\d+)/.exec(String(r || '')); return m ? (+m[1] % 2 ? 'gauche' : 'droite') : ''; };
 const RAIL_RE = /^(L1|L2|L3|L|N|PE|PEN|GND|0V|\+|-|VCC|VDD|\+?\d{1,3}V)$/i;
 
 /* Le repère aéronautique porte son code AU MILIEU : <numéro><CODE><suffixe>

@@ -1495,7 +1495,7 @@ function remplirSelonNorme(P, norme) {
        Des maxima : une pointe n'a pas droit au double. Vide (null) : la table Réseau de la norme (AC 43.13-1B table 11-6 :
        1 V sous 28 V, 4 V sous 115 V, 7 V entre phases, le double en intermittent). */
 const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], fils: 8, charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125,
-  chuteConducteur: 'estimee', chuteDisjoncteur: true, frequence: 400, marge: 10, margeTemps: 75, prechauffage: 1.6, calibresPreferes: [1, 3, 5, 7.5, 10, 15, 20, 25], chuteMono: 2, chuteTri: 4 };
+  chuteConducteur: 'estimee', chuteDisjoncteur: true, frequence: 400, marge: 10, margeTemps: 75, prechauffage: 1.6, calibresPreferes: [1, 3, 5, 7.5, 10, 15, 20, 25], chuteMono: 2, chuteTri: 4, calibreAuto: true };
 const RETOURS = { structure: 'par la structure (aller seul)', fil: 'par un câble identique (aller et retour)' };
 const MODES_CONDUCTEUR = { estimee: 'estimée sous le courant (AC 43.13-1B § 11-66 d(6))', fixe: 'fixe : l’hypothèse « conducteur » (20 °C, comme l’Excel)' };
 /* Le RETOUR par un fil identique double la résistance — en continu et en monophasé ; en triphasé équilibré, aucun courant

@@ -37,7 +37,46 @@
 'use strict';
 
 /* ---- lire le disjoncteur ------------------------------------------------------------ */
-const chargeDe = nom => (app.contrat.charges && app.contrat.charges.get(nom)) || null;
+/* Le profil de charge d'un disjoncteur : celui qu'on a écrit sur sa fiche ; sinon (rien d'écrit) la SOMME de ce qu'il
+   alimente (`profilDesConsommateurs`, plus bas) ; `chargeEcrite` : seulement ce qui est écrit. */
+const chargeEcrite = nom => (app.contrat.charges && app.contrat.charges.get(nom)) || null;
+const chargeDe = nom => { const c = chargeEcrite(nom); if (phaseEcrite(c) || !estDisjoncteur(nom)) return c;
+  const s = profilDesConsommateurs(nom); return s ? { ...(c || {}), ...s } : c; };
+/* LA CONSOMMATION D'UN ÉQUIPEMENT (le lecteur, v74 : « le courant de chaque équipement, c'est moi qui l'ai, sur des PDF :
+   quand je clique sur un équipement, je rajoute ses consos à la main ; toi, tu en déduis le calibre du disjoncteur ») :
+   gardée avec les profils (`app.contrat.charges`, sous le repère de l'équipement : { perm: { i }, dem: { i, t } }) — elle
+   suit donc le contrat partout (historique, enregistrement, feuille « Volta » de l'Excel). Un disjoncteur sans profil
+   écrit prend la SOMME de ce qu'il alimente, au-delà des prises et des barrettes : les permanents s'ajoutent, les
+   démarrages aussi — tous au même instant, le pire —, sur la durée la plus longue. Écrire son profil le remplace. */
+const phaseEcrite = c => !!c && ['dem', 'trans', 'perm'].some(k => c[k] && nombreLu(c[k].i) > 0);
+const consoDe = nom => { const c = nom && !estDisjoncteur(nom) ? chargeEcrite(nom) : null; return phaseEcrite(c) ? c : null; };
+// ce qu'un disjoncteur alimente : les bouts des chemins qui partent de lui (ni disjoncteur, ni masse)
+const consommateursDe = nom => !estDisjoncteur(nom) ? [] : [...new Set(cheminsDepuis(verite(), nom).map(ch => ch.bout[0]).filter(r => r && r !== nom && !estDisjoncteur(r) && !estMasse(r)))].sort(triNaturel);
+// les disjoncteurs qui alimentent un équipement
+const disjoncteursDe = nom => reperesDe(verite()).filter(estDisjoncteur).filter(d => consommateursDe(d).includes(nom)).sort(triNaturel);
+let CONSOS = { v: null, sig: '', m: new Map() };
+function profilDesConsommateurs(nom) { const V = verite(), C = app.contrat.charges || new Map();
+  const sig = [...C].filter(([k, c]) => !estDisjoncteur(k) && phaseEcrite(c)).map(([k, c]) => k + JSON.stringify(c)).join('|');
+  if (!sig) return null;   // aucune consommation écrite : rien à sommer (et aucun chemin à suivre)
+  if (CONSOS.v !== V || CONSOS.sig !== sig + V.length) CONSOS = { v: V, sig: sig + V.length, m: new Map() };
+  if (CONSOS.m.has(nom)) return CONSOS.m.get(nom);
+  const xs = consommateursDe(nom).map(r => ({ r, c: consoDe(r) })).filter(x => x.c), v = (c, k) => c[k] && nombreLu(c[k].i) > 0 ? nombreLu(c[k].i) : 0, r3 = x => Math.round(x * 1000) / 1000;
+  let out = null;
+  if (xs.length) { out = { somme: xs.map(x => x.r) }; const perm = xs.reduce((s, x) => s + v(x.c, 'perm'), 0), dems = xs.filter(x => v(x.c, 'dem') > 0);
+    if (perm > 0) out.perm = { i: r3(perm) };
+    if (dems.length) out.dem = { i: r3(xs.reduce((s, x) => s + (v(x.c, 'dem') || v(x.c, 'perm')), 0)), t: Math.max(...dems.map(x => nombreLu(x.c.dem.t) || 0)) || null }; }
+  CONSOS.m.set(nom, out); return out; }
+/* Écrire la consommation d'un équipement : `q` est 'perm', 'dem' (le courant) ou 'demt' (la durée du démarrage). */
+function ecrireConso(nom, q, valeur) { const x = valeur === '' || valeur == null ? null : nombreLu(valeur);
+  if (valeur !== '' && valeur != null && !(x >= 0)) { dire('Écrivez un nombre (3,5).', true); return false; }
+  const c = JSON.parse(JSON.stringify(chargeEcrite(nom) || {}));
+  if (q === 'perm') c.perm = x ? { i: x } : undefined; else if (q === 'dem') c.dem = x ? { ...(c.dem || {}), i: x } : undefined; else if (q === 'demt') c.dem = { ...(c.dem || {}), t: x };
+  Object.keys(c).forEach(k => c[k] === undefined && delete c[k]);
+  if (JSON.stringify(c) === JSON.stringify(chargeEcrite(nom) || {})) return false;
+  histPush('consommation de ' + nom); if (!app.contrat.charges) app.contrat.charges = new Map();
+  if (phaseEcrite(c) || (c.dem && c.dem.t)) app.contrat.charges.set(nom, c); else app.contrat.charges.delete(nom);
+  apresEdition(); const djs = disjoncteursDe(nom);
+  dire('Consommation de ' + nom + ' écrite' + (djs.length ? ' — ' + djs.map(d => d + ' en ' + (calibreDe(d) ? amperes(calibreDe(d)) : '—')).join(', ') : '') + '.'); return true; }
 /* Le part number d'un repère : celui que ses liaisons portent. */
 function pnDuRepere(nom) { for (const l of verite()) { if (l.de === nom && l.pnDe) return l.pnDe; if (l.vers === nom && l.pnVers) return l.pnVers; } return ''; }
 /* Les fils d'un disjoncteur : ceux qui le touchent, des deux côtés (la borne, l'autre bout, `amont`), puis tout ce qu'il
@@ -114,7 +153,7 @@ const meilleurCalibre = nom => disjonctionDe(nom).meilleur;
    déjà celui du folio et des exports. Appelé après chaque geste (`apresEdition`) et à l'ouverture d'un plan. Rend le
    nombre de disjoncteurs réécrits. */
 const pnDeVolta = nom => verite().some(l => [['de', 'pnDe'], ['vers', 'pnVers']].some(([b, ch]) => { const v = l[b] === nom && l.avant ? l.avant[ORIGINE_VOLTA + ch] : undefined; return v !== undefined && v === (l[ch] == null ? null : l[ch]); }));
-function appliquerCalibresVolta() { if (!app.norme || !verite().length) return 0; let n = 0;
+function appliquerCalibresVolta() { if (!app.norme || !verite().length || (app.simu || HYPOTHESES).calibreAuto === false) return 0; let n = 0;
   const noms = [...new Set(verite().flatMap(l => [l.de, l.vers]).filter(r => r && estDisjoncteur(r)))];
   noms.forEach(nom => { let d; try { d = disjonctionDe(nom); } catch (_) { return; }
     if (d.origine === 'main' || d.sansProfil || d.sansCourbe || !d.famille || !(d.pn > 0) || !(d.passe > 0) || d.calibre !== d.passe || d.pn === d.passe) return;
@@ -205,7 +244,7 @@ function poserChamp(l, champ, valeur) { if (!(l.avant && champ in l.avant)) l.av
   if (l.avant[champ] === (l[champ] == null ? null : l[champ])) { const av = { ...l.avant }; delete av[champ]; if (Object.keys(av).length) l.avant = av; else delete l.avant; } }
 /* Le profil de charge, écrit au contrat sans perdre ce qui n'est pas lui (le calibre écrit) ; vide, il s'efface — sauf
    s'il garde un état supprimé (`null` à la place du démarrage, de la transition ou du permanent : l'état n'est plus là). */
-function poserCharge(nom, c) { const vide = !(c.calibre > 0) && !['dem', 'trans', 'perm'].some(k => (c[k] && c[k].i != null) || c[k] === null) && !(c.plus && c.plus.length);
+function poserCharge(nom, c) { if (c && 'somme' in c) { c = { ...c }; delete c.somme; } const vide = !(c.calibre > 0) && !['dem', 'trans', 'perm'].some(k => (c[k] && c[k].i != null) || c[k] === null) && !(c.plus && c.plus.length);
   if (vide) app.contrat.charges.delete(nom); else app.contrat.charges.set(nom, c); }
 /* RETENIR UN CALIBRE À LA MAIN : il s'écrit au profil de charge, et un disjoncteur dont le part number dit la famille
    change aussi de part number (MS3320-10 → MS3320-15, sur chacune de ses liaisons, le retest gardé dans `avant`).
@@ -216,7 +255,7 @@ function retenirCalibre(nom, cal) { const d = disjonctionDe(nom); if (!(cal > 0)
   if (d.passe && cal === d.passe) { rendreCalibre(nom); return true; }
   if (d.ecrit === cal) return false;
   const pn = pnDuRepere(nom), F = d.famille, nouveau = F && pn ? pnAvecCalibre(pn, F, cal) : null;
-  histPush('calibre de ' + nom + ' : ' + amperes(cal)); const c = { ...(chargeDe(nom) || {}), calibre: cal };
+  histPush('calibre de ' + nom + ' : ' + amperes(cal)); const c = { ...(chargeEcrite(nom) || {}), calibre: cal };
   if (nouveau && nouveau !== pn) verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
   // le mot qui passe dit ce que le calibre retenu fait (un calibre qui déclenche se retient : le lecteur veut voir pourquoi)
   poserCharge(nom, c); apresEdition(); const g = (disjonctionDe(nom).gamme || []).find(x => x.calibre === cal), k = cleDuVerdict(g);
@@ -225,7 +264,7 @@ function retenirCalibre(nom, cal) { const d = disjonctionDe(nom); if (!(cal > 0)
    calibre redevient le meilleur qui passe (sinon celui du part number). */
 function rendreCalibre(nom) { histPush('calibre de ' + nom + ' : automatique');
   verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l.avant && ch in l.avant) poserChamp(l, ch, l.avant[ch]); }));
-  const c = chargeDe(nom); if (c && c.calibre != null) poserCharge(nom, { ...c, calibre: null });
+  const c = chargeEcrite(nom); if (c && c.calibre != null) poserCharge(nom, { ...c, calibre: null });
   // (apresEdition réécrit le calibre qui passe, si celui du fichier touche la courbe : la règle du lecteur, v74)
   apresEdition(); const d = disjonctionDe(nom); dire(nom + ' : automatique' + (d.calibre ? ', ' + amperes(d.calibre) : '') + '.'); }
 /* CHANGER LES FILS que le meilleur calibre demande : chacun passe au câble proposé (la jauge qui le suit), le fichier gardé
@@ -244,7 +283,7 @@ function deciderCalibre(nom) { const d = disjonctionDe(nom), cal = d.calibre; if
   const pn = pnDuRepere(nom), F = d.famille, nouveau = F && pn ? pnAvecCalibre(pn, F, cal) : null, xs = cal === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   histPush(nom + ' : ' + amperes(cal) + (xs.length ? ' et ' + pluriel2(xs.length, 'câble') + ' grossi' + (xs.length > 1 ? 's' : '') : ''));
   if (nouveau && nouveau !== pn) verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
-  else if (!nouveau) poserCharge(nom, { ...(chargeDe(nom) || {}), calibre: cal });
+  else if (!nouveau) poserCharge(nom, { ...(chargeEcrite(nom) || {}), calibre: cal });
   xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition();
   dire(nom + ' : ' + amperes(cal) + (nouveau ? ' (' + nouveau + ')' : '') + (xs.length ? ', ' + xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + '. Ctrl+Z défait le tout.'); return true; }
 /* LA CARTE DE DÉCISION (le parcours v72 : « 102CB1 coche 15 A en vert sous 4 problèmes rouges ; la vraie histoire est la

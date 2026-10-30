@@ -62,6 +62,19 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
       // une cavité : ses problèmes, et ses remarques — sauf les deux fils sur un contact, que la barrette à poser dit déjà
       else if (!estBornier(r)) cavitesDe(r).forEach(c => { noter(r, c.plan.fils); c.plan.verdicts.forEach(v => { if (v.niveau === 'ko') ko(r, c.nom + ' · ' + v.texte); else if (v.niveau === 'attention' && !/^contact \S+ : \d+ câbles/.test(v.texte)) att(r, c.nom + ' · ' + v.texte); }); });
     } catch (_) { } });
+  /* LA SÉGRÉGATION (le lecteur, v74) : la route d'un câble (colonne H : 1MO, 2HO…) — impair à gauche de l'hélicoptère, pair
+     à droite. Mélanger gauche et droite sur un même connecteur, un même module de barrette ou un même côté d'une prise de
+     coupure, c'est un BRANCHEMENT EN CHAÎNE : « pas top », parfois sans choix — à voir, jamais un problème. Deux routes
+     d'un même côté : rien à dire. Une prise de coupure CHANGE de route : sa fiche et son embase peuvent différer. */
+  try { const lieux = new Map(), poser = (r, lieu, l) => { const s = coteDeRoute(l && l.route); if (!s) return; const k = r + '\u0001' + lieu;
+      const x = lieux.get(k) || lieux.set(k, { r, lieu, g: new Set(), d: new Set(), cables: new Set() }).get(k); (s === 'gauche' ? x.g : x.d).add(String(l.route).trim()); x.cables.add(l); };
+    reperes.forEach(r => { if (estDisjoncteur(r)) return;
+      if (barretteEnModules(r)) planDeBarrette(r).plan.fils.forEach(x => x.f && poser(r, 'module ' + (x.module + 1), x.f.l));
+      else if (coupureEnModules(r)) planDeCoupure(r).plan.fils.forEach(x => x.f && poser(r, x.f.amont ? 'côté fiche' : 'côté embase', x.f.l));
+      else if (!estBornier(r) && !estCoupure(r)) V.filter(liaisonComplete).forEach(l => [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([q, b, pn]) => {
+        if (q !== r) return; const c = connecteurDeBorne(b, pn); poser(r, c && c.lettre ? 'connecteur ' + c.nom : 'connecteur', l); })); });
+    lieux.forEach(x => { if (x.g.size && x.d.size) att(x.r, `branchement en chaîne : ${x.lieu} mélange gauche (${[...x.g].sort(triNaturel).join(', ')}) et droite (${[...x.d].sort(triNaturel).join(', ')})`, { genre: 'segregation', cables: [...x.cables] }); });
+  } catch (_) { }
   // un conducteur qui n'est pas du cuivre (AD, VN : aluminium cuivré) serti sur un contact cuivre ordinaire : à qualifier
   contacts.forEach((xs, l) => { const fam = cableFamilleDe(N, l.type); if (!fam || !fam.conducteur || fam.conducteur === 'cuivre') return;
     xs.forEach(x => { if (x.sertir && x.sertir.reference && !contactPourCca(x.sertir.reference)) att(x.repere, `${l.cable || 'câble sans numéro'} (${l.type}) : conducteur ${fam.conducteur} sur un contact ${x.sertir.reference} — qualification CCA à confirmer`, { cables: [l] }); }); });
@@ -88,7 +101,7 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
 const GENRES_CONTROLE = [['arrangement', 'connecteurs qu’aucun arrangement ne loge', 'connecteur qu’aucun arrangement ne loge'], ['contact', 'contacts à revoir', 'contact à revoir'],
   ['calibre', 'calibres à revoir', 'calibre à revoir'], ['pn', 'disjoncteurs à deux part numbers', 'disjoncteur à deux part numbers'], ['protection', 'câbles mal protégés par leur disjoncteur', 'câble mal protégé par son disjoncteur'],
   ['chute', 'chutes de tension trop fortes', 'chute de tension trop forte'], ['profil', 'disjoncteurs sans profil de charge', 'disjoncteur sans profil de charge'],
-  ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['retest', 'points du retest', 'point du retest'], ['autre', 'autres points', 'autre point']];
+  ['segregation', 'mélanges gauche / droite', 'mélange gauche / droite'], ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['retest', 'points du retest', 'point du retest'], ['autre', 'autres points', 'autre point']];
 // le genre en mots, au nombre qu'il compte : « 2 chutes de tension trop fortes », « 1 barrette à poser »
 const motDuGenre = (g, n) => { const G = GENRES_CONTROLE.find(x => x[0] === g) || GENRES_CONTROLE[GENRES_CONTROLE.length - 1]; return n > 1 ? G[1] : G[2]; };
 const rangDuGenre = g => { const i = GENRES_CONTROLE.findIndex(x => x[0] === g); return i < 0 ? GENRES_CONTROLE.length : i; };

@@ -832,10 +832,26 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   // (le compte rouge au bout de la ligne se tait quand la bulle du connecteur fautif le dit déjà — le technicien v73 : « le 1 rouge répète l'info »)
   const pbC = probs.filter(p => p.section === 'connecteur'), dejaDit = pbC.length > 0 && pbC.every(p => p.niveau === 'ko' && p.connecteur && fautif(p.connecteur));
   const sections = [{ cle: 'connecteur', titre: 'Connecteur', resume: (refs ? `<span class="fs-ref">${refs}</span>` : '') + bulles || (ids.length ? '' : 'aucune borne'), badge: dejaDit ? null : badgeProblemes(probs, 'connecteur'), contenu: `<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>`, vide: ids.length ? '' : 'aucune borne' },
-    sectionFilsDuRepere(fils, probs, coupables), sectionDejaFait(nom)];
+    sectionFilsDuRepere(fils, probs, coupables), sectionConso(nom), sectionDejaFait(nom)];
   const id = identite([majuscule(natureDe(nom)), descriptionDuRetest(nom) ? esc(descriptionDuRetest(nom)) : '', pns.length === 1 ? ident(pns[0]) : '', C.length > 1 ? pluriel(C.length, 'connecteur') : '', esc(motFolios(foliosDuRepere(nom)))]);
   return enTete({ type: 'equipement', designation: nom, nom, champ: 'eq-rep', etat: etatDesProblemes(probs), identite: id }) + barreProblemes(probs, sections) + blocRetest(ecritsDuRepere(nom), []) + ficheSections('equipement', sections)
     + fiPied({ tableau: nom, fil: nom, menu: MENU_BLOC }); }
+/* LA CONSOMMATION (le lecteur, v74 : « le courant de chaque équipement, c'est moi qui l'ai — je le rajoute à la main ») :
+   le permanent, le démarrage et sa durée ; dessous, le disjoncteur qui l'alimente et le calibre qu'il en tire (la somme
+   de tout ce qu'il alimente, 08 bis `profilDesConsommateurs`). Rien pour une masse, un renvoi, un disjoncteur. */
+function sectionConso(nom) { if (!nom || estDisjoncteur(nom) || estMasse(nom)) return null;
+  const c = chargeEcrite(nom) || {}, v = (k, q) => c[k] && c[k][q] != null && c[k][q] !== '' ? nombre(nombreLu(c[k][q])) : '';
+  const champ = (q, val, aide, unite) => `<span class="fi-conso-c">${saisie(` data-conso="${q}" inputmode="decimal" autocomplete="off" aria-label="${escA(aide)}"`, val, { court: true, mono: true, ph: '—' })}<i>${esc(unite)}</i></span>`;
+  const djs = disjoncteursDe(nom), ecrit = phaseEcrite(c);
+  const qui = djs.length ? djs.map(d => { const s = (chargeEcrite(d) && phaseEcrite(chargeEcrite(d))), cal = calibreDe(d);
+      return `<button type="button" class="fi-lien" data-choisir-bloc="${escA(d)}">${esc(d)}</button>${cal ? ' · ' + esc(amperes(cal)) : ''}${s ? ' <em>(son profil est écrit sur sa fiche : il passe devant)</em>' : ''}`; }).join(', ')
+    : '<em>aucun disjoncteur ne l’alimente dans ce contrat</em>';
+  const contenu = champs([ligneChamp('Permanent', champ('perm', v('perm', 'i'), 'Courant permanent, en ampères', 'A')),
+      ligneChamp('Démarrage', champ('dem', v('dem', 'i'), 'Courant de démarrage, en ampères', 'A') + '<span class="fi-conso-mot">pendant</span>' + champ('demt', v('dem', 't'), 'Durée du démarrage, en secondes', 's')),
+      ligneChamp('Alimenté par', qui)])
+    + `<p class="fi-note">Le disjoncteur additionne la consommation de tout ce qu’il alimente, démarrages ensemble, et en déduit son calibre.</p>`;
+  const resume = ecrit ? [v('perm', 'i') ? v('perm', 'i') + ' A' : '', v('dem', 'i') ? 'démarrage ' + v('dem', 'i') + ' A' : ''].filter(Boolean).join(' · ') : '<span class="fi-a-ecrire">à écrire</span>';
+  return { cle: 'conso', titre: 'Consommation', resume, contenu }; }
 /* LE CONNECTEUR montré : sa RÉFÉRENCE d'abord (un champ ; plus de « part number » ni de « norme » à compléter) ; quand
    la norme est connue, l'ARRANGEMENT que Volta retient (en puce, son « ? » ; « Changer » ouvre la liste : « Automatique »
    en tête, les autres arrangements qui logent ces bornes, la bible au pied) ; puis, d'office, sa FACE (le lecteur :
@@ -1442,6 +1458,8 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
   const crayon = $('fi-crayon'), champNom = $('eq-rep') || $('fil-num'); if (crayon && champNom) crayon.onclick = () => { champNom.focus(); champNom.select(); };
   // la barre des problèmes : dépliée, elle le reste pour cette fiche ; une ligne mène à la section qui le démontre
   const pbs = $('fi-pbs'); if (pbs) ecouter(pbs, 'toggle', () => { FI.pbs = pbs.open ? box.dataset.cle : ''; });
+  // la consommation d'un équipement : écrite en quittant le champ (ou à Entrée)
+  box.querySelectorAll('[data-conso]').forEach(i => { i.onchange = () => ecrireConso(nom, i.dataset.conso, i.value.trim()); i.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); i.blur(); } }; });
   box.querySelectorAll('[data-voir]').forEach(b => b.onclick = () => allerDansLaFiche(box, nom, b.dataset.voir, { connecteur: b.dataset.connecteur, viser: b.dataset.viser }));
   // les segments de connecteur, la face d'un connecteur, la face d'une prise, « Changer » : la fiche se refait en place
   // une bulle de connecteur l'ouvre, sur place et allumée (v73, l'ingénieur : « un clic sur A ne l'ouvre pas ») — même quand la section est fermée

@@ -1744,6 +1744,8 @@ function hypothesesR2(N, H, nb) { const dj = !!(N.disjoncteurs && N.disjoncteurs
     dj ? { genre: 'case', id: 'si-Cd', k: 'chuteDisjoncteur', lib: 'compter la chute du disjoncteur', groupe: 'chute',
       sert: 'Cochée (par défaut) : la chute du disjoncteur entre dans la chute en ligne — celle de votre table (« Du max », comptée entière), sinon celle de sa famille au prorata I / In. La génération est négligée : elle garantit 28 V en sortie des panneaux de disjoncteurs (votre note).' } : null,
     nb('si-F', 'frequence', 'fréquence', 'Hz', '10', 'reseau', 'En alternatif, la réactance saisie (à 400 Hz) monte avec la fréquence (X = 2πfL) : 400 Hz par défaut, un réseau à fréquence fixe ; 800 en fréquence variable (MIL-STD-704F, 360 à 800 Hz). Sans effet en continu.'),
+    dj ? { genre: 'case', id: 'si-Ca', k: 'calibreAuto', lib: 'Volta écrit lui-même le calibre qui passe', groupe: 'tableau',
+      sert: 'Cochée (par défaut — le lecteur, v74 : « dès que ça touche la courbe, tu mets directement le calibre qui marche ») : un calibre du fichier qui touche la courbe ou déclenche est remplacé par le plus petit qui passe, et ses câbles grossis. Décochée : Volta le propose seulement.' } : null,
     dj ? nb('si-M', 'marge', 'marge de courant', '%', '5', 'tableau', 'Le meilleur calibre tient chaque courant du profil majoré de ce pourcentage : 10 % par défaut, pour un profil estimé (R2 règle 13) ; 0 % pour un profil qui sort du bilan électrique au pire cas (NASA TM-102179).') : null,
     dj ? nb('si-Mt', 'margeTemps', 'marge de temps', '%', '5', 'tableau', 'Ce qu’une pointe peut consommer, au plus, du temps de déclenchement du meilleur calibre : 75 % par défaut (R2 § 3.1, étape 2).') : null,
     dj ? nb('si-Pc', 'prechauffage', 'préchauffage', '', '0.1', 'tableau', 'Un état ajouté au profil survient en service, le bilame chaud : son temps de déclenchement se divise par ce facteur. 1,6 par défaut, la borne basse de la feuille MS3320N (table VII : 1,6 à 3,7) ; 1 l’ôte.') : null,
@@ -1872,6 +1874,7 @@ function lierHypotheses(box, refaireFiche) { const H = app.simu, el = id => box.
   [['si-F', 'frequence', v => v > 0], ['si-M', 'marge', v => v >= 0], ['si-Mt', 'margeTemps', v => v > 0 && v <= 100], ['si-Pc', 'prechauffage', v => v >= 1]].forEach(([id, k, ok]) => { const e = el(id); if (!e) return;
     e.addEventListener('change', () => { const v = parseFloat(String(e.value).replace(',', '.')); if (isNaN(v) || !ok(v)) { e.value = H[k]; return; } if (v === H[k]) return; H[k] = v; refaire(id); }); });
   const cd = el('si-Cd'); if (cd) cd.addEventListener('change', () => { H.chuteDisjoncteur = cd.checked; refaire('si-Cd'); });
+  const ca = el('si-Ca'); if (ca) ca.addEventListener('change', () => { H.calibreAuto = ca.checked; if (ca.checked) { try { appliquerCalibresVolta(); } catch (_) { } } refaire('si-Ca'); });
   // la chute admise de la règle du lecteur : un nombre > 0, ou vide — la table Réseau reprend
   [['si-Cm', 'chuteMono'], ['si-Ct', 'chuteTri']].forEach(([id, k]) => { const e = el(id); if (!e) return;
     e.addEventListener('change', () => { const t = String(e.value).trim(), v = t ? parseFloat(t.replace(',', '.')) : null; if (v != null && !(v > 0)) { e.value = H[k] == null ? '' : H[k]; return; }

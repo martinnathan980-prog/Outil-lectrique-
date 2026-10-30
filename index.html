@@ -23457,6 +23457,8 @@ const motUsage = u => u === 'normal' ? 'usage normal' : u === 'possible' ? 'usag
   : u === 'ancien' ? 'pas pour une nouvelle conception, jamais choisi seul' : u === 'shuntés' ? 'contacts shuntés, jamais choisi seul' : u === 'spécial' ? 'spécial, jamais choisi seul' : 'à confirmer, jamais choisi seul';
 
 // une couleur éclaircie vers le blanc, pour le contour d'un groupe pris
+// une couleur « #rrggbb » en ses trois composantes
+const rvb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const melanger = (h, k) => '#' + rvb(h).map(c => Math.round(c + (255 - c) * k).toString(16).padStart(2, '0')).join('');
 /* ---- la bible : chaque variante en petit, et en grand ------------------- */
 /* Le picto d'une variante : la même face, en 30 px — le contour à sa forme, les groupes en traits, les contacts en points. */

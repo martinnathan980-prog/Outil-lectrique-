@@ -211,7 +211,7 @@ function cartoucheSvg(rx, by, c, folio, legende) {
   routes.forEach((r, i) => { const k = Math.floor(i / LEG_PAR_COLONNE), cx = xT - (nCol - k) * LEG_COLONNE + 10, cy = y + 30 + (i % LEG_PAR_COLONNE) * LEG_LIGNE;
     const n = r.n + ' câble' + (r.n > 1 ? 's' : ''), place = LEG_COLONNE - 20 - 32 - largeurTexte(n.length, 7, 0) - 4;
     s += `<line x1="${f1(cx)}" y1="${f1(cy - 3)}" x2="${f1(cx + 24)}" y2="${f1(cy - 3)}" style="stroke:${r.couleur || '#26323f'};stroke-width:3.2;stroke-linecap:round"/>`;
-    s += `<text class="legnom" x="${f1(cx + 32)}" y="${f1(cy)}">${esc(clip(r.route || 'sans route', Math.max(4, Math.floor(place / (CAR * 8 + 0.3)))))}</text><text class="legn" x="${f1(cx + LEG_COLONNE - 20)}" y="${f1(cy)}" text-anchor="end">${n}</text>`; });
+    s += `<text class="legnom" x="${f1(cx + 32)}" y="${f1(cy)}">${esc(clip((r.route || 'sans route') + (coteDeRoute(r.route) ? (coteDeRoute(r.route) === 'gauche' ? ' · G' : ' · D') : ''), Math.max(4, Math.floor(place / (CAR * 8 + 0.3)))))}</text><text class="legn" x="${f1(cx + LEG_COLONNE - 20)}" y="${f1(cy)}" text-anchor="end">${n}</text>`; });
   if (nCol) s += `<text class="carth" x="${f1(x + 10)}" y="${f1(y + 13)}">ROUTES</text>`;
   return s + `<rect class="cbord" x="${f1(x)}" y="${f1(y)}" width="${f1(W)}" height="${CART_H}"/>`;
 }
