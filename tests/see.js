@@ -74,7 +74,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   // 1. reconnu à ses noms de feuilles, d'où qu'il arrive ; un Excel ordinaire, non ; lu EN ENTIER
   ok('un Excel ordinaire (une feuille Feuil1) n’est pas pris pour la base SEE', !(await p.evaluate(() => routerBaseSEE(window.__ordinaire))));
   const t0 = Date.now(); await p.evaluate(() => ouvrirFichier(window.__see)); await p.waitForFunction(() => app.fiche && app.fiche.mode === 'see'); const ms = Date.now() - t0;
-  ok('déposé comme un retest (ouvrirFichier), il est reconnu à ses feuilles EED_… et résumé, sans toucher au contrat ouvert', await p.evaluate(n0 => app.contrat.liaisons.length === n0 && app.nom === 'Contrat d’exemple', n0), Math.round(taille / 1024) + ' Ko lus en ' + ms + ' ms');
+  ok('déposé comme une installation (ouvrirFichier), il est reconnu à ses feuilles EED_… et résumé, sans toucher au contrat ouvert', await p.evaluate(n0 => app.contrat.liaisons.length === n0 && app.nom === 'Contrat d’exemple', n0), Math.round(taille / 1024) + ' Ko lus en ' + ms + ' ms');
   ok('treize feuilles lues en entier (une à la fois) et vérifiées ligne par ligne, en moins de 30 s (SheetJS seul en prend 8 à 13 sur une machine partagée)', ms < 30000 && await p.evaluate(() => SEE.lu.feuilles.length === 13 && SEE.lu.feuilles.find(f => f.nom === 'EED_ViewEquipments').lignes === 7091 && SEE.lu.feuilles.find(f => f.nom === 'EED_OBJ_END_Fitting_Rules_Conta').lignes === 6000), ms + ' ms');
 
   const sp = t => t == null ? t : String(t).replace(/[  ]/g, ' ');

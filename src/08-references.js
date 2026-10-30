@@ -166,9 +166,9 @@ function arreterLecture() { const L = BASE.lecture; if (!L) return; try { L.w.te
 /* La lecture finie : ce qui ne va pas se dit dans la carte de la base (comme un petit fichier) ; sinon la base est posée,
    gardée, rangée dans la bibliothèque — et la carte de lecture dit ce qu'il y a, et en combien de temps. */
 async function finDeLecture(L, fin) { BASE.lecture = null; const R = fin.lecture, B = { meta: fin.meta, morceaux: L.morceaux }, nom = L.nom, ms = Math.round(performance.now() - L.t0);
-  const liste = R.ignorees.length ? ['Feuilles ignorées (pas les en-têtes du retest) : ' + R.ignorees.map(n => guillemets(esc(n))).join(', ')] : [];
-  if (!R.entete) { montrerLecture(); echecImport('base', { texte: `${esc(nom)} : je ne trouve pas les en-têtes du retest dans les 30 premières lignes — la base a les mêmes colonnes que le retest, avec <span class="id">Harness</span>. ${ceQueJaiLu(R.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] }, nom + ' : je ne trouve pas les en-têtes du retest dans les 30 premières lignes.'); return; }
-  if (!R.n) { montrerLecture(); echecImport('base', { texte: `« ${esc(nom)} » : les en-têtes du retest sont là (ligne ${R.entete}), mais aucune liaison dessous.`, liste }); return; }
+  const liste = R.ignorees.length ? ['Feuilles ignorées (pas les en-têtes de l’installation) : ' + R.ignorees.map(n => guillemets(esc(n))).join(', ')] : [];
+  if (!R.entete) { montrerLecture(); echecImport('base', { texte: `${esc(nom)} : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(R.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] }, nom + ' : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
+  if (!R.n) { montrerLecture(); echecImport('base', { texte: `« ${esc(nom)} » : les en-têtes de l’installation sont là (ligne ${R.entete}), mais aucune liaison dessous.`, liste }); return; }
   const C = B.meta.contrats, sans = !C.some(c => c.h !== '—');
   // un seul contrat, ouvert comme un retest : il devient un plan, sans passer par la base
   if (L.but === 'ouvrir' && C.length === 1) { const V = liaisonsDuContratDeLaBase(B, C[0]); montrerLecture();
@@ -179,7 +179,7 @@ async function finDeLecture(L, fin) { BASE.lecture = null; const R = fin.lecture
   // la base posée, puis rangée, puis dite : trois temps, la page respire entre eux
   poserBase(B); await respirer(); const G = rangerLesContrats(B, nom); await respirer();
   BASE.fini = { nom, n: R.n, contrats: C.length, installs: B.meta.installs.length, ms, rangee: G, t: Date.now() }; finirCarteLecture();
-  baseRecue(nom, R.ignorees.length ? { texte: 'Feuilles ignorées (pas les en-têtes du retest) :', liste: R.ignorees.map(n => guillemets(esc(n))) } : null, G);
+  baseRecue(nom, R.ignorees.length ? { texte: 'Feuilles ignorées (pas les en-têtes de l’installation) :', liste: R.ignorees.map(n => guillemets(esc(n))) } : null, G);
   montrerLecture();
   dire(lies([nombreLie(R.n, 'liaison'), nombreLie(C.length, 'contrat'), B.meta.installs.length ? nombreLie(B.meta.installs.length, 'installation') : '']) + ` — lus en ${secondesLues(ms)}, gardés sur ce PC.`); }
 const secondesLues = ms => ms < 1000 ? ms + ' ms' : nombre(Math.round(ms / 100) / 10) + ' s';
@@ -234,17 +234,17 @@ async function importerReferences(fichier) { if (!fichier) return; const nom = f
   if ((fichier.size || 0) > SEUIL_AILLEURS && typeof Worker !== 'undefined' && lireLaBaseAilleurs(fichier, 'base')) return;
   dire('Lecture de « ' + nom + ' »…'); const L = await lireLeFichier(fichier); FICHIERS.base = null;
   if (L.erreur) { echecImport('base', L.erreur); return; }
-  try { const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), liste = ig.length ? ['Feuilles ignorées (pas les en-têtes du retest) : ' + ig.join(', ')] : [];
-    if (r.format !== 'retest') { echecImport('base', { texte: `${esc(nom)} : je ne trouve pas les en-têtes du retest dans les 30 premières lignes — la base a les mêmes colonnes que le retest, avec <span class="id">Harness</span>. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] },
-      nom + ' : je ne trouve pas les en-têtes du retest dans les 30 premières lignes.'); return; }
-    if (!r.liaisons.length) { echecImport('base', { texte: `«\u00a0${esc(nom)}\u00a0» : les en-têtes du retest sont là (ligne ${r.entete}), mais aucune liaison dessous.`, liste }); return; }
+  try { const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), liste = ig.length ? ['Feuilles ignorées (pas les en-têtes de l’installation) : ' + ig.join(', ')] : [];
+    if (r.format !== 'retest') { echecImport('base', { texte: `${esc(nom)} : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] },
+      nom + ' : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
+    if (!r.liaisons.length) { echecImport('base', { texte: `«\u00a0${esc(nom)}\u00a0» : les en-têtes de l’installation sont là (ligne ${r.entete}), mais aucune liaison dessous.`, liste }); return; }
     if (!r.harnais.length) { const e = trouverEnteteRetest(L.brutes), sans = !e || e.col.harness == null, G = rangerLaBase(r.liaisons, nom);
       // sans harness, pas de comparaison ; ses installations, si elle les dit, entrent quand même dans la bibliothèque (un plan par dessin)
       echecImport('base', { texte: `${esc(nom)} : ${sans ? 'aucune colonne <span class="id">Harness</span>' : 'la colonne <span class="id">Harness</span> est vide'}. Sans elle, je ne sais pas séparer les machines. Ajoutez-la, ou ouvrez ce fichier comme un plan.${G ? ` Ses ${esc(lies([plurielLie(G.installs, 'installation'), plurielLie(G.plans, 'plan')]))} sont rangés dans la bibliothèque.` : ''}`, liste },
         nom + ' : aucune colonne Harness — sans elle, je ne sais pas séparer les machines.');
       FICHIERS.base = { nom, liaisons: r.liaisons }; rendreFichiers(); return; }
     adopterReferences(r.liaisons, nom); const B = app.references.base, G = rangerLesContrats(B, nom);
-    baseRecue(nom, ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes du retest) :', liste: ig } : null, G); ficheFichiers('base');
+    baseRecue(nom, ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes de l’installation) :', liste: ig } : null, G); ficheFichiers('base');
     dire(lies([plurielLie(B.meta.harnais, 'harness'), plurielLie(B.meta.dessins, 'dessin'), plurielLie(B.meta.n, 'liaison')]) + ' gardés dans ce navigateur : les fiches disent ce qui a déjà été fait' + (G ? ', et la bibliothèque range ' + plurielLie(G.installs, 'installation') + '.' : '.'));
   } catch (e) { echecImport('base', { texte: `${esc(nom)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 /* Une empreinte courte du contrat (ce que la comparaison lit) : les comparaisons gardées se périment quand il change. */
@@ -512,11 +512,11 @@ function comparaisonAuContrat(h) { const I = indexReferences(), H = I && I.harna
 // le plus proche se propose, une fois le retest ouvert (et dessiné) : « Déjà fait à 85 % : … — Comparer »
 function proposerDejaFait() { const jeton = BASE.jeton, nom = app.nom; setTimeout(() => { if (jeton !== BASE.jeton || app.nom !== nom || !indexReferences() || bibliothequeOuverte()) return;
   const c = contratsLesPlusProches()[0]; if (!c || c.taux < 0.2) return;
-  direAvecGeste(`Déjà fait à ${Math.round(c.taux * 100)}${INSECABLE}% : ${c.harness}${c.appareil ? ' (' + c.appareil + (c.retest ? ', retest du ' + c.retest : '') + ')' : ''}.`, 'Comparer', () => { REF.choisi = c.harness; ficheDejaFaitContrat(); }); }, 1200); }
+  direAvecGeste(`Déjà fait à ${Math.round(c.taux * 100)}${INSECABLE}% : ${c.harness}${c.appareil ? ' (' + c.appareil + (c.retest ? ', installation du ' + c.retest : '') + ')' : ''}.`, 'Comparer', () => { REF.choisi = c.harness; ficheDejaFaitContrat(); }); }, 1200); }
 function ficheDejaFaitContrat() { const R = app.references, I = indexReferences(), V = verite(), K = BASE.construction;
   let corps = tete('Le plan ouvert contre la base', 'Déjà fait'), pied = '';
-  if (!R) corps += '<p class="note">Aucune base des contrats déjà faits dans ce navigateur : déposez-la dans ⋮ → Vos fichiers → Contrats déjà faits (un Excel aux colonnes du retest, Harness rempli).</p>';
-  else if (!V.length) corps += '<p class="note">Aucun plan ouvert : ouvrez un retest, puis comparez-le au déjà-fait.</p>';
+  if (!R) corps += '<p class="note">Aucune base des contrats déjà faits dans ce navigateur : déposez-la dans ⋮ → Vos fichiers → Contrats déjà faits (un Excel aux colonnes de l’installation, Harness rempli).</p>';
+  else if (!V.length) corps += '<p class="note">Aucun plan ouvert : ouvrez une installation, puis comparez-le au déjà-fait.</p>';
   else if (!I) corps += `<p class="note">La base s’indexe${K && K.total ? ' (' + Math.round(100 * K.fait / K.total) + ' %)' : ''} : la comparaison sera prête dans un instant.</p>`;
   else { const cs = contratsLesPlusProches(); if (!REF.choisi || !cs.some(c => c.harness === REF.choisi)) REF.choisi = cs.length ? cs[0].harness : '';
     if (!cs.length) corps += `<p class="note">Aucun contrat de la base ne partage un repère ou un part number avec ${esc(guillemets(app.nom || 'le plan'))}.</p>`;
@@ -527,7 +527,7 @@ function ficheDejaFaitContrat() { const R = app.references, I = indexReferences(
 function ccCandidatsHtml(cs) { const B = baseDeReferences();
   return `<p class="cc-lead">Les contrats de la base les plus proches de <b>${esc(nomAffiche(app.nom || 'ce plan'))}</b> — leur ressemblance : la part des lignes que les deux contrats ont en commun (chaque ligne réduite à ses deux bouts, leurs bornes, le type de câble).</p><div class="cc-cands" role="group" aria-label="Les plus proches">`
     + cs.map(c => { const k = B && contratDeLaBase(B, c.harness), niv = c.taux >= 0.8 ? 'ok' : c.taux >= 0.4 ? 'att' : 'ko';
-      return `<button class="cc-cand" data-h="${escA(c.harness)}" aria-pressed="${c.harness === REF.choisi}"><b class="cc-taux ${niv}">${Math.round(c.taux * 100)}${INSECABLE}%</b><span class="cc-cand-t"><span class="id">${esc(c.harness)}</span><small>${esc(lies([k && k.install, c.appareil, c.retest ? 'retest du ' + c.retest : '', plurielLie(c.lignes, 'ligne'), c.parZone ? 'une autre zone' : '']))}</small></span></button>`; }).join('') + '</div>'; }
+      return `<button class="cc-cand" data-h="${escA(c.harness)}" aria-pressed="${c.harness === REF.choisi}"><b class="cc-taux ${niv}">${Math.round(c.taux * 100)}${INSECABLE}%</b><span class="cc-cand-t"><span class="id">${esc(c.harness)}</span><small>${esc(lies([k && k.install, c.appareil, c.retest ? 'installation du ' + c.retest : '', plurielLie(c.lignes, 'ligne'), c.parZone ? 'une autre zone' : '']))}</small></span></button>`; }).join('') + '</div>'; }
 function ccDetailHtml(C, H) { const K = C.compte, ETATS = [['manque', 'manque chez nous', 'manquent chez nous'], ['differe', 'diffère', 'diffèrent'], ['identique', 'pareille', 'pareilles'], ['enplus', 'en plus chez nous', 'en plus chez nous']].filter(([e]) => K[e]);
   const image = r => { const m = C.correspondance.get(r); return m ? m.vers : r; }, bout = (r, b) => `<span class="id">${esc(r)}${b ? ':' + esc(b) : ''}</span>`;
   const barre = `<div class="cp-barre" role="img" aria-label="${escA(compteMots(K))}">${ETATS.map(([e]) => `<i class="cp-b-${e}" style="flex-grow:${K[e]}"></i>`).join('')}</div><ul class="cp-legende">${ETATS.map(([e, un, plus]) => `<li class="cp-l-${e}"><i aria-hidden="true"></i><b>${K[e]}</b>${INSECABLE}${K[e] > 1 ? plus : un}</li>`).join('')}</ul>`;
@@ -552,7 +552,7 @@ function lierDejaFaitContrat() { const c = $('fiche-corps');
 
 /* ---- LA BIBLE : la base par harness et par dessin, une recherche ---------------------------------------------- */
 function ficheReferences() { const R = app.references, I = indexReferences(), M = R && R.base ? R.base.meta : null, K = BASE.construction;
-  const etat = !R || !M ? '<div class="bible-etat"><span><b>Aucun contrat déjà fait</b> : la base se dépose dans ⋮ → Vos fichiers → Contrats déjà faits (un Excel aux colonnes du retest, Harness rempli) ; elle se garde dans ce navigateur, rien ne part sur le réseau.</span></div>'
+  const etat = !R || !M ? '<div class="bible-etat"><span><b>Aucun contrat déjà fait</b> : la base se dépose dans ⋮ → Vos fichiers → Contrats déjà faits (un Excel aux colonnes de l’installation, Harness rempli) ; elle se garde dans ce navigateur, rien ne part sur le réseau.</span></div>'
     : `<div class="bible-etat"><span><b>${esc(R.nom || 'Contrats déjà faits')}</b>${SEP_POINT}${plurielLie(M.harnais, 'harness')}${SEP_POINT}${plurielLie(M.dessins, 'dessin')}${SEP_POINT}${plurielLie(M.n, 'liaison')}${SEP_POINT}gardés dans ce navigateur${I ? '' : `${SEP_POINT}« Déjà fait » s’indexe${K && K.total ? ' (' + Math.round(100 * K.fait / K.total) + INSECABLE + '%)' : ''}`}</span></div>`;
   return `<h3 class="sous-titre">Les contrats déjà faits</h3>${etat}` + (I ? `<div id="rf-base">${rfBaseHtml()}</div>` : '')
     + '<p class="note">Pour un équipement du contrat, sa fiche dit les trois machines les plus proches (même part number, sinon même code), le taux de lignes communes, et le dessin (FWD) où il apparaît ; la comparaison — l’équipement, son voisinage, le dessin entier — montre ce qu’elles ont en plus, ce qui diffère, et reprend ce qu’on coche ; « Dessin » ouvre le FWD dessiné par l’outil. « La solution du PH n’est pas forcément la bonne » : ce qui est repris passe les mêmes contrôles que le reste.</p>'; }

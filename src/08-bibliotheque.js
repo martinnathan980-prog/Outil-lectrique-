@@ -320,8 +320,8 @@ async function plansDuFichier(f) { const nom = f.name || 'le fichier', L = await
   if (!trouverEnteteRetest(L.brutes)) { if (await rangerAilleurs(L, nom, f)) return { plans: [] };
     const D = devinerTableau(L.pleines), lu = D.entete && D.devine ? lireAvecCarte(L.pleines, D.map, D.debut) : null;
     if (lu && lu.liaisons.length) return { plans: [{ nom, liaisons: lu.liaisons }], devine: texteBrut(comprisHtml(D)) };
-    return { erreur: nom + ' n’a pas les en-têtes du retest : il me faut au moins Device1, Pin1, Device2 et Pin2.', lu: L }; }
-  const r = lireTexte(L.texte); if (!r.liaisons.length) return { erreur: nom + ' : les en-têtes du retest sont là, mais aucune liaison dessous.' };
+    return { erreur: nom + ' n’a pas les en-têtes de l’installation : il me faut au moins Device1, Pin1, Device2 et Pin2.', lu: L }; }
+  const r = lireTexte(L.texte); if (!r.liaisons.length) return { erreur: nom + ' : les en-têtes de l’installation sont là, mais aucune liaison dessous.' };
   if (r.harnais.length > 1) return { plans: r.harnais.map(h => ({ nom: h, liaisons: r.liaisons.filter(l => l.harness === h) })) };
   return { plans: [{ nom, liaisons: r.liaisons }] }; }
 /* AJOUTER DES PLANS à une installation (celle qu'on regarde, sinon celle du plan sur la table) : chaque fichier se lit dans
@@ -443,7 +443,7 @@ function rendreBibliotheque() { const el = $('bi-page'); if (!el || BIB.vue === 
     el.classList.toggle('bi-avec-rail', !!rail); el.classList.toggle('bi-accueil', accueil()); el.classList.toggle('bi-en-lot', !!BIB.lot);
     el.innerHTML = rail ? rail + `<div class="bi-principal">${corps}</div>` : corps; });
   // ce que dit la bibliothèque quand on y glisse un fichier : où il va
-  $('bibliotheque').dataset.depotDit = 'Déposez vos retests : ils deviennent des plans de ' + guillemets(nomInstallCible());
+  $('bibliotheque').dataset.depotDit = 'Déposez vos installations : elles deviennent des plans de ' + guillemets(nomInstallCible());
   apresRendu(); }
 // l'arrivée sur une vue : les cartes et la feuille se posent (une fois, pas à chaque lettre cherchée)
 function poser() { const p = $('bi-page'); if (!p || mouvementReduit()) return; p.classList.remove('bi-entre'); void p.offsetWidth; p.classList.add('bi-entre');
@@ -497,9 +497,9 @@ function reprendreHtml() { if (!planSurLaTable()) return ''; const p = BIB.plans
    une base) — « Ouvrez votre retest » : le geste n°1 en premier, clair sur la nuit, avec son raccourci ; une installation
    neuve, au trait ; ce que le dépôt fait, dans un cadre pointillé (on peut glisser le fichier n'importe où) ; la base des
    contrats déjà faits, en lien. */
-function videHtml() { return `<section class="bi-vide">${pileAccueil()}<h1 class="bi-titre">Ouvrez votre retest</h1>`
+function videHtml() { return `<section class="bi-vide">${pileAccueil()}<h1 class="bi-titre">Ouvrez votre installation</h1>`
   + `<p>Un fichier Excel ou CSV, une ligne par câble : Volta dessine les folios et vérifie chaque calibre, contact et câble.</p>${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
-  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir">${icoBi('depot')}<span>Ouvrir un retest…</span><kbd>Ctrl+O</kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
+  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir">${icoBi('depot')}<span>Ouvrir une installation…</span><kbd>Ctrl+O</kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
   + `<p class="bi-vide-depot"><b>…ou glissez-le n’importe où dans la fenêtre.</b><span>Il s’ouvre tout de suite ; vous le rangerez dans une installation quand vous voudrez.</span></p>`
   + `<p class="bi-vide-base">Vous avez la base des contrats déjà faits ? <button class="bi-lien-vide" data-bi="base">La déposer</button><span>— chaque installation se crée avec ses contrats, même à 300 000 lignes.</span></p></section>`; }
 /* Une carte d'installation : une pile de feuilles (deux ou trois selon ses plans), son ECP, son nom, ses comptes, ses
@@ -510,7 +510,7 @@ function carteInstallHtml(i) { const P = plansDeInstall(i.id), vu = vueLe(i), pi
   const meta = i.demo ? lies(['démonstration', nPlans(P.length)]) : lies([nPlans(P.length), vu ? 'ouverte ' + quand(vu) : 'créée ' + leJour(i.cree)]);
   const montres = (t ? P.filter(p => planCorrespond(p, t)) : P).slice(0, 3), reste = P.length - montres.length;
   const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn">${icoBi('plan')}<span>${esc(nomAffiche(p.nom))}</span></span>`).join('')}${reste > 0 ? `<span class="bi-pn-plus">+${INSECABLE}${esc(plurielLie(reste, 'autre'))}</span>` : ''}</span>`
-    : `<span class="bi-carte-plans bi-carte-plans-vide">Aucun plan : un clic, puis déposez vos retests.</span>`;
+    : `<span class="bi-carte-plans bi-carte-plans-vide">Aucun plan : un clic, puis déposez vos installations.</span>`;
   const haut = i.demo ? folioMini() : aUnEcp(i) ? ecpHtml(i, 'bi-carte-ecp') : `<span class="bi-carte-ico">${icoBi('install')}</span>`;
   // l'Exemple : sa carte OUVRE son plan, d'un clic (audit v72, parcours P2-2 : une page pour une ligne, c'était un clic de trop)
   const geste = i.demo ? 'data-bi="exemple"' : `data-bi="install" data-id="${escA(i.id)}"`;
@@ -568,8 +568,8 @@ function teteInstallHtml() { const i = BIB.installs.get(BIB.install), P = plansD
     + (BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id ? `<div class="bi-feuille bi-confirme-tete">${confirmeInstallHtml(i, P)}</div>` : ''); }
 function installHtml() { const i = BIB.installs.get(BIB.install); if (!i) return ''; const t = cleTexte(BIB.q), P = plansDeInstall(i.id), montres = P.filter(p => planCorrespond(p, t));
   // la zone de dépôt : une ligne au bas de la feuille ; l'installation vide, elle seule — une icône, une phrase, ce qu'elle attend
-  const zone = i.demo ? '' : P.length ? `<button type="button" class="bi-zone" data-bi="choisir">${icoBi('depot')}<span><b>Glissez d’autres retests ici</b> ou cliquez — plusieurs à la fois</span></button>`
-    : `<button type="button" class="bi-zone bi-zone-grande" data-bi="choisir"><span class="bi-zone-ico">${icoBi('depot')}</span><b>Glissez vos retests ici</b><span>ou cliquez pour les choisir — plusieurs à la fois</span>`
+  const zone = i.demo ? '' : P.length ? `<button type="button" class="bi-zone" data-bi="choisir">${icoBi('depot')}<span><b>Glissez d’autres installations ici</b> ou cliquez — plusieurs à la fois</span></button>`
+    : `<button type="button" class="bi-zone bi-zone-grande" data-bi="choisir"><span class="bi-zone-ico">${icoBi('depot')}</span><b>Glissez vos installations ici</b><span>ou cliquez pour les choisir — plusieurs à la fois</span>`
       + '<small>Excel ou CSV, une ligne par câble : <span class="id">Device1</span> · <span class="id">Pin1</span> · <span class="id">Device2</span> · <span class="id">Pin2</span> au moins. Chaque fichier devient un plan.</small></button>';
   const ajouts = BIB.ajouts.map(a => `<li class="bi-plan bi-ajout ${a.etat}"><span class="bi-ajout-ico" aria-hidden="true"></span><span class="bi-ajout-t">${a.etat === 'lecture' ? 'Lecture de ' + esc(guillemets(a.nom)) + '…' : esc(a.texte)}</span>${a.etat === 'ko' ? `${a.lu ? `<button class="bi-lien" data-bi="deviner" data-a="${escA(a.id)}">Deviner ses colonnes</button>` : ''}<button class="bi-oublier" data-bi="oublier-ajout" data-a="${escA(a.id)}" aria-label="Effacer ce message">${icoBi('fermer')}</button>` : ''}</li>`).join('');
   if (!P.length && !ajouts) return `<div class="bi-feuille bi-feuille-vide">${zone}</div>`;
@@ -586,7 +586,7 @@ function listePlansHtml(P, avecInstall) { const lot = !!BIB.lot, tous = lot && P
     + `<ul class="bi-plans" role="list">${P.map(p => lignePlanHtml(p, avecInstall)).join('')}</ul>`; }
 // sous le nom d'un plan : un contrat de la base dit son appareil, la date de son retest, ses dessins ; un fichier, ses harness
 // (quand ils ne sont pas son nom) et ses dessins — ce que la recherche lit aussi
-const sousPlan = p => { if (p.source === 'base') return lies([p.appareil, p.retest ? 'retest du ' + p.retest : '', p.fwdBase ? 'un dessin' : p.dessins > 1 ? plurielLie(p.dessins, 'dessin') : '']);
+const sousPlan = p => { if (p.source === 'base') return lies([p.appareil, p.retest ? 'installation du ' + p.retest : '', p.fwdBase ? 'un dessin' : p.dessins > 1 ? plurielLie(p.dessins, 'dessin') : '']);
   const h = (p.harness || []).filter(x => cleTexte(x) !== cleTexte(nomAffiche(p.nom)));
   return lies([h.slice(0, 2).join(', ') + (h.length > 2 ? '…' : ''), p.dessins > 1 ? plurielLie(p.dessins, 'dessin') : '']); };
 // ce qu'il reste à faire, d'après le dernier contrôle gardé
@@ -652,7 +652,7 @@ function trouvesHtml() { const T = BIB.trouve, B = baseDeReferences(); if (!T ||
   const R = T.R, C = B.meta.contrats;
   if (!R.n) return `<section class="bi-trouve">${tete('', '')}</div><p class="bi-rien">Aucune des ${esc(milliers(B.meta.n))} lignes de la base ne porte ${esc(guillemets(R.q))}.</p></section>`;
   const MAX = 40, montres = R.contrats.slice(0, MAX);
-  const carte = x => { const c = C[x.k], i = c.install, p = planDuContrat(c.h), ou = lies([i ? (c.ecp ? c.ecp + ' ' : '') + i : 'pas encore rangé', c.appareil, c.retest ? 'retest du ' + c.retest : '']);
+  const carte = x => { const c = C[x.k], i = c.install, p = planDuContrat(c.h), ou = lies([i ? (c.ecp ? c.ecp + ' ' : '') + i : 'pas encore rangé', c.appareil, c.retest ? 'installation du ' + c.retest : '']);
     return `<article class="bi-tc"><button class="bi-tc-tete" data-bi="contrat" data-h="${escA(c.h)}" data-g="${x.lignes[0]}"><span class="bi-plan-ico${p && p.id === app.planId && planSurLaTable() ? ' sur-table' : ''}">${icoBi('plan')}</span>`
       + `<span class="bi-tc-nom"><b>${esc(c.h)}</b><span>${esc(ou)}</span></span><span class="bi-tc-n">${esc(plurielLie(x.n, 'ligne'))}</span><span class="bi-tc-ouvrir">Ouvrir${icoBi('ouvrir')}</span></button>`
       + `<ul class="bi-tc-lignes">${x.lignes.map(g => ligneTrouveeHtml(B, g, R)).join('')}${x.n > x.lignes.length ? `<li class="bi-tc-plus">+${INSECABLE}${esc(autres(x.n - x.lignes.length, 'ligne'))}</li>` : ''}</ul></article>`; };
@@ -691,7 +691,7 @@ function lotHtml() { const L = BIB.lot; if (!L) return ''; const n = L.ids.size,
   if (E) return `<div class="bi-lot en-cours" role="status" aria-live="polite"><div class="bi-lot-barre" role="progressbar" aria-valuemin="0" aria-valuemax="${E.n}" aria-valuenow="${E.k}"><i style="width:${partDuLot(E)}%"></i></div>`
     + `<span class="bi-lot-n">Conversion : <b>${E.k}${INSECABLE}/${INSECABLE}${E.n}</b></span><span class="bi-lot-nom id">${esc(E.nom)}</span><small class="bi-lot-mot">${esc(E.mot || '')}</small><span class="espace"></span><button class="bi-lien-lot" data-bi="lot-arreter">Arrêter</button></div>`;
   return `<div class="bi-lot" role="region" aria-label="Convertir en lot"><span class="bi-lot-n"><b>${n}</b>${INSECABLE}${n > 1 ? 'contrats choisis' : 'contrat choisi'}</span>`
-    + `<label class="bi-lot-o"><input type="checkbox" data-lot-o="excel"${L.excel ? ' checked' : ''}><span>Retest corrigé <small>Excel</small></span></label>`
+    + `<label class="bi-lot-o"><input type="checkbox" data-lot-o="excel"${L.excel ? ' checked' : ''}><span>Installation corrigée <small>Excel</small></span></label>`
     + `<label class="bi-lot-o${pdf ? '' : ' eteint'}"><input type="checkbox" data-lot-o="pdf"${L.pdf && pdf ? ' checked' : ''}${pdf ? '' : ' disabled'}><span>Dossier PDF <small>${pdf ? 'tous les folios' : 'pas encore là'}</small></span></label>`
     + `<span class="bi-lot-seg" role="group" aria-label="Ce qui sort"><button data-bi="lot-zip" data-zip="1" aria-pressed="${L.zip}">Un zip</button><button data-bi="lot-zip" data-zip="0" aria-pressed="${!L.zip}">Un par contrat</button></span>`
     + `<span class="espace"></span><button class="bi-lien-lot" data-bi="lot-annuler">Annuler</button><button class="bi-btn" data-bi="lot-convertir"${n && (L.excel || (L.pdf && pdf)) ? '' : ' disabled'}>${icoBi('depot')}<span>Convertir${n ? ' ' + (n > 1 ? milliers(n) + ' contrats' : 'le contrat') : ''}</span></button></div>`; }
@@ -726,7 +726,7 @@ async function convertirLeLot() { const L = BIB.lot; if (!L || L.encours || !L.i
   const arrete = E.arret, ins = BIB.vue === 'install' && BIB.installs.get(BIB.install), nomZip = nomAscii((ins ? ins.nom : 'contrats-deja-faits') + '-' + els.length + '-contrats') + '.zip';
   if (L.zip && fichiers.length) telecharger(zipSimple(fichiers), nomZip);
   BIB.lot = null; rendreBibliotheque();
-  const fait = lies([nx ? nx + INSECABLE + (nx > 1 ? 'retests corrigés' : 'retest corrigé') + ' (Excel)' : '', np ? np + INSECABLE + (np > 1 ? 'dossiers PDF' : 'dossier PDF') : '']), ms = Math.round(performance.now() - t0);
+  const fait = lies([nx ? nx + INSECABLE + (nx > 1 ? 'installations corrigées' : 'installation corrigée') + ' (Excel)' : '', np ? np + INSECABLE + (np > 1 ? 'dossiers PDF' : 'dossier PDF') : '']), ms = Math.round(performance.now() - t0);
   dire((arrete ? 'Arrêté : ' : '') + (fait || 'rien à sortir') + (L.zip && fichiers.length ? ' dans ' + guillemets(nomZip) : '') + (fait ? ' — ' + (ms < 1000 ? ms + ' ms' : nombre(Math.round(ms / 100) / 10) + ' s') : '') + '.'
     + (L.pdf && !pdfDisponible() ? ' Le dossier PDF n’est pas encore dans cette version.' : '') + (rates.length ? ' Sans liaisons : ' + rates.slice(0, 3).join(', ') + (rates.length > 3 ? '…' : '') + '.' : '')
     + (sansPdf.length ? ' Pas de dossier PDF pour ' + sansPdf.slice(0, 3).join(', ') + (sansPdf.length > 3 ? '…' : '') + ' (un folio ne se dessine pas).' : ''), !fait); }

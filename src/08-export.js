@@ -11,7 +11,7 @@
 
    v73 — CE QUE L'ÉCRAN MONTRE EST CE QUI PART (le technicien, n° 1 : « le cadran affiche 15 A, “le retenu” ; j'envoie un
    retest qui garde MS3320-10 et un câble dimensionné pour un 15 A qui n'est pas dans le fichier »). La décision : Volta
-   n'écrit JAMAIS dans le retest un changement que le lecteur n'a pas demandé — un calibre automatique écrit sans grossir
+   n'écrit JAMAIS dans l’installation un changement que le lecteur n'a pas demandé — un calibre automatique écrit sans grossir
    ses câbles serait dangereux. Alors, avant d'enregistrer, LE RELEVÉ (un document de la page, pas un `confirm()`) :
      · ce qui part — chaque case changée, son objet, avant → après, et son ORIGINE : à la main, ou une proposition de
        Volta acceptée (la même colonne dans la feuille Modifications) ;
@@ -30,7 +30,7 @@ const COLONNES_RETEST = [['Harness', 'harness'], ['Device1', 'de'], ['Pin1', 'bo
   ['Description2', 'descriptionVers'], ['FWD', 'fwd'], ['Cable length (mm)', 'longueur'], ['Appareil', 'appareil'], ['Date retest', 'retest']];
 // une colonne en mots, pour le relevé (la colonne de l'Excel reste dans la bulle)
 const MOTS_COLONNES = { harness: 'harness', de: 'de', borneDe: 'borne', pnDe: 'part number', descriptionDe: 'description', type: 'type', cable: 'numéro', route: 'route',
-  vers: 'vers', borneVers: 'borne', pnVers: 'part number', descriptionVers: 'description', fwd: 'folio', longueur: 'longueur', appareil: 'appareil', retest: 'date du retest' };
+  vers: 'vers', borneVers: 'borne', pnVers: 'part number', descriptionVers: 'description', fwd: 'folio', longueur: 'longueur', appareil: 'appareil', retest: 'date de l’installation' };
 // une valeur telle que la case l'écrit : la longueur en mm (Volta la garde en mètres), le FWD d'origine sinon le folio
 const valeurRetest = (l, ch) => ch === 'longueur' ? (l.longueur > 0 ? Math.round(l.longueur * 1000) : '') : ch === 'fwd' ? (l.fwd || l.plan || '') : l[ch] == null ? '' : l[ch];
 const motAvant = (ch, v) => v == null || v === '' ? 'vide' : ch === 'longueur' ? Math.round(v * 1000) + ' mm' : String(v);
@@ -65,7 +65,7 @@ function origineDeCase(l, ch, ouvert) { const v = l.avant && l.avant[ORIGINE_VOL
    aussi par ses disjoncteurs) ; la conversion en lot (08-bibliotheque) appelle sans. */
 function classeurRetestCorrige(V, nom, o) { o = o || {}; V = (V || []).filter(liaisonComplete); const mods = V.map(modificationsDe), n = mods.filter(m => m.length).length;
   const quand = new Date().toLocaleDateString('fr-FR'), entetes = [...COLONNES_RETEST.map(c => c[0]), 'Modifié par Volta'];
-  const lignes = [[`Retest corrigé par Volta — ${nom || 'plan'}`], [`Le ${quand} · ${plurielLie(V.length, 'liaison')} · ${plurielLie(n, 'liaison')} modifiée${n > 1 ? 's' : ''} : chaque case changée porte en commentaire ce qu'elle disait avant`], [], entetes,
+  const lignes = [[`Installation corrigée par Volta — ${nom || 'plan'}`], [`Le ${quand} · ${plurielLie(V.length, 'liaison')} · ${plurielLie(n, 'liaison')} modifiée${n > 1 ? 's' : ''} : chaque case changée porte en commentaire ce qu'elle disait avant`], [], entetes,
     ...V.map((l, i) => [...COLONNES_RETEST.map(([, ch]) => valeurRetest(l, ch)), mods[i].map(m => m[0]).join(', ')])];
   const ws = XLSX.utils.aoa_to_sheet(lignes), origine = (l, ch) => origineDeCase(l, ch, !!o.ouvert);
   // le commentaire de chaque case changée : ce que portait le fichier, et d'où vient le changement
@@ -92,7 +92,7 @@ function voltaDuPlan() { const C = app.contrat, H = { ...HYPOTHESES, ...(app.sim
 const cleVolta = l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable].map(x => String(x == null ? '' : x)).join('|');
 const motProfil = p => !p ? '' : [p.calibre > 0 ? 'calibre ' + nombre(p.calibre) + ' A' : '', ...['dem', 'trans'].filter(k => p[k] && p[k].i != null).map(k => (k === 'dem' ? 'démarrage ' : 'transition ') + nombre(p[k].i) + ' A' + (p[k].t != null ? ' / ' + nombre(p[k].t) + ' s' : '')),
   p.perm && p.perm.i != null ? 'permanent ' + nombre(p.perm.i) + ' A' : '', ...(p.plus || []).map(x => (x.nom || 'état') + ' ' + nombre(x.i) + ' A' + (x.t != null ? ' / ' + nombre(x.t) + ' s' : ''))].filter(Boolean).join(' · ');
-function feuilleVolta(v) { const L = [['Volta — ce que les colonnes du retest ne disent pas : les profils de charge, les hypothèses, les choix des fiches.'], ['Volta relit cette feuille quand vous rouvrez ce fichier. Ne la modifiez pas.'], [],
+function feuilleVolta(v) { const L = [['Volta — ce que les colonnes de l’installation ne disent pas : les profils de charge, les hypothèses, les choix des fiches.'], ['Volta relit cette feuille quand vous rouvrez ce fichier. Ne la modifiez pas.'], [],
     ['Sorte', 'Clé', 'Valeur', 'Donnée']];
   L.push(['format', FORMAT_VOLTA, v.nom || '', JSON.stringify({ quand: v.quand })]);
   (v.charges || []).forEach(([k, p]) => L.push(['charge', k, motProfil(p), JSON.stringify(p)]));
@@ -139,7 +139,7 @@ function propositionsNonEcrites() { const V = verite(), out = [];
       if (!b.pn || !Q.reference || cleNorme(b.pn) === cleNorme(Q.reference) || !moduleDeReference(app.norme, b.pn)) return;
       const ecritures = () => { const xs = []; verite().forEach(l => { if (l.de === r && l.pnDe) xs.push([l, 'pnDe', Q.reference]); if (l.vers === r && l.pnVers) xs.push([l, 'pnVers', Q.reference]); }); return xs; };
       out.push({ genre: 'module', repere: r, retest: b.pn, retenu: Q.reference, cables: [], geste: 'Écrire ' + Q.reference, suite: '', ecritures,
-        faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ' : le module ' + Q.reference + ' écrit au retest')) }); } catch (_) { } });
+        faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ' : le module ' + Q.reference + ' écrit dans l’installation')) }); } catch (_) { } });
   return out; }
 
 /* ---- LE RELEVÉ, avant d'enregistrer ---------------------------------------------------------------------------------
@@ -157,17 +157,17 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
   // le ticket : trois chiffres sur une grille de filets
   const chiffre = (v, mot, cls, bulle) => `<div class="rv-chiffre${cls ? ' ' + cls : ''}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}><b>${v}</b><span>${mot}</span></div>`;
   const ticket = `<div class="rv-ticket${entre()}" role="group" aria-label="En bref">${chiffre(n, n > 1 ? 'liaisons modifiées' : n === 1 ? 'liaison modifiée' : 'aucune modification', '', pluriel(C.cases, 'case') + ' de l’Excel ' + (C.cases > 1 ? 'changent' : 'change'))}`
-    + chiffre(np, np > 1 ? 'choix de Volta à écrire' : np === 1 ? 'choix de Volta à écrire' : 'tout est écrit', np ? 'att' : '', np ? 'Volta les retient, mais ils ne partent que si vous les écrivez' : 'Chaque choix de Volta est dans le retest')
+    + chiffre(np, np > 1 ? 'choix de Volta à écrire' : np === 1 ? 'choix de Volta à écrire' : 'tout est écrit', np ? 'att' : '', np ? 'Volta les retient, mais ils ne partent que si vous les écrivez' : 'Chaque choix de Volta est dans l’installation')
     + chiffre(P.ko ? P.ko : P.att, P.ko ? (P.ko > 1 ? 'problèmes' : 'problème') + (P.att ? ` · ${P.att} à voir` : '') : P.att ? (P.att > 1 ? 'points à voir' : 'point à voir') : 'rien à reprendre', P.ko ? 'ko' : P.att ? 'att-doux' : 'ok', P.mot) + '</div>';
   k++;   // « Ce qui part » vient juste après le ticket
   const enr = RELEVE.enregistre && RELEVE.enregistre.cle === RELEVE.cle ? `<p class="rv-fait" role="status">${ico('coche')}<span>Enregistré à ${esc(RELEVE.enregistre.heure)} dans vos Téléchargements · <span class="id">${esc(RELEVE.enregistre.nom)}</span></span></p>` : '';
   // ce qui part
   const ligne = e => `<li class="rv-l" data-bulle="${escA((e.n > 1 ? pluriel(e.n, 'liaison') + ' · ' : '') + 'colonne' + (e.colonnes.length > 1 ? 's ' : ' ') + e.colonnes.join(', ') + ' de l’Excel')}"><span class="rv-objet id">${esc(e.objet)}</span><span class="rv-col">${esc(e.colonne)}${e.calibres ? ` · <b>${esc(e.calibres)}</b>` : ''}${e.n > 1 ? `<small> · ${e.n} liaisons</small>` : ''}</span>`
     + `<span class="rv-av"><s class="id">${esc(e.avant)}</s>${ico('fleche')}<b class="id">${esc(e.apres)}</b></span><span class="rv-orig ${e.origine}">${e.origine === 'volta' ? ico('etoile') + 'Volta' : 'à la main'}</span></li>`;
-  const part = C.ecrits.length ? `<ul class="rv-liste">${C.ecrits.map(ligne).join('')}</ul>` : '<p class="rv-vide">Rien n’a changé : l’Excel sera votre retest tel que Volta l’a lu.</p>';
+  const part = C.ecrits.length ? `<ul class="rv-liste">${C.ecrits.map(ligne).join('')}</ul>` : '<p class="rv-vide">Rien n’a changé : l’Excel sera votre installation telle que Volta l’a lue.</p>';
   // ce que Volta a choisi sans l'écrire
   const prop = (p, i) => { const vR = p.verdictRetest, vV = p.verdictRetenu;
-    const dit = p.genre === 'calibre' ? `le retest dit <s class="id">${esc(amperes(p.retest))}</s>${vR ? ` · <span class="rv-v ${vR.etat}" data-bulle="${escA(vR.bulle)}">${esc(vR.mot)}</span>` : ''}` : `le retest dit <s class="id">${esc(p.retest)}</s>`;
+    const dit = p.genre === 'calibre' ? `l’installation dit <s class="id">${esc(amperes(p.retest))}</s>${vR ? ` · <span class="rv-v ${vR.etat}" data-bulle="${escA(vR.bulle)}">${esc(vR.mot)}</span>` : ''}` : `l’installation dit <s class="id">${esc(p.retest)}</s>`;
     const garde = (p.faire ? 'Sans ce geste, l’Excel garde ' : 'L’Excel garde ') + (p.genre === 'calibre' ? (p.pnRetest ? '<span class="id">' + esc(p.pnRetest) + '</span>' : 'le ' + esc(amperes(p.retest))) : `<span class="id">${esc(p.retest)}</span>`) + '.';
     return `<li class="rv-p"><div class="rv-p-t"><b class="id">${esc(p.repere)}</b><span>Volta retient <b class="id">${esc(p.genre === 'calibre' ? amperes(p.retenu) : p.retenu)}</b>${vV && p.genre === 'calibre' ? ` <span class="rv-v ${vV.etat}" data-bulle="${escA(vV.bulle)}">${esc(vV.mot)}</span>` : ''}</span><span class="rv-p-dit">${dit}</span></div>`
       + `<p class="rv-p-n">${garde}${p.suite ? ' ' + esc(p.suite) : ''}</p>`
@@ -175,19 +175,19 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
       + (p.faire ? `<button type="button" class="btn papier dense rv-ecrire" data-proposition="${i}" data-bulle="${escA('Une proposition de Volta : elle part dans l’Excel, marquée comme telle — Ctrl+Z la défait')}">${esc(p.geste)}</button>` : '') + '</li>'; };
   // les modules de barrette se disent ensemble, d'un geste (le calibre d'un disjoncteur, lui, a chacun le sien)
   const cals = C.proposes.map((p, i) => [p, i]).filter(([p]) => p.genre !== 'module'), mods = C.proposes.filter(p => p.genre === 'module');
-  const modsHtml = mods.length ? `<li class="rv-p rv-p-mod"><div class="rv-p-t"><b>${mods.length > 1 ? mods.length + ' modules de barrette' : 'Un module de barrette'}</b><span class="rv-p-dit">Volta en retient un autre que celui du retest</span></div>`
+  const modsHtml = mods.length ? `<li class="rv-p rv-p-mod"><div class="rv-p-t"><b>${mods.length > 1 ? mods.length + ' modules de barrette' : 'Un module de barrette'}</b><span class="rv-p-dit">Volta en retient un autre que celui de l’installation</span></div>`
     + `<ul class="rv-p-cables rv-p-mods">${mods.map(p => `<li><b class="id">${esc(p.repere)}</b><s class="id">${esc(p.retest)}</s>${ico('fleche')}<b class="id">${esc(p.retenu)}</b></li>`).join('')}</ul>`
-    + `<p class="rv-p-n">Le plus petit module qui loge les câbles de chaque barrette. Sans ce geste, l’Excel garde ceux du retest.</p>`
+    + `<p class="rv-p-n">Le plus petit module qui loge les câbles de chaque barrette. Sans ce geste, l’Excel garde ceux de l’installation.</p>`
     + `<button type="button" class="btn papier dense rv-ecrire" data-proposition="modules" data-bulle="${escA('Une proposition de Volta : elle part dans l’Excel, marquée comme telle — Ctrl+Z la défait')}">${mods.length > 1 ? 'Écrire les ' + mods.length + ' modules' : 'Écrire ' + esc(mods[0].retenu)}</button></li>` : '';
   const props = np ? `<h3 class="sous-titre rv-st${entre()}">Choisi par Volta, pas encore écrit<small>${np}</small></h3><ul class="rv-props">${cals.map(([p, i]) => prop(p, i)).join('')}${modsHtml}</ul>` : '';
   // ce qui reste à reprendre : les genres du contrôle, les problèmes d'abord
   let reste = ''; try { const G = genresDuControle(); if (G.length) { const ligneG = g => { const noms = [...g.noms]; return `<li class="rv-g ${g.niveau}"><i aria-hidden="true"></i><b>${g.n}</b><span>${esc(motDuGenre(g.genre, g.n))}</span><small>${esc(noms.length === 1 ? noms[0] : noms.length ? plurielLie(noms.length, 'repère') : 'le tableau')}</small></li>`; };
       reste = `<h3 class="sous-titre rv-st${entre()}">Ce qui reste à reprendre<small>${esc(P.mot)}</small></h3><ul class="rv-reste">${G.slice(0, 5).map(ligneG).join('')}</ul>`
         + `<button type="button" class="btn lien rv-tout" id="rv-problemes" data-bulle="${escA('L’index des repères, sur ce qui reste à reprendre — P passe au point suivant')}">${G.length > 5 ? 'Tout voir sur le plan' : 'Les voir sur le plan'}<kbd>R</kbd></button>`; } } catch (_) { }
-  return tete(nomAffichePlan() + ' · retest corrigé', 'Ce qui part dans l’Excel')
-    + `<p class="note">Volta n’écrit dans votre retest que ce que vous avez demandé. Relisez, puis enregistrez.</p>`
+  return tete(nomAffichePlan() + ' · installation corrigée', 'Ce qui part dans l’Excel')
+    + `<p class="note">Volta n’écrit dans votre installation que ce que vous avez demandé. Relisez, puis enregistrez.</p>`
     + enr + ticket + `<h3 class="sous-titre rv-st${arrive ? ' entre-v" style="--k:2' : ''}">Ce qui part<small>${C.cases ? pluriel(C.cases, 'case') : ''}</small></h3>` + part + props + reste
-    + `<p class="note rv-volta">Une feuille cachée « Volta » garde vos profils de charge, vos hypothèses et vos choix : rouvert dans Volta, ce retest reprend où vous en étiez. La feuille Modifications dit l’origine de chaque case.</p>`; }
+    + `<p class="note rv-volta">Une feuille cachée « Volta » garde vos profils de charge, vos hypothèses et vos choix : rouverte dans Volta, cette installation reprend où vous en étiez. La feuille Modifications dit l’origine de chaque case.</p>`; }
 const nomAffichePlan = () => app.nom ? String(app.nom).replace(/\.[^.]+$/, '') : 'Plan';
 function rendreReleve(ouvrir) { if (!ouvrir && (!RELEVE.ouvert || !app.fiche || app.fiche.mode !== 'releve')) { RELEVE.ouvert = false; return; }
   const corps = $('fiche-corps'), haut = corps ? corps.scrollTop : 0; RELEVE.cle = cleDuReleve();
@@ -197,7 +197,7 @@ function rendreReleve(ouvrir) { if (!ouvrir && (!RELEVE.ouvert || !app.fiche || 
 function lierReleve() { const P = changementsDuRetest().proposes;
   $('rv-enregistrer').onclick = () => enregistrerRetestCorrige();
   document.querySelectorAll('#fiche [data-proposition]').forEach(b => b.onclick = () => { const k = b.dataset.proposition;
-    if (k === 'modules') { const ms = P.filter(p => p.genre === 'module'); if (!ms.length) return; avecOrigineVolta(() => changerLiaisons(ms.flatMap(p => p.ecritures()), ms.length > 1 ? 'les modules de ' + ms.length + ' barrettes écrits au retest' : ms[0].repere + ' : le module ' + ms[0].retenu + ' écrit au retest')); }
+    if (k === 'modules') { const ms = P.filter(p => p.genre === 'module'); if (!ms.length) return; avecOrigineVolta(() => changerLiaisons(ms.flatMap(p => p.ecritures()), ms.length > 1 ? 'les modules de ' + ms.length + ' barrettes écrits dans l’installation' : ms[0].repere + ' : le module ' + ms[0].retenu + ' écrit dans l’installation')); }
     else { const p = P[+k]; if (!p || !p.faire) return; p.faire(); }
     rendreReleve();
     const e = $('rv-enregistrer'); if (e) e.focus({ preventScroll: true }); });
@@ -255,4 +255,4 @@ function reprendreVolta(v, journaux) { const C = app.contrat, repris = [];
   const morceaux = [repris.length ? majuscule(repris.join(' et ')) + ' repris de la feuille « Volta »' : '', (journaux || []).length ? `la feuille ${journaux.map(j => '« ' + j + ' »').join(', ')} est le journal de Volta : laissée de côté` : '',
     differe.length ? `ce fichier a été jugé avec d’autres hypothèses (${differe.length})` : ''].filter(Boolean);
   if (!morceaux.length) return null;
-  return { msg: 'Retest corrigé par Volta · ' + morceaux.join(' ; ') + '.', geste, faire }; }
+  return { msg: 'Installation corrigée par Volta · ' + morceaux.join(' ; ') + '.', geste, faire }; }

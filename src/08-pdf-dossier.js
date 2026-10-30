@@ -92,7 +92,7 @@ async function pdfDuPlan(liaisons, nom, options) { const o = options || {}, ouve
   verifier(); annoncer(PLACER + (1 - PLACER) * 0.92, 'La page de garde, la nomenclature…', prets);
   const garde = o.garde !== false, hypo = ouvert ? pagesHypothesesPdf(nom) : [], debut = (garde ? 2 : 1) + hypo.length, annexes = [];
   let suite = debut + total; const ajouter = (pages, titre, mot) => { if (!pages.length) return []; annexes.push({ titre, mot, page: suite, pages }); suite += pages.length; return pages; };
-  if (ouvert) { ajouter(pagesNomenclaturePdf(nom), 'la nomenclature', 'la nomenclature'); ajouter(pagesModificationsPdf(nom), 'les modifications du retest', 'les modifications du retest'); }
+  if (ouvert) { ajouter(pagesNomenclaturePdf(nom), 'la nomenclature', 'la nomenclature'); ajouter(pagesModificationsPdf(nom), 'les modifications de l’installation', 'les modifications de l’installation'); }
   const nPages = suite - 1, ecrites = [];
   if (garde) { let problemes = null; if (ouvert && typeof controleDuContrat === 'function') { try { problemes = (typeof controleAJour === 'function' ? controleAJour() : (rendreControle(), CONTROLE.items) || []).slice(); } catch (_) { problemes = null; } }
     const modifiees = ouvert && typeof nombreDeChangements === 'function' ? nombreDeChangements() : null;
@@ -100,7 +100,7 @@ async function pdfDuPlan(liaisons, nom, options) { const o = options || {}, ouve
     const nR = (f) => typeof nombreDeReperes !== 'function' ? reperesDe(f ? f.orig : L0).filter(r => !estRenvoi(r)).length : ouvert ? nombreDeReperes(f ? (f.plan === '*' ? null : f.plan) : null) : nombreDeReperes(null, f ? f.orig : L0);
     const un = k => [...new Set(L0.map(l => l[k]).filter(Boolean))], ap = un('appareil'), hs = un('harness'), rt = un('retest');
     const p = pageDeGardePdf({ nom, cart: ctx.cartouche, quand: dateLonguePdf(new Date()), pages: nPages, n: L0.length, reperes: nR(null),
-      origine: [ap.length ? (ap.length > 1 ? ap.length + ' appareils' : 'Appareil ' + ap[0]) : '', hs.length ? (hs.length > 1 ? hs.length + ' harness' : 'Harness ' + hs[0]) : '', rt.length === 1 ? 'Retest du ' + rt[0] : ''].filter(Boolean).join(' · '),
+      origine: [ap.length ? (ap.length > 1 ? ap.length + ' appareils' : 'Appareil ' + ap[0]) : '', hs.length ? (hs.length > 1 ? hs.length + ' harness' : 'Harness ' + hs[0]) : '', rt.length === 1 ? 'Installation du ' + rt[0] : ''].filter(Boolean).join(' · '),
       folios: folios.map((f, i) => ({ plan: f.plan === '*' ? '1' : f.plan, n: f.orig.length, reperes: nR(f), page: debut + i })),
       problemes, modifiees, hypotheses: hypo.length ? 2 : 0, annexes: annexes.map(a => ({ titre: a.titre, mot: a.mot, page: a.page })) });
     p.pied(nom, 1, nPages); ecrites.push({ ops: p.ops(), signet: 'Page de garde' }); }
@@ -424,14 +424,14 @@ function pagesNomenclaturePdf(nom) { let N; try { N = nomenclatureDuContrat(); }
         x.cable ? [x.cable.nature, x.cable.diametre != null ? 'Ø ' + nombre(x.cable.diametre) : '', x.cable.section != null ? nombre(x.cable.section) + ' mm²' : ''].filter(Boolean).join(' · ') : 'inconnu de la base']) }];
   if (!sections.some(S => S.lignes.length)) return [];
   const resume = [motPdf(somme(N.contacts), 'contact à sertir', 'contacts à sertir'), motPdf(somme(N.modules), 'module de jonction', 'modules de jonction'), motPdf(somme(N.connecteurs), 'connecteur ou prise', 'connecteurs et prises'),
-    motPdf(N.fils, 'câble', 'câbles'), nombre(Math.round(N.longueur)) + ' m de câble'].join(' · ') + ` — relu depuis le plan, les normes et les choix des fiches ; sans longueur au retest, l’hypothèse de ${nombre(N.hypothese)} m par câble.`;
+    motPdf(N.fils, 'câble', 'câbles'), nombre(Math.round(N.longueur)) + ' m de câble'].join(' · ') + ` — relu depuis le plan, les normes et les choix des fiches ; sans longueur dans l’installation, l’hypothèse de ${nombre(N.hypothese)} m par câble.`;
   return pagesDeTablesPdf('Nomenclature — ' + nom, resume, sections); }
 // les modifications du retest (08-export : ce que portait le fichier là où on l'a changé), en une table
 function pagesModificationsPdf(nom) { if (typeof modificationsDe !== 'function') return [];
   const lignes = []; let n = 0; verite().filter(liaisonComplete).forEach(l => { const m = modificationsDe(l); if (!m.length) return; n++;
     m.forEach(([col, ch, av, ap]) => lignes.push([l.cable || '—', l.de + (l.borneDe ? ':' + l.borneDe : ''), l.vers + (l.borneVers ? ':' + l.borneVers : ''), col, motAvant(ch, av), motAvant(ch, ap), typeof origineDeCase === 'function' ? ORIGINES_MOTS[origineDeCase(l, ch, true)] : ''])); });
   if (!lignes.length) return [];
-  return pagesDeTablesPdf('Modifications du retest — ' + nom, `${motPdf(n, 'liaison modifiée', 'liaisons modifiées')} · ${motPdf(lignes.length, 'case', 'cases')} : ce que portait le fichier, ce que Volta y a mis, et d’où vient le changement (à la main, ou une proposition de Volta acceptée).`,
+  return pagesDeTablesPdf('Modifications de l’installation — ' + nom, `${motPdf(n, 'liaison modifiée', 'liaisons modifiées')} · ${motPdf(lignes.length, 'case', 'cases')} : ce que portait le fichier, ce que Volta y a mis, et d’où vient le changement (à la main, ou une proposition de Volta acceptée).`,
     [{ titre: 'Les cases changées', colonnes: [['Câble', 0.1, { mono: true }], ['De', 0.13, { mono: true }], ['Vers', 0.13, { mono: true }], ['Colonne', 0.12], ['Avant', 0.15, { gris: true, mono: true }], ['Après', 0.15, { mono: true }], ['Origine', 0.22]], lignes }]); }
 /* LES HYPOTHÈSES ET LES SOURCES (v73, l'ingénieur, n° 9 : « si j'envoie le dossier à un vérificateur, il ne peut pas refaire
    le calcul ») : juste après la garde, en deux colonnes — les RÉGLAGES (ceux de la page des hypothèses, `hypothesesDe` :
@@ -462,7 +462,7 @@ function pagesHypothesesPdf(nom) { if (typeof hypothesesDe !== 'function') retur
     xs.forEach(x => { const f = String(x.confiance || ''); if (f === 'vérifié') k.v++; else if (f === 'déduit' || f === 'structure') k.d++; else if (f) k.c++; else k.l++; });
     return [(typeof TITRES_NORME !== 'undefined' && TITRES_NORME[t]) || t, xs.length, k.v || '', k.d || '', k.c || '', k.l || '']; }).filter(Boolean);
   const reglees = reglages.filter(r => r[2]).length;
-  return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que le retest ne porte pas, Volta le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de l’outil est à côté)' : ', les valeurs de l’outil'}, les profils de charge des disjoncteurs et d’où viennent les tables. Le retest corrigé les garde dans sa feuille « Volta ».`, [
+  return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que l’installation ne porte pas, Volta le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de l’outil est à côté)' : ', les valeurs de l’outil'}, les profils de charge des disjoncteurs et d’où viennent les tables. L’installation corrigée les garde dans sa feuille « Volta ».`, [
     { titre: 'Les réglages', compte: motPdf(reglages.length, 'réglage', 'réglages'), colonnes: [['Réglage', 0.3], ['Valeur', 0.24], ['Valeur de l’outil', 0.18, { gris: true }], ['Source', 0.28, { gris: true }]], lignes: reglages },
     { titre: 'Les profils de charge', compte: motPdf(profils.length, 'disjoncteur', 'disjoncteurs'), colonnes: [['Repère', 0.14, { mono: true }], ['Calibre', 0.11, { droite: true }], ['Retest', 0.11, { droite: true, gris: true }], ['Démarrage', 0.15], ['Transition', 0.15], ['Permanent', 0.12], ['Autres états', 0.22]], lignes: profils },
     { titre: 'Le statut des tables', compte: motPdf(statuts.length, 'table', 'tables'), colonnes: [['Table', 0.3], ['Lignes', 0.12, { droite: true }], ['Vérifiées', 0.14, { droite: true }], ['Déduites', 0.14, { droite: true }], ['À confirmer', 0.15, { droite: true }], ['Vos tables', 0.15, { droite: true }]], lignes: statuts }], { deux: true }); }
@@ -473,7 +473,7 @@ const pausePdf = () => new Promise(r => setTimeout(r, 0));
 const abandonPdf = () => { const e = new Error('le dossier en PDF est annulé'); e.name = 'AbortError'; return e; };
 /* Les folios du dossier : pour le plan ouvert, ceux de l'écran (`liaisonsDe` : les barrettes à poser numérotées comme
    l'écran les numérote) ; pour des liaisons données, folio par folio (`plan`), les barrettes à poser numérotées dans
-   l'ordre des folios. `orig` : les liaisons du retest qu'il porte. */
+   l'ordre des folios. `orig` : les liaisons de l’installation qu'il porte. */
 function foliosDuDossier(L0, ouvert) {
   if (ouvert) { const P = plans(); return (P.length ? P : ['*']).map(p => ({ plan: p, L: liaisonsDe(p), orig: p === '*' ? L0 : L0.filter(l => l.plan === p) })).filter(f => f.L.length); }
   const P = plansDe(L0), memo = new Map(); let depart = 0;

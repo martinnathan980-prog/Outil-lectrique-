@@ -202,7 +202,7 @@ function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; c
       + O.map((o, k) => `<li><button data-orph="o${k}"><span class="pdf-o-p">p. ${o.page + 1}</span>${esc(o.raison)}</button></li>`).join('')
       + S.map((o, k) => `<li><button data-orph="s${k}"><span class="pdf-o-p">p. ${o.page + 1}</span>borne sans trait : <span class="id">${esc((o.repere ? o.repere + ' : ' : '') + o.texte)}</span></button></li>`).join('') + '</ul></details>';
   }
-  const pied = `<button class="btn cuivre" data-pdf="plan"${n ? '' : ' disabled'}>Ouvrir comme plan</button><button class="btn papier" data-pdf="excel"${n ? '' : ' disabled'}>Enregistrer en retest Excel</button>`;
+  const pied = `<button class="btn cuivre" data-pdf="plan"${n ? '' : ' disabled'}>Ouvrir comme plan</button><button class="btn papier" data-pdf="excel"${n ? '' : ' disabled'}>Enregistrer en Excel d’installation</button>`;
   const y = $('pdf-corps') ? $('pdf-corps').scrollTop : 0;
   // au téléphone, la relecture est le tiroir du bas : sa poignée le replie, le déplie (le CSS ne la montre que là)
   const poignee = `<button class="pdf-poignee" data-pdf="replier" type="button" aria-expanded="${!PDF.replie}" aria-label="${PDF.replie ? 'Déplier' : 'Replier'} la relecture"><i aria-hidden="true"></i></button>`;
@@ -280,7 +280,7 @@ function classeurDuPdf() { const L = liaisonsDuPdf(), lignes = [EN16_PDF, ...L.m
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignes), 'Retest'); return { wb, n: L.length }; }
 function enregistrerPdfEnExcel() { const { wb, n } = classeurDuPdf(); if (!n) return; const nom = PDF.nom.replace(/\.pdf$/i, '') + '-retest.xlsx';
   telecharger(new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nom);
-  dire(pluriel(n, 'liaison') + ' enregistrée' + (n > 1 ? 's' : '') + ' en retest Excel (' + nom + ').'); }
+  dire(pluriel(n, 'liaison') + ' enregistrée' + (n > 1 ? 's' : '') + ' en Excel d’installation (' + nom + ').'); }
 
 /* ---- la pièce : construite une fois, ses gestes ------------------------------------------------------------------ */
 const ICO_PDF = { prec: '<path d="m15 5-7 7 7 7"/>', suiv: '<path d="m9 5 7 7-7 7"/>', moins: '<path d="M6 12h12"/>', plus: '<path d="M12 6v12M6 12h12"/>', cadre: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',

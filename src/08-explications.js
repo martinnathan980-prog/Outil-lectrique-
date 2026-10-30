@@ -87,7 +87,7 @@ const EXPLICATIONS = {
   profil: c => { const H = exHypotheses(c), perm = c && exPositif(c.permanent) ? c.permanent : null, p = c && c.pointe && exPositif(c.pointe.i) ? c.pointe : null, so = c && c.somme != null && isFinite(c.somme) ? c.somme : null;
     const phrase = perm || p ? `Votre profil : ${[perm ? exA(perm) + ' permanents' : '', p ? 'une pointe de ' + exA(p.i) + (exPositif(p.t) && isFinite(p.t) ? ' pendant ' + exS(p.t) : '') : ''].filter(Boolean).join(' et ')}.` : 'Ce que tire l’équipement protégé, état par état.';
     return exE('Le profil de charge', phrase, [['Permanent', perm ? exA(perm) : null, ''], ['Pointe', p ? exA(p.i) + (exPositif(p.t) && isFinite(p.t) ? ' · ' + exS(p.t) : '') : null, ''], ['Temps consommé', so != null ? exPct(so) : null, so == null ? '' : so > 1 ? 'ko' : so > +H.margeTemps / 100 ? 'att' : 'ok']],
-      ['Chaque état : un courant (A) pendant une durée (s) — le permanent dure toujours', 'Chaque état devient un point de la courbe : glissez-le pour l’ajuster', `Leurs parts du temps de déclenchement s’additionnent : ${exN(+H.margeTemps)} % au plus`, 'Le retest ne le porte pas : vous l’écrivez, Volta n’invente rien'],
+      ['Chaque état : un courant (A) pendant une durée (s) — le permanent dure toujours', 'Chaque état devient un point de la courbe : glissez-le pour l’ajuster', `Leurs parts du temps de déclenchement s’additionnent : ${exN(+H.margeTemps)} % au plus`, 'L’installation ne le porte pas : vous l’écrivez, Volta n’invente rien'],
       `La méthode NASA TM-102179 ; un état après le permanent trouve le disjoncteur chaud (son temps ÷ ${exN(+H.prechauffage)}, feuille MS3320N).`); },
 
   module: c => { const P = c && c.plan ? c.plan : null, libres = P && P.contacts != null && P.utilises != null ? P.contacts - P.utilises : null;
@@ -173,7 +173,7 @@ const EXPLICATIONS = {
     const regle = mono || tri ? `${mono ? exV(mono) : 'la table Réseau'} au plus en continu et en monophasé, ${tri ? exV(tri) : 'la table Réseau'} en triphasé (votre règle)` : 'Sous la table Réseau (AC 43.13-1B : 1 V sous 28 V, le double en intermittent)';
     return exE('La chute de tension', phrase, [['Chute', ok ? exV(Math.round(x.dU * 100) / 100) : null, trop ? 'ko' : ok ? 'ok' : ''], ['Admis', exPositif(x.admis) ? exV(x.admis) : null, ''], ['Longueurs', x.reel === false ? 'supposées' : null, 'att']],
       ['Chaque câble : sa résistance × sa longueur × le courant', 'Chaque prise traversée : une paire de contacts ; chaque barrette : deux', 'Plus la chute du disjoncteur (votre table « Du max »)', regle],
-      `Votre règle et votre table des contacts par gauge ; la longueur du retest, sinon ${exN(+H.longueur)} m supposés ; la génération est négligée (28 V en sortie des panneaux).`); },
+      `Votre règle et votre table des contacts par gauge ; la longueur de l’installation, sinon ${exN(+H.longueur)} m supposés ; la génération est négligée (28 V en sortie des panneaux).`); },
 
   toron: c => { const h = exHabillage(c), F = h.foisonnement || null, n = F && F.n != null ? F.n : h.faisceau && h.faisceau.n != null ? h.faisceau.n : null, deq = h.deq != null ? h.deq : h.faisceau ? h.faisceau.deq : null;
     const phrase = exPositif(h.toron) && n ? `${exN(n)} câble${n > 1 ? 's' : ''} : un toron de ${exMm(h.toron)}${F && F.methode === 'Excel' ? ' (+ 10 %, comme votre tutoriel)' : F && F.methode === 'Guide' ? ' (+ 20 %, comme votre guide)' : ''}.` : 'Le paquet de câbles qui sort du connecteur.';

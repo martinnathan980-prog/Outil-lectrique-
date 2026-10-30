@@ -1402,7 +1402,7 @@ function synchroniserRail() { const p = (id, on) => { const b = $(id); if (b) b.
    repères — équipements, barrettes (celles à poser comprises), prises —, chacun avec son état et ses folios ; on y
    cherche ; un clic ouvre la fiche, la flèche ramène à la liste. Rien n'est caché derrière le plan. */
 function basculerIndex() { if (!$('inspecteur').hidden && app.insp.index) { if (app.cible) retourIndex(); else fermerInspecteur(); return; }   // depuis une fiche venue de l'index, R ramène à la liste
-  if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : ouvrez d’abord un retest.'); return; }
+  if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : ouvrez d’abord une installation.'); return; }
   app.insp.index = true; if (app.cible) { const c = app.cible; app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
     if (c.type === 'bloc' && app.base.filtreAuto) { app.base.filtre = ''; app.base.filtreAuto = false; rendreBase(); } eteindre(); marquerLignes(); }
   ouvrirInspecteur(); const q = $('ix-q'); if (q && !telephone()) q.focus(); }
@@ -1715,7 +1715,7 @@ function hypothesesDe(N, H, ctx) { ctx = ctx || {}; const regime = REGIMES[H.reg
   const faisceau = N.declassements.some(d => d.fils != null) && H.conditions.includes('faisceau'), altitude = N.declassements.some(d => d.altitude != null) && H.conditions.includes('altitude');
   const TABLEAU = 'L’ambiante du tableau de disjoncteurs : seules les courbes de disjonction qui l’encadrent jugent';
   return [
-    nb('si-L', 'longueur', 'longueur', 'm', '0.5', 'fil', 'La longueur d’un câble que le retest ne mesure pas : la chute sur ce câble, et la chute en ligne depuis le disjoncteur, se calculent dessus.'),
+    nb('si-L', 'longueur', 'longueur', 'm', '0.5', 'fil', 'La longueur d’un câble que l’installation ne mesure pas : la chute sur ce câble, et la chute en ligne depuis le disjoncteur, se calculent dessus.'),
     nb('si-I', 'courant', 'courant', 'A', '0.5', 'fil', 'Le courant d’un câble qu’aucun disjoncteur n’alimente, et celui de la simulation d’une barrette ou d’une prise.'),
     nb('si-U', 'tension', 'tension', 'V', '1', 'fil', 'La tension du réseau : le pourcentage de chute, et la ligne de la table Réseau quand la chute admise de la règle du lecteur est vidée.'),
     N.fils.some(f => f.tr != null) ? nb('si-T', 'ambiante', 'ambiante', '°C', '5', 'temperature', 'L’ambiante autour des câbles : l’EN 2853 déclasse ce qu’un câble admet (note 2), et sa tenue en température se juge dessus (+ 40 °C au conducteur).') : null,
@@ -1776,7 +1776,7 @@ const ligneHypotheseHtml = (c, H) => { const reglee = c.k && c.k in HYPOTHESES &
    disjoncteur. */
 function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }), N = app.norme || normeVide(), cs = hypothesesDe(N, H, { fiche: true });
   const reglees = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k])).length, defaut = !reglees;
-  const corps = tete('Simulation', 'Hypothèses') + '<p class="note">Ce que le retest ne porte pas, l’outil le suppose. Chaque fiche qui s’en sert le dit (<b>hypothèse</b>) ; ce qu’on règle ici rejuge tout — le contrôle, les fiches, la nomenclature — et se garde dans ce navigateur, pas avec le contrat.</p>'
+  const corps = tete('Simulation', 'Hypothèses') + '<p class="note">Ce que l’installation ne porte pas, l’outil le suppose. Chaque fiche qui s’en sert le dit (<b>hypothèse</b>) ; ce qu’on règle ici rejuge tout — le contrôle, les fiches, la nomenclature — et se garde dans ce navigateur, pas avec le contrat.</p>'
     + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><h3 class="hy-titre">${esc(t)}</h3>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
   const pied = `<span class="hy-etat${defaut ? '' : ' regle'}">${defaut ? 'Les valeurs de l’outil' : `<b>${pluriel(reglees, 'hypothèse')}</b> réglée${reglees > 1 ? 's' : ''} ici`}</span><span class="espace"></span>`
     + `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de l’outil</button>`;
@@ -1790,7 +1790,7 @@ function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }
 // le calibre du folio suit les hypothèses (`peindre` ne repeint que si un calibre a changé)
 function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); peindre(); rafraichirCarte(); }
 function carteSimulation(nom, P, S) { const H = S.hyp, V = verite(), N = app.norme || normeVide();
-  let s = `<div class="simu"><div class="simu-tete"><span class="sur">Simulation</span><span class="simu-note">hypothèses, pas des mesures : le retest ne porte ni longueur ni courant</span></div>
+  let s = `<div class="simu"><div class="simu-tete"><span class="sur">Simulation</span><span class="simu-note">hypothèses, pas des mesures : l’installation ne porte ni longueur ni courant</span></div>
     <div class="hyp">${hypothesesDe(N, H, { fils: S.fils }).map(c => champHypotheseHtml(c, H)).join('')}</div>`;
   if (S.sansNorme) return s + `<p class="simu-vide">Aucune norme ne connaît cette famille ni ces câbles : rien n’est calculé. Importez une norme depuis la bible.</p></div>`;
   if (!S.lignes.length) return s + `<p class="simu-vide">Aucun câble dans un trou : rien à simuler.</p></div>`;
@@ -2376,12 +2376,12 @@ function bulleDesReperes() { const s = $('bulle-index'), d = $('bulle-index-deta
    pas refait ; un clic ouvre son relevé (`exporterRetestCorrige`). */
 function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDeChangements() : 0, b = $('btnRetest'); if (!b) return;
   const avant = b.hidden, mod = plurielLie(n, 'liaison') + ' modifiée' + (n > 1 ? 's' : ''); b.hidden = !n;
-  if (n) { $('en-retest-n').textContent = motChangements(n); b.setAttribute('aria-label', 'Le retest corrigé — ' + mod + ' ; relire ce qui part, puis l’enregistrer');
-    b.querySelector('.bulle').textContent = 'Le retest corrigé : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
+  if (n) { $('en-retest-n').textContent = motChangements(n); b.setAttribute('aria-label', 'L’installation corrigée — ' + mod + ' ; relire ce qui part, puis l’enregistrer');
+    b.querySelector('.bulle').textContent = 'L’installation corrigée : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
     // elle paraît : elle tombe d'un rien, une fois
     if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }
   const m = $('mn-retest'); if (m) m.textContent = n ? mod : 'aucune modification pour l’instant';
-  const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'le retest corrigé · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
+  const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'l’installation corrigée · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
 function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
 /* LE RAIL SE DÉPLIE (le technicien : « la liste à puces avec une pastille, je la prends pour des notifications ; le ⊸+ pour un
    curseur de réglage ») : au survol prolongé — 250 ms, une main qui passe ne l'ouvre pas —, il montre le mot et la touche
@@ -2511,7 +2511,7 @@ const RACCOURCIS = [
   ['Dans une fiche', [['La fiche d’avant, d’après ; revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']], ['Renommer le repère', ['F2']],
     ['Le calibre : le cran d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre ; rendre l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche, revenir au plan', ['Échap']]]],
   ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire ce qu’on vient de défaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['Pousser le bloc choisi d’un carreau (cinq avec Maj)', ['↑'], ['↓']]]],
-  ['Ouvrir, sortir', [['Ouvrir un retest', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert, revenir', ['Échap']], ['Cette feuille', ['?']]]]];
+  ['Ouvrir, sortir', [['Ouvrir une installation', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert, revenir', ['Échap']], ['Cette feuille', ['?']]]]];
 const raccourcisOuverts = () => { const el = $('raccourcis'); return !!el && !el.hidden; };
 function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
   if (!el) { el = document.createElement('div'); el.id = 'raccourcis'; el.className = 'raccourcis'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'rk-titre');

@@ -126,7 +126,7 @@ function rendreRelectureVisio() { const box = $('visio-relecture'); if (!box || 
     + `</tbody></table>` + (V.length ? '' : `<p class="pdf-vide">${VISIO.filtre === 'revoir' ? 'Rien à revoir : chaque liaison est lue avec assurance.' : VISIO.filtre === 'page' ? 'Aucune liaison lue sur cette page.' : 'Aucune liaison lue : ni connecteur collé, ni trait qui relie deux bornes.'}</p>`);
   const O = L.pages.flatMap((Q, k) => Q.orphelins.map(o => ({ ...o, page: k })));
   if (O.length) corps += `<details class="pdf-orphelins"${O.length < 8 ? ' open' : ''}><summary>Bouts orphelins<i>${O.length}</i></summary><ul>` + O.map((o, k) => `<li><button data-orph="${k}"><span class="pdf-o-p">p. ${o.page + 1}</span>${esc(o.raison)}</button></li>`).join('') + '</ul></details>';
-  const pied = `<button class="btn cuivre" data-visio="plan"${n ? '' : ' disabled'}>Ouvrir comme plan</button><button class="btn papier" data-visio="excel"${n ? '' : ' disabled'}>Enregistrer en retest Excel</button>`;
+  const pied = `<button class="btn cuivre" data-visio="plan"${n ? '' : ' disabled'}>Ouvrir comme plan</button><button class="btn papier" data-visio="excel"${n ? '' : ' disabled'}>Enregistrer en Excel d’installation</button>`;
   const y = $('visio-corps') ? $('visio-corps').scrollTop : 0;
   // au téléphone, la relecture est le tiroir du bas : sa poignée le replie, le déplie (le CSS du PDF ne la montre que là)
   const poignee = `<button class="pdf-poignee" data-visio="replier" type="button" aria-expanded="${!VISIO.replie}" aria-label="${VISIO.replie ? 'Déplier' : 'Replier'} la relecture"><i aria-hidden="true"></i></button>`;
@@ -161,7 +161,7 @@ function classeurDuVisio() { const L = liaisonsDuVisio(), ent = COLONNES_RETEST.
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignes), 'Retest'); return { wb, n: L.length }; }
 function enregistrerVisioEnExcel() { const { wb, n } = classeurDuVisio(); if (!n) return; const nom = nomSansVisio() + '-retest.xlsx';
   telecharger(new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nom);
-  dire(pluriel(n, 'liaison') + ' enregistrée' + (n > 1 ? 's' : '') + ' en retest Excel (' + nomAscii(nom) + ').'); }
+  dire(pluriel(n, 'liaison') + ' enregistrée' + (n > 1 ? 's' : '') + ' en Excel d’installation (' + nomAscii(nom) + ').'); }
 
 /* ---- ÉCRIRE : les folios du plan ouvert, en Visio ----------------------------------------------------------------
    Le dessin de chaque folio, sans toucher à la vue : la retouche s'il y en a une, le dessin affiné, gardé ; sinon le
@@ -276,7 +276,7 @@ function lierEntreesVisio() {
   if (typeof entreeDuMenu === 'function') {
     // Plus › « Lire un schéma Visio… », juste après le PDF de schéma
     const lire = entreeDuMenu({ act: 'visio', panneau: 'plus', libelle: 'Lire un schéma Visio…', icone: ICONE_VISIO + '<circle cx="13.5" cy="7.5" r="1.1" fill="currentColor"/>',
-      aide: 'Un schéma Visio (.vsdx) : Volta lit ce qui est collé à quoi — bornes, repères, cartouche — et en fait un retest à relire.', faire: () => choisirVisio() });
+      aide: 'Un schéma Visio (.vsdx) : Volta lit ce qui est collé à quoi — bornes, repères, cartouche — et en fait une installation à relire.', faire: () => choisirVisio() });
     const pdf = document.querySelector('#mp-plus [data-act="pdf"]'), vide = lire && lire.parentElement;
     if (lire && pdf && pdf.parentElement !== vide) { pdf.after(lire); if (vide && !vide.querySelector('[role="menuitem"]')) vide.remove(); }
     // Exporter › le plan entier : « Les folios en Visio (.vsdx) », en tête

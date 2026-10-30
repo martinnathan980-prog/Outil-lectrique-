@@ -186,8 +186,8 @@ async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichie
   if (L.erreur) { echecImport('retest', L.erreur); return; }
   try {
     if (!trouverEnteteRetest(L.brutes)) { if (!(await rangerAilleurs(L, nom, fichier))) proposerRattrapage(nom, L); return; }
-    const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), avis = ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes du retest) :', liste: ig } : null;
-    if (!r.liaisons.length) { echecImport('retest', { texte: `${guillemets(esc(nom))} : les en-têtes du retest sont là (ligne ${r.entete}), mais aucune liaison dessous. Chaque ligne doit nommer au moins <span class="id">Device1</span> et <span class="id">Device2</span>.`, liste: avis ? [avis.texte + ' ' + ig.join(', ')] : [] },
+    const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), avis = ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes de l’installation) :', liste: ig } : null;
+    if (!r.liaisons.length) { echecImport('retest', { texte: `${guillemets(esc(nom))} : les en-têtes de l’installation sont là (ligne ${r.entete}), mais aucune liaison dessous. Chaque ligne doit nommer au moins <span class="id">Device1</span> et <span class="id">Device2</span>.`, liste: avis ? [avis.texte + ' ' + ig.join(', ')] : [] },
       guillemets(nom) + ' : les en-têtes sont là, mais aucune liaison dessous.'); return; }
     if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, nom); baseRecue(nom, avis, rangerLesContrats(app.references.base, nom));
       ficheHarnais(r, nom); signaler(pluriel(r.harnais.length, 'harness') + ' dans ' + guillemets(nom) + ' : gardés comme contrats déjà faits — lequel ouvrir sur la table ?', 'base'); return; }
@@ -220,10 +220,10 @@ function lireAvecCarte(pleines, map, debut) { const g = (row, i) => i != null &&
 function comprisHtml(D) { const parCol = new Map(); ROLES.forEach(([k, mot]) => { const i = D.map[k]; if (i != null && i !== '') parCol.set(+i, mot); });
   return [...parCol].sort((a, b) => a[0] - b[0]).map(([i, mot]) => `<span class="id">${esc(D.entete ? D.entete[i] || 'colonne ' + (i + 1) : 'colonne ' + (i + 1))}</span>\u00a0→ ${mot}`).join(', '); }
 function proposerRattrapage(nom, L) { const D = devinerTableau(L.pleines), lu = lireAvecCarte(L.pleines, D.map, D.debut);
-  if (!lu.liaisons.length) { echecImport('retest', { texte: `${esc(nom)} : je ne trouve pas les en-têtes du retest dans les 30 premières lignes. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-retest', 'Télécharger un modèle']] },
-    nom + ' : je ne trouve pas les en-têtes du retest dans les 30 premières lignes.'); return; }
+  if (!lu.liaisons.length) { echecImport('retest', { texte: `${esc(nom)} : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-retest', 'Télécharger un modèle']] },
+    nom + ' : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
   effacerErreur('retest'); FICHIERS.attente = { nom, pleines: L.pleines, ...D }; FICHIERS.corriger = false;
-  ficheFichiers('retest'); signaler(nom + ' n’a pas les en-têtes du retest : voici ce que j’ai compris — rien n’est chargé avant « Charger ».', 'retest'); }
+  ficheFichiers('retest'); signaler(nom + ' n’a pas les en-têtes de l’installation : voici ce que j’ai compris — rien n’est chargé avant « Charger ».', 'retest'); }
 function chargerRattrapage() { const A = FICHIERS.attente; if (!A) return; const lu = lireAvecCarte(A.pleines, A.map, A.debut); if (!lu.liaisons.length) return;
   chargerContrat(lu.liaisons, 'ouverture de ' + A.nom, A.nom, { nouveau: true }); contratRecu(A.nom, 'colonnes devinées');
   dire(pluriel(lu.liaisons.length, 'liaison') + ' chargée' + (lu.liaisons.length > 1 ? 's' : '') + ' de ' + guillemets(A.nom) + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.'); }
@@ -232,7 +232,7 @@ function apercuLiaisonsHtml(L, max) { const cols = [['de', 'De'], ['borneDe', 'B
   return `<div class="vf-apercu"><table><thead><tr>${cols.map(([k, t]) => `<th${k === 'de' || k === 'vers' ? ' class="req"' : ''}>${t}</th>`).join('')}</tr></thead><tbody>${L.slice(0, max || 3).map(l => `<tr>${cols.map(([k]) => `<td${k === 'de' || k === 'vers' ? ' class="req"' : ''}>${esc(l[k] == null ? '' : l[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
     + (L.length > (max || 3) ? `<p class="vf-note">… et ${pluriel(L.length - (max || 3), 'autre liaison')}.</p>` : ''); }
 function attenteHtml() { const A = FICHIERS.attente; if (!A) return ''; const lu = lireAvecCarte(A.pleines, A.map, A.debut);
-  const dit = A.entete && A.devine ? `${esc(A.nom)} n’a pas les en-têtes du retest. J’ai compris : ${comprisHtml(A)}.` : `${esc(A.nom)} n’a pas d’en-têtes que je reconnaisse : je l’ai lu dans l’ordre du collage — ${comprisHtml(A)}.`;
+  const dit = A.entete && A.devine ? `${esc(A.nom)} n’a pas les en-têtes de l’installation. J’ai compris : ${comprisHtml(A)}.` : `${esc(A.nom)} n’a pas d’en-têtes que je reconnaisse : je l’ai lu dans l’ordre du collage — ${comprisHtml(A)}.`;
   const choix = FICHIERS.corriger ? `<div class="vf-carte-cols" role="group" aria-label="Le rôle de chaque colonne">${Array.from({ length: A.n }, (_, i) => { const role = ROLES.find(([k]) => A.map[k] !== '' && A.map[k] != null && +A.map[k] === i), ex = cellules(A.pleines[A.debut] || '')[i] || '';
       return `<label class="vf-col"><span class="vf-col-nom">${esc(A.entete ? A.entete[i] || 'colonne ' + (i + 1) : 'colonne ' + (i + 1))}</span><span class="vf-col-ex id">${esc(ex) || '—'}</span><select data-colonne="${i}" aria-label="${escA('Lire la colonne ' + (i + 1) + ' comme')}"><option value="">ignorer</option>${ROLES.map(([k, mot, en]) => `<option value="${k}"${role && role[0] === k ? ' selected' : ''}>${mot} (${en})</option>`).join('')}</select></label>`; }).join('')}</div>` : '';
   return `<div class="vf-boite vf-attente"><p>${dit}</p>${lu.liaisons.length ? apercuLiaisonsHtml(lu.liaisons, 3) : '<p class="vf-note">Avec ces colonnes, aucune ligne ne nomme ses deux bouts.</p>'}${lu.rejets.length ? `<p class="vf-note">${pluriel(lu.rejets.length, 'ligne')} sans ses deux bouts, laissée${lu.rejets.length > 1 ? 's' : ''} de côté.</p>` : ''}${choix}`
@@ -260,7 +260,7 @@ function lireCollage(texte) { const brutes = String(texte || '').split(/\r?\n/),
   if (!pleines.length) return { liaisons: [], rejets: [], comment: '' };
   const rt = trouverEnteteRetest(brutes);
   if (rt) { const r = lireTexte(texte), n = brutes.slice(rt.ligne + 1).filter(l => l.trim()).length - ((r.entetes || 1) - 1);   // les lignes sous les en-têtes
-    return { liaisons: r.liaisons, rejets: Array.from({ length: Math.max(0, n - r.liaisons.length) }), comment: 'reconnues à leurs en-têtes (le retest, ligne ' + r.entete + ')' }; }
+    return { liaisons: r.liaisons, rejets: Array.from({ length: Math.max(0, n - r.liaisons.length) }), comment: 'reconnues à leurs en-têtes (l’installation, ligne ' + r.entete + ')' }; }
   const D = devinerTableau(pleines), lu = lireAvecCarte(pleines, D.map, D.debut);
   return { ...lu, comment: D.entete && D.devine ? 'colonnes devinées à leurs en-têtes : ' + comprisHtml(D) : 'lues dans l’ordre ci-dessus' }; }
 /* Le plan sur la table reçoit les lignes (« Ajouter au plan ») ou les prend à la place des siennes (« Remplacer le plan » :
@@ -270,7 +270,7 @@ function ficheColler() { const ouvert = verite().length > 0 && !bibliothequeOuve
   /* Trois temps, l'un sous l'autre, groupés par l'espace : ce qu'on colle (l'ordre des colonnes, un exemple qu'on peut
      coller d'un clic), le champ, ce qui est compris. */
   const corps = tete('Sans fichier', 'Coller des lignes')
-    + '<p class="co-lead"><b>Une liaison par ligne</b>, copiée d’Excel ou tapée ; les colonnes séparées par une tabulation, <b>;</b> ou <b>,</b>. Sous les en-têtes du retest, elles sont reconnues à leur nom.</p>'
+    + '<p class="co-lead"><b>Une liaison par ligne</b>, copiée d’Excel ou tapée ; les colonnes séparées par une tabulation, <b>;</b> ou <b>,</b>. Sous les en-têtes de l’installation, elles sont reconnues à leur nom.</p>'
     + `<section class="co-bloc"><h3 class="co-etiquette">Sans en-têtes, dans cet ordre<small>seuls les deux équipements sont obligatoires</small></h3>`
     + `<ol class="co-ordre">${MODELE_COLLAGE.entetes.map((t, i) => `<li${MODELE_COLLAGE.requises.includes(t) ? ' class="req"' : ''}><i>${i + 1}</i>${esc(t)}</li>`).join('')}</ol></section>`
     + `<section class="co-bloc co-exemple"><h3 class="co-etiquette">Par exemple<button class="btn lien" id="co-essai">Coller cet exemple</button></h3>${apercuHtml(MODELE_COLLAGE)}</section>`
@@ -282,7 +282,7 @@ function ficheColler() { const ouvert = verite().length > 0 && !bibliothequeOuve
   const txt = $('co-txt'); let lu = { liaisons: [], rejets: [] }, t = 0;
   const voir = () => { lu = lireCollage(txt.value); const n = lu.liaisons.length, vide = !txt.value.trim(), box = $('co-apercu');
     box.innerHTML = vide ? '' : n ? `<h3 class="co-etiquette">Ce que je comprends</h3><p class="co-dit"><i class="co-point" aria-hidden="true"></i><span><b>${pluriel(n, 'liaison')}</b>, ${lu.comment}${lu.rejets.length ? ` · <span class="co-rejet">${pluriel(lu.rejets.length, 'ligne')} sans ses deux bouts, laissée${lu.rejets.length > 1 ? 's' : ''} de côté</span>` : ''}.</span></p>${apercuLiaisonsHtml(lu.liaisons, 4)}`
-      : `<div class="vf-boite vf-erreur"><p>Aucune liaison reconnue : chaque ligne doit nommer ses deux équipements, dans l’ordre ci-dessus (ou sous les en-têtes du retest). Vérifiez le séparateur.</p></div>`;
+      : `<div class="vf-boite vf-erreur"><p>Aucune liaison reconnue : chaque ligne doit nommer ses deux équipements, dans l’ordre ci-dessus (ou sous les en-têtes de l’installation). Vérifiez le séparateur.</p></div>`;
     $('co-champ').classList.toggle('erreur', !vide && !n); txt.setAttribute('aria-invalid', String(!vide && !n));
     ['co-ajouter', 'co-remplacer'].forEach(id => { const b = $(id); if (b) b.disabled = !n; });
     if ($('co-ajouter')) $('co-ajouter').textContent = n ? 'Ajouter ' + pluriel(n, 'liaison') + ' au plan' : 'Ajouter au plan'; };
@@ -346,7 +346,7 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
   const n = V.length, exemple = n && app.nom === NOM_EXEMPLE, R = FICHIERS.retest && FICHIERS.retest.nom === app.nom ? FICHIERS.retest : null, P = plans().length;
   E.retest = err('retest') ? { niveau: 'ko', dit: 'le dernier fichier n’a pas pu être ouvert' + (n && !exemple ? ' — ' + (app.nom || 'le plan') + ' reste ouvert' : '') }
     : FICHIERS.attente ? { niveau: 'att', dit: FICHIERS.attente.nom + ' attend « Charger »' }
-    : !n ? { niveau: 'vide', dit: 'aucun plan ouvert : la bibliothèque, ou votre retest' }
+    : !n ? { niveau: 'vide', dit: 'aucun plan ouvert : la bibliothèque, ou votre installation' }
     : exemple ? { niveau: 'vide', dit: 'l’exemple embarqué est ouvert — pas votre contrat' }
     : { niveau: 'ok', dit: lies([app.nom === 'Collage' ? 'des lignes collées' : app.nom || 'sans nom', R ? 'ouvert ' + quand(R.t) : '', pluriel(n, 'liaison'), P > 1 ? pluriel(P, 'folio') : '']) };
   const B = app.references, M = B && B.base ? B.base.meta : null, K = typeof BASE !== 'undefined' ? BASE : {};
@@ -409,18 +409,18 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
   const colonnes = (M, noms) => noms.map(n => M.entetes.indexOf(n)).filter(i => i >= 0);
   const nonRanges = app.references ? aRanger().length : 0;
   const C = [
-    { cle: 'bibliotheque', titre: 'Bibliothèque', depot: 'plans', grande: true, action: ['bibliotheque', 'Ouvrir la bibliothèque'], zone: ['ajouter-plans', 'vos retests'],
-      une: `<p><b>Un plan par retest</b>. Ceux qu’on glisse ici vont dans ${esc(guillemets(nomInstallCible()))}.</p>` },
-    { cle: 'retest', titre: 'Votre retest', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir un retest…'], zone: ['ouvrir', 'le retest'],
+    { cle: 'bibliotheque', titre: 'Bibliothèque', depot: 'plans', grande: true, action: ['bibliotheque', 'Ouvrir la bibliothèque'], zone: ['ajouter-plans', 'vos installations'],
+      une: `<p><b>Un plan par installation</b>. Ceux qu’on glisse ici vont dans ${esc(guillemets(nomInstallCible()))}.</p>` },
+    { cle: 'retest', titre: 'Votre installation', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir une installation…'], zone: ['ouvrir', 'l’installation'],
       une: `<p>Un Excel ou un CSV, <b>une ligne par câble</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’installation ouverte.</p>`,
       liens: [['pdf', 'Un schéma en PDF ? Le lire…'], ...(V.length ? [] : [['exemple', 'Pas de fichier sous la main ? Ouvrir l’exemple']])],
       boites: attenteHtml() + erreurHtml('retest') + avisHtml('retest'),
-      attend: { format: 'Les en-têtes sont reconnus par leur nom ; les autres colonnes du retest (Harness, PN, Route, FWD, longueur…) sont lues si elles sont là.',
-        apercu: apercuHtml(MODELE_RETEST, { label: 'Trois lignes d’exemple du retest', colonnes: colonnes(MODELE_RETEST, ['Device1', 'Pin1', 'Cable TG', 'Cable Tag', 'Device2', 'Pin2', 'FWD']) }),
+      attend: { format: 'Les en-têtes sont reconnus par leur nom ; les autres colonnes de l’installation (Harness, PN, Route, FWD, longueur…) sont lues si elles sont là.',
+        apercu: apercuHtml(MODELE_RETEST, { label: 'Trois lignes d’exemple de l’installation', colonnes: colonnes(MODELE_RETEST, ['Device1', 'Pin1', 'Cable TG', 'Cable Tag', 'Device2', 'Pin2', 'FWD']) }),
         ensuite: 'Ensuite, les folios se dessinent et chaque câble est jugé. Plusieurs harness : on vous demande lequel ouvrir.',
         gestes: [['modele-retest', 'Modèle (CSV)'], ['coller', 'Coller des lignes…']] } },
     { cle: 'base', titre: 'Contrats déjà faits', depot: 'base', grande: true, action: ['base', app.references ? 'Remplacer…' : 'Déposer la base…'], zone: ['base', 'la base'],
-      une: `<p>Le retest de tous vos contrats : un seul Excel, <b>une ligne par liaison</b>, et :</p>${clesBaseHtml()}`,
+      une: `<p>L’installation de tous vos contrats : un seul Excel, <b>une ligne par liaison</b>, et :</p>${clesBaseHtml()}`,
       liens: app.references ? [...(V.length && FICHIERS.succes !== 'base' ? [['deja-fait', 'Voir un équipement déjà fait']] : []), ...(V.length ? [['comparer-contrat', 'Comparer le plan ouvert au déjà-fait']] : []), ...(nonRanges ? [['ranger', 'Ranger ses ' + pluriel(nonRanges, 'harness') + ' dans la bibliothèque']] : []), ['chercher-base', 'Chercher dans la base'], ['oublier-base', 'Oublier la base']] : [],
       boites: oubliBaseHtml() + succesBaseHtml() + erreurHtml('base') + baseSansHarnessHtml() + avisHtml('base'),
       attend: { apercu: apercuHtml(MODELE_BASE, { label: 'Trois lignes d’exemple de la base', colonnes: colonnes(MODELE_BASE, ['Harness', 'FWD', 'Appareil', 'Device1', 'Pin1', 'Device2', 'Pin2']) }),
@@ -437,7 +437,7 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
     { cle: 'hypotheses', titre: 'Hypothèses', action: ['hypotheses', 'Régler…'] }];
   return C.map(o => (o.cle === 'bible' ? '<h3 class="vf-groupe">Facultatif<span>l’outil a les siens</span></h3>' : '') + carteHtml(o, E[o.cle], focus, primaire === o.cle)).join(''); }
 function fichiersHtml(focus) { return tete('Ce que l’outil a reçu', 'Vos fichiers')
-  + '<p class="vf-lead">Vos retests suffisent pour commencer : glissez chaque fichier sur son entrée.</p>'
+  + '<p class="vf-lead">Vos installations suffisent pour commencer : glissez chaque fichier sur son entrée.</p>'
   + `<div class="vf-cartes">${cartesFichiers(focus)}</div>`; }
 /* Ouvrir « Vos fichiers », sur une carte (`focus`) s'il y a lieu : elle vient sous les yeux, son volet ouvert. */
 function ficheFichiers(focus) { const deja = app.fiche && app.fiche.mode === 'fichiers', y = deja ? $('fiche-corps').scrollTop : 0;

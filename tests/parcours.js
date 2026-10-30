@@ -80,7 +80,7 @@ function fixtures(M) {
   const desc = r => { if (M.estMasse(r)) return 'MASSE'; const q = M.lireRepere(r); return q && M.CODES[q.code] ? M.CODES[q.code].nom.toUpperCase() : ''; };
   const ligne = (l, o) => [o.harness || HARNESS, l.de, l.borneDe, l.pnDe, desc(l.de), l.type, l.cable, l.route, l.vers, l.borneVers, l.pnVers, desc(l.vers), o.fwd ? o.fwd(l) : FWD(l.plan),
     o.longueur === null ? '' : 800 + (hache(l.cable + (o.k || 0)) % 52) * 100, o.appareil || APPAREIL, DATE];
-  const feuille = lignes => [['Retest du ' + DATE], ['Mémo : jeu d’essai des parcours — rien de réel'], [], ENTETE, ...lignes];
+  const feuille = lignes => [['Installation du ' + DATE], ['Mémo : jeu d’essai des parcours — rien de réel'], [], ENTETE, ...lignes];
   const csv = (nom, lignes) => { const f = path.join(dir, nom); fs.writeFileSync(f, feuille(lignes).map(r => r.join(';')).join('\n') + '\n'); return f; };
   const xlsx = (nom, feuilles) => { const wb = XLSX.utils.book_new(); feuilles.forEach(([titre, lignes]) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(feuille(lignes)), titre));
     const f = path.join(dir, nom); fs.writeFileSync(f, XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })); return f; };
@@ -114,7 +114,9 @@ function fixtures(M) {
    le technicien d'un clic sur l'installation « Exemple ». */
 async function ouvrirPage(ctx, exemple) { const page = await ctx.newPage(); page.setDefaultTimeout(120000); page.erreurs = []; page.on('pageerror', e => page.erreurs.push(e.message));
   await page.addInitScript(ETAT_DU_CONTROLE);
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && BIB.pret); if (exemple) await page.evaluate(() => atelier.exemple()); await instrumenter(page); return page; }
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && BIB.pret);
+  // (v74 : le parcours se juge sur l'exemple tel que la v73 l'ouvrait — le 10 A proposé, pas écrit ; la règle a son bloc dans disjoncteur.js)
+  await page.evaluate(() => { HYPOTHESES.calibreAuto = false; if (app.simu) app.simu.calibreAuto = false; }); if (exemple) await page.evaluate(() => atelier.exempleSansCalibreAuto()); await instrumenter(page); return page; }
 /* Les chronomètres dans la page : le placement d'un folio et le rendu d'une fiche (les fonctions globales du module 08 se
    remplacent par une version qui les mesure — rien d'autre ne change). */
 const instrumenter = page => page.evaluate(() => { if (window.__mes) return; window.__mes = { placement: [], fiche: [] };
@@ -215,7 +217,7 @@ function baseEssaiDansLaPage() {
   const grand = { viewport: { width: 1600, height: 950 } }, tel = { viewport: { width: 390, height: 844 }, hasTouch: true, deviceScaleFactor: 2 };
 
   /* ================================================================ A. UN CONTRAT NEUF ======================= */
-  await parcours('A. Un contrat neuf — la bibliothèque, une installation, le retest ajouté et ouvert, les folios, la recherche, une correction, la mémoire, les exports', async () => {
+  await parcours('A. Un contrat neuf — la bibliothèque, une installation, l’installation ajouté et ouvert, les folios, la recherche, une correction, la mémoire, les exports', async () => {
     const ctx = await nav.newContext(grand); let page = await ouvrirPage(ctx);
     let e = await etat(page);
     // le premier lancement montre la BIBLIOTHÈQUE, plus l'exemple ni une page qui explique : vide, deux
@@ -238,7 +240,7 @@ function baseEssaiDansLaPage() {
     e = await etat(page); mesure('ajouter neuf.xlsx (64 lignes) à une installation, l’ouvrir, jusqu’au plan dessiné', tOuvrir, SEUIL_FOLIO); mesure('dont le placement du premier folio', tPlacement);
     ok(e.folios === 3 && e.plan === FWD(1) && e.n === X.neufL.length, 'trois folios, le premier affiché, 64 liaisons', e.plan + ' · ' + e.lbl);
     const herite = await page.evaluate(() => ({ charges: [...app.contrat.charges.keys()], designations: app.contrat.designations.size, sexes: app.contrat.sexes.size, raccords: app.contrat.raccords.size }));
-    frottement(!herite.charges.length && !herite.designations && !herite.sexes && !herite.raccords, 'les choix du contrat d’avant survivent à l’ouverture d’un nouveau fichier', 'le profil de charge de l’exemple (102CB1 : 9,31 A pendant 2 min) s’applique au 102CB1 du nouveau retest, qui n’en a pas : l’en-tête lui compte des problèmes qui ne sont pas les siens ; désignations, sexes des contacts et raccords survivraient de même (ici : charges ' + herite.charges.join(',') + ')',
+    frottement(!herite.charges.length && !herite.designations && !herite.sexes && !herite.raccords, 'les choix du contrat d’avant survivent à l’ouverture d’un nouveau fichier', 'le profil de charge de l’exemple (102CB1 : 9,31 A pendant 2 min) s’applique au 102CB1 du nouveau installation, qui n’en a pas : l’en-tête lui compte des problèmes qui ne sont pas les siens ; désignations, sexes des contacts et raccords survivraient de même (ici : charges ' + herite.charges.join(',') + ')',
       'bloquant', '08-interface.js `chargerContrat` (et l’action « vider ») : repartir de `nouveauContrat()` en gardant le cartouche — designations, sexes, charges, raccords vides ; `relire()` les rend quand on rouvre SON contrat');
     ok(/«\s?neuf\s?» ajouté à «\s?Antenne VHF\s?»/.test(O.ajout) && /64\sliaisons/.test(O.ajout) && /3\sfolios/.test(O.ajout), 'le message de l’ajout dit le plan, son installation, ses liaisons et ses folios', O.ajout);
     ok(await page.evaluate(() => $('en-install').textContent === 'Antenne VHF' && $('en-plan').textContent === 'neuf'), 'le fil de la barre du haut : « Antenne VHF / neuf »');
@@ -311,7 +313,7 @@ function baseEssaiDansLaPage() {
   await parcours('B. Je pars d’un contrat déjà fait — la base, « Déjà fait », le FWD à trois échelles, reprendre, revérifier, Ctrl+Z, les « ? »', async () => {
     const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx);
     await page.evaluate(baseEssaiDansLaPage); await page.waitForTimeout(300);
-    const tOuvrir = await ouvrirParBouton(page, 'menu', X.neuf); mesure('ouvrir le retest proche (neuf.xlsx) avec une base de 4 machines', tOuvrir, SEUIL_FOLIO);
+    const tOuvrir = await ouvrirParBouton(page, 'menu', X.neuf); mesure('ouvrir l’installation proche (neuf.xlsx) avec une base de 4 machines', tOuvrir, SEUIL_FOLIO);
     // sur chaque fiche du folio 1 : « Déjà fait » propose la machine la plus proche, en premier
     const deja = [];
     for (const nom of X.neufFolio1) { await cliquerBloc(page, nom);
@@ -348,7 +350,7 @@ function baseEssaiDansLaPage() {
     ok(R.cle !== avant.cle, 'le contrôle a été refait sur le contrat repris', avant.etat + ' → ' + R.etat);
     frottement(!R.longueurs.some(x => x === 2.5), 'la longueur de fil de l’autre machine est copiée telle quelle', 'les lignes reprises portent 2,5 m, la longueur mesurée sur H-1 : une autre machine, une autre longueur — la chute se calcule sur un chiffre qui n’est pas le nôtre, sans le dire',
       'gênant', '09-references.js `liaisonsAReprendre` / `liaisonsDEnsembleAReprendre` : ne pas copier `longueur` (laisser l’hypothèse, qui est dite), ou la marquer « longueur de H-1 » sur la fiche du fil');
-    note('ce qui n’est PAS repris (on repart de zéro) : le numéro de fil (voulu : la plage maison n’est pas connue), le raccord, le sexe des contacts, le calibre et le profil du disjoncteur de l’autre machine — la base ne garde que les liaisons du retest ; routes reprises : ' + R.routes.join(', '));
+    note('ce qui n’est PAS repris (on repart de zéro) : le numéro de fil (voulu : la plage maison n’est pas connue), le raccord, le sexe des contacts, le calibre et le profil du disjoncteur de l’autre machine — la base ne garde que les liaisons de l’installation ; routes reprises : ' + R.routes.join(', '));
     await capture(page, 'B-4-reprise');
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
     ok(await page.evaluate(n => verite().length === n && !app.dessin.comps.some(c => c.name === '305XX9'), avant.n), 'Ctrl+Z défait la reprise, 305XX9 quitte le plan');
@@ -417,8 +419,8 @@ function baseEssaiDansLaPage() {
     // la fiche s'ouvre pliée : « Calibre » se déplie d'un clic ; l'automatique y est déjà retenu (le lecteur, v62 : « commence directement par l'automatique »)
     await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="disjoncteur"]'); if (!d.open) d.querySelector('summary').click(); }); await page.waitForTimeout(500);
     e = await etat(page);
-    ok(await page.evaluate(() => calibreDe('102CB1') === 15 && !!$('dj-retenir') && $('dj-retenir').getAttribute('aria-pressed') === 'true' && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'att' && /^le retest porte un 10 A \(MS3320-10\), juste — il touche la courbe : l’outil retient le 15 A \(MS3320-15\)$/.test(x.texte)) && !CONTROLE.items.some(x => x.nom === '102CB1' && /ne passe pas/.test(x.texte))),
-      'la fiche de 102CB1, « Calibre » déplié d’un clic : le 15 A, l’automatique, déjà retenu (« Automatique » pressé, rien à cliquer) ; le contrôle dit que le retest porte un 10 A JUSTE — il touche la courbe (les trois mots, v73 : test mis à jour, « qui ne passe pas »)', e.enEtat);
+    ok(await page.evaluate(() => calibreDe('102CB1') === 15 && !!$('dj-retenir') && $('dj-retenir').getAttribute('aria-pressed') === 'true' && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'att' && /^l’installation porte un 10 A \(MS3320-10\), juste — il touche la courbe : l’outil retient le 15 A \(MS3320-15\)$/.test(x.texte)) && !CONTROLE.items.some(x => x.nom === '102CB1' && /ne passe pas/.test(x.texte))),
+      'la fiche de 102CB1, « Calibre » déplié d’un clic : le 15 A, l’automatique, déjà retenu (« Automatique » pressé, rien à cliquer) ; le contrôle dit que l’installation porte un 10 A JUSTE — il touche la courbe (les trois mots, v73 : test mis à jour, « qui ne passe pas »)', e.enEtat);
     await capture(page, 'C-3b-102CB1-15A');
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(500);
     e = await etat(page); ok(e.enEtat === enEtat0, 'Ctrl+Z : l’en-tête redit l’état du départ', e.enEtat);
@@ -531,12 +533,12 @@ function baseEssaiDansLaPage() {
     await ctx.close(); });
 
   /* ================================================================ E. LES CAS LIMITES ====================== */
-  await parcours('E. Les cas limites — vide, une ligne, sans part numbers, codes inconnus, plusieurs feuilles, deux harness, le gros retest', async () => {
+  await parcours('E. Les cas limites — vide, une ligne, sans part numbers, codes inconnus, plusieurs feuilles, deux harness, le gros installation', async () => {
     const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx, true); await page.waitForTimeout(300);
     const n0 = (await etat(page)).n;
     // un retest vide (les en-têtes, aucune ligne)
     await deposerParEntree(page, X.vide); let T = await toast(page), e = await etat(page);
-    ok(T.erreur && /aucune liaison/.test(T.texte) && e.n === n0 && e.nom === 'Contrat d’exemple', 'un retest vide : le message le dit, le contrat ouvert reste', T.texte);
+    ok(T.erreur && /aucune liaison/.test(T.texte) && e.n === n0 && e.nom === 'Contrat d’exemple', 'une installation vide : le message le dit, le contrat ouvert reste', T.texte);
     // une seule ligne
     await deposerParEntree(page, X.uneLigne); await page.waitForFunction(() => app.nom === 'une-ligne.csv'); e = await etat(page);
     ok(e.n === 1 && e.folios <= 1 && await page.evaluate(() => !!app.dessin && app.dessin.fils.length === 1 && $('fo-part').hidden && /^1\sliaison · 2\srepères$/.test($('ctx-txt').textContent)), 'une seule ligne : un fil dessiné, pas de barre de folios, « 1 liaison · 2 repères »', e.enSous);
@@ -559,7 +561,7 @@ function baseEssaiDansLaPage() {
     await deposerParEntree(page, X.feuilles); await page.waitForTimeout(600); e = await etat(page); T = await toast(page);
     const F2 = await page.evaluate(() => ({ harnais: [...new Set(verite().map(l => l.harness))], refs: app.references ? app.references.index.harnais.size : 0 }));
     frottement(F2.harnais.length === 2 || F2.refs === 2 || /feuille/.test(T.texte), 'un Excel à deux feuilles (un harness par feuille) : seule la première est lue, sans le dire', 'le contrat ouvert porte ' + e.n + ' liaisons du harness ' + F2.harnais.join(',') + ' ; la feuille H-B est ignorée en silence (`texteDuFichier` lit `wb.SheetNames[0]`)',
-      'gênant', '02-lecture.js `texteDuFichier` : lire chaque feuille qui porte les en-têtes du retest et les enchaîner (le harness distingue déjà les machines), ou dire « 2 feuilles, seule « H-A » est lue »');
+      'gênant', '02-lecture.js `texteDuFichier` : lire chaque feuille qui porte les en-têtes de l’installation et les enchaîner (le harness distingue déjà les machines), ou dire « 2 feuilles, seule « H-A » est lue »');
     // un fichier à deux harness (une feuille) : la base, et pas de contrat
     const nAvant = (await etat(page)).n; await deposerParEntree(page, X.deuxHarness); await page.waitForTimeout(600); e = await etat(page); T = await toast(page);
     ok(await page.evaluate(() => app.references && app.references.index.harnais.size === 2) && e.n === nAvant && /contrats déjà faits/.test(T.texte), 'deux harness dans une feuille : gardés comme contrats déjà faits, le contrat ouvert ne change pas, le message le dit', T.texte);
@@ -571,9 +573,9 @@ function baseEssaiDansLaPage() {
     await deposer(page, X.uneLigne); await page.waitForFunction(() => app.nom === 'une-ligne.csv'); ok(await page.evaluate(() => window.__depotVu === true && app.nom === 'une-ligne.csv'), 'glisser un fichier sur la fenêtre : la cible de dépôt s’allume, le fichier s’ouvre');
     ok(!page.erreurs.length, 'aucune erreur console sur les cas limites', page.erreurs.slice(0, 3).join(' | '));
     await ctx.close();
-    if (SANS_GROS) { note('le gros retest n’a pas été joué (--sans-gros)'); return; }
+    if (SANS_GROS) { note('le gros installation n’a pas été joué (--sans-gros)'); return; }
     /* ---- LE GROS RETEST : 1 500 lignes, 20 folios ---- */
-    console.log('\n  — le gros retest : ' + X.grosN + ' lignes, ' + X.grosFolios + ' folios —');
+    console.log('\n  — le gros installation : ' + X.grosN + ' lignes, ' + X.grosFolios + ' folios —');
     const ctx2 = await nav.newContext(grand), p2 = await ouvrirPage(ctx2); await p2.waitForTimeout(300);
     const tGros = await ouvrirParBouton(p2, 'menu', X.gros); const pl1 = await derniere(p2, 'placement'); e = await etat(p2);
     ok(e.n === X.grosN && e.folios === X.grosFolios && e.plan === FWD(1), X.grosN + ' liaisons lues, 20 folios (les dessins du fichier), le premier affiché', e.enSous);
@@ -619,7 +621,7 @@ function baseEssaiDansLaPage() {
     ok(A.worker === 'oui' && A.visible && /affin/.test(A.texte), 'l’affinage tourne en Worker, le point respire dans la barre du bas', A.texte);
     t0 = Date.now(); await p2.click('#zin'); await p2.waitForTimeout(50); const tz = Date.now() - t0; mesure('un zoom pendant l’affinage (l’écran répond ?)', tz, 300);
     await capture(p2, 'E-5-gros-affinage');
-    ok(!p2.erreurs.length, 'aucune erreur console sur le gros retest', p2.erreurs.slice(0, 3).join(' | '));
+    ok(!p2.erreurs.length, 'aucune erreur console sur le gros installation', p2.erreurs.slice(0, 3).join(' | '));
     await ctx2.close(); });
 
   /* ================================================================ LE BILAN ================================ */
