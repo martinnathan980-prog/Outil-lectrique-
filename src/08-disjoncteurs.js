@@ -133,7 +133,8 @@ function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit0 = profil && p
   const ecrit = ecrit0 || (pn && pnChangeIci(nom) && !pnDeVolta(nom) && pn !== passe ? pn : null);
   // LA RÈGLE DU LECTEUR (v74) : « dès que ça touche la courbe, on ne prend pas ; on prend que quand ça ne touche pas » —
   // le calibre du fichier est gardé s'il PASSE (avec la marge) ; sinon, le plus petit qui passe
-  const gPn0 = pn && !d.sansProfil ? (d.gamme || []).find(g => g.calibre === pn) : null, pnPasse = gPn0 && cleDuVerdict(gPn0) === 'passe' ? pn : null;
+  // (le calibre que Volta a écrit lui-même n'est pas celui du fichier : il suit le profil)
+  const gPn0 = pn && !d.sansProfil && !pnDeVolta(nom) ? (d.gamme || []).find(g => g.calibre === pn) : null, pnPasse = gPn0 && cleDuVerdict(gPn0) === 'passe' && !(passe > pn) ? pn : null;   // (plus petit que le meilleur : la sélectivité ou un câble le refuse)
   const calibre = ecrit || pnPasse || passe || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, courbe, calibre, profil, contexte);
   const chutePropre = chuteDuDisjoncteur(app.norme, famille, calibre);
   // le part number du retest jugé à son tour (passe-t-il ?) quand l'outil en retient un autre
@@ -157,7 +158,10 @@ function appliquerCalibresVolta() { if (!app.norme || !verite().length || (app.s
   const noms = [...new Set(verite().flatMap(l => [l.de, l.vers]).filter(r => r && estDisjoncteur(r)))];
   noms.forEach(nom => { let d; try { d = disjonctionDe(nom); } catch (_) { return; }
     if (d.origine === 'main' || d.sansProfil || d.sansCourbe || !d.famille || !(d.pn > 0) || !(d.passe > 0) || d.calibre !== d.passe || d.pn === d.passe) return;
-    const pn = pnDuRepere(nom), nouveau = pnAvecCalibre(pn, d.famille, d.passe); if (!nouveau || nouveau === pn) return;
+    // un calibre que Volta avait écrit, quand le profil change : celui du fichier revient s'il passe désormais
+    const pn = pnDuRepere(nom), o = pnDeVolta(nom) ? origineDuCalibre(nom, d) : null, gF = o && o.calRetest ? (d.gamme || []).find(g => g.calibre === o.calRetest) : null;
+    if (gF && cleDuVerdict(gF) === 'passe' && o.pnRetest) { verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l.avant && ch in l.avant) poserChamp(l, ch, l.avant[ch]); })); n++; return; }
+    const nouveau = pnAvecCalibre(pn, d.famille, d.passe); if (!nouveau || nouveau === pn) return;
     const xs = d.passe === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
     avecOrigineVolta(() => { verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
       xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); });

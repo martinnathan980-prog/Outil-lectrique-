@@ -89,7 +89,8 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
   // feuille Modifications, et Volta le relit à l'identique
   const R3 = await p.evaluate(async () => {
     const out = []; const ok = (n, c, d) => out.push((c ? '  ok   ' : '  KO   ') + n.padEnd(52) + (d || ''));
-    atelier.exemple(); await new Promise(r => setTimeout(r, 500));
+    // (l'exemple tel que la v73 l'ouvrait : la feuille Modifications n'y compte que les deux écritures à la main)
+    atelier.exempleSansCalibreAuto(); await new Promise(r => setTimeout(r, 500));
     changerLiaison(verite().find(x => x.cable === 'W-012'), 'type', 'DR16', 'essai'); changerLiaison(verite().find(x => x.cable === 'W-013'), 'longueur', 3.25, 'essai');
     const R = classeurRetestCorrige(verite(), app.nom), ws = R.wb.Sheets.Retest, rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }), i = rows.findIndex(x => x[6] === 'W-012');
     const com = (ws[XLSX.utils.encode_cell({ r: i, c: 5 })].c || [])[0], M = XLSX.utils.sheet_to_json(R.wb.Sheets.Modifications, { header: 1 }).slice(1).map(x => x.join('|'));

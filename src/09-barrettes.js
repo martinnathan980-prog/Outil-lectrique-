@@ -1721,7 +1721,7 @@ function nomenclatureDe(fils) { const m = new Map();
 /* LE CONTACT À SERTIR d'un fil, tel qu'un plan le pose (`sertir`) : la référence et l'accessoire de la ligne Contacts, son
    statut (« à confirmer » pour une référence que la recherche R1 n'a pas pu vérifier), le fût lu dans la référence (le
    courant en dépend), l'outillage (pince, positionneur, insertion) quand la table le connaît. */
-const sertirDe = (norme, st) => st ? { reference: st.reference, accessoire: st.accessoire, statut: st.statut || '', confiance: st.confiance || '', fut: (futDeContact(st.reference) || {}).fut != null ? futDeContact(st.reference).fut : null, outillage: outillageDuContact(norme, st.reference) } : null;
+const sertirDe = (norme, st) => st ? { reference: st.reference, accessoire: st.accessoire, statut: st.statut || '', confiance: st.confiance || '', fut: (futDeContact(st.reference) || {}).fut != null ? futDeContact(st.reference).fut : null, outillage: outillageDuContact(norme, st.reference), note: st.note || '', source: st.source || st.origine || '' } : null;
 /* Les entrées de bible d'une norme de modules : une par variante — ses groupes sont les « bornes » qu'elle offre. */
 function bibleDesModules(norme) {
   return normeDesModules(norme).modules.map(m => { const ts = [...new Set(m.contacts.map(c => c.taille))].map(t => tailleDe(norme, m.famille, t)).filter(Boolean);

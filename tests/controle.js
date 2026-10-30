@@ -210,7 +210,7 @@ function titre(t) { console.log('\n' + t); }
   /* ---- 8. LA VÉRITÉ (v73, domaine C) : un seul compte, une seule chute, les problèmes du câble et leur cause, deux part
      numbers, trois mots de verdict, le disjoncteur rangé à part dans la nomenclature, le dossier qui dit ses hypothèses */
   titre('8. LA VÉRITÉ : UN COMPTE, UNE CHUTE, LE CÂBLE ET SA CAUSE');
-  const V8 = await page.evaluate(async () => { const r = {}; atelier.exemple(); await new Promise(f => setTimeout(f, 600)); rendreControle();
+  const V8 = await page.evaluate(async () => { const r = {}; atelier.exempleSansCalibreAuto(); await new Promise(f => setTimeout(f, 600)); rendreControle();
     const C = compteProblemes(), xs = CONTROLE.items, p = document.querySelector('#btnIndex .rd-point');
     r.compte = { ko: C.ko, att: C.att, mot: C.mot, items: xs.length, nko: xs.filter(x => x.niveau === 'ko').length, pastille: p ? p.textContent : '', aria: document.getElementById('btnIndex').getAttribute('aria-label') };
     CONTROLE.pas = null; problemeSuivant(1); r.p1 = document.getElementById('toast').textContent;
@@ -247,7 +247,7 @@ function titre(t) { console.log('\n' + t); }
   ok('« Passer en DR12 » seul : W-012 garde la CAUSE en ambre (le 10 A du retest), avec « Tout régler »', !!V8.cause && V8.cause.niveau === 'att' && /102CB1 : le 10 A du retest/.test(V8.cause.texte) && /^Tout régler : 102CB1 en 15 A/.test(V8.cause.geste || '') && /ko/.test(V8.w015), V8.cause ? V8.cause.texte + ' · ' + V8.cause.geste : 'aucune cause');
   ok('« Tout régler » écrit le 15 A — une proposition de Volta (l’origine) — et la cause s’en va', !V8.apres.cause && V8.apres.pn === 'MS3320-15' && /volta/.test(V8.apres.origine), JSON.stringify(V8.apres));
   ok('deux part numbers sur 102CB1 : un problème, « Unifier sur… » qui le règle', V8.pn.niveau === 'ko' && /deux part numbers/.test(V8.pn.texte || '') && /^Unifier sur /.test(V8.pn.gestes) && !V8.pnApres, (V8.pn.texte || '') + ' · ' + V8.pn.gestes);
-  const V9 = await page.evaluate(async () => { const r = {}; atelier.exemple(); await new Promise(f => setTimeout(f, 400));
+  const V9 = await page.evaluate(async () => { const r = {}; atelier.exempleSansCalibreAuto(); await new Promise(f => setTimeout(f, 400));
     const d = disjonctionDe('102CB1'), mot = c => { const g = d.gamme.find(x => x.calibre === c); return (verdictDeCalibre(g) || {}).mot; };
     r.mots = [5, 10, 15].map(mot); r.pourquoi = (pourquoiDuCalibre(app.norme, d, 5) || {}).phrase || '';
     const E = explication('calibre', { verdict: d, calibre: d.calibre, origine: d.origine, meilleur: d.passe }); r.gamme = (E.etapes || []).join(' ');

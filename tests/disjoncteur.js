@@ -152,7 +152,7 @@ const FICHIER = P.fichierDemande();
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
   const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); page.setDefaultTimeout(120000);
   const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur la bibliothèque (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exempleSansCalibreAuto());   // (v74 : la carte de décision, l'hypothèse « Volta écrit le calibre » décochée — la règle v74 a son bloc, à la fin) l’outil s’ouvre sur la bibliothèque (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
   const ouvrir = async () => { await page.evaluate(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500); };
   await ouvrir();
   // LE FOLIO : 102CB1 a sa forme, pas la boîte d'un équipement — aux ports d'un équipement, choisi à l'encre (« Graphite »)
@@ -383,6 +383,23 @@ const FICHIER = P.fichierDemande();
   ok(sym.every(([, r]) => r.dedans && r.chev === 0 && r.rep), 'les textes (repère, calibre, numéros de borne) restent dans le corps réservé au bloc et ne se chevauchent pas', sym.filter(([, r]) => !r.dedans || r.chev).map(([k, r]) => k + ' ' + r.textes.join('/')).join(' | '));
   ok(C.poles.lettres === 'A1/A2 B1/B2 C1/C2' && C.poles.nombres === '1/2 3/4 5/6' && C.poles.lt === 'L1/T1 L2/T2' && C.poles.ligne === 'LINE/LOAD' && C.poles.trois === '1/2 3',
     'les pôles : A1/A2 par la lettre, 1/2 3/4 5/6 deux à deux, L1/T1 par le chiffre, LINE/LOAD ensemble, 1 2 3 → 1/2 et 3 seul', JSON.stringify(C.poles));
+  /* v74 — LA RÈGLE DU LECTEUR : « dès que ça touche la courbe, on ne prend pas ; tu mets directement le calibre qui marche ;
+     on garde automatique / manuel et la possibilité de revenir » — et la consommation de chaque équipement, écrite à la
+     main, fait le profil du disjoncteur qui l'alimente. */
+  console.log('\nLA RÈGLE v74 : le calibre qui passe, écrit dès l’ouverture ; la consommation des équipements');
+  const V74 = await page.evaluate(() => { fermerFiche(true); atelier.exemple(); const d = disjonctionDe('102CB1'), r = {};
+    r.ouvert = { pn: pnDuRepere('102CB1'), cal: d.calibre, origine: d.origine, carte: !!carteDecision('102CB1', d, 0), w011: verite().find(x => x.cable === 'W-011').type, volta: pnDeVolta('102CB1') };
+    retenirCalibre('102CB1', 10); r.main = { pn: pnDuRepere('102CB1'), cal: calibreDe('102CB1'), origine: disjonctionDe('102CB1').origine };
+    rendreCalibre('102CB1'); r.auto = { pn: pnDuRepere('102CB1'), cal: calibreDe('102CB1') };
+    app.contrat.charges.delete('102CB1'); ecrireConso('103RL1', 'perm', '2'); ecrireConso('103RL1', 'dem', '9'); ecrireConso('103RL1', 'demt', '3');
+    const p = chargeDe('102CB1'); r.conso = { somme: (p && p.somme || []).join(), perm: p && p.perm && p.perm.i, dem: p && p.dem && p.dem.i + '/' + p.dem.t, cal: calibreDe('102CB1'), pn: pnDuRepere('102CB1'), djs: disjoncteursDe('103RL1').join() };
+    return r; });
+  ok(V74.ouvert.pn === 'MS3320-15' && V74.ouvert.cal === 15 && V74.ouvert.origine !== 'main' && !V74.ouvert.carte && V74.ouvert.w011 === 'DR12' && V74.ouvert.volta,
+    'à l’ouverture, le 10 A qui touche la courbe est remplacé : MS3320-15 écrit (case « Volta »), W-011 grossi en DR12, plus de carte de décision', JSON.stringify(V74.ouvert));
+  ok(V74.main.pn === 'MS3320-10' && V74.main.cal === 10 && V74.main.origine === 'main' && V74.auto.pn === 'MS3320-15' && V74.auto.cal === 15,
+    '« À la main » garde le 10 A (le choix du lecteur) ; « Automatique » réécrit le 15 A', JSON.stringify([V74.main, V74.auto]));
+  ok(V74.conso.somme === '103RL1' && V74.conso.perm === 2 && V74.conso.dem === '9/3' && V74.conso.djs === '102CB1' && V74.conso.cal === 10 && V74.conso.pn === 'MS3320-10',
+    'la consommation de 103RL1 (2 A, 9 A pendant 3 s) fait le profil de 102CB1 : le 10 A du fichier passe désormais, il revient', JSON.stringify(V74.conso));
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   await nav.close();
   console.log('\n' + (echecs ? echecs + ' échec(s) sur ' + total : total + ' / ' + total + ' contrôles passés — tout est vert'));

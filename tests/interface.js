@@ -30,7 +30,8 @@ const FICHIER = P.fichierDemande();
     console.log('\n' + titre);
     const page = await nav.newPage({ viewport: vp }); page.setDefaultTimeout(300000);
     const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, true)))); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur la bibliothèque : la batterie, qui lit l’exemple, le demande ; les fiches s'ouvrent pliées : la batterie ouvre leurs sections
+    // (v74 : ces écrans se jugent sur l'exemple tel que la v73 l'ouvrait — le 10 A proposé, pas écrit ; la règle du calibre a son bloc dans disjoncteur.js)
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, true)))); await page.evaluate(() => atelier.exempleSansCalibreAuto());   // l’outil s’ouvre sur la bibliothèque : la batterie, qui lit l’exemple, le demande ; les fiches s'ouvrent pliées : la batterie ouvre leurs sections
     await page.evaluate(() => { app.plan = '1'; if (app.base.ouvert) fermerBase(); redessiner(); ajuster(); }); await page.waitForTimeout(400);
     /* la feuille à l'écran, et ce qui la recouvre : le tableau, le volet épinglé, le tiroir du téléphone. La CARTE (v72,
        08-carte) flotte sur le plan sans lui prendre de place : elle ne doit cacher que du plan, jamais son bloc */
@@ -130,7 +131,7 @@ const FICHIER = P.fichierDemande();
      ouvre la fiche, l'onglet se garde, le CSV suit les colonnes. */
   console.log('\nle récapitulatif');
   { const page = await nav.newPage({ viewport: { width: 1440, height: 900 } }); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, true)))); await page.evaluate(() => atelier.exemple());   // les fiches s'ouvrent pliées : la batterie lit leurs sections
+    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, true)))); await page.evaluate(() => atelier.exempleSansCalibreAuto());   // les fiches s'ouvrent pliées : la batterie lit leurs sections
     await page.evaluate(() => { app.plan = '1'; redessiner(); ajuster(); }); await page.keyboard.press('b'); await page.waitForTimeout(500);
     const entetes = () => page.evaluate(() => [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent.replace(/[▲▼]/g, '').trim()).filter(Boolean).join(' · '));
     const onglets = await page.evaluate(() => [...document.querySelectorAll('#ba-onglets .rc-onglet span')].map(s => s.textContent).join(' · '));
@@ -196,7 +197,7 @@ const FICHIER = P.fichierDemande();
   // chaque dédoublement : une vraie barrette, une borne par fil, jamais deux fils au même niveau
   console.log('\nbarrettes à poser');
   const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, true)))); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur la bibliothèque : la batterie, qui lit l’exemple, le demande ; les fiches s'ouvrent pliées : la batterie ouvre leurs sections
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, true)))); await page.evaluate(() => atelier.exempleSansCalibreAuto());   // l’outil s’ouvre sur la bibliothèque : la batterie, qui lit l’exemple, le demande ; les fiches s'ouvrent pliées : la batterie ouvre leurs sections
   // une ligne du menu ⋮ : le menu, puis le sous-menu qui la porte s'il y a lieu (Exporter, Plus s'ouvrent en place), puis elle
   const parLeMenu = async act => { await page.click('#btnMenu');
     const sous = await page.evaluate(a => { const p = document.querySelector(`#menu [data-act="${a}"]`).closest('.menu-panneau'); return p.id === 'mp-principal' ? '' : p.id.slice(3); }, act);
@@ -221,7 +222,7 @@ const FICHIER = P.fichierDemande();
     return { x: r.left + app.vue.tx + b.x * app.vue.s, y: r.top + app.vue.ty + (bs[0].y + bs[1].y) / 2 * app.vue.s }; });
   await page.mouse.click(vt1.x, vt1.y); await page.waitForTimeout(400);
   ok(await page.evaluate(() => app.cible && app.cible.nom === 'VT1' && !$('inspecteur').hidden), 'un clic sur la barrette VT1 ouvre sa fiche');
-  ok(await page.evaluate(() => /à poser/i.test($('ba-equip').textContent) && $('ba-equip').querySelectorAll('.fi-fil').length === 3), 'la fiche de VT1 : à poser, trois bornes');
+  ok(await page.evaluate(() => /ajoutée par Volta/i.test($('ba-equip').textContent) && $('ba-equip').querySelectorAll('.fi-fil').length === 3), 'la fiche de VT1 : à poser, trois bornes');
   await page.fill('#eq-rep', '102VT9'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(800);
   ok(await page.evaluate(() => { const L = app.contrat.liaisons.filter(l => l.de === '102VT9' || l.vers === '102VT9');
     return L.length === 5 && L.some(l => l.de === '102CB1' && l.borneDe === '2' && l.borneVers === '1' && !l.cable) && app.dessin.comps.some(c => c.name === '102VT9') && !app.dessin.barrettes.some(b => b.nomVT === 'VT1'); }),
@@ -479,12 +480,12 @@ const FICHIER = P.fichierDemande();
   console.log('\nles corrections de l’audit v72 : le parcours');
   await page.close();
   { const page = await nav.newPage({ viewport: { width: 1440, height: 900 } }); page.setDefaultTimeout(300000); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && BIB.pret); await page.evaluate(() => atelier.exemple());
+    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && BIB.pret); await page.evaluate(() => atelier.exempleSansCalibreAuto());
     await page.evaluate(() => { app.plan = '1'; redessiner(); ajuster(); }); await page.waitForTimeout(300);
     // les genres : l'index (R) les range, chacun son compte, « Voir le premier », le geste qui le traite
     await page.click('#btnIndex .rd-point'); await page.waitForTimeout(400);
     const G = await page.evaluate(() => ({ ouvert: document.querySelector('#ba-equip .ix-controle').open, genres: [...document.querySelectorAll('#ba-equip .co-genre')].map(g => g.dataset.genre + ':' + g.querySelector('.co-n').textContent + ':' + !!g.querySelector('[data-premier]') + ':' + ((g.querySelector('[data-geste]') || {}).textContent || '')) }));
-    ok(G.ouvert && G.genres.length === 8 && G.genres.every(g => /:true:/.test(g)) && G.genres.includes('att|aposer:3:true:Toutes les poser') && G.genres.includes('att|chute:2:true:Écrire les longueurs') && G.genres.includes('att|calibre:1:true:Voir les disjoncteurs'),
+    ok(G.ouvert && G.genres.length === 8 && G.genres.every(g => /:true:/.test(g)) && G.genres.includes('att|aposer:3:true:Leur donner leur repère') && G.genres.includes('att|chute:2:true:Écrire les longueurs') && G.genres.includes('att|calibre:1:true:Voir les disjoncteurs'),
       'un clic sur le compte rouge ouvre l’index sur les problèmes, par genre : chacun son compte, « Voir le premier », et le geste qui le traite (« Toutes les poser », « Écrire les longueurs », « Voir les disjoncteurs » — le calibre du retest, juste, est À VOIR : v73, test mis à jour)', G.genres.join(' | '));
     await page.click('#ba-equip .co-genre[data-genre="ko|arrangement"] [data-premier]'); await page.waitForTimeout(700);
     const P1 = await page.evaluate(() => ({ plan: app.plan, cible: app.cible && app.cible.nom, mot: $('toast').textContent }));
@@ -505,7 +506,7 @@ const FICHIER = P.fichierDemande();
     // l'onglet Problèmes du récapitulatif : les mêmes genres, en intercalaires, leurs gestes
     await page.evaluate(() => { fermerInspecteur(); app.base.portee = 'tout'; changerOnglet('problemes'); }); await page.waitForTimeout(500);
     const R = await page.evaluate(() => ({ genres: [...document.querySelectorAll('#ba-tbody tr.rc-genre')].map(t => t.querySelector('.rc-genre-mot').textContent), premier: document.querySelectorAll('#ba-tbody tr.rc-genre [data-premier]').length, gestes: [...document.querySelectorAll('#ba-tbody tr.rc-genre [data-geste]')].map(b => b.textContent) }));
-    ok(R.genres.length === 8 && R.premier === 8 && R.genres[0] === 'connecteur qu’aucun arrangement ne loge' && R.gestes.includes('Toutes les poser'), 'l’onglet Problèmes range ses lignes par genre : un intercalaire chacun, « Voir le premier », son geste', R.genres.join(' | '));
+    ok(R.genres.length === 8 && R.premier === 8 && R.genres[0] === 'connecteur qu’aucun arrangement ne loge' && R.gestes.includes('Leur donner leur repère'), 'l’onglet Problèmes range ses lignes par genre : un intercalaire chacun, « Voir le premier », son geste', R.genres.join(' | '));
     // l'export dit sa portée et propose « Tout »
     await page.evaluate(() => { app.base.portee = 'folio'; changerOnglet('liaisons'); allerAuPlan('1'); rendreBase(true); }); await page.waitForTimeout(400);
     const X = await page.evaluate(() => ({ dit: $('ba-csv').textContent.trim(), tout: !$('ba-csv-tout').hidden && $('ba-csv-tout').textContent }));
@@ -572,7 +573,7 @@ const FICHIER = P.fichierDemande();
   console.log('\nla carte : ni son bloc, ni ses câbles, entière (1440 et 1920)');
   for (const [W, H] of [[1440, 900], [1920, 1080]]) {
     const page = await nav.newPage({ viewport: { width: W, height: H } }); page.setDefaultTimeout(300000); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && BIB.pret); await page.evaluate(() => atelier.exemple());
+    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && BIB.pret); await page.evaluate(() => atelier.exempleSansCalibreAuto());
     for (const [nom, f] of [['102CB1', '1'], ['300XC1', '3'], ['668VT31', '3']]) {
       await page.evaluate(([nom, f]) => { deselectionner(); allerAuPlan(f); ajuster(); choisirBloc(app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag')); }, [nom, f]);
       await page.waitForFunction(() => !$('inspecteur').getAnimations().length, null, { timeout: 15000 }); await page.waitForTimeout(150);

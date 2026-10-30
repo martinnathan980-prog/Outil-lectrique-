@@ -37,7 +37,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   const p = await b.newPage({ viewport: { width: 1600, height: 1000 } }); p.setDefaultTimeout(120000);
   const e = []; p.on('pageerror', x => e.push(x.message));
   const R = []; const ok = (n, c, d) => R.push((c ? '  ok   ' : '  KO   ') + n + (d ? '   ' + d : ''));
-  await p.goto(FICHIER); await p.waitForFunction(() => typeof atelier !== 'undefined'); await p.evaluate(() => atelier.exemple()); await p.waitForTimeout(600);
+  await p.goto(FICHIER); await p.waitForFunction(() => typeof atelier !== 'undefined'); await p.evaluate(() => atelier.exempleSansCalibreAuto()); await p.waitForTimeout(600);
   const n0 = await p.evaluate(() => app.contrat.liaisons.length);
   // le faux classeur, comme celui du lecteur : six vues (des GUID en ID et IDEquipment, propres à chaque feuille), quatre
   // tables qui les relient (les contacts des règles, les broches des arrangements, les conducteurs, les paires fiche ↔
@@ -152,7 +152,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   // cosses), leurs contacts (un qui change Volta, un pareil, un nouveau, un sans fil), deux câbles et leurs conducteurs,
   // deux faces (une EN 2997 que Volta connaît, une EN 3545 qu'il ne connaît pas), des connecteurs du plan ouvert, une paire
   // fiche ↔ embase. Garder, voir la différence, la fiche, le programme, recharger la page, oublier.
-  await p.setViewportSize({ width: 1600, height: 1000 }); await p.evaluate(() => { fermerFiche(true); atelier.exemple(); }); await p.waitForTimeout(400);
+  await p.setViewportSize({ width: 1600, height: 1000 }); await p.evaluate(() => { fermerFiche(true); atelier.exempleSansCalibreAuto(); }); await p.waitForTimeout(400);
   const avant = await p.evaluate(() => ({ c: contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR24', 24).reference, c16: contactDuFil(app.norme, 'EN3645', '16', 'M', 'XE16', 16).reference, k: cableDuType(app.norme, 'DR24').diametre, m: moduleDeReference(app.norme, 'EN2997-002-14-12').note }));
   await p.evaluate(() => {
     const G = s => s + '-0000-4000-8000-000000000000', wb = XLSX.utils.book_new(), f = (rows, nom) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), nom);
@@ -268,7 +268,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   const Fi = await p.evaluate(() => { fermerFiche(true); const d = document.createElement('div'); d.innerHTML = ficheEquipement('101BT1'); const s = d.querySelector('.fi-see'); return s ? s.textContent.replace(/\s+/g, ' ') : ''; });
   ok('la fiche d’un équipement dit ce que SEE sait de la référence de son connecteur : la désignation, fiche ou embase, ce qui s’y accouple', /Plug MS 14-5/.test(Fi) && /fiche \(prise mobile\)/.test(Fi) && /broches/.test(Fi) && /se monte avec MS3476L14-5S/.test(Fi), Fi);
   // recharger la page : la base revient d'elle-même ; puis l'oublier
-  await p.reload(); await p.waitForFunction(() => typeof atelier !== 'undefined'); await p.waitForFunction(() => BASE_SEE.charge); await p.evaluate(() => atelier.exemple()); await p.waitForTimeout(300);
+  await p.reload(); await p.waitForFunction(() => typeof atelier !== 'undefined'); await p.waitForFunction(() => BASE_SEE.charge); await p.evaluate(() => atelier.exempleSansCalibreAuto()); await p.waitForTimeout(300);
   ok('la page rechargée : la base SEE gardée revient et passe devant Volta (sauf la source vérifiée), le programme aussi', await p.evaluate(() => !!BASE_SEE.base && contactDuFil(app.norme, 'EN3645', '16', 'M', 'XE16', 16).reference === 'ECS0000M1600' && contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR24', 24).reference === 'EN3155-018M2020' && programmeSEE() === 'EC225'));
   await p.evaluate(() => ficheBaseSEE()); await p.waitForFunction(() => app.fiche && app.fiche.mode === 'see');
   const G0 = await p.evaluate(() => ({ onglets: [...$('fiche-corps').querySelectorAll('[data-see-vue]')].map(b => b.textContent).join(','), t: ($('fiche-corps').querySelector('.see-etat') || {}).textContent || '' }));
@@ -284,7 +284,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   // par contrôle (deux pour le fût trop fin : la broche et la douille). Chaque défaut se trouve, compté juste, avec sa
   // référence ; aucune ligne saine n'est dans un exemple ; ce qui se contredit est écarté ; le rapport en texte ne dit que
   // des références de catalogue et des comptes. Puis les tables de Volta elles-mêmes, passées comme des lignes de SEE : rien.
-  await p.evaluate(() => { fermerFiche(true); atelier.exemple(); }); await p.waitForTimeout(300);
+  await p.evaluate(() => { fermerFiche(true); atelier.exempleSansCalibreAuto(); }); await p.waitForTimeout(300);
   await p.evaluate(() => {
     const G = (k, i) => k + String(i).padStart(7, '0') + '-0000-4000-8000-000000000000', wb = XLSX.utils.book_new(), f = (rows, nom) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), nom);
     const sains = [], sain = (feuille, rows) => sains.push(feuille + ' ' + (rows.length + 1));   // la ligne Excel de la ligne qu'on va poser (l'en-tête est la ligne 1)
@@ -401,7 +401,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   ok('« Voir la cohérence » ouvre l’onglet', await p.evaluate(() => SEE.vue === 'coherence'));
   await p.click('[data-see-vue="import"]'); await p.click('#see-garder'); await p.waitForFunction(() => !!BASE_SEE.base);
   ok('gardée : la masse impossible du QQ16 et le Ø du QR20 (sous leur conducteur) sont écartés — la case reste vide', await p.evaluate(() => { const a = cableDuType(app.norme, 'QQ16'), b = cableDuType(app.norme, 'QR20'); return a && a.masse == null && b && b.diametre == null && b.masse === 4; }));
-  await p.reload(); await p.waitForFunction(() => typeof atelier !== 'undefined'); await p.waitForFunction(() => BASE_SEE.charge); await p.evaluate(() => atelier.exemple()); await p.waitForTimeout(300);
+  await p.reload(); await p.waitForFunction(() => typeof atelier !== 'undefined'); await p.waitForFunction(() => BASE_SEE.charge); await p.evaluate(() => atelier.exempleSansCalibreAuto()); await p.waitForTimeout(300);
   await p.evaluate(() => ficheBaseSEE()); await p.waitForFunction(() => app.fiche && app.fiche.mode === 'see');
   const Ga = await p.evaluate(() => ({ onglets: [...$('fiche-corps').querySelectorAll('[data-see-vue]')].map(b => b.querySelector('b').textContent).join(','), n: controlesSEE(BASE_SEE.base).filter(x => x.n).length, liens: (BASE_SEE.base.coherence.c['l-orphelins'] || {}).n }));
   await p.click('[data-see-vue="coherence"]'); await p.waitForTimeout(200);

@@ -913,7 +913,32 @@ function corpsConnecteur(nom, c, k, b, vt) { const cle = nom + '|' + c.nom, Q = 
   const table = Q && (M ? Q.tableContacts : (normeDesModules(app.norme).contacts || []).some(x => x.famille === Q.famille));
   // ce que la base SEE dit de cette référence (08 nonies) : sa désignation, fiche ou embase, ce qui s'y accouple ; absente, obsolète, hors programme
   const see = typeof ligneSEEHtml === 'function' ? ligneSEEHtml(c.pn) : '';
-  return champs([ref, arr]) + see + face + groupeSection('Contacts', contacts, { droite: table ? pucesSexe(cle, Q.sexe) : '', compte: xs.length || null }); }
+  return champs([ref, arr]) + see + face + groupeSection('Contacts', contacts, { droite: table ? pucesSexe(cle, Q.sexe) : '', compte: xs.length || null }) + traceConnecteur(c, Q, M, xs); }
+/* D'OÙ VIENT CHAQUE PIÈCE (le lecteur, v74 : « j'ai peur qu'il mélange tout — qu'il prenne la norme connecteur pour la norme
+   contact » ; « quelqu'un qui est perdu doit tout retrouver ») : la chaîne, maillon par maillon, et la TABLE d'où sort
+   chacun — la référence donne la famille (table des connecteurs), la famille et la référence l'arrangement (table des
+   faces), chaque cavité sa taille, chaque câble sa gauge (table des câbles), et la taille, le sexe et la gauge le contact
+   (table des contacts — une règle SEE dit sa version et son numéro). Chaque maillon vient de sa table, et d'elle seule.
+   Quand un maillon manque, la chaîne s'arrête là, et le dit : c'est pourquoi des contacts restent vides. */
+const sourceDeLigne = (x, table) => { if (!x) return ''; const n = String(x.note || ''), s = String(x.source || x.origine || ''), r = /règle\s+\S+(?:\s+v\d+)?(?:\s+n°\s*\d+)?/.exec(n);
+  if (s === 'SEE' || /^SEE\b/.test(n)) return 'base SEE' + (r ? ' · ' + r[0] : '');
+  // (une source longue se lit en entier dans la Bible : ici, son nom, sans adresse)
+  const court = s.replace(/\s*\(?https?:\/\/\S+\)?/g, '').replace(/\s+/g, ' ').trim(), coupe = court.length > 80 ? court.slice(0, 78).replace(/\s+\S*$/, '') + '…' : court;
+  return table + (coupe ? ' · ' + coupe : '') + (x.statut ? ' · ' + x.statut : ''); };
+function traceConnecteur(c, Q, M, xs) { const N = app.norme, fam = Q && Q.famille ? Q.famille : familleDeReference(N, c.pn, 'connecteur'), nomF = fam ? nomDeFamille(N, fam) || fam : '';
+  const maillon = (k, v, d) => `<li><span class="fi-tr-k">${esc(k)}</span><span class="fi-tr-v">${v}</span><span class="fi-tr-d">${esc(d)}</span></li>`;
+  const lignes = [maillon('Référence', c.pn ? ident(c.pn) : '<em>aucune</em>', c.pn ? 'colonne du fichier d’installation' : 'à écrire dans le fichier ou ici')];
+  if (!c.pn) return ''; 
+  if (!fam) lignes.push(maillon('Famille', '<b class="fi-ko-t">inconnue</b>', 'aucune famille de connecteur ne commence comme cette référence — ni dans les tables de Volta, ni dans la base SEE gardée : la chaîne s’arrête ici, d’où les contacts vides'));
+  else { lignes.push(maillon('Famille', esc(nomF), 'le début de la référence est celui de la famille ' + fam + ' (table des connecteurs)'));
+    if (M) lignes.push(maillon('Arrangement', esc(M.reference), (Q.main ? 'choisi à la main' : Q.nomme ? 'la référence le nomme' : 'le plus petit qui loge tous les câbles') + ' (table des faces' + (M.module.statut ? ' · ' + M.module.statut : '') + ')'));
+    else lignes.push(maillon('Arrangement', '<b class="fi-ko-t">aucun</b>', 'aucun arrangement de la famille ne loge ces câbles : pas de cavité, donc pas de contact')); }
+  const parFil = M ? xs.filter(x => x.f && x.f.l).map(x => { const p = x.plan, t = p && p.taille, cb = cableDuType(N, x.f.type), j = jaugeDuType(x.f.type), st = x.sertir;
+    return `<li class="fi-tr-fil"><b class="id">${esc(x.borne)}</b><span>${t ? 'cavité taille ' + esc(t) : 'cavité ?'}</span><span>${ident(x.f.type || '?')}${j ? ' · ' + esc(j) + ' AWG' : ''}${cb ? '' : ' <em>(câble absent de la table)</em>'}</span>`
+      + `<span>${st && st.reference ? ident(st.reference) : '<b class="fi-ko-t">aucun contact</b>'}</span><small>${esc(st && st.main ? 'choisi à la main' : st ? sourceDeLigne(st, 'table des contacts') : 'la table des contacts n’a pas de ligne pour cette taille, ce sexe et cette gauge')}</small></li>`; }).join('') : '';
+  return `<details class="fi-trace"><summary>D’où vient chaque pièce</summary><ol class="fi-tr">${lignes.join('')}</ol>`
+    + (parFil ? `<p class="fi-tr-t">Puis, câble par câble : la taille de la cavité (table des faces), la gauge du câble (table des câbles), et le contact qui va avec ce sexe, cette taille et cette gauge (table des contacts).</p><ul class="fi-tr-fils">${parFil}</ul>` : '')
+    + `<p class="fi-note">Chaque maillon vient de sa table, et d’elle seule : une règle de contact n’a pas les colonnes d’un connecteur, Volta ne peut pas prendre l’une pour l’autre.</p></details>`; }
 // les bornes qui ne sont sur aucun connecteur (CNT, GND…) : elles se raccordent au corps
 function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (b.parBorne.get(bo) || []).map(f => ({ ct: `<b>${esc(bo)}</b>`, f, sertir: null, rep: nom, borne: bo, plan: null })));
   // la référence de l'équipement (celle de ses liaisons), et ce que la base SEE en dit (08 nonies)
@@ -984,7 +1009,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   // (sa colonne : le PN de la barrette, PN1 là où elle est l'appareil 1, PN2 là où elle est l'appareil 2)
   const colsPn = [...new Set(L.map(l => l.de === nom ? 'PN1' : l.vers === nom ? 'PN2' : '').filter(Boolean))].sort().join(' · ');
   const proposes = ecartRetest ? [{ sujet: '', champ: 'module', colonne: colsPn, objet: nom, avant: b.pn, apres: Q.reference, geste: main ? 'choisi ici' : 'Volta' }] : [];
-  return enTete({ type: 'barrette', genre: aPoser ? `À poser${sur ? ` · sur ${esc(sur)}` : ''}` : '', designation: aPoser ? '' : nom, nom, champ: 'eq-rep', aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '', etat: etatDesProblemes(probs), identite: id })
+  return enTete({ type: 'barrette', genre: aPoser ? `Ajoutée par Volta${sur ? ` · sur ${esc(sur)}` : ''}` : '', designation: aPoser ? '' : nom, nom, champ: 'eq-rep', aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '', etat: etatDesProblemes(probs), identite: id })
     + barreProblemes(probs, sections) + poser + (aPoser ? '' : blocRetest(ecritsDuRepere(nom), proposes)) + ficheSections('barrette', sections)
     + fiPied(aPoser ? { voir: raccord && raccord.de, menu: [['fi-renommer', 'Lui donner son vrai repère']] } : { tableau: nom, fil: nom, menu: MENU_BLOC }); }
 /* LA GALERIE des assemblages d'une norme (le lecteur : « quand on clique sur la norme, on voit tous les assemblages de

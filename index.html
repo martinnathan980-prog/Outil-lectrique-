@@ -3271,6 +3271,28 @@ details.fs:last-of-type{margin-bottom:var(--sp-5)}
   .fi-fil.ko[data-i]:hover{background:var(--ko-soft)}
 }
 
+/* ─── LA CONSOMMATION d'un équipement (v74) : deux champs courts, leur unité, « pendant » entre les deux ─── */
+.fi-conso-c{display:inline-flex;align-items:center;gap:5px}
+.fi-conso-c .fc-in{width:8ch;flex:none;text-align:right}
+.fi-conso-c i,.fi-conso-mot{font:500 var(--f-12)/1 var(--sans);font-style:normal;color:var(--t-3)}
+.fi-a-ecrire{color:var(--t-3);font-style:italic}
+
+/* ─── D'OÙ VIENT CHAQUE PIÈCE (v74) : la chaîne d'un connecteur, un maillon par ligne, sa table en petit ─── */
+.fi-trace{margin:14px 0 4px;border-top:1px solid var(--s-line);padding-top:10px}
+.fi-trace>summary{cursor:pointer;font:600 var(--f-13)/1.3 var(--sans);color:var(--t-2);list-style:none}
+.fi-trace>summary::before{content:'›';display:inline-block;width:14px;transition:transform var(--rapide)}
+.fi-trace[open]>summary::before{transform:rotate(90deg)}
+.fi-tr{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:12px;row-gap:2px}
+.fi-tr li{display:contents}
+.fi-tr-k{font:500 var(--f-12)/1.4 var(--sans);color:var(--t-3)}
+.fi-tr-v{font-size:var(--f-13);color:var(--t-1)}
+.fi-tr-d{grid-column:2;font-size:var(--f-12);color:var(--t-3);margin-bottom:6px}
+.fi-tr-t{font-size:var(--f-12);color:var(--t-2);margin:12px 0 6px}
+.fi-tr-fils{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.fi-tr-fil{display:grid;grid-template-columns:40px repeat(3,minmax(0,auto));column-gap:10px;align-items:baseline;font-size:var(--f-12);color:var(--t-1)}
+.fi-tr-fil small{grid-column:2 / -1;color:var(--t-3)}
+.fi-tr-fil .id{white-space:nowrap}
+
 /* ───────── style-fichiers.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
    PRENDRE LA MAIN — « Vos fichiers », le collage, le mot qui passe et son geste (« Voir », « Rétablir ») (08-fichiers,
@@ -5321,7 +5343,7 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '87f4c1438a75';
+const VERSION_MOTEUR = 'f3fb1f276df3';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -5346,6 +5368,9 @@ const VERSION_MOTEUR = '87f4c1438a75';
 /* L'ordre naturel du français (1, 2, 10 ; A1, A2, B1), UN collateur pour tout l'outil : `localeCompare` avec options en
    refait un à chaque comparaison — sur un retest de 100 000 lignes, c'est l'essentiel du temps d'un tri. */
 const COLLATEUR_FR = new Intl.Collator('fr', { numeric: true });
+/* LE CÔTÉ D'UNE ROUTE (le lecteur, v74 : « les routes 1MO, 2MO, 1HO, 2HO… — impair à gauche de l'hélicoptère, pair à
+   droite, pour la ségrégation ») : le nombre en tête de la route ; 'gauche', 'droite', ou '' sans nombre. */
+const coteDeRoute = r => { const m = /^\s*(\d+)/.exec(String(r || '')); return m ? (+m[1] % 2 ? 'gauche' : 'droite') : ''; };
 const RAIL_RE = /^(L1|L2|L3|L|N|PE|PEN|GND|0V|\+|-|VCC|VDD|\+?\d{1,3}V)$/i;
 
 /* Le repère aéronautique porte son code AU MILIEU : <numéro><CODE><suffixe>
@@ -9807,7 +9832,7 @@ function cartoucheSvg(rx, by, c, folio, legende) {
   routes.forEach((r, i) => { const k = Math.floor(i / LEG_PAR_COLONNE), cx = xT - (nCol - k) * LEG_COLONNE + 10, cy = y + 30 + (i % LEG_PAR_COLONNE) * LEG_LIGNE;
     const n = r.n + ' câble' + (r.n > 1 ? 's' : ''), place = LEG_COLONNE - 20 - 32 - largeurTexte(n.length, 7, 0) - 4;
     s += `<line x1="${f1(cx)}" y1="${f1(cy - 3)}" x2="${f1(cx + 24)}" y2="${f1(cy - 3)}" style="stroke:${r.couleur || '#26323f'};stroke-width:3.2;stroke-linecap:round"/>`;
-    s += `<text class="legnom" x="${f1(cx + 32)}" y="${f1(cy)}">${esc(clip(r.route || 'sans route', Math.max(4, Math.floor(place / (CAR * 8 + 0.3)))))}</text><text class="legn" x="${f1(cx + LEG_COLONNE - 20)}" y="${f1(cy)}" text-anchor="end">${n}</text>`; });
+    s += `<text class="legnom" x="${f1(cx + 32)}" y="${f1(cy)}">${esc(clip((r.route || 'sans route') + (coteDeRoute(r.route) ? (coteDeRoute(r.route) === 'gauche' ? ' · G' : ' · D') : ''), Math.max(4, Math.floor(place / (CAR * 8 + 0.3)))))}</text><text class="legn" x="${f1(cx + LEG_COLONNE - 20)}" y="${f1(cy)}" text-anchor="end">${n}</text>`; });
   if (nCol) s += `<text class="carth" x="${f1(x + 10)}" y="${f1(y + 13)}">ROUTES</text>`;
   return s + `<rect class="cbord" x="${f1(x)}" y="${f1(y)}" width="${f1(W)}" height="${CART_H}"/>`;
 }
@@ -12033,7 +12058,7 @@ function remplirSelonNorme(P, norme) {
        Des maxima : une pointe n'a pas droit au double. Vide (null) : la table Réseau de la norme (AC 43.13-1B table 11-6 :
        1 V sous 28 V, 4 V sous 115 V, 7 V entre phases, le double en intermittent). */
 const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], fils: 8, charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125,
-  chuteConducteur: 'estimee', chuteDisjoncteur: true, frequence: 400, marge: 10, margeTemps: 75, prechauffage: 1.6, calibresPreferes: [1, 3, 5, 7.5, 10, 15, 20, 25], chuteMono: 2, chuteTri: 4 };
+  chuteConducteur: 'estimee', chuteDisjoncteur: true, frequence: 400, marge: 10, margeTemps: 75, prechauffage: 1.6, calibresPreferes: [1, 3, 5, 7.5, 10, 15, 20, 25], chuteMono: 2, chuteTri: 4, calibreAuto: true };
 const RETOURS = { structure: 'par la structure (aller seul)', fil: 'par un câble identique (aller et retour)' };
 const MODES_CONDUCTEUR = { estimee: 'estimée sous le courant (AC 43.13-1B § 11-66 d(6))', fixe: 'fixe : l’hypothèse « conducteur » (20 °C, comme l’Excel)' };
 /* Le RETOUR par un fil identique double la résistance — en continu et en monophasé ; en triphasé équilibré, aucun courant
@@ -12259,7 +12284,7 @@ function nomenclatureDe(fils) { const m = new Map();
 /* LE CONTACT À SERTIR d'un fil, tel qu'un plan le pose (`sertir`) : la référence et l'accessoire de la ligne Contacts, son
    statut (« à confirmer » pour une référence que la recherche R1 n'a pas pu vérifier), le fût lu dans la référence (le
    courant en dépend), l'outillage (pince, positionneur, insertion) quand la table le connaît. */
-const sertirDe = (norme, st) => st ? { reference: st.reference, accessoire: st.accessoire, statut: st.statut || '', confiance: st.confiance || '', fut: (futDeContact(st.reference) || {}).fut != null ? futDeContact(st.reference).fut : null, outillage: outillageDuContact(norme, st.reference) } : null;
+const sertirDe = (norme, st) => st ? { reference: st.reference, accessoire: st.accessoire, statut: st.statut || '', confiance: st.confiance || '', fut: (futDeContact(st.reference) || {}).fut != null ? futDeContact(st.reference).fut : null, outillage: outillageDuContact(norme, st.reference), note: st.note || '', source: st.source || st.origine || '' } : null;
 /* Les entrées de bible d'une norme de modules : une par variante — ses groupes sont les « bornes » qu'elle offre. */
 function bibleDesModules(norme) {
   return normeDesModules(norme).modules.map(m => { const ts = [...new Set(m.contacts.map(c => c.taille))].map(t => tailleDe(norme, m.famille, t)).filter(Boolean);
@@ -16738,6 +16763,19 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
       // une cavité : ses problèmes, et ses remarques — sauf les deux fils sur un contact, que la barrette à poser dit déjà
       else if (!estBornier(r)) cavitesDe(r).forEach(c => { noter(r, c.plan.fils); c.plan.verdicts.forEach(v => { if (v.niveau === 'ko') ko(r, c.nom + ' · ' + v.texte); else if (v.niveau === 'attention' && !/^contact \S+ : \d+ câbles/.test(v.texte)) att(r, c.nom + ' · ' + v.texte); }); });
     } catch (_) { } });
+  /* LA SÉGRÉGATION (le lecteur, v74) : la route d'un câble (colonne H : 1MO, 2HO…) — impair à gauche de l'hélicoptère, pair
+     à droite. Mélanger gauche et droite sur un même connecteur, un même module de barrette ou un même côté d'une prise de
+     coupure, c'est un BRANCHEMENT EN CHAÎNE : « pas top », parfois sans choix — à voir, jamais un problème. Deux routes
+     d'un même côté : rien à dire. Une prise de coupure CHANGE de route : sa fiche et son embase peuvent différer. */
+  try { const lieux = new Map(), poser = (r, lieu, l) => { const s = coteDeRoute(l && l.route); if (!s) return; const k = r + '\u0001' + lieu;
+      const x = lieux.get(k) || lieux.set(k, { r, lieu, g: new Set(), d: new Set(), cables: new Set() }).get(k); (s === 'gauche' ? x.g : x.d).add(String(l.route).trim()); x.cables.add(l); };
+    reperes.forEach(r => { if (estDisjoncteur(r)) return;
+      if (barretteEnModules(r)) planDeBarrette(r).plan.fils.forEach(x => x.f && poser(r, 'module ' + (x.module + 1), x.f.l));
+      else if (coupureEnModules(r)) planDeCoupure(r).plan.fils.forEach(x => x.f && poser(r, x.f.amont ? 'côté fiche' : 'côté embase', x.f.l));
+      else if (!estBornier(r) && !estCoupure(r)) V.filter(liaisonComplete).forEach(l => [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([q, b, pn]) => {
+        if (q !== r) return; const c = connecteurDeBorne(b, pn); poser(r, c && c.lettre ? 'connecteur ' + c.nom : 'connecteur', l); })); });
+    lieux.forEach(x => { if (x.g.size && x.d.size) att(x.r, `branchement en chaîne : ${x.lieu} mélange gauche (${[...x.g].sort(triNaturel).join(', ')}) et droite (${[...x.d].sort(triNaturel).join(', ')})`, { genre: 'segregation', cables: [...x.cables] }); });
+  } catch (_) { }
   // un conducteur qui n'est pas du cuivre (AD, VN : aluminium cuivré) serti sur un contact cuivre ordinaire : à qualifier
   contacts.forEach((xs, l) => { const fam = cableFamilleDe(N, l.type); if (!fam || !fam.conducteur || fam.conducteur === 'cuivre') return;
     xs.forEach(x => { if (x.sertir && x.sertir.reference && !contactPourCca(x.sertir.reference)) att(x.repere, `${l.cable || 'câble sans numéro'} (${l.type}) : conducteur ${fam.conducteur} sur un contact ${x.sertir.reference} — qualification CCA à confirmer`, { cables: [l] }); }); });
@@ -16764,7 +16802,7 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
 const GENRES_CONTROLE = [['arrangement', 'connecteurs qu’aucun arrangement ne loge', 'connecteur qu’aucun arrangement ne loge'], ['contact', 'contacts à revoir', 'contact à revoir'],
   ['calibre', 'calibres à revoir', 'calibre à revoir'], ['pn', 'disjoncteurs à deux part numbers', 'disjoncteur à deux part numbers'], ['protection', 'câbles mal protégés par leur disjoncteur', 'câble mal protégé par son disjoncteur'],
   ['chute', 'chutes de tension trop fortes', 'chute de tension trop forte'], ['profil', 'disjoncteurs sans profil de charge', 'disjoncteur sans profil de charge'],
-  ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['retest', 'points du retest', 'point du retest'], ['autre', 'autres points', 'autre point']];
+  ['segregation', 'mélanges gauche / droite', 'mélange gauche / droite'], ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['retest', 'points du retest', 'point du retest'], ['autre', 'autres points', 'autre point']];
 // le genre en mots, au nombre qu'il compte : « 2 chutes de tension trop fortes », « 1 barrette à poser »
 const motDuGenre = (g, n) => { const G = GENRES_CONTROLE.find(x => x[0] === g) || GENRES_CONTROLE[GENRES_CONTROLE.length - 1]; return n > 1 ? G[1] : G[2]; };
 const rangDuGenre = g => { const i = GENRES_CONTROLE.findIndex(x => x[0] === g); return i < 0 ? GENRES_CONTROLE.length : i; };
@@ -17465,7 +17503,46 @@ function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg 
    =========================================================================== */
 
 /* ---- lire le disjoncteur ------------------------------------------------------------ */
-const chargeDe = nom => (app.contrat.charges && app.contrat.charges.get(nom)) || null;
+/* Le profil de charge d'un disjoncteur : celui qu'on a écrit sur sa fiche ; sinon (rien d'écrit) la SOMME de ce qu'il
+   alimente (`profilDesConsommateurs`, plus bas) ; `chargeEcrite` : seulement ce qui est écrit. */
+const chargeEcrite = nom => (app.contrat.charges && app.contrat.charges.get(nom)) || null;
+const chargeDe = nom => { const c = chargeEcrite(nom); if (phaseEcrite(c) || !estDisjoncteur(nom)) return c;
+  const s = profilDesConsommateurs(nom); return s ? { ...(c || {}), ...s } : c; };
+/* LA CONSOMMATION D'UN ÉQUIPEMENT (le lecteur, v74 : « le courant de chaque équipement, c'est moi qui l'ai, sur des PDF :
+   quand je clique sur un équipement, je rajoute ses consos à la main ; toi, tu en déduis le calibre du disjoncteur ») :
+   gardée avec les profils (`app.contrat.charges`, sous le repère de l'équipement : { perm: { i }, dem: { i, t } }) — elle
+   suit donc le contrat partout (historique, enregistrement, feuille « Volta » de l'Excel). Un disjoncteur sans profil
+   écrit prend la SOMME de ce qu'il alimente, au-delà des prises et des barrettes : les permanents s'ajoutent, les
+   démarrages aussi — tous au même instant, le pire —, sur la durée la plus longue. Écrire son profil le remplace. */
+const phaseEcrite = c => !!c && ['dem', 'trans', 'perm'].some(k => c[k] && nombreLu(c[k].i) > 0);
+const consoDe = nom => { const c = nom && !estDisjoncteur(nom) ? chargeEcrite(nom) : null; return phaseEcrite(c) ? c : null; };
+// ce qu'un disjoncteur alimente : les bouts des chemins qui partent de lui (ni disjoncteur, ni masse)
+const consommateursDe = nom => !estDisjoncteur(nom) ? [] : [...new Set(cheminsDepuis(verite(), nom).map(ch => ch.bout[0]).filter(r => r && r !== nom && !estDisjoncteur(r) && !estMasse(r)))].sort(triNaturel);
+// les disjoncteurs qui alimentent un équipement
+const disjoncteursDe = nom => reperesDe(verite()).filter(estDisjoncteur).filter(d => consommateursDe(d).includes(nom)).sort(triNaturel);
+let CONSOS = { v: null, sig: '', m: new Map() };
+function profilDesConsommateurs(nom) { const V = verite(), C = app.contrat.charges || new Map();
+  const sig = [...C].filter(([k, c]) => !estDisjoncteur(k) && phaseEcrite(c)).map(([k, c]) => k + JSON.stringify(c)).join('|');
+  if (!sig) return null;   // aucune consommation écrite : rien à sommer (et aucun chemin à suivre)
+  if (CONSOS.v !== V || CONSOS.sig !== sig + V.length) CONSOS = { v: V, sig: sig + V.length, m: new Map() };
+  if (CONSOS.m.has(nom)) return CONSOS.m.get(nom);
+  const xs = consommateursDe(nom).map(r => ({ r, c: consoDe(r) })).filter(x => x.c), v = (c, k) => c[k] && nombreLu(c[k].i) > 0 ? nombreLu(c[k].i) : 0, r3 = x => Math.round(x * 1000) / 1000;
+  let out = null;
+  if (xs.length) { out = { somme: xs.map(x => x.r) }; const perm = xs.reduce((s, x) => s + v(x.c, 'perm'), 0), dems = xs.filter(x => v(x.c, 'dem') > 0);
+    if (perm > 0) out.perm = { i: r3(perm) };
+    if (dems.length) out.dem = { i: r3(xs.reduce((s, x) => s + (v(x.c, 'dem') || v(x.c, 'perm')), 0)), t: Math.max(...dems.map(x => nombreLu(x.c.dem.t) || 0)) || null }; }
+  CONSOS.m.set(nom, out); return out; }
+/* Écrire la consommation d'un équipement : `q` est 'perm', 'dem' (le courant) ou 'demt' (la durée du démarrage). */
+function ecrireConso(nom, q, valeur) { const x = valeur === '' || valeur == null ? null : nombreLu(valeur);
+  if (valeur !== '' && valeur != null && !(x >= 0)) { dire('Écrivez un nombre (3,5).', true); return false; }
+  const c = JSON.parse(JSON.stringify(chargeEcrite(nom) || {}));
+  if (q === 'perm') c.perm = x ? { i: x } : undefined; else if (q === 'dem') c.dem = x ? { ...(c.dem || {}), i: x } : undefined; else if (q === 'demt') c.dem = { ...(c.dem || {}), t: x };
+  Object.keys(c).forEach(k => c[k] === undefined && delete c[k]);
+  if (JSON.stringify(c) === JSON.stringify(chargeEcrite(nom) || {})) return false;
+  histPush('consommation de ' + nom); if (!app.contrat.charges) app.contrat.charges = new Map();
+  if (phaseEcrite(c) || (c.dem && c.dem.t)) app.contrat.charges.set(nom, c); else app.contrat.charges.delete(nom);
+  apresEdition(); const djs = disjoncteursDe(nom);
+  dire('Consommation de ' + nom + ' écrite' + (djs.length ? ' — ' + djs.map(d => d + ' en ' + (calibreDe(d) ? amperes(calibreDe(d)) : '—')).join(', ') : '') + '.'); return true; }
 /* Le part number d'un repère : celui que ses liaisons portent. */
 function pnDuRepere(nom) { for (const l of verite()) { if (l.de === nom && l.pnDe) return l.pnDe; if (l.vers === nom && l.pnVers) return l.pnVers; } return ''; }
 /* Les fils d'un disjoncteur : ceux qui le touchent, des deux côtés (la borne, l'autre bout, `amont`), puis tout ce qu'il
@@ -17522,7 +17599,8 @@ function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit0 = profil && p
   const ecrit = ecrit0 || (pn && pnChangeIci(nom) && !pnDeVolta(nom) && pn !== passe ? pn : null);
   // LA RÈGLE DU LECTEUR (v74) : « dès que ça touche la courbe, on ne prend pas ; on prend que quand ça ne touche pas » —
   // le calibre du fichier est gardé s'il PASSE (avec la marge) ; sinon, le plus petit qui passe
-  const gPn0 = pn && !d.sansProfil ? (d.gamme || []).find(g => g.calibre === pn) : null, pnPasse = gPn0 && cleDuVerdict(gPn0) === 'passe' ? pn : null;
+  // (le calibre que Volta a écrit lui-même n'est pas celui du fichier : il suit le profil)
+  const gPn0 = pn && !d.sansProfil && !pnDeVolta(nom) ? (d.gamme || []).find(g => g.calibre === pn) : null, pnPasse = gPn0 && cleDuVerdict(gPn0) === 'passe' && !(passe > pn) ? pn : null;   // (plus petit que le meilleur : la sélectivité ou un câble le refuse)
   const calibre = ecrit || pnPasse || passe || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, courbe, calibre, profil, contexte);
   const chutePropre = chuteDuDisjoncteur(app.norme, famille, calibre);
   // le part number du retest jugé à son tour (passe-t-il ?) quand l'outil en retient un autre
@@ -17542,11 +17620,14 @@ const meilleurCalibre = nom => disjonctionDe(nom).meilleur;
    déjà celui du folio et des exports. Appelé après chaque geste (`apresEdition`) et à l'ouverture d'un plan. Rend le
    nombre de disjoncteurs réécrits. */
 const pnDeVolta = nom => verite().some(l => [['de', 'pnDe'], ['vers', 'pnVers']].some(([b, ch]) => { const v = l[b] === nom && l.avant ? l.avant[ORIGINE_VOLTA + ch] : undefined; return v !== undefined && v === (l[ch] == null ? null : l[ch]); }));
-function appliquerCalibresVolta() { if (!app.norme || !verite().length) return 0; let n = 0;
+function appliquerCalibresVolta() { if (!app.norme || !verite().length || (app.simu || HYPOTHESES).calibreAuto === false) return 0; let n = 0;
   const noms = [...new Set(verite().flatMap(l => [l.de, l.vers]).filter(r => r && estDisjoncteur(r)))];
   noms.forEach(nom => { let d; try { d = disjonctionDe(nom); } catch (_) { return; }
     if (d.origine === 'main' || d.sansProfil || d.sansCourbe || !d.famille || !(d.pn > 0) || !(d.passe > 0) || d.calibre !== d.passe || d.pn === d.passe) return;
-    const pn = pnDuRepere(nom), nouveau = pnAvecCalibre(pn, d.famille, d.passe); if (!nouveau || nouveau === pn) return;
+    // un calibre que Volta avait écrit, quand le profil change : celui du fichier revient s'il passe désormais
+    const pn = pnDuRepere(nom), o = pnDeVolta(nom) ? origineDuCalibre(nom, d) : null, gF = o && o.calRetest ? (d.gamme || []).find(g => g.calibre === o.calRetest) : null;
+    if (gF && cleDuVerdict(gF) === 'passe' && o.pnRetest) { verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l.avant && ch in l.avant) poserChamp(l, ch, l.avant[ch]); })); n++; return; }
+    const nouveau = pnAvecCalibre(pn, d.famille, d.passe); if (!nouveau || nouveau === pn) return;
     const xs = d.passe === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
     avecOrigineVolta(() => { verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
       xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); });
@@ -17633,7 +17714,7 @@ function poserChamp(l, champ, valeur) { if (!(l.avant && champ in l.avant)) l.av
   if (l.avant[champ] === (l[champ] == null ? null : l[champ])) { const av = { ...l.avant }; delete av[champ]; if (Object.keys(av).length) l.avant = av; else delete l.avant; } }
 /* Le profil de charge, écrit au contrat sans perdre ce qui n'est pas lui (le calibre écrit) ; vide, il s'efface — sauf
    s'il garde un état supprimé (`null` à la place du démarrage, de la transition ou du permanent : l'état n'est plus là). */
-function poserCharge(nom, c) { const vide = !(c.calibre > 0) && !['dem', 'trans', 'perm'].some(k => (c[k] && c[k].i != null) || c[k] === null) && !(c.plus && c.plus.length);
+function poserCharge(nom, c) { if (c && 'somme' in c) { c = { ...c }; delete c.somme; } const vide = !(c.calibre > 0) && !['dem', 'trans', 'perm'].some(k => (c[k] && c[k].i != null) || c[k] === null) && !(c.plus && c.plus.length);
   if (vide) app.contrat.charges.delete(nom); else app.contrat.charges.set(nom, c); }
 /* RETENIR UN CALIBRE À LA MAIN : il s'écrit au profil de charge, et un disjoncteur dont le part number dit la famille
    change aussi de part number (MS3320-10 → MS3320-15, sur chacune de ses liaisons, le retest gardé dans `avant`).
@@ -17644,7 +17725,7 @@ function retenirCalibre(nom, cal) { const d = disjonctionDe(nom); if (!(cal > 0)
   if (d.passe && cal === d.passe) { rendreCalibre(nom); return true; }
   if (d.ecrit === cal) return false;
   const pn = pnDuRepere(nom), F = d.famille, nouveau = F && pn ? pnAvecCalibre(pn, F, cal) : null;
-  histPush('calibre de ' + nom + ' : ' + amperes(cal)); const c = { ...(chargeDe(nom) || {}), calibre: cal };
+  histPush('calibre de ' + nom + ' : ' + amperes(cal)); const c = { ...(chargeEcrite(nom) || {}), calibre: cal };
   if (nouveau && nouveau !== pn) verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
   // le mot qui passe dit ce que le calibre retenu fait (un calibre qui déclenche se retient : le lecteur veut voir pourquoi)
   poserCharge(nom, c); apresEdition(); const g = (disjonctionDe(nom).gamme || []).find(x => x.calibre === cal), k = cleDuVerdict(g);
@@ -17653,7 +17734,7 @@ function retenirCalibre(nom, cal) { const d = disjonctionDe(nom); if (!(cal > 0)
    calibre redevient le meilleur qui passe (sinon celui du part number). */
 function rendreCalibre(nom) { histPush('calibre de ' + nom + ' : automatique');
   verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l.avant && ch in l.avant) poserChamp(l, ch, l.avant[ch]); }));
-  const c = chargeDe(nom); if (c && c.calibre != null) poserCharge(nom, { ...c, calibre: null });
+  const c = chargeEcrite(nom); if (c && c.calibre != null) poserCharge(nom, { ...c, calibre: null });
   // (apresEdition réécrit le calibre qui passe, si celui du fichier touche la courbe : la règle du lecteur, v74)
   apresEdition(); const d = disjonctionDe(nom); dire(nom + ' : automatique' + (d.calibre ? ', ' + amperes(d.calibre) : '') + '.'); }
 /* CHANGER LES FILS que le meilleur calibre demande : chacun passe au câble proposé (la jauge qui le suit), le fichier gardé
@@ -17672,7 +17753,7 @@ function deciderCalibre(nom) { const d = disjonctionDe(nom), cal = d.calibre; if
   const pn = pnDuRepere(nom), F = d.famille, nouveau = F && pn ? pnAvecCalibre(pn, F, cal) : null, xs = cal === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   histPush(nom + ' : ' + amperes(cal) + (xs.length ? ' et ' + pluriel2(xs.length, 'câble') + ' grossi' + (xs.length > 1 ? 's' : '') : ''));
   if (nouveau && nouveau !== pn) verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
-  else if (!nouveau) poserCharge(nom, { ...(chargeDe(nom) || {}), calibre: cal });
+  else if (!nouveau) poserCharge(nom, { ...(chargeEcrite(nom) || {}), calibre: cal });
   xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition();
   dire(nom + ' : ' + amperes(cal) + (nouveau ? ' (' + nouveau + ')' : '') + (xs.length ? ', ' + xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + '. Ctrl+Z défait le tout.'); return true; }
 /* LA CARTE DE DÉCISION (le parcours v72 : « 102CB1 coche 15 A en vert sous 4 problèmes rouges ; la vraie histoire est la
@@ -19418,10 +19499,26 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   // (le compte rouge au bout de la ligne se tait quand la bulle du connecteur fautif le dit déjà — le technicien v73 : « le 1 rouge répète l'info »)
   const pbC = probs.filter(p => p.section === 'connecteur'), dejaDit = pbC.length > 0 && pbC.every(p => p.niveau === 'ko' && p.connecteur && fautif(p.connecteur));
   const sections = [{ cle: 'connecteur', titre: 'Connecteur', resume: (refs ? `<span class="fs-ref">${refs}</span>` : '') + bulles || (ids.length ? '' : 'aucune borne'), badge: dejaDit ? null : badgeProblemes(probs, 'connecteur'), contenu: `<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>`, vide: ids.length ? '' : 'aucune borne' },
-    sectionFilsDuRepere(fils, probs, coupables), sectionDejaFait(nom)];
+    sectionFilsDuRepere(fils, probs, coupables), sectionConso(nom), sectionDejaFait(nom)];
   const id = identite([majuscule(natureDe(nom)), descriptionDuRetest(nom) ? esc(descriptionDuRetest(nom)) : '', pns.length === 1 ? ident(pns[0]) : '', C.length > 1 ? pluriel(C.length, 'connecteur') : '', esc(motFolios(foliosDuRepere(nom)))]);
   return enTete({ type: 'equipement', designation: nom, nom, champ: 'eq-rep', etat: etatDesProblemes(probs), identite: id }) + barreProblemes(probs, sections) + blocRetest(ecritsDuRepere(nom), []) + ficheSections('equipement', sections)
     + fiPied({ tableau: nom, fil: nom, menu: MENU_BLOC }); }
+/* LA CONSOMMATION (le lecteur, v74 : « le courant de chaque équipement, c'est moi qui l'ai — je le rajoute à la main ») :
+   le permanent, le démarrage et sa durée ; dessous, le disjoncteur qui l'alimente et le calibre qu'il en tire (la somme
+   de tout ce qu'il alimente, 08 bis `profilDesConsommateurs`). Rien pour une masse, un renvoi, un disjoncteur. */
+function sectionConso(nom) { if (!nom || estDisjoncteur(nom) || estMasse(nom)) return null;
+  const c = chargeEcrite(nom) || {}, v = (k, q) => c[k] && c[k][q] != null && c[k][q] !== '' ? nombre(nombreLu(c[k][q])) : '';
+  const champ = (q, val, aide, unite) => `<span class="fi-conso-c">${saisie(` data-conso="${q}" inputmode="decimal" autocomplete="off" aria-label="${escA(aide)}"`, val, { court: true, mono: true, ph: '—' })}<i>${esc(unite)}</i></span>`;
+  const djs = disjoncteursDe(nom), ecrit = phaseEcrite(c);
+  const qui = djs.length ? djs.map(d => { const s = (chargeEcrite(d) && phaseEcrite(chargeEcrite(d))), cal = calibreDe(d);
+      return `<button type="button" class="fi-lien" data-choisir-bloc="${escA(d)}">${esc(d)}</button>${cal ? ' · ' + esc(amperes(cal)) : ''}${s ? ' <em>(son profil est écrit sur sa fiche : il passe devant)</em>' : ''}`; }).join(', ')
+    : '<em>aucun disjoncteur ne l’alimente dans ce contrat</em>';
+  const contenu = champs([ligneChamp('Permanent', champ('perm', v('perm', 'i'), 'Courant permanent, en ampères', 'A')),
+      ligneChamp('Démarrage', champ('dem', v('dem', 'i'), 'Courant de démarrage, en ampères', 'A') + '<span class="fi-conso-mot">pendant</span>' + champ('demt', v('dem', 't'), 'Durée du démarrage, en secondes', 's')),
+      ligneChamp('Alimenté par', qui)])
+    + `<p class="fi-note">Le disjoncteur additionne la consommation de tout ce qu’il alimente, démarrages ensemble, et en déduit son calibre.</p>`;
+  const resume = ecrit ? [v('perm', 'i') ? v('perm', 'i') + ' A' : '', v('dem', 'i') ? 'démarrage ' + v('dem', 'i') + ' A' : ''].filter(Boolean).join(' · ') : '<span class="fi-a-ecrire">à écrire</span>';
+  return { cle: 'conso', titre: 'Consommation', resume, contenu }; }
 /* LE CONNECTEUR montré : sa RÉFÉRENCE d'abord (un champ ; plus de « part number » ni de « norme » à compléter) ; quand
    la norme est connue, l'ARRANGEMENT que Volta retient (en puce, son « ? » ; « Changer » ouvre la liste : « Automatique »
    en tête, les autres arrangements qui logent ces bornes, la bible au pied) ; puis, d'office, sa FACE (le lecteur :
@@ -19483,7 +19580,32 @@ function corpsConnecteur(nom, c, k, b, vt) { const cle = nom + '|' + c.nom, Q = 
   const table = Q && (M ? Q.tableContacts : (normeDesModules(app.norme).contacts || []).some(x => x.famille === Q.famille));
   // ce que la base SEE dit de cette référence (08 nonies) : sa désignation, fiche ou embase, ce qui s'y accouple ; absente, obsolète, hors programme
   const see = typeof ligneSEEHtml === 'function' ? ligneSEEHtml(c.pn) : '';
-  return champs([ref, arr]) + see + face + groupeSection('Contacts', contacts, { droite: table ? pucesSexe(cle, Q.sexe) : '', compte: xs.length || null }); }
+  return champs([ref, arr]) + see + face + groupeSection('Contacts', contacts, { droite: table ? pucesSexe(cle, Q.sexe) : '', compte: xs.length || null }) + traceConnecteur(c, Q, M, xs); }
+/* D'OÙ VIENT CHAQUE PIÈCE (le lecteur, v74 : « j'ai peur qu'il mélange tout — qu'il prenne la norme connecteur pour la norme
+   contact » ; « quelqu'un qui est perdu doit tout retrouver ») : la chaîne, maillon par maillon, et la TABLE d'où sort
+   chacun — la référence donne la famille (table des connecteurs), la famille et la référence l'arrangement (table des
+   faces), chaque cavité sa taille, chaque câble sa gauge (table des câbles), et la taille, le sexe et la gauge le contact
+   (table des contacts — une règle SEE dit sa version et son numéro). Chaque maillon vient de sa table, et d'elle seule.
+   Quand un maillon manque, la chaîne s'arrête là, et le dit : c'est pourquoi des contacts restent vides. */
+const sourceDeLigne = (x, table) => { if (!x) return ''; const n = String(x.note || ''), s = String(x.source || x.origine || ''), r = /règle\s+\S+(?:\s+v\d+)?(?:\s+n°\s*\d+)?/.exec(n);
+  if (s === 'SEE' || /^SEE\b/.test(n)) return 'base SEE' + (r ? ' · ' + r[0] : '');
+  // (une source longue se lit en entier dans la Bible : ici, son nom, sans adresse)
+  const court = s.replace(/\s*\(?https?:\/\/\S+\)?/g, '').replace(/\s+/g, ' ').trim(), coupe = court.length > 80 ? court.slice(0, 78).replace(/\s+\S*$/, '') + '…' : court;
+  return table + (coupe ? ' · ' + coupe : '') + (x.statut ? ' · ' + x.statut : ''); };
+function traceConnecteur(c, Q, M, xs) { const N = app.norme, fam = Q && Q.famille ? Q.famille : familleDeReference(N, c.pn, 'connecteur'), nomF = fam ? nomDeFamille(N, fam) || fam : '';
+  const maillon = (k, v, d) => `<li><span class="fi-tr-k">${esc(k)}</span><span class="fi-tr-v">${v}</span><span class="fi-tr-d">${esc(d)}</span></li>`;
+  const lignes = [maillon('Référence', c.pn ? ident(c.pn) : '<em>aucune</em>', c.pn ? 'colonne du fichier d’installation' : 'à écrire dans le fichier ou ici')];
+  if (!c.pn) return ''; 
+  if (!fam) lignes.push(maillon('Famille', '<b class="fi-ko-t">inconnue</b>', 'aucune famille de connecteur ne commence comme cette référence — ni dans les tables de Volta, ni dans la base SEE gardée : la chaîne s’arrête ici, d’où les contacts vides'));
+  else { lignes.push(maillon('Famille', esc(nomF), 'le début de la référence est celui de la famille ' + fam + ' (table des connecteurs)'));
+    if (M) lignes.push(maillon('Arrangement', esc(M.reference), (Q.main ? 'choisi à la main' : Q.nomme ? 'la référence le nomme' : 'le plus petit qui loge tous les câbles') + ' (table des faces' + (M.module.statut ? ' · ' + M.module.statut : '') + ')'));
+    else lignes.push(maillon('Arrangement', '<b class="fi-ko-t">aucun</b>', 'aucun arrangement de la famille ne loge ces câbles : pas de cavité, donc pas de contact')); }
+  const parFil = M ? xs.filter(x => x.f && x.f.l).map(x => { const p = x.plan, t = p && p.taille, cb = cableDuType(N, x.f.type), j = jaugeDuType(x.f.type), st = x.sertir;
+    return `<li class="fi-tr-fil"><b class="id">${esc(x.borne)}</b><span>${t ? 'cavité taille ' + esc(t) : 'cavité ?'}</span><span>${ident(x.f.type || '?')}${j ? ' · ' + esc(j) + ' AWG' : ''}${cb ? '' : ' <em>(câble absent de la table)</em>'}</span>`
+      + `<span>${st && st.reference ? ident(st.reference) : '<b class="fi-ko-t">aucun contact</b>'}</span><small>${esc(st && st.main ? 'choisi à la main' : st ? sourceDeLigne(st, 'table des contacts') : 'la table des contacts n’a pas de ligne pour cette taille, ce sexe et cette gauge')}</small></li>`; }).join('') : '';
+  return `<details class="fi-trace"><summary>D’où vient chaque pièce</summary><ol class="fi-tr">${lignes.join('')}</ol>`
+    + (parFil ? `<p class="fi-tr-t">Puis, câble par câble : la taille de la cavité (table des faces), la gauge du câble (table des câbles), et le contact qui va avec ce sexe, cette taille et cette gauge (table des contacts).</p><ul class="fi-tr-fils">${parFil}</ul>` : '')
+    + `<p class="fi-note">Chaque maillon vient de sa table, et d’elle seule : une règle de contact n’a pas les colonnes d’un connecteur, Volta ne peut pas prendre l’une pour l’autre.</p></details>`; }
 // les bornes qui ne sont sur aucun connecteur (CNT, GND…) : elles se raccordent au corps
 function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (b.parBorne.get(bo) || []).map(f => ({ ct: `<b>${esc(bo)}</b>`, f, sertir: null, rep: nom, borne: bo, plan: null })));
   // la référence de l'équipement (celle de ses liaisons), et ce que la base SEE en dit (08 nonies)
@@ -19554,7 +19676,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   // (sa colonne : le PN de la barrette, PN1 là où elle est l'appareil 1, PN2 là où elle est l'appareil 2)
   const colsPn = [...new Set(L.map(l => l.de === nom ? 'PN1' : l.vers === nom ? 'PN2' : '').filter(Boolean))].sort().join(' · ');
   const proposes = ecartRetest ? [{ sujet: '', champ: 'module', colonne: colsPn, objet: nom, avant: b.pn, apres: Q.reference, geste: main ? 'choisi ici' : 'Volta' }] : [];
-  return enTete({ type: 'barrette', genre: aPoser ? `À poser${sur ? ` · sur ${esc(sur)}` : ''}` : '', designation: aPoser ? '' : nom, nom, champ: 'eq-rep', aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '', etat: etatDesProblemes(probs), identite: id })
+  return enTete({ type: 'barrette', genre: aPoser ? `Ajoutée par Volta${sur ? ` · sur ${esc(sur)}` : ''}` : '', designation: aPoser ? '' : nom, nom, champ: 'eq-rep', aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '', etat: etatDesProblemes(probs), identite: id })
     + barreProblemes(probs, sections) + poser + (aPoser ? '' : blocRetest(ecritsDuRepere(nom), proposes)) + ficheSections('barrette', sections)
     + fiPied(aPoser ? { voir: raccord && raccord.de, menu: [['fi-renommer', 'Lui donner son vrai repère']] } : { tableau: nom, fil: nom, menu: MENU_BLOC }); }
 /* LA GALERIE des assemblages d'une norme (le lecteur : « quand on clique sur la norme, on voit tous les assemblages de
@@ -20028,6 +20150,8 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
   const crayon = $('fi-crayon'), champNom = $('eq-rep') || $('fil-num'); if (crayon && champNom) crayon.onclick = () => { champNom.focus(); champNom.select(); };
   // la barre des problèmes : dépliée, elle le reste pour cette fiche ; une ligne mène à la section qui le démontre
   const pbs = $('fi-pbs'); if (pbs) ecouter(pbs, 'toggle', () => { FI.pbs = pbs.open ? box.dataset.cle : ''; });
+  // la consommation d'un équipement : écrite en quittant le champ (ou à Entrée)
+  box.querySelectorAll('[data-conso]').forEach(i => { i.onchange = () => ecrireConso(nom, i.dataset.conso, i.value.trim()); i.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); i.blur(); } }; });
   box.querySelectorAll('[data-voir]').forEach(b => b.onclick = () => allerDansLaFiche(box, nom, b.dataset.voir, { connecteur: b.dataset.connecteur, viser: b.dataset.viser }));
   // les segments de connecteur, la face d'un connecteur, la face d'une prise, « Changer » : la fiche se refait en place
   // une bulle de connecteur l'ouvre, sur place et allumée (v73, l'ingénieur : « un clic sur A ne l'ouvre pas ») — même quand la section est fermée
@@ -22405,6 +22529,8 @@ function hypothesesR2(N, H, nb) { const dj = !!(N.disjoncteurs && N.disjoncteurs
     dj ? { genre: 'case', id: 'si-Cd', k: 'chuteDisjoncteur', lib: 'compter la chute du disjoncteur', groupe: 'chute',
       sert: 'Cochée (par défaut) : la chute du disjoncteur entre dans la chute en ligne — celle de votre table (« Du max », comptée entière), sinon celle de sa famille au prorata I / In. La génération est négligée : elle garantit 28 V en sortie des panneaux de disjoncteurs (votre note).' } : null,
     nb('si-F', 'frequence', 'fréquence', 'Hz', '10', 'reseau', 'En alternatif, la réactance saisie (à 400 Hz) monte avec la fréquence (X = 2πfL) : 400 Hz par défaut, un réseau à fréquence fixe ; 800 en fréquence variable (MIL-STD-704F, 360 à 800 Hz). Sans effet en continu.'),
+    dj ? { genre: 'case', id: 'si-Ca', k: 'calibreAuto', lib: 'Volta écrit lui-même le calibre qui passe', groupe: 'tableau',
+      sert: 'Cochée (par défaut — le lecteur, v74 : « dès que ça touche la courbe, tu mets directement le calibre qui marche ») : un calibre du fichier qui touche la courbe ou déclenche est remplacé par le plus petit qui passe, et ses câbles grossis. Décochée : Volta le propose seulement.' } : null,
     dj ? nb('si-M', 'marge', 'marge de courant', '%', '5', 'tableau', 'Le meilleur calibre tient chaque courant du profil majoré de ce pourcentage : 10 % par défaut, pour un profil estimé (R2 règle 13) ; 0 % pour un profil qui sort du bilan électrique au pire cas (NASA TM-102179).') : null,
     dj ? nb('si-Mt', 'margeTemps', 'marge de temps', '%', '5', 'tableau', 'Ce qu’une pointe peut consommer, au plus, du temps de déclenchement du meilleur calibre : 75 % par défaut (R2 § 3.1, étape 2).') : null,
     dj ? nb('si-Pc', 'prechauffage', 'préchauffage', '', '0.1', 'tableau', 'Un état ajouté au profil survient en service, le bilame chaud : son temps de déclenchement se divise par ce facteur. 1,6 par défaut, la borne basse de la feuille MS3320N (table VII : 1,6 à 3,7) ; 1 l’ôte.') : null,
@@ -22533,6 +22659,7 @@ function lierHypotheses(box, refaireFiche) { const H = app.simu, el = id => box.
   [['si-F', 'frequence', v => v > 0], ['si-M', 'marge', v => v >= 0], ['si-Mt', 'margeTemps', v => v > 0 && v <= 100], ['si-Pc', 'prechauffage', v => v >= 1]].forEach(([id, k, ok]) => { const e = el(id); if (!e) return;
     e.addEventListener('change', () => { const v = parseFloat(String(e.value).replace(',', '.')); if (isNaN(v) || !ok(v)) { e.value = H[k]; return; } if (v === H[k]) return; H[k] = v; refaire(id); }); });
   const cd = el('si-Cd'); if (cd) cd.addEventListener('change', () => { H.chuteDisjoncteur = cd.checked; refaire('si-Cd'); });
+  const ca = el('si-Ca'); if (ca) ca.addEventListener('change', () => { H.calibreAuto = ca.checked; if (ca.checked) { try { appliquerCalibresVolta(); } catch (_) { } } refaire('si-Ca'); });
   // la chute admise de la règle du lecteur : un nombre > 0, ou vide — la table Réseau reprend
   [['si-Cm', 'chuteMono'], ['si-Ct', 'chuteTri']].forEach(([id, k]) => { const e = el(id); if (!e) return;
     e.addEventListener('change', () => { const t = String(e.value).trim(), v = t ? parseFloat(t.replace(',', '.')) : null; if (v != null && !(v > 0)) { e.value = H[k] == null ? '' : H[k]; return; }
@@ -28627,7 +28754,10 @@ const atelier = {
   essai() { return atelier.charger(contratEssai()); },
   /* l'exemple embarqué, tel qu'il est livré, avec son profil de charge, comme si on venait de l'ouvrir (sans historique) :
      les batteries qui le lisent le demandent — l'outil, lui, s'ouvre sur la bibliothèque */
-  exemple() { ouvrirExemple(true); return app.dessin; },
+  exemple() { HYPOTHESES.calibreAuto = true; if (app.simu) app.simu.calibreAuto = true; ouvrirExemple(true); return app.dessin; },
+  /* l'exemple tel que la v73 l'ouvrait : le 10 A du fichier PROPOSÉ en 15 A, pas encore écrit (l'hypothèse « Volta écrit
+     lui-même le calibre qui passe » décochée) — les batteries qui jugent la carte de décision le demandent */
+  exempleSansCalibreAuto() { HYPOTHESES.calibreAuto = false; if (app.simu) app.simu.calibreAuto = false; ouvrirExemple(true); return app.dessin; },
   /* la bibliothèque (sa racine), et le retour au plan resté sur la table */
   bibliotheque() { montrerBibliotheque('racine'); return BIB.pret; },
   reprendre() { montrerLePlan(); return app.dessin; },

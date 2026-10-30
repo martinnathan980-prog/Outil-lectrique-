@@ -30,7 +30,7 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
   const ouvrir = async (o = {}) => { const page = await nav.newPage({ viewport: o.viewport || { width: 1440, height: 900 }, reducedMotion: o.reduit ? 'reduce' : 'no-preference', hasTouch: !!o.toucher });
     page.setDefaultTimeout(120000); page.on('pageerror', e => erreurs.push(e.message));
     await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && typeof BIB !== 'undefined' && BIB.pret, null, { timeout: 120000 });
-    await page.evaluate(() => atelier.exemple()); await page.waitForTimeout(700); await page.evaluate(() => allerAuPlan('1')); await page.waitForTimeout(500);
+    await page.evaluate(() => atelier.exempleSansCalibreAuto()); await page.waitForTimeout(700); await page.evaluate(() => allerAuPlan('1'));   // (v74 : W-012 reste en DR20 — le geste à défaire en a besoin) await page.waitForTimeout(500);
     await page.mouse.move(700, 600); return page; };
   const centre = (page, sel) => page.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, sel);
   const survoler = async (page, sel) => { const c = await centre(page, sel); await page.mouse.move(c.x, c.y); };
