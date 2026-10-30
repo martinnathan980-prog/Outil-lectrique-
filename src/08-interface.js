@@ -965,6 +965,11 @@ function pulser(cible) { if (mouvementReduit() || !app.dessin) return; clearTime
     let el = null; const u = 1 / app.vue.s;
     if (cible.type === 'fil') { const w = cible.f, p = w && sc.querySelector(`path.cab[data-i="${w.i}"]`); if (!p) return;
       el = document.createElementNS(NS_SVG, 'path'); el.setAttribute('d', p.getAttribute('d')); el.setAttribute('class', 'pulse pulse-fil'); }
+    // plusieurs liaisons à la fois (les câbles que Volta vient de grossir : 08-disjoncteurs) — leurs câbles dessinés, ensemble
+    else if (cible.type === 'liaisons') { const ps = D.fils.filter(w => !w.shunt && cible.ls.some(l => l.cable ? w.cable === l.cable : !w.cable && ((w.de === l.de && w.vers === l.vers) || (w.de === l.vers && w.vers === l.de))))
+        .map(w => sc.querySelector(`path.cab[data-i="${w.i}"]`)).filter(Boolean); if (!ps.length) return;
+      el = document.createElementNS(NS_SVG, 'g'); el.setAttribute('class', 'pulse');
+      ps.forEach(p => { const q = document.createElementNS(NS_SVG, 'path'); q.setAttribute('d', p.getAttribute('d')); q.setAttribute('class', 'pulse-fil'); el.appendChild(q); }); }
     else { const c = D.compDe.get(cible.nom) || D.comps.find(k => k.name === cible.nom), vt = c ? null : barretteAPoser(cible.nom); let b = null;
       if (c) { const q = boiteDuSymbole(c); b = { x: c.x + q.x, y: c.y + q.y, w: q.w, h: q.h }; }
       else if (vt) { const bs = bornesDePiquage(vt); b = { x: vt.x - 6, y: bs[0].y - 6, w: 12, h: bs[bs.length - 1].y - bs[0].y + 12 }; }
@@ -972,8 +977,9 @@ function pulser(cible) { if (mouvementReduit() || !app.dessin) return; clearTime
       el = document.createElementNS(NS_SVG, 'rect'); el.setAttribute('class', 'pulse pulse-bloc');
       [['x', b.x - m], ['y', b.y - m], ['width', b.w + 2 * m], ['height', b.h + 2 * m], ['rx', 6 * u]].forEach(([k, v]) => el.setAttribute(k, n3(v))); }
     el.setAttribute('aria-hidden', 'true'); sc.appendChild(el);
-    const kf = cible.type === 'fil' ? [{ opacity: 0 }, { opacity: 0.75, offset: 0.35 }, { opacity: 0 }] : [{ opacity: 0.95, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.16)' }];
-    const a = el.animate(kf, { duration: 300, iterations: 2, easing: cible.type === 'fil' ? 'ease-in-out' : 'cubic-bezier(.32,.72,0,1)' });
+    const fil = cible.type === 'fil' || cible.type === 'liaisons';
+    const kf = fil ? [{ opacity: 0 }, { opacity: 0.75, offset: 0.35 }, { opacity: 0 }] : [{ opacity: 0.95, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.16)' }];
+    const a = el.animate(kf, { duration: 300, iterations: 2, easing: fil ? 'ease-in-out' : 'cubic-bezier(.32,.72,0,1)' });
     a.onfinish = () => el.remove(); }, anim ? 300 : 30); }
 function allumerBloc(nom) { const sc = $('scene'); if (!sc || !app.dessin) return; eteindre(); const D = app.dessin, blocs = new Set();
   D.comps.forEach((c, k) => { if (c.name === nom) blocs.add(k); });

@@ -18,11 +18,10 @@
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
   /* ── LA TABLE : la même dans les deux thèmes (le lecteur, v72 : « un fond pas que noir, un peu dégradé, un petit peu
-     interactif »). Ses couches (#table) : le fond, le souffle, les points, la lueur. Ce qui s'écrit à même la table prend
+     interactif »). Ses couches (#table) : le fond, les points, la lueur. Ce qui s'écrit à même la table prend
      son encre (--t-table) ── */
   --s-app:#0e1626;                                       /* la couleur moyenne de la table (ce qui la remplace d'un aplat) */
   --table-fond:radial-gradient(1150px 780px at 96% -14%,rgba(96,140,220,.36),rgba(96,140,220,0) 62%),linear-gradient(158deg,#1b2843 0%,#121c30 42%,#0a111e 100%);
-  --table-souffle:radial-gradient(950px 720px at -8% 110%,rgba(48,100,176,.34),rgba(48,100,176,0) 64%),radial-gradient(640px 440px at 58% 44%,rgba(120,150,220,.07),rgba(120,150,220,0) 70%);
   --table-lueur:radial-gradient(closest-side,rgba(132,172,255,.17),rgba(132,172,255,.05) 52%,rgba(132,172,255,0));
   --s-grille:rgba(160,188,240,.22); --s-grille-2:rgba(160,188,240,.22);
   --points:radial-gradient(circle at 1px 1px,var(--s-grille) 1px,transparent 1.5px);   /* un point tous les 24 px */
@@ -376,8 +375,6 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 #table{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;contain:strict}
 #table>div{position:absolute;inset:0}
 #table .ta-fond{background:var(--table-fond)}
-#table .ta-souffle{background:var(--table-souffle);opacity:.55;animation:ta-respire 16s ease-in-out infinite alternate;will-change:opacity,transform}
-@keyframes ta-respire{from{opacity:.45;transform:scale(1)}to{opacity:1;transform:scale(1.06) translate(-1%,1%)}}
 #table .ta-points{background-image:var(--points);background-size:24px 24px}
 #table .ta-lueur{inset:auto;left:0;top:0;width:960px;height:960px;margin:-480px 0 0 -480px;border-radius:50%;background:var(--table-lueur);opacity:0;transition:opacity 1.2s ease;will-change:transform}
 #table.vue .ta-lueur{opacity:1}
@@ -1288,8 +1285,7 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition:none!important;animation:none!important}
   .phy,.fo-strip{scroll-behavior:auto}
-  /* la table immobile : ni lueur, ni souffle */
+  /* la table immobile : pas de lueur */
   #table .ta-lueur{display:none}
-  #table .ta-souffle{opacity:.75}
 }
 

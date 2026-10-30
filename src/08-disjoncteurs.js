@@ -277,8 +277,10 @@ function filsDuMeilleur(d) { const fs = d.contexte.fils, memes = (a, b) => JSON.
   return (d.meilleur.filsAChanger || []).map(x => ({ x, f: fs.find(f => f.l && (f.cable || '') === x.cable && f.type === x.actuel && memes([f.l.de, f.l.vers].filter(r => r && !estMasse(r) && !estDisjoncteur(r)), x.bouts)) })); }
 function changerFilsDuMeilleur(nom) { const d = disjonctionDe(nom), xs = filsAGrossir(d).filter(p => p.f && p.x.propose); if (!xs.length) return false;
   histPush(xs.length > 1 ? xs.length + ' câbles de ' + nom + ' grossis' : 'un câble de ' + nom + ' grossi');
-  xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition();
+  xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition(); pulserGrossis(xs);
   dire(xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') + '. Ctrl+Z les rend.'); return true; }
+// les câbles grossis s'éclairent deux fois sur le plan (08-interface, `pulser`) : l'œil voit ce que le geste a changé
+const pulserGrossis = xs => { if (xs.length && typeof pulser === 'function') pulser({ type: 'liaisons', ls: xs.map(p => p.f.l) }); };
 /* DÉCIDER (la carte de décision : « Passer en 15 A et grossir les 3 câbles ») : le retest est corrigé par le choix de
    l'outil — le part number du calibre retenu sur chaque liaison du disjoncteur (sans famille qui le construise, le calibre
    s'écrit au profil), les câbles que ce calibre demande à leur type proposé —, le fichier gardé dans `avant` (« Par
@@ -288,7 +290,7 @@ function deciderCalibre(nom) { const d = disjonctionDe(nom), cal = d.calibre; if
   histPush(nom + ' : ' + amperes(cal) + (xs.length ? ' et ' + pluriel2(xs.length, 'câble') + ' grossi' + (xs.length > 1 ? 's' : '') : ''));
   if (nouveau && nouveau !== pn) verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
   else if (!nouveau) poserCharge(nom, { ...(chargeEcrite(nom) || {}), calibre: cal });
-  xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition();
+  xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition(); pulserGrossis(xs);
   dire(nom + ' : ' + amperes(cal) + (nouveau ? ' (' + nouveau + ')' : '') + (xs.length ? ', ' + xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + '. Ctrl+Z défait le tout.'); return true; }
 /* LA CARTE DE DÉCISION (le parcours v72 : « 102CB1 coche 15 A en vert sous 4 problèmes rouges ; la vraie histoire est la
    première des onze lignes de la barre, repliée ») : en tête de la fiche, quand le calibre que l'outil retient n'est pas

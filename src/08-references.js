@@ -244,7 +244,9 @@ async function importerReferences(fichier) { if (!fichier) return; const nom = f
         nom + ' : aucune colonne Harness — sans elle, je ne sais pas séparer les machines.');
       FICHIERS.base = { nom, liaisons: r.liaisons }; rendreFichiers(); return; }
     adopterReferences(r.liaisons, nom); const B = app.references.base, G = rangerLesContrats(B, nom);
-    baseRecue(nom, ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes de l’installation) :', liste: ig } : null, G); ficheFichiers('base');
+    baseRecue(nom, ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes de l’installation) :', liste: ig } : null, G);
+    // déposée depuis la bibliothèque, qui montre déjà les installations créées : « Vos fichiers » ne s'ouvre pas par-dessus
+    if (!(typeof bibliothequeOuverte === 'function' && bibliothequeOuverte())) ficheFichiers('base');
     dire(lies([plurielLie(B.meta.harnais, 'harness'), plurielLie(B.meta.dessins, 'dessin'), plurielLie(B.meta.n, 'liaison')]) + ' gardés dans ce navigateur : les fiches disent ce qui a déjà été fait' + (G ? ', et la bibliothèque range ' + plurielLie(G.installs, 'installation') + '.' : '.'));
   } catch (e) { echecImport('base', { texte: `${esc(nom)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 /* Une empreinte courte du contrat (ce que la comparaison lit) : les comparaisons gardées se périment quand il change. */

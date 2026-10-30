@@ -44,10 +44,6 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 .attente .at-gestes button:hover{background:var(--palet-2)}
 .attente .at-gestes button:focus-visible{outline:2px solid var(--glace);outline-offset:2px}
 
-/* ─── LE FONDU : le dessin d'avant (une copie) s'efface au-dessus du nouveau (08-interface, `remplacerDessin`) ─── */
-.dessin-fondu{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;opacity:1;transition:opacity .55s var(--courbe)}
-.dessin-fondu.part{opacity:0}
-
 /* ─── LA PETITE BANDE du milieu (#affinage) : une barre fine après ses mots ; les folios pas encore prêts, pâles ─── */
 .affinage .af-barre{flex:none;width:44px;height:3px;border-radius:2px;background:var(--voile-3);overflow:hidden}
 .affinage .af-barre span{display:block;height:100%;background:var(--glace);transform-origin:0 50%;transition:transform .25s linear}
@@ -57,5 +53,4 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
   /* la même lumière, immobile : les nappes posées au temps zéro (08-table), ni lueur, ni révélation, ni courant */
   #table :is(.ta-lueur,.ta-revele,.ta-courant){display:none}
   #table .ta-points{transform:none!important}
-  .dessin-fondu{display:none}
 }
