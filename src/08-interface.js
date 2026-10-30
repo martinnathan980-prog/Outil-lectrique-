@@ -217,6 +217,10 @@ function copieDesCables(sc) { const g = document.createElementNS(NS_SVG, 'g');
    plus). Les câbles de l'esquisse s'effacent en 120 ms ; ceux du définitif attendent, puis paraissent quand les blocs
    arrivent (260 à 520 ms) : jamais deux jeux de câbles à la fois. Un bloc qui n'existait pas paraît à +200 ms (220 ms). Un transform par
    bloc, rien d'autre ne bouge ; le mouvement réduit coupe net. */
+/* La fin d'un geste animé : `fin` à la fin de l'animation — et, si cette fin se perd (une page chargée, une animation
+   annulée), un filet la rattrape ; une animation en pause (les planches image par image) attend. `fin` ne sert qu'une fois. */
+function auBoutDe(a, fin, ms) { let fait = false; const une = () => { if (!fait) { fait = true; fin(); } }; a.onfinish = une;
+  const filet = () => { if (fait) return; if (a.playState === 'paused' || a.playState === 'running') { setTimeout(filet, ms); return; } une(); }; setTimeout(filet, ms); }
 const RANGE = { anims: [], g: null, part: null };
 function rangerLeDessin(avant) { const sc = $('scene'), svg = $('svg'), D = app.dessin; finirRangement(); if (!sc || !svg || !D) return;
   const s = app.vue.s, parNom = new Map(); avant.blocs.forEach(a => (parNom.get(a.name) || parNom.set(a.name, []).get(a.name)).push(a));
@@ -230,10 +234,10 @@ function rangerLeDessin(avant) { const sc = $('scene'), svg = $('svg'), D = app.
   // voyait flotter loin de leurs blocs encore en chemin (la planche du rangement) —, puis se défait
   svg.appendChild(avant.cables);
   const part = avant.cables.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
-  part.onfinish = () => avant.cables.remove(); RANGE.anims.push(part); RANGE.part = avant.cables;
+  auBoutDe(part, () => avant.cables.remove(), 400); RANGE.anims.push(part); RANGE.part = avant.cables;
   const neufs = [...sc.querySelectorAll(':scope > :is(.cab,text.filnum,rect.halo,.jn,.vt)')], vient = { duration: 260, delay: 260, easing: 'cubic-bezier(.32,.72,0,1)', fill: 'backwards' };
   if (neufs.length) { const g = document.createElementNS(NS_SVG, 'g'); g.setAttribute('class', 'range-cables'); neufs[0].before(g); neufs.forEach(e => g.appendChild(e)); RANGE.g = g;
-    const a = g.animate([{ opacity: 0 }, { opacity: 1 }], vient); a.onfinish = () => deballerRangement(); RANGE.anims.push(a); }
+    const a = g.animate([{ opacity: 0 }, { opacity: 1 }], vient); auBoutDe(a, deballerRangement, 900); RANGE.anims.push(a); }
   sc.querySelectorAll(':scope > .loupe').forEach(l => RANGE.anims.push(l.animate([{ opacity: 0 }, { opacity: 1 }], vient)));
   vont.filter(v => !v.neuf).sort((a, b) => a.d - b.d).forEach((v, rang) => { if (v.d < 0.5) return;
     RANGE.anims.push(v.g.animate([{ transform: `translate(${v.c.x + v.dx}px,${v.c.y + v.dy}px)` }, { transform: `translate(${v.c.x}px,${v.c.y}px)` }],
@@ -1694,11 +1698,11 @@ function glisserFolio(photo, sens) { finirGlisse(); const svg = $('svg'), sc = $
   if (!D || !sc) { if (photo.feuille && photo.scene) photo.scene.prepend(photo.feuille); }
   const d = 32 * sens, sortie = { duration: 120, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }, entree = { duration: 260, delay: 100, easing: 'cubic-bezier(.32,.72,0,1)', fill: 'backwards' };
   const a = photo.svg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-d}px)` }], sortie);
-  a.onfinish = () => { if (GLISSE.photo === photo) { photo.svg.remove(); GLISSE.photo = null; } }; GLISSE.anims.push(a);
+  auBoutDe(a, () => { if (GLISSE.photo === photo) { photo.svg.remove(); GLISSE.photo = null; } }, 400); GLISSE.anims.push(a);
   if (!D || !sc) return;
   const s = app.vue.s, kids = [...sc.children].filter(e => !e.matches('g.feuille'));
   if (kids.length) { const g = document.createElementNS(NS_SVG, 'g'); g.setAttribute('class', 'folio-vient'); kids[0].before(g); kids.forEach(e => g.appendChild(e)); GLISSE.g = g;
-    const b = g.animate([{ opacity: 0, transform: `translate(${d / s}px,0)` }, { opacity: 1, transform: 'none' }], entree); b.onfinish = () => deballerGlisse(); GLISSE.anims.push(b); }
+    const b = g.animate([{ opacity: 0, transform: `translate(${d / s}px,0)` }, { opacity: 1, transform: 'none' }], entree); auBoutDe(b, deballerGlisse, 700); GLISSE.anims.push(b); }
   // la feuille et son ombre glissent de leur place d'avant à la nouvelle — si elle a changé
   const bb = D.bbox, R0 = photo.papier, R1 = { x: app.vue.tx + bb.x * s, y: app.vue.ty + bb.y * s, w: bb.w * s, h: bb.h * s }, f = sc.querySelector('g.feuille');
   if (f && Math.abs(R0.x - R1.x) + Math.abs(R0.y - R1.y) + Math.abs(R0.w - R1.w) > 1.5) { const k = bb.k || bb.w / PAGE_W, glisse = { duration: 300, easing: 'cubic-bezier(.65,0,.35,1)' };
@@ -1745,8 +1749,8 @@ function glisserPastille(strip, deP, deX, deW) { const on = strip.querySelector(
     p.animate([{ transform: `translateX(${deX}px)`, width: (deW || on.offsetWidth) + 'px' }, { transform: `translateX(${on.offsetLeft}px)`, width: on.offsetWidth + 'px' }], { ...t, fill: 'forwards' }),
     // l'encre change quand la pastille passe la moitié du chemin (la même courbe) : sombre sur elle, claire sur le verre
     on.animate([{ color: clair }, { color: clair, offset: 0.5 }, { color: encre, offset: 0.62 }, { color: encre }], t), de.animate([{ color: encre }, { color: encre, offset: 0.38 }, { color: clair, offset: 0.5 }, { color: clair }], t)];
-  const fin = () => { glisserPastille.fin = null; as.forEach(a => { try { a.cancel(); } catch (_) { } }); p.remove(); on.style.background = ''; on.style.boxShadow = ''; requestAnimationFrame(() => { on.style.transition = ''; }); };
-  glisserPastille.fin = fin; as[0].onfinish = fin; }
+  let fini = false; const fin = () => { if (fini) return; fini = true; if (glisserPastille.fin === fin) glisserPastille.fin = null; as.forEach(a => { try { a.cancel(); } catch (_) { } }); p.remove(); on.style.background = ''; on.style.boxShadow = ''; requestAnimationFrame(() => { on.style.transition = ''; }); };
+  glisserPastille.fin = fin; auBoutDe(as[0], fin, 500); }
 
 /* ---- aller à un repère ou à un fil, même sur un autre folio ------------ */
 function aller(cible) { const P = plans(); const nom = cible.nom;
@@ -1875,10 +1879,8 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
   box.addEventListener('pointerdown', e => e.preventDefault());   // le champ garde le focus
   box.addEventListener('click', e => { const b = e.target.closest('.q-item'); if (!b) return; const c = qCands[+b.dataset.i]; if (c) trouve(c); });
   q.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== q) fermerRecherche(); }, 120));
-  $('recherche').addEventListener('click', e => { if (!e.target.closest('.q-liste')) q.focus(); });
-  // Ctrl+K (⌘K) : la palette, partout — même dans un champ ; une seconde fois, elle se ferme
-  window.addEventListener('keydown', e => { if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || (e.key || '').toLowerCase() !== 'k') return;
-    if ($('relief') && !$('relief').hidden) return; e.preventDefault(); e.stopPropagation(); if (paletteOuverte()) fermerPalette(); else ouvrirPalette(); }, true); }
+  $('recherche').addEventListener('click', e => { if (!e.target.closest('.q-liste')) q.focus(); }); }
+// (Ctrl+K, ⌘K : la touche globale du chrome — « tout relier », A2 — appelle `ouvrirPalette` ; ouverte, la palette la reprend pour se fermer)
 
 /* ---- LA PALETTE (Ctrl+K) -------------------------------------------------
    v73 (l'ingénieur, n° 10 : « le clavier n'est pas celui d'un outil pro ; rien pour “export”, “hypo”, “pdf” ») : une
@@ -1887,7 +1889,7 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
    folios — et les OBJETS du plan (la liste de la recherche, qui pardonne). « Actions » en tête quand le mot y répond ;
    « À reprendre » : les gestes concrets du contrôle (« Tout régler : 102CB1 en 15 A… », 08-controle `gestesDuPoint`). Un
    verre de nuit au centre, qui tombe en 200 ms ; chaque action dit sa touche : la palette l'enseigne en passant. ↑ ↓,
-   Entrée, Échap (le clavier revient d'où il venait), Ctrl+K encore. */
+   Entrée, Échap (le clavier revient d'où il venait), Ctrl+K encore. Ctrl+K l'ouvre depuis la touche globale (A2). */
 const PALETTE = { el: null, sel: 0, lignes: [], avant: null };
 // ce qu'on tape aussi pour trouver une action (ses mots d'atelier, sans accent)
 const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx retest corrige modifications envoyer livrable', svg: 'image vectorielle dessin',
@@ -1917,7 +1919,8 @@ function actionsDeLaPalette() { const xs = [], vu = new Set();
       P.forEach((p, i) => en('folio:' + p, 'Folio ' + p, '', () => allerAuPlan(p), { des: pluriel(liaisonsDe(p).length, 'câble'), mots: 'folio f' + (i + 1) + ' page ' + (i + 1) })); }
     const cle = cleCourante(); if (cle && app.retouches.has(cle)) en('auto', 'Revenir au dessin automatique', '', revenirAutomatique, { mots: 'retouche moteur annuler dessin' }); }
   if (app.hist && app.hist.length) en('defaire', 'Défaire : ' + app.hist[app.hist.length - 1].quoi, 'Ctrl+Z', defaire, { mots: 'annuler defaire retour', ico: I('btnUndo') });
-  if (typeof refaire === 'function' && typeof peutRefaire === 'function' && peutRefaire()) en('refaire', 'Refaire', 'Ctrl+Y', refaire, { mots: 'refaire retablir' });
+  const aRefaire = typeof pileRefaire === 'function' ? pileRefaire() : [];
+  if (aRefaire.length && typeof refaireEtDire === 'function') en('refaire', 'Refaire : ' + aRefaire[aRefaire.length - 1].quoi, 'Ctrl+Y', refaireEtDire, { mots: 'refaire retablir', ico: I('btnRedo') });
   return xs; }
 // les gestes concrets du contrôle : un par point, le principal (« Tout régler… », « Unifier sur… », « La poser »)
 function gestesDeLaPalette() { if (typeof gestesDuPoint !== 'function' || !CONTROLE || !CONTROLE.items) return []; const out = [], vus = new Set();
@@ -1956,7 +1959,7 @@ function construirePalette() { if (PALETTE.el) return PALETTE.el;
     if (e.key === 'ArrowDown') { e.preventDefault(); pas(1); } else if (e.key === 'ArrowUp') { e.preventDefault(); pas(-1); }
     else if (e.key === 'Home' && n && !q.value) { e.preventDefault(); PALETTE.sel = 0; marquerPalette(true); } else if (e.key === 'End' && n && !q.value) { e.preventDefault(); PALETTE.sel = n - 1; marquerPalette(true); }
     else if (e.key === 'Enter') { e.preventDefault(); faireDeLaPalette(PALETTE.sel); }
-    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermerPalette(); }
+    else if (e.key === 'Escape' || ((e.ctrlKey || e.metaKey) && (e.key || '').toLowerCase() === 'k')) { e.preventDefault(); e.stopPropagation(); fermerPalette(); }
     else if (e.key === 'Tab') { e.preventDefault(); pas(e.shiftKey ? -1 : 1); } });   // le clavier reste dans la palette
   liste.addEventListener('pointerdown', e => e.preventDefault());   // le champ garde le clavier
   liste.addEventListener('pointermove', e => { const b = e.target.closest('[data-i]'); if (b && +b.dataset.i !== PALETTE.sel) { PALETTE.sel = +b.dataset.i; marquerPalette(false); } });
