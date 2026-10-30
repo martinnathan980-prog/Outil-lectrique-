@@ -16,9 +16,59 @@
 .pl-bulle .pl-b-id{font-family:var(--mono);font-weight:500;color:var(--bulle-t)}
 .pl-bulle .pl-b-route{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin:-2px 6px 0 0}
 
-/* LE CURSEUR DIT D'AVANCE ce qui se prendra : la croix de déplacement sur un bloc (une pièce qu'on bouge), la main ouverte
-   sur le papier (la vue qu'on glisse) — hier la même main sur les deux. Les bornes et les câbles gardent leurs flèches. */
-#planche[data-prise="bloc"] #svg *{cursor:move}
+/* LE CURSEUR DIT D'AVANCE ce qui se fera : sur un bloc, la main qui montre (un clic ouvre sa fiche — la croix laissait
+   croire qu'un clic le déplacerait, le technicien v73) ; il se prend en glissant, la main fermée ; la main ouverte sur le
+   papier (la vue qu'on glisse). Les bornes et les câbles gardent leurs flèches. */
+#planche[data-prise="bloc"] #svg *{cursor:pointer}
+
+/* LE ZOOM SÉMANTIQUE (08 `appliquerVue`, trois paliers : `.tait-1`, `.tait`, `.tait-3`) : sous 7 px d'écran, les petites
+   écritures se taisent — le numéro d'un câble et son fond de papier (le câble se referme dessous), la borne, la pastille,
+   la lettre d'un connecteur, un petit repère, une désignation. Le dessin cadré se lit comme une carte : les blocs, leurs
+   repères, les routes. Ce qui est allumé (`.hl`) et le bloc choisi parlent toujours. Elles reviennent en 140 ms. Une
+   classe sur la scène, jamais un recalcul : la copie qui s'efface (`.range-part`, le dessin qui se range) la porte aussi. */
+#planche svg text,#planche svg .halo{transition:opacity var(--d-rapide) var(--courbe)}
+#planche .tait-1 :is(.bpnum,.prnum,.barnum,.connpin,.rep-petit):not(.hl),
+#planche .tait :is(text.filnum,rect.halo,.connnom,.xref,.cb-ret,.bsname,.des,.dr-ou):not(.hl),
+#planche .tait-3 :is(.pinlbl,.dr-f,.rname):not(.hl){opacity:0}
+#planche :is(.tait-1,.tait,.tait-3) :is(.comp,.vt).hl :is(.bpnum,.prnum,.barnum,.connpin,.rep-petit,.connnom,.xref,.cb-ret,.bsname,.des,.pinlbl,.dr-f,.dr-ou,.rname){opacity:1}
+
+/* LA LOUPE (08 `poserLoupe`) : le numéro d'un câble allumé, levé à 11 px d'écran sur une pastille de papier, cerclée de la
+   couleur de sa route, une ombre d'un rien ; elle paraît en 140 ms, grandie depuis sa place. */
+#svg .loupe{pointer-events:none}
+#svg .loupe .lp{animation:loupe-entre var(--d-rapide) var(--courbe-entree) both;transform-box:fill-box;transform-origin:center}
+#svg .loupe .lp-fond{fill:#ffffff;stroke-width:1.25px;vector-effect:non-scaling-stroke}
+#svg .loupe .lp-ombre{fill:rgba(8,16,32,.16)}
+#svg .loupe .lp-n{fill:#0b0f14;font-weight:700;letter-spacing:.1px}
+@keyframes loupe-entre{from{opacity:0;scale:.82}}
+
+/* L'OBJET TROUVÉ PULSE (08 `pulser`) : un anneau de glace autour du bloc, qui s'élargit et s'efface, deux fois ; le câble
+   s'éclaire d'un trait large, deux fois. Sur le papier blanc, la glace prend une encre plus profonde pour se voir. */
+#svg .pulse{pointer-events:none;opacity:0}
+#svg .pulse-bloc{fill:rgba(159,194,255,.22);stroke:#5b8cf0;stroke-width:2.5px;vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:center}
+#svg .pulse-fil{fill:none;stroke:#7fa9ff;stroke-width:10px;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+
+/* LE DESSIN SE RANGE (08 `rangerLeDessin`, le moment signature n° 3) : de l'esquisse au définitif, chaque bloc glisse de
+   sa place à la nouvelle ; les câbles de l'esquisse (une copie, `.range-part`) s'effacent en 120 ms, ceux du définitif
+   (`.range-cables`, le temps du geste) attendent, puis paraissent — jamais deux jeux de câbles à la fois. Tout est en
+   animations Web (08) : rien ici que l'inertie de la copie. */
+#svg .range-part,#svg .range-cables{pointer-events:none}
+
+/* LE FOLIO QUI CHANGE (08 `glisserFolio`) : la photo du dessin qu'on quitte (sans sa feuille), posée sur le nouveau le
+   temps qu'elle sorte ; le nouveau dessin attend dans un groupe (`.folio-vient`). */
+#planche .folio-part{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+#svg .folio-vient{pointer-events:none}
+
+/* LA PASTILLE DU FOLIO COURANT GLISSE d'une puce à l'autre (08 `glisserPastille`) : posée sous les puces, le temps du
+   geste ; elle a la matière de la puce courante (lue sur elle). La bande la porte (elle défile avec ses puces). */
+#fo-strip{position:relative}
+.fo-pastille{position:absolute;left:0;top:0;z-index:0;pointer-events:none;border-radius:8px}
+
+@media (prefers-reduced-motion:reduce){
+  #planche svg text,#planche svg .halo{transition:none}
+  #svg .loupe .lp{animation:none}
+  #svg .pulse,.fo-pastille,#planche .folio-part{display:none}
+}
+
 /* ESPACE tenu : la vue, partout — la main, fermée pendant qu'on glisse */
 #planche.espace,#planche.espace *{cursor:grab!important}
 #planche.espace.tient,#planche.espace.tient *,#planche.tient,#planche.tient *{cursor:grabbing!important}

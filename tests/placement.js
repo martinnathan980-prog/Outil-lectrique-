@@ -14,7 +14,8 @@
        récapitulatif », la puce du folio qui respire), que l'écran répond
        pendant le calcul (on change de folio, on revient), que l'ESQUISSE
        arrive d'abord (un dessin complet, sain, la petite bande le dit), puis
-       que le dessin du concours la remplace EN FONDU, la feuille exactement à
+       que le dessin du concours la remplace EN SE RANGEANT (v73 : les blocs
+       glissent, jamais deux dessins à la fois), la feuille exactement à
        sa place à l'écran, IDENTIQUE, point par point, à celui que la page
        calcule elle-même — le Worker partage son concours avec ses aides ;
      · que retenir un autre calibre ne change pas la clé du placement (le part
@@ -100,13 +101,18 @@ const cadreDansLaPage = nom => { const d = app.dessin, c = d && d.comps.find(k =
   const me = await page.evaluate(P.mesurerDansLaPage);
   ok(!me.filsDansBloc && !me.chevauches && !me.rompus, 'l’esquisse est un dessin sain', JSON.stringify({ droits: me.taux, crois: me.croisements }));
   if (process.env.CAPTURES) await page.screenshot({ path: process.env.CAPTURES + '/placement-esquisse.png' }).catch(() => { });
-  // puis le dessin du concours la remplace, en fondu, la feuille à sa place, identique à celui de la page
+  // puis le dessin du concours la remplace : il SE RANGE (v73, le moment signature n° 3 — le fondu enchaîné superposait deux
+  // dessins), la feuille à sa place, identique à celui de la page (MIS À JOUR : le fondu n'est plus)
   await page.waitForFunction(p => app.plan === p && !!app.dessin && !app.dessin.provisoire, gros.folio); const tArrive = Date.now() - t0;
-  const venu = await page.evaluate(() => ({ ...attenteDansLaPage(), feuille: feuilleDansLaPage(), fondu: !!document.querySelector('#planche .dessin-fondu'), empreinte: empreinteDansLaPage() }));
+  const venu = await page.evaluate(() => ({ ...attenteDansLaPage(), feuille: feuilleDansLaPage(), empreinte: empreinteDansLaPage(),
+    range: { glissent: [...document.querySelectorAll('#scene .comp')].filter(g => g.getAnimations().some(a => a.playState === 'running')).length, copieDuDessin: !!document.querySelector('#planche .dessin-fondu'),
+      blocsCopies: document.querySelectorAll('#svg > .range-part .comp').length, cablesQuiPartent: !!document.querySelector('#svg > .range-part .cab'), cablesQuiAttendent: !!document.querySelector('#scene > .range-cables .cab'), scenes: document.querySelectorAll('[id="scene"]').length } }));
   ok(JSON.stringify(venu.feuille) === JSON.stringify(esq.feuille) && venu.empreinte !== esq.empreinte, 'le dessin définitif remplace l’esquisse SANS QUE LA VUE SAUTE : la feuille au même coin, à la même taille', JSON.stringify(esq.feuille) + ' → ' + JSON.stringify(venu.feuille));
-  ok(venu.fondu, 'en fondu : l’esquisse s’efface au-dessus du nouveau dessin');
+  ok(venu.range.glissent > 0 && !venu.range.copieDuDessin && !venu.range.blocsCopies && venu.range.scenes === 1 && venu.range.cablesQuiAttendent,
+    'le dessin SE RANGE : les blocs glissent de l’esquisse au définitif, sans double image (aucune copie du dessin ni d’un bloc) ; les câbles du définitif attendent', JSON.stringify(venu.range));
   await page.waitForTimeout(900);
-  ok(await page.evaluate(() => !document.querySelector('#planche .dessin-fondu')), 'le fondu fini, la copie de l’esquisse s’en va');
+  ok(await page.evaluate(() => !document.querySelector('#svg > .range-part') && !document.querySelector('#scene .range-cables') && document.querySelectorAll('#scene > .comp').length > 0 && !document.querySelector('#scene .comp').getAnimations().length),
+    'le rangement fini, la copie des câbles de l’esquisse s’en va, tout est à sa place dans la scène');
   ok(!venu.visible && !venu.puce, 'le dessin arrivé, l’attente et le point de la puce disparaissent');
   ok(venu.etat.faits >= 1 && !venu.etat.erreur, 'le Worker a rendu le folio, sans erreur', JSON.stringify({ faits: venu.etat.faits, relus: venu.etat.relus, aides: venu.etat.aides, erreur: venu.etat.erreur, ms: tArrive }));
   ok(venu.empreinte === reference, 'LE DESSIN NE CHANGE PAS : venu du Worker, il est identique point par point à celui de la page', venu.empreinte === reference ? reference.length + ' caractères d’empreinte' : 'différent');
