@@ -63,9 +63,11 @@ function contactDuPlan(l) { const xs = [];
 /* Les disjoncteurs VOISINS d'un repère : ceux où aboutit un chemin de fils depuis lui (bus → sous-bus) ; leur calibre
    nominal (écrit, sinon le part number) sert à la sélectivité 2:1 — sans passer par l'idéal, qui dépendrait du nôtre. */
 const calibreNominal = nom => { const p = chargeDe(nom); if (p && p.calibre > 0) return p.calibre; const f = familleDuPn(pnDuRepere(nom), app.norme); return f ? f.calibre : null; };
-/* Le calibre que le FOLIO écrit à côté du symbole : le retenu (l'automatique d'office, comme la fiche — le lecteur : « commence
-   directement par l'automatique »), sinon, si le moteur ne sait pas trancher, le nominal. */
-const calibreAuFolio = nom => { try { const d = disjonctionDe(nom); return d && d.calibre > 0 ? d.calibre : calibreNominal(nom); } catch (e) { return calibreNominal(nom); } };
+/* Le calibre que le FOLIO écrit à côté du symbole : celui qui sera MONTÉ — le calibre écrit (v73, la règle : ce que l'écran
+   montre est ce qui part ; l'ingénieur, n° 6 : « le folio écrit 15 A, la nomenclature commande un MS3320-10 ») ; la
+   proposition de l'outil, pas encore écrite, se dit dans la fiche (« 15 A proposé »), pas sur le dessin. Sinon, si le
+   moteur ne sait pas trancher, le nominal. */
+const calibreAuFolio = nom => { try { const d = disjonctionDe(nom), c = d && (d.calibreEcrit || d.calibre); return c > 0 ? c : calibreNominal(nom); } catch (e) { return calibreNominal(nom); } };
 /* Le calibre d'un VOISIN, pour la sélectivité : celui que l'outil lui retient (l'automatique, comme sa fiche et son folio)
    — jugé sur un seul niveau : ses propres voisins, eux, comptent pour leur calibre nominal (pas de ricochet sans fin). */
 let VOISINS_NOMINAUX = 0;
@@ -95,7 +97,16 @@ function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit0 = profil && p
   const chutePropre = chuteDuDisjoncteur(app.norme, famille, calibre);
   // le part number du retest jugé à son tour (passe-t-il ?) quand l'outil en retient un autre
   const gPn = pn && pn !== calibre ? (d.gamme || []).find(g => g.calibre === pn) || null : null;
-  return { ...d, profil, ecrit, pn, gPn, famille, courbe, chutePropre, voisins, contexte, passe, origine: ecrit ? 'main' : calibre && calibre === passe ? 'ideal' : pn && calibre === pn ? 'pn' : calibre ? 'ideal' : '', fils: protectionDesFils(app.norme, calibre, profil, contexte.fils, hyp) }; }
+  const origine = ecrit ? 'main' : calibre && calibre === passe ? 'ideal' : pn && calibre === pn ? 'pn' : calibre ? 'ideal' : '', fils = protectionDesFils(app.norme, calibre, profil, contexte.fils, hyp);
+  /* v73 — LE CALIBRE ÉCRIT (la règle : ce que l'écran montre est ce qui part, rien n'est écrit sans le lecteur ; le
+     technicien, n° 1 : « W-012 en DR16, pas protégé sous un 15 A qui n'est pas dans le fichier ») : celui qui sera MONTÉ —
+     le part number du retest, ou le calibre que le lecteur a retenu à la main ou accepté (« Passer en 15 A », « Tout
+     régler »). Tant que l'outil propose un autre calibre sans qu'il soit écrit (`propositionNonEcrite`), c'est celui du
+     retest : les câbles, leurs contacts, la table 11-3 et la chute propre du disjoncteur se jugent sous lui
+     (`filsEcrits`) ; la proposition se dit à part — elle porte le problème du disjoncteur. */
+  const nonEcrit = !!(origine !== 'main' && calibre > 0 && pn > 0 && Math.abs(pn - calibre) > 1e-9), calibreEcrit = nonEcrit ? pn : calibre;
+  const filsEcrits = calibreEcrit === calibre ? fils : protectionDesFils(app.norme, calibreEcrit, profil, contexte.fils, hyp);
+  return { ...d, profil, ecrit, pn, gPn, famille, courbe, chutePropre, voisins, contexte, passe, origine, fils, calibreEcrit, filsEcrits }; }
 const calibreDe = nom => disjonctionDe(nom).calibre;
 /* LE MEILLEUR CALIBRE d'un disjoncteur, avec ses fils (09 bis, `meilleurDe`) : { calibre, pn, famille, catalogue, pourquoi,
    marge, filsAChanger: [{ cable, actuel, propose, raison, … }], contactsTouches: [{ cable, actuel, propose, raison, … }],
@@ -166,10 +177,12 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
     out.push({ niveau: k === 'declenche' ? 'ko' : 'att', texte: k === 'passe' ? `le retest porte un ${amperes(d.pn)} (${pnR}) : ${d.calibre < d.pn ? 'le ' + amperes(d.calibre) + ' suffit' : 'l’outil retient le ' + amperes(d.calibre) + (d.voisins.some(v => v.calibre > 0 && Math.max(v.calibre, d.pn) < SELECTIVITE * Math.min(v.calibre, d.pn) - 1e-9) ? ' (sélectivité avec le voisin)' : '')}`
       : k === 'juste' ? `le retest porte un ${amperes(d.pn)} (${pnR}), ${motDuVerdict('juste')} — il touche la courbe : ${retenu}` : `le retest porte un ${amperes(d.pn)} (${pnR}) qui ${motDuVerdict('declenche')} : ${retenu}` }); }
   d.voisins.forEach(v => { if (v.calibre > 0 && d.calibre > 0 && Math.max(v.calibre, d.calibre) < SELECTIVITE * Math.min(v.calibre, d.calibre) - 1e-9) out.push({ niveau: 'att', texte: `sélectivité avec ${v.nom} (${amperes(v.calibre)}) : l’amont devrait faire au moins le double de l’aval` }); });
-  d.fils.forEach(f => { const nomF = (f.cable || 'câble sans numéro') + (f.type ? ' (' + f.type + ')' : '');
+  // ses câbles, sous le calibre ÉCRIT (v73) : celui du retest tant que la proposition ne l'est pas — « du retest » le dit
+  const calE = d.calibreEcrit || d.calibre, duE = calE !== d.calibre ? ' du retest' : '';
+  (d.filsEcrits || d.fils).forEach(f => { const nomF = (f.cable || 'câble sans numéro') + (f.type ? ' (' + f.type + ')' : '');
     if (f.verdict === 'fil') out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)}${f.pire.t === Infinity ? '' : ' / ' + secondes(f.pire.t)} > ${amperes(f.pire.admise)} admis ${pourPalier(f.pire.palier)}${motFacteur(f.pire.palier === Infinity ? f.facteur : f.facteurCourt)}` });
-    else if (f.verdict === 'calibre') out.push({ niveau: 'att', texte: `${nomF} : ${amperes(f.continu)} admis en continu${motFacteur(f.facteur)} < calibre ${amperes(d.calibre)} — pas protégé en surcharge` });
-    else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(d.calibre)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuFil(f, x)}` }); } });
+    else if (f.verdict === 'calibre') out.push({ niveau: 'att', texte: `${nomF} : ${amperes(f.continu)} admis en continu${motFacteur(f.facteur)} < calibre ${amperes(calE)}${duE} — pas protégé en surcharge` });
+    else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(calE)}${duE} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuFil(f, x)}` }); } });
   return out; }
 
 /* ---- les gestes sur le contrat ------------------------------------------------------ */
@@ -503,17 +516,19 @@ function tableauProfil(d) { const P = d.profil, E = etatsDuProfil(P), parI = new
 /* ---- ses câbles, pour la section commune « Câbles » (08-fiche, `listeCables`) ------------ */
 /* La chute en ligne depuis le disjoncteur, chemin par chemin : au courant permanent du profil (sinon le calibre, sinon
    l'hypothèse), à travers les prises de coupure et les barrettes, la part du disjoncteur comprise. */
-function chutesDe(nom, d) { const H = app.simu || HYPOTHESES, perm = d.profil && d.profil.perm && nombreLu(d.profil.perm.i) > 0 ? nombreLu(d.profil.perm.i) : null, I = perm || (d.calibre > 0 ? d.calibre : H.courant);
+function chutesDe(nom, d) { const cal = d.calibreEcrit || d.calibre, H = app.simu || HYPOTHESES, perm = d.profil && d.profil.perm && nombreLu(d.profil.perm.i) > 0 ? nombreLu(d.profil.perm.i) : null, I = perm || (cal > 0 ? cal : H.courant);
   const courts = (d.points || []).filter(p => p.t !== Infinity && p.i > 0);
-  const cs = chutesDepuis(app.norme, verite(), nom, I, H, courts, { famille: d.famille, calibre: d.calibre });
+  // (la chute propre du disjoncteur MONTÉ : le calibre écrit, v73 — pas celle d'une proposition qui n'est pas au retest)
+  const cs = chutesDepuis(app.norme, verite(), nom, I, H, courts, { famille: d.famille, calibre: cal });
   return { H, I, perm, cs: cs.slice().sort((a, b) => (b.dU || 0) - (a.dU || 0)) }; }
 /* Une ligne par câble qu'il nourrit : l'intensité au pire (le courant d'une phase contre ce que le câble admet pour
    cette durée), la chute en ligne du chemin le plus long qui passe par lui (et le seuil que le moteur rend) — la même que
    sa fiche (08-fiche, `chuteEnLigne`) —, pourquoi il est à voir, en une ligne, et la bulle : ce qui ne va pas, d'où
    viennent les chiffres. La valeur garde la couleur de sa mesure ; l'état de la ligne est le jugement (un câble à 80 %
    « pas protégé en surcharge » est à voir : la ligne le dit). */
-function lignesFilsDisjoncteur(nom, d) { d = d || disjonctionDe(nom); const cal = d.calibre, mV = u => nombre(Math.round(u * 1000) / 1000) + ' V';
-  return d.fils.map(f => { const j = jugementDuFil(f, cal), c = f.l ? chuteEnLigne(f.l, nom) : null, pointe = pireChuteEnPointe(c), etatU = etatDeChute(c, pointe), motSupp = c && !c.reel ? ', longueurs supposées' : '';
+function lignesFilsDisjoncteur(nom, d) { d = d || disjonctionDe(nom); const cal = d.calibreEcrit || d.calibre, mV = u => nombre(Math.round(u * 1000) / 1000) + ' V';
+  // (ses câbles se jugent sous le calibre ÉCRIT, v73 : celui du retest tant que la proposition ne l'est pas)
+  return (d.filsEcrits || d.fils).map(f => { const j = jugementDuFil(f, cal), c = f.l ? chuteEnLigne(f.l, nom) : null, pointe = pireChuteEnPointe(c), etatU = etatDeChute(c, pointe), motSupp = c && !c.reel ? ', longueurs supposées' : '';
     const etat = j.etat === 'ko' || etatU === 'ko' ? 'ko' : j.etat === 'att' || etatU === 'att' ? 'att' : '';
     const pourquoi = [j.dit, c && c.trop ? `chute en ligne ${volts(c.dU)} > ${volts(c.admis)}${motSupp}` : pointe ? `chute en pointe ${volts(pointe.dU)} > ${volts(pointe.admis)}${motSupp}` : ''].filter(Boolean).join(' · ');
     const bulle = [`${f.cable || 'câble sans numéro'}${f.type ? ' · ' + f.type : ''} · ${f.amont ? '← ' : '→ '}${f.autre}${f.via ? ' (par ' + f.via + ')' : ''}`, j.dit ? majuscule(j.dit) : '', j.contact || '',

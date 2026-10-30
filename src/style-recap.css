@@ -343,7 +343,7 @@ b.rc-n{font-weight:500}
 .rc-deja i{font-style:normal;color:var(--t-2);font-size:var(--f-12)}
 .rc-etoile{display:inline-grid;align-self:center;color:var(--t-1);margin-right:2px}
 .rc-etoile svg.ico{width:13px;height:13px}
-.rc-mesure .rc-lien{margin-left:12px;font-size:var(--f-12)}
+.rc-mesure .rc-lien{margin-left:12px;font-size:var(--f-12);display:inline-flex;align-items:center;min-height:24px}   /* « Écrire » / « Retenir » : une cible de 24 px au moins */
 .rc-pointe{font-size:var(--f-12);color:var(--t-2);margin-left:10px}
 .rc-choix{display:inline-flex;align-items:baseline;font-size:var(--f-13)}
 .rc-choix .rc-pt{margin:0 5px}

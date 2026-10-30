@@ -18,15 +18,21 @@ function compteur() { const m = new Map();
            lignes() { return [...m.values()].map(e => ({ ...e, ou: [...e.ou].sort(triNaturel) })).sort((a, b) => b.n - a.n || triNaturel(a.reference, b.reference)); } }; }
 /* LES DISJONCTEURS (v73, l'ingénieur, n° 6 : « MS3320-10 · connecteur — un disjoncteur n'est pas un connecteur » ; « le
    folio écrit 15 A, la nomenclature commande un MS3320-10 ») : un groupe à eux, une ligne par repère — le part number à
-   COMMANDER (celui du calibre que Volta retient : une désignation construite dans la famille du part number, à vérifier
-   au catalogue, quand il diffère du retest), le calibre retenu, le retest barré s'il diffère, l'état (le verdict, la table
-   unique de 09 bis ; « pas écrit au retest » tant que le retest dit un autre calibre). Une borne de disjoncteur se
-   raccorde par une cosse : ni contact à sertir, ni raccord. */
+   COMMANDER, celui qui est ÉCRIT (le retest, ou ce que vous y avez écrit : le folio écrit le même calibre), son calibre,
+   le part number du fichier barré quand vous l'avez changé, l'état (le verdict du calibre écrit, la table unique de
+   09 bis ; « Volta propose 15 A, pas écrit » tant que la proposition de l'outil n'est pas au retest). Une borne de
+   disjoncteur se raccorde par une cosse : ni contact à sertir, ni raccord. */
 function disjoncteursDeLaNomenclature(V) { return reperesDe(V || verite()).filter(estDisjoncteur).sort(triNaturel).map(r => { const pn = pnDuRepere(r); let d = null; try { d = disjonctionDe(r); } catch (_) { d = null; }
-  const F = d && d.famille, cal = d && d.calibre > 0 ? d.calibre : null, calPn = F && F.calibre > 0 ? F.calibre : null, differe = !!(cal && calPn && Math.abs(cal - calPn) > 1e-9);
-  const commande = differe && F ? pnAvecCalibre(pn, F, cal) || pn : pn, v = d ? verdictDeCalibre(d) : null;
-  const etat = !d || d.sansProfil ? 'profil de charge à écrire' : v ? v.mot + (differe ? ' · pas écrit au retest' : '') : '';
-  return { repere: r, reference: commande || '—', pnRetest: differe ? pn : '', calibre: cal, retest: differe ? calPn : null, verdict: v, etat, construit: differe, n: 1, ou: [r] }; }); }
+  /* (la reprise v73 — ce que l'écran montre est ce qui part : on commande le part number ÉCRIT, celui que le retest
+     corrigé portera, à son calibre ; la proposition de Volta, pas encore écrite, se dit à côté — « Volta propose 15 A »)
+     `retest` : le part number du fichier quand il a été changé ici, barré ; `construit` : un part number écrit ici, que la
+     famille a construit (à vérifier au catalogue). */
+  const ecrit = d ? d.calibreEcrit || d.calibre : null, cal = ecrit > 0 ? ecrit : null, F = d && d.famille, o = d ? origineDuCalibre(r, d) : {};
+  const propose = d && cal && d.calibre > 0 && Math.abs(d.calibre - cal) > 1e-9 ? d.calibre : null, pnPropose = propose && F && pn ? pnAvecCalibre(pn, F, propose) || '' : '';
+  const g = d && cal ? (d.gamme || []).find(x => Math.abs(x.calibre - cal) < 1e-9) : null, v = d ? (propose ? (g ? verdictDeCalibre(g) : null) : verdictDeCalibre(d)) : null;
+  const pnRetest = o.pnRetest && o.pnRetest !== pn ? o.pnRetest : '', retest = pnRetest ? o.calRetest || null : null;
+  const etat = !d || d.sansProfil ? 'profil de charge à écrire' : (v ? v.mot : '') + (propose ? (v ? ' · ' : '') + 'Volta propose ' + amperes(propose) + (pnPropose ? ' (' + pnPropose + ')' : '') + ', pas écrit' : '');
+  return { repere: r, reference: pn || '—', pnRetest, calibre: cal, retest, propose, pnPropose, verdict: v, etat, construit: !!pnRetest, n: 1, ou: [r] }; }); }
 /* UN SEUL COMPTE DE REPÈRES (v73, l'ingénieur : « la garde annonce 77 repères, le récapitulatif 67 ») : celui du menu et du
    récapitulatif (`reperesDuContrat`, 08-interface : sans les masses, les rails, les renvois ; les barrettes à poser
    comprises) — d'un folio, ceux qui y paraissent. Pour des liaisons qui ne sont pas le plan ouvert (l'API du dossier), la
@@ -109,14 +115,16 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
   // la nature d'un connecteur et l'arrangement que la norme lui donne : le mot, puis la référence dessous en chasse fixe
   const natureHtml = t => { const [n, ...r] = String(t || '').split(' · '); return esc(n) + (r.length ? `<span class="no-arr">${esc(r.join(' · '))}</span>` : ''); };
   // l'état d'un disjoncteur : le verdict à sa couleur (la table unique, 09 bis), « pas écrit au retest » en ambre dessous
-  const etatDj = x => x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>${x.retest ? note('pas écrit au retest') : ''}` : `<span class="no-rien">${esc(x.etat || '—')}</span>`;
+  // (la proposition de Volta, pas encore écrite, dessous : on commande ce qui est écrit — « Tout régler » ou « Passer en 15 A » l'écrit)
+  const propDj = x => x.propose ? `<i class="no-note-l" data-bulle="${escA('Volta propose ' + amperes(x.propose) + (x.pnPropose ? ' (' + x.pnPropose + ')' : '') + ' : il n’est pas écrit au retest, on commande donc ' + (x.reference !== '—' ? x.reference : 'le calibre écrit') + '. La fiche de ' + x.repere + ' l’écrit d’un geste.')}">Volta propose ${esc(amperes(x.propose))}, pas écrit</i>` : '';
+  const etatDj = x => (x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>` : `<span class="no-rien">${esc(x.propose ? '—' : x.etat || '—')}</span>`) + propDj(x);
   const corps = tete('Le contrat', 'Nomenclature', true) + resume + `<p class="note no-intro">Ce qu’il faut commander et sertir, relu depuis le contrat, les normes et les choix des fiches. Les longueurs sont celles du retest ; sans longueur, l’hypothèse de la simulation (${esc(nombre(N.hypothese))} m par câble).</p>`
     + table('Contacts à sertir', refs(N.contacts, 'référence'), ['Contact', 'Fourreau', 'Qté', 'Où'], N.contacts.map(x => [td('ref', esc(x.reference) + (x.confiance === 'à confirmer' ? note('à confirmer') : '')), td('', x.accessoire ? esc(x.accessoire) : rien, !x.accessoire), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Modules de jonction', refs(N.modules, 'référence'), ['Module', 'Norme', 'Qté', 'Barrettes'], N.modules.map(x => [td('ref', esc(x.reference)), td('sans', esc(x.famille || ''), !x.famille), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Connecteurs et prises', refs(N.connecteurs, 'part number'), ['Part number', 'Nature', 'Qté', 'Repères'], N.connecteurs.map(x => [td('ref', esc(x.reference)), td('sans', natureHtml(x.nature), !x.nature), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Disjoncteurs', plurielLie(N.disjoncteurs.length, 'disjoncteur'), ['Repère', 'Part number à commander', 'Calibre', 'Retest', 'État'], N.disjoncteurs.map(x => [td('ref', esc(x.repere)),
-      td('ref', esc(x.reference) + (x.construit ? `<i class="no-note-l no-construit" data-bulle="Le part number du calibre que Volta retient, construit dans la famille du retest : à vérifier au catalogue">construit · à vérifier</i>` : '')),
-      td('d', x.calibre ? esc(nombre(x.calibre)) + INSECABLE + 'A' : rien, !x.calibre), td('d', x.retest ? `<s class="no-barre" data-bulle="${escA('Le retest dit ' + x.pnRetest)}">${esc(nombre(x.retest))}${INSECABLE}A</s>` : rien, !x.retest), td('sans no-etat-c', etatDj(x))]))
+      td('ref', esc(x.reference) + (x.construit ? `<i class="no-note-l no-construit" data-bulle="Écrit ici : un part number construit dans la famille du retest, à vérifier au catalogue">construit · à vérifier</i>` : '')),
+      td('d', x.calibre ? esc(nombre(x.calibre)) + INSECABLE + 'A' : rien, !x.calibre), td('d', x.pnRetest ? `<s class="no-barre" data-bulle="${escA('Le fichier disait ' + x.pnRetest)}">${x.retest ? esc(nombre(x.retest)) + INSECABLE + 'A' : esc(x.pnRetest)}</s>` : rien, !x.pnRetest), td('sans no-etat-c', etatDj(x))]))
     + table('Autour des connecteurs', refs(N.habits, 'article'), ['Quoi', 'Référence', 'Qté', 'Où'], N.habits.map(x => [td('sans no-quoi', esc(x.quoi)), td('ref', esc(x.reference) + (x.note ? note(x.note) : '')), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Câbles', plurielLie(N.cables.length, 'type') + ' · ' + nombre(Math.round(N.longueur)) + ' m', ['Type', 'Qté', 'Longueur', 'Masse', 'Base'], N.cables.map(x => [td('ref', esc(x.reference)), td('d', x.n),
       td('d', `${x.reelles < x.n ? `<i class="no-hyp" data-bulle="${escA(pluriel(x.n - x.reelles, 'câble') + ' sans longueur dans le retest : l’hypothèse de la simulation')}">≈</i>` : ''}${esc((Math.round(x.longueur * 10) / 10).toFixed(1).replace('.', ','))} m`),
@@ -134,7 +142,7 @@ function lignesNomenclature(N) { const L = [];
   N.contacts.forEach(x => L.push(['Contacts', x.reference, [x.accessoire, x.confiance === 'à confirmer' ? 'à confirmer' : ''].filter(Boolean).join(' — '), x.n, 'pièce', x.ou.join(', ')]));
   N.modules.forEach(x => L.push(['Modules', x.reference, x.famille || '', x.n, 'pièce', x.ou.join(', ')]));
   N.connecteurs.forEach(x => L.push(['Connecteurs', x.reference, x.nature || '', x.n, 'pièce', x.ou.join(', ')]));
-  (N.disjoncteurs || []).forEach(x => L.push(['Disjoncteurs', x.reference, [x.calibre ? 'calibre ' + nombre(x.calibre) + ' A' : '', x.retest ? 'retest ' + x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat, x.construit ? 'part number construit, à vérifier au catalogue' : ''].filter(Boolean).join(' — '), 1, 'pièce', x.repere]));
+  (N.disjoncteurs || []).forEach(x => L.push(['Disjoncteurs', x.reference, [x.calibre ? 'calibre ' + nombre(x.calibre) + ' A' : '', x.pnRetest ? 'le fichier disait ' + x.pnRetest + (x.retest ? ' (' + nombre(x.retest) + ' A)' : '') : '', x.etat, x.construit ? 'part number construit, à vérifier au catalogue' : ''].filter(Boolean).join(' — '), 1, 'pièce', x.repere]));
   N.habits.forEach(x => L.push(['Habillage', x.reference, x.quoi + (x.note ? ' — ' + x.note : ''), x.n, 'pièce', x.ou.join(', ')]));
   N.cables.forEach(x => L.push(['Câbles', x.reference, pluriel(x.n, 'câble'), Math.round(x.longueur * 10) / 10, 'm', '']));
   return L; }

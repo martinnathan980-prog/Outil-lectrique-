@@ -373,7 +373,8 @@ function carteDesAlimentations() { const cle = typeof CONTROLE !== 'undefined' ?
   reperesDe(V).filter(estDisjoncteur).forEach(cb => { try { cheminsDepuis(V, cb).forEach(ch => ch.segments.forEach(s => { if (s.fil && !m.has(s.fil)) m.set(s.fil, { cb, chemin: ch }); })); } catch (_) { } });
   ALIM.cle = cle; ALIM.carte = m; ALIM.V = V; ALIM.premier = V[0]; return m; }
 function infosDisjoncteur(cb) { if (ALIM.dj.has(cb)) return ALIM.dj.get(cb); const d = disjonctionDe(cb), pts = d.points.length ? d.points : pointsDuProfil(d.profil), perm = pts.find(p => p.t === Infinity), pointe = pts[0];
-  const x = { nom: cb, calibre: d.calibre, perm: perm ? perm.i : null, pointe: pointe && pointe.t !== Infinity ? pointe : null, points: pts }; ALIM.dj.set(cb, x); return x; }
+  // (le calibre ÉCRIT, v73 : celui qui sera monté — le retest tant que la proposition de l'outil ne l'est pas)
+  const x = { nom: cb, calibre: d.calibreEcrit || d.calibre, perm: perm ? perm.i : null, pointe: pointe && pointe.t !== Infinity ? pointe : null, points: pts }; ALIM.dj.set(cb, x); return x; }
 const alimentationDuFil = l => { const a = carteDesAlimentations().get(l); return a ? { ...infosDisjoncteur(a.cb), chemin: a.chemin } : null; };
 /* CE QU'UN CÂBLE PORTE ET CE QU'IL ADMET : le courant (le permanent du disjoncteur en amont, sinon l'hypothèse), sa
    pointe, ce que la norme des câbles admet, déclassé comme la simulation (le faisceau, la charge, l'altitude, l'ambiante,
@@ -427,8 +428,8 @@ const gaugesDeFamille = fam => [...(famillesCables().get(String(fam || '').toUpp
    pas dans le fichier ») : tant que le calibre que l'outil propose n'est pas écrit, c'est celui du retest. Rend
    { type, pourquoi } ou null. */
 function plusFinQuiTient(l, calibre) { const x = intensiteDuFil(l), p = partiesDuType(l.type); if (!l.type || p.jauge == null) return null;
-  if (x.al) { try { const d = disjonctionDe(x.al.nom), f = (d.contexte.fils || []).find(y => y.l === l), cal = calibre > 0 ? calibre : d.calibre; if (f && cal > 0) { const H = { ...HYPOTHESES, ...(d.contexte.hyp || {}) }, ctx = contexteDeProtection(app.norme, H, d.courbes, pointsDuProfil(d.profil)), q = protegerFil(app.norme, cal, f, H, ctx);
-    if (filSuit(q)) return null; const s = jaugeQuiSuit(app.norme, cal, f, H, ctx); return s ? { type: s.type, pourquoi: `le plus fin que protège le ${amperes(cal)}${calibre > 0 && calibre !== d.calibre ? ' du retest' : ''} de ${x.al.nom}` } : null; } } catch (_) { } }
+  if (x.al) { try { const d = disjonctionDe(x.al.nom), f = (d.contexte.fils || []).find(y => y.l === l), cal = calibre > 0 ? calibre : d.calibreEcrit || d.calibre; if (f && cal > 0) { const H = { ...HYPOTHESES, ...(d.contexte.hyp || {}) }, ctx = contexteDeProtection(app.norme, H, d.courbes, pointsDuProfil(d.profil)), q = protegerFil(app.norme, cal, f, H, ctx);
+    if (filSuit(q)) return null; const s = jaugeQuiSuit(app.norme, cal, f, H, ctx); return s ? { type: s.type, pourquoi: `le plus fin que protège le ${amperes(cal)}${cal !== d.calibre ? ' du retest' : ''} de ${x.al.nom}` } : null; } } catch (_) { } }
   if (!x.trop.length) return null;
   const t = gaugesDeFamille(p.famille).filter(j => j < p.jauge).reverse().map(j => typeDe(p.famille, j)).find(ty => tientLeCourant(l, ty) != null);
   return t ? { type: t, pourquoi: 'le plus fin qui porte ' + (x.al ? 'son profil' : amperes(x.I) + ' supposés') } : null; }

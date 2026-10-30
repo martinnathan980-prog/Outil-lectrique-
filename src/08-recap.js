@@ -428,27 +428,36 @@ function survolRepere(nom) { if (app.dessin && app.dessin.compDe.has(nom)) allum
 
 /* ---- DISJONCTEURS : le calibre retenu, son verdict, le meilleur ----------------- */
 const disjoncteurs = () => memo('disj', () => reperes().filter(r => r.genre === 'cb'));
-function infoDisj(nom) { return memo('dj|' + nom, () => { const d = disjonctionDe(nom), H = H_(), V = verite();
-  const I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : d.calibre > 0 ? d.calibre : H.courant, courts = d.points.filter(p => p.t !== Infinity && p.i > 0);
-  let pire = null; try { chutesDepuis(app.norme, V, nom, I, H, courts).forEach(c => { if (!pire || c.dU > pire.dU) pire = c; }); } catch (_) { }
-  const ok = d.fils.filter(f => f.verdict !== 'fil' && f.verdict !== 'calibre' && f.protege !== false).length;
+/* v73 — LE CALIBRE ÉCRIT (la règle : ce que l'écran montre est ce qui part) : la colonne Calibre, son verdict, les câbles
+   protégés et la chute sont ceux du calibre écrit (`d.calibreEcrit`, 08-disjoncteurs : le retest tant que la proposition
+   de l'outil ne l'est pas) ; la proposition se dit à part — « 15 A proposé » sous le calibre, et « Écrire » sous le
+   meilleur. La chute est celle des fiches (`chutesDuDisjoncteur`, 08-fiche : une seule chute). */
+function infoDisj(nom) { return memo('dj|' + nom, () => { const d = disjonctionDe(nom), H = H_(), V = verite(), ecrit = d.calibreEcrit || d.calibre;
+  const I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : ecrit > 0 ? ecrit : H.courant, courts = d.points.filter(p => p.t !== Infinity && p.i > 0);
+  let pire = null; try { const C = typeof chutesDuDisjoncteur === 'function' ? chutesDuDisjoncteur(nom) : null; (C && C.cs ? C.cs : chutesDepuis(app.norme, V, nom, I, H, courts)).forEach(c => { if (!pire || c.dU > pire.dU) pire = c; }); } catch (_) { }
+  const fs = d.filsEcrits || d.fils, ok = fs.filter(f => f.verdict !== 'fil' && f.verdict !== 'calibre' && f.protege !== false).length;
   const pointe = d.points.find(p => p.t !== Infinity) || null, perm = etatsDuProfil(d.profil).find(e => e.k === 'perm');
-  const o = origineDuCalibre(nom, d);
-  return { d, pire, ok, n: d.fils.length, pointe, perm: perm && perm.i > 0 ? perm.i : null, pn: pnDuRepere(nom), origine: o.origine, rendu: o.calRetest ? 'celui du retest (' + amperes(o.calRetest) + ')' : 'l’automatique' + (d.calibreIdeal ? ' (' + amperes(d.calibreIdeal) + ')' : '') }; }); }
-/* Le verdict du calibre retenu, tel que le moteur le rend : il tient, il touche la courbe (sans sa marge), il déclenche ;
-   la bulle dit chaque état du profil contre la courbe. */
-function verdictDuCalibre(d) { if (!d.calibre) return { n: '', mot: '' };
+  const o = origineDuCalibre(nom, d), propose = ecrit > 0 && d.calibre > 0 && ecrit !== d.calibre ? d.calibre : null;
+  return { d, ecrit, propose, pire, ok, n: fs.length, pointe, perm: perm && perm.i > 0 ? perm.i : null, pn: pnDuRepere(nom), origine: o.origine, rendu: o.calRetest ? 'celui du retest (' + amperes(o.calRetest) + ')' : 'l’automatique' + (d.calibreIdeal ? ' (' + amperes(d.calibreIdeal) + ')' : '') }; }); }
+/* Le verdict du calibre ÉCRIT, en trois mots (09 bis, la table unique : passe, juste, déclenche) ; la bulle dit le
+   pourquoi chiffré (`pourquoiDuCalibre`) — sans la table, chaque état du profil contre la courbe. */
+function verdictDuCalibre(d) { const cal = d.calibreEcrit || d.calibre; if (!cal) return { n: '', mot: '' };
   if (d.sansProfil) return { n: 'att', mot: 'sans profil', bulle: 'Le profil de charge est à renseigner : sans lui, le calibre ne se juge pas' };
   if (d.sansCourbe) return { n: '', mot: '' };
+  if (typeof verdictDeCalibre === 'function') { const g = cal === d.calibre ? d : (d.gamme || []).find(x => Math.abs(x.calibre - cal) < 1e-9), v = g ? verdictDeCalibre(g) : null;
+    if (v) { let q = null; try { q = pourquoiDuCalibre(app.norme, d, cal); } catch (_) { q = null; } return { n: v.etat, mot: v.mot, bulle: (q ? majuscule(q.phrase) + '.\n' : '') + v.bulle }; } }
   const bulle = d.points.filter(p => p.ok != null).map(p => `${majuscule(p.nom || 'état')} ${amperes(p.i)}${p.t === Infinity ? ' en permanent' : ' pendant ' + secondes(p.t)} : ${p.ok === false ? 'déclenche' : p.serre ? 'tient, mais touche la courbe' : 'tient'}`).join('\n');
   return !d.valide ? { n: 'ko', mot: 'déclenche', bulle } : d.serre ? { n: 'att', mot: 'touche la courbe', bulle } : { n: 'ok', mot: 'tient', bulle }; }
 const COLONNES_DISJ = [COL_REPERE,
-  { k: 'calibre', t: 'Calibre', cls: 'rc-c-mesure', html: r => { const D = infoDisj(r.nom), d = D.d, main = D.origine === 'main';
-      return `<span class="rc-mesure">${chiffre(val('calibre', d.calibre ? fmt(d.calibre, 2) : '', { cls: 'rc-n rc-fort', ph: '—', titre: (main ? 'Choisi à la main' : 'Choisi automatiquement') + ' — double-clic pour le choisir dans la gamme' }), d.calibre ? 'A' : '')}${main ? orig('main') + rond('calibre', D.rendu) : ''}</span>`; },
-    tri: r => infoDisj(r.nom).d.calibre || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibre ? amperes(d.calibre) : ''; } },
+  { k: 'calibre', t: 'Calibre', cls: 'rc-c-mesure', html: r => { const D = infoDisj(r.nom), c = D.ecrit, main = D.origine === 'main';
+      const titre = (main ? 'Choisi à la main' : D.propose ? 'Celui du retest' : 'Choisi automatiquement') + ' — double-clic pour le choisir dans la gamme';
+      return `<span class="rc-mesure">${chiffre(val('calibre', c ? fmt(c, 2) : '', { cls: 'rc-n rc-fort', ph: '—', titre }), c ? 'A' : '')}${main ? orig('main') + rond('calibre', D.rendu) : ''}${D.propose ? `<small class="rc-pointe" data-bulle="${escA('Volta propose ' + amperes(D.propose) + ' : pas encore écrit au retest — ses câbles se jugent sous le ' + amperes(c) + ' écrit. « Écrire », sous le meilleur, l’écrit.')}">→ ${esc(amperes(D.propose))} proposé</small>` : ''}</span>`; },
+    tri: r => infoDisj(r.nom).ecrit || 0, texte: r => { const D = infoDisj(r.nom); return (D.ecrit ? amperes(D.ecrit) : '') + (D.propose ? ' (' + amperes(D.propose) + ' proposé)' : ''); } },
   { k: 'verdict', t: 'Verdict', cls: 'rc-c-etat', html: r => { const v = verdictDuCalibre(infoDisj(r.nom).d); return etatHtml(v.n, v.mot, v.bulle); }, tri: r => rangEtat(verdictDuCalibre(infoDisj(r.nom).d).n), texte: r => verdictDuCalibre(infoDisj(r.nom).d).mot },
-  { k: 'ideal', t: 'Meilleur', cls: 'rc-c-mesure', html: r => { const d = infoDisj(r.nom).d; if (!d.calibreIdeal) return rien; const pq = d.meilleur && d.meilleur.pourquoi;
-      return `<span class="rc-mesure"${pq ? ` data-bulle="${escA(majuscule(pq))}"` : ''}>${chiffre(`<i class="rc-etoile" aria-label="le meilleur">${ico('etoile')}</i><b class="rc-n">${fmt(d.calibreIdeal, 2)}</b>`, 'A')}${d.calibre !== d.calibreIdeal ? `<button type="button" class="rc-lien" data-retenir="${d.calibreIdeal}" data-bulle="${escA('Retenir ' + amperes(d.calibreIdeal))}">Retenir</button>` : ''}</span>`; },
+  { k: 'ideal', t: 'Meilleur', cls: 'rc-c-mesure', html: r => { const D = infoDisj(r.nom), d = D.d; if (!d.calibreIdeal) return rien; const pq = d.meilleur && d.meilleur.pourquoi;
+      // (le meilleur, quand c'est la proposition pas encore écrite : « Écrire » le porte au retest — les câbles, eux, se jugent alors sous lui)
+      const ecrire = D.propose && d.calibreIdeal === D.propose, geste = D.ecrit !== d.calibreIdeal ? `<button type="button" class="rc-lien" data-retenir="${d.calibreIdeal}" data-bulle="${escA(ecrire ? 'Écrire ' + amperes(d.calibreIdeal) + (d.meilleur && d.meilleur.pn ? ' (' + d.meilleur.pn + ')' : '') + ' au retest — une proposition de Volta acceptée ; Ctrl+Z la défait' : 'Retenir ' + amperes(d.calibreIdeal))}">${ecrire ? 'Écrire' : 'Retenir'}</button>` : '';
+      return `<span class="rc-mesure"${pq ? ` data-bulle="${escA(majuscule(pq))}"` : ''}>${chiffre(`<i class="rc-etoile" aria-label="le meilleur">${ico('etoile')}</i><b class="rc-n">${fmt(d.calibreIdeal, 2)}</b>`, 'A')}${geste}</span>`; },
     tri: r => infoDisj(r.nom).d.calibreIdeal || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibreIdeal ? amperes(d.calibreIdeal) : ''; } },
   COL_PROBLEMES,
   { k: 'pn', t: 'Part number', option: true, html: r => valT('pn:', infoDisj(r.nom).pn, { cls: 'rc-pn', ph: 'part number', titre: 'Double-clic : toutes ses liaisons le prennent' }), tri: r => infoDisj(r.nom).pn, texte: r => infoDisj(r.nom).pn },
@@ -469,13 +478,17 @@ const DISJONCTEURS = { ...ONGLET_REPERES, colonnes: COLONNES_DISJ, lignes: disjo
     if (f === 'rep') return { valeur: r.nom };
     if (f === 'pn:') return { valeur: D.pn, liste: 'pns', aide: 'toutes ses liaisons suivent' };
     // la gamme, le retenu choisi ; « rendre » en tête quand il a été choisi à la main
-    if (f === 'calibre') return { valeur: d.calibre ? String(d.calibre) : '', options: [...(D.origine === 'main' ? [['', 'Rendre ' + D.rendu]] : []), ...d.gamme.map(g => [String(g.calibre), amperes(g.calibre) + (g.ideal ? ' ★ le meilleur' : '') + (g.valide === false ? ' — déclenche' : g.serre ? ' — touche la courbe' : ' — tient')])] };
+    if (f === 'calibre') return { valeur: D.ecrit ? String(D.ecrit) : '', options: [...(D.origine === 'main' ? [['', 'Rendre ' + D.rendu]] : []), ...d.gamme.map(g => { const v = typeof verdictDeCalibre === 'function' ? verdictDeCalibre(g) : null;
+      return [String(g.calibre), amperes(g.calibre) + (g.ideal ? ' ★ le meilleur' : '') + (D.propose && g.calibre === D.propose ? ', proposé' : '') + (v ? ' — ' + v.mot : g.valide === false ? ' — déclenche' : '')]; })] };
     if (f === 'perm') return { valeur: D.perm != null ? fmt(D.perm, 2) : '', ph: 'A', aide: 'le courant permanent, en ampères' };
     return null; },
   ecrire: (r, f, v) => { const nom = r.nom;
     if (f === 'rep') return v && v !== nom ? renommerRepere(nom, v, r) : false;
     if (f === 'pn:') return changerPartNumber(nom, null, v);
-    if (f === 'calibre') { const D = infoDisj(nom); if (v) return +v !== D.d.calibre && retenirCalibre(nom, nombreLu(v)); if (D.origine !== 'main') return false; rendreCalibre(nom); return true; }
+    // (le calibre que Volta propose, choisi : il s'écrit au retest, seul — `ecrireLeCalibre`, 08-controle ; le calibre écrit,
+    // choisi quand une proposition attend : on le garde, à la main — « Garder le 10 A » de la fiche)
+    if (f === 'calibre') { const D = infoDisj(nom), c = v ? nombreLu(v) : null; if (v) { if (D.propose && c === D.propose && typeof ecrireLeCalibre === 'function') return ecrireLeCalibre(nom, c); return (c !== D.ecrit || !!D.propose) && retenirCalibre(nom, c); }
+      if (D.origine !== 'main') return false; rendreCalibre(nom); return true; }
     if (f === 'perm') { const x = v ? nombreLu(v) : null; if (v && x == null) { dire('Écrivez un courant en ampères (3,5).', true); return false; } return ecrireCharge(nom, c => { c.perm = { ...(c.perm || {}), i: x }; }, 'profil de charge de ' + nom); }
     return false; },
   rendre: (r, f) => { if (f !== 'calibre') return false; rendreCalibre(r.nom); return true; } };
@@ -1095,7 +1108,8 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
     const au = e.target.closest('button[data-auto]'); if (au) { if (O.rendre) O.rendre(r, au.dataset.auto); return; }
     if (e.target.closest('[data-aller]')) { if (O.aller) O.aller(r); return; }
     if (e.target.closest('[data-voir-fils]')) { if (O.voirFils) O.voirFils(r); return; }
-    const re = e.target.closest('[data-retenir]'); if (re) { retenirCalibre(r.nom, +re.dataset.retenir); return; }
+    // (« Écrire » : le meilleur est la proposition pas encore écrite — il s'écrit au retest, `ecrireLeCalibre` ; sinon « Retenir »)
+    const re = e.target.closest('[data-retenir]'); if (re) { const c = +re.dataset.retenir, D = infoDisj(r.nom); if (D.propose && c === D.propose && typeof ecrireLeCalibre === 'function') ecrireLeCalibre(r.nom, c); else retenirCalibre(r.nom, c); return; }
     if (e.target.closest('[data-poser]')) { editerCase(r.k, 'rep'); return; }
     if (O.choisir) O.choisir(r); });
   /* LE DOUBLE APPUI se reconnaît ici, pas au « dblclick » : le premier clic choisit la ligne, ouvre sa fiche à droite (le

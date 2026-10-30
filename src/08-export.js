@@ -157,7 +157,7 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
   // le ticket : trois chiffres sur une grille de filets
   const chiffre = (v, mot, cls, bulle) => `<div class="rv-chiffre${cls ? ' ' + cls : ''}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}><b>${v}</b><span>${mot}</span></div>`;
   const ticket = `<div class="rv-ticket${entre()}" role="group" aria-label="En bref">${chiffre(n, n > 1 ? 'liaisons modifiées' : n === 1 ? 'liaison modifiée' : 'aucune modification', '', pluriel(C.cases, 'case') + ' de l’Excel ' + (C.cases > 1 ? 'changent' : 'change'))}`
-    + chiffre(np, np > 1 ? 'choix de Volta à écrire' : np === 1 ? 'choix de Volta à écrire' : 'tout est écrit', np ? 'att' : '', np ? 'Volta les retient, mais ils ne partent que si vous les écrivez' : 'Chaque choix de Volta est dans le retest')
+    + chiffre(np, np > 1 ? 'choix de Volta à écrire' : np === 1 ? 'choix de Volta à écrire' : 'tout est écrit', np ? 'att' : '', np ? 'Volta les propose, mais ils ne partent que si vous les écrivez' : 'Chaque choix de Volta est dans le retest')
     + chiffre(P.ko ? P.ko : P.att, P.ko ? (P.ko > 1 ? 'problèmes' : 'problème') + (P.att ? ` · ${P.att} à voir` : '') : P.att ? (P.att > 1 ? 'points à voir' : 'point à voir') : 'rien à reprendre', P.ko ? 'ko' : P.att ? 'att-doux' : 'ok', P.mot) + '</div>';
   k++;   // « Ce qui part » vient juste après le ticket
   const enr = RELEVE.enregistre && RELEVE.enregistre.cle === RELEVE.cle ? `<p class="rv-fait" role="status">${ico('coche')}<span>Enregistré à ${esc(RELEVE.enregistre.heure)} dans vos Téléchargements · <span class="id">${esc(RELEVE.enregistre.nom)}</span></span></p>` : '';
@@ -169,13 +169,13 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
   const prop = (p, i) => { const vR = p.verdictRetest, vV = p.verdictRetenu;
     const dit = p.genre === 'calibre' ? `le retest dit <s class="id">${esc(amperes(p.retest))}</s>${vR ? ` · <span class="rv-v ${vR.etat}" data-bulle="${escA(vR.bulle)}">${esc(vR.mot)}</span>` : ''}` : `le retest dit <s class="id">${esc(p.retest)}</s>`;
     const garde = (p.faire ? 'Sans ce geste, l’Excel garde ' : 'L’Excel garde ') + (p.genre === 'calibre' ? (p.pnRetest ? '<span class="id">' + esc(p.pnRetest) + '</span>' : 'le ' + esc(amperes(p.retest))) : `<span class="id">${esc(p.retest)}</span>`) + '.';
-    return `<li class="rv-p"><div class="rv-p-t"><b class="id">${esc(p.repere)}</b><span>Volta retient <b class="id">${esc(p.genre === 'calibre' ? amperes(p.retenu) : p.retenu)}</b>${vV && p.genre === 'calibre' ? ` <span class="rv-v ${vV.etat}" data-bulle="${escA(vV.bulle)}">${esc(vV.mot)}</span>` : ''}</span><span class="rv-p-dit">${dit}</span></div>`
+    return `<li class="rv-p"><div class="rv-p-t"><b class="id">${esc(p.repere)}</b><span>Volta propose <b class="id">${esc(p.genre === 'calibre' ? amperes(p.retenu) : p.retenu)}</b>${vV && p.genre === 'calibre' ? ` <span class="rv-v ${vV.etat}" data-bulle="${escA(vV.bulle)}">${esc(vV.mot)}</span>` : ''}</span><span class="rv-p-dit">${dit}</span></div>`
       + `<p class="rv-p-n">${garde}${p.suite ? ' ' + esc(p.suite) : ''}</p>`
       + (p.cables.length ? `<ul class="rv-p-cables">${p.cables.map(c => `<li><b class="id">${esc(c.cable)}</b><s class="id">${esc(c.actuel)}</s>${ico('fleche')}<b class="id">${esc(c.propose)}</b></li>`).join('')}</ul>` : '')
       + (p.faire ? `<button type="button" class="btn papier dense rv-ecrire" data-proposition="${i}" data-bulle="${escA('Une proposition de Volta : elle part dans l’Excel, marquée comme telle — Ctrl+Z la défait')}">${esc(p.geste)}</button>` : '') + '</li>'; };
   // les modules de barrette se disent ensemble, d'un geste (le calibre d'un disjoncteur, lui, a chacun le sien)
   const cals = C.proposes.map((p, i) => [p, i]).filter(([p]) => p.genre !== 'module'), mods = C.proposes.filter(p => p.genre === 'module');
-  const modsHtml = mods.length ? `<li class="rv-p rv-p-mod"><div class="rv-p-t"><b>${mods.length > 1 ? mods.length + ' modules de barrette' : 'Un module de barrette'}</b><span class="rv-p-dit">Volta en retient un autre que celui du retest</span></div>`
+  const modsHtml = mods.length ? `<li class="rv-p rv-p-mod"><div class="rv-p-t"><b>${mods.length > 1 ? mods.length + ' modules de barrette' : 'Un module de barrette'}</b><span class="rv-p-dit">Volta en propose un autre que celui du retest</span></div>`
     + `<ul class="rv-p-cables rv-p-mods">${mods.map(p => `<li><b class="id">${esc(p.repere)}</b><s class="id">${esc(p.retest)}</s>${ico('fleche')}<b class="id">${esc(p.retenu)}</b></li>`).join('')}</ul>`
     + `<p class="rv-p-n">Le plus petit module qui loge les câbles de chaque barrette. Sans ce geste, l’Excel garde ceux du retest.</p>`
     + `<button type="button" class="btn papier dense rv-ecrire" data-proposition="modules" data-bulle="${escA('Une proposition de Volta : elle part dans l’Excel, marquée comme telle — Ctrl+Z la défait')}">${mods.length > 1 ? 'Écrire les ' + mods.length + ' modules' : 'Écrire ' + esc(mods[0].retenu)}</button></li>` : '';
@@ -221,11 +221,14 @@ function suivreLeReleve() { if (!RELEVE.ouvert) return; if (!app.fiche || app.fi
   if (cleDuReleve() !== RELEVE.cle) rendreReleve(); }
 
 /* ---- LE CALIBRE QUE LE FOLIO ÉCRIT (v73, l'ingénieur, n° 6 : « le folio écrit 15 A, la nomenclature commande un
-   MS3320-10 ») : le retenu, et — s'il diffère du part number écrit — le calibre du retest, que le dessin écrit dessous
-   « (retest 10 A) ». Rend { calibre, retest }. */
-function calibresAuFolio(nom) { const calibre = typeof calibreAuFolio === 'function' ? calibreAuFolio(nom) : null; let retest = null;
+   MS3320-10 ») : le calibre ÉCRIT (`calibreAuFolio`, 08-disjoncteurs : celui qui sera monté — la reprise v73 : ce que
+   l'écran montre est ce qui part), le même que la nomenclature commande ; `propose` : le calibre que Volta propose sans
+   qu'il soit écrit, que le dessin peut dire en petit (« 15 A proposé ») ; `retest` : celui du part number, s'il diffère
+   encore du calibre écrit (un calibre écrit au profil sans famille qui le construise). Rend { calibre, retest, propose }. */
+function calibresAuFolio(nom) { const calibre = typeof calibreAuFolio === 'function' ? calibreAuFolio(nom) : null; let retest = null, propose = null;
   try { const F = familleDuPn(pnDuRepere(nom), app.norme); if (F && F.calibre > 0 && calibre > 0 && Math.abs(F.calibre - calibre) > 1e-9) retest = F.calibre; } catch (_) { }
-  return { calibre, retest }; }
+  try { const d = disjonctionDe(nom); if (d && d.calibre > 0 && calibre > 0 && Math.abs(d.calibre - calibre) > 1e-9) propose = d.calibre; } catch (_) { }
+  return { calibre, retest, propose }; }
 
 /* ---- REPRENDRE CE QUE LA FEUILLE « VOLTA » GARDE ---------------------------------------------------------------------
    02-lecture lit la feuille (`lireTexte` rend `volta`, et remet déjà sur chaque liaison ses contacts choisis à la main) ;

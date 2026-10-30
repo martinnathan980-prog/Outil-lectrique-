@@ -256,7 +256,39 @@ function titre(t) { console.log('\n' + t); }
     return r; });
   ok('trois mots de verdict (la table unique) : 5 A déclenche, 10 A juste, 15 A passe ; le pourquoi chiffré', V9.mots.join() === 'déclenche,juste,passe' && /^5 A — déclenche : démarrage et transition, 9,31 A pendant 2,1 min/.test(V9.pourquoi), V9.mots.join(' · ') + ' · ' + V9.pourquoi);
   ok('le « ? » du calibre lit la gamme de la famille (MS3320 s’arrête à 20 A : pas de 25 A)', /gamme 2TC|gamme MS3320/i.test(V9.gamme) && !/25 A/.test(V9.gamme), V9.gamme.slice(0, 160));
-  ok('la nomenclature : un groupe « Disjoncteurs » (MS3320-15 à commander, retest 10 A), plus de disjoncteur en connecteur, plus de colonne vide', !V9.nomen.connecteur && V9.nomen.dj.length === 1 && /^102CB1 MS3320-15 15 10 /.test(V9.nomen.dj[0]) && !V9.fourreau && /Disjoncteurs/.test(V9.titres), V9.nomen.dj.join(' | ') + ' · ' + V9.titres);
+  // (la reprise v73 — ce que l'écran montre est ce qui part : on commande le part number ÉCRIT, MS3320-10, à son 10 A,
+  // juste ; le 15 A de Volta, pas écrit, se dit à côté. Test mis à jour : il commandait MS3320-15, que le retest corrigé
+  // n'aurait pas porté)
+  ok('la nomenclature : un groupe « Disjoncteurs » (MS3320-10 à commander, le part number écrit, « Volta propose 15 A, pas écrit » à côté), plus de disjoncteur en connecteur, plus de colonne vide', !V9.nomen.connecteur && V9.nomen.dj.length === 1 && /^102CB1 MS3320-10 10  juste · Volta propose 15 A \(MS3320-15\), pas écrit$/.test(V9.nomen.dj[0]) && !V9.fourreau && /Disjoncteurs/.test(V9.titres), V9.nomen.dj.join(' | ') + ' · ' + V9.titres);
+
+  /* ---- 9. LA REPRISE : LE CALIBRE ÉCRIT -------------------------------------------------------------------------------
+     B (les fiches) : « après “Seulement W-012 : DR16”, la fiche du câble dit “11,7 A admis < calibre 15 A — pas protégé en
+     surcharge”, alors que le retest garde 10 A et que 11,7 A > 10 A ». La règle : la protection d'un câble et son contact
+     contre le calibre se jugent sous le calibre ÉCRIT (le retest, ou ce que le lecteur a retenu ou accepté) ; la
+     proposition de Volta reste dite à part, elle porte le problème du disjoncteur. */
+  titre('9. LA REPRISE : LE CALIBRE ÉCRIT');
+  const V10 = await page.evaluate(async () => { const r = {}; atelier.exemple(); await new Promise(f => setTimeout(f, 600)); rendreControle();
+    const cables = () => CONTROLE.items.filter(x => x.nom === '102CB1' && (x.cables || []).length).map(x => x.texte);
+    const d0 = disjonctionDe('102CB1'); r.d0 = { calibre: d0.calibre, ecrit: d0.calibreEcrit, w011: (d0.filsEcrits.find(f => f.cable === 'W-011') || {}).verdict };
+    r.avant = { cables: cables(), dj: CONTROLE.items.filter(x => x.nom === '102CB1' && !(x.cables || []).length).map(x => x.niveau + ' ' + x.texte), folio: calibreAuFolio('102CB1'), seul: plusFinSousLeRetest(verite().find(x => x.cable === 'W-012')) };
+    // le geste de la fiche du câble, à la souris : « Seulement W-012 : DR16 »
+    allerAuPlan('1'); choisirFil(app.dessin.fils.find(w => w.cable === 'W-012')); await new Promise(f => setTimeout(f, 400));
+    const b = document.querySelector('#ba-equip .fi-reparer[data-reparer]'); r.bouton = b ? b.textContent.replace(/\s+/g, ' ').trim() : ''; const n = app.hist.length; if (b) b.click(); await new Promise(f => setTimeout(f, 700)); rendreControle();
+    const l = verite().find(x => x.cable === 'W-012'), P = problemesDuCable(l);
+    r.apres = { type: l.type, hist: app.hist.length - n, pbs: P.map(x => x.niveau + ' ' + x.texte + (x.cause ? ' [cause : ' + ((x.gestes || []).find(g => g.principal) || {}).mot + ']' : '')), cables: cables(),
+      dj: CONTROLE.items.filter(x => x.nom === '102CB1' && !(x.cables || []).length).map(x => x.niveau + ' ' + x.texte), seul: plusFinSousLeRetest(l),
+      fiche: ((document.querySelector('#ba-equip #fi-pbs') || {}).textContent || '').replace(/\s+/g, ' ').trim(), cause: !!document.querySelector('#ba-equip .fi-cause'),
+      folio: calibresAuFolio('102CB1'), nomen: disjoncteursDeLaNomenclature().filter(x => x.repere === '102CB1').map(x => x.reference + ' ' + x.calibre + ' ' + x.etat).join(), compte: compteProblemes().mot };
+    // « Tout régler » : le 15 A s'écrit, ses câbles grossissent — tout se juge alors sous lui
+    toutRegler('102CB1'); rendreControle(); const d2 = disjonctionDe('102CB1');
+    r.regle = { pn: pnDuRepere('102CB1'), ecrit: d2.calibreEcrit, types: ['W-011', 'W-012', 'W-015'].map(c => verite().find(x => x.cable === c).type).join(), cables: cables(), cause: problemesDuCable(verite().find(x => x.cable === 'W-012')).some(x => x.cause), folio: calibreAuFolio('102CB1') };
+    return r; });
+  ok('au départ, 102CB1 retient 15 A (une proposition) et son retest écrit 10 A : ses câbles se jugent sous le 10 A — W-011 (DR16, 11,7 A admis) y est protégé ; plus aucune ligne « < calibre 15 A »', V10.d0.calibre === 15 && V10.d0.ecrit === 10 && V10.d0.w011 === 'ok' && !V10.avant.cables.some(t => /calibre 15 A/.test(t)) && V10.avant.cables.some(t => /calibre 10 A du retest/.test(t)), V10.avant.cables.join(' | '));
+  ok('la proposition reste dite à part, par le DISJONCTEUR : « le retest porte un 10 A (MS3320-10), juste — … l’outil retient le 15 A »', V10.avant.dj.some(t => /^att le retest porte un 10 A \(MS3320-10\), juste/.test(t)), V10.avant.dj.join(' | '));
+  ok('« Seulement W-012 : DR16 » (le plus fin que protège le 10 A du retest), d’un clic dans la fiche du câble : une entrée d’historique', V10.bouton === 'Seulement W-012 : DR16' && V10.avant.seul && V10.avant.seul.type === 'DR16' && V10.apres.type === 'DR16' && V10.apres.hist === 1, V10.bouton + ' · ' + V10.apres.type);
+  ok('LE CAS DE B : après lui, W-012 n’est plus « pas protégé » — ni dans ses problèmes, ni dans le contrôle, ni sur sa fiche ; il ne garde que la CAUSE, le 10 A juste de 102CB1, avec « Tout régler »', !V10.apres.pbs.some(t => /pas protégé|calibre 15 A|< calibre/.test(t)) && V10.apres.pbs.length === 1 && /^att 102CB1 : le 10 A du retest est juste — Volta propose 15 A.*\[cause : Tout régler : 102CB1 en 15 A/.test(V10.apres.pbs[0]) && !V10.apres.cables.some(t => /^W-012/.test(t)) && !/pas protégé|calibre 15 A/.test(V10.apres.fiche) && V10.apres.cause && !V10.apres.seul, V10.apres.pbs.join(' | ') + ' · fiche : ' + V10.apres.fiche.slice(0, 160));
+  ok('le disjoncteur, lui, dit toujours la proposition ; le folio écrit 10 A, la nomenclature commande MS3320-10 (« Volta propose 15 A, pas écrit ») ; le compte suit', V10.apres.dj.some(t => /^att le retest porte un 10 A/.test(t)) && V10.apres.folio.calibre === 10 && V10.apres.folio.propose === 15 && /^MS3320-10 10 juste · Volta propose 15 A/.test(V10.apres.nomen) && /problème/.test(V10.apres.compte), JSON.stringify(V10.apres.folio) + ' · ' + V10.apres.nomen + ' · ' + V10.apres.compte);
+  ok('« Tout régler » écrit le 15 A et grossit les 3 câbles : tout se juge sous lui, aucun câble « pas protégé », plus de cause, le folio écrit 15 A', V10.regle.pn === 'MS3320-15' && V10.regle.ecrit === 15 && V10.regle.types === 'DR12,DR12,DR12' && !V10.regle.cables.some(t => /pas protégé/.test(t)) && !V10.regle.cause && V10.regle.folio === 15, JSON.stringify(V10.regle));
 
   titre('BILAN');
   ok('aucune erreur console', erreurs.length === 0, erreurs.length ? erreurs.slice(0, 3).join(' | ') : 'aucune');

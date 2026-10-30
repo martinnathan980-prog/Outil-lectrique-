@@ -145,8 +145,8 @@ const FICHIER = P.fichierDemande();
     const E = await page.evaluate(() => { const tr = [...document.querySelectorAll('#ba-tbody tr[data-i]')], ligne = c => tr.find(t => verite()[+t.dataset.i].cable === c), etat = t => t && t.querySelector('td.rc-c-etat .rc-etat');
       const w12 = etat(ligne('W-012')), l = verite().find(l => l.cable === 'W-012'), c = chuteDuFil(l, intensiteCalculee(l));
       return { w12: w12 ? w12.className + '|' + w12.textContent : '', bulle: w12 ? w12.dataset.bulle : '', admise: volts(c.max), w11: (etat(ligne('W-011')) || {}).textContent, mots: [...new Set(tr.map(t => (etat(t) || {}).textContent).filter(Boolean))].sort().join(',') }; });
-    ok(/ko\|problème$/.test(E.w12) && /Intensité/.test(E.bulle) && new RegExp('Chute en ligne : .* (sur|>) ' + E.admise + ' admis').test(E.bulle) && E.w11 === 'à voir' && E.mots.split(',').every(m => ['ok', 'à voir', 'problème'].includes(m)),
-      'un état par liaison, un point et un mot (ok, à voir, problème) ; W-012 : problème, l’intensité et la chute dans sa bulle, contre la chute admise du moteur ; W-011 (DR16) à voir : il est sous le 15 A que l’automatique retient', JSON.stringify(E));
+    ok(/ko\|problème$/.test(E.w12) && /Intensité/.test(E.bulle) && new RegExp('Chute en ligne : .* (sur|>) ' + E.admise + ' admis').test(E.bulle) && E.w11 === 'ok' && E.mots.split(',').every(m => ['ok', 'à voir', 'problème'].includes(m)),
+      'un état par liaison, un point et un mot (ok, à voir, problème) ; W-012 : problème, l’intensité et la chute dans sa bulle, contre la chute admise du moteur ; W-011 (DR16) ok : il se juge sous le 10 A ÉCRIT au retest, qui le protège (la reprise v73 ; test mis à jour — il était « à voir » sous le 15 A que l’outil propose sans l’écrire)', JSON.stringify(E));
     // Équipements : les équipements seuls, d'office le repère, le type, la norme, les problèmes
     await page.evaluate(() => { app.base.portee = 'tout'; changerOnglet('equipements'); }); await page.waitForTimeout(200);
     const Q = await page.evaluate(() => { const tr = [...document.querySelectorAll('#ba-tbody tr[data-k]')], ligne = n => tr.find(t => t.dataset.k === n), cases = t => t ? [...t.querySelectorAll('td')].map(x => x.textContent.trim()).filter(Boolean).join(' | ') : '';
@@ -157,17 +157,21 @@ const FICHIER = P.fichierDemande();
     ok(await page.evaluate(() => app.cible && app.cible.nom === '103RL1' && !$('inspecteur').hidden && app.choisi === '103RL1' && document.querySelector('#ba-tbody tr[data-k="103RL1"]').classList.contains('on')), 'un clic sur une ligne ouvre sa fiche et l’allume sur le plan');
     // Disjoncteurs : le calibre retenu, son verdict (celui du moteur), le meilleur ; en retenir un autre d'ici, Ctrl+Z le rend
     await page.evaluate(() => changerOnglet('disjoncteurs')); await page.waitForTimeout(200);
-    const D = await page.evaluate(() => { const d = disjonctionDe('102CB1'), tr = document.querySelector('#ba-tbody tr[data-k="102CB1"]');
-      return { entetes: [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent).filter(Boolean).join(' · '), cal: tr.querySelector('[data-f="calibre"]').textContent, calibre: d.calibre, attendu: nombre(d.calibre), pn: pnDuRepere('102CB1'),
-        verdict: tr.querySelector('td.rc-c-etat .rc-etat').textContent, juge: !d.valide ? 'déclenche' : d.serre ? 'touche la courbe' : 'tient', ideal: d.calibreIdeal, retenir: !!tr.querySelector('[data-retenir]'), gamme: d.gamme.map(g => g.calibre) }; });
-    ok(D.entetes === 'Repère · Calibre · Verdict · Meilleur · Problèmes' && D.cal === D.attendu && D.verdict === D.juge && D.retenir === (D.ideal !== D.calibre), 'Disjoncteurs : le calibre retenu, son verdict tel que le moteur le rend, le meilleur (« Retenir » quand il diffère)', JSON.stringify(D));
-    const autre = D.retenir ? D.ideal : D.gamme.find(c => c !== D.calibre);
+    // (la reprise v73 — ce que l'écran montre est ce qui part : la colonne Calibre montre le calibre ÉCRIT, le 10 A du
+    // retest, « → 15 A proposé » dessous, et son verdict en trois mots ; « Écrire » sous le meilleur l'écrit au retest.
+    // Test mis à jour : il montrait le 15 A que l'outil retient sans l'écrire, « tient », et « Retenir » n'y faisait rien)
+    const D = await page.evaluate(() => { const d = disjonctionDe('102CB1'), tr = document.querySelector('#ba-tbody tr[data-k="102CB1"]'), e = d.calibreEcrit || d.calibre, g = d.gamme.find(x => x.calibre === e), b = tr.querySelector('[data-retenir]');
+      return { entetes: [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent).filter(Boolean).join(' · '), cal: tr.querySelector('[data-f="calibre"]').textContent, calibre: d.calibre, ecrit: e, attendu: nombre(e), propose: ((tr.querySelector('.rc-pointe') || {}).textContent || '').replace(/\s+/g, ' '), pn: pnDuRepere('102CB1'),
+        verdict: tr.querySelector('td.rc-c-etat .rc-etat').textContent, juge: (verdictDeCalibre(g) || {}).mot, ideal: d.calibreIdeal, retenir: !!b, bouton: b ? b.textContent.trim() : '', gamme: d.gamme.map(g => g.calibre) }; });
+    ok(D.entetes === 'Repère · Calibre · Verdict · Meilleur · Problèmes' && D.cal === D.attendu && D.ecrit === 10 && /^→ 15 A proposé$/.test(D.propose) && D.verdict === D.juge && D.juge === 'juste' && D.retenir === (D.ideal !== D.ecrit) && D.bouton === 'Écrire',
+      'Disjoncteurs : le calibre ÉCRIT (10 A, le retest), « → 15 A proposé » dessous, son verdict en trois mots (juste), le meilleur et « Écrire » quand il n’est pas écrit', JSON.stringify(D));
+    const autre = D.retenir ? D.ideal : D.gamme.find(c => c !== D.ecrit);
     if (D.retenir) await page.click('#ba-tbody tr[data-k="102CB1"] [data-retenir]');
     else { await page.dblclick('#ba-tbody tr[data-k="102CB1"] [data-f="calibre"]'); await page.selectOption('#ba-tbody select[data-f="calibre"]', String(autre)); }
     await page.waitForTimeout(700);
-    ok(await page.evaluate(a => calibreDe('102CB1') === a && document.querySelector('#ba-tbody tr[data-k="102CB1"] [data-f="calibre"]').textContent === nombre(a), autre), 'retenir un autre calibre d’ici : ' + autre + ' A, comme dans la fiche');
+    ok(await page.evaluate(a => disjonctionDe('102CB1').calibreEcrit === a && pnDuRepere('102CB1') === 'MS3320-15' && document.querySelector('#ba-tbody tr[data-k="102CB1"] [data-f="calibre"]').textContent === nombre(a) && !document.querySelector('#ba-tbody tr[data-k="102CB1"] .rc-pointe'), autre), '« Écrire » d’ici : le ' + autre + ' A s’écrit au retest (MS3320-15), la colonne le montre, plus de « proposé »');
     await page.evaluate(() => annuler()); await page.waitForTimeout(500);
-    ok(await page.evaluate(d => calibreDe('102CB1') === d.calibre && pnDuRepere('102CB1') === d.pn, D), 'Ctrl+Z rend le calibre d’avant');
+    ok(await page.evaluate(d => calibreDe('102CB1') === d.calibre && disjonctionDe('102CB1').calibreEcrit === d.ecrit && pnDuRepere('102CB1') === d.pn, D), 'Ctrl+Z rend le calibre d’avant');
     // les colonnes : en ajouter une, revenir à celles d'office
     await page.evaluate(() => { changerOnglet('liaisons'); app.base.portee = 'folio'; rendreBase(true); }); await page.waitForTimeout(200);
     await page.click('#ba-colonnes'); await page.click('#ba-colonnes-menu input[data-col="jauge"]'); await page.waitForTimeout(300); const avec = await entetes();

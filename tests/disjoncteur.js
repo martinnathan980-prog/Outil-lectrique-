@@ -163,8 +163,10 @@ const FICHIER = P.fichierDemande();
     return { boite: !!g.querySelector('rect.body'), conn: !!g.querySelector('.conn'), bornes: g.querySelectorAll('.cb-borne').length, arcs: g.querySelectorAll('.cb-arc').length, bouton: g.querySelectorAll('.cb-bouton').length, rep: t('rep-big'), cal: t('cb-cal'),
       ports: bouts.length === ports.length && ports.every(p => bouts.some(b => Math.abs(b[0] - p[0]) < 0.06 && Math.abs(b[1] - p[1]) < 0.06)), largeur: c.w, sel: sel ? getComputedStyle(sel).stroke : '' }; });
   const F1 = await folioCb();
-  ok(!F1.boite && !F1.conn && F1.bornes === 2 && F1.arcs === 1 && F1.bouton === 1 && F1.rep.join() === '102CB1' && F1.cal.join() === '15 A' && F1.ports && F1.largeur === 144 && F1.sel === 'rgb(29, 29, 31)',
-    'le folio : 102CB1 n’est plus une boîte (ni corps, ni pièce de connecteur « A ») mais deux bornes, l’arc et le bouton en T, son repère et « 15 A » (l’automatique : le plus petit calibre qui passe — le retest porte un 10 A) ; chaque amenée part d’un port d’équipement (x = 0 ou 144, à la hauteur de sa borne) ; choisi, il est encadré à l’encre', JSON.stringify(F1));
+  // (la reprise v73 — ce que l'écran montre est ce qui part : le folio écrit le calibre ÉCRIT, le 10 A du retest, celui
+  // que la nomenclature commande ; le 15 A de l'outil n'est qu'une proposition, que la fiche dit. Test mis à jour : « 15 A »)
+  ok(!F1.boite && !F1.conn && F1.bornes === 2 && F1.arcs === 1 && F1.bouton === 1 && F1.rep.join() === '102CB1' && F1.cal.join() === '10 A' && F1.ports && F1.largeur === 144 && F1.sel === 'rgb(29, 29, 31)',
+    'le folio : 102CB1 n’est plus une boîte (ni corps, ni pièce de connecteur « A ») mais deux bornes, l’arc et le bouton en T, son repère et « 10 A » (le calibre écrit au retest — le 15 A de l’outil n’est qu’une proposition) ; chaque amenée part d’un port d’équipement (x = 0 ou 144, à la hauteur de sa borne) ; choisi, il est encadré à l’encre', JSON.stringify(F1));
   // LA FICHE : ses sections à elle, dans l'ordre commun ; le meilleur calibre, la courbe et le profil ouverts d'office
   const F = '#ba-equip ';
   const voir = async sel => { await page.evaluate(s => { const e = document.querySelector(s); if (e) e.scrollIntoView({ block: 'center' }); }, sel); await page.waitForTimeout(120); const b = await page.locator(sel).first().boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
@@ -298,9 +300,12 @@ const FICHIER = P.fichierDemande();
       && !(app.contrat.charges.get('102CB1') || {}).calibre && h.querySelector('.dj-h-cal').textContent === '15A' && h.classList.contains('ok') && !h.querySelector('.dj-verdict-pastille')
       && document.getElementById('dj-retenir').getAttribute('aria-pressed') === 'true' && /3 câbles à grossir/.test(document.querySelector('#ba-equip .dj-grossir').textContent) ; }, nHist),
     '« Automatique (15 A) » : une entrée d’historique ; plus de calibre à la main, le part number du retest intact ; le 15 A en grand, en vert ; le bouton reste, étoilé et pressé ; les câbles à grossir restent dits');
-  ok((await folioCb()).cal.join() === '15 A', 'le folio écrit « 15 A » à côté du symbole');
-  ok(await page.evaluate(() => CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'att' && /W-011 \(DR16\) : 11,7 A admis en continu \(× 0,6\) < calibre 15 A — pas protégé en surcharge/.test(x.texte)) && CONTROLE.items.filter(x => x.nom === '102CB1').every(x => !/W-012 \(DR20\) : pas protégé en surcharge brève/.test(x.texte))),
-    'le contrôle dit que le DR16 n’est pas protégé en surcharge par un 15 A (11,7 A admis en continu, le point FAA) ; un fil déjà en problème n’a pas en plus l’avertissement de surcharge brève');
+  // (la reprise v73 : « Automatique » rend le choix à l'outil sans rien écrire — le retest garde MS3320-10 : le folio écrit
+  // 10 A, et les câbles se jugent sous lui. Tests mis à jour : le folio écrivait « 15 A », et le contrôle disait le DR16
+  // « pas protégé » par un 15 A qui n'est pas dans le fichier — le cas exact que B relève)
+  ok((await folioCb()).cal.join() === '10 A', 'le folio écrit « 10 A » à côté du symbole : le calibre écrit au retest, le 15 A n’est que proposé');
+  ok(await page.evaluate(() => !CONTROLE.items.some(x => x.nom === '102CB1' && /calibre 15 A/.test(x.texte)) && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'att' && /^le retest porte un 10 A \(MS3320-10\), juste/.test(x.texte)) && CONTROLE.items.filter(x => x.nom === '102CB1').every(x => !/W-011/.test(x.texte) && !/W-012 \(DR20\) : pas protégé en surcharge brève/.test(x.texte))),
+    'le contrôle juge les câbles sous le 10 A ÉCRIT : le DR16 (11,7 A admis en continu) y est protégé, plus aucune ligne « < calibre 15 A » ; la proposition reste dite par le disjoncteur (« le retest porte un 10 A, juste ») ; un fil déjà en problème n’a pas en plus l’avertissement de surcharge brève');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600); await ouvrir();
   ok((await folioCb()).cal.join() === '10 A' && await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10' && (app.contrat.charges.get('102CB1') || {}).calibre === 10 && verite().every(l => !(l.avant && ('pnDe' in l.avant || 'pnVers' in l.avant)))), 'Ctrl+Z rend le 10 A à la main, MS3320-10 sans trace, et « 10 A » au folio');
   // un calibre à la main par sa puce (« Autre calibre »), « Automatique » rend le choix de l'outil
@@ -360,7 +365,8 @@ const FICHIER = P.fichierDemande();
   await ouvrir(); const auto = (await folioCb()).cal.join(); await page.evaluate(() => retenirCalibre('102CB1', 20)); await page.waitForTimeout(700); const avecVingt = (await folioCb()).cal.join();
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
   const defait = await folioCb();
-  ok(auto === '15 A' && avecVingt === '20 A' && defait.cal.join() === '15 A' && !defait.boite && await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10'), 'l’automatique écrit « 15 A » sur le folio ; retenir le 20 y écrit « 20 A », Ctrl+Z y rend « 15 A » (et MS3320-10 au retest)', auto + ' → ' + avecVingt + ' → ' + defait.cal.join());
+  // (la reprise v73 : le folio écrit le calibre ÉCRIT — test mis à jour : l'automatique, non écrit, y mettait « 15 A »)
+  ok(auto === '10 A' && avecVingt === '20 A' && defait.cal.join() === '10 A' && !defait.boite && await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10'), 'l’automatique, pas écrit, laisse « 10 A » (le retest) sur le folio ; retenir le 20 y écrit « 20 A », Ctrl+Z y rend « 10 A » (et MS3320-10 au retest)', auto + ' → ' + avecVingt + ' → ' + defait.cal.join());
 
   console.log('\nLE SYMBOLE, CAS PAR CAS');
   const C = await page.evaluate(symboleCasParCasDansLaPage);

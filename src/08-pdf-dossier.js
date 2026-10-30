@@ -416,7 +416,7 @@ function pagesNomenclaturePdf(nom) { let N; try { N = nomenclatureDuContrat(); }
     { titre: 'Connecteurs et prises', compte: motPdf(somme(N.connecteurs), 'pièce', 'pièces'), colonnes: [['Part number', 0.2, { mono: true }], ['Nature', 0.3], ['Qté', 0.07, { droite: true }], ['Repères', 0.43, { gris: true }]],
       lignes: N.connecteurs.map(x => [x.reference, x.nature || '', x.n, ou(x.ou)]) },
     { titre: 'Disjoncteurs', compte: motPdf((N.disjoncteurs || []).length, 'pièce', 'pièces'), colonnes: [['Repère', 0.12, { mono: true }], ['Part number à commander', 0.22, { mono: true }], ['Calibre', 0.1, { droite: true }], ['Retest', 0.2, { mono: true, gris: true }], ['État', 0.36]],
-      lignes: (N.disjoncteurs || []).map(x => [x.repere, x.reference + (x.construit ? ' (construit, à vérifier au catalogue)' : ''), x.calibre ? nombre(x.calibre) + ' A' : '—', x.retest ? x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat]) },
+      lignes: (N.disjoncteurs || []).map(x => [x.repere, x.reference + (x.construit ? ' (construit, à vérifier au catalogue)' : ''), x.calibre ? nombre(x.calibre) + ' A' : '—', x.pnRetest ? x.pnRetest + (x.retest ? ' (' + nombre(x.retest) + ' A)' : '') : '', x.etat]) },
     { titre: 'Autour des connecteurs', compte: motPdf(somme(N.habits), 'article', 'articles'), colonnes: [['Quoi', 0.2], ['Référence', 0.3, { mono: true }], ['Qté', 0.07, { droite: true }], ['Où', 0.43, { gris: true }]],
       lignes: N.habits.map(x => [x.quoi, x.reference + (x.note ? ' · ' + x.note : ''), x.n, ou(x.ou)]) },
     { titre: 'Câbles', compte: motPdf(N.cables.length, 'type', 'types') + ' · ' + nombre(Math.round(N.longueur)) + ' m', colonnes: [['Type', 0.2, { mono: true }], ['Câbles', 0.1, { droite: true }], ['Longueur', 0.12, { droite: true }], ['Masse', 0.12, { droite: true }], ['Base', 0.46, { gris: true }]],
@@ -455,8 +455,9 @@ function pagesHypothesesPdf(nom) { if (typeof hypothesesDe !== 'function') retur
   // les profils de charge : un par disjoncteur du plan
   const etat = (e, k) => e && e[k] && e[k].i != null ? nombre(e[k].i) + ' A' + (k !== 'perm' && e[k].t != null ? ' · ' + nombre(e[k].t) + ' s' : '') : '—';
   const profils = reperesDe(verite()).filter(estDisjoncteur).sort(triNaturel).map(r => { const c = chargeDe(r); let d = null; try { d = disjonctionDe(r); } catch (_) { }
-    const F = d && d.famille, retest = F && F.calibre > 0 && d.calibre > 0 && Math.abs(F.calibre - d.calibre) > 1e-9 ? nombre(F.calibre) + ' A' : '';
-    return [r, d && d.calibre > 0 ? nombre(d.calibre) + ' A' : '—', retest, etat(c, 'dem'), etat(c, 'trans'), etat(c, 'perm'), c && c.plus && c.plus.length ? c.plus.map(x => (x.nom || 'état') + ' ' + nombre(x.i) + ' A' + (x.t != null ? ' · ' + nombre(x.t) + ' s' : '')).join(' ; ') : c ? '' : 'profil à écrire']; });
+    // le calibre ÉCRIT (celui avec lequel ce dossier est jugé, v73) ; à côté, celui que Volta propose sans qu'il soit écrit
+    const ecrit = d ? d.calibreEcrit || d.calibre : null, propose = d && ecrit > 0 && d.calibre > 0 && Math.abs(d.calibre - ecrit) > 1e-9 ? nombre(d.calibre) + ' A' : '';
+    return [r, ecrit > 0 ? nombre(ecrit) + ' A' : '—', propose, etat(c, 'dem'), etat(c, 'trans'), etat(c, 'perm'), c && c.plus && c.plus.length ? c.plus.map(x => (x.nom || 'état') + ' ' + nombre(x.i) + ' A' + (x.t != null ? ' · ' + nombre(x.t) + ' s' : '')).join(' ; ') : c ? '' : 'profil à écrire']; });
   // le statut des tables : leurs lignes, par confiance
   const statuts = (typeof TABLES_NORME !== 'undefined' ? TABLES_NORME : []).map(t => { const xs = (N[t] || []); if (!xs.length) return null; const k = { v: 0, d: 0, c: 0, l: 0 };
     xs.forEach(x => { const f = String(x.confiance || ''); if (f === 'vérifié') k.v++; else if (f === 'déduit' || f === 'structure') k.d++; else if (f) k.c++; else k.l++; });
@@ -464,7 +465,7 @@ function pagesHypothesesPdf(nom) { if (typeof hypothesesDe !== 'function') retur
   const reglees = reglages.filter(r => r[2]).length;
   return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que le retest ne porte pas, Volta le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de l’outil est à côté)' : ', les valeurs de l’outil'}, les profils de charge des disjoncteurs et d’où viennent les tables. Le retest corrigé les garde dans sa feuille « Volta ».`, [
     { titre: 'Les réglages', compte: motPdf(reglages.length, 'réglage', 'réglages'), colonnes: [['Réglage', 0.3], ['Valeur', 0.24], ['Valeur de l’outil', 0.18, { gris: true }], ['Source', 0.28, { gris: true }]], lignes: reglages },
-    { titre: 'Les profils de charge', compte: motPdf(profils.length, 'disjoncteur', 'disjoncteurs'), colonnes: [['Repère', 0.14, { mono: true }], ['Calibre', 0.11, { droite: true }], ['Retest', 0.11, { droite: true, gris: true }], ['Démarrage', 0.15], ['Transition', 0.15], ['Permanent', 0.12], ['Autres états', 0.22]], lignes: profils },
+    { titre: 'Les profils de charge', compte: motPdf(profils.length, 'disjoncteur', 'disjoncteurs'), colonnes: [['Repère', 0.14, { mono: true }], ['Calibre', 0.11, { droite: true }], ['Proposé', 0.11, { droite: true, gris: true }], ['Démarrage', 0.15], ['Transition', 0.15], ['Permanent', 0.12], ['Autres états', 0.22]], lignes: profils },
     { titre: 'Le statut des tables', compte: motPdf(statuts.length, 'table', 'tables'), colonnes: [['Table', 0.3], ['Lignes', 0.12, { droite: true }], ['Vérifiées', 0.14, { droite: true }], ['Déduites', 0.14, { droite: true }], ['À confirmer', 0.15, { droite: true }], ['Vos tables', 0.15, { droite: true }]], lignes: statuts }], { deux: true }); }
 
 /* ---- les folios : leurs liaisons, leur placement (le cache, sinon au loin), leur dessin --------------------------- */
