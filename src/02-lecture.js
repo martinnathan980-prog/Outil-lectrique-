@@ -38,7 +38,7 @@ const COLONNES = [
   ['fwd',      ['fwd', 'plan', 'dessin', 'drawing']],
   ['length',   ['cablelength', 'cablelengthmm', 'cablelengthinmm', 'length', 'longueur']],
   ['appareil', ['appareil', 'aircraft', 'contrat']],
-  ['retest',   ['dateretest', 'retestdate', 'datederetest', 'dateduretest', 'retest', 'date']]
+  ['retest',   ['dateretest', 'retestdate', 'datederetest', 'dateduretest', 'dateinstallation', 'datedelinstallation', 'retest', 'date']]
 ];
 
 function decouperLigne(ligne) {

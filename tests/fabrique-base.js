@@ -43,7 +43,7 @@ const deux = n => String(n).padStart(2, '0');
 
 /* Les lignes de la base : `n` liaisons environ (on s'arrête au contrat qui les dépasse), une graine. */
 function lignes(n, graine) { const R = hasard(graine || 20261020), pick = xs => xs[Math.floor(R() * xs.length)], ent = (a, b) => a + Math.floor(R() * (b - a + 1));
-  const out = [['Installation — base des contrats déjà faits (inventée pour les essais de Volta)'], ['Mémo : une ligne par liaison ; Harness = la machine, FWD = le dessin, Appareil = le contrat'], [], ENTETES];
+  const out = [['Retest — base des contrats déjà faits (inventée pour les essais de Volta)'], ['Mémo : une ligne par liaison ; Harness = la machine, FWD = le dessin, Appareil = le contrat'], [], ENTETES];
   const ecps = new Set(); let total = 0, k = 0, contrats = 0;
   // une installation : son ECP, ses repères (la zone décalée), les folios de l'exemple qu'elle porte, son numéro de dessin
   const installs = INSTALLATIONS.map((nom, i) => { let e; do e = String(ent(30000, 69999)); while (ecps.has(e)); ecps.add(e);

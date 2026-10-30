@@ -75,7 +75,7 @@ function classeurRetestCorrige(V, nom, o) { o = o || {}; V = (V || []).filter(li
   const M = [['Harness', 'Cable Tag', 'Device1', 'Pin1', 'Device2', 'Pin2', 'Colonne', 'Avant', 'Après', 'Origine']];
   V.forEach((l, i) => mods[i].forEach(([col, ch, av, ap]) => M.push([l.harness || '', l.cable || '', l.de, l.borneDe || '', l.vers, l.borneVers || '', col, motAvant(ch, av), motAvant(ch, ap), ORIGINES_MOTS[origine(l, ch)]])));
   const wm = XLSX.utils.aoa_to_sheet(M.length > 1 ? M : [...M, ['', '', '', '', '', '', 'aucune modification', '', '', '']]); wm['!cols'] = M[0].map((h, j) => ({ wch: j < 6 ? 12 : j === 9 ? 30 : 22 }));
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Retest'); XLSX.utils.book_append_sheet(wb, wm, 'Modifications');
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Installation'); XLSX.utils.book_append_sheet(wb, wm, 'Modifications');
   if (o.volta) { XLSX.utils.book_append_sheet(wb, feuilleVolta(o.volta), FEUILLE_VOLTA); wb.Workbook = { Sheets: [{ Hidden: 0 }, { Hidden: 0 }, { Hidden: 1 }] }; }
   return { wb, liaisons: V.length, modifiees: n, cases: mods.reduce((s, m) => s + m.length, 0) }; }
 

@@ -458,7 +458,7 @@ function cadranCalibre(d, items, propose) { const cats = items.map(x => x.calibr
 // les crans, des boutons posés sur leurs chiffres (un seul arrêt de Tab : le retenu ; ← → parcourent les autres)
 function boutonsDuCadran(items) { const G = geometrieCadran(items.map(x => x.calibre)), C = CADRAN, focal = Math.max(0, items.findIndex(x => x.retenu));
   return `<div class="dj-crans" role="group" aria-label="Les calibres de la gamme — ← → les parcourent, Entrée retient, Échap revient">` + items.map((x, k) => { const [px, py] = G.pt(G.angCran(k), C.Rn);
-    return `<button type="button" class="dj-cran ${x.cle || 'inconnu'}${x.retenu ? ' retenu' : ''}${x.auto ? ' auto' : ''}${x.retest ? ' installation' : ''}" data-cal="${x.calibre}" data-k="${k}" style="left:${px.toFixed(1)}px;top:${py.toFixed(1)}px" tabindex="${k === focal ? 0 : -1}" aria-pressed="${x.retenu}"`
+    return `<button type="button" class="dj-cran ${x.cle || 'inconnu'}${x.retenu ? ' retenu' : ''}${x.auto ? ' auto' : ''}${x.retest ? ' retest' : ''}" data-cal="${x.calibre}" data-k="${k}" style="left:${px.toFixed(1)}px;top:${py.toFixed(1)}px" tabindex="${k === focal ? 0 : -1}" aria-pressed="${x.retenu}"`
       + ` aria-label="${escA(amperes(x.calibre) + (x.mot ? ', ' + x.mot : '') + (x.retenu ? (x.propose ? ', proposé' : ', retenu') : '') + (x.retest ? ', celui de l’installation' : ''))}" data-bulle="${escA(x.bulle)}"><span class="dj-arc-n">${nombreCourt(x.calibre)}</span></button>`; }).join('') + '</div>'; }
 // les marques des trois mots : ✓ passe, ~ juste, ✕ déclenche (des icônes : les polices embarquées n'ont pas ces glyphes)
 const MARQUES_VERDICT = { passe: 'coche', juste: 'vague', declenche: 'fermer' };
@@ -507,7 +507,7 @@ function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, b
    étoilé, celui du retest dit ; TOUS cliquables (le pourquoi dans la bulle). Dessous, « Tout le catalogue MS3320 (13) » :
    les calibres que la liste préférée des hypothèses écarte, en pointillé, et la phrase qui le dit. */
 function panneauGamme(nom, d) { const tout = !!FI.catalogue[nom], items = calibresDuCadran(d, tout, nom), F = d.famille, fam = (F && (F.famille || F.nom)) || '';
-  const chips = items.map(x => `<button type="button" class="dj-chip ${x.cle || 'inconnu'}${x.auto ? ' ideal' : ''}${x.hors ? ' hors' : ''}${x.retest ? ' installation' : ''}" data-cal="${x.calibre}" aria-pressed="${x.retenu}" data-bulle="${escA(x.bulle)}"`
+  const chips = items.map(x => `<button type="button" class="dj-chip ${x.cle || 'inconnu'}${x.auto ? ' ideal' : ''}${x.hors ? ' hors' : ''}${x.retest ? ' retest' : ''}" data-cal="${x.calibre}" aria-pressed="${x.retenu}" data-bulle="${escA(x.bulle)}"`
     + ` aria-label="${escA(amperes(x.calibre) + (x.mot ? ', ' + x.mot : '') + (x.retenu ? ', retenu' : '') + (x.retest ? ', celui de l’installation' : '') + (x.hors ? ', hors des calibres préférés' : ''))}">`
     + `<span class="dj-chip-l"><b>${x.auto ? `<i class="dj-etoile" aria-hidden="true">${ico('etoile')}</i>` : ''}${nombreCourt(x.calibre)}<small>A</small></b>${x.retest ? '<em>installation</em>' : ''}</span><span class="dj-chip-v">${marqueVerdict(x.cle)}${esc(x.mot || '—')}</span></button>`).join('');
   const nPref = (d.catalogue || []).length, complet = F ? gammeComplete(d, nom).length : nPref, hors = items.filter(x => x.hors).length;

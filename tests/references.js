@@ -32,7 +32,7 @@ let total = 0, echecs = 0;
 const ok = (nom, cond, mesure) => { total++; if (!cond) echecs++; console.log('  ' + (cond ? 'OK    ' : 'ÉCHEC ') + nom + (mesure ? '   — ' + mesure : '')); };
 
 console.log('\n1. LA LECTURE GARDE LE DESSIN (FWD) ET LES DESCRIPTIONS');
-const EN = 'Harness;Device1;Pin1;PN1;Description1;Cable T/G;Cable Tag;Route;Device2;Pin2;PN2;Description2;FWD;Cable length (mm);APPAREIL;Date de l’installation';
+const EN = 'Harness;Device1;Pin1;PN1;Description1;Cable T/G;Cable Tag;Route;Device2;Pin2;PN2;Description2;FWD;Cable length (mm);APPAREIL;Date du retest';
 let r = X.lireTexte(EN + '\n332A601150-023-D;677VT2 51;B;NSA937cdk,c;BARRETTE;DR22;2564-1830;2MO;677VCH;1;EN36cdcdc;PRISE;MEE256A7815003A;3670;test;27/10/2025\n'), v = r.liaisons[0] || {};
 ok('la ligne du lecteur : fwd = MEE256A7815003A (et le folio aussi), les deux descriptions gardées', v.fwd === 'MEE256A7815003A' && v.plan === 'MEE256A7815003A' && v.descriptionDe === 'BARRETTE' && v.descriptionVers === 'PRISE' && v.harness === '332A601150-023-D', JSON.stringify([v.fwd, v.plan, v.descriptionDe, v.descriptionVers]));
 r = X.lireTexte('Device1;Pin1;Device2;Pin2;Dessin\nA;1;B;2;D-7\nC;1;D;2;');

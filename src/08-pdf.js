@@ -277,7 +277,7 @@ function ouvrirPdfCommePlan() { const L = liaisonsDuPdf(); if (!L.length) return
   dire(pluriel(L.length, 'liaison') + ' lue' + (L.length > 1 ? 's' : '') + ' dans ' + guillemets(PDF.nom) + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + ' : un plan neuf, Ctrl+Z revient.'); }
 const EN16_PDF = ['Harness', 'Device1', 'Pin1', 'PN1', 'Description1', 'Cable T/G', 'Cable Tag', 'Route', 'Device2', 'Pin2', 'PN2', 'Description2', 'FWD', 'Cable length (mm)', 'Appareil', 'Date retest'];
 function classeurDuPdf() { const L = liaisonsDuPdf(), lignes = [EN16_PDF, ...L.map(l => [l.harness, l.de, l.borneDe, l.pnDe, '', l.type, l.cable, '', l.vers, l.borneVers, l.pnVers, '', l.plan, '', '', ''])];
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignes), 'Retest'); return { wb, n: L.length }; }
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignes), 'Installation'); return { wb, n: L.length }; }
 function enregistrerPdfEnExcel() { const { wb, n } = classeurDuPdf(); if (!n) return; const nom = PDF.nom.replace(/\.pdf$/i, '') + '-retest.xlsx';
   telecharger(new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nom);
   dire(pluriel(n, 'liaison') + ' enregistrée' + (n > 1 ? 's' : '') + ' en Excel d’installation (' + nom + ').'); }

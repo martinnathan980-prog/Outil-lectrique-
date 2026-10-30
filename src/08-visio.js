@@ -158,7 +158,7 @@ function ouvrirVisioCommePlan() { const L = liaisonsDuVisio(); if (!L.length) re
   fermerVisio(); chargerContrat(L, 'lecture de ' + VISIO.nom, nom, { nouveau: true }); if (typeof contratRecu === 'function') contratRecu(nom, 'schéma Visio');
   dire(pluriel(L.length, 'liaison') + ' lue' + (L.length > 1 ? 's' : '') + ' dans ' + guillemets(VISIO.nom) + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + ' : un plan neuf, Ctrl+Z revient.'); }
 function classeurDuVisio() { const L = liaisonsDuVisio(), ent = COLONNES_RETEST.map(c => c[0]), lignes = [ent, ...L.map(l => COLONNES_RETEST.map(([, ch]) => ch === 'fwd' ? l.fwd : l[ch] == null ? '' : l[ch]))];
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignes), 'Retest'); return { wb, n: L.length }; }
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignes), 'Installation'); return { wb, n: L.length }; }
 function enregistrerVisioEnExcel() { const { wb, n } = classeurDuVisio(); if (!n) return; const nom = nomSansVisio() + '-retest.xlsx';
   telecharger(new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nom);
   dire(pluriel(n, 'liaison') + ' enregistrée' + (n > 1 ? 's' : '') + ' en Excel d’installation (' + nomAscii(nom) + ').'); }

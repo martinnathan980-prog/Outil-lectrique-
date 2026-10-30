@@ -80,7 +80,7 @@ function fixtures(M) {
   const desc = r => { if (M.estMasse(r)) return 'MASSE'; const q = M.lireRepere(r); return q && M.CODES[q.code] ? M.CODES[q.code].nom.toUpperCase() : ''; };
   const ligne = (l, o) => [o.harness || HARNESS, l.de, l.borneDe, l.pnDe, desc(l.de), l.type, l.cable, l.route, l.vers, l.borneVers, l.pnVers, desc(l.vers), o.fwd ? o.fwd(l) : FWD(l.plan),
     o.longueur === null ? '' : 800 + (hache(l.cable + (o.k || 0)) % 52) * 100, o.appareil || APPAREIL, DATE];
-  const feuille = lignes => [['Installation du ' + DATE], ['Mémo : jeu d’essai des parcours — rien de réel'], [], ENTETE, ...lignes];
+  const feuille = lignes => [['Retest du ' + DATE], ['Mémo : jeu d’essai des parcours — rien de réel'], [], ENTETE, ...lignes];
   const csv = (nom, lignes) => { const f = path.join(dir, nom); fs.writeFileSync(f, feuille(lignes).map(r => r.join(';')).join('\n') + '\n'); return f; };
   const xlsx = (nom, feuilles) => { const wb = XLSX.utils.book_new(); feuilles.forEach(([titre, lignes]) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(feuille(lignes)), titre));
     const f = path.join(dir, nom); fs.writeFileSync(f, XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' })); return f; };

@@ -281,7 +281,7 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   const [dlZ] = await Promise.all([page.waitForEvent('download', { timeout: 120000 }), page.click('#bibliotheque [data-bi="lot-convertir"]')]);
   const zip = fs.readFileSync(await dlZ.path()), noms = []; for (let p = 0; p + 30 < zip.length && zip.readUInt32LE(p) === 0x04034b50;) { const ln = zip.readUInt16LE(p + 26), taille = zip.readUInt32LE(p + 18); noms.push([zip.toString('utf8', p + 30, p + 30 + ln), zip.subarray(p + 30 + ln, p + 30 + ln + taille)]); p += 30 + ln + taille; }
   const XLSX = require('../lib/xlsx.min.js'), xl = noms.filter(([n]) => /-retest-corrige\.xlsx$/.test(n)), pdfs = noms.filter(([n]) => /-dossier\.pdf$/.test(n));
-  const lu = xl.length ? XLSX.utils.sheet_to_json(XLSX.read(xl[0][1]).Sheets.Retest, { header: 1 }) : [];
+  const lu = xl.length ? XLSX.utils.sheet_to_json(XLSX.read(xl[0][1]).Sheets.Installation, { header: 1 }) : [];
   ok(LO.barre && LO.pdf && xl.length === LO.n && pdfs.length === (LO.avecPdf ? LO.n : 0) && noms.length === xl.length + pdfs.length && pdfs.every(([, d]) => d.subarray(0, 5).toString() === '%PDF-') && lu.length > 4 && lu[3][1] === 'Device1' && !(await page.evaluate(() => BIB.lot)),
     `« Convertir ces ${LO.n} contrats » : un zip, un installation corrigée (Excel, relu) et ${LO.avecPdf ? 'un dossier PDF (tous les folios)' : 'pas de dossier PDF (la case le dit)'} par contrat`, dlZ.suggestedFilename() + ' · ' + noms.length + ' fichiers');
   // comparer un retest entier au déjà-fait

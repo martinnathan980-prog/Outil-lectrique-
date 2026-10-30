@@ -22,7 +22,7 @@ const FICHIER = fichierDemande();
 const classeur = feuilles => { const wb = XLSX.utils.book_new(); feuilles.forEach(([nom, lignes]) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignes), nom)); return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' }); };
 const EN16 = ['Harness', 'Device1', 'Pin1', 'PN1', 'Description1', 'Cable T/G', 'Cable Tag', 'Route', 'Device2', 'Pin2', 'PN2', 'Description2', 'FWD', 'Cable length (mm)', 'Appareil', 'Date retest'];
 const ligne16 = (h, d1, p1, d2, p2, tag, tg, fwd) => [h, d1, p1, 'PN-A', '', tg, tag, '1M', d2, p2, 'PN-B', '', fwd, 1200, 'H160', '09/10/2026'];
-const B64 = classeur([['H-A', [['Installation du 09/10/2026'], ['Mémo'], [], EN16, ligne16('H-A', '101BT1', '1', '102CB1', '1', 'W-011', 'DR16', 'D1'), ligne16('H-A', '102CB1', '2', '103RL1', 'A1', 'W-012', 'DR20', 'D1')]],
+const B64 = classeur([['H-A', [['Retest du 09/10/2026'], ['Mémo'], [], EN16, ligne16('H-A', '101BT1', '1', '102CB1', '1', 'W-011', 'DR16', 'D1'), ligne16('H-A', '102CB1', '2', '103RL1', 'A1', 'W-012', 'DR20', 'D1')]],
   ['Notes', [['Ce que le technicien a noté'], ['rien à lire ici', 'ni là']]],
   ['H-B', [['Retest'], [], [], ['Device2', 'Pin2', 'Harness', 'Device1', 'Pin1', 'Cable Tag', 'FWD'], ['104LP1', '1', 'H-B', '103RL1', 'A2', 'W-013', 'D2']]],
   ['Feuil4', [[]]]]);
@@ -52,7 +52,7 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     r = lireTexte(t); const m = r.liaisons[0] || {};
     ok('colonnes dans le désordre', r.format === 'retest' && m.de === '210SP1' && m.vers === '409GH2' && m.borneVers === '7' && m.plan === '5', m.de + '·' + m.borneDe + ' → ' + m.vers + '·' + m.borneVers + ' folio ' + m.plan);
     // le vrai format : la ligne d'exemple du lecteur, les seize colonnes, le « repère module », la longueur en mm
-    t = 'Harness;Device1;Pin1;PN1;Description1;Cable T/G;Cable Tag;Route;Device2;Pin2;PN2;Description2;FWD;Cable length (mm);APPAREIL;Date de l’installation\n332A601150-023-D;677VT2 51;B;NSA937cdk,c;;DR22;2564-1830;2MO;677VCH;1;EN36cdcdc;;MEE256A7815003A;3670;test;27/10/2025\n';
+    t = 'Harness;Device1;Pin1;PN1;Description1;Cable T/G;Cable Tag;Route;Device2;Pin2;PN2;Description2;FWD;Cable length (mm);APPAREIL;Date du retest\n332A601150-023-D;677VT2 51;B;NSA937cdk,c;;DR22;2564-1830;2MO;677VCH;1;EN36cdcdc;;MEE256A7815003A;3670;test;27/10/2025\n';
     r = lireTexte(t); const v = r.liaisons[0] || {};
     ok('la ligne du lecteur : harness, appareil, date gardés ; 3670 mm → 3,67 m', r.format === 'retest' && v.harness === '332A601150-023-D' && v.appareil === 'test' && v.retest === '27/10/2025' && v.longueur === 3.67 && r.harnais.join() === '332A601150-023-D', JSON.stringify([v.harness, v.appareil, v.retest, v.longueur]));
     ok('« 677VT2 51 » + « B » → repère 677VT2, borne 51B (le module et son contact) ; 677VCH:1 tel quel', v.de === '677VT2' && v.borneDe === '51B' && v.vers === '677VCH' && v.borneVers === '1' && v.pnDe === 'NSA937cdk,c' && v.plan === 'MEE256A7815003A', v.de + ':' + v.borneDe);
@@ -92,12 +92,12 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     // (l'exemple tel que la v73 l'ouvrait : la feuille Modifications n'y compte que les deux écritures à la main)
     atelier.exempleSansCalibreAuto(); await new Promise(r => setTimeout(r, 500));
     changerLiaison(verite().find(x => x.cable === 'W-012'), 'type', 'DR16', 'essai'); changerLiaison(verite().find(x => x.cable === 'W-013'), 'longueur', 3.25, 'essai');
-    const R = classeurRetestCorrige(verite(), app.nom), ws = R.wb.Sheets.Retest, rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }), i = rows.findIndex(x => x[6] === 'W-012');
+    const R = classeurRetestCorrige(verite(), app.nom), ws = R.wb.Sheets.Installation, rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }), i = rows.findIndex(x => x[6] === 'W-012');
     const com = (ws[XLSX.utils.encode_cell({ r: i, c: 5 })].c || [])[0], M = XLSX.utils.sheet_to_json(R.wb.Sheets.Modifications, { header: 1 }).slice(1).map(x => x.join('|'));
     ok('l’installation corrigée : les seize colonnes (en-têtes en ligne 4), la case changée commentée de ce qu’elle disait', rows[3].slice(0, 16).join('|') === 'Harness|Device1|Pin1|PN1|Description1|Cable T/G|Cable Tag|Route|Device2|Pin2|PN2|Description2|FWD|Cable length (mm)|Appareil|Date retest' && rows[i][5] === 'DR16' && com && com.t === 'Avant : DR20' && rows[i][16] === 'Cable T/G', rows[i].join('|'));
     // (v73 : la feuille dit aussi l'ORIGINE de chaque case — ici deux écritures à la main)
     ok('la feuille Modifications : une ligne par case changée (le type, la longueur en mm) et son origine', M.join(' / ') === '|W-012|102CB1|2|103RL1|A1|Cable T/G|DR20|DR16|à la main / |W-013|103RL1|A2|104LP1|1|Cable length (mm)|vide|3250 mm|à la main' && R.modifiees === 2, M.join(' / '));
-    const lu = lireTexte(XLSX.utils.sheet_to_csv(XLSX.read(XLSX.write(R.wb, { type: 'array', bookType: 'xlsx' })).Sheets.Retest, { FS: ';' }));
+    const lu = lireTexte(XLSX.utils.sheet_to_csv(XLSX.read(XLSX.write(R.wb, { type: 'array', bookType: 'xlsx' })).Sheets.Installation, { FS: ';' }));
     ok('Volta le relit : le format installation, les 201 liaisons, les valeurs corrigées', lu.format === 'retest' && lu.liaisons.length === 201 && lu.liaisons.find(x => x.cable === 'W-012').type === 'DR16' && lu.liaisons.find(x => x.cable === 'W-013').longueur === 3.25, lu.format + ' · ' + lu.liaisons.length);
     return out;
   });
