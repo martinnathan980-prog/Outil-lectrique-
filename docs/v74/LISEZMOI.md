@@ -35,6 +35,12 @@ des lots et ce qui reste à trancher avec lui.
 - La feuille laissée de côté à l'ouverture est nommée ; « Déjà fait » n'offre plus le contrat ouvert lui-même ; une
   base déposée depuis la bibliothèque n'ouvre plus « Vos fichiers » par-dessus.
 
+## Les batteries (livraison v75)
+**24 batteries sur 24 vertes** (`node tests/toutes.js`), dont le juge de l'ergonome (`tests/ux.js`) pour la première
+fois : **0 défaut**, contre 40 à la livraison v74. La table vivante dérive à 7 Hz : 23 à 25 % d'un cœur éveillée, pour
+tout le navigateur sans carte graphique (85 à 90 % en v74). Le menu ⋮ passe à 292 px pour que « installation corrigée ·
+3 changements » tienne sur sa ligne.
+
 ## À trancher avec le lecteur
 1. **« Installation » dit deux choses** : son fichier Excel, et le classement par ECP de la bibliothèque (« Nouvelle
    installation »). Dans une installation, « Ajouter un plan » puis « Glissez vos installations ici » se lit en double.
