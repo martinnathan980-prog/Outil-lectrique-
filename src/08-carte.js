@@ -19,8 +19,10 @@
 'use strict';
 
 const CARTE = { epingle: false, origine: null, deplacee: false, appui: null, prise: null, ecart: 0 };
-const CARTE_L = () => (window.innerWidth >= 1800 ? 440 : 420);   // une fiche, pas un volet
-const CARTE_H = 620;            // au plus : au-delà elle défile — une carte, pas un pan d'écran
+// une fiche, pas un volet ; plus large sur un grand écran (l'ingénieur v73 : « à 1920, la carte garde 440 px alors qu'il y a
+// la place : les contacts tiendraient sur une ligne, la courbe du disjoncteur gagnerait un quart »)
+const CARTE_L = () => (window.innerWidth >= 1800 ? 500 : 420);
+const CARTE_H = 680;            // au plus : au-delà elle défile — une carte, pas un pan d'écran (v73 : 680, le cadran d'un disjoncteur en vue sous sa carte de décision)
 const CARTE_AIR = 44;           // l'air entre le bloc et la carte : le fil y passe
 const CARTE_COURBE = 'cubic-bezier(.2,.8,.2,1)';
 /* Flottante, sauf épinglée, au téléphone (le tiroir) — et le RÉCAPITULATIF ouvert : on y travaille en tableaux, la fiche
@@ -64,7 +66,7 @@ const feuilleALEcran = v => { const d = app.dessin; if (!d || !d.bbox) return nu
   return { left: r.left + V.tx + b.x * V.s, top: r.top + V.ty + b.y * V.s, right: r.left + V.tx + (b.x + b.w) * V.s, bottom: r.top + V.ty + (b.y + b.h) * V.s }; };
 function zonesAProteger(v) { const o = CARTE.origine, d = app.dessin, out = [], P = POIDS_CARTE;
   // la barre du bas (les folios, le zoom) : elle mène ailleurs, la carte ne s'y pose pas
-  const pied = $('folios'); if (pied && !pied.hidden) [...pied.children].forEach(c => { const b = c.getBoundingClientRect(); if (b.width && b.height) out.push({ left: b.left - 8, right: b.right + 8, top: b.top - 8, bottom: b.bottom + 8, poids: P.depart }); });
+  const pied = $('folios'); if (pied && !pied.hidden) [...pied.children].forEach(c => { const b = c.getBoundingClientRect(); if (b.width > 40 && b.height > 20) out.push({ left: b.left - 8, right: b.right + 8, top: b.top - 8, bottom: b.bottom + 8, poids: P.depart, pied: true }); });
   if (!o || !d || o.type === 'ecran') return out;
   const V = v || app.vue, r = cadre(), X = x => r.left + V.tx + x * V.s, Y = y => r.top + V.ty + y * V.s;
   const F = feuilleALEcran(V); if (F) out.push({ ...F, poids: P.feuille });
@@ -102,7 +104,13 @@ function placerPres(b, W, H, v, diag) { const Z = zoneDeLaCarte(), e = CARTE_AIR
   const zones = zonesAProteger(v), places = [];
   // `dispo` : la hauteur que la place lui laisse ; elle y est pesée à sa hauteur d'aujourd'hui (au plus H), et pourra y
   // grandir quand on ouvre une section (le cadran du calibre) — jusqu'à CARTE_H, jamais sur son bloc
-  const essai = (x, y, dispo, rang, ou) => { x = cl(x, Z.L, Z.R - W); dispo = Math.min(dispo, Z.B - y); const h = Math.min(dispo, H); if (y < Z.T || h < HMIN) return;
+  // (au-dessus de la barre du bas, elle s'arrête à son filet : elle y grandira sans jamais la couvrir — v73, la galerie d'une
+  // barrette ouverte posait la carte sur les folios)
+  const pieds = zones.filter(z => z.pied);
+  const essai = (x, y, dispo, rang, ou) => { x = cl(x, Z.L, Z.R - W); let bas = Z.B; for (const z of pieds) if (x < z.right && x + W > z.left && z.top >= y) bas = Math.min(bas, z.top);
+    // (trop bas pour sa hauteur au-dessus de la barre : elle remonte d'autant — entière, sans couvrir les folios)
+    if (bas < Z.B && bas - y < H) y = Math.max(Z.T, bas - H); dispo = Math.min(dispo, Z.B - y, bas - y);
+    const h = Math.min(dispo, H); if (y < Z.T || h < HMIN) return;
     const perte = (H - h) * W * C.hauteur, loin = Math.hypot(x + W / 2 - (b.left + b.width / 2), y + h / 2 - (b.top + b.height / 2)) * C.distance;
     let cache = 0; for (const z of zones) { const dx = Math.min(x + W, z.right) - Math.max(x, z.left), dy = Math.min(y + h, z.bottom) - Math.max(y, z.top); if (dx > 0 && dy > 0) cache += z.poids * dx * dy; }
     places.push({ x, y, h: dispo, cout: rang * C.rang + perte + loin + cache, ou, perte: Math.round(perte), loin: Math.round(loin), cache: Math.round(cache) }); };
@@ -139,23 +147,41 @@ const seCoupent = (a, c) => !(a.left > c.right || a.left + a.width < c.left || a
    bloc cliqué sur le plan l'y fait glisser — sauf si on l'a posée à la main et qu'elle ne le cache pas ; ouverte depuis
    la fiche elle-même (‹ ›, un câble de la liste), elle reste où elle est et le fil change de bout. */
 function poserLaCarte(etait, avant, vieille) { const el = $('inspecteur'), m = mesurerCarte(), b = rectDeLOrigine(), o = CARTE.origine;
-  if (!etait) { CARTE.deplacee = false; poserA(placerPres(b, m.W, m.H)); naitreCarte(el, b); return; }
+  if (!etait) { CARTE.deplacee = false; poserA(placerPres(b, m.W, m.H)); naitreCarte(el, b); prendreLeClavier(el); return; }
   const depuisPlan = !!(CARTE.appui && Date.now() - CARTE.appui.t < 900);
   const meme = vieille && o && vieille.type === o.type && vieille.nom === o.nom && vieille.x === o.x;
   if (depuisPlan && !meme && b && (!CARTE.deplacee || seCoupent(b, avant))) { poserA(placerPres(b, m.W, m.H)); glisserCarte(el, avant); }
   else { poserCarte(avant.left, avant.top, parseFloat(el.style.getPropertyValue('--carte-hmax')) || 0); dessinerLien(); } }
 
-/* Naître : la carte part EXACTEMENT de la boîte du bloc (le même rectangle blanc sur le papier) et grandit jusqu'à sa
-   place ; son contenu paraît dans la seconde moitié — pendant l'élan, on ne lit pas un texte écrasé. */
+/* LES COURBES DU MOUVEMENT (le socle v73, style.css) : ce qui PARAÎT (vif, très freiné), ce qui PART (il accélère), ce qui
+   VA de A à B sous les yeux (il glisse) — lues dans les jetons, les mêmes que les feuilles. */
+const COURBES_CARTE = { entree: 'cubic-bezier(.32,.72,0,1)', sortie: 'cubic-bezier(.4,0,1,1)', glisse: 'cubic-bezier(.65,0,.35,1)' };
+const courbeCarte = n => { try { const v = getComputedStyle(document.documentElement).getPropertyValue('--courbe-' + n).trim(); if (v) return v; } catch (_) { } return COURBES_CARTE[n]; };
+// l'échelle d'où la carte part (et où elle rentre) : UNIFORME — la plus grande des deux proportions bloc / carte, entre 0,16 et
+// 0,5 — jamais sx ≠ sy : ni texte écrasé ni coins ovales (le designer v73)
+const echelleDuBloc = (b, r) => Math.min(0.5, Math.max(0.16, b.width / r.width, b.height / r.height));
+/* NAÎTRE (v73, le moment signature n° 1 : « la carte se déplie du bloc ») : la carte ENTIÈRE part du CENTRE du bloc, à une
+   échelle uniforme, et se déplie jusqu'à sa place en 340 ms (la courbe d'entrée) ; son contenu est LÀ dès la première
+   image (une vignette lisible, pas une dalle blanche qui couvre les voisins) ; l'opacité monte dans le premier quart ;
+   l'ombre grandit avec elle ; les coins du bloc se serrent (160 ms) ; le fil se trace à 200 ms, en 220 ms. */
 function naitreCarte(el, de) { if (mouvementReduit()) { dessinerLien(); lacherLeSurvol(); return; }
-  const r = el.getBoundingClientRect(), fin = () => { el.classList.remove('carte-nait'); dessinerLien(true); lacherLeSurvol(); }; el.classList.add('carte-nait');
-  if (!de || !r.width) { el.animate([{ opacity: 0, transform: 'translateY(8px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: CARTE_COURBE }).onfinish = fin; return; }
-  const sx = Math.max(.03, de.width / r.width), sy = Math.max(.03, de.height / r.height);
-  el.animate([{ transform: `translate(${de.left - r.left}px,${de.top - r.top}px) scale(${sx},${sy})`, opacity: .35 }, { opacity: 1, offset: .3 }, { transform: 'none', opacity: 1 }], { duration: 280, easing: CARTE_COURBE }).onfinish = fin;
-  $('ba-equip').animate([{ opacity: 0 }, { opacity: 0, offset: .4 }, { opacity: 1 }], { duration: 320, easing: 'ease-out' }); }
-// glisser de son ancienne boîte à la nouvelle
+  const r = el.getBoundingClientRect(), box = $('ba-equip');
+  // pas de fondu d'entrée de la fiche pendant qu'elle naît : la vignette se lit tout de suite
+  if (box) { box.classList.remove('fondu'); box.getAnimations({ subtree: true }).forEach(a => { try { a.finish(); } catch (_) { } }); }
+  const fin = () => { el.classList.remove('carte-nait'); dessinerLien(); lacherLeSurvol(); }; el.classList.add('carte-nait');
+  if (!de || !r.width) { el.animate([{ opacity: 0, transform: 'translateY(8px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: courbeCarte('entree') }).onfinish = () => { fin(); dessinerLien(true); }; return; }
+  // (l'origine de la carte est son coin haut-gauche : son centre part du centre du bloc)
+  const s = echelleDuBloc(de, r), tx = de.left + de.width / 2 - r.left - s * r.width / 2, ty = de.top + de.height / 2 - r.top - s * r.height / 2;
+  el.animate([{ transform: `translate(${tx}px,${ty}px) scale(${s})`, opacity: 0 }, { opacity: 1, offset: 0.25 }, { transform: 'none', opacity: 1 }], { duration: 340, easing: courbeCarte('entree') }).onfinish = fin;
+  serrerLeViseur();
+  setTimeout(() => { if (!el.hidden && el.classList.contains('carte-nait')) dessinerLien(true, r); }, 200); }
+// les coins du bloc choisi (06 `crochetsDe` : `.selbox`) se serrent sur lui pendant que la carte en sort
+function serrerLeViseur() { const o = CARTE.origine; if (!o || o.type !== 'bloc' || mouvementReduit()) return;
+  document.querySelectorAll(`#svg .comp[data-name="${CSS.escape(o.nom)}"] path.selbox`).forEach(p => { p.style.transformBox = 'fill-box'; p.style.transformOrigin = 'center';
+    try { p.animate([{ opacity: 0, scale: '1.12' }, { opacity: 1, scale: '1' }], { duration: 160, easing: courbeCarte('entree') }); } catch (_) { p.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 }); } }); }
+// glisser de son ancienne boîte à la nouvelle, sous les yeux (300 ms, la courbe qui glisse) ; le fil suit
 function glisserCarte(el, avant) { if (mouvementReduit() || !avant) { dessinerLien(); lacherLeSurvol(); return; } const r = el.getBoundingClientRect();
-  el.animate([{ transform: `translate(${avant.left - r.left}px,${avant.top - r.top}px)` }, { transform: 'none' }], { duration: 300, easing: CARTE_COURBE }).onfinish = lacherLeSurvol;
+  el.animate([{ transform: `translate(${avant.left - r.left}px,${avant.top - r.top}px)` }, { transform: 'none' }], { duration: 300, easing: courbeCarte('glisse') }).onfinish = lacherLeSurvol;
   suivreLienPendant(320); }
 /* LE SURVOL QUI RESTAIT (vu sous charge) : la carte vient se poser sous la souris immobile — elle naît, glisse, s'écarte,
    on la lâche —, le plan n'en sait rien (aucun mouvement, aucun « mouseleave ») et ce qu'il allumait au survol reste
@@ -165,21 +191,27 @@ function lacherLeSurvol() { const s = CARTE.souris, el = $('inspecteur'); if (!s
   const r = el.getBoundingClientRect(); if (s.x < r.left || s.x > r.right || s.y < r.top || s.y > r.bottom) return;
   $('planche').dispatchEvent(new MouseEvent('mouseleave')); }
 /* Se résorber : la carte est déjà fermée (les gestes et les batteries n'attendent rien) ; c'est son DOUBLE, sans
-   identifiants et hors d'atteinte, qui rentre dans le bloc et s'éteint. */
+   identifiants et hors d'atteinte, qui rentre dans le bloc — en 240 ms, la courbe de sortie (il accélère), vers le CENTRE
+   du bloc, à échelle uniforme, son contenu lisible jusqu'au bout ; il s'éteint dès 70 % du chemin : jamais de dalle posée
+   sur le bloc. */
 function resorberCarte(el) { const de = el.getBoundingClientRect(), vers = rectDeLOrigine(); if (mouvementReduit() || !de.width) return;
   const f = el.cloneNode(true); f.removeAttribute('id'); f.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
   f.className = 'carte-double'; f.setAttribute('aria-hidden', 'true'); f.inert = true;
   Object.assign(f.style, { left: de.left + 'px', top: de.top + 'px', width: de.width + 'px', height: de.height + 'px' }); document.body.appendChild(f);
-  const fi = el.querySelector('.fi'), fi2 = f.querySelector('.fi'); if (fi && fi2) { fi2.classList.remove('fondu'); fi2.scrollTop = fi.scrollTop; fi2.animate([{ opacity: 1 }, { opacity: 0, offset: .45 }, { opacity: 0 }], { duration: 240, fill: 'forwards' }); }
-  (vers ? f.animate([{ transform: 'none', opacity: 1 }, { opacity: .9, offset: .55 }, { transform: `translate(${vers.left - de.left}px,${vers.top - de.top}px) scale(${Math.max(.03, vers.width / de.width)},${Math.max(.03, vers.height / de.height)})`, opacity: 0 }], { duration: 250, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'forwards' })
-    : f.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(6px) scale(.98)' }], { duration: 180, easing: 'ease-in', fill: 'forwards' })).onfinish = () => f.remove(); }
+  const fi = el.querySelector('.fi'), fi2 = f.querySelector('.fi'); if (fi && fi2) { fi2.classList.remove('fondu'); fi2.scrollTop = fi.scrollTop; }
+  if (!vers) { f.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(6px) scale(.98)' }], { duration: 180, easing: courbeCarte('sortie'), fill: 'forwards' }).onfinish = () => f.remove(); return; }
+  const s = echelleDuBloc(vers, de), tx = vers.left + vers.width / 2 - de.left - s * de.width / 2, ty = vers.top + vers.height / 2 - de.top - s * de.height / 2;
+  f.animate([{ transform: 'none' }, { transform: `translate(${tx}px,${ty}px) scale(${s})` }], { duration: 240, easing: courbeCarte('sortie'), fill: 'forwards' }).onfinish = () => f.remove();
+  // (l'opacité suit le temps, pas la courbe : pleine jusqu'à la moitié, éteinte à 70 %)
+  f.animate([{ opacity: 1 }, { opacity: 1, offset: 0.45 }, { opacity: 0, offset: 0.7 }, { opacity: 0 }], { duration: 240, fill: 'forwards' }); }
 
 /* ---- LE FIL : du bloc à la carte, une courbe fine (#carte-lien, page.html) ---------------------------------------- */
 const auBord = (r, x, y) => ({ x: Math.max(r.left, Math.min(r.left + r.width, x)), y: Math.max(r.top, Math.min(r.top + r.height, y)) });
-function dessinerLien(trace) { const s = $('carte-lien'), el = $('inspecteur'); if (!s) return;
-  const b = carteFlottante() && !el.hidden && !el.classList.contains('carte-nait') && CARTE.origine && CARTE.origine.type !== 'ecran' ? rectDeLOrigine() : null;
+// `posee` : la boîte où la carte se pose (pendant qu'elle naît, le fil se trace déjà vers elle — à 200 ms, en 220 ms)
+function dessinerLien(trace, posee) { const s = $('carte-lien'), el = $('inspecteur'); if (!s) return;
+  const b = carteFlottante() && !el.hidden && (posee || !el.classList.contains('carte-nait')) && CARTE.origine && CARTE.origine.type !== 'ecran' ? rectDeLOrigine() : null;
   if (!b) { s.classList.remove('on'); return; }
-  const c = el.getBoundingClientRect(), centre = { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+  const c = posee || el.getBoundingClientRect(), centre = { x: b.left + b.width / 2, y: b.top + b.height / 2 };
   // côté carte : à hauteur du bloc s'il est en face, sinon le coin le plus proche ; côté bloc : le point face à la carte
   const pc = auBord({ left: c.left, top: c.top + 20, width: c.width, height: Math.max(0, c.height - 40) }, centre.x, centre.y), pb = auBord(b, pc.x, pc.y);
   const dx = pc.x - pb.x, dy = pc.y - pb.y;
@@ -231,9 +263,25 @@ function eviterLeBloc() { const el = $('inspecteur'); if (!carteFlottante() || e
   const b = rectDeLOrigine(), c = el.getBoundingClientRect(); if (!b || !seCoupent(b, c)) return;
   const m = mesurerCarte(); poserA(placerPres(b, m.W, m.H)); glisserCarte(el, c); }   // (glisser lâche le survol à la fin)
 
+/* ---- LE CLAVIER (l'ergonome v73 : « / 102CB1 Entrée ouvre la carte, mais le clavier reste sur la page : 8 Tab plus
+   tard, on est encore dans la barre des folios ») : une carte qui s'ouvre — d'un clic, par la recherche, par P — PREND LE
+   CLAVIER (Tab commence dans la carte) ; fermée (Échap, ×, un clic dehors), elle le rend d'où il venait : le bouton qui
+   l'avait ouverte, la ligne du récapitulatif ; la recherche refermée, son bouton du rail ; sinon la page. ------------ */
+function prendreLeClavier(el) { const a = document.activeElement;
+  CARTE.ouvreur = a && a !== document.body && !el.contains(a) ? a : null;
+  if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+  try { el.focus({ preventScroll: true }); } catch (_) { el.focus(); } }
+function rendreLeClavier() { const o = CARTE.ouvreur; CARTE.ouvreur = null; const a = document.activeElement;
+  // le clavier est ailleurs (on a cliqué dehors, ou il est déjà parti) : on ne le reprend pas
+  if (a && a !== document.body && !$('inspecteur').contains(a)) return;
+  const cible = o && o.isConnected && o.offsetParent !== null && !o.closest('[hidden], [inert]') ? (o.matches('input, textarea') ? ($('btnCherche') || null) : o) : null;
+  if (cible) { try { cible.focus({ preventScroll: true }); } catch (_) { cible.focus(); } } }
+
 /* ---- LA TENIR PAR SA BARRE ------------------------------------------------------------------------------------------ */
 function lierCarte() { const el = $('inspecteur');
   try { CARTE.epingle = localStorage.getItem('volta.fiche.epinglee') === '1'; } catch (_) { }
+  // fermée, d'où qu'on la ferme (08-interface, `fermerInspecteur`), elle rend le clavier
+  if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) rendreLeClavier(); }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
   // l'endroit du dernier appui sur la planche : la fiche d'un câble naît de là, un clic sur le plan fait glisser la carte
   $('planche').addEventListener('pointerdown', e => { CARTE.appui = { x: e.clientX, y: e.clientY, t: Date.now() }; }, true);
   // où est la souris (la carte qui se pose dessous fait oublier au plan son survol : `lacherLeSurvol`)
