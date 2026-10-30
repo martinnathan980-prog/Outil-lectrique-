@@ -30686,10 +30686,12 @@ function rapportCoherenceSEE(I, copie) { const K = I && I.coherence; if (!K) ret
    =========================================================================== */
 
 const TABLE_PARALLAXE = .1, TABLE_PAS = 24;   // les points, un tous les 24 px : leur parallaxe glisse modulo un pas
-/* La dérive s'écrit à 10 Hz (v74 ; le designer en voulait 15) : à 7,7 px/s au plus (10 à 1920), un pas fait un pixel au plus sur une
-   lumière très floue — l'œil n'y voit aucune marche —, et le fil principal y passe quatre à cinq fois moins de temps
-   (banc v74, 15 et 10 Hz en alternance dans la même page : 4,1 % contre 0,8 %). La lueur : un ressort de 9 rad/s. */
-const TABLE_HZ = 10, TABLE_RESSORT = 9;
+/* La dérive s'écrit à 7 Hz (v74 ; le designer en voulait 15, le lot A l'avait mise à 10) : à 7,7 px/s au plus (10 à 1920), un
+   pas fait un pixel et demi au plus sur une lumière très floue — l'œil n'y voit aucune marche ; les points, à un dixième
+   de cette vitesse, à peine un sixième de pixel. Le navigateur entier, table éveillée, sans carte graphique (rendu
+   logiciel) : 85 à 90 % d'un cœur en v74, 31 à 34 % à 10 Hz, 24 à 25 % à 7 Hz (tests/vitesse.js, machine au repos). La
+   lueur : un ressort de 9 rad/s. */
+const TABLE_HZ = 7, TABLE_RESSORT = 9;
 const TABLE_REVELE = 420;                     // le disque où la grille se révèle (style-table.css, `.ta-revele`)
 // ce qu'on lit, posé sur la table : la grille ne s'y révèle pas
 const TABLE_LU = '#bi-page :is(.bi-vide-centre > *, .bi-dock, .bi-carte, .bi-tete, .bi-reprendre, .bi-feuille, .bi-intertitre, .bi-rail, .bi-bandeau, .bi-lot, .bi-sous), #fiche, #base, #inspecteur, #menu, #entete, #rail, #folios';

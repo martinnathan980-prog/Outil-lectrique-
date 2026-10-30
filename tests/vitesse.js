@@ -78,7 +78,7 @@ function lectureDAvantDansLaPage() {
   // — la table au repos : quelques secondes sans geste, le navigateur presque à l'arrêt (les autres folios placés, l'affinage arrêté)
   await page.waitForFunction(() => { const e = etatPlacement(); return !e.encours && !e.attentes.length; }, null, { timeout: 300000 }).catch(() => { });
   await page.evaluate(() => { affinage.actif = false; if (affinage.worker) { affinage.worker.terminate(); affinage.worker = null; } affinage.encours = null; affinage.file = []; arreterPlacement(); montrerAttente(); });
-  // la table VIVANTE (v73) : quand on est là, ses deux nappes dérivent (10 Hz, translation seule) — sobrement : le navigateur
+  // la table VIVANTE (v73) : quand on est là, ses deux nappes dérivent (7 Hz, translation seule) — sobrement : le navigateur
   // entier, la table éveillée ; puis la veille (90 s sans la main, avancée ici à 1,5 s) l'endort : plus rien ne tourne
   await page.mouse.move(900, 400); await page.mouse.move(1000, 450, { steps: 10 }); await page.waitForTimeout(1500);
   const vit = await page.evaluate(() => new Promise(r => { const t0 = TABLE.temps; setTimeout(() => r({ avance: TABLE.temps > t0, minuterie: !!TABLE.minuterie }), 800); }));
