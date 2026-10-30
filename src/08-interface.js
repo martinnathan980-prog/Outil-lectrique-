@@ -740,7 +740,10 @@ function ailleursDesReperes() { const P = plans(), ou = new Map(); if (P.length 
 function peindreChoix() { const sc = $('scene'); if (!sc || !app.dessin) return; const D = app.dessin, nom = app.choisi;
   sc.querySelectorAll('.selbox').forEach(e => e.remove()); sc.querySelectorAll('.vt.sel').forEach(g => g.classList.remove('sel'));
   if (nom == null || nom === '') return; const n = xmlSur(nom);
-  sc.querySelectorAll('.comp').forEach(g => { if (g.dataset.name !== n) return; const c = D.comps[+g.dataset.k]; if (c) g.insertAdjacentHTML('afterbegin', crochetsDe(c)); });
+  /* un repère dessiné plusieurs fois (une barrette en morceaux, 668VT31) : des crochets pleins sur l'occurrence cliquée, en
+     pointillé sur les autres (le technicien v73 : « je ne sais pas laquelle est elle ») */
+  const gs = [...sc.querySelectorAll('.comp')].filter(g => g.dataset.name === n), ici = gs.some(g => +g.dataset.k === app.choisiK) ? app.choisiK : gs.length ? +gs[0].dataset.k : -1;
+  gs.forEach(g => { const c = D.comps[+g.dataset.k]; if (!c) return; const h = crochetsDe(c); g.insertAdjacentHTML('afterbegin', gs.length > 1 && +g.dataset.k !== ici ? h.replace('class="selbox"', 'class="selbox selbox-autre"') : h); });
   sc.querySelectorAll('.vt').forEach(g => { if (g.dataset.vt !== n) return; const b = (D.barrettes || []).find(x => x.nomVT === nom); if (!b) return; g.classList.add('sel'); g.insertAdjacentHTML('beforeend', crochetsDeBarrette(b)); }); }
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 
@@ -787,7 +790,7 @@ function marges() { const tel = telephone(), folios = !$('folios').hidden, vu = 
   if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16 + entete, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
   return { haut: 24 + entete, bas: (bas ? bas.offsetHeight + 16 : 0) + (folios ? pied + 24 : 24), gauche: rail + 24, droite: 24 + (droite ? droite.offsetWidth + 8 : 0) }; }
 let anim = null, vueVisee = null;   // l'animation de la vue en cours, et la vue où elle va (la carte s'y place d'avance : 08-carte)
-/* LA VUE GLISSE vers sa cible (260 ms). L'échelle va d'un pas égal en proportion (son logarithme) et le point du dessin au
+/* LA VUE GLISSE_FOLIO vers sa cible (260 ms). L'échelle va d'un pas égal en proportion (son logarithme) et le point du dessin au
    centre de la planche glisse droit vers le sien : l'interpolation de tx, ty et s chacun pour soi faisait d'abord fuir ce
    qu'on allait voir, puis le ramenait (un zoom fort « en S »). La première image ne revient jamais en arrière (l'instant
    d'une image peut précéder celui de l'appel). */
@@ -1284,7 +1287,10 @@ function lierPlanche() {
     if (!suite) dire(c.name + ' poussé d’un carreau · Maj : cinq carreaux · Ctrl+Z pour défaire.'); };
   window.addEventListener('keydown', e => { const sens = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
     if (!sens || e.ctrlKey || e.metaKey || e.altKey || mode || pointeurs.size || !$('relief').hidden) return;
-    const t = e.target; if (t && t.closest && t.closest('input,textarea,select,[contenteditable],[role="listbox"],[role="menu"],#menu')) return;
+    // le clavier dans la carte, un document, le récapitulatif ou la palette : les flèches sont à eux (un cran du cadran poussait
+    // 102CB1, le domaine B v73). La carte qui vient de s'ouvrir tient le clavier SUR ELLE-MÊME (`prendreLeClavier`, 08-carte) :
+    // là, rien en elle ne veut des flèches, elles poussent toujours le bloc choisi (« un bloc choisi se pousse aux flèches »)
+    const t = e.target; if (t && t.closest && t.id !== 'inspecteur' && t.closest('input,textarea,select,[contenteditable],[role="listbox"],[role="menu"],#menu,#inspecteur,#fiche,#base,#palette')) return;
     const c = blocChoisi(); if (!c) return;
     e.preventDefault(); e.stopPropagation(); const k = e.shiftKey ? 5 : 1; pousser(c, sens[0] * k, sens[1] * k); }, true);
   /* Le SURVOL : ce qui se prendrait s'allume, le curseur dit dans quel sens ça va (`data-prise` sur la planche : bloc,
@@ -1492,7 +1498,7 @@ function choisirBarretteAPoser(b) { app.choisi = b.nomVT; app.cible = { type: 'b
    qu'elle dédouble (ses fils y sont). */
 const filtreDuBloc = nom => { if (!VT_A_POSER.test(nom)) return nom; const r = liaisonsDuPlan().find(l => l.origine === null && l.vers === nom && l.borneVers === '1'); return r ? r.de : ''; };
 /* Choisir un bloc : sa fiche dans l'inspecteur ; le tableau, s'il est ouvert, se filtre sur lui. */
-function choisirBloc(c) { app.choisi = c.name; app.cible = { type: 'bloc', nom: c.name };
+function choisirBloc(c) { app.choisi = c.name; app.cible = { type: 'bloc', nom: c.name }; app.choisiK = app.dessin ? app.dessin.comps.indexOf(c) : -1;
   if (app.base.ouvert) { app.base.filtre = filtreDuBloc(c.name); app.base.filtreAuto = true; app.base.defiler = true; rendreBase(); }
   peindre(); ouvrirInspecteur(); allumerBloc(c.name); }
 /* Choisir un fil : sa fiche ; dans le tableau ouvert, sa ligne se marque et vient sous les yeux. */
@@ -1621,7 +1627,7 @@ function rendreIndex(box) { const etats = new Map();
   box.querySelectorAll('.ix-item[data-nom]').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan));
   box.querySelectorAll('.ix-item[data-cable]').forEach(b => b.onclick = () => aller({ type: 'fil', nom: b.dataset.cable })); }
 /* LE SURVOL QUI SUIT (v68 : « très fluide, très naturel ») : une seule teinte, posée sous la ligne que la souris survole
-   (ou qui a le clavier), qui GLISSE d'une ligne à l'autre au lieu de s'éteindre et de se rallumer ; elle s'efface quand on
+   (ou qui a le clavier), qui GLISSE_FOLIO d'une ligne à l'autre au lieu de s'éteindre et de se rallumer ; elle s'efface quand on
    quitte les lignes. Posée dans la fiche (elle défile avec la liste), refaite à chaque rendu de l'index ; les écouteurs, une
    fois pour toutes sur l'inspecteur, ne valent que pour l'index (`.ix`). */
 function survolQuiSuit(box) { const s = document.createElement('span'); s.className = 'ix-survol'; s.setAttribute('aria-hidden', 'true'); box.prepend(s); box.classList.add('suit');
@@ -1648,12 +1654,13 @@ function allerAuRepere(nom, plan) { const P = plans();
   const c = app.dessin && app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag'), vt = c ? null : barretteAPoser(nom);
   if (c) choisirBloc(c); else if (vt) choisirBarretteAPoser(vt); else { app.cible = { type: 'bloc', nom }; ouvrirInspecteur(); }
   if (viser(nom)) pulser({ type: 'bloc', nom }); }
-/* Le panneau qui s'ouvre ou se ferme change la place du plan. Si l'on regardait la feuille ENTIÈRE, elle se recadre en
-   douceur dans la place qui reste (jamais sous le panneau) ; si l'on avait zoomé sur un endroit, on n'y touche pas —
+/* Le panneau qui s'ouvre ou se ferme change la place du plan. Si l'on regardait la feuille ENTIÈRE (ou le dessin entier,
+   cadré sur lui), elle se recadre en douceur dans la place qui reste (jamais sous le panneau) ; si l'on avait zoomé sur un endroit, on n'y touche pas —
    seulement, si ce qu'on vient de choisir passe sous le panneau, on le ramène, à la même échelle. */
 function recadrerSiCache() { const d = app.dessin; if (!d) { ajuster(true); return; }
-  const r = cadre(), s = app.vue.s, bb = d.bbox, x0 = app.vue.tx + bb.x * s, y0 = app.vue.ty + bb.y * s, x1 = x0 + bb.w * s, y1 = y0 + bb.h * s;
-  if (x0 >= -2 && y0 >= -2 && x1 <= r.width + 2 && y1 <= r.height + 2) { ajuster(true); return; }
+  const r = cadre(), s = app.vue.s, entier = bb => { const x0 = app.vue.tx + bb.x * s, y0 = app.vue.ty + bb.y * s; return x0 >= -2 && y0 >= -2 && x0 + bb.w * s <= r.width + 2 && y0 + bb.h * s <= r.height + 2; };
+  // la feuille entière — ou, cadré sur lui (v73), le DESSIN entier — se recadre dans la place qui reste
+  if (entier(d.bbox) || (VUE.cadrage === 'dessin' && !VUE.main && entier(boiteDuDessin(d)))) { ajuster(true); return; }
   const c = app.cible, k = c && c.type === 'bloc' && d.compDe.get(c.nom), w = c && c.type === 'fil' && filDe(c.l);
   if (k) montrerSiCache({ x: k.x, y: k.y, w: k.w, h: k.h });
   else if (w) { const xs = w.pts.map(p => p.x), ys = w.pts.map(p => p.y), a = Math.min(...xs), b = Math.min(...ys); montrerSiCache({ x: a, y: b, w: Math.max(...xs) - a, h: Math.max(...ys) - b }); } }
@@ -1675,39 +1682,39 @@ function allerAuPlan(plan) { if (plan === app.plan) return;
   finirGlisse(); finirRangement(); const photo = sens && app.dessin && !mouvementReduit() ? photoDuFolio() : null;
   garderVue(); app.plan = plan; app.choisi = null; fermerFiche(); redessiner(); retrouverVue(); sauver();
   if (photo) glisserFolio(photo, sens); }
-/* LE FOLIO GLISSE (v73, le designer § 5.4 : « une coupe franche ») : le DESSIN qu'on quitte sort de 32 px du côté d'où
+/* LE FOLIO GLISSE_FOLIO (v73, le designer § 5.4 : « une coupe franche ») : le DESSIN qu'on quitte sort de 32 px du côté d'où
    l'on vient, en 120 ms (`--courbe-sortie`) ; le nouveau entre de 32 px du côté où l'on va, en 260 ms (`--courbe-entree`),
    quand l'ancien est presque effacé — jamais deux dessins à la fois. La FEUILLE, elle, ne clignote pas : elle reste (cadrée
    sur le dessin, elle couvre la table d'un folio à l'autre ; un fondu la faisait passer par la nuit), et si sa place
    change, elle y glisse (300 ms, `--courbe-glisse`) avec son ombre. Le dessin qu'on quitte est une photo (une copie sans
    identifiants ni feuille) posée au-dessus, le nouveau attend dans un groupe à lui, puis tout reprend sa place ; un autre
    changement achève net le précédent. Le mouvement réduit coupe. */
-const GLISSE = { photo: null, anims: [], g: null };
+const GLISSE_FOLIO = { photo: null, anims: [], g: null };
 function photoDuFolio() { const svg = $('svg'), D = app.dessin; if (!svg || !D || !$('scene')) return null;
   const s = svg.cloneNode(true); s.removeAttribute('id'); s.setAttribute('class', 'folio-part'); s.setAttribute('aria-hidden', 'true');
   s.querySelectorAll('[id]').forEach(e => e.removeAttribute('id')); s.querySelectorAll('.loupe,.pulse,.rt-survol,.rt-calque').forEach(e => e.remove());
   const f = s.querySelector('g.feuille'), sc = f && f.parentNode, bb = D.bbox, v = app.vue; if (f) f.remove();
   return { svg: s, feuille: f, scene: sc, papier: { x: v.tx + bb.x * v.s, y: v.ty + bb.y * v.s, w: bb.w * v.s, h: bb.h * v.s } }; }
 // le nouveau dessin reprend sa place dans la scène (le groupe du glissement se défait)
-function deballerGlisse() { const g = GLISSE.g; GLISSE.g = null; if (!g || !g.parentNode) return; while (g.firstChild) g.before(g.firstChild); g.remove(); }
-function finirGlisse() { const xs = GLISSE.anims; GLISSE.anims = []; xs.forEach(a => { try { a.finish(); } catch (_) { } }); deballerGlisse();
-  if (GLISSE.photo) { GLISSE.photo.svg.remove(); GLISSE.photo = null; } }
+function deballerGlisse() { const g = GLISSE_FOLIO.g; GLISSE_FOLIO.g = null; if (!g || !g.parentNode) return; while (g.firstChild) g.before(g.firstChild); g.remove(); }
+function finirGlisse() { const xs = GLISSE_FOLIO.anims; GLISSE_FOLIO.anims = []; xs.forEach(a => { try { a.finish(); } catch (_) { } }); deballerGlisse();
+  if (GLISSE_FOLIO.photo) { GLISSE_FOLIO.photo.svg.remove(); GLISSE_FOLIO.photo = null; } }
 function glisserFolio(photo, sens) { finirGlisse(); const svg = $('svg'), sc = $('scene'), o = $('ombre'), D = app.dessin; if (!svg) return;
-  svg.after(photo.svg); GLISSE.photo = photo;
+  svg.after(photo.svg); GLISSE_FOLIO.photo = photo;
   // le folio se dessine encore (au loin) : sa feuille ne viendra qu'avec lui, la photo la garde le temps de s'effacer
   if (!D || !sc) { if (photo.feuille && photo.scene) photo.scene.prepend(photo.feuille); }
   const d = 32 * sens, sortie = { duration: 120, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }, entree = { duration: 260, delay: 100, easing: 'cubic-bezier(.32,.72,0,1)', fill: 'backwards' };
   const a = photo.svg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-d}px)` }], sortie);
-  auBoutDe(a, () => { if (GLISSE.photo === photo) { photo.svg.remove(); GLISSE.photo = null; } }, 400); GLISSE.anims.push(a);
+  auBoutDe(a, () => { if (GLISSE_FOLIO.photo === photo) { photo.svg.remove(); GLISSE_FOLIO.photo = null; } }, 400); GLISSE_FOLIO.anims.push(a);
   if (!D || !sc) return;
   const s = app.vue.s, kids = [...sc.children].filter(e => !e.matches('g.feuille'));
-  if (kids.length) { const g = document.createElementNS(NS_SVG, 'g'); g.setAttribute('class', 'folio-vient'); kids[0].before(g); kids.forEach(e => g.appendChild(e)); GLISSE.g = g;
-    const b = g.animate([{ opacity: 0, transform: `translate(${d / s}px,0)` }, { opacity: 1, transform: 'none' }], entree); auBoutDe(b, deballerGlisse, 700); GLISSE.anims.push(b); }
+  if (kids.length) { const g = document.createElementNS(NS_SVG, 'g'); g.setAttribute('class', 'folio-vient'); kids[0].before(g); kids.forEach(e => g.appendChild(e)); GLISSE_FOLIO.g = g;
+    const b = g.animate([{ opacity: 0, transform: `translate(${d / s}px,0)` }, { opacity: 1, transform: 'none' }], entree); auBoutDe(b, deballerGlisse, 700); GLISSE_FOLIO.anims.push(b); }
   // la feuille et son ombre glissent de leur place d'avant à la nouvelle — si elle a changé
   const bb = D.bbox, R0 = photo.papier, R1 = { x: app.vue.tx + bb.x * s, y: app.vue.ty + bb.y * s, w: bb.w * s, h: bb.h * s }, f = sc.querySelector('g.feuille');
   if (f && Math.abs(R0.x - R1.x) + Math.abs(R0.y - R1.y) + Math.abs(R0.w - R1.w) > 1.5) { const k = bb.k || bb.w / PAGE_W, glisse = { duration: 300, easing: 'cubic-bezier(.65,0,.35,1)' };
-    GLISSE.anims.push(f.animate([{ transform: `translate(${(R0.x - app.vue.tx) / s}px,${(R0.y - app.vue.ty) / s}px) scale(${k * R0.w / R1.w})` }, { transform: `translate(${bb.x}px,${bb.y}px) scale(${k})` }], glisse));
-    if (o && o.style.display !== 'none') GLISSE.anims.push(o.animate([{ transform: `translate(${R0.x}px,${R0.y}px)`, width: R0.w + 'px', height: R0.h + 'px' }, { transform: o.style.transform, width: o.style.width, height: o.style.height }], glisse)); } }
+    GLISSE_FOLIO.anims.push(f.animate([{ transform: `translate(${(R0.x - app.vue.tx) / s}px,${(R0.y - app.vue.ty) / s}px) scale(${k * R0.w / R1.w})` }, { transform: `translate(${bb.x}px,${bb.y}px) scale(${k})` }], glisse));
+    if (o && o.style.display !== 'none') GLISSE_FOLIO.anims.push(o.animate([{ transform: `translate(${R0.x}px,${R0.y}px)`, width: R0.w + 'px', height: R0.h + 'px' }, { transform: o.style.transform, width: o.style.width, height: o.style.height }], glisse)); } }
 function allerAuFolio(pas) { const P = plans(); let i = P.indexOf(app.plan);
   if (i < 0) i = pas > 0 ? -1 : P.length; i += pas; if (i < 0 || i >= P.length) return; allerAuPlan(P[i]); }
 function plansDuRepere(nom) { return [...new Set(app.contrat.liaisons.filter(l => l.de === nom || l.vers === nom).map(l => l.plan).filter(Boolean))]; }
@@ -1736,7 +1743,7 @@ function synchroniserFolios() { const P = plans(), strip = $('fo-strip'), sel = 
   // une seule feuille : les flèches n'ont nulle part où aller
   const seul = P.length < 2; $('fo-prev').disabled = seul || i === 0; $('fo-next').disabled = seul || (i >= 0 && i >= P.length - 1);
   const on = strip.querySelector('.chip.on'); if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (_) { } } }
-/* LA PASTILLE GLISSE (v73, le designer) : la pièce claire du folio courant va d'une puce à l'autre en 220 ms
+/* LA PASTILLE GLISSE_FOLIO (v73, le designer) : la pièce claire du folio courant va d'une puce à l'autre en 220 ms
    (`--courbe-glisse`) au lieu de sauter. Une pastille de la matière de la puce courante (lue sur elle) passe sous les
    puces ; les mots changent d'encre en chemin (sombre sur la pastille, clair sur le verre). Le mouvement réduit coupe. */
 function glisserPastille(strip, deP, deX, deW) { const on = strip.querySelector('.chip.on'), de = strip.querySelector(`.chip[data-plan="${CSS.escape(deP)}"]`);

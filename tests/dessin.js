@@ -30,13 +30,15 @@
        autres folios), et la référence croisée sous le repère ;
      · LE CLIC : choisir un bloc ne réécrit plus le folio (les crochets se
        posent dans le bloc) ; ce qui s'écrit sous un repère le repeint ; les
-       crochets d'une prise entourent sa réglette ;
+       crochets d'une prise entourent sa réglette ; un repère dessiné plusieurs
+       fois a ses crochets pleins sur le morceau cliqué, pointillés ailleurs ;
      · LE FOLIO SE LIT (v73) : il s'ouvre cadré sur le dessin ; à 100 %, un
        numéro de câble fait 11 px et aucune écriture moins de 9 ; la feuille
        entière se lit comme une carte (les petites écritures se taisent) ; le
        câble choisi lève son numéro (la loupe) ; « (retest 10 A) » sous le
        calibre retenu ; le folio glisse (une photo, puis tout à sa place) ;
-       l'objet trouvé pulse ;
+       l'objet trouvé pulse ; la carte épinglée, le dessin se recadre à côté ;
+       la main qui montre sur un bloc, la main fermée une fois le glisser commencé ;
      · LA RECHERCHE (v73) : elle pardonne (« w012 », « W 012 », « w12 »,
        « disjoncteur », « 300xc1b5 », « Vouliez-vous dire ») ; la palette
        Ctrl+K cherche les actions et les objets, Entrée fait, Échap ferme ;
@@ -179,6 +181,11 @@ const FICHIER = P.fichierDemande();
   const cur = await page.evaluate(([x, y]) => ({ prise: $('planche').dataset.prise, sur: getComputedStyle(document.elementFromPoint(x, y)).cursor, papier: getComputedStyle($('planche')).cursor }), [e3.x + 3, e3.y + 3]);
   // v73 (le technicien) : la croix laissait croire qu'un clic déplacerait le bloc — c'est un clic qui ouvre sa fiche (MIS À JOUR)
   ok(cur.prise === 'bloc' && cur.sur === 'pointer' && cur.papier === 'grab', 'le curseur dit ce qui se fera : la main qui montre sur un bloc (un clic, sa fiche), la main ouverte sur le papier', JSON.stringify(cur));
+  // le glisser commencé (plus de 4 px), la main fermée qui le tient ; Échap le défait
+  await page.mouse.down(); for (let k = 1; k <= 4; k++) { await page.mouse.move(e3.x + 3 + 5 * k, e3.y + 3); await page.waitForTimeout(30); }
+  const curG = await page.evaluate(([x, y]) => ({ deplace: $('planche').classList.contains('deplace'), sur: getComputedStyle(document.elementFromPoint(x, y)).cursor }), [e3.x + 23, e3.y + 3]);
+  await page.keyboard.press('Escape'); await page.mouse.up(); await page.waitForTimeout(250);
+  ok(curG.deplace && curG.sur === 'grabbing', 'le bloc pris en glissant : la main fermée qui le tient', JSON.stringify(curG));
 
   /* ---- LE CARTOUCHE D'UN FOLIO FWD ---- */
   console.log('\nLE CARTOUCHE');
@@ -243,6 +250,11 @@ const FICHIER = P.fichierDemande();
   await page.evaluate(() => { deselectionner(); allerAuPlan('5'); choisirBloc(app.dessin.comps.find(k => k.name === '412VC3B' && k.kind !== 'tag')); }); await page.waitForTimeout(300);
   const prise = await page.evaluate(() => { const g = [...document.querySelectorAll('#scene .comp')].find(x => x.dataset.name === '412VC3B'), s = g.querySelector('.selbox').getBBox(), c = app.dessin.comps.find(k => k.name === '412VC3B' && k.kind !== 'tag'); return { large: Math.round(s.width), bloc: c.w }; });
   ok(prise.large < prise.bloc / 2, 'les crochets d’une prise entourent sa réglette, pas ses amenées', JSON.stringify(prise));
+  // v73 (le technicien, le domaine B) : un repère dessiné plusieurs fois — crochets pleins sur l'occurrence cliquée, pointillés ailleurs
+  const vt31 = await page.evaluate(() => { deselectionner(); allerAuPlan('3'); const cs = app.dessin.comps.filter(k => k.name === '668VT31'), c = cs[cs.length - 1]; choisirBloc(c);
+    return { n: cs.length, k: app.dessin.comps.indexOf(c), pleins: [...document.querySelectorAll('#scene .comp .selbox:not(.selbox-autre)')].map(e => +e.closest('.comp').dataset.k), autres: document.querySelectorAll('#scene .selbox-autre').length }; });
+  ok(vt31.n > 1 && vt31.pleins.length === 1 && vt31.pleins[0] === vt31.k && vt31.autres === vt31.n - 1, '668VT31, dessinée en ' + vt31.n + ' morceaux : des crochets pleins sur le morceau cliqué, en pointillé sur les autres', JSON.stringify(vt31));
+  await page.evaluate(() => deselectionner());
 
   /* ---- LE FOLIO SE LIT (v73 : l'ergonome, le technicien, le designer) ---- */
   console.log('\nLE FOLIO SE LIT');
@@ -286,6 +298,13 @@ const FICHIER = P.fichierDemande();
   await page.waitForTimeout(1200); const pulseFini = await page.evaluate(() => !document.querySelector('#scene .pulse'));
   ok(pulse && pulseFini, 'l’objet trouvé pulse (deux fois), puis l’anneau s’en va', JSON.stringify({ pulse, pulseFini }));
   await page.evaluate(() => { deselectionner(); fermerInspecteur(); });
+  // cadré sur son dessin, la carte épinglée en volet : le dessin se recadre à côté (rien de lui sous le volet)
+  await page.evaluate(() => { VUE.cadrage = 'dessin'; ajuster(true); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(600);
+  await page.click('#fi-epingle'); await page.waitForTimeout(500); await posee();
+  const epi = await page.evaluate(() => { const b = boiteDuDessin(app.dessin), r = $('planche').getBoundingClientRect(), s = app.vue.s, q = $('inspecteur').getBoundingClientRect();
+    return { epingle: document.body.classList.contains('insp-epingle'), cadrage: VUE.cadrage, droite: Math.round(r.left + app.vue.tx + (b.x + b.w) * s), volet: Math.round(q.left) }; });
+  await page.click('#fi-epingle'); await page.waitForTimeout(500); await posee(); await page.evaluate(() => { deselectionner(); fermerInspecteur(); });
+  ok(epi.epingle && epi.cadrage === 'dessin' && epi.droite <= epi.volet + 2, 'cadré sur son dessin, la carte épinglée en volet : le dessin se recadre à côté', JSON.stringify(epi));
 
   /* ---- LA RECHERCHE PARDONNE, LA PALETTE, L'INDEX AU CLAVIER (v73) ---- */
   console.log('\nLA RECHERCHE');

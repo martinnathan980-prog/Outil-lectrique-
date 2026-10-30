@@ -17,8 +17,9 @@
 .pl-bulle .pl-b-route{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin:-2px 6px 0 0}
 
 /* LE CURSEUR DIT D'AVANCE ce qui se fera : sur un bloc, la main qui montre (un clic ouvre sa fiche — la croix laissait
-   croire qu'un clic le déplacerait, le technicien v73) ; il se prend en glissant, la main fermée ; la main ouverte sur le
-   papier (la vue qu'on glisse). Les bornes et les câbles gardent leurs flèches. */
+   croire qu'un clic le déplacerait, le technicien v73) ; le glisser commencé (`.deplace`, après 4 px), la main fermée
+   qui le tient (style.css) ; la main ouverte sur le papier (la vue qu'on glisse). Les bornes et les câbles gardent leurs
+   flèches. */
 #planche[data-prise="bloc"] #svg *{cursor:pointer}
 
 /* LE ZOOM SÉMANTIQUE (08 `appliquerVue`, trois paliers : `.tait-1`, `.tait`, `.tait-3`) : sous 7 px d'écran, les petites
@@ -31,6 +32,9 @@
 #planche .tait :is(text.filnum,rect.halo,.connnom,.xref,.cb-ret,.bsname,.des,.dr-ou):not(.hl),
 #planche .tait-3 :is(.pinlbl,.dr-f,.rname):not(.hl){opacity:0}
 #planche :is(.tait-1,.tait,.tait-3) :is(.comp,.vt).hl :is(.bpnum,.prnum,.barnum,.connpin,.rep-petit,.connnom,.xref,.cb-ret,.bsname,.des,.pinlbl,.dr-f,.dr-ou,.rname){opacity:1}
+
+/* LE REPÈRE DESSINÉ PLUSIEURS FOIS (08 `peindreChoix`) : ses autres occurrences, des crochets en pointillé */
+#svg .selbox.selbox-autre{stroke-width:1.4;stroke-dasharray:3 2.6}
 
 /* LA LOUPE (08 `poserLoupe`) : le numéro d'un câble allumé, levé à 11 px d'écran sur une pastille de papier, cerclée de la
    couleur de sa route, une ombre d'un rien ; elle paraît en 140 ms, grandie depuis sa place. */

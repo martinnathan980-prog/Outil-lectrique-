@@ -204,8 +204,10 @@ const FICHIER = P.fichierDemande();
     return { i, x: t.x + t.w / 2, y: t.y + t.h / 2, nom: t.name }; });
   await cadrer(m0.x, m0.y);
   const sm = await survoler(await ecran(m0.x, m0.y));
-  // le curseur d'une pièce qui se prend : la croix de déplacement (v72 : la main ouverte est celle du papier, la vue)
-  ok(sm.prise === 'bloc' && sm.curseur === 'move', 'au survol, une masse se prend comme un bloc : le curseur le dit', JSON.stringify(sm));
+  // le curseur d'une pièce qui se prend — MIS À JOUR v73 (le technicien : la croix laissait croire qu'un clic la
+  // déplacerait, c'est un clic qui ouvre sa fiche) : au repos, la main qui montre ; la main fermée une fois le glisser
+  // commencé (v72 : la main ouverte reste celle du papier, la vue)
+  ok(sm.prise === 'bloc' && sm.curseur === 'pointer', 'au survol, une masse se prend comme un bloc : le curseur le dit', JSON.stringify(sm));
   await glisserDe(await ecran(m0.x, m0.y), 0, 70);
   const m1 = await page.evaluate(i => { const t = app.dessin.comps[i]; return { y: t.y + t.h / 2 }; }, m0.i);
   ok(m1.y > m0.y + 20 && new RegExp(m0.nom + ' déplacé').test(await mot()), 'une masse quitte sa borne et se pose plus bas, et le mot le dit', Math.round(m0.y) + ' → ' + Math.round(m1.y) + ' · ' + await mot());
@@ -324,7 +326,7 @@ const FICHIER = P.fichierDemande();
   const r0 = await page.evaluate(() => { const i = app.dessin.comps.findIndex(c => estRenvoi(c.name)), c = app.dessin.comps[i]; return { i, x: c.x + c.w / 2, y: c.y + c.h / 2, nom: c.name }; });
   await cadrer(r0.x, r0.y);
   const sr = await survoler(await ecran(r0.x, r0.y));
-  ok(sr.prise === 'bloc' && sr.curseur === 'move', 'au survol, un renvoi (' + r0.nom + ') se prend comme un bloc', JSON.stringify(sr));
+  ok(sr.prise === 'bloc' && sr.curseur === 'pointer', 'au survol, un renvoi (' + r0.nom + ') se prend comme un bloc', JSON.stringify(sr));
   await glisserDe(await ecran(r0.x, r0.y), 0, 80);
   const r1 = await page.evaluate(i => app.dessin.comps[i].y + app.dessin.comps[i].h / 2, r0.i);
   ok(Math.abs(r1 - r0.y) > 10 && await auto() && (await propre()).ok, 'il se pose ailleurs, le routage propre', Math.round(r0.y) + ' → ' + Math.round(r1) + ' · ' + await mot());
