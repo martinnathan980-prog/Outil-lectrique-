@@ -61,11 +61,11 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
 
   /* ---- 1 bis. le récapitulatif pour l'œil (v74 : « trop de données, l'œil se perd ; le rail de gauche, c'est bien ») ---- */
   const RL = await ev(() => { const o = $('ba-onglets'), ro = o.getBoundingClientRect(), rc = $('ba-corps').getBoundingClientRect();
-    return { groupes: [...o.querySelectorAll('.rc-onglets-g')].map(g => g.querySelector('.rc-onglets-t').textContent + ':' + [...g.querySelectorAll('[data-onglet]')].map(b => b.dataset.onglet).join(',')).join(' | '),
+    return { groupes: [...o.querySelectorAll('.rc-onglets-g')].map(g => ((g.querySelector('.rc-onglets-t') || {}).textContent || '') + ':' + [...g.querySelectorAll('[data-onglet]')].map(b => b.dataset.onglet).join(',')).join(' | '),
       gauche: ro.right <= rc.left + 1 && ro.bottom > rc.top, sens: o.getAttribute('aria-orientation'), ambre: o.querySelectorAll('.rc-carre.att').length,
       tete: $('ba-contexte').textContent === app.nom, plan: getComputedStyle($('ba-fermer')).display, croix: $('ba-x').getBoundingClientRect().width > 0 }; });
-  ok('le rail : à gauche de la table, trois groupes (Câblage : liaisons, câbles · Matériel : équipements, disjoncteurs, barrettes, prises, raccords · Contrôle : problèmes, normes), un point rouge seulement ; la tête dit le nom du plan, la croix ferme (« Plan » ne double plus)',
-    RL.groupes === 'Câblage:liaisons,cables | Matériel:equipements,disjoncteurs,barrettes,prises,raccords | Contrôle:problemes,normes' && RL.gauche && RL.sens === 'vertical' && !RL.ambre && RL.tete && RL.plan === 'none' && RL.croix, JSON.stringify(RL));
+  ok('le rail (v77) : à gauche de la table, les problèmes en tête et seuls, puis Câblage (liaisons, câbles), Matériel (équipements, disjoncteurs, barrettes, prises, raccords), les normes en bas ; un point rouge seulement ; la tête dit le nom du plan, la croix ferme',
+    RL.groupes === ':problemes | Câblage:liaisons,cables | Matériel:equipements,disjoncteurs,barrettes,prises,raccords | Référence:normes' && RL.gauche && RL.sens === 'vertical' && !RL.ambre && RL.tete && RL.plan === 'none' && RL.croix, JSON.stringify(RL));
   await page.focus('#ba-onglets [aria-selected="true"]'); await page.keyboard.press('ArrowDown'); await attendre(300);
   const RD = await ev(() => ({ onglet: app.base.onglet, focus: document.activeElement && document.activeElement.dataset.onglet })); await page.keyboard.press('ArrowUp'); await attendre(300);
   ok('↓ dans le rail passe à l’onglet suivant (les Câbles), ↑ revient', RD.onglet === 'cables' && RD.focus === 'cables' && await ev(() => app.base.onglet === 'liaisons'), JSON.stringify(RD));

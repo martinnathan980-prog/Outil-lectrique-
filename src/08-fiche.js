@@ -721,11 +721,12 @@ function listeCables(rows, o) { o = o || {}; const rang = r => r.etat === 'ko' ?
     const nomC = nomCourtDuCable(r), ouvrir = r.k ? `<button type="button" class="cb-ouvrir" data-ouvrir-cable="${escA(r.k)}" aria-label="${escA('Ouvrir la fiche du câble ' + nomC)}" data-bulle="${escA('Ouvrir la fiche de ' + nomC)}">${ico('droite')}</button>` : '<span></span>';
     const lg = ed ? ed.lon : '', supp = r.l && !(r.l.longueur > 0);
     return `<li class="fi-ia fi-cab cb-carte${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle)}"` : ''} style="--n:${n}">`
-      + `<span class="cb-puce">${r.puce || ''}</span><span class="cb-id">${num}${typeLu}</span>${celluleI(r.charge)}${ouvrir}`
-      + `<span class="cb-sous"><span class="cb-sous-c"><span class="cb-sous-k">Chute</span>${celluleU(r.chute)}${r.chute.max != null ? `<span class="cb-sous-a">sur ${esc(volts(r.chute.max))}</span>` : ''}</span>`
+      // sans numéro, trois lignes « DR12 » se ressemblent : l'autre bout, en petit, les distingue
+      + `<span class="cb-puce">${r.puce || ''}</span><span class="cb-id">${num}${typeLu}${!num && r.bout && r.bout.rep ? `<small class="cb-vers id">vers ${esc(r.bout.rep + (r.bout.borne ? ':' + r.bout.borne : ''))}</small>` : ''}</span>${celluleI(r.charge)}${ouvrir}`
+      + `<span class="cb-sous"><span class="cb-sous-c"><span class="cb-sous-k">Chute${n === 0 ? qU : ''}</span>${celluleU(r.chute)}${r.chute.max != null ? `<span class="cb-sous-a">sur ${esc(volts(r.chute.max))}</span>` : ''}</span>`
       + (lg ? `<span class="cb-sous-c"><span class="cb-sous-k">Longueur</span>${lg}<span class="cb-sous-a">m${supp ? ' · supposée' : ''}</span></span>` : '') + '</span>'
       + (r.pourquoi ? `<span class="cb-pourquoi">${insecable(esc(r.pourquoi))}</span>` : '') + '</li>'; }).join('');
-  const entete = `<li class="cb-entete"><span></span><span>Câble</span><span>Intensité${qI}<span class="cb-ent-u">Chute${qU}</span></span><span></span></li>`;
+  const entete = `<li class="cb-entete"><span></span><span>Câble</span><span>Intensité${qI}</span><span></span></li>`;
   return (rows.length > 12 ? bandeDesCables(rows) : '') + `<ul class="fi-cables cb-liste${o.cls ? ' ' + o.cls : ''}">${entete}${li}</ul>${datalistCables()}`; }
 /* La ligne d'un câble d'un repère : son intensité contre ce qu'il admet (au pire du permanent et de la pointe), sa chute
    en ligne depuis le disjoncteur en amont (sinon sur le câble seul), pourquoi il est à voir, et la bulle qui dit d'où
@@ -763,7 +764,7 @@ function sectionFilsDuRepere(fils, probs, coupables) { const C = coupables || ne
    faire ; plus d'italique dans le tableau (une case vide montre la valeur supposée en gris, sans plus). */
 function noteSupposes(nDj, nL, n, H) { const xs = [nL ? `<b>${esc('Longueur supposée : ' + nombre(H.longueur) + ' m')}</b>${esc((n > 1 ? ' pour ' + (nL === n ? (n > 2 ? 'les ' + n + ' câbles' : 'les deux câbles') : nL + ' câble' + (nL > 1 ? 's' : '') + ' sur ' + n) : '') + ', à écrire dans l’installation (ou ici, dans la case Longueur)')}` : '',
     nDj ? `<b>${esc('Courant supposé : ' + nombre(H.courant) + ' A')}</b>${esc((n > 1 ? ' pour ' + (nDj === n ? (n > 2 ? 'les ' + n + ' câbles' : 'les deux câbles') : nDj + ' câble' + (nDj > 1 ? 's' : '') + ' sur ' + n) : '') + ', sans disjoncteur en amont')}` : ''].filter(Boolean);
-  return xs.length ? xs.join('. ') + `. <span class="fi-note-hyp">${esc('Ce sont des')} ${motHypothese}s.</span>` : ''; }
+  return xs.length ? xs.join('. ') + `. <span class="fi-note-hyp">${esc('Ce sont des')} ${motHypothese.replace('>hypothèse<', '>hypothèses<')}.</span>` : ''; }
 
 /* « DÉJÀ FAIT » : les machines proches dans la base des contrats déjà faits. Elle se tait tant qu'aucune base n'est
    chargée (le parcours v72 : « du bruit à chaque clic » — le rappel vit dans « Vos fichiers »). */
@@ -1120,7 +1121,7 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
   const pn = pnDuRepere(nom), id = identite([majuscule(natureDe(nom)), descriptionDuRetest(nom) ? esc(descriptionDuRetest(nom)) : '', pn ? ident(pn) : '', esc(motFolios(foliosDuRepere(nom)))]);
   // la carte de décision, quand l'outil retient un autre calibre que le retest ; elle porte le point du calibre (la barre, les autres)
   const decision = carteDecision(nom, d, Math.max(0, probs.length - 1));
-  return enTete({ type: 'disjoncteur', designation: nom, nom, champ: 'eq-rep', etat: etatDesProblemes(probs), identite: id }) + decision + barreProblemes(probs, sections, { taire: decision ? /^le retest porte un / : null }) + blocRetest(ecritsDuRepere(nom), []) + ficheSections('disjoncteur', sections)
+  return enTete({ type: 'disjoncteur', designation: nom, nom, champ: 'eq-rep', etat: etatDesProblemes(probs), identite: id }) + decision + barreProblemes(probs, sections, { taire: decision ? /^(le retest|l’installation) porte un / : null }) + blocRetest(ecritsDuRepere(nom), []) + ficheSections('disjoncteur', sections)
     + fiPied({ tableau: nom, fil: nom, menu: MENU_BLOC }); }
 
 /* ---- UNE BARRETTE (et une barrette à poser) ------------------------------------------------------------------------ */
@@ -1545,7 +1546,9 @@ function rendreFiche() { const box = $('ba-equip'), c = app.cible; if ($('inspec
   if (c.type === 'bloc' && but && but.connecteur) FI.connecteur[c.nom] = but.connecteur;
   FI.viser = but && but.viser || '';
   let html; try { html = ficheDe(c); }
-  catch (err) { html = enTete({ type: 'equipement', genre: 'Élément', nom: c.nom || (c.l && c.l.cable) || '—' }) + `<p class="fi-note">${esc(String(err && err.message || err))}</p>`; }
+  // (v77) une fiche qui casse le dit — et le bilan anonyme le garde (masqué), l'autotest le lit (`fi-erreur`, sa pile)
+  catch (err) { FI.erreur = err; if (typeof noterErreurPage === 'function') noterErreurPage('fiche : ' + String(err && err.message || err));
+    html = enTete({ type: 'equipement', genre: 'Élément', nom: c.nom || (c.l && c.l.cable) || '—' }) + `<p class="fi-note fi-erreur">${esc(String(err && err.message || err))}</p>`; }
   const nav = barreNav({ fermer: c.type !== 'ref', nom: nomDeCible(c) });
   const haut = box.scrollTop, a = document.activeElement, presse = meme && a && a.tagName === 'BUTTON' && box.contains(a) ? empreinteBouton(a) : null, ancres = meme ? ancresDe(box) : null;
   box.innerHTML = nav + html; box.dataset.cle = cle; box.className = 'fi'; box.dataset.type = c.type;

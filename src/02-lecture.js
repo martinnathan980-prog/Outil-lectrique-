@@ -41,11 +41,32 @@ const COLONNES = [
   ['retest',   ['dateretest', 'retestdate', 'datederetest', 'dateduretest', 'dateinstallation', 'datedelinstallation', 'retest', 'date']]
 ];
 
-function decouperLigne(ligne) {
-  if (ligne.includes('\t')) return ligne.split('\t');
-  if (ligne.includes(';'))  return ligne.split(';');
-  return ligne.split(',');
-}
+/* (v77, les fichiers piégés : un CSV à virgules aux champs entre guillemets s'ouvrait VIDE ; un « ; » dans une description
+   décalait les colonnes) — un CSV comme Excel l'écrit : un champ entre guillemets porte le séparateur, des guillemets
+   doublés, des retours à la ligne ; le séparateur se lit HORS des guillemets. Un guillemet au milieu d'un champ (12" de
+   câble) reste un caractère : seul celui qui ouvre un champ l'entoure. */
+const horsGuillemets = l => String(l).replace(/(^|[\t;,])\s*"(?:[^"]|"")*"/g, '$1');
+function decouperLigne(ligne) { const s = String(ligne == null ? '' : ligne), h = horsGuillemets(s);
+  const sep = h.includes('\t') ? '\t' : h.includes(';') ? ';' : ',';
+  if (!s.includes('"')) return s.split(sep);
+  const out = []; let cur = '', q = false, debut = true;
+  for (let i = 0; i < s.length; i++) { const ch = s[i];
+    if (q) { if (ch === '"') { if (s[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; continue; }
+    if (ch === '"' && debut) { q = true; cur = ''; debut = false; continue; }
+    if (ch === sep) { out.push(cur); cur = ''; debut = true; continue; }
+    cur += ch; if (ch !== ' ') debut = false; }
+  out.push(cur); return out; }
+/* Les lignes d'un texte : un retour à la ligne DANS un champ entre guillemets reste dans sa cellule. Des guillemets qui ne
+   se ferment pas (un texte qui n'est pas un CSV) : les lignes telles quelles. */
+function lignesDuTexte(texte) { const t = String(texte || ''); if (!t.includes('"')) return t.split(/\r?\n/);
+  const out = []; let cur = '', q = false, debut = true;
+  for (let i = 0; i < t.length; i++) { const ch = t[i];
+    if (q) { cur += ch; if (ch === '"') { if (t[i + 1] === '"') { cur += '"'; i++; } else q = false; } continue; }
+    if (ch === '"' && debut) { q = true; cur += ch; debut = false; continue; }
+    if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; out.push(cur); cur = ''; debut = true; continue; }
+    cur += ch; if (ch === '\t' || ch === ';' || ch === ',') debut = true; else if (ch !== ' ') debut = false; }
+  if (q) return t.split(/\r?\n/);
+  out.push(cur); return out; }
 const cellules = ligne => decouperLigne(ligne).map(x => String(x).trim());
 
 /* Une ligne est-elle un en-tête du retest ? Ses colonnes, si elle nomme au
@@ -111,7 +132,7 @@ function devinerColonnes(cells) {
    entetes (combien de lignes d'en-tête : les feuilles d'un classeur, ou des
    extraits collés à la suite — chacune reprend ses colonnes), harnais }. */
 function lireTexte(texte) {
-  const brutes = String(texte || '').split(/\r?\n/);   // lignes vides gardées : numérotation Excel
+  const brutes = lignesDuTexte(texte);   // lignes vides gardées : numérotation Excel (un retour à la ligne entre guillemets reste dans sa cellule)
   const pleines = brutes.filter(l => l.trim());
   if (!pleines.length) return { liaisons: [], format: 'vide' };
 

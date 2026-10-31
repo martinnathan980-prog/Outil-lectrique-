@@ -432,6 +432,9 @@ const CATEGORIES = [
     await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && typeof BIB !== 'undefined' && BIB.pret, null, { timeout: 120000 });
     await page.evaluate(t => { document.documentElement.dataset.theme = t; }, passe.theme);
     await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => { try { retenirSection(t, k, true); } catch (_) { } })));   // chaque section ouverte : on juge tout ce qu'une fiche peut montrer
+    // (v77 : chaque fiche s'ouvre toute pliée, sa mémoire est la sienne) : le juge déplie chaque fiche qu'il rend, pour tout juger
+    await page.evaluate(() => { const box = $('ba-equip'), tout = () => box.querySelectorAll('details.fs').forEach(d => { if (!d.open) { d.open = true; if (d.dataset.type) retenirSection(d.dataset.type, d.dataset.section, true); } });
+      new MutationObserver(tout).observe(box, { childList: true }); });
     await page.evaluate(socle);
     const D = Object.fromEntries(CATEGORIES.map(([k]) => [k, []])), echaps = [], bullesVues = new Set();
     // LES GESTES (une bulle paraît-elle, Échap, le clavier qui entre dans un document) ne dépendent pas du thème : ils se

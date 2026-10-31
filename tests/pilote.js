@@ -380,5 +380,10 @@ function blocsCollesDansLaPage() {
   return out;
 }
 
-module.exports = { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
+/* (v77) chaque fiche s'ouvre toute pliée, sa mémoire est la sienne (le lecteur : « c'est à moi de les déplier ») : une batterie
+   qui lit le contenu des sections les déplie à chaque fiche rendue, comme l'ingénieur. Exécuté DANS la page. */
+function deplierDansLaPage() { const box = document.getElementById('ba-equip'); if (!box || window.__deplier) return;
+  const tout = () => box.querySelectorAll('details.fs').forEach(d => { if (d.dataset.section !== 'dejafait' && !d.open) { d.open = true; if (d.dataset.type && typeof retenirSection === 'function') retenirSection(d.dataset.type, d.dataset.section, true); } });
+  window.__deplier = new MutationObserver(tout); window.__deplier.observe(box, { childList: true }); }
+module.exports = { deplierDansLaPage, fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
   flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, redressementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage, pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage, calculateurDansLaPage, blocsCollesDansLaPage };

@@ -2066,6 +2066,13 @@ body.biblio #toast:not(.on){transform:translateX(-50%) translateY(8px) scale(.98
 @media (prefers-reduced-motion:reduce){.carnet.entre{animation:none}}
 @media (max-width:640px){.carnet{left:50%;bottom:calc(var(--jeu) + 56px)}}
 
+/* (v77) L'AUTOTEST : son bloc dans le bilan, et son panneau pendant qu'il tourne (la barre du carnet, une jauge en plus) */
+.bl-auto{display:flex;flex-direction:column;gap:6px;margin:0 0 var(--sp-4)}
+.bl-auto h3{margin:0;font:600 var(--f-15)/1.3 var(--sans);color:var(--t-1)}
+.carnet.at{z-index:70}
+.at-barre{height:6px;border-radius:3px;background:var(--s-sunken);overflow:hidden}
+.at-barre i{display:block;height:100%;width:0;border-radius:3px;background:var(--accent);transition:width 200ms linear}
+
 /* ───────── style-carte.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════
    style-carte.css — ce que l'interface pose sur la table, à côté de la carte (08-carte, 08-controle, 08-interface) :
@@ -3258,7 +3265,7 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .cb-liste{list-style:none;margin:0 -10px;padding:0;display:flex;flex-direction:column}
 /* (v77) deux étages : en haut le câble (son type d'abord) et son intensité ; dessous, la chute et la longueur, en clair */
 .cb-entete,.cb-carte{display:grid;grid-template-columns:8px minmax(0,1fr) minmax(128px,168px) 28px;align-items:center;column-gap:10px}
-.cb-id{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.cb-id{display:inline-flex;flex-wrap:wrap;align-items:center;gap:0 6px;min-width:0}
 .cb-id .cb-num-ed .fc-in{width:8.5ch}
 .cb-ent-u{display:inline-flex;align-items:center;margin-left:14px;color:var(--t-3)}
 .cb-sous{grid-column:2/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 22px;margin:2px 0 6px;font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
@@ -3792,6 +3799,9 @@ button.fi-sertir.ct-ref{min-height:24px}
 .mj-legende .lg-libre{background:#fff;border:1.5px solid #3a4350}
 .mj-legende .lg-relie{width:16px;border-radius:5px;background:#d2e2f5;border:1px solid #8daed4}
 .mj-legende .lg-ko{background:#c3271f}
+.cb-id .cb-vers{flex-basis:100%;margin-top:1px;font:500 var(--f-11)/1.3 var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cb-sous-k .fi-q{margin-left:3px}
+.fi-note-hyp{white-space:nowrap}
 
 /* ───────── style-fichiers.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -6077,6 +6087,7 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
             </div>
             <div class="menu-bloc" role="group" aria-label="Améliorer Volta">
               <button role="menuitem" data-act="carnet" data-aide="Une petite barre pour noter une hésitation pendant le travail. La note se garde sur ce PC avec l’écran où vous étiez, et part avec le bilan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M9.5 8H15M9.5 12H15M9.5 16h3"/></svg><span class="menu-l">Carnet de séance</span><span class="raccourci">C</span></button>
+              <button role="menuitem" data-act="autotest" data-aide="Volta ouvre tout seul chaque folio, chaque fiche, chaque onglet et chaque export du plan ouvert, chronomètre et note chaque erreur, sans un nom du plan. Le résultat part avec le bilan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/><path d="M3 4h18v16H3z" opacity=".35"/></svg><span class="menu-l">Autotest du plan</span></button>
               <button role="menuitem" data-act="bilan" data-aide="Ce que Volta a lu et jugé de ce plan, en chiffres, sans un repère ni un part number : à copier dans la conversation pour améliorer Volta."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="menu-l">Bilan anonyme</span></button>
             </div>
           </div>
@@ -6277,7 +6288,7 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = 'b84189074cb8';
+const VERSION_MOTEUR = '3ead7068a90d';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -6804,11 +6815,32 @@ const COLONNES = [
   ['retest',   ['dateretest', 'retestdate', 'datederetest', 'dateduretest', 'dateinstallation', 'datedelinstallation', 'retest', 'date']]
 ];
 
-function decouperLigne(ligne) {
-  if (ligne.includes('\t')) return ligne.split('\t');
-  if (ligne.includes(';'))  return ligne.split(';');
-  return ligne.split(',');
-}
+/* (v77, les fichiers piégés : un CSV à virgules aux champs entre guillemets s'ouvrait VIDE ; un « ; » dans une description
+   décalait les colonnes) — un CSV comme Excel l'écrit : un champ entre guillemets porte le séparateur, des guillemets
+   doublés, des retours à la ligne ; le séparateur se lit HORS des guillemets. Un guillemet au milieu d'un champ (12" de
+   câble) reste un caractère : seul celui qui ouvre un champ l'entoure. */
+const horsGuillemets = l => String(l).replace(/(^|[\t;,])\s*"(?:[^"]|"")*"/g, '$1');
+function decouperLigne(ligne) { const s = String(ligne == null ? '' : ligne), h = horsGuillemets(s);
+  const sep = h.includes('\t') ? '\t' : h.includes(';') ? ';' : ',';
+  if (!s.includes('"')) return s.split(sep);
+  const out = []; let cur = '', q = false, debut = true;
+  for (let i = 0; i < s.length; i++) { const ch = s[i];
+    if (q) { if (ch === '"') { if (s[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; continue; }
+    if (ch === '"' && debut) { q = true; cur = ''; debut = false; continue; }
+    if (ch === sep) { out.push(cur); cur = ''; debut = true; continue; }
+    cur += ch; if (ch !== ' ') debut = false; }
+  out.push(cur); return out; }
+/* Les lignes d'un texte : un retour à la ligne DANS un champ entre guillemets reste dans sa cellule. Des guillemets qui ne
+   se ferment pas (un texte qui n'est pas un CSV) : les lignes telles quelles. */
+function lignesDuTexte(texte) { const t = String(texte || ''); if (!t.includes('"')) return t.split(/\r?\n/);
+  const out = []; let cur = '', q = false, debut = true;
+  for (let i = 0; i < t.length; i++) { const ch = t[i];
+    if (q) { cur += ch; if (ch === '"') { if (t[i + 1] === '"') { cur += '"'; i++; } else q = false; } continue; }
+    if (ch === '"' && debut) { q = true; cur += ch; debut = false; continue; }
+    if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; out.push(cur); cur = ''; debut = true; continue; }
+    cur += ch; if (ch === '\t' || ch === ';' || ch === ',') debut = true; else if (ch !== ' ') debut = false; }
+  if (q) return t.split(/\r?\n/);
+  out.push(cur); return out; }
 const cellules = ligne => decouperLigne(ligne).map(x => String(x).trim());
 
 /* Une ligne est-elle un en-tête du retest ? Ses colonnes, si elle nomme au
@@ -6874,7 +6906,7 @@ function devinerColonnes(cells) {
    entetes (combien de lignes d'en-tête : les feuilles d'un classeur, ou des
    extraits collés à la suite — chacune reprend ses colonnes), harnais }. */
 function lireTexte(texte) {
-  const brutes = String(texte || '').split(/\r?\n/);   // lignes vides gardées : numérotation Excel
+  const brutes = lignesDuTexte(texte);   // lignes vides gardées : numérotation Excel (un retour à la ligne entre guillemets reste dans sa cellule)
   const pleines = brutes.filter(l => l.trim());
   if (!pleines.length) return { liaisons: [], format: 'vide' };
 
@@ -16515,6 +16547,138 @@ function formatDuDessin(dessin) {
   return { larg: w, haut: h, ratio: w / h, tientSurUnePage: (w / h) <= 2.5 && (w / h) >= 0.4 };
 }
 
+/* ───────── 08-autotest.js ───────── */
+/* ===========================================================================
+   08 — L'AUTOTEST DU PLAN (v77). Le lecteur : « quand je vais faire le gigatest, prépare de ton côté tout ce qui va pas…
+   voir toutes les erreurs… je pourrai jamais tout envoyer, c'est confidentiel ». Volta se parcourt LUI-MÊME sur le vrai
+   fichier ouvert, comme le ferait quelqu'un de très patient : chaque folio (dessiné, chronométré), chaque fiche (chaque
+   équipement, disjoncteur, barrette, prise, chaque câble), chacune de ses sections dépliée, chaque liste « Changer » et
+   « D'où elle vient » ouverte, chaque onglet du récapitulatif, chaque document, chaque export (fabriqué, jamais
+   enregistré), le contrôle. Ce qui casse se note : l'écran où c'était (« fiche d'un disjoncteur · folio 3 », jamais le
+   repère), le message (les noms du plan masqués), la pile (le nom des fonctions de Volta et leur ligne, rien d'autre) ;
+   une fiche qui ne se rend pas sans rien dire aussi (vide, ou la fiche d’avant restée là) ; et ce qui est lent. Le résultat part avec le bilan anonyme
+   (`sectionAutotest`, 08-bilan). Échap, ou « Arrêter », l'arrête ; le plan revient où il était.
+   =========================================================================== */
+
+const AUTOTEST = { enCours: false, stop: false, resultat: null, budget: 20 * 60 * 1000, etape: '', erreurs: [], captures: [] };
+
+// ce qu'on garde d'une pile : « fonction:ligne », trois au plus — ni chemin de fichier, ni dossier (ils diraient un nom)
+const pileCourte = e => String((e && e.stack) || '').split('\n').slice(1).map(l => { l = l.trim(); const m = /^at\s+(?:async\s+)?([^\s(]+)\s+\(.*:(\d+):\d+\)$/.exec(l) || /^at\s+(?:async\s+)?().*:(\d+):\d+$/.exec(l) || /^([\w$.<>]*)@.*:(\d+):\d+$/.exec(l);
+  return m ? (m[1] || 'anonyme') + ':' + m[2] : ''; })
+  .filter(Boolean).slice(0, 3).join(' ← ');
+const pauseAT = (ms) => new Promise(r => setTimeout(r, ms || 0));
+const msLisible = ms => ms >= 60000 ? Math.floor(ms / 60000) + ' min ' + String(Math.round((ms % 60000) / 1000)).padStart(2, '0') + ' s' : ms >= 1000 ? (Math.round(ms / 100) / 10).toString().replace('.', ',') + ' s' : Math.round(ms) + ' ms';
+
+/* UNE ERREUR, d'où qu'elle vienne (une étape qui lève, la page qui lève pendant l'étape, une console qui crie) : regroupée
+   par message et par écran, comptée. */
+function noterErreurAT(genre, msg, pile) { if (!AUTOTEST.enCours) return; msg = String(msg || '').replace(/\s+/g, ' ').trim().slice(0, 220); if (!msg) return;
+  const ou = AUTOTEST.etape || 'hors étape', x = AUTOTEST.erreurs.find(y => y.msg === msg && y.ou === ou);
+  if (x) x.n++; else if (AUTOTEST.erreurs.length < 60) AUTOTEST.erreurs.push({ genre, ou, msg, pile: pile || '', n: 1 }); }
+window.addEventListener('error', e => noterErreurAT('page', e.message || (e.error && e.error.message), pileCourte(e.error)));
+window.addEventListener('unhandledrejection', e => noterErreurAT('promesse', (e.reason && e.reason.message) || e.reason, pileCourte(e.reason)));
+
+// le panneau de l'autotest : où il en est, ce qu'il a trouvé, « Arrêter »
+function panneauAT() { let el = $('autotest'); if (el) return el;
+  el = document.createElement('div'); el.id = 'autotest'; el.className = 'carnet at'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+  el.innerHTML = `<div class="cn-tete"><b>Autotest du plan</b><span class="cn-ou" id="at-ou"></span></div><div class="at-barre"><i id="at-barre"></i></div>`
+    + `<div class="cn-pied"><span class="cn-aide" id="at-mots"></span><button type="button" class="btn papier dense" id="at-stop">Arrêter <kbd>Échap</kbd></button></div>`;
+  document.body.appendChild(el); $('at-stop').onclick = () => { AUTOTEST.stop = true; }; return el; }
+function montrerAT(ou, fait, total, mots) { const el = panneauAT(); el.hidden = false; $('at-ou').textContent = ou; $('at-barre').style.width = Math.round(100 * Math.min(1, fait / Math.max(1, total))) + '%'; $('at-mots').textContent = mots; }
+
+/* LE PARCOURS. o : { listes (ouvrir chaque « Changer » : le plus long), budget (ms, 20 min d'office), sauter (des exports),
+   bilan (false : ne pas rouvrir le bilan à la fin — les bancs) } */
+async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assign({ listes: true, budget: AUTOTEST.budget }, o || {});
+  if (!verite().length) { dire('Aucun plan ouvert : ouvrez votre installation, puis relancez l’autotest.', true); return; }
+  const T0 = performance.now(), P = plans(), depart = app.plan, R = { quand: Date.now(), genres: {}, vides: 0, coupe: '', exports: [], listes: 0, sections: 0, folios: P.length };
+  Object.assign(AUTOTEST, { enCours: true, stop: false, erreurs: [], etape: '', captures: [] });
+  const echap = e => { if (e.key === 'Escape' && AUTOTEST.enCours) { AUTOTEST.stop = true; e.preventDefault(); e.stopPropagation(); } }; window.addEventListener('keydown', echap, true);
+  // la console qui crie pendant le parcours, et les téléchargements (fabriqués, jamais enregistrés)
+  const ce = console.error, tl = window.telecharger; console.error = function () { try { noterErreurAT('console', [...arguments].map(a => (a && a.message) || String(a)).join(' '), pileCourte(arguments[0])); } catch (_) { } return ce.apply(console, arguments); };
+  window.telecharger = (blob, nom) => { AUTOTEST.captures.push({ ext: (/\.(\w+)$/.exec(String(nom || '')) || [, '?'])[1].toLowerCase(), taille: blob && blob.size || 0 }); };
+  try { telecharger = window.telecharger; } catch (_) { }
+  const fini = () => AUTOTEST.stop || performance.now() - T0 > o.budget;
+  const compter = (genre, ms, ou) => { const g = R.genres[genre] || (R.genres[genre] = { n: 0, ms: 0, max: 0, ouMax: '' }); g.n++; g.ms += ms; if (ms > g.max) { g.max = ms; g.ouMax = ou; } };
+  const etape = async (genre, ou, f) => { AUTOTEST.etape = ou; const t = performance.now(); try { await f(); } catch (e) { noterErreurAT(genre, (e && e.message) || e, pileCourte(e)); } compter(genre, performance.now() - t, ou); await pauseAT(0); };
+  const folioDe = p => P.length > 1 ? 'folio ' + (P.indexOf(p) + 1) + ' / ' + P.length : '';
+  // une fiche : rendue (non rendue = un échec muet : on relance son rendu pour lire l'erreur), ses sections dépliées, ses listes ouvertes
+  // (rendue, c'est-à-dire LA SIENNE : un rendu qui échoue en silence laisse la fiche d'avant — sa barre dit un autre nom)
+  const exercerFiche = async (ou) => { const box = $('ba-equip'), nav = box && box.querySelector('.fi-nav-nom'), attendu = app.cible ? nomDeCible(app.cible) : '';
+    const casse = box && box.querySelector('.fi-erreur');
+    if (casse) { R.vides++; const e = FI.erreur; noterErreurAT('fiche', 'fiche non rendue : ' + casse.textContent, pileCourte(e)); return; }
+    if (!box || !box.querySelector('.fi-entete, .fi-nom, details.fs') || (nav && attendu && nav.textContent !== attendu)) { R.vides++; try { ficheDe(app.cible); noterErreurAT('fiche', 'fiche non rendue, sans erreur levée', ''); } catch (e) { noterErreurAT('fiche', 'fiche non rendue : ' + ((e && e.message) || e), pileCourte(e)); } return; }
+    box.querySelectorAll('details.fs').forEach(d => { if (!d.open) { d.open = true; R.sections++; } });
+    if (!o.listes) return;
+    const cles = [...new Set([...box.querySelectorAll('[data-changer]')].map(b => b.dataset.changer))].slice(0, 12);
+    for (const k of cles) { if (fini()) return; AUTOTEST.etape = ou + ' · une liste « Changer »';
+      try { FI.liste = k; rendreFiche(); R.listes++; } catch (e) { noterErreurAT('liste', (e && e.message) || e, pileCourte(e)); }
+      await pauseAT(0); }
+    try { FI.liste = ''; rendreFiche(); } catch (_) { } };
+  try {
+    // 1. CE QUI VAUT POUR TOUT LE PLAN D'ABORD (arrêté tôt, l'essentiel est vu) : le contrôle, en entier
+    if (!fini()) { montrerAT('le contrôle', 0, 1, ''); await etape('contrôle', 'le contrôle du contrat', () => { controleDuContrat(); }); }
+    // 2. LE RÉCAPITULATIF : chaque onglet, en page, sur tout le plan
+    if (!fini() && typeof ouvrirBase === 'function') { const ks = (typeof ONGLETS !== 'undefined' ? ONGLETS.map(([k]) => k) : []);
+      await etape('récapitulatif', 'récapitulatif · ouverture', () => { ouvrirBase('page'); app.base.portee = 'tout'; });
+      for (let k = 0; k < ks.length && !fini(); k++) { montrerAT('le récapitulatif', k, ks.length, 'onglet ' + ks[k]);
+        await etape('onglet', 'récapitulatif · onglet ' + ks[k], () => { changerOnglet(ks[k]); }); }
+      try { fermerBase(); } catch (_) { } }
+    // 3. LES DOCUMENTS
+    const docs = ['nomenclature', 'bible', 'normes', 'hypotheses', 'cartouche', 'comprendre', 'dejafait', 'fichiers'].filter(a => MENU.actions[a]);
+    for (let k = 0; k < docs.length && !fini(); k++) { montrerAT('les documents', k, docs.length, 'document ' + docs[k]);
+      await etape('document', 'document « ' + (MOTS_DOCS[docs[k]] || docs[k]) + ' »', async () => { MENU.actions[docs[k]](); await pauseAT(120);
+        if ($('fiche').hidden && !(typeof bibliothequeOuverte === 'function' && bibliothequeOuverte())) throw new Error('le document ne s’est pas ouvert'); });
+      try { fermerFiche(true); if (typeof fermerBibliotheque === 'function' && typeof bibliothequeOuverte === 'function' && bibliothequeOuverte()) fermerBibliotheque(); } catch (_) { } }
+    // 4. LES FOLIOS, puis sur chacun ses blocs et ses câbles
+    for (let i = 0; i < P.length && !fini(); i++) { const p = P[i], fo = folioDe(p) || 'le plan';
+      montrerAT(fo, i, P.length, 'le dessin du folio');
+      await etape('folio', 'dessin du ' + fo, async () => { fermerInspecteur(); allerAuPlan(p); const t = performance.now();
+        while (!app.dessin && performance.now() - t < 120000 && !AUTOTEST.stop) await pauseAT(60);
+        if (!app.dessin && !AUTOTEST.stop) throw new Error('le folio ne s’est pas dessiné en 2 minutes'); });
+      if (!app.dessin) continue;
+      const blocs = (app.dessin.comps || []).filter(c => c && c.name && c.kind !== 'tag' && !(typeof estRenvoi === 'function' && estRenvoi(c.name)));
+      for (let k = 0; k < blocs.length && !fini(); k++) { const c = blocs[k], ou = 'fiche ' + natureAnonyme(c.name) + (fo ? ' · ' + fo : '');
+        montrerAT(fo, i + k / Math.max(1, blocs.length) * .6, P.length, `fiche ${k + 1} / ${blocs.length} · ${pl(AUTOTEST.erreurs.length, 'erreur')}`);
+        await etape(genreDeFiche(c.name), ou, async () => { choisirBloc(c); await exercerFiche(ou); }); }
+      const fils = (app.dessin.fils || []).filter(f => f && f.i != null);
+      for (let k = 0; k < fils.length && !fini(); k++) { const f = fils[k], ou = 'fiche d’un câble' + (fo ? ' · ' + fo : '');
+        montrerAT(fo, i + .6 + k / Math.max(1, fils.length) * .4, P.length, `câble ${k + 1} / ${fils.length} · ${pl(AUTOTEST.erreurs.length, 'erreur')}`);
+        await etape('câble', ou, async () => { choisirFil(f); await exercerFiche(ou); }); }
+      try { deselectionner(); fermerInspecteur(); } catch (_) { } }
+    // 5. LES EXPORTS (fabriqués, jamais enregistrés ; le dossier PDF de tous les folios, le plus long, en dernier)
+    const exps = ['retestcorrige', 'suivi', 'nomenclaturecsv', 'svg', 'png', 'dossierpdf'].filter(a => MENU.actions[a] && !(o.sauter || []).includes(a));
+    for (let k = 0; k < exps.length && !fini(); k++) { montrerAT('les exports', k, exps.length, 'export ' + exps[k]); const avant = AUTOTEST.captures.length;
+      await etape('export', 'export ' + exps[k], async () => { await MENU.actions[exps[k]](); await pauseAT(200);
+        // l'installation corrigée passe par son relevé (ce qui change, puis « Enregistrer ») : on l'enregistre
+        if (AUTOTEST.captures.length === avant && $('rv-enregistrer')) $('rv-enregistrer').click(); const t = performance.now();
+        while (AUTOTEST.captures.length === avant && performance.now() - t < 30000 && !AUTOTEST.stop) await pauseAT(100);
+        if (AUTOTEST.captures.length === avant && !AUTOTEST.stop) throw new Error('l’export n’a rien fabriqué en 30 s');
+        const c = AUTOTEST.captures[AUTOTEST.captures.length - 1]; if (c) R.exports.push(exps[k] + ' .' + c.ext + ' ' + Math.max(1, Math.round(c.taille / 1024)) + ' Ko'); });
+      try { fermerFiche(true); } catch (_) { } }
+  } finally {
+    R.coupe = AUTOTEST.stop ? 'arrêté à la main' : performance.now() - T0 > o.budget ? 'temps limite atteint (' + msLisible(o.budget) + ')' : '';
+    R.duree = performance.now() - T0; R.erreurs = AUTOTEST.erreurs.slice(); AUTOTEST.resultat = R;
+    console.error = ce; window.telecharger = tl; try { telecharger = tl; } catch (_) { }
+    window.removeEventListener('keydown', echap, true); AUTOTEST.enCours = false; AUTOTEST.etape = '';
+    const el = $('autotest'); if (el) el.hidden = true;
+    try { FI.liste = ''; fermerBase(); fermerFiche(true); deselectionner(); fermerInspecteur(); if (depart && plans().includes(depart)) allerAuPlan(depart); } catch (_) { }
+    dire(`Autotest ${R.coupe ? 'arrêté' : 'fini'} en ${msLisible(R.duree)} : ${pl(R.erreurs.length, 'erreur')}${R.vides ? ', ' + pl(R.vides, 'fiche non rendue', 'fiches non rendues') : ''}. Le résultat est dans le bilan anonyme.`, !!R.erreurs.length);
+    if (o.bilan !== false && typeof ficheBilan === 'function') ficheBilan(); } }
+const genreDeFiche = r => VT_A_POSER.test(r || '') ? 'barrette ajoutée' : estMasse(r) ? 'masse' : estDisjoncteur(r) ? 'disjoncteur' : estBarrette(r) ? 'barrette' : estCoupure(r) ? 'prise' : 'équipement';
+
+/* CE QUE L'AUTOTEST DIT DANS LE BILAN : la durée, chaque genre (combien, la moyenne, le plus long et où), les erreurs
+   (l’écran, le message masqué, la pile), les fiches non rendues, les exports fabriqués. */
+function sectionAutotest(masque) { const R = AUTOTEST.resultat; if (!R) return ['pas encore lancé (⋮ › Plus › Autotest du plan, ou le bouton du bilan)'];
+  const G = Object.entries(R.genres).map(([g, x]) => `${g} : ${x.n} en ${msLisible(x.ms)} (moyenne ${msLisible(x.ms / x.n)}, le plus long ${msLisible(x.max)} — ${x.ouMax})`);
+  return [`lancé le ${new Date(R.quand).toLocaleString('fr-FR')} · ${msLisible(R.duree)}${R.coupe ? ' · ' + R.coupe : ' · parcours complet'}`,
+    `${pl(R.folios, 'folio')} · ${pl(R.sections, 'section dépliée', 'sections dépliées')} · ${pl(R.listes, 'liste « Changer » ouverte', 'listes « Changer » ouvertes')}`, ...G,
+    R.exports.length ? 'exports fabriqués (rien d’enregistré) : ' + R.exports.join(' · ') : '',
+    R.vides ? `${pl(R.vides, 'fiche non rendue', 'fiches non rendues')} (le rendu a échoué sans le dire)` : 'fiches non rendues : aucune',
+    R.erreurs.length ? `${pl(R.erreurs.length, 'erreur')} :` : 'erreurs : aucune',
+    ...R.erreurs.map(e => `  ${e.ou} — ${masque(e.msg)}${e.n > 1 ? ' (×' + e.n + ')' : ''}${e.pile ? ' — ' + masque(e.pile) : ''}`)].filter(Boolean); }
+
+MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} };
+MENU.actions.autotest = () => lancerAutotest();
+
 /* ───────── 08-bibliotheque.js ───────── */
 /* ===========================================================================
    08 — LA BIBLIOTHÈQUE : les installations et leurs plans, l'ouverture de Volta
@@ -17486,7 +17650,7 @@ function noterExportDuPlan(nom) { const p = BIB.plans.get(app.planId); if (!p ||
      dans les notes tapées à la main.
    =========================================================================== */
 
-const BILAN = { version: 'v76', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v77', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -17590,6 +17754,9 @@ function texteDuBilan() { const masque = masqueDuPlan(), V = verite(), N = app.n
   section('LES RÉGLAGES', () => { const H = app.simu || HYPOTHESES, ch = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k]));
     return [ch.length ? 'hypothèses changées : ' + ch.map(k => `${k} ${JSON.stringify(HYPOTHESES[k])} → ${JSON.stringify(H[k])}`).join(' · ') : 'hypothèses : celles de Volta, inchangées']; });
 
+  // (v77) l'autotest du plan : Volta s'est parcouru lui-même (08-autotest)
+  section('L’AUTOTEST', () => typeof sectionAutotest === 'function' ? sectionAutotest(masque) : []);
+
   section('LES ERREURS DE LA PAGE', () => BILAN.erreurs.length ? BILAN.erreurs.map(e => masque(e.msg) + (e.n > 1 ? ' (×' + e.n + ')' : '')) : ['aucune depuis l’ouverture']);
 
   const notes = lireCarnet(); if (notes.length) S.push(`LE CARNET (${pl(notes.length, 'note')})\n` + notes.map(n => `- ${heureDe(n.t)} · ${n.ou} — « ${masque(n.texte).replace(/\s+/g, ' ')} »`).join('\n'));
@@ -17643,11 +17810,13 @@ function ficheBilan() { const texte = texteDuBilan(), notes = lireCarnet();
     : `<p class="bl-vide">Le carnet est vide. Pendant le travail, appuyez sur <kbd>C</kbd> pour noter une hésitation : l’écran où vous êtes s’écrit avec elle.</p>`;
   const corps = tete('Pour améliorer Volta', 'Bilan anonyme')
     + `<p class="note bl-chapeau">Ce que Volta a lu et jugé de ce plan, en chiffres. <b>Aucun repère, part number, numéro de câble, nom de fichier, de harness ou de client</b> : les noms du plan sont masqués, une référence inconnue se dit par sa forme (lettres → A, chiffres → 9). Relisez-le, puis copiez-le dans la conversation.</p>`
+    + `<section class="bl-auto" aria-labelledby="bl-auto-t"><div class="bl-carnet-tete"><h3 id="bl-auto-t">L’autotest du plan</h3><button type="button" class="btn papier dense" id="bl-autotest">${typeof AUTOTEST !== 'undefined' && AUTOTEST.resultat ? 'Le relancer' : 'Lancer l’autotest'}</button></div>`
+    + `<p class="bl-masque">Volta ouvre tout seul chaque folio, chaque fiche et ses sections, chaque liste « Changer », chaque onglet du récapitulatif, chaque document et chaque export (fabriqué, jamais enregistré), chronomètre tout et note chaque erreur — l’écran où c’était, jamais un nom du plan. Quelques minutes ; <kbd>Échap</kbd> l’arrête. Le résultat s’ajoute au bilan ci-dessous.</p></section>`
     + `<pre class="bl-texte" id="bl-texte" tabindex="0" aria-label="Le bilan, tel qu’il sera copié">${esc(texte)}</pre>`
     + `<section class="bl-carnet" aria-labelledby="bl-carnet-t"><div class="bl-carnet-tete"><h3 id="bl-carnet-t">Le carnet de séance${notes.length ? ` <span class="bl-n">${notes.length}</span>` : ''}</h3><button type="button" class="btn papier dense" id="bl-noter">Noter <kbd>C</kbd></button></div>${notes.length ? '<p class="bl-masque">Vos notes restent sur ce PC telles que vous les avez tapées ; dans le bilan copié, les repères et références qu’elles nomment sont masqués.</p>' : ''}${carnet}</section>`;
   const pied = `<button type="button" class="btn cuivre" id="bl-copier">Copier le bilan${notes.length ? ' et le carnet' : ''}</button><button type="button" class="btn papier" id="bl-enregistrer">Enregistrer en .txt</button><span class="espace"></span><span class="bl-pied-note">Rien ne part tout seul : c’est vous qui collez.</span>`;
   ouvrirFiche({ mode: 'bilan', largeur: 'ample' }, corps, pied);
-  $('bl-copier').onclick = () => copierBilan(texte); $('bl-enregistrer').onclick = () => enregistrerBilan(texte); $('bl-noter').onclick = ouvrirCarnet;
+  $('bl-copier').onclick = () => copierBilan(texte); if ($('bl-autotest')) $('bl-autotest').onclick = () => { fermerFiche(true); lancerAutotest(); }; $('bl-enregistrer').onclick = () => enregistrerBilan(texte); $('bl-noter').onclick = ouvrirCarnet;
   document.querySelectorAll('#fiche-corps [data-note]').forEach(b => { b.onclick = () => { const xs = lireCarnet(); xs.splice(+b.dataset.note, 1); ecrireCarnet(xs); ficheBilan(); dire('Note effacée.'); }; }); }
 function copierBilan(texte) { const fini = () => dire('Le bilan est copié : collez-le dans la conversation.');
   const repli = () => { const a = document.createElement('textarea'); a.value = texte; a.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); fini(); } catch (_) { dire('La copie n’a pas pu se faire : enregistrez-le en .txt.', true); } a.remove(); };
@@ -19324,8 +19493,8 @@ function deciderCalibre(nom) { const d = disjonctionDe(nom), cal = d.calibre; if
 function carteDecision(nom, d, autres) { if (!d.gPn || d.origine === 'main' || d.sansProfil || d.sansCourbe || !(d.calibre > 0) || !d.pn) return '';
   const g = d.gPn, k = cleDuVerdict(g), passe = k === 'passe', pn = pnDuRepere(nom), m = d.meilleur || {}, cal = d.calibre, xs = cal === m.calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   let p = null; try { p = verdictDisjonction(app.norme, d.courbe, d.pn, d.profil, d.contexte).pire; } catch (_) { p = null; }
-  // les trois mots : « déclenche » (un problème), « est juste » (sans la marge : à voir), ou il passe et l'outil en retient un autre
-  const titre = passe ? `L’installation porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'l’outil retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : 'est ' + motDuVerdict('juste')}`;
+  // « déclenche » ou « touche la courbe » (v77 : l'un et l'autre, un problème — rouge), ou il passe et l'outil en retient un autre
+  const titre = passe ? `L’installation porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'l’outil retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}`;
   // deux lignes : ce que fait le retest (au démarrage, 9,31 A pendant 2,1 min touchent sa courbe), le plus petit qui passe
   const quoi = !passe && p ? `${majuscule(p.t === Infinity ? 'en permanence' : quandDuPoint(p))}, <b>${esc(amperes(p.i))}${p.t === Infinity ? '' : ' pendant ' + esc(secondes(p.t))}</b> ${k === 'declenche' ? 'font déclencher le' : 'touchent la courbe du'} ${ident(pn || amperes(d.pn))}. ` : '';
   // (les câbles qu'il demande : derrière le lien « Les 3 câbles », sur la ligne des liens)
@@ -19501,6 +19670,8 @@ function ligneDuVerdict(d, x, o) { o = o || {};
   if (x.cle === 'passe' && x.auto) {
     const suite = o.apercu ? 'Aperçu — Entrée le retient, Échap revient.' : x.propose ? 'Proposé : pas encore écrit dans votre fichier.' : '';
     return `<div class="dj-verdict-l ok${o.apercu ? ' apercu' : ''}" aria-live="polite"><span class="dj-v-mot">${marqueVerdict('passe')}<b>Le minimum : ${esc(A)}</b></span>${suite ? `<span class="dj-v-pourquoi"><i>${esc(suite)}</i></span>` : ''}</div>`; }
+  // (v77) le mot dit déjà « touche la courbe » : la raison ne le redit pas
+  if (x.cle === 'juste') quoi = String(quoi || '').replace(/^il touche la courbe\s*:\s*/, '');
   quoi = quoi + '.';
   const suite = o.apercu ? 'Aperçu — Entrée le retient, Échap revient.' : x.propose ? 'Proposé : pas encore écrit dans votre fichier.' : d.origine === 'main' && x.retenu ? `Retenu à la main${best && best !== x.calibre ? ' ; le minimum est ' + amperes(best) : ''}.` : '';
   return `<div class="dj-verdict-l ${x.etat || 'neutre'}${o.apercu ? ' apercu' : ''}" aria-live="polite"><span class="dj-v-mot">${marqueVerdict(x.cle)}<b>${esc(A)} ${esc(x.mot)}</b></span><span class="dj-v-pourquoi">${insecable(esc(quoi))}${suite ? ` <i>${esc(suite)}</i>` : ''}</span></div>`; }
@@ -20961,11 +21132,12 @@ function listeCables(rows, o) { o = o || {}; const rang = r => r.etat === 'ko' ?
     const nomC = nomCourtDuCable(r), ouvrir = r.k ? `<button type="button" class="cb-ouvrir" data-ouvrir-cable="${escA(r.k)}" aria-label="${escA('Ouvrir la fiche du câble ' + nomC)}" data-bulle="${escA('Ouvrir la fiche de ' + nomC)}">${ico('droite')}</button>` : '<span></span>';
     const lg = ed ? ed.lon : '', supp = r.l && !(r.l.longueur > 0);
     return `<li class="fi-ia fi-cab cb-carte${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle)}"` : ''} style="--n:${n}">`
-      + `<span class="cb-puce">${r.puce || ''}</span><span class="cb-id">${num}${typeLu}</span>${celluleI(r.charge)}${ouvrir}`
-      + `<span class="cb-sous"><span class="cb-sous-c"><span class="cb-sous-k">Chute</span>${celluleU(r.chute)}${r.chute.max != null ? `<span class="cb-sous-a">sur ${esc(volts(r.chute.max))}</span>` : ''}</span>`
+      // sans numéro, trois lignes « DR12 » se ressemblent : l'autre bout, en petit, les distingue
+      + `<span class="cb-puce">${r.puce || ''}</span><span class="cb-id">${num}${typeLu}${!num && r.bout && r.bout.rep ? `<small class="cb-vers id">vers ${esc(r.bout.rep + (r.bout.borne ? ':' + r.bout.borne : ''))}</small>` : ''}</span>${celluleI(r.charge)}${ouvrir}`
+      + `<span class="cb-sous"><span class="cb-sous-c"><span class="cb-sous-k">Chute${n === 0 ? qU : ''}</span>${celluleU(r.chute)}${r.chute.max != null ? `<span class="cb-sous-a">sur ${esc(volts(r.chute.max))}</span>` : ''}</span>`
       + (lg ? `<span class="cb-sous-c"><span class="cb-sous-k">Longueur</span>${lg}<span class="cb-sous-a">m${supp ? ' · supposée' : ''}</span></span>` : '') + '</span>'
       + (r.pourquoi ? `<span class="cb-pourquoi">${insecable(esc(r.pourquoi))}</span>` : '') + '</li>'; }).join('');
-  const entete = `<li class="cb-entete"><span></span><span>Câble</span><span>Intensité${qI}<span class="cb-ent-u">Chute${qU}</span></span><span></span></li>`;
+  const entete = `<li class="cb-entete"><span></span><span>Câble</span><span>Intensité${qI}</span><span></span></li>`;
   return (rows.length > 12 ? bandeDesCables(rows) : '') + `<ul class="fi-cables cb-liste${o.cls ? ' ' + o.cls : ''}">${entete}${li}</ul>${datalistCables()}`; }
 /* La ligne d'un câble d'un repère : son intensité contre ce qu'il admet (au pire du permanent et de la pointe), sa chute
    en ligne depuis le disjoncteur en amont (sinon sur le câble seul), pourquoi il est à voir, et la bulle qui dit d'où
@@ -21003,7 +21175,7 @@ function sectionFilsDuRepere(fils, probs, coupables) { const C = coupables || ne
    faire ; plus d'italique dans le tableau (une case vide montre la valeur supposée en gris, sans plus). */
 function noteSupposes(nDj, nL, n, H) { const xs = [nL ? `<b>${esc('Longueur supposée : ' + nombre(H.longueur) + ' m')}</b>${esc((n > 1 ? ' pour ' + (nL === n ? (n > 2 ? 'les ' + n + ' câbles' : 'les deux câbles') : nL + ' câble' + (nL > 1 ? 's' : '') + ' sur ' + n) : '') + ', à écrire dans l’installation (ou ici, dans la case Longueur)')}` : '',
     nDj ? `<b>${esc('Courant supposé : ' + nombre(H.courant) + ' A')}</b>${esc((n > 1 ? ' pour ' + (nDj === n ? (n > 2 ? 'les ' + n + ' câbles' : 'les deux câbles') : nDj + ' câble' + (nDj > 1 ? 's' : '') + ' sur ' + n) : '') + ', sans disjoncteur en amont')}` : ''].filter(Boolean);
-  return xs.length ? xs.join('. ') + `. <span class="fi-note-hyp">${esc('Ce sont des')} ${motHypothese}s.</span>` : ''; }
+  return xs.length ? xs.join('. ') + `. <span class="fi-note-hyp">${esc('Ce sont des')} ${motHypothese.replace('>hypothèse<', '>hypothèses<')}.</span>` : ''; }
 
 /* « DÉJÀ FAIT » : les machines proches dans la base des contrats déjà faits. Elle se tait tant qu'aucune base n'est
    chargée (le parcours v72 : « du bruit à chaque clic » — le rappel vit dans « Vos fichiers »). */
@@ -21360,7 +21532,7 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
   const pn = pnDuRepere(nom), id = identite([majuscule(natureDe(nom)), descriptionDuRetest(nom) ? esc(descriptionDuRetest(nom)) : '', pn ? ident(pn) : '', esc(motFolios(foliosDuRepere(nom)))]);
   // la carte de décision, quand l'outil retient un autre calibre que le retest ; elle porte le point du calibre (la barre, les autres)
   const decision = carteDecision(nom, d, Math.max(0, probs.length - 1));
-  return enTete({ type: 'disjoncteur', designation: nom, nom, champ: 'eq-rep', etat: etatDesProblemes(probs), identite: id }) + decision + barreProblemes(probs, sections, { taire: decision ? /^le retest porte un / : null }) + blocRetest(ecritsDuRepere(nom), []) + ficheSections('disjoncteur', sections)
+  return enTete({ type: 'disjoncteur', designation: nom, nom, champ: 'eq-rep', etat: etatDesProblemes(probs), identite: id }) + decision + barreProblemes(probs, sections, { taire: decision ? /^(le retest|l’installation) porte un / : null }) + blocRetest(ecritsDuRepere(nom), []) + ficheSections('disjoncteur', sections)
     + fiPied({ tableau: nom, fil: nom, menu: MENU_BLOC }); }
 
 /* ---- UNE BARRETTE (et une barrette à poser) ------------------------------------------------------------------------ */
@@ -21785,7 +21957,9 @@ function rendreFiche() { const box = $('ba-equip'), c = app.cible; if ($('inspec
   if (c.type === 'bloc' && but && but.connecteur) FI.connecteur[c.nom] = but.connecteur;
   FI.viser = but && but.viser || '';
   let html; try { html = ficheDe(c); }
-  catch (err) { html = enTete({ type: 'equipement', genre: 'Élément', nom: c.nom || (c.l && c.l.cable) || '—' }) + `<p class="fi-note">${esc(String(err && err.message || err))}</p>`; }
+  // (v77) une fiche qui casse le dit — et le bilan anonyme le garde (masqué), l'autotest le lit (`fi-erreur`, sa pile)
+  catch (err) { FI.erreur = err; if (typeof noterErreurPage === 'function') noterErreurPage('fiche : ' + String(err && err.message || err));
+    html = enTete({ type: 'equipement', genre: 'Élément', nom: c.nom || (c.l && c.l.cable) || '—' }) + `<p class="fi-note fi-erreur">${esc(String(err && err.message || err))}</p>`; }
   const nav = barreNav({ fermer: c.type !== 'ref', nom: nomDeCible(c) });
   const haut = box.scrollTop, a = document.activeElement, presse = meme && a && a.tagName === 'BUTTON' && box.contains(a) ? empreinteBouton(a) : null, ancres = meme ? ancresDe(box) : null;
   box.innerHTML = nav + html; box.dataset.cle = cle; box.className = 'fi'; box.dataset.type = c.type;
@@ -22259,7 +22433,7 @@ async function lireLeFichier(fichier) { const nom = fichier.name || 'le fichier'
   if (/^PK\u0003\u0004/.test(texte)) return /\.(csv|tsv|txt)$/i.test(nom) ? { erreur: { texte: `${esc(nom)} est un classeur Excel enregistré sous un autre nom : renommez-le en .xlsx, puis redéposez-le.` } } : pasUnTableau;
   let bizarres = 0; for (const c of debut) { const k = c.charCodeAt(0); if (k === 0xfffd || (k < 32 && k !== 9 && k !== 10 && k !== 13)) bizarres++; }
   if (debut && (/\u0000/.test(debut) || bizarres / debut.length > 0.02)) return { erreur: { texte: `${esc(nom)} n’est pas un tableau (Excel ou CSV).` } };
-  const brutes = texte.split(/\r?\n/), pleines = brutes.filter(l => l.trim() && l.replace(/[\t;,]/g, '').trim());
+  const brutes = lignesDuTexte(texte), pleines = brutes.filter(l => l.trim() && l.replace(/[\t;,]/g, '').trim());
   if (!pleines.length) return { erreur: { texte: `${esc(nom)} est vide : aucune ligne.` } };
   return { lu, texte, brutes, pleines }; }
 /* Ce que l'outil a lu d'un tableau qui n'est pas un retest : la ligne la plus remplie des trente premières (sans doute
@@ -22369,7 +22543,7 @@ function ficheHarnais(r, nom) { const H = r.harnais.map(h => { const L = r.liais
 /* ---- coller des lignes : l'ordre, un exemple, l'aperçu, ajouter ou remplacer ------------------------------------- */
 /* Ce qu'un texte collé donne : un retest reconnu à ses en-têtes (02, `lireTexte`), sinon le rattrapage (des en-têtes
    devinées, ou l'ordre du collage). Rend { liaisons, rejets, comment (en mots) }. */
-function lireCollage(texte) { const brutes = String(texte || '').split(/\r?\n/), pleines = brutes.filter(l => l.trim());
+function lireCollage(texte) { const brutes = lignesDuTexte(texte), pleines = brutes.filter(l => l.trim());
   if (!pleines.length) return { liaisons: [], rejets: [], comment: '' };
   const rt = trouverEnteteRetest(brutes);
   if (rt) { const r = lireTexte(texte), n = brutes.slice(rt.ligne + 1).filter(l => l.trim()).length - ((r.entetes || 1) - 1);   // les lignes sous les en-têtes

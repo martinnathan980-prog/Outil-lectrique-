@@ -254,7 +254,7 @@ function titre(t) { console.log('\n' + t); }
     const N = nomenclatureDuContrat(); r.nomen = { connecteur: N.connecteurs.some(x => /^MS3320/.test(x.reference)), dj: N.disjoncteurs.map(x => [x.repere, x.reference, x.calibre, x.retest, x.etat].join(' ')) };
     ficheNomenclature(); await new Promise(f => setTimeout(f, 300)); r.fourreau = [...document.querySelectorAll('#fiche th')].some(th => th.textContent === 'Fourreau'); r.titres = [...document.querySelectorAll('#fiche .no-st')].map(h => h.firstChild.textContent).join(','); fermerFiche();
     return r; });
-  ok('trois mots de verdict (la table unique) : 5 A déclenche, 10 A juste, 15 A passe ; le pourquoi chiffré', V9.mots.join() === 'déclenche,juste,passe' && /^5 A — déclenche : démarrage et transition, 9,31 A pendant 2,1 min/.test(V9.pourquoi), V9.mots.join(' · ') + ' · ' + V9.pourquoi);
+  ok('les mots du verdict (la table unique, v77) : 5 A déclenche, 10 A touche la courbe, 15 A passe ; le pourquoi chiffré', V9.mots.join() === 'déclenche,touche la courbe,passe' && /^5 A — déclenche : démarrage et transition, 9,31 A pendant 2,1 min/.test(V9.pourquoi), V9.mots.join(' · ') + ' · ' + V9.pourquoi);
   ok('le « ? » du calibre lit la gamme de la famille (MS3320 s’arrête à 20 A : pas de 25 A)', /gamme 2TC|gamme MS3320/i.test(V9.gamme) && !/25 A/.test(V9.gamme), V9.gamme.slice(0, 160));
   ok('la nomenclature : un groupe « Disjoncteurs » (MS3320-15 à commander, installation 10 A), plus de disjoncteur en connecteur, plus de colonne vide', !V9.nomen.connecteur && V9.nomen.dj.length === 1 && /^102CB1 MS3320-15 15 10 /.test(V9.nomen.dj[0]) && !V9.fourreau && /Disjoncteurs/.test(V9.titres), V9.nomen.dj.join(' | ') + ' · ' + V9.titres);
 

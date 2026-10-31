@@ -512,7 +512,7 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .cb-liste{list-style:none;margin:0 -10px;padding:0;display:flex;flex-direction:column}
 /* (v77) deux étages : en haut le câble (son type d'abord) et son intensité ; dessous, la chute et la longueur, en clair */
 .cb-entete,.cb-carte{display:grid;grid-template-columns:8px minmax(0,1fr) minmax(128px,168px) 28px;align-items:center;column-gap:10px}
-.cb-id{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.cb-id{display:inline-flex;flex-wrap:wrap;align-items:center;gap:0 6px;min-width:0}
 .cb-id .cb-num-ed .fc-in{width:8.5ch}
 .cb-ent-u{display:inline-flex;align-items:center;margin-left:14px;color:var(--t-3)}
 .cb-sous{grid-column:2/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 22px;margin:2px 0 6px;font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
@@ -1046,3 +1046,6 @@ button.fi-sertir.ct-ref{min-height:24px}
 .mj-legende .lg-libre{background:#fff;border:1.5px solid #3a4350}
 .mj-legende .lg-relie{width:16px;border-radius:5px;background:#d2e2f5;border:1px solid #8daed4}
 .mj-legende .lg-ko{background:#c3271f}
+.cb-id .cb-vers{flex-basis:100%;margin-top:1px;font:500 var(--f-11)/1.3 var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cb-sous-k .fi-q{margin-left:3px}
+.fi-note-hyp{white-space:nowrap}

@@ -41,3 +41,10 @@
 .cn-compte{font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){.carnet.entre{animation:none}}
 @media (max-width:640px){.carnet{left:50%;bottom:calc(var(--jeu) + 56px)}}
+
+/* (v77) L'AUTOTEST : son bloc dans le bilan, et son panneau pendant qu'il tourne (la barre du carnet, une jauge en plus) */
+.bl-auto{display:flex;flex-direction:column;gap:6px;margin:0 0 var(--sp-4)}
+.bl-auto h3{margin:0;font:600 var(--f-15)/1.3 var(--sans);color:var(--t-1)}
+.carnet.at{z-index:70}
+.at-barre{height:6px;border-radius:3px;background:var(--s-sunken);overflow:hidden}
+.at-barre i{display:block;height:100%;width:0;border-radius:3px;background:var(--accent);transition:width 200ms linear}

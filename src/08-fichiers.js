@@ -151,7 +151,7 @@ async function lireLeFichier(fichier) { const nom = fichier.name || 'le fichier'
   if (/^PK\u0003\u0004/.test(texte)) return /\.(csv|tsv|txt)$/i.test(nom) ? { erreur: { texte: `${esc(nom)} est un classeur Excel enregistré sous un autre nom : renommez-le en .xlsx, puis redéposez-le.` } } : pasUnTableau;
   let bizarres = 0; for (const c of debut) { const k = c.charCodeAt(0); if (k === 0xfffd || (k < 32 && k !== 9 && k !== 10 && k !== 13)) bizarres++; }
   if (debut && (/\u0000/.test(debut) || bizarres / debut.length > 0.02)) return { erreur: { texte: `${esc(nom)} n’est pas un tableau (Excel ou CSV).` } };
-  const brutes = texte.split(/\r?\n/), pleines = brutes.filter(l => l.trim() && l.replace(/[\t;,]/g, '').trim());
+  const brutes = lignesDuTexte(texte), pleines = brutes.filter(l => l.trim() && l.replace(/[\t;,]/g, '').trim());
   if (!pleines.length) return { erreur: { texte: `${esc(nom)} est vide : aucune ligne.` } };
   return { lu, texte, brutes, pleines }; }
 /* Ce que l'outil a lu d'un tableau qui n'est pas un retest : la ligne la plus remplie des trente premières (sans doute
@@ -261,7 +261,7 @@ function ficheHarnais(r, nom) { const H = r.harnais.map(h => { const L = r.liais
 /* ---- coller des lignes : l'ordre, un exemple, l'aperçu, ajouter ou remplacer ------------------------------------- */
 /* Ce qu'un texte collé donne : un retest reconnu à ses en-têtes (02, `lireTexte`), sinon le rattrapage (des en-têtes
    devinées, ou l'ordre du collage). Rend { liaisons, rejets, comment (en mots) }. */
-function lireCollage(texte) { const brutes = String(texte || '').split(/\r?\n/), pleines = brutes.filter(l => l.trim());
+function lireCollage(texte) { const brutes = lignesDuTexte(texte), pleines = brutes.filter(l => l.trim());
   if (!pleines.length) return { liaisons: [], rejets: [], comment: '' };
   const rt = trouverEnteteRetest(brutes);
   if (rt) { const r = lireTexte(texte), n = brutes.slice(rt.ligne + 1).filter(l => l.trim()).length - ((r.entetes || 1) - 1);   // les lignes sous les en-têtes

@@ -41,6 +41,17 @@ const FICHIER = fichierDemande();
   ok('ANONYMAT : aucun nom du plan dans le texte copié', B.fuites.length === 0, B.noms + ' noms vérifiés' + (B.fuites.length ? ' — FUITES : ' + B.fuites.slice(0, 5).join(', ') : ''));
   ok('l’erreur de page est gardée, son repère masqué', /boom-essai sur ‹repère›/.test(B.t));
 
+  // 2 bis (v77). L'AUTOTEST : un parcours court (le premier folio, sans les listes), une erreur provoquée dans une fiche qui
+  // nomme un repère — le bilan dit l'autotest, l'écran sans nom, le message masqué, la pile en fonctions de Volta
+  const AT = await p.evaluate(async () => { const r = verite()[0].de, vieux = ficheBloc;
+    ficheBloc = nom => { if (nom === r) throw new Error('piège-autotest sur ' + r); return vieux(nom); };
+    await lancerAutotest({ listes: false, budget: 25000, bilan: false, sauter: ['dossierpdf', 'png'] }); ficheBloc = vieux;
+    const t = texteDuBilan(), V = verite(), noms = new Set(); V.forEach(l => [l.de, l.vers, l.pnDe, l.pnVers, l.cable, l.harness, l.plan].forEach(v => { v = String(v || '').trim(); if (v.length >= 3) noms.add(v); }));
+    const s = t.split('L’AUTOTEST')[1] || ''; return { s: s.split('LES ERREURS DE LA PAGE')[0], fuites: [...noms].filter(n => s.includes(n)), enCours: AUTOTEST.enCours, cible: !!app.cible }; });
+  ok('l’autotest : sa section dans le bilan (durée, folios, fiches par genre)', /lancé le .* · \d/.test(AT.s) && /folio : \d+ en/.test(AT.s) && /équipement : \d+ en/.test(AT.s) && !AT.enCours, AT.s.slice(0, 160).replace(/\n/g, ' / '));
+  ok('… l’erreur d’une fiche : l’écran sans nom, le message masqué', /fiche d’un .* — (fiche non rendue : )?piège-autotest sur ‹repère›/.test(AT.s), (AT.s.match(/.*piège.*/) || ['pas trouvée'])[0]);
+  ok('… ANONYMAT : aucun nom du plan dans la section de l’autotest ; le plan rendu tel qu’il était', AT.fuites.length === 0 && !AT.cible, AT.fuites.slice(0, 3).join(', '));
+
   // 3. le carnet : C sur le plan, une note qui nomme un repère, Entrée
   await p.evaluate(() => { fermerFiche(true); deselectionner(); allerAuPlan(plans()[0]); if (document.activeElement) document.activeElement.blur(); }); await p.waitForTimeout(500);
   await p.keyboard.press('c'); await p.waitForTimeout(350);
@@ -73,7 +84,7 @@ const FICHIER = fichierDemande();
 
   // 4. le menu et la feuille des raccourcis
   const M = await p.evaluate(() => ({ plus: [...document.querySelectorAll('#mp-plus [data-act]')].map(b => b.dataset.act), carnetC: (document.querySelector('#mp-plus [data-act="carnet"] .raccourci') || {}).textContent }));
-  ok('⋮ › Plus porte « Carnet de séance » (C) et « Bilan anonyme »', M.plus.includes('carnet') && M.plus.includes('bilan') && M.carnetC === 'C', M.plus.join(','));
+  ok('⋮ › Plus porte « Carnet de séance » (C), « Autotest du plan » et « Bilan anonyme »', M.plus.includes('carnet') && M.plus.includes('autotest') && M.plus.includes('bilan') && M.carnetC === 'C', M.plus.join(','));
   await p.evaluate(() => { fermerFiche(true); montrerRaccourcis(); }); await p.waitForTimeout(300);
   ok('la feuille des raccourcis dit C', await p.evaluate(() => /carnet de séance/i.test($('raccourcis').textContent)));
 

@@ -12,7 +12,7 @@
    =========================================================================== */
 'use strict';
 
-const BILAN = { version: 'v76', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v77', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -116,6 +116,9 @@ function texteDuBilan() { const masque = masqueDuPlan(), V = verite(), N = app.n
   section('LES RÉGLAGES', () => { const H = app.simu || HYPOTHESES, ch = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k]));
     return [ch.length ? 'hypothèses changées : ' + ch.map(k => `${k} ${JSON.stringify(HYPOTHESES[k])} → ${JSON.stringify(H[k])}`).join(' · ') : 'hypothèses : celles de Volta, inchangées']; });
 
+  // (v77) l'autotest du plan : Volta s'est parcouru lui-même (08-autotest)
+  section('L’AUTOTEST', () => typeof sectionAutotest === 'function' ? sectionAutotest(masque) : []);
+
   section('LES ERREURS DE LA PAGE', () => BILAN.erreurs.length ? BILAN.erreurs.map(e => masque(e.msg) + (e.n > 1 ? ' (×' + e.n + ')' : '')) : ['aucune depuis l’ouverture']);
 
   const notes = lireCarnet(); if (notes.length) S.push(`LE CARNET (${pl(notes.length, 'note')})\n` + notes.map(n => `- ${heureDe(n.t)} · ${n.ou} — « ${masque(n.texte).replace(/\s+/g, ' ')} »`).join('\n'));
@@ -169,11 +172,13 @@ function ficheBilan() { const texte = texteDuBilan(), notes = lireCarnet();
     : `<p class="bl-vide">Le carnet est vide. Pendant le travail, appuyez sur <kbd>C</kbd> pour noter une hésitation : l’écran où vous êtes s’écrit avec elle.</p>`;
   const corps = tete('Pour améliorer Volta', 'Bilan anonyme')
     + `<p class="note bl-chapeau">Ce que Volta a lu et jugé de ce plan, en chiffres. <b>Aucun repère, part number, numéro de câble, nom de fichier, de harness ou de client</b> : les noms du plan sont masqués, une référence inconnue se dit par sa forme (lettres → A, chiffres → 9). Relisez-le, puis copiez-le dans la conversation.</p>`
+    + `<section class="bl-auto" aria-labelledby="bl-auto-t"><div class="bl-carnet-tete"><h3 id="bl-auto-t">L’autotest du plan</h3><button type="button" class="btn papier dense" id="bl-autotest">${typeof AUTOTEST !== 'undefined' && AUTOTEST.resultat ? 'Le relancer' : 'Lancer l’autotest'}</button></div>`
+    + `<p class="bl-masque">Volta ouvre tout seul chaque folio, chaque fiche et ses sections, chaque liste « Changer », chaque onglet du récapitulatif, chaque document et chaque export (fabriqué, jamais enregistré), chronomètre tout et note chaque erreur — l’écran où c’était, jamais un nom du plan. Quelques minutes ; <kbd>Échap</kbd> l’arrête. Le résultat s’ajoute au bilan ci-dessous.</p></section>`
     + `<pre class="bl-texte" id="bl-texte" tabindex="0" aria-label="Le bilan, tel qu’il sera copié">${esc(texte)}</pre>`
     + `<section class="bl-carnet" aria-labelledby="bl-carnet-t"><div class="bl-carnet-tete"><h3 id="bl-carnet-t">Le carnet de séance${notes.length ? ` <span class="bl-n">${notes.length}</span>` : ''}</h3><button type="button" class="btn papier dense" id="bl-noter">Noter <kbd>C</kbd></button></div>${notes.length ? '<p class="bl-masque">Vos notes restent sur ce PC telles que vous les avez tapées ; dans le bilan copié, les repères et références qu’elles nomment sont masqués.</p>' : ''}${carnet}</section>`;
   const pied = `<button type="button" class="btn cuivre" id="bl-copier">Copier le bilan${notes.length ? ' et le carnet' : ''}</button><button type="button" class="btn papier" id="bl-enregistrer">Enregistrer en .txt</button><span class="espace"></span><span class="bl-pied-note">Rien ne part tout seul : c’est vous qui collez.</span>`;
   ouvrirFiche({ mode: 'bilan', largeur: 'ample' }, corps, pied);
-  $('bl-copier').onclick = () => copierBilan(texte); $('bl-enregistrer').onclick = () => enregistrerBilan(texte); $('bl-noter').onclick = ouvrirCarnet;
+  $('bl-copier').onclick = () => copierBilan(texte); if ($('bl-autotest')) $('bl-autotest').onclick = () => { fermerFiche(true); lancerAutotest(); }; $('bl-enregistrer').onclick = () => enregistrerBilan(texte); $('bl-noter').onclick = ouvrirCarnet;
   document.querySelectorAll('#fiche-corps [data-note]').forEach(b => { b.onclick = () => { const xs = lireCarnet(); xs.splice(+b.dataset.note, 1); ecrireCarnet(xs); ficheBilan(); dire('Note effacée.'); }; }); }
 function copierBilan(texte) { const fini = () => dire('Le bilan est copié : collez-le dans la conversation.');
   const repli = () => { const a = document.createElement('textarea'); a.value = texte; a.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); fini(); } catch (_) { dire('La copie n’a pas pu se faire : enregistrez-le en .txt.', true); } a.remove(); };
