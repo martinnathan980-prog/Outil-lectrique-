@@ -1311,3 +1311,33 @@ body.insp-epingle #inspecteur .carte-bords [data-bord="w"]{top:0;bottom:0}
 body.insp-flotte #inspecteur.taillee{height:var(--carte-h)}
 body.carte-tiree #inspecteur{box-shadow:var(--sh-carte-tenue);transition:none}
 body.carte-tiree,body.carte-tiree *{cursor:var(--tire-curseur,move)!important;-webkit-user-select:none;user-select:none}
+/* (v77, le juge : une poignée posée DANS la carte couvrait les boutons de ses bords) les poignées sont DEHORS, sur le
+   pourtour : la carte (ou le volet) ne coupe plus ce qui dépasse ; son contenu se coupe lui-même, aux coins arrondis */
+body:is(.insp-flotte,.insp-epingle) #inspecteur{overflow:visible}
+body:is(.insp-flotte,.insp-epingle) #inspecteur>.fi{border-radius:inherit}
+.carte-bords [data-bord="n"]{top:-7px;left:12px;right:12px;height:7px}
+.carte-bords [data-bord="s"]{bottom:-7px;left:12px;right:12px;height:7px}
+.carte-bords [data-bord="e"]{right:-7px;top:12px;bottom:12px;width:7px}
+.carte-bords [data-bord="w"]{left:-7px;top:12px;bottom:12px;width:7px}
+.carte-bords [data-bord="ne"]{top:-7px;right:-7px;width:14px;height:14px}
+.carte-bords [data-bord="nw"]{top:-7px;left:-7px;width:14px;height:14px}
+.carte-bords [data-bord="se"]{bottom:-7px;right:-7px;width:16px;height:16px}
+.carte-bords [data-bord="sw"]{bottom:-7px;left:-7px;width:14px;height:14px}
+body.insp-flotte #inspecteur .carte-bords [data-bord="se"]::after{right:8px;bottom:8px}
+body.insp-epingle #inspecteur .carte-bords [data-bord="w"]{top:0;bottom:0;left:-7px}
+/* les coins aussi, dehors (2 px dedans au plus : la courbe du coin, où rien ne se pose) */
+.carte-bords [data-bord="ne"]{top:-8px;right:-8px;width:10px;height:10px}
+.carte-bords [data-bord="nw"]{top:-8px;left:-8px;width:10px;height:10px}
+.carte-bords [data-bord="se"]{bottom:-8px;right:-8px;width:10px;height:10px}
+.carte-bords [data-bord="sw"]{bottom:-8px;left:-8px;width:10px;height:10px}
+body.insp-flotte #inspecteur .carte-bords [data-bord="se"]::after{display:none}
+/* (un pixel d'air entre la carte et ses poignées : une ligne qui affleure au bord n'est jamais sous l'une d'elles) */
+.carte-bords [data-bord="n"]{top:-8px}
+.carte-bords [data-bord="s"]{bottom:-8px}
+.carte-bords [data-bord="e"]{right:-8px}
+.carte-bords [data-bord="w"]{left:-8px}
+.carte-bords [data-bord="ne"]{top:-9px;right:-9px}
+.carte-bords [data-bord="nw"]{top:-9px;left:-9px}
+.carte-bords [data-bord="se"]{bottom:-9px;right:-9px}
+.carte-bords [data-bord="sw"]{bottom:-9px;left:-9px}
+body.insp-epingle #inspecteur .carte-bords [data-bord="w"]{left:-8px}

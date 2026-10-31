@@ -40,7 +40,7 @@
 /* ── les noms, au bout de ce qu'ils nomment : détachés des traits par un halo de papier ── */
 .dj-graphe .dj-etiq{font-size:11px;font-weight:500;fill:var(--t-papier);paint-order:stroke;stroke:var(--s-papier);stroke-width:3px;stroke-linejoin:round}
 .dj-graphe .dj-etiq .v{font-weight:400;fill:var(--t-papier-2)}
-.dj-graphe .dj-etiq.dj-t.milieu{fill:var(--t-papier-2)}
+.dj-graphe .dj-etiq.dj-t.milieu{fill:var(--t-papier)}
 .dj-graphe .dj-etiq.dj-zone{font-size:11px;font-weight:500;fill:var(--t-papier-2);stroke-width:0}
 .dj-graphe .dj-etiq.dj-nomme.ko{fill:var(--ko)}
 .dj-graphe .dj-etiq.dj-nomme.serre{fill:var(--ko)}

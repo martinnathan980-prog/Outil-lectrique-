@@ -547,7 +547,7 @@ b.rc-n{font-weight:500}
 .rc-onglets-g[data-groupe="reference"] .rc-onglets-t{display:none}
 .rc-ns{margin-left:auto;display:inline-flex;gap:4px;padding-left:8px}
 .rc-n{display:inline-grid;place-items:center;min-width:20px;height:18px;padding:0 6px;border-radius:9px;font:600 var(--f-11)/1 var(--sans);font-variant-numeric:tabular-nums}
-.rc-n.ko{background:var(--ko);color:#fff}
+.rc-n.ko{background:var(--ko);color:var(--s-surface)}
 .rc-n.att{background:color-mix(in srgb,var(--warn) 24%,transparent);color:var(--t-1)}
 #base.etroit .rc-ico{display:none}
 #base.etroit .rc-onglets-g[data-groupe]{padding:0;border:none;margin-top:0}
