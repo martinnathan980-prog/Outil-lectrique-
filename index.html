@@ -6087,7 +6087,7 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
             </div>
             <div class="menu-bloc" role="group" aria-label="Améliorer Volta">
               <button role="menuitem" data-act="carnet" data-aide="Une petite barre pour noter une hésitation pendant le travail. La note se garde sur ce PC avec l’écran où vous étiez, et part avec le bilan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M9.5 8H15M9.5 12H15M9.5 16h3"/></svg><span class="menu-l">Carnet de séance</span><span class="raccourci">C</span></button>
-              <button role="menuitem" data-act="autotest" data-aide="Volta ouvre tout seul chaque folio, chaque fiche, chaque onglet et chaque export du plan ouvert, chronomètre et note chaque erreur, sans un nom du plan. Le résultat part avec le bilan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/><path d="M3 4h18v16H3z" opacity=".35"/></svg><span class="menu-l">Autotest du plan</span></button>
+              <button role="menuitem" data-act="autotest" data-aide="Volta ouvre seul chaque folio, fiche, onglet et export du plan, chronomètre et note chaque erreur, sans un nom du plan. Le résultat part avec le bilan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/><path d="M3 4h18v16H3z" opacity=".35"/></svg><span class="menu-l">Autotest du plan</span></button>
               <button role="menuitem" data-act="bilan" data-aide="Ce que Volta a lu et jugé de ce plan, en chiffres, sans un repère ni un part number : à copier dans la conversation pour améliorer Volta."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="menu-l">Bilan anonyme</span></button>
             </div>
           </div>
@@ -19417,8 +19417,9 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
     else if (!d.valide) { const p = d.pire, m = p.marges[0], mini = d.calibreIdeal ? ` — l’idéal est un ${amperes(d.calibreIdeal)}` : ' — aucun calibre de la gamme ne tient';
       out.push({ niveau: 'ko', texte: (p.t === Infinity ? `le permanent (${amperes(p.i)}) fait déclencher le ${amperes(d.calibre)} à ${m.courbe} (il tient jusqu'à ${amperes(m.admis)})`
         : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche à ${m.courbe} (${motFraction(d.somme)} du temps de déclenchement consommé, il tient ${secondes(m.temps)} à ce courant)`) + mini }); }
-    // (les trois mots : JUSTE — il passe sans la marge, il touche la courbe — est à voir, en ambre ; DÉCLENCHE est un problème)
-    else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${pnMot} : un ${amperes(d.calibreIdeal)} suffirait`
+    // (v77, le lecteur : « si ça touche, c'est rouge ») : TOUCHER LA COURBE est un problème, comme déclencher ; un calibre plus
+    // gros qu'il ne faut, ou la sélectivité, reste à voir
+    else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: d.calibre < d.calibreIdeal && !d.avecMarge ? 'ko' : 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${pnMot} : un ${amperes(d.calibreIdeal)} suffirait`
       : !d.avecMarge ? `${amperes(d.calibre)}${pnMot} ${motDuVerdict('juste')} (${d.somme > d.marges.fraction ? motFraction(d.somme) + ' du temps de déclenchement consommé' : 'sans ' + nombre(d.marges.marge) + ' % de marge de courant'}) — l’idéal est un ${amperes(d.calibreIdeal)}`
       : `${amperes(d.calibre)}${pnMot} ${motDuVerdict('passe')} ; l’idéal est un ${amperes(d.calibreIdeal)} (sélectivité avec le voisin)` }); }
   // le retest porte un autre calibre que celui que l'outil retient : il déclenche (un problème), il est juste ou plus gros qu'il ne faut (à voir)
@@ -25781,7 +25782,17 @@ function lierPanneau() {
   strip.addEventListener('wheel', e => { if (!e.deltaY || e.deltaX || strip.scrollWidth <= strip.clientWidth) return; e.preventDefault(); strip.scrollLeft += e.deltaY; }, { passive: false });
   const sel = $('fo-select'); if (sel) sel.addEventListener('change', () => allerAuPlan(sel.value));
   // au téléphone, la bande des folios se pose au-dessus de l'inspecteur : sa hauteur (celle de la fiche ouverte) se dit au style par le jeton --insp-h
-  const insp = $('inspecteur'); if (window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--insp-h', (insp.hidden ? 0 : insp.offsetHeight) + 'px')).observe(insp);
+  // (v77 : la fiche s'ouvre pliée, elle grandit quand on déplie) la feuille entière au-dessus du tiroir y reste : le tiroir
+  // qui monte sur elle la fait se recadrer dans la place qui reste
+  let hInsp = 0, tInsp = 0;
+  const insp = $('inspecteur'); if (window.ResizeObserver) new ResizeObserver(() => { const h = insp.hidden ? 0 : insp.offsetHeight; document.documentElement.style.setProperty('--insp-h', h + 'px');
+    // (la feuille cadrée par Volta — pas un zoom à la main — que le tiroir a fini par couvrir)
+    if (telephone() && h > hInsp && app.dessin && app.dessin.bbox) { clearTimeout(tInsp); tInsp = setTimeout(() => { try { if (insp.hidden || (typeof VUE !== 'undefined' && VUE.main)) return;
+      const q = insp.getBoundingClientRect(), r = $('planche').getBoundingClientRect(), bb = app.dessin.bbox, bas = r.top + app.vue.ty + (bb.y + bb.h) * app.vue.s;
+      const s = app.vue.s, haut = r.top + app.vue.ty + bb.y * s, g = r.left + app.vue.tx + bb.x * s, d = g + bb.w * s;
+      // la feuille entière était en vue (sa tête, ses deux côtés) et le tiroir lui mange le pied : elle se recadre au-dessus
+      if (bas > q.top + 2 && haut >= r.top - 2 && g >= r.left - 2 && d <= r.right + 2) ajuster(true); } catch (_) { } }, 120); }
+    hInsp = h; }).observe(insp);
   o('zin', () => zoomer(1.25)); o('zout', () => zoomer(1 / 1.25)); o('zfit', () => ajuster(true)); o('zlbl', () => ajuster(true));
   lierRecherche(); lierDepot(); lierBase(); lierControle();
   window.addEventListener('keydown', e => {

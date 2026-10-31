@@ -376,6 +376,18 @@ onglet ou une bulle. **Une même action a la même forme partout** (« Exporter 
   une note garde l'écran où l'on était (`ecranAnonyme()` : le genre de l'objet, l'onglet, le folio par son rang, jamais
   un nom), dans `localStorage` (`volta.carnet`). Une ouverture de fichier appelle `noterLecture(L, r)` (08-fichiers).
   Toute nouvelle donnée ajoutée au bilan passe par le masque, et `tests/bilan.js` vérifie qu'aucun nom ne fuit.
+- **L'autotest du plan** (`08-autotest.js`, v77) : `lancerAutotest()` parcourt le plan ouvert comme une personne très
+  patiente — le contrôle, le récapitulatif, les documents, puis chaque folio, chaque fiche (sections dépliées, listes
+  « Changer » ouvertes), chaque câble, enfin les exports (fabriqués : `telecharger` est détourné le temps du parcours,
+  rien ne s'enregistre). Chaque erreur se note par écran (`natureAnonyme`, jamais le repère), message masqué, pile en
+  « fonction:ligne » seulement ; une fiche qui casse s'affiche `.fi-erreur` (et `noterErreurPage` la garde). Le
+  résultat est une section du bilan (`sectionAutotest`). `tests/pieges.js` le lance sur dix fichiers abîmés.
+- **Les fiches, v77** : chaque fiche s'ouvre toute pliée et garde SA mémoire (`MEMOIRE_SECTIONS`, 08-sections) — une
+  batterie qui lit leur contenu les déplie (`deplierDansLaPage`, tests/pilote.js). Le calibre est **rouge ou vert** :
+  toucher la courbe, c'est ne pas passer (`VERDICTS_CALIBRE.juste` : « touche la courbe », état `ko`). Les faces des
+  modules : plein = pris, creux = libre, rouge = refusé, cerné de bleu pâle = reliés, une légende dessous
+  (`legendeFace`) — plus de couleur de route dans une face. La carte se tire par ses bords comme une fenêtre
+  (`lierBords`, 08-carte ; `volta.fiche.taille`, `volta.fiche.volet`).
 
 ## 6. Les règles de fabrication
 

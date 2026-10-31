@@ -104,7 +104,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   const q = (sel, fn) => page.evaluate(([sel, fn]) => { const xs = [...document.querySelectorAll('#fiche ' + sel)]; return new Function('xs', 'return (' + fn + ')(xs)')(xs); }, [sel, fn || 'xs => xs.length']);
   const texte = sel => page.evaluate(sel => { const e = document.querySelector('#fiche ' + sel); return e ? e.textContent.replace(/\s+/g, ' ').trim() : null; }, sel);
   const telechargement = async (action) => { const [d] = await Promise.all([page.waitForEvent('download'), action()]); const f = path.join(SCRATCH, d.suggestedFilename()); await d.saveAs(f); return { nom: d.suggestedFilename(), texte: fs.readFileSync(f, 'utf8') }; };
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(P.deplierDansLaPage);   // (v77 : les fiches s'ouvrent pliées ; la batterie lit leurs « ? »)
   await page.evaluate(() => { localStorage.removeItem('atelier.normes.v2'); });
 
   console.log('\nla page des normes');
@@ -143,7 +143,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   okp(await page.evaluate(() => !app.norme.contacts.some(c => c.accessoire === 'ESSAI-ACC') && app.normeNom === '' && !localStorage.getItem('atelier.normes.v2')) && await q('.nm-table[data-vue="contacts"] tr.nm-mod') === 0, 'Ctrl+Z dans la page défait la modification (et le contrat n’a pas bougé)');
   await page.evaluate(k => { modifierLigneNorme('contacts', k); }, cle0); await page.waitForTimeout(300);
   await page.fill('#fiche tr.nm-edition input[data-champ="accessoire"]', 'ESSAI-ACC'); await page.click('#fiche #nm-ok'); await page.waitForTimeout(500);
-  await page.reload(); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.waitForTimeout(400);
+  await page.reload(); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(P.deplierDansLaPage); await page.waitForTimeout(400);
   okp(await page.evaluate(() => app.norme.contacts.some(c => c.accessoire === 'ESSAI-ACC') && app.normeNom === 'modifiée ici'), 'après rechargement, la ligne modifiée est toujours là, et le moteur la lit');
   await page.evaluate(() => ficheNormes({ table: 'fils' })); await page.waitForTimeout(500);
   okp(await q('.nm-table[data-vue="contacts"]', 'xs => xs[0].classList.contains("modifiee")') && /1 modifiée/.test(await texte('.nm-table[data-vue="contacts"] .nm-t-badges')) && /1 table modifiée/.test(await texte('.nm-etat')), 'la page le montre : la table est marquée modifiée, l’état aussi');

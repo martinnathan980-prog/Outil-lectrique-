@@ -380,7 +380,7 @@ function baseEssaiDansLaPage() {
   /* ================================================================ C. LE CONTRÔLE D'UN CONTRAT ============== */
   await parcours('C. Le contrôle d’un contrat — l’en-tête, l’index « à reprendre », trois corrections, une hypothèse, un choix de fiche', async () => {
     const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx, true); await page.waitForTimeout(300);
-    let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Contrat d’exemple' && /^4 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : « 4 problèmes · n à voir » (W-012 et W-015 dépassés par la charge, le contact 23 du DR24 W-015 sous son permanent, 300XC1 B sans arrangement ; le 10 A de 102CB1, qui touche la courbe, est JUSTE — à voir (les trois mots, v73 : test mis à jour) ; le compte des « à voir » suit les règles du contrôle)', e.enEtat);
+    let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Contrat d’exemple' && /^5 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : « 5 problèmes · n à voir » (W-012 et W-015 dépassés par la charge, le contact 23 du DR24 W-015 sous son permanent, 300XC1 B sans arrangement ; le 10 A de 102CB1, qui touche la courbe — un problème aussi, v77 ; le compte des « à voir » suit les règles du contrôle)', e.enEtat);
     let t0 = Date.now(); await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); mesure('le bouton des repères → l’index « à reprendre »', Date.now() - t0, SEUIL_GESTE);
     const items = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .co-item')].map(b => { const x = CONTROLE.items[+b.dataset.k]; return { k: +b.dataset.k, nom: x.nom, plan: x.plan, tableau: x.tableau != null, texte: x.texte }; }));
     // (v72, l'audit du parcours P1-5 : les points se rangent par genre — une ligne par niveau, genre et repère)
@@ -414,13 +414,13 @@ function baseEssaiDansLaPage() {
     await page.keyboard.press('b'); await page.waitForTimeout(500);
     const i15 = await page.evaluate(() => verite().findIndex(l => l.cable === 'W-015'));
     await page.dblclick(`#ba-tbody tr[data-i="${i15}"] [data-f="type"]`); await page.fill(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'DR12'); await page.press(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'Enter'); await page.waitForTimeout(700);
-    e = await etat(page); ok(!(await page.evaluate(() => CONTROLE.items.some(x => /W-015/.test(x.texte)))) && /^2 problèmes · \d+ à voir$/.test(e.enEtat), 'W-015 en DR12 (un DR16 ne ferait que le ramener en « à voir ») : ses problèmes disparaissent, l’en-tête passe à 2 problèmes (v73 : le 10 A juste n’en est plus un — test mis à jour, 3)', e.enEtat);
+    e = await etat(page); ok(!(await page.evaluate(() => CONTROLE.items.some(x => /W-015/.test(x.texte)))) && /^3 problèmes · \d+ à voir$/.test(e.enEtat), 'W-015 en DR12 (un DR16 ne ferait que le ramener en « à voir ») : ses problèmes disparaissent, l’en-tête passe à 3 problèmes (v77 : le 10 A qui touche la courbe en reste un)', e.enEtat);
     await page.keyboard.press('Escape'); await page.keyboard.press('b'); await page.waitForTimeout(300); await cliquerBloc(page, '102CB1');
     // la fiche s'ouvre pliée : « Calibre » se déplie d'un clic ; l'automatique y est déjà retenu (le lecteur, v62 : « commence directement par l'automatique »)
     await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="disjoncteur"]'); if (!d.open) d.querySelector('summary').click(); }); await page.waitForTimeout(500);
     e = await etat(page);
-    ok(await page.evaluate(() => calibreDe('102CB1') === 15 && !!$('dj-retenir') && $('dj-retenir').getAttribute('aria-pressed') === 'true' && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'att' && /^l’installation porte un 10 A \(MS3320-10\), juste — il touche la courbe : l’outil retient le 15 A \(MS3320-15\)$/.test(x.texte)) && !CONTROLE.items.some(x => x.nom === '102CB1' && /ne passe pas/.test(x.texte))),
-      'la fiche de 102CB1, « Calibre » déplié d’un clic : le 15 A, l’automatique, déjà retenu (« Automatique » pressé, rien à cliquer) ; le contrôle dit que l’installation porte un 10 A JUSTE — il touche la courbe (les trois mots, v73 : test mis à jour, « qui ne passe pas »)', e.enEtat);
+    ok(await page.evaluate(() => calibreDe('102CB1') === 15 && !!$('dj-retenir') && $('dj-retenir').getAttribute('aria-pressed') === 'true' && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /^l’installation porte un 10 A \(MS3320-10\), qui touche la courbe : l’outil retient le 15 A \(MS3320-15\)$/.test(x.texte)) && !CONTROLE.items.some(x => x.nom === '102CB1' && /ne passe pas/.test(x.texte))),
+      'la fiche de 102CB1, « Calibre » déplié d’un clic : le 15 A, l’automatique, déjà retenu (« Automatique » pressé, rien à cliquer) ; le contrôle dit que l’installation porte un 10 A qui TOUCHE LA COURBE — un problème (v77)', e.enEtat);
     await capture(page, 'C-3b-102CB1-15A');
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(500);
     e = await etat(page); ok(e.enEtat === enEtat0, 'Ctrl+Z : l’en-tête redit l’état du départ', e.enEtat);
@@ -438,8 +438,9 @@ function baseEssaiDansLaPage() {
     // un choix sur une fiche change la nomenclature : le sexe des contacts du connecteur A de 300XC1, puis une reprise de blindage
     const N0 = await page.evaluate(() => JSON.stringify(nomenclatureDuContrat().contacts));
     await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '300XC1' && k.kind !== 'tag')); }); await page.waitForTimeout(400);
+    // (v77 : les bulles A · B · C sont DANS la section, plus dans son titre) la fiche s'ouvre pliée : on déplie, puis on choisit A
+    await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="connecteur"]'); if (!d.open) d.querySelector('summary').click(); }); await page.waitForTimeout(200);
     await page.click('#ba-equip .ct-bulles [data-connecteur="A"]'); await page.waitForTimeout(200);
-    await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="connecteur"]'); if (!d.open) d.querySelector('summary').click(); }); await page.waitForTimeout(200);   // la fiche s'ouvre pliée
     await page.click('#ba-equip [data-changer="arr|300XC1|A"]'); await page.waitForTimeout(200);
     ok(await page.evaluate(() => !!document.querySelector('#ba-equip [data-volet="arr|300XC1|A"] .cand') && document.querySelectorAll('#ba-equip [data-sexe="300XC1|A"]').length === 2), '« Changer » sur le connecteur A ouvre les arrangements sous la valeur ; le sexe des contacts est à côté');
     await page.click('#ba-equip [data-sexe="300XC1|A"][data-v="M"]'); await page.waitForTimeout(700);

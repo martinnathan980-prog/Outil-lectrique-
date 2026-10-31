@@ -225,8 +225,9 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
     else if (!d.valide) { const p = d.pire, m = p.marges[0], mini = d.calibreIdeal ? ` — l’idéal est un ${amperes(d.calibreIdeal)}` : ' — aucun calibre de la gamme ne tient';
       out.push({ niveau: 'ko', texte: (p.t === Infinity ? `le permanent (${amperes(p.i)}) fait déclencher le ${amperes(d.calibre)} à ${m.courbe} (il tient jusqu'à ${amperes(m.admis)})`
         : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche à ${m.courbe} (${motFraction(d.somme)} du temps de déclenchement consommé, il tient ${secondes(m.temps)} à ce courant)`) + mini }); }
-    // (les trois mots : JUSTE — il passe sans la marge, il touche la courbe — est à voir, en ambre ; DÉCLENCHE est un problème)
-    else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${pnMot} : un ${amperes(d.calibreIdeal)} suffirait`
+    // (v77, le lecteur : « si ça touche, c'est rouge ») : TOUCHER LA COURBE est un problème, comme déclencher ; un calibre plus
+    // gros qu'il ne faut, ou la sélectivité, reste à voir
+    else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: d.calibre < d.calibreIdeal && !d.avecMarge ? 'ko' : 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${pnMot} : un ${amperes(d.calibreIdeal)} suffirait`
       : !d.avecMarge ? `${amperes(d.calibre)}${pnMot} ${motDuVerdict('juste')} (${d.somme > d.marges.fraction ? motFraction(d.somme) + ' du temps de déclenchement consommé' : 'sans ' + nombre(d.marges.marge) + ' % de marge de courant'}) — l’idéal est un ${amperes(d.calibreIdeal)}`
       : `${amperes(d.calibre)}${pnMot} ${motDuVerdict('passe')} ; l’idéal est un ${amperes(d.calibreIdeal)} (sélectivité avec le voisin)` }); }
   // le retest porte un autre calibre que celui que l'outil retient : il déclenche (un problème), il est juste ou plus gros qu'il ne faut (à voir)

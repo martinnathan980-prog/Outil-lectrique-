@@ -3004,7 +3004,17 @@ function lierPanneau() {
   strip.addEventListener('wheel', e => { if (!e.deltaY || e.deltaX || strip.scrollWidth <= strip.clientWidth) return; e.preventDefault(); strip.scrollLeft += e.deltaY; }, { passive: false });
   const sel = $('fo-select'); if (sel) sel.addEventListener('change', () => allerAuPlan(sel.value));
   // au téléphone, la bande des folios se pose au-dessus de l'inspecteur : sa hauteur (celle de la fiche ouverte) se dit au style par le jeton --insp-h
-  const insp = $('inspecteur'); if (window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--insp-h', (insp.hidden ? 0 : insp.offsetHeight) + 'px')).observe(insp);
+  // (v77 : la fiche s'ouvre pliée, elle grandit quand on déplie) la feuille entière au-dessus du tiroir y reste : le tiroir
+  // qui monte sur elle la fait se recadrer dans la place qui reste
+  let hInsp = 0, tInsp = 0;
+  const insp = $('inspecteur'); if (window.ResizeObserver) new ResizeObserver(() => { const h = insp.hidden ? 0 : insp.offsetHeight; document.documentElement.style.setProperty('--insp-h', h + 'px');
+    // (la feuille cadrée par Volta — pas un zoom à la main — que le tiroir a fini par couvrir)
+    if (telephone() && h > hInsp && app.dessin && app.dessin.bbox) { clearTimeout(tInsp); tInsp = setTimeout(() => { try { if (insp.hidden || (typeof VUE !== 'undefined' && VUE.main)) return;
+      const q = insp.getBoundingClientRect(), r = $('planche').getBoundingClientRect(), bb = app.dessin.bbox, bas = r.top + app.vue.ty + (bb.y + bb.h) * app.vue.s;
+      const s = app.vue.s, haut = r.top + app.vue.ty + bb.y * s, g = r.left + app.vue.tx + bb.x * s, d = g + bb.w * s;
+      // la feuille entière était en vue (sa tête, ses deux côtés) et le tiroir lui mange le pied : elle se recadre au-dessus
+      if (bas > q.top + 2 && haut >= r.top - 2 && g >= r.left - 2 && d <= r.right + 2) ajuster(true); } catch (_) { } }, 120); }
+    hInsp = h; }).observe(insp);
   o('zin', () => zoomer(1.25)); o('zout', () => zoomer(1 / 1.25)); o('zfit', () => ajuster(true)); o('zlbl', () => ajuster(true));
   lierRecherche(); lierDepot(); lierBase(); lierControle();
   window.addEventListener('keydown', e => {
