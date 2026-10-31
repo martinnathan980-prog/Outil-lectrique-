@@ -363,7 +363,7 @@ function sectionDisjoncteur(nom, d, o, probs) { d = d || disjonctionDe(nom); o =
   const resume = !cal ? '' : propose
     ? `<b class="dj-resume">${nombreCourt(d.pn)}<small>A</small></b>${mot(kR)}<span class="dj-resume-sous">installation ${ico('fleche')} <b>${esc(amperes(cal))}</b> proposé${fam ? ' · ' + esc(fam) : ''}</span>`
     : `<b class="dj-resume">${nombreCourt(cal)}<small>A</small></b>${mot(kR)}<span class="dj-resume-sous">${[fam ? esc(fam) : '', retest ? `installation <s>${esc(amperes(retest))}</s>` : ''].filter(Boolean).join(' · ')}</span>`;
-  return { cle: 'disjoncteur', resume, contenu: tete + courbe + profil }; }
+  return { cle: 'disjoncteur', resume, contenu: tete + courbe + profil, parts: { tete, courbe, profil } }; }
 // ce que le « ? » de la courbe et du profil lit (08-explications) : la famille de courbes ; le permanent, la pointe, la part consommée
 function contexteAide(cle, d) { if (cle === 'courbe') return { famille: d.famille || d.courbe || '' };
   const perm = (d.points || []).find(p => p.t === Infinity), pointe = (d.points || []).find(p => p.t !== Infinity && p.i > 0);

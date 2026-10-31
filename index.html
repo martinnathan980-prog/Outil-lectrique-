@@ -3992,147 +3992,255 @@ body.depot-actif:has(#fiche [data-depot]) .depot{display:none}
 
 /* ───────── style-niveaux.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
-   LA FICHE À DEUX NIVEAUX (v78, 08-niveaux) — la CARTE (l'essentiel, près du bloc) et le GRAND (les deux tiers droits,
-   la liste à gauche, le résumé fixe, les onglets, le pied). Les composants de la fiche (style-fiche.css) restent ; ce
-   qui suit les range. Le bandeau dit l'état d'une couleur et rien d'autre ; les chiffres se lisent d'un coup d'œil, en
-   une bande au filet ; les onglets sont un trait sous le mot ; la liste est une colonne posée en retrait.
-   Jetons du domaine : --nv-liste (la largeur de la liste), --nv-crayon (le crayon qui paraît au survol d'une valeur
-   qui s'écrit, à l'encre de chaque thème).
+   LA FICHE À DEUX NIVEAUX (v78, 08-niveaux, 08-vues) — la CARTE (l'essentiel, près du bloc) et le GRAND (une fenêtre :
+   rangée à droite d'office, détachée elle se déplace et se tire par tous ses bords).
+   Le lecteur : « le fond bleu nuit qui bouge, je l'aimais beaucoup — mais il y en avait trop, tout était bleu nuit ». La
+   table garde sa nuit ; la fiche est un PAPIER posé dessus : blanc pierre le jour, graphite la nuit — aucune teinte
+   bleue, aucune lueur. Un seul accent, le CUIVRE (le métal des câbles) : l'onglet ouvert, le calibre retenu, ce que tire
+   un disjoncteur. Le rouge, l'ambre et le vert ne disent que l'état.
+   Jetons du domaine (sur l'inspecteur et son double) : --nv-cuivre, --nv-cuivre-soft, --vu-g1…6 (les groupes d'une
+   barrette, ni rouge ni vert), --vu-ko, --nv-liste (la largeur de la liste), --nv-crayon.
    ═══════════════════════════════════════════════════════════════════════ */
-:root{--nv-liste:248px;--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6575' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aab4c3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")} }
-:root[data-theme="dark"]{--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aab4c3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")}
+:root{--nv-liste:236px;--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366686e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")}
+#inspecteur,.carte-double{
+  --s-surface:#ffffff; --s-sunken:#f6f5f2; --s-hover:#f1efea; --s-line:#e8e5df; --s-line-2:#d9d5cd; --s-flottant:#ffffff;
+  --t-1:#1c1c1f; --t-2:#55575d; --t-3:#6c6e75; --t-inverse:#ffffff;
+  --accent:#1c1c1f; --accent-2:#000000; --accent-soft:#efede8; --accent-line:#cfcac0; --on-accent:#ffffff;
+  --nv-cuivre:#a9581f; --nv-cuivre-soft:#f6ebe1; --nv-cuivre-ligne:#e2c3a8;
+  --vu-g1:#a9581f; --vu-g2:#6a4cc4; --vu-g3:#0d7a6f; --vu-g4:#b2347c; --vu-g5:#866a10; --vu-g6:#3d5f9f; --vu-ko:var(--ko);
+  --vu-pointe:color-mix(in srgb,var(--nv-cuivre) 32%,transparent);
+  --sh-carte:0 0 0 1px rgba(28,22,12,.10),0 30px 72px -20px rgba(0,6,18,.62),0 10px 26px -12px rgba(0,6,18,.40);
+  --sh-carte-tenue:0 0 0 1px rgba(28,22,12,.14),0 46px 100px -20px rgba(0,6,18,.7),0 16px 34px -12px rgba(0,6,18,.45);
+  --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 28px 64px -18px rgba(0,6,18,.6),0 6px 18px -8px rgba(0,6,18,.35);
+  --anneau:0 0 0 3px rgba(169,88,31,.16);
+  color-scheme:light }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double){
+  --s-surface:#1c1d20; --s-sunken:#161719; --s-hover:#26272b; --s-line:#2e2f34; --s-line-2:#3d3e44; --s-flottant:#232428;
+  --t-1:#f2f2f3; --t-2:#b9bbc1; --t-3:#94969d; --t-inverse:#161719;
+  --accent:#f2f2f3; --accent-2:#ffffff; --accent-soft:#2a2b2f; --accent-line:#47484f; --on-accent:#161719;
+  --ok:#4fd67d; --ok-soft:rgba(79,214,125,.12); --warn:#f2b55c; --warn-soft:rgba(242,181,92,.12); --ko:#ff7a6e; --ko-soft:rgba(255,122,110,.13); --info:#b9bbc1; --info-soft:#232428;
+  --nv-cuivre:#e59c64; --nv-cuivre-soft:rgba(229,156,100,.13); --nv-cuivre-ligne:rgba(229,156,100,.42);
+  --vu-g1:#e59c64; --vu-g2:#a891f2; --vu-g3:#4cc4b5; --vu-g4:#f084c2; --vu-g5:#d9bb4f; --vu-g6:#8eaae6;
+  --sh-carte:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5);
+  --sh-carte-tenue:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.13),0 48px 110px -18px rgba(0,0,0,.85),0 16px 34px -10px rgba(0,0,0,.55);
+  --sh-panneau:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4);
+  --anneau:0 0 0 3px rgba(229,156,100,.22);
+  --nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b9bbc1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E");
+  color-scheme:dark } }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double){
+  --s-surface:#1c1d20; --s-sunken:#161719; --s-hover:#26272b; --s-line:#2e2f34; --s-line-2:#3d3e44; --s-flottant:#232428;
+  --t-1:#f2f2f3; --t-2:#b9bbc1; --t-3:#94969d; --t-inverse:#161719;
+  --accent:#f2f2f3; --accent-2:#ffffff; --accent-soft:#2a2b2f; --accent-line:#47484f; --on-accent:#161719;
+  --ok:#4fd67d; --ok-soft:rgba(79,214,125,.12); --warn:#f2b55c; --warn-soft:rgba(242,181,92,.12); --ko:#ff7a6e; --ko-soft:rgba(255,122,110,.13); --info:#b9bbc1; --info-soft:#232428;
+  --nv-cuivre:#e59c64; --nv-cuivre-soft:rgba(229,156,100,.13); --nv-cuivre-ligne:rgba(229,156,100,.42);
+  --vu-g1:#e59c64; --vu-g2:#a891f2; --vu-g3:#4cc4b5; --vu-g4:#f084c2; --vu-g5:#d9bb4f; --vu-g6:#8eaae6;
+  --sh-carte:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5);
+  --sh-carte-tenue:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.13),0 48px 110px -18px rgba(0,0,0,.85),0 16px 34px -10px rgba(0,0,0,.55);
+  --sh-panneau:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4);
+  --anneau:0 0 0 3px rgba(229,156,100,.22);
+  --nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b9bbc1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E");
+  color-scheme:dark }
+#inspecteur{container:insp / inline-size}
+/* le fil de la carte, sur la table : de cuivre, sans lueur */
+#carte-lien .cl-trait{filter:none}
 
-/* ─── LE GRAND : aux deux tiers droits (sa largeur se tire par le bord gauche : --grand-l) ─── */
-body.insp-grand{--insp-l:min(var(--grand-l,calc((100vw - var(--rail) - 3 * var(--jeu)) * .66)),calc(100vw - var(--rail) - 300px))}
+/* ─── LE GRAND RANGÉ : aux deux tiers droits (sa largeur se tire par le bord gauche : --grand-l) ─── */
+body.insp-grand{--insp-l:min(var(--grand-l,calc((100vw - var(--rail) - 3 * var(--jeu)) * .64)),calc(100vw - var(--rail) - 300px))}
 body.insp-grand #inspecteur{transition:width var(--moyen)}
+/* ─── LE GRAND DÉTACHÉ : une fenêtre, où on l'a lâchée, de la taille qu'on lui a donnée ─── */
+body.insp-grand-libre #inspecteur{top:var(--fen-y,72px);left:var(--fen-x,auto);right:auto;bottom:auto;width:var(--fen-l,900px);height:var(--fen-h,640px);max-height:none;
+  z-index:30;border-radius:var(--r-carte);box-shadow:var(--sh-carte);transition:box-shadow var(--moyen)}
+body.insp-grand-libre #inspecteur{overflow:visible}
+body.insp-grand-libre #inspecteur>.fi{border-radius:inherit}
+body.insp-grand-libre #inspecteur .carte-bords{display:block}
+body.insp-grand-libre #inspecteur .carte-bords i{display:block}
+body.insp-grand-libre.carte-tenue #inspecteur{box-shadow:var(--sh-carte-tenue)}
+/* sa barre se tient, rangé comme détaché : la main ouverte au survol */
+body.insp-grand #inspecteur .nv-poignee .fi-nav{cursor:grab}
+body.insp-grand #inspecteur .nv-poignee :is(button,input){cursor:pointer}
 
-/* ─── LA CARTE : l'en-tête, le bandeau, les chiffres, une ligne de modifications, le pied ─── */
-.nv-carte{display:flex;flex-direction:column;gap:12px;padding-bottom:16px}
-.fi.nv-c .fi-entete{padding:6px 0 4px}
-.fi.nv-c .fi-nom{font-size:var(--f-20)}
-div.fi-nom{flex:none;overflow:visible}
+/* ═══ LA CARTE — le premier regard ═══════════════════════════════════════════════════════════════════════════════════ */
+.nc{display:flex;flex-direction:column;gap:14px;padding:0 0 18px}
+/* le genre, et son état d'un mot */
+.nc-genre{display:flex;align-items:center;gap:9px;min-width:0}
+.nc-sym{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);color:var(--t-2)}
+.nc-sym svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nc-genre-mot{min-width:0;padding:2px 0;font:600 var(--f-12)/1.25 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nc-etat{flex:none;margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px 0 9px;border-radius:12px;background:var(--ok-soft);color:var(--ok);font:650 var(--f-12)/1 var(--sans);white-space:nowrap}
+.nc-etat::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.nc-etat.att{background:var(--warn-soft);color:var(--warn)}
+.nc-etat.ko{background:var(--ko-soft);color:var(--ko)}
+/* le repère, en grand ; il se lit comme un texte, se renomme d'un clic (le crayon paraît au survol) */
+.nc-rep{display:flex;align-items:center;gap:4px;min-width:0;margin:-2px 0 -4px}
+.nc-rep-in,.nc-rep-t{flex:1 1 auto;min-width:0;height:42px;margin:0 0 0 -8px;padding:0 8px;border:1px solid transparent;border-radius:var(--r-btn);background:none;color:var(--t-1);
+  font:650 30px/1 var(--mono);letter-spacing:-.025em;text-overflow:ellipsis;transition:background var(--rapide),border-color var(--rapide)}
+.nc-rep-t{display:flex;align-items:center;font-family:var(--sans);font-size:26px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden}
+.nc-rep-in:hover{background:var(--s-hover)}
+.nc-rep-in:focus{outline:none;border-color:var(--nv-cuivre);background:var(--s-surface);box-shadow:var(--anneau)}
+.nc-crayon{flex:none;width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:var(--r-1);background:none;color:var(--t-3);opacity:0;cursor:pointer;transition:opacity var(--rapide),background var(--rapide)}
+.nc-crayon svg.ico{width:15px;height:15px}
+.nc-rep:hover .nc-crayon,.nc-crayon:focus-visible{opacity:1}
+.nc-crayon:hover{background:var(--s-hover);color:var(--t-1)}
+/* ce qui l'identifie : des mots séparés d'un point */
+.nc-meta{display:flex;flex-wrap:wrap;align-items:center;gap:2px 0;font:500 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+.nc-meta>span{display:inline-flex;align-items:center;gap:6px}
+.nc-meta>span+span::before,.nc-meta>span+.nc-des::before{content:"";width:3px;height:3px;margin:0 9px;border-radius:50%;background:var(--t-3);opacity:.7}
+.nc-meta .id{font:600 var(--f-13) var(--mono);color:var(--t-1);letter-spacing:-.01em}
+.nc-route{width:14px;height:4px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
+.nc-des{flex:0 1 auto;min-width:10ch;max-width:100%;height:28px;margin:0 0 0 12px;padding:0 8px;border:1px dashed var(--s-line-2);border-radius:var(--r-1);background:none;color:var(--t-1);font:500 var(--f-13) var(--sans);field-sizing:content}
+.nc-des.plein{border-color:transparent}
+.nc-des:hover{background:var(--s-hover)}
+.nc-des:focus{outline:none;border:1px solid var(--nv-cuivre);box-shadow:var(--anneau)}
+.nc-des::placeholder{color:var(--t-3)}
+/* la pièce, dessinée en petit : un clic ouvre tout */
+.nc-vignette{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-height:96px;margin:0;padding:14px 14px 30px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-sunken);color:var(--t-1);cursor:pointer;
+  transition:border-color var(--rapide),box-shadow var(--moyen),transform var(--moyen)}
+.nc-vignette:hover{border-color:var(--s-line-2);box-shadow:0 10px 24px -14px rgba(0,0,0,.35)}
+.nc-vignette:active{transform:scale(.995)}
+.nc-vignette:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
+.nc-vignette svg{max-width:100%;height:auto}
+.nc-voir{position:absolute;right:10px;bottom:8px;display:inline-flex;align-items:center;gap:3px;font:600 var(--f-12)/1 var(--sans);color:var(--t-2);transition:color var(--rapide),transform var(--rapide)}
+.nc-voir svg.ico{width:14px;height:14px}
+.nc-vignette:hover .nc-voir{color:var(--nv-cuivre);transform:translateX(2px)}
+/* ce qu'il y a à faire : une tâche par point, le geste qui répare au bout */
+.nc-taches{display:flex;flex-direction:column;gap:2px}
+.nc-tache{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:start;column-gap:10px;padding:8px 8px 8px 6px;margin:0 -8px 0 -6px;border-radius:var(--r-2);transition:background var(--rapide)}
+.nc-tache:hover{background:var(--s-hover)}
+.nc-rond{width:22px;height:22px;margin-top:1px;display:grid;place-items:center;border-radius:50%;background:var(--warn-soft);color:var(--warn)}
+.nc-rond svg.ico{width:13px;height:13px;stroke-width:2.4}
+.nc-tache.ko .nc-rond{background:var(--ko-soft);color:var(--ko)}
+.nc-tache.ok .nc-rond{background:var(--ok-soft);color:var(--ok)}
+.nc-t{min-width:0;display:flex;flex-direction:column;gap:2px;margin:0;padding:1px 0;border:0;background:none;color:var(--t-1);font:inherit;text-align:left;cursor:pointer}
+span.nc-t{cursor:default}
+.nc-t b{font:650 var(--f-14)/1.3 var(--sans);letter-spacing:-.005em;text-wrap:pretty}
+.nc-tache.ko .nc-t b{color:var(--ko)}
+.nc-t small{font:400 var(--f-13)/1.42 var(--sans);color:var(--t-2);text-wrap:pretty}
+button.nc-t:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:4px}
+.nc-geste{display:flex;align-items:center;padding-top:1px}
+.nc-geste .btn{white-space:nowrap}
+.nc-autres{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;margin:2px 0 0 26px;padding:3px 8px;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);font:600 var(--f-12) var(--sans);cursor:pointer}
+.nc-autres:hover{color:var(--t-1);background:var(--s-hover)}
+.nc-autres svg.ico{width:14px;height:14px;transition:transform var(--moyen)}
+.nc-autres.ouvert svg.ico{transform:rotate(90deg)}
+.nc-reste{margin-top:2px}
+.nc-reste[hidden]{display:none}
+/* la carte, étroite : le geste passe sous la tâche, aligné sur son texte */
+.fi.nv-c .nc-tache{grid-template-columns:22px minmax(0,1fr)}
+.fi.nv-c .nc-geste{grid-column:2;padding-top:6px}
+/* les chiffres : trois ou quatre nombres, grands, sans boîte ; un filet entre eux */
+.nc-chiffres{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));border-top:1px solid var(--s-line);padding-top:12px}
+.nc-chiffre{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin:0;padding:2px 12px;border:0;border-left:1px solid var(--s-line);background:none;color:var(--t-1);font:inherit;text-align:left;border-radius:0}
+.nc-chiffre:first-child{border-left:0;padding-left:0}
+button.nc-chiffre{cursor:pointer}
+button.nc-chiffre:hover .nc-k{color:var(--t-1)}
+button.nc-chiffre:hover .nc-v{color:var(--nv-cuivre)}
+button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:4px}
+.nc-v{display:block;max-width:100%;min-height:28px;font:650 var(--f-20)/1.3 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color var(--rapide)}
+.nc-v small{margin-left:3px;font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2)}
+.nc-v .id{font:650 var(--f-15)/1.3 var(--mono);letter-spacing:-.015em}
+.nc-k{font:600 var(--f-11)/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;transition:color var(--rapide)}
+.nc-s{max-width:100%;font:500 var(--f-12)/1.35 var(--sans);color:var(--t-2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-wrap:pretty}
+.nc-s .id{font:600 var(--f-12) var(--mono);color:var(--t-1)}
+.nc-jauge{width:100%;max-width:120px;height:4px;border-radius:2px;background:var(--s-line);overflow:hidden}
+.nc-jauge i{display:block;height:100%;border-radius:2px;background:var(--ok)}
+.nc-jauge.att i{background:var(--warn)}
+.nc-jauge.ko i{background:var(--ko)}
+.nc-chiffre.ko .nc-v{color:var(--ko)}
+.nc-chiffre.att .nc-v{color:var(--warn)}
+.nc-chiffre.supp .nc-s{color:var(--warn)}
+/* une valeur qui s'écrit (le type, la longueur d'un câble) : la valeur est le champ */
+.nc-chiffre.edit .nc-v{display:flex;align-items:baseline;overflow:visible}
+.nc-chiffre .fc-in{height:30px;margin:0 0 0 -6px;padding:0 6px;font:650 var(--f-16)/1 var(--sans);min-width:3ch}
+.nc-chiffre .nv-type-ed{display:flex;align-items:center;gap:1px}
+.nc-chiffre .nv-type-ed .fc-in,.nc-chiffre .nv-type-ed select{font:650 var(--f-15)/1 var(--mono)}
+.nc-chiffre .nv-type-ed .fc-in.cb-fam{width:4.4ch;min-width:4.4ch;field-sizing:fixed}
+.nc-chiffre .cb-sel select{height:30px;border:1px solid transparent;border-radius:var(--r-1);background:none;color:var(--t-1);padding:0 2px}
+.nc-chiffre .cb-sel select:hover{background:var(--s-hover)}
+/* les modifications, d'une ligne */
+.nc-modifs{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;margin:0;padding:6px 10px;border:1px dashed var(--s-line-2);border-radius:var(--r-2);background:none;color:var(--t-2);font:500 var(--f-13)/1.35 var(--sans);text-align:left;cursor:pointer}
+.nc-modifs span{flex:1;min-width:0}
+.nc-modifs svg.ico{width:15px;height:15px;flex:none}
+.nc-modifs:hover{color:var(--t-1);border-color:var(--nv-cuivre-ligne);background:var(--nv-cuivre-soft)}
+/* la barre de la carte : rien au milieu ; le pied, « Tout voir » d'abord */
+.fi.nv-c>.fi-nav{margin-bottom:2px}
+#fi-tout-voir{color:var(--t-1)}
 
-/* ─── LE BANDEAU : l'état, d'une couleur ; ce qui cloche, en clair ; le geste qui répare ─── */
-.nv-etat{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:8px;padding:11px 12px 11px 12px;border-radius:var(--r-2);
-  background:var(--ok-soft);box-shadow:inset 3px 0 0 var(--ok)}
-.nv-etat.att{background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
-.nv-etat.ko{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
-.nv-etat-ico{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:var(--ok);color:var(--s-surface)}
-.nv-etat.att .nv-etat-ico{background:var(--warn)}
-.nv-etat.ko .nv-etat-ico{background:var(--ko)}
-.nv-etat-ico svg.ico{width:16px;height:16px;stroke-width:2.4}
-.nv-etat-t{min-width:0;display:flex;flex-direction:column;gap:2px}
-.nv-etat-titre{font:700 var(--f-14)/1.25 var(--sans);letter-spacing:-.005em;color:var(--t-1)}
-.nv-etat-p{display:block;min-width:0;margin:0;padding:0;border:0;background:none;text-align:left;font:400 var(--f-13)/1.4 var(--sans);color:var(--t-1);text-wrap:pretty}
-button.nv-etat-p{cursor:pointer;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 30%,transparent);text-underline-offset:3px}
-button.nv-etat-p:hover{text-decoration-color:currentColor}
-.nv-etat-g{display:flex;align-items:center;gap:6px}
-.nv-etat-g .btn{white-space:nowrap}
-/* trop étroite pour le geste à côté : il passe dessous, aligné sur le texte */
-.fi.nv-c .nv-etat{grid-template-columns:28px minmax(0,1fr)}
-.fi.nv-c .nv-etat-g{grid-column:2}
-.nv-autres{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;margin:-4px 0 0 40px;padding:2px 6px;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);font:500 var(--f-12) var(--sans);cursor:pointer}
-.nv-autres:hover{color:var(--t-1);background:var(--s-hover)}
-.nv-autres svg.ico{width:14px;height:14px}
-.nv-cache{display:none}
-/* le grand : tous les points, repliés sous le bandeau */
-.nv-tous{margin:8px 0 0}
-.nv-tous-t{display:inline-flex;align-items:center;gap:6px;margin-left:40px;padding:3px 8px;border-radius:var(--r-1);list-style:none;cursor:pointer;color:var(--t-2);font:500 var(--f-12) var(--sans)}
-.nv-tous-t::-webkit-details-marker{display:none}
-.nv-tous-t:hover{background:var(--s-hover);color:var(--t-1)}
-.nv-tous-t .fi-chevron{width:14px;height:14px;transition:transform var(--moyen)}
-.nv-tous[open] .nv-tous-t .fi-chevron{transform:rotate(180deg)}
-.nv-tous .fi-pbs{max-height:220px;overflow:auto;margin:4px 0 0}
-
-/* ─── LES CHIFFRES CLÉS : une bande au filet, une case chacun ─── */
-.nv-chiffres{display:grid;grid-template-columns:repeat(min(var(--n),4),minmax(0,1fr));gap:1px;background:var(--s-line);border:1px solid var(--s-line);border-radius:var(--r-2);overflow:hidden}
-.nv-chiffre{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:0;padding:10px 11px 10px;border:0;background:var(--s-surface);color:var(--t-1);font:inherit;text-align:left}
-button.nv-chiffre{cursor:pointer;transition:background var(--rapide)}
-button.nv-chiffre:hover{background:var(--s-hover)}
-button.nv-chiffre:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.nv-chiffre-k{max-width:100%;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nv-chiffre-v{display:flex;align-items:baseline;gap:3px;max-width:100%;min-height:26px;font:650 var(--f-20)/1.25 var(--sans);letter-spacing:-.015em;font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nv-chiffre-v small{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2)}
-.nv-chiffre-v .id{font:600 var(--f-14)/1.3 var(--mono);letter-spacing:-.01em}
-.nv-chiffre-s{max-width:100%;font:500 var(--f-11)/1.3 var(--sans);color:var(--t-2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-wrap:pretty}
-.nv-chiffre-s .id{font:600 var(--f-11) var(--mono);color:var(--t-1)}
-.nv-chiffre .nv-barre{width:100%;margin:2px 0 1px}
-.nv-chiffre.ko .nv-chiffre-v{color:var(--ko)}
-.nv-chiffre.att .nv-chiffre-v{color:var(--warn)}
-.nv-chiffre:is(.ko,.ko-l){box-shadow:inset 0 2px 0 var(--ko)}
-.nv-chiffre.att{box-shadow:inset 0 2px 0 var(--warn)}
-.nv-chiffre.supp .nv-chiffre-s{color:var(--warn)}
-/* une case qui s'écrit (le type, la longueur d'un câble) : la valeur est le champ */
-.nv-chiffre.edit .nv-chiffre-v{overflow:visible}
-.nv-chiffre .fc-in{height:28px;margin:0 0 0 -6px;padding:0 6px;font:650 var(--f-16)/1 var(--sans);min-width:3ch}
-.nv-chiffre .nv-type-ed{display:flex;align-items:center;gap:1px}
-.nv-chiffre .nv-type-ed .fc-in,.nv-chiffre .nv-type-ed select{font:600 var(--f-14)/1 var(--mono)}
-.nv-chiffre .nv-type-ed .fc-in.cb-fam{width:4.2ch;min-width:4.2ch;field-sizing:fixed}
-.nv-chiffre .cb-sel select{height:28px;border:1px solid transparent;border-radius:var(--r-1);background:none;color:var(--t-1);padding:0 2px}
-.nv-chiffre .cb-sel select:hover{background:var(--s-hover)}
-
-/* ─── LE TRAJET D'UN CÂBLE, sous son titre : un bout, la ligne à la couleur de sa route, l'autre bout ─── */
+/* ─── LE TRAJET D'UN CÂBLE : un bout, la ligne à la couleur de sa route, l'autre bout ─── */
 .nv-trajet{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0}
-.nv-bout{display:inline-flex;align-items:baseline;gap:1px;height:30px;padding:0 10px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);color:var(--t-1);cursor:pointer;line-height:28px}
-.nv-bout:hover{border-color:var(--accent);background:var(--accent-soft)}
-.nv-bout b{font:600 var(--f-13) var(--mono)}
+.nv-bout{display:inline-flex;align-items:baseline;gap:1px;height:32px;padding:0 11px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);color:var(--t-1);cursor:pointer;line-height:30px;transition:border-color var(--rapide),background var(--rapide)}
+.nv-bout:hover{border-color:var(--nv-cuivre-ligne);background:var(--nv-cuivre-soft)}
+.nv-bout b{font:650 var(--f-13) var(--mono)}
 .nv-bout i{font:500 var(--f-12) var(--mono);color:var(--t-2)}
-.nv-trajet-f{flex:1 1 18px;min-width:18px;max-width:64px;height:3px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
+.nv-trajet-f{flex:1 1 18px;min-width:18px;max-width:72px;height:4px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
 .nv-trajet-via{font:500 var(--f-12) var(--sans);color:var(--t-2)}
 
-/* ─── LES MODIFICATIONS, d'une ligne dans la carte ─── */
-.nv-modifs{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;margin:0;padding:6px 10px;border:1px dashed var(--s-line-2);border-radius:var(--r-2);background:none;color:var(--t-2);font:500 var(--f-12)/1.35 var(--sans);text-align:left;cursor:pointer}
-.nv-modifs span{flex:1;min-width:0}
-.nv-modifs svg.ico{width:15px;height:15px;flex:none}
-.nv-modifs:hover{color:var(--t-1);border-color:var(--accent);background:var(--accent-soft)}
-
-/* ─── LE GRAND : la liste | le corps (le résumé fixe, les onglets, le panneau qui défile, le pied) ─── */
+/* ═══ LE GRAND — la fenêtre ══════════════════════════════════════════════════════════════════════════════════════════ */
 .fi.nv-g{padding:0;overflow:hidden}
-.fi.nv-g>.fi-nav{margin:0;flex:none;box-shadow:0 1px 0 var(--s-line)}
 .nv-grand{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:var(--nv-liste) minmax(0,1fr)}
 .nv-grand.nv-seul{grid-template-columns:minmax(0,1fr)}
-.nv-corps{min-width:0;min-height:0;display:flex;flex-direction:column}
-.nv-resume{flex:none;display:flex;flex-direction:column;gap:12px;padding:8px 24px 14px}
-.nv-resume .fi-entete{padding:4px 0 0}
-.nv-resume .fi-nom{font-size:var(--f-24)}
-.fi.nv-g .nv-chiffres{grid-template-columns:repeat(var(--n),minmax(0,1fr))}
-.fi.nv-g .nv-chiffre{padding:10px 14px}
+@container insp (max-width:820px){ .nv-grand{grid-template-columns:minmax(0,1fr)} .nv-grand>.nv-liste{display:none} }
+.nv-corps{min-width:0;min-height:0;display:flex;flex-direction:column;container:corps / inline-size}
+/* la barre : ‹ › · le genre et son état · ranger/détacher, réduire, fermer — on la tient pour déplacer la fenêtre */
+.nv-tete{flex:none;position:relative}
+.nv-tete .fi-nav{position:relative;margin:0;height:48px;padding:0 10px 0 12px;gap:4px;box-shadow:0 1px 0 var(--s-line)}
+.fi-nav-milieu{flex:1;min-width:0;display:flex;align-items:center;margin:0 10px}
+.fi-nav-milieu .nc-genre{flex:1}
+/* le résumé : l'étiquette à gauche, les chiffres à droite */
+.nv-resume{flex:none;display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 32px;padding:18px 28px 16px}
+.nv-ident{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.nv-ident .nc-rep-in,.nv-ident .nc-rep-t{font-size:34px;height:46px}
+.nv-resume .nc-chiffres{flex:2 1 420px;min-width:0;border-top:0;padding-top:0}
+.nv-avant{flex:none;padding:0 28px 12px}
+/* à faire : un encart calme, sous le résumé */
+.nv-afaire{flex:none;margin:0 28px 14px;padding:6px 14px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-sunken)}
+.nv-afaire .nc-tache{margin:0 -8px}
+.nv-afaire .nc-tache:hover{background:var(--s-hover)}
+.nv-afaire .nc-tache.ok{padding:8px 8px}
+.nv-afaire .nc-tache.ok .nc-t small{display:inline}
+/* LES ONGLETS — chacun dit en deux lignes ce qu'il contient et où il en est ; l'ouvert, souligné de cuivre */
 .nv-onglets{flex:none;display:flex;align-items:stretch;gap:2px;padding:0 16px;border-bottom:1px solid var(--s-line);overflow-x:auto;scrollbar-width:none}
 .nv-onglets::-webkit-scrollbar{display:none}
-.nv-onglet{position:relative;flex:none;display:inline-flex;align-items:center;gap:7px;height:42px;margin:0;padding:0 10px;border:0;background:none;color:var(--t-2);font:600 var(--f-13) var(--sans);white-space:nowrap;cursor:pointer;border-radius:var(--r-1) var(--r-1) 0 0;transition:color var(--rapide),background var(--rapide)}
+.nv-onglets.deborde{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent)}
+.nv-onglets.deborde.au-bout{-webkit-mask-image:linear-gradient(90deg,transparent,#000 44px);mask-image:linear-gradient(90deg,transparent,#000 44px)}
+.nv-onglet{position:relative;flex:none;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;min-width:0;max-width:200px;height:56px;margin:0;padding:0 12px;border:0;border-radius:10px 10px 0 0;background:none;
+  color:var(--t-2);font:inherit;text-align:left;cursor:pointer;transition:color var(--rapide),background var(--rapide)}
 .nv-onglet:hover{color:var(--t-1);background:var(--s-hover)}
+.nv-o-t{font:650 var(--f-14)/1.2 var(--sans);letter-spacing:-.005em;white-space:nowrap}
+.nv-o-s{display:inline-flex;align-items:center;gap:5px;max-width:100%;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-o-s:is(.ok,.att,.ko)::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.nv-o-s.att{color:var(--warn)}
+.nv-o-s.att::before{background:var(--warn)}
+.nv-o-s.ko{color:var(--ko)}
+.nv-o-s.ko::before{background:var(--ko)}
 .nv-onglet[aria-selected="true"]{color:var(--t-1)}
-.nv-onglet[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent)}
-.nv-onglet:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
-.nv-pas,.nv-compte{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;font:700 var(--f-11)/1 var(--sans);font-style:normal}
-.nv-pas.ko{background:var(--ko);color:var(--s-surface)}
-.nv-pas.att{background:var(--warn);color:var(--s-surface)}
-.nv-compte{background:var(--s-hover);color:var(--t-2);font-weight:600}
-.nv-panneaux{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:18px 24px 28px;scrollbar-width:thin}
-.nv-panneau{display:flex;flex-direction:column;gap:14px;outline:none}
+.nv-onglet[aria-selected="true"]::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--nv-cuivre)}
+.nv-onglet:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:-3px}
+/* le panneau ouvert : seul lui défile */
+.nv-panneaux{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:22px 28px 32px;scrollbar-width:thin}
+.nv-panneau{display:flex;flex-direction:column;gap:22px;outline:none;max-width:980px}
 .nv-panneau[hidden]{display:none}
 .nv-panneau.nv-entre{animation:nv-entre var(--moyen) both}
-@keyframes nv-entre{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes nv-entre{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.nv-panneau.nv-entre{animation:none}}
-.nv-vide{margin:8px 0;color:var(--t-2);font:400 var(--f-13)/1.45 var(--sans)}
-/* dans un onglet, le contenu d'hier s'étale : plus de marges de section */
 .nv-panneau>.fs-groupe:first-child,.nv-panneau>.fs-champs:first-child{margin-top:0}
 .nv-panneau .fi-decision{margin:0}
-.fi.nv-g .fi-pied{position:static;flex:none;margin:0;padding:10px 20px 12px}
+.fi.nv-g .fi-pied{position:static;flex:none;margin:0;padding:10px 22px 12px;border-top:1px solid var(--s-line)}
+/* la fenêtre étroite : le résumé s'empile, les marges se resserrent */
+@container corps (max-width:600px){ .nv-resume{padding:14px 18px 12px} .nv-afaire{margin:0 18px 12px} .nv-panneaux{padding:16px 18px 24px} .nv-onglets{padding:0 10px} .nv-avant{padding:0 18px 10px} }
 
 /* la liste à gauche : une colonne en retrait ; chaque objet, son point d'état, son repère, ce qu'il est, ses folios */
 .nv-liste{min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--s-line);background:var(--s-sunken)}
-.nv-liste-t{flex:none;display:flex;align-items:baseline;gap:8px;padding:16px 16px 10px;font:700 var(--f-13) var(--sans);color:var(--t-1)}
-.nv-liste-t>span{font:600 var(--f-12) var(--sans);color:var(--t-2)}
-.nv-liste-t .nv-liste-ko{margin-left:auto;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--ko);color:var(--s-surface);font:700 var(--f-11)/1 var(--sans)}
+.nv-liste-t{flex:none;display:flex;align-items:baseline;gap:8px;padding:18px 16px 10px;font:650 var(--f-12) var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-2)}
+.nv-liste-t>b{font-weight:650;color:var(--t-1)}
+.nv-liste-t>span{font:600 var(--f-12) var(--sans);letter-spacing:0;text-transform:none;color:var(--t-3)}
+.nv-liste-t .nv-liste-ko{margin-left:auto;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--ko);color:var(--t-inverse);font:700 var(--f-11)/1 var(--sans)}
 .nv-liste-f{flex:none;margin:0 12px 8px;height:32px}
 .nv-liste-l{flex:1 1 auto;min-height:0;margin:0;padding:2px 8px 16px;list-style:none;overflow:auto;scrollbar-width:thin}
 .nv-liste-l>li[hidden]{display:none}
 .nv-item{width:100%;display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;column-gap:10px;margin:0;padding:7px 10px;border:0;border-radius:var(--r-1);background:none;color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide)}
 .nv-item:hover{background:var(--s-hover)}
-.nv-item.actif{background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--accent)}
-.nv-item:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.nv-item.actif{background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--nv-cuivre)}
+.nv-item:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:-2px}
 .nv-pt{width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .nv-pt.att{background:var(--warn)}
 .nv-pt.ko{background:var(--ko)}
@@ -4150,16 +4258,16 @@ button.nv-chiffre:focus-visible{outline:2px solid var(--accent);outline-offset:-
 /* (le filet d’hier entre deux lignes, un ::before, ferait une case de plus dans une ligne de tableau) */
 .nv-cables tr::before,.nv-cables tr::after{content:none!important;display:none!important}
 .nv-cables th{padding:0;text-align:left;border-bottom:1px solid var(--s-line-2);background:var(--s-surface);white-space:nowrap}
-.nv-tri{display:inline-flex;align-items:center;gap:5px;width:100%;height:34px;margin:0;padding:0 6px;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);font:600 var(--f-11)/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.nv-tri{display:inline-flex;align-items:center;gap:5px;width:100%;height:34px;margin:0;padding:0 6px;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);font:600 var(--f-11)/1 var(--sans);letter-spacing:.05em;text-transform:uppercase;cursor:pointer}
 .nv-tri:hover{color:var(--t-1);background:var(--s-hover)}
 .nv-tri-f{font:600 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3)}
 th[aria-sort="ascending"] .nv-tri,th[aria-sort="descending"] .nv-tri{color:var(--t-1)}
-th[aria-sort="ascending"] .nv-tri-f,th[aria-sort="descending"] .nv-tri-f{color:var(--accent)}
-.nv-cables td{padding:8px 6px;border-bottom:1px solid var(--s-line);vertical-align:middle;white-space:nowrap}
+th[aria-sort="ascending"] .nv-tri-f,th[aria-sort="descending"] .nv-tri-f{color:var(--nv-cuivre)}
+.nv-cables td{padding:9px 6px;border-bottom:1px solid var(--s-line);vertical-align:middle;white-space:nowrap}
 .nv-cab{cursor:pointer;transition:background var(--rapide)}
 .nv-cab:hover td,.nv-cab.vise td{background:var(--s-hover)}
-.nv-cab.choisi td,.nv-cab.arrivee td{background:var(--accent-soft)}
-.nv-cab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.nv-cab.choisi td,.nv-cab.arrivee td{background:var(--nv-cuivre-soft)}
+.nv-cab:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:-2px}
 .nv-cab.ko td:first-child{box-shadow:inset 3px 0 0 var(--ko)}
 .nv-cab.att td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
 .nv-cab-id{display:inline-flex;align-items:center;gap:8px}
@@ -4184,18 +4292,203 @@ th[aria-sort="ascending"] .nv-tri-f,th[aria-sort="descending"] .nv-tri-f{color:v
 .fi:is(.nv-c,.nv-g) .fc-in:not(:focus):hover{background-color:var(--s-hover);background-image:var(--nv-crayon);background-repeat:no-repeat;background-position:right 5px center;background-size:12px;padding-right:20px;cursor:text}
 .fi:is(.nv-c,.nv-g) .fc-in:focus{background-image:none}
 .fi:is(.nv-c,.nv-g) .fc-in::placeholder{color:var(--t-1)}
-.fi:is(.nv-c,.nv-g) .supp .fc-in::placeholder,.fi:is(.nv-c,.nv-g) .nv-chiffre.supp .fc-in::placeholder{color:var(--warn);font-weight:600}
+.fi:is(.nv-c,.nv-g) .supp .fc-in::placeholder,.fi:is(.nv-c,.nv-g) .nc-chiffre.supp .fc-in::placeholder{color:var(--warn);font-weight:600}
+
+/* ═══ LES VUES — la pièce dessinée, et pourquoi elle est ainsi (08-vues) ═══════════════════════════════════════════════ */
+.vu-bloc{display:flex;flex-direction:column;gap:12px;margin:0}
+.vu-titre{display:flex;align-items:baseline;gap:10px;margin:0;font:650 var(--f-12)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2)}
+.vu-titre>span{font:500 var(--f-12) var(--sans);letter-spacing:0;text-transform:none;color:var(--t-3)}
+.vu-note{margin:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty}
+.vu-legende{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2)}
+.vu-legende span{display:inline-flex;align-items:center;gap:6px}
+.vu-legende i{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--t-3)}
+.vu-legende i.pris{background:var(--t-1);box-shadow:none}
+.vu-legende i.ko,.vu-legende i.ok{box-shadow:none;background:var(--ko)}
+.vu-legende i.ok{background:var(--ok)}
+.vu-legende i.carre{width:16px;height:8px;border-radius:4px;box-shadow:none}
+.vu-legende i.carre.perm{background:var(--nv-cuivre)}
+.vu-legende i.carre.pointe{background:var(--vu-pointe)}
+/* le schéma et ce qu'il dit, côte à côte ; empilés dans une fenêtre étroite */
+.vu-schema{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:start}
+@container corps (max-width:700px){ .vu-schema{grid-template-columns:minmax(0,1fr)} .vu-fig{justify-self:center;min-width:240px} }
+.vu-schema-d{min-width:0;display:flex;flex-direction:column;gap:10px}
+.vu-fig{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:180px;padding:18px 18px 14px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-sunken)}
+.vu-fig figcaption{font:500 var(--f-12)/1.35 var(--sans);color:var(--t-2);text-align:center;max-width:280px;text-wrap:balance}
+.vu-faces-g{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}
+.vu-faces-g svg,.vu-fig>svg{max-width:100%;height:auto}
+/* la face d'un connecteur : plein = pris, creux = libre, rouge = refusé */
+svg.vu-face{overflow:visible}
+svg.vu-face .vu-corps{fill:var(--s-surface);stroke:var(--s-line-2);stroke-width:1.5}
+svg.vu-face .vu-cle{fill:var(--s-line-2)}
+svg.vu-face .vu-ct{fill:var(--s-surface);stroke:var(--t-3);stroke-width:1.4;transition:r var(--rapide)}
+svg.vu-face .vu-ct.pris{fill:var(--t-1);stroke:var(--t-1)}
+svg.vu-face .vu-ct.ko{fill:var(--ko);stroke:var(--ko)}
+svg.vu-face text{font:650 9px var(--mono);fill:var(--t-2);text-anchor:middle;pointer-events:none}
+svg.vu-face text.long{font-size:7px}
+svg.vu-face text.pris{fill:var(--t-inverse)}
+svg.vu-face text.ko{fill:#fff}
+svg.vu-face.mini .vu-ct{stroke-width:1.2}
+svg.vu-face.vu-vide text{font:500 11px var(--sans);fill:var(--t-3)}
+svg.vu-face.vu-vide .vu-corps{stroke-dasharray:4 4}
+.vu-ct-g.allume .vu-ct{stroke:var(--nv-cuivre);stroke-width:3}
+/* les faces en vignette (la carte) : chacune son nom, ses contacts pris */
+.vu-faces{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:14px 18px}
+.vu-face-v{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px}
+.vu-face-v b{font:650 var(--f-12)/1 var(--mono);color:var(--t-1)}
+.vu-face-v small{font:500 var(--f-11)/1 var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
+.vu-face-v.ko b{color:var(--ko)}
+/* ce qu'il tire contre ses calibres */
+svg.vu-charge{display:block;max-width:100%;height:auto;overflow:visible}
+svg.vu-charge .vu-rail{fill:var(--s-line)}
+svg.vu-charge .vu-b-perm{fill:var(--nv-cuivre)}
+svg.vu-charge .vu-b-pointe{fill:var(--vu-pointe)}
+svg.vu-charge .vu-tick.oui{fill:var(--ok)}
+svg.vu-charge .vu-tick.non{fill:var(--ko)}
+svg.vu-charge line.vu-cal{stroke:var(--t-1);stroke-width:2}
+svg.vu-charge line.vu-fic{stroke:var(--ko);stroke-width:1.6;stroke-dasharray:4 3}
+.nc-vignette svg.vu-charge{width:100%}
+/* les textes des dessins */
+:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) text{font:500 12px var(--sans);fill:var(--t-2)}
+:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) .vu-t-pied{font:600 10.5px var(--sans);text-anchor:middle;font-variant-numeric:tabular-nums}
+:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) .vu-t-fort,:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) tspan.vu-t-fort{font:650 12.5px var(--sans);fill:var(--t-1);font-variant-numeric:tabular-nums}
+:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) .vu-t-ko{font:600 11.5px var(--sans);fill:var(--ko)}
+:is(svg.vu-arbre,svg.vu-chemin) .vu-t-mono{font:650 12.5px var(--mono);fill:var(--t-1)}
+:is(svg.vu-arbre,svg.vu-chemin) tspan.vu-t{font:500 11.5px var(--mono);fill:var(--t-2)}
+:is(svg.vu-arbre,svg.vu-chemin) .vu-milieu{text-anchor:middle}
+:is(svg.vu-arbre,svg.vu-chemin) .vu-petit{font-size:10px}
+/* l'arbre d'un disjoncteur : lui, puis chacun de ses câbles, sa charge au bout */
+svg.vu-arbre{display:block;max-width:100%;height:auto;overflow:visible}
+svg.vu-arbre .vu-boite{fill:var(--s-sunken);stroke:var(--s-line-2);stroke-width:1.5}
+svg.vu-arbre .vu-bus{fill:none;stroke:var(--t-3);stroke-width:1.6;stroke-linecap:round}
+svg.vu-arbre .vu-br{fill:none;stroke-width:3.5;stroke-linecap:round}
+svg.vu-arbre .vu-noeud{fill:var(--t-3)}
+svg.vu-arbre .vu-b-fond{fill:transparent;transition:fill var(--rapide)}
+svg.vu-arbre .vu-branche{cursor:pointer;outline:none}
+svg.vu-arbre .vu-branche:is(:hover,:focus-visible,.vise) .vu-b-fond{fill:var(--s-hover)}
+svg.vu-arbre .vu-branche:focus-visible .vu-b-fond{stroke:var(--nv-cuivre);stroke-width:1.5}
+svg.vu-arbre .vu-branche.ko .vu-t-mono{fill:var(--ko)}
+svg.vu-arbre .vu-rail{fill:var(--s-line)}
+svg.vu-arbre .vu-j{fill:var(--ok)}
+svg.vu-arbre .vu-j.att{fill:var(--warn)}
+svg.vu-arbre .vu-j.ko{fill:var(--ko)}
+/* le chemin d'un câble */
+.vu-chemin-c{padding:14px 16px 6px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-sunken)}
+svg.vu-chemin{display:block;max-width:100%;height:auto;overflow:visible}
+svg.vu-chemin .vu-fil{fill:none;stroke-width:5;stroke-linecap:round}
+svg.vu-chemin .vu-bout{fill:var(--s-surface);stroke:var(--t-1);stroke-width:2}
+svg.vu-chemin .vu-via{fill:var(--s-surface);stroke:var(--s-line-2);stroke-width:1.4}
+/* la traversée d'une prise : ce qui arrive · la lettre · ce qui repart */
+.vu-traverse{display:flex;flex-direction:column;gap:2px;min-width:0}
+.vu-tr-t,.vu-tr-l{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);align-items:center;column-gap:10px}
+.vu-tr-t{padding:0 2px 6px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-3)}
+.vu-tr-t>span:first-child{text-align:right}
+.vu-tr-l{min-height:36px;border-radius:var(--r-1);transition:background var(--rapide)}
+.vu-tr-l:hover{background:var(--s-hover)}
+.vu-tr-p b{display:grid;place-items:center;width:28px;height:28px;margin:0 auto;border-radius:50%;background:var(--t-1);color:var(--t-inverse);font:650 var(--f-12)/1 var(--mono)}
+.vu-tr-c{display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer}
+.vu-tr-c.g{justify-content:flex-end}
+.vu-tr-c.vide{color:var(--t-3);cursor:default}
+.vu-tr-c.g.vide{justify-content:flex-end}
+.vu-tr-c b{font:650 var(--f-13) var(--mono);white-space:nowrap}
+.vu-tr-c small{font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.vu-tr-c.ko b{color:var(--ko)}
+.vu-route{flex:none;width:22px;height:4px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
+/* les groupes d'une barrette : la couleur du groupe, ses contacts, ses câbles */
+.vu-pots{display:flex;flex-direction:column;gap:6px}
+.vu-pot{display:grid;grid-template-columns:12px auto minmax(0,1fr);align-items:start;column-gap:10px;padding:8px 10px;border-radius:var(--r-2);background:color-mix(in srgb,var(--c) 7%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 22%,transparent)}
+.vu-pot>i{width:12px;height:12px;margin-top:3px;border-radius:50%;background:var(--c)}
+.vu-pot>b{font:650 var(--f-13)/1.5 var(--mono);color:var(--c);white-space:nowrap}
+.vu-pot>span{display:flex;flex-wrap:wrap;gap:4px 6px;min-width:0}
+.vu-pot em{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:12px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line);font:500 var(--f-12)/1 var(--mono);font-style:normal;color:var(--t-1);white-space:nowrap;cursor:pointer}
+.vu-pot em:hover{box-shadow:0 0 0 1px var(--c)}
+.vu-pot em.libre{color:var(--t-3);cursor:default;background:none}
+.vu-pot.ko>b{color:var(--ko)}
+/* les broches d'un connecteur */
+.vu-table{width:100%;border-collapse:separate;border-spacing:0;font:400 var(--f-13)/1.35 var(--sans);font-variant-numeric:tabular-nums}
+.vu-table th{padding:0 8px 8px;text-align:left;border-bottom:1px solid var(--s-line-2);font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--t-2);white-space:nowrap}
+.vu-table td{padding:8px;border-bottom:1px solid var(--s-line);vertical-align:middle;white-space:nowrap}
+.vu-table tr,.vu-table tr.fi-ia{display:table-row}
+.vu-table tr::before,.vu-table tr::after{content:none!important;display:none!important}
+.vu-table tbody tr{cursor:pointer;transition:background var(--rapide)}
+.vu-table tbody tr:hover td,.vu-table tbody tr.vise td{background:var(--s-hover)}
+.vu-table tbody tr:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:-2px}
+.vu-table tr.ko td:first-child{box-shadow:inset 3px 0 0 var(--ko)}
+.vu-table td small{font:500 var(--f-11) var(--sans);color:var(--t-2)}
+.vu-table td.id small{font-family:var(--mono)}
+.vu-cab{display:inline-flex;align-items:center;gap:8px}
+.vu-sertir{color:var(--t-2)}
+.vu-ko{color:var(--ko)!important;font-weight:600}
+/* COMMENT VOLTA L'A DÉCIDÉ : des étapes numérotées, une phrase chacune et sa source en pastille */
+.vu-pq{display:flex;flex-direction:column;gap:10px;margin:0;padding:16px 18px 14px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-surface)}
+.vu-pq ol{display:flex;flex-direction:column;margin:0;padding:0;list-style:none;counter-reset:none}
+.vu-pq li{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:start;column-gap:12px;padding:8px 0}
+.vu-pq li+li{border-top:1px solid var(--s-line)}
+/* le fil des étapes : un trait fin d'un numéro à l'autre */
+.vu-pq li:not(:last-child)::after{content:"";position:absolute;left:11.5px;top:34px;bottom:-8px;width:1px;background:var(--s-line-2)}
+.vu-pq-n{z-index:1;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2);font:650 var(--f-12)/1 var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums}
+.vu-pq li.att .vu-pq-n{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
+.vu-pq li.ko .vu-pq-n{background:var(--ko-soft);box-shadow:inset 0 0 0 1px var(--ko);color:var(--ko)}
+.vu-pq-t{min-width:0;padding-top:2px;font:400 var(--f-14)/1.5 var(--sans);color:var(--t-1);text-wrap:pretty}
+.vu-pq-t b{font-weight:650}
+.vu-pq-t .id{font-size:.94em}
+.vu-pq li.ko .vu-pq-t{color:var(--ko)}
+.vu-src{--sc:var(--t-2);align-self:start;margin-top:3px;display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:11px;white-space:nowrap;
+  background:color-mix(in srgb,var(--sc) 10%,transparent);color:var(--sc);font:600 var(--f-11)/1 var(--sans)}
+.vu-src::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.vu-src.fichier{--sc:var(--t-1)}
+.vu-src.norme{--sc:var(--vu-g2)}
+.vu-src.tables{--sc:var(--vu-g3)}
+.vu-src.calcul{--sc:var(--nv-cuivre)}
+.vu-src.hypothese{--sc:var(--warn);background:none;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 55%,transparent)}
+.vu-src.main{--sc:var(--vu-g4)}
+.vu-src.base{--sc:var(--vu-g6)}
+@container corps (max-width:560px){ .vu-pq li{grid-template-columns:24px minmax(0,1fr)} .vu-src{grid-column:2;margin-top:4px;justify-self:start} }
+/* LA FABRICATION : tout ce qu'il faut pour monter la pièce, groupé, compté par référence */
+.vu-fab{display:flex;flex-direction:column;gap:14px}
+.vu-fab-g{border:1px solid var(--s-line);border-radius:14px;overflow:hidden;background:var(--s-surface)}
+.vu-fab-g h4{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:0;padding:12px 16px;background:var(--s-sunken);border-bottom:1px solid var(--s-line);font:650 var(--f-14)/1.3 var(--sans);color:var(--t-1)}
+.vu-fab-g h4 .id{font:600 var(--f-13) var(--mono);color:var(--t-1)}
+.vu-fab-g h4 small{margin-left:auto;font:500 var(--f-12) var(--sans);color:var(--t-2)}
+.vu-fab-l{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;column-gap:12px;padding:10px 16px}
+.vu-fab-l+.vu-fab-l{border-top:1px solid var(--s-line)}
+.vu-q{font:650 var(--f-16)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
+.vu-q small{margin-left:2px;font:500 var(--f-12) var(--sans);color:var(--t-3)}
+.vu-r{min-width:0;display:flex;flex-direction:column;gap:2px}
+.vu-r b{font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
+.vu-r small{font:400 var(--f-12)/1.35 var(--sans);color:var(--t-2)}
+.vu-st{font:600 var(--f-11)/1 var(--sans);color:var(--t-2);white-space:nowrap}
+.vu-st.att{color:var(--warn)}
+/* les calibres de la gamme en touches : vert il passe, rouge non ; le retenu, plein ; celui du fichier, cerné */
+.vu-cals{display:flex;flex-wrap:wrap;gap:8px}
+button.vu-cal{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:62px;height:58px;margin:0;padding:0 10px;border:1px solid var(--s-line-2);border-radius:12px;background:var(--s-surface);color:var(--t-1);cursor:pointer;
+  transition:border-color var(--rapide),background var(--rapide),transform var(--rapide)}
+button.vu-cal b{font:650 var(--f-20)/1 var(--sans);font-variant-numeric:tabular-nums}
+button.vu-cal small{font:600 var(--f-11)/1 var(--sans);color:var(--t-2)}
+button.vu-cal::before{content:"";position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--ok)}
+button.vu-cal.non::before{background:var(--ko)}
+button.vu-cal.non b{color:var(--t-2)}
+button.vu-cal:hover{border-color:var(--t-3);background:var(--s-hover)}
+button.vu-cal:active{transform:scale(var(--presse))}
+button.vu-cal.on{border-color:var(--nv-cuivre);background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre)}
+button.vu-cal.on small{color:var(--nv-cuivre)}
+button.vu-cal.fichier:not(.on){border-style:dashed}
+button.vu-cal:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
 
 /* ─── AU TÉLÉPHONE : le grand est la feuille entière ; ses onglets défilent sous les doigts ─── */
 @media (max-width:700px){
   body.insp-grand #inspecteur{max-height:calc(100vh - var(--entete) - var(--rail-tel) - 12px)}
-  .nv-resume{padding:6px 16px 12px}
+  .nv-resume{padding:8px 16px 12px}
+  .nv-afaire{margin:0 16px 12px}
   .nv-onglets{padding:0 8px}
+  .nv-onglet{min-width:84px;height:52px;padding:0 10px}
   .nv-panneaux{padding:14px 16px 20px}
-  .fi.nv-g .nv-chiffres{grid-template-columns:repeat(auto-fit,minmax(78px,1fr))}
+  .nv-resume .nc-chiffres{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:14px}
+  .nv-resume .nc-chiffre:nth-child(odd){border-left:0;padding-left:0}
+  .fi-nav-milieu .nc-sym{display:none}
+  .fi-nav-milieu{margin:0 4px}
 }
 
-/* ─── LES BORDS : la carte a la taille de ce qu'elle dit ; seul le grand se tire, par son bord gauche ─── */
+/* ─── LES BORDS : la carte a la taille de ce qu'elle dit ; le grand rangé se tire par son bord gauche ─── */
 body.insp-flotte #inspecteur .carte-bords,body.insp-epingle:not(.insp-grand) #inspecteur .carte-bords{display:none}
 
 /* ───────── style-nomen.css ───────── */
@@ -18108,9 +18401,39 @@ const CARTE_COURBE = 'cubic-bezier(.2,.8,.2,1)';
 const carteFlottante = () => !NIVEAU.grand && !telephone() && !(typeof app !== 'undefined' && app.base && app.base.ouvert);
 // les classes du corps disent ce qu'est l'inspecteur ouvert : une carte, ou le volet épinglé ; fermé, ni l'un ni l'autre
 function modeCarte() { const ouvert = !$('inspecteur').hidden, b = document.body, tel = telephone(), flotte = carteFlottante();
-  b.classList.toggle('insp-flotte', ouvert && flotte); b.classList.toggle('insp-epingle', ouvert && !tel && !flotte);
-  // le grand (08-niveaux) : aux deux tiers, la liste à gauche ; au téléphone, la feuille entière
-  b.classList.toggle('insp-grand', ouvert && !!NIVEAU.grand && !(typeof app !== 'undefined' && app.base && app.base.ouvert)); }
+  const libre = ouvert && grandLibre();
+  b.classList.toggle('insp-flotte', ouvert && flotte); b.classList.toggle('insp-epingle', ouvert && !tel && !flotte && !libre);
+  // le grand (08-niveaux) : aux deux tiers, la liste à gauche ; au téléphone, la feuille entière ; détaché, une fenêtre
+  b.classList.toggle('insp-grand', ouvert && !!NIVEAU.grand && !(typeof app !== 'undefined' && app.base && app.base.ouvert));
+  b.classList.toggle('insp-grand-libre', libre); if (libre) poserFenetre(); }
+
+/* ---- LE GRAND, UNE FENÊTRE (v78, le lecteur : « quand ça va à droite, il faut pouvoir le bouger comme une pop-up, le
+   grandir… elle est à droite de base, mais on peut la bouger et la grandir, comme une fenêtre ») : rangé à droite d'office
+   (le plan se range à côté) ; tenu par sa barre, il se détache et suit la main — le plan reprend toute la place ; ses
+   quatre bords et ses coins le tirent ; lâché contre le bord droit, il s'y range de nouveau ; un double-clic sur sa barre,
+   ou le bouton de la barre, le range ou le détache. Sa place et sa taille de fenêtre se gardent d'une session à l'autre ;
+   il s'ouvre toujours rangé, à droite. ---- */
+const FENETRE = { libre: false, x: 0, y: 0, w: 0, h: 0 };
+const FEN_LMIN = 520, FEN_HMIN = 340;
+const grandLibre = () => !!(NIVEAU.grand && FENETRE.libre && !telephone() && !(typeof app !== 'undefined' && app.base && app.base.ouvert));
+function fenetreEnMemoire() { try { const f = JSON.parse(localStorage.getItem('volta.fiche.fenetre') || 'null'); if (f && f.w > 0 && f.h > 0) Object.assign(FENETRE, { x: +f.x || 0, y: +f.y || 0, w: +f.w, h: +f.h }); } catch (_) { } }
+function garderFenetre() { try { localStorage.setItem('volta.fiche.fenetre', JSON.stringify({ x: FENETRE.x, y: FENETRE.y, w: FENETRE.w, h: FENETRE.h })); } catch (_) { } }
+// la fenêtre dans l'écran : sous la barre du haut, à droite du rail ; jamais plus petite que ce qu'elle doit lire
+function poserFenetre() { const el = $('inspecteur'), Z = zoneDeLaCarte(), st = el.style;
+  if (!(FENETRE.w > 0)) { const w = Math.min(1040, Math.round((Z.R - Z.L) * .62)); Object.assign(FENETRE, { w, h: Z.B - Z.T - 24, x: Math.round(Z.L + (Z.R - Z.L - w) / 2), y: Z.T + 12 }); }
+  const w = Math.max(FEN_LMIN, Math.min(FENETRE.w, Z.R - Z.L)), h = Math.max(FEN_HMIN, Math.min(FENETRE.h, Z.B - Z.T));
+  const x = Math.max(Z.L, Math.min(FENETRE.x, Z.R - w)), y = Math.max(Z.T, Math.min(FENETRE.y, Z.B - 80));
+  Object.assign(FENETRE, { x, y, w, h });
+  st.setProperty('--fen-x', x + 'px'); st.setProperty('--fen-y', y + 'px'); st.setProperty('--fen-l', w + 'px'); st.setProperty('--fen-h', Math.min(h, Z.B - y) + 'px'); }
+// ranger (à droite, le plan à côté) ou détacher (une fenêtre, le plan entier) ; `r` : la fenêtre part de là (sous la main)
+function rangerFenetre(ranger, r) { if (!NIVEAU.grand || telephone()) return; const el = $('inspecteur'), avant = el.getBoundingClientRect();
+  FENETRE.libre = !ranger; if (!ranger && r) Object.assign(FENETRE, r);
+  modeCarte();
+  // sous la main (on tient la barre), la fiche ne se refait pas : seul son bouton change
+  if (r) { const f = $('fi-fenetre'); if (f) { f.outerHTML = boutonEpingle(); lierTaille(); } } else if (typeof rafraichirFicheEnPlace === 'function' && !rafraichirFicheEnPlace()) rendreFiche();
+  recadrerSiCache(); window.dispatchEvent(new Event('resize')); if (!ranger) garderFenetre();
+  if (!mouvementReduit() && !r && avant.width) { const a = el.getBoundingClientRect(); el.style.transformOrigin = '0 0';
+    el.animate([{ transform: `translate(${avant.left - a.left}px,${avant.top - a.top}px) scale(${avant.width / a.width},${avant.height / a.height})` }, { transform: 'none' }], { duration: 280, easing: CARTE_COURBE }); } }
 
 /* ---- D'OÙ ELLE NAÎT ------------------------------------------------------------------------------------------------ */
 // `v` : une autre vue que celle de l'écran (celle où le plan va, quand il glisse : 08-interface, `vueVisee`)
@@ -18309,11 +18632,15 @@ function suivreLienPendant(ms) { const t0 = performance.now(); const pas = t => 
 /* ---- L'ÉPINGLE ------------------------------------------------------------------------------------------------------ */
 // le bouton de la barre (08-fiche, `barreNav` ; l'index, `rendreIndex`) : rien au téléphone (le tiroir)
 // (v78) plus d'épingle : la carte, ou le grand
-const boutonEpingle = () => '';
+// (v78) le grand : ranger à droite, ou détacher en fenêtre
+const boutonEpingle = () => { if (!NIVEAU.grand || telephone() || (typeof app !== 'undefined' && app.base && app.base.ouvert)) return ''; const l = grandLibre(),
+    t = l ? 'Ranger à droite : le plan à côté — ou lâcher la fenêtre contre le bord droit' : 'Détacher : une fenêtre qui se déplace et se tire par ses bords — ou tenir la barre';
+  return `<button type="button" class="fi-x fi-epingle" id="fi-fenetre" aria-pressed="${!l}" aria-label="${escA(t)}" data-bulle="${escA(t)}">${ico(l ? 'epingler' : 'detacher')}</button>`; };
 /* ⤢ « TOUT VOIR » (la carte) — ⤡ « RÉDUIRE » (le grand) ; le récapitulatif ouvert, la fiche y est déjà entière. */
 const boutonTaille = () => { if (typeof app !== 'undefined' && app.base && app.base.ouvert) return ''; const g = !!NIVEAU.grand, t = g ? 'Réduire : l’essentiel, près de l’objet — Échap' : 'Tout voir : la fiche entière, le plan à côté — ou un double-clic sur l’objet';
   return `<button type="button" class="fi-x fi-taille" id="fi-taille" aria-pressed="${g}" aria-label="${escA(t)}" data-bulle="${escA(t)}">${ico(g ? 'reduire' : 'agrandir')}</button>`; };
-const lierTaille = () => { const b = $('fi-taille'); if (b) b.onclick = e => { e.stopPropagation(); if (NIVEAU.grand) reduireFiche(); else ouvrirGrand(''); }; };
+const lierTaille = () => { const b = $('fi-taille'); if (b) b.onclick = e => { e.stopPropagation(); if (NIVEAU.grand) reduireFiche(); else ouvrirGrand(''); };
+  const f = $('fi-fenetre'); if (f) f.onclick = e => { e.stopPropagation(); rangerFenetre(grandLibre()); }; };
 const agrandirCarte = oui => { if (oui) ouvrirGrand(''); else reduireFiche(); };
 /* Épingler : la carte devient le volet de droite et le plan se recadre à côté ; détacher : elle revient près de son
    bloc. `sansElan` : pendant qu'on la tient (la barre déjà sous les doigts, elle suit la main). */
@@ -18376,6 +18703,11 @@ function oublierTaille() { CARTE.taille = null; CARTE.volet = 0; appliquerVolet(
   try { localStorage.removeItem('volta.fiche.taille'); localStorage.removeItem('volta.fiche.volet'); } catch (_) { } }
 const CURSEURS_BORD = { n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', ne: 'nesw-resize', sw: 'nesw-resize', nw: 'nwse-resize', se: 'nwse-resize' };
 function tirerCarte(e) { const t = CARTE.tire, el = $('inspecteur'), Z = zoneDeLaCarte(), b = t.bord, dx = e.clientX - t.x0, dy = e.clientY - t.y0, r = t.r;
+  if (t.libre) { // la fenêtre : chaque bord, chaque coin ; le bord d'en face ne bouge pas
+    const xd = r.left + r.width, yb = r.top + r.height;
+    const w = Math.max(FEN_LMIN, Math.min(r.width + (b.includes('e') ? dx : b.includes('w') ? -dx : 0), b.includes('w') ? xd - Z.L : Z.R - r.left));
+    const h = Math.max(FEN_HMIN, Math.min(r.height + (b.includes('s') ? dy : b.includes('n') ? -dy : 0), b.includes('n') ? yb - Z.T : Z.B - r.top));
+    Object.assign(FENETRE, { w: Math.round(w), h: Math.round(h), x: b.includes('w') ? xd - w : r.left, y: b.includes('n') ? yb - h : r.top }); poserFenetre(); return; }
   if (!t.flotte) { // le volet épinglé : son bord gauche, le plan se recadre au lâcher
     CARTE.volet = Math.max(620, Math.min(window.innerWidth - (jetonPx('--rail') || 64) - 300, r.width - dx)); appliquerVolet(); return; }
   let w = r.width + (b.includes('e') ? dx : b.includes('w') ? -dx : 0), h = r.height + (b.includes('s') ? dy : b.includes('n') ? -dy : 0);
@@ -18386,25 +18718,27 @@ function tirerCarte(e) { const t = CARTE.tire, el = $('inspecteur'), Z = zoneDeL
   poserCarte(b.includes('w') ? xd - w : r.left, b.includes('n') ? yb - h : r.top); dessinerLien(); }
 function lierBords(el) {
   el.addEventListener('pointerdown', e => { const bord = e.target.closest && e.target.closest('[data-bord]'); if (!bord || telephone() || e.button !== 0) return;
-    // (v78) seul le grand se tire, par son bord gauche ; la carte a la taille de ce qu'elle dit
-    const flotte = carteFlottante(); if (flotte || bord.dataset.bord !== 'w') return;
+    // (v78) la carte a la taille de ce qu'elle dit ; le grand rangé se tire par son bord gauche, détaché par tous ses bords
+    const flotte = carteFlottante(), libre = grandLibre(); if (flotte || (!libre && bord.dataset.bord !== 'w')) return;
     e.preventDefault(); e.stopPropagation();
-    CARTE.tire = { bord: bord.dataset.bord, x0: e.clientX, y0: e.clientY, r: el.getBoundingClientRect(), flotte };
+    CARTE.tire = { bord: bord.dataset.bord, x0: e.clientX, y0: e.clientY, r: el.getBoundingClientRect(), flotte, libre };
     try { bord.setPointerCapture(e.pointerId); } catch (_) { }
     document.body.style.setProperty('--tire-curseur', CURSEURS_BORD[bord.dataset.bord] || 'move'); document.body.classList.add('carte-tiree'); }, true);
   el.addEventListener('pointermove', e => { if (CARTE.tire) { e.stopPropagation(); tirerCarte(e); } }, true);
   const lacher = () => { const t = CARTE.tire; if (!t) return; CARTE.tire = null; document.body.classList.remove('carte-tiree');
+    if (t.libre) { garderFenetre(); return; }
     try { if (t.flotte && CARTE.taille) localStorage.setItem('volta.fiche.taille', JSON.stringify(CARTE.taille)); if (!t.flotte && CARTE.volet) localStorage.setItem('volta.fiche.volet', String(Math.round(CARTE.volet))); } catch (_) { }
     if (!t.flotte) { recadrerSiCache(); window.dispatchEvent(new Event('resize')); } dessinerLien(); lacherLeSurvol(); };
   el.addEventListener('pointerup', lacher, true); el.addEventListener('pointercancel', lacher, true);
   // double-clic sur un bord : sa taille d'office
   el.addEventListener('dblclick', e => { if (!(e.target.closest && e.target.closest('[data-bord]'))) return; e.preventDefault(); e.stopPropagation();
+    if (grandLibre()) { FENETRE.w = 0; poserFenetre(); garderFenetre(); return; }
     const r = el.getBoundingClientRect(); oublierTaille(); if (carteFlottante()) poserCarte(r.left, r.top); else { recadrerSiCache(); window.dispatchEvent(new Event('resize')); } dessinerLien(); }, true); }
 
 /* ---- LA TENIR PAR SA BARRE ------------------------------------------------------------------------------------------ */
 function lierCarte() { const el = $('inspecteur');
   // (v78) chaque fiche s'ouvre en carte ; le grand ne se garde pas d'une session à l'autre — sa largeur, si
-  CARTE.epingle = false; CARTE.grande = false; NIVEAU.grand = false; CARTE.taille = null; CARTE.volet = voletEnMemoire(); appliquerVolet(); lierBords(el);
+  CARTE.epingle = false; CARTE.grande = false; NIVEAU.grand = false; CARTE.taille = null; CARTE.volet = voletEnMemoire(); appliquerVolet(); fenetreEnMemoire(); FENETRE.libre = false; lierBords(el);
   // fermée, d'où qu'on la ferme (08-interface, `fermerInspecteur`), elle rend le clavier
   if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) rendreLeClavierDeLaCarte(); }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
   // l'endroit du dernier appui sur la planche : la fiche d'un câble naît de là, un clic sur le plan fait glisser la carte
@@ -18413,19 +18747,31 @@ function lierCarte() { const el = $('inspecteur');
   window.addEventListener('pointermove', e => { if (e.pointerType !== 'touch') CARTE.souris = { x: e.clientX, y: e.clientY }; }, { passive: true });
   el.addEventListener('pointerdown', e => { if (telephone() || e.button !== 0) return;
     const barre = e.target.closest && e.target.closest('.fi-nav, .ix-tete, .fi-symbole'); if (!barre || e.target.closest('button, input, select, a, textarea')) return;
-    const r = el.getBoundingClientRect(); CARTE.prise = { dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, bouge: false };
+    const r = el.getBoundingClientRect(); CARTE.prise = { dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, bouge: false, fen0: grandLibre() ? { ...FENETRE } : null };
     try { barre.setPointerCapture(e.pointerId); } catch (_) { } e.preventDefault(); });
   el.addEventListener('pointermove', e => { const p = CARTE.prise; if (!p) return;
     if (!p.bouge) { if (Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 4) return; p.bouge = true; document.body.classList.add('carte-tenue');
-      // épinglée, on la détache : elle redevient une carte, sa barre sous les doigts
-      if (CARTE.epingle) { epinglerCarte(false, true); p.dx = Math.min(p.dx, CARTE_L() - 40); } }
-    poserCarte(e.clientX - p.dx, e.clientY - p.dy); dessinerLien(); document.body.classList.toggle('carte-quai', e.clientX > window.innerWidth - 56); });
+      // (v78) le grand rangé se détache : une fenêtre, sa barre sous les doigts (plus étroite qu'aux deux tiers, la main
+      // garde sa place relative sur la barre)
+      if (NIVEAU.grand && !grandLibre()) { const r = el.getBoundingClientRect(), w = Math.min(r.width, FENETRE.w > 0 ? FENETRE.w : Math.min(1040, r.width)), h = Math.min(r.height, FENETRE.h > 0 ? FENETRE.h : r.height);
+        p.dx = p.dx * w / r.width; p.fenetre = true; rangerFenetre(false, { x: e.clientX - p.dx, y: e.clientY - p.dy, w, h }); }
+      else if (grandLibre()) p.fenetre = true;
+      else if (CARTE.epingle) { epinglerCarte(false, true); p.dx = Math.min(p.dx, CARTE_L() - 40); } }
+    if (p.fenetre) { FENETRE.x = e.clientX - p.dx; FENETRE.y = e.clientY - p.dy; poserFenetre(); }
+    else { poserCarte(e.clientX - p.dx, e.clientY - p.dy); dessinerLien(); }
+    document.body.classList.toggle('carte-quai', e.clientX > window.innerWidth - 56); });
   const lacher = () => { const p = CARTE.prise; CARTE.prise = null; if (!p || !p.bouge) return; const b = document.body, quai = b.classList.contains('carte-quai');
-    b.classList.remove('carte-tenue', 'carte-quai'); if (quai) { epinglerCarte(true); return; } CARTE.deplacee = true;
+    b.classList.remove('carte-tenue', 'carte-quai');
+    // rangée au bord : détachée de nouveau (double-clic, bouton), elle reviendra où elle était avant ce geste
+    if (p.fenetre) { if (quai) { if (p.fen0) Object.assign(FENETRE, p.fen0, { libre: true }); garderFenetre(); rangerFenetre(true); } else garderFenetre(); return; }
+    if (quai) { epinglerCarte(true); return; } CARTE.deplacee = true;
     // relâchée trop bas : elle remonte d'elle-même dans l'écran
     const r = el.getBoundingClientRect(), Z = zoneDeLaCarte(); poserCarte(r.left, Math.min(r.top, Math.max(Z.T, Z.B - Math.min(r.height, 160)))); dessinerLien(); lacherLeSurvol(); };
   el.addEventListener('pointerup', lacher); el.addEventListener('pointercancel', lacher);
-  window.addEventListener('resize', () => { if (!el.hidden && carteFlottante()) { const r = el.getBoundingClientRect(); poserCarte(r.left, r.top); } modeCarte(); dessinerLien(); }); }
+  window.addEventListener('resize', () => { if (!el.hidden && carteFlottante()) { const r = el.getBoundingClientRect(); poserCarte(r.left, r.top); } modeCarte(); dessinerLien(); });
+  // un double-clic sur la barre du grand : le ranger à droite, ou le détacher en fenêtre
+  el.addEventListener('dblclick', e => { if (!NIVEAU.grand || telephone() || !(e.target.closest && e.target.closest('.nv-poignee')) || e.target.closest('button, input, select, a, textarea')) return;
+    e.preventDefault(); e.stopPropagation(); rangerFenetre(grandLibre()); }); }
 
 /* ───────── 08-comprendre.js ───────── */
 /* ===========================================================================
@@ -19790,7 +20136,7 @@ function sectionDisjoncteur(nom, d, o, probs) { d = d || disjonctionDe(nom); o =
   const resume = !cal ? '' : propose
     ? `<b class="dj-resume">${nombreCourt(d.pn)}<small>A</small></b>${mot(kR)}<span class="dj-resume-sous">installation ${ico('fleche')} <b>${esc(amperes(cal))}</b> proposé${fam ? ' · ' + esc(fam) : ''}</span>`
     : `<b class="dj-resume">${nombreCourt(cal)}<small>A</small></b>${mot(kR)}<span class="dj-resume-sous">${[fam ? esc(fam) : '', retest ? `installation <s>${esc(amperes(retest))}</s>` : ''].filter(Boolean).join(' · ')}</span>`;
-  return { cle: 'disjoncteur', resume, contenu: tete + courbe + profil }; }
+  return { cle: 'disjoncteur', resume, contenu: tete + courbe + profil, parts: { tete, courbe, profil } }; }
 // ce que le « ? » de la courbe et du profil lit (08-explications) : la famille de courbes ; le permanent, la pointe, la part consommée
 function contexteAide(cle, d) { if (cle === 'courbe') return { famille: d.famille || d.courbe || '' };
   const perm = (d.points || []).find(p => p.t === Infinity), pointe = (d.points || []).find(p => p.t !== Infinity && p.i > 0);
@@ -20894,7 +21240,7 @@ function barreNav(o) { o = o || {}; const I = pileInsp(), p = I.pile[I.pos - 1],
   const tPrec = !prec ? 'Rien avant' : I.pos > 0 && p ? 'Revenir à ' + nomDEntree(p) : 'Revenir à la liste des repères', tSuiv = suiv && n ? 'Aller à ' + nomDEntree(n) : 'Rien après';
   return `<nav class="fi-nav" aria-label="Fiches vues"><button type="button" class="fi-pas" id="fi-prec"${prec ? '' : ' disabled'} aria-label="${escA(tPrec + ' (Alt+←)')}" data-bulle="${escA('‹ ' + tPrec + ' — Alt+←')}">${ico('gauche')}</button>`
     + `<button type="button" class="fi-pas" id="fi-suiv"${suiv ? '' : ' disabled'} aria-label="${escA(tSuiv + ' (Alt+→)')}" data-bulle="${escA(tSuiv + ' › — Alt+→')}">${ico('droite')}</button>`
-    + `<span class="fi-nav-nom" aria-hidden="true">${esc(o.nom || '')}</span>${boutonTaille()}${boutonEpingle()}${o.fermer === false ? '' : `<button type="button" class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer — Échap">${ico('fermer')}</button>`}</nav>`; }
+    + (o.milieu ? `<span class="fi-nav-milieu">${o.milieu}</span>` : `<span class="fi-nav-nom" aria-hidden="true">${esc(o.nom || '')}</span>`) + `${boutonEpingle()}${boutonTaille()}${o.fermer === false ? '' : `<button type="button" class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer — Échap">${ico('fermer')}</button>`}</nav>`; }
 /* Les câbles d'un repère que le courant dépasse : des problèmes de la fiche, montrés dans « Câbles ». */
 const problemesDesFils = fils => fils.flatMap(f => { const x = intensiteDuFil(f.l); if (!x.trop.length) return []; const p = x.trop[0];
   return [{ niveau: 'ko', texte: `${cableEtType(f.l)} : ${p.nom} ${amperes(p.i)}${p.t === Infinity ? '' : ' pendant ' + secondes(p.t)} > ${amperes(intensiteAdmise(x.fn, p.t) * x.fac)} admis${x.al ? ' — sous ' + x.al.nom : ''}`, section: 'fils', viser: cleFil(f.l) }]; });
@@ -21596,27 +21942,52 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const quels = ids.filter(id => id !== '—'), enMots = quels.length > 1 ? `<span class="fs-ct-ids">${esc(pluriel(quels.length, 'connecteur') + ' : ' + quels.join(', '))}</span>` : '';
   const choix = ids.length > 1 || sans.length ? `<div class="ct-choix"><span class="ct-choix-t">Le connecteur montré</span>${bulles}</div>` : '';
   const resumeC = (refs ? `<span class="fs-ref">${refs}</span>` : '') + enMots || (ids.length ? '' : 'aucune borne'), badgeC = dejaDit ? null : badgeProblemes(probs, 'connecteur');
-  const sFils = sectionFilsDuRepere(fils, probs, coupables);
-  let sections;
-  // (v78, le grand : 08-niveaux) le connecteur montré en trois onglets — sa référence et sa face, ses contacts, son raccord —,
-  // ses bulles A · B · C en tête de chacun
-  if (ficheEnGrand() && c) { const P = P0, rac = racH;
-    sections = [{ cle: 'connecteur', titre: ids.length > 1 ? 'Connecteur ' + sel : 'Connecteur', badge: badgeC, contenu: `${choix}<div class="fi-panneau" data-panneau="${escA(sel)}">${P.tete}</div>` },
-      { cle: 'contacts', titre: 'Contacts', compte: P.n || null, contenu: choix + P.contacts }, rac ? { cle: 'raccord', titre: 'Raccord', contenu: choix + rac } : null, sFils, sectionConso(nom), sectionDejaFait(nom)]; }
-  else sections = [{ cle: 'connecteur', titre: 'Connecteur', resume: resumeC, badge: badgeC, contenu: `${choix}<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>`, vide: ids.length ? '' : 'aucune borne' },
-    sFils, sectionConso(nom), sectionDejaFait(nom)];
+  const sFils = sectionFilsDuRepere(fils, probs, coupables), sConso = sectionConso(nom), sDeja = sectionDejaFait(nom);
   const id = identite([majuscule(natureDe(nom)), descriptionDuRetest(nom) ? esc(descriptionDuRetest(nom)) : '', pns.length === 1 ? ident(pns[0]) : '', C.length > 1 ? pluriel(C.length, 'connecteur') : '', esc(motFolios(foliosDuRepere(nom)))]);
   // LES CHIFFRES (v78) : ses connecteurs (ou sa référence), ses contacts pris, ses câbles, ce qui l'alimente
   const pris = cav.reduce((n, x) => n + (x.plan.utilises || 0), 0), places = cav.reduce((n, x) => n + (x.plan.modules[0] ? x.plan.modules[0].module.contacts.length : 0), 0);
   const al = fils.map(f => intensiteDuFil(f.l).al).find(Boolean);
-  const chiffres = [quels.length > 1 ? { k: 'Connecteurs', v: `<span class="id">${quels.map(q => fautif(q) ? `<span class="fi-ko-t">${esc(q)}</span>` : esc(q)).join(' · ')}</span>`, etat: quels.some(fautif) ? 'ko-l' : '', sous: pns.length === 1 ? ident(pns[0]) : pns.length ? esc(pluriel(pns.length, 'référence')) : '', onglet: 'connecteur' }
-      : { k: 'Référence', v: pns.length ? ident(pns[0]) : '—', etat: quels.some(fautif) ? 'ko' : '', sous: quels.length ? 'connecteur ' + esc(quels[0]) : '', onglet: 'connecteur' },
-    places ? { k: 'Contacts', v: `${pris}<small>/ ${places}</small>`, sous: 'pris', barre: pris / places, onglet: 'contacts' } : null,
+  const chiffres = [quels.length > 1 ? { k: 'Connecteurs', v: `<span class="id">${quels.map(q => fautif(q) ? `<span class="fi-ko-t">${esc(q)}</span>` : esc(q)).join(' · ')}</span>`, etat: quels.some(fautif) ? 'ko-l' : '', sous: quels.some(fautif) ? esc(quels.filter(fautif).join(', ') + ' bloque') : 'tous logent leurs câbles', onglet: 'essentiel' }
+      : { k: 'Référence', v: pns.length ? ident(pns[0]) : '—', etat: quels.some(fautif) ? 'ko-l' : '', sous: quels.length ? 'connecteur ' + esc(quels[0]) : '', onglet: 'essentiel' },
+    places ? { k: 'Contacts', v: `${pris}<small>/ ${places}</small>`, sous: places - pris > 0 ? esc(plurielLie(places - pris, 'libre')) : 'tous pris', barre: pris / places, onglet: 'essentiel' } : null,
     chiffreCables(sFils),
-    al ? { k: 'Alimenté par', v: `<span class="id">${esc(al.nom)}</span>`, sous: al.calibre ? esc(amperes(al.calibre)) : '', onglet: 'conso' } : null];
+    al ? { k: 'Alimenté par', v: `<span class="id">${esc(al.nom)}</span>`, sous: al.calibre ? esc(amperes(al.calibre)) : '', onglet: 'reglages' } : null];
   // le geste qui répare : la gauge qui se loge, quand un arrangement refuse un câble
   let geste = ''; for (const x of cav) { const y = coupablesDu(x.plan, x.points).find(z => z.propose); if (y) { geste = boutonReparer(y).replace('btn papier', 'btn cuivre dense'); break; } }
-  return composerFiche({ type: 'equipement', tete: { type: 'equipement', designation: nom, nom, champ: 'eq-rep', identite: id }, probs, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
+  /* (v78) L'ESSENTIEL : le connecteur montré (ses bulles A · B · C), sa face, ses broches, comment Volta l'a choisi ;
+     LA FABRICATION : tout ce qu'il faut pour le monter ; LES RÉGLAGES : ce qui se change (la référence, l'arrangement, le
+     sexe, le raccord, la consommation) */
+  const Nn = app.norme, Q = k && k.plan, sertirs = new Map(Q ? Q.fils.map(x => [x.f.l, x]) : []);
+  const broches = c ? c.bornes.slice().sort(triNaturel).flatMap(bo => (b.parBorne.get(bo) || []).map(f => { const x = sertirs.get(f.l), st = x ? sertirAuBout(nom, bo, x) : null;
+      return { lettre: x && x.contact ? x.contact.lettre : '', borne: bo, vers: f.vers, borneVers: f.borne, type: f.type, couleur: coulDeFil(f), sertir: st ? motSertir(st) : '', ko: x && x.jaugeOk === false ? 'gauge refusée' : coupables.get(f.l) ? 'ne se loge pas' : '', k: f.l ? cleFil(f.l) : '' }; })) : [];
+  const parL = new Map(Q ? Q.fils.map(x => [x.contact.lettre, x]) : []);
+  const faceG = M ? faceVue(M.module.contacts, ct => { const x = parL.get(ct.lettre); return x ? (x.jaugeOk === false ? 'ko' : 'pris') : ''; }, { lettres: true, pas: 30, r: 10, titre: 'La face du connecteur ' + (c ? c.nom : '') }) : faceVue([], () => '', { w: 200 });
+  const famC = Q && Q.famille ? Q.famille : c && c.pn ? familleDeReference(Nn, c.pn, 'connecteur') : '', nomF = famC ? nomDeFamille(Nn, famC) || famC : '';
+  const colsC = c ? [...new Set(liaisonsDuConnecteur(nom, c.bornes).map(([, ch]) => ch === 'pnDe' ? 'PN1' : 'PN2'))].sort().join(' et ') : '';
+  const refsCt = [...new Set(broches.map(x => x.sertir).filter(Boolean))], fautifsC = Q && !M ? coupablesDu(Q, k.points) : [];
+  const etapesC = !c ? [] : [
+    c.pn ? { html: `Référence <b class="id">${esc(c.pn)}</b>.`, source: 'fichier', mot: 'votre fichier' + (colsC ? ' · ' + colsC : '') } : { html: 'Votre fichier ne donne pas de référence pour ce connecteur.', source: 'fichier', etat: 'att' },
+    nomF ? { html: `Norme <b>${esc(nomF)}</b> : la référence la désigne.`, source: 'norme' } : null,
+    M ? { html: `Arrangement <b class="id">${esc(M.reference)}</b> : ${esc(Q.main ? 'choisi ici, à la main' : Q.nomme ? 'la référence le nomme' : 'le plus petit qui loge ces ' + pluriel(c.bornes.length, 'borne') + ' avec leurs gauges')}.`, source: Q.main ? 'main' : Q.nomme ? 'fichier' : 'calcul' }
+      : Q ? { html: `Aucun arrangement ${esc(nomF)} ne loge ${esc([...new Set(fautifsC.map(x => x.borne))].join(', ') || 'ces bornes')}${fautifsC[0] ? ` : <b class="id">${esc(fautifsC[0].f.type || '?')}</b> ${esc(fautifsC[0].mot)}${fautifsC[0].contact ? ' pour un contact taille ' + esc(fautifsC[0].contact.taille) : ''}` : ''}.${fautifsC[0] && fautifsC[0].propose ? ` En <b class="id">${esc(fautifsC[0].propose.type)}</b>, il s’y loge et porte encore son courant.` : ''}`, source: 'calcul', etat: 'ko' } : null,
+    refsCt.length ? { html: `Contacts à sertir : <b class="id">${esc(refsCt.join(', '))}</b>, lus dans la table des contacts (taille, sexe, gauge).`, source: 'tables' } : null];
+  const fabC = C.map(x => { const kx = parNom.get(x.nom), Qx = kx && kx.plan, Mx = Qx && Qx.modules[0], fx = x.bornes.flatMap(bo => b.parBorne.get(bo) || []).filter(f => f.l), sx = new Map(Qx ? Qx.fils.map(y => [y.f.l, y]) : []);
+    const refs = x.bornes.flatMap(bo => (b.parBorne.get(bo) || []).map(f => { const y = sx.get(f.l), st = y ? sertirAuBout(nom, bo, y) : null; return st ? motSertir(st) : ''; }));
+    let pieces = []; try { pieces = fx.length ? piecesFabrication(habillageDe({ cle: nom + '|' + x.nom, fils: fx, pn: x.pn, ref: Mx ? Mx.reference : '', plan: Mx ? Qx : null })) : []; } catch (_) { pieces = []; }
+    return { titre: 'Connecteur ' + x.nom, ref: x.pn, sous: Mx ? 'arrangement ' + Mx.module.variante : 'arrangement à trouver', lignes: [Mx ? { q: 1, ref: Mx.reference, role: 'module de connecteur' } : null, ...compterParReference(refs, 'contact à sertir'), ...pieces].filter(Boolean) }; });
+  const ess = !ids.length ? '<p class="vu-note">Aucune borne : cet équipement n’a pas encore de câble.</p>' : sel === '—' ? `${choix}${corps}`
+    : `${choix}<div class="vu-schema"><figure class="vu-fig">${faceG}<figcaption>${esc(M ? (Q.utilises || broches.length) + ' contacts pris sur ' + M.module.contacts.length + ' · ' + M.module.variante + ' · face côté contacts' : 'Aucun arrangement ne loge ces bornes')}</figcaption>${M ? legendeFaceVue(broches.some(x => x.ko)) : ''}</figure>`
+      + `<div class="vu-schema-d"><h4 class="vu-titre">Ses broches <span>${broches.length}</span></h4>${brochesVue(broches)}</div></div>${pourquoiVue('Comment Volta a choisi le connecteur ' + c.nom, etapesC)}`;
+  const onglets = [
+    { cle: 'essentiel', statut: { t: quels.length > 1 ? (quels.some(fautif) ? quels.filter(fautif).join(', ') + ' bloque' : pluriel(quels.length, 'connecteur')) : places ? pris + ' contacts sur ' + places : pluriel(ids.length, 'connecteur'), etat: quels.some(fautif) ? 'ko' : 'ok' }, contenu: ess },
+    ongletCables(sFils), ongletFabrication(fabC, 'Ce qu’il faut pour le monter'),
+    { cle: 'reglages', statut: { t: 'référence, arrangement, raccord' }, contenu: (ids.length ? `${choix}<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>` : '<p class="vu-note">Aucune borne.</p>') + (sConso ? groupeSection('Consommation', sConso.contenu) : '') },
+    sDeja ? ongletDeLaSection(sDeja) : null];
+  const sections = [{ cle: 'connecteur', titre: 'Connecteur', resume: resumeC, badge: badgeC, contenu: `${choix}<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>`, vide: ids.length ? '' : 'aucune borne' }, sFils, sConso, sDeja];
+  const vignette = C.length ? `<span class="vu-faces">${C.map(x => { const kx = parNom.get(x.nom), Mx = kx && kx.plan.modules[0], px = new Map(kx ? kx.plan.fils.map(y => [y.contact.lettre, y]) : []);
+      return `<span class="vu-face-v${fautif(x.nom) ? ' ko' : ''}">${faceVue(Mx ? Mx.module.contacts : [], ct => px.has(ct.lettre) ? (px.get(ct.lettre).jaugeOk === false ? 'ko' : 'pris') : '', { mini: true, pas: 13, r: 4.2, w: 70, titre: 'Connecteur ' + x.nom })}<b class="id">${esc(x.nom)}</b><small>${Mx ? (kx.plan.utilises || 0) + '/' + Mx.module.contacts.length : '—'}</small></span>`; }).join('')}</span>` : '';
+  return composerFiche({ type: 'equipement', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pns.length === 1 ? ident(pns[0]) : pns.length ? esc(pluriel(pns.length, 'référence')) : '', C.length > 1 ? esc(pluriel(C.length, 'connecteur')) : '', descriptionDuRetest(nom) ? esc(descriptionDuRetest(nom)) : '', esc(motFolios(foliosDuRepere(nom)))],
+    probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste, vignette, identite: id,
     ok: 'Ses connecteurs logent tous ses câbles, et chacun porte son courant.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 // la case « Câbles » des chiffres (v78) : combien, combien en défaut, ce que porte le plus chargé
 const chiffreCables = s => !s ? null : s.vide ? { k: 'Câbles', v: '0', onglet: 'fils' }
@@ -21820,8 +22191,32 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     chiffreCables(sections[1])];
   const dec = typeof decisionEnMots === 'function' ? decisionEnMots(nom, d) : null;
   const geste = dec ? `<button type="button" class="btn cuivre dense" data-nv-decider="${escA(nom)}" data-bulle="${escA('Écrit dans l’installation : ' + amperes(cal) + ', et les câbles qu’il demande — une seule entrée d’historique, Ctrl+Z défait le tout')}">${esc('Passer en ' + amperes(cal))}</button>` : '';
-  return composerFiche({ type: 'disjoncteur', tete: { type: 'disjoncteur', designation: nom, nom, champ: 'eq-rep', identite: id }, probs, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
-    phrase: dec ? dec.titre + ' — ' + dec.suite : '', taire: decision ? /^(le retest|l’installation) porte un / : null,
+  /* (v78) L'ESSENTIEL — ce qu'il tire contre ses calibres, comment Volta a choisi, ce qu'il alimente ; LE CALIBRE — les
+     calibres de la gamme en touches (un clic en retient un), le profil qui s'écrit, la courbe */
+  const sD = sections[0] || {}, P = sD.parts || {}, sF = sections[1], gamme = (d.gamme || []).filter(g => g.calibre > 0);
+  const ec = phaseEcrite(chargeEcrite(nom)), conso = consommateursDe(nom).filter(r => phaseEcrite(chargeEcrite(r))), dur = ch.pointeP && ch.pointeP.t !== Infinity ? secondes(ch.pointeP.t) : '';
+  const nonP = gamme.filter(g => cleDuVerdict(g) !== 'passe').map(g => nombre(g.calibre)), oui = gamme.filter(g => cleDuVerdict(g) === 'passe').map(g => nombre(g.calibre));
+  const pire = rows.filter(r => r.charge.r != null && isFinite(r.charge.r)).sort((x, y) => y.charge.r - x.charge.r)[0];
+  const etapes = d.sansProfil ? [{ html: 'Aucun profil de charge : ni écrit sur sa fiche, ni déduit de ce qu’il alimente. Sans lui, rien ne se juge.', source: 'calcul', etat: 'att' }] : [
+    { html: `Ce qu’il alimente tire <b>${esc(amperes(ch.perm || 0))}</b> en permanence${ch.pointe ? ` et <b>${esc(amperes(ch.pointe))}</b> ${esc(quand.toLowerCase())}${dur ? ' pendant ' + esc(dur) : ''}` : ''}.`,
+      source: ec ? 'main' : conso.length ? 'calcul' : 'hypothese', mot: ec ? 'écrit sur sa fiche' : conso.length ? 'somme de ' + conso.join(', ') : 'hypothèse' },
+    gamme.length ? { html: `Sur les courbes ${esc(fam || 'de sa famille')}, ${nonP.length ? `<b>${esc(nonP.join(', '))} A</b> ne tiennent pas ce profil ; ` : ''}${oui.length ? `<b>${esc(oui.join(', '))} A</b> le tiennent, avec la marge.` : 'aucun calibre ne le tient.'}`, source: 'norme', mot: 'courbes ' + (fam || 'de la famille') } : null,
+    o.calRetest && o.calRetest !== cal ? { html: `Votre fichier porte <b class="id">${esc(o.pnRetest || amperes(o.calRetest))}</b>, un ${esc(amperes(o.calRetest))} : il ${esc(motDuVerdict(cleDuVerdict(gamme.find(g => g.calibre === o.calRetest) || {})) || 'ne passe pas')}.`, source: 'fichier', etat: 'ko' } : propose ? { html: `Votre fichier porte un <b>${esc(amperes(d.pn))}</b> : il ${esc(motDuVerdict(cleDuVerdict(d.gPn)))}.`, source: 'fichier', etat: 'ko' } : null,
+    cal ? { html: d.origine === 'main' ? `Retenu à la main : <b>${esc(amperes(cal))}</b>. Volta aurait pris ${esc(amperes(d.passe || cal))}.` : `Volta retient le plus petit qui passe : <b>${esc(amperes(cal))}</b>${pn ? ` (<span class="id">${esc(pn)}</span>)` : ''}.`, source: d.origine === 'main' ? 'main' : 'calcul', etat: v.etat === 'ko' ? 'ko' : 'ok' } : null,
+    pire ? { html: `Ses ${rows.length > 1 ? rows.length + ' câbles portent' : 'câble porte'} au plus <b>${Math.round(pire.charge.r * 100)} %</b> de ce qu’${rows.length > 1 ? 'ils admettent' : 'il admet'}.`, source: 'norme', mot: 'EN 2853', etat: pire.charge.r > 1 ? 'ko' : '' } : null];
+  const touches = gamme.length ? `<div class="vu-cals" role="group" aria-label="Les calibres de la gamme">${gamme.map(g => { const k = cleDuVerdict(g), on = g.calibre === cal, fic = o.calRetest === g.calibre || (propose && d.pn === g.calibre);
+      return `<button type="button" class="vu-cal ${k === 'passe' ? 'oui' : 'non'}${on ? ' on' : ''}${fic ? ' fichier' : ''}" data-nv-cal="${g.calibre}" aria-pressed="${on}" data-bulle="${escA(amperes(g.calibre) + ' : il ' + motDuVerdict(k) + (fic ? ' — celui de votre fichier' : '') + (on ? ' — retenu' : ' — un clic le retient'))}"><b>${esc(nombre(g.calibre))}</b><small>${esc(on ? 'retenu' : fic ? 'fichier' : g.calibre === d.passe ? 'le minimum' : 'A')}</small></button>`; }).join('')}</div>`
+    + `<p class="vu-note">Vert : il tient tout le profil, avec la marge. Rouge : il touche la courbe, ou déclenche.${d.origine === 'main' && d.passe ? ` <button type="button" class="fi-lien" data-nv-auto="${escA(nom)}">Revenir au choix de Volta (${esc(amperes(d.passe))})</button>` : ''}</p>` : '';
+  const onglets = [
+    { cle: 'essentiel', statut: { t: cal ? amperes(cal) + (v.etat === 'ko' ? ', ne passe pas' : ', il passe') : 'sans calibre', etat: v.etat === 'ko' ? 'ko' : cal ? 'ok' : '' },
+      contenu: `<section class="vu-bloc"><h4 class="vu-titre">Ce qu’il tire, ce qu’il tient</h4>${chargeVue(d, o, largeurVue())}${legendeChargeVue()}</section>${pourquoiVue('Comment Volta a choisi le calibre', etapes)}`
+        + `<section class="vu-bloc"><h4 class="vu-titre">Ce qu’il alimente <span>${esc(pluriel(rows.length, 'câble'))}</span></h4>${arbreVue(nom, cal, rows)}</section>` },
+    { cle: 'calibre', statut: { t: d.sansProfil ? 'profil à écrire' : ch.perm ? 'profil ' + amperes(ch.perm) + (ch.pointe ? ' · ' + amperes(ch.pointe) : '') : '', etat: d.sansProfil ? 'att' : '' },
+      contenu: (decision || '') + (touches ? `<section class="vu-bloc"><h4 class="vu-titre">Le calibre <span>un clic en retient un autre</span></h4>${touches}</section>` : '') + (P.profil || '') + (P.courbe || '') + (P.profil ? '' : sD.contenu || '') },
+    sF && { cle: 'cables', statut: { t: sF.vide ? 'aucun' : pluriel(sF.compte || 0, 'câble') + (sF.nko ? ', ' + sF.nko + ' en défaut' : sF.charge != null ? ', au plus ' + Math.round(sF.charge * 100) + ' %' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide },
+    sections[2] ? ongletDeLaSection(sections[2]) : null];
+  return composerFiche({ type: 'disjoncteur', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pn ? ident(pn) : '', fam ? 'gamme ' + esc(fam) : '', esc(motFolios(foliosDuRepere(nom)))], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
+    vignette: chargeVue(d, o, 330, true), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation) porte un / : null,
     ok: d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : `Le ${cal ? amperes(cal) : 'calibre'} passe, et ses câbles portent leur courant.`, pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 
 /* ---- UNE BARRETTE (et une barrette à poser) ------------------------------------------------------------------------ */
@@ -21877,13 +22272,46 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   // (sa colonne : le PN de la barrette, PN1 là où elle est l'appareil 1, PN2 là où elle est l'appareil 2)
   const colsPn = [...new Set(L.map(l => l.de === nom ? 'PN1' : l.vers === nom ? 'PN2' : '').filter(Boolean))].sort().join(' · ');
   const proposes = ecartRetest ? [{ sujet: '', champ: 'module', colonne: colsPn, objet: nom, avant: b.pn, apres: Q.reference, geste: main ? 'choisi ici' : 'Volta' }] : [];
-  // (v78, le grand) le module et ses contacts, deux onglets
-  if (ficheEnGrand() && sections[0] && nf) sections.splice(0, 1, { ...sections[0], contenu: tete + (faces ? `<div class="fi-faces">${faces}</div>` : '') }, { cle: 'contacts', titre: 'Contacts', compte: nf, contenu: contacts });
-  const places = Q.contacts || 0, chiffres = [{ k: plusieurs ? 'Modules' : 'Module', v: Q.reference ? ident(plusieurs ? Q.modules.length + ' modules' : Q.reference) : aPoser && !M0 ? '—' : '<span class="fi-ko-t">aucun</span>', etat: Q.reference || aPoser ? '' : 'ko', sous: R ? 'rail ' + ident(R.reference) : famNom ? esc(famNom) : '', onglet: 'connecteur' },
-    places ? { k: 'Contacts', v: `${Q.utilises || 0}<small>/ ${places}</small>`, sous: libres > 0 ? esc(plurielLie(libres, 'libre')) : 'tous pris', barre: (Q.utilises || 0) / places, etat: refuses.length ? 'ko' : '', onglet: 'contacts' } : null,
-    chiffreCables(sections.find(x => x && x.cle === 'fils')), sur ? { k: 'Sur', v: `<span class="id">${esc(sur)}</span>`, sous: 'ajoutée par Volta' } : null];
-  return composerFiche({ type: 'barrette', tete: { type: 'barrette', genre: aPoser ? `Ajoutée par Volta${sur ? ` · sur ${esc(sur)}` : ''}` : '', designation: aPoser ? '' : nom, nom, champ: 'eq-rep', aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '', identite: id },
-    probs, sections, avant: poser, ecrits: aPoser ? [] : ecritsDuRepere(nom), proposes: aPoser ? [] : proposes, chiffres, ok: 'Son module loge tous ses câbles, chacun dans un contact qui admet sa gauge.',
+  /* (v78) L'ESSENTIEL : la face de chaque module — chaque groupe de contacts reliés à sa couleur —, ce qu'elle relie, et
+     comment Volta a choisi le module ; LA FABRICATION : les modules, le rail, les contacts à sertir, les obturateurs ;
+     LES RÉGLAGES : changer de module, le contact de chaque câble */
+  const places = Q.contacts || 0, coulG = new Map(); let nG = 0; Q.modules.forEach((M, k) => M.places.forEach(pl => coulG.set(k + '|' + pl.groupe.k, ++nG)));
+  const facesV = mini => Q.modules.map((M, k) => { const gd = new Map(); (M.module.groupes || []).forEach(g => g.contacts.forEach(c => gd.set(c.lettre, g.k)));
+    return faceVue(M.module.contacts, ct => { const x = par.get(k + '|' + ct.lettre); return x ? (x.jaugeOk === false ? 'ko' : 'pris') : ''; },
+      { lettres: !mini, mini, pas: mini ? (Q.modules.length > 1 ? 12 : 15) : 26, r: mini ? (Q.modules.length > 1 ? 4 : 5) : 9, w: mini ? (Q.modules.length > 1 ? 64 : 92) : undefined, titre: 'Le module ' + M.reference, couleur: ct => { const i = coulG.get(k + '|' + gd.get(ct.lettre)); return i ? `var(--vu-g${(i - 1) % 6 + 1})` : ''; } }); });
+  const filV = f => ({ type: f.type, vers: f.vers + (f.borne ? ':' + f.borne : ''), amont: f.amont, k: f.l ? cleFil(f.l) : '' });
+  const groupesV = Q.modules.flatMap((M, k) => M.places.map(pl => ({ lettres: pl.fils.map(([, c]) => (plusieurs ? (k + 1) + '·' : '') + c.lettre), fils: pl.fils.map(([f]) => filV(f)) })));
+  (Q.restants || []).forEach(p => groupesV.push({ ko: true, lettres: ['?'], fils: p.fils.map(filV) }));
+  const refsCt = compterParReference(Q.fils.map(x => x.sertir ? motSertir(x.sertir) : ''), 'contact à sertir');
+  const etapesB = [
+    aPoser ? { html: `Volta l’a ajoutée${sur ? ` sur <b class="id">${esc(sur)}</b>` : ''} : plusieurs câbles y partent de la même borne, la barrette les relie. Elle entre au contrat quand elle a son vrai repère.`, source: 'calcul', etat: 'att' } : null,
+    nf ? { html: `Votre fichier y relie <b>${esc(pluriel(nf, 'câble'))}</b>, en <b>${esc(pluriel(Q.potentiels, 'groupe'))}</b> : les câbles d’une même borne, ou de bornes pontées, sont reliés entre eux.`, source: 'fichier' } : null,
+    famNom ? { html: `Norme <b>${esc(famNom)}</b> : dans un module, les contacts d’un même groupe sont reliés ; chaque groupe de câbles prend un groupe de contacts.`, source: 'norme' } : null,
+    M0 ? { html: plusieurs ? `<b class="id">${esc(Q.reference)}</b> : un seul module ne loge pas ces ${esc(pluriel(Q.potentiels, 'groupe'))}.` : `Module <b class="id">${esc(Q.reference)}</b> : ${main || Q.main ? 'choisi ici, à la main' : 'le plus petit qui loge ces ' + esc(pluriel(Q.potentiels, 'groupe')) + ', chaque câble dans un contact qui admet sa gauge'}.`, source: main || Q.main ? 'main' : 'calcul' }
+      : aPoser ? null : { html: esc(Q.verdicts[0] ? majuscule(Q.verdicts[0].texte) + '.' : 'Aucun module de la norme ne loge ces câbles.'), source: 'calcul', etat: 'ko' },
+    ecartRetest ? { html: `Votre fichier dit <b class="id">${esc(b.pn)}</b>${pqR ? ' — ' + esc(pqR) : ''}.`, source: 'fichier', etat: 'att' } : null,
+    R ? { html: `Rail <b class="id">${esc(R.reference)}</b>${R.sous ? ', ' + esc(R.sous) : ''} : il porte ${plusieurs ? 'les modules' : 'le module'}.`, source: 'tables', bulle: sansLiens(R.source) } : null,
+    refsCt.length ? { html: `Contacts à sertir : ${refsCt.map(x => `<b class="id">${esc(x.ref)}</b>${x.q > 1 ? ' × ' + x.q : ''}`).join(', ')}.`, source: 'tables' } : null,
+    refuses.length ? { html: `${esc(majuscule(pluriel(refuses.length, 'câble')))} trop gros pour leur contact : la gauge est refusée.`, source: 'tables', etat: 'ko' } : null];
+  const libresT = new Map(); Q.modules.forEach((M, k) => M.module.contacts.forEach(ct => { if (!par.has(k + '|' + ct.lettre)) libresT.set(ct.taille, (libresT.get(ct.taille) || 0) + 1); }));
+  const obts = M0 ? [...libresT].map(([t, q]) => { let o = null; try { o = obturateurDe(N, M0.module.famille, t); } catch (_) { o = null; } return o && o.obturateur ? { q, ref: String(o.obturateur), role: 'obturateur, contact libre taille ' + t, statut: 'selon la zone' } : null; }).filter(Boolean) : [];
+  const fabB = M0 ? [{ titre: 'Barrette ' + nom, sous: famNom, lignes: [...compterParReference(Q.modules.map(M => M.reference), 'module de jonction'), R ? { q: 1, ref: R.reference, role: 'rail' + (R.sous ? ', ' + R.sous : '') } : null, ...refsCt, ...obts].filter(Boolean) }] : [];
+  const essB = (aPoser && !M0 ? '<p class="vu-note">Le module se choisit quand la barrette a son vrai repère.</p>'
+    : `<div class="vu-schema"><figure class="vu-fig"><span class="vu-faces-g">${facesV(false).join('')}</span><figcaption>${esc(M0 ? (Q.utilises || 0) + ' contacts pris sur ' + places + (famNom ? ' · ' + famNom : '') : 'Aucun module ne loge ces câbles')}</figcaption>${M0 ? legendeFaceVue(refuses.length > 0) : ''}</figure>`
+      + `<div class="vu-schema-d"><h4 class="vu-titre">Ce qu’elle relie <span>${esc(pluriel(groupesV.length, 'groupe'))}</span></h4>${potentielsVue(groupesV)}</div></div>`) + pourquoiVue('Comment Volta a choisi le module', etapesB);
+  const sF = sections.find(x => x && x.cle === 'fils'), sD = sections.find(x => x && x.cle === 'dejafait');
+  const onglets = [
+    { cle: 'essentiel', statut: { t: M0 ? (Q.utilises || 0) + ' contacts sur ' + places : aPoser ? 'à poser' : 'aucun module', etat: refuses.length || (!M0 && !aPoser) ? 'ko' : 'ok' }, contenu: essB },
+    ongletCables(sF), ongletFabrication(fabB, 'Ce qu’il faut pour la monter'),
+    { cle: 'reglages', statut: { t: aPoser && !M0 ? 'son vrai repère' : 'module, contacts' }, contenu: tete + groupeSection('Contacts', contacts, { compte: nf || null }) },
+    sD ? ongletDeLaSection(sD) : null];
+  const chiffres = [places ? { k: 'Contacts', v: `${Q.utilises || 0}<small>/ ${places}</small>`, sous: libres > 0 ? esc(plurielLie(libres, 'libre')) : 'tous pris', barre: (Q.utilises || 0) / places, etat: refuses.length ? 'ko' : '', onglet: 'essentiel' } : null,
+    chiffreCables(sF), sur ? { k: 'Sur', v: `<span class="id">${esc(sur)}</span>`, sous: 'ajoutée par Volta' } : Q.potentiels ? { k: 'Groupes', v: String(groupesV.length), sous: 'de câbles reliés', onglet: 'essentiel' } : null,
+    { k: plusieurs ? 'Modules' : 'Module', v: Q.reference ? ident(plusieurs ? Q.modules.length + ' modules' : Q.reference) : aPoser && !M0 ? '—' : '<span class="fi-ko-t">aucun</span>', etat: Q.reference || aPoser ? '' : 'ko', sous: R ? 'rail ' + ident(R.reference) : famNom ? esc(famNom) : '', onglet: 'essentiel' }];
+  const vignette = M0 ? `<span class="vu-faces">${facesV(true).map((f, k) => `<span class="vu-face-v">${f}<b class="id">${esc(plusieurs ? (k + 1) + ' · ' + Q.modules[k].module.variante : Q.modules[k].module.variante)}</b></span>`).join('')}</span>` : '';
+  return composerFiche({ type: 'barrette', tete: { nom, champ: 'eq-rep', designation: aPoser ? '' : nom, aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '' },
+    meta: [aPoser ? esc('ajoutée par Volta' + (sur ? ' sur ' + sur : '')) : '', Q.reference ? ident(Q.reference) : '', famNom ? esc(famNom) : '', aPoser ? '' : esc(motFolios(foliosDuRepere(nom)))],
+    probs, onglets, sections, avant: poser, ecrits: aPoser ? [] : ecritsDuRepere(nom), proposes: aPoser ? [] : proposes, chiffres, vignette, identite: id, ok: 'Son module loge tous ses câbles, chacun dans un contact qui admet sa gauge.',
     pied: aPoser ? { voir: raccord && raccord.de, menu: [['fi-renommer', 'Lui donner son vrai repère']] } : { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 /* LA GALERIE des assemblages d'une norme (le lecteur : « quand on clique sur la norme, on voit tous les assemblages de
    la norme, très visuel, pour savoir lequel est le mieux, si on peut mieux faire ») : chaque variante qui loge les
@@ -22021,15 +22449,45 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     sectionFilsDuRepere(fils, probs), sectionDejaFait(nom)];
   // l'identité : la référence de l'installation, une fois (l'arrangement est sur la ligne Référence) — une norme à la fois
   const id = identite([majuscule(natureDe(nom)), b.pn ? ident(b.pn) : M ? ident(M.reference) : '', esc(motFolios(foliosDuRepere(nom)))]);
-  // (v78, le grand) la référence et sa face, les contacts, le raccord : trois onglets
-  if (ficheEnGrand() && sections[0]) sections.splice(0, 1, { ...sections[0], titre: 'Référence', contenu: tete + face },
-    lignes ? { cle: 'contacts', titre: 'Contacts', compte: nP || null, contenu: groupeSection('', pqSexe + paires, { droite: sexe }) } : null, raccords ? { cle: 'raccord', titre: 'Raccord', contenu: raccords } : null);
+  /* (v78) L'ESSENTIEL : la face de la fiche, LA TRAVERSÉE (ce qui arrive, la lettre, ce qui repart), comment Volta a choisi
+     l'arrangement et le sexe ; LA FABRICATION : de chaque côté, les contacts à sertir et le raccord ; LES RÉGLAGES : changer
+     d'arrangement, le sexe, le contact de chaque câble, le raccord */
   const places = M ? M.module.contacts.length : 0, nPris = M ? M.module.contacts.filter(ct => Q.fils.some(x => x.contact === ct)).length : 0;
-  const chiffres = [{ k: 'Référence', v: M ? ident(M.reference) : '<span class="fi-ko-t">aucune</span>', etat: M ? '' : 'ko', sous: fam ? esc(fam) : '', onglet: 'connecteur' },
-    places ? { k: 'Contacts', v: `${nPris}<small>/ ${places}</small>`, sous: places - nPris > 0 ? esc(plurielLie(places - nPris, 'libre')) : 'tous pris', barre: nPris / places, etat: Q.fils.some(x => x.jaugeOk === false) ? 'ko' : '', onglet: 'contacts' } : null,
-    Q.tableContacts && M ? { k: 'Fiche', v: Q.sexe === 'M' ? 'mâle' : 'femelle', sous: Q.sexe === 'M' ? 'broches' : 'douilles', onglet: 'contacts' } : null,
-    chiffreCables(sections.find(x => x && x.cle === 'fils'))];
-  return composerFiche({ type: 'prise', tete: { type: 'prise', designation: nom, nom, champ: 'eq-rep', identite: id }, probs, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres,
+  const rond = M ? formeDuCorps(M.module) === 'circulaire' : false, koP = Q.fils.some(x => x.jaugeOk === false);
+  const etatCt = ct => { const xs = Q.fils.filter(x => x.contact === ct); return !xs.length ? '' : xs.some(x => x.jaugeOk === false) ? 'ko' : 'pris'; };
+  const faceP = mini => M ? faceVue(M.module.contacts, etatCt, { rond, mini, lettres: !mini, pas: mini ? 16 : 28, r: mini ? 5.5 : 9.5, w: mini ? 96 : undefined, titre: 'La face de la fiche ' + M.reference }) : faceVue([], () => '', { w: mini ? 64 : 180 });
+  const coteP = (lt, am) => { const ct = M.module.contacts.find(k => k.lettre === lt), x = Q.fils.find(y => y.contact === ct && !!y.f.amont === am); if (!x) return null;
+    return { type: x.f.type, de: x.f.vers + (x.f.borne ? ':' + x.f.borne : ''), couleur: coulDeFil(x.f), ko: x.jaugeOk === false, k: x.f.l ? cleFil(x.f.l) : '' }; };
+  const lettresP = M ? M.module.contacts.filter(ct => Q.fils.some(x => x.contact === ct)).map(ct => ct.lettre) : [];
+  const refsDe = xs => compterParReference(xs.map(x => x.sertir ? motSertir(x.sertir) : ''), 'contact à sertir');
+  const rAm = refsDe(amont), rAv = refsDe(aval), dits = r => r.map(x => `<b class="id">${esc(x.ref)}</b>${x.q > 1 ? ' × ' + x.q : ''}`).join(', ');
+  const motsS = Q.sexe === 'M' ? 'la fiche en broches, l’embase en douilles' : 'la fiche en douilles, l’embase en broches';
+  const etapesP = [
+    b.pn ? { html: `Votre fichier donne la référence <b class="id">${esc(b.pn)}</b>${nomPn ? ', une ' + esc(nomPn) : ''}.`, source: 'fichier' } : { html: 'Votre fichier ne donne pas de référence pour cette prise.', source: 'fichier', etat: 'att' },
+    M ? { html: Q.main ? `Arrangement <b class="id">${esc(M.reference)}</b>, choisi ici, à la main.` : Q.visee ? `Norme ${esc(fam)} choisie ici : Volta y prend le plus petit arrangement qui loge ces ${nB} contacts, <b class="id">${esc(M.reference)}</b>.`
+          : Q.nomme ? `La référence nomme l’arrangement <b class="id">${esc(M.reference)}</b> (${esc(M.module.variante)}).` : `Arrangement <b class="id">${esc(M.reference)}</b> : le plus petit ${esc(fam)} qui a ces ${nB} contacts et accepte ${esc(types || 'ces câbles')}.`, source: Q.main || Q.visee ? 'main' : Q.nomme ? 'fichier' : 'calcul' }
+      : { html: `Aucun arrangement ne loge ${esc([...new Set(fautifs.map(x => x.borne))].join(', ') || 'ces contacts')}${fautifs[0] ? ` : <b class="id">${esc(fautifs[0].f.type || '?')}</b> ${esc(fautifs[0].mot)}` : ''}.${fautifs[0] && fautifs[0].propose ? ` En <b class="id">${esc(fautifs[0].propose.type)}</b>, il s’y loge.` : ''}`, source: 'calcul', etat: 'ko' },
+    M && Q.tableContacts ? { html: `${esc(majuscule(motsS))} : ${esc(Q.sexeSource === 'choix' ? 'choisi ici' : Q.sexeSource === 'part number' ? 'la référence le dit' : 'le côté qui amène le courant porte les douilles')}.`, source: Q.sexeSource === 'choix' ? 'main' : Q.sexeSource === 'part number' ? 'fichier' : 'hypothese', mot: Q.sexeSource === 'choix' || Q.sexeSource === 'part number' ? '' : 'l’usage' } : null,
+    rAm.length || rAv.length ? { html: `Contacts à sertir${rAm.length ? ` — côté fiche : ${dits(rAm)}` : ''}${rAv.length ? `${rAm.length ? ' ;' : ' —'} côté embase : ${dits(rAv)}` : ''}.`, source: 'tables' } : null,
+    koP ? { html: 'Un contact refuse la gauge de son câble : il faut un câble plus fin, ou un autre arrangement.', source: 'tables', etat: 'ko' } : null];
+  const fabP = M ? [['Fiche', 'la partie mobile · ce qui arrive', amont], ['Embase', 'la partie fixe · ce qui repart', aval]].filter(([, , xs]) => xs.length).map(([t, so, xs], i) => { let pieces = [];
+      try { pieces = piecesFabrication(habillageDe({ cle: nom + '|' + t.toLowerCase(), titre: t, fils: xs.map(x => x.f), pn: b.pn, ref: Q.reference, plan: Q })); } catch (_) { pieces = []; }
+      return { titre: t, ref: i === 0 ? M.reference : '', sous: so, lignes: [...refsDe(xs), ...pieces] }; }) : [];
+  const essP = (M ? `<div class="vu-schema"><figure class="vu-fig">${faceP(false)}<figcaption>${esc(nPris + ' contacts pris sur ' + places + ' · face de la fiche, côté contacts')}</figcaption>${legendeFaceVue(koP)}</figure>`
+      + `<div class="vu-schema-d"><h4 class="vu-titre">Ce qui la traverse <span>${esc(pluriel(lettresP.length, 'contact'))}</span></h4>${traverseeVue(lettresP, coteP)}</div></div>` : `<div class="vu-schema">${faceP(false)}</div>`)
+    + pourquoiVue('Comment Volta a choisi la prise', etapesP);
+  const sF = sections.find(x => x && x.cle === 'fils'), sD = sections.find(x => x && x.cle === 'dejafait');
+  const onglets = [
+    { cle: 'essentiel', statut: { t: M ? nPris + ' contacts sur ' + places : 'aucun arrangement', etat: !M || koP ? 'ko' : 'ok' }, contenu: essP },
+    ongletCables(sF), ongletFabrication(fabP, 'Ce qu’il faut pour la monter'),
+    { cle: 'reglages', statut: { t: 'arrangement, sexe, raccord' }, contenu: tete + face + (lignes ? groupeSection('Contacts', pqSexe + paires, { droite: sexe, compte: nP || null }) : '') + (raccords ? groupeSection('Raccord', raccords, { cls: 'fi-groupe-raccord' }) : '') },
+    sD ? ongletDeLaSection(sD) : null];
+  const chiffres = [places ? { k: 'Contacts', v: `${nPris}<small>/ ${places}</small>`, sous: places - nPris > 0 ? esc(plurielLie(places - nPris, 'libre')) : 'tous pris', barre: nPris / places, etat: koP ? 'ko' : '', onglet: 'essentiel' } : null,
+    chiffreCables(sF), Q.tableContacts && M ? { k: 'Fiche', v: Q.sexe === 'M' ? 'mâle' : 'femelle', sous: Q.sexe === 'M' ? 'en broches' : 'en douilles', onglet: 'reglages' } : null,
+    { k: 'Référence', v: M ? ident(M.reference) : '<span class="fi-ko-t">aucune</span>', etat: M ? '' : 'ko', sous: fam ? esc(fam) : '', onglet: 'essentiel' }];
+  const vignette = M ? `<span class="vu-faces"><span class="vu-face-v${koP ? ' ko' : ''}">${faceP(true)}<b class="id">${esc(M.module.variante)}</b></span></span>` : '';
+  return composerFiche({ type: 'prise', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [b.pn ? ident(b.pn) : M ? ident(M.reference) : '', fam ? esc(fam) : '', esc(motFolios(foliosDuRepere(nom)))],
+    probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, vignette, identite: id,
     geste: fautifs.length ? boutonReparer(fautifs.find(x => x.propose) || {}).replace('btn papier', 'btn cuivre dense') : '', ok: 'L’arrangement loge tous ses contacts, de chaque côté, avec leurs gauges.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 
 /* ---- UNE MASSE ------------------------------------------------------------------------------------------------------ */
@@ -22042,7 +22500,7 @@ function ficheMasse(nom) { const fils = filsDuRepere(nom), probs = problemesDesF
       + `<span class="fi-num">${puceFil(f)}<b>${esc(nomDuFil({ ...f, cable: l.cable }))}</b></span><span class="fi-dest amont">${ico('fleche')}<span>${esc(f.vers)}${f.borneVers ? `<i>:${esc(f.borneVers)}</i>` : ''}</span></span><span class="fi-jg${ko ? ' ko' : ''}">${j != null ? j + '<small> AWG</small>' : ''}</span></li>`; }).join('');
   const sections = [{ cle: 'fils', titre: pluriel(fils.length, 'câble'), badge: badgeProblemes(probs, 'fils'),
     contenu: rows ? `<ul class="fi-liste fi-masse"><li class="fi-entetes"><span>Câble</span><span>D’où il vient</span><span>Gauge</span></li>${rows}</ul>` : '', vide: fils.length ? '' : 'aucun câble' }];
-  return composerFiche({ type: 'masse', tete: { type: 'masse', genre: 'Masse' + aide('masse', { cables: fils.length }), identite: esc(motFolios(foliosDuRepere(nom))), designation: nom, nom, champ: 'eq-rep' }, probs, sections,
+  return composerFiche({ type: 'masse', tete: { type: 'masse', genre: 'Masse' + aide('masse', { cables: fils.length }), identite: esc(motFolios(foliosDuRepere(nom))), designation: nom, nom, champ: 'eq-rep' }, meta: ['retour au corps de l’appareil', esc(motFolios(foliosDuRepere(nom)))], probs, sections,
     chiffres: [{ k: 'Câbles', v: String(fils.length), sous: 'vont au corps', onglet: 'fils' }], ok: 'Un retour au corps de l’appareil : ni connecteur ni contact.', pied: { tableau: nom, menu: [['fi-copier', 'Copier la fiche']] } }); }
 
 /* ---- UN BORNIER HORS MODULES (une bible importée sans modules) ----------------------------------------------------- */
@@ -22183,7 +22641,28 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
      et la chute contre l'admis. La cause (son disjoncteur) et la longueur supposée ouvrent l'onglet « Intensité et chute ». */
   const bt = (k, rep, borne) => `<button type="button" class="nv-bout" data-bout="${k}" data-bulle="${escA('Ouvrir ' + (rep || '—'))}"><b class="id">${esc(rep || '—')}</b>${borne ? `<i>:${esc(borne)}</i>` : ''}</button>`;
   const trajetL = `<p class="nv-trajet" style="--c:${coul}">${bt('de', l.de, l.borneDe)}<span class="nv-trajet-f" aria-hidden="true"></span>${passe.length ? `<span class="nv-trajet-via" data-bulle="${escA('Par ' + passe.join(', '))}">par ${esc(passe.map(t => t.split(' · ')[0]).join(', '))}</span><span class="nv-trajet-f" aria-hidden="true"></span>` : ''}${bt('vers', l.vers, l.borneVers)}</p>`;
-  if (sections[1]) sections[1] = { ...sections[1], contenu: (cause || '') + hypL + sections[1].contenu };
+  /* (v78) L'ESSENTIEL : son chemin dessiné, l'intensité et la chute contre l'admis, d'où viennent ces chiffres ; LA
+     FABRICATION : le câble et le contact à sertir de chaque bout ; LES RÉGLAGES : le contact de chaque bout, sa route */
+  const sousB = k => { const ct = cts[k]; return ct && ct.st ? 'contact ' + motSertir(ct.st) : ''; };
+  const cheminG = cheminVue({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, via: passe.map(t => t.split(' · ')[0]).join(', '), couleur: coul,
+    legende: [l.type || 'sans type', L != null ? nombre(arrondi(L, 2)) + ' m' : neuf ? '' : nombre(H.longueur) + ' m supposés'].filter(Boolean).join(' · '), sousDe: sousB('de'), sousVers: sousB('vers') }, largeurVue());
+  const etapesF = neuf ? [{ html: `Volta le crée quand <b class="id">${esc(l.aPoser)}</b> est posée au contrat : il prend alors sa place dans votre fichier.`, source: 'calcul', etat: 'att' }] : [
+    l.type ? { html: `Type <b class="id">${esc(l.type)}</b>${jauge != null ? `, gauge ${esc(String(jauge))} AWG` : ''} : ${cab ? 'la base des câbles le connaît' + (brins ? ' — ' + esc(brins) : '') : 'hors de la base des câbles'}.`, source: 'fichier', etat: cab ? '' : 'att' }
+      : { html: 'Votre fichier ne donne pas son type : la gauge ne se vérifie pas.', source: 'fichier', etat: 'att' },
+    x.al ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : ce que tirent les équipements qu’il alimente, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
+      : { html: `Aucun disjoncteur en amont : Volta suppose <b>${esc(nombre(H.courant))} A</b>.`, source: 'hypothese', etat: 'att' },
+    x.fn ? { html: `Il admet <b>${esc(amperes(x.continu))}</b> en continu${x.fac && Math.abs(x.fac - 1) > 1e-9 ? ' (déclassé × ' + esc(nombre(arrondi(x.fac, 2))) + ')' : ''}.`, source: 'norme', mot: 'EN 2853' } : null,
+    L != null ? { html: `Longueur <b>${esc(nombre(arrondi(L, 2)))} m</b>.`, source: 'fichier' } : { html: `Longueur supposée <b>${esc(nombre(H.longueur))} m</b> : votre fichier ne la donne pas, et la chute en dépend.`, source: 'hypothese', etat: 'att' },
+    ch.total ? { html: `Chute <b>${esc(volts(ch.total.dU))}</b> de ${esc(x.al.nom)} jusqu’à ${esc(boutU)}${ch.max != null ? ', pour ' + esc(volts(ch.max)) + ' admis' : ''} ; ce câble en fait ${esc(volts(ch.dU))}.`, source: 'calcul', etat: ch.trop ? (ch.reel ? 'ko' : 'att') : '' }
+      : ch.dU != null ? { html: `Chute <b>${esc(volts(ch.dU))}</b> sur ce câble seul.`, source: 'calcul' } : null,
+    ...['de', 'vers'].map(k => cts[k] && cts[k].st ? { html: `Côté <b class="id">${esc(l[k])}</b> : contact à sertir <b class="id">${esc(motSertir(cts[k].st))}</b>.`, source: cts[k].st.main ? 'main' : 'tables' } : null)];
+  const fabF = neuf ? [] : [{ titre: 'Le câble', sous: l.route ? 'route ' + l.route : '', lignes: [{ q: 1, ref: l.type || '—', role: (L != null ? nombre(arrondi(L, 2)) + ' m' : nombre(H.longueur) + ' m supposés') + (cab && cab.nature ? ' · ' + cab.nature : '') }] },
+    ...['de', 'vers'].filter(k => cts[k] && cts[k].st).map(k => { const bo = k === 'de' ? l.borneDe : l.borneVers; return { titre: 'Côté ' + l[k], sous: bo ? 'borne ' + bo : '', lignes: [{ q: 1, ref: motSertir(cts[k].st), role: 'contact à sertir' }] }; })];
+  const essF = `<div class="vu-chemin-c">${cheminG}</div>${cause || ''}${hypL}<div class="fi-mesures">${intens}${chute}</div>${reparer}${pourquoiVue('D’où viennent ces chiffres', etapesF)}`;
+  const onglets = [
+    { cle: 'essentiel', statut: { t: x.fn ? amperes(iV) + ' sur ' + amperes(iA) : l.type ? 'hors EN 2853' : 'sans type', etat: probs.some(q => q.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: essF },
+    ongletFabrication(fabF, 'Ce qu’il faut pour le poser'),
+    neuf ? null : { cle: 'reglages', statut: { t: 'contacts, route' }, contenu: trajet }];
   const chiffres = neuf ? [{ k: 'Type', v: l.type ? `<span class="id">${esc(l.type)}</span>` : '—' }, { k: 'Gauge', v: jauge != null ? valeurU(jauge, 'AWG') : '—' }] : [
     { k: 'Type', v: `<span class="nv-type-ed">${T.fam}${T.jauge}</span>`, edit: true, etat: l.type ? (cab && !phy.length ? '' : 'att') : 'att', sous: cab && cab.nature ? esc(cab.nature) : l.type ? (cab ? 'AWG' : 'hors de la base') : 'à écrire', bulle: brins || '' },
     { k: 'Longueur', v: `${saisie('data-edit="longueur"', L != null ? nombre(arrondi(L, 3)) : '', { ph: nombre(H.longueur), label: 'Longueur en mètres' + (L == null ? ' — supposée : ' + nombre(H.longueur) + ' m, à écrire' : ''), mode: 'decimal', court: true })}<small>m</small>`, edit: true, etat: L == null ? 'supp' : '', sous: L == null ? 'supposée' : 'de l’installation' },
@@ -22192,7 +22671,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   // le geste qui répare : « Tout régler » quand son disjoncteur est la cause, sinon le plus fin qui tient, sinon la gauge qui se loge
   const pris = h => ((/<button type="button" class="btn cuivre" data-tout-regler[\s\S]*?<\/button>/.exec(h || '') || [])[0] || (/<button type="button" class="btn papier fi-reparer"[\s\S]*?<\/button>/.exec(h || '') || [])[0] || '').replace(/class="btn (cuivre|papier)/, 'class="btn cuivre dense');
   const geste = pris(cause) || pris(reparer) || pris(loge);
-  return composerFiche({ type: 'fil', tete: { type: 'fil', genre: 'Câble', identite: id, nom: neuf ? 'Câble à créer' : (l.type || 'Câble sans type'), coul }, probs, sections, avant: trajetL, ecrits, proposes: [], chiffres, geste,
+  return composerFiche({ type: 'fil', tete: { nom: neuf ? 'Câble à créer' : (l.type || 'Câble sans type') }, meta: [l.route ? `<i class="nc-route" style="--c:${coul}"></i>route ${esc(l.route)}` : '', cab && cab.nature ? esc(cab.nature) : '', esc(motFolios(neuf ? [] : foliosDe(l).map(String)))],
+    probs, onglets, sections, avant: trajetL, ecrits, proposes: [], chiffres, geste, identite: id,
     gestesTus: cause ? /^(Tout régler|Voir )/ : null, ok: x.fn ? 'Il porte son courant, et sa chute reste sous l’admis.' : 'Rien à reprendre.', fin: datalists, pied: neuf ? { voir: l.aPoser } : { tableau: l.de, menu: MENU_FIL } }); }
 
 /* ---- LE PIED ---------------------------------------------------------------------------------------------------------- */
@@ -22278,7 +22758,7 @@ function rendreFiche() { const box = $('ba-equip'), c = app.cible; if ($('inspec
   // (v77) une fiche qui casse le dit — et le bilan anonyme le garde (masqué), l'autotest le lit (`fi-erreur`, sa pile)
   catch (err) { FI.erreur = err; if (typeof noterErreurPage === 'function') noterErreurPage('fiche : ' + String(err && err.message || err));
     html = enTete({ type: 'equipement', genre: 'Élément', nom: c.nom || (c.l && c.l.cable) || '—' }) + `<p class="fi-note fi-erreur">${esc(String(err && err.message || err))}</p>`; }
-  const nav = barreNav({ fermer: c.type !== 'ref', nom: nomDeCible(c) });
+  const nav = ficheEnGrand() && c.type !== 'ref' ? '' : barreNav({ fermer: c.type !== 'ref', nom: nomDeCible(c) });
   const haut = box.scrollTop, a = document.activeElement, presse = meme && a && a.tagName === 'BUTTON' && box.contains(a) ? empreinteBouton(a) : null, ancres = meme ? ancresDe(box) : null;
   noterDefilements(box); box.innerHTML = nav + html; box.dataset.cle = cle; box.className = 'fi ' + (c.type === 'ref' ? '' : ficheEnGrand() ? 'nv-g' : 'nv-c'); box.dataset.type = c.type; rendreDefilements(box, meme);
   // les sections ouvertes et le défilement : ceux qu'on avait (la même fiche, un retour), sinon ceux de la mémoire, en haut
@@ -22299,14 +22779,14 @@ function rendreFiche() { const box = $('ba-equip'), c = app.cible; if ($('inspec
   if (but && box.querySelector('.nv-grand')) { if (but.section) activerOnglet(but.section, false);
     if (but.viser) { const xs = [...box.querySelectorAll(`[data-i="${CSS.escape(but.viser)}"]:not(.mj-contact)`)], li = xs.find(x => !x.closest('[hidden]')) || xs[0], p = li && li.closest('.nv-panneau');
       if (p && p.hidden) activerOnglet(p.dataset.section, false); viserDansLaFiche(but.viser); } }
-  else if (but && !box.querySelector('.nv-carte')) { const d = but.section ? ouvrirSection(box, but.section) : null;
+  else if (but && !box.querySelector('.nc')) { const d = but.section ? ouvrirSection(box, but.section) : null;
     if (but.viser) { const li = box.querySelector(`[data-i="${CSS.escape(but.viser)}"]:not(.mj-contact)`); if (li) { const sec = li.closest('details.fs'); if (sec) sec.open = true; box.querySelectorAll(`[data-i="${CSS.escape(but.viser)}"]`).forEach(x => x.classList.add('vise', 'arrivee')); try { li.scrollIntoView({ block: 'center' }); } catch (_) { } } else if (d) d.scrollIntoView({ block: 'start' }); } }
   FI.viser = ''; suivreDefilement(box); }
 /* REFAIRE EN PLACE la fiche montrée quand on écrit dans un de ses champs (le profil d'un disjoncteur, la désignation…) :
    la fiche se recalcule, et chaque morceau qui ne porte pas le champ sous les doigts est remplacé ; celui qui le porte
    garde son élément (et sa saisie), ses voisins suivent. Les sections restent comme l'ingénieur les a laissées. */
 function rafraichirFicheEnPlace() { const box = $('ba-equip'), c = app.cible; if (!c || c.type === 'ref' || $('inspecteur').hidden || !box.dataset.type) return false;
-  viderCalculs(); let html; try { html = barreNav({ fermer: true, nom: nomDeCible(c) }) + ficheDe(c); } catch (_) { return false; }
+  viderCalculs(); let html; try { html = (ficheEnGrand() ? '' : barreNav({ fermer: true, nom: nomDeCible(c) })) + ficheDe(c); } catch (_) { return false; }
   const t = document.createElement('template'); t.innerHTML = html;
   const ouvertes = {}; box.querySelectorAll('details.fs').forEach(d => { ouvertes[d.dataset.section] = d.open; }); const pbs = $('fi-pbs'), pbsOuvert = !!(pbs && pbs.open);
   noterDefilements(box); const haut = box.scrollTop, cleDe = el => el.tagName === 'DETAILS' && el.dataset.section ? 'fs:' + el.dataset.section : (el.id || String(el.className).split(' ')[0]);
@@ -23885,7 +24365,7 @@ const RAIL = 52;   // la largeur du rail de gauche ; le plan commence après (et
    Le plan se recadre dans ce qui reste : rien ne le recouvre. La CARTE flottante (08-carte) ne prend aucune place : elle
    se pose à côté de son bloc, et s'écarte s'il passe dessous. */
 function marges() { const tel = telephone(), folios = !$('folios').hidden, vu = id => !$(id).hidden ? $(id) : null;
-  const droite = vu('fiche') || (carteFlottante() ? null : vu('inspecteur')), bas = vu('base'), jeton = n => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(n)) || 0;
+  const droite = vu('fiche') || (carteFlottante() || (typeof grandLibre === 'function' && grandLibre()) ? null : vu('inspecteur')), bas = vu('base'), jeton = n => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(n)) || 0;
   const entete = jeton('--entete'), rail = jeton('--rail') || RAIL, pied = jeton('--pied') || 40;
   if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16 + entete, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
   return { haut: 24 + entete, bas: (bas ? bas.offsetHeight + 16 : 0) + (folios ? pied + 24 : 24), gauche: rail + 24, droite: 24 + (droite ? droite.offsetWidth + 8 : 0) }; }
@@ -24759,7 +25239,7 @@ function allerAuRepere(nom, plan) { const P = plans();
    seulement, si ce qu'on vient de choisir passe sous le panneau, on le ramène, à la même échelle. */
 function recadrerSiCache() { const d = app.dessin; if (!d) { ajuster(true); return; }
   // (v78) le grand ouvert : l'objet reste cadré dans le tiers du plan, lisible — pas la feuille entière, minuscule
-  if (document.body.classList.contains('insp-grand') && boiteDeLaCible()) { montrerSiCache(boiteDeLaCible()); return; }
+  if (document.body.classList.contains('insp-epingle') && document.body.classList.contains('insp-grand') && boiteDeLaCible()) { montrerSiCache(boiteDeLaCible()); return; }
   const r = cadre(), s = app.vue.s, entier = bb => { const x0 = app.vue.tx + bb.x * s, y0 = app.vue.ty + bb.y * s; return x0 >= -2 && y0 >= -2 && x0 + bb.w * s <= r.width + 2 && y0 + bb.h * s <= r.height + 2; };
   // la feuille entière — ou, cadré sur lui (v73), le DESSIN entier — se recadre dans la place qui reste
   if (entier(d.bbox) || (VUE.cadrage === 'dessin' && !VUE.main && entier(boiteDuDessin(d)))) { ajuster(true); return; }
@@ -24778,7 +25258,7 @@ function boiteDeLaCible() { const d = app.dessin, c = app.cible; if (!d || !c) r
 function montrerSiCache(b) { if (!b || !app.dessin) return; const r = cadre(), m = marges(), s = app.vue.s;
   const X0 = app.vue.tx + b.x * s, Y0 = app.vue.ty + b.y * s, X1 = X0 + b.w * s, Y1 = Y0 + b.h * s, L = m.gauche, T = m.haut, R = r.width - m.droite, B = r.height - m.bas;
   // (v78) à côté du grand, le plan n'a qu'un tiers : l'objet s'y cadre lisible (ses voisins autour), sauf s'il l'est déjà
-  if (document.body.classList.contains('insp-grand')) { const lisible = Math.min(LISIBLE_BUREAU, Math.max(0.42, Math.min((R - L) / (b.w + 260), (B - T) / (b.h + 200))));
+  if (document.body.classList.contains('insp-grand') && document.body.classList.contains('insp-epingle')) { const lisible = Math.min(LISIBLE_BUREAU, Math.max(0.42, Math.min((R - L) / (b.w + 260), (B - T) / (b.h + 200))));
     if (X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1 && s >= Math.min(0.42, lisible) - 1e-3) return;
     animerVue({ s: lisible, tx: (L + R) / 2 - (b.x + b.w / 2) * lisible, ty: (T + B) / 2 - (b.y + b.h / 2) * lisible }, true); return; }
   if (X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1) return;
@@ -26443,57 +26923,78 @@ const NIVEAU = { grand: false, onglet: {}, tri: { col: '', sens: 1 }, filtre: ''
 const recapOuvert = () => !!(typeof app !== 'undefined' && app.base && app.base.ouvert);
 // la fiche entière : le grand demandé, ou le récapitulatif ouvert (la fiche y est le volet de droite)
 const ficheEnGrand = () => !!NIVEAU.grand || recapOuvert();
-// le grand aux deux tiers, la liste à gauche : ni au téléphone (la feuille entière), ni à côté du récapitulatif
+// le grand avec sa liste à gauche : ni au téléphone (la feuille entière), ni à côté du récapitulatif
 const grandLarge = () => !!NIVEAU.grand && !recapOuvert() && !telephone();
 
-/* ---- LES ONGLETS : un sujet chacun, dans un ordre fixe ------------------------------------------------------------ */
-const ORDRE_ONGLETS = ['disjoncteur', 'connecteur', 'contacts', 'raccord', 'trajet', 'fils', 'conso', 'dejafait', 'modifs'];
-const TITRES_ONGLETS = { disjoncteur: 'Calibre', connecteur: 'Connecteur', contacts: 'Contacts', raccord: 'Raccord', trajet: 'De → vers', fils: 'Câbles', conso: 'Consommation', dejafait: 'Déjà fait', modifs: 'Modifications' };
+/* ---- LES ONGLETS (v78, le lecteur : « beaucoup plus lisibles, plus clairs, plus compréhensibles ») : chacun dit en deux
+   lignes ce qu'il contient et où il en est — « Calibre · 15 A, il passe », « Câbles · 3, au plus 44 % », « Fabrication ·
+   17 pièces ». Toujours le même ordre : l'essentiel d'abord, les réglages et l'historique à la fin. ---- */
+const ORDRE_ONGLETS = ['essentiel', 'calibre', 'cables', 'fabrication', 'reglages', 'dejafait', 'modifs'];
+const TITRES_ONGLETS = { essentiel: 'L’essentiel', calibre: 'Calibre', cables: 'Câbles', fabrication: 'Fabrication', reglages: 'Réglages', dejafait: 'Déjà fait', modifs: 'Modifications' };
+// d'où mène une section d'hier, un point, une case : à quel onglet
+const ONGLET_DE_SECTION = { disjoncteur: 'calibre', connecteur: 'essentiel', contacts: 'essentiel', trajet: 'essentiel', raccord: 'reglages', conso: 'reglages', fils: 'cables', dejafait: 'dejafait', modifs: 'modifs' };
+const ongletDeSection = (type, cle) => !cle ? '' : (type === 'fil' && cle === 'fils') ? 'essentiel' : ONGLET_DE_SECTION[cle] || cle;
 const titreOnglet = s => s.titre || TITRES_ONGLETS[s.cle] || (typeof SECTIONS !== 'undefined' && SECTIONS[s.cle]) || s.cle;
-const rangOnglet = s => { const k = ORDRE_ONGLETS.indexOf(s.cle); return k < 0 ? 99 : k; };
-// l'onglet ouvert : celui qu'on a choisi pour ce genre de fiche (il suit d'un objet à l'autre), sinon celui qui porte un
-// problème, sinon le premier
-function ongletActif(type, xs) { const k = NIVEAU.onglet[type]; if (k && xs.some(s => s.cle === k)) return k;
-  const ko = xs.find(s => s.badge && s.badge.etat === 'ko'); return (ko || xs[0] || {}).cle || ''; }
+const rangOnglet = s => { const k = ORDRE_ONGLETS.indexOf(s.cle); return k < 0 ? 50 : k; };
+// l'onglet ouvert : celui qu'on a choisi pour ce genre de fiche (il suit d'un objet à l'autre), sinon l'essentiel
+function ongletActif(type, xs) { const k = NIVEAU.onglet[type]; if (k && xs.some(s => s.cle === k)) return k; return (xs.find(s => s.cle === 'essentiel') || xs[0] || {}).cle || ''; }
 function ongletsHtml(type, xs) { if (!xs.length) return '';
   const actif = ongletActif(type, xs);
-  const pastille = s => { const b = s.badge; if (b && (b.etat === 'ko' || b.etat === 'att') && b.t != null && b.t !== '') return `<i class="nv-pas ${b.etat}">${b.t}</i>`;
-    return s.compte != null ? `<i class="nv-compte">${s.compte}</i>` : ''; };
-  const tabs = xs.map(s => `<button type="button" role="tab" class="nv-onglet" id="nv-o-${escA(s.cle)}" data-onglet="${escA(s.cle)}" aria-selected="${s.cle === actif}" aria-controls="nv-p-${escA(s.cle)}" tabindex="${s.cle === actif ? 0 : -1}">${esc(titreOnglet(s))}${pastille(s)}</button>`).join('');
+  const tabs = xs.map(s => { const st = s.statut || {};
+    return `<button type="button" role="tab" class="nv-onglet" id="nv-o-${escA(s.cle)}" data-onglet="${escA(s.cle)}" aria-selected="${s.cle === actif}" aria-controls="nv-p-${escA(s.cle)}" tabindex="${s.cle === actif ? 0 : -1}">`
+      + `<span class="nv-o-t">${esc(titreOnglet(s))}</span><span class="nv-o-s${st.etat ? ' ' + st.etat : ''}">${st.t != null && st.t !== '' ? esc(st.t) : '&nbsp;'}</span></button>`; }).join('');
   const panneaux = xs.map(s => `<section class="nv-panneau${s.vide ? ' fs-vide' : ''}" role="tabpanel" id="nv-p-${escA(s.cle)}" data-section="${escA(s.cle)}" aria-labelledby="nv-o-${escA(s.cle)}" tabindex="-1"${s.cle === actif ? '' : ' hidden'}>`
-    + (s.vide ? `<p class="nv-vide">${esc(majuscule(s.vide))}${s.action ? ' ' + s.action : ''}</p>` : '') + (s.contenu || '') + '</section>').join('');
-  return `<div class="nv-onglets" role="tablist" aria-label="Les sujets de la fiche">${tabs}</div><div class="nv-panneaux" id="nv-panneaux">${panneaux}</div>`; }
+    + (s.vide ? `<p class="vu-note">${esc(majuscule(s.vide))}${s.action ? ' ' + s.action : ''}</p>` : '') + (s.contenu || '') + '</section>').join('');
+  return `<div class="nv-onglets" role="tablist" aria-label="Ce que dit la fiche">${tabs}</div><div class="nv-panneaux" id="nv-panneaux">${panneaux}</div>`; }
+// une section d'hier (une fiche pas encore redessinée) devient un onglet
+const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === 'connecteur' ? 'essentiel' : s.cle, titre: s.cle === 'fils' || s.cle === 'connecteur' ? '' : s.titre, statut: s.resume ? { t: String(s.resume).replace(/<[^>]*>/g, '').slice(0, 40) } : null, contenu: s.contenu, vide: s.vide, action: s.action });
 
-/* ---- LE BANDEAU : l'état, et quoi faire ----------------------------------------------------------------------------- */
-// les gestes d'un point (« Tout régler… », « Unifier sur… ») : gardés le temps du rendu, sous un numéro que le bouton porte
+// les onglets que toutes les fiches partagent : les câbles (la section d'hier, son statut en mots), la fabrication
+const ongletCables = sF => !sF ? null : { cle: 'cables', statut: { t: sF.vide ? 'aucun' : pluriel(sF.compte || 0, 'câble') + (sF.nko ? ', ' + sF.nko + ' en défaut' : sF.charge != null ? ', au plus ' + Math.round(sF.charge * 100) + ' %' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide };
+function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
+  const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
+  return { cle: 'fabrication', statut: { t: pluriel(n, 'pièce') }, contenu: `<section class="vu-bloc"><h4 class="vu-titre">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span></h4>${fabricationVue(gs)}</section>` }; }
+
+/* ---- L'ÉTIQUETTE : le genre et son état d'un mot ; le repère, en grand, qui se renomme d'un clic ; ce qui l'identifie ---- */
+const GENRES_FICHE = { equipement: 'Équipement', disjoncteur: 'Disjoncteur', barrette: 'Barrette de jonction', prise: 'Prise de coupure', masse: 'Masse', fil: 'Câble' };
+const motEtatFiche = probs => { const ko = probs.filter(p => p.niveau === 'ko').length, n = probs.length; return ko ? pluriel(ko, 'problème') : n ? (n > 1 ? n + ' points à voir' : '1 point à voir') : 'Tout va bien'; };
+const genreFiche = (o, probs) => { const e = etatDesProblemes(probs);
+  return `<div class="nc-genre"><span class="nc-sym" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span><span class="nc-genre-mot">${esc(GENRES_FICHE[o.type] || 'Élément')}</span><span class="nc-etat ${e} fi-pb-n">${esc(motEtatFiche(probs))}</span></div>`; };
+function etiquetteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
+  const rep = t.champ ? `<input class="nc-rep-in" id="${t.champ}" value="${escA(nom)}" aria-label="${escA(t.aide || 'Repère — écrire pour renommer partout')}" spellcheck="false" autocomplete="off"><button type="button" class="nc-crayon" id="fi-crayon" aria-label="Renommer (F2)" data-bulle="Renommer partout — F2 ; chaque câble suit">${ico('crayon')}</button>`
+    : `<span class="nc-rep-t">${esc(nom)}</span>`;
+  const des = t.designation && grand ? app.contrat.designations.get(t.designation) || '' : null;
+  const meta = (o.meta || []).filter(Boolean).map(m => `<span>${m}</span>`).join('') + (des != null ? `<input class="nc-des${des ? ' plein' : ''}" id="eq-des" value="${escA(des)}" placeholder="+ une désignation" aria-label="Désignation (un texte libre, gardé avec le contrat)" spellcheck="false" autocomplete="off">` : '');
+  return `<div class="nc-rep">${rep}</div>${meta ? `<div class="nc-meta fi-identite">${meta}</div>` : ''}`; }
+
+/* ---- À FAIRE : chaque point devient une tâche — ce qui cloche, puis (après « — ») ce que ça veut dire ; le geste qui
+   répare au bout de la première ; un clic sur une tâche mène à l'onglet qui la démontre ---- */
 const gestePrincipal = p => { const gs = (p && p.gestes || []).filter(x => x && x.mot && typeof x.faire === 'function'); return gs.find(x => x.principal) || gs[0] || null; };
-function bandeauEtat(o, probs, titres, grand) {
-  const ko = probs.filter(p => p.niveau === 'ko'), att = probs.filter(p => p.niveau !== 'ko'), tri = ko.concat(att), etat = ko.length ? 'ko' : att.length ? 'att' : 'ok';
-  const titre = etat === 'ok' ? 'Tout va bien' : [ko.length ? pluriel(ko.length, 'problème') : '', att.length ? (att.length > 1 ? att.length + ' points à voir' : '1 point à voir') : ''].filter(Boolean).join(' · ');
-  const p0 = tri.find(p => !(o.taire && o.taire.test(p.texte))) || tri[0] || null;
-  // les lignes des points (la même règle que la barre d'hier : `lignesProblemes`) — elles posent les gestes de chacun
-  const lignes = tri.length ? lignesProblemes(tri, titres, o) : '';
-  let geste = o.geste || '';
-  if (!geste && p0) { const g = gestePrincipal(p0); if (g) { const k = FI.gestesPb.push([g]) - 1; geste = `<button type="button" class="btn ${etat === 'ko' ? 'cuivre' : 'papier'} dense" data-geste-pb="${k}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; } }
-  const voir = p0 && titres.has(p0.section) ? ` data-voir="${escA(p0.section)}"${p0.viser ? ` data-viser="${escA(p0.viser)}"` : ''}${p0.connecteur ? ` data-connecteur="${escA(p0.connecteur)}"` : ''}` : '';
-  const phrase = etat === 'ok' ? `<span class="nv-etat-p">${esc(o.ok || 'Rien à reprendre sur cette fiche.')}</span>` : o.phrase ? `<span class="nv-etat-p">${insecable(esc(o.phrase))}</span>`
-    : `<${voir ? 'button type="button"' : 'span'} class="nv-etat-p"${voir}${voir ? ` data-bulle="${escA('Voir où : ' + (titres.get(p0.section) || ''))}"` : ''}>${insecable(esc(majuscule(motDuProbleme(p0.texte))))}</${voir ? 'button' : 'span'}>`;
-  const tete = `<section class="nv-etat ${etat}" aria-label="${escA('L’état de la fiche : ' + titre)}"><span class="nv-etat-ico" aria-hidden="true">${ico(etat === 'ok' ? 'coche' : 'alerte')}</span>`
-    + `<div class="nv-etat-t"><b class="nv-etat-titre fi-pb-n">${esc(titre)}</b>${phrase}</div>${geste ? `<div class="nv-etat-g">${geste}</div>` : ''}</section>`;
-  if (tri.length < 2) return tete + (lignes ? `<ul class="fi-pbs nv-cache" hidden>${lignes}</ul>` : '');
-  // les autres points : dans la carte, une ligne « et 2 autres » qui mène au grand ; dans le grand, la liste dépliable
-  if (!grand) return tete + `<ul class="fi-pbs nv-cache" hidden>${lignes}</ul><button type="button" class="nv-autres" data-onglet-va="${escA((tri[1] && titres.has(tri[1].section) && tri[1].section) || '')}" data-voir-tout="1">${esc(tri.length - 1 > 1 ? 'et ' + (tri.length - 1) + ' autres points' : 'et 1 autre point')}${ico('droite')}</button>`;
-  return tete + `<details class="nv-tous" id="fi-pbs"><summary class="nv-tous-t">${esc('Les ' + tri.length + ' points')}${ico('bas', 'fi-chevron')}</summary><ul class="fi-pbs">${lignes}</ul></details>`; }
+function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
+  if (!probs.length) return `<div class="nc-taches"><div class="nc-tache ok"><span class="nc-rond" aria-hidden="true">${ico('coche')}</span><span class="nc-t"><b>Rien à reprendre</b><small>${esc(o.ok || 'Tout est en ordre sur cette fiche.')}</small></span></div></div>`;
+  const tri = probs.filter(p => p.niveau === 'ko').concat(probs.filter(p => p.niveau !== 'ko')), p0 = tri.find(p => !(o.taire && o.taire.test(p.texte))) || tri[0];
+  const ordre = [p0, ...tri.filter(p => p !== p0)], montres = ordre.slice(0, max);
+  const ligne = (p, i) => { let t = majuscule(motDuProbleme(p.texte)); if (i === 0 && o.phrase) t = o.phrase;
+    const k = t.indexOf(' — '), titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(t.slice(k + 3)) : gloseDuProbleme(p.texte);
+    let geste = '';
+    if (i === 0 && o.geste) geste = o.geste;
+    else { const g = gestePrincipal(p); if (g) { const n = FI.gestesPb.push([g]) - 1; geste = `<button type="button" class="btn ${p.niveau === 'ko' ? 'cuivre' : 'papier'} dense" data-geste-pb="${n}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; } }
+    const va = ongletDeSection(o.type, p.section);
+    return `<div class="nc-tache fi-pb-l ${p.niveau === 'ko' ? 'ko' : 'att'}"><span class="nc-rond" aria-hidden="true">${ico('alerte')}</span>`
+      + `<button type="button" class="nc-t" data-onglet-va="${escA(va)}"${p.viser ? ` data-viser="${escA(p.viser)}"` : ''}${p.connecteur ? ` data-connecteur="${escA(p.connecteur)}"` : ''} data-bulle="${escA(t + (p.bulle ? '\n' + p.bulle : ''))}"><b class="fi-pb-t">${insecable(esc(titre))}</b>${detail ? `<small>${insecable(esc(detail))}</small>` : ''}</button>${geste ? `<span class="nc-geste">${geste}</span>` : ''}</div>`; };
+  const reste = ordre.length - montres.length;
+  return `<div class="nc-taches">${montres.map(ligne).join('')}${reste > 0 ? `<button type="button" class="nc-autres" data-onglet-va="" data-voir-tout="1">${esc(reste > 1 ? 'et ' + reste + ' autres points' : 'et 1 autre point')}${ico('droite')}</button><div class="nc-taches nc-reste" hidden>${ordre.slice(max).map((p, i) => ligne(p, i + max)).join('')}</div>` : ''}</div>`; }
 
-/* ---- LES CHIFFRES CLÉS : une rangée de cases — l'étiquette, la valeur, une barre contre l'admis, une ligne dessous. Un
-   clic sur une case ouvre son onglet (dans la carte : le grand, sur cet onglet). Une case qui s'écrit (`edit`) ne
-   s'ouvre pas : on écrit dedans. ------------------------------------------------------------------------------------ */
-function chiffresHtml(xs) { const ys = (xs || []).filter(Boolean); if (!ys.length) return '';
-  return `<div class="nv-chiffres" style="--n:${Math.min(ys.length, 5)}">${ys.map(c => { const bouton = c.onglet && !c.edit, tag = bouton ? 'button' : 'div';
-    return `<${tag}${bouton ? ` type="button" data-onglet-va="${escA(c.onglet)}"` : ''} class="nv-chiffre${c.etat ? ' ' + c.etat : ''}${c.edit ? ' edit' : ''}"${c.bulle ? ` data-bulle="${escA(c.bulle)}"` : ''}>`
-      + `<span class="nv-chiffre-k">${esc(c.k)}</span><span class="nv-chiffre-v">${c.v}</span>`
-      + (c.barre != null && isFinite(c.barre) ? `<span class="fi-barre nv-barre ${classeMesure(c.barre)}" aria-hidden="true"><i style="width:${(Math.min(1, Math.max(0, c.barre)) * 100).toFixed(1)}%"></i></span>` : '')
-      + (c.sous ? `<span class="nv-chiffre-s">${c.sous}</span>` : '') + `</${tag}>`; }).join('')}</div>`; }
+/* ---- LES CHIFFRES : trois ou quatre nombres, grands, sans boîte — la valeur, une jauge contre l'admis, ce que c'est,
+   une ligne dessous. Un clic mène à l'onglet qui l'explique ; une valeur qui s'écrit s'écrit sur place. ---- */
+function chiffresHtml(xs, n) { const ys = (xs || []).filter(Boolean).slice(0, n || 9); if (!ys.length) return '';
+  return `<div class="nc-chiffres" style="--n:${ys.length}">${ys.map(c => { const va = c.onglet ? ongletDeSection(NIVEAU.typeRendu, c.onglet) : '', bouton = va && !c.edit, tag = bouton ? 'button' : 'div';
+    return `<${tag}${bouton ? ` type="button" data-onglet-va="${escA(va)}"` : ''} class="nc-chiffre${c.etat ? ' ' + c.etat : ''}${c.edit ? ' edit' : ''}"${c.bulle ? ` data-bulle="${escA(c.bulle)}"` : ''}>`
+      + `<span class="nc-v">${c.v}</span>`
+      + (c.barre != null && isFinite(c.barre) ? `<span class="nc-jauge ${classeMesure(c.barre)}" aria-hidden="true"><i style="width:${(Math.min(1, Math.max(0, c.barre)) * 100).toFixed(1)}%"></i></span>` : '')
+      + `<span class="nc-k">${esc(c.k)}</span>${c.sous ? `<span class="nc-s">${c.sous}</span>` : ''}</${tag}>`; }).join('')}</div>`; }
+// la largeur d'un dessin du grand : celle de son panneau (au téléphone, l'écran)
+const largeurVue = () => typeof telephone === 'function' && telephone() ? 360 : 640;
 // une valeur et son unité, l'unité plus petite
 const valeurU = (n, u) => n == null || n === '' ? '—' : `${esc(String(n))}<small>${esc(u)}</small>`;
 
@@ -26551,30 +27052,35 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
   return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap">${esc(pluriel(rows.length, 'câble'))} — un clic sur une ligne ouvre le câble</caption><thead><tr>${tete}</tr></thead><tbody>${lignes}</tbody></table></div>${datalistCables()}`; }
 
 /* ---- COMPOSER : la carte, ou le grand ------------------------------------------------------------------------------- */
-/* o : { type (equipement · disjoncteur · barrette · prise · masse · fil), tete (les options de l'en-tête), probs, sections,
-   ecrits, proposes (les modifications), pied (les options du pied), chiffres, ok (la phrase quand tout va bien), geste (le
-   geste qui répare, en HTML), taire, gestesTus (les options des lignes des problèmes), avant (HTML posé sous le bandeau :
-   le vrai repère d'une barrette à poser), fin (HTML posé au bout : les listes de saisie) } */
-function composerFiche(o) { const probs = o.probs || [], secs = (o.sections || []).filter(Boolean).slice().sort((a, b) => rangOnglet(a) - rangOnglet(b));
-  const titres = new Map(secs.filter(s => !s.vide || s.contenu).map(s => [s.cle, titreOnglet(s)]));
-  const modifs = modificationsDeLaFiche(o.ecrits || [], o.proposes || []); if (modifs) titres.set('modifs', 'Modifications');
-  const tete = enTete({ ...o.tete, etat: etatDesProblemes(probs) });
-  FI.gestesPb = [];
+/* o : { type (equipement · disjoncteur · barrette · prise · masse · fil), tete ({ nom, champ, aide, designation }), meta
+   (ce qui l'identifie, en HTML : sa référence, son folio…), probs, chiffres, vignette (le schéma en petit), onglets
+   ([{ cle, titre, statut: { t, etat }, contenu }] — ou, pour une fiche pas encore redessinée, ses sections d'hier),
+   ecrits, proposes (les modifications), pied, ok (quand tout va bien), geste (le geste qui répare), phrase (ce que dit la
+   première tâche à la place du point : la décision d'un disjoncteur), taire, avant (le vrai repère d'une barrette à
+   poser), fin (les listes de saisie) } */
+function composerFiche(o) { const probs = o.probs || []; NIVEAU.typeRendu = o.type; FI.gestesPb = [];
+  const modifs = modificationsDeLaFiche(o.ecrits || [], o.proposes || []);
   if (!ficheEnGrand()) {
-    // LA CARTE : l'en-tête, l'état et quoi faire, les chiffres, les modifications en une ligne, « Tout voir »
-    return `<div class="nv-carte">${tete}${bandeauEtat(o, probs, titres, false)}${o.avant || ''}${chiffresHtml(o.chiffres)}`
-      + (modifs ? `<button type="button" class="nv-modifs" data-onglet-va="modifs" data-bulle="${escA(modifs.mots + ' — les voir')}">${ico('crayon')}<span>${esc(modifs.mots)}</span>${ico('droite')}</button>` : '') + '</div>'
+    // LA CARTE — le premier regard : l'étiquette, la pièce en vignette, ce qu'il y a à faire, trois chiffres, « Tout voir »
+    return `<div class="nc">${genreFiche(o, probs)}${etiquetteFiche(o, false)}${o.avant || ''}`
+      + (o.vignette ? `<button type="button" class="nc-vignette" data-onglet-va="essentiel" aria-label="Tout voir : la fiche entière">${o.vignette}<span class="nc-voir">Tout voir${ico('droite')}</span></button>` : '')
+      + tachesFiche(o, probs, 2) + chiffresHtml(o.chiffres, 3)
+      + (modifs ? `<button type="button" class="nc-modifs" data-onglet-va="modifs" data-bulle="${escA(modifs.mots + ' — les voir')}">${ico('crayon')}<span>${esc(modifs.mots)}</span>${ico('droite')}</button>` : '') + '</div>'
       + fiPied({ ...(o.pied || {}), toutVoir: true }) + (o.fin || ''); }
-  // LE GRAND : le résumé fixe, les onglets, le pied ; la liste à gauche quand il a la place
-  const onglets = secs.concat(modifs ? [{ cle: 'modifs', titre: 'Modifications', compte: modifs.n, contenu: modifs.html }] : []);
-  const corps = `<div class="nv-resume">${tete}${bandeauEtat(o, probs, titres, true)}${o.avant || ''}${chiffresHtml(o.chiffres)}</div>` + ongletsHtml(o.type, onglets) + fiPied(o.pied || {}) + (o.fin || '');
+  // LE GRAND — la fenêtre : la barre (on la tient pour la déplacer), l'étiquette et les chiffres, à faire, les onglets
+  const base = o.onglets ? o.onglets.filter(Boolean) : (o.sections || []).filter(Boolean).map(ongletDeLaSection);
+  // (les modifications : un onglet quand il y en a ; sinon rien — un onglet « aucune » n'apprend rien)
+  const onglets = base.concat(modifs ? [{ cle: 'modifs', statut: { t: modifs.n > 1 ? modifs.n + ' changements' : '1 changement' }, contenu: modifs.html }] : []).slice().sort((x, y) => rangOnglet(x) - rangOnglet(y));
+  const corps = `<div class="nv-tete nv-poignee">${barreNav({ milieu: genreFiche(o, probs), fermer: true })}</div>`
+    + `<div class="nv-resume"><div class="nv-ident">${etiquetteFiche(o, true)}</div>${chiffresHtml(o.chiffres, 4)}</div>${o.avant ? `<div class="nv-avant">${o.avant}</div>` : ''}`
+    + `<div class="nv-afaire">${tachesFiche(o, probs, 3)}</div>` + ongletsHtml(o.type, onglets) + fiPied(o.pied || {}) + (o.fin || '');
   return `<div class="nv-grand${grandLarge() ? '' : ' nv-seul'}" data-nv-type="${escA(o.type)}">${grandLarge() ? listeDuGenre(app.cible, etatDesProblemes(probs)) : ''}<div class="nv-corps">${corps}</div></div>`; }
 
 /* ---- PASSER D'UN NIVEAU À L'AUTRE --------------------------------------------------------------------------------- */
 /* « Tout voir » (ou un double-clic, ou une case de la carte) : la carte devient le grand — elle glisse jusqu'à sa place
    (08-carte, `epinglerCarte`), le plan se recadre à gauche, l'objet en vue ; `onglet` : celui qui s'ouvre. Réduire
    (Échap, le bouton) : le grand redevient la carte, près de son bloc. */
-function ouvrirGrand(onglet, but) { if (onglet) { const t = typeDeLaFicheMontree(); if (t) NIVEAU.onglet[t] = onglet; }
+function ouvrirGrand(onglet, but) { if (onglet) { const t = typeDeLaFicheMontree(); if (t) NIVEAU.onglet[t] = ongletDeSection(t, onglet); }
   if (NIVEAU.grand) { if (onglet) activerOnglet(onglet, true); if (but && but.viser) viserDansLaFiche(but.viser); return; }
   NIVEAU.grand = true; if (typeof epinglerCarte === 'function') epinglerCarte(true); else rendreFiche();
   if (but && but.viser) viserDansLaFiche(but.viser); }
@@ -26584,7 +27090,7 @@ const typeDeLaFicheMontree = () => { const g = document.querySelector('#ba-equip
   return c.type === 'fil' ? 'fil' : estDisjoncteur(c.nom) ? 'disjoncteur' : VT_A_POSER.test(c.nom) || barretteEnModules(c.nom) ? 'barrette' : coupureEnModules(c.nom) ? 'prise' : estMasse(c.nom) ? 'masse' : 'equipement'; };
 // un onglet devient le montré (sans refaire la fiche) : son panneau paraît, en haut ; `allumer` le fait briller un instant
 function activerOnglet(cle, allumer) { const box = $('ba-equip'), g = box && box.querySelector('.nv-grand'); if (!g) return null;
-  const tab = g.querySelector(`.nv-onglet[data-onglet="${CSS.escape(cle)}"]`); if (!tab) return null;
+  cle = ongletDeSection(g.dataset.nvType, cle); const tab = g.querySelector(`.nv-onglet[data-onglet="${CSS.escape(cle)}"]`); if (!tab) return null;
   NIVEAU.onglet[g.dataset.nvType] = cle;
   g.querySelectorAll('.nv-onglet').forEach(t => { const on = t === tab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
   let p = null; g.querySelectorAll('.nv-panneau').forEach(x => { const on = x.dataset.section === cle; x.hidden = !on; if (on) p = x; });
@@ -26600,11 +27106,17 @@ function viserDansLaFiche(k) { const box = $('ba-equip'); if (!box || !k) return
 function lierNiveaux(box, c) {
   // « Tout voir », une case de la carte, « et 2 autres points », une ligne des modifications : le grand, sur l'onglet
   box.querySelectorAll('[data-onglet-va]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const k = b.dataset.ongletVa || '';
-    if (ficheEnGrand()) { if (k) activerOnglet(k, true); else { const d = $('fi-pbs'); if (d) d.open = true; } return; }
-    ouvrirGrand(k); if (b.dataset.voirTout) { const d = $('fi-pbs'); if (d) { d.open = true; FI.pbs = box.dataset.cle; } } });
+    if (b.dataset.voirTout && ficheEnGrand()) { const r = b.parentElement.querySelector('.nc-reste'); if (r) { r.hidden = !r.hidden; b.classList.toggle('ouvert', !r.hidden); } return; }
+    if (ficheEnGrand()) { if (k) activerOnglet(k, true); if (b.dataset.viser) viserDansLaFiche(b.dataset.viser); return; }
+    ouvrirGrand(k, b.dataset.viser ? { viser: b.dataset.viser } : null); if (b.dataset.voirTout) { const r = $('ba-equip').querySelector('.nc-reste'); if (r) r.hidden = false; } });
   const tv = $('fi-tout-voir'); if (tv) tv.onclick = e => { e.stopPropagation(); ouvrirGrand(''); };
   // les onglets : un clic, ou ← → au clavier (Début, Fin) — le clavier suit l'onglet
   const tabs = [...box.querySelectorAll('.nv-onglet')];
+  // les onglets qui débordent : un fondu au bord qui cache, et l'ouvert sous les yeux
+  const bande = box.querySelector('.nv-onglets');
+  if (bande) { const juger = () => { const d = bande.scrollWidth > bande.clientWidth + 2; bande.classList.toggle('deborde', d); bande.classList.toggle('au-bout', d && bande.scrollLeft + bande.clientWidth >= bande.scrollWidth - 2); };
+    bande.onscroll = juger; requestAnimationFrame(() => { const a = bande.querySelector('[aria-selected="true"]'); if (a && a.offsetLeft + a.offsetWidth > bande.clientWidth) bande.scrollLeft = a.offsetLeft - 16; juger(); });
+    if (typeof ResizeObserver === 'function') { if (bande._ro) bande._ro.disconnect(); bande._ro = new ResizeObserver(juger); bande._ro.observe(bande); } }
   tabs.forEach((t, i) => { t.onclick = () => activerOnglet(t.dataset.onglet, true);
     t.onkeydown = e => { const j = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
       if (j == null) return; e.preventDefault(); activerOnglet(tabs[j].dataset.onglet, false); tabs[j].focus(); }; });
@@ -26634,6 +27146,10 @@ function lierNiveaux(box, c) {
   // le geste qui répare un disjoncteur, dans le bandeau (la carte n'a pas de cadran à qui le demander)
   box.querySelectorAll('[data-nv-decider]').forEach(b => b.onclick = e => { e.stopPropagation(); const nom = b.dataset.nvDecider;
     const fait = typeof parVolta === 'function' && typeof deciderCalibre === 'function' ? parVolta(() => deciderCalibre(nom)) : false; if (fait !== false && !$('inspecteur').hidden && app.cible && !rafraichirFicheEnPlace()) rendreFiche(); });
+  // (v78) les touches du calibre : un clic retient ce calibre ; « Revenir au choix de Volta » rend l'automatique
+  const refaire = () => { if (!$('inspecteur').hidden && app.cible && !rafraichirFicheEnPlace()) rendreFiche(); };
+  box.querySelectorAll('[data-nv-cal]').forEach(b => b.onclick = e => { e.stopPropagation(); if (c && c.nom && retenirCalibre(c.nom, +b.dataset.nvCal) !== false) refaire(); });
+  box.querySelectorAll('[data-nv-auto]').forEach(b => b.onclick = e => { e.stopPropagation(); rendreCalibre(b.dataset.nvAuto); refaire(); });
   if (c && c.type !== 'ref') document.body.classList.toggle('insp-grand-ouvert', ficheEnGrand()); }
 
 /* ---- LA LISTE, LE PANNEAU : leur défilement se garde d'un rendu de la même fiche à l'autre -------------------------- */
@@ -30456,7 +30972,7 @@ const groupeSection = (titre, contenu, o) => { o = o || {}; if (!contenu) return
 function ouvrirSection(box, cle, allumer, surPlace) {
   // (v78) le grand : la section est un onglet — il devient le montré ; la carte : le grand s'ouvre sur lui (08-niveaux)
   if (box && box.querySelector('.nv-grand')) return typeof activerOnglet === 'function' ? activerOnglet(cle, allumer) : null;
-  if (box && box.querySelector('.nv-carte')) { if (typeof ouvrirGrand === 'function' && cle) ouvrirGrand(cle); return null; }
+  if (box && box.querySelector('.nc')) { if (typeof ouvrirGrand === 'function' && cle) ouvrirGrand(cle); return null; }
   const d = box && box.querySelector(`details.fs[data-section="${CSS.escape(cle)}"]`); if (!d) return null;
   d.open = true; if (d.dataset.type) retenirSection(d.dataset.type, cle, true); if (!surPlace) try { d.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { d.scrollIntoView(); }
   if (allumer !== false) { d.classList.remove('fs-allume'); void d.offsetWidth; d.classList.add('fs-allume'); setTimeout(() => d.classList.remove('fs-allume'), 1400); }
@@ -32285,6 +32801,113 @@ function lierEntreesVisio() {
   window.addEventListener('drop', e => { const fs = e.dataTransfer && e.dataTransfer.files ? [...e.dataTransfer.files] : [], f = fs.find(x => estVisio(x) || estVisioAncien(x)); if (!f) return;
     e.preventDefault(); e.stopImmediatePropagation(); window.dispatchEvent(new Event('drop')); ouvrirVisio(f); }, true); }
 if (typeof document !== 'undefined') lierEntreesVisio();
+
+/* ───────── 08-vues.js ───────── */
+/* ===========================================================================
+   08 — LES VUES DE LA FICHE (v78) : la pièce dessinée, et pourquoi elle est ainsi
+   Le lecteur, sur la maquette : « le schéma qui parle, c'est bien » ; « il faut qu'on comprenne d'où ça vient, pourquoi
+   on en est là — toutes les infos de manière précise, propre, mais très simple ». Ce module dessine, pour chaque genre
+   d'objet, ce qu'on comprend d'un coup d'œil :
+     · le disjoncteur — ce qu'il tire contre ses calibres (le fichier, le retenu, ceux qui passent), puis l'arbre de ses
+       câbles, chacun sa charge au bout ;
+     · l'équipement — la face de chaque connecteur (plein = pris, creux = libre, rouge = refusé), puis ses broches ;
+     · la barrette — ses potentiels en couleur, chacun avec ses câbles ;
+     · la prise de coupure — LA TRAVERSÉE : ce qui arrive par la fiche, la lettre du contact, ce qui repart par l'embase ;
+     · le câble — son chemin d'un bout à l'autre, et deux jauges (l'intensité, la chute).
+   Et sous chaque schéma, « COMMENT VOLTA L'A DÉCIDÉ » : trois ou quatre étapes numérotées, chacune une phrase et sa
+   source en pastille (votre fichier, la norme, les tables de Volta, une hypothèse). Puis LA FABRICATION : tout ce qu'il
+   faut pour monter la pièce, compté par référence.
+   Ces fonctions ne calculent rien : les fiches (08-fiche) leur donnent les chiffres du moteur.
+   =========================================================================== */
+
+/* ---- LA FACE d'un connecteur, d'une barrette, d'une prise : chaque contact à sa place (r, c), plein s'il est pris,
+   rouge s'il refuse ; `couleur(ct)` (une barrette : la couleur de son potentiel) ; `rond` : une prise circulaire. ---- */
+function faceVue(contacts, etatDe, o) { o = o || {}; const n = (contacts || []).length;
+  if (!n) return `<svg class="vu-face vu-vide" viewBox="0 0 120 84" width="${o.w || 120}" role="img" aria-label="Aucun arrangement"><rect class="vu-corps" x="4" y="4" width="112" height="76" rx="10"/><text x="60" y="40">aucun</text><text x="60" y="53">arrangement</text></svg>`;
+  const xs = contacts.map(c => +c.c || 0), ys = contacts.map(c => +c.r || 0), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  // (les lettres s'écrivent DANS les contacts : au-dessus, elles chevauchaient le rang d'avant)
+  const R = o.r || 8, p = Math.max(o.pas || 26, o.lettres ? 2 * R + 6 : 0), m = o.rond ? 28 : 18, W = (x1 - x0) * p + 2 * m, H = (y1 - y0) * p + 2 * m;
+  const corps = o.rond ? `<circle class="vu-corps" cx="${W / 2}" cy="${H / 2}" r="${(Math.max(W, H) / 2 - 3).toFixed(1)}"/><rect class="vu-cle" x="${W / 2 - 5}" y="1" width="10" height="7" rx="2"/>`
+    : `<rect class="vu-corps" x="2" y="2" width="${W - 4}" height="${H - 4}" rx="${o.mini ? 7 : 11}"/><rect class="vu-cle" x="${W / 2 - 13}" y="${H - 5}" width="26" height="4" rx="2"/>`;
+  const cts = contacts.map(c => { const x = m + ((+c.c || 0) - x0) * p, y = m + ((+c.r || 0) - y0) * p, st = etatDe(c) || '', col = o.couleur ? o.couleur(c) : '', L = String(c.lettre || '');
+    const style = col ? (st === 'pris' ? ` style="fill:${col};stroke:${col}"` : ` style="stroke:${col}"`) : '';
+    return `<g class="vu-ct-g" data-ct="${escA(L)}"><circle class="vu-ct ${st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"${style}/>${o.lettres ? `<text class="${st}${L.length > 2 ? ' long' : ''}" x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}">${esc(L)}</text>` : ''}</g>`; }).join('');
+  return `<svg class="vu-face${o.mini ? ' mini' : ''}" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${o.w || W}" role="img" aria-label="${escA(o.titre || 'La face')}">${corps}${cts}</svg>`; }
+const legendeFaceVue = (avecKo) => `<p class="vu-legende"><span><i class="pris"></i>pris</span><span><i></i>libre</span>${avecKo ? '<span><i class="ko"></i>refusé</span>' : ''}</p>`;
+
+/* ---- CE QU'IL TIRE, CE QU'IL TIENT (un disjoncteur) : le démarrage et le permanent en barres, sur l'échelle des
+   ampères ; au pied, les calibres de la gamme (vert : il passe ; rouge : non) ; le retenu en trait plein, celui du
+   fichier en pointillé rouge quand il touche la courbe. ---- */
+function chargeVue(d, o, W, mini) { const ch = chargeDuProfil(d), cal = d.calibre, gamme = (d.gamme || []).filter(g => g.calibre > 0);
+  if (!gamme.length || !(ch.perm || ch.pointe)) return `<p class="vu-note">${esc(d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : 'Aucune gamme de calibres connue pour ce part number.')}</p>`;
+  const max = Math.max(...gamme.map(g => g.calibre), ch.pointe || 0, ch.perm || 0) * 1.08, L = 12, X = a => L + (W - 2 * L) * a / max;
+  const bh = mini ? 10 : 14, y1 = mini ? 36 : 50, y2 = y1 + (mini ? 28 : 44), H = mini ? 106 : 160, yt = H - 13;
+  const cRet = o && o.calRetest && o.calRetest !== cal ? o.calRetest : null, pointe = ch.pointe || ch.perm, dur = ch.pointeP && ch.pointeP.t !== Infinity ? secondes(ch.pointeP.t) : '';
+  const quand = majuscule(String(quandDuPoint(ch.pointeP) || 'en pointe').replace(/^(au|en) /, ''));
+  const barre = (y, v, cls) => `<rect class="vu-rail" x="${X(0)}" y="${y}" width="${(X(max) - X(0)).toFixed(1)}" height="${bh}" rx="${bh / 2}"/><rect class="${cls}" x="${X(0)}" y="${y}" width="${Math.max(bh, X(v) - X(0)).toFixed(1)}" height="${bh}" rx="${bh / 2}"/>`;
+  const ticks = gamme.map(g => { const k = cleDuVerdict(g); return `<circle class="vu-tick ${k === 'passe' ? 'oui' : 'non'}" cx="${X(g.calibre).toFixed(1)}" cy="${yt - 11}" r="3"/><text class="vu-t-pied" x="${X(g.calibre).toFixed(1)}" y="${yt + 2}">${esc(nombre(g.calibre))}</text>`; }).join('');
+  const mots = mini ? `<text class="vu-t" x="${X(0)}" y="${y1 - 5}">${esc(quand)} <tspan class="vu-t-fort">${esc(amperes(pointe))}</tspan></text>${ch.perm ? `<text class="vu-t" x="${X(0)}" y="${y2 - 5}">Permanent <tspan class="vu-t-fort">${esc(amperes(ch.perm))}</tspan></text>` : ''}`
+    : `<text class="vu-t" x="${X(0)}" y="${y1 - 7}">${esc(quand)} <tspan class="vu-t-fort">${esc(amperes(pointe))}</tspan>${dur ? ' · pendant ' + esc(dur) : ''}</text>${ch.perm ? `<text class="vu-t" x="${X(0)}" y="${y2 - 7}">Permanent <tspan class="vu-t-fort">${esc(amperes(ch.perm))}</tspan></text>` : ''}`;
+  // le retenu : son trait, son nom en haut (à droite du trait, ou à gauche quand il est au bout de l'échelle)
+  const finCal = cal && X(cal) > W - 90, traitCal = cal ? `<line class="vu-cal" x1="${X(cal).toFixed(1)}" x2="${X(cal).toFixed(1)}" y1="${mini ? 14 : 8}" y2="${yt - 18}"/><text class="vu-t-fort vu-t-cal" x="${(X(cal) + (finCal ? -6 : 6)).toFixed(1)}" y="${mini ? 12 : 18}"${finCal ? ' text-anchor="end"' : ''}>${esc(amperes(cal))} retenu</text>` : '';
+  const traitFic = cRet ? `<line class="vu-fic" x1="${X(cRet).toFixed(1)}" x2="${X(cRet).toFixed(1)}" y1="${mini ? 14 : 8}" y2="${yt - 18}"/>${mini ? '' : `<text class="vu-t-ko" x="${(X(cRet) - 6).toFixed(1)}" y="${yt - 24}" text-anchor="end">${esc(amperes(cRet))} du fichier</text>`}` : '';
+  return `<svg class="vu-charge" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${escA('Ce qu’il tire contre ses calibres : ' + amperes(pointe) + ' au plus, ' + (cal ? amperes(cal) + ' retenu' : 'aucun calibre'))}">${barre(y1, pointe, 'vu-b-pointe')}${ch.perm ? barre(y2, ch.perm, 'vu-b-perm') : ''}${mots}${traitFic}${traitCal}${ticks}</svg>`; }
+const legendeChargeVue = () => `<p class="vu-legende"><span><i class="carre perm"></i>permanent</span><span><i class="carre pointe"></i>démarrage</span><span><i class="ok"></i>calibre qui passe</span><span><i class="ko"></i>qui ne passe pas</span></p>`;
+
+/* ---- L'ARBRE d'un disjoncteur : lui, puis chacun de ses câbles jusqu'à son bout, sa charge au bout ; une ligne
+   s'ouvre d'un clic (data-i : la ligne du câble), son survol l'allume sur le plan. ---- */
+function arbreVue(nom, cal, rows) { const n = rows.length; if (!n) return '<p class="vu-note">Aucun câble ne part de ce disjoncteur.</p>';
+  const rh = 40, H = n * rh + 12, W = 600, yC = H / 2;
+  const lignes = rows.map((r, i) => { const y = 16 + i * rh + 6, col = r.l ? coulDeFil({ l: r.l }) : 'currentColor', m = classeMesure(r.charge.r), w = r.charge.r != null && isFinite(r.charge.r) ? Math.min(1, r.charge.r) : 0;
+    return `<g class="vu-branche fi-ia${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}" tabindex="0" role="button" aria-label="${escA('Ouvrir le câble ' + (r.type || '') + ' vers ' + (r.bout ? r.bout.rep : ''))}"` : ''}>`
+      + `<rect class="vu-b-fond" x="140" y="${y - 18}" width="${W - 140}" height="${rh - 4}" rx="9"/><path class="vu-br" d="M112 ${y}H220" style="stroke:${col}"/><circle class="vu-noeud" cx="112" cy="${y}" r="3.5"/>`
+      + `<text class="vu-t-mono" x="232" y="${y + 4}">${esc(r.type || 'sans type')}</text><text class="vu-t" x="286" y="${y + 4}">vers</text><text class="vu-t-mono" x="316" y="${y + 4}">${esc(r.bout ? r.bout.rep : '—')}<tspan class="vu-t">${r.bout && r.bout.borne ? ':' + esc(r.bout.borne) : ''}</tspan></text>`
+      + `<rect class="vu-rail" x="436" y="${y - 3}" width="80" height="6" rx="3"/><rect class="vu-j ${m}" x="436" y="${y - 3}" width="${(80 * w).toFixed(1)}" height="6" rx="3"/>`
+      + `<text class="vu-t-fort" x="526" y="${y + 4}">${r.charge.i != null ? esc(nombreA(r.charge.i)) : '—'}<tspan class="vu-t">${r.charge.admis != null ? ' / ' + esc(nombreA(r.charge.admis)) + ' A' : ' A'}</tspan></text></g>`; }).join('');
+  return `<svg class="vu-arbre" viewBox="0 0 ${W} ${H}" width="${W}" role="group" aria-label="${escA('Les ' + n + ' câbles de ' + nom)}"><rect class="vu-boite" x="4" y="${yC - 25}" width="88" height="50" rx="10"/><text class="vu-t-mono vu-milieu" x="48" y="${yC - 2}">${esc(nom)}</text><text class="vu-t vu-milieu" x="48" y="${yC + 14}">${cal ? esc(amperes(cal)) : ''}</text>`
+    + `<path class="vu-bus" d="M92 ${yC}H112M112 22V${16 + (n - 1) * rh + 6}"/>${lignes}</svg>`; }
+
+/* ---- LE CHEMIN d'un câble : un bout, ce qu'il traverse, l'autre bout, à la couleur de sa route ---- */
+function cheminVue(o, W, mini) { const H = mini ? 66 : 104, y = mini ? 26 : 42, a = 22, b = W - 22, m = (a + b) / 2;
+  const bt = (x, rep, borne, ancre, sous) => `<text class="vu-t-mono" x="${x}" y="${y + 28}" text-anchor="${ancre}">${esc(rep || '—')}<tspan class="vu-t">${borne ? ':' + esc(borne) : ''}</tspan></text>${!mini && sous ? `<text class="vu-t" x="${x}" y="${y + 45}" text-anchor="${ancre}">${esc(sous)}</text>` : ''}`;
+  return `<svg class="vu-chemin" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${escA('De ' + o.de + ' à ' + o.vers)}"><path class="vu-fil" d="M${a} ${y}H${b}" style="stroke:${o.couleur || 'currentColor'}"/>`
+    + `<circle class="vu-bout" cx="${a}" cy="${y}" r="6.5"/><circle class="vu-bout" cx="${b}" cy="${y}" r="6.5"/>`
+    + (o.via ? `<rect class="vu-via" x="${m - 18}" y="${y - 10}" width="36" height="20" rx="6"/><text class="vu-t-mono vu-milieu vu-petit" x="${m}" y="${y + 4}">${esc(o.via)}</text>` : '')
+    + (mini ? '' : `<text class="vu-t vu-milieu" x="${(a + (o.via ? m - 18 : b)) / 2}" y="${y - 12}">${esc(o.legende || '')}</text>`)
+    + bt(a - 4, o.de, o.borneDe, 'start', o.sousDe) + bt(b + 4, o.vers, o.borneVers, 'end', o.sousVers) + '</svg>'; }
+
+/* ---- LA TRAVERSÉE d'une prise de coupure : ce qui arrive par la fiche (à gauche), la lettre du contact, ce qui repart
+   par l'embase (à droite) — une ligne par contact ; son survol allume la lettre sur la face et le câble sur le plan ---- */
+function traverseeVue(lettres, cote) { const c = (f, g) => !f ? `<span class="vu-tr-c ${g ? 'g' : ''} vide">—</span>`
+    : `<span class="vu-tr-c ${g ? 'g' : ''}${f.ko ? ' ko' : ''}"${f.k ? ` data-i="${f.k}"` : ''}>${g ? `<small class="id">${esc(f.de)}</small><b class="id">${esc(f.type || '—')}</b><i class="vu-route" style="--c:${f.couleur}"></i>` : `<i class="vu-route" style="--c:${f.couleur}"></i><b class="id">${esc(f.type || '—')}</b><small class="id">${esc(f.de)}</small>`}</span>`;
+  return `<div class="vu-traverse" role="table" aria-label="Ce qui traverse la prise"><div class="vu-tr-t" role="row"><span>Arrive par la fiche</span><span></span><span>Repart par l’embase</span></div>`
+    + lettres.map(l => `<div class="vu-tr-l" role="row" data-ct="${escA(l)}">${c(cote(l, true), true)}<span class="vu-tr-p"><b>${esc(l)}</b></span>${c(cote(l, false))}</div>`).join('') + '</div>'; }
+
+/* ---- LES POTENTIELS d'une barrette : la couleur du potentiel, ses contacts, ses câbles (type → où il va) ---- */
+function potentielsVue(groupes) { return `<div class="vu-pots">${groupes.map((g, i) => `<div class="vu-pot${g.ko ? ' ko' : ''}" style="--c:${g.ko ? 'var(--vu-ko)' : `var(--vu-g${(i % 6) + 1})`}" data-ct="${escA(g.lettres[0] || '')}"><i aria-hidden="true"></i><b class="id">${esc(g.lettres.join(' '))}</b>`
+  + `<span>${g.fils.length ? g.fils.map(f => `<em class="id"${f.k ? ` data-i="${f.k}"` : ''}>${esc(f.type || '—')} ${f.amont ? '←' : '→'} ${esc(f.vers)}</em>`).join('') : '<em class="libre">libre</em>'}</span></div>`).join('')}</div>`; }
+
+/* ---- LES BROCHES d'un connecteur : contact, où il va, le câble, le contact à sertir — une ligne chacune ---- */
+function brochesVue(xs) { if (!xs.length) return '<p class="vu-note">Aucun câble sur ce connecteur.</p>';
+  return `<table class="vu-table vu-broches"><thead><tr><th>Contact</th><th>Vers</th><th>Câble</th><th>Contact à sertir</th></tr></thead><tbody>${xs.map(x => `<tr class="fi-ia${x.ko ? ' ko' : ''}" data-ct="${escA(x.lettre)}"${x.k ? ` data-i="${x.k}" tabindex="0"` : ''}>`
+    + `<td><b class="id">${esc(x.lettre || x.borne)}</b>${x.lettre && x.borne && x.borne !== x.lettre ? `<small> borne ${esc(x.borne)}</small>` : ''}</td><td class="id">${esc(x.vers)}<small>${x.borneVers ? ':' + esc(x.borneVers) : ''}</small></td>`
+    + `<td><span class="vu-cab"><i class="vu-route" style="--c:${x.couleur}"></i><b class="id">${esc(x.type || '—')}</b></span>${x.ko ? `<small class="vu-ko"> ${esc(x.ko)}</small>` : ''}</td><td class="id vu-sertir">${esc(x.sertir || '—')}</td></tr>`).join('')}</tbody></table>`; }
+
+/* ---- COMMENT VOLTA L'A DÉCIDÉ : des étapes numérotées, une phrase chacune et sa source ---- */
+// sources : fichier (votre fichier), norme, tables (les tables de Volta), calcul, hypothese, main (choisi ici), base (la base SEE)
+const MOTS_SOURCES = { fichier: 'votre fichier', norme: 'la norme', tables: 'tables de Volta', calcul: 'calcul de Volta', hypothese: 'hypothèse', main: 'choisi ici', base: 'base SEE' };
+function pourquoiVue(titre, etapes) { const xs = (etapes || []).filter(Boolean); if (!xs.length) return '';
+  return `<section class="vu-pq" aria-label="${escA(titre)}"><h4 class="vu-titre">${esc(titre)}</h4><ol>${xs.map((e, i) => `<li class="${e.etat || ''}"><span class="vu-pq-n">${i + 1}</span><span class="vu-pq-t">${e.html || esc(e.texte)}</span>`
+    + `${e.source ? `<span class="vu-src ${escA(e.source)}"${e.bulle ? ` data-bulle="${escA(e.bulle)}"` : ''}>${esc(e.mot || MOTS_SOURCES[e.source] || e.source)}</span>` : ''}</li>`).join('')}</ol></section>`; }
+
+/* ---- LA FABRICATION : tout ce qu'il faut pour monter la pièce, groupé, compté par référence ---- */
+function fabricationVue(groupes) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length);
+  if (!gs.length) return '<p class="vu-note">Rien à monter : la référence de la pièce n’est pas encore connue.</p>';
+  const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
+  return `<div class="vu-fab" data-pieces="${n}">${gs.map(g => `<section class="vu-fab-g"><h4><span>${esc(g.titre)}</span>${g.ref ? `<span class="id">${esc(g.ref)}</span>` : ''}${g.sous ? `<small>${esc(g.sous)}</small>` : ''}</h4>`
+    + g.lignes.map(l => `<div class="vu-fab-l"><span class="vu-q">${l.q}<small>×</small></span><span class="vu-r"><b class="id">${esc(l.ref || '—')}</b><small>${esc(l.role || '')}</small></span>${l.statut ? `<span class="vu-st${/confirmer|manque/.test(l.statut) ? ' att' : ''}">${esc(l.statut)}</span>` : '<span></span>'}</div>`).join('') + '</section>').join('')}</div>`; }
+const compterParReference = (refs, role) => { const m = new Map(); refs.filter(Boolean).forEach(r => m.set(r, (m.get(r) || 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]).map(([ref, q]) => ({ q, ref, role })); };
+const piecesFabrication = h => { try { return piecesHabillage(h).map(p => ({ q: p.quantite || 1, ref: p.reference || '', role: ({ cheminee: 'cheminée, à la place du raccord', tyrap: 'collier', raccord: 'raccord', bande: 'collier de blindage (band-it)', manchon: 'manchon', gaine: 'gaine', obturateur: 'obturateur des contacts libres' })[p.role] || p.libelle || p.role || '', statut: p.statut || '' })).filter(p => p.ref); } catch (_) { return []; } };
 
 /* ───────── 10-demarrage.js ───────── */
 /* ===========================================================================

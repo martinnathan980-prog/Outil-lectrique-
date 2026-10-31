@@ -1,145 +1,253 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LA FICHE À DEUX NIVEAUX (v78, 08-niveaux) — la CARTE (l'essentiel, près du bloc) et le GRAND (les deux tiers droits,
-   la liste à gauche, le résumé fixe, les onglets, le pied). Les composants de la fiche (style-fiche.css) restent ; ce
-   qui suit les range. Le bandeau dit l'état d'une couleur et rien d'autre ; les chiffres se lisent d'un coup d'œil, en
-   une bande au filet ; les onglets sont un trait sous le mot ; la liste est une colonne posée en retrait.
-   Jetons du domaine : --nv-liste (la largeur de la liste), --nv-crayon (le crayon qui paraît au survol d'une valeur
-   qui s'écrit, à l'encre de chaque thème).
+   LA FICHE À DEUX NIVEAUX (v78, 08-niveaux, 08-vues) — la CARTE (l'essentiel, près du bloc) et le GRAND (une fenêtre :
+   rangée à droite d'office, détachée elle se déplace et se tire par tous ses bords).
+   Le lecteur : « le fond bleu nuit qui bouge, je l'aimais beaucoup — mais il y en avait trop, tout était bleu nuit ». La
+   table garde sa nuit ; la fiche est un PAPIER posé dessus : blanc pierre le jour, graphite la nuit — aucune teinte
+   bleue, aucune lueur. Un seul accent, le CUIVRE (le métal des câbles) : l'onglet ouvert, le calibre retenu, ce que tire
+   un disjoncteur. Le rouge, l'ambre et le vert ne disent que l'état.
+   Jetons du domaine (sur l'inspecteur et son double) : --nv-cuivre, --nv-cuivre-soft, --vu-g1…6 (les groupes d'une
+   barrette, ni rouge ni vert), --vu-ko, --nv-liste (la largeur de la liste), --nv-crayon.
    ═══════════════════════════════════════════════════════════════════════ */
-:root{--nv-liste:248px;--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6575' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aab4c3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")} }
-:root[data-theme="dark"]{--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aab4c3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")}
+:root{--nv-liste:236px;--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366686e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")}
+#inspecteur,.carte-double{
+  --s-surface:#ffffff; --s-sunken:#f6f5f2; --s-hover:#f1efea; --s-line:#e8e5df; --s-line-2:#d9d5cd; --s-flottant:#ffffff;
+  --t-1:#1c1c1f; --t-2:#55575d; --t-3:#6c6e75; --t-inverse:#ffffff;
+  --accent:#1c1c1f; --accent-2:#000000; --accent-soft:#efede8; --accent-line:#cfcac0; --on-accent:#ffffff;
+  --nv-cuivre:#a9581f; --nv-cuivre-soft:#f6ebe1; --nv-cuivre-ligne:#e2c3a8;
+  --vu-g1:#a9581f; --vu-g2:#6a4cc4; --vu-g3:#0d7a6f; --vu-g4:#b2347c; --vu-g5:#866a10; --vu-g6:#3d5f9f; --vu-ko:var(--ko);
+  --vu-pointe:color-mix(in srgb,var(--nv-cuivre) 32%,transparent);
+  --sh-carte:0 0 0 1px rgba(28,22,12,.10),0 30px 72px -20px rgba(0,6,18,.62),0 10px 26px -12px rgba(0,6,18,.40);
+  --sh-carte-tenue:0 0 0 1px rgba(28,22,12,.14),0 46px 100px -20px rgba(0,6,18,.7),0 16px 34px -12px rgba(0,6,18,.45);
+  --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 28px 64px -18px rgba(0,6,18,.6),0 6px 18px -8px rgba(0,6,18,.35);
+  --anneau:0 0 0 3px rgba(169,88,31,.16);
+  color-scheme:light }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double){
+  --s-surface:#1c1d20; --s-sunken:#161719; --s-hover:#26272b; --s-line:#2e2f34; --s-line-2:#3d3e44; --s-flottant:#232428;
+  --t-1:#f2f2f3; --t-2:#b9bbc1; --t-3:#94969d; --t-inverse:#161719;
+  --accent:#f2f2f3; --accent-2:#ffffff; --accent-soft:#2a2b2f; --accent-line:#47484f; --on-accent:#161719;
+  --ok:#4fd67d; --ok-soft:rgba(79,214,125,.12); --warn:#f2b55c; --warn-soft:rgba(242,181,92,.12); --ko:#ff7a6e; --ko-soft:rgba(255,122,110,.13); --info:#b9bbc1; --info-soft:#232428;
+  --nv-cuivre:#e59c64; --nv-cuivre-soft:rgba(229,156,100,.13); --nv-cuivre-ligne:rgba(229,156,100,.42);
+  --vu-g1:#e59c64; --vu-g2:#a891f2; --vu-g3:#4cc4b5; --vu-g4:#f084c2; --vu-g5:#d9bb4f; --vu-g6:#8eaae6;
+  --sh-carte:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5);
+  --sh-carte-tenue:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.13),0 48px 110px -18px rgba(0,0,0,.85),0 16px 34px -10px rgba(0,0,0,.55);
+  --sh-panneau:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4);
+  --anneau:0 0 0 3px rgba(229,156,100,.22);
+  --nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b9bbc1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E");
+  color-scheme:dark } }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double){
+  --s-surface:#1c1d20; --s-sunken:#161719; --s-hover:#26272b; --s-line:#2e2f34; --s-line-2:#3d3e44; --s-flottant:#232428;
+  --t-1:#f2f2f3; --t-2:#b9bbc1; --t-3:#94969d; --t-inverse:#161719;
+  --accent:#f2f2f3; --accent-2:#ffffff; --accent-soft:#2a2b2f; --accent-line:#47484f; --on-accent:#161719;
+  --ok:#4fd67d; --ok-soft:rgba(79,214,125,.12); --warn:#f2b55c; --warn-soft:rgba(242,181,92,.12); --ko:#ff7a6e; --ko-soft:rgba(255,122,110,.13); --info:#b9bbc1; --info-soft:#232428;
+  --nv-cuivre:#e59c64; --nv-cuivre-soft:rgba(229,156,100,.13); --nv-cuivre-ligne:rgba(229,156,100,.42);
+  --vu-g1:#e59c64; --vu-g2:#a891f2; --vu-g3:#4cc4b5; --vu-g4:#f084c2; --vu-g5:#d9bb4f; --vu-g6:#8eaae6;
+  --sh-carte:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5);
+  --sh-carte-tenue:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.13),0 48px 110px -18px rgba(0,0,0,.85),0 16px 34px -10px rgba(0,0,0,.55);
+  --sh-panneau:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4);
+  --anneau:0 0 0 3px rgba(229,156,100,.22);
+  --nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b9bbc1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E");
+  color-scheme:dark }
+#inspecteur{container:insp / inline-size}
+/* le fil de la carte, sur la table : de cuivre, sans lueur */
+#carte-lien .cl-trait{filter:none}
 
-/* ─── LE GRAND : aux deux tiers droits (sa largeur se tire par le bord gauche : --grand-l) ─── */
-body.insp-grand{--insp-l:min(var(--grand-l,calc((100vw - var(--rail) - 3 * var(--jeu)) * .66)),calc(100vw - var(--rail) - 300px))}
+/* ─── LE GRAND RANGÉ : aux deux tiers droits (sa largeur se tire par le bord gauche : --grand-l) ─── */
+body.insp-grand{--insp-l:min(var(--grand-l,calc((100vw - var(--rail) - 3 * var(--jeu)) * .64)),calc(100vw - var(--rail) - 300px))}
 body.insp-grand #inspecteur{transition:width var(--moyen)}
+/* ─── LE GRAND DÉTACHÉ : une fenêtre, où on l'a lâchée, de la taille qu'on lui a donnée ─── */
+body.insp-grand-libre #inspecteur{top:var(--fen-y,72px);left:var(--fen-x,auto);right:auto;bottom:auto;width:var(--fen-l,900px);height:var(--fen-h,640px);max-height:none;
+  z-index:30;border-radius:var(--r-carte);box-shadow:var(--sh-carte);transition:box-shadow var(--moyen)}
+body.insp-grand-libre #inspecteur{overflow:visible}
+body.insp-grand-libre #inspecteur>.fi{border-radius:inherit}
+body.insp-grand-libre #inspecteur .carte-bords{display:block}
+body.insp-grand-libre #inspecteur .carte-bords i{display:block}
+body.insp-grand-libre.carte-tenue #inspecteur{box-shadow:var(--sh-carte-tenue)}
+/* sa barre se tient, rangé comme détaché : la main ouverte au survol */
+body.insp-grand #inspecteur .nv-poignee .fi-nav{cursor:grab}
+body.insp-grand #inspecteur .nv-poignee :is(button,input){cursor:pointer}
 
-/* ─── LA CARTE : l'en-tête, le bandeau, les chiffres, une ligne de modifications, le pied ─── */
-.nv-carte{display:flex;flex-direction:column;gap:12px;padding-bottom:16px}
-.fi.nv-c .fi-entete{padding:6px 0 4px}
-.fi.nv-c .fi-nom{font-size:var(--f-20)}
-div.fi-nom{flex:none;overflow:visible}
+/* ═══ LA CARTE — le premier regard ═══════════════════════════════════════════════════════════════════════════════════ */
+.nc{display:flex;flex-direction:column;gap:14px;padding:0 0 18px}
+/* le genre, et son état d'un mot */
+.nc-genre{display:flex;align-items:center;gap:9px;min-width:0}
+.nc-sym{flex:none;width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);color:var(--t-2)}
+.nc-sym svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nc-genre-mot{min-width:0;padding:2px 0;font:600 var(--f-12)/1.25 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nc-etat{flex:none;margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px 0 9px;border-radius:12px;background:var(--ok-soft);color:var(--ok);font:650 var(--f-12)/1 var(--sans);white-space:nowrap}
+.nc-etat::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.nc-etat.att{background:var(--warn-soft);color:var(--warn)}
+.nc-etat.ko{background:var(--ko-soft);color:var(--ko)}
+/* le repère, en grand ; il se lit comme un texte, se renomme d'un clic (le crayon paraît au survol) */
+.nc-rep{display:flex;align-items:center;gap:4px;min-width:0;margin:-2px 0 -4px}
+.nc-rep-in,.nc-rep-t{flex:1 1 auto;min-width:0;height:42px;margin:0 0 0 -8px;padding:0 8px;border:1px solid transparent;border-radius:var(--r-btn);background:none;color:var(--t-1);
+  font:650 30px/1 var(--mono);letter-spacing:-.025em;text-overflow:ellipsis;transition:background var(--rapide),border-color var(--rapide)}
+.nc-rep-t{display:flex;align-items:center;font-family:var(--sans);font-size:26px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden}
+.nc-rep-in:hover{background:var(--s-hover)}
+.nc-rep-in:focus{outline:none;border-color:var(--nv-cuivre);background:var(--s-surface);box-shadow:var(--anneau)}
+.nc-crayon{flex:none;width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:var(--r-1);background:none;color:var(--t-3);opacity:0;cursor:pointer;transition:opacity var(--rapide),background var(--rapide)}
+.nc-crayon svg.ico{width:15px;height:15px}
+.nc-rep:hover .nc-crayon,.nc-crayon:focus-visible{opacity:1}
+.nc-crayon:hover{background:var(--s-hover);color:var(--t-1)}
+/* ce qui l'identifie : des mots séparés d'un point */
+.nc-meta{display:flex;flex-wrap:wrap;align-items:center;gap:2px 0;font:500 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+.nc-meta>span{display:inline-flex;align-items:center;gap:6px}
+.nc-meta>span+span::before,.nc-meta>span+.nc-des::before{content:"";width:3px;height:3px;margin:0 9px;border-radius:50%;background:var(--t-3);opacity:.7}
+.nc-meta .id{font:600 var(--f-13) var(--mono);color:var(--t-1);letter-spacing:-.01em}
+.nc-route{width:14px;height:4px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
+.nc-des{flex:0 1 auto;min-width:10ch;max-width:100%;height:28px;margin:0 0 0 12px;padding:0 8px;border:1px dashed var(--s-line-2);border-radius:var(--r-1);background:none;color:var(--t-1);font:500 var(--f-13) var(--sans);field-sizing:content}
+.nc-des.plein{border-color:transparent}
+.nc-des:hover{background:var(--s-hover)}
+.nc-des:focus{outline:none;border:1px solid var(--nv-cuivre);box-shadow:var(--anneau)}
+.nc-des::placeholder{color:var(--t-3)}
+/* la pièce, dessinée en petit : un clic ouvre tout */
+.nc-vignette{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-height:96px;margin:0;padding:14px 14px 30px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-sunken);color:var(--t-1);cursor:pointer;
+  transition:border-color var(--rapide),box-shadow var(--moyen),transform var(--moyen)}
+.nc-vignette:hover{border-color:var(--s-line-2);box-shadow:0 10px 24px -14px rgba(0,0,0,.35)}
+.nc-vignette:active{transform:scale(.995)}
+.nc-vignette:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
+.nc-vignette svg{max-width:100%;height:auto}
+.nc-voir{position:absolute;right:10px;bottom:8px;display:inline-flex;align-items:center;gap:3px;font:600 var(--f-12)/1 var(--sans);color:var(--t-2);transition:color var(--rapide),transform var(--rapide)}
+.nc-voir svg.ico{width:14px;height:14px}
+.nc-vignette:hover .nc-voir{color:var(--nv-cuivre);transform:translateX(2px)}
+/* ce qu'il y a à faire : une tâche par point, le geste qui répare au bout */
+.nc-taches{display:flex;flex-direction:column;gap:2px}
+.nc-tache{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:start;column-gap:10px;padding:8px 8px 8px 6px;margin:0 -8px 0 -6px;border-radius:var(--r-2);transition:background var(--rapide)}
+.nc-tache:hover{background:var(--s-hover)}
+.nc-rond{width:22px;height:22px;margin-top:1px;display:grid;place-items:center;border-radius:50%;background:var(--warn-soft);color:var(--warn)}
+.nc-rond svg.ico{width:13px;height:13px;stroke-width:2.4}
+.nc-tache.ko .nc-rond{background:var(--ko-soft);color:var(--ko)}
+.nc-tache.ok .nc-rond{background:var(--ok-soft);color:var(--ok)}
+.nc-t{min-width:0;display:flex;flex-direction:column;gap:2px;margin:0;padding:1px 0;border:0;background:none;color:var(--t-1);font:inherit;text-align:left;cursor:pointer}
+span.nc-t{cursor:default}
+.nc-t b{font:650 var(--f-14)/1.3 var(--sans);letter-spacing:-.005em;text-wrap:pretty}
+.nc-tache.ko .nc-t b{color:var(--ko)}
+.nc-t small{font:400 var(--f-13)/1.42 var(--sans);color:var(--t-2);text-wrap:pretty}
+button.nc-t:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:4px}
+.nc-geste{display:flex;align-items:center;padding-top:1px}
+.nc-geste .btn{white-space:nowrap}
+.nc-autres{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;margin:2px 0 0 26px;padding:3px 8px;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);font:600 var(--f-12) var(--sans);cursor:pointer}
+.nc-autres:hover{color:var(--t-1);background:var(--s-hover)}
+.nc-autres svg.ico{width:14px;height:14px;transition:transform var(--moyen)}
+.nc-autres.ouvert svg.ico{transform:rotate(90deg)}
+.nc-reste{margin-top:2px}
+.nc-reste[hidden]{display:none}
+/* la carte, étroite : le geste passe sous la tâche, aligné sur son texte */
+.fi.nv-c .nc-tache{grid-template-columns:22px minmax(0,1fr)}
+.fi.nv-c .nc-geste{grid-column:2;padding-top:6px}
+/* les chiffres : trois ou quatre nombres, grands, sans boîte ; un filet entre eux */
+.nc-chiffres{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));border-top:1px solid var(--s-line);padding-top:12px}
+.nc-chiffre{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin:0;padding:2px 12px;border:0;border-left:1px solid var(--s-line);background:none;color:var(--t-1);font:inherit;text-align:left;border-radius:0}
+.nc-chiffre:first-child{border-left:0;padding-left:0}
+button.nc-chiffre{cursor:pointer}
+button.nc-chiffre:hover .nc-k{color:var(--t-1)}
+button.nc-chiffre:hover .nc-v{color:var(--nv-cuivre)}
+button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:4px}
+.nc-v{display:block;max-width:100%;min-height:28px;font:650 var(--f-20)/1.3 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color var(--rapide)}
+.nc-v small{margin-left:3px;font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2)}
+.nc-v .id{font:650 var(--f-15)/1.3 var(--mono);letter-spacing:-.015em}
+.nc-k{font:600 var(--f-11)/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;transition:color var(--rapide)}
+.nc-s{max-width:100%;font:500 var(--f-12)/1.35 var(--sans);color:var(--t-2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-wrap:pretty}
+.nc-s .id{font:600 var(--f-12) var(--mono);color:var(--t-1)}
+.nc-jauge{width:100%;max-width:120px;height:4px;border-radius:2px;background:var(--s-line);overflow:hidden}
+.nc-jauge i{display:block;height:100%;border-radius:2px;background:var(--ok)}
+.nc-jauge.att i{background:var(--warn)}
+.nc-jauge.ko i{background:var(--ko)}
+.nc-chiffre.ko .nc-v{color:var(--ko)}
+.nc-chiffre.att .nc-v{color:var(--warn)}
+.nc-chiffre.supp .nc-s{color:var(--warn)}
+/* une valeur qui s'écrit (le type, la longueur d'un câble) : la valeur est le champ */
+.nc-chiffre.edit .nc-v{display:flex;align-items:baseline;overflow:visible}
+.nc-chiffre .fc-in{height:30px;margin:0 0 0 -6px;padding:0 6px;font:650 var(--f-16)/1 var(--sans);min-width:3ch}
+.nc-chiffre .nv-type-ed{display:flex;align-items:center;gap:1px}
+.nc-chiffre .nv-type-ed .fc-in,.nc-chiffre .nv-type-ed select{font:650 var(--f-15)/1 var(--mono)}
+.nc-chiffre .nv-type-ed .fc-in.cb-fam{width:4.4ch;min-width:4.4ch;field-sizing:fixed}
+.nc-chiffre .cb-sel select{height:30px;border:1px solid transparent;border-radius:var(--r-1);background:none;color:var(--t-1);padding:0 2px}
+.nc-chiffre .cb-sel select:hover{background:var(--s-hover)}
+/* les modifications, d'une ligne */
+.nc-modifs{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;margin:0;padding:6px 10px;border:1px dashed var(--s-line-2);border-radius:var(--r-2);background:none;color:var(--t-2);font:500 var(--f-13)/1.35 var(--sans);text-align:left;cursor:pointer}
+.nc-modifs span{flex:1;min-width:0}
+.nc-modifs svg.ico{width:15px;height:15px;flex:none}
+.nc-modifs:hover{color:var(--t-1);border-color:var(--nv-cuivre-ligne);background:var(--nv-cuivre-soft)}
+/* la barre de la carte : rien au milieu ; le pied, « Tout voir » d'abord */
+.fi.nv-c>.fi-nav{margin-bottom:2px}
+#fi-tout-voir{color:var(--t-1)}
 
-/* ─── LE BANDEAU : l'état, d'une couleur ; ce qui cloche, en clair ; le geste qui répare ─── */
-.nv-etat{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:8px;padding:11px 12px 11px 12px;border-radius:var(--r-2);
-  background:var(--ok-soft);box-shadow:inset 3px 0 0 var(--ok)}
-.nv-etat.att{background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
-.nv-etat.ko{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
-.nv-etat-ico{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:var(--ok);color:var(--s-surface)}
-.nv-etat.att .nv-etat-ico{background:var(--warn)}
-.nv-etat.ko .nv-etat-ico{background:var(--ko)}
-.nv-etat-ico svg.ico{width:16px;height:16px;stroke-width:2.4}
-.nv-etat-t{min-width:0;display:flex;flex-direction:column;gap:2px}
-.nv-etat-titre{font:700 var(--f-14)/1.25 var(--sans);letter-spacing:-.005em;color:var(--t-1)}
-.nv-etat-p{display:block;min-width:0;margin:0;padding:0;border:0;background:none;text-align:left;font:400 var(--f-13)/1.4 var(--sans);color:var(--t-1);text-wrap:pretty}
-button.nv-etat-p{cursor:pointer;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 30%,transparent);text-underline-offset:3px}
-button.nv-etat-p:hover{text-decoration-color:currentColor}
-.nv-etat-g{display:flex;align-items:center;gap:6px}
-.nv-etat-g .btn{white-space:nowrap}
-/* trop étroite pour le geste à côté : il passe dessous, aligné sur le texte */
-.fi.nv-c .nv-etat{grid-template-columns:28px minmax(0,1fr)}
-.fi.nv-c .nv-etat-g{grid-column:2}
-.nv-autres{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;margin:-4px 0 0 40px;padding:2px 6px;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);font:500 var(--f-12) var(--sans);cursor:pointer}
-.nv-autres:hover{color:var(--t-1);background:var(--s-hover)}
-.nv-autres svg.ico{width:14px;height:14px}
-.nv-cache{display:none}
-/* le grand : tous les points, repliés sous le bandeau */
-.nv-tous{margin:8px 0 0}
-.nv-tous-t{display:inline-flex;align-items:center;gap:6px;margin-left:40px;padding:3px 8px;border-radius:var(--r-1);list-style:none;cursor:pointer;color:var(--t-2);font:500 var(--f-12) var(--sans)}
-.nv-tous-t::-webkit-details-marker{display:none}
-.nv-tous-t:hover{background:var(--s-hover);color:var(--t-1)}
-.nv-tous-t .fi-chevron{width:14px;height:14px;transition:transform var(--moyen)}
-.nv-tous[open] .nv-tous-t .fi-chevron{transform:rotate(180deg)}
-.nv-tous .fi-pbs{max-height:220px;overflow:auto;margin:4px 0 0}
-
-/* ─── LES CHIFFRES CLÉS : une bande au filet, une case chacun ─── */
-.nv-chiffres{display:grid;grid-template-columns:repeat(min(var(--n),4),minmax(0,1fr));gap:1px;background:var(--s-line);border:1px solid var(--s-line);border-radius:var(--r-2);overflow:hidden}
-.nv-chiffre{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:0;padding:10px 11px 10px;border:0;background:var(--s-surface);color:var(--t-1);font:inherit;text-align:left}
-button.nv-chiffre{cursor:pointer;transition:background var(--rapide)}
-button.nv-chiffre:hover{background:var(--s-hover)}
-button.nv-chiffre:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.nv-chiffre-k{max-width:100%;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nv-chiffre-v{display:flex;align-items:baseline;gap:3px;max-width:100%;min-height:26px;font:650 var(--f-20)/1.25 var(--sans);letter-spacing:-.015em;font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nv-chiffre-v small{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2)}
-.nv-chiffre-v .id{font:600 var(--f-14)/1.3 var(--mono);letter-spacing:-.01em}
-.nv-chiffre-s{max-width:100%;font:500 var(--f-11)/1.3 var(--sans);color:var(--t-2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-wrap:pretty}
-.nv-chiffre-s .id{font:600 var(--f-11) var(--mono);color:var(--t-1)}
-.nv-chiffre .nv-barre{width:100%;margin:2px 0 1px}
-.nv-chiffre.ko .nv-chiffre-v{color:var(--ko)}
-.nv-chiffre.att .nv-chiffre-v{color:var(--warn)}
-.nv-chiffre:is(.ko,.ko-l){box-shadow:inset 0 2px 0 var(--ko)}
-.nv-chiffre.att{box-shadow:inset 0 2px 0 var(--warn)}
-.nv-chiffre.supp .nv-chiffre-s{color:var(--warn)}
-/* une case qui s'écrit (le type, la longueur d'un câble) : la valeur est le champ */
-.nv-chiffre.edit .nv-chiffre-v{overflow:visible}
-.nv-chiffre .fc-in{height:28px;margin:0 0 0 -6px;padding:0 6px;font:650 var(--f-16)/1 var(--sans);min-width:3ch}
-.nv-chiffre .nv-type-ed{display:flex;align-items:center;gap:1px}
-.nv-chiffre .nv-type-ed .fc-in,.nv-chiffre .nv-type-ed select{font:600 var(--f-14)/1 var(--mono)}
-.nv-chiffre .nv-type-ed .fc-in.cb-fam{width:4.2ch;min-width:4.2ch;field-sizing:fixed}
-.nv-chiffre .cb-sel select{height:28px;border:1px solid transparent;border-radius:var(--r-1);background:none;color:var(--t-1);padding:0 2px}
-.nv-chiffre .cb-sel select:hover{background:var(--s-hover)}
-
-/* ─── LE TRAJET D'UN CÂBLE, sous son titre : un bout, la ligne à la couleur de sa route, l'autre bout ─── */
+/* ─── LE TRAJET D'UN CÂBLE : un bout, la ligne à la couleur de sa route, l'autre bout ─── */
 .nv-trajet{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0}
-.nv-bout{display:inline-flex;align-items:baseline;gap:1px;height:30px;padding:0 10px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);color:var(--t-1);cursor:pointer;line-height:28px}
-.nv-bout:hover{border-color:var(--accent);background:var(--accent-soft)}
-.nv-bout b{font:600 var(--f-13) var(--mono)}
+.nv-bout{display:inline-flex;align-items:baseline;gap:1px;height:32px;padding:0 11px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);color:var(--t-1);cursor:pointer;line-height:30px;transition:border-color var(--rapide),background var(--rapide)}
+.nv-bout:hover{border-color:var(--nv-cuivre-ligne);background:var(--nv-cuivre-soft)}
+.nv-bout b{font:650 var(--f-13) var(--mono)}
 .nv-bout i{font:500 var(--f-12) var(--mono);color:var(--t-2)}
-.nv-trajet-f{flex:1 1 18px;min-width:18px;max-width:64px;height:3px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
+.nv-trajet-f{flex:1 1 18px;min-width:18px;max-width:72px;height:4px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
 .nv-trajet-via{font:500 var(--f-12) var(--sans);color:var(--t-2)}
 
-/* ─── LES MODIFICATIONS, d'une ligne dans la carte ─── */
-.nv-modifs{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;margin:0;padding:6px 10px;border:1px dashed var(--s-line-2);border-radius:var(--r-2);background:none;color:var(--t-2);font:500 var(--f-12)/1.35 var(--sans);text-align:left;cursor:pointer}
-.nv-modifs span{flex:1;min-width:0}
-.nv-modifs svg.ico{width:15px;height:15px;flex:none}
-.nv-modifs:hover{color:var(--t-1);border-color:var(--accent);background:var(--accent-soft)}
-
-/* ─── LE GRAND : la liste | le corps (le résumé fixe, les onglets, le panneau qui défile, le pied) ─── */
+/* ═══ LE GRAND — la fenêtre ══════════════════════════════════════════════════════════════════════════════════════════ */
 .fi.nv-g{padding:0;overflow:hidden}
-.fi.nv-g>.fi-nav{margin:0;flex:none;box-shadow:0 1px 0 var(--s-line)}
 .nv-grand{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:var(--nv-liste) minmax(0,1fr)}
 .nv-grand.nv-seul{grid-template-columns:minmax(0,1fr)}
-.nv-corps{min-width:0;min-height:0;display:flex;flex-direction:column}
-.nv-resume{flex:none;display:flex;flex-direction:column;gap:12px;padding:8px 24px 14px}
-.nv-resume .fi-entete{padding:4px 0 0}
-.nv-resume .fi-nom{font-size:var(--f-24)}
-.fi.nv-g .nv-chiffres{grid-template-columns:repeat(var(--n),minmax(0,1fr))}
-.fi.nv-g .nv-chiffre{padding:10px 14px}
+@container insp (max-width:820px){ .nv-grand{grid-template-columns:minmax(0,1fr)} .nv-grand>.nv-liste{display:none} }
+.nv-corps{min-width:0;min-height:0;display:flex;flex-direction:column;container:corps / inline-size}
+/* la barre : ‹ › · le genre et son état · ranger/détacher, réduire, fermer — on la tient pour déplacer la fenêtre */
+.nv-tete{flex:none;position:relative}
+.nv-tete .fi-nav{position:relative;margin:0;height:48px;padding:0 10px 0 12px;gap:4px;box-shadow:0 1px 0 var(--s-line)}
+.fi-nav-milieu{flex:1;min-width:0;display:flex;align-items:center;margin:0 10px}
+.fi-nav-milieu .nc-genre{flex:1}
+/* le résumé : l'étiquette à gauche, les chiffres à droite */
+.nv-resume{flex:none;display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 32px;padding:18px 28px 16px}
+.nv-ident{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.nv-ident .nc-rep-in,.nv-ident .nc-rep-t{font-size:34px;height:46px}
+.nv-resume .nc-chiffres{flex:2 1 420px;min-width:0;border-top:0;padding-top:0}
+.nv-avant{flex:none;padding:0 28px 12px}
+/* à faire : un encart calme, sous le résumé */
+.nv-afaire{flex:none;margin:0 28px 14px;padding:6px 14px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-sunken)}
+.nv-afaire .nc-tache{margin:0 -8px}
+.nv-afaire .nc-tache:hover{background:var(--s-hover)}
+.nv-afaire .nc-tache.ok{padding:8px 8px}
+.nv-afaire .nc-tache.ok .nc-t small{display:inline}
+/* LES ONGLETS — chacun dit en deux lignes ce qu'il contient et où il en est ; l'ouvert, souligné de cuivre */
 .nv-onglets{flex:none;display:flex;align-items:stretch;gap:2px;padding:0 16px;border-bottom:1px solid var(--s-line);overflow-x:auto;scrollbar-width:none}
 .nv-onglets::-webkit-scrollbar{display:none}
-.nv-onglet{position:relative;flex:none;display:inline-flex;align-items:center;gap:7px;height:42px;margin:0;padding:0 10px;border:0;background:none;color:var(--t-2);font:600 var(--f-13) var(--sans);white-space:nowrap;cursor:pointer;border-radius:var(--r-1) var(--r-1) 0 0;transition:color var(--rapide),background var(--rapide)}
+.nv-onglets.deborde{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent)}
+.nv-onglets.deborde.au-bout{-webkit-mask-image:linear-gradient(90deg,transparent,#000 44px);mask-image:linear-gradient(90deg,transparent,#000 44px)}
+.nv-onglet{position:relative;flex:none;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;min-width:0;max-width:200px;height:56px;margin:0;padding:0 12px;border:0;border-radius:10px 10px 0 0;background:none;
+  color:var(--t-2);font:inherit;text-align:left;cursor:pointer;transition:color var(--rapide),background var(--rapide)}
 .nv-onglet:hover{color:var(--t-1);background:var(--s-hover)}
+.nv-o-t{font:650 var(--f-14)/1.2 var(--sans);letter-spacing:-.005em;white-space:nowrap}
+.nv-o-s{display:inline-flex;align-items:center;gap:5px;max-width:100%;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-o-s:is(.ok,.att,.ko)::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.nv-o-s.att{color:var(--warn)}
+.nv-o-s.att::before{background:var(--warn)}
+.nv-o-s.ko{color:var(--ko)}
+.nv-o-s.ko::before{background:var(--ko)}
 .nv-onglet[aria-selected="true"]{color:var(--t-1)}
-.nv-onglet[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent)}
-.nv-onglet:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
-.nv-pas,.nv-compte{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;font:700 var(--f-11)/1 var(--sans);font-style:normal}
-.nv-pas.ko{background:var(--ko);color:var(--s-surface)}
-.nv-pas.att{background:var(--warn);color:var(--s-surface)}
-.nv-compte{background:var(--s-hover);color:var(--t-2);font-weight:600}
-.nv-panneaux{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:18px 24px 28px;scrollbar-width:thin}
-.nv-panneau{display:flex;flex-direction:column;gap:14px;outline:none}
+.nv-onglet[aria-selected="true"]::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--nv-cuivre)}
+.nv-onglet:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:-3px}
+/* le panneau ouvert : seul lui défile */
+.nv-panneaux{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:22px 28px 32px;scrollbar-width:thin}
+.nv-panneau{display:flex;flex-direction:column;gap:22px;outline:none;max-width:980px}
 .nv-panneau[hidden]{display:none}
 .nv-panneau.nv-entre{animation:nv-entre var(--moyen) both}
-@keyframes nv-entre{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes nv-entre{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.nv-panneau.nv-entre{animation:none}}
-.nv-vide{margin:8px 0;color:var(--t-2);font:400 var(--f-13)/1.45 var(--sans)}
-/* dans un onglet, le contenu d'hier s'étale : plus de marges de section */
 .nv-panneau>.fs-groupe:first-child,.nv-panneau>.fs-champs:first-child{margin-top:0}
 .nv-panneau .fi-decision{margin:0}
-.fi.nv-g .fi-pied{position:static;flex:none;margin:0;padding:10px 20px 12px}
+.fi.nv-g .fi-pied{position:static;flex:none;margin:0;padding:10px 22px 12px;border-top:1px solid var(--s-line)}
+/* la fenêtre étroite : le résumé s'empile, les marges se resserrent */
+@container corps (max-width:600px){ .nv-resume{padding:14px 18px 12px} .nv-afaire{margin:0 18px 12px} .nv-panneaux{padding:16px 18px 24px} .nv-onglets{padding:0 10px} .nv-avant{padding:0 18px 10px} }
 
 /* la liste à gauche : une colonne en retrait ; chaque objet, son point d'état, son repère, ce qu'il est, ses folios */
 .nv-liste{min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--s-line);background:var(--s-sunken)}
-.nv-liste-t{flex:none;display:flex;align-items:baseline;gap:8px;padding:16px 16px 10px;font:700 var(--f-13) var(--sans);color:var(--t-1)}
-.nv-liste-t>span{font:600 var(--f-12) var(--sans);color:var(--t-2)}
-.nv-liste-t .nv-liste-ko{margin-left:auto;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--ko);color:var(--s-surface);font:700 var(--f-11)/1 var(--sans)}
+.nv-liste-t{flex:none;display:flex;align-items:baseline;gap:8px;padding:18px 16px 10px;font:650 var(--f-12) var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-2)}
+.nv-liste-t>b{font-weight:650;color:var(--t-1)}
+.nv-liste-t>span{font:600 var(--f-12) var(--sans);letter-spacing:0;text-transform:none;color:var(--t-3)}
+.nv-liste-t .nv-liste-ko{margin-left:auto;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--ko);color:var(--t-inverse);font:700 var(--f-11)/1 var(--sans)}
 .nv-liste-f{flex:none;margin:0 12px 8px;height:32px}
 .nv-liste-l{flex:1 1 auto;min-height:0;margin:0;padding:2px 8px 16px;list-style:none;overflow:auto;scrollbar-width:thin}
 .nv-liste-l>li[hidden]{display:none}
 .nv-item{width:100%;display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;column-gap:10px;margin:0;padding:7px 10px;border:0;border-radius:var(--r-1);background:none;color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide)}
 .nv-item:hover{background:var(--s-hover)}
-.nv-item.actif{background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--accent)}
-.nv-item:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.nv-item.actif{background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--nv-cuivre)}
+.nv-item:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:-2px}
 .nv-pt{width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .nv-pt.att{background:var(--warn)}
 .nv-pt.ko{background:var(--ko)}
@@ -157,16 +265,16 @@ button.nv-chiffre:focus-visible{outline:2px solid var(--accent);outline-offset:-
 /* (le filet d’hier entre deux lignes, un ::before, ferait une case de plus dans une ligne de tableau) */
 .nv-cables tr::before,.nv-cables tr::after{content:none!important;display:none!important}
 .nv-cables th{padding:0;text-align:left;border-bottom:1px solid var(--s-line-2);background:var(--s-surface);white-space:nowrap}
-.nv-tri{display:inline-flex;align-items:center;gap:5px;width:100%;height:34px;margin:0;padding:0 6px;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);font:600 var(--f-11)/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.nv-tri{display:inline-flex;align-items:center;gap:5px;width:100%;height:34px;margin:0;padding:0 6px;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);font:600 var(--f-11)/1 var(--sans);letter-spacing:.05em;text-transform:uppercase;cursor:pointer}
 .nv-tri:hover{color:var(--t-1);background:var(--s-hover)}
 .nv-tri-f{font:600 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3)}
 th[aria-sort="ascending"] .nv-tri,th[aria-sort="descending"] .nv-tri{color:var(--t-1)}
-th[aria-sort="ascending"] .nv-tri-f,th[aria-sort="descending"] .nv-tri-f{color:var(--accent)}
-.nv-cables td{padding:8px 6px;border-bottom:1px solid var(--s-line);vertical-align:middle;white-space:nowrap}
+th[aria-sort="ascending"] .nv-tri-f,th[aria-sort="descending"] .nv-tri-f{color:var(--nv-cuivre)}
+.nv-cables td{padding:9px 6px;border-bottom:1px solid var(--s-line);vertical-align:middle;white-space:nowrap}
 .nv-cab{cursor:pointer;transition:background var(--rapide)}
 .nv-cab:hover td,.nv-cab.vise td{background:var(--s-hover)}
-.nv-cab.choisi td,.nv-cab.arrivee td{background:var(--accent-soft)}
-.nv-cab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.nv-cab.choisi td,.nv-cab.arrivee td{background:var(--nv-cuivre-soft)}
+.nv-cab:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:-2px}
 .nv-cab.ko td:first-child{box-shadow:inset 3px 0 0 var(--ko)}
 .nv-cab.att td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
 .nv-cab-id{display:inline-flex;align-items:center;gap:8px}
@@ -191,16 +299,201 @@ th[aria-sort="ascending"] .nv-tri-f,th[aria-sort="descending"] .nv-tri-f{color:v
 .fi:is(.nv-c,.nv-g) .fc-in:not(:focus):hover{background-color:var(--s-hover);background-image:var(--nv-crayon);background-repeat:no-repeat;background-position:right 5px center;background-size:12px;padding-right:20px;cursor:text}
 .fi:is(.nv-c,.nv-g) .fc-in:focus{background-image:none}
 .fi:is(.nv-c,.nv-g) .fc-in::placeholder{color:var(--t-1)}
-.fi:is(.nv-c,.nv-g) .supp .fc-in::placeholder,.fi:is(.nv-c,.nv-g) .nv-chiffre.supp .fc-in::placeholder{color:var(--warn);font-weight:600}
+.fi:is(.nv-c,.nv-g) .supp .fc-in::placeholder,.fi:is(.nv-c,.nv-g) .nc-chiffre.supp .fc-in::placeholder{color:var(--warn);font-weight:600}
+
+/* ═══ LES VUES — la pièce dessinée, et pourquoi elle est ainsi (08-vues) ═══════════════════════════════════════════════ */
+.vu-bloc{display:flex;flex-direction:column;gap:12px;margin:0}
+.vu-titre{display:flex;align-items:baseline;gap:10px;margin:0;font:650 var(--f-12)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2)}
+.vu-titre>span{font:500 var(--f-12) var(--sans);letter-spacing:0;text-transform:none;color:var(--t-3)}
+.vu-note{margin:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty}
+.vu-legende{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2)}
+.vu-legende span{display:inline-flex;align-items:center;gap:6px}
+.vu-legende i{width:10px;height:10px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--t-3)}
+.vu-legende i.pris{background:var(--t-1);box-shadow:none}
+.vu-legende i.ko,.vu-legende i.ok{box-shadow:none;background:var(--ko)}
+.vu-legende i.ok{background:var(--ok)}
+.vu-legende i.carre{width:16px;height:8px;border-radius:4px;box-shadow:none}
+.vu-legende i.carre.perm{background:var(--nv-cuivre)}
+.vu-legende i.carre.pointe{background:var(--vu-pointe)}
+/* le schéma et ce qu'il dit, côte à côte ; empilés dans une fenêtre étroite */
+.vu-schema{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:start}
+@container corps (max-width:700px){ .vu-schema{grid-template-columns:minmax(0,1fr)} .vu-fig{justify-self:center;min-width:240px} }
+.vu-schema-d{min-width:0;display:flex;flex-direction:column;gap:10px}
+.vu-fig{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:180px;padding:18px 18px 14px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-sunken)}
+.vu-fig figcaption{font:500 var(--f-12)/1.35 var(--sans);color:var(--t-2);text-align:center;max-width:280px;text-wrap:balance}
+.vu-faces-g{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}
+.vu-faces-g svg,.vu-fig>svg{max-width:100%;height:auto}
+/* la face d'un connecteur : plein = pris, creux = libre, rouge = refusé */
+svg.vu-face{overflow:visible}
+svg.vu-face .vu-corps{fill:var(--s-surface);stroke:var(--s-line-2);stroke-width:1.5}
+svg.vu-face .vu-cle{fill:var(--s-line-2)}
+svg.vu-face .vu-ct{fill:var(--s-surface);stroke:var(--t-3);stroke-width:1.4;transition:r var(--rapide)}
+svg.vu-face .vu-ct.pris{fill:var(--t-1);stroke:var(--t-1)}
+svg.vu-face .vu-ct.ko{fill:var(--ko);stroke:var(--ko)}
+svg.vu-face text{font:650 9px var(--mono);fill:var(--t-2);text-anchor:middle;pointer-events:none}
+svg.vu-face text.long{font-size:7px}
+svg.vu-face text.pris{fill:var(--t-inverse)}
+svg.vu-face text.ko{fill:#fff}
+svg.vu-face.mini .vu-ct{stroke-width:1.2}
+svg.vu-face.vu-vide text{font:500 11px var(--sans);fill:var(--t-3)}
+svg.vu-face.vu-vide .vu-corps{stroke-dasharray:4 4}
+.vu-ct-g.allume .vu-ct{stroke:var(--nv-cuivre);stroke-width:3}
+/* les faces en vignette (la carte) : chacune son nom, ses contacts pris */
+.vu-faces{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:14px 18px}
+.vu-face-v{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px}
+.vu-face-v b{font:650 var(--f-12)/1 var(--mono);color:var(--t-1)}
+.vu-face-v small{font:500 var(--f-11)/1 var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
+.vu-face-v.ko b{color:var(--ko)}
+/* ce qu'il tire contre ses calibres */
+svg.vu-charge{display:block;max-width:100%;height:auto;overflow:visible}
+svg.vu-charge .vu-rail{fill:var(--s-line)}
+svg.vu-charge .vu-b-perm{fill:var(--nv-cuivre)}
+svg.vu-charge .vu-b-pointe{fill:var(--vu-pointe)}
+svg.vu-charge .vu-tick.oui{fill:var(--ok)}
+svg.vu-charge .vu-tick.non{fill:var(--ko)}
+svg.vu-charge line.vu-cal{stroke:var(--t-1);stroke-width:2}
+svg.vu-charge line.vu-fic{stroke:var(--ko);stroke-width:1.6;stroke-dasharray:4 3}
+.nc-vignette svg.vu-charge{width:100%}
+/* les textes des dessins */
+:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) text{font:500 12px var(--sans);fill:var(--t-2)}
+:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) .vu-t-pied{font:600 10.5px var(--sans);text-anchor:middle;font-variant-numeric:tabular-nums}
+:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) .vu-t-fort,:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) tspan.vu-t-fort{font:650 12.5px var(--sans);fill:var(--t-1);font-variant-numeric:tabular-nums}
+:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) .vu-t-ko{font:600 11.5px var(--sans);fill:var(--ko)}
+:is(svg.vu-arbre,svg.vu-chemin) .vu-t-mono{font:650 12.5px var(--mono);fill:var(--t-1)}
+:is(svg.vu-arbre,svg.vu-chemin) tspan.vu-t{font:500 11.5px var(--mono);fill:var(--t-2)}
+:is(svg.vu-arbre,svg.vu-chemin) .vu-milieu{text-anchor:middle}
+:is(svg.vu-arbre,svg.vu-chemin) .vu-petit{font-size:10px}
+/* l'arbre d'un disjoncteur : lui, puis chacun de ses câbles, sa charge au bout */
+svg.vu-arbre{display:block;max-width:100%;height:auto;overflow:visible}
+svg.vu-arbre .vu-boite{fill:var(--s-sunken);stroke:var(--s-line-2);stroke-width:1.5}
+svg.vu-arbre .vu-bus{fill:none;stroke:var(--t-3);stroke-width:1.6;stroke-linecap:round}
+svg.vu-arbre .vu-br{fill:none;stroke-width:3.5;stroke-linecap:round}
+svg.vu-arbre .vu-noeud{fill:var(--t-3)}
+svg.vu-arbre .vu-b-fond{fill:transparent;transition:fill var(--rapide)}
+svg.vu-arbre .vu-branche{cursor:pointer;outline:none}
+svg.vu-arbre .vu-branche:is(:hover,:focus-visible,.vise) .vu-b-fond{fill:var(--s-hover)}
+svg.vu-arbre .vu-branche:focus-visible .vu-b-fond{stroke:var(--nv-cuivre);stroke-width:1.5}
+svg.vu-arbre .vu-branche.ko .vu-t-mono{fill:var(--ko)}
+svg.vu-arbre .vu-rail{fill:var(--s-line)}
+svg.vu-arbre .vu-j{fill:var(--ok)}
+svg.vu-arbre .vu-j.att{fill:var(--warn)}
+svg.vu-arbre .vu-j.ko{fill:var(--ko)}
+/* le chemin d'un câble */
+.vu-chemin-c{padding:14px 16px 6px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-sunken)}
+svg.vu-chemin{display:block;max-width:100%;height:auto;overflow:visible}
+svg.vu-chemin .vu-fil{fill:none;stroke-width:5;stroke-linecap:round}
+svg.vu-chemin .vu-bout{fill:var(--s-surface);stroke:var(--t-1);stroke-width:2}
+svg.vu-chemin .vu-via{fill:var(--s-surface);stroke:var(--s-line-2);stroke-width:1.4}
+/* la traversée d'une prise : ce qui arrive · la lettre · ce qui repart */
+.vu-traverse{display:flex;flex-direction:column;gap:2px;min-width:0}
+.vu-tr-t,.vu-tr-l{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);align-items:center;column-gap:10px}
+.vu-tr-t{padding:0 2px 6px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-3)}
+.vu-tr-t>span:first-child{text-align:right}
+.vu-tr-l{min-height:36px;border-radius:var(--r-1);transition:background var(--rapide)}
+.vu-tr-l:hover{background:var(--s-hover)}
+.vu-tr-p b{display:grid;place-items:center;width:28px;height:28px;margin:0 auto;border-radius:50%;background:var(--t-1);color:var(--t-inverse);font:650 var(--f-12)/1 var(--mono)}
+.vu-tr-c{display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer}
+.vu-tr-c.g{justify-content:flex-end}
+.vu-tr-c.vide{color:var(--t-3);cursor:default}
+.vu-tr-c.g.vide{justify-content:flex-end}
+.vu-tr-c b{font:650 var(--f-13) var(--mono);white-space:nowrap}
+.vu-tr-c small{font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.vu-tr-c.ko b{color:var(--ko)}
+.vu-route{flex:none;width:22px;height:4px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
+/* les groupes d'une barrette : la couleur du groupe, ses contacts, ses câbles */
+.vu-pots{display:flex;flex-direction:column;gap:6px}
+.vu-pot{display:grid;grid-template-columns:12px auto minmax(0,1fr);align-items:start;column-gap:10px;padding:8px 10px;border-radius:var(--r-2);background:color-mix(in srgb,var(--c) 7%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 22%,transparent)}
+.vu-pot>i{width:12px;height:12px;margin-top:3px;border-radius:50%;background:var(--c)}
+.vu-pot>b{font:650 var(--f-13)/1.5 var(--mono);color:var(--c);white-space:nowrap}
+.vu-pot>span{display:flex;flex-wrap:wrap;gap:4px 6px;min-width:0}
+.vu-pot em{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:12px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line);font:500 var(--f-12)/1 var(--mono);font-style:normal;color:var(--t-1);white-space:nowrap;cursor:pointer}
+.vu-pot em:hover{box-shadow:0 0 0 1px var(--c)}
+.vu-pot em.libre{color:var(--t-3);cursor:default;background:none}
+.vu-pot.ko>b{color:var(--ko)}
+/* les broches d'un connecteur */
+.vu-table{width:100%;border-collapse:separate;border-spacing:0;font:400 var(--f-13)/1.35 var(--sans);font-variant-numeric:tabular-nums}
+.vu-table th{padding:0 8px 8px;text-align:left;border-bottom:1px solid var(--s-line-2);font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--t-2);white-space:nowrap}
+.vu-table td{padding:8px;border-bottom:1px solid var(--s-line);vertical-align:middle;white-space:nowrap}
+.vu-table tr,.vu-table tr.fi-ia{display:table-row}
+.vu-table tr::before,.vu-table tr::after{content:none!important;display:none!important}
+.vu-table tbody tr{cursor:pointer;transition:background var(--rapide)}
+.vu-table tbody tr:hover td,.vu-table tbody tr.vise td{background:var(--s-hover)}
+.vu-table tbody tr:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:-2px}
+.vu-table tr.ko td:first-child{box-shadow:inset 3px 0 0 var(--ko)}
+.vu-table td small{font:500 var(--f-11) var(--sans);color:var(--t-2)}
+.vu-table td.id small{font-family:var(--mono)}
+.vu-cab{display:inline-flex;align-items:center;gap:8px}
+.vu-sertir{color:var(--t-2)}
+.vu-ko{color:var(--ko)!important;font-weight:600}
+/* COMMENT VOLTA L'A DÉCIDÉ : des étapes numérotées, une phrase chacune et sa source en pastille */
+.vu-pq{display:flex;flex-direction:column;gap:10px;margin:0;padding:16px 18px 14px;border:1px solid var(--s-line);border-radius:14px;background:var(--s-surface)}
+.vu-pq ol{display:flex;flex-direction:column;margin:0;padding:0;list-style:none;counter-reset:none}
+.vu-pq li{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:start;column-gap:12px;padding:8px 0}
+.vu-pq li+li{border-top:1px solid var(--s-line)}
+/* le fil des étapes : un trait fin d'un numéro à l'autre */
+.vu-pq li:not(:last-child)::after{content:"";position:absolute;left:11.5px;top:34px;bottom:-8px;width:1px;background:var(--s-line-2)}
+.vu-pq-n{z-index:1;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2);font:650 var(--f-12)/1 var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums}
+.vu-pq li.att .vu-pq-n{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
+.vu-pq li.ko .vu-pq-n{background:var(--ko-soft);box-shadow:inset 0 0 0 1px var(--ko);color:var(--ko)}
+.vu-pq-t{min-width:0;padding-top:2px;font:400 var(--f-14)/1.5 var(--sans);color:var(--t-1);text-wrap:pretty}
+.vu-pq-t b{font-weight:650}
+.vu-pq-t .id{font-size:.94em}
+.vu-pq li.ko .vu-pq-t{color:var(--ko)}
+.vu-src{--sc:var(--t-2);align-self:start;margin-top:3px;display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:11px;white-space:nowrap;
+  background:color-mix(in srgb,var(--sc) 10%,transparent);color:var(--sc);font:600 var(--f-11)/1 var(--sans)}
+.vu-src::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.vu-src.fichier{--sc:var(--t-1)}
+.vu-src.norme{--sc:var(--vu-g2)}
+.vu-src.tables{--sc:var(--vu-g3)}
+.vu-src.calcul{--sc:var(--nv-cuivre)}
+.vu-src.hypothese{--sc:var(--warn);background:none;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 55%,transparent)}
+.vu-src.main{--sc:var(--vu-g4)}
+.vu-src.base{--sc:var(--vu-g6)}
+@container corps (max-width:560px){ .vu-pq li{grid-template-columns:24px minmax(0,1fr)} .vu-src{grid-column:2;margin-top:4px;justify-self:start} }
+/* LA FABRICATION : tout ce qu'il faut pour monter la pièce, groupé, compté par référence */
+.vu-fab{display:flex;flex-direction:column;gap:14px}
+.vu-fab-g{border:1px solid var(--s-line);border-radius:14px;overflow:hidden;background:var(--s-surface)}
+.vu-fab-g h4{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:0;padding:12px 16px;background:var(--s-sunken);border-bottom:1px solid var(--s-line);font:650 var(--f-14)/1.3 var(--sans);color:var(--t-1)}
+.vu-fab-g h4 .id{font:600 var(--f-13) var(--mono);color:var(--t-1)}
+.vu-fab-g h4 small{margin-left:auto;font:500 var(--f-12) var(--sans);color:var(--t-2)}
+.vu-fab-l{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;column-gap:12px;padding:10px 16px}
+.vu-fab-l+.vu-fab-l{border-top:1px solid var(--s-line)}
+.vu-q{font:650 var(--f-16)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
+.vu-q small{margin-left:2px;font:500 var(--f-12) var(--sans);color:var(--t-3)}
+.vu-r{min-width:0;display:flex;flex-direction:column;gap:2px}
+.vu-r b{font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
+.vu-r small{font:400 var(--f-12)/1.35 var(--sans);color:var(--t-2)}
+.vu-st{font:600 var(--f-11)/1 var(--sans);color:var(--t-2);white-space:nowrap}
+.vu-st.att{color:var(--warn)}
+/* les calibres de la gamme en touches : vert il passe, rouge non ; le retenu, plein ; celui du fichier, cerné */
+.vu-cals{display:flex;flex-wrap:wrap;gap:8px}
+button.vu-cal{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:62px;height:58px;margin:0;padding:0 10px;border:1px solid var(--s-line-2);border-radius:12px;background:var(--s-surface);color:var(--t-1);cursor:pointer;
+  transition:border-color var(--rapide),background var(--rapide),transform var(--rapide)}
+button.vu-cal b{font:650 var(--f-20)/1 var(--sans);font-variant-numeric:tabular-nums}
+button.vu-cal small{font:600 var(--f-11)/1 var(--sans);color:var(--t-2)}
+button.vu-cal::before{content:"";position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--ok)}
+button.vu-cal.non::before{background:var(--ko)}
+button.vu-cal.non b{color:var(--t-2)}
+button.vu-cal:hover{border-color:var(--t-3);background:var(--s-hover)}
+button.vu-cal:active{transform:scale(var(--presse))}
+button.vu-cal.on{border-color:var(--nv-cuivre);background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre)}
+button.vu-cal.on small{color:var(--nv-cuivre)}
+button.vu-cal.fichier:not(.on){border-style:dashed}
+button.vu-cal:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
 
 /* ─── AU TÉLÉPHONE : le grand est la feuille entière ; ses onglets défilent sous les doigts ─── */
 @media (max-width:700px){
   body.insp-grand #inspecteur{max-height:calc(100vh - var(--entete) - var(--rail-tel) - 12px)}
-  .nv-resume{padding:6px 16px 12px}
+  .nv-resume{padding:8px 16px 12px}
+  .nv-afaire{margin:0 16px 12px}
   .nv-onglets{padding:0 8px}
+  .nv-onglet{min-width:84px;height:52px;padding:0 10px}
   .nv-panneaux{padding:14px 16px 20px}
-  .fi.nv-g .nv-chiffres{grid-template-columns:repeat(auto-fit,minmax(78px,1fr))}
+  .nv-resume .nc-chiffres{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:14px}
+  .nv-resume .nc-chiffre:nth-child(odd){border-left:0;padding-left:0}
+  .fi-nav-milieu .nc-sym{display:none}
+  .fi-nav-milieu{margin:0 4px}
 }
 
-/* ─── LES BORDS : la carte a la taille de ce qu'elle dit ; seul le grand se tire, par son bord gauche ─── */
+/* ─── LES BORDS : la carte a la taille de ce qu'elle dit ; le grand rangé se tire par son bord gauche ─── */
 body.insp-flotte #inspecteur .carte-bords,body.insp-epingle:not(.insp-grand) #inspecteur .carte-bords{display:none}

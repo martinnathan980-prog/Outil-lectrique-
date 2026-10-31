@@ -37,9 +37,39 @@ const CARTE_COURBE = 'cubic-bezier(.2,.8,.2,1)';
 const carteFlottante = () => !NIVEAU.grand && !telephone() && !(typeof app !== 'undefined' && app.base && app.base.ouvert);
 // les classes du corps disent ce qu'est l'inspecteur ouvert : une carte, ou le volet épinglé ; fermé, ni l'un ni l'autre
 function modeCarte() { const ouvert = !$('inspecteur').hidden, b = document.body, tel = telephone(), flotte = carteFlottante();
-  b.classList.toggle('insp-flotte', ouvert && flotte); b.classList.toggle('insp-epingle', ouvert && !tel && !flotte);
-  // le grand (08-niveaux) : aux deux tiers, la liste à gauche ; au téléphone, la feuille entière
-  b.classList.toggle('insp-grand', ouvert && !!NIVEAU.grand && !(typeof app !== 'undefined' && app.base && app.base.ouvert)); }
+  const libre = ouvert && grandLibre();
+  b.classList.toggle('insp-flotte', ouvert && flotte); b.classList.toggle('insp-epingle', ouvert && !tel && !flotte && !libre);
+  // le grand (08-niveaux) : aux deux tiers, la liste à gauche ; au téléphone, la feuille entière ; détaché, une fenêtre
+  b.classList.toggle('insp-grand', ouvert && !!NIVEAU.grand && !(typeof app !== 'undefined' && app.base && app.base.ouvert));
+  b.classList.toggle('insp-grand-libre', libre); if (libre) poserFenetre(); }
+
+/* ---- LE GRAND, UNE FENÊTRE (v78, le lecteur : « quand ça va à droite, il faut pouvoir le bouger comme une pop-up, le
+   grandir… elle est à droite de base, mais on peut la bouger et la grandir, comme une fenêtre ») : rangé à droite d'office
+   (le plan se range à côté) ; tenu par sa barre, il se détache et suit la main — le plan reprend toute la place ; ses
+   quatre bords et ses coins le tirent ; lâché contre le bord droit, il s'y range de nouveau ; un double-clic sur sa barre,
+   ou le bouton de la barre, le range ou le détache. Sa place et sa taille de fenêtre se gardent d'une session à l'autre ;
+   il s'ouvre toujours rangé, à droite. ---- */
+const FENETRE = { libre: false, x: 0, y: 0, w: 0, h: 0 };
+const FEN_LMIN = 520, FEN_HMIN = 340;
+const grandLibre = () => !!(NIVEAU.grand && FENETRE.libre && !telephone() && !(typeof app !== 'undefined' && app.base && app.base.ouvert));
+function fenetreEnMemoire() { try { const f = JSON.parse(localStorage.getItem('volta.fiche.fenetre') || 'null'); if (f && f.w > 0 && f.h > 0) Object.assign(FENETRE, { x: +f.x || 0, y: +f.y || 0, w: +f.w, h: +f.h }); } catch (_) { } }
+function garderFenetre() { try { localStorage.setItem('volta.fiche.fenetre', JSON.stringify({ x: FENETRE.x, y: FENETRE.y, w: FENETRE.w, h: FENETRE.h })); } catch (_) { } }
+// la fenêtre dans l'écran : sous la barre du haut, à droite du rail ; jamais plus petite que ce qu'elle doit lire
+function poserFenetre() { const el = $('inspecteur'), Z = zoneDeLaCarte(), st = el.style;
+  if (!(FENETRE.w > 0)) { const w = Math.min(1040, Math.round((Z.R - Z.L) * .62)); Object.assign(FENETRE, { w, h: Z.B - Z.T - 24, x: Math.round(Z.L + (Z.R - Z.L - w) / 2), y: Z.T + 12 }); }
+  const w = Math.max(FEN_LMIN, Math.min(FENETRE.w, Z.R - Z.L)), h = Math.max(FEN_HMIN, Math.min(FENETRE.h, Z.B - Z.T));
+  const x = Math.max(Z.L, Math.min(FENETRE.x, Z.R - w)), y = Math.max(Z.T, Math.min(FENETRE.y, Z.B - 80));
+  Object.assign(FENETRE, { x, y, w, h });
+  st.setProperty('--fen-x', x + 'px'); st.setProperty('--fen-y', y + 'px'); st.setProperty('--fen-l', w + 'px'); st.setProperty('--fen-h', Math.min(h, Z.B - y) + 'px'); }
+// ranger (à droite, le plan à côté) ou détacher (une fenêtre, le plan entier) ; `r` : la fenêtre part de là (sous la main)
+function rangerFenetre(ranger, r) { if (!NIVEAU.grand || telephone()) return; const el = $('inspecteur'), avant = el.getBoundingClientRect();
+  FENETRE.libre = !ranger; if (!ranger && r) Object.assign(FENETRE, r);
+  modeCarte();
+  // sous la main (on tient la barre), la fiche ne se refait pas : seul son bouton change
+  if (r) { const f = $('fi-fenetre'); if (f) { f.outerHTML = boutonEpingle(); lierTaille(); } } else if (typeof rafraichirFicheEnPlace === 'function' && !rafraichirFicheEnPlace()) rendreFiche();
+  recadrerSiCache(); window.dispatchEvent(new Event('resize')); if (!ranger) garderFenetre();
+  if (!mouvementReduit() && !r && avant.width) { const a = el.getBoundingClientRect(); el.style.transformOrigin = '0 0';
+    el.animate([{ transform: `translate(${avant.left - a.left}px,${avant.top - a.top}px) scale(${avant.width / a.width},${avant.height / a.height})` }, { transform: 'none' }], { duration: 280, easing: CARTE_COURBE }); } }
 
 /* ---- D'OÙ ELLE NAÎT ------------------------------------------------------------------------------------------------ */
 // `v` : une autre vue que celle de l'écran (celle où le plan va, quand il glisse : 08-interface, `vueVisee`)
@@ -238,11 +268,15 @@ function suivreLienPendant(ms) { const t0 = performance.now(); const pas = t => 
 /* ---- L'ÉPINGLE ------------------------------------------------------------------------------------------------------ */
 // le bouton de la barre (08-fiche, `barreNav` ; l'index, `rendreIndex`) : rien au téléphone (le tiroir)
 // (v78) plus d'épingle : la carte, ou le grand
-const boutonEpingle = () => '';
+// (v78) le grand : ranger à droite, ou détacher en fenêtre
+const boutonEpingle = () => { if (!NIVEAU.grand || telephone() || (typeof app !== 'undefined' && app.base && app.base.ouvert)) return ''; const l = grandLibre(),
+    t = l ? 'Ranger à droite : le plan à côté — ou lâcher la fenêtre contre le bord droit' : 'Détacher : une fenêtre qui se déplace et se tire par ses bords — ou tenir la barre';
+  return `<button type="button" class="fi-x fi-epingle" id="fi-fenetre" aria-pressed="${!l}" aria-label="${escA(t)}" data-bulle="${escA(t)}">${ico(l ? 'epingler' : 'detacher')}</button>`; };
 /* ⤢ « TOUT VOIR » (la carte) — ⤡ « RÉDUIRE » (le grand) ; le récapitulatif ouvert, la fiche y est déjà entière. */
 const boutonTaille = () => { if (typeof app !== 'undefined' && app.base && app.base.ouvert) return ''; const g = !!NIVEAU.grand, t = g ? 'Réduire : l’essentiel, près de l’objet — Échap' : 'Tout voir : la fiche entière, le plan à côté — ou un double-clic sur l’objet';
   return `<button type="button" class="fi-x fi-taille" id="fi-taille" aria-pressed="${g}" aria-label="${escA(t)}" data-bulle="${escA(t)}">${ico(g ? 'reduire' : 'agrandir')}</button>`; };
-const lierTaille = () => { const b = $('fi-taille'); if (b) b.onclick = e => { e.stopPropagation(); if (NIVEAU.grand) reduireFiche(); else ouvrirGrand(''); }; };
+const lierTaille = () => { const b = $('fi-taille'); if (b) b.onclick = e => { e.stopPropagation(); if (NIVEAU.grand) reduireFiche(); else ouvrirGrand(''); };
+  const f = $('fi-fenetre'); if (f) f.onclick = e => { e.stopPropagation(); rangerFenetre(grandLibre()); }; };
 const agrandirCarte = oui => { if (oui) ouvrirGrand(''); else reduireFiche(); };
 /* Épingler : la carte devient le volet de droite et le plan se recadre à côté ; détacher : elle revient près de son
    bloc. `sansElan` : pendant qu'on la tient (la barre déjà sous les doigts, elle suit la main). */
@@ -305,6 +339,11 @@ function oublierTaille() { CARTE.taille = null; CARTE.volet = 0; appliquerVolet(
   try { localStorage.removeItem('volta.fiche.taille'); localStorage.removeItem('volta.fiche.volet'); } catch (_) { } }
 const CURSEURS_BORD = { n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', ne: 'nesw-resize', sw: 'nesw-resize', nw: 'nwse-resize', se: 'nwse-resize' };
 function tirerCarte(e) { const t = CARTE.tire, el = $('inspecteur'), Z = zoneDeLaCarte(), b = t.bord, dx = e.clientX - t.x0, dy = e.clientY - t.y0, r = t.r;
+  if (t.libre) { // la fenêtre : chaque bord, chaque coin ; le bord d'en face ne bouge pas
+    const xd = r.left + r.width, yb = r.top + r.height;
+    const w = Math.max(FEN_LMIN, Math.min(r.width + (b.includes('e') ? dx : b.includes('w') ? -dx : 0), b.includes('w') ? xd - Z.L : Z.R - r.left));
+    const h = Math.max(FEN_HMIN, Math.min(r.height + (b.includes('s') ? dy : b.includes('n') ? -dy : 0), b.includes('n') ? yb - Z.T : Z.B - r.top));
+    Object.assign(FENETRE, { w: Math.round(w), h: Math.round(h), x: b.includes('w') ? xd - w : r.left, y: b.includes('n') ? yb - h : r.top }); poserFenetre(); return; }
   if (!t.flotte) { // le volet épinglé : son bord gauche, le plan se recadre au lâcher
     CARTE.volet = Math.max(620, Math.min(window.innerWidth - (jetonPx('--rail') || 64) - 300, r.width - dx)); appliquerVolet(); return; }
   let w = r.width + (b.includes('e') ? dx : b.includes('w') ? -dx : 0), h = r.height + (b.includes('s') ? dy : b.includes('n') ? -dy : 0);
@@ -315,25 +354,27 @@ function tirerCarte(e) { const t = CARTE.tire, el = $('inspecteur'), Z = zoneDeL
   poserCarte(b.includes('w') ? xd - w : r.left, b.includes('n') ? yb - h : r.top); dessinerLien(); }
 function lierBords(el) {
   el.addEventListener('pointerdown', e => { const bord = e.target.closest && e.target.closest('[data-bord]'); if (!bord || telephone() || e.button !== 0) return;
-    // (v78) seul le grand se tire, par son bord gauche ; la carte a la taille de ce qu'elle dit
-    const flotte = carteFlottante(); if (flotte || bord.dataset.bord !== 'w') return;
+    // (v78) la carte a la taille de ce qu'elle dit ; le grand rangé se tire par son bord gauche, détaché par tous ses bords
+    const flotte = carteFlottante(), libre = grandLibre(); if (flotte || (!libre && bord.dataset.bord !== 'w')) return;
     e.preventDefault(); e.stopPropagation();
-    CARTE.tire = { bord: bord.dataset.bord, x0: e.clientX, y0: e.clientY, r: el.getBoundingClientRect(), flotte };
+    CARTE.tire = { bord: bord.dataset.bord, x0: e.clientX, y0: e.clientY, r: el.getBoundingClientRect(), flotte, libre };
     try { bord.setPointerCapture(e.pointerId); } catch (_) { }
     document.body.style.setProperty('--tire-curseur', CURSEURS_BORD[bord.dataset.bord] || 'move'); document.body.classList.add('carte-tiree'); }, true);
   el.addEventListener('pointermove', e => { if (CARTE.tire) { e.stopPropagation(); tirerCarte(e); } }, true);
   const lacher = () => { const t = CARTE.tire; if (!t) return; CARTE.tire = null; document.body.classList.remove('carte-tiree');
+    if (t.libre) { garderFenetre(); return; }
     try { if (t.flotte && CARTE.taille) localStorage.setItem('volta.fiche.taille', JSON.stringify(CARTE.taille)); if (!t.flotte && CARTE.volet) localStorage.setItem('volta.fiche.volet', String(Math.round(CARTE.volet))); } catch (_) { }
     if (!t.flotte) { recadrerSiCache(); window.dispatchEvent(new Event('resize')); } dessinerLien(); lacherLeSurvol(); };
   el.addEventListener('pointerup', lacher, true); el.addEventListener('pointercancel', lacher, true);
   // double-clic sur un bord : sa taille d'office
   el.addEventListener('dblclick', e => { if (!(e.target.closest && e.target.closest('[data-bord]'))) return; e.preventDefault(); e.stopPropagation();
+    if (grandLibre()) { FENETRE.w = 0; poserFenetre(); garderFenetre(); return; }
     const r = el.getBoundingClientRect(); oublierTaille(); if (carteFlottante()) poserCarte(r.left, r.top); else { recadrerSiCache(); window.dispatchEvent(new Event('resize')); } dessinerLien(); }, true); }
 
 /* ---- LA TENIR PAR SA BARRE ------------------------------------------------------------------------------------------ */
 function lierCarte() { const el = $('inspecteur');
   // (v78) chaque fiche s'ouvre en carte ; le grand ne se garde pas d'une session à l'autre — sa largeur, si
-  CARTE.epingle = false; CARTE.grande = false; NIVEAU.grand = false; CARTE.taille = null; CARTE.volet = voletEnMemoire(); appliquerVolet(); lierBords(el);
+  CARTE.epingle = false; CARTE.grande = false; NIVEAU.grand = false; CARTE.taille = null; CARTE.volet = voletEnMemoire(); appliquerVolet(); fenetreEnMemoire(); FENETRE.libre = false; lierBords(el);
   // fermée, d'où qu'on la ferme (08-interface, `fermerInspecteur`), elle rend le clavier
   if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) rendreLeClavierDeLaCarte(); }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
   // l'endroit du dernier appui sur la planche : la fiche d'un câble naît de là, un clic sur le plan fait glisser la carte
@@ -342,16 +383,28 @@ function lierCarte() { const el = $('inspecteur');
   window.addEventListener('pointermove', e => { if (e.pointerType !== 'touch') CARTE.souris = { x: e.clientX, y: e.clientY }; }, { passive: true });
   el.addEventListener('pointerdown', e => { if (telephone() || e.button !== 0) return;
     const barre = e.target.closest && e.target.closest('.fi-nav, .ix-tete, .fi-symbole'); if (!barre || e.target.closest('button, input, select, a, textarea')) return;
-    const r = el.getBoundingClientRect(); CARTE.prise = { dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, bouge: false };
+    const r = el.getBoundingClientRect(); CARTE.prise = { dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, bouge: false, fen0: grandLibre() ? { ...FENETRE } : null };
     try { barre.setPointerCapture(e.pointerId); } catch (_) { } e.preventDefault(); });
   el.addEventListener('pointermove', e => { const p = CARTE.prise; if (!p) return;
     if (!p.bouge) { if (Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 4) return; p.bouge = true; document.body.classList.add('carte-tenue');
-      // épinglée, on la détache : elle redevient une carte, sa barre sous les doigts
-      if (CARTE.epingle) { epinglerCarte(false, true); p.dx = Math.min(p.dx, CARTE_L() - 40); } }
-    poserCarte(e.clientX - p.dx, e.clientY - p.dy); dessinerLien(); document.body.classList.toggle('carte-quai', e.clientX > window.innerWidth - 56); });
+      // (v78) le grand rangé se détache : une fenêtre, sa barre sous les doigts (plus étroite qu'aux deux tiers, la main
+      // garde sa place relative sur la barre)
+      if (NIVEAU.grand && !grandLibre()) { const r = el.getBoundingClientRect(), w = Math.min(r.width, FENETRE.w > 0 ? FENETRE.w : Math.min(1040, r.width)), h = Math.min(r.height, FENETRE.h > 0 ? FENETRE.h : r.height);
+        p.dx = p.dx * w / r.width; p.fenetre = true; rangerFenetre(false, { x: e.clientX - p.dx, y: e.clientY - p.dy, w, h }); }
+      else if (grandLibre()) p.fenetre = true;
+      else if (CARTE.epingle) { epinglerCarte(false, true); p.dx = Math.min(p.dx, CARTE_L() - 40); } }
+    if (p.fenetre) { FENETRE.x = e.clientX - p.dx; FENETRE.y = e.clientY - p.dy; poserFenetre(); }
+    else { poserCarte(e.clientX - p.dx, e.clientY - p.dy); dessinerLien(); }
+    document.body.classList.toggle('carte-quai', e.clientX > window.innerWidth - 56); });
   const lacher = () => { const p = CARTE.prise; CARTE.prise = null; if (!p || !p.bouge) return; const b = document.body, quai = b.classList.contains('carte-quai');
-    b.classList.remove('carte-tenue', 'carte-quai'); if (quai) { epinglerCarte(true); return; } CARTE.deplacee = true;
+    b.classList.remove('carte-tenue', 'carte-quai');
+    // rangée au bord : détachée de nouveau (double-clic, bouton), elle reviendra où elle était avant ce geste
+    if (p.fenetre) { if (quai) { if (p.fen0) Object.assign(FENETRE, p.fen0, { libre: true }); garderFenetre(); rangerFenetre(true); } else garderFenetre(); return; }
+    if (quai) { epinglerCarte(true); return; } CARTE.deplacee = true;
     // relâchée trop bas : elle remonte d'elle-même dans l'écran
     const r = el.getBoundingClientRect(), Z = zoneDeLaCarte(); poserCarte(r.left, Math.min(r.top, Math.max(Z.T, Z.B - Math.min(r.height, 160)))); dessinerLien(); lacherLeSurvol(); };
   el.addEventListener('pointerup', lacher); el.addEventListener('pointercancel', lacher);
-  window.addEventListener('resize', () => { if (!el.hidden && carteFlottante()) { const r = el.getBoundingClientRect(); poserCarte(r.left, r.top); } modeCarte(); dessinerLien(); }); }
+  window.addEventListener('resize', () => { if (!el.hidden && carteFlottante()) { const r = el.getBoundingClientRect(); poserCarte(r.left, r.top); } modeCarte(); dessinerLien(); });
+  // un double-clic sur la barre du grand : le ranger à droite, ou le détacher en fenêtre
+  el.addEventListener('dblclick', e => { if (!NIVEAU.grand || telephone() || !(e.target.closest && e.target.closest('.nv-poignee')) || e.target.closest('button, input, select, a, textarea')) return;
+    e.preventDefault(); e.stopPropagation(); rangerFenetre(grandLibre()); }); }

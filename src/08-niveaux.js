@@ -27,57 +27,78 @@ const NIVEAU = { grand: false, onglet: {}, tri: { col: '', sens: 1 }, filtre: ''
 const recapOuvert = () => !!(typeof app !== 'undefined' && app.base && app.base.ouvert);
 // la fiche entière : le grand demandé, ou le récapitulatif ouvert (la fiche y est le volet de droite)
 const ficheEnGrand = () => !!NIVEAU.grand || recapOuvert();
-// le grand aux deux tiers, la liste à gauche : ni au téléphone (la feuille entière), ni à côté du récapitulatif
+// le grand avec sa liste à gauche : ni au téléphone (la feuille entière), ni à côté du récapitulatif
 const grandLarge = () => !!NIVEAU.grand && !recapOuvert() && !telephone();
 
-/* ---- LES ONGLETS : un sujet chacun, dans un ordre fixe ------------------------------------------------------------ */
-const ORDRE_ONGLETS = ['disjoncteur', 'connecteur', 'contacts', 'raccord', 'trajet', 'fils', 'conso', 'dejafait', 'modifs'];
-const TITRES_ONGLETS = { disjoncteur: 'Calibre', connecteur: 'Connecteur', contacts: 'Contacts', raccord: 'Raccord', trajet: 'De → vers', fils: 'Câbles', conso: 'Consommation', dejafait: 'Déjà fait', modifs: 'Modifications' };
+/* ---- LES ONGLETS (v78, le lecteur : « beaucoup plus lisibles, plus clairs, plus compréhensibles ») : chacun dit en deux
+   lignes ce qu'il contient et où il en est — « Calibre · 15 A, il passe », « Câbles · 3, au plus 44 % », « Fabrication ·
+   17 pièces ». Toujours le même ordre : l'essentiel d'abord, les réglages et l'historique à la fin. ---- */
+const ORDRE_ONGLETS = ['essentiel', 'calibre', 'cables', 'fabrication', 'reglages', 'dejafait', 'modifs'];
+const TITRES_ONGLETS = { essentiel: 'L’essentiel', calibre: 'Calibre', cables: 'Câbles', fabrication: 'Fabrication', reglages: 'Réglages', dejafait: 'Déjà fait', modifs: 'Modifications' };
+// d'où mène une section d'hier, un point, une case : à quel onglet
+const ONGLET_DE_SECTION = { disjoncteur: 'calibre', connecteur: 'essentiel', contacts: 'essentiel', trajet: 'essentiel', raccord: 'reglages', conso: 'reglages', fils: 'cables', dejafait: 'dejafait', modifs: 'modifs' };
+const ongletDeSection = (type, cle) => !cle ? '' : (type === 'fil' && cle === 'fils') ? 'essentiel' : ONGLET_DE_SECTION[cle] || cle;
 const titreOnglet = s => s.titre || TITRES_ONGLETS[s.cle] || (typeof SECTIONS !== 'undefined' && SECTIONS[s.cle]) || s.cle;
-const rangOnglet = s => { const k = ORDRE_ONGLETS.indexOf(s.cle); return k < 0 ? 99 : k; };
-// l'onglet ouvert : celui qu'on a choisi pour ce genre de fiche (il suit d'un objet à l'autre), sinon celui qui porte un
-// problème, sinon le premier
-function ongletActif(type, xs) { const k = NIVEAU.onglet[type]; if (k && xs.some(s => s.cle === k)) return k;
-  const ko = xs.find(s => s.badge && s.badge.etat === 'ko'); return (ko || xs[0] || {}).cle || ''; }
+const rangOnglet = s => { const k = ORDRE_ONGLETS.indexOf(s.cle); return k < 0 ? 50 : k; };
+// l'onglet ouvert : celui qu'on a choisi pour ce genre de fiche (il suit d'un objet à l'autre), sinon l'essentiel
+function ongletActif(type, xs) { const k = NIVEAU.onglet[type]; if (k && xs.some(s => s.cle === k)) return k; return (xs.find(s => s.cle === 'essentiel') || xs[0] || {}).cle || ''; }
 function ongletsHtml(type, xs) { if (!xs.length) return '';
   const actif = ongletActif(type, xs);
-  const pastille = s => { const b = s.badge; if (b && (b.etat === 'ko' || b.etat === 'att') && b.t != null && b.t !== '') return `<i class="nv-pas ${b.etat}">${b.t}</i>`;
-    return s.compte != null ? `<i class="nv-compte">${s.compte}</i>` : ''; };
-  const tabs = xs.map(s => `<button type="button" role="tab" class="nv-onglet" id="nv-o-${escA(s.cle)}" data-onglet="${escA(s.cle)}" aria-selected="${s.cle === actif}" aria-controls="nv-p-${escA(s.cle)}" tabindex="${s.cle === actif ? 0 : -1}">${esc(titreOnglet(s))}${pastille(s)}</button>`).join('');
+  const tabs = xs.map(s => { const st = s.statut || {};
+    return `<button type="button" role="tab" class="nv-onglet" id="nv-o-${escA(s.cle)}" data-onglet="${escA(s.cle)}" aria-selected="${s.cle === actif}" aria-controls="nv-p-${escA(s.cle)}" tabindex="${s.cle === actif ? 0 : -1}">`
+      + `<span class="nv-o-t">${esc(titreOnglet(s))}</span><span class="nv-o-s${st.etat ? ' ' + st.etat : ''}">${st.t != null && st.t !== '' ? esc(st.t) : '&nbsp;'}</span></button>`; }).join('');
   const panneaux = xs.map(s => `<section class="nv-panneau${s.vide ? ' fs-vide' : ''}" role="tabpanel" id="nv-p-${escA(s.cle)}" data-section="${escA(s.cle)}" aria-labelledby="nv-o-${escA(s.cle)}" tabindex="-1"${s.cle === actif ? '' : ' hidden'}>`
-    + (s.vide ? `<p class="nv-vide">${esc(majuscule(s.vide))}${s.action ? ' ' + s.action : ''}</p>` : '') + (s.contenu || '') + '</section>').join('');
-  return `<div class="nv-onglets" role="tablist" aria-label="Les sujets de la fiche">${tabs}</div><div class="nv-panneaux" id="nv-panneaux">${panneaux}</div>`; }
+    + (s.vide ? `<p class="vu-note">${esc(majuscule(s.vide))}${s.action ? ' ' + s.action : ''}</p>` : '') + (s.contenu || '') + '</section>').join('');
+  return `<div class="nv-onglets" role="tablist" aria-label="Ce que dit la fiche">${tabs}</div><div class="nv-panneaux" id="nv-panneaux">${panneaux}</div>`; }
+// une section d'hier (une fiche pas encore redessinée) devient un onglet
+const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === 'connecteur' ? 'essentiel' : s.cle, titre: s.cle === 'fils' || s.cle === 'connecteur' ? '' : s.titre, statut: s.resume ? { t: String(s.resume).replace(/<[^>]*>/g, '').slice(0, 40) } : null, contenu: s.contenu, vide: s.vide, action: s.action });
 
-/* ---- LE BANDEAU : l'état, et quoi faire ----------------------------------------------------------------------------- */
-// les gestes d'un point (« Tout régler… », « Unifier sur… ») : gardés le temps du rendu, sous un numéro que le bouton porte
+// les onglets que toutes les fiches partagent : les câbles (la section d'hier, son statut en mots), la fabrication
+const ongletCables = sF => !sF ? null : { cle: 'cables', statut: { t: sF.vide ? 'aucun' : pluriel(sF.compte || 0, 'câble') + (sF.nko ? ', ' + sF.nko + ' en défaut' : sF.charge != null ? ', au plus ' + Math.round(sF.charge * 100) + ' %' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide };
+function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
+  const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
+  return { cle: 'fabrication', statut: { t: pluriel(n, 'pièce') }, contenu: `<section class="vu-bloc"><h4 class="vu-titre">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span></h4>${fabricationVue(gs)}</section>` }; }
+
+/* ---- L'ÉTIQUETTE : le genre et son état d'un mot ; le repère, en grand, qui se renomme d'un clic ; ce qui l'identifie ---- */
+const GENRES_FICHE = { equipement: 'Équipement', disjoncteur: 'Disjoncteur', barrette: 'Barrette de jonction', prise: 'Prise de coupure', masse: 'Masse', fil: 'Câble' };
+const motEtatFiche = probs => { const ko = probs.filter(p => p.niveau === 'ko').length, n = probs.length; return ko ? pluriel(ko, 'problème') : n ? (n > 1 ? n + ' points à voir' : '1 point à voir') : 'Tout va bien'; };
+const genreFiche = (o, probs) => { const e = etatDesProblemes(probs);
+  return `<div class="nc-genre"><span class="nc-sym" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span><span class="nc-genre-mot">${esc(GENRES_FICHE[o.type] || 'Élément')}</span><span class="nc-etat ${e} fi-pb-n">${esc(motEtatFiche(probs))}</span></div>`; };
+function etiquetteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
+  const rep = t.champ ? `<input class="nc-rep-in" id="${t.champ}" value="${escA(nom)}" aria-label="${escA(t.aide || 'Repère — écrire pour renommer partout')}" spellcheck="false" autocomplete="off"><button type="button" class="nc-crayon" id="fi-crayon" aria-label="Renommer (F2)" data-bulle="Renommer partout — F2 ; chaque câble suit">${ico('crayon')}</button>`
+    : `<span class="nc-rep-t">${esc(nom)}</span>`;
+  const des = t.designation && grand ? app.contrat.designations.get(t.designation) || '' : null;
+  const meta = (o.meta || []).filter(Boolean).map(m => `<span>${m}</span>`).join('') + (des != null ? `<input class="nc-des${des ? ' plein' : ''}" id="eq-des" value="${escA(des)}" placeholder="+ une désignation" aria-label="Désignation (un texte libre, gardé avec le contrat)" spellcheck="false" autocomplete="off">` : '');
+  return `<div class="nc-rep">${rep}</div>${meta ? `<div class="nc-meta fi-identite">${meta}</div>` : ''}`; }
+
+/* ---- À FAIRE : chaque point devient une tâche — ce qui cloche, puis (après « — ») ce que ça veut dire ; le geste qui
+   répare au bout de la première ; un clic sur une tâche mène à l'onglet qui la démontre ---- */
 const gestePrincipal = p => { const gs = (p && p.gestes || []).filter(x => x && x.mot && typeof x.faire === 'function'); return gs.find(x => x.principal) || gs[0] || null; };
-function bandeauEtat(o, probs, titres, grand) {
-  const ko = probs.filter(p => p.niveau === 'ko'), att = probs.filter(p => p.niveau !== 'ko'), tri = ko.concat(att), etat = ko.length ? 'ko' : att.length ? 'att' : 'ok';
-  const titre = etat === 'ok' ? 'Tout va bien' : [ko.length ? pluriel(ko.length, 'problème') : '', att.length ? (att.length > 1 ? att.length + ' points à voir' : '1 point à voir') : ''].filter(Boolean).join(' · ');
-  const p0 = tri.find(p => !(o.taire && o.taire.test(p.texte))) || tri[0] || null;
-  // les lignes des points (la même règle que la barre d'hier : `lignesProblemes`) — elles posent les gestes de chacun
-  const lignes = tri.length ? lignesProblemes(tri, titres, o) : '';
-  let geste = o.geste || '';
-  if (!geste && p0) { const g = gestePrincipal(p0); if (g) { const k = FI.gestesPb.push([g]) - 1; geste = `<button type="button" class="btn ${etat === 'ko' ? 'cuivre' : 'papier'} dense" data-geste-pb="${k}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; } }
-  const voir = p0 && titres.has(p0.section) ? ` data-voir="${escA(p0.section)}"${p0.viser ? ` data-viser="${escA(p0.viser)}"` : ''}${p0.connecteur ? ` data-connecteur="${escA(p0.connecteur)}"` : ''}` : '';
-  const phrase = etat === 'ok' ? `<span class="nv-etat-p">${esc(o.ok || 'Rien à reprendre sur cette fiche.')}</span>` : o.phrase ? `<span class="nv-etat-p">${insecable(esc(o.phrase))}</span>`
-    : `<${voir ? 'button type="button"' : 'span'} class="nv-etat-p"${voir}${voir ? ` data-bulle="${escA('Voir où : ' + (titres.get(p0.section) || ''))}"` : ''}>${insecable(esc(majuscule(motDuProbleme(p0.texte))))}</${voir ? 'button' : 'span'}>`;
-  const tete = `<section class="nv-etat ${etat}" aria-label="${escA('L’état de la fiche : ' + titre)}"><span class="nv-etat-ico" aria-hidden="true">${ico(etat === 'ok' ? 'coche' : 'alerte')}</span>`
-    + `<div class="nv-etat-t"><b class="nv-etat-titre fi-pb-n">${esc(titre)}</b>${phrase}</div>${geste ? `<div class="nv-etat-g">${geste}</div>` : ''}</section>`;
-  if (tri.length < 2) return tete + (lignes ? `<ul class="fi-pbs nv-cache" hidden>${lignes}</ul>` : '');
-  // les autres points : dans la carte, une ligne « et 2 autres » qui mène au grand ; dans le grand, la liste dépliable
-  if (!grand) return tete + `<ul class="fi-pbs nv-cache" hidden>${lignes}</ul><button type="button" class="nv-autres" data-onglet-va="${escA((tri[1] && titres.has(tri[1].section) && tri[1].section) || '')}" data-voir-tout="1">${esc(tri.length - 1 > 1 ? 'et ' + (tri.length - 1) + ' autres points' : 'et 1 autre point')}${ico('droite')}</button>`;
-  return tete + `<details class="nv-tous" id="fi-pbs"><summary class="nv-tous-t">${esc('Les ' + tri.length + ' points')}${ico('bas', 'fi-chevron')}</summary><ul class="fi-pbs">${lignes}</ul></details>`; }
+function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
+  if (!probs.length) return `<div class="nc-taches"><div class="nc-tache ok"><span class="nc-rond" aria-hidden="true">${ico('coche')}</span><span class="nc-t"><b>Rien à reprendre</b><small>${esc(o.ok || 'Tout est en ordre sur cette fiche.')}</small></span></div></div>`;
+  const tri = probs.filter(p => p.niveau === 'ko').concat(probs.filter(p => p.niveau !== 'ko')), p0 = tri.find(p => !(o.taire && o.taire.test(p.texte))) || tri[0];
+  const ordre = [p0, ...tri.filter(p => p !== p0)], montres = ordre.slice(0, max);
+  const ligne = (p, i) => { let t = majuscule(motDuProbleme(p.texte)); if (i === 0 && o.phrase) t = o.phrase;
+    const k = t.indexOf(' — '), titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(t.slice(k + 3)) : gloseDuProbleme(p.texte);
+    let geste = '';
+    if (i === 0 && o.geste) geste = o.geste;
+    else { const g = gestePrincipal(p); if (g) { const n = FI.gestesPb.push([g]) - 1; geste = `<button type="button" class="btn ${p.niveau === 'ko' ? 'cuivre' : 'papier'} dense" data-geste-pb="${n}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; } }
+    const va = ongletDeSection(o.type, p.section);
+    return `<div class="nc-tache fi-pb-l ${p.niveau === 'ko' ? 'ko' : 'att'}"><span class="nc-rond" aria-hidden="true">${ico('alerte')}</span>`
+      + `<button type="button" class="nc-t" data-onglet-va="${escA(va)}"${p.viser ? ` data-viser="${escA(p.viser)}"` : ''}${p.connecteur ? ` data-connecteur="${escA(p.connecteur)}"` : ''} data-bulle="${escA(t + (p.bulle ? '\n' + p.bulle : ''))}"><b class="fi-pb-t">${insecable(esc(titre))}</b>${detail ? `<small>${insecable(esc(detail))}</small>` : ''}</button>${geste ? `<span class="nc-geste">${geste}</span>` : ''}</div>`; };
+  const reste = ordre.length - montres.length;
+  return `<div class="nc-taches">${montres.map(ligne).join('')}${reste > 0 ? `<button type="button" class="nc-autres" data-onglet-va="" data-voir-tout="1">${esc(reste > 1 ? 'et ' + reste + ' autres points' : 'et 1 autre point')}${ico('droite')}</button><div class="nc-taches nc-reste" hidden>${ordre.slice(max).map((p, i) => ligne(p, i + max)).join('')}</div>` : ''}</div>`; }
 
-/* ---- LES CHIFFRES CLÉS : une rangée de cases — l'étiquette, la valeur, une barre contre l'admis, une ligne dessous. Un
-   clic sur une case ouvre son onglet (dans la carte : le grand, sur cet onglet). Une case qui s'écrit (`edit`) ne
-   s'ouvre pas : on écrit dedans. ------------------------------------------------------------------------------------ */
-function chiffresHtml(xs) { const ys = (xs || []).filter(Boolean); if (!ys.length) return '';
-  return `<div class="nv-chiffres" style="--n:${Math.min(ys.length, 5)}">${ys.map(c => { const bouton = c.onglet && !c.edit, tag = bouton ? 'button' : 'div';
-    return `<${tag}${bouton ? ` type="button" data-onglet-va="${escA(c.onglet)}"` : ''} class="nv-chiffre${c.etat ? ' ' + c.etat : ''}${c.edit ? ' edit' : ''}"${c.bulle ? ` data-bulle="${escA(c.bulle)}"` : ''}>`
-      + `<span class="nv-chiffre-k">${esc(c.k)}</span><span class="nv-chiffre-v">${c.v}</span>`
-      + (c.barre != null && isFinite(c.barre) ? `<span class="fi-barre nv-barre ${classeMesure(c.barre)}" aria-hidden="true"><i style="width:${(Math.min(1, Math.max(0, c.barre)) * 100).toFixed(1)}%"></i></span>` : '')
-      + (c.sous ? `<span class="nv-chiffre-s">${c.sous}</span>` : '') + `</${tag}>`; }).join('')}</div>`; }
+/* ---- LES CHIFFRES : trois ou quatre nombres, grands, sans boîte — la valeur, une jauge contre l'admis, ce que c'est,
+   une ligne dessous. Un clic mène à l'onglet qui l'explique ; une valeur qui s'écrit s'écrit sur place. ---- */
+function chiffresHtml(xs, n) { const ys = (xs || []).filter(Boolean).slice(0, n || 9); if (!ys.length) return '';
+  return `<div class="nc-chiffres" style="--n:${ys.length}">${ys.map(c => { const va = c.onglet ? ongletDeSection(NIVEAU.typeRendu, c.onglet) : '', bouton = va && !c.edit, tag = bouton ? 'button' : 'div';
+    return `<${tag}${bouton ? ` type="button" data-onglet-va="${escA(va)}"` : ''} class="nc-chiffre${c.etat ? ' ' + c.etat : ''}${c.edit ? ' edit' : ''}"${c.bulle ? ` data-bulle="${escA(c.bulle)}"` : ''}>`
+      + `<span class="nc-v">${c.v}</span>`
+      + (c.barre != null && isFinite(c.barre) ? `<span class="nc-jauge ${classeMesure(c.barre)}" aria-hidden="true"><i style="width:${(Math.min(1, Math.max(0, c.barre)) * 100).toFixed(1)}%"></i></span>` : '')
+      + `<span class="nc-k">${esc(c.k)}</span>${c.sous ? `<span class="nc-s">${c.sous}</span>` : ''}</${tag}>`; }).join('')}</div>`; }
+// la largeur d'un dessin du grand : celle de son panneau (au téléphone, l'écran)
+const largeurVue = () => typeof telephone === 'function' && telephone() ? 360 : 640;
 // une valeur et son unité, l'unité plus petite
 const valeurU = (n, u) => n == null || n === '' ? '—' : `${esc(String(n))}<small>${esc(u)}</small>`;
 
@@ -135,30 +156,35 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
   return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap">${esc(pluriel(rows.length, 'câble'))} — un clic sur une ligne ouvre le câble</caption><thead><tr>${tete}</tr></thead><tbody>${lignes}</tbody></table></div>${datalistCables()}`; }
 
 /* ---- COMPOSER : la carte, ou le grand ------------------------------------------------------------------------------- */
-/* o : { type (equipement · disjoncteur · barrette · prise · masse · fil), tete (les options de l'en-tête), probs, sections,
-   ecrits, proposes (les modifications), pied (les options du pied), chiffres, ok (la phrase quand tout va bien), geste (le
-   geste qui répare, en HTML), taire, gestesTus (les options des lignes des problèmes), avant (HTML posé sous le bandeau :
-   le vrai repère d'une barrette à poser), fin (HTML posé au bout : les listes de saisie) } */
-function composerFiche(o) { const probs = o.probs || [], secs = (o.sections || []).filter(Boolean).slice().sort((a, b) => rangOnglet(a) - rangOnglet(b));
-  const titres = new Map(secs.filter(s => !s.vide || s.contenu).map(s => [s.cle, titreOnglet(s)]));
-  const modifs = modificationsDeLaFiche(o.ecrits || [], o.proposes || []); if (modifs) titres.set('modifs', 'Modifications');
-  const tete = enTete({ ...o.tete, etat: etatDesProblemes(probs) });
-  FI.gestesPb = [];
+/* o : { type (equipement · disjoncteur · barrette · prise · masse · fil), tete ({ nom, champ, aide, designation }), meta
+   (ce qui l'identifie, en HTML : sa référence, son folio…), probs, chiffres, vignette (le schéma en petit), onglets
+   ([{ cle, titre, statut: { t, etat }, contenu }] — ou, pour une fiche pas encore redessinée, ses sections d'hier),
+   ecrits, proposes (les modifications), pied, ok (quand tout va bien), geste (le geste qui répare), phrase (ce que dit la
+   première tâche à la place du point : la décision d'un disjoncteur), taire, avant (le vrai repère d'une barrette à
+   poser), fin (les listes de saisie) } */
+function composerFiche(o) { const probs = o.probs || []; NIVEAU.typeRendu = o.type; FI.gestesPb = [];
+  const modifs = modificationsDeLaFiche(o.ecrits || [], o.proposes || []);
   if (!ficheEnGrand()) {
-    // LA CARTE : l'en-tête, l'état et quoi faire, les chiffres, les modifications en une ligne, « Tout voir »
-    return `<div class="nv-carte">${tete}${bandeauEtat(o, probs, titres, false)}${o.avant || ''}${chiffresHtml(o.chiffres)}`
-      + (modifs ? `<button type="button" class="nv-modifs" data-onglet-va="modifs" data-bulle="${escA(modifs.mots + ' — les voir')}">${ico('crayon')}<span>${esc(modifs.mots)}</span>${ico('droite')}</button>` : '') + '</div>'
+    // LA CARTE — le premier regard : l'étiquette, la pièce en vignette, ce qu'il y a à faire, trois chiffres, « Tout voir »
+    return `<div class="nc">${genreFiche(o, probs)}${etiquetteFiche(o, false)}${o.avant || ''}`
+      + (o.vignette ? `<button type="button" class="nc-vignette" data-onglet-va="essentiel" aria-label="Tout voir : la fiche entière">${o.vignette}<span class="nc-voir">Tout voir${ico('droite')}</span></button>` : '')
+      + tachesFiche(o, probs, 2) + chiffresHtml(o.chiffres, 3)
+      + (modifs ? `<button type="button" class="nc-modifs" data-onglet-va="modifs" data-bulle="${escA(modifs.mots + ' — les voir')}">${ico('crayon')}<span>${esc(modifs.mots)}</span>${ico('droite')}</button>` : '') + '</div>'
       + fiPied({ ...(o.pied || {}), toutVoir: true }) + (o.fin || ''); }
-  // LE GRAND : le résumé fixe, les onglets, le pied ; la liste à gauche quand il a la place
-  const onglets = secs.concat(modifs ? [{ cle: 'modifs', titre: 'Modifications', compte: modifs.n, contenu: modifs.html }] : []);
-  const corps = `<div class="nv-resume">${tete}${bandeauEtat(o, probs, titres, true)}${o.avant || ''}${chiffresHtml(o.chiffres)}</div>` + ongletsHtml(o.type, onglets) + fiPied(o.pied || {}) + (o.fin || '');
+  // LE GRAND — la fenêtre : la barre (on la tient pour la déplacer), l'étiquette et les chiffres, à faire, les onglets
+  const base = o.onglets ? o.onglets.filter(Boolean) : (o.sections || []).filter(Boolean).map(ongletDeLaSection);
+  // (les modifications : un onglet quand il y en a ; sinon rien — un onglet « aucune » n'apprend rien)
+  const onglets = base.concat(modifs ? [{ cle: 'modifs', statut: { t: modifs.n > 1 ? modifs.n + ' changements' : '1 changement' }, contenu: modifs.html }] : []).slice().sort((x, y) => rangOnglet(x) - rangOnglet(y));
+  const corps = `<div class="nv-tete nv-poignee">${barreNav({ milieu: genreFiche(o, probs), fermer: true })}</div>`
+    + `<div class="nv-resume"><div class="nv-ident">${etiquetteFiche(o, true)}</div>${chiffresHtml(o.chiffres, 4)}</div>${o.avant ? `<div class="nv-avant">${o.avant}</div>` : ''}`
+    + `<div class="nv-afaire">${tachesFiche(o, probs, 3)}</div>` + ongletsHtml(o.type, onglets) + fiPied(o.pied || {}) + (o.fin || '');
   return `<div class="nv-grand${grandLarge() ? '' : ' nv-seul'}" data-nv-type="${escA(o.type)}">${grandLarge() ? listeDuGenre(app.cible, etatDesProblemes(probs)) : ''}<div class="nv-corps">${corps}</div></div>`; }
 
 /* ---- PASSER D'UN NIVEAU À L'AUTRE --------------------------------------------------------------------------------- */
 /* « Tout voir » (ou un double-clic, ou une case de la carte) : la carte devient le grand — elle glisse jusqu'à sa place
    (08-carte, `epinglerCarte`), le plan se recadre à gauche, l'objet en vue ; `onglet` : celui qui s'ouvre. Réduire
    (Échap, le bouton) : le grand redevient la carte, près de son bloc. */
-function ouvrirGrand(onglet, but) { if (onglet) { const t = typeDeLaFicheMontree(); if (t) NIVEAU.onglet[t] = onglet; }
+function ouvrirGrand(onglet, but) { if (onglet) { const t = typeDeLaFicheMontree(); if (t) NIVEAU.onglet[t] = ongletDeSection(t, onglet); }
   if (NIVEAU.grand) { if (onglet) activerOnglet(onglet, true); if (but && but.viser) viserDansLaFiche(but.viser); return; }
   NIVEAU.grand = true; if (typeof epinglerCarte === 'function') epinglerCarte(true); else rendreFiche();
   if (but && but.viser) viserDansLaFiche(but.viser); }
@@ -168,7 +194,7 @@ const typeDeLaFicheMontree = () => { const g = document.querySelector('#ba-equip
   return c.type === 'fil' ? 'fil' : estDisjoncteur(c.nom) ? 'disjoncteur' : VT_A_POSER.test(c.nom) || barretteEnModules(c.nom) ? 'barrette' : coupureEnModules(c.nom) ? 'prise' : estMasse(c.nom) ? 'masse' : 'equipement'; };
 // un onglet devient le montré (sans refaire la fiche) : son panneau paraît, en haut ; `allumer` le fait briller un instant
 function activerOnglet(cle, allumer) { const box = $('ba-equip'), g = box && box.querySelector('.nv-grand'); if (!g) return null;
-  const tab = g.querySelector(`.nv-onglet[data-onglet="${CSS.escape(cle)}"]`); if (!tab) return null;
+  cle = ongletDeSection(g.dataset.nvType, cle); const tab = g.querySelector(`.nv-onglet[data-onglet="${CSS.escape(cle)}"]`); if (!tab) return null;
   NIVEAU.onglet[g.dataset.nvType] = cle;
   g.querySelectorAll('.nv-onglet').forEach(t => { const on = t === tab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
   let p = null; g.querySelectorAll('.nv-panneau').forEach(x => { const on = x.dataset.section === cle; x.hidden = !on; if (on) p = x; });
@@ -184,11 +210,17 @@ function viserDansLaFiche(k) { const box = $('ba-equip'); if (!box || !k) return
 function lierNiveaux(box, c) {
   // « Tout voir », une case de la carte, « et 2 autres points », une ligne des modifications : le grand, sur l'onglet
   box.querySelectorAll('[data-onglet-va]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const k = b.dataset.ongletVa || '';
-    if (ficheEnGrand()) { if (k) activerOnglet(k, true); else { const d = $('fi-pbs'); if (d) d.open = true; } return; }
-    ouvrirGrand(k); if (b.dataset.voirTout) { const d = $('fi-pbs'); if (d) { d.open = true; FI.pbs = box.dataset.cle; } } });
+    if (b.dataset.voirTout && ficheEnGrand()) { const r = b.parentElement.querySelector('.nc-reste'); if (r) { r.hidden = !r.hidden; b.classList.toggle('ouvert', !r.hidden); } return; }
+    if (ficheEnGrand()) { if (k) activerOnglet(k, true); if (b.dataset.viser) viserDansLaFiche(b.dataset.viser); return; }
+    ouvrirGrand(k, b.dataset.viser ? { viser: b.dataset.viser } : null); if (b.dataset.voirTout) { const r = $('ba-equip').querySelector('.nc-reste'); if (r) r.hidden = false; } });
   const tv = $('fi-tout-voir'); if (tv) tv.onclick = e => { e.stopPropagation(); ouvrirGrand(''); };
   // les onglets : un clic, ou ← → au clavier (Début, Fin) — le clavier suit l'onglet
   const tabs = [...box.querySelectorAll('.nv-onglet')];
+  // les onglets qui débordent : un fondu au bord qui cache, et l'ouvert sous les yeux
+  const bande = box.querySelector('.nv-onglets');
+  if (bande) { const juger = () => { const d = bande.scrollWidth > bande.clientWidth + 2; bande.classList.toggle('deborde', d); bande.classList.toggle('au-bout', d && bande.scrollLeft + bande.clientWidth >= bande.scrollWidth - 2); };
+    bande.onscroll = juger; requestAnimationFrame(() => { const a = bande.querySelector('[aria-selected="true"]'); if (a && a.offsetLeft + a.offsetWidth > bande.clientWidth) bande.scrollLeft = a.offsetLeft - 16; juger(); });
+    if (typeof ResizeObserver === 'function') { if (bande._ro) bande._ro.disconnect(); bande._ro = new ResizeObserver(juger); bande._ro.observe(bande); } }
   tabs.forEach((t, i) => { t.onclick = () => activerOnglet(t.dataset.onglet, true);
     t.onkeydown = e => { const j = e.key === 'ArrowRight' ? (i + 1) % tabs.length : e.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
       if (j == null) return; e.preventDefault(); activerOnglet(tabs[j].dataset.onglet, false); tabs[j].focus(); }; });
@@ -218,6 +250,10 @@ function lierNiveaux(box, c) {
   // le geste qui répare un disjoncteur, dans le bandeau (la carte n'a pas de cadran à qui le demander)
   box.querySelectorAll('[data-nv-decider]').forEach(b => b.onclick = e => { e.stopPropagation(); const nom = b.dataset.nvDecider;
     const fait = typeof parVolta === 'function' && typeof deciderCalibre === 'function' ? parVolta(() => deciderCalibre(nom)) : false; if (fait !== false && !$('inspecteur').hidden && app.cible && !rafraichirFicheEnPlace()) rendreFiche(); });
+  // (v78) les touches du calibre : un clic retient ce calibre ; « Revenir au choix de Volta » rend l'automatique
+  const refaire = () => { if (!$('inspecteur').hidden && app.cible && !rafraichirFicheEnPlace()) rendreFiche(); };
+  box.querySelectorAll('[data-nv-cal]').forEach(b => b.onclick = e => { e.stopPropagation(); if (c && c.nom && retenirCalibre(c.nom, +b.dataset.nvCal) !== false) refaire(); });
+  box.querySelectorAll('[data-nv-auto]').forEach(b => b.onclick = e => { e.stopPropagation(); rendreCalibre(b.dataset.nvAuto); refaire(); });
   if (c && c.type !== 'ref') document.body.classList.toggle('insp-grand-ouvert', ficheEnGrand()); }
 
 /* ---- LA LISTE, LE PANNEAU : leur défilement se garde d'un rendu de la même fiche à l'autre -------------------------- */
