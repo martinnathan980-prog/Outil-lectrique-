@@ -67,7 +67,7 @@ function chuteDuChemin(norme, chemin, courant, hyp, disjoncteur) { const H = { .
   const kReg = regime === 'tri' ? Math.sqrt(3) : 1, kR = kRetour(H, regime), xParM = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * facteurFrequence(H);
   chemin.segments.forEach(s => { if (s.fil) { const l = s.fil, L = l.longueur > 0 ? l.longueur : H.longueur, tc = temperatureDuConducteur(norme, l.type, courant, H), rd = resistanceDuFil(norme, l.type, jaugeDuType(l.type), tc.T); filPrecedent = l; if (!(l.longueur > 0)) reel = false;
       const r = rd.rho != null ? rd.rho / 1000 * L * kR : null, X = xParM * L * kR, d = r == null ? null : kReg * (r * cosphi + X * sinphi) * courant;
-      if (d == null) inconnus.push((l.cable || 'câble') + ' : type ' + (l.type || 'inconnu') + ', résistance inconnue' + (rd.refuse ? ' (conducteur ' + rd.conducteur + ' : la ligne cuivre ne vaut pas)' : '')); else dU += d; longueur += L;
+      if (d == null) inconnus.push((l.type || 'câble') + ' vers ' + l.vers + ' : type ' + (l.type || 'inconnu') + ', résistance inconnue' + (rd.refuse ? ' (conducteur ' + rd.conducteur + ' : la ligne cuivre ne vaut pas)' : '')); else dU += d; longueur += L;
       segs.push({ ...s, longueur: L, reelle: l.longueur > 0, rho: rd.rho, rho20: rd.rho20, T: rd.T, tEstimee: tc.estimee, rhoSource: rd.source, conducteur: rd.conducteur, R: r, X, dU: d }); }
     else { const pn = pnDuPassage(norme, chemin, s.passage), coupure = estCoupure(s.passage), F = coupure ? familleDeNorme(norme, null, pn) : null;
       // la résistance de l'atelier par la gauge du câble qui arrive (l'Excel du lecteur) d'abord ; sinon celle de la famille de la prise, sinon celle de la taille
@@ -116,7 +116,7 @@ function chutesDepuis(norme, liaisons, repere, courant, hyp, pointes, disjoncteu
     const ps = P.map(p => { const dU = courant > 0 ? (c.dU - fixe) * p.i / courant + fixe : chuteDuChemin(norme, ch, p.i, H, disjoncteur).dU, intermittent = p.t <= INTERMITTENT_MAX, a = intermittent ? inter : admis;
       return { i: p.i, t: p.t, nom: p.nom || '', dU, admis: a, intermittent, trop: !!(a != null && dU > a + 1e-9) }; });
     return { ...c, pct, admis, trop: !!(admis != null && c.dU > admis + 1e-9), tension: chute ? chute.tension : H.tension, regle: chute ? chute.regle : '', pointes: ps, tropPointe: ps.some(p => p.trop),
-             mots: c.segments.map(s => s.fil ? (s.fil.cable || 'câble') : '⇄ ' + s.passage).join(' → ') + ' → ' + c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : '') }; }); }
+             mots: c.segments.map(s => s.fil ? (s.fil.type || 'câble') : '⇄ ' + s.passage).join(' → ') + ' → ' + c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : '') }; }); }
 /* LES FILS QU'UN DISJONCTEUR ALIMENTE : ceux qui le touchent (`direct`), et ceux de la suite de chaque chemin, à travers
    les prises de coupure et les barrettes — chacun une fois, avec sa borne de départ, l'autre bout et le passage par
    lequel il vient (`via`). C'est la liste que la protection doit juger : le disjoncteur protège tout ce qu'il nourrit,

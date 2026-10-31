@@ -82,7 +82,11 @@ const groupeSection = (titre, contenu, o) => { o = o || {}; if (!contenu) return
 /* Ouvrir une section par programme (une ligne des problèmes, un lien « voir ») : elle s'ouvre, vient sous les yeux et
    s'allume un instant ; ce n'est pas un choix de l'ingénieur, on ne le retient pas. */
 // (`sur place` : ouverte là où elle est, sans défiler — le geste vient de sa tête, sous la main)
-function ouvrirSection(box, cle, allumer, surPlace) { const d = box && box.querySelector(`details.fs[data-section="${CSS.escape(cle)}"]`); if (!d) return null;
+function ouvrirSection(box, cle, allumer, surPlace) {
+  // (v78) le grand : la section est un onglet — il devient le montré ; la carte : le grand s'ouvre sur lui (08-niveaux)
+  if (box && box.querySelector('.nv-grand')) return typeof activerOnglet === 'function' ? activerOnglet(cle, allumer) : null;
+  if (box && box.querySelector('.nv-carte')) { if (typeof ouvrirGrand === 'function' && cle) ouvrirGrand(cle); return null; }
+  const d = box && box.querySelector(`details.fs[data-section="${CSS.escape(cle)}"]`); if (!d) return null;
   d.open = true; if (d.dataset.type) retenirSection(d.dataset.type, cle, true); if (!surPlace) try { d.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { d.scrollIntoView(); }
   if (allumer !== false) { d.classList.remove('fs-allume'); void d.offsetWidth; d.classList.add('fs-allume'); setTimeout(() => d.classList.remove('fs-allume'), 1400); }
   return d; }

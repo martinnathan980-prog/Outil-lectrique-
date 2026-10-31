@@ -160,7 +160,7 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
    porté au moins porté. Un disjoncteur n'en a qu'un ; deux, c'est une faute (« Unifier sur… »). */
 function partNumbersDuRepere(nom, V) { const m = new Map();
   (V || verite()).forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] !== nom || !l[ch]) return; const pn = String(l[ch]).trim(); if (!pn) return;
-    const e = m.get(pn) || m.set(pn, { pn, cables: [], liaisons: [] }).get(pn); e.liaisons.push([l, ch]); const c = l.cable || 'sans n°'; if (!e.cables.includes(c)) e.cables.push(c); }));
+    const e = m.get(pn) || m.set(pn, { pn, cables: [], liaisons: [] }).get(pn); e.liaisons.push([l, ch]); const c = cableDit(l); if (!e.cables.includes(c)) e.cables.push(c); }));
   return [...m.values()].sort((a, b) => b.liaisons.length - a.liaisons.length || triNaturel(a.pn, b.pn)); }
 /* UNIFIER un repère sur un part number : chaque liaison qui en porte un autre prend celui-ci (le fichier gardé dans
    `avant`) ; une entrée d'historique, Ctrl+Z la défait. */
@@ -214,6 +214,8 @@ const memeLiaison = (a, b) => a === b || (!!a && !!b && cleDeLiaison(a) === cleD
 const parleDuCable = (x, l) => (x.cables || []).some(c => memeLiaison(c, l));
 // une phrase de disjoncteur vue depuis le câble : son nom en tête s'efface (« W-012 (DR20) : démarrage… » → « Démarrage… »)
 const sansLeCable = (texte, l) => { const t = String(texte || ''), n = nomDuCableDit(l); if (t.startsWith(n + ' : ')) return t.slice(n.length + 3);
+  // (v78 : un câble se dit « DR12 vers 103RL1:A1 » — l'autre bout dépend d'où on le regarde)
+  const m = /^\S+ vers \S+ : /.exec(t); if (m) return t.slice(m[0].length);
   if (t.startsWith(n + ' (par ')) { const k = t.indexOf(') : ', n.length); if (k > 0) return t.slice(k + 4); } return t; };
 // le disjoncteur en amont d'un câble : celui dont un chemin passe par lui
 function disjoncteurDuCable(l) { if (typeof alimentationDuFil === 'function') { try { const a = alimentationDuFil(l); if (a && a.nom) return a.nom; } catch (_) { } }

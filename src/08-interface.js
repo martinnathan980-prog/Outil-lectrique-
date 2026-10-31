@@ -1394,6 +1394,8 @@ function lierPlanche() {
      ailleurs, on zoome */
   const doubleAppui = e => { const w = versMonde(e.clientX, e.clientY), p = app.dessin ? priseSous(w) : null;
     if (p && p.genre !== 'bloc' && estRetouche(p)) { rendreAuMoteur(objetDe(p)); return; }
+    // (v78) un double-clic sur l'objet choisi (un bloc, un câble, une barrette à poser) : sa fiche entière, en grand (08-niveaux)
+    if (app.cible && !$('inspecteur').hidden && typeof ouvrirGrand === 'function' && (blocSous(w) || barretteAPoserSous(w) || filSous(w))) { ouvrirGrand(''); return; }
     const r = cadre(); zoomer(1.6, e.clientX - r.left, e.clientY - r.top); };
   stage.addEventListener('pointerup', fin); stage.addEventListener('pointercancel', fin);
   stage.addEventListener('mousemove', survoler);
@@ -1523,7 +1525,9 @@ function ouvrirInspecteur() { const el = $('inspecteur'), etait = !el.hidden, av
 /* Fermer : la carte se résorbe dans son bloc (son double ; elle, elle est fermée tout de suite) ; le volet rend la place. */
 function fermerInspecteur() { const el = $('inspecteur'); app.insp.index = false; synchroniserRail(); if (el.hidden) return;
   const volet = !carteFlottante(); if (!volet) resorberCarte(el);
-  el.hidden = true; document.body.classList.remove('insp-ouvert'); modeCarte(); CARTE.origine = null; dessinerLien(); if (volet) recadrerSiCache(); }
+  el.hidden = true; document.body.classList.remove('insp-ouvert'); modeCarte(); CARTE.origine = null; dessinerLien(); if (volet) recadrerSiCache();
+  // (v78) la prochaine fiche s'ouvre en carte : le grand ne dure que le temps qu'on y travaille
+  if (typeof NIVEAU !== 'undefined') NIVEAU.grand = false; CARTE.epingle = false; document.body.classList.remove('insp-grand', 'insp-grand-ouvert'); }
 /* Le rail dit ce qui est ouvert : l'outil dont le panneau est là se marque pressé (dans un carré gris). */
 function synchroniserRail() { const p = (id, on) => { const b = $(id); if (b) b.setAttribute('aria-pressed', on ? 'true' : 'false'); };
   p('btnIndex', app.insp.index && !$('inspecteur').hidden); p('btnCherche', document.body.classList.contains('cherche')); p('btnBible', !!(app.fiche && app.fiche.mode === 'bible')); }
@@ -1654,17 +1658,29 @@ function allerAuRepere(nom, plan) { const P = plans();
    cadré sur lui), elle se recadre en douceur dans la place qui reste (jamais sous le panneau) ; si l'on avait zoomé sur un endroit, on n'y touche pas —
    seulement, si ce qu'on vient de choisir passe sous le panneau, on le ramène, à la même échelle. */
 function recadrerSiCache() { const d = app.dessin; if (!d) { ajuster(true); return; }
+  // (v78) le grand ouvert : l'objet reste cadré dans le tiers du plan, lisible — pas la feuille entière, minuscule
+  if (document.body.classList.contains('insp-grand') && boiteDeLaCible()) { montrerSiCache(boiteDeLaCible()); return; }
   const r = cadre(), s = app.vue.s, entier = bb => { const x0 = app.vue.tx + bb.x * s, y0 = app.vue.ty + bb.y * s; return x0 >= -2 && y0 >= -2 && x0 + bb.w * s <= r.width + 2 && y0 + bb.h * s <= r.height + 2; };
   // la feuille entière — ou, cadré sur lui (v73), le DESSIN entier — se recadre dans la place qui reste
   if (entier(d.bbox) || (VUE.cadrage === 'dessin' && !VUE.main && entier(boiteDuDessin(d)))) { ajuster(true); return; }
   const c = app.cible, k = c && c.type === 'bloc' && d.compDe.get(c.nom), w = c && c.type === 'fil' && filDe(c.l);
   if (k) montrerSiCache({ x: k.x, y: k.y, w: k.w, h: k.h });
   else if (w) { const xs = w.pts.map(p => p.x), ys = w.pts.map(p => p.y), a = Math.min(...xs), b = Math.min(...ys); montrerSiCache({ x: a, y: b, w: Math.max(...xs) - a, h: Math.max(...ys) - b }); } }
+// la boîte, dans le dessin, de ce qui est choisi : un bloc, un câble, une barrette à poser — null s'il n'est pas sur ce folio
+function boiteDeLaCible() { const d = app.dessin, c = app.cible; if (!d || !c) return null;
+  if (c.type === 'bloc') { const k = d.compDe.get(c.nom); if (k) return { x: k.x, y: k.y, w: k.w, h: k.h };
+    const vt = typeof barretteAPoser === 'function' ? barretteAPoser(c.nom) : null; if (vt) { const bs = bornesDePiquage(vt); return { x: vt.x - 20, y: bs[0].y - 12, w: 40, h: bs[bs.length - 1].y - bs[0].y + 24 }; } return null; }
+  if (c.type === 'fil') { const w = c.f || filDe(c.l); if (!w || !w.pts || !w.pts.length) return null; const xs = w.pts.map(p => p.x), ys = w.pts.map(p => p.y), a = Math.min(...xs), b = Math.min(...ys); return { x: a, y: b, w: Math.max(...xs) - a, h: Math.max(...ys) - b }; }
+  return null; }
 /* R5 — LE PLAN NE BOUGE PAS pour rien : ouvrir une fiche depuis une fiche allume l'objet ; le plan ne glisse que si
    l'objet est hors de la place libre (sous un panneau, hors de l'écran), et alors à la même échelle quand il y tient.
    `b` : la boîte de l'objet, dans le repère du dessin. */
 function montrerSiCache(b) { if (!b || !app.dessin) return; const r = cadre(), m = marges(), s = app.vue.s;
   const X0 = app.vue.tx + b.x * s, Y0 = app.vue.ty + b.y * s, X1 = X0 + b.w * s, Y1 = Y0 + b.h * s, L = m.gauche, T = m.haut, R = r.width - m.droite, B = r.height - m.bas;
+  // (v78) à côté du grand, le plan n'a qu'un tiers : l'objet s'y cadre lisible (ses voisins autour), sauf s'il l'est déjà
+  if (document.body.classList.contains('insp-grand')) { const lisible = Math.min(LISIBLE_BUREAU, Math.max(0.42, Math.min((R - L) / (b.w + 260), (B - T) / (b.h + 200))));
+    if (X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1 && s >= Math.min(0.42, lisible) - 1e-3) return;
+    animerVue({ s: lisible, tx: (L + R) / 2 - (b.x + b.w / 2) * lisible, ty: (T + B) / 2 - (b.y + b.h / 2) * lisible }, true); return; }
   if (X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1) return;
   if (b.w * s > R - L || b.h * s > B - T) { centrerSur(b.x, b.y, b.w, b.h); return; }
   animerVue({ s, tx: (L + R) / 2 - (b.x + b.w / 2) * s, ty: (T + B) / 2 - (b.y + b.h / 2) * s }, true); }
@@ -3031,7 +3047,10 @@ function lierPanneau() {
       else if (plusFiche && !plusFiche.hidden) { plusFiche.hidden = true; const m = $('fi-menu'); if (m) { m.setAttribute('aria-expanded', 'false'); m.focus(); } }
       else if (colonnes && !colonnes.hidden) { fermerMenuColonnes(); $('ba-colonnes').focus(); }
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
-      else if (app.fiche) fermerFiche(true); else if (app.cible || !$('inspecteur').hidden) deselectionner(); else fermerBase(); return; }
+      else if (app.fiche) fermerFiche(true);
+      // (v78) le grand se réduit d'abord en carte ; la carte se ferme au second appui
+      else if (app.cible && typeof NIVEAU !== 'undefined' && NIVEAU.grand && !$('inspecteur').hidden) reduireFiche();
+      else if (app.cible || !$('inspecteur').hidden) deselectionner(); else fermerBase(); return; }
     // Ctrl+Z défait ; Ctrl+Y et Ctrl+Maj+Z (⌘⇧Z) REFONT — jamais ne défont (le panel v73 : Ctrl+Maj+Z défaisait un second geste)
     if ((e.ctrlKey || e.metaKey) && !e.altKey && !dansChamp && (e.key.toLowerCase() === 'y' || e.key.toLowerCase() === 'z' && e.shiftKey)) { e.preventDefault(); refaireEtDire(); return; }
     if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); defaire(); return; }

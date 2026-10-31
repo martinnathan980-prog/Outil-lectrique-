@@ -1436,7 +1436,7 @@ function remplirSelonNorme(P, norme) {
       if (creux.length) verdicts.push({ niveau: 'attention', texte: `${mot}${s(creux.length)} ${creux.join(', ')} libre${s(creux.length)} avant le ${max} : la norme remplit dans l’ordre`, bornes: creux }); } }
     if (F.masse === 'par paquet') P.paquets.forEach(p => { const fils = p.bornes.flatMap(b => (modDe(b) || { fils: [] }).fils); if (!fils.length) return;
       if (!fils.some(f => estMasse(f.vers))) verdicts.push({ niveau: 'ko', texte: `paquet ${p.bornes.join('-')} sans retour de masse`, bornes: p.bornes }); });
-    modules.forEach(m => m.fils.forEach(f => { if (f.jaugeOk === false) verdicts.push({ niveau: 'ko', texte: `${f.cable} (${f.type}) : gauge ${f.jauge} hors de ${F.jaugeMin}–${F.jaugeMax} AWG sur le ${mot} ${m.borne}`, bornes: [m.borne] }); }));
+    modules.forEach(m => m.fils.forEach(f => { if (f.jaugeOk === false) verdicts.push({ niveau: 'ko', texte: `${cableDit(f)} : gauge ${f.jauge} hors de ${F.jaugeMin}–${F.jaugeMax} AWG sur le ${mot} ${m.borne}`, bornes: [m.borne] }); }));
   }
   return { ...P, famille: F, filsParCote: n, cotes: cote, modules, verdicts };
 }
@@ -1851,11 +1851,11 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
         jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge, sx, f.type), sertir, joint }); }));
     // le fil contre le joint arrière (table Joint arrière) : trop gros, il n'entre pas ; trop fin sans manchon d'étanchéité, l'eau passe
     fils.forEach(x => { const j = x.joint; if (!j || !j.verdict || j.verdict === 'dans' || (j.verdict === 'sous' && j.manchon)) return; const J = j.joint, plage = (J.dmin != null ? nombreFr(J.dmin) : '?') + '–' + (J.dmax != null ? nombreFr(J.dmax) : '?') + ' mm';
-      verdicts.push({ niveau: 'attention', texte: `borne ${x.potentiel.bornes[0]} : ${x.f.cable || 'câble'} (${x.f.type}, Ø ${nombreFr(j.d)} mm) ${j.verdict === 'dessus' ? 'plus gros que le joint arrière du contact ' + x.contact.lettre + ' n’admet (' + plage + ') : il n’entre pas' : 'sous la plage du joint arrière du contact ' + x.contact.lettre + ' (' + plage + ') et sans manchon d’étanchéité : l’eau passe'}${J.confiance && J.confiance !== 'vérifié' ? ' (plage ' + J.confiance + ')' : ''}`, bornes: x.potentiel.bornes }); });
+      verdicts.push({ niveau: 'attention', texte: `borne ${x.potentiel.bornes[0]} : ${cableDit(x.f)} (Ø ${nombreFr(j.d)} mm) ${j.verdict === 'dessus' ? 'plus gros que le joint arrière du contact ' + x.contact.lettre + ' n’admet (' + plage + ') : il n’entre pas' : 'sous la plage du joint arrière du contact ' + x.contact.lettre + ' (' + plage + ') et sans manchon d’étanchéité : l’eau passe'}${J.confiance && J.confiance !== 'vérifié' ? ' (plage ' + J.confiance + ')' : ''}`, bornes: x.potentiel.bornes }); });
     mieux.r.manque.forEach(p => verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : l'arrangement ${m.variante} n'a pas de contact ${p.num}`, bornes: [p.borne] }));
     if (mieux.r.pl.some(x => x.c.lettre !== x.p.num)) verdicts.push({ niveau: 'info', texte: `contacts lettrés : chaque borne numérotée prend la lettre de même rang (${mieux.r.pl.slice(0, 4).map(x => x.p.num + ' → ' + x.c.lettre).join(', ')}${mieux.r.pl.length > 4 ? '…' : ''})`, bornes: [] });
     mieux.r.refus.forEach(({ p, c, ko }) => { const table = contactsDeTaille(N, m.famille, c.taille).length;
-      verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : ${ko.map(f => (f.cable || '?') + ' (' + f.type + ')').join(', ')} — ` + (table ? `aucun contact ${nomDuSexe(sexeFil(ko[0]))} de taille ${c.taille} (${nomDeFamille(N, m.famille)}) pour ce câble` : `gauge refusée par le contact ${c.lettre} (taille ${c.taille})`), bornes: [p.borne] }); });
+      verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : ${ko.map(f => cableDit(f)).join(', ')} — ` + (table ? `aucun contact ${nomDuSexe(sexeFil(ko[0]))} de taille ${c.taille} (${nomDeFamille(N, m.famille)}) pour ce câble` : `gauge refusée par le contact ${c.lettre} (taille ${c.taille})`), bornes: [p.borne] }); });
     mieux.r.pl.forEach(({ p, c }) => { const cotes = opts.prise ? [p.fils.filter(f => f.amont), p.fils.filter(f => !f.amont)] : [p.fils];
       if (cotes.some(x => x.length > 1)) verdicts.push({ niveau: 'attention', texte: `contact ${c.lettre} : ${p.fils.length} câbles${opts.prise ? ', plus d’un d’un même côté' : ''} — un contact reçoit un câble${opts.prise ? ' de chaque côté' : ''}`, bornes: [p.borne] }); });
     // les contacts shuntés d'un module retenu à la main relient des bornes qui ne le sont peut-être pas
@@ -1867,7 +1867,7 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
       if (!proche || meilleurScore(score, proche.score)) proche = { m, r, score }; });
     const ko = proche ? points.filter(p => !proche.r.pl.some(x => x.p === p && x.ok)) : points, n = points.length - ko.length;
     const nomme = proche && ko.length && n > 0 && ko.length <= Math.max(2, points.length / 3), fam = famille ? nomDeFamille(N, famille) : 'des normes de connecteurs';
-    const motBorne = p => p.borne + (p.fils.length ? ' : ' + p.fils.map(f => (f.cable || 'câble') + (f.type ? ' (' + f.type + ')' : '')).join(', ') : '');
+    const motBorne = p => p.borne + (p.fils.length ? ' : ' + p.fils.map(f => cableDit(f)).join(', ') : '');
     verdicts.push(nomme ? { niveau: 'ko', texte: `aucun arrangement ${fam} ne loge ${ko.map(motBorne).join(' ; ')} — le plus proche (${proche.m.variante}) loge ${n > 1 ? 'les ' + n + ' autres bornes' : 'l’autre borne'}`, bornes: ko.map(p => p.borne), coupables: ko.map(p => ({ borne: p.borne, cables: p.fils.map(f => f.cable).filter(Boolean), types: p.fils.map(f => f.type).filter(Boolean) })), proche: proche.m.reference }
       : { niveau: 'ko', texte: `aucun arrangement ${fam} ne loge les bornes ${points.map(p => p.borne).join(', ')} avec ces gauges`, bornes: points.map(p => p.borne) }); }
   const posees = new Set(mieux ? mieux.r.pl.map(x => x.p) : []), restants = points.filter(p => !posees.has(p));

@@ -99,7 +99,7 @@ const EXPLICATIONS = {
   arrangement: c => { const P = c && c.plan ? c.plan : null, F = (c && c.fautifs) || [], aucun = !!P && !P.reference;
     // aucun arrangement ne loge : la borne fautive et ce qui cloche, plus de « Contacts 0 · Pris 0 » (l'audit v72)
     const phrase = P && P.reference ? `${P.reference} : ${P.main ? 'retenu à la main' : P.nomme ? 'celui que la référence nomme' : 'le plus petit de la norme qui loge vos bornes et leurs gauges'}.`
-      : aucun && F.length ? `Aucun arrangement ${c.famille ? 'de l’' + c.famille + ' ' : ''}ne loge ${F[0].borne} : ${F[0].l && F[0].l.cable ? F[0].l.cable : 'son câble'}${F[0].f && F[0].f.type ? ' (' + F[0].f.type + ')' : ''}, ${F[0].mot}${F[0].module && /^trop|^refus/.test(F[0].mot) ? ' pour le plus proche, le ' + F[0].module.variante : ''}.`
+      : aucun && F.length ? `Aucun arrangement ${c.famille ? 'de l’' + c.famille + ' ' : ''}ne loge ${F[0].borne} : ${F[0].l ? cableDit(F[0].l) : 'son câble'}${F[0].f && F[0].f.type ? ' (' + F[0].f.type + ')' : ''}, ${F[0].mot}${F[0].module && /^trop|^refus/.test(F[0].mot) ? ' pour le plus proche, le ' + F[0].module.variante : ''}.`
       : aucun ? 'Aucun arrangement de la norme ne loge ces bornes avec ces gauges.' : 'L’insert : la place et la taille de chaque contact du connecteur.';
     return exE('L’arrangement', phrase, aucun ? [['Borne', F[0] ? F[0].borne : null, 'ko'], ['Gauge', F[0] && F[0].f && F[0].f.type ? String(jaugeDuType(F[0].f.type)) + ' AWG' : null, 'ko'], ['Proposé', F[0] && F[0].propose ? F[0].propose.type : null, 'ok']]
       : [['Contacts', P && P.contacts != null ? exN(P.contacts) : null, ''], ['Pris', P && P.utilises != null ? exN(P.utilises) : null, '']],

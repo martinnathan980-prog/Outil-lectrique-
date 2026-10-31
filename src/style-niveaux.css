@@ -1,0 +1,206 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA FICHE À DEUX NIVEAUX (v78, 08-niveaux) — la CARTE (l'essentiel, près du bloc) et le GRAND (les deux tiers droits,
+   la liste à gauche, le résumé fixe, les onglets, le pied). Les composants de la fiche (style-fiche.css) restent ; ce
+   qui suit les range. Le bandeau dit l'état d'une couleur et rien d'autre ; les chiffres se lisent d'un coup d'œil, en
+   une bande au filet ; les onglets sont un trait sous le mot ; la liste est une colonne posée en retrait.
+   Jetons du domaine : --nv-liste (la largeur de la liste), --nv-crayon (le crayon qui paraît au survol d'une valeur
+   qui s'écrit, à l'encre de chaque thème).
+   ═══════════════════════════════════════════════════════════════════════ */
+:root{--nv-liste:248px;--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6575' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aab4c3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")} }
+:root[data-theme="dark"]{--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aab4c3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")}
+
+/* ─── LE GRAND : aux deux tiers droits (sa largeur se tire par le bord gauche : --grand-l) ─── */
+body.insp-grand{--insp-l:min(var(--grand-l,calc((100vw - var(--rail) - 3 * var(--jeu)) * .66)),calc(100vw - var(--rail) - 300px))}
+body.insp-grand #inspecteur{transition:width var(--moyen)}
+
+/* ─── LA CARTE : l'en-tête, le bandeau, les chiffres, une ligne de modifications, le pied ─── */
+.nv-carte{display:flex;flex-direction:column;gap:12px;padding-bottom:16px}
+.fi.nv-c .fi-entete{padding:6px 0 4px}
+.fi.nv-c .fi-nom{font-size:var(--f-20)}
+div.fi-nom{flex:none;overflow:visible}
+
+/* ─── LE BANDEAU : l'état, d'une couleur ; ce qui cloche, en clair ; le geste qui répare ─── */
+.nv-etat{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:8px;padding:11px 12px 11px 12px;border-radius:var(--r-2);
+  background:var(--ok-soft);box-shadow:inset 3px 0 0 var(--ok)}
+.nv-etat.att{background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
+.nv-etat.ko{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
+.nv-etat-ico{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:var(--ok);color:var(--s-surface)}
+.nv-etat.att .nv-etat-ico{background:var(--warn)}
+.nv-etat.ko .nv-etat-ico{background:var(--ko)}
+.nv-etat-ico svg.ico{width:16px;height:16px;stroke-width:2.4}
+.nv-etat-t{min-width:0;display:flex;flex-direction:column;gap:2px}
+.nv-etat-titre{font:700 var(--f-14)/1.25 var(--sans);letter-spacing:-.005em;color:var(--t-1)}
+.nv-etat-p{display:block;min-width:0;margin:0;padding:0;border:0;background:none;text-align:left;font:400 var(--f-13)/1.4 var(--sans);color:var(--t-1);text-wrap:pretty}
+button.nv-etat-p{cursor:pointer;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 30%,transparent);text-underline-offset:3px}
+button.nv-etat-p:hover{text-decoration-color:currentColor}
+.nv-etat-g{display:flex;align-items:center;gap:6px}
+.nv-etat-g .btn{white-space:nowrap}
+/* trop étroite pour le geste à côté : il passe dessous, aligné sur le texte */
+.fi.nv-c .nv-etat{grid-template-columns:28px minmax(0,1fr)}
+.fi.nv-c .nv-etat-g{grid-column:2}
+.nv-autres{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;margin:-4px 0 0 40px;padding:2px 6px;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);font:500 var(--f-12) var(--sans);cursor:pointer}
+.nv-autres:hover{color:var(--t-1);background:var(--s-hover)}
+.nv-autres svg.ico{width:14px;height:14px}
+.nv-cache{display:none}
+/* le grand : tous les points, repliés sous le bandeau */
+.nv-tous{margin:8px 0 0}
+.nv-tous-t{display:inline-flex;align-items:center;gap:6px;margin-left:40px;padding:3px 8px;border-radius:var(--r-1);list-style:none;cursor:pointer;color:var(--t-2);font:500 var(--f-12) var(--sans)}
+.nv-tous-t::-webkit-details-marker{display:none}
+.nv-tous-t:hover{background:var(--s-hover);color:var(--t-1)}
+.nv-tous-t .fi-chevron{width:14px;height:14px;transition:transform var(--moyen)}
+.nv-tous[open] .nv-tous-t .fi-chevron{transform:rotate(180deg)}
+.nv-tous .fi-pbs{max-height:220px;overflow:auto;margin:4px 0 0}
+
+/* ─── LES CHIFFRES CLÉS : une bande au filet, une case chacun ─── */
+.nv-chiffres{display:grid;grid-template-columns:repeat(min(var(--n),4),minmax(0,1fr));gap:1px;background:var(--s-line);border:1px solid var(--s-line);border-radius:var(--r-2);overflow:hidden}
+.nv-chiffre{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:0;padding:10px 11px 10px;border:0;background:var(--s-surface);color:var(--t-1);font:inherit;text-align:left}
+button.nv-chiffre{cursor:pointer;transition:background var(--rapide)}
+button.nv-chiffre:hover{background:var(--s-hover)}
+button.nv-chiffre:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.nv-chiffre-k{max-width:100%;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-chiffre-v{display:flex;align-items:baseline;gap:3px;max-width:100%;min-height:26px;font:650 var(--f-20)/1.25 var(--sans);letter-spacing:-.015em;font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-chiffre-v small{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2)}
+.nv-chiffre-v .id{font:600 var(--f-14)/1.3 var(--mono);letter-spacing:-.01em}
+.nv-chiffre-s{max-width:100%;font:500 var(--f-11)/1.3 var(--sans);color:var(--t-2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-wrap:pretty}
+.nv-chiffre-s .id{font:600 var(--f-11) var(--mono);color:var(--t-1)}
+.nv-chiffre .nv-barre{width:100%;margin:2px 0 1px}
+.nv-chiffre.ko .nv-chiffre-v{color:var(--ko)}
+.nv-chiffre.att .nv-chiffre-v{color:var(--warn)}
+.nv-chiffre:is(.ko,.ko-l){box-shadow:inset 0 2px 0 var(--ko)}
+.nv-chiffre.att{box-shadow:inset 0 2px 0 var(--warn)}
+.nv-chiffre.supp .nv-chiffre-s{color:var(--warn)}
+/* une case qui s'écrit (le type, la longueur d'un câble) : la valeur est le champ */
+.nv-chiffre.edit .nv-chiffre-v{overflow:visible}
+.nv-chiffre .fc-in{height:28px;margin:0 0 0 -6px;padding:0 6px;font:650 var(--f-16)/1 var(--sans);min-width:3ch}
+.nv-chiffre .nv-type-ed{display:flex;align-items:center;gap:1px}
+.nv-chiffre .nv-type-ed .fc-in,.nv-chiffre .nv-type-ed select{font:600 var(--f-14)/1 var(--mono)}
+.nv-chiffre .nv-type-ed .fc-in.cb-fam{width:4.2ch;min-width:4.2ch;field-sizing:fixed}
+.nv-chiffre .cb-sel select{height:28px;border:1px solid transparent;border-radius:var(--r-1);background:none;color:var(--t-1);padding:0 2px}
+.nv-chiffre .cb-sel select:hover{background:var(--s-hover)}
+
+/* ─── LE TRAJET D'UN CÂBLE, sous son titre : un bout, la ligne à la couleur de sa route, l'autre bout ─── */
+.nv-trajet{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0}
+.nv-bout{display:inline-flex;align-items:baseline;gap:1px;height:30px;padding:0 10px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);color:var(--t-1);cursor:pointer;line-height:28px}
+.nv-bout:hover{border-color:var(--accent);background:var(--accent-soft)}
+.nv-bout b{font:600 var(--f-13) var(--mono)}
+.nv-bout i{font:500 var(--f-12) var(--mono);color:var(--t-2)}
+.nv-trajet-f{flex:1 1 18px;min-width:18px;max-width:64px;height:3px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
+.nv-trajet-via{font:500 var(--f-12) var(--sans);color:var(--t-2)}
+
+/* ─── LES MODIFICATIONS, d'une ligne dans la carte ─── */
+.nv-modifs{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;margin:0;padding:6px 10px;border:1px dashed var(--s-line-2);border-radius:var(--r-2);background:none;color:var(--t-2);font:500 var(--f-12)/1.35 var(--sans);text-align:left;cursor:pointer}
+.nv-modifs span{flex:1;min-width:0}
+.nv-modifs svg.ico{width:15px;height:15px;flex:none}
+.nv-modifs:hover{color:var(--t-1);border-color:var(--accent);background:var(--accent-soft)}
+
+/* ─── LE GRAND : la liste | le corps (le résumé fixe, les onglets, le panneau qui défile, le pied) ─── */
+.fi.nv-g{padding:0;overflow:hidden}
+.fi.nv-g>.fi-nav{margin:0;flex:none;box-shadow:0 1px 0 var(--s-line)}
+.nv-grand{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:var(--nv-liste) minmax(0,1fr)}
+.nv-grand.nv-seul{grid-template-columns:minmax(0,1fr)}
+.nv-corps{min-width:0;min-height:0;display:flex;flex-direction:column}
+.nv-resume{flex:none;display:flex;flex-direction:column;gap:12px;padding:8px 24px 14px}
+.nv-resume .fi-entete{padding:4px 0 0}
+.nv-resume .fi-nom{font-size:var(--f-24)}
+.fi.nv-g .nv-chiffres{grid-template-columns:repeat(var(--n),minmax(0,1fr))}
+.fi.nv-g .nv-chiffre{padding:10px 14px}
+.nv-onglets{flex:none;display:flex;align-items:stretch;gap:2px;padding:0 16px;border-bottom:1px solid var(--s-line);overflow-x:auto;scrollbar-width:none}
+.nv-onglets::-webkit-scrollbar{display:none}
+.nv-onglet{position:relative;flex:none;display:inline-flex;align-items:center;gap:7px;height:42px;margin:0;padding:0 10px;border:0;background:none;color:var(--t-2);font:600 var(--f-13) var(--sans);white-space:nowrap;cursor:pointer;border-radius:var(--r-1) var(--r-1) 0 0;transition:color var(--rapide),background var(--rapide)}
+.nv-onglet:hover{color:var(--t-1);background:var(--s-hover)}
+.nv-onglet[aria-selected="true"]{color:var(--t-1)}
+.nv-onglet[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent)}
+.nv-onglet:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+.nv-pas,.nv-compte{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;font:700 var(--f-11)/1 var(--sans);font-style:normal}
+.nv-pas.ko{background:var(--ko);color:var(--s-surface)}
+.nv-pas.att{background:var(--warn);color:var(--s-surface)}
+.nv-compte{background:var(--s-hover);color:var(--t-2);font-weight:600}
+.nv-panneaux{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:18px 24px 28px;scrollbar-width:thin}
+.nv-panneau{display:flex;flex-direction:column;gap:14px;outline:none}
+.nv-panneau[hidden]{display:none}
+.nv-panneau.nv-entre{animation:nv-entre var(--moyen) both}
+@keyframes nv-entre{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.nv-panneau.nv-entre{animation:none}}
+.nv-vide{margin:8px 0;color:var(--t-2);font:400 var(--f-13)/1.45 var(--sans)}
+/* dans un onglet, le contenu d'hier s'étale : plus de marges de section */
+.nv-panneau>.fs-groupe:first-child,.nv-panneau>.fs-champs:first-child{margin-top:0}
+.nv-panneau .fi-decision{margin:0}
+.fi.nv-g .fi-pied{position:static;flex:none;margin:0;padding:10px 20px 12px}
+
+/* la liste à gauche : une colonne en retrait ; chaque objet, son point d'état, son repère, ce qu'il est, ses folios */
+.nv-liste{min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--s-line);background:var(--s-sunken)}
+.nv-liste-t{flex:none;display:flex;align-items:baseline;gap:8px;padding:16px 16px 10px;font:700 var(--f-13) var(--sans);color:var(--t-1)}
+.nv-liste-t>span{font:600 var(--f-12) var(--sans);color:var(--t-2)}
+.nv-liste-t .nv-liste-ko{margin-left:auto;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--ko);color:var(--s-surface);font:700 var(--f-11)/1 var(--sans)}
+.nv-liste-f{flex:none;margin:0 12px 8px;height:32px}
+.nv-liste-l{flex:1 1 auto;min-height:0;margin:0;padding:2px 8px 16px;list-style:none;overflow:auto;scrollbar-width:thin}
+.nv-liste-l>li[hidden]{display:none}
+.nv-item{width:100%;display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;column-gap:10px;margin:0;padding:7px 10px;border:0;border-radius:var(--r-1);background:none;color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide)}
+.nv-item:hover{background:var(--s-hover)}
+.nv-item.actif{background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--accent)}
+.nv-item:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.nv-pt{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.nv-pt.att{background:var(--warn)}
+.nv-pt.ko{background:var(--ko)}
+.nv-item-t{min-width:0;display:flex;flex-direction:column;gap:1px}
+.nv-item-t b{font:600 var(--f-13)/1.3 var(--mono);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-item-t small{font:400 var(--f-11)/1.3 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-item-f{font:500 var(--f-11) var(--sans);color:var(--t-2);white-space:nowrap}
+.nv-liste-vide{padding:12px 10px;color:var(--t-2);font-size:var(--f-12)}
+
+/* ─── LES CÂBLES EN TABLEAU TRIABLE ─── */
+.nv-table-c{overflow-x:auto;margin:0 -6px}
+.nv-cables{width:100%;border-collapse:separate;border-spacing:0;font:400 var(--f-13)/1.35 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
+.nv-cap{caption-side:top;text-align:left;padding:0 6px 8px;font:500 var(--f-12) var(--sans);color:var(--t-2)}
+.nv-cables tr,.nv-cables tr.fi-ia{display:table-row}
+/* (le filet d’hier entre deux lignes, un ::before, ferait une case de plus dans une ligne de tableau) */
+.nv-cables tr::before,.nv-cables tr::after{content:none!important;display:none!important}
+.nv-cables th{padding:0;text-align:left;border-bottom:1px solid var(--s-line-2);background:var(--s-surface);white-space:nowrap}
+.nv-tri{display:inline-flex;align-items:center;gap:5px;width:100%;height:34px;margin:0;padding:0 6px;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);font:600 var(--f-11)/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.nv-tri:hover{color:var(--t-1);background:var(--s-hover)}
+.nv-tri-f{font:600 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3)}
+th[aria-sort="ascending"] .nv-tri,th[aria-sort="descending"] .nv-tri{color:var(--t-1)}
+th[aria-sort="ascending"] .nv-tri-f,th[aria-sort="descending"] .nv-tri-f{color:var(--accent)}
+.nv-cables td{padding:8px 6px;border-bottom:1px solid var(--s-line);vertical-align:middle;white-space:nowrap}
+.nv-cab{cursor:pointer;transition:background var(--rapide)}
+.nv-cab:hover td,.nv-cab.vise td{background:var(--s-hover)}
+.nv-cab.choisi td,.nv-cab.arrivee td{background:var(--accent-soft)}
+.nv-cab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.nv-cab.ko td:first-child{box-shadow:inset 3px 0 0 var(--ko)}
+.nv-cab.att td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
+.nv-cab-id{display:inline-flex;align-items:center;gap:8px}
+.nv-cab-type{font:600 var(--f-13) var(--mono)}
+.nv-td-vers .id{font:500 var(--f-12) var(--mono)}
+.nv-td-vers small{font:500 var(--f-11) var(--mono);color:var(--t-2)}
+.nv-cab-i{display:grid;grid-template-columns:minmax(48px,72px) auto;align-items:center;gap:8px}
+.nv-cab-i .cb-i-v{font-size:var(--f-12);color:var(--t-2)}
+.nv-cab-i .cb-i-v b{font-weight:650;color:var(--t-1)}
+.nv-cab-i.ko .cb-i-v b{color:var(--ko)}
+.nv-sur{margin-left:4px;font:500 var(--f-11) var(--sans);color:var(--t-2)}
+.nv-cab-lg{display:inline-flex;align-items:center;gap:3px}
+.nv-cab-lg small{font:500 var(--f-11) var(--sans);color:var(--t-2)}
+.nv-cab-lg .cb-lg{display:inline-flex}
+.nv-cab-lg .fc-in{width:6ch;min-width:0;height:26px;margin:0;padding:0 4px;text-align:right;font:500 var(--f-13) var(--sans);field-sizing:fixed}
+.nv-cab-ct{font:500 var(--f-12) var(--mono)}
+.nv-cab-ct.ko{color:var(--ko)}
+.nv-muet{color:var(--t-3)}
+
+/* ─── LA VALEUR SE CHANGE AU CLIC : elle se lit comme un texte ; au survol, un voile et un crayon ; au clic, le champ ─── */
+.fi:is(.nv-c,.nv-g) .fc-in:not(:focus){border-color:transparent;background-color:transparent}
+.fi:is(.nv-c,.nv-g) .fc-in:not(:focus):hover{background-color:var(--s-hover);background-image:var(--nv-crayon);background-repeat:no-repeat;background-position:right 5px center;background-size:12px;padding-right:20px;cursor:text}
+.fi:is(.nv-c,.nv-g) .fc-in:focus{background-image:none}
+.fi:is(.nv-c,.nv-g) .fc-in::placeholder{color:var(--t-1)}
+.fi:is(.nv-c,.nv-g) .supp .fc-in::placeholder,.fi:is(.nv-c,.nv-g) .nv-chiffre.supp .fc-in::placeholder{color:var(--warn);font-weight:600}
+
+/* ─── AU TÉLÉPHONE : le grand est la feuille entière ; ses onglets défilent sous les doigts ─── */
+@media (max-width:700px){
+  body.insp-grand #inspecteur{max-height:calc(100vh - var(--entete) - var(--rail-tel) - 12px)}
+  .nv-resume{padding:6px 16px 12px}
+  .nv-onglets{padding:0 8px}
+  .nv-panneaux{padding:14px 16px 20px}
+  .fi.nv-g .nv-chiffres{grid-template-columns:repeat(auto-fit,minmax(78px,1fr))}
+}
+
+/* ─── LES BORDS : la carte a la taille de ce qu'elle dit ; seul le grand se tire, par son bord gauche ─── */
+body.insp-flotte #inspecteur .carte-bords,body.insp-epingle:not(.insp-grand) #inspecteur .carte-bords{display:none}

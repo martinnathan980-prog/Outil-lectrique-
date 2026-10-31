@@ -115,8 +115,10 @@ function liaison(o) {
    en cours de saisie. On la garde dans la table, pas dans le dessin. */
 const liaisonComplete = l => !!(l.de && l.vers);
 // (v77, le lecteur : « les câbles n'ont plus de numéro, il faut mettre le type ») : un câble sans numéro se dit par son type
-const cableDit = l => (l && String(l.cable || '').trim()) || ('câble ' + ((l && l.type) || 'sans numéro'));
-const cableEtType = l => l && String(l.cable || '').trim() ? l.cable + (l.type ? ' (' + l.type + ')' : '') : cableDit(l);
+// (v78, le lecteur : « il n'y a plus de numéro de câble du tout, ça doit disparaître ») : un câble se dit par son TYPE et
+// par où il va — « DR12 vers 103RL1:A1 » —, jamais par son numéro (la colonne reste dans le fichier ; l'export la rend telle quelle)
+const cableDit = l => { const t = (l && String(l.type || '').trim()) || 'câble', v = l && (l.vers || l.autre); return t + (v ? ' vers ' + v + (l.vers && l.borneVers ? ':' + l.borneVers : '') : ''); };
+const cableEtType = l => cableDit(l);
 
 /* ---- LES BARRETTES À POSER ---------------------------------------------------
    Plusieurs fils sur une même borne d'équipement (le contrat dit « 102CB1:2 → 103RL1 » et « 395SW1 → 102CB1:2 ») : on

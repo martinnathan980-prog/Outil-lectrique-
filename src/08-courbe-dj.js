@@ -53,7 +53,9 @@ const DJ_VUE = Object.freeze({});
    In et le titre du courant. */
 const DJG = { L: 64, R: 16, T: 50, B: 50, ylo: -2, yhi: 4, ubas: -2.4, uhaut: 4.4 };
 // (la largeur de la figure : celle de la fiche, moins ses deux marges de 20 px)
-function largeurGrapheEstimee() { const b = typeof $ === 'function' ? $('ba-equip') : null; return b && b.clientWidth > 200 ? b.clientWidth - 40 : 392; }
+// (v78) dans le grand, le panneau de l'onglet : la fiche moins la liste à gauche (08-niveaux), au plus 760 px de courbe
+function largeurGrapheEstimee() { const b = typeof $ === 'function' ? $('ba-equip') : null; if (!(b && b.clientWidth > 200)) return 392;
+  const w = b.clientWidth - (typeof grandLarge === 'function' && grandLarge() ? 264 : 0) - (typeof ficheEnGrand === 'function' && ficheEnGrand() ? 56 : 40); return Math.max(300, Math.min(760, w)); }
 function geometrieGraphe(d, W) { W = Math.max(300, Math.round(W || 392)); const { L, R, T, B, ylo, yhi } = DJG;
   const hp = Math.round(Math.max(240, Math.min(380, (W - L - R) * 0.86))), H = T + hp + B, rapide = d.courbes[0], cal = d.calibre, I = d.points.map(p => p.i).filter(i => i > 0);
   const bas = [...I, cal ? cal * rapide.points[0].m : Infinity].filter(x => x > 0 && isFinite(x));
