@@ -25,10 +25,16 @@ function faceVue(contacts, etatDe, o) { o = o || {}; const n = (contacts || []).
   const R = o.r || 8, p = Math.max(o.pas || 26, o.lettres ? 2 * R + 6 : 0), m = o.rond ? 28 : 18, W = (x1 - x0) * p + 2 * m, H = (y1 - y0) * p + 2 * m;
   const corps = o.rond ? `<circle class="vu-corps" cx="${W / 2}" cy="${H / 2}" r="${(Math.max(W, H) / 2 - 3).toFixed(1)}"/><rect class="vu-cle" x="${W / 2 - 5}" y="1" width="10" height="7" rx="2"/>`
     : `<rect class="vu-corps" x="2" y="2" width="${W - 4}" height="${H - 4}" rx="${o.mini ? 7 : 11}"/><rect class="vu-cle" x="${W / 2 - 13}" y="${H - 5}" width="26" height="4" rx="2"/>`;
-  const cts = contacts.map(c => { const x = m + ((+c.c || 0) - x0) * p, y = m + ((+c.r || 0) - y0) * p, st = etatDe(c) || '', col = o.couleur ? o.couleur(c) : '', L = String(c.lettre || '');
+  const pos = c => [m + ((+c.c || 0) - x0) * p, m + ((+c.r || 0) - y0) * p];
+  // (v78) LES GROUPES RELIÉS (une barrette) : un trait épais et pâle passe par les contacts d'un même groupe — on voit qu'ils
+  // sont reliés ; à la couleur du groupe s'il porte des câbles, gris sinon
+  const bus = (o.bus || []).map(g => { const ps = g.contacts.map(pos); if (!ps.length) return '';
+    const d = ps.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('') + (ps.length === 1 ? 'h0.01' : '');
+    return `<path class="vu-bus-g${g.couleur ? '' : ' libre'}" d="${d}" style="stroke-width:${(2 * R + 7).toFixed(1)}px${g.couleur ? ';stroke:' + g.couleur : ''}"/>`; }).join('');
+  const cts = contacts.map(c => { const [x, y] = pos(c), st = etatDe(c) || '', col = o.couleur ? o.couleur(c) : '', L = String(c.lettre || '');
     const style = col ? (st === 'pris' ? ` style="fill:${col};stroke:${col}"` : ` style="stroke:${col}"`) : '';
     return `<g class="vu-ct-g" data-ct="${escA(L)}"><circle class="vu-ct ${st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"${style}/>${o.lettres ? `<text class="${st}${L.length > 2 ? ' long' : ''}" x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}">${esc(L)}</text>` : ''}</g>`; }).join('');
-  return `<svg class="vu-face${o.mini ? ' mini' : ''}" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${o.w || W}" role="img" aria-label="${escA(o.titre || 'La face')}">${corps}${cts}</svg>`; }
+  return `<svg class="vu-face${o.mini ? ' mini' : ''}" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${o.w || W}" role="img" aria-label="${escA(o.titre || 'La face')}">${corps}${bus}${cts}</svg>`; }
 const legendeFaceVue = (avecKo) => `<p class="vu-legende"><span><i class="pris"></i>pris</span><span><i></i>libre</span>${avecKo ? '<span><i class="ko"></i>refusé</span>' : ''}</p>`;
 
 /* ---- CE QU'IL TIRE, CE QU'IL TIENT (un disjoncteur) : le démarrage et le permanent en barres, sur l'échelle des
@@ -46,7 +52,7 @@ function chargeVue(d, o, W, mini) { const ch = chargeDuProfil(d), cal = d.calibr
     : `<text class="vu-t" x="${X(0)}" y="${y1 - 7}">${esc(quand)} <tspan class="vu-t-fort">${esc(amperes(pointe))}</tspan>${dur ? ' · pendant ' + esc(dur) : ''}</text>${ch.perm ? `<text class="vu-t" x="${X(0)}" y="${y2 - 7}">Permanent <tspan class="vu-t-fort">${esc(amperes(ch.perm))}</tspan></text>` : ''}`;
   // le retenu : son trait, son nom en haut (à droite du trait, ou à gauche quand il est au bout de l'échelle)
   const finCal = cal && X(cal) > W - 90, traitCal = cal ? `<line class="vu-cal" x1="${X(cal).toFixed(1)}" x2="${X(cal).toFixed(1)}" y1="${mini ? 14 : 8}" y2="${yt - 18}"/><text class="vu-t-fort vu-t-cal" x="${(X(cal) + (finCal ? -6 : 6)).toFixed(1)}" y="${mini ? 12 : 18}"${finCal ? ' text-anchor="end"' : ''}>${esc(amperes(cal))} retenu</text>` : '';
-  const traitFic = cRet ? `<line class="vu-fic" x1="${X(cRet).toFixed(1)}" x2="${X(cRet).toFixed(1)}" y1="${mini ? 14 : 8}" y2="${yt - 18}"/>${mini ? '' : `<text class="vu-t-ko" x="${(X(cRet) - 6).toFixed(1)}" y="${yt - 24}" text-anchor="end">${esc(amperes(cRet))} du fichier</text>`}` : '';
+  const traitFic = cRet ? `<line class="vu-fic" x1="${X(cRet).toFixed(1)}" x2="${X(cRet).toFixed(1)}" y1="${mini ? 14 : 8}" y2="${yt - 18}"/>${mini ? '' : `<text class="vu-t-ko" x="${(X(cRet) - 6).toFixed(1)}" y="${yt - 24}" text-anchor="end">${esc(amperes(cRet))} : votre fichier</text>`}` : '';
   return `<svg class="vu-charge" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${escA('Ce qu’il tire contre ses calibres : ' + amperes(pointe) + ' au plus, ' + (cal ? amperes(cal) + ' retenu' : 'aucun calibre'))}">${barre(y1, pointe, 'vu-b-pointe')}${ch.perm ? barre(y2, ch.perm, 'vu-b-perm') : ''}${mots}${traitFic}${traitCal}${ticks}</svg>`; }
 const legendeChargeVue = () => `<p class="vu-legende"><span><i class="carre perm"></i>permanent</span><span><i class="carre pointe"></i>démarrage</span><span><i class="ok"></i>calibre qui passe</span><span><i class="ko"></i>qui ne passe pas</span></p>`;
 
@@ -58,7 +64,7 @@ function arbreVue(nom, cal, rows) { const n = rows.length; if (!n) return '<p cl
     return `<g class="vu-branche fi-ia${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}" tabindex="0" role="button" aria-label="${escA('Ouvrir le câble ' + (r.type || '') + ' vers ' + (r.bout ? r.bout.rep : ''))}"` : ''}>`
       + `<rect class="vu-b-fond" x="140" y="${y - 18}" width="${W - 140}" height="${rh - 4}" rx="9"/><path class="vu-br" d="M112 ${y}H220" style="stroke:${col}"/><circle class="vu-noeud" cx="112" cy="${y}" r="3.5"/>`
       + `<text class="vu-t-mono" x="232" y="${y + 4}">${esc(r.type || 'sans type')}</text><text class="vu-t" x="286" y="${y + 4}">vers</text><text class="vu-t-mono" x="316" y="${y + 4}">${esc(r.bout ? r.bout.rep : '—')}<tspan class="vu-t">${r.bout && r.bout.borne ? ':' + esc(r.bout.borne) : ''}</tspan></text>`
-      + `<rect class="vu-rail" x="436" y="${y - 3}" width="80" height="6" rx="3"/><rect class="vu-j ${m}" x="436" y="${y - 3}" width="${(80 * w).toFixed(1)}" height="6" rx="3"/>`
+      + `<rect class="vu-rail" x="430" y="${y - 4}" width="88" height="8" rx="4"/><rect class="vu-j ${m}" x="430" y="${y - 4}" width="${(88 * w).toFixed(1)}" height="8" rx="4"/>`
       + `<text class="vu-t-fort" x="526" y="${y + 4}">${r.charge.i != null ? esc(nombreA(r.charge.i)) : '—'}<tspan class="vu-t">${r.charge.admis != null ? ' / ' + esc(nombreA(r.charge.admis)) + ' A' : ' A'}</tspan></text></g>`; }).join('');
   return `<svg class="vu-arbre" viewBox="0 0 ${W} ${H}" width="${W}" role="group" aria-label="${escA('Les ' + n + ' câbles de ' + nom)}"><rect class="vu-boite" x="4" y="${yC - 25}" width="88" height="50" rx="10"/><text class="vu-t-mono vu-milieu" x="48" y="${yC - 2}">${esc(nom)}</text><text class="vu-t vu-milieu" x="48" y="${yC + 14}">${cal ? esc(amperes(cal)) : ''}</text>`
     + `<path class="vu-bus" d="M92 ${yC}H112M112 22V${16 + (n - 1) * rh + 6}"/>${lignes}</svg>`; }
@@ -93,8 +99,28 @@ function brochesVue(xs) { if (!xs.length) return '<p class="vu-note">Aucun câbl
 // sources : fichier (votre fichier), norme, tables (les tables de Volta), calcul, hypothese, main (choisi ici), base (la base SEE)
 const MOTS_SOURCES = { fichier: 'votre fichier', norme: 'la norme', tables: 'tables de Volta', calcul: 'calcul de Volta', hypothese: 'hypothèse', main: 'choisi ici', base: 'base SEE' };
 function pourquoiVue(titre, etapes) { const xs = (etapes || []).filter(Boolean); if (!xs.length) return '';
-  return `<section class="vu-pq" aria-label="${escA(titre)}"><h4 class="vu-titre">${esc(titre)}</h4><ol>${xs.map((e, i) => `<li class="${e.etat || ''}"><span class="vu-pq-n">${i + 1}</span><span class="vu-pq-t">${e.html || esc(e.texte)}</span>`
-    + `${e.source ? `<span class="vu-src ${escA(e.source)}"${e.bulle ? ` data-bulle="${escA(e.bulle)}"` : ''}>${esc(e.mot || MOTS_SOURCES[e.source] || e.source)}</span>` : ''}</li>`).join('')}</ol></section>`; }
+  return `<section class="vu-pq" aria-label="${escA(titre)}"><h4 class="vu-titre">${esc(titre)}</h4><ol>${xs.map((e, i) => {
+    const va = e.va ? ` data-va-onglet="${escA(e.va.onglet || '')}" data-va-vers="${escA(e.va.vers || '')}" tabindex="0" role="button" aria-label="${escA('Voir ' + (e.va.mot || 'le détail'))}"` : '';
+    return `<li class="${e.etat || ''}${e.va ? ' va' : ''}"${va}><span class="vu-pq-n">${i + 1}</span><span class="vu-pq-t">${e.html || esc(e.texte)}${e.va ? `<span class="vu-pq-va">${esc('voir ' + (e.va.mot || 'le détail'))}${ico('droite')}</span>` : ''}</span>`
+      + `${e.source ? `<span class="vu-src ${escA(e.source)}"${e.bulle ? ` data-bulle="${escA(e.bulle)}"` : ''}>${esc(e.mot || MOTS_SOURCES[e.source] || e.source)}</span>` : ''}`
+      + `${e.detail ? `<details class="vu-pq-d"><summary>${ico('bas')}Voir le calcul</summary><div class="vu-pq-dc">${e.detail}</div></details>` : ''}</li>`; }).join('')}</ol></section>`; }
+
+/* ---- LES CALIBRES D'UN DISJONCTEUR, en un coup d'œil (la carte) : chaque calibre de la gamme, vert s'il tient ce qu'il
+   alimente, rouge sinon ; le retenu plein, l'actuel (celui de votre fichier) marqué ---- */
+function calibresVue(d, o, cal) { const gamme = (d.gamme || []).filter(g => g.calibre > 0); if (!gamme.length) return '';
+  const act = o && o.calRetest ? o.calRetest : d.pn && d.pn !== cal ? d.pn : null;
+  return `<span class="vu-calv"><span class="vu-calv-l">${gamme.map(g => { const k = cleDuVerdict(g), r = g.calibre === cal, a = act === g.calibre && !r;
+      return `<span class="vu-c ${k === 'passe' ? 'oui' : 'non'}${r ? ' ret' : ''}${a ? ' act' : ''}"><b>${esc(nombre(g.calibre))}</b><small>${r ? 'retenu' : a ? 'actuel' : ''}</small></span>`; }).join('')}</span>`
+    + `<span class="vu-legende"><span><i class="ok"></i>tient</span><span><i class="ko"></i>ne tient pas</span>${act && act !== cal ? '<span>actuel : votre fichier</span>' : ''}</span></span>`; }
+
+/* ---- LES CONNECTEURS D'UN ÉQUIPEMENT, en un coup d'œil (la carte) : une ligne chacun — sa lettre, sa référence, ses
+   contacts pris (une barre) ; en rouge celui qu'aucun arrangement ne loge ---- */
+function connecteursVue(xs) { if (!xs.length) return '';
+  return `<span class="vu-cons">${xs.map(x => `<span class="vu-con${x.ko ? ' ko' : ''}"><b class="vu-con-l">${esc(x.nom)}</b><span class="vu-con-t"><span class="id">${esc(x.ref || 'sans référence')}</span>`
+    + (x.ko ? `<small>${esc(x.ko)}</small>` : x.places ? `<span class="vu-con-b"><i style="width:${(Math.min(1, x.pris / x.places) * 100).toFixed(1)}%"></i></span>` : '<small>aucun arrangement connu</small>') + `</span>`
+    + `<span class="vu-con-n">${x.places && !x.ko ? `${x.pris}<small>/${x.places}</small>` : ''}</span></span>`).join('')}</span>`; }
+// deux, trois… en mots (une phrase qui se lit)
+const nombreEnMots = n => ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix'][n] || String(n);
 
 /* ---- LA FABRICATION : tout ce qu'il faut pour monter la pièce, groupé, compté par référence ---- */
 function fabricationVue(groupes) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length);

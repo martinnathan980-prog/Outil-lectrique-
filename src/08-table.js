@@ -32,7 +32,7 @@ const TABLE_PARALLAXE = .1, TABLE_PAS = 24;   // les points, un tous les 24 px :
    logiciel) : 85 à 90 % d'un cœur en v74, 31 à 34 % à 10 Hz, 24 à 25 % à 7 Hz (tests/vitesse.js, machine au repos). La
    lueur : un ressort de 9 rad/s. */
 const TABLE_HZ = 7, TABLE_RESSORT = 9;
-const TABLE_REVELE = 420;                     // le disque où la grille se révèle (style-table.css, `.ta-revele`)
+const TABLE_REVELE = 240;  // (v78 : « les jeux de lumière autour de la souris, plus fins »)                     // le disque où la grille se révèle (style-table.css, `.ta-revele`)
 // ce qu'on lit, posé sur la table : la grille ne s'y révèle pas
 const TABLE_LU = '#bi-page :is(.bi-vide-centre > *, .bi-dock, .bi-carte, .bi-tete, .bi-reprendre, .bi-feuille, .bi-intertitre, .bi-rail, .bi-bandeau, .bi-lot, .bi-sous), #fiche, #base, #inspecteur, #menu, #entete, #rail, #folios';
 const TABLE = {
@@ -48,7 +48,8 @@ const TABLE = {
    des retournements, la dérive ne coûte presque plus. */
 const NAPPES = { a: [NaN, NaN], b: [NaN, NaN], o: NaN };
 function poserNappes(t, toujours) { const T = TABLE; if (!T.nA) return; const vw = innerWidth / 100, vh = innerHeight / 100, s = Math.sin, D = 2 * Math.PI, N = NAPPES;
-  const ax = 18 * vw + 4 * vw * s(D * t / 47), ay = -22 * vh + 3 * vh * s(D * t / 61 + 1.1), bx = -30 * vw - 4 * vw * s(D * t / 61 + .4), by = 30 * vh - 3 * vh * s(D * t / 47 + 2), o = .775 + .225 * s(D * t / 24);
+  // (v78, le lecteur : « le fond, un petit peu plus en mouvement — pas grossi ») : des périodes plus courtes, une course plus ample
+  const ax = 18 * vw + 7 * vw * s(D * t / 29), ay = -22 * vh + 6 * vh * s(D * t / 37 + 1.1), bx = -30 * vw - 7 * vw * s(D * t / 37 + .4), by = 30 * vh - 6 * vh * s(D * t / 29 + 2), o = .7 + .3 * s(D * t / 17);
   const loin = (p, x, y) => toujours || !(Math.abs(p[0] - x) < .33 && Math.abs(p[1] - y) < .33);
   if (loin(N.a, ax, ay)) { N.a = [ax, ay]; T.nA.style.transform = `translate3d(${ax.toFixed(1)}px,${ay.toFixed(1)}px,0)`; }
   if (loin(N.b, bx, by)) { N.b = [bx, by]; T.nB.style.transform = `translate3d(${bx.toFixed(1)}px,${by.toFixed(1)}px,0)`; }
@@ -86,7 +87,7 @@ function pasDeLaLueur(n) { const T = TABLE, dt = Math.min(.05, (n - (T.t || n)) 
 
 /* LE COURANT : un éclat de glace sur une rangée de points, dans une bande que rien ne couvre (la bibliothèque : sa
    composition, ses cartes, le dock ; la barre du haut). Sur le plan, la table se tait : on y travaille. */
-function planifierCourant() { clearTimeout(TABLE.courantT); TABLE.courantT = setTimeout(courir, 14000 + Math.random() * 8000); }
+function planifierCourant() { clearTimeout(TABLE.courantT); TABLE.courantT = setTimeout(courir, 6000 + Math.random() * 5000); }
 function rangeesLibres() { const H = innerHeight, haut = (typeof $ === 'function' && $('entete') ? $('entete').getBoundingClientRect().bottom : 52) + 20;
   const pris = [...document.querySelectorAll('#bi-page :is(.bi-tete, .bi-reprendre, .bi-bandeau, .bi-intertitre, .bi-carte, .bi-feuille, .bi-sous, .bi-rien, .bi-rail, .bi-lot, .bi-vide-centre > *, .bi-dock), #fiche:not([hidden])')]
     .map(e => e.getBoundingClientRect()).filter(r => r.height && r.width);

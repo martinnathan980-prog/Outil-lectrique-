@@ -68,7 +68,7 @@ function styleDessin() {
      .pinlbl{fill:#2b3743;font-size:7.5px;font-weight:500;letter-spacing:.2px}
      .filnum{fill:#0b0f14;font-size:${FS_FIL}px;font-weight:500;letter-spacing:.1px}
      .halo{fill:#ffffff;stroke:none}
-     .rep-petit{fill:#1b2430;font-size:6px;font-weight:600;letter-spacing:.3px}
+     .rep-petit{fill:#1b2430;font-size:6.4px;font-weight:650;letter-spacing:.3px}
      .lead{stroke:#26323f;stroke-width:.95;stroke-linecap:butt}
      .conn{fill:#ffffff;stroke:#1b2430;stroke-width:.75}
      .connnom{fill:#1b2430;font-size:6.5px;font-weight:700;letter-spacing:.3px}

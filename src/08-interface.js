@@ -819,7 +819,7 @@ function placeDuPlan() { const r = cadre(), m = marges(), W = Math.max(80, r.wid
    pour tous les folios, et un recadrage de l'outil (un panneau qui s'ouvre, un folio jamais vu) le suit. Le plan s'ouvre
    cadré sur le DESSIN (v73, le technicien : « à l'ouverture, le folio n'est qu'une poussière de traits ») — le cartouche
    se voit d'un 0 ; un petit dessin ne s'y grossit pas au-delà de 100 % (ses numéros à leur taille de lecture, 11 px). */
-const VUE = { cadrage: 'dessin', geste: false, parFolio: null, retours: [], main: false };
+const VUE = { cadrage: 'feuille', geste: false, parFolio: null, retours: [], main: false };
 const DESSIN_MAX = S100;
 function boiteDuDessin(d) { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; const v = (x, y) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); };
   d.comps.forEach(c => { v(c.x, c.y - 16); v(c.x + c.w, c.y + c.h + 14); });   // la lettre d'un connecteur au-dessus, le repère dessous

@@ -477,7 +477,7 @@ function rendreBibliotheque(o) { const el = $('bi-page'); if (!el || BIB.vue ===
    40 ms d'écart, six crans au plus) — l'accueil : la pile, le titre, la phrase, les gestes, la ligne, le dock, puis les
    deux câbles de la vignette se tracent ; la bibliothèque : la tête, « Reprendre », l'intertitre, les cartes. Ensuite (le
    retour du plan, une installation, la racine) : un fondu de 220 ms, rien ne bouge. Jamais à chaque lettre cherchée. */
-const ARRIVEE = ['.bi-pile', '.bi-vide-centre > h1', '.bi-chapeau', '.bi-vide-gestes', '.bi-vide-depot', '.bi-dock', '.bi-rail', '.bi-tete', '.bi-reprendre', '.bi-bandeau', '.bi-intertitre', '.bi-grille:not(.bi-grille-demo) > .bi-carte', '.bi-feuille', '.bi-essai'].join(', ');
+const ARRIVEE = ['.bi-pile', '.bi-vide-centre > h1', '.bi-devise', '.bi-vitrine', '.bi-chapeau', '.bi-vide-gestes', '.bi-vide-depot', '.bi-dock', '.bi-rail', '.bi-tete', '.bi-reprendre', '.bi-bandeau', '.bi-intertitre', '.bi-grille:not(.bi-grille-demo) > .bi-carte', '.bi-feuille', '.bi-essai'].join(', ');
 function poser() { const p = $('bi-page'); if (!p || mouvementReduit()) return; clearTimeout(BIB.poseT); p.classList.remove('entre-v', 'bi-fondu', 'bi-trace');
   const fin = [...p.querySelectorAll('.entre-v')]; fin.forEach(e => e.classList.remove('entre-v'));
   if (BIB.arrive) { void p.offsetWidth; p.classList.add('entre-v', 'bi-fondu'); BIB.poseT = setTimeout(() => p.classList.remove('entre-v', 'bi-fondu'), 400); return; }
@@ -559,10 +559,23 @@ function reprendreHtml() { if (!planSurLaTable()) return ''; const p = BIB.plans
    « Nouvelle installation » au verre), une ligne pour le dépôt (la fenêtre entière le reçoit) ; en bas, le DOCK. Plus
    d'encadré pointillé ni de « Pour essayer » : l'Exemple et la base des contrats déjà faits sont deux tuiles du dock (la
    phrase de la base, dans sa bulle). */
-function videHtml(demo) { return `<section class="bi-vide"><div class="bi-vide-centre">${pileAccueil()}<h1 class="bi-titre bi-affiche">Ouvrez votre installation</h1>`
-  + `<p class="bi-chapeau">Une ligne par câble, en Excel ou en CSV. Volta dessine les folios et vérifie chaque calibre, chaque contact, chaque câble.</p>${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
-  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir">${icoBi('depot')}<span>Ouvrir une installation…</span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
-  + `<p class="bi-vide-depot">${icoBi('glisser')}<span>ou glissez-le n’importe où dans la fenêtre</span></p></div>${dockHtml(demo)}</section>`; }
+/* (v78, le lecteur : « en général, on met le titre au-dessus ; une ligne par câble, Excel ou CSV, glisser n'importe où :
+   on enlève — c'est trop ; on met le nom du site, en gros ; les folios d'exemple, qui bougent ; et proprement, la
+   bibliothèque pour reprendre ») : le NOM en grand, trois FOLIOS qui flottent doucement (chacun un petit plan : un
+   disjoncteur et ses équipements, une barrette qui distribue, une prise de coupure), les deux gestes, le DOCK. Déposer
+   un fichier n'importe où marche toujours — sans le dire. */
+const FOLIOS_VITRINE = [
+  '<rect class="bp-bloc" x="28.5" y="44.5" width="36" height="46" rx="1.5"/><rect class="bp-bloc" x="160.5" y="30.5" width="44" height="30" rx="1.5"/><rect class="bp-bloc" x="160.5" y="76.5" width="44" height="30" rx="1.5"/>'
+    + '<path class="bp-fil bf-a" pathLength="1" d="M64.5 56.5H112.5V45.5H160.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M64.5 78.5H120.5V91.5H160.5"/><circle class="bp-noeud" cx="112.5" cy="56.5" r="2.2"/>',
+  '<rect class="bp-bloc" x="24.5" y="50.5" width="40" height="52" rx="1.5"/><rect class="bp-barre" x="112.5" y="36.5" width="9" height="84" rx="2"/><rect class="bp-bloc" x="164.5" y="24.5" width="42" height="26" rx="1.5"/><rect class="bp-bloc" x="164.5" y="63.5" width="42" height="26" rx="1.5"/><rect class="bp-bloc" x="164.5" y="102.5" width="42" height="26" rx="1.5"/>'
+    + '<path class="bp-fil bf-a" pathLength="1" d="M64.5 64.5H112.5"/><path class="bp-fil bf-b" pathLength="1" d="M64.5 88.5H112.5"/><path class="bp-fil bf-a" pathLength="1" style="--j:1" d="M121.5 46.5H140.5V37.5H164.5"/><path class="bp-fil bf-a" pathLength="1" style="--j:1" d="M121.5 76.5H164.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M121.5 110.5H140.5V115.5H164.5"/>',
+  '<rect class="bp-bloc" x="22.5" y="32.5" width="44" height="38" rx="1.5"/><rect class="bp-bloc" x="22.5" y="92.5" width="44" height="32" rx="1.5"/><rect class="bp-barre" x="106.5" y="38.5" width="7" height="82" rx="2"/><rect class="bp-barre" x="116.5" y="38.5" width="7" height="82" rx="2"/><rect class="bp-bloc" x="164.5" y="32.5" width="44" height="38" rx="1.5"/><rect class="bp-bloc" x="164.5" y="92.5" width="44" height="32" rx="1.5"/>'
+    + '<path class="bp-fil bf-a" pathLength="1" d="M66.5 44.5H106.5M123.5 44.5H164.5"/><path class="bp-fil bf-a" pathLength="1" d="M66.5 58.5H106.5M123.5 58.5H164.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M66.5 108.5H106.5M123.5 108.5H164.5"/>'];
+const vitrineAccueil = () => `<div class="bi-vitrine ilot-clair" aria-hidden="true">${FOLIOS_VITRINE.map((d, i) => `<span class="bi-vf bi-vf${i + 1}" style="--i:${i}"><svg viewBox="0 0 236 167">`
+  + `<rect class="bp-cadre" x="9.5" y="9.5" width="217" height="148" rx="1"/><rect class="bp-cart" x="140.5" y="132.5" width="86" height="25"/><path class="bp-cadre" d="M170 132.5v25"/>${d}</svg></span>`).join('')}</div>`;
+function videHtml(demo) { return `<section class="bi-vide bi-accueil"><div class="bi-vide-centre"><h1 class="bi-titre bi-marque">Volta</h1><p class="bi-devise">Le câblage, dessiné et vérifié.</p>${vitrineAccueil()}`
+  + `${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
+  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir">${icoBi('depot')}<span>Ouvrir une installation…</span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div></div>${dockHtml(demo)}</section>`; }
 /* LE DOCK : le verre des palets, en bas au milieu — « Reprendre » le plan resté sur la table (s'il y en a un), l'Exemple,
    la base des contrats déjà faits : comme des applications. Une tuile : son image (une vignette, une icône), son nom, ce
    qu'elle fait. */

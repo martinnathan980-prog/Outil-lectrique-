@@ -28,7 +28,9 @@
    repères, les routes. Ce qui est allumé (`.hl`) et le bloc choisi parlent toujours. Elles reviennent en 140 ms. Une
    classe sur la scène, jamais un recalcul : la copie qui s'efface (`.range-part`, le dessin qui se range) la porte aussi. */
 #planche svg text,#planche svg .halo{transition:opacity var(--d-rapide) var(--courbe)}
-#planche .tait-1 :is(.bpnum,.prnum,.barnum,.connpin,.rep-petit):not(.hl),
+/* (v78, le lecteur : « le numéro des barrettes n'apparaît que quand je mets la souris dessus ») : le repère d'une barrette,
+   d'une prise de coupure, d'une masse (`.rep-petit`) parle toujours, comme celui d'un équipement */
+#planche .tait-1 :is(.bpnum,.prnum,.barnum,.connpin):not(.hl),
 #planche .tait :is(text.filnum,rect.halo,.connnom,.xref,.cb-ret,.bsname,.des,.dr-ou):not(.hl),
 #planche .tait-3 :is(.pinlbl,.dr-f,.rname):not(.hl){opacity:0}
 #planche :is(.tait-1,.tait,.tait-3) :is(.comp,.vt).hl :is(.bpnum,.prnum,.barnum,.connpin,.rep-petit,.connnom,.xref,.cb-ret,.bsname,.des,.pinlbl,.dr-f,.dr-ou,.rname){opacity:1}
