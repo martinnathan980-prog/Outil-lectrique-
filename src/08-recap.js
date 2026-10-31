@@ -61,9 +61,23 @@
    l'outil, en trois groupes qui se lisent d'un regard — ce qu'on câble, le matériel qu'on pose, ce qu'on vérifie —, chacun
    avec son compte aligné à droite et un point rouge seulement là où il y a un problème. La table garde toute la largeur
    qui reste ; la feuille étroite (l'inspecteur épinglé, un petit écran) les remet en bande au-dessus (`#base.etroit`). */
-const GROUPES_ONGLETS = [['cablage', 'Câblage', ['liaisons', 'cables']], ['materiel', 'Matériel', ['equipements', 'disjoncteurs', 'barrettes', 'prises', 'raccords']], ['controle', 'Contrôle', ['problemes', 'normes']]];
-const ONGLETS = [['liaisons', 'Liaisons'], ['cables', 'Câbles'], ['equipements', 'Équipements'], ['disjoncteurs', 'Disjoncteurs'], ['barrettes', 'Barrettes'], ['prises', 'Prises'],
-  ['raccords', 'Raccords'], ['problemes', 'Problèmes'], ['normes', 'Normes']];
+/* (v77, le lecteur : « encore mieux trier, plus intuitif, plus simple, plus propre, plus carré ») : LES PROBLÈMES EN TÊTE,
+   seuls, comme une boîte de réception (le rouge et l'ambre en pastilles, plus de « 1 · 3 ») ; puis ce qu'on câble, le
+   matériel qu'on pose ; les normes, la référence, tout en bas. Chaque onglet a son icône (le point rouge se pose dessus :
+   les mots s'alignent tous), son compte, un seul nombre. */
+const GROUPES_ONGLETS = [['controle', '', ['problemes']], ['cablage', 'Câblage', ['liaisons', 'cables']], ['materiel', 'Matériel', ['equipements', 'disjoncteurs', 'barrettes', 'prises', 'raccords']], ['reference', 'Référence', ['normes']]];
+const ONGLETS = [['problemes', 'Problèmes'], ['liaisons', 'Liaisons'], ['cables', 'Câbles'], ['equipements', 'Équipements'], ['disjoncteurs', 'Disjoncteurs'], ['barrettes', 'Barrettes'], ['prises', 'Prises'],
+  ['raccords', 'Raccords'], ['normes', 'Normes']];
+const ICONES_ONGLETS = {
+  problemes: '<path d="M12 4 21 19.5H3z"/><path d="M12 10v4.2M12 16.8v.2"/>',
+  liaisons: '<circle cx="5" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><path d="M7.2 12h9.6"/>',
+  cables: '<path d="M2.5 12h4M17.5 12h4"/><rect x="6.5" y="8.5" width="11" height="7" rx="3.5"/>',
+  equipements: '<rect x="5" y="6" width="14" height="12" rx="1.5"/><path d="M2.5 10h2.5M2.5 14h2.5M19 10h2.5M19 14h2.5"/>',
+  disjoncteurs: '<circle cx="6" cy="15.5" r="1.7"/><circle cx="18" cy="15.5" r="1.7"/><path d="M7.5 14.6 16.2 8.5M2.5 15.5h1.8M19.7 15.5h1.8"/>',
+  barrettes: '<rect x="3" y="8" width="18" height="8" rx="2"/><circle cx="8" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="16" cy="12" r="1.3"/>',
+  prises: '<circle cx="12" cy="12" r="8"/><circle cx="9" cy="10.2" r="1.2"/><circle cx="15" cy="10.2" r="1.2"/><circle cx="12" cy="15" r="1.2"/>',
+  raccords: '<path d="M3.5 9h7l3-2.5h7v11h-7l-3-2.5h-7z"/>',
+  normes: '<path d="M5 4.5h10.5a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3z"/><path d="M5 16.5a3 3 0 0 1 3-3h10.5"/>' };
 /* app.base (08) porte déjà : ouvert, portee, filtre (la recherche de l'onglet ouvert), filtreAuto (le bloc choisi sur le
    plan : il vaut pour tous les onglets), tri (celui de l'onglet ouvert), hauteur, sale, defiler, enSaisie. Le
    récapitulatif y ajoute sa taille, l'onglet, les recherches, tris, puces et colonnes de chaque onglet, les lignes
@@ -835,13 +849,13 @@ function compteOnglet(k) { const items = CONTROLE.items || [];
     case 'liaisons': { const V = verite(), C = itemsParCable(); return { n: String(V.length), etat: V.some(l => (C.get(l.cable) || []).some(x => x.niveau === 'ko')) ? 'ko' : items.some(x => x.tableau != null) || V.some(l => C.has(l.cable)) ? 'att' : '' }; }
     case 'equipements': { const R = equipements(); return { n: String(R.length), etat: etatNoms(R) }; }
     case 'disjoncteurs': { const R = disjoncteurs(); return { n: String(R.length), etat: etatNoms(R) }; }
-    case 'barrettes': { const R = barrettes(), a = R.filter(r => r.aPoser).length; return { n: a ? (R.length - a) + ' + ' + a : String(R.length), etat: etatNoms(R), titre: a ? pluriel(R.length - a, 'barrette') + ' du contrat, ' + a + ' ajoutée' + (a > 1 ? 's' : '') + ' par Volta' : '' }; }
+    case 'barrettes': { const R = barrettes(), a = R.filter(r => r.aPoser).length; return { n: String(R.length), etat: etatNoms(R), titre: a ? pluriel(R.length - a, 'barrette') + ' du contrat, ' + a + ' ajoutée' + (a > 1 ? 's' : '') + ' par Volta' : '' }; }
     case 'prises': { const R = prises(); return { n: String(R.length), etat: etatNoms(R) }; }
     case 'cables': { const C = cables(); return { n: String(C.length), etat: C.some(etatCable) ? 'att' : '' }; }
     case 'raccords': return { n: String(raccords().length), etat: '' };
     // le compte des problèmes : la source unique (08-controle, `compteProblemes`) — les rouges · ce qui est à voir
     case 'problemes': { const C = typeof compteProblemes === 'function' ? compteProblemes() : { ko: items.filter(x => x.niveau === 'ko').length, att: items.filter(x => x.niveau !== 'ko').length }, ko = C.ko, att = C.att;
-      return { n: ko && att ? ko + ' · ' + att : String(ko + att), etat: ko ? 'ko' : att ? 'att' : '', titre: C.mot || pluriel(ko, 'problème') + ' · ' + att + ' à voir' }; }
+      return { n: String(ko + att), ko, att, etat: ko ? 'ko' : att ? 'att' : '', titre: C.mot || pluriel(ko, 'problème') + ' · ' + att + ' à voir' }; }
     case 'normes': return { n: String(NORMES_ONGLET.lignes().length), etat: '' };
   } } catch (_) { } return { n: '', etat: '' }; }
 
@@ -874,8 +888,10 @@ function rendreTete(O) { const b = app.base, n = app.contrat.liaisons.length, P 
    Les trois groupes portent leur titre ; au clavier, ↑ ↓ (← → dans la bande étroite) passent d'un onglet à l'autre. */
 function rendreOnglets() { const b = app.base, mots = new Map(ONGLETS);
   const ongletHtml = k => { const c = compteOnglet(k), on = k === b.onglet, ko = c.etat === 'ko';
-    return `<button role="tab" class="rc-onglet" data-onglet="${k}" aria-selected="${on}" tabindex="${on ? 0 : -1}"${c.titre ? ` data-bulle="${escA(c.titre)}"` : ''}><span>${esc(mots.get(k))}</span>${ko ? '<i class="rc-carre ko" aria-label="un problème"></i>' : ''}${c.n ? `<small>${esc(c.n)}</small>` : ''}</button>`; };
-  $('ba-onglets').innerHTML = GROUPES_ONGLETS.map(([g, t, ks]) => `<div class="rc-onglets-g" role="presentation" data-groupe="${g}"><span class="rc-onglets-t" aria-hidden="true">${esc(t)}</span>${ks.map(ongletHtml).join('')}</div>`).join('');
+    // les problèmes : deux pastilles, le rouge (à reprendre) et l'ambre (à voir) ; les autres : un nombre
+    const compte = k === 'problemes' && c.ko != null ? (c.ko || c.att ? `<span class="rc-ns">${c.ko ? `<b class="rc-n ko" aria-label="${escA(pluriel(c.ko, 'problème'))}">${c.ko}</b>` : ''}${c.att ? `<b class="rc-n att" aria-label="${escA(c.att + ' à voir')}">${c.att}</b>` : ''}</span>` : '<small>0</small>') : c.n ? `<small>${esc(c.n)}</small>` : '';
+    return `<button role="tab" class="rc-onglet" data-onglet="${k}" aria-selected="${on}" tabindex="${on ? 0 : -1}"${c.titre ? ` data-bulle="${escA(c.titre)}"` : ''}><i class="rc-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24">${ICONES_ONGLETS[k] || ''}</svg>${ko && k !== 'problemes' ? '<i class="rc-carre ko" aria-label="un problème"></i>' : ''}</i><span>${esc(mots.get(k))}</span>${compte}</button>`; };
+  $('ba-onglets').innerHTML = GROUPES_ONGLETS.map(([g, t, ks]) => `<div class="rc-onglets-g" role="presentation" data-groupe="${g}">${t ? `<span class="rc-onglets-t" aria-hidden="true">${esc(t)}</span>` : ''}${ks.map(ongletHtml).join('')}</div>`).join('');
   // l'onglet choisi reste en vue quand le rail défile (une moitié basse) ou la bande (la feuille étroite)
   const ong = $('ba-onglets'), x = ong.querySelector('[aria-selected="true"]');
   if (x && ong.scrollWidth > ong.clientWidth) { if (x.offsetLeft < ong.scrollLeft) ong.scrollLeft = x.offsetLeft - 8; else if (x.offsetLeft + x.offsetWidth > ong.scrollLeft + ong.clientWidth) ong.scrollLeft = x.offsetLeft + x.offsetWidth - ong.clientWidth + 24; }

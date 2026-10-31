@@ -530,3 +530,28 @@ b.rc-n{font-weight:500}
 /* v74 : le ↺ d'une case changée par Volta — 22 px dessinés, 26 px au clic (WCAG 2.5.8) */
 .rc-auto{position:relative}
 .rc-auto::before{content:"";position:absolute;inset:-2px;border-radius:50%}
+
+/* ─── (v77, le lecteur : « plus intuitif, plus simple, plus propre, plus carré ») LE RAIL, carré : une icône par onglet
+   (à l'encre troisième, à l'encre quand on la survole ou la choisit ; le point rouge d'un problème posé sur son coin), les
+   mots tous alignés derrière, le compte à droite. Les PROBLÈMES en tête, seuls, au-dessus d'un filet (le rouge et l'ambre
+   en pastilles) ; la RÉFÉRENCE (les normes) tout en bas, après un filet. Les titres de groupe en petites capitales. ─── */
+.rc-onglet{gap:10px}
+.rc-onglets-t{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase}
+.rc-ico{position:relative;flex:none;display:inline-grid;place-items:center;width:18px;height:18px;color:var(--t-3);transition:color var(--rapide)}
+.rc-ico svg.ico{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.rc-onglet:hover .rc-ico,.rc-onglet[aria-selected="true"] .rc-ico{color:var(--t-1)}
+.rc-onglet[data-onglet="problemes"] .rc-ico{color:var(--t-2)}
+.rc-ico .rc-carre{position:absolute;top:-1px;right:-3px;box-shadow:0 0 0 2px var(--s-surface)}
+.rc-onglets-g[data-groupe="controle"]{padding-bottom:8px;border-bottom:1px solid var(--s-line)}
+.rc-onglets-g[data-groupe="reference"]{margin-top:auto;padding-top:8px;border-top:1px solid var(--s-line)}
+.rc-onglets-g[data-groupe="reference"] .rc-onglets-t{display:none}
+.rc-ns{margin-left:auto;display:inline-flex;gap:4px;padding-left:8px}
+.rc-n{display:inline-grid;place-items:center;min-width:20px;height:18px;padding:0 6px;border-radius:9px;font:600 var(--f-11)/1 var(--sans);font-variant-numeric:tabular-nums}
+.rc-n.ko{background:var(--ko);color:#fff}
+.rc-n.att{background:color-mix(in srgb,var(--warn) 24%,transparent);color:var(--t-1)}
+#base.etroit .rc-ico{display:none}
+#base.etroit .rc-onglets-g[data-groupe]{padding:0;border:none;margin-top:0}
+#base.etroit .rc-onglets-g[data-groupe]+.rc-onglets-g{margin-left:6px;padding-left:6px;box-shadow:inset 1px 0 0 var(--s-line)}
+/* (v77) l'icône prend sa place : le rail s'élargit d'autant (« Équipements » et « Problèmes » entiers, avec leurs comptes) */
+.recap{--rc-rail:212px}
+#base.serre{--rc-rail:196px}
