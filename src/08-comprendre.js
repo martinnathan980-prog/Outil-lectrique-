@@ -3,8 +3,8 @@
    ---------------------------------------------------------------------------
    Le lecteur (octobre 2026) : « je ne comprends plus la base ; explique-moi comme à un enfant de quatre ans » — et
    « même le BE doit comprendre comment c'est fait, et pourquoi ». Une page, six images, en français simple :
-     1. le CUISINIER : l'installation est la commande, la base SEE le catalogue, la physique les recettes — Volta cuisine,
-        il n'invente pas une pièce qui manque au catalogue ; et la base « unique » (ce que seul Volta a, l'option) ;
+     1. le CUISINIER : l'installation est la commande, la base SEE le catalogue, la physique les recettes — VOLTA cuisine,
+        il n'invente pas une pièce qui manque au catalogue ; et la base « unique » (ce que seul VOLTA a, l'option) ;
      2. la CHAÎNE D'UN CONNECTEUR : référence → famille → face → taille → câble → contact ;
      3. la CHAÎNE D'UN DISJONCTEUR : consommation → profil → courbe → calibre → câbles → chute ;
      4. les ROUTES : impair à gauche, pair à droite, le branchement en chaîne, la prise de coupure qui change de route ;
@@ -20,7 +20,7 @@
 'use strict';
 
 const CHAPITRES_COMPRENDRE = [
-  ['cuisinier', 'Volta est un cuisinier'], ['connecteur', 'La chaîne d’un connecteur'], ['disjoncteur', 'La chaîne d’un disjoncteur'],
+  ['cuisinier', 'VOLTA est un cuisinier'], ['connecteur', 'La chaîne d’un connecteur'], ['disjoncteur', 'La chaîne d’un disjoncteur'],
   ['routes', 'Les routes : gauche, droite'], ['manque', 'Ce que veut dire « manque »'], ['verifier', 'Comment vérifier']];
 
 /* ---- les dessins : sur papier, l'encre et quatre couleurs (les seules couleurs littérales de l'outil sont celles des
@@ -52,14 +52,14 @@ function cpSchemaCuisinier() { const carte = (y, c, cd, titre, sous, ex) => `<re
     + `<circle cx="42" cy="${y + 39}" r="17" fill="${cd}"/>` + cpT(42, y + 44, titre[0], { cls: 'vr-ico', couleur: c })
     + cpT(70, y + 26, titre[1], { cls: 'vr-titre', ancre: 'start' }) + cpT(70, y + 45, sous, { cls: 'vr-sous', ancre: 'start', couleur: c }) + cpT(70, y + 63, ex, { cls: 'vr-petit', ancre: 'start' });
   const plat = ['les folios dessinés', 'une fiche par objet', 'la nomenclature', 'l’installation corrigée'];
-  return cpSvg('0 0 880 300', 'Volta est un cuisinier : la commande, le catalogue et les recettes entrent ; les folios, les fiches et la nomenclature sortent',
+  return cpSvg('0 0 880 300', 'VOLTA est un cuisinier : la commande, le catalogue et les recettes entrent ; les folios, les fiches et la nomenclature sortent',
     carte(10, CP.violet, CP.violetDoux, ['1', 'La commande'], 'votre fichier d’installation', 'relier 102CB1 à 103RL1, en DR20')
-    + carte(111, CP.sarcelle, CP.sarcelleDoux, ['2', 'Le catalogue'], 'la base SEE gardée', 'sinon les tables de Volta')
+    + carte(111, CP.sarcelle, CP.sarcelleDoux, ['2', 'Le catalogue'], 'la base SEE gardée', 'sinon les tables de VOLTA')
     + carte(212, CP.ambre, CP.ambreDoux, ['3', 'Les recettes'], 'la physique, les normes', 'ce qu’un câble supporte, quand couper')
     + cpFleche(302, 49, 376, 128, CP.violet) + cpFleche(302, 150, 368, 150, CP.sarcelle) + cpFleche(302, 251, 376, 172, CP.ambre)
     + `<circle cx="440" cy="150" r="70" fill="${CP.doux}" stroke="${CP.encre}" stroke-width="1.6"/>`
     + `<path d="M412 126c-10 0-16-8-13-16 3-9 14-11 20-5 3-10 15-13 22-6 7-7 19-4 22 6 6-6 17-4 20 5 3 8-3 16-13 16v12h-58z" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.5" stroke-linejoin="round"/>`
-    + cpT(440, 166, 'Volta', { cls: 'vr-titre' }) + cpT(440, 184, 'le cuisinier', { cls: 'vr-sous' })
+    + cpT(440, 166, 'VOLTA', { cls: 'vr-titre' }) + cpT(440, 184, 'le cuisinier', { cls: 'vr-sous' })
     + cpFleche(514, 150, 582, 150, CP.encre)
     + `<rect x="586" y="44" width="286" height="212" rx="14" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.3"/>` + cpT(606, 76, 'Le plat', { cls: 'vr-titre', ancre: 'start' })
     + plat.map((p, i) => `<circle cx="612" cy="${104 + i * 26}" r="3.5" fill="${CP.vert}"/>` + cpT(626, 109 + i * 26, p, { cls: 'vr-ligne', ancre: 'start' })).join('')
@@ -93,7 +93,7 @@ function cpSchemaDisjoncteur() { const xs = [
   return cpSvg('0 0 880 384', 'La chaîne d’un disjoncteur : consommation, profil, courbe, calibre, câbles, chute ; et, en schéma, la courbe du 10 A et du 15 A face au profil de 102CB1',
     cpChaine(xs, 14, 126, 128, 24) + axes + `<path d="${courbe(10)}" fill="none" stroke="${CP.ambre}" stroke-width="2.4" stroke-dasharray="6 4"/><path d="${courbe(15)}" fill="none" stroke="${CP.vert}" stroke-width="2.4"/>` + profil
     + leg(214, CP.violet, true, 'le profil de 102CB1') + leg(244, CP.ambre, true, '10 A : il frôle le profil (juste)') + leg(274, CP.vert, false, '15 A : le profil passe, avec la marge')
-    + cpT(586, 310, ['Un point à gauche d’une courbe ne déclenche pas.', 'Volta prend le plus petit calibre dont la courbe', 'reste à droite, avec la marge.', '(schéma : la forme des courbes à 125 °C)'], { cls: 'vr-petit', ancre: 'start', pas: 15 })); }
+    + cpT(586, 310, ['Un point à gauche d’une courbe ne déclenche pas.', 'VOLTA prend le plus petit calibre dont la courbe', 'reste à droite, avec la marge.', '(schéma : la forme des courbes à 125 °C)'], { cls: 'vr-petit', ancre: 'start', pas: 15 })); }
 /* 4. LES ROUTES : l'appareil vu de dessus, ses deux côtés ; un connecteur qui mélange ; une prise qui change de route. */
 function cpSchemaRoutes() { const cable = (x1, y1, x2, y2, c, t, ty) => `<path d="M${x1} ${y1}H${x2}" stroke="${c}" stroke-width="3" fill="none"/>` + (t ? cpT((x1 + x2) / 2, ty || y1 - 7, t, { cls: 'vr-petit mono', couleur: c }) : '');
   const helico = `<g><ellipse cx="150" cy="150" rx="60" ry="92" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.5"/><path d="M90 150a60 92 0 0 0 60 92V58a60 92 0 0 0-60 92z" fill="${CP.violetDoux}"/>`
@@ -117,7 +117,7 @@ function cpSchemaManque() { const xs = [['Connecteur', 'EN 3646', ['sa famille,'
     + cpT(x + 42, 203, t, { cls: 'vr-sous', ancre: 'start', couleur: c }) + cpT(x + 16, 226, s, { cls: 'vr-petit', ancre: 'start' }) + '</g>';
   return cpSvg('0 0 880 252', 'Ce que veut dire « manque » : une chaîne qui s’arrête, et les quatre mots de l’outil — vérifié, à confirmer, hypothèse, manque',
     cpChaine(xs, 8, 196, 124, 26) + mot(8, CP.vert, CP.vertDoux, 'vérifié', 'deux sources ou plus le disent', 'plein') + mot(228, CP.ambre, CP.ambreDoux, 'à confirmer', 'une seule source, ou non publique', 'anneau')
-    + mot(448, CP.violet, CP.violetDoux, 'hypothèse', 'Volta suppose, et le dit (5 m)', 'hyp') + mot(668, CP.rouge, CP.rougeDoux, 'manque', 'rien n’est inventé', 'manque')); }
+    + mot(448, CP.violet, CP.violetDoux, 'hypothèse', 'VOLTA suppose, et le dit (5 m)', 'hyp') + mot(668, CP.rouge, CP.rougeDoux, 'manque', 'rien n’est inventé', 'manque')); }
 /* 6. VÉRIFIER : la fiche d'un connecteur, « D'où vient chaque pièce » déplié, et la bulle d'un point. */
 function cpSchemaVerifier() { const ligne = (y, k, v, d, forme) => `<g>${cpT(46, y, k, { cls: 'vr-petit', ancre: 'start' })}${cpT(136, y, v, { cls: 'vr-val mono', ancre: 'start' })}`
     + (forme === 'plein' ? `<circle cx="292" cy="${y - 4}" r="4.5" fill="${CP.vert}"/>` : forme === 'moitie' ? `<circle cx="292" cy="${y - 4}" r="4.5" fill="none" stroke="${CP.encre2}" stroke-width="1.4"/><path d="M292 ${y - 8.5}a4.5 4.5 0 0 0 0 9z" fill="${CP.encre2}"/>` : `<circle cx="292" cy="${y - 4}" r="4" fill="none" stroke="${CP.ambre}" stroke-width="2"/>`)
@@ -137,29 +137,29 @@ const cpChapitre = (id, n, titre, une, schema, points, be) => `<section class="v
   + `<figure class="vr-schema">${schema}</figure><ul class="vr-points">${points.map(p => `<li>${p}</li>`).join('')}</ul>`
   + `<details class="vr-be"><summary>Pour le bureau d’études : la règle exacte</summary><div class="vr-be-corps">${be}</div></details></section>`;
 const cpLien = (geste, mot, bulle) => `<button type="button" class="btn lien dense vr-aller" data-vr-aller="${geste}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}>${esc(mot)}</button>`;
-// ce que la base SEE gardée sur ce PC change à la page : le compte de ce que seul Volta a, l'option — rien sans base
+// ce que la base SEE gardée sur ce PC change à la page : le compte de ce que seul VOLTA a, l'option — rien sans base
 function cpBase() { const I = typeof BASE_SEE !== 'undefined' && BASE_SEE.base; if (!I || typeof seulVoltaSEE !== 'function') return '';
   let L = []; try { L = seulVoltaSEE(I); } catch (_) { L = []; } const perdues = L.filter(x => !x.couverte).length, seule = typeof seuleBaseSEE === 'function' && seuleBaseSEE();
-  return `<p class="vr-encart"><b>Sur ce PC</b>, votre base SEE est gardée : elle est le catalogue. ${L.length ? `${plurielLie(L.length, 'ligne')} de contact ne ${L.length > 1 ? 'sont' : 'est'} que chez Volta${perdues ? `, dont ${perdues} sans équivalent dans la base` : ''}. ` : 'Tout ce que Volta tenait de vos photos est dans la base. '}`
-    + `${seule ? 'Vous avez choisi de ne prendre les pièces que dans la base.' : 'Volta les garde en secours tant que vous ne cochez pas « Ne prendre les pièces que dans la base SEE gardée ».'} ${cpLien('seul-volta', 'Voir ces lignes', 'La base SEE, onglet Cohérence : chaque ligne que seul Volta a, et pourquoi')}</p>`; }
+  return `<p class="vr-encart"><b>Sur ce PC</b>, votre base SEE est gardée : elle est le catalogue. ${L.length ? `${plurielLie(L.length, 'ligne')} de contact ne ${L.length > 1 ? 'sont' : 'est'} que chez VOLTA${perdues ? `, dont ${perdues} sans équivalent dans la base` : ''}. ` : 'Tout ce que VOLTA tenait de vos photos est dans la base. '}`
+    + `${seule ? 'Vous avez choisi de ne prendre les pièces que dans la base.' : 'VOLTA les garde en secours tant que vous ne cochez pas « Ne prendre les pièces que dans la base SEE gardée ».'} ${cpLien('seul-volta', 'Voir ces lignes', 'La base SEE, onglet Cohérence : chaque ligne que seul VOLTA a, et pourquoi')}</p>`; }
 function comprendreHtml() {
   const sommaire = `<nav class="vr-sommaire" aria-label="Les chapitres"><ol>${CHAPITRES_COMPRENDRE.map(([id, t], i) => `<li><button type="button" data-vr-ch="${id}"${i ? '' : ' data-clavier'}><span>${i + 1}</span>${esc(t)}</button></li>`).join('')}</ol></nav>`;
   const ch = [
-    cpChapitre('cuisinier', 1, 'Volta est un cuisinier', 'Votre installation est <b>la commande</b>, la base SEE est <b>le catalogue</b>, la physique est <b>les recettes</b>. Volta lit la commande, prend les pièces dans le catalogue, suit les recettes — et sert le plat. Il n’invente jamais une pièce : si elle n’est pas au catalogue, il écrit « manque ».', cpSchemaCuisinier(),
-      ['<b>La commande</b> dit ce qu’on veut : relier telle borne à telle autre, avec tel câble, sur tel folio. Volta ne la change jamais sans vous : ce qu’il propose s’écrit seulement d’un geste.',
-        '<b>Le catalogue</b> dit ce qui existe : les contacts à sertir, les câbles, les faces des connecteurs. Si votre base SEE est gardée sur ce PC, c’est elle ; sinon, les tables de Volta (vos photos des tables de SEE, recoupées sur des sources publiques).',
+    cpChapitre('cuisinier', 1, 'VOLTA est un cuisinier', 'Votre installation est <b>la commande</b>, la base SEE est <b>le catalogue</b>, la physique est <b>les recettes</b>. VOLTA lit la commande, prend les pièces dans le catalogue, suit les recettes — et sert le plat. Il n’invente jamais une pièce : si elle n’est pas au catalogue, il écrit « manque ».', cpSchemaCuisinier(),
+      ['<b>La commande</b> dit ce qu’on veut : relier telle borne à telle autre, avec tel câble, sur tel folio. VOLTA ne la change jamais sans vous : ce qu’il propose s’écrit seulement d’un geste.',
+        '<b>Le catalogue</b> dit ce qui existe : les contacts à sertir, les câbles, les faces des connecteurs. Si votre base SEE est gardée sur ce PC, c’est elle ; sinon, les tables de VOLTA (vos photos des tables de SEE, recoupées sur des sources publiques).',
         '<b>Les recettes</b> disent ce qui tient : ce qu’un câble supporte, quand un disjoncteur coupe, la chute de tension admise (2 V, votre règle). Elles ne viennent jamais du catalogue : la base SEE n’a ni courbes ni intensités.',
-        '<b>Un seul catalogue ?</b> Quand la base SEE est là, elle passe devant. Quelques lignes ne sont que chez Volta : la Cohérence les liste, une par une, avec leur raison. Vous décidez : une case, « Ne prendre les pièces que dans la base SEE gardée », est prête, décochée.'],
-      `<p>L’ordre des tables, du plus fort au plus faible : <b>ce que vous corrigez à la main</b> sur la page Normes, puis <b>la base SEE gardée</b>, puis <b>les tables de Volta</b> (l’embarquée et vos imports). Une exception, votre règle du 20 octobre 2026 : quand la base contredit une ligne que deux sources indépendantes ont vérifiée, la source gagne, et la valeur de la base est montrée barrée, « à corriger dans SEE ». Un chiffre de la base impossible pour sa gauge (une masse sous celle du cuivre seul) ne passe jamais. Ce que la base laisse vide, Volta le garde.</p>`
-      + `<p>« Seulement dans Volta » : une ligne de contact (famille, sexe, taille, type et gauge du câble) que la base n’a pas. Deux raisons : la base ne l’a plus (sa règle a changé de version), ou Volta l’a ajoutée de ses sources (une taille que vos photos n’avaient pas). Avec la case cochée, ces lignes ne servent plus pour les familles que la base connaît ; une famille que la base ignore garde celles de Volta.</p>`
+        '<b>Un seul catalogue ?</b> Quand la base SEE est là, elle passe devant. Quelques lignes ne sont que chez VOLTA : la Cohérence les liste, une par une, avec leur raison. Vous décidez : une case, « Ne prendre les pièces que dans la base SEE gardée », est prête, décochée.'],
+      `<p>L’ordre des tables, du plus fort au plus faible : <b>ce que vous corrigez à la main</b> sur la page Normes, puis <b>la base SEE gardée</b>, puis <b>les tables de VOLTA</b> (l’embarquée et vos imports). Une exception, votre règle du 20 octobre 2026 : quand la base contredit une ligne que deux sources indépendantes ont vérifiée, la source gagne, et la valeur de la base est montrée barrée, « à corriger dans SEE ». Un chiffre de la base impossible pour sa gauge (une masse sous celle du cuivre seul) ne passe jamais. Ce que la base laisse vide, VOLTA le garde.</p>`
+      + `<p>« Seulement dans VOLTA » : une ligne de contact (famille, sexe, taille, type et gauge du câble) que la base n’a pas. Deux raisons : la base ne l’a plus (sa règle a changé de version), ou VOLTA l’a ajoutée de ses sources (une taille que vos photos n’avaient pas). Avec la case cochée, ces lignes ne servent plus pour les familles que la base connaît ; une famille que la base ignore garde celles de VOLTA.</p>`
       + cpBase()),
-    cpChapitre('connecteur', 2, 'La chaîne d’un connecteur', 'Pour savoir quel contact sertir au bout d’un câble, Volta suit une chaîne, maillon par maillon : <b>la référence</b> donne <b>la famille</b>, la famille donne <b>la face</b>, la face donne <b>la taille de la cavité</b>, et la taille, avec <b>la gauge du câble</b>, donne <b>le contact</b>.', cpSchemaConnecteur(),
+    cpChapitre('connecteur', 2, 'La chaîne d’un connecteur', 'Pour savoir quel contact sertir au bout d’un câble, VOLTA suit une chaîne, maillon par maillon : <b>la référence</b> donne <b>la famille</b>, la famille donne <b>la face</b>, la face donne <b>la taille de la cavité</b>, et la taille, avec <b>la gauge du câble</b>, donne <b>le contact</b>.', cpSchemaConnecteur(),
       ['L’exemple est 340AB1 dans l’installation livrée : EN2997Y1A08P est un EN 2997 ; sa face 16-24 loge ses câbles ; la borne 1 est une cavité de taille 20 ; le câble DR24 fait 24 AWG ; la douille qui va avec est EN3155-019F2020.',
         'Chaque maillon vient de <b>sa</b> table, et d’elle seule. Un contact ne se devine pas : il se lit dans la table des contacts, à la taille, au sexe et à la gauge.',
         'Si un maillon manque — une famille inconnue, aucune face qui loge les câbles —, la chaîne s’arrête là, et la fiche le dit : c’est pourquoi un contact reste vide.'],
       `<p><b>Famille</b> : la famille la plus longue dont le nom commence la référence (table des connecteurs ; la base SEE gardée en plus). <b>Face</b> : celle que la référence nomme, sinon la plus petite de la famille qui a toutes les bornes et dont chaque cavité admet la gauge de son câble ; « Changer » sur la fiche en prend une autre. <b>Cavité</b> : la borne numérotée va sur son numéro, une borne lettrée sur sa lettre (ou la lettre de même rang). <b>Contact</b> : la ligne la plus précise gagne — le type de câble exact avant « tout câble », la gauge exacte avant « toute gauge » ; le sexe est celui du contact qu’on sertit (des douilles face à une embase d’équipement ; « Changer » l’inverse). Autour du connecteur, le toron (√ de la somme des Ø², × le facteur TE), le raccord (votre table CHOIX), le manchon et le collier suivent la même règle : une table, une ligne, sinon « manque ».</p>`),
-    cpChapitre('disjoncteur', 3, 'La chaîne d’un disjoncteur', 'Un disjoncteur doit <b>laisser passer</b> ce que les équipements consomment, et <b>couper avant</b> que les câbles chauffent trop. Volta part de la <b>consommation</b>, en fait un <b>profil</b>, le pose sur la <b>courbe</b> de la famille, choisit le <b>calibre</b>, vérifie les <b>câbles</b>, puis la <b>chute</b> de tension.', cpSchemaDisjoncteur(),
-      ['L’exemple est 102CB1 : il démarre à 9,31 A pendant 2 minutes, puis tire 5 A. Le 10 A frôle sa courbe : il passe, mais sans la marge (« juste »). Le 15 A passe avec la marge : Volta l’écrit, et grossit ses trois câbles en DR12 pour que le 15 A les protège.',
+    cpChapitre('disjoncteur', 3, 'La chaîne d’un disjoncteur', 'Un disjoncteur doit <b>laisser passer</b> ce que les équipements consomment, et <b>couper avant</b> que les câbles chauffent trop. VOLTA part de la <b>consommation</b>, en fait un <b>profil</b>, le pose sur la <b>courbe</b> de la famille, choisit le <b>calibre</b>, vérifie les <b>câbles</b>, puis la <b>chute</b> de tension.', cpSchemaDisjoncteur(),
+      ['L’exemple est 102CB1 : il démarre à 9,31 A pendant 2 minutes, puis tire 5 A. Le 10 A frôle sa courbe : il passe, mais sans la marge (« juste »). Le 15 A passe avec la marge : VOLTA l’écrit, et grossit ses trois câbles en DR12 pour que le 15 A les protège.',
         'La courbe dit combien de temps le disjoncteur met à couper, selon le courant. Un point du profil à gauche de la courbe ne déclenche pas.',
         'Un câble doit tenir le courant, et être protégé par le calibre : si le calibre monte, le câble grossit — jamais l’inverse.',
         'La chute se compte du disjoncteur jusqu’au bout du câble, contacts et disjoncteur compris : 2 V au plus, pointes comprises (votre règle).'],
@@ -169,20 +169,20 @@ function comprendreHtml() {
         'Gauche et droite mêlées sur un même connecteur, un même module de barrette ou un même côté de prise : « branchement en chaîne », un point <b>à voir</b> (pas un problème : c’est parfois sans choix).',
         'Une <b>prise de coupure change de route</b> : sa fiche et son embase peuvent porter deux routes différentes. Chaque côté se juge à part.'],
       `<p>Le côté se lit dans le premier nombre de la route (« 1MO » → 1, impair → gauche) ; une route sans nombre n’a pas de côté et ne se juge pas. Le contrôle regroupe les câbles par lieu — un connecteur (ou une cavité lettrée d’un connecteur EN 4165), un module de barrette, le côté fiche ou le côté embase d’une prise — et relève, en ambre, chaque lieu qui mêle les deux côtés, avec les routes de chacun. Les disjoncteurs et les borniers ne sont pas jugés. La légende du folio écrit G ou D à côté de chaque route.</p>`),
-    cpChapitre('manque', 5, 'Ce que veut dire « manque »', '« Manque », c’est Volta qui dit : <b>je ne sais pas, et je ne l’invente pas</b>. Une table n’a pas la ligne qu’il faut ; la case reste vide, et la fiche dit laquelle, et pourquoi.', cpSchemaManque(),
+    cpChapitre('manque', 5, 'Ce que veut dire « manque »', '« Manque », c’est VOLTA qui dit : <b>je ne sais pas, et je ne l’invente pas</b>. Une table n’a pas la ligne qu’il faut ; la case reste vide, et la fiche dit laquelle, et pourquoi.', cpSchemaManque(),
       ['<b>Vérifié</b> : deux sources indépendantes (la norme, des catalogues) disent la même chose.',
         '<b>À confirmer</b> : une seule source, ou une norme qui n’est pas publique (Airbus, Airbus Helicopters). La valeur sert, et la bulle dit pourquoi elle reste à confirmer.',
-        '<b>Hypothèse</b> : ce que votre fichier ne dit pas, Volta le suppose et l’écrit « hypothèse » (une longueur de 5 m, une ambiante de 95 °C) ; ⋮ › Plus › Hypothèses le change.',
+        '<b>Hypothèse</b> : ce que votre fichier ne dit pas, VOLTA le suppose et l’écrit « hypothèse » (une longueur de 5 m, une ambiante de 95 °C) ; ⋮ › Plus › Hypothèses le change.',
         '<b>Manque</b> : aucune ligne. Pour le combler : la base SEE gardée la donne peut-être ; sinon déposez la ligne (⋮ › Vos fichiers › Normes) ou écrivez-la sur la page Normes.'],
       `<p>Un « manque » n’est jamais muet : il nomme la table et la clé cherchée (« aucune ligne de la table des raccords pour l’EN 3646, classe K, taille 12 »). Ce qui en dépend s’arrête aussi (pas de raccord, pas de code d’entrée, donc pas de manchon). La liste de ce qui manque encore à l’outil, et la forme sous laquelle le donner, est dans CE-QUI-MANQUE.md ; chaque donnée reçue fait disparaître un « à confirmer » ou un « manque ».</p>`),
-    cpChapitre('verifier', 6, 'Comment vérifier', 'Tout ce que Volta montre se remonte jusqu’à sa table. Sur la fiche d’un connecteur, dépliez <b>« D’où vient chaque pièce »</b> : chaque maillon y dit sa table et sa source. À côté de chaque valeur, un <b>point</b> dit d’où elle vient — survolez-le.', cpSchemaVerifier(),
+    cpChapitre('verifier', 6, 'Comment vérifier', 'Tout ce que VOLTA montre se remonte jusqu’à sa table. Sur la fiche d’un connecteur, dépliez <b>« D’où vient chaque pièce »</b> : chaque maillon y dit sa table et sa source. À côté de chaque valeur, un <b>point</b> dit d’où elle vient — survolez-le.', cpSchemaVerifier(),
       ['Le point <b>plein vert</b> : vérifié par deux sources (la bulle les nomme). <b>À moitié</b> : vos tables. <b>Un anneau ambre</b> : à confirmer, et pourquoi.',
-        'Le <b>« ? »</b> à côté d’une valeur choisie dit comment Volta l’a choisie, en une phrase, ses chiffres, ses étapes et ses sources.',
+        'Le <b>« ? »</b> à côté d’une valeur choisie dit comment VOLTA l’a choisie, en une phrase, ses chiffres, ses étapes et ses sources.',
         'La <b>Bible</b> montre chaque module et chaque arrangement en grand, avec son origine. Les <b>Normes</b> montrent chaque table : d’où elle vient, qui la lit, comment une ligne se choisit.',
-        'La <b>base SEE</b>, onglet Cohérence : la base vérifiée ligne par ligne, et ce que seul Volta a.'],
-      `<p>Les sources de chaque ligne sont dans les colonnes Source et Statut des tables (normes/*.csv, lisibles sur la page Normes) : « vérifié (deux sources : … ) », « à confirmer (une source : …) », « à confirmer (non public : …) » ; vide, c’est votre donnée. Le dossier PDF porte une page « Hypothèses et sources » ; l’installation corrigée, une feuille « Volta » (cachée) avec les hypothèses et les choix faits à la main. ${cpLien('normes', 'Ouvrir les Normes')} ${cpLien('bible', 'Ouvrir la Bible')}</p>`)];
-  return `<div class="vr">${nmTitre('Pour tous, du novice au bureau d’études', 'Comment Volta réfléchit')}`
-    + `<div class="vr-page">${sommaire}<div class="vr-texte"><p class="vr-chapeau">Volta ne devine rien. Il lit votre fichier, prend les pièces dans un catalogue, applique des règles de physique, et vous montre d’où vient chaque chose. Six images pour tout comprendre.</p>${ch.join('')}</div></div></div>`; }
+        'La <b>base SEE</b>, onglet Cohérence : la base vérifiée ligne par ligne, et ce que seul VOLTA a.'],
+      `<p>Les sources de chaque ligne sont dans les colonnes Source et Statut des tables (normes/*.csv, lisibles sur la page Normes) : « vérifié (deux sources : … ) », « à confirmer (une source : …) », « à confirmer (non public : …) » ; vide, c’est votre donnée. Le dossier PDF porte une page « Hypothèses et sources » ; l’installation corrigée, une feuille « VOLTA » (cachée) avec les hypothèses et les choix faits à la main. ${cpLien('normes', 'Ouvrir les Normes')} ${cpLien('bible', 'Ouvrir la Bible')}</p>`)];
+  return `<div class="vr">${nmTitre('Pour tous, du novice au bureau d’études', 'Comment VOLTA réfléchit')}`
+    + `<div class="vr-page">${sommaire}<div class="vr-texte"><p class="vr-chapeau">VOLTA ne devine rien. Il lit votre fichier, prend les pièces dans un catalogue, applique des règles de physique, et vous montre d’où vient chaque chose. Six images pour tout comprendre.</p>${ch.join('')}</div></div></div>`; }
 /* Ouvrir la page (sur un chapitre). Elle prend la page entière : on la lit comme un livre, le plan attend derrière. */
 function ficheComprendre(chapitre) { const deja = !!(app.fiche && app.fiche.mode === 'comprendre');
   ouvrirFiche({ mode: 'comprendre', largeur: 'page' }, comprendreHtml(), '');
@@ -210,14 +210,14 @@ function lierComprendre() { const c = $('fiche-corps'); if (!c) return;
 /* ---- la page se trouve : le menu (⋮ › Plus, la ligne est dans page.html) et chaque « ? » ------------------------------ */
 // le menu lit ses gestes dans MENU.actions (08-interface, `lierMenu`) : celui-ci y est posé d'avance (MENU est un `var`)
 MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.comprendre = () => ficheComprendre();
-/* LE « ? » (08-sections) : dans la bulle qui dit comment Volta a choisi CETTE valeur, un lien vers le chapitre qui dit
+/* LE « ? » (08-sections) : dans la bulle qui dit comment VOLTA a choisi CETTE valeur, un lien vers le chapitre qui dit
    comment il réfléchit en général — sans toucher à la bulle elle-même : on la regarde se remplir, et on ajoute le lien.
    Il se met dans la ligne du titre, à droite : la bulle garde sa hauteur, donc sa place (sous le « ? » ; plus haute,
    elle se retournait au-dessus et couvrait le cadran du calibre). */
 (function lierLesQ() { if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
   const poser = el => { if (!el || el.hidden || el.querySelector('.q-comprendre')) return; const b = typeof AIDE !== 'undefined' && AIDE.bouton, cle = b && b.dataset.q, ch = typeof chapitreDeLExplication === 'function' ? chapitreDeLExplication(cle) : 'cuisinier';   // 08-explications
     const t = (CHAPITRES_COMPRENDRE.find(([k]) => k === ch) || ['', ''])[1], tete = el.querySelector('.q-tete');
-    const lien = `<button type="button" class="btn lien dense q-comprendre" data-comprendre="${ch}" data-bulle="${escA('Comment Volta réfléchit — ' + t)}">Comprendre<span aria-hidden="true"> →</span></button>`;
+    const lien = `<button type="button" class="btn lien dense q-comprendre" data-comprendre="${ch}" data-bulle="${escA('Comment VOLTA réfléchit — ' + t)}">Comprendre<span aria-hidden="true"> →</span></button>`;
     if (tete) tete.insertAdjacentHTML('beforeend', lien); else el.insertAdjacentHTML('beforeend', `<p class="q-comprendre-l">${lien}</p>`);
     if (typeof placerAide === 'function') placerAide(); };
   let vu = null; const regarder = el => { if (vu === el) return; vu = el; new MutationObserver(() => poser(el)).observe(el, { childList: true }); poser(el); };

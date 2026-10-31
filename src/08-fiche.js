@@ -89,7 +89,7 @@ function cleFil(l) { const i = rangDe(l); if (i >= 0) return String(i); const p 
 const filDeCle = k => !k || k === '-1' ? null : k[0] === 'p' ? ((app.dessin && app.dessin.fils) || []).find(w => w.i === +k.slice(1)) || null : filDe(verite()[+k]);
 const liaisonDeCle = k => !k ? null : k[0] === 'p' ? liaisonsDuPlan()[+k.slice(1)] || null : verite()[+k] || null;
 // le numéro d'un câble ; celui que l'outil ajoute (le raccord d'une barrette à poser) n'en a pas encore : « à créer »
-// (v78) jamais le numéro : le type (« à créer » pour un câble que Volta ajoute)
+// (v78) jamais le numéro : le type (« à créer » pour un câble que VOLTA ajoute)
 const nomDuFil = f => (f.l && f.l.origine === null ? 'à créer' : '') || f.type || (f.l && f.l.type) || 'sans type';
 // le nom d'un câble dans une phrase (v77) : son numéro, sinon son type et l'autre bout — « DR12 vers 101BT1:1 »
 const nomCourtDuCable = r => (r.type || 'câble') + (r.bout && r.bout.rep ? ' vers ' + r.bout.rep + (r.bout.borne ? ':' + r.bout.borne : '') : '');
@@ -162,11 +162,11 @@ const legendeConfiance = () => `<p class="fi-conf-legende"><span><i class="fi-co
 
 /* ---- CE QU'UN PROBLÈME NE DIT PAS DE LUI-MÊME ------------------------------------------------------------------------
    « contact taille 23 supposé (3 A) » (le lecteur : pourquoi ?) : le plan ne dit pas quel contact est serti au
-   bout de ce câble — un interrupteur, un relais à cosses —, Volta prend alors le plus petit contact qui admet sa gauge,
+   bout de ce câble — un interrupteur, un relais à cosses —, VOLTA prend alors le plus petit contact qui admet sa gauge,
    par prudence (09 bis, `protegerFil` : la règle reste). La fiche le dit sous la ligne du problème. */
 function gloseDuProbleme(t) { const m = /^([A-Z]+\s*-?(\d{1,2}))(?: vers \S+)?[^:]*:.*?contact taille (\S+) (?:supposé \(([\d,]+\s?A)\)|\(([\d,]+\s?A), par la gauge\))/.exec(t);
-  if (m) return `Le plan ne dit pas quel contact est serti au bout de ce ${m[1]} : Volta prend le plus petit qui admet un ${m[2]} AWG — la taille ${m[3]}, ${m[4] || m[5]} —, par prudence.`;
-  if (/ supposé \(|par la gauge\)/.test(t)) return 'Le plan ne dit pas quel contact est serti : Volta prend le plus petit qui admet la gauge du câble, par prudence.';
+  if (m) return `Le plan ne dit pas quel contact est serti au bout de ce ${m[1]} : VOLTA prend le plus petit qui admet un ${m[2]} AWG — la taille ${m[3]}, ${m[4] || m[5]} —, par prudence.`;
+  if (/ supposé \(|par la gauge\)/.test(t)) return 'Le plan ne dit pas quel contact est serti : VOLTA prend le plus petit qui admet la gauge du câble, par prudence.';
   return ''; }
 // la phrase d'un problème telle que la fiche l'écrit : « supposé » (le contrôle l'écrit ainsi ; l'ancienne forme « par la gauge »
 // d'un plan enregistré se lit encore), la glose dit pourquoi
@@ -327,7 +327,7 @@ function barreProblemes(probs, sections, o) { o = o || {}; if (!probs.length) re
 /* ---- PAR RAPPORT AU RETEST (l'idée n°1 de l'audit des fiches : « c'est ce que l'ingénieur doit reporter ; aujourd'hui
    éparpillé dans les problèmes, les bulles et "l’installation dit" ») : sous les problèmes, une ligne repliée — « Par rapport
    au retest · 3 changements » — qui se déplie en une ligne par changement : ce qui a été écrit ici (le champ de la
-   liaison, `l.avant` gardant ce que portait le fichier) et ce que Volta retient d'autre que le retest (un calibre, un
+   liaison, `l.avant` gardant ce que portait le fichier) et ce que VOLTA retient d'autre que le retest (un calibre, un
    module). « ↺ » rend au retest ce qui a été écrit ici (une entrée d'historique). */
 const MOTS_CHAMPS = { cable: 'numéro', type: 'type', longueur: 'longueur', route: 'route', pnDe: 'référence', pnVers: 'référence', contactDe: 'contact', contactVers: 'contact', plan: 'folio', de: 'de', vers: 'vers', borneDe: 'borne', borneVers: 'borne' };
 const motValeur = (c, v) => v == null || v === '' ? 'rien' : c === 'longueur' ? nombre(arrondi(+v, 3)) + ' m' : String(v);
@@ -346,11 +346,11 @@ function changementsEcrits(liaisons) { const m = new Map();
     const objet = objetDuChamp(l, c), k = objet + '|' + MOTS_CHAMPS[c] + '|' + avant + '|' + apres;
     if (!m.has(k)) m.set(k, { sujet: /^(pn|contact)/.test(c) ? '' : cableDit(l), objet, colonnes: new Set(), champ: MOTS_CHAMPS[c] || c, avant: motValeur(c, avant), apres: motValeur(c, apres), rendre: [] });
     const x = m.get(k), col = colonneRetest(c); if (col) x.colonnes.add(col); x.rendre.push([l, c]);
-    // écrit par Volta (la règle du calibre, les câbles grossis : `avecOrigineVolta`, 08-export) : le résumé le compte
+    // écrit par VOLTA (la règle du calibre, les câbles grossis : `avecOrigineVolta`, 08-export) : le résumé le compte
     if (l.avant['volta:' + c] !== undefined && l.avant['volta:' + c] === l[c]) x.parVolta = true; }); });
   return [...m.values()].map(x => ({ ...x, colonne: [...x.colonnes].sort().join(' · ') })); }
 /* « Par rapport au retest · 1 modification » : une ligne par modification — sa colonne et son objet (« PN1 (102CB1) »),
-   ce qu'il portait barré, ce qu'il porte ; « ↺ » le rend. Ce que Volta propose d'autre, marqué « Volta ». */
+   ce qu'il portait barré, ce qu'il porte ; « ↺ » le rend. Ce que VOLTA propose d'autre, marqué « VOLTA ». */
 /* v78 — les modifications, pour les deux niveaux (08-niveaux) : la carte en dit le compte d'une ligne, le grand les liste
    dans leur onglet. Rend { n, mots, html } — ou null quand rien n'a changé. */
 function modificationsDeLaFiche(ecrits, proposes) { const x = blocRetest(ecrits, proposes, true); if (!x) { FI.ecarts = []; return null; }
@@ -361,14 +361,14 @@ function blocRetest(ecrits, proposes, enParts) { const n = ecrits.length + propo
   const quoi = x => `${esc(majuscule(x.champ))}${x.objet || x.sujet ? ` <span class="fi-ec-de">de</span> <b class="id">${esc(x.objet || x.sujet)}</b>` : ''}`;
   const ligne = (x, i) => `<li class="fi-ec-l${x.volta ? ' volta' : ''}"><span class="fi-ec-q" data-bulle="${escA((x.colonne ? 'Colonne ' + x.colonne + ' de l’installation' : majuscule(x.champ) + ', hors des colonnes de l’installation') + (x.objet ? ' — ' + x.objet : '') + ' : ' + x.avant + ' → ' + x.apres)}">${quoi(x)}</span>`
     + `<span class="fi-ec-v"><s class="id">${esc(x.avant)}</s>${ico('fleche')}<b class="id">${esc(x.apres)}</b></span>`
-    + (x.volta ? `<span class="fi-ec-o">${x.geste || 'Volta'}</span>` : `<button type="button" class="fi-ec-o fi-lien" data-rendre-retest="${i}" aria-label="${escA('Rendre ce que portait l’installation : ' + x.avant)}" data-bulle="${escA('Rendre ce que portait l’installation (' + x.avant + ')' + (x.rendre.length > 1 ? ' sur ses ' + x.rendre.length + ' liaisons' : '') + ' — Ctrl+Z le défait')}">${ico('retour')}<span>Annuler</span></button>`) + '</li>';
+    + (x.volta ? `<span class="fi-ec-o">${x.geste || 'VOLTA'}</span>` : `<button type="button" class="fi-ec-o fi-lien" data-rendre-retest="${i}" aria-label="${escA('Rendre ce que portait l’installation : ' + x.avant)}" data-bulle="${escA('Rendre ce que portait l’installation (' + x.avant + ')' + (x.rendre.length > 1 ? ' sur ses ' + x.rendre.length + ' liaisons' : '') + ' — Ctrl+Z le défait')}">${ico('retour')}<span>Annuler</span></button>`) + '</li>';
   /* « MODIFICATIONS » (v77, le lecteur : « installation, ça ne va pas ; trois modifications, mais par rapport à quoi ? on perd
      l'utilisateur ») : le mot dit ce que c'est, la ligne dit par rapport à quoi — votre fichier —, et dépliée, à quoi ça
      sert : ces changements partent dans l'installation corrigée. */
   const parVolta = ecrits.filter(x => x.parVolta).length + proposes.length;
-  const mots = pluriel(n, 'changement') + ' par rapport à votre fichier' + (!parVolta ? '' : parVolta === n ? (n > 1 ? ', tous écrits par Volta' : ', écrit par Volta') : ` (dont ${parVolta} par Volta)`);
+  const mots = pluriel(n, 'changement') + ' par rapport à votre fichier' + (!parVolta ? '' : parVolta === n ? (n > 1 ? ', tous écrits par VOLTA' : ', écrit par VOLTA') : ` (dont ${parVolta} par VOLTA)`);
   FI.ecarts = ecrits;
-  const corps = `<p class="fi-ec-note">Ce qui a changé depuis votre fichier, par Volta ou par vous — chaque ligne : avant, après. Ces changements partent dans l’installation corrigée ; « Annuler » rend la valeur de votre fichier.</p><ul class="fi-ec-liste">${proposes.map(x => ligne({ ...x, volta: true })).join('')}${ecrits.map(ligne).join('')}</ul>`;
+  const corps = `<p class="fi-ec-note">Ce qui a changé depuis votre fichier, par VOLTA ou par vous — chaque ligne : avant, après. Ces changements partent dans l’installation corrigée ; « Annuler » rend la valeur de votre fichier.</p><ul class="fi-ec-liste">${proposes.map(x => ligne({ ...x, volta: true })).join('')}${ecrits.map(ligne).join('')}</ul>`;
   if (enParts) return { n, mots, corps };
   return `<details class="fi-ecarts" id="fi-ecarts"><summary class="fi-ec"><span class="fi-pb-k">Modifications</span><span class="fi-ec-mots" data-bulle="${escA(mots)}">${esc(mots)}</span>${ico('bas', 'fi-chevron')}</summary>${corps}</details>`; }
 
@@ -495,15 +495,15 @@ function protectionDuCable(l, x) { const out = { probs: [], cause: null, calEcri
     if (k === 'declenche' || k === 'juste') { out.calEcrit = d.pn;
       const xs = typeof filsDuMeilleur === 'function' && d.calibre === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [], ce = xs.find(p => p.f.l === l);
       out.cause = { cb, d, k, xs, ce };
-      if (!causeDeC) out.probs.push({ niveau: 'ko', texte: `${cb} : le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')} — il protège ce câble ; Volta propose ${amperes(d.calibre)}${ce ? ', ce qui demande ' + ce.x.propose + ' ici' : ''}`, section: 'fils', viser: undefined }); } }
+      if (!causeDeC) out.probs.push({ niveau: 'ko', texte: `${cb} : le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')} — il protège ce câble ; VOLTA propose ${amperes(d.calibre)}${ce ? ', ce qui demande ' + ce.x.propose + ' ici' : ''}`, section: 'fils', viser: undefined }); } }
   return out; }
-/* La chaîne de cause, en tête de la fiche du câble (le technicien, n° 1) : ce que fait le disjoncteur, ce que Volta propose
+/* La chaîne de cause, en tête de la fiche du câble (le technicien, n° 1) : ce que fait le disjoncteur, ce que VOLTA propose
    et ce que ça demande ; « Tout régler » (le même geste que la carte de décision du disjoncteur, `deciderCalibre`),
    « Seulement W-012 » (le plus fin que protège le calibre DU RETEST), « Voir 102CB1 ». */
 function causeDuCable(l, prot, fin) { const c = prot && prot.cause; if (!c) return '';
   const { cb, d, k, xs, ce } = c, types = [...new Set(xs.map(p => p.x.propose))], nom = 'ce câble';
   const tout = `Tout régler : ${cb} en ${amperes(d.calibre)}${xs.length ? ' et ' + (xs.length > 1 ? xs.length + ' câbles' : '1 câble') + (types.length === 1 ? ' en ' + types[0] : ' grossis') : ''}`;
-  const phrase = `<b class="id">${esc(cb)}</b> : le ${esc(amperes(d.pn))} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}, et il protège ${esc(nom)}. Volta propose <b>${esc(amperes(d.calibre))}</b>${ce ? `, ce qui demande <b class="id">${esc(ce.x.propose)}</b> ici` : ''}.`;
+  const phrase = `<b class="id">${esc(cb)}</b> : le ${esc(amperes(d.pn))} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}, et il protège ${esc(nom)}. VOLTA propose <b>${esc(amperes(d.calibre))}</b>${ce ? `, ce qui demande <b class="id">${esc(ce.x.propose)}</b> ici` : ''}.`;
   const seul = fin ? `<button type="button" class="btn papier fi-reparer" data-reparer="${escA(cleFil(l))}" data-type="${escA(fin.type)}" data-bulle="${escA(majuscule(fin.pourquoi) + ' : ' + fin.type + ' — ' + cb + ' garde son ' + amperes(d.pn) + ' ; Ctrl+Z le rend')}">Seulement ${esc(nom)} : ${esc(fin.type)}</button>` : '';
   return `<section class="fi-cause ko" aria-label="${escA('La cause : ' + cb)}"><p class="fi-cause-p">${insecable(phrase)}</p><div class="fi-cause-gestes">`
     + `<button type="button" class="btn cuivre" data-tout-regler="${escA(cb)}" data-bulle="${escA('Écrit dans l’installation : ' + ((d.meilleur || {}).pn && d.meilleur.calibre === d.calibre ? d.meilleur.pn : amperes(d.calibre)) + (xs.length ? ', et ' + xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + ' — une seule entrée d’historique, Ctrl+Z défait le tout')}">${esc(tout)}</button>${seul}`
@@ -558,7 +558,7 @@ const contactForce = (P, f, st) => { if (!(st && st.main && P && P.Q && f && f.t
 /* ---- LE CONTACT, OUVERT (v74, lot F — le lecteur : « cliquer sur la gauge doit aller au contact et à sa norme ») -------
    Un clic sur la GAUGE ou le CONTACT d'une ligne de contacts (un connecteur, une barrette, une prise, le bout d'un câble)
    ouvre, sous la ligne, la carte du contact : ce qu'il est (« douille, taille 20, fût 20 »), SA norme (la partie de
-   l'EN 3155 qui le définit — pas celle du connecteur : Volta ne les mélange pas), la TABLE d'où il sort et SA LIGNE
+   l'EN 3155 qui le définit — pas celle du connecteur : VOLTA ne les mélange pas), la TABLE d'où il sort et SA LIGNE
    (famille · taille · sexe · type · gauge), sa SOURCE (vérifiée par deux sources, vos tables, à confirmer), ce câble
    contre la plage de la taille (table des tailles), sa place (le contact du module, table des faces), son outillage ;
    dessous, quand il se change, les autres contacts de la taille (`choixSertir`). C'est la chaîne de « D'où vient chaque
@@ -587,7 +587,7 @@ function carteContact(o) { const N = app.norme, st = o.st || null, ref = st && s
     ligneDl('Ce qu’il est', insecable(esc(majuscule(quoi))), !propre && note ? insecable(esc(note.length > 140 ? note.slice(0, 138).replace(/\s+\S*$/, '') + '…' : note)) : ''),
     ligneDl('Sa norme', partie ? `<b class="id">${esc(partie.partie)}</b> — ${esc(partie.titre || '')}` : ref ? '<span class="fi-muet">aucune partie de l’EN 3155 connue ne porte cette référence</span>' : '',
       esc(`La norme du contact${nomF ? ', pas celle du connecteur (' + nomF + ')' : ''} : chaque pièce a la sienne.`) + (partie && partie.emploi ? ' ' + esc('Elle sert à : ' + partie.emploi + '.') : '')),
-    ligneDl('Sa table', st && st.main ? 'choisi ici, à la main' : ligne ? esc(see ? 'la base SEE gardée sur ce PC' : !ligne.confiance ? 'vos tables (la table des contacts que vous avez envoyée)' : 'la table des contacts de Volta') : '<b class="fi-ko-t">aucune ligne</b>',
+    ligneDl('Sa table', st && st.main ? 'choisi ici, à la main' : ligne ? esc(see ? 'la base SEE gardée sur ce PC' : !ligne.confiance ? 'vos tables (la table des contacts que vous avez envoyée)' : 'la table des contacts de VOLTA') : '<b class="fi-ko-t">aucune ligne</b>',
       st && st.main ? esc('Écrit sur la liaison (la colonne Contact du récapitulatif)' + (ligne ? ' ; la table a sa ligne : ' + ligneDeLaTable(ligne) : ' ; la table n’a pas cette référence pour cette taille')) : ligne ? esc('Sa ligne : ' + ligneDeLaTable(ligne) + ' → ' + ligne.reference + (ligne.accessoire ? ' + ' + ligne.accessoire : '')) : esc('La table des contacts n’a pas de ligne pour ' + [nomF, o.taille ? 'la taille ' + o.taille : '', sexe ? nomDuSexe(sexe) : '', o.type || ''].filter(Boolean).join(', ') + '.')),
     ligneDl('Sa source', c ? `<i class="fi-conf ${c.niveau}" aria-hidden="true"></i>${insecable(esc(c.bulle.split('\n')[0]))}` : '', c && c.bulle.split('\n')[1] ? insecable(esc(c.bulle.split('\n').slice(1).join(' — '))) : ''),
     ligneDl('Ce câble', o.type ? `${ident(o.type)}${j != null ? ' · ' + esc(j + ' AWG') : ''}${admis === false ? ' <b class="fi-ko-t">✕ refusé</b>' : admis ? ' <b class="ct-carte-ok">✓ admis</b>' : ''}` : '',
@@ -629,7 +629,7 @@ function tableContacts(xs, o) { o = o || {}; let prec = '';
   const rows = xs.map(x => { if (x.groupe) { prec = ''; return `<li class="ct-groupe">${x.groupe}</li>`; }
     const f = x.f, k = f && f.l ? cleFil(f.l) : '', st = x.sertir, mot = motSertir(st), meme = !!mot && mot === prec; prec = mot;
     const ks = x.rep && x.borne != null && x.plan ? cleSertir(x.rep, x.borne) : '', j = f && f.type ? jaugeDuType(f.type) : null;
-    // la ligne de la table Contacts : d'où vient le contact (vérifié, vos tables, à confirmer) ; et la base SEE quand elle a mis le sien à la place de celui de Volta
+    // la ligne de la table Contacts : d'où vient le contact (vérifié, vos tables, à confirmer) ; et la base SEE quand elle a mis le sien à la place de celui de VOLTA
     const P = x.plan, fam = P && P.Q ? P.Q.famille || (P.Q.modules[0] ? P.Q.modules[0].module.famille : '') : '', ligne = st && !st.main && P && P.Q ? ligneDuContact(fam, P.taille, P.sexe, f && f.type) : null;
     const dSee = ligne && typeof differenceSEEMots === 'function' && ligne.reference === (st.reference || '') ? differenceSEEMots('contacts', ligne) : '';
     // v74 : la gauge et le contact OUVRENT le contact (`carteContact`) — sa norme, sa table, sa source ; et, quand il se change
@@ -836,7 +836,7 @@ const classeStatut = s => statutMontre(s) === 'ko' ? 'ko' : '';
    référence). */
 function pourquoiManque(p, h, it) { const N = app.norme, fam = h.famille || '', nomF = fam ? nomDeFamille(N, fam) || fam : '', cl = h.classe && h.classe.raccord ? h.classe.raccord : '', type = typeof MOTS_RACCORD !== 'undefined' && MOTS_RACCORD[h.raccord] ? MOTS_RACCORD[h.raccord] : h.raccord || '';
   const dit = (p.role === 'raccord' || p.role === 'cheminee') && !h.reference
-    ? (fam ? `aucune ligne de la table des raccords pour un raccord ${type} de l’${nomF}${cl ? ', classe ' + cl : ''}${h.taille ? ', boîtier ' + h.taille : ''}` : `aucune ligne de la table des raccords pour ce connecteur : sa référence${it.pn ? ' (' + it.pn + ')' : ''} n’est d’aucune famille que Volta connaît`)
+    ? (fam ? `aucune ligne de la table des raccords pour un raccord ${type} de l’${nomF}${cl ? ', classe ' + cl : ''}${h.taille ? ', boîtier ' + h.taille : ''}` : `aucune ligne de la table des raccords pour ce connecteur : sa référence${it.pn ? ' (' + it.pn + ')' : ''} n’est d’aucune famille que VOLTA connaît`)
     : p.note || 'aucune ligne de la table ne va';
   let see = ''; try { if (typeof BASE_SEE !== 'undefined' && BASE_SEE.base) { const e = it.pn && typeof equipementSEE === 'function' ? equipementSEE(it.pn) : null, mate = e && Array.isArray(e.m) ? e.m.slice(0, 3).map(x => x && x.p).filter(Boolean) : [];
       see = mate.length ? `la base SEE gardée sur ce PC dit qu’il se monte avec ${mate.join(', ')} : à vérifier` : 'la base SEE gardée sur ce PC la donne peut-être'; }
@@ -905,7 +905,7 @@ function problemesEquipement(nom, cav, b, vt, dj) { const probs = [];
       else if (v.niveau === 'attention' && !/^contact \S+ : \d+ (fils|câbles)/.test(v.texte)) probs.push({ niveau: 'att', texte: c.nom + ' · ' + v.texte, section: 'connecteur', connecteur: c.nom }); }); });
   const parBorne = connecteurParBorne(nom, liaisonsDeRepere(nom));
   [...b.parBorne].filter(([, fs]) => fs.length > 1).forEach(([bo, fs]) => { const g = parBorne.get(String(bo));
-    probs.push({ niveau: 'att', texte: `${majuscule(nombreEnMots(fs.length))} câbles sur la borne ${bo} — ${vt.has(String(bo)) ? 'Volta les relie par une barrette, ' + vt.get(String(bo)) + ', à poser au contrat' : 'il faut une barrette pour les relier'}`, section: dj ? 'fils' : 'connecteur', connecteur: !dj && g ? g.nom : undefined }); });
+    probs.push({ niveau: 'att', texte: `${majuscule(nombreEnMots(fs.length))} câbles arrivent sur la borne ${bo} — Une borne n’en reçoit qu’un : ${vt.has(String(bo)) ? 'VOLTA ajoute une barrette (' + vt.get(String(bo)) + ') qui les relie, à poser au contrat' : 'il faut une barrette pour les relier'}`, section: dj ? 'fils' : 'connecteur', connecteur: !dj && g ? g.nom : undefined }); });
   if (dj) controleDisjonction(nom).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: sectionDj(x.texte) }));
   // ce que le contrôle du contrat relève en plus sur ce repère (un conducteur CCA, ce qu'un disjoncteur nourrit au-delà d'un passage)
   ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: dj ? sectionDj(x.texte) : x.section || 'connecteur' }));
@@ -954,11 +954,10 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const chiffres = [quels.length > 1 ? { k: 'Connecteurs', v: `<span class="id">${quels.map(q => fautif(q) ? `<span class="fi-ko-t">${esc(q)}</span>` : esc(q)).join(' · ')}</span>`, etat: quels.some(fautif) ? 'ko-l' : '', sous: quels.some(fautif) ? esc(quels.filter(fautif).join(', ') + ' bloque') : 'tous logent leurs câbles', onglet: 'essentiel' }
       : { k: 'Référence', v: pns.length ? ident(pns[0]) : '—', etat: quels.some(fautif) ? 'ko-l' : '', sous: quels.length ? 'connecteur ' + esc(quels[0]) : '', onglet: 'essentiel' },
     places ? { k: 'Contacts', v: `${pris}<small>/ ${places}</small>`, sous: places - pris > 0 ? esc(plurielLie(places - pris, 'libre')) : 'tous pris', barre: pris / places, onglet: 'essentiel' } : null,
-    chiffreCables(sFils),
-    al ? { k: 'Alimenté par', v: `<span class="id">${esc(al.nom)}</span>`, sous: al.calibre ? esc(amperes(al.calibre)) : '', onglet: 'reglages' } : null];
+    chiffreCables(sFils)];
   // le geste qui répare : la gauge qui se loge, quand un arrangement refuse un câble
   let geste = ''; for (const x of cav) { const y = coupablesDu(x.plan, x.points).find(z => z.propose); if (y) { geste = boutonReparer(y).replace('btn papier', 'btn cuivre dense'); break; } }
-  /* (v78) L'ESSENTIEL : le connecteur montré (ses bulles A · B · C), sa face, ses broches, comment Volta l'a choisi ;
+  /* (v78) L'ESSENTIEL : le connecteur montré (ses bulles A · B · C), sa face, ses broches, comment VOLTA l'a choisi ;
      LA FABRICATION : tout ce qu'il faut pour le monter ; LES RÉGLAGES : ce qui se change (la référence, l'arrangement, le
      sexe, le raccord, la consommation) */
   const Nn = app.norme, Q = k && k.plan, sertirs = new Map(Q ? Q.fils.map(x => [x.f.l, x]) : []);
@@ -978,19 +977,24 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const fabC = C.map(x => { const kx = parNom.get(x.nom), Qx = kx && kx.plan, Mx = Qx && Qx.modules[0], fx = x.bornes.flatMap(bo => b.parBorne.get(bo) || []).filter(f => f.l), sx = new Map(Qx ? Qx.fils.map(y => [y.f.l, y]) : []);
     const refs = x.bornes.flatMap(bo => (b.parBorne.get(bo) || []).map(f => { const y = sx.get(f.l), st = y ? sertirAuBout(nom, bo, y) : null; return st ? motSertir(st) : ''; }));
     let pieces = []; try { pieces = fx.length ? piecesFabrication(habillageDe({ cle: nom + '|' + x.nom, fils: fx, pn: x.pn, ref: Mx ? Mx.reference : '', plan: Mx ? Qx : null })) : []; } catch (_) { pieces = []; }
-    return { titre: 'Connecteur ' + x.nom, ref: x.pn, sous: Mx ? 'arrangement ' + Mx.module.variante : 'arrangement à trouver', lignes: [Mx ? { q: 1, ref: Mx.reference, role: 'module de connecteur' } : null, ...compterParReference(refs, 'contact à sertir'), ...pieces].filter(Boolean) }; });
+    // (v78, le lecteur : « les connecteurs des équipements sont fournis par le fournisseur ; à nous le raccord, les tyraps ») :
+    // le connecteur, fourni ; ce qu'on monte dessus — les contacts à sertir, le raccord et ce qui l'entoure
+    return { titre: 'Connecteur ' + x.nom, ref: x.pn, sous: 'fourni avec l’équipement', lignes: [...compterParReference(refs, 'contact à sertir'), ...pieces].filter(Boolean) }; });
   const ess = !ids.length ? '<p class="vu-note">Aucune borne : cet équipement n’a pas encore de câble.</p>' : sel === '—' ? `${choix}${corps}`
-    : `${choix}<div class="vu-schema"><figure class="vu-fig">${faceG}<figcaption>${esc(M ? (Q.utilises || broches.length) + ' contacts pris sur ' + M.module.contacts.length + ' · ' + M.module.variante + ' · face côté contacts' : 'Aucun arrangement ne loge ces bornes')}</figcaption>${M ? legendeFaceVue(broches.some(x => x.ko)) : ''}</figure>`
-      + `<div class="vu-schema-d"><h4 class="vu-titre">Ses broches <span>${broches.length}</span></h4>${brochesVue(broches)}</div></div>${pourquoiVue('Comment Volta a choisi le connecteur ' + c.nom, etapesC)}`;
+    : `${choix}${M ? `<div class="vu-schema"><figure class="vu-fig">${faceG}<figcaption>${esc((Q.utilises || broches.length) + ' contacts pris sur ' + M.module.contacts.length + ' · ' + M.module.variante + ' · face côté contacts')}</figcaption>${legendeFaceVue(broches.some(x => x.ko))}</figure>`
+      + `<div class="vu-schema-d"><h4 class="vu-titre">Ses broches <span>${broches.length}</span></h4>${brochesVue(broches)}</div></div>` : `<section class="vu-bloc"><h4 class="vu-titre">Ses broches <span>${broches.length}</span></h4>${brochesVue(broches)}</section>`}${pourquoiVue('Comment VOLTA a choisi le connecteur ' + c.nom, etapesC)}`;
   const onglets = [
     { cle: 'essentiel', statut: { t: quels.length > 1 ? (quels.some(fautif) ? quels.filter(fautif).join(', ') + ' bloque' : pluriel(quels.length, 'connecteur')) : places ? pris + ' contacts sur ' + places : pluriel(ids.length, 'connecteur'), etat: quels.some(fautif) ? 'ko' : 'ok' }, contenu: ess },
     ongletCables(sFils), ongletFabrication(fabC, 'Ce qu’il faut pour le monter'),
-    { cle: 'reglages', statut: { t: 'référence, arrangement, raccord' }, contenu: (ids.length ? `${choix}<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>` : '<p class="vu-note">Aucune borne.</p>') + (sConso ? groupeSection('Consommation', sConso.contenu) : '') },
+    { cle: 'reglages', statut: { t: 'contacts, raccord, consommation' }, contenu: (ids.length ? `<div class="fi-panneau" data-panneau="${escA(sel)}">`
+        + regCarte(sel === '—' ? 'Les bornes sans connecteur' : 'Le connecteur ' + sel, sel === '—' ? 'Ces bornes n’ont pas de connecteur dans votre fichier.' : 'Fourni avec l’équipement : sa référence vient de votre fichier. Vous ne changez que les contacts à sertir, si le calcul se trompe (double-clic sur un contact).', corps, { droite: ids.length > 1 ? bulles : '' })
+        + regCarte('Le raccord', 'Ce que nous posons autour du connecteur : gaine, tyrap. VOLTA le calcule d’après les câbles ; « Options » pour le changer.', racH) + '</div>' : '<p class="vu-note">Aucune borne.</p>')
+        + (sConso ? regCarte('Ce qu’il consomme', 'Le courant qu’il tire, phase par phase : il donne le profil du disjoncteur qui l’alimente.', sConso.contenu) : '') },
     sDeja ? ongletDeLaSection(sDeja) : null];
   const sections = [{ cle: 'connecteur', titre: 'Connecteur', resume: resumeC, badge: badgeC, contenu: `${choix}<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>`, vide: ids.length ? '' : 'aucune borne' }, sFils, sConso, sDeja];
   const vignette = C.length ? connecteursVue(C.map(x => { const kx = parNom.get(x.nom), Mx = kx && kx.plan.modules[0];
-      return { nom: x.nom, ref: x.pn || (Mx ? Mx.reference : ''), pris: kx ? kx.plan.utilises || 0 : 0, places: Mx ? Mx.module.contacts.length : 0, ko: fautif(x.nom) ? 'aucun arrangement ne loge ses câbles' : '' }; })) : '';
-  return composerFiche({ type: 'equipement', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pns.length === 1 ? ident(pns[0]) : pns.length ? esc(pluriel(pns.length, 'référence')) : '', C.length > 1 ? esc(pluriel(C.length, 'connecteur')) : '', descriptionDuRetest(nom) ? esc(descriptionDuRetest(nom)) : ''],
+      return { nom: x.nom, ref: x.pn || (Mx ? Mx.reference : ''), pris: kx ? kx.plan.utilises || 0 : 0, places: Mx ? Mx.module.contacts.length : 0, cables: x.bornes.reduce((n, bo) => n + (b.parBorne.get(bo) || []).length, 0), ko: fautif(x.nom) ? 'aucun arrangement ne loge ses câbles' : '' }; })) : '';
+  return composerFiche({ type: 'equipement', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pns.length === 1 ? ident(pns[0]) : pns.length ? esc(pluriel(pns.length, 'référence')) : ''],
     probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste, vignette, identite: id,
     ok: 'Ses connecteurs logent tous ses câbles, et chacun porte son courant.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 // la case « Câbles » des chiffres (v78) : combien, combien en défaut, ce que porte le plus chargé
@@ -1014,7 +1018,7 @@ function sectionConso(nom) { if (!nom || estDisjoncteur(nom) || estMasse(nom)) r
   const resume = ecrit ? [v('perm', 'i') ? v('perm', 'i') + ' A' : '', v('dem', 'i') ? 'démarrage ' + v('dem', 'i') + ' A' : ''].filter(Boolean).join(' · ') : '<span class="fi-a-ecrire">à écrire</span>';
   return { cle: 'conso', titre: 'Consommation', resume, contenu }; }
 /* LE CONNECTEUR montré : sa RÉFÉRENCE d'abord (un champ ; plus de « part number » ni de « norme » à compléter) ; quand
-   la norme est connue, l'ARRANGEMENT que Volta retient (en puce, son « ? » ; « Changer » ouvre la liste : « Automatique »
+   la norme est connue, l'ARRANGEMENT que VOLTA retient (en puce, son « ? » ; « Changer » ouvre la liste : « Automatique »
    en tête, les autres arrangements qui logent ces bornes, la bible au pied) ; puis, d'office, sa FACE (le lecteur :
    « avoir du visuel : ce qui est pris, ce qui n'est pas pris ») — les contacts pris à la couleur de leur câble, les
    libres en blanc — et, dessous, ce que dit la norme en une ligne (la norme, combien de contacts et de quelle taille,
@@ -1067,7 +1071,7 @@ function corpsConnecteur(nom, c, k, b, vt, enParts) { const cle = nom + '|' + c.
   // les contacts : une ligne par câble posé, borne par borne
   const sertirs = new Map(Q ? Q.fils.map(x => [x.f.l, x]) : []), fautes = new Map(fautifs.map(x => [x.f.l, x.mot]));
   const xs = c.bornes.slice().sort(triNaturel).flatMap(bo => (b.parBorne.get(bo) || []).map(f => { const x = sertirs.get(f.l), st = x ? sertirAuBout(nom, bo, x) : null;
-    return { ct: `<b>${esc(bo)}</b>${vt.get(String(bo)) ? `<i class="fi-tag" data-bulle="Barrette ajoutée par Volta sur cette borne (repère provisoire)">${esc(vt.get(String(bo)))}</i>` : ''}`, f, sertir: st, rep: nom, borne: bo, plan: x ? { Q, sertir: x.sertir, taille: x.taille, sexe: x.sexe } : null, ko: x && x.jaugeOk === false ? 'gauge refusée par le contact' : '', coupable: fautes.get(f.l) || '',
+    return { ct: `<b>${esc(bo)}</b>${vt.get(String(bo)) ? `<i class="fi-tag" data-bulle="Barrette ajoutée par VOLTA sur cette borne (repère provisoire)">${esc(vt.get(String(bo)))}</i>` : ''}`, f, sertir: st, rep: nom, borne: bo, plan: x ? { Q, sertir: x.sertir, taille: x.taille, sexe: x.sexe } : null, ko: x && x.jaugeOk === false ? 'gauge refusée par le contact' : '', coupable: fautes.get(f.l) || '',
       lettre: x && x.contact ? x.contact.lettre : '', variante: M ? M.module.variante : '' }; }));
   const sansContacts = !!Q && !M;
   const contacts = xs.length ? (sansContacts ? `<p class="fi-note ct-note">Les contacts à sertir viendront avec l’arrangement.</p>` : '') + tableContacts(xs, { sans: sansContacts, trace: !!c.pn }) + (!sansContacts && xs.some(x => x.sertir) ? legendeConfiance() : '') : '<p class="fi-note">Aucun câble sur ce connecteur.</p>';
@@ -1098,7 +1102,7 @@ function chaineConnecteur(c, Q, M, xs) { const N = app.norme, fam = Q && Q.famil
   const maillon = (k, v, d) => `<li><span class="fi-tr-k">${esc(k)}</span><span class="fi-tr-v">${v}</span><span class="fi-tr-d">${esc(d)}</span></li>`;
   const lignes = [maillon('Référence', c.pn ? ident(c.pn) : '<em>aucune</em>', c.pn ? 'colonne du fichier d’installation' : 'à écrire dans le fichier ou ici')];
   if (!c.pn) return { lignes, parFil: '', fam, nomF };
-  if (!fam) lignes.push(maillon('Famille', '<b class="fi-ko-t">inconnue</b>', 'aucune famille de connecteur ne commence comme cette référence — ni dans les tables de Volta, ni dans la base SEE gardée : la chaîne s’arrête ici, d’où les contacts vides'));
+  if (!fam) lignes.push(maillon('Famille', '<b class="fi-ko-t">inconnue</b>', 'aucune famille de connecteur ne commence comme cette référence — ni dans les tables de VOLTA, ni dans la base SEE gardée : la chaîne s’arrête ici, d’où les contacts vides'));
   else { lignes.push(maillon('Famille', esc(nomF), 'le début de la référence est celui de la famille ' + fam + ' (table des connecteurs)'));
     if (M) lignes.push(maillon('Arrangement', esc(M.reference), (Q.main ? 'choisi à la main' : Q.nomme ? 'la référence le nomme' : 'le plus petit qui loge tous les câbles') + ' (table des faces' + (M.module.statut ? ' · ' + M.module.statut : '') + ')'));
     else lignes.push(maillon('Arrangement', '<b class="fi-ko-t">aucun</b>', 'aucun arrangement de la famille ne loge ces câbles : pas de cavité, donc pas de contact')); }
@@ -1109,13 +1113,13 @@ function chaineConnecteur(c, Q, M, xs) { const N = app.norme, fam = Q && Q.famil
 function traceConnecteur(c, Q, M, xs) { if (!c.pn) return ''; const { lignes, parFil } = chaineConnecteur(c, Q, M, xs);
   return `<details class="fi-trace"><summary>D’où vient chaque pièce</summary><ol class="fi-tr">${lignes.join('')}</ol>`
     + (parFil ? `<p class="fi-tr-t">Puis, câble par câble : la taille de la cavité (table des faces), la gauge du câble (table des câbles), et le contact qui va avec ce sexe, cette taille et cette gauge (table des contacts).</p><ul class="fi-tr-fils">${parFil}</ul>` : '')
-    + `<p class="fi-note">Chaque maillon vient de sa table, et d’elle seule : une règle de contact n’a pas les colonnes d’un connecteur, Volta ne peut pas prendre l’une pour l’autre.</p></details>`; }
+    + `<p class="fi-note">Chaque maillon vient de sa table, et d’elle seule : une règle de contact n’a pas les colonnes d’un connecteur, VOLTA ne peut pas prendre l’une pour l’autre.</p></details>`; }
 
 /* ---- LE RÉCIT DE LA RÉFÉRENCE (v74, lot F — le lecteur : « un clic dessus doit ouvrir une fenêtre : la norme, pourquoi
    cette norme, où on l'a trouvée par rapport aux autres — quelqu'un de perdu doit tout retrouver ») ---------------------
    À côté de la référence d'un connecteur (et sous celle d'une prise), « Pourquoi cette norme » ouvre, sous la ligne, le
    récit en cinq pas : 1. la référence, d'où elle vient (la colonne du fichier d'installation, ou écrite ici) ; 2. la norme
-   que Volta en tire, et comment (le début de la référence contre le nom de chaque famille qu'il connaît) ; 3. où il l'a
+   que VOLTA en tire, et comment (le début de la référence contre le nom de chaque famille qu'il connaît) ; 3. où il l'a
    trouvée (ses tables ; la base SEE gardée sur ce PC, si elle la connaît) ; 4. les familles VOISINES ÉCARTÉES, les plus
    proches d'abord, chacune avec sa raison ; 5. ce que la norme donne ensuite (la chaîne de `traceConnecteur`). Une
    référence qu'aucune famille ne nomme le dit, et dit quoi faire.
@@ -1133,7 +1137,7 @@ function origineDeLaReference(nom, bornes) { const xs = nom ? liaisonsDuConnecte
   return ecrite ? `écrite ici — le fichier d’installation portait ${avantDe(ecrite[0], ecrite[1])}` : xs.length ? `lue dans le fichier d’installation : colonne ${cols.join(' et ')}, sur ${pluriel(xs.length, 'liaison')}` : 'lue dans le fichier d’installation'; }
 /* (v77, le lecteur : « pourquoi c'est cette norme… pas évident… plus simple » ; « que je comprenne d'où elle vient, de
    quelle base de données, que je clique dessus, je vois son schéma ») : plus de récit en cinq pas — une carte d'identité.
-   D'où elle vient (votre fichier, ou écrite ici), sa norme et LA BASE qui la donne (les tables de Volta, ou la base SEE
+   D'où elle vient (votre fichier, ou écrite ici), sa norme et LA BASE qui la donne (les tables de VOLTA, ou la base SEE
    gardée), pourquoi en une phrase (le début de la référence), ce que la base SEE en dit, et SON SCHÉMA (la face de
    l'arrangement, les câbles posés dessus). Les familles voisines ne se disent que quand aucune ne la nomme. */
 function recitReference(o) { if (FI.liste !== o.cle) return '';   // (calculé à l'ouverture seulement)
@@ -1145,11 +1149,11 @@ function recitReference(o) { if (FI.liste !== o.cle) return '';   // (calculé �
     else see = 'aucune n’est gardée sur ce PC'; } catch (_) { see = ''; }
   const ligne = (k, v) => `<dt>${esc(k)}</dt><dd>${v}</dd>`;
   const pourquoi = fam ? esc(`Elle commence par « ${fam} », comme toutes les références de l’${nomF}.`) + (F && F.note ? `<small>${insecable(esc(majuscule(sansLiens(F.note))))}.</small>` : '')
-    : esc(`Aucune norme que Volta connaît ne commence comme « ${pn || '?'} » : il ne sait pas quel arrangement ni quels contacts lire.`);
+    : esc(`Aucune norme que VOLTA connaît ne commence comme « ${pn || '?'} » : il ne sait pas quel arrangement ni quels contacts lire.`);
   const vs = fam ? [] : famillesVoisines(pn, '').filter(x => x.k > 0).slice(0, 3);
-  const proches = vs.length ? `<small>Les plus proches : ${vs.map(x => `<b class="id">${esc(x.nom)}</b>${x.nature !== 'connecteur' ? esc(' (une barrette, pas un connecteur)') : !x.modules ? esc(' (Volta n’a pas ses arrangements)') : ''}`).join(', ')}.</small>` : '';
+  const proches = vs.length ? `<small>Les plus proches : ${vs.map(x => `<b class="id">${esc(x.nom)}</b>${x.nature !== 'connecteur' ? esc(' (une barrette, pas un connecteur)') : !x.modules ? esc(' (VOLTA n’a pas ses arrangements)') : ''}`).join(', ')}.</small>` : '';
   const dl = `<dl class="rf-dl">${ligne('Vient de', pn ? esc(majuscule(origineDeLaReference(o.nom, o.bornes || '*'))) : esc('Ni le fichier d’installation ni la fiche ne la donnent : à écrire.'))}`
-    + ligne('Sa base', fam ? `<b>${deSEE ? 'La base SEE' : 'Les tables de Volta'}</b>${esc(deSEE ? ' gardée sur ce PC' : ' (les normes embarquées)')} : ${esc('norme ' + nomF)}` : '<b class="fi-ko-t">aucune</b>' + esc(' : ni les tables de Volta ni la base SEE ne la reconnaissent'))
+    + ligne('Sa base', fam ? `<b>${deSEE ? 'La base SEE' : 'Les tables de VOLTA'}</b>${esc(deSEE ? ' gardée sur ce PC' : ' (les normes embarquées)')} : ${esc('norme ' + nomF)}` : '<b class="fi-ko-t">aucune</b>' + esc(' : ni les tables de VOLTA ni la base SEE ne la reconnaissent'))
     + ligne('Pourquoi', pourquoi + proches) + (see ? ligne('Base SEE', esc(majuscule(see))) : '') + '</dl>';
   // SON SCHÉMA : la face de l'arrangement retenu, les câbles posés dessus
   let schema = '';
@@ -1164,7 +1168,7 @@ function origineCourte(nom, bornes, pn, fam, M) { if (!pn) return '';
   const xs = nom ? liaisonsDuConnecteur(nom, bornes) : [], ecrite = xs.some(([l, ch]) => l.avant && ch in l.avant && l.avant[ch] !== l[ch]);
   const nomF = fam ? nomDeFamille(app.norme, fam) || fam : '', deSEE = !!(M && String(M.module.source || '') === 'SEE');
   let see = ''; try { if (typeof BASE_SEE !== 'undefined' && BASE_SEE.base) see = typeof equipementSEE === 'function' && equipementSEE(pn) ? 'connue de la base SEE' : 'inconnue de la base SEE'; } catch (_) { }
-  const m = [ecrite ? 'écrite ici' : 'de votre fichier', fam ? `norme ${nomF} · ${deSEE ? 'base SEE' : 'tables de Volta'}` : 'aucune norme connue', see].filter(Boolean);
+  const m = [ecrite ? 'écrite ici' : 'de votre fichier', fam ? `norme ${nomF} · ${deSEE ? 'base SEE' : 'tables de VOLTA'}` : 'aucune norme connue', see].filter(Boolean);
   return `<span class="rf-orig${fam ? '' : ' ko'}">${m.map(x => `<span>${esc(x)}</span>`).join('')}</span>`; }
 // les bornes qui ne sont sur aucun connecteur (CNT, GND…) : elles se raccordent au corps
 function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (b.parBorne.get(bo) || []).map(f => ({ ct: `<b>${esc(bo)}</b>`, f, sertir: null, rep: nom, borne: bo, plan: null })));
@@ -1176,6 +1180,18 @@ function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (
 /* Calibre (le calibre retenu en grand et son verdict, le meilleur, la courbe, le profil : `sectionDisjoncteur`, 08
    quinquies) · Câbles (l'intensité au pire contre ce qu'ils admettent, la chute en ligne jusqu'au bout de leur chemin)
    · Déjà fait. Un disjoncteur de tableau a des bornes à vis : ni contacts ni raccord, pas de section Connecteur. */
+/* (v78, le lecteur : « touche la courbe, consomme 6 % du temps de déclenchement : on ne comprend rien ; explique
+   simplement — à tel moment, il touche, donc il disjoncte ») : un calibre en une phrase d'électricien — il disjoncte ou
+   non, et le moment qui le décide (le permanent, le démarrage), sur sa courbe à 125 °C. */
+function calibreEnClair(d, cal) { const A = amperes(cal), g = (d.gamme || []).find(x => Math.abs(x.calibre - cal) < 1e-9), k = cleDuVerdict(g || {});
+  let j = null; try { j = verdictDisjonction(app.norme, d.courbe || '', cal, d.profil, d.contexte || {}); } catch (_) { j = null; }
+  const p = j && j.pire, marge = (j && j.marges && j.marges.marge) || 10, ch = chargeDuProfil(d);
+  const moment = q => !q ? '' : (q.duree === Infinity || q.t === Infinity || q.k === 'perm') ? `en permanent (${amperes(q.i)})` : `${String(q.nom || 'en pointe').replace(/^démarrage et transition$/, 'au démarrage')} (${amperes(q.i)} pendant ${secondes(q.duree || q.t)})`;
+  if (g && g.permanentOk === false) return `${A} : disjoncte — en permanent, ${amperes(ch.perm || 0)}, plus que les ${amperes(g.tenu)} qu’il tient.`;
+  if (k === 'passe') return `${A} : ne disjoncte pas — même ${moment(p) || 'au plus fort'}, il reste loin de sa courbe, marge de ${marge} % comprise.`;
+  if (g && g.valide) return `${A} : trop juste — ${moment(p)}, il frôle sa courbe à 125 °C ; avec ${marge} % de marge, il disjoncterait.`;
+  const tc = p && p.marges && p.marges[0] && isFinite(p.marges[0].temps) ? p.marges[0].temps : null;
+  return `${A} : disjoncte — ${moment(p)}${tc ? `, il déclenche au bout de ${secondes(tc)}` : ''}.`; }
 function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origineDuCalibre(nom, d), H = app.simu || HYPOTHESES;
   const rows = lignesFilsDisjoncteur(nom, d), nL = rows.filter(r => r.l && !(r.l.longueur > 0)).length;
   // (v74 : ce qui est supposé, dit une fois et en clair — `noteSupposes` ; plus d'italique)
@@ -1194,34 +1210,35 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     chiffreCables(sections[1])];
   const dec = typeof decisionEnMots === 'function' ? decisionEnMots(nom, d) : null;
   const geste = dec ? `<button type="button" class="btn cuivre dense" data-nv-decider="${escA(nom)}" data-bulle="${escA('Écrit dans l’installation : ' + amperes(cal) + ', et les câbles qu’il demande — une seule entrée d’historique, Ctrl+Z défait le tout')}">${esc('Passer en ' + amperes(cal))}</button>` : '';
-  /* (v78) L'ESSENTIEL — ce qu'il tire contre ses calibres, comment Volta a choisi, ce qu'il alimente ; LE CALIBRE — les
+  /* (v78) L'ESSENTIEL — ce qu'il tire contre ses calibres, comment VOLTA a choisi, ce qu'il alimente ; LE CALIBRE — les
      calibres de la gamme en touches (un clic en retient un), le profil qui s'écrit, la courbe */
   const sD = sections[0] || {}, P = sD.parts || {}, sF = sections[1], gamme = (d.gamme || []).filter(g => g.calibre > 0);
   const ec = phaseEcrite(chargeEcrite(nom)), conso = consommateursDe(nom).filter(r => phaseEcrite(chargeEcrite(r))), dur = ch.pointeP && ch.pointeP.t !== Infinity ? secondes(ch.pointeP.t) : '';
   const nonP = gamme.filter(g => cleDuVerdict(g) !== 'passe').map(g => nombre(g.calibre)), oui = gamme.filter(g => cleDuVerdict(g) === 'passe').map(g => nombre(g.calibre));
   const pire = rows.filter(r => r.charge.r != null && isFinite(r.charge.r)).sort((x, y) => y.charge.r - x.charge.r)[0];
-  const M = margesDuMeilleur(app.simu || HYPOTHESES), phraseDe = c => { try { const x = pourquoiDuCalibre(app.norme, d, c); return x ? x.phrase : ''; } catch (_) { return ''; } };
-  const calcul = gamme.length ? `<p>Pour chaque calibre, Volta pose chaque moment du profil (le permanent, ${esc(quand.toLowerCase())}) sur sa courbe de déclenchement, avec ${esc(String(M.marge))} % de marge : le plus petit qui ne la touche jamais est retenu.</p><ul class="vu-pq-l">${gamme.map(g => { const k = cleDuVerdict(g), ph = phraseDe(g.calibre);
-      return `<li class="${k === 'passe' ? 'ok' : 'ko'}${g.calibre === cal ? ' ret' : ''}"><i></i><span>${esc(ph || amperes(g.calibre) + ' — ' + motDuVerdict(k))}</span></li>`; }).join('')}</ul>` : '';
+  const M = margesDuMeilleur(app.simu || HYPOTHESES), phraseDe = c => calibreEnClair(d, c);
+  const calcul = gamme.length ? `<p>Pour chaque calibre, VOLTA pose chaque moment du profil (le permanent, ${esc(quand.toLowerCase())}) sur sa courbe de déclenchement à 125 °C, avec ${esc(String(M.marge))} % de marge : le plus petit qui ne disjoncte jamais est retenu.</p><ul class="vu-pq-l">${gamme.map(g => { const k = cleDuVerdict(g), ph = phraseDe(g.calibre);
+      return `<li class="${k === 'passe' ? 'ok' : 'ko'}${g.calibre === cal ? ' ret' : ''}"><i></i><span>${esc(ph)}</span></li>`; }).join('')}</ul>` : '';
   const etapes = d.sansProfil ? [{ html: 'Aucun profil de charge : ni écrit sur sa fiche, ni déduit de ce qu’il alimente. Sans lui, rien ne se juge.', source: 'calcul', etat: 'att', va: { onglet: 'calibre', vers: '[data-part="profil"]', mot: 'l’écrire' } }] : [
     { html: `Ce qu’il alimente tire <b>${esc(amperes(ch.perm || 0))}</b> en permanence${ch.pointe ? ` et <b>${esc(amperes(ch.pointe))}</b> ${esc(quand.toLowerCase())}${dur ? ' pendant ' + esc(dur) : ''}` : ''}.`,
       source: ec ? 'main' : conso.length ? 'calcul' : 'hypothese', mot: ec ? 'écrit sur sa fiche' : conso.length ? 'somme de ' + conso.join(', ') : 'hypothèse', va: { onglet: 'calibre', vers: '[data-part="profil"]', mot: 'le profil' } },
     gamme.length ? { html: `Sur les courbes ${esc(fam || 'de sa famille')}, ${nonP.length ? `<b>${esc(nonP.join(', '))} A</b> ne tiennent pas ce profil ; ` : ''}${oui.length ? `<b>${esc(oui.join(', '))} A</b> le tiennent, avec la marge.` : 'aucun calibre ne le tient.'}`, source: 'norme', mot: 'courbes ' + (fam || 'de la famille'), va: { onglet: 'calibre', vers: '[data-part="courbe"]', mot: 'la courbe' } } : null,
     o.calRetest && o.calRetest !== cal ? { html: `Votre fichier porte <b class="id">${esc(o.pnRetest || amperes(o.calRetest))}</b>, un ${esc(amperes(o.calRetest))} : il ${esc(motDuVerdict(cleDuVerdict(gamme.find(g => g.calibre === o.calRetest) || {})) || 'ne passe pas')}.`, source: 'fichier', etat: 'ko', va: { onglet: 'calibre', vers: '.vu-cals', mot: 'les calibres' } } : propose ? { html: `Votre fichier porte un <b>${esc(amperes(d.pn))}</b> : il ${esc(motDuVerdict(cleDuVerdict(d.gPn)))}.`, source: 'fichier', etat: 'ko', va: { onglet: 'calibre', vers: '.vu-cals', mot: 'les calibres' } } : null,
-    cal ? { html: d.origine === 'main' ? `Retenu à la main : <b>${esc(amperes(cal))}</b>. Volta aurait pris ${esc(amperes(d.passe || cal))}.` : `Volta retient le plus petit qui passe : <b>${esc(amperes(cal))}</b>${pn ? ` (<span class="id">${esc(pn)}</span>)` : ''}.`, source: d.origine === 'main' ? 'main' : 'calcul', etat: v.etat === 'ko' ? 'ko' : 'ok', detail: calcul, va: { onglet: 'calibre', vers: '[data-part="courbe"]', mot: 'la courbe' } } : null,
+    cal ? { html: d.origine === 'main' ? `Retenu à la main : <b>${esc(amperes(cal))}</b>. VOLTA aurait pris ${esc(amperes(d.passe || cal))}.` : `VOLTA retient le plus petit qui passe : <b>${esc(amperes(cal))}</b>${pn ? ` (<span class="id">${esc(pn)}</span>)` : ''}.`, source: d.origine === 'main' ? 'main' : 'calcul', etat: v.etat === 'ko' ? 'ko' : 'ok', detail: calcul, va: { onglet: 'calibre', vers: '[data-part="courbe"]', mot: 'la courbe' } } : null,
     pire ? { html: `Ses ${rows.length > 1 ? rows.length + ' câbles portent' : 'câble porte'} au plus <b>${Math.round(pire.charge.r * 100)} %</b> de ce qu’${rows.length > 1 ? 'ils admettent' : 'il admet'}.`, source: 'norme', mot: 'EN 2853', etat: pire.charge.r > 1 ? 'ko' : '', va: { onglet: 'essentiel', vers: '.vu-arbre', mot: 'ses câbles' } } : null];
+  const explique = cal && !d.sansProfil ? `<ul class="vu-explique">${[o.calRetest && o.calRetest !== cal ? o.calRetest : propose ? d.pn : null, cal].filter(Boolean).map(c => { const g = gamme.find(x => x.calibre === c), k = cleDuVerdict(g || {}); return `<li class="${k === 'passe' ? 'ok' : 'ko'}"><i></i><span>${esc(calibreEnClair(d, c))}</span></li>`; }).join('')}</ul>` : '';
   const touches = gamme.length ? `<div class="vu-cals" role="group" aria-label="Les calibres de la gamme">${gamme.map(g => { const k = cleDuVerdict(g), on = g.calibre === cal, fic = o.calRetest === g.calibre || (propose && d.pn === g.calibre);
       return `<button type="button" class="vu-cal ${k === 'passe' ? 'oui' : 'non'}${on ? ' on' : ''}${fic ? ' fichier' : ''}" data-nv-cal="${g.calibre}" aria-pressed="${on}" data-bulle="${escA((phraseDe(g.calibre) || amperes(g.calibre) + ' : il ' + motDuVerdict(k)) + (fic ? ' — c’est celui de votre fichier' : '') + (on ? ' — retenu' : ' — un clic le retient'))}"><b>${esc(nombre(g.calibre))}<small>A</small></b><small>${esc(on ? 'retenu' : fic ? 'actuel' : '')}</small></button>`; }).join('')}</div>`
-    + `<p class="vu-legende"><span><i class="ok"></i>tient</span><span><i class="ko"></i>ne tient pas</span><span><i class="ret"></i>retenu</span>${o.calRetest || propose ? '<span><i class="act"></i>actuel : celui de votre fichier</span>' : ''}${d.origine === 'main' && d.passe ? ` <button type="button" class="fi-lien" data-nv-auto="${escA(nom)}">Revenir au choix de Volta (${esc(amperes(d.passe))})</button>` : ''}</p>` : '';
+    + `<p class="vu-legende"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="ret"></i>retenu</span>${o.calRetest || propose ? '<span><i class="act"></i>actuel : celui de votre fichier</span>' : ''}${d.origine === 'main' && d.passe ? ` <button type="button" class="fi-lien" data-nv-auto="${escA(nom)}">Revenir au choix de VOLTA (${esc(amperes(d.passe))})</button>` : ''}</p>` : '';
   const onglets = [
-    { cle: 'essentiel', statut: { t: cal ? amperes(cal) + (v.etat === 'ko' ? ', ne passe pas' : ', il passe') : 'sans calibre', etat: v.etat === 'ko' ? 'ko' : cal ? 'ok' : '' },
-      contenu: `<section class="vu-bloc"><h4 class="vu-titre">Ce qu’il tire, ce qu’il tient</h4>${chargeVue(d, o, largeurVue())}${legendeChargeVue()}</section>${pourquoiVue('Comment Volta a choisi le calibre', etapes)}`
+    { cle: 'essentiel', statut: { t: cal ? amperes(cal) + (v.etat === 'ko' ? ', disjoncte' : ', ne disjoncte pas') : 'sans calibre', etat: v.etat === 'ko' ? 'ko' : cal ? 'ok' : '' },
+      contenu: `<section class="vu-bloc"><h4 class="vu-titre">Courant appelé et calibres</h4>${chargeVue(d, o, largeurVue())}${legendeChargeVue()}${explique}</section>${pourquoiVue('Comment VOLTA a choisi le calibre', etapes)}`
         + `<section class="vu-bloc"><h4 class="vu-titre">Ce qu’il alimente <span>${esc(pluriel(rows.length, 'câble'))}</span></h4>${arbreVue(nom, cal, rows)}</section>` },
     { cle: 'calibre', statut: { t: d.sansProfil ? 'profil à écrire' : ch.perm ? 'profil ' + amperes(ch.perm) + (ch.pointe ? ' · ' + amperes(ch.pointe) : '') : '', etat: d.sansProfil ? 'att' : '' },
       contenu: (decision || '') + (touches ? `<section class="vu-bloc"><h4 class="vu-titre">Le calibre <span>un clic en retient un autre</span></h4>${touches}</section>` : '') + (P.profil || '') + (P.courbe || '') + (P.profil ? '' : sD.contenu || '') },
     sF && { cle: 'cables', statut: { t: sF.vide ? 'aucun' : pluriel(sF.compte || 0, 'câble') + (sF.nko ? ', ' + sF.nko + ' en défaut' : sF.charge != null ? ', au plus ' + Math.round(sF.charge * 100) + ' %' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide },
     sections[2] ? ongletDeLaSection(sections[2]) : null];
-  return composerFiche({ type: 'disjoncteur', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pn ? ident(pn) : '', fam ? 'gamme ' + esc(fam) : ''], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
+  return composerFiche({ type: 'disjoncteur', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pn ? ident(pn) : ''], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
     vignette: calibresVue(d, o, cal), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation) porte un / : null,
     ok: d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : `Le ${cal ? amperes(cal) : 'calibre'} passe, et ses câbles portent leur courant.`, pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 
@@ -1236,7 +1253,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const probs = [...Q.verdicts.filter(v => v.niveau === 'ko').map(v => ({ niveau: 'ko', texte: v.texte, section: 'connecteur' })), ...refuses.map(x => ({ niveau: 'ko', texte: `${x.f.l && x.f.l.origine === null ? 'câble à créer' : cableDit(x.f)} : gauge refusée par le contact ${x.contact.lettre}`, section: 'connecteur', viser: cleFil(x.f.l) }))];
   const raccord = aPoser ? L.find(l => l.aPoser === nom && l.origine === null && l.vers === nom && l.borneVers === '1') : null, sur = raccord ? raccord.de + ':' + raccord.borneDe : '';
   if (aPoser) probs.push({ niveau: 'att', texte: 'repère provisoire : lui donner son vrai repère la pose au contrat', section: '' });
-  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte) && !/^ajoutée par Volta sur/.test(x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur' }));
+  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte) && !/^ajoutée par VOLTA sur/.test(x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur' }));
   const libres = Q.contacts - Q.utilises, famNom = M0 ? nomDeFamille(N, M0.module.famille) || M0.module.famille : Q.famille ? nomDeFamille(N, Q.famille) || Q.famille : '';
   /* le MODULE : sa référence en puce, qui ouvre la galerie (plusieurs modules : chacun sa référence) ; l'écart avec le
      retest ; le RAIL qui les porte ; la face */
@@ -1274,12 +1291,12 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
       badge: badgeProblemes(probs, 'connecteur'), contenu: tete + (faces ? `<div class="fi-faces">${faces}</div>` : '') + groupeSection('Contacts', contacts, { compte: nf || null }) },
     sectionFilsDuRepere(fils, probs), aPoser ? null : sectionDejaFait(nom)];
   const id = aPoser ? '' : identite([majuscule(natureDe(nom)), Q.reference ? ident(Q.reference) : '', pluriel(fils.length, 'câble'), esc(motFolios(foliosDuRepere(nom)))]);
-  // par rapport au retest : ce qui a été écrit ici, et le module que Volta retient à la place de celui du retest
+  // par rapport au retest : ce qui a été écrit ici, et le module que VOLTA retient à la place de celui du retest
   // (sa colonne : le PN de la barrette, PN1 là où elle est l'appareil 1, PN2 là où elle est l'appareil 2)
   const colsPn = [...new Set(L.map(l => l.de === nom ? 'PN1' : l.vers === nom ? 'PN2' : '').filter(Boolean))].sort().join(' · ');
-  const proposes = ecartRetest ? [{ sujet: '', champ: 'module', colonne: colsPn, objet: nom, avant: b.pn, apres: Q.reference, geste: main ? 'choisi ici' : 'Volta' }] : [];
+  const proposes = ecartRetest ? [{ sujet: '', champ: 'module', colonne: colsPn, objet: nom, avant: b.pn, apres: Q.reference, geste: main ? 'choisi ici' : 'VOLTA' }] : [];
   /* (v78) L'ESSENTIEL : la face de chaque module — chaque groupe de contacts reliés à sa couleur —, ce qu'elle relie, et
-     comment Volta a choisi le module ; LA FABRICATION : les modules, le rail, les contacts à sertir, les obturateurs ;
+     comment VOLTA a choisi le module ; LA FABRICATION : les modules, le rail, les contacts à sertir, les obturateurs ;
      LES RÉGLAGES : changer de module, le contact de chaque câble */
   const places = Q.contacts || 0, coulG = new Map(); let nG = 0; Q.modules.forEach((M, k) => M.places.forEach(pl => coulG.set(k + '|' + pl.groupe.k, ++nG)));
   const facesV = mini => Q.modules.map((M, k) => { const gd = new Map(); (M.module.groupes || []).forEach(g => g.contacts.forEach(c => gd.set(c.lettre, g.k)));
@@ -1291,7 +1308,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   (Q.restants || []).forEach(p => groupesV.push({ ko: true, lettres: ['?'], fils: p.fils.map(filV) }));
   const refsCt = compterParReference(Q.fils.map(x => x.sertir ? motSertir(x.sertir) : ''), 'contact à sertir');
   const etapesB = [
-    aPoser ? { html: `Volta l’a ajoutée${sur ? ` sur <b class="id">${esc(sur)}</b>` : ''} : plusieurs câbles y partent de la même borne, la barrette les relie. Elle entre au contrat quand elle a son vrai repère.`, source: 'calcul', etat: 'att' } : null,
+    aPoser ? { html: `VOLTA l’a ajoutée${sur ? ` sur <b class="id">${esc(sur)}</b>` : ''} : plusieurs câbles y partent de la même borne, la barrette les relie. Elle entre au contrat quand elle a son vrai repère.`, source: 'calcul', etat: 'att' } : null,
     nf ? { html: `Votre fichier y relie <b>${esc(pluriel(nf, 'câble'))}</b>, en <b>${esc(pluriel(Q.potentiels, 'groupe'))}</b> : les câbles d’une même borne, ou de bornes pontées, sont reliés entre eux.`, source: 'fichier' } : null,
     famNom ? { html: `Norme <b>${esc(famNom)}</b> : dans un module, les contacts d’un même groupe sont reliés ; chaque groupe de câbles prend un groupe de contacts.`, source: 'norme' } : null,
     M0 ? { html: plusieurs ? `<b class="id">${esc(Q.reference)}</b> : un seul module ne loge pas ces ${esc(pluriel(Q.potentiels, 'groupe'))}.` : `Module <b class="id">${esc(Q.reference)}</b> : ${main || Q.main ? 'choisi ici, à la main' : 'le plus petit qui loge ces ' + esc(pluriel(Q.potentiels, 'groupe')) + ', chaque câble dans un contact qui admet sa gauge'}.`, source: main || Q.main ? 'main' : 'calcul' }
@@ -1305,7 +1322,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const fabB = M0 ? [{ titre: 'Barrette ' + nom, sous: famNom, lignes: [...compterParReference(Q.modules.map(M => M.reference), 'module de jonction'), R ? { q: 1, ref: R.reference, role: 'rail' + (R.sous ? ', ' + R.sous : '') } : null, ...refsCt, ...obts].filter(Boolean) }] : [];
   const essB = (aPoser && !M0 ? '<p class="vu-note">Le module se choisit quand la barrette a son vrai repère.</p>'
     : `<div class="vu-schema"><figure class="vu-fig"><span class="vu-faces-g">${facesV(false).join('')}</span><figcaption>${esc(M0 ? (Q.utilises || 0) + ' contacts pris sur ' + places + (famNom ? ' · ' + famNom : '') : 'Aucun module ne loge ces câbles')}</figcaption>${M0 ? legendeFaceVue(refuses.length > 0) : ''}</figure>`
-      + `<div class="vu-schema-d"><h4 class="vu-titre">Ce qu’elle relie <span>${esc(pluriel(groupesV.length, 'groupe'))}</span></h4>${potentielsVue(groupesV)}</div></div>`) + pourquoiVue('Comment Volta a choisi le module', etapesB);
+      + `<div class="vu-schema-d"><h4 class="vu-titre">Ce qu’elle relie <span>${esc(pluriel(groupesV.length, 'groupe'))}</span></h4>${potentielsVue(groupesV)}</div></div>`) + pourquoiVue('Comment VOLTA a choisi le module', etapesB);
   const sF = sections.find(x => x && x.cle === 'fils'), sD = sections.find(x => x && x.cle === 'dejafait');
   const onglets = [
     { cle: 'essentiel', statut: { t: M0 ? (Q.utilises || 0) + ' contacts sur ' + places : aPoser ? 'à poser' : 'aucun module', etat: refuses.length || (!M0 && !aPoser) ? 'ko' : 'ok' }, contenu: essB },
@@ -1313,11 +1330,11 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
     { cle: 'reglages', statut: { t: aPoser && !M0 ? 'son vrai repère' : 'module, contacts' }, contenu: tete + groupeSection('Contacts', contacts, { compte: nf || null }) },
     sD ? ongletDeLaSection(sD) : null];
   const chiffres = [places ? { k: 'Contacts', v: `${Q.utilises || 0}<small>/ ${places}</small>`, sous: libres > 0 ? esc(plurielLie(libres, 'libre')) : 'tous pris', barre: (Q.utilises || 0) / places, etat: refuses.length ? 'ko' : '', onglet: 'essentiel' } : null,
-    chiffreCables(sF), sur ? { k: 'Sur', v: `<span class="id">${esc(sur)}</span>`, sous: 'ajoutée par Volta' } : Q.potentiels ? { k: 'Groupes', v: String(groupesV.length), sous: 'de câbles reliés', onglet: 'essentiel' } : null,
+    chiffreCables(sF), sur ? { k: 'Sur', v: `<span class="id">${esc(sur)}</span>`, sous: 'ajoutée par VOLTA' } : Q.potentiels ? { k: 'Groupes', v: String(groupesV.length), sous: 'de câbles reliés', onglet: 'essentiel' } : null,
     { k: plusieurs ? 'Modules' : 'Module', v: Q.reference ? ident(plusieurs ? Q.modules.length + ' modules' : Q.reference) : aPoser && !M0 ? '—' : '<span class="fi-ko-t">aucun</span>', etat: Q.reference || aPoser ? '' : 'ko', sous: R ? 'rail ' + ident(R.reference) : famNom ? esc(famNom) : '', onglet: 'essentiel' }];
   const vignette = M0 ? `<span class="vu-faces">${facesV(true).map((f, k) => `<span class="vu-face-v">${f}<b class="id">${esc(plusieurs ? (k + 1) + ' · ' + Q.modules[k].module.variante : Q.modules[k].module.variante)}</b></span>`).join('')}</span>` : '';
   return composerFiche({ type: 'barrette', tete: { nom, champ: 'eq-rep', designation: aPoser ? '' : nom, aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '' },
-    meta: [aPoser ? esc('ajoutée par Volta' + (sur ? ' sur ' + sur : '')) : '', Q.reference ? ident(Q.reference) : '', famNom ? esc(famNom) : ''],
+    meta: [aPoser ? esc('ajoutée par VOLTA' + (sur ? ' sur ' + sur : '')) : Q.reference ? ident(Q.reference) : ''],
     probs, onglets, sections, avant: poser, ecrits: aPoser ? [] : ecritsDuRepere(nom), proposes: aPoser ? [] : proposes, chiffres, vignette, identite: id, ok: 'Son module loge tous ses câbles, chacun dans un contact qui admet sa gauge.',
     pied: aPoser ? { voir: raccord && raccord.de, menu: [['fi-renommer', 'Lui donner son vrai repère']] } : { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 /* LA GALERIE des assemblages d'une norme (le lecteur : « quand on clique sur la norme, on voit tous les assemblages de
@@ -1373,7 +1390,7 @@ function carteRecommandee(nom, x, points, Q, enAuto) { const N = app.norme, m = 
     return `<span class="pr-ct"><i>${c === 'fiche' ? 'Fiche' : 'Embase'} · ${ys[0].sexe === 'M' ? 'broches' : 'douilles'}</i>${ys.map(y => `<b class="id">${esc(y.reference || 'aucun')}${y.accessoire ? ' + ' + esc(y.accessoire) : ''}</b>${y.n > 1 ? `<small>× ${y.n}</small>` : ''}`).join('')}</span>`; }).join('');
   return `<button type="button" class="cand cand-r${x.retenu ? ' retenue' : ''}" data-cle="${escA(nom)}" data-ref="${escA(m.reference)}" aria-pressed="${!!x.retenu}" data-bulle="${escA(m.reference + ' — ' + x.raisons.join(' ; ') + (x.retenu ? ' — retenu' : ' — un clic le retient'))}">`
     + `<span class="cand-face" aria-hidden="true"><svg class="mj" viewBox="0 0 ${f1(fc.w)} ${f1(fc.h)}">${fc.svg}</svg></span>`
-    + `<span class="pr-c"><span class="pr-c-t"><b>${esc(m.variante)}</b>${x.retenu ? `<em>${enAuto ? 'retenu par Volta' : 'retenu ici'}</em>` : ''}<small>${esc(taillesDe(m))}</small></span>`
+    + `<span class="pr-c"><span class="pr-c-t"><b>${esc(m.variante)}</b>${x.retenu ? `<em>${enAuto ? 'retenu par VOLTA' : 'retenu ici'}</em>` : ''}<small>${esc(taillesDe(m))}</small></span>`
     + `<span class="pr-c-r">${insecable(esc(majuscule(x.raisons.join(' · '))))}</span>${cotes ? `<span class="pr-c-ct">${cotes}</span>` : ''}</span></button>`; }
 function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupure(nom), M = Q.modules[0], N = app.norme;
   const cps0 = coupablesDu(Q, points), probs = Q.verdicts.filter(v => v.niveau === 'ko' || v.niveau === 'attention').map(v => ({ niveau: v.niveau === 'ko' ? 'ko' : 'att', texte: v.texte, section: 'connecteur', viser: v.coupables && cps0[0] ? cleFil(cps0[0].l) : undefined }));
@@ -1398,7 +1415,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   /* « CHANGER », RANGÉ : la norme en tête (une à la fois), « Automatique », puis les RECOMMANDÉS — même norme, même boîtier
      ou mêmes contacts, ils logent ces câbles (09, `arrangementsRecommandes`) : chacun dessiné, sa raison, ses contacts
      admissibles côté fiche et côté embase ; puis, repliés, ceux qui logent aussi (moins proches), ceux qui ne logent pas
-     (et pourquoi), les autres normes (et pourquoi Volta ne change pas de norme d'office) ; la bible au pied */
+     (et pourquoi), les autres normes (et pourquoi VOLTA ne change pas de norme d'office) ; la bible au pied */
   const ouverte = FI.liste === 'cou|' + nom, retenu = M ? M.reference : '', enAuto = !Q.main && !Q.visee;
   const autoRef = Q.main || Q.visee ? coupureEnModule(nom, verite(), N, '', sexeChoisi(nom)).plan.reference : retenu;
   let corpsChanger = '';
@@ -1406,16 +1423,16 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     let recos = []; try { recos = typeof arrangementsRecommandes === 'function' ? arrangementsRecommandes(points, N, famV, { sexe: s0, prise: true, actuel: M ? M.module : null, nomme: Q.nomme }) : []; } catch (_) { recos = []; }
     const N_RECO = 4, recommandes = recos.slice(0, N_RECO), aussi = recos.slice(N_RECO);
     const tete = `<div class="pr-tete"><span class="pr-tete-k">Norme</span><b>${esc(nomV)}</b><span class="pr-tete-d">${esc(Q.visee ? 'choisie ici' : famPn && famPn === famV ? 'celle de la référence de l’installation' + (b.pn ? ', ' + b.pn : '') : famV ? 'celle de l’arrangement retenu' : '')}</span>${Q.visee ? `<button type="button" class="fi-lien" data-auto="${escA('arr:' + nom)}">${esc('revenir à ' + (nomPn || 'la norme de la référence'))}</button>` : ''}</div>`;
-    const auto = `<button type="button" class="cand cand-auto" data-auto="${escA('arr:' + nom)}" aria-pressed="${enAuto}" data-bulle="${escA('Le choix de Volta : celui que la référence nomme, sinon le plus petit qui loge ces contacts' + (autoRef ? ' — ' + autoRef : ''))}"><i class="cand-etoile">${ico('etoile')}</i><b>Automatique</b><span>${esc(autoRef || 'le plus petit qui loge')}</span></button>`;
+    const auto = `<button type="button" class="cand cand-auto" data-auto="${escA('arr:' + nom)}" aria-pressed="${enAuto}" data-bulle="${escA('Le choix de VOLTA : celui que la référence nomme, sinon le plus petit qui loge ces contacts' + (autoRef ? ' — ' + autoRef : ''))}"><i class="cand-etoile">${ico('etoile')}</i><b>Automatique</b><span>${esc(autoRef || 'le plus petit qui loge')}</span></button>`;
     const reco = recommandes.length ? `<p class="fi-rac-t pr-t">${esc(`Recommandés — ${nomV}, ils logent ces ${nB} contacts de chaque côté`)}</p><div class="pr-recos">${recommandes.map(x => carteRecommandee(nom, x, points, Q, enAuto)).join('')}</div>` : `<p class="fi-note">${esc(`Aucun arrangement ${nomV} ne loge ces ${nB} contacts avec ces câbles.`)}</p>`;
     const pli = (t, h, n) => n ? `<details class="pr-pli"><summary>${ico('bas', 'pr-pli-ch')}<span>${esc(t)}</span><i>${n}</i></summary><div class="pr-pli-c">${h}</div></details>` : '';
     const aussiH = pli('Ceux qui logent aussi, moins proches', `<div class="cand-ls">${aussi.map(x => ligneCandidat(nom, { m: x.m, etat: 'att', loge: 'loge tout', raison: x.raisons.join(' ; '), retenu: !enAuto && x.retenu })).join('')}</div>`, aussi.length);
     const A = autresArrangements(nom, points, famV, recos.map(x => x.m), enAuto ? '' : retenu, true), nonH = pli('Ceux qui ne logent pas ces câbles — et pourquoi', A.html, A.n);
-    // les autres normes : pourquoi Volta n'en change pas d'office, et ce que chacune logerait
+    // les autres normes : pourquoi VOLTA n'en change pas d'office, et ce que chacune logerait
     const autresN = famillesDeModules(N, 'connecteur').filter(f => f !== famV).map(f => { let n = 0; try { n = arrangementsQuiLogent(points, N, f, sexeFil).length; } catch (_) { n = 0; } const F = (normeDesModules(N).familles || []).find(x => cleNorme(x.famille) === f && !x.exemple);
       return `<div class="pr-norme"><span class="pr-norme-t"><b>${esc(nomDeFamille(N, f) || f)}</b><small>${esc((F && F.note ? avantQueDeux(F.note) + ' · ' : '') + (n ? plurielLie(n, 'arrangement') + ' logerai' + (n > 1 ? 'ent' : 't') + ' ces ' + nB + ' contacts' : 'aucun arrangement ne loge ces câbles'))}</small></span>`
-        + (n ? `<button type="button" class="fi-lien pr-norme-b" data-norme-prise="${escA(f)}" data-bulle="${escA('Volta y prend le plus petit arrangement qui loge ces contacts ; « Automatique » revient à la norme de la référence')}">${esc('Passer en ' + (nomDeFamille(N, f) || f))}</button>` : '') + '</div>'; }).join('');
-    const pourquoiN = famPn ? `La référence de l’installation (${b.pn}) est une ${nomPn} : changer de norme change toute la prise — le boîtier, le raccord, les contacts. Volta ne le fait jamais d’office.` : 'La référence de l’installation ne dit pas la norme : Volta a pris la plus petite prise qui loge tout, toutes normes confondues.';
+        + (n ? `<button type="button" class="fi-lien pr-norme-b" data-norme-prise="${escA(f)}" data-bulle="${escA('VOLTA y prend le plus petit arrangement qui loge ces contacts ; « Automatique » revient à la norme de la référence')}">${esc('Passer en ' + (nomDeFamille(N, f) || f))}</button>` : '') + '</div>'; }).join('');
+    const pourquoiN = famPn ? `La référence de l’installation (${b.pn}) est une ${nomPn} : changer de norme change toute la prise — le boîtier, le raccord, les contacts. VOLTA ne le fait jamais d’office.` : 'La référence de l’installation ne dit pas la norme : VOLTA a pris la plus petite prise qui loge tout, toutes normes confondues.';
     const normesH = pli('Les autres normes — et pourquoi pas elles', `<p class="pr-pq">${esc(pourquoiN)}</p>${autresN}`, famillesDeModules(N, 'connecteur').filter(f => f !== famV).length);
     corpsChanger = tete + `<div class="fi-cands">${auto}</div>` + reco + aussiH + nonH + normesH; }
   const liste = listeChoix('cou|' + nom, corpsChanger, { titre: 'Les arrangements de la norme', filtre: ouverte ? 'Filtrer les arrangements' : '', cls: 'pr-changer', pied: M ? `<button type="button" class="fi-lien" data-bible="${escA(M.reference)}">${ico('livre')}voir dans la bible</button>` : '' });
@@ -1423,8 +1440,8 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   // aucun arrangement ne loge la prise : la borne fautive nommée, la gauge qui s'y loge (un geste)
   const fautifs = M ? [] : coupablesDu(Q, points), dit = fautifs.map(x => `<span class="fi-fautif"><b class="id">${esc(x.borne)}</b> : ${ident(x.f.type || '?')}${x.f.vers ? ' vers ' + esc(x.f.vers) : ''}, ${esc(x.mot)}${x.contact ? ` pour le contact ${esc(x.contact.lettre)} du ${esc(x.module.variante)}, le plus proche` : ''}</span>`).join('');
   // LE POURQUOI de la référence, en clair, sous elle ; « Pourquoi cette norme » ouvre le récit
-  const pq = Q.main ? `Choisi ici, à la main — « Automatique » le rend à Volta (${autoRef || 'le plus petit qui loge'}).` : Q.visee ? `Norme choisie ici (${fam}) : Volta y prend le plus petit arrangement qui loge ces ${nB} contacts.`
-    : Q.nomme && M ? `La référence de l’installation, ${b.pn}, nomme cet arrangement (${M.module.variante}) de l’${fam}.` : M ? (famPn ? `La référence de l’installation, ${b.pn}, est une ${nomPn} qui ne nomme pas d’arrangement : Volta prend le plus petit qui loge ces ${nB} contacts.` : `La référence de l’installation ne dit pas la norme : Volta prend, toutes normes confondues, le plus petit arrangement qui loge ces ${nB} contacts.`) : '';
+  const pq = Q.main ? `Choisi ici, à la main — « Automatique » le rend à VOLTA (${autoRef || 'le plus petit qui loge'}).` : Q.visee ? `Norme choisie ici (${fam}) : VOLTA y prend le plus petit arrangement qui loge ces ${nB} contacts.`
+    : Q.nomme && M ? `La référence de l’installation, ${b.pn}, nomme cet arrangement (${M.module.variante}) de l’${fam}.` : M ? (famPn ? `La référence de l’installation, ${b.pn}, est une ${nomPn} qui ne nomme pas d’arrangement : VOLTA prend le plus petit qui loge ces ${nB} contacts.` : `La référence de l’installation ne dit pas la norme : VOLTA prend, toutes normes confondues, le plus petit arrangement qui loge ces ${nB} contacts.`) : '';
   const kr = 'recit|' + nom, recit = b.pn ? `<button type="button" class="fi-lien pr-recit" data-changer="${escA(kr)}" aria-expanded="${FI.liste === kr}" data-bulle="D’où vient cette référence, de quelle base, et son schéma">D’où elle vient${ico('bas', 'fi-chevron')}</button>` : '';
   const tete = champs([ligneChamp('Référence', (M ? `<span class="fi-norme-puce statique" data-bulle="${escA(pourquoi)}">${esc(M.reference)}</span>` : `<b class="fi-ko-t">${fautifs.length ? 'Aucun arrangement ne loge ' + esc([...new Set(fautifs.map(x => x.borne))].join(', ')) : 'Aucun arrangement'}</b>`) + aide('prise', { plan: Q, fautifs }),
     { changer: boutonChanger('cou|' + nom, 'Les arrangements recommandés, puis les autres — chacun avec sa raison'), liste: liste + (b.pn ? recitReference({ cle: kr, nom, bornes: '*', c: { pn: b.pn }, Q, M, prise: true }) : ''),
@@ -1447,7 +1464,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   // le sexe de la fiche : deux puces qui ne bougent pas, celle qui est retenue pressée ; et pourquoi ce sexe, en une ligne
   const sexe = Q.tableContacts ? sexeDeLaFiche(nom, Q.sexe) : '';
   const motsSexe = Q.sexe === 'M' ? 'Fiche en broches (mâles), embase en douilles (femelles)' : 'Fiche en douilles (femelles), embase en broches (mâles)';
-  const pqSexe = !Q.tableContacts || !M ? '' : `<p class="fi-note pr-sexe">${insecable(esc(motsSexe + ' : ' + (Q.sexeSource === 'choix' ? 'choisi ici.' : Q.sexeSource === 'part number' ? 'la référence de l’installation le dit (' + b.pn + ').' : 'la référence ne le dit pas, Volta met d’office des douilles côté fiche — l’usage : le côté qui amène le courant porte les douilles, ses contacts ne se touchent pas.')))}</p>`;
+  const pqSexe = !Q.tableContacts || !M ? '' : `<p class="fi-note pr-sexe">${insecable(esc(motsSexe + ' : ' + (Q.sexeSource === 'choix' ? 'choisi ici.' : Q.sexeSource === 'part number' ? 'la référence de l’installation le dit (' + b.pn + ').' : 'la référence ne le dit pas, VOLTA met d’office des douilles côté fiche — l’usage : le côté qui amène le courant porte les douilles, ses contacts ne se touchent pas.')))}</p>`;
   // le raccord de chaque moitié, dans la même section que la prise (le lecteur : « tout ce qui est connecteur, tyrap, etc. »)
   const raccords = [['Fiche', amont], ['Embase', aval]].filter(([, xs]) => xs.length).map(([t, xs]) => raccordHtml({ cle: nom + '|' + t.toLowerCase(), titre: t, fils: xs.map(x => x.f), pn: b.pn, ref: Q.reference, plan: M ? Q : null })).join('');
   // pas de résumé sous « Connecteur » (le lecteur : « ne mets pas la référence en dessous de connecteur ») : la ligne Référence la dit
@@ -1456,7 +1473,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     sectionFilsDuRepere(fils, probs), sectionDejaFait(nom)];
   // l'identité : la référence de l'installation, une fois (l'arrangement est sur la ligne Référence) — une norme à la fois
   const id = identite([majuscule(natureDe(nom)), b.pn ? ident(b.pn) : M ? ident(M.reference) : '', esc(motFolios(foliosDuRepere(nom)))]);
-  /* (v78) L'ESSENTIEL : la face de la fiche, LA TRAVERSÉE (ce qui arrive, la lettre, ce qui repart), comment Volta a choisi
+  /* (v78) L'ESSENTIEL : la face de la fiche, LA TRAVERSÉE (ce qui arrive, la lettre, ce qui repart), comment VOLTA a choisi
      l'arrangement et le sexe ; LA FABRICATION : de chaque côté, les contacts à sertir et le raccord ; LES RÉGLAGES : changer
      d'arrangement, le sexe, le contact de chaque câble, le raccord */
   const places = M ? M.module.contacts.length : 0, nPris = M ? M.module.contacts.filter(ct => Q.fils.some(x => x.contact === ct)).length : 0;
@@ -1471,7 +1488,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   const motsS = Q.sexe === 'M' ? 'la fiche en broches, l’embase en douilles' : 'la fiche en douilles, l’embase en broches';
   const etapesP = [
     b.pn ? { html: `Votre fichier donne la référence <b class="id">${esc(b.pn)}</b>${nomPn ? ', une ' + esc(nomPn) : ''}.`, source: 'fichier' } : { html: 'Votre fichier ne donne pas de référence pour cette prise.', source: 'fichier', etat: 'att' },
-    M ? { html: Q.main ? `Arrangement <b class="id">${esc(M.reference)}</b>, choisi ici, à la main.` : Q.visee ? `Norme ${esc(fam)} choisie ici : Volta y prend le plus petit arrangement qui loge ces ${nB} contacts, <b class="id">${esc(M.reference)}</b>.`
+    M ? { html: Q.main ? `Arrangement <b class="id">${esc(M.reference)}</b>, choisi ici, à la main.` : Q.visee ? `Norme ${esc(fam)} choisie ici : VOLTA y prend le plus petit arrangement qui loge ces ${nB} contacts, <b class="id">${esc(M.reference)}</b>.`
           : Q.nomme ? `La référence nomme l’arrangement <b class="id">${esc(M.reference)}</b> (${esc(M.module.variante)}).` : `Arrangement <b class="id">${esc(M.reference)}</b> : le plus petit ${esc(fam)} qui a ces ${nB} contacts et accepte ${esc(types || 'ces câbles')}.`, source: Q.main || Q.visee ? 'main' : Q.nomme ? 'fichier' : 'calcul' }
       : { html: `Aucun arrangement ne loge ${esc([...new Set(fautifs.map(x => x.borne))].join(', ') || 'ces contacts')}${fautifs[0] ? ` : <b class="id">${esc(fautifs[0].f.type || '?')}</b> ${esc(fautifs[0].mot)}` : ''}.${fautifs[0] && fautifs[0].propose ? ` En <b class="id">${esc(fautifs[0].propose.type)}</b>, il s’y loge.` : ''}`, source: 'calcul', etat: 'ko' },
     M && Q.tableContacts ? { html: `${esc(majuscule(motsS))} : ${esc(Q.sexeSource === 'choix' ? 'choisi ici' : Q.sexeSource === 'part number' ? 'la référence le dit' : 'le côté qui amène le courant porte les douilles')}.`, source: Q.sexeSource === 'choix' ? 'main' : Q.sexeSource === 'part number' ? 'fichier' : 'hypothese', mot: Q.sexeSource === 'choix' || Q.sexeSource === 'part number' ? '' : 'l’usage' } : null,
@@ -1482,7 +1499,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
       return { titre: t, ref: i === 0 ? M.reference : '', sous: so, lignes: [...refsDe(xs), ...pieces] }; }) : [];
   const essP = (M ? `<div class="vu-schema"><figure class="vu-fig">${faceP(false)}<figcaption>${esc(nPris + ' contacts pris sur ' + places + ' · face de la fiche, côté contacts')}</figcaption>${legendeFaceVue(koP)}</figure>`
       + `<div class="vu-schema-d"><h4 class="vu-titre">Ce qui la traverse <span>${esc(pluriel(lettresP.length, 'contact'))}</span></h4>${traverseeVue(lettresP, coteP)}</div></div>` : `<div class="vu-schema">${faceP(false)}</div>`)
-    + pourquoiVue('Comment Volta a choisi la prise', etapesP);
+    + pourquoiVue('Comment VOLTA a choisi la prise', etapesP);
   const sF = sections.find(x => x && x.cle === 'fils'), sD = sections.find(x => x && x.cle === 'dejafait');
   const onglets = [
     { cle: 'essentiel', statut: { t: M ? nPris + ' contacts sur ' + places : 'aucun arrangement', etat: !M || koP ? 'ko' : 'ok' }, contenu: essP },
@@ -1493,7 +1510,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     chiffreCables(sF), Q.tableContacts && M ? { k: 'Fiche', v: Q.sexe === 'M' ? 'mâle' : 'femelle', sous: Q.sexe === 'M' ? 'en broches' : 'en douilles', onglet: 'reglages' } : null,
     { k: 'Référence', v: M ? ident(M.reference) : '<span class="fi-ko-t">aucune</span>', etat: M ? '' : 'ko', sous: fam ? esc(fam) : '', onglet: 'essentiel' }];
   const vignette = M ? `<span class="vu-faces"><span class="vu-face-v${koP ? ' ko' : ''}">${faceP(true)}<b class="id">${esc(M.module.variante)}</b></span></span>` : '';
-  return composerFiche({ type: 'prise', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [b.pn ? ident(b.pn) : M ? ident(M.reference) : '', fam ? esc(fam) : ''],
+  return composerFiche({ type: 'prise', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [b.pn ? ident(b.pn) : M ? ident(M.reference) : ''],
     probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, vignette, identite: id,
     geste: fautifs.length ? boutonReparer(fautifs.find(x => x.propose) || {}).replace('btn papier', 'btn cuivre dense') : '', ok: 'L’arrangement loge tous ses contacts, de chaque côté, avec leurs gauges.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 
@@ -1540,7 +1557,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const fautes = neuf ? [] : ['de', 'vers'].map(k => coupableAuBout(l, l[k])).filter(Boolean);
   const probs = [];
   if (!l.type) probs.push({ niveau: 'att', texte: 'type de câble inconnu : la gauge ne se vérifie pas', section: '' });
-  if (neuf) probs.push({ niveau: 'att', texte: 'Nouveau câble — Volta l’ajoute avec la barrette ' + l.aPoser + ' ; il entre au contrat quand elle a son vrai repère', section: '' });
+  if (neuf) probs.push({ niveau: 'att', texte: 'Nouveau câble — VOLTA l’ajoute avec la barrette ' + l.aPoser + ' ; il entre au contrat quand elle a son vrai repère', section: '' });
   [st.de, st.vers].forEach((s, k) => { if (s && s.ko) probs.push({ niveau: 'ko', texte: 'aucun contact n’accepte ce câble côté ' + (k ? l.vers : l.de), section: 'trajet' }); });
   // le plan d'un connecteur ne le loge pas : c'est ce câble qui l'en empêche (l'audit : « W-370 est vert »)
   fautes.forEach(y => probs.push({ niveau: 'ko', texte: `${y.rep}${y.connecteur ? ' · connecteur ' + y.connecteur : ''} : aucun arrangement ne loge ce ${l.type || 'câble'} sur la borne ${y.borne} (${y.mot})`, section: 'trajet' }));
@@ -1572,7 +1589,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const brins = cab ? [(cab.brins > 1 ? cab.brins + ' brins' : '1 brin') + (cab.blindage ? ' + blindage' : ''), cab.nature, cab.diametre != null ? 'Ø ' + nombre(cab.diametre) + ' mm' : '', cab.section != null ? nombre(cab.section) + ' mm² hors-tout' : '', cab.resistance != null ? nombre(cab.resistance) + ' mΩ/m' : '', cab.masse != null ? nombre(cab.masse) + ' g/m' : ''].filter(Boolean).join(' · ') : '';
   // sous la gauge, la section du CONDUCTEUR (EN 2853) — pas celle de la base des câbles, hors-tout (isolant et gaine compris)
   const cuivre = T.p && T.p.jauge != null ? filDeNorme(app.norme, l.type, +T.p.jauge) : null;
-  // le câble que la base SEE a mis à la place de celui de Volta (08 nonies) : la différence dans la bulle du type
+  // le câble que la base SEE a mis à la place de celui de VOLTA (08 nonies) : la différence dans la bulle du type
   const dCab = cab && typeof differenceSEEMots === 'function' ? differenceSEEMots('cables', cab) : '';
   const tuiles = neuf ? [tuile('Type', l.type ? esc(T.p.famille) : '—', { mono: true }), tuile('Gauge', jauge != null ? jauge + '<i>AWG</i>' : '—')] : [
     tuile('Type', T.fam, { mono: true, edit: true, etat: l.type ? (cab && !phy.length ? '' : 'att') : 'att', titre: [brins || (l.type ? 'Inconnu de la base des câbles' : 'Sans type'), dCab, ...phy.map(q => majuscule(q.texte) + ' : impossible')].filter(Boolean).join('\n'), sous: [cab && cab.nature ? esc(cab.nature) : l.type ? (cab ? '' : 'hors de la base') : 'à écrire', dCab ? '<i class="ct-see">SEE</i>' : '', repereConfiance(cab, 'Votre base des câbles') + (cab && !cab.nature && !dCab ? esc((confianceDe(cab) || {}).mot || '') : '')].filter(Boolean).join(' ') }),
@@ -1593,7 +1610,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       + `<span class="fi-bout-rep"><b>${esc(rep || '—')}</b>${borne ? `<span>:${esc(borne)}</span>` : ''}</span>${quoi ? `<small>${esc(quoi)}</small>` : ''}${ico('droite', 'fi-bout-fl')}</button>`
       + (s && s.ko && !ct ? '<small class="fi-bout-ko">Aucun contact pour ce câble</small>' : ct ? `<span class="fi-bout-ct">${boutonContact(ct, 'fi-bout-puce')}${ligne && ligne.reference === ct.st.reference ? repereConfiance(ligne, 'Vos tables SEE') : ''}</span>` : '') + '</li>'; };
   const passe = [via('de'), via('vers')].filter(Boolean);
-  const etapes = bout('de', 'De') + passe.map(t => `<li class="fi-etape via"><span class="fi-bout-k">Par</span><span>${esc(t)}</span><small>barrette ajoutée par Volta</small></li>`).join('') + bout('vers', 'Vers');
+  const etapes = bout('de', 'De') + passe.map(t => `<li class="fi-etape via"><span class="fi-bout-k">Par</span><span>${esc(t)}</span><small>barrette ajoutée par VOLTA</small></li>`).join('') + bout('vers', 'Vers');
   // (après les bouts : c'est `bout` qui connaît le contact de chacun)
   // (v74 : la puce ouvre le contact — sa norme, sa table, sa source —, et dessous les autres contacts de la taille)
   const choixCt = ['de', 'vers'].map(k => { const ct = cts[k]; if (!(ct && FI.liste === 'sertir:' + ct.ks)) return ''; const Qc = ct.plan.Q, famC = Qc ? Qc.famille || (Qc.modules && Qc.modules[0] ? Qc.modules[0].module.famille : '') : '';
@@ -1611,7 +1628,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const mesure = (k, q, v, barre, etat, d, bulle) => `<div class="fi-mes ${etat || ''}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}><span class="fi-mes-k"><span>${k}${q}</span></span><span class="fi-mes-v">${v}</span><span class="fi-barre ${etat || ''}" aria-hidden="true"><i style="width:${(Math.min(1, barre || 0) * 100).toFixed(1)}%"></i></span>${d ? `<p class="fi-mes-d">${d}</p>` : ''}</div>`;
   // son disjoncteur en puce, le calibre ÉCRIT à côté (le technicien v73 : « la porte vers la vraie cause, un petit texte souligné de 11 px ») — ⚠ quand il est la cause
   const calS = prot && prot.calEcrit ? prot.calEcrit : x.al ? x.al.calibre : null, causeS = prot && prot.cause;
-  const source = x.al ? `<button type="button" class="fi-sertir fi-ct-puce fi-dj-puce${causeS ? ' ' + (causeS.k === 'declenche' ? 'ko' : 'main') : ''}" data-choisir-bloc="${escA(x.al.nom)}" aria-label="${escA('Son disjoncteur : ' + x.al.nom + (calS ? ', ' + amperes(calS) : ''))}" data-bulle="${escA('Son disjoncteur : ' + x.al.nom + (calS ? ', ' + amperes(calS) + (prot && prot.calEcrit ? ' (l’installation)' : '') : '') + (causeS ? ' — il est la cause : ' + (causeS.k === 'declenche' ? 'il déclenche' : 'il est juste') : '') + ' — son profil de charge, sa courbe')}">${esc(x.al.nom)}${calS ? ' · ' + esc(amperes(calS)) : ''}${causeS ? ' <i>⚠</i>' : ''}</button>` : `${esc(nombre(H.courant))} A ${origine('hyp', 'Aucun disjoncteur en amont : Volta suppose ' + nombre(H.courant) + ' A', 'supposés')}`;
+  const source = x.al ? `<button type="button" class="fi-sertir fi-ct-puce fi-dj-puce${causeS ? ' ' + (causeS.k === 'declenche' ? 'ko' : 'main') : ''}" data-choisir-bloc="${escA(x.al.nom)}" aria-label="${escA('Son disjoncteur : ' + x.al.nom + (calS ? ', ' + amperes(calS) : ''))}" data-bulle="${escA('Son disjoncteur : ' + x.al.nom + (calS ? ', ' + amperes(calS) + (prot && prot.calEcrit ? ' (l’installation)' : '') : '') + (causeS ? ' — il est la cause : ' + (causeS.k === 'declenche' ? 'il déclenche' : 'il est juste') : '') + ' — son profil de charge, sa courbe')}">${esc(x.al.nom)}${calS ? ' · ' + esc(amperes(calS)) : ''}${causeS ? ' <i>⚠</i>' : ''}</button>` : `${esc(nombre(H.courant))} A ${origine('hyp', 'Aucun disjoncteur en amont : VOLTA suppose ' + nombre(H.courant) + ' A', 'supposés')}`;
   const bulleI = r.bulle.split('\n').filter(t => !/^chute|^en pointe/.test(t)).slice(1).join('\n');
   const bulleU = ch.total ? `En ligne depuis ${x.al.nom} jusqu’à ${ch.total.bout[0]}${ch.total.bout[1] ? ':' + ch.total.bout[1] : ''} : ${volts(ch.total.dU)}${ch.max != null ? ' (' + volts(ch.max) + ' admis)' : ''}${ch.reel ? '' : ', longueurs supposées'}\nSur ce câble : ${volts(ch.dU)} (${nombre(arrondi(ch.L, 2))} m${ch.hyp ? ' supposés' : ''})${ch.pointe ? `\nEn pointe : ${volts(ch.pointe.dU)} à ${amperes(ch.pointe.i)} > ${volts(ch.pointe.admis)} admis` : ''}` : ch.dU != null ? `Sur ce câble : ${volts(ch.dU)} = ${nombre(arrondi(x.rd.rho, 1))} Ω/km × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A` : 'La résistance du câble est inconnue';
   // l'intensité : au pire du permanent et de la pointe, « sur » ce qu'il admet pour cette durée ; dessous, en clair, l'autre
@@ -1619,7 +1636,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const dT = x.pointe ? ' pendant ' + secondes(x.pointe.t) : '';
   const dI = !x.fn ? '' : (pointeI ? esc(`Au pire, ${x.pointe.nom || 'la pointe'}${dT}${Math.abs(x.pointe.admis - x.continu) > 0.05 ? ' (sur cette durée, il admet plus qu’en continu)' : ''}. En continu : ${amperes(x.I)} sur ${amperes(x.continu)}.`)
       : x.pointe && x.pointe.admis ? esc(`En continu, au pire. ${majuscule(x.pointe.nom || 'la pointe')} : ${amperes(x.pointe.i)}${dT}, sur ${amperes(x.pointe.admis)} admis.`) : esc('En continu.'))
-    + (x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : Volta suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
+    + (x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
   const intens = !x.fn ? `<p class="fi-note">${l.type ? 'Hors de l’EN 2853 : ce qu’il admet ne se lit pas.' : 'Sans type, ce qu’il admet ne se lit pas.'}</p>`
     : mesure('Intensité', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
   // la chute : en ligne depuis le disjoncteur jusqu'au bout du chemin, sur ce qui est admis ; dessous, le chemin, la part de
@@ -1653,11 +1670,11 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const sousB = k => { const ct = cts[k]; return ct && ct.st ? 'contact ' + motSertir(ct.st) : ''; };
   const cheminG = cheminVue({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, via: passe.map(t => t.split(' · ')[0]).join(', '), couleur: coul,
     legende: [l.type || 'sans type', L != null ? nombre(arrondi(L, 2)) + ' m' : neuf ? '' : nombre(H.longueur) + ' m supposés'].filter(Boolean).join(' · '), sousDe: sousB('de'), sousVers: sousB('vers') }, largeurVue());
-  const etapesF = neuf ? [{ html: `Volta le crée quand <b class="id">${esc(l.aPoser)}</b> est posée au contrat : il prend alors sa place dans votre fichier.`, source: 'calcul', etat: 'att' }] : [
+  const etapesF = neuf ? [{ html: `VOLTA le crée quand <b class="id">${esc(l.aPoser)}</b> est posée au contrat : il prend alors sa place dans votre fichier.`, source: 'calcul', etat: 'att' }] : [
     l.type ? { html: `Type <b class="id">${esc(l.type)}</b>${jauge != null ? `, gauge ${esc(String(jauge))} AWG` : ''} : ${cab ? 'la base des câbles le connaît' + (brins ? ' — ' + esc(brins) : '') : 'hors de la base des câbles'}.`, source: 'fichier', etat: cab ? '' : 'att' }
       : { html: 'Votre fichier ne donne pas son type : la gauge ne se vérifie pas.', source: 'fichier', etat: 'att' },
     x.al ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : ce que tirent les équipements qu’il alimente, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
-      : { html: `Aucun disjoncteur en amont : Volta suppose <b>${esc(nombre(H.courant))} A</b>.`, source: 'hypothese', etat: 'att' },
+      : { html: `Aucun disjoncteur en amont : VOLTA suppose <b>${esc(nombre(H.courant))} A</b>.`, source: 'hypothese', etat: 'att' },
     x.fn ? { html: `Il admet <b>${esc(amperes(x.continu))}</b> en continu${x.fac && Math.abs(x.fac - 1) > 1e-9 ? ' (déclassé × ' + esc(nombre(arrondi(x.fac, 2))) + ')' : ''}.`, source: 'norme', mot: 'EN 2853' } : null,
     L != null ? { html: `Longueur <b>${esc(nombre(arrondi(L, 2)))} m</b>.`, source: 'fichier' } : { html: `Longueur supposée <b>${esc(nombre(H.longueur))} m</b> : votre fichier ne la donne pas, et la chute en dépend.`, source: 'hypothese', etat: 'att' },
     ch.total ? { html: `Chute <b>${esc(volts(ch.total.dU))}</b> de ${esc(x.al.nom)} jusqu’à ${esc(boutU)}${ch.max != null ? ', pour ' + esc(volts(ch.max)) + ' admis' : ''} ; ce câble en fait ${esc(volts(ch.dU))}.`, source: 'calcul', etat: ch.trop ? (ch.reel ? 'ko' : 'att') : '' }

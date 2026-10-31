@@ -153,7 +153,7 @@ const SCHEMA_PDF = (() => {
   const RE_BORNE = /^(?:[A-Z]{1,2}[-.]?)?\d{1,3}[A-Z]?$|^[A-Z]{1,2}$|^[A-Z]{1,2}\d{1,2}[A-Z]$/;
   const RE_TYPE = /^(?:DR|DW|ML[A-D]?|BN|AD[B-E]?|DG|GPB|KC|KD|KL|YV|X[EFKYD]|W[SHLMNFWCGKP]|HE|AM|LE|KQ|KR|DH|VN[B-D]?|CF|SPA|PB)\d{1,2}[A-Z]?$/;
   const RE_PN = /^(?:EN|MS|NSA|ABS|ASNE|E\d{3,}|M\d{3,}|D38999|MIL|AS\d|SAE|NAS|NSA|DMC|M8\d{3})[\w\-/.,*]{3,}$|^\*?\d{3}[A-Z]\d{4,}/;
-  // les flèches d'un renvoi (« ›F3 » : le renvoi « ▷F3 » de Volta, écrit dans un PDF en WinAnsi — 08-pdf-dossier)
+  // les flèches d'un renvoi (« ›F3 » : le renvoi « ▷F3 » de VOLTA, écrit dans un PDF en WinAnsi — 08-pdf-dossier)
   const FLECHES = '→|->|>|▷|►|⇨|⇒|›|»|←|<-|◁|◄|⇦|⇐|‹|«', RE_FLECHE = new RegExp('^\\s*(' + FLECHES + ')'), RE_RETOUR = /^\s*(←|<-|◁|◄|⇦|⇐|‹|«)/;
   const RE_RENVOI = new RegExp('^(?:' + FLECHES + ')?\\s*(?:F(?:OLIO|°|\\.)?\\s*)?(\\d{1,3})\\s*(?:[\\/.]\\s*([A-Z]?\\d{0,2}[A-Z]?))?$', 'i');
   const RE_FIL = /^W[-_]?\d{1,5}[A-Z]?$/i;
@@ -493,7 +493,7 @@ const SCHEMA_PDF = (() => {
       for (let i = 1; i < nums.length; i++) { const A = ou(nums[i - 1]), Bn = ou(nums[i]);
         liaisons.push({ de: b.nom.s, borneDe: nums[i - 1], pnDe: '', vers: b.nom.s, borneVers: nums[i], pnVers: '', type: '', cable: '', conf: 0.9, raisons: ['shunt : bornes ' + nums[i - 1] + ' et ' + nums[i] + ' sur le même pointillé de ' + b.nom.s],
           trajet: [[A.c, Bn.c]], bouts: [A.c, Bn.c], mots: [A.mot.B, Bn.mot.B, b.nom.B] }); } });
-    // une barrette à poser (VT1, la convention de Volta) : ses bornes 2, 3… reviennent sur la borne que la 1 dédouble
+    // une barrette à poser (VT1, la convention de VOLTA) : ses bornes 2, 3… reviennent sur la borne que la 1 dédouble
     replierBarrettesAPoser(liaisons);
     // lu sur un scan : les textes viennent de l'OCR, les traits de l'image — une confiance plus basse, toujours à relire
     if (P.scan) liaisons.forEach(l => { l.conf = Math.round(l.conf * 0.75 * 100) / 100; l.raisons.unshift('lu sur un scan : les textes par l’OCR, les traits sur l’image'); });
@@ -507,7 +507,7 @@ const SCHEMA_PDF = (() => {
   // le repère d'un cadre ou de son voisin collé (pour dire à qui est une borne sans trait)
   function cadreRepere(k, cadres) { const r = (k.reperes || [])[0] || (k.mots || []).find(m => m.devine); if (r) return r.s; const v = cadres.find(j => j !== k && !j.cadre && (j.reperes || []).length === 1 && k.x0 <= j.x1 + 1 && j.x0 <= k.x1 + 1 && k.y0 <= j.y1 + 1 && j.y0 <= k.y1 + 1); return v ? v.reperes[0].s : ''; }
 
-  /* Une barrette à poser (VTn : le nom que Volta donne à une borne d'équipement qui reçoit plusieurs fils) : le fil de
+  /* Une barrette à poser (VTn : le nom que VOLTA donne à une borne d'équipement qui reçoit plusieurs fils) : le fil de
      la borne 1 vient de la borne dédoublée ; chaque fil des bornes 2, 3… en part en vérité. On le replie comme le
      moteur (01, `sansBarrettesAPoser`) : la liaison de la 1 et les shunts disparaissent, les autres retrouvent la borne. */
   function replierBarrettesAPoser(L) { const source = new Map();
@@ -529,7 +529,7 @@ const SCHEMA_PDF = (() => {
     const indice = ((lues.find(r => r.champs && r.champs.indice) || {}).champs || {}).indice || '';
     const harness = ((lues.find(r => r.champs && r.champs.harness) || {}).champs || {}).harness || '';
     // le folio : celui du cartouche, sinon le rang de la page ; le dessin (FWD) : le numéro du document et le folio — une page,
-    // un folio de Volta
+    // un folio de VOLTA
     lues.forEach((r, i) => { const f = (r.champs && r.champs.folioNum) || String(i + 1); r.folio = f;
       r.plan = numero ? numero + (lues.length > 1 ? ' F' + f : '') : f; });
     const tout = [];

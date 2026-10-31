@@ -9,11 +9,11 @@
        (08-bibliotheque, `synchroniserFil`). Sa hauteur est le jeton --entete : le plan commence dessous. -->
   <header id="entete" aria-label="Recherche et menu">
     <div class="en-contrat">
-      <button type="button" class="en-volta" id="en-biblio" aria-label="Volta : la bibliothèque des installations">
+      <button type="button" class="en-volta" id="en-biblio" aria-label="VOLTA : la bibliothèque des installations">
         <span class="en-marque" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M5.5 7 12 17.5 18.5 7"/><circle cx="5.5" cy="5.6" r="1.9"/><circle cx="18.5" cy="5.6" r="1.9"/><circle cx="12" cy="18.6" r="1.25" fill="currentColor" stroke="none"/></svg>
         </span>
-        <span class="en-nom">Volta</span>
+        <span class="en-nom">VOLTA</span>
         <span class="bulle" aria-hidden="true">Bibliothèque</span>
       </button>
       <nav class="en-fil" id="en-fil" aria-label="Où l’on est" hidden>
@@ -25,7 +25,7 @@
     <!-- La recherche : toujours là, au milieu de la barre ; « / » y va, Échap en sort, la liste tombe dessous. -->
     <div class="recherche" id="recherche">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="Repère, câble, part number, 300XC1:B5…" aria-label="Chercher un repère, un câble, un part number, une description ou une borne (repère:borne)" autocomplete="off" spellcheck="false">
+      <input id="q" type="search" placeholder="Repère, câble…" aria-label="Chercher un repère, un câble, un part number, une description ou une borne (repère:borne)" autocomplete="off" spellcheck="false">
       <kbd class="raccourci rc-ouvrir" aria-hidden="true">/</kbd>
       <kbd class="raccourci rc-fermer" aria-hidden="true">Échap</kbd>
       <!-- au doigt (pas de touche Échap) : une croix ferme la recherche -->
@@ -69,7 +69,7 @@
               <button role="menuitem" data-sous="exporter" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-exporter" data-aide="D’abord l’installation corrigée, en Excel : ce que vous renvoyez. Puis le folio (SVG, PNG, A3) et le plan entier (PDF, Visio, suivi, nomenclature)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg><span class="menu-l">Exporter<small id="mn-exporter" hidden></small></span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Le reste">
-              <button role="menuitem" data-sous="plus" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-plus" data-aide="Coller des lignes, l’exemple, un schéma en PDF ou en Visio, la bible, les normes, les hypothèses, le cartouche, comment Volta réfléchit, les raccourcis."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu-l">Plus</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+              <button role="menuitem" data-sous="plus" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-plus" data-aide="Coller des lignes, l’exemple, un schéma en PDF ou en Visio, la bible, les normes, les hypothèses, le cartouche, comment VOLTA réfléchit, les raccourcis."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu-l">Plus</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
             </div>
           </div>
           <!-- EXPORTER : d'abord LE RETEST CORRIGÉ — le livrable, ce que le lecteur renvoie (08-export) —, seul dans son
@@ -80,7 +80,7 @@
           <div class="menu-panneau" id="mp-exporter" role="group" aria-label="Exporter" hidden>
             <button role="menuitem" class="menu-retour" data-retour><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span class="menu-l">Exporter</span></button>
             <div class="menu-bloc menu-livrable" role="group" aria-label="Le livrable" data-groupe="retest">
-              <button role="menuitem" data-act="retestcorrige" class="menu-2l" data-aide="Ce qui part dans votre installation, relu avant d’enregistrer : chaque case changée dit ce qu’elle portait, et si c’est vous ou une proposition de Volta."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/><path d="m14.5 16.5 1.5 1.5 3-3"/></svg><span class="menu-l">L’installation corrigée (Excel)<small id="mn-retest">aucune modification pour l’instant</small></span></button>
+              <button role="menuitem" data-act="retestcorrige" class="menu-2l" data-aide="Ce qui part dans votre installation, relu avant d’enregistrer : chaque case changée dit ce qu’elle portait, et si c’est vous ou une proposition de VOLTA."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/><path d="m14.5 16.5 1.5 1.5 3-3"/></svg><span class="menu-l">L’installation corrigée (Excel)<small id="mn-retest">aucune modification pour l’instant</small></span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Le folio affiché" data-groupe="folio">
               <button role="menuitem" data-act="svg" data-aide="Le folio affiché et son cartouche, en vectoriel : net à toute échelle."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 18.5C6 11 11 6 18.5 5.5"/><rect x="3" y="17" width="4" height="4" rx="1"/><rect x="17" y="3" width="4" height="4" rx="1"/></svg><span class="menu-l">Folio en SVG</span></button>
@@ -88,7 +88,7 @@
               <button role="menuitem" data-act="imprimer" data-aide="Le folio affiché, seul, sur une feuille A3 paysage."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg><span class="menu-l">Imprimer</span><span class="raccourci">Ctrl+P</span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Le plan entier" data-groupe="contrat">
-              <button role="menuitem" data-act="dossierpdf" data-aide="Tous les folios en A3 avec leur cartouche, une page de garde (ce qui reste à reprendre), la nomenclature : un PDF vectoriel que Volta sait relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l4 4v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M16 3v4h4M4 7v13a1 1 0 0 0 1 1h11M10.5 11h6M10.5 14.5h6"/></svg><span class="menu-l">Le dossier en PDF (tous les folios)</span></button>
+              <button role="menuitem" data-act="dossierpdf" data-aide="Tous les folios en A3 avec leur cartouche, une page de garde (ce qui reste à reprendre), la nomenclature : un PDF vectoriel que VOLTA sait relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l4 4v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M16 3v4h4M4 7v13a1 1 0 0 0 1 1h11M10.5 11h6M10.5 14.5h6"/></svg><span class="menu-l">Le dossier en PDF (tous les folios)</span></button>
               <button role="menuitem" data-act="suivi" data-aide="Une ligne par pièce posée — barrette, prise, connecteur — avec sa référence, ses contacts et ses câbles, en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg><span class="menu-l">Suivi de fabrication (CSV)</span></button>
               <button role="menuitem" data-act="nomenclaturecsv" data-aide="Ce qu’il faut commander pour tout le plan — contacts, modules, connecteurs, câbles —, en CSV, sans ouvrir la nomenclature."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">La nomenclature (CSV)</span></button>
             </div>
@@ -100,8 +100,8 @@
             <div class="menu-bloc" role="group" aria-label="Sans fichier">
               <button role="menuitem" data-act="coller" data-aide="Sans fichier : quelques lignes copiées d’Excel, une par câble. Un aperçu, puis ajouter au plan ou le remplacer."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"/></svg><span class="menu-l">Coller des lignes…</span></button>
               <button role="menuitem" data-act="exemple" data-aide="Le plan de démonstration, 201 câbles sur 6 folios, tel qu’il est livré. Le vôtre reste dans la bibliothèque : Ctrl+Z le rend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 7 12 17.5 18.5 7"/><circle cx="5.5" cy="5.6" r="1.9"/><circle cx="18.5" cy="5.6" r="1.9"/></svg><span class="menu-l">Ouvrir l’exemple</span></button>
-              <!-- un PDF de schéma : la visionneuse, puis le retest que Volta en lit (08-pdf, qui pose le geste de cette ligne) -->
-              <button role="menuitem" data-act="pdf" data-aide="Un schéma en PDF, exporté ou scanné : Volta le montre, lit ses liaisons (bornes, repères, cartouche) et en fait une installation à relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/><circle cx="8.8" cy="15.5" r="1.3"/><circle cx="15.2" cy="12" r="1.3"/><path d="M10 15.5h2.5v-3.5h1.5"/></svg><span class="menu-l">Lire un PDF de schéma…</span></button>
+              <!-- un PDF de schéma : la visionneuse, puis le retest que VOLTA en lit (08-pdf, qui pose le geste de cette ligne) -->
+              <button role="menuitem" data-act="pdf" data-aide="Un schéma en PDF, exporté ou scanné : VOLTA le montre, lit ses liaisons (bornes, repères, cartouche) et en fait une installation à relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/><circle cx="8.8" cy="15.5" r="1.3"/><circle cx="15.2" cy="12" r="1.3"/><path d="M10 15.5h2.5v-3.5h1.5"/></svg><span class="menu-l">Lire un PDF de schéma…</span></button>
               <!-- « Lire un schéma Visio… » se pose ici, après le PDF (08-visio, `entreeDuMenu`) -->
             </div>
             <div class="menu-bloc" role="group" aria-label="Ce qui juge">
@@ -111,13 +111,13 @@
               <button role="menuitem" data-act="cartouche" data-aide="Le titre, le dessinateur, la date et l’indice, écrits en bas à droite de chaque folio."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M10 14h11M10 14v6M15.5 14v6"/></svg><span class="menu-l">Cartouche…</span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Prendre en main">
-              <button role="menuitem" data-act="comprendre" data-aide="Une page, six images : d’où viennent les pièces, comment Volta choisit un contact, un calibre, ce que disent les routes et « manque », comment tout vérifier."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6"/><circle cx="12" cy="16.9" r=".6"/></svg><span class="menu-l">Comment Volta réfléchit</span></button>
+              <button role="menuitem" data-act="comprendre" data-aide="Une page, six images : d’où viennent les pièces, comment VOLTA choisit un contact, un calibre, ce que disent les routes et « manque », comment tout vérifier."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6"/><circle cx="12" cy="16.9" r=".6"/></svg><span class="menu-l">Comment VOLTA réfléchit</span></button>
               <button role="menuitem" data-act="raccourcis" data-aide="Les touches de l’outil sur une feuille : chercher, les problèmes un par un, le récapitulatif, défaire…"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1M8 14h8"/></svg><span class="menu-l">Raccourcis clavier</span><span class="raccourci">?</span></button>
             </div>
-            <div class="menu-bloc" role="group" aria-label="Améliorer Volta">
+            <div class="menu-bloc" role="group" aria-label="Améliorer VOLTA">
               <button role="menuitem" data-act="carnet" data-aide="Une petite barre pour noter une hésitation pendant le travail. La note se garde sur ce PC avec l’écran où vous étiez, et part avec le bilan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M9.5 8H15M9.5 12H15M9.5 16h3"/></svg><span class="menu-l">Carnet de séance</span><span class="raccourci">C</span></button>
-              <button role="menuitem" data-act="autotest" data-aide="Volta ouvre seul chaque folio, fiche, onglet et export du plan, chronomètre et note chaque erreur, sans un nom du plan. Le résultat part avec le bilan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/><path d="M3 4h18v16H3z" opacity=".35"/></svg><span class="menu-l">Autotest du plan</span></button>
-              <button role="menuitem" data-act="bilan" data-aide="Ce que Volta a lu et jugé de ce plan, en chiffres, sans un repère ni un part number : à copier dans la conversation pour améliorer Volta."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="menu-l">Bilan anonyme</span></button>
+              <button role="menuitem" data-act="autotest" data-aide="VOLTA ouvre seul chaque folio, fiche, onglet et export du plan, chronomètre et note chaque erreur, sans un nom du plan. Le résultat part avec le bilan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/><path d="M3 4h18v16H3z" opacity=".35"/></svg><span class="menu-l">Autotest du plan</span></button>
+              <button role="menuitem" data-act="bilan" data-aide="Ce que VOLTA a lu et jugé de ce plan, en chiffres, sans un repère ni un part number : à copier dans la conversation pour améliorer VOLTA."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="menu-l">Bilan anonyme</span></button>
             </div>
           </div>
         </div>
@@ -231,7 +231,7 @@
     </span>
   </nav>
 
-  <!-- LA BIBLIOTHÈQUE : l'ouverture de Volta, sur la table bleu nuit. Les installations (une installation : telle antenne, tel
+  <!-- LA BIBLIOTHÈQUE : l'ouverture de VOLTA, sur la table bleu nuit. Les installations (une installation : telle antenne, tel
        cockpit…) et, dans chacune, ses plans (un plan = un retest) ; on choisit l'installation, puis le plan, qui s'ouvre sur la
        table. Elle couvre la table, le rail et les folios (le plan reste dessous, tel qu'on l'a laissé) ; les documents (vos
        fichiers, la bible, les normes) s'ouvrent à côté d'elle. 08-bibliotheque écrit tout (`rendreBibliotheque`) ; un

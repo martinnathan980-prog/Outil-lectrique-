@@ -21,7 +21,7 @@
        « Ouvrir comme plan » (le chemin de tout retest : `chargerContrat`) et
        « Enregistrer en retest Excel » (les seize colonnes, SheetJS).
    Un PDF SCANNÉ n'a pas de texte : on relie à la main — un clic sur une borne,
-   un clic sur l'autre ; Volta propose le repère et la borne (ce qui est déjà
+   un clic sur l'autre ; VOLTA propose le repère et la borne (ce qui est déjà
    saisi revient, la borne suivante aussi), on valide au clavier.
 
    Rien ne sort du poste : pdf.js est embarqué (vendor/, construire.js), son
@@ -192,7 +192,7 @@ function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; c
   const champs = L && L.pages[PDF.page - 1] && L.pages[PDF.page - 1].champs || {}, cart = [champs.numero || (L && L.numero), champs.folio ? 'folio ' + champs.folio : '', champs.indice || (L && L.indice) ? 'indice ' + (champs.indice || L.indice) : ''].filter(Boolean);
   let haut = `<p class="pdf-etat" id="pdf-etat" role="status">${etat}</p>` + (cart.length ? `<p class="pdf-cart">Cartouche : <span class="id">${cart.map(esc).join('</span>' + POINT + '<span class="id">')}</span></p>` : ''), corps = '';
   const lisible = tout && L.pages.every(r => r.texte), vectorise = tout && L.pages.every(r => r.vectorise);
-  if (tout) haut += `<div class="pdf-scan"><p><b>${vectorise ? 'Texte dessiné en traits' : 'Page scannée'}</b>${lisible ? ', son texte se lit (le scanner l’a reconnu) : Volta propose le repère et la borne écrits là où vous cliquez' : vectorise ? ' : ce PDF n’a pas de texte à lire, ses lettres sont des dessins' : ' : aucun texte à lire'}. Reliez les bornes à la main — un clic sur une borne, un clic sur l’autre ; Entrée valide.</p>${PDF.assiste ? '' : '<button class="btn papier" data-pdf="assiste">Relier à la main</button>'}</div>`;
+  if (tout) haut += `<div class="pdf-scan"><p><b>${vectorise ? 'Texte dessiné en traits' : 'Page scannée'}</b>${lisible ? ', son texte se lit (le scanner l’a reconnu) : VOLTA propose le repère et la borne écrits là où vous cliquez' : vectorise ? ' : ce PDF n’a pas de texte à lire, ses lettres sont des dessins' : ' : aucun texte à lire'}. Reliez les bornes à la main — un clic sur une borne, un clic sur l’autre ; Entrée valide.</p>${PDF.assiste ? '' : '<button class="btn papier" data-pdf="assiste">Relier à la main</button>'}</div>`;
   if (n || (L && !tout)) {
     haut += `<div class="pdf-filtres segment" role="group" aria-label="Lignes montrées">${[['tout', 'Toutes', n], ['revoir', 'À revoir', revoir], ['page', 'Cette page', PDF.L.filter(l => l.page === PDF.page - 1 || l.pageVers === PDF.page - 1).length]].map(([k, t, c]) => `<button data-filtre="${k}" aria-pressed="${PDF.filtre === k}">${t}<i>${c}</i></button>`).join('')}</div>`;
     const V = lignesVues();
@@ -237,7 +237,7 @@ function corrigerCasePdf(td) { const tr = td.closest('tr'), i = +tr.dataset.i, k
   inp.addEventListener('blur', () => ecrire(0)); }
 
 /* ---- relier à la main : un clic sur une borne, un clic sur l'autre ------------------------------------------------
-   Volta propose : sur un PDF vectoriel, le repère et la borne écrits là (les textes les plus proches du clic) ; sur un
+   VOLTA propose : sur un PDF vectoriel, le repère et la borne écrits là (les textes les plus proches du clic) ; sur un
    scan, le dernier repère saisi près de là et la borne suivante. Ce qui est déjà saisi revient dans la liste. */
 const versPage = (cx, cy) => { const r = $('pdf-feuille').getBoundingClientRect(), s = PDF.vue.s; return [(cx - r.left) / s, (cy - r.top) / s]; };
 function propositionPdf(p) { const n = PDF.page - 1, M = (PDF.textes.get(PDF.page) || []), u = (PDF.lecture && PDF.lecture.pages[n] && PDF.lecture.pages[n].u) || 8;
@@ -278,7 +278,7 @@ function liaisonSousLeClic(e) { const p = versPage(e.clientX, e.clientY), n = PD
   PDF.L.forEach((l, i) => { const tr = l.page === n ? l.trajet : l.pageVers === n ? l.trajetVers : null; (tr || []).forEach(([a, b]) => { const vx = b[0] - a[0], vy = b[1] - a[1], L2 = vx * vx + vy * vy;
     const t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / L2)) : 0, d = Math.hypot(p[0] - a[0] - t * vx, p[1] - a[1] - t * vy); if (d < bd) { bd = d; best = i; } }); });
   if (best >= 0) { if (PDF.filtre !== 'tout' && !lignesVues().some(([, i]) => i === best)) PDF.filtre = 'tout'; PDF.vu = null; choisirLiaisonPdf(best, false); } }
-/* ---- sortir : un plan de Volta, un retest Excel ------------------------------------------------------------------ */
+/* ---- sortir : un plan de VOLTA, un retest Excel ------------------------------------------------------------------ */
 const liaisonsDuPdf = () => PDF.L.filter(l => l.de && l.vers).map(l => ({ de: l.de, borneDe: l.borneDe, pnDe: l.pnDe, vers: l.vers, borneVers: l.borneVers, pnVers: l.pnVers, type: l.type, cable: l.cable, plan: l.plan || l.folio, fwd: l.plan || l.folio, harness: l.harness || '' }));
 function ouvrirPdfCommePlan() { const L = liaisonsDuPdf(); if (!L.length) return; const nom = PDF.nom.replace(/\.pdf$/i, '');
   fermerPdf(); chargerContrat(L, 'lecture de ' + PDF.nom, nom, { nouveau: true }); if (typeof contratRecu === 'function') contratRecu(nom, 'PDF de schéma');

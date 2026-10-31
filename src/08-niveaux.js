@@ -65,15 +65,22 @@ function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g
    Dans le grand, la même chose sur une ligne fine : la barre qu'on tient pour déplacer la fenêtre. ---- */
 const GENRES_FICHE = { equipement: 'Équipement', disjoncteur: 'Disjoncteur', barrette: 'Barrette de jonction', prise: 'Prise de coupure', masse: 'Masse', fil: 'Câble' };
 function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
-  const rep = t.champ ? `<input class="nc-rep-in" id="${t.champ}" value="${escA(nom)}" size="${Math.max(3, nom.length)}" style="width:calc(${Math.max(3, nom.length) + 1}ch + 16px)" aria-label="${escA(t.aide || 'Repère — écrire pour renommer partout')}" data-bulle="${escA(t.aide || 'Un clic pour le renommer : chaque câble suit')}" spellcheck="false" autocomplete="off">`
+  // (v78, le lecteur : « le genre et la référence, même taille, même police — un tiret au milieu ; pas d'écarts de gras »)
+  const rep = t.champ ? `<input class="nc-rep-in" id="${t.champ}" value="${escA(nom)}" size="${Math.max(3, nom.length)}" style="width:calc(${Math.max(3, nom.length) + 1}ch + 14px)" aria-label="${escA(t.aide || 'Repère — écrire pour renommer partout')}" data-bulle="${escA(t.aide || 'Un clic pour le renommer : chaque câble suit')}" spellcheck="false" autocomplete="off">`
     : `<span class="nc-rep-t">${esc(nom)}</span>`;
-  const meta = (o.meta || []).filter(Boolean).map(m => `<span>${m}</span>`).join('');
-  const sym = `<span class="nc-sym" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span>`;
-  if (grand) return `<div class="nc-tete fine">${sym}<span class="nc-genre-mot">${esc(GENRES_FICHE[o.type] || 'Élément')}</span><span class="nc-rep">${rep}</span>${meta ? `<span class="nc-meta fi-identite">${meta}</span>` : ''}</div>`;
-  return `<div class="nc-tete">${sym}<span class="nc-tete-t"><span class="nc-genre-mot">${esc(GENRES_FICHE[o.type] || 'Élément')}</span><span class="nc-rep">${rep}</span></span></div>${meta ? `<div class="nc-meta fi-identite">${meta}</div>` : ''}`; }
+  const ms = (o.meta || []).filter(Boolean), ref = ms.length === 1 && /class="id"/.test(ms[0]);
+  const meta = ms.length ? `<div class="nc-meta fi-identite">${ref ? `<span class="nc-meta-k">Référence</span>` : ''}${ms.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</div>` : '';
+  const sym = `<svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg>`, titre = `<span class="nc-genre-mot">${esc(GENRES_FICHE[o.type] || 'Élément')}</span><span class="nc-tiret" aria-hidden="true">—</span><span class="nc-rep">${rep}</span>`;
+  if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${ms.length ? `<span class="nc-meta fi-identite">${ms.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</span>` : ''}</div>`;
+  // le symbole : un filigrane dans le coin de la tuile, qui s'éveille au survol
+  return `<span class="nc-filigrane" aria-hidden="true">${sym}</span><div class="nc-tete"><span class="nc-titre">${titre}</span></div>${meta}`; }
 // la désignation (un texte libre, gardé avec le contrat) : dans l'onglet « Modifier » du grand
+/* (v78c, le lecteur : « Modifier, faut tout reprendre, c'est pas hyper compréhensible ») : l'onglet « Modifier » se lit en
+   CARTES — chacune son titre, une phrase qui dit ce que ça change, puis le réglage. */
+const regCarte = (titre, phrase, corps, o) => !corps ? '' : `<section class="nv-reg${o && o.cls ? ' ' + o.cls : ''}"><header class="nv-reg-t"><h4>${esc(titre)}</h4>${phrase ? `<p>${phrase}</p>` : ''}${o && o.droite ? `<span class="nv-reg-d">${o.droite}</span>` : ''}</header><div class="nv-reg-c">${corps}</div></section>`;
 const designationFiche = o => { const t = o.tete || {}; if (!t.designation) return ''; const des = app.contrat.designations.get(t.designation) || '';
-  return `<label class="nv-des"><span>Désignation</span><input class="nc-des${des ? ' plein' : ''}" id="eq-des" value="${escA(des)}" placeholder="un nom en clair, gardé avec le contrat" spellcheck="false" autocomplete="off"></label>`; };
+  return regCarte('Son nom en clair', 'Gardé avec le contrat, montré sous le repère. Le repère, lui, vient de votre fichier et ne change pas.',
+    `<label class="nv-des"><span class="sr">Nom en clair</span><input class="nc-des${des ? ' plein' : ''}" id="eq-des" value="${escA(des)}" placeholder="par exemple : relais de démarrage" spellcheck="false" autocomplete="off"></label>`, { cls: 'nv-reg-nom' }); };
 
 /* ---- À FAIRE : chaque point devient une tâche — ce qui cloche, puis (après « — ») ce que ça veut dire ; le geste qui
    répare au bout de la première ; un clic sur une tâche mène à l'onglet qui la démontre. Rien à reprendre : rien. ---- */
@@ -131,7 +138,7 @@ function listeDuGenre(c, etatIci) { const { genre, xs } = objetsDuGenre(c), q = 
 
 /* ---- LES CÂBLES EN TABLEAU TRIABLE (le grand) : une ligne par câble ; un clic sur un en-tête trie (un second clic
    renverse), un clic sur une ligne ouvre le câble, son survol l'allume sur le plan ; la longueur s'écrit sur place. ---- */
-const COLONNES_TABLE_CABLES = [['type', 'Câble'], ['vers', 'Vers'], ['i', 'Intensité'], ['u', 'Chute'], ['lg', 'Longueur'], ['ct', 'Contact']];
+const COLONNES_TABLE_CABLES = [['type', 'Câble'], ['vers', 'Vers'], ['i', 'Intensité'], ['u', 'Chute en ligne'], ['lg', 'Longueur'], ['ct', 'Contact à sertir']];
 function contactDeLaLigne(r) { const c = app.cible, l = r.l; if (!l || !c || c.type !== 'bloc' || l.origine === null) return null;
   const nom = c.nom, borne = l.de === nom ? l.borneDe : l.vers === nom ? l.borneVers : null;
   try { return (borne != null ? contactAuBout(l, nom, borne) : null) || (r.bout && r.bout.rep ? contactAuBout(l, r.bout.rep, r.bout.borne) : null); } catch (_) { return null; } }
@@ -143,19 +150,22 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     const n = typeof va === 'number' || typeof vb === 'number' ? ((va == null ? -1 : va) - (vb == null ? -1 : vb)) : triNaturel(String(va || ''), String(vb || '')); return (n || triNaturel(a.cles.type, b.cles.type)) * T.sens; };
   const tete = COLONNES_TABLE_CABLES.map(([k, t]) => { const s = T.col === k ? (T.sens > 0 ? 'ascending' : 'descending') : 'none';
     return `<th scope="col" aria-sort="${s}" class="nv-th-${k}"><button type="button" class="nv-tri" data-tri="${k}" data-bulle="${escA('Trier par ' + t.toLowerCase() + (s === 'none' ? '' : ' — un clic renverse'))}">${esc(t)}<span class="nv-tri-f" aria-hidden="true">${s === 'ascending' ? '↑' : s === 'descending' ? '↓' : '↕'}</span></button></th>`; }).join('');
+  const avecCt = xs.some(x => x.ct && x.ct.st && x.ct.st.reference);
   const lignes = xs.slice().sort(cmp).map(({ r, ct, L }) => { const ed = r.l && r.l.origine !== null && r.k && r.k[0] !== 'p' ? editionsDuCable(r) : null;
-    // (v78, le lecteur : « il n'y a plus de numéro de câble du tout ») : un câble se dit par son type, et où il va
-    const type = `<b class="id nv-cab-type">${esc(r.type || 'sans type')}</b>`;
-    const m = classeMesure(r.charge.r), w = r.charge.r != null && isFinite(r.charge.r) ? Math.max(0, Math.min(1, r.charge.r)) * 100 : 0;
-    const iH = `<span class="nv-cab-i ${m}"><span class="fi-barre ${m}" aria-hidden="true"><i style="width:${w.toFixed(1)}%"></i></span><span class="cb-i-v">${r.charge.i != null ? `<b>${esc(nombreA(r.charge.i))}</b>${r.charge.admis != null ? ' / ' + esc(nombreA(r.charge.admis)) : ''} A` : esc(r.charge.mot || '—')}</span></span>`;
-    const uH = `${celluleU(r.chute)}${r.chute.max != null ? `<small class="nv-sur">/ ${esc(volts(r.chute.max))}</small>` : ''}`;
-    const lgH = ed ? `<span class="nv-cab-lg">${ed.lon}<small>m${L == null ? ' · supposée' : ''}</small></span>` : `<span class="nv-cab-lg">${L != null ? esc(nombre(arrondi(L, 2))) : esc(nombre(H.longueur))}<small>m${L == null ? ' · supposée' : ''}</small></span>`;
+    // (v78, le lecteur : « équipement et borne, mal présentés ; l'intensité, la chute : juste un rapport ») : une nomenclature —
+    // le câble, où il va et sur quelle borne, la charge et la chute en anneaux (la part de l'admis), la longueur
+    const type = `<span class="nv-cab-id">${r.puce || ''}<b class="id nv-cab-type">${esc(r.type || 'sans type')}</b></span>`;
+    const iH = `<span class="nv-mes">${anneauVue(r.charge.r)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : ''}</span></span>`;
+    const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
+    const uH = `<span class="nv-mes">${anneauVue(ru)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
+    const lgH = `<span class="nv-cab-lg">${ed ? ed.lon : `<b>${L != null ? esc(nombre(arrondi(L, 2))) : esc(nombre(H.longueur))}</b>`}<small>m</small>${L == null ? '<em class="nv-supp">supposée</em>' : ''}</span>`;
     const ctH = ct && ct.st && ct.st.reference ? `<span class="id nv-cab-ct${ct.ko ? ' ko' : ''}" data-bulle="${escA(motSertir(ct.st) + (ct.rep ? ' — ' + ct.rep + (ct.borne ? ':' + ct.borne : '') : ''))}">${esc(ct.st.reference)}</span>` : '<span class="nv-muet">—</span>';
     return `<tr class="fi-ia nv-cab${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}" tabindex="0"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle + (r.pourquoi ? '\n' + r.pourquoi : ''))}"` : ''}>`
-      + `<td class="nv-td-type"><span class="nv-cab-id">${r.puce || ''}${type}</span></td>`
-      + `<td class="nv-td-vers"><span class="id">${esc(r.bout && r.bout.rep ? r.bout.rep : '—')}</span>${r.bout && r.bout.borne ? `<small>:${esc(r.bout.borne)}</small>` : ''}</td>`
-      + `<td class="nv-td-i">${iH}</td><td class="nv-td-u">${uH}</td><td class="nv-td-lg">${lgH}</td><td class="nv-td-ct">${ctH}</td></tr>`; }).join('');
-  return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap">${esc(pluriel(rows.length, 'câble'))} — un clic sur une ligne ouvre le câble</caption><thead><tr>${tete}</tr></thead><tbody>${lignes}</tbody></table></div>${datalistCables()}`; }
+      + `<td class="nv-td-type">${type}</td>`
+      + `<td class="nv-td-vers"><span class="nv-vers"><b class="id">${esc(r.bout && r.bout.rep ? r.bout.rep : '—')}</b>${r.bout && r.bout.borne ? `<span class="nv-borne">borne ${esc(r.bout.borne)}</span>` : ''}</span></td>`
+      + `<td class="nv-td-i">${iH}</td><td class="nv-td-u">${uH}</td><td class="nv-td-lg">${lgH}</td>${avecCt ? `<td class="nv-td-ct">${ctH}</td>` : ''}</tr>`; }).join('');
+  const tete2 = avecCt ? tete : tete.replace(/<th scope="col"[^>]*class="nv-th-ct"[\s\S]*?<\/th>/, '');
+  return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap">${esc(pluriel(rows.length, 'câble'))} — un clic sur une ligne ouvre le câble</caption><thead><tr>${tete2}</tr></thead><tbody>${lignes}</tbody></table></div>${datalistCables()}`; }
 
 /* ---- COMPOSER : la carte, ou le grand ------------------------------------------------------------------------------- */
 /* o : { type (equipement · disjoncteur · barrette · prise · masse · fil), tete ({ nom, champ, aide, designation }), meta
@@ -257,13 +267,13 @@ function lierNiveaux(box, c) {
   box.querySelectorAll('[data-nv-decider]').forEach(b => b.onclick = e => { e.stopPropagation(); const nom = b.dataset.nvDecider;
     const fait = typeof parVolta === 'function' && typeof deciderCalibre === 'function' ? parVolta(() => deciderCalibre(nom)) : false; if (fait !== false && !$('inspecteur').hidden && app.cible && !rafraichirFicheEnPlace()) rendreFiche(); });
   // (v78, le lecteur : « tout doit être interactif : je clique sur “les courbes”, ça m'envoie sur la courbe ») : une étape de
-  // « Comment Volta a décidé » mène où elle se démontre — l'onglet, puis la pièce, allumée un instant ; son calcul se déplie
+  // « Comment VOLTA a décidé » mène où elle se démontre — l'onglet, puis la pièce, allumée un instant ; son calcul se déplie
   box.querySelectorAll('li[data-va-onglet]').forEach(li => { const aller = e => { if (e.target.closest('details, summary, button, a, input')) return; e.preventDefault(); e.stopPropagation();
       const p = li.dataset.vaOnglet ? activerOnglet(li.dataset.vaOnglet, false) : li.closest('.nv-panneau'), cible = p && li.dataset.vaVers ? p.querySelector(li.dataset.vaVers) : null;
       if (!cible) return; try { cible.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { cible.scrollIntoView(); }
       cible.classList.remove('vu-allume'); void cible.offsetWidth; cible.classList.add('vu-allume'); setTimeout(() => cible.classList.remove('vu-allume'), 1600); };
     li.onclick = aller; li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') aller(e); }; });
-  // (v78) les touches du calibre : un clic retient ce calibre ; « Revenir au choix de Volta » rend l'automatique
+  // (v78) les touches du calibre : un clic retient ce calibre ; « Revenir au choix de VOLTA » rend l'automatique
   const refaire = () => { if (!$('inspecteur').hidden && app.cible && !rafraichirFicheEnPlace()) rendreFiche(); };
   box.querySelectorAll('[data-nv-cal]').forEach(b => b.onclick = e => { e.stopPropagation(); if (c && c.nom && retenirCalibre(c.nom, +b.dataset.nvCal) !== false) refaire(); });
   box.querySelectorAll('[data-nv-auto]').forEach(b => b.onclick = e => { e.stopPropagation(); rendreCalibre(b.dataset.nvAuto); refaire(); });

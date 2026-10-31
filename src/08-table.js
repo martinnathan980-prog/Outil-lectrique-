@@ -49,7 +49,7 @@ const TABLE = {
 const NAPPES = { a: [NaN, NaN], b: [NaN, NaN], o: NaN };
 function poserNappes(t, toujours) { const T = TABLE; if (!T.nA) return; const vw = innerWidth / 100, vh = innerHeight / 100, s = Math.sin, D = 2 * Math.PI, N = NAPPES;
   // (v78, le lecteur : « le fond, un petit peu plus en mouvement — pas grossi ») : des périodes plus courtes, une course plus ample
-  const ax = 18 * vw + 7 * vw * s(D * t / 29), ay = -22 * vh + 6 * vh * s(D * t / 37 + 1.1), bx = -30 * vw - 7 * vw * s(D * t / 37 + .4), by = 30 * vh - 6 * vh * s(D * t / 29 + 2), o = .7 + .3 * s(D * t / 17);
+  const ax = 18 * vw + 5.5 * vw * s(D * t / 31), ay = -22 * vh + 4.5 * vh * s(D * t / 41 + 1.1), bx = -30 * vw - 5.5 * vw * s(D * t / 41 + .4), by = 30 * vh - 4.5 * vh * s(D * t / 31 + 2), o = .74 + .26 * s(D * t / 19);
   const loin = (p, x, y) => toujours || !(Math.abs(p[0] - x) < .33 && Math.abs(p[1] - y) < .33);
   if (loin(N.a, ax, ay)) { N.a = [ax, ay]; T.nA.style.transform = `translate3d(${ax.toFixed(1)}px,${ay.toFixed(1)}px,0)`; }
   if (loin(N.b, bx, by)) { N.b = [bx, by]; T.nB.style.transform = `translate3d(${bx.toFixed(1)}px,${by.toFixed(1)}px,0)`; }

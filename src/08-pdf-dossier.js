@@ -15,7 +15,7 @@
        l'aller-retour redonne toutes les liaisons (tests/pdf.js) ;
      · la NOMENCLATURE (08-nomenclature) et les MODIFICATIONS du retest
        (08-export) en fin de dossier, quand le plan en a.
-   Volta l'écrit lui-même, sans bibliothèque : un écrivain de PDF de quelques
+   VOLTA l'écrit lui-même, sans bibliothèque : un écrivain de PDF de quelques
    dizaines de lignes et les chasses d'Helvetica (les métriques standard
    d'Adobe, 2 Ko) ; rien ne sort du poste. Le quadrillage fin du papier ne
    part pas (l'audit : « du bruit sur papier »).
@@ -162,7 +162,7 @@ async function ecrirePdf(pages, meta) { const n = pages.length, pid = i => 9 + 3
   const d = new Date(), z = x => String(x).padStart(2, '0'), quand = `D:${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`;
   obj[1] = '<< /Type /Catalog /Pages 2 0 R /Outlines 8 0 R /PageMode /UseOutlines /ViewerPreferences << /DisplayDocTitle true >> >>';
   obj[2] = `<< /Type /Pages /Kids [${pages.map((_, i) => pid(i) + ' 0 R').join(' ')}] /Count ${n} >>`;
-  obj[3] = `<< /Title ${texteUnicodePdf(meta.titre)} /Subject ${texteUnicodePdf(meta.sujet || '')} /Creator ${texteUnicodePdf('Volta')} /Producer ${texteUnicodePdf('Volta')} /CreationDate (${quand}) >>`;
+  obj[3] = `<< /Title ${texteUnicodePdf(meta.titre)} /Subject ${texteUnicodePdf(meta.sujet || '')} /Creator ${texteUnicodePdf('VOLTA')} /Producer ${texteUnicodePdf('VOLTA')} /CreationDate (${quand}) >>`;
   POLICES_PDF.forEach((p, k) => { obj[4 + k] = `<< /Type /Font /Subtype /Type1 /BaseFont /${p} /Encoding /WinAnsiEncoding >>`; });
   obj[8] = `<< /Type /Outlines /First ${sid(0)} 0 R /Last ${sid(n - 1)} 0 R /Count ${n} >>`;
   const flux = await Promise.all(pages.map(p => flatePdf(p.ops)));
@@ -323,7 +323,7 @@ function pageEcrite() { const ops = [], H = A3_PDF.h; let rg = '', tc = '';
     // un aplat clair, son coin haut-gauche à (x, y)
     bande(x, y, w, h, c) { couleur(c || BANDE_PDF); ops.push(`${nbPdf(x)} ${nbPdf(H - y - h)} ${nbPdf(w)} ${nbPdf(h)} re f`); },
     // le pied : le plan à gauche, la page à droite
-    pied(nom, i, n) { P.texte(MARGE_PDF, H - 28, 'Volta · ' + nom, { corps: 8, couleur: GRIS_PDF, max: 600 }); P.texte(A3_PDF.w - MARGE_PDF, H - 28, `page ${i} / ${n}`, { corps: 8, couleur: GRIS_PDF, ancre: 'end' }); },
+    pied(nom, i, n) { P.texte(MARGE_PDF, H - 28, 'VOLTA · ' + nom, { corps: 8, couleur: GRIS_PDF, max: 600 }); P.texte(A3_PDF.w - MARGE_PDF, H - 28, `page ${i} / ${n}`, { corps: 8, couleur: GRIS_PDF, ancre: 'end' }); },
     ops: () => ops.join('\n') };
   return P; }
 const dateLonguePdf = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -372,7 +372,7 @@ function pageDeGardePdf(D) { const p = pageEcrite(), X = MARGE_PDF, W = A3_PDF.w
         // chaque point sur deux lignes au plus (plus de « … » au milieu d'une phrase)
         dits.forEach(dit => { if (y + 12 > BAS_PDF) return; y += 12 * p.bloc(xr + 12, y, dit, { corps: 9, couleur: GRIS2_PDF, max: wr - 12, lignes: 2, interligne: 12 }); }); y += 6; });
       y += 8; });
-    if (coupe) p.texte(xr, BAS_PDF - 6, '… la suite dans l’index des repères de Volta (R).', { corps: 9, couleur: GRIS_PDF }); }
+    if (coupe) p.texte(xr, BAS_PDF - 6, '… la suite dans l’index des repères de VOLTA (R).', { corps: 9, couleur: GRIS_PDF }); }
   return p; }
 /* DES TABLES sur des pages A3 : un titre, une ligne qui résume, puis chaque section — son titre, ses en-têtes sur un
    aplat, ses lignes (une sur deux légèrement teintée) ; une section qui ne tient pas continue page suivante, ses
@@ -431,7 +431,7 @@ function pagesModificationsPdf(nom) { if (typeof modificationsDe !== 'function')
   const lignes = []; let n = 0; verite().filter(liaisonComplete).forEach(l => { const m = modificationsDe(l); if (!m.length) return; n++;
     m.forEach(([col, ch, av, ap]) => lignes.push([l.cable || '—', l.de + (l.borneDe ? ':' + l.borneDe : ''), l.vers + (l.borneVers ? ':' + l.borneVers : ''), col, motAvant(ch, av), motAvant(ch, ap), typeof origineDeCase === 'function' ? ORIGINES_MOTS[origineDeCase(l, ch, true)] : ''])); });
   if (!lignes.length) return [];
-  return pagesDeTablesPdf('Modifications de l’installation — ' + nom, `${motPdf(n, 'liaison modifiée', 'liaisons modifiées')} · ${motPdf(lignes.length, 'case', 'cases')} : ce que portait le fichier, ce que Volta y a mis, et d’où vient le changement (à la main, ou une proposition de Volta acceptée).`,
+  return pagesDeTablesPdf('Modifications de l’installation — ' + nom, `${motPdf(n, 'liaison modifiée', 'liaisons modifiées')} · ${motPdf(lignes.length, 'case', 'cases')} : ce que portait le fichier, ce que VOLTA y a mis, et d’où vient le changement (à la main, ou une proposition de VOLTA acceptée).`,
     [{ titre: 'Les cases changées', colonnes: [['Câble', 0.1, { mono: true }], ['De', 0.13, { mono: true }], ['Vers', 0.13, { mono: true }], ['Colonne', 0.12], ['Avant', 0.15, { gris: true, mono: true }], ['Après', 0.15, { mono: true }], ['Origine', 0.22]], lignes }]); }
 /* LES HYPOTHÈSES ET LES SOURCES (v73, l'ingénieur, n° 9 : « si j'envoie le dossier à un vérificateur, il ne peut pas refaire
    le calcul ») : juste après la garde, en deux colonnes — les RÉGLAGES (ceux de la page des hypothèses, `hypothesesDe` :
@@ -462,7 +462,7 @@ function pagesHypothesesPdf(nom) { if (typeof hypothesesDe !== 'function') retur
     xs.forEach(x => { const f = String(x.confiance || ''); if (f === 'vérifié') k.v++; else if (f === 'déduit' || f === 'structure') k.d++; else if (f) k.c++; else k.l++; });
     return [(typeof TITRES_NORME !== 'undefined' && TITRES_NORME[t]) || t, xs.length, k.v || '', k.d || '', k.c || '', k.l || '']; }).filter(Boolean);
   const reglees = reglages.filter(r => r[2]).length;
-  return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que l’installation ne porte pas, Volta le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de l’outil est à côté)' : ', les valeurs de l’outil'}, les profils de charge des disjoncteurs et d’où viennent les tables. L’installation corrigée les garde dans sa feuille « Volta ».`, [
+  return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que l’installation ne porte pas, VOLTA le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de l’outil est à côté)' : ', les valeurs de l’outil'}, les profils de charge des disjoncteurs et d’où viennent les tables. L’installation corrigée les garde dans sa feuille « VOLTA ».`, [
     { titre: 'Les réglages', compte: motPdf(reglages.length, 'réglage', 'réglages'), colonnes: [['Réglage', 0.3], ['Valeur', 0.24], ['Valeur de l’outil', 0.18, { gris: true }], ['Source', 0.28, { gris: true }]], lignes: reglages },
     { titre: 'Les profils de charge', compte: motPdf(profils.length, 'disjoncteur', 'disjoncteurs'), colonnes: [['Repère', 0.14, { mono: true }], ['Calibre', 0.11, { droite: true }], ['Retest', 0.11, { droite: true, gris: true }], ['Démarrage', 0.15], ['Transition', 0.15], ['Permanent', 0.12], ['Autres états', 0.22]], lignes: profils },
     { titre: 'Le statut des tables', compte: motPdf(statuts.length, 'table', 'tables'), colonnes: [['Table', 0.3], ['Lignes', 0.12, { droite: true }], ['Vérifiées', 0.14, { droite: true }], ['Déduites', 0.14, { droite: true }], ['À confirmer', 0.15, { droite: true }], ['Vos tables', 0.15, { droite: true }]], lignes: statuts }], { deux: true }); }

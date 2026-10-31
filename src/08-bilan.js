@@ -1,8 +1,8 @@
 /* ===========================================================================
-   08 — LE BILAN ANONYME ET LE CARNET DE SÉANCE (v76). Le lecteur : « comment être plus parfait ? » — Volta n'a jamais
+   08 — LE BILAN ANONYME ET LE CARNET DE SÉANCE (v76). Le lecteur : « comment être plus parfait ? » — VOLTA n'a jamais
    tourné devant celui qui le construit sur les vrais fichiers (ils ne quittent pas le PC du lecteur). Deux outils pour
    combler ce manque sans rien montrer de confidentiel :
-   · LE BILAN ANONYME (⋮ › Plus) : ce que Volta a lu et jugé du plan ouvert, EN CHIFFRES — aucun repère, part number,
+   · LE BILAN ANONYME (⋮ › Plus) : ce que VOLTA a lu et jugé du plan ouvert, EN CHIFFRES — aucun repère, part number,
      numéro de câble, nom de fichier, de harness ou de client ; une référence ou un type inconnu se dit par sa FORME
      (lettres → A, chiffres → 9). Le texte se relit à l'écran tel qu'il partira, puis se copie ou s'enregistre en .txt.
    · LE CARNET DE SÉANCE (C, ou ⋮ › Plus) : une petite barre pour noter chaque hésitation pendant le travail ; la note se
@@ -22,7 +22,7 @@ window.addEventListener('error', e => noterErreurPage(e.message || (e.error && e
 window.addEventListener('unhandledrejection', e => noterErreurPage('promesse rejetée : ' + ((e.reason && e.reason.message) || e.reason || '')));
 
 /* LA LECTURE D'UN FICHIER (08-fichiers l'appelle après une ouverture réussie) : son format, ses feuilles, la ligne de ses
-   en-têtes, les colonnes reconnues (l'en-tête du fichier et ce que Volta y lit) et celles qu'il ne reconnaît pas. Rien de
+   en-têtes, les colonnes reconnues (l'en-tête du fichier et ce que VOLTA y lit) et celles qu'il ne reconnaît pas. Rien de
    ses lignes. Gardée pour le plan qu'elle a ouvert (`app.nom`) : un autre plan n'en hérite pas. */
 const CHAMPS_DU_BILAN = { install: 'installation', ecp: 'ECP', harness: 'harness', device1: 'équipement 1', pin1: 'borne 1', pn1: 'part number 1', desc1: 'description 1',
   cabletg: 'type de câble', cabletag: 'numéro de câble', route: 'route', device2: 'équipement 2', pin2: 'borne 2', pn2: 'part number 2', desc2: 'description 2',
@@ -57,14 +57,14 @@ function texteDuBilan() { const masque = masqueDuPlan(), V = verite(), N = app.n
   const section = (titre, f) => { let L; try { L = f(); } catch (e) { L = ['(indisponible : ' + masque(e && e.message || e) + ')']; } if (L && L.length) S.push(titre + '\n' + L.map(x => '- ' + x).join('\n')); };
   const quand = new Date(), ua = navigator.userAgent, m = /Edg\/(\d+)/.exec(ua) || /Chrome\/(\d+)/.exec(ua) || /Firefox\/(\d+)/.exec(ua);
   const nav = m ? m[0].split('/')[0].replace('Edg', 'Edge') + ' ' + m[1] : 'navigateur inconnu';
-  const entete = ['VOLTA — BILAN ANONYME', `Volta ${BILAN.version} · ${quand.toLocaleDateString('fr-FR')} ${quand.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · ${nav} · fenêtre ${innerWidth} × ${innerHeight}`,
+  const entete = ['VOLTA — BILAN ANONYME', `VOLTA ${BILAN.version} · ${quand.toLocaleDateString('fr-FR')} ${quand.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · ${nav} · fenêtre ${innerWidth} × ${innerHeight}`,
     'Aucun repère, part number, numéro de câble, nom de fichier, de harness ou de client : les noms du plan sont masqués (‹repère›, ‹référence›…).'].join('\n');
 
   section('LE FICHIER', () => { const x = BILAN.lecture;
     if (!V.length) return ['aucun plan ouvert'];
     if (!x || x.cle !== app.nom) return ['plan ouvert sans lecture de fichier dans cette session (l’exemple, ou un plan rouvert depuis la bibliothèque) : rouvrez le fichier pour que le bilan dise ses colonnes'];
     return [`format : ${x.format === 'retest' ? 'installation (en-têtes ligne ' + x.ligne + (x.entetes > 1 ? ', ' + x.entetes + ' blocs d’en-têtes' : '') + ')' : x.format === 'libre' ? 'tableau libre (colonnes devinées)' : x.format}`,
-      x.excel ? `classeur Excel : ${pl(x.lues, 'feuille lue', 'feuilles lues')}, ${pl(x.ignorees, 'feuille laissée de côté', 'feuilles laissées de côté')}${x.journaux ? ', ' + pl(x.journaux, 'journal de Volta', 'journaux de Volta') : ''}` : 'texte (CSV ou collé)',
+      x.excel ? `classeur Excel : ${pl(x.lues, 'feuille lue', 'feuilles lues')}, ${pl(x.ignorees, 'feuille laissée de côté', 'feuilles laissées de côté')}${x.journaux ? ', ' + pl(x.journaux, 'journal de VOLTA', 'journaux de VOLTA') : ''}` : 'texte (CSV ou collé)',
       x.champs.length ? `colonnes reconnues (${x.champs.length}) : ${x.champs.map(c => masque(c.entete) + ' → ' + (CHAMPS_DU_BILAN[c.champ] || c.champ)).join(' · ')}` : '',
       x.inconnues.length ? `colonnes non reconnues (${x.inconnues.length}) : ${x.inconnues.slice(0, 20).map(t => '« ' + masque(t).slice(0, 40) + ' »').join(', ')}${x.inconnues.length > 20 ? ', …' : ''} — en-têtes recopiés, à relire` : 'colonnes non reconnues : aucune',
       x.champs.some(c => c.champ === 'length') ? 'longueurs ' + (x.mm ? 'en mm (l’en-tête le dit)' : 'en m') : ''].filter(Boolean); });
@@ -77,7 +77,7 @@ function texteDuBilan() { const masque = masqueDuPlan(), V = verite(), N = app.n
     const avecNum = V.filter(l => String(l.cable || '').trim()).length, numeros = new Set(V.map(l => String(l.cable || '').trim()).filter(Boolean)), lg = V.filter(l => String(l.longueur || '').trim()).length;
     const rt = V.filter(l => String(l.route || '').trim()), g = rt.filter(l => coteDeRoute(l.route) === 'gauche').length, d = rt.filter(l => coteDeRoute(l.route) === 'droite').length;
     return [`${pl(V.length, 'liaison')} · ${pl(Math.max(1, plans().length), 'folio')}`,
-      `repères : ${pl(k.equipement, 'équipement')}, ${pl(k.disjoncteur, 'disjoncteur')}, ${pl(k.barrette, 'barrette')}${k.provisoire ? ' (+' + k.provisoire + ' ajoutée' + (k.provisoire > 1 ? 's' : '') + ' par Volta)' : ''}, ${pl(k.prise, 'prise')} de coupure, ${pl(k.masse, 'masse')}${k.renvoi ? ', ' + pl(k.renvoi, 'renvoi') : ''}`,
+      `repères : ${pl(k.equipement, 'équipement')}, ${pl(k.disjoncteur, 'disjoncteur')}, ${pl(k.barrette, 'barrette')}${k.provisoire ? ' (+' + k.provisoire + ' ajoutée' + (k.provisoire > 1 ? 's' : '') + ' par VOLTA)' : ''}, ${pl(k.prise, 'prise')} de coupure, ${pl(k.masse, 'masse')}${k.renvoi ? ', ' + pl(k.renvoi, 'renvoi') : ''}`,
       `câbles : ${avecNum} liaisons numérotées (${numeros.size} numéros distincts${numeros.size < avecNum ? ', certains partagés' : ''}), ${V.length - avecNum} sans numéro`,
       `longueurs : ${lg} écrites, ${V.length - lg} supposées (${(app.simu || HYPOTHESES).longueur} m)`,
       `routes : ${rt.length} avec route (${g} gauche, ${d} droite${rt.length - g - d ? ', ' + (rt.length - g - d) + ' sans numéro lisible' : ''}), ${V.length - rt.length} sans route`]; });
@@ -90,7 +90,7 @@ function texteDuBilan() { const masque = masqueDuPlan(), V = verite(), N = app.n
   section('LES RÉFÉRENCES', () => { const pns = new Map(); V.forEach(l => [[l.de, l.pnDe], [l.vers, l.pnVers]].forEach(([r, p]) => { p = String(p || '').trim(); if (p && !pns.has(p)) pns.set(p, r); }));
     const connue = (p, r) => estDisjoncteur(r) ? !!familleDuPn(p, N) : !!(familleDeNorme(N, '', p) || moduleDeReference(N, p) || (typeof familleDuPn === 'function' && familleDuPn(p, N)));
     const inc = [...pns].filter(([p, r]) => !connue(p, r)).map(([p]) => p), sansPn = new Set(); V.forEach(l => { if (l.de && !l.pnDe && !estMasse(l.de) && !VT_A_POSER.test(l.de)) sansPn.add(l.de); if (l.vers && !l.pnVers && !estMasse(l.vers) && !VT_A_POSER.test(l.vers)) sansPn.add(l.vers); });
-    return [`${pl(pns.size, 'part number distinct', 'part numbers distincts')} : ${pns.size - inc.length} reconnus (connecteur, prise, module ou disjoncteur d’une famille de Volta), ${inc.length} dont Volta ne connaît pas la famille${inc.length ? ' (formes : ' + parFormes(inc) + ')' : ''}`,
+    return [`${pl(pns.size, 'part number distinct', 'part numbers distincts')} : ${pns.size - inc.length} reconnus (connecteur, prise, module ou disjoncteur d’une famille de VOLTA), ${inc.length} dont VOLTA ne connaît pas la famille${inc.length ? ' (formes : ' + parFormes(inc) + ')' : ''}`,
       `${pl(sansPn.size, 'repère')} sans part number dans l’installation`]; });
 
   section('LES CONTACTS', () => { let bouts = 0, trouves = 0, main = 0, sans = 0, ko = 0;
@@ -101,7 +101,7 @@ function texteDuBilan() { const masque = masqueDuPlan(), V = verite(), N = app.n
     let sansProfil = 0, sansCalibre = 0; cbs.forEach(nom => { const d = disjonctionDe(nom); if (d.sansProfil) sansProfil++; if (!(d.calibre > 0)) sansCalibre++; });
     const reecrits = cbs.filter(nom => typeof pnDeVolta === 'function' && pnDeVolta(nom)).length, grossis = V.filter(l => l.avant && ('volta:type' in l.avant)).length;
     return [`${pl(cbs.length, 'disjoncteur')} : ${cbs.length - sansProfil} avec un profil de charge, ${sansProfil} sans${sansCalibre ? ', ' + sansCalibre + ' sans calibre trouvé' : ''}`,
-      `calibres réécrits par Volta (ils touchaient la courbe) : ${reecrits} · câbles grossis par Volta : ${grossis}`,
+      `calibres réécrits par VOLTA (ils touchaient la courbe) : ${reecrits} · câbles grossis par VOLTA : ${grossis}`,
       `règle du calibre automatique : ${(app.simu || HYPOTHESES).calibreAuto === false ? 'coupée' : 'active'}`]; });
 
   section('LE CONTRÔLE', () => { const it = controleDuContrat(), ko = it.filter(x => x.niveau === 'ko').length, att = it.length - ko, g = new Map();
@@ -111,12 +111,12 @@ function texteDuBilan() { const masque = masqueDuPlan(), V = verite(), N = app.n
   section('LA BASE SEE', () => { const B = typeof BASE_SEE !== 'undefined' ? BASE_SEE.base : null; if (!B) return ['pas de base SEE gardée sur ce PC'];
     const tables = Object.entries(B).filter(([, v]) => Array.isArray(v) && v.length).map(([k, v]) => k + ' ' + v.length);
     let seul = 0; try { seul = seulVoltaSEE(B).length; } catch (_) { seul = 0; }
-    return [`gardée sur ce PC : ${tables.join(', ') || 'vide'}`, `lignes « Seul Volta » : ${seul}`, `« ne prendre que la base SEE » : ${typeof seuleBaseSEE === 'function' && seuleBaseSEE() ? 'cochée' : 'décochée'}`]; });
+    return [`gardée sur ce PC : ${tables.join(', ') || 'vide'}`, `lignes « Seul VOLTA » : ${seul}`, `« ne prendre que la base SEE » : ${typeof seuleBaseSEE === 'function' && seuleBaseSEE() ? 'cochée' : 'décochée'}`]; });
 
   section('LES RÉGLAGES', () => { const H = app.simu || HYPOTHESES, ch = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k]));
-    return [ch.length ? 'hypothèses changées : ' + ch.map(k => `${k} ${JSON.stringify(HYPOTHESES[k])} → ${JSON.stringify(H[k])}`).join(' · ') : 'hypothèses : celles de Volta, inchangées']; });
+    return [ch.length ? 'hypothèses changées : ' + ch.map(k => `${k} ${JSON.stringify(HYPOTHESES[k])} → ${JSON.stringify(H[k])}`).join(' · ') : 'hypothèses : celles de VOLTA, inchangées']; });
 
-  // (v77) l'autotest du plan : Volta s'est parcouru lui-même (08-autotest)
+  // (v77) l'autotest du plan : VOLTA s'est parcouru lui-même (08-autotest)
   section('L’AUTOTEST', () => typeof sectionAutotest === 'function' ? sectionAutotest(masque) : []);
 
   section('LES ERREURS DE LA PAGE', () => BILAN.erreurs.length ? BILAN.erreurs.map(e => masque(e.msg) + (e.n > 1 ? ' (×' + e.n + ')' : '')) : ['aucune depuis l’ouverture']);
@@ -129,8 +129,8 @@ function lireCarnet() { try { const x = JSON.parse(localStorage.getItem(BILAN.cl
 function ecrireCarnet(xs) { try { localStorage.setItem(BILAN.cle, JSON.stringify(xs)); return true; } catch (_) { return false; } }
 const heureDe = t => { const d = new Date(t); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); };
 // l'écran où l'on est, sans un nom : le genre de l'objet ouvert, l'onglet, le folio par son rang
-const MOTS_DOCS = { normes: 'Normes', bible: 'Bible', hypotheses: 'Hypothèses', nomenclature: 'Nomenclature', comprendre: 'Comment Volta réfléchit', bilan: 'Bilan anonyme', fichiers: 'Vos fichiers', see: 'base SEE', cartouche: 'Cartouche', 'deja-contrat': 'Déjà fait' };
-function natureAnonyme(r) { return VT_A_POSER.test(r || '') ? 'd’une barrette ajoutée par Volta' : estMasse(r) ? 'd’une masse' : estDisjoncteur(r) ? 'd’un disjoncteur' : estBarrette(r) ? 'd’une barrette' : estCoupure(r) ? 'd’une prise de coupure' : 'd’un équipement'; }
+const MOTS_DOCS = { normes: 'Normes', bible: 'Bible', hypotheses: 'Hypothèses', nomenclature: 'Nomenclature', comprendre: 'Comment VOLTA réfléchit', bilan: 'Bilan anonyme', fichiers: 'Vos fichiers', see: 'base SEE', cartouche: 'Cartouche', 'deja-contrat': 'Déjà fait' };
+function natureAnonyme(r) { return VT_A_POSER.test(r || '') ? 'd’une barrette ajoutée par VOLTA' : estMasse(r) ? 'd’une masse' : estDisjoncteur(r) ? 'd’un disjoncteur' : estBarrette(r) ? 'd’une barrette' : estCoupure(r) ? 'd’une prise de coupure' : 'd’un équipement'; }
 function ecranAnonyme() { try {
   if (typeof bibliothequeOuverte === 'function' && bibliothequeOuverte()) return 'bibliothèque';
   const P = plans(), i = P.indexOf(app.plan), folio = P.length > 1 && i >= 0 ? 'folio ' + (i + 1) + ' / ' + P.length : '';
@@ -170,10 +170,10 @@ const carnetOuvert = () => { const el = $('carnet'); return !!el && !el.hidden; 
 function ficheBilan() { const texte = texteDuBilan(), notes = lireCarnet();
   const carnet = notes.length ? `<ol class="bl-notes">${notes.map((n, i) => `<li><div class="bl-n-tete"><span class="bl-n-quand">${esc(heureDe(n.t))}</span><span class="bl-n-ou">${esc(n.ou)}</span><button type="button" class="fi-x bl-n-x" data-note="${i}" aria-label="${escA('Effacer la note du ' + heureDe(n.t))}" data-bulle="Effacer cette note">${ico('poubelle')}</button></div><p>${esc(n.texte)}</p></li>`).join('')}</ol>`
     : `<p class="bl-vide">Le carnet est vide. Pendant le travail, appuyez sur <kbd>C</kbd> pour noter une hésitation : l’écran où vous êtes s’écrit avec elle.</p>`;
-  const corps = tete('Pour améliorer Volta', 'Bilan anonyme')
-    + `<p class="note bl-chapeau">Ce que Volta a lu et jugé de ce plan, en chiffres. <b>Aucun repère, part number, numéro de câble, nom de fichier, de harness ou de client</b> : les noms du plan sont masqués, une référence inconnue se dit par sa forme (lettres → A, chiffres → 9). Relisez-le, puis copiez-le dans la conversation.</p>`
+  const corps = tete('Pour améliorer VOLTA', 'Bilan anonyme')
+    + `<p class="note bl-chapeau">Ce que VOLTA a lu et jugé de ce plan, en chiffres. <b>Aucun repère, part number, numéro de câble, nom de fichier, de harness ou de client</b> : les noms du plan sont masqués, une référence inconnue se dit par sa forme (lettres → A, chiffres → 9). Relisez-le, puis copiez-le dans la conversation.</p>`
     + `<section class="bl-auto" aria-labelledby="bl-auto-t"><div class="bl-carnet-tete"><h3 id="bl-auto-t">L’autotest du plan</h3><button type="button" class="btn papier dense" id="bl-autotest">${typeof AUTOTEST !== 'undefined' && AUTOTEST.resultat ? 'Le relancer' : 'Lancer l’autotest'}</button></div>`
-    + `<p class="bl-masque">Volta ouvre tout seul chaque folio, chaque fiche et ses sections, chaque liste « Changer », chaque onglet du récapitulatif, chaque document et chaque export (fabriqué, jamais enregistré), chronomètre tout et note chaque erreur — l’écran où c’était, jamais un nom du plan. Quelques minutes ; <kbd>Échap</kbd> l’arrête. Le résultat s’ajoute au bilan ci-dessous.</p></section>`
+    + `<p class="bl-masque">VOLTA ouvre tout seul chaque folio, chaque fiche et ses sections, chaque liste « Changer », chaque onglet du récapitulatif, chaque document et chaque export (fabriqué, jamais enregistré), chronomètre tout et note chaque erreur — l’écran où c’était, jamais un nom du plan. Quelques minutes ; <kbd>Échap</kbd> l’arrête. Le résultat s’ajoute au bilan ci-dessous.</p></section>`
     + `<pre class="bl-texte" id="bl-texte" tabindex="0" aria-label="Le bilan, tel qu’il sera copié">${esc(texte)}</pre>`
     + `<section class="bl-carnet" aria-labelledby="bl-carnet-t"><div class="bl-carnet-tete"><h3 id="bl-carnet-t">Le carnet de séance${notes.length ? ` <span class="bl-n">${notes.length}</span>` : ''}</h3><button type="button" class="btn papier dense" id="bl-noter">Noter <kbd>C</kbd></button></div>${notes.length ? '<p class="bl-masque">Vos notes restent sur ce PC telles que vous les avez tapées ; dans le bilan copié, les repères et références qu’elles nomment sont masqués.</p>' : ''}${carnet}</section>`;
   const pied = `<button type="button" class="btn cuivre" id="bl-copier">Copier le bilan${notes.length ? ' et le carnet' : ''}</button><button type="button" class="btn papier" id="bl-enregistrer">Enregistrer en .txt</button><span class="espace"></span><span class="bl-pied-note">Rien ne part tout seul : c’est vous qui collez.</span>`;
@@ -186,7 +186,7 @@ function copierBilan(texte) { const fini = () => dire('Le bilan est copié : col
 function enregistrerBilan(texte) { const d = new Date(), j = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   telecharger(new Blob(['﻿' + texte], { type: 'text/plain;charset=utf-8' }), 'volta-bilan-anonyme-' + j + '.txt'); dire('Le bilan est enregistré en .txt.'); }
 
-// les deux lignes du menu ⋮ › Plus (page.html, « Améliorer Volta »)
+// les deux lignes du menu ⋮ › Plus (page.html, « Améliorer VOLTA »)
 MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} };
 MENU.actions.carnet = () => ouvrirCarnet();
 MENU.actions.bilan = () => ficheBilan();

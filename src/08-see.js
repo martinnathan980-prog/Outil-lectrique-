@@ -2,12 +2,12 @@
    LA BASE SEE (08 nonies) — l'Excel des vues et des tables de SEE Electrical Equipment Definition, lu sur place
    Le lecteur (octobre 2026) a tiré la base SEE dans Excel (Données → SQL Server → EED_View…, EED_OBJ_…, EED_LNK_…) :
    « il y a trop de colonnes, 200 ; les photos, c'est beaucoup trop ; le fichier est sur le bureau, je ne peux pas
-   l'envoyer ». Volta lit donc ce classeur SUR LE POSTE, et montre, sur des écrans qui tiennent chacun en une photo :
-     · IMPORT — ce que Volta en prend (contacts, câbles, faces, équipements : 08-see-import) et ce qui change dans ses
-       tables ; « Garder dans Volta » le garde sur ce PC (IndexedDB, rien ne sort), sinon fermer la page l'oublie ;
+   l'envoyer ». VOLTA lit donc ce classeur SUR LE POSTE, et montre, sur des écrans qui tiennent chacun en une photo :
+     · IMPORT — ce que VOLTA en prend (contacts, câbles, faces, équipements : 08-see-import) et ce qui change dans ses
+       tables ; « Garder dans VOLTA » le garde sur ce PC (IndexedDB, rien ne sort), sinon fermer la page l'oublie ;
      · COHÉRENCE (le lecteur, 20 octobre 2026 : « Tu as pu vérifier si toute notre base est correcte et cohérente ? ») —
        la base vérifiée ligne par ligne pendant l'import (08-see-import) : pour chaque contrôle, le compte, la gravité,
-       les dix premiers exemples, ce que Volta en fait ; ce que la base apporte à côté des photos ; un rapport en texte
+       les dix premiers exemples, ce que VOLTA en fait ; ce que la base apporte à côté des photos ; un rapport en texte
        fait seulement de références de catalogue et de comptes (« Copier le rapport de cohérence ») ;
      · LIENS — les identifiants (GUID) d'une feuille retrouvés dans une autre : ce qui se relie à quoi, et ce qui ne se
        relie à rien (une table qui manque) ;
@@ -78,7 +78,7 @@ async function lireBaseSEE(fichier, buf) { if (!fichier) return; const nom = fic
       if (k && !lignes[k]) { lignes[k] = rows; Object.defineProperty(rows, 'nom', { value: noms[i] }); }
       const F = resumerFeuilleSEE(noms[i], ws, rows); if (F.colonnes.length || F.vides.length) feuilles.push(F); }
     if (!feuilles.length) { echecImport('normes', { texte: `${esc(nom)} : aucune feuille avec une ligne d’en-têtes.` }); return; }
-    dire(`${guillemets(nom)} : Volta prend et vérifie les contacts, les câbles, les faces et les équipements…`); await new Promise(r => setTimeout(r, 0));
+    dire(`${guillemets(nom)} : VOLTA prend et vérifie les contacts, les câbles, les faces et les équipements…`); await new Promise(r => setTimeout(r, 0));
     SEE.import = importerSEE(lignes, nom);
     SEE.lu = { nom, feuilles, quand: new Date(), liens: liensSEE(feuilles), plan: planFaceASEE(feuilles) }; SEE.vue = 'import';
     coherenceDuClasseurSEE(SEE.import, SEE.lu); ficheBaseSEE();
@@ -159,7 +159,7 @@ function planFaceASEE(F) { const V = typeof verite === 'function' ? verite() : [
   return { nom: app.nom || 'le plan ouvert', types: chercher(types), familles: chercher(familles), pns: chercher(pns) }; }
 
 /* ---- la page ------------------------------------------------------------------------------------------------- */
-// les onglets : l'import d'abord (ce que Volta prend), la cohérence (la base vérifiée ligne par ligne), puis les liens, les
+// les onglets : l'import d'abord (ce que VOLTA prend), la cohérence (la base vérifiée ligne par ligne), puis les liens, les
 // codes, les feuilles — l'import et la cohérence seuls quand aucun classeur n'est lu dans cette séance mais qu'une base
 // est gardée sur ce PC
 const ORDRE_SEE = () => SEE.lu ? ['import', 'coherence', 'liens', 'codes', ...SEE.lu.feuilles.map((_, i) => i)] : ['import', ...(BASE_SEE.base && BASE_SEE.base.coherence ? ['coherence'] : [])];
@@ -178,14 +178,14 @@ const aReprendreSEE = I => controlesSEE(I).filter(x => x.n && x.gravite !== 'inf
 function baseSEEHtml() { const L = SEE.lu, v = SEE.vue, I = baseMontreeSEE();
   // dans la bulle de l'outil (data-bulle) : le sens d'un onglet, ou le nom entier d'une feuille (l'onglet porte le court)
   const onglet = (cle, b, s, sens, entier) => `<button type="button" role="tab" data-see-vue="${cle}" aria-selected="${String(v) === String(cle)}" data-bulle="${escA(entier || sens || b)}"><b>${esc(b)}</b>${s != null ? `<span>${esc(s)}</span>` : ''}</button>`;
-  const imp = onglet('import', 'Import', null, 'Ce que Volta prend de la base, et ce qui change dans ses tables');
-  const coh = I && I.coherence ? onglet('coherence', 'Cohérence', String(aReprendreSEE(I)), 'La base vérifiée ligne par ligne : ce qui cloche, et ce que Volta en fait') : '';
+  const imp = onglet('import', 'Import', null, 'Ce que VOLTA prend de la base, et ce qui change dans ses tables');
+  const coh = I && I.coherence ? onglet('coherence', 'Cohérence', String(aReprendreSEE(I)), 'La base vérifiée ligne par ligne : ce qui cloche, et ce que VOLTA en fait') : '';
   const corpsBase = v === 'coherence' && coh ? coherenceSEEHtml() : importSEEHtml();
   /* LE VERDICT D'ABORD (le technicien v73 : « beaucoup de paragraphes avant le premier chiffre ») : « 1 contrôle en erreur,
      2 à voir » sous le titre, quel que soit l'onglet ; la façon de lire la page, repliée. */
   const verdict = lienCoherenceSEEHtml(I, v === 'coherence'), lire = t => `<details class="see-lire"><summary>Comment lire cette page</summary><p class="see-mode">${t}</p></details>`;
   if (!L) return `<div class="see">${nmTitre('Base SEE · gardée sur ce PC, rien n’en sort', I.nom)}${verdict}`
-    + lire('Volta se sert de cette base à la place de ses tables. Pour la mettre à jour, déposez le nouvel Excel de SEE (Données → Actualiser tout, puis enregistrer).')
+    + lire('VOLTA se sert de cette base à la place de ses tables. Pour la mettre à jour, déposez le nouvel Excel de SEE (Données → Actualiser tout, puis enregistrer).')
     + `<div class="see-barre"><div class="see-onglets" role="tablist" aria-label="La base">${imp}${coh}</div></div>${corpsBase}</div>`;
   const nl = L.liens.filter(x => x.cibles.length).length;
   // les feuilles du classeur, après un filet et leur nom de groupe ; chacune sous un nom court (sans EED_, OBJ_, LNK_), le nom entier dans sa bulle
@@ -193,7 +193,7 @@ function baseSEEHtml() { const L = SEE.lu, v = SEE.vue, I = baseMontreeSEE();
     + L.feuilles.map((f, i) => onglet(i, nomOngletSEE(f.nom), milliers(f.lignes), '', f.nom)).join('') + '</div>';
   const corps = v === 'import' || v === 'coherence' ? corpsBase : v === 'liens' ? liensSEEHtml() : v === 'codes' ? codesSEEHtml() : feuilleSEEHtml(L.feuilles[v] || L.feuilles[0]);
   return `<div class="see">${nmTitre('Base SEE · lue sur ce poste, rien n’en sort', L.nom)}${verdict}`
-    + lire('Volta a lu votre Excel ici, en entier, et l’a vérifié ligne par ligne. <b>Import</b> dit ce qu’il en prend et ce qui change dans ses tables : « Garder dans Volta » le garde sur ce PC, et rien ne sort. <b>Cohérence</b> dit ce qui cloche dans la base. Les autres onglets montrent le classeur tel quel.')
+    + lire('VOLTA a lu votre Excel ici, en entier, et l’a vérifié ligne par ligne. <b>Import</b> dit ce qu’il en prend et ce qui change dans ses tables : « Garder dans VOLTA » le garde sur ce PC, et rien ne sort. <b>Cohérence</b> dit ce qui cloche dans la base. Les autres onglets montrent le classeur tel quel.')
     + `<div class="see-barre">${onglets}${v === 'import' || v === 'coherence' ? '' : `<label class="see-ex"><input type="checkbox" id="see-ex"${SEE.exemples ? ' checked' : ''}> Exemples de valeurs</label>`}</div>${corps}</div>`; }
 /* Une colonne d'une feuille, sur une ligne : son nom, son taux, deux exemples (la gauge AWG d'une section en mm²) ; un
    identifiant dit où il mène. */
@@ -246,7 +246,7 @@ function codesSEEHtml() { const L = SEE.lu, P = L.plan, codes = [];
   return `<section class="see-feuille see-codes" aria-label="Codes"><div class="see-tete"><b class="see-nom">Codes</b><span class="see-compte">${esc(pluriel(codes.length, 'colonne'))} de codes · les valeurs et leur nombre de lignes</span></div>${plan}`
     + (d_abord.length ? `<div class="see-codes-l">${d_abord.map(code).join('')}</div>` : '')
     + (autres.length ? `<details class="see-vides"><summary>${autres.length} autre${autres.length > 1 ? 's' : ''} colonne${autres.length > 1 ? 's' : ''} de codes</summary><div class="see-codes-l">${autres.map(code).join('')}</div></details>` : '') + '</section>'; }
-/* Le pied : d'un onglet à l'autre (au filet : l'action pleine de la page est « Garder dans Volta », dans l'onglet Import),
+/* Le pied : d'un onglet à l'autre (au filet : l'action pleine de la page est « Garder dans VOLTA », dans l'onglet Import),
    l'onglet en cours sur combien ; à droite, le résumé à copier ou à enregistrer — sur l'onglet Cohérence, le rapport de
    cohérence (son action pleine : le copier). */
 function baseSEEPiedHtml() { const o = ORDRE_SEE(), k = o.findIndex(x => String(x) === String(SEE.vue)), coh = SEE.vue === 'coherence';
@@ -273,7 +273,7 @@ function lierBaseSEE() { const c = $('fiche-corps'); if (!c) return;
   if ($('see-copier-coh')) $('see-copier-coh').onclick = () => copierTexteSEE(rapportCoherenceSEE(baseMontreeSEE(), true), 'Rapport de cohérence copié : des références de catalogue et des comptes, rien de votre plan.', 'Enregistrer le rapport');
   if ($('see-enregistrer-coh')) $('see-enregistrer-coh').onclick = () => { telecharger(new Blob(['﻿' + rapportCoherenceSEE(baseMontreeSEE(), true)], { type: 'text/plain;charset=utf-8' }), 'coherence-base-SEE.txt'); dire('Le rapport de cohérence est enregistré.'); };
   if ($('see-voir-coh')) $('see-voir-coh').onclick = () => changerVueSEE('coherence');
-  // « Seul Volta » : un nombre (ou une puce) déplie la liste de sa famille, le même la replie ; la page garde sa place, la
+  // « Seul VOLTA » : un nombre (ou une puce) déplie la liste de sa famille, le même la replie ; la page garde sa place, la
   // liste vient sous les yeux ; la case de la base unique (08-see-import)
   c.querySelectorAll('[data-seul-volta]').forEach(b => b.onclick = () => { const k = b.dataset.seulVolta, ferme = b.classList.contains('see-seul-n') && SEE.seulVolta === k;
     SEE.seulVolta = ferme ? '' : k; SEE.garderDefilement = true; rendreBaseSEE(); const s = $('see-seul');
@@ -285,7 +285,7 @@ function lierBaseSEE() { const c = $('fiche-corps'); if (!c) return;
   if (typeof lierBullesDoc === 'function') lierBullesDoc(); }   // la bulle de l'outil (data-bulle) sur la page et son pied
 
 /* ---- le résumé en texte : les liens, les codes, le plan face à SEE, puis chaque feuille ------------------------- */
-function resumeSEE() { const L = SEE.lu; if (!L) return ''; const F = L.feuilles, P = L.plan, out = [`Base SEE — ${L.nom} — résumé par Volta le ${L.quand.toLocaleDateString('fr-FR')}${SEE.exemples ? '' : ' (sans exemples)'}`];
+function resumeSEE() { const L = SEE.lu; if (!L) return ''; const F = L.feuilles, P = L.plan, out = [`Base SEE — ${L.nom} — résumé par VOLTA le ${L.quand.toLocaleDateString('fr-FR')}${SEE.exemples ? '' : ' (sans exemples)'}`];
   const imp = resumeImportSEE(); if (imp) out.push(imp);
   const coh = rapportCoherenceSEE(baseMontreeSEE(), false); if (coh) out.push('\n== Cohérence ==\n' + coh.trim());
   out.push('\n== Liens entre feuilles ==', ...L.liens.map(x => nomCourtSEE(F[x.fi].nom) + '.' + x.col + ' → '
@@ -306,9 +306,9 @@ function copierTexteSEE(t, mot, repliMot) { const ok = () => { SEE.copie = t; di
 
 /* ---- l'onglet « Cohérence » : la base vérifiée ligne par ligne ---------------------------------------------------
    D'un coup d'œil, le verdict (combien de contrôles en erreur, à voir, pour information, sans défaut) ; puis chaque
-   contrôle, par domaine : son point d'état, son titre, ce que Volta en fait, son compte — un clic déplie ses dix premiers
+   contrôle, par domaine : son point d'état, son titre, ce que VOLTA en fait, son compte — un clic déplie ses dix premiers
    exemples (la référence de catalogue, ce qui cloche, la ligne de la feuille Excel) ; enfin ce que la base apporte à
-   côté de ce que Volta tenait de vos photos. Les contrôles qui ont des cas d'abord (les erreurs, puis à voir, puis pour
+   côté de ce que VOLTA tenait de vos photos. Les contrôles qui ont des cas d'abord (les erreurs, puis à voir, puis pour
    information), ceux qui n'en ont pas ensuite, dans l'ordre du catalogue. */
 const GRAVITES_SEE = { ko: ['erreur', 'erreurs', 'en erreur'], att: ['à voir', 'à voir', 'à voir'], info: ['info', 'pour information', 'pour information'], ok: ['rien à redire', 'sans défaut', 'sans défaut'] };
 const etatCtlSEE = x => x.na ? 'na' : x.n ? x.gravite : 'ok';
@@ -322,14 +322,14 @@ function surSEE(I, g) { const s = (I.coherence || {}).sur || {}, C = comparaison
     : g === 'faces' ? `${plurielLie(s.faces || 0, 'face')}, ${m(s.broches || 0)} broche${s.broches > 1 ? 's' : ''}`
     : g === 'equipements' ? `${plurielLie(s.connecteurs || 0, 'connecteur')}, ${plurielLie(s.equipements || 0, 'équipement')}, ${plurielLie(s.paires || 0, 'paire')} fiche ↔ embase`
     : g === 'liens' ? (s.renvois != null ? `${plurielLie(s.renvois, 'renvoi')} entre ${plurielLie(s.feuilles || 0, 'feuille')}` : 'à la lecture du classeur')
-    : `${m(['contacts', 'cables', 'modules'].reduce((n, t) => n + C[t].remplacees.length + (C[t].verifiees || []).length + C[t].identiques.length + (C[t].redessinees || []).length, 0))} lignes que Volta avait aussi`; }
+    : `${m(['contacts', 'cables', 'modules'].reduce((n, t) => n + C[t].remplacees.length + (C[t].verifiees || []).length + C[t].identiques.length + (C[t].redessinees || []).length, 0))} lignes que VOLTA avait aussi`; }
 function coherenceSEEHtml() { const I = baseMontreeSEE(), K = I && I.coherence;
-  if (!K) return `<section class="see-feuille see-coherence" aria-label="Cohérence"><p class="see-rien">Cette base a été gardée avant que Volta sache la vérifier : déposez de nouveau le classeur de SEE pour la vérifier ligne par ligne.</p></section>`;
+  if (!K) return `<section class="see-feuille see-coherence" aria-label="Cohérence"><p class="see-rien">Cette base a été gardée avant que VOLTA sache la vérifier : déposez de nouveau le classeur de SEE pour la vérifier ligne par ligne.</p></section>`;
   const X = controlesSEE(I), par = e => X.filter(x => etatCtlSEE(x) === e), rang = { ko: 0, att: 1, info: 2, ok: 3, na: 4 };
   const lignesDe = xs => xs.reduce((n, x) => n + x.n, 0);
   const tuile = (e, n, t, s) => `<div class="see-v ${e}${n ? '' : ' zero'}"><b>${esc(milliers(n))}</b><span><i class="see-pt" aria-hidden="true"></i>${esc(t)}</span><small>${esc(s)}</small></div>`;
   const ko = par('ko'), att = par('att'), info = par('info'), ok = par('ok');
-  const verdict = `<div class="see-verdict">${tuile('ko', ko.length, ko.length > 1 ? 'contrôles en erreur' : 'contrôle en erreur', ko.length ? plurielLie(lignesDe(ko), 'cas') + ' — Volta les écarte' : 'aucune ligne ne se contredit')}`
+  const verdict = `<div class="see-verdict">${tuile('ko', ko.length, ko.length > 1 ? 'contrôles en erreur' : 'contrôle en erreur', ko.length ? plurielLie(lignesDe(ko), 'cas') + ' — VOLTA les écarte' : 'aucune ligne ne se contredit')}`
     + `${tuile('att', att.length, att.length > 1 ? 'contrôles à voir' : 'contrôle à voir', att.length ? plurielLie(lignesDe(att), 'cas') + ' — pris, à vérifier dans SEE' : 'rien à vérifier')}`
     + `${tuile('info', info.length, 'pour information', info.length ? plurielLie(lignesDe(info), 'cas') : 'rien à signaler')}${tuile('ok', ok.length, 'sans défaut', 'sur ' + plurielLie(X.length, 'contrôle'))}</div>`;
   const ctl = x => { const e = etatCtlSEE(x), G = GRAVITES_SEE[e] || ['sans objet'], plus = x.plus ? plusMotsSEE(x.plus) : '';
@@ -348,27 +348,27 @@ function coherenceSEEHtml() { const I = baseMontreeSEE(), K = I && I.coherence;
     + `<button type="button" class="btn lien see-deplier" id="see-deplier">${SEE.deplie ? 'Replier les exemples' : 'Déplier les exemples'}</button></div>`;
   return `<section class="see-feuille see-coherence" aria-label="Cohérence">${tete}${verdict}<div class="see-cols-c">${col(['contacts', 'cables'])}${col(['faces', 'equipements', 'liens', 'sources'])}</div>${apporteSEEHtml(I)}</section>`; }
 /* « Ce que la base apporte » : à gauche, les quatre tables des photos face à la base (par famille : les lignes pareilles,
-   celles qui diffèrent, celles que seul SEE ou seul Volta a, la version de la règle) ; à droite, ce que Volta n'avait pas. */
+   celles qui diffèrent, celles que seul SEE ou seul VOLTA a, la version de la règle) ; à droite, ce que VOLTA n'avait pas. */
 function apporteSEEHtml(I) { const A = apporteSEE(I), m = milliers, nSeul = A.photos.reduce((n, p) => n + p.seulVolta, 0);
-  // « Seul Volta » se CLIQUE (v74) : la liste de ces lignes, chacune avec sa raison, se déplie sous la table
+  // « Seul VOLTA » se CLIQUE (v74) : la liste de ces lignes, chacune avec sa raison, se déplie sous la table
   const seul = p => p.seulVolta ? `<button type="button" class="see-seul-n" data-seul-volta="${escA(p.famille)}" aria-expanded="${SEE.seulVolta === p.famille || SEE.seulVolta === '*'}" aria-controls="see-seul" data-bulle="${escA('Les ' + plurielLie(p.seulVolta, 'ligne') + ' de l’' + p.nom + ' que la base n’a pas, et pourquoi')}">${m(p.seulVolta)}</button>` : m(0);
   const ligne = p => `<tr><td class="mono">${esc(p.nom)}</td><td>v${p.photo}</td><td class="${p.version && p.version !== p.photo ? 'mono' : ''}">${p.version ? 'v' + p.version : '—'}</td><td>${m(p.volta)}</td><td>${m(p.see)}</td><td>${m(p.pareilles)}</td><td class="${p.autres ? 'att' : ''}">${m(p.autres)}</td><td>${m(p.seulSEE)}</td><td class="see-seul-c">${seul(p)}</td></tr>`;
-  const total = nSeul ? `<tfoot><tr><td colspan="8">Seulement dans Volta, pour les quatre familles</td><td class="see-seul-c"><button type="button" class="see-seul-n tout" data-seul-volta="*" aria-expanded="${SEE.seulVolta === '*'}" aria-controls="see-seul" data-bulle="Toutes les lignes que seul Volta a, et pourquoi">${m(nSeul)}</button></td></tr></tfoot>` : '';
-  const photos = `<div class="see-ap-t"><h4>Les quatre tables de vos photos, face à la base</h4><table class="see-table"><thead><tr><th>Famille</th><th>Règle photo</th><th>Règle SEE</th><th>Lignes Volta</th><th>Lignes SEE</th><th>Pareilles</th><th>Autres</th><th>Seul SEE</th><th>Seul Volta</th></tr></thead><tbody>${A.photos.map(ligne).join('')}</tbody>${total}</table>`
-    + `<p class="see-note">« Pareilles » : même contact, même accessoire pour la même clé (famille, sexe, taille, type et gauge du câble) — un nom écrit en entier compte pareil. « Seul Volta » : des lignes des photos que la base n’a plus, ou que Volta a ajoutées de ses sources — un clic sur le nombre dit lesquelles, et pourquoi.</p></div>`;
+  const total = nSeul ? `<tfoot><tr><td colspan="8">Seulement dans VOLTA, pour les quatre familles</td><td class="see-seul-c"><button type="button" class="see-seul-n tout" data-seul-volta="*" aria-expanded="${SEE.seulVolta === '*'}" aria-controls="see-seul" data-bulle="Toutes les lignes que seul VOLTA a, et pourquoi">${m(nSeul)}</button></td></tr></tfoot>` : '';
+  const photos = `<div class="see-ap-t"><h4>Les quatre tables de vos photos, face à la base</h4><table class="see-table"><thead><tr><th>Famille</th><th>Règle photo</th><th>Règle SEE</th><th>Lignes VOLTA</th><th>Lignes SEE</th><th>Pareilles</th><th>Autres</th><th>Seul SEE</th><th>Seul VOLTA</th></tr></thead><tbody>${A.photos.map(ligne).join('')}</tbody>${total}</table>`
+    + `<p class="see-note">« Pareilles » : même contact, même accessoire pour la même clé (famille, sexe, taille, type et gauge du câble) — un nom écrit en entier compte pareil. « Seul VOLTA » : des lignes des photos que la base n’a plus, ou que VOLTA a ajoutées de ses sources — un clic sur le nombre dit lesquelles, et pourquoi.</p></div>`;
   const fam = xs => xs.length ? ' : ' + xs.slice(0, 12).join(', ') + (xs.length > 12 ? '…' : '') : '';
   const item = (n, t, s) => `<li><b>${esc(n)}</b><span>${esc(t)}${s ? ` <i>${esc(s)}</i>` : ''}</span></li>`;
   const formes = Object.entries(A.formes).sort((a, b) => b[1] - a[1]).map(([f, n]) => f + ' ' + m(n)).join(' · ');
   const ac = A.accessoires;
-  const plus = `<div class="see-ap-l"><h4>Ce que Volta n’avait pas</h4><ul>`
+  const plus = `<div class="see-ap-l"><h4>Ce que VOLTA n’avait pas</h4><ul>`
     + item('+' + m(A.contacts.nouvelles), 'lignes de contact', 'sur ' + m(A.contacts.n) + ' retenues, ' + plurielLie(A.contacts.familles, 'famille') + (A.contacts.famillesNouvelles.length ? ' — ' + plurielLie(A.contacts.famillesNouvelles.length, 'nouvelle') + fam(A.contacts.famillesNouvelles) : ''))
     + item('+' + m(A.cables.nouveaux), 'câbles', 'sur ' + m(A.cables.n) + (A.cables.famillesNouvelles.length ? ' — familles nouvelles' + fam(A.cables.famillesNouvelles) : ''))
     + item('+' + m(A.faces.nouvelles), 'faces de connecteur', 'sur ' + m(A.faces.n) + (A.faces.parFamille.length ? ' — ' + A.faces.parFamille.slice(0, 6).map(([f, n]) => f + ' ' + n).join(', ') : ''))
-    + item(m(A.equipements.n), 'références de connecteurs et d’équipements', plurielLie(A.equipements.paires, 'paire') + ' fiche ↔ embase, ' + plurielLie(A.equipements.programmes, 'programme') + ' — Volta n’en avait aucune')
-    + (ac ? item(m(ac.lignes), 'accessoires', (ac.types.length ? ac.types.slice(0, 4).map(([v, n]) => v + ' ' + m(n)).join(', ') + ' · ' : '') + (ac.tyraps ? m(ac.tyraps) + ' tyraps' : 'aucun tyrap nommé') + (ac.tyrapsVolta ? ' ; des ' + ac.tyrapsVolta + ' tyraps de Volta, ' + ac.tyrapsDansSEE + ' y sont' : '')) : '')
+    + item(m(A.equipements.n), 'références de connecteurs et d’équipements', plurielLie(A.equipements.paires, 'paire') + ' fiche ↔ embase, ' + plurielLie(A.equipements.programmes, 'programme') + ' — VOLTA n’en avait aucune')
+    + (ac ? item(m(ac.lignes), 'accessoires', (ac.types.length ? ac.types.slice(0, 4).map(([v, n]) => v + ' ' + m(n)).join(', ') + ' · ' : '') + (ac.tyraps ? m(ac.tyraps) + ' tyraps' : 'aucun tyrap nommé') + (ac.tyrapsVolta ? ' ; des ' + ac.tyrapsVolta + ' tyraps de VOLTA, ' + ac.tyrapsDansSEE + ' y sont' : '')) : '')
     + `</ul>${formes ? `<p class="see-note">Les références de contact, par famille : ${esc(formes)}.</p>` : ''}</div>`;
-  return `<div class="see-bloc see-apporte"><h3>Ce que la base apporte <span>à côté de ce que Volta tenait de vos photos des tables de SEE (EN 2997 v6, EN 3645 v2, EN 3646 v13, EN 4165 v49)</span></h3><div class="see-ap">${photos}${plus}</div>${seulVoltaHtml(I, nSeul)}</div>`; }
-/* « SEUL VOLTA », DÉPLIÉ (v74) : chaque ligne que la base n'a pas — la clé en mots, le contact de Volta, d'où elle vient (une
+  return `<div class="see-bloc see-apporte"><h3>Ce que la base apporte <span>à côté de ce que VOLTA tenait de vos photos des tables de SEE (EN 2997 v6, EN 3645 v2, EN 3646 v13, EN 4165 v49)</span></h3><div class="see-ap">${photos}${plus}</div>${seulVoltaHtml(I, nSeul)}</div>`; }
+/* « SEUL VOLTA », DÉPLIÉ (v74) : chaque ligne que la base n'a pas — la clé en mots, le contact de VOLTA, d'où elle vient (une
    puce, la source dans sa bulle), ce que la base dit autour, et ce que donnerait « ne prendre que la base » : rien de perdu
    (une ligne plus large de la base la couvre) ou un câble sans contact. Par famille (une puce par famille), ou toutes.
    Dessous, LA BASE UNIQUE : la case, préparée et décochée, et ce qu'elle ferait. */
@@ -379,34 +379,34 @@ function seulVoltaHtml(I, n) { if (!SEE.seulVolta || !n) return caseUniqueHtml(I
     + `<td><span class="see-orig ${y.origine.genre}" data-bulle="${escA(y.origine.source || '')}">${esc(y.origine.mot)}</span>${y.origine.genre === 'ajoutee' && y.origine.source ? `<small>${esc(y.origine.source)}</small>` : ''}</td>`
     + `<td>${esc(y.base.mot)}</td><td class="see-seul-v">${y.couverte ? `<b class="see-t-ok">couverte</b><small>par ${esc(y.couverte.reference || 'une ligne de la base')} (${esc(motsCouvertureSEE(y.couverte))})</small>` : '<b class="see-t-att">sans équivalent</b><small>ce câble n’aurait plus de contact</small>'}</td></tr>`;
   const corps = (f ? [f] : fams).map(k => { const xs = L.filter(y => y.famille === k); return xs.length ? `${f ? '' : `<tr class="see-seul-f"><th colspan="5">${esc(xs[0].nom)} · ${plurielLie(xs.length, 'ligne')}</th></tr>`}${xs.map(ligne).join('')}` : ''; }).join('');
-  return `<div class="see-seul" id="see-seul" role="region" aria-label="Ce que seul Volta a"><div class="see-seul-tete"><h4>Ce que seul Volta a <span>${esc(plurielLie(tous.length, 'ligne'))} de contact que la base n’a pas${perdues ? ` · ${perdues} sans équivalent dans la base` : ' · toutes couvertes par une ligne plus large de la base'}</span></h4>`
+  return `<div class="see-seul" id="see-seul" role="region" aria-label="Ce que seul VOLTA a"><div class="see-seul-tete"><h4>Ce que seul VOLTA a <span>${esc(plurielLie(tous.length, 'ligne'))} de contact que la base n’a pas${perdues ? ` · ${perdues} sans équivalent dans la base` : ' · toutes couvertes par une ligne plus large de la base'}</span></h4>`
     + `<button type="button" class="rond fermer" id="see-seul-fermer" aria-label="Replier la liste" data-bulle="Replier la liste"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`
     + `<div class="see-seul-puces" role="group" aria-label="Une famille">${puce('*', 'toutes', tous.length)}${fams.map(k => puce(k, tous.find(y => y.famille === k).nom, tous.filter(y => y.famille === k).length)).join('')}</div>`
-    + `<p class="see-note">Deux raisons possibles : la base n’a plus la ligne (sa règle a changé de version depuis vos photos), ou Volta l’a ajoutée de ses sources (une taille que vos photos n’avaient pas). <b>Couverte</b> : une ligne plus large de la base (tout câble, toute gauge) donne un contact — ne prendre que la base n’y perd rien. <b>Sans équivalent</b> : ne prendre que la base laisserait ce câble sans contact.</p>`
-    + `<table class="see-table see-seul-t"><thead><tr><th>La ligne (sexe, taille, câble, gauge)</th><th>Contact de Volta</th><th>D’où elle vient</th><th>Ce que dit la base</th><th>Ne prendre que la base</th></tr></thead><tbody>${corps}</tbody></table>`
+    + `<p class="see-note">Deux raisons possibles : la base n’a plus la ligne (sa règle a changé de version depuis vos photos), ou VOLTA l’a ajoutée de ses sources (une taille que vos photos n’avaient pas). <b>Couverte</b> : une ligne plus large de la base (tout câble, toute gauge) donne un contact — ne prendre que la base n’y perd rien. <b>Sans équivalent</b> : ne prendre que la base laisserait ce câble sans contact.</p>`
+    + `<table class="see-table see-seul-t"><thead><tr><th>La ligne (sexe, taille, câble, gauge)</th><th>Contact de VOLTA</th><th>D’où elle vient</th><th>Ce que dit la base</th><th>Ne prendre que la base</th></tr></thead><tbody>${corps}</tbody></table>`
     + caseUniqueHtml(I, n) + '</div>'; }
 // une ligne de la base qui en couvre une autre : ce qu'elle a de plus large
 const motsCouvertureSEE = s => [s.typeFil === '*' ? 'tout câble' : s.typeFil, s.jauge == null ? 'toute gauge' : s.jauge + ' AWG', s.taille === '*' ? 'toute taille' : ''].filter(Boolean).join(' · ');
 /* LA BASE UNIQUE : la case, préparée et décochée, et ce qu'elle ferait, en une phrase ; éteinte tant que la base montrée
    n'est pas celle qui est gardée sur ce PC. */
 function caseUniqueHtml(I, n) { const gardee = typeof BASE_SEE !== 'undefined' && BASE_SEE.base === I, oui = gardee && seuleBaseSEE(), perdues = n ? seulVoltaSEE(I).filter(x => !x.couverte).length : 0;
-  return `<div class="see-unique${oui ? ' oui' : ''}">${caseSeuleBaseSEE('see-seule')}<p class="see-note">${!gardee ? 'Cette base n’est pas encore gardée sur ce PC : la case attend « Garder dans Volta » (onglet Import).'
-    : oui ? `Cochée : les pièces ne viennent que de la base, pour chaque famille qu’elle connaît${n ? ` — ${plurielLie(n, 'ligne')} de Volta ne ${n > 1 ? 'servent' : 'sert'} plus${perdues ? `, dont ${perdues} sans équivalent` : ''}` : ''}. Décochez pour que Volta les garde en secours.`
-    : `Décochée : Volta garde ses lignes en secours, derrière la base.${n ? ` Cochée, ${plurielLie(n, 'ligne')} ne serviraient plus${perdues ? `, dont ${perdues} sans équivalent dans la base` : ' — toutes couvertes par la base'}.` : ' Cochée, rien ne changerait : la base a tout ce que Volta tenait de vos photos.'}`}`
-    + ` <button type="button" class="btn lien dense" data-comprendre="cuisinier" data-bulle="Une page qui explique le catalogue, les recettes, et pourquoi une base unique">Comment Volta réfléchit</button></p></div>`; }
-/* Ouvrir la Cohérence de la base gardée, la liste « Seul Volta » dépliée (la page « Comment Volta réfléchit » y mène). */
+  return `<div class="see-unique${oui ? ' oui' : ''}">${caseSeuleBaseSEE('see-seule')}<p class="see-note">${!gardee ? 'Cette base n’est pas encore gardée sur ce PC : la case attend « Garder dans VOLTA » (onglet Import).'
+    : oui ? `Cochée : les pièces ne viennent que de la base, pour chaque famille qu’elle connaît${n ? ` — ${plurielLie(n, 'ligne')} de VOLTA ne ${n > 1 ? 'servent' : 'sert'} plus${perdues ? `, dont ${perdues} sans équivalent` : ''}` : ''}. Décochez pour que VOLTA les garde en secours.`
+    : `Décochée : VOLTA garde ses lignes en secours, derrière la base.${n ? ` Cochée, ${plurielLie(n, 'ligne')} ne serviraient plus${perdues ? `, dont ${perdues} sans équivalent dans la base` : ' — toutes couvertes par la base'}.` : ' Cochée, rien ne changerait : la base a tout ce que VOLTA tenait de vos photos.'}`}`
+    + ` <button type="button" class="btn lien dense" data-comprendre="cuisinier" data-bulle="Une page qui explique le catalogue, les recettes, et pourquoi une base unique">Comment VOLTA réfléchit</button></p></div>`; }
+/* Ouvrir la Cohérence de la base gardée, la liste « Seul VOLTA » dépliée (la page « Comment VOLTA réfléchit » y mène). */
 function montrerSeulVoltaSEE(f) { if (!BASE_SEE.base && !SEE.lu) { dire('Aucune base SEE gardée sur ce PC : déposez l’Excel de SEE (⋮ › Vos fichiers › Normes).'); return; }
   SEE.vue = 'coherence'; SEE.seulVolta = f || '*'; ficheBaseSEE(); rendreBaseSEE(); const s = $('see-seul'); if (s && s.scrollIntoView) { try { s.scrollIntoView({ block: 'start' }); } catch (_) { } } }
 /* Le lien de l'onglet Import vers la cohérence : une ligne, le compte de ce qui est à reprendre. */
 function lienCoherenceSEEHtml(I, ici) { if (!I || !I.coherence) return ''; const X = controlesSEE(I), ko = X.filter(x => x.n && x.gravite === 'ko'), att = X.filter(x => x.n && x.gravite === 'att');
   const mots = [ko.length ? `<b class="see-t-ko">${esc(plurielLie(ko.length, 'contrôle'))} en erreur</b>` : '', att.length ? `<b class="see-t-att">${esc(plurielLie(att.length, 'contrôle'))} à voir</b>` : ''].filter(Boolean).join(', ');
-  return `<p class="see-coh-l"><span>Volta a vérifié la base ligne par ligne : ${mots || 'aucun contrôle n’a rien à redire'}.</span>${ici ? '' : '<button type="button" class="btn lien" id="see-voir-coh">Voir la cohérence</button>'}</p>`; }
+  return `<p class="see-coh-l"><span>VOLTA a vérifié la base ligne par ligne : ${mots || 'aucun contrôle n’a rien à redire'}.</span>${ici ? '' : '<button type="button" class="btn lien" id="see-voir-coh">Voir la cohérence</button>'}</p>`; }
 
 /* ---- le rapport de cohérence, en texte : à montrer à qui le demande. Des références de catalogue et des comptes —
    jamais le plan ouvert, ni le nom du classeur, ni le nom des programmes (« programme A ») quand il se copie. */
 function rapportCoherenceSEE(I, copie) { const K = I && I.coherence; if (!K) return ''; const X = controlesSEE(I), s = K.sur || {}, m = milliers, A = apporteSEE(I);
   const nb = e => X.filter(x => etatCtlSEE(x) === e), cas = xs => xs.reduce((n, x) => n + x.n, 0);
-  const out = [`Rapport de cohérence de la base SEE — vérifiée par Volta le ${new Date(I.quand || Date.now()).toLocaleDateString('fr-FR')}, sur le poste qui la détient`,
+  const out = [`Rapport de cohérence de la base SEE — vérifiée par VOLTA le ${new Date(I.quand || Date.now()).toLocaleDateString('fr-FR')}, sur le poste qui la détient`,
     'Des références de catalogue et des comptes seulement : ni le plan, ni le nom du classeur' + (copie ? ', ni le nom des programmes.' : '.'),
     `Lu : ${m(s.lignes || 0)} lignes de contact (${m(s.regles || 0)} règles validées ou en cours), ${m(s.cables || 0)} câbles, ${m(s.faces || 0)} faces (${m(s.broches || 0)} broches), ${m(s.connecteurs || 0)} connecteurs, ${m(s.equipements || 0)} équipements, ${m(s.paires || 0)} paires fiche ↔ embase${s.renvois != null ? `, ${m(s.renvois)} renvois entre ${m(s.feuilles || 0)} feuilles` : ''}.`,
     `Verdict : ${X.length} contrôles — ${nb('ko').length} en erreur (${m(cas(nb('ko')))} cas, écartés), ${nb('att').length} à voir (${m(cas(nb('att')))} cas), ${nb('info').length} pour information (${m(cas(nb('info')))} cas), ${nb('ok').length} sans défaut${nb('na').length ? ', ' + nb('na').length + ' sans objet' : ''}.`];
@@ -419,14 +419,14 @@ function rapportCoherenceSEE(I, copie) { const K = I && I.coherence; if (!K) ret
         out.push(`    ${r} — ${d}${y.l ? ' — ' + lieuSEE(x, y, true).replace(/ /g, ' ') : ''}`); });
       if (x.n > x.ex.length) out.push(`    … et ${m(x.n - x.ex.length)} autres`); }); });
   out.push('', '== Ce que la base apporte ==',
-    `Contacts : ${m(A.contacts.n)} lignes retenues, ${A.contacts.familles} familles — ${m(A.contacts.nouvelles)} que Volta n’avait pas${A.contacts.famillesNouvelles.length ? ' ; familles nouvelles : ' + A.contacts.famillesNouvelles.join(', ') : ''}`,
-    'Les quatre tables des photos, face à la base :', ...A.photos.map(p => `    ${p.nom} : photo v${p.photo}, SEE ${p.version ? 'v' + p.version : 'sans règle validée'} — Volta ${p.volta} lignes, SEE ${p.see} : ${p.pareilles} pareilles, ${p.autres} autres, ${p.seulSEE} seulement dans SEE, ${p.seulVolta} seulement dans Volta`),
-    // ce que seul Volta a, ligne par ligne, et pourquoi (v74) : des références de catalogue, rien du plan
-    ...(t => t.length ? ['Seulement dans Volta, ligne par ligne :', ...t.map(y => `    ${y.nom} · ${motsContactSEE(y.x).replace(/^[^·]+· /, '')} — ${y.x.reference || '—'} — ${y.origine.mot}${y.origine.genre === 'ajoutee' && y.origine.source ? ' (' + y.origine.source + ')' : ''} — la base : ${y.base.mot} — ${y.couverte ? 'couverte par ' + (y.couverte.reference || 'une ligne plus large') : 'sans équivalent dans la base'}`)] : [])(seulVoltaSEE(I)),
-    `La base, seule source des pièces : ${typeof BASE_SEE !== 'undefined' && BASE_SEE.base === I && seuleBaseSEE() ? 'oui (la case est cochée)' : 'non — Volta garde ses lignes en secours'}`,
-    `Câbles : ${m(A.cables.n)}, dont ${m(A.cables.nouveaux)} que Volta n’avait pas${A.cables.famillesNouvelles.length ? ' ; familles nouvelles : ' + A.cables.famillesNouvelles.join(', ') : ''}`,
-    `Faces : ${m(A.faces.n)}, dont ${m(A.faces.nouvelles)} que Volta n’avait pas${A.faces.parFamille.length ? ' (' + A.faces.parFamille.map(([f, n]) => f + ' ' + n).join(', ') + ')' : ''}`,
-    `Connecteurs et équipements : ${m(A.equipements.n)} références, ${m(A.equipements.paires)} paires fiche ↔ embase, ${A.equipements.programmes} programmes — Volta n’en avait aucune`,
+    `Contacts : ${m(A.contacts.n)} lignes retenues, ${A.contacts.familles} familles — ${m(A.contacts.nouvelles)} que VOLTA n’avait pas${A.contacts.famillesNouvelles.length ? ' ; familles nouvelles : ' + A.contacts.famillesNouvelles.join(', ') : ''}`,
+    'Les quatre tables des photos, face à la base :', ...A.photos.map(p => `    ${p.nom} : photo v${p.photo}, SEE ${p.version ? 'v' + p.version : 'sans règle validée'} — VOLTA ${p.volta} lignes, SEE ${p.see} : ${p.pareilles} pareilles, ${p.autres} autres, ${p.seulSEE} seulement dans SEE, ${p.seulVolta} seulement dans VOLTA`),
+    // ce que seul VOLTA a, ligne par ligne, et pourquoi (v74) : des références de catalogue, rien du plan
+    ...(t => t.length ? ['Seulement dans VOLTA, ligne par ligne :', ...t.map(y => `    ${y.nom} · ${motsContactSEE(y.x).replace(/^[^·]+· /, '')} — ${y.x.reference || '—'} — ${y.origine.mot}${y.origine.genre === 'ajoutee' && y.origine.source ? ' (' + y.origine.source + ')' : ''} — la base : ${y.base.mot} — ${y.couverte ? 'couverte par ' + (y.couverte.reference || 'une ligne plus large') : 'sans équivalent dans la base'}`)] : [])(seulVoltaSEE(I)),
+    `La base, seule source des pièces : ${typeof BASE_SEE !== 'undefined' && BASE_SEE.base === I && seuleBaseSEE() ? 'oui (la case est cochée)' : 'non — VOLTA garde ses lignes en secours'}`,
+    `Câbles : ${m(A.cables.n)}, dont ${m(A.cables.nouveaux)} que VOLTA n’avait pas${A.cables.famillesNouvelles.length ? ' ; familles nouvelles : ' + A.cables.famillesNouvelles.join(', ') : ''}`,
+    `Faces : ${m(A.faces.n)}, dont ${m(A.faces.nouvelles)} que VOLTA n’avait pas${A.faces.parFamille.length ? ' (' + A.faces.parFamille.map(([f, n]) => f + ' ' + n).join(', ') + ')' : ''}`,
+    `Connecteurs et équipements : ${m(A.equipements.n)} références, ${m(A.equipements.paires)} paires fiche ↔ embase, ${A.equipements.programmes} programmes — VOLTA n’en avait aucune`,
     Object.keys(A.formes).length ? 'Références de contact par famille : ' + Object.entries(A.formes).sort((a, b) => b[1] - a[1]).map(([f, n]) => f + ' ' + n).join(', ') : '',
-    A.accessoires ? `Accessoires : ${m(A.accessoires.lignes)}${A.accessoires.types.length ? ' (' + A.accessoires.types.map(([v, n]) => v + ' ' + n).join(', ') + ')' : ''} ; tyraps : ${A.accessoires.tyraps}${A.accessoires.tyrapsVolta ? ` ; des ${A.accessoires.tyrapsVolta} tyraps de Volta, ${A.accessoires.tyrapsDansSEE} y sont` : ''}` : '');
+    A.accessoires ? `Accessoires : ${m(A.accessoires.lignes)}${A.accessoires.types.length ? ' (' + A.accessoires.types.map(([v, n]) => v + ' ' + n).join(', ') + ')' : ''} ; tyraps : ${A.accessoires.tyraps}${A.accessoires.tyrapsVolta ? ` ; des ${A.accessoires.tyrapsVolta} tyraps de VOLTA, ${A.accessoires.tyrapsDansSEE} y sont` : ''}` : '');
   return out.filter(x => x !== '').join('\n').replace(/\n(== )/g, '\n\n$1') + '\n'; }

@@ -18,7 +18,7 @@ function compteur() { const m = new Map();
            lignes() { return [...m.values()].map(e => ({ ...e, ou: [...e.ou].sort(triNaturel) })).sort((a, b) => b.n - a.n || triNaturel(a.reference, b.reference)); } }; }
 /* LES DISJONCTEURS (v73, l'ingénieur, n° 6 : « MS3320-10 · connecteur — un disjoncteur n'est pas un connecteur » ; « le
    folio écrit 15 A, la nomenclature commande un MS3320-10 ») : un groupe à eux, une ligne par repère — le part number à
-   COMMANDER (celui du calibre que Volta retient : une désignation construite dans la famille du part number, à vérifier
+   COMMANDER (celui du calibre que VOLTA retient : une désignation construite dans la famille du part number, à vérifier
    au catalogue, quand il diffère du retest), le calibre retenu, le retest barré s'il diffère, l'état (le verdict, la table
    unique de 09 bis ; « pas écrit au retest » tant que le retest dit un autre calibre). Une borne de disjoncteur se
    raccorde par une cosse : ni contact à sertir, ni raccord. */
@@ -117,7 +117,7 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
     + table('Modules de jonction', refs(N.modules, 'référence'), ['Module', 'Norme', 'Qté', 'Barrettes'], N.modules.map(x => [td('ref', esc(x.reference)), td('sans', esc(x.famille || ''), !x.famille), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Connecteurs et prises', refs(N.connecteurs, 'part number'), ['Part number', 'Nature', 'Qté', 'Repères'], N.connecteurs.map(x => [td('ref', esc(x.reference)), td('sans', natureHtml(x.nature), !x.nature), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Disjoncteurs', plurielLie(N.disjoncteurs.length, 'disjoncteur'), ['Repère', 'Part number à commander', 'Calibre', 'Installation', 'État'], N.disjoncteurs.map(x => [td('ref', esc(x.repere)),
-      td('ref', esc(x.reference) + (x.construit ? `<i class="no-note-l no-construit" data-bulle="Le part number du calibre que Volta retient, construit dans la famille du retest : à vérifier au catalogue">construit · à vérifier</i>` : '')),
+      td('ref', esc(x.reference) + (x.construit ? `<i class="no-note-l no-construit" data-bulle="Le part number du calibre que VOLTA retient, construit dans la famille du retest : à vérifier au catalogue">construit · à vérifier</i>` : '')),
       td('d', x.calibre ? esc(nombre(x.calibre)) + INSECABLE + 'A' : rien, !x.calibre), td('d', x.retest ? `<s class="no-barre" data-bulle="${escA('L’installation dit ' + x.pnRetest)}">${esc(nombre(x.retest))}${INSECABLE}A</s>` : rien, !x.retest), td('sans no-etat-c', etatDj(x))]))
     + table('Autour des connecteurs', refs(N.habits, 'article'), ['Quoi', 'Référence', 'Qté', 'Où'], N.habits.map(x => [td('sans no-quoi', esc(x.quoi)), td('ref', esc(x.reference) + (x.note ? note(x.note) : '')), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Câbles', plurielLie(N.cables.length, 'type') + ' · ' + nombre(Math.round(N.longueur)) + ' m', ['Type', 'Qté', 'Longueur', 'Masse', 'Base'], N.cables.map(x => [td('ref', esc(x.reference)), td('d', x.n),

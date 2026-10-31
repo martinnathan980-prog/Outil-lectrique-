@@ -87,7 +87,7 @@ const EXPLICATIONS = {
   profil: c => { const H = exHypotheses(c), perm = c && exPositif(c.permanent) ? c.permanent : null, p = c && c.pointe && exPositif(c.pointe.i) ? c.pointe : null, so = c && c.somme != null && isFinite(c.somme) ? c.somme : null;
     const phrase = perm || p ? `Votre profil : ${[perm ? exA(perm) + ' permanents' : '', p ? 'une pointe de ' + exA(p.i) + (exPositif(p.t) && isFinite(p.t) ? ' pendant ' + exS(p.t) : '') : ''].filter(Boolean).join(' et ')}.` : 'Ce que tire l’équipement protégé, état par état.';
     return exE('Le profil de charge', phrase, [['Permanent', perm ? exA(perm) : null, ''], ['Pointe', p ? exA(p.i) + (exPositif(p.t) && isFinite(p.t) ? ' · ' + exS(p.t) : '') : null, ''], ['Temps consommé', so != null ? exPct(so) : null, so == null ? '' : so > 1 ? 'ko' : so > +H.margeTemps / 100 ? 'att' : 'ok']],
-      ['Chaque état : un courant (A) pendant une durée (s) — le permanent dure toujours', 'Chaque état devient un point de la courbe : glissez-le pour l’ajuster', `Leurs parts du temps de déclenchement s’additionnent : ${exN(+H.margeTemps)} % au plus`, 'L’installation ne le porte pas : vous l’écrivez, Volta n’invente rien'],
+      ['Chaque état : un courant (A) pendant une durée (s) — le permanent dure toujours', 'Chaque état devient un point de la courbe : glissez-le pour l’ajuster', `Leurs parts du temps de déclenchement s’additionnent : ${exN(+H.margeTemps)} % au plus`, 'L’installation ne le porte pas : vous l’écrivez, VOLTA n’invente rien'],
       `La méthode NASA TM-102179 ; un état après le permanent trouve le disjoncteur chaud (son temps ÷ ${exN(+H.prechauffage)}, feuille MS3320N).`); },
 
   module: c => { const P = c && c.plan ? c.plan : null, libres = P && P.contacts != null && P.utilises != null ? P.contacts - P.utilises : null;
@@ -103,7 +103,7 @@ const EXPLICATIONS = {
       : aucun ? 'Aucun arrangement de la norme ne loge ces bornes avec ces gauges.' : 'L’insert : la place et la taille de chaque contact du connecteur.';
     return exE('L’arrangement', phrase, aucun ? [['Borne', F[0] ? F[0].borne : null, 'ko'], ['Gauge', F[0] && F[0].f && F[0].f.type ? String(jaugeDuType(F[0].f.type)) + ' AWG' : null, 'ko'], ['Proposé', F[0] && F[0].propose ? F[0].propose.type : null, 'ok']]
       : [['Contacts', P && P.contacts != null ? exN(P.contacts) : null, ''], ['Pris', P && P.utilises != null ? exN(P.utilises) : null, '']],
-      ['La référence nomme l’arrangement : Volta le prend', 'Sinon, chaque borne cherche le contact de même rang, d’une taille qui admet sa gauge', 'Entre ceux qui logent tout : le moins d’accommodements, puis le moins de contacts'],
+      ['La référence nomme l’arrangement : VOLTA le prend', 'Sinon, chaque borne cherche le contact de même rang, d’une taille qui admet sa gauge', 'Entre ceux qui logent tout : le moins d’accommodements, puis le moins de contacts'],
       'Les faces des normes EN 2997-002, EN 3645-002, EN 3646, EN 4165-002, ASNE 0059.'); },
 
   prise: c => { const P = c && c.plan ? c.plan : null;
@@ -188,7 +188,7 @@ const EXPLICATIONS = {
 };
 const majusculeEx = t => t ? t[0].toUpperCase() + t.slice(1) : t;
 
-/* LE CHAPITRE de « Comment Volta réfléchit » (08-comprendre, v74) qui dit EN GÉNÉRAL ce qu'un « ? » dit d'une valeur : le
+/* LE CHAPITRE de « Comment VOLTA réfléchit » (08-comprendre, v74) qui dit EN GÉNÉRAL ce qu'un « ? » dit d'une valeur : le
    pied de sa bulle y mène. Le calibre, la courbe, le profil, l'intensité et la chute : la chaîne d'un disjoncteur ; le module,
    l'arrangement, le contact, la gauge : celle d'un connecteur ; ce qui habille un connecteur (raccord, bande, manchon…) : ce
    que veut dire « manque » (une table, une ligne, sinon rien d'inventé) ; la masse : les routes et le retour au corps. */
@@ -197,6 +197,6 @@ const CHAPITRE_EXPLICATION = { calibre: 'disjoncteur', courbe: 'disjoncteur', pr
   raccord: 'manque', bande: 'manque', manchon: 'manque', tyrap: 'manque', cheminee: 'manque', toron: 'manque', masse: 'routes' };
 const chapitreDeLExplication = cle => CHAPITRE_EXPLICATION[cle] || 'cuisinier';
 /* L'EXPLICATION d'une valeur choisie : { titre, phrase, chiffres, etapes, sources, texte, chapitre }, ou null pour une clé
-   inconnue (`chapitre` : celui de la page « Comment Volta réfléchit »). */
+   inconnue (`chapitre` : celui de la page « Comment VOLTA réfléchit »). */
 function explication(cle, contexte) { const f = EXPLICATIONS[cle]; if (!f) return null; let e;
   try { e = f(contexte || null); } catch (_) { e = f(null); } return e ? { ...e, chapitre: chapitreDeLExplication(cle) } : e; }

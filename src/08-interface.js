@@ -965,7 +965,7 @@ function pulser(cible) { if (mouvementReduit() || !app.dessin) return; clearTime
     let el = null; const u = 1 / app.vue.s;
     if (cible.type === 'fil') { const w = cible.f, p = w && sc.querySelector(`path.cab[data-i="${w.i}"]`); if (!p) return;
       el = document.createElementNS(NS_SVG, 'path'); el.setAttribute('d', p.getAttribute('d')); el.setAttribute('class', 'pulse pulse-fil'); }
-    // plusieurs liaisons à la fois (les câbles que Volta vient de grossir : 08-disjoncteurs) — leurs câbles dessinés, ensemble
+    // plusieurs liaisons à la fois (les câbles que VOLTA vient de grossir : 08-disjoncteurs) — leurs câbles dessinés, ensemble
     else if (cible.type === 'liaisons') { const ps = D.fils.filter(w => !w.shunt && cible.ls.some(l => l.cable ? w.cable === l.cable : !w.cable && ((w.de === l.de && w.vers === l.vers) || (w.de === l.vers && w.vers === l.de))))
         .map(w => sc.querySelector(`path.cab[data-i="${w.i}"]`)).filter(Boolean); if (!ps.length) return;
       el = document.createElementNS(NS_SVG, 'g'); el.setAttribute('class', 'pulse');
@@ -1187,7 +1187,7 @@ function lierPlanche() {
           // à la hauteur d'une de ses bornes, le fil en part droit : un guide le dit, de la borne au bout du tronçon
           const borne = e => () => ({ x1: Math.min(e.x, xa), y1: e.y, x2: Math.max(e.x, xb), y2: e.y });
           pr.aimants = [{ d: g.y, fort: true, guide: borne(g) }, { d: d.y, fort: true, guide: borne(d) }, { d: pr.y0, fort: true }]; }
-        return 'déplacer ' + (l.cable || 'le câble'); },
+        return 'déplacer le câble'; },
       viser(pr, rx, ry, libre) {
         if (pr.sens === 'V') { const x = pr.x0 + rx; if (libre) return { x: Math.round(x * 2) / 2 };
           const tol = Math.max(PISTE / 2, tolAimant()), g = pr.grille.filter(v => Math.abs(v - x) <= tol).reduce((m, v) => m == null || Math.abs(v - x) < Math.abs(m - x) ? v : m, null);
@@ -1218,7 +1218,7 @@ function lierPlanche() {
         const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x);
         const yp = q ? q.y : pr.y0, guides = pr.aimants.filter(m => m.guide && Math.abs(m.d - yp) < 0.26).map(m => m.guide());
         return lignesDeGuides(guides, u) + (pris ? ligne('rt-pose', x0, yp, x1, yp, u) : '') + ligne('rt-fantome' + (pris ? ' pris' : ''), x0, pr.vise.y, x1, pr.vise.y, u, true); },
-      mot(pr) { const nom = String(pr.l.cable || 'Le câble'), p = pr.place;
+      mot(pr) { const nom = 'Le câble', p = pr.place;
         if (!pr.posee) return pr.vise && !GESTES.fil.immobile(pr.vise, pr) ? 'Pas de passage ici pour ' + nom + ' : il y croiserait un bloc, une borne ou un autre câble — il reste où il était.' : '';
         let quoi;
         if (pr.sens === 'V') { const x = p.reel != null ? p.reel : p.x, n = Math.round((x - pr.x0) / PISTE);
@@ -1433,14 +1433,14 @@ const boutLisible = (n, b) => { const [r, x] = boutSource(n, b); return bornePlu
 const rangsDesFolios = ps => { const P = plans(); return ps.map(p => P.indexOf(p) + 1).filter(r => r > 0).sort((a, b) => a - b); };
 function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => `<b class="pl-b-t">${esc(t)}</b>`, l_ = t => `<span class="pl-b-l">${t}</span>`, id = t => `<span class="pl-b-id">${esc(t)}</span>`;
   if (q.genre === 'rendre') return T('Rendre au moteur') + l_('ce qu’on a changé ici revient au dessin automatique');
-  const lignesDeFil = f => { const l = L[f.i] || {}, s = sourceDe(l) || l; return id(s.cable || s.type || 'sans numéro') + ' · ' + id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)); };
+  const lignesDeFil = f => { const l = L[f.i] || {}, s = sourceDe(l) || l; return id(s.type || 'câble') + ' · ' + id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)); };
   if (q.genre === 'fil') { const l = L[q.f.i] || {}, s = sourceDe(l) || l, c = D.couleurDe && D.couleurDe(q.f), lg = parseFloat(String(s.longueur || '').replace(',', '.'));
-    return T(s.cable || majuscule(cableDit(s))) + l_(id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)))
-      + l_((c ? `<i class="pl-b-route" style="background:${c}"></i>` : '') + esc(s.route || 'sans route') + ' · ' + esc(s.type || 'type inconnu') + (lg > 0 ? ' · ' + String(Math.round(lg * 100) / 100).replace('.', ',') + ' m' : '')); }
+    return T(s.type ? 'Câble ' + s.type : 'Câble') + l_(id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)))
+      + l_((c ? `<i class="pl-b-route" style="background:${c}"></i>` : '') + esc(s.route || 'sans route') + (lg > 0 ? ' · ' + String(Math.round(lg * 100) / 100).replace('.', ',') + ' m' : '')); }
   if (q.genre === 'renvoi') { const t = q.c.name.replace(RENVOI, ''), l = q.f && L[q.f.i], bout = l ? (l.de === q.c.name ? l.borneDe : l.borneVers) : '';
-    return T('Vers le folio ' + t) + (l ? l_(id(autreBoutDuRenvoi(bout)) + (l.cable ? ' · ' + id(l.cable) : '')) : '') + l_('Clic : y aller, l’autre moitié allumée'); }
+    return T('Vers le folio ' + t) + (l ? l_(id(autreBoutDuRenvoi(bout)) + (l.type ? ' · ' + id(l.type) : '')) : '') + l_('Clic : y aller, l’autre moitié allumée'); }
   if (q.genre === 'vt') { const ws = filsDeBarretteAPoser(q.b.nomVT), r = liaisonsDuPlan().find(l => l.vers === q.b.nomVT && l.borneVers === '1' && !VT_A_POSER.test(l.de));
-    return T(q.b.nomVT) + l_('barrette ajoutée par Volta' + (r ? ' sur ' + id(bornePlusRepere(r.de, r.borneDe)) : '')) + l_(pluriel(ws.length, 'câble')); }
+    return T(q.b.nomVT) + l_('barrette ajoutée par VOLTA' + (r ? ' sur ' + id(bornePlusRepere(r.de, r.borneDe)) : '')) + l_(pluriel(ws.length, 'câble')); }
   const c = q.c, nom = c.name;
   if (q.genre === 'borne') { const ws = filsDeLaBorne(c, q.y);
     return T(bornePlusRepere(nom, q.etiq)) + ws.slice(0, 3).map(f => l_(lignesDeFil(f))).join('') + (ws.length > 3 ? l_('et ' + (ws.length - 3) + (ws.length > 4 ? ' autres câbles' : ' autre câble')) : '') + l_('Glisser : la déplacer le long du bloc'); }
@@ -1563,7 +1563,7 @@ const reperesDuContrat = () => memoContrat('reperes', () => { const V = verite()
     if (!sous) sous = pluriel(V.filter(l => l.de === nom || l.vers === nom).length, 'câble');
     out.push({ nom, genre, plans: plansDuRepere(nom).sort(triNaturel), sous }); });
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1')
-    out.push({ nom: l.aPoser, genre: 'barrette', plan: p, plans: p === '*' ? [] : [p], sous: 'ajoutée par Volta sur ' + l.de + ':' + l.borneDe }); }));
+    out.push({ nom: l.aPoser, genre: 'barrette', plan: p, plans: p === '*' ? [] : [p], sous: 'ajoutée par VOLTA sur ' + l.de + ':' + l.borneDe }); }));
   return out.sort((a, b) => triNaturel(a.nom, b.nom) || triNaturel(a.plan || '', b.plan || '')); });
 /* L'index : d'abord ce qu'il y a à reprendre (08 quater, par genre), puis les repères par genre — les disjoncteurs à part.
    Le filtre cherche dans les repères et ce qu'on écrit dessous (la désignation, la description du retest, le calibre, le
@@ -1572,7 +1572,7 @@ function rendreIndex(box) { const etats = new Map();
   (CONTROLE.items || []).forEach(x => { if (!x.nom) return; if (x.niveau === 'ko' || !etats.has(x.nom)) etats.set(x.nom, x.niveau); });
   const f = app.insp.filtre.trim().toLowerCase(), items = reperesDuContrat().filter(r => !f || r.nom.toLowerCase().includes(f) || r.sous.toLowerCase().includes(f));
   // les câbles que le filtre trouve (le numéro, le type), douze au plus
-  const cables = !f ? [] : (() => { const vus = new Set(), out = []; for (const l of verite()) { const c = l.cable || ''; if (!c || vus.has(c)) continue;
+  const cables = SANS_NUMERO_DE_CABLE || !f ? [] : (() => { const vus = new Set(), out = []; for (const l of verite()) { const c = l.cable || ''; if (!c || vus.has(c)) continue;
       if (c.toLowerCase().includes(f) || (f.length >= 2 && String(l.type || '').toLowerCase().includes(f))) { vus.add(c); out.push(l); } }
     return out.sort((a, b) => triNaturel(a.cable, b.cable)); })();
   // ce que le filtre a trouvé, surligné dans le repère et sa ligne
@@ -1659,7 +1659,8 @@ function allerAuRepere(nom, plan) { const P = plans();
    seulement, si ce qu'on vient de choisir passe sous le panneau, on le ramène, à la même échelle. */
 function recadrerSiCache() { const d = app.dessin; if (!d) { ajuster(true); return; }
   // (v78) le grand ouvert : l'objet reste cadré dans le tiers du plan, lisible — pas la feuille entière, minuscule
-  if (document.body.classList.contains('insp-epingle') && document.body.classList.contains('insp-grand') && boiteDeLaCible()) { montrerSiCache(boiteDeLaCible()); return; }
+  // (v78, le lecteur : « le dessin derrière, dans le tiers qui reste, directement reciblé, bien centré ») : l'objet au milieu du plan
+  if (document.body.classList.contains('insp-epingle') && document.body.classList.contains('insp-grand') && boiteDeLaCible()) { montrerSiCache(boiteDeLaCible(), true); return; }
   const r = cadre(), s = app.vue.s, entier = bb => { const x0 = app.vue.tx + bb.x * s, y0 = app.vue.ty + bb.y * s; return x0 >= -2 && y0 >= -2 && x0 + bb.w * s <= r.width + 2 && y0 + bb.h * s <= r.height + 2; };
   // la feuille entière — ou, cadré sur lui (v73), le DESSIN entier — se recadre dans la place qui reste
   if (entier(d.bbox) || (VUE.cadrage === 'dessin' && !VUE.main && entier(boiteDuDessin(d)))) { ajuster(true); return; }
@@ -1675,11 +1676,11 @@ function boiteDeLaCible() { const d = app.dessin, c = app.cible; if (!d || !c) r
 /* R5 — LE PLAN NE BOUGE PAS pour rien : ouvrir une fiche depuis une fiche allume l'objet ; le plan ne glisse que si
    l'objet est hors de la place libre (sous un panneau, hors de l'écran), et alors à la même échelle quand il y tient.
    `b` : la boîte de l'objet, dans le repère du dessin. */
-function montrerSiCache(b) { if (!b || !app.dessin) return; const r = cadre(), m = marges(), s = app.vue.s;
+function montrerSiCache(b, centrer) { if (!b || !app.dessin) return; const r = cadre(), m = marges(), s = app.vue.s;
   const X0 = app.vue.tx + b.x * s, Y0 = app.vue.ty + b.y * s, X1 = X0 + b.w * s, Y1 = Y0 + b.h * s, L = m.gauche, T = m.haut, R = r.width - m.droite, B = r.height - m.bas;
   // (v78) à côté du grand, le plan n'a qu'un tiers : l'objet s'y cadre lisible (ses voisins autour), sauf s'il l'est déjà
   if (document.body.classList.contains('insp-grand') && document.body.classList.contains('insp-epingle')) { const lisible = Math.min(LISIBLE_BUREAU, Math.max(0.42, Math.min((R - L) / (b.w + 260), (B - T) / (b.h + 200))));
-    if (X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1 && s >= Math.min(0.42, lisible) - 1e-3) return;
+    if (!centrer && X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1 && s >= Math.min(0.42, lisible) - 1e-3) return;
     animerVue({ s: lisible, tx: (L + R) / 2 - (b.x + b.w / 2) * lisible, ty: (T + B) / 2 - (b.y + b.h / 2) * lisible }, true); return; }
   if (X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1) return;
   if (b.w * s > R - L || b.h * s > B - T) { centrerSur(b.x, b.y, b.w, b.h); return; }
@@ -1842,7 +1843,7 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   if (!rep0 && Q.length > 3) { const r = [...info.keys()].filter(n => Q.startsWith(aPlat(n)) && Q.length > aPlat(n).length).sort((a, b) => aPlat(b).length - aPlat(a).length)[0]; if (r) { rep0 = r; bq = Q.slice(aPlat(r).length); } }
   if (rep0) { const vues = new Set(); L.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
       if (r !== rep0 || !b || vues.has(b) || !aPlat(b).startsWith(bq)) return; vues.add(b);
-      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: (l.cable ? l.cable + (l.type ? ' · ' + l.type : '') : cableDit(l)) + ' → ' + autre + (bAutre ? ':' + bAutre : '') }); }));
+      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: (SANS_NUMERO_DE_CABLE || !l.cable ? cableDit(l) : l.cable + (l.type ? ' · ' + l.type : '')) + ' → ' + autre + (bAutre ? ':' + bAutre : '') }); }));
     bornes.sort((a, b) => triNaturel(a.borne, b.borne)); }
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };
@@ -1858,7 +1859,7 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
     return { type: 'nature', nom: k > 1 ? nom.replace(/^(\S+?)([sxz]?)(?=\s|$)/, (t, a, b) => a + (b || 's')) : nom, code, onglet, filtre: onglet === 'equipements' ? nom : '', des: 'tous, dans le récapitulatif', n: k, sansCable: true }; }).filter(Boolean).slice(0, 2);
   // les câbles par leur numéro ; un type de câble (deux lettres au moins) : la ligne « tous les DR12 », puis quelques-uns
   const fils = [], vus = new Set(), types = new Map();
-  L.forEach(l => { const c = l.cable; if (c && !vus.has(c) && contient(c)) { vus.add(c); fils.push({ type: 'fil', nom: c, des: l.de + ' → ' + l.vers, r: rang(c) }); }
+  L.forEach(l => { const c = SANS_NUMERO_DE_CABLE ? '' : l.cable; if (c && !vus.has(c) && contient(c)) { vus.add(c); fils.push({ type: 'fil', nom: c, des: l.de + ' → ' + l.vers, r: rang(c) }); }
     if (Q.length >= 2 && l.type && contient(l.type) && l.de !== l.vers) types.set(l.type, (types.get(l.type) || 0) + 1); });
   fils.sort((a, b) => a.r - b.r || triNaturel(a.nom, b.nom));
   const ty = [...types].sort((a, b) => rang(a[0]) - rang(b[0]) || b[1] - a[1]).slice(0, 2).map(([t, n]) => ({ type: 'type', nom: t, des: 'tous les câbles de ce type, dans le récapitulatif', n }));
@@ -1871,7 +1872,7 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
 function proposition(Q, info, L) { const Qz = sansZeros(Q), max = Qz.length <= 3 ? 0 : Qz.length <= 6 ? 1 : 2; if (!max) return [];
   let best = null; const essayer = (t, quoi) => { const d = distanceFrappe(sansZeros(aPlat(t)), Qz, best ? Math.min(max, best.d) : max); if (d <= max && (!best || d < best.d)) best = { d, t, quoi }; };
   info.forEach((x, n) => essayer(n, 'repere')); const vus = new Set(), types = new Set();
-  for (const l of L) { if (l.cable && !vus.has(l.cable)) { vus.add(l.cable); essayer(l.cable, 'fil'); } if (l.type) types.add(l.type); if (best && best.d === 1 && vus.size > 5000) break; }
+  for (const l of L) { if (!SANS_NUMERO_DE_CABLE && l.cable && !vus.has(l.cable)) { vus.add(l.cable); essayer(l.cable, 'fil'); } if (l.type) types.add(l.type); if (best && best.d === 1 && vus.size > 5000) break; }
   types.forEach(t => essayer(t, 'type'));
   if (!best) return [];
   const l = best.quoi === 'fil' ? L.find(x => x.cable === best.t) : null;
@@ -1954,7 +1955,7 @@ function actionsDeLaPalette() { const xs = [], vu = new Set();
      qu'elle soit des premières actions —, sinon la palette l'appelle elle-même. */
   const comprendre = xs.find(a => /comment volta r[ée]fl[ée]chit/i.test(a.mot)), motsComprendre = 'comprendre comment ca marche pourquoi aide explication novice cuisinier fonctionnement volta reflechit';
   if (comprendre) Object.assign(comprendre, { act: 'comprendre', mots: (comprendre.mots + ' ' + motsComprendre).trim(), ico: comprendre.ico || ICONE_OBJET.comprendre });
-  else if (typeof ficheComprendre === 'function') en('comprendre', 'Comment Volta réfléchit', '', () => ficheComprendre(), { des: 'ce que Volta lit, d’où viennent ses pièces, comment il choisit', mots: motsComprendre, ico: ICONE_OBJET.comprendre });
+  else if (typeof ficheComprendre === 'function') en('comprendre', 'Comment VOLTA réfléchit', '', () => ficheComprendre(), { des: 'ce que VOLTA lit, d’où viennent ses pièces, comment il choisit', mots: motsComprendre, ico: ICONE_OBJET.comprendre });
   return xs; }
 // les gestes concrets du contrôle : un par point, le principal (« Tout régler… », « Unifier sur… », « La poser »)
 function gestesDeLaPalette() { if (typeof gestesDuPoint !== 'function' || !CONTROLE || !CONTROLE.items) return []; const out = [], vus = new Set();
@@ -2149,8 +2150,8 @@ function hypothesesR2(N, H, nb) { const dj = !!(N.disjoncteurs && N.disjoncteurs
     dj ? { genre: 'case', id: 'si-Cd', k: 'chuteDisjoncteur', lib: 'compter la chute du disjoncteur', groupe: 'chute',
       sert: 'Cochée (par défaut) : la chute du disjoncteur entre dans la chute en ligne — celle de votre table (« Du max », comptée entière), sinon celle de sa famille au prorata I / In. La génération est négligée : elle garantit 28 V en sortie des panneaux de disjoncteurs (votre note).' } : null,
     nb('si-F', 'frequence', 'fréquence', 'Hz', '10', 'reseau', 'En alternatif, la réactance saisie (à 400 Hz) monte avec la fréquence (X = 2πfL) : 400 Hz par défaut, un réseau à fréquence fixe ; 800 en fréquence variable (MIL-STD-704F, 360 à 800 Hz). Sans effet en continu.'),
-    dj ? { genre: 'case', id: 'si-Ca', k: 'calibreAuto', lib: 'Volta écrit lui-même le calibre qui passe', groupe: 'tableau',
-      sert: 'Cochée (par défaut — le lecteur, v74 : « dès que ça touche la courbe, tu mets directement le calibre qui marche ») : un calibre du fichier qui touche la courbe ou déclenche est remplacé par le plus petit qui passe, et ses câbles grossis. Décochée : Volta le propose seulement.' } : null,
+    dj ? { genre: 'case', id: 'si-Ca', k: 'calibreAuto', lib: 'VOLTA écrit lui-même le calibre qui passe', groupe: 'tableau',
+      sert: 'Cochée (par défaut — le lecteur, v74 : « dès que ça touche la courbe, tu mets directement le calibre qui marche ») : un calibre du fichier qui touche la courbe ou déclenche est remplacé par le plus petit qui passe, et ses câbles grossis. Décochée : VOLTA le propose seulement.' } : null,
     dj ? nb('si-M', 'marge', 'marge de courant', '%', '5', 'tableau', 'Le meilleur calibre tient chaque courant du profil majoré de ce pourcentage : 10 % par défaut, pour un profil estimé (R2 règle 13) ; 0 % pour un profil qui sort du bilan électrique au pire cas (NASA TM-102179).') : null,
     dj ? nb('si-Mt', 'margeTemps', 'marge de temps', '%', '5', 'tableau', 'Ce qu’une pointe peut consommer, au plus, du temps de déclenchement du meilleur calibre : 75 % par défaut (R2 § 3.1, étape 2).') : null,
     dj ? nb('si-Pc', 'prechauffage', 'préchauffage', '', '0.1', 'tableau', 'Un état ajouté au profil survient en service, le bilame chaud : son temps de déclenchement se divise par ce facteur. 1,6 par défaut, la borne basse de la feuille MS3320N (table VII : 1,6 à 3,7) ; 1 l’ôte.') : null,
@@ -2194,8 +2195,8 @@ const ligneHypotheseHtml = (c, H) => { const reglee = c.k && c.k in HYPOTHESES &
 function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }), N = app.norme || normeVide(), cs = hypothesesDe(N, H, { fiche: true });
   const reglees = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k])).length, defaut = !reglees;
   // le chapeau dit où vont ces réglages (l'ingénieur v73 : « si j'envoie le dossier, on ne peut pas refaire le calcul ») : ils
-  // partent avec chaque export — la page « Hypothèses et sources » du dossier PDF, la feuille « Volta » de l'installation corrigée
-  const corps = tete('Simulation', 'Hypothèses') + '<p class="note">Ce que l’installation ne porte pas, Volta le suppose ; chaque fiche qui s’en sert le dit (<b>hypothèse</b>). <b>Ces réglages sont écrits dans chaque export</b> — la page « Hypothèses et sources » du dossier PDF, la feuille « Volta » de l’installation corrigée.</p>'
+  // partent avec chaque export — la page « Hypothèses et sources » du dossier PDF, la feuille « VOLTA » de l'installation corrigée
+  const corps = tete('Simulation', 'Hypothèses') + '<p class="note">Ce que l’installation ne porte pas, VOLTA le suppose ; chaque fiche qui s’en sert le dit (<b>hypothèse</b>). <b>Ces réglages sont écrits dans chaque export</b> — la page « Hypothèses et sources » du dossier PDF, la feuille « VOLTA » de l’installation corrigée.</p>'
     + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><h3 class="hy-titre">${esc(t)}</h3>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
   const pied = `<span class="hy-etat${defaut ? '' : ' regle'}">${defaut ? 'Les valeurs de l’outil' : `<b>${pluriel(reglees, 'hypothèse')}</b> réglée${reglees > 1 ? 's' : ''} ici`}</span><span class="espace"></span>`
     + `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de l’outil</button>`;
@@ -2955,7 +2956,7 @@ const RACCOURCIS = [
     ['Le calibre : le cran d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre ; rendre l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche, revenir au plan', ['Échap']]]],
   ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire ce qu’on vient de défaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['Pousser le bloc choisi d’un carreau (cinq avec Maj)', ['↑'], ['↓']]]],
   ['Ouvrir, sortir', [['Ouvrir une installation', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert, revenir', ['Échap']], ['Cette feuille', ['?']]]],
-  ['Améliorer Volta', [['Noter une hésitation dans le carnet de séance|l’écran où vous êtes s’écrit avec elle', ['C']]]]];
+  ['Améliorer VOLTA', [['Noter une hésitation dans le carnet de séance|l’écran où vous êtes s’écrit avec elle', ['C']]]]];
 const raccourcisOuverts = () => { const el = $('raccourcis'); return !!el && !el.hidden; };
 function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
   if (!el) { el = document.createElement('div'); el.id = 'raccourcis'; el.className = 'raccourcis'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'rk-titre');
@@ -3024,7 +3025,7 @@ function lierPanneau() {
   // qui monte sur elle la fait se recadrer dans la place qui reste
   let hInsp = 0, tInsp = 0;
   const insp = $('inspecteur'); if (window.ResizeObserver) new ResizeObserver(() => { const h = insp.hidden ? 0 : insp.offsetHeight; document.documentElement.style.setProperty('--insp-h', h + 'px');
-    // (la feuille cadrée par Volta — pas un zoom à la main — que le tiroir a fini par couvrir)
+    // (la feuille cadrée par VOLTA — pas un zoom à la main — que le tiroir a fini par couvrir)
     if (telephone() && h > hInsp && app.dessin && app.dessin.bbox) { clearTimeout(tInsp); tInsp = setTimeout(() => { try { if (insp.hidden || (typeof VUE !== 'undefined' && VUE.main)) return;
       const q = insp.getBoundingClientRect(), r = $('planche').getBoundingClientRect(), bb = app.dessin.bbox, bas = r.top + app.vue.ty + (bb.y + bb.h) * app.vue.s;
       const s = app.vue.s, haut = r.top + app.vue.ty + bb.y * s, g = r.left + app.vue.tx + bb.x * s, d = g + bb.w * s;

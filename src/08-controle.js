@@ -82,7 +82,7 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   reperes.filter(estDisjoncteur).forEach(r => { try { controleProtection(r, contacts, V, N, H).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte, { cables: x.cables || [] })); } catch (_) { } });
   // les barrettes à poser, folio par folio
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => {
-    if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1') att(l.aPoser, `ajoutée par Volta sur ${l.de}:${l.borneDe} (plusieurs câbles sur une borne) — repère provisoire`, { plan: p }); }));
+    if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1') att(l.aPoser, `ajoutée par VOLTA sur ${l.de}:${l.borneDe} (plusieurs câbles sur une borne) — repère provisoire`, { plan: p }); }));
   // les types de fil que la base des câbles ne connaît pas (une faute de frappe, un câble à ajouter)
   if (cablesDe(N).length) { const inc = [...new Set(V.filter(l => liaisonComplete(l) && l.de !== l.vers && l.type && !cableDuType(N, l.type)).map(l => l.type))].sort(triNaturel);
     if (inc.length) att('', (inc.length > 1 ? inc.length + ' types de câble inconnus' : 'un type de câble inconnu') + ' de la base des câbles : ' + inc.slice(0, 5).join(', ') + (inc.length > 5 ? '…' : ''), { tableau: '' }); }
@@ -108,7 +108,7 @@ const rangDuGenre = g => { const i = GENRES_CONTROLE.findIndex(x => x[0] === g);
 function genreDuPoint(x) { const t = x.texte || '';
   if (x.genre) return x.genre;
   if (x.tableau != null) return 'retest';
-  if (/^ajoutée par Volta sur/.test(t)) return 'aposer';
+  if (/^ajoutée par VOLTA sur/.test(t)) return 'aposer';
   if (/qualification CCA/.test(t)) return 'cca';
   if (/profil de charge est à renseigner/.test(t)) return 'profil';
   if (/^chute en ligne/.test(t)) return 'chute';
@@ -128,7 +128,7 @@ function genreDuPoint(x) { const t = x.texte || '';
    Rend [{ niveau, texte }]. */
 // ce qu'un câble supporte, en mots : avant de s'abîmer (sa courbe de dommage), sinon en service
 const limiteDuCable = (f, x) => f.jugeSur === 'dommage' ? `il s’abîme au-delà de ${amperes(x.admise)}` : `le câble admet ${amperes(x.admise)} en service`;
-// le contact d'un câble en mots : celui du plan (« taille 20 (7,5 A, 103J1) »), sinon celui que Volta suppose — le plus petit
+// le contact d'un câble en mots : celui du plan (« taille 20 (7,5 A, 103J1) »), sinon celui que VOLTA suppose — le plus petit
 // qui admet la gauge, par prudence (« taille 23 supposé (3 A) » ; la fiche dit pourquoi sous le problème)
 const motContact = f => `taille ${f.contact.taille} ${f.contact.parLePlan ? '(' + amperes(f.contact.intensite) + ', ' + f.contactRepere + ')' : 'supposé (' + amperes(f.contact.intensite) + ')'}`;
 function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(nom), out = [], cal = d.calibre, pn = pnDuRepere(nom);
@@ -221,17 +221,17 @@ const sansLeCable = (texte, l) => { const t = String(texte || ''), n = nomDuCabl
 function disjoncteurDuCable(l) { if (typeof alimentationDuFil === 'function') { try { const a = alimentationDuFil(l); if (a && a.nom) return a.nom; } catch (_) { } }
   const V = verite(); for (const r of reperesDe(V).filter(estDisjoncteur)) { try { if (cheminsDepuis(V, r).some(ch => ch.segments.some(s => s.fil && memeLiaison(s.fil, l)))) return r; } catch (_) { } } return ''; }
 /* LA CAUSE qu'un disjoncteur fait peser sur ses câbles : le calibre que porte son part number (le retest, écrit) ne passe
-   pas, et Volta en retient un autre. Rend { repere, retest, retenu, verdict, cables (ceux à grossir), mot } ou null. */
+   pas, et VOLTA en retient un autre. Rend { repere, retest, retenu, verdict, cables (ceux à grossir), mot } ou null. */
 function causeDuDisjoncteur(nom) { let d; try { d = disjonctionDe(nom); } catch (_) { return null; }
   if (!d || !d.pn || !d.gPn || d.origine === 'main' || d.sansProfil || d.sansCourbe || !(d.calibre > 0) || d.calibre === d.pn) return null;
   const v = verdictDeCalibre(d.gPn); if (!v || v === VERDICTS_CALIBRE.passe) return null;
   const m = d.meilleur || {}, xs = d.calibre === m.calibre && typeof filsDuMeilleur === 'function' ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   const types = [...new Set(xs.map(p => p.x.propose))];
-  const mot = `${nom} : le ${amperes(d.pn)} de l’installation ${v.cle === 'juste' || v.mot === 'touche la courbe' ? 'touche la courbe' : 'déclenche'} — Volta retient ${amperes(d.calibre)}${xs.length ? ', qui demande ' + (xs.length > 1 ? xs.length + ' câbles' : 'un câble') + (types.length === 1 ? ' en ' + types[0] : ' plus gros') : ''}`;
+  const mot = `${nom} : le ${amperes(d.pn)} de l’installation ${v.cle === 'juste' || v.mot === 'touche la courbe' ? 'touche la courbe' : 'déclenche'} — VOLTA retient ${amperes(d.calibre)}${xs.length ? ', qui demande ' + (xs.length > 1 ? xs.length + ' câbles' : 'un câble') + (types.length === 1 ? ' en ' + types[0] : ' plus gros') : ''}`;
   // le pourquoi chiffré du retest (09 bis), pour la bulle : « touche la courbe », « sans la marge » s'y disent, pas dans le mot
   let bulle = v.bulle; try { const q = pourquoiDuCalibre(app.norme, d, d.pn); if (q) bulle = majuscule(q.phrase) + '.\n' + v.bulle + ' Il protège ce câble.'; } catch (_) { }
   return { repere: nom, retest: d.pn, retenu: d.calibre, verdict: v, cables: xs.map(p => ({ cable: p.x.cable, actuel: p.x.actuel, propose: p.x.propose })), mot, bulle }; }
-// le geste qui règle la cause : le calibre retenu ÉCRIT au retest, et ses câbles grossis — une proposition de Volta acceptée
+// le geste qui règle la cause : le calibre retenu ÉCRIT au retest, et ses câbles grossis — une proposition de VOLTA acceptée
 const motToutRegler = c => `Tout régler : ${c.repere} en ${amperes(c.retenu)}${c.cables.length ? ' et ' + (c.cables.length > 1 ? c.cables.length + ' câbles' : 'un câble') + ([...new Set(c.cables.map(x => x.propose))].length === 1 ? ' en ' + c.cables[0].propose : ' grossis') : ''}`;
 function toutRegler(nom) { const faire = () => typeof deciderCalibre === 'function' ? deciderCalibre(nom) : false;
   return typeof avecOrigineVolta === 'function' ? avecOrigineVolta(faire) : faire(); }
@@ -249,7 +249,7 @@ function problemesDuCable(l) { if (!l) return []; const s = l.origine ? (typeof 
     out.push({ niveau: x.niveau, texte: majuscule(sansLeCable(x.texte, s)), section: 'fils', genre: x.genre, repere: x.nom || '', gestes: gestesDuPoint(x), point: x }); });
   const cb = disjoncteurDuCable(s), c = cb ? causeDuDisjoncteur(cb) : null;
   if (c) out.push({ niveau: 'att', texte: c.mot, bulle: c.bulle, section: 'fils', genre: 'calibre', repere: cb, cause: c,
-    gestes: [{ mot: motToutRegler(c), aide: 'Le calibre que Volta retient s’écrit dans l’installation, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(cb), principal: true },
+    gestes: [{ mot: motToutRegler(c), aide: 'Le calibre que VOLTA retient s’écrit dans l’installation, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(cb), principal: true },
       { mot: 'Voir ' + cb, aide: 'Sa fiche : la courbe, le profil, la décision', faire: () => allerAuControle({ nom: cb, texte: '', section: 'disjoncteur', plan: plansDuRepere(cb).sort(triNaturel)[0] || '' }) }] });
   return out.sort((a, b) => (a.niveau === 'ko' ? 0 : 1) - (b.niveau === 'ko' ? 0 : 1)); }
 /* LES GESTES D'UN POINT (v73, l'ingénieur, n° 8 : « Ce qu'il faut faire » donne le geste concret, jamais un conseil faux) :
@@ -258,8 +258,8 @@ function problemesDuCable(l) { if (!l) return []; const s = l.origine ? (typeof 
 function gestesDuPoint(x) { if (!x) return []; const out = [];
   if (x.genre === 'pn' && x.nom) (x.pns || []).forEach((pn, i) => out.push({ mot: 'Unifier sur ' + pn, aide: `Toutes les liaisons de ${x.nom} prennent ${pn} — Ctrl+Z le défait`, faire: () => unifierPartNumber(x.nom, pn), principal: i === 0 }));
   const c = x.nom && estDisjoncteur(x.nom) && x.genre !== 'pn' ? causeDuDisjoncteur(x.nom) : null;
-  if (c) out.push({ mot: motToutRegler(c), aide: 'Le calibre que Volta retient s’écrit dans l’installation, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(x.nom), principal: !out.length });
-  if (x.genre === 'aposer' && x.nom) out.push({ mot: 'Lui donner son repère', aide: 'Elle prend le repère que Volta propose (la suite de la barrette la plus proche) — Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes([x.nom]), principal: !out.length });
+  if (c) out.push({ mot: motToutRegler(c), aide: 'Le calibre que VOLTA retient s’écrit dans l’installation, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(x.nom), principal: !out.length });
+  if (x.genre === 'aposer' && x.nom) out.push({ mot: 'Lui donner son repère', aide: 'Elle prend le repère que VOLTA propose (la suite de la barrette la plus proche) — Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes([x.nom]), principal: !out.length });
   if (x.tableau == null && x.nom) out.push({ mot: 'Voir ' + x.nom, aide: 'Sa fiche, sur son folio, à la section qui le démontre', faire: () => allerAuControle(x), principal: !out.length });
   else if (x.tableau != null) out.push({ mot: 'Voir les liaisons', aide: 'L’onglet Liaisons du récapitulatif, sur ce qu’il faut reprendre', faire: () => allerAuControle(x), principal: !out.length });
   return out; }
@@ -286,7 +286,7 @@ function genresDuControle() { const G = new Map();
 /* LE GESTE QUI TRAITE UN GENRE, quand il existe : { mot, aide, faire }. Les barrettes à poser se posent toutes d'un coup
    (chacune sous le repère que l'outil propose, un seul Ctrl+Z) ; les autres mènent au tableau qui les corrige, filtré. */
 function gesteDuGenre(g) { const xs = g.lignes.flatMap(l => l.xs);
-  if (g.genre === 'aposer') return { mot: g.lignes.length > 1 ? 'Leur donner leur repère' : 'Lui donner son repère', aide: 'Chacune prend le repère que Volta propose (la suite de la barrette la plus proche) ; « Rétablir » ou Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes(g.lignes.map(l => l.nom)) };
+  if (g.genre === 'aposer') return { mot: g.lignes.length > 1 ? 'Leur donner leur repère' : 'Lui donner son repère', aide: 'Chacune prend le repère que VOLTA propose (la suite de la barrette la plus proche) ; « Rétablir » ou Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes(g.lignes.map(l => l.nom)) };
   if (g.genre === 'profil') return { mot: 'Écrire les profils', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux sans profil de charge, la colonne Permanent à écrire', faire: () => ouvrirOngletFiltre('disjoncteurs', ['sansprofil'], ['profil']) };
   if (g.genre === 'pn' && g.lignes.length === 1) { const G = gestesDuPoint(g.lignes[0].xs[0])[0]; if (G) return { mot: G.mot, aide: G.aide, faire: G.faire }; }
   if (g.genre === 'calibre' || g.genre === 'protection' || g.genre === 'pn') return { mot: 'Voir les disjoncteurs', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux qui ont quelque chose à reprendre', faire: () => ouvrirOngletFiltre('disjoncteurs', ['probleme']) };

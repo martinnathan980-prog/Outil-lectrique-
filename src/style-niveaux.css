@@ -9,7 +9,7 @@
    barrette, ni rouge ni vert), --vu-ko, --nv-liste (la largeur de la liste), --nv-crayon.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{--nv-liste:236px;--nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366686e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E")}
-#inspecteur,.carte-double{
+#inspecteur,.carte-double,#base{
   --s-surface:#ffffff; --s-sunken:#f6f5f2; --s-hover:#f1efea; --s-line:#e8e5df; --s-line-2:#d9d5cd; --s-flottant:#ffffff;
   --t-1:#1c1c1f; --t-2:#55575d; --t-3:#6c6e75; --t-inverse:#ffffff;
   --accent:#1c1c1f; --accent-2:#000000; --accent-soft:#efede8; --accent-line:#cfcac0; --on-accent:#ffffff;
@@ -21,8 +21,8 @@
   --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 28px 64px -18px rgba(0,6,18,.6),0 6px 18px -8px rgba(0,6,18,.35);
   --anneau:0 0 0 3px rgba(169,88,31,.16);
   color-scheme:light }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double){
-  --s-surface:#1c1d20; --s-sunken:#161719; --s-hover:#26272b; --s-line:#2e2f34; --s-line-2:#3d3e44; --s-flottant:#232428;
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double,#base){
+  --s-surface:#25272c; --s-sunken:#1d1e22; --s-hover:#2f3137; --s-line:#363840; --s-line-2:#464850; --s-flottant:#2b2d33;
   --t-1:#f2f2f3; --t-2:#b9bbc1; --t-3:#94969d; --t-inverse:#161719;
   --accent:#f2f2f3; --accent-2:#ffffff; --accent-soft:#2a2b2f; --accent-line:#47484f; --on-accent:#161719;
   --ok:#4fd67d; --ok-soft:rgba(79,214,125,.12); --warn:#f2b55c; --warn-soft:rgba(242,181,92,.12); --ko:#ff7a6e; --ko-soft:rgba(255,122,110,.13); --info:#b9bbc1; --info-soft:#232428;
@@ -34,8 +34,8 @@
   --anneau:0 0 0 3px rgba(229,156,100,.22);
   --nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b9bbc1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E");
   color-scheme:dark } }
-:root[data-theme="dark"] :is(#inspecteur,.carte-double){
-  --s-surface:#1c1d20; --s-sunken:#161719; --s-hover:#26272b; --s-line:#2e2f34; --s-line-2:#3d3e44; --s-flottant:#232428;
+:root[data-theme="dark"] :is(#inspecteur,.carte-double,#base){
+  --s-surface:#25272c; --s-sunken:#1d1e22; --s-hover:#2f3137; --s-line:#363840; --s-line-2:#464850; --s-flottant:#2b2d33;
   --t-1:#f2f2f3; --t-2:#b9bbc1; --t-3:#94969d; --t-inverse:#161719;
   --accent:#f2f2f3; --accent-2:#ffffff; --accent-soft:#2a2b2f; --accent-line:#47484f; --on-accent:#161719;
   --ok:#4fd67d; --ok-soft:rgba(79,214,125,.12); --warn:#f2b55c; --warn-soft:rgba(242,181,92,.12); --ko:#ff7a6e; --ko-soft:rgba(255,122,110,.13); --info:#b9bbc1; --info-soft:#232428;
@@ -500,7 +500,7 @@ button.vu-cal:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2p
 }
 
 /* ─── LES BORDS : la carte a la taille de ce qu'elle dit ; le grand rangé se tire par son bord gauche ─── */
-body.insp-flotte #inspecteur .carte-bords,body.insp-epingle:not(.insp-grand) #inspecteur .carte-bords{display:none}
+body.insp-epingle:not(.insp-grand) #inspecteur .carte-bords{display:none}
 
 /* ─── (v78) « COMMENT VOLTA A DÉCIDÉ » : chaque étape mène où elle se démontre ; son calcul se déplie ─── */
 .vu-pq li.va{cursor:pointer;border-radius:10px;margin:0 -10px;padding:8px 10px;transition:background var(--rapide)}
@@ -571,3 +571,172 @@ svg.vu-arbre .vu-rail,svg.vu-arbre .vu-j{rx:4px}
 @keyframes vu-pousse{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @media (prefers-reduced-motion:reduce){svg.vu-arbre .vu-j{animation:none}}
 svg.vu-arbre .vu-branche:is(:hover,:focus-visible) .vu-br{stroke-width:5}
+
+
+/* ═══ v78c — LE TITRE, LE FILIGRANE, LES ONGLETS, LES PROBLÈMES, LES SOURCES, LE PROFIL, LES ANNEAUX, LES BROCHES ═══════ */
+/* la carte se tire par ses quatre coins et ses bords, comme une fenêtre */
+body.insp-flotte #inspecteur .carte-bords{display:block}
+body.insp-flotte #inspecteur .carte-bords i{display:block}
+body.insp-flotte #inspecteur.taillee{height:var(--carte-h)}
+/* le titre : le genre, un tiret, le repère — même police, même taille, même graisse */
+.nc{position:relative;isolation:isolate}
+.nc-tete{display:flex;justify-content:center;margin:2px 0 0}
+.nc-titre{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0 10px;min-width:0;font:650 22px/1.25 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
+.nc-titre .nc-genre-mot{padding:0;font:inherit;letter-spacing:inherit;text-transform:none;color:var(--t-1);overflow:visible}
+.nc-tiret{color:var(--t-3);font-weight:400}
+.nc-titre .nc-rep{display:inline-flex}
+.nc-titre .nc-rep-in,.nc-titre .nc-rep-t{height:34px;margin:0;padding:0 6px;font:inherit;letter-spacing:inherit;color:var(--nv-cuivre)}
+.nc-titre .nc-rep-in:focus{color:var(--t-1)}
+/* la référence, seule, dessous : son nom en petit, la valeur en chasse fixe */
+.nc-meta{gap:8px}
+.nc-meta>span+span::before{content:none}
+.nc-meta-k{font:600 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
+.nc-meta-v .id,.nc-meta-v{font:600 var(--f-14) var(--mono);color:var(--t-1)}
+/* le symbole, en filigrane dans le coin haut de la tuile ; il s'éveille au survol */
+.nc-filigrane{position:absolute;z-index:-1;top:-30px;right:-22px;width:150px;height:150px;color:var(--t-1);opacity:.06;pointer-events:none;transition:opacity var(--lent),transform var(--lent)}
+.nc-filigrane svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
+.nc:hover .nc-filigrane{opacity:.1;transform:rotate(-6deg) scale(1.04)}
+/* le grand : la même ligne de titre, plus petite */
+.nc-tete.fine .nc-titre{flex-wrap:nowrap;font-size:18px}
+.nc-tete.fine .nc-titre .nc-rep-in,.nc-tete.fine .nc-titre .nc-rep-t{height:30px}
+.nc-tete.fine .nc-meta{font:inherit}
+.nc-tete.fine .nc-meta-v,.nc-tete.fine .nc-meta-v .id{font:600 var(--f-13) var(--mono);color:var(--t-2)}
+/* LES ONGLETS : l'ouvert se distingue — clair, son titre de cuivre, sa barre ; les autres en retrait */
+.nv-onglet{color:var(--t-3)}
+.nv-onglet .nv-o-t{color:var(--t-2)}
+.nv-onglet:hover .nv-o-t{color:var(--t-1)}
+.nv-onglet[aria-selected="true"]{background:color-mix(in srgb,var(--s-surface) 88%,#fff);box-shadow:0 1px 3px rgba(0,0,0,.14),0 0 0 1px var(--s-line-2)}
+.nv-onglet[aria-selected="true"] .nv-o-t{color:var(--nv-cuivre)}
+.nv-onglet[aria-selected="true"]::after{left:12px;right:12px;width:auto;top:auto;bottom:0;height:3px;border-radius:3px 3px 0 0}
+/* LES PROBLÈMES : une carte douce par point, teintée de son état — le rouge dit, sans crier */
+.nv-afaire{padding:0;border:0;background:none;display:flex;flex-direction:column;gap:8px}
+.nv-afaire .nc-taches{gap:8px}
+.nv-afaire .nc-tache{margin:0;padding:12px 14px 12px 12px;border-radius:12px;background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
+.nv-afaire .nc-tache.ko{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
+.nv-afaire .nc-tache .nc-t b,.nv-afaire .nc-tache.ko .nc-t b{color:var(--t-1)}
+.nv-afaire .nc-tache:hover{filter:brightness(1.03)}
+.nc-tache.ko .nc-t b{color:var(--t-1)}
+.nc-tache .nc-t small{color:var(--t-2)}
+/* LES SOURCES : des pastilles sobres — un point de couleur, le mot en gris ; le cuivre pour un calcul, l'ambre pour une hypothèse */
+.vu-src{--sc:var(--t-3);background:var(--s-sunken);color:var(--t-2);box-shadow:inset 0 0 0 1px var(--s-line)}
+.vu-src::before{background:var(--sc)}
+.vu-src.fichier{--sc:var(--t-1)}
+.vu-src.norme,.vu-src.tables,.vu-src.base{--sc:var(--t-3)}
+.vu-src.calcul{--sc:var(--nv-cuivre)}
+.vu-src.main{--sc:var(--t-1)}
+.vu-src.hypothese{--sc:var(--warn);background:var(--s-sunken);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 45%,transparent)}
+/* le pourquoi d'un calibre, sous son dessin */
+.vu-explique{display:flex;flex-direction:column;gap:6px;margin:4px 0 0;padding:12px 14px;border-radius:12px;background:var(--s-sunken);list-style:none;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-1)}
+.vu-explique li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:10px;align-items:baseline}
+.vu-explique i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.vu-explique li.ko i{background:var(--ko)}
+/* LES ANNEAUX : la part de l'admis */
+svg.vu-anneau{flex:none;overflow:visible}
+svg.vu-anneau .vu-an-f,svg.vu-arbre .vu-an-f{fill:none;stroke:var(--s-line)}
+svg.vu-anneau .vu-an-v,svg.vu-arbre .vu-an-v{fill:none;stroke:var(--ok);stroke-linecap:round;transition:stroke-dasharray .7s var(--courbe-entree,ease-out)}
+svg.vu-anneau.att .vu-an-v,svg.vu-arbre .vu-an.att .vu-an-v{stroke:var(--warn)}
+svg.vu-anneau.ko .vu-an-v,svg.vu-arbre .vu-an.ko .vu-an-v{stroke:var(--ko)}
+svg.vu-anneau text,svg.vu-arbre .vu-an-t{font:700 7.5px var(--sans);fill:var(--t-1);text-anchor:middle}
+svg.vu-arbre .vu-an-f,svg.vu-arbre .vu-an-v{stroke-width:4px}
+svg.vu-arbre .vu-an-t{font-size:8.5px}
+@keyframes vu-anneau{from{stroke-dasharray:0 100}}
+svg.vu-arbre .vu-an-v,svg.vu-anneau .vu-an-v{animation:vu-anneau .9s var(--courbe-entree,ease-out) both}
+@media (prefers-reduced-motion:reduce){svg.vu-arbre .vu-an-v,svg.vu-anneau .vu-an-v{animation:none}}
+/* LES CÂBLES, en nomenclature */
+.nv-mes{display:inline-flex;align-items:center;gap:10px}
+.nv-mes-t{display:flex;flex-direction:column;gap:1px;line-height:1.2}
+.nv-mes-t b{font:650 var(--f-14) var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
+.nv-mes-t small{font:500 var(--f-11) var(--sans);color:var(--t-3)}
+.nv-vers{display:inline-flex;align-items:center;gap:8px}
+.nv-vers b{font:650 var(--f-13) var(--mono);color:var(--t-1)}
+.nv-borne{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:600 var(--f-11) var(--sans);color:var(--t-2);white-space:nowrap}
+.nv-cab-lg{display:inline-flex;align-items:baseline;gap:4px}
+.nv-cab-lg b{font:650 var(--f-14) var(--sans)}
+.nv-supp{margin-left:4px;font:600 var(--f-11) var(--sans);font-style:normal;color:var(--warn)}
+.nv-panneau .nv-cables td{padding:10px 10px;vertical-align:middle}
+.nv-panneau .nv-cables th .nv-tri{padding:0 10px}
+/* LES BROCHES, en nomenclature */
+.vu-broches{display:flex;flex-direction:column;gap:4px;min-width:0}
+.vu-br-l{display:grid;grid-template-columns:40px minmax(70px,auto) 18px minmax(0,1fr) minmax(0,auto);align-items:center;column-gap:12px;min-height:44px;padding:4px 10px;border-radius:10px;background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line)}
+.vu-br-l.fi-ia::before{content:none!important}
+.vu-br-l[data-i]{cursor:pointer;transition:background var(--rapide),box-shadow var(--rapide)}
+.vu-br-l[data-i]:hover,.vu-br-l.vise{background:var(--s-hover);box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.vu-br-l.ko{box-shadow:inset 3px 0 0 var(--ko),inset 0 0 0 1px var(--s-line)}
+.vu-br-tete{min-height:24px;background:none;box-shadow:none;font:650 var(--f-11)/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-3)}
+.vu-br-pin{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--t-1);color:var(--t-inverse);font:650 var(--f-12)/1 var(--mono)}
+.vu-br-l.ko .vu-br-pin{background:var(--ko);color:#fff}
+.vu-br-cab{display:inline-flex;align-items:center;gap:8px}
+.vu-br-cab b{font:650 var(--f-13) var(--mono)}
+.vu-br-fl{display:grid;place-items:center;color:var(--t-3)}
+.vu-br-fl svg.ico{width:14px;height:14px}
+.vu-br-vers{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.vu-br-vers b{font:650 var(--f-13) var(--mono)}
+.vu-br-vers small{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:600 var(--f-11) var(--sans);color:var(--t-2);white-space:nowrap}
+.vu-br-sertir{font:500 var(--f-12) var(--mono);color:var(--t-2);text-align:right;white-space:nowrap}
+/* LE PROFIL DE CHARGE : un état, une carte — son nom, son courant, sa durée ; « + État » à la suite */
+.nv-panneau .dj-profil .fs-st{max-width:none}
+.nv-panneau .dj-etats{max-width:none;display:flex;flex-direction:row;flex-wrap:wrap;gap:10px;margin:0}
+.nv-panneau .dj-entete{display:none}
+.nv-panneau .dj-etat{position:relative;display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"nom nom" "i t";gap:10px 12px;width:200px;min-height:0;padding:14px 14px 12px;border-radius:14px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 6px 16px -12px rgba(0,0,0,.35)}
+.nv-panneau .dj-etat:hover{background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line-2),0 8px 20px -12px rgba(0,0,0,.4)}
+.nv-panneau .dj-etat .dj-nom{grid-area:nom;font:650 var(--f-14)/1.2 var(--sans);color:var(--t-1)}
+.nv-panneau .dj-etat .dj-verdict{position:absolute;top:16px;right:38px}
+.nv-panneau .dj-etat .dj-x{position:absolute;top:8px;right:8px;opacity:0}
+.nv-panneau .dj-etat:hover .dj-x{opacity:1}
+.nv-panneau .dj-etat .dj-champ{display:flex;flex-direction:column;gap:3px;min-width:0}
+.nv-panneau .dj-etat .dj-champ:nth-of-type(1){grid-area:i}
+.nv-panneau .dj-etat .dj-champ:nth-of-type(2),.nv-panneau .dj-etat .dj-inf{grid-area:t}
+.nv-panneau .dj-etat .dj-champ::before,.nv-panneau .dj-etat .dj-inf::before{font:650 var(--f-11)/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-3)}
+.nv-panneau .dj-etat .dj-champ:nth-of-type(1)::before{content:"Courant · A"}
+.nv-panneau .dj-etat .dj-champ:nth-of-type(2)::before{content:"Durée · s"}
+.nv-panneau .dj-etat .dj-inf{display:flex;flex-direction:column;align-items:flex-start;gap:6px;color:var(--t-2)}
+.nv-panneau .dj-etat .dj-inf::before{content:"Durée"}
+.nv-panneau .dj-etat .dj-champ input{width:100%;height:34px;padding:0 8px;border-radius:9px;background:var(--s-sunken);border:1px solid transparent;font:650 var(--f-16) var(--sans);text-align:left;color:var(--t-1)}
+.nv-panneau .dj-etat .dj-champ input:focus{border-color:var(--nv-cuivre);box-shadow:var(--anneau);outline:none}
+.nv-panneau .dj-etat .dj-champ[data-min]::after{content:attr(data-min);font:500 var(--f-11) var(--sans);color:var(--t-3)}
+
+/* (v78c, retouches) un titre d'une seule encre ; le genre du grand à la taille du repère ; le filigrane en bas à droite */
+.nc-titre .nc-rep-in,.nc-titre .nc-rep-t{color:var(--t-1)}
+.nc-tete.fine .nc-titre .nc-genre-mot{font:inherit;letter-spacing:inherit;text-transform:none;color:var(--t-1);padding:0}
+.nc-filigrane{top:auto;bottom:-8px;right:-26px;width:170px;height:170px;opacity:.045}
+.nc:hover .nc-filigrane{opacity:.08}
+.vu-br-l{grid-template-columns:56px minmax(70px,auto) 18px minmax(0,1fr) minmax(0,auto)}
+.vu-br-sertir .vu-ko{font:600 var(--f-12) var(--sans)}
+
+.nv-panneau .dj-etat{width:232px}
+.nv-panneau .dj-etat .dj-champ::before,.nv-panneau .dj-etat .dj-inf::before{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:0;text-transform:none;white-space:nowrap}
+.nv-panneau .dj-etat .dj-champ:nth-of-type(1)::before{content:"Courant (A)"}
+.nv-panneau .dj-etat .dj-champ:nth-of-type(2)::before{content:"Durée (s)"}
+svg.vu-arbre tspan.vu-t-sur{font:500 11.5px var(--sans);fill:var(--t-3)}
+/* (v78c) les cartes du profil, au propre : le champ de base (30 px de haut, voile et marges) n'enferme plus le libellé et la
+   valeur — le libellé au-dessus, la valeur dans sa case, « 2 min » dessous dans le flux ; l'infini à la hauteur d'une case */
+.nv-panneau .dj-etat .dj-champ,.nv-panneau .dj-etat .dj-champ:hover,.nv-panneau .dj-etat .dj-champ:focus-within{height:auto;padding:0;border:0;background:none;box-shadow:none;gap:6px}
+.nv-panneau .dj-etat::before{display:none}
+.nv-panneau .dj-etat{align-items:start;padding:14px 16px 14px}
+.nv-panneau .dj-etat .dj-champ input{height:36px;padding:0 10px;font:650 var(--f-16) var(--sans);font-variant-numeric:tabular-nums}
+.nv-panneau .dj-etat .dj-champ input:hover{border-color:var(--s-line-2)}
+.nv-panneau .dj-etat .dj-champ[data-min]::after{position:static;margin-top:-2px}
+.nv-panneau .dj-etat .dj-inf{gap:6px;padding:0}
+.nv-panneau .dj-etat .dj-inf svg.ico{width:22px;height:36px;color:var(--t-2)}
+.nv-panneau .dj-etat .dj-inf::before{content:"Durée"}
+.nv-panneau .dj-etat:has(.dj-champ[data-min]){min-height:0;padding-bottom:14px}
+.nv-panneau .dj-etat .dj-verdict{top:18px;right:40px}
+.nv-panneau .dj-etats{align-items:flex-start;padding-bottom:4px}
+.nv-panneau .dj-etat{align-content:start}
+.nv-panneau .dj-etat .dj-champ{align-items:stretch}
+.nv-panneau .dj-etat .dj-champ::before,.nv-panneau .dj-etat .dj-inf::before{text-align:left;padding-left:2px}
+.nv-panneau .dj-etat .dj-inf{align-items:flex-start}
+/* (v78c) L'ONGLET « MODIFIER » EN CARTES : un titre, une phrase qui dit ce que ça change, le réglage — rien d'autre */
+.nv-reg{margin:0 0 14px;padding:16px 18px 18px;border-radius:14px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line)}
+.nv-reg-t{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:4px;align-items:start;margin:0 0 14px}
+.nv-reg-t h4{grid-column:1;margin:0;font:650 var(--f-14)/1.3 var(--sans);color:var(--t-1)}
+.nv-reg-t p{grid-column:1;margin:0;max-width:62ch;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+.nv-reg-d{grid-column:2;grid-row:1 / span 2;align-self:center}
+.nv-reg-c>.fs-groupe:first-child{margin-top:0;padding-top:0;border-top:0}
+.nv-reg-c .fs-groupe>.fs-st{font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-3)}
+.nv-reg-nom .nv-des{display:block;margin:0}
+.nv-reg-nom .nc-des{width:100%;height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--s-line-2);background:var(--s-sunken);font:500 var(--f-14) var(--sans);color:var(--t-1)}
+.nv-reg-nom .nc-des:focus{outline:none;border-color:var(--nv-cuivre);box-shadow:var(--anneau)}
+.nv-panneau .nv-reg .ct-bulles{gap:6px}
+.nv-reg-t h4,.nv-reg-t p{word-spacing:normal;letter-spacing:0}
+.nv-panneau .fi-panneau>.nv-reg:first-child{margin-top:0}

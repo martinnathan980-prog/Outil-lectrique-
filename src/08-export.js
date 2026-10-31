@@ -1,26 +1,26 @@
 /* ===========================================================================
    08 — LE RETEST CORRIGÉ, EN EXCEL : le livrable que le lecteur renvoie
    ---------------------------------------------------------------------------
-   L'audit v72 (le parcours joué de bout en bout) : « rien ne rend le livrable » — le lecteur corrige dans Volta (un
-   calibre, trois câbles grossis, un numéro), puis recopie tout à la main dans son retest. Volta garde déjà, sur chaque
+   L'audit v72 (le parcours joué de bout en bout) : « rien ne rend le livrable » — le lecteur corrige dans VOLTA (un
+   calibre, trois câbles grossis, un numéro), puis recopie tout à la main dans son retest. VOLTA garde déjà, sur chaque
    liaison, ce que portait le fichier là où on l'a changé (`l.avant` : changerLiaison, poserChamp) : il rend donc le
-   retest tel qu'il est maintenant, dans SES seize colonnes et sa mise en page (titre, mémo, en-têtes en ligne 4 — Volta
+   retest tel qu'il est maintenant, dans SES seize colonnes et sa mise en page (titre, mémo, en-têtes en ligne 4 — VOLTA
    le relit tel quel), chaque case changée portant en commentaire ce qu'elle disait avant, et une feuille
    « Modifications » qui les liste (le câble, ses deux bouts, la colonne, avant → après, et d'où vient le changement).
    Rien ne part du poste : le fichier est fabriqué dans la page (SheetJS) et téléchargé.
 
    v73 — CE QUE L'ÉCRAN MONTRE EST CE QUI PART (le technicien, n° 1 : « le cadran affiche 15 A, “le retenu” ; j'envoie un
-   retest qui garde MS3320-10 et un câble dimensionné pour un 15 A qui n'est pas dans le fichier »). La décision : Volta
+   retest qui garde MS3320-10 et un câble dimensionné pour un 15 A qui n'est pas dans le fichier »). La décision : VOLTA
    n'écrit JAMAIS dans l’installation un changement que le lecteur n'a pas demandé — un calibre automatique écrit sans grossir
    ses câbles serait dangereux. Alors, avant d'enregistrer, LE RELEVÉ (un document de la page, pas un `confirm()`) :
      · ce qui part — chaque case changée, son objet, avant → après, et son ORIGINE : à la main, ou une proposition de
-       Volta acceptée (la même colonne dans la feuille Modifications) ;
-     · ce que Volta a choisi sans l'écrire — un calibre, un module — chacun avec son geste (« Écrire 15 A et grossir les
+       VOLTA acceptée (la même colonne dans la feuille Modifications) ;
+     · ce que VOLTA a choisi sans l'écrire — un calibre, un module — chacun avec son geste (« Écrire 15 A et grossir les
        2 câbles ») ; sans ce geste, l'Excel garde ce que dit le retest ;
      · ce qui reste à reprendre (le compte du contrôle, 08-controle) ;
      · le bouton plein « Enregistrer l'Excel ».
    ET LE RETEST CORRIGÉ SE RELIT (l'ingénieur, n° 2 : « rouvert, il a 207 liaisons au lieu de 201, et le profil de charge
-   est perdu ») : une feuille cachée « Volta » garde ce que les seize colonnes ne disent pas — les profils de charge, les
+   est perdu ») : une feuille cachée « VOLTA » garde ce que les seize colonnes ne disent pas — les profils de charge, les
    hypothèses, les contacts choisis à la main, les désignations et les choix des fiches — ; 02-lecture la lit et laisse
    la feuille Modifications de côté (un journal, pas des liaisons) ; `reprendreVolta` la remet sur le plan.
    ========================================================================= */
@@ -31,7 +31,7 @@ const COLONNES_RETEST = [['Harness', 'harness'], ['Device1', 'de'], ['Pin1', 'bo
 // une colonne en mots, pour le relevé (la colonne de l'Excel reste dans la bulle)
 const MOTS_COLONNES = { harness: 'harness', de: 'de', borneDe: 'borne', pnDe: 'part number', descriptionDe: 'description', type: 'type', cable: 'numéro', route: 'route',
   vers: 'vers', borneVers: 'borne', pnVers: 'part number', descriptionVers: 'description', fwd: 'folio', longueur: 'longueur', appareil: 'appareil', retest: 'date de l’installation' };
-// une valeur telle que la case l'écrit : la longueur en mm (Volta la garde en mètres), le FWD d'origine sinon le folio
+// une valeur telle que la case l'écrit : la longueur en mm (VOLTA la garde en mètres), le FWD d'origine sinon le folio
 const valeurRetest = (l, ch) => ch === 'longueur' ? (l.longueur > 0 ? Math.round(l.longueur * 1000) : '') : ch === 'fwd' ? (l.fwd || l.plan || '') : l[ch] == null ? '' : l[ch];
 const motAvant = (ch, v) => v == null || v === '' ? 'vide' : ch === 'longueur' ? Math.round(v * 1000) + ' mm' : String(v);
 /* Les modifications d'une liaison : [colonne, champ, avant, après] pour chaque champ que `l.avant` garde et qui a changé. */
@@ -39,13 +39,13 @@ function modificationsDe(l) { if (!l.avant) return [];
   return COLONNES_RETEST.filter(([, ch]) => ch in l.avant && (l.avant[ch] == null ? null : l.avant[ch]) !== (l[ch] == null ? null : l[ch]))
     .map(([col, ch]) => [col, ch, l.avant[ch], l[ch]]); }
 
-/* ---- L'ORIGINE D'UNE CASE CHANGÉE : à la main, ou une proposition de Volta acceptée -----------------------------------
-   Un geste de Volta (« Passer en 15 A et grossir les 3 câbles », « Passer en DR12 », les gestes du relevé) se fait dans
+/* ---- L'ORIGINE D'UNE CASE CHANGÉE : à la main, ou une proposition de VOLTA acceptée -----------------------------------
+   Un geste de VOLTA (« Passer en 15 A et grossir les 3 câbles », « Passer en DR12 », les gestes du relevé) se fait dans
    `avecOrigineVolta` : chaque champ qu'il change garde, à côté de ce que portait le fichier (`l.avant`), la valeur que
-   Volta y a mise (`l.avant['volta:type']`) — la liaison, l'historique et la bibliothèque la gardent avec elle. La case
-   est « proposition de Volta acceptée » tant qu'elle porte encore cette valeur ; réécrite à la main, elle redevient « à
+   VOLTA y a mise (`l.avant['volta:type']`) — la liaison, l'historique et la bibliothèque la gardent avec elle. La case
+   est « proposition de VOLTA acceptée » tant qu'elle porte encore cette valeur ; réécrite à la main, elle redevient « à
    la main ». Un part number de disjoncteur qui porte le calibre que l'outil retient (la carte de décision) l'est aussi. */
-const ORIGINE_VOLTA = 'volta:', ORIGINES_MOTS = { main: 'à la main', volta: 'proposition de Volta acceptée' };
+const ORIGINE_VOLTA = 'volta:', ORIGINES_MOTS = { main: 'à la main', volta: 'proposition de VOLTA acceptée' };
 function avecOrigineVolta(faire) { const avant = new Map(); verite().forEach(l => avant.set(l, COLONNES_RETEST.map(([, ch]) => l[ch])));
   const r = faire(); let n = 0;
   verite().forEach(l => { const a = avant.get(l); if (!a || !l.avant) return;
@@ -60,17 +60,17 @@ function origineDeCase(l, ch, ouvert) { const v = l.avant && l.avant[ORIGINE_VOL
 
 /* ---- LE CLASSEUR ---------------------------------------------------------------------------------------------------
    La feuille « Retest » (titre, mémo, en-têtes en ligne 4, une ligne par liaison, les cases changées commentées, une 17e
-   colonne « Modifié par Volta » qui les nomme), la feuille « Modifications » (avec son Origine) et, pour le plan ouvert
-   (`o.volta`), la feuille cachée « Volta ». `o.ouvert` : ce sont les liaisons du plan sur la table (l'origine se lit
+   colonne « Modifié par VOLTA » qui les nomme), la feuille « Modifications » (avec son Origine) et, pour le plan ouvert
+   (`o.volta`), la feuille cachée « VOLTA ». `o.ouvert` : ce sont les liaisons du plan sur la table (l'origine se lit
    aussi par ses disjoncteurs) ; la conversion en lot (08-bibliotheque) appelle sans. */
 function classeurRetestCorrige(V, nom, o) { o = o || {}; V = (V || []).filter(liaisonComplete); const mods = V.map(modificationsDe), n = mods.filter(m => m.length).length;
-  const quand = new Date().toLocaleDateString('fr-FR'), entetes = [...COLONNES_RETEST.map(c => c[0]), 'Modifié par Volta'];
-  const lignes = [[`Installation corrigée par Volta — ${nom || 'plan'}`], [`Le ${quand} · ${plurielLie(V.length, 'liaison')} · ${plurielLie(n, 'liaison')} modifiée${n > 1 ? 's' : ''} : chaque case changée porte en commentaire ce qu'elle disait avant`], [], entetes,
+  const quand = new Date().toLocaleDateString('fr-FR'), entetes = [...COLONNES_RETEST.map(c => c[0]), 'Modifié par VOLTA'];
+  const lignes = [[`Installation corrigée par VOLTA — ${nom || 'plan'}`], [`Le ${quand} · ${plurielLie(V.length, 'liaison')} · ${plurielLie(n, 'liaison')} modifiée${n > 1 ? 's' : ''} : chaque case changée porte en commentaire ce qu'elle disait avant`], [], entetes,
     ...V.map((l, i) => [...COLONNES_RETEST.map(([, ch]) => valeurRetest(l, ch)), mods[i].map(m => m[0]).join(', ')])];
   const ws = XLSX.utils.aoa_to_sheet(lignes), origine = (l, ch) => origineDeCase(l, ch, !!o.ouvert);
   // le commentaire de chaque case changée : ce que portait le fichier, et d'où vient le changement
   V.forEach((l, i) => mods[i].forEach(([col, ch, av]) => { const c = COLONNES_RETEST.findIndex(x => x[1] === ch), ref = XLSX.utils.encode_cell({ r: 4 + i, c });
-    if (!ws[ref]) ws[ref] = { t: 's', v: '' }; ws[ref].c = [{ a: 'Volta', t: 'Avant : ' + motAvant(ch, av) + (origine(l, ch) === 'volta' ? ' · ' + ORIGINES_MOTS.volta : '') }]; ws[ref].c.hidden = true; }));
+    if (!ws[ref]) ws[ref] = { t: 's', v: '' }; ws[ref].c = [{ a: 'VOLTA', t: 'Avant : ' + motAvant(ch, av) + (origine(l, ch) === 'volta' ? ' · ' + ORIGINES_MOTS.volta : '') }]; ws[ref].c.hidden = true; }));
   ws['!cols'] = entetes.map(h => ({ wch: Math.max(10, Math.min(28, h.length + 3)) })); ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 3, c: 0 }, e: { r: 3 + V.length, c: entetes.length - 1 } }) };
   const M = [['Harness', 'Cable Tag', 'Device1', 'Pin1', 'Device2', 'Pin2', 'Colonne', 'Avant', 'Après', 'Origine']];
   V.forEach((l, i) => mods[i].forEach(([col, ch, av, ap]) => M.push([l.harness || '', l.cable || '', l.de, l.borneDe || '', l.vers, l.borneVers || '', col, motAvant(ch, av), motAvant(ch, ap), ORIGINES_MOTS[origine(l, ch)]])));
@@ -81,7 +81,7 @@ function classeurRetestCorrige(V, nom, o) { o = o || {}; V = (V || []).filter(li
 
 /* ---- LA FEUILLE CACHÉE « VOLTA » : ce que les seize colonnes ne disent pas -----------------------------------------
    Une ligne par donnée : sa sorte (charge, hypothese, contact, designation, sexe, raccord), sa clé, sa valeur en mots
-   (un vérificateur qui la démasque la lit) et sa valeur pour Volta (JSON). 02-lecture la relit (`lireFeuilleVolta`). */
+   (un vérificateur qui la démasque la lit) et sa valeur pour VOLTA (JSON). 02-lecture la relit (`lireFeuilleVolta`). */
 const FEUILLE_VOLTA = 'Volta', FORMAT_VOLTA = 'volta-retest-corrige-1';
 // ce qu'un plan ouvert garde hors des colonnes : ses choix, et les hypothèses avec lesquelles il a été jugé
 function voltaDuPlan() { const C = app.contrat, H = { ...HYPOTHESES, ...(app.simu || {}) }, contacts = [];
@@ -92,7 +92,7 @@ function voltaDuPlan() { const C = app.contrat, H = { ...HYPOTHESES, ...(app.sim
 const cleVolta = l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable].map(x => String(x == null ? '' : x)).join('|');
 const motProfil = p => !p ? '' : [p.calibre > 0 ? 'calibre ' + nombre(p.calibre) + ' A' : '', ...['dem', 'trans'].filter(k => p[k] && p[k].i != null).map(k => (k === 'dem' ? 'démarrage ' : 'transition ') + nombre(p[k].i) + ' A' + (p[k].t != null ? ' / ' + nombre(p[k].t) + ' s' : '')),
   p.perm && p.perm.i != null ? 'permanent ' + nombre(p.perm.i) + ' A' : '', ...(p.plus || []).map(x => (x.nom || 'état') + ' ' + nombre(x.i) + ' A' + (x.t != null ? ' / ' + nombre(x.t) + ' s' : ''))].filter(Boolean).join(' · ');
-function feuilleVolta(v) { const L = [['Volta — ce que les colonnes de l’installation ne disent pas : les profils de charge, les hypothèses, les choix des fiches.'], ['Volta relit cette feuille quand vous rouvrez ce fichier. Ne la modifiez pas.'], [],
+function feuilleVolta(v) { const L = [['VOLTA — ce que les colonnes de l’installation ne disent pas : les profils de charge, les hypothèses, les choix des fiches.'], ['VOLTA relit cette feuille quand vous rouvrez ce fichier. Ne la modifiez pas.'], [],
     ['Sorte', 'Clé', 'Valeur', 'Donnée']];
   L.push(['format', FORMAT_VOLTA, v.nom || '', JSON.stringify({ quand: v.quand })]);
   (v.charges || []).forEach(([k, p]) => L.push(['charge', k, motProfil(p), JSON.stringify(p)]));
@@ -103,7 +103,7 @@ function feuilleVolta(v) { const L = [['Volta — ce que les colonnes de l’ins
 
 /* ---- CE QUI PART, CE QUE VOLTA A CHOISI SANS L'ÉCRIRE ---------------------------------------------------------------
    `changementsDuRetest()` : ce qu'un enregistrement écrirait maintenant — les cases changées, groupées par objet (le part
-   number d'un disjoncteur changé sur ses trois liaisons fait une ligne), leur origine ; les choix de Volta qui ne sont
+   number d'un disjoncteur changé sur ses trois liaisons fait une ligne), leur origine ; les choix de VOLTA qui ne sont
    pas écrits (`proposes`) ; ce qui reste à reprendre (le compte unique du contrôle). La pilule de la barre du haut (A2)
    lit `nombreDeChangements()`. */
 function changementsDuRetest() { const V = verite().filter(liaisonComplete), par = new Map(); let liaisons = 0, cases = 0;
@@ -121,20 +121,20 @@ const nombreDeChangements = () => { let n = 0; verite().forEach(l => { if (liais
 const motChangements = n => n > 1 ? n + ' changements' : n === 1 ? '1 changement' : 'aucun changement';
 /* LES CHOIX DE VOLTA PAS ENCORE ÉCRITS : un disjoncteur dont l'outil retient un autre calibre que celui de son part number
    (le meilleur qui passe), une barrette dont il retient un autre module que celui du retest. Chacun : ce que dit le retest,
-   ce que Volta retient, son verdict (la table unique, 09 bis), ce que le geste écrirait, et le geste. */
+   ce que VOLTA retient, son verdict (la table unique, 09 bis), ce que le geste écrirait, et le geste. */
 function propositionsNonEcrites() { const V = verite(), out = [];
   reperesDe(V).filter(estDisjoncteur).sort(triNaturel).forEach(r => { let d; try { d = disjonctionDe(r); } catch (_) { return; }
     if (!d || !d.pn || !(d.calibre > 0) || d.origine === 'main' || Math.abs(d.calibre - d.pn) < 1e-9) return;
     const m = d.meilleur || {}, xs = d.calibre === m.calibre && typeof filsDuMeilleur === 'function' ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
     const types = [...new Set(xs.map(p => p.x.propose))], nc = xs.length, pnRetest = pnDuRepere(r), pnVolta = d.famille && pnRetest ? pnAvecCalibre(pnRetest, d.famille, d.calibre) : null;
-    // un part number dont la famille ne se lit pas ne sait pas porter un autre calibre : Volta ne l'écrit pas, il le dit
+    // un part number dont la famille ne se lit pas ne sait pas porter un autre calibre : VOLTA ne l'écrit pas, il le dit
     const ecrivable = !!(pnVolta && pnVolta !== pnRetest);
     out.push({ genre: 'calibre', repere: r, retest: d.pn, retenu: d.calibre, pnRetest, pnVolta, ecrivable, verdictRetest: verdictDeCalibre(d.gPn), verdictRetenu: verdictDeCalibre(d),
       cables: xs.map(p => ({ cable: p.x.cable || 'sans n°', actuel: p.x.actuel, propose: p.x.propose })),
       geste: `Écrire ${amperes(d.calibre)}${nc ? ' et grossir ' + (nc > 1 ? 'les ' + nc + ' câbles' : 'le câble') : ''}`,
-      suite: (nc ? `Le ${amperes(d.calibre)} demande ${xs.map(p => p.x.cable || 'le ' + cableDit(p.x)).join(', ')} en ${types.length === 1 ? types[0] : 'plus gros'}.` : '') + (ecrivable ? '' : ` Son part number (${pnRetest}) ne dit pas sa famille : Volta ne sait pas l’écrire, à reporter à la main.`),
+      suite: (nc ? `Le ${amperes(d.calibre)} demande ${xs.map(p => p.x.cable || 'le ' + cableDit(p.x)).join(', ')} en ${types.length === 1 ? types[0] : 'plus gros'}.` : '') + (ecrivable ? '' : ` Son part number (${pnRetest}) ne dit pas sa famille : VOLTA ne sait pas l’écrire, à reporter à la main.`),
       faire: ecrivable ? () => avecOrigineVolta(() => deciderCalibre(r)) : null }); });
-  // les barrettes : le module que Volta retient à la place de celui du retest
+  // les barrettes : le module que VOLTA retient à la place de celui du retest
   reperesDe(V).filter(r => !VT_A_POSER.test(r) && barretteEnModules(r)).sort(triNaturel).forEach(r => { try { const b = besoinsDeBarrette(r, V), Q = planDeBarrette(r).plan;
       if (!b.pn || !Q.reference || cleNorme(b.pn) === cleNorme(Q.reference) || !moduleDeReference(app.norme, b.pn)) return;
       const ecritures = () => { const xs = []; verite().forEach(l => { if (l.de === r && l.pnDe) xs.push([l, 'pnDe', Q.reference]); if (l.vers === r && l.pnVers) xs.push([l, 'pnVers', Q.reference]); }); return xs; };
@@ -157,37 +157,37 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
   // le ticket : trois chiffres sur une grille de filets
   const chiffre = (v, mot, cls, bulle) => `<div class="rv-chiffre${cls ? ' ' + cls : ''}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}><b>${v}</b><span>${mot}</span></div>`;
   const ticket = `<div class="rv-ticket${entre()}" role="group" aria-label="En bref">${chiffre(n, n > 1 ? 'liaisons modifiées' : n === 1 ? 'liaison modifiée' : 'aucune modification', '', pluriel(C.cases, 'case') + ' de l’Excel ' + (C.cases > 1 ? 'changent' : 'change'))}`
-    + chiffre(np, np > 1 ? 'choix de Volta à écrire' : np === 1 ? 'choix de Volta à écrire' : 'tout est écrit', np ? 'att' : '', np ? 'Volta les retient, mais ils ne partent que si vous les écrivez' : 'Chaque choix de Volta est dans l’installation')
+    + chiffre(np, np > 1 ? 'choix de VOLTA à écrire' : np === 1 ? 'choix de VOLTA à écrire' : 'tout est écrit', np ? 'att' : '', np ? 'VOLTA les retient, mais ils ne partent que si vous les écrivez' : 'Chaque choix de VOLTA est dans l’installation')
     + chiffre(P.ko ? P.ko : P.att, P.ko ? (P.ko > 1 ? 'problèmes' : 'problème') + (P.att ? ` · ${P.att} à voir` : '') : P.att ? (P.att > 1 ? 'points à voir' : 'point à voir') : 'rien à reprendre', P.ko ? 'ko' : P.att ? 'att-doux' : 'ok', P.mot) + '</div>';
   k++;   // « Ce qui part » vient juste après le ticket
   const enr = RELEVE.enregistre && RELEVE.enregistre.cle === RELEVE.cle ? `<p class="rv-fait" role="status">${ico('coche')}<span>Enregistré à ${esc(RELEVE.enregistre.heure)} dans vos Téléchargements · <span class="id">${esc(RELEVE.enregistre.nom)}</span></span></p>` : '';
   // ce qui part
   const ligne = e => `<li class="rv-l" data-bulle="${escA((e.n > 1 ? pluriel(e.n, 'liaison') + ' · ' : '') + 'colonne' + (e.colonnes.length > 1 ? 's ' : ' ') + e.colonnes.join(', ') + ' de l’Excel')}"><span class="rv-objet id">${esc(e.objet)}</span><span class="rv-col">${esc(e.colonne)}${e.calibres ? ` · <b>${esc(e.calibres)}</b>` : ''}${e.n > 1 ? `<small> · ${e.n} liaisons</small>` : ''}</span>`
-    + `<span class="rv-av"><s class="id">${esc(e.avant)}</s>${ico('fleche')}<b class="id">${esc(e.apres)}</b></span><span class="rv-orig ${e.origine}">${e.origine === 'volta' ? ico('etoile') + 'Volta' : 'à la main'}</span></li>`;
-  const part = C.ecrits.length ? `<ul class="rv-liste">${C.ecrits.map(ligne).join('')}</ul>` : '<p class="rv-vide">Rien n’a changé : l’Excel sera votre installation telle que Volta l’a lue.</p>';
-  // ce que Volta a choisi sans l'écrire
+    + `<span class="rv-av"><s class="id">${esc(e.avant)}</s>${ico('fleche')}<b class="id">${esc(e.apres)}</b></span><span class="rv-orig ${e.origine}">${e.origine === 'volta' ? ico('etoile') + 'VOLTA' : 'à la main'}</span></li>`;
+  const part = C.ecrits.length ? `<ul class="rv-liste">${C.ecrits.map(ligne).join('')}</ul>` : '<p class="rv-vide">Rien n’a changé : l’Excel sera votre installation telle que VOLTA l’a lue.</p>';
+  // ce que VOLTA a choisi sans l'écrire
   const prop = (p, i) => { const vR = p.verdictRetest, vV = p.verdictRetenu;
     const dit = p.genre === 'calibre' ? `l’installation dit <s class="id">${esc(amperes(p.retest))}</s>${vR ? ` · <span class="rv-v ${vR.etat}" data-bulle="${escA(vR.bulle)}">${esc(vR.mot)}</span>` : ''}` : `l’installation dit <s class="id">${esc(p.retest)}</s>`;
     const garde = (p.faire ? 'Sans ce geste, l’Excel garde ' : 'L’Excel garde ') + (p.genre === 'calibre' ? (p.pnRetest ? '<span class="id">' + esc(p.pnRetest) + '</span>' : 'le ' + esc(amperes(p.retest))) : `<span class="id">${esc(p.retest)}</span>`) + '.';
-    return `<li class="rv-p"><div class="rv-p-t"><b class="id">${esc(p.repere)}</b><span>Volta retient <b class="id">${esc(p.genre === 'calibre' ? amperes(p.retenu) : p.retenu)}</b>${vV && p.genre === 'calibre' ? ` <span class="rv-v ${vV.etat}" data-bulle="${escA(vV.bulle)}">${esc(vV.mot)}</span>` : ''}</span><span class="rv-p-dit">${dit}</span></div>`
+    return `<li class="rv-p"><div class="rv-p-t"><b class="id">${esc(p.repere)}</b><span>VOLTA retient <b class="id">${esc(p.genre === 'calibre' ? amperes(p.retenu) : p.retenu)}</b>${vV && p.genre === 'calibre' ? ` <span class="rv-v ${vV.etat}" data-bulle="${escA(vV.bulle)}">${esc(vV.mot)}</span>` : ''}</span><span class="rv-p-dit">${dit}</span></div>`
       + `<p class="rv-p-n">${garde}${p.suite ? ' ' + esc(p.suite) : ''}</p>`
       + (p.cables.length ? `<ul class="rv-p-cables">${p.cables.map(c => `<li><b class="id">${esc(c.cable)}</b><s class="id">${esc(c.actuel)}</s>${ico('fleche')}<b class="id">${esc(c.propose)}</b></li>`).join('')}</ul>` : '')
-      + (p.faire ? `<button type="button" class="btn papier dense rv-ecrire" data-proposition="${i}" data-bulle="${escA('Une proposition de Volta : elle part dans l’Excel, marquée comme telle — Ctrl+Z la défait')}">${esc(p.geste)}</button>` : '') + '</li>'; };
+      + (p.faire ? `<button type="button" class="btn papier dense rv-ecrire" data-proposition="${i}" data-bulle="${escA('Une proposition de VOLTA : elle part dans l’Excel, marquée comme telle — Ctrl+Z la défait')}">${esc(p.geste)}</button>` : '') + '</li>'; };
   // les modules de barrette se disent ensemble, d'un geste (le calibre d'un disjoncteur, lui, a chacun le sien)
   const cals = C.proposes.map((p, i) => [p, i]).filter(([p]) => p.genre !== 'module'), mods = C.proposes.filter(p => p.genre === 'module');
-  const modsHtml = mods.length ? `<li class="rv-p rv-p-mod"><div class="rv-p-t"><b>${mods.length > 1 ? mods.length + ' modules de barrette' : 'Un module de barrette'}</b><span class="rv-p-dit">Volta en retient un autre que celui de l’installation</span></div>`
+  const modsHtml = mods.length ? `<li class="rv-p rv-p-mod"><div class="rv-p-t"><b>${mods.length > 1 ? mods.length + ' modules de barrette' : 'Un module de barrette'}</b><span class="rv-p-dit">VOLTA en retient un autre que celui de l’installation</span></div>`
     + `<ul class="rv-p-cables rv-p-mods">${mods.map(p => `<li><b class="id">${esc(p.repere)}</b><s class="id">${esc(p.retest)}</s>${ico('fleche')}<b class="id">${esc(p.retenu)}</b></li>`).join('')}</ul>`
     + `<p class="rv-p-n">Le plus petit module qui loge les câbles de chaque barrette. Sans ce geste, l’Excel garde ceux de l’installation.</p>`
-    + `<button type="button" class="btn papier dense rv-ecrire" data-proposition="modules" data-bulle="${escA('Une proposition de Volta : elle part dans l’Excel, marquée comme telle — Ctrl+Z la défait')}">${mods.length > 1 ? 'Écrire les ' + mods.length + ' modules' : 'Écrire ' + esc(mods[0].retenu)}</button></li>` : '';
-  const props = np ? `<h3 class="sous-titre rv-st${entre()}">Choisi par Volta, pas encore écrit<small>${np}</small></h3><ul class="rv-props">${cals.map(([p, i]) => prop(p, i)).join('')}${modsHtml}</ul>` : '';
+    + `<button type="button" class="btn papier dense rv-ecrire" data-proposition="modules" data-bulle="${escA('Une proposition de VOLTA : elle part dans l’Excel, marquée comme telle — Ctrl+Z la défait')}">${mods.length > 1 ? 'Écrire les ' + mods.length + ' modules' : 'Écrire ' + esc(mods[0].retenu)}</button></li>` : '';
+  const props = np ? `<h3 class="sous-titre rv-st${entre()}">Choisi par VOLTA, pas encore écrit<small>${np}</small></h3><ul class="rv-props">${cals.map(([p, i]) => prop(p, i)).join('')}${modsHtml}</ul>` : '';
   // ce qui reste à reprendre : les genres du contrôle, les problèmes d'abord
   let reste = ''; try { const G = genresDuControle(); if (G.length) { const ligneG = g => { const noms = [...g.noms]; return `<li class="rv-g ${g.niveau}"><i aria-hidden="true"></i><b>${g.n}</b><span>${esc(motDuGenre(g.genre, g.n))}</span><small>${esc(noms.length === 1 ? noms[0] : noms.length ? plurielLie(noms.length, 'repère') : 'le tableau')}</small></li>`; };
       reste = `<h3 class="sous-titre rv-st${entre()}">Ce qui reste à reprendre<small>${esc(P.mot)}</small></h3><ul class="rv-reste">${G.slice(0, 5).map(ligneG).join('')}</ul>`
         + `<button type="button" class="btn lien rv-tout" id="rv-problemes" data-bulle="${escA('L’index des repères, sur ce qui reste à reprendre — P passe au point suivant')}">${G.length > 5 ? 'Tout voir sur le plan' : 'Les voir sur le plan'}<kbd>R</kbd></button>`; } } catch (_) { }
   return tete(nomAffichePlan() + ' · installation corrigée', 'Ce qui part dans l’Excel')
-    + `<p class="note">Volta n’écrit dans votre installation que ce que vous avez demandé. Relisez, puis enregistrez.</p>`
+    + `<p class="note">VOLTA n’écrit dans votre installation que ce que vous avez demandé. Relisez, puis enregistrez.</p>`
     + enr + ticket + `<h3 class="sous-titre rv-st${arrive ? ' entre-v" style="--k:2' : ''}">Ce qui part<small>${C.cases ? pluriel(C.cases, 'case') : ''}</small></h3>` + part + props + reste
-    + `<p class="note rv-volta">Une feuille cachée « Volta » garde vos profils de charge, vos hypothèses et vos choix : rouverte dans Volta, cette installation reprend où vous en étiez. La feuille Modifications dit l’origine de chaque case.</p>`; }
+    + `<p class="note rv-volta">Une feuille cachée « VOLTA » garde vos profils de charge, vos hypothèses et vos choix : rouverte dans VOLTA, cette installation reprend où vous en étiez. La feuille Modifications dit l’origine de chaque case.</p>`; }
 const nomAffichePlan = () => app.nom ? String(app.nom).replace(/\.[^.]+$/, '') : 'Plan';
 function rendreReleve(ouvrir) { if (!ouvrir && (!RELEVE.ouvert || !app.fiche || app.fiche.mode !== 'releve')) { RELEVE.ouvert = false; return; }
   const corps = $('fiche-corps'), haut = corps ? corps.scrollTop : 0; RELEVE.cle = cleDuReleve();
@@ -252,7 +252,7 @@ function reprendreVolta(v, journaux) { const C = app.contrat, repris = [];
   const differe = F ? Object.keys(F).filter(k => k in HYPOTHESES && JSON.stringify(F[k]) !== JSON.stringify(H[k])) : [];
   if (differe.length) { geste = 'Reprendre ses hypothèses'; faire = () => { app.simu = { ...(app.simu || {}), ...Object.fromEntries(differe.map(k => [k, F[k]])) }; if (typeof apresHypotheses === 'function') apresHypotheses(); else redessiner(); dire('Les hypothèses du fichier sont reprises : ' + differe.length + ' réglage' + (differe.length > 1 ? 's' : '') + ' (⋮ → Plus → Hypothèses).'); }; }
   if (repris.length) { if (typeof redessiner === 'function') redessiner(); if (typeof sauver === 'function') sauver(); }
-  const morceaux = [repris.length ? majuscule(repris.join(' et ')) + ' repris de la feuille « Volta »' : '', (journaux || []).length ? `la feuille ${journaux.map(j => '« ' + j + ' »').join(', ')} est le journal de Volta : laissée de côté` : '',
+  const morceaux = [repris.length ? majuscule(repris.join(' et ')) + ' repris de la feuille « VOLTA »' : '', (journaux || []).length ? `la feuille ${journaux.map(j => '« ' + j + ' »').join(', ')} est le journal de VOLTA : laissée de côté` : '',
     differe.length ? `ce fichier a été jugé avec d’autres hypothèses (${differe.length})` : ''].filter(Boolean);
   if (!morceaux.length) return null;
-  return { msg: 'Installation corrigée par Volta · ' + morceaux.join(' ; ') + '.', geste, faire }; }
+  return { msg: 'Installation corrigée par VOLTA · ' + morceaux.join(' ; ') + '.', geste, faire }; }

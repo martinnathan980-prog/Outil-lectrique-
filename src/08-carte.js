@@ -27,7 +27,8 @@ const CARTE = { epingle: false, origine: null, deplacee: false, appui: null, pri
 const CARTE_LMIN = 340, CARTE_HMIN = 220;
 // (v78, la fiche à deux niveaux : 08-niveaux) la carte ne dit que l'essentiel : étroite, de la hauteur de ce qu'elle dit ;
 // la fiche entière, c'est le grand (« Tout voir »), posé à droite sur les deux tiers de l'écran
-const CARTE_L = () => window.innerWidth >= 1800 ? 420 : 384;
+// (v78, le lecteur : « chaque tuile, je prends les angles et je tire, en largeur, en hauteur, comme je veux ») : tirée, sa largeur est la sienne
+const CARTE_L = () => CARTE.taille && CARTE.taille.l > 0 ? CARTE.taille.l : window.innerWidth >= 1800 ? 420 : 384;
 // au plus : au-delà elle défile — une carte, pas un pan d'écran
 const carteH = () => 680;
 const CARTE_AIR = 44;           // l'air entre le bloc et la carte : le fil y passe
@@ -287,6 +288,8 @@ function epinglerCarte(oui, sansElan) { NIVEAU.grand = !!oui; CARTE.epingle = !!
   const avant = el.getBoundingClientRect(); modeCarte(); rendreFiche();
   // le plan reprend (ou rend) la place du volet ; détachée d'un bouton, elle retourne près de son bloc, là où le plan VA
   recadrerSiCache();
+  // (le volet s'élargit en 220 ms : une fois à sa largeur, l'objet se recentre dans ce qui reste du plan)
+  if (CARTE.epingle) setTimeout(() => { if (NIVEAU.grand && !$('inspecteur').hidden) recadrerSiCache(); }, 280);
   if (!CARTE.epingle && !sansElan) { CARTE.deplacee = false; const m = mesurerCarte(), v = anim ? vueVisee : null; poserA(placerPres(rectDeLOrigine(null, v), m.W, m.H, v)); }
 
   if (!sansElan && !mouvementReduit()) { const r = el.getBoundingClientRect(); el.style.transformOrigin = '0 0';
@@ -354,8 +357,8 @@ function tirerCarte(e) { const t = CARTE.tire, el = $('inspecteur'), Z = zoneDeL
   poserCarte(b.includes('w') ? xd - w : r.left, b.includes('n') ? yb - h : r.top); dessinerLien(); }
 function lierBords(el) {
   el.addEventListener('pointerdown', e => { const bord = e.target.closest && e.target.closest('[data-bord]'); if (!bord || telephone() || e.button !== 0) return;
-    // (v78) la carte a la taille de ce qu'elle dit ; le grand rangé se tire par son bord gauche, détaché par tous ses bords
-    const flotte = carteFlottante(), libre = grandLibre(); if (flotte || (!libre && bord.dataset.bord !== 'w')) return;
+    // (v78) la carte et le grand détaché se tirent par tous leurs bords et leurs coins ; le grand rangé, par son bord gauche
+    const flotte = carteFlottante(), libre = grandLibre(); if (!flotte && !libre && bord.dataset.bord !== 'w') return;
     e.preventDefault(); e.stopPropagation();
     CARTE.tire = { bord: bord.dataset.bord, x0: e.clientX, y0: e.clientY, r: el.getBoundingClientRect(), flotte, libre };
     try { bord.setPointerCapture(e.pointerId); } catch (_) { }
@@ -374,7 +377,7 @@ function lierBords(el) {
 /* ---- LA TENIR PAR SA BARRE ------------------------------------------------------------------------------------------ */
 function lierCarte() { const el = $('inspecteur');
   // (v78) chaque fiche s'ouvre en carte ; le grand ne se garde pas d'une session à l'autre — sa largeur, si
-  CARTE.epingle = false; CARTE.grande = false; NIVEAU.grand = false; CARTE.taille = null; CARTE.volet = voletEnMemoire(); appliquerVolet(); fenetreEnMemoire(); FENETRE.libre = false; lierBords(el);
+  CARTE.epingle = false; CARTE.grande = false; NIVEAU.grand = false; CARTE.taille = tailleEnMemoire(); CARTE.volet = voletEnMemoire(); appliquerVolet(); fenetreEnMemoire(); FENETRE.libre = false; lierBords(el);
   // fermée, d'où qu'on la ferme (08-interface, `fermerInspecteur`), elle rend le clavier
   if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) rendreLeClavierDeLaCarte(); }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
   // l'endroit du dernier appui sur la planche : la fiche d'un câble naît de là, un clic sur le plan fait glisser la carte

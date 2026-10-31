@@ -1,5 +1,5 @@
 /* ===========================================================================
-   08 — LA BIBLIOTHÈQUE : les installations et leurs plans, l'ouverture de Volta
+   08 — LA BIBLIOTHÈQUE : les installations et leurs plans, l'ouverture de VOLTA
    ---------------------------------------------------------------------------
    Le lecteur : « Il nous faut une bibliothèque : par installation (telle
    antenne, tel cockpit…), on a plein de plans électriques. On choisit notre
@@ -40,7 +40,7 @@
    Ce qui est un plan se montre en VIGNETTE (une petite feuille blanche, son
    dessin à l'encre, deux fils aux couleurs des routes) : l'Exemple,
    « Reprendre », l'accueil.
-   La barre du haut porte un fil discret : Volta (la bibliothèque) /
+   La barre du haut porte un fil discret : VOLTA (la bibliothèque) /
    l'installation (son ECP, son nom : ses plans) / le plan. Échap remonte d'un
    cran. Renommer (sur place), supprimer (une confirmation dans la page,
    « Rétablir » juste après), déplacer un plan d'une installation à une autre :
@@ -182,7 +182,7 @@ const installNommee = nom => { const k = cleTexte(nom); return installsVraies().
 const installARanger = () => BIB.installs.get(ID_A_RANGER) || creerInstall(NOM_A_RANGER, { id: ID_A_RANGER });
 /* Un plan : son installation, son nom, son résumé ; son contrat, quand on le donne (`liaisons`), se garde « neuf » — à sa
    première ouverture il se charge comme un fichier (les folios se découpent s'il le faut, les choix partent de zéro, sauf
-   ce que garde la feuille « Volta » d'un retest corrigé : `o.volta`, repris à l'ouverture). */
+   ce que garde la feuille « VOLTA » d'un retest corrigé : `o.volta`, repris à l'ouverture). */
 function creerPlan(installId, nom, liaisons, o) { o = o || {}; const t = Date.now();
   const p = { id: o.id || nouvelId('p'), install: installId, nom: String(nom || '').trim() || 'Sans nom', source: o.source || 'fichier', cree: t, vu: 0, modifie: t, ...resumeDe({ liaisons: liaisons || [] }) };
   BIB.plans.set(p.id, p); BIB.supprimes.delete(p.id); garderPlan(p);
@@ -266,7 +266,7 @@ async function ouvrirPlan(id, apres) { const p = BIB.plans.get(id); if (!p) retu
     if (!L || !L.length) { dire(guillemets(nomAffiche(p.nom)) + ' vient de la base des contrats déjà faits, qui n’est plus dans ce navigateur : redéposez-la.', true); return; }
     chargerContrat(L, 'ouverture de ' + p.nom, p.nom, { planId: id }); app.hist = []; synchroniserHistorique(); if (apres) aller(apres); return; }
   if (!o || !o.liaisons) { dire(guillemets(nomAffiche(p.nom)) + ' n’a plus ses liaisons dans ce navigateur.', true); return; }
-  // un retest corrigé déposé, ouvert pour la première fois (même un autre jour) : ce que garde sa feuille « Volta » — les
+  // un retest corrigé déposé, ouvert pour la première fois (même un autre jour) : ce que garde sa feuille « VOLTA » — les
   // profils, les choix des fiches ; les hypothèses, dites et offertes — se reprend une fois (08-export, `reprendreVolta`).
   // La reprise en attente de la même lecture (`VOLTA.attente`) est la même : elle ne se dit pas deux fois.
   if (o.neuf) { const v = o.volta && typeof reprendreVolta === 'function' ? o.volta : null; if (v && typeof VOLTA !== 'undefined') VOLTA.attente = null;
@@ -345,7 +345,7 @@ async function plansDuFichier(f) { const nom = f.name || 'le fichier', L = await
     if (lu && lu.liaisons.length) return { plans: [{ nom, liaisons: lu.liaisons }], devine: texteBrut(comprisHtml(D)) };
     return { erreur: nom + ' n’a pas les en-têtes de l’installation : il me faut au moins Device1, Pin1, Device2 et Pin2.', lu: L }; }
   const r = lireTexte(L.texte); if (!r.liaisons.length) return { erreur: nom + ' : les en-têtes de l’installation sont là, mais aucune liaison dessous.' };
-  // la feuille « Volta » d'une installation corrigée (02-lecture) suit le plan qu'elle devient : elle se reprend à son ouverture
+  // la feuille « VOLTA » d'une installation corrigée (02-lecture) suit le plan qu'elle devient : elle se reprend à son ouverture
   const volta = r.volta || null;
   if (r.harnais.length > 1) return { plans: r.harnais.map(h => ({ nom: h, liaisons: r.liaisons.filter(l => l.harness === h), volta })) };
   return { plans: [{ nom, liaisons: r.liaisons, volta }] }; }
@@ -517,7 +517,7 @@ const aUnEcp = i => !i.demo && i.id !== ID_A_RANGER;
 const accueil = () => BIB.vue === 'racine' && !installsVraies().length && !BIB.q && !baseDeReferences() && !(BIB.edition && BIB.edition.quoi === 'nouvelle');
 const pasGardeHtml = () => BIB.garde ? '' : '<span class="bi-pas-garde">pas gardée dans ce navigateur</span>';
 function teteRacineHtml() { const V = installsVraies(), nP = plansVrais().length, B = baseDeReferences(); if (accueil()) return '';
-  return `<header class="bi-tete"><div class="bi-titres"><h1 class="bi-titre">Bibliothèque</h1>`
+  return `<header class="bi-tete"><div class="bi-titres"><p class="bi-marque-mini">VOLTA<span>${esc(SLOGAN)}</span></p><h1 class="bi-titre">Installations en cours</h1>`
     + `<p class="bi-compte">${V.length ? esc(lies([plurielLie(V.length, 'installation'), nPlans(nP)])) : 'Vos installations et leurs plans'}${B ? `<span class="bi-compte-base">${esc(POINT + 'base de ' + milliers(B.meta.n) + ' lignes')}</span>` : ''}${BIB.garde ? '' : POINT + pasGardeHtml()}</p></div>`
     + (V.length || B ? `<div class="bi-outils">${chercheBiHtml(B ? 'Chercher partout : part number, repère, câble, ECP…' : 'Chercher un ECP, une installation…', !!B)}<button class="bi-btn" id="bi-nouvelle" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>` : '') + '</header>'; }
 /* L'intertitre des cartes, au filet (le designer v73 : le segment flottait entre deux blocs) : « Installations, par n° ECP »,
@@ -565,17 +565,31 @@ function reprendreHtml() { if (!planSurLaTable()) return ''; const p = BIB.plans
    disjoncteur et ses équipements, une barrette qui distribue, une prise de coupure), les deux gestes, le DOCK. Déposer
    un fichier n'importe où marche toujours — sans le dire. */
 const FOLIOS_VITRINE = [
-  '<rect class="bp-bloc" x="28.5" y="44.5" width="36" height="46" rx="1.5"/><rect class="bp-bloc" x="160.5" y="30.5" width="44" height="30" rx="1.5"/><rect class="bp-bloc" x="160.5" y="76.5" width="44" height="30" rx="1.5"/>'
-    + '<path class="bp-fil bf-a" pathLength="1" d="M64.5 56.5H112.5V45.5H160.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M64.5 78.5H120.5V91.5H160.5"/><circle class="bp-noeud" cx="112.5" cy="56.5" r="2.2"/>',
-  '<rect class="bp-bloc" x="24.5" y="50.5" width="40" height="52" rx="1.5"/><rect class="bp-barre" x="112.5" y="36.5" width="9" height="84" rx="2"/><rect class="bp-bloc" x="164.5" y="24.5" width="42" height="26" rx="1.5"/><rect class="bp-bloc" x="164.5" y="63.5" width="42" height="26" rx="1.5"/><rect class="bp-bloc" x="164.5" y="102.5" width="42" height="26" rx="1.5"/>'
-    + '<path class="bp-fil bf-a" pathLength="1" d="M64.5 64.5H112.5"/><path class="bp-fil bf-b" pathLength="1" d="M64.5 88.5H112.5"/><path class="bp-fil bf-a" pathLength="1" style="--j:1" d="M121.5 46.5H140.5V37.5H164.5"/><path class="bp-fil bf-a" pathLength="1" style="--j:1" d="M121.5 76.5H164.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M121.5 110.5H140.5V115.5H164.5"/>',
-  '<rect class="bp-bloc" x="22.5" y="32.5" width="44" height="38" rx="1.5"/><rect class="bp-bloc" x="22.5" y="92.5" width="44" height="32" rx="1.5"/><rect class="bp-barre" x="106.5" y="38.5" width="7" height="82" rx="2"/><rect class="bp-barre" x="116.5" y="38.5" width="7" height="82" rx="2"/><rect class="bp-bloc" x="164.5" y="32.5" width="44" height="38" rx="1.5"/><rect class="bp-bloc" x="164.5" y="92.5" width="44" height="32" rx="1.5"/>'
-    + '<path class="bp-fil bf-a" pathLength="1" d="M66.5 44.5H106.5M123.5 44.5H164.5"/><path class="bp-fil bf-a" pathLength="1" d="M66.5 58.5H106.5M123.5 58.5H164.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M66.5 108.5H106.5M123.5 108.5H164.5"/>'];
-const vitrineAccueil = () => `<div class="bi-vitrine ilot-clair" aria-hidden="true">${FOLIOS_VITRINE.map((d, i) => `<span class="bi-vf bi-vf${i + 1}" style="--i:${i}"><svg viewBox="0 0 236 167">`
-  + `<rect class="bp-cadre" x="9.5" y="9.5" width="217" height="148" rx="1"/><rect class="bp-cart" x="140.5" y="132.5" width="86" height="25"/><path class="bp-cadre" d="M170 132.5v25"/>${d}</svg></span>`).join('')}</div>`;
-function videHtml(demo) { return `<section class="bi-vide bi-accueil"><div class="bi-vide-centre"><h1 class="bi-titre bi-marque">Volta</h1><p class="bi-devise">Le câblage, dessiné et vérifié.</p>${vitrineAccueil()}`
+  // un disjoncteur et ce qu'il alimente
+  { d: '<rect class="bp-bloc" x="28.5" y="44.5" width="36" height="46" rx="1.5"/><rect class="bp-bloc" x="160.5" y="30.5" width="44" height="30" rx="1.5"/><rect class="bp-bloc" x="160.5" y="76.5" width="44" height="30" rx="1.5"/>'
+      + '<path class="bp-fil bf-a" pathLength="1" d="M64.5 56.5H112.5V45.5H160.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M64.5 78.5H120.5V91.5H160.5"/><circle class="bp-noeud" cx="112.5" cy="56.5" r="2.2"/>'
+      + '<text class="bp-t" x="46.5" y="70">102CB1</text><text class="bp-t" x="182.5" y="48">101BT1</text><text class="bp-t" x="182.5" y="94">103RL1</text><text class="bp-c" x="88" y="52">DR12</text><text class="bp-c" x="138" y="88">DR22</text><text class="bp-b" x="69" y="54">1</text><text class="bp-b" x="69" y="76">2</text>',
+    p: 'M64.5 56.5H112.5V45.5H160.5' },
+  // une barrette qui distribue
+  { d: '<rect class="bp-bloc" x="24.5" y="50.5" width="40" height="52" rx="1.5"/><rect class="bp-barre" x="112.5" y="36.5" width="9" height="84" rx="2"/><rect class="bp-bloc" x="164.5" y="24.5" width="42" height="26" rx="1.5"/><rect class="bp-bloc" x="164.5" y="63.5" width="42" height="26" rx="1.5"/><rect class="bp-bloc" x="164.5" y="102.5" width="42" height="26" rx="1.5"/>'
+      + '<path class="bp-fil bf-a" pathLength="1" d="M64.5 64.5H112.5"/><path class="bp-fil bf-b" pathLength="1" d="M64.5 88.5H112.5"/><path class="bp-fil bf-a" pathLength="1" style="--j:1" d="M121.5 46.5H140.5V37.5H164.5"/><path class="bp-fil bf-a" pathLength="1" style="--j:1" d="M121.5 76.5H164.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M121.5 110.5H140.5V115.5H164.5"/>'
+      + '<text class="bp-t" x="44.5" y="79">300XC1</text><text class="bp-c bp-v" x="117" y="129">668VT31</text><text class="bp-t" x="185.5" y="40">381RL1</text><text class="bp-t" x="185.5" y="79">382RL2</text><text class="bp-t" x="185.5" y="118">383RL3</text><text class="bp-c" x="88" y="60">DR22</text><text class="bp-c" x="88" y="84">DR20</text>',
+    p: 'M64.5 64.5H112.5V46.5H140.5V37.5H164.5' },
+  // une prise de coupure
+  { d: '<rect class="bp-bloc" x="22.5" y="32.5" width="44" height="38" rx="1.5"/><rect class="bp-bloc" x="22.5" y="92.5" width="44" height="32" rx="1.5"/><rect class="bp-barre" x="106.5" y="38.5" width="7" height="82" rx="2"/><rect class="bp-barre" x="116.5" y="38.5" width="7" height="82" rx="2"/><rect class="bp-bloc" x="164.5" y="32.5" width="44" height="38" rx="1.5"/><rect class="bp-bloc" x="164.5" y="92.5" width="44" height="32" rx="1.5"/>'
+      + '<path class="bp-fil bf-a" pathLength="1" d="M66.5 44.5H106.5M123.5 44.5H164.5"/><path class="bp-fil bf-a" pathLength="1" d="M66.5 58.5H106.5M123.5 58.5H164.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M66.5 108.5H106.5M123.5 108.5H164.5"/>'
+      + '<text class="bp-t" x="44.5" y="54">500XC3</text><text class="bp-t" x="44.5" y="111">540VL5</text><text class="bp-c bp-v" x="115" y="129">412VC3B</text><text class="bp-t" x="186.5" y="54">530PM3</text><text class="bp-t" x="186.5" y="111">560HT1</text><text class="bp-c" x="86" y="41">DR20</text><text class="bp-c" x="144" y="105">DR22</text>',
+    p: 'M66.5 44.5H106.5M123.5 44.5H164.5' }];
+// (un courant qui circule : un point de lumière court le long d'un câble de chaque folio)
+const vitrineAccueil = () => `<div class="bi-vitrine ilot-clair" aria-hidden="true">${FOLIOS_VITRINE.map((f, i) => `<span class="bi-vf bi-vf${i + 1}" style="--i:${i}"><svg viewBox="0 0 236 167">`
+  + `<rect class="bp-cadre" x="9.5" y="9.5" width="217" height="148" rx="1"/><rect class="bp-cart" x="140.5" y="132.5" width="86" height="25"/><path class="bp-cadre" d="M170 132.5v25"/><text class="bp-cart-t" x="146" y="148">Folio ${i + 1}</text>${f.d}`
+  + `<circle class="bp-courant" r="2.6"><animateMotion dur="${(3.2 + i * .7).toFixed(1)}s" begin="${(1.6 + i * .9).toFixed(1)}s" repeatCount="indefinite" path="${f.p}"/></circle></svg></span>`).join('')}</div>`;
+// (v78c, le lecteur : « VOLTA tout en majuscule, une belle écriture, un peu plus en haut ; une phrase d'accroche, comme un slogan »)
+const SLOGAN = 'Du tableau au folio, chaque câble à sa place.';
+function videHtml(demo) { return `<section class="bi-vide bi-accueil"><div class="bi-vide-centre"><h1 class="bi-titre bi-marque">VOLTA</h1><p class="bi-devise">${esc(SLOGAN)}</p>${vitrineAccueil()}`
   + `${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
-  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir">${icoBi('depot')}<span>Ouvrir une installation…</span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div></div>${dockHtml(demo)}</section>`; }
+  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir">${icoBi('depot')}<span>Ouvrir une installation…</span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
+  + `<h2 class="bi-sous bi-encours-t">Pour commencer</h2>${dockHtml(demo)}</div></section>`; }
 /* LE DOCK : le verre des palets, en bas au milieu — « Reprendre » le plan resté sur la table (s'il y en a un), l'Exemple,
    la base des contrats déjà faits : comme des applications. Une tuile : son image (une vignette, une icône), son nom, ce
    qu'elle fait. */
@@ -835,7 +849,7 @@ async function convertirLeLot() { const L = BIB.lot; if (!L || L.encours || !L.i
     + (sansPdf.length ? ' Pas de dossier PDF pour ' + sansPdf.slice(0, 3).join(', ') + (sansPdf.length > 3 ? '…' : '') + ' (un folio ne se dessine pas).' : ''), !fait); }
 
 /* ---- la barre du haut, le menu, le plan vide : ce qui suit le contrat (08-interface, `synchroniserContexte`) ---------- */
-/* LE FIL : Volta / l'installation / le plan. La racine : la marque seule ; une installation : son ECP et son nom ; la
+/* LE FIL : VOLTA / l'installation / le plan. La racine : la marque seule ; une installation : son ECP et son nom ; la
    table : l'installation (un clic y mène) et le plan. */
 function synchroniserFil() { const fil = $('en-fil'); if (!fil) return; const surTable = BIB.vue === 'plan';
   const p = BIB.plans.get(app.planId), i = BIB.vue === 'install' ? BIB.installs.get(BIB.install) : surTable && p ? BIB.installs.get(p.install) : null;

@@ -145,7 +145,7 @@ function lireTexte(texte) {
     const liaisons = [];
     for (let r = rt.ligne + 1; r < brutes.length; r++) {
       if (!brutes[r].trim()) continue;
-      // ce que `lectureDuFichier` a lu d'un retest corrigé par Volta : sa feuille « Volta », ses journaux
+      // ce que `lectureDuFichier` a lu d'un retest corrigé par VOLTA : sa feuille « VOLTA », ses journaux
       if (brutes[r].startsWith(MARQUE_VOLTA)) { try { volta = JSON.parse(brutes[r].slice(MARQUE_VOLTA.length)); } catch (_) { volta = null; } continue; }
       if (brutes[r].startsWith(MARQUE_JOURNAL)) { journaux.push(brutes[r].slice(MARQUE_JOURNAL.length)); continue; }
       const row = cellules(brutes[r]);
@@ -197,14 +197,14 @@ function lireTexte(texte) {
    embarqué dans la page : rien ne part sur le réseau. */
 /* v73 — LE RETEST CORRIGÉ RELU (l'ingénieur, n° 2 : « rouvert, 207 liaisons au lieu de 201 : les six lignes de la feuille
    Modifications sont devenues des liaisons ; et le profil de charge est perdu ») : la feuille « Modifications » qu'écrit
-   Volta (08-export) porte Device1, Pin1, Device2, Pin2 — elle a l'air d'un retest. Elle se reconnaît à son NOM, ou à son
+   VOLTA (08-export) porte Device1, Pin1, Device2, Pin2 — elle a l'air d'un retest. Elle se reconnaît à son NOM, ou à son
    en-tête « Colonne · Avant · Après » : c'est un JOURNAL, laissé de côté et nommé (`journaux`) pour qu'on le dise. La
-   feuille cachée « Volta » (`volta`) garde ce que les colonnes ne disent pas — profils de charge, hypothèses, choix des
+   feuille cachée « VOLTA » (`volta`) garde ce que les colonnes ne disent pas — profils de charge, hypothèses, choix des
    fiches — : elle se lit à part. Les deux passent aussi dans le texte, sur des lignes marquées que `lireTexte` reconnaît
    (le texte est ce que chaque chemin d'ouverture se transmet). */
 const MARQUE_VOLTA = '⁣VOLTA⁣', MARQUE_JOURNAL = '⁣JOURNAL⁣';
 const estJournal = (nom, rows) => NORM(nom) === 'modifications' || rows.slice(0, 12).some(r => { const k = new Set(r.map(NORM)); return k.has('colonne') && k.has('avant') && k.has('apres'); });
-/* La feuille « Volta » : ses lignes [sorte, clé, valeur en mots, donnée JSON], sous l'en-tête « Sorte · Clé · Valeur · Donnée ». */
+/* La feuille « VOLTA » : ses lignes [sorte, clé, valeur en mots, donnée JSON], sous l'en-tête « Sorte · Clé · Valeur · Donnée ». */
 function lireFeuilleVolta(rows) { const v = { charges: [], hypotheses: {}, contacts: [], designations: [], sexes: [], raccords: [] }; let entete = false, format = '';
   const J = t => { try { return JSON.parse(t); } catch (_) { return undefined; } };
   rows.forEach(r => { const [s, k, , d] = r.map(x => String(x == null ? '' : x)); if (!entete) { entete = NORM(s) === 'sorte' && NORM(d) === 'donnee'; return; }
@@ -226,7 +226,7 @@ async function lectureDuFichier(fichier) {
     if (estJournal(n, rows)) { journaux.push(n); return null; }
     return { nom: n, retest: !!trouverEnteteRetest(rows), lignes: rows.filter(r => r.some(Boolean)).length, texte: rows.map(r => r.join('\t')).join('\n') }; }).filter(Boolean);
   const retests = feuilles.filter(f => f.retest), lues = retests.length ? retests : feuilles.slice(0, 1);
-  // un retest relu porte, après ses liaisons, ce qu'on a lu à part : la feuille « Volta », les journaux laissés de côté
+  // un retest relu porte, après ses liaisons, ce qu'on a lu à part : la feuille « VOLTA », les journaux laissés de côté
   const marques = retests.length ? [volta ? MARQUE_VOLTA + JSON.stringify(volta) : '', ...journaux.map(j => MARQUE_JOURNAL + j)].filter(Boolean) : [];
   return { texte: lues.map(f => f.texte).concat(marques).join('\n'), feuilles: feuilles.map(({ nom, retest, lignes }) => ({ nom, retest, lignes })),
            lues: lues.map(f => f.nom), ignorees: feuilles.filter(f => !lues.includes(f)).map(f => f.nom), journaux, volta };

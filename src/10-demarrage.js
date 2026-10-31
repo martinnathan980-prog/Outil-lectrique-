@@ -16,7 +16,7 @@ const atelier = {
   /* l'exemple embarqué, tel qu'il est livré, avec son profil de charge, comme si on venait de l'ouvrir (sans historique) :
      les batteries qui le lisent le demandent — l'outil, lui, s'ouvre sur la bibliothèque */
   exemple() { HYPOTHESES.calibreAuto = true; if (app.simu) app.simu.calibreAuto = true; ouvrirExemple(true); return app.dessin; },
-  /* l'exemple tel que la v73 l'ouvrait : le 10 A du fichier PROPOSÉ en 15 A, pas encore écrit (l'hypothèse « Volta écrit
+  /* l'exemple tel que la v73 l'ouvrait : le 10 A du fichier PROPOSÉ en 15 A, pas encore écrit (l'hypothèse « VOLTA écrit
      lui-même le calibre qui passe » décochée) — les batteries qui jugent la carte de décision le demandent */
   exempleSansCalibreAuto() { HYPOTHESES.calibreAuto = false; if (app.simu) app.simu.calibreAuto = false; ouvrirExemple(true); return app.dessin; },
   /* la bibliothèque (sa racine), et le retour au plan resté sur la table */
@@ -48,7 +48,7 @@ function demarrer() {
   requestAnimationFrame(() => retrouverVue());
   // les folios déjà affinés dans ce navigateur reviennent ; les autres s'affinent en arrière-plan ; les retouches aussi
   relireAffines(); relireRetouches(); relireReferences();
-  // la base SEE gardée sur ce PC (08 nonies) : elle revient et passe devant les tables de Volta
+  // la base SEE gardée sur ce PC (08 nonies) : elle revient et passe devant les tables de VOLTA
   relireBaseSEE();
 }
 demarrer();

@@ -555,3 +555,40 @@ b.rc-n{font-weight:500}
 /* (v77) l'icône prend sa place : le rail s'élargit d'autant (« Équipements » et « Problèmes » entiers, avec leurs comptes) */
 .recap{--rc-rail:212px}
 #base.serre{--rc-rail:196px}
+
+
+/* ─── (v78c) LE RÉCAPITULATIF, PAPIER COMME LES FICHES — le lecteur : « un tableau bleu sur bleu, c'est dommage ; à gauche
+   c'est mieux mais pas encore assez différencié ; Moitié · Page en haut, ça dégage ; Tableau CSV, ça dégage : que la croix ;
+   les connecteurs et les bornes, on fait mieux ». Le panneau prend les jetons neutres des fiches (blanc pierre le jour,
+   graphite la nuit, aucune teinte bleue) ; le rail des onglets est un cran plus enfoncé, l'onglet ouvert remonte au niveau
+   de la table avec un filet cuivre ; l'en-tête du tableau en petites capitales ; une borne est une pastille, comme dans
+   la fiche ; plus de numéro de câble. La taille se règle à la poignée (B ferme, Maj+B la page) ; le CSV reste dans
+   ⋮ › Exporter. ─── */
+#base .rc-taille,#base .rc-export{display:none}
+#base{border:none}
+#base .rc-tete{padding:12px 12px 12px var(--rc-g);background:var(--s-surface)}
+#base .rc-titre{font:650 var(--f-15)/1.2 var(--sans);letter-spacing:-.01em}
+#base .rc-onglets{background:var(--s-sunken);border-right:1px solid var(--s-line)}
+#base .rc-onglets-t{font:650 var(--f-11)/1.2 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
+#base .rc-onglet{color:var(--t-2)}
+#base .rc-onglet:hover{background:var(--s-hover);color:var(--t-1)}
+#base .rc-onglet[aria-selected="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:inset 3px 0 0 var(--nv-cuivre),0 1px 2px rgba(0,0,0,.08)}
+#base .rc-onglet[aria-selected="true"] .ico{color:var(--nv-cuivre)}
+#base .rc-outils{background:var(--s-surface)}
+#base .ba-corps{background:var(--s-surface)}
+#base .rc-tab th{background:var(--s-surface);font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-3);height:34px}
+#base .rc-tab th[data-note]::after{text-transform:none;letter-spacing:0;font-weight:400}
+#base .rc-tab td{height:42px;border-bottom-color:color-mix(in srgb,var(--s-line) 70%,transparent)}
+#base .rc-tab tbody tr[data-k]:hover td{background:var(--s-hover)}
+#base .rc-tab tr.on td,#base .rc-tab tbody tr.on[data-k]:hover td{background:var(--nv-cuivre-soft)}
+#base .rc-tab tr.on td:first-child{box-shadow:inset 3px 0 0 var(--nv-cuivre)}
+/* un bout : le repère en chasse fixe, sa borne en pastille (plus de « : ») */
+#base .rc-bout{align-items:center;gap:7px}
+#base .rc-sep{display:none}
+#base .rc-b{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;border-radius:6px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2);font:600 var(--f-11)/1 var(--mono);color:var(--t-1)}
+#base .rc-b:empty{display:none}
+#base .rc-nat{margin-left:2px;padding:2px 7px;border-radius:999px;background:var(--s-sunken);font:500 var(--f-11)/1.2 var(--sans);color:var(--t-2)}
+/* le câble : son type en pastille, la flèche de la couleur de sa route */
+#base .rc-cable{min-width:180px}
+#base .rc-type{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:6px;background:var(--nv-cuivre-soft);font:600 var(--f-11)/1 var(--mono);color:var(--nv-cuivre)}
+#base .rc-tab th.tri{color:var(--t-1)}

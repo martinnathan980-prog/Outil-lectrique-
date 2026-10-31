@@ -429,6 +429,7 @@ const repereTexte = r => `<text class="${r.cls}" x="${f1(r.x)}" y="${f1(r.y)}" t
    AXE sous le trait. Un fond de papier, à peine plus large que le texte,
    coupe le trait derrière lui ; le fil repart de part et d'autre. De même
    pour un numéro debout, sur son vertical. */
+const SANS_NUMERO_DE_CABLE = true;
 function reperesDeFil(fils, verticaux, barrettes, occ) {
   const H = 5.6, fs = FS_FIL, AXE = 0.365 * fs, HALO = 2.3;
   occ = occ || occupationDe(fils, barrettes || [], []);
@@ -919,7 +920,9 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi, disjoncteurDe
   // les textes cherchent leur place dans ce qui est tracé : les repères d'abord, les numéros de fil ensuite
   const occ = occupationDe(fils, dessin.barrettes, dessin.comps);
   poserReperes(dessin.comps, occ); poserReperesVT(dessin.barrettes, occ);
-  s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ);
+  // (v78c, le lecteur : « les câbles n'ont plus de numéro du tout — les W103, ça n'existe plus, ce sera fait plus tard dans un
+  // autre logiciel ») : le dessin n'écrit plus de numéro ; le moteur garde sa place le long des fils (le dessin ne bouge pas)
+  if (!SANS_NUMERO_DE_CABLE) s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ);
   const bouts = boutsDesFils(fils, couleurDe);
   s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux, bouts, choisi);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);

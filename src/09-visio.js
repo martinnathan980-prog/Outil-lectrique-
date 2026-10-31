@@ -24,7 +24,7 @@
    folio. Chaque liaison garde sa CONFIANCE et ses raisons, son trajet et ses
    deux bouts (pour la relecture, qui les surligne sur la page rendue).
 
-   ÉCRIRE. Les folios de Volta, pour les retoucher dans Visio : une page par
+   ÉCRIRE. Les folios de VOLTA, pour les retoucher dans Visio : une page par
    folio ; chaque bloc est un groupe — son dessin (celui du folio), le texte
    de son repère, ses bornes en points de connexion NOMMÉS (le nom exact de
    la borne dans « Prompt », l'étiquette écrite à côté liée au point) ; chaque
@@ -324,7 +324,7 @@ const SCHEMA_VISIO = (() => {
     const GF = grille(48); formes2D.forEach(i => { if (i.boite.x1 - i.boite.x0 < 0.5 && i.boite.y1 - i.boite.y0 < 0.5) return; GF.ajouter(i, i.boite.x0, i.boite.y0, i.boite.x1, i.boite.y1); });
     const GT = grille(36); textes.forEach(t => { const B = boiteTexte(t); t.B = B; GT.ajouter(t, B.x0, B.y0, B.x1, B.y1); });
     const libre = t => !t.parent || (t.parent && !t.parent.parent && t.racine.groupe && !t.racine.points.length && !t.racine.chemins.length && t.racine.enfants.length === 1);
-    // les étiquettes que Volta lie à un point de connexion (User.voltaBorne : le nom du point)
+    // les étiquettes que VOLTA lie à un point de connexion (User.voltaBorne : le nom du point)
     const liees = new Map(); textes.forEach(t => { const b = t.user.get('voltaBorne'); if (b && t.racine) liees.set(t.racine.id + '|' + b, t); });
     // les colles : Connects, sinon les formules de BeginX / EndX
     const colles = new Map();
@@ -336,7 +336,7 @@ const SCHEMA_VISIO = (() => {
     /* Le REPÈRE d'une forme : son texte, ses données, son groupe, ou le texte posé contre elle. Rend { repere, comment, conf, i, mot }. */
     const cacheRep = new Map();
     function repereDe(S) { if (cacheRep.has(S)) return cacheRep.get(S); let r = null;
-      // un bloc de Volta : son texte, tel qu'il est (on a pu le retoucher dans Visio)
+      // un bloc de VOLTA : son texte, tel qu'il est (on a pu le retoucher dans Visio)
       for (let g = S; g && !r; g = g.parent) if (g.user.get('voltaBloc')) { const t = (g.texte.split('\n')[0] || '').trim() || (g.props.get('Repere') || {}).v || ''; if (t) r = { repere: t, comment: 'repère du bloc', conf: 1, i: g, mot: g }; }
       const premier = t => t.split(/[\s\n]+/).find(x => estRepere(x)) || '';
       for (let g = S; g && !r; g = g.parent) { const t = premier(g.texte); if (t) r = { repere: t, comment: g === S ? 'repère de la forme' : 'repère du groupe', conf: 1, i: g, mot: g };
@@ -360,7 +360,7 @@ const SCHEMA_VISIO = (() => {
     function borneDe(S, r, p, R) {
       if (r) { const top = (R && R.i) || S.racine || S, lab = liees.get(top.id + '|' + r.nom) || liees.get((S.racine || S).id + '|' + r.nom);
         if (lab) { const t = lab.texte.split('\n')[0].trim(); return { borne: t, comment: t === r.prompt ? 'borne : le nom du point de connexion, écrit à côté' : 'borne écrite à côté du point de connexion (son nom était « ' + (r.prompt || r.nom) + ' »)', conf: 1, mot: lab }; }
-        // un bloc de Volta : le nom exact de la borne est dans « Prompt » (vide : une masse, une borne sans numéro)
+        // un bloc de VOLTA : le nom exact de la borne est dans « Prompt » (vide : une masse, une borne sans numéro)
         if (top.user.get('voltaBloc') || S.user.get('voltaBloc')) return { borne: r.prompt, comment: r.prompt ? 'borne : le nom du point de connexion' : 'point de connexion sans numéro de borne', conf: 1 };
         if (r.prompt) return { borne: r.prompt, comment: 'borne : le nom du point de connexion', conf: 1 };
         if (r.nom && !/^(Row|Connections?|Pt|Point|Conn|Cp)_?\d*$/i.test(r.nom)) return { borne: r.nom, comment: 'borne : le nom du point de connexion', conf: 0.99 }; }
@@ -463,7 +463,7 @@ const SCHEMA_VISIO = (() => {
 
     function infoFil(w) { const i = w.i; let cable = '', type = '', route = '';
       const pc = i.props.get('Cable'), pt = i.props.get('Type'), prt = i.props.get('Route'), toks = i.texte.split(/[\s·;|]+/).filter(Boolean);
-      // un câble de Volta dont le texte n'a pas changé : ses données, exactes
+      // un câble de VOLTA dont le texte n'a pas changé : ses données, exactes
       if (i.user.get('voltaCable') && pc && i.texte.replace(/\s+/g, ' ') === [pc.v, pt ? pt.v : ''].filter(Boolean).join(' ')) return { cable: pc.v, type: pt ? pt.v : '', route: prt ? prt.v : '' };
       toks.forEach(t => { if (!type && estType(t)) type = t; else if (!cable && RE_FIL.test(t)) cable = t; });
       const reste = toks.filter(t => t !== type && t !== cable);
@@ -532,9 +532,9 @@ const SCHEMA_VISIO = (() => {
     (r.fondInfos || []).filter(i => !i.parent).forEach(voir); r.infos.filter(i => !i.parent).forEach(voir);
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f2(r.page.w)} ${f2(r.page.h)}" font-family="Arial, Helvetica, sans-serif" stroke-linecap="round" stroke-linejoin="round"><rect width="100%" height="100%" fill="#fff"/>${s}</svg>`; }
 
-  /* ---- 10. ÉCRIRE : les folios de Volta en un paquet Visio ---------------------------------------------------------
+  /* ---- 10. ÉCRIRE : les folios de VOLTA en un paquet Visio ---------------------------------------------------------
      `doc` : { titre, auteur, date, indice, echelle, harness, folios: [{ nom, plan, folio ('1 / 6'), fwd, dessin: { comps
-     (chacun avec `svg`, son dessin), fils, bbox } }] }. Les unités du dessin passent en pouces : la feuille de Volta
+     (chacun avec `svg`, son dessin), fils, bbox } }] }. Les unités du dessin passent en pouces : la feuille de VOLTA
      (bbox) devient un A3 paysage. */
   const A3 = [420 / 25.4, 297 / 25.4];
   const nb = x => { const v = Math.round(x * 1e6) / 1e6; return Object.is(v, -0) ? '0' : String(v); };
@@ -557,7 +557,7 @@ const SCHEMA_VISIO = (() => {
     return `<Shape ID="${id}" Type="Shape" LineStyle="0" FillStyle="0" TextStyle="0">${cel('PinX', cx)}${cel('PinY', cy)}${cel('Width', w)}${cel('Height', h)}${cel('LocPinX', w / 2)}${cel('LocPinY', h / 2)}${cel('Angle', t.angle || 0)}${cel('FlipX', 0)}${cel('FlipY', 0)}${cel('ResizeMode', 0)}`
       + `${cel('LinePattern', 0)}${cel('FillPattern', 0)}${cel('VerticalAlign', 1)}${marges0()}${sectionCar(t.taille, t.couleur, t.gras, t.police)}${sectionPara(t.ancre)}${extra || ''}<Text>${xa(t.s)}</Text></Shape>`; }
 
-  /* Le dessin d'un bloc (le SVG que Volta dessine) en traits et en textes, dans les unités du dessin : les classes du
+  /* Le dessin d'un bloc (le SVG que VOLTA dessine) en traits et en textes, dans les unités du dessin : les classes du
      style du folio (06, `styleDessin`) donnent l'épaisseur, la couleur, les tirets ; un arc devient des cordes. */
   let STYLES = null;
   function stylesDuDessin() { if (STYLES) return STYLES; STYLES = new Map(); const css = typeof styleDessin === 'function' ? styleDessin() : '';
@@ -614,8 +614,8 @@ const SCHEMA_VISIO = (() => {
     fichiers['_rels/.rels'] = `${enTete}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>`
       + `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/><Relationship Id="rId3" Type="${REL}document" Target="visio/document.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties" Target="docProps/custom.xml"/></Relationships>`;
     fichiers['docProps/core.xml'] = `${enTete}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">`
-      + `<dc:title>${xa(doc.titre || '')}</dc:title><dc:creator>${xa(doc.auteur || 'Volta')}</dc:creator><cp:lastModifiedBy>Volta</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${quand}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${quand}</dcterms:modified><dc:language>fr-FR</dc:language></cp:coreProperties>`;
-    fichiers['docProps/app.xml'] = `${enTete}<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Volta</Application>`
+      + `<dc:title>${xa(doc.titre || '')}</dc:title><dc:creator>${xa(doc.auteur || 'VOLTA')}</dc:creator><cp:lastModifiedBy>VOLTA</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">${quand}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${quand}</dcterms:modified><dc:language>fr-FR</dc:language></cp:coreProperties>`;
+    fichiers['docProps/app.xml'] = `${enTete}<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>VOLTA</Application>`
       + `<HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Pages</vt:lpstr></vt:variant><vt:variant><vt:i4>${n}</vt:i4></vt:variant></vt:vector></HeadingPairs>`
       + `<TitlesOfParts><vt:vector size="${n}" baseType="lpstr">${pages.map(p => `<vt:lpstr>${xa(p.nom)}</vt:lpstr>`).join('')}</vt:vector></TitlesOfParts><Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>16.0000</AppVersion></Properties>`;
     fichiers['docProps/custom.xml'] = `${enTete}<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">`

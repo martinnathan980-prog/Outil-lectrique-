@@ -45,7 +45,7 @@ const chargeDe = nom => { const c = chargeEcrite(nom); if (phaseEcrite(c) || !es
 /* LA CONSOMMATION D'UN ÉQUIPEMENT (le lecteur, v74 : « le courant de chaque équipement, c'est moi qui l'ai, sur des PDF :
    quand je clique sur un équipement, je rajoute ses consos à la main ; toi, tu en déduis le calibre du disjoncteur ») :
    gardée avec les profils (`app.contrat.charges`, sous le repère de l'équipement : { perm: { i }, dem: { i, t } }) — elle
-   suit donc le contrat partout (historique, enregistrement, feuille « Volta » de l'Excel). Un disjoncteur sans profil
+   suit donc le contrat partout (historique, enregistrement, feuille « VOLTA » de l'Excel). Un disjoncteur sans profil
    écrit prend la SOMME de ce qu'il alimente, au-delà des prises et des barrettes : les permanents s'ajoutent, les
    démarrages aussi — tous au même instant, le pire —, sur la durée la plus longue. Écrire son profil le remplace. */
 const phaseEcrite = c => !!c && ['dem', 'trans', 'perm'].some(k => c[k] && nombreLu(c[k].i) > 0);
@@ -133,7 +133,7 @@ function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit0 = profil && p
   const ecrit = ecrit0 || (pn && pnChangeIci(nom) && !pnDeVolta(nom) && pn !== passe ? pn : null);
   // LA RÈGLE DU LECTEUR (v74) : « dès que ça touche la courbe, on ne prend pas ; on prend que quand ça ne touche pas » —
   // le calibre du fichier est gardé s'il PASSE (avec la marge) ; sinon, le plus petit qui passe
-  // (le calibre que Volta a écrit lui-même n'est pas celui du fichier : il suit le profil)
+  // (le calibre que VOLTA a écrit lui-même n'est pas celui du fichier : il suit le profil)
   const gPn0 = pn && !d.sansProfil && !pnDeVolta(nom) ? (d.gamme || []).find(g => g.calibre === pn) : null, pnPasse = gPn0 && cleDuVerdict(gPn0) === 'passe' && !(passe > pn) ? pn : null;   // (plus petit que le meilleur : la sélectivité ou un câble le refuse)
   const calibre = ecrit || pnPasse || passe || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, courbe, calibre, profil, contexte);
   const chutePropre = chuteDuDisjoncteur(app.norme, famille, calibre);
@@ -149,7 +149,7 @@ const meilleurCalibre = nom => disjonctionDe(nom).meilleur;
    directement le calibre automatique qui marche ; on garde automatique / manuel et la possibilité de revenir ») : un
    disjoncteur dont le calibre du fichier touche la courbe ou déclenche prend, sans carte ni question, le plus petit qui
    passe — son part number réécrit sur chaque liaison, les câbles que ce calibre demande grossis —, le fichier gardé dans
-   `avant` et la case marquée « Volta » (08-export, `avecOrigineVolta`). Un calibre retenu à la main ne bouge pas ;
+   `avant` et la case marquée « VOLTA » (08-export, `avecOrigineVolta`). Un calibre retenu à la main ne bouge pas ;
    « Automatique » (`rendreCalibre`) revient ici. Sans famille de part number (rien à réécrire) : le calibre de l'outil est
    déjà celui du folio et des exports. Appelé après chaque geste (`apresEdition`) et à l'ouverture d'un plan. Rend le
    nombre de disjoncteurs réécrits. */
@@ -158,7 +158,7 @@ function appliquerCalibresVolta() { if (!app.norme || !verite().length || (app.s
   const noms = [...new Set(verite().flatMap(l => [l.de, l.vers]).filter(r => r && estDisjoncteur(r)))];
   noms.forEach(nom => { let d; try { d = disjonctionDe(nom); } catch (_) { return; }
     if (d.origine === 'main' || d.sansProfil || d.sansCourbe || !d.famille || !(d.pn > 0) || !(d.passe > 0) || d.calibre !== d.passe || d.pn === d.passe) return;
-    // un calibre que Volta avait écrit, quand le profil change : celui du fichier revient s'il passe désormais
+    // un calibre que VOLTA avait écrit, quand le profil change : celui du fichier revient s'il passe désormais
     const pn = pnDuRepere(nom), o = pnDeVolta(nom) ? origineDuCalibre(nom, d) : null, gF = o && o.calRetest ? (d.gamme || []).find(g => g.calibre === o.calRetest) : null;
     if (gF && cleDuVerdict(gF) === 'passe' && o.pnRetest) { verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l.avant && ch in l.avant) poserChamp(l, ch, l.avant[ch]); })); n++; return; }
     const nouveau = pnAvecCalibre(pn, d.famille, d.passe); if (!nouveau || nouveau === pn) return;
@@ -476,7 +476,7 @@ const marqueVerdict = k => MARQUES_VERDICT[k] ? ico(MARQUES_VERDICT[k], 'dj-marq
    et son mot, en gras et dans sa couleur, puis le pourquoi chiffré ; d'où vient le retenu (proposé, à la main) ; sans
    profil, le geste qui l'écrit. `apercu` : un calibre que le clavier montre sans le retenir encore. */
 function ligneDuVerdict(d, x, o) { o = o || {};
-  if (d.sansProfil) return `<div class="dj-verdict-l neutre" aria-live="polite"><span>Sans profil de charge, rien ne se juge : Volta trouve le calibre dès qu’il est écrit.</span><button type="button" class="btn cuivre dense" data-dj-geste="voir-profil">Écrire le profil</button></div>`;
+  if (d.sansProfil) return `<div class="dj-verdict-l neutre" aria-live="polite"><span>Sans profil de charge, rien ne se juge : VOLTA trouve le calibre dès qu’il est écrit.</span><button type="button" class="btn cuivre dense" data-dj-geste="voir-profil">Écrire le profil</button></div>`;
   if (!x) return `<div class="dj-verdict-l ko" aria-live="polite"><span><b>Aucun calibre</b> de la gamme ne passe ce profil.</span></div>`;
   const best = d.passe, A = amperes(x.calibre), fam = (d.famille && (d.famille.famille || d.famille.nom)) || '';
   let quoi = x.raison;
@@ -625,7 +625,7 @@ function jugementDuFil(f, cal) { const r = [];
   if (f.horsTable) r.push(`la table 11-3 le limite à un ${amperes(f.calibreMax)}`);
   if (f.contactSurcharge && !f.contactDepasse) r.push(`contact ${f.contact.taille}${supp} : ${amperes(f.contact.intensite)}, sous le calibre`);
   const etat = f.verdict === 'fil' || f.contactDepasse ? 'ko' : r.length ? 'att' : 'ok';
-  const contact = supp && (f.contactDepasse || f.contactSurcharge) ? `Le plan ne dit pas quel contact est serti au bout de ce câble : Volta prend le plus petit qui admet un ${f.jauge != null ? f.jauge : jaugeDuType(f.type)} AWG (taille ${f.contact.taille}, ${amperes(f.contact.intensite)}), par prudence.` : '';
+  const contact = supp && (f.contactDepasse || f.contactSurcharge) ? `Le plan ne dit pas quel contact est serti au bout de ce câble : VOLTA prend le plus petit qui admet un ${f.jauge != null ? f.jauge : jaugeDuType(f.type)} AWG (taille ${f.contact.taille}, ${amperes(f.contact.intensite)}), par prudence.` : '';
   return { etat, charge, dit: r.join(' · '), contact }; }
 
 
@@ -666,7 +666,7 @@ const ecrireLaLigne = el => { if (el && !mouvementReduit()) el.animate([{ opacit
    les pose (`conteneur`, sinon l'inspecteur, sinon la page) par leur `.fi-dj[data-disj]`. Chaque écriture va au contrat
    (Ctrl+Z la défait) ; la fiche se refait ensuite d'elle-même — sauf si l'on écrit dans un champ du profil : alors
    ce qui change se refait EN PLACE (les champs restent sous les doigts), et de même si la fiche ne s'est pas refaite. */
-// un geste qui accepte une proposition de Volta : chaque case qu'il change se marque « proposition de Volta acceptée » (la
+// un geste qui accepte une proposition de VOLTA : chaque case qu'il change se marque « proposition de VOLTA acceptée » (la
 // colonne Origine du retest corrigé — le domaine C, 08-export, `avecOrigineVolta`)
 const parVolta = faire => typeof avecOrigineVolta === 'function' ? avecOrigineVolta(faire) : faire();
 function lierDisjonction(nom, conteneur) {

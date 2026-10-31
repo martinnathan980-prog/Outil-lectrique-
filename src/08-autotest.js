@@ -1,11 +1,11 @@
 /* ===========================================================================
    08 — L'AUTOTEST DU PLAN (v77). Le lecteur : « quand je vais faire le gigatest, prépare de ton côté tout ce qui va pas…
-   voir toutes les erreurs… je pourrai jamais tout envoyer, c'est confidentiel ». Volta se parcourt LUI-MÊME sur le vrai
+   voir toutes les erreurs… je pourrai jamais tout envoyer, c'est confidentiel ». VOLTA se parcourt LUI-MÊME sur le vrai
    fichier ouvert, comme le ferait quelqu'un de très patient : chaque folio (dessiné, chronométré), chaque fiche (chaque
    équipement, disjoncteur, barrette, prise, chaque câble), chacune de ses sections dépliée, chaque liste « Changer » et
    « D'où elle vient » ouverte, chaque onglet du récapitulatif, chaque document, chaque export (fabriqué, jamais
    enregistré), le contrôle. Ce qui casse se note : l'écran où c'était (« fiche d'un disjoncteur · folio 3 », jamais le
-   repère), le message (les noms du plan masqués), la pile (le nom des fonctions de Volta et leur ligne, rien d'autre) ;
+   repère), le message (les noms du plan masqués), la pile (le nom des fonctions de VOLTA et leur ligne, rien d'autre) ;
    une fiche qui ne se rend pas sans rien dire aussi (vide, ou la fiche d’avant restée là) ; et ce qui est lent. Le résultat part avec le bilan anonyme
    (`sectionAutotest`, 08-bilan). Échap, ou « Arrêter », l'arrête ; le plan revient où il était.
    =========================================================================== */

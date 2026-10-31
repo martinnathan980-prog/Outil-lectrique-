@@ -4,7 +4,7 @@
    Le lecteur : « Il faut gérer les PDF mais aussi tout ce qui n'est pas PDF
    mais que de la visio, c'est très très important. » Ses schémas sont des
    .vsdx ; il veut les deux sens :
-     · LIRE un Visio pour en faire le retest Excel ou un plan de Volta. Un
+     · LIRE un Visio pour en faire le retest Excel ou un plan de VOLTA. Un
        .vsdx déposé n'importe où (08-fichiers, `ouvrirFichier`, ou le dépôt
        pris ici avant les autres) ou ouvert par « Plus › Lire un schéma
        Visio… » s'ouvre dans la même pièce que le lecteur de PDF (08-pdf : ses
@@ -14,7 +14,7 @@
        géométrie), sa confiance et ses raisons, surlignée d'un clic ; une case
        se corrige d'un double-clic ; puis « Ouvrir comme plan » ou
        « Enregistrer en retest Excel » ;
-     · ÉCRIRE les folios de Volta en Visio (« Exporter › Les folios en Visio
+     · ÉCRIRE les folios de VOLTA en Visio (« Exporter › Les folios en Visio
        (.vsdx) ») pour les retoucher dans Visio : une page par folio, chaque
        bloc un groupe et ses bornes en points de connexion, chaque câble un
        connecteur collé aux deux bornes, le cartouche en tableau (09-visio).
@@ -154,7 +154,7 @@ function liaisonSousLeClicVisio(e) { const p = versPageVisio(e.clientX, e.client
     const t = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / L2)) : 0, d = Math.hypot(p[0] - a[0] - t * vx, p[1] - a[1] - t * vy); if (d < bd) { bd = d; best = i; } }); });
   if (best >= 0) { if (VISIO.filtre !== 'tout' && !lignesVuesVisio().some(([, i]) => i === best)) VISIO.filtre = 'tout'; VISIO.vu = null; choisirLiaisonVisio(best, false); } }
 
-/* ---- sortir : un plan de Volta, un retest Excel ------------------------------------------------------------------- */
+/* ---- sortir : un plan de VOLTA, un retest Excel ------------------------------------------------------------------- */
 const liaisonsDuVisio = () => VISIO.L.filter(l => l.de && l.vers).map(l => ({ de: l.de, borneDe: l.borneDe, pnDe: l.pnDe, vers: l.vers, borneVers: l.borneVers, pnVers: l.pnVers, type: l.type, cable: l.cable, route: l.route || '', plan: l.plan || l.folio, fwd: l.plan || l.folio, harness: l.harness || '' }));
 const nomSansVisio = () => VISIO.nom.replace(/\.vs[dt][xm]$/i, '');
 function ouvrirVisioCommePlan() { const L = liaisonsDuVisio(); if (!L.length) return; const nom = nomSansVisio();
@@ -184,7 +184,7 @@ function dessinPourVisio(plan) { const L = liaisonsDe(plan); if (!L.length) retu
   const routes = couleursDesRoutes(), routeDe = w => (L[w.i] && L[w.i].route) || ''; d.couleurDe = w => routes.get(routeDe(w)) || null;
   d.legende = legendeDesRoutes(d.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes); nommerBarrettesAPoser(d.barrettes, L);
   // le folio se compose comme à l'écran (les connecteurs de chaque équipement, la place des repères), puis chaque bloc seul
-  // le calibre que le folio écrit, et celui de l'installation quand Volta en retient un autre (« 15 A (installation 10 A) »)
+  // le calibre que le folio écrit, et celui de l'installation quand VOLTA en retient un autre (« 15 A (installation 10 A) »)
   const disj = n => typeof calibresAuFolio === 'function' ? calibresAuFolio(n) : { calibre: calibreAuFolio(n) }, P2 = plans(), folio = P2.length > 1 ? plan + ' / ' + P2.length : '1 / 1';
   const scene = sceneSvg(d, app.contrat.cartouche, folio, designationDe, null, disj);
   // la place que le folio a trouvée pour le numéro de chaque câble (06, `reperesDeFil`) : le texte du connecteur s'y pose
@@ -280,7 +280,7 @@ function lierEntreesVisio() {
   if (typeof entreeDuMenu === 'function') {
     // Plus › « Lire un schéma Visio… », juste après le PDF de schéma
     const lire = entreeDuMenu({ act: 'visio', panneau: 'plus', libelle: 'Lire un schéma Visio…', icone: ICONE_VISIO + '<circle cx="13.5" cy="7.5" r="1.1" fill="currentColor"/>',
-      aide: 'Un schéma Visio (.vsdx) : Volta lit ce qui est collé à quoi — bornes, repères, cartouche — et en fait une installation à relire.', faire: () => choisirVisio() });
+      aide: 'Un schéma Visio (.vsdx) : VOLTA lit ce qui est collé à quoi — bornes, repères, cartouche — et en fait une installation à relire.', faire: () => choisirVisio() });
     const pdf = document.querySelector('#mp-plus [data-act="pdf"]'), vide = lire && lire.parentElement;
     if (lire && pdf && pdf.parentElement !== vide) { pdf.after(lire); if (vide && !vide.querySelector('[role="menuitem"]')) vide.remove(); }
     // Exporter › le plan entier : « Les folios en Visio (.vsdx) », en tête

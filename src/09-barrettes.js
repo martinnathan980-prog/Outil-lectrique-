@@ -1932,7 +1932,7 @@ function arrangementsRecommandes(points, norme, famille, opts) { opts = opts || 
   const cleC = L => L.map(y => y.cote + '|' + y.reference + '|' + y.accessoire).sort().join(), bA = boitierDe(actuel);
   return arrangementsQuiLogent(points, N, famille, sexeFil).map(m => { const C = contactsAdmissibles(N, m, points, sexeFil, prise), b = boitierDe(m), retenu = !!actuel && m.reference === actuel.reference;
     const memeBoitier = !!(bA && b && b === bA), memesContacts = !!(A && A.liste.length && cleC(C.liste) === cleC(A.liste)), libres = Math.max(0, m.contacts.length - C.pris), raisons = [];
-    if (retenu) raisons.push(opts.nomme ? 'celui de l’installation : sa référence le nomme' : 'le choix de Volta : le plus petit qui loge tout');
+    if (retenu) raisons.push(opts.nomme ? 'celui de l’installation : sa référence le nomme' : 'le choix de VOLTA : le plus petit qui loge tout');
     else { if (b) raisons.push(memeBoitier ? 'même boîtier (taille ' + b + ') : le même raccord' : 'boîtier ' + b + (bA ? ' au lieu de ' + bA : '') + ' : un autre raccord');
       raisons.push(memesContacts ? 'les mêmes contacts à sertir' : 'd’autres contacts à sertir'); }
     raisons.push(libres ? libres + ' contact' + (libres > 1 ? 's' : '') + ' libre' + (libres > 1 ? 's (un obturateur chacun)' : ' (un obturateur)') : 'aucun contact libre');
