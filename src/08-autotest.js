@@ -56,14 +56,24 @@ async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assi
   const exercerFiche = async (ou) => { const box = $('ba-equip'), nav = box && box.querySelector('.fi-nav-nom'), attendu = app.cible ? nomDeCible(app.cible) : '';
     const casse = box && box.querySelector('.fi-erreur');
     if (casse) { R.vides++; const e = FI.erreur; noterErreurAT('fiche', 'fiche non rendue : ' + casse.textContent, pileCourte(e)); return; }
-    if (!box || !box.querySelector('.fi-entete, .fi-nom, details.fs') || (nav && attendu && nav.textContent !== attendu)) { R.vides++; try { ficheDe(app.cible); noterErreurAT('fiche', 'fiche non rendue, sans erreur levée', ''); } catch (e) { noterErreurAT('fiche', 'fiche non rendue : ' + ((e && e.message) || e), pileCourte(e)); } return; }
+    if (!box || !box.querySelector('.fi-entete, .fi-nom, details.fs, .nc, .nv-grand') || (nav && attendu && nav.textContent !== attendu)) { R.vides++; try { ficheDe(app.cible); noterErreurAT('fiche', 'fiche non rendue, sans erreur levée', ''); } catch (e) { noterErreurAT('fiche', 'fiche non rendue : ' + ((e && e.message) || e), pileCourte(e)); } return; }
     box.querySelectorAll('details.fs').forEach(d => { if (!d.open) { d.open = true; R.sections++; } });
-    if (!o.listes) return;
+    /* (v78) LE GRAND : la fiche entière, chaque onglet montré une fois ; les listes « Changer » s'ouvrent depuis lui (elles
+       vivent dans ses onglets), puis il redevient la carte */
+    const enGrand = typeof ouvrirGrand === 'function' && !telephone() && !!box.querySelector('.nc');
+    if (enGrand) { AUTOTEST.etape = ou + ' · en grand';
+      try { ouvrirGrand(''); const g = box.querySelector('.nv-grand');
+        if (!g) { R.vides++; noterErreurAT('fiche', 'fiche entière non rendue', pileCourte(FI.erreur)); }
+        else box.querySelectorAll('.nv-onglet').forEach(t => { activerOnglet(t.dataset.onglet, false); R.sections++; }); }
+      catch (e) { noterErreurAT('fiche', 'fiche entière : ' + ((e && e.message) || e), pileCourte(e)); }
+      await pauseAT(0); }
+    const rendre = () => { if (enGrand) try { reduireFiche(); } catch (_) { } };
+    if (!o.listes) { rendre(); return; }
     const cles = [...new Set([...box.querySelectorAll('[data-changer]')].map(b => b.dataset.changer))].slice(0, 12);
-    for (const k of cles) { if (fini()) return; AUTOTEST.etape = ou + ' · une liste « Changer »';
+    for (const k of cles) { if (fini()) { rendre(); return; } AUTOTEST.etape = ou + ' · une liste « Changer »';
       try { FI.liste = k; rendreFiche(); R.listes++; } catch (e) { noterErreurAT('liste', (e && e.message) || e, pileCourte(e)); }
       await pauseAT(0); }
-    try { FI.liste = ''; rendreFiche(); } catch (_) { } };
+    try { FI.liste = ''; rendreFiche(); } catch (_) { } rendre(); };
   try {
     // 1. CE QUI VAUT POUR TOUT LE PLAN D'ABORD (arrêté tôt, l'essentiel est vu) : le contrôle, en entier
     if (!fini()) { montrerAT('le contrôle', 0, 1, ''); await etape('contrôle', 'le contrôle du contrat', () => { controleDuContrat(); }); }
