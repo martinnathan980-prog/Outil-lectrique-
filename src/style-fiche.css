@@ -1027,3 +1027,22 @@ button.fi-sertir.ct-ref{min-height:24px}
 .rf-schema .fi-face{margin:0}
 .rf-sans{margin:0}
 .rf-faire{margin:0;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+/* (v77, le lecteur : « les schémas des prises et des barrettes, les couleurs… pas ultra intuitif ») LES FACES, en trois
+   mots : un contact PRIS est plein d'encre, LIBRE est creux, REFUSÉ est rouge ; les contacts RELIÉS (une plaque, un shunt)
+   sont cernés d'un bleu pâle, plus franc quand des câbles y arrivent. Sur papier : les mêmes dans les deux thèmes. */
+:is(.fi-face,.cand-face) .mj :is(.mj-plaque-bord,.mj-shunt-bord){fill:none;stroke:#b4c0cd;stroke-linecap:round;stroke-linejoin:round}
+:is(.fi-face,.cand-face) .mj :is(.mj-plaque,.mj-shunt){fill:none;stroke:#eef1f5;stroke-linecap:round;stroke-linejoin:round}
+:is(.fi-face,.cand-face) .mj :is(.mj-plaque,.mj-shunt).prise{stroke:#d2e2f5}
+:is(.fi-face,.cand-face) .mj .mj-shunt-cadre{fill:#eef1f5;stroke:#b4c0cd;stroke-width:1}
+:is(.fi-face,.cand-face) .mj .mj-shunt-cadre.prise{fill:#d2e2f5;stroke:#8daed4}
+:is(.fi-face,.cand-face) .mj .plein .mj-trou{fill:#1d2733}
+:is(.fi-face,.cand-face) .mj .ko .mj-trou{fill:#c3271f}
+.fi-face .mj .mj-lettre{fill:#2b3440;font-size:9.5px;font-weight:600;paint-order:stroke;stroke:#f4f5f7;stroke-width:3px;stroke-linejoin:round}
+.mj-legende{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;margin:0;font:500 var(--f-11)/1.3 var(--sans);color:var(--t-papier-2)}
+.mj-legende span{display:inline-flex;align-items:center;gap:5px}
+.mj-legende span.ko{color:#c3271f}
+.mj-legende i{display:inline-block;width:9px;height:9px;border-radius:50%;box-sizing:border-box}
+.mj-legende .lg-pris{background:#1d2733}
+.mj-legende .lg-libre{background:#fff;border:1.5px solid #3a4350}
+.mj-legende .lg-relie{width:16px;border-radius:5px;background:#d2e2f5;border:1px solid #8daed4}
+.mj-legende .lg-ko{background:#c3271f}

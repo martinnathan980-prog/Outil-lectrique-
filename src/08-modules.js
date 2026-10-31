@@ -76,7 +76,7 @@ function faceModuleSvg(m, occupe) { const forme = formeDuCorps(m), rond = forme 
   const pas = pasDuModule(m), bout = forme === 'etanche' ? 14 : 0, M = MJ.marge + (rond ? 4 : 0);
   const W = m.colonnes * pas + 2 * M + bout, H = m.rangs * pas + 2 * M, T = rond ? 8 : 2;
   const pos = c => ({ x: M + (c.c + 0.5) * pas, y: T + M + (c.r + 0.5) * pas });
-  let s = `<g class="mj-module ${classeFamille(m.famille)} corps-${forme}">${corpsSvg(m, W, H, T, bout)}`;
+  let s = `<g class="mj-module ${classeFamille(m.famille)} corps-${forme}">${corpsSvg(m, W, H, T, bout)}`, relies = false, pris = 0, ko = 0;
   // les groupes : le contour qui cerne les contacts reliés — une plaque (ASNE 0599) ou un shunt (NSA937901) ; un groupe
   // qui porte un potentiel se teinte à la couleur de la route. Un contact seul n'a pas de contour.
   const plaque = m.famille === 'E0599';
@@ -85,23 +85,24 @@ function faceModuleSvg(m, occupe) { const forme = formeDuCorps(m), rond = forme 
     // un groupe qui remplit un bloc de la grille, ou sur une face irrégulière : un cadre arrondi, comme la norme le trace
     if (!plaque && (m.libre || blocPlein(g))) { const bx = g.contacts.map(c => { const p = pos(c), q = rayonDe(c) + 5; return [p.x - q, p.y - q, p.x + q, p.y + q]; });
       const x0 = Math.min(...bx.map(v => v[0])), y0 = Math.min(...bx.map(v => v[1])), x1 = Math.max(...bx.map(v => v[2])), y1 = Math.max(...bx.map(v => v[3]));
-      s += `<rect class="mj-shunt-cadre${o ? ' prise' : ''}" x="${f1(x0)}" y="${f1(y0)}" width="${f1(x1 - x0)}" height="${f1(y1 - y0)}" rx="${f1(r + 5)}"${o ? ` style="fill:${o.couleurClaire}"` : ''}/>`; return; }
+      s += `<rect class="mj-shunt-cadre${o ? ' prise' : ''}" x="${f1(x0)}" y="${f1(y0)}" width="${f1(x1 - x0)}" height="${f1(y1 - y0)}" rx="${f1(r + 5)}"/>`; relies = true; return; }
     const d = traitsDe(pts);
-    s += `<path class="mj-${cls}-bord" d="${d}" style="stroke-width:${f1(2 * r + 11)}"/><path class="mj-${cls}${o ? ' prise' : ''}" d="${d}" style="stroke-width:${f1(2 * r + 9)}${o ? ';stroke:' + o.couleurClaire : ''}"/>`; });
+    s += `<path class="mj-${cls}-bord" d="${d}" style="stroke-width:${f1(2 * r + 11)}"/><path class="mj-${cls}${o ? ' prise' : ''}" d="${d}" style="stroke-width:${f1(2 * r + 9)}"/>`; relies = true; });
   // les diodes du module à diodes : de l'anode à la cathode, entre les deux groupes
   (m.diodes || []).forEach(([a, k]) => { const ga = m.groupes.find(g => g.contacts[0].lettre.startsWith(a)), gk = m.groupes.find(g => g.contacts[0].lettre.startsWith(k)); if (!ga || !gk) return;
     const pa = pos(ga.contacts[0]), pk = pos(gk.contacts[gk.contacts.length - 1]), mx = (pa.x + pk.x) / 2, my = (pa.y + pk.y) / 2, sens = pk.y < pa.y ? -1 : 1;
     s += `<path class="mj-diode" d="M${f1(mx)} ${f1(pa.y)}V${f1(pk.y)}M${f1(mx - 6)} ${f1(my - 4 * sens)}h12l-6 ${8 * sens}zM${f1(mx - 6)} ${f1(my + 4 * sens)}h12"/>`; });
-  // les contacts : un cercle, sa lettre ; occupé, le trou plein à la couleur de la route ; un fil refusé cercle le
-  // contact de rouge. Le halo (invisible d'office) dit le survol et le choix dans la fiche ; la bulle (`data-bulle`) y
+  // les contacts : un cercle, sa lettre ; (v77, le lecteur : « les couleurs, pas ultra intuitif ») occupé, le trou PLEIN
+  // d'encre ; libre, creux ; un fil refusé le fait ROUGE ; les contacts reliés (plaque, shunt), cernés de bleu pâle —
+  // plus de couleur de route ici (elle est dans la liste des câbles), une légende sous la face (`faceAjustee`). Le halo (invisible d'office) dit le survol et le choix dans la fiche ; la bulle (`data-bulle`) y
   // dit le fil.
-  m.contacts.forEach(c => { const p = pos(c), r = rayonDe(c), o = occupe ? occupe(c) : null;
+  m.contacts.forEach(c => { const p = pos(c), r = rayonDe(c), o = occupe ? occupe(c) : null; if (o) { pris++; if (o.ko) ko++; }
     s += `<g class="mj-contact${o ? ' plein' : ''}${o && o.ko ? ' ko' : ''}" data-lettre="${escA(c.lettre)}"${o ? ` data-i="${o.i}" data-fils="${o.fils || o.i}"${o.bulle ? ` data-bulle="${escA(o.bulle)}"` : ''}` : ''}>`
       + `<circle class="mj-halo" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(r + 4.5)}" fill="transparent"/>`
       + `<circle class="mj-bague" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(r)}"/>`
-      + `<circle class="mj-trou" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(o ? r * 0.62 : r * 0.3)}"${o ? ` style="fill:${o.couleur}"` : ''}/>`
+      + `<circle class="mj-trou" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(o ? r * 0.62 : r * 0.3)}"/>`
       + `<text class="mj-lettre" x="${f1(p.x - r - 1.5)}" y="${f1(p.y - r + 2.5)}" text-anchor="end">${esc(c.lettre)}</text></g>`; });
-  return { svg: s + '</g>', w: W, h: T + H + (forme === 'module' ? 6 : 2) }; }
+  return { svg: s + '</g>', w: W, h: T + H + (forme === 'module' ? 6 : 2), legende: occupe ? { pris, libres: Math.max(0, m.contacts.length - pris), ko, relies } : null }; }
 // « 18 × 2 », « 2 × 8 + 2 × 10 » : les groupes d'un module, comptés par taille
 const tailleDesGroupes = m => { const n = new Map(); m.groupes.forEach(g => n.set(g.contacts.length, (n.get(g.contacts.length) || 0) + 1));
   return [...n].sort((a, b) => b[1] - a[1] || b[0] - a[0]).map(([t, k]) => k > 1 ? k + ' × ' + t : String(t)).join(' + '); };

@@ -3773,6 +3773,25 @@ button.fi-sertir.ct-ref{min-height:24px}
 .rf-schema .fi-face{margin:0}
 .rf-sans{margin:0}
 .rf-faire{margin:0;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+/* (v77, le lecteur : « les schémas des prises et des barrettes, les couleurs… pas ultra intuitif ») LES FACES, en trois
+   mots : un contact PRIS est plein d'encre, LIBRE est creux, REFUSÉ est rouge ; les contacts RELIÉS (une plaque, un shunt)
+   sont cernés d'un bleu pâle, plus franc quand des câbles y arrivent. Sur papier : les mêmes dans les deux thèmes. */
+:is(.fi-face,.cand-face) .mj :is(.mj-plaque-bord,.mj-shunt-bord){fill:none;stroke:#b4c0cd;stroke-linecap:round;stroke-linejoin:round}
+:is(.fi-face,.cand-face) .mj :is(.mj-plaque,.mj-shunt){fill:none;stroke:#eef1f5;stroke-linecap:round;stroke-linejoin:round}
+:is(.fi-face,.cand-face) .mj :is(.mj-plaque,.mj-shunt).prise{stroke:#d2e2f5}
+:is(.fi-face,.cand-face) .mj .mj-shunt-cadre{fill:#eef1f5;stroke:#b4c0cd;stroke-width:1}
+:is(.fi-face,.cand-face) .mj .mj-shunt-cadre.prise{fill:#d2e2f5;stroke:#8daed4}
+:is(.fi-face,.cand-face) .mj .plein .mj-trou{fill:#1d2733}
+:is(.fi-face,.cand-face) .mj .ko .mj-trou{fill:#c3271f}
+.fi-face .mj .mj-lettre{fill:#2b3440;font-size:9.5px;font-weight:600;paint-order:stroke;stroke:#f4f5f7;stroke-width:3px;stroke-linejoin:round}
+.mj-legende{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;margin:0;font:500 var(--f-11)/1.3 var(--sans);color:var(--t-papier-2)}
+.mj-legende span{display:inline-flex;align-items:center;gap:5px}
+.mj-legende span.ko{color:#c3271f}
+.mj-legende i{display:inline-block;width:9px;height:9px;border-radius:50%;box-sizing:border-box}
+.mj-legende .lg-pris{background:#1d2733}
+.mj-legende .lg-libre{background:#fff;border:1.5px solid #3a4350}
+.mj-legende .lg-relie{width:16px;border-radius:5px;background:#d2e2f5;border:1px solid #8daed4}
+.mj-legende .lg-ko{background:#c3271f}
 
 /* ───────── style-fichiers.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -20325,7 +20344,10 @@ const miroir = m => ({ ...m, contacts: m.contacts.map(c => ({ ...c, c: m.colonne
 const occupant = (f, ko, lettre) => { const cl = coulDeFil(f);
   return { i: cleFil(f.l), couleur: cl, couleurClaire: melanger(cl, 0.8), ko: !!ko, bulle: [lettre ? 'Contact ' + lettre : '', nomDuFil(f), f.type || ''].filter(Boolean).join(' · ') + (ko ? '\ngauge refusée par le contact' : '') }; };
 /* Une face qui tient dans la largeur de sa place, interactive : survoler un contact allume son câble, un clic le choisit. */
-const faceAjustee = (f, titre) => `<figure class="fi-face"><svg class="mj" viewBox="0 0 ${f1(f.w)} ${f1(f.h)}" style="max-width:${f1(Math.min(f.w * 1.25, 440))}px" role="img" aria-label="${escA(titre || 'Face')}">${f.svg}</svg>${titre ? `<figcaption>${esc(titre)}</figcaption>` : ''}</figure>`;
+// (v77) sous la face, sa légende : plein = pris, creux = libre, cerné = reliés entre eux, rouge = refusé — rien d'autre
+const legendeFace = g => !g ? '' : `<p class="mj-legende"><span><i class="lg-pris" aria-hidden="true"></i>${esc(plurielLie(g.pris, 'pris'))}</span><span><i class="lg-libre" aria-hidden="true"></i>${esc(plurielLie(g.libres, 'libre'))}</span>`
+  + (g.relies ? `<span><i class="lg-relie" aria-hidden="true"></i>reliés entre eux</span>` : '') + (g.ko ? `<span class="ko"><i class="lg-ko" aria-hidden="true"></i>${esc(plurielLie(g.ko, 'refusé'))}</span>` : '') + '</p>';
+const faceAjustee = (f, titre) => `<figure class="fi-face"><svg class="mj" viewBox="0 0 ${f1(f.w)} ${f1(f.h)}" style="max-width:${f1(Math.min(f.w * 1.25, 440))}px" role="img" aria-label="${escA(titre || 'Face')}">${f.svg}</svg>${legendeFace(f.legende)}${titre ? `<figcaption>${esc(titre)}</figcaption>` : ''}</figure>`;
 /* Le contact à sertir, en un mot : « EN3155-003F2020 + E0718-20-30 ». */
 const motSertir = st => st ? st.reference + (st.accessoire ? ' + ' + st.accessoire : '') : '';
 /* Le mot « hypothèse » sur une fiche : un lien vers la fiche des hypothèses de la simulation (08, `ficheHypotheses`). */
@@ -21186,7 +21208,7 @@ function corpsConnecteur(nom, c, k, b, vt) { const cle = nom + '|' + c.nom, Q = 
       { changer: boutonChanger('arr|' + cle, 'Choisir un autre arrangement — toute la norme'), liste });
     if (montree) { const n = M.module.contacts.length, pris = Q.utilises || Q.fils.length, tailles = [...new Set(M.module.contacts.map(x => x.taille))].map(t => '#' + t).join(' + '), fam = nomDeFamille(app.norme, Q.famille) || Q.famille || '';
       face = `<div class="fi-faces">${faceAjustee(faceModuleSvg(M.module, ct => { const x = par.get(ct.lettre); return x ? occupant(x.f, x.jaugeOk === false, ct.lettre) : null; }), 'Face côté contacts · ' + M.module.variante)}</div>`
-        + `<p class="fi-norme-ligne"><span class="fi-norme-nom">${esc(fam)}</span><span>${esc(plurielLie(n, 'contact') + (tailles ? ' ' + tailles : ''))}</span><span class="fi-pris"><i class="pt pris" aria-hidden="true"></i>${esc(plurielLie(pris, 'pris'))}</span><span class="fi-libres"><i class="pt" aria-hidden="true"></i>${esc(plurielLie(Math.max(0, n - pris), 'libre'))}</span><button type="button" class="fi-lien" data-bible="${escA(M.reference)}">${ico('livre')}la bible</button></p>`; } }
+        + `<p class="fi-norme-ligne"><span class="fi-norme-nom">${esc(fam)}</span><span>${esc(plurielLie(n, 'contact') + (tailles ? ' ' + tailles : ''))}</span><button type="button" class="fi-lien" data-bible="${escA(M.reference)}">${ico('livre')}la bible</button></p>`; } }
   // aucun arrangement ne loge : la borne fautive nommée, ce qui cloche, la gauge qui s'y loge (un geste) ; la phrase du moteur dans la bulle
   else if (Q) { fautifs = coupablesDu(Q, k.points); const fam = nomDeFamille(app.norme, Q.famille) || Q.famille || 'la norme', phrase = Q.verdicts.filter(v => v.niveau === 'ko').map(v => v.texte).join(' ; ') || 'aucun arrangement ne convient';
     const dit = fautifs.length ? fautifs.map(x => `<span class="fi-fautif"><b class="id">${esc(x.borne)}</b> : ${esc(x.l.cable || 'câble')} (${ident(x.f.type || '?')}), ${esc(x.mot)}${x.contact ? ` pour le contact ${esc(x.contact.lettre)} du ${esc(x.module.variante)}, le plus proche` : ''}${x.propose ? '' : ' — aucune gauge de sa famille ne s’y loge en portant son courant'}</span>`).join('') : '';
@@ -25749,7 +25771,7 @@ function faceModuleSvg(m, occupe) { const forme = formeDuCorps(m), rond = forme 
   const pas = pasDuModule(m), bout = forme === 'etanche' ? 14 : 0, M = MJ.marge + (rond ? 4 : 0);
   const W = m.colonnes * pas + 2 * M + bout, H = m.rangs * pas + 2 * M, T = rond ? 8 : 2;
   const pos = c => ({ x: M + (c.c + 0.5) * pas, y: T + M + (c.r + 0.5) * pas });
-  let s = `<g class="mj-module ${classeFamille(m.famille)} corps-${forme}">${corpsSvg(m, W, H, T, bout)}`;
+  let s = `<g class="mj-module ${classeFamille(m.famille)} corps-${forme}">${corpsSvg(m, W, H, T, bout)}`, relies = false, pris = 0, ko = 0;
   // les groupes : le contour qui cerne les contacts reliés — une plaque (ASNE 0599) ou un shunt (NSA937901) ; un groupe
   // qui porte un potentiel se teinte à la couleur de la route. Un contact seul n'a pas de contour.
   const plaque = m.famille === 'E0599';
@@ -25758,23 +25780,24 @@ function faceModuleSvg(m, occupe) { const forme = formeDuCorps(m), rond = forme 
     // un groupe qui remplit un bloc de la grille, ou sur une face irrégulière : un cadre arrondi, comme la norme le trace
     if (!plaque && (m.libre || blocPlein(g))) { const bx = g.contacts.map(c => { const p = pos(c), q = rayonDe(c) + 5; return [p.x - q, p.y - q, p.x + q, p.y + q]; });
       const x0 = Math.min(...bx.map(v => v[0])), y0 = Math.min(...bx.map(v => v[1])), x1 = Math.max(...bx.map(v => v[2])), y1 = Math.max(...bx.map(v => v[3]));
-      s += `<rect class="mj-shunt-cadre${o ? ' prise' : ''}" x="${f1(x0)}" y="${f1(y0)}" width="${f1(x1 - x0)}" height="${f1(y1 - y0)}" rx="${f1(r + 5)}"${o ? ` style="fill:${o.couleurClaire}"` : ''}/>`; return; }
+      s += `<rect class="mj-shunt-cadre${o ? ' prise' : ''}" x="${f1(x0)}" y="${f1(y0)}" width="${f1(x1 - x0)}" height="${f1(y1 - y0)}" rx="${f1(r + 5)}"/>`; relies = true; return; }
     const d = traitsDe(pts);
-    s += `<path class="mj-${cls}-bord" d="${d}" style="stroke-width:${f1(2 * r + 11)}"/><path class="mj-${cls}${o ? ' prise' : ''}" d="${d}" style="stroke-width:${f1(2 * r + 9)}${o ? ';stroke:' + o.couleurClaire : ''}"/>`; });
+    s += `<path class="mj-${cls}-bord" d="${d}" style="stroke-width:${f1(2 * r + 11)}"/><path class="mj-${cls}${o ? ' prise' : ''}" d="${d}" style="stroke-width:${f1(2 * r + 9)}"/>`; relies = true; });
   // les diodes du module à diodes : de l'anode à la cathode, entre les deux groupes
   (m.diodes || []).forEach(([a, k]) => { const ga = m.groupes.find(g => g.contacts[0].lettre.startsWith(a)), gk = m.groupes.find(g => g.contacts[0].lettre.startsWith(k)); if (!ga || !gk) return;
     const pa = pos(ga.contacts[0]), pk = pos(gk.contacts[gk.contacts.length - 1]), mx = (pa.x + pk.x) / 2, my = (pa.y + pk.y) / 2, sens = pk.y < pa.y ? -1 : 1;
     s += `<path class="mj-diode" d="M${f1(mx)} ${f1(pa.y)}V${f1(pk.y)}M${f1(mx - 6)} ${f1(my - 4 * sens)}h12l-6 ${8 * sens}zM${f1(mx - 6)} ${f1(my + 4 * sens)}h12"/>`; });
-  // les contacts : un cercle, sa lettre ; occupé, le trou plein à la couleur de la route ; un fil refusé cercle le
-  // contact de rouge. Le halo (invisible d'office) dit le survol et le choix dans la fiche ; la bulle (`data-bulle`) y
+  // les contacts : un cercle, sa lettre ; (v77, le lecteur : « les couleurs, pas ultra intuitif ») occupé, le trou PLEIN
+  // d'encre ; libre, creux ; un fil refusé le fait ROUGE ; les contacts reliés (plaque, shunt), cernés de bleu pâle —
+  // plus de couleur de route ici (elle est dans la liste des câbles), une légende sous la face (`faceAjustee`). Le halo (invisible d'office) dit le survol et le choix dans la fiche ; la bulle (`data-bulle`) y
   // dit le fil.
-  m.contacts.forEach(c => { const p = pos(c), r = rayonDe(c), o = occupe ? occupe(c) : null;
+  m.contacts.forEach(c => { const p = pos(c), r = rayonDe(c), o = occupe ? occupe(c) : null; if (o) { pris++; if (o.ko) ko++; }
     s += `<g class="mj-contact${o ? ' plein' : ''}${o && o.ko ? ' ko' : ''}" data-lettre="${escA(c.lettre)}"${o ? ` data-i="${o.i}" data-fils="${o.fils || o.i}"${o.bulle ? ` data-bulle="${escA(o.bulle)}"` : ''}` : ''}>`
       + `<circle class="mj-halo" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(r + 4.5)}" fill="transparent"/>`
       + `<circle class="mj-bague" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(r)}"/>`
-      + `<circle class="mj-trou" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(o ? r * 0.62 : r * 0.3)}"${o ? ` style="fill:${o.couleur}"` : ''}/>`
+      + `<circle class="mj-trou" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(o ? r * 0.62 : r * 0.3)}"/>`
       + `<text class="mj-lettre" x="${f1(p.x - r - 1.5)}" y="${f1(p.y - r + 2.5)}" text-anchor="end">${esc(c.lettre)}</text></g>`; });
-  return { svg: s + '</g>', w: W, h: T + H + (forme === 'module' ? 6 : 2) }; }
+  return { svg: s + '</g>', w: W, h: T + H + (forme === 'module' ? 6 : 2), legende: occupe ? { pris, libres: Math.max(0, m.contacts.length - pris), ko, relies } : null }; }
 // « 18 × 2 », « 2 × 8 + 2 × 10 » : les groupes d'un module, comptés par taille
 const tailleDesGroupes = m => { const n = new Map(); m.groupes.forEach(g => n.set(g.contacts.length, (n.get(g.contacts.length) || 0) + 1));
   return [...n].sort((a, b) => b[1] - a[1] || b[0] - a[0]).map(([t, k]) => k > 1 ? k + ' × ' + t : String(t)).join(' + '); };
