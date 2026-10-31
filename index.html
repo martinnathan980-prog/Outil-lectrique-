@@ -1320,6 +1320,28 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
 }
 
 
+/* ─── LA CARTE À LA TAILLE QU'ON VEUT (v77, 08-carte, `lierBords`) : ses bords et ses coins se tirent, comme une fenêtre ;
+   tirée, sa hauteur est la sienne (--carte-h) ; épinglée, seul son bord gauche (la largeur du volet). Un petit grain au
+   coin bas-droit dit qu'elle se tire. ─── */
+.carte-bords{display:none}
+body.insp-flotte #inspecteur .carte-bords,body.insp-epingle #inspecteur .carte-bords{display:block}
+.carte-bords i{position:absolute;z-index:6;display:block}
+.carte-bords [data-bord="n"]{top:0;left:14px;right:14px;height:5px;cursor:ns-resize}
+.carte-bords [data-bord="s"]{bottom:0;left:14px;right:14px;height:6px;cursor:ns-resize}
+.carte-bords [data-bord="e"]{right:0;top:14px;bottom:14px;width:5px;cursor:ew-resize}
+.carte-bords [data-bord="w"]{left:0;top:14px;bottom:14px;width:6px;cursor:ew-resize}
+.carte-bords [data-bord="ne"]{top:0;right:0;width:14px;height:14px;cursor:nesw-resize}
+.carte-bords [data-bord="nw"]{top:0;left:0;width:14px;height:14px;cursor:nwse-resize}
+.carte-bords [data-bord="se"]{bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize}
+.carte-bords [data-bord="sw"]{bottom:0;left:0;width:14px;height:14px;cursor:nesw-resize}
+body.insp-flotte #inspecteur .carte-bords [data-bord="se"]::after{content:"";position:absolute;right:4px;bottom:4px;width:8px;height:8px;opacity:.75;
+  background:linear-gradient(135deg,transparent 0 46%,var(--t-3) 46% 56%,transparent 56% 72%,var(--t-3) 72% 82%,transparent 82%)}
+body.insp-epingle #inspecteur .carte-bords i:not([data-bord="w"]){display:none}
+body.insp-epingle #inspecteur .carte-bords [data-bord="w"]{top:0;bottom:0}
+body.insp-flotte #inspecteur.taillee{height:var(--carte-h)}
+body.carte-tiree #inspecteur{box-shadow:var(--sh-carte-tenue);transition:none}
+body.carte-tiree,body.carte-tiree *{cursor:var(--tire-curseur,move)!important;-webkit-user-select:none;user-select:none}
+
 /* ───────── style-bibliotheque.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
    LA BIBLIOTHÈQUE (08-bibliotheque) — l'ouverture de Volta, posée sur la table bleu nuit.
@@ -3739,6 +3761,18 @@ button.fi-sertir.ct-ref{min-height:24px}
 .fi :is(em,i){font-style:normal}
 /* (v77) un câble sans numéro : son titre dit son type, à l'encre du titre ; écrire lui donne un numéro */
 .fi-nom.fi-nom-vide::placeholder{color:var(--t-1);opacity:1}
+/* (v77) LA RÉFÉRENCE : d'où elle vient, sous elle (trois mots séparés d'un point) ; sa carte d'identité et son schéma */
+.rf-orig{display:flex;flex-wrap:wrap;align-items:baseline;row-gap:2px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.rf-orig>span+span::before{content:"·";margin:0 6px;color:var(--t-3)}
+.rf-orig.ko>span:nth-child(2){color:var(--ko)}
+.rf-carte{display:flex;flex-direction:column;gap:12px;padding:4px 2px 2px}
+.rf-dl{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:9px;margin:0}
+.rf-dl dt{font:500 var(--f-12)/1.5 var(--sans);color:var(--t-2);white-space:nowrap}
+.rf-dl dd{margin:0;min-width:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-1)}
+.rf-dl dd small{display:block;margin-top:2px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.rf-schema .fi-face{margin:0}
+.rf-sans{margin:0}
+.rf-faire{margin:0;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
 
 /* ───────── style-fichiers.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -6127,6 +6161,8 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
        côté (08-carte). Le fil la relie à son bloc ; le quai montre où elle s'épinglera quand on la porte au bord droit. -->
   <aside id="inspecteur" hidden aria-label="Fiche de l’élément choisi">
     <div id="ba-equip" class="fi"></div>
+    <!-- ses bords et ses coins se tirent, comme une fenêtre (v77, 08-carte) ; épinglée, son bord gauche -->
+    <div class="carte-bords" aria-hidden="true"><i data-bord="n"></i><i data-bord="e"></i><i data-bord="s"></i><i data-bord="w"></i><i data-bord="ne"></i><i data-bord="se"></i><i data-bord="sw"></i><i data-bord="nw"></i></div>
   </aside>
   <svg id="carte-lien" aria-hidden="true"><path class="cl-trait"/><circle class="cl-bloc" r="3.5"/><circle class="cl-carte" r="3"/></svg>
   <div id="carte-quai" aria-hidden="true"><span>Épingler ici</span></div>
@@ -17604,9 +17640,14 @@ const CARTE = { epingle: false, origine: null, deplacee: false, appui: null, pri
 // une fiche, pas un volet ; plus large sur un grand écran (l'ingénieur v73 : « à 1920, la carte garde 440 px alors qu'il y a
 // la place : les contacts tiendraient sur une ligne, la courbe du disjoncteur gagnerait un quart »)
 // AGRANDIE (le lecteur, v74 : « la pop-up, je ne peux pas l'agrandir ») : deux fois plus large et toute la hauteur de l'écran
-const CARTE_L = () => (CARTE.grande ? Math.min(Math.round(window.innerWidth * 0.6), window.innerWidth >= 1800 ? 980 : 840) : window.innerWidth >= 1800 ? 500 : 420);
+// À LA TAILLE QU'ON VEUT (le lecteur, v77 : « comme une page, tu l'agrandis à la taille que tu veux ») : tirée par un bord
+// ou un coin, elle garde sa largeur et sa hauteur d'une fiche à l'autre (`CARTE.taille`, retenue sur ce PC)
+const CARTE_LMIN = 340, CARTE_HMIN = 220;
+const CARTE_L = () => (CARTE.grande ? Math.min(Math.round(window.innerWidth * 0.6), window.innerWidth >= 1800 ? 980 : 840)
+  : CARTE.taille ? Math.max(CARTE_LMIN, Math.min(CARTE.taille.l, window.innerWidth - (jetonPx('--rail') || 64) - 2 * (jetonPx('--jeu') || 10)))
+  : window.innerWidth >= 1800 ? 500 : 420);
 // au plus : au-delà elle défile — une carte, pas un pan d'écran (v73 : 680, le cadran d'un disjoncteur en vue sous sa carte de décision)
-const carteH = () => (CARTE.grande ? 4000 : 680);
+const carteH = () => (CARTE.grande ? 4000 : CARTE.taille ? Math.max(CARTE_HMIN, CARTE.taille.h) : 680);
 const CARTE_AIR = 44;           // l'air entre le bloc et la carte : le fil y passe
 const CARTE_COURBE = 'cubic-bezier(.2,.8,.2,1)';
 /* Flottante, sauf épinglée, au téléphone (le tiroir) — et le RÉCAPITULATIF ouvert : on y travaille en tableaux, la fiche
@@ -17718,13 +17759,17 @@ function placerPres(b, W, H, v, diag) { const Z = zoneDeLaCarte(), e = CARTE_AIR
 function poserCarte(x, y, h) { const s = $('inspecteur').style, Z = zoneDeLaCarte();
   x = Math.max(Z.L - 40, Math.min(Z.R - 120, x)); y = Math.max(Z.T - 2, Math.min(Z.B - 56, y));
   s.setProperty('--carte-x', Math.round(x) + 'px'); s.setProperty('--carte-y', Math.round(y) + 'px'); s.setProperty('--carte-l', CARTE_L() + 'px');
-  s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - y, h || Infinity)) + 'px'); }
+  // (tirée à une taille, elle la garde : la place trouvée près du bloc ne la raccourcit pas)
+  s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - y, (CARTE.taille && !CARTE.grande ? 0 : h) || Infinity)) + 'px');
+  // tirée à une taille : c'est SA hauteur (une fenêtre), pas seulement son plafond
+  const t = !!(CARTE.taille && !CARTE.grande); $('inspecteur').classList.toggle('taillee', t);
+  if (t) s.setProperty('--carte-h', Math.round(Math.min(CARTE.taille.h, Z.B - y)) + 'px'); else s.removeProperty('--carte-h'); }
 const poserA = p => poserCarte(p.x, p.y, p.h);
 
 // sa taille libre (au plus carteH(), au plus l'écran), mesurée avant de la poser
 function mesurerCarte() { const el = $('inspecteur'), Z = zoneDeLaCarte();
   el.style.setProperty('--carte-l', CARTE_L() + 'px'); el.style.setProperty('--carte-hmax', Math.min(carteH(), Z.B - Z.T) + 'px');
-  return { W: el.offsetWidth || CARTE_L(), H: el.offsetHeight || 400 }; }
+  return { W: el.offsetWidth || CARTE_L(), H: CARTE.taille && !CARTE.grande ? Math.min(carteH(), Z.B - Z.T) : el.offsetHeight || 400 }; }
 const seCoupent = (a, c) => !(a.left > c.right || a.left + a.width < c.left || a.top > c.bottom || a.top + a.height < c.top);
 
 /* Ouvrir (08-interface, `ouvrirInspecteur`, la fiche déjà rendue) : fermée, elle naît de son origine ; ouverte, un autre
@@ -17811,10 +17856,11 @@ function suivreLienPendant(ms) { const t0 = performance.now(); const pas = t => 
 const boutonEpingle = () => { if (telephone()) return ''; const t = CARTE.epingle ? 'Détacher la fiche : une carte qu’on déplace' : 'Épingler la fiche à droite';
   return `<button type="button" class="fi-x fi-epingle" id="fi-epingle" aria-pressed="${CARTE.epingle}" aria-label="${escA(t)}" data-bulle="${escA(t)}">${ico(CARTE.epingle ? 'detacher' : 'epingler')}</button>`; };
 /* AGRANDIR : la carte (ou le volet) prend deux fois la largeur et toute la hauteur ; retenu d'une fiche à l'autre. */
-const boutonTaille = () => { if (telephone()) return ''; const t = CARTE.grande ? 'Réduire la fiche' : 'Agrandir la fiche';
+const boutonTaille = () => { if (telephone()) return ''; const t = CARTE.grande ? 'Réduire la fiche' : 'Agrandir la fiche — ou tirez un de ses bords, à la taille voulue';
   return `<button type="button" class="fi-x fi-taille" id="fi-taille" aria-pressed="${CARTE.grande}" aria-label="${escA(t)}" data-bulle="${escA(t)}">${ico(CARTE.grande ? 'reduire' : 'agrandir')}</button>`; };
 const lierTaille = () => { const b = $('fi-taille'); if (b) b.onclick = e => { e.stopPropagation(); agrandirCarte(!CARTE.grande); }; };
 function agrandirCarte(oui) { CARTE.grande = !!oui; try { localStorage.setItem('volta.fiche.grande', oui ? '1' : ''); } catch (_) { }
+  oublierTaille();
   document.documentElement.classList.toggle('insp-grande', CARTE.grande);
   const b = $('fi-taille'); if (b) { b.outerHTML = boutonTaille(); lierTaille(); }
   const el = $('inspecteur'); if (el.hidden) return; const avant = el.getBoundingClientRect();
@@ -17853,7 +17899,7 @@ function basculerModeCarte() { const el = $('inspecteur'); if (el.hidden) { mode
 /* ---- S'ÉCARTER : le plan qui glisse de lui-même amène le bloc sous la carte ---------------------------------------- */
 
 function planifierEcart(doux) { clearTimeout(CARTE.ecart); CARTE.ecart = setTimeout(eviterLeBloc, doux && !mouvementReduit() ? 300 : 30); }
-function eviterLeBloc() { const el = $('inspecteur'); if (!carteFlottante() || el.hidden || CARTE.deplacee || CARTE.prise || !CARTE.origine || CARTE.origine.type === 'ecran') return;
+function eviterLeBloc() { const el = $('inspecteur'); if (!carteFlottante() || el.hidden || CARTE.deplacee || CARTE.prise || CARTE.tire || !CARTE.origine || CARTE.origine.type === 'ecran') return;
   // encore en élan (elle naît, glisse, se détache) : on juge sa place une fois posée
   if (el.getAnimations().length || anim) { CARTE.ecart = setTimeout(eviterLeBloc, 80); return; }
   // elle ne montre plus rien de choisi (défait, un autre folio posé sous elle) et n'est pas l'index : elle se ferme —
@@ -17876,10 +17922,45 @@ function rendreLeClavierDeLaCarte() { const o = CARTE.ouvreur; CARTE.ouvreur = n
   const cible = o && o.isConnected && o.offsetParent !== null && !o.closest('[hidden], [inert]') ? (o.matches('input, textarea') ? ($('btnCherche') || null) : o) : null;
   if (cible) { try { cible.focus({ preventScroll: true }); } catch (_) { cible.focus(); } } }
 
+/* ---- LA TIRER PAR UN BORD (v77) : flottante, ses quatre bords et ses coins ; épinglée, son bord gauche (le volet). Un
+   double-clic sur un bord la rend à sa taille d'office ; ⤢ aussi (agrandie, puis d'office). ----------------------- */
+const tailleEnMemoire = () => { try { const t = JSON.parse(localStorage.getItem('volta.fiche.taille') || 'null'); return t && t.l > 0 && t.h > 0 ? { l: +t.l, h: +t.h } : null; } catch (_) { return null; } };
+const voletEnMemoire = () => { try { const v = +localStorage.getItem('volta.fiche.volet'); return v > 0 ? v : 0; } catch (_) { return 0; } };
+function appliquerVolet() { const r = document.documentElement.style; if (CARTE.volet && !CARTE.grande) r.setProperty('--insp-l', `min(${Math.round(CARTE.volet)}px, calc(100vw - var(--rail) - 320px))`); else r.removeProperty('--insp-l'); }
+function oublierTaille() { CARTE.taille = null; CARTE.volet = 0; appliquerVolet(); $('inspecteur').style.removeProperty('--carte-h'); $('inspecteur').classList.remove('taillee');
+  try { localStorage.removeItem('volta.fiche.taille'); localStorage.removeItem('volta.fiche.volet'); } catch (_) { } }
+const CURSEURS_BORD = { n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', ne: 'nesw-resize', sw: 'nesw-resize', nw: 'nwse-resize', se: 'nwse-resize' };
+function tirerCarte(e) { const t = CARTE.tire, el = $('inspecteur'), Z = zoneDeLaCarte(), b = t.bord, dx = e.clientX - t.x0, dy = e.clientY - t.y0, r = t.r;
+  if (!t.flotte) { // le volet épinglé : son bord gauche, le plan se recadre au lâcher
+    CARTE.volet = Math.max(CARTE_LMIN, Math.min(window.innerWidth - (jetonPx('--rail') || 64) - 240, r.width - dx)); appliquerVolet(); return; }
+  let w = r.width + (b.includes('e') ? dx : b.includes('w') ? -dx : 0), h = r.height + (b.includes('s') ? dy : b.includes('n') ? -dy : 0);
+  const xd = r.left + r.width, yb = r.top + r.height;   // le bord qui ne bouge pas
+  w = Math.max(CARTE_LMIN, Math.min(w, (b.includes('w') ? xd - Z.L : Z.R - r.left)));
+  h = Math.max(CARTE_HMIN, Math.min(h, (b.includes('n') ? yb - Z.T : Z.B - r.top)));
+  CARTE.taille = { l: Math.round(w), h: Math.round(h) }; CARTE.deplacee = true;
+  poserCarte(b.includes('w') ? xd - w : r.left, b.includes('n') ? yb - h : r.top); dessinerLien(); }
+function lierBords(el) {
+  el.addEventListener('pointerdown', e => { const bord = e.target.closest && e.target.closest('[data-bord]'); if (!bord || telephone() || e.button !== 0) return;
+    const flotte = carteFlottante(); if (!flotte && bord.dataset.bord !== 'w') return;
+    e.preventDefault(); e.stopPropagation(); if (CARTE.grande) { CARTE.grande = false; try { localStorage.setItem('volta.fiche.grande', ''); } catch (_) { }
+      document.documentElement.classList.remove('insp-grande'); const bt = $('fi-taille'); if (bt) { bt.outerHTML = boutonTaille(); lierTaille(); } }
+    CARTE.tire = { bord: bord.dataset.bord, x0: e.clientX, y0: e.clientY, r: el.getBoundingClientRect(), flotte };
+    try { bord.setPointerCapture(e.pointerId); } catch (_) { }
+    document.body.style.setProperty('--tire-curseur', CURSEURS_BORD[bord.dataset.bord] || 'move'); document.body.classList.add('carte-tiree'); }, true);
+  el.addEventListener('pointermove', e => { if (CARTE.tire) { e.stopPropagation(); tirerCarte(e); } }, true);
+  const lacher = () => { const t = CARTE.tire; if (!t) return; CARTE.tire = null; document.body.classList.remove('carte-tiree');
+    try { if (t.flotte && CARTE.taille) localStorage.setItem('volta.fiche.taille', JSON.stringify(CARTE.taille)); if (!t.flotte && CARTE.volet) localStorage.setItem('volta.fiche.volet', String(Math.round(CARTE.volet))); } catch (_) { }
+    if (!t.flotte) { recadrerSiCache(); window.dispatchEvent(new Event('resize')); } dessinerLien(); lacherLeSurvol(); };
+  el.addEventListener('pointerup', lacher, true); el.addEventListener('pointercancel', lacher, true);
+  // double-clic sur un bord : sa taille d'office
+  el.addEventListener('dblclick', e => { if (!(e.target.closest && e.target.closest('[data-bord]'))) return; e.preventDefault(); e.stopPropagation();
+    const r = el.getBoundingClientRect(); oublierTaille(); if (carteFlottante()) poserCarte(r.left, r.top); else { recadrerSiCache(); window.dispatchEvent(new Event('resize')); } dessinerLien(); }, true); }
+
 /* ---- LA TENIR PAR SA BARRE ------------------------------------------------------------------------------------------ */
 function lierCarte() { const el = $('inspecteur');
   try { CARTE.epingle = localStorage.getItem('volta.fiche.epinglee') === '1'; CARTE.grande = localStorage.getItem('volta.fiche.grande') === '1'; } catch (_) { }
   document.documentElement.classList.toggle('insp-grande', !!CARTE.grande);
+  CARTE.taille = CARTE.grande ? null : tailleEnMemoire(); CARTE.volet = CARTE.grande ? 0 : voletEnMemoire(); appliquerVolet(); lierBords(el);
   // fermée, d'où qu'on la ferme (08-interface, `fermerInspecteur`), elle rend le clavier
   if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) rendreLeClavierDeLaCarte(); }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
   // l'endroit du dernier appui sur la planche : la fiche d'un câble naît de là, un clic sur le plan fait glisser la carte
@@ -21099,7 +21180,7 @@ function listeArrangements(cle, k, Q, M, autoRef) { if (FI.liste !== 'arr|' + cl
 function corpsConnecteur(nom, c, k, b, vt) { const cle = nom + '|' + c.nom, Q = k && k.plan, M = Q && Q.modules[0];
   let arr = '', face = '', fautifs = [];
   if (M) { const autoRef = Q.main ? remplirContacts(k.points, app.norme, { pn: c.pn, sexe: sexeChoisi(cle) }).reference : M.reference, par = new Map(Q.fils.map(x => [x.contact.lettre, x]));
-    const pourquoi = Q.main ? 'Choisi ici' : Q.nomme ? 'La référence le nomme' : `Le plus petit qui a ces ${pluriel(Q.potentiels, 'contact')} et accepte ${typesDe(Q.fils.map(x => x.f)) || 'ces câbles'}`, montree = FI.face[cle] !== false;
+    const pourquoi = Q.main ? 'Choisi ici' : Q.nomme ? 'La référence le nomme' : `Le plus petit qui a ces ${pluriel(Q.potentiels, 'contact')} et accepte ${typesDe(Q.fils.map(x => x.f)) || 'ces câbles'}`, montree = FI.face[cle] !== false && FI.liste !== 'recit|' + cle;   // (la carte de la référence ouverte montre déjà le schéma)
     const liste = listeArrangements(cle, k, Q, M, autoRef), force = Q.main && Q.verdicts.some(v => v.niveau === 'ko');
     arr = ligneChamp('Arrangement', `<button type="button" class="fi-norme-puce${Q.main ? ' main' : ''}${force ? ' ko' : ''}" data-face="${escA(cle)}" aria-pressed="${montree}" data-bulle="${escA(pourquoi + (force ? ' : il ne loge pas tout (les problèmes le disent)' : '') + (montree ? ' — un clic replie la face' : ' — un clic montre la face'))}">${esc(M.reference)}${ico('voir')}</button>${aide('arrangement', { plan: Q })}`,
       { changer: boutonChanger('arr|' + cle, 'Choisir un autre arrangement — toute la norme'), liste });
@@ -21122,8 +21203,10 @@ function corpsConnecteur(nom, c, k, b, vt) { const cle = nom + '|' + c.nom, Q = 
   const sansContacts = !!Q && !M;
   const contacts = xs.length ? (sansContacts ? `<p class="fi-note ct-note">Les contacts à sertir viendront avec l’arrangement.</p>` : '') + tableContacts(xs, { sans: sansContacts, trace: !!c.pn }) + (!sansContacts && xs.some(x => x.sertir) ? legendeConfiance() : '') : '<p class="fi-note">Aucun câble sur ce connecteur.</p>';
   // LA RÉFÉRENCE et, à côté, « Pourquoi cette norme » (v74, lot F) : le récit, sous la ligne (`recitReference`)
-  const kr = 'recit|' + cle, ref = ligneChamp('Référence', referenceConnecteur(nom, c.nom, c.bornes, c.pn), { changer: c.pn ? boutonChanger(kr, 'La norme de cette référence : pourquoi elle, où Volta l’a trouvée, les familles voisines écartées', 'Pourquoi cette norme') : '',
-    liste: c.pn ? recitReference({ cle: kr, nom, bornes: c.bornes, c, Q, M, xs, trace: true }) : '' });
+  // (v77) sous elle, d'où elle vient en trois mots ; « D'où elle vient » ouvre sa carte d'identité et son schéma
+  const famRef = Q && Q.famille ? Q.famille : c.pn ? familleDeReference(app.norme, c.pn, 'connecteur') : '';
+  const kr = 'recit|' + cle, ref = ligneChamp('Référence', referenceConnecteur(nom, c.nom, c.bornes, c.pn), { changer: c.pn ? boutonChanger(kr, 'D’où vient cette référence, de quelle base, et son schéma', 'D’où elle vient') : '',
+    sous: origineCourte(nom, c.bornes, c.pn, famRef, M), liste: c.pn ? recitReference({ cle: kr, nom, bornes: c.bornes, c, Q, M, xs, trace: true }) : '' });
   // le sexe des contacts se choisit dès que la norme a sa table de contacts (même quand aucun arrangement ne loge)
   const table = Q && (M ? Q.tableContacts : (normeDesModules(app.norme).contacts || []).some(x => x.famille === Q.famille));
   // ce que la base SEE dit de cette référence (08 nonies) : sa désignation, fiche ou embase, ce qui s'y accouple ; absente, obsolète, hors programme
@@ -21178,27 +21261,41 @@ function famillesVoisines(pn, retenue) { const N = app.norme, r = cleNorme(pn), 
 function origineDeLaReference(nom, bornes) { const xs = nom ? liaisonsDuConnecteur(nom, bornes) : [], cols = [...new Set(xs.map(([, ch]) => ch === 'pnDe' ? 'PN1' : 'PN2'))].sort();
   const ecrite = xs.find(([l, ch]) => l.avant && ch in l.avant && l.avant[ch] !== l[ch]);
   return ecrite ? `écrite ici — le fichier d’installation portait ${avantDe(ecrite[0], ecrite[1])}` : xs.length ? `lue dans le fichier d’installation : colonne ${cols.join(' et ')}, sur ${pluriel(xs.length, 'liaison')}` : 'lue dans le fichier d’installation'; }
+/* (v77, le lecteur : « pourquoi c'est cette norme… pas évident… plus simple » ; « que je comprenne d'où elle vient, de
+   quelle base de données, que je clique dessus, je vois son schéma ») : plus de récit en cinq pas — une carte d'identité.
+   D'où elle vient (votre fichier, ou écrite ici), sa norme et LA BASE qui la donne (les tables de Volta, ou la base SEE
+   gardée), pourquoi en une phrase (le début de la référence), ce que la base SEE en dit, et SON SCHÉMA (la face de
+   l'arrangement, les câbles posés dessus). Les familles voisines ne se disent que quand aucune ne la nomme. */
 function recitReference(o) { if (FI.liste !== o.cle) return '';   // (calculé à l'ouverture seulement)
   const N = app.norme, pn = (o.c && o.c.pn) || '', r = cleNorme(pn), Q = o.Q || null, M = o.M || null;
   const fam = Q && Q.famille && (!r || r.startsWith(Q.famille)) ? Q.famille : familleDeReference(N, pn, 'connecteur'), F = fam ? (normeDesModules(N).familles || []).find(x => cleNorme(x.famille) === fam && !x.exemple) : null, nomF = fam ? nomDeFamille(N, fam) || fam : '';
-  const etape = (n, k, v, d) => `<li><span class="recit-n" aria-hidden="true">${n}</span><div class="recit-c"><p class="recit-k">${esc(k)}${v ? ` <span class="recit-v">${v}</span>` : ''}</p>${d ? `<p class="recit-d">${d}</p>` : ''}</div></li>`;
-  // 3. la base SEE gardée sur ce PC (08 nonies) : la connaît-elle ?
+  const deSEE = !!(M && String(M.module.source || '') === 'SEE');
   let see = ''; try { if (typeof BASE_SEE !== 'undefined' && BASE_SEE.base && pn) { const e = typeof equipementSEE === 'function' ? equipementSEE(pn) : null;
-      see = e ? `La base SEE gardée sur ce PC la connaît${e.d || e.ty ? ' : « ' + esc(e.d || e.ty) + ' »' : ''}${e.std && e.std !== e.p ? ' (standard ' + esc(e.std) + ')' : ''}.` : 'La base SEE gardée sur ce PC ne la connaît pas.'; }
-    else see = 'Aucune base SEE n’est gardée sur ce PC (Vos fichiers peut en garder une) : rien à comparer.'; } catch (_) { see = ''; }
-  // (la norme connue : ses voisines parmi les connecteurs seulement ; inconnue : toutes les familles, les plus proches d'abord)
-  const vs = famillesVoisines(pn, fam).filter(x => !fam || x.nature === 'connecteur'), proches = vs.filter(x => x.k > 0).slice(0, 4), reste = vs.length - proches.length;
-  const voisine = x => { const debut = r.slice(0, Math.max(x.f.length, 1)), type = x.note ? avantQueDeux(x.note) : x.nature === 'connecteur' ? 'connecteurs' : 'barrettes de jonction';
-    return `<li><b class="id">${esc(x.nom)}</b><span>${insecable(esc(`${majuscule(type)}. Ses références commencent par « ${x.f} » ; celle-ci, par « ${debut} »`))}${x.nature !== 'connecteur' ? esc(' — et ce n’est pas une famille de connecteurs') : !x.modules ? esc(' — et Volta n’a pas ses arrangements') : ''}.</span></li>`; };
-  const etapes = [
-    etape(1, 'La référence', pn ? ident(pn, true) : '<em>aucune</em>', esc(pn ? majuscule(origineDeLaReference(o.nom, o.bornes || '*')) + '.' : 'Ni le fichier d’installation ni la fiche ne la donnent : à écrire.')),
-    fam ? etape(2, 'Sa norme', `<b>${esc(nomF)}</b>`, esc(`Volta compare le début de la référence au nom de chaque famille qu’il connaît : « ${pn.slice(0, fam.length + 2).trim()}… » commence par « ${fam} », celui de l’${nomF}.`) + (F && F.note ? `<br>${insecable(esc(majuscule(sansLiens(F.note))))}.` : ''))
-      : etape(2, 'Sa norme', '<b class="fi-ko-t">aucune</b>', esc(`Aucune famille de connecteur que Volta connaît ne commence comme « ${pn || '?'} » : il ne sait pas quelle norme lire, ni l’arrangement, ni les contacts.`)),
-    etape(3, 'Où Volta l’a trouvée', fam ? esc('dans ses tables (les normes embarquées)') : '', (fam ? esc(`La table des familles de connecteurs donne l’${nomF} ; ses arrangements et leurs faces, la table des faces${M && M.module.statut ? ' — celui-ci : ' + sansLiens(M.module.statut) : ''}.`) + ' ' : '') + see),
-    etape(4, fam ? 'Les voisines écartées' : 'Les plus proches', '', proches.length ? `<ul class="recit-voisines">${proches.map(voisine).join('')}</ul>${reste > 0 ? `<span class="recit-reste">${esc(`Et ${reste} autre${reste > 1 ? 's' : ''} famille${reste > 1 ? 's' : ''} : un tout autre début.`)}</span>` : ''}` : esc('Aucune famille ne commence comme elle.')),
-    fam ? etape(5, 'Ce que la norme donne ensuite', '', esc(M ? `L’arrangement ${M.module.variante} (${Q && Q.main ? 'choisi ici' : Q && Q.nomme ? 'la référence le nomme' : 'le plus petit qui loge tous les câbles'}), la taille de chaque cavité, puis le contact de chaque câble — dans la table des contacts, sous une autre norme : l’EN 3155.` : 'Aucun arrangement de la famille ne loge ces câbles : pas de cavité, donc pas de contact.') + (o.trace ? ` <button type="button" class="fi-lien recit-lien" data-trace="1">${esc('câble par câble')}${ico('droite')}</button>` : ''))
-      : etape(5, 'Ce que vous pouvez faire', '', esc('Vérifier la référence dans le fichier d’installation ; envoyer la table de sa norme (Normes) ; la base SEE gardée sur ce PC la donne peut-être.') + ` <button type="button" class="fi-lien recit-lien" data-action="normes">${esc('Normes')}${ico('droite')}</button>`)];
-  return listeChoix(o.cle, `<p class="fi-rac-t recit-t">${esc(o.prise ? 'Pourquoi cette norme, et pas une autre' : 'Pourquoi cette norme')}</p><ol class="recit-etapes">${etapes.join('')}</ol>`, { titre: 'Pourquoi cette norme', cls: 'recit-recit' }); }
+      see = e ? `la connaît${e.d || e.ty ? ' : « ' + (e.d || e.ty) + ' »' : ''}${e.std && e.std !== e.p ? ' (standard ' + e.std + ')' : ''}` : 'ne la connaît pas'; }
+    else see = 'aucune n’est gardée sur ce PC'; } catch (_) { see = ''; }
+  const ligne = (k, v) => `<dt>${esc(k)}</dt><dd>${v}</dd>`;
+  const pourquoi = fam ? esc(`Elle commence par « ${fam} », comme toutes les références de l’${nomF}.`) + (F && F.note ? `<small>${insecable(esc(majuscule(sansLiens(F.note))))}.</small>` : '')
+    : esc(`Aucune norme que Volta connaît ne commence comme « ${pn || '?'} » : il ne sait pas quel arrangement ni quels contacts lire.`);
+  const vs = fam ? [] : famillesVoisines(pn, '').filter(x => x.k > 0).slice(0, 3);
+  const proches = vs.length ? `<small>Les plus proches : ${vs.map(x => `<b class="id">${esc(x.nom)}</b>${x.nature !== 'connecteur' ? esc(' (une barrette, pas un connecteur)') : !x.modules ? esc(' (Volta n’a pas ses arrangements)') : ''}`).join(', ')}.</small>` : '';
+  const dl = `<dl class="rf-dl">${ligne('Vient de', pn ? esc(majuscule(origineDeLaReference(o.nom, o.bornes || '*'))) : esc('Ni le fichier d’installation ni la fiche ne la donnent : à écrire.'))}`
+    + ligne('Sa base', fam ? `<b>${deSEE ? 'La base SEE' : 'Les tables de Volta'}</b>${esc(deSEE ? ' gardée sur ce PC' : ' (les normes embarquées)')} : ${esc('norme ' + nomF)}` : '<b class="fi-ko-t">aucune</b>' + esc(' : ni les tables de Volta ni la base SEE ne la reconnaissent'))
+    + ligne('Pourquoi', pourquoi + proches) + (see ? ligne('Base SEE', esc(majuscule(see))) : '') + '</dl>';
+  // SON SCHÉMA : la face de l'arrangement retenu, les câbles posés dessus
+  let schema = '';
+  if (M) { const par = new Map(((Q && Q.fils) || []).filter(x => x.contact).map(x => [x.contact.lettre, x]));
+    try { schema = `<div class="rf-schema">${faceAjustee(faceModuleSvg(M.module, ct => { const x = par.get(ct.lettre); return x ? occupant(x.f, x.jaugeOk === false, ct.lettre) : null; }), 'Son schéma · arrangement ' + (M.module.variante || M.reference) + ' · face côté contacts')}</div>`; } catch (_) { schema = ''; } }
+  else if (fam) schema = `<p class="fi-note rf-sans">${esc('Aucun arrangement de l’' + nomF + ' ne loge ces câbles : pas de schéma (« Changer », sous Arrangement, les montre tous).')}</p>`;
+  const faire = fam ? '' : `<p class="rf-faire">${esc('Vérifier la référence dans le fichier d’installation, ou envoyer la table de sa norme :')} <button type="button" class="fi-lien recit-lien" data-action="normes">${esc('Normes')}${ico('droite')}</button></p>`;
+  const pied = M ? `<button type="button" class="fi-lien" data-bible="${escA(M.reference)}">${ico('livre')}voir dans la bible</button>` : '';
+  return listeChoix(o.cle, `<div class="rf-carte">${dl}${schema}${faire}</div>`, { titre: 'D’où vient cette référence', cls: 'recit-recit', pied }); }
+/* Sous la référence, toujours : d'où elle vient, en trois mots (votre fichier · sa norme et sa base · la base SEE). */
+function origineCourte(nom, bornes, pn, fam, M) { if (!pn) return '';
+  const xs = nom ? liaisonsDuConnecteur(nom, bornes) : [], ecrite = xs.some(([l, ch]) => l.avant && ch in l.avant && l.avant[ch] !== l[ch]);
+  const nomF = fam ? nomDeFamille(app.norme, fam) || fam : '', deSEE = !!(M && String(M.module.source || '') === 'SEE');
+  let see = ''; try { if (typeof BASE_SEE !== 'undefined' && BASE_SEE.base) see = typeof equipementSEE === 'function' && equipementSEE(pn) ? 'connue de la base SEE' : 'inconnue de la base SEE'; } catch (_) { }
+  const m = [ecrite ? 'écrite ici' : 'de votre fichier', fam ? `norme ${nomF} · ${deSEE ? 'base SEE' : 'tables de Volta'}` : 'aucune norme connue', see].filter(Boolean);
+  return `<span class="rf-orig${fam ? '' : ' ko'}">${m.map(x => `<span>${esc(x)}</span>`).join('')}</span>`; }
 // les bornes qui ne sont sur aucun connecteur (CNT, GND…) : elles se raccordent au corps
 function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (b.parBorne.get(bo) || []).map(f => ({ ct: `<b>${esc(bo)}</b>`, f, sertir: null, rep: nom, borne: bo, plan: null })));
   // la référence de l'équipement (celle de ses liaisons), et ce que la base SEE en dit (08 nonies)
@@ -21380,7 +21477,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   // LE POURQUOI de la référence, en clair, sous elle ; « Pourquoi cette norme » ouvre le récit
   const pq = Q.main ? `Choisi ici, à la main — « Automatique » le rend à Volta (${autoRef || 'le plus petit qui loge'}).` : Q.visee ? `Norme choisie ici (${fam}) : Volta y prend le plus petit arrangement qui loge ces ${nB} contacts.`
     : Q.nomme && M ? `La référence de l’installation, ${b.pn}, nomme cet arrangement (${M.module.variante}) de l’${fam}.` : M ? (famPn ? `La référence de l’installation, ${b.pn}, est une ${nomPn} qui ne nomme pas d’arrangement : Volta prend le plus petit qui loge ces ${nB} contacts.` : `La référence de l’installation ne dit pas la norme : Volta prend, toutes normes confondues, le plus petit arrangement qui loge ces ${nB} contacts.`) : '';
-  const kr = 'recit|' + nom, recit = b.pn ? `<button type="button" class="fi-lien pr-recit" data-changer="${escA(kr)}" aria-expanded="${FI.liste === kr}" data-bulle="La norme de cette référence : pourquoi elle, où Volta l’a trouvée, les familles voisines écartées">Pourquoi cette norme${ico('bas', 'fi-chevron')}</button>` : '';
+  const kr = 'recit|' + nom, recit = b.pn ? `<button type="button" class="fi-lien pr-recit" data-changer="${escA(kr)}" aria-expanded="${FI.liste === kr}" data-bulle="D’où vient cette référence, de quelle base, et son schéma">D’où elle vient${ico('bas', 'fi-chevron')}</button>` : '';
   const tete = champs([ligneChamp('Référence', (M ? `<span class="fi-norme-puce statique" data-bulle="${escA(pourquoi)}">${esc(M.reference)}</span>` : `<b class="fi-ko-t">${fautifs.length ? 'Aucun arrangement ne loge ' + esc([...new Set(fautifs.map(x => x.borne))].join(', ')) : 'Aucun arrangement'}</b>`) + aide('prise', { plan: Q, fautifs }),
     { changer: boutonChanger('cou|' + nom, 'Les arrangements recommandés, puis les autres — chacun avec sa raison'), liste: liste + (b.pn ? recitReference({ cle: kr, nom, bornes: '*', c: { pn: b.pn }, Q, M, prise: true }) : ''),
       sous: (pq ? `<span class="pr-pq">${insecable(esc(pq))}</span>${recit}` : recit) + (dit ? `<span class="fi-fautifs">${dit}</span>` + fautifs.map(boutonReparer).join('') : '') })]);

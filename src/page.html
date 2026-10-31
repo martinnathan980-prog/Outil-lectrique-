@@ -244,6 +244,8 @@
        côté (08-carte). Le fil la relie à son bloc ; le quai montre où elle s'épinglera quand on la porte au bord droit. -->
   <aside id="inspecteur" hidden aria-label="Fiche de l’élément choisi">
     <div id="ba-equip" class="fi"></div>
+    <!-- ses bords et ses coins se tirent, comme une fenêtre (v77, 08-carte) ; épinglée, son bord gauche -->
+    <div class="carte-bords" aria-hidden="true"><i data-bord="n"></i><i data-bord="e"></i><i data-bord="s"></i><i data-bord="w"></i><i data-bord="ne"></i><i data-bord="se"></i><i data-bord="sw"></i><i data-bord="nw"></i></div>
   </aside>
   <svg id="carte-lien" aria-hidden="true"><path class="cl-trait"/><circle class="cl-bloc" r="3.5"/><circle class="cl-carte" r="3"/></svg>
   <div id="carte-quai" aria-hidden="true"><span>Épingler ici</span></div>

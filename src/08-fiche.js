@@ -984,7 +984,7 @@ function listeArrangements(cle, k, Q, M, autoRef) { if (FI.liste !== 'arr|' + cl
 function corpsConnecteur(nom, c, k, b, vt) { const cle = nom + '|' + c.nom, Q = k && k.plan, M = Q && Q.modules[0];
   let arr = '', face = '', fautifs = [];
   if (M) { const autoRef = Q.main ? remplirContacts(k.points, app.norme, { pn: c.pn, sexe: sexeChoisi(cle) }).reference : M.reference, par = new Map(Q.fils.map(x => [x.contact.lettre, x]));
-    const pourquoi = Q.main ? 'Choisi ici' : Q.nomme ? 'La référence le nomme' : `Le plus petit qui a ces ${pluriel(Q.potentiels, 'contact')} et accepte ${typesDe(Q.fils.map(x => x.f)) || 'ces câbles'}`, montree = FI.face[cle] !== false;
+    const pourquoi = Q.main ? 'Choisi ici' : Q.nomme ? 'La référence le nomme' : `Le plus petit qui a ces ${pluriel(Q.potentiels, 'contact')} et accepte ${typesDe(Q.fils.map(x => x.f)) || 'ces câbles'}`, montree = FI.face[cle] !== false && FI.liste !== 'recit|' + cle;   // (la carte de la référence ouverte montre déjà le schéma)
     const liste = listeArrangements(cle, k, Q, M, autoRef), force = Q.main && Q.verdicts.some(v => v.niveau === 'ko');
     arr = ligneChamp('Arrangement', `<button type="button" class="fi-norme-puce${Q.main ? ' main' : ''}${force ? ' ko' : ''}" data-face="${escA(cle)}" aria-pressed="${montree}" data-bulle="${escA(pourquoi + (force ? ' : il ne loge pas tout (les problèmes le disent)' : '') + (montree ? ' — un clic replie la face' : ' — un clic montre la face'))}">${esc(M.reference)}${ico('voir')}</button>${aide('arrangement', { plan: Q })}`,
       { changer: boutonChanger('arr|' + cle, 'Choisir un autre arrangement — toute la norme'), liste });
@@ -1007,8 +1007,10 @@ function corpsConnecteur(nom, c, k, b, vt) { const cle = nom + '|' + c.nom, Q = 
   const sansContacts = !!Q && !M;
   const contacts = xs.length ? (sansContacts ? `<p class="fi-note ct-note">Les contacts à sertir viendront avec l’arrangement.</p>` : '') + tableContacts(xs, { sans: sansContacts, trace: !!c.pn }) + (!sansContacts && xs.some(x => x.sertir) ? legendeConfiance() : '') : '<p class="fi-note">Aucun câble sur ce connecteur.</p>';
   // LA RÉFÉRENCE et, à côté, « Pourquoi cette norme » (v74, lot F) : le récit, sous la ligne (`recitReference`)
-  const kr = 'recit|' + cle, ref = ligneChamp('Référence', referenceConnecteur(nom, c.nom, c.bornes, c.pn), { changer: c.pn ? boutonChanger(kr, 'La norme de cette référence : pourquoi elle, où Volta l’a trouvée, les familles voisines écartées', 'Pourquoi cette norme') : '',
-    liste: c.pn ? recitReference({ cle: kr, nom, bornes: c.bornes, c, Q, M, xs, trace: true }) : '' });
+  // (v77) sous elle, d'où elle vient en trois mots ; « D'où elle vient » ouvre sa carte d'identité et son schéma
+  const famRef = Q && Q.famille ? Q.famille : c.pn ? familleDeReference(app.norme, c.pn, 'connecteur') : '';
+  const kr = 'recit|' + cle, ref = ligneChamp('Référence', referenceConnecteur(nom, c.nom, c.bornes, c.pn), { changer: c.pn ? boutonChanger(kr, 'D’où vient cette référence, de quelle base, et son schéma', 'D’où elle vient') : '',
+    sous: origineCourte(nom, c.bornes, c.pn, famRef, M), liste: c.pn ? recitReference({ cle: kr, nom, bornes: c.bornes, c, Q, M, xs, trace: true }) : '' });
   // le sexe des contacts se choisit dès que la norme a sa table de contacts (même quand aucun arrangement ne loge)
   const table = Q && (M ? Q.tableContacts : (normeDesModules(app.norme).contacts || []).some(x => x.famille === Q.famille));
   // ce que la base SEE dit de cette référence (08 nonies) : sa désignation, fiche ou embase, ce qui s'y accouple ; absente, obsolète, hors programme
@@ -1063,27 +1065,41 @@ function famillesVoisines(pn, retenue) { const N = app.norme, r = cleNorme(pn), 
 function origineDeLaReference(nom, bornes) { const xs = nom ? liaisonsDuConnecteur(nom, bornes) : [], cols = [...new Set(xs.map(([, ch]) => ch === 'pnDe' ? 'PN1' : 'PN2'))].sort();
   const ecrite = xs.find(([l, ch]) => l.avant && ch in l.avant && l.avant[ch] !== l[ch]);
   return ecrite ? `écrite ici — le fichier d’installation portait ${avantDe(ecrite[0], ecrite[1])}` : xs.length ? `lue dans le fichier d’installation : colonne ${cols.join(' et ')}, sur ${pluriel(xs.length, 'liaison')}` : 'lue dans le fichier d’installation'; }
+/* (v77, le lecteur : « pourquoi c'est cette norme… pas évident… plus simple » ; « que je comprenne d'où elle vient, de
+   quelle base de données, que je clique dessus, je vois son schéma ») : plus de récit en cinq pas — une carte d'identité.
+   D'où elle vient (votre fichier, ou écrite ici), sa norme et LA BASE qui la donne (les tables de Volta, ou la base SEE
+   gardée), pourquoi en une phrase (le début de la référence), ce que la base SEE en dit, et SON SCHÉMA (la face de
+   l'arrangement, les câbles posés dessus). Les familles voisines ne se disent que quand aucune ne la nomme. */
 function recitReference(o) { if (FI.liste !== o.cle) return '';   // (calculé à l'ouverture seulement)
   const N = app.norme, pn = (o.c && o.c.pn) || '', r = cleNorme(pn), Q = o.Q || null, M = o.M || null;
   const fam = Q && Q.famille && (!r || r.startsWith(Q.famille)) ? Q.famille : familleDeReference(N, pn, 'connecteur'), F = fam ? (normeDesModules(N).familles || []).find(x => cleNorme(x.famille) === fam && !x.exemple) : null, nomF = fam ? nomDeFamille(N, fam) || fam : '';
-  const etape = (n, k, v, d) => `<li><span class="recit-n" aria-hidden="true">${n}</span><div class="recit-c"><p class="recit-k">${esc(k)}${v ? ` <span class="recit-v">${v}</span>` : ''}</p>${d ? `<p class="recit-d">${d}</p>` : ''}</div></li>`;
-  // 3. la base SEE gardée sur ce PC (08 nonies) : la connaît-elle ?
+  const deSEE = !!(M && String(M.module.source || '') === 'SEE');
   let see = ''; try { if (typeof BASE_SEE !== 'undefined' && BASE_SEE.base && pn) { const e = typeof equipementSEE === 'function' ? equipementSEE(pn) : null;
-      see = e ? `La base SEE gardée sur ce PC la connaît${e.d || e.ty ? ' : « ' + esc(e.d || e.ty) + ' »' : ''}${e.std && e.std !== e.p ? ' (standard ' + esc(e.std) + ')' : ''}.` : 'La base SEE gardée sur ce PC ne la connaît pas.'; }
-    else see = 'Aucune base SEE n’est gardée sur ce PC (Vos fichiers peut en garder une) : rien à comparer.'; } catch (_) { see = ''; }
-  // (la norme connue : ses voisines parmi les connecteurs seulement ; inconnue : toutes les familles, les plus proches d'abord)
-  const vs = famillesVoisines(pn, fam).filter(x => !fam || x.nature === 'connecteur'), proches = vs.filter(x => x.k > 0).slice(0, 4), reste = vs.length - proches.length;
-  const voisine = x => { const debut = r.slice(0, Math.max(x.f.length, 1)), type = x.note ? avantQueDeux(x.note) : x.nature === 'connecteur' ? 'connecteurs' : 'barrettes de jonction';
-    return `<li><b class="id">${esc(x.nom)}</b><span>${insecable(esc(`${majuscule(type)}. Ses références commencent par « ${x.f} » ; celle-ci, par « ${debut} »`))}${x.nature !== 'connecteur' ? esc(' — et ce n’est pas une famille de connecteurs') : !x.modules ? esc(' — et Volta n’a pas ses arrangements') : ''}.</span></li>`; };
-  const etapes = [
-    etape(1, 'La référence', pn ? ident(pn, true) : '<em>aucune</em>', esc(pn ? majuscule(origineDeLaReference(o.nom, o.bornes || '*')) + '.' : 'Ni le fichier d’installation ni la fiche ne la donnent : à écrire.')),
-    fam ? etape(2, 'Sa norme', `<b>${esc(nomF)}</b>`, esc(`Volta compare le début de la référence au nom de chaque famille qu’il connaît : « ${pn.slice(0, fam.length + 2).trim()}… » commence par « ${fam} », celui de l’${nomF}.`) + (F && F.note ? `<br>${insecable(esc(majuscule(sansLiens(F.note))))}.` : ''))
-      : etape(2, 'Sa norme', '<b class="fi-ko-t">aucune</b>', esc(`Aucune famille de connecteur que Volta connaît ne commence comme « ${pn || '?'} » : il ne sait pas quelle norme lire, ni l’arrangement, ni les contacts.`)),
-    etape(3, 'Où Volta l’a trouvée', fam ? esc('dans ses tables (les normes embarquées)') : '', (fam ? esc(`La table des familles de connecteurs donne l’${nomF} ; ses arrangements et leurs faces, la table des faces${M && M.module.statut ? ' — celui-ci : ' + sansLiens(M.module.statut) : ''}.`) + ' ' : '') + see),
-    etape(4, fam ? 'Les voisines écartées' : 'Les plus proches', '', proches.length ? `<ul class="recit-voisines">${proches.map(voisine).join('')}</ul>${reste > 0 ? `<span class="recit-reste">${esc(`Et ${reste} autre${reste > 1 ? 's' : ''} famille${reste > 1 ? 's' : ''} : un tout autre début.`)}</span>` : ''}` : esc('Aucune famille ne commence comme elle.')),
-    fam ? etape(5, 'Ce que la norme donne ensuite', '', esc(M ? `L’arrangement ${M.module.variante} (${Q && Q.main ? 'choisi ici' : Q && Q.nomme ? 'la référence le nomme' : 'le plus petit qui loge tous les câbles'}), la taille de chaque cavité, puis le contact de chaque câble — dans la table des contacts, sous une autre norme : l’EN 3155.` : 'Aucun arrangement de la famille ne loge ces câbles : pas de cavité, donc pas de contact.') + (o.trace ? ` <button type="button" class="fi-lien recit-lien" data-trace="1">${esc('câble par câble')}${ico('droite')}</button>` : ''))
-      : etape(5, 'Ce que vous pouvez faire', '', esc('Vérifier la référence dans le fichier d’installation ; envoyer la table de sa norme (Normes) ; la base SEE gardée sur ce PC la donne peut-être.') + ` <button type="button" class="fi-lien recit-lien" data-action="normes">${esc('Normes')}${ico('droite')}</button>`)];
-  return listeChoix(o.cle, `<p class="fi-rac-t recit-t">${esc(o.prise ? 'Pourquoi cette norme, et pas une autre' : 'Pourquoi cette norme')}</p><ol class="recit-etapes">${etapes.join('')}</ol>`, { titre: 'Pourquoi cette norme', cls: 'recit-recit' }); }
+      see = e ? `la connaît${e.d || e.ty ? ' : « ' + (e.d || e.ty) + ' »' : ''}${e.std && e.std !== e.p ? ' (standard ' + e.std + ')' : ''}` : 'ne la connaît pas'; }
+    else see = 'aucune n’est gardée sur ce PC'; } catch (_) { see = ''; }
+  const ligne = (k, v) => `<dt>${esc(k)}</dt><dd>${v}</dd>`;
+  const pourquoi = fam ? esc(`Elle commence par « ${fam} », comme toutes les références de l’${nomF}.`) + (F && F.note ? `<small>${insecable(esc(majuscule(sansLiens(F.note))))}.</small>` : '')
+    : esc(`Aucune norme que Volta connaît ne commence comme « ${pn || '?'} » : il ne sait pas quel arrangement ni quels contacts lire.`);
+  const vs = fam ? [] : famillesVoisines(pn, '').filter(x => x.k > 0).slice(0, 3);
+  const proches = vs.length ? `<small>Les plus proches : ${vs.map(x => `<b class="id">${esc(x.nom)}</b>${x.nature !== 'connecteur' ? esc(' (une barrette, pas un connecteur)') : !x.modules ? esc(' (Volta n’a pas ses arrangements)') : ''}`).join(', ')}.</small>` : '';
+  const dl = `<dl class="rf-dl">${ligne('Vient de', pn ? esc(majuscule(origineDeLaReference(o.nom, o.bornes || '*'))) : esc('Ni le fichier d’installation ni la fiche ne la donnent : à écrire.'))}`
+    + ligne('Sa base', fam ? `<b>${deSEE ? 'La base SEE' : 'Les tables de Volta'}</b>${esc(deSEE ? ' gardée sur ce PC' : ' (les normes embarquées)')} : ${esc('norme ' + nomF)}` : '<b class="fi-ko-t">aucune</b>' + esc(' : ni les tables de Volta ni la base SEE ne la reconnaissent'))
+    + ligne('Pourquoi', pourquoi + proches) + (see ? ligne('Base SEE', esc(majuscule(see))) : '') + '</dl>';
+  // SON SCHÉMA : la face de l'arrangement retenu, les câbles posés dessus
+  let schema = '';
+  if (M) { const par = new Map(((Q && Q.fils) || []).filter(x => x.contact).map(x => [x.contact.lettre, x]));
+    try { schema = `<div class="rf-schema">${faceAjustee(faceModuleSvg(M.module, ct => { const x = par.get(ct.lettre); return x ? occupant(x.f, x.jaugeOk === false, ct.lettre) : null; }), 'Son schéma · arrangement ' + (M.module.variante || M.reference) + ' · face côté contacts')}</div>`; } catch (_) { schema = ''; } }
+  else if (fam) schema = `<p class="fi-note rf-sans">${esc('Aucun arrangement de l’' + nomF + ' ne loge ces câbles : pas de schéma (« Changer », sous Arrangement, les montre tous).')}</p>`;
+  const faire = fam ? '' : `<p class="rf-faire">${esc('Vérifier la référence dans le fichier d’installation, ou envoyer la table de sa norme :')} <button type="button" class="fi-lien recit-lien" data-action="normes">${esc('Normes')}${ico('droite')}</button></p>`;
+  const pied = M ? `<button type="button" class="fi-lien" data-bible="${escA(M.reference)}">${ico('livre')}voir dans la bible</button>` : '';
+  return listeChoix(o.cle, `<div class="rf-carte">${dl}${schema}${faire}</div>`, { titre: 'D’où vient cette référence', cls: 'recit-recit', pied }); }
+/* Sous la référence, toujours : d'où elle vient, en trois mots (votre fichier · sa norme et sa base · la base SEE). */
+function origineCourte(nom, bornes, pn, fam, M) { if (!pn) return '';
+  const xs = nom ? liaisonsDuConnecteur(nom, bornes) : [], ecrite = xs.some(([l, ch]) => l.avant && ch in l.avant && l.avant[ch] !== l[ch]);
+  const nomF = fam ? nomDeFamille(app.norme, fam) || fam : '', deSEE = !!(M && String(M.module.source || '') === 'SEE');
+  let see = ''; try { if (typeof BASE_SEE !== 'undefined' && BASE_SEE.base) see = typeof equipementSEE === 'function' && equipementSEE(pn) ? 'connue de la base SEE' : 'inconnue de la base SEE'; } catch (_) { }
+  const m = [ecrite ? 'écrite ici' : 'de votre fichier', fam ? `norme ${nomF} · ${deSEE ? 'base SEE' : 'tables de Volta'}` : 'aucune norme connue', see].filter(Boolean);
+  return `<span class="rf-orig${fam ? '' : ' ko'}">${m.map(x => `<span>${esc(x)}</span>`).join('')}</span>`; }
 // les bornes qui ne sont sur aucun connecteur (CNT, GND…) : elles se raccordent au corps
 function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (b.parBorne.get(bo) || []).map(f => ({ ct: `<b>${esc(bo)}</b>`, f, sertir: null, rep: nom, borne: bo, plan: null })));
   // la référence de l'équipement (celle de ses liaisons), et ce que la base SEE en dit (08 nonies)
@@ -1265,7 +1281,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   // LE POURQUOI de la référence, en clair, sous elle ; « Pourquoi cette norme » ouvre le récit
   const pq = Q.main ? `Choisi ici, à la main — « Automatique » le rend à Volta (${autoRef || 'le plus petit qui loge'}).` : Q.visee ? `Norme choisie ici (${fam}) : Volta y prend le plus petit arrangement qui loge ces ${nB} contacts.`
     : Q.nomme && M ? `La référence de l’installation, ${b.pn}, nomme cet arrangement (${M.module.variante}) de l’${fam}.` : M ? (famPn ? `La référence de l’installation, ${b.pn}, est une ${nomPn} qui ne nomme pas d’arrangement : Volta prend le plus petit qui loge ces ${nB} contacts.` : `La référence de l’installation ne dit pas la norme : Volta prend, toutes normes confondues, le plus petit arrangement qui loge ces ${nB} contacts.`) : '';
-  const kr = 'recit|' + nom, recit = b.pn ? `<button type="button" class="fi-lien pr-recit" data-changer="${escA(kr)}" aria-expanded="${FI.liste === kr}" data-bulle="La norme de cette référence : pourquoi elle, où Volta l’a trouvée, les familles voisines écartées">Pourquoi cette norme${ico('bas', 'fi-chevron')}</button>` : '';
+  const kr = 'recit|' + nom, recit = b.pn ? `<button type="button" class="fi-lien pr-recit" data-changer="${escA(kr)}" aria-expanded="${FI.liste === kr}" data-bulle="D’où vient cette référence, de quelle base, et son schéma">D’où elle vient${ico('bas', 'fi-chevron')}</button>` : '';
   const tete = champs([ligneChamp('Référence', (M ? `<span class="fi-norme-puce statique" data-bulle="${escA(pourquoi)}">${esc(M.reference)}</span>` : `<b class="fi-ko-t">${fautifs.length ? 'Aucun arrangement ne loge ' + esc([...new Set(fautifs.map(x => x.borne))].join(', ')) : 'Aucun arrangement'}</b>`) + aide('prise', { plan: Q, fautifs }),
     { changer: boutonChanger('cou|' + nom, 'Les arrangements recommandés, puis les autres — chacun avec sa raison'), liste: liste + (b.pn ? recitReference({ cle: kr, nom, bornes: '*', c: { pn: b.pn }, Q, M, prise: true }) : ''),
       sous: (pq ? `<span class="pr-pq">${insecable(esc(pq))}</span>${recit}` : recit) + (dit ? `<span class="fi-fautifs">${dit}</span>` + fautifs.map(boutonReparer).join('') : '') })]);

@@ -1289,3 +1289,25 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
   #table .ta-lueur{display:none}
 }
 
+
+/* ─── LA CARTE À LA TAILLE QU'ON VEUT (v77, 08-carte, `lierBords`) : ses bords et ses coins se tirent, comme une fenêtre ;
+   tirée, sa hauteur est la sienne (--carte-h) ; épinglée, seul son bord gauche (la largeur du volet). Un petit grain au
+   coin bas-droit dit qu'elle se tire. ─── */
+.carte-bords{display:none}
+body.insp-flotte #inspecteur .carte-bords,body.insp-epingle #inspecteur .carte-bords{display:block}
+.carte-bords i{position:absolute;z-index:6;display:block}
+.carte-bords [data-bord="n"]{top:0;left:14px;right:14px;height:5px;cursor:ns-resize}
+.carte-bords [data-bord="s"]{bottom:0;left:14px;right:14px;height:6px;cursor:ns-resize}
+.carte-bords [data-bord="e"]{right:0;top:14px;bottom:14px;width:5px;cursor:ew-resize}
+.carte-bords [data-bord="w"]{left:0;top:14px;bottom:14px;width:6px;cursor:ew-resize}
+.carte-bords [data-bord="ne"]{top:0;right:0;width:14px;height:14px;cursor:nesw-resize}
+.carte-bords [data-bord="nw"]{top:0;left:0;width:14px;height:14px;cursor:nwse-resize}
+.carte-bords [data-bord="se"]{bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize}
+.carte-bords [data-bord="sw"]{bottom:0;left:0;width:14px;height:14px;cursor:nesw-resize}
+body.insp-flotte #inspecteur .carte-bords [data-bord="se"]::after{content:"";position:absolute;right:4px;bottom:4px;width:8px;height:8px;opacity:.75;
+  background:linear-gradient(135deg,transparent 0 46%,var(--t-3) 46% 56%,transparent 56% 72%,var(--t-3) 72% 82%,transparent 82%)}
+body.insp-epingle #inspecteur .carte-bords i:not([data-bord="w"]){display:none}
+body.insp-epingle #inspecteur .carte-bords [data-bord="w"]{top:0;bottom:0}
+body.insp-flotte #inspecteur.taillee{height:var(--carte-h)}
+body.carte-tiree #inspecteur{box-shadow:var(--sh-carte-tenue);transition:none}
+body.carte-tiree,body.carte-tiree *{cursor:var(--tire-curseur,move)!important;-webkit-user-select:none;user-select:none}

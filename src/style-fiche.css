@@ -1015,3 +1015,15 @@ button.fi-sertir.ct-ref{min-height:24px}
 .fi :is(em,i){font-style:normal}
 /* (v77) un câble sans numéro : son titre dit son type, à l'encre du titre ; écrire lui donne un numéro */
 .fi-nom.fi-nom-vide::placeholder{color:var(--t-1);opacity:1}
+/* (v77) LA RÉFÉRENCE : d'où elle vient, sous elle (trois mots séparés d'un point) ; sa carte d'identité et son schéma */
+.rf-orig{display:flex;flex-wrap:wrap;align-items:baseline;row-gap:2px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.rf-orig>span+span::before{content:"·";margin:0 6px;color:var(--t-3)}
+.rf-orig.ko>span:nth-child(2){color:var(--ko)}
+.rf-carte{display:flex;flex-direction:column;gap:12px;padding:4px 2px 2px}
+.rf-dl{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:14px;row-gap:9px;margin:0}
+.rf-dl dt{font:500 var(--f-12)/1.5 var(--sans);color:var(--t-2);white-space:nowrap}
+.rf-dl dd{margin:0;min-width:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-1)}
+.rf-dl dd small{display:block;margin-top:2px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.rf-schema .fi-face{margin:0}
+.rf-sans{margin:0}
+.rf-faire{margin:0;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
