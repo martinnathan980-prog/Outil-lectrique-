@@ -114,6 +114,9 @@ function liaison(o) {
 /* Une liaison sans équipement à un bout n'en est pas une : c'est une ligne
    en cours de saisie. On la garde dans la table, pas dans le dessin. */
 const liaisonComplete = l => !!(l.de && l.vers);
+// (v77, le lecteur : « les câbles n'ont plus de numéro, il faut mettre le type ») : un câble sans numéro se dit par son type
+const cableDit = l => (l && String(l.cable || '').trim()) || ('câble ' + ((l && l.type) || 'sans numéro'));
+const cableEtType = l => l && String(l.cable || '').trim() ? l.cable + (l.type ? ' (' + l.type + ')' : '') : cableDit(l);
 
 /* ---- LES BARRETTES À POSER ---------------------------------------------------
    Plusieurs fils sur une même borne d'équipement (le contrat dit « 102CB1:2 → 103RL1 » et « 395SW1 → 102CB1:2 ») : on

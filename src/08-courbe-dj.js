@@ -359,8 +359,8 @@ function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg 
     // LES TROIS MOTS, comme le calibre (v73, l'ingénieur, point 8 : « les mots changent d'un écran à l'autre ») : déclenche, juste
     // (il touche la courbe, sans la marge), passe — la table du domaine C (`motDuVerdict`, 08-disjoncteurs)
     const M = k => typeof motDuVerdict === 'function' ? motDuVerdict(k) : { passe: 'passe', juste: 'juste', declenche: 'déclenche' }[k];
-    const verdict = pt.ok === false ? `<em>${esc(M('declenche'))}</em> à ${rates.length === pt.marges.length ? 'toute température' : esc(rates.join(', '))}${bilan}` : pt.serre ? (pt.t === Infinity ? `<em>${esc(M('juste'))}</em> : sans ` + esc(nombre(d.marges.marge)) + ' % de marge' : `<em>${esc(M('juste'))}</em> : touche la courbe` + bilan) : (pt.t === Infinity ? esc(M('passe')) + ' : ne déclenche jamais' : esc(M('passe')) + ' à toute température' + bilan);
-    return carteTip(titre, sous, verdict, pt.ok === false ? 'ko' : pt.serre ? 'serre' : 'ok'); };
+    const verdict = pt.ok === false ? `<em>${esc(M('declenche'))}</em> à ${rates.length === pt.marges.length ? 'toute température' : esc(rates.join(', '))}${bilan}` : pt.serre ? (pt.t === Infinity ? `<em>${esc(M('juste'))}</em> : sans ` + esc(nombre(d.marges.marge)) + ' % de marge' : `<em>${esc(M('juste'))}</em>` + bilan) : (pt.t === Infinity ? esc(M('passe')) + ' : ne déclenche jamais' : esc(M('passe')) + ' à toute température' + bilan);
+    return carteTip(titre, sous, verdict, pt.ok === false || pt.serre ? 'ko' : 'ok'); };
   // le réticule : à ce courant (et ce multiple de In), ce que le calibre retenu tient à la courbe qui juge
   const carteReticule = (i, t) => { if (!cal) return carteTip(esc(amperes(i)) + ' · ' + esc(secondes(t)), '', '', '');
     const tt = tempsDeDeclenchement(C[0], i / cal); return carteTip(esc(motIn(i, cal)) + ' · ' + esc(secondes(t)), 'soit ' + esc(amperes(i)) + ' — le ' + esc(amperes(cal)) + (tt === Infinity ? ' n’y déclenche jamais' : ' y tient ' + esc(secondes(tt))) + ' à ' + esc(C[0].nom), '', ''); };

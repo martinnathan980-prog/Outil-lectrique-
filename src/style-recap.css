@@ -482,7 +482,7 @@ b.rc-n{font-weight:500}
 .rc-g-h em{font:500 var(--f-13)/1.2 var(--sans);font-style:normal}
 .rc-g-marque{width:14px;height:14px;flex:none;stroke-width:2.4}
 .rc-g-l.passe :is(.rc-g-marque,em){color:var(--ok)}
-.rc-g-l.juste :is(.rc-g-marque,em){color:var(--warn)}
+.rc-g-l.juste :is(.rc-g-marque,em){color:var(--ko)}
 .rc-g-l.declenche :is(.rc-g-marque,em){color:var(--ko)}
 .rc-g-l.inconnu em{color:var(--t-2)}
 .rc-g-tags{display:inline-flex;gap:4px;margin-left:auto;flex:none}
@@ -497,7 +497,7 @@ b.rc-n{font-weight:500}
 .rc-g-l[aria-selected="true"]{background:#e9f0fd;cursor:default}
 .rc-g-l[aria-selected="true"] :is(b,.rc-g-r,b small){color:#1b2438}
 .rc-g-l[aria-selected="true"].passe :is(.rc-g-marque,em){color:#11743a}
-.rc-g-l[aria-selected="true"].juste :is(.rc-g-marque,em){color:#8a5300}
+.rc-g-l[aria-selected="true"].juste :is(.rc-g-marque,em){color:#a3241b}
 .rc-g-l[aria-selected="true"].declenche :is(.rc-g-marque,em){color:#b3261e}
 .rc-g-l[aria-selected="true"] .rc-g-tag{background:rgba(15,26,46,.08);color:#2c3a55}
 .rc-g-l[aria-selected="true"]:focus-visible{box-shadow:inset 0 0 0 2px #1b2438}

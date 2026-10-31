@@ -2249,16 +2249,16 @@ body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-lueur{display:
 .dj-graphe .dj-etiq.dj-t.milieu{fill:var(--t-papier-2)}
 .dj-graphe .dj-etiq.dj-zone{font-size:11px;font-weight:500;fill:var(--t-papier-2);stroke-width:0}
 .dj-graphe .dj-etiq.dj-nomme.ko{fill:var(--ko)}
-.dj-graphe .dj-etiq.dj-nomme.serre{fill:var(--warn)}
+.dj-graphe .dj-etiq.dj-nomme.serre{fill:var(--ko)}
 
 /* ── le profil de charge : l'escalier ; un point se saisit, sa couleur dit son sort ── */
 .dj-graphe .dj-escalier{fill:none;stroke:var(--t-papier);stroke-width:1.75;stroke-linejoin:miter;stroke-linecap:square;pointer-events:none}
-.dj-graphe .dj-escalier.ok{stroke:var(--ok)} .dj-graphe .dj-escalier.serre{stroke:var(--warn)} .dj-graphe .dj-escalier.ko{stroke:var(--ko)}
+.dj-graphe .dj-escalier.ok{stroke:var(--ok)} .dj-graphe .dj-escalier.serre{stroke:var(--ko)} .dj-graphe .dj-escalier.ko{stroke:var(--ko)}
 .dj-graphe .dj-escalier.fin{stroke:var(--t-papier-2);stroke-width:1.25}
 .dj-graphe .dj-pt{cursor:grab;outline:none}
 .dj-graphe .dj-halo{fill:transparent}
 .dj-graphe .dj-point{fill:var(--t-papier);stroke:var(--s-papier);stroke-width:2;transition:fill var(--rapide)}
-.dj-graphe .dj-pt.ok .dj-point{fill:var(--ok)} .dj-graphe .dj-pt.serre .dj-point{fill:var(--warn)} .dj-graphe .dj-pt.ko .dj-point{fill:var(--ko)}
+.dj-graphe .dj-pt.ok .dj-point{fill:var(--ok)} .dj-graphe .dj-pt.serre .dj-point{fill:var(--ko)} .dj-graphe .dj-pt.ko .dj-point{fill:var(--ko)}
 .dj-graphe .dj-pt:hover .dj-halo{fill:var(--t-papier);fill-opacity:.08}
 .dj-graphe .dj-pt:focus-visible .dj-point{stroke:var(--t-papier);stroke-width:2.5}
 .dj-graphe .dj-croix{stroke:var(--t-papier);stroke-opacity:.35;stroke-width:1;stroke-dasharray:2 3;pointer-events:none}
@@ -2269,7 +2269,7 @@ body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-lueur{display:
 .dj-tip-t b{font:600 var(--f-13) var(--sans);white-space:nowrap;font-variant-numeric:tabular-nums}
 .dj-tip-t span{color:var(--t-2);font-weight:400}
 .dj-tip-v{margin-top:2px;font-weight:600;color:var(--ok)}
-.dj-tip-v.ko{color:var(--ko)} .dj-tip-v.serre{color:var(--warn)} .dj-tip-v.info{color:var(--t-2);font-weight:500}
+.dj-tip-v.ko{color:var(--ko)} .dj-tip-v.serre{color:var(--ko)} .dj-tip-v.info{color:var(--t-2);font-weight:500}
 .dj-tip-v em{font-style:normal}
 .dj-tip-t:only-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
 
@@ -2375,12 +2375,12 @@ body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-lueur{display:
 .dj-arc{display:block;width:184px;height:166px;overflow:visible}
 .dj-arc-piste{fill:none;stroke:var(--s-line-2);stroke-width:3;stroke-linecap:round}
 .dj-arc-passe{fill:none;stroke:var(--ok);stroke-width:5;stroke-linecap:round}
-.dj-arc-serre{fill:none;stroke:var(--warn);stroke-width:5;stroke-linecap:round}
+.dj-arc-serre{fill:none;stroke:var(--ko);stroke-width:5;stroke-linecap:round}
 .dj-arc-fond{fill:none;stroke:var(--s-sunken);stroke-width:7;stroke-linecap:round}
 .dj-arc-pointe{fill:none;stroke:color-mix(in srgb,var(--charge) 45%,transparent);stroke-width:7;stroke-linecap:round}
 .dj-arc-perm{fill:none;stroke:var(--charge);stroke-width:7;stroke-linecap:round}
 .dj-arc-cran{stroke:var(--t-3);stroke-width:1.3;stroke-linecap:round}
-.dj-arc-cran.passe{stroke:var(--ok)} .dj-arc-cran.juste{stroke:var(--warn)} .dj-arc-cran.declenche{stroke:color-mix(in srgb,var(--ko) 75%,transparent)}
+.dj-arc-cran.passe{stroke:var(--ok)} .dj-arc-cran.juste{stroke:var(--ko)} .dj-arc-cran.declenche{stroke:color-mix(in srgb,var(--ko) 75%,transparent)}
 .dj-arc-cran.retenu{stroke-width:2}
 .dj-arc-index{fill:var(--s-surface);stroke:var(--t-1);stroke-width:2.5;filter:drop-shadow(0 1px 3px rgba(0,10,30,.35));transform-box:fill-box;transform-origin:center;transition:stroke var(--d-moyen) var(--courbe)}
 .dj-heros.ko .dj-arc-index{stroke:var(--ko)} .dj-heros.att .dj-arc-index{stroke:var(--warn)}
@@ -2391,7 +2391,7 @@ body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-lueur{display:
 .dj-cran{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;display:grid;place-items:center;padding:0;border:none;border-radius:50%;background:none;color:var(--t-2);cursor:pointer;pointer-events:auto;
   transition:background var(--d-rapide) var(--courbe),color var(--d-rapide) var(--courbe),transform var(--d-instant) var(--courbe)}
 .dj-arc-n{font:500 var(--f-12)/1 var(--sans);font-variant-numeric:tabular-nums;letter-spacing:-.01em;pointer-events:none}
-.dj-cran.juste{color:var(--warn)} .dj-cran.declenche{color:var(--ko)}
+.dj-cran.juste{color:var(--ko)} .dj-cran.declenche{color:var(--ko)}
 .dj-cran.retenu{color:var(--t-1)} .dj-cran.retenu .dj-arc-n{font-weight:700;font-size:var(--f-13)}
 .dj-cran:hover{background:color-mix(in srgb,var(--t-1) 7%,transparent)} .dj-cran:hover .dj-arc-n{font-weight:600}
 .dj-cran:active{transform:scale(var(--presse))}
@@ -2452,7 +2452,7 @@ body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-lueur{display:
 .dj-cle{display:flex;flex-wrap:wrap;gap:4px 14px;margin:-2px 0 0;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
 .dj-cle span{display:inline-flex;align-items:center;gap:6px}
 .dj-cle i{display:inline-block;width:12px;height:4px;border-radius:2px;background:var(--ok)}
-.dj-cle .juste i{background:var(--warn)} .dj-cle .declenche i{background:var(--ko)}
+.dj-cle .juste i{background:var(--ko)} .dj-cle .declenche i{background:var(--ko)}
 .dj-cle .charge i{height:6px;background:var(--charge)}
 .dj-cle .retest i{width:10px;height:10px;border-radius:50%;background:none;border:1.5px dashed var(--t-2)}
 /* ce qu'on fait : « ★ Automatique » | « À la main ▾ » */
@@ -2482,7 +2482,7 @@ body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-lueur{display:
 .dj-chip-v{display:inline-flex;align-items:center;gap:3px;max-width:100%;font:500 var(--f-11)/1.1 var(--sans);color:var(--t-2);white-space:nowrap}
 .dj-chip-v svg.dj-marque{width:11px;height:11px;stroke-width:2.6;flex:none}
 .dj-chip.passe .dj-marque{color:var(--ok)}
-.dj-chip.juste{border-color:color-mix(in srgb,var(--warn) 65%,transparent)} .dj-chip.juste .dj-chip-v{color:var(--warn)}
+.dj-chip.juste{border-color:color-mix(in srgb,var(--ko) 65%,transparent)} .dj-chip.juste .dj-chip-v{color:var(--ko)}
 .dj-chip.declenche{border-color:var(--ko)} .dj-chip.declenche .dj-chip-v{color:var(--ko)}
 .dj-chip.hors{border-style:dashed}
 .dj-chip:hover{border-color:var(--t-3);background:var(--s-hover)}
@@ -2537,7 +2537,7 @@ body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-lueur{display:
 .dj-aucun{padding:12px 10px}
 .dj-verdict{width:7px;height:7px;border-radius:50%;background:var(--s-line-2);justify-self:center;transition:background var(--rapide),box-shadow var(--rapide)}
 .dj-verdict.ok{background:var(--ok)}
-.dj-verdict.serre{background:var(--warn)}
+.dj-verdict.serre{background:var(--ko)}
 .dj-verdict.ko{background:var(--ko);box-shadow:0 0 0 3px var(--ko-soft)}
 .dj-etat .dj-nom{font-size:var(--f-13);color:var(--t-1);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dj-etat input.dj-nom{width:calc(100% + 8px);margin-left:-8px;border:1px solid transparent;border-radius:var(--r-1);padding:5px 8px;font:500 var(--f-13) var(--sans);background:none;color:var(--t-1);transition:border-color var(--rapide),background var(--rapide),box-shadow var(--rapide)}
@@ -2870,12 +2870,13 @@ input.fi-nom:focus{outline:none;background:var(--s-surface);box-shadow:inset 0 0
 .fi-pb-gestes .btn{min-height:28px;font-size:var(--f-12)}
 /* « Retest » : ce qui change par rapport au retest, à reporter — une ligne par changement (ce qu'il portait, barré ; ce qu'il
    porte), « ↺ » le rend ; ce que Volta propose d'autre, marqué « Volta » */
-.fi-ec-mots{min-width:0;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-ec-mots{min-width:0;color:var(--t-1);text-wrap:pretty}
 .fi-ec-note{margin:0 0 6px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
 .fi-ec-liste{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column}
 .fi-ec-l{display:grid;grid-template-columns:minmax(0,1fr) auto 34px;align-items:center;column-gap:10px;min-height:34px;font:500 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
 .fi-ec-l+.fi-ec-l{border-top:1px solid var(--s-line)}
 .fi-ec-q{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-ec-de{color:var(--t-3)}
 .fi-ec-q .id{font:600 var(--f-12) var(--mono);color:var(--t-1)}
 .fi-ec-v{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .fi-ec-v s{font:500 var(--f-12) var(--mono);color:var(--t-3);text-decoration-color:var(--t-3)}
@@ -2993,6 +2994,11 @@ details.fs[data-type="barrette"][data-section="connecteur"][open]>.fs-tete .fs-r
 /* LES BULLES des connecteurs, sous le titre « Connecteur » : un rond par connecteur, la lettre au centre ; le montré à
    l'encre, plein ; rouge s'il porte un problème */
 .ct-bulles{display:inline-flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+/* (v77) le choix du connecteur, en tête du corps de la section : son mot, puis les bulles ; la ligne de titre ne fait que plier */
+.ct-choix{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.ct-choix .ct-bulles{margin-top:0}
+.ct-choix-t{font:500 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.fs-ct-ids{margin-left:8px;color:var(--t-2)}
 .seg.ct-bulle{width:auto;min-width:28px;height:28px;justify-content:center;gap:0;padding:0 9px;border-radius:999px;font:600 var(--f-13) var(--mono)}
 .seg.ct-bulle.ko{border-color:color-mix(in srgb,var(--ko) 55%,transparent);color:var(--ko)}
 .seg.ct-bulle.ko[aria-pressed="true"]{background:var(--ko);border-color:var(--ko);color:var(--s-surface)}
@@ -3228,12 +3234,21 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
    voir porte un trait de son état dans la marge et, sous sa ligne, pourquoi ─── */
 .fi-ia{position:relative;font-size:var(--f-12);transition:background var(--rapide),box-shadow var(--rapide)}
 .cb-liste{list-style:none;margin:0 -10px;padding:0;display:flex;flex-direction:column}
-.cb-entete,.cb-carte{display:grid;grid-template-columns:8px 58px 100px minmax(min-content,1fr) 50px 30px 28px;align-items:center;column-gap:8px}
+/* (v77) deux étages : en haut le câble (son type d'abord) et son intensité ; dessous, la chute et la longueur, en clair */
+.cb-entete,.cb-carte{display:grid;grid-template-columns:8px minmax(0,1fr) minmax(128px,168px) 28px;align-items:center;column-gap:10px}
+.cb-id{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.cb-id .cb-num-ed .fc-in{width:8.5ch}
+.cb-ent-u{display:inline-flex;align-items:center;margin-left:14px;color:var(--t-3)}
+.cb-sous{grid-column:2/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 22px;margin:2px 0 6px;font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.cb-sous-c{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.cb-sous-k{color:var(--t-3)}
+.cb-sous-a{color:var(--t-3);white-space:nowrap}
+.cb-sous .cb-lg{display:inline-flex;width:5.5ch}
 .cb-entete{position:sticky;top:44px;z-index:3;min-height:30px;padding:0 10px;background:linear-gradient(var(--s-line),var(--s-line)) 10px 100%/calc(100% - 20px) 1px no-repeat,var(--s-surface);font:600 var(--f-11)/1.2 var(--sans);color:var(--t-2)}
 .cb-entete>span{display:inline-flex;align-items:center;min-width:0;white-space:nowrap}
 .cb-entete .fi-q{width:16px;height:16px;font-size:var(--f-11);margin-left:4px}
 .cb-entete .dr{justify-content:flex-end}
-.cb-carte{row-gap:0;min-height:34px;padding:2px 10px;border-radius:var(--r-1)}
+.cb-carte{row-gap:0;min-height:34px;padding:4px 10px 2px;border-radius:var(--r-1)}
 /* les lignes entrent l'une après l'autre — à l'entrée de la fiche, ou quand on ouvre la section ; jamais à un rendu en place */
 .fi.fondu .cb-carte,details.fs.fs-entre .cb-carte{animation:cb-entre var(--moyen) both;animation-delay:calc(min(var(--n,0),8) * 20ms)}
 .cb-carte+.cb-carte::before{left:10px;right:10px}
@@ -3288,7 +3303,7 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .cb-ouvrir:hover{background:var(--fi-voile-2);color:var(--t-1)}
 .cb-ouvrir:active{transform:scale(.94)}
 /* pourquoi le câble est à voir, en une ligne sous la sienne (le détail dans la bulle) */
-.cb-pourquoi{grid-column:2/-1;margin:-2px 0 4px;font:500 var(--f-11)/1.35 var(--sans);color:var(--warn);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cb-pourquoi{grid-column:2/-1;margin:0 0 6px;font:500 var(--f-11)/1.35 var(--sans);color:var(--warn);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cb-carte.ko .cb-pourquoi{color:var(--ko)}
 .cb-note{margin:0 0 8px}
 /* LA BANDE DES MARGES (au-delà de douze câbles) : deux pistes — l'intensité, la chute — chaque câble un trait à sa part de
@@ -3722,6 +3737,8 @@ button.fi-sertir.ct-ref{min-height:24px}
 .fi-trace>summary{display:flex;align-items:center;min-height:28px;border-radius:var(--r-1)}
 /* plus d'italique dans la fiche (v74, lot F — le lecteur : « l'italique, c'est compliqué ») : ni un <em> ni un <i> ne penchent */
 .fi :is(em,i){font-style:normal}
+/* (v77) un câble sans numéro : son titre dit son type, à l'encre du titre ; écrire lui donne un numéro */
+.fi-nom.fi-nom-vide::placeholder{color:var(--t-1);opacity:1}
 
 /* ───────── style-fichiers.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -4962,7 +4979,7 @@ b.rc-n{font-weight:500}
 .rc-g-h em{font:500 var(--f-13)/1.2 var(--sans);font-style:normal}
 .rc-g-marque{width:14px;height:14px;flex:none;stroke-width:2.4}
 .rc-g-l.passe :is(.rc-g-marque,em){color:var(--ok)}
-.rc-g-l.juste :is(.rc-g-marque,em){color:var(--warn)}
+.rc-g-l.juste :is(.rc-g-marque,em){color:var(--ko)}
 .rc-g-l.declenche :is(.rc-g-marque,em){color:var(--ko)}
 .rc-g-l.inconnu em{color:var(--t-2)}
 .rc-g-tags{display:inline-flex;gap:4px;margin-left:auto;flex:none}
@@ -4977,7 +4994,7 @@ b.rc-n{font-weight:500}
 .rc-g-l[aria-selected="true"]{background:#e9f0fd;cursor:default}
 .rc-g-l[aria-selected="true"] :is(b,.rc-g-r,b small){color:#1b2438}
 .rc-g-l[aria-selected="true"].passe :is(.rc-g-marque,em){color:#11743a}
-.rc-g-l[aria-selected="true"].juste :is(.rc-g-marque,em){color:#8a5300}
+.rc-g-l[aria-selected="true"].juste :is(.rc-g-marque,em){color:#a3241b}
 .rc-g-l[aria-selected="true"].declenche :is(.rc-g-marque,em){color:#b3261e}
 .rc-g-l[aria-selected="true"] .rc-g-tag{background:rgba(15,26,46,.08);color:#2c3a55}
 .rc-g-l[aria-selected="true"]:focus-visible{box-shadow:inset 0 0 0 2px #1b2438}
@@ -6180,7 +6197,7 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '587016da02b3';
+const VERSION_MOTEUR = 'b84189074cb8';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -6297,6 +6314,9 @@ function liaison(o) {
 /* Une liaison sans équipement à un bout n'en est pas une : c'est une ligne
    en cours de saisie. On la garde dans la table, pas dans le dessin. */
 const liaisonComplete = l => !!(l.de && l.vers);
+// (v77, le lecteur : « les câbles n'ont plus de numéro, il faut mettre le type ») : un câble sans numéro se dit par son type
+const cableDit = l => (l && String(l.cable || '').trim()) || ('câble ' + ((l && l.type) || 'sans numéro'));
+const cableEtType = l => l && String(l.cable || '').trim() ? l.cable + (l.type ? ' (' + l.type + ')' : '') : cableDit(l);
 
 /* ---- LES BARRETTES À POSER ---------------------------------------------------
    Plusieurs fils sur une même borne d'équipement (le contrat dit « 102CB1:2 → 103RL1 » et « 395SW1 → 102CB1:2 ») : on
@@ -13842,7 +13862,8 @@ function verdictDisjonction(norme, famille, calibre, profil, contexte) { context
    retenu) ; null quand rien ne se juge (pas de profil, pas de courbe). */
 const VERDICTS_CALIBRE = Object.freeze({
   passe: Object.freeze({ cle: 'passe', mot: 'passe', encre: '--ok', etat: 'ok', bulle: 'Il ne déclenche pas, avec la marge.' }),
-  juste: Object.freeze({ cle: 'juste', mot: 'juste', encre: '--warn', etat: 'att', bulle: 'Il touche la courbe : il passe, mais sans la marge.' }),
+  // (v77, le lecteur : « si ça touche, c'est rouge — il faut arrêter de mettre presque ; soit c'est rouge, soit c'est vert »)
+  juste: Object.freeze({ cle: 'juste', mot: 'touche la courbe', encre: '--ko', etat: 'ko', bulle: 'Il touche la courbe : il ne passe pas.' }),
   declenche: Object.freeze({ cle: 'declenche', mot: 'déclenche', encre: '--ko', etat: 'ko', bulle: 'Il déclenche.' }) });
 function verdictDeCalibre(g) { if (!g || g.sansProfil || g.sansCourbe) return null;
   // le verdict d'ensemble d'un disjoncteur : celui de la ligne de sa gamme qui porte le calibre retenu
@@ -18154,7 +18175,7 @@ const sectionDuPoint = (nom, texte) => !nom ? '' : estDisjoncteur(nom) ? section
    — la charge qu'il porte, sa protection, son contact contre le calibre, la chute d'un chemin, un conducteur CCA — porte
    `cables` : les liaisons du contrat dont il parle. `problemesDuCable(l)` les rend à la fiche du câble, avec la chaîne de
    cause quand c'est le disjoncteur. Un point de disjoncteur dit son câble en tête (« W-012 (DR20) : … ») : on l'y lit. */
-const nomDuCableDit = f => (f.cable || 'câble sans numéro') + (f.type ? ' (' + f.type + ')' : '');
+const nomDuCableDit = f => cableEtType(f);
 function cablesDuTexte(d, texte) { const t = String(texte || ''); return (d && d.fils || []).filter(f => f.l && (t.startsWith(nomDuCableDit(f) + ' : ') || t.startsWith(nomDuCableDit(f) + ' (par '))).map(f => f.l); }
 function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu || HYPOTHESES, items = [], ko = (nom, texte, plus) => items.push({ niveau: 'ko', nom, texte, section: sectionDuPoint(nom, texte), ...plus }), att = (nom, texte, plus) => items.push({ niveau: 'att', nom, texte, section: sectionDuPoint(nom, texte), ...plus });
   // la chute affichée est celle des fiches (`chutesDuDisjoncteur`, 08-fiche) : le contrôle la relit avec le contrat neuf
@@ -18189,7 +18210,7 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   } catch (_) { }
   // un conducteur qui n'est pas du cuivre (AD, VN : aluminium cuivré) serti sur un contact cuivre ordinaire : à qualifier
   contacts.forEach((xs, l) => { const fam = cableFamilleDe(N, l.type); if (!fam || !fam.conducteur || fam.conducteur === 'cuivre') return;
-    xs.forEach(x => { if (x.sertir && x.sertir.reference && !contactPourCca(x.sertir.reference)) att(x.repere, `${l.cable || 'câble sans numéro'} (${l.type}) : conducteur ${fam.conducteur} sur un contact ${x.sertir.reference} — qualification CCA à confirmer`, { cables: [l] }); }); });
+    xs.forEach(x => { if (x.sertir && x.sertir.reference && !contactPourCca(x.sertir.reference)) att(x.repere, `${cableEtType(l)} : conducteur ${fam.conducteur} sur un contact ${x.sertir.reference} — qualification CCA à confirmer`, { cables: [l] }); }); });
   // les disjoncteurs : tout ce qu'ils nourrissent, la table 11-3, les contacts, la chute en ligne
   reperes.filter(estDisjoncteur).forEach(r => { try { controleProtection(r, contacts, V, N, H).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte, { cables: x.cables || [] })); } catch (_) { } });
   // les barrettes à poser, folio par folio
@@ -18337,7 +18358,7 @@ function causeDuDisjoncteur(nom) { let d; try { d = disjonctionDe(nom); } catch 
   const v = verdictDeCalibre(d.gPn); if (!v || v === VERDICTS_CALIBRE.passe) return null;
   const m = d.meilleur || {}, xs = d.calibre === m.calibre && typeof filsDuMeilleur === 'function' ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   const types = [...new Set(xs.map(p => p.x.propose))];
-  const mot = `${nom} : le ${amperes(d.pn)} de l’installation ${v.mot === 'juste' ? 'est juste' : 'déclenche'} — Volta retient ${amperes(d.calibre)}${xs.length ? ', qui demande ' + (xs.length > 1 ? xs.length + ' câbles' : 'un câble') + (types.length === 1 ? ' en ' + types[0] : ' plus gros') : ''}`;
+  const mot = `${nom} : le ${amperes(d.pn)} de l’installation ${v.cle === 'juste' || v.mot === 'touche la courbe' ? 'touche la courbe' : 'déclenche'} — Volta retient ${amperes(d.calibre)}${xs.length ? ', qui demande ' + (xs.length > 1 ? xs.length + ' câbles' : 'un câble') + (types.length === 1 ? ' en ' + types[0] : ' plus gros') : ''}`;
   // le pourquoi chiffré du retest (09 bis), pour la bulle : « touche la courbe », « sans la marge » s'y disent, pas dans le mot
   let bulle = v.bulle; try { const q = pourquoiDuCalibre(app.norme, d, d.pn); if (q) bulle = majuscule(q.phrase) + '.\n' + v.bulle + ' Il protège ce câble.'; } catch (_) { }
   return { repere: nom, retest: d.pn, retenu: d.calibre, verdict: v, cables: xs.map(p => ({ cable: p.x.cable, actuel: p.x.actuel, propose: p.x.propose })), mot, bulle }; }
@@ -18843,8 +18864,8 @@ function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg 
     // LES TROIS MOTS, comme le calibre (v73, l'ingénieur, point 8 : « les mots changent d'un écran à l'autre ») : déclenche, juste
     // (il touche la courbe, sans la marge), passe — la table du domaine C (`motDuVerdict`, 08-disjoncteurs)
     const M = k => typeof motDuVerdict === 'function' ? motDuVerdict(k) : { passe: 'passe', juste: 'juste', declenche: 'déclenche' }[k];
-    const verdict = pt.ok === false ? `<em>${esc(M('declenche'))}</em> à ${rates.length === pt.marges.length ? 'toute température' : esc(rates.join(', '))}${bilan}` : pt.serre ? (pt.t === Infinity ? `<em>${esc(M('juste'))}</em> : sans ` + esc(nombre(d.marges.marge)) + ' % de marge' : `<em>${esc(M('juste'))}</em> : touche la courbe` + bilan) : (pt.t === Infinity ? esc(M('passe')) + ' : ne déclenche jamais' : esc(M('passe')) + ' à toute température' + bilan);
-    return carteTip(titre, sous, verdict, pt.ok === false ? 'ko' : pt.serre ? 'serre' : 'ok'); };
+    const verdict = pt.ok === false ? `<em>${esc(M('declenche'))}</em> à ${rates.length === pt.marges.length ? 'toute température' : esc(rates.join(', '))}${bilan}` : pt.serre ? (pt.t === Infinity ? `<em>${esc(M('juste'))}</em> : sans ` + esc(nombre(d.marges.marge)) + ' % de marge' : `<em>${esc(M('juste'))}</em>` + bilan) : (pt.t === Infinity ? esc(M('passe')) + ' : ne déclenche jamais' : esc(M('passe')) + ' à toute température' + bilan);
+    return carteTip(titre, sous, verdict, pt.ok === false || pt.serre ? 'ko' : 'ok'); };
   // le réticule : à ce courant (et ce multiple de In), ce que le calibre retenu tient à la courbe qui juge
   const carteReticule = (i, t) => { if (!cal) return carteTip(esc(amperes(i)) + ' · ' + esc(secondes(t)), '', '', '');
     const tt = tempsDeDeclenchement(C[0], i / cal); return carteTip(esc(motIn(i, cal)) + ' · ' + esc(secondes(t)), 'soit ' + esc(amperes(i)) + ' — le ' + esc(amperes(cal)) + (tt === Infinity ? ' n’y déclenche jamais' : ' y tient ' + esc(secondes(tt))) + ' à ' + esc(C[0].nom), '', ''); };
@@ -19077,7 +19098,7 @@ const motMarge = m => (m >= 1 ? '+' : '−') + nombre(Math.round(Math.abs(m - 1)
    quand elle arrive. */
 const MOTS_VERDICT_FICHE = Object.freeze({
   passe: Object.freeze({ mot: 'passe', etat: 'ok', bulle: 'Il ne déclenche pas, avec la marge.' }),
-  juste: Object.freeze({ mot: 'juste', etat: 'att', bulle: 'Il passe, sans la marge : il touche la courbe.' }),
+  juste: Object.freeze({ mot: 'touche la courbe', etat: 'ko', bulle: 'Il touche la courbe : il ne passe pas.' }),
   declenche: Object.freeze({ mot: 'déclenche', etat: 'ko', bulle: 'Il déclenche.' }) });
 const motsVerdict = () => typeof VERDICTS_CALIBRE === 'object' && VERDICTS_CALIBRE && VERDICTS_CALIBRE.passe && VERDICTS_CALIBRE.juste && VERDICTS_CALIBRE.declenche ? VERDICTS_CALIBRE : MOTS_VERDICT_FICHE;
 /* La clé du verdict d'un calibre jugé — une case de la gamme (`valide`, `marge`) ou le verdict d'ensemble (`valide`,
@@ -19089,7 +19110,7 @@ const etatDuVerdict = k => (motsVerdict()[k] || {}).etat || '';
 // le sort d'un point du profil, en trois mots : sa classe (ok, serre — le juste, en ambre —, ko ; rien s'il n'est pas jugé)
 // et son mot ; le pourquoi (« touche la courbe ») dans la bulle du point
 const classeVerdict = p => !p || p.ok == null ? '' : p.ok === false ? 'ko' : p.serre ? 'serre' : 'ok';
-const motVerdict = p => !p || p.ok == null ? 'pas jugé' : p.ok === false ? motDuVerdict('declenche') : p.serre ? motDuVerdict('juste') + ' : touche la courbe' : motDuVerdict('passe');
+const motVerdict = p => !p || p.ok == null ? 'pas jugé' : p.ok === false ? motDuVerdict('declenche') : p.serre ? motDuVerdict('juste') : motDuVerdict('passe');
 const pluriel2 = (n, mot, mots) => n + ' ' + (n > 1 ? mots || mot + 's' : mot);
 
 /* Ce que le contrôle en dit : un problème si une phase fait déclencher (le bilan thermique déborde), ou si un fil ne
@@ -19104,14 +19125,14 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
         : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche à ${m.courbe} (${motFraction(d.somme)} du temps de déclenchement consommé, il tient ${secondes(m.temps)} à ce courant)`) + mini }); }
     // (les trois mots : JUSTE — il passe sans la marge, il touche la courbe — est à voir, en ambre ; DÉCLENCHE est un problème)
     else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${pnMot} : un ${amperes(d.calibreIdeal)} suffirait`
-      : !d.avecMarge ? `${amperes(d.calibre)}${pnMot} ${motDuVerdict('juste')} : il touche la courbe (${d.somme > d.marges.fraction ? motFraction(d.somme) + ' du temps de déclenchement consommé' : 'sans ' + nombre(d.marges.marge) + ' % de marge de courant'}) — l’idéal est un ${amperes(d.calibreIdeal)}`
+      : !d.avecMarge ? `${amperes(d.calibre)}${pnMot} ${motDuVerdict('juste')} (${d.somme > d.marges.fraction ? motFraction(d.somme) + ' du temps de déclenchement consommé' : 'sans ' + nombre(d.marges.marge) + ' % de marge de courant'}) — l’idéal est un ${amperes(d.calibreIdeal)}`
       : `${amperes(d.calibre)}${pnMot} ${motDuVerdict('passe')} ; l’idéal est un ${amperes(d.calibreIdeal)} (sélectivité avec le voisin)` }); }
   // le retest porte un autre calibre que celui que l'outil retient : il déclenche (un problème), il est juste ou plus gros qu'il ne faut (à voir)
   if (d.gPn && d.origine !== 'main' && !d.sansProfil && !d.sansCourbe && d.calibre > 0) { const k = cleDuVerdict(d.gPn), m = d.meilleur || {}, pnR = pnDuRepere(nom), retenu = 'l’outil retient le ' + amperes(d.calibre) + (m.pn && m.calibre === d.calibre ? ' (' + m.pn + ')' : '');
-    out.push({ niveau: k === 'declenche' ? 'ko' : 'att', texte: k === 'passe' ? `l’installation porte un ${amperes(d.pn)} (${pnR}) : ${d.calibre < d.pn ? 'le ' + amperes(d.calibre) + ' suffit' : 'l’outil retient le ' + amperes(d.calibre) + (d.voisins.some(v => v.calibre > 0 && Math.max(v.calibre, d.pn) < SELECTIVITE * Math.min(v.calibre, d.pn) - 1e-9) ? ' (sélectivité avec le voisin)' : '')}`
-      : k === 'juste' ? `l’installation porte un ${amperes(d.pn)} (${pnR}), ${motDuVerdict('juste')} — il touche la courbe : ${retenu}` : `l’installation porte un ${amperes(d.pn)} (${pnR}) qui ${motDuVerdict('declenche')} : ${retenu}` }); }
+    out.push({ niveau: k === 'passe' ? 'att' : 'ko', texte: k === 'passe' ? `l’installation porte un ${amperes(d.pn)} (${pnR}) : ${d.calibre < d.pn ? 'le ' + amperes(d.calibre) + ' suffit' : 'l’outil retient le ' + amperes(d.calibre) + (d.voisins.some(v => v.calibre > 0 && Math.max(v.calibre, d.pn) < SELECTIVITE * Math.min(v.calibre, d.pn) - 1e-9) ? ' (sélectivité avec le voisin)' : '')}`
+      : k === 'juste' ? `l’installation porte un ${amperes(d.pn)} (${pnR}), qui ${motDuVerdict('juste')} : ${retenu}` : `l’installation porte un ${amperes(d.pn)} (${pnR}) qui ${motDuVerdict('declenche')} : ${retenu}` }); }
   d.voisins.forEach(v => { if (v.calibre > 0 && d.calibre > 0 && Math.max(v.calibre, d.calibre) < SELECTIVITE * Math.min(v.calibre, d.calibre) - 1e-9) out.push({ niveau: 'att', texte: `sélectivité avec ${v.nom} (${amperes(v.calibre)}) : l’amont devrait faire au moins le double de l’aval` }); });
-  d.fils.forEach(f => { const nomF = (f.cable || 'câble sans numéro') + (f.type ? ' (' + f.type + ')' : '');
+  d.fils.forEach(f => { const nomF = cableEtType(f);
     if (f.verdict === 'fil') out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)}${f.pire.t === Infinity ? '' : ' / ' + secondes(f.pire.t)} > ${amperes(f.pire.admise)} admis ${pourPalier(f.pire.palier)}${motFacteur(f.pire.palier === Infinity ? f.facteur : f.facteurCourt)}` });
     else if (f.verdict === 'calibre') out.push({ niveau: 'att', texte: `${nomF} : ${amperes(f.continu)} admis en continu${motFacteur(f.facteur)} < calibre ${amperes(d.calibre)} — pas protégé en surcharge` });
     else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(d.calibre)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuFil(f, x)}` }); } });
@@ -19195,7 +19216,7 @@ function carteDecision(nom, d, autres) { if (!d.gPn || d.origine === 'main' || d
   // les câbles qu'il demande, repliés (le designer v73 : la carte de décision tient en 180 px, le cadran reste en vue dessous)
   const cleC = 'cables|' + nom, montres = !!FI.tous[cleC];
   const lignes = xs.length ? `<ul class="fi-decision-cables" id="dj-decision-cables"${montres ? '' : ' hidden'}>${xs.map(({ x, f }) => `<li${f && f.l ? ` data-i="${cleFil(f.l)}"` : ''} data-bulle="${escA(majuscule(x.raison))}"><b class="id">${esc(x.cable || 'sans n°')}</b><span class="id">${esc(x.actuel)}</span>${ico('fleche')}<b class="id">${esc(x.propose)}</b></li>`).join('')}</ul>` : '';
-  return `<section class="fi-decision ${k === 'declenche' ? 'ko' : 'att'}" aria-label="${escA(titre)}"><h3 class="fi-decision-t">${ico('alerte')}<span>${esc(titre)}</span></h3><p class="fi-decision-p">${insecable(quoi + suite)}</p>`
+  return `<section class="fi-decision ${k === 'passe' ? 'att' : 'ko'}" aria-label="${escA(titre)}"><h3 class="fi-decision-t">${ico('alerte')}<span>${esc(titre)}</span></h3><p class="fi-decision-p">${insecable(quoi + suite)}</p>`
     + `<div class="fi-decision-gestes"><button type="button" class="btn cuivre" id="dj-decider" data-dj-geste="decider" data-bulle="${escA('Écrit dans l’installation : ' + (m.pn && m.calibre === cal ? m.pn : amperes(cal)) + (xs.length ? ', et ' + xs.map(({ x }) => (x.cable || 'un câble') + ' en ' + x.propose).join(', ') : '') + ' — une seule entrée d’historique, Ctrl+Z défait le tout')}">Passer en ${esc(amperes(cal))}${xs.length ? ' et grossir ' + (xs.length > 1 ? 'les ' + xs.length + ' câbles' : 'le câble') : ''}</button>`
     // les gestes seconds, des liens sur une ligne (la carte tient en 180 px) : les câbles qu'il demande, garder le retest, les autres points
     + `</div><div class="fi-decision-liens">${xs.length ? `<button type="button" class="btn lien dense fi-decision-voir" data-dj-cables="${escA(cleC)}" aria-expanded="${montres}" aria-controls="dj-decision-cables" data-bulle="${escA(xs.map(({ x }) => (x.cable || 'sans n°') + ' : ' + x.actuel + ' → ' + x.propose).join('\n'))}">${ico('droite', 'fi-chevron')}Les ${esc(pluriel2(xs.length, 'câble'))}</button>` : ''}<button type="button" class="btn lien dense fi-decision-garder-b" data-changer="${escA(cleG)}" aria-expanded="${ouvert}">Garder le ${esc(amperes(d.pn))}…</button>`
@@ -19340,7 +19361,7 @@ function boutonsDuCadran(items) { const G = geometrieCadran(items.map(x => x.cal
     return `<button type="button" class="dj-cran ${x.cle || 'inconnu'}${x.retenu ? ' retenu' : ''}${x.auto ? ' auto' : ''}${x.retest ? ' retest' : ''}" data-cal="${x.calibre}" data-k="${k}" style="left:${px.toFixed(1)}px;top:${py.toFixed(1)}px" tabindex="${k === focal ? 0 : -1}" aria-pressed="${x.retenu}"`
       + ` aria-label="${escA(amperes(x.calibre) + (x.mot ? ', ' + x.mot : '') + (x.retenu ? (x.propose ? ', proposé' : ', retenu') : '') + (x.retest ? ', celui de l’installation' : ''))}" data-bulle="${escA(x.bulle)}"><span class="dj-arc-n">${nombreCourt(x.calibre)}</span></button>`; }).join('') + '</div>'; }
 // les marques des trois mots : ✓ passe, ~ juste, ✕ déclenche (des icônes : les polices embarquées n'ont pas ces glyphes)
-const MARQUES_VERDICT = { passe: 'coche', juste: 'vague', declenche: 'fermer' };
+const MARQUES_VERDICT = { passe: 'coche', juste: 'fermer', declenche: 'fermer' };   // (v77) ce qui touche la courbe ne passe pas : la même croix
 const marqueVerdict = k => MARQUES_VERDICT[k] ? ico(MARQUES_VERDICT[k], 'dj-marque') : '';
 /* LA LIGNE DU VERDICT, sous le cadran (le designer v73 : « le verdict s'écrit en une ligne, dans sa couleur ») : le calibre
    et son mot, en gras et dans sa couleur, puis le pourquoi chiffré ; d'où vient le retenu (proposé, à la main) ; sans
@@ -19350,10 +19371,13 @@ function ligneDuVerdict(d, x, o) { o = o || {};
   if (!x) return `<div class="dj-verdict-l ko" aria-live="polite"><span><b>Aucun calibre</b> de la gamme ne passe ce profil.</span></div>`;
   const best = d.passe, A = amperes(x.calibre), fam = (d.famille && (d.famille.famille || d.famille.nom)) || '';
   let quoi = x.raison;
-  if (x.cle === 'passe' && x.auto) { const prev = calibresDuCadran(d, false, o.nom).filter(y => y.calibre < x.calibre).pop(), pr = x.propose && d.pn ? calibresDuCadran(d, false, o.nom).find(y => y.calibre === d.pn) : null;
-    quoi = `le plus petit ${fam ? 'de la gamme ' + fam + ' ' : ''}qui passe${pr ? ` ; le ${amperes(pr.calibre)} de l’installation est ${pr.mot}` : prev ? ` ; le ${amperes(prev.calibre)} est ${prev.mot}` : ''}.`; }
-  else quoi = quoi + '.';
-  const suite = o.apercu ? 'Aperçu — Entrée le retient, Échap revient.' : x.propose ? 'Proposé : pas encore écrit dans l’installation.' : d.origine === 'main' && x.retenu ? `Retenu à la main${best && best !== x.calibre ? ' ; l’automatique est le ' + amperes(best) : ''}.` : '';
+  /* L'AUTOMATIQUE (v77, le lecteur : « “15 A passe, le plus petit de la gamme”, on s'en fout ; on dit : le minimum, c'est
+     15 A. Simple, efficace ») : « Le minimum : 15 A », rien d'autre ; le pourquoi chiffré reste dans le « ? » et les bulles. */
+  if (x.cle === 'passe' && x.auto) {
+    const suite = o.apercu ? 'Aperçu — Entrée le retient, Échap revient.' : x.propose ? 'Proposé : pas encore écrit dans votre fichier.' : '';
+    return `<div class="dj-verdict-l ok${o.apercu ? ' apercu' : ''}" aria-live="polite"><span class="dj-v-mot">${marqueVerdict('passe')}<b>Le minimum : ${esc(A)}</b></span>${suite ? `<span class="dj-v-pourquoi"><i>${esc(suite)}</i></span>` : ''}</div>`; }
+  quoi = quoi + '.';
+  const suite = o.apercu ? 'Aperçu — Entrée le retient, Échap revient.' : x.propose ? 'Proposé : pas encore écrit dans votre fichier.' : d.origine === 'main' && x.retenu ? `Retenu à la main${best && best !== x.calibre ? ' ; le minimum est ' + amperes(best) : ''}.` : '';
   return `<div class="dj-verdict-l ${x.etat || 'neutre'}${o.apercu ? ' apercu' : ''}" aria-live="polite"><span class="dj-v-mot">${marqueVerdict(x.cle)}<b>${esc(A)} ${esc(x.mot)}</b></span><span class="dj-v-pourquoi">${insecable(esc(quoi))}${suite ? ` <i>${esc(suite)}</i>` : ''}</span></div>`; }
 
 /* LE CALIBRE (le lecteur, v62 : « commence directement par l'automatique ; le A à la même taille » ; v72 : « le calibre
@@ -19374,8 +19398,10 @@ function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, b
     + `<div class="dj-h-centre"><b class="dj-h-cal"><span class="dj-h-n">${cal ? nombreCourt(cal) : '—'}</span>${cal ? '<span class="dj-h-u">A</span>' : ''}</b>${etatC ? `<small class="dj-h-etat">${esc(etatC)}</small>` : ''}</div></div>`
     + `<div class="dj-h-cote">${ch.perm || ch.pointe ? `<div class="dj-stats">${stat(ch.perm, 'perm', 'permanent')}${stat(ch.pointe, 'pointe', (quandDuPoint(ch.pointeP) || 'en pointe').replace(/^(au|en) /, ''))}</div>` : ''}`
     + `<div class="dj-h-pied">${famille ? `<span>Gamme ${esc(famille)}</span>` : ''}${aide('calibre', { verdict: d, calibre: cal || null, origine: o.origine === 'main' ? 'main' : d.origine, meilleur: best || null })}</div></div></div>`;
-  // la clé du cadran, en mots — les trois mots, la charge, le retest quand il en porte un autre
-  const cles = d.sansProfil ? '' : `<p class="dj-cle">${['passe', 'juste', 'declenche'].filter(k => items.some(y => y.cle === k)).map(k => `<span class="${k}"><i aria-hidden="true"></i>${esc(motDuVerdict(k))}</span>`).join('')}${ch.perm || ch.pointe ? '<span class="charge"><i aria-hidden="true"></i>la charge</span>' : ''}${items.some(y => y.retest && !y.retenu) ? '<span class="retest"><i aria-hidden="true"></i>l’installation</span>' : ''}</p>`;
+  // la clé du cadran (v77, le lecteur : « trop de couleurs pour la légende ; soit c'est rouge, soit c'est vert ») : deux mots,
+  // « passe » et « ne passe pas » ; le calibre de votre fichier, quand il en porte un autre (son anneau)
+  const nonPasse = items.some(y => y.cle === 'juste' || y.cle === 'declenche');
+  const cles = d.sansProfil ? '' : `<p class="dj-cle">${items.some(y => y.cle === 'passe') ? '<span class="passe"><i aria-hidden="true"></i>passe</span>' : ''}${nonPasse ? '<span class="declenche"><i aria-hidden="true"></i>ne passe pas</span>' : ''}${items.some(y => y.retest && !y.retenu) ? '<span class="retest"><i aria-hidden="true"></i>celui de votre fichier</span>' : ''}</p>`;
   // le choix : « ★ Automatique » | « À la main ▾ » (toute la gamme, dès qu'elle a plus d'un calibre)
   const mainB = (d.gamme || []).length > 1 ? `<button type="button" class="dj-seg dj-main" data-changer="${escA(cleL)}" aria-expanded="${ouverte}" data-bulle="Toute la gamme : un clic retient un calibre, même s’il ne passe pas">${auto || !cal || propose ? 'À la main' : esc(amperes(cal)) + ' à la main'}${ico('bas', 'fi-chevron')}</button>` : '';
   const actions = d.sansProfil ? '' : best || mainB ? `<span class="dj-choix" role="group" aria-label="Le choix du calibre">${best ? `<button type="button" class="dj-seg${auto ? ' dj-auto-pris' : ''}" id="dj-retenir" data-dj-geste="retenir" data-cal="${best}" aria-pressed="${auto}" data-bulle="${escA(phraseMeilleur(d) + (auto ? (propose ? ' Il est proposé : « Passer en ' + amperes(best) + ' » l’écrit dans l’installation.' : ' Il est retenu.') : ' Un clic rend ce choix à l’outil — Ctrl+Z le défait.') + (m.pn ? ' Part number ' + m.pn + ' : une désignation construite, à vérifier au catalogue.' : ''))}">${auto ? ico('etoile', 'dj-auto-etoile') : ''}Automatique${auto ? '' : ` (${esc(amperes(best))})`}</button>` : ''}${mainB}</span>` : '';
@@ -19464,7 +19490,7 @@ function lignesFilsDisjoncteur(nom, d) { d = d || disjonctionDe(nom); const cal 
   return d.fils.map(f => { const j = jugementDuFil(f, cal), c = f.l ? chuteEnLigne(f.l, nom) : null, pointe = pireChuteEnPointe(c), etatU = etatDeChute(c, pointe), motSupp = c && !c.reel ? ', longueurs supposées' : '';
     const etat = j.etat === 'ko' || etatU === 'ko' ? 'ko' : j.etat === 'att' || etatU === 'att' ? 'att' : '';
     const pourquoi = [j.dit, c && c.trop ? `chute en ligne ${volts(c.dU)} > ${volts(c.admis)}${motSupp}` : pointe ? `chute en pointe ${volts(pointe.dU)} > ${volts(pointe.admis)}${motSupp}` : ''].filter(Boolean).join(' · ');
-    const bulle = [`${f.cable || 'câble sans numéro'}${f.type ? ' · ' + f.type : ''} · ${f.amont ? '← ' : '→ '}${f.autre}${f.via ? ' (par ' + f.via + ')' : ''}`, j.dit ? majuscule(j.dit) : '', j.contact || '',
+    const bulle = [`${f.cable ? f.cable + (f.type ? ' · ' + f.type : '') : cableDit(f)} · ${f.amont ? '← ' : '→ '}${f.autre}${f.via ? ' (par ' + f.via + ')' : ''}`, j.dit ? majuscule(j.dit) : '', j.contact || '',
       j.charge ? `au pire ${amperes(j.charge.i)} sur ${amperes1(j.charge.admise)} admis ${j.charge.quand}` : '',
       c && c.dU != null ? `chute en ligne vers ${c.bout[0]}${c.bout[1] ? ':' + c.bout[1] : ''} : ${volts(c.dU)}${c.pct != null ? ' (' + nombre(Math.round(c.pct * 10) / 10) + ' %)' : ''}${c.admis != null ? ', ' + volts(c.admis) + ' admis' : ''}${c.reel ? '' : ' — longueurs supposées'}${c.disjoncteur && c.disjoncteur.dU != null ? ', dont ' + mV(c.disjoncteur.dU) + ' dans le disjoncteur' : ''}` : '',
       pointe ? `en pointe : ${volts(pointe.dU)} à ${amperes(pointe.i)} > ${volts(pointe.admis)} admis${pointe.intermittent ? ' en intermittent' : ''}` : ''].filter(Boolean).join('\n');
@@ -19962,7 +19988,7 @@ function propositionsNonEcrites() { const V = verite(), out = [];
     out.push({ genre: 'calibre', repere: r, retest: d.pn, retenu: d.calibre, pnRetest, pnVolta, ecrivable, verdictRetest: verdictDeCalibre(d.gPn), verdictRetenu: verdictDeCalibre(d),
       cables: xs.map(p => ({ cable: p.x.cable || 'sans n°', actuel: p.x.actuel, propose: p.x.propose })),
       geste: `Écrire ${amperes(d.calibre)}${nc ? ' et grossir ' + (nc > 1 ? 'les ' + nc + ' câbles' : 'le câble') : ''}`,
-      suite: (nc ? `Le ${amperes(d.calibre)} demande ${xs.map(p => p.x.cable || 'un câble sans numéro').join(', ')} en ${types.length === 1 ? types[0] : 'plus gros'}.` : '') + (ecrivable ? '' : ` Son part number (${pnRetest}) ne dit pas sa famille : Volta ne sait pas l’écrire, à reporter à la main.`),
+      suite: (nc ? `Le ${amperes(d.calibre)} demande ${xs.map(p => p.x.cable || 'le ' + cableDit(p.x)).join(', ')} en ${types.length === 1 ? types[0] : 'plus gros'}.` : '') + (ecrivable ? '' : ` Son part number (${pnRetest}) ne dit pas sa famille : Volta ne sait pas l’écrire, à reporter à la main.`),
       faire: ecrivable ? () => avecOrigineVolta(() => deciderCalibre(r)) : null }); });
   // les barrettes : le module que Volta retient à la place de celui du retest
   reperesDe(V).filter(r => !VT_A_POSER.test(r) && barretteEnModules(r)).sort(triNaturel).forEach(r => { try { const b = besoinsDeBarrette(r, V), Q = planDeBarrette(r).plan;
@@ -20179,6 +20205,8 @@ const filDeCle = k => !k || k === '-1' ? null : k[0] === 'p' ? ((app.dessin && a
 const liaisonDeCle = k => !k ? null : k[0] === 'p' ? liaisonsDuPlan()[+k.slice(1)] || null : verite()[+k] || null;
 // le numéro d'un câble ; celui que l'outil ajoute (le raccord d'une barrette à poser) n'en a pas encore : « à créer »
 const nomDuFil = f => f.cable || (f.l && f.l.origine === null ? 'à créer' : '—');
+// le nom d'un câble dans une phrase (v77) : son numéro, sinon son type et l'autre bout — « DR12 vers 101BT1:1 »
+const nomCourtDuCable = r => (r.l && r.l.cable) || ((r.type || 'câble') + (r.bout && r.bout.rep ? ' vers ' + r.bout.rep + (r.bout.borne ? ':' + r.bout.borne : '') : ''));
 // le code du repère : « XC » pour 300XC1, « VT » pour une barrette (l'index et le contrôle s'en servent)
 const codeDe = nom => { const q = lireRepere(nom); return q && q.code ? q.code.slice(0, 3) : String(nom || '?').slice(0, 2); };
 const s_ = n => n > 1 ? 's' : '';
@@ -20278,7 +20306,7 @@ const idDeLiaison = l => IDS_FILS.get(l) || (IDS_FILS.set(l, ++idFil), idFil);
 const entreeDeCible = c => c.type === 'fil' ? { type: 'fil', l: c.l } : c.type === 'ref' ? { type: 'ref', c: { ...c } } : { type: 'bloc', nom: c.nom };
 const memeEntree = (a, b) => !!a && !!b && a.type === b.type && (a.type === 'fil' ? a.l === b.l : a.type === 'ref' ? a.c.nom === b.c.nom && a.c.harness === b.c.harness && a.c.repere === b.c.repere : a.nom === b.nom);
 const cleDEntree = e => e.type === 'fil' ? 'fil#' + idDeLiaison(e.l) : e.type === 'ref' ? 'ref|' + e.c.nom + '|' + e.c.harness + '|' + e.c.repere : 'bloc|' + e.nom;
-const nomDEntree = e => e.type === 'fil' ? (e.l.cable || (e.l.origine === null ? 'câble à créer' : 'câble')) : e.type === 'ref' ? 'Déjà fait · ' + e.c.harness : e.nom;
+const nomDEntree = e => e.type === 'fil' ? (e.l.cable || (e.l.origine === null ? 'câble à créer' : e.l.type || 'câble')) : e.type === 'ref' ? 'Déjà fait · ' + e.c.harness : e.nom;
 // la fiche montrée garde sa place (ses sections ouvertes, son défilement, son connecteur) avant qu'une autre la remplace
 function memoriserEntree(e, box) { e.haut = box.scrollTop; e.sections = {}; box.querySelectorAll('details.fs').forEach(d => { e.sections[d.dataset.section] = d.open; });
   if (e.type === 'bloc' && FI.connecteur[e.nom] != null) e.connecteur = FI.connecteur[e.nom]; }
@@ -20327,7 +20355,7 @@ function barreNav(o) { o = o || {}; const I = pileInsp(), p = I.pile[I.pos - 1],
     + `<span class="fi-nav-nom" aria-hidden="true">${esc(o.nom || '')}</span>${boutonTaille()}${boutonEpingle()}${o.fermer === false ? '' : `<button type="button" class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer — Échap">${ico('fermer')}</button>`}</nav>`; }
 /* Les câbles d'un repère que le courant dépasse : des problèmes de la fiche, montrés dans « Câbles ». */
 const problemesDesFils = fils => fils.flatMap(f => { const x = intensiteDuFil(f.l); if (!x.trop.length) return []; const p = x.trop[0];
-  return [{ niveau: 'ko', texte: `${f.l.cable || 'câble sans numéro'} (${f.l.type}) : ${p.nom} ${amperes(p.i)}${p.t === Infinity ? '' : ' pendant ' + secondes(p.t)} > ${amperes(intensiteAdmise(x.fn, p.t) * x.fac)} admis${x.al ? ' — sous ' + x.al.nom : ''}`, section: 'fils', viser: cleFil(f.l) }]; });
+  return [{ niveau: 'ko', texte: `${cableEtType(f.l)} : ${p.nom} ${amperes(p.i)}${p.t === Infinity ? '' : ' pendant ' + secondes(p.t)} > ${amperes(intensiteAdmise(x.fn, p.t) * x.fac)} admis${x.al ? ' — sous ' + x.al.nom : ''}`, section: 'fils', viser: cleFil(f.l) }]; });
 
 /* ---- L'EN-TÊTE --------------------------------------------------------------------------------------------------- */
 /* Le SYMBOLE du type, à plat : l'équipement (un boîtier et son connecteur), le disjoncteur (deux bornes, le levier,
@@ -20361,7 +20389,8 @@ const tuile = (k, v, o) => { o = o || {};
    o : { type, genre (HTML, le contexte), identite (HTML), nom, champ (l'id du champ), aide, designation (le repère dont on
    écrit le nom), coul, etat (ok · att · ko : le point à l'angle du symbole) } */
 function enTete(o) {
-  const nom = o.champ ? `<input class="fi-nom" id="${o.champ}" value="${escA(o.nom)}" aria-label="${escA(o.aide || 'Repère — écrire pour renommer partout')}" spellcheck="false" autocomplete="off">`
+  // `o.ph` : ce que dit le titre quand il est vide (un câble sans numéro se dit par son type, v77) — à l'encre du titre
+  const nom = o.champ ? `<input class="fi-nom${o.ph && !o.nom ? ' fi-nom-vide' : ''}" id="${o.champ}" value="${escA(o.nom)}"${o.ph ? ` placeholder="${escA(o.ph)}"` : ''} aria-label="${escA(o.aide || 'Repère — écrire pour renommer partout')}" spellcheck="false" autocomplete="off">`
     + `<button type="button" class="fi-crayon" id="fi-crayon" aria-label="Renommer (F2)" data-bulle="Renommer partout — F2 ; chaque câble suit">${ico('crayon')}</button>` : `<div class="fi-nom">${esc(o.nom)}</div>`;
   const des = o.designation ? app.contrat.designations.get(o.designation) || '' : null;
   const desH = des != null ? `<input class="fi-des${des ? ' plein' : ''}" id="eq-des" value="${escA(des)}" placeholder="Désignation" aria-label="Désignation (un texte libre, gardé avec le contrat)" spellcheck="false" autocomplete="off">` : '';
@@ -20419,19 +20448,27 @@ function changementsEcrits(liaisons) { const m = new Map();
   liaisons.forEach(([l, champs]) => { if (!l || !l.avant) return; champs.forEach(c => { if (!(c in l.avant)) return; const avant = l.avant[c], apres = l[c] == null ? null : l[c]; if (avant === apres) return;
     const objet = objetDuChamp(l, c), k = objet + '|' + MOTS_CHAMPS[c] + '|' + avant + '|' + apres;
     if (!m.has(k)) m.set(k, { sujet: /^(pn|contact)/.test(c) ? '' : l.cable || 'câble', objet, colonnes: new Set(), champ: MOTS_CHAMPS[c] || c, avant: motValeur(c, avant), apres: motValeur(c, apres), rendre: [] });
-    const x = m.get(k), col = colonneRetest(c); if (col) x.colonnes.add(col); x.rendre.push([l, c]); }); });
+    const x = m.get(k), col = colonneRetest(c); if (col) x.colonnes.add(col); x.rendre.push([l, c]);
+    // écrit par Volta (la règle du calibre, les câbles grossis : `avecOrigineVolta`, 08-export) : le résumé le compte
+    if (l.avant['volta:' + c] !== undefined && l.avant['volta:' + c] === l[c]) x.parVolta = true; }); });
   return [...m.values()].map(x => ({ ...x, colonne: [...x.colonnes].sort().join(' · ') })); }
 /* « Par rapport au retest · 1 modification » : une ligne par modification — sa colonne et son objet (« PN1 (102CB1) »),
    ce qu'il portait barré, ce qu'il porte ; « ↺ » le rend. Ce que Volta propose d'autre, marqué « Volta ». */
 function blocRetest(ecrits, proposes) { const n = ecrits.length + proposes.length; if (!n) return '';
-  const quoi = x => x.colonne ? `<b class="id">${esc(x.colonne)}</b> (${esc(x.objet || x.sujet || '')})` : `${esc(x.champ)}${x.objet ? ` (${esc(x.objet)})` : ''}`;
+  // (v77, le lecteur : « colonne par colonne, on ne comprend pas ») : ce qui a changé, en mots — « Référence de 102CB1 »,
+  // « Type de W-011 » ; la colonne du fichier reste dans la bulle
+  const quoi = x => `${esc(majuscule(x.champ))}${x.objet || x.sujet ? ` <span class="fi-ec-de">de</span> <b class="id">${esc(x.objet || x.sujet)}</b>` : ''}`;
   const ligne = (x, i) => `<li class="fi-ec-l${x.volta ? ' volta' : ''}"><span class="fi-ec-q" data-bulle="${escA((x.colonne ? 'Colonne ' + x.colonne + ' de l’installation' : majuscule(x.champ) + ', hors des colonnes de l’installation') + (x.objet ? ' — ' + x.objet : '') + ' : ' + x.avant + ' → ' + x.apres)}">${quoi(x)}</span>`
     + `<span class="fi-ec-v"><s class="id">${esc(x.avant)}</s>${ico('fleche')}<b class="id">${esc(x.apres)}</b></span>`
     + (x.volta ? `<span class="fi-ec-o">${x.geste || 'Volta'}</span>` : `<button type="button" class="fi-ec-o fi-lien" data-rendre-retest="${i}" aria-label="${escA('Rendre ce que portait l’installation : ' + x.avant)}" data-bulle="${escA('Rendre ce que portait l’installation (' + x.avant + ')' + (x.rendre.length > 1 ? ' sur ses ' + x.rendre.length + ' liaisons' : '') + ' — Ctrl+Z le défait')}">↺</button>`) + '</li>';
-  const mots = 'Par rapport au fichier d’origine · ' + pluriel(n, 'modification') + (proposes.length ? ` · dont ${proposes.length} proposée${s_(proposes.length)} par Volta` : '');
+  /* « MODIFICATIONS » (v77, le lecteur : « installation, ça ne va pas ; trois modifications, mais par rapport à quoi ? on perd
+     l'utilisateur ») : le mot dit ce que c'est, la ligne dit par rapport à quoi — votre fichier —, et dépliée, à quoi ça
+     sert : ces changements partent dans l'installation corrigée. */
+  const parVolta = ecrits.filter(x => x.parVolta).length + proposes.length;
+  const mots = pluriel(n, 'changement') + ' par rapport à votre fichier' + (!parVolta ? '' : parVolta === n ? (n > 1 ? ', tous écrits par Volta' : ', écrit par Volta') : ` (dont ${parVolta} par Volta)`);
   FI.ecarts = ecrits;
-  return `<details class="fi-ecarts" id="fi-ecarts"><summary class="fi-ec"><span class="fi-pb-k">Installation</span><span class="fi-ec-mots" data-bulle="${escA(mots)}">${esc(mots)}</span>${ico('bas', 'fi-chevron')}</summary>`
-    + `<p class="fi-ec-note">Ce qui change par rapport au fichier d’origine, colonne par colonne, à reporter au bureau d’études.</p><ul class="fi-ec-liste">${proposes.map(x => ligne({ ...x, volta: true })).join('')}${ecrits.map(ligne).join('')}</ul></details>`; }
+  return `<details class="fi-ecarts" id="fi-ecarts"><summary class="fi-ec"><span class="fi-pb-k">Modifications</span><span class="fi-ec-mots" data-bulle="${escA(mots)}">${esc(mots)}</span>${ico('bas', 'fi-chevron')}</summary>`
+    + `<p class="fi-ec-note">Ce qui a changé sur cette fiche depuis l’ouverture de votre fichier, par Volta ou par vous. Ces changements partent dans l’installation corrigée (⋮ › Exporter).</p><ul class="fi-ec-liste">${proposes.map(x => ligne({ ...x, volta: true })).join('')}${ecrits.map(ligne).join('')}</ul></details>`; }
 
 /* ---- LES CHAMPS : une valeur, son retour au calcul ---------------------------------------------------------------- */
 /* Une ligne de champ : l'étiquette (un mot, avec sa majuscule), la valeur ou son champ, « Changer » ; dessous, s'il le
@@ -20556,7 +20593,7 @@ function protectionDuCable(l, x) { const out = { probs: [], cause: null, calEcri
     if (k === 'declenche' || k === 'juste') { out.calEcrit = d.pn;
       const xs = typeof filsDuMeilleur === 'function' && d.calibre === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [], ce = xs.find(p => p.f.l === l);
       out.cause = { cb, d, k, xs, ce };
-      if (!causeDeC) out.probs.push({ niveau: k === 'declenche' ? 'ko' : 'att', texte: `${cb} : le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : 'est ' + motDuVerdict('juste')} — il protège ce câble ; Volta propose ${amperes(d.calibre)}${ce ? ', ce qui demande ' + ce.x.propose + ' ici' : ''}`, section: 'fils', viser: undefined }); } }
+      if (!causeDeC) out.probs.push({ niveau: 'ko', texte: `${cb} : le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')} — il protège ce câble ; Volta propose ${amperes(d.calibre)}${ce ? ', ce qui demande ' + ce.x.propose + ' ici' : ''}`, section: 'fils', viser: undefined }); } }
   return out; }
 /* La chaîne de cause, en tête de la fiche du câble (le technicien, n° 1) : ce que fait le disjoncteur, ce que Volta propose
    et ce que ça demande ; « Tout régler » (le même geste que la carte de décision du disjoncteur, `deciderCalibre`),
@@ -20564,9 +20601,9 @@ function protectionDuCable(l, x) { const out = { probs: [], cause: null, calEcri
 function causeDuCable(l, prot, fin) { const c = prot && prot.cause; if (!c) return '';
   const { cb, d, k, xs, ce } = c, types = [...new Set(xs.map(p => p.x.propose))], nom = l.cable || 'ce câble';
   const tout = `Tout régler : ${cb} en ${amperes(d.calibre)}${xs.length ? ' et ' + (xs.length > 1 ? xs.length + ' câbles' : '1 câble') + (types.length === 1 ? ' en ' + types[0] : ' grossis') : ''}`;
-  const phrase = `<b class="id">${esc(cb)}</b> : le ${esc(amperes(d.pn))} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : 'est ' + motDuVerdict('juste')}, et il protège ${esc(nom)}. Volta propose <b>${esc(amperes(d.calibre))}</b>${ce ? `, ce qui demande <b class="id">${esc(ce.x.propose)}</b> ici` : ''}.`;
+  const phrase = `<b class="id">${esc(cb)}</b> : le ${esc(amperes(d.pn))} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}, et il protège ${esc(nom)}. Volta propose <b>${esc(amperes(d.calibre))}</b>${ce ? `, ce qui demande <b class="id">${esc(ce.x.propose)}</b> ici` : ''}.`;
   const seul = fin ? `<button type="button" class="btn papier fi-reparer" data-reparer="${escA(cleFil(l))}" data-type="${escA(fin.type)}" data-bulle="${escA(majuscule(fin.pourquoi) + ' : ' + fin.type + ' — ' + cb + ' garde son ' + amperes(d.pn) + ' ; Ctrl+Z le rend')}">Seulement ${esc(nom)} : ${esc(fin.type)}</button>` : '';
-  return `<section class="fi-cause ${k === 'declenche' ? 'ko' : 'att'}" aria-label="${escA('La cause : ' + cb)}"><p class="fi-cause-p">${insecable(phrase)}</p><div class="fi-cause-gestes">`
+  return `<section class="fi-cause ko" aria-label="${escA('La cause : ' + cb)}"><p class="fi-cause-p">${insecable(phrase)}</p><div class="fi-cause-gestes">`
     + `<button type="button" class="btn cuivre" data-tout-regler="${escA(cb)}" data-bulle="${escA('Écrit dans l’installation : ' + ((d.meilleur || {}).pn && d.meilleur.calibre === d.calibre ? d.meilleur.pn : amperes(d.calibre)) + (xs.length ? ', et ' + xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + ' — une seule entrée d’historique, Ctrl+Z défait le tout')}">${esc(tout)}</button>${seul}`
     + `<button type="button" class="btn lien dense" data-choisir-bloc="${escA(cb)}">Voir ${esc(cb)}</button></div></section>`; }
 
@@ -20759,7 +20796,9 @@ const nombreA = i => nombre(arrondi(i, i < 10 ? 2 : 1));
 /* Ce qui s'écrit dans la ligne d'un câble : son numéro, son type et sa gauge (et d'où vient sa ligne de la base des
    câbles), sa longueur. */
 function editionsDuCable(r) { const l = r.l, k = r.k, H = app.simu || HYPOTHESES, L = l.longueur > 0 ? l.longueur : null, lie = c => `data-cable="${escA(k)}" data-champ="${c}"`;
-  const num = `<span class="cb-num-ed${l.cable ? '' : ' manque'}"${l.cable ? '' : ' data-bulle="Ce câble n’a pas de numéro dans le retest : il manque une information"'}>${saisie(lie('cable'), l.cable || '', { mono: true, ph: 'sans n°', label: 'Numéro du câble' })}</span>`;
+  // (v77, le lecteur : « les câbles n'ont plus de numéro, il faut mettre le type ») : un câble sans numéro n'a pas de champ
+  // de numéro dans la ligne (il s'écrit sur sa fiche) ; celui qui en a un le garde, modifiable
+  const num = l.cable ? `<span class="cb-num-ed">${saisie(lie('cable'), l.cable, { mono: true, ph: 'n°', label: 'Numéro du câble' })}</span>` : '';
   const T = editeurType(lie, l.type, { num: r.num }), cab = l.type ? cableDuType(app.norme, l.type) : null;
   const type = `<span class="cb-type-ed fi-ed">${T.fam}${T.jauge}${repereConfiance(cab, 'Votre base des câbles')}</span>`;
   const lon = `<label class="cb-lg fi-ed${L == null ? ' supp' : ''}">${saisie(lie('longueur'), L != null ? nombre(arrondi(L, 2)) : '', { court: true, ph: nombre(H.longueur), mode: 'decimal', label: 'Longueur du câble ' + r.num + ', en mètres' + (L == null ? ' (supposée : l’installation ne la porte pas)' : '') })}</label>`;
@@ -20777,9 +20816,9 @@ const celluleU = cu => `<span class="fi-u ${cu.max && cu.u != null ? classeMesur
 function bandeDesCables(rows) {
   const piste = (k, val) => { const xs = rows.map(r => ({ r, v: val(r) })).filter(x => x.v != null && isFinite(x.v)); if (!xs.length) return '';
     const tri = xs.slice().sort((a, b) => b.v - a.v), max = tri[0], pc = v => Math.round(v * 100) + ' %';
-    return `<div class="cb-bande-l" data-bulle="${escA(k + ', les plus chargés : ' + tri.slice(0, 5).map(x => x.r.num + ' ' + pc(x.v)).join(' · '))}"><span class="cb-bande-k">${esc(k)}</span>`
+    return `<div class="cb-bande-l" data-bulle="${escA(k + ', les plus chargés : ' + tri.slice(0, 5).map(x => nomCourtDuCable(x.r) + ' ' + pc(x.v)).join(' · '))}"><span class="cb-bande-k">${esc(k)}</span>`
       + `<span class="cb-piste" aria-hidden="true">${xs.map(x => `<i class="${classeMesure(x.v)}" style="left:${(Math.min(1.2, x.v) / 1.2 * 100).toFixed(1)}%"></i>`).join('')}</span>`
-      + `<span class="cb-bande-max ${classeMesure(max.v)}"><b>${esc(pc(max.v))}</b><small class="id">${esc(max.r.num)}</small></span></div>`; };
+      + `<span class="cb-bande-max ${classeMesure(max.v)}"><b>${esc(pc(max.v))}</b><small class="id">${esc(nomCourtDuCable(max.r))}</small></span></div>`; };
   const h = piste('Intensité', r => r.charge.r) + piste('Chute', r => r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null);
   return h ? `<div class="cb-bande">${h}</div>` : ''; }
 function listeCables(rows, o) { o = o || {}; const rang = r => r.etat === 'ko' ? 0 : r.etat === 'att' ? 1 : 2;
@@ -20787,12 +20826,18 @@ function listeCables(rows, o) { o = o || {}; const rang = r => r.etat === 'ko' ?
   const qI = aide('intensite'), qU = aide('chute', seuil != null ? { admis: seuil, regle: regles.length === 1 ? regles[0] : '' } : null);
   const li = rows.slice().sort((a, b) => rang(a) - rang(b) || triNaturel(a.num, b.num)).map((r, n) => {
     const ed = r.l && r.l.origine !== null && r.k && r.k[0] !== 'p' ? editionsDuCable(r) : null;
-    const num = ed ? ed.num : `<b class="cb-num${r.neuf ? ' neuf' : ''}">${esc(r.num)}</b>`, typeLu = ed ? ed.type : `<span class="cb-type id">${esc(r.type || '—')}</span>`;
-    const ouvrir = r.k ? `<button type="button" class="cb-ouvrir" data-ouvrir-cable="${escA(r.k)}" aria-label="${escA('Ouvrir la fiche du câble ' + r.num)}" data-bulle="${escA('Ouvrir la fiche de ' + r.num)}">${ico('droite')}</button>` : '<span></span>';
+    /* LA LIGNE D'UN CÂBLE, sur deux étages (v77, le lecteur : « la chute en ligne et la longueur, trop serré, pas assez
+       intuitif ») : en haut, le câble — son type d'abord (son numéro s'il en a un) — et son intensité ; dessous, en clair,
+       sa chute en ligne contre l'admis et sa longueur (« supposée » quand l'installation ne la porte pas). */
+    const num = ed ? ed.num : r.l && r.l.cable ? `<b class="cb-num${r.neuf ? ' neuf' : ''}">${esc(r.num)}</b>` : '', typeLu = ed ? ed.type : `<span class="cb-type id">${esc(r.type || '—')}</span>`;
+    const nomC = nomCourtDuCable(r), ouvrir = r.k ? `<button type="button" class="cb-ouvrir" data-ouvrir-cable="${escA(r.k)}" aria-label="${escA('Ouvrir la fiche du câble ' + nomC)}" data-bulle="${escA('Ouvrir la fiche de ' + nomC)}">${ico('droite')}</button>` : '<span></span>';
+    const lg = ed ? ed.lon : '', supp = r.l && !(r.l.longueur > 0);
     return `<li class="fi-ia fi-cab cb-carte${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle)}"` : ''} style="--n:${n}">`
-      + `<span class="cb-puce">${r.puce || ''}</span>${num}${typeLu}${celluleI(r.charge)}${celluleU(r.chute)}${ed ? ed.lon : '<span class="cb-lg"></span>'}${ouvrir}`
+      + `<span class="cb-puce">${r.puce || ''}</span><span class="cb-id">${num}${typeLu}</span>${celluleI(r.charge)}${ouvrir}`
+      + `<span class="cb-sous"><span class="cb-sous-c"><span class="cb-sous-k">Chute</span>${celluleU(r.chute)}${r.chute.max != null ? `<span class="cb-sous-a">sur ${esc(volts(r.chute.max))}</span>` : ''}</span>`
+      + (lg ? `<span class="cb-sous-c"><span class="cb-sous-k">Longueur</span>${lg}<span class="cb-sous-a">m${supp ? ' · supposée' : ''}</span></span>` : '') + '</span>'
       + (r.pourquoi ? `<span class="cb-pourquoi">${insecable(esc(r.pourquoi))}</span>` : '') + '</li>'; }).join('');
-  const entete = `<li class="cb-entete"><span></span><span>Câble</span><span>Type</span><span>Intensité${qI}</span><span>Chute${seuil != null ? ' / ' + esc(volts(seuil)) : ''}${qU}</span><span class="dr">m</span><span></span></li>`;
+  const entete = `<li class="cb-entete"><span></span><span>Câble</span><span>Intensité${qI}<span class="cb-ent-u">Chute${qU}</span></span><span></span></li>`;
   return (rows.length > 12 ? bandeDesCables(rows) : '') + `<ul class="fi-cables cb-liste${o.cls ? ' ' + o.cls : ''}">${entete}${li}</ul>${datalistCables()}`; }
 /* La ligne d'un câble d'un repère : son intensité contre ce qu'il admet (au pire du permanent et de la pointe), sa chute
    en ligne depuis le disjoncteur en amont (sinon sur le câble seul), pourquoi il est à voir, et la bulle qui dit d'où
@@ -20802,7 +20847,7 @@ function ligneDeFil(f) { const l = f.l, x = intensiteDuFil(l), c = chuteDuFil(l,
   const u = c.total ? c.total.dU : c.dU, supp = c.total ? !c.total.reel : c.hyp, motSupp = supp ? ', longueurs supposées' : '';
   const pourquoi = [trop ? `trop fin pour ${x.trop[0].nom} : ${amperes(x.trop[0].i)} > ${amperes(intensiteAdmise(x.fn, x.trop[0].t) * x.fac)}` : '',
     c.trop ? `chute en ligne ${volts(c.total.dU)} > ${volts(c.max)}${motSupp}` : c.pointe ? `chute en pointe ${volts(c.pointe.dU)} > ${volts(c.pointe.admis)}${motSupp}` : '', f.coupable || ''].filter(Boolean).join(' · ');
-  const bulle = [`${l.cable || (l.origine === null ? 'câble à créer' : 'câble sans numéro')}${l.type ? ' · ' + l.type : ''} · ${x.al ? 'sous ' + x.al.nom + (x.al.calibre ? ' (' + amperes(x.al.calibre) + ')' : '') : amperes(x.H.courant) + ' supposés (aucun disjoncteur en amont)'}`,
+  const bulle = [`${l.cable ? l.cable + (l.type ? ' · ' + l.type : '') : l.origine === null ? 'câble à créer' + (l.type ? ' · ' + l.type : '') : cableDit(l)} · ${x.al ? 'sous ' + x.al.nom + (x.al.calibre ? ' (' + amperes(x.al.calibre) + ')' : '') : amperes(x.H.courant) + ' supposés (aucun disjoncteur en amont)'}`,
     x.fn ? `permanent ${amperes(x.I)} sur ${amperes(x.continu)} admis en continu${motFacteur(x.fac)}` : (l.type ? 'hors de la norme des câbles : ce qu’il admet ne se lit pas' : 'sans type : ce qu’il admet ne se lit pas'),
     x.pointe && x.pointe.admis ? `pointe ${amperes(x.pointe.i)} pendant ${secondes(x.pointe.t)} sur ${amperes(x.pointe.admis)} admis` : '',
     c.total ? `chute en ligne depuis ${x.al.nom} vers ${c.total.bout[0]}${c.total.bout[1] ? ':' + c.total.bout[1] : ''} : ${volts(c.total.dU)}${c.max != null ? ' (' + volts(c.max) + ' admis)' : ''}${motSupp}` : c.dU != null ? `chute sur ce câble : ${volts(c.dU)} (${nombre(arrondi(c.L, 2))} m${c.hyp ? ' supposés' : ''})` : '',
@@ -20817,7 +20862,7 @@ function ligneDeFil(f) { const l = f.l, x = intensiteDuFil(l), c = chuteDuFil(l,
 function sectionFils(rows, probs, o) { o = o || {}; if (!rows.length) return { cle: 'fils', titre: o.titre, vide: 'aucun câble' };
   const ko = rows.filter(r => r.etat === 'ko').length, att = rows.filter(r => r.etat === 'att').length, rs = rows.filter(r => r.charge.r != null && isFinite(r.charge.r)), pire = rs.length ? rs.reduce((a, b) => (b.charge.r > a.charge.r ? b : a)) : null;
   // (v74, lot F — le lecteur : « “Tous tiennent”, c'est obscur ») : aucun problème, et le plus chargé nommé, avec ce qu'il porte de ce qu'il admet
-  const resume = [pluriel(rows.length, 'câble'), ko ? `<span class="fi-ko-t">${ko} en défaut</span>` : att ? `<span class="fi-att-t">${att} à voir</span>` : 'aucun problème' + (pire ? ` · le plus chargé, ${esc(pire.num)}, porte ${Math.round(pire.charge.r * 100)} % de ce qu’il admet` : '')].join(' · ');
+  const resume = [pluriel(rows.length, 'câble'), ko ? `<span class="fi-ko-t">${ko} en défaut</span>` : att ? `<span class="fi-att-t">${att} à voir</span>` : 'aucun problème' + (pire ? ` · le plus chargé, ${esc(nomCourtDuCable(pire))}, porte ${Math.round(pire.charge.r * 100)} % de ce qu’il admet` : '')].join(' · ');
   return { cle: 'fils', titre: o.titre, resume: insecable(resume), badge: badgeProblemes(probs, 'fils') || (ko ? { t: String(ko), etat: 'ko' } : att ? { t: String(att), etat: 'att' } : { t: ico('coche'), etat: 'ok' }),
     contenu: (o.note ? `<p class="fi-note cb-note">${o.note}</p>` : '') + listeCables(rows, o) }; }
 /* Les câbles d'un repère (équipement, barrette, prise) : une ligne chacun ; ce qui est supposé (le courant quand aucun
@@ -20828,7 +20873,7 @@ function sectionFilsDuRepere(fils, probs, coupables) { const C = coupables || ne
 /* CE QUI EST SUPPOSÉ, dit une fois et en clair (v74, lot F — le lecteur : « l'italique, l'hypothèse 5 m : compliqué ») : la
    longueur que l'installation ne porte pas, le courant sans disjoncteur en amont — combien de câbles, la valeur, et quoi
    faire ; plus d'italique dans le tableau (une case vide montre la valeur supposée en gris, sans plus). */
-function noteSupposes(nDj, nL, n, H) { const xs = [nL ? `<b>${esc('Longueur supposée : ' + nombre(H.longueur) + ' m')}</b>${esc((n > 1 ? ' pour ' + (nL === n ? (n > 2 ? 'les ' + n + ' câbles' : 'les deux câbles') : nL + ' câble' + (nL > 1 ? 's' : '') + ' sur ' + n) : '') + ', à écrire dans l’installation (ou dans la colonne m)')}` : '',
+function noteSupposes(nDj, nL, n, H) { const xs = [nL ? `<b>${esc('Longueur supposée : ' + nombre(H.longueur) + ' m')}</b>${esc((n > 1 ? ' pour ' + (nL === n ? (n > 2 ? 'les ' + n + ' câbles' : 'les deux câbles') : nL + ' câble' + (nL > 1 ? 's' : '') + ' sur ' + n) : '') + ', à écrire dans l’installation (ou ici, dans la case Longueur)')}` : '',
     nDj ? `<b>${esc('Courant supposé : ' + nombre(H.courant) + ' A')}</b>${esc((n > 1 ? ' pour ' + (nDj === n ? (n > 2 ? 'les ' + n + ' câbles' : 'les deux câbles') : nDj + ' câble' + (nDj > 1 ? 's' : '') + ' sur ' + n) : '') + ', sans disjoncteur en amont')}` : ''].filter(Boolean);
   return xs.length ? xs.join('. ') + `. <span class="fi-note-hyp">${esc('Ce sont des')} ${motHypothese}s.</span>` : ''; }
 
@@ -20933,7 +20978,7 @@ function raccordHtml(it) { const { cle } = it, h = habillageDe(it), c = h.choix,
     + (lignes ? `<ul class="fi-nomen">${lignes}</ul>` : `<p class="fi-note">${h.tableau ? 'Disjoncteur de tableau : ni raccord ni band-it.' : 'Rien à poser.'}</p>`) + '</div>'; }
 /* ---- UN ÉQUIPEMENT ------------------------------------------------------------------------------------------------ */
 // la section qu'un point du disjoncteur démontre : ses câbles (la charge, la protection, la chute en ligne), sinon lui
-const sectionDj = t => /^chute en ligne/.test(t) || /^(?![\d])\S+ \(|^(fil|câble) sans numéro|^borne /.test(t) ? 'fils' : 'disjoncteur';
+const sectionDj = t => /^chute en ligne/.test(t) || /^(?![\d])\S+ \(|^(fil|câble) sans numéro|^câble \S+ :|^borne /.test(t) ? 'fils' : 'disjoncteur';
 /* LA BORNE FAUTIVE d'un connecteur qu'aucun arrangement ne loge (l'audit v72 : « six bornes accusées pour une seule
    fautive ; W-370 est vert ») — le moteur la nomme (09, `remplirContacts` : `coupables`, et `proche`, la référence de
    l'arrangement le plus proche) : pour chaque câble de la borne, ce qui cloche contre le contact de même rang du plus
@@ -20992,7 +21037,12 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const coupables = new Map(); cav.forEach(x => coupablesDu(x.plan, x.points).forEach(y => coupables.set(y.l, `connecteur ${x.nom} : aucun arrangement ne le loge (${y.mot} pour la borne ${y.borne})`)));
   // (le compte rouge au bout de la ligne se tait quand la bulle du connecteur fautif le dit déjà — le technicien v73 : « le 1 rouge répète l'info »)
   const pbC = probs.filter(p => p.section === 'connecteur'), dejaDit = pbC.length > 0 && pbC.every(p => p.niveau === 'ko' && p.connecteur && fautif(p.connecteur));
-  const sections = [{ cle: 'connecteur', titre: 'Connecteur', resume: (refs ? `<span class="fs-ref">${refs}</span>` : '') + bulles || (ids.length ? '' : 'aucune borne'), badge: dejaDit ? null : badgeProblemes(probs, 'connecteur'), contenu: `<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>`, vide: ids.length ? '' : 'aucune borne' },
+  /* (v77, le lecteur : « je n'arrive pas à ouvrir un connecteur et le fermer, je reste bloqué dessus ») : les bulles étaient
+     DANS la ligne de titre — un clic au milieu de la ligne tombait sur une bulle et ne repliait rien. La ligne ne fait plus
+     que déplier et replier (la référence, les connecteurs en mots) ; les bulles ouvrent le corps de la section. */
+  const quels = ids.filter(id => id !== '—'), enMots = quels.length > 1 ? `<span class="fs-ct-ids">${esc(pluriel(quels.length, 'connecteur') + ' : ' + quels.join(', '))}</span>` : '';
+  const choix = ids.length > 1 || sans.length ? `<div class="ct-choix"><span class="ct-choix-t">Le connecteur montré</span>${bulles}</div>` : '';
+  const sections = [{ cle: 'connecteur', titre: 'Connecteur', resume: (refs ? `<span class="fs-ref">${refs}</span>` : '') + enMots || (ids.length ? '' : 'aucune borne'), badge: dejaDit ? null : badgeProblemes(probs, 'connecteur'), contenu: `${choix}<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>`, vide: ids.length ? '' : 'aucune borne' },
     sectionFilsDuRepere(fils, probs, coupables), sectionConso(nom), sectionDejaFait(nom)];
   const id = identite([majuscule(natureDe(nom)), descriptionDuRetest(nom) ? esc(descriptionDuRetest(nom)) : '', pns.length === 1 ? ident(pns[0]) : '', C.length > 1 ? pluriel(C.length, 'connecteur') : '', esc(motFolios(foliosDuRepere(nom)))]);
   return enTete({ type: 'equipement', designation: nom, nom, champ: 'eq-rep', etat: etatDesProblemes(probs), identite: id }) + barreProblemes(probs, sections) + blocRetest(ecritsDuRepere(nom), []) + ficheSections('equipement', sections)
@@ -21509,7 +21559,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
     { cle: 'fils', titre: 'Intensité et chute', resume: insecable(resumeI), badge: badgeProblemes(probs, 'fils') || (x.fn ? { t: ico('coche'), etat: 'ok' } : { t: '—', etat: '' }), contenu: `<div class="fi-mesures">${intens}${chute}</div>${reparer}` }];
   const id = identite([l.type ? ident(l.type) : '', l.route ? esc(l.route) : '', esc(motFolios(neuf ? [] : foliosDe(l).map(String)))]);
   const ecrits = neuf ? [] : changementsEcrits([[l, ['cable', 'type', 'longueur', 'route', 'pnDe', 'pnVers', 'contactDe', 'contactVers']]]);
-  return enTete({ type: 'fil', genre: 'Câble', identite: id, nom: neuf ? 'à créer' : (l.cable || 'sans numéro'), champ: neuf ? '' : 'fil-num', aide: 'Numéro du câble — écrire pour le changer', coul, etat: etatDesProblemes(probs) })
+  // (v77, le lecteur : « les câbles n'ont plus de numéro, il faut mettre le type ») : sans numéro, le titre dit son type
+  return enTete({ type: 'fil', genre: 'Câble', identite: id, nom: neuf ? 'à créer' : (l.cable || ''), ph: neuf ? '' : (l.type || 'câble'), champ: neuf ? '' : 'fil-num', aide: 'Numéro du câble (il n’en a pas encore : écrire pour lui en donner un)', coul, etat: etatDesProblemes(probs) })
     + barreProblemes(probs, sections, { gestesTus: cause ? /^(Tout régler|Voir )/ : null }) + cause + blocRetest(ecrits, []) + tuilesHtml(tuiles) + hypL + ficheSections('fil', sections) + datalists + fiPied(neuf ? { voir: l.aPoser } : { tableau: l.cable || l.de, menu: MENU_FIL }); }
 
 /* ---- LE PIED ---------------------------------------------------------------------------------------------------------- */
@@ -21540,7 +21591,7 @@ function ficheBloc(nom) {
   return ficheEquipement(nom); }
 // la fiche d'une cible, en HTML (sans la barre), et le nom que la barre écrit quand l'en-tête passe dessous
 const ficheDe = c => c.type === 'fil' ? ficheFil(c.l) : c.type === 'ref' ? ficheComparaison(c) : ficheBloc(c.nom);
-const nomDeCible = c => c.type === 'fil' ? (c.l.cable || (c.l.origine === null ? 'câble à créer' : 'câble')) : c.type === 'ref' ? 'Déjà fait · ' + c.harness : c.nom;
+const nomDeCible = c => c.type === 'fil' ? (c.l.cable || (c.l.origine === null ? 'câble à créer' : c.l.type || 'câble')) : c.type === 'ref' ? 'Déjà fait · ' + c.harness : c.nom;
 // ce qu'un rendu garde le temps de se faire : les intensités, les plans, les raccords
 /* UN GESTE QUI SE DÉFAIT (plus de confirm()) : il se fait, le mot le dit, et « Rétablir » dedans le défait — le geste du
    toast (`dire`, troisième argument, 08-interface) ; Ctrl+Z aussi, l'historique est la vérité. `puis` : rouvrir ce qui
@@ -21803,7 +21854,7 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
       const g = estMasse(rep) ? null : connecteurParBorne(rep, liaisonsDeRepere(rep)).get(String(borne)); allerAuBloc(rep, estMasse(rep) ? { section: 'fils', viser: cleFil(l) } : { connecteur: g ? g.nom : '', section: 'connecteur', viser: cleFil(l) }); });
     if ($('fil-tableau')) $('fil-tableau').onclick = () => recapitulatifDe(c);
     // supprimer : fait tout de suite, « Rétablir » dans le toast (plus de boîte du navigateur ; Ctrl+Z aussi)
-    if ($('fil-del')) $('fil-del').onclick = () => { const i = verite().indexOf(l); if (i < 0) return; const quoi = 'Câble ' + (l.cable || 'sans numéro') + ' (' + l.de + ' → ' + l.vers + ') supprimé (Ctrl+Z).';
+    if ($('fil-del')) $('fil-del').onclick = () => { const i = verite().indexOf(l); if (i < 0) return; const quoi = (l.cable ? 'Câble ' + l.cable : majuscule(cableDit(l))) + ' (' + l.de + ' → ' + l.vers + ') supprimé (Ctrl+Z).';
       supprimerLiaison(i); deselectionner(); direRetablir(quoi, () => { const x = verite()[i]; if (x) montrerFil(x); }); }; }
   lierChoix(box, c);
   // « Copier la fiche » (le « ⋯ ») ; « ↺ » d'un changement par rapport au retest ; la gauge qui se loge ou qui tient, d'un clic ;
@@ -23839,9 +23890,9 @@ const boutLisible = (n, b) => { const [r, x] = boutSource(n, b); return bornePlu
 const rangsDesFolios = ps => { const P = plans(); return ps.map(p => P.indexOf(p) + 1).filter(r => r > 0).sort((a, b) => a - b); };
 function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => `<b class="pl-b-t">${esc(t)}</b>`, l_ = t => `<span class="pl-b-l">${t}</span>`, id = t => `<span class="pl-b-id">${esc(t)}</span>`;
   if (q.genre === 'rendre') return T('Rendre au moteur') + l_('ce qu’on a changé ici revient au dessin automatique');
-  const lignesDeFil = f => { const l = L[f.i] || {}, s = sourceDe(l) || l; return id(s.cable || 'sans numéro') + ' · ' + id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)); };
+  const lignesDeFil = f => { const l = L[f.i] || {}, s = sourceDe(l) || l; return id(s.cable || s.type || 'sans numéro') + ' · ' + id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)); };
   if (q.genre === 'fil') { const l = L[q.f.i] || {}, s = sourceDe(l) || l, c = D.couleurDe && D.couleurDe(q.f), lg = parseFloat(String(s.longueur || '').replace(',', '.'));
-    return T(s.cable || 'Câble sans numéro') + l_(id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)))
+    return T(s.cable || majuscule(cableDit(s))) + l_(id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)))
       + l_((c ? `<i class="pl-b-route" style="background:${c}"></i>` : '') + esc(s.route || 'sans route') + ' · ' + esc(s.type || 'type inconnu') + (lg > 0 ? ' · ' + String(Math.round(lg * 100) / 100).replace('.', ',') + ' m' : '')); }
   if (q.genre === 'renvoi') { const t = q.c.name.replace(RENVOI, ''), l = q.f && L[q.f.i], bout = l ? (l.de === q.c.name ? l.borneDe : l.borneVers) : '';
     return T('Vers le folio ' + t) + (l ? l_(id(autreBoutDuRenvoi(bout)) + (l.cable ? ' · ' + id(l.cable) : '')) : '') + l_('Clic : y aller, l’autre moitié allumée'); }
@@ -24234,7 +24285,7 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   if (!rep0 && Q.length > 3) { const r = [...info.keys()].filter(n => Q.startsWith(aPlat(n)) && Q.length > aPlat(n).length).sort((a, b) => aPlat(b).length - aPlat(a).length)[0]; if (r) { rep0 = r; bq = Q.slice(aPlat(r).length); } }
   if (rep0) { const vues = new Set(); L.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
       if (r !== rep0 || !b || vues.has(b) || !aPlat(b).startsWith(bq)) return; vues.add(b);
-      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: (l.cable || 'câble sans numéro') + (l.type ? ' · ' + l.type : '') + ' → ' + autre + (bAutre ? ':' + bAutre : '') }); }));
+      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: (l.cable ? l.cable + (l.type ? ' · ' + l.type : '') : cableDit(l)) + ' → ' + autre + (bAutre ? ':' + bAutre : '') }); }));
     bornes.sort((a, b) => triNaturel(a.borne, b.borne)); }
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };
@@ -27917,7 +27968,7 @@ function infoDisj(nom) { return memo('dj|' + nom, () => { const d = disjonctionD
    dossier (v73, l'ingénieur n° 8 : « tient », « touche la courbe » ici, « passe » là ; la table unique est celle du moteur,
    `VERDICTS_CALIBRE`, 09-disjoncteurs) ; « touche la courbe », « sans la marge » vont dans la bulle, avec le pourquoi
    chiffré du moteur (`pourquoiDuCalibre`) et chaque état du profil contre la courbe. */
-const MOTS_TROIS = { passe: { mot: 'passe', etat: 'ok', bulle: 'Il ne déclenche pas, avec la marge.' }, juste: { mot: 'juste', etat: 'att', bulle: 'Il touche la courbe : il passe, mais sans la marge.' }, declenche: { mot: 'déclenche', etat: 'ko', bulle: 'Il déclenche.' } };
+const MOTS_TROIS = { passe: { mot: 'passe', etat: 'ok', bulle: 'Il ne déclenche pas, avec la marge.' }, juste: { mot: 'touche la courbe', etat: 'ko', bulle: 'Il touche la courbe : il ne passe pas.' }, declenche: { mot: 'déclenche', etat: 'ko', bulle: 'Il déclenche.' } };
 const verdictTrois = g => { if (typeof verdictDeCalibre === 'function') { try { return verdictDeCalibre(g); } catch (_) { return null; } }
   if (!g || g.valide == null) return null; return g.valide === false ? MOTS_TROIS.declenche : (g.marge != null ? g.marge : g.avecMarge) ? MOTS_TROIS.passe : MOTS_TROIS.juste; };
 function verdictDuCalibre(d) { if (!d.calibre) return { n: '', mot: '' };
@@ -29454,23 +29505,16 @@ lierReferencesUneFois();
 
 const SECTIONS = { disjoncteur: 'Calibre', connecteur: 'Connecteur', raccord: 'Raccord', trajet: 'De → vers', fils: 'Câbles', dejafait: 'Déjà fait' };
 const ORDRE_SECTIONS = Object.keys(SECTIONS);
-// ouvertes d'office : dans la carte flottante, presque aucune — une fiche s'ouvre pliée, chaque ligne dit l'essentiel —, sauf
-// le CALIBRE d'un disjoncteur (v73 : le cadran est le moment de l'outil, l'ingénieur et le designer le veulent en vue dès
-// l'ouverture) et les câbles d'une masse (une masse n'a que ça à montrer) ; dans le volet épinglé (la place y est), celle qui
-// définit l'objet. v74 (lot F — le lecteur : « intensité et chute, c'est bien, mais pas présenté de façon fluide ») : celles
-// d'un câble s'ouvrent d'office — elles sont sa seule place (plus de tuile Intensité), elles se lisent sans un clic
-const OUVERTES_D_OFFICE = { disjoncteur: ['disjoncteur'], masse: ['fils'], fil: ['fils'] };
-const OUVERTES_DANS_LE_VOLET = { equipement: ['connecteur'], disjoncteur: ['disjoncteur'], barrette: ['connecteur'], prise: ['connecteur'], fil: ['trajet', 'fils'] };
-const voletEpingle = () => typeof CARTE === 'object' && !!CARTE && !!CARTE.epingle;
-
-/* La mémoire des sections, par type : ce que l'ingénieur a ouvert ou fermé (dans ce navigateur ; une mémoire
-   indisponible — navigation privée — n'empêche rien : on garde les valeurs d'office). La clé change avec la v5 :
-   tout se plie d'office, ce qu'on avait ouvert avant ne compte plus. */
-const CLE_SECTIONS = 'atelier.fiche.sections.v5';
-const MEMOIRE_SECTIONS = (() => { try { return JSON.parse(localStorage.getItem(CLE_SECTIONS) || '{}') || {}; } catch (_) { return {}; } })();
-function sectionOuverte(type, cle) { const m = MEMOIRE_SECTIONS[type]; return m && cle in m ? !!m[cle] : ((voletEpingle() ? OUVERTES_DANS_LE_VOLET : OUVERTES_D_OFFICE)[type] || []).includes(cle); }
-function retenirSection(type, cle, ouvert) { (MEMOIRE_SECTIONS[type] = MEMOIRE_SECTIONS[type] || {})[cle] = !!ouvert;
-  try { localStorage.setItem(CLE_SECTIONS, JSON.stringify(MEMOIRE_SECTIONS)); } catch (_) { } }
+/* TOUT PLIÉ (v77, le lecteur : « toutes les pages doivent être fermées, tous les petits onglets — installation, calibre,
+   etc. — et c'est à moi de les déplier ») : une fiche s'ouvre pliée, quel que soit l'objet, flottante ou épinglée. Ce qu'on
+   déplie reste déplié tant qu'on reste sur CETTE fiche (elle se refait sous la main après une saisie), et s'oublie dès
+   qu'on en ouvre une autre ; rien ne se garde d'une session à l'autre. Une section qu'un geste ouvre (une ligne des
+   problèmes, « voir », la recherche) compte comme dépliée. */
+const MEMOIRE_SECTIONS = { fiche: '', ouvertes: {} };
+const cleDeLaFiche = () => { const c = app.cible; return c ? (c.type || '') + '|' + (c.nom || (c.l && typeof cleFil === 'function' ? cleFil(c.l) : '')) : ''; };
+const memoireDeLaFiche = () => { const k = cleDeLaFiche(); if (MEMOIRE_SECTIONS.fiche !== k) { MEMOIRE_SECTIONS.fiche = k; MEMOIRE_SECTIONS.ouvertes = {}; } return MEMOIRE_SECTIONS.ouvertes; };
+function sectionOuverte(type, cle) { return !!memoireDeLaFiche()[type + '|' + cle]; }
+function retenirSection(type, cle, ouvert) { memoireDeLaFiche()[type + '|' + cle] = !!ouvert; }
 
 /* Une section : { cle, titre?, resume?, badge?: { t, etat: 'ko'|'att'|'ok'|'' }, contenu, vide?, action?, ouvert? }.
    `resume`, `contenu` et `action` sont du HTML déjà échappé ; `vide` est la raison (texte) quand la donnée manque, et
@@ -29496,7 +29540,7 @@ const groupeSection = (titre, contenu, o) => { o = o || {}; if (!contenu) return
    s'allume un instant ; ce n'est pas un choix de l'ingénieur, on ne le retient pas. */
 // (`sur place` : ouverte là où elle est, sans défiler — le geste vient de sa tête, sous la main)
 function ouvrirSection(box, cle, allumer, surPlace) { const d = box && box.querySelector(`details.fs[data-section="${CSS.escape(cle)}"]`); if (!d) return null;
-  d.open = true; if (!surPlace) try { d.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { d.scrollIntoView(); }
+  d.open = true; if (d.dataset.type) retenirSection(d.dataset.type, cle, true); if (!surPlace) try { d.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { d.scrollIntoView(); }
   if (allumer !== false) { d.classList.remove('fs-allume'); void d.offsetWidth; d.classList.add('fs-allume'); setTimeout(() => d.classList.remove('fs-allume'), 1400); }
   return d; }
 // ce que l'ingénieur ouvre ou ferme à la main (un clic, ou Entrée / Espace sur le titre), on le retient pour ce type ; une

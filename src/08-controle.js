@@ -42,7 +42,7 @@ const sectionDuPoint = (nom, texte) => !nom ? '' : estDisjoncteur(nom) ? section
    — la charge qu'il porte, sa protection, son contact contre le calibre, la chute d'un chemin, un conducteur CCA — porte
    `cables` : les liaisons du contrat dont il parle. `problemesDuCable(l)` les rend à la fiche du câble, avec la chaîne de
    cause quand c'est le disjoncteur. Un point de disjoncteur dit son câble en tête (« W-012 (DR20) : … ») : on l'y lit. */
-const nomDuCableDit = f => (f.cable || 'câble sans numéro') + (f.type ? ' (' + f.type + ')' : '');
+const nomDuCableDit = f => cableEtType(f);
 function cablesDuTexte(d, texte) { const t = String(texte || ''); return (d && d.fils || []).filter(f => f.l && (t.startsWith(nomDuCableDit(f) + ' : ') || t.startsWith(nomDuCableDit(f) + ' (par '))).map(f => f.l); }
 function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu || HYPOTHESES, items = [], ko = (nom, texte, plus) => items.push({ niveau: 'ko', nom, texte, section: sectionDuPoint(nom, texte), ...plus }), att = (nom, texte, plus) => items.push({ niveau: 'att', nom, texte, section: sectionDuPoint(nom, texte), ...plus });
   // la chute affichée est celle des fiches (`chutesDuDisjoncteur`, 08-fiche) : le contrôle la relit avec le contrat neuf
@@ -77,7 +77,7 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   } catch (_) { }
   // un conducteur qui n'est pas du cuivre (AD, VN : aluminium cuivré) serti sur un contact cuivre ordinaire : à qualifier
   contacts.forEach((xs, l) => { const fam = cableFamilleDe(N, l.type); if (!fam || !fam.conducteur || fam.conducteur === 'cuivre') return;
-    xs.forEach(x => { if (x.sertir && x.sertir.reference && !contactPourCca(x.sertir.reference)) att(x.repere, `${l.cable || 'câble sans numéro'} (${l.type}) : conducteur ${fam.conducteur} sur un contact ${x.sertir.reference} — qualification CCA à confirmer`, { cables: [l] }); }); });
+    xs.forEach(x => { if (x.sertir && x.sertir.reference && !contactPourCca(x.sertir.reference)) att(x.repere, `${cableEtType(l)} : conducteur ${fam.conducteur} sur un contact ${x.sertir.reference} — qualification CCA à confirmer`, { cables: [l] }); }); });
   // les disjoncteurs : tout ce qu'ils nourrissent, la table 11-3, les contacts, la chute en ligne
   reperes.filter(estDisjoncteur).forEach(r => { try { controleProtection(r, contacts, V, N, H).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte, { cables: x.cables || [] })); } catch (_) { } });
   // les barrettes à poser, folio par folio
@@ -225,7 +225,7 @@ function causeDuDisjoncteur(nom) { let d; try { d = disjonctionDe(nom); } catch 
   const v = verdictDeCalibre(d.gPn); if (!v || v === VERDICTS_CALIBRE.passe) return null;
   const m = d.meilleur || {}, xs = d.calibre === m.calibre && typeof filsDuMeilleur === 'function' ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   const types = [...new Set(xs.map(p => p.x.propose))];
-  const mot = `${nom} : le ${amperes(d.pn)} de l’installation ${v.mot === 'juste' ? 'est juste' : 'déclenche'} — Volta retient ${amperes(d.calibre)}${xs.length ? ', qui demande ' + (xs.length > 1 ? xs.length + ' câbles' : 'un câble') + (types.length === 1 ? ' en ' + types[0] : ' plus gros') : ''}`;
+  const mot = `${nom} : le ${amperes(d.pn)} de l’installation ${v.cle === 'juste' || v.mot === 'touche la courbe' ? 'touche la courbe' : 'déclenche'} — Volta retient ${amperes(d.calibre)}${xs.length ? ', qui demande ' + (xs.length > 1 ? xs.length + ' câbles' : 'un câble') + (types.length === 1 ? ' en ' + types[0] : ' plus gros') : ''}`;
   // le pourquoi chiffré du retest (09 bis), pour la bulle : « touche la courbe », « sans la marge » s'y disent, pas dans le mot
   let bulle = v.bulle; try { const q = pourquoiDuCalibre(app.norme, d, d.pn); if (q) bulle = majuscule(q.phrase) + '.\n' + v.bulle + ' Il protège ce câble.'; } catch (_) { }
   return { repere: nom, retest: d.pn, retenu: d.calibre, verdict: v, cables: xs.map(p => ({ cable: p.x.cable, actuel: p.x.actuel, propose: p.x.propose })), mot, bulle }; }

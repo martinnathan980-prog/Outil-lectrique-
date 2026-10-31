@@ -1431,9 +1431,9 @@ const boutLisible = (n, b) => { const [r, x] = boutSource(n, b); return bornePlu
 const rangsDesFolios = ps => { const P = plans(); return ps.map(p => P.indexOf(p) + 1).filter(r => r > 0).sort((a, b) => a - b); };
 function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => `<b class="pl-b-t">${esc(t)}</b>`, l_ = t => `<span class="pl-b-l">${t}</span>`, id = t => `<span class="pl-b-id">${esc(t)}</span>`;
   if (q.genre === 'rendre') return T('Rendre au moteur') + l_('ce qu’on a changé ici revient au dessin automatique');
-  const lignesDeFil = f => { const l = L[f.i] || {}, s = sourceDe(l) || l; return id(s.cable || 'sans numéro') + ' · ' + id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)); };
+  const lignesDeFil = f => { const l = L[f.i] || {}, s = sourceDe(l) || l; return id(s.cable || s.type || 'sans numéro') + ' · ' + id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)); };
   if (q.genre === 'fil') { const l = L[q.f.i] || {}, s = sourceDe(l) || l, c = D.couleurDe && D.couleurDe(q.f), lg = parseFloat(String(s.longueur || '').replace(',', '.'));
-    return T(s.cable || 'Câble sans numéro') + l_(id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)))
+    return T(s.cable || majuscule(cableDit(s))) + l_(id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)))
       + l_((c ? `<i class="pl-b-route" style="background:${c}"></i>` : '') + esc(s.route || 'sans route') + ' · ' + esc(s.type || 'type inconnu') + (lg > 0 ? ' · ' + String(Math.round(lg * 100) / 100).replace('.', ',') + ' m' : '')); }
   if (q.genre === 'renvoi') { const t = q.c.name.replace(RENVOI, ''), l = q.f && L[q.f.i], bout = l ? (l.de === q.c.name ? l.borneDe : l.borneVers) : '';
     return T('Vers le folio ' + t) + (l ? l_(id(autreBoutDuRenvoi(bout)) + (l.cable ? ' · ' + id(l.cable) : '')) : '') + l_('Clic : y aller, l’autre moitié allumée'); }
@@ -1826,7 +1826,7 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   if (!rep0 && Q.length > 3) { const r = [...info.keys()].filter(n => Q.startsWith(aPlat(n)) && Q.length > aPlat(n).length).sort((a, b) => aPlat(b).length - aPlat(a).length)[0]; if (r) { rep0 = r; bq = Q.slice(aPlat(r).length); } }
   if (rep0) { const vues = new Set(); L.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
       if (r !== rep0 || !b || vues.has(b) || !aPlat(b).startsWith(bq)) return; vues.add(b);
-      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: (l.cable || 'câble sans numéro') + (l.type ? ' · ' + l.type : '') + ' → ' + autre + (bAutre ? ':' + bAutre : '') }); }));
+      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: (l.cable ? l.cable + (l.type ? ' · ' + l.type : '') : cableDit(l)) + ' → ' + autre + (bAutre ? ':' + bAutre : '') }); }));
     bornes.sort((a, b) => triNaturel(a.borne, b.borne)); }
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };

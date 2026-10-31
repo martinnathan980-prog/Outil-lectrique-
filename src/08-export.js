@@ -132,7 +132,7 @@ function propositionsNonEcrites() { const V = verite(), out = [];
     out.push({ genre: 'calibre', repere: r, retest: d.pn, retenu: d.calibre, pnRetest, pnVolta, ecrivable, verdictRetest: verdictDeCalibre(d.gPn), verdictRetenu: verdictDeCalibre(d),
       cables: xs.map(p => ({ cable: p.x.cable || 'sans n°', actuel: p.x.actuel, propose: p.x.propose })),
       geste: `Écrire ${amperes(d.calibre)}${nc ? ' et grossir ' + (nc > 1 ? 'les ' + nc + ' câbles' : 'le câble') : ''}`,
-      suite: (nc ? `Le ${amperes(d.calibre)} demande ${xs.map(p => p.x.cable || 'un câble sans numéro').join(', ')} en ${types.length === 1 ? types[0] : 'plus gros'}.` : '') + (ecrivable ? '' : ` Son part number (${pnRetest}) ne dit pas sa famille : Volta ne sait pas l’écrire, à reporter à la main.`),
+      suite: (nc ? `Le ${amperes(d.calibre)} demande ${xs.map(p => p.x.cable || 'le ' + cableDit(p.x)).join(', ')} en ${types.length === 1 ? types[0] : 'plus gros'}.` : '') + (ecrivable ? '' : ` Son part number (${pnRetest}) ne dit pas sa famille : Volta ne sait pas l’écrire, à reporter à la main.`),
       faire: ecrivable ? () => avecOrigineVolta(() => deciderCalibre(r)) : null }); });
   // les barrettes : le module que Volta retient à la place de celui du retest
   reperesDe(V).filter(r => !VT_A_POSER.test(r) && barretteEnModules(r)).sort(triNaturel).forEach(r => { try { const b = besoinsDeBarrette(r, V), Q = planDeBarrette(r).plan;

@@ -48,23 +48,16 @@
 
 const SECTIONS = { disjoncteur: 'Calibre', connecteur: 'Connecteur', raccord: 'Raccord', trajet: 'De → vers', fils: 'Câbles', dejafait: 'Déjà fait' };
 const ORDRE_SECTIONS = Object.keys(SECTIONS);
-// ouvertes d'office : dans la carte flottante, presque aucune — une fiche s'ouvre pliée, chaque ligne dit l'essentiel —, sauf
-// le CALIBRE d'un disjoncteur (v73 : le cadran est le moment de l'outil, l'ingénieur et le designer le veulent en vue dès
-// l'ouverture) et les câbles d'une masse (une masse n'a que ça à montrer) ; dans le volet épinglé (la place y est), celle qui
-// définit l'objet. v74 (lot F — le lecteur : « intensité et chute, c'est bien, mais pas présenté de façon fluide ») : celles
-// d'un câble s'ouvrent d'office — elles sont sa seule place (plus de tuile Intensité), elles se lisent sans un clic
-const OUVERTES_D_OFFICE = { disjoncteur: ['disjoncteur'], masse: ['fils'], fil: ['fils'] };
-const OUVERTES_DANS_LE_VOLET = { equipement: ['connecteur'], disjoncteur: ['disjoncteur'], barrette: ['connecteur'], prise: ['connecteur'], fil: ['trajet', 'fils'] };
-const voletEpingle = () => typeof CARTE === 'object' && !!CARTE && !!CARTE.epingle;
-
-/* La mémoire des sections, par type : ce que l'ingénieur a ouvert ou fermé (dans ce navigateur ; une mémoire
-   indisponible — navigation privée — n'empêche rien : on garde les valeurs d'office). La clé change avec la v5 :
-   tout se plie d'office, ce qu'on avait ouvert avant ne compte plus. */
-const CLE_SECTIONS = 'atelier.fiche.sections.v5';
-const MEMOIRE_SECTIONS = (() => { try { return JSON.parse(localStorage.getItem(CLE_SECTIONS) || '{}') || {}; } catch (_) { return {}; } })();
-function sectionOuverte(type, cle) { const m = MEMOIRE_SECTIONS[type]; return m && cle in m ? !!m[cle] : ((voletEpingle() ? OUVERTES_DANS_LE_VOLET : OUVERTES_D_OFFICE)[type] || []).includes(cle); }
-function retenirSection(type, cle, ouvert) { (MEMOIRE_SECTIONS[type] = MEMOIRE_SECTIONS[type] || {})[cle] = !!ouvert;
-  try { localStorage.setItem(CLE_SECTIONS, JSON.stringify(MEMOIRE_SECTIONS)); } catch (_) { } }
+/* TOUT PLIÉ (v77, le lecteur : « toutes les pages doivent être fermées, tous les petits onglets — installation, calibre,
+   etc. — et c'est à moi de les déplier ») : une fiche s'ouvre pliée, quel que soit l'objet, flottante ou épinglée. Ce qu'on
+   déplie reste déplié tant qu'on reste sur CETTE fiche (elle se refait sous la main après une saisie), et s'oublie dès
+   qu'on en ouvre une autre ; rien ne se garde d'une session à l'autre. Une section qu'un geste ouvre (une ligne des
+   problèmes, « voir », la recherche) compte comme dépliée. */
+const MEMOIRE_SECTIONS = { fiche: '', ouvertes: {} };
+const cleDeLaFiche = () => { const c = app.cible; return c ? (c.type || '') + '|' + (c.nom || (c.l && typeof cleFil === 'function' ? cleFil(c.l) : '')) : ''; };
+const memoireDeLaFiche = () => { const k = cleDeLaFiche(); if (MEMOIRE_SECTIONS.fiche !== k) { MEMOIRE_SECTIONS.fiche = k; MEMOIRE_SECTIONS.ouvertes = {}; } return MEMOIRE_SECTIONS.ouvertes; };
+function sectionOuverte(type, cle) { return !!memoireDeLaFiche()[type + '|' + cle]; }
+function retenirSection(type, cle, ouvert) { memoireDeLaFiche()[type + '|' + cle] = !!ouvert; }
 
 /* Une section : { cle, titre?, resume?, badge?: { t, etat: 'ko'|'att'|'ok'|'' }, contenu, vide?, action?, ouvert? }.
    `resume`, `contenu` et `action` sont du HTML déjà échappé ; `vide` est la raison (texte) quand la donnée manque, et
@@ -90,7 +83,7 @@ const groupeSection = (titre, contenu, o) => { o = o || {}; if (!contenu) return
    s'allume un instant ; ce n'est pas un choix de l'ingénieur, on ne le retient pas. */
 // (`sur place` : ouverte là où elle est, sans défiler — le geste vient de sa tête, sous la main)
 function ouvrirSection(box, cle, allumer, surPlace) { const d = box && box.querySelector(`details.fs[data-section="${CSS.escape(cle)}"]`); if (!d) return null;
-  d.open = true; if (!surPlace) try { d.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { d.scrollIntoView(); }
+  d.open = true; if (d.dataset.type) retenirSection(d.dataset.type, cle, true); if (!surPlace) try { d.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { d.scrollIntoView(); }
   if (allumer !== false) { d.classList.remove('fs-allume'); void d.offsetWidth; d.classList.add('fs-allume'); setTimeout(() => d.classList.remove('fs-allume'), 1400); }
   return d; }
 // ce que l'ingénieur ouvre ou ferme à la main (un clic, ou Entrée / Espace sur le titre), on le retient pour ce type ; une

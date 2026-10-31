@@ -347,7 +347,8 @@ function verdictDisjonction(norme, famille, calibre, profil, contexte) { context
    retenu) ; null quand rien ne se juge (pas de profil, pas de courbe). */
 const VERDICTS_CALIBRE = Object.freeze({
   passe: Object.freeze({ cle: 'passe', mot: 'passe', encre: '--ok', etat: 'ok', bulle: 'Il ne déclenche pas, avec la marge.' }),
-  juste: Object.freeze({ cle: 'juste', mot: 'juste', encre: '--warn', etat: 'att', bulle: 'Il touche la courbe : il passe, mais sans la marge.' }),
+  // (v77, le lecteur : « si ça touche, c'est rouge — il faut arrêter de mettre presque ; soit c'est rouge, soit c'est vert »)
+  juste: Object.freeze({ cle: 'juste', mot: 'touche la courbe', encre: '--ko', etat: 'ko', bulle: 'Il touche la courbe : il ne passe pas.' }),
   declenche: Object.freeze({ cle: 'declenche', mot: 'déclenche', encre: '--ko', etat: 'ko', bulle: 'Il déclenche.' }) });
 function verdictDeCalibre(g) { if (!g || g.sansProfil || g.sansCourbe) return null;
   // le verdict d'ensemble d'un disjoncteur : celui de la ligne de sa gamme qui porte le calibre retenu
