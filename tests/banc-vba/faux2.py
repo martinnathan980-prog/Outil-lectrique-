@@ -255,27 +255,55 @@ rep('FauxVue', '''    Style "GetObjectsFromSelection", Not IsMissing(p)
     End If
     Set f = gFolios.Item(1)''')
 
-# --- LE BOUTON 3 ET LA CONNEXION (v3 du classeur) : le faux SEE_Windows (FauxWindows.bas, chargé par banc.py) dit
-#     ce que Windows « répond » ; le faux SeeAutomation (FauxAuto) est l'objet qu'il crée : OpenProject (V4 : paramètre
-#     de sortie), Visible (refusé par défaut : 438, comme on s'y attend), Quit (le programme s'arrête, ou en laisse
-#     gWinProcessusApresQuit), et un CreateObject dont la signature est À DÉCOUVRIR : gAutoForme = 1, celle
-#     d'Application (V4 : type, objet en sortie ; V5 : l'objet rendu) ; 2, un paramètre de plus (V4 : type, ?, objet ;
-#     V5 : type, objet en sortie) ; 0, refusée (450 pour la première forme, 13 pour la seconde). Une autre forme lève
-#     450 (« nombre d'arguments »), comme le ferait SEE. Ni GetProject, ni GetEnvironment, ni CloseProject (absents de
-#     ISeeAutomation) ; FauxProjet n'a pas de Close.
+# --- LE BOUTON 3 ET LA CONNEXION (v3, puis v4 du classeur) : le faux SEE_Windows (FauxWindows.bas, chargé par banc.py)
+#     dit ce que Windows « répond » ; le faux SeeAutomation (FauxAuto) est l'objet qu'il crée, réglé sur ce que le bureau a
+#     vu le 2 novembre 2026 (V4R3, 4.89.99.5) : OpenProject (V4 : paramètre de sortie), Visible refusé (438), Quit (le
+#     programme s'arrête, ou en laisse gWinProcessusApresQuit), et son CreateObject :
+#       gAutoForme = 1 (le bureau) : SEULEMENT (type, projet, objet en sortie) ; deux arguments, ou un seul -> 450
+#                    (« nombre d'arguments ») ; trois dont le milieu n'est pas le projet ouvert (un Variant vide, Nothing,
+#                    0, "") -> 13 ; une sortie qui n'est pas une variable Object -> 13 (sauf gAutoSortie = 1 : un Variant
+#                    seulement) ;
+#       gAutoForme = 2 : SEULEMENT l'objet rendu, Set o = CreateObject(type) ; tout autre nombre d'arguments -> 450 ;
+#       gAutoForme = 0 : rien (450 pour un ou deux arguments, 13 pour trois).
+#     CloseProject : sans argument -> 450 (le bureau), avec le projet ouvert : accepté (tracé). OpenEnvironment (V4 :
+#     paramètre de sortie) rend le faux environnement ENV_FAUX (gAutoEnvRefuse : refusé, 1131), CloseEnvironment le prend
+#     en argument. Ni GetProject, ni GetEnvironment (absents d'ISeeAutomation) ; FauxProjet n'a pas de Close, mais un
+#     EnvironmentName et un GetShape (la forme par le projet). gAlbumFaux : l'environnement a aussi des familles
+#     « utilisateur », comme l'album du bureau.
 rep('FauxSEE', 'Public gMuet As Boolean\n', '''Public gMuet As Boolean
 Public gAutoForme As Long
 Public gAutoSansVisible As Boolean
 Public gAutoOuvertureRefusee As Boolean
 Public gAutoSortie As Long
+Public gAutoEnvRefuse As Boolean
+Public gAlbumFaux As Boolean
 
-' Le type du paramètre de sortie de SeeAutomation (V4) n'est pas établi : gAutoSortie = 0, tout est accepté ; 1, VARIANT*
-' seulement (une variable Object est refusée) ; 2, IDispatch** seulement (un Variant est refusé). Le refus (13, « Type
-' mismatch ») vient AVANT que la méthode tourne, comme le ferait IDispatch::Invoke.
+' Le type du paramètre de sortie de SeeAutomation (V4) : gAutoSortie = 0, OpenProject accepte tout ; 1, VARIANT* seulement
+' (une variable Object est refusée) ; 2, IDispatch** seulement (un Variant est refusé). Le refus (13, « Type mismatch »)
+' vient AVANT que la méthode tourne, comme le ferait IDispatch::Invoke.
 Public Sub SortieAcceptee(ByVal parObjet As Boolean)
     If gAutoSortie = 1 And parObjet Then Err.Raise 13, , "Type mismatch : VARIANT* attendu (panne simulée)"
     If gAutoSortie = 2 And Not parObjet Then Err.Raise 13, , "Type mismatch : IDispatch** attendu (panne simulée)"
 End Sub
+
+' Vrai si l'argument est le faux projet ouvert (« Is » ne reconnaît pas, dans LibreOffice, un objet du faux revenu par le
+' pilote : on lit son nom).
+Public Function EstLeProjetFaux(ByRef a As Variant) As Boolean
+    On Error GoTo Non
+    If Not IsObject(a) Then Exit Function
+    If a Is Nothing Then Exit Function
+    EstLeProjetFaux = (a.Name = "PROJET_FAUX")
+    Exit Function
+Non:
+    EstLeProjetFaux = False
+End Function
+
+' Une forme que le faux connaît (l'environnement, et le projet sous SeeAutomation) : la famille FAM, et l'album.
+Public Function FormeConnue(ByVal f As String, ByVal n As String) As Boolean
+    If f = "FAM" Then FormeConnue = (n = "BOITE" Or n = "BROCHE" Or n = "BORNE" Or n = "MASSE")
+    If f = "Blackbox Family" Then FormeConnue = (n = "BB_2" Or n = "BB_4" Or n = "BB_8")
+    If f = "Ground Family" Then FormeConnue = (n = "GND")
+End Function
 ''')
 rep('FauxSEE', '''    gMuet = False
 End Sub''', '''    gMuet = False
@@ -283,8 +311,68 @@ End Sub''', '''    gMuet = False
     gAutoSansVisible = True
     gAutoOuvertureRefusee = False
     gAutoSortie = 0
+    gAutoEnvRefuse = False
+    gAlbumFaux = False
     InitWindows
 End Sub''')
+# le projet : son environnement, et la forme lue par lui (ISEEProject.GetShape)
+rep('FauxProjet', '''Public Function GetShape(ByVal f As String, ByVal n As String, Optional ByRef p As Variant) As Object
+    Style "Project.GetShape", Not IsMissing(p)
+    Err.Raise 1012, , "forme absente du projet : " & f & "/" & n
+End Function''', '''Public Property Get EnvironmentName() As String
+    EnvironmentName = "ENV_FAUX"
+End Property
+Public Function GetShape(ByVal f As String, ByVal n As String, Optional ByRef p As Variant) As Object
+    Dim s As Object
+    Style "Project.GetShape", Not IsMissing(p)
+    If Not FormeConnue(f, n) Then Err.Raise 1012, , "forme absente du projet : " & f & "/" & n
+    Trace "Project.GetShape|" & f & "|" & n
+    Set s = New FauxForme
+    s.Name = n
+    If IsMissing(p) Then Set GetShape = s Else Set p = s
+End Function''')
+# l'environnement : les familles « utilisateur » de l'album (gAlbumFaux)
+rep('FauxEnv', '''    Set c = New FauxColl
+    If t = 1 Then
+        Set f = New FauxFamille
+        c.Add f
+    End If''', '''    Set c = New FauxColl
+    If t = 1 Then
+        Set f = New FauxFamille
+        c.Add f
+    End If
+    If t = 2 And gAlbumFaux Then
+        Set f = New FauxFamilleAlbum
+        f.Regler "Blackbox Family", "BB_2;BB_4;BB_8"
+        c.Add f
+        Set f = New FauxFamilleAlbum
+        f.Regler "Ground Family", "GND"
+        c.Add f
+    End If''')
+MOD['FauxFamilleAlbum'] = faux.CL + '''Private mNom As String
+Private mFormes As String
+Public Sub Regler(ByVal nom As String, ByVal formes As String)
+    mNom = nom
+    mFormes = formes
+End Sub
+Public Property Get Name() As String
+    Name = mNom
+End Property
+Public Property Get Description() As String
+    Description = "famille de l'album (faux)"
+End Property
+Public Function GetShapesCollection(Optional ByRef p As Variant) As Object
+    Dim c As Object, f As Object, n As Variant
+    Style "GetShapesCollection", Not IsMissing(p)
+    Set c = New FauxColl
+    For Each n In Split(mFormes, ";")
+        Set f = New FauxForme
+        f.Name = n
+        c.Add f
+    Next n
+    If IsMissing(p) Then Set GetShapesCollection = c Else Set p = c
+End Function
+'''
 MOD['FauxAuto'] = faux.CL + '''Public Property Get ApplicationName() As String
     If gMuet Then Err.Raise 1111, , "SEE ne répond plus (panne simulée)"
     ApplicationName = "SEE Electrical Expert (faux SeeAutomation)"
@@ -304,26 +392,42 @@ Public Function OpenProject(ByVal chemin As String, ByVal mdp As String, Optiona
     If IsMissing(p) Then Set OpenProject = gProjet Else Set p = gProjet
 End Function
 Public Function CreateObject(ByVal t As Long, Optional ByRef a As Variant, Optional ByRef b As Variant) As Object
-    Dim n As Long, o As Object
+    Dim n As Long
     n = 1
     If Not IsMissing(a) Then n = n + 1
     If Not IsMissing(b) Then n = n + 1
-    If gAutoForme = 0 Then
-        If n = IIf(gMockV4, 2, 1) Then Err.Raise 450, , "Wrong number of arguments or invalid property assignment (faux)"
-        Err.Raise 13, , "Type mismatch (panne simulée)"
+    If gAutoForme = 2 Then
+        If n <> 1 Then Err.Raise 450, , "Wrong number of arguments or invalid property assignment (faux)"
+        Set CreateObject = NouveauFaux(t)
+        Exit Function
     End If
-    If n <> gAutoForme + IIf(gMockV4, 1, 0) Then Err.Raise 450, , "Wrong number of arguments or invalid property assignment (faux)"
-    If n = 2 Then SortieAcceptee IsObject(a)
-    If n = 3 Then SortieAcceptee IsObject(b)
-    Set o = NouveauFaux(t)
-    If n = 1 Then
-        Set CreateObject = o
-    ElseIf n = 2 Then
-        Set a = o
-    Else
-        Set b = o
+    If n <> 3 Then Err.Raise 450, , "Wrong number of arguments or invalid property assignment (faux)"
+    If gAutoForme = 0 Then Err.Raise 13, , "Type mismatch (panne simulée)"
+    If Not EstLeProjetFaux(a) Then Err.Raise 13, , "Type mismatch : le projet ouvert attendu au milieu (faux)"
+    If gAutoSortie = 1 Then
+        If IsObject(b) Then Err.Raise 13, , "Type mismatch : VARIANT* attendu (panne simulée)"
+    ElseIf Not IsObject(b) Then
+        Err.Raise 13, , "Type mismatch : IDispatch** attendu (faux)"
     End If
+    Set b = NouveauFaux(t)
 End Function
+Public Sub CloseProject(Optional ByRef p As Variant)
+    If IsMissing(p) Then Err.Raise 450, , "Wrong number of arguments or invalid property assignment (faux : CloseProject attend le projet)"
+    If Not EstLeProjetFaux(p) Then Err.Raise 13, , "Type mismatch : CloseProject attend le projet (faux)"
+    Trace "CloseProject"
+End Sub
+Public Function OpenEnvironment(ByVal nom As String, Optional ByRef p As Variant) As Object
+    Style "SeeAutomation.OpenEnvironment", Not IsMissing(p)
+    If gAutoEnvRefuse Then Err.Raise 1131, , "environnement refusé (panne simulée)"
+    If nom <> "ENV_FAUX" Then Err.Raise 1132, , "environnement inconnu : " & nom
+    Trace "OpenEnvironment|" & nom
+    If IsMissing(p) Then Set OpenEnvironment = gEnv Else Set p = gEnv
+End Function
+Public Sub CloseEnvironment(Optional ByRef p As Variant)
+    If IsMissing(p) Then Err.Raise 450, , "Wrong number of arguments or invalid property assignment (faux : CloseEnvironment attend l'environnement)"
+    If Not IsObject(p) Then Err.Raise 13, , "Type mismatch : CloseEnvironment attend l'environnement (faux)"
+    Trace "CloseEnvironment"
+End Sub
 Public Sub Quit()
     Trace "Quit"
     gWinProcessus = gWinProcessusApresQuit

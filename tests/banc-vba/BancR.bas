@@ -865,6 +865,25 @@ Private Sub RegistreSEE(ByVal exe As String)
     RegistreFaux "HKCR\SEEExpert.Project\shell\open\command", "", """C:\Programmes\IGE+XAO\SEE_Soft\Exe\" & exe & """ ""%1"""
 End Sub
 
+' Le registre du poste du bureau (photos du 2 novembre 2026) : seule la coclasse SeeAutomation V4R3 est inscrite (dans
+' les deux vues, ProgID SEEExpert.SeeAutomation.4.8, programme ...\SEE_Soft\EXE\SEE.exe) ; l'Application est ABSENTE.
+' Deux autres ProgID qui parlent de SEE : SeeBase.ErrorManager (une bibliothèque, InprocServer32 : jamais essayé) et
+' SEEExpert.Autre (un CLSID hors des réglages, servi par le même SEE.exe : essayé).
+Private Sub RegistreBureau()
+    Dim vue As Variant
+    For Each vue In Array("CLSID", "WOW6432Node\CLSID")
+        RegistreFaux "HKCR\" & vue & "\" & AUTO_V4, "", "SeeAutomation Class"
+        RegistreFaux "HKCR\" & vue & "\" & AUTO_V4 & "\ProgID", "", "SEEExpert.SeeAutomation.4.8"
+        RegistreFaux "HKCR\" & vue & "\" & AUTO_V4 & "\LocalServer32", "", "C:\Programmes\IGE+XAO\SEE_Soft\EXE\SEE.exe"
+    Next vue
+    RegistreFaux "HKLM\SOFTWARE\Classes\SEEExpert.SeeAutomation.4.8\CLSID", "", AUTO_V4
+    RegistreFaux "HKLM\SOFTWARE\Classes\SeeBase.ErrorManager\CLSID", "", "{22222222-2222-2222-2222-222222222222}"
+    RegistreFaux "HKCR\CLSID\{22222222-2222-2222-2222-222222222222}\InprocServer32", "", "C:\Programmes\IGE+XAO\SEE_Soft\EXE\SeeBase.dll"
+    RegistreFaux "HKLM\SOFTWARE\Classes\SEEExpert.Autre\CLSID", "", "{33333333-3333-3333-3333-333333333333}"
+    RegistreFaux "HKCR\WOW6432Node\CLSID\{33333333-3333-3333-3333-333333333333}\LocalServer32", "", """C:\Programmes\IGE+XAO\SEE_Soft\Exe\SEE.exe"" /Automation"
+    RegistreFaux "HKCR\.seeprj", "", "SEEExpert.Project"
+End Sub
+
 ' Un classeur et un faux SEE neufs, rien d'ouvert ; créer un objet SEE MARCHERAIT (un « new: » se verrait).
 Private Sub PreparerConnexion(ByVal v4 As Boolean)
     InitFaux v4
@@ -951,6 +970,17 @@ Public Function BancConnexion(ByVal v4 As Boolean) As String
     TesterSEE
     r = r & " | f : gApp lâché " & IIf(gApp Is Nothing, "oui", "non") & " ; lâchée dite " & JournalContient("connexion gardée lâchée") & _
         " ; GetActiveObject après les GetObject " & IIf(OrdreWin("Windows|GetObject(,|{", "Windows|GetActiveObject|"), "oui", "non") & " ; " & ResultatTest()
+    ' g. le registre du bureau (photos du 2 novembre 2026) : SeeAutomation V4R3 seule, l'Application ABSENTE ; pour
+    '    rejoindre SEE, seuls les ProgID d'un CLSID des réglages ou du programme de SEE sont essayés ; le message va droit
+    '    au bouton 3
+    PreparerConnexion v4
+    RegistreBureau
+    TesterSEE
+    r = r & " | g : GetObject SEEExpert.SeeAutomation.4.8 " & CompterWin("Windows|GetObject(,|SEEExpert.SeeAutomation.4.8") & _
+        " ; GetObject SEEExpert.Autre " & CompterWin("Windows|GetObject(,|SEEExpert.Autre") & _
+        " ; GetObject SeeBase.ErrorManager " & CompterWin("Windows|GetObject(,|SeeBase.ErrorManager") & _
+        " ; Sonde_Registre nomme SeeBase.ErrorManager " & FeuilleContient("Sonde_Registre", "SeeBase.ErrorManager") & _
+        " ; créations " & CreationsWin() & " ; " & ResultatTest()
     BancConnexion = r
     Exit Function
 E:
@@ -1025,8 +1055,10 @@ End Function
 
 ' Un faux SEE FERMÉ : un SEE V4R3 inscrit (programme SEE_Faux.exe, pour voir que son nom vient du registre), sa
 ' coclasse SeeAutomation V4R3 créable (V5R2 ne l'est pas : « classe non inscrite » d'abord), la forme du
-' CreateObject à découvrir, le réglage Projet = projet, aucune copie de sécurité.
+' CreateObject à découvrir (gAutoForme, faux2.py), un environnement à familles « utilisateur » (l'album), le réglage
+' Projet = projet, aucune copie de sécurité.
 Private Sub PreparerBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal projet As String)
+    Dim ws As Object
     InitFaux v4
     Set gApp = Nothing
     gStrategie = ""
@@ -1041,7 +1073,10 @@ Private Sub PreparerBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal proj
     gWinNomExe = "SEE_Faux.exe"
     CreableFaux AUTO_V4
     gAutoForme = forme
+    gAlbumFaux = True
     CopiesDe projet, True
+    ' la feuille Sonde_Symboles d'un passage précédent, vidée : ce passage dit s'il la remplit
+    If FeuilleExiste("Sonde_Symboles") Then Set ws = FeuilleCreee("Sonde_Symboles", True)
 End Sub
 
 ' « oui » si le dossier qui contient celui du projet (le chemin qui nommerait l'utilisateur de Windows, sous Windows)
@@ -1064,21 +1099,43 @@ Public Function CheminMontre(ByVal projet As String) As String
     Next nom
 End Function
 
+' Le haut d'une feuille, pour la photo : les n premières lignes, colonnes A à D (« A/B/C/D », lignes séparées par « § »).
+Public Function HautDeFeuille(ByVal nom As String, ByVal n As Long) As String
+    Dim ws As Object, i As Long, j As Long, s As String, l As String
+    If Not FeuilleExiste(nom) Then
+        HautDeFeuille = "(absente)"
+        Exit Function
+    End If
+    Set ws = ThisWorkbook.Worksheets(nom)
+    For i = 1 To n
+        l = ""
+        For j = 1 To 4
+            l = l & IIf(j > 1, "/", "") & CStr(ws.Cells(i, j).Value)
+        Next j
+        s = s & IIf(i > 1, " § ", "") & l
+    Next i
+    HautDeFeuille = s
+End Function
+
 ' Ce que le bouton 3 a fait : les appels à Windows et au faux SEE, la copie, puis Resultat_Test.
 Private Function BilanBouton3(ByVal projet As String) As String
     BilanBouton3 = "chemin entier montré " & CheminMontre(projet) & " ; " & _
         "new: " & CompterWin("Windows|new:") & " ; programme compté " & IIf(CompterWin("Windows|Processus|SEE_Faux.exe") > 0, "SEE_Faux.exe", "autre") & _
         " ; OpenProject " & Compter("OpenProject") & " ; AddSheet " & Compter("AddSheet") & " ; graphiques " & Compter("AddGraphicObject|") & _
-        " ; Save " & Compter("Save") & " ; Quit " & Compter("Quit") & " ; copies " & CopiesDe(projet, False) & _
+        " ; Save " & Compter("Save") & " ; CloseProject " & Compter("CloseProject") & " ; Quit " & Compter("Quit") & _
+        " ; OpenEnvironment " & Compter("OpenEnvironment") & " ; CloseEnvironment " & Compter("CloseEnvironment") & _
+        " ; Sonde_Symboles album " & FeuilleContient("Sonde_Symboles", "Blackbox Family") & " ; copies " & CopiesDe(projet, False) & _
         " ; gApp lâché " & IIf(gApp Is Nothing, "oui", "non") & " ; Simulation après " & IIf(gSimulation, "O", "N") & _
         " ; Sonde_Folio ESSAI_PILOTE " & SondeFolioNomme("ESSAI_PILOTE") & " ; " & ResultatTest()
 End Function
 
-' Le bouton 3 (EssaiSansFenetre) : SEE FERMÉ, Excel ouvre lui-même le projet d'essai, y dessine, enregistre et
-' referme. projet : un fichier .seeprj que relecture.py a posé dans le dossier de travail ; forme : la signature du
-' CreateObject du faux SeeAutomation (1 : celle d'Application ; 2 : un paramètre de plus). Dans l'ordre : SEE ouvert ;
-' Windows muet ; la copie ratée ; Annuler (la fenêtre « Ouvrir », puis la question) : rien n'est fait. Puis le parcours
-' complet ; CreateObject refusé ; un SEE qui reste après Quit.
+' Le bouton 3 (EssaiSansFenetre) : SEE FERMÉ, Excel ouvre lui-même le projet d'essai, y dessine, enregistre, relève
+' les formes de l'album et referme. projet : un fichier .seeprj que relecture.py a posé dans le dossier de travail ;
+' forme : la signature du CreateObject du faux SeeAutomation (1 : celle du bureau, type, projet, objet en sortie ;
+' 2 : l'objet rendu seulement). Dans l'ordre : SEE ouvert ; Windows muet ; la copie ratée ; Annuler (la fenêtre
+' « Ouvrir », puis la question) : rien n'est fait. Puis le parcours complet ; CreateObject refusé ; un SEE qui reste
+' après Quit ; ... ; OpenEnvironment refusé (le dessin, Save et CloseProject passent quand même) ; seul l'objet rendu
+' marche ; la forme lue par le projet.
 Public Function BancBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal projet As String) As String
     Dim r As String, absent As String, n0 As Long
     On Error GoTo E
@@ -1109,7 +1166,7 @@ Public Function BancBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal proj
     gWinFichier = projet
     EssaiSansFenetre
     r = r & " | complet : Projet noté " & IIf(ValeurReglage("Projet") = projet, "oui", "non") & " ; Patienter " & CompterWin("Windows|Patienter") & _
-        " ; " & BilanBouton3(projet)
+        " ; Sonde_Symboles haut = " & HautDeFeuille("Sonde_Symboles", 7) & " ; " & BilanBouton3(projet)
     PreparerBouton3 v4, 0, projet
     EssaiSansFenetre
     r = r & " | refusé : " & BilanBouton3(projet)
@@ -1155,6 +1212,27 @@ Public Function BancBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal proj
     EssaiDessinReel
     r = r & " ; bouton 2 : OpenProject " & (Compter("OpenProject") - n0) & " ; question nomme PROJET_FAUX " & _
         JournalContient("projet ouvert dans SEE : « PROJET_FAUX »") & " ; AddSheet " & Compter("AddSheet")
+    ' la v4 : OpenEnvironment refusé : le relevé le dit, le dessin, Save et CloseProject passent quand même
+    PreparerBouton3 v4, forme, projet
+    gAutoEnvRefuse = True
+    EssaiSansFenetre
+    r = r & " | env refusé : " & BilanBouton3(projet)
+    ' la v4 : seul l'objet rendu marche (Set o = CreateObject(type)) : cette forme est retenue
+    PreparerBouton3 v4, 2, projet
+    EssaiSansFenetre
+    r = r & " | rendu seulement : " & BilanBouton3(projet)
+    ' la v4 : sous SeeAutomation, une forme (définition de symbole) se lit par le projet ouvert, jamais par l'environnement
+    PreparerBouton3 v4, forme, projet
+    Set gApp = New FauxAuto
+    gEstAutomation = True
+    gVersionAPI = IIf(v4, 4, 5)
+    OuvrirJournal "Banc"
+    n0 = gTrace.Count
+    r = r & " | forme par le projet : rendue " & IIf(SEE_Forme(gEnv, gProjet, "Blackbox Family", "BB_4") Is Nothing, "non", "oui") & _
+        " ; Project.GetShape " & CompterDepuis("Project.GetShape|Blackbox Family|BB_4", n0) & " ; Environment.GetShape au journal " & _
+        JournalContient("Environment.GetShape") & " ; Project.GetShape au journal " & JournalContient("Project.GetShape")
+    Set gApp = Nothing
+    gEstAutomation = False
     BancBouton3 = r
     Exit Function
 E:

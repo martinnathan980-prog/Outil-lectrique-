@@ -18,7 +18,8 @@ Attribute VB_Name = "SEE_Pilote"
 '    EssaiSansFenetre LE BOUTON 3 DU CLASSEUR (« 3. SEE FERMÉ ») : quand la
 '                    fenêtre SEE ne se laisse pas rejoindre, SEE FERMÉ, Excel
 '                    ouvre lui-même le projet d'essai (coclasse SeeAutomation),
-'                    y dessine le même folio d'essai, l'enregistre et le
+'                    y dessine le même folio d'essai, l'enregistre, relève les
+'                    formes de l'album (Sonde_Symboles, en lecture) et le
 '                    referme (voir son en-tête). Le seul endroit qui ferme un
 '                    SEE : le sien
 '    EssaiSymboles   sur ce folio : une boîte, deux broches recalées, un fil
@@ -86,11 +87,13 @@ Private mBouton2 As Boolean     ' EssaiDessinReel en cours : la boîte de fin dit
 Private mBouton3 As Boolean     ' EssaiSansFenetre en cours : pas de pas à pas (SEE est caché)
 Private mNbPoses As Long        ' objets graphiques que SEE a acceptés (AddGraphicObject sans erreur)
 Private mFolioCree As Boolean   ' un folio a été créé dans SEE (AddSheet sans erreur)
-Private mEtapes3(1 To 8) As String ' le bouton 3 : ce que chaque étape a donné (le bloc « À PHOTOGRAPHIER »)
+Private mEtapes3(1 To 9) As String ' le bouton 3 : ce que chaque étape a donné (le bloc « À PHOTOGRAPHIER »)
 Private mConsigne3 As String    ' le bouton 3 : ce que le technicien doit faire ensuite
 Private mNotreSEE As Boolean    ' le bouton 3 a créé gApp, SEE fermé : lui seul le ferme (FermerNotreSEE)
 Private mFermeDit As Integer    ' le bouton 3, étape 1 : 0 Windows a dit SEE fermé ; 2 le technicien l'a dit (Windows muet) ; -1 non
 Private mFolioRelu As Boolean   ' le bouton 3 a relu son folio dans Sonde_Folio (la photo à demander)
+Private mNomEnv3 As String      ' le bouton 3 : l'environnement du projet ouvert (Project.EnvironmentName), tel que lu
+Private mFormesRelevees As Boolean ' le bouton 3 a relevé les formes de l'album dans Sonde_Symboles (la photo à demander)
 
 ' trois folios de suite non créés : l'échec est systématique, le lot s'arrête
 Private Const ECHECS_MAX As Long = 3
@@ -264,21 +267,28 @@ End Function
 '       CLSID_Automation ; Visible = True essayé (une fenêtre visible
 '       montrerait un dialogue de SEE au lieu de bloquer Excel) ; la version.
 '       JAMAIS Login.
-'    5. LE PROJET OUVERT : OpenProject (V4 : paramètre de sortie), son nom lu.
+'    5. LE PROJET OUVERT : OpenProject (V4 : paramètre de sortie), son nom et
+'       celui de son environnement (EnvironmentName) lus.
 '    6. LE DESSIN : OuvrirFolioEssai et DessinerMotifEssai du bouton 2, sans
-'       pas à pas ; la forme du CreateObject de SeeAutomation est essayée
-'       (NouvelObjet) ; le folio est relu (Sonde_Folio).
+'       pas à pas ; les formes du CreateObject de SeeAutomation sont essayées
+'       (NouvelObjet : d'abord type, projet, objet en sortie), la première qui
+'       rend un objet est retenue ; le folio est relu (Sonde_Folio).
 '    7. L'ENREGISTREMENT : Project.Save, seulement si quelque chose a été dessiné.
-'    8. LA FERMETURE (FermerNotreSEE) : CloseProject, sinon Close du projet,
-'       puis Quit, chacun essayé et dit ; les objets lâchés ; Windows revu
-'       quelques secondes : un SEE qui reste est dit, avec la manière de
-'       l'arrêter. L'instance fermée est la NÔTRE : SEE était fermé à l'étape 1.
+'    8. LE RELEVÉ DES FORMES (ReleverFormes), en LECTURE SEULE : l'environnement
+'       du projet ouvert par OpenEnvironment, ses familles et ses formes dans
+'       Sonde_Symboles, puis CloseEnvironment. Il n'empêche jamais l'étape 9.
+'    9. LA FERMETURE (FermerNotreSEE) : CloseProject(le projet), sinon Close
+'       du projet, puis Quit, chacun essayé et dit ; les objets lâchés ;
+'       Windows revu quelques secondes : un SEE qui reste est dit, avec la
+'       manière de l'arrêter. L'instance fermée est la NÔTRE : SEE était fermé
+'       à l'étape 1.
 '  Avant tout, il LÂCHE toute connexion gardée (rejointe aussi : tant qu'Excel
 '  tient un objet de SEE, SEE.exe ne s'arrête pas) ; et Windows est revu juste
 '  avant la création (étape 4) : SEE a pu être rouvert pendant le choix du
 '  projet. Pendant le travail, un bloc « EN COURS » est devant le technicien.
 '  Puis le bloc « À PHOTOGRAPHIER » en tête de Resultat_Test : chaque étape et
-'  son résultat, la copie de sécurité, et la consigne. Il n'écrit que dans le
+'  son résultat (la forme de CreateObject retenue, en clair ; les familles et
+'  les formes relevées), la copie de sécurité, et la consigne. Il n'écrit que dans le
 '  fichier choisi et confirmé, et ne tourne jamais si SEE est ouvert.
 '  Si SEE caché ouvre une fenêtre, Excel attend (« Microsoft Excel attend
 '  qu'une autre application termine une action OLE ») : le mode d'emploi dit
@@ -292,9 +302,11 @@ Public Sub EssaiSansFenetre()
     mNotreSEE = False
     mFermeDit = -1
     mFolioRelu = False
+    mNomEnv3 = ""
+    mFormesRelevees = False
     mMessageFin = ""
     mConsigne3 = ""
-    For i = 1 To 8
+    For i = 1 To 9
         mEtapes3(i) = "pas fait"
     Next i
     ' les feuilles Reglages et Journal, si le bouton 1 n'a pas encore tourné (sans sa boîte : elle va au journal ;
@@ -330,8 +342,10 @@ Public Sub EssaiSansFenetre()
     DessinerSansFenetre prj, nomFolio
     ' 7. l'enregistrement
     EnregistrerSansFenetre
+    ' 8. le relevé des formes de l'album, en lecture seule (aucune erreur n'en sort : l'étape 9 suit toujours)
+    ReleverFormes
 Fermer:
-    ' 8. la fermeture : l'instance créée à l'étape 4, et elle seule
+    ' 9. la fermeture : l'instance créée à l'étape 4, et elle seule
     If mNotreSEE Then FermerNotreSEE prj
     Set prj = Nothing
 Fin:
@@ -351,7 +365,7 @@ End Sub
 ' Le titre de chaque étape du bouton 3, pour le bloc à photographier.
 Private Function TitreEtape3(ByVal i As Long) As String
     TitreEtape3 = Choose(i, "1. SEE fermé ?", "2. Projet d'essai", "3. Copie", "4. SEE créé", "5. Projet ouvert", "6. Dessin", _
-        "7. Enregistré", "8. SEE refermé")
+        "7. Enregistré", "8. Formes", "9. SEE refermé")
 End Function
 
 ' L'étape en cours, dans la barre d'état d'Excel et dans le bloc « EN COURS »
@@ -592,7 +606,8 @@ Private Function CreerNotreSEE() As Boolean
     CreerNotreSEE = True
 End Function
 
-' 5. Le projet ouvert dans notre SEE (Nothing s'il ne l'est pas).
+' 5. Le projet ouvert dans notre SEE (Nothing s'il ne l'est pas), et le nom
+' de son environnement (EnvironmentName : le relevé des formes l'ouvre).
 Private Function OuvrirProjetDEssai(ByVal chemin As String) As Object
     Dim prj As Object, numErr As Long, descErr As String, sortie As String
     Contexte "Bouton 3", "projet"
@@ -604,7 +619,10 @@ Private Function OuvrirProjetDEssai(ByVal chemin As String) As Object
         mConsigne3 = "SEE n'a pas ouvert ton projet : envoie-moi la photo."
         Exit Function
     End If
-    NoterEtape3 5, "oui : « " & LireProp(prj, "Name") & " »" & IIf(Len(sortie) > 0, " (variable de sortie : " & sortie & ")", "")
+    mNomEnv3 = LirePropOuMethode(prj, "EnvironmentName")
+    Journal gEtape, "projet", "Project.EnvironmentName", mNomEnv3
+    NoterEtape3 5, "oui : « " & LireProp(prj, "Name") & " »" & IIf(Len(sortie) > 0, " (variable de sortie : " & sortie & ")", "") & _
+        " ; environnement : " & IIf(Left$(mNomEnv3, 4) = "#ERR", "illisible (" & mNomEnv3 & ")", "« " & mNomEnv3 & " »")
     Set OuvrirProjetDEssai = prj
 End Function
 
@@ -659,23 +677,97 @@ Private Sub EnregistrerSansFenetre()
     End If
 End Sub
 
-' 8. LA FERMETURE de l'instance créée à l'étape 4 (SEE était fermé à l'étape
-' 1 : c'est la nôtre). Le seul endroit du pilote qui ferme quelque chose dans
-' SEE : CloseProject, sinon Close du projet, puis Quit, chacun essayé et dit
-' (un membre absent n'est pas une faute) ; puis tous les objets SEE lâchés ;
-' puis Windows revu quelques secondes (Patienter). Appelé seulement si
-' mNotreSEE (l'objet créé par CreerNotreSEE).
-Private Sub FermerNotreSEE(ByRef prj As Object)
-    Dim s As String, r As String, nb As Long, detail As String, etat As Integer, i As Long
-    Contexte "Bouton 3", "fermeture"
+' 8. LE RELEVÉ DES FORMES de l'album, en LECTURE SEULE, après l'enregistrement
+' et avant la fermeture : l'environnement du projet (EnvironmentName, lu à
+' l'étape 5), ouvert par SeeAutomation.OpenEnvironment (V4 : une variable de
+' sortie ; sinon l'objet rendu), ses familles et ses formes dans la feuille
+' Sonde_Symboles (RelireFormes, la sonde des symboles), puis CloseEnvironment.
+' Rien n'est écrit dans l'environnement. Un refus est dit, avec son code, et
+' rien d'autre n'est tenté. Aucune erreur n'en sort : la fermeture suit.
+Private Sub ReleverFormes()
+    Dim env As Object, numErr As Long, descErr As String, forme As String, nbFam As Long, nbSym As Long, ferme As String
+    Dim refus As String
+    On Error GoTo Imprevu
+    Contexte "Bouton 3", "formes"
     EnCours3 8
-    r = AppelFermeture(gApp, "CloseProject")
-    s = "CloseProject : " & r
+    If Len(mNomEnv3) = 0 Or Left$(mNomEnv3, 4) = "#ERR" Then
+        NoterEtape3 8, "non relevées : le nom de l'environnement du projet est illisible (EnvironmentName : " & _
+            IIf(Len(mNomEnv3) > 0, mNomEnv3, "vide") & ")"
+        Exit Sub
+    End If
+    Set env = SEE_OuvrirEnvironnementAutomation(mNomEnv3, forme, refus)
+    If env Is Nothing Then
+        NoterEtape3 8, "non relevées : OpenEnvironment(« " & mNomEnv3 & " ») refusé, rien d'autre n'est tenté" & vbLf & refus
+        Exit Sub
+    End If
+    RelireFormes env, nbFam, nbSym
+    mFormesRelevees = (nbFam > 0)
+    ' l'environnement ouvert ici est refermé ici, sans rien y écrire
+    On Error Resume Next
+    Err.Clear
+    gApp.CloseEnvironment env
+    numErr = Err.Number
+    descErr = Err.Description
+    On Error GoTo Imprevu
+    If numErr = 0 Then
+        ferme = "ok"
+        Journal gEtape, gObjet, "SeeAutomation.CloseEnvironment(environnement)", "ok"
+    Else
+        ferme = ReponseDeWindows(numErr, descErr)
+        Journal gEtape, gObjet, "SeeAutomation.CloseEnvironment(environnement)", "échec (sans gravité : on continue)", numErr, descErr
+    End If
+    Set env = Nothing
+    NoterEtape3 8, nbFam & " familles, " & nbSym & " formes (feuille Sonde_Symboles)" & vbLf & "environnement « " & mNomEnv3 & _
+        " », ouvert par OpenEnvironment" & forme & ", en lecture ; CloseEnvironment : " & ferme
+    Exit Sub
+Imprevu:
+    numErr = Err.Number
+    descErr = Err.Description
+    Resume ApresImprevu
+ApresImprevu:
+    On Error Resume Next
+    Journal gEtape, gObjet, "(relevé des formes)", "ARRÊT IMPRÉVU du relevé (lecture seule) : la fermeture suit", numErr, descErr
+    NoterEtape3 8, "relevé arrêté par une erreur imprévue (" & ReponseDeWindows(numErr, descErr) & ") ; la fermeture suit"
+    If Not env Is Nothing Then gApp.CloseEnvironment env
+    Set env = Nothing
+End Sub
+
+' 9. LA FERMETURE de l'instance créée à l'étape 4 (SEE était fermé à l'étape
+' 1 : c'est la nôtre). Le seul endroit du pilote qui ferme quelque chose dans
+' SEE : CloseProject(le projet) (ISeeAutomation le veut en argument : sans lui,
+' 450 au bureau), sinon Close du projet, puis Quit, chacun essayé et dit (un
+' membre absent n'est pas une faute) ; puis tous les objets SEE lâchés, le
+' projet gardé pour CreateObject compris (OublierCreation) ; puis Windows revu
+' quelques secondes (Patienter). Appelé seulement si mNotreSEE (l'objet créé
+' par CreerNotreSEE).
+Private Sub FermerNotreSEE(ByRef prj As Object)
+    Dim s As String, r As String, nb As Long, detail As String, etat As Integer, i As Long, numErr As Long, descErr As String
+    Contexte "Bouton 3", "fermeture"
+    EnCours3 9
+    If prj Is Nothing Then
+        r = "pas de projet ouvert"
+    Else
+        On Error Resume Next
+        Err.Clear
+        gApp.CloseProject prj
+        numErr = Err.Number
+        descErr = Err.Description
+        On Error GoTo 0
+        If numErr = 0 Then
+            r = "ok"
+            Journal gEtape, gObjet, "SeeAutomation.CloseProject(projet)", "ok"
+        Else
+            r = ReponseDeWindows(numErr, descErr)
+            Journal gEtape, gObjet, "SeeAutomation.CloseProject(projet)", "échec (sans gravité : on continue)", numErr, descErr
+        End If
+    End If
+    s = "CloseProject(projet) : " & r
     If r <> "ok" And Not prj Is Nothing Then s = s & " ; Close : " & AppelFermeture(prj, "Close")
     s = s & " ; Quit : " & AppelFermeture(gApp, "Quit")
     ' tous les objets SEE lâchés AVANT d'attendre : le programme ne s'arrête pas tant qu'Excel en tient un
     Set prj = Nothing
     LacherObjetsSEE
+    OublierCreation
     Set gApp = Nothing
     gStrategie = ""
     gEstAutomation = False
@@ -687,12 +779,12 @@ Private Sub FermerNotreSEE(ByRef prj As Object)
         If etat <> 1 Then Exit For
     Next i
     If etat = 0 Then
-        NoterEtape3 8, "oui : " & detail & vbLf & s
+        NoterEtape3 9, "oui : " & detail & vbLf & s
     ElseIf etat = 1 Then
-        NoterEtape3 8, "NON : " & detail & " après 10 secondes" & vbLf & s
+        NoterEtape3 9, "NON : " & detail & " après 10 secondes" & vbLf & s
         mConsigne3 = "SEE tourne encore, caché (" & detail & "). " & ConsigneFinDeTache() & vbLf & mConsigne3
     Else
-        NoterEtape3 8, "on ne sait pas : " & detail & vbLf & s
+        NoterEtape3 9, "on ne sait pas : " & detail & vbLf & s
         mConsigne3 = "SEE tourne peut-être encore, caché. " & ConsigneFinDeTache() & vbLf & mConsigne3
     End If
 End Sub
@@ -720,6 +812,8 @@ Private Sub FinirBouton3(ByVal copie As String, ByVal nomFolio As String, ByVal 
     ' la boîte cache le milieu du bloc : d'abord OK, puis la photo
     photo = "Clique sur OK, puis prends une photo de la partie jaune de la feuille " & FEUILLE_RESULTAT & " et envoie-la-moi."
     consigne = photo
+    ' les formes de l'album relevées : leurs familles et leurs noms se lisent en haut de Sonde_Symboles
+    If mFormesRelevees Then consigne = consigne & vbLf & "Puis, en bas d'Excel, clique sur l'onglet « Sonde_Symboles » et prends une photo de son haut."
     ' le folio relu : l'origine, le sens de y et l'échelle se lisent sur Sonde_Folio
     If mFolioRelu Then consigne = consigne & vbLf & "Puis, en bas d'Excel, clique sur l'onglet « Sonde_Folio » et prends une photo de son haut."
     If Len(imprevu) > 0 Then consigne = consigne & vbLf & "Puis, en bas d'Excel, clique sur l'onglet « Journal » et prends une photo de son haut."
@@ -743,7 +837,7 @@ Private Sub FinirBouton3(ByVal copie As String, ByVal nomFolio As String, ByVal 
     LigneResultat ws, l, "À PHOTOGRAPHIER", "Prends en photo cette partie jaune, jusqu'à « Et maintenant », et envoie-la-moi. " & _
         "Bouton 3 du " & Format$(Now, "yyyy-mm-dd hh:mm") & "."
     LigneResultat ws, l, "Résultat", resultat
-    For i = 1 To 8
+    For i = 1 To 9
         rubrique = TitreEtape3(i)
         For Each e In Split(mEtapes3(i), vbLf)
             LigneResultat ws, l, rubrique, CStr(e)
@@ -754,7 +848,8 @@ Private Sub FinirBouton3(ByVal copie As String, ByVal nomFolio As String, ByVal 
     LigneResultat ws, l, "Et maintenant", consigne
     SurlignerPhoto ws, l
     l = l + 1
-    LigneResultat ws, l, "Détail", "la feuille Journal dit chaque appel ; Sonde_Folio relit le folio dessiné"
+    LigneResultat ws, l, "Détail", "la feuille Journal dit chaque appel ; Sonde_Folio relit le folio dessiné ; Sonde_Symboles " & _
+        "liste les familles et les formes de l'album"
     MontrerFeuille ws
     ' une boîte de Windows ne montre qu'environ 1 000 caractères : la suite est dans le bloc
     boite = "Bouton 3 : " & resultat & "." & vbCrLf & vbCrLf & Replace(consigne, vbLf, vbCrLf)
@@ -964,8 +1059,8 @@ Private Function PreparerSEE(ByVal lancerPermis As Boolean) As Boolean
     End If
     If gEstAutomation Then
         ' la coclasse SeeAutomation n'a ni GetProject ni GetEnvironment : elle ne
-        ' lit pas le projet ouvert, et la signature de son CreateObject n'est pas
-        ' établie. C'est le bouton 3 (EssaiSansFenetre) qui s'en sert : il ouvre
+        ' lit pas le projet ouvert, et son CreateObject veut le projet qu'elle a
+        ' ouvert. C'est le bouton 3 (EssaiSansFenetre) qui s'en sert : il ouvre
         ' lui-même le projet d'essai, SEE fermé, et essaie les formes de CreateObject
         If gSimulation Then
             Journal gEtape, gObjet, "", "connecté par la coclasse SeeAutomation : la simulation continue SANS lecture dans SEE", -1, "SeeAutomation"

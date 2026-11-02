@@ -71,7 +71,15 @@
    Windows déclarée, essayé en dernier, après un bloc PROVISOIRE ; le
    paramètre de sortie de SeeAutomation (V4) : un Variant, puis une variable
    Object si SEE refuse le type ; aucun chemin entier dans le bloc ni le
-   journal (MasquerChemins).
+   journal (MasquerChemins). Et la v4 (les photos du 2 novembre 2026) : le
+   CreateObject de SeeAutomation d'abord sous la forme (type, projet, objet en
+   sortie), le projet ouvert gardé pour lui, chaque forme essayée jusqu'à la
+   première qui rend un objet ; CloseProject(le projet), après Save et le
+   relevé des formes, qui passe par la sonde des symboles et ne laisse sortir
+   aucune erreur ; une forme lue par le projet sous SeeAutomation ; pour
+   rejoindre SEE, seulement les ProgID d'un CLSID des réglages ou du
+   programme de SEE ; l'Application absente du registre, le bouton 1 envoie
+   droit au bouton 3.
    Puis le contrôleur s'éprouve lui-même : des fautes sont injectées une à
    une dans une copie des modules (mutations), chacune doit être attrapée
    par le contrôle attendu ; et une écriture dans le classeur (feuille,
@@ -897,9 +905,40 @@ function controler(entrees) {
         && /If mBlocEnCours Then EcrireBlocEnCours[\s\S]*ConnecterSEE\(False\)/.test(debut), `GetObject ${dernierNom}, GetActiveObject ${premierClsid}`);
     const opa = texteBrut(procDe('SEE_Commun', 'SEE_OuvrirProjetAutomation')), ec = texteBrut(procDe('SEE_Commun', 'EssaiCreation'));
     const iVar = opa.indexOf('gApp.OpenProject chemin, mdp, r\n'), iRefus = opa.indexOf('ElseIf TypeRefuse(numErr) Then'), iObj = opa.indexOf('gApp.OpenProject chemin, mdp, prj');
-    ok('SeeAutomation (V4) : le paramètre de sortie d\'OpenProject et de CreateObject : un Variant, puis une variable Object seulement si SEE refuse le type',
-      iVar >= 0 && iRefus > iVar && iObj > iRefus && /gApp\.CreateObject typeObjet, r\b/.test(ec) && /gApp\.CreateObject typeObjet, x\b/.test(ec)
-        && /If Not TypeRefuse\(numErr\) And numErr <> -1 Then Exit For/.test(texteBrut(procDe('SEE_Commun', 'AppelCreation'))), `Variant ${iVar}, refus ${iRefus}, Object ${iObj}`);
+    ok('SeeAutomation (V4) : le paramètre de sortie d\'OpenProject : un Variant, puis une variable Object seulement si SEE refuse le type',
+      iVar >= 0 && iRefus > iVar && iObj > iRefus, `Variant ${iVar}, refus ${iRefus}, Object ${iObj}`);
+    // la v4 (le bureau : 2 arguments -> 450, un Variant vide au milieu -> 13) : le projet ouvert au milieu, d'abord
+    const oc = texteBrut(procDe('SEE_Commun', 'OrdreCreation')), nao = texteBrut(procDe('SEE_Commun', 'NouvelObjetAutomation'));
+    ok('SeeAutomation : CreateObject d\'abord (type, projet, objet en sortie) en V4, le projet ouvert par OpenProject gardé pour lui ; chaque forme essayée jusqu\'à la première qui rend un objet, retenue',
+      /Case 1\s*\n\s*gApp\.CreateObject typeObjet, mProjetCreation, x\b/.test(ec) && /gApp\.CreateObject typeObjet, mProjetCreation, r\b/.test(ec)
+        && /Set o = gApp\.CreateObject\(typeObjet\)/.test(ec) && /If EstV4\(\) Then\s*\n\s*ordre = Array\(1, 2, 3, /.test(oc) && /Set mProjetCreation = prj/.test(opa)
+        && /For Each forme In OrdreCreation\(\)\s*\n\s*If EssaiCreation\(CInt\(forme\)[^\n]*\n\s*mFormeCreation = CInt\(forme\)[\s\S]{0,400}?Exit Function[\s\S]*?Next forme/.test(nao),
+      'EssaiCreation, OrdreCreation, SEE_OuvrirProjetAutomation ou NouvelObjetAutomation');
+    // la fermeture du bouton 3 : CloseProject(le projet), après Save et le relevé ; le projet gardé lâché avant d'attendre
+    const fns = texteBrut(procDe('SEE_Pilote', 'FermerNotreSEE')), iClose = fns.indexOf('gApp.CloseProject prj\n'), iOublie = fns.indexOf('OublierCreation');
+    ok('le bouton 3 ferme son projet par CloseProject(le projet), après Save et le relevé des formes ; le projet gardé pour CreateObject est lâché avant d\'attendre Windows',
+      iClose >= 0 && !/"CloseProject"/.test(fns) && iOublie > iClose && iOublie < fns.indexOf('Patienter')
+        && essB.indexOf('EnregistrerSansFenetre') >= 0 && essB.indexOf('ReleverFormes') > essB.indexOf('EnregistrerSansFenetre')
+        && essB.indexOf('If mNotreSEE Then FermerNotreSEE') > essB.indexOf('ReleverFormes'), `CloseProject ${iClose}, OublierCreation ${iOublie}`);
+    // le relevé des formes : en lecture, par la sonde des symboles ; il ne laisse sortir aucune erreur
+    const rf = texteBrut(procDe('SEE_Pilote', 'ReleverFormes')), rlf = procDe('SEE_Sonde', 'RelireFormes');
+    ok('le relevé des formes du bouton 3 : OpenEnvironment, la sonde des symboles (RelireFormes, comme SondeSymboles), CloseEnvironment ; aucun membre de l\'environnement appelé hors de la sonde ; aucune erreur n\'en sort',
+      rf.search(/^\s*On Error GoTo Imprevu\s*$/m) >= 0 && rf.search(/^\s*On Error GoTo Imprevu\s*$/m) < rf.indexOf('Contexte "Bouton 3", "formes"') && /SEE_OuvrirEnvironnementAutomation\(/.test(rf) && rf.indexOf('RelireFormes env') >= 0
+        && rf.indexOf('gApp.CloseEnvironment env') > rf.indexOf('RelireFormes env') && !/\benv\./.test(rf) && rlf && rlf.public
+        && /DecrireFormes env/.test(texteBrut(rlf)) && /DecrireFormes env/.test(texteBrut(procDe('SEE_Sonde', 'SondeSymboles'))) && /Resume ApresImprevu/.test(rf),
+      'ReleverFormes ou RelireFormes');
+    ok('SeeAutomation : une forme (définition de symbole) se lit par le projet, jamais par un environnement (pas de GetEnvironment)',
+      /If Not env Is Nothing And Not gEstAutomation Then/.test(texteBrut(procDe('SEE_Commun', 'SEE_Forme'))), 'SEE_Forme');
+    // le registre : pour rejoindre SEE, seulement les ProgID d'un CLSID des réglages ou du programme de SEE
+    const np = texteBrut(procDe('SEE_Sonde', 'NoterProgID')), rde = texteBrut(procDe('SEE_Sonde', 'RaisonDEssayer'));
+    ok('SondeRegistre : pour rejoindre SEE, seulement les ProgID d\'un CLSID des réglages ou dont le LocalServer32 est le programme de SEE lu au registre',
+      /If raison = "CLSID des réglages" Then\s*\n\s*mProgIDsConnus\.Add nom\s*\n\s*ElseIf Len\(raison\) > 0 Then\s*\n\s*mProgIDsAutres\.Add nom/.test(np)
+        && /DansLaListe\(clsid, Reglage\("CLSID_Application", ""\) & ";" & Reglage\("CLSID_Automation", ""\)\)/.test(rde)
+        && /StrComp\(ServeurDuCLSID\(clsid\), mServeurSEE, vbTextCompare\) = 0/.test(rde), 'NoterProgID ou RaisonDEssayer');
+    const cf = texteBrut(procDe('SEE_Sonde', 'ConsigneFinale'));
+    ok('bouton 1 : l\'Application absente du registre, le message va droit au bouton 3 (« Ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 »)',
+      /ElseIf Not mJoint And mAppAbsente Then\n[\s\S]*?Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3[\s\S]*?bouton3[\s\S]*?ElseIf Not mJoint Then/.test(cf)
+        && cf.indexOf('ElseIf Not mJoint And mAppAbsente Then') < cf.indexOf('ElseIf Not mJoint Then'), 'ConsigneFinale');
     ok('le bloc à photographier et le journal ne montrent pas le chemin entier (MasquerChemins)',
       /MasquerChemins\(texte\)/.test(texteBrut(procDe('SEE_Commun', 'LigneResultat'))) && /MasquerChemins\(appel\)/.test(texteBrut(procDe('SEE_Commun', 'Journal'))),
       'LigneResultat ou Journal');
@@ -1164,8 +1203,33 @@ if (Object.keys(entrees).length === MODULES.length && Object.keys(analyses).leng
       remplacer('SEE_Commun', /(    ' b\. la fenêtre ouverte, par GetObject[^\r]*\r\n(?:.*\r\n){10})(    ' c\. la fenêtre ouverte, par CLSID[^\r]*\r\n(?:.*\r\n){10})/, '$2$1')],
     ['TesterSEE sans bloc provisoire avant la recherche de SEE (EX3)', 'GetActiveObject (une fonction de Windows déclarée) en DERNIER, et TesterSEE pose un bloc PROVISOIRE avant le registre et avant la recherche de SEE',
       remplacer('SEE_Sonde', /        If mBlocEnCours Then EcrireBlocEnCours /, '        If False Then EcrireBlocEnCours ')],
-    ['OpenProject en V4 avec une variable Object d\'abord (EX2)', 'SeeAutomation (V4) : le paramètre de sortie d\'OpenProject et de CreateObject : un Variant, puis une variable Object seulement si SEE refuse le type',
+    ['OpenProject en V4 avec une variable Object d\'abord (EX2)', 'SeeAutomation (V4) : le paramètre de sortie d\'OpenProject : un Variant, puis une variable Object seulement si SEE refuse le type',
       remplacer('SEE_Commun', /        gApp\.OpenProject chemin, mdp, r\r\n/, '        gApp.OpenProject chemin, mdp, prj\r\n')],
+    // --- la v4 : CreateObject (type, projet, objet en sortie), CloseProject(le projet), le relevé des formes, le registre
+    ['CreateObject sans le projet au milieu', 'SeeAutomation : CreateObject d\'abord (type, projet, objet en sortie) en V4, le projet ouvert par OpenProject gardé pour lui ; chaque forme essayée jusqu\'à la première qui rend un objet, retenue',
+      remplacer('SEE_Commun', /gApp\.CreateObject typeObjet, mProjetCreation, x\r\n/, 'gApp.CreateObject typeObjet, rien, x\r\n')],
+    ['CreateObject : l\'objet rendu essayé d\'abord en V4', 'SeeAutomation : CreateObject d\'abord (type, projet, objet en sortie) en V4, le projet ouvert par OpenProject gardé pour lui ; chaque forme essayée jusqu\'à la première qui rend un objet, retenue',
+      remplacer('SEE_Commun', /ordre = Array\(1, 2, 3, 4, 5, 6, 7, 8, 9, 10\)/, 'ordre = Array(3, 1, 2, 4, 5, 6, 7, 8, 9, 10)')],
+    ['le projet ouvert non gardé pour CreateObject', 'SeeAutomation : CreateObject d\'abord (type, projet, objet en sortie) en V4, le projet ouvert par OpenProject gardé pour lui ; chaque forme essayée jusqu\'à la première qui rend un objet, retenue',
+      remplacer('SEE_Commun', /    Set mProjetCreation = prj\r\n/, '')],
+    ['CreateObject qui continue après une forme qui marche', 'SeeAutomation : CreateObject d\'abord (type, projet, objet en sortie) en V4, le projet ouvert par OpenProject gardé pour lui ; chaque forme essayée jusqu\'à la première qui rend un objet, retenue',
+      remplacer('SEE_Commun', /(            mFormeCreation = CInt\(forme\)\r\n(?:.*\r\n){3})            Exit Function\r\n/, '$1')],
+    ['CloseProject sans le projet', 'le bouton 3 ferme son projet par CloseProject(le projet), après Save et le relevé des formes ; le projet gardé pour CreateObject est lâché avant d\'attendre Windows', remplacer('SEE_Pilote', /        gApp\.CloseProject prj\r\n/, '        gApp.CloseProject\r\n')],
+    ['le projet gardé pour CreateObject non lâché à la fermeture', 'le bouton 3 ferme son projet par CloseProject(le projet), après Save et le relevé des formes ; le projet gardé pour CreateObject est lâché avant d\'attendre Windows',
+      remplacer('SEE_Pilote', /(Private Sub FermerNotreSEE[\s\S]*?)    OublierCreation\r\n/, '$1')],
+    ['le relevé des formes après la fermeture', 'le bouton 3 ferme son projet par CloseProject(le projet), après Save et le relevé des formes ; le projet gardé pour CreateObject est lâché avant d\'attendre Windows',
+      remplacer('SEE_Pilote', /    ReleverFormes\r\nFermer:\r\n([\s\S]*?    If mNotreSEE Then FermerNotreSEE prj\r\n)/, 'Fermer:\r\n$1    ReleverFormes\r\n')],
+    ['le relevé qui écrit dans l\'environnement', 'le relevé des formes du bouton 3 : OpenEnvironment, la sonde des symboles (RelireFormes, comme SondeSymboles), CloseEnvironment ; aucun membre de l\'environnement appelé hors de la sonde ; aucune erreur n\'en sort',
+      remplacer('SEE_Pilote', /(    RelireFormes env, nbFam, nbSym\r\n)/, '$1    env.UpdateMethodsXML 22, Nothing\r\n')],
+    ['le relevé qui laisse sortir une erreur', 'le relevé des formes du bouton 3 : OpenEnvironment, la sonde des symboles (RelireFormes, comme SondeSymboles), CloseEnvironment ; aucun membre de l\'environnement appelé hors de la sonde ; aucune erreur n\'en sort', remplacer('SEE_Pilote', /    On Error GoTo Imprevu\r\n    Contexte "Bouton 3", "formes"/, '    Contexte "Bouton 3", "formes"')],
+    ['une forme lue par l\'environnement sous SeeAutomation', 'SeeAutomation : une forme (définition de symbole) se lit par le projet, jamais par un environnement (pas de GetEnvironment)',
+      remplacer('SEE_Commun', /If Not env Is Nothing And Not gEstAutomation Then/, 'If Not env Is Nothing Then')],
+    ['un ProgID du registre essayé sans raison', 'SondeRegistre : pour rejoindre SEE, seulement les ProgID d\'un CLSID des réglages ou dont le LocalServer32 est le programme de SEE lu au registre',
+      remplacer('SEE_Sonde', /    ElseIf Len\(raison\) > 0 Then\r\n        mProgIDsAutres\.Add nom\r\n/, '    Else\r\n        mProgIDsAutres.Add nom\r\n')],
+    ['un ProgID essayé pour son seul nom', 'SondeRegistre : pour rejoindre SEE, seulement les ProgID d\'un CLSID des réglages ou dont le LocalServer32 est le programme de SEE lu au registre',
+      remplacer('SEE_Sonde', /    If StrComp\(ServeurDuCLSID\(clsid\), mServeurSEE, vbTextCompare\) = 0 Then RaisonDEssayer/, '    RaisonDEssayer')],
+    ['le bouton 1 qui ne dit pas que le bouton 3 est la voie (Application absente)', 'bouton 1 : l\'Application absente du registre, le message va droit au bouton 3 (« Ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 »)',
+      remplacer('SEE_Sonde', /Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3/, 'Essaie peut-être le bouton 3')],
     ['le bloc à photographier qui montre le chemin entier (SU3)', 'le bloc à photographier et le journal ne montrent pas le chemin entier (MasquerChemins)',
       remplacer('SEE_Commun', /EcrireLigne ws, l, Array\(rubrique, MasquerChemins\(texte\)\)/, 'EcrireLigne ws, l, Array(rubrique, texte)')],
   ];

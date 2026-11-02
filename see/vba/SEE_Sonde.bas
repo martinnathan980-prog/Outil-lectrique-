@@ -24,7 +24,8 @@ Attribute VB_Name = "SEE_Sonde"
 '                      avant de joindre SEE)
 '    SondeApplication  versions, chemins, environnement (Unit !), projet,
 '                      cartouches (zone de travail), stratégie de connexion
-'    SondeSymboles     familles et symboles de l'environnement
+'    SondeSymboles     familles et symboles de l'environnement (en haut, une
+'                      ligne par famille ; dessous, chaque forme)
 '    SondeFolio        un folio dessiné à la main : symboles (repères,
 '                      position, points de connexion, MATÉRIEL associé au
 '                      symbole et à son connecteur : Class, Code, Quantity),
@@ -38,6 +39,9 @@ Attribute VB_Name = "SEE_Sonde"
 '    RelireFolio       (appelée par les boutons 2 et 3) relit le folio que le
 '                      pilote vient de dessiner, dans Sonde_Folio, sans boîte,
 '                      sans vider le journal, avec la connexion déjà là
+'    RelireFormes      (appelée par le bouton 3) la même chose que SondeSymboles,
+'                      pour un environnement donné (celui du projet, ouvert
+'                      par SeeAutomation, qui n'a pas de GetEnvironment)
 '
 '  But : connaître l'unité, l'origine et le sens de y, les formes que le
 '  bureau utilise, la chaîne de type de connexion, la sémantique des repères,
@@ -85,6 +89,12 @@ Private mProgIDsTrouves As Collection ' « ProgID = CLSID » trouvés par SondeRegi
 Private mProgIDsConnus As Collection  ' ProgID d'un CLSID des réglages (essayés d'abord)
 Private mProgIDsAutres As Collection  ' les autres ProgID de SEE (SEE..., IGE..., ...XAO...)
 Private mProgIDsVus As Object         ' les ProgID déjà notés
+Private mServeurSEE As String         ' le programme de SEE lu au registre (LocalServer32 d'un CLSID des réglages, chemin entier)
+Private mServeurs As Object           ' CLSID -> son programme (LocalServer32, chemin entier ; "" : aucun), lu une fois
+Private mNbServeursNonLus As Long     ' ProgID dont le programme n'a pas été lu (au-delà de SERVEURS_MAXI CLSID)
+Private mNbAppLus As Long             ' CLSID du réglage CLSID_Application cherchés au registre
+Private mNbAppInscrits As Long        ' ... et trouvés (une vue au moins)
+Private mAppAbsente As Boolean        ' le registre lu n'a AUCUN CLSID d'Application : seul le bouton 3 ouvre le projet
 Private mEnMarche As String           ' TesterSEE : les programmes SEE en marche, d'après Windows (SEEEnMarche)
 Private mEtatMarche As Integer        ' 1 SEE en marche, 0 aucun, -1 Windows ne répond pas
 Private mBlocEnCours As Boolean       ' TesterSEE en cours : un bloc PROVISOIRE précède ce qui demande à Windows
@@ -93,6 +103,8 @@ Private Const FEUILLE_XML As String = "Sonde_XML"
 Private Const TAILLE_MORCEAU As Long = 30000   ' caractères de XML par cellule (Excel en tient 32 767)
 Private Const FEUILLE_REGISTRE As String = "Sonde_Registre"
 Private Const PROGID_MAXI As Long = 8          ' ProgID du registre essayés au plus par ConnecterSEE
+Private Const SERVEURS_MAXI As Long = 400      ' CLSID dont SondeRegistre lit le programme, au plus
+Private Const LIGNES_PROGID_MAXI As Long = 5000 ' ProgID écrits au plus dans Sonde_Registre
 
 ' ----------------------------------------------------------------------------
 '  Début et fin communs
@@ -136,9 +148,12 @@ Private Function DebutSonde(ByVal titre As String, ByVal nomFeuille As String) A
     DebutSonde = connecte
 End Function
 
-' Vrai si l'objet SEE gardé répond encore (le test que fait ConnecterSEE).
+' Vrai si l'objet SEE gardé répond encore (le test que fait ConnecterSEE) ;
+' la coclasse SeeAutomation, dont la liste des membres n'est pas établie en
+' V4R3, répond aussi par ApplicationVersion (lue au bureau).
 Private Function SEERepond() As Boolean
     SEERepond = (Left$(LireProp(gApp, "ApplicationName"), 4) <> "#ERR")
+    If Not SEERepond And gEstAutomation Then SEERepond = (Left$(LireProp(gApp, "ApplicationVersion"), 4) <> "#ERR")
 End Function
 
 Private Sub FinSonde(ByVal titre As String)
@@ -168,8 +183,9 @@ Private Sub Entetes(ByVal valeurs As Variant)
     mFeuille.Rows(mLigne).Font.Bold = True
 End Sub
 
-' Une propriété, et si elle échoue en lecture de propriété, comme méthode.
-Private Function LirePropOuMethode(ByVal obj As Object, ByVal nom As String) As String
+' Une propriété, et si elle échoue en lecture de propriété, comme méthode
+' (EnvironmentName du projet, par exemple : le bouton 3 la lit aussi).
+Public Function LirePropOuMethode(ByVal obj As Object, ByVal nom As String) As String
     Dim s As String, v As Variant
     s = LireProp(obj, nom)
     If Left$(s, 4) <> "#ERR" Then
@@ -337,6 +353,10 @@ Private Function ConsigneFinale(ByVal imprevu As String) As String
     If Len(imprevu) > 0 Then
         ConsigneFinale = "Le test s'est arrêté sur une erreur imprévue (" & imprevu & ")." & vbCrLf & _
             "1. " & photo & vbCrLf & "2. Puis, en bas d'Excel, clique sur l'onglet « Journal » et prends une photo de son haut."
+    ElseIf Not mJoint And mAppAbsente Then
+        ConsigneFinale = "Excel n'a pas trouvé ta fenêtre SEE : le registre de Windows n'a pas sa partie « Application ». " & _
+            "Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3 : sur ce poste, c'est lui qui compte." & vbCrLf & _
+            "1. " & photo & vbCrLf & "2. " & bouton3
     ElseIf Not mJoint Then
         ConsigneFinale = "Excel n'a pas trouvé ta fenêtre SEE." & vbCrLf & "1. " & photo & vbCrLf & "2. " & bouton3
     ElseIf Len(mPerdu) > 0 Then
@@ -492,6 +512,7 @@ Private Sub RemettreLesLectures()
     mRegistreLu = False
     mNbClsidInscrits = 0
     mNbClsidLus = 0
+    mAppAbsente = False
     Set mProgIDsTrouves = New Collection
     Set gEssais = Nothing
     mEnMarche = ""
@@ -625,6 +646,7 @@ Private Function TexteSEERejoint() As String
         If gEstAutomation Then s = s & " ; mais par la coclasse SeeAutomation, qui ne sait pas lire le projet ouvert"
     ElseIf mConnexionEssayee Then
         s = "NON : Excel n'a pas trouvé ta fenêtre SEE (chaque essai ci-dessous, avec la réponse de Windows)"
+        If mAppAbsente Then s = s & " ; le registre n'a pas la partie « Application » de SEE : seul le bouton 3 ouvre ton projet"
     Else
         s = "pas essayé : le test s'est arrêté avant (voir « Arrêt imprévu »)"
     End If
@@ -690,11 +712,15 @@ End Function
 '      ProgID, VersionIndependentProgID, LocalServer32, InprocServer32,
 '      TypeLib, AppID ;
 '    - les ProgID inscrits dont le nom parle de SEE (SEE, IGE, XAO), avec
-'      leur CLSID : HKLM\SOFTWARE\Classes, sa vue WOW6432Node, et
-'      HKCU\SOFTWARE\Classes ;
+'      leur CLSID, TOUS (une ligne chacun) : HKLM\SOFTWARE\Classes, sa vue
+'      WOW6432Node, et HKCU\SOFTWARE\Classes ;
 '    - l'association de l'extension .seeprj.
-'  Les ProgID trouvés vont dans gProgIDsRegistre (ceux d'un CLSID des
-'  réglages d'abord, PROGID_MAXI au plus) : ConnecterSEE les essaie. Toute
+'  Pour REJOINDRE SEE, seuls vont dans gProgIDsRegistre (PROGID_MAXI au plus,
+'  ConnecterSEE les essaie) les ProgID dont le CLSID est dans les réglages,
+'  puis ceux dont le programme (LocalServer32) est celui de SEE lu au
+'  registre (une bibliothèque, SeeBase.ErrorManager..., ne rejoint pas la
+'  fenêtre SEE) ; la feuille dit lesquels. Sans aucun CLSID d'Application au
+'  registre, le bloc et la boîte envoient droit au bouton 3. Toute
 '  erreur (WMI refusé, clé absente) est dite, jamais fatale. Un chemin de
 '  serveur s'affiche ; un chemin dans un profil utilisateur est masqué.
 '  Elle ne joint pas SEE : TesterSEE la lance AVANT de le joindre.
@@ -717,10 +743,17 @@ End Sub
 Private Sub LireRegistreSEE()
     Dim p As Variant, clsid As String, vue As Variant, dit As String, racine As Variant, noms As Collection
     Dim nom As Variant, pourquoi As String, t As String, nbLignes As Long, nbAutres As Long, nbNoms As Long, s As String
+    Dim raison As String
     Set mProgIDsTrouves = New Collection
     Set mProgIDsConnus = New Collection
     Set mProgIDsAutres = New Collection
     Set mProgIDsVus = NouveauDico()
+    Set mServeurs = NouveauDico()
+    mServeurSEE = ""
+    mNbServeursNonLus = 0
+    mNbAppLus = 0
+    mNbAppInscrits = 0
+    mAppAbsente = False
     mRegistreResume = ""
     mNbClsidInscrits = 0
     mNbClsidLus = 0
@@ -749,13 +782,23 @@ Private Sub LireRegistreSEE()
                 DecrireCLSID clsid, CStr(vue), dit
             Next vue
             If InStr(1, dit, "inscrit", vbBinaryCompare) > 0 Then mNbClsidInscrits = mNbClsidInscrits + 1
+            If DansLaListe(clsid, Reglage("CLSID_Application", "")) Then
+                mNbAppLus = mNbAppLus + 1
+                If InStr(1, dit, "inscrit", vbBinaryCompare) > 0 Then mNbAppInscrits = mNbAppInscrits + 1
+            End If
             AjouterResume Trim$(NomDuCLSID(clsid) & " " & CLSIDCourt(clsid)) & " : " & dit
         End If
     Next p
+    ' aucune coclasse Application au registre : la fenêtre SEE ne peut pas être rejointe, le bouton 3 est la voie
+    mAppAbsente = (mNbAppLus > 0 And mNbAppInscrits = 0)
+    If mAppAbsente Then AjouterResume "Application : ABSENTE du registre (aucun CLSID d'Application inscrit) : Excel ne peut pas " & _
+        "rejoindre ta fenêtre SEE ; le bouton 3 est la voie"
     ' --- 2. les ProgID qui parlent de SEE
     TitreSection ""
-    TitreSection "Les ProgID inscrits dont le nom contient SEE, IGE ou XAO (avec leur CLSID)"
-    Entetes Array("Racine", "ProgID", "CLSID", "Nom du CLSID")
+    TitreSection "Les ProgID inscrits dont le nom contient SEE, IGE ou XAO (avec leur CLSID) ; pour rejoindre SEE, Excel " & _
+        "n'essaie que ceux d'un CLSID des réglages ou du programme de SEE (" & IIf(Len(mServeurSEE) > 0, CheminAffichable(mServeurSEE), _
+        "inconnu : aucun LocalServer32 lu") & ")"
+    Entetes Array("Racine", "ProgID", "CLSID", "Nom du CLSID", "Essayé pour rejoindre SEE ?")
     For Each racine In Array("HKLM\SOFTWARE\Classes", "HKLM\SOFTWARE\WOW6432Node\Classes", "HKCU\SOFTWARE\Classes")
         If RegistreSousCles(CStr(racine), noms, pourquoi) Then
             nbNoms = nbNoms + noms.Count
@@ -764,8 +807,11 @@ Private Sub LireRegistreSEE()
                     t = TexteDuRegistre(CStr(racine) & "\" & CStr(nom) & "\CLSID", "")
                     If Len(t) > 0 Then
                         nbLignes = nbLignes + 1
-                        If nbLignes <= 60 Then Ecrire Array(CStr(racine), CStr(nom), t, NomDuCLSID(t))
-                        NoterProgID CStr(nom), t
+                        raison = RaisonDEssayer(CStr(nom), t)
+                        If nbLignes <= LIGNES_PROGID_MAXI Then Ecrire Array(CStr(racine), CStr(nom), t, NomDuCLSID(t), _
+                            IIf(Len(raison) > 0, "oui : " & raison, "non"))
+                        If nbLignes Mod 100 = 0 Then Application.StatusBar = "Registre de Windows : " & nbLignes & " ProgID lus"
+                        NoterProgID CStr(nom), t, raison
                     Else
                         nbAutres = nbAutres + 1
                     End If
@@ -775,8 +821,11 @@ Private Sub LireRegistreSEE()
             Ecrire Array(CStr(racine), "(illisible : " & pourquoi & ")")
         End If
     Next racine
-    If nbLignes > 60 Then Ecrire Array("", "(et " & (nbLignes - 60) & " autre(s))")
+    Application.StatusBar = False
+    If nbLignes > LIGNES_PROGID_MAXI Then Ecrire Array("", "(et " & (nbLignes - LIGNES_PROGID_MAXI) & " autre(s))")
     Ecrire Array("", "(" & nbNoms & " clés lues ; " & nbAutres & " clé(s) qui parlent de SEE sans CLSID : pas des ProgID)")
+    If mNbServeursNonLus > 0 Then Ecrire Array("", "(" & mNbServeursNonLus & " ProgID dont le programme n'a pas été lu : au-delà de " & _
+        SERVEURS_MAXI & " CLSID ; ils ne sont pas essayés)")
     If mProgIDsTrouves.Count = 0 Then
         AjouterResume "ProgID : aucun dont le nom contient SEE, IGE ou XAO (" & nbNoms & " clés lues)"
     Else
@@ -789,7 +838,7 @@ Private Sub LireRegistreSEE()
         If nbLignes > 6 Then s = s & " ; et " & (nbLignes - 6) & " autre(s) (feuille " & FEUILLE_REGISTRE & ")"
         AjouterResume "ProgID trouvés : " & s
     End If
-    ' les ProgID que ConnecterSEE essaiera : ceux d'un CLSID des réglages d'abord
+    ' les ProgID que ConnecterSEE essaiera : ceux d'un CLSID des réglages d'abord, puis ceux du programme de SEE
     Set gProgIDsRegistre = New Collection
     For Each p In mProgIDsConnus
         If gProgIDsRegistre.Count < PROGID_MAXI Then gProgIDsRegistre.Add CStr(p)
@@ -797,6 +846,12 @@ Private Sub LireRegistreSEE()
     For Each p In mProgIDsAutres
         If gProgIDsRegistre.Count < PROGID_MAXI Then gProgIDsRegistre.Add CStr(p)
     Next p
+    s = ""
+    For Each p In gProgIDsRegistre
+        s = s & IIf(Len(s) > 0, " ; ", "") & CStr(p)
+    Next p
+    AjouterResume "ProgID essayés pour rejoindre SEE : " & IIf(Len(s) > 0, s, "aucun") & " (CLSID des réglages, ou programme de SEE ; " & _
+        "les autres ne le sont pas)"
     ' --- 3. l'extension des projets
     TitreSection ""
     TitreSection "L'extension .seeprj (les projets SEE)"
@@ -831,8 +886,10 @@ Private Sub DecrireCLSID(ByVal clsid As String, ByVal vue As String, ByRef dit A
     v(6) = LuDuRegistre(cleCLSID & "\TypeLib", "")
     v(7) = LuDuRegistre(cleCLSID, "AppID")
     Ecrire Array(clsid, NomDuCLSID(clsid), vue, "OUI", v(1), v(2), v(3), v(4), v(5), v(6), v(7))
-    If Left$(v(2), 1) <> "(" Then NoterProgID v(2), clsid
-    If Left$(v(3), 1) <> "(" Then NoterProgID v(3), clsid
+    If Left$(v(2), 1) <> "(" Then NoterProgID v(2), clsid, "CLSID des réglages"
+    If Left$(v(3), 1) <> "(" Then NoterProgID v(3), clsid, "CLSID des réglages"
+    ' le programme de SEE (chemin entier), pour reconnaître les autres ProgID qu'il sert
+    If Len(mServeurSEE) = 0 Then mServeurSEE = CheminDuProgramme(TexteDuRegistre(cleCLSID & "\LocalServer32", ""))
     serveur = v(4)
     If Left$(serveur, 1) = "(" Then serveur = v(5)
     dit = dit & quoi & " : inscrit" & IIf(Left$(v(2), 1) <> "(", ", ProgID " & v(2), ", sans ProgID") & _
@@ -855,22 +912,73 @@ Private Function TexteDuRegistre(ByVal chemin As String, ByVal valeur As String)
     If RegistreTexte(chemin, valeur, t, pourquoi) Then TexteDuRegistre = t
 End Function
 
-' Un ProgID trouvé (nom = CLSID), une fois : pour la photo, et pour ConnecterSEE.
-Private Sub NoterProgID(ByVal nom As String, ByVal clsid As String)
-    Dim u As String
+' Un ProgID trouvé (nom = CLSID), une fois : pour la photo, et pour ConnecterSEE
+' s'il peut rejoindre SEE (raison : RaisonDEssayer ; "" : il n'est pas essayé).
+Private Sub NoterProgID(ByVal nom As String, ByVal clsid As String, ByVal raison As String)
     nom = Trim$(nom)
     If Len(nom) = 0 Then Exit Sub
     If mProgIDsVus.Exists(nom) Then Exit Sub
     mProgIDsVus.Add nom, True
     mProgIDsTrouves.Add nom & " = " & Trim$(NomDuCLSID(clsid) & " " & CLSIDCourt(clsid))
-    If Len(NomDuCLSID(clsid)) > 0 And Left$(NomDuCLSID(clsid), 1) <> "(" Then
+    If raison = "CLSID des réglages" Then
         mProgIDsConnus.Add nom
-    Else
-        ' un autre ProgID n'est essayé que s'il commence comme ceux de SEE ou d'IGE+XAO
-        u = UCase$(nom)
-        If Left$(u, 3) = "SEE" Or Left$(u, 3) = "IGE" Or InStr(1, u, "XAO", vbBinaryCompare) > 0 Then mProgIDsAutres.Add nom
+    ElseIf Len(raison) > 0 Then
+        mProgIDsAutres.Add nom
     End If
 End Sub
+
+' Pourquoi ce ProgID peut REJOINDRE SEE : « CLSID des réglages »
+' (CLSID_Application, CLSID_Automation), ou « programme SEE.exe » (son
+' LocalServer32 est le programme de SEE lu au registre). "" : ni l'un ni
+' l'autre, il n'est pas essayé. Le programme n'est lu que pour un nom qui
+' commence comme ceux de SEE ou d'IGE+XAO, au plus SERVEURS_MAXI CLSID.
+Private Function RaisonDEssayer(ByVal nom As String, ByVal clsid As String) As String
+    Dim u As String
+    If DansLaListe(clsid, Reglage("CLSID_Application", "") & ";" & Reglage("CLSID_Automation", "")) Then
+        RaisonDEssayer = "CLSID des réglages"
+        Exit Function
+    End If
+    If Len(mServeurSEE) = 0 Then Exit Function
+    u = UCase$(nom)
+    If Not (Left$(u, 3) = "SEE" Or Left$(u, 3) = "IGE" Or InStr(1, u, "XAO", vbBinaryCompare) > 0) Then Exit Function
+    If StrComp(ServeurDuCLSID(clsid), mServeurSEE, vbTextCompare) = 0 Then RaisonDEssayer = "programme " & ProgrammeDeLaCommande(mServeurSEE)
+End Function
+
+' Le programme d'un CLSID (LocalServer32, chemin entier, dans l'une des deux
+' vues du registre ; "" : aucun, une bibliothèque par exemple), lu une fois.
+Private Function ServeurDuCLSID(ByVal clsid As String) As String
+    Dim vue As Variant, t As String, s As String
+    If mServeurs.Exists(clsid) Then
+        ServeurDuCLSID = CStr(mServeurs.Item(clsid))
+        Exit Function
+    End If
+    If mServeurs.Count >= SERVEURS_MAXI Then
+        mNbServeursNonLus = mNbServeursNonLus + 1
+        Exit Function
+    End If
+    For Each vue In Array("CLSID", "WOW6432Node\CLSID")
+        t = TexteDuRegistre("HKCR\" & CStr(vue) & "\" & clsid & "\LocalServer32", "")
+        If Len(t) > 0 Then
+            s = CheminDuProgramme(t)
+            Exit For
+        End If
+    Next vue
+    mServeurs.Add clsid, s
+    ServeurDuCLSID = s
+End Function
+
+' Vrai si le CLSID est dans la liste (« {...};{...} », sans tenir compte de la casse).
+Private Function DansLaListe(ByVal clsid As String, ByVal liste As String) As Boolean
+    Dim p As Variant
+    For Each p In Split(liste, ";")
+        If Len(Trim$(CStr(p))) > 0 Then
+            If StrComp(Trim$(CStr(p)), Trim$(clsid), vbTextCompare) = 0 Then
+                DansLaListe = True
+                Exit Function
+            End If
+        End If
+    Next p
+End Function
 
 ' Vrai pour un nom de clé qui parle de SEE ou d'IGE+XAO : il contient SEE ou
 ' XAO, ou IGE en début de mot (pas « Privilege »). Ni une extension, ni un CLSID.
@@ -1070,7 +1178,7 @@ End Sub
 '  SondeSymboles : familles SEE (eSEEFamily = 1) puis utilisateur (2)
 ' ============================================================================
 Public Sub SondeSymboles()
-    Dim env As Object, t As Variant, fam As Variant, forme As Variant, nbFam As Long, nbSym As Long
+    Dim env As Object, nbFam As Long, nbSym As Long
     Const TITRE_SONDE As String = "SondeSymboles"
     If Not DebutSonde(TITRE_SONDE, "Sonde_Symboles") Then GoTo Fin
     Contexte "SondeSymboles", "Environnement"
@@ -1079,25 +1187,85 @@ Public Sub SondeSymboles()
         Ecrire Array("#ERR environnement illisible : " & gDerniereErreur)
         GoTo Fin
     End If
-    Entetes Array("TypeFamille", "Famille", "DescriptionFamille", "Nom", "Description", "Description2", "Behavior", _
-        "Function", "Root", "Class", "Code", "Neutral", "DwgBlockName", "Rect X1", "Rect Y1", "Rect X2", "Rect Y2", "Erreur")
-    For Each t In Array(FAMILLE_SEE, FAMILLE_UTILISATEUR)
-        For Each fam In ElementsDe(SEE_Familles(env, CLng(t)))
-            nbFam = nbFam + 1
-            Contexte "SondeSymboles", LireProp(fam, "Name")
-            For Each forme In ElementsDe(SEE_FormesDeFamille(fam))
-                nbSym = nbSym + 1
-                EcrireForme CLng(t), fam, forme
-                If nbSym Mod 200 = 0 Then Application.StatusBar = "Sonde des symboles : " & nbSym
-            Next forme
-        Next fam
-    Next t
-    Journal "SondeSymboles", "", "", nbFam & " famille(s), " & nbSym & " symbole(s)"
+    DecrireFormes env, nbFam, nbSym
 Fin:
     mNbFamilles = nbFam
     mNbFormes = nbSym
     Application.StatusBar = False
     FinSonde TITRE_SONDE
+End Sub
+
+' ============================================================================
+'  RelireFormes : les familles et les formes d'un environnement DONNÉ dans la
+'  feuille Sonde_Symboles, sans boîte et sans vider le journal, avec la
+'  connexion déjà là. Le bouton 3 (EssaiSansFenetre, SEE_Pilote) l'appelle sur
+'  l'environnement du projet qu'il a ouvert (la coclasse SeeAutomation n'a pas
+'  de GetEnvironment : il l'ouvre par OpenEnvironment, et le referme).
+'  LECTURE SEULE. nbFam, nbSym : ce qui a été lu (0 sur une erreur imprévue,
+'  qui est au journal et ne sort pas d'ici).
+' ============================================================================
+Public Sub RelireFormes(ByVal env As Object, ByRef nbFam As Long, ByRef nbSym As Long)
+    nbFam = 0
+    nbSym = 0
+    On Error GoTo Echec
+    Journal "Relevé des formes", "", "", "les familles et les formes de l'environnement, en lecture seule (feuille Sonde_Symboles)"
+    Set mFeuille = FeuilleCreee("Sonde_Symboles", True)
+    mLigne = 0
+    Application.ScreenUpdating = False
+    DecrireFormes env, nbFam, nbSym
+    Application.ScreenUpdating = True
+    mFeuille.Columns.AutoFit
+    Exit Sub
+Echec:
+    Journal "Relevé des formes", "", "(sonde)", "ARRÊT IMPRÉVU du relevé (rien n'est écrit dans SEE)", Err.Number, Err.Description
+    Application.ScreenUpdating = True
+End Sub
+
+' Les familles d'un environnement, SEE (eSEEFamily = 1) puis utilisateur (2),
+' dans la feuille de la sonde en cours (mFeuille). En haut, une ligne par
+' famille (son type, son nom, son nombre de formes, les premières : ce qu'une
+' photo du haut de la feuille montre) ; dessous, chaque forme (EcrireForme).
+' LECTURE SEULE. nbFam, nbSym : ce qui a été lu.
+Private Sub DecrireFormes(ByVal env As Object, ByRef nbFam As Long, ByRef nbSym As Long)
+    Dim t As Variant, fam As Variant, forme As Variant, familles As Collection, types As Collection, f As Object
+    Dim ligneResume As Long, i As Long, n As Long, noms As String, typeFamille As Long
+    nbFam = 0
+    nbSym = 0
+    Set familles = New Collection
+    Set types = New Collection
+    For Each t In Array(FAMILLE_SEE, FAMILLE_UTILISATEUR)
+        For Each fam In ElementsDe(SEE_Familles(env, CLng(t)))
+            familles.Add fam
+            types.Add CLng(t)
+        Next fam
+    Next t
+    TitreSection "Les familles de formes (une ligne par famille) ; chaque forme est plus bas"
+    Entetes Array("TypeFamille", "Famille", "Nb formes", "Premières formes")
+    ligneResume = mLigne
+    If familles.Count = 0 Then Ecrire Array("", "(aucune famille lue)")
+    mLigne = mLigne + familles.Count
+    TitreSection ""
+    TitreSection "Chaque forme"
+    Entetes Array("TypeFamille", "Famille", "DescriptionFamille", "Nom", "Description", "Description2", "Behavior", _
+        "Function", "Root", "Class", "Code", "Neutral", "DwgBlockName", "Rect X1", "Rect Y1", "Rect X2", "Rect Y2", "Erreur")
+    For i = 1 To familles.Count
+        Set f = familles.Item(i)
+        typeFamille = CLng(types.Item(i))
+        nbFam = nbFam + 1
+        Contexte "SondeSymboles", LireProp(f, "Name")
+        n = 0
+        noms = ""
+        For Each forme In ElementsDe(SEE_FormesDeFamille(f))
+            n = n + 1
+            nbSym = nbSym + 1
+            EcrireForme typeFamille, f, forme
+            If n <= 12 Then noms = noms & IIf(n > 1, ", ", "") & LireProp(forme, "Name")
+            If nbSym Mod 200 = 0 Then Application.StatusBar = "Sonde des symboles : " & nbSym
+        Next forme
+        If n > 12 Then noms = noms & ", ..."
+        EcrireLigne mFeuille, ligneResume + i, Array(IIf(typeFamille = FAMILLE_SEE, "SEE", "Utilisateur"), LireProp(f, "Name"), n, noms)
+    Next i
+    Journal "SondeSymboles", "", "", nbFam & " famille(s), " & nbSym & " symbole(s)"
 End Sub
 
 Private Sub EcrireForme(ByVal typeFamille As Long, ByVal fam As Object, ByVal forme As Object)

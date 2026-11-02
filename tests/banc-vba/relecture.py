@@ -72,10 +72,10 @@ SCEN = [
     # la v3 : les boutons 1 et 2 rejoignent la fenêtre SEE et n'en créent jamais (faux SEE_Windows : FauxWindows.bas)
     ('connexion V5', lambda d: lancer(d, 'BancR.BancConnexion', (False,)), None),
     ('connexion V4', lambda d: lancer(d, 'BancR.BancConnexion', (True,)), None),
-    # le bouton 3 (EssaiSansFenetre), SEE fermé : V4 et la forme à un paramètre de plus (le cas probable au bureau),
-    # V5 et la forme d'Application ; projet_essai() pose un faux projet dans le dossier de travail
-    ('bouton 3 V4', lambda d: lancer(d, 'BancR.BancBouton3', (True, 2, projet_essai())), lambda: dossier_essai()),
-    ('bouton 3 V5', lambda d: lancer(d, 'BancR.BancBouton3', (False, 1, projet_essai())), lambda: dossier_essai()),
+    # le bouton 3 (EssaiSansFenetre), SEE fermé : V4 et le CreateObject vu au bureau (type, projet, objet en sortie ;
+    # gAutoForme = 1), V5 et l'objet rendu (gAutoForme = 2) ; projet_essai() pose un faux projet dans le dossier de travail
+    ('bouton 3 V4', lambda d: lancer(d, 'BancR.BancBouton3', (True, 1, projet_essai())), lambda: dossier_essai()),
+    ('bouton 3 V5', lambda d: lancer(d, 'BancR.BancBouton3', (False, 2, projet_essai())), lambda: dossier_essai()),
     # Windows arrête TesterSEE au premier appel d'une fonction déclarée (GetActiveObject) : le bloc PROVISOIRE reste
     ('arret Windows', lambda d: (sans_texte(d, 'BancR.BancArret'), lancer(d, 'BancR.ApresArret', ())), None),
     # InitialiserClasseur qui lève une erreur : gSansDialogue reprend sa valeur

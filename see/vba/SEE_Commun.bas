@@ -90,7 +90,7 @@ Public gVersionLue As String          ' ApplicationVersion telle que lue
 Public gSimulation As Boolean         ' Simulation = O : rien n'est écrit dans SEE
 Public gSansDialogue As Boolean       ' Vrai : aucune boîte de dialogue (lancement par une autre macro)
 Public gEssais As Collection          ' les essais de la dernière connexion, une ligne chacun (feuille Resultat_Test)
-Public gProgIDsRegistre As Collection ' les ProgID de SEE trouvés au registre par SondeRegistre (essayés par ConnecterSEE)
+Public gProgIDsRegistre As Collection ' les ProgID du registre qui peuvent rejoindre SEE (SondeRegistre : un CLSID des réglages, ou le programme de SEE) ; ConnecterSEE les essaie
 
 ' --- Contexte du journal
 Public gEtape As String
@@ -117,9 +117,9 @@ Private mModeCollectionDit As Boolean ' la manière de lire une collection est au
 Private mFormesDites As Object        ' appel -> forme rendue par la V5, déjà au journal
 Private mCodesDits As Object          ' les codes de Windows déjà expliqués dans gEssais (la dernière connexion)
 ' --- le CreateObject de la coclasse SeeAutomation (signature non établie : essayée, voir NouvelObjet)
-Private mFormeCreation As Integer     ' 0 pas encore essayée, 1 la forme d'Application, 2 un paramètre de plus, -1 refusée
-Private mCodesCreation As String      ' les réponses des formes essayées (le bloc « À PHOTOGRAPHIER » du bouton 3)
-Private mSortieCreation As String     ' la variable de sortie qui a marché : "Variant", "Object" ("" : l'objet est rendu)
+Private mFormeCreation As Integer     ' 0 pas encore essayée, 1 à 10 la forme retenue (FormeCreation), -1 refusée
+Private mCodesCreation As String      ' les réponses des formes essayées avant (le bloc « À PHOTOGRAPHIER » du bouton 3)
+Private mProjetCreation As Object     ' le projet ouvert par SeeAutomation.OpenProject : le paramètre du milieu de son CreateObject
 
 ' --- La conversion des coordonnées (PreparerConversion)
 Private mEchelle As Double
@@ -1100,7 +1100,8 @@ Public Function EssaisEnTexte() As String
 End Function
 
 ' Les ProgID à essayer, sans doublon : ceux du réglage ProgID, puis ceux que
-' SondeRegistre a trouvés au registre (versions comprises : ...Application.1).
+' SondeRegistre a retenus au registre (versions comprises : ...Application.1) :
+' seulement ceux d'un CLSID des réglages ou servis par le programme de SEE.
 Private Function CandidatsProgID() As Collection
     Dim res As Collection, vus As Object, p As Variant
     Set res = New Collection
@@ -1213,7 +1214,8 @@ Public Function ReponseDeWindows(ByVal code As Long, ByVal texte As String) As S
     ReponseDeWindows = CodeDeWindows(code) & " = " & phrase
 End Function
 
-' Le nom d'un CLSID connu (see/RECHERCHE.md, § 3.1), pour le lire sans le retenir.
+' Le nom d'un CLSID connu (see/RECHERCHE.md, § 3.1), pour le lire sans le retenir ;
+' sinon « (CLSID des réglages) » ou « (autre CLSID) ».
 Public Function NomDuCLSID(ByVal clsid As String) As String
     Select Case UCase$(Trim$(clsid))
         Case "{829E4B3B-B128-4999-A66A-6E76F0B4B22F}"
@@ -1225,7 +1227,12 @@ Public Function NomDuCLSID(ByVal clsid As String) As String
         Case "{B0B9DD73-EE81-473F-9C3C-D8910C7E2D59}"
             NomDuCLSID = "SeeAutomation V4R3"
         Case Else
-            NomDuCLSID = "(CLSID des réglages)"
+            If InStr(1, ";" & UCase$(Replace(Reglage("CLSID_Application", "") & ";" & Reglage("CLSID_Automation", ""), " ", "", 1, -1)) & ";", _
+                    ";" & UCase$(Trim$(clsid)) & ";", vbBinaryCompare) > 0 Then
+                NomDuCLSID = "(CLSID des réglages)"
+            Else
+                NomDuCLSID = "(autre CLSID)"
+            End If
     End Select
 End Function
 
@@ -1296,6 +1303,17 @@ End Function
 ' commande ne nomme pas de .exe).
 Public Function ProgrammeDeLaCommande(ByVal commande As String) As String
     Dim s As String, p As Long
+    s = CheminDuProgramme(commande)
+    p = InStrRev(s, "\")
+    If p > 0 Then s = Mid$(s, p + 1)
+    If LCase$(Right$(s, 4)) <> ".exe" Then s = ""
+    ProgrammeDeLaCommande = s
+End Function
+
+' « "C:\...\SEE_Soft\Exe\SEE.exe" /Automation » -> « C:\...\SEE_Soft\Exe\SEE.exe »
+' (sans guillemets ni arguments ; "" si la commande ne nomme pas de .exe).
+Public Function CheminDuProgramme(ByVal commande As String) As String
+    Dim s As String, p As Long
     s = Trim$(commande)
     If Left$(s, 1) = """" Then
         p = InStr(2, s, """")
@@ -1304,10 +1322,8 @@ Public Function ProgrammeDeLaCommande(ByVal commande As String) As String
         p = InStr(1, LCase$(s), ".exe", vbBinaryCompare)
         If p > 0 Then s = Left$(s, p + 3)
     End If
-    p = InStrRev(s, "\")
-    If p > 0 Then s = Mid$(s, p + 1)
     If LCase$(Right$(s, 4)) <> ".exe" Then s = ""
-    ProgrammeDeLaCommande = s
+    CheminDuProgramme = s
 End Function
 
 ' La version de l'API : forcée par le réglage VersionAPI (V4 / V5), sinon
@@ -1492,20 +1508,25 @@ Echec:
 End Function
 
 ' La coclasse SeeAutomation : la signature de son CreateObject n'est pas
-' établie (les bibliothèques de types disent V5 : type, objet en sortie ;
-' V4 : type, ?, objet). La première fois, elle est ESSAYÉE, au journal :
-' d'abord la forme d'Application (V4 : type, objet en sortie ; V5 : l'objet
-' rendu) ; si SEE répond « nombre d'arguments » (450, 8002000E) ou « argument
-' non facultatif » (449), la forme à un paramètre de plus (V4 : type, ?,
-' objet ; V5 : type, objet en sortie). Le TYPE du paramètre de sortie n'est
-' pas établi non plus (un VARIANT, ou un IDispatch**) : chaque forme essaie un
-' Variant, puis une variable Object (AppelCreation). La forme et la variable
-' qui marchent sont retenues pour la suite de la macro ; si rien ne marche, la
-' création est dite refusée et n'est plus essayée (CreationDObjets le dit).
-' Rien d'autre n'est deviné : un objet créé n'existe qu'en mémoire, l'essai
-' est sans risque.
+' établie (V5R2, d'après sa bibliothèque de types : type, objet en sortie).
+' Au bureau (V4R3, 4.89.99.5) : deux arguments -> 450 (nombre d'arguments) ;
+' trois, un Variant vide au milieu -> 13, quelle que soit la variable de
+' sortie : le paramètre du MILIEU refuse un Variant vide ; c'est sans doute un
+' objet, le projet ouvert. La première fois, les formes sont ESSAYÉES dans
+' l'ordre d'OrdreCreation, chacune au journal avec son code, jusqu'à la
+' première qui rend un objet. V4 : (type, projet, objet en sortie), la même
+' avec un Variant en sortie, l'objet rendu, les deux formes à deux arguments,
+' d'autres valeurs au milieu (Nothing, 0, "", le projet passé dans un
+' Variant), puis (type, objet en sortie, projet) ; V5 : l'objet rendu et les
+' formes à deux arguments d'abord. Le
+' projet est celui que SEE_OuvrirProjetAutomation a ouvert ; sans lui, les
+' formes qui le passent ne sont pas essayées. La forme qui marche est retenue
+' pour toute la suite de la macro (une nouvelle connexion l'oublie :
+' OublierCreation) ; si aucune ne marche, la création est dite refusée et
+' n'est plus essayée (CreationDObjets le dit). Un objet créé n'existe qu'en
+' mémoire : l'essai est sans risque.
 Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
-    Dim o As Object, numErr As Long, descErr As String, forme As Integer
+    Dim o As Object, numErr As Long, descErr As String, forme As Variant
     Set NouvelObjetAutomation = Nothing
     If mFormeCreation < 0 Then
         JournalErreur "CreateObject(" & typeObjet & ")", -1, "coclasse SeeAutomation : la création d'objets a été refusée " & _
@@ -1513,26 +1534,30 @@ Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
         Exit Function
     End If
     If mFormeCreation > 0 Then
-        ' la forme retenue, avec la variable retenue
-        If EssaiCreation(mFormeCreation, typeObjet, mSortieCreation = "Object", o, numErr, descErr) Then
+        ' la forme retenue
+        If EssaiCreation(mFormeCreation, typeObjet, o, numErr, descErr) Then
             Set NouvelObjetAutomation = o
-            NoterAppel "CreateObject(" & typeObjet & ") " & FormeCreation(mFormeCreation), o
+            NoterAppel LibelleCreation(mFormeCreation, typeObjet), o
         Else
-            JournalErreur "CreateObject(" & typeObjet & ") " & FormeCreation(mFormeCreation), numErr, descErr
+            JournalErreur LibelleCreation(mFormeCreation, typeObjet), numErr, descErr
         End If
         Exit Function
     End If
-    ' la première fois : les formes, dans l'ordre (chacune : un Variant, puis une variable Object)
-    For forme = 1 To 2
-        If AppelCreation(forme, typeObjet, o, numErr, descErr) Then
-            mFormeCreation = forme
-            Journal gEtape, gObjet, "CreateObject(" & typeObjet & ") " & FormeCreation(forme) & IIf(Len(mSortieCreation) > 0, ", variable " & _
-                mSortieCreation, ""), "ok (" & TypeName(o) & ") : forme retenue pour la coclasse SeeAutomation"
+    ' la première fois : chaque forme, dans l'ordre, jusqu'à la première qui rend un objet
+    If mProjetCreation Is Nothing Then
+        Journal gEtape, gObjet, "CreateObject", "aucun projet ouvert par SeeAutomation.OpenProject : les formes qui passent le " & _
+            "projet ne sont pas essayées"
+    End If
+    For Each forme In OrdreCreation()
+        If EssaiCreation(CInt(forme), typeObjet, o, numErr, descErr) Then
+            mFormeCreation = CInt(forme)
+            Journal gEtape, gObjet, LibelleCreation(mFormeCreation, typeObjet), "ok (" & TypeName(o) & ") : forme retenue pour la " & _
+                "coclasse SeeAutomation, pour toute la suite de la macro"
             Set NouvelObjetAutomation = o
             Exit Function
         End If
-        ' une autre forme seulement si SEE dit que les arguments ne vont pas
-        If numErr <> 449 And numErr <> 450 And numErr <> &H8002000E Then Exit For
+        mCodesCreation = mCodesCreation & IIf(Len(mCodesCreation) > 0, " ; ", "") & FormeCreation(CInt(forme)) & " : " & CodeDeWindows(numErr)
+        Journal gEtape, gObjet, LibelleCreation(CInt(forme), typeObjet), "échec : " & ReponseDeWindows(numErr, descErr), numErr, descErr
     Next forme
     mFormeCreation = -1
     gNbErreurs = gNbErreurs + 1
@@ -1541,68 +1566,74 @@ Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
         "plus aucun essai dans cette macro", -1, "création d'objets refusée"
 End Function
 
-' Une forme de CreateObject (1, celle d'Application ; 2, un paramètre de
-' plus), essayée la première fois. Avec un paramètre de sortie, d'abord un
-' Variant (un « out » déclaré VARIANT* n'accepte que lui), puis une variable
-' Object (un IDispatch** n'accepte qu'elle) : seulement si SEE refuse le TYPE
-' de l'argument (13, DISP_E_TYPEMISMATCH : refusé AVANT que la méthode tourne)
-' ou si le Variant revient vide. Chaque échec est au journal et dans
-' mCodesCreation (le bloc à photographier). Vrai, l'objet, et mSortieCreation ;
-' sinon Faux, le dernier code et sa description.
-Private Function AppelCreation(ByVal forme As Integer, ByVal typeObjet As Long, ByRef o As Object, ByRef numErr As Long, _
-        ByRef descErr As String) As Boolean
-    Dim parObjet As Boolean, essai As Integer
-    For essai = 1 To 2
-        parObjet = (essai = 2)
-        If forme = 1 And Not EstV4() Then
-            ' V5, la forme d'Application : l'objet est rendu, pas de variable de sortie
-            mSortieCreation = ""
-        Else
-            mSortieCreation = IIf(parObjet, "Object", "Variant")
-        End If
-        If EssaiCreation(forme, typeObjet, parObjet, o, numErr, descErr) Then
-            AppelCreation = True
-            Exit Function
-        End If
-        mCodesCreation = mCodesCreation & IIf(Len(mCodesCreation) > 0, " ; ", "") & "forme " & forme & _
-            IIf(Len(mSortieCreation) > 0, ", " & mSortieCreation, "") & " : " & CodeDeWindows(numErr)
-        Journal gEtape, gObjet, "CreateObject(" & typeObjet & ") " & FormeCreation(forme) & IIf(Len(mSortieCreation) > 0, _
-            ", variable " & mSortieCreation, ""), "échec : " & ReponseDeWindows(numErr, descErr), numErr, descErr
-        If Len(mSortieCreation) = 0 Then Exit For
-        If Not TypeRefuse(numErr) And numErr <> -1 Then Exit For
-    Next essai
-    mSortieCreation = ""
+' Les formes de CreateObject à essayer, dans l'ordre (FormeCreation) : V4, les
+' formes à trois arguments d'abord ; V5, l'objet rendu et les formes à deux
+' arguments d'abord. Sans projet ouvert, celles qui le passent sont laissées.
+Private Function OrdreCreation() As Collection
+    Dim res As Collection, f As Variant, ordre As Variant
+    Set res = New Collection
+    If EstV4() Then
+        ordre = Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    Else
+        ordre = Array(3, 4, 5, 1, 2, 6, 7, 8, 9, 10)
+    End If
+    For Each f In ordre
+        If Not (FormeAvecProjet(CInt(f)) And mProjetCreation Is Nothing) Then res.Add f
+    Next f
+    Set OrdreCreation = res
 End Function
 
-' Un appel de CreateObject sous une forme, avec un Variant ou une variable
-' Object en sortie (parObjet). Vrai et l'objet ; sinon Faux, le code (-1 :
-' rien rendu) et sa description.
-Private Function EssaiCreation(ByVal forme As Integer, ByVal typeObjet As Long, ByVal parObjet As Boolean, ByRef o As Object, _
-        ByRef numErr As Long, ByRef descErr As String) As Boolean
-    Dim v As Variant, r As Variant, x As Object
+' Vrai pour une forme qui passe le projet ouvert (1, 2, 9 et 10).
+Private Function FormeAvecProjet(ByVal forme As Integer) As Boolean
+    FormeAvecProjet = (forme = 1 Or forme = 2 Or forme = 9 Or forme = 10)
+End Function
+
+' Un appel de CreateObject sous une forme (FormeCreation). Vrai et l'objet ;
+' sinon Faux, le code (-1 : rien rendu) et sa description. Un « objet en
+' sortie » est une variable Object (un IDispatch** n'accepte qu'elle), un
+' « Variant en sortie » un Variant (un VARIANT* n'accepte que lui) ; le projet
+' est la variable gardée par SEE_OuvrirProjetAutomation (forme 9 : une copie
+' de la référence dans un Variant, pour le cas où SEE refuserait la variable
+' Object au milieu).
+Private Function EssaiCreation(ByVal forme As Integer, ByVal typeObjet As Long, ByRef o As Object, ByRef numErr As Long, _
+        ByRef descErr As String) As Boolean
+    Dim r As Variant, x As Object, rien As Object, vp As Variant
     Set o = Nothing
     numErr = 0
     descErr = ""
     On Error GoTo Echec
-    If forme = 1 And Not EstV4() Then
-        Set o = gApp.CreateObject(typeObjet)
-    ElseIf forme = 2 And EstV4() Then
-        ' (type, ?, objet en sortie) : le paramètre du milieu reste un Variant
-        If parObjet Then
-            gApp.CreateObject typeObjet, v, x
+    Select Case forme
+        Case 1
+            gApp.CreateObject typeObjet, mProjetCreation, x
             Set o = x
-        Else
-            gApp.CreateObject typeObjet, v, r
+        Case 2
+            gApp.CreateObject typeObjet, mProjetCreation, r
             If IsObject(r) Then Set o = r
-        End If
-        If o Is Nothing And IsObject(v) Then Set o = v
-    ElseIf parObjet Then
-        gApp.CreateObject typeObjet, x
-        Set o = x
-    Else
-        gApp.CreateObject typeObjet, r
-        If IsObject(r) Then Set o = r
-    End If
+        Case 3
+            Set o = gApp.CreateObject(typeObjet)
+        Case 4
+            gApp.CreateObject typeObjet, x
+            Set o = x
+        Case 5
+            gApp.CreateObject typeObjet, r
+            If IsObject(r) Then Set o = r
+        Case 6
+            gApp.CreateObject typeObjet, rien, x
+            Set o = x
+        Case 7
+            gApp.CreateObject typeObjet, 0&, x
+            Set o = x
+        Case 8
+            gApp.CreateObject typeObjet, "", x
+            Set o = x
+        Case 9
+            Set vp = mProjetCreation
+            gApp.CreateObject typeObjet, vp, x
+            Set o = x
+        Case Else
+            gApp.CreateObject typeObjet, x, mProjetCreation
+            Set o = x
+    End Select
     If o Is Nothing Then
         numErr = -1
         descErr = "rien rendu (Nothing)"
@@ -1623,34 +1654,59 @@ Public Function TypeRefuse(ByVal numErr As Long) As Boolean
     TypeRefuse = (numErr = 13 Or numErr = &H80020005)
 End Function
 
-' La forme d'un appel de CreateObject, en clair.
+' Une forme de CreateObject, en clair (le bloc à photographier, le journal).
 Private Function FormeCreation(ByVal forme As Integer) As String
-    If forme = 1 Then
-        FormeCreation = IIf(EstV4(), "(type, objet en sortie)", "(type) -> objet rendu")
-    Else
-        FormeCreation = IIf(EstV4(), "(type, ?, objet en sortie)", "(type, objet en sortie)")
-    End If
+    Select Case forme
+        Case 1
+            FormeCreation = "(type, projet, objet en sortie)"
+        Case 2
+            FormeCreation = "(type, projet, Variant en sortie)"
+        Case 3
+            FormeCreation = "(type) -> objet rendu"
+        Case 4
+            FormeCreation = "(type, objet en sortie)"
+        Case 5
+            FormeCreation = "(type, Variant en sortie)"
+        Case 6
+            FormeCreation = "(type, Nothing, objet en sortie)"
+        Case 7
+            FormeCreation = "(type, 0, objet en sortie)"
+        Case 8
+            FormeCreation = "(type, """", objet en sortie)"
+        Case 9
+            FormeCreation = "(type, projet dans un Variant, objet en sortie)"
+        Case Else
+            FormeCreation = "(type, objet en sortie, projet)"
+    End Select
+End Function
+
+' L'appel, pour le journal : « CreateObject(9, projet, objet en sortie) ».
+Private Function LibelleCreation(ByVal forme As Integer, ByVal typeObjet As Long) As String
+    LibelleCreation = "CreateObject" & Replace(FormeCreation(forme), "type", CStr(typeObjet), 1, 1)
 End Function
 
 ' Ce que la création d'objets de la coclasse SeeAutomation a donné, pour une
-' photo : « pas essayée », « oui, forme ..., variable ... », « refusée (codes
-' ...) » (chaque forme et chaque variable essayées, avec leur code).
+' photo : « pas essayée » ; « oui, forme retenue : CreateObject(...) », et les
+' formes refusées avant, chacune avec son code ; « REFUSÉE (codes : ...) »,
+' chaque forme essayée avec son code.
 Public Function CreationDObjets() As String
     If mFormeCreation = 0 Then
         CreationDObjets = "pas essayée"
     ElseIf mFormeCreation > 0 Then
-        CreationDObjets = "oui, CreateObject" & FormeCreation(mFormeCreation) & IIf(Len(mSortieCreation) > 0, ", variable " & _
-            mSortieCreation, "") & IIf(Len(mCodesCreation) > 0, " (avant : " & mCodesCreation & ")", "")
+        CreationDObjets = "oui, forme retenue : CreateObject" & FormeCreation(mFormeCreation) & _
+            IIf(Len(mCodesCreation) > 0, " (avant : " & mCodesCreation & ")", "")
     Else
         CreationDObjets = "REFUSÉE (codes : " & mCodesCreation & ")"
     End If
 End Function
 
-' Une nouvelle connexion : la forme de CreateObject sera essayée de nouveau.
+' Une nouvelle connexion, ou la fermeture du bouton 3 : la forme de
+' CreateObject sera essayée de nouveau, et le projet gardé pour elle est lâché
+' (Set ... = Nothing : rien n'est fermé dans SEE).
 Public Sub OublierCreation()
     mFormeCreation = 0
     mCodesCreation = ""
-    mSortieCreation = ""
+    Set mProjetCreation = Nothing
 End Sub
 
 ' Un SEEPoint aux coordonnées SEE données.
@@ -1751,7 +1807,9 @@ End Function
 ' l'argument (13, DISP_E_TYPEMISMATCH : refusé avant que la méthode tourne, le
 ' projet n'a donc pas été ouvert), une variable Object. sortie reçoit celle qui
 ' a servi (« Variant », « Object », "" en V5). Journalisé ; Nothing, numErr et
-' descErr si SEE refuse. Jamais de Login.
+' descErr si SEE refuse. Jamais de Login. Le projet ouvert est retenu pour le
+' CreateObject de SeeAutomation (son paramètre du milieu : NouvelObjet), et
+' lâché par OublierCreation (une nouvelle connexion, la fermeture du bouton 3).
 Public Function SEE_OuvrirProjetAutomation(ByVal chemin As String, ByVal mdp As String, ByRef numErr As Long, _
         ByRef descErr As String, ByRef sortie As String) As Object
     Dim prj As Object, r As Variant
@@ -1795,6 +1853,7 @@ Public Function SEE_OuvrirProjetAutomation(ByVal chemin As String, ByVal mdp As 
     End If
     Journal gEtape, "projet", "SeeAutomation.OpenProject(""" & chemin & """)" & IIf(Len(sortie) > 0, ", variable " & sortie, ""), _
         "ouvert par la macro, en écriture"
+    Set mProjetCreation = prj
     Set SEE_OuvrirProjetAutomation = prj
     Exit Function
 Echec:
@@ -1802,6 +1861,46 @@ Echec:
     descErr = Err.Description
     JournalErreur "SeeAutomation.OpenProject(""" & chemin & """)" & IIf(Len(sortie) > 0, ", variable " & sortie, ""), numErr, descErr
     Set SEE_OuvrirProjetAutomation = Nothing
+End Function
+
+' La coclasse SeeAutomation : OpenEnvironment(nom), EN LECTURE (le relevé des
+' formes du bouton 3 : rien n'y est écrit). L'environnement par un paramètre
+' de sortie, une variable Object (celle qu'OpenProject a prise au bureau), ou
+' rendu : V4, la sortie d'abord ; V5, l'objet rendu d'abord ; l'autre si la
+' première refuse. Chaque essai au journal, avec son code. forme reçoit celle
+' qui a marché ; si SEE refuse les deux : Nothing, et refus dit chaque forme
+' avec la réponse de Windows. Celui qui l'ouvre le referme (CloseEnvironment).
+Public Function SEE_OuvrirEnvironnementAutomation(ByVal nom As String, ByRef forme As String, ByRef refus As String) As Object
+    Dim env As Object, essai As Integer, parSortie As Boolean, numErr As Long, descErr As String
+    Set SEE_OuvrirEnvironnementAutomation = Nothing
+    refus = ""
+    For essai = 1 To 2
+        If essai = 1 Then parSortie = EstV4() Else parSortie = Not EstV4()
+        forme = IIf(parSortie, "(nom, environnement en sortie)", "(nom) -> environnement rendu")
+        Set env = Nothing
+        On Error Resume Next
+        Err.Clear
+        If parSortie Then
+            gApp.OpenEnvironment nom, env
+        Else
+            Set env = gApp.OpenEnvironment(nom)
+        End If
+        numErr = Err.Number
+        descErr = Err.Description
+        On Error GoTo 0
+        If numErr = 0 And env Is Nothing Then
+            numErr = -1
+            descErr = "rien rendu (Nothing)"
+        End If
+        If numErr = 0 Then
+            Journal gEtape, "environnement", "SeeAutomation.OpenEnvironment" & forme, "ouvert, en lecture : « " & nom & " »"
+            Set SEE_OuvrirEnvironnementAutomation = env
+            Exit Function
+        End If
+        Journal gEtape, "environnement", "SeeAutomation.OpenEnvironment" & forme, "échec : " & ReponseDeWindows(numErr, descErr), numErr, descErr
+        refus = refus & IIf(Len(refus) > 0, " ; ", "") & forme & " : " & ReponseDeWindows(numErr, descErr)
+    Next essai
+    forme = ""
 End Function
 
 Private Function DernierNom(ByVal chemin As String) As String
@@ -2116,12 +2215,15 @@ Echec:
 End Function
 
 ' Une forme (définition de symbole) par famille et nom : dans l'environnement,
-' sinon dans le projet. Nothing si elle n'existe pas.
+' sinon dans le projet. Nothing si elle n'existe pas. Coclasse SeeAutomation
+' (gEstAutomation) : elle n'a pas de GetEnvironment (438 au bureau) ; la forme
+' se lit PAR LE PROJET ouvert (ISEEProject.GetShape : V4, prj.GetShape famille,
+' nom, o ; V5, Set o = prj.GetShape(famille, nom)), jamais par un environnement.
 Public Function SEE_Forme(ByVal env As Object, ByVal prj As Object, ByVal famille As String, ByVal nom As String) As Object
     Dim o As Object
     Set SEE_Forme = Nothing
     If Len(famille) = 0 Or Len(nom) = 0 Then Exit Function
-    If Not env Is Nothing Then
+    If Not env Is Nothing And Not gEstAutomation Then
         Set o = FormeDe(env, "Environment", famille, nom)
         If Not o Is Nothing Then
             Set SEE_Forme = o
