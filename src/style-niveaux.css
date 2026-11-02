@@ -673,27 +673,6 @@ svg.vu-arbre .vu-an-v,svg.vu-anneau .vu-an-v{animation:vu-anneau .9s var(--courb
 .vu-br-vers b{font:650 var(--f-13) var(--mono)}
 .vu-br-vers small{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:600 var(--f-11) var(--sans);color:var(--t-2);white-space:nowrap}
 .vu-br-sertir{font:500 var(--f-12) var(--mono);color:var(--t-2);text-align:right;white-space:nowrap}
-/* LE PROFIL DE CHARGE : un état, une carte — son nom, son courant, sa durée ; « + État » à la suite */
-.nv-panneau .dj-profil .fs-st{max-width:none}
-.nv-panneau .dj-etats{max-width:none;display:flex;flex-direction:row;flex-wrap:wrap;gap:10px;margin:0}
-.nv-panneau .dj-entete{display:none}
-.nv-panneau .dj-etat{position:relative;display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"nom nom" "i t";gap:10px 12px;width:200px;min-height:0;padding:14px 14px 12px;border-radius:14px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 6px 16px -12px rgba(0,0,0,.35)}
-.nv-panneau .dj-etat:hover{background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line-2),0 8px 20px -12px rgba(0,0,0,.4)}
-.nv-panneau .dj-etat .dj-nom{grid-area:nom;font:650 var(--f-14)/1.2 var(--sans);color:var(--t-1)}
-.nv-panneau .dj-etat .dj-verdict{position:absolute;top:16px;right:38px}
-.nv-panneau .dj-etat .dj-x{position:absolute;top:8px;right:8px;opacity:0}
-.nv-panneau .dj-etat:hover .dj-x{opacity:1}
-.nv-panneau .dj-etat .dj-champ{display:flex;flex-direction:column;gap:3px;min-width:0}
-.nv-panneau .dj-etat .dj-champ:nth-of-type(1){grid-area:i}
-.nv-panneau .dj-etat .dj-champ:nth-of-type(2),.nv-panneau .dj-etat .dj-inf{grid-area:t}
-.nv-panneau .dj-etat .dj-champ::before,.nv-panneau .dj-etat .dj-inf::before{font:650 var(--f-11)/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-3)}
-.nv-panneau .dj-etat .dj-champ:nth-of-type(1)::before{content:"Courant · A"}
-.nv-panneau .dj-etat .dj-champ:nth-of-type(2)::before{content:"Durée · s"}
-.nv-panneau .dj-etat .dj-inf{display:flex;flex-direction:column;align-items:flex-start;gap:6px;color:var(--t-2)}
-.nv-panneau .dj-etat .dj-inf::before{content:"Durée"}
-.nv-panneau .dj-etat .dj-champ input{width:100%;height:34px;padding:0 8px;border-radius:9px;background:var(--s-sunken);border:1px solid transparent;font:650 var(--f-16) var(--sans);text-align:left;color:var(--t-1)}
-.nv-panneau .dj-etat .dj-champ input:focus{border-color:var(--nv-cuivre);box-shadow:var(--anneau);outline:none}
-.nv-panneau .dj-etat .dj-champ[data-min]::after{content:attr(data-min);font:500 var(--f-11) var(--sans);color:var(--t-3)}
 
 /* (v78c, retouches) un titre d'une seule encre ; le genre du grand à la taille du repère ; le filigrane en bas à droite */
 .nc-titre .nc-rep-in,.nc-titre .nc-rep-t{color:var(--t-1)}
@@ -703,29 +682,7 @@ svg.vu-arbre .vu-an-v,svg.vu-anneau .vu-an-v{animation:vu-anneau .9s var(--courb
 .vu-br-l{grid-template-columns:56px minmax(70px,auto) 18px minmax(0,1fr) minmax(0,auto)}
 .vu-br-sertir .vu-ko{font:600 var(--f-12) var(--sans)}
 
-.nv-panneau .dj-etat{width:232px}
-.nv-panneau .dj-etat .dj-champ::before,.nv-panneau .dj-etat .dj-inf::before{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:0;text-transform:none;white-space:nowrap}
-.nv-panneau .dj-etat .dj-champ:nth-of-type(1)::before{content:"Courant (A)"}
-.nv-panneau .dj-etat .dj-champ:nth-of-type(2)::before{content:"Durée (s)"}
 svg.vu-arbre tspan.vu-t-sur{font:500 11.5px var(--sans);fill:var(--t-3)}
-/* (v78c) les cartes du profil, au propre : le champ de base (30 px de haut, voile et marges) n'enferme plus le libellé et la
-   valeur — le libellé au-dessus, la valeur dans sa case, « 2 min » dessous dans le flux ; l'infini à la hauteur d'une case */
-.nv-panneau .dj-etat .dj-champ,.nv-panneau .dj-etat .dj-champ:hover,.nv-panneau .dj-etat .dj-champ:focus-within{height:auto;padding:0;border:0;background:none;box-shadow:none;gap:6px}
-.nv-panneau .dj-etat::before{display:none}
-.nv-panneau .dj-etat{align-items:start;padding:14px 16px 14px}
-.nv-panneau .dj-etat .dj-champ input{height:36px;padding:0 10px;font:650 var(--f-16) var(--sans);font-variant-numeric:tabular-nums}
-.nv-panneau .dj-etat .dj-champ input:hover{border-color:var(--s-line-2)}
-.nv-panneau .dj-etat .dj-champ[data-min]::after{position:static;margin-top:-2px}
-.nv-panneau .dj-etat .dj-inf{gap:6px;padding:0}
-.nv-panneau .dj-etat .dj-inf svg.ico{width:22px;height:36px;color:var(--t-2)}
-.nv-panneau .dj-etat .dj-inf::before{content:"Durée"}
-.nv-panneau .dj-etat:has(.dj-champ[data-min]){min-height:0;padding-bottom:14px}
-.nv-panneau .dj-etat .dj-verdict{top:18px;right:40px}
-.nv-panneau .dj-etats{align-items:flex-start;padding-bottom:4px}
-.nv-panneau .dj-etat{align-content:start}
-.nv-panneau .dj-etat .dj-champ{align-items:stretch}
-.nv-panneau .dj-etat .dj-champ::before,.nv-panneau .dj-etat .dj-inf::before{text-align:left;padding-left:2px}
-.nv-panneau .dj-etat .dj-inf{align-items:flex-start}
 /* (v78c) L'ONGLET « MODIFIER » EN CARTES : un titre, une phrase qui dit ce que ça change, le réglage — rien d'autre */
 .nv-reg{margin:0 0 14px;padding:16px 18px 18px;border-radius:14px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line)}
 .nv-reg-t{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:4px;align-items:start;margin:0 0 14px}

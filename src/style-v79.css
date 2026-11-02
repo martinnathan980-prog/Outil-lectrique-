@@ -1,0 +1,135 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   v79 — L'ŒIL HUMAIN (CLAUDE.md, « L'œil humain »). Le lecteur : « on ne voit pas assez les sections, c'est des gros
+   pavés, on se perd » ; « le menu en haut, trop dans le même thème : plus mis en évidence » ; « les onglets doivent tous
+   avoir la même largeur » ; « dissocier encore plus, inconsciemment, le titre, la référence, les calibres, les
+   attentions, les chiffres ».
+   · LES ONGLETS : une BANDE GRAPHITE pleine largeur sous le titre — on la reconnaît d'instinct comme le menu. Tous les
+     onglets ont la même largeur. L'onglet ouvert est une languette de PAPIER qui rejoint la page en dessous (la page et
+     lui, même teinte), un filet de cuivre en haut.
+   · LES SECTIONS : la page est un cran en creux ; chaque section est une CARTE posée dessus, son titre net (une barre
+     de cuivre, le titre à l'encre, sa précision en gris), de l'air entre les cartes.
+   · LA TUILE : chaque nature d'information a sa forme — le titre (grand, à l'encre), la référence (une étiquette), les
+     calibres (un plateau en creux), une attention (une carte ambrée), les chiffres (grands, nus), « Tout voir ».
+   Jetons : --v-bande (la bande), --v-fond (la page sous les cartes), sur l'inspecteur, dans les deux thèmes.
+   ═══════════════════════════════════════════════════════════════════════ */
+#inspecteur,.carte-double{--v-bande:#26282d;--v-bande-2:#30333a;--v-bande-t:#e8e9ec;--v-bande-s:#a3a6ad;--v-fond:#f3f2ee;--v-cuivre-vif:#e59c64}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double){--v-bande:#141518;--v-bande-2:#1f2024;--v-bande-t:#e8e9ec;--v-bande-s:#9a9da4;--v-fond:#1c1d21} }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double){--v-bande:#141518;--v-bande-2:#1f2024;--v-bande-t:#e8e9ec;--v-bande-s:#9a9da4;--v-fond:#1c1d21}
+
+/* ─── LA BANDE DES ONGLETS ─── */
+.nv-grand .nv-onglets{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(132px,1fr);gap:4px;margin:6px 0 0;padding:8px 14px 0;border-radius:0;
+  background:var(--v-bande);box-shadow:none;overflow-x:auto}
+.nv-grand .nv-onglet{min-width:0;max-width:none;width:auto;height:60px;padding:0 16px;border-radius:12px 12px 0 0;background:none;box-shadow:none;color:var(--v-bande-s)}
+.nv-grand .nv-onglet .nv-o-t{color:var(--v-bande-t);opacity:.82;font:600 var(--f-15)/1.2 var(--sans);letter-spacing:-.01em}
+.nv-grand .nv-onglet .nv-o-s{color:var(--v-bande-s)}
+.nv-grand .nv-onglet .nv-o-s.att{color:#f2b55c}
+.nv-grand .nv-onglet .nv-o-s.ko{color:#ff8f84}
+.nv-grand .nv-onglet .nv-o-s.ok::before{background:#4fd67d}
+.nv-grand .nv-onglet:hover{background:var(--v-bande-2)}
+.nv-grand .nv-onglet:hover .nv-o-t{opacity:1}
+.nv-grand .nv-onglet[aria-selected="true"]{background:var(--v-fond);box-shadow:none}
+.nv-grand .nv-onglet[aria-selected="true"] .nv-o-t{color:var(--t-1);opacity:1;font-weight:650}
+.nv-grand .nv-onglet[aria-selected="true"] .nv-o-s{color:var(--t-2)}
+.nv-grand .nv-onglet[aria-selected="true"] .nv-o-s.att{color:var(--warn)}
+.nv-grand .nv-onglet[aria-selected="true"] .nv-o-s.ko{color:var(--ko)}
+.nv-grand .nv-onglet[aria-selected="true"] .nv-o-s.ok::before{background:var(--ok)}
+.nv-grand .nv-onglet[aria-selected="true"]::after{left:16px;right:16px;top:0;bottom:auto;width:auto;height:3px;border-radius:0 0 3px 3px;background:var(--nv-cuivre)}
+.nv-grand .nv-onglet:focus-visible{outline:2px solid var(--v-cuivre-vif);outline-offset:-3px}
+.nv-grand .nv-onglets.deborde,.nv-grand .nv-onglets.deborde.au-bout{-webkit-mask-image:none;mask-image:none}
+
+/* ─── LA PAGE ET SES CARTES ─── */
+.nv-grand .nv-panneaux{background:var(--v-fond);padding:20px 22px 30px}
+.nv-grand .nv-panneau{gap:16px;max-width:1040px}
+.nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.vu-schema,.fs-groupe,.nv-reg,.fi-panneau>.nv-reg,.nv-table-c,.fi-ecarts,.v-carte){
+  margin:0;padding:18px 20px 20px;border:0;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.04)}
+.nv-grand .nv-panneau>.fi-panneau{display:flex;flex-direction:column;gap:16px;margin:0;padding:0;background:none;box-shadow:none}
+.nv-grand .nv-panneau>.fi-panneau>.nv-reg{margin:0;padding:18px 20px 20px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.04)}
+.nv-grand .nv-panneau>.nv-table-c{overflow-x:auto;padding:6px 8px 10px}
+.nv-grand .nv-panneau>.cb-note{margin:0 4px}
+.nv-grand .nv-panneau>.vu-schema{grid-template-columns:auto minmax(0,1fr)}
+
+/* LE TITRE D'UNE SECTION : une barre de cuivre, le titre à l'encre, sa précision en gris — le même partout */
+.nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.fs-groupe)>:is(.vu-titre,.fs-st),.nv-grand .nv-panneau>.vu-schema .vu-titre,.nv-grand .nv-reg-t h4{
+  position:relative;display:flex;align-items:baseline;gap:10px;margin:0 0 4px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
+.nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.fs-groupe)>:is(.vu-titre,.fs-st)::before,.nv-grand .nv-panneau>.vu-schema .vu-titre::before,.nv-grand .nv-reg-t h4::before{
+  content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
+.nv-grand .nv-panneau .vu-titre>span,.nv-grand .nv-panneau .fs-st>span:first-child i{font:500 var(--f-13) var(--sans);letter-spacing:0;color:var(--t-3)}
+.nv-grand .nv-panneau>.fs-groupe>.fs-st{min-height:0}
+.nv-grand .nv-reg-t{margin-bottom:12px}
+.nv-grand .nv-reg-t p{padding-left:14px}
+/* ce qui cloche, en tête : ses propres cartes, ambrées ou rouges — une autre nature que les sections */
+.nv-grand .nv-afaire{padding:0;border:0;background:none}
+
+/* ─── LA TUILE : une forme par nature d'information ─── */
+.nc{gap:18px}
+.nc-tete .nc-titre{font-size:26px}
+.nc-meta{margin-top:-8px}
+.nc-meta .nc-meta-k{font:650 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
+.nc-meta .nc-meta-v{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:7px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:600 var(--f-13)/1 var(--mono);color:var(--t-1)}
+.nc-vignette{background:var(--s-sunken);border-color:transparent;box-shadow:inset 0 0 0 1px var(--s-line)}
+.nc-vignette:hover{box-shadow:inset 0 0 0 1px var(--s-line-2),0 10px 22px -16px rgba(0,0,0,.35)}
+/* une attention : une carte ambrée (rouge pour un problème), son icône, son titre en gras, sa phrase */
+.nc>.nc-taches .nc-tache{width:auto;box-sizing:border-box;margin:0;padding:12px 14px 12px 14px;border-radius:12px;background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
+.nc>.nc-taches .nc-tache.ko{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
+/* les chiffres : grands, nus, la ligne du bas de la tuile */
+.nc-chiffres{border-top:0;padding-top:2px}
+.nc-chiffre .nc-v{font-size:30px;letter-spacing:-.02em}
+.nc-chiffre .nc-k{font:650 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
+.nc-tete.fine .nc-meta{align-self:center;margin-left:8px}
+.nc-tete.fine .nc-meta>span:first-child::before{display:none}
+.nc-tete.fine .nc-meta .nc-meta-v{height:24px;font-size:var(--f-12)}
+
+/* ─── LE BROCHAGE (08-vues, `brochageVue`) : le petit plan de l'équipement, dessiné comme le folio ─── */
+.vu-bro{display:block;width:100%;height:auto;max-width:760px;overflow:visible}
+.vu-bro .bro-corps{fill:var(--s-surface);stroke:var(--t-1);stroke-width:1.2}
+.vu-bro .bro-nom{font:700 14px var(--mono);fill:var(--t-1);text-anchor:middle}
+.vu-bro .bro-sous{font:500 11px var(--sans);fill:var(--t-3);text-anchor:middle}
+.vu-bro .bro-piece{fill:var(--s-sunken);stroke:var(--t-1);stroke-width:1.2}
+.vu-bro .bro-lettre{font:700 12px var(--mono);fill:var(--nv-cuivre);text-anchor:middle}
+.vu-bro .bro-ref{font:500 11px var(--mono);fill:var(--t-3)}
+.vu-bro .bro-borne{font:650 11px var(--mono);fill:var(--t-1);text-anchor:middle}
+.vu-bro .bro-fil{fill:none;stroke-width:2.2;stroke-linecap:round}
+.vu-bro .bro-type-f{fill:var(--s-surface)}
+.vu-bro .bro-type{font:600 10.5px var(--mono);fill:var(--t-2);text-anchor:middle}
+.vu-bro .bro-bout{fill:var(--t-1)}
+.vu-bro .bro-masse{fill:none;stroke:var(--t-1);stroke-width:1.6;stroke-linecap:round}
+.vu-bro .bro-vers{font:650 13px var(--mono);fill:var(--t-1)}
+.vu-bro .bro-pin-f{fill:var(--s-sunken);stroke:var(--s-line-2)}
+.vu-bro .bro-pin{font:650 10.5px var(--mono);fill:var(--t-1);text-anchor:middle}
+.vu-bro .bro-mot{font:500 11px var(--sans);fill:var(--t-3)}
+.vu-bro .bro-ko{font:600 11px var(--sans);fill:var(--ko);text-anchor:end}
+.vu-bro .bro-zone{fill:transparent;transition:fill var(--rapide)}
+.vu-bro .bro-l{cursor:pointer}
+.vu-bro .bro-l:hover .bro-zone,.vu-bro .bro-l.vise .bro-zone,.vu-bro .bro-l.choisi .bro-zone{fill:var(--nv-cuivre-soft)}
+.vu-bro .bro-l:hover .bro-fil{stroke-width:3}
+.vu-bro .bro-l.ko .bro-fil{stroke-dasharray:5 4}
+.vu-bloc-bro .vu-titre{margin-bottom:10px}
+/* la face du connecteur, au milieu de sa carte */
+.vu-bloc-face{align-items:center}
+.vu-bloc-face .vu-titre{align-self:stretch}
+.vu-face-choix{align-self:flex-start;padding-left:14px}
+.vu-fig-face{display:flex;flex-direction:column;align-items:center;gap:10px;margin:4px 0 0}
+
+/* ─── LE PROFIL DE CHARGE, en tableau (le lecteur v79 : « non, je préfère avant ») — l'état, son courant, sa durée sur une
+   ligne, comme avant ; mais toute la largeur de sa carte, un en-tête net, des lignes claires (plus de noir sur noir) ─── */
+.nv-grand .nv-panneau .dj-profil .fs-st{max-width:none}
+.nv-grand .nv-panneau .dj-etats{max-width:none;gap:0;margin:4px 0 0;border-radius:12px;box-shadow:0 0 0 1px var(--s-line);overflow:hidden}
+.nv-grand .nv-panneau .dj-entete,.nv-grand .nv-panneau .dj-etat{grid-template-columns:14px minmax(140px,1fr) minmax(110px,170px) minmax(110px,170px) 32px;column-gap:16px;padding:0 10px 0 16px}
+.nv-grand .nv-panneau .dj-entete{min-height:36px;background:var(--s-sunken);border-bottom:1px solid var(--s-line)}
+.nv-grand .nv-panneau .dj-entete span{font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-3)}
+.nv-grand .nv-panneau .dj-etat{min-height:52px;border-radius:0;background:var(--s-surface);box-shadow:none}
+.nv-grand .nv-panneau .dj-etat+.dj-etat{border-top:1px solid var(--s-line)}
+.nv-grand .nv-panneau .dj-etat+.dj-etat::before{display:none}
+.nv-grand .nv-panneau .dj-etat:hover{background:var(--s-hover)}
+.nv-grand .nv-panneau .dj-etat .dj-nom{font:600 var(--f-14)/1.2 var(--sans);color:var(--t-1)}
+.nv-grand .nv-panneau .dj-etat .dj-champ{height:34px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.nv-grand .nv-panneau .dj-etat .dj-champ input{font:650 var(--f-15) var(--sans);text-align:right}
+.nv-grand .nv-panneau .dj-etat .dj-champ:hover{box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.nv-grand .nv-panneau .dj-etat .dj-champ:focus-within{box-shadow:inset 0 0 0 1px var(--nv-cuivre),var(--anneau);background:var(--s-surface)}
+.nv-grand .nv-panneau .dj-etat:has(.dj-champ[data-min]){min-height:60px;padding-bottom:10px}
+.vu-seuil{margin:2px 0 0;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-3)}
+.vu-explique b{font-weight:650;color:var(--t-1)}
+.nv-reg-n{font:500 var(--f-13) var(--sans);color:var(--t-3)}
+.nv-reg-c>.fs-champs{margin:0}
+.nv-reg-c .fi-faces{margin:12px 0 0}
+.nc-chiffre.mot .nc-v{font-size:20px;letter-spacing:-.01em}

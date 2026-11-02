@@ -54,7 +54,7 @@ function ongletsHtml(type, xs) { if (!xs.length) return '';
 const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === 'connecteur' ? 'essentiel' : s.cle, titre: s.cle === 'fils' || s.cle === 'connecteur' ? '' : s.titre, statut: s.resume ? { t: String(s.resume).replace(/<[^>]*>/g, '').slice(0, 40) } : null, contenu: s.contenu, vide: s.vide, action: s.action });
 
 // les onglets que toutes les fiches partagent : les câbles (la section d'hier, son statut en mots), la fabrication
-const ongletCables = sF => !sF ? null : { cle: 'cables', statut: { t: sF.vide ? 'aucun' : pluriel(sF.compte || 0, 'câble') + (sF.nko ? ', ' + sF.nko + ' en défaut' : sF.charge != null ? ', au plus ' + Math.round(sF.charge * 100) + ' %' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide };
+const ongletCables = sF => !sF ? null : { cle: 'cables', statut: { t: sF.vide ? 'aucun' : pluriel(sF.compte || 0, 'câble') + (sF.nko ? ', ' + sF.nko + ' en défaut' : sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' % max' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide };
 function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
   return { cle: 'fabrication', statut: { t: pluriel(n, 'pièce') }, contenu: `<section class="vu-bloc"><h4 class="vu-titre">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span></h4>${fabricationVue(gs)}</section>` }; }
@@ -77,8 +77,11 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
 // la désignation (un texte libre, gardé avec le contrat) : dans l'onglet « Modifier » du grand
 /* (v78c, le lecteur : « Modifier, faut tout reprendre, c'est pas hyper compréhensible ») : l'onglet « Modifier » se lit en
    CARTES — chacune son titre, une phrase qui dit ce que ça change, puis le réglage. */
+const DESIGNATION_SAISIE = false;
 const regCarte = (titre, phrase, corps, o) => !corps ? '' : `<section class="nv-reg${o && o.cls ? ' ' + o.cls : ''}"><header class="nv-reg-t"><h4>${esc(titre)}</h4>${phrase ? `<p>${phrase}</p>` : ''}${o && o.droite ? `<span class="nv-reg-d">${o.droite}</span>` : ''}</header><div class="nv-reg-c">${corps}</div></section>`;
-const designationFiche = o => { const t = o.tete || {}; if (!t.designation) return ''; const des = app.contrat.designations.get(t.designation) || '';
+// (v79, le lecteur : « c'est pas à moi de mettre un nom : je change le fichier de base si je veux un nom ; tout au même
+// endroit ») : plus de saisie du nom dans la fiche — la carte reste (`regCarte`) pour d'autres réglages
+const designationFiche = o => { const t = o.tete || {}; if (!t.designation || !DESIGNATION_SAISIE) return ''; const des = app.contrat.designations.get(t.designation) || '';
   return regCarte('Son nom en clair', 'Gardé avec le contrat, montré sous le repère. Le repère, lui, vient de votre fichier et ne change pas.',
     `<label class="nv-des"><span class="sr">Nom en clair</span><input class="nc-des${des ? ' plein' : ''}" id="eq-des" value="${escA(des)}" placeholder="par exemple : relais de démarrage" spellcheck="false" autocomplete="off"></label>`, { cls: 'nv-reg-nom' }); };
 
@@ -104,7 +107,7 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
    dans le grand). Un clic mène à l'onglet qui l'explique ; une valeur qui s'écrit s'écrit sur place. ---- */
 function chiffresHtml(xs, n) { const ys = (xs || []).filter(Boolean).slice(0, n || 3); if (!ys.length) return '';
   return `<div class="nc-chiffres" style="--n:${ys.length}">${ys.map(c => { const va = c.onglet ? ongletDeSection(NIVEAU.typeRendu, c.onglet) : '', bouton = va && !c.edit, tag = bouton ? 'button' : 'div';
-    return `<${tag}${bouton ? ` type="button" data-onglet-va="${escA(va)}"` : ''} class="nc-chiffre${c.etat ? ' ' + c.etat : ''}${c.edit ? ' edit' : ''}"${c.bulle ? ` data-bulle="${escA(c.bulle)}"` : ''}>`
+    return `<${tag}${bouton ? ` type="button" data-onglet-va="${escA(va)}"` : ''} class="nc-chiffre${c.etat ? ' ' + c.etat : ''}${c.edit ? ' edit' : ''}${/\d/.test(String(c.v).replace(/<[^>]*>/g, '')) ? '' : ' mot'}"${c.bulle ? ` data-bulle="${escA(c.bulle)}"` : ''}>`
       + `<span class="nc-k">${esc(c.k)}</span><span class="nc-v">${c.v}</span></${tag}>`; }).join('')}</div>`; }
 // la largeur d'un dessin du grand : celle de son panneau (au téléphone, l'écran)
 const largeurVue = () => typeof telephone === 'function' && telephone() ? 360 : 640;

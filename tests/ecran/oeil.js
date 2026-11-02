@@ -12,6 +12,7 @@ const [, , THEME = 'clair', L = '1440'] = process.argv;
   const defauts = await p.evaluate(async () => { const pause = ms => new Promise(f => setTimeout(f, ms)), out = [];
     // vraiment vu : ni lui ni un parent transparent, caché ou replié ; sa boîte rognée par les parents qui coupent
     const boite = e => { let r = e.getBoundingClientRect(); if (r.width <= 0 || r.height <= 0) return null; let x0 = r.left, y0 = r.top, x1 = r.right, y1 = r.bottom;
+      if (e.closest('details:not([open])') && !e.closest('summary')) return null;
       for (let a = e; a && a !== document.body; a = a.parentElement) { const s = getComputedStyle(a); if (s.display === 'none' || s.visibility === 'hidden' || +s.opacity < 0.05) return null;
         if (a !== e && (s.overflow !== 'visible' || s.overflowX !== 'visible' || s.overflowY !== 'visible')) { const q = a.getBoundingClientRect(); x0 = Math.max(x0, q.left); y0 = Math.max(y0, q.top); x1 = Math.min(x1, q.right); y1 = Math.min(y1, q.bottom); }
         if (x1 - x0 < 2 || y1 - y0 < 2) return null; }

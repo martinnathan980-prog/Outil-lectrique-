@@ -106,6 +106,35 @@ function brochesVue(xs) { if (!xs.length) return '<p class="vu-note">Aucun câbl
       + `<span class="vu-br-vers"><b class="id">${esc(x.vers)}</b>${x.borneVers ? `<small>borne ${esc(x.borneVers)}</small>` : ''}</span>`
       + `<span class="vu-br-sertir">${x.ko ? `<em class="vu-ko">${esc(x.ko)}</em>` : `<span class="id">${esc(x.sertir || '—')}</span>`}</span></div>`).join('') + '</div>'; }
 
+/* ---- LE BROCHAGE : l'équipement, ses connecteurs, chaque broche, son câble, où il va (v79, le lecteur sur 101BT1 :
+   « les broches et tout, c'est vide, on comprend pas ; l'œil humain, il n'y a pas d'infos, il est perdu ») — un petit
+   plan de l'équipement seul, dessiné comme le folio : le corps, ses connecteurs collés (la lettre au-dessus, le numéro
+   de chaque borne dedans), un câble par broche à la couleur de sa route, son type dessus, et au bout l'équipement et sa
+   borne (une masse : son symbole). Survoler une ligne allume le câble sur le plan ; un clic ouvre sa fiche.
+   cons : [{ nom, ref, lignes: [{ borne, type, couleur, vers, borneVers, masse, ko, k }] }] ---- */
+function brochageVue(nom, sous, cons) { const xs = (cons || []).filter(c => c.lignes && c.lignes.length); if (!xs.length) return '';
+  const PAS = 30, HAUT = 34, ECART = 18, W = 640, xC = 150, wC = 30, x0 = xC + wC, x1 = W - 214, xd = x1 + 16;
+  let y = HAUT, out = '';
+  const blocs = xs.map(c => { const y0 = y, h = c.lignes.length * PAS; y += h + ECART; return { c, y0, h }; });
+  const H = y - ECART + 22, yB0 = HAUT - 10, yB1 = H - 12;
+  out += `<rect class="bro-corps" x="8.5" y="${yB0 + .5}" width="${xC - 8}" height="${yB1 - yB0}" rx="4"/>`
+    + `<text class="bro-nom" x="${(8 + xC) / 2}" y="${(yB0 + yB1) / 2 - (sous ? 4 : -4)}">${esc(nom)}</text>`
+    + (sous ? `<text class="bro-sous" x="${(8 + xC) / 2}" y="${(yB0 + yB1) / 2 + 14}">${esc(sous)}</text>` : '');
+  blocs.forEach(({ c, y0, h }) => {
+    out += `<path class="bro-piece" d="M${xC} ${y0 + .5}H${xC + wC - 7}a7 7 0 0 1 7 7V${y0 + h - 7.5}a7 7 0 0 1 -7 7H${xC}Z"/>`
+      + `<text class="bro-lettre" x="${xC + wC / 2}" y="${y0 - 7}">${esc(c.nom)}</text>`
+      + (c.ref ? `<text class="bro-ref" x="${xC + wC + 8}" y="${y0 - 7}">${esc(c.ref)}</text>` : '');
+    c.lignes.forEach((l, i) => { const yy = y0 + i * PAS + PAS / 2, xm = (x0 + x1) / 2;
+      out += `<g class="bro-l fi-ia${l.ko ? ' ko' : ''}"${l.k ? ` data-i="${escA(l.k)}"` : ''}><rect class="bro-zone" x="${xC}" y="${yy - PAS / 2}" width="${W - xC}" height="${PAS}" rx="6"/>`
+        + `<text class="bro-borne" x="${xC + wC / 2 - 2}" y="${yy + 4}">${esc(l.borne)}</text>`
+        + `<path class="bro-fil" style="stroke:${l.couleur || 'currentColor'}" d="M${x0} ${yy}H${x1}"/>`
+        + `<rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(l.type || '—')}</text>`
+        + (l.masse ? `<path class="bro-masse" d="M${x1} ${yy - 7}v14M${x1 + 4} ${yy - 4.5}v9M${x1 + 8} ${yy - 2}v4"/><text class="bro-vers" x="${xd}" y="${yy + 4.5}">${esc(l.vers)}</text><text class="bro-mot" x="${xd + 8 + l.vers.length * 7.8}" y="${yy + 4}">masse</text>`
+          : `<circle class="bro-bout" cx="${x1}" cy="${yy}" r="2.6"/><text class="bro-vers" x="${xd}" y="${yy + 4.5}">${esc(l.vers)}</text>`
+            + (l.borneVers ? `<rect class="bro-pin-f" x="${xd + 6 + l.vers.length * 7.8}" y="${yy - 9}" width="${12 + String(l.borneVers).length * 6.6}" height="18" rx="5"/><text class="bro-pin" x="${xd + 12 + l.vers.length * 7.8 + String(l.borneVers).length * 3.3}" y="${yy + 4}">${esc(l.borneVers)}</text>` : ''))
+        + (l.ko ? `<text class="bro-ko" x="${W - 6}" y="${yy + 4}">${esc(l.ko)}</text>` : '') + '</g>'; }); });
+  return `<svg class="vu-bro" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('Le brochage de ' + nom)}">${out}</svg>`; }
+
 /* ---- COMMENT VOLTA L'A DÉCIDÉ : des étapes numérotées, une phrase chacune et sa source ---- */
 // sources : fichier (votre fichier), norme, tables (les tables de VOLTA), calcul, hypothese, main (choisi ici), base (la base SEE)
 const MOTS_SOURCES = { fichier: 'votre fichier', norme: 'la norme', tables: 'tables de VOLTA', calcul: 'calcul de VOLTA', hypothese: 'hypothèse', main: 'choisi ici', base: 'base SEE' };
