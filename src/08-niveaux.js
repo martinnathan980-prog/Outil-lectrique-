@@ -73,7 +73,10 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   const sym = `<svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg>`, titre = `<span class="nc-genre-mot">${esc(GENRES_FICHE[o.type] || 'Élément')}</span><span class="nc-tiret" aria-hidden="true">—</span><span class="nc-rep">${rep}</span>`;
   if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${ms.length ? `<span class="nc-meta fi-identite">${ms.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</span>` : ''}</div>`;
   // le symbole : un filigrane dans le coin de la tuile, qui s'éveille au survol
-  return `<span class="nc-filigrane" aria-hidden="true">${sym}</span><div class="nc-tete"><span class="nc-titre">${titre}</span></div>${meta}`; }
+  // (v79, le lecteur : « ce sigle en fond, ce micro-détail, cette interactivité, c'est vraiment la diff — on peut encore
+  // faire mieux ») : au survol, un trait de cuivre parcourt le symbole, comme un courant qui passe
+  const trace = (SYMBOLES[o.type] || SYMBOLES.equipement).replace(/<(path|circle|rect|line)\b/g, '<$1 pathLength="1"');
+  return `<span class="nc-filigrane" aria-hidden="true"><svg viewBox="0 0 30 30"><g class="nc-fil-base">${SYMBOLES[o.type] || SYMBOLES.equipement}</g><g class="nc-fil-trace">${trace}</g></svg></span><div class="nc-tete"><span class="nc-titre">${titre}</span></div>${meta}`; }
 // la désignation (un texte libre, gardé avec le contrat) : dans l'onglet « Modifier » du grand
 /* (v78c, le lecteur : « Modifier, faut tout reprendre, c'est pas hyper compréhensible ») : l'onglet « Modifier » se lit en
    CARTES — chacune son titre, une phrase qui dit ce que ça change, puis le réglage. */
@@ -168,7 +171,7 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
       + `<td class="nv-td-vers"><span class="nv-vers"><b class="id">${esc(r.bout && r.bout.rep ? r.bout.rep : '—')}</b>${r.bout && r.bout.borne ? `<span class="nv-borne">borne ${esc(r.bout.borne)}</span>` : ''}</span></td>`
       + `<td class="nv-td-i">${iH}</td><td class="nv-td-u">${uH}</td><td class="nv-td-lg">${lgH}</td>${avecCt ? `<td class="nv-td-ct">${ctH}</td>` : ''}</tr>`; }).join('');
   const tete2 = avecCt ? tete : tete.replace(/<th scope="col"[^>]*class="nv-th-ct"[\s\S]*?<\/th>/, '');
-  return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap">${esc(pluriel(rows.length, 'câble'))} — un clic sur une ligne ouvre le câble</caption><thead><tr>${tete2}</tr></thead><tbody>${lignes}</tbody></table></div>${datalistCables()}`; }
+  return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap"><b>${esc(o.titre || 'Ses câbles')}</b><span>${esc(rows.length + ' · un clic sur une ligne ouvre sa fiche')}</span></caption><thead><tr>${tete2}</tr></thead><tbody>${lignes}</tbody></table></div>${datalistCables()}`; }
 
 /* ---- COMPOSER : la carte, ou le grand ------------------------------------------------------------------------------- */
 /* o : { type (equipement · disjoncteur · barrette · prise · masse · fil), tete ({ nom, champ, aide, designation }), meta

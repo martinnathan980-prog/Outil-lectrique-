@@ -117,7 +117,9 @@ function lierTable() { const T = TABLE, t = $('table'); if (!t) return; const q 
     if (!T.vue) { T.vue = true; t.classList.add('vue'); } if (!T.anim) T.anim = requestAnimationFrame(pasDeLaLueur);
     // la lampe éclaire la table, pas ce qu'on lit : sur la composition, les cartes, une feuille, la grille ne se révèle pas
     // (ses points passeraient entre les lettres) ; la lueur, elle, reste
-    const lu = !!(e.target && e.target.closest && e.target.closest(TABLE_LU)); if (lu !== T.surLu) { T.surLu = lu; t.classList.toggle('sur-lu', lu); } }, { passive: true });
+    const lu = !!(e.target && e.target.closest && e.target.closest(TABLE_LU)); if (lu !== T.surLu) { T.surLu = lu; t.classList.toggle('sur-lu', lu); }
+    // (v79) à l'accueil, le schéma vivant suit la main d'un rien : une profondeur, pas un manège
+    if (document.body.classList.contains('biblio-accueil')) { const h = document.querySelector('.bi-hero'); if (h) { h.style.setProperty('--px', ((e.clientX / innerWidth) - .5).toFixed(3)); h.style.setProperty('--py', ((e.clientY / innerHeight) - .5).toFixed(3)); } } }, { passive: true });
   addEventListener('pointerdown', () => { eveillerTable(); geste(); }, { passive: true, capture: true });
   addEventListener('wheel', () => { eveillerTable(); geste(); }, { passive: true, capture: true });
   addEventListener('keydown', eveillerTable, { passive: true, capture: true });

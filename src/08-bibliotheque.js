@@ -580,13 +580,33 @@ const FOLIOS_VITRINE = [
       + '<path class="bp-fil bf-a" pathLength="1" d="M66.5 44.5H106.5M123.5 44.5H164.5"/><path class="bp-fil bf-a" pathLength="1" d="M66.5 58.5H106.5M123.5 58.5H164.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M66.5 108.5H106.5M123.5 108.5H164.5"/>'
       + '<text class="bp-t" x="44.5" y="54">500XC3</text><text class="bp-t" x="44.5" y="111">540VL5</text><text class="bp-c bp-v" x="115" y="129">412VC3B</text><text class="bp-t" x="186.5" y="54">530PM3</text><text class="bp-t" x="186.5" y="111">560HT1</text><text class="bp-c" x="86" y="41">DR20</text><text class="bp-c" x="144" y="105">DR22</text>',
     p: 'M66.5 44.5H106.5M123.5 44.5H164.5' }];
-// (un courant qui circule : un point de lumière court le long d'un câble de chaque folio)
-const vitrineAccueil = () => `<div class="bi-vitrine ilot-clair" aria-hidden="true">${FOLIOS_VITRINE.map((f, i) => `<span class="bi-vf bi-vf${i + 1}" style="--i:${i}"><svg viewBox="0 0 236 167">`
-  + `<rect class="bp-cadre" x="9.5" y="9.5" width="217" height="148" rx="1"/><rect class="bp-cart" x="140.5" y="132.5" width="86" height="25"/><path class="bp-cadre" d="M170 132.5v25"/><text class="bp-cart-t" x="146" y="148">Folio ${i + 1}</text>${f.d}`
-  + `<circle class="bp-courant" r="2.6"><animateMotion dur="${(3.2 + i * .7).toFixed(1)}s" begin="${(1.6 + i * .9).toFixed(1)}s" repeatCount="indefinite" path="${f.p}"/></circle></svg></span>`).join('')}</div>`;
+/* (v79, le lecteur : « pas moderne, peut-être trop de bleu, peut-être les lettres anciennes, c'est pas waouh ») : un
+   SCHÉMA VIVANT, dessiné au trait clair sur le graphite — un disjoncteur, une barrette qui distribue, deux relais, une
+   prise de coupure, une vanne, leurs masses ; les câbles se tracent à l'arrivée, puis le courant les parcourt (trois
+   points de cuivre) ; survoler une pièce l'allume. Leurs vrais mots : repères, types de câble, bornes. */
+const masseHero = (x, y) => `<path class="hs-masse" d="M${x} ${y}v9M${x - 8} ${y + 9}h16M${x - 5} ${y + 13}h10M${x - 2} ${y + 17}h4"/>`;
+const HERO_FILS = [
+  ['M186 110H330', 'DR12', 258, 104], ['M340 70H560', 'DR20', 450, 64], ['M340 150H560', 'DR20', 450, 144], ['M340 224H758', 'DR22', 550, 218],
+  ['M776 224H900', 'DR22', 838, 218], ['M186 164H232V198', '', 0, 0], ['M670 78H726V100', '', 0, 0], ['M670 158H726V180', '', 0, 0], ['M1020 232H1070V252', '', 0, 0]];
+const HERO_COURANTS = ['M186 110H335V70H560', 'M186 110H335V150H560', 'M186 110H335V224H900'];
+function heroSchema() {
+  const bloc = (x, y, w, h, rep, sous, cls) => `<g class="hs-piece${cls ? ' ' + cls : ''}"><rect class="hs-bloc" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/><text class="hs-rep" x="${x + w / 2}" y="${y + h / 2 + (sous ? -1 : 4.5)}">${rep}</text>${sous ? `<text class="hs-sous" x="${x + w / 2}" y="${y + h / 2 + 15}">${sous}</text>` : ''}</g>`;
+  const fils = HERO_FILS.map(([d, t, tx, ty], i) => `<path class="hs-fil" pathLength="1" style="--i:${i}" d="${d}"/>${t ? `<text class="hs-c" x="${tx}" y="${ty}">${t}</text>` : ''}`).join('');
+  const bornes = [[192, 104, '1'], [192, 158, '2'], [552, 64, '1'], [552, 144, '1'], [676, 72, '2'], [676, 152, '2'], [892, 218, '1'], [1026, 226, '2']].map(([x, y, t]) => `<text class="hs-b" x="${x}" y="${y}">${t}</text>`).join('');
+  return `<div class="bi-vitrine bi-hero" aria-hidden="true"><svg viewBox="0 0 1200 290" preserveAspectRatio="xMidYMid meet">`
+    + fils
+    + bloc(90, 92, 96, 90, '102CB1', '15 A', 'hs-dj') + `<g class="hs-piece hs-vt"><rect class="hs-barre" x="330" y="52" width="10" height="190" rx="3"/><text class="hs-rep" x="335" y="268">668VT31</text></g>`
+    + bloc(560, 52, 110, 50, '381RL1', 'relais') + bloc(560, 132, 110, 50, '382RL2', 'relais')
+    + `<g class="hs-piece hs-vc"><rect class="hs-barre" x="758" y="196" width="7" height="58" rx="2"/><rect class="hs-barre" x="769" y="196" width="7" height="58" rx="2"/><text class="hs-rep" x="767" y="276">412VC3B</text></g>`
+    + bloc(900, 204, 120, 50, '540VL5', 'vanne')
+    + masseHero(232, 198) + masseHero(726, 100) + masseHero(726, 180) + masseHero(1070, 252)
+    + `<text class="hs-c hs-g" x="246" y="214">901G</text>` + bornes
+    + HERO_COURANTS.map((d, i) => `<circle class="hs-courant" r="3.2"><animateMotion dur="${(2.6 + i * .5).toFixed(1)}s" begin="${(2.4 + i * 1.1).toFixed(1)}s" repeatCount="indefinite" path="${d}" keyPoints="0;1" keyTimes="0;1" calcMode="linear"/></circle>`).join('')
+    + `</svg></div>`; }
+const vitrineAccueil = heroSchema;
 // (v78c, le lecteur : « VOLTA tout en majuscule, une belle écriture, un peu plus en haut ; une phrase d'accroche, comme un slogan »)
 const SLOGAN = 'Du tableau au folio, chaque câble à sa place.';
-function videHtml(demo) { return `<section class="bi-vide bi-accueil"><div class="bi-vide-centre"><h1 class="bi-titre bi-marque">VOLTA</h1><p class="bi-devise">${esc(SLOGAN)}</p>${vitrineAccueil()}`
+function videHtml(demo) { return `<section class="bi-vide bi-accueil"><div class="bi-vide-centre"><p class="bi-sur-titre">Câblage électrique aéronautique · hors ligne</p><h1 class="bi-titre bi-marque">VOLTA</h1><p class="bi-devise">${esc(SLOGAN)}</p>${vitrineAccueil()}`
   + `${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
   + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir">${icoBi('depot')}<span>Ouvrir une installation…</span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
   + `<h2 class="bi-sous bi-encours-t">Pour commencer</h2>${dockHtml(demo)}</div></section>`; }
