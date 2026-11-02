@@ -159,12 +159,47 @@ la même architecture `[nso-inv]` *(déduction technique)*.
 - reste à voir aussi : si le poste applique la règle de Defender « Bloquer les appels d'API Win32 à partir
   de macros Office » (elle arrêterait le bouton 1 sur `GetActiveObject`, essayé en dernier).
 
+**Vu au bureau le 2 novembre 2026** *(photos du bloc « À PHOTOGRAPHIER » des boutons 1 et 3 ; même poste, V4R3
+4.89.99.5)* :
+- **le registre** : seule la coclasse `SeeAutomation` V4R3 {B0B9DD73-EE81-473F-9C3C-D8910C7E2D59} est inscrite,
+  dans les deux vues (`HKCR\CLSID` et `WOW6432Node`), ProgID `SEEExpert.SeeAutomation.4.8`, serveur
+  `…\SEE_Soft\EXE\SEE.exe`. L'`Application` V4R3 {A55015A3-…} est **absente** du registre : elle ne peut être
+  ni rejointe ni créée. Le filtre « SEE, IGE, XAO » trouve 1 015 ProgID, presque tous des bibliothèques
+  (`SeeBase.ErrorManager`…) : la v4 du pilote n'essaie plus, pour rejoindre SEE, que les ProgID d'un CLSID des
+  réglages ou servis par le programme de SEE (`LocalServer32`) ;
+- **rejoindre** : avec SEE ouvert, les treize `GetObject(, …)` répondent **429** : SEE ne s'inscrit pas dans la
+  table des objets actifs. Les boutons 1 et 2 ne peuvent donc pas rejoindre la fenêtre ; le bouton 3 est la voie ;
+- **le bouton 3** (SEE fermé ; projet confirmé, copie de sécurité faite) : `GetObject("new:{B0B9DD73-…}")` crée
+  l'objet (version 4.89.99.5, API V4 ; `Visible` : 438) ; `OpenProject chemin, mdp, prj`, le projet en
+  paramètre de sortie dans une variable `Object`, **ouvre le projet** (`prj.Name` rendu) *(établi)* ;
+- **son `CreateObject`** : (type, sortie) répond 13 avec un `Variant` et 450 (nombre d'arguments) avec une
+  variable `Object` ; (type, `Variant` vide, sortie) répond 13 avec l'une et l'autre. Deux arguments : 450 ;
+  trois : 13. La méthode a donc trois paramètres, et c'est celui du **milieu** qui refuse un `Variant` vide :
+  sans doute un objet, et le plus probable est le projet ouvert *(déduction)*. La forme qui rend l'objet
+  (`Set o = gApp.CreateObject(type)`) n'avait pas été essayée en V4. La v4 du pilote essaie, dans l'ordre :
+  (type, projet, objet en sortie), la même avec un `Variant` en sortie, l'objet rendu, les deux formes à deux
+  arguments, puis `Nothing`, 0, "" et le projet passé dans un `Variant` au milieu, puis (type, objet en sortie,
+  projet) ; la première qui rend un
+  objet est retenue pour la macro ;
+- **la fermeture** : `CloseProject` sans argument répond 450, `Close` (du projet) et `Quit` 438 ; pourtant,
+  après le relâchement des objets, aucun SEE.exe ne tournait plus. Dans ISeeAutomation V5R2,
+  `CloseProject(A_piObject)` prend le projet en argument `[nso-index]` : la v4 appelle
+  `gApp.CloseProject prj` ;
+- **les formes de l'album** : `SeeAutomation` n'a pas de `GetEnvironment` (438). ISEEProject a
+  `GetShape(A_Family, A_Name)` et `EnvironmentName` `[nso-index]` : la v4 lit une forme par le projet ouvert,
+  et relève l'album par `OpenEnvironment(EnvironmentName)` (V4 : environnement en sortie, comme
+  `IPluginRoot.OpenEnvironment(A_Name, out SEEEnvironment)` du SDK des plugins `[nso-v4r3-cn]`),
+  `GetShapeFamilyCollection`, `GetShapesCollection`, puis `CloseEnvironment(environnement)`. Familles vues à
+  l'écran : Blackbox, Equipment, Production Break (Connector Production Break, Module Production Break),
+  Ground, Coaxial Adaptator, VT, End Cap, Splices, Lug & Stud, TI, Pressure Seal, Overshield, Renvois, Title
+  Block, Phone.
+
 **Les objets et méthodes clés (V5R2)** `[nso-index]` `[nso-comnet]` `[nso-enums]` :
 
 | Objet | Membres utiles |
 |---|---|
 | IDualApplication | GetProject(), OpenProject(A_Path, A_Password, A_ReadOnly), CloseProject, GetEnvironment(), CreateObject(A_ObjectType), ApplicationVersion, Protection |
-| ISeeAutomation | OpenProject(A_Path, A_Password), Login(A_SACUser, A_SACPassword) (SEE Access Control, probable) |
+| ISeeAutomation | OpenProject(A_Path, A_Password), CloseProject(A_piObject), CreateObject(A_ObjectType, A_ppiObject), OpenEnvironment(A_Name), CloseEnvironment(A_piObject), OpenEnvironmentForProject(A_ppiObject, A_Name), IsProjectProtected(A_Path), ProductVersion, Login(A_SACUser, A_SACPassword) (SEE Access Control, probable) ; en V4R3, 26 fonctions dont la liste n'est pas publiée |
 | ISEEEnvironment | CreateProjectFromTemplate(…), CreateWireProjectFromTemplate(…), GetShape(A_Family, A_Name), GetTitleBlockByName(A_Name) |
 | ISEEProject | GetMainGroup(), AddConnector(A_Object, A_Tag, A_PinsToCreate), Process (Cabling, WireNumbering), ImportWireList, ImportData / ExtractData, ExecuteADGGenerationFile, OpenDataExport / OpenDataImport, Save(), SaveCopyAs |
 | ISEEGroup | CreateSubGroup(A_Name), GetSubGroupByName, AddSheet(A_Object), GetSheetByName, GetNextSheetNumber() |
@@ -304,12 +339,12 @@ Classé par ce que la réponse débloque. Une partie se relève par `see/diagnos
 | # | Question | Où regarder | Débloque |
 |---|---|---|---|
 | 6 | Le registre connaît-il `HKCR\CLSID\{829E4B3B-B128-4999-A66A-6E76F0B4B22F}`, `{29E25405-2755-42DA-A17D-C07EC1A16CCB}`, `HKCR\TypeLib\{9956A56F-B14C-4007-B6CF-B89B4A7CD08D}` (V5R2 ; CLSID V4R3 en 3.1) ? ProgID ? LocalServer32 ? | `reg query … /s`, diagnostic.ps1 | réglages ProgID, CLSID_* |
-| 7 | Un SEE ouvert est-il trouvé par GetObject ? **Vu : non** (429 pour les six `GetObject(, x)`) ; `GetActiveObject` par CLSID, les ProgID du registre ? `SeeAutomation` créée SEE fermé (bouton 3) ouvre-t-elle le projet et crée-t-elle des objets ? | TesterSEE (bouton 1, `Sonde_Registre`), bouton 3 | s'attacher à SEE |
+| 7 | Un SEE ouvert est-il trouvé par GetObject ? **Vu : non** (429 pour les treize `GetObject(, x)` ; l'`Application` est absente du registre, SEE n'est pas dans la table des objets actifs). `SeeAutomation` créée SEE fermé (bouton 3) ouvre-t-elle le projet ? **Vu : oui** (`OpenProject`, projet en sortie dans une variable `Object`). Crée-t-elle des objets ? **Pas encore** : 450 à deux arguments, 13 à trois ; la v4 passe le projet au milieu | bouton 3 (bloc `Resultat_Test`) | s'attacher à SEE, dessiner |
 | 8 | L'Explorateur d'objets confirme-t-il les signatures (valeurs de retour, énumérations) ? | Excel > VBE > Références > SEE.exe, F2 | confiance dans NSO73 |
 | 9 | Une aide API est-elle installée (en V4R2 : \Doc\VBAHelp\SEEapp.chm), des .tlb, un dossier Plugins ? (En attendant : le chapitre VBA du manuel V4R2, en accès libre, voir 2.1.) | dossier d'installation | doc officielle |
 | 10 | Unité et origine des coordonnées : poser un symbole à la main à un endroit connu, relire sa position | sonde | Mode, Echelle, OrigineX/Y, SensY |
 | 11 | Chaîne de `AddWireConnection` : tracer un fil à la main, relire le type de son segment | sonde | TypeConnexion |
-| 12 | Familles et noms des symboles de l'environnement : boîte noire, connecteur, broche, masse, barrette, épissure | explorateur de symboles | réglages Symboles |
+| 12 | Familles et noms des symboles de l'environnement : boîte noire, connecteur, broche, masse, barrette, épissure. Familles vues à l'écran le 2 novembre 2026 (Blackbox, Equipment, Ground, Splices, Lug & Stud…) ; leurs formes : le relevé du bouton 3 | bouton 3 (`Sonde_Symboles`), explorateur de symboles | réglages Symboles |
 | 13 | Type de projet (Standard ou Wire Connectivity) et type de folio (schéma = 9, harnais = 18) | propriétés du projet | TypeFolio ; limite ADG |
 | 14 | Faut-il un login SEE Access Control ? Projet en multi-utilisateur (SQL Server) ? | administrateur | ouverture du projet |
 | 15 | Check-out SPM par projet ou par document ? Qui administre l'environnement de référence ? | administrateur SPM | où le pilote écrit ; nouvelles références |

@@ -5,11 +5,15 @@ redessinés à la main. L'Atelier sait déjà placer et router chaque folio ; il
 reste à le **poser dans SEE**. Ce dossier contient tout ce qu'il faut pour
 l'essayer au bureau, pas à pas, sans jamais risquer un vrai projet.
 
-**Où on en est.** Tout est construit et vérifié ici, mais rien n'a encore
-touché ni SEE ni le poste du bureau. Les noms de l'API de SEE sont connus (voir
-plus bas), mais pas encore la façon dont ton poste et ta licence les laissent
-utiliser. La première journée au bureau sert à l'apprendre ; elle ne modifie
-rien.
+**Où on en est (photos du 2 novembre 2026).** Sur le poste du bureau, seule
+la coclasse `SeeAutomation` V4R3 est inscrite au registre ; l'`Application` en
+est absente, et SEE ne s'inscrit pas dans la table des objets actifs : Excel ne
+peut pas rejoindre la fenêtre SEE (boutons 1 et 2). Le bouton 3, SEE fermé,
+crée `SeeAutomation` et **ouvre le projet d'essai tout seul** ; son
+`CreateObject` a refusé les formes essayées jusque-là. La version 4 du
+classeur essaie celle que les codes désignent (le projet ouvert au milieu),
+ferme le projet par `CloseProject(projet)` et relève les familles et les
+formes de l'album. Sur ce poste, c'est le **bouton 3** qui compte.
 
 ## Les trois outils de SEE, et qui fait quoi
 
@@ -59,7 +63,13 @@ folio**, que SEE importe d'un coup (voir plus bas).
 
 Avant de partir : `node see/kit.js` écrit **Kit-SEE.zip** (le classeur pilote y
 est fabriqué à la volée depuis `vba/`). C'est le seul fichier à emporter. Au
-bureau, tout est dans son `LIS-MOI-D-ABORD.txt`, une action par ligne. Le
+bureau, tout est dans son `LIS-MOI-D-ABORD.txt`, une action par ligne. Il
+commence par ce qui est acquis (le projet s'ouvre tout seul), puis « Cette
+fois : seulement le bouton 3 », pas à pas (fermer SEE, attendre 30 secondes,
+le bouton orange, le projet d'essai dans « Robot », *OK*, attendre sans
+toucher) et ses photos (la partie jaune, le haut de `Sonde_Symboles`, SEE
+rouvert sur `ESSAI_PILOTE`) ; les étapes du début restent dessous, pour
+mémoire, avec les secours (Excel bloqué, SEE caché). Le
 technicien ne renvoie que des **photos** de l'écran : tout ce qu'il faut
 apprendre se lit dans le bloc jaune « À PHOTOGRAPHIER », en tête de la
 feuille `Resultat_Test`.
@@ -86,7 +96,10 @@ feuille `Resultat_Test`.
    (`SondeRegistre`), demande à Windows quels programmes SEE tournent, puis
    cherche à **rejoindre** la fenêtre ouverte, chaque essai noté avec la
    réponse de Windows (code et phrase) : `GetObject(, ProgID)` (ceux des
-   réglages, puis ceux du registre, versions comprises), `GetObject(,
+   réglages, puis, parmi ceux du registre, versions comprises, seulement
+   ceux d'un CLSID des réglages ou servis par le programme de SEE, son
+   `LocalServer32` : une bibliothèque comme `SeeBase.ErrorManager` n'est pas
+   essayée ; `Sonde_Registre` garde la liste complète), `GetObject(,
    "{CLSID}")`, puis, en dernier et **seulement si `EssaiCLSID = O`** (`N`
    par défaut), `GetActiveObject` par CLSID, la seule fonction de Windows
    déclarée (`Declare`) : sur un poste où la règle de Defender « Bloquer les
@@ -109,7 +122,10 @@ feuille `Resultat_Test`.
      puis « Essaie le bouton 3 : enregistre et ferme SEE. Puis, en bas
      d'Excel, clique sur l'onglet « Accueil », et sur le bouton orange « 3.
      SEE FERMÉ ». » Une connexion par `SeeAutomation` est alors lâchée : tant
-     qu'Excel tient un objet de SEE, *File > Exit* ne fait que cacher SEE.
+     qu'Excel tient un objet de SEE, *File > Exit* ne fait que cacher SEE ;
+   - le registre n'a aucune coclasse `Application` (le cas du bureau) : le
+     bloc et la boîte vont droit au bouton 3 (« Ton SEE n'ouvre qu'une porte
+     à Excel, celle du bouton 3 »).
 5. **Le bouton bleu 2. SEE DESSINE** (`EssaiDessinReel`, module
    `SEE_Pilote`), seulement après « BRAVO » : UNE question nomme le projet
    ouvert et le folio `ESSAI_PILOTE` ; *OK* dessine, *Annuler* (le bouton par
@@ -125,8 +141,9 @@ feuille `Resultat_Test`.
 6. **Le bouton orange 3. SEE FERMÉ** (`EssaiSansFenetre`, module
    `SEE_Pilote`), quand la fenêtre ne se laisse pas rejoindre : SEE fermé,
    Excel ouvre **lui-même** le projet d'essai par la coclasse `SeeAutomation`
-   (créable au bureau), y dessine le folio du bouton 2, l'enregistre et le
-   referme. Il commence par lâcher **toute** connexion gardée, rejointe aussi
+   (créable au bureau), y dessine le folio du bouton 2, l'enregistre, relève
+   les formes de l'album et le referme. Il commence par lâcher **toute**
+   connexion gardée, rejointe aussi
    (tant qu'Excel tient un objet de SEE, SEE.exe ne s'arrête pas), et pose
    un bloc « EN COURS ». Puis, dans l'ordre, chaque étape au journal et dans
    le bloc à photographier : (1) aucun programme SEE ne tourne, d'après
@@ -146,17 +163,29 @@ feuille `Resultat_Test`.
    `GetObject("new:{CLSID}")` pour les CLSID de `CLSID_Automation`, `Visible =
    True` essayé, jamais `Login` ; (5) `OpenProject` (V4 : paramètre de sortie,
    d'abord un `Variant`, puis une variable `Object` seulement si SEE refuse le
-   type, ce qu'il fait avant d'ouvrir quoi que ce soit) ; (6) le dessin : la
-   signature du `CreateObject` de `SeeAutomation` n'étant pas établie, la
-   forme d'Application est essayée, puis, sur 449 ou 450, une forme à un
-   paramètre de plus, chacune avec un `Variant` puis une variable `Object` ;
-   la forme et la variable qui marchent sont retenues et dites, et si rien ne
-   marche le bloc dit « projet ouvert : oui ; création d'objets : refusée
-   (codes…) », chaque forme et chaque variable avec son code ; le folio est
-   relu (`Sonde_Folio`, dont la consigne demande la photo) ; (7) `Save`
-   seulement si quelque chose a été dessiné ; (8) `CloseProject`, sinon
-   `Close`, puis `Quit`, chacun essayé ; les objets lâchés ; Windows revu une
-   dizaine de secondes : un SEE qui reste est dit, avec la manière de
+   type, ce qu'il fait avant d'ouvrir quoi que ce soit ; au bureau, c'est la
+   variable `Object` qui a servi), puis le nom de l'environnement du projet
+   (`EnvironmentName`) ; (6) le dessin : le `CreateObject` de `SeeAutomation`
+   est essayé sous chaque forme, dans l'ordre, jusqu'à la première qui rend
+   un objet : en V4, (type, projet, objet en sortie), la même avec un
+   `Variant` en sortie, l'objet rendu, les deux formes à deux arguments, puis
+   d'autres valeurs au milieu (`Nothing`, 0, "", le projet passé dans un
+   `Variant`) et (type, objet en sortie, projet) ; en V5, l'objet rendu et
+   les formes à deux arguments d'abord. La
+   forme retenue sert à toute la suite de la macro (une nouvelle connexion
+   l'oublie) et le bloc la dit en clair ; si rien ne marche, il dit « projet
+   ouvert : oui ; création d'objets : refusée (codes…) », chaque forme avec
+   son code ; le folio est relu (`Sonde_Folio`) ; (7) `Save` seulement si
+   quelque chose a été dessiné ; (8) le **relevé des formes**, en lecture
+   seule : l'environnement du projet ouvert par `OpenEnvironment` (V4 :
+   paramètre de sortie), ses familles et ses formes dans `Sonde_Symboles`
+   (en haut, une ligne par famille, ce qu'une photo montre), puis
+   `CloseEnvironment` ; un refus est dit avec son code et rien d'autre n'est
+   tenté ; aucune erreur n'en sort, la fermeture suit toujours ; (9)
+   `CloseProject(le projet)` (sans argument : 450 au bureau), sinon `Close`,
+   puis `Quit`, chacun essayé ; les objets lâchés, le projet gardé pour
+   `CreateObject` compris ; Windows revu une dizaine de secondes : un SEE qui
+   reste est dit, avec la manière de
    l'arrêter (Ctrl+Maj+Échap, « Plus de détails », « Processus en
    arrière-plan », SEE, *Fin de tâche*, sans terminer Excel). Il n'écrit que
    dans le fichier choisi et confirmé, et ne tourne jamais si SEE est ouvert.
@@ -166,7 +195,10 @@ feuille `Resultat_Test`.
    échoue alors, et le journal le dit. Ni le bloc ni le journal ne montrent
    le chemin entier du projet (le dossier qui le contient devient « ... »).
    C'est aussi la voie des 800 plans : Excel ouvre le projet, dessine,
-   enregistre et referme.
+   enregistre et referme. Sous `SeeAutomation`, qui n'a pas de
+   `GetEnvironment`, une forme (définition de symbole) se lit par le projet
+   ouvert (`prj.GetShape famille, nom, o` en V4), jamais par un
+   environnement.
 7. **Si ça bloque** (barre rouge « Microsoft a bloqué l'exécution des
    macros », un refus, une erreur) : une photo de l'écran. Ne rien forcer :
    selon le message, c'est le déblocage du fichier, une stratégie de
@@ -196,7 +228,9 @@ classeur et se lancent par `Alt+F8`, seulement si je le demande :
 Ce qui revient du bureau, ce sont des photos : le bloc jaune de
 `Resultat_Test` (SEE rejoint ou non et comment, chaque essai avec le code de
 Windows et sa phrase, les ProgID du registre, le projet lu ; pour le bouton
-3, chaque étape et son résultat), et l'écran de SEE. J'en tire les réglages
+3, chaque étape et son résultat, dont la forme du `CreateObject` retenue et
+les familles relevées), le haut de `Sonde_Symboles` s'il est rempli, et
+l'écran de SEE. J'en tire les réglages
 (l'unité, l'origine et le sens des axes, la forme du `CreateObject`), et la
 suite : un ProgID à mettre dans les réglages, une question à l'informatique
 ou à ETAP, ou le repli DXF. Le classeur garde le reste (`Journal`, feuilles
@@ -350,7 +384,9 @@ macros déjà dedans, sans Excel et sans dépendance, à partir des `.bas` tels
 qu'ils sont au moment où on le lance (`VBA_DOSSIER=…` pour d'autres). Il
 contient :
 
-- **une feuille « Accueil »** : un titre, trois étapes (ouvrir le projet
+- **une feuille « Accueil »** : un titre, une ligne qui dit que sur ce poste
+  c'est le bouton 3 qui compte (« ton SEE n'ouvre qu'une porte à Excel,
+  celle du bouton 3 »), trois étapes (ouvrir le projet
   d'essai dans SEE et cliquer le bouton vert **1. TESTER SEE**, *OK*, puis la
   photo de la partie jaune ; après « BRAVO », le bouton bleu **2. SEE
   DESSINE**, puis *OK*, sinon ce que dit le message, le plus souvent fermer
@@ -395,15 +431,17 @@ la commande le dit. Le contrôle des boutons reste en échec dans
 c'est la limite. À sa place :
 
 - `node tests/classeur.js` relit tout avec des lecteurs écrits pour le test
-  (zip, OOXML, fichier composé, décompresseur) : 89 contrôles, dont les 72
+  (zip, OOXML, fichier composé, décompresseur) : 92 contrôles, dont les 72
   enregistrements de `VBA/dir` un par un, le texte de chaque module comparé
   octet pour octet aux `.bas`, les exemples de compression et de chiffrement
   de la spécification au bit près, les trois boutons sur leurs lignes vides,
   le refus sans `TesterSEE` ou sans `EssaiSansFenetre` (par la fonction et
   par la commande : code 1, rien d'écrit), le LIS-MOI (le dossier « Robot »,
   le bouton 3, les photos, « Excel bloqué », les onglets à cliquer, *OK*
-  avant la photo, SEE caché), l'Accueil à la mesure d'un écran de portable,
-  et vingt-cinq fautes injectées qu'il doit attraper ;
+  avant la photo, SEE caché ; en tête, ce qui est acquis et « cette fois :
+  seulement le bouton 3 » avec ses photos), l'Accueil à la mesure d'un écran
+  de portable (et sa ligne « c'est le bouton 3 qui compte »), et vingt-six
+  fautes injectées qu'il doit attraper ;
 - **oletools** (`olevba`, un outil courant d'analyse des macros Office)
   lit le projet sans erreur, liste les six modules et rend le texte des
   quatre modules standard identique aux `.bas` (relu sur le classeur du kit) ;
@@ -475,13 +513,25 @@ répondent 429) ; la coclasse `SeeAutomation` V4R3 se **crée** par
 `GetObject("new:{B0B9DD73-…}")` et répond `ApplicationName` et
 `ApplicationVersion` (4.89.99.5), mais n'a ni `GetEnvironment` ni `Workspace`
 (438) ni `GetProject` ; l'`Application` V4R3 ne s'est pas créée par `new:`.
-D'où le bouton 3.
+D'où le bouton 3. Le 2 novembre 2026 (photos) : le registre n'a que
+`SeeAutomation` V4R3 (`{B0B9DD73-…}`, ProgID `SEEExpert.SeeAutomation.4.8`,
+serveur `…\SEE_Soft\EXE\SEE.exe`, dans les deux vues) ; l'`Application`
+V4R3 (`{A55015A3-…}`) en est **absente** ; avec SEE ouvert, les treize
+`GetObject(, …)` répondent 429 (SEE n'est pas dans la table des objets
+actifs). Le bouton 3 : `OpenProject chemin, mdp, prj` **ouvre le projet**
+(variable `Object` en sortie) ; `CreateObject` répond 450 avec deux
+arguments et 13 avec trois, un `Variant` vide au milieu, quelle que soit la
+variable de sortie : le paramètre du milieu attend sans doute un objet, le
+projet ouvert ; `CloseProject` sans argument : 450 (il veut le projet,
+comme le dit ISeeAutomation V5R2), `Close` et `Quit` : 438, et pourtant plus
+aucun SEE.exe ne tournait après le relâchement.
 
-Pas encore établi : que le bouton 3 ouvre le projet (`OpenProject`), la
-signature du `CreateObject` de `SeeAutomation` et le type de ses paramètres
-de sortie (`VARIANT` ou `IDispatch**` : le pilote essaie les deux), et que SEE
-se referme ; si le poste bloque les appels d'API Win32 depuis une macro ; ce que
-le registre dit de SEE (ProgID, `LocalServer32`) ; l'unité, l'origine et le
+Pas encore établi : la forme du `CreateObject` de `SeeAutomation` (la
+version 4 essaie d'abord le projet au milieu), et que les objets ainsi créés
+se posent sur le folio ; que `CloseProject(projet)` ferme le projet ;
+qu'`OpenEnvironment` ouvre l'environnement du projet et que l'album s'y lise
+famille par famille ; si le poste bloque les appels d'API Win32 depuis une
+macro ; l'unité, l'origine et le
 sens des coordonnées ; la chaîne qui donne le type d'une connexion ; la façon
 d'écrire un repère ; la classe du matériel et la façon dont SEE accepte une
 référence du catalogue ; ce que ta licence permet.
@@ -494,7 +544,7 @@ Vérifié ici :
   de l'Atelier n'a pas changé d'un caractère ;
 - le DXF : relu par une lecture maison et par une bibliothèque indépendante
   (ezdxf : aucune erreur d'audit) ;
-- le pilote : 154 contrôles statiques (`tests/vba.js`, dont : chaque procédure
+- le pilote : 160 contrôles statiques (`tests/vba.js`, dont : chaque procédure
   qui écrit dans SEE teste la simulation ; la sonde et TesterSEE, de proche en
   proche, ne font que des **lectures** : chaque objet est suivi depuis sa
   provenance, et sur un objet SEE seuls les membres d'une liste blanche de
@@ -504,7 +554,10 @@ Vérifié ici :
   ses vérifications (revues juste avant la création), et ne ferme que
   celui-là ; `GetObject` et `CreateObject` ne sont que dans `SEE_Windows`, qui
   ne déclare que `CLSIDFromString` et `GetActiveObject` ; aucun module n'écrit
-  le registre ; *Annuler* par défaut ; 79 fautes injectées,
+  le registre ; *Annuler* par défaut ; le `CreateObject` de `SeeAutomation`
+  d'abord sous la forme (type, projet, objet en sortie), `CloseProject(le
+  projet)` après `Save` et le relevé des formes, qui ne laisse sortir aucune
+  erreur ; 92 fautes injectées,
   toutes attrapées, et une écriture dans le classeur n'est pas prise pour une
   écriture dans SEE). Il a aussi été exécuté dans LibreOffice contre un
   **faux SEE** qui imite l'API, et un faux `SEE_Windows` (banc :
@@ -523,13 +576,23 @@ Vérifié ici :
   connexion que le bouton 1 gardait, et sinon copie, crée, ouvre, dessine,
   enregistre et referme, ou dit « création d'objets : refusée » et ne sauve
   pas ; le paramètre de sortie passe en `Variant` ou en `Object`, selon ce
-  que SEE accepte ; quand Windows arrête la macro sur `GetActiveObject`, le
+  que SEE accepte ; face à un faux `SeeAutomation` réglé comme au bureau (il
+  n'accepte que `CreateObject(type, projet, objet en sortie)`, répond 450 à
+  deux arguments et 13 à un milieu qui n'est pas le projet, refuse
+  `CloseProject` sans argument), le bouton 3 retient cette forme, dessine,
+  enregistre, relève l'album dans `Sonde_Symboles`, appelle
+  `CloseProject(projet)` une fois et le dit ; quand seul l'objet rendu
+  marche, c'est lui qui est retenu ; un `OpenEnvironment` refusé n'empêche
+  ni le dessin, ni `Save`, ni la fermeture ; sous `SeeAutomation`, une forme
+  se lit par le projet ; avec le registre du bureau, le bouton 1 n'essaie
+  que les ProgID d'un CLSID des réglages ou du programme de SEE, et envoie
+  droit au bouton 3 ; quand Windows arrête la macro sur `GetActiveObject`, le
   bloc « EN COURS » reste devant le technicien. Il s'arrête et reprend
   proprement, et la simulation n'écrit rien. Ce
   banc prouve la cohérence du code, **pas** le comportement du vrai SEE, ni
   celui du vrai `SEE_Windows` (WMI, `GetActiveObject`, `GetObject("new:…")`),
   qui ne tourne que sous Windows ;
-- le classeur pilote tout prêt : 89 contrôles (`tests/classeur.js`), relu
+- le classeur pilote tout prêt : 92 contrôles (`tests/classeur.js`), relu
   par oletools et par LibreOffice, comparé enregistrement par enregistrement
   aux projets écrits par Excel 2007 et 2010 (voir plus haut). **Pas** par
   Excel lui-même.

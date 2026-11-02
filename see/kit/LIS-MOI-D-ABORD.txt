@@ -2,10 +2,69 @@
 ========================
 
 Ce kit sert à automatiser tes plans dans SEE, une marche après l'autre.
-Aujourd'hui : Excel parle à SEE, puis SEE dessine tout seul un folio
-d'essai. Un seul fichier à ouvrir : Pilote-SEE.xlsm. Compte 20 minutes.
+Un seul fichier à ouvrir : Pilote-SEE.xlsm.
 Tout se fait dans un projet d'essai VIDE, jamais dans un vrai projet.
 Tu ne m'envoies que des PHOTOS de l'écran (ton téléphone, c'est très bien).
+
+
+CE QUI EST ACQUIS (tes photos du 2 novembre)
+--------------------------------------------
+- Le projet s'ouvre tout seul : SEE fermé, le bouton 3 a ouvert ton
+  projet d'essai sans que tu touches à SEE. Bravo, c'était le plus dur.
+- Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3. Les boutons
+  1 et 2 ne peuvent pas rejoindre ta fenêtre SEE : sur ce poste, c'est
+  le BOUTON 3 qui compte.
+- Cette fois, Excel dessine le folio d'essai d'une autre manière, puis
+  relève la liste de tes symboles (les familles de ton album), sans
+  rien y changer.
+
+
+CETTE FOIS : SEULEMENT LE BOUTON 3 (10 minutes)
+-----------------------------------------------
+1. Ferme Excel s'il est ouvert. Sors le NOUVEAU kit du zip, comme la
+   dernière fois (l'étape A, plus bas). Si Windows demande de remplacer
+   les fichiers : clique sur « Remplacer les fichiers dans la
+   destination ». Puis ouvre le Pilote-SEE.xlsm du dossier « Kit-SEE ».
+   Pas besoin des boutons 1 et 2.
+   (Barres jaunes en haut d'Excel : l'étape C, points 3 et 4.)
+2. Dans SEE : menu File, puis Exit. Si SEE demande d'enregistrer :
+   clique sur Oui. SEE se ferme. Ne le rouvre pas toi-même : Excel
+   s'en charge.
+3. Attends 30 secondes : SEE finit de s'arrêter.
+4. Dans Excel, en bas, clique sur l'onglet « Accueil ». Fais descendre
+   la feuille avec la molette de la souris, et clique sur le gros
+   bouton orange « 3. SEE FERMÉ ».
+5. Une fenêtre « Choisis ton projet d'ESSAI » s'ouvre. Va dans le
+   dossier « Robot » de ton Bureau, clique sur ton projet d'essai (le
+   même que la dernière fois : son nom commence par TEST_ et finit par
+   .seeprj), puis sur « Ouvrir ». PAS sur un fichier dont le nom
+   contient « avant-pilote » (ce sont les copies de sécurité).
+6. Une question te montre le nom du fichier : c'est bien ton projet
+   d'essai, clique sur OK. Si Excel dit que le folio « ESSAI_PILOTE »
+   existe déjà : clique sur Oui (il est refait à neuf).
+7. Attends le message de fin sans toucher à rien : une ou deux
+   minutes. SEE peut s'ouvrir tout seul : ne clique pas dedans.
+   Si Excel reste bloqué : va à « SI EXCEL RESTE BLOQUÉ ».
+8. Clique sur OK, puis prends les photos, dans cet ordre :
+   a. la partie jaune de la feuille Resultat_Test, jusqu'à
+      « Et maintenant » ;
+   b. si le message le demande : en bas d'Excel, clique sur l'onglet
+      « Sonde_Symboles » et prends une photo du haut de cette feuille
+      (la liste de tes familles de symboles) ;
+   c. si le message le demande : l'onglet « Sonde_Folio », une photo
+      de son haut ;
+   d. puis ouvre SEE, ouvre ton projet d'essai, double-clic sur le
+      folio « ESSAI_PILOTE » dans l'arbre, à gauche, et prends une
+      photo de l'écran, même si le folio est vide ou de travers.
+   Si le message dit « SEE tourne encore, caché » : fais d'abord
+   « SI SEE TOURNE CACHÉ », plus bas, avant de rouvrir SEE.
+9. Envoie-moi les photos (l'étape F).
+
+
+POUR MÉMOIRE : TOUTES LES ÉTAPES DU DÉBUT
+=========================================
+Elles ont servi les fois d'avant. Cette fois, ne les suis que si le
+paragraphe « CETTE FOIS » t'y envoie.
 
 
 ÉTAPE A : SORTIR LE KIT DU ZIP (2 minutes)
@@ -89,7 +148,7 @@ refermera. S'il te pose une question : prends-la en photo, puis clique
 sur Annuler (ou Non).
 1. Dans SEE : menu File, puis Exit. Si SEE demande d'enregistrer :
    clique sur Oui. SEE se ferme. Ne le rouvre pas toi-même : Excel s'en
-   charge.
+   charge. Attends 30 secondes.
 2. Dans Excel, en bas, clique sur l'onglet « Accueil ». Le bouton orange
    est plus bas : fais descendre la feuille avec la molette de la
    souris. Clique sur le gros bouton orange « 3. SEE FERMÉ ».
@@ -100,7 +159,7 @@ sur Annuler (ou Non).
    NON : va à « SI SEE TOURNE CACHÉ », puis reclique sur 3.)
 3. Une fenêtre « Choisis ton projet d'ESSAI » s'ouvre. Va dans le
    dossier « Robot » de ton Bureau, clique sur ton projet d'essai
-   (par exemple TEST_SEE.seeprj), puis sur « Ouvrir ».
+   (son nom commence par TEST_), puis sur « Ouvrir ».
    Clique sur ton projet, PAS sur un fichier dont le nom contient
    « avant-pilote » (ce sont les copies de sécurité).
 4. Une question te montre le nom du fichier.
@@ -112,8 +171,8 @@ sur Annuler (ou Non).
    rien. Si Excel reste bloqué : va à « SI EXCEL RESTE BLOQUÉ ».
 6. Clique sur OK. Prends une photo de la partie jaune de la feuille
    Resultat_Test. Puis, si le message le demande, en bas d'Excel, clique
-   sur l'onglet « Sonde_Folio » et prends une photo du haut de cette
-   feuille.
+   sur l'onglet « Sonde_Symboles », puis sur l'onglet « Sonde_Folio »,
+   et prends chaque fois une photo du haut de la feuille.
 7. Fais ce que dit sa ligne « Et maintenant ». Le plus souvent : ouvre
    SEE, ouvre ton projet d'essai, double-clic sur le folio
    « ESSAI_PILOTE », et prends une photo de l'écran.
@@ -194,8 +253,10 @@ LES PHOTOS À PRENDRE
 - Après le bouton 2 : l'écran de SEE avec le folio « ESSAI_PILOTE »,
   puis le haut de la feuille Sonde_Folio (son onglet est en bas d'Excel).
 - Après le bouton 3 : la partie jaune de la feuille Resultat_Test, puis
-  le haut de la feuille Sonde_Folio (son onglet est en bas d'Excel),
-  puis l'écran de SEE avec le folio « ESSAI_PILOTE » (ouvert par toi).
+  le haut de la feuille Sonde_Symboles s'il est rempli, puis le haut de
+  la feuille Sonde_Folio si le message le demande (leurs onglets sont en
+  bas d'Excel), puis l'écran de SEE avec le folio « ESSAI_PILOTE »
+  (ouvert par toi).
 - Tout message d'erreur ou de refus, tel quel, même un message de
   Windows (par exemple « Sécurité Windows »).
 Si une photo coupe le texte : prends la première photo, fais descendre

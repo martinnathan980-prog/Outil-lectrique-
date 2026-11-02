@@ -30,7 +30,9 @@
      · la sortie est déterministe ; le kit (see/kit.js) porte ce classeur en
        tête (ses quatre modules standard, SEE_Windows compris), son LIS-MOI
        est en UTF-8 avec BOM et CRLF et dit les trois boutons, les photos, et
-       quoi faire si Excel reste bloqué ;
+       quoi faire si Excel reste bloqué ; en tête, ce qui est acquis et « cette
+       fois : seulement le bouton 3 », pas à pas, avec ses photos (la partie
+       jaune, le haut de Sonde_Symboles, SEE rouvert sur ESSAI_PILOTE) ;
      · le REFUS : sans la macro du bouton (ou avec un .bas que le classeur ne
        lit pas), classeur.js et kit.js lèvent une exception, sortent avec le
        code 1 et n'écrivent rien, sauf --sans-bouton ; essayé sur des copies
@@ -311,6 +313,11 @@ function controler(parties) {
     /bouton vert 1.*clique sur OK.*photo/.test(cellule(6)) && /^Sinon : fais ce que dit le message/.test(cellule(18)) && /Ne rouvre pas SEE toi-même/.test(cellule(19))
       && /Après le bouton 2 ou 3.*photos.*message de fin/.test(etapes[2]) && !/SEE doit rester fermé/.test(partage.join(' ')),
     [6, 18, 19, 24].map(cellule).map(c => c.slice(0, 30)).join(' | '));
+  // la v4 (les photos du 2 novembre 2026) : sur le poste du bureau, seule la porte du bouton 3 s'ouvre ; l'Accueil le dit
+  // en tête, avant l'étape 1
+  verif('l\'Accueil dit, avant l\'étape 1, que sur ce poste c\'est le bouton 3 qui compte (« Ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 »)',
+    /^Sur ce poste, c'est le BOUTON 3 qui compte : ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3/.test(cellule(4)) && /bouton 3 \(orange/.test(cellule(4)),
+    cellule(4).slice(0, 60));
   // TE10 : le bouton 3 tient sur un écran de portable (zoom 80 %, lignes de bouton basses)
   const vue = premier(ws, 'sheetView'), hauteurs = new Map([...ws.matchAll(/<row r="(\d+)" ht="([\d.]+)"/g)].map(m => [+m[1], +m[2]]));
   const basBouton3 = Array.from({ length: 22 }, (_, i) => hauteurs.get(i + 1) || 15).reduce((s, h) => s + h, 0) * 4 / 3 * (+vue.zoomScale || 100) / 100;
@@ -520,6 +527,13 @@ try { const k = K.kit({ dossierVba: AVEC }), z = lireZip(k.zip), ref = C.classeu
   ok('LIS-MOI-D-ABORD.txt : rien que des photos (pas de fichier à renvoyer, ni Ctrl+S, ni zip à envoyer), et « LES PHOTOS À PRENDRE » pour chaque bouton',
     /Pas besoin de m'envoyer le fichier Excel/.test(t) && !/Ctrl\+S|Envoyer vers|Dossier compressé|Envoie-moi ce zip/i.test(t)
       && /LES PHOTOS À PRENDRE[\s\S]*bouton 1[\s\S]*Resultat_Test[\s\S]*bouton 2[\s\S]*bouton 3[\s\S]*Resultat_Test/.test(t));
+  // la v4 (les photos du 2 novembre 2026) : en tête, ce qui est acquis, puis « cette fois : seulement le bouton 3 », pas à pas
+  const tete = t.slice(0, t.indexOf('ÉTAPE A'));
+  ok('LIS-MOI-D-ABORD.txt, en tête (avant l\'étape A) : ce qui est acquis (le projet s\'ouvre tout seul ; « Ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 »), puis « CETTE FOIS : SEULEMENT LE BOUTON 3 » pas à pas : File > Exit, 30 secondes, le bouton orange 3, le projet dans « Robot » (pas un « avant-pilote »), OK, attendre sans toucher ; les photos : la partie jaune de Resultat_Test, le haut de Sonde_Symboles, puis SEE rouvert sur ESSAI_PILOTE ; les secours (Excel bloqué, SEE caché)',
+    t.indexOf('ÉTAPE A') > 0 && /CE QUI EST ACQUIS[\s\S]*Le projet s'ouvre tout seul[\s\S]*Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3[\s\S]*BOUTON 3 qui compte[\s\S]*CETTE FOIS : SEULEMENT LE BOUTON 3[\s\S]*File, puis Exit[\s\S]*Attends 30 secondes[\s\S]*onglet « Accueil »[\s\S]*bouton orange « 3\. SEE FERMÉ »[\s\S]*Choisis ton projet d'ESSAI[\s\S]*dossier « Robot »[\s\S]*« avant-pilote »[\s\S]*clique sur OK[\s\S]*sans toucher à rien[\s\S]*SI EXCEL RESTE BLOQUÉ[\s\S]*partie jaune de la feuille Resultat_Test[\s\S]*« Sonde_Symboles »[\s\S]*photo du haut de cette feuille[\s\S]*« ESSAI_PILOTE »[\s\S]*SI SEE TOURNE CACHÉ/.test(tete)
+      && !/Compte 20 minutes/.test(t));
+  ok('LIS-MOI-D-ABORD.txt, « LES PHOTOS À PRENDRE » : après le bouton 3, la partie jaune, PUIS le haut de Sonde_Symboles s\'il est rempli, puis SEE avec ESSAI_PILOTE',
+    /Après le bouton 3 : la partie jaune de la feuille Resultat_Test, puis\s+le haut de la feuille Sonde_Symboles s'il est rempli[\s\S]*« ESSAI_PILOTE »/.test(t.slice(t.indexOf('LES PHOTOS À PRENDRE'))));
   ok('LIS-MOI-D-ABORD.txt : « SI EXCEL RESTE BLOQUÉ » (action OLE : attendre 2 minutes, Ctrl + Maj + Échap, SEE, Fin de tâche)',
     /SI EXCEL RESTE BLOQUÉ[\s\S]*action OLE[\s\S]*2 minutes[\s\S]*Ctrl \+ Maj \+ Échap[\s\S]*SEE[\s\S]*Fin de tâche/.test(t));
   // la relecture de la v3 (TE1 à TE10, EX5, SU6)
@@ -584,6 +598,8 @@ const MUTATIONS = [
   ['une balise mal fermée', 'chaque partie XML est bien formée', avecTexte('xl/styles.xml', '</fonts>', '</font>')],
   ['l\'Accueil sans son zoom (le bouton 3 sous le bord d\'un écran de portable)', 'l\'Accueil : le bas du bouton orange 3', avecTexte('xl/worksheets/sheet1.xml', ' zoomScale="80" zoomScaleNormal="80"', '')],
   ['l\'Accueil qui envoie au bouton 3 pour tout message autre que BRAVO', 'l\'Accueil suit le mode d\'emploi', avecTexte('xl/sharedStrings.xml', 'Sinon : fais ce que dit le message. Souvent : ferme SEE', 'Sinon : ferme SEE')],
+  ['l\'Accueil qui ne dit plus que le bouton 3 compte', 'l\'Accueil dit, avant l\'étape 1, que sur ce poste c\'est le bouton 3 qui compte',
+    avecTexte('xl/sharedStrings.xml', 'c\'est le BOUTON 3 qui compte : ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3', 'les trois boutons comptent')],
   ['les éléments de la feuille dans le désordre', 'sheet1.xml : ses éléments', (() => { const p = new Map(parties), t = Buffer.from(p.get('xl/worksheets/sheet1.xml')).toString('utf8'), m = /<pageMargins[^>]*\/>/.exec(t);
     p.set('xl/worksheets/sheet1.xml', new Uint8Array(Buffer.from(t.replace(m[0], '').replace('<sheetData>', m[0] + '<sheetData>'), 'utf8'))); return p; })()],
 ];

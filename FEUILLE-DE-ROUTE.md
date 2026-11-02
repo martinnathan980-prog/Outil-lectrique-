@@ -305,6 +305,31 @@ connexion, repères, la forme du `CreateObject`) et on dessine un premier
 folio, puis les 800 par lots, par la voie du bouton 3 (Excel ouvre, dessine,
 enregistre, referme).
 
+**Le 2 novembre 2026 (photos), puis la v4 du classeur.** Le registre n'a que
+`SeeAutomation` V4R3 ; l'`Application` en est absente et SEE n'est pas dans
+la table des objets actifs : les boutons 1 et 2 ne rejoindront jamais la
+fenêtre, **le bouton 3 est la voie**. Il a créé `SeeAutomation` et **ouvert
+le projet d'essai tout seul** (`OpenProject`, projet en sortie dans une
+variable `Object`) ; son `CreateObject` a refusé (450 à deux arguments, 13 à
+trois avec un `Variant` vide au milieu : le milieu attend sans doute le
+projet). La v4 :
+- essaie `CreateObject(type, projet, objet en sortie)` d'abord, puis les
+  autres formes (l'objet rendu compris), et garde la première qui rend un
+  objet ; le bloc la dit en clair ;
+- ferme par `CloseProject(projet)` (sans argument : 450), puis `Close` et
+  `Quit` comme avant ;
+- lit une forme par le projet (`prj.GetShape`), sans `GetEnvironment` ;
+- relève, en lecture seule, les familles et les formes de l'album
+  (`OpenEnvironment` du projet, `Sonde_Symboles`, `CloseEnvironment`), après
+  `Save` et avant la fermeture, sans jamais l'empêcher ;
+- n'essaie plus, pour rejoindre SEE, que les ProgID utiles, et le dit : sur
+  ce poste, c'est le bouton 3 qui compte (le LIS-MOI, l'Accueil, le
+  message du bouton 1).
+Les photos attendues : la partie jaune de `Resultat_Test` après le bouton 3,
+le haut de `Sonde_Symboles` s'il est rempli, puis SEE rouvert sur
+`ESSAI_PILOTE`. Avec la forme du `CreateObject` et les noms des familles, on
+règle les symboles des natures et on passe au premier vrai plan.
+
 ### F. Les contrats déjà faits (voir § 2)
 
 15. **Un extrait de la grande base**, dans son format réel : deux ou trois
