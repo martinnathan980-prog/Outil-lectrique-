@@ -30,7 +30,7 @@ const [, , THEME = 'clair', L = '1440'] = process.argv;
         if (coupe && !e.closest('svg') && e.tagName !== 'INPUT') dire(ou, `texte coupé : « ${e.textContent.trim().slice(0, 50)} » (${e.className || e.tagName})`); });
       // 3. des textes qui se chevauchent (feuilles de texte seulement, hors svg)
       const feuilles = [...racine.querySelectorAll('span, b, small, strong, em, i, h1, h2, h3, h4, p, label, button, td, th, li')].filter(e => vu(e) && !e.closest('svg') && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && ![...e.children].length);
-      const R = feuilles.map(e => ({ e, r: boite(e) })).filter(x => x.r);
+      const R = feuilles.filter(e => e.getClientRects().length <= 1).map(e => ({ e, r: boite(e) })).filter(x => x.r);   // un texte sur deux lignes : sa boîte englobe tout, pas un chevauchement
       for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) { const a = R[i].r, c = R[j].r;
         const x = Math.min(a.right, c.right) - Math.max(a.left, c.left), y = Math.min(a.bottom, c.bottom) - Math.max(a.top, c.top);
         if (x > 3 && y > 3 && !R[i].e.contains(R[j].e) && !R[j].e.contains(R[i].e)) dire(ou, `chevauchement : « ${R[i].e.textContent.trim().slice(0, 30)} » / « ${R[j].e.textContent.trim().slice(0, 30)} »`); }

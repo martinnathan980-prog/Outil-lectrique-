@@ -53,7 +53,8 @@ const cleDeCible = () => !app.cible ? '' : app.cible.type === 'fil' ? 'fil:' + (
    le texte (le nôtre, celui d'une table de normes, d'un retest). Jamais dans le dessin des folios (svg) ni dans un champ :
    ce qu'on y lit reste ce qu'on y a écrit. Un observateur la pose sur ce qui s'ajoute ou change. */
 const TYPO_HORS = 'svg,script,style,textarea,input,select,code,pre,[contenteditable]';
-const typo = t => t.replace(/ ([:;?!»])/g, '\u00a0$1').replace(/« /g, '«\u00a0').replace(/([A-Za-zÀ-ÿ])'(?=[A-Za-zÀ-ÿ])/g, '$1’');
+// (v79) un nombre ne se sépare jamais de son unité (« 2 A », « 5 m », « 44 % ») : une espace insécable
+const typo = t => t.replace(/(\d) (A|V|m|mm|s|min|h|%|AWG|Ω|mΩ|g|°C|kg)(?![A-Za-zÀ-ÿ0-9])/g, '$1\u00a0$2').replace(/ ([:;?!»])/g, '\u00a0$1').replace(/« /g, '«\u00a0').replace(/([A-Za-zÀ-ÿ])'(?=[A-Za-zÀ-ÿ])/g, '$1’');
 function typographier(n) {
   if (n.nodeType === 3) { const el = n.parentElement; if (!el || el.closest(TYPO_HORS)) return; const t = typo(n.nodeValue); if (t !== n.nodeValue) n.nodeValue = t; return; }
   if (n.nodeType !== 1 || n.closest(TYPO_HORS)) return;

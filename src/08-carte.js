@@ -139,7 +139,7 @@ function zonesAProteger(v) { const o = CARTE.origine, d = app.dessin, out = [], 
    détour) et un rien d'ordre. Le bloc n'est jamais dessous ; quand un côté porte ses câbles, elle passe de l'autre.
    `v` : la vue où le plan va ; `diag` : rendre toutes les places pesées (les batteries, la mise au point). */
 const COUT_CARTE = { hauteur: .5, distance: 20, rang: 400 };
-function placerPres(b, W, H, v, diag) { const Z = zoneDeLaCarte(), e = CARTE_AIR, cl = (x, a, z) => Math.max(a, Math.min(z, x)), HMIN = Math.min(H, 300), C = COUT_CARTE;
+function placerPres(b, W, H, v, diag) { const Z = zoneDeLaCarte(), e = CARTE_AIR, cl = (x, a, z) => Math.max(a, Math.min(z, x)), HMIN = Math.min(H, Z.B - Z.T), C = COUT_CARTE;   // (v79) la tuile entière, jamais coupée par le bas de l'écran, quand l'écran peut la tenir
   if (!b) return { x: Z.R - W - 6, y: Z.T, h: Math.min(H, Z.B - Z.T) };
   const zones = zonesAProteger(v), places = [];
   // `dispo` : la hauteur que la place lui laisse ; elle y est pesée à sa hauteur d'aujourd'hui (au plus H), et pourra y

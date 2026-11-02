@@ -290,7 +290,7 @@ function grapheSvg(d, vue, W) { const G = geometrieGraphe(d, W), { L, R, T, B, H
         for (let k = 0; k < 80; k++, x += 8 * cote) { const c = etiquette(l, x, y, a); if (cote < 0 ? c.b.x0 < L : c.b.x1 > Wd - R) break; if (c.b.x1 < L || c.b.x0 > Wd - R) continue;
           c.b.gx = 16; c.b.gy = 10; cands.push(c); } });
       const e2 = P.essayer(cands); return e2 ? etiquetteSvg(e2, 'dj-zone ' + (cote < 0 ? 'sur' : 'declenche'), 0) : ''; };
-    zones = mot('ne déclenche pas', -1) + mot('déclenche', 1); }
+    zones = mot('ne disjoncte pas', -1) + mot('disjoncte', 1); }
   const glisse = `data-glisse="${f2(dx)}" style="transform:translate(${f2(dx)}px,0)"`, cadre = `<rect x="${L}" y="${T}" width="${Wd - L - R}" height="${H - T - B}"/>`;
   const s = `<defs><clipPath id="${clip}">${cadre}</clipPath></defs>`
     + (avecBande ? `<g clip-path="url(#${clip})"><g class="dj-fonds" ${glisse}>${fonds}</g><g class="dj-papier-in" ${glisse}>${filetsIn(G, cal)}</g></g>` : '') + papierSvg(G, avecBande ? cal : 0)

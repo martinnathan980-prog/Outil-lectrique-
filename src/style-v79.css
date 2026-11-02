@@ -220,3 +220,83 @@ body.biblio #table .ta-courant::after{background:#ffe2cc;box-shadow:0 0 8px 2px 
 .vu-bro.petit .bro-nom{font-size:13px}
 .vu-bro.petit .bro-type{font-size:10px}
 .vu-bro.petit .bro-zone{pointer-events:none}
+
+/* ─── LE TRAJET D'UN CÂBLE (sa tuile, son grand) : chaque bout, le repère et sa borne en pastille, centrés ─── */
+.nc .nv-trajet{justify-content:center;gap:10px}
+.nv-bout{align-items:center;gap:7px;height:34px;padding:0 7px 0 12px;line-height:1}
+.nv-bout b{line-height:1}
+.nv-bout i{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:6px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2);font:650 var(--f-11)/1 var(--mono);font-style:normal;color:var(--t-1)}
+.nv-trajet-f{height:3px}
+
+/* ═══ v79 — CE QUE LES RELECTEURS ONT VU ═══ */
+/* « Ses câbles » : le titre au-dessus du tableau, sur une ligne (il était tassé dans une colonne) */
+.nv-grand .nv-cap{display:table-caption;caption-side:top;padding:8px 0 14px 14px;text-align:left;white-space:nowrap}
+.nv-grand .nv-cap b{display:inline;margin-right:10px}
+.nv-grand .nv-cap span{display:inline;white-space:normal}
+/* la référence dans la tête du grand : sur la ligne du titre */
+.nc-tete.fine{align-items:center}
+.nc-tete.fine .nc-meta{margin-top:2px}
+/* la nuit : la bande plus sombre, l'onglet ouvert se détache */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double){--v-bande:#0e0f11;--v-bande-2:#1a1b1f} }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double){--v-bande:#0e0f11;--v-bande-2:#1a1b1f}
+/* le filigrane : dans le coin du titre, jamais sous un chiffre */
+.nc-filigrane{top:-22px;bottom:auto;right:-26px;width:140px;height:140px}
+.nc:hover .nc-filigrane{opacity:.12}
+/* « retenu » : un seul code partout, le cuivre (le vert et le rouge ne disent que le verdict) */
+.vu-c.ret b,.vu-c.ret.non b{background:color-mix(in srgb,var(--ok) 14%,var(--s-surface));color:var(--ok);box-shadow:inset 0 0 0 2px var(--nv-cuivre),0 6px 14px -8px rgba(169,88,31,.6);transform:scale(1.08)}
+.vu-c.ret.non b{background:color-mix(in srgb,var(--ko) 12%,var(--s-surface));color:var(--ko)}
+.vu-c.ret small,.vu-c.ret.non small{color:var(--nv-cuivre)}
+/* un titre long (« Prise de coupure — 408VC1A ») reste sur une ligne */
+.nc-tete .nc-titre.long{font-size:21px}
+/* les commandes à segments : des parts égales */
+.bi-tri-seg,#base .ba-portee{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr}
+.bi-tri-seg>button,#base .ba-portee>button{justify-content:center;text-align:center}
+/* le rail du récapitulatif, un vrai cran plus bas que la table */
+#base .rc-onglets{background:#efede8}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #base .rc-onglets{background:#19191c} }
+:root[data-theme="dark"] #base .rc-onglets{background:#19191c}
+/* une puce à zéro se tait à moitié */
+#base .rc-puces .zero{opacity:.45}
+/* un câble : l'intensité et la chute dans leur carte */
+.nv-grand .nv-panneau>.fi-mesures{margin:0;padding:18px 20px 16px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.04)}
+.nv-grand .nv-panneau>.fi-hyp-l{margin:0;padding:12px 16px;border-radius:12px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--warn)}
+.nv-grand .nv-panneau>.vu-chemin-c{margin:0}
+/* une norme à préciser : l'ambre, pas le rouge */
+.rf-orig.att>span:nth-child(2){color:var(--warn)}
+/* la marque : un carré graphite, le V de cuivre (plus de bleu) */
+.en-marque{background:linear-gradient(150deg,#2b2d33 0%,#141518 100%);color:#f2a46b;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 4px 12px -6px rgba(0,0,0,.6)}
+.en-marque svg{stroke:#f2a46b}
+.en-nom{letter-spacing:-.01em;font-weight:700}
+/* la bibliothèque sur le graphite : les installations en verre graphite, plus en papier blanc qui éblouit */
+.biblio .bi-grille .bi-carte:not(.bi-demo){--s-surface:#1c1d21;--s-sunken:#16171a;--s-hover:#24262b;--s-line:#2c2e33;--s-line-2:#3a3c42;--t-1:#f0f1f3;--t-2:#a9adb6;--t-3:#80848c;
+  --bi-bord:rgba(255,255,255,.09);--bi-pile-1:#18191c;--bi-pile-2:#141518;--bi-pile-bord:rgba(255,255,255,.07);--bi-pile-bord-2:rgba(255,255,255,.05)}
+.biblio .bi-grille .bi-carte:not(.bi-demo):not(.bi-confirmant):not(.bi-carte-neuve):hover .bi-carte-corps{box-shadow:0 0 0 1px rgba(242,164,107,.55),0 24px 48px -24px rgba(0,0,0,.8)}
+/* l'accueil, retouché : un rythme régulier, centré sur un grand écran ; le cadre de folio ; les câbles qui s'allument */
+.bi-accueil .bi-vide-centre{padding-top:max(36px,calc((100vh - 900px) / 2 + 36px))}
+.bi-vitrine.bi-hero{margin:44px 0 40px}
+.bi-accueil .bi-encours-t{margin:44px 0 16px}
+.bi-accueil .bi-tuile,.bi-accueil .bi-dock .bi-demo .bi-carte-corps.bi-tuile{width:260px;min-width:260px}
+body.biblio-accueil .en-nom{display:none}
+.bi-hero .hs-c{font-size:11px;fill:rgba(236,239,245,.55)}
+.bi-hero .hs-b{font-size:10.5px;fill:rgba(236,239,245,.5)}
+.bi-hero .hs-cadre{fill:none;stroke:rgba(236,239,245,.12);stroke-width:1}
+.bi-hero .hs-col{font:500 9px var(--mono);fill:rgba(236,239,245,.22);text-anchor:middle}
+.bi-hero .hs-cart-t{font:600 8.5px var(--mono);letter-spacing:.08em;fill:rgba(236,239,245,.32)}
+.bi-hero .hs-prise{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke;cursor:help}
+.bi-hero .hs-f:hover .hs-fil{stroke:#f2a46b;stroke-width:2.2;filter:drop-shadow(0 0 4px rgba(242,164,107,.7))}
+.bi-hero .hs-f:hover .hs-c{fill:#f2a46b}
+.bi-hero .hs-fil{transition:stroke .25s,stroke-width .25s}
+/* sur un écran de 900 px de haut, tout tient sans défiler */
+.bi-titre.bi-marque{font-size:clamp(84px,min(9.4vw,14.5vh),156px)}
+.bi-vitrine.bi-hero{width:min(1280px,94vw,calc((100vh - 600px) * 3.8));margin:min(44px,4vh) 0 min(40px,3.6vh)}
+.nc-filigrane{top:-34px;right:-30px;width:122px;height:122px}
+/* le récapitulatif : les en-têtes des colonnes de nombres à droite, comme leurs valeurs ; rien de coupé dans un en-tête */
+#base .rc-tab th{overflow:visible;text-overflow:clip}
+#base .rc-tab th:is(.rc-c-mesure,.rc-c-n,.rc-c-int){text-align:right}
+#base .rc-tab td:is(.rc-c-mesure,.rc-c-n){text-align:right}
+#base .rc-tab td{white-space:nowrap}
+#base .rc-puces{flex-wrap:nowrap}
+#base .rc-chip{flex-shrink:0}
+/* un onglet étroit : sa précision passe sur deux lignes plutôt que d'être coupée */
+.nv-grand .nv-onglet{height:auto;min-height:60px;padding-top:10px;padding-bottom:10px}
+.nv-grand .nv-onglet .nv-o-s{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25}

@@ -586,14 +586,19 @@ const FOLIOS_VITRINE = [
    points de cuivre) ; survoler une pièce l'allume. Leurs vrais mots : repères, types de câble, bornes. */
 const masseHero = (x, y) => `<path class="hs-masse" d="M${x} ${y}v9M${x - 8} ${y + 9}h16M${x - 5} ${y + 13}h10M${x - 2} ${y + 17}h4"/>`;
 const HERO_FILS = [
-  ['M186 110H330', 'DR12', 258, 104], ['M340 70H560', 'DR20', 450, 64], ['M340 150H560', 'DR20', 450, 144], ['M340 224H758', 'DR22', 550, 218],
-  ['M776 224H900', 'DR22', 838, 218], ['M186 164H232V198', '', 0, 0], ['M670 78H726V100', '', 0, 0], ['M670 158H726V180', '', 0, 0], ['M1020 232H1070V252', '', 0, 0]];
+  ['M186 110H330', 'DR12', 258, 104, '102CB1 : 1 → 668VT31'], ['M340 70H560', 'DR20', 450, 64, '668VT31 → 381RL1 : 1'], ['M340 150H560', 'DR20', 450, 144, '668VT31 → 382RL2 : 1'],
+  ['M340 224H758', 'DR22', 550, 218, '668VT31 → 412VC3B'], ['M776 224H900', 'DR22', 838, 218, '412VC3B → 540VL5 : 1'], ['M186 164H232V198', '', 0, 0, '102CB1 : 2 → masse 901G'],
+  ['M670 78H726V100', '', 0, 0, '381RL1 : 2 → masse'], ['M670 158H726V180', '', 0, 0, '382RL2 : 2 → masse'], ['M1020 232H1070V252', '', 0, 0, '540VL5 : 2 → masse']];
 const HERO_COURANTS = ['M186 110H335V70H560', 'M186 110H335V150H560', 'M186 110H335V224H900'];
+/* (v79, un relecteur : « une planche technique plutôt qu'un site vitrine ») : le schéma posé dans le cadre d'un folio —
+   les numéros de colonne en marge, un petit cartouche — et chaque câble qui s'allume au survol en disant ce qu'il relie */
 function heroSchema() {
   const bloc = (x, y, w, h, rep, sous, cls) => `<g class="hs-piece${cls ? ' ' + cls : ''}"><rect class="hs-bloc" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/><text class="hs-rep" x="${x + w / 2}" y="${y + h / 2 + (sous ? -1 : 4.5)}">${rep}</text>${sous ? `<text class="hs-sous" x="${x + w / 2}" y="${y + h / 2 + 15}">${sous}</text>` : ''}</g>`;
-  const fils = HERO_FILS.map(([d, t, tx, ty], i) => `<path class="hs-fil" pathLength="1" style="--i:${i}" d="${d}"/>${t ? `<text class="hs-c" x="${tx}" y="${ty}">${t}</text>` : ''}`).join('');
+  const fils = HERO_FILS.map(([d, t, tx, ty, dit], i) => `<g class="hs-f"><title>${esc((t ? t + ' · ' : '') + dit)}</title><path class="hs-prise" d="${d}"/><path class="hs-fil" pathLength="1" style="--i:${i}" d="${d}"/>${t ? `<text class="hs-c" x="${tx}" y="${ty}">${t}</text>` : ''}</g>`).join('');
   const bornes = [[192, 104, '1'], [192, 158, '2'], [552, 64, '1'], [552, 144, '1'], [676, 72, '2'], [676, 152, '2'], [892, 218, '1'], [1026, 226, '2']].map(([x, y, t]) => `<text class="hs-b" x="${x}" y="${y}">${t}</text>`).join('');
-  return `<div class="bi-vitrine bi-hero" aria-hidden="true"><svg viewBox="0 0 1200 290" preserveAspectRatio="xMidYMid meet">`
+  const marge = `<rect class="hs-cadre" x="24.5" y="14.5" width="1151" height="292" rx="2"/>` + [...Array(8)].map((_, k) => `<text class="hs-col" x="${24 + 72 + k * 144}" y="9">${k + 1}</text><path class="hs-cadre" d="M${24 + (k + 1) * 144} 14.5v6"/>`).join('')
+    + `<g class="hs-cart"><rect class="hs-cadre" x="868.5" y="284.5" width="212" height="22"/><path class="hs-cadre" d="M936.5 284.5v22"/><text class="hs-cart-t" x="876" y="299">VOLTA</text><text class="hs-cart-t" x="944" y="299">FOLIO 0 · HORS LIGNE</text></g>`;
+  return `<div class="bi-vitrine bi-hero" aria-hidden="true"><svg viewBox="0 -4 1200 316" preserveAspectRatio="xMidYMid meet">${marge}`
     + fils
     + bloc(90, 92, 96, 90, '102CB1', '15 A', 'hs-dj') + `<g class="hs-piece hs-vt"><rect class="hs-barre" x="330" y="52" width="10" height="190" rx="3"/><text class="hs-rep" x="335" y="268">668VT31</text></g>`
     + bloc(560, 52, 110, 50, '381RL1', 'relais') + bloc(560, 132, 110, 50, '382RL2', 'relais')
@@ -628,11 +633,11 @@ function tuileExempleHtml(i) { const p = plansDeInstall(i.id)[0], f = p && p.fol
    modifiée sur place ; la confirmation d'une suppression s'écrit dedans. L'Exemple : au trait, la vignette de son plan. */
 function carteInstallHtml(i) { const P = plansDeInstall(i.id), vu = vueLe(i), pile = P.length >= 3 ? 3 : P.length, t = cleTexte(BIB.q);
   const edite = BIB.edition && BIB.edition.quoi === 'install' && BIB.edition.id === i.id, confirme = BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id;
-  const meta = i.demo ? lies(['démonstration', nPlans(P.length)]) : lies([nPlans(P.length), vu ? 'ouverte ' + quand(vu) : 'créée ' + leJour(i.cree)]);
+  const meta = i.demo ? lies(['démonstration', nPlans(P.length)]) : lies([P.length ? nPlans(P.length) : '', vu ? 'ouverte ' + quand(vu) : 'créée ' + leJour(i.cree)]);
   const montres = (t ? P.filter(p => planCorrespond(p, t)) : P).slice(0, 3), reste = P.length - montres.length;
   const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn"><i aria-hidden="true"></i><span>${esc(nomAffiche(p.nom))}</span></span>`).join('')}${reste > 0 ? `<span class="bi-pn-plus">+${INSECABLE}${esc(plurielLie(reste, 'autre'))}</span>` : ''}</span>`
-    : `<span class="bi-carte-plans bi-carte-plans-vide">Aucun plan : un clic, puis déposez vos installations.</span>`;
-  const haut = i.demo ? folioMini() : aUnEcp(i) ? ecpHtml(i, 'bi-carte-ecp') : `<span class="bi-carte-ico">${icoBi('install')}</span>`;
+    : `<span class="bi-carte-plans bi-carte-plans-vide">Déposez-y un retest Excel, ou un clic pour l’ouvrir.</span>`;
+  const haut = i.demo ? folioMini() : aUnEcp(i) && i.ecp ? ecpHtml(i, 'bi-carte-ecp') : `<span class="bi-carte-ico">${icoBi('install')}</span>`;
   // l'Exemple : sa carte OUVRE son plan, d'un clic (audit v72, parcours P2-2 : une page pour une ligne, c'était un clic de trop)
   const geste = i.demo ? 'data-bi="exemple"' : `data-bi="install" data-id="${escA(i.id)}"`;
   // ce qu'il reste à faire dans ses plans (le compte gardé de chacun) : on voit d'un coup d'œil où il y a du travail

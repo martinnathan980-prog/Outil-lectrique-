@@ -58,8 +58,10 @@ const legendeChargeVue = () => `<p class="vu-legende"><span><i class="carre perm
 /* ---- UNE JAUGE EN ANNEAU (le lecteur : « la barre de progression, pas top — quelque chose de circulaire ») : la part de
    l'admis, de la couleur de son état ; au centre, le pourcentage ---- */
 function anneauVue(r, o) { o = o || {}; const R = o.r || 11, e = o.ep || 3.5, C = 2 * Math.PI * R, ok = r != null && isFinite(r), w = ok ? Math.max(0, Math.min(1, r)) : 0, S = 2 * R + e + 2, c = S / 2;
+  // (v79) sans mesure, pas d'anneau vide (il ressemblait à un chargement) ; plus de chiffre minuscule dedans (la valeur est à côté)
+  if (!ok) return `<span class="vu-anneau-vide" style="width:${S}px" aria-hidden="true"></span>`;
   return `<svg class="vu-anneau ${classeMesure(r)}" viewBox="0 0 ${S} ${S}" width="${S}" height="${S}" aria-hidden="true"><circle class="vu-an-f" cx="${c}" cy="${c}" r="${R}" style="stroke-width:${e}px"/>`
-    + `<circle class="vu-an-v" cx="${c}" cy="${c}" r="${R}" style="stroke-width:${e}px;stroke-dasharray:${(C * w).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>${o.texte !== false && ok ? `<text x="${c}" y="${(c + 2.8).toFixed(1)}">${Math.round(r * 100)}</text>` : ''}</svg>`; }
+    + `<circle class="vu-an-v" cx="${c}" cy="${c}" r="${R}" style="stroke-width:${e}px;stroke-dasharray:${(C * w).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>${o.texte === true && ok ? `<text x="${c}" y="${(c + 2.8).toFixed(1)}">${Math.round(r * 100)}</text>` : ''}</svg>`; }
 
 /* ---- L'ARBRE d'un disjoncteur : lui, puis chacun de ses câbles jusqu'à son bout, sa charge au bout ; une ligne
    s'ouvre d'un clic (data-i : la ligne du câble), son survol l'allume sur le plan. ---- */

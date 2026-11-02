@@ -469,7 +469,7 @@ function infoDisj(nom) { return memo('dj|' + nom, () => { const d = disjonctionD
    dossier (v73, l'ingénieur n° 8 : « tient », « touche la courbe » ici, « passe » là ; la table unique est celle du moteur,
    `VERDICTS_CALIBRE`, 09-disjoncteurs) ; « touche la courbe », « sans la marge » vont dans la bulle, avec le pourquoi
    chiffré du moteur (`pourquoiDuCalibre`) et chaque état du profil contre la courbe. */
-const MOTS_TROIS = { passe: { mot: 'passe', etat: 'ok', bulle: 'Il ne déclenche pas, avec la marge.' }, juste: { mot: 'touche la courbe', etat: 'ko', bulle: 'Il touche la courbe : il ne passe pas.' }, declenche: { mot: 'déclenche', etat: 'ko', bulle: 'Il déclenche.' } };
+const MOTS_TROIS = { passe: { mot: 'ne disjoncte pas', etat: 'ok', bulle: 'Il ne disjoncte pas, réserve de 10 % comprise.' }, juste: { mot: 'trop juste', etat: 'ko', bulle: 'Trop juste : sans réserve, il pourrait disjoncter.' }, declenche: { mot: 'disjoncte', etat: 'ko', bulle: 'Il disjoncte.' } };
 const verdictTrois = g => { if (typeof verdictDeCalibre === 'function') { try { return verdictDeCalibre(g); } catch (_) { return null; } }
   if (!g || g.valide == null) return null; return g.valide === false ? MOTS_TROIS.declenche : (g.marge != null ? g.marge : g.avecMarge) ? MOTS_TROIS.passe : MOTS_TROIS.juste; };
 function verdictDuCalibre(d) { if (!d.calibre) return { n: '', mot: '' };

@@ -346,10 +346,10 @@ function verdictDisjonction(norme, famille, calibre, profil, contexte) { context
    de la gamme ({ valide, marge }) ou le verdict d'ensemble (`verdictDisjonction`, `disjonctionDe` : celui du calibre
    retenu) ; null quand rien ne se juge (pas de profil, pas de courbe). */
 const VERDICTS_CALIBRE = Object.freeze({
-  passe: Object.freeze({ cle: 'passe', mot: 'passe', encre: '--ok', etat: 'ok', bulle: 'Il ne déclenche pas, avec la marge.' }),
+  passe: Object.freeze({ cle: 'passe', mot: 'ne disjoncte pas', encre: '--ok', etat: 'ok', bulle: 'Il ne disjoncte pas, réserve de 10 % comprise.' }),
   // (v77, le lecteur : « si ça touche, c'est rouge — il faut arrêter de mettre presque ; soit c'est rouge, soit c'est vert »)
-  juste: Object.freeze({ cle: 'juste', mot: 'touche la courbe', encre: '--ko', etat: 'ko', bulle: 'Il touche la courbe : il ne passe pas.' }),
-  declenche: Object.freeze({ cle: 'declenche', mot: 'déclenche', encre: '--ko', etat: 'ko', bulle: 'Il déclenche.' }) });
+  juste: Object.freeze({ cle: 'juste', mot: 'trop juste', encre: '--ko', etat: 'ko', bulle: 'Trop juste : sans réserve, il pourrait disjoncter.' }),
+  declenche: Object.freeze({ cle: 'declenche', mot: 'disjoncte', encre: '--ko', etat: 'ko', bulle: 'Il disjoncte.' }) });
 function verdictDeCalibre(g) { if (!g || g.sansProfil || g.sansCourbe) return null;
   // le verdict d'ensemble d'un disjoncteur : celui de la ligne de sa gamme qui porte le calibre retenu
   if (Array.isArray(g.gamme) && g.calibre > 0) { const x = g.gamme.find(y => Math.abs(y.calibre - g.calibre) < 1e-9); if (x) return verdictDeCalibre(x); }

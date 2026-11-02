@@ -199,9 +199,9 @@ const motMarge = m => (m >= 1 ? '+' : '−') + nombre(Math.round(Math.abs(m - 1)
    `verdictDeCalibre(case)` qui rend son entrée) ; tant qu'elle manque, la même, ici, et la fiche ne change pas d'un mot
    quand elle arrive. */
 const MOTS_VERDICT_FICHE = Object.freeze({
-  passe: Object.freeze({ mot: 'passe', etat: 'ok', bulle: 'Il ne déclenche pas, avec la marge.' }),
-  juste: Object.freeze({ mot: 'touche la courbe', etat: 'ko', bulle: 'Il touche la courbe : il ne passe pas.' }),
-  declenche: Object.freeze({ mot: 'déclenche', etat: 'ko', bulle: 'Il déclenche.' }) });
+  passe: Object.freeze({ mot: 'ne disjoncte pas', etat: 'ok', bulle: 'Il ne disjoncte pas, réserve de 10 % comprise.' }),
+  juste: Object.freeze({ mot: 'trop juste', etat: 'ko', bulle: 'Trop juste : sans réserve, il pourrait disjoncter.' }),
+  declenche: Object.freeze({ mot: 'disjoncte', etat: 'ko', bulle: 'Il disjoncte.' }) });
 const motsVerdict = () => typeof VERDICTS_CALIBRE === 'object' && VERDICTS_CALIBRE && VERDICTS_CALIBRE.passe && VERDICTS_CALIBRE.juste && VERDICTS_CALIBRE.declenche ? VERDICTS_CALIBRE : MOTS_VERDICT_FICHE;
 /* La clé du verdict d'un calibre jugé — une case de la gamme (`valide`, `marge`) ou le verdict d'ensemble (`valide`,
    `avecMarge`) — : 'passe', 'juste', 'declenche' ; '' quand rien ne se juge (pas de profil). */

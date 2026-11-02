@@ -54,7 +54,7 @@ function ongletsHtml(type, xs) { if (!xs.length) return '';
 const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === 'connecteur' ? 'essentiel' : s.cle, titre: s.cle === 'fils' || s.cle === 'connecteur' ? '' : s.titre, statut: s.resume ? { t: String(s.resume).replace(/<[^>]*>/g, '').slice(0, 40) } : null, contenu: s.contenu, vide: s.vide, action: s.action });
 
 // les onglets que toutes les fiches partagent : les câbles (la section d'hier, son statut en mots), la fabrication
-const ongletCables = sF => !sF ? null : { cle: 'cables', statut: { t: sF.vide ? 'aucun' : pluriel(sF.compte || 0, 'câble') + (sF.nko ? ', ' + sF.nko + ' en défaut' : sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' % max' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide };
+const ongletCables = sF => !sF ? null : { cle: 'cables', statut: { t: sF.vide ? 'aucun' : sF.nko ? sF.nko + (sF.nko > 1 ? ' câbles en défaut' : ' câble en défaut') : pluriel(sF.compte || 0, 'câble') + (false ? '' : sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' % max' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide };
 function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
   return { cle: 'fabrication', statut: { t: pluriel(n, 'pièce') }, contenu: `<section class="vu-bloc"><h4 class="vu-titre">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span></h4>${fabricationVue(gs)}</section>` }; }
@@ -76,7 +76,8 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   // (v79, le lecteur : « ce sigle en fond, ce micro-détail, cette interactivité, c'est vraiment la diff — on peut encore
   // faire mieux ») : au survol, un trait de cuivre parcourt le symbole, comme un courant qui passe
   const trace = (SYMBOLES[o.type] || SYMBOLES.equipement).replace(/<(path|circle|rect|line)\b/g, '<$1 pathLength="1"');
-  return `<span class="nc-filigrane" aria-hidden="true"><svg viewBox="0 0 30 30"><g class="nc-fil-base">${SYMBOLES[o.type] || SYMBOLES.equipement}</g><g class="nc-fil-trace">${trace}</g></svg></span><div class="nc-tete"><span class="nc-titre">${titre}</span></div>${meta}`; }
+  const long = ((GENRES_FICHE[o.type] || '') + ' — ' + ((o.tete || {}).nom || '')).length > 22;
+  return `<span class="nc-filigrane" aria-hidden="true"><svg viewBox="0 0 30 30"><g class="nc-fil-base">${SYMBOLES[o.type] || SYMBOLES.equipement}</g><g class="nc-fil-trace">${trace}</g></svg></span><div class="nc-tete"><span class="nc-titre${long ? ' long' : ''}">${titre}</span></div>${meta}`; }
 // la désignation (un texte libre, gardé avec le contrat) : dans l'onglet « Modifier » du grand
 /* (v78c, le lecteur : « Modifier, faut tout reprendre, c'est pas hyper compréhensible ») : l'onglet « Modifier » se lit en
    CARTES — chacune son titre, une phrase qui dit ce que ça change, puis le réglage. */
@@ -144,7 +145,7 @@ function listeDuGenre(c, etatIci) { const { genre, xs } = objetsDuGenre(c), q = 
 
 /* ---- LES CÂBLES EN TABLEAU TRIABLE (le grand) : une ligne par câble ; un clic sur un en-tête trie (un second clic
    renverse), un clic sur une ligne ouvre le câble, son survol l'allume sur le plan ; la longueur s'écrit sur place. ---- */
-const COLONNES_TABLE_CABLES = [['type', 'Câble'], ['vers', 'Vers'], ['i', 'Intensité'], ['u', 'Chute en ligne'], ['lg', 'Longueur'], ['ct', 'Contact à sertir']];
+const COLONNES_TABLE_CABLES = [['type', 'Câble'], ['vers', 'Vers'], ['i', 'Courant'], ['u', 'Chute en ligne'], ['lg', 'Longueur'], ['ct', 'Contact à sertir']];
 function contactDeLaLigne(r) { const c = app.cible, l = r.l; if (!l || !c || c.type !== 'bloc' || l.origine === null) return null;
   const nom = c.nom, borne = l.de === nom ? l.borneDe : l.vers === nom ? l.borneVers : null;
   try { return (borne != null ? contactAuBout(l, nom, borne) : null) || (r.bout && r.bout.rep ? contactAuBout(l, r.bout.rep, r.bout.borne) : null); } catch (_) { return null; } }
@@ -198,7 +199,7 @@ function composerFiche(o) { const probs = o.probs || []; NIVEAU.typeRendu = o.ty
   if (des) { if (mod) mod.contenu = des + (mod.contenu || ''); else if (ess) ess.contenu = (ess.contenu || '') + des; }
   // (l'historique : un onglet quand il y en a un ; sinon rien — un onglet « aucune » n'apprend rien)
   const onglets = base.concat(modifs ? [{ cle: 'modifs', statut: { t: modifs.n > 1 ? modifs.n + ' changements' : '1 changement' }, contenu: modifs.html }] : []).slice().sort((x, y) => rangOnglet(x) - rangOnglet(y));
-  const corps = `<div class="nv-tete nv-poignee">${barreNav({ milieu: enteteFiche(o, true), epure: true })}</div>${o.avant ? `<div class="nv-avant">${o.avant}</div>` : ''}`
+  const corps = `<div class="nv-tete nv-poignee">${barreNav({ milieu: enteteFiche(o, true), epure: true })}</div>${o.avant && o.type !== 'fil' ? `<div class="nv-avant">${o.avant}</div>` : ''}`
     + ongletsHtml(o.type, onglets) + (o.fin || '');
   return `<div class="nv-grand nv-seul" data-nv-type="${escA(o.type)}"><div class="nv-corps">${corps}</div></div>`; }
 
