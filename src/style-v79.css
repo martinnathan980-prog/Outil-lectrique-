@@ -216,3 +216,7 @@ body.biblio #table .ta-courant::after{background:#ffe2cc;box-shadow:0 0 8px 2px 
 @media (prefers-reduced-motion:reduce){ .bi-hero svg{transform:none} }
 .bi-marque-mini{font:700 var(--f-14)/1 var(--sans);letter-spacing:-.02em;color:#fff}
 .bi-marque-mini span{color:#a9adb6}
+.nc-vignette .vu-bro.petit{max-width:100%}
+.vu-bro.petit .bro-nom{font-size:13px}
+.vu-bro.petit .bro-type{font-size:10px}
+.vu-bro.petit .bro-zone{pointer-events:none}

@@ -112,8 +112,8 @@ function brochesVue(xs) { if (!xs.length) return '<p class="vu-note">Aucun câbl
    de chaque borne dedans), un câble par broche à la couleur de sa route, son type dessus, et au bout l'équipement et sa
    borne (une masse : son symbole). Survoler une ligne allume le câble sur le plan ; un clic ouvre sa fiche.
    cons : [{ nom, ref, lignes: [{ borne, type, couleur, vers, borneVers, masse, ko, k }] }] ---- */
-function brochageVue(nom, sous, cons) { const xs = (cons || []).filter(c => c.lignes && c.lignes.length); if (!xs.length) return '';
-  const PAS = 30, HAUT = 34, ECART = 18, W = 640, xC = 150, wC = 30, x0 = xC + wC, x1 = W - 214, xd = x1 + 16;
+function brochageVue(nom, sous, cons, o) { const xs = (cons || []).filter(c => c.lignes && c.lignes.length); if (!xs.length) return ''; const petit = !!(o && o.petit);
+  const PAS = petit ? 26 : 30, HAUT = 34, ECART = petit ? 22 : 26, W = petit ? 400 : 640, xC = petit ? 92 : 150, wC = petit ? 26 : 30, x0 = xC + wC, x1 = W - (petit ? 132 : 214), xd = x1 + (petit ? 12 : 16);
   let y = HAUT, out = '';
   const blocs = xs.map(c => { const y0 = y, h = c.lignes.length * PAS; y += h + ECART; return { c, y0, h }; });
   const H = y - ECART + 22, yB0 = HAUT - 10, yB1 = H - 12;
@@ -123,7 +123,7 @@ function brochageVue(nom, sous, cons) { const xs = (cons || []).filter(c => c.li
   blocs.forEach(({ c, y0, h }) => {
     out += `<path class="bro-piece" d="M${xC} ${y0 + .5}H${xC + wC - 7}a7 7 0 0 1 7 7V${y0 + h - 7.5}a7 7 0 0 1 -7 7H${xC}Z"/>`
       + `<text class="bro-lettre" x="${xC + wC / 2}" y="${y0 - 7}">${esc(c.nom)}</text>`
-      + (c.ref ? `<text class="bro-ref" x="${xC + wC + 8}" y="${y0 - 7}">${esc(c.ref)}</text>` : '');
+      + (c.ref && !petit ? `<text class="bro-ref" x="${xC + wC + 8}" y="${y0 - 7}">${esc(c.ref)}</text>` : '');
     c.lignes.forEach((l, i) => { const yy = y0 + i * PAS + PAS / 2, xm = (x0 + x1) / 2;
       out += `<g class="bro-l fi-ia${l.ko ? ' ko' : ''}"${l.k ? ` data-i="${escA(l.k)}"` : ''}><rect class="bro-zone" x="${xC}" y="${yy - PAS / 2}" width="${W - xC}" height="${PAS}" rx="6"/>`
         + `<text class="bro-borne" x="${xC + wC / 2 - 2}" y="${yy + 4}">${esc(l.borne)}</text>`
@@ -133,7 +133,7 @@ function brochageVue(nom, sous, cons) { const xs = (cons || []).filter(c => c.li
           : `<circle class="bro-bout" cx="${x1}" cy="${yy}" r="2.6"/><text class="bro-vers" x="${xd}" y="${yy + 4.5}">${esc(l.vers)}</text>`
             + (l.borneVers ? `<rect class="bro-pin-f" x="${xd + 6 + l.vers.length * 7.8}" y="${yy - 9}" width="${12 + String(l.borneVers).length * 6.6}" height="18" rx="5"/><text class="bro-pin" x="${xd + 12 + l.vers.length * 7.8 + String(l.borneVers).length * 3.3}" y="${yy + 4}">${esc(l.borneVers)}</text>` : ''))
         + (l.ko ? `<text class="bro-ko" x="${W - 6}" y="${yy + 4}">${esc(l.ko)}</text>` : '') + '</g>'; }); });
-  return `<svg class="vu-bro" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('Le brochage de ' + nom)}">${out}</svg>`; }
+  return `<svg class="vu-bro${petit ? ' petit' : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('Le brochage de ' + nom)}">${out}</svg>`; }
 
 /* ---- COMMENT VOLTA L'A DÉCIDÉ : des étapes numérotées, une phrase chacune et sa source ---- */
 // sources : fichier (votre fichier), norme, tables (les tables de VOLTA), calcul, hypothese, main (choisi ici), base (la base SEE)

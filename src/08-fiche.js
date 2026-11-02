@@ -954,7 +954,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const pris = cav.reduce((n, x) => n + (x.plan.utilises || 0), 0), places = cav.reduce((n, x) => n + (x.plan.modules[0] ? x.plan.modules[0].module.contacts.length : 0), 0);
   const al = fils.map(f => intensiteDuFil(f.l).al).find(Boolean);
   const chiffres = [quels.length > 1 ? { k: 'Connecteurs', v: `<span class="id">${quels.map(q => fautif(q) ? `<span class="fi-ko-t">${esc(q)}</span>` : esc(q)).join(' · ')}</span>`, etat: quels.some(fautif) ? 'ko-l' : '', sous: quels.some(fautif) ? esc(quels.filter(fautif).join(', ') + ' bloque') : 'tous logent leurs câbles', onglet: 'essentiel' }
-      : { k: 'Référence', v: pns.length ? ident(pns[0]) : '—', etat: quels.some(fautif) ? 'ko-l' : '', sous: quels.length ? 'connecteur ' + esc(quels[0]) : '', onglet: 'essentiel' },
+      : { k: 'Connecteur', v: `<span class="id">${esc(quels[0] || '—')}</span>`, etat: quels.some(fautif) ? 'ko-l' : '', onglet: 'essentiel' },
     places ? { k: 'Contacts', v: `${pris}<small>/ ${places}</small>`, sous: places - pris > 0 ? esc(plurielLie(places - pris, 'libre')) : 'tous pris', barre: pris / places, onglet: 'essentiel' } : null,
     chiffreCables(sFils)];
   // le geste qui répare : la gauge qui se loge, quand un arrangement refuse un câble
@@ -1002,8 +1002,8 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
         + (sConso ? regCarte('Ce qu’il consomme', 'Le courant qu’il tire, phase par phase : il donne le profil du disjoncteur qui l’alimente.', sConso.contenu) : '') },
     sDeja ? ongletDeLaSection(sDeja) : null];
   const sections = [{ cle: 'connecteur', titre: 'Connecteur', resume: resumeC, badge: badgeC, contenu: `${choix}<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>`, vide: ids.length ? '' : 'aucune borne' }, sFils, sConso, sDeja];
-  const vignette = C.length ? connecteursVue(C.map(x => { const kx = parNom.get(x.nom), Mx = kx && kx.plan.modules[0];
-      return { nom: x.nom, ref: x.pn || (Mx ? Mx.reference : ''), pris: kx ? kx.plan.utilises || 0 : 0, places: Mx ? Mx.module.contacts.length : 0, cables: x.bornes.reduce((n, bo) => n + (b.parBorne.get(bo) || []).length, 0), ko: fautif(x.nom) ? 'aucun arrangement ne loge ses câbles' : '' }; })) : '';
+  // (v79) la tuile montre ce qu'il relie — le brochage, en petit — plutôt que sa référence une troisième fois
+  const vignette = brochage ? brochageVue(nom, majuscule(natureDe(nom) || ''), consB, { petit: true }) : '';
   return composerFiche({ type: 'equipement', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pns.length === 1 ? ident(pns[0]) : pns.length ? esc(pluriel(pns.length, 'référence')) : ''],
     probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste, vignette, identite: id,
     ok: 'Ses connecteurs logent tous ses câbles, et chacun porte son courant.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }

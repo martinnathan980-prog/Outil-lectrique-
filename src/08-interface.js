@@ -1047,7 +1047,7 @@ const filsDeLaBorne = (c, y) => ((app.dessin && app.dessin.fils) || []).filter(w
 function objetDe(p) { if (!p) return null;
   if (p.genre === 'fil') return { genre: 'fil', li: p.f.i };
   if (p.genre === 'vt') return { genre: 'vt', cle: cleDeBarrette(p.b), nom: p.b.nomVT || 'la barrette' };
-  if (p.genre === 'borne') return { genre: 'borne', c: p.c, y: p.y };
+  if (p.genre === 'borne' || p.genre === 'connecteur') return { genre: 'borne', c: p.c, y: p.y };
   return { genre: 'bloc', c: p.c }; }
 function estRetouche(p) { const d = app.dessin; if (!p || !d) return false; const C = (d.geom && d.geom.consignes) || {};
   if (p.genre === 'fil') return (C.fils || []).some(k => k.li === p.f.i);
@@ -1159,6 +1159,30 @@ function lierPlanche() {
         const q = p.echange != null ? Object.values(c.rangs).flat().find(x => Math.abs(x.y - p.y) < 0.5) : null;
         return (q ? c.name + ' : les bornes ' + pr.etiq + ' et ' + q.etiq + ' échangent leurs places' : (nom.charAt(0).toUpperCase() + nom.slice(1)) + ' glisse' + (p.pourquoi === 'prise' ? ' au plus près : la place visée était prise' : ''))
           + ' · double-clic pour la rendre au moteur · Ctrl+Z pour défaire.'; } },
+    /* (v79) UN CONNECTEUR ENTIER : Maj + glisser une borne — toutes les bornes de son connecteur, sur ce flanc, glissent
+       ensemble (05-routage, `preparerConnecteur`) ; le retest ne change pas, seul le dessin bouge */
+    connecteur: {
+      preparer(pr, P) { const c = P.comps.find(k => k === pr.c); if (!c) return null; const pb = preparerConnecteur(P, c, pr.y); if (!pb) return null;
+        const bb = app.dessin && app.dessin.bbox, k = (bb && bb.k) || 1, m = (PAGE_CADRE + PAGE_MARGE) * k;
+        Object.assign(pr, { c, pb, y0: pr.y, lim: bb ? [bb.y + m + MARGE_BORNE, bb.y + bb.h - m - PAGE_CARTOUCHE * k - MARGE_BORNE] : [-Infinity, Infinity] });
+        return 'déplacer le connecteur ' + pb.cn + ' de ' + c.name; },
+      viser(pr, rx, ry, libre) { const y = pr.y0 + ry; return { y: libre ? Math.round(y * 2) / 2 : pr.y0 + Math.round(ry / PAS_BORNE) * PAS_BORNE }; },
+      placer(pr, v) { const [a, b] = pr.lim, d0 = Math.min(...pr.pb.ys) - pr.y0, d1 = Math.max(...pr.pb.ys) - pr.y0, y = Math.max(a - d0, Math.min(b - d1, v.y)), r = pr.pb.examiner(y);
+        if (!r.refus) return { y: r.y, pourquoi: Math.abs(y - v.y) > 0.01 ? 'feuille' : null };
+        for (let n = 1; n <= 80; n++) for (const s of [1, -1]) { const yy = y + s * n * PAS_BORNE; if (yy - d0 < a || yy + d1 > b) continue; const q = pr.pb.examiner(yy); if (!q.refus) return { y: q.y, pourquoi: 'prise', refus: r }; }
+        return { y: pr.y0, pourquoi: 'prise', refus: r }; },
+      meme: (a, b) => Math.abs(a.y - b.y) < 0.01,
+      immobile: (p, pr) => Math.abs(p.y - pr.y0) < 0.5,
+      poser: (pr, p) => deplacerBorne(pr.P, pr.pb, p.y),
+      pris: pr => Math.abs(pr.vise.y - (ici(pr) || { y: pr.y0 }).y) > 0.01,
+      voisines(pr, p) { const out = []; for (let n = 1; n <= 12; n++) for (const s of [1, -1]) { const y = p.y + s * n * PAS_BORNE, q = pr.pb.examiner(y); if (!q.refus) out.push({ y: q.rien ? pr.y0 : q.y }); } return out; },
+      calque(pr, u) { const z = pr.zone, h = z.y1 - z.y0, y0 = Math.min(...pr.pb.ys), y1 = Math.max(...pr.pb.ys), pris = GESTES.connecteur.pris(pr), d = (ici(pr) || { y: pr.y0 }).y - pr.y0;
+        const cadre = (cls, dy, tirets) => `<rect class="${cls}" x="${f1(z.x0 - 2)}" y="${f1(y0 + dy - h / 2 - 1)}" width="${f1(z.x1 - z.x0 + 4)}" height="${f1(y1 - y0 + h + 2)}" rx="${n3(3 * u)}" stroke-width="${n3(1.5 * u)}"${tirets ? ` stroke-dasharray="${n3(4 * u)} ${n3(2.5 * u)}"` : ''}/>`;
+        return (pris ? cadre('rt-pose', d, false) : '') + cadre('rt-fantome' + (pris ? ' pris' : ''), pr.vise.y - pr.y0, true); },
+      mot(pr) { const { c, place: p } = pr, nom = 'le connecteur ' + pr.pb.cn + ' de ' + c.name;
+        if (!pr.posee) { if (!pr.vise || Math.abs(pr.vise.y - pr.y0) < 0.5) return '';
+          const r = p.refus || {}; return 'Pas de place ici pour ' + nom + (r.refus === 'serre' && r.avec ? ' : la borne ' + r.avec.etiq + (r.deux ? ', d’un autre connecteur, serait à moins de deux pas' : ' serait à moins d’un pas') : r.refus === 'bloc' && r.avec ? ' : ' + c.name + ' grandirait sur ' + r.avec.name : pr.refuse ? ' : un câble y romprait une règle' : '') + ' — il reste où il était.'; }
+        return majuscule(nom) + ' glisse avec ses ' + pr.pb.ys.length + ' bornes' + (p.pourquoi === 'prise' ? ' au plus près : la place visée était prise' : '') + ' · Ctrl+Z pour défaire.'; } },
     vt: {
       preparer(pr, P) { const b = pr.b, G = goulottesDe(P), ch = G.chDe(b.x); if (ch < 0 || !(P.routage.barrettes || []).includes(b)) return null;
         const a = G.x0(ch) + RETRAIT, z = G.x1(ch) - RETRAIT, grille = [];
@@ -1366,7 +1390,7 @@ function lierPlanche() {
     if (pointeurs.size >= 2) { annulerPrise(); prise = null; debutPinch(); return; }
     bouge = false; origine = [e.clientX, e.clientY]; mode = 'pan'; pan = { tx: app.vue.tx, ty: app.vue.ty, x: e.clientX, y: e.clientY };
     if (milieu || espace) { pan.vue = true; prise = null; stage.classList.add('tient'); return; }   // la vue, et rien d'autre
-    const w = versMonde(e.clientX, e.clientY), p = app.dessin ? priseSous(w) : null, c = p && p.c, vt = p && p.genre === 'vt' ? p.b : null;
+    const w = versMonde(e.clientX, e.clientY), p0 = app.dessin ? priseSous(w) : null, p = p0 && p0.genre === 'borne' && e.shiftKey ? { ...p0, genre: 'connecteur' } : p0, c = p && p.c, vt = p && p.genre === 'vt' ? p.b : null;
     prise = prenable(p) ? { ...p, wx: w.x, wy: w.y } : null;
     if (!dernierBloc || Date.now() - dernierBloc.t > 800) dernierBloc = c ? { nom: c.name, t: Date.now() } : vt ? { nom: vt.nomVT, t: Date.now() } : null;   // le premier appui d'un double-clic fait foi
     if (prise && e.pointerType !== 'touch') mode = 'prise';
@@ -1443,7 +1467,7 @@ function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => 
     return T(q.b.nomVT) + l_('barrette ajoutée par VOLTA' + (r ? ' sur ' + id(bornePlusRepere(r.de, r.borneDe)) : '')) + l_(pluriel(ws.length, 'câble')); }
   const c = q.c, nom = c.name;
   if (q.genre === 'borne') { const ws = filsDeLaBorne(c, q.y);
-    return T(bornePlusRepere(nom, q.etiq)) + ws.slice(0, 3).map(f => l_(lignesDeFil(f))).join('') + (ws.length > 3 ? l_('et ' + (ws.length - 3) + (ws.length > 4 ? ' autres câbles' : ' autre câble')) : '') + l_('Glisser : la déplacer le long du bloc'); }
+    return T(bornePlusRepere(nom, q.etiq)) + ws.slice(0, 3).map(f => l_(lignesDeFil(f))).join('') + (ws.length > 3 ? l_('et ' + (ws.length - 3) + (ws.length > 4 ? ' autres câbles' : ' autre câble')) : '') + l_('Glisser : la déplacer le long du bloc · Maj + glisser : tout son connecteur'); }
   const n = D.fils.filter(w => !w.shunt && (w.de === nom || w.vers === nom)).length, ail = rangsDesFolios(plansDuRepere(nom).filter(p => p !== app.plan));
   const genre = estMasse(nom) ? 'masse' : c.kind === 'tag' && estBarrette(nom) ? 'morceau de barrette' : estCoupure(nom) ? 'prise de coupure' : estBarrette(nom) ? 'barrette' : estDisjoncteur(nom) ? 'disjoncteur' : '';
   const d = c.kind === 'tag' ? '' : designationDe(nom), cc = estDisjoncteur(nom) && c.kind === 'equip' ? calibresDuFolio(nom) : null, cal = cc && cc.calibre;

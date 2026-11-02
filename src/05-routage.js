@@ -1009,6 +1009,49 @@ function preparerBorne(layout, bloc, y0) {
   return { examiner, poser, bloc, y0, lids };
 }
 
+/* ---- UN CONNECTEUR ENTIER glisse le long de son bloc (v79, le lecteur : « est-ce que je peux modifier le connecteur en
+   entier ? non, que la borne ») — Maj + glisser une borne : toutes les bornes de son connecteur, sur ce flanc, glissent
+   ensemble d'autant ; leur ordre et leurs pas ne changent pas. Mêmes règles que pour une borne : deux pas entre deux
+   connecteurs, un entre deux bornes, le corps grandit au besoin s'il ne touche pas un voisin. Le retest n'est pas touché :
+   seul le dessin bouge. Rend { examiner, poser, bloc, y0, cn } comme `preparerBorne`, ou null (borne sans connecteur). */
+function preparerConnecteur(layout, bloc, y0) {
+  const g = layout.geom, comps = layout.comps; if (!bloc || bloc.kind === 'tag') return null;
+  const lid = Object.keys(bloc.rangs || {}).find(l => bloc.rangs[l].some(p => Math.abs(p.y - y0) < 0.5 && p.cn)); if (!lid) return null;
+  const cn = bloc.rangs[lid].find(p => Math.abs(p.y - y0) < 0.5 && p.cn).cn;
+  const ys = bloc.rangs[lid].filter(p => p.cn === cn).map(p => p.y), dans = v => ys.some(y => Math.abs(y - v) < 0.5);
+  const serre = bloc.kind === 'strip' && estBarrette(bloc.name);
+  const voisins = comps.filter(o => o !== bloc && o.kind !== 'tag' && o.x < bloc.x + bloc.w && bloc.x < o.x + o.w);
+  const examiner = y => { const dy = Math.round((y - y0) * 2) / 2; if (Math.abs(dy) < 0.5) return { y: y0, rien: true };
+    const vers = v => dans(v) ? v + dy : v;
+    for (const l of Object.keys(bloc.rangs)) { const ps = bloc.rangs[l].map(p => ({ p, y: vers(p.y) })).sort((u, v) => u.y - v.y);
+      for (let i = 1; i < ps.length; i++) { const u = ps[i - 1], v = ps[i], deux = u.p.cn && v.p.cn && u.p.cn !== v.p.cn;
+        if (v.y - u.y < (deux ? 2 : 1) * PRH - 0.5) return { refus: 'serre', deux, avec: (dans(u.p.y) ? v : u).p }; } }
+    const toutes = Object.values(bloc.rangs).flat().map(p => vers(p.y)), lo = Math.min(...toutes) - MARGE_BORNE, hi = Math.max(...toutes) + MARGE_BORNE;
+    const haut = serre ? lo : Math.min(bloc.y, lo), bas = serre ? hi : Math.max(bloc.y + bloc.h, hi);
+    if (haut < bloc.y - 0.5 || bas > bloc.y + bloc.h + 0.5) for (const o of voisins)
+      if (haut < o.y + o.h + ECART_RETOUCHE && o.y < bas + ECART_RETOUCHE && !(bloc.y < o.y + o.h + ECART_RETOUCHE && o.y < bloc.y + bloc.h + ECART_RETOUCHE)) return { refus: 'bloc', avec: o };
+    return { y: y0 + dy, dy, echange: null, haut, bas, vers }; };
+  let muetsAvant = null;
+  const poser = y => { const r = examiner(y); if (r.refus || r.rien) return r;
+    const bouge = p => { const v = r.vers(p.y); if (Math.abs(v - p.y) < 0.01) return p; const ya = p.ya != null ? p.ya : p.y, q = { ...p, y: v };
+      if (Math.abs(v - ya) < 0.5) delete q.ya; else q.ya = ya; return q; };
+    const rangs = {}; Object.keys(bloc.rangs).forEach(l => { rangs[l] = bloc.rangs[l].map(bouge).sort((u, v) => u.y - v.y); });
+    const parCle = new Map(); (bloc.parCle || new Map()).forEach((v, k) => parCle.set(k, { ...v, y: r.vers(v.y) }));
+    const c2 = { ...bloc, rangs, parCle, y: r.haut, h: r.bas - r.haut };
+    const tags = new Map(pastillesDuBloc(comps, bloc, layout.links).map(t => { const S = (t.rangs.S || [])[0], dy = S ? r.vers(S.y) - S.y : 0; return [t, dy]; }).filter(([, dy]) => Math.abs(dy) > 0.01));
+    const nouveaux = comps.map(c => c === bloc ? c2 : tags.has(c) ? decalerBloc(c, 0, tags.get(c), c.col) : c);
+    const parNom = parNomDe(comps);
+    const bout = (nom, e) => { if (!e) return e; const c = blocDuBout(parNom, nom, e);
+      if (c === bloc) { const v = r.vers(e.y); return Math.abs(v - e.y) < 0.01 ? e : { ...e, y: v }; }
+      return tags.has(c) ? { ...e, y: e.y + tags.get(c) } : e; };
+    const links = layout.links.map(l => { const A = bout(l.de, l.epA), B = bout(l.vers, l.epB); return A === l.epA && B === l.epB ? l : { ...l, epA: A, epB: B }; });
+    let yMin = Infinity, yMax = -Infinity; nouveaux.forEach(c => { if (c.kind === 'tag') return; yMin = Math.min(yMin, c.y); yMax = Math.max(yMax, c.y + c.h); });
+    if (muetsAvant == null) muetsAvant = layout.routage ? filsMuets(layout.routage, comps).length : 0;
+    const R = routerEtElargir({ comps: nouveaux, links, geom: { ...g, yMin, yMax, libre: true } }, bloc.col, muetsAvant, layout.routage && layout.routage.besoins);
+    return { ...R.D, routage: R.routage, bloc: R.D.comps[comps.indexOf(bloc)], echange: null, poussee: Math.max(0, ...R.sx.map(Math.abs)), muets: R.muets, muetsAvant }; };
+  return { examiner, poser, bloc, y0, cn, lid, ys };
+}
+
 /* ---- LES FILS : un tronçon pris à la main ------------------------------------------------------------
    `poserConsignes(layout, consignes)` : le dessin routé avec ces consignes (plus haut, `lireConsignes`), ses goulottes
    élargies au besoin (vers la droite) ; `muets` et `muetsAvant` disent si un numéro ne s'écrit plus. Sans aucune
