@@ -300,3 +300,5 @@ body.biblio-accueil .en-nom{display:none}
 /* un onglet étroit : sa précision passe sur deux lignes plutôt que d'être coupée */
 .nv-grand .nv-onglet{height:auto;min-height:60px;padding-top:10px;padding-bottom:10px}
 .nv-grand .nv-onglet .nv-o-s{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25}
+/* une tuile rangée à droite (le récapitulatif ouvert) : sa hauteur, celle de ce qu'elle dit — plus de grand vide dessous */
+body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-height:calc(100% - var(--entete) - var(--pied, 0px) - 3 * var(--jeu))}

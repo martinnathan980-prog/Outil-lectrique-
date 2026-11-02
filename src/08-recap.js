@@ -828,7 +828,8 @@ const pucesDe = O => (O.puces ? O.puces() : []).map(([k, t, test, avant, groupe,
 function pucesActives(O) { const P = pucesDe(O), on = new Set(app.base.puces[app.base.onglet] || []); return P.filter(p => on.has(p.k)); }
 function lignesDe(O, sansPuces, sansPortee) { const b = app.base, f = b.filtre.trim().toLowerCase();
   let L = O.lignes();
-  if (!sansPortee && portee(O) && b.portee === 'folio' && O.surFolio) L = L.filter(O.surFolio);
+  // (v79, un relecteur : « Ce folio : rien — alors que le plan en compte 5 ») : un folio qui n'a rien de cet onglet montre tout le plan
+  if (!sansPortee && portee(O) && b.portee === 'folio' && O.surFolio) { const F = L.filter(O.surFolio); b.toutFaute = !F.length && L.length > 0 && !f; if (!b.toutFaute) L = F; }
   // un bloc choisi sur le plan filtre sur lui-même, là où il veut dire quelque chose (pas les câbles, ni les normes)
   if (f && b.filtreAuto) { if (O.exact) L = L.filter(r => O.exact(r, b.filtre.trim())); }
   else if (f) L = L.filter(r => O.colonnes.some(c => c.texte && String(c.texte(r)).toLowerCase().includes(f)));
@@ -905,7 +906,9 @@ function rendreOutils(O) { const b = app.base, pt = portee(O);
   // folio se lit dans la bulle et dans la barre des folios
   if (pt) { const tous = O.lignes(); $('ba-n-folio').textContent = tous.filter(O.surFolio).length; $('ba-n-tout').textContent = tous.length; $('ba-lib-folio').textContent = 'Ce folio';
     $('ba-lib-folio').parentElement.dataset.bulle = 'Les lignes du folio ' + app.plan + ', celui qu’on regarde';
-    $('ba-portee').querySelectorAll('[data-portee]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.portee === b.portee))); }
+    const vide = b.portee === 'folio' && !tous.some(O.surFolio) && tous.length > 0;
+    $('ba-portee').querySelectorAll('[data-portee]').forEach(x => x.setAttribute('aria-pressed', String(vide ? x.dataset.portee === 'tout' : x.dataset.portee === b.portee)));
+    if (vide) $('ba-lib-folio').parentElement.dataset.bulle = 'Rien sur le folio ' + app.plan + ' : voici tout le plan'; }
   const fi = $('ba-filtre'); if (fi.value !== b.filtre && document.activeElement !== fi) fi.value = b.filtre; $('ba-vider').hidden = !b.filtre; fi.placeholder = O.cherche || 'Chercher dans l’onglet';
   const on = new Set(b.puces[b.onglet] || []), P = pucesDe(O), base = P.length ? lignesDe(O, true) : [], petit = base.length <= PAQUET * 2;
   /* « À REPRENDRE » COMPTE TOUT LE PLAN, le folio en second (le technicien v73 : « À reprendre 3 » sur le folio 1, 4 sur le

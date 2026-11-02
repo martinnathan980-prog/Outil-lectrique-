@@ -64,6 +64,12 @@ s'écrit ici, le jour même.
 - **Jamais de bloc vide ou sans sens** : pas de dessin quand il n'y a rien à dessiner, pas de « aucun … » — rien, ou une
   information pertinente.
 - **Moderne, pas statique** : l'accueil et les écrans doivent vivre, sans clignoter.
+- **Les choix déjà tranchés** (v79) : le profil de charge d'un disjoncteur se lit en **tableau** (état, courant, durée sur une
+  ligne), pas en cartes ; la courbe de déclenchement est « parfaite » — on n'y touche pas ; l'essentiel d'un équipement
+  montre son **brochage dessiné** (ce qu'il relie), jamais un tableau de tirets ; un calibre s'explique en **ampères** (ce
+  qu'il tire, le seuil où il disjoncte sur cette durée, la réserve, les 10 % exigés).
+- **L'accueil et la bibliothèque** sont sur le **graphite** (noir chaud, cuivre) ; le plan garde sa table bleu nuit tant que
+  le lecteur ne dit pas le contraire.
 
 ## La méthode
 

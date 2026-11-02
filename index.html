@@ -7110,6 +7110,8 @@ body.biblio-accueil .en-nom{display:none}
 /* un onglet étroit : sa précision passe sur deux lignes plutôt que d'être coupée */
 .nv-grand .nv-onglet{height:auto;min-height:60px;padding-top:10px;padding-bottom:10px}
 .nv-grand .nv-onglet .nv-o-s{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25}
+/* une tuile rangée à droite (le récapitulatif ouvert) : sa hauteur, celle de ce qu'elle dit — plus de grand vide dessous */
+body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-height:calc(100% - var(--entete) - var(--pied, 0px) - 3 * var(--jeu))}
 
 /* ───────── style-visio.css ───────── */
 /* ─── LIRE UN SCHÉMA VISIO (08-visio) ───────────────────────────────────────────────────────────────────────────────
@@ -22466,7 +22468,7 @@ function bandeDesCables(rows) {
     return `<div class="cb-bande-l" data-bulle="${escA(k + ', les plus chargés : ' + tri.slice(0, 5).map(x => nomCourtDuCable(x.r) + ' ' + pc(x.v)).join(' · '))}"><span class="cb-bande-k">${esc(k)}</span>`
       + `<span class="cb-piste" aria-hidden="true">${xs.map(x => `<i class="${classeMesure(x.v)}" style="left:${(Math.min(1.2, x.v) / 1.2 * 100).toFixed(1)}%"></i>`).join('')}</span>`
       + `<span class="cb-bande-max ${classeMesure(max.v)}"><b>${esc(pc(max.v))}</b><small class="id">${esc(nomCourtDuCable(max.r))}</small></span></div>`; };
-  const h = piste('Intensité', r => r.charge.r) + piste('Chute', r => r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null);
+  const h = piste('Courant', r => r.charge.r) + piste('Chute', r => r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null);
   return h ? `<div class="cb-bande">${h}</div>` : ''; }
 function listeCables(rows, o) { o = o || {}; if (ficheEnGrand()) return tableCables(rows, o); const rang = r => r.etat === 'ko' ? 0 : r.etat === 'att' ? 1 : 2;
   const maxs = [...new Set(rows.map(r => r.chute.max).filter(m => m != null))], seuil = maxs.length === 1 ? maxs[0] : null, regles = [...new Set(rows.map(r => r.chute.regle).filter(Boolean))];
@@ -23407,7 +23409,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       : x.pointe && x.pointe.admis ? esc(`En continu, au pire. ${majuscule(x.pointe.nom || 'la pointe')} : ${amperes(x.pointe.i)}${dT}, sur ${amperes(x.pointe.admis)} admis.`) : esc('En continu.'))
     + (x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
   const intens = !x.fn ? `<p class="fi-note">${l.type ? 'Hors de l’EN 2853 : ce qu’il admet ne se lit pas.' : 'Sans type, ce qu’il admet ne se lit pas.'}</p>`
-    : mesure('Intensité', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
+    : mesure('Courant', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
   // la chute : en ligne depuis le disjoncteur jusqu'au bout du chemin, sur ce qui est admis ; dessous, le chemin, la part de
   // ce câble, la pointe qui dépasse (de la couleur de sa mesure) — les longueurs supposées sont dites une fois, sous les tuiles
   const rU = ch.total && ch.max ? ch.total.dU / ch.max : null, etatU = classeMesure(rU), boutU = ch.total ? ch.total.bout[0] + (ch.total.bout[1] ? ':' + ch.total.bout[1] : '') : '';
@@ -30604,7 +30606,8 @@ const pucesDe = O => (O.puces ? O.puces() : []).map(([k, t, test, avant, groupe,
 function pucesActives(O) { const P = pucesDe(O), on = new Set(app.base.puces[app.base.onglet] || []); return P.filter(p => on.has(p.k)); }
 function lignesDe(O, sansPuces, sansPortee) { const b = app.base, f = b.filtre.trim().toLowerCase();
   let L = O.lignes();
-  if (!sansPortee && portee(O) && b.portee === 'folio' && O.surFolio) L = L.filter(O.surFolio);
+  // (v79, un relecteur : « Ce folio : rien — alors que le plan en compte 5 ») : un folio qui n'a rien de cet onglet montre tout le plan
+  if (!sansPortee && portee(O) && b.portee === 'folio' && O.surFolio) { const F = L.filter(O.surFolio); b.toutFaute = !F.length && L.length > 0 && !f; if (!b.toutFaute) L = F; }
   // un bloc choisi sur le plan filtre sur lui-même, là où il veut dire quelque chose (pas les câbles, ni les normes)
   if (f && b.filtreAuto) { if (O.exact) L = L.filter(r => O.exact(r, b.filtre.trim())); }
   else if (f) L = L.filter(r => O.colonnes.some(c => c.texte && String(c.texte(r)).toLowerCase().includes(f)));
@@ -30681,7 +30684,9 @@ function rendreOutils(O) { const b = app.base, pt = portee(O);
   // folio se lit dans la bulle et dans la barre des folios
   if (pt) { const tous = O.lignes(); $('ba-n-folio').textContent = tous.filter(O.surFolio).length; $('ba-n-tout').textContent = tous.length; $('ba-lib-folio').textContent = 'Ce folio';
     $('ba-lib-folio').parentElement.dataset.bulle = 'Les lignes du folio ' + app.plan + ', celui qu’on regarde';
-    $('ba-portee').querySelectorAll('[data-portee]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.portee === b.portee))); }
+    const vide = b.portee === 'folio' && !tous.some(O.surFolio) && tous.length > 0;
+    $('ba-portee').querySelectorAll('[data-portee]').forEach(x => x.setAttribute('aria-pressed', String(vide ? x.dataset.portee === 'tout' : x.dataset.portee === b.portee)));
+    if (vide) $('ba-lib-folio').parentElement.dataset.bulle = 'Rien sur le folio ' + app.plan + ' : voici tout le plan'; }
   const fi = $('ba-filtre'); if (fi.value !== b.filtre && document.activeElement !== fi) fi.value = b.filtre; $('ba-vider').hidden = !b.filtre; fi.placeholder = O.cherche || 'Chercher dans l’onglet';
   const on = new Set(b.puces[b.onglet] || []), P = pucesDe(O), base = P.length ? lignesDe(O, true) : [], petit = base.length <= PAQUET * 2;
   /* « À REPRENDRE » COMPTE TOUT LE PLAN, le folio en second (le technicien v73 : « À reprendre 3 » sur le folio 1, 4 sur le

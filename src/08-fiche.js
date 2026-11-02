@@ -721,7 +721,7 @@ function bandeDesCables(rows) {
     return `<div class="cb-bande-l" data-bulle="${escA(k + ', les plus chargés : ' + tri.slice(0, 5).map(x => nomCourtDuCable(x.r) + ' ' + pc(x.v)).join(' · '))}"><span class="cb-bande-k">${esc(k)}</span>`
       + `<span class="cb-piste" aria-hidden="true">${xs.map(x => `<i class="${classeMesure(x.v)}" style="left:${(Math.min(1.2, x.v) / 1.2 * 100).toFixed(1)}%"></i>`).join('')}</span>`
       + `<span class="cb-bande-max ${classeMesure(max.v)}"><b>${esc(pc(max.v))}</b><small class="id">${esc(nomCourtDuCable(max.r))}</small></span></div>`; };
-  const h = piste('Intensité', r => r.charge.r) + piste('Chute', r => r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null);
+  const h = piste('Courant', r => r.charge.r) + piste('Chute', r => r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null);
   return h ? `<div class="cb-bande">${h}</div>` : ''; }
 function listeCables(rows, o) { o = o || {}; if (ficheEnGrand()) return tableCables(rows, o); const rang = r => r.etat === 'ko' ? 0 : r.etat === 'att' ? 1 : 2;
   const maxs = [...new Set(rows.map(r => r.chute.max).filter(m => m != null))], seuil = maxs.length === 1 ? maxs[0] : null, regles = [...new Set(rows.map(r => r.chute.regle).filter(Boolean))];
@@ -1662,7 +1662,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       : x.pointe && x.pointe.admis ? esc(`En continu, au pire. ${majuscule(x.pointe.nom || 'la pointe')} : ${amperes(x.pointe.i)}${dT}, sur ${amperes(x.pointe.admis)} admis.`) : esc('En continu.'))
     + (x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
   const intens = !x.fn ? `<p class="fi-note">${l.type ? 'Hors de l’EN 2853 : ce qu’il admet ne se lit pas.' : 'Sans type, ce qu’il admet ne se lit pas.'}</p>`
-    : mesure('Intensité', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
+    : mesure('Courant', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
   // la chute : en ligne depuis le disjoncteur jusqu'au bout du chemin, sur ce qui est admis ; dessous, le chemin, la part de
   // ce câble, la pointe qui dépasse (de la couleur de sa mesure) — les longueurs supposées sont dites une fois, sous les tuiles
   const rU = ch.total && ch.max ? ch.total.dU / ch.max : null, etatU = classeMesure(rU), boutU = ch.total ? ch.total.bout[0] + (ch.total.bout[1] ? ':' + ch.total.bout[1] : '') : '';
