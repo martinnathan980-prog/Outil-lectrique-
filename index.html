@@ -7266,9 +7266,10 @@ body:is(.insp-flotte,.insp-epingle) #inspecteur .ix-tete::before{display:none}
   .rc-tab td.rc-c-bout{min-width:96px}
   .rc-tab td.rc-c-etat{min-width:96px}
   .rc-fleche{max-width:64px;min-width:28px}
-  .rc-tab td:is(.rc-c-id,.rc-c-norme) .rc-norme,.rc-tab td .rc-choix{white-space:normal}
-  .rc-tab td .rc-choix{display:inline}
-  .rc-tab td:has(.rc-choix),.rc-tab td:has(.rc-norme){white-space:normal;min-width:120px}
+  .rc-tab td:is(.rc-c-id,.rc-c-norme) .rc-norme{white-space:normal}
+  .rc-tab td .rc-choix{display:inline-flex;flex-wrap:wrap;align-items:baseline;min-width:200px;max-width:220px;row-gap:2px}
+  .rc-tab td .rc-choix>*{white-space:nowrap}
+  .rc-tab td:has(.rc-norme){white-space:normal;min-width:120px}
   .rc-tab th.rc-c-mesure .rc-th-l{flex-wrap:wrap}
 }
 /* la fiche étroite (rangée à côté du récapitulatif) : tous ses onglets tiennent — de même largeur, resserrés */
@@ -7317,6 +7318,12 @@ body:is(.insp-flotte,.insp-epingle) #inspecteur .ix-tete::before{display:none}
 /* la bible : les références s'alignent à gauche (on les lit comme une liste), leur en-tête aussi */
 #fiche .bible th.c-ref{text-align:left}
 #fiche .bible td.ref .ref-btn{margin:0;justify-content:flex-start;text-align:left}
+
+/* ═══ VARIANTE À MONTRER (pas encore choisie par le lecteur) : la table du plan en graphite — un cran plus claire que
+   l'accueil, les îlots un cran au-dessus avec leur filet, un halo très doux sous la feuille. Inerte tant que
+   `body.table-graphite` n'est pas posé sur le plan. ═══ */
+body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at 52% 48%,#27282c 0%,#1e1f22 52%,#17181a 100%);--grille-repos:rgba(255,255,255,.06);
+  --palet:rgba(40,41,46,.96);--palet-2:rgba(50,51,57,.97);--sh-palet:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px rgba(255,255,255,.12),0 14px 30px -12px rgba(0,0,0,.6)}
 
 /* ───────── style-visio.css ───────── */
 /* ─── LIRE UN SCHÉMA VISIO (08-visio) ───────────────────────────────────────────────────────────────────────────────
@@ -19136,7 +19143,7 @@ function noterExportDuPlan(nom) { const p = BIB.plans.get(app.planId); if (!p ||
      dans les notes tapées à la main.
    =========================================================================== */
 
-const BILAN = { version: 'v77', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v80', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -19295,7 +19302,7 @@ function ficheBilan() { const texte = texteDuBilan(), notes = lireCarnet();
   const carnet = notes.length ? `<ol class="bl-notes">${notes.map((n, i) => `<li><div class="bl-n-tete"><span class="bl-n-quand">${esc(heureDe(n.t))}</span><span class="bl-n-ou">${esc(n.ou)}</span><button type="button" class="fi-x bl-n-x" data-note="${i}" aria-label="${escA('Effacer la note du ' + heureDe(n.t))}" data-bulle="Effacer cette note">${ico('poubelle')}</button></div><p>${esc(n.texte)}</p></li>`).join('')}</ol>`
     : `<p class="bl-vide">Le carnet est vide. Pendant le travail, appuyez sur <kbd>C</kbd> pour noter une hésitation : l’écran où vous êtes s’écrit avec elle.</p>`;
   const corps = tete('Aide', 'Bilan anonyme')
-    + `<p class="note bl-chapeau">Ce que VOLTA a lu et jugé de ce plan, en chiffres. <b>Aucun repère, part number, numéro de câble, nom de fichier, de harness ou de client</b> : les noms du plan sont masqués, une référence inconnue se dit par sa forme (lettres → A, chiffres → 9). Relisez-le, puis copiez-le dans la conversation.</p>`
+    + `<p class="note bl-chapeau">Ce que VOLTA a lu et jugé de ce plan, en chiffres. <b>Aucun repère, part number, numéro de câble, nom de fichier, de harness ou de client</b> : les noms du plan sont masqués, une référence inconnue se dit par sa forme (lettres → A, chiffres → 9). Relisez-le, puis copiez-le dans votre message : c’est vous qui l’envoyez.</p>`
     + `<section class="bl-auto" aria-labelledby="bl-auto-t"><div class="bl-carnet-tete"><h3 id="bl-auto-t">L’autotest du plan</h3><button type="button" class="btn papier dense" id="bl-autotest">${typeof AUTOTEST !== 'undefined' && AUTOTEST.resultat ? 'Le relancer' : 'Lancer l’autotest'}</button></div>`
     + `<p class="bl-masque">VOLTA ouvre tout seul chaque folio, chaque fiche et ses sections, chaque liste « Changer », chaque onglet du récapitulatif, chaque document et chaque export (fabriqué, jamais enregistré), chronomètre tout et note chaque erreur — l’écran où c’était, jamais un nom du plan. Quelques minutes ; <kbd>Échap</kbd> l’arrête. Le résultat s’ajoute au bilan ci-dessous.</p></section>`
     + `<pre class="bl-texte" id="bl-texte" tabindex="0" aria-label="Le bilan, tel qu’il sera copié">${esc(texte)}</pre>`
@@ -19304,7 +19311,7 @@ function ficheBilan() { const texte = texteDuBilan(), notes = lireCarnet();
   ouvrirFiche({ mode: 'bilan', largeur: 'ample' }, corps, pied);
   $('bl-copier').onclick = () => copierBilan(texte); if ($('bl-autotest')) $('bl-autotest').onclick = () => { fermerFiche(true); lancerAutotest(); }; $('bl-enregistrer').onclick = () => enregistrerBilan(texte); $('bl-noter').onclick = ouvrirCarnet;
   document.querySelectorAll('#fiche-corps [data-note]').forEach(b => { b.onclick = () => { const xs = lireCarnet(); xs.splice(+b.dataset.note, 1); ecrireCarnet(xs); ficheBilan(); dire('Note effacée.'); }; }); }
-function copierBilan(texte) { const fini = () => dire('Le bilan est copié : collez-le dans la conversation.');
+function copierBilan(texte) { const fini = () => dire('Le bilan est copié : collez-le dans votre message.');
   const repli = () => { const a = document.createElement('textarea'); a.value = texte; a.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); fini(); } catch (_) { dire('La copie n’a pas pu se faire : enregistrez-le en .txt.', true); } a.remove(); };
   try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texte).then(fini, repli); else repli(); } catch (_) { repli(); } }
 function enregistrerBilan(texte) { const d = new Date(), j = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');

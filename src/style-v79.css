@@ -456,9 +456,10 @@ body:is(.insp-flotte,.insp-epingle) #inspecteur .ix-tete::before{display:none}
   .rc-tab td.rc-c-bout{min-width:96px}
   .rc-tab td.rc-c-etat{min-width:96px}
   .rc-fleche{max-width:64px;min-width:28px}
-  .rc-tab td:is(.rc-c-id,.rc-c-norme) .rc-norme,.rc-tab td .rc-choix{white-space:normal}
-  .rc-tab td .rc-choix{display:inline}
-  .rc-tab td:has(.rc-choix),.rc-tab td:has(.rc-norme){white-space:normal;min-width:120px}
+  .rc-tab td:is(.rc-c-id,.rc-c-norme) .rc-norme{white-space:normal}
+  .rc-tab td .rc-choix{display:inline-flex;flex-wrap:wrap;align-items:baseline;min-width:200px;max-width:220px;row-gap:2px}
+  .rc-tab td .rc-choix>*{white-space:nowrap}
+  .rc-tab td:has(.rc-norme){white-space:normal;min-width:120px}
   .rc-tab th.rc-c-mesure .rc-th-l{flex-wrap:wrap}
 }
 /* la fiche étroite (rangée à côté du récapitulatif) : tous ses onglets tiennent — de même largeur, resserrés */
@@ -507,3 +508,9 @@ body:is(.insp-flotte,.insp-epingle) #inspecteur .ix-tete::before{display:none}
 /* la bible : les références s'alignent à gauche (on les lit comme une liste), leur en-tête aussi */
 #fiche .bible th.c-ref{text-align:left}
 #fiche .bible td.ref .ref-btn{margin:0;justify-content:flex-start;text-align:left}
+
+/* ═══ VARIANTE À MONTRER (pas encore choisie par le lecteur) : la table du plan en graphite — un cran plus claire que
+   l'accueil, les îlots un cran au-dessus avec leur filet, un halo très doux sous la feuille. Inerte tant que
+   `body.table-graphite` n'est pas posé sur le plan. ═══ */
+body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at 52% 48%,#27282c 0%,#1e1f22 52%,#17181a 100%);--grille-repos:rgba(255,255,255,.06);
+  --palet:rgba(40,41,46,.96);--palet-2:rgba(50,51,57,.97);--sh-palet:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px rgba(255,255,255,.12),0 14px 30px -12px rgba(0,0,0,.6)}

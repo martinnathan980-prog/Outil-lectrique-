@@ -12,7 +12,7 @@
    =========================================================================== */
 'use strict';
 
-const BILAN = { version: 'v77', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v80', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -171,7 +171,7 @@ function ficheBilan() { const texte = texteDuBilan(), notes = lireCarnet();
   const carnet = notes.length ? `<ol class="bl-notes">${notes.map((n, i) => `<li><div class="bl-n-tete"><span class="bl-n-quand">${esc(heureDe(n.t))}</span><span class="bl-n-ou">${esc(n.ou)}</span><button type="button" class="fi-x bl-n-x" data-note="${i}" aria-label="${escA('Effacer la note du ' + heureDe(n.t))}" data-bulle="Effacer cette note">${ico('poubelle')}</button></div><p>${esc(n.texte)}</p></li>`).join('')}</ol>`
     : `<p class="bl-vide">Le carnet est vide. Pendant le travail, appuyez sur <kbd>C</kbd> pour noter une hésitation : l’écran où vous êtes s’écrit avec elle.</p>`;
   const corps = tete('Aide', 'Bilan anonyme')
-    + `<p class="note bl-chapeau">Ce que VOLTA a lu et jugé de ce plan, en chiffres. <b>Aucun repère, part number, numéro de câble, nom de fichier, de harness ou de client</b> : les noms du plan sont masqués, une référence inconnue se dit par sa forme (lettres → A, chiffres → 9). Relisez-le, puis copiez-le dans la conversation.</p>`
+    + `<p class="note bl-chapeau">Ce que VOLTA a lu et jugé de ce plan, en chiffres. <b>Aucun repère, part number, numéro de câble, nom de fichier, de harness ou de client</b> : les noms du plan sont masqués, une référence inconnue se dit par sa forme (lettres → A, chiffres → 9). Relisez-le, puis copiez-le dans votre message : c’est vous qui l’envoyez.</p>`
     + `<section class="bl-auto" aria-labelledby="bl-auto-t"><div class="bl-carnet-tete"><h3 id="bl-auto-t">L’autotest du plan</h3><button type="button" class="btn papier dense" id="bl-autotest">${typeof AUTOTEST !== 'undefined' && AUTOTEST.resultat ? 'Le relancer' : 'Lancer l’autotest'}</button></div>`
     + `<p class="bl-masque">VOLTA ouvre tout seul chaque folio, chaque fiche et ses sections, chaque liste « Changer », chaque onglet du récapitulatif, chaque document et chaque export (fabriqué, jamais enregistré), chronomètre tout et note chaque erreur — l’écran où c’était, jamais un nom du plan. Quelques minutes ; <kbd>Échap</kbd> l’arrête. Le résultat s’ajoute au bilan ci-dessous.</p></section>`
     + `<pre class="bl-texte" id="bl-texte" tabindex="0" aria-label="Le bilan, tel qu’il sera copié">${esc(texte)}</pre>`
@@ -180,7 +180,7 @@ function ficheBilan() { const texte = texteDuBilan(), notes = lireCarnet();
   ouvrirFiche({ mode: 'bilan', largeur: 'ample' }, corps, pied);
   $('bl-copier').onclick = () => copierBilan(texte); if ($('bl-autotest')) $('bl-autotest').onclick = () => { fermerFiche(true); lancerAutotest(); }; $('bl-enregistrer').onclick = () => enregistrerBilan(texte); $('bl-noter').onclick = ouvrirCarnet;
   document.querySelectorAll('#fiche-corps [data-note]').forEach(b => { b.onclick = () => { const xs = lireCarnet(); xs.splice(+b.dataset.note, 1); ecrireCarnet(xs); ficheBilan(); dire('Note effacée.'); }; }); }
-function copierBilan(texte) { const fini = () => dire('Le bilan est copié : collez-le dans la conversation.');
+function copierBilan(texte) { const fini = () => dire('Le bilan est copié : collez-le dans votre message.');
   const repli = () => { const a = document.createElement('textarea'); a.value = texte; a.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); fini(); } catch (_) { dire('La copie n’a pas pu se faire : enregistrez-le en .txt.', true); } a.remove(); };
   try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texte).then(fini, repli); else repli(); } catch (_) { repli(); } }
 function enregistrerBilan(texte) { const d = new Date(), j = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
