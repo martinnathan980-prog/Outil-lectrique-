@@ -269,6 +269,7 @@ rep('FauxVue', '''    Style "GetObjectsFromSelection", Not IsMissing(p)
 #       gAutoForme = 4 : la méthode tourne et ne rend rien (sa sortie reste Nothing) ;
 #       gAutoForme = 5 : la sortie est AU MILIEU, le projet en dernier, (type, sortie, projet) : la méthode écrit l'objet
 #         dans le paramètre du milieu, même sans le projet en dernier (la forme 1 ne rend alors rien dans sa sortie) ;
+#       gAutoForme = 6 : la sortie est au milieu, mais un projet vide en dernier est refusé (1002), sans rien écrire ;
 #       gAutoForme = 0 : rien ne passe (13 pour trois arguments, après les contrôles du milieu et du nombre) ;
 #       gAutoForme = 2 : SEULEMENT l'objet rendu, Set o = CreateObject(type) ; tout autre nombre d'arguments -> 450.
 #     CloseProject : sans argument -> 450 (le bureau), avec le projet ouvert : accepté (tracé). OpenEnvironment (V4 :
@@ -436,6 +437,11 @@ Public Function CreateObject(ByVal t As Long, Optional ByRef a As Variant, Optio
     End If
     If gAutoForme = 4 Then Exit Function
     If gAutoForme = 5 Then
+        Set a = NouveauFaux(t)
+        Exit Function
+    End If
+    If gAutoForme = 6 Then
+        If Not EstLeProjetFaux(b) Then Err.Raise 1002, , "projet vide refusé (panne simulée : la sortie est au milieu)"
         Set a = NouveauFaux(t)
         Exit Function
     End If

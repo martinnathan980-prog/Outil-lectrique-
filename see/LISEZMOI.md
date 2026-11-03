@@ -595,10 +595,11 @@ Vérifié ici :
   retient (type, projet, objet en sortie), dessine, enregistre, relève
   l'album dans `Sonde_Symboles`, appelle `CloseProject(projet)` une fois et
   le dit ; quand seul l'objet rendu marche, c'est lui qui est retenu ; quand
-  la méthode tourne puis refuse, elle ne tourne qu'une fois et le bloc dit
-  son code ; quand elle tourne sans rien rendre, seule (type, objet en
-  sortie, projet) est encore essayée, une fois ; quand la sortie est au
-  milieu, cette forme est retenue et dessine tout ; un `OpenEnvironment` refusé n'empêche ni le
+  la méthode tourne puis refuse, ou ne rend rien, elle ne tourne qu'une
+  fois et le bloc dit son code ; quand la sortie est au milieu (SEE y écrit,
+  et accepte un projet vide en dernier), seule (type, objet en sortie,
+  projet) est encore essayée, une fois, puis retenue, et elle dessine tout ;
+  quand SEE refuse ce projet vide, rien d'autre n'est essayé ; un `OpenEnvironment` refusé n'empêche ni le
   dessin, ni `Save`, ni la fermeture ; des familles refusées, ou un relevé
   arrêté au milieu, sont dits dans l'étape 8 avec leur code ; sous `SeeAutomation`, une forme
   se lit par le projet ; avec le registre du bureau, le bouton 1 n'essaie

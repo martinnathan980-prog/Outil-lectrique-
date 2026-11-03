@@ -121,6 +121,7 @@ Private mFormeCreation As Integer     ' 0 pas encore essayée, 1 à 10 la forme re
 Private mCodesCreation As String      ' les réponses des formes essayées avant (le bloc « À PHOTOGRAPHIER » du bouton 3)
 Private mProjetCreation As Object     ' le projet ouvert par SeeAutomation.OpenProject : le paramètre du milieu de son CreateObject
 Private Const FORME_SORTIE_AU_MILIEU As Integer = 10 ' (type, objet en sortie, projet) : la seule essayée encore après une forme qui a tourné sans rien rendre
+Private mMilieuEcrit As Boolean       ' le dernier EssaiCreation : SEE a changé le paramètre du milieu (le projet qu'on y passait)
 
 ' --- La conversion des coordonnées (PreparerConversion)
 Private mEchelle As Double
@@ -1522,11 +1523,11 @@ End Function
 ' rien rendu, arrête les essais : les suivantes ne passeraient au milieu que
 ' Nothing, 0 ou "" à la place du projet, et le bloc garde son code. Une seule
 ' exception : une forme qui passe le projet au milieu, que SEE a fait tourner
-' SANS erreur mais qui n'a rien rendu dans la sortie (-1). La sortie serait
-' alors au milieu (SEE y aurait écrit) : un seul autre essai, (type, objet en
-' sortie, projet), puis plus rien. Après une erreur de SEE, pas d'autre essai
-' (le type d'objet serait en cause, et un projet nul pourrait le faire
-' tomber). V4 :
+' SANS erreur, qui n'a rien rendu dans la sortie (-1), et dont SEE a CHANGÉ le
+' paramètre du milieu (mMilieuEcrit). La sortie est alors au milieu : un seul
+' autre essai, (type, objet en sortie, projet), puis plus rien. Sans cette
+' preuve, ou après une erreur de SEE, pas d'autre essai : la forme 10 passe
+' un projet nul au milieu, et un projet nul pourrait faire tomber SEE. V4 :
 ' (type, projet, objet en sortie), la même avec un Variant en sortie, l'objet
 ' rendu, les deux formes à deux arguments, d'autres valeurs au milieu
 ' (Nothing, 0, "", le projet passé dans un Variant), puis (type, objet en
@@ -1578,9 +1579,9 @@ Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
             If sortieAuMilieu Then Exit For
             ' une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode
             If Not RefusAvantAppel(numErr) Then
-                If numErr = -1 And FormeAvecProjet(CInt(forme)) And CInt(forme) <> FORME_SORTIE_AU_MILIEU Then
-                    Journal gEtape, gObjet, "CreateObject", "SEE a fait tourner cette forme sans erreur, mais rien n'est revenu dans la " & _
-                        "sortie : un seul autre essai, " & FormeCreation(FORME_SORTIE_AU_MILIEU) & ", au cas où la sortie serait au milieu"
+                If numErr = -1 And mMilieuEcrit And FormeAvecProjet(CInt(forme)) And CInt(forme) <> FORME_SORTIE_AU_MILIEU Then
+                    Journal gEtape, gObjet, "CreateObject", "SEE a fait tourner cette forme sans erreur, rien n'est revenu dans la " & _
+                        "sortie, mais SEE a écrit au milieu : un seul autre essai, " & FormeCreation(FORME_SORTIE_AU_MILIEU)
                     sortieAuMilieu = True
                 Else
                     Journal gEtape, gObjet, "CreateObject", "SEE a fait tourner cette forme : sa réponse est la bonne, les autres formes ne sont pas essayées"
@@ -1635,15 +1636,18 @@ Private Function EssaiCreation(ByVal forme As Integer, ByVal typeObjet As Long, 
     Set o = Nothing
     numErr = 0
     descErr = ""
+    mMilieuEcrit = False
     Set pc = mProjetCreation
     On Error GoTo Echec
     Select Case forme
         Case 1
             gApp.CreateObject typeObjet, pc, x
             Set o = x
+            mMilieuEcrit = Not (pc Is mProjetCreation)
         Case 2
             gApp.CreateObject typeObjet, pc, r
             If IsObject(r) Then Set o = r
+            mMilieuEcrit = Not (pc Is mProjetCreation)
         Case 3
             Set o = gApp.CreateObject(typeObjet)
         Case 4
@@ -1665,6 +1669,7 @@ Private Function EssaiCreation(ByVal forme As Integer, ByVal typeObjet As Long, 
             Set vp = pc
             gApp.CreateObject typeObjet, vp, x
             Set o = x
+            If IsObject(vp) Then mMilieuEcrit = Not (vp Is mProjetCreation) Else mMilieuEcrit = True
         Case Else
             gApp.CreateObject typeObjet, x, pc
             Set o = x
@@ -1672,6 +1677,7 @@ Private Function EssaiCreation(ByVal forme As Integer, ByVal typeObjet As Long, 
     If o Is Nothing Then
         numErr = -1
         descErr = "rien rendu (Nothing)"
+        If mMilieuEcrit Then descErr = descErr & " ; SEE a écrit dans le paramètre du milieu"
         Exit Function
     End If
     EssaiCreation = True
