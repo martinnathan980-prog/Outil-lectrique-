@@ -693,3 +693,5 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #base .rc-onglets{background:#202226} :root:not([data-theme="light"]) #base .rc-tab th{background:#33353b;color:#c3c6cc} }
 :root[data-theme="dark"] #base .rc-onglets{background:#202226}
 :root[data-theme="dark"] #base .rc-tab th{background:#33353b;color:#c3c6cc}
+/* le calibre retenu est celui du fichier, et un plus petit suffirait : une note de papier, la barre de cuivre */
+.vu-fichier{margin:10px 0 0;padding:10px 14px;border-radius:10px;background:var(--nv-cuivre-soft);box-shadow:inset 3px 0 0 var(--nv-cuivre);font:400 var(--f-13)/1.5 var(--sans);color:var(--t-1)}
