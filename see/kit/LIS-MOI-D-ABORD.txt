@@ -7,8 +7,13 @@ Tout se fait dans un projet d'essai VIDE, jamais dans un vrai projet.
 Tu ne m'envoies que des PHOTOS de l'écran (ton téléphone, c'est très bien).
 
 
-CE QUI EST ACQUIS (tes photos du 2 novembre)
---------------------------------------------
+CE QUI EST ACQUIS (tes photos du 2 et du 3 novembre)
+----------------------------------------------------
+- Le 3 novembre : Excel a ouvert ton environnement « ATA-PD », lu tes
+  117 familles de symboles, et refermé SEE proprement. Mais SEE a
+  refusé de créer le folio : sans doute parce que personne ne s'était
+  connecté (la fenêtre bleue « SEE ACCESS CONTROL »). Cette fois,
+  Excel te demande de quoi le connecter.
 - Le projet s'ouvre tout seul : SEE fermé, le bouton 3 a ouvert ton
   projet d'essai sans que tu touches à SEE. Bravo, c'était le plus dur.
 - Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3. Les boutons
@@ -40,7 +45,15 @@ CETTE FOIS : SEULEMENT LE BOUTON 3 (10 minutes)
    .seeprj), puis sur « Ouvrir ». PAS sur un fichier dont le nom
    contient « avant-pilote » (ce sont les copies de sécurité).
 6. Une question te montre le nom du fichier : c'est bien ton projet
-   d'essai, clique sur OK. Si Excel dit que le folio « ESSAI_PILOTE »
+   d'essai, clique sur OK.
+   Puis Excel te demande de quoi connecter SEE, en deux petites
+   fenêtres :
+   - la 1re : ton Username, le même que dans la fenêtre bleue
+     « SEE ACCESS CONTROL » de SEE, puis OK ;
+   - la 2e : ton mot de passe SEE, puis OK. Il s'affiche en clair
+     dans cette petite fenêtre, mais Excel ne le garde NULLE PART :
+     ni dans le fichier, ni dans le journal, ni sur les photos. Ne
+     me l'envoie jamais. Si Excel dit que le folio « ESSAI_PILOTE »
    existe déjà : clique sur Oui (il est refait à neuf).
 7. Attends le message de fin sans toucher à rien : une ou deux
    minutes. SEE peut s'ouvrir tout seul : ne clique pas dedans.

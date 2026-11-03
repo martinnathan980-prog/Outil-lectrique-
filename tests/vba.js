@@ -59,7 +59,8 @@
    seulement l'essai volontaire (après « If Not lancerPermis ») et le bouton 3
    (après SEE fermé, le projet choisi, la copie de sécurité) ; Quit,
    CloseProject, Close : seulement FermerNotreSEE, sur le SEE que le bouton 3
-   a créé ; jamais Login. Et, depuis la relecture de la v3 : GetObject et
+   a créé ; Login seulement dans ConnecterASEE (le bouton 3, v5), le mot de
+   passe jamais écrit. Et, depuis la relecture de la v3 : GetObject et
    CreateObject seulement dans SEE_Windows (hors Scripting.Dictionary et
    ADODB.Stream) ; le registre jamais écrit, dans aucun module ; CreerNotreSEE
    appelé par le seul bouton 3, qui lâche d'abord TOUTE connexion gardée,
@@ -921,7 +922,7 @@ function controler(entrees) {
     // milieu, et seule (type, objet en sortie, projet) est encore essayée, une fois ; après une erreur de SEE, rien
     const rav = texteBrut(procDe('SEE_Commun', 'RefusAvantAppel')), appelsCreation = [...sansChaines(ec).matchAll(/gApp\.CreateObject\b[^\n]*/g)].map(m => m[0]);
     ok('SeeAutomation : CreateObject passe à une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode (le type ou le nombre des arguments), sauf un seul dernier essai (type, objet en sortie, projet) après une forme qui a passé le projet, n\'a rien rendu sans erreur, et dont SEE a changé le paramètre du milieu ; le projet lui est passé par une copie locale, jamais par la variable gardée',
-      /For Each forme In OrdreCreation\(\)[\s\S]*?mCodesCreation = [^\n]*\n[^\n]*\n\s*If sortieAuMilieu Then Exit For\n(\s*'[^\n]*\n)?\s*If Not RefusAvantAppel\(numErr\) Then\n\s*If numErr = -1 And mMilieuEcrit And FormeAvecProjet\(CInt\(forme\)\) And CInt\(forme\) <> FORME_SORTIE_AU_MILIEU Then\n\s*Journal gEtape, gObjet, "CreateObject", [^\n]*\n\s*sortieAuMilieu = True\n\s*Else\n[\s\S]{0,300}?Exit For\n\s*End If\n\s*End If\n\s*End If\n\s*Next forme/.test(nao)
+      /For Each forme In OrdreCreation\(\)[\s\S]*?mCodesCreation = [^\n]*\n(\s*If Not RefusAvantAppel\(numErr\) And numErr <> -1 Then\n\s*mRefusCreation = numErr\n\s*mTexteRefusCreation = descErr\n\s*End If\n)?[^\n]*\n\s*If sortieAuMilieu Then Exit For\n(\s*'[^\n]*\n)?\s*If Not RefusAvantAppel\(numErr\) Then\n\s*If numErr = -1 And mMilieuEcrit And FormeAvecProjet\(CInt\(forme\)\) And CInt\(forme\) <> FORME_SORTIE_AU_MILIEU Then\n\s*Journal gEtape, gObjet, "CreateObject", [^\n]*\n\s*sortieAuMilieu = True\n\s*Else\n[\s\S]{0,300}?Exit For\n\s*End If\n\s*End If\n\s*End If\n\s*Next forme/.test(nao)
         && /\n\s*sortieAuMilieu = False\n\s*For Each forme In OrdreCreation\(\)/.test(nao)
         && /^Private Const FORME_SORTIE_AU_MILIEU As Integer = 10\b/m.test(sources.SEE_Commun) && /\n\s*Case Else\n\s*gApp\.CreateObject typeObjet, x, pc\n/.test(ec)
         // le dernier essai seulement si SEE a CHANGÉ le paramètre du milieu (la copie du projet) : sinon la forme 10 lui
@@ -989,8 +990,17 @@ function controler(entrees) {
   const fermetures = toutCode.filter(x => !(x.m === 'SEE_Pilote' && x.p === 'FermerNotreSEE')
     && (/\.(Quit|CloseProject)\b|\b(gApp|prj|mPrj)\.Close\b/i.test(sansChaines(x.code)) || /"(Quit|CloseProject|Close)"/i.test(x.code))).map(x => `${x.m}.${x.p}:${x.n}`);
   ok('fermer SEE (Quit, CloseProject, Close du projet) : seulement dans FermerNotreSEE (le SEE créé par le bouton 3)', !fermetures.length, fermetures.join(' ; '));
-  const login = toutCode.filter(x => /\.Login\b/i.test(sansChaines(x.code)) || /"Login"/i.test(x.code)).map(x => `${x.m}.${x.p}:${x.n}`);
-  ok('jamais Login (SEE Access Control) : ni appel, ni nom en chaîne', !login.length, login.join(' ; '));
+  // Login (SEE Access Control) : à la demande du technicien (v5), SEULEMENT dans ConnecterASEE (le bouton 3, sur le SEE
+  // qu'il a créé), avec le nom et le mot de passe qu'il tape ; le mot de passe (mdp) ne sert qu'à l'InputBox, à Login et
+  // à être vidé : jamais au journal, au bloc, aux réglages ni ailleurs
+  const login = toutCode.filter(x => !(x.m === 'SEE_Pilote' && x.p === 'ConnecterASEE')
+    && (/\.Login\b/i.test(sansChaines(x.code)) || /"Login"/i.test(x.code))).map(x => `${x.m}.${x.p}:${x.n}`);
+  ok('Login (SEE Access Control) : seulement dans ConnecterASEE (le bouton 3)', !login.length, login.join(' ; '));
+  const cas = codeDe('SEE_Pilote').filter(x => x.p === 'ConnecterASEE'), mdpPermis = [/^\s*Dim\b/, /^\s*mdp = InputBox\(/, /^\s*gApp\.Login nom, mdp(, r)?\s*$/, /^\s*mdp = ""\s*$/];
+  const mdpHors = cas.filter(x => /\bmdp\b/i.test(sansChaines(x.code)) && !mdpPermis.some(re => re.test(x.code))).map(x => `ConnecterASEE:${x.n}`);
+  const mdpAilleurs = toutCode.filter(x => !(x.m === 'SEE_Pilote' && x.p === 'ConnecterASEE') && /\bmdp\b/i.test(sansChaines(x.code)) && /\b(Login|Journal\w*|Ecrire\w*|NoterEtape3|FixerReglage)\b/.test(x.code) && /Login/.test(x.code)).map(x => `${x.m}.${x.p}:${x.n}`);
+  ok('le mot de passe de SEE Access Control : seulement l\'InputBox, Login et « mdp = "" » (jamais au journal, au bloc, aux réglages)',
+    cas.length > 0 && !mdpHors.length && !mdpAilleurs.length && cas.some(x => /^\s*mdp = ""\s*$/.test(x.code)), mdpHors.concat(mdpAilleurs).join(' ; ') || (cas.length ? 'mdp jamais vidé' : 'ConnecterASEE absente'));
   // --- le contrat : les clés de réglage de FORMAT-PAQUET.md sont créées par InitialiserClasseur
   if (sources.SEE_Commun) {
     const cles = ['ProgID', 'CLSID_Application', 'CLSID_Automation', 'VersionAPI', 'Projet', 'MotDePasse', 'Groupe', 'TypeFolio', 'Cartouche', 'NomFolio',
@@ -1199,7 +1209,11 @@ if (Object.keys(entrees).length === MODULES.length && Object.keys(analyses).leng
     ['Quit sur l\'objet SEE', 'fermer SEE (Quit, CloseProject, Close du projet) : seulement dans FermerNotreSEE (le SEE créé par le bouton 3)', ajout('SEE_Pilote', ['gApp.Quit'])],
     ['CloseProject par son nom', 'fermer SEE (Quit, CloseProject, Close du projet) : seulement dans FermerNotreSEE (le SEE créé par le bouton 3)',
       ajout('SEE_Commun', ['CallByName gApp, "CloseProject", VbMethod'])],
-    ['Login sur SEE', 'jamais Login (SEE Access Control) : ni appel, ni nom en chaîne', ajout('SEE_Pilote', ['gApp.Login "a", "b"'])],
+    ['Login sur SEE hors du bouton 3', 'Login (SEE Access Control) : seulement dans ConnecterASEE (le bouton 3)', ajout('SEE_Pilote', ['gApp.Login "a", "b"'])],
+    ['le mot de passe de SEE au journal', 'le mot de passe de SEE Access Control : seulement l\'InputBox, Login et « mdp = "" » (jamais au journal, au bloc, aux réglages)',
+      remplacer('SEE_Pilote', /        mdp = ""\r\n/, '        Journal gEtape, gObjet, "Login", mdp\r\n')],
+    ['le mot de passe de SEE noté dans un réglage', 'le mot de passe de SEE Access Control : seulement l\'InputBox, Login et « mdp = "" » (jamais au journal, au bloc, aux réglages)',
+      remplacer('SEE_Pilote', /        mdp = ""\r\n/, '        mdp = ""\r\n        FixerReglage "UtilisateurSEE", mdp\r\n')],
     ['TesterSEE qui joint SEE avant de lire le registre', 'SEE_Sonde : TesterSEE lit le registre (SondeRegistre) AVANT de joindre SEE (ses ProgID servent à le rejoindre)',
       remplacer('SEE_Sonde', /    EtapeDuTest "SondeRegistre"\r\n/, '')],
     // --- la relecture de la v3 (constats SU5, EX1 à EX4, SU1 à SU4, SU7)

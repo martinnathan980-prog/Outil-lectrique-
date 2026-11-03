@@ -1069,6 +1069,8 @@ Private Sub PreparerBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal proj
     FixerReglage "Projet", projet
     FixerReglage "Simulation", "O"
     FixerReglage "PasAPas", "O"
+    ' (la petite sonde de création ajouterait des appels de CreateObject : ses passages la remettent à O)
+    FixerReglage "SondeCreation", "N"
     RegistreSEE "SEE_Faux.exe"
     gWinNomExe = "SEE_Faux.exe"
     CreableFaux AUTO_V4

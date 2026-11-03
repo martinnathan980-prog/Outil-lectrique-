@@ -203,6 +203,11 @@ après la sonde. La liste qui fait foi est dans la feuille ; en résumé :
   `EssaiCLSID` (`N` par défaut : `GetActiveObject`, une fonction de Windows
   qu'un poste d'entreprise peut bloquer et signaler, n'est pas essayé ; `O`
   seulement avec l'accord de l'informatique),
+  `UtilisateurSEE` (le bouton 3 : le Username de la fenêtre « SEE ACCESS
+  CONTROL » ; vide = Excel le demande ; le mot de passe n'est jamais écrit
+  dans le classeur : il est demandé à chaque fois et oublié aussitôt),
+  `SondeCreation` (`O` par défaut : si SEE refuse de créer le folio, le
+  bouton 3 essaie quelques autres objets en mémoire et dit ses réponses),
   `VersionAPI` (`auto`, `V5`, `V4`), `Projet` (chemin du projet, vide = celui
   ouvert dans SEE ; le bouton 3 y note le projet d'essai choisi), `MotDePasse`.
 - **Où écrire** : `Groupe` (vide = le groupe principal), `TypeFolio` (9 =

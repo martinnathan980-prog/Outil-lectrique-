@@ -94,6 +94,7 @@ Private mFermeDit As Integer    ' le bouton 3, étape 1 : 0 Windows a dit SEE fer
 Private mFolioRelu As Boolean   ' le bouton 3 a relu son folio dans Sonde_Folio (la photo à demander)
 Private mNomEnv3 As String      ' le bouton 3 : l'environnement du projet ouvert (Project.EnvironmentName), tel que lu
 Private mFormesRelevees As Boolean ' le bouton 3 a relevé les formes de l'album dans Sonde_Symboles (la photo à demander)
+Private mConnecte3 As Boolean   ' le bouton 3 a connecté SEE (SeeAutomation.Login) : Logout à la fermeture
 
 ' trois folios de suite non créés : l'échec est systématique, le lot s'arrête
 Private Const ECHECS_MAX As Long = 3
@@ -304,6 +305,7 @@ Public Sub EssaiSansFenetre()
     mFolioRelu = False
     mNomEnv3 = ""
     mFormesRelevees = False
+    mConnecte3 = False
     mMessageFin = ""
     mConsigne3 = ""
     For i = 1 To 9
@@ -335,6 +337,8 @@ Public Sub EssaiSansFenetre()
     If Len(copie) = 0 Then GoTo Fin
     ' 4. l'objet SEE, créé
     If Not CreerNotreSEE() Then GoTo Fin
+    ' 4 bis. la connexion à SEE ACCESS CONTROL (le nom donné par le technicien ; le mot de passe n'est jamais gardé)
+    ConnecterASEE
     ' 5. le projet, ouvert
     Set prj = OuvrirProjetDEssai(chemin)
     If prj Is Nothing Then GoTo Fermer
@@ -657,10 +661,177 @@ Private Sub DessinerSansFenetre(ByVal prj As Object, ByVal nomFolio As String)
         NoterEtape3 6, "rien dessiné : tu as répondu Annuler (le folio « " & nomFolio & " » existait déjà)"
         mConsigne3 = "Reclique sur " & Bouton3Ici() & " et réponds Oui à la question sur le folio « " & nomFolio & " » : il est refait à neuf."
     Else
-        NoterEtape3 6, "rien dessiné : projet ouvert : oui ; création d'objets : " & CreationDObjets()
+        NoterEtape3 6, "rien dessiné : projet ouvert : oui ; création d'objets : " & CreationDObjets() & ExplicationRefus() & _
+            SondeSiPermise(prj)
         mConsigne3 = "Rien n'a été dessiné : envoie-moi la photo, c'est ce que je dois savoir."
     End If
 End Sub
+
+' 4 bis. La connexion à SEE ACCESS CONTROL, la fenêtre bleue que SEE montre à
+' l'ouverture (Username, Password, LOGIN). SEE caché, lancé par Excel, n'est
+' connecté à personne : il ouvre et lit, mais refuse peut-être d'écrire (au
+' bureau, le 3 novembre : CreateObject a répondu 80100000). Le nom vient du
+' réglage UtilisateurSEE, sinon d'une InputBox ; le mot de passe d'une
+' InputBox, à chaque fois : il n'est écrit NULLE PART (ni réglage, ni journal,
+' ni bloc) et la variable est vidée aussitôt après l'appel. Le nom n'est
+' jamais écrit non plus (seulement sa longueur). Sans nom : pas de connexion.
+Private Sub ConnecterASEE()
+    Dim nom As String, mdp As String, numErr As Long, descErr As String, r As Variant, txt As String
+    Contexte "Bouton 3", "connexion"
+    mConnecte3 = False
+    nom = Trim$(Reglage("UtilisateurSEE", ""))
+    If Len(nom) = 0 And Not gSansDialogue Then
+        nom = Trim$(InputBox("SEE demande de se connecter (la fenêtre bleue « SEE ACCESS CONTROL »)." & vbCrLf & vbCrLf & _
+            "Tape ici ton Username SEE, exactement comme dans cette fenêtre, puis OK." & vbCrLf & vbCrLf & _
+            "(Pour essayer sans connexion : laisse vide et clique OK.)", "Pilote SEE - connexion (1 sur 2)"))
+    End If
+    If Len(nom) = 0 Then
+        txt = "pas essayée (aucun nom donné)"
+    Else
+        If Not gSansDialogue Then
+            mdp = InputBox("Tape ton mot de passe SEE (celui de la fenêtre « SEE ACCESS CONTROL »), puis OK." & vbCrLf & vbCrLf & _
+                "Il s'affiche en clair dans cette petite fenêtre, mais Excel ne le garde nulle part : ni dans le fichier, " & _
+                "ni dans le journal, ni sur les photos.", "Pilote SEE - connexion (2 sur 2)")
+        End If
+        On Error Resume Next
+        Err.Clear
+        gApp.Login nom, mdp
+        numErr = Err.Number
+        descErr = Err.Description
+        If numErr = 450 Or numErr = 449 Then
+            Err.Clear
+            r = Empty
+            gApp.Login nom, mdp, r
+            numErr = Err.Number
+            descErr = Err.Description
+        End If
+        On Error GoTo 0
+        mdp = ""
+        If numErr = 0 Then
+            mConnecte3 = True
+            txt = "OUI (nom donné : " & Len(nom) & " caractères)"
+            If Not IsEmpty(r) And Not IsObject(r) Then txt = txt & " ; réponse de SEE : " & CStr(r)
+        Else
+            txt = "REFUSÉE : " & CodeDeWindows(numErr) & " « " & Left$(Trim$(descErr), 100) & " »"
+        End If
+    End If
+    nom = ""
+    Journal gEtape, gObjet, "SeeAutomation.Login", txt
+    NoterEtape3 4, mEtapes3(4) & vbLf & "Connexion à SEE : " & txt
+End Sub
+
+' Le dernier refus de création que SEE a fait tourner : sa description, et la
+' phrase que SEE lui-même en donne (TraductionSEE). Vide s'il n'y en a pas.
+Private Function ExplicationRefus() As String
+    Dim code As Long, texte As String, trad As String, raison As String
+    code = RefusCreation(texte)
+    If code = 0 Then Exit Function
+    ExplicationRefus = vbLf & "explication : « " & IIf(Len(Trim$(texte)) > 0, Left$(Trim$(texte), 120), "(aucune)") & " »"
+    trad = TraductionSEE(code, raison)
+    If Len(trad) > 0 Then
+        ExplicationRefus = ExplicationRefus & vbLf & "SEE dit pour " & CodeDeWindows(code) & " : « " & trad & " »"
+    Else
+        ExplicationRefus = ExplicationRefus & vbLf & "phrase de SEE pour ce code : pas obtenue (" & raison & ")"
+    End If
+End Function
+
+' La phrase de SEE pour un de ses codes : Protection.GetErrorDescription
+' (ISEEProtection), en LECTURE SEULE, avec la langue 1036, 1033, "FRA", "ENU"
+' ou "" : la valeur rendue, puis le texte en sortie (V4). Au plus 11 appels.
+' Vide si SEE ne la donne pas ; raison : sa dernière réponse.
+Private Function TraductionSEE(ByVal code As Long, ByRef raison As String) As String
+    Dim prot As Object, l As Variant, t As Variant, numErr As Long
+    On Error Resume Next
+    Err.Clear
+    Set prot = gApp.Protection
+    numErr = Err.Number
+    If numErr <> 0 Or prot Is Nothing Then
+        raison = "Protection : " & IIf(numErr = 0, "rien rendu", CodeDeWindows(numErr))
+        Exit Function
+    End If
+    For Each l In Array(1036, 1033, "FRA", "ENU", "")
+        Err.Clear
+        t = Empty
+        t = prot.GetErrorDescription(code, l)
+        numErr = Err.Number
+        If numErr <> 0 Then
+            Err.Clear
+            t = Empty
+            prot.GetErrorDescription code, l, t
+            numErr = Err.Number
+        End If
+        If numErr = 0 And Not IsObject(t) Then
+            If Len(Trim$(CStr(t))) > 0 Then
+                TraductionSEE = Left$(Trim$(CStr(t)), 160)
+                Exit Function
+            End If
+        End If
+        raison = "GetErrorDescription : " & IIf(numErr = 0, "texte vide", CodeDeWindows(numErr))
+    Next l
+End Function
+
+' La petite sonde de création, si SondeCreation = O et que SEE a refusé (en la
+' faisant tourner) de créer le folio.
+Private Function SondeSiPermise(ByVal prj As Object) As String
+    Dim texte As String
+    If RefusCreation(texte) = 0 Then Exit Function
+    If Not ReglageOui("SondeCreation", "O") Then Exit Function
+    SondeSiPermise = vbLf & "autres essais : " & SondeCreationRapide(prj)
+End Function
+
+' Quelques autres objets, EN MÉMOIRE SEULEMENT : rien n'est ajouté au projet,
+' chaque objet est lâché aussitôt. Par la forme qui a tourné au bureau (type,
+' contexte, objet en sortie) : point, trait, texte et symbole avec une COPIE
+' du projet au milieu, puis le folio avec le groupe principal au milieu. Au
+' plus 5 appels ; arrêt si SEE ne répond plus (800706BA, 800706BE, 462).
+Private Function SondeCreationRapide(ByVal prj As Object) As String
+    Dim types As Variant, noms As Variant, i As Long, ctx As Object, x As Object, g As Object, s As String
+    Dim numErr As Long, descErr As String
+    types = Array(OBJ_POINT, OBJ_LIGNE, OBJ_TEXTE, OBJ_SYMBOLE, OBJ_FOLIO)
+    noms = Array("point", "trait", "texte", "symbole", "folio par le groupe")
+    On Error Resume Next
+    For i = 0 To 4
+        Set x = Nothing
+        Set ctx = Nothing
+        If i < 4 Then
+            Set ctx = prj
+        Else
+            Err.Clear
+            If EstV4() Then
+                prj.GetMainGroup g
+            Else
+                Set g = prj.GetMainGroup()
+            End If
+            numErr = Err.Number
+            If numErr <> 0 Or g Is Nothing Then
+                s = s & " ; " & noms(i) & " : groupe illisible (" & IIf(numErr = 0, "rien rendu", CodeDeWindows(numErr)) & ")"
+                Exit For
+            End If
+            Set ctx = g
+        End If
+        Err.Clear
+        gApp.CreateObject CLng(types(i)), ctx, x
+        numErr = Err.Number
+        descErr = Err.Description
+        If numErr <> 0 Then
+            s = s & " ; " & noms(i) & " : " & CodeDeWindows(numErr)
+        ElseIf x Is Nothing Then
+            s = s & " ; " & noms(i) & " : rien rendu"
+        Else
+            s = s & " ; " & noms(i) & " : OUI (" & TypeName(x) & ")"
+        End If
+        Journal gEtape, "sonde de création", "CreateObject(" & types(i) & ")", IIf(numErr = 0, "ok", "refus"), numErr, descErr
+        Set x = Nothing
+        Set ctx = Nothing
+        If numErr = &H800706BA Or numErr = &H800706BE Or numErr = 462 Then
+            s = s & " (SEE ne répond plus : arrêt)"
+            Exit For
+        End If
+    Next i
+    Set g = Nothing
+    On Error GoTo 0
+    SondeCreationRapide = Mid$(s, 4)
+End Function
 
 ' 7. Project.Save, seulement si quelque chose a été dessiné.
 Private Sub EnregistrerSansFenetre()
@@ -776,6 +947,8 @@ Private Sub FermerNotreSEE(ByRef prj As Object)
     End If
     s = "CloseProject(projet) : " & r
     If r <> "ok" And Not prj Is Nothing Then s = s & " ; Close : " & AppelFermeture(prj, "Close")
+    If mConnecte3 Then s = s & " ; Logout : " & AppelFermeture(gApp, "Logout")
+    mConnecte3 = False
     s = s & " ; Quit : " & AppelFermeture(gApp, "Quit")
     ' tous les objets SEE lâchés AVANT d'attendre : le programme ne s'arrête pas tant qu'Excel en tient un
     Set prj = Nothing

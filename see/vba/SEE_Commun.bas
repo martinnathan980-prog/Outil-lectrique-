@@ -120,6 +120,8 @@ Private mCodesDits As Object          ' les codes de Windows déjà expliqués dans
 Private mFormeCreation As Integer     ' 0 pas encore essayée, 1 à 10 la forme retenue (FormeCreation), -1 refusée
 Private mCodesCreation As String      ' les réponses des formes essayées avant (le bloc « À PHOTOGRAPHIER » du bouton 3)
 Private mProjetCreation As Object     ' le projet ouvert par SeeAutomation.OpenProject : le paramètre du milieu de son CreateObject
+Private mRefusCreation As Long        ' le code du dernier refus de création que SEE a fait tourner (0 : aucun)
+Private mTexteRefusCreation As String ' sa description (Err.Description), pour le bloc
 Private Const FORME_SORTIE_AU_MILIEU As Integer = 10 ' (type, objet en sortie, projet) : la seule essayée encore après une forme qui a tourné sans rien rendre
 Private mMilieuEcrit As Boolean       ' le dernier EssaiCreation : SEE a changé le paramètre du milieu (le projet qu'on y passait)
 
@@ -235,6 +237,10 @@ Private Function ReglagesParDefaut() As Variant
         "N (le défaut) : Excel ne fait que REJOINDRE la fenêtre SEE ouverte, il n'en démarre jamais. O : essai volontaire, pour les macros lancées par Alt+F8 (DessinerPaquet, EssaiDessin...) : si aucune fenêtre n'est trouvée, GetObject(""new:{CLSID}"") puis CreateObject(ProgID), qui CRÉENT un objet SEE. Les boutons 1 et 2 n'en créent jamais ; le bouton 3 crée le sien, SEE fermé.")
     r.Add Array("EssaiCLSID", "N", _
         "N (le défaut) : pour rejoindre la fenêtre SEE, Excel n'essaie PAS GetActiveObject, une fonction de Windows appelée par Declare : sur un poste d'entreprise, la règle de Defender « Bloquer les appels d'API Win32 à partir de macros Office » arrêterait la macro et le signalerait à l'informatique. O : l'essayer, en dernier, seulement avec l'accord de l'informatique.")
+    r.Add Array("UtilisateurSEE", "", _
+        "Bouton 3 : ton Username de la fenêtre bleue « SEE ACCESS CONTROL ». Vide (le défaut) : Excel te le demande. Le mot de passe n'est JAMAIS écrit ici : Excel le demande à chaque fois et ne le garde nulle part.")
+    r.Add Array("SondeCreation", "O", _
+        "Bouton 3 : O (le défaut) : si SEE refuse de créer le folio, Excel essaie quelques autres objets (point, trait, texte, symbole, le folio par le groupe), en mémoire seulement, et dit ce que SEE répond. N : ne pas essayer.")
     r.Add Array("VersionAPI", "auto", _
         "auto (ApplicationVersion 4.x = V4, sinon V5), V5 ou V4 : comment l'API rend les objets (valeur de retour en V5, paramètre de sortie en V4).")
     r.Add Array("Projet", "", _
@@ -1575,6 +1581,10 @@ Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
             Exit Function
         Else
             mCodesCreation = mCodesCreation & IIf(Len(mCodesCreation) > 0, " ; ", "") & FormeCreation(CInt(forme)) & " : " & CodeDeWindows(numErr)
+            If Not RefusAvantAppel(numErr) And numErr <> -1 Then
+                mRefusCreation = numErr
+                mTexteRefusCreation = descErr
+            End If
             Journal gEtape, gObjet, LibelleCreation(CInt(forme), typeObjet), "échec : " & ReponseDeWindows(numErr, descErr), numErr, descErr
             If sortieAuMilieu Then Exit For
             ' une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode
@@ -1750,12 +1760,21 @@ Public Function CreationDObjets() As String
     End If
 End Function
 
+' Le dernier refus de création que SEE a fait tourner : son code (0 : aucun)
+' et sa description.
+Public Function RefusCreation(ByRef texte As String) As Long
+    texte = mTexteRefusCreation
+    RefusCreation = mRefusCreation
+End Function
+
 ' Une nouvelle connexion, ou la fermeture du bouton 3 : la forme de
 ' CreateObject sera essayée de nouveau, et le projet gardé pour elle est lâché
 ' (Set ... = Nothing : rien n'est fermé dans SEE).
 Public Sub OublierCreation()
     mFormeCreation = 0
     mCodesCreation = ""
+    mRefusCreation = 0
+    mTexteRefusCreation = ""
     Set mProjetCreation = Nothing
 End Sub
 
