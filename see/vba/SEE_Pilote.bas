@@ -96,6 +96,10 @@ Private mNomEnv3 As String      ' le bouton 3 : l'environnement du projet ouvert
 Private mFormesRelevees As Boolean ' le bouton 3 a relevé les formes de l'album dans Sonde_Symboles (la photo à demander)
 Private mConnecte3 As Boolean   ' le bouton 3 a connecté SEE (SeeAutomation.Login) : Logout à la fermeture
 Private mEnvProjet3 As Object   ' le bouton 3 : l'environnement attaché au projet (OpenEnvironmentForProject), refermé avant CloseProject
+Private mDiagWs As Object       ' le diagnostic complet du bouton 3 : la feuille Diagnostic
+Private mDiagLigne As Long
+Private mDiagOK As Long
+Private mDiagKO As Long
 
 ' trois folios de suite non créés : l'échec est systématique, le lot s'arrête
 Private Const ECHECS_MAX As Long = 3
@@ -346,6 +350,8 @@ Public Sub EssaiSansFenetre()
     If prj Is Nothing Then GoTo Fermer
     ' 5 bis. le projet protégé ? l'environnement attaché au projet (OpenEnvironmentForProject), avant de créer
     PreparerProjet3 prj, chemin
+    ' 5 ter. le diagnostic complet, niveau par niveau (feuille Diagnostic)
+    DiagnosticComplet prj
     ' 6. le dessin
     DessinerSansFenetre prj, nomFolio
     ' 7. l'enregistrement
@@ -669,6 +675,289 @@ Private Sub DessinerSansFenetre(ByVal prj As Object, ByVal nomFolio As String)
             SondeSiPermise(prj)
         mConsigne3 = "Rien n'a été dessiné : envoie-moi la photo, c'est ce que je dois savoir."
     End If
+End Sub
+
+' ============================================================================
+'  LE DIAGNOSTIC COMPLET (bouton 3) : une ligne par essai dans la feuille
+'  Diagnostic (niveau, essai, OK ou le code, détail), pour savoir d'un coup ce
+'  que SEE caché sait faire : 1 SEE, 2 lire le projet, 3 lire l'environnement,
+'  4 écrire par les méthodes du projet, 5 créer des objets, 6 ce qui est
+'  installé (outils d'import, générateur). Rien n'est enregistré ; les
+'  sous-groupes d'essai sont supprimés si SEE le permet. Aucune erreur n'en
+'  sort.
+' ============================================================================
+Private Sub DiagnosticComplet(ByVal prj As Object)
+    Dim g As Object, c As Object, sg As Object, x As Object, env As Object, envOuvert As Boolean, fam As Object, tb As Object, pt As Object
+    Dim sh As Object, s As String, numErr As Long, descErr As String, forme As String, refus As String, v As Variant, nb As Long
+    If gSimulation Then Exit Sub
+    On Error Resume Next
+    Contexte "Bouton 3", "diagnostic"
+    Set mDiagWs = FeuilleCreee("Diagnostic", True)
+    mDiagLigne = 1
+    mDiagOK = 0
+    mDiagKO = 0
+    EcrireLigne mDiagWs, 1, Array("Niveau", "Essai", "Résultat", "Détail")
+    mDiagWs.Rows(1).Font.Bold = True
+    ' --- 1. SEE
+    DiagLire "1 SEE", gApp, "ApplicationName"
+    DiagLire "1 SEE", gApp, "ApplicationVersion"
+    DiagLire "1 SEE", gApp, "ProductVersion"
+    DiagLire "1 SEE", gApp, "IsEProjectMode"
+    ' --- 2. lire le projet
+    DiagLire "2 Projet", prj, "Name"
+    DiagLire "2 Projet", prj, "EnvironmentName"
+    Err.Clear
+    prj.GetMainGroup g
+    DiagNote "2 Projet", "GetMainGroup", Err.Number, Err.Description, IIf(g Is Nothing, "rien rendu", "« " & LireProp(g, "Name") & " »")
+    If Not g Is Nothing Then
+        Set c = Nothing
+        Err.Clear
+        g.GetSheetCollection c
+        DiagNote "2 Projet", "Groupe.GetSheetCollection (folios du groupe)", Err.Number, Err.Description, DiagColl(c)
+        Set c = Nothing
+        Err.Clear
+        g.GetSubGroupCollection c
+        DiagNote "2 Projet", "Groupe.GetSubGroupCollection (sous-groupes)", Err.Number, Err.Description, DiagColl(c)
+        s = ""
+        Err.Clear
+        g.GetNextSheetNumber s
+        DiagNote "2 Projet", "Groupe.GetNextSheetNumber", Err.Number, Err.Description, "« " & s & " »"
+    End If
+    Set c = Nothing
+    Err.Clear
+    prj.GetAllSheets c
+    DiagNote "2 Projet", "GetAllSheets (tous les folios)", Err.Number, Err.Description, DiagColl(c)
+    If Not c Is Nothing Then
+        If NombreDe(c) > 0 Then
+            Set sh = ElementsDe(c).Item(1)
+            Set x = Nothing
+            Err.Clear
+            sh.GetSymbolCollection x
+            DiagNote "2 Projet", "1er folio « " & LireProp(sh, "Name") & " ».GetSymbolCollection", Err.Number, Err.Description, DiagColl(x)
+        End If
+    End If
+    Set c = Nothing
+    Err.Clear
+    prj.GetAllGroups c
+    DiagNote "2 Projet", "GetAllGroups", Err.Number, Err.Description, DiagColl(c)
+    Set c = Nothing
+    Err.Clear
+    prj.GetFamilyCollection c
+    DiagNote "2 Projet", "GetFamilyCollection (familles du projet)", Err.Number, Err.Description, DiagColl(c)
+    If Not c Is Nothing Then
+        If NombreDe(c) > 0 Then
+            Set fam = ElementsDe(c).Item(1)
+            Set x = Nothing
+            Err.Clear
+            fam.GetShapesCollection x
+            DiagNote "2 Projet", "famille du projet « " & LireProp(fam, "Name") & " ».GetShapesCollection", Err.Number, Err.Description, DiagColl(x)
+        End If
+    End If
+    Set c = Nothing
+    Err.Clear
+    prj.GetParameterSheetCollection c
+    DiagNote "2 Projet", "GetParameterSheetCollection", Err.Number, Err.Description, DiagColl(c)
+    ' --- 3. lire l'environnement
+    If Not mEnvProjet3 Is Nothing Then
+        Set env = mEnvProjet3
+    ElseIf Len(mNomEnv3) > 0 And Left$(mNomEnv3, 4) <> "#ERR" Then
+        Set env = SEE_OuvrirEnvironnementAutomation(mNomEnv3, forme, refus)
+        envOuvert = Not env Is Nothing
+        DiagNote "3 Environnement", "OpenEnvironment(« " & mNomEnv3 & " »)", IIf(env Is Nothing, -1, 0), refus, forme
+    End If
+    If Not env Is Nothing Then
+        Set c = Nothing
+        Err.Clear
+        env.GetShapeFamilyCollection 2, c
+        DiagNote "3 Environnement", "GetShapeFamilyCollection(2 : utilisateur)", Err.Number, Err.Description, DiagColl(c)
+        If Not c Is Nothing Then
+            If NombreDe(c) > 0 Then
+                Set fam = ElementsDe(c).Item(1)
+                Set x = Nothing
+                Err.Clear
+                fam.GetShapesCollection x
+                DiagNote "3 Environnement", "famille « " & LireProp(fam, "Name") & " ».GetShapesCollection", Err.Number, Err.Description, _
+                    DiagColl(x) & " ; TypeName : " & TypeName(x) & " ; Count : " & LireProp(x, "Count")
+            End If
+        End If
+        Set c = Nothing
+        Err.Clear
+        env.GetTitleBlockCollection c
+        DiagNote "3 Environnement", "GetTitleBlockCollection (cartouches)", Err.Number, Err.Description, DiagColl(c)
+        If Not c Is Nothing Then
+            If NombreDe(c) > 0 Then Set tb = ElementsDe(c).Item(1)
+        End If
+        Set c = Nothing
+        Err.Clear
+        env.GetParameterSheetCollection c
+        DiagNote "3 Environnement", "GetParameterSheetCollection", Err.Number, Err.Description, DiagColl(c)
+        Set c = Nothing
+        Err.Clear
+        env.GetBlockCollection 0, c
+        DiagNote "3 Environnement", "GetBlockCollection(0)", Err.Number, Err.Description, DiagColl(c)
+    End If
+    ' --- 4. écrire par les méthodes du projet (rien n'est enregistré)
+    If Not g Is Nothing Then
+        Set sg = Nothing
+        Err.Clear
+        g.CreateSubGroup "DIAG_PILOTE", sg
+        DiagNote "4 Écriture", "Groupe.CreateSubGroup(« DIAG_PILOTE »)", Err.Number, Err.Description, IIf(sg Is Nothing, "rien rendu", TypeName(sg) & " « " & LireProp(sg, "Name") & " »")
+        Set x = Nothing
+        Err.Clear
+        g.GetSubGroupByName "DIAG_PILOTE", x
+        DiagNote "4 Écriture", "Groupe.GetSubGroupByName(« DIAG_PILOTE ») après création", Err.Number, Err.Description, IIf(x Is Nothing, "PAS trouvé", "trouvé")
+        If Not sg Is Nothing And x Is Nothing Then
+            Err.Clear
+            g.AddSubGroup sg
+            DiagNote "4 Écriture", "Groupe.AddSubGroup(le sous-groupe créé)", Err.Number, Err.Description, ""
+            Set x = Nothing
+            Err.Clear
+            g.GetSubGroupByName "DIAG_PILOTE", x
+            DiagNote "4 Écriture", "GetSubGroupByName après AddSubGroup", Err.Number, Err.Description, IIf(x Is Nothing, "PAS trouvé", "trouvé")
+        End If
+        If Not x Is Nothing Then
+            Err.Clear
+            g.DeleteSubGroup x
+            DiagNote "4 Écriture", "Groupe.DeleteSubGroup(le sous-groupe trouvé)", Err.Number, Err.Description, ""
+        End If
+    End If
+    ' --- 5. créer des objets
+    Set x = Nothing
+    Set c = prj
+    Err.Clear
+    gApp.CreateObject OBJ_FOLIO, c, x
+    DiagNote "5 Création", "SeeAutomation.CreateObject(9 folio, projet)", Err.Number, Err.Description, IIf(x Is Nothing, "rien rendu", TypeName(x))
+    Set c = Nothing
+    If Not tb Is Nothing Then
+        Set pt = Nothing
+        Err.Clear
+        tb.GetPrimaryCoordinates pt
+        DiagNote "5 Création", "un point SANS CreateObject : cartouche « " & LireProp(tb, "Name") & " ».GetPrimaryCoordinates", Err.Number, _
+            Err.Description, IIf(pt Is Nothing, "rien rendu", TypeName(pt) & " X=" & LireProp(pt, "X") & " Y=" & LireProp(pt, "Y"))
+    End If
+    ' --- 6. ce qui est installé (lecture du disque)
+    DiagInstalle
+    ' l'environnement ouvert ici est refermé ici
+    If envOuvert Then
+        Err.Clear
+        gApp.CloseEnvironment env
+    End If
+    Set env = Nothing
+    mDiagWs.Columns("A:C").AutoFit
+    mDiagWs.Columns("D").ColumnWidth = 90
+    mDiagWs.Columns("D").WrapText = True
+    On Error GoTo 0
+    NoterEtape3 5, mEtapes3(5) & vbLf & "DIAGNOSTIC : " & (mDiagOK + mDiagKO) & " essais, " & mDiagOK & " OK, " & mDiagKO & _
+        " refusés : prends en photo TOUTE la feuille « Diagnostic » (2 ou 3 photos en descendant)"
+End Sub
+
+' Une propriété lue, pour le diagnostic.
+Private Sub DiagLire(ByVal niveau As String, ByVal obj As Object, ByVal prop As String)
+    Dim t As String
+    t = LirePropOuMethode(obj, prop)
+    If Left$(t, 4) = "#ERR" Then
+        DiagLigne niveau, prop, "refusé", t
+        mDiagKO = mDiagKO + 1
+    Else
+        DiagLigne niveau, prop, "OK", t
+        mDiagOK = mDiagOK + 1
+    End If
+End Sub
+
+' Un essai du diagnostic : OK si numErr = 0, sinon le code et la description.
+Private Sub DiagNote(ByVal niveau As String, ByVal essai As String, ByVal numErr As Long, ByVal descErr As String, ByVal detail As String)
+    If numErr = 0 Then
+        DiagLigne niveau, essai, "OK", detail
+        mDiagOK = mDiagOK + 1
+    Else
+        DiagLigne niveau, essai, CodeDeWindows(numErr), Left$(Trim$(descErr), 100) & IIf(Len(detail) > 0, " ; " & detail, "")
+        mDiagKO = mDiagKO + 1
+    End If
+    Journal "Diagnostic", niveau, essai, IIf(numErr = 0, "OK", "refusé") & " ; " & detail, numErr, descErr
+End Sub
+
+Private Sub DiagLigne(ByVal niveau As String, ByVal essai As String, ByVal resultat As String, ByVal detail As String)
+    On Error Resume Next
+    mDiagLigne = mDiagLigne + 1
+    EcrireLigne mDiagWs, mDiagLigne, Array(niveau, essai, resultat, MasquerChemins(detail))
+End Sub
+
+' Une collection, en clair : son nombre d'éléments et les noms des premiers.
+Private Function DiagColl(ByVal c As Object) As String
+    Dim e As Variant, n As Long, s As String
+    On Error Resume Next
+    If c Is Nothing Then
+        DiagColl = "rien rendu"
+        Exit Function
+    End If
+    For Each e In ElementsDe(c)
+        n = n + 1
+        If n <= 8 Then s = s & IIf(n > 1, ", ", "") & LireProp(e, "Name")
+    Next e
+    DiagColl = n & " élément(s)" & IIf(n > 0, " : " & s & IIf(n > 8, ", ...", ""), "")
+End Function
+
+' 6. Ce qui est installé autour de SEE (lecture du disque) : le dossier du
+' programme (LocalServer32 de la coclasse SeeAutomation), ses sous-dossiers et
+' ses programmes, et les outils connus de génération et d'import.
+Private Sub DiagInstalle()
+    Dim cmd As String, erreur As String, exe As String, dossier As String, racine As String, p As Variant, s As String, n As Long, f As String
+    On Error Resume Next
+    For Each p In Array("CLSID", "WOW6432Node\CLSID")
+        If Len(cmd) = 0 Then
+            If RegistreTexte("HKCR\" & CStr(p) & "\" & Reglage("CLSID_Automation", "") & "\LocalServer32", "", cmd, erreur) Then
+            End If
+        End If
+    Next p
+    exe = Trim$(Replace(cmd, """", ""))
+    If InStr(1, LCase$(exe), ".exe") > 0 Then exe = Left$(exe, InStr(1, LCase$(exe), ".exe") + 3)
+    If Len(exe) = 0 Then
+        DiagLigne "6 Installé", "programme de SEE (registre)", "inconnu", erreur
+        Exit Sub
+    End If
+    dossier = Left$(exe, InStrRev(exe, "\") - 1)
+    racine = Left$(dossier, InStrRev(dossier, "\") - 1)
+    racine = Left$(racine, InStrRev(racine, "\") - 1)
+    DiagLigne "6 Installé", "programme de SEE", "OK", exe
+    s = ""
+    n = 0
+    f = Dir$(dossier & "\*.exe")
+    Do While Len(f) > 0 And n < 60
+        n = n + 1
+        s = s & IIf(n > 1, ", ", "") & f
+        f = Dir$()
+    Loop
+    DiagLigne "6 Installé", "programmes du dossier EXE (" & n & ")", "OK", s
+    s = ""
+    n = 0
+    f = Dir$(racine & "\*", vbDirectory)
+    Do While Len(f) > 0 And n < 60
+        If f <> "." And f <> ".." Then
+            n = n + 1
+            s = s & IIf(n > 1, ", ", "") & f
+        End If
+        f = Dir$()
+    Loop
+    DiagLigne "6 Installé", "dossiers de " & racine, "OK", s
+    For Each p In Array(racine & "\Tools\Xml Batch Mode Generator\SEEBatchModeGenerator.exe", dossier & "\SEEBatchModeGenerator.exe", _
+            "C:\Program Files\IGE+XAO\Common\Plugins\SEE", "C:\Program Files (x86)\IGE+XAO\Common\Plugins\SEE", racine & "\Plugins", _
+            dossier & "\Plugins", racine & "\Doc\VBAHelp\SEEapp.chm")
+        f = Dir$(CStr(p), vbDirectory)
+        DiagLigne "6 Installé", CStr(p), IIf(Len(f) > 0, "PRÉSENT", "absent"), ""
+        If Len(f) > 0 And InStr(1, CStr(p), "Plugins", vbTextCompare) > 0 Then
+            s = ""
+            n = 0
+            f = Dir$(CStr(p) & "\*", vbDirectory)
+            Do While Len(f) > 0 And n < 60
+                If f <> "." And f <> ".." Then
+                    n = n + 1
+                    s = s & IIf(n > 1, ", ", "") & f
+                End If
+                f = Dir$()
+            Loop
+            DiagLigne "6 Installé", "contenu de " & CStr(p), "OK", s
+        End If
+    Next p
 End Sub
 
 ' 5 bis. Avant de créer : le projet est-il protégé (IsProjectProtected, en
