@@ -838,26 +838,72 @@ Private Function SondeSiPermise(ByVal prj As Object) As String
     Dim texte As String
     If RefusCreation(texte) = 0 Then Exit Function
     If Not ReglageOui("SondeCreation", "O") Then Exit Function
-    SondeSiPermise = vbLf & "autres essais : " & SondeCreationRapide(prj)
+    SondeSiPermise = vbLf & "autres essais : " & SondeCreationRapide(prj) & vbLf & "écriture par un autre chemin : " & EssaiEcriture(prj)
+End Function
+
+' SEE écrit-il dans le projet par un autre chemin que CreateObject ? Un
+' sous-groupe ESSAI_PILOTE_GROUPE créé dans le groupe principal
+' (Group.CreateSubGroup, qui rend le groupe), puis supprimé aussitôt
+' (DeleteSubGroup). Rien n'est enregistré : le bouton 3 n'enregistre que si
+' le folio a été dessiné.
+Private Function EssaiEcriture(ByVal prj As Object) As String
+    Dim g As Object, sg As Object, numErr As Long, descErr As String, r As String
+    If gSimulation Then
+        EssaiEcriture = "pas essayé (Simulation)"
+        Exit Function
+    End If
+    On Error Resume Next
+    Err.Clear
+    prj.GetMainGroup g
+    If g Is Nothing Then
+        Err.Clear
+        Set g = prj.GetMainGroup()
+    End If
+    If g Is Nothing Then
+        EssaiEcriture = "groupe principal illisible"
+        Exit Function
+    End If
+    Err.Clear
+    g.CreateSubGroup "ESSAI_PILOTE_GROUPE", sg
+    numErr = Err.Number
+    descErr = Err.Description
+    If numErr <> 0 Then
+        r = "CreateSubGroup : " & CodeDeWindows(numErr) & " « " & Left$(Trim$(descErr), 60) & " »"
+    ElseIf sg Is Nothing Then
+        r = "CreateSubGroup : ok, rien rendu"
+    Else
+        r = "CreateSubGroup : OUI (" & TypeName(sg) & ")"
+        Err.Clear
+        g.DeleteSubGroup sg
+        r = r & " ; supprimé : " & IIf(Err.Number = 0, "oui", CodeDeWindows(Err.Number))
+    End If
+    Journal gEtape, "essai d'écriture", "Group.CreateSubGroup", r
+    Set sg = Nothing
+    Set g = Nothing
+    EssaiEcriture = r
 End Function
 
 ' Quelques autres objets, EN MÉMOIRE SEULEMENT : rien n'est ajouté au projet,
 ' chaque objet est lâché aussitôt. Par la forme qui a tourné au bureau (type,
 ' contexte, objet en sortie) : point, trait, texte et symbole avec une COPIE
 ' du projet au milieu, puis le folio avec le groupe principal au milieu. Au
-' plus 7 appels (les deux derniers avec l'environnement au milieu : celui
-' attaché au projet, sinon un ouvert ici en lecture et refermé) ; arrêt si SEE
-' ne répond plus (800706BA, 800706BE, 462).
+' plus 12 appels (le folio et le point aussi avec l'environnement au milieu :
+' celui attaché au projet, sinon un ouvert ici en lecture et refermé ; puis
+' des objets de travail : collection, attribut, capture, impression, mise à
+' jour, avec le projet) ; arrêt si SEE ne répond plus (800706BA, 800706BE,
+' 462).
 Private Function SondeCreationRapide(ByVal prj As Object) As String
     Dim types As Variant, noms As Variant, i As Long, ctx As Object, x As Object, g As Object, s As String
     Dim numErr As Long, descErr As String, env As Object, envOuvert As Boolean, forme As String, refus As String
-    types = Array(OBJ_POINT, OBJ_LIGNE, OBJ_TEXTE, OBJ_SYMBOLE, OBJ_FOLIO, OBJ_FOLIO, OBJ_POINT)
-    noms = Array("point", "trait", "texte", "symbole", "folio par le groupe", "folio par l'environnement", "point par l'environnement")
+    types = Array(OBJ_POINT, OBJ_LIGNE, OBJ_TEXTE, OBJ_SYMBOLE, OBJ_FOLIO, OBJ_FOLIO, OBJ_POINT, _
+        OBJ_COLLECTION, 3, 33, 46, 59)
+    noms = Array("point", "trait", "texte", "symbole", "folio par le groupe", "folio par l'environnement", "point par l'environnement", _
+        "collection", "attribut", "capture", "impression", "mise à jour")
     On Error Resume Next
-    For i = 0 To 6
+    For i = 0 To 11
         Set x = Nothing
         Set ctx = Nothing
-        If i >= 5 Then
+        If i >= 5 And i <= 6 Then
             If env Is Nothing Then
                 If Not mEnvProjet3 Is Nothing Then
                     Set env = mEnvProjet3
@@ -871,7 +917,7 @@ Private Function SondeCreationRapide(ByVal prj As Object) As String
                 Exit For
             End If
             Set ctx = env
-        ElseIf i < 4 Then
+        ElseIf i < 4 Or i >= 7 Then
             Set ctx = prj
         Else
             Err.Clear
