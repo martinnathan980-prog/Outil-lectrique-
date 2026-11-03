@@ -95,6 +95,7 @@ Private mFolioRelu As Boolean   ' le bouton 3 a relu son folio dans Sonde_Folio 
 Private mNomEnv3 As String      ' le bouton 3 : l'environnement du projet ouvert (Project.EnvironmentName), tel que lu
 Private mFormesRelevees As Boolean ' le bouton 3 a relevé les formes de l'album dans Sonde_Symboles (la photo à demander)
 Private mConnecte3 As Boolean   ' le bouton 3 a connecté SEE (SeeAutomation.Login) : Logout à la fermeture
+Private mEnvProjet3 As Object   ' le bouton 3 : l'environnement attaché au projet (OpenEnvironmentForProject), refermé avant CloseProject
 
 ' trois folios de suite non créés : l'échec est systématique, le lot s'arrête
 Private Const ECHECS_MAX As Long = 3
@@ -306,6 +307,7 @@ Public Sub EssaiSansFenetre()
     mNomEnv3 = ""
     mFormesRelevees = False
     mConnecte3 = False
+    Set mEnvProjet3 = Nothing
     mMessageFin = ""
     mConsigne3 = ""
     For i = 1 To 9
@@ -342,6 +344,8 @@ Public Sub EssaiSansFenetre()
     ' 5. le projet, ouvert
     Set prj = OuvrirProjetDEssai(chemin)
     If prj Is Nothing Then GoTo Fermer
+    ' 5 bis. le projet protégé ? l'environnement attaché au projet (OpenEnvironmentForProject), avant de créer
+    PreparerProjet3 prj, chemin
     ' 6. le dessin
     DessinerSansFenetre prj, nomFolio
     ' 7. l'enregistrement
@@ -667,6 +671,64 @@ Private Sub DessinerSansFenetre(ByVal prj As Object, ByVal nomFolio As String)
     End If
 End Sub
 
+' 5 bis. Avant de créer : le projet est-il protégé (IsProjectProtected, en
+' lecture) ? Puis l'environnement ATTACHÉ au projet, OpenEnvironmentForProject
+' (projet, nom de l'environnement) : SEE caché refuse toute création
+' (80100000, le 3 novembre, même connecté) ; il lui manque peut-être
+' l'environnement du projet. Formes : la sortie en dernier (V4), sans
+' sortie, puis la valeur rendue ; arrêt dès que SEE a fait tourner la
+' méthode. L'environnement obtenu est refermé avant CloseProject.
+Private Sub PreparerProjet3(ByVal prj As Object, ByVal chemin As String)
+    Dim pc As Object, env As Object, numErr As Long, descErr As String, txt As String, prot As String, b As Boolean, v As Variant, f As Long
+    On Error Resume Next
+    ' le projet protégé ?
+    Err.Clear
+    v = Empty
+    v = gApp.IsProjectProtected(chemin)
+    numErr = Err.Number
+    If numErr = 0 Then
+        prot = CStr(v)
+    Else
+        Err.Clear
+        b = False
+        gApp.IsProjectProtected chemin, b
+        numErr = Err.Number
+        prot = IIf(numErr = 0, CStr(b), CodeDeWindows(numErr))
+    End If
+    ' l'environnement attaché au projet
+    If Len(mNomEnv3) = 0 Or Left$(mNomEnv3, 4) = "#ERR" Then
+        txt = "pas essayé (nom illisible)"
+    Else
+        For f = 1 To 3
+            Set pc = prj
+            Set env = Nothing
+            Err.Clear
+            Select Case f
+                Case 1
+                    gApp.OpenEnvironmentForProject pc, mNomEnv3, env
+                Case 2
+                    gApp.OpenEnvironmentForProject pc, mNomEnv3
+                Case Else
+                    Set env = gApp.OpenEnvironmentForProject(pc, mNomEnv3)
+            End Select
+            numErr = Err.Number
+            descErr = Err.Description
+            Set pc = Nothing
+            If numErr = 0 Then
+                txt = "OUI (forme " & f & IIf(env Is Nothing, ", rien rendu", ", " & TypeName(env)) & ")"
+                Set mEnvProjet3 = env
+                Exit For
+            End If
+            txt = CodeDeWindows(numErr) & " « " & Left$(Trim$(descErr), 80) & " »"
+            If Not (TypeRefuse(numErr) Or numErr = 449 Or numErr = 450) Then Exit For
+        Next f
+    End If
+    Set env = Nothing
+    On Error GoTo 0
+    Journal gEtape, gObjet, "SeeAutomation.OpenEnvironmentForProject", txt
+    NoterEtape3 5, mEtapes3(5) & vbLf & "projet protégé : " & prot & " ; environnement attaché au projet : " & txt
+End Sub
+
 ' 4 bis. La connexion à SEE ACCESS CONTROL, la fenêtre bleue que SEE montre à
 ' l'ouverture (Username, Password, LOGIN). SEE caché, lancé par Excel, n'est
 ' connecté à personne : il ouvre et lit, mais refuse peut-être d'écrire (au
@@ -740,7 +802,7 @@ End Function
 ' ou "" : la valeur rendue, puis le texte en sortie (V4). Au plus 11 appels.
 ' Vide si SEE ne la donne pas ; raison : sa dernière réponse.
 Private Function TraductionSEE(ByVal code As Long, ByRef raison As String) As String
-    Dim prot As Object, l As Variant, t As Variant, numErr As Long
+    Dim prot As Object, l As Variant, ts As String, lg As Long, numErr As Long
     On Error Resume Next
     Err.Clear
     Set prot = gApp.Protection
@@ -749,24 +811,24 @@ Private Function TraductionSEE(ByVal code As Long, ByRef raison As String) As St
         raison = "Protection : " & IIf(numErr = 0, "rien rendu", CodeDeWindows(numErr))
         Exit Function
     End If
-    For Each l In Array(1036, 1033, "FRA", "ENU", "")
+    For Each l In Array(1036, 1033, 12, 9, 0)
+        lg = CLng(l)
         Err.Clear
-        t = Empty
-        t = prot.GetErrorDescription(code, l)
+        ts = ""
+        ts = prot.GetErrorDescription(code, lg)
         numErr = Err.Number
         If numErr <> 0 Then
             Err.Clear
-            t = Empty
-            prot.GetErrorDescription code, l, t
+            ts = ""
+            prot.GetErrorDescription code, lg, ts
             numErr = Err.Number
         End If
-        If numErr = 0 And Not IsObject(t) Then
-            If Len(Trim$(CStr(t))) > 0 Then
-                TraductionSEE = Left$(Trim$(CStr(t)), 160)
-                Exit Function
-            End If
+        If numErr = 0 And Len(Trim$(ts)) > 0 Then
+            TraductionSEE = Left$(Trim$(ts), 160)
+            Exit Function
         End If
         raison = "GetErrorDescription : " & IIf(numErr = 0, "texte vide", CodeDeWindows(numErr))
+        If numErr <> 0 And Not (TypeRefuse(numErr) Or numErr = 449 Or numErr = 450) Then Exit For
     Next l
 End Function
 
@@ -783,17 +845,33 @@ End Function
 ' chaque objet est lâché aussitôt. Par la forme qui a tourné au bureau (type,
 ' contexte, objet en sortie) : point, trait, texte et symbole avec une COPIE
 ' du projet au milieu, puis le folio avec le groupe principal au milieu. Au
-' plus 5 appels ; arrêt si SEE ne répond plus (800706BA, 800706BE, 462).
+' plus 7 appels (les deux derniers avec l'environnement au milieu : celui
+' attaché au projet, sinon un ouvert ici en lecture et refermé) ; arrêt si SEE
+' ne répond plus (800706BA, 800706BE, 462).
 Private Function SondeCreationRapide(ByVal prj As Object) As String
     Dim types As Variant, noms As Variant, i As Long, ctx As Object, x As Object, g As Object, s As String
-    Dim numErr As Long, descErr As String
-    types = Array(OBJ_POINT, OBJ_LIGNE, OBJ_TEXTE, OBJ_SYMBOLE, OBJ_FOLIO)
-    noms = Array("point", "trait", "texte", "symbole", "folio par le groupe")
+    Dim numErr As Long, descErr As String, env As Object, envOuvert As Boolean, forme As String, refus As String
+    types = Array(OBJ_POINT, OBJ_LIGNE, OBJ_TEXTE, OBJ_SYMBOLE, OBJ_FOLIO, OBJ_FOLIO, OBJ_POINT)
+    noms = Array("point", "trait", "texte", "symbole", "folio par le groupe", "folio par l'environnement", "point par l'environnement")
     On Error Resume Next
-    For i = 0 To 4
+    For i = 0 To 6
         Set x = Nothing
         Set ctx = Nothing
-        If i < 4 Then
+        If i >= 5 Then
+            If env Is Nothing Then
+                If Not mEnvProjet3 Is Nothing Then
+                    Set env = mEnvProjet3
+                Else
+                    Set env = SEE_OuvrirEnvironnementAutomation(mNomEnv3, forme, refus)
+                    envOuvert = Not env Is Nothing
+                End If
+            End If
+            If env Is Nothing Then
+                s = s & " ; environnement : pas ouvert"
+                Exit For
+            End If
+            Set ctx = env
+        ElseIf i < 4 Then
             Set ctx = prj
         Else
             Err.Clear
@@ -829,6 +907,11 @@ Private Function SondeCreationRapide(ByVal prj As Object) As String
         End If
     Next i
     Set g = Nothing
+    If envOuvert Then
+        Err.Clear
+        gApp.CloseEnvironment env
+    End If
+    Set env = Nothing
     On Error GoTo 0
     SondeCreationRapide = Mid$(s, 4)
 End Function
@@ -928,6 +1011,15 @@ Private Sub FermerNotreSEE(ByRef prj As Object)
     Dim s As String, r As String, nb As Long, detail As String, etat As Integer, i As Long, numErr As Long, descErr As String
     Contexte "Bouton 3", "fermeture"
     EnCours3 9
+    If Not mEnvProjet3 Is Nothing Then
+        On Error Resume Next
+        Err.Clear
+        gApp.CloseEnvironment mEnvProjet3
+        Journal gEtape, gObjet, "SeeAutomation.CloseEnvironment(environnement du projet)", IIf(Err.Number = 0, "ok", "échec (sans gravité)"), _
+            Err.Number, Err.Description
+        Set mEnvProjet3 = Nothing
+        On Error GoTo 0
+    End If
     If prj Is Nothing Then
         r = "pas de projet ouvert"
     Else
@@ -947,7 +1039,13 @@ Private Sub FermerNotreSEE(ByRef prj As Object)
     End If
     s = "CloseProject(projet) : " & r
     If r <> "ok" And Not prj Is Nothing Then s = s & " ; Close : " & AppelFermeture(prj, "Close")
-    If mConnecte3 Then s = s & " ; Logout : " & AppelFermeture(gApp, "Logout")
+    If mConnecte3 Then
+        On Error Resume Next
+        Err.Clear
+        gApp.Logout
+        s = s & " ; Logout : " & IIf(Err.Number = 0, "ok", CodeDeWindows(Err.Number))
+        On Error GoTo 0
+    End If
     mConnecte3 = False
     s = s & " ; Quit : " & AppelFermeture(gApp, "Quit")
     ' tous les objets SEE lâchés AVANT d'attendre : le programme ne s'arrête pas tant qu'Excel en tient un
