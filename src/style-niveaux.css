@@ -14,7 +14,7 @@
   --t-1:#1c1c1f; --t-2:#55575d; --t-3:#6c6e75; --t-inverse:#ffffff;
   --accent:#1c1c1f; --accent-2:#000000; --accent-soft:#efede8; --accent-line:#cfcac0; --on-accent:#ffffff;
   --nv-cuivre:#a9581f; --nv-cuivre-soft:#f6ebe1; --nv-cuivre-ligne:#e2c3a8;
-  --vu-g1:#a9581f; --vu-g2:#6a4cc4; --vu-g3:#0d7a6f; --vu-g4:#b2347c; --vu-g5:#866a10; --vu-g6:#3d5f9f; --vu-ko:var(--ko);
+  --vu-g1:#a9581f; --vu-g2:#6a4cc4; --vu-g3:#0d7a6f; --vu-g4:#4b6378; --vu-g5:#866a10; --vu-g6:#3d5f9f; --vu-ko:var(--ko);
   --vu-pointe:color-mix(in srgb,var(--nv-cuivre) 32%,transparent);
   --sh-carte:0 0 0 1px rgba(28,22,12,.10),0 30px 72px -20px rgba(0,6,18,.62),0 10px 26px -12px rgba(0,6,18,.40);
   --sh-carte-tenue:0 0 0 1px rgba(28,22,12,.14),0 46px 100px -20px rgba(0,6,18,.7),0 16px 34px -12px rgba(0,6,18,.45);
@@ -27,7 +27,7 @@
   --accent:#f2f2f3; --accent-2:#ffffff; --accent-soft:#2a2b2f; --accent-line:#47484f; --on-accent:#161719;
   --ok:#4fd67d; --ok-soft:rgba(79,214,125,.12); --warn:#f2b55c; --warn-soft:rgba(242,181,92,.12); --ko:#ff7a6e; --ko-soft:rgba(255,122,110,.13); --info:#b9bbc1; --info-soft:#232428;
   --nv-cuivre:#e59c64; --nv-cuivre-soft:rgba(229,156,100,.13); --nv-cuivre-ligne:rgba(229,156,100,.42);
-  --vu-g1:#e59c64; --vu-g2:#a891f2; --vu-g3:#4cc4b5; --vu-g4:#f084c2; --vu-g5:#d9bb4f; --vu-g6:#8eaae6;
+  --vu-g1:#e59c64; --vu-g2:#a891f2; --vu-g3:#4cc4b5; --vu-g4:#a3b8cc; --vu-g5:#d9bb4f; --vu-g6:#8eaae6;
   --sh-carte:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5);
   --sh-carte-tenue:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.13),0 48px 110px -18px rgba(0,0,0,.85),0 16px 34px -10px rgba(0,0,0,.55);
   --sh-panneau:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4);
@@ -40,7 +40,7 @@
   --accent:#f2f2f3; --accent-2:#ffffff; --accent-soft:#2a2b2f; --accent-line:#47484f; --on-accent:#161719;
   --ok:#4fd67d; --ok-soft:rgba(79,214,125,.12); --warn:#f2b55c; --warn-soft:rgba(242,181,92,.12); --ko:#ff7a6e; --ko-soft:rgba(255,122,110,.13); --info:#b9bbc1; --info-soft:#232428;
   --nv-cuivre:#e59c64; --nv-cuivre-soft:rgba(229,156,100,.13); --nv-cuivre-ligne:rgba(229,156,100,.42);
-  --vu-g1:#e59c64; --vu-g2:#a891f2; --vu-g3:#4cc4b5; --vu-g4:#f084c2; --vu-g5:#d9bb4f; --vu-g6:#8eaae6;
+  --vu-g1:#e59c64; --vu-g2:#a891f2; --vu-g3:#4cc4b5; --vu-g4:#a3b8cc; --vu-g5:#d9bb4f; --vu-g6:#8eaae6;
   --sh-carte:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5);
   --sh-carte-tenue:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.13),0 48px 110px -18px rgba(0,0,0,.85),0 16px 34px -10px rgba(0,0,0,.55);
   --sh-panneau:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px rgba(255,255,255,.09),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4);

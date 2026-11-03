@@ -1,0 +1,189 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE RÉCAPITULATIF, DES TABLEAUX FINIS (08-recap.js) — chargé en dernier, il reprend la table sur ce que les retouches
+   v78c à v82 avaient laissé. Le lecteur : « la flèche, tu la mets immense, tu dis ça va de là à là, mais en fait tu as mis
+   le câble entre ; ce n'est pas du tout propre. État, pastille verte ou quoi, on ne comprend pas. » — « Le type est hyper
+   à gauche, le nombre hyper à droite… ça se travaille, les tableaux. » — « Il faut tout regarder. On ne doit plus
+   revenir dessus. »
+   Les règles, pour tous les onglets, en clair et en sombre, en moitié comme rétréci (une fiche rangée à droite) :
+     1. le rythme : chaque colonne à sa juste largeur, le même écart entre deux colonnes ; la dernière, vide, prend ce
+        qui reste — le tableau se lit comme un bloc serré, ses lignes courent sur toute la feuille ;
+     2. l'alignement : un titre se range comme ses valeurs — le texte à gauche, les nombres centrés sous leur titre
+        (alignés à droite dans une place fixe : les virgules tombent l'une sous l'autre) ;
+     3. une liaison : « de » contre la flèche, « vers » à sa pointe ; la flèche a une longueur fixe et porte l'étiquette
+        du câble en son milieu ;
+     4. l'état en mots, à sa couleur ; rien quand tout va bien (08-recap ôte la colonne entière quand rien n'est à dire) ;
+     5. les nombres à la taille du texte (la pastille des comptes du rail ne déborde plus dans la table).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. LE RYTHME ───
+   Défaut : la table s'étirait sur toute la feuille (la colonne de la croix réduite à 44 px), chaque colonne prenait sa
+   part du vide — un type à 200 px de son nombre, « De » et « Vers » séparés par une flèche immense.
+   Correction : la croix reprend toute la place qui reste ; les autres colonnes ont la largeur de leur contenu (un
+   plancher pour celles qui centrent un nombre ou un mot d'état), et un même écart, qui grandit un peu sur une grande
+   feuille. */
+#base #ba-tab{width:100%;table-layout:auto;--rc-pad:12px;--rc-fleche:104px}
+@container rc-corps (min-width:861px){ #base #ba-tab{--rc-pad:18px;--rc-fleche:128px} }
+@container rc-corps (min-width:1300px){ #base #ba-tab{--rc-pad:24px;--rc-fleche:136px} }
+#base #ba-tab :is(th,td){padding-left:var(--rc-pad);padding-right:var(--rc-pad)}
+#base #ba-tab :is(th,td):first-child{padding-left:var(--rc-g)}
+#base #ba-tab :is(th,td).rc-suppr{width:100%;padding-left:0;padding-right:12px}
+#base #ba-tab[data-onglet="cables"]{table-layout:auto}
+#base #ba-tab[data-onglet="cables"] :is(th,td).rc-suppr{width:100%}
+#base #ba-tab[data-onglet="cables"] :is(th,td).rc-c-aller{width:auto}
+/* les planchers : une colonne de nombres ou d'état ne se serre pas sous son mot ; un repère garde sa place */
+#base #ba-tab th:is(.rc-c-n,.rc-c-mesure,.rc-c-int){width:76px}
+#base #ba-tab th.rc-c-etat{width:88px}
+#base #ba-tab th.rc-c-rep{width:84px}
+#base #ba-tab td:is(.rc-c-etat,.rc-c-bout,.rc-c-rep,.rc-c-nature,.rc-c-norme){min-width:0}
+
+/* ─── 2. L'ALIGNEMENT ───
+   Le texte à gauche, son titre aussi ; les nombres centrés sous leur titre, alignés à droite dans leur place (08-recap,
+   `chiffre`) ; l'état est un mot : à gauche, ses points l'un sous l'autre. */
+#base #ba-tab :is(th,td){text-align:left}
+#base #ba-tab th .rc-th-l{justify-content:flex-start}
+#base #ba-tab :is(th,td):is(.rc-c-n,.rc-c-mesure,.rc-c-int){text-align:center}
+#base #ba-tab th:is(.rc-c-n,.rc-c-mesure,.rc-c-int) .rc-th-l{justify-content:center}
+#base #ba-tab td:is(.rc-c-n,.rc-c-mesure,.rc-c-int)>*{margin-left:auto;margin-right:auto}
+#base #ba-tab td.rc-c-etat .rc-etat{justify-content:flex-start}
+#base #ba-tab th[data-note]:is(.rc-c-n,.rc-c-mesure,.rc-c-int)::after{text-align:center}
+#base #ba-tab th[data-note]:not(:is(.rc-c-n,.rc-c-mesure,.rc-c-int))::after{text-align:left}
+/* la flèche du tri : derrière le mot d'un titre à gauche ; devant celui d'un titre centré ou à droite, sans le déplacer */
+#base #ba-tab th:is(.rc-c-n,.rc-c-mesure,.rc-c-int,.rc-c-cable,.rc-c-de) .rc-sens{position:absolute;right:100%;margin-right:3px}
+/* rien à écrire dans une case : rien du tout, plus de tiret (une colonne de tirets ne dit rien) */
+#base #ba-tab .rc-rien{display:none}
+
+/* ─── 3. UNE LIAISON, D'UN TRAIT : de ─── DR20 ──▸ vers ───
+   « de » se range à droite de sa case, contre la queue de la flèche ; « vers » part de sa pointe ; le même petit écart
+   des deux côtés. La flèche a une longueur fixe, de la couleur de sa route ; l'étiquette du câble est posée en son
+   milieu, une pastille de papier cerclée de la couleur de sa route (comme la loupe du plan) : son type, et sa gauge
+   quand le type ne la dit pas. Les titres suivent : « De » à droite, « Câble » au milieu, « Vers » à gauche. */
+#base #ba-tab :is(th,td).rc-c-de{text-align:right;padding-right:6px}
+#base #ba-tab :is(th,td).rc-c-vers{padding-left:6px}
+#base #ba-tab :is(th,td).rc-c-cable{text-align:center;padding-left:6px;padding-right:6px;width:var(--rc-fleche)}
+#base #ba-tab td.rc-c-cable{min-width:0}
+#base #ba-tab th.rc-c-cable .rc-th-l{justify-content:center}
+#base #ba-tab .rc-cable{--c:var(--t-3);position:relative;display:flex;align-items:center;justify-content:center;width:var(--rc-fleche);min-width:0;height:24px;margin:0 auto;gap:0}
+#base #ba-tab .rc-cable .rc-fleche{position:absolute;left:0;right:8px;top:50%;flex:none;width:auto;min-width:0;max-width:none;height:2px;margin:-1px 0 0;border-radius:1px;
+  background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c)}
+#base #ba-tab .rc-cable .rc-fleche::before{content:none}
+#base #ba-tab .rc-cable .rc-fleche::after{right:-8px;width:9px;height:10px}
+#base #ba-tab .rc-cable-type{position:relative;z-index:1;display:inline-flex;align-items:center;gap:0;min-width:0;height:20px;padding:0 7px;border-radius:6px;flex:none;
+  background:var(--s-surface);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 62%,var(--s-surface));transition:box-shadow var(--rapide)}
+#base #ba-tab .rc-cable-type.vide{padding:0;background:none;box-shadow:none}
+#base #ba-tab .rc-cable .rc-type{display:inline-block;height:auto;min-width:0;padding:2px 2px;margin:-2px -2px;border-radius:4px;background:none;box-shadow:none;
+  font:600 var(--f-11)/1 var(--mono);letter-spacing:.01em;color:var(--t-1);text-decoration:none}
+#base #ba-tab .rc-cable .rc-type.rc-vide{min-width:28px}
+#base #ba-tab .rc-cable .rc-type.rc-vide::before{font:400 var(--f-11)/1 var(--sans)}
+#base #ba-tab .rc-cable .rc-jauge{min-width:0;font:500 var(--f-11)/1 var(--sans);font-style:normal;color:var(--t-2)}
+#base #ba-tab .rc-cable .rc-jauge::before{content:"·";margin:0 4px;color:var(--t-3)}
+#base #ba-tab .rc-cable .rc-auto{width:18px;height:18px;margin:0 -4px 0 2px;font-size:var(--f-11)}
+/* ce qui s'écrit : sous le pointeur, le cadre de la pastille prend l'air d'un champ ; au clavier, l'anneau commun */
+#base #ba-tab tbody tr:hover .rc-cable-type:has(.rc-type:hover){box-shadow:inset 0 0 0 1px var(--filet-champ),var(--sh-1)}
+#base #ba-tab tbody tr .rc-cable .rc-type:is(:hover,:focus,:focus-visible){background:none;box-shadow:none}
+#base #ba-tab tbody tr .rc-cable-type:has(.rc-type:focus){box-shadow:0 0 0 2px var(--anneau-c)}
+#base #ba-tab tbody tr .rc-cable-type.vide:has(.rc-type:hover){padding:0 7px;background:var(--s-surface)}
+/* un bout : le repère en chasse fixe, sa borne en pastille, « masse » ou « renvoi » en mot doux */
+/* (les valeurs qui s'écrivent ont 5 px de marge négative : l'écart vu entre le repère et sa borne est de 8 px) */
+#base #ba-tab .rc-bout{gap:13px}
+#base #ba-tab .rc-bout .rc-nat{margin-left:-2px}
+/* le repère du bloc choisi sur le plan, là où il paraît (de ou vers) : surligné de cuivre, sans toucher sa borne */
+#base #ba-tab .rc-bout.ici .rc-r{background:var(--nv-cuivre-soft);box-shadow:none;border-radius:5px}
+/* les lignes d'un bloc choisi ne soulignent leurs valeurs qu'au survol, comme les autres */
+#base #ba-tab tbody tr.on.lie:not(:hover) .rc-v{text-decoration-color:transparent}
+/* une longueur ou une masse supposée (l'hypothèse de la simulation) : « ≈ » devant, en gris (style-v79) */
+#base #ba-tab .rc-mesure.rc-suppose .rc-chiffre .rc-n{color:var(--t-2);font-weight:500}
+
+/* ─── 4. L'ÉTAT, EN MOTS ───
+   « problème » en rouge, « à voir » en ambre, un point devant ; « 3 problèmes », « 1 à voir » pour un repère. Ce qui va
+   bien ne se dessine pas (le mot reste pour le lecteur d'écran). Un verdict (« ne disjoncte pas ») garde son point vert :
+   il dit un mot. */
+#base #ba-tab .rc-etat{gap:7px;font:500 var(--f-13)/1.3 var(--sans)}
+#base #ba-tab .rc-etat i{width:7px;height:7px}
+#base #ba-tab .rc-etat.ok.seul{display:inline;padding:0}
+#base #ba-tab .rc-etat.ok:not(.seul){color:var(--t-1)}
+/* les lignes qui tiennent au bloc choisi (ses liaisons, ses problèmes, ses raccords : la recherche dit déjà son nom) ne se
+   teintent pas toutes de cuivre ; seule la ligne qui EST l'objet choisi s'y pose */
+#base #ba-tab tr.on.lie td{background:none}
+#base #ba-tab tbody tr.on.lie[data-k]:hover td{background:var(--s-hover)}
+#base #ba-tab tr.on.lie td:first-child{box-shadow:none}
+
+/* ─── 5. LES NOMBRES À LA TAILLE DU TEXTE ───
+   Défaut : la pastille des comptes du rail (`.rc-n` : 11 px, gras, rembourrée) s'appliquait aussi aux nombres de la
+   table — « 10 A », « 7 / 10 », « 29 » paraissaient plus petits et plus gras que le texte voisin.
+   Correction : dans la table, un nombre est du texte de 13 px, en chiffres tabulaires. */
+#base #ba-tab .rc-n{min-width:0;height:auto;border-radius:0;background:none;place-items:normal;font:500 var(--f-13)/1.4 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
+#base #ba-tab .rc-n:not(.rc-v){display:inline;padding:0}
+#base #ba-tab .rc-v.rc-n:not(.rc-gamme-v){display:inline-block;padding:2px 5px;margin:-2px -5px;border-radius:5px}
+#base #ba-tab .rc-n.rc-fort{font-weight:600}
+#base #ba-tab :is(.rc-chiffre.ko,.rc-frac.ko) .rc-n{color:var(--ko);font-weight:600}
+#base #ba-tab .rc-chiffre.att .rc-n{color:var(--warn);font-weight:600}
+#base #ba-tab .rc-retest.autre .rc-n{color:var(--t-3)}
+#base #ba-tab .rc-chiffre{gap:3px;min-width:var(--w,52px)}
+/* la place des chiffres d'une colonne : la largeur du plus long (08-recap, `calerChiffres`), centrée sous le titre */
+#base #ba-tab td:nth-child(1) .rc-chiffre{min-width:var(--wc1,var(--w,52px))}
+#base #ba-tab td:nth-child(2) .rc-chiffre{min-width:var(--wc2,var(--w,52px))}
+#base #ba-tab td:nth-child(3) .rc-chiffre{min-width:var(--wc3,var(--w,52px))}
+#base #ba-tab td:nth-child(4) .rc-chiffre{min-width:var(--wc4,var(--w,52px))}
+#base #ba-tab td:nth-child(5) .rc-chiffre{min-width:var(--wc5,var(--w,52px))}
+#base #ba-tab td:nth-child(6) .rc-chiffre{min-width:var(--wc6,var(--w,52px))}
+#base #ba-tab td:nth-child(7) .rc-chiffre{min-width:var(--wc7,var(--w,52px))}
+#base #ba-tab td:nth-child(8) .rc-chiffre{min-width:var(--wc8,var(--w,52px))}
+#base #ba-tab td:nth-child(9) .rc-chiffre{min-width:var(--wc9,var(--w,52px))}
+#base #ba-tab td:nth-child(10) .rc-chiffre{min-width:var(--wc10,var(--w,52px))}
+#base #ba-tab td:nth-child(11) .rc-chiffre{min-width:var(--wc11,var(--w,52px))}
+#base #ba-tab td:nth-child(12) .rc-chiffre{min-width:var(--wc12,var(--w,52px))}
+#base #ba-tab td:nth-child(13) .rc-chiffre{min-width:var(--wc13,var(--w,52px))}
+#base #ba-tab td:nth-child(14) .rc-chiffre{min-width:var(--wc14,var(--w,52px))}
+#base #ba-tab td:nth-child(15) .rc-chiffre{min-width:var(--wc15,var(--w,52px))}
+#base #ba-tab td:nth-child(16) .rc-chiffre{min-width:var(--wc16,var(--w,52px))}
+/* le temps de la mesure, chaque place se serre sur son chiffre */
+#base #ba-tab.rc-cale td:nth-child(n) .rc-chiffre{min-width:0}
+#base #ba-tab .rc-u,#base #ba-tab .rc-frac i,#base #ba-tab .rc-adm{font-size:var(--f-12);color:var(--t-2)}
+#base #ba-tab .rc-frac{gap:4px}
+
+/* ─── 6. LES REPÈRES ET LES MOTS : une seule voix ───
+   Le type d'un câble (onglet Câbles) est la même étiquette que sur la flèche : du papier, un filet, la chasse fixe — plus
+   la pastille cuivre (le cuivre ne dit que le choix). */
+#base #ba-tab[data-onglet="cables"] .rc-type{display:inline-flex;align-items:center;height:20px;padding:0 7px;margin:0;border-radius:6px;background:var(--s-surface);
+  box-shadow:inset 0 0 0 1px var(--s-line-2);font:600 var(--f-11)/1 var(--mono);letter-spacing:.01em;color:var(--t-1);text-decoration:none}
+#base #ba-tab[data-onglet="cables"] tbody tr:hover .rc-type:hover{box-shadow:inset 0 0 0 1px var(--filet-champ),var(--sh-1)}
+#base #ba-tab[data-onglet="cables"] .rc-type.rc-vide{min-width:52px}
+/* une barrette que VOLTA a ajoutée : son repère provisoire, le mot « ajoutée » (d'où elle vient : sa bulle), « Poser » —
+   court, sa colonne ne s'élargit plus pour une phrase */
+#base #ba-tab .rc-aposer{gap:10px}
+#base #ba-tab .rc-ajout{padding:2px 7px;border-radius:999px;background:var(--s-sunken);font:500 var(--f-11)/1.2 var(--sans);color:var(--t-2);cursor:help}
+/* un contact à écrire : son mot paraît sur la ligne survolée ou choisie, comme les autres cases vides (plus de tiret fixe) */
+#base #ba-tab .rc-ct.rc-vide::before{opacity:0}
+#base #ba-tab tr:is(:hover,.on,.neuve) .rc-ct.rc-vide::before,#base #ba-tab .rc-ct.rc-vide:focus::before{opacity:1}
+/* les choix d'un raccord : le défaut à l'encre seconde, le choix fait à l'encre — sur une ligne, même rétréci (la table
+   serrée a la place : plus de « droit · sans reprise » coupé en deux) */
+#base #ba-tab .rc-choix .rc-pt{margin:0 6px}
+#base #ba-tab td .rc-choix{flex-wrap:nowrap;min-width:0;max-width:none}
+
+/* ─── 7. LES PROBLÈMES : l'objet, ce qui ne va pas, ce qu'il faut faire ───
+   Rangés par genre, plus de colonne de points (08-recap : l'intercalaire dit le niveau) ; les phrases prennent la place,
+   la croix ne la vole pas. */
+#base #ba-tab[data-onglet="problemes"] :is(th,td).rc-suppr{width:auto}
+#base #ba-tab[data-onglet="problemes"] :is(th,td).rc-c-etat{width:auto}
+#base #ba-tab[data-onglet="problemes"] td.rc-c-phrase{min-width:200px}
+#base #ba-tab[data-onglet="problemes"] td.rc-c-que{min-width:240px}
+
+/* ─── 8. LE PIED DE L'ONGLET CÂBLES : le total, la masse par route ───
+   Une bande comme l'en-tête, collée au bas de la feuille : « Total », le nombre, la longueur, la masse sous leurs colonnes
+   (les mêmes places de chiffres), puis la masse de chaque route avec son trait. */
+#base #ba-tab tr.rc-total td{position:sticky;bottom:0;z-index:1;height:40px;background:var(--v-tete,var(--s-sunken));border-top:1px solid var(--s-line-2);border-bottom:none}
+#base #ba-tab tr.rc-total .rc-n{font-weight:600}
+#base #ba-tab tr.rc-total .rc-mesure.rc-suppose .rc-chiffre .rc-n{color:var(--t-2);font-weight:600}
+#base #ba-tab .rc-total-t{font:600 var(--f-13)/1 var(--sans);color:var(--t-1)}
+#base #ba-tab td.rc-total-d{white-space:normal;padding-top:6px;padding-bottom:6px}
+#base #ba-tab .rc-total-routes{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 22px}
+@container rc-corps (max-width:860px){ #base #ba-tab .rc-total-routes{column-gap:16px} }
+#base #ba-tab .rc-total-r{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font:500 var(--f-12)/1 var(--sans);letter-spacing:.02em;color:var(--t-2)}
+#base #ba-tab .rc-total-r .rc-trait{width:14px}
+#base #ba-tab .rc-total-r .rc-n{margin-left:2px;letter-spacing:0;font-weight:600}
+#base #ba-tab .rc-total-r .rc-n.rc-sup{color:var(--t-2)}
+/* (la feuille garde 24 px d'air sous sa dernière ligne : avec un pied collé, il passerait des lignes dessous — le pied est la fin) */
+#base #ba-corps:has(tr.rc-total){padding-bottom:0}
+
+/* v83 — une norme ne se coupe pas en deux lignes (« EN 3646- / 002 ») : il y a la place */
+#base td.rc-c-norme,#base td.rc-c-norme .rc-norme{white-space:nowrap}

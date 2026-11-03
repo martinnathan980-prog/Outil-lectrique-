@@ -19,10 +19,12 @@
        le contact d'un bout se change là où on le voit (sa fiche ; ici les
        colonnes « Contact de » et « Contact vers »).
      · PEU DE COLONNES D'OFFICE, celles du quotidien ; le reste attend dans
-       « Colonnes ». Une liaison se lit comme une phrase : de (repère:borne) →
-       le câble (son numéro, son type, sa gauge, une flèche de la couleur de
-       sa route, épaisse selon la gauge) → vers ; sa longueur ; UN état (ok,
-       à voir, problème : un point et un mot), son pourquoi dans la bulle.
+       « Colonnes ». Une liaison se lit comme une phrase : de (repère, borne)
+       → une flèche de longueur fixe, de la couleur de sa route, qui porte
+       l'étiquette du câble (son type, sa gauge si le type ne la dit pas) →
+       vers ; sa longueur ; son état en mots (à voir, problème — rien quand
+       tout va bien), son pourquoi dans la bulle. Une colonne qui ne dirait
+       rien pour les lignes montrées ne se pose pas (`colonnesUtiles`).
      · LA COULEUR NE DIT QUE L'ÉTAT, et la route d'un câble ; le reste est à
        l'encre, les identifiants en chasse fixe.
      · TOUT SE CORRIGE SUR PLACE : une valeur qu'on peut écrire prend au
@@ -189,18 +191,23 @@ const amp1 = x => x == null || !isFinite(x) ? '' : nombre((Math.round(x * 10) / 
 const metres = x => nombre((Math.round(x * 100) / 100).toFixed(2));
 // un nombre et son unité, alignés à droite dans leur place ; ce qui suit (l'origine, ↺) se range derrière
 const chiffre = (html, u, cls) => `<span class="rc-chiffre${cls ? ' ' + cls : ''}">${html}${u ? unite(u) : ''}</span>`;
+// une fraction (« 7 / 10 ») : le premier nombre dans la place des chiffres de sa colonne — les barres tombent l'une sous l'autre
+const fraction = (a, b, cls) => `<span class="rc-frac${cls ? ' ' + cls : ''}">${chiffre(`<b class="rc-n">${a}</b>`)}<i>/ ${b}</i></span>`;
 /* L'ÉTAT, partout pareil : un point de sa couleur et un mot (ok, à voir, problème — ou ce qu'il compte), le pourquoi
    dans la bulle. */
 const MOTS_ETAT = { ok: 'ok', att: 'à voir', ko: 'problème' };
 /* (v74 : « l'œil se perd ») ce qui va bien se tait : « ok » n'est plus écrit deux cents fois — son point vert suffit, le mot
    reste pour le lecteur d'écran et le CSV ; « à voir » et « problème » gardent leur mot, ils sortent ainsi du lot. */
-const etatHtml = (niveau, mot, bulle) => { if (!niveau) return rien; const m = mot || MOTS_ETAT[niveau], seul = m === 'ok';
-  return `<span class="rc-etat ${niveau}${seul ? ' seul' : ''}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}><i aria-hidden="true"></i>${seul ? '<span class="sr">ok</span>' : esc(m)}</span>`; };
+/* (le lecteur : « État, pastille verte ou quoi, on ne comprend pas ») ce qui va bien ne se dessine plus du tout : ni point,
+   ni mot à l'écran — « ok » reste pour le lecteur d'écran et le CSV ; une colonne d'état où tout va bien ne se pose pas
+   (`vide`, `colonnesUtiles`). Le reste se dit en mots, à sa couleur : « problème », « à voir », « 3 problèmes ». */
+const etatHtml = (niveau, mot, bulle) => { if (!niveau) return rien; const m = mot || MOTS_ETAT[niveau];
+  if (m === 'ok') return '<span class="rc-etat ok seul"><span class="sr">ok</span></span>';
+  return `<span class="rc-etat ${niveau}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}><i aria-hidden="true"></i>${esc(m)}</span>`; };
 const rangEtat = n => ({ ko: 0, att: 1, ok: 2 })[n] ?? 3;
 /* LA GAUGE, une fois (v74 ; le designer v73 : « trois styles de disque sans légende » ; le technicien : « la gauge en simple
    nombre ») : un nombre à l'encre seconde, sans disque — et dans la case du câble, seulement quand le type ne la dit pas
-   déjà (DR12 dit 12) ; la flèche, à peine plus épaisse pour un gros câble (1,5 à 3 px : elle ne crie plus). */
-const epaisseur = g => g == null ? 1.5 : g <= 16 ? Math.min(3, 2.2 + 0.1 * (16 - g)) : Math.max(1.5, 2.2 - 0.15 * (g - 16));
+   déjà (DR12 dit 12) ; toutes les flèches d'une colonne ont la même épaisseur (v81 : la gauge ne l'épaissit plus). */
 const pastilleJauge = g => `<span class="rc-jauge ${g == null ? 'inconnue' : g <= 16 ? 'forte' : g <= 20 ? 'moyenne' : 'fine'}" data-bulle="${g == null ? 'Gauge inconnue : le type ne la dit pas' : 'Gauge ' + g + ' AWG'}">${g == null ? '?' : g}</span>`;
 const typeDitJauge = (t, g) => g != null && new RegExp('(^|\\D)' + g + '$').test(String(t || '').trim());
 const traitRoute = c => `<i class="rc-trait"${c ? ` style="--c:${c}"` : ''}></i>`;
@@ -221,14 +228,17 @@ const bout = (l, c) => { const de = c === 'de', r = l[c], b = l[de ? 'borneDe' :
 const rendu = (l, f) => origineChamp(l, f) === 'main' && l.avant && l.avant[f] ? rond(f, 'la valeur de l’installation (' + l.avant[f] + ')') : '';
 const contactH = (l, F, c) => { const x = F[c], f = c === 'de' ? 'contactDe' : 'contactVers'; if (!x) return rien;
   const titre = x.main ? 'Écrit à la main' + (x.auto ? ' — le calcul donne ' + x.auto : '') : x.ko ? 'Ce contact refuse la gauge du câble' : !x.ref ? (x.connu ? 'Aucun contact de la table ne va à ce câble' : 'Aucun plan ne connaît ce connecteur : écrivez le contact') : (x.taille ? 'Contact taille ' + x.taille + (x.sexe ? ' · ' + (x.sexe === 'M' ? 'mâle' : 'femelle') : '') : '');
-  return `<span class="rc-ctc">${valT(f, x.ref, { cls: 'rc-ct' + (x.ko ? ' ko' : ''), ph: '—', titre: (titre ? titre + ' — ' : '') + 'double-clic pour en choisir un autre' })}${x.acc ? `<small class="rc-acc">+ ${esc(x.acc)}</small>` : ''}${x.main ? orig('main') + rond(f, x.auto ? 'le contact calculé (' + x.auto + ')' : 'le calcul') : ''}</span>`; };
+  return `<span class="rc-ctc">${valT(f, x.ref, { cls: 'rc-ct' + (x.ko ? ' ko' : ''), ph: 'contact', titre: (titre ? titre + ' — ' : '') + 'double-clic pour en choisir un autre' })}${x.acc ? `<small class="rc-acc">+ ${esc(x.acc)}</small>` : ''}${x.main ? orig('main') + rond(f, x.auto ? 'le contact calculé (' + x.auto + ')' : 'le calcul') : ''}</span>`; };
 const motEtatFil = r => { const n = r.F().etat.niveau; return n ? MOTS_ETAT[n] : ''; };
-/* Le câble : son type, sa gauge, puis la flèche vers « vers », de la couleur de sa route (v78c : plus de numéro — le lecteur :
-   « les câbles n'ont plus de numéro du tout »). */
-const celluleCable = r => { const l = r.l, g = r.F().jauge, c = routes().get(l.route || '') || '';
-  return `<span class="rc-cable${c ? '' : ' sans-route'}${g == null ? ' sans-jauge' : ''}" style="${c ? '--c:' + c + ';' : ''}--e:${epaisseur(g)}px">`
-    + `<span class="rc-cable-type">${valT('type', l.type, { cls: 'rc-type', ph: 'type' })}${rendu(l, 'type')}</span>${typeDitJauge(l.type, g) ? '' : pastilleJauge(g)}`
-    + `<i class="rc-fleche" data-bulle="${escA((l.route ? 'Route ' + l.route : 'Sans route') + (g != null ? ' · ' + g + ' AWG' : ''))}"></i></span>`; };
+/* LE CÂBLE EST LE LIEN (le lecteur : « la flèche, tu la mets immense, tu dis ça va de là à là, mais en fait tu as mis le câble
+   entre ; ce n'est pas du tout propre »). De → Vers se lit d'un trait : « de » finit contre la flèche, « vers » part de sa
+   pointe ; la flèche a une longueur fixe, de la couleur de sa route, et porte en son milieu l'étiquette du câble — son type
+   (et sa gauge quand le type ne la dit pas), sur une pastille de papier cerclée de la couleur de sa route, comme la loupe
+   du plan. Plus de numéro (v78c : « les câbles n'ont plus de numéro du tout »). */
+const celluleCable = r => { const l = r.l, g = r.F().jauge, c = routes().get(l.route || '') || '', dit = typeDitJauge(l.type, g);
+  const bulle = (l.route ? 'Route ' + l.route : 'Sans route') + (g != null ? ' · gauge ' + g + ' AWG' : ' · gauge inconnue');
+  return `<span class="rc-cable${c ? '' : ' sans-route'}${g == null ? ' sans-jauge' : ''}"${c ? ` style="--c:${c}"` : ''} data-bulle="${escA(bulle)}"><i class="rc-fleche" aria-hidden="true"></i>`
+    + `<span class="rc-cable-type${l.type || (g != null && !dit) ? '' : ' vide'}">${valT('type', l.type, { cls: 'rc-type', ph: 'type' })}${g != null && !dit ? `<i class="rc-jauge">${g}</i>` : ''}${rendu(l, 'type')}</span></span>`; };
 const celluleLongueur = r => { const l = r.l, o = l.longueur > 0 ? origineChamp(l, 'longueur') : 'hyp';
   return `<span class="rc-mesure${o === 'hyp' ? ' rc-suppose' : ''}">${chiffre(val('longueur', metres(r.F().L), { cls: 'rc-n', titre: o === 'hyp' ? 'Aucune longueur dans l’installation : la longueur supposée par la simulation. Double-clic pour écrire la longueur mesurée.' : '' }), 'm')}`
     // « supposée » une fois : dans l'en-tête quand toutes les longueurs montrées le sont (la note de sa colonne), sinon sur
@@ -245,14 +255,15 @@ const celluleChute = r => { const c = r.F().c, u = c.total ? c.total.dU : c.dU; 
   return `<span class="rc-mesure" data-bulle="${escA(c.total ? 'En ligne depuis ' + r.F().x.al.nom + ' : ' + volts(c.total.dU) + (c.max != null ? ' sur ' + volts(c.max) + ' admis' : '') + (c.reel ? '' : ' (longueurs d’hypothèse)') + '\nSur ce câble : ' + volts(c.dU) : 'Sur ce câble seul : aucun disjoncteur en amont')}">`
     + `${chiffre(`<b class="rc-n">${fmt(u, u < 0.1 ? 3 : 2)}</b>`, 'V', niv)}${c.total && c.max != null ? `<span class="rc-adm">/ ${fmt(c.max, 2)}</span>` : ''}</span>`; };
 const COLONNES_LIAISONS = [
-  { k: 'de', t: 'De', cls: 'rc-c-bout', html: r => bout(r.l, 'de') + rendu(r.l, 'de'), tri: r => r.l.de + '\u0001' + r.l.borneDe, texte: r => r.l.de + (r.l.borneDe ? ':' + r.l.borneDe : '') },
+  // « de » se range contre la flèche (à droite de sa case), « vers » part de sa pointe (à gauche) : la phrase se lit d'un trait
+  { k: 'de', t: 'De', cls: 'rc-c-bout rc-c-de', html: r => bout(r.l, 'de') + rendu(r.l, 'de'), tri: r => r.l.de + '\u0001' + r.l.borneDe, texte: r => r.l.de + (r.l.borneDe ? ':' + r.l.borneDe : '') },
   { k: 'cable', t: 'Câble', cls: 'rc-c-cable', html: celluleCable, tri: r => r.l.type || '', texte: r => [r.l.type, r.F().jauge != null ? r.F().jauge + ' AWG' : ''].filter(Boolean).join(' ') },
-  { k: 'vers', t: 'Vers', cls: 'rc-c-bout', html: r => bout(r.l, 'vers') + rendu(r.l, 'vers'), tri: r => r.l.vers + '\u0001' + r.l.borneVers, texte: r => r.l.vers + (r.l.borneVers ? ':' + r.l.borneVers : '') },
+  { k: 'vers', t: 'Vers', cls: 'rc-c-bout rc-c-vers', html: r => bout(r.l, 'vers') + rendu(r.l, 'vers'), tri: r => r.l.vers + '\u0001' + r.l.borneVers, texte: r => r.l.vers + (r.l.borneVers ? ':' + r.l.borneVers : '') },
   { k: 'longueur', t: 'Longueur', cls: 'rc-c-mesure', html: celluleLongueur, tri: r => r.F().L, texte: r => metres(r.F().L) + ' m' + (r.l.longueur > 0 ? '' : ' (hypothèse)'),
     note: L => L.every(r => !(r.l.longueur > 0)) ? ['supposée', 'Aucune longueur dans l’installation : chaque câble compte ' + metres(H_().longueur) + ' m, l’hypothèse de la simulation (menu ⋮ → Hypothèses). Écrivez la longueur mesurée d’un double-clic.'] : null },
-  { k: 'etat', t: 'État', cls: 'rc-c-etat', html: r => { const e = r.F().etat; return etatHtml(e.niveau, '', e.bulle); }, tri: r => rangEtat(r.F().etat.niveau), texte: motEtatFil },
+  { k: 'etat', t: 'État', cls: 'rc-c-etat', html: r => { const e = r.F().etat; return etatHtml(e.niveau, '', e.bulle); }, tri: r => rangEtat(r.F().etat.niveau), texte: motEtatFil, vide: r => !aReprendre(r.F().etat.niveau) },
   // en plus, au choix
-  { k: 'jauge', t: 'Gauge', option: true, g: 'Le câble', html: r => pastilleJauge(r.F().jauge), tri: r => r.F().jauge == null ? 99 : r.F().jauge, texte: r => r.F().jauge != null ? r.F().jauge + ' AWG' : '' },
+  { k: 'jauge', t: 'Gauge', cls: 'rc-c-n', option: true, g: 'Le câble', html: r => chiffre(pastilleJauge(r.F().jauge)), tri: r => r.F().jauge == null ? 99 : r.F().jauge, texte: r => r.F().jauge != null ? r.F().jauge + ' AWG' : '' },
   { k: 'route', t: 'Route', option: true, g: 'Le câble', html: r => `<span class="rc-route">${traitRoute(routes().get(r.l.route || ''))}${valT('route', r.l.route, { ph: 'route' })}${rendu(r.l, 'route')}</span>`, tri: r => r.l.route, texte: r => r.l.route },
   { k: 'intensite', t: 'Intensité', option: true, g: 'Le câble', cls: 'rc-c-int', html: celluleIntensite, tri: r => { const x = r.F().x; return x.continu ? x.I / x.continu : -1; }, texte: r => { const x = r.F().x; return x.fn ? amp1(x.I) + ' A / ' + amp1(x.continu) + ' A' : ''; } },
   { k: 'chute', t: 'Chute', option: true, g: 'Le câble', cls: 'rc-c-mesure', html: celluleChute, tri: r => { const c = r.F().c; return c.total ? c.total.dU : c.dU ?? -1; }, texte: r => { const c = r.F().c, u = c.total ? c.total.dU : c.dU; return u == null ? '' : fmt(u, 2) + ' V'; } },
@@ -372,11 +383,12 @@ const etatRepere = nom => { const e = etatDuNom(nom);
   return { niveau: e.niveau || 'ok', mot: e.ko.length ? pluriel(e.ko.length, 'problème') : e.att.length ? e.att.length + INSECABLE + 'à voir' : 'ok', bulle: [...e.ko, ...e.att].map(majuscule).join('\n') }; };
 /* Les colonnes que les onglets de repères partagent : le repère (en tête), ses problèmes (au bout), son folio (en plus). */
 const COL_REPERE = { k: 'rep', t: 'Repère', cls: 'rc-c-rep', html: r => r.aPoser
-    ? `<span class="rc-aposer">${valT('rep', r.nom, { cls: 'rc-r aposer', titre: 'Barrette ajoutée par VOLTA (plusieurs câbles sur une borne), repère provisoire : double-clic pour écrire son vrai repère' })}<small>${esc(r.sous)}</small><button type="button" class="rc-poser" data-poser="1" data-bulle="${escA('Lui donner son vrai repère (' + prochainRepereVT(r) + ' proposé) : elle entre au contrat')}">Poser</button></span>`
+    ? `<span class="rc-aposer">${valT('rep', r.nom, { cls: 'rc-r aposer', titre: 'Barrette ajoutée par VOLTA (plusieurs câbles sur une borne), repère provisoire : double-clic pour écrire son vrai repère' })}<small class="rc-ajout" data-bulle="${escA(majuscule(r.sous) + ' : plusieurs câbles sur une borne')}">ajoutée</small><button type="button" class="rc-poser" data-poser="1" data-bulle="${escA('Lui donner son vrai repère (' + prochainRepereVT(r) + ' proposé) : elle entre au contrat')}">Poser</button></span>`
     : valT('rep', r.nom, { cls: 'rc-r', titre: 'Double-clic pour renommer : chaque câble suit' }),
   tri: r => r.nom, texte: r => r.nom + (r.aPoser ? ' (repère provisoire)' : '') };
-const COL_PROBLEMES = { k: 'etat', t: 'Problèmes', cls: 'rc-c-etat', html: r => { const e = etatRepere(r.nom); return etatHtml(e.niveau, e.mot, e.bulle); },
-  tri: r => { const e = etatDuNom(r.nom); return e.ko.length ? -100 * e.ko.length - e.att.length : -e.att.length; }, texte: r => etatRepere(r.nom).mot };
+// (« État », comme dans Liaisons, Câbles, Raccords : la case dit « 3 problèmes », « 1 à voir » ; tout va bien, elle se tait)
+const COL_PROBLEMES = { k: 'etat', t: 'État', cls: 'rc-c-etat', html: r => { const e = etatRepere(r.nom); return etatHtml(e.niveau, e.mot, e.bulle); },
+  tri: r => { const e = etatDuNom(r.nom); return e.ko.length ? -100 * e.ko.length - e.att.length : -e.att.length; }, texte: r => etatRepere(r.nom).mot, vide: r => !etatDuNom(r.nom).niveau };
 const COL_FOLIO = { k: 'folio', t: 'Folio', cls: 'rc-c-folio', option: true, html: r => r.plans.length ? `<span class="rc-folios">${esc(listeFolios(r.plans))}</span>` : rien, tri: r => r.plans[0] || '', texte: r => r.plans.join(' ') };
 const surFolioRepere = r => app.plan === '*' || (r.plan ? r.plan === app.plan : r.plans.includes(app.plan));
 const choisieRepere = r => !!app.cible && app.cible.type === 'bloc' && app.cible.nom === r.nom;
@@ -391,7 +403,7 @@ const COLONNES_EQUIPEMENTS = [COL_REPERE,
       return `<span class="rc-nature">${valT('nature', majuscule(natureDe(r.nom)), { titre: (d ? 'Dit à la main ; le code du repère dit « ' + natureAuto(r.nom) + ' »' : 'Lu dans le code du repère') + ' — double-clic pour le changer' })}${d ? orig('main') + rond('nature', 'le type que dit le code (' + natureAuto(r.nom) + ')') : ''}</span>`; },
     tri: r => natureDe(r.nom), texte: r => majuscule(natureDe(r.nom)) },
   { k: 'norme', t: 'Norme', cls: 'rc-c-norme', si: () => memo('eq-normes', () => reperes().some(r => r.genre === 'eqpt' && normesDuRepere(r.nom).length)), html: r => { const N = normesDuRepere(r.nom); return N.length ? `<span class="rc-norme" data-bulle="${escA(N.flatMap(n => n.cs).join('\n'))}">${N.map(n => esc(n.norme)).join('<i class="rc-pt">·</i>')}</span>` : rien; },
-    tri: r => normesDuRepere(r.nom).map(n => n.norme).join(' '), texte: r => normesDuRepere(r.nom).map(n => n.norme).join(' · ') },
+    tri: r => normesDuRepere(r.nom).map(n => n.norme).join(' '), texte: r => normesDuRepere(r.nom).map(n => n.norme).join(' · '), vide: r => !normesDuRepere(r.nom).length },
   COL_PROBLEMES,
   { k: 'des', t: 'Désignation', option: true, g: 'Ce qu’il est', html: r => valT('des', app.contrat.designations.get(r.nom) || '', { cls: 'rc-texte', ph: 'à écrire' }), tri: r => app.contrat.designations.get(r.nom) || '', texte: r => app.contrat.designations.get(r.nom) || '' },
   { k: 'pn', t: 'Part number', option: true, g: 'Ce qu’il est', html: r => { const I = baseRepere(r.nom);
@@ -399,8 +411,8 @@ const COLONNES_EQUIPEMENTS = [COL_REPERE,
     tri: r => baseRepere(r.nom).pns.map(c => c.pn).join(' '), texte: r => baseRepere(r.nom).pns.map(c => c.pn).filter(Boolean).join(' ') },
   { k: 'connecteurs', t: 'Connecteurs', option: true, g: 'Ce qu’il est', html: r => { const I = infoRepere(r); return I.connecteurs.length ? `<span class="rc-cnx">${I.connecteurs.map(c => `<i class="${c.ko ? 'ko' : ''}" data-bulle="${escA((c.pn || 'sans part number') + (c.ref ? ' · ' + c.ref : '') + ' · ' + pluriel(c.bornes.length, 'borne') + (c.ko ? ' — aucun arrangement ne convient' : ''))}">${esc(c.nom)}</i>`).join('')}</span>` : rien; },
     tri: r => infoRepere(r).connecteurs.length, texte: r => infoRepere(r).connecteurs.map(c => c.nom).join(' ') },
-  { k: 'cables', t: 'Câbles', cls: 'rc-c-n', option: true, g: 'Ce qu’il porte', html: r => `<b class="rc-n">${nCablesDuRepere(r)}</b>`, tri: nCablesDuRepere, texte: r => String(nCablesDuRepere(r)) },
-  { k: 'contacts', t: 'Contacts', cls: 'rc-c-n', option: true, g: 'Ce qu’il porte', html: r => { const c = infoRepere(r).contacts; return c ? `<span class="rc-frac"><b class="rc-n">${c[0]}</b><i>/ ${c[1] == null ? '?' : c[1]}</i></span>` : rien; },
+  { k: 'cables', t: 'Câbles', cls: 'rc-c-n', option: true, g: 'Ce qu’il porte', html: r => chiffre(`<b class="rc-n">${nCablesDuRepere(r)}</b>`), tri: nCablesDuRepere, texte: r => String(nCablesDuRepere(r)) },
+  { k: 'contacts', t: 'Contacts', cls: 'rc-c-n', option: true, g: 'Ce qu’il porte', html: r => { const c = infoRepere(r).contacts; return c ? fraction(c[0], c[1] == null ? '?' : c[1]) : rien; },
     tri: r => (infoRepere(r).contacts || [-1])[0], texte: r => { const c = infoRepere(r).contacts; return c ? c[0] + ' / ' + (c[1] == null ? '?' : c[1]) : ''; } },
   COL_FOLIO,
   { k: 'deja', t: 'Déjà fait', cls: 'rc-c-n', option: true, si: () => !!indexReferences(), html: r => { const c = dejaFait(r.nom); return c ? `<span class="rc-deja" data-bulle="${escA(c.repere + ' de ' + c.harness)}"><b class="rc-n">${Math.round(c.taux * 100)}</b><i>%</i></span>` : rien; },
@@ -491,7 +503,8 @@ const COLONNES_DISJ = [COL_REPERE,
     tri: r => infoDisj(r.nom).d.calibre || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibre ? amperes(d.calibre) : ''; } },
   { k: 'retest', t: 'Votre fichier', cls: 'rc-c-mesure', html: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; if (!c) return rien; const autre = d.calibre && c !== d.calibre;
       return `<span class="rc-mesure rc-retest${autre ? ' autre' : ''}" data-bulle="${escA('Votre fichier porte ' + (pnDuRepere(r.nom) || 'son part number') + (autre ? ', un ' + amperes(c) + ' : VOLTA retient le ' + amperes(d.calibre) + ' (la fiche dit pourquoi, en ampères)' : ''))}">${autre ? chiffre(`<s class="rc-n">${fmt(c, 2)}</s>`, 'A') : chiffre(`<b class="rc-n">${fmt(c, 2)}</b>`, 'A')}</span>`; },
-    tri: r => calibreDuRetest(r) || 0, texte: r => { const c = calibreDuRetest(r); return c ? amperes(c) : ''; } },
+    // le calibre du fichier ne se répète pas quand c'est celui que VOLTA retient : la colonne paraît dès qu'il en conteste un
+    tri: r => calibreDuRetest(r) || 0, texte: r => { const c = calibreDuRetest(r); return c ? amperes(c) : ''; }, vide: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; return !c || !d.calibre || c === d.calibre; } },
   { k: 'verdict', t: 'Verdict', cls: 'rc-c-etat', html: r => { const v = verdictDuCalibre(infoDisj(r.nom).d); return etatHtml(v.n, v.mot, v.bulle); }, tri: r => rangEtat(verdictDuCalibre(infoDisj(r.nom).d).n), texte: r => verdictDuCalibre(infoDisj(r.nom).d).mot },
   COL_PROBLEMES,
   { k: 'ideal', t: 'Meilleur', cls: 'rc-c-mesure', option: true, html: r => { const d = infoDisj(r.nom).d; if (!d.calibreIdeal) return rien; const pq = d.meilleur && d.meilleur.pourquoi;
@@ -501,7 +514,7 @@ const COLONNES_DISJ = [COL_REPERE,
   { k: 'profil', t: 'Permanent', cls: 'rc-c-mesure', w: 72, option: true, html: r => { const D = infoDisj(r.nom);
       return `<span class="rc-mesure">${chiffre(val('perm', D.perm != null ? fmt(D.perm, 2) : '', { cls: 'rc-n', ph: 'A', titre: 'Le courant permanent du profil de charge — double-clic pour l’écrire' }), D.perm != null ? 'A' : '')}${D.pointe ? `<small class="rc-pointe">pointe ${esc(amperes(D.pointe.i))} · ${esc(secondes(D.pointe.t))}</small>` : ''}</span>`; },
     tri: r => infoDisj(r.nom).perm ?? -1, texte: r => { const D = infoDisj(r.nom); return (D.perm != null ? amperes(D.perm) : '') + (D.pointe ? ' pointe ' + amperes(D.pointe.i) + ' ' + secondes(D.pointe.t) : ''); } },
-  { k: 'cables', t: 'Câbles protégés', cls: 'rc-c-n', option: true, html: r => { const D = infoDisj(r.nom); return D.n ? `<span class="rc-frac${D.ok < D.n ? ' ko' : ''}"><b class="rc-n">${D.ok}</b><i>/ ${D.n}</i></span>` : rien; },
+  { k: 'cables', t: 'Câbles protégés', cls: 'rc-c-n', option: true, html: r => { const D = infoDisj(r.nom); return D.n ? fraction(D.ok, D.n, D.ok < D.n ? 'ko' : '') : rien; },
     tri: r => { const D = infoDisj(r.nom); return D.n ? D.ok / D.n : -1; }, texte: r => { const D = infoDisj(r.nom); return D.ok + ' / ' + D.n; } },
   { k: 'chute', t: 'Pire chute', cls: 'rc-c-mesure', option: true, html: r => { const p = infoDisj(r.nom).pire; if (!p) return rien;
       return `<span class="rc-mesure" data-bulle="${escA(majuscule(p.mots || '') + (p.admis != null ? ' · ' + volts(p.admis) + ' admis' : '') + (p.reel ? '' : ' · sur des longueurs d’hypothèse'))}">${chiffre(`<b class="rc-n">${fmt(p.dU, 2)}</b>`, 'V', p.trop ? (p.reel ? 'ko' : 'att') : '')}${p.admis != null ? `<span class="rc-adm">/ ${fmt(p.admis, 2)}</span>` : ''}${p.reel ? '' : orig('hyp', 'Sur des longueurs supposées par la simulation', 'supposée')}</span>`; },
@@ -599,11 +612,11 @@ const COLONNES_BARRETTES = [COL_REPERE,
   { k: 'module', t: 'Module', cls: 'rc-c-id', html: r => { const B = infoBarrette(r); if (!B.Q) return rien;
       return r.aPoser ? `<span class="rc-id">${esc(B.Q.reference || '')}</span>` : valT('module', B.Q.reference || '', { cls: 'rc-id', ph: 'aucun module', titre: (B.main ? 'Choisi à la main' : 'Choisi automatiquement : le plus petit module de la norme qui loge ces potentiels') + ' — double-clic pour en choisir un autre' }) + (B.main ? orig('main') + rond('module', 'le choix automatique') : ''); },
     tri: r => (infoBarrette(r).Q || {}).reference || '', texte: r => (infoBarrette(r).Q || {}).reference || '' },
-  { k: 'libres', t: 'Contacts libres', cls: 'rc-c-n', html: r => { const Q = infoBarrette(r).Q; return Q && Q.modules.length ? `<span class="rc-frac"><b class="rc-n">${Q.contacts - Q.utilises}</b><i>/ ${Q.contacts}</i></span>` : rien; },
+  { k: 'libres', t: 'Contacts libres', cls: 'rc-c-n', html: r => { const Q = infoBarrette(r).Q; return Q && Q.modules.length ? fraction(Q.contacts - Q.utilises, Q.contacts) : rien; },
     tri: r => { const Q = infoBarrette(r).Q; return Q ? Q.contacts - Q.utilises : -1; }, texte: r => { const Q = infoBarrette(r).Q; return Q ? (Q.contacts - Q.utilises) + ' / ' + Q.contacts : ''; } },
   COL_PROBLEMES,
-  { k: 'potentiels', t: 'Potentiels', cls: 'rc-c-n', option: true, html: r => { const Q = infoBarrette(r).Q; return Q ? `<b class="rc-n">${Q.potentiels}</b>` : rien; }, tri: r => (infoBarrette(r).Q || { potentiels: -1 }).potentiels, texte: r => String((infoBarrette(r).Q || {}).potentiels ?? '') },
-  { k: 'cables', t: 'Câbles', cls: 'rc-c-n', option: true, html: r => `<b class="rc-n">${infoBarrette(r).cables}</b>`, tri: r => infoBarrette(r).cables, texte: r => String(infoBarrette(r).cables) },
+  { k: 'potentiels', t: 'Potentiels', cls: 'rc-c-n', option: true, html: r => { const Q = infoBarrette(r).Q; return Q ? chiffre(`<b class="rc-n">${Q.potentiels}</b>`) : rien; }, tri: r => (infoBarrette(r).Q || { potentiels: -1 }).potentiels, texte: r => String((infoBarrette(r).Q || {}).potentiels ?? '') },
+  { k: 'cables', t: 'Câbles', cls: 'rc-c-n', option: true, html: r => chiffre(`<b class="rc-n">${infoBarrette(r).cables}</b>`), tri: r => infoBarrette(r).cables, texte: r => String(infoBarrette(r).cables) },
   COL_FOLIO];
 const BARRETTES = { ...ONGLET_REPERES, colonnes: COLONNES_BARRETTES, lignes: barrettes, cherche: 'Chercher : repère, module, norme…',
   puces: () => [PUCE_A_REPRENDRE, ['aposer', 'Repère provisoire', r => r.aPoser, '', '', 'Les barrettes que VOLTA a ajoutées (plusieurs câbles sur une borne), au repère provisoire']],
@@ -630,7 +643,7 @@ const COLONNES_PRISES = [COL_REPERE,
     tri: r => (infoPrise(r.nom) || { Q: {} }).Q.famille || '', texte: r => { const I = infoPrise(r.nom); return I && I.Q.famille ? nomDeFamille(app.norme, I.Q.famille) : ''; } },
   { k: 'arrangement', t: 'Arrangement', cls: 'rc-c-id', html: r => { const I = infoPrise(r.nom); return I ? valT('arrangement', I.Q.reference, { cls: 'rc-id', ph: 'aucun arrangement', titre: (I.Q.main ? 'Choisi à la main' : 'Choisi automatiquement : le plus petit de la norme qui loge ces contacts') + ' — double-clic pour en choisir un autre' }) + (I.Q.main ? orig('main') + rond('arrangement', 'le choix automatique') : '') : rien; },
     tri: r => (infoPrise(r.nom) || { Q: {} }).Q.reference || '', texte: r => (infoPrise(r.nom) || { Q: {} }).Q.reference || '' },
-  { k: 'contacts', t: 'Contacts', cls: 'rc-c-n', html: r => { const I = infoPrise(r.nom); return I ? `<span class="rc-frac"><b class="rc-n">${I.pris}</b><i>/ ${I.total == null ? '?' : I.total}</i></span>` : rien; }, tri: r => (infoPrise(r.nom) || { pris: -1 }).pris, texte: r => { const I = infoPrise(r.nom); return I ? I.pris + ' / ' + (I.total ?? '?') : ''; } },
+  { k: 'contacts', t: 'Contacts', cls: 'rc-c-n', html: r => { const I = infoPrise(r.nom); return I ? fraction(I.pris, I.total == null ? '?' : I.total) : rien; }, tri: r => (infoPrise(r.nom) || { pris: -1 }).pris, texte: r => { const I = infoPrise(r.nom); return I ? I.pris + ' / ' + (I.total ?? '?') : ''; } },
   COL_PROBLEMES,
   // (v74, l'ingénieur v73 : « le part number complet de la prise, le récapitulatif ne l'a pas ») : au choix, et il s'écrit
   { k: 'pn', t: 'Part number', option: true, html: r => valT('pn:', baseRepere(r.nom).b.pn || '', { cls: 'rc-pn', ph: 'part number', titre: 'Double-clic : toutes ses liaisons le prennent' }), tri: r => baseRepere(r.nom).b.pn || '', texte: r => baseRepere(r.nom).b.pn || '' },
@@ -661,26 +674,51 @@ const cables = () => memo('cables', () => { const H = H_(), m = new Map();
   return [...m.values()].map(e => { const cab = e.type ? cableDuType(app.norme, e.type) : null, jauge = jaugeDuType(e.type), fn = e.type ? filDeNorme(app.norme, e.type, jauge) : null;
     return { ...e, cab, fam: e.type ? cableFamilleDe(app.norme, e.type) : null, jauge, fn, masse: cab && cab.masse != null ? cab.masse * e.L : null }; }); });
 const etatCable = c => !c.type ? 'att' : !c.cab && !c.fn ? 'att' : '';
+// une masse : en g, en kg dès 1 000 g (deux décimales : la dizaine de grammes) ; supposée, « ≈ » en gris (la classe des longueurs)
+const masseNombre = g => g >= 1000 ? nombre((Math.round(g / 10) / 100).toFixed(2)) : fmt(g, 0), masseUnite = g => g >= 1000 ? 'kg' : 'g', masseMot = g => masseNombre(g) + ' ' + masseUnite(g);
+const celluleMasse = (g, suppose, bulle) => `<span class="rc-mesure${suppose ? ' rc-suppose' : ''}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}>${chiffre(`<b class="rc-n">${masseNombre(g)}</b>`, masseUnite(g))}</span>`;
+const suppositionDe = c => pluriel(c.n - c.reelles, 'câble') + ' sur ' + c.n + ' sans longueur dans l’installation : la longueur supposée par la simulation (' + metres(H_().longueur) + ' m) compte pour eux';
+/* LE PIED DE L'ONGLET CÂBLES : le total des types montrés — leur nombre, leur longueur, leur masse — et la masse de chaque
+   route (PUISSANCE, SIGNAL…), chacune avec son trait. Il reste collé au bas de la feuille. */
+function totalCables(L, C) { const n = L.reduce((s, c) => s + c.n, 0), Lt = L.reduce((s, c) => s + c.L, 0), sup = L.some(c => c.reelles < c.n), pesees = L.filter(c => c.masse != null), M = pesees.reduce((s, c) => s + c.masse, 0);
+  const types = new Set(L.map(c => c.type)), H = H_(), parRoute = new Map(), couleurs = routes();
+  verite().forEach(l => { if (!liaisonComplete(l) || l.de === l.vers || !types.has(l.type || '')) return; const cab = l.type ? cableDuType(app.norme, l.type) : null; if (!cab || cab.masse == null) return;
+    const k = l.route || ''; parRoute.set(k, (parRoute.get(k) || 0) + cab.masse * (l.longueur > 0 ? l.longueur : H.longueur)); });
+  const ordre = [...couleurs.keys()], rs = [...parRoute].sort((a, b) => (ordre.indexOf(a[0]) + 1 || 99) - (ordre.indexOf(b[0]) + 1 || 99));
+  const cellule = c => c.k === 'type' ? '<span class="rc-total-t">Total</span>' : c.k === 'n' ? chiffre(`<b class="rc-n">${n}</b>`)
+    : c.k === 'longueur' ? `<span class="rc-mesure${sup ? ' rc-suppose' : ''}">${chiffre(`<b class="rc-n">${fmt(Lt, 1)}</b>`, 'm')}</span>`
+    : c.k === 'masse' && pesees.length ? celluleMasse(M, sup, pesees.length < L.length ? 'Sans ' + pluriel(L.length - pesees.length, 'type') + ' que la base des câbles ne pèse pas' : '') : '';
+  const j = Math.max(C.findIndex(c => c.k === 'masse'), C.findIndex(c => c.k === 'longueur'), C.findIndex(c => c.k === 'n')) + 1;
+  const detail = rs.length > 1 ? `<span class="rc-total-routes" aria-label="La masse par route">${rs.map(([k, g]) => `<span class="rc-total-r"${k ? '' : ' data-bulle="Les câbles sans route"'}>${traitRoute(couleurs.get(k))}<span>${esc(k || 'sans route')}</span><b class="rc-n${sup ? ' rc-sup' : ''}">${sup ? '≈ ' : ''}${masseMot(g)}</b></span>`).join('')}</span>` : '';
+  return `<tr class="rc-total">${C.slice(0, j).map(c => `<td class="${c.cls || ''}">${cellule(c)}</td>`).join('')}<td class="rc-total-d" colspan="${C.length - j + 1}">${detail}</td></tr>`; }
 const motCable = c => !c.type ? 'sans type' : etatCable(c) ? 'inconnu' : 'ok';
 const COLONNES_CABLES = [
   { k: 'type', t: 'Type', cls: 'rc-c-id', html: c => valT('type', c.type, { cls: 'rc-type', ph: 'sans type', titre: 'Double-clic : tous les câbles de ce type prennent le nouveau' }), tri: c => c.type, texte: c => c.type || 'sans type' },
-  { k: 'jauge', t: 'Gauge', option: true, html: c => pastilleJauge(c.jauge), tri: c => c.jauge ?? 99, texte: c => c.jauge != null ? c.jauge + ' AWG' : '' },
-  { k: 'n', t: 'Nombre', cls: 'rc-c-n', html: c => `<b class="rc-n">${c.n}</b>`, tri: c => c.n, texte: c => String(c.n) },
-  { k: 'longueur', t: 'Longueur totale', cls: 'rc-c-mesure', w: 100, html: c => `<span class="rc-mesure">${chiffre(`<b class="rc-n">${fmt(c.L, 1)}</b>`, 'm')}${c.reelles < c.n && !RECAP.notes.longueur ? orig('hyp', pluriel(c.n - c.reelles, 'câble') + ' sans longueur dans l’installation : la longueur supposée par la simulation', 'en partie supposée') : ''}</span>`, tri: c => c.L, texte: c => fmt(c.L, 1) + ' m',
+  { k: 'jauge', t: 'Gauge', cls: 'rc-c-n', option: true, html: c => chiffre(pastilleJauge(c.jauge)), tri: c => c.jauge ?? 99, texte: c => c.jauge != null ? c.jauge + ' AWG' : '' },
+  // (le lecteur : « le type est hyper à gauche, le nombre hyper à droite… ça se travaille, les tableaux ») : des colonnes à
+  // leur juste largeur, serrées sur le type ; chaque nombre aligné à droite dans une place fixe, centrée sous son titre
+  { k: 'n', t: 'Nombre', cls: 'rc-c-n', html: c => chiffre(`<b class="rc-n">${c.n}</b>`), tri: c => c.n, texte: c => String(c.n) },
+  { k: 'longueur', t: 'Longueur totale', cls: 'rc-c-mesure', w: 100, html: c => `<span class="rc-mesure${c.reelles < c.n ? ' rc-suppose' : ''}"${c.reelles < c.n ? ` data-bulle="${escA(suppositionDe(c))}"` : ''}>${chiffre(`<b class="rc-n">${fmt(c.L, 1)}</b>`, 'm')}</span>`, tri: c => c.L, texte: c => fmt(c.L, 1) + ' m',
     note: L => L.every(c => c.reelles < c.n) ? ['en partie supposée', 'Des câbles de chaque type n’ont pas de longueur dans l’installation : la longueur supposée par la simulation compte pour eux (menu ⋮ → Hypothèses)'] : null },
-  { k: 'masse', t: 'Masse', cls: 'rc-c-mesure', html: c => c.masse != null ? `<span class="rc-mesure">${chiffre(`<b class="rc-n">${fmt(c.masse, 0)}</b>`, 'g')}</span>` : rien, tri: c => c.masse ?? -1, texte: c => c.masse != null ? fmt(c.masse, 0) + ' g' : '' },
-  { k: 'etat', t: 'État', cls: 'rc-c-etat', html: c => etatHtml(etatCable(c) || 'ok', motCable(c), !c.type ? 'Des câbles sans type : leur gauge ne se vérifie pas' : etatCable(c) ? 'Inconnu de la base des câbles et de la norme des câbles' : c.cab ? 'Dans la base des câbles' : 'La gauge seule, par l’EN 2853'), tri: c => etatCable(c) ? 0 : 1, texte: motCable },
+  /* LA MASSE d'un type (le lecteur) : sa longueur totale × sa masse linéique (la base des câbles, `cableDuType` : g/m) — en g,
+     en kg dès 1 000 g ; « ≈ » en gris quand une partie des longueurs est supposée, comme la longueur ; sa bulle dit le calcul.
+     Un type que la base ne pèse pas : rien ; aucun : la colonne ne se pose pas. Le total, et sa part par route, au pied. */
+  { k: 'masse', t: 'Masse', cls: 'rc-c-mesure', html: c => c.masse != null ? celluleMasse(c.masse, c.reelles < c.n, `${fmt(c.L, 1)} m × ${fmt(c.cab.masse, 2)} g/m (base des câbles)` + (c.reelles < c.n ? '\n' + suppositionDe(c) : '')) : rien,
+    tri: c => c.masse ?? -1, texte: c => c.masse != null ? masseMot(c.masse) : '', vide: c => c.masse == null },
+  { k: 'etat', t: 'État', cls: 'rc-c-etat', html: c => etatHtml(etatCable(c) || 'ok', motCable(c), !c.type ? 'Des câbles sans type : leur gauge ne se vérifie pas' : etatCable(c) ? 'Inconnu de la base des câbles et de la norme des câbles' : c.cab ? 'Dans la base des câbles' : 'La gauge seule, par l’EN 2853'), tri: c => etatCable(c) ? 0 : 1, texte: motCable, vide: c => !etatCable(c) },
   { k: 'nature', t: 'Composition', option: true, html: c => c.cab ? `<span class="rc-mot">${esc([(c.cab.brins > 1 ? c.cab.brins + ' brins' : '1 brin') + (c.cab.blindage ? ' + blindage' : ''), c.cab.nature, c.fam && c.fam.conducteur && c.fam.conducteur !== 'cuivre' ? c.fam.conducteur : ''].filter(Boolean).join(' · '))}</span>` : rien,
     tri: c => c.cab ? c.cab.brins || 0 : -1, texte: c => c.cab ? [c.cab.brins + ' brins', c.cab.blindage ? 'blindage' : '', c.cab.nature].filter(Boolean).join(' ') : '' },
   { k: 'diametre', t: 'Ø', cls: 'rc-c-mesure', option: true, html: c => c.cab && c.cab.diametre != null ? chiffre(`<b class="rc-n">${fmt(c.cab.diametre, 2)}</b>`, 'mm') : rien, tri: c => c.cab && c.cab.diametre != null ? c.cab.diametre : -1, texte: c => c.cab && c.cab.diametre != null ? fmt(c.cab.diametre, 2) + ' mm' : '' },
-  { k: 'resistance', t: 'mΩ/m', cls: 'rc-c-n', option: true, html: c => { const R = c.cab && c.cab.resistance != null ? c.cab.resistance : c.fn && c.fn.resistance != null ? c.fn.resistance : null; return R != null ? `<b class="rc-n">${fmt(R, 2)}</b>` : rien; },
+  { k: 'resistance', t: 'mΩ/m', cls: 'rc-c-n', option: true, html: c => { const R = c.cab && c.cab.resistance != null ? c.cab.resistance : c.fn && c.fn.resistance != null ? c.fn.resistance : null; return R != null ? chiffre(`<b class="rc-n">${fmt(R, 2)}</b>`) : rien; },
     tri: c => (c.cab && c.cab.resistance) ?? (c.fn && c.fn.resistance) ?? -1, texte: c => String((c.cab && c.cab.resistance) ?? (c.fn && c.fn.resistance) ?? '') },
-  { k: 'gm', t: 'g/m', cls: 'rc-c-n', option: true, html: c => c.cab && c.cab.masse != null ? `<b class="rc-n">${fmt(c.cab.masse, 2)}</b>` : rien, tri: c => c.cab && c.cab.masse != null ? c.cab.masse : -1, texte: c => c.cab && c.cab.masse != null ? fmt(c.cab.masse, 2) : '' },
+  { k: 'gm', t: 'g/m', cls: 'rc-c-n', option: true, html: c => c.cab && c.cab.masse != null ? chiffre(`<b class="rc-n">${fmt(c.cab.masse, 2)}</b>`) : rien, tri: c => c.cab && c.cab.masse != null ? c.cab.masse : -1, texte: c => c.cab && c.cab.masse != null ? fmt(c.cab.masse, 2) : '' },
   { k: 'source', t: 'Source', option: true, html: c => `<span class="rc-mot">${c.cab ? 'base des câbles' : c.fn ? 'EN 2853 (la gauge seule)' : c.type ? 'inconnu' : '—'}</span>`, tri: c => c.cab ? 0 : c.fn ? 1 : 2, texte: c => c.cab ? 'base des câbles' : c.fn ? 'EN 2853' : 'inconnu' },
   { k: 'aller', t: '', cls: 'rc-c-aller', html: () => '<button type="button" class="rc-lien" data-voir-fils="1">Voir les câbles</button>', texte: () => '' }];
 const CABLES = { colonnes: COLONNES_CABLES, lignes: cables, etat: etatCable, choisie: () => false, cherche: 'Chercher : type de câble…',
   puces: () => [['inconnus', 'Inconnus de la base', c => !!etatCable(c), '', '', 'Les types que la base des câbles ne connaît pas']],
-  voirFils: c => montrerLiaisons(c.type),
+  voirFils: c => montrerLiaisons(c.type), total: totalCables,
+  // survoler un type allume, sur le folio affiché, chacun de ses câbles
+  survol: c => { const D = app.dessin; if (!D) return; const L = liaisonsDuPlan(); allumerFils(D.fils.filter(w => !w.shunt && L[w.i] && (L[w.i].type || '') === c.type)); },
   editeur: (c, f) => f === 'type' ? { valeur: c.type, liste: 'types', aide: 'tous les câbles de ce type le prennent' } : null,
   ecrire: (c, f, v) => { if (f !== 'type' || v === c.type) return false; const xs = verite().filter(l => liaisonComplete(l) && l.de !== l.vers && (l.type || '') === c.type).map(l => [l, 'type']);
     return changerLiaisons(xs.map(([l, k]) => [l, k, v]), 'type ' + (c.type || 'vide') + ' → ' + (v || 'vide')); } };
@@ -708,14 +746,15 @@ const COLONNES_RACCORDS = [
       return h.sansRaccord ? `<span class="rc-mot"${pq}>sans raccord</span>`
         : `<span class="${h.designation ? 'rc-id' : 'rc-mot'}"${pq}>${esc(h.designation || h.raccord)}</span>${h.statut && h.statut !== 'vérifié' ? `<i class="rc-o" data-bulle="${escA(SENS_STATUT_RACCORD[h.statut] || '')}">${esc(h.statut)}</i>` : ''}`; },
     tri: x => motRaccord(habDe(x)), texte: x => motRaccord(habDe(x)) },
-  { k: 'bandit', t: 'Band-it', html: x => { const h = habDe(x); return h && h.bandit ? (h.collier ? `<span class="rc-id">${esc(h.collier.reference)}</span>` : etatHtml('att', 'aucun ne va')) : rien; }, tri: x => { const h = habDe(x); return h && h.collier ? h.collier.reference : ''; }, texte: x => { const h = habDe(x); return h && h.collier ? h.collier.reference : ''; } },
+  { k: 'bandit', t: 'Band-it', html: x => { const h = habDe(x); return h && h.bandit ? (h.collier ? `<span class="rc-id">${esc(h.collier.reference)}</span>` : etatHtml('att', 'aucun ne va')) : rien; }, tri: x => { const h = habDe(x); return h && h.collier ? h.collier.reference : ''; }, texte: x => { const h = habDe(x); return h && h.collier ? h.collier.reference : ''; },
+    vide: x => { const h = habDe(x); return !(h && h.bandit); } },
   // (v74) ce qu'on a choisi à l'encre, ce qui reste par défaut à l'encre seconde : l'œil va aux choix, pas aux quatre mots
   // que chaque ligne répète
   { k: 'choix', t: 'Choix', html: x => { const c = (habDe(x) || { choix: {} }).choix, o = app.contrat.raccords.get(x.k) || {};
       return `<span class="rc-choix">${['orientation', 'blindage', 'etanche', 'gaine'].map(k => valT(k, motChoix(k, c[k]), { cls: k in o ? '' : 'rc-defaut', titre: (k in o ? 'Choisi ici' : 'Par défaut') + ' — double-clic pour changer : la fiche et la nomenclature suivent' })).join('<i class="rc-pt">·</i>')}</span>`; },
     tri: x => { const c = (habDe(x) || { choix: {} }).choix; return [c.orientation, c.blindage, c.etanche, c.gaine].join(' '); }, texte: x => { const c = (habDe(x) || { choix: {} }).choix; return ['orientation', 'blindage', 'etanche', 'gaine'].map(k => motChoix(k, c[k])).join(' · '); } },
   { k: 'etat', t: 'État', cls: 'rc-c-etat', html: x => { const h = habDe(x); return h ? etatHtml(h.manquants.length ? 'att' : 'ok', h.manquants.length ? 'à compléter' : 'ok', h.manquants.map(majuscule).join('\n')) : rien; },
-    tri: x => { const h = habDe(x); return h && h.manquants.length ? 0 : 1; }, texte: x => { const h = habDe(x); return h && h.manquants.length ? 'à compléter' : 'ok'; } },
+    tri: x => { const h = habDe(x); return h && h.manquants.length ? 0 : 1; }, texte: x => { const h = habDe(x); return h && h.manquants.length ? 'à compléter' : 'ok'; }, vide: x => { const h = habDe(x); return !(h && h.manquants.length); } },
   { k: 'pn', t: 'Part number', option: true, html: x => x.pn ? `<span class="rc-pn">${esc(x.pn)}</span>` : rien, tri: x => x.pn || '', texte: x => x.pn || '' },
   { k: 'taille', t: 'Taille · filetage', option: true, html: x => { const h = habDe(x); return h && h.taille ? `<span class="rc-mot"><b>${esc(h.taille)}</b>${h.filetage ? ' · ' + esc(h.filetage.filetage) : ''}</span>` : rien; }, tri: x => (habDe(x) || {}).taille || '', texte: x => { const h = habDe(x); return h && h.taille ? h.taille + (h.filetage ? ' ' + h.filetage.filetage : '') : ''; } },
   { k: 'manchon', t: 'Manchon', option: true, html: x => { const h = habDe(x); return h && h.manchon ? (h.manchonRef ? `<span class="rc-id">${esc(h.manchonRef.designation)}</span>` : etatHtml('att', 'aucun ne va')) : rien; }, tri: x => { const h = habDe(x); return h && h.manchonRef ? h.manchonRef.designation : ''; }, texte: x => { const h = habDe(x); return h && h.manchonRef ? h.manchonRef.designation : ''; } },
@@ -763,8 +802,13 @@ const problemes = () => memo('problemes:' + RECAP.itemsN, () => (CONTROLE.items 
 const pointSeul = (n, mot) => `<span class="rc-etat ${n} seul"><i aria-hidden="true"></i><span class="sr">${esc(mot)}</span></span>`;
 const signatureGestes = p => gestesDuPb(p).map(g => g.mot).join('\u0001');
 const COLONNES_PROBLEMES = [
-  { k: 'niveau', t: 'Niveau', cls: 'rc-c-etat', html: p => { const n = p.x.niveau === 'ko' ? 'ko' : 'att'; return RECAP.parGenre ? pointSeul(n, MOTS_ETAT[n]) : etatHtml(n); }, tri: p => p.x.niveau === 'ko' ? 0 : 1, texte: p => p.x.niveau === 'ko' ? 'problème' : 'à voir' },
-  { k: 'objet', t: 'Objet', cls: 'rc-c-rep', html: p => p.x.nom ? `<span class="rc-r">${esc(p.x.nom)}</span>` : '<span class="rc-mot">le contrat</span>', tri: p => p.x.nom || '', texte: p => p.x.nom || 'contrat' },
+  // rangé par genre, l'intercalaire dit déjà le niveau (son compte, à sa couleur) : la colonne ne se pose pas — elle ne
+  // répéterait qu'un point par ligne ; triée, cherchée ou filtrée, chaque ligne le dit en mots
+  { k: 'niveau', t: 'Niveau', cls: 'rc-c-etat', html: p => { const n = p.x.niveau === 'ko' ? 'ko' : 'att'; return RECAP.parGenre ? pointSeul(n, MOTS_ETAT[n]) : etatHtml(n); }, tri: p => p.x.niveau === 'ko' ? 0 : 1, texte: p => p.x.niveau === 'ko' ? 'problème' : 'à voir',
+    vide: () => groupesParGenre() },
+  // (un bloc choisi sur le plan filtre l'onglet sur lui : la colonne ne répéterait que son nom, déjà dans la recherche)
+  { k: 'objet', t: 'Objet', cls: 'rc-c-rep', html: p => p.x.nom ? `<span class="rc-r">${esc(p.x.nom)}</span>` : '<span class="rc-mot">le contrat</span>', tri: p => p.x.nom || '', texte: p => p.x.nom || 'contrat',
+    vide: p => !!app.base.filtreAuto && !!p.x.nom && p.x.nom === app.base.filtre.trim() },
   { k: 'texte', t: 'Ce qui ne va pas', cls: 'rc-c-phrase', html: p => `<span class="rc-phrase">${insecable(esc(majuscule(p.x.texte)))}</span>`, tri: p => p.x.texte, texte: p => p.x.texte },
   /* CE QU'IL FAUT FAIRE : le GESTE de la fiche, en bouton (v73, l'ingénieur n° 8 ; le domaine C, `gestesDuPoint`) — « Tout
      régler : 102CB1 en 15 A et 3 câbles en DR12 », « Unifier sur MS3320-15 », « La poser » — le premier au trait, les autres
@@ -813,7 +857,7 @@ const COLONNES_NORMES = [
   { k: 'origine', t: 'Origine', si: () => normes().some(x => x.modifiee), html: x => x.modifiee ? `<span class="rc-mot">modifiée</span>${orig('main', 'Une table changée dans ce navigateur (Normes)')}` : '<span class="rc-mot doux">embarquée</span>', tri: x => x.modifiee ? 0 : 1, texte: x => x.modifiee ? 'modifiée' : 'embarquée' },
   { k: 'aller', t: '', cls: 'rc-c-aller', html: () => '<button type="button" class="rc-lien" data-aller="1">Ouvrir la table</button>', texte: () => '' },
   { k: 'juge', t: 'À quoi elle sert', cls: 'rc-c-phrase', option: true, html: x => `<span class="rc-phrase">${esc(x.juge)}</span>`, tri: x => x.juge, texte: x => x.juge },
-  { k: 'lignes', t: 'Lignes', cls: 'rc-c-n', option: true, html: x => `<b class="rc-n">${x.lignes}</b>`, tri: x => x.lignes, texte: x => String(x.lignes) }];
+  { k: 'lignes', t: 'Lignes', cls: 'rc-c-n', option: true, html: x => chiffre(`<b class="rc-n">${x.lignes}</b>`), tri: x => x.lignes, texte: x => String(x.lignes) }];
 const NORMES_ONGLET = { colonnes: COLONNES_NORMES, lignes: () => normes().filter(x => x.n || x.modifiee), etat: () => '', choisie: () => false, cherche: 'Chercher : norme, table…',
   puces: () => [['modifiees', 'Modifiées', x => x.modifiee]], aller: x => ficheNormes({ table: x.v }) };
 
@@ -985,9 +1029,17 @@ const FLECHE_TRI = '<svg class="ico rc-sens" viewBox="0 0 24 24" aria-hidden="tr
 const largeurCol = c => c.w ? ` style="--w:${c.w}px"` : '';
 // les intercalaires par genre : l'onglet Problèmes lu tel quel (ni tri, ni recherche, ni puce)
 const groupesParGenre = () => app.base.onglet === 'problemes' && !app.base.tri && !app.base.filtre.trim() && !pucesActives(PROBLEMES).length && typeof genresDuControle === 'function';
-function rendreTable(O, C) { const b = app.base, tri = b.tri, n = C.length + 1, jeton = ++RECAP.jeton; if (GAMME.el) fermerGamme();
+/* UNE COLONNE QUI NE DIRAIT RIEN NE SE POSE PAS (le lecteur : « retire ce qui ne sert à rien : les colonnes de tirets, les
+   répétitions ») : une colonne qui sait se dire vide (`vide`) et l'est pour chaque ligne montrée — l'état quand tout va bien,
+   la norme ou le band-it que rien ne porte, le calibre du fichier quand c'est le retenu — s'efface ; une ligne qui la
+   remplit la fait revenir. Au-delà d'une table virtuelle, on ne lit pas toutes les lignes pour le savoir : elle reste. */
+function colonnesUtiles(C, rs) { const xs = rs.filter(r => !r.nouveau), tri = app.base.tri; if (!xs.length || xs.length > VIRTUEL_DES) return C;
+  // (la colonne qui trie reste : son en-tête est le seul geste qui défait le tri)
+  return C.filter(c => { if (!c.vide || (tri && tri.k === c.k)) return true; try { return !xs.every(c.vide); } catch (_) { return true; } }); }
+function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.jeton; if (GAMME.el) fermerGamme();
   $('ba-tab').dataset.onglet = b.onglet;
   const { tete, L, tous } = lignesMontrees(O), parFolio = groupesParFolio(), parGenre = groupesParGenre();
+  C = colonnesUtiles(C, [...tete, ...L]); const n = C.length + 1;
   /* LA NOTE D'UNE COLONNE (v74) : ce qui vaut pour toutes les lignes montrées — « supposée » quand aucune longueur n'est
      mesurée — se dit UNE fois, dans l'en-tête (sa bulle dit pourquoi), et les lignes se taisent ; une exception se dit sur sa ligne. */
   RECAP.notes = {}; C.forEach(c => { const x = c.note && L.length ? c.note(L) : null; if (x) RECAP.notes[c.k] = x; });
@@ -1014,6 +1066,8 @@ function rendreTable(O, C) { const b = app.base, tri = b.tri, n = C.length + 1, 
           + (ge ? `<button type="button" class="rc-lien rc-fort" data-geste="${escA(g.cle)}" data-bulle="${escA(ge.aide)}">${esc(ge.mot)}</button>` : '') + '</span></td></tr>'; } });
       rs.forEach(ligne); }); }
   else L.forEach(ligne);
+  // le pied (onglet Câbles : le total, la masse par route), dès qu'il y a de quoi additionner
+  if (O.total && L.length > 1) morceaux.push({ h: H_LIGNE, f: () => O.total(L, C) });
   // (v74) le geste qui se répète d'une ligne à la suivante, sans intercalaire entre elles : « ″ » (les lignes se posent après)
   RECAP.parGenre = !!parGenre; RECAP.pareils = new Set();
   if (O === PROBLEMES) { let avant = null; morceaux.forEach(m => { if (m.k == null) { avant = null; return; } const r = RECAP.vues.get(m.k), s = r ? signatureGestes(r) : ''; if (s && s === avant) RECAP.pareils.add(m.k); avant = s; }); }
@@ -1026,10 +1080,22 @@ function rendreTable(O, C) { const b = app.base, tri = b.tri, n = C.length + 1, 
   RECAP.virtuel = null;
   // le premier paquet va jusqu'à la ligne choisie (on la fait venir sous les yeux)
   const d = Math.max(PAQUET, choisie >= 0 ? choisie + 20 : 0), poser = (a, z) => morceaux.slice(a, z).map(m => m.f()).join('');
-  corps.innerHTML = poser(0, d);
+  corps.innerHTML = poser(0, d); calerChiffres();
   if (d < morceaux.length) { let k = d; const suite = () => { if (jeton !== RECAP.jeton || $('base').hidden) return;
-      corps.insertAdjacentHTML('beforeend', poser(k, k + PAQUET * 2)); k += PAQUET * 2; if (k < morceaux.length) requestAnimationFrame(suite); };
+      corps.insertAdjacentHTML('beforeend', poser(k, k + PAQUET * 2)); calerChiffres(true); k += PAQUET * 2; if (k < morceaux.length) requestAnimationFrame(suite); };
     requestAnimationFrame(suite); } }
+/* LES CHIFFRES CENTRÉS SOUS LEUR TITRE, ALIGNÉS ENTRE EUX (la charte : « chaque valeur centrée sous son titre quand c'est un
+   chiffre ») : dans une colonne de nombres, chaque valeur est alignée à droite dans une place de la largeur de la plus
+   longue (les virgules et les unités tombent l'une sous l'autre), et cette place est centrée sous le titre. La largeur se
+   mesure sur les lignes posées (un seul calcul de mise en page), elle va à la table (`--wc<n>`, la n-ième colonne :
+   style-x-recap.css) ; une table virtuelle ne fait que l'élargir en défilant. */
+const NUMERIQUE = /\brc-c-(n|mesure|int)\b/;
+function calerChiffres(garder) { const t = $('ba-tab'), ths = [...$('ba-thead').querySelectorAll('th')], idx = ths.map((th, i) => NUMERIQUE.test(th.className) ? i + 1 : 0).filter(Boolean);
+  if (!garder) { for (let i = 1; i <= 16; i++) t.style.removeProperty('--wc' + i); RECAP.cale = {}; }
+  if (!idx.length) return;
+  t.classList.add('rc-cale'); const w = idx.map(i => { let m = 0; $('ba-tbody').querySelectorAll(`tr:is([data-k],.rc-total) > td:nth-child(${i}) .rc-chiffre`).forEach(x => { m = Math.max(m, x.getBoundingClientRect().width); }); return Math.ceil(m); });
+  t.classList.remove('rc-cale');
+  idx.forEach((i, j) => { const x = Math.max(w[j], (RECAP.cale || {})[i] || 0); if (!x) return; (RECAP.cale || (RECAP.cale = {}))[i] = x; t.style.setProperty('--wc' + i, x + 'px'); }); }
 /* LA FENÊTRE d'une table virtuelle : les morceaux sous les yeux (et MARGE_VIRTUELLE au-dessus et au-dessous), entre deux
    espaces ; les hauteurs vraies de ce qui vient d'être posé remplacent les estimées. Rien ne change sous les doigts : pas
    pendant qu'on écrit dans une case ; la case qui a le clavier le garde. */
@@ -1042,7 +1108,7 @@ function peindreFenetre(force) { const V = RECAP.virtuel; if (!V || $('base').hi
   let apres = 0; for (let j = fin; j < M.length; j++) apres += M[j].h;
   const a = document.activeElement, garde = corps.contains(a) ? caseDe(a) : null;
   corps.innerHTML = espaceVirtuel(avant, V.n) + M.slice(debut, fin).map(m => m.f()).join('') + espaceVirtuel(apres, V.n);
-  V.debut = debut; V.fin = fin;
+  V.debut = debut; V.fin = fin; calerChiffres(!!V.cale); V.cale = true;
   [...corps.children].filter(tr => !tr.classList.contains('rc-espace')).forEach((tr, j) => { const m = M[debut + j]; if (m && tr.offsetHeight) m.h = tr.offsetHeight; });
   if (garde) { const el = elementDe(garde); if (el) { try { el.focus({ preventScroll: true }); } catch (_) { el.focus(); } } } }
 // amener la ligne d'une clé sous les yeux (la ligne choisie, une case qu'on édite), même hors de la fenêtre
@@ -1076,7 +1142,9 @@ function assurerVide() { let v = $('ba-vide'); if (v) return v; v = document.cre
 /* LA LIGNE CHOISIE suit le plan : la liaison du câble choisi est posée sur le gris doux ; un BLOC choisi ne fait pas de
    ses liaisons des lignes choisies — elles gardent un filet, et le repère du bloc se surligne là où il paraît (de ou
    vers). `on` reste la marque de ce que le plan désigne ; `lie` dit qu'elle y tient par un bloc. */
-const parUnBloc = O => O === LIAISONS && !!app.cible && app.cible.type === 'bloc';
+// (les lignes qui tiennent au bloc par lui — ses liaisons, ses problèmes, ses raccords — : la recherche dit déjà son nom,
+// elles ne se teintent pas toutes de cuivre ; seule la ligne qui EST l'objet choisi se pose sur le cuivre)
+const parUnBloc = O => (O === LIAISONS || O === PROBLEMES || O === RACCORDS) && !!app.cible && app.cible.type === 'bloc';
 function ligneHtml(O, C, r, neuve) { RECAP.vues.set(r.k, r); const et = r.nouveau ? '' : O.etat(r), on = !r.nouveau && O.choisie(r), lie = on && parUnBloc(O);
   const cls = [et, on ? 'on' : '', lie ? 'lie' : '', neuve ? 'neuve' : '', O.hors && O.hors(r) ? 'rc-hors' : ''].filter(Boolean).join(' ');
   return `<tr data-k="${escA(r.k)}"${r.l ? ` data-i="${r.i}"` : ''}${cls ? ` class="${cls}"` : ''}>` + C.map(c => `<td class="${c.cls || ''}"${largeurCol(c)}>${r.nouveau ? (c.k === 'rep' ? valT('rep', '', { cls: 'rc-r', ph: 'repère' }) : '') : c.html(r)}</td>`).join('')
@@ -1336,8 +1404,11 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
       if (v && !v.classList.contains('edite') && !b.edition) { e.preventDefault(); editer(v); } return; }
     const c = caseDe(e.target); premier = c && e.detail <= 1 ? { c, x: e.clientX, y: e.clientY } : null; });
   corps.addEventListener('dblclick', e => { const v = e.target.closest('[data-f]'); if (v && !v.classList.contains('edite') && !b.edition && !GAMME.el) { e.preventDefault(); editer(v); } });
-  corps.addEventListener('mouseover', e => { if (b.edition) return; const tr = e.target.closest('tr[data-k]'), r = tr && RECAP.vues.get(tr.dataset.k), O = onglet(); if (r && !r.nouveau && O.survol) O.survol(r); });
-  corps.addEventListener('mouseleave', () => { if (!b.edition) rallumer(); });
+  // survoler une ligne allume ce qu'elle désigne sur le plan (son câble, son repère, les câbles d'un type) — une fois par
+  // ligne entrée, pas à chaque case traversée ; la quitter rend ce qui était choisi
+  corps.addEventListener('mouseover', e => { if (b.edition) return; const tr = e.target.closest('tr[data-k]'); if (tr === RECAP.survolee) return; RECAP.survolee = tr;
+    const r = tr && RECAP.vues.get(tr.dataset.k), O = onglet(); if (r && !r.nouveau && O.survol) O.survol(r); else if (!tr) rallumer(); });
+  corps.addEventListener('mouseleave', () => { RECAP.survolee = null; if (!b.edition) rallumer(); });
   // le clavier dans la table : en édition, Entrée écrit et descend, Tab passe à la case suivante, Échap annule, Ctrl+Z
   // sur une case qu'on n'a pas touchée défait le dernier geste de l'outil ; hors édition, Entrée ou F2 édite, les
   // flèches se déplacent de case en case

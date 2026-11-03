@@ -602,8 +602,10 @@ function heroSchema() {
   const bloc = (x, y, w, h, rep, sous, cls) => `<g class="hs-piece${cls ? ' ' + cls : ''}"><rect class="hs-bloc" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/><text class="hs-rep" x="${x + w / 2}" y="${y + h / 2 + (sous ? -1 : 4.5)}">${rep}</text>${sous ? `<text class="hs-sous" x="${x + w / 2}" y="${y + h / 2 + 15}">${sous}</text>` : ''}</g>`;
   const fils = HERO_FILS.map(([d, t, tx, ty, dit], i) => `<g class="hs-f"><title>${esc((t ? t + ' · ' : '') + dit)}</title><path class="hs-prise" d="${d}"/><path class="hs-fil" pathLength="1" style="--i:${i}" d="${d}"/>${t ? `<text class="hs-c" x="${tx}" y="${ty}">${t}</text>` : ''}</g>`).join('');
   const bornes = [[192, 104, '1'], [192, 158, '2'], [552, 64, '1'], [552, 144, '1'], [676, 72, '2'], [676, 152, '2'], [892, 218, '1'], [1026, 226, '2']].map(([x, y, t]) => `<text class="hs-b" x="${x}" y="${y}">${t}</text>`).join('');
-  const marge = `<rect class="hs-cadre" x="24.5" y="14.5" width="1151" height="292" rx="2"/>` + [...Array(8)].map((_, k) => `<text class="hs-col" x="${24 + 72 + k * 144}" y="9">${k + 1}</text><path class="hs-cadre" d="M${24 + (k + 1) * 144} 14.5v6"/>`).join('')
-    + `<g class="hs-cart"><rect class="hs-cadre" x="868.5" y="284.5" width="212" height="22"/><path class="hs-cadre" d="M936.5 284.5v22"/><text class="hs-cart-t" x="876" y="299">VOLTA</text><text class="hs-cart-t" x="944" y="299">FOLIO 0 · HORS LIGNE</text></g>`;
+  // (v83, le lecteur : « j'aimais la ligne du haut avec 1, 2, 3… ; le reste du cadre, ça fait un casier ; la ligne seule,
+  // qui s'efface sur les côtés, et c'est un schéma infini ») : la règle des colonnes seule, en dégradé vers les bords
+  const marge = `<defs><linearGradient id="hs-regle" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#eceff5" stop-opacity="0"/><stop offset=".22" stop-color="#eceff5" stop-opacity=".22"/><stop offset=".78" stop-color="#eceff5" stop-opacity=".22"/><stop offset="1" stop-color="#eceff5" stop-opacity="0"/></linearGradient></defs>`
+    + `<path class="hs-regle" d="M0 14.5H1200"/>` + [...Array(8)].map((_, k) => `<text class="hs-col" x="${24 + 72 + k * 144}" y="9">${k + 1}</text>${k < 7 ? `<path class="hs-regle" d="M${24 + (k + 1) * 144} 14.5v6"/>` : ''}`).join('');
   return `<div class="bi-vitrine bi-hero" aria-hidden="true"><svg viewBox="0 -4 1200 316" preserveAspectRatio="xMidYMid meet">${marge}`
     + fils
     + bloc(90, 92, 96, 90, '102CB1', '15 A', 'hs-dj') + `<g class="hs-piece hs-vt"><rect class="hs-barre" x="330" y="52" width="10" height="190" rx="3"/><text class="hs-rep" x="335" y="268">668VT31</text></g>`
@@ -612,7 +614,9 @@ function heroSchema() {
     + bloc(900, 204, 120, 50, '540VL5', 'vanne')
     + sourceHero(232, 194) + masseHero(726, 100) + masseHero(726, 180) + masseHero(1070, 252)
     + `<text class="hs-c hs-g" x="244" y="202">28 V CC</text>` + bornes
-    + HERO_COURANTS.map((d, i) => `<circle class="hs-courant" r="3.2"><animateMotion dur="${(2.6 + i * .5).toFixed(1)}s" begin="${(2.4 + i * 1.1).toFixed(1)}s" repeatCount="indefinite" path="${d}" keyPoints="0;1" keyTimes="0;1" calcMode="linear"/></circle>`).join('')
+    + HERO_COURANTS.map((d, i) => { const t = (2.4 + i * 1.1).toFixed(1) + 's';
+      // (v83) caché jusqu'à son départ : avant, il attendait à l'origine du dessin, un point cuivré seul à gauche de la règle
+      return `<circle class="hs-courant" r="3.2" opacity="0"><set attributeName="opacity" to="1" begin="${t}"/><animateMotion dur="${(2.6 + i * .5).toFixed(1)}s" begin="${t}" repeatCount="indefinite" path="${d}" keyPoints="0;1" keyTimes="0;1" calcMode="linear"/></circle>`; }).join('')
     + `</svg></div>`; }
 const vitrineAccueil = heroSchema;
 /* LA MARQUE (v81, le lecteur : « le titre, un peu plus sexy ; ça fait trop écriture classique, on ne sort pas du lot ») :

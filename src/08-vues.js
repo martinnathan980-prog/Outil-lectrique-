@@ -16,28 +16,101 @@
    =========================================================================== */
 'use strict';
 
+/* ---- (v83) LA ZONE D'UN GROUPE (une barrette). Le lecteur : « tu ne les relies pas par un trait, c'est dégueulasse ;
+   c'est la zone entière de la barrette qui doit être prise, de manière très esthétique ». Dans le vrai module, les
+   contacts d'un groupe tiennent à une même pièce de métal : on la dessine. Une PLAGE d'un seul tenant qui épouse ses
+   contacts : chacun au centre d'un carré de demi-côté `rho`, les voisins du groupe soudés (en ligne, en L, en bloc), les
+   coins sortants arrondis au rayon `rho` — le bout d'une rangée est un demi-cercle centré sur son contact —, les coins
+   rentrants adoucis. Une place vide cernée par le groupe (« . » dans la disposition) en fait partie : la plage reste
+   pleine. Une face libre (« lettre@x:y ») : l'enveloppe des contacts, arrondie au même rayon. Toujours UN chemin fermé :
+   un remplissage teinté et un liseré net, rien de flou, rien qui se superpose. ---- */
+const faceZoneN = v => String(Math.round(v * 100) / 100);
+// le chemin d'un contour polygonal, ses coins arrondis : sortants au rayon `rc`, rentrants au rayon `rf` (sens horaire
+// à l'écran : la plage est à droite du chemin, un virage à droite est un coin sortant)
+function faceZoneArrondi(pts, rc, rf) { const n = pts.length; if (n < 3) return '';
+  const k = pts.map((v, i) => { const a = pts[(i + n - 1) % n], b = pts[(i + 1) % n], la = Math.hypot(v[0] - a[0], v[1] - a[1]), lb = Math.hypot(b[0] - v[0], b[1] - v[1]);
+    const u = [(v[0] - a[0]) / la, (v[1] - a[1]) / la], w = [(b[0] - v[0]) / lb, (b[1] - v[1]) / lb], sort = u[0] * w[1] - u[1] * w[0] > 0, r = Math.min(sort ? rc : rf, la / 2, lb / 2);
+    return { s: [v[0] - u[0] * r, v[1] - u[1] * r], e: [v[0] + w[0] * r, v[1] + w[1] * r], r, sw: sort ? 1 : 0 }; });
+  const P = q => faceZoneN(q[0]) + ' ' + faceZoneN(q[1]);
+  return 'M' + P(k[n - 1].e) + k.map(c => 'L' + P(c.s) + 'A' + faceZoneN(c.r) + ' ' + faceZoneN(c.r) + ' 0 0 ' + c.sw + ' ' + P(c.e)).join('') + 'Z'; }
+// la plage d'un groupe posé sur la grille : l'union des carrés et de leurs soudures, son contour (une boucle par bord —
+// un trou s'il y en a un, tourné à l'envers, reste un trou), chaque coin arrondi
+function faceZoneGrille(cases, P, rho) { const S = new Set(cases.map(q => q.join(':'))), a = (r, c) => S.has(r + ':' + c), rects = [];
+  cases.forEach(([r, c]) => { const [x, y] = P(r, c); rects.push([x - rho, y - rho, x + rho, y + rho]);
+    if (a(r, c + 1)) rects.push([x - rho, y - rho, P(r, c + 1)[0] + rho, y + rho]);
+    if (a(r + 1, c)) rects.push([x - rho, y - rho, x + rho, P(r + 1, c)[1] + rho]);
+    if (a(r, c + 1) && a(r + 1, c) && a(r + 1, c + 1)) { const [x2, y2] = P(r + 1, c + 1); rects.push([x - rho, y - rho, x2 + rho, y2 + rho]); } });
+  const Q = rects.map(q => q.map(v => Math.round(v * 100) / 100)), tri = v => [...new Set(v)].sort((u, w) => u - w), X = tri(Q.flatMap(q => [q[0], q[2]])), Y = tri(Q.flatMap(q => [q[1], q[3]]));
+  const plein = Y.slice(1).map((_, j) => X.slice(1).map((_, i) => Q.some(q => q[0] <= X[i] && X[i + 1] <= q[2] && q[1] <= Y[j] && Y[j + 1] <= q[3])));
+  const pl = (i, j) => j >= 0 && j < plein.length && i >= 0 && i < plein[j].length && plein[j][i], depart = new Map();
+  const arete = (u, v) => { const c = u.join(','); (depart.get(c) || depart.set(c, []).get(c)).push([u, v]); };
+  plein.forEach((ln, j) => ln.forEach((x, i) => { if (!x) return;
+    if (!pl(i, j - 1)) arete([X[i], Y[j]], [X[i + 1], Y[j]]); if (!pl(i + 1, j)) arete([X[i + 1], Y[j]], [X[i + 1], Y[j + 1]]);
+    if (!pl(i, j + 1)) arete([X[i + 1], Y[j + 1]], [X[i], Y[j + 1]]); if (!pl(i - 1, j)) arete([X[i], Y[j + 1]], [X[i], Y[j]]); }));
+  const vues = new Set(); let d = '';
+  depart.forEach(es => es.forEach(e0 => { if (vues.has(e0)) return; const pts = []; let e = e0;
+    while (e && !vues.has(e)) { vues.add(e); pts.push(e[0]); e = (depart.get(e[1].join(',')) || []).find(x => !vues.has(x)); }
+    // les points alignés tombent : il reste les coins
+    const coins = pts.filter((v, i) => { const u = pts[(i + pts.length - 1) % pts.length], w = pts[(i + 1) % pts.length]; return !((u[0] === v[0] && v[0] === w[0]) || (u[1] === v[1] && v[1] === w[1])); });
+    d += faceZoneArrondi(coins, rho, rho * 0.42); }));
+  return d; }
+// l'enveloppe convexe de quelques centres, gonflée de `rho` : un cercle, une gélule, un polygone aux coins ronds
+function faceZoneEnveloppe(ps, rho) { const s = ps.slice().sort((u, v) => u[0] - v[0] || u[1] - v[1]), x = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const bas = [], haut = []; s.forEach(q => { while (bas.length > 1 && x(bas[bas.length - 2], bas[bas.length - 1], q) <= 0) bas.pop(); bas.push(q); });
+  s.slice().reverse().forEach(q => { while (haut.length > 1 && x(haut[haut.length - 2], haut[haut.length - 1], q) <= 0) haut.pop(); haut.push(q); });
+  const H = bas.slice(0, -1).concat(haut.slice(0, -1)).filter((q, i, t) => !i || q[0] !== t[i - 1][0] || q[1] !== t[i - 1][1]), N = faceZoneN, n = H.length;
+  if (n < 2) { const [cx, cy] = s[0]; return { H: [s[0]], d: `M${N(cx - rho)} ${N(cy)}A${N(rho)} ${N(rho)} 0 1 1 ${N(cx + rho)} ${N(cy)}A${N(rho)} ${N(rho)} 0 1 1 ${N(cx - rho)} ${N(cy)}Z` }; }
+  const no = H.map((a, i) => { const b = H[(i + 1) % n], l = Math.hypot(b[0] - a[0], b[1] - a[1]); return [(b[1] - a[1]) / l * rho, -(b[0] - a[0]) / l * rho]; });
+  return { H, d: 'M' + N(H[0][0] + no[0][0]) + ' ' + N(H[0][1] + no[0][1]) + H.map((_, i) => { const b = H[(i + 1) % n], m1 = no[i], m2 = no[(i + 1) % n];
+    return 'L' + N(b[0] + m1[0]) + ' ' + N(b[1] + m1[1]) + 'A' + N(rho) + ' ' + N(rho) + ' 0 0 1 ' + N(b[0] + m2[0]) + ' ' + N(b[1] + m2[1]); }).join('') + 'Z' }; }
+// la distance d'un point à une enveloppe (0 dedans)
+function faceZoneDistance(f, H) { const n = H.length; if (n === 1) return Math.hypot(f[0] - H[0][0], f[1] - H[0][1]);
+  let dedans = n > 2, m = Infinity;
+  H.forEach((a, i) => { const b = H[(i + 1) % n], dx = b[0] - a[0], dy = b[1] - a[1], t = Math.max(0, Math.min(1, ((f[0] - a[0]) * dx + (f[1] - a[1]) * dy) / (dx * dx + dy * dy)));
+    m = Math.min(m, Math.hypot(f[0] - a[0] - t * dx, f[1] - a[1] - t * dy)); if (dx * (f[1] - a[1]) - dy * (f[0] - a[0]) < 0) dedans = false; });
+  return dedans ? 0 : m; }
+// la plage d'un groupe : `g.contacts` parmi `tous` (ceux de la face), P(r, c) → [x, y] ; R le rayon d'un contact, p le pas
+function faceZone(g, tous, P, rho, R, p) { const cle = c => (+c.r || 0) + ':' + (+c.c || 0), siens = new Set(g.contacts.map(cle));
+  const etrangers = tous.filter(c => !siens.has(cle(c))).map(c => P(+c.r || 0, +c.c || 0)), libre = H => etrangers.every(f => faceZoneDistance(f, H) >= rho + R + 1.5);
+  const morceaux = (xs, voisin) => { const reste = xs.slice(), out = []; while (reste.length) { const cc = [reste.shift()];
+    for (let i = 0; i < cc.length; i++) for (let j = reste.length - 1; j >= 0; j--) if (voisin(cc[i], reste[j])) cc.push(reste.splice(j, 1)[0]); out.push(cc); } return out; };
+  if (tous.every(c => Number.isInteger(+c.r || 0) && Number.isInteger(+c.c || 0))) {
+    // une place vide cernée par le groupe (trois voisins au moins, tous à lui) entre dans sa plage
+    const occ = new Set(tous.map(cle)), rs = tous.map(c => +c.r || 0), cs = tous.map(c => +c.c || 0), cases = g.contacts.map(c => [+c.r || 0, +c.c || 0]);
+    for (let r = Math.min(...rs); r <= Math.max(...rs); r++) for (let c = Math.min(...cs); c <= Math.max(...cs); c++) { if (occ.has(r + ':' + c)) continue;
+      const vs = [[r + 1, c], [r - 1, c], [r, c + 1], [r, c - 1]].map(q => q.join(':')).filter(k => occ.has(k)); if (vs.length >= 3 && vs.every(k => siens.has(k))) cases.push([r, c]); }
+    const uniques = [...new Map(cases.map(q => [q.join(':'), q])).values()], parts = morceaux(uniques, (u, v) => Math.abs(u[0] - v[0]) + Math.abs(u[1] - v[1]) === 1);
+    if (parts.length === 1) return faceZoneGrille(parts[0], P, rho);
+    // en morceaux sur la grille (une norme d'atelier) : l'enveloppe si elle ne mord sur aucun autre contact, sinon chaque morceau
+    const env = faceZoneEnveloppe(g.contacts.map(c => P(+c.r || 0, +c.c || 0)), rho);
+    return libre(env.H) ? env.d : parts.map(pt => faceZoneGrille(pt, P, rho)).join(''); }
+  const ps = g.contacts.map(c => P(+c.r || 0, +c.c || 0)), env = faceZoneEnveloppe(ps, rho); if (libre(env.H)) return env.d;
+  return morceaux(ps, (u, v) => Math.hypot(u[0] - v[0], u[1] - v[1]) <= 1.3 * p).map(pt => { const e = faceZoneEnveloppe(pt, rho); return libre(e.H) ? e.d : pt.map(q => faceZoneEnveloppe([q], rho).d).join(''); }).join(''); }
+
 /* ---- LA FACE d'un connecteur, d'une barrette, d'une prise : chaque contact à sa place (r, c), plein s'il est pris,
-   rouge s'il refuse ; `couleur(ct)` (une barrette : la couleur de son potentiel) ; `rond` : une prise circulaire. ---- */
+   rouge s'il refuse ; `couleur(ct)` (une barrette : la couleur de son potentiel) ; `rond` : une prise circulaire ;
+   `bus` (une barrette) : [{ contacts, couleur }], les groupes de contacts reliés — chacun sa plage. ---- */
 function faceVue(contacts, etatDe, o) { o = o || {}; const n = (contacts || []).length;
   if (!n) return `<svg class="vu-face vu-vide" viewBox="0 0 120 84" width="${o.w || 120}" role="img" aria-label="Aucun arrangement"><rect class="vu-corps" x="4" y="4" width="112" height="76" rx="10"/><text x="60" y="40">aucun</text><text x="60" y="53">arrangement</text></svg>`;
   const xs = contacts.map(c => +c.c || 0), ys = contacts.map(c => +c.r || 0), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
   // (les lettres s'écrivent DANS les contacts : au-dessus, elles chevauchaient le rang d'avant)
-  const R = o.r || 8, p = Math.max(o.pas || 26, o.lettres ? 2 * R + 6 : 0), m = o.rond ? 28 : 18, W = (x1 - x0) * p + 2 * m, H = (y1 - y0) * p + 2 * m;
+  // (v83) une barrette : chaque plage déborde de ses contacts (`rho`), et deux plages voisines gardent entre elles un
+  // jour franc — le pas s'élargit d'autant (la vignette garde le sien : ses lettres l'avaient déjà élargi)
+  const grp = (o.bus || []).filter(g => g && g.contacts && g.contacts.length), R = o.r || 8, rho = R + (o.mini ? 1.5 : 3);
+  const p = Math.max(o.pas || 26, o.lettres ? 2 * R + 6 : 0, grp.length ? 2 * rho + (o.mini ? 3 : 4) : 0), m = o.rond ? 28 : grp.length && !o.mini ? 20 : 18, W = (x1 - x0) * p + 2 * m, H = (y1 - y0) * p + 2 * m;
   const corps = o.rond ? `<circle class="vu-corps" cx="${W / 2}" cy="${H / 2}" r="${(Math.max(W, H) / 2 - 3).toFixed(1)}"/><rect class="vu-cle" x="${W / 2 - 5}" y="1" width="10" height="7" rx="2"/>`
     : `<rect class="vu-corps" x="2" y="2" width="${W - 4}" height="${H - 4}" rx="${o.mini ? 7 : 11}"/><rect class="vu-cle" x="${W / 2 - 13}" y="${H - 5}" width="26" height="4" rx="2"/>`;
-  const pos = c => [m + ((+c.c || 0) - x0) * p, m + ((+c.r || 0) - y0) * p];
-  // (v78) LES GROUPES RELIÉS (une barrette) : un trait épais et pâle passe par les contacts d'un même groupe — on voit qu'ils
-  // sont reliés ; à la couleur du groupe s'il porte des câbles, gris sinon
-  const bus = (o.bus || []).map(g => { const ps = g.contacts.map(pos); if (!ps.length) return '';
-    const d = ps.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('') + (ps.length === 1 ? 'h0.01' : '');
-    // (v82, le lecteur : « un fond flou derrière ; il faut que ce soit net et propre ») : la liaison d'un groupe, un trait
-    // net à la couleur du groupe, qui relie les contacts par leur centre
-    return `<path class="vu-bus-g${g.couleur ? '' : ' libre'}" d="${d}" style="stroke-width:${o.mini ? 2 : 3}px${g.couleur ? ';stroke:' + g.couleur : ''}"/>`; }).join('');
-  const cts = contacts.map(c => { const [x, y] = pos(c), st = etatDe(c) || '', col = o.couleur ? o.couleur(c) : '', L = String(c.lettre || '');
+  const P = (r, c) => [m + (c - x0) * p, m + (r - y0) * p], pos = c => P(+c.r || 0, +c.c || 0);
+  const ct = c => { const [x, y] = pos(c), st = etatDe(c) || '', col = o.couleur ? o.couleur(c) : '', L = String(c.lettre || '');
     const style = col ? (st === 'pris' ? ` style="fill:${col};stroke:${col}"` : ` style="stroke:${col}"`) : '';
     const va = o.va ? o.va(c) : null;
-    return `<g class="vu-ct-g${va ? ' va' : ''}" data-ct="${escA(L)}"${va ? ` data-va-onglet="${escA(va.onglet)}" data-va-vers="${escA(va.vers)}" role="button" tabindex="0" aria-label="${escA('Le contact ' + L)}"` : ''}><circle class="vu-ct ${st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"${style}/>${o.lettres ? `<text class="${st}${L.length > 2 ? ' long' : ''}" x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}">${esc(L)}</text>` : ''}</g>`; }).join('');
-  return `<svg class="vu-face${o.mini ? ' mini' : ''}" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${o.w || W}" role="img" aria-label="${escA(o.titre || 'La face')}">${corps}${bus}${cts}</svg>`; }
+    return `<g class="vu-ct-g${va ? ' va' : ''}" data-ct="${escA(L)}"${va ? ` data-va-onglet="${escA(va.onglet)}" data-va-vers="${escA(va.vers)}" role="button" tabindex="0" aria-label="${escA('Le contact ' + L)}"` : ''}><circle class="vu-ct ${st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"${style}/>${o.lettres ? `<text class="${st}${L.length > 2 ? ' long' : ''}" x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}">${esc(L)}</text>` : ''}</g>`; };
+  // (v83) LES GROUPES RELIÉS : chaque groupe, sa plage puis ses contacts par-dessus (un survol de l'un éveille la plage
+  // entière) ; teintée à la couleur du groupe s'il porte des câbles — la même que ses câbles dans la fiche —, neutre sinon
+  const cle = c => (+c.r || 0) + ':' + (+c.c || 0), sienDe = new Map(); grp.forEach((g, k) => g.contacts.forEach(c => sienDe.set(cle(c), k)));
+  const zones = grp.map((g, k) => `<g class="vu-zone-g"><path class="vu-zone${g.couleur ? '' : ' libre'}" d="${faceZone(g, contacts, P, rho, R, p)}"${g.couleur ? ` style="--zc:${escA(g.couleur)}"` : ''}/>${contacts.filter(c => sienDe.get(cle(c)) === k).map(ct).join('')}</g>`).join('');
+  const cts = contacts.filter(c => !sienDe.has(cle(c))).map(ct).join('');
+  return `<svg class="vu-face${o.mini ? ' mini' : ''}${grp.length ? ' a-zones' : ''}" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${o.w || W}" role="img" aria-label="${escA(o.titre || 'La face')}">${corps}${zones}${cts}</svg>`; }
 const legendeFaceVue = (avecKo) => `<p class="vu-legende"><span><i class="pris"></i>pris</span><span><i></i>libre</span>${avecKo ? '<span><i class="ko"></i>refusé</span>' : ''}</p>`;
 
 /* ---- CE QU'IL TIRE, CE QU'IL TIENT (un disjoncteur) : le démarrage et le permanent en barres, sur l'échelle des
@@ -93,7 +166,7 @@ function cheminVue(o, W, mini) { const H = mini ? 66 : 104, y = mini ? 26 : 42, 
    par l'embase (à droite) — une ligne par contact ; son survol allume la lettre sur la face et le câble sur le plan ---- */
 function traverseeVue(lettres, cote) { const c = (f, g) => !f ? `<span class="vu-tr-c ${g ? 'g' : ''} vide">—</span>`
     : `<span class="vu-tr-c ${g ? 'g' : ''}${f.ko ? ' ko' : ''}"${f.k ? ` data-i="${f.k}"` : ''}>${g ? `<small class="id">${esc(f.de)}</small><b class="id">${esc(f.type || '—')}</b><i class="vu-route" style="--c:${f.couleur}"></i>` : `<i class="vu-route" style="--c:${f.couleur}"></i><b class="id">${esc(f.type || '—')}</b><small class="id">${esc(f.de)}</small>`}</span>`;
-  return `<div class="vu-traverse" role="table" aria-label="Ce qui traverse la prise"><div class="vu-tr-t" role="row"><span>Arrive par la fiche</span><span></span><span>Repart par l’embase</span></div>`
+  return `<div class="vu-traverse" role="table" aria-label="Ce qui traverse la prise"><div class="vu-tr-t" role="row"><span>Arrive par la partie mobile</span><span></span><span>Repart par la partie fixe</span></div>`
     + lettres.map(l => `<div class="vu-tr-l" role="row" data-ct="${escA(l)}">${c(cote(l, true), true)}<span class="vu-tr-p"><b>${esc(l)}</b></span>${c(cote(l, false))}</div>`).join('') + '</div>'; }
 
 /* ---- LA TRAVERSÉE DESSINÉE d'une prise de coupure (v81, le lecteur : « attention au schéma de la prise et de ce qui la
@@ -104,11 +177,12 @@ function traverseeDessin(nom, lettres, cote, o) { if (!lettres.length) return ''
   // (v82, le lecteur : « deux carrés pareils ; représente-la comme sur le schéma ») : comme le folio — la FICHE (partie
   // mobile) plus large et un peu moins haute, l'EMBASE (partie fixe) plus fine et plus haute, accolées, angles vifs ; les
   // lettres dans la fiche seulement
-  const PAS = petit ? 30 : 34, HAUT = petit ? 22 : 48, W = petit ? 400 : 660, wB = petit ? 28 : 34, wE = petit ? 16 : 20, xF = petit ? 178 : 304, xE = xF + wB, x0 = petit ? 104 : 140, x1 = xE + wE + (petit ? 70 : 156), cx = 7.8;
+  const PAS = petit ? 30 : 34, HAUT = petit ? 22 : 26, W = petit ? 400 : 660, wB = petit ? 28 : 34, wE = petit ? 16 : 20, xF = petit ? 178 : 304, xE = xF + wB, x0 = petit ? 104 : 140, x1 = xE + wE + (petit ? 70 : 156), cx = 7.8;
   const H = HAUT + lettres.length * PAS + 16, yB0 = HAUT - 10, yB1 = HAUT + lettres.length * PAS + 4, yF0 = yB0 + 7, yF1 = yB1 - 7;
   const bout = s => { const t = String(s || ''), i = t.lastIndexOf(':'); return i > 0 ? [t.slice(0, i), t.slice(i + 1)] : [t, '']; };
- let out = (petit ? '' : `<text class="bro-sens" x="${(x0 + xF) / 2}" y="14" text-anchor="middle">arrive par la fiche</text><text class="bro-sens" x="${(xE + wE + x1) / 2}" y="14" text-anchor="middle">repart par l’embase</text>`)
-    + (petit ? '' : `<text class="bro-cote" x="${xF + wB / 2}" y="${yB0 - 8}" text-anchor="end">fiche</text><text class="bro-cote" x="${xE + wE / 2}" y="${yB0 - 8}">embase</text>`)
+  // (v83, le lecteur : « fiche, embase : tu peux l'enlever, on le sait — partie mobile, partie fixe ») : le dessin seul
+  let out = (true ? '' : `<text class="bro-sens" x="${(x0 + xF) / 2}" y="14" text-anchor="middle">arrive par la fiche</text><text class="bro-sens" x="${(xE + wE + x1) / 2}" y="14" text-anchor="middle">repart par l’embase</text>`)
+    + ''
     + `<rect class="bro-embase" x="${xE}" y="${yB0}" width="${wE}" height="${yB1 - yB0}"/><rect class="bro-fiche" x="${xF}" y="${yF0}" width="${wB}" height="${yF1 - yF0}"/>`;
   lettres.forEach((l, i) => { const yy = HAUT + i * PAS + PAS / 2, g = cote(l, true), d = cote(l, false);
     out += `<g class="bro-l fi-ia${(g && g.ko) || (d && d.ko) ? ' ko' : ''}"${(g && g.k) || (d && d.k) ? ` data-i="${escA((g && g.k) || d.k)}"` : ''}><rect class="bro-zone" x="0" y="${yy - PAS / 2}" width="${W}" height="${PAS}" rx="6"/>`

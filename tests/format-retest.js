@@ -98,13 +98,13 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     // (v73 : la feuille dit aussi l'ORIGINE de chaque case — ici deux écritures à la main)
     ok('la feuille Modifications : une ligne par case changée (le type, la longueur en mm) et son origine', M.join(' / ') === '|W-012|102CB1|2|103RL1|A1|Cable T/G|DR20|DR16|à la main / |W-013|103RL1|A2|104LP1|1|Cable length (mm)|vide|3250 mm|à la main' && R.modifiees === 2, M.join(' / '));
     const lu = lireTexte(XLSX.utils.sheet_to_csv(XLSX.read(XLSX.write(R.wb, { type: 'array', bookType: 'xlsx' })).Sheets.Installation, { FS: ';' }));
-    ok('Volta le relit : le format installation, les 201 liaisons, les valeurs corrigées', lu.format === 'retest' && lu.liaisons.length === 201 && lu.liaisons.find(x => x.cable === 'W-012').type === 'DR16' && lu.liaisons.find(x => x.cable === 'W-013').longueur === 3.25, lu.format + ' · ' + lu.liaisons.length);
+    ok('Volta le relit : le format installation, les 209 liaisons, les valeurs corrigées', lu.format === 'retest' && lu.liaisons.length === 209 && lu.liaisons.find(x => x.cable === 'W-012').type === 'DR16' && lu.liaisons.find(x => x.cable === 'W-013').longueur === 3.25, lu.format + ' · ' + lu.liaisons.length);
     return out;
   });
   R.push(...R3);
   /* v73 — LE RETEST CORRIGÉ ROUVERT NE SE CORROMPT PLUS (l'ingénieur, n° 2 : « 207 liaisons au lieu de 201, le profil
      perdu ») : « Passer en 15 A et grossir les câbles » (une proposition de Volta), un contact choisi à la main ; on
-     enregistre (le bouton du relevé), on rouvre le fichier comme Ctrl+O le rouvre : 201 liaisons, la feuille
+     enregistre (le bouton du relevé), on rouvre le fichier comme Ctrl+O le rouvre : 209 liaisons, la feuille
      Modifications laissée de côté (et dite), la feuille cachée « Volta » reprise — le profil, le contact —, et le même
      verdict pour 102CB1. */
   const R4 = await p.evaluate(async () => {
@@ -126,7 +126,7 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     await ouvrirFichier(f); await new Promise(r => setTimeout(r, 900));
     const D1 = disjonctionDe('102CB1'), v1 = { pn: pnDuRepere('102CB1'), calibre: D1.calibre, verdict: (verdictDeCalibre(D1) || {}).cle, profil: JSON.stringify(chargeDe('102CB1')) };
     const l1 = verite().find(x => x.cable === 'W-013'), toast = document.getElementById('toast').textContent;
-    ok('la feuille Modifications est un journal, laissée de côté : 201 liaisons, aucune sans type', lu.journaux.join() === 'Modifications' && !lu.ignorees.includes('Modifications') && verite().length === 201 && !verite().some(x => liaisonComplete(x) && !x.type), lu.journaux.join() + ' · ' + verite().length + ' liaisons');
+    ok('la feuille Modifications est un journal, laissée de côté : 209 liaisons, aucune sans type', lu.journaux.join() === 'Modifications' && !lu.ignorees.includes('Modifications') && verite().length === 209 && !verite().some(x => liaisonComplete(x) && !x.type), lu.journaux.join() + ' · ' + verite().length + ' liaisons');
     ok('la feuille « Volta » reprise : le profil de charge de 102CB1, le contact choisi à la main ; le mot qui passe le dit', v1.profil === v0.profil && v1.profil !== 'null' && l1 && l1.contactDe === 'EN3155-016M2018' && /feuille «\s*volta\s*»/i.test(toast) && /journal/.test(toast), toast.slice(0, 160) + ' · contact ' + (l1 && l1.contactDe) + ' · profil ' + (v1.profil === v0.profil ? 'le même' : v0.profil + ' ≠ ' + v1.profil));
     ok('le même verdict pour 102CB1 : le part number écrit, le calibre, « passe »', v1.pn === v0.pn && v1.calibre === v0.calibre && v1.verdict === v0.verdict && v0.verdict === 'passe' && avant.pn === 'MS3320-10' /* v80 : valide ou pas valide, sans réserve — le 10 A du fichier ne disjoncte pas, VOLTA le garde */, `avant ${avant.pn} ${avant.calibre} A ${avant.verdict} → écrit ${v0.pn} ${v0.calibre} A ${v0.verdict} → rouvert ${v1.pn} ${v1.calibre} A ${v1.verdict}`);
     return out;

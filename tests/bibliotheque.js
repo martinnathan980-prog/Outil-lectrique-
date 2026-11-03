@@ -231,9 +231,9 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   ok(await page.evaluate(() => BIB.vue === 'install' && BIB.install === 'exemple' && !document.querySelector('#bi-ajouter') && !document.querySelector('#bi-convertir') && document.querySelectorAll('#bibliotheque .bi-plan[data-plan="exemple"]').length === 1), 'l’Exemple : une installation de démonstration, un plan, rien à y ajouter ni à convertir');
   // sa carte, à la racine, ouvre son plan d'un seul clic (audit v72, parcours P2-2 : la page d'une ligne entre les deux est partie)
   await page.click('#en-biblio'); await page.waitForTimeout(150); await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps'); await page.waitForFunction(() => app.planId === 'exemple' && !!app.dessin); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => app.nom === NOM_EXEMPLE && verite().length === 201 && app.contrat.charges.has('102CB1') && BIB.vue === 'plan' && $('en-install').textContent === 'Exemple'), 'un seul clic sur la carte de l’Exemple l’ouvre : l’exemple tel qu’il est livré, 201 liaisons, son profil de charge ; le fil dit « Exemple »');
+  ok(await page.evaluate(() => app.nom === NOM_EXEMPLE && verite().length === 209 && app.contrat.charges.has('102CB1') && BIB.vue === 'plan' && $('en-install').textContent === 'Exemple'), 'un seul clic sur la carte de l’Exemple l’ouvre : l’exemple tel qu’il est livré, 209 liaisons, son profil de charge ; le fil dit « Exemple »');
   await page.evaluate(() => montrerBibliotheque()); await page.evaluate(() => atelier.exemple()); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => BIB.vue === 'plan' && app.planId === 'exemple' && !app.hist.length && verite().length === 201), '`atelier.exemple()` ouvre l’exemple directement, sans historique — même depuis la bibliothèque');
+  ok(await page.evaluate(() => BIB.vue === 'plan' && app.planId === 'exemple' && !app.hist.length && verite().length === 209), '`atelier.exemple()` ouvre l’exemple directement, sans historique — même depuis la bibliothèque');
 
   /* ---- la base des contrats déjà faits remplit la bibliothèque ------------------------------------------------- */
   console.log('\nla base des contrats déjà faits');

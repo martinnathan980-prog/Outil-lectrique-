@@ -97,6 +97,19 @@ s'écrit ici, le jour même.
   folios ; une lettre de la face mène à son contact ; les liaisons d'un groupe se dessinent nettes, jamais floues (v82).
 - **Le dessin d'un objet reprend la forme du plan** (la prise : grand rectangle et petit rectangle, comme sur le folio).
 - « Pièces », c'est la **LPA** (liste de pré-approvisionnement) dans le jargon du lecteur.
+- **Le mode sombre doit être beau et vivant**, pas seulement moins noir : de la couleur, de la lumière, des surfaces qui se
+  distinguent (v83, le lecteur, excédé : « tout est sombre… c'est l'essentiel, c'est la beauté »).
+- **La fenêtre agrandie se tire par ses coins et ses bords** : ne jamais retirer ce geste.
+- **Une barrette montre ses groupes comme des ZONES** (la plage de métal commune), jamais des contacts reliés par un trait.
+- **La prise : « partie mobile » et « partie fixe » vont de soi** — ne pas étiqueter « fiche / embase » sur le dessin ; dans
+  les textes, ce sont ses mots (« partie mobile », « partie fixe »), jamais « fiche / embase » ; une lettre de la face mène à
+  son câble.
+- **Pas deux fois la même chose** : en grand, « module 2 de VT2 » se lit dans la section de la barrette, pas aussi en tête.
+- **Ce que coûte un changement se chiffre** (« +21 g sur 5 m ») ; la LPA du plan entier s'exporte d'un clic depuis Pièces.
+- **L'accueil** : du cadre du schéma, seule la ligne du haut (les numéros de colonne) reste, et s'efface vers les côtés :
+  un schéma infini, pas un casier.
+- **Modifier se lit sans défiler** : un sommaire, et chaque réglage s'ouvre sur place.
+- **Les tableaux du récapitulatif** : le câble est porté par la flèche entre ses deux bouts ; l'état se dit en mots.
 
 ## La méthode
 

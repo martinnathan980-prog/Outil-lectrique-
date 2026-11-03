@@ -36,7 +36,7 @@ const FICHIER = fichierDemande();
   ok('le bilan dit le format (installation, en-têtes ligne 1)', /format : installation \(en-têtes ligne 1\)/.test(B.t));
   ok('… les colonnes reconnues, chacune avec ce que Volta y lit', /colonnes reconnues \(11\)/.test(B.t) && /Device1 → équipement 1/.test(B.t) && /Cable TG → type de câble/.test(B.t));
   ok('… et la colonne qu’il ne connaît pas', /colonnes non reconnues \(1\) : « Remarque client »/.test(B.t));
-  ok('… les liaisons, les folios, les contacts, le contrôle', /201 liaisons · 6 folios/.test(B.t) && /bouts à sertir/.test(B.t) && /LE CONTRÔLE\n- \d+ problème/.test(B.t));
+  ok('… les liaisons, les folios, les contacts, le contrôle', /209 liaisons · 6 folios/.test(B.t) && /bouts à sertir/.test(B.t) && /LE CONTRÔLE\n- \d+ problème/.test(B.t));
   ok('une référence inconnue se dit par sa forme (A, 9)', /formes : [A9*\-]+ ×\d/.test(B.t));
   ok('ANONYMAT : aucun nom du plan dans le texte copié', B.fuites.length === 0, B.noms + ' noms vérifiés' + (B.fuites.length ? ' — FUITES : ' + B.fuites.slice(0, 5).join(', ') : ''));
   ok('l’erreur de page est gardée, son repère masqué', /boom-essai sur ‹repère›/.test(B.t));

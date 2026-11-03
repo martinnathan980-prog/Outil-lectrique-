@@ -363,7 +363,11 @@ function tirerCarte(e) { const t = CARTE.tire, el = $('inspecteur'), Z = zoneDeL
 function lierBords(el) {
   el.addEventListener('pointerdown', e => { const bord = e.target.closest && e.target.closest('[data-bord]'); if (!bord || telephone() || e.button !== 0) return;
     // (v78) la carte et le grand détaché se tirent par tous leurs bords et leurs coins ; le grand rangé, par son bord gauche
-    const flotte = carteFlottante(), libre = grandLibre(); if (!flotte && !libre && bord.dataset.bord !== 'w') return;
+    const flotte = carteFlottante(); let libre = grandLibre();
+    // (v83, le lecteur : « dans les angles, je ne peux pas l'agrandir ou la rapetisser ; je te l'avais demandé ») : le grand
+    // rangé à droite se tire aussi par ses coins et ses bords — il devient une fenêtre, à sa place, et suit la main
+    if (!flotte && !libre && bord.dataset.bord !== 'w') { if (!NIVEAU.grand || telephone()) return; const r0 = el.getBoundingClientRect();
+      rangerFenetre(false, { x: Math.round(r0.left), y: Math.round(r0.top), w: Math.round(r0.width), h: Math.round(r0.height) }); libre = grandLibre(); if (!libre) return; }
     e.preventDefault(); e.stopPropagation();
     CARTE.tire = { bord: bord.dataset.bord, x0: e.clientX, y0: e.clientY, r: el.getBoundingClientRect(), flotte, libre };
     try { bord.setPointerCapture(e.pointerId); } catch (_) { }

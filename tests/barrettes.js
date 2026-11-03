@@ -95,7 +95,7 @@ ok('un connecteur inconnu de la bible n’a pas de partie mobile, et on le dit',
 console.log('\n6. LE SUIVI DU CONTRAT');
 const S = X.suiviDuContrat(L, X.bibleDeLOutil(), 'exemple', n => n === '667VT21' ? 'E0599-1B204Z' : '');
 const barrettes = S.filter(l => /barrette/.test(l.nature)), prises = S.filter(l => l.nature === 'prise de coupure'), conns = S.filter(l => l.nature === 'connecteur');
-ok('une ligne par barrette, par prise, par connecteur', barrettes.length === 6 && prises.length === 5 && conns.length > 20, barrettes.length + ' barrettes · ' + prises.length + ' prises · ' + conns.length + ' connecteurs');
+ok('une ligne par barrette, par prise, par connecteur', barrettes.length === 8 && prises.length === 5 && conns.length > 20, barrettes.length + ' barrettes · ' + prises.length + ' prises · ' + conns.length + ' connecteurs');
 const l667 = S.find(l => l.repere === '667VT21');
 ok('la référence retenue à la main l’emporte, celle du fichier reste', l667.reference === 'E0599-1B204Z' && l667.fichier === 'E0599-1B201Z', l667.reference + ' · fichier ' + l667.fichier);
 const l668 = S.find(l => l.repere === '668VT31');
@@ -579,7 +579,7 @@ const RB = [...L.map(l => X.liaison({ ...l, de: decale(l.de), vers: decale(l.ver
   X.liaison({ de: '302CB1', borneDe: '3', pnDe: 'MS3320-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', harness: 'H-1', appareil: 'H160' }),
   ...L.slice(0, 30).map(l => X.liaison({ ...l, harness: 'H-2', appareil: 'H175', retest: '2023-01-01' }))];
 const IR = X.indexerReferences(RB);
-ok('la base se range par harness : H-1 (l’exemple décalé, 65 équipements, H160, 2024-07-08) et H-2 (trente lignes)', IR.harnais.size === 2 && IR.harnais.get('H-1').equipements.size === 65 && IR.harnais.get('H-1').appareil === 'H160' && IR.harnais.get('H-1').retest === '2024-07-08' && IR.harnais.get('H-2').liaisons.length === 30);
+ok('la base se range par harness : H-1 (l’exemple décalé, 67 équipements, H160, 2024-07-08) et H-2 (trente lignes)', IR.harnais.size === 2 && IR.harnais.get('H-1').equipements.size === 67 && IR.harnais.get('H-1').appareil === 'H160' && IR.harnais.get('H-1').retest === '2024-07-08' && IR.harnais.get('H-2').liaisons.length === 30);
 const CR = X.candidatsDeReference(IR, L, '102CB1', 3);
 ok('102CB1 se reconnaît : H-2/102CB1 (même part number, 100 %) puis H-1/302CB1 (même part number, 75 % : une ligne de plus chez lui)', CR.length === 2 && CR[0].harness === 'H-2' && CR[0].repere === '102CB1' && CR[0].par === 'pn' && CR[0].taux === 1 && CR[1].repere === '302CB1' && Math.abs(CR[1].taux - 0.75) < 1e-9, JSON.stringify(CR.map(c => [c.harness, c.repere, c.taux])));
 ok('300XC1 se reconnaît en 500XC1 de H-1 à 100 % (même part number, repères décalés) ; un repère sans part number se cherche par son code', X.candidatsDeReference(IR, L, '300XC1', 1)[0].repere === '500XC1' && X.candidatsDeReference(IR, L, '300XC1', 1)[0].taux === 1 && X.candidatsDeReference(IR, L.map(l => X.liaison({ ...l, pnDe: '', pnVers: '' })), '102CB1', 3).some(c => c.par === 'code'));

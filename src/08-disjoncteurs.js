@@ -351,11 +351,12 @@ function sectionDisjoncteur(nom, d, o, probs) { d = d || disjonctionDe(nom); o =
   if (d.sansCourbe) return { cle: 'disjoncteur', vide: 'aucune courbe de disjonction dans la norme : rien ne se choisit', contenu: tete };
   const cal = d.calibre, v = verdictDuRetenu(d);
   const courbe = part('courbe', 'Courbe de déclenchement', `<figure class="dj-graphe ilot-clair">${grapheSvg(d, vueDeLaCourbe(), largeurGrapheEstimee())}<div class="dj-tip" hidden></div></figure>`, confianceDeLaCourbe(d), 'courbe');
+  // « + Ajouter un état » : la dernière ligne du tableau (le designer v83 : le geste au bout de la liste, là où l'œil le
+  // cherche, plus en haut à droite) — ou, quand un état de base a été supprimé, la petite liste qui le rend
   const supprimes = ['dem', 'trans', 'perm'].filter(k => d.profil && d.profil[k] === null), cleP = 'djplus|' + nom;
-  const plus = supprimes.length ? `<button type="button" class="fi-lien dj-plus" id="dj-plus" data-changer="${escA(cleP)}" aria-expanded="${FI.liste === cleP}" data-bulle="Un état de plus : un courant, une durée">${ico('plus')}État</button>`
-    : `<button type="button" class="fi-lien dj-plus" id="dj-plus" data-bulle="Un état de plus : un courant, une durée">${ico('plus')}État</button>`;
+  const plus = `<button type="button" class="dj-plus" id="dj-plus"${supprimes.length ? ` data-changer="${escA(cleP)}" aria-expanded="${FI.liste === cleP}"` : ''} data-bulle="Un état de plus : un courant, une durée">${ico('plus')}<span>Ajouter un état</span></button>`;
   const ajouts = supprimes.length ? listeChoix(cleP, `<div class="fi-puces">${supprimes.map(k => `<button type="button" class="fi-chip" data-dj-ajout="${k}">${esc(majuscule(NOMS_PHASES[k] || k))}</button>`).join('')}<button type="button" class="fi-chip" data-dj-ajout="plus">Autre état</button></div>`, { titre: 'Ajouter un état' }) : '';
-  const profil = part('profil', 'Profil de charge', tableauProfil(d) + ajouts, plus, 'profil');
+  const profil = part('profil', 'Profil de charge', tableauProfil(d, plus) + ajouts, '', 'profil');
   // pliée, la ligne dit le calibre en grand, son mot quand il ne passe pas, sa gamme ; et, tant que la proposition de
   // l'outil n'est pas écrite (l'ergonome v73 : « est-il à 10 ou à 15 ? »), le calibre du RETEST en grand et « → 15 A proposé »
   const fam = (d.famille && (d.famille.famille || d.famille.nom)) || '', propose = propositionNonEcrite(d), retest = !propose && o.calRetest && o.calRetest !== cal && !pnDeVolta(nom) ? o.calRetest : null;
@@ -569,21 +570,41 @@ function phraseMeilleur(d) { const m = d.meilleur, cal = m.calibre, fam = m.fami
       : prev.selectif === false ? `${Ap} ne serait pas à 2:1 avec le disjoncteur voisin` : `${Ap} conviendrait aussi`); }
   return majuscule(s) + '.'; }
 
-/* LE PROFIL DE CHARGE : un petit tableau — démarrage, transition, permanent (pour toujours), puis les états ajoutés —, la
-   pastille du sort de chaque point sur la courbe, le courant, la durée ; les unités dans l'en-tête des colonnes, pas
-   dans les cases ; chaque état se supprime (×), le démarrage, la transition et le permanent compris (le profil garde
-   alors `null` à sa place : l'état n'est plus là, pas seulement vide) ; « + État » en ajoute — ou rend l'un des trois. */
-function tableauProfil(d) { const P = d.profil, E = etatsDuProfil(P), parI = new Map(d.points.map(p => [p.i, p])), k = x => E.find(e => e.k === x), la = x => !P || P[x] !== null;
+/* LE PROFIL DE CHARGE : un petit tableau — démarrage, transition, permanent (pour toujours), puis les états ajoutés —, le
+   courant, la durée ; les unités dans l'en-tête des colonnes, pas dans les cases ; chaque état se supprime (×), le
+   démarrage, la transition et le permanent compris (le profil garde alors `null` à sa place : l'état n'est plus là, pas
+   seulement vide) ; « + Ajouter un état » (`plus`), sa dernière ligne, en ajoute — ou rend l'un des trois.
+   (v83, le lecteur : « pas centré, pas homogène, les cases trop grandes, les petites couleurs sur les côtés ») : plus de
+   pastille en marge — un état qui fait disjoncter le calibre retenu le dit en mots, en rouge, à côté de son nom (rien
+   quand il ne disjoncte pas) ; trois colonnes égales, chaque chiffre centré sous son titre, des cases à leur taille. */
+function tableauProfil(d, plus) { const P = d.profil, E = etatsDuProfil(P), parI = new Map(d.points.map(p => [p.i, p])), k = x => E.find(e => e.k === x), la = x => !P || P[x] !== null;
   const ordre = [la('dem') ? k('dem') : null, la('trans') ? k('trans') : null, la('perm') ? k('perm') : null, ...E.filter(e => /^plus/.test(e.k))].filter(Boolean);
   const val = (e, q) => e[q] != null && isFinite(e[q]) ? nombre(e[q]) : '';
-  const ligne = e => { const plus = /^plus/.test(e.k), p = e.i > 0 ? parI.get(e.i) : null, c = classeVerdict(p);
-    return `<div class="dj-etat${e.k === 'perm' ? ' perm' : ''}" data-k="${e.k}" role="row"><i class="dj-verdict${c ? ' ' + c : ''}" data-bulle="${escA(majuscule(motVerdict(p)))}" role="img" aria-label="${escA(motVerdict(p))}"></i>`
-      + (plus ? `<input class="dj-nom" data-dj="${e.k}" data-q="nom" value="${escA(e.nom)}" aria-label="Nom de l’état" spellcheck="false" autocomplete="off">` : `<span class="dj-nom">${esc(majuscule(e.nom))}</span>`)
+  /* LE VERDICT DE LA LIGNE, sous le nom (v83, le lecteur : « le temps avant de disjoncter ») : avec le calibre retenu, au
+     courant de cet état, le temps où il disjoncterait — lu dans le jugement du moteur (09, `verdictDisjonction` : le temps
+     de déclenchement du point sur la courbe qui juge, le préchauffage compris), rien de recalculé. Une information, pas
+     une marge : « ne disjoncterait qu’après 14 min » ; plus court que l'état, « disjoncte au bout de 9 s » ; sous le
+     seuil de la courbe, « ne disjoncte jamais à ce courant ». La bulle dit tout, en ampères et en secondes. */
+  // (deux états au même courant ne font qu'un point : sa durée est la leur, mise bout à bout — la bulle les nomme)
+  const C = d.calibre > 0 ? amperes(d.calibre) : 'calibre retenu', meme = p => E.filter(x => x.i === p.i && x.t > 0 && x.t !== Infinity).length > 1;
+  const verdictLigne = p => { const m = p && p.marges && p.marges[0]; if (!m || p.ok == null) return null; const T = m.temps, perm = p.t === Infinity, dure = perm ? '' : `il tire ce courant ${secondes(p.t)}${meme(p) ? ' (' + p.nom + ')' : ''}`;
+    const auCourant = `À ${amperes(p.i)}, le ${C}`;
+    if (p.ok) return T === Infinity ? { mot: 'ne disjoncte jamais à ce courant', bulle: `${auCourant} ne disjoncte jamais : ce courant reste sous le seuil de sa courbe.` }
+      : { mot: `ne disjoncterait qu’après ${secondes(T)}`, bulle: `${auCourant} ne disjoncterait qu’au bout de ${secondes(T)} ; ${dure} : il ne disjoncte pas.` };
+    if (perm && T === Infinity) return { mot: `disjoncte au-delà de ${amperes(m.garanti || 0)}`, bulle: `En permanence, le ${C} ne garantit de ne pas disjoncter que jusqu’à ${amperes(m.garanti || 0)} ; il en tire ${amperes(p.i)} : il disjoncte.` };
+    if (perm || T <= p.t) return { mot: `disjoncte au bout de ${secondes(T)}`, bulle: `${auCourant} disjoncte au bout de ${secondes(T)}${perm ? ', et ce courant dure toujours' : ' ; ' + dure} : il disjoncte.` };
+    return { mot: 'disjoncte avec les autres états', bulle: `Seul, cet état ne le ferait disjoncter qu’au bout de ${secondes(T)} ; mais chaque état chauffe le disjoncteur, et, mis bout à bout, les états font disjoncter le ${C}.` }; };
+  // (un disjoncteur est valide ou pas : le verdict de la ligne est rouge quand le moteur dit que ce point fait disjoncter, gris sinon)
+  const ligne = e => { const ajoute = /^plus/.test(e.k), p = e.i > 0 ? parI.get(e.i) : null, ko = !!p && p.ok === false, v = verdictLigne(p);
+    return `<div class="dj-etat${e.k === 'perm' ? ' perm' : ''}${ko ? ' ko' : ''}" data-k="${e.k}" role="row"><span class="dj-c-nom" role="cell">`
+      + (ajoute ? `<input class="dj-nom" data-dj="${e.k}" data-q="nom" value="${escA(e.nom)}" aria-label="Nom de l’état" spellcheck="false" autocomplete="off">` : `<span class="dj-nom">${esc(majuscule(e.nom))}</span>`)
+      + (v ? `<i class="dj-verdict ${ko ? 'ko' : 'ok'}" data-bulle="${escA(v.bulle)}">${esc(v.mot)}</i>` : '') + '</span>'
       + `<label class="dj-champ"><input data-dj="${e.k}" data-q="i" value="${escA(val(e, 'i'))}" inputmode="decimal" placeholder="—" autocomplete="off" aria-label="${escA(e.nom + ' : courant en ampères')}"></label>`
       // une durée d'une minute ou plus se lit aussi en minutes, en petit sous elle (l'ingénieur v73 : « 120 s, 2 min »)
-      + (e.k === 'perm' ? `<span class="dj-inf" data-bulle="Pour toujours" role="img" aria-label="Pour toujours">${ico('infini')}</span>` : `<label class="dj-champ"${e.t >= 60 && isFinite(e.t) ? ` data-min="${escA(secondes(e.t))}"` : ''}><input data-dj="${e.k}" data-q="t" value="${escA(val(e, 't'))}" inputmode="decimal" placeholder="—" autocomplete="off" aria-label="${escA(e.nom + ' : durée en secondes' + (e.t >= 60 && isFinite(e.t) ? ', soit ' + secondes(e.t) : ''))}"></label>`)
+      + (e.k === 'perm' ? `<span class="dj-inf" data-bulle="Pour toujours : il tire ce courant tant qu’il est alimenté" role="img" aria-label="Pour toujours">${ico('infini')}</span>` : `<label class="dj-champ"${e.t >= 60 && isFinite(e.t) ? ` data-min="${escA(secondes(e.t))}"` : ''}><input data-dj="${e.k}" data-q="t" value="${escA(val(e, 't'))}" inputmode="decimal" placeholder="—" autocomplete="off" aria-label="${escA(e.nom + ' : durée en secondes' + (e.t >= 60 && isFinite(e.t) ? ', soit ' + secondes(e.t) : ''))}"></label>`)
       + `<button type="button" class="dj-x" data-x="${e.k}" tabindex="-1" aria-label="${escA('Supprimer l’état « ' + e.nom + ' »')}" data-bulle="Supprimer cet état">${ico('fermer')}</button></div>`; };
-  return `<div class="dj-etats" role="table" aria-label="Profil de charge"><div class="dj-entete" role="row"><span></span><span>État</span><span>Courant <i>A</i></span><span>Durée <i>s</i></span><span></span></div>${ordre.length ? ordre.map(ligne).join('') : '<p class="fi-note dj-aucun">Aucun état : « + État » en ajoute un.</p>'}</div>`; }
+  return `<div class="dj-etats" role="table" aria-label="Profil de charge"><div class="dj-entete" role="row"><span role="columnheader">État</span><span role="columnheader">Courant <i>A</i></span><span role="columnheader">Durée <i>s</i></span><span aria-hidden="true"></span></div>`
+    + ordre.map(ligne).join('') + (plus ? `<div class="dj-ajout" role="row">${plus}</div>` : '') + '</div>'; }
 
 /* ---- ses câbles, pour la section commune « Câbles » (08-fiche, `listeCables`) ------------ */
 /* La chute en ligne depuis le disjoncteur, chemin par chemin : au courant permanent du profil (sinon le calibre, sinon

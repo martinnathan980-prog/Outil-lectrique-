@@ -255,7 +255,7 @@ function contratExemple() {
     '441VN1': 'ABS0864-08', '442VN2': 'ABS0864-08', '670VT41': 'NSA937901M20-06', '671VT42': 'NSA937901M20-04',
     '500XC3': 'EN4165-2M', '510RL1': 'E0836IS35-22SA', '511RL2': 'E0836IS35-22SA', '520LP1': 'E0644D9S', '530PM3': 'EN2997Y1A12P', '531PM4': 'EN2997Y1A12P',
     '540VL5': 'ABS0864-08', '550SW3': 'NSA937802-03', '560HT1': 'E0644B9S', '411VC3A': 'EN3646A61208FN', '412VC3B': 'EN3646A61208FN',
-    '600XC4': 'EN4165-2M', '601XC5': 'EN4165-2M', '672VT51': 'E0599-1A101Z', '610LP3': 'E0644D9S', '611LP4': 'E0644D9S', '620SW4': 'NSA937802-03',
+    '600XC4': 'EN4165-2M', '601XC5': 'EN4165-2M', '672VT51': 'E0599-1A101Z', '673VT52': 'E0599-1A101Z', '674VT22': 'E0599-1B201Z', '610LP3': 'E0644D9S', '611LP4': 'E0644D9S', '620SW4': 'NSA937802-03',
     '630RL5': 'E0836IS35-22SA', '631RL6': 'E0836IS35-22SA' };
   const L = [];
   /* des routes PROVISOIRES, tirées du type de fil, pour que la légende des routes se voie sur l'exemple : les vraies
@@ -440,6 +440,12 @@ function contratExemple() {
   li('5', '540VL5', '3',   '913G',    '',   'W-546', 'DR22');
   li('5', '550SW3', '3',   '913G',    '',   'W-547', 'DR22');
   li('5', '560HT1', '2',   '913G',    '',   'W-548', 'DR22');
+  // le module 2 de la barrette VT2 (le module 1, 667VT21, est au folio 2) : le 28 V de B7 réparti vers la vanne et le
+  // réchauffeur — une barrette dont les modules sont posés sur deux folios
+  li('5', '500XC3', 'B7',  '674VT22', '1',  'W-550', 'DR22');
+  li('5', '674VT22', '1',  '674VT22', '2',  'W-551', 'DR22');
+  li('5', '674VT22', '1',  '540VL5',  '5',  'W-552', 'DR22');
+  li('5', '674VT22', '2',  '560HT1',  '3',  'W-553', 'DR22');
   // ---- plan 6 : moyen — deux équipements de dix bornes qui se parlent à travers une barrette : huit fils qui la
   //      traversent, un paquet ponté en bus, trois piquages par shunt vers des lampes et un interrupteur (un module de
   //      barrette n'a qu'un contact par côté : un piquage, c'est un shunt), deux fils directs, une borne qui alimente
@@ -480,5 +486,10 @@ function contratExemple() {
   li('6', '631RL6', '3',   '914G',    '',   'W-644', 'DR24');
   li('6', '600XC4', 'A15', '915G',    '',   'W-645', 'DR22');
   li('6', '601XC5', 'B15', '915G',    '',   'W-646', 'DR22');
+  // le module 2 de la barrette VT5 : la commande A12 reprise par les deux relais
+  li('6', '600XC4', 'A12', '673VT52', '1',  'W-650', 'DR24');
+  li('6', '673VT52', '1',  '673VT52', '2',  'W-651', 'DR24');
+  li('6', '673VT52', '1',  '630RL5',  '4',  'W-652', 'DR24');
+  li('6', '673VT52', '2',  '631RL6',  '4',  'W-653', 'DR24');
   return L;
 }

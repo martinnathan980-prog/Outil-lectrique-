@@ -1,0 +1,21 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES PLAGES D'UNE BARRETTE (v83, 08-vues `faceVue`, `faceZone`) — chargée en dernier.
+   Le lecteur : « tu ne les relies pas par un trait ; c'est la zone entière qui doit être prise, de manière très belle ».
+   Chaque groupe de contacts reliés est une PLAGE : une pièce d'un seul tenant qui épouse ses contacts. Prise (le groupe
+   porte des câbles) : teintée à la couleur du groupe — la même que ses câbles dans la fiche —, un liseré net de cette
+   couleur. Libre : une plage neutre, à peine plus sombre que la face, un filet discret. Les contacts et leurs lettres se
+   posent dessus, inchangés. Survoler un contact éveille la plage entière : on voit d'un coup tout ce qui lui est relié.
+   ═══════════════════════════════════════════════════════════════════════ */
+svg.vu-face .vu-zone{fill:color-mix(in srgb,var(--zc) 12%,var(--s-surface));stroke:color-mix(in srgb,var(--zc) 62%,var(--s-surface));stroke-width:1.2;stroke-linejoin:round;
+  transition:fill var(--rapide,.15s) ease,stroke var(--rapide,.15s) ease}
+svg.vu-face .vu-zone.libre{fill:color-mix(in srgb,var(--t-1) 3.5%,var(--s-surface));stroke:color-mix(in srgb,var(--t-1) 13%,var(--s-surface));stroke-width:1}
+svg.vu-face.mini .vu-zone{stroke-width:1}
+svg.vu-face.mini .vu-zone.libre{stroke-width:.8}
+/* le survol d'un contact : sa plage se teinte un peu plus, son liseré prend la pleine couleur */
+svg.vu-face:not(.mini) .vu-zone-g:hover .vu-zone:not(.libre){fill:color-mix(in srgb,var(--zc) 19%,var(--s-surface));stroke:var(--zc)}
+svg.vu-face:not(.mini) .vu-zone-g:hover .vu-zone.libre{fill:color-mix(in srgb,var(--t-1) 6%,var(--s-surface));stroke:color-mix(in srgb,var(--t-1) 24%,var(--s-surface))}
+/* la nuit : le graphite boit la teinte, elle monte un peu */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) svg.vu-face .vu-zone{fill:color-mix(in srgb,var(--zc) 17%,var(--s-surface));stroke:color-mix(in srgb,var(--zc) 58%,var(--s-surface))}
+  :root:not([data-theme="light"]) svg.vu-face .vu-zone.libre{fill:color-mix(in srgb,var(--t-1) 4.5%,var(--s-surface));stroke:color-mix(in srgb,var(--t-1) 15%,var(--s-surface))} }
+:root[data-theme="dark"] svg.vu-face .vu-zone{fill:color-mix(in srgb,var(--zc) 17%,var(--s-surface));stroke:color-mix(in srgb,var(--zc) 58%,var(--s-surface))}
+:root[data-theme="dark"] svg.vu-face .vu-zone.libre{fill:color-mix(in srgb,var(--t-1) 4.5%,var(--s-surface));stroke:color-mix(in srgb,var(--t-1) 15%,var(--s-surface))}

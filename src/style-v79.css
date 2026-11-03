@@ -939,3 +939,54 @@ svg.vu-face:has(circle.vu-corps) text.pris{fill:#fff}
    hauteur de ligne de 11 px et coupe ce qui dépasse (overflow:hidden) — l'accent des capitales est rogné. En français,
    les capitales s'accentuent. Correction : une hauteur de ligne qui laisse la place à l'accent. */
 .nc-chiffre .nc-k{line-height:1.4;padding-top:1px}
+
+/* ═══ v83 ═══ */
+.bi-hero .hs-regle{fill:none;stroke:url(#hs-regle);stroke-width:1}
+.bi-vitrine.bi-hero{-webkit-mask-image:none;mask-image:none}
+/* le grand rangé à droite : ses coins et ses bords se tirent aussi (il devient une fenêtre) */
+body.insp-epingle.insp-grand #inspecteur .carte-bords i{display:block}
+body.insp-epingle.insp-grand #inspecteur .carte-bords [data-bord="w"]{top:12px;bottom:12px}
+/* Modifier : les sections attendent sous le sommaire ; celle qu'on ouvre se déplie sous sa ligne */
+.nv-panneau.avec-somm .nv-reg,.nv-panneau.avec-somm .fi-panneau>.nv-reg{display:none}
+.nv-panneau.avec-somm .nv-somm-x .nv-reg{display:block;margin:0;padding:6px 4px 12px;border-radius:0;background:none;box-shadow:none}
+.nv-panneau.avec-somm .nv-somm-x .nv-reg-t h4{display:none}
+.nv-panneau.avec-somm .nv-somm-x .nv-reg-t{padding:0 0 4px}
+.nv-somm-x{list-style:none;margin:0 -18px;padding:6px 18px 4px;background:var(--s-sunken);border-top:1px solid var(--s-line);box-shadow:inset 3px 0 0 var(--nv-cuivre)}
+.nv-somm-x.naît{animation:somm-ouvre .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes somm-ouvre{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.nv-somm-i.ouvert{background:none}
+.nv-somm-i.ouvert .nv-somm-k{color:var(--nv-cuivre)}
+.nv-somm-b svg.ico{transition:transform .25s}
+.nv-somm-b[aria-expanded="true"]{border-color:var(--nv-cuivre);color:var(--nv-cuivre)}
+.nv-somm-b[aria-expanded="true"] svg.ico{transform:rotate(180deg)}
+/* la source de chaque réglage : une colonne à elle, alignée d'une ligne à l'autre */
+.nv-somm-i{grid-template-columns:150px minmax(0,1fr) 130px minmax(0,1.3fr) 112px}
+.nv-somm-v{display:contents}
+.nv-somm-v>s,.nv-somm-v>.nv-somm-f{display:none}
+.nv-somm-v>b{grid-column:2;min-width:0;overflow-wrap:anywhere}
+.nv-somm-v>.vu-src{grid-column:3;justify-self:start}
+.nv-somm-p{grid-column:4}
+.nv-somm-i>:last-child{grid-column:5}
+.nv-somm-av{display:block;margin-top:2px;font:400 var(--f-11)/1.3 var(--sans);color:var(--t-3)}
+.nv-somm-av .id{font-family:var(--mono)}
+@container corps (max-width:760px){ .nv-somm-i{grid-template-columns:120px minmax(0,1fr) 112px} .nv-somm-v>.vu-src{grid-column:2;grid-row:2} .nv-somm-p{grid-column:1/-1;grid-row:3} .nv-somm-i>:last-child{grid-column:3;grid-row:1} }
+.nv-somm-v>.vu-src{align-self:center}
+.nv-cab.vu-allume td{background:var(--nv-cuivre-soft)!important}
+
+/* v83 — la LPA du plan, d'un clic, au pied de l'onglet Pièces */
+.nv-lpa-t{display:flex;align-items:center}
+.nv-grand .nv-panneau>.vu-bloc>.vu-titre.nv-lpa-t::before{top:50%;transform:translateY(-50%)}
+.nv-lpa-b{margin-left:auto;display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 12px;border-radius:8px;border:1px solid color-mix(in srgb,var(--cuivre,#b8733a) 45%,transparent);background:color-mix(in srgb,var(--cuivre,#b8733a) 9%,transparent);color:var(--t-1);font:600 var(--f-12) var(--sans);letter-spacing:0;text-transform:none;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}
+.nv-lpa-b svg{width:15px;height:15px;fill:none;stroke:var(--cuivre,#b8733a);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.nv-lpa-b:hover{background:color-mix(in srgb,var(--cuivre,#b8733a) 16%,transparent);border-color:var(--cuivre,#b8733a)}
+.nv-lpa-b:hover svg{transform:translateY(1px)}
+/* v83 — la longueur, « ≈ 5 m » serré : la case épouse son chiffre */
+.nv-grand table.nv-cables .nv-cab-lg{gap:3px}
+.nv-grand table.nv-cables .nv-cab-lg .fc-in{width:3.6ch;padding:0 2px;text-align:right}
+/* v83 — ce que coûte un câble grossi, dit à côté de la proposition */
+.fi-cout{font-weight:500;color:var(--t-2);white-space:nowrap}
+/* v83 — une ligne de problème reste dans sa carte : le bouton ne touche plus le bord */
+.nc-taches.nc-pbs>.nc-tache{box-sizing:border-box;width:auto;max-width:100%}
+/* v83 — le filigrane de la tête ne passe plus sous les pastilles (« module 2 de VT2 ») : elles s'arrêtent avant lui */
+.nv-grand .nc-tete:has(.nv-fili){padding-right:130px}
+@container corps (max-width:620px){ .nv-grand .nc-tete:has(.nv-fili){padding-right:0} }

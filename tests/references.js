@@ -63,7 +63,7 @@ const H3 = E.filter(l => l.plan === '2').map(l => { const m = x => x === '667VT2
   return X.liaison({ ...l, de: m(l.de), borneDe: b(l.de, l.borneDe), vers: m(l.vers), borneVers: b(l.vers, l.borneVers), fwd: F(2, 'C'), harness: 'H-3', appareil: 'H160', retest: '2025-03-12' }); });
 const RB = [...H1, ...H2, ...H3], IR = X.indexerReferences(RB);
 ok('trois harness, dix dessins (six de H-1, trois de H-2, un de H-3)', IR.harnais.size === 3 && IR.dessins.size === 10 && IR.harnais.get('H-1').dessins.length === 6 && IR.harnais.get('H-2').dessins.length === 3 && IR.harnais.get('H-3').dessins.length === 1, IR.dessins.size + ' dessins');
-ok('H-1 garde ses 65 équipements, son appareil et sa date (comme avant)', IR.harnais.get('H-1').equipements.size === 65 && IR.harnais.get('H-1').appareil === 'H160' && IR.harnais.get('H-1').retest === '2024-07-08');
+ok('H-1 garde ses 67 équipements, son appareil et sa date (comme avant)', IR.harnais.get('H-1').equipements.size === 67 && IR.harnais.get('H-1').appareil === 'H160' && IR.harnais.get('H-1').retest === '2024-07-08');
 const D1 = X.dessinDe(IR, 'H-1', F(1, 'A'));
 ok('le dessin MEE256A7815001A de H-1 : 6 équipements (le 305XX9 en plus), 10 fils, une masse 901G sur 4 fils', D1 && D1.equipements.size === 6 && D1.fils === 10 && D1.pontages === 0 && D1.masses.get('901G') === 4 && D1.appareil === 'H160', D1 && JSON.stringify([D1.equipements.size, D1.fils, [...D1.masses]]));
 const e302 = D1.equipements.get('302CB1');

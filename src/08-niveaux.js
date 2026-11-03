@@ -57,7 +57,8 @@ const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === '
 const ongletCables = sF => !sF ? null : { cle: 'cables', statut: { t: sF.vide ? 'aucun' : sF.nko ? sF.nko + (sF.nko > 1 ? ' câbles en défaut' : ' câble en défaut') : pluriel(sF.compte || 0, 'câble') + (false ? '' : sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' % max' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide };
 function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
-  return { cle: 'fabrication', statut: { t: n + '\u00a0à commander' }, contenu: `<section class="vu-bloc"><h4 class="vu-titre">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span></h4>${fabricationVue(gs)}</section>` }; }
+  return { cle: 'fabrication', statut: { t: n + '\u00a0à commander' }, contenu: `<section class="vu-bloc"><h4 class="vu-titre nv-lpa-t">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span>
+    ${/* (v83) la LPA du plan entier, d'un clic : la même que la nomenclature, en Excel */ ''}<button type="button" class="nv-lpa-b" data-lpa data-bulle="Ce qu’il faut commander pour tout le plan, compté : contacts, modules, connecteurs, câbles"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v7.5M4.8 7 8 10.2 11.2 7M3 12.5h10"/></svg>LPA du plan · Excel</button></h4>${fabricationVue(gs)}</section>` }; }
 
 /* ---- L'EN-TÊTE (v78, le lecteur : « le disjoncteur doit être centré, en gros : on doit direct comprendre ce que c'est ;
    et proprement à côté, son nom ; en dessous, sa référence, sa gamme — le folio, on s'en fout ; plus de pastille d'état »)
@@ -76,7 +77,9 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   const sym = `<svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg>`, titre = `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-tiret" aria-hidden="true">—</span><span class="nc-rep">${rep}</span>`;
   // (v81, le lecteur : « la tête, tu peux la rendre un peu plus sexy ») : le symbole en grand filigrane, à droite, qui se
   // trace à l'ouverture — la signature de la tuile, reprise dans le grand
-  if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${ms.length ? `<span class="nc-meta fi-identite">${ms.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</span>` : ''}<span class="nv-fili" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span></div>`;
+  // (v83) en grand, « module 2 de VT2 » se lit dans la première section (la barrette et tous ses modules) : pas deux fois
+  const msG = ms.filter(m => !/^(module|partie) \S+ de /.test(m));
+  if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${msG.length ? `<span class="nc-meta fi-identite">${msG.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</span>` : ''}<span class="nv-fili" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span></div>`;
   // le symbole : un filigrane dans le coin de la tuile, qui s'éveille au survol
   // (v79, le lecteur : « ce sigle en fond, ce micro-détail, cette interactivité, c'est vraiment la diff — on peut encore
   // faire mieux ») : au survol, un trait de cuivre parcourt le symbole, comme un courant qui passe
@@ -103,9 +106,9 @@ const designationFiche = o => { const t = o.tete || {}; if (!t.designation || !D
 function sommaireReglages(xs) { const ys = (xs || []).filter(Boolean); if (!ys.length) return '';
   return `<section class="nv-somm"><h4 class="vu-titre">Ce que vous pouvez changer <span>${esc(ys.length > 1 ? ys.length + ' réglages' : '1 réglage')} · le bouton mène à sa section</span></h4><ol class="nv-somm-l">`
     + ys.map(x => `<li class="nv-somm-i${x.etat ? ' ' + x.etat : ''}"><span class="nv-somm-k">${esc(x.titre)}</span>`
-      + `<span class="nv-somm-v">${x.avant ? `<s>${x.avant}</s><i class="nv-somm-f" aria-hidden="true">→</i>` : ''}<b>${x.valeur}</b>${x.source ? `<span class="vu-src ${escA(x.source)}">${esc(MOTS_SOURCES[x.source] || x.source)}</span>` : ''}</span>`
+      + `<span class="nv-somm-v">${x.avant ? `<s>${x.avant}</s><i class="nv-somm-f" aria-hidden="true">→</i>` : ''}<b>${x.valeur}${x.avant ? `<small class="nv-somm-av">au lieu de ${x.avant}</small>` : ''}</b>${x.source ? `<span class="vu-src ${escA(x.source)}">${esc(MOTS_SOURCES[x.source] || x.source)}</span>` : ''}</span>`
       + `<span class="nv-somm-p">${x.pourquoi || ''}</span>`
-      + (x.vers ? `<button type="button" class="btn papier dense nv-somm-b" data-va-onglet="" data-va-vers="${escA(x.vers)}">${esc(x.geste || 'Changer')}${ico('droite')}</button>` : '<span></span>') + '</li>').join('')
+      + (x.vers ? `<button type="button" class="btn papier dense nv-somm-b" data-somm="${escA(x.vers)}" data-mot="${escA(x.geste || 'Changer')}" aria-expanded="false">${esc(x.geste || 'Changer')}${ico('bas')}</button>` : '<span></span>') + '</li>').join('')
     + '</ol></section>'; }
 
 /* ---- À FAIRE : chaque point devient une tâche — ce qui cloche, puis (après « — ») ce que ça veut dire ; le geste qui
@@ -254,7 +257,21 @@ function viserDansLaFiche(k) { const box = $('ba-equip'); if (!box || !k) return
   box.querySelectorAll(`[data-i="${CSS.escape(k)}"]`).forEach(x => x.classList.add('vise', 'arrivee')); try { li.scrollIntoView({ block: 'center', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { } }
 
 /* ---- LES GESTES DES DEUX NIVEAUX (08-fiche, `lierFiche`, les appelle à chaque rendu) -------------------------------- */
-function lierNiveaux(box, c) {
+/* MODIFIER SE LIT SANS DÉFILER (v83, le lecteur : « plein de sections, il faut scroller ; fluide, simple, carré, propre ») :
+   sous le sommaire, les sections se rangent ; le bouton d'une ligne déplie SA section juste sous elle (une seule à la
+   fois), et la replie ; la section ouverte se garde quand la fiche se refait. */
+function lierSommaire(box) { const somm = box.querySelector('.nv-panneau[data-section="reglages"] .nv-somm, .nv-panneau .nv-somm'); if (!somm) return;
+  const pan = somm.closest('.nv-panneau'); pan.classList.add('avec-somm');
+  const fermer = () => { pan.querySelectorAll('.nv-somm-x').forEach(x => { const sec = x.firstElementChild; if (sec) (x.dataset.retour ? pan.querySelector(x.dataset.retour) || pan : pan).appendChild(sec); x.remove(); });
+    pan.querySelectorAll('.nv-somm-b').forEach(b => { b.setAttribute('aria-expanded', 'false'); b.closest('.nv-somm-i').classList.remove('ouvert'); }); };
+  const ouvrir = (b, doux) => { const sel = b.dataset.somm, sec = pan.querySelector(sel); if (!sec) return; const li = b.closest('.nv-somm-i'), parent = sec.parentElement;
+    const x = document.createElement('li'); x.className = 'nv-somm-x'; if (parent && parent !== pan && parent.classList.contains('fi-panneau')) x.dataset.retour = '.fi-panneau'; li.after(x); x.appendChild(sec);
+    b.setAttribute('aria-expanded', 'true'); li.classList.add('ouvert'); NIVEAU.sommOuvert = sel;
+    if (!doux) { x.classList.add('naît'); try { li.scrollIntoView({ block: 'nearest', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { } } };
+  pan.querySelectorAll('.nv-somm-b').forEach(b => { b.onclick = e => { e.preventDefault(); e.stopPropagation(); const deja = b.getAttribute('aria-expanded') === 'true'; fermer(); if (deja) { NIVEAU.sommOuvert = ''; return; } ouvrir(b); }; });
+  const garde = NIVEAU.sommOuvert && [...pan.querySelectorAll('.nv-somm-b')].find(b => b.dataset.somm === NIVEAU.sommOuvert); if (garde) ouvrir(garde, true); }
+function lierNiveaux(box, c) { lierSommaire(box);
+  box.querySelectorAll('[data-lpa]').forEach(b => b.onclick = e => { e.stopPropagation(); if (typeof exporterNomenclatureExcel === 'function') exporterNomenclatureExcel(); });
   // « Tout voir », une case de la carte, « et 2 autres points », une ligne des modifications : le grand, sur l'onglet
   box.querySelectorAll('[data-onglet-va]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const k = b.dataset.ongletVa || '';
     if (b.dataset.voirTout && ficheEnGrand()) { const r = b.parentElement.querySelector('.nc-reste'); if (r) { r.hidden = !r.hidden; b.classList.toggle('ouvert', !r.hidden); } return; }
@@ -299,11 +316,14 @@ function lierNiveaux(box, c) {
     const fait = typeof parVolta === 'function' && typeof deciderCalibre === 'function' ? parVolta(() => deciderCalibre(nom)) : false; if (fait !== false && !$('inspecteur').hidden && app.cible && !rafraichirFicheEnPlace()) rendreFiche(); });
   // (v78, le lecteur : « tout doit être interactif : je clique sur “les courbes”, ça m'envoie sur la courbe ») : une étape de
   // « Comment VOLTA a décidé » mène où elle se démontre — l'onglet, puis la pièce, allumée un instant ; son calcul se déplie
-  box.querySelectorAll('[data-va-onglet]').forEach(li => { const aller = e => { const t = e.target.closest('details, summary, button, a, input'); if (t && t !== li) return; e.preventDefault(); e.stopPropagation();
+  // (v83) délégué une fois sur la fiche : un panneau rendu plus tard (l'onglet ouvert ensuite) mène aussi où il dit
+  if (!box.dataset.vaLie) { box.dataset.vaLie = '1';
+    const aller = (li, e) => { const t = e.target.closest('details, summary, button, a, input'); if (t && t !== li && li.contains(t)) return; e.preventDefault(); e.stopPropagation();
       const p = li.dataset.vaOnglet ? activerOnglet(li.dataset.vaOnglet, false) : li.closest('.nv-panneau'), cible = p && li.dataset.vaVers ? p.querySelector(li.dataset.vaVers) : null;
-      if (!cible) return; try { cible.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { cible.scrollIntoView(); }
+      if (!cible) return; try { cible.scrollIntoView({ block: 'center', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { cible.scrollIntoView(); }
       cible.classList.remove('vu-allume'); void cible.offsetWidth; cible.classList.add('vu-allume'); setTimeout(() => cible.classList.remove('vu-allume'), 1600); };
-    li.onclick = aller; li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') aller(e); }; });
+    box.addEventListener('click', e => { const li = e.target.closest && e.target.closest('[data-va-onglet]'); if (li && box.contains(li)) aller(li, e); });
+    box.addEventListener('keydown', e => { if (e.key !== 'Enter' && e.key !== ' ') return; const li = e.target.closest && e.target.closest('[data-va-onglet]'); if (li && li === e.target) aller(li, e); }); }
   // (v78) les touches du calibre : un clic retient ce calibre ; « Revenir au choix de VOLTA » rend l'automatique
   const refaire = () => { if (!$('inspecteur').hidden && app.cible && !rafraichirFicheEnPlace()) rendreFiche(); };
   box.querySelectorAll('[data-nv-cal]').forEach(b => b.onclick = e => { e.stopPropagation(); if (c && c.nom && retenirCalibre(c.nom, +b.dataset.nvCal) !== false) refaire(); });

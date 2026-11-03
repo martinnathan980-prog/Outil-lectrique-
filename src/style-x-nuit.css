@@ -1,0 +1,228 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA NUIT CUIVRÉE — la fiche, la carte, le récapitulatif et les documents, la nuit.
+   Le lecteur : « beaucoup trop sombre, tout est sombre, il n'y a pas un peu de couleur… c'est l'essentiel, c'est la vue,
+   c'est la beauté ». Le graphite neutre (#303136 sur #232428) était plat : trois gris voisins, pas une lumière.
+   La nuit garde son papier graphite, mais un graphite CHAUD, éclairé par son accent :
+   · LA TÊTE : une lumière de cuivre derrière le symbole en filigrane ;
+   · LA BANDE D'ONGLETS : un bronze profond — on la reconnaît d'instinct comme le menu ; l'onglet ouvert est une
+     languette de la page, son filet de cuivre allumé qui verse un peu de lumière dessous ;
+   · LA PAGE : un graphite chaud, en léger dégradé ; LES CARTES : un cran plus claires, une lueur de cuivre dans leur coin
+     haut-gauche, un filet de lumière en haut — les sections se voient sans effort ;
+   · LES TITRES : la barre de cuivre s'allume (un dégradé, un halo) ;
+   · LES CHIFFRES ET LES GRAPHES : le calibre retenu brille, les barres de courant et les anneaux ont leur halo, les points
+     d'état aussi ; le geste « Tout voir » est en cuivre.
+   Le rouge, l'ambre et le vert ne disent que l'état ; aucune teinte bleue (la table l'est déjà) ; chaque encre passe
+   4,5:1 sur chaque fond où elle se pose (le plus clair des fonds : le survol, #443d37).
+   Le jour ne change pas : chaque règle lit un jeton --n-* que seule la nuit définit, et retombe sinon sur la valeur du
+   jour. Les jetons sont écrits deux fois : pour le réglage du système, et pour un choix explicite (data-theme).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── LES JETONS DE LA NUIT ─── */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
+  --s-surface:#3c3835; --s-sunken:#2e2b28; --s-hover:#48433f; --s-line:#4f4945; --s-line-2:#665e57; --s-flottant:#423e3a;
+  --t-1:#f8f4ef; --t-2:#dbd3cb; --t-3:#c2b9b0; --t-inverse:#1e1c1a;
+  --accent-soft:#48433f; --accent-line:#6d655e; --info-soft:#35322f;
+  --ok:#62dd8c; --ok-soft:rgba(98,221,140,.13); --warn:#f6bf6c; --warn-soft:rgba(246,191,108,.13); --ko:#ff9285; --ko-soft:rgba(255,146,133,.14);
+  --nv-cuivre:#eca570; --nv-cuivre-soft:rgba(236,165,112,.15); --nv-cuivre-ligne:rgba(236,165,112,.5); --v-cuivre-vif:#ffb57e;
+  --vu-pointe:color-mix(in srgb,var(--nv-cuivre) 48%,transparent);
+  --v-fond:#2e2b28; --v-bande:#553c2a; --v-bande-2:#5f4430; --v-bande-t:#fcf4ec; --v-bande-s:#e8d2bd; --v-bande-att:#ffcb7d; --v-bande-ko:#ffaca2;
+  --v-tete:#4a4541; --v-tete-t:#ebe3da; --v-carte-haut:rgba(255,238,220,.075); --filet-champ:#978e85;
+  --sh-carte:inset 0 1px 0 rgba(255,236,216,.07),0 0 0 1px rgba(255,214,180,.13),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5),0 0 90px -34px rgba(236,165,112,.32);
+  --sh-carte-tenue:inset 0 1px 0 rgba(255,236,216,.08),0 0 0 1px rgba(255,214,180,.18),0 48px 110px -18px rgba(0,0,0,.85),0 16px 34px -10px rgba(0,0,0,.55),0 0 110px -34px rgba(236,165,112,.4);
+  --sh-panneau:inset 0 1px 0 rgba(255,236,216,.07),0 0 0 1px rgba(255,214,180,.13),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4),0 0 90px -34px rgba(236,165,112,.3);
+  --anneau:0 0 0 3px rgba(236,165,112,.26);
+  /* les surfaces */
+  --n-page:radial-gradient(900px 520px at 100% 100%,rgba(236,165,112,.055),rgba(236,165,112,0) 70%),linear-gradient(180deg,#2e2b28 0%,#292624 52%,#252220 100%);
+  --n-carte:radial-gradient(620px 170px at 0 0,rgba(236,165,112,.08),rgba(236,165,112,0) 72%),linear-gradient(180deg,#433f3b 0%,#3c3835 150px,#393532 100%);
+  --n-carte-ombre:inset 0 1px 0 rgba(255,238,220,.075),0 0 0 1px rgba(255,222,192,.09),0 14px 30px -18px rgba(0,0,0,.7);
+  --n-tete:radial-gradient(380px 130px at calc(100% - 120px) 50%,rgba(236,165,112,.17),rgba(236,165,112,0) 72%),linear-gradient(180deg,#48433e 0%,#3c3734 100%);
+  --n-tete-doc:radial-gradient(460px 150px at 0 0,rgba(236,165,112,.17),rgba(236,165,112,0) 72%),linear-gradient(180deg,#48433e 0%,#3c3734 100%);
+  --n-filet-ok:0 0 8px rgba(98,221,140,.55); --n-filet-ko:0 0 8px rgba(255,146,133,.5);
+  --n-fiche:radial-gradient(420px 220px at 50% -40px,rgba(236,165,112,.16),rgba(236,165,112,0) 72%),linear-gradient(180deg,#433f3b 0%,#393532 100%);
+  --n-creux:linear-gradient(180deg,#2c2926 0%,#312e2b 100%);
+  --n-ligne:transparent; --n-ligne-survol:rgba(255,236,216,.04);
+  --n-pied:linear-gradient(180deg,#393532 0%,#3e3a37 100%);
+  /* la bande d'onglets : le bronze */
+  --n-bande:linear-gradient(180deg,#5c412e 0%,#4d3625 100%);
+  --n-bande-ombre:inset 0 1px 0 rgba(255,212,176,.13),inset 0 -1px 0 rgba(0,0,0,.2);
+  --n-onglet-on:linear-gradient(180deg,rgba(255,181,126,.13) 0,rgba(255,181,126,0) 72%),#2e2b28;
+  --n-onglet-lueur:0 0 12px rgba(255,181,126,.75),0 3px 12px rgba(255,181,126,.35);
+  /* les titres : la barre allumée */
+  --n-barre:linear-gradient(180deg,#ffcfa0 0%,#e8925a 100%);
+  --n-barre-lueur:0 0 10px rgba(236,165,112,.55);
+  /* les lueurs des chiffres et des graphes */
+  --n-lueur-cuivre:drop-shadow(0 0 6px rgba(236,165,112,.6));
+  --n-lueur-ok:drop-shadow(0 0 4px rgba(98,221,140,.7)); --n-lueur-ko:drop-shadow(0 0 4px rgba(255,138,126,.7)); --n-lueur-att:drop-shadow(0 0 4px rgba(246,191,108,.7));
+  --n-lueur-blanche:drop-shadow(0 0 5px rgba(255,217,184,.7));
+  --n-point-ok:0 0 8px rgba(98,221,140,.8); --n-point-ko:0 0 8px rgba(255,138,126,.8); --n-point-att:0 0 8px rgba(246,191,108,.8); --n-point-cuivre:0 0 8px rgba(236,165,112,.85);
+  --n-rail:#2c2926; --n-trait-cal:#ffe0c4;
+  --n-chiffre-lueur:0 0 24px rgba(236,165,112,.3);
+  /* le calibre */
+  --n-cal:linear-gradient(180deg,#4b4642 0%,#403c38 100%);
+  --n-cal-ombre:inset 0 1px 0 rgba(255,238,220,.08),0 6px 14px -10px rgba(0,0,0,.7);
+  --n-cal-on:linear-gradient(180deg,rgba(236,165,112,.34) 0%,rgba(236,165,112,.14) 100%);
+  --n-cal-on-lueur:0 0 0 4px rgba(236,165,112,.13),0 10px 26px -8px rgba(236,165,112,.6);
+  --n-cal-on-t:#fff3e8;
+  /* les étapes, le geste, les problèmes */
+  --n-pas:rgba(236,165,112,.14); --n-pas-ligne:rgba(236,165,112,.55); --n-pas-t:#ffd2ad; --n-pas-fil:rgba(236,165,112,.32);
+  --n-tout:linear-gradient(180deg,rgba(236,165,112,.24) 0%,rgba(236,165,112,.1) 100%); --n-tout-bord:rgba(236,165,112,.6); --n-tout-t:#ffe6d2;
+  --n-tout-survol:linear-gradient(180deg,rgba(236,165,112,.34) 0%,rgba(236,165,112,.16) 100%); --n-tout-lueur:0 10px 28px -10px rgba(236,165,112,.6);
+  --n-pbs:linear-gradient(100deg,rgba(246,191,108,.12) 0%,rgba(246,191,108,.035) 60%),#3c3835;
+  --n-pbs-ko:linear-gradient(100deg,rgba(255,146,133,.15) 0%,rgba(255,146,133,.04) 60%),#3c3835;
+  --n-recap-rail:linear-gradient(180deg,#322e2b 0%,#2a2725 100%);
+  --n-nav-carte:transparent; --n-tout-t-survol:#fff1e4;
+  --n-recap:linear-gradient(180deg,#3c3835 0%,#373330 100%);
+  --n-papier-ombre:0 0 0 1px rgba(255,236,216,.16),0 18px 36px -20px rgba(0,0,0,.8),0 0 44px -18px rgba(236,165,112,.28);
+  --nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d9cfc5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E");
+} }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
+  --s-surface:#3c3835; --s-sunken:#2e2b28; --s-hover:#48433f; --s-line:#4f4945; --s-line-2:#665e57; --s-flottant:#423e3a;
+  --t-1:#f8f4ef; --t-2:#dbd3cb; --t-3:#c2b9b0; --t-inverse:#1e1c1a;
+  --accent-soft:#48433f; --accent-line:#6d655e; --info-soft:#35322f;
+  --ok:#62dd8c; --ok-soft:rgba(98,221,140,.13); --warn:#f6bf6c; --warn-soft:rgba(246,191,108,.13); --ko:#ff9285; --ko-soft:rgba(255,146,133,.14);
+  --nv-cuivre:#eca570; --nv-cuivre-soft:rgba(236,165,112,.15); --nv-cuivre-ligne:rgba(236,165,112,.5); --v-cuivre-vif:#ffb57e;
+  --vu-pointe:color-mix(in srgb,var(--nv-cuivre) 48%,transparent);
+  --v-fond:#2e2b28; --v-bande:#553c2a; --v-bande-2:#5f4430; --v-bande-t:#fcf4ec; --v-bande-s:#e8d2bd; --v-bande-att:#ffcb7d; --v-bande-ko:#ffaca2;
+  --v-tete:#4a4541; --v-tete-t:#ebe3da; --v-carte-haut:rgba(255,238,220,.075); --filet-champ:#978e85;
+  --sh-carte:inset 0 1px 0 rgba(255,236,216,.07),0 0 0 1px rgba(255,214,180,.13),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5),0 0 90px -34px rgba(236,165,112,.32);
+  --sh-carte-tenue:inset 0 1px 0 rgba(255,236,216,.08),0 0 0 1px rgba(255,214,180,.18),0 48px 110px -18px rgba(0,0,0,.85),0 16px 34px -10px rgba(0,0,0,.55),0 0 110px -34px rgba(236,165,112,.4);
+  --sh-panneau:inset 0 1px 0 rgba(255,236,216,.07),0 0 0 1px rgba(255,214,180,.13),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4),0 0 90px -34px rgba(236,165,112,.3);
+  --anneau:0 0 0 3px rgba(236,165,112,.26);
+  --n-page:radial-gradient(900px 520px at 100% 100%,rgba(236,165,112,.055),rgba(236,165,112,0) 70%),linear-gradient(180deg,#2e2b28 0%,#292624 52%,#252220 100%);
+  --n-carte:radial-gradient(620px 170px at 0 0,rgba(236,165,112,.08),rgba(236,165,112,0) 72%),linear-gradient(180deg,#433f3b 0%,#3c3835 150px,#393532 100%);
+  --n-carte-ombre:inset 0 1px 0 rgba(255,238,220,.075),0 0 0 1px rgba(255,222,192,.09),0 14px 30px -18px rgba(0,0,0,.7);
+  --n-tete:radial-gradient(380px 130px at calc(100% - 120px) 50%,rgba(236,165,112,.17),rgba(236,165,112,0) 72%),linear-gradient(180deg,#48433e 0%,#3c3734 100%);
+  --n-tete-doc:radial-gradient(460px 150px at 0 0,rgba(236,165,112,.17),rgba(236,165,112,0) 72%),linear-gradient(180deg,#48433e 0%,#3c3734 100%);
+  --n-filet-ok:0 0 8px rgba(98,221,140,.55); --n-filet-ko:0 0 8px rgba(255,146,133,.5);
+  --n-fiche:radial-gradient(420px 220px at 50% -40px,rgba(236,165,112,.16),rgba(236,165,112,0) 72%),linear-gradient(180deg,#433f3b 0%,#393532 100%);
+  --n-creux:linear-gradient(180deg,#2c2926 0%,#312e2b 100%);
+  --n-ligne:transparent; --n-ligne-survol:rgba(255,236,216,.04);
+  --n-pied:linear-gradient(180deg,#393532 0%,#3e3a37 100%);
+  --n-bande:linear-gradient(180deg,#5c412e 0%,#4d3625 100%);
+  --n-bande-ombre:inset 0 1px 0 rgba(255,212,176,.13),inset 0 -1px 0 rgba(0,0,0,.2);
+  --n-onglet-on:linear-gradient(180deg,rgba(255,181,126,.13) 0,rgba(255,181,126,0) 72%),#2e2b28;
+  --n-onglet-lueur:0 0 12px rgba(255,181,126,.75),0 3px 12px rgba(255,181,126,.35);
+  --n-barre:linear-gradient(180deg,#ffcfa0 0%,#e8925a 100%);
+  --n-barre-lueur:0 0 10px rgba(236,165,112,.55);
+  --n-lueur-cuivre:drop-shadow(0 0 6px rgba(236,165,112,.6));
+  --n-lueur-ok:drop-shadow(0 0 4px rgba(98,221,140,.7)); --n-lueur-ko:drop-shadow(0 0 4px rgba(255,138,126,.7)); --n-lueur-att:drop-shadow(0 0 4px rgba(246,191,108,.7));
+  --n-lueur-blanche:drop-shadow(0 0 5px rgba(255,217,184,.7));
+  --n-point-ok:0 0 8px rgba(98,221,140,.8); --n-point-ko:0 0 8px rgba(255,138,126,.8); --n-point-att:0 0 8px rgba(246,191,108,.8); --n-point-cuivre:0 0 8px rgba(236,165,112,.85);
+  --n-rail:#2c2926; --n-trait-cal:#ffe0c4;
+  --n-chiffre-lueur:0 0 24px rgba(236,165,112,.3);
+  --n-cal:linear-gradient(180deg,#4b4642 0%,#403c38 100%);
+  --n-cal-ombre:inset 0 1px 0 rgba(255,238,220,.08),0 6px 14px -10px rgba(0,0,0,.7);
+  --n-cal-on:linear-gradient(180deg,rgba(236,165,112,.34) 0%,rgba(236,165,112,.14) 100%);
+  --n-cal-on-lueur:0 0 0 4px rgba(236,165,112,.13),0 10px 26px -8px rgba(236,165,112,.6);
+  --n-cal-on-t:#fff3e8;
+  --n-pas:rgba(236,165,112,.14); --n-pas-ligne:rgba(236,165,112,.55); --n-pas-t:#ffd2ad; --n-pas-fil:rgba(236,165,112,.32);
+  --n-tout:linear-gradient(180deg,rgba(236,165,112,.24) 0%,rgba(236,165,112,.1) 100%); --n-tout-bord:rgba(236,165,112,.6); --n-tout-t:#ffe6d2;
+  --n-tout-survol:linear-gradient(180deg,rgba(236,165,112,.34) 0%,rgba(236,165,112,.16) 100%); --n-tout-lueur:0 10px 28px -10px rgba(236,165,112,.6);
+  --n-pbs:linear-gradient(100deg,rgba(246,191,108,.12) 0%,rgba(246,191,108,.035) 60%),#3c3835;
+  --n-pbs-ko:linear-gradient(100deg,rgba(255,146,133,.15) 0%,rgba(255,146,133,.04) 60%),#3c3835;
+  --n-recap-rail:linear-gradient(180deg,#322e2b 0%,#2a2725 100%);
+  --n-nav-carte:transparent; --n-tout-t-survol:#fff1e4;
+  --n-recap:linear-gradient(180deg,#3c3835 0%,#373330 100%);
+  --n-papier-ombre:0 0 0 1px rgba(255,236,216,.16),0 18px 36px -20px rgba(0,0,0,.8),0 0 44px -18px rgba(236,165,112,.28);
+  --nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d9cfc5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E");
+}
+
+/* ─── LE JOUR : les mêmes lumières, en plus doux — la bande d'onglets prend un graphite chaud (l'espresso), la barre des
+   titres un dégradé de cuivre, la tête et les cartes un rien de lumière chaude, « Tout voir » le cuivre ─── */
+#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet{
+  --n-bande:linear-gradient(180deg,#3a2f27 0%,#2f2620 100%);
+  --n-bande-ombre:inset 0 1px 0 rgba(255,214,180,.10);
+  --n-barre:linear-gradient(180deg,#d98e55 0%,#a9581f 100%);
+  --n-tete:radial-gradient(380px 130px at calc(100% - 120px) 50%,rgba(196,111,48,.08),rgba(196,111,48,0) 72%),#ffffff;
+  --n-tete-doc:radial-gradient(460px 150px at 0 0,rgba(196,111,48,.08),rgba(196,111,48,0) 72%),#ffffff;
+  --n-fiche:radial-gradient(420px 220px at 50% -40px,rgba(196,111,48,.07),rgba(196,111,48,0) 72%),#ffffff;
+  --n-carte:radial-gradient(620px 170px at 0 0,rgba(196,111,48,.035),rgba(196,111,48,0) 72%),#ffffff;
+  --n-tout:linear-gradient(180deg,#fbf3ec 0%,#f6ebe1 100%); --n-tout-bord:#dfbb9c; --n-tout-t:#8a4516;
+  --n-tout-survol:linear-gradient(180deg,#faefe6 0%,#f5e6d9 100%); --n-tout-lueur:0 8px 20px -10px rgba(169,88,31,.45);
+  --n-nav-carte:transparent; --n-tout-t-survol:#8a4516;
+  --v-bande-2:#463930; --v-bande-s:#c9bcb0 }
+
+/* ─── LA FICHE AGRANDIE : la tête, la bande, la page ─── */
+.nv-grand .nv-tete .fi-nav{background:var(--n-tete,var(--s-surface))}
+.nv-grand .nv-onglets{background:var(--n-bande,var(--v-bande));box-shadow:var(--n-bande-ombre,none)}
+.nv-grand .nv-onglet[aria-selected="true"]{background:var(--n-onglet-on,var(--v-fond))}
+.nv-grand .nv-onglet[aria-selected="true"]::after{box-shadow:var(--n-onglet-lueur,none)}
+.nv-grand .nv-panneaux{background:var(--n-page,var(--v-fond))}
+
+/* ─── LES CARTES DE SECTION (la fiche, les documents) ─── */
+.nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.vu-schema,.fs-groupe,.nv-reg,.nv-table-c,.fi-ecarts,.v-carte,.fi-mesures),.nv-grand .nv-panneau>.fi-panneau>.nv-reg,
+#fiche .fiche-corps>:is(.hy-groupe,.no-section,.bl-auto,.bl-carnet,.co-bloc,.co-apercu,.ca-form,.ca-apercu,.bl-texte,.no-resume),#fiche .nm>:is(.nm-dom,.nm-etat,.bible-etat,.nm-import,.nm-resultats),#fiche .vf-cartes>.vf-carte,
+.nv-somm{
+  background:var(--n-carte,var(--s-surface));box-shadow:var(--n-carte-ombre,inset 0 1px 0 var(--v-carte-haut),0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.05))}
+
+/* LE TITRE D'UNE SECTION : la barre de cuivre s'allume */
+.nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.fs-groupe)>:is(.vu-titre,.fs-st)::before,.nv-grand .nv-panneau>.vu-schema .vu-titre::before,.nv-grand .nv-reg-t h4::before,
+#fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3,.cc-vide-t,.ca-t)::before,.raccourcis .rk-groupe h3::before,#carnet .cn-tete b::before{
+  background:var(--n-barre,var(--nv-cuivre));box-shadow:var(--n-barre-lueur,none)}
+
+/* ─── LE CALIBRE : les boutons de la gamme, le retenu qui brille ─── */
+button.vu-cal{background:var(--n-cal,var(--s-surface));box-shadow:var(--n-cal-ombre,none)}
+button.vu-cal:hover{background:var(--n-cal-survol,var(--s-hover))}
+button.vu-cal.on{background:var(--n-cal-on,var(--nv-cuivre-soft));box-shadow:inset 0 0 0 1px var(--nv-cuivre),var(--n-cal-on-lueur,0 0 0 transparent)}
+button.vu-cal.on:not(.non) b{color:var(--n-cal-on-t,var(--t-1))}
+
+/* la règle graduée (style-x-dj.css) : le filet rouge et le filet vert ont leur halo, la nuit */
+.nv-grand .nv-panneau .vu-bloc>.vu-cals>button.vu-cal::after{box-shadow:var(--n-filet-ok,none)}
+.nv-grand .nv-panneau .vu-bloc>.vu-cals>button.vu-cal.non::after{box-shadow:var(--n-filet-ko,none)}
+
+/* le profil de charge : des lignes posées sur la carte (plus de dalles grises), les cases en creux */
+.nv-grand .nv-panneau .dj-etat{background:var(--n-ligne,var(--s-surface))}
+.nv-grand .nv-panneau .dj-etat:hover{background:var(--n-ligne-survol,var(--s-surface))}
+.nv-grand .nv-panneau .dj-etat .dj-champ{background:var(--n-creux,var(--s-sunken))}
+/* la courbe de déclenchement : on n'y touche pas — un cadre net autour du papier */
+.nv-grand .dj-graphe.ilot-clair{box-shadow:var(--n-papier-ombre,0 0 0 1px var(--s-line-2),var(--sh-1))}
+
+/* ─── LES GRAPHES : le courant appelé, les anneaux, les liaisons ─── */
+svg.vu-charge .vu-rail{fill:var(--n-rail,var(--s-line))}
+svg.vu-charge .vu-b-perm{filter:var(--n-lueur-cuivre,none)}
+svg.vu-charge .vu-tick.oui{filter:var(--n-lueur-ok,none)}
+svg.vu-charge .vu-tick.non{filter:var(--n-lueur-ko,none)}
+svg.vu-charge line.vu-cal{stroke:var(--n-trait-cal,var(--t-1));filter:var(--n-lueur-blanche,none)}
+svg.vu-anneau .vu-an-v,svg.vu-arbre .vu-an-v{filter:var(--n-lueur-ok,none)}
+svg.vu-anneau.att .vu-an-v,svg.vu-arbre .vu-an.att .vu-an-v{filter:var(--n-lueur-att,none)}
+svg.vu-anneau.ko .vu-an-v,svg.vu-arbre .vu-an.ko .vu-an-v{filter:var(--n-lueur-ko,none)}
+.vu-explique{background:var(--n-creux,var(--s-sunken))}
+
+/* ─── LES ÉTAPES (« Comment VOLTA a choisi… ») : les numéros en cuivre, le fil qui les relie ─── */
+.vu-pq li .vu-pq-n{background:var(--n-pas,var(--s-sunken));box-shadow:inset 0 0 0 1px var(--n-pas-ligne,var(--s-line-2));color:var(--n-pas-t,var(--t-1))}
+.vu-pq li:not(:last-child)::after{background:var(--n-pas-fil,var(--s-line-2))}
+
+/* ─── LES PROBLÈMES : la section compacte prend la teinte de son état ─── */
+.nc-taches.nc-pbs{background:var(--n-pbs,var(--s-surface))}
+.nc-taches.nc-pbs.ko{background:var(--n-pbs-ko,var(--s-surface))}
+.nc-taches.nc-pbs .nc-tache .nc-rond{box-shadow:var(--n-point-att,none)}
+.nc-taches.nc-pbs .nc-tache.ko .nc-rond{box-shadow:var(--n-point-ko,none)}
+
+/* ─── LA CARTE DE SYNTHÈSE : une lumière de cuivre derrière le titre, le geste « Tout voir » en cuivre ─── */
+.fi.nv-c{background:var(--n-fiche,var(--s-surface))}
+.fi.nv-c>.fi-nav{background:var(--n-nav-carte,var(--s-surface))}
+.nc-vignette{background:var(--n-creux,var(--s-sunken))}
+.nc-chiffre .nc-v{text-shadow:var(--n-chiffre-lueur,none)}
+.nc-tout{background:var(--n-tout,var(--s-surface));border-color:var(--n-tout-bord,var(--s-line-2));color:var(--n-tout-t,var(--t-1))}
+.nc-tout:hover{background:var(--n-tout-survol,var(--nv-cuivre-soft));box-shadow:var(--n-tout-lueur,none);color:var(--n-tout-t-survol,var(--nv-cuivre))}
+
+/* ─── LES DOCUMENTS : la tête éclairée, la page chaude, le pied posé ─── */
+#fiche .fiche-tete{background:var(--n-tete-doc,var(--s-surface))}
+#fiche .fiche-corps{background:var(--n-page,var(--v-fond))}
+#fiche .fiche-pied{background:var(--n-pied,var(--s-surface))}
+#fiche .nm-nav{background:var(--n-bande,var(--v-bande))}
+#fiche .nm-nav .onglet[aria-selected="true"]{background:var(--n-onglet-on,var(--v-fond))}
+
+/* ─── LE RÉCAPITULATIF : la tête éclairée, le rail un cran plus bas ─── */
+#base{background:var(--n-recap,var(--s-surface))}
+#base .rc-tete{background:var(--n-tete-doc,var(--s-surface))}
+#base .rc-onglets,:root[data-theme] #base .rc-onglets,:root:not([data-theme="light"]) #base .rc-onglets{background:var(--n-recap-rail,var(--v-fond))}
+
+/* ─── LES TITRES S'ALLUMENT : à l'ouverture d'un onglet, la barre de cuivre de chaque section monte et s'éclaire, l'une
+   après l'autre (une fois, sans clignoter). Tout tient dans le demi-seconde où le panneau porte .nv-entre (08-niveaux) ─── */
+@keyframes n-barre{from{transform:scaleY(.15);opacity:0}60%{opacity:1}}
+.nv-grand .nv-panneau.nv-entre>:is(.vu-bloc,.vu-pq,.fs-groupe)>:is(.vu-titre,.fs-st)::before,.nv-grand .nv-panneau.nv-entre>.vu-schema .vu-titre::before,.nv-grand .nv-panneau.nv-entre .nv-reg-t h4::before{
+  transform-origin:50% 100%;animation:n-barre .32s var(--courbe-entree) both;animation-delay:calc(var(--n-k,0) * 24ms + 40ms)}
+.nv-grand .nv-panneau.nv-entre>:nth-child(2){--n-k:1} .nv-grand .nv-panneau.nv-entre>:nth-child(3){--n-k:2} .nv-grand .nv-panneau.nv-entre>:nth-child(4){--n-k:3}
+.nv-grand .nv-panneau.nv-entre>:nth-child(5){--n-k:4} .nv-grand .nv-panneau.nv-entre>:nth-child(n+6){--n-k:5}
+@media (prefers-reduced-motion:reduce){ .nv-grand .nv-panneau.nv-entre :is(.vu-titre,.fs-st,.nv-reg-t h4)::before{animation:none} }

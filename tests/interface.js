@@ -233,7 +233,7 @@ const FICHIER = P.fichierDemande();
     return L.length === 5 && L.some(l => l.de === '102CB1' && l.borneDe === '2' && l.borneVers === '1' && !l.cable) && app.dessin.comps.some(c => c.name === '102VT9') && !app.dessin.barrettes.some(b => b.nomVT === 'VT1'); }),
     'VT1 posée sous 102VT9 : le fil à créer, les deux fils, deux shunts — dessinée comme avant');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.dessin.barrettes.some(b => b.nomVT === 'VT1')), 'Ctrl+Z rend VT1');
+  ok(await page.evaluate(() => app.contrat.liaisons.length === 209 && app.dessin.barrettes.some(b => b.nomVT === 'VT1')), 'Ctrl+Z rend VT1');
   // survoler une ligne de la fiche allume son fil sur le plan
   await page.evaluate(() => { choisirBloc(app.dessin.comps.find(k => k.name === '103RL1' && k.kind !== 'tag')); }); await page.waitForTimeout(300);
   await page.evaluate(() => document.querySelector('#ba-equip .fi-fil[data-i]').scrollIntoView({ block: 'center' })); await page.waitForTimeout(100);   // la fiche v3 pose les contacts plus bas : sous les yeux d'abord
@@ -345,21 +345,21 @@ const FICHIER = P.fichierDemande();
      passe en entier), le contrat neuf, les folios aux noms longs, les mots au pluriel, les noms de fichier */
   console.log('\nla bibliothèque à la vraie souris, le contrat neuf, les folios aux noms de dessin');
   await parLeMenu('bibliotheque'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => BIB.vue === 'racine' && !$('bibliotheque').hidden && $('inspecteur').hidden && !!$('bi-reprendre') && app.contrat.liaisons.length === 201 && !!document.querySelector('#bibliotheque .bi-vide')),
+  ok(await page.evaluate(() => BIB.vue === 'racine' && !$('bibliotheque').hidden && $('inspecteur').hidden && !!$('bi-reprendre') && app.contrat.liaisons.length === 209 && !!document.querySelector('#bibliotheque .bi-vide')),
     '« Bibliothèque » (le menu) : la bibliothèque, aucune install encore ; l’exemple reste sur la table, dessous (« Reprendre »)');
   // chaque geste de la bibliothèque répond à un clic de souris
   let fc = null; try { [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#bibliotheque .bi-vide [data-bi="base"]')]); } catch (_) { }
   ok(!!fc, 'un clic de souris sur « Déposer la base des contrats déjà faits » ouvre le choix de fichier');
   // l'Exemple : sa carte ouvre son plan, d'un seul clic (audit v72, parcours P2-2 : la page d'une ligne entre les deux est partie)
   await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.contrat.charges.has('102CB1') && $('bibliotheque').hidden && $('vide').hidden), 'l’Exemple, d’un seul clic sur sa carte : l’exemple sur la table, avec son profil de charge');
-  ok(await page.evaluate(() => app.nom === 'Contrat d’exemple' && $('ctx-nom').textContent === 'Contrat d’exemple' && /^l’exemple embarqué · 201\sliaisons · \d+\srepères · 6\sfolios$/.test($('ctx-txt').textContent) && $('en-install').textContent === 'Exemple'), 'le menu dit que c’est l’exemple embarqué ; le fil de la barre du haut, « Exemple »', await page.evaluate(() => $('ctx-txt').textContent));
+  ok(await page.evaluate(() => app.contrat.liaisons.length === 209 && app.contrat.charges.has('102CB1') && $('bibliotheque').hidden && $('vide').hidden), 'l’Exemple, d’un seul clic sur sa carte : l’exemple sur la table, avec son profil de charge');
+  ok(await page.evaluate(() => app.nom === 'Contrat d’exemple' && $('ctx-nom').textContent === 'Contrat d’exemple' && /^l’exemple embarqué · 209\sliaisons · \d+\srepères · 6\sfolios$/.test($('ctx-txt').textContent) && $('en-install').textContent === 'Exemple'), 'le menu dit que c’est l’exemple embarqué ; le fil de la barre du haut, « Exemple »', await page.evaluate(() => $('ctx-txt').textContent));
   // un autre fichier : rien du contrat d'avant ne survit ; le menu dit son nom ; Ctrl+Z rend l'exemple et ses choix
   await page.evaluate(() => chargerContrat(contratExemple().filter(l => l.plan === '1'), 'ouverture de neuf.xlsx', 'neuf.xlsx')); await page.waitForTimeout(500);
   ok(await page.evaluate(() => !app.contrat.charges.size && !app.contrat.designations.size && !app.contrat.sexes.size && !app.contrat.raccords.size && $('ctx-nom').textContent === 'neuf.xlsx' && !/exemple/.test($('ctx-txt').textContent) && !CONTROLE.items.some(x => x.nom === '102CB1' && /9,31/.test(x.texte))),
     'un autre fichier ouvert : rien du contrat d’avant ne survit (son 102CB1 n’a pas le profil de l’exemple), le menu dit le nom du fichier', await page.evaluate(() => $('ctx-nom').textContent + ' · ' + $('ctx-txt').textContent));
   await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
-  ok(await page.evaluate(() => app.nom === 'Contrat d’exemple' && app.contrat.charges.has('102CB1') && app.contrat.liaisons.length === 201), 'Ctrl+Z rend l’exemple avec ses choix');
+  ok(await page.evaluate(() => app.nom === 'Contrat d’exemple' && app.contrat.charges.has('102CB1') && app.contrat.liaisons.length === 209), 'Ctrl+Z rend l’exemple avec ses choix');
   // dix folios aux noms de dessin (FWD) : les puces s'abrègent, aucune ne déborde, la courante en entier, une liste déroulante en plus
   await page.evaluate(() => { const E = contratExemple(), F = p => 'MEE256A78150' + String(p).padStart(2, '0') + 'A', L = E.map(l => liaison({ ...l, plan: F(l.plan) }));
     for (let k = 7; k <= 10; k++) { const z = r => r.replace(/^(\d+)/, d => String(+d + 1000 * k)); E.filter(l => l.plan === '1').forEach(l => L.push(liaison({ ...l, de: z(l.de), vers: z(l.vers), cable: l.cable + '-' + k, plan: F(k) }))); }
@@ -523,7 +523,7 @@ const FICHIER = P.fichierDemande();
     const X = await page.evaluate(() => ({ dit: $('ba-csv-vu').textContent.replace(/\s+/g, ' ').trim(), tout: $('ba-csv-tout') ? $('ba-csv-tout').textContent.replace(/\s+/g, ' ').trim() : '', retest: !!$('ba-csv-retest') }));
     const [dlt] = await Promise.all([page.waitForEvent('download'), page.click('#ba-csv-tout')]);
     const csvt = require('fs').readFileSync(await dlt.path(), 'utf8').replace(/^﻿/, '').trim().split('\n');
-    ok(/^Ce qui est montré ?8 liaisons · folio 1/.test(X.dit) && /^Tout l’onglet Liaisons ?201 liaisons, sans folio ni filtre/.test(X.tout) && X.retest && csvt.length === 202, '« Tableau en CSV » dit ce qu’il sort (« Ce qui est montré : 8 liaisons · folio 1 ») ; « Tout l’onglet » sort les 201 ; le retest corrigé est au bas du menu', X.dit + ' · ' + X.tout + ' · ' + (csvt.length - 1) + ' lignes');
+    ok(/^Ce qui est montré ?8 liaisons · folio 1/.test(X.dit) && /^Tout l’onglet Liaisons ?209 liaisons, sans folio ni filtre/.test(X.tout) && X.retest && csvt.length === 202, '« Tableau en CSV » dit ce qu’il sort (« Ce qui est montré : 8 liaisons · folio 1 ») ; « Tout l’onglet » sort les 209 ; le retest corrigé est au bas du menu', X.dit + ' · ' + X.tout + ' · ' + (csvt.length - 1) + ' lignes');
     // le récapitulatif en moitié garde l'échelle ; fermé, la vue d'avant revient
     await page.evaluate(() => { fermerBase(); ajuster(); }); await page.waitForTimeout(400);
     const v0 = await page.evaluate(() => ({ ...app.vue })); await page.keyboard.press('b'); await page.waitForTimeout(600);
