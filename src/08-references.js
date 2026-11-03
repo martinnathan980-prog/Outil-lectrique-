@@ -518,7 +518,10 @@ function proposerDejaFait() { const jeton = BASE.jeton, nom = app.nom; setTimeou
   direAvecGeste(`Déjà fait à ${Math.round(c.taux * 100)}${INSECABLE}% : ${c.harness}${c.appareil ? ' (' + c.appareil + (c.retest ? ', installation du ' + c.retest : '') + ')' : ''}.`, 'Comparer', () => { REF.choisi = c.harness; ficheDejaFaitContrat(); }); }, 1200); }
 function ficheDejaFaitContrat() { const R = app.references, I = indexReferences(), V = verite(), K = BASE.construction;
   let corps = tete('Le plan ouvert contre la base', 'Déjà fait'), pied = '';
-  if (!R) corps += '<p class="note">Aucune base des contrats déjà faits dans ce navigateur : déposez-la dans ⋮ → Vos fichiers → Contrats déjà faits (un Excel aux colonnes de l’installation, Harness rempli).</p>';
+  // (v79) sans base : à quoi ça sert, ce qu'il faut, le geste — plus une phrase seule sur une page vide
+  if (!R) corps += `<section class="cc-vide"><h3 class="cc-vide-t">Retrouver ce qu’on a déjà fait</h3><p>Déposez une fois le grand fichier de vos contrats déjà faits : VOLTA y cherche, pour le plan ouvert, les contrats les plus proches — les mêmes repères, les mêmes part numbers — et montre ce qui diffère, ligne à ligne.</p>`
+    + `<ul class="cc-vide-l"><li><b>Un seul Excel</b>, une ligne par liaison, aux colonnes de l’installation</li><li><b>Harness</b> rempli : il dit à quel contrat chaque ligne appartient</li><li>Il reste <b>sur ce PC</b> : rien ne sort</li></ul>`
+    + `<button type="button" class="btn cuivre" id="cc-deposer">Déposer la base des contrats…</button></section>`;
   else if (!V.length) corps += '<p class="note">Aucun plan ouvert : ouvrez une installation, puis comparez-le au déjà-fait.</p>';
   else if (!I) corps += `<p class="note">La base s’indexe${K && K.total ? ' (' + Math.round(100 * K.fait / K.total) + ' %)' : ''} : la comparaison sera prête dans un instant.</p>`;
   else { const cs = contratsLesPlusProches(); if (!REF.choisi || !cs.some(c => c.harness === REF.choisi)) REF.choisi = cs.length ? cs[0].harness : '';
@@ -548,6 +551,7 @@ function ccDetailHtml(C, H) { const K = C.compte, ETATS = [['manque', 'manque ch
   return `<section class="cp-resume cc-detail"><div class="cp-taux-l"><b class="cp-taux ${C.taux >= 0.8 ? 'ok' : C.taux >= 0.4 ? 'att' : 'ko'}">${Math.round(C.taux * 100)}${INSECABLE}%</b><span>de ses lignes pareilles chez nous${INSECABLE}: <b>${K.identique}</b> sur ${K.identique + K.differe + K.manque}</span></div>${barre}${resume}</section>`
     + C.dessins.map(dessin).join(''); }
 function lierDejaFaitContrat() { const c = $('fiche-corps');
+  const dep = $('cc-deposer'); if (dep) dep.onclick = () => $('fichier-base').click();
   c.querySelectorAll('.cc-cand').forEach(b => b.onclick = () => { REF.choisi = b.dataset.h; ficheDejaFaitContrat(); });
   c.querySelectorAll('.cc-bout').forEach(b => b.onclick = () => { const r = b.dataset.rep; if (!reperesDe(verite()).includes(r)) { dire(guillemets(r) + ' n’est pas dans le plan ouvert : il manque chez nous.'); return; } aller({ type: 'repere', nom: r }); });
   c.querySelectorAll('.cc-fwd').forEach(b => b.onclick = () => ouvrirFwd({ harness: REF.choisi, fwd: b.dataset.fwd }));

@@ -12,9 +12,9 @@
      calibres (un plateau en creux), une attention (une carte ambrée), les chiffres (grands, nus), « Tout voir ».
    Jetons : --v-bande (la bande), --v-fond (la page sous les cartes), sur l'inspecteur, dans les deux thèmes.
    ═══════════════════════════════════════════════════════════════════════ */
-#inspecteur,.carte-double{--v-bande:#26282d;--v-bande-2:#30333a;--v-bande-t:#e8e9ec;--v-bande-s:#a3a6ad;--v-fond:#f3f2ee;--v-cuivre-vif:#e59c64}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double){--v-bande:#141518;--v-bande-2:#1f2024;--v-bande-t:#e8e9ec;--v-bande-s:#9a9da4;--v-fond:#1c1d21} }
-:root[data-theme="dark"] :is(#inspecteur,.carte-double){--v-bande:#141518;--v-bande-2:#1f2024;--v-bande-t:#e8e9ec;--v-bande-s:#9a9da4;--v-fond:#1c1d21}
+#inspecteur,.carte-double,#fiche{--v-bande:#26282d;--v-bande-2:#30333a;--v-bande-t:#e8e9ec;--v-bande-s:#a3a6ad;--v-fond:#f3f2ee;--v-cuivre-vif:#e59c64}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double,#fiche){--v-bande:#141518;--v-bande-2:#1f2024;--v-bande-t:#e8e9ec;--v-bande-s:#9a9da4;--v-fond:#1c1d21} }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double,#fiche){--v-bande:#141518;--v-bande-2:#1f2024;--v-bande-t:#e8e9ec;--v-bande-s:#9a9da4;--v-fond:#1c1d21}
 
 /* ─── LA BANDE DES ONGLETS ─── */
 .nv-grand .nv-onglets{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(132px,1fr);gap:4px;margin:6px 0 0;padding:8px 14px 0;border-radius:0;
@@ -97,7 +97,7 @@
 .vu-bro .bro-pin-f{fill:var(--s-sunken);stroke:var(--s-line-2)}
 .vu-bro .bro-pin{font:650 10.5px var(--mono);fill:var(--t-1);text-anchor:middle}
 .vu-bro .bro-mot{font:500 11px var(--sans);fill:var(--t-3)}
-.vu-bro .bro-ko{font:600 11px var(--sans);fill:var(--ko);text-anchor:end}
+.vu-bro .bro-ko{font:600 10px var(--sans);fill:var(--ko);text-anchor:middle}
 .vu-bro .bro-zone{fill:transparent;transition:fill var(--rapide)}
 .vu-bro .bro-l{cursor:pointer}
 .vu-bro .bro-l:hover .bro-zone,.vu-bro .bro-l.vise .bro-zone,.vu-bro .bro-l.choisi .bro-zone{fill:var(--nv-cuivre-soft)}
@@ -167,14 +167,14 @@
    noir chaud, une lueur neutre, deux nappes à peine teintées (cuivre, acier), les points blancs. Le nom en grand, d'une
    écriture d'aujourd'hui : Inter très gras, serré, blanc qui descend vers l'acier ; un balayage de lumière le traverse de
    temps en temps. Dessous, le SCHÉMA VIVANT (08-bibliotheque, `heroSchema`). */
-body.biblio{--table-fond:radial-gradient(ellipse 90% 70% at 50% -10%,#1d1f25 0%,#111215 52%,#0a0b0d 100%);
+body.biblio,body.table-graphite{--table-fond:radial-gradient(ellipse 90% 70% at 50% -10%,#1d1f25 0%,#111215 52%,#0a0b0d 100%);
   --nappe-a:radial-gradient(closest-side,rgba(229,156,100,.10),rgba(229,156,100,.035) 50%,rgba(229,156,100,0));
   --nappe-b:radial-gradient(closest-side,rgba(150,165,190,.08),rgba(150,165,190,.03) 52%,rgba(150,165,190,0));
   --grille-repos:rgba(255,255,255,.07); --s-grille-revele:rgba(255,255,255,.22);
   --courant:linear-gradient(90deg,rgba(240,164,108,0),rgba(240,164,108,.8) 70%,#ffd7b8)}
-body.biblio #table .ta-lueur{background:radial-gradient(closest-side,rgba(255,240,228,.06),rgba(255,240,228,.02) 55%,rgba(255,240,228,0))}
-body.biblio #table .ta-courant{box-shadow:0 0 6px 1px rgba(240,164,108,.35)}
-body.biblio #table .ta-courant::after{background:#ffe2cc;box-shadow:0 0 8px 2px rgba(240,164,108,.6)}
+body.biblio #table .ta-lueur,body.table-graphite #table .ta-lueur{background:radial-gradient(closest-side,rgba(255,240,228,.06),rgba(255,240,228,.02) 55%,rgba(255,240,228,0))}
+body.biblio #table .ta-courant,body.table-graphite #table .ta-courant{box-shadow:0 0 6px 1px rgba(240,164,108,.35)}
+body.biblio #table .ta-courant::after,body.table-graphite #table .ta-courant::after{background:#ffe2cc;box-shadow:0 0 8px 2px rgba(240,164,108,.6)}
 .bi-accueil .bi-vide-centre{width:min(1180px,100%);padding-top:clamp(40px,9vh,110px)}
 .bi-sur-titre{margin:0 0 18px;font:600 var(--f-12)/1 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:#e59c64}
 .bi-titre.bi-marque{margin:0;font:700 clamp(84px,9.4vw,156px)/.92 var(--sans);letter-spacing:-.055em;margin-right:0;
@@ -302,3 +302,62 @@ body.biblio-accueil .en-nom{display:none}
 .nv-grand .nv-onglet .nv-o-s{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25}
 /* une tuile rangée à droite (le récapitulatif ouvert) : sa hauteur, celle de ce qu'elle dit — plus de grand vide dessous */
 body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-height:calc(100% - var(--entete) - var(--pied, 0px) - 3 * var(--jeu))}
+
+
+/* ═══ LES DOCUMENTS (v79 — le tour du site) : Hypothèses, Nomenclature, Normes, Bible, Vos fichiers, Bilan, Cartouche,
+   Coller, Déjà fait. La même langue que la fiche : le papier neutre, une tête nette (le « sur » en cuivre, le titre),
+   la page un cran en creux, chaque section une carte titrée (la barre de cuivre), le pied posé en bas. ═══ */
+#fiche{background:var(--s-surface);color:var(--t-1)}
+#fiche .fiche-corps{background:var(--v-fond);padding-bottom:22px}
+#fiche .fiche-tete{position:sticky;top:0;z-index:3;display:flex;align-items:flex-start;gap:12px;margin:0 -20px 16px;padding:18px 18px 16px 22px;background:var(--s-surface);border-bottom:1px solid var(--s-line)}
+#fiche .fiche-tete .sur{margin:0 0 4px;font:650 var(--f-11)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--nv-cuivre)}
+#fiche .fiche-tete .titre{margin:0;font:650 22px/1.2 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
+/* les deux vues des normes : la bande d'onglets de la fiche */
+#fiche .fiche-tete.avec-onglets{flex-wrap:wrap;padding-bottom:0}
+#fiche .nm-nav{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;margin:12px -18px 0 -22px;padding:8px 14px 0;background:var(--v-bande);border:0;border-radius:0}
+#fiche .nm-nav .onglet{height:44px;border:0;border-radius:12px 12px 0 0;background:none;font:600 var(--f-14) var(--sans);color:var(--v-bande-t);opacity:.82}
+#fiche .nm-nav .onglet:hover{background:var(--v-bande-2);opacity:1}
+#fiche .nm-nav .onglet[aria-selected="true"]{position:relative;background:var(--v-fond);color:var(--t-1);opacity:1;box-shadow:none}
+#fiche .nm-nav .onglet[aria-selected="true"]::after{content:"";position:absolute;left:16px;right:16px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--nv-cuivre)}
+#fiche .fiche-tete.avec-onglets .min0{flex:1;min-width:0}
+#fiche .fiche-tete.avec-onglets .titre.sr+.nm-nav{margin-top:10px}
+/* le texte d'ouverture : une phrase posée sur la page */
+#fiche .fiche-corps>:is(p.note,.vf-lead,.co-lead,.no-intro,.bl-chapeau){margin:0 2px 14px;font:400 var(--f-13)/1.55 var(--sans);color:var(--t-2);max-width:68ch}
+/* les sections : des cartes */
+#fiche .fiche-corps>:is(.hy-groupe,.no-section,.bl-auto,.bl-carnet,.co-bloc,.co-apercu,.ca-form,.ca-apercu,.bl-texte,.no-resume),
+#fiche .nm>:is(.nm-dom,.nm-etat,.bible-etat,.nm-import,.nm-resultats),#fiche .vf-cartes>.vf-carte{
+  margin:0 0 14px;padding:16px 18px 18px;border:0;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.04)}
+#fiche .fiche-corps>.co-apercu:empty{display:none}
+#fiche .fiche-corps>.no-resume{padding:6px 8px}
+#fiche .fiche-corps>.bl-texte{font:500 var(--f-12)/1.55 var(--mono);white-space:pre-wrap}
+#fiche .vf-cartes{display:flex;flex-direction:column;gap:0;margin:0;padding:0}
+#fiche .nm>.nm-outils{margin:0 0 14px}
+#fiche .nm>.bible-filtres{margin:0 0 12px}
+/* le titre d'une section : la barre de cuivre, comme dans la fiche */
+#fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3){position:relative;margin:0 0 10px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
+#fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3)::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
+#fiche label.co-champ>.co-etiquette::before{display:none}
+#fiche label.co-champ>.co-etiquette{padding-left:0}
+#fiche .nm-dom-sens{margin:0 0 10px 14px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+/* le pied : posé, ses boutons alignés */
+#fiche .fiche-pied{gap:10px;padding:12px 18px;background:var(--s-surface);border-top:1px solid var(--s-line)}
+#fiche .nm-nav .onglet:focus-visible{outline:2px solid var(--v-cuivre-vif);outline-offset:-3px}
+#fiche .nm-nav .onglet::after{display:none}
+#fiche .nm-nav .onglet[aria-selected="true"]::after{display:block}
+#fiche .nm>table.bible{width:100%;margin:0 0 14px;border-collapse:separate;border-spacing:0;border-radius:16px;overflow:hidden;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line)}
+#fiche .nm>table.bible thead th{background:var(--s-sunken);font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);height:38px}
+#fiche .fiche-corps>.cc-vide{margin:0 0 14px;padding:20px 20px 22px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line)}
+#fiche .cc-vide-t{position:relative;margin:0 0 8px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);color:var(--t-1)}
+#fiche .cc-vide-t::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
+#fiche .cc-vide p{margin:0 0 12px;font:400 var(--f-13)/1.55 var(--sans);color:var(--t-2);max-width:62ch}
+#fiche .cc-vide-l{margin:0 0 16px;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+#fiche .cc-vide-l li{position:relative;padding-left:16px;font:400 var(--f-13)/1.45 var(--sans);color:var(--t-2)}
+#fiche .cc-vide-l li::before{content:"";position:absolute;left:2px;top:.55em;width:6px;height:6px;border-radius:50%;background:var(--nv-cuivre)}
+#fiche .nm>table.bible{overflow:visible}
+/* le bouton d'export de la barre du haut : il dit son geste ; le nombre de changements en pastille de cuivre */
+.en-retest{gap:9px;padding:0 8px 0 12px;box-shadow:inset 0 0 0 1px rgba(242,164,107,.45)}
+.en-retest:hover{box-shadow:inset 0 0 0 1px rgba(242,164,107,.8);background:rgba(242,164,107,.10)}
+.en-retest svg.ico{color:#f2a46b}
+.en-retest-n{order:2;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#f2a46b;color:#1a1a1c;font:700 var(--f-11)/1 var(--sans)}
+.en-retest-n::after{display:none}
+.en-retest-mot{font-weight:600}

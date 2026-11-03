@@ -1868,7 +1868,7 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   if (!rep0 && Q.length > 3) { const r = [...info.keys()].filter(n => Q.startsWith(aPlat(n)) && Q.length > aPlat(n).length).sort((a, b) => aPlat(b).length - aPlat(a).length)[0]; if (r) { rep0 = r; bq = Q.slice(aPlat(r).length); } }
   if (rep0) { const vues = new Set(); L.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
       if (r !== rep0 || !b || vues.has(b) || !aPlat(b).startsWith(bq)) return; vues.add(b);
-      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: (SANS_NUMERO_DE_CABLE || !l.cable ? cableDit(l) : l.cable + (l.type ? ' · ' + l.type : '')) + ' → ' + autre + (bAutre ? ':' + bAutre : '') }); }));
+      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: (SANS_NUMERO_DE_CABLE || !l.cable ? (l.type || 'câble') : l.cable + (l.type ? ' · ' + l.type : '')) + ' → ' + autre + (bAutre ? ':' + bAutre : '') }); }));
     bornes.sort((a, b) => triNaturel(a.borne, b.borne)); }
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };
@@ -1916,10 +1916,16 @@ function montrerCandidats() { const box = $('q-liste'), q = $('q').value; qCands
   $('q').setAttribute('aria-activedescendant', qCands.length ? 'q-opt-' + qSel : ''); }
 /* La fenêtre de recherche s'ouvre à côté du rail, par le bouton ou « / »,
    et disparaît sitôt qu'on a trouvé ou qu'on regarde ailleurs. */
-function ouvrirRecherche() { document.body.classList.add('cherche'); synchroniserRail(); const q = $('q'); q.focus(); q.select(); if (q.value.trim()) montrerCandidats(); }
+/* (v79, le tour du site) UNE SEULE RECHERCHE : le champ du haut, « / », la loupe du rail ouvrent la palette — elle trouve les
+   objets (repères, bornes, types de câble, natures) ET les actions (exporter, hypothèses, nomenclature…), au même endroit.
+   La liste d'hier sous le champ reste pour ce qui l'appelle encore directement. */
+function ouvrirRecherche(seme) { if (typeof ouvrirPalette === 'function') { ouvrirPalette(seme); return; }
+  document.body.classList.add('cherche'); synchroniserRail(); const q = $('q'); q.focus(); q.select(); if (q.value.trim()) montrerCandidats(); }
 function fermerRecherche() { $('q-liste').hidden = true; document.body.classList.remove('cherche'); synchroniserRail(); }
 const rechercheOuverte = () => document.body.classList.contains('cherche');
 function lierRecherche() { const q = $('q'), box = $('q-liste');
+  q.readOnly = true; q.addEventListener('pointerdown', e => { e.preventDefault(); ouvrirRecherche(); });
+  q.addEventListener('focus', () => { if (!PALETTE.el || PALETTE.el.hidden) { q.blur(); ouvrirRecherche(); } });
   q.addEventListener('input', () => { qSel = 0; montrerCandidats(); });
   q.addEventListener('focus', () => { document.body.classList.add('cherche'); synchroniserRail(); if (q.value.trim()) montrerCandidats(); });
   const x = $('rc-x'); if (x) x.addEventListener('click', () => { q.blur(); fermerRecherche(); });
@@ -2008,7 +2014,7 @@ function construirePalette() { if (PALETTE.el) return PALETTE.el;
   const el = document.createElement('div'); el.id = 'palette'; el.className = 'palette'; el.hidden = true;
   el.innerHTML = `<div class="pa-boite menu-verre" role="dialog" aria-modal="true" aria-label="Palette : une action, un repère, un câble">`
     + `<div class="pa-tete"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>`
-    + `<input id="pa-q" type="text" role="combobox" aria-expanded="true" aria-controls="pa-liste" aria-autocomplete="list" placeholder="Une action, un repère, un câble… (pdf, hypo, w012, disjoncteur)" aria-label="Chercher une action, un repère ou un câble" autocomplete="off" spellcheck="false">`
+    + `<input id="pa-q" type="text" role="combobox" aria-expanded="true" aria-controls="pa-liste" aria-autocomplete="list" placeholder="Un repère, une borne, un type de câble, une action… (102CB1, DR12, pdf, hypothèses)" aria-label="Chercher une action, un repère ou un câble" autocomplete="off" spellcheck="false">`
     + `<kbd class="pa-echap" aria-hidden="true">Échap</kbd></div><div class="pa-liste" id="pa-liste" role="listbox" aria-label="Ce que la palette trouve"></div>`
     + `<div class="pa-pied" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> choisir</span><span><kbd>Entrée</kbd> faire</span><span><kbd>Ctrl</kbd><kbd>K</kbd> ou <kbd>Échap</kbd> fermer</span></div></div>`;
   document.body.appendChild(el); PALETTE.el = el;
@@ -2028,9 +2034,9 @@ function construirePalette() { if (PALETTE.el) return PALETTE.el;
   liste.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) faireDeLaPalette(+b.dataset.i); });
   el.addEventListener('pointerdown', e => { if (!e.target.closest('.pa-boite')) { e.preventDefault(); fermerPalette(); } });
   return el; }
-function ouvrirPalette() { const el = construirePalette(); if (rechercheOuverte()) fermerRecherche(); if (typeof fermerMenu === 'function') fermerMenu();
+function ouvrirPalette(seme) { const el = construirePalette(); if (rechercheOuverte()) fermerRecherche(); if (typeof fermerMenu === 'function') fermerMenu();
   PALETTE.avant = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
-  el.hidden = false; document.body.classList.add('palette-ouverte'); const q = el.querySelector('#pa-q'); q.value = ''; PALETTE.sel = 0; rendrePalette();
+  el.hidden = false; document.body.classList.add('palette-ouverte'); const q = el.querySelector('#pa-q'); q.value = typeof seme === 'string' ? seme : ''; PALETTE.sel = 0; rendrePalette();
   if (!mouvementReduit()) el.querySelector('.pa-boite').animate([{ opacity: 0, transform: 'translateY(-6px) scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.32,.72,0,1)' });
   try { q.focus({ preventScroll: true }); } catch (_) { q.focus(); } }
 function fermerPalette(rendre) { const el = PALETTE.el; if (!el || el.hidden) return; el.hidden = true; document.body.classList.remove('palette-ouverte');
@@ -2845,7 +2851,8 @@ function bulleDesReperes() { const s = $('bulle-index'), d = $('bulle-index-deta
    pas refait ; un clic ouvre son relevé (`exporterRetestCorrige`). */
 function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDeChangements() : 0, b = $('btnRetest'); if (!b) return;
   const avant = b.hidden, mod = plurielLie(n, 'liaison') + ' modifiée' + (n > 1 ? 's' : ''); b.hidden = !n;
-  if (n) { $('en-retest-n').textContent = motChangements(n); b.setAttribute('aria-label', 'L’installation corrigée — ' + mod + ' ; relire ce qui part, puis l’enregistrer');
+  // (v79, un relecteur : « 3 changements · Installation corrigée : un état ou un bouton ? ») : le bouton dit son geste, le compte en pastille
+  if (n) { $('en-retest-n').textContent = String(n); $('en-retest-n').title = motChangements(n); b.setAttribute('aria-label', 'L’installation corrigée — ' + mod + ' ; relire ce qui part, puis l’enregistrer');
     b.querySelector('.bulle').textContent = 'L’installation corrigée : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
     // elle paraît : elle tombe d'un rien, une fois
     if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }

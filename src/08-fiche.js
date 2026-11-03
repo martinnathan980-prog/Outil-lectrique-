@@ -1003,7 +1003,9 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
     sDeja ? ongletDeLaSection(sDeja) : null];
   const sections = [{ cle: 'connecteur', titre: 'Connecteur', resume: resumeC, badge: badgeC, contenu: `${choix}<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>`, vide: ids.length ? '' : 'aucune borne' }, sFils, sConso, sDeja];
   // (v79) la tuile montre ce qu'il relie — le brochage, en petit — plutôt que sa référence une troisième fois
-  const vignette = brochage ? brochageVue(nom, majuscule(natureDe(nom) || ''), consB, { petit: true }) : '';
+  // (au-delà d'une douzaine de câbles — un calculateur —, la tuile dit ses connecteurs en une ligne chacun ; le brochage entier est dans « Tout voir »)
+  const vignette = !brochage ? '' : nCab <= 12 ? brochageVue(nom, majuscule(natureDe(nom) || ''), consB, { petit: true }) : connecteursVue(C.map(x => { const kx = parNom.get(x.nom), Mx = kx && kx.plan.modules[0];
+      return { nom: x.nom, ref: x.pn || (Mx ? Mx.reference : ''), pris: kx ? kx.plan.utilises || 0 : 0, places: Mx ? Mx.module.contacts.length : 0, cables: x.bornes.reduce((n, bo) => n + (b.parBorne.get(bo) || []).length, 0), ko: fautif(x.nom) ? 'un câble ne se loge pas' : '' }; }));
   return composerFiche({ type: 'equipement', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pns.length === 1 ? ident(pns[0]) : pns.length ? esc(pluriel(pns.length, 'référence')) : ''],
     probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste, vignette, identite: id,
     ok: 'Ses connecteurs logent tous ses câbles, et chacun porte son courant.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
