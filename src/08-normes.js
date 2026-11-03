@@ -93,6 +93,8 @@ function relireSimu() { app.simu = { ...HYPOTHESES };
   try { const o = JSON.parse(localStorage.getItem(CLE_SIMU) || 'null');
     // la liste vide des calibres préférés était le défaut d'hier : gardée sans `gammeLue`, elle laisse place à la gamme du lecteur
     if (o && Array.isArray(o.calibresPreferes) && !o.calibresPreferes.length && !o.gammeLue) delete o.calibresPreferes;
+    // (v80) les marges d'autrefois ne reviennent pas d'un navigateur : un disjoncteur est valide ou ne l'est pas
+    if (o && typeof o === 'object') { delete o.marge; delete o.margeTemps; }
     if (o && typeof o === 'object') app.simu = { ...HYPOTHESES, ...o, conditions: Array.isArray(o.conditions) ? o.conditions : HYPOTHESES.conditions }; } catch (_) { } }
 function memoriserSimu() { try { localStorage.setItem(CLE_SIMU, JSON.stringify({ ...app.simu, gammeLue: true })); } catch (_) { } }
 

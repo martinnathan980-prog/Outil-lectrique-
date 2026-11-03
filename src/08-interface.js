@@ -2183,10 +2183,9 @@ function hypothesesR2(N, H, nb) { const dj = !!(N.disjoncteurs && N.disjoncteurs
     dj ? { genre: 'case', id: 'si-Cd', k: 'chuteDisjoncteur', lib: 'compter la chute du disjoncteur', groupe: 'chute',
       sert: 'Cochée (par défaut) : la chute du disjoncteur entre dans la chute en ligne — celle de votre table (« Du max », comptée entière), sinon celle de sa famille au prorata I / In. La génération est négligée : elle garantit 28 V en sortie des panneaux de disjoncteurs (votre note).' } : null,
     nb('si-F', 'frequence', 'fréquence', 'Hz', '10', 'reseau', 'En alternatif, la réactance saisie (à 400 Hz) monte avec la fréquence (X = 2πfL) : 400 Hz par défaut, un réseau à fréquence fixe ; 800 en fréquence variable (MIL-STD-704F, 360 à 800 Hz). Sans effet en continu.'),
-    dj ? { genre: 'case', id: 'si-Ca', k: 'calibreAuto', lib: 'VOLTA écrit lui-même le calibre qui passe', groupe: 'tableau',
-      sert: 'Cochée (par défaut — le lecteur, v74 : « dès que ça touche la courbe, tu mets directement le calibre qui marche ») : un calibre du fichier qui touche la courbe ou déclenche est remplacé par le plus petit qui passe, et ses câbles grossis. Décochée : VOLTA le propose seulement.' } : null,
-    dj ? nb('si-M', 'marge', 'marge de courant', '%', '5', 'tableau', 'Le meilleur calibre tient chaque courant du profil majoré de ce pourcentage : 10 % par défaut, pour un profil estimé (R2 règle 13) ; 0 % pour un profil qui sort du bilan électrique au pire cas (NASA TM-102179).') : null,
-    dj ? nb('si-Mt', 'margeTemps', 'marge de temps', '%', '5', 'tableau', 'Ce qu’une pointe peut consommer, au plus, du temps de déclenchement du meilleur calibre : 75 % par défaut (R2 § 3.1, étape 2).') : null,
+    dj ? { genre: 'case', id: 'si-Ca', k: 'calibreAuto', lib: 'VOLTA écrit lui-même le calibre qui ne disjoncte pas', groupe: 'tableau',
+      sert: 'Cochée (par défaut) : un calibre du fichier qui disjoncte est remplacé par le plus petit qui ne disjoncte pas, et ses câbles grossis si ce calibre ne les protège pas. Décochée : VOLTA le propose seulement.' } : null,
+    // (v80) plus de marge de courant ni de temps : un disjoncteur est valide ou ne l'est pas (le lecteur)
     dj ? nb('si-Pc', 'prechauffage', 'préchauffage', '', '0.1', 'tableau', 'Un état ajouté au profil survient en service, le bilame chaud : son temps de déclenchement se divise par ce facteur. 1,6 par défaut, la borne basse de la feuille MS3320N (table VII : 1,6 à 3,7) ; 1 l’ôte.') : null,
     dj ? { genre: 'liste', id: 'si-Cp', k: 'calibresPreferes', lib: 'calibres préférés', unite: 'A', groupe: 'tableau',
       sert: 'Les calibres que vous posez, dans le catalogue de la famille du part number : 1 3 5 7,5 10 15 20 25 par défaut (au-delà de 25 A, la famille garde les siens) ; le meilleur se choisit parmi eux. Vide : tout le catalogue de la famille.' } : null]; }
@@ -2209,7 +2208,7 @@ const COURT_HYPOTHESES = { longueur: 'La longueur d’un câble que l’installa
   chuteDisjoncteur: 'La chute propre du disjoncteur compte dans la chute en ligne.', frequence: 'La fréquence du réseau alternatif.', marge: 'La marge du meilleur calibre sur chaque courant du profil.',
   margeTemps: 'Ce qu’une pointe peut consommer du temps de déclenchement.', prechauffage: 'Un état en service trouve le bilame chaud.', calibresPreferes: 'Les calibres que vous posez : le meilleur se choisit parmi eux.',
   // v74 (la règle du calibre) : la case a sa phrase courte, son paragraphe reste dans le « ? »
-  calibreAuto: 'Un calibre qui touche la courbe devient le plus petit qui passe.' };
+  calibreAuto: 'Un calibre qui disjoncte devient le plus petit qui ne disjoncte pas.' };
 const courtDe = c => c.genre === 'condition' ? (c.c === 'faisceau' ? 'Des câbles en faisceau admettent moins qu’un câble seul.' : c.c === 'altitude' ? 'L’air raréfié refroidit moins les câbles.' : 'Un déclassement de la norme.') : COURT_HYPOTHESES[c.k] || c.sert;
 /* Une ligne de la fiche : le champ, ce qu'il fait ; réglée ici (autre que `HYPOTHESES`), « ↺ » et la valeur de l'outil
    la rendent, d'un clic. */

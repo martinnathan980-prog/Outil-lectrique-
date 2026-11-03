@@ -93,6 +93,30 @@ function traverseeVue(lettres, cote) { const c = (f, g) => !f ? `<span class="vu
   return `<div class="vu-traverse" role="table" aria-label="Ce qui traverse la prise"><div class="vu-tr-t" role="row"><span>Arrive par la fiche</span><span></span><span>Repart par l’embase</span></div>`
     + lettres.map(l => `<div class="vu-tr-l" role="row" data-ct="${escA(l)}">${c(cote(l, true), true)}<span class="vu-tr-p"><b>${esc(l)}</b></span>${c(cote(l, false))}</div>`).join('') + '</div>'; }
 
+/* ---- LA TRAVERSÉE DESSINÉE d'une prise de coupure (v81, le lecteur : « attention au schéma de la prise et de ce qui la
+   traverse ») : la prise au milieu — la fiche et l'embase accolées, la lettre de chaque contact des deux côtés —, à gauche
+   ce qui arrive par la fiche, à droite ce qui repart par l'embase : le type sur le câble, où il va, sur quelle borne.
+   `cote(l, amont)` rend { de: 'REP:borne', type, couleur, ko, k } ou rien. ---- */
+function traverseeDessin(nom, lettres, cote) { if (!lettres.length) return '';
+  const PAS = 34, HAUT = 44, W = 660, xF = 300, wB = 34, xE = xF + wB + 4, x0 = 140, x1 = xE + wB + 156, cx = 7.8;
+  const H = HAUT + lettres.length * PAS + 14, yB0 = HAUT - 8, yB1 = HAUT + lettres.length * PAS + 2;
+  const bout = s => { const t = String(s || ''), i = t.lastIndexOf(':'); return i > 0 ? [t.slice(0, i), t.slice(i + 1)] : [t, '']; };
+  let out = `<text class="bro-sens" x="${(x0 + xF) / 2}" y="14" text-anchor="middle">arrive par la fiche</text><text class="bro-sens" x="${(xE + wB + x1) / 2}" y="14" text-anchor="middle">repart par l’embase</text>`
+    + `<text class="bro-cote" x="${xF + wB - 2}" y="${yB0 - 8}" text-anchor="end">fiche</text><text class="bro-cote" x="${xE + 2}" y="${yB0 - 8}">embase</text>`
+    + `<rect class="bro-piece" x="${xF}" y="${yB0}" width="${wB}" height="${yB1 - yB0}" rx="8"/><rect class="bro-piece" x="${xE}" y="${yB0}" width="${wB}" height="${yB1 - yB0}" rx="8"/>`;
+  lettres.forEach((l, i) => { const yy = HAUT + i * PAS + PAS / 2, g = cote(l, true), d = cote(l, false);
+    out += `<g class="bro-l fi-ia${(g && g.ko) || (d && d.ko) ? ' ko' : ''}"${(g && g.k) || (d && d.k) ? ` data-i="${escA((g && g.k) || d.k)}"` : ''}><rect class="bro-zone" x="0" y="${yy - PAS / 2}" width="${W}" height="${PAS}" rx="6"/>`
+      + `<text class="bro-borne" x="${xF + wB / 2}" y="${yy + 4}">${esc(l)}</text><text class="bro-borne" x="${xE + wB / 2}" y="${yy + 4}">${esc(l)}</text>`;
+    if (g) { const [rep, bo] = bout(g.de), pw = bo ? 12 + bo.length * 6.6 : 0, xm = (x0 + xF) / 2;
+      out += `<path class="bro-fil" style="stroke:${g.couleur || 'currentColor'}" d="M${x0} ${yy}H${xF}"/><rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(g.type || '—')}</text><circle class="bro-bout" cx="${x0}" cy="${yy}" r="2.6"/>`
+        + (bo ? `<rect class="bro-pin-f" x="${x0 - 10 - pw}" y="${yy - 9}" width="${pw}" height="18" rx="5"/><text class="bro-pin" x="${x0 - 10 - pw / 2}" y="${yy + 4}">${esc(bo)}</text>` : '')
+        + `<text class="bro-vers" x="${x0 - 10 - pw - (bo ? 6 : 0)}" y="${yy + 4.5}" text-anchor="end">${esc(rep)}</text>`; }
+    if (d) { const [rep, bo] = bout(d.de), xm = (xE + wB + x1) / 2;
+      out += `<path class="bro-fil" style="stroke:${d.couleur || 'currentColor'}" d="M${xE + wB} ${yy}H${x1}"/><rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(d.type || '—')}</text><circle class="bro-bout" cx="${x1}" cy="${yy}" r="2.6"/>`
+        + `<text class="bro-vers" x="${x1 + 10}" y="${yy + 4.5}">${esc(rep)}</text>` + (bo ? `<rect class="bro-pin-f" x="${x1 + 16 + rep.length * cx}" y="${yy - 9}" width="${12 + bo.length * 6.6}" height="18" rx="5"/><text class="bro-pin" x="${x1 + 22 + rep.length * cx + bo.length * 3.3}" y="${yy + 4}">${esc(bo)}</text>` : ''); }
+    out += '</g>'; });
+  return `<svg class="vu-bro vu-trav" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('Ce qui traverse ' + nom)}">${out}</svg>`; }
+
 /* ---- LES POTENTIELS d'une barrette : la couleur du potentiel, ses contacts, ses câbles (type → où il va) ---- */
 function potentielsVue(groupes) { return `<div class="vu-pots">${groupes.map((g, i) => `<div class="vu-pot${g.ko ? ' ko' : ''}" style="--c:${g.ko ? 'var(--vu-ko)' : `var(--vu-g${(i % 6) + 1})`}" data-ct="${escA(g.lettres[0] || '')}"><i aria-hidden="true"></i><b class="id">${esc(g.lettres.join(' '))}</b>`
   + `<span>${g.fils.length ? g.fils.map(f => `<em class="id"${f.k ? ` data-i="${f.k}"` : ''}>${esc(f.type || '—')} ${f.amont ? '←' : '→'} ${esc(f.vers)}</em>`).join('') : '<em class="libre">libre</em>'}</span></div>`).join('')}</div>`; }

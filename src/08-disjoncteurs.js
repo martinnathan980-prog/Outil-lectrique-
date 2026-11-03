@@ -199,8 +199,8 @@ const motMarge = m => (m >= 1 ? '+' : '−') + nombre(Math.round(Math.abs(m - 1)
    `verdictDeCalibre(case)` qui rend son entrée) ; tant qu'elle manque, la même, ici, et la fiche ne change pas d'un mot
    quand elle arrive. */
 const MOTS_VERDICT_FICHE = Object.freeze({
-  passe: Object.freeze({ mot: 'ne disjoncte pas', etat: 'ok', bulle: 'Il ne disjoncte pas, réserve de 10 % comprise.' }),
-  juste: Object.freeze({ mot: 'trop juste', etat: 'ko', bulle: 'Trop juste : sans réserve, il pourrait disjoncter.' }),
+  passe: Object.freeze({ mot: 'ne disjoncte pas', etat: 'ok', bulle: 'Il ne disjoncte pas : chaque point du profil reste du côté de sa courbe où il ne coupe pas.' }),
+  juste: Object.freeze({ mot: 'disjoncte', etat: 'ko', bulle: 'Il disjoncte.' }),
   declenche: Object.freeze({ mot: 'disjoncte', etat: 'ko', bulle: 'Il disjoncte.' }) });
 const motsVerdict = () => typeof VERDICTS_CALIBRE === 'object' && VERDICTS_CALIBRE && VERDICTS_CALIBRE.passe && VERDICTS_CALIBRE.juste && VERDICTS_CALIBRE.declenche ? VERDICTS_CALIBRE : MOTS_VERDICT_FICHE;
 /* La clé du verdict d'un calibre jugé — une case de la gamme (`valide`, `marge`) ou le verdict d'ensemble (`valide`,
@@ -412,7 +412,7 @@ function raisonDuCalibre(d, g) { const k = cleDuVerdict(g), c = g.calibre, ch = 
     if (p && g.sommeMarge != null && g.sommeMarge >= 1) { const t = tempsDeCoupure(d, c, p.i * kM, p); return `il touche la courbe : avec ${nombre(M.marge || 0)} % de marge, ${amperes(Math.round(p.i * kM * 100) / 100)} le feraient couper en ${secondes(t)} (${quandDuPoint(p)}, ${secondes(p.t)})`; }
     if (p && g.somme != null) return `il touche la courbe : ${quandDuPoint(p)}, ${amperes(p.i)} consomment ${motFraction(g.somme)} de son temps de déclenchement (${Math.round((M.fraction || 1) * 100)} % au plus)`;
     return 'il passe sans la marge : il touche la courbe'; }
-  if (k === 'passe') { const r = [`avec ${nombre(M.marge || 0)} % de marge`]; if (g.fils === false) r.push('des câbles à grossir'); if (g.selectif === false) r.push('pas à 2:1 avec le voisin'); return r.join(' · '); }
+  if (k === 'passe') { const r = []; if (g.fils === false) r.push('des câbles à grossir'); if (g.selectif === false) r.push('pas à 2:1 avec le voisin'); return r.join(' · '); }
   return 'rien ne se juge sans profil de charge'; }
 /* LES CALIBRES DU CADRAN (et de « À la main ») : chaque calibre de la gamme — `tout` : de toute la famille —, jugé, avec
    ce qui le distingue (l'automatique, le retenu, celui du retest, hors des calibres préférés) et sa bulle. */
@@ -559,8 +559,8 @@ function ligneCablesAGrossir(nom, d) { const aChanger = filsAGrossir(d), propose
 function phraseMeilleur(d) { const m = d.meilleur, cal = m.calibre, fam = m.famille ? m.famille : 'calibre de la gamme', T = nombre(m.marge.temperature);
   const perm = m.marge.permanent, courts = d.points.some(p => p.t !== Infinity && p.i > 0);
   const tes = [perm > 0 ? (perm < 2 ? `votre ${amperes(perm)} permanent` : `vos ${amperes(perm)} permanents`) : '', courts ? 'vos pointes' : ''].filter(Boolean).join(' et ');
-  const marge = m.marge.courant ? `avec ${nombre(m.marge.courant)} % de marge` : 'sans marge';
-  let s = m.serre ? `aucun ${fam} ne passe ${tes} ${marge} à ${T} °C : le ${amperes(cal)} ne disjoncte pas, mais sans la marge` : `le plus petit ${fam} qui ne disjoncte pas sous ${tes}, ${marge}, à ${T} °C`;
+  const marge = '';
+  let s = m.serre ? `aucun ${fam} ne passe ${tes} ${marge} à ${T} °C : le ${amperes(cal)} ne disjoncte pas, mais sans la marge` : `le plus petit ${fam} qui ne disjoncte pas sous ${tes}, à ${T} °C`;
   // pourquoi pas celui d'en dessous, en mots simples
   const cat = d.gamme.filter(g => g.catalogue), prev = cat.filter(g => g.calibre < cal - 1e-9).pop();
   if (prev && !m.serre) { const Ap = 'le ' + amperes(prev.calibre);

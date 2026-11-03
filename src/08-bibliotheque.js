@@ -251,7 +251,10 @@ function quitterLePlan() { if (app.cible || app.choisi) { app.cible = null; app.
   fermerInspecteur(); fermerBase(); fermerFiche(); fermerRecherche(); fermerMenu(); }
 /* Le plan sur la table, la bibliothèque s'efface (un plan ouvert, chargé, repris). */
 function montrerLePlan() { if (typeof retirerCarteLecture === 'function') retirerCarteLecture(); if (BIB.vue === 'plan') return; BIB.vue = 'plan'; BIB.pop = null; BIB.edition = null; BIB.confirme = null; BIB.ranger = null; BIB.nouveaux.clear();
-  $('bibliotheque').hidden = true; document.body.classList.remove('biblio', 'biblio-accueil'); synchroniserBibliotheque(); }
+  $('bibliotheque').hidden = true; document.body.classList.remove('biblio', 'biblio-accueil'); synchroniserBibliotheque();
+  // (v81, le lecteur : « Reprendre ne va pas directement sur la planche en mode centré ; le bouton en bas à droite centre ») :
+  // le plan revient cadré sur sa feuille entière, comme ce bouton — une fois la table redevenue visible
+  if (typeof ajuster === 'function' && app.dessin) requestAnimationFrame(() => { try { if (typeof VUE === 'object') VUE.cadrage = 'feuille'; ajuster(true); } catch (_) { } }); }
 // ce qui porte sur le plan (le récapitulatif, la nomenclature, les exports, le cartouche) le remet sur la table d'abord
 const surLePlan = fn => (...a) => { if (bibliothequeOuverte()) { if (!planSurLaTable()) { dire('Aucun plan ouvert : choisissez une installation, puis un plan.'); return; } montrerLePlan(); } return fn(...a); };
 /* OUVRIR UN PLAN : le sien, tel qu'on l'a laissé (ses liaisons, ses choix, son folio) ; un plan jamais ouvert se charge
@@ -612,12 +615,34 @@ function heroSchema() {
     + HERO_COURANTS.map((d, i) => `<circle class="hs-courant" r="3.2"><animateMotion dur="${(2.6 + i * .5).toFixed(1)}s" begin="${(2.4 + i * 1.1).toFixed(1)}s" repeatCount="indefinite" path="${d}" keyPoints="0;1" keyTimes="0;1" calcMode="linear"/></circle>`).join('')
     + `</svg></div>`; }
 const vitrineAccueil = heroSchema;
+/* LA MARQUE (v81, le lecteur : « le titre, un peu plus sexy ; ça fait trop écriture classique, on ne sort pas du lot ») :
+   VOLTA dessiné comme un câble — chaque lettre un trait continu, aux bouts ronds, qui se trace ; puis un courant de cuivre
+   le parcourt, et la dernière lettre finit sur une borne. Trois variantes (le lecteur choisit) :
+     · `fil`   — le trait épais, acier, le courant qui court (par défaut) ;
+     · `fin`   — le trait fin et l'air entre les lettres, à la manière d'une marque de luxe ;
+     · `borne` — le O devient la face d'un connecteur (trois contacts), la barre du A un fil de cuivre. */
+const LETTRES_MARQUE = [['M0 4L42 96L84 4'], ['M155 4A46 46 0 1 1 154.9 4'], ['M228 4V96H288'], ['M312 4H384', 'M348 4V96'], ['M408 96L450 4L492 96', 'M424 62H476']];
+const COURANT_MARQUE = 'M0 4L42 96L84 4M155 4A46 46 0 1 1 154.9 4M228 4V96H288M312 4H384M348 4V96M408 96L450 4L492 96';
+const MARQUE_ACCUEIL = 'fil';
+function marqueSvg(v) { v = v || MARQUE_ACCUEIL; const fin = v === 'fin', borne = v === 'borne', ep = fin ? 3.4 : 11, gap = fin ? 30 : 0;
+  const lettre = (ds, i) => `<g transform="translate(${i * gap} 0)">` + (borne && i === 1
+    ? `<circle class="mq-o" pathLength="1" style="--i:${i}" cx="155" cy="50" r="46"/><circle class="mq-pin" cx="137" cy="38" r="7"/><circle class="mq-pin" cx="173" cy="38" r="7"/><circle class="mq-pin on" cx="155" cy="68" r="7"/>`
+    : ds.map((d, j) => `<path class="mq-t${borne && i === 4 && j === 1 ? ' cuivre' : ''}" pathLength="1" style="--i:${i + j * .35}" d="${d}"/>`).join('')) + '</g>';
+  const W = 492 + 4 * gap;
+  return `<svg class="mq mq-${v}" viewBox="-8 -8 ${W + 16} 116" role="img" aria-label="VOLTA"><defs><linearGradient id="mq-acier" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="100"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#b3b8c2"/></linearGradient></defs>`
+    + `<g class="mq-g" style="stroke-width:${ep}">${LETTRES_MARQUE.map(lettre).join('')}</g>`
+    + (v === 'fil' ? `<circle class="mq-borne" cx="492" cy="96" r="8.5"/><circle class="mq-courant" r="5"><animateMotion dur="6s" begin="2.4s" repeatCount="indefinite" path="${COURANT_MARQUE}" calcMode="paced"/></circle>` : '')
+    + `</svg>`; }
+
 // (v78c, le lecteur : « VOLTA tout en majuscule, une belle écriture, un peu plus en haut ; une phrase d'accroche, comme un slogan »)
 const SLOGAN = 'Du tableau au folio, chaque câble à sa place.';
-function videHtml(demo) { return `<section class="bi-vide bi-accueil"><div class="bi-vide-centre"><p class="bi-sur-titre">Câblage électrique aéronautique · hors ligne</p><h1 class="bi-titre bi-marque">VOLTA</h1><p class="bi-devise">${esc(SLOGAN)}</p>${vitrineAccueil()}`
+function videHtml(demo) { return `<section class="bi-vide bi-accueil"><div class="bi-vide-centre"><h1 class="bi-titre bi-marque bi-marque-svg"><span class="sr">VOLTA</span>${marqueSvg()}</h1><p class="bi-devise">${esc(SLOGAN)}</p>${vitrineAccueil()}`
   + `${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
-  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir">${icoBi('depot')}<span>Ouvrir une installation…</span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
-  + `<h2 class="bi-sous bi-encours-t">Pour commencer</h2>${dockHtml(demo)}</div></section>`; }
+  // (v81, le lecteur : « ouvrir, nouvelle, pour commencer : pas assez classe, pas assez dynamique, pas assez waouh ») : un
+  // geste principal, grand, cerné d'un courant de cuivre qui tourne ; le second à côté, en verre ; dessous, sans titre,
+  // ce qu'on reprend ou découvre — tout entre l'un après l'autre
+  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir"><span class="bi-g-ico">${icoBi('depot')}</span><span class="bi-g-t"><b>Ouvrir une installation…</b><small>ou glissez votre Excel n’importe où</small></span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
+  + `${dockHtml(demo)}</div></section>`; }
 /* LE DOCK : le verre des palets, en bas au milieu — « Reprendre » le plan resté sur la table (s'il y en a un), l'Exemple,
    la base des contrats déjà faits : comme des applications. Une tuile : son image (une vignette, une icône), son nom, ce
    qu'elle fait. */

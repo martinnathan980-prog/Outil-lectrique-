@@ -514,3 +514,182 @@ body:is(.insp-flotte,.insp-epingle) #inspecteur .ix-tete::before{display:none}
    `body.table-graphite` n'est pas posé sur le plan. ═══ */
 body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at 52% 48%,#27282c 0%,#1e1f22 52%,#17181a 100%);--grille-repos:rgba(255,255,255,.06);
   --palet:rgba(40,41,46,.96);--palet-2:rgba(50,51,57,.97);--sh-palet:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px rgba(255,255,255,.12),0 14px 30px -12px rgba(0,0,0,.6)}
+
+/* ═══ v81 — LA FICHE (le lecteur : « la tête plus sexy ; en sombre, beaucoup de noir ; les attentions, on peut faire mieux ;
+   le profil de charge : tout en vert à gauche, ça se mélange avec « ne disjoncte pas » ») ═══ */
+/* la tête : plus d'air, le symbole dans un carreau cuivré, le genre et le repère à la même taille, la référence en
+   pastille, et le grand filigrane du symbole qui se trace à l'ouverture */
+.nv-grand .nv-tete .fi-nav{height:68px;padding-left:20px;overflow:hidden}
+.nv-grand .nc-tete.fine{position:relative;gap:14px}
+.nv-grand .nc-tete.fine .nc-sym{width:40px;height:40px;border-radius:12px;background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne);color:var(--nv-cuivre)}
+.nv-grand .nc-tete.fine .nc-sym svg{width:26px;height:26px}
+.nv-grand .nc-tete.fine .nc-titre{font-size:22px;gap:10px}
+.nv-grand .nc-tete.fine .nc-titre .nc-genre-mot{font-weight:500;color:var(--t-2)}
+.nv-grand .nc-tete.fine .nc-tiret{color:var(--nv-cuivre);opacity:.8}
+.nv-grand .nc-tete.fine .nc-titre .nc-rep-in,.nv-grand .nc-tete.fine .nc-titre .nc-rep-t{height:34px;font-size:22px;font-weight:650;letter-spacing:-.01em}
+.nv-grand .nc-tete.fine .nc-meta .nc-meta-v{height:26px;padding:0 10px;border-radius:8px;background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne)}
+.nv-grand .nc-tete.fine .nc-meta .nc-meta-v,.nv-grand .nc-tete.fine .nc-meta .nc-meta-v .id{color:var(--t-1)}
+.nv-fili{display:none}
+.nv-grand .nv-fili{display:block;position:absolute;right:56px;top:50%;width:112px;height:112px;transform:translateY(-50%);pointer-events:none;color:var(--nv-cuivre);opacity:.16}
+.nv-grand .nv-fili svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:.9;stroke-linecap:round;stroke-linejoin:round}
+.nv-grand .nv-fili svg *{stroke-dasharray:90;stroke-dashoffset:90;animation:nv-fili-trace 1.6s cubic-bezier(.4,0,.2,1) .15s forwards}
+@keyframes nv-fili-trace{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){ .nv-grand .nv-fili svg *{animation:none;stroke-dashoffset:0} }
+@container corps (max-width:620px){ .nv-grand .nv-fili{display:none} }
+/* la bande d'onglets, la nuit : un graphite plus clair que la page, plus le noir d'encre */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double,#fiche,#raccourcis){--v-bande:#2c2e34;--v-bande-2:#373a41;--v-bande-s:#a7aab1} }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double,#fiche,#raccourcis){--v-bande:#2c2e34;--v-bande-2:#373a41;--v-bande-s:#a7aab1}
+/* les attentions : une carte de papier, sa barre d'état à gauche, l'icône dans un rond teinté — plus de grand aplat
+   rouge ; le titre à l'encre, le détail en gris */
+.nv-afaire .nc-tache,.nv-grand .nv-afaire .nc-tache{padding:13px 16px 13px 14px;border-radius:14px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--warn);column-gap:12px;grid-template-columns:28px minmax(0,1fr) auto}
+.nv-afaire .nc-tache.ko,.nv-grand .nv-afaire .nc-tache.ko{background:var(--s-surface);box-shadow:0 0 0 1px color-mix(in srgb,var(--ko) 28%,var(--s-line)),inset 3px 0 0 var(--ko)}
+.nv-afaire .nc-tache .nc-rond{width:28px;height:28px;margin-top:-2px}
+.nv-afaire .nc-tache .nc-rond svg.ico{width:15px;height:15px}
+.nv-afaire .nc-tache:hover{filter:none;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line-2),inset 3px 0 0 var(--warn)}
+.nv-afaire .nc-tache.ko:hover{box-shadow:0 0 0 1px color-mix(in srgb,var(--ko) 45%,var(--s-line)),inset 3px 0 0 var(--ko)}
+.nv-afaire .nc-tache .nc-t b{font-weight:600}
+/* le profil de charge : à gauche de chaque état, sa couleur dans le graphe « Courant appelé » (le permanent en cuivre, les
+   pointes en cuivre doux) — plus le vert de « ne disjoncte pas » ; un état qui fait disjoncter le calibre retenu passe
+   au rouge. Les cases : un peu plus présentes, arrondies, le chiffre bien posé à droite. */
+.nv-grand .nv-panneau .dj-etat .dj-verdict,.nv-grand .nv-panneau .dj-etat .dj-verdict.ok,.nv-grand .nv-panneau .dj-etat .dj-verdict.serre{width:14px;height:5px;border-radius:3px;background:color-mix(in srgb,var(--nv-cuivre) 42%,var(--s-line));box-shadow:none}
+.nv-grand .nv-panneau .dj-etat.perm .dj-verdict,.nv-grand .nv-panneau .dj-etat.perm .dj-verdict.ok{background:var(--nv-cuivre)}
+.nv-grand .nv-panneau .dj-etat .dj-verdict.ko{background:var(--ko)}
+.nv-grand .nv-panneau .dj-etat{min-height:56px}
+.nv-grand .nv-panneau .dj-etat .dj-champ{height:36px;border-radius:9px;box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.nv-grand .nv-panneau .dj-entete{height:38px;background:var(--s-sunken)}
+/* le tableau des câbles : homogène — des colonnes de mesure de même largeur, chaque mesure centrée sous son titre ; dans
+   une colonne, le bloc (anneau + chiffre) a la même largeur d'une ligne à l'autre : les anneaux s'alignent, les écarts
+   sont égaux (le lecteur : « courant et chute plus proches que chute et longueur, l'œil le voit direct ») */
+.nv-grand table.nv-cables{table-layout:fixed}
+.nv-grand table.nv-cables .nv-th-type{width:17%}
+.nv-grand table.nv-cables .nv-th-vers{width:21%}
+.nv-grand table.nv-cables :is(.nv-th-i,.nv-th-u,.nv-th-lg){width:20.66%}
+.nv-grand table.nv-cables:has(.nv-th-ct) .nv-th-type{width:14%}
+.nv-grand table.nv-cables:has(.nv-th-ct) .nv-th-vers{width:18%}
+.nv-grand table.nv-cables:has(.nv-th-ct) :is(.nv-th-i,.nv-th-u,.nv-th-lg){width:16%}
+.nv-grand table.nv-cables:has(.nv-th-ct) .nv-th-ct{width:20%}
+.nv-grand table.nv-cables :is(.nv-th-i,.nv-th-u,.nv-th-lg,.nv-th-ct) .nv-tri{justify-content:center}
+.nv-grand table.nv-cables :is(.nv-td-i,.nv-td-u,.nv-td-lg,.nv-td-ct){text-align:center}
+.nv-grand table.nv-cables :is(.nv-td-i,.nv-td-u) .nv-mes{width:124px;justify-content:flex-start;text-align:left}
+.nv-grand table.nv-cables .nv-td-lg .nv-cab-lg{justify-content:center;min-width:70px}
+.nv-grand table.nv-cables .nv-cab-lg.supp b{color:var(--t-3);font-weight:550}
+.nv-grand table.nv-cables .nv-cab-lg .nv-env{font:400 var(--f-13) var(--sans);font-style:normal;color:var(--t-3);margin-right:2px}
+.nv-grand table.nv-cables td{overflow:hidden;text-overflow:ellipsis}
+.nv-grand .nv-fili{width:86px;height:86px;right:60px;opacity:.15}
+/* une longueur supposée dans sa case : le chiffre en gris (plus en ambre), « ≈ » devant */
+.nv-grand table.nv-cables .nv-cab-lg.supp .fc-in::placeholder{color:var(--t-3);font-weight:550}
+.nv-grand table.nv-cables .nv-cab-lg.supp .fc-in{color:var(--t-2)}
+/* la liste des contacts : des colonnes réparties, les chiffres et le câble centrés sous leur titre */
+.nv-grand .ct-legende,.nv-grand .ct-ligne{grid-template-columns:var(--ct-pin) minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr)}
+.nv-grand .ct-sans .ct-legende,.nv-grand .ct-sans .ct-ligne{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)}
+.nv-grand .ct-legende span:nth-last-child(-n+2){justify-self:center}
+.nv-grand .ct-ligne>.ct-jg,.nv-grand .ct-ligne>.ct-cab{justify-self:center}
+.nv-grand .ct-sans .ct-legende span:first-child,.nv-grand .ct-sans .ct-ligne>.ct-pin{justify-self:center}
+.nv-grand .ct-legende{font:650 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase}
+.nv-grand .fi-note.ct-note{margin:0 0 10px;padding:10px 14px;border-radius:10px;background:var(--s-sunken);color:var(--t-2);font:400 var(--f-13)/1.5 var(--sans)}
+/* le raccord : sa tête (le Ø du toron en pastille, les options à droite), puis une liste de pièces sur une ligne chacune —
+   ce que c'est, sa référence, son état — dans un cadre fin ; plus de libellés perdus au-dessus de leur valeur */
+.nv-grand .fi-hab-tete{display:flex;align-items:center;gap:10px;margin:2px 0 12px}
+.nv-grand .fi-hab-mots{display:flex;flex-wrap:wrap;gap:8px;flex:1;min-width:0}
+.nv-grand .fi-hab-mots>span{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:500 var(--f-12)/1 var(--sans);color:var(--t-2)}
+.nv-grand .fi-nomen{list-style:none;margin:0;padding:0;border-radius:12px;box-shadow:0 0 0 1px var(--s-line);overflow:hidden}
+.nv-grand .fi-nomen .fi-piece{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto;align-items:center;column-gap:14px;min-height:46px;margin:0;padding:6px 14px;background:var(--s-surface)}
+.nv-grand .fi-nomen .fi-piece+.fi-piece{border-top:1px solid var(--s-line)}
+.nv-grand .fi-nomen .fi-piece-r{grid-column:1;grid-row:1;font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.nv-grand .fi-nomen .fi-piece-ref{grid-column:2;grid-row:1;justify-self:start;font:500 var(--f-13) var(--mono)}
+.nv-grand .fi-nomen .fi-piece-st{grid-column:3;grid-row:1;justify-self:end}
+.nv-grand .fi-nomen .fi-piece>span:empty{display:none}
+.nv-grand .fi-nomen .fi-piece-pq{grid-column:1/-1;grid-row:2;margin-top:4px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+/* la face d'un module ou d'une prise, en grand dans sa carte */
+.nv-grand .vu-fig-module{display:flex;flex-direction:column;align-items:center;gap:10px;margin:4px auto 0;padding:18px 28px 14px}
+.nv-grand .vu-fig-module svg{width:min(300px,100%);height:auto}
+.nv-grand .vu-fig-module .vu-faces-g{display:flex;gap:18px;justify-content:center}
+.vu-trav .bro-lettre{font-size:11px;font-family:var(--sans);font-weight:650;letter-spacing:.04em}
+.nv-grand .vu-fig-module svg.vu-face{width:auto;height:auto;max-height:260px;min-height:180px;max-width:100%}
+.nv-grand .vu-fig-module .vu-faces-g svg.vu-face{min-height:220px}
+.vu-trav .bro-cote{font:650 10.5px var(--sans);letter-spacing:.06em;text-transform:uppercase;fill:var(--nv-cuivre)}
+.vu-trav .bro-sens{font:500 11.5px var(--sans);fill:var(--t-3)}
+
+/* ═══ v81 — LE RÉCAPITULATIF (le lecteur : « des flèches pas de la même taille, pas de la même épaisseur ; le tableau des
+   câbles pas homogène pour l'œil ») ═══ */
+/* toutes les flèches d'une colonne : la même longueur, la même épaisseur ; la route garde sa couleur */
+#base .rc-cable{--e:2px!important}
+#base .rc-fleche{flex:none;width:96px;min-width:96px;max-width:96px;height:2px;border-radius:2px}
+#base .rc-fleche::after{height:9px}
+@container rc-corps (max-width:860px){ #base .rc-fleche{width:56px;min-width:56px;max-width:56px} }
+/* les colonnes de chiffres et d'état : centrées sous leur titre ; dans la case, le chiffre garde sa largeur fixe (les
+   virgules s'alignent d'une ligne à l'autre) */
+#base .rc-tab :is(th,td):is(.rc-c-n,.rc-c-mesure,.rc-c-etat,.rc-c-int){text-align:center}
+#base .rc-tab th:is(.rc-c-n,.rc-c-mesure,.rc-c-etat,.rc-c-int) .rc-th-l{justify-content:center}
+#base .rc-tab td:is(.rc-c-n,.rc-c-mesure,.rc-c-int)>*{margin-left:auto;margin-right:auto}
+#base .rc-tab td.rc-c-etat .rc-etat{justify-content:center}
+/* l'onglet Câbles : le tableau réparti sur toute la largeur, des colonnes égales ; « Voir les câbles » ne se répète plus
+   sur chaque ligne — il paraît au survol de la ligne (la ligne entière l'ouvre aussi) */
+#base .rc-tab[data-onglet="cables"]{width:100%;table-layout:fixed}
+#base .rc-tab[data-onglet="cables"] :is(th,td).rc-suppr{width:28px}
+#base .rc-tab[data-onglet="cables"] :is(th,td).rc-c-aller{width:150px}
+#base .rc-tab[data-onglet="cables"] td.rc-c-aller .rc-lien{opacity:0;transition:opacity var(--rapide)}
+#base .rc-tab[data-onglet="cables"] tr:is(:hover,:focus-within) td.rc-c-aller .rc-lien{opacity:1}
+/* la note d'une colonne (« supposée ») passe sous son titre, en petit : le titre reste centré sur sa colonne, rien n'est coupé */
+#base .rc-tab th[data-note]{height:44px;line-height:1.15}
+#base .rc-tab th[data-note]::after{display:block;margin:2px 0 0;font:400 10.5px/1.1 var(--sans);text-transform:none;letter-spacing:0;color:var(--t-3);white-space:nowrap}
+#base .rc-tab th[data-note]:is(.rc-c-n,.rc-c-mesure,.rc-c-etat,.rc-c-int)::after{text-align:center}
+#base .rc-tab th.rc-c-mesure .rc-th-l{min-width:0}
+
+/* ═══ v81 — L'ACCUEIL, À LA MANIÈRE D'APPLE (le lecteur : « trop de texte autour du titre ; un titre qui sort du lot ;
+   des gestes classe, dynamiques, waouh ») ═══ */
+.bi-accueil .bi-sur-titre{display:none}
+.bi-titre.bi-marque.bi-marque-svg{background:none;-webkit-text-fill-color:currentColor;animation:none;font-size:inherit;line-height:1;margin:0;display:flex;justify-content:center}
+.mq{display:block;width:clamp(300px,min(36vw,46vh),560px);height:auto;overflow:visible}
+.mq .mq-g{fill:none;stroke:url(#mq-acier);stroke-linecap:round;stroke-linejoin:round}
+.mq .mq-t,.mq .mq-o{stroke-dasharray:1;stroke-dashoffset:1;animation:mq-trace 1.1s cubic-bezier(.55,0,.25,1) forwards;animation-delay:calc(.15s + var(--i) * .16s)}
+.mq .mq-o{stroke-dasharray:290;stroke-dashoffset:290;animation-name:mq-trace-o}
+@keyframes mq-trace{to{stroke-dashoffset:0}}
+@keyframes mq-trace-o{to{stroke-dashoffset:0}}
+.mq .mq-t.cuivre{stroke:#f2a46b}
+.mq .mq-pin{fill:none;stroke:#b3b8c2;stroke-width:3.2;opacity:0;animation:mq-pose .5s ease 1.1s forwards}
+.mq .mq-pin.on{fill:#f2a46b;stroke:#f2a46b}
+.mq .mq-borne{fill:#141518;stroke:#f2a46b;stroke-width:3.4;opacity:0;animation:mq-pose .5s ease 1.25s forwards}
+.mq .mq-courant{fill:#ffd9bd;filter:drop-shadow(0 0 5px rgba(242,164,107,.95)) drop-shadow(0 0 14px rgba(242,164,107,.55));opacity:0;animation:mq-pose .4s ease 2.4s forwards}
+@keyframes mq-pose{to{opacity:1}}
+.mq-fin .mq-g{stroke:#f4f4f2}
+.mq-fin{width:clamp(320px,min(40vw,50vh),620px)}
+@media (prefers-reduced-motion:reduce){ .mq .mq-t,.mq .mq-o{animation:none;stroke-dashoffset:0} .mq .mq-pin,.mq .mq-borne{animation:none;opacity:1} .mq .mq-courant{display:none} }
+/* le slogan, en cuivre (le lecteur : « j'aimais bien la couleur orange ») */
+.bi-accueil .bi-devise{margin-top:26px;color:#e59c64;font-weight:450;letter-spacing:.005em}
+/* les gestes : le principal, grand, sa bordure de cuivre qui tourne lentement ; le second en verre */
+@property --bi-ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+.bi-accueil .bi-vide-gestes{gap:14px;align-items:center}
+.bi-accueil .bi-vide-gestes .bi-btn-ouvrir{position:relative;isolation:isolate;height:64px;gap:14px;padding:0 14px 0 10px;border:0;border-radius:999px;background:#f4f2ee;color:#141518;
+  box-shadow:0 18px 44px -18px rgba(242,164,107,.55),0 8px 22px -12px rgba(0,0,0,.8);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}
+.bi-accueil .bi-vide-gestes .bi-btn-ouvrir::before{content:"";position:absolute;inset:-2px;padding:2px;z-index:1;pointer-events:none;border-radius:inherit;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  background:conic-gradient(from var(--bi-ang),rgba(242,164,107,0) 0 64%,rgba(242,164,107,.9) 80%,#ffe0c6 86%,rgba(242,164,107,0) 94%);animation:bi-ang 5s linear infinite}
+@keyframes bi-ang{to{--bi-ang:360deg}}
+.bi-accueil .bi-vide-gestes .bi-btn-ouvrir:hover{transform:translateY(-2px);box-shadow:0 24px 54px -18px rgba(242,164,107,.7),0 10px 26px -12px rgba(0,0,0,.85)}
+.bi-accueil .bi-btn-ouvrir .bi-g-ico{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#141518;color:#f2a46b;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.bi-accueil .bi-btn-ouvrir:hover .bi-g-ico{transform:translateY(-2px) scale(1.04)}
+.bi-accueil .bi-btn-ouvrir .bi-g-ico svg{width:20px;height:20px}
+.bi-accueil .bi-btn-ouvrir .bi-g-t{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
+.bi-accueil .bi-btn-ouvrir .bi-g-t b{font:650 16px/1.15 var(--sans);letter-spacing:-.01em}
+.bi-accueil .bi-btn-ouvrir .bi-g-t small{font:400 12px/1.2 var(--sans);color:#6b6e75}
+.bi-accueil .bi-btn-ouvrir kbd{margin-left:10px;opacity:.75}
+.bi-accueil .bi-vide-gestes .bi-btn-2{height:64px;padding:0 24px;border-radius:999px;font-size:15px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.bi-accueil .bi-vide-gestes .bi-btn-2:hover{border-color:rgba(242,164,107,.5)}
+@media (prefers-reduced-motion:reduce){ .bi-accueil .bi-vide-gestes .bi-btn-ouvrir::before{animation:none} }
+/* dessous, sans titre : reprendre, l'exemple, la base — plus discrets, ils entrent après */
+.bi-accueil .bi-dock{margin-top:30px}
+.bi-accueil .bi-encours-t{display:none}
+.bi-accueil :is(.bi-devise,.bi-vide-gestes,.bi-dock){opacity:0;transform:translateY(10px);animation:bi-monte .7s cubic-bezier(.2,.8,.2,1) forwards}
+.bi-accueil .bi-devise{animation-delay:.9s}
+.bi-accueil .bi-vide-gestes{animation-delay:1.6s}
+.bi-accueil .bi-dock{animation-delay:2s}
+@keyframes bi-monte{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){ .bi-accueil :is(.bi-devise,.bi-vide-gestes,.bi-dock){animation:none;opacity:1;transform:none} }
+/* le récapitulatif la nuit (le lecteur : « en mode sombre, on perd pas mal d'affaires ») : trois plans de graphite qui se
+   distinguent — le rail, un cran plus bas ; la table, un graphite clair ; la ligne des titres, une bande — au lieu d'un
+   seul noir où tout se fond */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #base{--s-surface:#2a2c31;--s-sunken:#232529;--s-line:#3a3d44;--s-line-2:#4a4d55;--s-hover:#33363c} }
+:root[data-theme="dark"] #base{--s-surface:#2a2c31;--s-sunken:#232529;--s-line:#3a3d44;--s-line-2:#4a4d55;--s-hover:#33363c}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #base .rc-onglets{background:#202226} :root:not([data-theme="light"]) #base .rc-tab th{background:#33353b;color:#c3c6cc} }
+:root[data-theme="dark"] #base .rc-onglets{background:#202226}
+:root[data-theme="dark"] #base .rc-tab th{background:#33353b;color:#c3c6cc}

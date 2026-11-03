@@ -39,6 +39,11 @@ s'écrit ici, le jour même.
 - **Les connecteurs des équipements sont fournis par le fournisseur.** Nous choisissons : barrettes, prises de coupure,
   relais, raccords, tyraps, contacts à sertir.
 - Un fichier peut donner un **calibre** ; VOLTA peut le contester s'il le justifie (« actuel : celui de votre fichier »).
+- **Un disjoncteur, c'est mathématique : valide ou pas valide, point** (v80, le lecteur insiste : « je te l'ai dit plein
+  de fois »). La courbe a une zone où il ne disjoncte pas et une zone où il disjoncte ; chaque point du profil tombe
+  d'un côté ou de l'autre. **Aucune réserve, aucune marge, aucun « 10 % », aucun « trop juste »**. Le calibre retenu est
+  le plus petit qui ne disjoncte pas. Ce qui s'explique : ce qu'il tire, pendant combien de temps, et le seuil où ce
+  calibre disjoncte sur cette durée.
 
 ## Les mots
 
@@ -46,8 +51,9 @@ s'écrit ici, le jour même.
 - Vocabulaire électrique : « disjoncte / ne disjoncte pas » (jamais « tient »), courant, calibre, borne, repère,
   connecteur, câble, contact à sertir.
 - **Gauge** (son mot, pas « jauge ») ; **folio** (pas « planche ») ; « VOLTA » partout où l'on écrivait « l'outil ».
-- **Chaque chiffre s'explique en clair.** Jamais « 10 % de marge » sans dire de quoi et ce que ça change : « VOLTA veut
-  que le courant reste au moins 10 % sous la courbe ; ici il n'en est qu'à 4 %, il pourrait disjoncter ».
+- **Chaque chiffre s'explique en clair** : de quoi il parle et ce qu'il change (« au démarrage il tire 9,31 A pendant
+  5 s ; sur 5 s, un 7,5 A ne disjoncte qu'au-delà de 21 A : il ne disjoncte pas »).
+- **Le nom des onglets dit ce qu'on y trouve** : « Fabrication » sonnait « usine » — c'est devenu « Pièces » (ce qu'il faut commander pour le monter).
 - Un problème se dit simplement, avec ce qu'il faut faire.
 
 ## L'œil humain (la vraie différence)
@@ -63,14 +69,26 @@ s'écrit ici, le jour même.
 - **Les micro-détails interactifs** (le symbole en filigrane qui s'éveille, une étape qui mène à la courbe, un survol qui
   explique) : c'est la signature de VOLTA. On en met, avec goût.
 - **Jamais de bloc vide ou sans sens** : pas de dessin quand il n'y a rien à dessiner, pas de « aucun … » — rien, ou une
-  information pertinente.
+  information pertinente. Pas de colonne pleine de tirets.
+- **Ne pas surcharger** : ce que le dessin montre déjà, on ne le répète pas en phrase (« 3 contacts pris sur 8 » sous un
+  module dessiné : de trop) ; une légende suffit.
+- **Les tableaux sont homogènes** : chaque valeur centrée sous son titre quand c'est un chiffre ou un dessin, les colonnes
+  réparties également, les écarts égaux (deux anneaux plus proches que le troisième, l'œil le voit tout de suite).
+  Toutes les flèches d'une même colonne ont la même longueur et la même épaisseur.
+- **Expliquer : 1, 2, 3** — une phrase simple par étape ; qui veut plus déplie l'étape et trouve tout, expliqué pour
+  tout le monde.
+- **Le mode sombre n'est pas tout noir** : les bandes et les en-têtes restent lisibles et vivants, rien ne se perd.
 - **Moderne, pas statique** : l'accueil et les écrans doivent vivre, sans clignoter.
 - **Les choix déjà tranchés** (v79) : le profil de charge d'un disjoncteur se lit en **tableau** (état, courant, durée sur une
   ligne), pas en cartes ; la courbe de déclenchement est « parfaite » — on n'y touche pas ; l'essentiel d'un équipement
   montre son **brochage dessiné** (ce qu'il relie), jamais un tableau de tirets ; un calibre s'explique en **ampères** (ce
-  qu'il tire, le seuil où il disjoncte sur cette durée, la réserve, les 10 % exigés).
+  qu'il tire, pendant combien de temps, le seuil où il disjoncte sur cette durée — sans réserve ni pourcentage).
 - **L'accueil et la bibliothèque** sont sur le **graphite** (noir chaud, cuivre) ; le plan garde sa table bleu nuit tant que
   le lecteur ne dit pas le contraire.
+- **L'accueil, à la manière d'Apple** (v80) : VOLTA seul, presque rien autour — plus de sur-titre ; le slogan garde la
+  couleur cuivre ; un titre qui sort du lot (pas une écriture classique) ; le schéma vivant reste ; les gestes d'entrée
+  (ouvrir, nouvelle, pour commencer) doivent être classe, dynamiques, « waouh ».
+- **Reprendre un plan l'ouvre cadré**, comme le bouton de cadrage en bas à droite.
 
 ## La méthode
 

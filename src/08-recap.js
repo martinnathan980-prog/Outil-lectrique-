@@ -469,7 +469,7 @@ function infoDisj(nom) { return memo('dj|' + nom, () => { const d = disjonctionD
    dossier (v73, l'ingénieur n° 8 : « tient », « touche la courbe » ici, « passe » là ; la table unique est celle du moteur,
    `VERDICTS_CALIBRE`, 09-disjoncteurs) ; « touche la courbe », « sans la marge » vont dans la bulle, avec le pourquoi
    chiffré du moteur (`pourquoiDuCalibre`) et chaque état du profil contre la courbe. */
-const MOTS_TROIS = { passe: { mot: 'ne disjoncte pas', etat: 'ok', bulle: 'Il ne disjoncte pas, réserve de 10 % comprise.' }, juste: { mot: 'trop juste', etat: 'ko', bulle: 'Trop juste : sans réserve, il pourrait disjoncter.' }, declenche: { mot: 'disjoncte', etat: 'ko', bulle: 'Il disjoncte.' } };
+const MOTS_TROIS = { passe: { mot: 'ne disjoncte pas', etat: 'ok', bulle: 'Il ne disjoncte pas : chaque point du profil reste du côté de sa courbe où il ne coupe pas.' }, juste: { mot: 'disjoncte', etat: 'ko', bulle: 'Il disjoncte.' }, declenche: { mot: 'disjoncte', etat: 'ko', bulle: 'Il disjoncte.' } };
 const verdictTrois = g => { if (typeof verdictDeCalibre === 'function') { try { return verdictDeCalibre(g); } catch (_) { return null; } }
   if (!g || g.valide == null) return null; return g.valide === false ? MOTS_TROIS.declenche : (g.marge != null ? g.marge : g.avecMarge) ? MOTS_TROIS.passe : MOTS_TROIS.juste; };
 function verdictDuCalibre(d) { if (!d.calibre) return { n: '', mot: '' };
@@ -477,7 +477,7 @@ function verdictDuCalibre(d) { if (!d.calibre) return { n: '', mot: '' };
   if (d.sansCourbe) return { n: '', mot: '' };
   const v = verdictTrois(d) || (!d.valide ? MOTS_TROIS.declenche : d.serre ? MOTS_TROIS.juste : MOTS_TROIS.passe);
   let pq = null; try { pq = typeof pourquoiDuCalibre === 'function' ? pourquoiDuCalibre(app.norme, d, d.calibre) : null; } catch (_) { pq = null; }
-  const motPoint = p => p.ok === false ? 'déclenche' : p.serre ? 'juste (touche la courbe)' : 'passe';
+  const motPoint = p => p.ok === false ? 'disjoncte' : 'ne disjoncte pas';
   const etats = d.points.filter(p => p.ok != null).map(p => `${majuscule(p.nom || 'état')} ${amperes(p.i)}${p.t === Infinity ? ' en permanent' : ' pendant ' + secondes(p.t)} : ${motPoint(p)}`).join('\n');
   return { n: v.etat, mot: v.mot, bulle: [pq ? majuscule(pq.phrase) + '.' : v.bulle, etats].filter(Boolean).join('\n') }; }
 /* Le calibre que l'INSTALLATION écrit (son part number, celui du fichier quand on l'a changé ici) : à côté du retenu, barré

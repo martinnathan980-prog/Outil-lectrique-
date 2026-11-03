@@ -34,7 +34,7 @@ const grandLarge = () => !!NIVEAU.grand && !recapOuvert() && !telephone();
    lignes ce qu'il contient et où il en est — « Calibre · 15 A, il passe », « Câbles · 3, au plus 44 % », « Fabrication ·
    17 pièces ». Toujours le même ordre : l'essentiel d'abord, les réglages et l'historique à la fin. ---- */
 const ORDRE_ONGLETS = ['essentiel', 'calibre', 'cables', 'fabrication', 'reglages', 'dejafait', 'modifs'];
-const TITRES_ONGLETS = { essentiel: 'L’essentiel', calibre: 'Calibre', cables: 'Câbles', fabrication: 'Fabrication', reglages: 'Modifier', dejafait: 'Déjà fait', modifs: 'Historique' };
+const TITRES_ONGLETS = { essentiel: 'L’essentiel', calibre: 'Calibre', cables: 'Câbles', fabrication: 'Pièces', reglages: 'Modifier', dejafait: 'Déjà fait', modifs: 'Historique' };
 // d'où mène une section d'hier, un point, une case : à quel onglet
 const ONGLET_DE_SECTION = { disjoncteur: 'calibre', connecteur: 'essentiel', contacts: 'essentiel', trajet: 'essentiel', raccord: 'reglages', conso: 'reglages', fils: 'cables', dejafait: 'dejafait', modifs: 'modifs' };
 const ongletDeSection = (type, cle) => !cle ? '' : (type === 'fil' && cle === 'fils') ? 'essentiel' : ONGLET_DE_SECTION[cle] || cle;
@@ -57,7 +57,7 @@ const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === '
 const ongletCables = sF => !sF ? null : { cle: 'cables', statut: { t: sF.vide ? 'aucun' : sF.nko ? sF.nko + (sF.nko > 1 ? ' câbles en défaut' : ' câble en défaut') : pluriel(sF.compte || 0, 'câble') + (false ? '' : sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' % max' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide };
 function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
-  return { cle: 'fabrication', statut: { t: pluriel(n, 'pièce') }, contenu: `<section class="vu-bloc"><h4 class="vu-titre">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span></h4>${fabricationVue(gs)}</section>` }; }
+  return { cle: 'fabrication', statut: { t: n + '\u00a0à commander' }, contenu: `<section class="vu-bloc"><h4 class="vu-titre">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span></h4>${fabricationVue(gs)}</section>` }; }
 
 /* ---- L'EN-TÊTE (v78, le lecteur : « le disjoncteur doit être centré, en gros : on doit direct comprendre ce que c'est ;
    et proprement à côté, son nom ; en dessous, sa référence, sa gamme — le folio, on s'en fout ; plus de pastille d'état »)
@@ -71,7 +71,9 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   const ms = (o.meta || []).filter(Boolean), ref = ms.length === 1 && /class="id"/.test(ms[0]);
   const meta = ms.length ? `<div class="nc-meta fi-identite">${ref ? `<span class="nc-meta-k">Référence</span>` : ''}${ms.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</div>` : '';
   const sym = `<svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg>`, titre = `<span class="nc-genre-mot">${esc(GENRES_FICHE[o.type] || 'Élément')}</span><span class="nc-tiret" aria-hidden="true">—</span><span class="nc-rep">${rep}</span>`;
-  if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${ms.length ? `<span class="nc-meta fi-identite">${ms.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</span>` : ''}</div>`;
+  // (v81, le lecteur : « la tête, tu peux la rendre un peu plus sexy ») : le symbole en grand filigrane, à droite, qui se
+  // trace à l'ouverture — la signature de la tuile, reprise dans le grand
+  if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${ms.length ? `<span class="nc-meta fi-identite">${ms.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</span>` : ''}<span class="nv-fili" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span></div>`;
   // le symbole : un filigrane dans le coin de la tuile, qui s'éveille au survol
   // (v79, le lecteur : « ce sigle en fond, ce micro-détail, cette interactivité, c'est vraiment la diff — on peut encore
   // faire mieux ») : au survol, un trait de cuivre parcourt le symbole, comme un courant qui passe
@@ -165,7 +167,8 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     const iH = `<span class="nv-mes">${anneauVue(r.charge.r)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : ''}</span></span>`;
     const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
     const uH = `<span class="nv-mes">${anneauVue(ru)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
-    const lgH = `<span class="nv-cab-lg">${ed ? ed.lon : `<b>${L != null ? esc(nombre(arrondi(L, 2))) : esc(nombre(H.longueur))}</b>`}<small>m</small>${L == null ? '<em class="nv-supp">supposée</em>' : ''}</span>`;
+    // (v81) une longueur supposée s'écrit « ≈ 5 m » en gris, comme au récapitulatif — la cellule reste centrée sous son titre
+    const lgH = `<span class="nv-cab-lg${L == null ? ' supp' : ''}"${L == null ? ` data-bulle="${escA('Votre fichier ne donne pas sa longueur : VOLTA suppose ' + nombre(H.longueur) + ' m (Hypothèses)')}"` : ''}>${L == null ? '<i class="nv-env">≈</i>' : ''}${ed ? ed.lon : `<b>${L != null ? esc(nombre(arrondi(L, 2))) : esc(nombre(H.longueur))}</b>`}<small>m</small></span>`;
     const ctH = ct && ct.st && ct.st.reference ? `<span class="id nv-cab-ct${ct.ko ? ' ko' : ''}" data-bulle="${escA(motSertir(ct.st) + (ct.rep ? ' — ' + ct.rep + (ct.borne ? ':' + ct.borne : '') : ''))}">${esc(ct.st.reference)}</span>` : '<span class="nv-muet">—</span>';
     return `<tr class="fi-ia nv-cab${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}" tabindex="0"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle + (r.pourquoi ? '\n' + r.pourquoi : ''))}"` : ''}>`
       + `<td class="nv-td-type">${type}</td>`

@@ -82,12 +82,15 @@ const SERIE_CALIBRES = [0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10, 15, 20, 25,
 // les marges par défaut du meilleur calibre — les hypothèses `marge` et `margeTemps` les remplacent : 10 % de courant en
 // plus (R2 règle 13), au plus 75 % du temps de déclenchement consommé (R2 § 3.1) ; la sélectivité : l'amont fait au moins
 // le double de l'aval (Sensata : « coordinated ratings » 2:1)
-const MARGE_DISJONCTION = 1.1, MARGE_FRACTION = 0.75, SELECTIVITE = 2;
+const MARGE_DISJONCTION = 1, MARGE_FRACTION = 1, SELECTIVITE = 2;   // (v80) plus de marge : valide ou pas valide
 // le préchauffage de la feuille MS3320N (table VII) : un disjoncteur préchargé à 60 % de In
 const PRECHARGE = 0.6;
 /* Les marges d'une hypothèse : le facteur de courant (1 + marge %), la fraction du temps de déclenchement admise. */
-const margesDuMeilleur = H => { const m = H ? +H.marge : NaN, f = H ? +H.margeTemps : NaN, okM = isFinite(m) && m >= 0, okF = isFinite(f) && f > 0;
-  return { marge: okM ? m : Math.round((MARGE_DISJONCTION - 1) * 100), k: okM ? 1 + m / 100 : MARGE_DISJONCTION, fraction: okF ? f / 100 : MARGE_FRACTION }; };
+// (v80, le lecteur, qui l'avait déjà dit : « valide, pas valide, point — pas de réserve, pas de je ne sais quoi ») : la courbe
+// a une zone où il ne disjoncte pas et une où il disjoncte ; aucune marge de courant, aucune fraction du temps gardée en
+// réserve — un point sous la courbe est valide, un point dessus ne l'est pas. Les hypothèses `marge` et `margeTemps`
+// d'autrefois sont ignorées (un réglage gardé dans un navigateur ne les ramène pas).
+const margesDuMeilleur = () => ({ marge: 0, k: 1, fraction: 1 });
 /* Des mots pour les phrases du moteur (`nombreFr` est dans 09-barrettes). */
 const motA = x => nombreFr(x) + ' A';
 const motPct = x => x > 9.995 ? '> 1 000 %' : nombreFr(Math.round(x * 100)) + ' %';
@@ -346,9 +349,9 @@ function verdictDisjonction(norme, famille, calibre, profil, contexte) { context
    de la gamme ({ valide, marge }) ou le verdict d'ensemble (`verdictDisjonction`, `disjonctionDe` : celui du calibre
    retenu) ; null quand rien ne se juge (pas de profil, pas de courbe). */
 const VERDICTS_CALIBRE = Object.freeze({
-  passe: Object.freeze({ cle: 'passe', mot: 'ne disjoncte pas', encre: '--ok', etat: 'ok', bulle: 'Il ne disjoncte pas, réserve de 10 % comprise.' }),
+  passe: Object.freeze({ cle: 'passe', mot: 'ne disjoncte pas', encre: '--ok', etat: 'ok', bulle: 'Il ne disjoncte pas : chaque point du profil reste du côté de sa courbe où il ne coupe pas.' }),
   // (v77, le lecteur : « si ça touche, c'est rouge — il faut arrêter de mettre presque ; soit c'est rouge, soit c'est vert »)
-  juste: Object.freeze({ cle: 'juste', mot: 'trop juste', encre: '--ko', etat: 'ko', bulle: 'Trop juste : sans réserve, il pourrait disjoncter.' }),
+  juste: Object.freeze({ cle: 'juste', mot: 'disjoncte', encre: '--ko', etat: 'ko', bulle: 'Il disjoncte.' }),
   declenche: Object.freeze({ cle: 'declenche', mot: 'disjoncte', encre: '--ko', etat: 'ko', bulle: 'Il disjoncte.' }) });
 function verdictDeCalibre(g) { if (!g || g.sansProfil || g.sansCourbe) return null;
   // le verdict d'ensemble d'un disjoncteur : celui de la ligne de sa gamme qui porte le calibre retenu
@@ -403,7 +406,9 @@ function meilleurDe(norme, o) { const { F, H, M, tenue, courbes, pts, fils, gamm
   // passe pas au 10 A pour être à 2:1 (il deviendrait l'amont de son amont) — sans calibre à 2:1 de ce côté, la réserve le dit
   const avecMarge = cat.filter(g => g.marge), c0 = avecMarge.length ? avecMarge[0].calibre : null, autres = o.autres || [];
   const memeCote = x => autres.every(a => (x.calibre < a - 1e-9) === (c0 < a - 1e-9));
-  const selectifs = avecMarge.filter(x => x.selectif !== false && memeCote(x)), g = selectifs[0] || avecMarge[0] || cat.find(x => x.valide) || null;
+  // (v80) le retenu est le plus petit qui ne disjoncte pas — la sélectivité avec un voisin se dit, elle ne fait plus monter
+// le calibre (le lecteur : « 7,5 A ne disjoncte pas, pourquoi 10 A retenu ? »)
+const g = avecMarge[0] || cat.find(x => x.valide) || null; void memeCote;
   if (!g) return { ...vide, pourquoi: `aucun calibre ${nomF} (${cat.map(x => nombreFr(x.calibre)).join(', ')} A) ne tient ce profil à ${courbes[0].nom}` };
   const cal = g.calibre, perm = pts.filter(p => p.t === Infinity).reduce((m, p) => Math.max(m, p.i), 0), courts = pts.some(p => p.t !== Infinity);
   // les fils qui ne suivent pas ce calibre, et la jauge qui les suivrait
@@ -430,7 +435,7 @@ function meilleurDe(norme, o) { const { F, H, M, tenue, courbes, pts, fils, gamm
     : prev.selectif === false ? `le ${Ap} n’est pas à 2:1 avec le disjoncteur voisin` : '';
   const phrases = [`${motA(cal)} : le plus petit calibre ${nomF} qui tient ${tient}${g.marge ? '' : ' — sans la marge : aucun ne l’a'}`];
   if (pourquoiPas) phrases.push(pourquoiPas);
-  if (g.selectif === false) phrases.push('pas à 2:1 avec le disjoncteur voisin : aucun calibre qui tient ne l’est');
+  if (g.selectif === false) phrases.push('il n’est pas à 2:1 avec le disjoncteur voisin : à voir');
   if (filsAChanger.length) phrases.push(filsAChanger.map(x => (x.actuel || 'un câble') + (x.bouts && x.bouts.length ? ' vers ' + x.bouts[x.bouts.length - 1] : '') + ' ' + (x.propose ? 'en ' + x.propose : '— ' + x.aucune)).join(', ') + (contactsTouches.length ? ' (' + (contactsTouches.length > 1 ? contactsTouches.length + ' contacts changent' : 'un contact change') + ' de taille)' : ''));
   else if (fils.length) phrases.push('ses câbles le suivent');
   return { calibre: cal, pn: F ? pnAvecCalibre(o.pn, F, cal) : null, famille: F ? F.famille : '', catalogue: cat.map(x => x.calibre), pourquoi: phrases.join(' ; '), marge, filsAChanger, contactsTouches, filsInconnus, selectif: g.selectif, serre: !g.marge, reserve }; }
