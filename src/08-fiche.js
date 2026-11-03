@@ -1007,7 +1007,10 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const al = fils.map(f => intensiteDuFil(f.l).al).find(Boolean);
   // (v84) la lettre d'un connecteur seul est déjà sur le dessin de la carte : la case dit plutôt le disjoncteur qui le
   // protège ; un connecteur qui bloque garde sa case, en rouge
-  const chiffres = [al && !quels.some(fautif) ? { k: 'Disjoncteur', v: `<span class="id">${esc(al.nom)}</span>`, bulle: 'Le disjoncteur qui protège ses câbles' + (al.calibre ? ' : ' + amperes(al.calibre) : '') }
+  // (côté source d'un disjoncteur — une batterie, une génératrice —, ses câbles l'alimentent et ne sont pas sous sa protection)
+  const als = fils.map(f => intensiteDuFil(f.l).al).filter(Boolean), alP = als.find(a => !a.amont), alS = als.find(a => a.amont);
+  const chiffres = [alP && !quels.some(fautif) ? { k: 'Disjoncteur', v: `<span class="id">${esc(alP.nom)}</span>`, bulle: 'Le disjoncteur qui protège ses câbles' + (alP.calibre ? ' : ' + amperes(alP.calibre) : '') }
+    : alS && !quels.some(fautif) ? { k: 'Alimente', v: `<span class="id">${esc(alS.nom)}</span>`, bulle: 'Il alimente le disjoncteur ' + alS.nom + ' : côté source, ses câbles ne sont pas sous sa protection' }
     : quels.length > 1 ? { k: 'Connecteurs', v: `<span class="id">${quels.map(q => fautif(q) ? `<span class="fi-ko-t">${esc(q)}</span>` : esc(q)).join(' · ')}</span>`, etat: quels.some(fautif) ? 'ko-l' : '', sous: quels.some(fautif) ? esc(quels.filter(fautif).join(', ') + ' bloque') : 'tous logent leurs câbles', onglet: 'essentiel' }
       : { k: 'Connecteur', v: `<span class="id">${esc(quels[0] || '—')}</span>`, etat: quels.some(fautif) ? 'ko-l' : '', onglet: 'essentiel' },
     places ? { k: 'Contacts', v: `${pris}<small>/ ${places}</small>`, sous: places - pris > 0 ? esc(plurielLie(places - pris, 'libre')) : 'tous pris', barre: pris / places, onglet: 'essentiel' } : null,
@@ -1764,7 +1767,11 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const dT = x.pointe ? ' pendant ' + secondes(x.pointe.t) : '';
   const dI = !x.fn ? '' : (pointeI ? esc(`Au pire, ${x.pointe.nom || 'la pointe'}${dT}${Math.abs(x.pointe.admis - x.continu) > 0.05 ? ' (sur cette durée, il admet plus qu’en continu)' : ''}. En continu : ${amperes(x.I)} sur ${amperes(x.continu)}.`)
       : x.pointe && x.pointe.admis ? esc(`En continu, au pire. ${majuscule(x.pointe.nom || 'la pointe')} : ${amperes(x.pointe.i)}${dT}, sur ${amperes(x.pointe.admis)} admis.`) : esc('En continu.'))
-    + (x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
+    // (v84, l'agent « câbles ») côté source du disjoncteur (vers une batterie, une génératrice, un TR), il n'est pas sous sa
+    // protection ; sans profil de charge, le courant retenu est le calibre du disjoncteur — chaque cas se dit tel qu'il est
+    + (x.al && x.al.amont ? ` ${esc('Côté source de')} ${source} ${esc(': il l’alimente, il n’est pas sous sa protection.')}`
+      : x.al && x.source === 'calibre' ? ` ${esc('Le courant vient de')} ${source} ${esc('— son calibre, faute de profil de charge.')}`
+      : x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
   const intens = !x.fn ? `<p class="fi-note">${l.type ? 'Hors de l’EN 2853 : ce qu’il admet ne se lit pas.' : 'Sans type, ce qu’il admet ne se lit pas.'}</p>`
     : mesure('Courant', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
   // la chute : en ligne depuis le disjoncteur jusqu'au bout du chemin, sur ce qui est admis ; dessous, le chemin, la part de
@@ -1803,7 +1810,11 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const etapesF = neuf ? [{ html: `VOLTA le crée quand <b class="id">${esc(l.aPoser)}</b> est posée au contrat : il prend alors sa place dans votre fichier.`, source: 'calcul', etat: 'att' }] : [
     l.type ? { html: `Type <b class="id">${esc(l.type)}</b>${jauge != null ? `, gauge ${esc(String(jauge))} AWG` : ''} : ${cab ? 'la base des câbles le connaît' + (brins ? ' — ' + esc(brins) : '') : 'hors de la base des câbles'}.`, source: 'fichier', etat: cab ? '' : 'att' }
       : { html: 'Votre fichier ne donne pas son type : la gauge ne se vérifie pas.', source: 'fichier', etat: 'att' },
-    x.al ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : ce que tirent les équipements qu’il alimente, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
+    // (v84, l'agent « câbles ») trois cas : côté source du disjoncteur, il l'alimente et n'est pas sous sa protection ; sans
+    // profil de charge, le courant retenu est le calibre ; sinon, ce que tirent les équipements qu'il alimente
+    x.al && x.al.amont ? { html: `Il est côté source de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : il l’alimente, et n’est pas sous sa protection ; il porte <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
+      : x.al && x.source === 'calibre' ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b> : faute de profil de charge, VOLTA retient le calibre du disjoncteur, <b>${esc(amperes(x.I))}</b>.`, source: 'calcul', etat: 'att' }
+      : x.al ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : ce que tirent les équipements qu’il alimente, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
       : { html: `Aucun disjoncteur en amont : VOLTA suppose <b>${esc(nombre(H.courant))} A</b>.`, source: 'hypothese', etat: 'att' },
     x.fn ? { html: `Il admet <b>${esc(amperes(x.continu))}</b> en continu${x.fac && Math.abs(x.fac - 1) > 1e-9 ? ' (déclassé × ' + esc(nombre(arrondi(x.fac, 2))) + ')' : ''}.`, source: 'norme', mot: 'EN 2853' } : null,
     L != null ? { html: `Longueur <b>${esc(nombre(arrondi(L, 2)))} m</b>.`, source: 'fichier' } : { html: `Longueur supposée <b>${esc(nombre(H.longueur))} m</b> : votre fichier ne la donne pas, et la chute en dépend.`, source: 'hypothese', etat: 'att' },

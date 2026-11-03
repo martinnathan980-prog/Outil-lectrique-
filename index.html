@@ -9148,7 +9148,7 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '0dad1ab77077';
+const VERSION_MOTEUR = '5a120662b188';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -9255,10 +9255,10 @@ function boutLu(repere, borne) { const r = String(repere == null ? '' : repere).
    virgule décimale devient un point, une puissance de dix se lit. */
 // un nombre écrit à la main : « 2 500 » (espace, espace insécable, espace fine), « 2.500,5 » (le point des milliers devant la
 // virgule décimale), « 2,500.5 » (à l'anglaise) — le dernier des deux signes est la décimale, l'autre sépare les milliers
-const nombreEcrit = s => { let t = String(s).trim().replace(/(\d)[\s  ]+(?=\d)/g, '$1'); const p = t.lastIndexOf('.'), v = t.lastIndexOf(',');
+const nombreDeLaCase = s => { let t = String(s).trim().replace(/(\d)[\s  ]+(?=\d)/g, '$1'); const p = t.lastIndexOf('.'), v = t.lastIndexOf(',');
   if (p >= 0 && v >= 0) t = p > v ? t.replace(/,/g, '') : t.replace(/\./g, '').replace(',', '.'); else t = t.replace(',', '.'); return t; };
 function longueurLue(v) { if (v == null || v === '') return null; if (typeof v === 'number') return v > 100 ? v / 1000 : v > 0 ? v : null;
-  const t = nombreEcrit(v), m = /-?\d+(\.\d+)?(e[+-]?\d+)?/i.exec(t); if (!m) return null;
+  const t = nombreDeLaCase(v), m = /-?\d+(\.\d+)?(e[+-]?\d+)?/i.exec(t); if (!m) return null;
   const x = parseFloat(m[0]); if (!(x > 0) || !isFinite(x)) return null;
   return /mm/i.test(t) || (!/\bm\b/i.test(t) && x > 100) ? x / 1000 : x; }
 /* (v84) CE QUE LE FICHIER ÉCRIVAIT, quand VOLTA le lit autrement : « 677VT2 51 » + « B » se lit 677VT2:51B (`boutLu`), une
@@ -24951,7 +24951,10 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const al = fils.map(f => intensiteDuFil(f.l).al).find(Boolean);
   // (v84) la lettre d'un connecteur seul est déjà sur le dessin de la carte : la case dit plutôt le disjoncteur qui le
   // protège ; un connecteur qui bloque garde sa case, en rouge
-  const chiffres = [al && !quels.some(fautif) ? { k: 'Disjoncteur', v: `<span class="id">${esc(al.nom)}</span>`, bulle: 'Le disjoncteur qui protège ses câbles' + (al.calibre ? ' : ' + amperes(al.calibre) : '') }
+  // (côté source d'un disjoncteur — une batterie, une génératrice —, ses câbles l'alimentent et ne sont pas sous sa protection)
+  const als = fils.map(f => intensiteDuFil(f.l).al).filter(Boolean), alP = als.find(a => !a.amont), alS = als.find(a => a.amont);
+  const chiffres = [alP && !quels.some(fautif) ? { k: 'Disjoncteur', v: `<span class="id">${esc(alP.nom)}</span>`, bulle: 'Le disjoncteur qui protège ses câbles' + (alP.calibre ? ' : ' + amperes(alP.calibre) : '') }
+    : alS && !quels.some(fautif) ? { k: 'Alimente', v: `<span class="id">${esc(alS.nom)}</span>`, bulle: 'Il alimente le disjoncteur ' + alS.nom + ' : côté source, ses câbles ne sont pas sous sa protection' }
     : quels.length > 1 ? { k: 'Connecteurs', v: `<span class="id">${quels.map(q => fautif(q) ? `<span class="fi-ko-t">${esc(q)}</span>` : esc(q)).join(' · ')}</span>`, etat: quels.some(fautif) ? 'ko-l' : '', sous: quels.some(fautif) ? esc(quels.filter(fautif).join(', ') + ' bloque') : 'tous logent leurs câbles', onglet: 'essentiel' }
       : { k: 'Connecteur', v: `<span class="id">${esc(quels[0] || '—')}</span>`, etat: quels.some(fautif) ? 'ko-l' : '', onglet: 'essentiel' },
     places ? { k: 'Contacts', v: `${pris}<small>/ ${places}</small>`, sous: places - pris > 0 ? esc(plurielLie(places - pris, 'libre')) : 'tous pris', barre: pris / places, onglet: 'essentiel' } : null,
@@ -25708,7 +25711,11 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const dT = x.pointe ? ' pendant ' + secondes(x.pointe.t) : '';
   const dI = !x.fn ? '' : (pointeI ? esc(`Au pire, ${x.pointe.nom || 'la pointe'}${dT}${Math.abs(x.pointe.admis - x.continu) > 0.05 ? ' (sur cette durée, il admet plus qu’en continu)' : ''}. En continu : ${amperes(x.I)} sur ${amperes(x.continu)}.`)
       : x.pointe && x.pointe.admis ? esc(`En continu, au pire. ${majuscule(x.pointe.nom || 'la pointe')} : ${amperes(x.pointe.i)}${dT}, sur ${amperes(x.pointe.admis)} admis.`) : esc('En continu.'))
-    + (x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
+    // (v84, l'agent « câbles ») côté source du disjoncteur (vers une batterie, une génératrice, un TR), il n'est pas sous sa
+    // protection ; sans profil de charge, le courant retenu est le calibre du disjoncteur — chaque cas se dit tel qu'il est
+    + (x.al && x.al.amont ? ` ${esc('Côté source de')} ${source} ${esc(': il l’alimente, il n’est pas sous sa protection.')}`
+      : x.al && x.source === 'calibre' ? ` ${esc('Le courant vient de')} ${source} ${esc('— son calibre, faute de profil de charge.')}`
+      : x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
   const intens = !x.fn ? `<p class="fi-note">${l.type ? 'Hors de l’EN 2853 : ce qu’il admet ne se lit pas.' : 'Sans type, ce qu’il admet ne se lit pas.'}</p>`
     : mesure('Courant', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
   // la chute : en ligne depuis le disjoncteur jusqu'au bout du chemin, sur ce qui est admis ; dessous, le chemin, la part de
@@ -25747,7 +25754,11 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const etapesF = neuf ? [{ html: `VOLTA le crée quand <b class="id">${esc(l.aPoser)}</b> est posée au contrat : il prend alors sa place dans votre fichier.`, source: 'calcul', etat: 'att' }] : [
     l.type ? { html: `Type <b class="id">${esc(l.type)}</b>${jauge != null ? `, gauge ${esc(String(jauge))} AWG` : ''} : ${cab ? 'la base des câbles le connaît' + (brins ? ' — ' + esc(brins) : '') : 'hors de la base des câbles'}.`, source: 'fichier', etat: cab ? '' : 'att' }
       : { html: 'Votre fichier ne donne pas son type : la gauge ne se vérifie pas.', source: 'fichier', etat: 'att' },
-    x.al ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : ce que tirent les équipements qu’il alimente, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
+    // (v84, l'agent « câbles ») trois cas : côté source du disjoncteur, il l'alimente et n'est pas sous sa protection ; sans
+    // profil de charge, le courant retenu est le calibre ; sinon, ce que tirent les équipements qu'il alimente
+    x.al && x.al.amont ? { html: `Il est côté source de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : il l’alimente, et n’est pas sous sa protection ; il porte <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
+      : x.al && x.source === 'calibre' ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b> : faute de profil de charge, VOLTA retient le calibre du disjoncteur, <b>${esc(amperes(x.I))}</b>.`, source: 'calcul', etat: 'att' }
+      : x.al ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : ce que tirent les équipements qu’il alimente, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
       : { html: `Aucun disjoncteur en amont : VOLTA suppose <b>${esc(nombre(H.courant))} A</b>.`, source: 'hypothese', etat: 'att' },
     x.fn ? { html: `Il admet <b>${esc(amperes(x.continu))}</b> en continu${x.fac && Math.abs(x.fac - 1) > 1e-9 ? ' (déclassé × ' + esc(nombre(arrondi(x.fac, 2))) + ')' : ''}.`, source: 'norme', mot: 'EN 2853' } : null,
     L != null ? { html: `Longueur <b>${esc(nombre(arrondi(L, 2)))} m</b>.`, source: 'fichier' } : { html: `Longueur supposée <b>${esc(nombre(H.longueur))} m</b> : votre fichier ne la donne pas, et la chute en dépend.`, source: 'hypothese', etat: 'att' },
@@ -33107,7 +33118,9 @@ const NORME_DE_VUE = { 'modules:barrette': 'ASNE 0599 · NSA937901', 'tailles:ba
 const RE_NORME = /\b(EN ?\d{4}(?:-\d{3})?|AC 43\.13-1B|ASNE ?\d{4}|NSA ?\d{6}|AS ?\d{4,5}|VG ?\d{5})/;
 const normeCourte = v => { if (NORME_DE_VUE[v]) return NORME_DE_VUE[v]; const F = FICHES_TABLES[vueDe(v).table] || {}, m = RE_NORME.exec(F.source || ''); return m ? m[1] : String(F.source || '').split(/[,;(:]/)[0].trim().slice(0, 32); };
 // ce qu'une table juge : la première phrase de « à quoi elle sert »
-const phrase = t => { const x = String(t || '').split(/\. (?=[A-ZÀ-Ý])/)[0].replace(/\.$/, ''); return x.length > 170 ? x.slice(0, 168).replace(/\s+\S*$/, '') + '…' : x; };
+// (v84 : la colonne a la place d'office sur une feuille large — la phrase se coupe à une virgule plutôt qu'au milieu d'un mot)
+const phrase = t => { const x = String(t || '').split(/\. (?=[A-ZÀ-Ý])/)[0].replace(/\.$/, ''); if (x.length <= 210) return x;
+  const c = x.slice(0, 210), v = Math.max(c.lastIndexOf(', '), c.lastIndexOf(' : '), c.lastIndexOf(' — ')); return v > 120 ? c.slice(0, v) + '…' : c.replace(/\s+\S*$/, '') + '…'; };
 function normes() { return memo('normes', () => { const V = verite(), cab = V.filter(l => liaisonComplete(l) && l.de !== l.vers && l.type).length, R = reperes();
   const n = g => R.filter(r => r.genre === g).length, connecteurs = raccords().length, cb = n('cb'), barr = n('barrette'), pr = n('coupure');
   const objets = { fils: [cab, 'câble'], cables: [cab, 'câble'], cablesFamilles: [cab, 'câble'], reseau: [cb ? cab : 0, 'câble'], declassements: [cab, 'câble'],
@@ -33422,6 +33435,12 @@ const icoVide = (k, cls) => `<span class="rc-vide-ico${cls ? ' ' + cls : ''}"><s
 function videRecap(O, nTous) { const b = app.base, cherche = b.filtre.trim(), puces = pucesActives(O).length;
   const bloc = (ico, titre, phrase, action) => `<div class="rc-vide-etat">${ico}<b>${titre}</b><span>${phrase}</span>${action || ''}</div>`;
   if (nTous) {
+    /* (v84) le bloc choisi sur le plan filtre chaque onglet : sous un onglet qui ne l'a pas, dire où il est (« 102CB1 est un
+       disjoncteur ») et y mener — plus « la recherche lit chaque colonne », qui ne parlait pas de lui */
+    if (cherche && b.filtreAuto && !puces) { const g = genreDuRepere(cherche), ou = { cb: 'disjoncteurs', barrette: 'barrettes', coupure: 'prises', eqpt: 'equipements' }[g], mot = (ONGLETS.find(([k]) => k === ou) || [])[1];
+      const reperes = ['equipements', 'disjoncteurs', 'barrettes', 'prises'].includes(b.onglet);
+      return reperes && ou && ou !== b.onglet ? bloc(icoVide('folio'), `${esc(cherche)} est dans l’onglet ${esc(mot)}`, 'Le bloc choisi sur le plan filtre chaque onglet sur lui.', `<button class="btn papier" data-onglet-vers="${escA(ou)}">Voir ${esc(cherche)} dans ${esc(mot)}</button>`)
+        : bloc(icoVide('folio'), `Rien sur ${esc(cherche)} dans cet onglet`, 'Le bloc choisi sur le plan filtre chaque onglet sur lui.', '<button class="btn papier" id="ba-effacer">Voir tout l’onglet</button>'); }
     if (cherche || puces) return bloc(icoVide('loupe'), cherche && !b.filtreAuto ? `Rien ne correspond à «${INSECABLE}${esc(cherche)}${INSECABLE}»` : 'Rien qui corresponde',
       cherche && puces ? 'La recherche et ' + (puces > 1 ? 'les filtres pressés' : 'le filtre pressé') + ' se cumulent.' : puces ? (puces > 1 ? 'Les filtres pressés se cumulent : ôtez-en un pour élargir.' : 'Ôtez-le pour revoir tout l’onglet.') : 'La recherche lit chaque colonne de l’onglet, même celles qu’on ne montre pas.', `<button class="btn papier" id="ba-effacer">${cherche && puces ? 'Effacer la recherche et les filtres' : cherche ? 'Effacer la recherche' : 'Ôter les filtres'}</button>`);
     return bloc(icoVide('folio'), 'Rien sur ce folio', 'Le folio ' + esc(app.plan) + ' n’a aucune ligne de cet onglet.', '<button class="btn papier" data-portee-tout="1">Voir tout le contrat</button>'); }
@@ -33433,6 +33452,7 @@ function assurerVide() { let v = $('ba-vide'); if (v) return v; v = document.cre
   v.addEventListener('click', e => { const b = app.base, O = onglet();
     if (e.target.closest('#ba-effacer')) { b.filtre = ''; b.filtreAuto = false; $('ba-filtre').value = ''; b.puces[b.onglet] = []; memoriserBase(); rendreBase(true); }
     else if (e.target.closest('[data-portee-tout]')) { b.portee = 'tout'; memoriserBase(); rendreBase(true); }
+    else if (e.target.closest('[data-onglet-vers]')) { const k = e.target.closest('[data-onglet-vers]').dataset.ongletVers; changerOnglet(k); const n = $('ba-onglets').querySelector(`[data-onglet="${k}"]`); if (n) n.focus({ preventScroll: true }); }
     else if (e.target.closest('[data-ajouter]') && O.ajouter) O.ajouter(); });
   return v; }
 /* LA LIGNE CHOISIE suit le plan : la liaison du câble choisi est posée sur le gris doux ; un BLOC choisi ne fait pas de

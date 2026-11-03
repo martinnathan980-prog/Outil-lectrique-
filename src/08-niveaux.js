@@ -296,6 +296,8 @@ function lierNiveaux(box, c) { lierSommaire(box);
     if (ficheEnGrand()) { if (k) activerOnglet(k, true); if (b.dataset.viser) viserDansLaFiche(b.dataset.viser); return; }
     ouvrirGrand(k, b.dataset.viser ? { viser: b.dataset.viser } : null); if (b.dataset.voirTout) { const r = $('ba-equip').querySelector('.nc-reste'); if (r) r.hidden = false; } });
   const tv = $('fi-tout-voir'); if (tv) tv.onclick = e => { e.stopPropagation(); ouvrirGrand(''); };
+  // (v84) un bout dessiné (le chemin d'un câble) se prend au clavier comme à la souris : Entrée ou Espace l'ouvre
+  box.querySelectorAll('svg [data-bout][role="button"]').forEach(g => g.onkeydown = e => { if (e.key !== 'Enter' && e.key !== ' ') return; e.preventDefault(); g.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
   // les onglets : un clic, ou ← → au clavier (Début, Fin) — le clavier suit l'onglet
   const tabs = [...box.querySelectorAll('.nv-onglet')];
   // les onglets qui débordent : un fondu au bord qui cache, et l'ouvert sous les yeux

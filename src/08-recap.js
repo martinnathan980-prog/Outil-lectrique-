@@ -867,7 +867,9 @@ const NORME_DE_VUE = { 'modules:barrette': 'ASNE 0599 · NSA937901', 'tailles:ba
 const RE_NORME = /\b(EN ?\d{4}(?:-\d{3})?|AC 43\.13-1B|ASNE ?\d{4}|NSA ?\d{6}|AS ?\d{4,5}|VG ?\d{5})/;
 const normeCourte = v => { if (NORME_DE_VUE[v]) return NORME_DE_VUE[v]; const F = FICHES_TABLES[vueDe(v).table] || {}, m = RE_NORME.exec(F.source || ''); return m ? m[1] : String(F.source || '').split(/[,;(:]/)[0].trim().slice(0, 32); };
 // ce qu'une table juge : la première phrase de « à quoi elle sert »
-const phrase = t => { const x = String(t || '').split(/\. (?=[A-ZÀ-Ý])/)[0].replace(/\.$/, ''); return x.length > 170 ? x.slice(0, 168).replace(/\s+\S*$/, '') + '…' : x; };
+// (v84 : la colonne a la place d'office sur une feuille large — la phrase se coupe à une virgule plutôt qu'au milieu d'un mot)
+const phrase = t => { const x = String(t || '').split(/\. (?=[A-ZÀ-Ý])/)[0].replace(/\.$/, ''); if (x.length <= 210) return x;
+  const c = x.slice(0, 210), v = Math.max(c.lastIndexOf(', '), c.lastIndexOf(' : '), c.lastIndexOf(' — ')); return v > 120 ? c.slice(0, v) + '…' : c.replace(/\s+\S*$/, '') + '…'; };
 function normes() { return memo('normes', () => { const V = verite(), cab = V.filter(l => liaisonComplete(l) && l.de !== l.vers && l.type).length, R = reperes();
   const n = g => R.filter(r => r.genre === g).length, connecteurs = raccords().length, cb = n('cb'), barr = n('barrette'), pr = n('coupure');
   const objets = { fils: [cab, 'câble'], cables: [cab, 'câble'], cablesFamilles: [cab, 'câble'], reseau: [cb ? cab : 0, 'câble'], declassements: [cab, 'câble'],
@@ -1182,6 +1184,12 @@ const icoVide = (k, cls) => `<span class="rc-vide-ico${cls ? ' ' + cls : ''}"><s
 function videRecap(O, nTous) { const b = app.base, cherche = b.filtre.trim(), puces = pucesActives(O).length;
   const bloc = (ico, titre, phrase, action) => `<div class="rc-vide-etat">${ico}<b>${titre}</b><span>${phrase}</span>${action || ''}</div>`;
   if (nTous) {
+    /* (v84) le bloc choisi sur le plan filtre chaque onglet : sous un onglet qui ne l'a pas, dire où il est (« 102CB1 est un
+       disjoncteur ») et y mener — plus « la recherche lit chaque colonne », qui ne parlait pas de lui */
+    if (cherche && b.filtreAuto && !puces) { const g = genreDuRepere(cherche), ou = { cb: 'disjoncteurs', barrette: 'barrettes', coupure: 'prises', eqpt: 'equipements' }[g], mot = (ONGLETS.find(([k]) => k === ou) || [])[1];
+      const reperes = ['equipements', 'disjoncteurs', 'barrettes', 'prises'].includes(b.onglet);
+      return reperes && ou && ou !== b.onglet ? bloc(icoVide('folio'), `${esc(cherche)} est dans l’onglet ${esc(mot)}`, 'Le bloc choisi sur le plan filtre chaque onglet sur lui.', `<button class="btn papier" data-onglet-vers="${escA(ou)}">Voir ${esc(cherche)} dans ${esc(mot)}</button>`)
+        : bloc(icoVide('folio'), `Rien sur ${esc(cherche)} dans cet onglet`, 'Le bloc choisi sur le plan filtre chaque onglet sur lui.', '<button class="btn papier" id="ba-effacer">Voir tout l’onglet</button>'); }
     if (cherche || puces) return bloc(icoVide('loupe'), cherche && !b.filtreAuto ? `Rien ne correspond à «${INSECABLE}${esc(cherche)}${INSECABLE}»` : 'Rien qui corresponde',
       cherche && puces ? 'La recherche et ' + (puces > 1 ? 'les filtres pressés' : 'le filtre pressé') + ' se cumulent.' : puces ? (puces > 1 ? 'Les filtres pressés se cumulent : ôtez-en un pour élargir.' : 'Ôtez-le pour revoir tout l’onglet.') : 'La recherche lit chaque colonne de l’onglet, même celles qu’on ne montre pas.', `<button class="btn papier" id="ba-effacer">${cherche && puces ? 'Effacer la recherche et les filtres' : cherche ? 'Effacer la recherche' : 'Ôter les filtres'}</button>`);
     return bloc(icoVide('folio'), 'Rien sur ce folio', 'Le folio ' + esc(app.plan) + ' n’a aucune ligne de cet onglet.', '<button class="btn papier" data-portee-tout="1">Voir tout le contrat</button>'); }
@@ -1193,6 +1201,7 @@ function assurerVide() { let v = $('ba-vide'); if (v) return v; v = document.cre
   v.addEventListener('click', e => { const b = app.base, O = onglet();
     if (e.target.closest('#ba-effacer')) { b.filtre = ''; b.filtreAuto = false; $('ba-filtre').value = ''; b.puces[b.onglet] = []; memoriserBase(); rendreBase(true); }
     else if (e.target.closest('[data-portee-tout]')) { b.portee = 'tout'; memoriserBase(); rendreBase(true); }
+    else if (e.target.closest('[data-onglet-vers]')) { const k = e.target.closest('[data-onglet-vers]').dataset.ongletVers; changerOnglet(k); const n = $('ba-onglets').querySelector(`[data-onglet="${k}"]`); if (n) n.focus({ preventScroll: true }); }
     else if (e.target.closest('[data-ajouter]') && O.ajouter) O.ajouter(); });
   return v; }
 /* LA LIGNE CHOISIE suit le plan : la liaison du câble choisi est posée sur le gris doux ; un BLOC choisi ne fait pas de

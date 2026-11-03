@@ -104,10 +104,10 @@ function boutLu(repere, borne) { const r = String(repere == null ? '' : repere).
    virgule décimale devient un point, une puissance de dix se lit. */
 // un nombre écrit à la main : « 2 500 » (espace, espace insécable, espace fine), « 2.500,5 » (le point des milliers devant la
 // virgule décimale), « 2,500.5 » (à l'anglaise) — le dernier des deux signes est la décimale, l'autre sépare les milliers
-const nombreEcrit = s => { let t = String(s).trim().replace(/(\d)[\s  ]+(?=\d)/g, '$1'); const p = t.lastIndexOf('.'), v = t.lastIndexOf(',');
+const nombreDeLaCase = s => { let t = String(s).trim().replace(/(\d)[\s  ]+(?=\d)/g, '$1'); const p = t.lastIndexOf('.'), v = t.lastIndexOf(',');
   if (p >= 0 && v >= 0) t = p > v ? t.replace(/,/g, '') : t.replace(/\./g, '').replace(',', '.'); else t = t.replace(',', '.'); return t; };
 function longueurLue(v) { if (v == null || v === '') return null; if (typeof v === 'number') return v > 100 ? v / 1000 : v > 0 ? v : null;
-  const t = nombreEcrit(v), m = /-?\d+(\.\d+)?(e[+-]?\d+)?/i.exec(t); if (!m) return null;
+  const t = nombreDeLaCase(v), m = /-?\d+(\.\d+)?(e[+-]?\d+)?/i.exec(t); if (!m) return null;
   const x = parseFloat(m[0]); if (!(x > 0) || !isFinite(x)) return null;
   return /mm/i.test(t) || (!/\bm\b/i.test(t) && x > 100) ? x / 1000 : x; }
 /* (v84) CE QUE LE FICHIER ÉCRIVAIT, quand VOLTA le lit autrement : « 677VT2 51 » + « B » se lit 677VT2:51B (`boutLu`), une
