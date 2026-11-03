@@ -1153,7 +1153,8 @@ End Function
 ' 2 : l'objet rendu seulement). Dans l'ordre : SEE ouvert ; Windows muet ; la copie ratée ; Annuler (la fenêtre
 ' « Ouvrir », puis la question) : rien n'est fait. Puis le parcours complet ; CreateObject refusé ; un SEE qui reste
 ' après Quit ; ... ; OpenEnvironment refusé (le dessin, Save et CloseProject passent quand même) ; seul l'objet rendu
-' marche ; la méthode qui tourne, puis refuse ou ne rend rien (une seule forme qui tourne) ; la forme lue par le projet.
+' marche ; la méthode qui tourne, puis refuse (une seule forme qui tourne) ou ne rend rien (un seul dernier essai,
+' type, objet en sortie, projet) ; la sortie au milieu (ce dernier essai retenu) ; la forme lue par le projet.
 Public Function BancBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal projet As String) As String
     Dim r As String, absent As String, n0 As Long
     On Error GoTo E
@@ -1262,6 +1263,11 @@ Public Function BancBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal proj
     PreparerBouton3 v4, 4, projet
     EssaiSansFenetre
     r = r & " | tourne sans rien rendre : appels " & Compter("CreateObject.appel") & " =" & AppelsCreation() & " ; " & BilanBouton3(projet)
+    ' la v4.1 : la sortie est au milieu, (type, sortie, projet) : la forme 1 tourne sans erreur et ne rend rien dans sa
+    ' sortie ; un seul dernier essai, (type, objet en sortie, projet), qui marche et est retenu pour tout le dessin
+    PreparerBouton3 v4, 5, projet
+    EssaiSansFenetre
+    r = r & " | sortie au milieu : appels " & Compter("CreateObject.appel") & " =" & AppelsCreation() & " ; " & BilanBouton3(projet)
     ' la v4 : sous SeeAutomation, une forme (définition de symbole) se lit par le projet ouvert, jamais par l'environnement
     PreparerBouton3 v4, forme, projet
     Set gApp = New FauxAuto

@@ -186,7 +186,11 @@ la même architecture `[nso-inv]` *(déduction technique)*.
   arguments, puis `Nothing`, 0, "" et le projet passé dans un `Variant` au milieu, puis (type, objet en sortie,
   projet), **tant que SEE les refuse avant de faire tourner la méthode** (13, 449, 450) ; la première qui rend
   un objet est retenue pour la macro. Une forme que SEE a fait tourner, puis refusée (un autre code) ou qui
-  n'a rien rendu, arrête les essais : le bloc garde son code. Le projet lui est passé par une copie de la
+  n'a rien rendu, arrête les essais : le bloc garde son code. Une seule exception (v4.1) : une forme qui passe
+  le projet au milieu, que SEE a fait tourner **sans erreur** mais qui n'a rien rendu dans sa sortie ; la
+  sortie serait alors au milieu (SEE y aurait écrit), et seule (type, objet en sortie, projet) est encore
+  essayée, une fois. Après une erreur de SEE, aucun autre essai : le type d'objet serait en cause, et un
+  projet nul passé à SEE pourrait le faire tomber. Le projet lui est passé par une copie de la
   référence, jamais par la variable gardée ;
 - **la fermeture** : `CloseProject` sans argument répond 450, `Close` (du projet) et `Quit` 438 ; pourtant,
   après le relâchement des objets, aucun SEE.exe ne tournait plus. Dans ISeeAutomation V5R2,

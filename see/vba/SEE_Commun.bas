@@ -120,6 +120,7 @@ Private mCodesDits As Object          ' les codes de Windows déjà expliqués dans
 Private mFormeCreation As Integer     ' 0 pas encore essayée, 1 à 10 la forme retenue (FormeCreation), -1 refusée
 Private mCodesCreation As String      ' les réponses des formes essayées avant (le bloc « À PHOTOGRAPHIER » du bouton 3)
 Private mProjetCreation As Object     ' le projet ouvert par SeeAutomation.OpenProject : le paramètre du milieu de son CreateObject
+Private Const FORME_SORTIE_AU_MILIEU As Integer = 10 ' (type, objet en sortie, projet) : la seule essayée encore après une forme qui a tourné sans rien rendre
 
 ' --- La conversion des coordonnées (PreparerConversion)
 Private mEchelle As Double
@@ -1519,7 +1520,13 @@ End Function
 ' AVANT de faire tourner la méthode (RefusAvantAppel : le type ou le nombre
 ' des arguments). Une forme que SEE a fait tourner, puis refusée ou qui n'a
 ' rien rendu, arrête les essais : les suivantes ne passeraient au milieu que
-' Nothing, 0 ou "" à la place du projet, et le bloc garde son code. V4 :
+' Nothing, 0 ou "" à la place du projet, et le bloc garde son code. Une seule
+' exception : une forme qui passe le projet au milieu, que SEE a fait tourner
+' SANS erreur mais qui n'a rien rendu dans la sortie (-1). La sortie serait
+' alors au milieu (SEE y aurait écrit) : un seul autre essai, (type, objet en
+' sortie, projet), puis plus rien. Après une erreur de SEE, pas d'autre essai
+' (le type d'objet serait en cause, et un projet nul pourrait le faire
+' tomber). V4 :
 ' (type, projet, objet en sortie), la même avec un Variant en sortie, l'objet
 ' rendu, les deux formes à deux arguments, d'autres valeurs au milieu
 ' (Nothing, 0, "", le projet passé dans un Variant), puis (type, objet en
@@ -1533,7 +1540,7 @@ End Function
 ' n'est plus essayée (CreationDObjets le dit). Un objet créé n'existe qu'en
 ' mémoire tant qu'il n'est pas ajouté au projet.
 Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
-    Dim o As Object, numErr As Long, descErr As String, forme As Variant
+    Dim o As Object, numErr As Long, descErr As String, forme As Variant, sortieAuMilieu As Boolean
     Set NouvelObjetAutomation = Nothing
     If mFormeCreation < 0 Then
         JournalErreur "CreateObject(" & typeObjet & ")", -1, "coclasse SeeAutomation : la création d'objets a été refusée " & _
@@ -1555,20 +1562,31 @@ Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
         Journal gEtape, gObjet, "CreateObject", "aucun projet ouvert par SeeAutomation.OpenProject : les formes qui passent le " & _
             "projet ne sont pas essayées"
     End If
+    sortieAuMilieu = False
     For Each forme In OrdreCreation()
-        If EssaiCreation(CInt(forme), typeObjet, o, numErr, descErr) Then
+        ' après une forme qui a tourné sans rien rendre : seulement (type, objet en sortie, projet)
+        If sortieAuMilieu And CInt(forme) <> FORME_SORTIE_AU_MILIEU Then
+        ElseIf EssaiCreation(CInt(forme), typeObjet, o, numErr, descErr) Then
             mFormeCreation = CInt(forme)
             Journal gEtape, gObjet, LibelleCreation(mFormeCreation, typeObjet), "ok (" & TypeName(o) & ") : forme retenue pour la " & _
                 "coclasse SeeAutomation, pour toute la suite de la macro"
             Set NouvelObjetAutomation = o
             Exit Function
-        End If
-        mCodesCreation = mCodesCreation & IIf(Len(mCodesCreation) > 0, " ; ", "") & FormeCreation(CInt(forme)) & " : " & CodeDeWindows(numErr)
-        Journal gEtape, gObjet, LibelleCreation(CInt(forme), typeObjet), "échec : " & ReponseDeWindows(numErr, descErr), numErr, descErr
-        ' une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode
-        If Not RefusAvantAppel(numErr) Then
-            Journal gEtape, gObjet, "CreateObject", "SEE a fait tourner cette forme : sa réponse est la bonne, les autres formes ne sont pas essayées"
-            Exit For
+        Else
+            mCodesCreation = mCodesCreation & IIf(Len(mCodesCreation) > 0, " ; ", "") & FormeCreation(CInt(forme)) & " : " & CodeDeWindows(numErr)
+            Journal gEtape, gObjet, LibelleCreation(CInt(forme), typeObjet), "échec : " & ReponseDeWindows(numErr, descErr), numErr, descErr
+            If sortieAuMilieu Then Exit For
+            ' une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode
+            If Not RefusAvantAppel(numErr) Then
+                If numErr = -1 And FormeAvecProjet(CInt(forme)) And CInt(forme) <> FORME_SORTIE_AU_MILIEU Then
+                    Journal gEtape, gObjet, "CreateObject", "SEE a fait tourner cette forme sans erreur, mais rien n'est revenu dans la " & _
+                        "sortie : un seul autre essai, " & FormeCreation(FORME_SORTIE_AU_MILIEU) & ", au cas où la sortie serait au milieu"
+                    sortieAuMilieu = True
+                Else
+                    Journal gEtape, gObjet, "CreateObject", "SEE a fait tourner cette forme : sa réponse est la bonne, les autres formes ne sont pas essayées"
+                    Exit For
+                End If
+            End If
         End If
     Next forme
     mFormeCreation = -1

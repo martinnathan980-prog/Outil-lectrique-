@@ -421,7 +421,8 @@ def bouton3(v, forme):
     ensuite, les boutons 1 et 2 n'ouvrent jamais le projet d'essai noté dans Projet (SU2) ; le chemin entier du projet
     n'est jamais montré (SU3) ; OpenEnvironment refusé : le dessin, Save et CloseProject passent quand même ; seul l'objet
     rendu marche : cette forme est retenue ; une forme se lit par le projet, jamais par un environnement. La relecture de
-    la v4 : la méthode qui tourne puis refuse, ou ne rend rien, ne tourne qu'une fois (EX1) ; un relevé interrompu est dit
+    la v4 : la méthode qui tourne puis refuse ne tourne qu'une fois (EX1) ; la v4.1 : celle qui tourne sans rien rendre
+    a un seul dernier essai, (type, objet en sortie, projet), retenu quand la sortie est au milieu ; un relevé interrompu est dit
     INTERROMPU, avec la famille et le code (EX2) ; des familles refusées sont comptées, la dernière avec son code (TE3) ;
     la colonne A de Sonde_Symboles reste étroite (TE4)."""
     rien = lambda ou: egal(f'{ou} : rien de fait (new:, copie, OpenProject, AddSheet, Save, CloseProject, Quit : 0)',
@@ -573,11 +574,15 @@ def bouton3(v, forme):
           (lambda s: 'création d\'objets : oui, forme retenue : CreateObject(type) -> objet rendu (avant : (type, projet, objet en sortie) : 450 (800A01C2), '
                      '(type, projet, Variant en sortie) : 450 (800A01C2))' in s) if v4 else
           (lambda s: 'création d\'objets : oui, forme retenue : CreateObject(type) -> objet rendu' in s and 'objet rendu (avant' not in s)),
-         # EX1 : la méthode TOURNE, puis refuse (1000) ou ne rend rien (-1) : une seule exécution, avec le projet au milieu ;
-         # aucune forme qui passe Nothing au milieu ou le projet en sortie ; le bloc garde le vrai code ; le relevé et la fermeture
-         *[x for ou, code in (('tourne et refuse', '1000 (800A03E8)'), ('tourne sans rien rendre', '-1')) for x in (
-             egal(f'{ou} : une seule exécution de CreateObject, le projet au milieu, une variable en sortie',
-                  dans(ou, r'appels (\d+ = .*?) ; chemin entier'), '1 = [milieu projet|sortie variable]'),
+         # EX1 : la méthode TOURNE, puis refuse (1000) : une seule exécution, avec le projet au milieu ; aucune forme qui passe
+         # Nothing au milieu ou le projet en sortie ; le bloc garde le vrai code ; le relevé et la fermeture. La v4.1 : elle
+         # tourne SANS erreur et ne rend rien (-1) : un seul dernier essai, (type, objet en sortie, projet), au cas où la sortie
+         # serait au milieu ; puis plus rien
+         *[x for ou, code, appels in (('tourne et refuse', '1000 (800A03E8)', '1 = [milieu projet|sortie variable]'),
+                                      ('tourne sans rien rendre', '-1, (type, objet en sortie, projet) : -1',
+                                       '2 = [milieu projet|sortie variable] [milieu autre|sortie le projet]')) for x in (
+             egal(f'{ou} : exécutions de CreateObject : ' + appels,
+                  dans(ou, r'appels (\d+ = .*?) ; chemin entier'), appels),
              egal(f'{ou} : copie 1, OpenProject 1, AddSheet 0, graphiques 0, Save 0, CloseProject 1, Quit 1',
                   (lambda t, o=ou: tuple(nombres(rf'{m} (\d+)', o)(t) for m in ('copies', 'OpenProject', 'AddSheet', 'graphiques', 'Save', 'CloseProject', 'Quit'))), (1, 1, 0, 0, 0, 1, 1)),
              releve(ou),
@@ -585,6 +590,17 @@ def bouton3(v, forme):
               lambda t, o=ou: partie(t, o),
               lambda s, c=code: f"création d'objets : REFUSÉE (codes : {avant_v5}(type, projet, objet en sortie) : {c})" in s
                   and "7. Enregistré = non : rien n'a été dessiné" in s and 'CloseProject(projet) : ok' in s and '9. SEE refermé = oui' in s))],
+         # la v4.1 : la sortie est au milieu : la forme 1 tourne sans rien rendre, puis (type, objet en sortie, projet) marche, est
+         # retenue, et dessine tout le folio ; le relevé et la fermeture comme le parcours complet
+         egal('sortie au milieu : les deux premières exécutions : la forme 1, puis (type, objet en sortie, projet)',
+              dans('sortie au milieu', r'appels \d+ = (\[[^\]]*\] \[[^\]]*\])'), '[milieu projet|sortie variable] [milieu autre|sortie le projet]'),
+         tout('sortie au milieu'),
+         releve('sortie au milieu'),
+         au_moins('sortie au milieu : le motif dessiné (au moins 5 objets graphiques)', nombres(r'graphiques (\d+)', 'sortie au milieu'), 5),
+         ('sortie au milieu : « oui, forme retenue : CreateObject(type, objet en sortie, projet) (avant : … (type, projet, objet en sortie) : -1) », enregistré, CloseProject(projet)',
+          lambda t: partie(t, 'sortie au milieu'),
+          lambda s: f"création d'objets : oui, forme retenue : CreateObject(type, objet en sortie, projet) (avant : {avant_v5}(type, projet, objet en sortie) : -1)" in s
+              and 'CloseProject(projet) : ok' in s and '9. SEE refermé = oui' in s),
          # la v4 : sous SeeAutomation, une forme se lit par le projet ouvert (ISEEProject.GetShape), jamais par l'environnement
          egal('forme par le projet : rendue, un Project.GetShape, aucun Environment.GetShape',
               nombres(r'Project\.GetShape (\d+) ; Environment\.GetShape au journal (\d+) ; Project\.GetShape au journal (\d+)', 'forme par le projet'), (1, 0, 1)),
