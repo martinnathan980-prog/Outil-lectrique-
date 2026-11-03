@@ -774,3 +774,38 @@ svg.vu-face .vu-ct-g.va:focus{outline:none}
 /* l'accueil (le lecteur : « le slogan, plus fin, plus discret ; le schéma, je le préférais un peu plus gros ») */
 .bi-accueil .bi-devise{margin-top:22px;font:400 clamp(14px,1.05vw,16px)/1.5 var(--sans);letter-spacing:.04em;color:rgba(229,156,100,.82)}
 .bi-vitrine.bi-hero{width:min(1400px,97vw,calc((100vh - 520px) * 4.2));margin:24px 0 20px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+
+
+/* ═══ v82 — LES FONDS (palette retenue après l’étude des couleurs) ═══ */
+/* ═══ PALETTE « Nuit bleue raffinée » ═══
+   La table garde la nuit bleue que le lecteur aime, mais plus claire en bas, moins saturée : une ardoise bleue,
+   plus une encre. Dessus, le cadre en graphite et le papier neutre : blanc pierre le jour, graphite chaud la nuit
+   (trois crans nets : la page, les cartes, la bande — la bande est la plus claire, elle se lit comme le menu).
+   Jetons : la table (--table-fond, --s-app, nappes, points), le cadre (#entete, --palet), le papier des feuilles
+   (--s-*, --t-*), la page sous les cartes (--v-fond), la bande d'onglets (--v-bande…), l'en-tête des tableaux
+   (--v-tete, --v-tete-t). ═══ */
+/* ─── le jour ─── */
+:root{--s-app:#18233a;--palet:rgba(30,31,35,.95);--palet-2:rgba(44,45,50,.97)}
+body:not(.biblio){--table-fond:radial-gradient(1100px 760px at 92% -12%,rgba(132,160,218,.24),rgba(132,160,218,0) 62%),linear-gradient(160deg,#26344f 0%,#1c2840 46%,#141d30 100%);--nappe-a:radial-gradient(closest-side,rgba(110,148,222,.18),rgba(110,148,222,.06) 48%,rgba(110,148,222,0));--nappe-b:radial-gradient(closest-side,rgba(64,118,168,.15),rgba(64,118,168,.05) 52%,rgba(64,118,168,0));--grille-repos:rgba(172,196,240,.12);--s-grille-revele:rgba(196,216,255,.30)}
+#entete{background:rgba(24,25,29,.95)}
+#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet{--s-surface:#ffffff;--s-sunken:#f5f4f0;--s-hover:#f0eee9;--s-line:#e6e3dc;--s-line-2:#d6d2c9;--s-flottant:#ffffff;--t-1:#1c1c1f;--t-2:#53555b;--t-3:#67696f;--accent-soft:#efede8;--accent-line:#cfcac0;--info-soft:#f1efea;--v-fond:#f0efea;--v-bande:#2b2d33;--v-bande-2:#373a41;--v-bande-t:#eef0f2;--v-bande-s:#aeb1b8;--v-tete:#efede7;--v-tete-t:#53555b;--v-carte-haut:transparent;--v-bande-att:#f2b55c;--v-bande-ko:#ff8f84;--filet-champ:#8c8e94}
+/* ─── la nuit : le réglage du système, puis le choix explicite ─── */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){--s-surface:#303136;--s-sunken:#27282c;--s-hover:#393a40;--s-line:#404248;--s-line-2:#50525a;--s-flottant:#36373c;--t-1:#f3f3f4;--t-2:#c3c5ca;--t-3:#a7a9af;--accent-soft:#393a40;--accent-line:#55575e;--info-soft:#2c2d31;--v-fond:#232428;--v-bande:#44464d;--v-bande-2:#50525a;--v-bande-t:#f4f4f5;--v-bande-s:#c0c2c8;--v-tete:#3a3b41;--v-tete-t:#c8cacf;--v-carte-haut:rgba(255,255,255,.035);--v-bande-att:#f5bd6a;--v-bande-ko:#ffa49b;--filet-champ:#8b8d94} }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){--s-surface:#303136;--s-sunken:#27282c;--s-hover:#393a40;--s-line:#404248;--s-line-2:#50525a;--s-flottant:#36373c;--t-1:#f3f3f4;--t-2:#c3c5ca;--t-3:#a7a9af;--accent-soft:#393a40;--accent-line:#55575e;--info-soft:#2c2d31;--v-fond:#232428;--v-bande:#44464d;--v-bande-2:#50525a;--v-bande-t:#f4f4f5;--v-bande-s:#c0c2c8;--v-tete:#3a3b41;--v-tete-t:#c8cacf;--v-carte-haut:rgba(255,255,255,.035);--v-bande-att:#f5bd6a;--v-bande-ko:#ffa49b;--filet-champ:#8b8d94}
+/* ─── les règles qui lisent les jetons (les mêmes dans les deux thèmes) ─── */
+/* l'en-tête des tableaux : une bande nette, un cran au-dessus des lignes */
+.nv-grand .nv-panneau .dj-entete,.nv-grand .nv-cables thead th,#fiche .nm>table.bible thead th{background:var(--v-tete)}
+.nv-grand .nv-panneau .dj-entete span,.nv-grand .nv-cables thead .nv-tri,#fiche .nm>table.bible thead th{color:var(--v-tete-t)}
+/* les états écrits sur la bande (un cran plus vifs sur une bande claire de nuit) */
+.nv-grand .nv-onglet .nv-o-s.att{color:var(--v-bande-att)}
+.nv-grand .nv-onglet .nv-o-s.ko{color:var(--v-bande-ko)}
+/* le récapitulatif : le rail des onglets sur la page (un cran plus bas), les titres des colonnes sur l'en-tête */
+#base .rc-onglets,:root[data-theme] #base .rc-onglets,:root:not([data-theme="light"]) #base .rc-onglets{background:var(--v-fond)}
+#base .rc-tab th,:root[data-theme] #base .rc-tab th,:root:not([data-theme="light"]) #base .rc-tab th{background:var(--v-tete);color:var(--v-tete-t)}
+/* une carte de section : son filet, un rien de lumière en haut la nuit (--v-carte-haut) */
+.nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.vu-schema,.fs-groupe,.nv-reg,.nv-table-c,.fi-ecarts,.v-carte,.fi-mesures),.nv-grand .nv-panneau>.fi-panneau>.nv-reg,
+#fiche .fiche-corps>:is(.hy-groupe,.no-section,.bl-auto,.bl-carnet,.co-bloc,.co-apercu,.ca-form,.ca-apercu,.bl-texte,.no-resume),#fiche .nm>:is(.nm-dom,.nm-etat,.bible-etat,.nm-import,.nm-resultats),#fiche .vf-cartes>.vf-carte{
+  box-shadow:inset 0 1px 0 var(--v-carte-haut),0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.05)}
+
+.nv-somm{box-shadow:inset 0 1px 0 var(--v-carte-haut),0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.05)}
