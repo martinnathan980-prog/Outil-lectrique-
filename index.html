@@ -7620,6 +7620,136 @@ body:not(.biblio){--table-fond:radial-gradient(1100px 760px at 92% -12%,rgba(132
 
 .nv-somm{box-shadow:inset 0 1px 0 var(--v-carte-haut),0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.05)}
 
+
+/* ═══ v82 — LA BEAUTÉ (relecture clair et sombre, retenue) ═══ */
+/* ─── 1 bis. LE GRAND À 1920 : la colonne de cartes au milieu de sa page ───────────────────────────────────────────────
+   Défaut : à 1920, les cartes (1040 px au plus) se calent à gauche ; 107 px de page vide à droite, leur bord droit ne
+   tombe plus sous celui de la bande d'onglets. Correction : la colonne centrée dans la page. */
+.nv-grand .nv-panneau{margin-inline:auto}
+/* la tête du grand, la nuit : un filet net sous elle, la bande commence franchement ; l'onglet ouvert, son filet de
+   cuivre vif ; les autres, l'encre claire presque pleine */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .nv-grand .nv-tete{box-shadow:inset 0 -1px 0 rgba(255,255,255,.06)}
+  :root:not([data-theme="light"]) .nv-grand .nv-onglet .nv-o-t{opacity:.9}
+  :root:not([data-theme="light"]) .nv-grand .nv-onglet[aria-selected="true"]::after{background:var(--v-cuivre-vif)} }
+:root[data-theme="dark"] .nv-grand .nv-tete{box-shadow:inset 0 -1px 0 rgba(255,255,255,.06)}
+:root[data-theme="dark"] .nv-grand .nv-onglet .nv-o-t{opacity:.9}
+:root[data-theme="dark"] .nv-grand .nv-onglet[aria-selected="true"]::after{background:var(--v-cuivre-vif)}
+
+/* ─── 2. LE TITRE DE LA CARTE : le genre au-dessus, le repère en grand — et le filigrane qui ne passe plus dessous ─────────
+   Défaut : « Barrette de jonction — 667VT21 » se coupe sur deux lignes ; « Prise — 408VC1A », « Barrette — 667VT21 » :
+   le filigrane (le symbole) se pose sur la fin du repère. Correction : le genre en sur-titre (petites capitales, l'encre
+   seconde), le repère seul en grand dessous — on lit « ce que c'est », puis « lequel » ; le titre est étroit, le coin
+   droit est libre : le filigrane s'y loge, plus petit, sans rien toucher. */
+.fi.nv-c .nc-tete{margin-top:-2px}
+.fi.nv-c .nc-tete .nc-titre{flex-direction:column;flex-wrap:nowrap;align-items:center;gap:2px;font-size:30px}
+.fi.nv-c .nc-titre .nc-tiret{display:none}
+.fi.nv-c .nc-titre .nc-genre-mot{font:650 var(--f-12)/1.3 var(--sans);letter-spacing:.11em;text-transform:uppercase;color:var(--t-2)}
+.fi.nv-c .nc-titre .nc-rep-in,.fi.nv-c .nc-titre .nc-rep-t{height:38px;font:700 30px/1 var(--sans);letter-spacing:-.025em;text-align:center}
+.fi.nv-c .nc-meta{margin-top:-6px}
+.fi.nv-c .nc-filigrane{top:-18px;right:-12px;width:96px;height:96px}
+
+/* ─── 3. LA SYNTHÈSE QUI TIENT : deux lignes par point, une vignette plafonnée ─────────────────────────────────────────
+   Défaut : dans la carte, chaque point s'écrit sur trois lignes en gras (« DR20 vers 103RL1:A1 : démarrage et transition
+   9,31 A / 2,1 min > 6,9 A admis en continu (× 0,6) ») : la section compacte redevient un pavé ; et la face d'un module de
+   18 contacts pousse la carte hors de l'écran (667VT21 montrée après 409GH2 : la carte reste à y = 413, plafonnée à 477 px,
+   « Tout voir » caché, elle défile). Correction : deux lignes par point au plus, le survol (ou le clavier) déplie, la bulle
+   dit tout ; le dessin de la vignette plafonné à 150 px ; un rythme un peu plus serré. Le vrai remède est dans 08-carte.js :
+   remonter la carte (y) quand son contenu dépasse, au lieu de la plafonner. */
+.fi.nv-c .nc-taches.nc-pbs .nc-t b.fi-pb-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.fi.nv-c .nc-taches.nc-pbs .nc-tache:is(:hover,:focus-within) .nc-t b.fi-pb-t{-webkit-line-clamp:unset}
+.fi.nv-c .nc-taches.nc-pbs .nc-tache{padding-top:7px;padding-bottom:7px}
+.fi.nv-c .nc{gap:14px}
+.fi.nv-c .nc-vignette{min-height:0;padding:12px 14px}
+.fi.nv-c .nc-vignette svg.vu-face{width:auto;max-height:150px}
+
+/* ─── 4. LA PRISE DE COUPURE : l'objet de la fiche en cuivre, une face qui a du relief ────────────────────────────────────
+   Défaut : tout est gris et noir ; la fiche et l'embase sont deux petites boîtes perdues sur le trait, la face est un cercle
+   pâle dans un grand cadre beige : « fade ». Correction : ce dont parle la fiche (la fiche, l'embase, leurs contacts) prend
+   le cuivre — le métal ; la face devient une vraie embase ronde (une coque épaisse, l'isolant en creux, le détrompeur en
+   cuivre, le contact pris en cuivre plein) posée sous une lumière douce. */
+.vu-trav :is(.bro-fiche,.bro-embase){fill:var(--nv-cuivre-soft);stroke:var(--nv-cuivre);stroke-width:1.6}
+.vu-trav .bro-borne{fill:var(--nv-cuivre);font-weight:700}
+.vu-trav .bro-cote{letter-spacing:.09em}
+.nv-grand .vu-bloc-face .vu-fig-module{border:0;border-radius:18px;padding:22px 40px 16px;
+  background:radial-gradient(closest-side,var(--s-surface) 0%,var(--s-surface) 55%,var(--s-sunken) 100%);box-shadow:inset 0 0 0 1px var(--s-line)}
+svg.vu-face circle.vu-corps{fill:var(--s-sunken);stroke:var(--t-1);stroke-width:3.2;paint-order:stroke;filter:drop-shadow(0 6px 10px rgba(0,0,0,.14))}
+svg.vu-face:has(circle.vu-corps) .vu-cle{fill:var(--nv-cuivre);stroke:none}
+svg.vu-face:has(circle.vu-corps) .vu-ct{fill:var(--s-surface);stroke:var(--t-2);stroke-width:1.3}
+svg.vu-face:has(circle.vu-corps) .vu-ct.pris{fill:var(--nv-cuivre);stroke:var(--nv-cuivre);filter:drop-shadow(0 2px 3px rgba(169,88,31,.35))}
+svg.vu-face:has(circle.vu-corps) text.pris{fill:#fff}
+.vu-bloc-face .vu-legende i.pris{background:var(--nv-cuivre);border-color:var(--nv-cuivre)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) svg.vu-face:has(circle.vu-corps) text.pris{fill:#1d1e22} }
+:root[data-theme="dark"] svg.vu-face:has(circle.vu-corps) text.pris{fill:#1d1e22}
+
+/* ─── 5. L'ONGLET « MODIFIER » : ce qui se change se voit d'un coup d'œil ────────────────────────────────────────────────
+   Défaut : une liste de libellés et de valeurs où rien ne dit ce qu'on peut toucher : « Changer », « D'où elle vient »,
+   « garder celui de votre fichier » sont des liens gris noyés dans le texte ; le contact à sertir, modifiable, a l'air
+   d'un texte ; ce qui est fixé (la référence de votre fichier) a la même tête que ce qui se règle. Correction :
+   · chaque réglage est une ligne nette (le libellé à gauche dans sa colonne, la valeur, un filet entre les lignes) ;
+   · ce qui se choisit est un CHAMP (bord fin, chevron, le cuivre au survol) ; les gestes (« Changer », « Options »,
+     « garder celui de votre fichier ») sont des boutons de cuivre ;
+   · ce qui vient du fichier reste du texte, sans cadre : on voit d'instinct ce qui est fixé et ce qui se règle ;
+   · le contact à sertir montre un crayon au survol de sa ligne. */
+.nv-grand #nv-p-reglages .fs-champs{display:flex;flex-direction:column;gap:0;width:100%;max-width:none;margin:2px 0 0}
+.nv-grand #nv-p-reglages .fs-champs>.fc{box-sizing:border-box;width:100%;max-width:none;align-self:stretch;display:grid;grid-template-columns:132px minmax(0,1fr);column-gap:16px;row-gap:6px;align-items:center;padding:12px 0;border-top:1px solid var(--s-line)}
+.nv-grand #nv-p-reglages .fs-champs>.fc:first-child{border-top:0;padding-top:4px}
+.nv-grand #nv-p-reglages .fs-champs>.fc>.fc-k{grid-column:1;font:550 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
+.nv-grand #nv-p-reglages .fs-champs>.fc>.fc-v{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.nv-grand #nv-p-reglages .fs-champs>.fc>.fc-sous{grid-column:2;margin:0;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+/* ce qui se choisit : un champ */
+.nv-grand #nv-p-reglages button.fi-norme-puce:not(.statique){display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 10px 0 12px;border:0;border-radius:10px;
+  background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line-2),0 1px 2px rgba(0,0,0,.05);font:600 var(--f-14)/1 var(--mono);color:var(--t-1);cursor:pointer;
+  transition:box-shadow var(--rapide),background var(--rapide)}
+.nv-grand #nv-p-reglages button.fi-norme-puce:not(.statique):hover{box-shadow:inset 0 0 0 1px var(--nv-cuivre),var(--anneau)}
+.nv-grand #nv-p-reglages button.fi-norme-puce:not(.statique) svg{color:var(--nv-cuivre)}
+/* ce qui est fixé : du texte, sans cadre */
+.nv-grand #nv-p-reglages .fi-norme-puce.statique{padding:0;background:none;box-shadow:none;border:0;font:600 var(--f-14)/1 var(--mono);color:var(--t-1)}
+/* les gestes : des boutons de cuivre */
+.nv-grand #nv-p-reglages :is(.fc-changer,.fi-options-b,.fi-ecart .fi-lien[data-garder]){display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:0;border-radius:9px;
+  background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne);color:var(--nv-cuivre);font:600 var(--f-13)/1 var(--sans);text-decoration:none;cursor:pointer;transition:box-shadow var(--rapide)}
+.nv-grand #nv-p-reglages :is(.fc-changer,.fi-options-b,.fi-ecart .fi-lien[data-garder]):hover{box-shadow:inset 0 0 0 1px var(--nv-cuivre),var(--anneau)}
+.nv-grand #nv-p-reglages :is(.fc-changer,.fi-options-b) svg{color:currentColor}
+/* « votre fichier donne… » : l'avant, sur une note de papier à la barre de cuivre — l'avant et l'après se lisent */
+.nv-grand #nv-p-reglages .fi-ecart{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:2px 0 0;padding:9px 12px;border-radius:10px;background:var(--s-sunken);box-shadow:inset 3px 0 0 var(--nv-cuivre)}
+.nv-grand #nv-p-reglages .fi-ecart .fi-ecart-r{flex-basis:100%;color:var(--t-3)}
+/* « D'où elle vient » : un lien discret, mais un lien (le cuivre) */
+.nv-grand #nv-p-reglages .fi-lien.pr-recit{color:var(--nv-cuivre);text-decoration:none;font-weight:600}
+/* le contact à sertir : il se change — un crayon au survol de sa ligne, le bord paraît */
+.nv-grand #nv-p-reglages .fi-sertir.ct-ref{position:relative;padding:4px 26px 4px 8px;margin-left:-8px;border-radius:8px;box-shadow:inset 0 0 0 1px transparent;transition:box-shadow var(--rapide),background var(--rapide)}
+.nv-grand #nv-p-reglages .fi-sertir.ct-ref::after{content:"";position:absolute;right:7px;top:50%;width:13px;height:13px;margin-top:-6.5px;background:var(--nv-crayon) center/contain no-repeat;opacity:0;transition:opacity var(--rapide)}
+.nv-grand #nv-p-reglages :is(.ct-ligne,.fi-cote):hover .fi-sertir.ct-ref,.nv-grand #nv-p-reglages .fi-sertir.ct-ref:focus-visible{background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.nv-grand #nv-p-reglages :is(.ct-ligne,.fi-cote):hover .fi-sertir.ct-ref::after,.nv-grand #nv-p-reglages .fi-sertir.ct-ref:focus-visible::after{opacity:1}
+/* le choix fiche mâle / femelle : un vrai sélecteur à deux parts égales */
+.nv-grand #nv-p-reglages .fi-seg-mini{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:3px;border-radius:10px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.nv-grand #nv-p-reglages .fi-seg-mini .fi-chip{justify-content:center;height:28px;padding:0 12px;border-radius:7px}
+.nv-grand #nv-p-reglages .fi-seg-mini .fi-chip[aria-pressed="true"]{background:var(--s-surface);box-shadow:0 1px 3px rgba(0,0,0,.14),inset 0 0 0 1px var(--nv-cuivre-ligne);color:var(--t-1)}
+
+/* ─── 6. LE RÉCAPITULATIF : l'en-tête des colonnes en bandeau, le jour aussi ; les colonnes réparties ───────────────────
+   Défaut (clair) : la ligne des titres est blanche sur blanc — l'œil ne sépare pas l'en-tête des lignes ; les colonnes se
+   tassent à gauche et la dernière (vide) prend toute la place qui reste : la moitié droite du tableau est un grand blanc.
+   Correction : la ligne des titres sur la teinte « en creux » (comme la nuit, en plus doux) ; la colonne de la croix a sa
+   largeur juste, les autres se partagent la place. */
+#base .rc-tab th{background:var(--s-sunken)}
+#base .rc-tab :is(th,td).rc-suppr{width:44px}
+/* les liaisons : la flèche occupe sa colonne — toutes de la même longueur (la case du type a sa largeur fixe), et plus
+   de grand blanc entre la flèche et « Vers » */
+#base .rc-tab[data-onglet="liaisons"] .rc-fleche{flex:1 1 auto;width:auto;min-width:56px;max-width:none}
+
+/* ─── 7. L'ACCUEIL : l'ensemble au centre de l'écran, les cartes du bas alignées sur les gestes ──────────────────────────
+   Défaut : à 1440 × 900, tout est poussé en haut (36 px au-dessus du nom, 130 px de vide sous les cartes) ; les deux cartes
+   du bas ne s'alignent pas sur les deux gestes du dessus. Correction : l'ensemble centré verticalement ; la rangée du bas
+   a la largeur de la rangée des gestes. */
+.bi-accueil .bi-vide-centre{justify-content:center;padding-top:0;padding-bottom:2vh}
+.bi-accueil .bi-dock{margin-top:22px}
+.bi-accueil .bi-tuile,.bi-accueil .bi-dock .bi-demo .bi-carte-corps.bi-tuile{width:288px;min-width:288px;max-width:288px}
+
+/* ─── 8. LES CAPITALES GARDENT LEURS ACCENTS ─────────────────────────────────────────────────────────────────────────────
+   Défaut : sous les chiffres de la carte, « DÉMARRAGE » s'affiche « DEMARRAGE », « CÂBLES » « CABLES » : le libellé a une
+   hauteur de ligne de 11 px et coupe ce qui dépasse (overflow:hidden) — l'accent des capitales est rogné. En français,
+   les capitales s'accentuent. Correction : une hauteur de ligne qui laisse la place à l'accent. */
+.nc-chiffre .nc-k{line-height:1.4;padding-top:1px}
+
 /* ───────── style-visio.css ───────── */
 /* ─── LIRE UN SCHÉMA VISIO (08-visio) ───────────────────────────────────────────────────────────────────────────────
    La pièce est celle du lecteur de PDF (style-pdf.css : la table, les vignettes et les outils en palets, la relecture
@@ -19820,8 +19950,12 @@ function placerPres(b, W, H, v, diag) { const Z = zoneDeLaCarte(), e = CARTE_AIR
   return Z.R - (b.left + b.width) >= b.left - Z.L ? { x: cl(droite, Z.L, Z.R - W), y: yA } : { x: cl(gauche, Z.L, Z.R - W), y: yA }; }
 /* la poser : sa place et sa hauteur au plus (--carte-x, --carte-y, --carte-hmax, style.css) ; `h` : plus courte que l'écran
    ne le permet (posée au-dessus de son bloc) ; jamais tout à fait hors de l'écran */
-function poserCarte(x, y, h) { const s = $('inspecteur').style, Z = zoneDeLaCarte();
+function poserCarte(x, y, h) { const el = $('inspecteur'), s = el.style, Z = zoneDeLaCarte();
   x = Math.max(Z.L - 40, Math.min(Z.R - 120, x)); y = Math.max(Z.T - 2, Math.min(Z.B - 56, y));
+  // (v82, la relecture : « la carte reste à sa place et se plafonne : “Tout voir” caché, elle défile ») : la carte qui ne tient
+  // pas sous sa place remonte — sa hauteur entière, d'abord ; le plafond seulement si l'écran entier est trop court
+  if (!CARTE.grande) { s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - Z.T)) + 'px'); const besoin = el.offsetHeight || 0;
+    if (besoin && y + besoin > Z.B) y = Math.max(Z.T, Z.B - besoin); }
   s.setProperty('--carte-x', Math.round(x) + 'px'); s.setProperty('--carte-y', Math.round(y) + 'px'); s.setProperty('--carte-l', CARTE_L() + 'px');
   // (tirée à une taille, elle la garde : la place trouvée près du bloc ne la raccourcit pas)
   // (v82, le lecteur : « la synthèse doit s'adapter : tantôt il faut défiler, tantôt la fenêtre est trop grande et rien
@@ -30812,7 +30946,7 @@ const COLONNES_EQUIPEMENTS = [COL_REPERE,
   { k: 'nature', t: 'Type', cls: 'rc-c-nature', html: r => { const d = natureDite(r.nom);
       return `<span class="rc-nature">${valT('nature', majuscule(natureDe(r.nom)), { titre: (d ? 'Dit à la main ; le code du repère dit « ' + natureAuto(r.nom) + ' »' : 'Lu dans le code du repère') + ' — double-clic pour le changer' })}${d ? orig('main') + rond('nature', 'le type que dit le code (' + natureAuto(r.nom) + ')') : ''}</span>`; },
     tri: r => natureDe(r.nom), texte: r => majuscule(natureDe(r.nom)) },
-  { k: 'norme', t: 'Norme', cls: 'rc-c-norme', html: r => { const N = normesDuRepere(r.nom); return N.length ? `<span class="rc-norme" data-bulle="${escA(N.flatMap(n => n.cs).join('\n'))}">${N.map(n => esc(n.norme)).join('<i class="rc-pt">·</i>')}</span>` : rien; },
+  { k: 'norme', t: 'Norme', cls: 'rc-c-norme', si: () => memo('eq-normes', () => reperes().some(r => r.genre === 'eqpt' && normesDuRepere(r.nom).length)), html: r => { const N = normesDuRepere(r.nom); return N.length ? `<span class="rc-norme" data-bulle="${escA(N.flatMap(n => n.cs).join('\n'))}">${N.map(n => esc(n.norme)).join('<i class="rc-pt">·</i>')}</span>` : rien; },
     tri: r => normesDuRepere(r.nom).map(n => n.norme).join(' '), texte: r => normesDuRepere(r.nom).map(n => n.norme).join(' · ') },
   COL_PROBLEMES,
   { k: 'des', t: 'Désignation', option: true, g: 'Ce qu’il est', html: r => valT('des', app.contrat.designations.get(r.nom) || '', { cls: 'rc-texte', ph: 'à écrire' }), tri: r => app.contrat.designations.get(r.nom) || '', texte: r => app.contrat.designations.get(r.nom) || '' },

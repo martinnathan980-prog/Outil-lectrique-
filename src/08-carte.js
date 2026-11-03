@@ -171,8 +171,12 @@ function placerPres(b, W, H, v, diag) { const Z = zoneDeLaCarte(), e = CARTE_AIR
   return Z.R - (b.left + b.width) >= b.left - Z.L ? { x: cl(droite, Z.L, Z.R - W), y: yA } : { x: cl(gauche, Z.L, Z.R - W), y: yA }; }
 /* la poser : sa place et sa hauteur au plus (--carte-x, --carte-y, --carte-hmax, style.css) ; `h` : plus courte que l'écran
    ne le permet (posée au-dessus de son bloc) ; jamais tout à fait hors de l'écran */
-function poserCarte(x, y, h) { const s = $('inspecteur').style, Z = zoneDeLaCarte();
+function poserCarte(x, y, h) { const el = $('inspecteur'), s = el.style, Z = zoneDeLaCarte();
   x = Math.max(Z.L - 40, Math.min(Z.R - 120, x)); y = Math.max(Z.T - 2, Math.min(Z.B - 56, y));
+  // (v82, la relecture : « la carte reste à sa place et se plafonne : “Tout voir” caché, elle défile ») : la carte qui ne tient
+  // pas sous sa place remonte — sa hauteur entière, d'abord ; le plafond seulement si l'écran entier est trop court
+  if (!CARTE.grande) { s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - Z.T)) + 'px'); const besoin = el.offsetHeight || 0;
+    if (besoin && y + besoin > Z.B) y = Math.max(Z.T, Z.B - besoin); }
   s.setProperty('--carte-x', Math.round(x) + 'px'); s.setProperty('--carte-y', Math.round(y) + 'px'); s.setProperty('--carte-l', CARTE_L() + 'px');
   // (tirée à une taille, elle la garde : la place trouvée près du bloc ne la raccourcit pas)
   // (v82, le lecteur : « la synthèse doit s'adapter : tantôt il faut défiler, tantôt la fenêtre est trop grande et rien

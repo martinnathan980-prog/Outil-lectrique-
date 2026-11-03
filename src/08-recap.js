@@ -390,7 +390,7 @@ const COLONNES_EQUIPEMENTS = [COL_REPERE,
   { k: 'nature', t: 'Type', cls: 'rc-c-nature', html: r => { const d = natureDite(r.nom);
       return `<span class="rc-nature">${valT('nature', majuscule(natureDe(r.nom)), { titre: (d ? 'Dit à la main ; le code du repère dit « ' + natureAuto(r.nom) + ' »' : 'Lu dans le code du repère') + ' — double-clic pour le changer' })}${d ? orig('main') + rond('nature', 'le type que dit le code (' + natureAuto(r.nom) + ')') : ''}</span>`; },
     tri: r => natureDe(r.nom), texte: r => majuscule(natureDe(r.nom)) },
-  { k: 'norme', t: 'Norme', cls: 'rc-c-norme', html: r => { const N = normesDuRepere(r.nom); return N.length ? `<span class="rc-norme" data-bulle="${escA(N.flatMap(n => n.cs).join('\n'))}">${N.map(n => esc(n.norme)).join('<i class="rc-pt">·</i>')}</span>` : rien; },
+  { k: 'norme', t: 'Norme', cls: 'rc-c-norme', si: () => memo('eq-normes', () => reperes().some(r => r.genre === 'eqpt' && normesDuRepere(r.nom).length)), html: r => { const N = normesDuRepere(r.nom); return N.length ? `<span class="rc-norme" data-bulle="${escA(N.flatMap(n => n.cs).join('\n'))}">${N.map(n => esc(n.norme)).join('<i class="rc-pt">·</i>')}</span>` : rien; },
     tri: r => normesDuRepere(r.nom).map(n => n.norme).join(' '), texte: r => normesDuRepere(r.nom).map(n => n.norme).join(' · ') },
   COL_PROBLEMES,
   { k: 'des', t: 'Désignation', option: true, g: 'Ce qu’il est', html: r => valT('des', app.contrat.designations.get(r.nom) || '', { cls: 'rc-texte', ph: 'à écrire' }), tri: r => app.contrat.designations.get(r.nom) || '', texte: r => app.contrat.designations.get(r.nom) || '' },
