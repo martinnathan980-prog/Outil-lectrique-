@@ -110,7 +110,9 @@ function faceVue(contacts, etatDe, o) { o = o || {}; const n = (contacts || []).
   const cle = c => (+c.r || 0) + ':' + (+c.c || 0), sienDe = new Map(); grp.forEach((g, k) => g.contacts.forEach(c => sienDe.set(cle(c), k)));
   const zones = grp.map((g, k) => `<g class="vu-zone-g"><path class="vu-zone${g.couleur ? '' : ' libre'}" d="${faceZone(g, contacts, P, rho, R, p)}"${g.couleur ? ` style="--zc:${escA(g.couleur)}"` : ''}/>${contacts.filter(c => sienDe.get(cle(c)) === k).map(ct).join('')}</g>`).join('');
   const cts = contacts.filter(c => !sienDe.has(cle(c))).map(ct).join('');
-  return `<svg class="vu-face${o.mini ? ' mini' : ''}${grp.length ? ' a-zones' : ''}" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${o.w || W}" role="img" aria-label="${escA(o.titre || 'La face')}">${corps}${zones}${cts}</svg>`; }
+  // (v84) `echelle` : la face agrandie d'un même facteur, quel que soit le module — deux modules montrent des contacts de
+  // même taille (un module de dix contacts n'est plus deux fois plus gros qu'un de dix-huit)
+  return `<svg class="vu-face${o.mini ? ' mini' : ''}${grp.length ? ' a-zones' : ''}" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${o.w || Math.round(W * (o.echelle || 1))}" role="img" aria-label="${escA(o.titre || 'La face')}">${corps}${zones}${cts}</svg>`; }
 const legendeFaceVue = (avecKo) => `<p class="vu-legende"><span><i class="pris"></i>pris</span><span><i></i>libre</span>${avecKo ? '<span><i class="ko"></i>refusé</span>' : ''}</p>`;
 
 /* ---- CE QU'IL TIRE, CE QU'IL TIENT (un disjoncteur) : le démarrage et le permanent en barres, sur l'échelle des

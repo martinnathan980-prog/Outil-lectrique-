@@ -276,8 +276,9 @@ function ficheHarnais(r, nom) { const H = r.harnais.map(h => { const L = r.liais
 function lireCollage(texte) { const brutes = lignesDuTexte(texte), pleines = brutes.filter(l => l.trim());
   if (!pleines.length) return { liaisons: [], rejets: [], comment: '' };
   const rt = trouverEnteteRetest(brutes);
-  if (rt) { const r = lireTexte(texte), n = brutes.slice(rt.ligne + 1).filter(l => l.trim()).length - ((r.entetes || 1) - 1);   // les lignes sous les en-têtes
-    return { liaisons: r.liaisons, rejets: Array.from({ length: Math.max(0, n - r.liaisons.length) }), comment: 'reconnues à leurs en-têtes (l’installation, ligne ' + r.entete + ')' }; }
+  // les lignes sous les en-têtes qui ne donnent pas de liaison entière : un bout vide, ou rien (02, `incompletes`, `laissees`)
+  if (rt) { const r = lireTexte(texte), n = (r.incompletes || 0) + (r.laissees || []).length;
+    return { liaisons: r.liaisons, rejets: Array.from({ length: n }), comment: 'reconnues à leurs en-têtes (l’installation, ligne ' + r.entete + ')' }; }
   const D = devinerTableau(pleines), lu = lireAvecCarte(pleines, D.map, D.debut);
   return { ...lu, comment: D.entete && D.devine ? 'colonnes devinées à leurs en-têtes : ' + comprisHtml(D) : 'lues dans l’ordre ci-dessus' }; }
 /* Le plan sur la table reçoit les lignes (« Ajouter au plan ») ou les prend à la place des siennes (« Remplacer le plan » :
@@ -288,7 +289,7 @@ function ficheColler() { const ouvert = verite().length > 0 && !bibliothequeOuve
      coller d'un clic), le champ, ce qui est compris. */
   const corps = tete('Entrées', 'Coller des lignes')
     // (v84) « 1, 2, 3 » (la charte) : copier, coller, relire — le détail (l'ordre, les séparateurs) dans les sections dessous
-    + '<ol class="doc-etapes"><li><b>Copiez</b> vos lignes d’Excel : une liaison par ligne</li><li><b>Collez-les</b> plus bas, avec les en-têtes de l’installation ou dans l’ordre ci-dessous</li><li><b>Relisez</b> ce que VOLTA comprend, puis ajoutez-les au plan</li></ol>'
+    + '<ol class="doc-etapes"><li><b>Copiez</b> vos lignes d’Excel, une liaison par ligne</li><li><b>Collez-les</b> dans « Vos lignes »</li><li><b>Relisez</b>, puis ajoutez-les au plan</li></ol>'
     + `<section class="co-bloc"><h3 class="co-etiquette">Sans en-têtes, dans cet ordre<small>séparées par une tabulation, « ; » ou « , » — seuls les deux équipements sont obligatoires</small></h3>`
     + `<ol class="co-ordre">${MODELE_COLLAGE.entetes.map((t, i) => `<li${MODELE_COLLAGE.requises.includes(t) ? ' class="req"' : ''}><i>${i + 1}</i>${esc(t)}</li>`).join('')}</ol></section>`
     + `<section class="co-bloc co-exemple"><h3 class="co-etiquette">Par exemple<button class="btn lien" id="co-essai">Coller cet exemple</button></h3>${apercuHtml(MODELE_COLLAGE)}</section>`

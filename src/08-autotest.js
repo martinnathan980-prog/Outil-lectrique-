@@ -40,7 +40,7 @@ function montrerAT(ou, fait, total, mots) { const el = panneauAT(); el.hidden = 
    bilan (false : ne pas rouvrir le bilan à la fin — les bancs) } */
 async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assign({ listes: true, budget: AUTOTEST.budget }, o || {});
   if (!verite().length) { dire('Aucun plan ouvert : ouvrez votre installation, puis relancez l’autotest.', true); return; }
-  const T0 = performance.now(), P = plans(), depart = app.plan, R = { quand: Date.now(), genres: {}, vides: 0, coupe: '', exports: [], listes: 0, sections: 0, folios: P.length };
+  const T0 = performance.now(), P = plans(), depart = app.plan, R = { quand: Date.now(), genres: {}, vides: 0, coupe: '', exports: [], listes: 0, listesSautees: 0, sections: 0, folios: P.length }, listesVues = new Set();
   Object.assign(AUTOTEST, { enCours: true, stop: false, erreurs: [], etape: '', captures: [] });
   const echap = e => { if (e.key === 'Escape' && AUTOTEST.enCours) { AUTOTEST.stop = true; e.preventDefault(); e.stopPropagation(); } }; window.addEventListener('keydown', echap, true);
   // la console qui crie pendant le parcours, et les téléchargements (fabriqués, jamais enregistrés)
@@ -70,10 +70,25 @@ async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assi
     const rendre = () => { if (enGrand) try { reduireFiche(); } catch (_) { } };
     if (!o.listes) { rendre(); return; }
     const cles = [...new Set([...box.querySelectorAll('[data-changer]')].map(b => b.dataset.changer))].slice(0, 12);
+    /* (v84, la vitesse : sur le plan géant, douze listes par fiche refaisaient la fiche entière douze fois — l'essentiel des
+       4 minutes) Les listes d'une fiche IDENTIQUE à une fiche déjà parcourue — même genre, mêmes câbles (type, bornes, part
+       numbers, la nature de l'autre bout), les repères réduits à leur code — ont déjà été ouvertes : la fiche se rend et ses
+       sections se déplient, ses listes ne se rouvrent pas. Un vrai fichier a des dizaines de relais câblés pareil. */
+    const sig = signatureDeFicheAT(app.cible, cles); if (sig && listesVues.has(sig)) { R.listesSautees++; rendre(); return; } if (sig) listesVues.add(sig);
     for (const k of cles) { if (fini()) { rendre(); return; } AUTOTEST.etape = ou + ' · une liste « Changer »';
       try { FI.liste = k; rendreFiche(); R.listes++; } catch (e) { noterErreurAT('liste', (e && e.message) || e, pileCourte(e)); }
       await pauseAT(0); }
     try { FI.liste = ''; rendreFiche(); } catch (_) { } rendre(); };
+  // un export : fabriqué (jamais enregistré), l'installation corrigée par son relevé ; ce qu'il a fabriqué se note
+  const exporter = async exps => { exps = exps.filter(a => MENU.actions[a] && !(o.sauter || []).includes(a));
+    for (let k = 0; k < exps.length && !fini(); k++) { montrerAT('les exports', k, exps.length, 'export ' + exps[k]); const avant = AUTOTEST.captures.length;
+      await etape('export', 'export ' + exps[k], async () => { await MENU.actions[exps[k]](); await pauseAT(200);
+        // l'installation corrigée passe par son relevé (ce qui change, puis « Enregistrer ») : on l'enregistre
+        if (AUTOTEST.captures.length === avant && $('rv-enregistrer')) $('rv-enregistrer').click(); const t = performance.now();
+        while (AUTOTEST.captures.length === avant && performance.now() - t < 30000 && !AUTOTEST.stop) await pauseAT(100);
+        if (AUTOTEST.captures.length === avant && !AUTOTEST.stop) throw new Error('l’export n’a rien fabriqué en 30 s');
+        const c = AUTOTEST.captures[AUTOTEST.captures.length - 1]; if (c) R.exports.push(exps[k] + ' .' + c.ext + ' ' + Math.max(1, Math.round(c.taille / 1024)) + ' Ko'); });
+      try { fermerFiche(true); } catch (_) { } } };
   try {
     // 1. CE QUI VAUT POUR TOUT LE PLAN D'ABORD (arrêté tôt, l'essentiel est vu) : le contrôle, en entier
     if (!fini()) { montrerAT('le contrôle', 0, 1, ''); await etape('contrôle', 'le contrôle du contrat', () => { controleDuContrat(); }); }
@@ -89,6 +104,9 @@ async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assi
       await etape('document', 'document « ' + (MOTS_DOCS[docs[k]] || docs[k]) + ' »', async () => { MENU.actions[docs[k]](); await pauseAT(120);
         if ($('fiche').hidden && !(typeof bibliothequeOuverte === 'function' && bibliothequeOuverte())) throw new Error('le document ne s’est pas ouvert'); });
       try { fermerFiche(true); if (typeof fermerBibliotheque === 'function' && typeof bibliothequeOuverte === 'function' && bibliothequeOuverte()) fermerBibliotheque(); } catch (_) { } }
+    /* 3 bis. LES EXPORTS DE DONNÉES (v84 : sur le plan géant, le temps limite tombait avant eux — l'installation corrigée n'était
+       jamais fabriquée) : l'installation corrigée, le suivi, la nomenclature ne dépendent d'aucun folio : ils passent tôt */
+    await exporter(['retestcorrige', 'suivi', 'nomenclaturecsv']);
     // 4. LES FOLIOS, puis sur chacun ses blocs et ses câbles
     for (let i = 0; i < P.length && !fini(); i++) { const p = P[i], fo = folioDe(p) || 'le plan';
       montrerAT(fo, i, P.length, 'le dessin du folio');
@@ -105,16 +123,8 @@ async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assi
         montrerAT(fo, i + .6 + k / Math.max(1, fils.length) * .4, P.length, `câble ${k + 1} / ${fils.length} · ${pl(AUTOTEST.erreurs.length, 'erreur')}`);
         await etape('câble', ou, async () => { choisirFil(f); await exercerFiche(ou); }); }
       try { deselectionner(); fermerInspecteur(); } catch (_) { } }
-    // 5. LES EXPORTS (fabriqués, jamais enregistrés ; le dossier PDF de tous les folios, le plus long, en dernier)
-    const exps = ['retestcorrige', 'suivi', 'nomenclaturecsv', 'svg', 'png', 'dossierpdf'].filter(a => MENU.actions[a] && !(o.sauter || []).includes(a));
-    for (let k = 0; k < exps.length && !fini(); k++) { montrerAT('les exports', k, exps.length, 'export ' + exps[k]); const avant = AUTOTEST.captures.length;
-      await etape('export', 'export ' + exps[k], async () => { await MENU.actions[exps[k]](); await pauseAT(200);
-        // l'installation corrigée passe par son relevé (ce qui change, puis « Enregistrer ») : on l'enregistre
-        if (AUTOTEST.captures.length === avant && $('rv-enregistrer')) $('rv-enregistrer').click(); const t = performance.now();
-        while (AUTOTEST.captures.length === avant && performance.now() - t < 30000 && !AUTOTEST.stop) await pauseAT(100);
-        if (AUTOTEST.captures.length === avant && !AUTOTEST.stop) throw new Error('l’export n’a rien fabriqué en 30 s');
-        const c = AUTOTEST.captures[AUTOTEST.captures.length - 1]; if (c) R.exports.push(exps[k] + ' .' + c.ext + ' ' + Math.max(1, Math.round(c.taille / 1024)) + ' Ko'); });
-      try { fermerFiche(true); } catch (_) { } }
+    // 5. LES EXPORTS DU DESSIN (le folio affiché ; le dossier PDF de tous les folios, le plus long, en dernier)
+    await exporter(['svg', 'png', 'dossierpdf']);
   } finally {
     R.coupe = AUTOTEST.stop ? 'arrêté à la main' : performance.now() - T0 > o.budget ? 'temps limite atteint (' + msLisible(o.budget) + ')' : '';
     R.duree = performance.now() - T0; R.erreurs = AUTOTEST.erreurs.slice(); AUTOTEST.resultat = R;
@@ -124,6 +134,17 @@ async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assi
     try { FI.liste = ''; fermerBase(); fermerFiche(true); deselectionner(); fermerInspecteur(); if (depart && plans().includes(depart)) allerAuPlan(depart); } catch (_) { }
     dire(`Autotest ${R.coupe ? 'arrêté' : 'fini'} en ${msLisible(R.duree)} : ${pl(R.erreurs.length, 'erreur')}${R.vides ? ', ' + pl(R.vides, 'fiche non rendue', 'fiches non rendues') : ''}. Le résultat est dans le bilan anonyme.`, !!R.erreurs.length);
     if (o.bilan !== false && typeof ficheBilan === 'function') ficheBilan(); } }
+/* LA SIGNATURE D'UNE FICHE D'OBJET, pour ses listes « Changer » (v84) : son genre et son code, ses listes, chacun de ses câbles
+   réduit à ce que la fiche en lit (le type, la route, la longueur, ses bornes et part numbers, le code de l'autre bout) et
+   les choix du contrat qui le nomment (désignations, sexes, raccords, profil de charge). Les repères ne comptent que par leur
+   code : 1101BT1 et 2101BT1 câblés pareil ont la même. '' : pas de signature (la fiche d'un câble : toujours parcourue). */
+function signatureDeFicheAT(c, cles) { if (!c || c.type !== 'bloc' || !c.nom) return ''; const nom = c.nom;
+  const code = r => { const q = lireRepere(r); return q ? q.code : String(r == null ? '' : r); };
+  const L = verite().filter(l => liaisonComplete(l) && (l.de === nom || l.vers === nom));
+  const xs = L.map(l => { const ici = l.de === nom ? [l.borneDe, l.pnDe, l.vers === nom ? '=' : code(l.vers), l.borneVers, l.pnVers] : [l.borneVers, l.pnVers, code(l.de), l.borneDe, l.pnDe];
+    return JSON.stringify([l.type, l.route, l.longueur || 0, ...ici]); }).sort();
+  const choix = ['designations', 'sexes', 'raccords', 'charges'].map(m => { const M = app.contrat[m], out = []; if (M && M.forEach) M.forEach((v, k) => { if (String(k).includes(nom)) out.push(String(k).split(nom).join('#') + '=' + JSON.stringify(v)); }); return out.sort().join(','); });
+  return genreDeFiche(nom) + '|' + code(nom) + '|' + cles.join(',') + '|' + xs.join(';') + '|' + choix.join('/'); }
 const genreDeFiche = r => VT_A_POSER.test(r || '') ? 'barrette ajoutée' : estMasse(r) ? 'masse' : estDisjoncteur(r) ? 'disjoncteur' : estBarrette(r) ? 'barrette' : estCoupure(r) ? 'prise' : 'équipement';
 
 /* CE QUE L'AUTOTEST DIT DANS LE BILAN : la durée, chaque genre (combien, la moyenne, le plus long et où), les erreurs
@@ -131,7 +152,7 @@ const genreDeFiche = r => VT_A_POSER.test(r || '') ? 'barrette ajoutée' : estMa
 function sectionAutotest(masque) { const R = AUTOTEST.resultat; if (!R) return ['pas encore lancé (⋮ › Plus › Autotest du plan, ou le bouton du bilan)'];
   const G = Object.entries(R.genres).map(([g, x]) => `${g} : ${x.n} en ${msLisible(x.ms)} (moyenne ${msLisible(x.ms / x.n)}, le plus long ${msLisible(x.max)} — ${x.ouMax})`);
   return [`lancé le ${new Date(R.quand).toLocaleString('fr-FR')} · ${msLisible(R.duree)}${R.coupe ? ' · ' + R.coupe : ' · parcours complet'}`,
-    `${pl(R.folios, 'folio')} · ${pl(R.sections, 'section dépliée', 'sections dépliées')} · ${pl(R.listes, 'liste « Changer » ouverte', 'listes « Changer » ouvertes')}`, ...G,
+    `${pl(R.folios, 'folio')} · ${pl(R.sections, 'section dépliée', 'sections dépliées')} · ${pl(R.listes, 'liste « Changer » ouverte', 'listes « Changer » ouvertes')}${R.listesSautees ? ` (celles de ${pl(R.listesSautees, 'fiche câblée comme une autre déjà vue', 'fiches câblées comme une autre déjà vue')} : non rouvertes)` : ''}`, ...G,
     R.exports.length ? 'exports fabriqués (rien d’enregistré) : ' + R.exports.join(' · ') : '',
     R.vides ? `${pl(R.vides, 'fiche non rendue', 'fiches non rendues')} (le rendu a échoué sans le dire)` : 'fiches non rendues : aucune',
     R.erreurs.length ? `${pl(R.erreurs.length, 'erreur')} :` : 'erreurs : aucune',

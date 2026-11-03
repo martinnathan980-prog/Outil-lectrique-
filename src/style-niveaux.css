@@ -77,10 +77,10 @@ body.insp-grand #inspecteur .nv-poignee :is(button,input){cursor:pointer}
 .nc-tete .nc-sym{width:58px;height:58px}
 .nc-sym svg{width:38px;height:38px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .nc-tete-t{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
-.nc-genre-mot{min-width:0;padding:3px 0 1px;font:650 var(--f-12)/1.4 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nc-genre-mot{min-width:0;padding:3px 0 1px;font:600 var(--f-12)/1.4 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nc-rep{display:flex;align-items:center;min-width:0;max-width:100%}
 .nc-rep-in,.nc-rep-t{min-width:3ch;max-width:100%;height:40px;margin:0 0 0 -7px;padding:0 7px;border:1px solid transparent;border-radius:var(--r-btn);background:none;color:var(--t-1);
-  font:650 30px/1 var(--mono);letter-spacing:-.025em;text-overflow:ellipsis;transition:background var(--rapide),border-color var(--rapide)}
+  font:600 30px/1 var(--mono);letter-spacing:-.025em;text-overflow:ellipsis;transition:background var(--rapide),border-color var(--rapide)}
 .nc-rep-t{display:flex;align-items:center;font-family:var(--sans);font-size:26px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden}
 .nc-rep-in:hover{background:var(--s-hover);cursor:text}
 .nc-rep-in:focus{outline:none;border-color:var(--nv-cuivre);background:var(--s-surface);box-shadow:var(--anneau)}
@@ -105,7 +105,7 @@ body.insp-grand #inspecteur .nv-poignee :is(button,input){cursor:pointer}
 .nc-rond svg.ico{width:13px;height:13px;stroke-width:2.4}
 .nc-tache.ko .nc-rond{background:var(--ko-soft);color:var(--ko)}
 .nc-t{min-width:0;display:flex;flex-direction:column;gap:2px;margin:0;padding:1px 0;border:0;background:none;color:var(--t-1);font:inherit;text-align:left;cursor:pointer}
-.nc-t b{font:650 var(--f-14)/1.3 var(--sans);letter-spacing:-.005em;text-wrap:pretty}
+.nc-t b{font:600 var(--f-14)/1.3 var(--sans);letter-spacing:-.005em;text-wrap:pretty}
 .nc-tache.ko .nc-t b{color:var(--ko)}
 .nc-t small{font:400 var(--f-13)/1.42 var(--sans);color:var(--t-2);text-wrap:pretty}
 button.nc-t:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:4px}
@@ -127,23 +127,23 @@ button.nc-chiffre{cursor:pointer}
 button.nc-chiffre:hover .nc-k{color:var(--t-1)}
 button.nc-chiffre:hover .nc-v{color:var(--nv-cuivre)}
 button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:4px}
-.nc-k{max-width:100%;font:650 var(--f-11)/1.3 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color var(--rapide)}
-.nc-v{display:block;max-width:100%;min-height:30px;font:650 24px/1.25 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color var(--rapide)}
-.nc-v small{margin-left:3px;font:550 var(--f-13) var(--sans);letter-spacing:0;color:var(--t-2)}
-.nc-v .id{font:650 var(--f-16)/1.5 var(--mono);letter-spacing:-.015em}
+.nc-k{max-width:100%;font:600 var(--f-11)/1.3 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color var(--rapide)}
+.nc-v{display:block;max-width:100%;min-height:30px;font:600 24px/1.25 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color var(--rapide)}
+.nc-v small{margin-left:3px;font:500 var(--f-13) var(--sans);letter-spacing:0;color:var(--t-2)}
+.nc-v .id{font:600 var(--f-16)/1.5 var(--mono);letter-spacing:-.015em}
 .nc-chiffre.ko .nc-v{color:var(--ko)}
 .nc-chiffre.att .nc-v{color:var(--warn)}
 /* une valeur qui s'écrit (le type, la longueur d'un câble) : la valeur est le champ */
 .nc-chiffre.edit .nc-v{display:flex;align-items:baseline;justify-content:center;overflow:visible}
-.nc-chiffre .fc-in{height:32px;margin:0;padding:0 6px;font:650 var(--f-20)/1 var(--sans);min-width:3ch;text-align:center}
+.nc-chiffre .fc-in{height:32px;margin:0;padding:0 6px;font:600 var(--f-20)/1 var(--sans);min-width:3ch;text-align:center}
 .nc-chiffre .nv-type-ed{display:flex;align-items:center;justify-content:center;gap:1px}
-.nc-chiffre .nv-type-ed .fc-in,.nc-chiffre .nv-type-ed select{font:650 var(--f-16)/1 var(--mono)}
+.nc-chiffre .nv-type-ed .fc-in,.nc-chiffre .nv-type-ed select{font:600 var(--f-16)/1 var(--mono)}
 .nc-chiffre .nv-type-ed .fc-in.cb-fam{width:4.4ch;min-width:4.4ch;field-sizing:fixed}
 .nc-chiffre .cb-sel select{height:32px;border:1px solid transparent;border-radius:var(--r-1);background:none;color:var(--t-1);padding:0 2px}
 .nc-chiffre .cb-sel select:hover{background:var(--s-hover)}
 /* le pied : « Tout voir », seul */
 .fi-pied.nc-pied{position:static;display:block;margin:0;padding:0 0 16px;border:0;background:none;box-shadow:none}
-.nc-tout{width:100%;height:44px;display:flex;align-items:center;justify-content:center;gap:6px;margin:0;border:1px solid var(--s-line-2);border-radius:12px;background:var(--s-surface);color:var(--t-1);font:650 var(--f-14) var(--sans);cursor:pointer;
+.nc-tout{width:100%;height:44px;display:flex;align-items:center;justify-content:center;gap:6px;margin:0;border:1px solid var(--s-line-2);border-radius:12px;background:var(--s-surface);color:var(--t-1);font:600 var(--f-14) var(--sans);cursor:pointer;
   transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
 .nc-tout svg.ico{width:16px;height:16px;transition:transform var(--rapide)}
 .nc-tout:hover{border-color:var(--nv-cuivre-ligne);background:var(--nv-cuivre-soft);color:var(--nv-cuivre)}
@@ -153,33 +153,33 @@ button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offse
 .vu-calv{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
 .vu-calv-l{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 6px}
 .vu-c{display:flex;flex-direction:column;align-items:center;gap:4px}
-.vu-c b{display:grid;place-items:center;min-width:36px;height:32px;padding:0 6px;border-radius:9px;background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ok) 32%,transparent);font:650 var(--f-13)/1 var(--sans);font-variant-numeric:tabular-nums}
+.vu-c b{display:grid;place-items:center;min-width:36px;height:32px;padding:0 6px;border-radius:9px;background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ok) 32%,transparent);font:600 var(--f-13)/1 var(--sans);font-variant-numeric:tabular-nums}
 .vu-c.non b{background:color-mix(in srgb,var(--ko) 10%,transparent);color:var(--ko);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ko) 28%,transparent)}
 .vu-c.ret b{background:var(--ok);color:#fff;box-shadow:0 6px 14px -6px color-mix(in srgb,var(--ok) 70%,transparent);transform:scale(1.1)}
 .vu-c.ret.non b{background:var(--ko)}
 .vu-c.act b{box-shadow:inset 0 0 0 1.5px currentColor;outline:1.5px dashed currentColor;outline-offset:2px}
-.vu-c small{height:13px;font:650 10.5px/13px var(--sans);color:var(--t-2);white-space:nowrap}
+.vu-c small{height:13px;font:600 10.5px/13px var(--sans);color:var(--t-2);white-space:nowrap}
 .vu-c.ret small{color:var(--ok)}
 .vu-c.ret.non small{color:var(--ko)}
 /* les connecteurs d'un équipement, d'un coup d'œil */
 .vu-cons{display:flex;flex-direction:column;gap:10px;width:100%}
 .vu-con{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:12px;text-align:left}
-.vu-con-l{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:var(--t-1);color:var(--t-inverse);font:650 var(--f-14)/1 var(--mono)}
+.vu-con-l{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:var(--t-1);color:var(--t-inverse);font:600 var(--f-14)/1 var(--mono)}
 .vu-con.ko .vu-con-l{background:var(--ko);color:#fff}
 .vu-con-t{min-width:0;display:flex;flex-direction:column;gap:6px}
 .vu-con-t .id{font:600 var(--f-13)/1.2 var(--mono);color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vu-con-t small{font:550 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.vu-con-t small{font:500 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
 .vu-con.ko .vu-con-t small{color:var(--ko)}
 .vu-con-b{display:block;height:6px;border-radius:3px;background:var(--s-line);overflow:hidden}
 .vu-con-b i{display:block;height:100%;border-radius:3px;background:var(--nv-cuivre)}
-.vu-con-n{font:650 var(--f-15)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
-.vu-con-n small{margin-left:1px;font:550 var(--f-12) var(--sans);color:var(--t-2)}
+.vu-con-n{font:600 var(--f-15)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
+.vu-con-n small{margin-left:1px;font:500 var(--f-12) var(--sans);color:var(--t-2)}
 
 /* ─── LE TRAJET D'UN CÂBLE : un bout, la ligne à la couleur de sa route, l'autre bout ─── */
 .nv-trajet{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0}
 .nv-bout{display:inline-flex;align-items:baseline;gap:1px;height:32px;padding:0 11px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);color:var(--t-1);cursor:pointer;line-height:30px;transition:border-color var(--rapide),background var(--rapide)}
 .nv-bout:hover{border-color:var(--nv-cuivre-ligne);background:var(--nv-cuivre-soft)}
-.nv-bout b{font:650 var(--f-13) var(--mono)}
+.nv-bout b{font:600 var(--f-13) var(--mono)}
 .nv-bout i{font:500 var(--f-12) var(--mono);color:var(--t-2)}
 .nv-trajet-f{flex:1 1 18px;min-width:18px;max-width:72px;height:4px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
 .nv-trajet-via{font:500 var(--f-12) var(--sans);color:var(--t-2)}
@@ -210,7 +210,7 @@ button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offse
 .nv-onglet{position:relative;flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:4px;min-width:104px;max-width:220px;height:58px;margin:0;padding:0 14px;border:0;border-radius:10px;background:none;
   color:var(--t-2);font:inherit;text-align:left;cursor:pointer;transition:color var(--rapide),background var(--rapide),box-shadow var(--rapide)}
 .nv-onglet:hover{color:var(--t-1);background:color-mix(in srgb,var(--s-surface) 60%,transparent)}
-.nv-o-t{font:650 var(--f-15)/1.2 var(--sans);letter-spacing:-.01em;white-space:nowrap}
+.nv-o-t{font:600 var(--f-15)/1.2 var(--sans);letter-spacing:-.01em;white-space:nowrap}
 .nv-o-s{display:inline-flex;align-items:center;gap:5px;max-width:100%;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nv-o-s:is(.ok,.att,.ko)::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--ok)}
 .nv-o-s.att{color:var(--warn)}
@@ -241,8 +241,8 @@ button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offse
 
 /* la liste à gauche : une colonne en retrait ; chaque objet, son point d'état, son repère, ce qu'il est, ses folios */
 .nv-liste{min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--s-line);background:var(--s-sunken)}
-.nv-liste-t{flex:none;display:flex;align-items:baseline;gap:8px;padding:18px 16px 10px;font:650 var(--f-12) var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-2)}
-.nv-liste-t>b{font-weight:650;color:var(--t-1)}
+.nv-liste-t{flex:none;display:flex;align-items:baseline;gap:8px;padding:18px 16px 10px;font:600 var(--f-12) var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-2)}
+.nv-liste-t>b{font-weight:600;color:var(--t-1)}
 .nv-liste-t>span{font:600 var(--f-12) var(--sans);letter-spacing:0;text-transform:none;color:var(--t-3)}
 .nv-liste-t .nv-liste-ko{margin-left:auto;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--ko);color:var(--t-inverse);font:700 var(--f-11)/1 var(--sans)}
 .nv-liste-f{flex:none;margin:0 12px 8px;height:32px}
@@ -287,7 +287,7 @@ th[aria-sort="ascending"] .nv-tri-f,th[aria-sort="descending"] .nv-tri-f{color:v
 .nv-td-vers small{font:500 var(--f-11) var(--mono);color:var(--t-2)}
 .nv-cab-i{display:grid;grid-template-columns:minmax(48px,72px) auto;align-items:center;gap:8px}
 .nv-cab-i .cb-i-v{font-size:var(--f-12);color:var(--t-2)}
-.nv-cab-i .cb-i-v b{font-weight:650;color:var(--t-1)}
+.nv-cab-i .cb-i-v b{font-weight:600;color:var(--t-1)}
 .nv-cab-i.ko .cb-i-v b{color:var(--ko)}
 .nv-sur{margin-left:4px;font:500 var(--f-11) var(--sans);color:var(--t-2)}
 .nv-cab-lg{display:inline-flex;align-items:center;gap:3px}
@@ -307,7 +307,7 @@ th[aria-sort="ascending"] .nv-tri-f,th[aria-sort="descending"] .nv-tri-f{color:v
 
 /* ═══ LES VUES — la pièce dessinée, et pourquoi elle est ainsi (08-vues) ═══════════════════════════════════════════════ */
 .vu-bloc{display:flex;flex-direction:column;gap:12px;margin:0}
-.vu-titre{display:flex;align-items:baseline;gap:10px;margin:0;font:650 var(--f-12)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2)}
+.vu-titre{display:flex;align-items:baseline;gap:10px;margin:0;font:600 var(--f-12)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2)}
 .vu-titre>span{font:500 var(--f-12) var(--sans);letter-spacing:0;text-transform:none;color:var(--t-3)}
 .vu-note{margin:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty}
 .vu-legende{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2)}
@@ -334,7 +334,7 @@ svg.vu-face .vu-cle{fill:var(--s-line-2)}
 svg.vu-face .vu-ct{fill:var(--s-surface);stroke:var(--t-3);stroke-width:1.4;transition:r var(--rapide)}
 svg.vu-face .vu-ct.pris{fill:var(--t-1);stroke:var(--t-1)}
 svg.vu-face .vu-ct.ko{fill:var(--ko);stroke:var(--ko)}
-svg.vu-face text{font:650 9px var(--mono);fill:var(--t-2);text-anchor:middle;pointer-events:none}
+svg.vu-face text{font:600 9px var(--mono);fill:var(--t-2);text-anchor:middle;pointer-events:none}
 svg.vu-face text.long{font-size:7px}
 svg.vu-face text.pris{fill:var(--t-inverse)}
 svg.vu-face text.ko{fill:#fff}
@@ -345,7 +345,7 @@ svg.vu-face.vu-vide .vu-corps{stroke-dasharray:4 4}
 /* les faces en vignette (la carte) : chacune son nom, ses contacts pris */
 .vu-faces{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:14px 18px}
 .vu-face-v{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px}
-.vu-face-v b{font:650 var(--f-12)/1 var(--mono);color:var(--t-1)}
+.vu-face-v b{font:600 var(--f-12)/1 var(--mono);color:var(--t-1)}
 .vu-face-v small{font:500 var(--f-11)/1 var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
 .vu-face-v.ko b{color:var(--ko)}
 /* ce qu'il tire contre ses calibres */
@@ -361,9 +361,9 @@ svg.vu-charge line.vu-fic{stroke:var(--ko);stroke-width:1.6;stroke-dasharray:4 3
 /* les textes des dessins */
 :is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) text{font:500 12px var(--sans);fill:var(--t-2)}
 :is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) .vu-t-pied{font:600 10.5px var(--sans);text-anchor:middle;font-variant-numeric:tabular-nums}
-:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) .vu-t-fort,:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) tspan.vu-t-fort{font:650 12.5px var(--sans);fill:var(--t-1);font-variant-numeric:tabular-nums}
+:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) .vu-t-fort,:is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) tspan.vu-t-fort{font:600 12.5px var(--sans);fill:var(--t-1);font-variant-numeric:tabular-nums}
 :is(svg.vu-charge,svg.vu-arbre,svg.vu-chemin) .vu-t-ko{font:600 11.5px var(--sans);fill:var(--ko)}
-:is(svg.vu-arbre,svg.vu-chemin) .vu-t-mono{font:650 12.5px var(--mono);fill:var(--t-1)}
+:is(svg.vu-arbre,svg.vu-chemin) .vu-t-mono{font:600 12.5px var(--mono);fill:var(--t-1)}
 :is(svg.vu-arbre,svg.vu-chemin) tspan.vu-t{font:500 11.5px var(--mono);fill:var(--t-2)}
 :is(svg.vu-arbre,svg.vu-chemin) .vu-milieu{text-anchor:middle}
 :is(svg.vu-arbre,svg.vu-chemin) .vu-petit{font-size:10px}
@@ -395,12 +395,12 @@ svg.vu-chemin .vu-via{fill:var(--s-surface);stroke:var(--s-line-2);stroke-width:
 .vu-tr-t>span:first-child{text-align:right}
 .vu-tr-l{min-height:36px;border-radius:var(--r-1);transition:background var(--rapide)}
 .vu-tr-l:hover{background:var(--s-hover)}
-.vu-tr-p b{display:grid;place-items:center;width:28px;height:28px;margin:0 auto;border-radius:50%;background:var(--t-1);color:var(--t-inverse);font:650 var(--f-12)/1 var(--mono)}
+.vu-tr-p b{display:grid;place-items:center;width:28px;height:28px;margin:0 auto;border-radius:50%;background:var(--t-1);color:var(--t-inverse);font:600 var(--f-12)/1 var(--mono)}
 .vu-tr-c{display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer}
 .vu-tr-c.g{justify-content:flex-end}
 .vu-tr-c.vide{color:var(--t-3);cursor:default}
 .vu-tr-c.g.vide{justify-content:flex-end}
-.vu-tr-c b{font:650 var(--f-13) var(--mono);white-space:nowrap}
+.vu-tr-c b{font:600 var(--f-13) var(--mono);white-space:nowrap}
 .vu-tr-c small{font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .vu-tr-c.ko b{color:var(--ko)}
 .vu-route{flex:none;width:22px;height:4px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-2))}
@@ -408,7 +408,7 @@ svg.vu-chemin .vu-via{fill:var(--s-surface);stroke:var(--s-line-2);stroke-width:
 .vu-pots{display:flex;flex-direction:column;gap:6px}
 .vu-pot{display:grid;grid-template-columns:12px auto minmax(0,1fr);align-items:start;column-gap:10px;padding:8px 10px;border-radius:var(--r-2);background:color-mix(in srgb,var(--c) 7%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 22%,transparent)}
 .vu-pot>i{width:12px;height:12px;margin-top:3px;border-radius:50%;background:var(--c)}
-.vu-pot>b{font:650 var(--f-13)/1.5 var(--mono);color:var(--c);white-space:nowrap}
+.vu-pot>b{font:600 var(--f-13)/1.5 var(--mono);color:var(--c);white-space:nowrap}
 .vu-pot>span{display:flex;flex-wrap:wrap;gap:4px 6px;min-width:0}
 .vu-pot em{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:12px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line);font:500 var(--f-12)/1 var(--mono);font-style:normal;color:var(--t-1);white-space:nowrap;cursor:pointer}
 .vu-pot em:hover{box-shadow:0 0 0 1px var(--c)}
@@ -436,11 +436,11 @@ svg.vu-chemin .vu-via{fill:var(--s-surface);stroke:var(--s-line-2);stroke-width:
 .vu-pq li+li{border-top:1px solid var(--s-line)}
 /* le fil des étapes : un trait fin d'un numéro à l'autre */
 .vu-pq li:not(:last-child)::after{content:"";position:absolute;left:11.5px;top:34px;bottom:-8px;width:1px;background:var(--s-line-2)}
-.vu-pq-n{z-index:1;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2);font:650 var(--f-12)/1 var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums}
+.vu-pq-n{z-index:1;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2);font:600 var(--f-12)/1 var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums}
 .vu-pq li.att .vu-pq-n{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn)}
 .vu-pq li.ko .vu-pq-n{background:var(--ko-soft);box-shadow:inset 0 0 0 1px var(--ko);color:var(--ko)}
 .vu-pq-t{min-width:0;padding-top:2px;font:400 var(--f-14)/1.5 var(--sans);color:var(--t-1);text-wrap:pretty}
-.vu-pq-t b{font-weight:650}
+.vu-pq-t b{font-weight:600}
 .vu-pq-t .id{font-size:.94em}
 .vu-pq li.ko .vu-pq-t{color:var(--ko)}
 .vu-src{--sc:var(--t-2);align-self:start;margin-top:3px;display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:11px;white-space:nowrap;
@@ -457,12 +457,12 @@ svg.vu-chemin .vu-via{fill:var(--s-surface);stroke:var(--s-line-2);stroke-width:
 /* LA FABRICATION : tout ce qu'il faut pour monter la pièce, groupé, compté par référence */
 .vu-fab{display:flex;flex-direction:column;gap:14px}
 .vu-fab-g{border:1px solid var(--s-line);border-radius:14px;overflow:hidden;background:var(--s-surface)}
-.vu-fab-g h4{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:0;padding:12px 16px;background:var(--s-sunken);border-bottom:1px solid var(--s-line);font:650 var(--f-14)/1.3 var(--sans);color:var(--t-1)}
+.vu-fab-g h4{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:0;padding:12px 16px;background:var(--s-sunken);border-bottom:1px solid var(--s-line);font:600 var(--f-14)/1.3 var(--sans);color:var(--t-1)}
 .vu-fab-g h4 .id{font:600 var(--f-13) var(--mono);color:var(--t-1)}
 .vu-fab-g h4 small{margin-left:auto;font:500 var(--f-12) var(--sans);color:var(--t-2)}
 .vu-fab-l{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;column-gap:12px;padding:10px 16px}
 .vu-fab-l+.vu-fab-l{border-top:1px solid var(--s-line)}
-.vu-q{font:650 var(--f-16)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
+.vu-q{font:600 var(--f-16)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
 .vu-q small{margin-left:2px;font:500 var(--f-12) var(--sans);color:var(--t-3)}
 .vu-r{min-width:0;display:flex;flex-direction:column;gap:2px}
 .vu-r b{font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
@@ -473,7 +473,7 @@ svg.vu-chemin .vu-via{fill:var(--s-surface);stroke:var(--s-line-2);stroke-width:
 .vu-cals{display:flex;flex-wrap:wrap;gap:8px}
 button.vu-cal{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:62px;height:58px;margin:0;padding:0 10px;border:1px solid var(--s-line-2);border-radius:12px;background:var(--s-surface);color:var(--t-1);cursor:pointer;
   transition:border-color var(--rapide),background var(--rapide),transform var(--rapide)}
-button.vu-cal b{font:650 var(--f-20)/1 var(--sans);font-variant-numeric:tabular-nums}
+button.vu-cal b{font:600 var(--f-20)/1 var(--sans);font-variant-numeric:tabular-nums}
 button.vu-cal small{font:600 var(--f-11)/1 var(--sans);color:var(--t-2)}
 button.vu-cal::before{content:"";position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--ok)}
 button.vu-cal.non::before{background:var(--ko)}
@@ -523,7 +523,7 @@ body.insp-epingle:not(.insp-grand) #inspecteur .carte-bords{display:none}
 .vu-pq-l li::after{content:none!important}
 .vu-pq-l li i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .vu-pq-l li.ko i{background:var(--ko)}
-.vu-pq-l li.ret span{font-weight:650}
+.vu-pq-l li.ret span{font-weight:600}
 @keyframes vu-allume{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--nv-cuivre) 55%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
 .vu-allume{animation:vu-allume 1.2s ease-out 1;border-radius:12px}
 /* les groupes reliés d'une barrette : un trait pâle passe par leurs contacts */
@@ -533,7 +533,7 @@ svg.vu-face .vu-bus-g.libre{stroke:var(--t-3);opacity:.1}
 .vu-legende i.ret{background:var(--nv-cuivre);box-shadow:none}
 .vu-legende i.act{background:none;box-shadow:none;outline:1.5px dashed var(--t-2);outline-offset:-1px}
 button.vu-cal small:empty{display:none}
-button.vu-cal b small{margin-left:1px;font:550 var(--f-12) var(--sans);color:var(--t-2)}
+button.vu-cal b small{margin-left:1px;font:500 var(--f-12) var(--sans);color:var(--t-2)}
 
 /* ─── (v78) LE PROFIL DE CHARGE dans le grand : un tableau serré — le nom, le courant, la durée, côte à côte (le lecteur :
    « c'est à gauche, puis un grand espace ») ; chaque état sur une ligne en carte douce ─── */
@@ -541,7 +541,7 @@ button.vu-cal b small{margin-left:1px;font:550 var(--f-12) var(--sans);color:var
 .nv-panneau .dj-etats{max-width:560px;margin:0;gap:4px}
 .nv-panneau .dj-entete,.nv-panneau .dj-etat{grid-template-columns:10px minmax(120px,1fr) 120px 120px 28px;column-gap:14px}
 .nv-panneau .dj-entete{border-bottom:0;min-height:24px}
-.nv-panneau .dj-entete span{font:650 var(--f-11)/1 var(--sans);letter-spacing:.06em;text-transform:uppercase}
+.nv-panneau .dj-entete span{font:600 var(--f-11)/1 var(--sans);letter-spacing:.06em;text-transform:uppercase}
 .nv-panneau .dj-etat{min-height:46px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);border-radius:10px}
 .nv-panneau .dj-etat:hover{background:var(--s-hover)}
 .nv-panneau .dj-etat .dj-nom{font-weight:600}
@@ -581,7 +581,7 @@ body.insp-flotte #inspecteur.taillee{height:var(--carte-h)}
 /* le titre : le genre, un tiret, le repère — même police, même taille, même graisse */
 .nc{position:relative;isolation:isolate}
 .nc-tete{display:flex;justify-content:center;margin:2px 0 0}
-.nc-titre{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0 10px;min-width:0;font:650 22px/1.25 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
+.nc-titre{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0 10px;min-width:0;font:600 22px/1.25 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
 .nc-titre .nc-genre-mot{padding:0;font:inherit;letter-spacing:inherit;text-transform:none;color:var(--t-1);overflow:visible}
 .nc-tiret{color:var(--t-3);font-weight:400}
 .nc-titre .nc-rep{display:inline-flex}
@@ -645,13 +645,13 @@ svg.vu-arbre .vu-an-v,svg.vu-anneau .vu-an-v{animation:vu-anneau .9s var(--courb
 /* LES CÂBLES, en nomenclature */
 .nv-mes{display:inline-flex;align-items:center;gap:10px}
 .nv-mes-t{display:flex;flex-direction:column;gap:1px;line-height:1.2}
-.nv-mes-t b{font:650 var(--f-14) var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
+.nv-mes-t b{font:600 var(--f-14) var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
 .nv-mes-t small{font:500 var(--f-11) var(--sans);color:var(--t-3)}
 .nv-vers{display:inline-flex;align-items:center;gap:8px}
-.nv-vers b{font:650 var(--f-13) var(--mono);color:var(--t-1)}
+.nv-vers b{font:600 var(--f-13) var(--mono);color:var(--t-1)}
 .nv-borne{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:600 var(--f-11) var(--sans);color:var(--t-2);white-space:nowrap}
 .nv-cab-lg{display:inline-flex;align-items:baseline;gap:4px}
-.nv-cab-lg b{font:650 var(--f-14) var(--sans)}
+.nv-cab-lg b{font:600 var(--f-14) var(--sans)}
 .nv-supp{margin-left:4px;font:600 var(--f-11) var(--sans);font-style:normal;color:var(--warn)}
 .nv-panneau .nv-cables td{padding:10px 10px;vertical-align:middle}
 .nv-panneau .nv-cables th .nv-tri{padding:0 10px}
@@ -662,15 +662,15 @@ svg.vu-arbre .vu-an-v,svg.vu-anneau .vu-an-v{animation:vu-anneau .9s var(--courb
 .vu-br-l[data-i]{cursor:pointer;transition:background var(--rapide),box-shadow var(--rapide)}
 .vu-br-l[data-i]:hover,.vu-br-l.vise{background:var(--s-hover);box-shadow:inset 0 0 0 1px var(--s-line-2)}
 .vu-br-l.ko{box-shadow:inset 3px 0 0 var(--ko),inset 0 0 0 1px var(--s-line)}
-.vu-br-tete{min-height:24px;background:none;box-shadow:none;font:650 var(--f-11)/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-3)}
-.vu-br-pin{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--t-1);color:var(--t-inverse);font:650 var(--f-12)/1 var(--mono)}
+.vu-br-tete{min-height:24px;background:none;box-shadow:none;font:600 var(--f-11)/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-3)}
+.vu-br-pin{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--t-1);color:var(--t-inverse);font:600 var(--f-12)/1 var(--mono)}
 .vu-br-l.ko .vu-br-pin{background:var(--ko);color:#fff}
 .vu-br-cab{display:inline-flex;align-items:center;gap:8px}
-.vu-br-cab b{font:650 var(--f-13) var(--mono)}
+.vu-br-cab b{font:600 var(--f-13) var(--mono)}
 .vu-br-fl{display:grid;place-items:center;color:var(--t-3)}
 .vu-br-fl svg.ico{width:14px;height:14px}
 .vu-br-vers{display:inline-flex;align-items:center;gap:8px;min-width:0}
-.vu-br-vers b{font:650 var(--f-13) var(--mono)}
+.vu-br-vers b{font:600 var(--f-13) var(--mono)}
 .vu-br-vers small{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:600 var(--f-11) var(--sans);color:var(--t-2);white-space:nowrap}
 .vu-br-sertir{font:500 var(--f-12) var(--mono);color:var(--t-2);text-align:right;white-space:nowrap}
 
@@ -686,11 +686,11 @@ svg.vu-arbre tspan.vu-t-sur{font:500 11.5px var(--sans);fill:var(--t-3)}
 /* (v78c) L'ONGLET « MODIFIER » EN CARTES : un titre, une phrase qui dit ce que ça change, le réglage — rien d'autre */
 .nv-reg{margin:0 0 14px;padding:16px 18px 18px;border-radius:14px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line)}
 .nv-reg-t{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:4px;align-items:start;margin:0 0 14px}
-.nv-reg-t h4{grid-column:1;margin:0;font:650 var(--f-14)/1.3 var(--sans);color:var(--t-1)}
+.nv-reg-t h4{grid-column:1;margin:0;font:600 var(--f-14)/1.3 var(--sans);color:var(--t-1)}
 .nv-reg-t p{grid-column:1;margin:0;max-width:62ch;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
 .nv-reg-d{grid-column:2;grid-row:1 / span 2;align-self:center}
 .nv-reg-c>.fs-groupe:first-child{margin-top:0;padding-top:0;border-top:0}
-.nv-reg-c .fs-groupe>.fs-st{font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-3)}
+.nv-reg-c .fs-groupe>.fs-st{font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-3)}
 .nv-reg-nom .nv-des{display:block;margin:0}
 .nv-reg-nom .nc-des{width:100%;height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--s-line-2);background:var(--s-sunken);font:500 var(--f-14) var(--sans);color:var(--t-1)}
 .nv-reg-nom .nc-des:focus{outline:none;border-color:var(--nv-cuivre);box-shadow:var(--anneau)}

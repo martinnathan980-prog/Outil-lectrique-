@@ -1,0 +1,122 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE CADRE — le dernier mot (v84, « graphite et cuivre »). Chargé APRÈS toutes les feuilles (construire.js : style.css,
+   puis les style-*.css par ordre alphabétique) : ce qui suit l'emporte sur les couches anciennes.
+   1. LA TABLE DU PLAN, en GRAPHITE CHAUD (la nuit) : des couches plus anciennes (style-table.css, style-v79.css) la
+      peignaient encore en bleu nuit, à même `body` — on la reprend ici, à la même place. L'accueil (`body.biblio`) garde
+      la sienne (le graphite d'atelier, style-v79.css).
+   2. LE JOUR DU PLAN : la table devient une PIERRE CLAIRE chaude, le folio blanc s'en détache d'une ombre fine et d'un
+      liseré ; le cadre (barre du haut, rail, folios, zoom, menus, mot qui passe, outils d'un PDF) devient CLAIR, la bulle
+      devient sombre, le cuivre se fonce pour rester net sur le clair. Deux blocs aux mêmes valeurs : le réglage du
+      système, puis le choix explicite (data-theme) — comme la nuit dans style.css.
+   3. CE QUE LES COUCHES ANCIENNES ÉCRIVAIENT EN DUR dans le cadre (style-v79.css : la barre du haut, la recherche, les
+      rubriques d'Exporter ; style-table.css : la lueur et le courant de la table) : repris avec les jetons.
+   Les jetons eux-mêmes sont décrits en tête de style.css.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. LA BASE : le graphite (style.css le pose ; style-v79.css le redéfinissait plus bas, on le reprend) ─── */
+:root{--s-app:#211f1d;--palet:rgba(54,50,46,.96);--palet-2:rgba(64,60,55,.97)}
+/* la table du plan, la nuit : le graphite chaud, une lumière de cuivre au coin haut-droit ; deux nappes à peine teintées
+   (cuivre, lin) qui dérivent ; les points de lin ; le courant, un trait de cuivre */
+body:not(.biblio){--s-app:#211f1d;
+  --table-fond:radial-gradient(1100px 760px at 92% -12%,rgba(236,165,112,.10),rgba(236,165,112,0) 62%),radial-gradient(900px 640px at -6% 108%,rgba(255,236,216,.04),rgba(255,236,216,0) 60%),linear-gradient(160deg,#2b2826 0%,#232120 48%,#1b1918 100%);
+  --nappe-a:radial-gradient(closest-side,rgba(236,165,112,.075),rgba(236,165,112,.025) 50%,rgba(236,165,112,0));
+  --nappe-b:radial-gradient(closest-side,rgba(255,236,216,.05),rgba(255,236,216,.018) 52%,rgba(255,236,216,0));
+  --grille-repos:rgba(255,236,216,.075); --s-grille-revele:rgba(255,236,216,.22);
+  --courant:linear-gradient(90deg,rgba(236,165,112,0),rgba(236,165,112,.75) 70%,#ffd7b8)}
+/* la lueur qui suit la souris et le courant : la lumière de la table (style-table.css les écrivait en bleu) */
+body:not(.biblio) #table .ta-lueur{background:var(--table-lueur)}
+body:not(.biblio) #table .ta-courant{box-shadow:0 0 6px 1px color-mix(in srgb,var(--glace) 35%,transparent)}
+body:not(.biblio) #table .ta-courant::after{background:color-mix(in srgb,var(--glace) 30%,#fff);box-shadow:0 0 8px 2px color-mix(in srgb,var(--glace) 55%,transparent)}
+
+/* ─── 2. LE JOUR DU PLAN — le réglage du système ─── */
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]) body:not(.biblio){
+    /* la table : la pierre claire, une lumière blanche au coin haut-droit, un rien de cuivre en bas à gauche */
+    --s-app:#e6e2db;
+    --table-fond:radial-gradient(1200px 820px at 90% -12%,rgba(255,255,255,.75),rgba(255,255,255,0) 60%),radial-gradient(1000px 720px at -4% 110%,rgba(169,88,31,.055),rgba(169,88,31,0) 60%),linear-gradient(160deg,#efece6 0%,#e7e3dc 48%,#ddd8d0 100%);
+    --nappe-a:radial-gradient(closest-side,rgba(255,255,255,.5),rgba(255,255,255,.16) 50%,rgba(255,255,255,0));
+    --nappe-b:radial-gradient(closest-side,rgba(176,108,52,.07),rgba(176,108,52,.025) 52%,rgba(176,108,52,0));
+    --grille-repos:rgba(72,58,42,.15); --s-grille-revele:rgba(72,58,42,.32);
+    --courant:linear-gradient(90deg,rgba(169,88,31,0),rgba(169,88,31,.55) 70%,#b5662c);
+    --table-lueur:radial-gradient(closest-side,rgba(255,255,255,.55),rgba(255,255,255,.18) 55%,rgba(255,255,255,0));
+    --t-table:#2a2622; --t-table-2:#5d564f; --t-table-warn:#8a5300; --t-table-ko:#b8261d;
+    --l-table:rgba(60,48,36,.12); --l-table-2:rgba(60,48,36,.26); --s-table-champ:rgba(255,255,255,.78); --s-table-survol:rgba(60,48,36,.05);
+    --sh-feuille:0 0 0 1px rgba(60,48,36,.12),0 1px 2px rgba(60,48,36,.10),0 28px 60px -26px rgba(60,48,36,.48),0 10px 22px -12px rgba(60,48,36,.22);
+    /* le cadre : des palets blancs, un filet chaud, une ombre douce ; les voiles d'encre */
+    --palet:rgba(255,255,255,.97); --palet-2:#f5f3ef; --palet-plein:#ffffff;
+    --voile-1:rgba(60,48,36,.04); --voile-2:rgba(60,48,36,.07); --voile-3:rgba(60,48,36,.11); --voile-4:rgba(60,48,36,.16);
+    --sh-palet:0 0 0 1px rgba(60,48,36,.10),0 12px 28px -14px rgba(60,48,36,.34),0 2px 5px -1px rgba(60,48,36,.10);
+    --p-ligne:rgba(60,48,36,.10); --p-hover:rgba(60,48,36,.06); --p-t1:#1c1b1a; --p-t2:#4f4a44; --p-t3:#6b655e; --p-accent:#1c1b1a; --p-ok:#1d7a3c; --p-ko:#c3271f;
+    --entete-fond:rgba(250,249,246,.95); --entete-ombre:0 1px 0 rgba(60,48,36,.10),0 10px 26px -22px rgba(60,48,36,.5);
+    --chip-on:#f3e5d8; --chip-on-t:#1c1b1a; --chip-on-ombre:inset 0 0 0 1px rgba(169,88,31,.40),0 3px 10px -4px rgba(169,88,31,.35);
+    --chrome-cuivre:#a9581f; --chrome-cuivre-soft:rgba(169,88,31,.10); --chrome-cuivre-ligne:rgba(169,88,31,.34); --chrome-cuivre-t:#8a4516;
+    /* l'accent, foncé pour le clair ; la bulle, sombre ; la pastille rouge, franche */
+    --glace:#a9581f; --lien:#c27a42; --anneau-c:#a9581f;
+    --bulle:#2a2724; --bulle-t:#f7f3ee; --bulle-t2:#cbc3b9; --bulle-kbd:rgba(255,255,255,.14); --sh-bulle:0 0 0 1px rgba(0,0,0,.06),0 12px 28px -10px rgba(40,28,16,.5);
+    --pastille-ko:#d4372c; --pastille-ko-t:#ffffff }
+  :root:not([data-theme="dark"]) body:not(.biblio) #planche{color-scheme:light}
+  /* l'îlot du cadre, le jour : l'encre sur le blanc (style.css lui donne le graphite) */
+  :where(:root:not([data-theme="dark"]) body:not(.biblio)) :is(#entete,#rail,#folios,#toast),
+  :where(:root:not([data-theme="dark"]) body:not(.biblio)) :is(.ilot-sombre,.menu-verre,.doc-menu-l){
+    --s-surface:#ffffff; --s-sunken:#f4f2ee; --s-hover:rgba(60,48,36,.06); --s-line:rgba(60,48,36,.10); --s-line-2:rgba(60,48,36,.20); --s-flottant:rgba(255,255,255,.98);
+    --t-1:#1c1b1a; --t-2:#4f4a44; --t-3:#6b655e; --t-inverse:#ffffff;
+    --accent:#1c1b1a; --accent-2:#000000; --accent-soft:rgba(169,88,31,.10); --accent-line:rgba(169,88,31,.32); --on-accent:#ffffff;
+    --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#4f4a44; --info-soft:rgba(60,48,36,.05);
+    --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;
+    --voile:rgba(26,20,14,.30); --voile-fort:rgba(26,20,14,.58);
+    --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent;
+    --sh-1:0 1px 2px rgba(40,30,20,.06); --sh-2:0 0 0 1px rgba(60,48,36,.10),0 20px 44px -16px rgba(60,48,36,.34),0 4px 10px -4px rgba(60,48,36,.12);
+    --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 24px 56px -18px rgba(60,48,36,.42),0 6px 16px -8px rgba(60,48,36,.2);
+    --anneau:0 0 0 3px rgba(169,88,31,.18);
+    color-scheme:light }
+}
+/* ─── 2 bis. LE JOUR DU PLAN — le choix explicite (les mêmes valeurs) ─── */
+:root[data-theme="light"] body:not(.biblio){
+  --s-app:#e6e2db;
+  --table-fond:radial-gradient(1200px 820px at 90% -12%,rgba(255,255,255,.75),rgba(255,255,255,0) 60%),radial-gradient(1000px 720px at -4% 110%,rgba(169,88,31,.055),rgba(169,88,31,0) 60%),linear-gradient(160deg,#efece6 0%,#e7e3dc 48%,#ddd8d0 100%);
+  --nappe-a:radial-gradient(closest-side,rgba(255,255,255,.5),rgba(255,255,255,.16) 50%,rgba(255,255,255,0));
+  --nappe-b:radial-gradient(closest-side,rgba(176,108,52,.07),rgba(176,108,52,.025) 52%,rgba(176,108,52,0));
+  --grille-repos:rgba(72,58,42,.15); --s-grille-revele:rgba(72,58,42,.32);
+  --courant:linear-gradient(90deg,rgba(169,88,31,0),rgba(169,88,31,.55) 70%,#b5662c);
+  --table-lueur:radial-gradient(closest-side,rgba(255,255,255,.55),rgba(255,255,255,.18) 55%,rgba(255,255,255,0));
+  --t-table:#2a2622; --t-table-2:#5d564f; --t-table-warn:#8a5300; --t-table-ko:#b8261d;
+  --l-table:rgba(60,48,36,.12); --l-table-2:rgba(60,48,36,.26); --s-table-champ:rgba(255,255,255,.78); --s-table-survol:rgba(60,48,36,.05);
+  --sh-feuille:0 0 0 1px rgba(60,48,36,.12),0 1px 2px rgba(60,48,36,.10),0 28px 60px -26px rgba(60,48,36,.48),0 10px 22px -12px rgba(60,48,36,.22);
+  --palet:rgba(255,255,255,.97); --palet-2:#f5f3ef; --palet-plein:#ffffff;
+  --voile-1:rgba(60,48,36,.04); --voile-2:rgba(60,48,36,.07); --voile-3:rgba(60,48,36,.11); --voile-4:rgba(60,48,36,.16);
+  --sh-palet:0 0 0 1px rgba(60,48,36,.10),0 12px 28px -14px rgba(60,48,36,.34),0 2px 5px -1px rgba(60,48,36,.10);
+  --p-ligne:rgba(60,48,36,.10); --p-hover:rgba(60,48,36,.06); --p-t1:#1c1b1a; --p-t2:#4f4a44; --p-t3:#6b655e; --p-accent:#1c1b1a; --p-ok:#1d7a3c; --p-ko:#c3271f;
+  --entete-fond:rgba(250,249,246,.95); --entete-ombre:0 1px 0 rgba(60,48,36,.10),0 10px 26px -22px rgba(60,48,36,.5);
+  --chip-on:#f3e5d8; --chip-on-t:#1c1b1a; --chip-on-ombre:inset 0 0 0 1px rgba(169,88,31,.40),0 3px 10px -4px rgba(169,88,31,.35);
+  --chrome-cuivre:#a9581f; --chrome-cuivre-soft:rgba(169,88,31,.10); --chrome-cuivre-ligne:rgba(169,88,31,.34); --chrome-cuivre-t:#8a4516;
+  --glace:#a9581f; --lien:#c27a42; --anneau-c:#a9581f;
+  --bulle:#2a2724; --bulle-t:#f7f3ee; --bulle-t2:#cbc3b9; --bulle-kbd:rgba(255,255,255,.14); --sh-bulle:0 0 0 1px rgba(0,0,0,.06),0 12px 28px -10px rgba(40,28,16,.5);
+  --pastille-ko:#d4372c; --pastille-ko-t:#ffffff }
+:root[data-theme="light"] body:not(.biblio) #planche{color-scheme:light}
+:where(:root[data-theme="light"] body:not(.biblio)) :is(#entete,#rail,#folios,#toast),
+:where(:root[data-theme="light"] body:not(.biblio)) :is(.ilot-sombre,.menu-verre,.doc-menu-l){
+  --s-surface:#ffffff; --s-sunken:#f4f2ee; --s-hover:rgba(60,48,36,.06); --s-line:rgba(60,48,36,.10); --s-line-2:rgba(60,48,36,.20); --s-flottant:rgba(255,255,255,.98);
+  --t-1:#1c1b1a; --t-2:#4f4a44; --t-3:#6b655e; --t-inverse:#ffffff;
+  --accent:#1c1b1a; --accent-2:#000000; --accent-soft:rgba(169,88,31,.10); --accent-line:rgba(169,88,31,.32); --on-accent:#ffffff;
+  --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#4f4a44; --info-soft:rgba(60,48,36,.05);
+  --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;
+  --voile:rgba(26,20,14,.30); --voile-fort:rgba(26,20,14,.58);
+  --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent;
+  --sh-1:0 1px 2px rgba(40,30,20,.06); --sh-2:0 0 0 1px rgba(60,48,36,.10),0 20px 44px -16px rgba(60,48,36,.34),0 4px 10px -4px rgba(60,48,36,.12);
+  --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 24px 56px -18px rgba(60,48,36,.42),0 6px 16px -8px rgba(60,48,36,.2);
+  --anneau:0 0 0 3px rgba(169,88,31,.18);
+  color-scheme:light }
+
+/* ─── 3. CE QUE LES COUCHES ANCIENNES ÉCRIVAIENT EN DUR (style-v79.css « le cadre », « les fonds ») ─── */
+/* la barre du haut : sa matière (graphite la nuit et sur l'accueil, claire le jour) — l'accueil la rend transparente
+   (style-bibliotheque.css, plus précis) */
+#entete{background:var(--entete-fond);box-shadow:var(--entete-ombre)}
+/* le fil de cuivre qui court sous elle : une lueur, très lente */
+#entete::after{background:linear-gradient(90deg,transparent 0%,transparent 25%,color-mix(in srgb,var(--chrome-cuivre) 42%,transparent) 50%,transparent 75%,transparent 100%);background-size:200% 100%;animation-duration:46s}
+/* la recherche : un champ creusé, son filet ; qu'on y écrive, le filet et le halo prennent le cuivre */
+.recherche{background:var(--voile-1);border-color:var(--s-line-2)}
+.recherche:hover{background:var(--voile-2);border-color:color-mix(in srgb,var(--t-1) 30%,var(--s-line-2))}
+body.cherche .recherche{background:var(--s-surface);border-color:var(--chrome-cuivre-ligne);box-shadow:0 0 0 3px var(--chrome-cuivre-soft)}
+.recherche .raccourci{background:var(--voile-2)}
+/* les rubriques du sous-menu Exporter (ce folio, tout le plan) : une capitale de rubrique — 11 px, 600, 0,07 em — au cuivre */
+#mp-exporter .menu-bloc[data-groupe="folio"]::before,#mp-exporter .menu-bloc[data-groupe="contrat"]::before{padding:8px 10px 4px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;color:var(--chrome-cuivre)}

@@ -233,10 +233,13 @@ function formesDirectes(K) {
   // il passe à Z_MIN au moins des deux bornes : à leur hauteur, c'est une arrivée ou un départ, plus près c'est une marche
   const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y), bandes = G.bandes(G.x0(A.ch) + 2, G.x1(B.ch) - 2); let meilleur = null;
   const y0 = Math.max(G.yMin - 12, lo - 240), yFin = Math.min(G.yMax + 12, hi + 240);
+  const mi = (lo + hi) / 2;
   for (let y = y0; y <= yFin; y += 4) {
     const b = G.bande(bandes, y); if (b) { y = surLaGrille(y0, 4, b[1]) - 4; continue; }
+    // ce qu'un couloir coûte au moins (aucune barrière enjambée) : pas sous le meilleur, rien à chercher ; passé le milieu, ce plancher ne fait que croître
+    if (meilleur) { const plancher = 0.5 + 0.0005 * Math.abs(y - mi) + (y < lo || y > hi ? 0.4 : 0); if (plancher >= meilleur.cout) { if (y >= mi) break; continue; } }
     if (!vraiZ(y, A.y) || !vraiZ(y, B.y) || surUneBorne(A.ch, y) || surUneBorne(B.ch, y)) continue;
-    const c = coupe(A.ch, A.y, y) + coupe(B.ch, y, B.y) + 0.5 + 0.0005 * Math.abs(y - (lo + hi) / 2) + (y < lo || y > hi ? 0.4 : 0);
+    const c = coupe(A.ch, A.y, y) + coupe(B.ch, y, B.y) + 0.5 + 0.0005 * Math.abs(y - mi) + (y < lo || y > hi ? 0.4 : 0);
     if (meilleur && c >= meilleur.cout) continue;
     if (pris(G.x1(A.ch), G.x0(B.ch), y)) continue;
     meilleur = { forme: 'couloir', cout: c, y }; }

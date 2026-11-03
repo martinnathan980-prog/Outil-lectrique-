@@ -1707,9 +1707,14 @@ function contactDuFil(norme, famille, taille, sexe, type, jauge) { const t = typ
 function accommodations(norme, famille, pl, sexeFil) { let n = 0;
   pl.forEach(x => x.p.fils.forEach(f => { if (f.jauge == null) return; const c = contactDuFil(norme, famille, x.c.taille, sexeFil(f), f.type, f.jauge); if (!c) return;
     if (c.jauge == null) n += 2; if (c.accessoire) n += 1; })); return n; }
+// (v84) la réponse gardée par norme : un remplissage de 40 câbles la demande des dizaines de milliers de fois
+const ACCEPTE = new WeakMap();
 function contactAccepte(norme, famille, taille, jauge, sexe, type) { if (jauge == null) return true;
-  if (contactsDeTaille(norme, famille, taille).length) return !!contactDuFil(norme, famille, taille, sexe, type, jauge);
-  const T = tailleDe(norme, famille, taille); return !T || (jauge <= T.jaugeMin && jauge >= T.jaugeMax); }
+  const N = normeDesModules(norme), k = famille + '|' + taille + '|' + jauge + '|' + (sexe || '') + '|' + typeDuFil(type);
+  let m = ACCEPTE.get(N); if (!m) ACCEPTE.set(N, m = new Map()); if (m.has(k)) return m.get(k);
+  const table = contactsDeTaille(N, famille, taille).length > 0, T = table ? null : tailleDe(N, famille, taille);
+  const r = table ? !!contactDuFil(N, famille, taille, sexe, type, jauge) : !T || (jauge <= T.jaugeMin && jauge >= T.jaugeMax);
+  m.set(k, r); return r; }
 // le sexe opposé ; le sexe des contacts d'une prise : la fiche (ce qui arrive) d'un côté, l'embase de l'autre
 const autreSexe = s => s === 'M' ? 'F' : 'M';
 // un nombre à la française pour les phrases du moteur (pas de page ici : `nombre` est à la page) — 09-disjoncteurs s'en sert aussi
@@ -1756,11 +1761,14 @@ function placerDansGroupe(norme, mod, groupe, fils) { if (fils.length > groupe.c
   return [...parTaille.values()].flatMap(xs => { const fs = xs.map(x => x[0]).sort((a, b) => triBornes(a.cable || '', b.cable || '')), cs = xs.map(x => x[1]).sort((a, b) => ordre(a) - ordre(b)); return fs.map((f, i) => [f, cs[i]]); }); }
 /* Des potentiels dans un module : chacun, du plus chargé au moins chargé, dans le groupe qui le loge en perdant le moins
    de contacts. */
+// (v84, la vitesse) les groupes du plus juste au plus large, dans l'ordre du module à taille égale : le premier qui reçoit
+// est celui qui perd le moins ; un groupe de mêmes tailles qu'un groupe qui a refusé refuse aussi — on ne le reteste pas
+const TAILLES_DU_GROUPE = new WeakMap(), taillesDuGroupe = g => TAILLES_DU_GROUPE.get(g) || (TAILLES_DU_GROUPE.set(g, g.contacts.map(c => c.taille).sort().join()), TAILLES_DU_GROUPE.get(g));
 function placerDansModule(norme, mod, potentiels) { const libres = mod.groupes.slice(), places = [];
-  potentiels.forEach(p => { let mieux = null;
-    for (const g of libres) { const perte = g.contacts.length - p.fils.length; if (perte < 0 || (mieux && perte >= mieux.perte)) continue;
-      const a = placerDansGroupe(norme, mod, g, p.fils); if (a) mieux = { g, a, perte }; }
-    if (mieux) { libres.splice(libres.indexOf(mieux.g), 1); places.push({ potentiel: p, groupe: mieux.g, fils: mieux.a, perte: mieux.perte }); } });
+  potentiels.forEach(p => { const n = p.fils.length, refus = new Set();
+    for (const g of libres.filter(g => g.contacts.length >= n).sort((a, b) => a.contacts.length - b.contacts.length)) { const sig = taillesDuGroupe(g); if (refus.has(sig)) continue;
+      const a = placerDansGroupe(norme, mod, g, p.fils); if (!a) { refus.add(sig); continue; }
+      libres.splice(libres.indexOf(g), 1); places.push({ potentiel: p, groupe: g, fils: a, perte: g.contacts.length - n }); break; } });
   return places; }
 /* Ce que vise le remplissage : `choix` est une désignation retenue à la main (tous les modules la prennent), le nom
    d'une norme (ses variantes seules), ou rien — alors la norme du part number du fichier s'il en nomme une, sinon les
@@ -1867,7 +1875,7 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
   const cands = force ? [force] : N.modules.filter(m => m.emploi === 'connecteur' && m.auto && (!famille || m.famille === famille));
   let mieux = null;
   cands.forEach(m => { const r = poserPoints(N, m, points, sexeFil), bons = r.pl.filter(x => x.ok).length;
-    const score = [bons, m.usage === 'normal' ? 1 : 0, ...taillePosee(m, famille), -accommodations(N, m.famille, r.pl, sexeFil), m.poids != null ? -m.poids : -1e3];
+    const score = [bons, m.usage === 'normal' ? 1 : 0, taillePosee(m, famille), -accommodations(N, m.famille, r.pl, sexeFil), -m.contacts.length, m.poids != null ? -m.poids : -1e3];
     if (force || bons === points.length) if (!mieux || meilleurScore(score, mieux.score)) mieux = { m, r, score }; });
   const verdicts = [], modules = [], fils = [];
   if (mieux) { const m = mieux.m;

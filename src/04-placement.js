@@ -100,7 +100,8 @@ function modele(G) {
     if (ps.length !== 1 || blocs.get(ps[0].id).genre === 'tag') b.genre = estBarrette(b.nom) ? 'barrette' : 'equip'; });
   const estTag = id => blocs.get(id).genre === 'tag';
   const partenairesDe = k => parts.get(k) || [];
-  const partenairesBlocs = k => partenairesDe(k).filter(q => !estTag(q.id));
+  // les partenaires qui sont des blocs (pas des pastilles), lus une fois par borne : le modèle ne change plus (on ne les modifie jamais)
+  const blocsDe = new Map(), partenairesBlocs = k => { let r = blocsDe.get(k); if (!r) blocsDe.set(k, r = partenairesDe(k).filter(q => !estTag(q.id))); return r; };
   const voisins = new Map(ids.map(id => [id, new Set()]));
   liens.forEach(w => { if (w.boucle || w.shunt || estTag(w.a.id) || estTag(w.b.id)) return; voisins.get(w.a.id).add(w.b.id); voisins.get(w.b.id).add(w.a.id); });
   const hauteurEstimee = id => blocs.get(id).bornes.length * PRH + 46;
@@ -858,7 +859,7 @@ function paquetsDe(M, id, cles) {
    comme le juge) — l'ordre qui aligne le plus de fils en fait souvent
    croiser trop. */
 function ordonnerLesBlocs(M, E, maxit) {
-  const note = pos => estimer(assembler(M, E, pos)).lisibilite;
+  const note = pos => estimerMemo(assemblerMemo(M, E, pos)).lisibilite;
   let pos = resoudre(M, E, null), best = pos, bestNote = note(pos), bestOrdre = photoOrdres(E), stagne = 0;
   const MAXIT = maxit || (M.ids.length > 300 ? 8 : 20);
   for (let it = 0; it < MAXIT && stagne < 6; it++) { barycentre(M, E, pos.y, (it >> 1) % 2 === 1, it % 2); pos = resoudre(M, E, pos.y);
@@ -1118,11 +1119,11 @@ function chevauchements(C) { let n = 0;
    apprendrait à « rendre droit » un fil à travers son bloc, ou, en les
    tenant pour faux, écarterait la moitié des dispositions. */
 function traversees(fils, blocs) { let etrangers = 0; const propres = new Set();
-  fils.forEach(w => { const siens = new Set([String(w.de), String(w.vers)]);
+  fils.forEach(w => { const de = String(w.de), vers = String(w.vers);
     for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
       const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
       for (const c of blocs) { if (!(x1 > c.x + 2 && x0 < c.x + c.w - 2 && y1 > c.y + 2 && y0 < c.y + c.h - 2)) continue;
-        if (siens.has(String(c.name))) propres.add(w); else etrangers++; } } });
+        const nom = String(c.name); if (nom === de || nom === vers) propres.add(w); else etrangers++; } } });
   return { etrangers, propres }; }
 /* Ce que le juge mesure sur un dessin routé : sain (aucun fil dans un bloc
    étranger, aucun chevauchement), tient sur la feuille, fils droits,
@@ -1307,8 +1308,12 @@ function estimer(L) {
     if (mA === 'L' && libre(A.x + 2, x0(B.ch) + 2, A.y, de, vers)) choix.push({ c: coupe(B.ch, A.y, B.y), pose: () => vert(B.ch, { y: A.y, mur: 'L' }, { y: B.y, mur: mB }) });
     if (mB === 'R' && libre(x1(A.ch) - 2, B.x - 2, B.y, de, vers)) choix.push({ c: coupe(A.ch, A.y, B.y), pose: () => vert(A.ch, { y: A.y, mur: mA }, { y: B.y, mur: 'R' }) });
     // un couloir entre les deux goulottes, libre à travers les colonnes entières, celui qui enjambe le moins
-    const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y); let ym = null, cm = Infinity;
-    for (let y = lo - 240; y <= hi + 240; y += 8) { const c = coupe(A.ch, A.y, y) + coupe(B.ch, y, B.y) + 0.5 + 0.0005 * Math.abs(y - (lo + hi) / 2) + (y < lo || y > hi ? 0.4 : 0);
+    const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y), mi = (lo + hi) / 2; let ym = null, cm = Infinity;
+    /* ce qu'un couloir coûte au moins (aucune barrière enjambée) : s'il n'est pas sous le meilleur, rien à compter — et
+       passé le milieu, ce plancher ne fait que croître : plus rien ne gagnera */
+    for (let y = lo - 240; y <= hi + 240; y += 8) { const plancher = 0.5 + 0.0005 * Math.abs(y - mi) + (y < lo || y > hi ? 0.4 : 0);
+      if (plancher >= cm) { if (y >= mi) break; continue; }
+      const c = coupe(A.ch, A.y, y) + coupe(B.ch, y, B.y) + 0.5 + 0.0005 * Math.abs(y - mi) + (y < lo || y > hi ? 0.4 : 0);
       if (c < cm && couloirLibre(A.ch, B.ch, y)) { cm = c; ym = y; } }
     if (ym != null) choix.push({ c: cm, pose: () => { vert(A.ch, { y: A.y, mur: mA }, { y: ym, mur: 'R' }); vert(B.ch, { y: ym, mur: 'L' }, { y: B.y, mur: mB }); } });
     if (choix.length) choix.sort((u, v) => u.c - v.c)[0].pose(); });
@@ -1348,7 +1353,37 @@ function estimer(L) {
 let evaluations = 0;
 const routerVite = L => typeof routerUneFois === 'function' ? routerUneFois(L, new Set()).resultat : router(L);
 // `L0` : le contrat de ce même état à cette même position, déjà assemblé (l'estimation l'avait fait) — rien ne l'a touché
-function evaluer(M, E, pos, vite, L0) { evaluations += vite ? 1 : 2; const L = L0 || assembler(M, E, pos); const R = vite ? routerVite(L) : router(L); return { E, pos, L, R, j: juger(L, R) }; }
+function evaluer(M, E, pos, vite, L0) { evaluations += vite ? 1 : 2; const L = L0 || assemblerMemo(M, E, pos);
+  let rs = ROUTAGES_MEMO.get(L); if (!rs) ROUTAGES_MEMO.set(L, rs = {});
+  const R = vite ? (rs.vite || (rs.vite = routerVite(L))) : (rs.complet || (rs.complet = router(L)));
+  let js = JUGEMENTS_MEMO.get(R); if (!js) JUGEMENTS_MEMO.set(R, js = new Map());
+  let j = js.get(NIVEAU_JUGE); if (!j) js.set(NIVEAU_JUGE, j = juger(L, R));
+  return { E, pos, L, R, j }; }
+/* LA MÉMOIRE DES ÉVALUATIONS. Un état (colonnes, listes et flancs des bornes, sorties, goulottes) à une position donne
+   toujours le même contrat, le même routage, le même jugement : la recherche en redemandait un sur quatre à l'identique
+   (un même échange de bornes essayé par deux gestes, une passe qui rejoue ce qu'elle a refusé, le routage rapide puis le
+   complet d'une même disposition), à quelques évaluations d'intervalle. Le contrat se retrouve par la clé de l'état et
+   de la position (les plus récents seulement), son routage et son jugement par lui. Le BUDGET compte toujours chaque
+   évaluation : le dessin est le même, au point près — il vient plus vite. Rien de ce qui est gardé ne se modifie après
+   coup (le contrat, le routage, le jugement se lisent). */
+const MEMOIRE_CONTRATS = new WeakMap(), ROUTAGES_MEMO = new WeakMap(), JUGEMENTS_MEMO = new WeakMap(), ESTIMATIONS_MEMO = new WeakMap(), ORDRES_ESTIMES = new WeakMap(), CONTRATS_GARDES = 256;
+const indefini = v => v === undefined ? '\u0002' : v;
+function cleDeLEtat(E, pos) { const t = [E.goulottes || null, E.options ? E.options.serpentin | 0 : 0];
+  E.place.forEach((p, id) => t.push(id, p.r, p.c)); t.push(0);
+  E.listes.forEach((o, id) => t.push(id, Object.keys(o).map(k => [k, o[k].map(p => p.cle)]))); t.push(1);
+  E.flancDe.forEach((v, k) => t.push(k, indefini(v))); t.push(2);
+  E.dirs.forEach((v, k) => t.push(k, indefini(v))); t.push(3);
+  E.sorties.forEach((v, k) => t.push(k, indefini(v))); t.push(4);
+  pos.y.forEach((v, k) => t.push(k, v)); t.push(5);
+  pos.haut.forEach((v, k) => t.push(k, v)); t.push(6);
+  pos.bas.forEach((v, k) => t.push(k, v));
+  return JSON.stringify(t); }
+function assemblerMemo(M, E, pos) { let C = MEMOIRE_CONTRATS.get(M); if (!C) MEMOIRE_CONTRATS.set(M, C = new Map());
+  const k = cleDeLEtat(E, pos), L = C.get(k); if (L) { C.delete(k); C.set(k, L); return L; }
+  const L2 = assembler(M, E, pos); C.set(k, L2); if (C.size > CONTRATS_GARDES) C.delete(C.keys().next().value); return L2; }
+// l'estimation d'un contrat gardé, au niveau courant du juge
+function estimerMemo(L) { let es = ESTIMATIONS_MEMO.get(L); if (!es) ESTIMATIONS_MEMO.set(L, es = new Map());
+  let e = es.get(NIVEAU_JUGE); if (!e) es.set(NIVEAU_JUGE, e = estimer(L)); return e; }
 /* Un dessin un peu trop large pour la feuille s'ÉTIRE : de l'espace
    s'insère dans les bandes vides (aucun bloc ne les traverse, dans aucune
    colonne), ce qui garde tous les alignements et tous les tracés. Gardé
@@ -1414,11 +1449,11 @@ const TAMIS = 1 / CROISEMENTS_PAR_DROIT, TAMIS_FINAL = 2 / CROISEMENTS_PAR_DROIT
 function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   const copie = pos => ({ y: new Map(pos.y), haut: new Map(pos.haut), bas: new Map(pos.bas), acc: pos.acc });
   const journal = meilleur.journal || (meilleur.journal = []); let geste = '';
-  if (!meilleur.est) meilleur.est = estimer(meilleur.L);
+  if (!meilleur.est) meilleur.est = estimerMemo(meilleur.L);
   if (!meilleur.jv) meilleur.jv = evaluer(M, meilleur.E, meilleur.pos, true).j;
   // trier : les deux premiers tamis, contre le meilleur ; rend le candidat au routage rapide, ou rien
   const exacte = finale === 'exacte';
-  const trier = (E, pos, tamis = TAMIS, large) => { const L0 = assembler(M, E, pos), est = estimer(L0); if (!exacte && meilleur.j.sain && est.lisibilite < meilleur.est.lisibilite - tamis) return null;   // un dessin faux se répare à n'importe quel prix
+  const trier = (E, pos, tamis = TAMIS, large) => { const L0 = assemblerMemo(M, E, pos), est = estimerMemo(L0); if (!exacte && meilleur.j.sain && est.lisibilite < meilleur.est.lisibilite - tamis) return null;   // un dessin faux se répare à n'importe quel prix
     const vite = evaluer(M, E, pos, true, L0); if (exacte) { vite.est = est; return vite; }      // la passe exacte : tout va au routage complet
     /* large : le routage rapide ne voit pas les croisements que les détours du routage complet ôtent (deux au moins, quand il en ôte) — un candidat qui semble pire de deux croisements va quand même au routage complet */
     if (large) { const marge = Math.max(2, meilleur.jv.croisements - meilleur.j.croisements), seuil = { ...meilleur.jv, croisements: meilleur.jv.croisements + marge, lisibilite: meilleur.jv.lisibilite - marge / CROISEMENTS_PAR_DROIT };
@@ -1433,11 +1468,16 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   /* l'estimation d'un autre ordre des bornes d'un groupe, sans rien
      réassembler : les bouts des fils touchés prennent leurs nouvelles
      ordonnées, la pastille collée à une borne suit */
-  const estimerOrdre = (id, cles, ordre) => { const L = meilleur.L, pos = meilleur.pos, yDe = new Map(ordre.map((c, j) => [K(id, c), pos.y.get(K(id, cles[j]))]));
+  /* (gardée par contrat du meilleur : la descente sur les paires et les échanges un à un estimaient deux fois les mêmes
+     ordres — le même dessin, une estimation sur trois de moins) */
+  const estimerOrdre = (id, cles, ordre) => { const L = meilleur.L, pos = meilleur.pos;
+    let G = ORDRES_ESTIMES.get(L); if (!G) ORDRES_ESTIMES.set(L, G = new Map());
+    const cle = JSON.stringify([NIVEAU_JUGE, id, cles, ordre]), deja = G.get(cle); if (deja) return deja;
+    const yDe = new Map(ordre.map((c, j) => [K(id, c), pos.y.get(K(id, cles[j]))]));
     const links = L.links.map((l, li) => { const w = M.liens[li]; let ya = yDe.get(K(w.a.id, w.a.cle)), yb = yDe.get(K(w.b.id, w.b.cle)); if (ya == null && yb == null) return l;
       if (ya == null && M.estTag(w.a.id)) ya = yb; if (yb == null && M.estTag(w.b.id)) yb = ya;
       return { ...l, epA: ya == null ? l.epA : { ...l.epA, y: ya }, epB: yb == null ? l.epB : { ...l.epB, y: yb } }; });
-    return estimer({ comps: L.comps, links, geom: L.geom }); };
+    const e = estimer({ comps: L.comps, links, geom: L.geom }); G.set(cle, e); return e; };
   // après un geste géométrique gardé, l'état reprend l'ordre des ordonnées
   const ordonnerParY = (E, pos) => { M.ids.forEach(id => { if (M.estTag(id)) return; E.clesListes(id).forEach(lid => E.listes.get(id)[lid].sort((u, v) => pos.y.get(K(id, u.cle)) - pos.y.get(K(id, v.cle)))); });
     construireRuns(M, E);
@@ -1492,7 +1532,7 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   const essayerPoli = pos => { if (essayerGeometrie(pos)) return true; if (!temps()) return false;
     const vite = evaluer(M, meilleur.E, pos, true); if (vite.j.droits < meilleur.jv.droits + 3) return false;
     const E = meilleur.E, E2 = etatDepuisColonnes(M, E.col, E.options); E2.sorties = new Map(E.sorties); ordonnerParY(E2, pos);
-    const v = evaluer(M, E2, pos); v.est = estimer(v.L); v.jv = evaluer(M, E2, pos, true, v.L).j;
+    const v = evaluer(M, E2, pos); v.est = estimerMemo(v.L); v.jv = evaluer(M, E2, pos, true, v.L).j;
     const poli = rechercheLocale(M, v, POLISSAGE, false, true); if (!bat(poli.j, meilleur.j)) return false;
     poli.journal = journal; journal.push({ geste, droits: poli.j.droits, croisements: poli.j.croisements }); meilleur = poli; return true; };
   const gestes = [
@@ -1500,7 +1540,7 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['bande', () => bandes(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['tassement', () => tassements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
-    ['redressement', () => redressements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps, p2 => estimer(assembler(M, meilleur.E, p2)).lisibilite)],
+    ['redressement', () => redressements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps, p2 => estimerMemo(assemblerMemo(M, meilleur.E, p2)).lisibilite)],
     ['échange', () => echangesDeBlocs(M, meilleur.E, essayerEtat, temps)],
     ['priorité', () => promotions(M, meilleur.E, () => meilleur, essayerEtat, temps)],
     ['renoncement', () => renoncements(M, meilleur.E, () => meilleur, essayerEtat, temps)],
@@ -1508,7 +1548,7 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
     ['étirement', () => etirements(M, meilleur.E, () => meilleur, copie, interne ? essayerGeometrie : essayerPoli, temps)],
     ['en face', grosEnFaceGeste],
     ['flanc', () => flancsDeConnecteurs(M, meilleur.E, essayerEtat, temps)],
-    ['borne', () => flancsDeBornes(M, meilleur.E, () => meilleur, essayerEtat, temps, (k, y) => essayerGeometrie(borneA(k, y), TAMIS), false, (k, y) => estimer(assembler(M, meilleur.E, borneA(k, y))).lisibilite)],
+    ['borne', () => flancsDeBornes(M, meilleur.E, () => meilleur, essayerEtat, temps, (k, y) => essayerGeometrie(borneA(k, y), TAMIS), false, (k, y) => estimerMemo(assemblerMemo(M, meilleur.E, borneA(k, y))).lisibilite)],
     ['sortie', () => sortiesDeBornier(M, meilleur.E, essayerEtat, temps)],
     // sans hub, le geste rebâti d'abord (budget commun), puis la colonne neuve entre deux (budget à elle)
     ['colonne', () => { const rebati = hubDe(M) == null && changementsDeColonneRebatis(M, () => meilleur.E, () => meilleur, trier, confirmer, temps, () => meilleur.est);
@@ -1533,14 +1573,14 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
      chaque geste va au routage complet. */
   const essayerTout = pos => essayerGeometrie(pos, TAMIS_FINAL, true);
   const essayerEtatTout = () => { const E = meilleur.E; return garder(E, resoudre(M, E, meilleur.pos.y), TAMIS_FINAL, true); };
-  const estimerBorneA = (k, y) => estimer(assembler(M, meilleur.E, borneA(k, y))).lisibilite;
+  const estimerBorneA = (k, y) => estimerMemo(assemblerMemo(M, meilleur.E, borneA(k, y))).lisibilite;
   /* le flanc d'une borne se juge au ROUTAGE COMPLET directement : ni l'estimation ni le routage rapide ne voient le détour
      qui, seul, ôte parfois les croisements que le changement de flanc apporte — et les candidats sont peu nombreux ;
      l'estimation n'écarte que ce qu'elle donne perdant de quatre croisements */
   const essayerBorneAuComplet = (k, y) => { const E = meilleur.E, pos = borneA(k, y);
     if (!exacte && meilleur.j.sain && estimerBorneA(k, y) < meilleur.est.lisibilite - 2 * TAMIS_FINAL) return false;
     const plein = evaluer(M, E, pos); if (!bat(plein.j, meilleur.j)) return false;
-    plein.est = estimer(plein.L); plein.jv = evaluer(M, E, pos, true, plein.L).j; plein.journal = journal; journal.push({ geste, droits: plein.j.droits, croisements: plein.j.croisements });
+    plein.est = estimerMemo(plein.L); plein.jv = evaluer(M, E, pos, true, plein.L).j; plein.journal = journal; journal.push({ geste, droits: plein.j.droits, croisements: plein.j.croisements });
     meilleur = plein; ordonnerParY(E, pos); return true; };
   const finaux = [
     ['borne', () => flancsDeBornes(M, meilleur.E, () => meilleur, essayerEtatTout, temps, essayerBorneAuComplet, true, estimerBorneA)],
@@ -1555,7 +1595,7 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   /* sur la géométrie resserrée aussi, et d'abord : un fil plié se redresse en allongeant un bloc (avant le resserrage, la
      borne n'était pas encore là où elle finit ; un fil plié d'un pas sous la lettre d'un connecteur, que le petit bloc
      d'en face redresse en s'allongeant d'autant) */
-  finaux.unshift(['redressement', () => redressements(M, meilleur.E, () => meilleur, copie, essayerTout, temps, p2 => estimer(assembler(M, meilleur.E, p2)).lisibilite)]);
+  finaux.unshift(['redressement', () => redressements(M, meilleur.E, () => meilleur, copie, essayerTout, temps, p2 => estimerMemo(assemblerMemo(M, meilleur.E, p2)).lisibilite)]);
   // un geste évident ne se manque pas : tant qu'un balayage trouve encore, la passe continue, jusqu'au double de son budget
   const finFinale = evaluations + 2 * budget; temps = () => evaluations < finFinale;
   for (let passe = 0; passe < (exacte ? 12 : 6) && temps(); passe++) { let any = false; finaux.forEach(([nom, g]) => { geste = nom; if (temps() && g()) any = true; }); if (!any) break; }
@@ -1596,7 +1636,7 @@ function changementsDeColonne(M, meilleurDe, copie, heriter, confirmer) {
   const avant = evaluations, fin = evaluations + BUDGET_COLONNE, temps = () => evaluations < fin, ch = hub != null ? E.col.get(hub) : null;
   // seuls les blocs qui ont un fil plié peuvent y gagner
   const plies = new Set(); meilleur.R.fils.forEach(w => { if (!w.shunt && w.pts.length > 2) { plies.add(M.liens[w.i].a.id); plies.add(M.liens[w.i].b.id); } });
-  const cs = [...E.col.values()], cMin = Math.min(...cs), cMax = Math.max(...cs), candidats = [], esquisses = [], est0 = estimer(meilleur.L).lisibilite;
+  const cs = [...E.col.values()], cMin = Math.min(...cs), cMax = Math.max(...cs), candidats = [], esquisses = [], est0 = estimerMemo(meilleur.L).lisibilite;
   const centre = id => (pos.haut.get(id) + pos.bas.get(id)) / 2;
   M.ids.forEach(id => { if (M.estTag(id) || !plies.has(id) || !temps()) return;
     const ys = [], colonnesDesPartenaires = new Set();
@@ -1644,13 +1684,13 @@ function changementsDeColonne(M, meilleurDe, copie, heriter, confirmer) {
         if (!creux || creux.d > PRH) { const p2 = copie(p1); let plancher = -Infinity;
           [...autres, id].sort((u, v) => p2.haut.get(u) - p2.haut.get(v) || (u === id ? -1 : 1)).forEach(o => { const m = plancher - p2.haut.get(o); if (m > 0) glisserBloc(M, p2, o, m); plancher = p2.bas.get(o) + VGAP; }); entrees.push(p2); }
         // l'estimation d'abord (cent fois moins chère qu'un routage), large : elle ne voit ni les détours ni les escaliers
-        for (const p2 of entrees) { heriter(E2, p2); espacer(M, E2, p2); const est = estimer(assembler(M, E2, p2)).lisibilite;
+        for (const p2 of entrees) { heriter(E2, p2); espacer(M, E2, p2); const est = estimerMemo(assemblerMemo(M, E2, p2)).lisibilite;
           if (est >= est0 - 3 * TAMIS) esquisses.push({ etat, p2, est }); } } } });
   /* les meilleurs à l'estimation passent au routage COMPLET (le routage rapide voit six croisements de trop à un morceau
      de barrette qui change de colonne, ses détours les ôtent) — chacun dans son état à lui */
   esquisses.sort((a, b) => b.est - a.est);
   for (const q of esquisses.slice(0, CHANGEMENTS_ROUTES)) { if (!temps()) break; const E2 = q.etat(); heriter(E2, q.p2); espacer(M, E2, q.p2); const v = evaluer(M, E2, q.p2);
-    if (v.j.droits >= meilleur.j.droits && v.j.lisibilite > meilleur.j.lisibilite + 0.01 && bat(v.j, meilleur.j)) { v.est = estimer(v.L); candidats.push(v); } }
+    if (v.j.droits >= meilleur.j.droits && v.j.lisibilite > meilleur.j.lisibilite + 0.01 && bat(v.j, meilleur.j)) { v.est = estimerMemo(v.L); candidats.push(v); } }
   candidats.sort((a, b) => bat(a.j, b.j) ? -1 : (bat(b.j, a.j) ? 1 : 0));
   let gagne = false; for (const v of candidats) if (confirmer(v)) { gagne = true; break; }
   evaluations = avant; return gagne;
@@ -1671,7 +1711,7 @@ function changementsDeColonneRebatis(M, etatDe, meilleurDe, trier, confirmer, te
       const col = new Map(E.col); col.set(id, c1); normaliser(col);
       const E2 = etatDepuisColonnes(M, col, E.options); E2.sorties = new Map(E.sorties);
       // l'ordre complet coûte cher : un premier solveur et l'estimation écartent les changements sans espoir
-      const brut = estimer(assembler(M, E2, resoudre(M, E2, null))); if (meilleurDe().j.sain && brut.lisibilite < estDe().lisibilite - TAMIS - 3 / CROISEMENTS_PAR_DROIT) continue;
+      const brut = estimerMemo(assemblerMemo(M, E2, resoudre(M, E2, null))); if (meilleurDe().j.sain && brut.lisibilite < estDe().lisibilite - TAMIS - 3 / CROISEMENTS_PAR_DROIT) continue;
       const v = trier(E2, ordonnerLesBlocs(M, E2, 8)); if (v) candidats.push(v); } });
   candidats.sort((a, b) => bat(a.j, b.j) ? -1 : (bat(b.j, a.j) ? 1 : 0));
   for (const v of candidats) { if (!temps()) break; if (confirmer(v)) return true; }

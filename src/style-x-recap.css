@@ -211,7 +211,7 @@
    faire — les deux phrases se partagent la largeur (plus de grand vide entre elles) ; au survol, « Voir › » au bout dit que
    la ligne mène à la fiche, à la section qui démontre le point. */
 #base #ba-tab[data-onglet="problemes"] th.rc-c-pb{width:46%}
-#base #ba-tab[data-onglet="problemes"] th.rc-c-que{width:34%}
+#base #ba-tab[data-onglet="problemes"] th.rc-c-que{width:40%}
 #base #ba-tab[data-onglet="problemes"] td.rc-c-pb,#base #ba-tab[data-onglet="problemes"] td.rc-c-que{min-width:0}
 #base #ba-tab[data-onglet="problemes"] .rc-phrase{max-width:76ch}
 #base #ba-tab[data-onglet="problemes"] tbody tr[data-k]{cursor:pointer}
@@ -246,8 +246,21 @@
 #base .rc-genre .rc-genre-geste{margin-left:8px}
 #base .rc-genre .btn.rc-genre-geste{height:28px;padding:0 10px;font-size:var(--f-12)}
 #base .rc-genre .rc-lien.rc-genre-geste{font-size:var(--f-12);margin:-4px -6px -4px 2px}
+/* l'onglet Normes : « À quoi elle sert » (d'office sur une feuille large) prend sa part de la largeur, plus une colonne
+   étroite où la phrase tombait mot à mot */
+#base #ba-tab[data-onglet="normes"] th.rc-c-phrase{width:42%}
+#base #ba-tab[data-onglet="normes"] td.rc-c-phrase{min-width:0}
+#base #ba-tab[data-onglet="normes"] :is(th,td).rc-suppr{width:auto}
+#base #ba-tab .rc-pareil{vertical-align:-2px}
 /* les gestes d'une ligne : le principal au trait, net ; le reste en lien */
 #base #ba-tab .rc-gestes .btn.papier{font-weight:500}
+
+/* ─── 13. LE CLAVIER SE VOIT ───
+   Défaut : une valeur qui porte sa propre pastille (la borne, le type d'un câble) gardait son filet au focus — l'anneau
+   cuivre ne se posait pas, on ne savait plus où était le clavier après ← →. Correction : sur toute valeur qui a le clavier,
+   l'anneau commun (le type sur la flèche le porte sur sa pastille, plus haut). */
+#base #ba-tab tbody .rc-v:not(.rc-gamme-v):not(.edite):is(:focus,:focus-visible){box-shadow:0 0 0 2px var(--anneau-c);outline:none}
+#base #ba-tab tbody tr .rc-cable .rc-v.rc-type:not(.edite):is(:focus,:focus-visible){box-shadow:none}
 
 /* ─── 12. UN AUTRE ONGLET : ses lignes paraissent d'un fondu court (08-recap, `rc-entre`) — rien ne glisse, rien ne clignote ─── */
 @keyframes rc-entre{from{opacity:.25}}

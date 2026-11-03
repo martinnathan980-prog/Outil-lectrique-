@@ -74,11 +74,17 @@ function lireRepere(repere) {
   const equipement = c => !CODES[c] || CODES[c].forme === 'equipement';
   return d && d !== q.code && equipement(q.code) && (CODES[d] ? CODES[d].forme === 'equipement' : d === 'EQ') ? { ...q, code: d, codeLu: q.code } : q;
 }
-function formeDe(repere) {
+function formeSansMemoire(repere) {
   if (VT_A_POSER.test(String(repere || '').trim())) return 'barrette';   // une barrette à poser (VT1, VT2…)
   const q = lireRepere(repere);
   return (q && q.num && CODES[q.code]) ? CODES[q.code].forme : 'equipement';
 }
+/* (v84, la vitesse : sur le plan géant des fichiers piégés, 3 135 liaisons, `formeDe` se relisait des millions de fois — 0,5 s
+   à l'ouverture, autant à chaque contrôle) La forme ne dépend que de l'écriture du repère : la nature dite à la main (`natureDite`)
+   ne change que le nom d'un équipement, jamais sa forme (barrette, prise, masse restent celles du code). Elle se garde. */
+const FORMES_DES_REPERES = new Map();
+function formeDe(repere) { const r = repere == null ? '' : String(repere), M = FORMES_DES_REPERES; let f = M.get(r); if (f !== undefined) return f;
+  f = formeSansMemoire(r); if (M.size > 50000) M.clear(); M.set(r, f); return f; }
 const estBarrette = r => formeDe(r) === 'barrette';
 const estCoupure  = r => formeDe(r) === 'coupure';
 const estMasse    = r => formeDe(r) === 'masse';
@@ -89,14 +95,19 @@ const estBornier  = r => estBarrette(r) || estCoupure(r);
 /* Un bout tel que la base l'écrit : « 677VT2 51 » dans Device et « B » dans Pin — le repère, puis le MODULE de la
    barrette, puis le contact du module. Chez nous : repère 677VT2, borne 51B (le module et son contact). Un repère sans
    espace reste tel quel. */
+// (v84) seul un repère aéronautique numéroté (677VT2) porte un module : « LAMP 1 » reste un nom, il n'est pas coupé en LAMP:1-…
 function boutLu(repere, borne) { const r = String(repere == null ? '' : repere).trim(), b = String(borne == null ? '' : borne).trim();
-  const m = /^(\S+)\s+(\d+)$/.exec(r); if (!m || !lireRepere(m[1])) return [r, b];
+  const m = /^(\S+)\s+(\d+)$/.exec(r), q = m ? lireRepere(m[1]) : null; if (!q || !q.num) return [r, b];
   return [m[1], m[2] + (/^\d/.test(b) ? '-' : '') + b]; }
 /* Une longueur du retest : des mm (« 3670 ») ou des m (« 3,67 ») ; en mètres chez nous, ou null. (v84, les fichiers piégés :
    « 2 500 » — l'espace des milliers d'Excel — se lisait 2 mm, « 1e3 » 1 mm.) Les espaces entre chiffres tombent, la
    virgule décimale devient un point, une puissance de dix se lit. */
+// un nombre écrit à la main : « 2 500 » (espace, espace insécable, espace fine), « 2.500,5 » (le point des milliers devant la
+// virgule décimale), « 2,500.5 » (à l'anglaise) — le dernier des deux signes est la décimale, l'autre sépare les milliers
+const nombreEcrit = s => { let t = String(s).trim().replace(/(\d)[\s  ]+(?=\d)/g, '$1'); const p = t.lastIndexOf('.'), v = t.lastIndexOf(',');
+  if (p >= 0 && v >= 0) t = p > v ? t.replace(/,/g, '') : t.replace(/\./g, '').replace(',', '.'); else t = t.replace(',', '.'); return t; };
 function longueurLue(v) { if (v == null || v === '') return null; if (typeof v === 'number') return v > 100 ? v / 1000 : v > 0 ? v : null;
-  const t = String(v).trim().replace(/(\d)[\s  ]+(?=\d)/g, '$1').replace(',', '.'), m = /-?\d+(\.\d+)?(e[+-]?\d+)?/i.exec(t); if (!m) return null;
+  const t = nombreEcrit(v), m = /-?\d+(\.\d+)?(e[+-]?\d+)?/i.exec(t); if (!m) return null;
   const x = parseFloat(m[0]); if (!(x > 0) || !isFinite(x)) return null;
   return /mm/i.test(t) || (!/\bm\b/i.test(t) && x > 100) ? x / 1000 : x; }
 /* (v84) CE QUE LE FICHIER ÉCRIVAIT, quand VOLTA le lit autrement : « 677VT2 51 » + « B » se lit 677VT2:51B (`boutLu`), une

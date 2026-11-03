@@ -247,6 +247,13 @@ const caseDate = c => !!c && ((c.t === 'n' && c.z && typeof XLSX !== 'undefined'
 function lignesDeFeuille(ws) { if (!ws) return [];
   const voir = c => { if (!caseDate(c)) return; const v = c.t === 'd' ? (c.v instanceof Date ? c.v.getTime() : Date.parse(c.v)) / 864e5 + 25569 : c.v; c.t = 's'; c.v = dateDeSerie(v); };
   if (Array.isArray(ws)) ws.forEach(r => { if (Array.isArray(r)) r.forEach(voir); }); else Object.keys(ws).forEach(k => { if (k[0] !== '!') voir(ws[k]); });
+  /* (v84) LES CASES FUSIONNÉES vers le bas (un FWD, un harness fusionnés sur les lignes de leur dessin) : SheetJS ne donne la
+     valeur qu'à la première ligne, les suivantes se lisaient vides — sans folio, sans harness. Chaque ligne de la fusion
+     reçoit la valeur ; une fusion en largeur (un titre) ne se recopie pas dans les colonnes voisines. */
+  const lire = (r, c) => Array.isArray(ws) ? (ws[r] || [])[c] : ws[XLSX.utils.encode_cell({ r, c })];
+  const poser = (r, c, x) => { if (Array.isArray(ws)) { if (!ws[r]) ws[r] = []; ws[r][c] = x; } else ws[XLSX.utils.encode_cell({ r, c })] = x; };
+  (ws['!merges'] || []).forEach(m => { if (!m || !m.s || !m.e || m.e.r <= m.s.r) return; const x = lire(m.s.r, m.s.c); if (!x || x.v == null || x.v === '') return;
+    for (let r = m.s.r + 1; r <= m.e.r; r++) { const y = lire(r, m.s.c); if (!y || y.v == null || y.v === '') poser(r, m.s.c, { ...x }); } });
   return XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: true, defval: '' }).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c))); }
 /* Une ligne d'Excel en texte tabulé : une case qui porte une tabulation, un retour à la ligne (Alt+Entrée dans une
    description) ou un guillemet s'entoure de guillemets, comme un CSV — sans eux, la ligne se coupait en deux et les
@@ -257,10 +264,12 @@ async function texteDuCsv(fichier) { if (!fichier.arrayBuffer) return fichier.te
   let t; try { t = new TextDecoder('utf-8', { fatal: true }).decode(u8); } catch (_) { t = new TextDecoder('windows-1252').decode(u8); } return t.charCodeAt(0) === 0xfeff ? t.slice(1) : t; }
 async function lectureDuFichier(fichier) {
   const nom = (fichier.name || '').toLowerCase();
-  const excel = /\.xls[xmb]?$/.test(nom) || /sheet|excel/.test(fichier.type || '');
+  const excel = /\.(xls[xmb]?|ods)$/.test(nom) || /sheet|excel/.test(fichier.type || '');
   if (!excel) return { texte: await texteDuCsv(fichier), feuilles: [], lues: [], ignorees: [], journaux: [], volta: null };
   if (typeof XLSX === 'undefined') throw new Error('bibliothèque Excel absente');
-  const wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array', cellNF: true });
+  let wb; try { wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array', cellNF: true }); }
+  // ce que SheetJS dit en anglais, en mots : un classeur protégé, un fichier abîmé
+  catch (e) { const m = String(e && e.message || e); throw new Error(/password|encrypt/i.test(m) ? 'il est protégé par un mot de passe — enregistrez-en une copie sans mot de passe' : /zip|end of data|corrupt|unsupported|invalid/i.test(m) ? 'le classeur semble abîmé ou d’un format inconnu' : m); }
   let volta = null; const journaux = [];
   const feuilles = wb.SheetNames.map(n => {
     const rows = lignesDeFeuille(wb.Sheets[n]);

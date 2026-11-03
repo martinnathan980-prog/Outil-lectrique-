@@ -1,0 +1,185 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'ACCUEIL (08-bibliotheque, `videHtml`) — VOLTA seul, à la manière d'Apple (v80-v84).
+   Ce que la charte a tranché : VOLTA seul, presque rien autour ; le titre « fil » (VOLTA dessiné comme un câble) ; le
+   slogan en cuivre ; le SCHÉMA VIVANT sous la seule règle du haut (1 à 8), qui s'efface vers les côtés — un schéma
+   infini, pas un casier ; deux gestes classe et vivants, deux tuiles dessous ; le graphite dans les deux thèmes.
+   La mise en scène, une fois par séance (1,7 s pour tout voir, les courants partent à 2 s) :
+       0,10 s  VOLTA se trace, lettre après lettre (1 s chacune, 130 ms d'écart), la borne se pose au bout du A ;
+       0,20 s  la règle des colonnes paraît, puis les pièces du schéma (0,40 s) ;
+       0,55 s  les câbles se tracent, l'un après l'autre (90 ms d'écart), leur type paraît avec eux ;
+       0,70 s  le slogan monte ;
+       1,15 s  les deux gestes montent, puis les deux tuiles (1,30 s) ;
+       2 s     le courant parcourt VOLTA ; 2,2 s les trois courants du schéma.
+   Ensuite (l'accueil revenu, un nouveau rendu) : rien ne se rejoue (`.bi-deja`) — la page paraît en fondu. 90 s sans la
+   main, les courants s'arrêtent où ils sont (`body.au-repos`, 08-table). Le mouvement réduit : tout posé, aucun courant.
+   Ce fichier se charge après les autres feuilles du domaine (style-bibliotheque.css) : il a le dernier mot sur l'accueil.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── la table de la bibliothèque : le noir chaud — la même famille que le graphite du plan, un cran plus profond (la
+   scène) ; une lumière de cuivre tombe d'en haut, deux nappes à peine teintées dérivent, les points sont blancs ─── */
+body.biblio{--s-app:#141211;
+  --table-fond:radial-gradient(900px 560px at 50% -14%,rgba(236,165,112,.075),rgba(236,165,112,0) 66%),radial-gradient(ellipse 92% 72% at 50% -8%,#221f1d 0%,#151312 54%,#0c0b0a 100%);
+  --nappe-a:radial-gradient(closest-side,rgba(229,156,100,.10),rgba(229,156,100,.035) 50%,rgba(229,156,100,0));
+  --nappe-b:radial-gradient(closest-side,rgba(190,170,150,.07),rgba(190,170,150,.025) 52%,rgba(190,170,150,0));
+  --grille-repos:rgba(255,236,216,.07); --s-grille-revele:rgba(255,236,216,.22);
+  --courant:linear-gradient(90deg,rgba(240,164,108,0),rgba(240,164,108,.8) 70%,#ffd7b8)}
+
+/* ─── la barre du haut, sur l'accueil : elle s'efface — la marque et le menu flottent, son filet de cuivre se tait, le nom
+   de l'outil aussi (VOLTA est déjà là, en grand) ─── */
+body.biblio #entete{transition:background var(--d-moyen) var(--courbe),box-shadow var(--d-moyen) var(--courbe)}
+body.biblio-accueil #entete{background:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+body.biblio-accueil #entete::after{opacity:0}
+body.biblio-accueil .en-nom{display:none}
+
+/* ─── la composition : au centre de l'écran, une colonne ─── */
+.bi-page.bi-accueil{--bi-rangee:600px;display:flex;flex-direction:column;width:100%;min-height:100%;padding:0 24px}
+.bi-accueil>.bi-contenu{flex:1;display:flex;flex-direction:column}
+.bi-vide{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;color:var(--t-table)}
+.bi-accueil .bi-vide-centre{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:min(1180px,100%);padding:8px 0 calc(2vh + 8px)}
+
+/* ─── LA MARQUE : VOLTA dessiné comme un câble, acier, qui se trace ; la borne de cuivre au bout du A ; le courant ─── */
+.bi-titre.bi-marque.bi-marque-svg{display:flex;justify-content:center;margin:0;font-size:inherit;line-height:1;background:none;-webkit-text-fill-color:currentColor}
+.mq{display:block;width:clamp(300px,min(36vw,46vh),560px);height:auto;overflow:visible}
+.mq .mq-g{fill:none;stroke:url(#mq-acier);stroke-linecap:round;stroke-linejoin:round}
+.mq .mq-t,.mq .mq-o{stroke-dasharray:1;stroke-dashoffset:1;animation:mq-trace 1s cubic-bezier(.55,0,.25,1) both;animation-delay:calc(.1s + var(--i) * .13s)}
+.mq .mq-o{stroke-dasharray:290;stroke-dashoffset:290}
+/* (le bout rond d'un trait de longueur nulle fait un point : tant que la lettre attend son tour, elle est invisible) */
+@keyframes mq-trace{from{stroke-opacity:0}2%{stroke-opacity:1}to{stroke-dashoffset:0;stroke-opacity:1}}
+.mq .mq-t.cuivre{stroke:#f2a46b}
+.mq .mq-pin{fill:none;stroke:#b3b8c2;stroke-width:3.2;opacity:0;animation:hs-pose .4s var(--courbe) 1s both}
+.mq .mq-pin.on{fill:#f2a46b;stroke:#f2a46b}
+.mq .mq-borne{fill:#141211;stroke:#f2a46b;stroke-width:3.4;opacity:0;animation:mq-borne .4s var(--courbe) 1.3s both}
+.mq .mq-courant{fill:#ffd9bd;filter:drop-shadow(0 0 5px rgba(242,164,107,.95)) drop-shadow(0 0 14px rgba(242,164,107,.55));opacity:0;animation:hs-pose .4s ease 2s both}
+@keyframes mq-borne{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+.mq .mq-borne{transform-box:fill-box;transform-origin:center}
+.mq-fin .mq-g{stroke:#f4f4f2}
+.mq-fin{width:clamp(320px,min(40vw,50vh),620px)}
+
+/* ─── LE SLOGAN : le cuivre, fin, un peu d'air entre les lettres ─── */
+.bi-accueil .bi-devise{margin:20px 0 0;font:400 clamp(14px,1.05vw,16px)/1.5 var(--sans);letter-spacing:.04em;color:rgba(229,156,100,.86)}
+
+/* ─── LE SCHÉMA VIVANT : au trait clair sur le graphite, sous la règle des colonnes ─── */
+.bi-vitrine.bi-hero{position:relative;flex:none;width:min(1400px,97vw,calc((100vh - 520px) * 4.2));height:auto;margin:28px 0 24px}
+.bi-hero svg{display:block;width:100%;height:auto;overflow:visible;transform:translate3d(calc(var(--px,0) * -14px),calc(var(--py,0) * -8px),0);transition:transform .9s var(--courbe)}
+.bi-hero .hs-regle{fill:none;stroke:url(#hs-regle);stroke-width:1}
+.bi-hero .hs-col{font:500 9px var(--mono);fill:rgba(236,239,245,.24);text-anchor:middle}
+.bi-hero .hs-fil{fill:none;stroke:rgba(236,239,245,.5);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;
+  animation:hs-trace 1s cubic-bezier(.4,0,.2,1) both;animation-delay:calc(.55s + var(--i) * .09s);transition:stroke var(--d-moyen) var(--courbe),stroke-width var(--d-moyen) var(--courbe)}
+@keyframes hs-trace{from{stroke-opacity:0}2%{stroke-opacity:1}to{stroke-dashoffset:0;stroke-opacity:1}}
+.bi-hero .hs-prise{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke;cursor:help}
+.bi-hero .hs-prise-p{fill:transparent;pointer-events:all}
+.bi-hero .hs-bloc{fill:rgba(255,255,255,.035);stroke:rgba(236,239,245,.72);stroke-width:1.2;transition:fill var(--d-moyen) var(--courbe),stroke var(--d-moyen) var(--courbe)}
+.bi-hero .hs-barre{fill:rgba(236,239,245,.82);transition:fill var(--d-moyen) var(--courbe)}
+.bi-hero .hs-rep{font:600 13px var(--mono);fill:#eef0f4;text-anchor:middle;letter-spacing:.02em;transition:fill var(--d-moyen) var(--courbe)}
+.bi-hero .hs-sous{font:500 11px var(--sans);fill:rgba(236,239,245,.45);text-anchor:middle}
+.bi-hero .hs-c{font:500 11px var(--mono);fill:rgba(236,239,245,.55);text-anchor:middle;transition:fill var(--d-moyen) var(--courbe)}
+.bi-hero .hs-g{text-anchor:start}
+.bi-hero .hs-b{font:500 10.5px var(--mono);fill:rgba(236,239,245,.5)}
+.bi-hero .hs-masse{fill:none;stroke:rgba(236,239,245,.6);stroke-width:1.3;stroke-linecap:round}
+.bi-hero .hs-source{fill:#1a1716;stroke:#f2a46b;stroke-width:1.4}
+.bi-hero .hs-courant{fill:#f2a46b;filter:drop-shadow(0 0 4px rgba(242,164,107,.95)) drop-shadow(0 0 10px rgba(242,164,107,.5))}
+.bi-hero .hs-piece{cursor:help}
+/* SURVOLER : un câble s'allume (le cuivre, sa lueur, son type) ; une pièce s'allume avec les câbles qui la touchent — ce
+   qu'elle relie se voit d'un coup (08-bibliotheque, `survolerHero`) ; le reste du schéma recule d'un cran */
+.bi-hero.montre .hs-f:not(.allume) .hs-fil{stroke:rgba(236,239,245,.3)}
+.bi-hero.montre .hs-piece:not(.allume) :is(.hs-bloc,.hs-barre){opacity:.62}
+.bi-hero :is(.hs-bloc,.hs-barre){transition:fill var(--d-moyen) var(--courbe),stroke var(--d-moyen) var(--courbe),opacity var(--d-moyen) var(--courbe)}
+.bi-hero .hs-f.allume .hs-fil{stroke:#f2a46b;stroke-width:2.2;filter:drop-shadow(0 0 4px rgba(242,164,107,.7))}
+.bi-hero .hs-f.allume .hs-c{fill:#f2a46b}
+.bi-hero .hs-piece.allume .hs-bloc{fill:rgba(229,156,100,.12);stroke:#f2a46b}
+.bi-hero .hs-piece.allume .hs-barre{fill:#f2a46b}
+.bi-hero .hs-piece.allume .hs-rep{fill:#ffe2cc}
+.bi-hero .hs-piece.hs-28.allume .hs-source{fill:#f2a46b}
+/* la légende : sous le schéma, au milieu, elle dit en clair ce qu'on survole ; elle n'est là que pendant le survol */
+.bi-hero .hs-legende{position:absolute;left:50%;bottom:-2px;width:max-content;max-width:92%;margin:0;transform:translate(-50%,4px);font:500 var(--f-13)/1.4 var(--sans);letter-spacing:.005em;color:rgba(243,238,232,.86);
+  opacity:0;pointer-events:none;transition:opacity var(--d-moyen) var(--courbe),transform var(--d-moyen) var(--courbe)}
+.bi-hero.montre .hs-legende{opacity:1;transform:translate(-50%,0)}
+
+/* ─── LES DEUX GESTES : le principal, une pastille de pierre claire, son liseré de cuivre qui tourne lentement ; le second
+   en verre, à côté. La rangée a la largeur des deux tuiles dessous : leurs bords tombent l'un sous l'autre ─── */
+@property --bi-ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+.bi-accueil .bi-vide-gestes{display:flex;flex-wrap:nowrap;justify-content:center;align-items:center;gap:14px;width:var(--bi-rangee);max-width:100%;margin:0}
+.bi-accueil .bi-vide-gestes .bi-btn{height:64px;letter-spacing:-.006em}
+.bi-accueil .bi-vide-gestes .bi-btn-ouvrir{position:relative;isolation:isolate;flex:none;gap:14px;padding:0 14px 0 10px;border:0;border-radius:999px;background:var(--bi-geste);color:var(--bi-geste-t);
+  box-shadow:0 18px 44px -18px rgba(242,164,107,.55),0 8px 22px -12px rgba(0,0,0,.8);transition:transform var(--d-moyen) var(--courbe),box-shadow var(--d-moyen) var(--courbe),background var(--d-rapide) var(--courbe)}
+.bi-accueil .bi-vide-gestes .bi-btn-ouvrir::before{content:"";position:absolute;inset:-2px;padding:2px;z-index:1;pointer-events:none;border-radius:inherit;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  background:conic-gradient(from var(--bi-ang),rgba(242,164,107,0) 0 64%,rgba(242,164,107,.9) 80%,#ffe0c6 86%,rgba(242,164,107,0) 94%);animation:bi-ang 5s linear infinite}
+@keyframes bi-ang{to{--bi-ang:360deg}}
+.bi-accueil .bi-vide-gestes .bi-btn-ouvrir:hover{background:var(--bi-geste-2);transform:translateY(-2px);box-shadow:0 24px 54px -18px rgba(242,164,107,.7),0 10px 26px -12px rgba(0,0,0,.85)}
+.bi-accueil .bi-btn-ouvrir .bi-g-ico{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#171513;color:#f2a46b;transition:transform var(--d-moyen) var(--courbe)}
+.bi-accueil .bi-btn-ouvrir:hover .bi-g-ico{transform:translateY(-2px)}
+.bi-accueil .bi-btn-ouvrir .bi-g-ico svg{width:20px;height:20px}
+.bi-accueil .bi-btn-ouvrir .bi-g-t{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left}
+.bi-accueil .bi-btn-ouvrir .bi-g-t b{font:600 var(--f-16)/1.15 var(--sans);letter-spacing:-.01em}
+.bi-accueil .bi-btn-ouvrir .bi-g-t small{font:400 var(--f-12)/1.2 var(--sans);color:var(--bi-geste-t2)}
+/* ses touches : deux, « Ctrl » et « O », à l'encre sur la pierre ; le « + » se lit aux lecteurs d'écran, il ne se voit pas */
+.bi-touches-k{position:relative;display:inline-flex;gap:3px;margin-left:10px;padding:0;background:none;font:inherit;opacity:.8}
+.bi-touches-k span{font:500 var(--f-11)/1 var(--mono);color:#4f4a44;background:rgba(23,21,19,.06);box-shadow:inset 0 0 0 1px rgba(23,21,19,.12);border-radius:5px;padding:4px 5px}
+.bi-touches-k i{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.bi-accueil .bi-vide-gestes .bi-btn-2{flex:1;justify-content:center;gap:10px;padding:0 24px;border-radius:999px;background:var(--bi-verre);border:1px solid var(--bi-verre-bord-2);color:var(--t-table);font:500 var(--f-16)/1 var(--sans);box-shadow:var(--bi-haut);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.bi-accueil .bi-vide-gestes .bi-btn-2 .ico{width:18px;height:18px}
+.bi-accueil .bi-vide-gestes .bi-btn-2:hover{background:var(--bi-verre-2);border-color:var(--bi-cu-ligne);transform:translateY(-2px)}
+.bi-accueil .bi-vide-gestes .bi-btn-2:hover .ico{transform:rotate(90deg)}
+.bi-accueil .bi-vide-gestes .bi-btn-2 .ico{transition:transform var(--d-moyen) var(--courbe),color var(--d-rapide) var(--courbe)}
+
+/* ─── LE DOCK : deux tuiles de verre sous les gestes — « Reprendre » (ou l'Exemple), la base des contrats ─── */
+.bi-accueil .bi-dock{flex:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:var(--bi-rangee);max-width:100%;margin:16px 0 32px;padding:0;background:none;box-shadow:none}
+.bi-accueil .bi-dock:has(> :only-child){grid-template-columns:minmax(0,288px);justify-content:center}
+.bi-accueil .bi-dock hr{display:none}
+.bi-accueil .bi-dock .bi-carte.bi-demo{display:flex;min-width:0}
+.bi-accueil .bi-tuile,.bi-accueil .bi-dock .bi-demo .bi-carte-corps.bi-tuile{position:relative;display:flex;flex:1;flex-direction:row;align-items:center;gap:12px;width:auto;min-width:0;min-height:72px;height:auto;padding:10px 20px 10px 12px;border:1px solid var(--bi-verre-bord);border-radius:16px;
+  background:var(--bi-verre);color:var(--t-table);text-align:left;cursor:pointer;box-shadow:var(--bi-haut),0 12px 30px -18px rgba(0,0,0,.8);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2);
+  transition:transform var(--d-moyen) var(--courbe),box-shadow var(--d-moyen) var(--courbe),background var(--d-rapide) var(--courbe),border-color var(--d-rapide) var(--courbe)}
+.bi-accueil .bi-tuile:hover,.bi-accueil .bi-dock .bi-demo:hover .bi-carte-corps.bi-tuile{background:var(--bi-verre-2);border-color:var(--bi-cu-ligne);transform:translateY(-2px);box-shadow:var(--bi-haut),0 16px 34px -16px rgba(0,0,0,.7),0 0 0 3px rgba(242,164,107,.07)}
+.bi-accueil .bi-tuile:active,.bi-accueil .bi-dock .bi-demo .bi-carte-corps.bi-tuile:active{transform:scale(var(--presse));transition-duration:var(--d-instant)}
+.bi-accueil .bi-tuile .bi-folio{width:56px}
+.bi-accueil .bi-tuile-ico{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:11px;background:var(--voile-1);box-shadow:inset 0 0 0 1px var(--bi-verre-bord-2);transition:box-shadow var(--d-rapide) var(--courbe)}
+.bi-accueil .bi-tuile-ico .ico{width:20px;height:20px;color:var(--t-table-2);stroke-width:1.5;transition:color var(--d-rapide) var(--courbe)}
+.bi-accueil .bi-tuile:hover .bi-tuile-ico{box-shadow:inset 0 0 0 1px var(--bi-cu-ligne)}
+.bi-accueil .bi-tuile:hover .bi-tuile-ico .ico{color:var(--bi-cu)}
+.bi-accueil .bi-tuile-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.bi-accueil .bi-tuile-t b{font:600 var(--f-14)/1.3 var(--sans);letter-spacing:-.006em;white-space:nowrap}
+.bi-accueil .bi-tuile-t small{font:400 var(--f-12)/1.35 var(--sans);color:var(--t-table-2);white-space:normal}
+.bi-accueil .bi-tuile kbd{flex:none;margin-left:auto;font:500 var(--f-11)/1 var(--mono);color:var(--t-table);background:var(--voile-2);border-radius:5px;padding:5px 7px}
+/* « Reprendre » : sa touche ne paraît qu'au survol */
+.bi-accueil .bi-tuile-reprendre kbd{opacity:0;transition:opacity var(--d-moyen) var(--courbe)}
+.bi-accueil .bi-tuile-reprendre:is(:hover,:focus-visible) kbd{opacity:1}
+/* la bulle d'une tuile : au-dessus (la phrase de la base des contrats) */
+.bulle.bi-bulle-haut{display:block;left:50%;top:auto;bottom:calc(100% + 14px);width:max-content;max-width:300px;transform:translate(-50%,3px);white-space:normal;text-align:left}
+.bulle.bi-bulle-haut::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--bulle)}
+.bi-tuile.bulle-on>.bi-bulle-haut{transform:translate(-50%,0)}
+
+/* ─── LA MISE EN SCÈNE : ce qui ne se trace pas paraît (la règle, les pièces, les types, les bornes) ou monte (le slogan,
+   les gestes, les tuiles), dans l'ordre dit en tête ─── */
+@keyframes hs-pose{from{opacity:0}to{opacity:1}}
+@keyframes bi-monte{from{opacity:0;transform:translateY(var(--monte))}to{opacity:1;transform:none}}
+.bi-hero :is(.hs-regle,.hs-col){animation:hs-pose .4s var(--courbe) .2s both}
+.bi-hero .hs-piece,.bi-hero .hs-masse,.bi-hero .hs-b{animation:hs-pose .6s var(--courbe) .4s both}
+.bi-hero .hs-f .hs-c{animation:hs-pose .4s var(--courbe) both;animation-delay:calc(.9s + var(--i) * .09s)}
+.bi-accueil .bi-devise{animation:bi-monte .4s var(--courbe) .7s both}
+.bi-accueil .bi-vide-gestes{animation:bi-monte .4s var(--courbe) 1.15s both}
+.bi-accueil .bi-dock{animation:bi-monte .4s var(--courbe) 1.3s both}
+/* une fois jouée (et toujours au mouvement réduit), tout est posé d'emblée */
+.bi-page.bi-deja .bi-accueil :is(.mq-t,.mq-o,.mq-pin,.mq-borne,.mq-courant,.hs-fil,.hs-piece,.hs-c,.hs-b,.hs-masse,.hs-col,.hs-regle,.bi-devise,.bi-vide-gestes,.bi-dock){animation:none;opacity:1;stroke-dashoffset:0}
+.bi-page.bi-deja .bi-accueil :is(.bi-devise,.bi-vide-gestes,.bi-dock){transform:none}
+/* au repos (90 s sans la main, 08-table) : le liseré du premier geste s'arrête où il est */
+body.au-repos .bi-accueil .bi-btn-ouvrir::before{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){
+  .bi-accueil :is(.mq-t,.mq-o,.mq-pin,.mq-borne,.hs-fil,.hs-piece,.hs-c,.hs-b,.hs-masse,.hs-col,.hs-regle,.bi-devise,.bi-vide-gestes,.bi-dock){animation:none;opacity:1;stroke-dashoffset:0;transform:none}
+  .bi-accueil :is(.mq-courant,.hs-courant){display:none}
+  .bi-accueil .bi-vide-gestes .bi-btn-ouvrir::before{animation:none}
+  .bi-hero svg{transform:none;transition:none}
+}
+
+/* ─── LE PASSAGE AU PLAN (08-bibliotheque, `montrerLePlan`) : la table change de matière en fondu (08-table,
+   `fonduTable`) ; le folio et son cadre paraissent dans le même temps — un enchaînement, pas une coupure ─── */
+@keyframes du-biblio{from{opacity:0}}
+body.du-biblio :is(#svg,#ombre,#rail,#folios){animation:du-biblio .42s var(--courbe) both}
+@media (prefers-reduced-motion:reduce){ body.du-biblio :is(#svg,#ombre,#rail,#folios){animation:none} }
+
+/* ─── une fenêtre étroite (le code reste, on ne le soigne plus) ─── */
+@media (max-width:900px){
+  .bi-page.bi-accueil{padding:0 12px}
+  .bi-accueil .bi-vide-gestes{flex-wrap:wrap;width:auto}
+  .bi-accueil .bi-dock{grid-template-columns:minmax(0,1fr);width:min(320px,100%)}
+}

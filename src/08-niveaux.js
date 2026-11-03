@@ -191,13 +191,17 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
   const tete = COLONNES_TABLE_CABLES.map(([k, t]) => { const s = T.col === k ? (T.sens > 0 ? 'ascending' : 'descending') : 'none';
     return `<th scope="col" aria-sort="${s}" class="nv-th-${k}"><button type="button" class="nv-tri" data-tri="${k}" data-bulle="${escA('Trier par ' + t.toLowerCase() + (s === 'none' ? '' : ' — un clic renverse'))}">${esc(t)}<span class="nv-tri-f" aria-hidden="true">${s === 'ascending' ? '↑' : s === 'descending' ? '↓' : '↕'}</span></button></th>`; }).join('');
   const avecCt = xs.some(x => x.ct && x.ct.st && x.ct.st.reference);
+  // (v84) une colonne homogène : si une ligne y porte un anneau, celles qui n'en ont pas gardent sa place (la valeur reste
+  // alignée sous les autres) ; si aucune n'en porte, la valeur seule, centrée sous son titre
+  const fini = v => v != null && isFinite(v), anI = xs.some(x => fini(x.r.charge.r)), anU = xs.some(x => fini(x.r.chute.u != null && x.r.chute.max ? x.r.chute.u / x.r.chute.max : null));
+  const anneauOuPlace = (v, a) => !a ? '' : anneauVue(v, { r: 16, ep: 3.2, texte: true });
   const lignes = xs.slice().sort(cmp).map(({ r, ct, L }) => { const ed = r.l && r.l.origine !== null && r.k && r.k[0] !== 'p' ? editionsDuCable(r) : null;
     // (v78, le lecteur : « équipement et borne, mal présentés ; l'intensité, la chute : juste un rapport ») : une nomenclature —
     // le câble, où il va et sur quelle borne, la charge et la chute en anneaux (la part de l'admis), la longueur
     const type = `<span class="nv-cab-id">${r.puce || ''}<b class="id nv-cab-type">${esc(r.type || 'sans type')}</b></span>`;
-    const iH = `<span class="nv-mes">${anneauVue(r.charge.r, { r: 16, ep: 3.2, texte: true })}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : ''}</span></span>`;
+    const iH = `<span class="nv-mes${anI ? '' : ' seul'}">${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : ''}</span></span>`;
     const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
-    const uH = `<span class="nv-mes">${anneauVue(ru, { r: 16, ep: 3.2, texte: true })}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
+    const uH = `<span class="nv-mes${anU ? '' : ' seul'}">${anneauOuPlace(ru, anU)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
     // (v81) une longueur supposée s'écrit « ≈ 5 m » en gris, comme au récapitulatif — la cellule reste centrée sous son titre
     const lgH = `<span class="nv-cab-lg${L == null ? ' supp' : ''}"${L == null ? ` data-bulle="${escA('Votre fichier ne donne pas sa longueur : VOLTA suppose ' + nombre(H.longueur) + ' m (Hypothèses)')}"` : ''}>${L == null ? '<i class="nv-env">≈</i>' : ''}${ed ? ed.lon : `<b>${L != null ? esc(nombre(arrondi(L, 2))) : esc(nombre(H.longueur))}</b>`}<small>m</small></span>`;
     const ctH = ct && ct.st && ct.st.reference ? `<span class="id nv-cab-ct${ct.ko ? ' ko' : ''}" data-bulle="${escA(motSertir(ct.st) + (ct.rep ? ' — ' + ct.rep + (ct.borne ? ':' + ct.borne : '') : ''))}">${esc(ct.st.reference)}</span>` : '<span class="nv-muet">—</span>';

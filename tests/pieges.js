@@ -67,9 +67,10 @@ const PIEGES = {
 
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
-  const R = []; const ok = (n, c, d) => R.push((c ? '  ok   ' : '  KO   ') + n.padEnd(56) + (d || ''));
+  // un piège tombe dès qu'une de ses lignes est KO (son ouverture, son aller-retour, son autotest)
+  const R = [], tombes = new Set(); let courant = ''; const ok = (n, c, d) => { if (!c) tombes.add(courant); R.push((c ? '  ok   ' : '  KO   ') + n.padEnd(56) + (d || '')); };
   const noms = Object.keys(PIEGES).concat(['classeur']).filter(n => !SEUL || n === SEUL);
-  for (const nom of noms) {
+  for (const nom of noms) { courant = nom;
     const p = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); p.setDefaultTimeout(900000);
     const e = []; p.on('pageerror', x => e.push(x.message));
     await p.goto(FICHIER); await p.waitForTimeout(1200);
@@ -84,6 +85,16 @@ const PIEGES = {
     await p.waitForTimeout(2500);
     const lu = await p.evaluate(() => ({ n: verite().length, folios: plans().length }));
     if (!lu.n) { ok(`${nom} : le fichier ne s’ouvre pas (0 liaison)`, false, e.slice(0, 2).join(' · ')); console.log(R[R.length - 1]); await p.context().close(); continue; }
+    /* (v84) L'ALLER-RETOUR : le plan ouvert → l'installation corrigée (Excel) → relue comme Ctrl+O la relit : les mêmes liaisons,
+       champ pour champ, à leur rang (les incomplètes comprises) — la donnée du fichier reste intacte */
+    const AR = await p.evaluate(async () => { const V = verite(), C = classeurRetestCorrige(V, 'essai'), buf = XLSX.write(C.wb, { type: 'array', bookType: 'xlsx' });
+      const r = await lireFichier(new File([buf], 'essai-corrige.xlsx')), T = r.toutes || r.liaisons, hors = new Set(['avant', 'origine', 'aPoser', 'contactDe', 'contactVers']);
+      const sans = l => JSON.stringify(Object.keys(l).filter(k => !hors.has(k) && l[k] !== '' && l[k] != null).sort().map(k => [k, l[k]]));
+      const A = V.filter(l => l.de || l.vers || l.cable), ecarts = [];
+      A.forEach((l, i) => { if (ecarts.length < 3 && (!T[i] || sans(l) !== sans(T[i]))) ecarts.push(i + ' : ' + sans(l) + ' ≠ ' + (T[i] ? sans(T[i]) : 'absente')); });
+      return { n: A.length, relues: T.length, ecarts }; });
+    ok(`${nom} : lire → installation corrigée → relire : ${AR.relues} / ${AR.n} liaisons identiques`, AR.relues === AR.n && !AR.ecarts.length, AR.ecarts.join(' · ').slice(0, 400));
+    console.log(R[R.length - 1]);
     const budget = nom === 'geant' ? 240000 : 180000;
     await p.evaluate(o => lancerAutotest(o), { listes: !VITE, budget, bilan: false, sauter: nom === 'geant' ? ['dossierpdf', 'png'] : [] });
     await p.waitForFunction(() => typeof AUTOTEST !== 'undefined' && !AUTOTEST.enCours && AUTOTEST.resultat, null, { polling: 500 });
@@ -95,7 +106,7 @@ const PIEGES = {
     console.log(R.slice(-1 - Math.min(8, fautes.length)).join('\n'));
     await p.context().close();
   }
-  const ko = R.filter(x => x.startsWith('  KO')).length;
+  const ko = tombes.size;
   console.log('\n  ' + (noms.length - ko) + ' / ' + noms.length + (ko ? '  — ' + ko + ' PROBLÈME(S)' : '  — tout tient'));
   await b.close(); process.exit(ko ? 1 : 0);
 })();

@@ -25,7 +25,7 @@
    ni épaisseur, ni ombre : ce qui distingue une famille, c'est sa forme.
    La fiche (08 bis) montre la face, vivante : survoler un contact allume son
    fil sur le plan et sa ligne dans la fiche, un clic le choisit ; la bible dessine chaque
-   variante en petit (`pictoModule`) et en grand (`zoomModule`).
+   variante en petit (`pictoModule`) ; en grand, c'est la bible (08-normes, `zoomBible`).
    =========================================================================== */
 'use strict';
 
@@ -125,21 +125,8 @@ function pictoModule(m) { const k = 30 / Math.max(m.colonnes * 6, m.rangs * 6), 
   return `<svg class="picto mj-picto ${classeFamille(m.famille)} corps-${forme}" width="${f1(W + 4)}" height="${f1(H + 4)}" viewBox="-2 -2 ${f1(W + 4)} ${f1(H + 4)}" aria-hidden="true">${corps}`
     + m.groupes.filter(g => g.contacts.length > 1).map(g => `<path class="p-groupe" d="${traitsDe(g.contacts.map(pos))}" style="stroke-width:${f1(4 * k)}"/>`).join('')
     + m.contacts.map(c => { const p = pos(c); return `<circle class="p-contact" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1((c.calibre <= 12 ? 2 : c.calibre <= 16 ? 1.7 : 1.3) * k)}"/>`; }).join('') + '</svg>'; }
-function zoomModule(e) { const m = moduleDeReference(app.norme, e.reference); if (!m) return '';
-  const tailles = [...new Set(m.contacts.map(c => c.taille))].map(t => { const T = tailleDe(app.norme, m.famille, t); return '#' + t + (T ? (T.jaugeMin != null ? ' : ' + T.jaugeMin + '–' + T.jaugeMax + ' AWG' : ' : câble spécial') : ''); });
-  const f = faceModuleSvg(m, null), E = m.famille === 'E0599', C = m.emploi === 'connecteur';
-  const type = m.type === 'mixte' ? 'mixte (tailles de contact variables)' : m.type === 'diodes' ? 'à diodes incorporées' : m.type === 'obturateur' ? 'module neutre, sans contact' : m.type === 'spécial' ? 'contact spécial à clé' : E ? 'type ' + m.type : 'contacts taille ' + m.type.toUpperCase();
-  const carac = [['norme', nomDeFamille(app.norme, m.famille) + (E ? ' · NF L 53-105' : C ? ' · 2023' : ' · mars 2021')], [E ? 'variante' : 'arrangement', m.variante], ['type', type],
-    ['contacts', taillesDe(m)], ['groupes', seulsDe(m) ? 'aucun : chaque contact seul' : tailleDesGroupes(m)], ['tailles', tailles.join(' ; ') || '—'], ['usage', motUsage(m.usage)],
-    ['corps', m.corps === 'étanche' ? 'étanche (plaque d’extrémité)' : m.corps === 'ovale' ? 'bouts arrondis' : m.corps === 'module' ? 'module carré, détrompeur sous la face' : m.corps === 'circulaire' ? 'circulaire, clé de détrompage en haut' : 'rectangulaire'],
-    ['emploi', C ? 'connecteur d’équipement, prise de coupure' : 'barrette'],
-    ['masse', m.poids != null ? nombre(m.poids) + ' g' : '—'], ['hauteur', m.hauteur != null ? nombre(m.hauteur) + ' mm' : '—'],
-    ['désignation', m.reference + (E ? ' (module à retour, tenue aux fluides Z)' : ' (provisoire)')], ['note', m.note]];
-  return `<div class="bible-zoom"><div class="bz-tete"><div class="min0"><div class="sur">module ${C ? 'de connecteur' : 'de jonction'} · ${esc(nomDeFamille(app.norme, m.famille))}</div><div class="bz-ref">${esc(e.reference)}</div></div>
-      <button class="rond fermer" id="bz-fermer" aria-label="Replier la référence"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
-    <div class="mj-faces"><svg class="mj" width="${f1(f.w)}" height="${f1(f.h)}" viewBox="0 0 ${f1(f.w)} ${f1(f.h)}" role="img" aria-label="${escA('Face du module ' + m.variante)}">${f.svg}</svg></div>
-    <div class="bar-faits">${carac.map(([k, v]) => `<span>${esc(k)}</span><span>${esc(v)}</span>`).join('')}</div>
-    <p class="note">${E ? 'Borne de jonction : E0599B01. Shunt : E0599S01A (2 trous), B (3), C (4), D (5).' : C ? 'Désignation provisoire : la règle de désignation de la norme n’est pas sur les pages lues. Les jauges par taille de contact sont celles, usuelles, des contacts EN 3155 (EN 3155-002 non fournie) : à confirmer.' : 'La règle de désignation de la NSA937901 n’est pas sur les pages lues : la désignation est provisoire, la face et les groupes viennent des figures 13 à 15.'}</p></div>`; }
+// (v84) le grand d'une variante se dessine dans la bible (08-normes, `zoomBible`) : l'ancien `zoomModule` d'ici, que plus
+// rien n'appelait, est retiré — il datait toutes les normes de connecteurs de 2023 et disait provisoire la désignation NSA937901.
 
 /* ---- les connecteurs et les prises de coupure en modules EN 4165 -------------
    Un connecteur d'équipement EN 4165 : une carte par cavité (A, B…), la face

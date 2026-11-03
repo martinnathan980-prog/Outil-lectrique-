@@ -1548,7 +1548,11 @@ function deselectionner() { const c = app.cible;
   if (c) { app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
     if (c.type === 'bloc' && app.base.filtre && app.base.filtre === filtreDuBloc(c.nom)) { app.base.filtre = ''; app.base.filtreAuto = false; rendreBase(); }
     else marquerLignes(); eteindre();
-    if (app.insp.index && !$('inspecteur').hidden) { rendreFiche(); CARTE.origine = origineDeLaCible(); dessinerLien(); return; } }
+    // (v84, le parcours) revenue à l'index, la fiche rend le clavier à la ligne d'où elle venait (il tombait sur la page)
+    if (app.insp.index && !$('inspecteur').hidden) { const el = $('inspecteur'), avait = el.contains(document.activeElement) || document.activeElement === document.body;
+      rendreFiche(); CARTE.origine = origineDeLaCible(); dessinerLien();
+      if (avait) { const b = [...el.querySelectorAll('.ix-item[data-nom]')].find(x => x.dataset.nom === c.nom) || $('ix-q'); if (b) { try { b.focus({ preventScroll: true }); b.scrollIntoView({ block: 'nearest' }); } catch (_) { } } }
+      return; } }
   fermerInspecteur();
   if (app.fiche) fermerFiche(true); }
 const retourIndex = () => deselectionner();
@@ -1556,6 +1560,9 @@ const retourIndex = () => deselectionner();
    de ce qu'on a cliqué et se pose à côté, le plan ne bouge pas ; épinglée (le volet), le plan se recadre à côté (sans
    bouger si ce qu'on vient de choisir est déjà en vue). Au téléphone, le tiroir. */
 function ouvrirInspecteur() { const el = $('inspecteur'), etait = !el.hidden, avant = etait ? el.getBoundingClientRect() : null, vieille = CARTE.origine; if (app.fiche) fermerFiche();
+  // (v84) ce qui avait le clavier (le bouton du rail, une ligne du récapitulatif) le retrouve quand elle se ferme
+  // — au clavier seulement (`:focus-visible`) : un bouton pressé à la souris ne se rallume pas
+  const a = document.activeElement; if (!etait) app.insp.ouvreur = a && a !== document.body && !el.contains(a) && a.matches(':focus-visible') ? a : null;
   CARTE.origine = origineDeLaCible();
   el.hidden = false; document.body.classList.add('insp-ouvert'); modeCarte(); rendreFiche(); synchroniserRail();
   if (carteFlottante()) { el.classList.remove('entre'); poserLaCarte(etait, avant, vieille); return; }
@@ -1563,12 +1570,13 @@ function ouvrirInspecteur() { const el = $('inspecteur'), etait = !el.hidden, av
 /* Fermer : la carte se résorbe dans son bloc (son double ; elle, elle est fermée tout de suite) ; le volet rend la place. */
 function fermerInspecteur() { const el = $('inspecteur'); app.insp.index = false; synchroniserRail(); if (el.hidden) return;
   const volet = !carteFlottante(); if (!volet) resorberCarte(el);
-  el.hidden = true; document.body.classList.remove('insp-ouvert'); modeCarte(); CARTE.origine = null; dessinerLien(); if (volet) recadrerSiCache();
+  const avait = el.contains(document.activeElement) || document.activeElement === document.body, o = app.insp.ouvreur; app.insp.ouvreur = null;
+  el.hidden = true; if (avait && o && o.isConnected && o.offsetParent && typeof rendreLeClavier === 'function') rendreLeClavier(o); document.body.classList.remove('insp-ouvert'); modeCarte(); CARTE.origine = null; dessinerLien(); if (volet) recadrerSiCache();
   // (v78) la prochaine fiche s'ouvre en carte : le grand ne dure que le temps qu'on y travaille
   if (typeof NIVEAU !== 'undefined') NIVEAU.grand = false; CARTE.epingle = false; document.body.classList.remove('insp-grand', 'insp-grand-ouvert'); }
 /* Le rail dit ce qui est ouvert : l'outil dont le panneau est là se marque pressé (dans un carré gris). */
 function synchroniserRail() { const p = (id, on) => { const b = $(id); if (b) b.setAttribute('aria-pressed', on ? 'true' : 'false'); };
-  p('btnIndex', app.insp.index && !$('inspecteur').hidden); p('btnCherche', document.body.classList.contains('cherche')); p('btnBible', !!(app.fiche && app.fiche.mode === 'bible')); }
+  p('btnIndex', app.insp.index && !$('inspecteur').hidden); p('btnCherche', document.body.classList.contains('cherche') || document.body.classList.contains('palette-ouverte')); p('btnBible', !!(app.fiche && app.fiche.mode === 'bible')); }
 
 /* ---- l'INDEX : les repères du contrat ---------------------------------- */
 /* Le lecteur : « on se repère pas, on est perdu ». Un bouton du rail (R) ouvre l'inspecteur sur la liste de tous les
@@ -1800,7 +1808,8 @@ function synchroniserFolios() { const P = plans(), strip = $('fo-strip'), sel = 
   // la même bande (le même folio, les mêmes puces) ne se refait pas : la puce qui a le clavier le garde, la pastille ne saute pas
   if (synchroniserFolios.html !== html || !strip.querySelector('.chip') !== !html) { strip.innerHTML = html; synchroniserFolios.html = html; }
   if (deP && deP !== app.plan && P.includes(deP)) glisserPastille(strip, deP, deX, deW);
-  if (sel) { sel.hidden = P.length <= FOLIOS_EN_LISTE; sel.innerHTML = sel.hidden ? '' : P.map((p, j) => `<option value="${escA(p)}"${p === app.plan ? ' selected' : ''}>${j + 1} · ${esc(p)}</option>`).join(''); }
+  // (v84, le parcours) un folio nommé par son rang se dit « 41 / 90 », pas « 41 · 41 » ; un nom, « 3 · MEE…003A »
+  if (sel) { sel.hidden = P.length <= FOLIOS_EN_LISTE; sel.innerHTML = sel.hidden ? '' : P.map((p, j) => `<option value="${escA(p)}"${p === app.plan ? ' selected' : ''}>${String(p) === String(j + 1) ? (j + 1) + ' / ' + P.length : (j + 1) + ' · ' + esc(p)}</option>`).join(''); }
   $('fo-lbl').textContent = i < 0 ? (P.length > 1 ? 'tout' : '1 / 1') : (i + 1) + ' / ' + P.length;
   // une seule feuille : les flèches n'ont nulle part où aller
   const seul = P.length < 2; $('fo-prev').disabled = seul || i === 0; $('fo-next').disabled = seul || (i >= 0 && i >= P.length - 1);
@@ -1944,9 +1953,16 @@ function fermerRecherche() { $('q-liste').hidden = true; document.body.classList
 const rechercheOuverte = () => document.body.classList.contains('cherche');
 function lierRecherche() { const q = $('q'), box = $('q-liste');
   q.readOnly = true; q.addEventListener('pointerdown', e => { e.preventDefault(); ouvrirRecherche(); });
-  q.addEventListener('focus', () => { if (!PALETTE.el || PALETTE.el.hidden) { q.blur(); ouvrirRecherche(); } });
+  /* (v84, le parcours) AU CLAVIER, le champ se TRAVERSE : Tab s'y pose (l'anneau cuivre) puis passe au menu, au rail, aux
+     folios ; il s'ouvre à la frappe (la lettre tapée commence la recherche), à Entrée, à Espace ou à ↓ — et Échap rend le
+     clavier au champ. Il ouvrait la palette dès qu'il avait le clavier, et Tab y tournait en rond : le menu, le rail, les
+     folios et le zoom ne se joignaient plus au clavier. */
+  const palette = typeof ouvrirPalette === 'function';
+  q.addEventListener('keydown', e => { if (!palette || e.ctrlKey || e.metaKey || e.altKey) return; const k = e.key, lettre = k.length === 1 && k !== ' ' && k !== '/';
+    if (!(lettre || k === 'Enter' || k === ' ' || k === 'ArrowDown' || k === '/')) return;
+    e.preventDefault(); e.stopImmediatePropagation(); ouvrirPalette(lettre ? k : ''); });
   q.addEventListener('input', () => { qSel = 0; montrerCandidats(); });
-  q.addEventListener('focus', () => { document.body.classList.add('cherche'); synchroniserRail(); if (q.value.trim()) montrerCandidats(); });
+  q.addEventListener('focus', () => { if (palette) return; document.body.classList.add('cherche'); synchroniserRail(); if (q.value.trim()) montrerCandidats(); });
   const x = $('rc-x'); if (x) x.addEventListener('click', () => { q.blur(); fermerRecherche(); });
   q.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown') { e.preventDefault(); qSel = Math.min(qSel + 1, qCands.length - 1); montrerCandidats(); }
@@ -1958,7 +1974,7 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
   box.addEventListener('pointerdown', e => e.preventDefault());   // le champ garde le focus
   box.addEventListener('click', e => { const b = e.target.closest('.q-item'); if (!b) return; const c = qCands[+b.dataset.i]; if (c) trouve(c); });
   q.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== q) fermerRecherche(); }, 120));
-  $('recherche').addEventListener('click', e => { if (!e.target.closest('.q-liste')) q.focus(); }); }
+  $('recherche').addEventListener('click', e => { if (e.target.closest('.q-liste')) return; if (!palette) q.focus(); else if (!paletteOuverte()) ouvrirRecherche(); }); }
 // (Ctrl+K, ⌘K : la touche globale du chrome — « tout relier », A2 — appelle `ouvrirPalette` ; ouverte, la palette la reprend pour se fermer)
 
 /* ---- LA PALETTE (Ctrl+K) -------------------------------------------------
@@ -2055,10 +2071,10 @@ function construirePalette() { if (PALETTE.el) return PALETTE.el;
   return el; }
 function ouvrirPalette(seme) { const el = construirePalette(); if (rechercheOuverte()) fermerRecherche(); if (typeof fermerMenu === 'function') fermerMenu();
   PALETTE.avant = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
-  el.hidden = false; document.body.classList.add('palette-ouverte'); const q = el.querySelector('#pa-q'); q.value = typeof seme === 'string' ? seme : ''; PALETTE.sel = 0; rendrePalette();
+  el.hidden = false; document.body.classList.add('palette-ouverte'); synchroniserRail(); const q = el.querySelector('#pa-q'); q.value = typeof seme === 'string' ? seme : ''; PALETTE.sel = 0; rendrePalette();
   if (!mouvementReduit()) el.querySelector('.pa-boite').animate([{ opacity: 0, transform: 'translateY(-6px) scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.32,.72,0,1)' });
   try { q.focus({ preventScroll: true }); } catch (_) { q.focus(); } }
-function fermerPalette(rendre) { const el = PALETTE.el; if (!el || el.hidden) return; el.hidden = true; document.body.classList.remove('palette-ouverte');
+function fermerPalette(rendre) { const el = PALETTE.el; if (!el || el.hidden) return; el.hidden = true; document.body.classList.remove('palette-ouverte'); synchroniserRail();
   const a = PALETTE.avant; PALETTE.avant = null; if (rendre !== false && a && a.isConnected && a.focus) try { a.focus({ preventScroll: true }); } catch (_) { } else if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
 const ICONE_OBJET = { repere: '<rect x="5" y="6" width="14" height="12" rx="1.5"/><path d="M2.5 10h2.5M2.5 14h2.5M19 10h2.5M19 14h2.5"/>', fil: '<path d="M3 16c4 0 4-8 9-8s5 8 9 8"/>', borne: '<circle cx="12" cy="12" r="3.2"/><path d="M3 12h5.8M15.2 12H21"/>',
   type: '<path d="M4 7h16M4 12h16M4 17h10"/>', nature: '<path d="M4 6h16v4H4zM4 14h16v4H4z"/>', action: '<path d="m13 3-7 10h5l-1 8 7-10h-5z"/>', geste: '<path d="M4.5 12h13M13 6.5l5.5 5.5-5.5 5.5"/>', folio: '<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/>',
@@ -2651,7 +2667,7 @@ const photo = (quoi, retouche) => ({ quoi, retouche: !!retouche, planId: app.pla
 const REFAIRE = { hist: null, pile: [] }, HISTOIRE = { recit: '' };
 function pileRefaire() { if (REFAIRE.hist !== app.hist) { REFAIRE.hist = app.hist; REFAIRE.pile = []; } return REFAIRE.pile; }
 const borner = (xs, n) => { while (xs.length > n) xs.shift(); };
-function histPush(quoi, retouche) { app.hist.push(photo(quoi, retouche)); borner(app.hist, 40); pileRefaire().length = 0; synchroniserHistorique(); }
+function histPush(quoi, retouche) { app.hist.push(photo(quoi, retouche)); borner(app.hist, 40); pileRefaire().length = 0; HISTOIRE.t = Date.now(); synchroniserHistorique(); }
 // défaire : la photo du dessus revient ; ce qu'on quitte part sur la pile à refaire. Rend le nom du geste défait.
 function annuler() { const p = app.hist.pop(); if (!p) return null; const ici = photo(p.quoi, p.retouche), pile = pileRefaire(); pile.push(ici); borner(pile, 40);
   poserPhoto(p); HISTOIRE.recit = recitDuGeste(ici, p, p, 'revient'); return p.quoi; }
@@ -2905,7 +2921,14 @@ const cacherToast = () => { clearTimeout(toastT); $('toast').classList.remove('o
 /* Le temps qu'il reste : 2,8 s pour une ligne ; un mot plus long se lit plus longtemps (le technicien : « deux lignes
    effacées en 2,8 s, je n'ai pas eu le temps de lire le nom du fichier »), 6 s au plus ; 8 s quand il offre un geste. */
 const dureeDuMot = (msg, geste) => geste ? 8000 : Math.min(6000, Math.max(2800, 1400 + String(msg).length * 45));
-function dire(msg, erreur, o) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.remove('action'); t.classList.add('on');
+/* (v84, le parcours) un geste qui vient d'entrer dans l'historique, et dont le mot disait « Ctrl+Z le rend » : le mot offre
+   « Défaire », un bouton (le même que Ctrl+Z, qui répond « Défait : … · Refaire »), au lieu d'une touche à retenir. Pas pour
+   les normes : leur Ctrl+Z est le leur (elles n'écrivent pas l'historique du plan). */
+const ASTUCE_CTRL_Z = /\s*\(Ctrl\+Z[^)]*\)|\s*(?:[·—,:]\s*)?Ctrl\+Z\s(?:pour défaire|les? rend|la rend|défait le tout|le défait|revient)\.?/;
+function dire(msg, erreur, o) { const t = $('toast');
+  if (!erreur && !(o && o.geste) && app.hist.length && Date.now() - (HISTOIRE.t || 0) < 2000 && ASTUCE_CTRL_Z.test(msg)) {
+    msg = String(msg).replace(ASTUCE_CTRL_Z, '').trimEnd(); if (!/[.!?…]$/.test(msg)) msg += '.'; o = { ...(o || {}), geste: 'Défaire', faire: defaire }; }
+  t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.remove('action'); t.classList.add('on');
   clearTimeout(toastT); TOAST.erreur = !!erreur; TOAST.t = Date.now();
   if (o && o.geste && typeof o.faire === 'function') { const b = document.createElement('button'); b.type = 'button'; b.className = 'toast-voir toast-geste'; b.textContent = o.geste;
     b.addEventListener('click', e => { e.stopPropagation(); cacherToast(); o.faire(); }); t.appendChild(b); t.classList.add('action'); }
@@ -2914,15 +2937,19 @@ function dire(msg, erreur, o) { const t = $('toast'); t.textContent = msg; t.cla
   if (!TOAST.lie) { TOAST.lie = true;
     // l'erreur s'en va au premier clic qui la suit (pas celui qui l'a fait naître) ; sur un de ses boutons, il fait d'abord le sien
     document.addEventListener('pointerdown', e => { if (!TOAST.erreur || Date.now() - TOAST.t < 400 || (e.target.closest && e.target.closest('#toast button'))) return; cacherToast(); }, true); } }
-/* Où il se pose : au milieu de la place du plan (style.css) ; une CARTE flottante est sous lui (le designer : « Problème
-   1 / 10 chevauche la carte de 21 px », sur ses flèches ‹ ›) — il passe dans la plus grande place libre à côté d'elle,
-   à 16 px d'elle, plus étroit s'il le faut. Seulement là : un document, le volet, la base SEE, la visionneuse ont leur
-   règle (les feuilles de style). */
-function placerToast(t) { t.classList.remove('evite'); const b = document.body, insp = $('inspecteur');
-  if (innerWidth <= 700 || !b.classList.contains('insp-flotte') || b.matches('.fiche-ouverte, .pdf-ouvert, .visio-ouvert') || !insp || insp.hidden) return;
-  const c = insp.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight, haut = t.getBoundingClientRect().top, rail = $('rail').getBoundingClientRect().right + 12;
-  const x0 = rail + (innerWidth - rail) / 2; if (c.top > haut + h + 8 || c.bottom < haut || x0 + w / 2 < c.left - 16 || x0 - w / 2 > c.right + 16) return;
-  const zones = [[rail, c.left - 16], [c.right + 16, innerWidth - 12]].map(([a, z]) => ({ a, z, l: z - a })).sort((p, q) => q.l - p.l), Z = zones[0]; if (Z.l < 220) return;
+/* Où il se pose : au milieu de la place du plan (style.css). S'il couvre ce qu'on lit — une CARTE flottante (le designer :
+   « Problème 1 / 10 chevauche la carte de 21 px »), le grand épinglé, un document, le RAIL (v84, le parcours : un mot long à
+   côté du grand passait sur les outils) —, il passe dans la plus grande place libre de sa rangée, à 16 px de chacun, plus
+   étroit s'il le faut. La visionneuse et la bibliothèque ont leur règle (les feuilles de style). */
+function placerToast(t) { t.classList.remove('evite'); const b = document.body;
+  if (innerWidth <= 700 || b.matches('.pdf-ouvert, .visio-ouvert, .biblio')) return;
+  const obstacles = ['rail', 'inspecteur', 'fiche'].map($).filter(e => e && !e.hidden && e.offsetParent !== null).map(e => e.getBoundingClientRect()).filter(r => r.width && r.height);
+  const r = t.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight, cx = r.left + r.width / 2, haut = r.top, rangee = o => !(o.top > haut + h + 8 || o.bottom < haut - 8);
+  if (!obstacles.some(o => rangee(o) && !(cx + w / 2 < o.left - 12 || cx - w / 2 > o.right + 12))) return;
+  const zones = []; let x = 12;
+  obstacles.filter(rangee).map(o => [o.left - 16, o.right + 16]).sort((p, q) => p[0] - q[0]).forEach(([a, z]) => { if (a > x) zones.push({ a: x, l: a - x }); x = Math.max(x, z); });
+  if (innerWidth - 12 > x) zones.push({ a: x, l: innerWidth - 12 - x });
+  const Z = zones.sort((p, q) => q.l - p.l)[0]; if (!Z || Z.l < 220) return;
   t.style.setProperty('--toast-x', Math.round(Z.a + Z.l / 2) + 'px'); t.style.setProperty('--toast-max', Math.round(Math.min(560, Z.l)) + 'px'); t.classList.add('evite'); }
 /* DÉFAIRE, REFAIRE — Ctrl+Z, Ctrl+Y (ou Ctrl+Maj+Z), ↶ et ↷ du rail : le mot dit l'ÉTAT D'ARRIVÉE (« Défait : W-012 revient en
    DR20 »), pas le nom du geste, et offre le geste inverse (« Refaire », « Défaire ») ; rien à faire, il le dit aussi (on

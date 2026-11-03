@@ -172,7 +172,7 @@ function ficheBilan() { const texte = texteDuBilan(), notes = lireCarnet();
     : `<p class="bl-vide">Le carnet est vide. Pendant le travail, appuyez sur <kbd>C</kbd> pour noter une hésitation : l’écran où vous êtes s’écrit avec elle.</p>`;
   const corps = tete('Améliorer VOLTA', 'Bilan anonyme')
     + `<p class="note bl-chapeau">Ce que VOLTA a lu et jugé de ce plan, en chiffres, <b>sans un nom</b> : repères, part numbers, câbles, fichiers, harness et clients sont masqués ; une référence inconnue se dit par sa forme (lettres → A, chiffres → 9).</p>`
-    + `<ol class="doc-etapes"><li><b>Relisez</b> le bilan ci-dessous</li><li><b>Copiez-le</b> d’un clic</li><li><b>Collez-le</b> dans la conversation : c’est vous qui l’envoyez</li></ol>`
+    + `<ol class="doc-etapes"><li><b>Relisez</b> le bilan ci-dessous</li><li><b>Copiez-le</b> d’un clic, en bas</li><li><b>Collez-le</b> dans la conversation</li></ol>`
     + `<section class="bl-auto" aria-labelledby="bl-auto-t"><div class="bl-carnet-tete"><h3 id="bl-auto-t">L’autotest du plan</h3><button type="button" class="btn papier dense" id="bl-autotest">${typeof AUTOTEST !== 'undefined' && AUTOTEST.resultat ? 'Le relancer' : 'Lancer l’autotest'}</button></div>`
     + `<p class="bl-masque">VOLTA ouvre seul chaque folio, chaque fiche, chaque onglet, chaque document et chaque export, chronomètre tout et note chaque erreur avec l’écran où elle est née — jamais un nom du plan. Quelques minutes ; <kbd>Échap</kbd> l’arrête. Le résultat s’ajoute au bilan.</p></section>`
     + `<pre class="bl-texte" id="bl-texte" tabindex="0" aria-label="Le bilan, tel qu’il sera copié">${esc(texte)}</pre>`

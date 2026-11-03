@@ -36,9 +36,15 @@ const FS_FIL = 6.4;                 // le numéro d'un fil
 const CAR = 0.60;                   // la chasse d'un caractère, en part du corps
 const largeurTexte = (n, fs, ls) => n * (CAR * fs + (ls || 0));
 
-/* LE STYLE DU FOLIO. Les encres secondes (les zones, les intitulés du cartouche, les désignations) sont assez sombres pour
-   des textes de 4 à 8 px (l'audit v72 : 2,5:1 à 3,7:1 sur le blanc, elles passent à 4,5:1 et plus) ; le cadre de la
-   feuille est un trait net. Le FOCUS (un bloc, un câble allumé) : tout le reste RECULE d'un pas — les câbles, leurs
+/* LE STYLE DU FOLIO. Un papier technique sobre : NOIR SUR BLANC, des gris neutres (plus de gris bleutés : la feuille se
+   pose sur la pierre ou le graphite, elle ne doit pas y paraître froide), le repère et tout ce qui s'écrit en JetBrains
+   Mono — la police des repères dans tout VOLTA (embarquée ; ailleurs, la chasse fixe du système : 0,6 corps, la mesure
+   même du placement, CAR). Les encres secondes (les zones, les intitulés du cartouche, les désignations) sont assez
+   sombres pour des textes de 4 à 8 px (4,5:1 et plus sur le blanc) ; le cadre de la feuille est un trait net.
+   Trois graisses seulement, celles de la police : 400, 500, 600.
+   CE QUE VOLTA AJOUTE (une barrette à poser, `.vt`) se reconnaît d'un coup d'œil : sa ligne, ses pastilles et son repère
+   sont au CUIVRE foncé (l'accent de VOLTA, 5,3:1 sur le blanc) — ce qui vient du fichier reste à l'encre.
+   Le FOCUS (un bloc, un câble allumé) : tout le reste RECULE d'un pas — les câbles, leurs
    numéros et leurs fonds, les blocs, les barrettes à poser — et ce qui est allumé s'allume EN ENTIER : son trait, son
    numéro (en gras), le bout de câble dessiné dans chaque bloc (`data-i`) ; le trait allumé garde 2,4 px d'écran à tout
    zoom (un feutre de 6 px à 200 % masquait le dessin). Ce qu'on SURVOLE pendant qu'un objet est choisi se marque à peine
@@ -46,71 +52,82 @@ const largeurTexte = (n, fs, ls) => n * (CAR * fs + (ls || 0));
    gardent leur couleur. LISIBLE À 100 % (v73, l'ergonome : 4 à 6 px hier) : à « 100 % », un numéro de câble fait 11 px
    d'écran (08-interface, `S100`) et la plus petite écriture — le numéro dans une pastille de barrette, 5,4 — en fait 9 ;
    en deçà, à l'écran seulement, les petites écritures se taisent (style-dessin.css, le zoom sémantique). */
+const ENCRE_FOLIO = '#1e1f22', CABLE_FOLIO = '#2a2b2f', CUIVRE_FOLIO = '#9a5220';
+/* LES TEINTES DES ROUTES (v84) : des teintes de CATÉGORIE — des bleus, des sarcelles, un indigo, une ardoise —, distinctes
+   entre elles, lisibles sur le blanc (4,5:1 et plus : un câble de 0,95 se suit) et à l'impression ; jamais le rouge, l'ambre
+   ou le vert des états, jamais le fuchsia, jamais le cuivre (l'accent : ce que VOLTA ajoute). L'ordre sépare d'abord ce
+   qui se voit le plus souvent ensemble : les trois premières (bleu, sarcelle, indigo) ne se confondent pas. L'interface
+   les donne aux routes du contrat, dans l'ordre (08-interface `PALETTE_ROUTES`) ; une couleur choisie au contrat passe
+   devant. */
+const TEINTES_ROUTES = Object.freeze(['#2c62b0', '#0e7a7c', '#5a4fb3', '#4a6278', '#1f7f9e', '#33437f', '#3f7f6c', '#6d5a9c']);
 function styleDessin() {
   return `<defs>
-   <pattern id="gfine" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#eef1f5" stroke-width=".8"/></pattern>
+   <pattern id="gfine" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#efefec" stroke-width=".8"/></pattern>
    <style>
-     text{font-family:ui-monospace,Menlo,Consolas,monospace}
-     .sym{fill:none;stroke:#1b2430;stroke-width:1;stroke-linecap:round;stroke-linejoin:round}
-     .dot-fix{fill:#1b2430;stroke:none}
-     .cab{fill:none;stroke:#26323f;stroke-width:.95;stroke-linecap:round;stroke-linejoin:round;transition:opacity .12s}
-     .jn{fill:#1b2430;stroke:none}
-     .earth{fill:none;stroke:#1b2430;stroke-width:1.1;stroke-linecap:butt}
-     .rep{fill:#111b25;font-weight:500;font-size:10px;letter-spacing:1.15px}
-     .rep-big{fill:#111b25;font-weight:500;font-size:10.5px;letter-spacing:1.15px}
-     .rep-strip{fill:#111b25;font-weight:500;font-size:9px;letter-spacing:1px}
-     .des{fill:#4d5965;font-size:6.8px;font-weight:400;letter-spacing:.4px}
-     .xref{fill:#4d5965;font-size:6.2px;font-weight:600;letter-spacing:.3px}
-     .body{fill:#ffffff;stroke:#1b2430;stroke-width:1}
-     .bstrip{fill:#ffffff;stroke:#1b2430;stroke-width:.7}
-     .bcell{fill:#ffffff;stroke:#1b2430;stroke-width:.55}
-     .bsname{fill:#5f6b77;font-size:6.5px;font-weight:600;letter-spacing:.9px}
-     .pinlbl{fill:#2b3743;font-size:7.5px;font-weight:500;letter-spacing:.2px}
-     .filnum{fill:#0b0f14;font-size:${FS_FIL}px;font-weight:500;letter-spacing:.1px}
+     text{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+     .sym{fill:none;stroke:${ENCRE_FOLIO};stroke-width:1;stroke-linecap:round;stroke-linejoin:round}
+     .dot-fix{fill:${ENCRE_FOLIO};stroke:none}
+     .cab{fill:none;stroke:${CABLE_FOLIO};stroke-width:.95;stroke-linecap:round;stroke-linejoin:round;transition:opacity .12s}
+     .jn{fill:${ENCRE_FOLIO};stroke:none}
+     .earth{fill:none;stroke:${ENCRE_FOLIO};stroke-width:1.1;stroke-linecap:butt}
+     .rep{fill:#141518;font-weight:500;font-size:10px;letter-spacing:1.15px}
+     .rep-big{fill:#141518;font-weight:500;font-size:10.5px;letter-spacing:1.15px}
+     .rep-strip{fill:#141518;font-weight:500;font-size:9px;letter-spacing:1px}
+     .des{fill:#56585d;font-size:6.8px;font-weight:400;letter-spacing:.4px}
+     .xref{fill:#56585d;font-size:6.2px;font-weight:600;letter-spacing:.3px}
+     .body{fill:#ffffff;stroke:${ENCRE_FOLIO};stroke-width:1}
+     .bstrip{fill:#ffffff;stroke:${ENCRE_FOLIO};stroke-width:.7}
+     .bcell{fill:#ffffff;stroke:${ENCRE_FOLIO};stroke-width:.55}
+     .bsname{fill:#63656a;font-size:6.5px;font-weight:600;letter-spacing:.9px}
+     .pinlbl{fill:#2e3034;font-size:7.5px;font-weight:500;letter-spacing:.2px}
+     .filnum{fill:#0e0f11;font-size:${FS_FIL}px;font-weight:500;letter-spacing:.1px}
      .halo{fill:#ffffff;stroke:none}
-     .rep-petit{fill:#1b2430;font-size:6.4px;font-weight:650;letter-spacing:.3px}
-     .lead{stroke:#26323f;stroke-width:.95;stroke-linecap:butt}
-     .conn{fill:#ffffff;stroke:#1b2430;stroke-width:.75}
-     .connnom{fill:#1b2430;font-size:6.5px;font-weight:700;letter-spacing:.3px}
-     .connpin{fill:#2b3743;font-size:5.6px;font-weight:500}
-     .prnum{fill:#1b2430;font-size:5.4px;font-weight:700}
-     .barre{fill:none;stroke:#1b2430;stroke-width:1;stroke-dasharray:3 2.2;stroke-linecap:butt}
-     .bardot{fill:#1b2430;stroke:none}
-     .pontage{stroke:#1b2430;stroke-width:1.1;stroke-linecap:butt}
-     .barnum{fill:#2b3743;font-size:5.6px;font-weight:600}
-     .fiche{fill:#ffffff;stroke:#1b2430;stroke-width:.9}
-     .embase{fill:#ffffff;stroke:#1b2430;stroke-width:1.1}
-     .pont{stroke:#1b2430;stroke-width:1;stroke-linecap:butt}
-     .bpast{fill:#1b2430;stroke:none}
-     .bpnum{fill:#ffffff;font-size:5.4px;font-weight:700}
-     .rep-petit{fill:#111b25;font-size:5.6px;font-weight:600;letter-spacing:.35px}
-     .rpill{fill:#ffffff;stroke:#8f9ba6;stroke-width:.8}
-     .rname{fill:#2b3743;font-weight:600;font-size:7.5px;letter-spacing:.6px}
-     .frame{fill:none;stroke:#8f9ba6;stroke-width:1.2}
-     .zline{stroke:#c2ccd5;stroke-width:.7}
-     .zone{fill:#6f7b87;font-size:8px;font-weight:600;letter-spacing:.5px}
-     .cbord{fill:none;stroke:#1b2430;stroke-width:1.2}
-     .cfond{fill:#f2f4f6;stroke:none}
-     .cdiv{stroke:#aab4be;stroke-width:.7}
-     .carth{fill:#5f6b77;font-size:6px;font-weight:700;letter-spacing:.9px}
-     .cartx{fill:#111b25;font-size:8.5px;font-weight:600}
-     .cartT{fill:#0b1118;font-size:13px;font-weight:700;letter-spacing:.4px}
-     .cartF{fill:#0b1118;font-size:18px;font-weight:700;letter-spacing:.6px}
-     .cartD{fill:#0b1118;font-size:9.5px;font-weight:700;letter-spacing:.3px}
-     .cartA{fill:#5f6b77;font-size:6.5px;font-weight:700;letter-spacing:1.6px}
-     .legnom{fill:#111b25;font-size:8px;font-weight:700;letter-spacing:.3px}
-     .legn{fill:#5f6b77;font-size:7px;font-weight:600}
-     .drapeau{fill:#ffffff;stroke:#1b2430;stroke-width:.9;stroke-linejoin:round}
-     .dr-f{fill:#1b2430;font-size:7.5px;font-weight:700;letter-spacing:.3px}
-     .dr-ou{fill:#2b3743;font-size:7px;font-weight:500}
-     .renvoi:hover .drapeau{fill:#1b2430}
-     .cb-arc,.cb-bouton{fill:none;stroke:#1d1d1f;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
-     .cb-borne{fill:#ffffff;stroke:#1d1d1f;stroke-width:1}
-     .cb-lien{fill:none;stroke:#1d1d1f;stroke-width:.8;stroke-dasharray:2.4 1.8;stroke-linecap:butt}
-     .cb-cal{fill:#1d1d1f;font-size:8px;font-weight:700;letter-spacing:.5px}
-     .cb-ret{fill:#4d5965;font-size:6px;font-weight:500;letter-spacing:.3px}
+     .rep-petit{fill:${ENCRE_FOLIO};font-size:6.4px;font-weight:600;letter-spacing:.3px}
+     .lead{stroke:${CABLE_FOLIO};stroke-width:.95;stroke-linecap:butt}
+     .conn{fill:#ffffff;stroke:${ENCRE_FOLIO};stroke-width:.75}
+     .connnom{fill:${ENCRE_FOLIO};font-size:6.5px;font-weight:600;letter-spacing:.3px}
+     .connpin{fill:#2e3034;font-size:5.6px;font-weight:500}
+     .prnum{fill:${ENCRE_FOLIO};font-size:5.4px;font-weight:600}
+     .barre{fill:none;stroke:${ENCRE_FOLIO};stroke-width:1;stroke-dasharray:3 2.2;stroke-linecap:butt}
+     .bardot{fill:${ENCRE_FOLIO};stroke:none}
+     .pontage{stroke:${ENCRE_FOLIO};stroke-width:1.1;stroke-linecap:butt}
+     .barnum{fill:#2e3034;font-size:5.6px;font-weight:600}
+     .fiche{fill:#ffffff;stroke:${ENCRE_FOLIO};stroke-width:.9}
+     .embase{fill:#ffffff;stroke:${ENCRE_FOLIO};stroke-width:1.1}
+     .pont{stroke:${ENCRE_FOLIO};stroke-width:1;stroke-linecap:butt}
+     .bpast{fill:${ENCRE_FOLIO};stroke:none}
+     .bpnum{fill:#ffffff;font-size:5.4px;font-weight:600}
+     .rep-petit{fill:#141518;font-size:5.6px;font-weight:600;letter-spacing:.35px}
+     .vt .barre{stroke:${CUIVRE_FOLIO}}
+     .vt .bpast,.vt .bardot{fill:${CUIVRE_FOLIO}}
+     .vt .rep-petit{fill:${CUIVRE_FOLIO}}
+     .rpill{fill:#ffffff;stroke:#96979b;stroke-width:.8}
+     .rname{fill:#2e3034;font-weight:600;font-size:7.5px;letter-spacing:.6px}
+     .frame{fill:none;stroke:#96979b;stroke-width:1.2}
+     .zline{stroke:#c9c9cb;stroke-width:.7}
+     .zone{fill:#6e7075;font-size:8px;font-weight:600;letter-spacing:.5px}
+     .cbord{fill:none;stroke:${ENCRE_FOLIO};stroke-width:1.2}
+     .cfond{fill:#f3f2ef;stroke:none}
+     .cdiv{stroke:#b3b3b6;stroke-width:.7}
+     .carth{fill:#63656a;font-size:6px;font-weight:600;letter-spacing:.9px}
+     .cartx{fill:#141518;font-size:8.5px;font-weight:600}
+     .cartT{fill:#0e0f11;font-size:13px;font-weight:600;letter-spacing:.4px}
+     .cartF{fill:#0e0f11;font-size:18px;font-weight:600;letter-spacing:.6px}
+     .cartD{fill:#0e0f11;font-size:9.5px;font-weight:600;letter-spacing:.3px}
+     .cartA{fill:${CUIVRE_FOLIO};font-size:6.5px;font-weight:600;letter-spacing:1.6px}
+     .legnom{fill:#141518;font-size:8px;font-weight:600;letter-spacing:.3px}
+     .legn{fill:#63656a;font-size:7px;font-weight:500}
+     .drapeau{fill:#ffffff;stroke:${ENCRE_FOLIO};stroke-width:.9;stroke-linejoin:round}
+     .dr-f{fill:${ENCRE_FOLIO};font-size:7.5px;font-weight:600;letter-spacing:.3px}
+     .dr-ou{fill:#2e3034;font-size:7px;font-weight:500}
+     .renvoi:hover .drapeau{fill:${ENCRE_FOLIO}}
+     .cb-arc,.cb-bouton{fill:none;stroke:${ENCRE_FOLIO};stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
+     .cb-borne{fill:#ffffff;stroke:${ENCRE_FOLIO};stroke-width:1}
+     .cb-lien{fill:none;stroke:${ENCRE_FOLIO};stroke-width:.8;stroke-dasharray:2.4 1.8;stroke-linecap:butt}
+     .cb-cal{fill:${ENCRE_FOLIO};font-size:8px;font-weight:600;letter-spacing:.5px}
+     .cb-ret{fill:#56585d;font-size:6px;font-weight:500;letter-spacing:.3px}
      .cb-zone{fill:#ffffff;fill-opacity:0;stroke:none}
-     .selbox{fill:none;stroke:#1d1d1f;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+     .selbox{fill:none;stroke:${ENCRE_FOLIO};stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
      .comp{cursor:pointer;transition:opacity .12s}
      .loin .cab,.loin .lead,.loin .earth{stroke-width:1.6}
      .loin .body,.loin .conn,.loin .cb-arc,.loin .cb-bouton,.loin .embase,.loin .fiche{stroke-width:1.5}
@@ -119,7 +136,7 @@ function styleDessin() {
      .focus .filnum,.focus .halo{opacity:.2}
      .focus .cab.hl{opacity:1;stroke-width:2.4px;vector-effect:non-scaling-stroke}
      .focus .comp.hl,.focus .vt.hl,.focus .filnum.hl,.focus .halo.hl{opacity:1}
-     .focus .filnum.hl{font-weight:700}
+     .focus .filnum.hl{font-weight:600}
      .focus .comp .lead.hl,.focus .comp .earth.hl{stroke-width:2.4px;vector-effect:non-scaling-stroke}
      .focus .comp.hl .lead[data-i]:not(.hl),.focus .comp.hl .earth[data-i]:not(.hl){opacity:.22}
      .focus .comp.sv{opacity:.62}
@@ -214,7 +231,7 @@ function cartoucheSvg(rx, by, c, folio, legende) {
   // la légende des routes, colonne après colonne vers la gauche ; le nom de la route s'arrête avant son compte
   routes.forEach((r, i) => { const k = Math.floor(i / LEG_PAR_COLONNE), cx = xT - (nCol - k) * LEG_COLONNE + 10, cy = y + 30 + (i % LEG_PAR_COLONNE) * LEG_LIGNE;
     const n = r.n + ' câble' + (r.n > 1 ? 's' : ''), place = LEG_COLONNE - 20 - 32 - largeurTexte(n.length, 7, 0) - 4;
-    s += `<line x1="${f1(cx)}" y1="${f1(cy - 3)}" x2="${f1(cx + 24)}" y2="${f1(cy - 3)}" style="stroke:${r.couleur || '#26323f'};stroke-width:3.2;stroke-linecap:round"/>`;
+    s += `<line x1="${f1(cx)}" y1="${f1(cy - 3)}" x2="${f1(cx + 24)}" y2="${f1(cy - 3)}" style="stroke:${r.couleur || CABLE_FOLIO};stroke-width:3.2;stroke-linecap:round"/>`;
     s += `<text class="legnom" x="${f1(cx + 32)}" y="${f1(cy)}">${esc(clip((r.route || 'sans route') + (coteDeRoute(r.route) ? (coteDeRoute(r.route) === 'gauche' ? ' · G' : ' · D') : ''), Math.max(4, Math.floor(place / (CAR * 8 + 0.3)))))}</text><text class="legn" x="${f1(cx + LEG_COLONNE - 20)}" y="${f1(cy)}" text-anchor="end">${n}</text>`; });
   if (nCol) s += `<text class="carth" x="${f1(x + 10)}" y="${f1(y + 13)}">ROUTES</text>`;
   return s + `<rect class="cbord" x="${f1(x)}" y="${f1(y)}" width="${f1(W)}" height="${CART_H}"/>`;

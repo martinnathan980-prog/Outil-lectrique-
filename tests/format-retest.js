@@ -144,13 +144,19 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     let r = await lireFichier(f); const a = r.liaisons[0] || {}, b = r.liaisons[1] || {};
     ok('une case date d’Excel se lit jj/mm/aaaa (pas « 45957 »)', a.retest === '27/10/2025' && b.retest === '28/10/2025', a.retest + ' · ' + b.retest);
     ok('une description sur deux lignes, un guillemet : la ligne reste entière', r.liaisons.length === 2 && a.descriptionDe === 'BATTERIE\nPRINCIPALE' && a.vers === '102CB1' && a.type === 'DR16' && b.descriptionDe === 'CB "10 A"' && b.vers === '103RL1', r.liaisons.length + ' liaisons · ' + JSON.stringify(a.descriptionDe) + ' → ' + a.vers + ' ' + a.type);
+    { const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet([['Device1', 'Pin1', 'Device2', 'Pin2', 'FWD'], ['A1X', '1', 'B1X', '1', 'D-7'], ['A1X', '2', 'B1X', '2', ''], ['A1X', '3', 'B1X', '3', '']]);
+      ws['!merges'] = [{ s: { r: 1, c: 4 }, e: { r: 3, c: 4 } }]; XLSX.utils.book_append_sheet(wb, ws, 'F');
+      const rf = await lireFichier(new File([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], 'fusion.xlsx'));
+      ok('un FWD fusionné sur trois lignes : chacune a son folio', rf.liaisons.length === 3 && rf.liaisons.every(l => l.plan === 'D-7'), rf.liaisons.map(l => l.plan || 'vide').join(' · ')); }
     const w1252 = Uint8Array.from([...'Device1;Pin1;Description1;Device2;Pin2\r\n101BT1;1;'].map(c => c.charCodeAt(0)).concat([0xC9, 0x71, 0x75, 0x69, 0x70, 0x2E, 0x20, 0xE0, 0x20, 0x6D, 0xEA, 0x6D, 0x65]).concat([...';102CB1;1\r\n'].map(c => c.charCodeAt(0))));
     r = await lireFichier(new File([w1252], 'francais.csv', { type: 'text/csv' }));
     ok('un CSV de l’Excel français (Windows-1252) : les accents lus', (r.liaisons[0] || {}).descriptionDe === 'Équip. à même', JSON.stringify((r.liaisons[0] || {}).descriptionDe));
     r = lireTexte('Device1,Pin1,Description1,Device2,Pin2,Cable T/G\n101BT1,1,LAMPE; ROUGE,102CB1,1,DR16\n102CB1,2,,103RL1,A1,DR20');
     ok('un CSV à virgules, un « ; » dans une description : les colonnes tiennent', r.liaisons.length === 2 && r.liaisons[0].vers === '102CB1' && r.liaisons[0].descriptionDe === 'LAMPE; ROUGE' && r.liaisons[0].type === 'DR16', r.liaisons.map(l => l.de + '→' + l.vers + ' ' + l.type).join(' · '));
-    r = lireTexte('Device1;Pin1;Device2;Pin2;Cable length (mm)\nA1X;1;B1X;2;2 500\nC1X;1;D1X;2;1e3\nE1X;1;F1X;2;3670,5');
-    ok('« 2 500 » mm → 2,5 m ; « 1e3 » mm → 1 m ; « 3670,5 » mm → 3,6705 m', r.liaisons.map(l => l.longueur).join(' ') === '2.5 1 3.6705', r.liaisons.map(l => l.longueur).join(' '));
+    r = lireTexte('Device1;Pin1;Device2;Pin2;Cable length (mm)\nA1X;1;B1X;2;2 500\nC1X;1;D1X;2;1e3\nE1X;1;F1X;2;3670,5\nG1X;1;H1X;2;2 500\nJ1X;1;K1X;2;2 500\nL1X;1;M1X;2;2.500,5\nN1X;1;P1X;2;"2,500.5"\nQ1X;1;R1X;2;1,2E3');
+    ok('mm : « 2 500 » (espace, insécable, fine) → 2,5 m ; « 1e3 », « 1,2E3 » ; « 3670,5 » ; « 2.500,5 » et « 2,500.5 » → 2,5005 m', r.liaisons.map(l => l.longueur).join(' ') === '2.5 1 3.6705 2.5 2.5 2.5005 2.5005 1.2', r.liaisons.map(l => l.longueur).join(' '));
+    r = lireTexte('Device1;Pin1;Device2;Pin2;Longueur (m)\nA1X;1;B1X;2;3,67\nC1X;1;D1X;2;12\nE1X;1;F1X;2;2 m\nG1X;1;H1X;2;850 mm');
+    ok('m : « 3,67 » → 3,67 m ; « 12 » → 12 m ; « 2 m » ; « 850 mm » écrit dans la case → 0,85 m', r.liaisons.map(l => l.longueur).join(' ') === '3.67 12 2 0.85', r.liaisons.map(l => l.longueur).join(' '));
     r = lireTexte('Équipement 1;Borne 1;Équipement 2;Borne 2;Type de câble;Longueur (mm)\n101BT1;1;102CB1;1;DR16;900');
     ok('des en-têtes en français (« Équipement 1 », « Longueur (mm) ») : lu comme une installation', r.format === 'retest' && r.liaisons.length === 1 && r.liaisons[0].type === 'DR16' && r.liaisons[0].longueur === 0.9, r.format + ' · ' + JSON.stringify(r.liaisons[0] || {}));
     r = lireTexte('Device1;Pin1;Device2;Pin2;Cable Tag;Harness\n101BT1;1;;;W-1;H\n;;102CB1;2;W-2;H\n;;;;;H\n;;;;;Total : 3\n103RL1;A1;104LP1;1;W-3;H');

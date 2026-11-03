@@ -7,7 +7,7 @@
    processus, avec un délai au-delà duquel elle est comptée en échec.
    ========================================================================= */
 const { spawnSync } = require('child_process'), path = require('path');
-const MOTEUR = ['barrettes', 'references', 'format-retest'];
+const MOTEUR = ['barrettes', 'references', 'format-retest', 'cables-maths', 'connectique', 'disjoncteur-maths'];
 const NAVIGATEUR = ['disjoncteur', 'interface', 'chrome', 'documents', 'bibliotheque', 'controle', 'fiche', 'fwd', 'memoire', 'retouche', 'dessin', 'affinage', 'couverture', 'normes', 'see', 'placement', 'vitesse', 'parcours', 'pdf', 'visio', 'bilan', 'ux'];
 const args = process.argv.slice(2), fs = require('fs');
 const voulues = !args.length ? [...MOTEUR, ...NAVIGATEUR] : args.flatMap(a => a === 'moteur' ? MOTEUR : a === 'navigateur' ? NAVIGATEUR : [a]);

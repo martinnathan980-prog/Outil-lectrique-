@@ -1,0 +1,189 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA FICHE, PASSE v84 — la carte (la synthèse) et la fenêtre agrandie, pour chaque genre.
+   Chargée en dernier : elle reprend ce que les couches d'hier (style-niveaux, style-v79, style-x-*) ont laissé disparate.
+   · L'ÉCRITURE : une échelle courte (11 · 12 · 13 · 14 · 16 · 20 · 28), trois graisses (400 · 500 · 600 ; 700 aux grands
+     chiffres et au repère de la carte). Les capitales de rubrique : 11 px, 600, 0,07 em. Les chiffres en tabular-nums.
+   · LE RYTHME : des multiples de 4 — 16 entre deux cartes, 20 de marge dans une carte, 12 sous un titre.
+   · LES COULEURS : les jetons seulement (--s-*, --t-*, --nv-cuivre, --ok/--warn/--ko, --n-* la nuit).
+   · LES INTERACTIONS : une courbe (--courbe), trois durées (120 · 200 · 400 ms) ; le survol éclaire d'un cran, jamais
+     ne grandit ; le focus clavier, un anneau de cuivre net.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. LES TITRES DE SECTION : le même partout — la barre de cuivre, 16 px, 600 ; sa précision en gris, 13 px ─── */
+.nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.fs-groupe)>:is(.vu-titre,.fs-st),.nv-grand .nv-panneau>.vu-schema .vu-titre,.nv-grand .nv-reg-t h4,
+.nv-grand .nv-panneau>.nv-somm>.vu-titre{
+  position:relative;display:flex;align-items:baseline;gap:10px;margin:0 0 4px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.011em;text-transform:none;color:var(--t-1)}
+.nv-grand .nv-panneau>.nv-somm>.vu-titre::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--n-barre,var(--nv-cuivre));box-shadow:var(--n-barre-lueur,none)}
+.nv-grand .nv-panneau .vu-titre>span,.nv-grand .nv-panneau .fs-st>span:first-child i{font:400 var(--f-13) var(--sans);letter-spacing:0;text-transform:none;color:var(--t-3)}
+.nv-grand .nv-panneau .vu-titre>span.id{font:500 var(--f-13) var(--mono);color:var(--t-2)}
+.nv-grand .nv-cap b{font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.011em}
+.nv-grand .nv-cap span{font:400 var(--f-13) var(--sans);color:var(--t-3);font-variant-numeric:tabular-nums}
+.nv-grand .nv-cap::before{background:var(--n-barre,var(--nv-cuivre));box-shadow:var(--n-barre-lueur,none)}
+.nv-grand .nv-reg-t p{font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+.vu-explique b{font-weight:600}
+
+/* les capitales de rubrique : 11 px, 600, 0,07 em — partout dans la fiche */
+#inspecteur :is(.nc-k,.nc-meta-k,.nc-pbs-n,.ct-legende,.vu-fr-n),.nv-grand .nv-cables thead .nv-tri,.nv-grand .nv-panneau .dj-entete span{font-weight:600;font-size:var(--f-11);letter-spacing:.07em}
+
+/* ─── 2. LA BANDE DES ONGLETS : elle ressort du contenu ; tous de même largeur ; l'ouvert est une languette de la page ─── */
+/* (v84) des onglets, pas des dalles : au plus 216 px chacun, rangés à gauche — deux onglets (une masse) ne coupent plus la
+   fenêtre en deux ; à l'étroit, tous rétrécissent ensemble, jusqu'à 132 px */
+.nv-grand .nv-onglets{grid-auto-columns:minmax(132px,216px);justify-content:start}
+.nv-grand .nv-onglet .nv-o-t{font:600 var(--f-14)/1.25 var(--sans);letter-spacing:-.006em}
+.nv-grand .nv-onglet[aria-selected="true"] .nv-o-t{font-weight:600}
+.nv-grand .nv-onglet .nv-o-s{font:500 var(--f-12)/1.25 var(--sans)}
+.nv-grand .nv-onglet{transition:background var(--d-rapide,120ms) var(--courbe),color var(--d-rapide,120ms) var(--courbe)}
+/* la nuit : l'onglet ouvert se lève de la bande (la page + un liseré de lumière) — on le voit d'instinct */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .nv-grand .nv-onglet[aria-selected="true"]{box-shadow:inset 0 1px 0 rgba(255,236,216,.10),inset 1px 0 0 rgba(255,236,216,.06),inset -1px 0 0 rgba(255,236,216,.06)} }
+:root[data-theme="dark"] .nv-grand .nv-onglet[aria-selected="true"]{box-shadow:inset 0 1px 0 rgba(255,236,216,.10),inset 1px 0 0 rgba(255,236,216,.06),inset -1px 0 0 rgba(255,236,216,.06)}
+
+/* ─── 3. LA TÊTE ─── */
+/* la carte : le genre en capitales, le repère en grand (28 px, 700) */
+.fi.nv-c .nc-titre .nc-genre-mot{font:600 var(--f-11)/1.3 var(--sans);letter-spacing:.1em}
+.fi.nv-c .nc-titre .nc-rep-in,.fi.nv-c .nc-titre .nc-rep-t{font-size:var(--f-28);font-weight:700}
+/* le grand : sur une ligne fine — le genre en gris, le repère à l'encre, 20 px */
+.nv-grand .nc-tete.fine .nc-titre .nc-genre-mot{font:400 var(--f-20)/1.2 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-2)}
+.nv-grand .nc-tete.fine .nc-titre .nc-rep-in,.nv-grand .nc-tete.fine .nc-titre .nc-rep-t{font-size:var(--f-20);font-weight:600}
+/* une phrase sous le titre (« ajoutée par VOLTA sur 102CB1:2 », « route PUISSANCE ») : en clair, pas en puce de code */
+#inspecteur .nc-meta .nc-meta-v.texte,.carte-double .nc-meta .nc-meta-v.texte{height:auto;padding:0;border-radius:0;background:none;box-shadow:none;font:400 var(--f-13)/1.4 var(--sans);color:var(--t-2)}
+#inspecteur .nc-meta .nc-meta-v.texte .id{font:500 var(--f-13) var(--mono);color:var(--t-1)}
+.nv-grand .nc-tete.fine .nc-meta .nc-meta-v.texte{height:auto;padding:0;background:none;box-shadow:none;font:400 var(--f-13) var(--sans);color:var(--t-2)}
+#inspecteur .nc-meta .nc-meta-v.texte .nc-route{display:inline-block;margin-right:6px;vertical-align:middle}
+
+/* ─── 4. LES CHIFFRES DE LA CARTE : trois natures, une même ligne de pied — le nombre (28, 700), le repère (20, mono), le
+   mot (20, 600) ; la valeur posée sur le bas de sa case, quelle que soit sa taille ─── */
+.nc-chiffre{gap:8px}
+.nc-chiffre .nc-v{display:flex;align-items:flex-end;justify-content:center;height:34px;min-height:0;font:700 var(--f-28)/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.nc-chiffre .nc-v small{margin:0 0 3px 3px;font:500 var(--f-13)/1 var(--sans);letter-spacing:0;color:var(--t-2)}
+.nc-chiffre .nc-v small.nc-a{margin:0 5px 4px;font-size:var(--f-14);color:var(--t-3)}
+.nc-chiffre.mot .nc-v{font:600 var(--f-20)/1 var(--sans);letter-spacing:-.01em;padding-bottom:2px}
+.nc-chiffre.ident .nc-v{padding-bottom:2px}
+.nc-chiffre.ident .nc-v .id{font:600 var(--f-20)/1 var(--mono);letter-spacing:-.02em}
+.nc-chiffre.ident .nc-v .fi-ko-t{color:var(--ko)}
+/* une valeur qui s'écrit (la longueur d'un câble) : le champ au même gabarit que les nombres */
+.nc-chiffre.edit .nc-v{align-items:flex-end;overflow:visible}
+.nc-chiffre.edit .fc-in{height:34px;margin:0;padding:0 3px;font:700 var(--f-28)/1 var(--sans);letter-spacing:-.02em;text-align:center;width:auto;min-width:1.2ch;field-sizing:content;max-width:5ch}
+.nc-chiffre.edit .fc-in::placeholder{color:var(--warn);opacity:1}
+.nc-chiffre .nc-v .nv-env{margin:0 2px 3px 0;font:400 var(--f-20)/1 var(--sans);font-style:normal;color:var(--warn)}
+/* (le survol d'une case : son titre s'éclaire, sa valeur prend le cuivre — elle mène à l'onglet qui l'explique) */
+button.nc-chiffre:hover{background:none}
+button.nc-chiffre:is(.ko,.att):hover .nc-v{color:inherit}
+
+/* ─── 5. LA VIGNETTE DE LA CARTE : la pièce dessinée, centrée, à sa taille ─── */
+.nc-vignette svg.vu-masse,.nc-vignette svg.vu-chemin{width:100%;max-width:360px}
+
+/* ─── 6. LE TABLEAU DES CÂBLES : la longueur serrée (« ≈ 5 m »), une flèche au bout de la ligne survolée ─── */
+.nv-grand table.nv-cables .nv-td-lg .nv-cab-lg{display:inline-flex;align-items:baseline;justify-content:center;gap:2px;min-width:0}
+.nv-grand table.nv-cables .nv-cab-lg .cb-lg{display:inline-flex}
+.nv-grand table.nv-cables .nv-cab-lg .fc-in{width:3.2ch;min-width:0;height:26px;padding:0 2px;font:600 var(--f-14) var(--sans);text-align:center;field-sizing:content;max-width:6ch}
+.nv-grand table.nv-cables .nv-cab-lg.supp .fc-in{width:2.4ch;text-align:center;padding:0 1px}
+.nv-grand table.nv-cables .nv-cab-lg b{display:inline-block;min-width:2.4ch;padding:0 1px;text-align:center;font:600 var(--f-14) var(--sans)}
+.nv-grand table.nv-cables .nv-cab-lg small{font:500 var(--f-13) var(--sans);color:var(--t-3)}
+.nv-grand table.nv-cables .nv-cab-lg .nv-env{margin-right:1px;font:400 var(--f-13) var(--sans);color:var(--t-3)}
+.nv-grand table.nv-cables tbody tr.nv-cab{cursor:pointer}
+.nv-grand table.nv-cables tbody tr.nv-cab td:last-child{position:relative}
+.nv-grand table.nv-cables tbody tr.nv-cab td:last-child::after{content:"";position:absolute;right:6px;top:50%;width:7px;height:7px;border-top:1.6px solid var(--t-3);border-right:1.6px solid var(--t-3);
+  transform:translate(-4px,-50%) rotate(45deg);opacity:0;transition:opacity var(--d-rapide,120ms) var(--courbe),transform var(--d-moyen,200ms) var(--courbe)}
+.nv-grand table.nv-cables tbody tr.nv-cab:is(:hover,:focus-visible,.vise) td:last-child::after{opacity:1;transform:translate(0,-50%) rotate(45deg)}
+/* l'anneau absent d'une ligne garde sa place ; une colonne sans anneau centre sa valeur */
+.vu-anneau-vide{display:inline-block;flex:none;height:1px}
+.nv-grand table.nv-cables :is(.nv-td-i,.nv-td-u) .nv-mes.seul{width:auto;justify-content:center;text-align:center}
+.nv-grand table.nv-cables .nv-mes.seul .nv-mes-t{align-items:center}
+.nv-grand table.nv-cables .nv-mes-t b{font:600 var(--f-14)/1.25 var(--sans);font-variant-numeric:tabular-nums}
+.nv-grand table.nv-cables .nv-mes-t small{font:400 var(--f-12)/1.25 var(--sans);color:var(--t-3);font-variant-numeric:tabular-nums}
+/* la note de ce qui est supposé : une ligne, discrète */
+.nv-grand .nv-panneau>.cb-note{padding:10px 16px;font:400 var(--f-13)/1.5 var(--sans)}
+.nv-grand .nv-panneau>.cb-note b{font-weight:600;color:var(--t-1)}
+
+/* ─── 7. MODIFIER : le sommaire se lit d'un coup d'œil — le réglage et son pourquoi à gauche, la valeur et sa source au
+   milieu, le geste à droite ; chaque ligne s'ouvre sur place ─── */
+.nv-grand .nv-panneau>.nv-somm{padding:18px 20px 8px}
+.nv-somm-l{margin-top:10px}
+.nv-somm-i{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr) 116px;grid-template-rows:auto auto;column-gap:24px;row-gap:3px;align-items:start;min-height:0;padding:12px 0}
+.nv-somm-k{grid-column:1;grid-row:1;font:600 var(--f-14)/1.35 var(--sans)}
+.nv-somm-p{grid-column:1;grid-row:2;font:400 var(--f-13)/1.45 var(--sans);color:var(--t-2)}
+.nv-somm-p:empty{display:none}
+.nv-somm-v>b{grid-column:2;grid-row:1;font:600 var(--f-14)/1.35 var(--sans)}
+.nv-somm-v>b .id{font:600 var(--f-13)/1.35 var(--mono)}
+.nv-somm-v>.vu-src{grid-column:2;grid-row:2;justify-self:start;align-self:start;margin-top:2px}
+.nv-somm-av{font:400 var(--f-12)/1.35 var(--sans)}
+.nv-somm-i>:last-child{grid-column:3;grid-row:1/3;align-self:center;justify-self:end}
+.nv-somm-b{min-width:104px;justify-content:center}
+.nv-somm-i:hover .nv-somm-b:not([aria-expanded="true"]){border-color:var(--nv-cuivre-ligne);color:var(--nv-cuivre)}
+.nv-somm-i.ouvert{box-shadow:inset 3px 0 0 var(--nv-cuivre);margin:0 -20px;padding-left:20px;padding-right:20px;background:var(--nv-cuivre-soft)}
+.nv-somm-x{margin:0 -20px;padding:8px 20px 6px}
+@container corps (max-width:700px){
+  .nv-somm-i{grid-template-columns:minmax(0,1fr) 112px}
+  .nv-somm-v>b{grid-column:1;grid-row:3} .nv-somm-v>.vu-src{grid-column:1;grid-row:4} .nv-somm-i>:last-child{grid-column:2;grid-row:1/5} }
+/* un réglage ouvert sous sa ligne : sa ligne a déjà dit le compte et le pourquoi */
+.nv-somm-x .nv-reg-d{display:none}
+.nv-somm-x .nv-reg-t p{margin:0;padding-left:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+/* les réglages du câble, ouverts sous leur ligne : le type et la gauge, la longueur — des champs qui se voient */
+.nv-reg-type{display:inline-flex;align-items:center;gap:8px}
+:is(.nv-reg-type .fc-in.cb-fam,.nv-reg-type .cb-sel select,.nv-reg-lg .fc-in,[data-reg="la-route"] .fc-in){height:34px;margin:0;border:0;border-radius:9px;background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line-2);color:var(--t-1);
+  transition:box-shadow var(--d-rapide,120ms) var(--courbe)}
+:is(.nv-reg-type .fc-in.cb-fam,.nv-reg-type .cb-sel select,.nv-reg-lg .fc-in,[data-reg="la-route"] .fc-in):hover{box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne)}
+:is(.nv-reg-type .fc-in.cb-fam,.nv-reg-type .cb-sel select,.nv-reg-lg .fc-in,[data-reg="la-route"] .fc-in):focus{outline:none;box-shadow:inset 0 0 0 1px var(--nv-cuivre),var(--anneau)}
+.nv-reg-type .fc-in.cb-fam{width:6ch;min-width:6ch;padding:0 8px;font:600 var(--f-14) var(--mono);text-align:center;field-sizing:fixed}
+.nv-reg-type .cb-sel{position:relative;display:inline-flex;align-items:center}
+.nv-reg-type .cb-sel select{padding:0 26px 0 12px;font:600 var(--f-14) var(--mono);appearance:none;-webkit-appearance:none;cursor:pointer}
+.nv-reg-type .cb-sel svg.ico{position:absolute;right:8px;width:14px;height:14px;pointer-events:none;color:var(--t-2)}
+.nv-reg-type::after{content:"AWG";font:500 var(--f-12) var(--sans);color:var(--t-3)}
+.nv-reg-note{margin:10px 0 0;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-3)}
+.nv-reg-lg{display:inline-flex;align-items:center;gap:8px}
+.nv-reg-lg .fc-in{width:9ch;padding:0 10px;font:600 var(--f-14) var(--sans);text-align:right}
+.nv-reg-lg small{font:500 var(--f-13) var(--sans);color:var(--t-2)}
+.nv-reg-lg.supp .fc-in::placeholder{color:var(--warn);opacity:1}
+[data-reg="la-route"] .fc-in{padding:0 10px;min-width:16ch}
+
+/* ─── 8. LES DESSINS : la masse (ce qui y revient), le chemin d'un câble ─── */
+.vu-bro .bro-bus{fill:none;stroke:var(--t-1);stroke-width:2.2;stroke-linecap:round}
+.vu-bro .bro-terre{fill:none;stroke:var(--t-1);stroke-width:2;stroke-linecap:round}
+.vu-bro .bro-noeud{fill:var(--t-1)}
+.vu-bro .bro-nom-masse{text-anchor:start;font:600 var(--f-14) var(--mono)}
+.vu-bro .bro-sous-masse{text-anchor:start}
+.vu-bro.petit .bro-nom-masse{font-size:var(--f-13)}
+.vu-masse .bro-l:hover .bro-fil{stroke-width:3}
+/* le chemin d'un câble : les bouts s'ouvrent (un clic : l'équipement, le contact allumé) ; le trait, plus appuyé */
+svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visible}
+.vu-chemin .vu-ch-fil{stroke-width:3.2}
+.vu-chemin .vu-ch-bout{cursor:pointer;outline:none}
+.vu-chemin .vu-ch-bout:is(:hover,:focus-visible) .bro-zone{fill:var(--nv-cuivre-soft)}
+.vu-chemin .vu-ch-bout:focus-visible .bro-zone{stroke:var(--nv-cuivre);stroke-width:1.5}
+.vu-chemin .vu-ch-bout:is(:hover,:focus-visible) .bro-vers{fill:var(--nv-cuivre)}
+.vu-chemin .vu-ch-leg{font:500 var(--f-12) var(--sans);fill:var(--t-3)}
+.vu-chemin .vu-ch-sous{font:500 var(--f-11) var(--mono);fill:var(--t-3)}
+.vu-chemin .vu-ch-via{fill:var(--nv-cuivre-soft);stroke:var(--nv-cuivre)}
+.vu-bloc-chemin{gap:8px}
+/* le courant et la chute, dans leur carte titrée */
+.vu-bloc-mes .fi-mesures{margin:0}
+.vu-bloc-mes .fi-mes:first-child{padding-top:4px}
+.vu-bloc-mes .fi-mes:last-child{padding-bottom:2px}
+.vu-bloc-mes .fi-reparer-l{margin:8px 0 0}
+/* la note d'une longueur supposée, et son geste */
+.nv-grand .nv-panneau>.fi-hyp-l{align-items:center;gap:10px;padding:10px 12px 10px 16px;font:400 var(--f-13)/1.5 var(--sans)}
+.nv-grand .nv-panneau>.fi-hyp-l>svg.ico{margin-top:0;color:var(--warn)}
+.nv-grand .nv-panneau>.fi-hyp-l .btn{flex:none}
+
+/* la face d'un module, d'une prise : à l'échelle de ses contacts (08-vues, `echelle`), jamais gonflée pour remplir */
+.nv-grand .vu-fig-module svg.vu-face,.nv-grand .vu-fig-module .vu-faces-g svg.vu-face{width:auto;height:auto;min-height:0;max-height:340px;max-width:100%}
+
+/* ─── 9. LA BARRETTE AJOUTÉE PAR VOLTA : son vrai repère à donner — une bande nette, le geste en cuivre ─── */
+.fi-poser{align-items:center;gap:12px;margin:0;padding:10px 10px 10px 16px;border:0;border-radius:12px;background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn);font:500 var(--f-13) var(--sans);color:var(--t-1)}
+.fi-poser>span{white-space:nowrap}
+.fi-poser .fc-in{height:32px;padding:0 10px;border:0;border-radius:8px;background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line-2);font:600 var(--f-14) var(--mono);color:var(--t-1)}
+.fi-poser .fc-in:hover{box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne)}
+.fi-poser .fc-in:focus{outline:none;box-shadow:inset 0 0 0 1px var(--nv-cuivre),var(--anneau)}
+.fi-poser .btn{height:32px;padding:0 16px;border:0;background:var(--nv-cuivre);color:var(--t-inverse);box-shadow:0 6px 16px -10px var(--nv-cuivre)}
+.fi-poser .btn:hover{background:color-mix(in srgb,var(--nv-cuivre) 88%,var(--t-1))}
+.nv-avant{padding:12px 22px 4px}
+.nv-avant>.fi-poser{margin:0}
+.fi.nv-c .nc>.fi-poser{margin:-4px 0 0}
+
+/* ─── 10. LES PROBLÈMES : une section compacte ; la ligne se lit d'un trait ─── */
+.nc-taches.nc-pbs .nc-t b{font-weight:600}
+
+/* ─── 11. L'HISTORIQUE : une ligne par changement, le geste qui annule toujours visible ─── */
+.nv-modifs-l .fi-ec-note{margin:0 0 12px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+
+@media (prefers-reduced-motion:reduce){ .nv-grand table.nv-cables tbody tr.nv-cab td:last-child::after{transition:none} }

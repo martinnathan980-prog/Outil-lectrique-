@@ -1,73 +1,104 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LE SITE — « Nuit bleue » (v72, DESIGN.md)
+   LE SITE — « Graphite et cuivre » (v84 ; avant : la « Nuit bleue » v72-v83)
 
-   Tout est posé sur LA TABLE : une encre bleu nuit dégradée — une lumière froide tombe du coin haut-droit, une autre
-   respire au coin bas-gauche —, semée de points, la même dans les deux thèmes, d'un bord à l'autre de l'écran ; une
-   lueur suit la souris de loin et les points glissent d'un rien sous la feuille (page.html `#table`, 08-table). Les
-   outils s'y posent en PALETS de VERRE clair — un bleu plus pâle que la nuit, flouté, un filet de lumière en haut : plus
-   rien de noir sur noir —, les mêmes dans les deux thèmes (l'îlot). Le plan y est une feuille blanche ; la fiche est une
-   CARTE qui naît du bloc cliqué (08-carte), blanche le jour, encre bleue le soir ; ce qu'on lit d'autre (le
-   récapitulatif, un document) est une FEUILLE posée à côté, détachée des bords par le même jeu de 10 px.
-   L'interface est à l'ENCRE : le bouton principal est plein, la sélection en gris doux, et la couleur ne dit QUE
-   l'état — le vert ce qui est bon, l'ambre ce qui est à voir, le rouge ce qui est un problème. Les routes des fils
-   gardent leurs couleurs ; un bleu de glace, rare, relie la carte à son bloc. Inter pour le texte, JetBrains Mono pour
-   les identifiants ; les étiquettes en minuscules avec leur majuscule. Les coins 6 · 10 · 12 · 16 (18 la carte), des
-   ombres profondes, un mouvement qui freine en arrivant (140 à 340 ms). Les dessins techniques restent sur papier
-   blanc dans les deux thèmes.
+   UNE SEULE FAMILLE DE MATIÈRES : le graphite chaud et le cuivre. La nuit bleue est partie.
+   · LA TABLE (page.html `#table`, 08-table, style-table.css) : sous tout, d'un bord à l'autre. La nuit : un GRAPHITE
+     CHAUD dégradé, une lumière de cuivre au coin haut-droit ; le jour : une PIERRE CLAIRE chaude (pas du blanc), une
+     lumière blanche au même coin. Le folio y est une feuille blanche posée d'une ombre douce, un liseré le jour.
+     L'accueil (la bibliothèque) reste sur le graphite dans les deux thèmes (la charte) : il garde ses jetons à lui.
+   · LE CADRE (la barre du haut, le rail, les folios, le zoom, les menus, le mot qui passe, les outils d'un PDF) :
+     des PALETS qui suivent le thème — clairs le jour, graphite la nuit, graphite toujours sur l'accueil. Plus de chrome
+     noir sur une page claire.
+   · LES FEUILLES ET LA CARTE (la fiche, le récapitulatif, les documents) : du papier — blanc pierre le jour, graphite
+     chaud la nuit (leurs jetons : style-niveaux.css, style-x-nuit.css).
+   L'interface est à l'ENCRE : le bouton principal est plein, la sélection en gris doux. UN SEUL ACCENT, le CUIVRE : ce
+   qui est ouvert, le folio courant, le fil de la carte, l'anneau du clavier, ce que VOLTA ajoute au folio. La couleur
+   ne dit sinon QUE l'état — le vert ce qui est bon, l'ambre ce qui est à voir, le rouge ce qui est un problème. Les
+   routes des câbles ont leurs teintes (06 `TEINTES_ROUTES`), des bleus et des sarcelles : jamais un état, jamais du
+   fuchsia. Inter pour l'interface, JetBrains Mono pour les repères, les références, les bornes, les types de câble.
+   OÙ SONT LES JETONS
+   · ici, `:root` : la base, et le GRAPHITE de la table et du cadre (la nuit, l'accueil) ; les feuilles du jour, puis
+     celles de la nuit (les deux blocs « le thème sombre ») ; l'îlot du cadre (le graphite, `#entete,#rail…`) ;
+   · style-z-cadre.css (chargé en dernier, le dernier mot) : LE JOUR DU PLAN — la pierre de la table et le cadre clair —,
+     et ce que des couches plus anciennes (style-table.css, style-v79.css) redéfinissaient encore en bleu.
+   LES JETONS (v84), ce qu'ils disent :
+   · la table : --s-app (sa couleur moyenne), --table-fond, --table-lueur, --nappe-a/-b, --grille-repos,
+     --s-grille-revele, --courant ; ce qui s'écrit dessus : --t-table, --t-table-2, --t-table-warn, --t-table-ko,
+     --l-table, --l-table-2, --s-table-champ, --s-table-survol ; l'ombre du folio : --sh-feuille ;
+   · le cadre : --palet, --palet-2, --palet-plein (le palet sans transparence : l'anneau d'une pastille posée dessus),
+     --sh-palet, --voile-1…4 (les voiles d'un survol, d'un pressé), --entete-fond, --entete-ombre ; le folio courant :
+     --chip-on, --chip-on-t, --chip-on-ombre ; ce qui est ouvert : --chrome-cuivre, --chrome-cuivre-soft,
+     --chrome-cuivre-ligne, --chrome-cuivre-t (l'icône posée sur le voile de cuivre) ;
+   · l'accent : --glace (le nom est resté : c'est le CUIVRE, l'accent rare — la lueur d'une pièce choisie, une barre de
+     progression), --lien (le fil de la carte), --anneau-c (l'anneau du clavier : cuivre, net) ;
+   · la bulle : --bulle, --bulle-t, --bulle-t2 (sa seconde ligne), --bulle-kbd (le fond d'une touche), --sh-bulle,
+     --bulle-delai ; l'inverse du fond : sombre sur le jour, claire sur la nuit ;
+   · l'écriture : --f-11 · 12 · 13 · 14 · 16 · 20 · 28 (l'échelle), --f-34, --f-44 (les grands titres de l'accueil) ;
+     --f-15 et --f-24 sont HORS ÉCHELLE (restés pour les feuilles qui les lisent encore : à remplacer par 14/16, 20/28) ;
+     graisses 400 · 500 · 600 (700 : les grands chiffres) ; une capitale de rubrique : 11 px, 600, 0,07 em ;
+   · le mouvement : UNE courbe (--courbe), TROIS durées — rapide 120 ms (--rapide, --d-rapide, --d-instant), normale
+     200 ms (--moyen, --d-moyen), entrée 400 ms (--lent, --d-lent, --d-pose) ; --d-trace (640 ms) n'est pas une
+     transition, c'est un dessin qui se trace. Les anciennes courbes nommées (--courbe-entree…) valent --courbe.
+   Les coins : 6 une puce, 8 un contrôle dans un palet, 10 un bouton, 12 un palet ou un menu, 16 une feuille, 18 la carte.
+   Les dessins techniques restent sur papier blanc dans les deux thèmes.
    Ce fichier porte les JETONS (pour tout le monde) et le SITE ; chaque domaine a son style-*.css, écrit avec eux.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
-  /* ── LA TABLE : la même dans les deux thèmes (le lecteur, v72 : « un fond pas que noir, un peu dégradé, un petit peu
-     interactif »). Ses couches (#table) : le fond, les points, la lueur. Ce qui s'écrit à même la table prend
-     son encre (--t-table) ── */
-  --s-app:#0e1626;                                       /* la couleur moyenne de la table (ce qui la remplace d'un aplat) */
-  --table-fond:radial-gradient(1150px 780px at 96% -14%,rgba(96,140,220,.36),rgba(96,140,220,0) 62%),linear-gradient(158deg,#1b2843 0%,#121c30 42%,#0a111e 100%);
-  --table-lueur:radial-gradient(closest-side,rgba(132,172,255,.17),rgba(132,172,255,.05) 52%,rgba(132,172,255,0));
-  --s-grille:rgba(160,188,240,.22); --s-grille-2:rgba(160,188,240,.22);
+  /* ── LA TABLE, en graphite chaud : la nuit, et l'accueil dans les deux thèmes (le jour du plan : style-z-cadre.css).
+     Ses couches (#table) : le fond, les nappes, les points, la lueur. Ce qui s'écrit à même la table prend son encre
+     (--t-table) ── */
+  --s-app:#211f1d;                                       /* la couleur moyenne de la table (ce qui la remplace d'un aplat) */
+  --table-fond:radial-gradient(1100px 760px at 92% -12%,rgba(236,165,112,.10),rgba(236,165,112,0) 62%),radial-gradient(900px 640px at -6% 108%,rgba(255,236,216,.04),rgba(255,236,216,0) 60%),linear-gradient(160deg,#2b2826 0%,#232120 48%,#1b1918 100%);
+  --table-lueur:radial-gradient(closest-side,rgba(255,226,200,.09),rgba(255,226,200,.03) 52%,rgba(255,226,200,0));
+  --s-grille:rgba(255,236,216,.15); --s-grille-2:rgba(255,236,216,.15);
   --points:radial-gradient(circle at 1px 1px,var(--s-grille) 1px,transparent 1.5px);   /* un point tous les 24 px */
-  --t-table:#e9eef9; --t-table-2:#a9b8d4;                /* sur la table : 15:1 et 8:1 */
-  --l-table:rgba(160,190,255,.13); --l-table-2:rgba(160,190,255,.26);   /* les filets à même la table : discret, appuyé */
-  --s-table-champ:rgba(14,22,40,.6); --s-table-survol:rgba(160,190,255,.07);   /* un champ, un survol posés sur elle */
+  --t-table:#f3eee8; --t-table-2:#bfb6ab;                /* sur la table : 15:1 et 8:1 */
+  --l-table:rgba(255,236,216,.11); --l-table-2:rgba(255,236,216,.22);   /* les filets à même la table : discret, appuyé */
+  --s-table-champ:rgba(22,20,18,.6); --s-table-survol:rgba(255,236,216,.06);   /* un champ, un survol posés sur elle */
   --t-table-warn:#f2b55c;                                /* ce qui est à voir, écrit sur la table : 9:1 */
-  --glace:#9fc2ff;                                       /* l'accent froid, rare : le fil de la carte, la lueur d'une pièce choisie */
-  /* ── LES PALETS : du verre clair posé sur la table (rail, folios, mot qui passe), presque opaque — la feuille blanche
-     passe dessous quand on zoome, et leur texte doit rester lisible (l'audit v72 : 3,4:1 à 85 %, 4,4:1 et plus à 97 %) ;
-     les voiles de lumière posés dessus. Pas de flou : à 97 % il ne se voyait pas, mais il se recalculait à chaque image
-     d'un déplacement du plan (l'audit de fluidité) ── */
-  --palet:rgba(38,54,86,.97); --palet-2:rgba(50,70,108,.97); --palet-flou:none;
-  --voile-1:rgba(170,200,255,.06); --voile-2:rgba(170,200,255,.11); --voile-3:rgba(170,200,255,.17); --voile-4:rgba(170,200,255,.25);
-  --sh-palet:inset 0 1px 0 rgba(255,255,255,.16),0 0 0 1px rgba(186,212,255,.26),0 16px 36px -10px rgba(0,6,18,.7),0 2px 6px rgba(0,6,18,.35);
-  --sh-feuille:0 0 0 1px rgba(0,0,0,.45),0 32px 80px -12px rgba(0,5,16,.75),0 10px 24px rgba(0,5,16,.45);
-  /* ── LA CARTE (08-carte) : son ombre posée et tenue (un filet de glace, une lueur froide), son coin, son fil ── */
-  --sh-carte:0 0 0 1px rgba(160,192,255,.22),0 32px 80px -14px rgba(0,6,20,.78),0 10px 26px -8px rgba(0,6,20,.5),0 0 60px -20px rgba(110,160,255,.35);
-  --sh-carte-tenue:0 0 0 1px rgba(160,192,255,.3),0 48px 110px -16px rgba(0,6,20,.85),0 16px 34px -10px rgba(0,6,20,.55),0 0 80px -20px rgba(110,160,255,.45);
-  --r-carte:18px; --lien:#a9c8ff;
-  /* ── LES FEUILLES (le thème clair) : ce qu'on lit. Chaque encre passe l'AA (4,5:1) sur chaque fond où elle se pose ;
-     le filet se voit (1,3:1 sur le blanc — l'audit v72 : à 1,22:1, les lignes d'un tableau se confondaient) ── */
-  --s-surface:#ffffff; --s-sunken:#f5f6f8; --s-hover:#eff1f5; --s-line:#dfe3ea; --s-line-2:#d2d6df;
+  --glace:#eca570;                                       /* L'ACCENT (le cuivre), rare : la lueur d'une pièce choisie, une barre qui avance */
+  /* ── LES PALETS : le cadre posé sur la table (rail, folios, zoom, mot qui passe), presque opaque — la feuille blanche
+     passe dessous quand on zoome, et leur texte doit rester lisible ; les voiles d'un survol posés dessus. Pas de flou :
+     il se recalculait à chaque image d'un déplacement du plan (l'audit de fluidité) ── */
+  --palet:rgba(54,50,46,.96); --palet-2:rgba(64,60,55,.97); --palet-plein:#36322e; --palet-flou:none;
+  --voile-1:rgba(255,240,225,.05); --voile-2:rgba(255,240,225,.09); --voile-3:rgba(255,240,225,.14); --voile-4:rgba(255,240,225,.20);
+  --sh-palet:inset 0 1px 0 rgba(255,240,225,.08),0 0 0 1px rgba(255,236,216,.11),0 14px 32px -12px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.28);
+  --sh-feuille:0 0 0 1px rgba(0,0,0,.42),0 30px 70px -18px rgba(0,0,0,.72),0 8px 20px rgba(0,0,0,.34);
+  --entete-fond:rgba(27,25,23,.94); --entete-ombre:0 1px 0 rgba(255,236,216,.07),0 12px 30px -20px rgba(0,0,0,.85);
+  /* le folio courant : une pièce claire et chaude, sa lueur de cuivre ; ce qui est ouvert : le cuivre, en voile */
+  --chip-on:#f6efe8; --chip-on-t:#1d1a17; --chip-on-ombre:0 0 0 1px rgba(255,255,255,.5),0 4px 14px -4px rgba(236,165,112,.65);
+  --chrome-cuivre:#eca570; --chrome-cuivre-soft:rgba(236,165,112,.16); --chrome-cuivre-ligne:rgba(236,165,112,.42); --chrome-cuivre-t:#ffffff;
+  /* ── LA CARTE (08-carte) : son ombre posée et tenue, son coin, son fil (le cuivre) ── */
+  --sh-carte:0 0 0 1px rgba(28,22,12,.12),0 32px 80px -16px rgba(0,0,0,.6),0 10px 26px -10px rgba(0,0,0,.36);
+  --sh-carte-tenue:0 0 0 1px rgba(28,22,12,.16),0 48px 110px -18px rgba(0,0,0,.68),0 16px 34px -10px rgba(0,0,0,.42);
+  --r-carte:18px; --lien:#d98d52;
+  /* ── LES FEUILLES (le thème clair) : ce qu'on lit — le blanc pierre (le même que la fiche, style-niveaux.css). Chaque
+     encre passe l'AA (4,5:1) sur chaque fond où elle se pose ; le filet se voit (1,3:1 sur le blanc) ── */
+  --s-surface:#ffffff; --s-sunken:#f5f4f0; --s-hover:#f0eee9; --s-line:#e6e3dc; --s-line-2:#d6d2c9;
   --s-flottant:#ffffff;                                  /* ce qui flotte au-dessus d'une feuille : listes, bulles de graphique */
   --s-papier:#ffffff; --t-papier:#1d1d1f; --t-papier-2:#5c5c61; --s-papier-grille:#f1f1f4;   /* les dessins : toujours sur papier */
-  --t-1:#1b1f27; --t-2:#454b57; --t-3:#5f6672; --t-inverse:#ffffff;
+  --t-1:#1c1c1f; --t-2:#53555b; --t-3:#67696f; --t-inverse:#ffffff;
   /* l'action et la sélection sont à l'encre : le plein dit ce qu'on fait, le gris doux ce qu'on a choisi */
-  --accent:#1b1f27; --accent-2:#000000; --accent-soft:#eaedf2; --accent-line:#c3c9d4; --on-accent:#ffffff;
+  --accent:#1c1c1f; --accent-2:#000000; --accent-soft:#efede8; --accent-line:#cfcac0; --on-accent:#ffffff;
   /* les états : la seule couleur de l'interface */
-  --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#454b57; --info-soft:#eff1f5;
+  --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#53555b; --info-soft:#f1efea;
   --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;   /* les courbes de disjonction, sur la surface */
   --charge:#3d6fd6;                                      /* la charge d'un disjoncteur sur son cadran (le permanent ; la pointe en voile) */
-  /* les bulles : claires sur la nuit, un filet qui les détache aussi du papier */
-  --bulle:#eef3fd; --bulle-t:#0f1a2e; --sh-bulle:0 0 0 1px rgba(15,26,46,.16),0 14px 34px -8px rgba(0,6,18,.55);
-  --voile:rgba(6,12,24,.32);                             /* derrière un calque plein écran */
-  --voile-fort:rgba(6,12,24,.6);                         /* derrière une fenêtre (le dessin d'un contrat fait) */
-  --route-a:#7d3c98; --route-b:#117a8b;                  /* deux routes du dessin (la vignette d'un plan) : ni le rouge ni le vert des états */
+  /* la bulle : l'inverse de son fond — claire sur la nuit et sur l'accueil (ici), sombre sur le jour du plan (style-z-cadre) */
+  --bulle:#f6f1ea; --bulle-t:#1f1c19; --bulle-t2:#5b544c; --bulle-kbd:rgba(31,28,25,.08);
+  --sh-bulle:0 0 0 1px rgba(0,0,0,.2),0 14px 32px -10px rgba(0,0,0,.6);
+  --voile:rgba(26,20,14,.30);                            /* derrière un calque plein écran */
+  --voile-fort:rgba(26,20,14,.58);                       /* derrière une fenêtre (le dessin d'un contrat fait) */
+  --route-a:#2c62b0; --route-b:#0e7a7c;                  /* deux routes du dessin (la vignette d'un plan) : les deux premières teintes de 06 `TEINTES_ROUTES` */
   --route-voile:transparent;                             /* posé sur une couleur de route hors du papier : l'éclaircit en sombre */
-  /* les anciens jetons des barres : les palets, les mêmes dans les deux thèmes */
-  --p-fond:var(--palet); --p-fond-2:var(--palet-2); --p-ligne:rgba(170,200,255,.13); --p-hover:rgba(170,200,255,.09);
-  --p-t1:#eef3fd; --p-t2:#cdd8eb; --p-t3:#b8c6e0;
-  --p-accent:#eef3fd; --p-ok:#4fd67d; --p-warn:#f2b55c; --p-ko:#ff7a6e;
+  /* les anciens jetons des barres : les palets */
+  --p-fond:var(--palet); --p-fond-2:var(--palet-2); --p-ligne:rgba(255,236,216,.10); --p-hover:rgba(255,240,225,.07);
+  --p-t1:#f4efe9; --p-t2:#d4ccc2; --p-t3:#b3aa9f;
+  --p-accent:#f4efe9; --p-ok:#5fdc8a; --p-warn:#f2b55c; --p-ko:#ff7a6e;
   --f-11:11px; --f-12:12px; --f-13:13px; --f-14:14px; --f-16:16px; --f-20:20px; --f-24:24px; --f-28:28px;
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
   /* les coins : une puce, un bouton, un groupe, une feuille ; un palet (et tout menu qui tombe d'un bouton) ; une bulle */
-  --r-1:6px; --r-btn:10px; --r-2:12px; --r-3:16px; --r-palet:14px; --r-bulle:8px;
+  --r-1:6px; --r-btn:10px; --r-2:12px; --r-3:16px; --r-palet:12px; --r-bulle:8px;
   /* ── LES COMPOSANTS : une mesure chacun (DESIGN §4, « une règle par composant ») — tout le monde les lit ── */
   --h-btn:34px; --h-btn-dense:30px;            /* un bouton : sur une feuille, sur la table ; dans une barre d'outils dense */
   --h-onglet:40px;                             /* un onglet, souligné */
@@ -75,36 +106,37 @@
   --h-puce:28px; --h-badge:20px;               /* une puce de filtre ; un badge d'état (une pilule, pas cliquable) */
   --h-ligne-dense:32px; --h-ligne:44px; --h-ligne-riche:56px; --h-tete-table:32px;   /* les lignes d'un tableau, son en-tête */
   --h-menu-ligne:34px;                         /* une ligne de menu */
-  --bulle-delai:.4s;                           /* le survol attend un instant avant la bulle (au clavier, tout de suite) */
+  --bulle-delai:.35s;                          /* le survol attend un instant avant la bulle (au clavier, tout de suite) */
   --menu-flou:blur(26px) saturate(1.5);        /* le verre dense de tout ce qui tombe d'un bouton (le ⋮, la liste, le « ··· ») */
-  --sh-1:0 1px 2px rgba(10,20,40,.06),0 0 0 .5px rgba(10,20,40,.05);
-  --sh-2:0 0 0 .5px rgba(10,20,40,.08),0 16px 40px rgba(10,20,40,.16),0 3px 10px rgba(10,20,40,.07);
+  --sh-1:0 1px 2px rgba(40,30,20,.06),0 0 0 .5px rgba(40,30,20,.05);
+  --sh-2:0 0 0 .5px rgba(40,30,20,.08),0 16px 40px rgba(40,30,20,.16),0 3px 10px rgba(40,30,20,.07);
   /* une feuille posée sur la table : son bord net, une ombre longue */
-  --sh-panneau:0 0 0 1px rgba(0,6,20,.5),0 24px 64px rgba(0,6,20,.55),0 6px 18px rgba(0,6,20,.35);
-  --anneau:0 0 0 3px rgba(27,31,39,.09);                 /* l'anneau d'un champ qui a le clavier */
+  --sh-panneau:0 0 0 1px rgba(28,22,12,.12),0 24px 64px -16px rgba(0,0,0,.45),0 6px 18px -6px rgba(0,0,0,.25);
+  --anneau:0 0 0 3px rgba(169,88,31,.16);                /* l'anneau d'un champ qui a le clavier : le cuivre, en halo */
   --sans:"Inter","IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --titre:var(--sans);
   --mono:"JetBrains Mono","IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
-  /* le mouvement : vif au départ, il freine en arrivant ; on ne le remarque pas, on le sent */
+  /* le mouvement (v84) : UNE courbe — vive au départ, elle freine en arrivant ; on ne la remarque pas, on la sent — et
+     TROIS durées : rapide 120 ms (un survol, une pression), normale 200 ms (ce qui s'ouvre, se replie), entrée 400 ms
+     (ce qui paraît : une feuille, la carte, le mot qui passe) */
   --courbe:cubic-bezier(.2,.8,.2,1);
-  --rapide:.14s var(--courbe); --moyen:.22s var(--courbe); --lent:.34s var(--courbe);
-  /* v73, le panel : TROIS courbes nommées par ce que fait la chose. Ce qui PARAÎT est vif et très freiné, ce qui PART
-     accélère sans traîner, ce qui VA de A à B sous les yeux glisse. Les durées vont de l'instant à la pose. */
-  --courbe-entree:cubic-bezier(.32,.72,0,1); --courbe-sortie:cubic-bezier(.4,0,1,1); --courbe-glisse:cubic-bezier(.65,0,.35,1);
-  --d-instant:90ms; --d-rapide:140ms; --d-moyen:220ms; --d-lent:340ms; --d-pose:420ms; --d-trace:640ms;
+  --rapide:120ms var(--courbe); --moyen:200ms var(--courbe); --lent:400ms var(--courbe);
+  /* les noms d'avant restent (on les lit partout) : ils valent la courbe unique et les trois durées */
+  --courbe-entree:var(--courbe); --courbe-sortie:var(--courbe); --courbe-glisse:var(--courbe);
+  --d-instant:120ms; --d-rapide:120ms; --d-moyen:200ms; --d-lent:400ms; --d-pose:400ms; --d-trace:640ms;
   --decale:40ms;             /* l'écart entre deux éléments d'une même arrivée (six au plus)                    */
   --monte:8px;               /* l'amplitude UNIQUE d'une entrée verticale                                       */
   --glisse:24px;             /* l'amplitude UNIQUE d'une feuille qui entre de côté                              */
   --presse:.97;              /* l'enfoncement d'un bouton                                                       */
   --bulle-chaude:1200ms;     /* après une bulle, la suivante paraît tout de suite pendant ce temps              */
-  --f-15:15px; --f-34:34px; --f-44:clamp(36px,2.9vw,56px);
-  /* les encres posées À MÊME LA TABLE bleu nuit (mesurées) : le --ko des feuilles n'y fait que 2,9:1 */
-  --t-table-ko:#ff7a6e;      /* 6,7:1 sur la table                                                              */
-  --pastille-ko:#ff6b5e; --pastille-ko-t:#2a0806;   /* une pastille rouge sur un palet : 4,3:1, son chiffre 6,6:1 */
-  --kbd-clair-t:#3f4a62; --kbd-clair-fond:rgba(15,26,46,.07);   /* une touche écrite sur un bouton clair : 8:1   */
-  --halo-geste:0 16px 36px -12px rgba(130,175,255,.7);         /* le geste clair survolé, sur la table          */
-  /* l'anneau du focus clavier : l'encre sur le papier et les surfaces claires, la glace sur la nuit (ci-dessous) */
-  --anneau-c:#1b1f27;
+  --f-15:15px; --f-34:34px; --f-44:clamp(36px,2.9vw,56px);   /* (--f-15 : hors échelle, à ne plus employer) */
+  /* les encres posées À MÊME LA TABLE graphite (mesurées) : le --ko des feuilles n'y fait que 3:1 */
+  --t-table-ko:#ff8a7e;      /* 6,9:1 sur la table                                                              */
+  --pastille-ko:#ff6b5e; --pastille-ko-t:#2a0806;   /* une pastille rouge sur un palet graphite : 4,3:1, son chiffre 6,6:1 */
+  --kbd-clair-t:#4a443e; --kbd-clair-fond:rgba(40,30,20,.07);   /* une touche écrite sur un bouton clair : 8:1   */
+  --halo-geste:0 16px 36px -12px rgba(236,165,112,.55);        /* le geste clair survolé, sur la table          */
+  /* l'anneau du focus clavier : le CUIVRE, net — foncé sur le papier et le jour, clair sur la nuit (ci-dessous) */
+  --anneau-c:#a9581f;
   color-scheme:light;
   /* ── la géométrie de la page : le plan se recadre dans ce que les palets et le volet épinglé laissent ── */
   --jeu:10px;                /* l'écart des palets et des feuilles aux bords de l'écran, et entre eux           */
@@ -123,51 +155,51 @@
   --danger:var(--ko); --craie:var(--s-surface); --verre-plein:var(--t-1); --ombre-1:var(--sh-2);
   --t0:var(--f-11); --t1:var(--f-12); --t2:var(--f-13); --t3:var(--f-14); --t4:var(--f-16); --t5:var(--f-20); --t6:var(--f-28);
 }
-/* ── le thème sombre : les feuilles et la carte prennent la matière des palets — un bleu d'encre plus clair que la table,
-   un anneau de lumière, un filet clair en haut (l'audit v72 : à 1,05:1 contre la table, on ne voyait pas où elles
-   commençaient) —, l'encre claire, l'action en blanc. Les mêmes valeurs
-   deux fois : pour le réglage du système, et pour un choix explicite (data-theme) ── */
+/* ── le thème sombre : les feuilles prennent le graphite chaud (celui des fiches de nuit, style-x-nuit.css : la page, un
+   cran plus clair la feuille, un filet de lumière en haut), l'encre claire, l'action en blanc, un anneau de cuivre. Les
+   mêmes valeurs deux fois : pour le réglage du système, et pour un choix explicite (data-theme) ── */
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --s-surface:#1a2640; --s-sunken:#121b2e; --s-hover:#213050; --s-line:#2a3b5c; --s-line-2:#3a4e75; --s-flottant:#1e2b47;
-  --t-1:#eef3fd; --t-2:#b6c4de; --t-3:#91a2c2; --t-inverse:#0f1a2e;
-  --accent:#eef3fd; --accent-2:#ffffff; --accent-soft:#22324f; --accent-line:#3a4e75; --on-accent:#0f1a2e;
-  --ok:#4fd67d; --ok-soft:#14291f; --warn:#f2b55c; --warn-soft:#2c2414; --ko:#ff7a6e; --ko-soft:#36191b; --info:#b6c4de; --info-soft:#1c2942;
+  --s-surface:#36322f; --s-sunken:#2a2724; --s-hover:#423d39; --s-line:#4a4440; --s-line-2:#5e5751; --s-flottant:#3c3835;
+  --t-1:#f6f2ec; --t-2:#d6cec5; --t-3:#b9b0a6; --t-inverse:#1e1c1a;
+  --accent:#f6f2ec; --accent-2:#ffffff; --accent-soft:#423d39; --accent-line:#5e5751; --on-accent:#1e1c1a;
+  --ok:#5fdc8a; --ok-soft:rgba(95,220,138,.13); --warn:#f4bb66; --warn-soft:rgba(244,187,102,.13); --ko:#ff8a7e; --ko-soft:rgba(255,138,126,.14); --info:#d6cec5; --info-soft:#2f2c29;
   --courbe-chaud:#ff6b6b; --courbe-tiede:#ffb224; --courbe-froid:#7aa7ff; --charge:#8fb6ff;
-  --voile:rgba(2,6,14,.5); --voile-fort:rgba(2,6,14,.68);
-  --route-a:#c49ade; --route-b:#52c2d4; --route-voile:rgba(255,255,255,.3);
-  --sh-1:0 1px 2px rgba(0,4,12,.4); --sh-2:0 0 0 1px rgba(160,192,255,.1),0 16px 40px rgba(0,4,12,.6),0 3px 10px rgba(0,4,12,.4);
-  --sh-panneau:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(186,212,255,.3),0 28px 64px -14px rgba(0,6,18,.8),0 6px 18px rgba(0,4,12,.45);
-  --sh-carte:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(186,212,255,.26),0 32px 80px -14px rgba(0,6,20,.8),0 0 60px -20px rgba(110,160,255,.35);
-  --anneau:0 0 0 3px rgba(159,194,255,.2);
+  --voile:rgba(8,6,4,.52); --voile-fort:rgba(8,6,4,.7);
+  --route-a:#86aee8; --route-b:#5ec3c1; --route-voile:rgba(255,255,255,.3);
+  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 0 0 1px rgba(255,236,216,.1),0 16px 40px rgba(0,0,0,.6),0 3px 10px rgba(0,0,0,.4);
+  --sh-panneau:inset 0 1px 0 rgba(255,236,216,.07),0 0 0 1px rgba(255,214,180,.13),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4);
+  --sh-carte:inset 0 1px 0 rgba(255,236,216,.07),0 0 0 1px rgba(255,214,180,.13),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5);
+  --anneau:0 0 0 3px rgba(236,165,112,.24); --lien:#e0965c;
   color-scheme:dark } }
 :root[data-theme="dark"]{
-  --s-surface:#1a2640; --s-sunken:#121b2e; --s-hover:#213050; --s-line:#2a3b5c; --s-line-2:#3a4e75; --s-flottant:#1e2b47;
-  --t-1:#eef3fd; --t-2:#b6c4de; --t-3:#91a2c2; --t-inverse:#0f1a2e;
-  --accent:#eef3fd; --accent-2:#ffffff; --accent-soft:#22324f; --accent-line:#3a4e75; --on-accent:#0f1a2e;
-  --ok:#4fd67d; --ok-soft:#14291f; --warn:#f2b55c; --warn-soft:#2c2414; --ko:#ff7a6e; --ko-soft:#36191b; --info:#b6c4de; --info-soft:#1c2942;
+  --s-surface:#36322f; --s-sunken:#2a2724; --s-hover:#423d39; --s-line:#4a4440; --s-line-2:#5e5751; --s-flottant:#3c3835;
+  --t-1:#f6f2ec; --t-2:#d6cec5; --t-3:#b9b0a6; --t-inverse:#1e1c1a;
+  --accent:#f6f2ec; --accent-2:#ffffff; --accent-soft:#423d39; --accent-line:#5e5751; --on-accent:#1e1c1a;
+  --ok:#5fdc8a; --ok-soft:rgba(95,220,138,.13); --warn:#f4bb66; --warn-soft:rgba(244,187,102,.13); --ko:#ff8a7e; --ko-soft:rgba(255,138,126,.14); --info:#d6cec5; --info-soft:#2f2c29;
   --courbe-chaud:#ff6b6b; --courbe-tiede:#ffb224; --courbe-froid:#7aa7ff; --charge:#8fb6ff;
-  --voile:rgba(2,6,14,.5); --voile-fort:rgba(2,6,14,.68);
-  --route-a:#c49ade; --route-b:#52c2d4; --route-voile:rgba(255,255,255,.3);
-  --sh-1:0 1px 2px rgba(0,4,12,.4); --sh-2:0 0 0 1px rgba(160,192,255,.1),0 16px 40px rgba(0,4,12,.6),0 3px 10px rgba(0,4,12,.4);
-  --sh-panneau:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(186,212,255,.3),0 28px 64px -14px rgba(0,6,18,.8),0 6px 18px rgba(0,4,12,.45);
-  --sh-carte:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(186,212,255,.26),0 32px 80px -14px rgba(0,6,20,.8),0 0 60px -20px rgba(110,160,255,.35);
-  --anneau:0 0 0 3px rgba(159,194,255,.2);
+  --voile:rgba(8,6,4,.52); --voile-fort:rgba(8,6,4,.7);
+  --route-a:#86aee8; --route-b:#5ec3c1; --route-voile:rgba(255,255,255,.3);
+  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 0 0 1px rgba(255,236,216,.1),0 16px 40px rgba(0,0,0,.6),0 3px 10px rgba(0,0,0,.4);
+  --sh-panneau:inset 0 1px 0 rgba(255,236,216,.07),0 0 0 1px rgba(255,214,180,.13),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4);
+  --sh-carte:inset 0 1px 0 rgba(255,236,216,.07),0 0 0 1px rgba(255,214,180,.13),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5);
+  --anneau:0 0 0 3px rgba(236,165,112,.24); --lien:#e0965c;
   color-scheme:dark }
-/* ── L'ÎLOT DE VERRE : la barre du haut, le rail, les folios, le mot qui passe, tout menu qui tombe d'un bouton (`.menu-verre`,
-   le « ··· » d'un document) et tout `.ilot-sombre` portent l'encre claire de la nuit dans les deux thèmes, sur le verre des
-   palets — un menu est le même, qu'il tombe sur la table ou sur une feuille blanche ── */
+/* ── L'ÎLOT DU CADRE : la barre du haut, le rail, les folios, le mot qui passe, tout menu qui tombe d'un bouton (`.menu-verre`,
+   le « ··· » d'un document) et les outils d'un PDF (`.ilot-sombre`, le nom est resté) portent ICI le GRAPHITE : la nuit,
+   et l'accueil dans les deux thèmes. LE JOUR DU PLAN, ils s'éclairent (style-z-cadre.css) — un menu est le même, qu'il
+   tombe sur la table ou sur une feuille ── */
 #entete,#rail,#folios,#toast,.ilot-sombre,.menu-verre,.doc-menu-l{
-  --s-surface:#16213a; --s-sunken:#111a2e; --s-hover:rgba(170,200,255,.09); --s-line:rgba(170,200,255,.13); --s-line-2:rgba(170,200,255,.24); --s-flottant:rgba(37,54,89,.97);
-  --t-1:#eef3fd; --t-2:#cdd8eb; --t-3:#b8c6e0; --t-inverse:#0f1a2e;
-  --accent:#eef3fd; --accent-2:#ffffff; --accent-soft:rgba(170,200,255,.17); --accent-line:rgba(170,200,255,.3); --on-accent:#0f1a2e;
-  --ok:#4fd67d; --ok-soft:rgba(79,214,125,.14); --warn:#f2b55c; --warn-soft:rgba(242,181,92,.14); --ko:#ff7a6e; --ko-soft:rgba(255,122,110,.14); --info:#c3cfe6; --info-soft:rgba(170,200,255,.09);
+  --s-surface:#26231f; --s-sunken:#1d1b19; --s-hover:rgba(255,240,225,.07); --s-line:rgba(255,236,216,.10); --s-line-2:rgba(255,236,216,.18); --s-flottant:rgba(60,56,52,.98);
+  --t-1:#f4efe9; --t-2:#d4ccc2; --t-3:#b3aa9f; --t-inverse:#1d1b19;
+  --accent:#f4efe9; --accent-2:#ffffff; --accent-soft:rgba(236,165,112,.16); --accent-line:rgba(236,165,112,.40); --on-accent:#1d1b19;
+  --ok:#5fdc8a; --ok-soft:rgba(95,220,138,.14); --warn:#f2b55c; --warn-soft:rgba(242,181,92,.14); --ko:#ff7a6e; --ko-soft:rgba(255,122,110,.15); --info:#d4ccc2; --info-soft:rgba(255,240,225,.07);
   --courbe-chaud:#ff6b6b; --courbe-tiede:#ffb224; --courbe-froid:#7aa7ff;
-  --voile:rgba(2,6,14,.5); --voile-fort:rgba(2,6,14,.68);
-  --route-a:#c49ade; --route-b:#52c2d4; --route-voile:rgba(255,255,255,.3);
-  --sh-1:0 1px 2px rgba(0,4,12,.4); --sh-2:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(170,200,255,.28),0 28px 64px -14px rgba(0,6,18,.75),0 6px 16px -6px rgba(0,6,18,.4);
-  --sh-panneau:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(186,212,255,.3),0 28px 64px -14px rgba(0,6,18,.8),0 6px 18px rgba(0,4,12,.45);
-  --sh-carte:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(186,212,255,.26),0 32px 80px -14px rgba(0,6,20,.8),0 0 60px -20px rgba(110,160,255,.35);
-  --anneau:0 0 0 3px rgba(159,194,255,.2);
+  --voile:rgba(8,6,4,.52); --voile-fort:rgba(8,6,4,.7);
+  --route-a:#86aee8; --route-b:#5ec3c1; --route-voile:rgba(255,255,255,.3);
+  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:inset 0 1px 0 rgba(255,240,225,.07),0 0 0 1px rgba(255,236,216,.12),0 28px 64px -14px rgba(0,0,0,.75),0 6px 16px -6px rgba(0,0,0,.4);
+  --sh-panneau:inset 0 1px 0 rgba(255,236,216,.07),0 0 0 1px rgba(255,214,180,.13),0 28px 64px -14px rgba(0,0,0,.75),0 6px 18px rgba(0,0,0,.4);
+  --sh-carte:inset 0 1px 0 rgba(255,236,216,.07),0 0 0 1px rgba(255,214,180,.13),0 32px 80px -16px rgba(0,0,0,.78),0 10px 26px -10px rgba(0,0,0,.5);
+  --anneau:0 0 0 3px rgba(236,165,112,.26);
   color-scheme:dark }
 /* ── l'îlot clair : une figure (la courbe d'un disjoncteur) garde l'encre du jour dans les deux thèmes, comme les folios.
    (Pas « .papier » : c'est déjà le bouton secondaire, .btn.papier) ── */
@@ -175,7 +207,7 @@
   --s-surface:#ffffff; --s-sunken:#f5f6f8; --s-hover:#eff1f5; --s-line:#dfe3ea; --s-line-2:#d2d6df; --s-flottant:#ffffff;
   --t-1:#1b1f27; --t-2:#454b57; --t-3:#5f6672; --t-inverse:#ffffff;
   --accent:#1b1f27; --accent-2:#000000; --accent-soft:#eaedf2; --accent-line:#c3c9d4; --on-accent:#ffffff;
-  --route-a:#7d3c98; --route-b:#117a8b; --route-voile:transparent; --anneau:0 0 0 3px rgba(27,31,39,.09);
+  --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent; --anneau:0 0 0 3px rgba(27,31,39,.09);
   --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#454b57; --info-soft:#eff1f5;
   color-scheme:light; color:var(--t-1) }
 
@@ -194,17 +226,19 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 kbd{font-family:var(--mono)}
 :focus-visible{outline:2px solid var(--anneau-c);outline-offset:2px}
 /* UN anneau, partout, qui se voit sur les deux matières (l'ergonome v73 : sur le folio courant, « Reprendre », les
-   lignes du menu, il tombait à 1,02:1) : l'encre sur le clair, la glace sur la nuit et en sombre */
-#entete,#rail,#folios,.ilot-sombre,#bibliotheque,:root[data-theme="dark"]{--anneau-c:var(--glace)}
+   lignes du menu, il tombait à 1,02:1) : le cuivre foncé sur le clair (4,9:1 sur le blanc), le cuivre clair sur le
+   graphite (7:1) — l'îlot du cadre prend celui de sa matière (--glace : le cuivre de son thème) */
+#entete,#rail,#folios,#toast,.ilot-sombre,.menu-verre,.doc-menu-l,#bibliotheque,:root[data-theme="dark"]{--anneau-c:var(--glace)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--anneau-c:var(--glace)}}
-.menu button:focus-visible,.doc-menu-l button:focus-visible{box-shadow:inset 0 0 0 2px var(--glace)}
+.menu button:focus-visible,.doc-menu-l button:focus-visible{box-shadow:inset 0 0 0 2px var(--anneau-c)}
 /* UNE entrée pour tout ce qui paraît (le panel v73 : elle remplace peu à peu les vingt-deux @keyframes d'entrée) : du
    bas de --monte, ou de côté (--entre-x: var(--glisse); --entre-y: 0), vive et très freinée ; --k décale les éléments
    d'une même arrivée de --decale chacun. Les sorties font le même chemin à l'envers, en 0,7 × la durée, --courbe-sortie. */
 @keyframes entre{from{opacity:0;transform:translate(var(--entre-x,0),var(--entre-y,var(--monte)))}}
 .entre-v{animation:entre var(--d-pose) var(--courbe-entree) both;animation-delay:calc(var(--k,0) * var(--decale))}
 @media (prefers-reduced-motion:reduce){.entre-v{animation:none}}
-::selection{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+/* le texte choisi : un voile de cuivre (l'accent de son thème), l'encre ne change pas */
+::selection{background:color-mix(in srgb,var(--glace) 30%,transparent)}
 /* ce qui défile : une barre fine et arrondie, de l'encre de son fond, qui s'affirme au survol */
 *{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--t-1) 22%,transparent) transparent}
 ::-webkit-scrollbar{width:10px;height:10px}
@@ -274,26 +308,26 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .rd.sobre{color:var(--t-3)}
 .bascule[aria-pressed="true"],.rd[aria-expanded="true"]{background:var(--accent-soft);color:var(--t-1)}
 .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--t-1) 12%,var(--s-surface));color:var(--t-1)}
-/* LA BULLE — une seule : claire (sur la nuit comme sur le papier : un anneau d'encre la détache du blanc, `--sh-bulle`),
-   12 px / 400, coin 8 ; 160 signes au plus. Deux emplois, une matière : `.bulle` (le nom d'un outil et son raccourci, à
+/* LA BULLE — une seule : l'inverse de son fond (claire sur le graphite, sombre sur le jour : `--bulle`, `--sh-bulle`),
+   12 px / 400, coin 8 ; 160 signes au plus ; elle paraît à côté de ce qu'elle explique, jamais dessus. Deux emplois, une matière : `.bulle` (le nom d'un outil et son raccourci, à
    côté de l'icône) et `.bulle-texte` (le pourquoi d'une valeur ou d'un geste : `data-bulle`, posée par `lierBulles`,
    08-fiche ; `.menu-bulle` pour une ligne du menu). Plus de `title=` sur un contrôle visible — seulement sur ce qui est
    tronqué, pour en donner le nom entier.
    LE TEMPS D'UNE BULLE (le panel v73, 08-menu `lierBullesDuChrome`) : une classe la montre, `.bulle-on` sur son bouton —
-   la première après 400 ms de survol, les suivantes TOUT DE SUITE pendant `--bulle-chaude` (on balaie le rail, les noms
+   la première après un temps de survol (`--bulle-delai`, 350 ms), les suivantes TOUT DE SUITE pendant `--bulle-chaude` (on balaie le rail, les noms
    se suivent, comme sur macOS), tout de suite au clavier ; elle s'éteint au premier appui et se tait jusqu'à ce que la
    main quitte le bouton. Elle glisse de 3 px en paraissant, vive et freinée ; elle part plus vite qu'elle ne vient. */
 .bulle{position:absolute;left:calc(100% + 12px);top:50%;transform:translate(-3px,-50%);white-space:nowrap;pointer-events:none;z-index:5;
   background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);border-radius:var(--r-bulle);padding:5px 10px;font-size:var(--f-12);font-weight:400;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);text-align:left;
   display:flex;align-items:center;gap:8px;opacity:0;visibility:hidden;transition:opacity var(--d-instant) var(--courbe-sortie),transform var(--d-instant) var(--courbe-sortie),visibility 0s linear var(--d-instant)}
 .bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-4px;border:4px solid transparent;border-right-color:var(--bulle)}
-.bulle kbd{font-size:var(--f-11);color:var(--bulle-t);background:rgba(15,26,46,.08);border-radius:4px;padding:0 5px;line-height:1.5}
+.bulle kbd{font-size:var(--f-11);color:var(--bulle-t);background:var(--bulle-kbd);border-radius:4px;padding:0 5px;line-height:1.5}
 .bulle-on>.bulle{opacity:1;visibility:visible;transform:translate(0,-50%);transition:opacity var(--d-rapide) var(--courbe-entree),transform var(--d-moyen) var(--courbe-entree),visibility 0s}
 /* une bulle à deux étages : le nom et sa touche, puis l'état en plus petit (« 4 problèmes · 8 à voir ») ; ce que l'outil
    fait (`.bulle-detail`) ne se lit que dans le rail déplié, où le nom est déjà écrit */
 .bulle:has(.bulle-l){flex-direction:column;align-items:flex-start;gap:1px}
 .bulle-l{display:flex;align-items:center;gap:8px}
-.bulle-s{color:#46536b}
+.bulle-s{color:var(--bulle-t2)}
 .bulle-s:empty,.bulle-detail{display:none}
 /* la bulle d'un texte (le pourquoi) : la même matière, sur plusieurs lignes */
 .bulle-texte{position:fixed;z-index:200;max-width:320px;padding:8px 12px;border-radius:var(--r-bulle);background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);
@@ -363,15 +397,16 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 .tableau :is(td,th).d{text-align:right;font-variant-numeric:tabular-nums}
 .tableau td.texte{font-family:var(--sans);color:var(--t-2)}
 /* LE MENU — tout ce qui tombe d'un bouton (le ⋮, la liste de la recherche, le « ··· » d'un document, une liste de choix) est
-   LE MÊME : le verre dense de la nuit (l'encre claire de l'îlot), coin 14, des lignes de 34 px, une icône de 16 au trait, le
-   raccourci à droite ; qu'il tombe sur la table ou sur une feuille blanche */
-.menu-verre{background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);color:var(--t-1);padding:6px}
+   LE MÊME : la matière du cadre (claire le jour, graphite la nuit : l'îlot), coin 12, un jeu de 4, des lignes de 34 px
+   au coin 8, une icône de 16 au trait, le raccourci à droite ; qu'il tombe sur la table ou sur une feuille blanche */
+.menu-verre{background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);color:var(--t-1);padding:4px}
 .menu-verre :is(button,[role=menuitem],[role=option]){min-height:var(--h-menu-ligne)}
 
 /* ─── LA TABLE ET LA FEUILLE ──────────────────────────────────────────────
-   LA TABLE (page.html `#table`, 08-table) : sous tout, fixée à l'écran, quatre couches — l'encre bleu nuit dégradée, une
-   lumière qui respire (16 s), les points (ils glissent d'un dixième sous la feuille), une lueur froide qui suit la souris
-   de loin (elle ne paraît qu'une fois la souris vue). La planche et la bibliothèque sont transparentes au-dessus. */
+   LA TABLE (page.html `#table`, 08-table) : sous tout, fixée à l'écran, ses couches — le graphite (la pierre, le jour)
+   dégradé, deux nappes de lumière qui dérivent, les points (ils glissent d'un dixième sous la feuille), une lueur qui
+   suit la souris de loin (elle ne paraît qu'une fois la souris vue). La planche et la bibliothèque sont transparentes
+   au-dessus. */
 #table{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;contain:strict}
 #table>div{position:absolute;inset:0}
 #table .ta-fond{background:var(--table-fond)}
@@ -382,7 +417,7 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 #planche{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;overflow:hidden;touch-action:none;cursor:grab;color-scheme:dark;background:transparent}
 #planche.tient{cursor:grabbing}
 #svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-/* la feuille est dessinée par le moteur ; sous elle, une ombre profonde qui la pose sur la table bleu nuit */
+/* la feuille est dessinée par le moteur ; sous elle, une ombre douce qui la pose sur la table (un liseré, le jour) */
 #ombre{position:absolute;left:0;top:0;pointer-events:none;display:none;box-shadow:var(--sh-feuille)}
 #svg .comp,#svg .cab{cursor:pointer}
 #svg .comp{cursor:grab}
@@ -415,10 +450,10 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 #planche.deplace[data-prise="borne"],#planche.deplace[data-prise="borne"] *,#planche.deplace[data-prise="fil-h"],#planche.deplace[data-prise="fil-h"] *{cursor:ns-resize!important}
 #planche.deplace[data-prise="fil-v"],#planche.deplace[data-prise="fil-v"] *,#planche.deplace[data-prise="vt"],#planche.deplace[data-prise="vt"] *{cursor:ew-resize!important}
 
-/* ─── LA BARRE DU HAUT : un voile de nuit sur la table — sa lumière passe au travers ; un filet de lumière la borde. La
-   marque, le fil, la recherche, le menu ─── */
-#entete{position:fixed;top:0;left:0;right:0;height:calc(var(--entete) + var(--sur-h));z-index:36;background:rgba(12,19,34,.5);color:var(--t-1);
-  box-shadow:0 1px 0 rgba(160,192,255,.12),0 12px 30px -20px rgba(0,4,14,.8);
+/* ─── LA BARRE DU HAUT : la matière du cadre (graphite la nuit, claire le jour : --entete-fond), un filet la borde et un fil
+   de cuivre y court, très lentement. La marque, le fil, la recherche, le menu ─── */
+#entete{position:fixed;top:0;left:0;right:0;height:calc(var(--entete) + var(--sur-h));z-index:36;background:var(--entete-fond);color:var(--t-1);
+  box-shadow:var(--entete-ombre);
   display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:var(--sur-h) max(var(--jeu),var(--sur-d)) 0 max(var(--jeu),var(--sur-g))}
 /* la marque et le nom de l'outil — un bouton : la bibliothèque —, puis le fil discret (l'installation, le plan) */
 .en-contrat{display:flex;align-items:center;gap:4px;min-width:0}
@@ -429,15 +464,16 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 #entete .en-volta .bulle{left:47px;transform:translate(0,-3px)}
 #entete .en-volta .bulle::before{left:14px}
 #entete .en-volta.bulle-on .bulle{transform:none}
-/* la marque : un fil en V entre deux bornes, gravé dans une pièce de verre clair, une lueur froide dessous */
-.en-marque{flex:none;width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,#f4f7ff 0%,#bdd0f4 100%);color:#13203a;display:grid;place-items:center;
-  box-shadow:0 0 0 1px rgba(255,255,255,.35),0 6px 18px -4px rgba(120,165,255,.55);transition:transform var(--moyen)}
+/* la marque : un fil en V entre deux bornes, de cuivre, gravé dans un carreau de graphite (le même dans les deux thèmes :
+   c'est la marque) */
+.en-marque{flex:none;width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,#2f2b28 0%,#171514 100%);color:#f2a46b;display:grid;place-items:center;
+  box-shadow:inset 0 0 0 1px rgba(255,236,216,.14),0 4px 12px -6px rgba(0,0,0,.6);transition:transform var(--moyen)}
 .en-volta:hover .en-marque{transform:rotate(-4deg)}
 .en-marque svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .en-nom{font:600 var(--f-16)/1.2 var(--titre);letter-spacing:-.02em;white-space:nowrap;color:var(--t-1)}
 /* le fil : « / Antenne VHF / H-1 » — l'installation mène à ses plans, le plan se lit ; rien de plus */
 .en-fil{display:flex;align-items:center;min-width:0;gap:0;font-size:var(--f-13);color:var(--t-2)}
-.en-fil>*::before{content:"/";margin:0 10px 0 2px;color:rgba(170,200,255,.4);font-weight:400}
+.en-fil>*::before{content:"/";margin:0 10px 0 2px;color:color-mix(in srgb,var(--t-3) 55%,transparent);font-weight:400}
 .en-install{flex:none;max-width:300px;height:30px;padding:0 8px 0 0;border:none;background:none;color:var(--t-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:var(--r-1);transition:color var(--rapide)}
 /* l'ECP de l'installation, devant son nom : cinq chiffres à la machine, un ton plus bas */
 .en-ecp{margin-right:7px;font:600 var(--f-12)/1 var(--mono);letter-spacing:.04em;color:var(--t-3);font-variant-numeric:tabular-nums}
@@ -458,9 +494,9 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 /* LE RETEST CORRIGÉ : une pilule de verre, à gauche du menu — « 3 changements · Retest corrigé » ; elle paraît dès que le
    plan porte un changement (08-interface, `synchroniserRetest`), tombe d'un rien, et un clic ouvre le relevé de ce qui part */
 .en-retest{position:relative;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 13px 0 11px;border:none;border-radius:var(--r-btn);
-  background:var(--voile-2);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),inset 0 0 0 1px var(--voile-3);color:var(--t-1);font:500 var(--f-13)/1 var(--sans);white-space:nowrap;
+  background:var(--voile-2);box-shadow:inset 0 0 0 1px var(--voile-3);color:var(--t-1);font:500 var(--f-13)/1 var(--sans);white-space:nowrap;
   transition:background var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
-.en-retest:hover{background:var(--voile-3);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 0 0 1px var(--voile-4)}
+.en-retest:hover{background:var(--voile-3);box-shadow:inset 0 0 0 1px var(--voile-4)}
 .en-retest svg.ico{width:16px;height:16px;color:var(--glace)}
 .en-retest-n{color:var(--t-2);font-variant-numeric:tabular-nums}
 .en-retest-n::after{content:"·";margin-left:8px;color:var(--t-3)}
@@ -472,27 +508,28 @@ body.biblio .en-retest{display:none}
    voile plus franc et l'encre pleine */
 #entete .rd,#rail .rd,#folios .rd{color:var(--t-2)}
 #entete .rd:hover:not(:disabled),#rail .rd:hover:not(:disabled),#folios .rd:hover:not(:disabled){background:var(--voile-2);color:var(--t-1)}
-#entete .rd[aria-expanded="true"],#rail .bascule[aria-pressed="true"]{background:rgba(190,212,255,.2);color:var(--accent-2);box-shadow:inset 0 0 0 1px rgba(190,212,255,.22)}
-#entete .rd[aria-expanded="true"]:hover:not(:disabled),#rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:var(--voile-4);color:var(--accent-2)}
+/* ce qui est ouvert (le ⋮, le récapitulatif, l'index…) : le cuivre, en voile, son filet ; l'icône prend l'encre du cuivre */
+#entete .rd[aria-expanded="true"],#rail .bascule[aria-pressed="true"]{background:var(--chrome-cuivre-soft);color:var(--chrome-cuivre-t);box-shadow:inset 0 0 0 1px var(--chrome-cuivre-ligne)}
+#entete .rd[aria-expanded="true"]:hover:not(:disabled),#rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--chrome-cuivre) 24%,transparent);color:var(--chrome-cuivre-t)}
 #btnMenu[aria-expanded="true"] .bulle{display:none}
-/* la recherche : un champ de verre au milieu de la barre ; il s'éclaire quand on y écrit ; la liste tombe dessous. Son
-   filet se voit sur la nuit (3,4:1 — à 17 % de glace, il tombait à 1,45:1 : on ne voyait pas qu'on pouvait y écrire) */
+/* la recherche : un champ creusé au milieu de la barre (le creux de sa matière, un filet qui se voit : on sait qu'on
+   peut y écrire) ; il s'éclaire quand on y écrit, son filet et son halo prennent le cuivre ; la liste tombe dessous */
 .recherche{position:relative;width:min(420px,30vw);height:34px;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;
-  background:rgba(170,200,255,.08);border:1px solid rgba(170,200,255,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);border-radius:var(--r-btn);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
-.recherche:hover{background:rgba(170,200,255,.11);border-color:rgba(170,200,255,.62)}
-body.cherche .recherche{background:rgba(26,38,64,.9);border-color:rgba(159,194,255,.55);box-shadow:0 0 0 3px rgba(159,194,255,.14)}
+  background:var(--voile-1);border:1px solid var(--s-line-2);border-radius:var(--r-btn);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
+.recherche:hover{background:var(--voile-2);border-color:color-mix(in srgb,var(--t-1) 30%,var(--s-line-2))}
+body.cherche .recherche{background:var(--s-surface);border-color:var(--chrome-cuivre-ligne);box-shadow:0 0 0 3px var(--chrome-cuivre-soft)}
 .recherche svg.ico{width:16px;height:16px;color:var(--t-3)}
 .recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--t-1);font-family:var(--mono);font-size:var(--f-13);height:100%}
 .recherche input::placeholder{color:var(--t-3);font-family:var(--sans)}
 .recherche input::-webkit-search-cancel-button{-webkit-appearance:none}
-.recherche .raccourci{color:var(--t-3);font-size:var(--f-11);border:none;background:rgba(170,200,255,.12);border-radius:5px;padding:1px 6px;line-height:1.6;white-space:nowrap}
+.recherche .raccourci{color:var(--t-3);font-size:var(--f-11);border:none;background:var(--voile-2);border-radius:5px;padding:1px 6px;line-height:1.6;white-space:nowrap}
 .recherche .rc-fermer,body.cherche .recherche .rc-ouvrir{display:none}
 body.cherche .recherche .rc-fermer{display:inline}
 /* la croix de la recherche : seulement au doigt (au clavier, Échap) */
 .rc-x{display:none;width:32px;height:32px;margin-right:-4px;border:none;background:none;border-radius:var(--r-1);color:var(--t-2);place-items:center;padding:0;flex:none}
 .rc-x:hover{background:var(--voile-2);color:var(--t-1)}
 /* la liste, plus large que le champ, se centre dessous (elle le dépassait de 40 px d'un seul côté : deux bords) */
-.q-liste{position:absolute;top:calc(100% + 8px);left:calc((100% - max(100%,min(460px,calc(100vw - 24px)))) / 2);width:max(100%,min(460px,calc(100vw - 24px)));background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:6px;max-height:min(60vh,440px);overflow:auto;z-index:40;color:var(--t-1);
+.q-liste{position:absolute;top:calc(100% + 8px);left:calc((100% - max(100%,min(460px,calc(100vw - 24px)))) / 2);width:max(100%,min(460px,calc(100vw - 24px)));background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:4px;max-height:min(60vh,440px);overflow:auto;z-index:40;color:var(--t-1);
   animation:tombe var(--moyen)}
 @keyframes tombe{from{opacity:0;transform:translateY(-4px) scale(.985)}to{opacity:1;transform:none}}
 .q-item{display:flex;align-items:center;gap:12px;height:var(--h-menu-ligne);padding:0 12px;border-radius:8px;width:100%;background:none;border:none;text-align:left;color:var(--t-1)}
@@ -503,13 +540,13 @@ body.cherche .recherche .rc-fermer{display:inline}
 .q-item .des{color:var(--t-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--f-12)}
 .q-item .cpt{color:var(--t-3);font:400 var(--f-11) var(--mono);white-space:nowrap}
 .q-rien{padding:10px 12px;color:var(--t-2);font-size:var(--f-12)}
-/* LE MENU ⋮ : sous son bouton, un verre de nuit dense — un filet de lumière le détache de la table —, peu de lignes. En tête, ce qui est ouvert (à lire) ;
+/* LE MENU ⋮ : sous son bouton, la matière du cadre (claire le jour, graphite la nuit) — un filet le détache de la table —, peu de lignes. En tête, ce qui est ouvert (à lire) ;
    puis l'essentiel, une icône au trait et un mot par ligne ; deux sous-menus (Exporter, Plus) s'ouvrent EN PLACE — le
    panneau glisse, une ligne « ‹ » ramène —, si bien que le menu garde sa largeur et ne déborde jamais de l'écran */
 /* il TOMBE DE SON BOUTON : 200 ms, vif et très freiné, d'une échelle de .96 dont l'origine est le ⋮ lui-même (18 px du
    bord, 26 px au-dessus) ; il se FERME en 120 ms — son double s'efface (`.menu-part`, 08-interface `fermerMenu`), le vrai
    est déjà fermé : le clavier et les tests n'attendent pas */
-.menu{position:absolute;top:calc(100% + 8px);right:0;width:292px;color:var(--t-1);background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:6px;z-index:40;
+.menu{position:absolute;top:calc(100% + 8px);right:0;width:292px;color:var(--t-1);background:var(--s-flottant);-webkit-backdrop-filter:var(--menu-flou);backdrop-filter:var(--menu-flou);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:4px;z-index:40;
   max-height:calc(100vh - var(--entete) - var(--sur-h) - 16px);overflow-y:auto;overscroll-behavior:contain;transform-origin:calc(100% - 18px) -26px;animation:menu-tombe 200ms var(--courbe-entree)}
 @keyframes menu-tombe{from{opacity:0;transform:translateY(-4px) scale(.96)}}
 .menu-part{pointer-events:none;animation:menu-part 120ms var(--courbe-sortie) forwards}
@@ -519,14 +556,14 @@ body.cherche .recherche .rc-fermer{display:inline}
 .menu-panneau#mp-principal{animation-name:menu-revient}
 @keyframes menu-glisse{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
 @keyframes menu-revient{from{opacity:.4;transform:translateX(-8px)}to{opacity:1;transform:none}}
-/* LE LIVRABLE en tête d'Exporter : le retest corrigé, son compte dessous ; son icône prend la glace, un filet le sépare des
+/* LE LIVRABLE en tête d'Exporter : le retest corrigé, son compte dessous ; son icône prend le cuivre, un filet le sépare des
    formats de dessin */
 .menu .menu-livrable button>svg.ico{color:var(--glace)}
 .menu .menu-livrable small{color:var(--t-2)}
 .menu button{display:flex;width:100%;align-items:center;gap:11px;min-height:34px;padding:0 10px;border-radius:8px;background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400;line-height:1.3;transition:background var(--rapide),transform var(--rapide)}
 .menu button:hover,.menu button:focus-visible{background:var(--voile-2);outline:none}
-.menu button>svg.ico{width:16px;height:16px;color:#a9bde0;transition:color var(--rapide)}
-.menu button:hover>svg.ico,.menu button:focus-visible>svg.ico{color:#dbe7ff}
+.menu button>svg.ico{width:16px;height:16px;color:var(--t-3);transition:color var(--rapide)}
+.menu button:hover>svg.ico,.menu button:focus-visible>svg.ico{color:var(--t-1)}
 .menu-l{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* « Vos fichiers » dit, en petit, tout ce qu'on y dépose — la base des contrats déjà faits comprise */
 .menu button.menu-2l{min-height:46px;padding-top:5px;padding-bottom:5px}
@@ -542,9 +579,9 @@ body.cherche .recherche .rc-fermer{display:inline}
 .menu button:active:not([aria-disabled="true"]){transform:scale(.985);transition-duration:var(--d-instant)}
 /* sa bulle : ce que la ligne fait, en une ou deux phrases — UNE bulle sur la page (08-menu, `lierBullesDuMenu`), à
    gauche du menu, à la hauteur de la ligne, après un temps de survol, tout de suite au clavier */
-.menu-bulle{position:fixed;top:0;right:0;z-index:45;width:max-content;max-width:280px;padding:9px 12px;border-radius:var(--r-bulle);background:var(--bulle);color:var(--bulle-t);
+.menu-bulle{position:fixed;top:0;right:0;z-index:45;width:max-content;max-width:280px;padding:8px 12px;border-radius:var(--r-bulle);background:var(--bulle);color:var(--bulle-t);
   font:400 var(--f-12)/1.5 var(--sans);text-align:left;box-shadow:var(--sh-bulle);pointer-events:none;opacity:0;transform:translateX(4px);visibility:hidden;
-  transition:opacity var(--rapide),transform var(--rapide),visibility 0s linear .14s}
+  transition:opacity var(--rapide),transform var(--rapide),visibility 0s linear var(--d-rapide)}
 .menu-bulle.on{opacity:1;transform:none;visibility:visible;transition:opacity var(--rapide),transform var(--rapide)}
 @media (max-width:700px){ .menu-bulle{display:none} }
 /* ce qui porte sur le plan, sans plan sur la table : éteint (un clic dit pourquoi) */
@@ -559,7 +596,7 @@ body.cherche .recherche .rc-fermer{display:inline}
 .sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 18%,transparent)}
 .sauve.ko::before{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 18%,transparent)}
 
-/* ─── LE RAIL : un palet de verre à gauche, posé sur la table — les outils de tous les instants ───
+/* ─── LE RAIL : un palet à gauche, posé sur la table — les outils de tous les instants ───
    À un jeu de la barre du haut, comme de tous les bords. Il SE DÉPLIE (08-interface, `lierRail`) : au survol prolongé
    (250 ms), 44 → 176 px en 220 ms, vif et freiné ; puis les mots et les touches entrent, d'un
    rien de côté, quand la place est faite ; il se replie en 140 ms, plus vite qu'il ne s'ouvre, dès qu'on clique ou qu'on
@@ -572,12 +609,12 @@ body.cherche .recherche .rc-fermer{display:inline}
 /* déplié, ou une bulle dehors : le rail passe au-dessus d'une carte posée près de lui (sa bulle passait dessous) — sous la
    barre du haut, ses menus et le mot qui passe */
 #rail.deplie,#rail:has(.bulle-on){z-index:32}
-#rail .rd{width:auto;height:36px;border-radius:var(--r-btn);display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:0 0 0 8.5px}
+/* un outil : 36 px, au coin 8 — le coin du palet (12) moins son jeu (4) : les deux arrondis se suivent */
+#rail .rd{width:auto;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:0 0 0 8.5px}
 #rail .rd svg.ico{width:19px;height:19px}
-/* l'anneau sur le bord du bouton, dans le jeu du palet : sur le verre sombre (en dedans, il tombait sur le voile clair d'un
-   outil pressé — 2,8:1) */
+/* l'anneau sur le bord du bouton, dans le jeu du palet (en dedans, il tombait sur le voile d'un outil pressé — 2,8:1) */
 #rail .rd:focus-visible{outline-offset:0}
-#rail .rd:disabled{opacity:1;color:rgba(184,198,224,.42)}
+#rail .rd:disabled{opacity:1;color:color-mix(in srgb,var(--t-3) 55%,transparent)}
 #rail hr{width:20px;align-self:center;border:none;border-top:1px solid var(--voile-2);margin:4px 0;transition:width var(--d-rapide) var(--courbe-sortie)}
 #rail.deplie hr{width:calc(100% - 16px);transition:width var(--d-moyen) var(--courbe-entree)}
 /* le mot et la touche : invisibles plié (ils ne se coupent pas, ils n'existent pas), ils entrent quand la place est faite ;
@@ -596,7 +633,7 @@ body.cherche .recherche .rc-fermer{display:inline}
 /* le compte de ce qu'il y a à reprendre, sur le bouton des repères : les PROBLÈMES du plan (rouges), une pastille accrochée
    à l'icône (elle ne suit pas le palet qui se déplie) ; sans problème rouge, ce qui est à voir, en ambre (08-controle). Sa
    bulle dit tout : « 4 problèmes · 8 à voir » */
-.rd-point{position:absolute;top:-3px;left:19px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 var(--f-11)/16px var(--sans);font-style:normal;text-align:center;color:#2a1a00;background:var(--p-warn);box-shadow:0 0 0 2px #263656;pointer-events:none}
+.rd-point{position:absolute;top:-3px;left:19px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 var(--f-11)/16px var(--sans);font-style:normal;text-align:center;color:#2a1a00;background:var(--p-warn);box-shadow:0 0 0 2px var(--palet-plein);pointer-events:none}
 .rd-point.ko{background:var(--pastille-ko);color:var(--pastille-ko-t)}
 
 /* les palets passent au-dessus des feuilles (l'ombre d'une feuille ne les grise pas : ils ne se chevauchent jamais) ; la
@@ -616,7 +653,7 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
 #folios .rd svg.ico{width:18px;height:18px}
 #folios hr{width:0;height:16px;border:none;border-left:1px solid var(--voile-2);margin:0 4px}
 /* les palets */
-.fo-part,.fo-zoom{pointer-events:auto;height:40px;padding:0 4px;background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);border-radius:12px;box-shadow:var(--sh-palet)}
+.fo-part,.fo-zoom{pointer-events:auto;height:40px;padding:0 4px;background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);border-radius:var(--r-palet);box-shadow:var(--sh-palet)}
 /* dans la barre du bas, la bulle se lit au-dessus du bouton ; aux deux bouts, elle s'aligne sur le bouton au lieu de déborder */
 #folios .bulle{left:50%;top:auto;bottom:calc(100% + 12px);transform:translate(-50%,3px)}
 #folios .bulle-on>.bulle{transform:translate(-50%,0)}
@@ -645,13 +682,13 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
 .chip:hover{background:var(--voile-2);color:var(--t-1)}
 .chip:focus-visible{outline-offset:-2px}
 .chip:active{transform:scale(var(--presse));transition-duration:var(--d-instant)}
-/* le folio courant est une pièce presque blanche : la glace ne s'y voyait pas (1,58:1) — l'anneau y prend l'encre, en dedans */
-.chip.on:focus-visible{outline-color:#1b1f27;outline-offset:-4px}
-/* le folio courant : une pièce de verre dépoli presque blanche, une lueur dessous */
-.chip.on{background:#e9f0fd;color:#10192c;font-weight:600;box-shadow:0 0 0 1px rgba(255,255,255,.55),0 4px 14px -4px rgba(140,180,255,.6)}
+/* le folio courant : la pièce qui ressort — claire et chaude sur le graphite, une lueur de cuivre dessous ; au cuivre
+   doux le jour (--chip-on…) ; l'anneau du clavier s'y pose en dedans, à l'encre de la pièce */
+.chip.on:focus-visible{outline-color:var(--chip-on-t);outline-offset:-4px}
+.chip.on{background:var(--chip-on);color:var(--chip-on-t);font-weight:600;box-shadow:var(--chip-on-ombre)}
 .chip-pre{display:none}
 .chip.abrege:not(.on)::before{content:"…";color:var(--t-3);margin-right:1px}
-.chip.on .chip-pre{display:inline;color:rgba(16,25,44,.62);font-weight:500}
+.chip.on .chip-pre{display:inline;color:color-mix(in srgb,var(--chip-on-t) 62%,transparent);font-weight:500}
 .fo-lbl{color:var(--t-2);font-size:var(--f-12);padding:0 10px 0 6px;white-space:nowrap}
 /* au-delà de huit folios, une liste déroulante double la bande — et dit déjà le rang : le compte se range */
 .fo-select{height:30px;max-width:220px;margin:0 2px;padding:0 6px;border:1px solid transparent;border-radius:8px;background:var(--voile-1);color:var(--t-1);font:500 var(--f-12) var(--sans)}
@@ -660,7 +697,7 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
 /* l'affinage en cours : un petit palet, un point qui respire, ce qu'il fait, en phrase */
 .affinage{display:inline-flex;align-items:center;gap:8px;height:32px;font-family:var(--sans);font-size:var(--f-12);color:var(--t-2);padding:0 14px 0 12px;white-space:nowrap;
   background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);border-radius:999px;box-shadow:var(--sh-palet)}
-.affinage i{width:7px;height:7px;border-radius:50%;background:var(--glace);box-shadow:0 0 8px rgba(159,194,255,.8);animation:respire 1.6s ease-in-out infinite}
+.affinage i{width:7px;height:7px;border-radius:50%;background:var(--glace);box-shadow:0 0 8px color-mix(in srgb,var(--glace) 75%,transparent);animation:respire 1.6s ease-in-out infinite}
 .affinage.ailleurs i{background:var(--t-3);box-shadow:none}
 @keyframes respire{0%,100%{transform:scale(.6);opacity:.35}50%{transform:scale(1);opacity:1}}
 /* le folio qu'on attend : le moteur le place au loin (un Worker, 08) ; au milieu de la place libre du plan, le point qui
@@ -729,17 +766,17 @@ body.base-ouverte .fi-epingle{display:none}
 .carte-double{position:fixed;z-index:31;margin:0;display:flex;flex-direction:column;overflow:hidden;pointer-events:none;transform-origin:0 0;
   background:var(--s-surface);color:var(--t-1);border-radius:var(--r-carte);box-shadow:var(--sh-carte)}
 .carte-double .fi{flex:1 1 auto;min-height:0;overflow:hidden}
-/* LE FIL : du bloc à la carte, une courbe fine de glace ; un point sur le bloc, un anneau sur la carte */
+/* LE FIL : du bloc à la carte, une courbe fine de cuivre (l'accent) ; un point sur le bloc, un anneau sur la carte */
 #carte-lien{position:fixed;inset:0;width:100vw;height:100vh;z-index:29;pointer-events:none;overflow:visible;opacity:0;transition:opacity var(--rapide)}
 #carte-lien.on{opacity:1}
-#carte-lien .cl-trait{fill:none;stroke:var(--lien);stroke-width:1.25px;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(140,180,255,.55))}
+#carte-lien .cl-trait{fill:none;stroke:var(--lien);stroke-width:1.25px;stroke-linecap:round;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--lien) 45%,transparent))}
 #carte-lien .cl-bloc{fill:var(--lien)}
 #carte-lien .cl-carte{fill:var(--s-surface);stroke:var(--lien);stroke-width:1.25px}
 /* LE QUAI : portée au bord droit, la carte montre où elle s'épinglera (le volet) */
 #carte-quai{position:fixed;top:calc(var(--entete) + var(--jeu) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));width:var(--insp-l);z-index:28;pointer-events:none;
-  border-radius:var(--r-3);border:1.5px dashed rgba(159,194,255,.6);background:rgba(159,194,255,.09);
+  border-radius:var(--r-3);border:1.5px dashed color-mix(in srgb,var(--glace) 60%,transparent);background:color-mix(in srgb,var(--glace) 9%,transparent);
   display:grid;align-content:center;justify-items:start;padding-left:18px;opacity:0;transform:translateX(12px);transition:opacity var(--moyen),transform var(--moyen)}
-#carte-quai span{font:600 var(--f-13)/1 var(--sans);color:#10192c;padding:8px 12px;border-radius:var(--r-btn);background:#e9f0fd;box-shadow:0 8px 24px -6px rgba(0,6,18,.6)}
+#carte-quai span{font:600 var(--f-13)/1 var(--sans);color:var(--bulle-t);padding:8px 12px;border-radius:var(--r-btn);background:var(--bulle);box-shadow:var(--sh-bulle)}
 body.carte-quai #carte-quai{opacity:1;transform:none}
 
 /* ─── LES DOCUMENTS : cartouche, collage, bible, nomenclature, hypothèses ───
@@ -788,14 +825,14 @@ body.carte-quai #carte-quai{opacity:1;transform:none}
 .ca-apercu{margin:8px 0 4px;padding:16px;border-radius:var(--r-2);background:var(--s-papier);box-shadow:inset 0 0 0 1px var(--s-line)}
 .ca-apercu svg{display:block;width:100%;height:auto}
 .ca-apercu text{font-family:var(--mono)}
-.ca-apercu .cbord{fill:none;stroke:#1b2430;stroke-width:1.2}
-.ca-apercu .cfond{fill:#f2f4f6;stroke:none}
-.ca-apercu .cdiv{stroke:#aab4be;stroke-width:.7}
-.ca-apercu .carth{fill:#7d8893;font-size:6px;font-weight:700;letter-spacing:.9px}
-.ca-apercu .cartx{fill:#111b25;font-size:8.5px;font-weight:600}
-.ca-apercu .cartT{fill:#0b1118;font-size:13px;font-weight:700;letter-spacing:.4px}
-.ca-apercu .cartF{fill:#0b1118;font-size:18px;font-weight:700;letter-spacing:.6px}
-.ca-apercu .cartA{fill:#7d8893;font-size:6.5px;font-weight:700;letter-spacing:1.6px}
+.ca-apercu .cbord{fill:none;stroke:#1e1f22;stroke-width:1.2}
+.ca-apercu .cfond{fill:#f3f2ef;stroke:none}
+.ca-apercu .cdiv{stroke:#b3b3b6;stroke-width:.7}
+.ca-apercu .carth{fill:#63656a;font-size:6px;font-weight:600;letter-spacing:.9px}
+.ca-apercu .cartx{fill:#141518;font-size:8.5px;font-weight:600}
+.ca-apercu .cartT{fill:#0e0f11;font-size:13px;font-weight:600;letter-spacing:.4px}
+.ca-apercu .cartF{fill:#0e0f11;font-size:18px;font-weight:600;letter-spacing:.6px}
+.ca-apercu .cartA{fill:#9a5220;font-size:6.5px;font-weight:600;letter-spacing:1.6px}
 .ca-trois{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) minmax(0,1fr)}
 .ca-form{margin-top:4px}
 
@@ -1132,19 +1169,19 @@ body.depot-actif:has(#bibliotheque:not([hidden])) .depot{display:none}
    Il ENTRE en 340 ms, vif et très freiné (8 px plus haut, d'une échelle de .98) ; il SORT en 200 ms, il accélère et ne traîne
    pas. Une carte flottante est là : il se pose dans la plus grande place libre à côté d'elle (`.evite`, 08-interface
    `placerToast`), jamais sur ses flèches. La liste de la recherche ouverte, il se tait (il passait dessous). */
-#toast{position:fixed;left:calc(var(--rail) + (100vw - var(--rail)) / 2);top:calc(var(--entete) + var(--sur-h) + 12px);transform:translateX(-50%) translateY(-8px) scale(.98);padding:10px 16px;border-radius:12px;z-index:35;max-width:min(60vw,560px);
+#toast{position:fixed;left:calc(var(--rail) + (100vw - var(--rail)) / 2);top:calc(var(--entete) + var(--sur-h) + 12px);transform:translateX(-50%) translateY(-8px) scale(.98);padding:10px 16px;border-radius:var(--r-palet);z-index:35;max-width:min(60vw,560px);
   background:var(--palet);-webkit-backdrop-filter:var(--palet-flou);backdrop-filter:var(--palet-flou);color:var(--t-1);box-shadow:var(--sh-palet);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;
-  transition:opacity 200ms var(--courbe-sortie),transform 200ms var(--courbe-sortie)}
+  transition:opacity var(--d-moyen) var(--courbe-sortie),transform var(--d-moyen) var(--courbe-sortie)}
 #toast.on{opacity:1;transform:translateX(-50%);transition:opacity var(--d-lent) var(--courbe-entree),transform var(--d-lent) var(--courbe-entree)}
 html body #toast.evite{left:var(--toast-x);max-width:var(--toast-max)}
 body.cherche #toast{opacity:0;pointer-events:none}
 body.insp-epingle #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l) - 2 * var(--jeu)) / 2)}
 /* un document ouvert : le mot reste dans la place libre à côté de lui (plus étroit s'il le faut), il ne couvre pas sa tête */
 body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l) - 2 * var(--jeu)) / 2);max-width:min(560px,calc(100vw - var(--rail) - var(--fiche-l) - 2 * var(--jeu) - 32px))}
-/* LE MOT QUI PASSE — une règle : l'INFO est du verre, une ligne, elle s'efface d'elle-même ; l'ERREUR se voit autrement
-   qu'à son point — le verre teinté de rouge, un filet rouge —, elle reste jusqu'au clic et offre le geste qui répare ;
+/* LE MOT QUI PASSE — une règle : l'INFO est un palet, une ligne, elle s'efface d'elle-même ; l'ERREUR se voit autrement
+   qu'à son point — le palet teinté de rouge, un filet rouge —, elle reste jusqu'au clic et offre le geste qui répare ;
    une suppression offre « Rétablir » (`.toast-voir`, style-fichiers.css) */
-#toast.erreur{padding-left:32px;background:linear-gradient(var(--ko-soft),var(--ko-soft)),var(--palet);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(255,122,110,.55),0 16px 36px -10px rgba(0,6,18,.7),0 2px 6px rgba(0,6,18,.35)}
+#toast.erreur{padding-left:32px;background:linear-gradient(var(--ko-soft),var(--ko-soft)),var(--palet-plein);box-shadow:0 0 0 1px color-mix(in srgb,var(--ko) 50%,transparent),var(--sh-palet)}
 #toast.erreur::before{content:"";position:absolute;left:14px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--ko);box-shadow:0 0 0 3px color-mix(in srgb,var(--ko) 22%,transparent)}
 
 /* ─── LA FEUILLE DES RACCOURCIS (« ? », 08-interface ; son dessin est dans style-carte.css) : elle se pose comme tout ce qui
@@ -1266,8 +1303,8 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
 /* ─── SANS SURVOL (écran tactile) : un toucher ne laisse pas d'état « survolé » collé derrière lui ─── */
 @media (hover:none){
   #entete .rd:hover:not(:disabled),#rail .rd:hover:not(:disabled),#folios .rd:hover:not(:disabled),.chip:hover{background:none;color:var(--t-2)}
-  #rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:var(--voile-3);color:var(--accent-2)}
-  .chip.on:hover{background:var(--accent);color:var(--on-accent)}
+  #rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:var(--chrome-cuivre-soft);color:var(--chrome-cuivre-t)}
+  .chip.on:hover{background:var(--chip-on);color:var(--chip-on-t)}
   .rond:hover,.q-item:hover,.menu button:hover{background:none}
 }
 
@@ -1343,37 +1380,9 @@ body.insp-flotte #inspecteur .carte-bords [data-bord="se"]::after{display:none}
 body.insp-epingle #inspecteur .carte-bords [data-bord="w"]{left:-8px}
 
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   v78 — LE CHROME EN GRAPHITE (le lecteur : « un peu trop de bleu : la ligne du haut, les petits palets — le rail, les
-   folios, le zoom ; autre chose que bleu, pas une couleur qui pète : un peu de dynamisme, du vivant, très classe »).
-   La table garde sa nuit bleue qui bouge ; ce qui flotte dessus devient un verre graphite chaud, son accent le cuivre de
-   la fiche : le folio courant, ce qui est ouvert, un filet qui court lentement sous la barre du haut.
-   ═══════════════════════════════════════════════════════════════════════ */
-:root{
-  --palet:rgba(27,28,32,.95); --palet-2:rgba(42,43,48,.97);
-  --voile-1:rgba(255,255,255,.05); --voile-2:rgba(255,255,255,.09); --voile-3:rgba(255,255,255,.14); --voile-4:rgba(255,255,255,.2);
-  --p-ligne:rgba(255,255,255,.10); --p-hover:rgba(255,255,255,.07);
-  --p-t1:#f4f2ef; --p-t2:#d7d2cb; --p-t3:#bfb9b1; --p-accent:#f4f2ef;
-  --sh-palet:inset 0 1px 0 rgba(255,255,255,.09),0 0 0 1px rgba(255,255,255,.10),0 16px 36px -10px rgba(0,0,0,.62),0 2px 6px rgba(0,0,0,.3);
-  --chrome-cuivre:#e8a06a; --chrome-cuivre-soft:rgba(232,160,106,.16); --chrome-cuivre-ligne:rgba(232,160,106,.38) }
-#entete,#rail,#folios,#toast,.ilot-sombre,.menu-verre,.doc-menu-l{
-  --s-surface:#1c1d21; --s-sunken:#151619; --s-hover:rgba(255,255,255,.07); --s-line:rgba(255,255,255,.10); --s-line-2:rgba(255,255,255,.18); --s-flottant:rgba(36,37,42,.97);
-  --t-1:#f4f2ef; --t-2:#d7d2cb; --t-3:#bfb9b1; --t-inverse:#18191c;
-  --accent:#f4f2ef; --accent-2:#ffffff; --accent-soft:rgba(232,160,106,.16); --accent-line:rgba(232,160,106,.38); --on-accent:#18191c;
-  --info:#d7d2cb; --info-soft:rgba(255,255,255,.07);
-  --sh-2:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(255,255,255,.12),0 28px 64px -14px rgba(0,0,0,.75),0 6px 16px -6px rgba(0,0,0,.4);
-  --anneau:0 0 0 3px rgba(232,160,106,.26) }
-#entete,#rail,#folios,.ilot-sombre,#bibliotheque{--anneau-c:var(--chrome-cuivre)}
-#entete{background:rgba(20,21,24,.86);box-shadow:0 1px 0 rgba(255,255,255,.06),0 12px 30px -20px rgba(0,0,0,.85)}
-/* le vivant : un filet de cuivre qui court sous la barre, très lentement, d'un bord à l'autre */
+/* ─── LE VIVANT DE LA BARRE DU HAUT (v78, gardé) : un filet de cuivre qui court sous elle, très lentement, d'un bord à
+   l'autre — une lueur, pas une barre de chargement ─── */
 #entete::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;pointer-events:none;
-  background:linear-gradient(90deg,transparent 0%,rgba(232,160,106,0) 30%,rgba(232,160,106,.7) 50%,rgba(232,160,106,0) 70%,transparent 100%);background-size:220% 100%;animation:chrome-filet 18s ease-in-out infinite alternate}
+  background:linear-gradient(90deg,transparent 0%,transparent 25%,color-mix(in srgb,var(--chrome-cuivre) 42%,transparent) 50%,transparent 75%,transparent 100%);background-size:200% 100%;animation:chrome-filet 46s ease-in-out infinite alternate}
 @keyframes chrome-filet{from{background-position:100% 0}to{background-position:0 0}}
 @media (prefers-reduced-motion:reduce){#entete::after{animation:none;background-position:50% 0}}
-/* ce qui est ouvert : le cuivre, en voile */
-#entete .rd[aria-expanded="true"],#rail .bascule[aria-pressed="true"]{background:var(--chrome-cuivre-soft);color:#fff;box-shadow:inset 0 0 0 1px var(--chrome-cuivre-ligne)}
-#entete .rd[aria-expanded="true"]:hover:not(:disabled),#rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:rgba(232,160,106,.24);color:#fff}
-/* le folio courant : une pièce claire, chaude, sa lueur de cuivre */
-.chip.on{background:#f6efe8;color:#1d1a17;box-shadow:0 0 0 1px rgba(255,255,255,.5),0 4px 14px -4px rgba(232,160,106,.65)}
-.chip.on .chip-pre{color:rgba(29,26,23,.6)}
-.chip.on:focus-visible{outline-color:#1d1a17}

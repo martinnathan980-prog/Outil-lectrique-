@@ -180,7 +180,8 @@ function viserHit() { const x = PDF.hits[PDF.hit]; if (!x) return; if (x.page !=
 function hitSuivant(pas) { if (!PDF.hits.length) return; PDF.hit = (PDF.hit + pas + PDF.hits.length) % PDF.hits.length; viserHit(); }
 
 /* ---- la relecture : la feuille de droite --------------------------------------------------------------------------- */
-const COLS_PDF = [['de', 'De'], ['borneDe', 'Borne'], ['vers', 'Vers'], ['borneVers', 'Borne'], ['type', 'Référence'], ['folio', 'Folio']];
+// (v84) la colonne du type dit « Câble » : un câble se dit par son type (la charte)
+const COLS_PDF = [['de', 'De'], ['borneDe', 'Borne'], ['vers', 'Vers'], ['borneVers', 'Borne'], ['type', 'Câble'], ['folio', 'Folio']];
 const pourcentPdf = c => Math.round(c * 100) + '\u00a0%';
 function lignesVues() { return PDF.L.map((l, i) => [l, i]).filter(([l]) => PDF.filtre === 'tout' || (PDF.filtre === 'revoir' ? !l.main.size && l.conf < 0.9 : PDF.filtre === 'page' ? (l.page === PDF.page - 1 || l.pageVers === PDF.page - 1) : true)); }
 function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; const L = PDF.lecture, n = PDF.L.length, revoir = PDF.L.filter(l => !l.main.size && l.conf < 0.9).length;
@@ -202,7 +203,7 @@ function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; c
         return `<tr data-i="${i}" class="${sel ? 'choisie' : ''}"${sel ? ' aria-selected="true"' : ''}>${COLS_PDF.map(([k]) => { const plein = [k === 'folio' ? l.plan || l[k] : l[k], k === 'de' ? l.pnDe : k === 'vers' ? l.pnVers : ''].filter(Boolean).join(' · ');
             return `<td class="pdf-c${l.main.has(k) ? ' main' : ''}${/^borne/.test(k) ? ' b' : ''}" data-k="${k}"${plein ? ` title="${escA(plein)}"` : ''}>${esc(l[k] || '')}${k === 'de' && l.pnDe ? `<small>${esc(l.pnDe)}</small>` : k === 'vers' && l.pnVers ? `<small>${esc(l.pnVers)}</small>` : ''}</td>`; }).join('')}`
           + `<td class="pdf-conf e-${e}"><i aria-hidden="true"></i>${l.main.size ? "main" : pourcentPdf(c)}</td></tr>`
-          + (sel ? `<tr class="pdf-raisons"><td colspan="${COLS_PDF.length + 1}"><p class="pdf-detail">${esc(lies([l.type ? 'référence ' + l.type : 'sans référence', 'folio ' + (l.folio || '—')]))}</p><ul>${(l.raisons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul><div class="pdf-geste"><span class="pdf-astuce">Double-clic sur une case pour la corriger.</span><button class="btn lien" data-pdf="suppr" data-i="${i}">Supprimer cette liaison</button></div></td></tr>` : ''); }).join('')
+          + (sel ? `<tr class="pdf-raisons"><td colspan="${COLS_PDF.length + 1}"><p class="pdf-detail">${esc(lies([l.type ? 'câble ' + l.type : 'câble sans type', 'folio ' + (l.folio || '—')]))}</p><ul>${(l.raisons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul><div class="pdf-geste"><span class="pdf-astuce">Double-clic sur une case pour la corriger.</span><button class="btn lien" data-pdf="suppr" data-i="${i}">Supprimer cette liaison</button></div></td></tr>` : ''); }).join('')
       + `</tbody></table>` + (V.length ? '' : `<p class="pdf-vide">${PDF.filtre === 'revoir' ? 'Rien à revoir : chaque liaison est lue avec assurance.' : PDF.filtre === 'page' ? 'Aucune liaison lue sur cette page.' : 'Aucune liaison lue.'}</p>`);
     // les bouts orphelins, les bornes sans trait : à part
     const O = L ? L.pages.flatMap((P, k) => P.orphelins.map(o => ({ ...o, page: k }))) : [], S = L ? L.pages.flatMap((P, k) => P.bornesSeules.map(o => ({ ...o, page: k }))) : [];

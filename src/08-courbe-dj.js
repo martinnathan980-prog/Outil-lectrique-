@@ -59,7 +59,9 @@ function largeurGrapheEstimee() { const b = typeof $ === 'function' ? $('ba-equi
 function geometrieGraphe(d, W) { W = Math.max(300, Math.round(W || 392)); const { L, R, T, B, ylo, yhi } = DJG;
   const hp = Math.round(Math.max(240, Math.min(380, (W - L - R) * 0.86))), H = T + hp + B, rapide = d.courbes[0], cal = d.calibre, I = d.points.map(p => p.i).filter(i => i > 0);
   const bas = [...I, cal ? cal * rapide.points[0].m : Infinity].filter(x => x > 0 && isFinite(x));
-  const hauts = [...I.map(i => i * 1.5), cal ? cal * multipleAdmis(rapide, 0.02) : 0];
+  // (v84 : le seuil se prolonge désormais sous le dernier point lu, comme le temps ; le cadre, lui, s'arrête toujours au
+  // dernier multiple lu — le dessin ne change pas)
+  const hauts = [...I.map(i => i * 1.5), cal ? cal * Math.min(multipleAdmis(rapide, 0.02), rapide.points[rapide.points.length - 1].m) : 0];
   let xlo = Math.floor(Math.log10((bas.length ? Math.min(...bas) : 1) / 1.4) + 1e-9), xhi = Math.ceil(Math.log10(Math.max(...hauts, 1e-9)) - 1e-9); if (xhi - xlo < 2) xhi = xlo + 2;
   const kx = (W - L - R) / (xhi - xlo), ky = hp / (yhi - ylo), xv = v => L + (v - xlo) * kx, yu = u => T + (yhi - u) * ky;
   return { W, H, L, R, T, B, xlo, xhi, ylo, yhi, kx, ky, xv, yu, X: i => xv(Math.log10(i)), Y: t => yu(Math.max(ylo, Math.min(yhi, Math.log10(t)))),

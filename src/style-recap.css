@@ -496,10 +496,8 @@ b.rc-n{font-weight:500}
 .rc-g-l.hors{background:none;box-shadow:inset 0 0 0 1px var(--voile-2)}
 .rc-g-l.hors:hover{background:var(--voile-1)}
 /* le retenu : (v84) la pièce de cuivre doux, cerclée d'un filet de cuivre — plus la pièce bleutée (« jamais de bleu ») ; la
-   liste vit hors du panneau (dans <body>) : ses teintes de cuivre se lisent ici, aux jetons des fiches quand ils sont là */
-.rc-gamme{--g-cuivre:var(--nv-cuivre,#a9581f);--g-cuivre-soft:var(--nv-cuivre-soft,#f6ebe1);--g-cuivre-ligne:var(--nv-cuivre-ligne,#e2c3a8)}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .rc-gamme{--g-cuivre:var(--nv-cuivre,#eca570);--g-cuivre-soft:var(--nv-cuivre-soft,rgba(236,165,112,.15));--g-cuivre-ligne:var(--nv-cuivre-ligne,rgba(236,165,112,.5))} }
-:root[data-theme="dark"] .rc-gamme{--g-cuivre:var(--nv-cuivre,#eca570);--g-cuivre-soft:var(--nv-cuivre-soft,rgba(236,165,112,.15));--g-cuivre-ligne:var(--nv-cuivre-ligne,rgba(236,165,112,.5))}
+   liste est un menu du cadre (dans <body>, `menu-verre`) : elle prend le cuivre du cadre (--chrome-cuivre…), clair ou graphite */
+.rc-gamme{--g-cuivre:var(--chrome-cuivre,var(--glace));--g-cuivre-soft:var(--chrome-cuivre-soft,rgba(236,165,112,.16));--g-cuivre-ligne:var(--chrome-cuivre-ligne,rgba(236,165,112,.42))}
 .rc-g-l[aria-selected="true"]{background:var(--g-cuivre-soft);box-shadow:inset 0 0 0 1px var(--g-cuivre-ligne);cursor:default}
 .rc-g-l[aria-selected="true"] :is(b,.rc-g-r){color:var(--t-1)}
 .rc-g-l[aria-selected="true"] .rc-g-tag{background:var(--voile-2);color:var(--t-1)}

@@ -307,7 +307,7 @@ function svgEnOpsPdf(svgTexte, bb) { const doc = new DOMParser().parseFromString
    aplats clairs, et sans trait il n'y a ni liaison ni bout orphelin). Les mots de l'atelier : « câble », « repère ». */
 const ENCRE_PDF = [0.043, 0.067, 0.094], GRIS_PDF = [0.49, 0.533, 0.576], GRIS2_PDF = [0.227, 0.275, 0.325], BANDE_PDF = [0.945, 0.953, 0.961], ZEBRE_PDF = [0.973, 0.976, 0.98],
   KO_PDF = [0.765, 0.153, 0.122], ATT_PDF = [0.66, 0.4, 0.0];
-const MARGE_PDF = 56, BAS_PDF = A3_PDF.h - 60;
+const MARGE_PDF = 56, BAS_PDF = A3_PDF.h - 74;   // (v84) le bas du texte : 24 au-dessus du cartouche de la page
 function pageEcrite() { const ops = [], H = A3_PDF.h; let rg = '', tc = '';
   const couleur = c => { const k = c.map(v => nbPdf(v, 3)).join(' '); if (k !== rg) { rg = k; ops.push(k + ' rg'); } };
   const P = {
@@ -324,10 +324,11 @@ function pageEcrite() { const ops = [], H = A3_PDF.h; let rg = '', tc = '';
     bande(x, y, w, h, c) { couleur(c || BANDE_PDF); ops.push(`${nbPdf(x)} ${nbPdf(H - y - h)} ${nbPdf(w)} ${nbPdf(h)} re f`); },
     /* le pied : le plan à gauche ; à droite, LE CARTOUCHE de la page (v84 : une page écrite qui s'égare de la liasse dit
        d'où elle vient, comme un folio) — le titre, l'indice, la date, la page, en cases d'aplat clair : aucun trait (une
-       page écrite ne se lit pas comme un schéma), lisible en noir et blanc. Sans cartouche, la page seule. */
+       page écrite ne se lit pas comme un schéma), lisible en noir et blanc. Sans cartouche, la page seule. « PAGE DU DOSSIER »,
+       pas « PAGE » : la relecture d'un PDF (09-pdf) prendrait « 1 / 10 » pour le folio de la page. */
     pied(nom, i, n, cart) { P.texte(MARGE_PDF, H - 28, 'VOLTA · ' + nom, { corps: 8, couleur: GRIS_PDF, max: 560 });
       if (!cart) { P.texte(A3_PDF.w - MARGE_PDF, H - 28, `page ${i} / ${n}`, { corps: 8, couleur: GRIS_PDF, ancre: 'end' }); return; }
-      const cases = [['TITRE', cart.titre || nom, 0.48, true], ['INDICE', cart.indice || '—', 0.12], ['DATE', cart.date || '—', 0.2], ['PAGE', i + ' / ' + n, 0.2, true]];
+      const cases = [['TITRE', cart.titre || nom, 0.48, true], ['INDICE', cart.indice || '—', 0.12], ['DATE', cart.date || '—', 0.2], ['PAGE DU DOSSIER', i + ' / ' + n, 0.2, true]];
       const W = 430, y = H - 50, h = 34; let x = A3_PDF.w - MARGE_PDF - W;
       cases.forEach(([lib, val, part, gras]) => { const w = part * W - 2; P.bande(x, y, w, h);
         P.texte(x + 8, y + 11, lib, { corps: 6, gras: true, ls: 0.6, couleur: GRIS_PDF }); P.texte(x + 8, y + 26, String(val), { corps: 9.5, gras: !!gras, max: w - 16 }); x += part * W; }); },
@@ -351,7 +352,8 @@ function pageDeGardePdf(D) { const p = pageEcrite(), X = MARGE_PDF, W = A3_PDF.w
   const tuiles = [[D.n, 'liaison', 'liaisons'], [D.folios.length, 'folio', 'folios'], [D.reperes, 'repère', 'repères']];
   if (D.problemes) tuiles.push([nko, 'problème', 'problèmes', nko ? KO_PDF : null], [natt, 'point à voir', 'points à voir', natt ? ATT_PDF : null]);
   if (D.modifiees != null) tuiles.push([D.modifiees, 'liaison modifiée', 'liaisons modifiées']);
-  const tw = W / tuiles.length; tuiles.forEach(([n, un, des, coul], i) => { const x = X + i * tw; p.bande(x, yT, tw - 12, 76);
+  // les tuiles remplissent la largeur entre les marges, 12 de jeu entre elles (la dernière ne s'arrête plus avant la marge)
+  const jeu = 12, tw = (W - jeu * (tuiles.length - 1)) / tuiles.length; tuiles.forEach(([n, un, des, coul], i) => { const x = X + i * (tw + jeu); p.bande(x, yT, tw, 76);
     p.texte(x + 18, yT + 46, String(n), { corps: 30, gras: true, couleur: coul || ENCRE_PDF }); p.texte(x + 18, yT + 65, n > 1 ? des : un, { corps: 10, couleur: GRIS2_PDF, max: tw - 40 }); });
   // les folios : leur page dans le dossier (une, deux… colonnes)
   const y0 = yT + 124, haut = BAS_PDF - 30 - y0, larg = D.problemes ? 520 : W, ligne = 17, parCol = Math.floor(haut / ligne);
@@ -399,8 +401,8 @@ function pagesDeTablesPdf(titre, resume, sections, o) { o = o || {}; const pages
     // les colonnes qui ont quelque chose à dire, leur largeur rendue aux autres
     const garde = S.colonnes.map((c, k) => S.lignes.some(L => L[k] != null && String(L[k]).trim() !== '' && String(L[k]).trim() !== '—')), parts = S.colonnes.filter((_, k) => garde[k]), tot = parts.reduce((s, c) => s + c[1], 0);
     const cols = S.colonnes.map((c, k) => garde[k] ? [c[0], c[1] / tot, c[2] || {}, k] : null).filter(Boolean);
-    const entetes = () => { p.bande(X, y, W, 19); let x = X; cols.forEach(([t, part, oc]) => { const cw = part * W; p.texte(oc.droite ? x + cw - 8 : x + 8, y + 13, t, { corps: 8.5, gras: true, couleur: GRIS2_PDF, ancre: oc.droite ? 'end' : undefined, max: cw - 16 }); x += cw; }); y += 19; };
-    const cases = L => cols.map(([, part, oc, k]) => { const v = L[k] == null ? '' : String(L[k]); return oc.droite ? [v] : lignesPdf(v, (oc.mono ? 3 : 1), 9, 0, part * W - 16, MAXL); });
+    const entetes = () => { p.bande(X, y, W, 19); let x = X; cols.forEach(([t, part, oc]) => { const cw = part * W; p.texte(oc.centre ? x + cw / 2 : oc.droite ? x + cw - 8 : x + 8, y + 13, t, { corps: 8.5, gras: true, couleur: GRIS2_PDF, ancre: oc.centre ? 'middle' : oc.droite ? 'end' : undefined, max: cw - 16 }); x += cw; }); y += 19; };
+    const cases = L => cols.map(([, part, oc, k]) => { const v = L[k] == null ? '' : String(L[k]); return oc.droite || oc.centre ? [v] : lignesPdf(v, (oc.mono ? 3 : 1), 9, 0, part * W - 16, MAXL); });
     const hauteur = cs => 15 + LH * (Math.max(1, ...cs.map(c => c.length)) - 1);
     const premieres = S.lignes.slice(0, 3).reduce((s, L) => s + hauteur(cases(L)), 0);
     if (y + 26 + 19 + premieres > BAS_PDF) plusDePlace();
@@ -408,7 +410,7 @@ function pagesDeTablesPdf(titre, resume, sections, o) { o = o || {}; const pages
     S.lignes.forEach((L, i) => { const cs = cases(L), h = hauteur(cs);
       if (y + h > BAS_PDF) { plusDePlace(); p.texte(X, y + 16, S.titre + ' (suite)', { corps: 13, gras: true }); y += 26; entetes(); }
       if (i % 2) p.bande(X, y, W, h, ZEBRE_PDF); let x = X;
-      cols.forEach(([, part, oc], j) => { const cw = part * W; cs[j].forEach((t, k) => p.texte(oc.droite ? x + cw - 8 : x + 8, y + 11 + k * LH, t, { corps: 9, mono: !!oc.mono, ancre: oc.droite ? 'end' : undefined, max: cw - 16, couleur: oc.gris ? GRIS2_PDF : oc.couleur || ENCRE_PDF })); x += cw; });
+      cols.forEach(([, part, oc], j) => { const cw = part * W; cs[j].forEach((t, k) => p.texte(oc.centre ? x + cw / 2 : oc.droite ? x + cw - 8 : x + 8, y + 11 + k * LH, t, { corps: 9, mono: !!oc.mono, ancre: oc.centre ? 'middle' : oc.droite ? 'end' : undefined, max: cw - 16, couleur: oc.gris ? GRIS2_PDF : oc.couleur || ENCRE_PDF })); x += cw; });
       y += h; });
     y += 22; });
   return pages; }
@@ -416,22 +418,22 @@ function pagesDeTablesPdf(titre, resume, sections, o) { o = o || {}; const pages
 function pagesNomenclaturePdf(nom) { let N; try { N = nomenclatureDuContrat(); } catch (_) { return []; }
   const somme = xs => xs.reduce((s, x) => s + x.n, 0), ou = xs => xs.join(', ');
   const sections = [
-    { titre: 'Contacts à sertir', compte: motPdf(somme(N.contacts), 'pièce', 'pièces'), colonnes: [['Contact', 0.2, { mono: true }], ['Fourreau', 0.16, { mono: true }], ['Qté', 0.07, { droite: true }], ['Où', 0.57, { gris: true }]],
+    { titre: 'Contacts à sertir', compte: motPdf(somme(N.contacts), 'pièce', 'pièces'), colonnes: [['Contact', 0.2, { mono: true }], ['Fourreau', 0.16, { mono: true }], ['Qté', 0.07, { centre: true }], ['Où', 0.57, { gris: true }]],
       lignes: N.contacts.map(x => [x.reference + (x.confiance === 'à confirmer' ? ' (à confirmer)' : ''), x.accessoire || '—', x.n, ou(x.ou)]) },
-    { titre: 'Modules de jonction', compte: motPdf(somme(N.modules), 'pièce', 'pièces'), colonnes: [['Module', 0.2, { mono: true }], ['Norme', 0.16], ['Qté', 0.07, { droite: true }], ['Barrettes', 0.57, { gris: true }]],
+    { titre: 'Modules de jonction', compte: motPdf(somme(N.modules), 'pièce', 'pièces'), colonnes: [['Module', 0.2, { mono: true }], ['Norme', 0.16], ['Qté', 0.07, { centre: true }], ['Barrettes', 0.57, { gris: true }]],
       lignes: N.modules.map(x => [x.reference, x.famille || '', x.n, ou(x.ou)]) },
-    { titre: 'Connecteurs et prises', compte: motPdf(somme(N.connecteurs), 'pièce', 'pièces'), colonnes: [['Part number', 0.2, { mono: true }], ['Nature', 0.3], ['Qté', 0.07, { droite: true }], ['Repères', 0.43, { gris: true }]],
+    { titre: 'Connecteurs et prises', compte: motPdf(somme(N.connecteurs), 'pièce', 'pièces'), colonnes: [['Part number', 0.2, { mono: true }], ['Nature', 0.3], ['Qté', 0.07, { centre: true }], ['Repères', 0.43, { gris: true }]],
       lignes: N.connecteurs.map(x => [x.reference, x.nature || '', x.n, ou(x.ou)]) },
-    { titre: 'Disjoncteurs', compte: motPdf((N.disjoncteurs || []).length, 'pièce', 'pièces'), colonnes: [['Repère', 0.12, { mono: true }], ['Part number à commander', 0.22, { mono: true }], ['Calibre', 0.1, { droite: true }], ['Installation', 0.2, { mono: true, gris: true }], ['État', 0.36]],
+    { titre: 'Disjoncteurs', compte: motPdf((N.disjoncteurs || []).length, 'pièce', 'pièces'), colonnes: [['Repère', 0.12, { mono: true }], ['Part number à commander', 0.22, { mono: true }], ['Calibre', 0.1, { centre: true }], ['Installation', 0.2, { mono: true, gris: true }], ['État', 0.36]],
       lignes: (N.disjoncteurs || []).map(x => [x.repere, x.reference + (x.construit ? ' (construit, à vérifier au catalogue)' : ''), x.calibre ? nombre(x.calibre) + ' A' : '—', x.retest ? x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat]) },
-    { titre: 'Autour des connecteurs', compte: motPdf(somme(N.habits), 'article', 'articles'), colonnes: [['Quoi', 0.2], ['Référence', 0.3, { mono: true }], ['Qté', 0.07, { droite: true }], ['Où', 0.43, { gris: true }]],
+    { titre: 'Autour des connecteurs', compte: motPdf(somme(N.habits), 'article', 'articles'), colonnes: [['Quoi', 0.2], ['Référence', 0.3, { mono: true }], ['Qté', 0.07, { centre: true }], ['Où', 0.43, { gris: true }]],
       lignes: N.habits.map(x => [x.quoi, x.reference + (x.note ? ' · ' + x.note : ''), x.n, ou(x.ou)]) },
-    { titre: 'Câbles', compte: motPdf(N.cables.length, 'type', 'types') + ' · ' + nombre(Math.round(N.longueur)) + ' m', colonnes: [['Type', 0.2, { mono: true }], ['Câbles', 0.1, { droite: true }], ['Longueur', 0.12, { droite: true }], ['Masse', 0.12, { droite: true }], ['Base', 0.46, { gris: true }]],
+    { titre: 'Câbles', compte: motPdf(N.cables.length, 'type', 'types') + ' · ' + nombre(Math.round(N.longueur)) + ' m', colonnes: [['Type', 0.2, { mono: true }], ['Câbles', 0.1, { centre: true }], ['Longueur', 0.12, { centre: true }], ['Masse', 0.12, { centre: true }], ['Base', 0.46, { gris: true }]],
       lignes: N.cables.map(x => [x.reference, x.n, (x.reelles < x.n ? '≈ ' : '') + nombre(Math.round(x.longueur * 10) / 10) + ' m', x.masse != null ? nombre(Math.round(x.masse)) + ' g' : '—',
         x.cable ? [x.cable.nature, x.cable.diametre != null ? 'Ø ' + nombre(x.cable.diametre) : '', x.cable.section != null ? nombre(x.cable.section) + ' mm²' : ''].filter(Boolean).join(' · ') : 'inconnu de la base']) }];
   if (!sections.some(S => S.lignes.length)) return [];
-  const resume = [motPdf(somme(N.contacts), 'contact à sertir', 'contacts à sertir'), motPdf(somme(N.modules), 'module de jonction', 'modules de jonction'), motPdf(somme(N.connecteurs), 'connecteur ou prise', 'connecteurs et prises'),
-    motPdf(N.fils, 'câble', 'câbles'), nombre(Math.round(N.longueur)) + ' m de câble'].join(' · ') + ` — relu depuis le plan, les normes et les choix des fiches ; sans longueur dans l’installation, l’hypothèse de ${nombre(N.hypothese)} m par câble.`;
+  const resume = 'Tout ce qu’il faut commander pour monter le plan : ' + [motPdf(somme(N.contacts), 'contact à sertir', 'contacts à sertir'), motPdf(somme(N.modules), 'module de jonction', 'modules de jonction'), motPdf(somme(N.connecteurs), 'connecteur ou prise', 'connecteurs et prises'),
+    motPdf(N.fils, 'câble', 'câbles'), nombre(Math.round(N.longueur)) + ' m de câble'].join(' · ') + `. Un câble sans longueur dans l’installation compte ${nombre(N.hypothese)} m (les hypothèses).`;
   return pagesDeTablesPdf('LPA — ' + nom, resume, sections); }
 // les modifications du retest (08-export : ce que portait le fichier là où on l'a changé), en une table
 function pagesModificationsPdf(nom) { if (typeof modificationsDe !== 'function') return [];
@@ -471,8 +473,8 @@ function pagesHypothesesPdf(nom) { if (typeof hypothesesDe !== 'function') retur
   const reglees = reglages.filter(r => r[2]).length;
   return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que l’installation ne porte pas, VOLTA le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de VOLTA est à côté)' : ', les valeurs de VOLTA'}, les profils de charge des disjoncteurs et d’où viennent les tables. L’installation corrigée les garde dans sa feuille « VOLTA ».`, [
     { titre: 'Les réglages', compte: motPdf(reglages.length, 'réglage', 'réglages'), colonnes: [['Réglage', 0.3], ['Valeur', 0.24], ['Valeur de VOLTA', 0.18, { gris: true }], ['Source', 0.28, { gris: true }]], lignes: reglages },
-    { titre: 'Les profils de charge', compte: motPdf(profils.length, 'disjoncteur', 'disjoncteurs'), colonnes: [['Repère', 0.14, { mono: true }], ['Calibre', 0.11, { droite: true }], ['Retest', 0.11, { droite: true, gris: true }], ['Démarrage', 0.15], ['Transition', 0.15], ['Permanent', 0.12], ['Autres états', 0.22]], lignes: profils },
-    { titre: 'Le statut des tables', compte: motPdf(statuts.length, 'table', 'tables'), colonnes: [['Table', 0.3], ['Lignes', 0.12, { droite: true }], ['Vérifiées', 0.14, { droite: true }], ['Déduites', 0.14, { droite: true }], ['À confirmer', 0.15, { droite: true }], ['Vos tables', 0.15, { droite: true }]], lignes: statuts }], { deux: true }); }
+    { titre: 'Les profils de charge', compte: motPdf(profils.length, 'disjoncteur', 'disjoncteurs'), colonnes: [['Repère', 0.14, { mono: true }], ['Calibre', 0.11, { centre: true }], ['Installation', 0.11, { centre: true, gris: true }], ['Démarrage', 0.15], ['Transition', 0.15], ['Permanent', 0.12], ['Autres états', 0.22]], lignes: profils },
+    { titre: 'Le statut des tables', compte: motPdf(statuts.length, 'table', 'tables'), colonnes: [['Table', 0.3], ['Lignes', 0.12, { centre: true }], ['Vérifiées', 0.14, { centre: true }], ['Déduites', 0.14, { centre: true }], ['À confirmer', 0.15, { centre: true }], ['Vos tables', 0.15, { centre: true }]], lignes: statuts }], { deux: true }); }
 
 /* ---- les folios : leurs liaisons, leur placement (le cache, sinon au loin), leur dessin --------------------------- */
 const DOSSIER = { url: null, encours: null, historique: [] };

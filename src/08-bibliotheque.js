@@ -481,7 +481,8 @@ function rendreBibliotheque(o) { const el = $('bi-page'); if (!el || BIB.vue ===
    revenu) : un fondu de 220 ms, rien ne se rejoue (`bi-deja`) — jamais à chaque lettre cherchée. */
 const ARRIVEE = ['.bi-rail', '.bi-tete', '.bi-reprendre', '.bi-bandeau', '.bi-intertitre', '.bi-grille:not(.bi-grille-demo) > .bi-carte', '.bi-feuille', '.bi-essai'].join(', ');
 const DUREE_INTRO = 3200;
-function poser() { const p = $('bi-page'); if (!p) return; clearTimeout(BIB.poseT);
+// (la bibliothèque pas encore lue, la page est vide : rien à poser — l'arrivée attend `chargerBibliotheque`)
+function poser() { const p = $('bi-page'); if (!p || !BIB.pret) return; clearTimeout(BIB.poseT);
   // la mise en scène ne se joue qu'une fois : au-delà (ou le mouvement réduit), tout est posé d'emblée
   if (!BIB.intro) { BIB.intro = 'en-cours'; clearTimeout(BIB.introT); BIB.introT = setTimeout(() => { BIB.intro = 'faite'; const q = $('bi-page'); if (q) q.classList.add('bi-deja'); }, mouvementReduit() ? 0 : DUREE_INTRO); }
   if (mouvementReduit()) return;
@@ -537,13 +538,15 @@ function racineHtml() { const t = cleTexte(BIB.q), toutes = installsTriees(), I 
   let h = reprendreHtml() + bandeauBaseHtml() + rangerHtml();
   { const nouvelle = BIB.edition && BIB.edition.quoi === 'nouvelle' ? carteNouvelleHtml() : '';
     if ((installsVraies().length || nouvelle) && !t) h += triHtml();
+    // la recherche : les installations qui répondent ont leur intertitre et leur compte, comme les plans dessous
+    else if (t && vraies.length) h += `<div class="bi-intertitre"><h2 class="bi-sous">Installations<span>${vraies.length}</span></h2></div>`;
     // une recherche que seules les lignes de la base portent (un part number, un câble) : ce qu'elles disent d'abord
     const trouve = t ? trouvesHtml() : '', base = !!(BIB.trouve && BIB.trouve.R && BIB.trouve.R.n);
     if (t && base && !vraies.length) h += trouve;
     h += vraies.length || nouvelle ? `<div class="bi-grille" role="list">${nouvelle}${vraies.map(carteInstallHtml).join('')}</div>` : t && !base ? `<p class="bi-rien">Aucune installation ne répond à ${esc(guillemets(BIB.q))}.</p>` : '';
     // la recherche : les plans qui répondent par leur nom (harness, dessin, appareil), puis ce que la base porte, ligne à ligne
     if (t) { const P = [...BIB.plans.values()].filter(p => planCorrespondNom(p, t)).sort((a, b) => TRI_NOMS(nomAffiche(a.nom), nomAffiche(b.nom)));
-      if (P.length) h += `<h2 class="bi-sous">Plans<span>${P.length}</span></h2><div class="bi-feuille">${listePlansHtml(P.slice(0, 60), true)}</div>`;
+      if (P.length) h += `<div class="bi-intertitre bi-intertitre-suite"><h2 class="bi-sous">Plans<span>${P.length}</span></h2></div><div class="bi-feuille">${listePlansHtml(P.slice(0, 60), true)}</div>`;
       if (!(base && !vraies.length)) h += trouve; } }
   // l'Exemple ferme la marche, discret, au trait : « Pour essayer »
   if (demo.length) h += `<section class="bi-essai"><div class="bi-intertitre"><h2 class="bi-sous">Pour essayer</h2></div><div class="bi-grille bi-grille-demo" role="list">${demo.map(carteInstallHtml).join('')}</div></section>`;
@@ -590,7 +593,7 @@ const HERO_COURANTS = ['M186 110H335V70H560', 'M186 110H335V150H560', 'M186 110H
    au premier accueil de la séance ; ensuite, tout de suite (`BIB.intro`). */
 function heroSchema() { const deja = BIB.intro === 'faite';
   const bloc = (x, y, w, h, rep, sous, cls) => `<g class="hs-piece${cls ? ' ' + cls : ''}" data-rep="${rep}"><rect class="hs-bloc" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/><text class="hs-rep" x="${x + w / 2}" y="${y + h / 2 + (sous ? -1 : 4.5)}">${rep}</text>${sous ? `<text class="hs-sous" x="${x + w / 2}" y="${y + h / 2 + 15}">${sous}</text>` : ''}</g>`;
-  const fils = HERO_FILS.map(([d, t, tx, ty, bouts, dit], i) => `<g class="hs-f" data-bouts="${bouts}" data-dit="${escA(dit)}"><path class="hs-prise" d="${d}"/><path class="hs-fil" pathLength="1" style="--i:${i}" d="${d}"/>${t ? `<text class="hs-c" x="${tx}" y="${ty}">${t}</text>` : ''}</g>`).join('');
+  const fils = HERO_FILS.map(([d, t, tx, ty, bouts, dit], i) => `<g class="hs-f" style="--i:${i}" data-bouts="${bouts}" data-dit="${escA(dit)}"><path class="hs-prise" d="${d}"/><path class="hs-fil" pathLength="1" d="${d}"/>${t ? `<text class="hs-c" x="${tx}" y="${ty}">${t}</text>` : ''}</g>`).join('');
   const bornes = [[192, 104, '1'], [192, 158, '2'], [552, 64, '1'], [552, 144, '1'], [676, 72, '2'], [676, 152, '2'], [892, 218, '1'], [1026, 226, '2']].map(([x, y, t]) => `<text class="hs-b" x="${x}" y="${y}">${t}</text>`).join('');
   // (v83, le lecteur : « j'aimais la ligne du haut avec 1, 2, 3… ; le reste du cadre, ça fait un casier ; la ligne seule,
   // qui s'efface sur les côtés, et c'est un schéma infini ») : la règle des colonnes seule, en dégradé vers les bords
@@ -612,7 +615,8 @@ function heroSchema() { const deja = BIB.intro === 'faite';
 function survolerHero(cible) { const h = document.querySelector('#bi-page .bi-hero'); if (!h) return;
   const f = cible && cible.closest('.hs-f'), pc = !f && cible && cible.closest('.hs-piece'), rep = pc ? pc.dataset.rep : '';
   h.querySelectorAll('.hs-f.allume').forEach(x => x.classList.remove('allume')); h.querySelectorAll('.hs-piece.allume').forEach(x => x.classList.remove('allume'));
-  if (f) f.classList.add('allume');
+  // un câble allume aussi ses deux bouts ; une pièce, les câbles qui la touchent
+  if (f) { f.classList.add('allume'); f.dataset.bouts.split(' ').forEach(r => { const x = h.querySelector(`.hs-piece[data-rep="${r}"]`); if (x) x.classList.add('allume'); }); }
   if (rep) { pc.classList.add('allume'); h.querySelectorAll('.hs-f').forEach(x => { if (x.dataset.bouts.split(' ').includes(rep)) x.classList.add('allume'); }); }
   const dit = f ? f.dataset.dit : rep ? HERO_PIECES[rep] || rep : '', l = h.querySelector('.hs-legende');
   if (l && dit) l.textContent = dit;
@@ -633,7 +637,7 @@ function marqueSvg(v) { v = v || MARQUE_ACCUEIL; const fin = v === 'fin', borne 
   const W = 492 + 4 * gap;
   return `<svg class="mq mq-${v}" viewBox="-8 -8 ${W + 16} 116" role="img" aria-label="VOLTA"><defs><linearGradient id="mq-acier" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="100"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#b3b8c2"/></linearGradient></defs>`
     + `<g class="mq-g" style="stroke-width:${ep}">${LETTRES_MARQUE.map(lettre).join('')}</g>`
-    + (v === 'fil' ? `<circle class="mq-borne" cx="492" cy="96" r="8.5"/><circle class="mq-courant" r="5"><animateMotion dur="6s" begin="${BIB.intro === 'faite' ? '.3s' : '2s'}" repeatCount="indefinite" path="${COURANT_MARQUE}" calcMode="paced"/></circle>` : '')
+    + (v === 'fil' ? `<circle class="mq-borne" cx="492" cy="96" r="8.5"/><circle class="mq-courant" r="5"><animateMotion dur="6s" begin="${BIB.intro === 'faite' ? '0s' : '2s'}" repeatCount="indefinite" path="${COURANT_MARQUE}" calcMode="paced"/></circle>` : '')
     + `</svg>`; }
 
 // (v78c, le lecteur : « VOLTA tout en majuscule, une belle écriture, un peu plus en haut ; une phrase d'accroche, comme un slogan »)
@@ -665,9 +669,10 @@ function tuileExempleHtml(i) { const p = plansDeInstall(i.id)[0], f = p && p.fol
    modifiée sur place ; la confirmation d'une suppression s'écrit dedans. L'Exemple : au trait, la vignette de son plan. */
 function carteInstallHtml(i) { const P = plansDeInstall(i.id), vu = vueLe(i), pile = P.length >= 3 ? 3 : P.length, t = cleTexte(BIB.q);
   const edite = BIB.edition && BIB.edition.quoi === 'install' && BIB.edition.id === i.id, confirme = BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id;
-  const meta = i.demo ? lies(['démonstration', nPlans(P.length)]) : lies([P.length ? nPlans(P.length) : '', vu ? 'ouverte ' + quand(vu) : 'créée ' + leJour(i.cree)]);
+  // l'Exemple dit ses folios, comme sa tuile de l'accueil (« 1 plan » ne disait rien)
+  const meta = i.demo ? lies(['démonstration', P[0] && P[0].folios ? plurielLie(P[0].folios, 'folio') : nPlans(P.length)]) : lies([P.length ? nPlans(P.length) : '', vu ? 'ouverte ' + quand(vu) : 'créée ' + leJour(i.cree)]);
   const montres = (t ? P.filter(p => planCorrespond(p, t)) : P).slice(0, 3), reste = P.length - montres.length;
-  const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn"><i aria-hidden="true"></i><span>${esc(nomAffiche(p.nom))}</span></span>`).join('')}${reste > 0 ? `<span class="bi-pn-plus">+${INSECABLE}${esc(plurielLie(reste, 'autre'))}</span>` : ''}</span>`
+  const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn">${icoBi('plan')}<span>${esc(nomAffiche(p.nom))}</span></span>`).join('')}${reste > 0 ? `<span class="bi-pn-plus">+${INSECABLE}${esc(plurielLie(reste, 'autre'))}</span>` : ''}</span>`
     : `<span class="bi-carte-plans bi-carte-plans-vide">${icoBi('depot')}<span>Déposez-y votre Excel : il devient un plan.</span></span>`;
   // la ligne du haut a la même hauteur sur toutes les cartes (les noms s'alignent d'une carte à l'autre) : l'ECP, ou, pas
   // encore saisi, « sans ECP » à l'encre calme (le technicien v73 : une alerte inquiétait) ; « À ranger » n'en a pas besoin
@@ -683,7 +688,10 @@ function carteInstallHtml(i) { const P = plansDeInstall(i.id), vu = vueLe(i), pi
   if (confirme) return article(' bi-confirmant') + `<div class="bi-carte-corps">${confirmeInstallHtml(i, P)}</div></article>`;
   return article(i.demo ? ' bi-demo' : '')
     + (edite ? `<div class="bi-carte-corps">${nommerInstallHtml('install', i)}<span class="bi-carte-meta">${esc(meta)}</span></div>`
-      : `<button class="bi-carte-corps" ${geste} aria-label="${escA(lies([i.demo ? 'Ouvrir l’exemple' : '', i.ecp ? 'ECP ' + i.ecp : '', i.nom, meta, pb]))}">${haut}${etat}<span class="bi-carte-textes"><span class="bi-carte-nom">${esc(i.nom)}</span><span class="bi-carte-meta">${esc(meta)}${pb && i.demo ? `${POINT}<span class="bi-carte-pb">${esc(pb)}</span>` : ''}</span></span>${i.demo ? icoBi('ouvrir', 'bi-demo-fleche') : noms}</button>`)
+      : i.demo ? `<button class="bi-carte-corps" ${geste} aria-label="${escA(lies(['Ouvrir l’exemple', meta, pb]))}">${haut}<span class="bi-carte-textes"><span class="bi-carte-nom">${esc(i.nom)}</span><span class="bi-carte-meta">${esc(meta)}${pb ? `${POINT}<span class="bi-carte-pb">${esc(pb)}</span>` : ''}</span></span>${icoBi('ouvrir', 'bi-demo-fleche')}</button>`
+      // (v84) le nom, ses plans, et en pied quand on l'a ouverte : la liste dit déjà combien de plans (« + 2 autres »), le
+      // pied ne le répète pas ; posé au bas de la carte, il tient les cartes d'une rangée à la même ligne
+      : `<button class="bi-carte-corps" ${geste} aria-label="${escA(lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom, meta, pb]))}">${haut}${etat}<span class="bi-carte-textes"><span class="bi-carte-nom">${esc(i.nom)}</span></span>${noms}<span class="bi-carte-pied">${esc(vu ? 'ouverte ' + quand(vu) : 'créée ' + leJour(i.cree))}</span></button>`)
     + (edite ? '' : plus) + popHtml('install', i) + '</article>'; }
 function carteNouvelleHtml() { return `<article class="bi-carte bi-carte-neuve" role="listitem"><div class="bi-carte-corps">${nommerInstallHtml('nouvelle', null)}<span class="bi-carte-meta bi-touches"><kbd>Entrée</kbd> la crée<kbd>Échap</kbd> renonce</span></div></article>`; }
 /* Ce qui s'écrit sur place. Un plan : son nom. Une installation (neuve ou modifiée) : son ECP — cinq chiffres, le clavier
@@ -714,7 +722,7 @@ function popHtml(quoi, x) { if (!(BIB.pop && BIB.pop.quoi === quoi && BIB.pop.id
 function railHtml() { const T = ordreDuRail(); if (T.length < 2) return '';
   const ligne = i => { const n = plansDeInstall(i.id).length, ici = i.id === BIB.install;
     return `<li><button class="bi-rail-l${i.demo ? ' bi-rail-demo' : ''}" data-bi="install" data-id="${escA(i.id)}"${ici ? ' aria-current="page"' : ''} data-bulle="${escA(lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom, nPlans(n)]))}">`
-      + `<span class="bi-rail-ecp">${aUnEcp(i) ? (i.ecp ? esc(i.ecp) : '—') : ''}</span><span class="bi-rail-nom">${esc(i.nom)}</span><span class="bi-rail-n">${n || ''}</span></button></li>`; };
+      + `<span class="bi-rail-ecp">${aUnEcp(i) && i.ecp ? esc(i.ecp) : ''}</span><span class="bi-rail-nom">${esc(i.nom)}</span><span class="bi-rail-n">${n || ''}</span></button></li>`; };
   return `<nav class="bi-rail" aria-label="Les installations"><p class="bi-rail-titre"><span>Installations</span><kbd data-bulle="Alt+↑ · Alt+↓ : l’installation d’avant, d’après">Alt ↑↓</kbd></p><ul>${T.map(ligne).join('')}</ul></nav>`; }
 
 /* UNE INSTALLATION : son ECP et son nom (un clic les modifie), créée quand, modifiée quand, la recherche, « Ajouter un
@@ -725,7 +733,8 @@ function teteInstallHtml() { const i = BIB.installs.get(BIB.install), P = plansD
     + (edite ? `<div class="bi-titre bi-titre-edite">${nommerInstallHtml('install', i)}</div>`
       : (aUnEcp(i) ? `<button class="bi-ecp-tete" data-bi="renommer" data-quoi="install" data-id="${escA(i.id)}" data-champ="ecp" data-bulle="${i.ecp ? 'Modifier l’ECP' : 'Saisir l’ECP : il range l’installation parmi les autres'}">${ecpHtml(i, '', true)}</button>` : '')
         + `<h1 class="bi-titre"><button class="bi-titre-nom" data-bi="renommer" data-quoi="install" data-id="${escA(i.id)}" data-champ="nom" data-bulle="${i.demo ? '' : 'Renommer'}"${i.demo ? ' disabled' : ''}>${esc(i.nom)}</button></h1>`)
-    + `<p class="bi-compte">${esc(lies([i.demo ? 'démonstration' : '', nPlans(P.length), 'créée ' + leJour(i.cree), mod ? 'modifiée ' + quand(mod) : '']))}</p></div>`
+    // (vide, la zone de dépôt le montre : pas de « aucun plan » ; modifiée le jour même de sa création, elle ne le redit pas)
+    + `<p class="bi-compte">${esc(lies([i.demo ? 'démonstration' : '', P.length ? nPlans(P.length) : '', 'créée ' + leJour(i.cree), mod && (P.length || leJour(mod) !== leJour(i.cree)) ? 'modifiée ' + quand(mod) : '']))}</p></div>`
     + `<div class="bi-outils">${P.length > 6 ? chercheBiHtml(baseDeReferences() ? 'Un plan, un part number, un câble…' : 'Chercher un plan, un harness, un dessin') : ''}${P.length && !i.demo ? `<button class="bi-btn bi-btn-2" id="bi-convertir" data-bi="lot" aria-pressed="${!!BIB.lot}">${icoBi('depot')}<span>Convertir…</span></button>` : ''}${i.demo ? '' : `<button class="bi-btn" id="bi-ajouter" data-bi="choisir">${icoBi('plus')}<span>Ajouter un plan</span></button>`}`
     + `<span class="bi-pop-ancre${BIB.pop && BIB.pop.id === i.id ? ' bi-pop-ouvert' : ''}"><button class="bi-plus bi-plus-tete" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu">${icoBi('points')}<span class="bulle" aria-hidden="true">${i.demo ? 'Retirer l’exemple' : 'Renommer, supprimer l’installation'}</span></button>${popHtml('install', i)}</span></div></header>`
     + (BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id ? `<div class="bi-feuille bi-confirme-tete">${confirmeInstallHtml(i, P)}</div>` : ''); }
@@ -740,7 +749,7 @@ function installHtml() { const i = BIB.installs.get(BIB.install); if (!i) return
 /* La liste des plans : l'en-tête des colonnes, puis une ligne par plan — sa feuille, son nom (« sur la table », « nouveau »)
    et dessous ce qu'il est (un contrat de la base : son appareil, la date de son retest, ses dessins ; un fichier : ses
    harness et ses dessins), ses folios, ses liaisons, CE QU'IL RESTE À FAIRE (le compte du contrôle, gardé à chaque
-   enregistrement : « 3 problèmes », « 5 à voir », « rien à reprendre » — « pas encore ouvert » sinon), modifié, et sa
+   enregistrement : « 3 problèmes », « 5 à voir », « rien à reprendre » — « pas encore contrôlé » sinon : VOLTA contrôle un plan quand il l'ouvre), modifié, et sa
    dernière ouverture avec, dessous, « exporté le … » (pages, idée 7 : on voit d'un coup d'œil ce qui reste à faire).
    `avecInstall` : la recherche de la racine dit l'installation de chacun (à la place de « modifié »). En CONVERSION EN LOT
    (`BIB.lot`), la feuille devient une case à cocher et un clic choisit au lieu d'ouvrir. */
@@ -753,7 +762,7 @@ const sousPlan = p => { if (p.source === 'base') return lies([p.appareil, p.rete
   const h = (p.harness || []).filter(x => cleTexte(x) !== cleTexte(nomAffiche(p.nom)));
   return lies([h.slice(0, 2).join(', ') + (h.length > 2 ? '…' : ''), p.dessins > 1 ? plurielLie(p.dessins, 'dessin') : '']); };
 // ce qu'il reste à faire, d'après le dernier contrôle gardé
-const problemesHtml = p => { const x = p.problemes; if (!x) return '<span class="bi-pb bi-pb-rien">pas encore ouvert</span>';
+const problemesHtml = p => { const x = p.problemes; if (!x) return '<span class="bi-pb bi-pb-rien">pas encore contrôlé</span>';
   return x.ko ? `<span class="bi-pb ko">${esc(plurielLie(x.ko, 'problème'))}</span>` : x.att ? `<span class="bi-pb att">${x.att}${INSECABLE}à voir</span>` : '<span class="bi-pb ok">rien à reprendre</span>'; };
 function lignePlanHtml(p, avecInstall) { const i = BIB.installs.get(p.install), table = p.id === app.planId && planSurLaTable(), neuf = BIB.nouveaux.has(p.id), lot = !!BIB.lot, choisi = lot && BIB.lot.ids.has(p.id);
   const edite = BIB.edition && BIB.edition.quoi === 'plan' && BIB.edition.id === p.id, confirme = BIB.confirme && BIB.confirme.quoi === 'plan' && BIB.confirme.id === p.id;

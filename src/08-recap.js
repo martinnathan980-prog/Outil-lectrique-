@@ -711,10 +711,11 @@ const COLONNES_CABLES = [
   { k: 'etat', t: 'État', cls: 'rc-c-etat', html: c => etatHtml(etatCable(c) || 'ok', motCable(c), !c.type ? 'Des câbles sans type : leur gauge ne se vérifie pas' : etatCable(c) ? 'Inconnu de la base des câbles et de la norme des câbles' : c.cab ? 'Dans la base des câbles' : 'La gauge seule, par l’EN 2853'), tri: c => etatCable(c) ? 0 : 1, texte: motCable, vide: c => !etatCable(c) },
   { k: 'nature', t: 'Composition', option: true, large: 1, vide: c => !c.cab, html: c => c.cab ? `<span class="rc-mot">${esc([(c.cab.brins > 1 ? c.cab.brins + ' brins' : '1 brin') + (c.cab.blindage ? ' + blindage' : ''), c.cab.nature, c.fam && c.fam.conducteur && c.fam.conducteur !== 'cuivre' ? c.fam.conducteur : ''].filter(Boolean).join(' · '))}</span>` : rien,
     tri: c => c.cab ? c.cab.brins || 0 : -1, texte: c => c.cab ? [c.cab.brins + ' brins', c.cab.blindage ? 'blindage' : '', c.cab.nature].filter(Boolean).join(' ') : '' },
-  { k: 'diametre', t: 'Ø', cls: 'rc-c-mesure', option: true, large: 1, vide: c => !(c.cab && c.cab.diametre != null), html: c => c.cab && c.cab.diametre != null ? chiffre(`<b class="rc-n">${fmt(c.cab.diametre, 2)}</b>`, 'mm') : rien, tri: c => c.cab && c.cab.diametre != null ? c.cab.diametre : -1, texte: c => c.cab && c.cab.diametre != null ? fmt(c.cab.diametre, 2) + ' mm' : '' },
-  { k: 'resistance', t: 'mΩ/m', cls: 'rc-c-n', option: true, large: 2, vide: c => (c.cab && c.cab.resistance != null ? c.cab.resistance : c.fn && c.fn.resistance != null ? c.fn.resistance : null) == null, html: c => { const R = c.cab && c.cab.resistance != null ? c.cab.resistance : c.fn && c.fn.resistance != null ? c.fn.resistance : null; return R != null ? chiffre(`<b class="rc-n">${fmt(R, 2)}</b>`) : rien; },
-    tri: c => (c.cab && c.cab.resistance) ?? (c.fn && c.fn.resistance) ?? -1, texte: c => String((c.cab && c.cab.resistance) ?? (c.fn && c.fn.resistance) ?? '') },
-  { k: 'gm', t: 'g/m', cls: 'rc-c-n', option: true, large: 2, vide: c => !(c.cab && c.cab.masse != null), html: c => c.cab && c.cab.masse != null ? chiffre(`<b class="rc-n">${fmt(c.cab.masse, 2)}</b>`) : rien, tri: c => c.cab && c.cab.masse != null ? c.cab.masse : -1, texte: c => c.cab && c.cab.masse != null ? fmt(c.cab.masse, 2) : '' },
+  // (v84) des titres en mots, l'unité dans la case : en capitales, « mΩ/m » devenait « MΩ/M » (des mégohms)
+  { k: 'diametre', t: 'Diamètre', cls: 'rc-c-mesure', option: true, large: 1, vide: c => !(c.cab && c.cab.diametre != null), html: c => c.cab && c.cab.diametre != null ? chiffre(`<b class="rc-n">${fmt(c.cab.diametre, 2)}</b>`, 'mm') : rien, tri: c => c.cab && c.cab.diametre != null ? c.cab.diametre : -1, texte: c => c.cab && c.cab.diametre != null ? fmt(c.cab.diametre, 2) + ' mm' : '' },
+  { k: 'resistance', t: 'Résistance', cls: 'rc-c-mesure', option: true, large: 2, vide: c => (c.cab && c.cab.resistance != null ? c.cab.resistance : c.fn && c.fn.resistance != null ? c.fn.resistance : null) == null, html: c => { const R = c.cab && c.cab.resistance != null ? c.cab.resistance : c.fn && c.fn.resistance != null ? c.fn.resistance : null; return R != null ? chiffre(`<b class="rc-n">${fmt(R, 2)}</b>`, 'mΩ/m') : rien; },
+    tri: c => (c.cab && c.cab.resistance) ?? (c.fn && c.fn.resistance) ?? -1, texte: c => { const R = (c.cab && c.cab.resistance) ?? (c.fn && c.fn.resistance); return R == null ? '' : fmt(R, 2) + ' mΩ/m'; } },
+  { k: 'gm', t: 'Masse linéique', cls: 'rc-c-mesure', option: true, large: 2, vide: c => !(c.cab && c.cab.masse != null), html: c => c.cab && c.cab.masse != null ? chiffre(`<b class="rc-n">${fmt(c.cab.masse, 2)}</b>`, 'g/m') : rien, tri: c => c.cab && c.cab.masse != null ? c.cab.masse : -1, texte: c => c.cab && c.cab.masse != null ? fmt(c.cab.masse, 2) + ' g/m' : '' },
   { k: 'source', t: 'Source', option: true, html: c => `<span class="rc-mot">${c.cab ? 'base des câbles' : c.fn ? 'EN 2853 (la gauge seule)' : c.type ? 'inconnu' : '—'}</span>`, tri: c => c.cab ? 0 : c.fn ? 1 : 2, texte: c => c.cab ? 'base des câbles' : c.fn ? 'EN 2853' : 'inconnu' },
   { k: 'aller', t: '', cls: 'rc-c-aller', html: () => '<button type="button" class="rc-lien" data-voir-fils="1">Voir les câbles</button>', texte: () => '' }];
 const CABLES = { colonnes: COLONNES_CABLES, lignes: cables, etat: etatCable, choisie: () => false, cherche: 'Chercher : type de câble…',
@@ -851,6 +852,7 @@ const PROBLEMES = { colonnes: COLONNES_PROBLEMES, portee: false, lignes: problem
   choisie: p => !!app.cible && app.cible.type === 'bloc' && app.cible.nom === p.x.nom, etat: p => p.x.niveau,
   puces: () => [['niveau:ko', 'Problèmes', p => p.x.niveau === 'ko', '', 'niveau'], ['niveau:att', 'À voir', p => p.x.niveau !== 'ko', '', 'niveau']],
   choisir: voirLePoint, survol: p => { if (p.x.nom) survolRepere(p.x.nom); },
+  ordre: L => { const rg = p => (p.x.niveau === 'ko' ? 0 : 1000) + (typeof rangDuGenre === 'function' ? rangDuGenre(p.x.genre) : 0); return L.map((p, i) => [p, i]).sort((a, z) => rg(a[0]) - rg(z[0]) || a[1] - z[1]).map(x => x[0]); },
   aller: p => { const x = p.x; if (x.tableau != null) { montrerLiaisons(x.tableau); return; } allerAuControle(x);
     if (p.sec) setTimeout(() => { if (typeof ouvrirSection === 'function') ouvrirSection($('ba-equip'), p.sec); }, 0); } };
 
@@ -918,6 +920,8 @@ function lignesDe(O, sansPuces, sansPortee) { const b = app.base, f = b.filtre.t
   else if (f) L = L.filter(r => O.colonnes.some(c => c.texte && String(c.texte(r)).toLowerCase().includes(f)));
   if (!sansPuces) { const A = pucesActives(O), G = new Map(); A.forEach(p => (G.get(p.groupe) || G.set(p.groupe, []).get(p.groupe)).push(p)); G.forEach(ps => { L = L.filter(r => ps.some(p => p.test(r))); }); }
   const tri = b.tri, c = tri && O.colonnes.find(x => x.k === tri.k && x.tri);
+  // sans tri choisi, l'onglet garde son ordre de lecture (les problèmes : du plus grave au moins grave, même filtrés)
+  if (!c && O.ordre) L = O.ordre(L);
   if (c) { const v = new Map(L.map(r => [r, c.tri(r)]));
     L = L.slice().sort((a, z) => { const x = v.get(a), y = v.get(z), vx = x == null || x === '', vy = y == null || y === ''; if (vx || vy) return vx - vy;
       return tri.sens * (typeof x === 'number' && typeof y === 'number' ? x - y : triNaturel(x, y)); }); }
@@ -1121,7 +1125,8 @@ function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.je
   if (O === PROBLEMES) { let avant = null, nom = null; morceaux.forEach(m => { if (m.k == null) { avant = null; nom = null; return; } const r = RECAP.vues.get(m.k), s = r ? signatureGestes(r) : '', x = r && r.x.nom;
     if (s && s === avant) RECAP.pareils.add(m.k); if (x && x === nom) RECAP.memes.add(m.k); avant = s; nom = x; }); }
   // un onglet vide le dit sous ses en-têtes, au milieu de la feuille (hors de la table : sa dernière colonne prend tout)
-  const vide = assurerVide(), rien = !L.length && !tete.length; vide.innerHTML = rien ? videRecap(O, tous.length) : ''; vide.hidden = !rien;
+  // (v84) un onglet vide ne pose pas d'en-têtes : sans lignes, ils se tassaient à gauche (« DE CÂBLE VERS… »), sans rien dire
+  const vide = assurerVide(), rien = !L.length && !tete.length; vide.innerHTML = rien ? videRecap(O, tous.length) : ''; vide.hidden = !rien; $('ba-thead').hidden = rien;
   const corps = $('ba-tbody'), choisie = morceaux.findIndex(m => { const r = m.k != null && RECAP.vues.get(m.k); return r && !r.nouveau && O.choisie(r); });
   if (morceaux.length > VIRTUEL_DES) { RECAP.virtuel = { morceaux, n, debut: -1, fin: -1, jeton }; corps.innerHTML = '';
     if (choisie >= 0 && b.defiler) { let y = 0; for (let i = 0; i < choisie; i++) y += morceaux[i].h; $('ba-corps').scrollTop = Math.max(0, y - $('ba-corps').clientHeight / 2); }
@@ -1359,7 +1364,9 @@ function ouvrirMenuColonnes(garde) { const O = onglet(), vues = new Set(colonnes
   const R = []; xs.filter(c => !dOffice(c)).forEach(c => { const t = c.g || 'En plus', r = R.find(x => x.t === t); if (r) r.cs.push(c); else R.push({ t, cs: [c] }); });
   const rubrique = (t, cs) => `<div class="rc-menu-t">${esc(t)}</div><div class="rc-menu-g">${cs.map(coche).join('')}</div>`;
   m.classList.toggle('large', xs.length >= 10);
-  m.innerHTML = rubrique(RECAP.palier && xs.some(c => c.option && dOffice(c)) ? 'D’office, à cette largeur' : 'D’office', xs.filter(dOffice)) + R.map(r => rubrique(r.t, r.cs)).join('')
+  // (dans l'ordre où la table les pose : l'état au bout)
+  const office = xs.filter(dOffice).map((c, i) => [c, i]).sort((a, z) => rangDeFin(a[0]) - rangDeFin(z[0]) || a[1] - z[1]).map(x => x[0]);
+  m.innerHTML = rubrique(RECAP.palier && xs.some(c => c.option && dOffice(c)) ? 'D’office, à cette largeur' : 'D’office', office) + R.map(r => rubrique(r.t, r.cs)).join('')
     + (app.base.colonnes[app.base.onglet] ? '<button class="rc-lien" id="ba-colonnes-defaut">Revenir aux colonnes d’office</button>' : '');
   m.style.maxHeight = ''; m.hidden = false; $('ba-colonnes').setAttribute('aria-expanded', 'true');
   const place = $('base').getBoundingClientRect().bottom - $('ba-colonnes').getBoundingClientRect().bottom - 18; if (place > 120 && m.scrollHeight > place) m.style.maxHeight = place + 'px';

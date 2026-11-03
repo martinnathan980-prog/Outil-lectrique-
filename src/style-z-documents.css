@@ -51,8 +51,8 @@
 /* ─── « 1, 2, 3 » (la charte) : les gestes d'un document en trois phrases courtes — le Bilan, Coller ; un chiffre de
    cuivre dans son rond, posés sur la page sous la tête, avant les sections ─── */
 #fiche .fiche-corps>.doc-etapes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0 2px 16px;padding:0;list-style:none;counter-reset:etape}
-.doc-etapes li{display:flex;align-items:flex-start;gap:10px;min-width:0;font:400 var(--f-13)/1.45 var(--sans);color:var(--t-2);counter-increment:etape;text-wrap:pretty}
-.doc-etapes li::before{content:counter(etape);flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;margin-top:-1px;
+.doc-etapes li{position:relative;min-width:0;padding:1px 0 0 32px;font:400 var(--f-13)/1.45 var(--sans);color:var(--t-2);counter-increment:etape;text-wrap:pretty}
+.doc-etapes li::before{content:counter(etape);position:absolute;left:0;top:0;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;
   font:600 var(--f-12)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--nv-cuivre,var(--t-1));box-shadow:inset 0 0 0 1.5px var(--nv-cuivre-ligne,var(--s-line-2))}
 .doc-etapes li b{color:var(--t-1);font-weight:600}
 
@@ -60,3 +60,11 @@
 #fiche .nm-tab th{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase}
 #fiche .nm-tab th[aria-sort="ascending"],#fiche .nm-tab th[aria-sort="descending"]{font-weight:600;color:var(--t-1)}
 #fiche .nm-tab :is(td.d,th.d){text-align:center}
+
+/* ─── LES PIÈCES DE RELECTURE (un PDF, un Visio) : leur tête parle comme celle des documents — la rubrique en capitales de
+   cuivre, le titre 20 · 600 ; le cuivre est celui des fiches (style-niveaux), redit ici pour ces pièces qui n'en héritent pas ─── */
+#pdf,#visio{--nv-cuivre:#a9581f}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#pdf,#visio){--nv-cuivre:#eca570} }
+:root[data-theme="dark"] :is(#pdf,#visio){--nv-cuivre:#eca570}
+.pdf-haut .fiche-tete .sur{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--nv-cuivre)}
+.pdf-haut .fiche-tete .titre{font:600 var(--f-20)/1.25 var(--sans);letter-spacing:-.015em}

@@ -48,7 +48,8 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   // la chute affichée est celle des fiches (`chutesDuDisjoncteur`, 08-fiche) : le contrôle la relit avec le contrat neuf
   if (typeof CHUTES !== 'undefined') CHUTES.cle = null;
   // le contact de chaque bout d'un fil, par les plans (la taille, la référence à sertir) : la protection et le CCA s'en servent
-  const contacts = new Map(), noter = (r, fils) => (fils || []).forEach(x => { if (!x.f || !x.f.l) return; (contacts.get(x.f.l) || contacts.set(x.f.l, []).get(x.f.l)).push({ repere: r, taille: x.taille, sertir: x.sertir || null }); });
+  // (v84 : le câble serti et le fût du contact gardés — le courant du contact en dépend, `intensiteDuContactPose`)
+  const contacts = new Map(), noter = (r, fils) => (fils || []).forEach(x => { if (!x.f || !x.f.l) return; (contacts.get(x.f.l) || contacts.set(x.f.l, []).get(x.f.l)).push({ repere: r, taille: x.taille, sertir: x.sertir || null, f: x.f, fut: x.sertir && x.sertir.fut != null ? x.sertir.fut : null }); });
   const reperes = [...new Set(V.flatMap(l => [l.de, l.vers]).filter(Boolean))].sort(triNaturel).filter(r => !estMasse(r) && !estRenvoi(r));
   reperes.forEach(r => {
     try {
@@ -68,11 +69,13 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
      d'un même côté : rien à dire. Une prise de coupure CHANGE de route : sa fiche et son embase peuvent différer. */
   try { const lieux = new Map(), poser = (r, lieu, l) => { const s = coteDeRoute(l && l.route); if (!s) return; const k = r + '\u0001' + lieu;
       const x = lieux.get(k) || lieux.set(k, { r, lieu, g: new Set(), d: new Set(), cables: new Set() }).get(k); (s === 'gauche' ? x.g : x.d).add(String(l.route).trim()); x.cables.add(l); };
+    // (v84, la vitesse) les bouts de chaque repère, rangés une fois : chaque équipement relisait toutes les liaisons (1,3 s → quelques ms sur 3 000 liaisons)
+    const boutsDe = new Map(); V.forEach(l => { if (!liaisonComplete(l)) return; [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(x => (boutsDe.get(x[0]) || boutsDe.set(x[0], []).get(x[0])).push([x, l])); });
     reperes.forEach(r => { if (estDisjoncteur(r)) return;
       if (barretteEnModules(r)) planDeBarrette(r).plan.fils.forEach(x => x.f && poser(r, 'module ' + (x.module + 1), x.f.l));
-      else if (coupureEnModules(r)) planDeCoupure(r).plan.fils.forEach(x => x.f && poser(r, x.f.amont ? 'côté fiche' : 'côté embase', x.f.l));
-      else if (!estBornier(r) && !estCoupure(r)) V.filter(liaisonComplete).forEach(l => [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([q, b, pn]) => {
-        if (q !== r) return; const c = connecteurDeBorne(b, pn); poser(r, c && c.lettre ? 'connecteur ' + c.nom : 'connecteur', l); })); });
+      // (v84, les mots du lecteur) la prise : « partie mobile », « partie fixe » — jamais fiche / embase
+      else if (coupureEnModules(r)) planDeCoupure(r).plan.fils.forEach(x => x.f && poser(r, x.f.amont ? 'côté partie mobile' : 'côté partie fixe', x.f.l));
+      else if (!estBornier(r) && !estCoupure(r)) (boutsDe.get(r) || []).forEach(([[, b, pn], l]) => { const c = connecteurDeBorne(b, pn); poser(r, c && c.lettre ? 'connecteur ' + c.nom : 'connecteur', l); }); });
     lieux.forEach(x => { if (x.g.size && x.d.size) att(x.r, `branchement en chaîne : ${x.lieu} mélange gauche (${[...x.g].sort(triNaturel).join(', ')}) et droite (${[...x.d].sort(triNaturel).join(', ')})`, { genre: 'segregation', cables: [...x.cables] }); });
   } catch (_) { }
   // un conducteur qui n'est pas du cuivre (AD, VN : aluminium cuivré) serti sur un contact cuivre ordinaire : à qualifier
@@ -92,16 +95,69 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   if (inc) att('', pluriel(inc, 'liaison') + ' incomplète' + (inc > 1 ? 's' : '') + ' : ni dessinée' + (inc > 1 ? 's' : '') + ', ni vérifiée' + (inc > 1 ? 's' : ''), { tableau: '' });
   // les câbles qui ne tiennent pas l'ambiante de la simulation (l'EN 2853 les échauffe de 40 °C) : une fois par famille
   const tenues = new Map(); V.forEach(l => { if (!liaisonComplete(l) || l.de === l.vers || !l.type) return; const t = tenueEnTemperature(N, l.type, H.ambiante); if (t && !t.ok && !tenues.has(typeDuFil(l.type))) tenues.set(typeDuFil(l.type), t); });
-  if (tenues.size) att('', `ambiante ${nombre(H.ambiante)} °C : ${[...tenues].map(([f, t]) => f + ' (' + nombre(t.tmax) + ' °C max)').join(', ')} ne ${tenues.size > 1 ? 'tiennent' : 'tient'} pas l’échauffement de 40 °C de l’EN 2853 (${nombre(H.ambiante + ECHAUFFEMENT_EN2853)} °C au conducteur)`, { tableau: '' });
-  items.forEach(x => { if (x.nom && x.plan == null) x.plan = plansDuRepere(x.nom).sort(triNaturel)[0] || ''; x.genre = genreDuPoint(x); });
-  return items; }
+  if (tenues.size) att('', `ambiante ${nombre(H.ambiante)} °C : ${[...tenues].map(([f, t]) => f + ' (' + nombre(t.tmax) + ' °C max)').join(', ')} ne ${tenues.size > 1 ? 'supportent' : 'supporte'} pas l’échauffement de 40 °C de l’EN 2853 (${nombre(H.ambiante + ECHAUFFEMENT_EN2853)} °C au conducteur)`, { tableau: '' });
+  try { controleDeStructure(V).forEach(x => att(x.nom, x.texte, x.plus)); } catch (_) { }
+  /* CHAQUE DÉFAUT UNE FOIS (v84) : deux chemins qui relèvent la même phrase sur le même repère (un fil direct et le même vu à
+     travers une prise) n'en font qu'un point — ses câbles réunis. */
+  const uniques = new Map(), sortie = [];
+  items.forEach(x => { const k = x.niveau + '\u0001' + (x.nom || '') + '\u0001' + x.texte, y = uniques.get(k);
+    if (!y) { uniques.set(k, x); sortie.push(x); return; }
+    if (x.cables && x.cables.length) y.cables = [...new Set([...(y.cables || []), ...x.cables])]; });
+  sortie.forEach(x => { if (x.nom && x.plan == null) x.plan = plansDuRepere(x.nom).sort(triNaturel)[0] || ''; x.genre = genreDuPoint(x); });
+  return sortie; }
+/* ---- LA STRUCTURE DU FICHIER (v84) -----------------------------------------------------------------------------------
+   Ce que le fichier écrit de travers, que VOLTA ne corrige jamais (le retest est la source dure : c'est au fichier de
+   changer) mais qu'il DIT, une fois, sur son repère, avec ce qu'il faut faire — tous « à voir », aucun n'est faux à coup
+   sûr :
+     · deux lignes identiques (les mêmes bouts, le même câble) : une ligne copiée, ou deux câbles voulus en parallèle ;
+     · un repère écrit de deux façons (« 101bt1 » et « 101BT1 », une espace de trop) : deux équipements pour VOLTA ;
+     · une borne écrite de deux façons sur un même repère (« 1 » et « 01 », « 1.0 ») : deux bornes pour VOLTA ;
+     · un câble qui part et arrive sur la même borne : sans effet ;
+     · un câble sans borne sur un repère dont les autres câbles en ont une : son contact ne se place pas ;
+     · un connecteur à lettre (A12, B3) qui porte deux part numbers : VOLTA ne lit que le premier ;
+     · des liaisons sans folio quand le fichier en a plusieurs : elles ne se dessinent sur aucun.
+   Rend [{ nom, texte, plus }] ; `plus.cables` : les liaisons dont il parle (la fiche du câble les montre). */
+const formeDuRepere = r => String(r || '').toUpperCase().replace(/\s+/g, '');
+const formeDeLaBorne = b => String(b || '').toUpperCase().replace(/\s+/g, '').replace(/(\d+)[.,]0+$/, '$1').replace(/\d+/g, d => String(+d));
+function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete), dire = (nom, texte, plus) => out.push({ nom, texte, plus: { genre: 'fichier', ...(plus || {}) } });
+  const potentiel = r => estMasse(r) || estRail(r) || VT_A_POSER.test(r);
+  // les lignes identiques : les deux bouts (dans un sens ou dans l'autre), le type et le numéro du câble
+  const pareilles = new Map();
+  L.forEach(l => { const a = l.de + '\u0002' + l.borneDe, b = l.vers + '\u0002' + l.borneVers, k = (a < b ? a + '\u0001' + b : b + '\u0001' + a) + '\u0001' + (l.type || '') + '\u0001' + (l.cable || '');
+    (pareilles.get(k) || pareilles.set(k, []).get(k)).push(l); });
+  pareilles.forEach(xs => { if (xs.length < 2) return; const l = xs[0];
+    dire(l.de, `${cableDit(l)} : ${xs.length} lignes identiques dans le fichier — une ligne en double (à retirer du fichier), ou ${xs.length} câbles voulus en parallèle`, { cables: xs }); });
+  // un câble qui part et arrive sur la même borne
+  L.forEach(l => { if (l.de === l.vers && l.borneDe === l.borneVers) dire(l.de, `${cableDit(l)} : il part et arrive sur la même borne (${l.de}${l.borneDe ? ':' + l.borneDe : ''}) — sans effet, sans doute une faute de saisie dans le fichier`, { cables: [l] }); });
+  // les repères écrits de deux façons, et, sur un même repère, les bornes écrites de deux façons ; les câbles sans borne
+  const parForme = new Map(), bornes = new Map();
+  L.forEach(l => [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
+    const f = formeDuRepere(r), e = parForme.get(f) || parForme.set(f, new Map()).get(f); e.set(r, (e.get(r) || 0) + 1);
+    if (potentiel(r)) return; const x = bornes.get(r) || bornes.set(r, { formes: new Map(), sans: [], avec: 0, pns: new Map() }).get(r);
+    if (!b) { x.sans.push(l); return; } x.avec++; const fb = formeDeLaBorne(b), y = x.formes.get(fb) || x.formes.set(fb, new Map()).get(fb); y.set(b, (y.get(b) || 0) + 1);
+    // le part number de chaque connecteur à lettre (A12 : le connecteur A)
+    const c = pn ? connecteurDeBorne(b, pn) : null; if (c && c.lettre) { const m = x.pns.get(c.nom) || x.pns.set(c.nom, new Map()).get(c.nom); (m.get(pn) || m.set(pn, []).get(pn)).push(l); } }));
+  parForme.forEach(e => { if (e.size < 2) return; const xs = [...e].sort((a, b) => b[1] - a[1] || triNaturel(a[0], b[0])), [r] = xs[0];
+    dire(r, `s’écrit aussi ${xs.slice(1).map(([s, n]) => '« ' + s + ' » (' + pluriel(n, 'ligne') + ')').join(', ')} : pour VOLTA, ${xs.length > 2 ? 'ce sont des' : 'deux'} équipements différents — à unifier dans le fichier s’il s’agit du même`); });
+  bornes.forEach((x, r) => {
+    x.formes.forEach(y => { if (y.size < 2) return; const xs = [...y].sort((a, b) => b[1] - a[1] || triNaturel(a[0], b[0]));
+      dire(r, `bornes ${xs.map(([s]) => '« ' + s + ' »').join(' et ')} : sans doute la même borne, écrite de ${xs.length > 2 ? xs.length : 'deux'} façons — pour VOLTA, ${xs.length > 2 ? 'des' : 'deux'} bornes différentes ; à unifier dans le fichier`); });
+    if (x.sans.length && x.avec) dire(r, `${pluriel(x.sans.length, 'câble')} sans numéro de borne, quand ${x.avec > 1 ? 'les autres câbles' : 'l’autre câble'} de ${r} en ${x.avec > 1 ? 'ont' : 'a'} un : ${x.sans.length > 1 ? 'leur' : 'son'} contact ne se place pas — la borne est à écrire dans le fichier`, { cables: x.sans }); });
+  // un connecteur à lettre qui porte deux part numbers (un disjoncteur le dit déjà, en problème ; une barrette, une prise ont leurs modules)
+  bornes.forEach((x, r) => { if (estBornier(r) || estDisjoncteur(r)) return;
+    x.pns.forEach((m, c) => { if (m.size < 2) return; const xs = [...m], lu = xs[0][0];
+      dire(r, `${c} · porte ${xs.length > 2 ? xs.length : 'deux'} part numbers : ${xs.map(([pn, ls]) => pn + ' (' + pluriel(ls.length, 'câble') + ')').join(', ')} — VOLTA lit ${lu} ; à unifier dans le fichier`, { cables: xs.flatMap(([, ls]) => ls) }); }); });
+  // des liaisons sans folio, quand le fichier en a plusieurs : aucun folio ne les dessine
+  const P = plansDe(V); if (P.length > 1) { const n = L.filter(l => !l.plan).length;
+    if (n) dire('', `${pluriel(n, 'liaison')} sans folio (FWD vide) : ${n > 1 ? 'elles ne se dessinent' : 'elle ne se dessine'} sur aucun des ${P.length} folios — le FWD est à écrire dans le fichier`, { tableau: '' }); }
+  return out; }
 /* LE GENRE D'UN POINT (audit v72 : sur un grand retest, 192 lignes une par repère, quand huit genres disent tout) :
    chaque point se range dans un genre, que l'index et le récapitulatif montrent groupé, avec son compte et le geste qui
    le traite. L'ordre de GENRES_CONTROLE est celui de la lecture : ce qui casse d'abord. */
 const GENRES_CONTROLE = [['arrangement', 'connecteurs qu’aucun arrangement ne loge', 'connecteur qu’aucun arrangement ne loge'], ['contact', 'contacts à revoir', 'contact à revoir'],
   ['calibre', 'calibres à revoir', 'calibre à revoir'], ['pn', 'disjoncteurs à deux part numbers', 'disjoncteur à deux part numbers'], ['protection', 'câbles mal protégés par leur disjoncteur', 'câble mal protégé par son disjoncteur'],
   ['chute', 'chutes de tension trop fortes', 'chute de tension trop forte'], ['profil', 'disjoncteurs sans profil de charge', 'disjoncteur sans profil de charge'],
-  ['segregation', 'mélanges gauche / droite', 'mélange gauche / droite'], ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['retest', 'points de l’installation', 'point de l’installation'], ['autre', 'autres points', 'autre point']];
+  ['segregation', 'mélanges gauche / droite', 'mélange gauche / droite'], ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['fichier', 'écritures du fichier à vérifier', 'écriture du fichier à vérifier'], ['retest', 'points de l’installation', 'point de l’installation'], ['autre', 'autres points', 'autre point']];
 // le genre en mots, au nombre qu'il compte : « 2 chutes de tension trop fortes », « 1 barrette à poser »
 const motDuGenre = (g, n) => { const G = GENRES_CONTROLE.find(x => x[0] === g) || GENRES_CONTROLE[GENRES_CONTROLE.length - 1]; return n > 1 ? G[1] : G[2]; };
 const rangDuGenre = g => { const i = GENRES_CONTROLE.findIndex(x => x[0] === g); return i < 0 ? GENRES_CONTROLE.length : i; };
@@ -131,19 +187,28 @@ const limiteDuCable = (f, x) => f.jugeSur === 'dommage' ? `il s’abîme au-del�
 // le contact d'un câble en mots : celui du plan (« taille 20 (7,5 A, 103J1) »), sinon celui que VOLTA suppose — le plus petit
 // qui admet la gauge, par prudence (« taille 23 supposé (3 A) » ; la fiche dit pourquoi sous le problème)
 const motContact = f => `taille ${f.contact.taille} ${f.contact.parLePlan ? '(' + amperes(f.contact.intensite) + ', ' + f.contactRepere + ')' : 'supposé (' + amperes(f.contact.intensite) + ')'}`;
+/* (v84) DEUX CHIFFRES COMPARÉS, sans que l'arrondi inverse le verdict (09 quater, `enOrdre` : « 2,004 V > 2 V » ne s'écrit
+   plus « 2 V > 2 V ») ; `u` : l'unité. */
+const chiffresEnOrdre = (a, b, u) => enOrdre(a, b).map(x => nombre(x) + ' ' + u);
+// le « × 0,6 » en clair (09 quater, `motDuDeclassement`) : « (11,5 A × 0,6 : faisceau de 8 câbles à 60 %) »
+const motDeclasse = (N, H, f, t) => { const m = typeof motDuDeclassement === 'function' && f && f.type ? motDuDeclassement(N, f.type, H, t) : ''; return m ? ' (' + m + ')' : ''; };
+/* LE CONTACT QUI NE PORTE PAS LE PERMANENT : un problème quand c'est sûr — le contact du plan, ou un courant que la GAUGE du
+   câble serti borne (AS39029 : un 24 AWG porte 3 A dans n'importe quel contact) ; à voir quand VOLTA ne fait que supposer la
+   taille du contact (le connecteur d'un équipement vient du fournisseur : sa vraie taille peut porter plus). */
+const contactSur = f => !!(f.contact && (f.contact.parLePlan || f.contact.source === 'courants'));
 function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(nom), out = [], cal = d.calibre, pn = pnDuRepere(nom);
   if (pn && !d.famille && !d.ecrit) out.push({ niveau: 'att', texte: `part number ${pn} : famille de disjoncteur inconnue, le calibre ne s’y lit pas${cal ? ' — ' + amperes(cal) + ' (l’idéal) retenu' : ''}` });
-  // le courant de chaque contact du câble, borné par la gauge du câble serti (R1) ; le plus faible des deux bouts juge
+  // le courant de chaque contact du câble, borné par la gauge du câble serti (R1) et le fût du contact ; le plus faible des deux bouts juge
   const fils = filsDepuis(V, nom).map(f => { const xs = (contacts.get(f.l) || []).map(x => ({ x, i: intensiteDuContactPose(N, x) })).filter(y => y.i).sort((a, b) => a.i.intensite - b.i.intensite);
-    return xs.length ? { ...f, taille: xs[0].x.taille, contactRepere: xs[0].x.repere } : f; });
+    return xs.length ? { ...f, taille: xs[0].x.taille, contactRepere: xs[0].x.repere, fut: xs[0].x.fut } : f; });
   protectionDesFils(N, cal, d.profil, fils, H).forEach(f => { const nomF = nomDuCableDit(f) + (f.direct ? '' : ' (par ' + f.via + ')'), cables = f.l ? [f.l] : [];
     if (!f.direct) {
-      if (f.verdict === 'fil') out.push({ niveau: 'ko', cables, texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)}${f.pire.t === Infinity ? '' : ' / ' + secondes(f.pire.t)} > ${amperes(f.pire.admise)} admis ${pourPalier(f.pire.palier)}${motFacteur(f.pire.palier === Infinity ? f.facteur : f.facteurCourt)}` });
-      else if (f.verdict === 'calibre') out.push({ niveau: 'att', cables, texte: `${nomF} : ${amperes(f.continu)} admis en continu${motFacteur(f.facteur)} < calibre ${amperes(cal)} — pas protégé en surcharge` });
+      if (f.verdict === 'fil') { const [i, a] = chiffresEnOrdre(f.pire.i, f.pire.admise, 'A'); out.push({ niveau: 'ko', cables, texte: `${nomF} : ${f.pire.nom} ${i}${f.pire.t === Infinity ? '' : ' pendant ' + secondes(f.pire.t)} > ${a} admis ${pourPalier(f.pire.palier)}${motDeclasse(N, H, f, f.pire.t)}` }); }
+      else if (f.verdict === 'calibre') { const [a, c] = chiffresEnOrdre(f.continu, cal, 'A'); out.push({ niveau: 'att', cables, texte: `${nomF} : ${a} admis en continu${motDeclasse(N, H, f, Infinity)} < calibre ${c} — pas protégé en surcharge` }); }
       else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', cables, texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(cal)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuCable(f, x)}` }); } }
     if (f.refuse) out.push({ niveau: 'att', cables, texte: `${nomF} : conducteur ${f.conducteur} sans résistance dans la base, son intensité admissible est inconnue` });
     if (f.horsTable) out.push({ niveau: 'att', cables, texte: `${nomF} : calibre ${amperes(cal)} > ${amperes(f.calibreMax)}, le maximum de l’AC 43.13-1B (table 11-3) pour du ${f.jauge} AWG` });
-    if (f.contactDepasse) out.push({ niveau: 'ko', cables, texte: `${nomF} : le permanent (${amperes(f.permanent)}) dépasse le contact ${motContact(f)}` });
+    if (f.contactDepasse) { const [p, c] = chiffresEnOrdre(f.permanent, f.contact.intensite, 'A'); out.push({ niveau: contactSur(f) ? 'ko' : 'att', cables, texte: `${nomF} : le permanent (${p}) dépasse le contact taille ${f.contact.taille} ${f.contact.parLePlan ? '(' + c + ', ' + f.contactRepere + ')' : 'supposé (' + c + ')'}` }); }
     else if (f.contactSurcharge) out.push({ niveau: 'att', cables, texte: `${nomF} : contact ${motContact(f)} < calibre ${amperes(cal)} — pas protégé en surcharge` }); });
   /* LA CHUTE EN LIGNE — UNE SEULE (v73, l'ingénieur : « 2,28 V sur la fiche du câble, 2,33 V dans les problèmes et le PDF ;
      même mot, même câble, deux valeurs ») : celle que les fiches montrent (`chutesDuDisjoncteur`, 08-fiche — la chute
@@ -153,8 +218,8 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
   const cs = C && C.cs ? C.cs : chutesDepuis(N, V, nom, I, H, d.points.filter(p => p.t !== Infinity && p.i > 0), { famille: d.famille, calibre: cal });
   const pire = c => typeof pireChuteEnPointe === 'function' ? pireChuteEnPointe(c) : (c.pointes || []).find(x => x.trop);
   cs.forEach(c => { const ou = c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : ''), hyp = c.reel ? '' : ' (longueurs d’hypothèse)', niveau = c.reel ? 'ko' : 'att', cables = c.segments.filter(s => s.fil).map(s => s.fil);
-    if (c.trop) out.push({ niveau, cables, texte: `chute en ligne vers ${ou} : ${volts(c.dU)} à ${amperes(I)} > ${volts(c.admis)} admis sous ${nombre(c.tension)} V${hyp}` });
-    else { const p = pire(c); if (p) out.push({ niveau, cables, texte: `chute en ligne vers ${ou} en pointe : ${volts(p.dU)} à ${amperes(p.i)} pendant ${secondes(p.t)} > ${volts(p.admis)} admis${p.intermittent && p.admis !== c.admis ? ' en intermittent' : ''}${hyp}` }); } });
+    if (c.trop) { const [u, a] = chiffresEnOrdre(c.dU, c.admis, 'V'); out.push({ niveau, cables, texte: `chute en ligne vers ${ou} : ${u} à ${amperes(I)} > ${a} admis sous ${nombre(c.tension)} V${hyp}` }); }
+    else { const p = pire(c); if (p) { const [u, a] = chiffresEnOrdre(p.dU, p.admis, 'V'); out.push({ niveau, cables, texte: `chute en ligne vers ${ou} en pointe : ${u} à ${amperes(p.i)} pendant ${secondes(p.t)} > ${a} admis${p.intermittent && p.admis !== c.admis ? ' en intermittent' : ''}${hyp}` }); } } });
   return out; }
 /* LES PART NUMBERS d'un repère, chacun avec les câbles qui le portent : [{ pn, cables, liaisons: [[l, champ]] }], du plus
    porté au moins porté. Un disjoncteur n'en a qu'un ; deux, c'est une faute (« Unifier sur… »). */

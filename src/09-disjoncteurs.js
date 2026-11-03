@@ -10,17 +10,21 @@
    (MS3320) : à 23 °C, 200 % → 3,3–16 s, 500 % → 0,4–1,3 s, 1000 % →
    0,1–0,3 s, comme les feuilles Sensata ; 125 °C est la courbe la plus RAPIDE
    (le bilame est déjà chaud), −55 °C la plus LENTE. Deux lectures :
-     · LA CHARGE : le profil (démarrage, transition, états libres, permanent :
-       un courant pendant une durée) doit rester À GAUCHE de la courbe la plus
-       rapide, sinon le disjoncteur déclenche en service. Chaque phase
-       transitoire consomme la fraction tᵢ / t_decl(Iᵢ) du temps de
-       déclenchement ; le BILAN THERMIQUE est leur somme, qui doit rester
-       sous 1 (la règle des organes à une constante de temps : fusibles,
-       bilames — le simple cumul des durées sous-estimait l'échauffement d'un
-       démarrage fort et bref). Le permanent dure toujours : il reste sous le
-       premier multiple, là où le disjoncteur ne déclenche jamais. Pour
-       l'escalier du graphique, le profil se lit toujours en points cumulés
-       (une phase dure autant que toutes les phases au moins aussi fortes).
+     · LA CHARGE : VALIDE OU PAS VALIDE, sans aucune marge (v80). Le profil
+       (démarrage, transition, états libres, permanent : un courant pendant une
+       durée) se lit en ESCALIER — un état dure autant que tous les états au
+       moins aussi forts que lui — et chaque marche doit rester À GAUCHE de la
+       courbe la plus rapide : sa durée sous le temps de déclenchement à son
+       courant, ou, ce qui est la même chose, son courant sous le SEUIL de la
+       courbe sur cette durée. Et chaque phase transitoire consomme la
+       fraction tᵢ / t_decl(Iᵢ) du temps de déclenchement : le BILAN THERMIQUE
+       est leur somme, qui doit rester sous 1 (la règle des organes à une
+       constante de temps : fusibles, bilames — l'escalier seul sous-estime
+       l'échauffement d'un démarrage fort suivi d'une transition longue). Les
+       deux, toujours : sans préchauffage, le bilan sous 1 met chaque marche à
+       gauche ; un état en service, préchauffé, peut passer au bilan et pas sur
+       sa marche. Le permanent dure toujours : il reste sous le premier
+       multiple, là où le disjoncteur ne disjoncte jamais.
        Le permanent reste aussi sous ce que le disjoncteur GARANTIT de tenir
        à la température max du tableau (table Calibration, « Tient »,
        interpolée en température : MS3320N 0,80 In à 121 °C, Sensata 2TC
@@ -58,17 +62,16 @@
    n'existent pas » ; au-delà de 25 A, le catalogue reste) ; sans famille,
    la gamme du lecteur, la même.
    LE MEILLEUR CALIBRE (`meilleur`, R2 § 3.1 ; NASA TM-102179 étapes 3 à 7) :
-   le plus petit calibre de la gamme qui tient le permanent et les pointes
-   avec la marge (hypothèses `marge` : 10 % de courant, `margeTemps` : 75 %
-   du temps de déclenchement), à la température max du tableau, et qui reste
-   sélectif 2:1 avec ses voisins s'il en est un — sans passer de l'autre côté
-   d'un voisin pour y arriver. Puis, pour chaque fil qui
-   ne le suit pas, la plus petite jauge de sa famille (la base des câbles)
-   qui tient la charge et que ce calibre protège — ON NE MONTE JAMAIS LE
-   CALIBRE POUR SAUVER UN FIL : un disjoncteur plus gros protège moins ; et
-   les contacts que la jauge conseillée change de taille. `calibreIdeal` est
-   ce calibre, `reserve` dit ce qui reste à faire ('fils', 'selectivite',
-   'serre'). « Serré » (tient, sans la marge) reste un avertissement.
+   le plus petit calibre de la gamme qui ne disjoncte pas, à la température
+   max du tableau — aucune marge (v80 : les hypothèses `marge` et
+   `margeTemps` d'autrefois sont ignorées) ; la sélectivité 2:1 avec un
+   voisin se dit, elle ne fait pas monter le calibre. Puis, pour chaque fil
+   qui ne le suit pas, la plus petite jauge de sa famille (la base des
+   câbles) qui porte la charge et que ce calibre protège — ON NE MONTE JAMAIS
+   LE CALIBRE POUR SAUVER UN FIL : un disjoncteur plus gros protège moins ;
+   et les contacts que la jauge conseillée change de taille. `calibreIdeal`
+   est ce calibre, `reserve` dit ce qui reste à faire ('fils',
+   'selectivite').
    Rien ici ne touche à la page : le moteur, comme 09.
    =========================================================================== */
 'use strict';
@@ -79,13 +82,11 @@ const CALIBRES = [1, 3, 5, 7.5, 10, 15, 20, 25];
 // la série des calibres d'aéronef (MS3320N, MS22073M, MS14105, EN 3661 : la table Familles) — ce qu'une famille donnée en
 // plage (« 1 à 25 ») propose
 const SERIE_CALIBRES = [0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10, 15, 20, 25, 30, 35, 40, 50];
-// les marges par défaut du meilleur calibre — les hypothèses `marge` et `margeTemps` les remplacent : 10 % de courant en
-// plus (R2 règle 13), au plus 75 % du temps de déclenchement consommé (R2 § 3.1) ; la sélectivité : l'amont fait au moins
-// le double de l'aval (Sensata : « coordinated ratings » 2:1)
-const MARGE_DISJONCTION = 1, MARGE_FRACTION = 1, SELECTIVITE = 2;   // (v80) plus de marge : valide ou pas valide
+// (v80) plus de marge : valide ou pas valide — le facteur de courant et la part du temps de déclenchement admise valent 1
+// (gardés pour qui les lit) ; la sélectivité : l'amont fait au moins le double de l'aval (Sensata : « coordinated ratings » 2:1)
+const MARGE_DISJONCTION = 1, MARGE_FRACTION = 1, SELECTIVITE = 2;
 // le préchauffage de la feuille MS3320N (table VII) : un disjoncteur préchargé à 60 % de In
 const PRECHARGE = 0.6;
-/* Les marges d'une hypothèse : le facteur de courant (1 + marge %), la fraction du temps de déclenchement admise. */
 // (v80, le lecteur, qui l'avait déjà dit : « valide, pas valide, point — pas de réserve, pas de je ne sais quoi ») : la courbe
 // a une zone où il ne disjoncte pas et une où il disjoncte ; aucune marge de courant, aucune fraction du temps gardée en
 // réserve — un point sous la courbe est valide, un point dessus ne l'est pas. Les hypothèses `marge` et `margeTemps`
@@ -206,7 +207,10 @@ function courbesDeDisjonction(norme, famille, hyp) { const src = norme && norme.
   const tmin = hyp && hyp.tableauMin != null && hyp.tableauMin !== '' ? +hyp.tableauMin : null, tmax = hyp && hyp.tableauMax != null && hyp.tableauMax !== '' ? +hyp.tableauMax : null;
   const cle = [f, tmin, tmax, tous.length].join('|'); let deja = COURBES_LUES.get(tous); if (!deja) COURBES_LUES.set(tous, deja = new Map()); if (deja.has(cle)) return deja.get(cle).slice();
   const rows = tous.filter(d => !f || d.famille === f), m = new Map();
-  rows.forEach(d => (m.get(d.courbe) || m.set(d.courbe, { nom: d.courbe, famille: d.famille, temperature: d.temperature, brut: [] }).get(d.courbe)).brut.push({ m: d.multiple, t: d.temps }));
+  // (un point sans multiple ou sans temps positifs — une ligne mal écrite dans une norme importée — ne se lit pas : son
+  // logarithme n'existe pas)
+  rows.filter(d => d.multiple > 0 && d.temps > 0 && isFinite(d.multiple) && isFinite(d.temps))
+    .forEach(d => (m.get(d.courbe) || m.set(d.courbe, { nom: d.courbe, famille: d.famille, temperature: d.temperature, brut: [] }).get(d.courbe)).brut.push({ m: d.multiple, t: d.temps }));
   const parVitesse = (a, b) => a.points[0].m - b.points[0].m || a.nom.localeCompare(b.nom);
   const cs = [...m.values()].map(c => { const brut = c.brut.slice().sort((a, b) => a.m - b.m || b.t - a.t); let mn = Infinity;
     const points = brut.map(p => { mn = Math.min(mn, p.t); return { m: p.m, t: mn }; }); return { ...c, brut, points }; })
@@ -219,39 +223,56 @@ function courbesDeDisjonction(norme, famille, hyp) { const src = norme && norme.
     const tH = temps.find(t => t >= hi), tH0 = temps.filter(t => t < hi).pop(), tL = temps.filter(t => t <= lo).pop(), tL1 = temps.find(t => t > lo);
     const dessus = tH == null ? null : tH > hi && tH0 != null ? interpolerCourbes(rapide(tH0), rapide(tH), hi) : rapide(tH);
     const dessous = tL == null ? null : tL < lo && tL1 != null ? interpolerCourbes(lente(tL), lente(tL1), lo) : lente(tL);
-    out = [...new Set(cs.filter(c => c.temperature == null || (c.temperature >= lo && c.temperature <= hi)).concat([dessus, dessous].filter(Boolean)))].sort(parVitesse); }
+    out = [...new Set(cs.filter(c => c.temperature == null || (c.temperature >= lo && c.temperature <= hi)).concat([dessus, dessous].filter(c => c && c.points.length)))].sort(parVitesse); }
   deja.set(cle, out); return out.slice(); }
 /* UNE COURBE INTERPOLÉE en température entre deux courbes lues (A à Ta, B à Tb) : à chaque durée des deux courbes, le
    multiple admis, linéaire en température — la même règle que la tenue de la table Calibration ; tenue ensuite en
    enveloppe, comme les courbes lues. */
 function interpolerCourbes(A, B, T) { const w = (T - A.temperature) / (B.temperature - A.temperature);
   const ts = [...new Set(A.points.concat(B.points).map(p => p.t))].sort((x, y) => y - x);
-  const brut = ts.map(t => { const ma = multipleAdmis(A, t), mb = multipleAdmis(B, t); return { m: ma + w * (mb - ma), t }; }).sort((a, b) => a.m - b.m || b.t - a.t);
+  // (une durée qu'une des deux ne lit pas — sous son dernier point, sans pente — ne fait pas de point)
+  const brut = ts.map(t => { const ma = multipleAdmis(A, t), mb = multipleAdmis(B, t); return { m: ma + w * (mb - ma), t }; }).filter(p => isFinite(p.m) && p.m > 0).sort((a, b) => a.m - b.m || b.t - a.t);
   let mn = Infinity; const points = brut.map(p => { mn = Math.min(mn, p.t); return { m: p.m, t: mn }; });
   return { nom: nombreFr(Math.round(T * 10) / 10) + ' °C', famille: A.famille, temperature: T, brut, points, interpolee: true, entre: [A.nom, B.nom] }; }
 /* LA PROTECTION PAR JAUGE (table Protection, AC 43.13-1B table 11-3) : le calibre maximal du disjoncteur et du fusible
    pour cette jauge de fil, la taille de contact usuelle et son courant. Rien pour une jauge que la table ignore (elle
    commence au 22 AWG) : on ne l'invente pas. */
 function protectionDeJauge(norme, jauge) { if (jauge == null) return null; return (normeDesModules(norme).protections || []).find(p => p.jauge === jauge) || null; }
-/* Le temps que le disjoncteur tient à ce multiple : sous le premier point, toujours (Infinity) ; entre deux points, une
-   interpolation en log-log (la courbe d'un thermique est une droite par morceaux sur papier log-log : c'est ce que la
-   figure du constructeur dessine) ; au-delà du dernier, la pente du dernier segment — sauf sur une courbe PARTIELLE
-   (relue sur un bout de figure : 7274 à −55 °C, MS25244) : elle ne se prolonge pas, au-delà de son dernier point elle
-   garde son dernier temps (prolongée, la 7274 à 71 °C déclenchait en 0,27 s à 2 In et la −55 °C passait sous la 25 °C
-   max vers 7 In). Le graphique de la fiche échantillonne cette fonction-ci : ce qu'on voit est exactement ce qui juge. */
-function tempsDeDeclenchement(courbe, multiple) { const P = courbe.points; if (!P.length || !(multiple > 0)) return Infinity;
-  if (multiple < P[0].m) return Infinity; if (P.length === 1) return P[0].t;
-  if (multiple > P[P.length - 1].m && /partielle/i.test(courbe.nom || '')) return P[P.length - 1].t;
-  let i = 1; while (i < P.length - 1 && P[i].m < multiple) i++;
-  const a = P[i - 1], b = P[i]; if (b.m === a.m) return Math.min(a.t, b.t);
-  const k = (Math.log(multiple) - Math.log(a.m)) / (Math.log(b.m) - Math.log(a.m));
+/* LA COURBE EST UNE FRONTIÈRE, et rien d'autre (v84) : sur papier log-log, la ligne brisée de ses points (l'enveloppe :
+   par multiple croissant, le temps ne remonte jamais), la verticale de son premier multiple au-dessus de son premier
+   point, et, au-delà de son dernier point, le prolongement de son dernier segment (la pente d'un bilame vers les forts
+   courants ; un dernier segment vertical ou horizontal garde son dernier temps). Un point (multiple, durée) qui touche
+   la frontière ou passe au-delà DISJONCTE ; en deçà, il ne disjoncte pas. Les deux lectures ci-dessous sont les deux
+   manières de lire LA MÊME frontière, l'une l'inverse exacte de l'autre (tests/disjoncteur-maths.js) :
+       durée < tempsDeDeclenchement(multiple)   ⟺   multiple < multipleAdmis(durée)   ⟺   il ne disjoncte pas.
+   (v84 : la règle « une courbe partielle ne se prolonge pas » est tombée — elle gardait le dernier temps au-delà du
+   dernier point : la 7274 à 71 °C, la plus RAPIDE, y devenait plus lente que celle de 25 °C — 61 ms contre 42 ms à
+   10 In —, et la −55 °C, la plus LENTE, ne laissait passer que 3 In pendant 2 s, moins que la 25 °C max (3,7 In) ; et
+   l'inverse ne le savait pas : le seuil disait « disjoncte » là où le temps disait « ne disjoncte pas ».) */
+const penteFinale = P => { const n = P.length, a = P[n - 2], b = P[n - 1];
+  return n > 1 && b.m > a.m && b.t < a.t ? (Math.log(b.t) - Math.log(a.t)) / (Math.log(b.m) - Math.log(a.m)) : 0; };
+/* Le temps de déclenchement à ce multiple : sous le premier multiple, jamais (Infinity) ; entre deux points, une droite
+   en log-log (la courbe d'un thermique est une droite par morceaux sur papier log-log : c'est ce que la figure du
+   constructeur dessine) ; sur un trait vertical (deux points lus au même multiple), le temps le plus court ; au-delà du
+   dernier, la pente du dernier segment. Le graphique, lui, dessine une courbe lissée de ces points (08-courbe-dj, à 5 %
+   au plus en temps de chacun) : le jugement reste sur les points lus. */
+function tempsDeDeclenchement(courbe, multiple) { const P = courbe.points, n = P.length; if (!n || !(multiple > 0) || multiple < P[0].m) return Infinity;
+  // le dernier point lu à ce multiple ou avant (sur un trait vertical, le plus bas)
+  let j = 0; while (j + 1 < n && P[j + 1].m <= multiple) j++;
+  const a = P[j]; if (j === n - 1) { const s = penteFinale(P); return s && multiple > a.m ? Math.exp(Math.log(a.t) + s * (Math.log(multiple) - Math.log(a.m))) : a.t; }
+  if (a.m === multiple) return a.t;
+  const b = P[j + 1], k = (Math.log(multiple) - Math.log(a.m)) / (Math.log(b.m) - Math.log(a.m));
   return Math.exp(Math.log(a.t) + k * (Math.log(b.t) - Math.log(a.t))); }
-/* L'inverse : le multiple qu'une durée admet encore (« 5 s admettent jusqu'à 1,43 In ») ; une durée infinie, le premier
-   multiple — en dessous, le disjoncteur ne déclenche jamais. Sous le dernier point, le dernier multiple : l'outil ne
-   prête pas au disjoncteur plus qu'il n'a lu. */
-function multipleAdmis(courbe, duree) { const P = courbe.points; if (!P.length) return Infinity; if (!isFinite(duree) || duree >= P[0].t) return P[0].m;
-  if (duree <= P[P.length - 1].t) return P[P.length - 1].m; let i = 1; while (i < P.length - 1 && P[i].t > duree) i++;
-  const a = P[i - 1], b = P[i]; if (a.t === b.t) return b.m; const k = (Math.log(duree) - Math.log(a.t)) / (Math.log(b.t) - Math.log(a.t));
+/* L'inverse : le multiple qu'une durée admet encore (« sur 5 s, il ne disjoncte qu'au-delà de 1,45 In ») — le SEUIL ; une
+   durée infinie, le premier multiple (en dessous, le disjoncteur ne disjoncte jamais) ; sur un palier (deux points lus au
+   même temps), le multiple le plus bas ; sous le dernier point, la pente du dernier segment, comme le temps (sans pente :
+   rien ne le fait disjoncter si vite, Infinity) ; une durée nulle n'est rien (Infinity). */
+function multipleAdmis(courbe, duree) { const P = courbe.points, n = P.length; if (!n || !(duree > 0)) return Infinity; if (duree >= P[0].t) return P[0].m;
+  // le premier point lu à cette durée ou plus court (sur un palier, le plus à gauche)
+  let j = 1; while (j < n && P[j].t > duree) j++;
+  if (j === n) { const a = P[n - 1], s = penteFinale(P); return s ? Math.exp(Math.log(a.m) + (Math.log(duree) - Math.log(a.t)) / s) : Infinity; }
+  const a = P[j - 1], b = P[j]; if (b.t === duree) return b.m;
+  const k = (Math.log(duree) - Math.log(a.t)) / (Math.log(b.t) - Math.log(a.t));
   return Math.exp(Math.log(a.m) + k * (Math.log(b.m) - Math.log(a.m))); }
 
 /* LES ÉTATS d'un profil : le démarrage, la transition (chacun un courant et une durée), les états qu'on ajoute
@@ -272,82 +293,102 @@ function pointsDuProfil(profil) { const phases = phasesDuProfil(profil);
     const t = phases.reduce((s, q) => q.i >= p.i ? s + q.t : s, 0); pts.push({ nom: phases.filter(q => q.i === p.i).map(q => q.nom).join(' et '), k: p.k, i: p.i, t }); });
   return pts.sort((a, b) => b.i - a.i); }
 /* LE BILAN THERMIQUE d'un profil sur une courbe, pour un calibre : chaque phase transitoire consomme la fraction
-   tᵢ / t_decl(Iᵢ) du temps de déclenchement, la somme doit rester sous 1 ; le permanent reste sous le premier multiple
-   — et sous ce que le disjoncteur garantit de tenir (`o.tient`, en multiple de In : la table Calibration) quand on le
-   donne. `k` grossit les courants (1,1 : la marge du meilleur calibre) ; `o.chauffe` divise le temps de déclenchement des
-   états qui surviennent en service (le préchauffage). */
+   tᵢ / t_decl(Iᵢ) du temps de déclenchement (la règle de Miner, celle des organes à une constante de temps), la somme
+   doit rester sous 1 ; le permanent reste sous le premier multiple — et sous ce que le disjoncteur garantit de tenir
+   (`o.tient`, en multiple de In : la table Calibration) quand on le donne. `o.chauffe` divise le temps de déclenchement
+   des états qui surviennent en service (le préchauffage). Aucune marge : sous 1, il ne disjoncte pas ; à 1 ou au-delà,
+   il disjoncte. (Un 1e-12 près, au plus, sur ce qu'il garantit : l'arrondi d'une multiplication, pas une réserve.) */
 const enService = p => /^plus/.test(String(p && p.k || ''));
-function bilanThermique(courbe, calibre, phases, k, o) { let somme = 0, permOk = true; k = k || 1; o = o || {};
-  phases.forEach(p => { const m = p.i * k / calibre, t0 = tempsDeDeclenchement(courbe, m), t = o.chauffe > 1 && enService(p) && t0 !== Infinity ? t0 / o.chauffe : t0;
-    if (p.t === Infinity) { if (t0 !== Infinity || (o.tient != null && m > o.tient + 1e-9)) permOk = false; } else if (t !== Infinity) somme += p.t / t; });
-  return { somme, permOk, sommeOk: somme < 1 - 1e-9, ok: permOk && somme < 1 - 1e-9 }; }
+const chauffeDe = (p, chauffe) => chauffe > 1 && enService(p) ? chauffe : 1;
+function bilanThermique(courbe, calibre, phases, o) { let somme = 0, permOk = true; o = o || {};
+  phases.forEach(p => { const m = p.i / calibre, t0 = tempsDeDeclenchement(courbe, m);
+    if (p.t === Infinity) { if (t0 !== Infinity || (o.tient != null && m > o.tient + 1e-12)) permOk = false; }
+    else if (t0 !== Infinity) somme += p.t * chauffeDe(p, o.chauffe) / t0; });
+  return { somme, permOk, sommeOk: somme < 1, ok: permOk && somme < 1 }; }
 /* LE PRÉCHAUFFAGE d'un calibre sous un profil : le facteur de l'hypothèse (MS3320N table VII, préchargé à 60 % de In :
    ÷ 1,6 à 3,7), en plein dès que le permanent atteint 60 % de In, au-dessous en proportion du carré du courant
    (l'échauffement d'un bilame va comme I²) ; sans permanent, rien. */
 function facteurPrechauffage(H, phases, calibre) { const k = H ? +H.prechauffage : NaN; if (!(k > 1) || !(calibre > 0)) return 1;
   const perm = phases.filter(p => p.t === Infinity).reduce((m, p) => Math.max(m, p.i), 0); if (!(perm > 0)) return 1;
   return 1 + (k - 1) * Math.min(1, Math.pow(perm / (PRECHARGE * calibre), 2)); }
-/* LE VERDICT d'un calibre sur un profil. `points` : l'escalier, chaque point jugé sur chaque courbe (ce que le
-   disjoncteur tient à ce multiple — pour le permanent, sur la courbe qui juge, au plus ce qu'il garantit, `garanti` —, la
-   fraction que ses phases consomment, s'il tient) ; `valide` : le bilan thermique tient sur la courbe la plus rapide ;
-   `avecMarge` : il tient encore avec la marge de courant et sous la fraction admise du temps de déclenchement (hypothèses
-   `marge`, `margeTemps`) ; `serre` : valide sans la marge ; `gamme` : chaque calibre du catalogue de la famille (et le
-   retenu s'il est ailleurs : `catalogue` faux), jugé — valide, serre, marge, somme, fils (les protège tous et reste sous
-   ce qu'ils admettent), selectif (2:1 avec les disjoncteurs voisins) ; `meilleur` : le meilleur calibre et ses fils
-   (`meilleurDe`) — `calibreIdeal` et `reserve` le reprennent ; `tenue` : ce que la famille garantit à la température max
-   du tableau. `contexte` : { famille (celle du part number, `familleDuPn` : son catalogue, sa calibration, sa courbe), pn,
-   fils, hyp, autres } — les fils aval, les hypothèses, les calibres des disjoncteurs voisins. */
+/* LE POINT QUI DÉCIDE d'un calibre (v84) : quand il disjoncte, le permanent s'il est en cause (il disjoncte quoi qu'il
+   arrive), sinon l'état qui passe le plus loin au-delà de son seuil — et, si chaque état passe seul, celui que le bilan
+   désigne (`parLaSomme`) ; quand il ne disjoncte pas, l'état le plus près de son seuil, EN AMPÈRES (le permanent compris :
+   « 9 A en permanence, il ne disjoncte qu'au-delà de 9,24 A » est plus près que « 9,31 A pendant 2 min, au-delà de
+   12 A »). Ses chiffres disent toujours la même chose que le verdict : `seuil` (A), `avant` (s), `ok`. */
+function pointQuiDecide(points) { const P = points.filter(p => p.marges && p.marges.length), ko = P.filter(p => p.ok === false);
+  if (ko.length) return ko.find(p => p.t === Infinity) || ko.slice().sort((a, b) => b.i / b.seuil - a.i / a.seuil)[0];
+  return P.slice().sort((a, b) => a.seuil / a.i - b.seuil / b.i)[0] || null; }
+/* LE VERDICT d'un calibre sur un profil — VALIDE OU PAS VALIDE, point (v80 ; v84 : les trois lectures toujours d'accord).
+   `points` : l'escalier (`pointsDuProfil`), chaque point jugé sur chaque courbe (`marges[k]`) : `temps`, le temps où il
+   disjoncterait à ce courant (le préchauffage compris) ; `admis`, le SEUIL — le courant au-delà duquel il disjoncte sur
+   cette durée (pour le permanent, sur la courbe qui juge, au plus ce qu'il garantit, `garanti`) ; `fraction`, la part de
+   ses phases dans le bilan ; `ok`. Les trois disent la même chose, par construction (tests/disjoncteur-maths.js) :
+       ok  ⟺  durée < temps  ⟺  courant < seuil      (le permanent : temps infini et courant ≤ ce qu'il garantit)
+   — sauf le point que le BILAN désigne quand chaque état passe seul mais que leur somme atteint 1 (`parLaSomme` : ok faux,
+   alors que son courant reste sous son seuil). Chaque point porte aussi ces chiffres à plat, sur la courbe qui juge :
+   `seuil`, `avant`, `parLaSomme`. `valide` : chaque point ne disjoncte pas ET le bilan reste sous 1 sur la courbe la plus
+   rapide — l'un et l'autre, jamais l'un sans l'autre (un état en service, préchauffé, peut passer au bilan et pas sur
+   l'escalier) ; `pire` : le point qui décide (`pointQuiDecide`). `gamme` : chaque calibre du catalogue de la famille (et
+   le retenu s'il est ailleurs : `catalogue` faux), jugé — valide, somme, tenu (ce qu'il garantit au permanent), pire,
+   fils (les protège tous et reste sous ce qu'ils admettent), selectif (2:1 avec les disjoncteurs voisins) ; `meilleur` :
+   le plus petit calibre qui ne disjoncte pas, et ses fils (`meilleurDe`) — `calibreIdeal` et `reserve` le reprennent ;
+   `tenue` : ce que la famille garantit à la température max du tableau. Les champs de la marge d'autrefois restent pour
+   qui les lit, égaux au verdict : `avecMarge` = `valide`, `marge` = `valide`, `serre` faux, `sommeMarge` = `somme`,
+   `permanentMargeOk` = `permanentOk`. `contexte` : { famille (celle du part number, `familleDuPn` : son catalogue, sa
+   calibration, sa courbe), pn, fils, hyp, autres } — les fils aval, les hypothèses, les calibres des disjoncteurs voisins. */
 function verdictDisjonction(norme, famille, calibre, profil, contexte) { contexte = contexte || {};
   const H = { ...HYPOTHESES, ...(contexte.hyp || {}) }, F = contexte.famille && typeof contexte.famille === 'object' ? contexte.famille : null, M = margesDuMeilleur(H);
   const courbes = courbesDeDisjonction(norme, famille || (F && F.courbe) || H.courbe || '', H), pts = pointsDuProfil(profil), phases = phasesDuProfil(profil), fils = contexte.fils || [], autres = (contexte.autres || []).filter(c => c > 0);
   // ce que le disjoncteur garantit de tenir à la température max du tableau, là où la courbe la plus rapide juge
   const tenue = courbes.length ? tenueGarantie(norme, F, courbes[0].famille, H.tableauMax) : null, tientM = tenue ? tenue.tient : null;
-  const juger = cal => { const chauffe = facteurPrechauffage(H, phases, cal), opt = i => ({ tient: i === 0 ? tientM : null, chauffe });
-    const bilans = courbes.map((c, i) => bilanThermique(c, cal, phases, 1, opt(i))), marges = courbes.map((c, i) => bilanThermique(c, cal, phases, M.k, opt(i)));
-    const points = pts.map(p => { const multiple = p.i / cal, qs = phases.filter(q => q.i === p.i && q.t !== Infinity), duree = qs.reduce((s, q) => s + q.t, 0), chaud = qs.some(enService) ? chauffe : 1;
-      const m = courbes.map((c, k) => { const brut = tempsDeDeclenchement(c, multiple), temps = brut === Infinity ? Infinity : brut / chaud;
-        const garanti = p.t === Infinity && k === 0 && tientM != null ? tientM * cal : Infinity, admis = Math.min(multipleAdmis(c, p.t === Infinity ? Infinity : p.t * chaud) * cal, garanti);
-        const fraction = p.t === Infinity || temps === Infinity ? 0 : duree / temps, ok = p.t === Infinity ? temps === Infinity && p.i <= garanti + 1e-9 : temps > p.t;
-        return { courbe: c.nom, temps, fraction, somme: bilans[k].somme, ok, rapport: p.t === Infinity ? (ok ? Infinity : 0) : temps / p.t, admis, marge: admis / p.i, garanti: isFinite(garanti) ? garanti : null }; });
-      return { ...p, multiple, duree, chauffe: chaud, marges: m }; });
-    // la somme déborde alors que chaque point tient seul : le point qui pèse le plus est le fautif
-    courbes.forEach((c, k) => { if (bilans[k].sommeOk) return; const gros = points.filter(p => p.t !== Infinity).sort((a, b) => b.marges[k].fraction - a.marges[k].fraction)[0]; if (gros) gros.marges[k].ok = false; });
-    const b0 = bilans[0], bm = marges[0], avecMarge = !!(b0 && b0.ok && bm.ok && b0.somme <= M.fraction + 1e-9);
-    const gros = points.filter(q => q.t !== Infinity).sort((a, b) => b.marges[0].fraction - a.marges[0].fraction)[0] || null;
-    points.forEach(p => { const m = p.marges[0]; p.ok = m ? m.ok : null;
-      // serré : tient, mais sans la marge — le permanent sans sa marge de courant ; le transitoire qui pèse le plus
-      p.serre = !!(m && m.ok && (p.t === Infinity ? m.marge < M.k - 1e-9 : p === gros && (!bm.sommeOk || b0.somme > M.fraction + 1e-9))); });
+  const juger = cal => { const chauffe = facteurPrechauffage(H, phases, cal);
+    const bilans = courbes.map((c, k) => bilanThermique(c, cal, phases, { tient: k === 0 ? tientM : null, chauffe }));
+    const points = pts.map(p => { const multiple = p.i / cal, perm = p.t === Infinity, qs = phases.filter(q => q.i === p.i && q.t !== Infinity), duree = qs.reduce((s, q) => s + q.t, 0), chaud = qs.some(enService) ? chauffe : 1;
+      const marges = courbes.map((c, k) => { const brut = tempsDeDeclenchement(c, multiple), temps = brut === Infinity ? Infinity : brut / chaud, tient = perm && k === 0 && tientM != null ? tientM : Infinity;
+        const garanti = tient * cal, admis = Math.min(multipleAdmis(c, perm ? Infinity : p.t * chaud) * cal, garanti);
+        // la part de ses phases dans le bilan, chacune à son préchauffage — la somme de celles des points est le bilan
+        const fraction = perm || brut === Infinity ? 0 : qs.reduce((s, q) => s + q.t * chauffeDe(q, chauffe) / brut, 0);
+        const ok = perm ? brut === Infinity && multiple <= tient + 1e-12 : p.t < temps;
+        return { courbe: c.nom, temps, fraction, somme: bilans[k].somme, ok, parLaSomme: false, rapport: perm ? (ok ? Infinity : 0) : temps / p.t, admis, marge: admis / p.i, garanti: isFinite(garanti) ? garanti : null }; });
+      return { ...p, multiple, duree, chauffe: chaud, marges }; });
+    // le bilan atteint 1 alors que chaque point passe seul : le point qui pèse le plus disjoncte, par la somme
+    courbes.forEach((c, k) => { if (bilans[k].sommeOk) return; const gros = points.filter(p => p.t !== Infinity).sort((a, b) => b.marges[k].fraction - a.marges[k].fraction)[0];
+      if (gros && gros.marges[k].ok) { gros.marges[k].ok = false; gros.marges[k].parLaSomme = true; } });
+    points.forEach(p => { const m = p.marges[0]; p.ok = m ? m.ok : null; p.serre = false; p.seuil = m ? m.admis : null; p.avant = m ? m.temps : null; p.parLaSomme = !!(m && m.parLaSomme); });
+    const b0 = bilans[0], valide = !!(b0 && b0.ok && points.every(p => p.ok !== false));
     // ce que le calibre garantit au permanent sur la courbe qui juge : la courbe et la calibration, la plus basse
     const tenu = courbes.length ? Math.min(courbes[0].points[0].m, tientM != null ? tientM : Infinity) * cal : null;
-    return { points, valide: !!(b0 && b0.ok), avecMarge, serre: !!(b0 && b0.ok && !avecMarge), somme: b0 ? b0.somme : 0, sommeMarge: bm ? bm.somme : 0, permanentOk: !!(b0 && b0.permOk), permanentMargeOk: !!(bm && bm.permOk), tenu, chauffe, bilans }; };
-  const J = calibre > 0 && courbes.length ? juger(calibre) : null;
-  const points = J ? J.points : pts.map(p => ({ ...p, multiple: null, marges: [], ok: null, serre: false }));
+    return { points, valide, avecMarge: valide, serre: false, somme: b0 ? b0.somme : 0, sommeMarge: b0 ? b0.somme : 0, permanentOk: !!(b0 && b0.permOk), permanentMargeOk: !!(b0 && b0.permOk), tenu, chauffe, bilans, pire: pointQuiDecide(points) }; };
+  // chaque calibre jugé une fois (le retenu est aussi dans la gamme)
+  const juges = new Map(), juge = c => { if (!juges.has(c)) juges.set(c, juger(c)); return juges.get(c); };
+  const J = calibre > 0 && courbes.length ? juge(calibre) : null;
+  const points = J ? J.points : pts.map(p => ({ ...p, multiple: null, marges: [], ok: null, serre: false, seuil: null, avant: null, parLaSomme: false }));
   const valide = !!(J && pts.length && J.valide);
   // la gamme : le catalogue de la famille (sans famille, la gamme du lecteur), et le calibre retenu s'il est ailleurs
   const catalogue = calibresDeLaFamille(F, H), calibres = [...new Set(catalogue.concat(calibre > 0 ? [calibre] : []))].sort((a, b) => a - b), protCtx = contexteDeProtection(norme, H, courbes, pts);
   const gamme = calibres.map(c => { const dans = catalogue.some(x => Math.abs(x - c) < 1e-9);
-    if (!(courbes.length && pts.length)) return { calibre: c, catalogue: dans, valide: null, serre: false, marge: null, somme: null, fils: null, selectif: null, ideal: false };
-    const j = juger(c), pf = fils.map(f => protegerFil(norme, c, f, H, protCtx));
-    return { calibre: c, catalogue: dans, valide: j.valide, serre: j.serre, marge: j.avecMarge, somme: j.somme, sommeMarge: j.sommeMarge, permanentOk: j.permanentOk, permanentMargeOk: j.permanentMargeOk, tenu: j.tenu,
+    if (!(courbes.length && pts.length)) return { calibre: c, catalogue: dans, valide: null, serre: false, marge: null, somme: null, pire: null, fils: null, selectif: null, ideal: false };
+    const j = juge(c), pf = fils.map(f => protegerFil(norme, c, f, H, protCtx));
+    return { calibre: c, catalogue: dans, valide: j.valide, serre: false, marge: j.valide, somme: j.somme, sommeMarge: j.somme, permanentOk: j.permanentOk, permanentMargeOk: j.permanentOk, tenu: j.tenu, pire: j.pire,
       fils: fils.length ? pf.every(f => f.protege !== false && f.verdict !== 'calibre' && !f.horsTable && !f.contactSurcharge) : null,
       selectif: autres.length ? autres.every(a => Math.max(a, c) >= SELECTIVITE * Math.min(a, c) - 1e-9) : null, ideal: false }; });
   const meilleur = meilleurDe(norme, { F, H, M, tenue, courbes, pts, fils, gamme, protCtx, autres, pn: contexte.pn || (F && F.pn) || '' });
   const calibreMini = (gamme.find(g => g.valide) || {}).calibre || null, calibreIdeal = meilleur.calibre, reserve = meilleur.reserve;
   gamme.forEach(g => { g.ideal = g.calibre === calibreIdeal; });
-  // le pire point : le fautif qui pèse le plus dans le bilan, sinon le plus près de la courbe
-  const pire = points.filter(p => p.marges.length && p.ok === false).sort((a, b) => b.marges[0].fraction - a.marges[0].fraction)[0] || points.filter(p => p.marges.length).sort((a, b) => a.marges[0].rapport - b.marges[0].rapport)[0] || null;
-  return { courbes, points, valide, serre: !!(J && valide && J.serre), avecMarge: !!(J && J.avecMarge), somme: J ? J.somme : null, bilans: J ? J.bilans : [], gamme, catalogue, calibreMini, calibreIdeal, reserve, pire, meilleur,
+  return { courbes, points, valide, serre: false, avecMarge: valide, somme: J ? J.somme : null, bilans: J ? J.bilans : [], gamme, catalogue, calibreMini, calibreIdeal, reserve, pire: J ? J.pire : null, meilleur,
     famille: F, tenue, marges: M, chauffe: J ? J.chauffe : 1, calibre: calibre > 0 ? calibre : null, autres, sansProfil: !pts.length, sansCourbe: !courbes.length }; }
 
 /* LES TROIS MOTS DU VERDICT (v73, l'ingénieur : « les mots du verdict changent d'un écran à l'autre » — la fiche disait
    « passe / ne passe pas — il touche la courbe », le récapitulatif « tient / touche la courbe / déclenche », les
    problèmes « calibre à revoir ») : UNE table, que la fiche, le récapitulatif, les problèmes, le PDF et l'export lisent.
-     · PASSE : il ne déclenche pas, avec la marge (`--ok`) ;
-     · JUSTE : il ne déclenche pas, mais sans la marge — il touche la courbe (`--warn`) ;
-     · DÉCLENCHE : le bilan thermique déborde, ou le permanent dépasse ce qu'il garantit (`--ko`).
-   « Touche la courbe », « sans la marge » vont dans la bulle, jamais à la place du mot. `verdictDeCalibre(g)` : une ligne
-   de la gamme ({ valide, marge }) ou le verdict d'ensemble (`verdictDisjonction`, `disjonctionDe` : celui du calibre
-   retenu) ; null quand rien ne se juge (pas de profil, pas de courbe). */
+     · PASSE : il ne disjoncte pas (`--ok`) ;
+     · DÉCLENCHE : un état passe au-delà de son seuil, le bilan thermique atteint 1, ou le permanent dépasse ce qu'il
+       garantit (`--ko`) ;
+     · JUSTE n'est plus qu'un nom (v77 : « soit c'est rouge, soit c'est vert » ; v80 : plus de marge) : il disjoncte, et
+       le moteur ne le rend plus (`marge` vaut `valide`).
+   `verdictDeCalibre(g)` : une ligne de la gamme ({ valide, marge }) ou le verdict d'ensemble (`verdictDisjonction`,
+   `disjonctionDe` : celui du calibre retenu) ; null quand rien ne se juge (pas de profil, pas de courbe). */
 const VERDICTS_CALIBRE = Object.freeze({
   passe: Object.freeze({ cle: 'passe', mot: 'ne disjoncte pas', encre: '--ok', etat: 'ok', bulle: 'Il ne disjoncte pas : chaque point du profil reste du côté de sa courbe où il ne coupe pas.' }),
   // (v77, le lecteur : « si ça touche, c'est rouge — il faut arrêter de mettre presque ; soit c'est rouge, soit c'est vert »)
@@ -359,22 +400,21 @@ function verdictDeCalibre(g) { if (!g || g.sansProfil || g.sansCourbe) return nu
   const v = g.valide, m = g.marge != null && typeof g.marge !== 'object' ? g.marge : g.avecMarge; if (v == null) return null;
   return v === false ? VERDICTS_CALIBRE.declenche : m ? VERDICTS_CALIBRE.passe : VERDICTS_CALIBRE.juste; }
 /* LE POURQUOI CHIFFRÉ d'un calibre de la gamme, en une ligne (la bulle d'un cran, d'une puce, d'une ligne du
-   récapitulatif) : « 5 A — déclenche : démarrage et transition, 9,31 A pendant 2,1 min », « 10 A — juste : ses pointes
-   consomment 82 % du temps de déclenchement (75 % au plus) », « 15 A — passe : ses pointes consomment 31 % du temps de
-   déclenchement ». `d` : le verdict d'un disjoncteur (`disjonctionDe`, 08 : son profil, sa courbe, son contexte). Rend
-   { verdict, phrase } ou null. */
+   récapitulatif) : « 5 A — disjoncte : démarrage et transition, 9,31 A pendant 2,1 min » (son point qui décide),
+   « 15 A — ne disjoncte pas : ses pointes consomment 31 % du temps de déclenchement ». `d` : le verdict d'un disjoncteur
+   (`disjonctionDe`, 08 : son profil, sa courbe, son contexte). Rend { verdict, phrase } ou null. */
 function pourquoiDuCalibre(norme, d, cal) { if (!d || !(cal > 0) || d.sansProfil || d.sansCourbe) return null;
-  const g = (d.gamme || []).find(x => Math.abs(x.calibre - cal) < 1e-9); let j = null;
-  try { j = verdictDisjonction(norme, d.courbe || '', cal, d.profil, d.contexte || {}); } catch (_) { j = null; }
-  const v = verdictDeCalibre(g || (j ? { valide: j.valide, avecMarge: j.avecMarge } : null)); if (!v) return null;
-  const A = motA(cal), M = (j && j.marges) || margesDuMeilleur(null), p = j ? j.pire : null, s = g ? g.somme : j ? j.somme : null, sm = g ? g.sommeMarge : null;
+  // (v84) la ligne de sa gamme porte déjà son point qui décide : le moteur ne rejuge plus tout le profil pour une bulle
+  const ligne = G => (G || []).find(x => Math.abs(x.calibre - cal) < 1e-9);
+  let g = ligne(d.gamme); if (!g) try { g = ligne(verdictDisjonction(norme, d.courbe || '', cal, d.profil, d.contexte || {}).gamme); } catch (_) { g = null; }
+  const v = verdictDeCalibre(g); if (!v) return null;
+  const A = motA(cal), p = g.pire, s = g.somme, T = g.tenu;
   const quand = q => q.t === Infinity ? `le permanent, ${motA(q.i)} pour toujours` : `${q.nom}, ${motA(q.i)} pendant ${motDuree(q.t)}`;
   let suite = '';
-  if (v === VERDICTS_CALIBRE.declenche) suite = p ? quand(p) + (p.t === Infinity && g && g.tenu ? ` : il ne garantit que ${motA(g.tenu)}` : '') : '';
-  else if (v === VERDICTS_CALIBRE.juste) suite = g && !g.permanentMargeOk ? `le permanent, sans ${nombreFr(M.marge)} % de marge sous les ${motA(g.tenu)} qu’il garantit`
-    : s != null && sm != null ? `ses pointes consomment ${motPct(s)} du temps de déclenchement, ${motPct(sm)} avec ${nombreFr(M.marge)} % de marge (${nombreFr(Math.round(M.fraction * 100))} % au plus)` : 'il touche la courbe, sans la marge';
+  // (« juste » n'existe plus que de nom : il disjoncte, comme « déclenche » — aucune marge)
+  if (v !== VERDICTS_CALIBRE.passe) suite = p ? quand(p) + (p.t === Infinity && T ? ` : il ne garantit que ${motA(T)}` : '') : '';
   else suite = s != null && s > 0 ? `ses pointes consomment ${motPct(s)} du temps de déclenchement` : 'le profil reste sous sa courbe, avec la marge';
-  if (g && g.fils === false && v !== VERDICTS_CALIBRE.declenche) suite += (suite ? ' ; ' : '') + 'des câbles à grossir';
+  if (g.fils === false && v === VERDICTS_CALIBRE.passe) suite += (suite ? ' ; ' : '') + 'des câbles à grossir';
   return { verdict: v, phrase: `${A} — ${v.mot}${suite ? ' : ' + suite : ''}` }; }
 /* LE CATALOGUE ENTIER d'une famille, sans la liste préférée du lecteur (« Tout le catalogue MS3320 (13) ») : ses calibres
    (une plage « 1 à 25 » prend la série d'aéronef qu'elle couvre) ; sans famille, la gamme du lecteur. */
@@ -382,11 +422,9 @@ function catalogueDeLaFamille(F) { const cs = !F || !F.calibres || !F.calibres.l
   return [...new Set(cs)].sort((a, b) => a - b); }
 
 /* LE MEILLEUR CALIBRE, et ses fils (R2 § 3.1 ; NASA TM-102179 étapes 3 à 7 ; AC 43.13-1B § 11-48, § 11-67) :
-     1. le calibre : le plus petit du catalogue qui tient le permanent (courant majoré de la marge, sous ce qu'il garantit
-        à la température max du tableau) et les pointes (courant majoré, au plus `margeTemps` de son temps de
-        déclenchement), et qui reste sélectif 2:1 avec ses voisins quand un calibre qui tient l'est, du même côté de chacun
-        que le plus petit qui tient (l'aval reste sous l'amont) ; sinon le plus petit qui tient avec la marge (réserve
-        'selectivite') ; sinon le plus petit qui tient, serré (réserve 'serre') ;
+     1. le calibre : le plus petit du catalogue qui ne disjoncte pas (`verdictDisjonction` : le permanent sous ce qu'il
+        garantit à la température max du tableau, chaque état sous son seuil, le bilan sous 1) — sans aucune marge ; s'il
+        n'est pas à 2:1 avec un voisin, il reste le retenu et la réserve le dit ('selectivite') ;
      2. chaque fil qu'il nourrit doit le SUIVRE (`filSuit`) : porter la charge, admettre le calibre en service, rester dans
         la table 11-3, avoir un contact qui l'admet, ne pas s'abîmer avant que le disjoncteur s'ouvre. Sinon on ne monte
         pas le calibre — un disjoncteur plus gros protège moins —, on grossit le fil : la plus petite jauge de sa famille
@@ -396,19 +434,17 @@ function catalogueDeLaFamille(F) { const cs = !F || !F.calibres || !F.calibres.l
    marge: { courant (%), temps (%), permanent (A), garanti (A), tient (× In), temperature, source, fraction, fractionMarge,
    reste, horsPlage }, filsAChanger: [{ cable, actuel, propose, raison, jaugeActuelle, jaugeProposee, masseActuelle,
    masseProposee, direct, via, bouts, aucune }], contactsTouches: [{ cable, actuel, propose, intensite, repere, bouts,
-   raison }], filsInconnus, selectif, serre, reserve ('' | 'fils' | 'selectivite' | 'serre') }. */
+   raison }], filsInconnus, selectif, serre (toujours faux : plus de marge), reserve ('' | 'fils' | 'selectivite') }. */
 function meilleurDe(norme, o) { const { F, H, M, tenue, courbes, pts, fils, gamme, protCtx } = o;
   const cat = gamme.filter(g => g.catalogue), nomF = F ? 'de la famille ' + F.famille : 'de la gamme du lecteur';
   const vide = { calibre: null, pn: null, famille: F ? F.famille : '', catalogue: cat.map(g => g.calibre), filsAChanger: [], contactsTouches: [], filsInconnus: [], selectif: null, serre: false, reserve: '', marge: null };
   if (!courbes.length) return { ...vide, pourquoi: 'aucune courbe de disjonction dans la norme : rien ne se choisit' };
   if (!pts.length) return { ...vide, pourquoi: 'le profil de charge est à renseigner : sans lui, aucun calibre ne se choisit' };
-  // sélectif, mais du même côté de chaque voisin que le plus petit calibre qui tient : sous un 5 A, un 1,5 A de charge ne
-  // passe pas au 10 A pour être à 2:1 (il deviendrait l'amont de son amont) — sans calibre à 2:1 de ce côté, la réserve le dit
-  const avecMarge = cat.filter(g => g.marge), c0 = avecMarge.length ? avecMarge[0].calibre : null, autres = o.autres || [];
-  const memeCote = x => autres.every(a => (x.calibre < a - 1e-9) === (c0 < a - 1e-9));
-  // (v80) le retenu est le plus petit qui ne disjoncte pas — la sélectivité avec un voisin se dit, elle ne fait plus monter
-// le calibre (le lecteur : « 7,5 A ne disjoncte pas, pourquoi 10 A retenu ? »)
-const g = avecMarge[0] || cat.find(x => x.valide) || null; void memeCote;
+  // (v80) le retenu est LE PLUS PETIT QUI NE DISJONCTE PAS — la sélectivité avec un voisin se dit (réserve
+  // 'selectivite'), elle ne fait plus monter le calibre (le lecteur : « 7,5 A ne disjoncte pas, pourquoi 10 A retenu ? ») ;
+  // ne pas disjoncter est monotone en calibre (un calibre plus gros a un temps de déclenchement plus long à chaque courant,
+  // garantit plus au permanent, se préchauffe moins) : au-dessus du retenu, aucun ne disjoncte (tests/disjoncteur-maths.js)
+  const g = cat.find(x => x.valide) || null;
   if (!g) return { ...vide, pourquoi: `aucun calibre ${nomF} (${cat.map(x => nombreFr(x.calibre)).join(', ')} A) ne tient ce profil à ${courbes[0].nom}` };
   const cal = g.calibre, perm = pts.filter(p => p.t === Infinity).reduce((m, p) => Math.max(m, p.i), 0), courts = pts.some(p => p.t !== Infinity);
   // les fils qui ne suivent pas ce calibre, et la jauge qui les suivrait
@@ -423,22 +459,20 @@ const g = avecMarge[0] || cat.find(x => x.valide) || null; void memeCote;
       raison: `le ${prop.type} se sertit sur un contact taille ${apres} (${motA(prop.p.contact.intensite)})${avant ? ', le ' + f.type + ' était sur un ' + avant + (f.contactRepere ? ' (' + f.contactRepere + ')' : '') : ''} : la cavité change${bouts.length ? ' — ' + bouts.join(', ') : ''}` }); });
   // la marge : ce que le calibre garantit au permanent, ce que les pointes consomment
   const marge = { courant: M.marge, temps: Math.round(M.fraction * 100), permanent: perm, garanti: g.tenu, tient: tenue ? tenue.tient : null, temperature: +H.tableauMax,
-    source: tenue ? tenue.famille + (tenue.source ? ' — ' + tenue.source : '') : 'la courbe ' + courbes[0].nom, fraction: g.somme, fractionMarge: g.sommeMarge, reste: perm > 0 && g.tenu ? g.tenu / (perm * M.k) - 1 : null, horsPlage: !!(tenue && tenue.horsPlage) };
-  const reserve = !g.marge ? 'serre' : filsAChanger.length ? 'fils' : g.selectif === false ? 'selectivite' : '';
+    source: tenue ? tenue.famille + (tenue.source ? ' — ' + tenue.source : '') : 'la courbe ' + courbes[0].nom, fraction: g.somme, fractionMarge: g.somme, reste: perm > 0 && g.tenu ? g.tenu / perm - 1 : null, horsPlage: !!(tenue && tenue.horsPlage) };
+  const reserve = filsAChanger.length ? 'fils' : g.selectif === false ? 'selectivite' : '';
   // pourquoi, en une phrase : ce qu'il tient, pourquoi pas le calibre d'en dessous, ce qui reste à faire
-  const avec = M.marge ? ' + ' + nombreFr(M.marge) + ' %' : '';
-  const tient = [perm > 0 ? `le permanent (${motA(perm)}${avec}, sous les ${motA(g.tenu)} qu’il garantit à ${nombreFr(+H.tableauMax)} °C)` : '',
-    courts ? `les pointes (${motPct(g.sommeMarge)} de son temps de déclenchement à ${courbes[0].nom}${avec ? ', courant' + avec : ''} ; au plus ${marge.temps} %)` : ''].filter(Boolean).join(' et ');
+  const tient = [perm > 0 ? `le permanent (${motA(perm)}, sous les ${motA(g.tenu)} qu’il garantit à ${nombreFr(+H.tableauMax)} °C)` : '',
+    courts ? `les pointes (${motPct(g.somme)} de son temps de déclenchement à ${courbes[0].nom} ; au plus ${marge.temps} %)` : ''].filter(Boolean).join(' et ');
   const prev = cat.filter(x => x.calibre < cal - 1e-9).pop(), Ap = prev ? motA(prev.calibre) : '';
   const pourquoiPas = !prev ? '' : !prev.valide ? (!prev.permanentOk ? `le ${Ap} ne garantit que ${motA(prev.tenu)} au permanent` : `le ${Ap} déclenche (${motPct(prev.somme)} de son temps de déclenchement)`)
-    : !prev.marge ? (!prev.permanentMargeOk ? `le ${Ap} ne garantit que ${motA(prev.tenu)}, moins que le permanent${avec}` : `le ${Ap} est serré : ses pointes consomment ${motPct(prev.somme)} de son temps de déclenchement${avec ? ', ' + motPct(prev.sommeMarge) + ' avec le courant' + avec : ''}`)
     : prev.selectif === false ? `le ${Ap} n’est pas à 2:1 avec le disjoncteur voisin` : '';
-  const phrases = [`${motA(cal)} : le plus petit calibre ${nomF} qui tient ${tient}${g.marge ? '' : ' — sans la marge : aucun ne l’a'}`];
+  const phrases = [`${motA(cal)} : le plus petit calibre ${nomF} qui tient ${tient}`];
   if (pourquoiPas) phrases.push(pourquoiPas);
   if (g.selectif === false) phrases.push('il n’est pas à 2:1 avec le disjoncteur voisin : à voir');
   if (filsAChanger.length) phrases.push(filsAChanger.map(x => (x.actuel || 'un câble') + (x.bouts && x.bouts.length ? ' vers ' + x.bouts[x.bouts.length - 1] : '') + ' ' + (x.propose ? 'en ' + x.propose : '— ' + x.aucune)).join(', ') + (contactsTouches.length ? ' (' + (contactsTouches.length > 1 ? contactsTouches.length + ' contacts changent' : 'un contact change') + ' de taille)' : ''));
   else if (fils.length) phrases.push('ses câbles le suivent');
-  return { calibre: cal, pn: F ? pnAvecCalibre(o.pn, F, cal) : null, famille: F ? F.famille : '', catalogue: cat.map(x => x.calibre), pourquoi: phrases.join(' ; '), marge, filsAChanger, contactsTouches, filsInconnus, selectif: g.selectif, serre: !g.marge, reserve }; }
+  return { calibre: cal, pn: F ? pnAvecCalibre(o.pn, F, cal) : null, famille: F ? F.famille : '', catalogue: cat.map(x => x.calibre), pourquoi: phrases.join(' ; '), marge, filsAChanger, contactsTouches, filsInconnus, selectif: g.selectif, serre: false, reserve }; }
 /* UN FIL SUIT un calibre : il porte la charge, admet le calibre en service, reste dans la table 11-3, son contact admet le
    calibre et porte le permanent, et ce que le disjoncteur laisse passer reste sous sa courbe de dommage. */
 const filSuit = p => p.verdict === 'ok' && p.protege !== false && !p.horsTable && !p.contactSurcharge && !p.contactDepasse;
