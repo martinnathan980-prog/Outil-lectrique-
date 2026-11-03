@@ -689,6 +689,7 @@ End Sub
 Private Sub DiagnosticComplet(ByVal prj As Object)
     Dim g As Object, c As Object, sg As Object, x As Object, env As Object, envOuvert As Boolean, fam As Object, tb As Object, pt As Object
     Dim sh As Object, s As String, numErr As Long, descErr As String, forme As String, refus As String, v As Variant, nb As Long
+    Dim nomDiag As String, rien As Object, nouveau As Object, sh01 As Object, i As Long
     If gSimulation Then Exit Sub
     On Error Resume Next
     Contexte "Bouton 3", "diagnostic"
@@ -800,19 +801,20 @@ Private Sub DiagnosticComplet(ByVal prj As Object)
     If Not g Is Nothing Then
         Set sg = Nothing
         Err.Clear
-        g.CreateSubGroup "DIAG_PILOTE", sg
-        DiagNote "4 Écriture", "Groupe.CreateSubGroup(« DIAG_PILOTE »)", Err.Number, Err.Description, IIf(sg Is Nothing, "rien rendu", TypeName(sg) & " « " & LireProp(sg, "Name") & " »")
+        nomDiag = "DIAG_" & Format$(Now, "hhnnss")
+        g.CreateSubGroup nomDiag, sg
+        DiagNote "4 Écriture", "Groupe.CreateSubGroup(« " & nomDiag & " »)", Err.Number, Err.Description, IIf(sg Is Nothing, "rien rendu", TypeName(sg) & " « " & LireProp(sg, "Name") & " »")
         Set x = Nothing
         Err.Clear
-        g.GetSubGroupByName "DIAG_PILOTE", x
-        DiagNote "4 Écriture", "Groupe.GetSubGroupByName(« DIAG_PILOTE ») après création", Err.Number, Err.Description, IIf(x Is Nothing, "PAS trouvé", "trouvé")
+        g.GetSubGroupByName nomDiag, x
+        DiagNote "4 Écriture", "Groupe.GetSubGroupByName après création", Err.Number, Err.Description, IIf(x Is Nothing, "PAS trouvé", "trouvé")
         If Not sg Is Nothing And x Is Nothing Then
             Err.Clear
             g.AddSubGroup sg
             DiagNote "4 Écriture", "Groupe.AddSubGroup(le sous-groupe créé)", Err.Number, Err.Description, ""
             Set x = Nothing
             Err.Clear
-            g.GetSubGroupByName "DIAG_PILOTE", x
+            g.GetSubGroupByName nomDiag, x
             DiagNote "4 Écriture", "GetSubGroupByName après AddSubGroup", Err.Number, Err.Description, IIf(x Is Nothing, "PAS trouvé", "trouvé")
         End If
         If Not x Is Nothing Then
@@ -834,6 +836,73 @@ Private Sub DiagnosticComplet(ByVal prj As Object)
         tb.GetPrimaryCoordinates pt
         DiagNote "5 Création", "un point SANS CreateObject : cartouche « " & LireProp(tb, "Name") & " ».GetPrimaryCoordinates", Err.Number, _
             Err.Description, IIf(pt Is Nothing, "rien rendu", TypeName(pt) & " X=" & LireProp(pt, "X") & " Y=" & LireProp(pt, "Y"))
+    End If
+    ' une forme de l'album par son nom (celui de l'écran de SEE), par l'environnement puis par le projet
+    If Not env Is Nothing Then
+        For Each v In Array("USEREQP|Connector Receptacle for Equipment", "Equipment Family|Connector Receptacle for Equipment")
+            Set x = Nothing
+            Err.Clear
+            env.GetShape Split(CStr(v), "|")(0), Split(CStr(v), "|")(1), x
+            DiagNote "3 Environnement", "GetShape(« " & Replace(CStr(v), "|", " », « ") & " »)", Err.Number, Err.Description, _
+                IIf(x Is Nothing, "rien rendu", "FORME : " & TypeName(x))
+        Next v
+    End If
+    ' (les essais suivants pourraient faire tomber SEE : ils viennent en dernier)
+    ' CreateObject : le paramètre du milieu serait-il un MODÈLE (un objet du même type) ou rien du tout ?
+    If Not g Is Nothing Then
+        Set c = Nothing
+        Err.Clear
+        g.GetSheetCollection c
+        If Not c Is Nothing Then
+            If NombreDe(c) > 0 Then Set sh01 = ElementsDe(c).Item(1)
+        End If
+    End If
+    For i = 1 To 6
+        Set x = Nothing
+        Set c = Nothing
+        Set rien = Nothing
+        Err.Clear
+        Select Case i
+            Case 1
+                gApp.CreateObject OBJ_POINT, rien, x
+                s = "CreateObject(12 point, Nothing)"
+            Case 2
+                If pt Is Nothing Then GoTo Suivant
+                Set c = pt
+                gApp.CreateObject OBJ_POINT, c, x
+                s = "CreateObject(12 point, le point du cartouche)"
+            Case 3
+                If sh01 Is Nothing Then GoTo Suivant
+                Set c = sh01
+                gApp.CreateObject OBJ_FOLIO, c, x
+                s = "CreateObject(9 folio, le folio 01)"
+            Case 4
+                gApp.CreateObject OBJ_FOLIO, rien, x
+                s = "CreateObject(9 folio, Nothing)"
+            Case 5
+                gApp.CreateObject OBJ_LIGNE, rien, x
+                s = "CreateObject(11 trait, Nothing)"
+            Case Else
+                If sh01 Is Nothing Then GoTo Suivant
+                Set c = sh01
+                gApp.CreateObject OBJ_LIGNE, c, x
+                s = "CreateObject(11 trait, le folio 01)"
+        End Select
+        DiagNote "5 Création", s, Err.Number, Err.Description, IIf(x Is Nothing, "rien rendu", "OBJET : " & TypeName(x))
+        If Not x Is Nothing And nouveau Is Nothing Then Set nouveau = x
+Suivant:
+    Next i
+    ' un folio créé PAR SEE : AddSheet prend le folio par référence (entrée ET sortie) : avec rien, SEE en crée-t-il un ?
+    If Not g Is Nothing Then
+        Set sh = Nothing
+        Err.Clear
+        g.AddSheet sh
+        DiagNote "5 Création", "Groupe.AddSheet(rien) : SEE crée-t-il le folio ?", Err.Number, Err.Description, _
+            IIf(sh Is Nothing, "rien rendu", "FOLIO : " & TypeName(sh) & " « " & LireProp(sh, "Name") & " »")
+        Set c = Nothing
+        Err.Clear
+        g.GetSheetCollection c
+        DiagNote "5 Création", "folios du groupe après AddSheet", Err.Number, Err.Description, DiagColl(c)
     End If
     ' --- 6. ce qui est installé (lecture du disque)
     DiagInstalle
@@ -905,7 +974,8 @@ Private Sub DiagInstalle()
     On Error Resume Next
     For Each p In Array("CLSID", "WOW6432Node\CLSID")
         If Len(cmd) = 0 Then
-            If RegistreTexte("HKCR\" & CStr(p) & "\" & Reglage("CLSID_Automation", "") & "\LocalServer32", "", cmd, erreur) Then
+            If RegistreTexte("HKCR\" & CStr(p) & "\" & IIf(Len(Reglage("CLSID_Automation", "")) > 0, Reglage("CLSID_Automation", ""), _
+                    "{B0B9DD73-EE81-473F-9C3C-D8910C7E2D59}") & "\LocalServer32", "", cmd, erreur) Then
             End If
         End If
     Next p
