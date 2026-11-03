@@ -63,6 +63,7 @@ function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g
    et proprement à côté, son nom ; en dessous, sa référence, sa gamme — le folio, on s'en fout ; plus de pastille d'état »)
    : le symbole du genre en grand, le genre en mot, le repère à côté (il se renomme d'un clic) ; dessous, ce qui l'identifie.
    Dans le grand, la même chose sur une ligne fine : la barre qu'on tient pour déplacer la fenêtre. ---- */
+const GENRES_COURTS = { barrette: 'Barrette', prise: 'Prise' };
 const GENRES_FICHE = { equipement: 'Équipement', disjoncteur: 'Disjoncteur', barrette: 'Barrette de jonction', prise: 'Prise de coupure', masse: 'Masse', fil: 'Câble' };
 function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   // (v78, le lecteur : « le genre et la référence, même taille, même police — un tiret au milieu ; pas d'écarts de gras »)
@@ -70,7 +71,9 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
     : `<span class="nc-rep-t">${esc(nom)}</span>`;
   const ms = (o.meta || []).filter(Boolean), ref = ms.length === 1 && /class="id"/.test(ms[0]);
   const meta = ms.length ? `<div class="nc-meta fi-identite">${ref ? `<span class="nc-meta-k">Référence</span>` : ''}${ms.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</div>` : '';
-  const sym = `<svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg>`, titre = `<span class="nc-genre-mot">${esc(GENRES_FICHE[o.type] || 'Élément')}</span><span class="nc-tiret" aria-hidden="true">—</span><span class="nc-rep">${rep}</span>`;
+  // (v82) dans la carte, le genre court (« Barrette », « Prise ») : le titre tient sur une ligne, le tiret ne pend plus
+  const genre = !grand && GENRES_COURTS[o.type] ? GENRES_COURTS[o.type] : GENRES_FICHE[o.type] || 'Élément';
+  const sym = `<svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg>`, titre = `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-tiret" aria-hidden="true">—</span><span class="nc-rep">${rep}</span>`;
   // (v81, le lecteur : « la tête, tu peux la rendre un peu plus sexy ») : le symbole en grand filigrane, à droite, qui se
   // trace à l'ouverture — la signature de la tuile, reprise dans le grand
   if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${ms.length ? `<span class="nc-meta fi-identite">${ms.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</span>` : ''}<span class="nv-fili" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span></div>`;
@@ -84,12 +87,26 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
 /* (v78c, le lecteur : « Modifier, faut tout reprendre, c'est pas hyper compréhensible ») : l'onglet « Modifier » se lit en
    CARTES — chacune son titre, une phrase qui dit ce que ça change, puis le réglage. */
 const DESIGNATION_SAISIE = false;
-const regCarte = (titre, phrase, corps, o) => !corps ? '' : `<section class="nv-reg${o && o.cls ? ' ' + o.cls : ''}"><header class="nv-reg-t"><h4>${esc(titre)}</h4>${phrase ? `<p>${phrase}</p>` : ''}${o && o.droite ? `<span class="nv-reg-d">${o.droite}</span>` : ''}</header><div class="nv-reg-c">${corps}</div></section>`;
+const slugReg = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const regCarte = (titre, phrase, corps, o) => !corps ? '' : `<section class="nv-reg${o && o.cls ? ' ' + o.cls : ''}" data-reg="${escA(o && o.reg ? o.reg : slugReg(titre))}"><header class="nv-reg-t"><h4>${esc(titre)}</h4>${phrase ? `<p>${phrase}</p>` : ''}${o && o.droite ? `<span class="nv-reg-d">${o.droite}</span>` : ''}</header><div class="nv-reg-c">${corps}</div></section>`;
 // (v79, le lecteur : « c'est pas à moi de mettre un nom : je change le fichier de base si je veux un nom ; tout au même
 // endroit ») : plus de saisie du nom dans la fiche — la carte reste (`regCarte`) pour d'autres réglages
 const designationFiche = o => { const t = o.tete || {}; if (!t.designation || !DESIGNATION_SAISIE) return ''; const des = app.contrat.designations.get(t.designation) || '';
   return regCarte('Son nom en clair', 'Gardé avec le contrat, montré sous le repère. Le repère, lui, vient de votre fichier et ne change pas.',
     `<label class="nv-des"><span class="sr">Nom en clair</span><input class="nc-des${des ? ' plein' : ''}" id="eq-des" value="${escA(des)}" placeholder="par exemple : relais de démarrage" spellcheck="false" autocomplete="off"></label>`, { cls: 'nv-reg-nom' }); };
+
+/* CE QUE VOUS POUVEZ CHANGER (v82, le lecteur : « Modifier, ce n'est pas intuitif : je ne vois pas les boutons, ce qu'il
+   y avait avant, ce qu'il y a après, ce que ça m'apporte, où il a cherché, pourquoi ; les sections dans l'ordre ») : en
+   tête de l'onglet, une ligne par réglage — ce que c'est ; ce qui est retenu et d'où ça vient ; avant → après quand il a
+   changé ; pourquoi, en une phrase ; le bouton qui mène à sa section, allumée. `xs` : [{ titre, valeur (html), source,
+   avant (html), pourquoi (html), vers (sélecteur), geste, etat }]. */
+function sommaireReglages(xs) { const ys = (xs || []).filter(Boolean); if (!ys.length) return '';
+  return `<section class="nv-somm"><h4 class="vu-titre">Ce que vous pouvez changer <span>${esc(ys.length > 1 ? ys.length + ' réglages' : '1 réglage')} · le bouton mène à sa section</span></h4><ol class="nv-somm-l">`
+    + ys.map(x => `<li class="nv-somm-i${x.etat ? ' ' + x.etat : ''}"><span class="nv-somm-k">${esc(x.titre)}</span>`
+      + `<span class="nv-somm-v">${x.avant ? `<s>${x.avant}</s><i class="nv-somm-f" aria-hidden="true">→</i>` : ''}<b>${x.valeur}</b>${x.source ? `<span class="vu-src ${escA(x.source)}">${esc(MOTS_SOURCES[x.source] || x.source)}</span>` : ''}</span>`
+      + `<span class="nv-somm-p">${x.pourquoi || ''}</span>`
+      + (x.vers ? `<button type="button" class="btn papier dense nv-somm-b" data-va-onglet="" data-va-vers="${escA(x.vers)}">${esc(x.geste || 'Changer')}${ico('droite')}</button>` : '<span></span>') + '</li>').join('')
+    + '</ol></section>'; }
 
 /* ---- À FAIRE : chaque point devient une tâche — ce qui cloche, puis (après « — ») ce que ça veut dire ; le geste qui
    répare au bout de la première ; un clic sur une tâche mène à l'onglet qui la démontre. Rien à reprendre : rien. ---- */
@@ -105,9 +122,13 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
     else { const g = gestePrincipal(p); if (g) { const n = FI.gestesPb.push([g]) - 1; geste = `<button type="button" class="btn ${p.niveau === 'ko' ? 'cuivre' : 'papier'} dense" data-geste-pb="${n}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; } }
     const va = ongletDeSection(o.type, p.section);
     return `<div class="nc-tache fi-pb-l ${p.niveau === 'ko' ? 'ko' : 'att'}"><span class="nc-rond" aria-hidden="true">${ico('alerte')}</span>`
-      + `<button type="button" class="nc-t" data-onglet-va="${escA(va)}"${p.viser ? ` data-viser="${escA(p.viser)}"` : ''}${p.connecteur ? ` data-connecteur="${escA(p.connecteur)}"` : ''} data-bulle="${escA(t + (p.bulle ? '\n' + p.bulle : ''))}"><b class="fi-pb-t">${insecable(esc(titre))}</b>${detail ? `<small>${insecable(esc(detail))}</small>` : ''}</button>${geste ? `<span class="nc-geste">${geste}</span>` : ''}</div>`; };
-  const reste = ordre.length - montres.length;
-  return `<div class="nc-taches">${montres.map(ligne).join('')}${reste > 0 ? `<button type="button" class="nc-autres" data-onglet-va="" data-voir-tout="1">${esc(reste > 1 ? 'et ' + reste + ' autres points' : 'et 1 autre point')}${ico('droite')}</button><div class="nc-taches nc-reste" hidden>${ordre.slice(max).map((p, i) => ligne(p, i + max)).join('')}</div>` : ''}</div>`; }
+      + `<button type="button" class="nc-t" data-onglet-va="${escA(va)}"${p.viser ? ` data-viser="${escA(p.viser)}"` : ''}${p.connecteur ? ` data-connecteur="${escA(p.connecteur)}"` : ''} data-bulle="${escA(titre + (detail ? '\n' + detail : '') + (p.bulle ? '\n' + p.bulle : ''))}"><b class="fi-pb-t">${insecable(esc(titre))}</b>${detail ? `<small>${insecable(esc(detail))}</small>` : ''}</button>${geste ? `<span class="nc-geste">${geste}</span>` : ''}</div>`; };
+  const reste = ordre.length - montres.length, nko = probs.filter(p => p.niveau === 'ko').length, natt = probs.length - nko;
+  // (v82, le lecteur : « les avertissements, quand il y en a plusieurs, prennent beaucoup de place les uns à la suite des
+  // autres ; en un coup d'œil, on n'a pas le truc ») : UNE section — son compte en tête, une ligne par point (le titre ; le
+  // détail au survol), le geste au bout de la première ; les autres se déplient
+  const tete = `<div class="nc-pbs-tete"><span class="nc-pbs-n">${nko ? `<b class="ko">${esc(pluriel(nko, 'problème'))}</b>` : ''}${nko && natt ? '<i>·</i>' : ''}${natt ? `<b class="att">${esc(natt + '\u00a0à voir')}</b>` : ''}</span></div>`;
+  return `<div class="nc-taches nc-pbs ${nko ? 'ko' : 'att'}">${tete}${montres.map(ligne).join('')}${reste > 0 ? `<button type="button" class="nc-autres" data-onglet-va="" data-voir-tout="1">${esc(reste > 1 ? 'et ' + reste + ' autres points' : 'et 1 autre point')}${ico('droite')}</button><div class="nc-taches nc-reste" hidden>${ordre.slice(max).map((p, i) => ligne(p, i + max)).join('')}</div>` : ''}</div>`; }
 
 /* ---- LES CHIFFRES (la carte) : trois, centrés — ce que c'est au-dessus, la valeur dessous ; rien d'autre (le détail est
    dans le grand). Un clic mène à l'onglet qui l'explique ; une valeur qui s'écrit s'écrit sur place. ---- */
@@ -164,9 +185,9 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     // (v78, le lecteur : « équipement et borne, mal présentés ; l'intensité, la chute : juste un rapport ») : une nomenclature —
     // le câble, où il va et sur quelle borne, la charge et la chute en anneaux (la part de l'admis), la longueur
     const type = `<span class="nv-cab-id">${r.puce || ''}<b class="id nv-cab-type">${esc(r.type || 'sans type')}</b></span>`;
-    const iH = `<span class="nv-mes">${anneauVue(r.charge.r)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : ''}</span></span>`;
+    const iH = `<span class="nv-mes">${anneauVue(r.charge.r, { r: 16, ep: 3.2, texte: true })}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : ''}</span></span>`;
     const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
-    const uH = `<span class="nv-mes">${anneauVue(ru)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
+    const uH = `<span class="nv-mes">${anneauVue(ru, { r: 16, ep: 3.2, texte: true })}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
     // (v81) une longueur supposée s'écrit « ≈ 5 m » en gris, comme au récapitulatif — la cellule reste centrée sous son titre
     const lgH = `<span class="nv-cab-lg${L == null ? ' supp' : ''}"${L == null ? ` data-bulle="${escA('Votre fichier ne donne pas sa longueur : VOLTA suppose ' + nombre(H.longueur) + ' m (Hypothèses)')}"` : ''}>${L == null ? '<i class="nv-env">≈</i>' : ''}${ed ? ed.lon : `<b>${L != null ? esc(nombre(arrondi(L, 2))) : esc(nombre(H.longueur))}</b>`}<small>m</small></span>`;
     const ctH = ct && ct.st && ct.st.reference ? `<span class="id nv-cab-ct${ct.ko ? ' ko' : ''}" data-bulle="${escA(motSertir(ct.st) + (ct.rep ? ' — ' + ct.rep + (ct.borne ? ':' + ct.borne : '') : ''))}">${esc(ct.st.reference)}</span>` : '<span class="nv-muet">—</span>';
@@ -278,7 +299,7 @@ function lierNiveaux(box, c) {
     const fait = typeof parVolta === 'function' && typeof deciderCalibre === 'function' ? parVolta(() => deciderCalibre(nom)) : false; if (fait !== false && !$('inspecteur').hidden && app.cible && !rafraichirFicheEnPlace()) rendreFiche(); });
   // (v78, le lecteur : « tout doit être interactif : je clique sur “les courbes”, ça m'envoie sur la courbe ») : une étape de
   // « Comment VOLTA a décidé » mène où elle se démontre — l'onglet, puis la pièce, allumée un instant ; son calcul se déplie
-  box.querySelectorAll('li[data-va-onglet]').forEach(li => { const aller = e => { if (e.target.closest('details, summary, button, a, input')) return; e.preventDefault(); e.stopPropagation();
+  box.querySelectorAll('[data-va-onglet]').forEach(li => { const aller = e => { const t = e.target.closest('details, summary, button, a, input'); if (t && t !== li) return; e.preventDefault(); e.stopPropagation();
       const p = li.dataset.vaOnglet ? activerOnglet(li.dataset.vaOnglet, false) : li.closest('.nv-panneau'), cible = p && li.dataset.vaVers ? p.querySelector(li.dataset.vaVers) : null;
       if (!cible) return; try { cible.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { cible.scrollIntoView(); }
       cible.classList.remove('vu-allume'); void cible.offsetWidth; cible.classList.add('vu-allume'); setTimeout(() => cible.classList.remove('vu-allume'), 1600); };

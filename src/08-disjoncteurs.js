@@ -669,6 +669,8 @@ const ecrireLaLigne = el => { if (el && !mouvementReduit()) el.animate([{ opacit
 // un geste qui accepte une proposition de VOLTA : chaque case qu'il change se marque « proposition de VOLTA acceptée » (la
 // colonne Origine du retest corrigé — le domaine C, 08-export, `avecOrigineVolta`)
 const parVolta = faire => typeof avecOrigineVolta === 'function' ? avecOrigineVolta(faire) : faire();
+// la saisie du profil en cours (v82) : le disjoncteur dont la saisie a déjà pris son entrée d'historique, et le souffle
+const PROFIL_VIF = { nom: '', minuteur: 0 };
 function lierDisjonction(nom, conteneur) {
   const racine = conteneur || (($('ba-equip') && $('ba-equip').querySelector(`.fi-dj[data-disj="${CSS.escape(nom)}"]`)) ? $('ba-equip') : document);
   const parts = () => [...racine.querySelectorAll(`.fi-dj[data-disj="${CSS.escape(nom)}"]`)];
@@ -737,7 +739,13 @@ function lierDisjonction(nom, conteneur) {
     // « Les 3 câbles » de la carte de décision : leur liste, avant → après, se montre et se cache sur place
     racine.querySelectorAll('.fi-decision [data-dj-cables]').forEach(b => { b.onclick = () => { const k = b.dataset.djCables, ul = racine.querySelector('#dj-decision-cables'), o = !FI.tous[k]; FI.tous[k] = o; b.setAttribute('aria-expanded', String(o)); if (ul) ul.hidden = !o; }; });
     QA('[data-hyp]').forEach(b => { b.onclick = e => { e.stopPropagation(); ficheHypotheses(); }; });
-    QA('.dj-etats input').forEach(el => { el.onchange = () => ecrire('profil de charge de ' + nom, lire()); });
+    // (v82, le lecteur : « l'essentiel ne change pas en continu quand je change démarrage, transition, permanent ») : le
+    // profil s'écrit pendant la frappe (un souffle après la dernière touche) — l'essentiel, la courbe, les câbles suivent ;
+    // une seule entrée d'historique par saisie, prise à la première touche
+    const vif = () => { const c = lire(), avant = parts()[0]; if (PROFIL_VIF.nom !== nom) { histPush('profil de charge de ' + nom); PROFIL_VIF.nom = nom; } poserCharge(nom, c); apresEdition(); apres(avant, true); };
+    QA('.dj-etats input').forEach(el => {
+      el.oninput = () => { clearTimeout(PROFIL_VIF.minuteur); PROFIL_VIF.minuteur = setTimeout(vif, 420); };
+      el.onchange = () => { clearTimeout(PROFIL_VIF.minuteur); if (PROFIL_VIF.nom === nom) { const avant = parts()[0]; poserCharge(nom, lire()); apresEdition(); apres(avant, dansUnChamp()); PROFIL_VIF.nom = ''; } else ecrire('profil de charge de ' + nom, lire()); }; });
     // « + État » : un état de plus — ou, quand le démarrage, la transition ou le permanent ont été supprimés, une petite
     // liste (08-fiche, `[data-changer]`) qui les rend ; × supprime un état, quel qu'il soit
     const ajouter = k => { const c = lire(); if (k && k !== 'plus') c[k] = { i: null, t: null }; else c.plus.push({ nom: 'État ' + (c.plus.length + 3), i: null, t: null }); FI.liste = ''; ecrire((k && k !== 'plus' ? NOMS_PHASES[k] + ' rendu' : 'un état de plus') + ' sur ' + nom, c); };

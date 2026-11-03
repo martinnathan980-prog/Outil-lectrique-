@@ -30,10 +30,13 @@ function faceVue(contacts, etatDe, o) { o = o || {}; const n = (contacts || []).
   // sont reliés ; à la couleur du groupe s'il porte des câbles, gris sinon
   const bus = (o.bus || []).map(g => { const ps = g.contacts.map(pos); if (!ps.length) return '';
     const d = ps.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('') + (ps.length === 1 ? 'h0.01' : '');
-    return `<path class="vu-bus-g${g.couleur ? '' : ' libre'}" d="${d}" style="stroke-width:${(2 * R + 7).toFixed(1)}px${g.couleur ? ';stroke:' + g.couleur : ''}"/>`; }).join('');
+    // (v82, le lecteur : « un fond flou derrière ; il faut que ce soit net et propre ») : la liaison d'un groupe, un trait
+    // net à la couleur du groupe, qui relie les contacts par leur centre
+    return `<path class="vu-bus-g${g.couleur ? '' : ' libre'}" d="${d}" style="stroke-width:${o.mini ? 2 : 3}px${g.couleur ? ';stroke:' + g.couleur : ''}"/>`; }).join('');
   const cts = contacts.map(c => { const [x, y] = pos(c), st = etatDe(c) || '', col = o.couleur ? o.couleur(c) : '', L = String(c.lettre || '');
     const style = col ? (st === 'pris' ? ` style="fill:${col};stroke:${col}"` : ` style="stroke:${col}"`) : '';
-    return `<g class="vu-ct-g" data-ct="${escA(L)}"><circle class="vu-ct ${st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"${style}/>${o.lettres ? `<text class="${st}${L.length > 2 ? ' long' : ''}" x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}">${esc(L)}</text>` : ''}</g>`; }).join('');
+    const va = o.va ? o.va(c) : null;
+    return `<g class="vu-ct-g${va ? ' va' : ''}" data-ct="${escA(L)}"${va ? ` data-va-onglet="${escA(va.onglet)}" data-va-vers="${escA(va.vers)}" role="button" tabindex="0" aria-label="${escA('Le contact ' + L)}"` : ''}><circle class="vu-ct ${st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"${style}/>${o.lettres ? `<text class="${st}${L.length > 2 ? ' long' : ''}" x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}">${esc(L)}</text>` : ''}</g>`; }).join('');
   return `<svg class="vu-face${o.mini ? ' mini' : ''}" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${o.w || W}" role="img" aria-label="${escA(o.titre || 'La face')}">${corps}${bus}${cts}</svg>`; }
 const legendeFaceVue = (avecKo) => `<p class="vu-legende"><span><i class="pris"></i>pris</span><span><i></i>libre</span>${avecKo ? '<span><i class="ko"></i>refusé</span>' : ''}</p>`;
 
@@ -61,7 +64,7 @@ function anneauVue(r, o) { o = o || {}; const R = o.r || 11, e = o.ep || 3.5, C 
   // (v79) sans mesure, pas d'anneau vide (il ressemblait à un chargement) ; plus de chiffre minuscule dedans (la valeur est à côté)
   if (!ok) return `<span class="vu-anneau-vide" style="width:${S}px" aria-hidden="true"></span>`;
   return `<svg class="vu-anneau ${classeMesure(r)}" viewBox="0 0 ${S} ${S}" width="${S}" height="${S}" aria-hidden="true"><circle class="vu-an-f" cx="${c}" cy="${c}" r="${R}" style="stroke-width:${e}px"/>`
-    + `<circle class="vu-an-v" cx="${c}" cy="${c}" r="${R}" style="stroke-width:${e}px;stroke-dasharray:${(C * w).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>${o.texte === true && ok ? `<text x="${c}" y="${(c + 2.8).toFixed(1)}">${Math.round(r * 100)}</text>` : ''}</svg>`; }
+    + `<circle class="vu-an-v" cx="${c}" cy="${c}" r="${R}" style="stroke-width:${e}px;stroke-dasharray:${(C * w).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${c} ${c})"/>${o.texte === true && ok ? `<text class="vu-an-t" x="${c}" y="${(c + 3.2).toFixed(1)}">${r > 9.99 ? '>999' : Math.round(r * 100)}<tspan class="vu-an-pc">%</tspan></text>` : ''}</svg>`; }
 
 /* ---- L'ARBRE d'un disjoncteur : lui, puis chacun de ses câbles jusqu'à son bout, sa charge au bout ; une ligne
    s'ouvre d'un clic (data-i : la ligne du câble), son survol l'allume sur le plan. ---- */
@@ -97,25 +100,28 @@ function traverseeVue(lettres, cote) { const c = (f, g) => !f ? `<span class="vu
    traverse ») : la prise au milieu — la fiche et l'embase accolées, la lettre de chaque contact des deux côtés —, à gauche
    ce qui arrive par la fiche, à droite ce qui repart par l'embase : le type sur le câble, où il va, sur quelle borne.
    `cote(l, amont)` rend { de: 'REP:borne', type, couleur, ko, k } ou rien. ---- */
-function traverseeDessin(nom, lettres, cote) { if (!lettres.length) return '';
-  const PAS = 34, HAUT = 44, W = 660, xF = 300, wB = 34, xE = xF + wB + 4, x0 = 140, x1 = xE + wB + 156, cx = 7.8;
-  const H = HAUT + lettres.length * PAS + 14, yB0 = HAUT - 8, yB1 = HAUT + lettres.length * PAS + 2;
+function traverseeDessin(nom, lettres, cote, o) { if (!lettres.length) return ''; const petit = !!(o && o.petit);
+  // (v82, le lecteur : « deux carrés pareils ; représente-la comme sur le schéma ») : comme le folio — la FICHE (partie
+  // mobile) plus large et un peu moins haute, l'EMBASE (partie fixe) plus fine et plus haute, accolées, angles vifs ; les
+  // lettres dans la fiche seulement
+  const PAS = petit ? 30 : 34, HAUT = petit ? 22 : 48, W = petit ? 400 : 660, wB = petit ? 28 : 34, wE = petit ? 16 : 20, xF = petit ? 178 : 304, xE = xF + wB, x0 = petit ? 104 : 140, x1 = xE + wE + (petit ? 70 : 156), cx = 7.8;
+  const H = HAUT + lettres.length * PAS + 16, yB0 = HAUT - 10, yB1 = HAUT + lettres.length * PAS + 4, yF0 = yB0 + 7, yF1 = yB1 - 7;
   const bout = s => { const t = String(s || ''), i = t.lastIndexOf(':'); return i > 0 ? [t.slice(0, i), t.slice(i + 1)] : [t, '']; };
-  let out = `<text class="bro-sens" x="${(x0 + xF) / 2}" y="14" text-anchor="middle">arrive par la fiche</text><text class="bro-sens" x="${(xE + wB + x1) / 2}" y="14" text-anchor="middle">repart par l’embase</text>`
-    + `<text class="bro-cote" x="${xF + wB - 2}" y="${yB0 - 8}" text-anchor="end">fiche</text><text class="bro-cote" x="${xE + 2}" y="${yB0 - 8}">embase</text>`
-    + `<rect class="bro-piece" x="${xF}" y="${yB0}" width="${wB}" height="${yB1 - yB0}" rx="8"/><rect class="bro-piece" x="${xE}" y="${yB0}" width="${wB}" height="${yB1 - yB0}" rx="8"/>`;
+ let out = (petit ? '' : `<text class="bro-sens" x="${(x0 + xF) / 2}" y="14" text-anchor="middle">arrive par la fiche</text><text class="bro-sens" x="${(xE + wE + x1) / 2}" y="14" text-anchor="middle">repart par l’embase</text>`)
+    + (petit ? '' : `<text class="bro-cote" x="${xF + wB / 2}" y="${yB0 - 8}" text-anchor="end">fiche</text><text class="bro-cote" x="${xE + wE / 2}" y="${yB0 - 8}">embase</text>`)
+    + `<rect class="bro-embase" x="${xE}" y="${yB0}" width="${wE}" height="${yB1 - yB0}"/><rect class="bro-fiche" x="${xF}" y="${yF0}" width="${wB}" height="${yF1 - yF0}"/>`;
   lettres.forEach((l, i) => { const yy = HAUT + i * PAS + PAS / 2, g = cote(l, true), d = cote(l, false);
     out += `<g class="bro-l fi-ia${(g && g.ko) || (d && d.ko) ? ' ko' : ''}"${(g && g.k) || (d && d.k) ? ` data-i="${escA((g && g.k) || d.k)}"` : ''}><rect class="bro-zone" x="0" y="${yy - PAS / 2}" width="${W}" height="${PAS}" rx="6"/>`
-      + `<text class="bro-borne" x="${xF + wB / 2}" y="${yy + 4}">${esc(l)}</text><text class="bro-borne" x="${xE + wB / 2}" y="${yy + 4}">${esc(l)}</text>`;
+      + `<text class="bro-borne" x="${xF + wB / 2}" y="${yy + 4}">${esc(l)}</text>`;
     if (g) { const [rep, bo] = bout(g.de), pw = bo ? 12 + bo.length * 6.6 : 0, xm = (x0 + xF) / 2;
       out += `<path class="bro-fil" style="stroke:${g.couleur || 'currentColor'}" d="M${x0} ${yy}H${xF}"/><rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(g.type || '—')}</text><circle class="bro-bout" cx="${x0}" cy="${yy}" r="2.6"/>`
         + (bo ? `<rect class="bro-pin-f" x="${x0 - 10 - pw}" y="${yy - 9}" width="${pw}" height="18" rx="5"/><text class="bro-pin" x="${x0 - 10 - pw / 2}" y="${yy + 4}">${esc(bo)}</text>` : '')
         + `<text class="bro-vers" x="${x0 - 10 - pw - (bo ? 6 : 0)}" y="${yy + 4.5}" text-anchor="end">${esc(rep)}</text>`; }
-    if (d) { const [rep, bo] = bout(d.de), xm = (xE + wB + x1) / 2;
-      out += `<path class="bro-fil" style="stroke:${d.couleur || 'currentColor'}" d="M${xE + wB} ${yy}H${x1}"/><rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(d.type || '—')}</text><circle class="bro-bout" cx="${x1}" cy="${yy}" r="2.6"/>`
+    if (d) { const [rep, bo] = bout(d.de), xm = (xE + wE + x1) / 2;
+      out += `<path class="bro-fil" style="stroke:${d.couleur || 'currentColor'}" d="M${xE + wE} ${yy}H${x1}"/><rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(d.type || '—')}</text><circle class="bro-bout" cx="${x1}" cy="${yy}" r="2.6"/>`
         + `<text class="bro-vers" x="${x1 + 10}" y="${yy + 4.5}">${esc(rep)}</text>` + (bo ? `<rect class="bro-pin-f" x="${x1 + 16 + rep.length * cx}" y="${yy - 9}" width="${12 + bo.length * 6.6}" height="18" rx="5"/><text class="bro-pin" x="${x1 + 22 + rep.length * cx + bo.length * 3.3}" y="${yy + 4}">${esc(bo)}</text>` : ''); }
     out += '</g>'; });
-  return `<svg class="vu-bro vu-trav" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('Ce qui traverse ' + nom)}">${out}</svg>`; }
+  return `<svg class="vu-bro vu-trav${petit ? ' petit' : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('Ce qui traverse ' + nom)}">${out}</svg>`; }
 
 /* ---- LES POTENTIELS d'une barrette : la couleur du potentiel, ses contacts, ses câbles (type → où il va) ---- */
 function potentielsVue(groupes) { return `<div class="vu-pots">${groupes.map((g, i) => `<div class="vu-pot${g.ko ? ' ko' : ''}" style="--c:${g.ko ? 'var(--vu-ko)' : `var(--vu-g${(i % 6) + 1})`}" data-ct="${escA(g.lettres[0] || '')}"><i aria-hidden="true"></i><b class="id">${esc(g.lettres.join(' '))}</b>`

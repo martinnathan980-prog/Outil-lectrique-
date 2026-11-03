@@ -89,6 +89,14 @@ s'écrit ici, le jour même.
   couleur cuivre ; un titre qui sort du lot (pas une écriture classique) ; le schéma vivant reste ; les gestes d'entrée
   (ouvrir, nouvelle, pour commencer) doivent être classe, dynamiques, « waouh ».
 - **Reprendre un plan l'ouvre cadré**, comme le bouton de cadrage en bas à droite.
+- **La synthèse (la carte d'un objet) tient sans défiler** et sa hauteur suit son contenu : ni ascenseur, ni grand vide
+  dessous. Les problèmes et attentions ne s'empilent pas : une seule section compacte, qui se déplie (v82).
+- **Ce qu'on modifie montre sa plus-value** : avant / après, ce que ça change, d'où vient l'info, pourquoi ce choix ; les
+  gestes de modification se voient d'un coup d'œil (v82).
+- **Une barrette ou une prise montre tous ses modules** (1, 2, 3… sous le nom du parent), même ceux posés sur d'autres
+  folios ; une lettre de la face mène à son contact ; les liaisons d'un groupe se dessinent nettes, jamais floues (v82).
+- **Le dessin d'un objet reprend la forme du plan** (la prise : grand rectangle et petit rectangle, comme sur le folio).
+- « Pièces », c'est la **LPA** (liste de pré-approvisionnement) dans le jargon du lecteur.
 
 ## La méthode
 
@@ -97,6 +105,8 @@ s'écrit ici, le jour même.
 - **Poser les questions** quand un retour est ambigu (court, avec une proposition par défaut) ; pour un choix visuel ouvert,
   montrer deux ou trois variantes. Ne pas rester dans son coin.
 - Carte blanche : proposer, dire non quand une demande va contre l'expérience (avec mieux à la place).
+- **Répondre court** dans la conversation (v82, le lecteur : « trop à lire ») : les points importants seulement, ce
+  qu'il doit savoir ; le détail seulement s'il le demande.
 - Livrer avec la skill **`livrer-volta`** : le fichier `.html` envoyé directement (pas de ZIP) et un compte rendu en
   français, court, qui dit aussi ce qui reste.
 

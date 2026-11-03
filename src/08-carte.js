@@ -30,7 +30,7 @@ const CARTE_LMIN = 340, CARTE_HMIN = 220;
 // (v78, le lecteur : « chaque tuile, je prends les angles et je tire, en largeur, en hauteur, comme je veux ») : tirée, sa largeur est la sienne
 const CARTE_L = () => CARTE.taille && CARTE.taille.l > 0 ? CARTE.taille.l : window.innerWidth >= 1800 ? 420 : 384;
 // au plus : au-delà elle défile — une carte, pas un pan d'écran
-const carteH = () => 680;
+const carteH = () => 760;
 const CARTE_AIR = 44;           // l'air entre le bloc et la carte : le fil y passe
 const CARTE_COURBE = 'cubic-bezier(.2,.8,.2,1)';
 /* Flottante, sauf épinglée, au téléphone (le tiroir) — et le RÉCAPITULATIF ouvert : on y travaille en tableaux, la fiche
@@ -175,16 +175,17 @@ function poserCarte(x, y, h) { const s = $('inspecteur').style, Z = zoneDeLaCart
   x = Math.max(Z.L - 40, Math.min(Z.R - 120, x)); y = Math.max(Z.T - 2, Math.min(Z.B - 56, y));
   s.setProperty('--carte-x', Math.round(x) + 'px'); s.setProperty('--carte-y', Math.round(y) + 'px'); s.setProperty('--carte-l', CARTE_L() + 'px');
   // (tirée à une taille, elle la garde : la place trouvée près du bloc ne la raccourcit pas)
-  s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - y, (CARTE.taille && !CARTE.grande ? 0 : h) || Infinity)) + 'px');
-  // tirée à une taille : c'est SA hauteur (une fenêtre), pas seulement son plafond
-  const t = !!(CARTE.taille && !CARTE.grande); $('inspecteur').classList.toggle('taillee', t);
-  if (t) s.setProperty('--carte-h', Math.round(Math.min(CARTE.taille.h, Z.B - y)) + 'px'); else s.removeProperty('--carte-h'); }
+  // (v82, le lecteur : « la synthèse doit s'adapter : tantôt il faut défiler, tantôt la fenêtre est trop grande et rien
+  // dessous ») : la carte prend TOUJOURS la hauteur de ce qu'elle dit, au plus la place sous elle — tirée à une largeur,
+  // elle la garde ; sa hauteur, jamais
+  s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - y)) + 'px');
+  $('inspecteur').classList.remove('taillee'); s.removeProperty('--carte-h'); void h; }
 const poserA = p => poserCarte(p.x, p.y, p.h);
 
 // sa taille libre (au plus carteH(), au plus l'écran), mesurée avant de la poser
 function mesurerCarte() { const el = $('inspecteur'), Z = zoneDeLaCarte();
   el.style.setProperty('--carte-l', CARTE_L() + 'px'); el.style.setProperty('--carte-hmax', Math.min(carteH(), Z.B - Z.T) + 'px');
-  return { W: el.offsetWidth || CARTE_L(), H: CARTE.taille && !CARTE.grande ? Math.min(carteH(), Z.B - Z.T) : el.offsetHeight || 400 }; }
+  return { W: el.offsetWidth || CARTE_L(), H: el.offsetHeight || 400 }; }
 const seCoupent = (a, c) => !(a.left > c.right || a.left + a.width < c.left || a.top > c.bottom || a.top + a.height < c.top);
 
 /* Ouvrir (08-interface, `ouvrirInspecteur`, la fiche déjà rendue) : fermée, elle naît de son origine ; ouverte, un autre

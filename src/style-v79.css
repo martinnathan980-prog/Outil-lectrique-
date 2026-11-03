@@ -695,3 +695,82 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 :root[data-theme="dark"] #base .rc-tab th{background:#33353b;color:#c3c6cc}
 /* le calibre retenu est celui du fichier, et un plus petit suffirait : une note de papier, la barre de cuivre */
 .vu-fichier{margin:10px 0 0;padding:10px 14px;border-radius:10px;background:var(--nv-cuivre-soft);box-shadow:inset 3px 0 0 var(--nv-cuivre);font:400 var(--f-13)/1.5 var(--sans);color:var(--t-1)}
+
+/* ═══ v82 ═══ */
+/* l'anneau d'un câble porte sa part, en pourcentage (le lecteur : « 9,31 A sur 21 : un pourcentage, léger, pratique ») */
+svg.vu-anneau .vu-an-t{font:650 9.5px var(--sans);fill:var(--t-1);text-anchor:middle;font-variant-numeric:tabular-nums}
+svg.vu-anneau .vu-an-t .vu-an-pc{font-size:6.5px;font-weight:500;fill:var(--t-3)}
+.nv-grand table.nv-cables :is(.nv-td-i,.nv-td-u) .nv-mes{width:140px}
+/* les problèmes et attentions : une seule section compacte — le compte en tête, une ligne par point */
+.nc-taches.nc-pbs{display:flex;flex-direction:column;gap:0;padding:0;border-radius:14px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--warn);overflow:hidden}
+.nc-taches.nc-pbs.ko{box-shadow:0 0 0 1px color-mix(in srgb,var(--ko) 26%,var(--s-line)),inset 3px 0 0 var(--ko)}
+.nc-pbs-tete{display:flex;align-items:center;gap:8px;padding:9px 14px 7px 16px}
+.nc-pbs-n{display:inline-flex;align-items:baseline;gap:7px;font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase}
+.nc-pbs-n b.ko{color:var(--ko)} .nc-pbs-n b.att{color:var(--warn)} .nc-pbs-n i{font-style:normal;color:var(--t-3)}
+.nc-taches.nc-pbs .nc-tache,.nv-grand .nv-afaire .nc-taches.nc-pbs .nc-tache,.nv-afaire .nc-taches.nc-pbs .nc-tache,.nc>.nc-taches.nc-pbs .nc-tache{display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;column-gap:10px;margin:0;padding:8px 14px 8px 16px;border-radius:0;background:none;box-shadow:none;border-top:1px solid var(--s-line)}
+.nc-taches.nc-pbs .nc-tache:hover{background:var(--s-hover);box-shadow:none}
+.nc-taches.nc-pbs .nc-tache .nc-rond{width:7px;height:7px;margin:0;border-radius:50%;background:var(--warn)}
+.nc-taches.nc-pbs .nc-tache.ko .nc-rond{background:var(--ko)}
+.nc-taches.nc-pbs .nc-tache .nc-rond svg{display:none}
+.nc-taches.nc-pbs .nc-t{padding:0}
+.nc-taches.nc-pbs .nc-t b{font:550 var(--f-13)/1.35 var(--sans);color:var(--t-1)}
+.nc-taches.nc-pbs .nc-tache.ko .nc-t b{color:var(--t-1)}
+.nc-taches.nc-pbs .nc-t small{display:none}
+.nc-taches.nc-pbs .nc-geste .btn{height:28px;font-size:var(--f-12)}
+.nc-taches.nc-pbs>.nc-autres{margin:0;padding:7px 16px 9px;border-top:1px solid var(--s-line);border-radius:0;width:100%;justify-content:flex-start;color:var(--t-2)}
+.nc-taches.nc-pbs .nc-reste{display:contents}
+.nc-taches.nc-pbs .nc-reste[hidden]{display:none}
+.nv-grand .nv-afaire{padding:0}
+.nc-taches.nc-pbs .nc-t b.fi-pb-t{display:block;-webkit-line-clamp:unset;overflow:visible}
+/* une longueur supposée qu'on peut écrire : « ≈ » collé au chiffre */
+.nv-grand table.nv-cables .nv-cab-lg.supp .fc-in{width:4ch;text-align:left;padding-left:2px}
+/* la face d'un module : les liaisons d'un groupe, nettes (un trait plein), plus le voile flou */
+svg.vu-face .vu-bus-g{opacity:1}
+svg.vu-face .vu-bus-g.libre{stroke:var(--s-line-2);opacity:1;stroke-dasharray:3 4}
+svg.vu-face .vu-ct-g.va{cursor:pointer}
+svg.vu-face .vu-ct-g.va:hover circle,svg.vu-face .vu-ct-g.va:focus-visible circle{stroke:var(--nv-cuivre);stroke-width:2.6}
+svg.vu-face .vu-ct-g.va:focus{outline:none}
+.ct-ligne.vu-allume{background:var(--nv-cuivre-soft)}
+/* les modules d'une même barrette, les parties d'une même prise : une rangée de cartes, celle-ci en cuivre */
+.vu-fr-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.vu-fr{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;padding:11px 14px 12px;border:0;border-radius:12px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);color:var(--t-1);text-align:left;cursor:pointer;transition:box-shadow var(--rapide),transform var(--rapide)}
+.vu-fr:hover{box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne);transform:translateY(-1px)}
+.vu-fr.ici{background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1.5px var(--nv-cuivre);cursor:default;transform:none}
+.vu-fr-n{font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--nv-cuivre)}
+.vu-fr b.id{font:650 var(--f-14) var(--mono)}
+.vu-fr small{font:500 var(--f-11) var(--mono);color:var(--t-3);max-width:100%;overflow-wrap:anywhere}
+.vu-fr-f{font:500 var(--f-11) var(--sans);color:var(--t-2)}
+.vu-fr.ko .vu-fr-n::after,.vu-fr.att .vu-fr-n::after{content:"";display:inline-block;width:6px;height:6px;margin-left:6px;border-radius:50%;background:var(--warn);vertical-align:1px}
+.vu-fr.ko .vu-fr-n::after{background:var(--ko)}
+.vu-trav .bro-fiche{fill:var(--s-sunken);stroke:var(--t-1);stroke-width:1.3}
+.vu-trav .bro-embase{fill:var(--s-surface);stroke:var(--t-1);stroke-width:1.3}
+.vu-trav-v{display:block;width:100%}
+.vu-trav.petit{max-width:100%}
+.vu-trav.petit .bro-vers{font-size:12px}
+.vu-trav.petit .bro-type{font-size:9.5px}
+/* « Ce que vous pouvez changer » : le sommaire de l'onglet Modifier — une ligne par réglage : ce que c'est | l'actuel et sa
+   source (avant → après s'il a changé) | pourquoi | le bouton */
+.nv-somm{margin:0;padding:16px 18px 10px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.04)}
+.nv-somm-l{list-style:none;margin:6px 0 0;padding:0}
+.nv-somm-i{display:grid;grid-template-columns:minmax(120px,.8fr) minmax(0,1.2fr) minmax(0,1.6fr) auto;align-items:center;column-gap:16px;min-height:52px;padding:8px 0;border-top:1px solid var(--s-line)}
+.nv-somm-i:first-child{border-top:0}
+.nv-somm-k{font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.nv-somm-v{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0}
+.nv-somm-v b{font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.nv-somm-v b .id,.nv-somm-v s .id{font-family:var(--mono)}
+.nv-somm-v s{font:500 var(--f-12) var(--sans);color:var(--t-3)}
+.nv-somm-f{font-style:normal;color:var(--nv-cuivre)}
+.nv-somm-p{font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.nv-somm-b{gap:4px;white-space:nowrap}
+.nv-somm-b svg.ico{width:14px;height:14px}
+.nv-somm-i.att .nv-somm-v b{color:var(--warn)}
+.nv-somm-i.ko .nv-somm-v b{color:var(--ko)}
+.nv-reg.vu-allume{box-shadow:0 0 0 2px var(--nv-cuivre),0 1px 2px rgba(0,0,0,.04)}
+@container corps (max-width:640px){ .nv-somm-i{grid-template-columns:minmax(0,1fr) auto;row-gap:4px} .nv-somm-k{grid-column:1/-1} .nv-somm-p{grid-column:1/-1} }
+.nv-somm-i{grid-template-columns:150px 230px minmax(0,1fr) 112px}
+.nv-somm-i>:last-child{justify-self:end}
+@container corps (max-width:760px){ .nv-somm-i{grid-template-columns:130px minmax(0,1fr) 104px} .nv-somm-p{grid-column:2/3} }
+
+/* l'accueil (le lecteur : « le slogan, plus fin, plus discret ; le schéma, je le préférais un peu plus gros ») */
+.bi-accueil .bi-devise{margin-top:22px;font:400 clamp(14px,1.05vw,16px)/1.5 var(--sans);letter-spacing:.04em;color:rgba(229,156,100,.82)}
+.bi-vitrine.bi-hero{width:min(1400px,97vw,calc((100vh - 520px) * 4.2));margin:24px 0 20px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
