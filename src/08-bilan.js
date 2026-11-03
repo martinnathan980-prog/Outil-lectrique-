@@ -12,7 +12,7 @@
    =========================================================================== */
 'use strict';
 
-const BILAN = { version: 'v82', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v84', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -129,7 +129,7 @@ function lireCarnet() { try { const x = JSON.parse(localStorage.getItem(BILAN.cl
 function ecrireCarnet(xs) { try { localStorage.setItem(BILAN.cle, JSON.stringify(xs)); return true; } catch (_) { return false; } }
 const heureDe = t => { const d = new Date(t); return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); };
 // l'écran où l'on est, sans un nom : le genre de l'objet ouvert, l'onglet, le folio par son rang
-const MOTS_DOCS = { normes: 'Normes', bible: 'Bible', hypotheses: 'Hypothèses', nomenclature: 'Nomenclature', comprendre: 'Comment VOLTA réfléchit', bilan: 'Bilan anonyme', fichiers: 'Vos fichiers', see: 'base SEE', cartouche: 'Cartouche', 'deja-contrat': 'Déjà fait' };
+const MOTS_DOCS = { normes: 'Normes', bible: 'Bible', hypotheses: 'Hypothèses', nomenclature: 'LPA', comprendre: 'Comment VOLTA réfléchit', bilan: 'Bilan anonyme', fichiers: 'Vos fichiers', see: 'base SEE', cartouche: 'Cartouche', 'deja-contrat': 'Déjà fait' };
 function natureAnonyme(r) { return VT_A_POSER.test(r || '') ? 'd’une barrette ajoutée par VOLTA' : estMasse(r) ? 'd’une masse' : estDisjoncteur(r) ? 'd’un disjoncteur' : estBarrette(r) ? 'd’une barrette' : estCoupure(r) ? 'd’une prise de coupure' : 'd’un équipement'; }
 function ecranAnonyme() { try {
   if (typeof bibliothequeOuverte === 'function' && bibliothequeOuverte()) return 'bibliothèque';
@@ -170,10 +170,11 @@ const carnetOuvert = () => { const el = $('carnet'); return !!el && !el.hidden; 
 function ficheBilan() { const texte = texteDuBilan(), notes = lireCarnet();
   const carnet = notes.length ? `<ol class="bl-notes">${notes.map((n, i) => `<li><div class="bl-n-tete"><span class="bl-n-quand">${esc(heureDe(n.t))}</span><span class="bl-n-ou">${esc(n.ou)}</span><button type="button" class="fi-x bl-n-x" data-note="${i}" aria-label="${escA('Effacer la note du ' + heureDe(n.t))}" data-bulle="Effacer cette note">${ico('poubelle')}</button></div><p>${esc(n.texte)}</p></li>`).join('')}</ol>`
     : `<p class="bl-vide">Le carnet est vide. Pendant le travail, appuyez sur <kbd>C</kbd> pour noter une hésitation : l’écran où vous êtes s’écrit avec elle.</p>`;
-  const corps = tete('Aide', 'Bilan anonyme')
-    + `<p class="note bl-chapeau">Ce que VOLTA a lu et jugé de ce plan, en chiffres. <b>Aucun repère, part number, numéro de câble, nom de fichier, de harness ou de client</b> : les noms du plan sont masqués, une référence inconnue se dit par sa forme (lettres → A, chiffres → 9). Relisez-le, puis copiez-le dans votre message : c’est vous qui l’envoyez.</p>`
+  const corps = tete('Améliorer VOLTA', 'Bilan anonyme')
+    + `<p class="note bl-chapeau">Ce que VOLTA a lu et jugé de ce plan, en chiffres, <b>sans un nom</b> : repères, part numbers, câbles, fichiers, harness et clients sont masqués ; une référence inconnue se dit par sa forme (lettres → A, chiffres → 9).</p>`
+    + `<ol class="doc-etapes"><li><b>Relisez</b> le bilan ci-dessous</li><li><b>Copiez-le</b> d’un clic</li><li><b>Collez-le</b> dans la conversation : c’est vous qui l’envoyez</li></ol>`
     + `<section class="bl-auto" aria-labelledby="bl-auto-t"><div class="bl-carnet-tete"><h3 id="bl-auto-t">L’autotest du plan</h3><button type="button" class="btn papier dense" id="bl-autotest">${typeof AUTOTEST !== 'undefined' && AUTOTEST.resultat ? 'Le relancer' : 'Lancer l’autotest'}</button></div>`
-    + `<p class="bl-masque">VOLTA ouvre tout seul chaque folio, chaque fiche et ses sections, chaque liste « Changer », chaque onglet du récapitulatif, chaque document et chaque export (fabriqué, jamais enregistré), chronomètre tout et note chaque erreur — l’écran où c’était, jamais un nom du plan. Quelques minutes ; <kbd>Échap</kbd> l’arrête. Le résultat s’ajoute au bilan ci-dessous.</p></section>`
+    + `<p class="bl-masque">VOLTA ouvre seul chaque folio, chaque fiche, chaque onglet, chaque document et chaque export, chronomètre tout et note chaque erreur avec l’écran où elle est née — jamais un nom du plan. Quelques minutes ; <kbd>Échap</kbd> l’arrête. Le résultat s’ajoute au bilan.</p></section>`
     + `<pre class="bl-texte" id="bl-texte" tabindex="0" aria-label="Le bilan, tel qu’il sera copié">${esc(texte)}</pre>`
     + `<section class="bl-carnet" aria-labelledby="bl-carnet-t"><div class="bl-carnet-tete"><h3 id="bl-carnet-t">Le carnet de séance${notes.length ? ` <span class="bl-n">${notes.length}</span>` : ''}</h3><button type="button" class="btn papier dense" id="bl-noter">Noter <kbd>C</kbd></button></div>${notes.length ? '<p class="bl-masque">Vos notes restent sur ce PC telles que vous les avez tapées ; dans le bilan copié, les repères et références qu’elles nomment sont masqués.</p>' : ''}${carnet}</section>`;
   const pied = `<span class="bl-pied-note">Rien ne part tout seul : c’est vous qui collez.</span><span class="espace"></span><button type="button" class="btn papier" id="bl-enregistrer">Enregistrer en .txt</button><button type="button" class="btn cuivre" id="bl-copier">Copier le bilan${notes.length ? ' et le carnet' : ''}</button>`;

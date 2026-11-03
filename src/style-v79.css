@@ -163,10 +163,8 @@
 @media (prefers-reduced-motion:reduce){ .nc-filigrane,.nc-filigrane .nc-fil-trace *{transition:none} }
 
 /* ═══ L'ACCUEIL v79 — « moderne, waouh, moins de bleu, des lettres modernes, vivant » ═══
-   Le graphite d'atelier remplace la nuit bleue à l'accueil seulement (le plan garde sa table, que le lecteur aime) : un
-   noir chaud, une lueur neutre, deux nappes à peine teintées (cuivre, acier), les points blancs. Le nom en grand, d'une
-   écriture d'aujourd'hui : Inter très gras, serré, blanc qui descend vers l'acier ; un balayage de lumière le traverse de
-   temps en temps. Dessous, le SCHÉMA VIVANT (08-bibliotheque, `heroSchema`). */
+   La table de la bibliothèque, en graphite d'atelier : un noir chaud, une lueur neutre, deux nappes à peine teintées
+   (cuivre, acier), les points blancs. Ce qui s'y pose (la marque, le schéma vivant, les cartes) : style-z-accueil.css. */
 body.biblio,body.table-graphite{--table-fond:radial-gradient(ellipse 90% 70% at 50% -10%,#1d1f25 0%,#111215 52%,#0a0b0d 100%);
   --nappe-a:radial-gradient(closest-side,rgba(229,156,100,.10),rgba(229,156,100,.035) 50%,rgba(229,156,100,0));
   --nappe-b:radial-gradient(closest-side,rgba(150,165,190,.08),rgba(150,165,190,.03) 52%,rgba(150,165,190,0));
@@ -175,47 +173,7 @@ body.biblio,body.table-graphite{--table-fond:radial-gradient(ellipse 90% 70% at 
 body.biblio #table .ta-lueur,body.table-graphite #table .ta-lueur{background:radial-gradient(closest-side,rgba(255,240,228,.06),rgba(255,240,228,.02) 55%,rgba(255,240,228,0))}
 body.biblio #table .ta-courant,body.table-graphite #table .ta-courant{box-shadow:0 0 6px 1px rgba(240,164,108,.35)}
 body.biblio #table .ta-courant::after,body.table-graphite #table .ta-courant::after{background:#ffe2cc;box-shadow:0 0 8px 2px rgba(240,164,108,.6)}
-.bi-accueil .bi-vide-centre{width:min(1180px,100%);padding-top:clamp(40px,9vh,110px)}
-.bi-sur-titre{margin:0 0 18px;font:600 var(--f-12)/1 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:#e59c64}
-.bi-titre.bi-marque{margin:0;font:700 clamp(84px,9.4vw,156px)/.92 var(--sans);letter-spacing:-.055em;margin-right:0;
-  background:linear-gradient(100deg,#ffffff 0%,#ffffff 38%,#fff3e8 46%,#ffffff 54%,#d9dce3 100%);background-size:260% 100%;background-position:100% 0;
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:bi-balaye 9s ease-in-out 1.2s infinite}
-@keyframes bi-balaye{0%,62%{background-position:100% 0}84%,100%{background-position:0 0}}
-.bi-devise{margin:22px 0 0;font:400 clamp(17px,1.35vw,21px)/1.45 var(--sans);letter-spacing:-.005em;color:#a9adb6}
-/* le schéma vivant */
-.bi-hero{width:min(1120px,100%);margin:34px 0 30px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent)}
-.bi-hero svg{display:block;width:100%;height:auto;overflow:visible}
-.bi-hero .hs-fil{fill:none;stroke:rgba(236,239,245,.5);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation:hs-trace 1.5s cubic-bezier(.4,0,.2,1) forwards;animation-delay:calc(.35s + var(--i) * .11s)}
-@keyframes hs-trace{to{stroke-dashoffset:0}}
-.bi-hero .hs-bloc{fill:rgba(255,255,255,.035);stroke:rgba(236,239,245,.72);stroke-width:1.2;transition:fill .3s,stroke .3s}
-.bi-hero .hs-barre{fill:rgba(236,239,245,.82);transition:fill .3s}
-.bi-hero .hs-rep{font:600 13px var(--mono);fill:#eef0f4;text-anchor:middle;letter-spacing:.02em}
-.bi-hero .hs-sous{font:500 11px var(--sans);fill:rgba(236,239,245,.45);text-anchor:middle}
-.bi-hero .hs-c{font:500 10.5px var(--mono);fill:rgba(236,239,245,.46);text-anchor:middle}
-.bi-hero .hs-g{text-anchor:start}
-.bi-hero .hs-b{font:500 9.5px var(--mono);fill:rgba(236,239,245,.4)}
-.bi-hero .hs-masse{fill:none;stroke:rgba(236,239,245,.6);stroke-width:1.3;stroke-linecap:round}
-.bi-hero .hs-courant{fill:#f2a46b;filter:drop-shadow(0 0 4px rgba(242,164,107,.95)) drop-shadow(0 0 10px rgba(242,164,107,.5))}
-.bi-hero .hs-piece{opacity:0;animation:hs-pose .7s ease forwards;animation-delay:.15s;cursor:default}
-.bi-hero .hs-piece:hover .hs-bloc{fill:rgba(229,156,100,.12);stroke:#f2a46b}
-.bi-hero .hs-piece:hover .hs-barre{fill:#f2a46b}
-@keyframes hs-pose{to{opacity:1}}
-@media (prefers-reduced-motion:reduce){ .bi-hero .hs-fil{animation:none;stroke-dashoffset:0} .bi-hero .hs-piece{animation:none;opacity:1} .bi-hero .hs-courant{display:none} .bi-titre.bi-marque{animation:none} }
-/* les gestes et les cartes, sur le graphite */
-.bi-accueil .bi-vide-gestes .bi-btn-ouvrir{background:#f4f4f2;color:#141518;box-shadow:0 10px 30px -12px rgba(0,0,0,.7)}
-.bi-accueil .bi-vide-gestes .bi-btn-2{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#eef0f4}
-.bi-accueil .bi-vide-gestes .bi-btn-2:hover{background:rgba(255,255,255,.09)}
-.bi-accueil .bi-encours-t{color:rgba(236,239,245,.5)}
-.bi-accueil .bi-tuile,.bi-accueil .bi-dock .bi-demo .bi-carte-corps.bi-tuile{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);box-shadow:0 12px 30px -18px rgba(0,0,0,.8)}
-.bi-accueil .bi-tuile:hover,.bi-accueil .bi-dock .bi-demo:hover .bi-carte-corps.bi-tuile{background:rgba(255,255,255,.07);border-color:rgba(242,164,107,.5)}
-.bi-accueil .bi-tuile-ico{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
-.bi-vitrine.bi-hero{width:min(1120px,100%);height:auto;margin:30px 0 26px}
-.bi-vitrine.bi-hero::before,.bi-vitrine.bi-hero::after{display:none}
-.bi-vitrine.bi-hero{width:min(1280px,94vw)}
-.bi-hero svg{transform:translate3d(calc(var(--px,0) * -14px),calc(var(--py,0) * -8px),0);transition:transform .9s cubic-bezier(.2,.8,.2,1)}
-@media (prefers-reduced-motion:reduce){ .bi-hero svg{transform:none} }
-.bi-marque-mini{font:700 var(--f-14)/1 var(--sans);letter-spacing:-.02em;color:#fff}
-.bi-marque-mini span{color:#a9adb6}
+/* (v84) les règles de l'accueil et de la bibliothèque qui suivaient ici vivent dans style-z-accueil.css */
 .nc-vignette .vu-bro.petit{max-width:100%}
 .vu-bro.petit .bro-nom{font-size:13px}
 .vu-bro.petit .bro-type{font-size:10px}
@@ -267,28 +225,6 @@ body.biblio #table .ta-courant::after,body.table-graphite #table .ta-courant::af
 .en-marque{background:linear-gradient(150deg,#2b2d33 0%,#141518 100%);color:#f2a46b;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 4px 12px -6px rgba(0,0,0,.6)}
 .en-marque svg{stroke:#f2a46b}
 .en-nom{letter-spacing:-.01em;font-weight:700}
-/* la bibliothèque sur le graphite : les installations en verre graphite, plus en papier blanc qui éblouit */
-.biblio .bi-grille .bi-carte:not(.bi-demo){--s-surface:#1c1d21;--s-sunken:#16171a;--s-hover:#24262b;--s-line:#2c2e33;--s-line-2:#3a3c42;--t-1:#f0f1f3;--t-2:#a9adb6;--t-3:#80848c;
-  --bi-bord:rgba(255,255,255,.09);--bi-pile-1:#18191c;--bi-pile-2:#141518;--bi-pile-bord:rgba(255,255,255,.07);--bi-pile-bord-2:rgba(255,255,255,.05)}
-.biblio .bi-grille .bi-carte:not(.bi-demo):not(.bi-confirmant):not(.bi-carte-neuve):hover .bi-carte-corps{box-shadow:0 0 0 1px rgba(242,164,107,.55),0 24px 48px -24px rgba(0,0,0,.8)}
-/* l'accueil, retouché : un rythme régulier, centré sur un grand écran ; le cadre de folio ; les câbles qui s'allument */
-.bi-accueil .bi-vide-centre{padding-top:max(36px,calc((100vh - 900px) / 2 + 36px))}
-.bi-vitrine.bi-hero{margin:44px 0 40px}
-.bi-accueil .bi-encours-t{margin:44px 0 16px}
-.bi-accueil .bi-tuile,.bi-accueil .bi-dock .bi-demo .bi-carte-corps.bi-tuile{width:260px;min-width:260px}
-body.biblio-accueil .en-nom{display:none}
-.bi-hero .hs-c{font-size:11px;fill:rgba(236,239,245,.55)}
-.bi-hero .hs-b{font-size:10.5px;fill:rgba(236,239,245,.5)}
-.bi-hero .hs-cadre{fill:none;stroke:rgba(236,239,245,.12);stroke-width:1}
-.bi-hero .hs-col{font:500 9px var(--mono);fill:rgba(236,239,245,.22);text-anchor:middle}
-.bi-hero .hs-cart-t{font:600 8.5px var(--mono);letter-spacing:.08em;fill:rgba(236,239,245,.32)}
-.bi-hero .hs-prise{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke;cursor:help}
-.bi-hero .hs-f:hover .hs-fil{stroke:#f2a46b;stroke-width:2.2;filter:drop-shadow(0 0 4px rgba(242,164,107,.7))}
-.bi-hero .hs-f:hover .hs-c{fill:#f2a46b}
-.bi-hero .hs-fil{transition:stroke .25s,stroke-width .25s}
-/* sur un écran de 900 px de haut, tout tient sans défiler */
-.bi-titre.bi-marque{font-size:clamp(84px,min(9.4vw,14.5vh),156px)}
-.bi-vitrine.bi-hero{width:min(1280px,94vw,calc((100vh - 600px) * 3.8));margin:min(44px,4vh) 0 min(40px,3.6vh)}
 .nc-filigrane{top:-34px;right:-30px;width:122px;height:122px}
 /* le récapitulatif : les en-têtes des colonnes de nombres à droite, comme leurs valeurs ; rien de coupé dans un en-tête */
 #base .rc-tab th{overflow:visible;text-overflow:clip}
@@ -438,14 +374,6 @@ body:is(.insp-flotte,.insp-epingle) #inspecteur .ix-tete::before{display:none}
 /* le champ qu'on écrit dans une case : le cuivre, un filet fin, jamais le gros bord blanc */
 #base .rc-saisie{border:1px solid var(--nv-cuivre);box-shadow:var(--anneau);outline:none}
 #base select.rc-saisie{-webkit-appearance:none;appearance:none;padding:0 26px 0 8px;background:var(--s-surface) no-repeat right 8px center/10px 10px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 3.5 5 7l3.5-3.5' fill='none' stroke='%23a9581f' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")}
-/* la barre d'alimentation qui arrive sur la borne 2 du disjoncteur : un rond de borne cuivré */
-.bi-hero .hs-source{fill:#1a1a1d;stroke:#f2a46b;stroke-width:1.4}
-/* les tuiles de l'accueil : rien de coupé — le nom tient sur sa ligne, le détail passe à la ligne s'il le faut ; la touche
-   de « Reprendre » ne paraît qu'au survol */
-.bi-accueil .bi-tuile,.bi-accueil .bi-dock .bi-demo .bi-carte-corps.bi-tuile{min-width:256px;max-width:330px;height:auto;min-height:72px;padding-top:10px;padding-bottom:10px}
-.bi-accueil .bi-tuile-t small{white-space:normal;overflow:visible;text-overflow:clip}
-.bi-accueil .bi-tuile-reprendre kbd{opacity:0;transition:opacity .2s}
-.bi-accueil .bi-tuile-reprendre:is(:hover,:focus-visible) kbd{opacity:1}
 .vu-bro .bro-ko.bout{font-size:11px;text-anchor:start}
 /* le récapitulatif étroit (une fiche rangée à côté) : les cases se resserrent, les longs textes passent à la ligne,
    la flèche du câble raccourcit — rien ne sort à droite */
@@ -636,55 +564,6 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 #base .rc-tab th[data-note]:is(.rc-c-n,.rc-c-mesure,.rc-c-etat,.rc-c-int)::after{text-align:center}
 #base .rc-tab th.rc-c-mesure .rc-th-l{min-width:0}
 
-/* ═══ v81 — L'ACCUEIL, À LA MANIÈRE D'APPLE (le lecteur : « trop de texte autour du titre ; un titre qui sort du lot ;
-   des gestes classe, dynamiques, waouh ») ═══ */
-.bi-accueil .bi-sur-titre{display:none}
-.bi-titre.bi-marque.bi-marque-svg{background:none;-webkit-text-fill-color:currentColor;animation:none;font-size:inherit;line-height:1;margin:0;display:flex;justify-content:center}
-.mq{display:block;width:clamp(300px,min(36vw,46vh),560px);height:auto;overflow:visible}
-.mq .mq-g{fill:none;stroke:url(#mq-acier);stroke-linecap:round;stroke-linejoin:round}
-.mq .mq-t,.mq .mq-o{stroke-dasharray:1;stroke-dashoffset:1;animation:mq-trace 1.1s cubic-bezier(.55,0,.25,1) forwards;animation-delay:calc(.15s + var(--i) * .16s)}
-.mq .mq-o{stroke-dasharray:290;stroke-dashoffset:290;animation-name:mq-trace-o}
-@keyframes mq-trace{to{stroke-dashoffset:0}}
-@keyframes mq-trace-o{to{stroke-dashoffset:0}}
-.mq .mq-t.cuivre{stroke:#f2a46b}
-.mq .mq-pin{fill:none;stroke:#b3b8c2;stroke-width:3.2;opacity:0;animation:mq-pose .5s ease 1.1s forwards}
-.mq .mq-pin.on{fill:#f2a46b;stroke:#f2a46b}
-.mq .mq-borne{fill:#141518;stroke:#f2a46b;stroke-width:3.4;opacity:0;animation:mq-pose .5s ease 1.25s forwards}
-.mq .mq-courant{fill:#ffd9bd;filter:drop-shadow(0 0 5px rgba(242,164,107,.95)) drop-shadow(0 0 14px rgba(242,164,107,.55));opacity:0;animation:mq-pose .4s ease 2.4s forwards}
-@keyframes mq-pose{to{opacity:1}}
-.mq-fin .mq-g{stroke:#f4f4f2}
-.mq-fin{width:clamp(320px,min(40vw,50vh),620px)}
-@media (prefers-reduced-motion:reduce){ .mq .mq-t,.mq .mq-o{animation:none;stroke-dashoffset:0} .mq .mq-pin,.mq .mq-borne{animation:none;opacity:1} .mq .mq-courant{display:none} }
-/* le slogan, en cuivre (le lecteur : « j'aimais bien la couleur orange ») */
-.bi-accueil .bi-devise{margin-top:26px;color:#e59c64;font-weight:450;letter-spacing:.005em}
-/* les gestes : le principal, grand, sa bordure de cuivre qui tourne lentement ; le second en verre */
-@property --bi-ang{syntax:'<angle>';inherits:false;initial-value:0deg}
-.bi-accueil .bi-vide-gestes{gap:14px;align-items:center}
-.bi-accueil .bi-vide-gestes .bi-btn-ouvrir{position:relative;isolation:isolate;height:64px;gap:14px;padding:0 14px 0 10px;border:0;border-radius:999px;background:#f4f2ee;color:#141518;
-  box-shadow:0 18px 44px -18px rgba(242,164,107,.55),0 8px 22px -12px rgba(0,0,0,.8);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}
-.bi-accueil .bi-vide-gestes .bi-btn-ouvrir::before{content:"";position:absolute;inset:-2px;padding:2px;z-index:1;pointer-events:none;border-radius:inherit;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
-  background:conic-gradient(from var(--bi-ang),rgba(242,164,107,0) 0 64%,rgba(242,164,107,.9) 80%,#ffe0c6 86%,rgba(242,164,107,0) 94%);animation:bi-ang 5s linear infinite}
-@keyframes bi-ang{to{--bi-ang:360deg}}
-.bi-accueil .bi-vide-gestes .bi-btn-ouvrir:hover{transform:translateY(-2px);box-shadow:0 24px 54px -18px rgba(242,164,107,.7),0 10px 26px -12px rgba(0,0,0,.85)}
-.bi-accueil .bi-btn-ouvrir .bi-g-ico{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#141518;color:#f2a46b;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
-.bi-accueil .bi-btn-ouvrir:hover .bi-g-ico{transform:translateY(-2px) scale(1.04)}
-.bi-accueil .bi-btn-ouvrir .bi-g-ico svg{width:20px;height:20px}
-.bi-accueil .bi-btn-ouvrir .bi-g-t{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
-.bi-accueil .bi-btn-ouvrir .bi-g-t b{font:650 16px/1.15 var(--sans);letter-spacing:-.01em}
-.bi-accueil .bi-btn-ouvrir .bi-g-t small{font:400 12px/1.2 var(--sans);color:#6b6e75}
-.bi-accueil .bi-btn-ouvrir kbd{margin-left:10px;opacity:.75}
-.bi-accueil .bi-vide-gestes .bi-btn-2{height:64px;padding:0 24px;border-radius:999px;font-size:15px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-.bi-accueil .bi-vide-gestes .bi-btn-2:hover{border-color:rgba(242,164,107,.5)}
-@media (prefers-reduced-motion:reduce){ .bi-accueil .bi-vide-gestes .bi-btn-ouvrir::before{animation:none} }
-/* dessous, sans titre : reprendre, l'exemple, la base — plus discrets, ils entrent après */
-.bi-accueil .bi-dock{margin-top:30px}
-.bi-accueil .bi-encours-t{display:none}
-.bi-accueil :is(.bi-devise,.bi-vide-gestes,.bi-dock){opacity:0;transform:translateY(10px);animation:bi-monte .7s cubic-bezier(.2,.8,.2,1) forwards}
-.bi-accueil .bi-devise{animation-delay:.9s}
-.bi-accueil .bi-vide-gestes{animation-delay:1.6s}
-.bi-accueil .bi-dock{animation-delay:2s}
-@keyframes bi-monte{to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){ .bi-accueil :is(.bi-devise,.bi-vide-gestes,.bi-dock){animation:none;opacity:1;transform:none} }
 /* le récapitulatif la nuit (le lecteur : « en mode sombre, on perd pas mal d'affaires ») : trois plans de graphite qui se
    distinguent — le rail, un cran plus bas ; la table, un graphite clair ; la ligne des titres, une bande — au lieu d'un
    seul noir où tout se fond */
@@ -770,10 +649,6 @@ svg.vu-face .vu-ct-g.va:focus{outline:none}
 .nv-somm-i{grid-template-columns:150px 230px minmax(0,1fr) 112px}
 .nv-somm-i>:last-child{justify-self:end}
 @container corps (max-width:760px){ .nv-somm-i{grid-template-columns:130px minmax(0,1fr) 104px} .nv-somm-p{grid-column:2/3} }
-
-/* l'accueil (le lecteur : « le slogan, plus fin, plus discret ; le schéma, je le préférais un peu plus gros ») */
-.bi-accueil .bi-devise{margin-top:22px;font:400 clamp(14px,1.05vw,16px)/1.5 var(--sans);letter-spacing:.04em;color:rgba(229,156,100,.82)}
-.bi-vitrine.bi-hero{width:min(1400px,97vw,calc((100vh - 520px) * 4.2));margin:24px 0 20px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
 
 
 /* ═══ v82 — LES FONDS (palette retenue après l’étude des couleurs) ═══ */
@@ -926,14 +801,6 @@ svg.vu-face:has(circle.vu-corps) text.pris{fill:#fff}
    de grand blanc entre la flèche et « Vers » */
 #base .rc-tab[data-onglet="liaisons"] .rc-fleche{flex:1 1 auto;width:auto;min-width:56px;max-width:none}
 
-/* ─── 7. L'ACCUEIL : l'ensemble au centre de l'écran, les cartes du bas alignées sur les gestes ──────────────────────────
-   Défaut : à 1440 × 900, tout est poussé en haut (36 px au-dessus du nom, 130 px de vide sous les cartes) ; les deux cartes
-   du bas ne s'alignent pas sur les deux gestes du dessus. Correction : l'ensemble centré verticalement ; la rangée du bas
-   a la largeur de la rangée des gestes. */
-.bi-accueil .bi-vide-centre{justify-content:center;padding-top:0;padding-bottom:2vh}
-.bi-accueil .bi-dock{margin-top:22px}
-.bi-accueil .bi-tuile,.bi-accueil .bi-dock .bi-demo .bi-carte-corps.bi-tuile{width:288px;min-width:288px;max-width:288px}
-
 /* ─── 8. LES CAPITALES GARDENT LEURS ACCENTS ─────────────────────────────────────────────────────────────────────────────
    Défaut : sous les chiffres de la carte, « DÉMARRAGE » s'affiche « DEMARRAGE », « CÂBLES » « CABLES » : le libellé a une
    hauteur de ligne de 11 px et coupe ce qui dépasse (overflow:hidden) — l'accent des capitales est rogné. En français,
@@ -941,8 +808,6 @@ svg.vu-face:has(circle.vu-corps) text.pris{fill:#fff}
 .nc-chiffre .nc-k{line-height:1.4;padding-top:1px}
 
 /* ═══ v83 ═══ */
-.bi-hero .hs-regle{fill:none;stroke:url(#hs-regle);stroke-width:1}
-.bi-vitrine.bi-hero{-webkit-mask-image:none;mask-image:none}
 /* le grand rangé à droite : ses coins et ses bords se tirent aussi (il devient une fenêtre) */
 body.insp-epingle.insp-grand #inspecteur .carte-bords i{display:block}
 body.insp-epingle.insp-grand #inspecteur .carte-bords [data-bord="w"]{top:12px;bottom:12px}

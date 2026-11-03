@@ -1141,14 +1141,17 @@ function juger(L, R) {
   const partages = compterPartages(R.fils), etires = compterEtires(L.comps, fils), excesEtires = excesDesEtires(L.comps, fils), marches = compterMarches(fils), escaliers = compterEscaliers(fils), sousHub = compterSousHub(L.comps);
   // un demi pour cent de tolérance : le juge mesure pastilles comprises, il est plus strict que la feuille
   const tient = (r <= FORMAT_MAX * 1.005 && r >= FORMAT_MIN / 1.005) || tientALEchelle(w, h), tiendra = tient || (r <= FORMAT_MAX * ETIRABLE && compterBandes(blocs) >= 2);
-  const contours = compterContours(fils), descentes = compterDescentes(boutsDesLiaisons(L.links)), frolements = compterFrolements(fils, blocs), forme = coutDeForme(w, h);
+  // les frôlements ne comptent dans la lisibilité qu'à partir de la finition : au juge de structure, ils se comptent à la demande
+  let frolements = NIVEAU_JUGE >= 1 ? compterFrolements(fils, blocs) : null;
+  const contours = compterContours(fils), descentes = compterDescentes(boutsDesLiaisons(L.links)), forme = coutDeForme(w, h);
   let muets = null;      // les muets coûtent cher à compter (le dessin pose ses étiquettes) : au niveau du choix, ou quand droits et croisements sont à égalité
   const j = { sain: t.etrangers === 0 && chevauchements(L.comps) === 0 && bornesSuperposees(L.comps) === 0 && filsRompus(R.fils, R.barrettes) === 0, tient, tiendra, format: r, largeur: w,
-    droits, croisements, partages, etires, marches, tours: compterTours(L), propres: t.propres.size, contours, frolements, forme,
+    droits, croisements, partages, etires, marches, tours: compterTours(L), propres: t.propres.size, contours, forme,
     escaliers, sousHub, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - PAR_MARCHE * marches - ESCALIER * escaliers - ETIRE * etires - TOUR * compterTours(L) - SOUS_HUB * sousHub - contours - DESCENTE * (descentes + excesEtires)
       - (NIVEAU_JUGE >= 1 ? FROLE * frolements : 0) - (NIVEAU_JUGE >= 2 ? forme + MUET * (muets = compterMuets(R, L.comps)) : 0), descentes, exces: compterExces(blocs), genees: compterPastillesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
     encombrement: Math.min(Math.max(w / A3, h), Math.max(w, h / A3)), surface: w * h, longueur };
   Object.defineProperty(j, 'muets', { enumerable: true, get() { if (muets == null) muets = compterMuets(R, L.comps); return muets; } });
+  Object.defineProperty(j, 'frolements', { enumerable: true, get() { if (frolements == null) frolements = compterFrolements(fils, blocs); return frolements; } });
   return j;
 }
 /* Un dessin qui met un fil dans un bloc ne gagne jamais ; un dessin qui tient
@@ -1187,16 +1190,21 @@ const boutsDesLiaisons = links => links.filter(l => !l.shunt && !l.boucle).map(l
    s'écarte, ou le fil passe ailleurs, mais un fil droit ne se plie pas pour un frôlement seul. Un morceau de barrette
    se longe : il est fait pour ça (les compter, c'était égarer la recherche — au folio 4, quatre fils droits perdus). */
 const FROLE = 0.5, FROLE_LONG = 8;
-function frolementsDuSegment(a, b, siens, blocs) { let n = 0;
+/* La géométrie d'abord (des comparaisons de nombres), le nom du bloc ensuite : le juge de la passe finale passait le
+   dixième de son temps à demander à chaque paire (segment, bloc) si le bloc était l'un des deux du fil. `de`, `vers` : les
+   deux blocs du fil, en texte. */
+function frolementsDuSegment(a, b, de, vers, blocs) { let n = 0;
   const h = Math.abs(a.y - b.y) < 0.5, v = Math.abs(a.x - b.x) < 0.5; if (!h && !v) return 0;
-  for (const c of blocs) { if (c.kind !== 'equip' || siens.has(String(c.name))) continue;
-    if (h) { if (Math.min(Math.max(a.x, b.x), c.x + c.w) - Math.max(Math.min(a.x, b.x), c.x) < FROLE_LONG) continue;
-      const d = a.y < c.y ? c.y - a.y : a.y - (c.y + c.h); if (d > 0 && d < DEGAGEMENT) n++; }
-    else { if (Math.min(Math.max(a.y, b.y), c.y + c.h) - Math.max(Math.min(a.y, b.y), c.y) < FROLE_LONG) continue;
-      const d = a.x < c.x ? c.x - a.x : a.x - (c.x + c.w); if (d > 0 && d < DEGAGEMENT_V) n++; } }
+  const xa = Math.min(a.x, b.x), xb = Math.max(a.x, b.x), ya = Math.min(a.y, b.y), yb = Math.max(a.y, b.y);
+  for (const c of blocs) { if (c.kind !== 'equip') continue;
+    if (h) { if (Math.min(xb, c.x + c.w) - Math.max(xa, c.x) < FROLE_LONG) continue;
+      const d = a.y < c.y ? c.y - a.y : a.y - (c.y + c.h); if (!(d > 0 && d < DEGAGEMENT)) continue; }
+    else { if (Math.min(yb, c.y + c.h) - Math.max(ya, c.y) < FROLE_LONG) continue;
+      const d = a.x < c.x ? c.x - a.x : a.x - (c.x + c.w); if (!(d > 0 && d < DEGAGEMENT_V)) continue; }
+    const nom = String(c.name); if (nom !== de && nom !== vers) n++; }
   return n; }
 function compterFrolements(fils, blocs) { let n = 0;
-  fils.forEach(w => { const siens = new Set([String(w.de), String(w.vers)]); for (let i = 0; i < w.pts.length - 1; i++) n += frolementsDuSegment(w.pts[i], w.pts[i + 1], siens, blocs); });
+  fils.forEach(w => { const de = String(w.de), vers = String(w.vers); for (let i = 0; i < w.pts.length - 1; i++) n += frolementsDuSegment(w.pts[i], w.pts[i + 1], de, vers, blocs); });
   return n; }
 /* La FORME : le lecteur veut un dessin SERRÉ, à la forme de la feuille (« c'est vachement dans la longueur… l'œil se perd
    à vouloir le recentrer » : un folio étalé sur une rangée pour n'avoir rien à descendre, un bloc rejeté au bout de la
@@ -1260,33 +1268,44 @@ function bat(a, b, tolerant) {
    enjambe un fil droit le croise. C'est le TAMIS des gestes de la recherche
    locale : cent fois moins cher qu'un routage, faux d'un croisement ou deux,
    et le routage tranche. */
+/* Ce que l'estimation lit des blocs ne dépend que d'eux : la liste des blocs et les bandes d'ordonnées des couloirs se
+   calculent une fois par jeu de blocs (`L.comps`) — l'estimation d'un autre ordre des bornes (`estimerOrdre`) garde les
+   blocs du meilleur, et la descente sur les paires d'un connecteur l'appelait des centaines de fois par geste. */
+const BLOCS_ESTIMES = new WeakMap();
+const blocsEstimes = comps => { let e = BLOCS_ESTIMES.get(comps); if (!e) { e = { blocs: comps.filter(c => c.kind !== 'tag'), bandes: new Map() }; BLOCS_ESTIMES.set(comps, e); } return e; };
+// combien de valeurs d'un tableau trié sont au plus v (dichotomie)
+const auPlus = (T, v) => { let a = 0, b = T.length; while (a < b) { const m = (a + b) >> 1; if (T[m] <= v) a = m + 1; else b = m; } return a; };
 function estimer(L) {
-  const blocs = L.comps.filter(c => c.kind !== 'tag'), g = L.geom;
+  const EB = blocsEstimes(L.comps), blocs = EB.blocs, g = L.geom;
   const x0 = ch => ch === 0 ? g.colX[0] - g.chW[0] : g.colX[ch - 1] + g.colW[ch - 1], x1 = ch => x0(ch) + g.chW[ch];
   const mur = ep => ep.stub === 'L' ? 'L' : 'R';
-  const libre = (xa, xb, y, ex) => { if (xa > xb) { const t = xa; xa = xb; xb = t; } return !blocs.some(c => !ex.has(c.name) && xb > c.x + 1 && xa < c.x + c.w - 1 && y > c.y - 3 && y < c.y + c.h + 3); };
+  // un fil ne bute pas sur ses deux blocs (`de`, `vers`, leurs noms en texte : ce que le Set d'exclusion comparait)
+  const libre = (xa, xb, y, de, vers) => { if (xa > xb) { const t = xa; xa = xb; xb = t; }
+    for (const c of blocs) if (c.name !== de && c.name !== vers && xb > c.x + 1 && xa < c.x + c.w - 1 && y > c.y - 3 && y < c.y + c.h + 3) return false; return true; };
   const fils = []; L.links.forEach(l => { if (l.boucle || l.shunt) return; let A = l.epA, B = l.epB;
     if (A.ch > B.ch || (A.ch === B.ch && mur(A) === 'R' && mur(B) === 'L')) { const t = A; A = B; B = t; }
-    fils.push({ A, B, ex: new Set([String(l.de), String(l.vers)]), pont: String(l.de) === String(l.vers) }); });
+    const de = String(l.de), vers = String(l.vers); fils.push({ A, B, de, vers, pont: de === vers }); });
   const nG = g.nCols + 1, barrieres = Array.from({ length: nG }, () => []), verticales = Array.from({ length: nG }, () => []);
-  let droits = 0, frolements = 0; const plies = [];
-  fils.forEach(f => { const { A, B, ex } = f;
-    if (Math.abs(A.y - B.y) <= 0.75 && mur(A) === 'L' && mur(B) === 'R' && libre(A.x + 2, B.x - 2, A.y, ex)) { if (!f.pont) droits++;          // un pont de barrette coupée n'est pas un fil droit gagné (05, compterDroits)
-      frolements += frolementsDuSegment(A, B, ex, blocs);                  // un fil droit frôle ce qu'il longe ; les pliés, le routeur les écarte
+  // les frôlements ne comptent qu'à partir de la finition (NIVEAU_JUGE 1) : au juge de structure, on ne les cherche pas
+  let droits = 0, frolements = 0; const plies = [], frole = NIVEAU_JUGE >= 1;
+  fils.forEach(f => { const { A, B } = f;
+    if (Math.abs(A.y - B.y) <= 0.75 && mur(A) === 'L' && mur(B) === 'R' && libre(A.x + 2, B.x - 2, A.y, f.de, f.vers)) { if (!f.pont) droits++;          // un pont de barrette coupée n'est pas un fil droit gagné (05, compterDroits)
+      if (frole) frolements += frolementsDuSegment(A, B, f.de, f.vers, blocs);                // un fil droit frôle ce qu'il longe ; les pliés, le routeur les écarte
       // il barre les goulottes qu'il traverse de part en part (le fil d'une pastille reste dans sa colonne)
       for (let ch = A.ch; ch <= B.ch; ch++) if (A.x <= x0(ch) + 1 && B.x >= x1(ch) - 1) barrieres[ch].push(A.y); } else plies.push(f); });
   barrieres.forEach(b => b.sort((u, v) => u - v));
-  const coupe = (ch, ya, yb) => { const lo = Math.min(ya, yb) + 0.5, hi = Math.max(ya, yb) - 0.5; let n = 0; for (const y of barrieres[ch]) { if (y > hi) break; if (y > lo) n++; } return n; };
+  // les barrières strictement au-dessus de min + 0,5 et au plus à max − 0,5
+  const coupe = (ch, ya, yb) => { const lo = Math.min(ya, yb) + 0.5, hi = Math.max(ya, yb) - 0.5; if (!(hi > lo)) return 0; const B = barrieres[ch]; return auPlus(B, hi) - auPlus(B, lo); };
   const vert = (ch, a0, a1) => verticales[ch].push({ lo: Math.min(a0.y, a1.y), hi: Math.max(a0.y, a1.y), att: [a0, a1] });
   // les bandes d'ordonnées que les colonnes entre deux goulottes occupent : un couloir passe entre elles (calculées une fois par paire de goulottes)
-  const bandes = new Map(); const couloirLibre = (ca, cb, y) => { const k = ca + ':' + cb; let B = bandes.get(k);
+  const bandes = EB.bandes; const couloirLibre = (ca, cb, y) => { const k = ca + ':' + cb; let B = bandes.get(k);
     if (!B) { B = blocs.filter(c => c.col >= ca && c.col < cb).map(c => [c.y - 3, c.y + c.h + 3]).sort((u, v) => u[0] - v[0]); bandes.set(k, B); }
     for (const [a, b] of B) { if (a > y) return true; if (y < b) return false; } return true; };
-  plies.forEach(({ A, B, ex }) => { const mA = mur(A), mB = mur(B);
+  plies.forEach(({ A, B, de, vers }) => { const mA = mur(A), mB = mur(B);
     if (A.ch === B.ch) { vert(A.ch, { y: A.y, mur: mA }, { y: B.y, mur: mB }); return; }
     const choix = [];
-    if (mA === 'L' && libre(A.x + 2, x0(B.ch) + 2, A.y, ex)) choix.push({ c: coupe(B.ch, A.y, B.y), pose: () => vert(B.ch, { y: A.y, mur: 'L' }, { y: B.y, mur: mB }) });
-    if (mB === 'R' && libre(x1(A.ch) - 2, B.x - 2, B.y, ex)) choix.push({ c: coupe(A.ch, A.y, B.y), pose: () => vert(A.ch, { y: A.y, mur: mA }, { y: B.y, mur: 'R' }) });
+    if (mA === 'L' && libre(A.x + 2, x0(B.ch) + 2, A.y, de, vers)) choix.push({ c: coupe(B.ch, A.y, B.y), pose: () => vert(B.ch, { y: A.y, mur: 'L' }, { y: B.y, mur: mB }) });
+    if (mB === 'R' && libre(x1(A.ch) - 2, B.x - 2, B.y, de, vers)) choix.push({ c: coupe(A.ch, A.y, B.y), pose: () => vert(A.ch, { y: A.y, mur: mA }, { y: B.y, mur: 'R' }) });
     // un couloir entre les deux goulottes, libre à travers les colonnes entières, celui qui enjambe le moins
     const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y); let ym = null, cm = Infinity;
     for (let y = lo - 240; y <= hi + 240; y += 8) { const c = coupe(A.ch, A.y, y) + coupe(B.ch, y, B.y) + 0.5 + 0.0005 * Math.abs(y - (lo + hi) / 2) + (y < lo || y > hi ? 0.4 : 0);

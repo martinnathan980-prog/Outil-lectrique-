@@ -89,10 +89,10 @@ async function pdfDuPlan(liaisons, nom, options) { const o = options || {}, ouve
     const S = svgDuFolioPdf(f, ctx); pagesFolios.push({ ops: svgEnOpsPdf(S.svg, S.bb), signet: 'Folio ' + nomF }); await pausePdf(); }
   // 3. les pages écrites : la garde (elle connaît la page de chacun), les hypothèses et sources juste après elle (v73,
   // l'ingénieur, n° 9 : « le dossier ne dit pas sur quelles hypothèses il repose »), la nomenclature et les modifications à la fin
-  verifier(); annoncer(PLACER + (1 - PLACER) * 0.92, 'La page de garde, la nomenclature…', prets);
+  verifier(); annoncer(PLACER + (1 - PLACER) * 0.92, 'La page de garde, la LPA…', prets);
   const garde = o.garde !== false, hypo = ouvert ? pagesHypothesesPdf(nom) : [], debut = (garde ? 2 : 1) + hypo.length, annexes = [];
   let suite = debut + total; const ajouter = (pages, titre, mot) => { if (!pages.length) return []; annexes.push({ titre, mot, page: suite, pages }); suite += pages.length; return pages; };
-  if (ouvert) { ajouter(pagesNomenclaturePdf(nom), 'la nomenclature', 'la nomenclature'); ajouter(pagesModificationsPdf(nom), 'les modifications de l’installation', 'les modifications de l’installation'); }
+  if (ouvert) { ajouter(pagesNomenclaturePdf(nom), 'la LPA', 'la LPA (ce qu’il faut commander)'); ajouter(pagesModificationsPdf(nom), 'les modifications de l’installation', 'les modifications de l’installation'); }
   const nPages = suite - 1, ecrites = [];
   if (garde) { let problemes = null; if (ouvert && typeof controleDuContrat === 'function') { try { problemes = (typeof controleAJour === 'function' ? controleAJour() : (rendreControle(), CONTROLE.items) || []).slice(); } catch (_) { problemes = null; } }
     const modifiees = ouvert && typeof nombreDeChangements === 'function' ? nombreDeChangements() : null;
@@ -103,10 +103,10 @@ async function pdfDuPlan(liaisons, nom, options) { const o = options || {}, ouve
       origine: [ap.length ? (ap.length > 1 ? ap.length + ' appareils' : 'Appareil ' + ap[0]) : '', hs.length ? (hs.length > 1 ? hs.length + ' harness' : 'Harness ' + hs[0]) : '', rt.length === 1 ? 'Installation du ' + rt[0] : ''].filter(Boolean).join(' · '),
       folios: folios.map((f, i) => ({ plan: f.plan === '*' ? '1' : f.plan, n: f.orig.length, reperes: nR(f), page: debut + i })),
       problemes, modifiees, hypotheses: hypo.length ? 2 : 0, annexes: annexes.map(a => ({ titre: a.titre, mot: a.mot, page: a.page })) });
-    p.pied(nom, 1, nPages); ecrites.push({ ops: p.ops(), signet: 'Page de garde' }); }
-  hypo.forEach((p, k) => { p.pied(nom, (garde ? 2 : 1) + k, nPages); ecrites.push({ ops: p.ops(), signet: 'Hypothèses et sources' + (hypo.length > 1 ? ' (' + (k + 1) + ')' : '') }); });
+    p.pied(nom, 1, nPages, ctx.cartouche); ecrites.push({ ops: p.ops(), signet: 'Page de garde' }); }
+  hypo.forEach((p, k) => { p.pied(nom, (garde ? 2 : 1) + k, nPages, ctx.cartouche); ecrites.push({ ops: p.ops(), signet: 'Hypothèses et sources' + (hypo.length > 1 ? ' (' + (k + 1) + ')' : '') }); });
   const pages = [...ecrites, ...pagesFolios];
-  annexes.forEach(a => a.pages.forEach((p, k) => { p.pied(nom, a.page + k, nPages); pages.push({ ops: p.ops(), signet: (a.titre.charAt(0).toUpperCase() + a.titre.slice(1)) + (a.pages.length > 1 ? ' (' + (k + 1) + ')' : '') }); }));
+  annexes.forEach(a => a.pages.forEach((p, k) => { p.pied(nom, a.page + k, nPages, ctx.cartouche); pages.push({ ops: p.ops(), signet: (a.titre.charAt(0).toUpperCase() + a.titre.slice(1)) + (a.pages.length > 1 ? ' (' + (k + 1) + ')' : '') }); }));
   // 4. le fichier
   annoncer(PLACER + (1 - PLACER) * 0.96, 'Assemblage du PDF…', prets);
   const octets = await ecrirePdf(pages, { titre: nom, sujet: 'Dossier de câblage : ' + motPdf(total, 'folio', 'folios') + ', ' + motPdf(L0.length, 'liaison', 'liaisons') });
@@ -302,7 +302,7 @@ function svgEnOpsPdf(svgTexte, bb) { const doc = new DOMParser().parseFromString
   for (const k of racine.children) parcourir(k, { ...STYLE_SVG, op: 1 });
   out.push('Q'); return out.join('\n'); }
 
-/* ---- les pages écrites : la garde, la nomenclature, les modifications (Helvetica, sur le même A3) ------------------
+/* ---- les pages écrites : la garde, la LPA, les modifications (Helvetica, sur le même A3) ---------------------------
    Des textes et des aplats clairs, aucun trait : une page écrite ne se lit pas comme un schéma (09-pdf ignore les
    aplats clairs, et sans trait il n'y a ni liaison ni bout orphelin). Les mots de l'atelier : « câble », « repère ». */
 const ENCRE_PDF = [0.043, 0.067, 0.094], GRIS_PDF = [0.49, 0.533, 0.576], GRIS2_PDF = [0.227, 0.275, 0.325], BANDE_PDF = [0.945, 0.953, 0.961], ZEBRE_PDF = [0.973, 0.976, 0.98],
@@ -322,8 +322,15 @@ function pageEcrite() { const ops = [], H = A3_PDF.h; let rg = '', tc = '';
       L.forEach((t, k) => P.texte(x, y + k * h, t, { ...o, max: k === L.length - 1 ? o.max : undefined })); return L.length; },
     // un aplat clair, son coin haut-gauche à (x, y)
     bande(x, y, w, h, c) { couleur(c || BANDE_PDF); ops.push(`${nbPdf(x)} ${nbPdf(H - y - h)} ${nbPdf(w)} ${nbPdf(h)} re f`); },
-    // le pied : le plan à gauche, la page à droite
-    pied(nom, i, n) { P.texte(MARGE_PDF, H - 28, 'VOLTA · ' + nom, { corps: 8, couleur: GRIS_PDF, max: 600 }); P.texte(A3_PDF.w - MARGE_PDF, H - 28, `page ${i} / ${n}`, { corps: 8, couleur: GRIS_PDF, ancre: 'end' }); },
+    /* le pied : le plan à gauche ; à droite, LE CARTOUCHE de la page (v84 : une page écrite qui s'égare de la liasse dit
+       d'où elle vient, comme un folio) — le titre, l'indice, la date, la page, en cases d'aplat clair : aucun trait (une
+       page écrite ne se lit pas comme un schéma), lisible en noir et blanc. Sans cartouche, la page seule. */
+    pied(nom, i, n, cart) { P.texte(MARGE_PDF, H - 28, 'VOLTA · ' + nom, { corps: 8, couleur: GRIS_PDF, max: 560 });
+      if (!cart) { P.texte(A3_PDF.w - MARGE_PDF, H - 28, `page ${i} / ${n}`, { corps: 8, couleur: GRIS_PDF, ancre: 'end' }); return; }
+      const cases = [['TITRE', cart.titre || nom, 0.48, true], ['INDICE', cart.indice || '—', 0.12], ['DATE', cart.date || '—', 0.2], ['PAGE', i + ' / ' + n, 0.2, true]];
+      const W = 430, y = H - 50, h = 34; let x = A3_PDF.w - MARGE_PDF - W;
+      cases.forEach(([lib, val, part, gras]) => { const w = part * W - 2; P.bande(x, y, w, h);
+        P.texte(x + 8, y + 11, lib, { corps: 6, gras: true, ls: 0.6, couleur: GRIS_PDF }); P.texte(x + 8, y + 26, String(val), { corps: 9.5, gras: !!gras, max: w - 16 }); x += part * W; }); },
     ops: () => ops.join('\n') };
   return P; }
 const dateLonguePdf = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -425,7 +432,7 @@ function pagesNomenclaturePdf(nom) { let N; try { N = nomenclatureDuContrat(); }
   if (!sections.some(S => S.lignes.length)) return [];
   const resume = [motPdf(somme(N.contacts), 'contact à sertir', 'contacts à sertir'), motPdf(somme(N.modules), 'module de jonction', 'modules de jonction'), motPdf(somme(N.connecteurs), 'connecteur ou prise', 'connecteurs et prises'),
     motPdf(N.fils, 'câble', 'câbles'), nombre(Math.round(N.longueur)) + ' m de câble'].join(' · ') + ` — relu depuis le plan, les normes et les choix des fiches ; sans longueur dans l’installation, l’hypothèse de ${nombre(N.hypothese)} m par câble.`;
-  return pagesDeTablesPdf('Nomenclature — ' + nom, resume, sections); }
+  return pagesDeTablesPdf('LPA — ' + nom, resume, sections); }
 // les modifications du retest (08-export : ce que portait le fichier là où on l'a changé), en une table
 function pagesModificationsPdf(nom) { if (typeof modificationsDe !== 'function') return [];
   const lignes = []; let n = 0; verite().filter(liaisonComplete).forEach(l => { const m = modificationsDe(l); if (!m.length) return; n++;

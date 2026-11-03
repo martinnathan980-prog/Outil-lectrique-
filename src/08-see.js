@@ -320,7 +320,7 @@ function surSEE(I, g) { const s = (I.coherence || {}).sur || {}, C = comparaison
   return g === 'contacts' ? `${m(s.lignes || 0)} ligne${s.lignes > 1 ? 's' : ''} de contact de ${plurielLie(s.regles || 0, 'règle')} validée${s.regles > 1 ? 's' : ''} ou en cours`
     : g === 'cables' ? `${m(s.cables || 0)} câble${s.cables > 1 ? 's' : ''}, les obsolètes à part`
     : g === 'faces' ? `${plurielLie(s.faces || 0, 'face')}, ${m(s.broches || 0)} broche${s.broches > 1 ? 's' : ''}`
-    : g === 'equipements' ? `${plurielLie(s.connecteurs || 0, 'connecteur')}, ${plurielLie(s.equipements || 0, 'équipement')}, ${plurielLie(s.paires || 0, 'paire')} fiche ↔ embase`
+    : g === 'equipements' ? `${plurielLie(s.connecteurs || 0, 'connecteur')}, ${plurielLie(s.equipements || 0, 'équipement')}, ${plurielLie(s.paires || 0, 'paire')} partie mobile ↔ partie fixe`
     : g === 'liens' ? (s.renvois != null ? `${plurielLie(s.renvois, 'renvoi')} entre ${plurielLie(s.feuilles || 0, 'feuille')}` : 'à la lecture du classeur')
     : `${m(['contacts', 'cables', 'modules'].reduce((n, t) => n + C[t].remplacees.length + (C[t].verifiees || []).length + C[t].identiques.length + (C[t].redessinees || []).length, 0))} lignes que VOLTA avait aussi`; }
 function coherenceSEEHtml() { const I = baseMontreeSEE(), K = I && I.coherence;
@@ -364,7 +364,7 @@ function apporteSEEHtml(I) { const A = apporteSEE(I), m = milliers, nSeul = A.ph
     + item('+' + m(A.contacts.nouvelles), 'lignes de contact', 'sur ' + m(A.contacts.n) + ' retenues, ' + plurielLie(A.contacts.familles, 'famille') + (A.contacts.famillesNouvelles.length ? ' — ' + plurielLie(A.contacts.famillesNouvelles.length, 'nouvelle') + fam(A.contacts.famillesNouvelles) : ''))
     + item('+' + m(A.cables.nouveaux), 'câbles', 'sur ' + m(A.cables.n) + (A.cables.famillesNouvelles.length ? ' — familles nouvelles' + fam(A.cables.famillesNouvelles) : ''))
     + item('+' + m(A.faces.nouvelles), 'faces de connecteur', 'sur ' + m(A.faces.n) + (A.faces.parFamille.length ? ' — ' + A.faces.parFamille.slice(0, 6).map(([f, n]) => f + ' ' + n).join(', ') : ''))
-    + item(m(A.equipements.n), 'références de connecteurs et d’équipements', plurielLie(A.equipements.paires, 'paire') + ' fiche ↔ embase, ' + plurielLie(A.equipements.programmes, 'programme') + ' — VOLTA n’en avait aucune')
+    + item(m(A.equipements.n), 'références de connecteurs et d’équipements', plurielLie(A.equipements.paires, 'paire') + ' partie mobile ↔ partie fixe, ' + plurielLie(A.equipements.programmes, 'programme') + ' — VOLTA n’en avait aucune')
     + (ac ? item(m(ac.lignes), 'accessoires', (ac.types.length ? ac.types.slice(0, 4).map(([v, n]) => v + ' ' + m(n)).join(', ') + ' · ' : '') + (ac.tyraps ? m(ac.tyraps) + ' tyraps' : 'aucun tyrap nommé') + (ac.tyrapsVolta ? ' ; des ' + ac.tyrapsVolta + ' tyraps de VOLTA, ' + ac.tyrapsDansSEE + ' y sont' : '')) : '')
     + `</ul>${formes ? `<p class="see-note">Les références de contact, par famille : ${esc(formes)}.</p>` : ''}</div>`;
   return `<div class="see-bloc see-apporte"><h3>Ce que la base apporte <span>à côté de ce que VOLTA tenait de vos photos des tables de SEE (EN 2997 v6, EN 3645 v2, EN 3646 v13, EN 4165 v49)</span></h3><div class="see-ap">${photos}${plus}</div>${seulVoltaHtml(I, nSeul)}</div>`; }
@@ -408,7 +408,7 @@ function rapportCoherenceSEE(I, copie) { const K = I && I.coherence; if (!K) ret
   const nb = e => X.filter(x => etatCtlSEE(x) === e), cas = xs => xs.reduce((n, x) => n + x.n, 0);
   const out = [`Rapport de cohérence de la base SEE — vérifiée par VOLTA le ${new Date(I.quand || Date.now()).toLocaleDateString('fr-FR')}, sur le poste qui la détient`,
     'Des références de catalogue et des comptes seulement : ni le plan, ni le nom du classeur' + (copie ? ', ni le nom des programmes.' : '.'),
-    `Lu : ${m(s.lignes || 0)} lignes de contact (${m(s.regles || 0)} règles validées ou en cours), ${m(s.cables || 0)} câbles, ${m(s.faces || 0)} faces (${m(s.broches || 0)} broches), ${m(s.connecteurs || 0)} connecteurs, ${m(s.equipements || 0)} équipements, ${m(s.paires || 0)} paires fiche ↔ embase${s.renvois != null ? `, ${m(s.renvois)} renvois entre ${m(s.feuilles || 0)} feuilles` : ''}.`,
+    `Lu : ${m(s.lignes || 0)} lignes de contact (${m(s.regles || 0)} règles validées ou en cours), ${m(s.cables || 0)} câbles, ${m(s.faces || 0)} faces (${m(s.broches || 0)} broches), ${m(s.connecteurs || 0)} connecteurs, ${m(s.equipements || 0)} équipements, ${m(s.paires || 0)} paires partie mobile ↔ partie fixe${s.renvois != null ? `, ${m(s.renvois)} renvois entre ${m(s.feuilles || 0)} feuilles` : ''}.`,
     `Verdict : ${X.length} contrôles — ${nb('ko').length} en erreur (${m(cas(nb('ko')))} cas, écartés), ${nb('att').length} à voir (${m(cas(nb('att')))} cas), ${nb('info').length} pour information (${m(cas(nb('info')))} cas), ${nb('ok').length} sans défaut${nb('na').length ? ', ' + nb('na').length + ' sans objet' : ''}.`];
   const progs = new Map(); let np = 0; const prog = p => progs.get(p) || (progs.set(p, 'programme ' + String.fromCharCode(65 + (np++ % 26))), progs.get(p));
   GROUPES_SEE.forEach(([g, t]) => { out.push('', `== ${t} (${surSEE(I, g).replace(/ /g, ' ')}) ==`);
@@ -426,7 +426,7 @@ function rapportCoherenceSEE(I, copie) { const K = I && I.coherence; if (!K) ret
     `La base, seule source des pièces : ${typeof BASE_SEE !== 'undefined' && BASE_SEE.base === I && seuleBaseSEE() ? 'oui (la case est cochée)' : 'non — VOLTA garde ses lignes en secours'}`,
     `Câbles : ${m(A.cables.n)}, dont ${m(A.cables.nouveaux)} que VOLTA n’avait pas${A.cables.famillesNouvelles.length ? ' ; familles nouvelles : ' + A.cables.famillesNouvelles.join(', ') : ''}`,
     `Faces : ${m(A.faces.n)}, dont ${m(A.faces.nouvelles)} que VOLTA n’avait pas${A.faces.parFamille.length ? ' (' + A.faces.parFamille.map(([f, n]) => f + ' ' + n).join(', ') + ')' : ''}`,
-    `Connecteurs et équipements : ${m(A.equipements.n)} références, ${m(A.equipements.paires)} paires fiche ↔ embase, ${A.equipements.programmes} programmes — VOLTA n’en avait aucune`,
+    `Connecteurs et équipements : ${m(A.equipements.n)} références, ${m(A.equipements.paires)} paires partie mobile ↔ partie fixe, ${A.equipements.programmes} programmes — VOLTA n’en avait aucune`,
     Object.keys(A.formes).length ? 'Références de contact par famille : ' + Object.entries(A.formes).sort((a, b) => b[1] - a[1]).map(([f, n]) => f + ' ' + n).join(', ') : '',
     A.accessoires ? `Accessoires : ${m(A.accessoires.lignes)}${A.accessoires.types.length ? ' (' + A.accessoires.types.map(([v, n]) => v + ' ' + n).join(', ') + ')' : ''} ; tyraps : ${A.accessoires.tyraps}${A.accessoires.tyrapsVolta ? ` ; des ${A.accessoires.tyrapsVolta} tyraps de VOLTA, ${A.accessoires.tyrapsDansSEE} y sont` : ''}` : '');
   return out.filter(x => x !== '').join('\n').replace(/\n(== )/g, '\n\n$1') + '\n'; }

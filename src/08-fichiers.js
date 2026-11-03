@@ -162,6 +162,14 @@ function ceQueJaiLu(brutes) { let best = null;
   return `J’ai lu${best.i ? ', ligne ' + (best.i + 1) : ''} : <span class="id">${cs.map(esc).join('</span>' + POINT + '<span class="id">')}</span>${best.cs.length > 8 ? '…' : ''}.`; }
 const IL_ME_FAUT = 'Il me faut au moins <span class="id">Device1</span>, <span class="id">Pin1</span>, <span class="id">Device2</span>, <span class="id">Pin2</span>.';
 const feuillesHtml = lu => lu && lu.ignorees && lu.ignorees.length ? lu.ignorees.map(n => guillemets(esc(n))) : [];
+/* (v84 — « rien ne se perd en silence ») CE QUE LA LECTURE A LAISSÉ DE CÔTÉ, pour la carte de l'installation : les feuilles
+   sans les en-têtes, les lignes qui ne nomment ni équipement ni câble (leur n° de ligne Excel, quand le fichier n'a qu'une
+   feuille), et les liaisons incomplètes — gardées au plan, mais ni dessinées ni vérifiées. Rend l'avis, ou null. */
+function avisDeLecture(r, ig) { const liste = [], nl = (r.laissees || []).length, ni = r.incompletes || 0;
+  if (ig && ig.length) liste.push('les feuilles ' + ig.join(', ') + ' : pas les en-têtes d’une installation');
+  if (nl) liste.push(pluriel(nl, 'ligne') + ' sans équipement ni câble' + ((r.entetes || 1) === 1 ? ' (ligne' + (nl > 1 ? 's ' : ' ') + r.laissees.slice(0, 8).join(', ') + (nl > 8 ? '…' : '') + ')' : '') + ' : rien à y lire');
+  if (ni) liste.push(pluriel(ni, 'liaison') + ' à un bout vide : gardée' + (ni > 1 ? 's' : '') + ' au plan, ni dessinée' + (ni > 1 ? 's' : '') + ' ni vérifiée' + (ni > 1 ? 's' : '') + ' — le récapitulatif les montre');
+  return liste.length ? { texte: 'Ce que VOLTA a laissé de côté en lisant le fichier :', liste } : null; }
 
 /* ---- ouvrir un fichier : le retest, ou ce qu'il est (une bible, une norme, une base) ------------------------------ */
 /* Un tableau qui n'est pas un retest : une bible ou une norme vont à leur place (rend vrai) — sur la table comme dans la
@@ -186,19 +194,23 @@ async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichie
   if (L.erreur) { echecImport('retest', L.erreur); return; }
   try {
     if (!trouverEnteteRetest(L.brutes)) { if (!(await rangerAilleurs(L, nom, fichier))) proposerRattrapage(nom, L); return; }
-    const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), avis = ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes de l’installation) :', liste: ig } : null;
-    if (!r.liaisons.length) { echecImport('retest', { texte: `${guillemets(esc(nom))} : les en-têtes de l’installation sont là (ligne ${r.entete}), mais aucune liaison dessous. Chaque ligne doit nommer au moins <span class="id">Device1</span> et <span class="id">Device2</span>.`, liste: avis ? [avis.texte + ' ' + ig.join(', ')] : [] },
+    const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), avis = avisDeLecture(r, ig);
+    if (!r.liaisons.length) { echecImport('retest', { texte: `${guillemets(esc(nom))} : les en-têtes de l’installation sont là (ligne ${r.entete}), mais aucune liaison dessous. Chaque ligne doit nommer au moins <span class="id">Device1</span> et <span class="id">Device2</span>.`, liste: avis ? avis.liste : [] },
       guillemets(nom) + ' : les en-têtes sont là, mais aucune liaison dessous.'); return; }
     if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, nom); baseRecue(nom, avis, rangerLesContrats(app.references.base, nom));
       ficheHarnais(r, nom); signaler(pluriel(r.harnais.length, 'harness') + ' dans ' + guillemets(nom) + ' : gardés comme contrats déjà faits — lequel ouvrir sur la table ?', 'base'); return; }
-    chargerContrat(r.liaisons, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest', avis);
+    // les liaisons à un bout vide restent au contrat, à leur rang (ni dessinées, ni vérifiées : le contrôle les dit) — 02, `toutes`
+    chargerContrat(r.toutes || r.liaisons, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest', avis);
     if (typeof noterLecture === 'function') noterLecture(L, r);   // le bilan anonyme dit comment ce fichier a été lu (08-bilan)
     // les feuilles laissées de côté se NOMMENT (le technicien v73 : « 1 feuille ignorée » m'inquiète : laquelle ?) ; le journal
-    // d'un retest corrigé (« Modifications ») n'en est plus une : la lecture le reconnaît et le dit (02, domaine C)
-    const noms = (L.lu && L.lu.ignorees) || [], n = r.liaisons.length;
+    // d'un retest corrigé (« Modifications ») n'en est plus une : la lecture le reconnaît et le dit (02, domaine C) ; (v84) les
+    // liaisons incomplètes et les lignes sans aucun bout se comptent aussi — rien ne se perd en silence
+    const noms = (L.lu && L.lu.ignorees) || [], n = r.liaisons.length, ni = r.incompletes || 0, nl = (r.laissees || []).length;
     const msg = pluriel(n, 'liaison') + ' lue' + (n > 1 ? 's' : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '')
+      + (ni ? ' · ' + pluriel(ni, 'incomplète') + ' (un bout vide : ni dessinée' + (ni > 1 ? 's' : '') + ', ni vérifiée' + (ni > 1 ? 's' : '') + ')' : '')
+      + (nl ? ' · ' + pluriel(nl, 'ligne') + ' sans équipement ni câble, laissée' + (nl > 1 ? 's' : '') + ' de côté' : '')
       + (noms.length === 1 ? ' · la feuille ' + guillemets(noms[0]) + ' est laissée de côté (pas les en-têtes d’une installation)' : noms.length ? ' · ' + noms.length + ' feuilles laissées de côté : ' + noms.slice(0, 3).map(guillemets).join(', ') + (noms.length > 3 ? '…' : '') : '') + '.';
-    if (ig.length) signaler(msg, 'retest'); else dire(msg);
+    if (avis) signaler(msg, 'retest'); else dire(msg);
     proposerDejaFait();
   } catch (e) { echecImport('retest', { texte: `${guillemets(esc(nom))} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 /* Une base reçue (un dépôt sur sa carte, ou un fichier de plusieurs harness) : la carte le dira, avec ses comptes et ce
@@ -253,7 +265,7 @@ function ficheHarnais(r, nom) { const H = r.harnais.map(h => { const L = r.liais
     + `<p class="note">Un contrat, c’est un harness. Les ${H.length} sont gardés comme <b>contrats déjà faits</b> : les fiches diront ce qui a déjà été fait. Celui qu’on ouvre devient le contrat sur la table.</p>`
     + `<ul class="ch-liste" id="choix-harness">${H.map(x => `<li><button class="ch-harness" data-harness="${escA(x.h)}"><b>${esc(x.h)}</b><span>${[pluriel(x.n, 'liaison'), x.dessins ? pluriel(x.dessins, 'dessin') : '', x.appareil].filter(Boolean).map(esc).join(' · ')}</span>${ico('fleche')}</button></li>`).join('')}</ul>`;
   ouvrirFiche({ mode: 'harnais' }, corps, '<button class="btn papier" id="ch-aucun">N’en ouvrir aucun</button><span class="espace"></span><button class="btn lien" id="ch-base">Voir la base</button>');
-  $('fiche-corps').querySelectorAll('.ch-harness').forEach(b => b.onclick = () => { const h = b.dataset.harness, L = r.liaisons.filter(l => l.harness === h);
+  $('fiche-corps').querySelectorAll('.ch-harness').forEach(b => b.onclick = () => { const h = b.dataset.harness, L = (r.toutes || r.liaisons).filter(l => l.harness === h);
     chargerContrat(L, 'ouverture de ' + h + ' (' + nom + ')', h + ' (' + nom + ')', { nouveau: true }); contratRecu(h + ' (' + nom + ')', 'un harness de la base');
     dire(h + ' : ' + pluriel(L.length, 'liaison') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + ' — les autres harness restent des contrats déjà faits.'); });
   $('ch-aucun').onclick = () => fermerFiche(true); $('ch-base').onclick = () => ficheFichiers('base'); }
@@ -275,8 +287,9 @@ function ficheColler() { const ouvert = verite().length > 0 && !bibliothequeOuve
   /* Trois temps, l'un sous l'autre, groupés par l'espace : ce qu'on colle (l'ordre des colonnes, un exemple qu'on peut
      coller d'un clic), le champ, ce qui est compris. */
   const corps = tete('Entrées', 'Coller des lignes')
-    + '<p class="co-lead"><b>Une liaison par ligne</b>, copiée d’Excel ou tapée ; les colonnes séparées par une tabulation, <b>;</b> ou <b>,</b>. Sous les en-têtes de l’installation, elles sont reconnues à leur nom.</p>'
-    + `<section class="co-bloc"><h3 class="co-etiquette">Sans en-têtes, dans cet ordre<small>seuls les deux équipements sont obligatoires</small></h3>`
+    // (v84) « 1, 2, 3 » (la charte) : copier, coller, relire — le détail (l'ordre, les séparateurs) dans les sections dessous
+    + '<ol class="doc-etapes"><li><b>Copiez</b> vos lignes d’Excel : une liaison par ligne</li><li><b>Collez-les</b> plus bas, avec les en-têtes de l’installation ou dans l’ordre ci-dessous</li><li><b>Relisez</b> ce que VOLTA comprend, puis ajoutez-les au plan</li></ol>'
+    + `<section class="co-bloc"><h3 class="co-etiquette">Sans en-têtes, dans cet ordre<small>séparées par une tabulation, « ; » ou « , » — seuls les deux équipements sont obligatoires</small></h3>`
     + `<ol class="co-ordre">${MODELE_COLLAGE.entetes.map((t, i) => `<li${MODELE_COLLAGE.requises.includes(t) ? ' class="req"' : ''}><i>${i + 1}</i>${esc(t)}</li>`).join('')}</ol></section>`
     + `<section class="co-bloc co-exemple"><h3 class="co-etiquette">Par exemple<button class="btn lien" id="co-essai">Coller cet exemple</button></h3>${apercuHtml(MODELE_COLLAGE)}</section>`
     + '<label class="champ co-champ" id="co-champ"><span class="co-etiquette">Vos lignes</span><textarea id="co-txt" placeholder="102CB1;2;MS3320-10;103RL1;A1;;;DR20;PUISSANCE;1" spellcheck="false" aria-describedby="co-apercu"></textarea></label>'
@@ -286,7 +299,7 @@ function ficheColler() { const ouvert = verite().length > 0 && !bibliothequeOuve
   ouvrirFiche({ mode: 'coller', large: true }, corps, pied);
   const txt = $('co-txt'); let lu = { liaisons: [], rejets: [] }, t = 0;
   const voir = () => { lu = lireCollage(txt.value); const n = lu.liaisons.length, vide = !txt.value.trim(), box = $('co-apercu');
-    box.innerHTML = vide ? '' : n ? `<h3 class="co-etiquette">Ce que je comprends</h3><p class="co-dit"><i class="co-point" aria-hidden="true"></i><span><b>${pluriel(n, 'liaison')}</b>, ${lu.comment}${lu.rejets.length ? ` · <span class="co-rejet">${pluriel(lu.rejets.length, 'ligne')} sans ses deux bouts, laissée${lu.rejets.length > 1 ? 's' : ''} de côté</span>` : ''}.</span></p>${apercuLiaisonsHtml(lu.liaisons, 4)}`
+    box.innerHTML = vide ? '' : n ? `<h3 class="co-etiquette">Ce que VOLTA comprend</h3><p class="co-dit"><i class="co-point" aria-hidden="true"></i><span><b>${pluriel(n, 'liaison')}</b>, ${lu.comment}${lu.rejets.length ? ` · <span class="co-rejet">${pluriel(lu.rejets.length, 'ligne')} sans ses deux bouts, laissée${lu.rejets.length > 1 ? 's' : ''} de côté</span>` : ''}.</span></p>${apercuLiaisonsHtml(lu.liaisons, 4)}`
       : `<div class="vf-boite vf-erreur"><p>Aucune liaison reconnue : chaque ligne doit nommer ses deux équipements, dans l’ordre ci-dessus (ou sous les en-têtes de l’installation). Vérifiez le séparateur.</p></div>`;
     $('co-champ').classList.toggle('erreur', !vide && !n); txt.setAttribute('aria-invalid', String(!vide && !n));
     ['co-ajouter', 'co-remplacer'].forEach(id => { const b = $(id); if (b) b.disabled = !n; });

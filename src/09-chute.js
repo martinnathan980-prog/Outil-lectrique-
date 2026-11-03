@@ -34,10 +34,23 @@ function memePotentiel(liaisons, repere, borne) { if (VT_A_POSER.test(repere)) r
   liaisons.forEach(l => { if (l.de === repere && l.vers === repere && l.borneDe && l.borneVers) { [l.borneDe, l.borneVers].forEach(b => { if (!chef.has(b)) chef.set(b, b); });
     const a = trouver(l.borneDe), c = trouver(l.borneVers); if (a !== c) chef.set(c, a); } });
   if (!chef.has(borne)) return new Set([borne]); const r = trouver(borne); return new Set([...chef.keys()].filter(b => trouver(b) === r)); }
+/* UNE SOURCE au bout d'un chemin (une batterie, une génératrice, un transfo-redresseur) : c'est le côté LIGNE du
+   disjoncteur — d'où vient le courant, pas une charge qu'il alimente. « La chute de 102CB1 jusqu'à la batterie » ne veut
+   rien dire, et le câble de la batterie n'est pas protégé par ce disjoncteur (il est en amont). */
+const CODES_SOURCE = new Set(['BT', 'GN', 'TR']);
+const estSource = r => { const q = lireRepere(r); return !!(q && CODES_SOURCE.has(q.code)); };
 /* LES CHEMINS depuis un repère (un disjoncteur) : pour chaque fil qui en part, la suite des segments jusqu'à un
    équipement — [{ fil: liaison, de, vers }, { passage: repère, borne }, …]. Une barrette qui dessert plusieurs fils
-   donne plusieurs chemins. Un chemin qui tourne en rond ou n'aboutit pas est rendu tel quel (`fini: false`). */
-function cheminsDepuis(liaisons, repere) { const L = liaisons.filter(l => l.de && l.vers && l.de !== l.vers), out = [];
+   donne plusieurs chemins. Un chemin qui tourne en rond ou n'aboutit pas est rendu tel quel (`fini: false`). Chaque
+   chemin dit sa borne de départ (`depart`) et s'il est en AMONT (`amont`) : il finit sur une source, ou il part de la
+   même borne qu'un chemin qui y finit (la borne de ligne du disjoncteur) quand une autre borne alimente des charges.
+   La chute en ligne et les câbles que le disjoncteur alimente (`chutesDepuis`, `filsDepuis`) laissent l'amont de côté. */
+function cheminsDepuis(liaisons, repere) { const out = cheminsBruts(liaisons, repere);
+  out.forEach(c => { const s0 = c.segments.find(s => s.fil); c.depart = s0 && s0.de[1] != null ? String(s0.de[1]) : ''; c.amont = estSource(c.bout[0]); });
+  const lignes = new Set(out.filter(c => c.amont && c.depart).map(c => c.depart));
+  if (lignes.size && out.some(c => !lignes.has(c.depart))) out.forEach(c => { if (lignes.has(c.depart)) c.amont = true; });
+  return out; }
+function cheminsBruts(liaisons, repere) { const L = liaisons.filter(l => l.de && l.vers && l.de !== l.vers), out = [];
   const bouts = l => [[l.de, l.borneDe], [l.vers, l.borneVers]];
   const suivre = (chemin, ici, borne, vus) => { if (chemin.length > PROFONDEUR_CHUTE) { out.push({ segments: chemin, fini: false, bout: [ici, borne] }); return; }
     if (!estPassage(ici)) { out.push({ segments: chemin, fini: true, bout: [ici, borne] }); return; }
@@ -80,7 +93,14 @@ function chuteDuChemin(norme, chemin, courant, hyp, disjoncteur) { const H = { .
   if (cb && cb.R == null) inconnus.push(cb.nom + ' : chute propre du disjoncteur inconnue (' + cb.raison + ')');
   // la chute de la table de l'atelier est une chute MAX : elle compte entière dès qu'un courant passe ; les autres, à I / In
   const dCb = cb && cb.R != null ? (cb.fixe ? (courant > 0 ? cb.chuteIn : 0) : kReg * cb.R * cosphi * courant) : null; if (dCb != null) dU += dCb;
-  return { segments: segs, disjoncteur: cb ? { ...cb, dU: dCb } : null, dU, longueur, inconnus, reel, regime, kRetour: kR, conducteur: H.chuteConducteur === 'fixe' ? 'fixe' : 'estimee', bout: chemin.bout, fini: chemin.fini }; }
+  return { segments: segs, disjoncteur: cb ? { ...cb, dU: dCb } : null, dU, longueur, inconnus, reel, regime, kRetour: kR, conducteur: H.chuteConducteur === 'fixe' ? 'fixe' : 'estimee', bout: chemin.bout, fini: chemin.fini, courant }; }
+/* LA CHUTE D'UN CÂBLE SEUL, sous `courant` : exactement comme un segment d'un chemin (la même résistance, à la même
+   température du conducteur, le même régime, le même retour) — sans passage ni disjoncteur. La fiche d'un câble qu'aucun
+   chemin de disjoncteur ne porte la prend ; sinon c'est son segment dans la chute en ligne qui parle (une seule valeur).
+   Rend le segment : { longueur, reelle, rho (Ω/km), rho20, T (°C), R (Ω), dU (V) ou null }. */
+function chuteDuCable(norme, l, courant, hyp) {
+  const c = chuteDuChemin(norme, { segments: [{ fil: l, de: [l.de, l.borneDe], vers: [l.vers, l.borneVers] }], bout: [l.vers, l.borneVers], fini: true }, courant, { ...(hyp || {}), chuteDisjoncteur: false });
+  return { ...c.segments[0], courant }; }
 /* LE DISJONCTEUR D'OÙ PART un chemin, pour sa chute propre : le repère du premier fil, s'il est un disjoncteur ; sa famille et
    son calibre — ceux que l'appelant donne (le calibre retenu sur la fiche), sinon ceux de son part number ; sa chute à In
    (table Chute disjoncteur) et la résistance équivalente chute / In. Rien si l'hypothèse `chuteDisjoncteur` l'ôte. */
@@ -100,28 +120,67 @@ const pnDuPassage = (norme, chemin, repere) => { for (const s of chemin.segments
 const INTERMITTENT_MAX = 120;
 /* Toutes les chutes depuis un repère, prêtes à lire : la destination, le chemin en mots, le total — au courant
    permanent `courant`, comparé à la chute admise (`chuteAdmise` : la règle du lecteur, sinon la table Réseau) ; et, si
-   on donne les POINTES du profil ([{ i, t }] : les états courts, en points cumulés), la chute à chacun de ces courants
-   — linéaire en courant : un état court ne laisse pas au conducteur le temps de chauffer au-delà de ce que le permanent
-   lui donne, sa résistance est celle du permanent (sans permanent, celle de la pointe, à l'équilibre : prudent) —,
-   comparée à la chute admise en intermittent quand l'état dure deux minutes au plus (la même que le continu sous la
-   règle du lecteur), sinon au continu. `trop` et `tropPointe` disent le dépassement ; `reel` que toutes les longueurs
-   sont celles du retest (sans quoi c'est l'hypothèse qui parle) ; `regle` d'où vient la chute admise ('lecteur',
-   'table'). `disjoncteur` : { famille, calibre } du repère quand l'appelant les connaît (sa chute propre,
-   `chuteDuChemin`). */
+   on donne les POINTES du profil ([{ i, t }] : les états courts, en points cumulés), la chute à chacun de ces courants.
+   Un état d'une minute au plus ne laisse pas au conducteur le temps de chauffer au-delà de ce que le permanent lui
+   donne : sa chute est celle du permanent, linéaire en courant. Un état PLUS LONG (le palier continu de l'EN 2853,
+   comme pour l'intensité : `palierDe`) a le temps de chauffer le câble — un 20 AWG met une vingtaine de secondes à
+   prendre sa température — : sa chute se calcule à la température que CE courant donne au conducteur (v84 : la
+   transition de 102CB1, 9,31 A pendant 2,1 min, comptait le DR20 à 116 °C, celle du permanent ; elle le chauffe à
+   168 °C : 2,64 V, pas 2,33 V). Sans permanent, chaque pointe à sa propre température (prudent). Chacune se compare à
+   la chute admise en intermittent quand l'état dure deux minutes au plus (la même que le continu sous la règle du
+   lecteur), sinon au continu. `trop` et `tropPointe` disent le dépassement ; `reel` que toutes les longueurs sont
+   celles du retest (sans quoi c'est l'hypothèse qui parle) ; `regle` d'où vient la chute admise ('lecteur', 'table').
+   `disjoncteur` : { famille, calibre } du repère quand l'appelant les connaît (sa chute propre, `chuteDuChemin`). Les
+   chemins en amont (vers la source : `cheminsDepuis`) ne sont pas des chutes en ligne. */
 function chutesDepuis(norme, liaisons, repere, courant, hyp, pointes, disjoncteur) { const H = { ...HYPOTHESES, ...(hyp || {}) }, regime = REGIMES[H.regime] ? H.regime : 'continu', chute = chuteAdmise(norme, H.tension, regime, H);
   const admis = chute && chute.chuteMax != null ? chute.chuteMax : null, inter = chute ? (chute.chuteInter != null ? chute.chuteInter : chute.chuteMax) : null;
   const P = (pointes || []).filter(p => p && p.i > 0 && p.t > 0 && isFinite(p.t));
-  return cheminsDepuis(liaisons, repere).map(ch => { const c = chuteDuChemin(norme, ch, courant, H, disjoncteur), pct = H.tension ? c.dU / H.tension * 100 : null;
+  return cheminsDepuis(liaisons, repere).filter(ch => !ch.amont).map(ch => { const c = chuteDuChemin(norme, ch, courant, H, disjoncteur), pct = H.tension ? c.dU / H.tension * 100 : null;
     const fixe = c.disjoncteur && c.disjoncteur.fixe && c.disjoncteur.dU != null ? c.disjoncteur.dU : 0;
-    const ps = P.map(p => { const dU = courant > 0 ? (c.dU - fixe) * p.i / courant + fixe : chuteDuChemin(norme, ch, p.i, H, disjoncteur).dU, intermittent = p.t <= INTERMITTENT_MAX, a = intermittent ? inter : admis;
-      return { i: p.i, t: p.t, nom: p.nom || '', dU, admis: a, intermittent, trop: !!(a != null && dU > a + 1e-9) }; });
+    const ps = P.map(p => { const chauffe = !(courant > 0) || palierDe(p.t) === Infinity, dU = chauffe ? chuteDuChemin(norme, ch, p.i, H, disjoncteur).dU : (c.dU - fixe) * p.i / courant + fixe, intermittent = p.t <= INTERMITTENT_MAX, a = intermittent ? inter : admis;
+      return { i: p.i, t: p.t, nom: p.nom || '', dU, admis: a, intermittent, chauffe, trop: !!(a != null && dU > a + 1e-9) }; });
     return { ...c, pct, admis, trop: !!(admis != null && c.dU > admis + 1e-9), tension: chute ? chute.tension : H.tension, regle: chute ? chute.regle : '', pointes: ps, tropPointe: ps.some(p => p.trop),
              mots: c.segments.map(s => s.fil ? (s.fil.type || 'câble') : '⇄ ' + s.passage).join(' → ') + ' → ' + c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : '') }; }); }
 /* LES FILS QU'UN DISJONCTEUR ALIMENTE : ceux qui le touchent (`direct`), et ceux de la suite de chaque chemin, à travers
    les prises de coupure et les barrettes — chacun une fois, avec sa borne de départ, l'autre bout et le passage par
    lequel il vient (`via`). C'est la liste que la protection doit juger : le disjoncteur protège tout ce qu'il nourrit,
-   pas seulement ce qui est serti sur lui. Rend [{ cable, type, borne, autre, l, direct, via }]. */
+   pas seulement ce qui est serti sur lui — et pas ce qui le nourrit (le côté source : `cheminsDepuis`, `amont`).
+   Rend [{ cable, type, borne, autre, l, direct, via }]. */
 function filsDepuis(liaisons, repere) { const vus = new Map();
-  cheminsDepuis(liaisons, repere).forEach(ch => { let via = ''; ch.segments.forEach(s => { if (s.passage) { via = s.passage; return; } const l = s.fil; if (vus.has(l)) return;
+  cheminsDepuis(liaisons, repere).filter(ch => !ch.amont).forEach(ch => { let via = ''; ch.segments.forEach(s => { if (s.passage) { via = s.passage; return; } const l = s.fil; if (vus.has(l)) return;
     vus.set(l, { cable: l.cable, type: l.type, borne: s.de[1], autre: s.vers[0] + (s.vers[1] ? ':' + s.vers[1] : ''), l, direct: s.de[0] === repere, via }); }); });
   return [...vus.values()]; }
+
+/* ---- CE QU'UN CÂBLE ADMET : la table, le déclassement, en un seul endroit ---------------------------------------------
+   L'intensité de l'EN 2853 (un câble seul à l'air libre, ambiante 95 °C, conducteur à 135 °C), déclassée :
+     · le FAISCEAU (fig. 11-5 de l'AC 43.13-1B, lue au nombre de câbles et à la charge des hypothèses : 8 câbles à 60 %
+       → × 0,60 par défaut) et l'ALTITUDE (fig. 11-6) — sur tous les paliers ;
+     · l'AMBIANTE (EN 2853 note 2 : × √((135 − Tu)/40), 1 à 95 °C) — sur le continu seulement, comme la protection
+       (09 bis, `protegerFil`) ;
+     · un conducteur qui n'est pas du cuivre (`kConducteur` : CCA × √(R cuivre / R câble), aluminium − 20 % au moins) —
+       partout.
+   Le palier d'un état se lit sur sa DURÉE (`palierDe` : 2 s, 10 s, 1 min, sinon le continu) : un état de 2,1 min se
+   juge sur le continu, avec le facteur du continu (avant v84, la fiche d'un câble mettait l'ambiante aussi sur les
+   paliers courts). Rend { fil, rd, decl, amb, kc, continu (A), facteurContinu, facteurCourt, facteur(t), admise(t) } ;
+   `fil` null hors de la norme, `continu` null sans intensité (ou un conducteur sans résistance : `rd.refuse`). */
+function admissionDuFil(norme, type, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, jauge = jaugeDuType(type), fil = type ? filDeNorme(norme, type, jauge) : null;
+  const rd = type ? resistanceDuFil(norme, type, jauge, null) : { kConducteur: 1, conducteur: 'cuivre', refuse: false };
+  const decl = fil ? facteurDeclassement(norme, H.conditions, { fils: H.fils, charge: H.charge, altitude: H.altitude }) : 1, amb = fil ? facteurAmbiante(fil, H.ambiante) : 1, kc = rd.kConducteur || 1;
+  const facteurContinu = decl * amb * kc, facteurCourt = decl * kc, facteur = t => palierDe(t) === Infinity ? facteurContinu : facteurCourt;
+  const sait = !!(fil && fil.intensite != null && !rd.refuse);
+  return { fil, rd, jauge, decl, amb, kc, facteurContinu, facteurCourt, facteur, continu: sait ? fil.intensite * facteurContinu : null, admise: t => sait ? intensiteAdmise(fil, t) * facteur(t) : null }; }
+/* LE DÉCLASSEMENT EN MOTS (v84, le lecteur : « chaque chiffre s'explique en clair » — le « × 0,6 » ne disait pas d'où il
+   venait) : « 11,5 A × 0,6 : faisceau de 8 câbles à 60 % » ; l'altitude, l'ambiante (en continu), le conducteur s'y
+   ajoutent ; rien quand rien ne déclasse. `t` : la durée de l'état (Infinity : le continu). */
+function motDuDeclassement(norme, type, hyp, t) { const H = { ...HYPOTHESES, ...(hyp || {}) }, A = admissionDuFil(norme, type, H); if (!A.fil || A.fil.intensite == null) return '';
+  const continu = palierDe(t) === Infinity, k = A.facteur(t); if (Math.abs(k - 1) < 1e-9) return '';
+  const pourquoi = detailDeclassement(norme, H.conditions, { fils: H.fils, charge: H.charge, altitude: H.altitude }).filter(d => Math.abs(d.facteur - 1) > 1e-9)
+    .map(d => d.condition === 'faisceau' ? `faisceau de ${nombreFr(+H.fils)} câbles à ${nombreFr(+H.charge)} %` : d.condition === 'altitude' ? `${nombreFr(+H.altitude)} ft` : d.condition);
+  if (continu && Math.abs(A.amb - 1) > 1e-9) pourquoi.push(`ambiante ${nombreFr(+H.ambiante)} °C`);
+  if (Math.abs(A.kc - 1) > 1e-9) pourquoi.push(`conducteur ${A.rd.conducteur}`);
+  return `${nombreFr(intensiteAdmise(A.fil, t))} A × ${nombreFr(k)}${pourquoi.length ? ' : ' + pourquoi.join(', ') : ''}`; }
+/* DEUX VALEURS COMPARÉES, écrites sans que l'arrondi inverse ce qu'elles disent (v84 : « 2 V > 2 V admis » pour 2,004 V) :
+   deux décimales, plus tant qu'elles s'écrivent pareil (quatre au plus). Rend [a, b] arrondis. */
+function enOrdre(a, b) { if (a == null || b == null || !isFinite(a) || !isFinite(b)) return [a, b];
+  for (let n = 2; n <= 4; n++) { const k = Math.pow(10, n), A = Math.round(a * k) / k, B = Math.round(b * k) / k; if (A !== B || Math.abs(a - b) < 1e-9) return [A, B]; }
+  const k = 1e4; return a > b ? [Math.ceil(a * k) / k, Math.floor(b * k) / k] : [Math.floor(a * k) / k, Math.ceil(b * k) / k]; }

@@ -284,7 +284,8 @@ const NOMS_RACCORD = { durci: 'Raccord blindé étanche (durci)', 'pour manchon'
 const MANQUE_RACCORD = /^la référence du raccord|^la taille du boîtier|trop gros|ne passe pas|ne s’ouvre pas/;
 function piecesDHabillage(norme, h, opts, fils) { const P = [], mm = mmTexte, c = h.choix, R = h.reference, O = opts || {};
   const piece = (role, libelle, reference, quantite, statut, note) => P.push({ role, libelle, reference: reference || '', quantite, statut, note: note || '' });
-  const nModules = Math.max(1, Math.round(O.modules || 1)), toron = h.toron != null ? 'Ø ' + mm(h.toron) + ' mm' : 'Ø inconnu';
+  // les modules câblés : un nombre, ou la liste des modules du plan (la fiche passe `plan.modules` : la quantité valait NaN)
+  const nm = Array.isArray(O.modules) ? O.modules.length : +O.modules, nModules = Math.max(1, Math.round(nm > 0 ? nm : 1)), toron = h.toron != null ? 'Ø ' + mm(h.toron) + ' mm' : 'Ø inconnu';
   // 1. le raccord — ou la cheminée d'un EN 4165, une par module câblé — ou rien (l'EN 3645 de la règle d'atelier)
   if (h.sansRaccord) piece('raccord', 'Aucun raccord', '', 0, h.aConfirmer ? 'à confirmer' : 'vérifié', h.pourquoi || 'un ' + nomDeFamille(norme, h.sansRaccord) + ' s’utilise sans raccord');
   else if (h.cheminee) { const pas = R && R.amax != null ? R.amax : null, passe = pas == null || h.toron == null ? null : h.toron <= pas + 1e-9;
@@ -346,8 +347,8 @@ function piecesDHabillage(norme, h, opts, fils) { const P = [], mm = mmTexte, c 
    et la désignation construite, le code d'entrée, la chambre, la masse, la bande, la gaine, le manchon — ce qui
    manque, et la nomenclature d'habillage (`pieces`). `pn` : le part number du connecteur ; `reference` : l'arrangement
    retenu (EN3646-002-12-08), qui porte la taille à défaut ; `hyp` : les hypothèses (`toron`, `chambre` ; sans elles,
-   celles de l'outil) ; `opts` (facultatif) : `modules`, le nombre de modules câblés (les cheminées d'un EN 4165, une par
-   module) ; `plan`, le plan de contacts du connecteur (`remplirContacts`) — chaque cavité libre y demande un obturateur. */
+   celles de l'outil) ; `opts` (facultatif) : `modules`, le nombre de modules câblés ou leur liste (les cheminées d'un
+   EN 4165, une par module) ; `plan`, le plan de contacts du connecteur (`remplirContacts`) — chaque cavité libre y demande un obturateur. */
 function habillage(norme, fils, choix, pn, reference, hyp, opts) { const c = { ...CHOIX_RACCORD, ...(choix || {}) }, H = { ...HYPOTHESES, ...(hyp || {}) }, avecPieces = h => ({ ...h, pieces: piecesDHabillage(norme, h, opts, fils) });
   const f0 = faisceauDe(norme, fils), foisonnement = toronDe(norme, f0, H.toron), f = { ...f0, diametre: foisonnement.diametre, foisonnement };
   const lue = familleDeReference(norme, pn, 'connecteur') || familleDeReference(norme, reference, 'connecteur'), alias = lue ? null : aliasDeRaccord(pn) || aliasDeRaccord(reference), famille = lue || (alias ? alias.famille : '');

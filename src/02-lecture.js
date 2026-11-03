@@ -20,34 +20,44 @@ const NORM = t => String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g
    bibliothèque (08-bibliotheque) : la base des contrats déjà faits qui la
    porte crée chaque installation avec ses plans ; son ECP (cinq chiffres),
    quand une colonne le dit, la numérote. */
+/* (v84) les mêmes colonnes écrites en français (« Équipement 1 », « Borne 1 », « Longueur (mm) ») ou à l'anglaise
+   (« From device », « To pin », « Wire number ») : un fichier venu d'un autre outil s'ouvre comme un retest, sans passer
+   par le rattrapage. Un en-tête nu (« De », « Vers », « Borne ») reste au rattrapage : il ne dit pas de quel bout il parle. */
 const COLONNES = [
   ['install',  ['install', 'installation', 'systeme', 'system']],
   ['ecp',      ['ecp', 'numeroecp', 'necp', 'noecp', 'numecp']],
   ['harness',  ['harness', 'faisceau']],
-  ['device1',  ['device1']],
-  ['pin1',     ['pin1']],
-  ['pn1',      ['pn1', 'partnumber1']],
-  ['desc1',    ['description1', 'desc1']],
-  ['cabletg',  ['cabletg', 'cabletypegauge']],
-  ['cabletag', ['cabletag']],
+  ['device1',  ['device1', 'equipement1', 'equip1', 'repere1', 'fromdevice', 'devicefrom']],
+  ['pin1',     ['pin1', 'borne1', 'broche1', 'frompin', 'pinfrom']],
+  ['pn1',      ['pn1', 'partnumber1', 'reference1', 'frompn', 'pnfrom']],
+  ['desc1',    ['description1', 'desc1', 'designation1']],
+  ['cabletg',  ['cabletg', 'cabletypegauge', 'cabletypeetgauge', 'typegauge', 'cabletype', 'typedecable', 'typecable', 'wiretype']],
+  ['cabletag', ['cabletag', 'cablenumber', 'cableno', 'cablenum', 'numerocable', 'numerodecable', 'ncable', 'nocable', 'wiretag', 'wirenumber', 'wireno']],
   ['route',    ['route', 'cheminement']],
-  ['device2',  ['device2']],
-  ['pin2',     ['pin2']],
-  ['pn2',      ['pn2', 'partnumber2']],
-  ['desc2',    ['description2', 'desc2']],
+  ['device2',  ['device2', 'equipement2', 'equip2', 'repere2', 'todevice', 'deviceto']],
+  ['pin2',     ['pin2', 'borne2', 'broche2', 'topin', 'pinto']],
+  ['pn2',      ['pn2', 'partnumber2', 'reference2', 'topn', 'pnto']],
+  ['desc2',    ['description2', 'desc2', 'designation2']],
   ['fwd',      ['fwd', 'plan', 'dessin', 'drawing']],
-  ['length',   ['cablelength', 'cablelengthmm', 'cablelengthinmm', 'length', 'longueur']],
+  ['length',   ['cablelength', 'cablelengthmm', 'cablelengthinmm', 'cablelengthm', 'length', 'lengthmm', 'lengthm', 'longueur', 'longueurmm', 'longueurm', 'longueurenmm', 'longueurcable', 'longueurcablemm', 'longueurducable', 'longueurducablemm']],
   ['appareil', ['appareil', 'aircraft', 'contrat']],
   ['retest',   ['dateretest', 'retestdate', 'datederetest', 'dateduretest', 'dateinstallation', 'datedelinstallation', 'retest', 'date']]
 ];
+// la colonne que VOLTA ajoute à l'installation corrigée (08-export) : relue, elle n'est pas une colonne du fichier à rendre
+const COLONNES_DE_VOLTA = new Set(['modifieparvolta']);
 
 /* (v77, les fichiers piégés : un CSV à virgules aux champs entre guillemets s'ouvrait VIDE ; un « ; » dans une description
    décalait les colonnes) — un CSV comme Excel l'écrit : un champ entre guillemets porte le séparateur, des guillemets
    doublés, des retours à la ligne ; le séparateur se lit HORS des guillemets. Un guillemet au milieu d'un champ (12" de
    câble) reste un caractère : seul celui qui ouvre un champ l'entoure. */
 const horsGuillemets = l => String(l).replace(/(^|[\t;,])\s*"(?:[^"]|"")*"/g, '$1');
-function decouperLigne(ligne) { const s = String(ligne == null ? '' : ligne), h = horsGuillemets(s);
-  const sep = h.includes('\t') ? '\t' : h.includes(';') ? ';' : ',';
+// le séparateur d'une ligne, lu hors des guillemets : la tabulation (Excel, un collage), sinon « ; » (l'Excel français), sinon « , »
+const sepDeLigne = ligne => { const h = horsGuillemets(String(ligne == null ? '' : ligne)); return h.includes('\t') ? '\t' : h.includes(';') ? ';' : ','; };
+/* `sep` : celui du FICHIER (v84 — lu sur ses en-têtes, `lireTexte`) ; sans lui, celui de la ligne. Un CSV à virgules dont
+   une description porte un « ; » (Excel ne l'entoure pas de guillemets : ce n'est pas son séparateur) se découpait au
+   point-virgule — des repères inventés, une liaison perdue. */
+function decouperLigne(ligne, sep) { const s = String(ligne == null ? '' : ligne);
+  sep = sep || sepDeLigne(s);
   if (!s.includes('"')) return s.split(sep);
   const out = []; let cur = '', q = false, debut = true;
   for (let i = 0; i < s.length; i++) { const ch = s[i];
@@ -67,7 +77,7 @@ function lignesDuTexte(texte) { const t = String(texte || ''); if (!t.includes('
     cur += ch; if (ch === '\t' || ch === ';' || ch === ',') debut = true; else if (ch !== ' ') debut = false; }
   if (q) return t.split(/\r?\n/);
   out.push(cur); return out; }
-const cellules = ligne => decouperLigne(ligne).map(x => String(x).trim());
+const cellules = (ligne, sep) => decouperLigne(ligne, sep).map(x => String(x).trim());
 
 /* Une ligne est-elle un en-tête du retest ? Ses colonnes, si elle nomme au
    moins les quatre qui font une liaison : { col, trouvees } ; sinon null. */
@@ -84,13 +94,21 @@ function colonnesRetest(row) {
 function trouverEnteteRetest(lignes) {
   let meilleure = null;
   for (let r = 0; r < Math.min(lignes.length, 30); r++) {
-    // une ligne est un texte à découper, ou déjà un tableau de cellules (Excel)
-    const row = Array.isArray(lignes[r]) ? lignes[r].map(x => String(x == null ? '' : x).trim()) : cellules(lignes[r] || '');
+    // une ligne est un texte à découper, ou déjà un tableau de cellules (Excel) ; son séparateur devient celui du fichier
+    const texte = !Array.isArray(lignes[r]), sep = texte ? sepDeLigne(lignes[r] || '') : '';
+    const row = texte ? cellules(lignes[r] || '', sep) : lignes[r].map(x => String(x == null ? '' : x).trim());
     const e = colonnesRetest(row);
-    if (e && (!meilleure || e.trouvees > meilleure.trouvees)) meilleure = { ligne: r, col: e.col, trouvees: e.trouvees };
+    if (e && (!meilleure || e.trouvees > meilleure.trouvees)) meilleure = { ligne: r, col: e.col, trouvees: e.trouvees, sep, row };
   }
   return meilleure;
 }
+/* (v84) LES COLONNES QUE VOLTA NE LIT PAS (« Remarque », « Visa », une colonne d'atelier) : leur en-tête, leur rang. Elles
+   ne disent rien au dessin, mais elles sont au fichier : chaque liaison les garde (`autres`, 01) et l'installation corrigée
+   les rend. Un en-tête vide n'en fait pas une ; deux colonnes de même nom se distinguent (« Remarque (2) »). */
+function colonnesInconnues(row, col) { const prises = new Set(Object.values(col)), vus = new Map(), out = [];
+  row.forEach((cell, i) => { const t = String(cell == null ? '' : cell).trim(), k = NORM(t); if (!t || prises.has(i) || COLONNES_DE_VOLTA.has(k)) return;
+    const n = (vus.get(t) || 0) + 1; vus.set(t, n); out.push([n > 1 ? t + ' (' + n + ')' : t, i]); });
+  return out; }
 
 /* Rattrapage : deviner les colonnes d'un tableau quelconque. */
 const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -138,38 +156,46 @@ function lireTexte(texte) {
 
   const rt = trouverEnteteRetest(brutes);
   if (rt) {
-    let c = rt.col, entetes = 1, volta = null; const g = (row, i) => (i != null && row[i] != null) ? row[i] : '', journaux = [];
+    let c = rt.col, sep = rt.sep, entetes = 1, volta = null; const g = (row, i) => (i != null && row[i] != null) ? row[i] : '', journaux = [];
     // la longueur : des mm quand l'en-tête le dit (« Cable length (mm) »)
     const mm = entete => c.length != null && /mm/i.test(entete[c.length] || '');
-    let enMm = mm(cellules(brutes[rt.ligne] || ''));
-    const liaisons = [];
+    let enMm = mm(rt.row), autres = colonnesInconnues(rt.row, c);
+    /* (v84 — « rien n'est perdu en silence ») : `liaisons` les liaisons entières (les deux bouts) ; `toutes` aussi celles
+       dont un bout manque, à leur rang — le contrat les garde (ni dessinées, ni vérifiées : le contrôle et le récapitulatif
+       les disent ; l'installation corrigée les rend) ; `laissees` les lignes qui ne nomment aucun bout ni aucun câble (une
+       ligne de total, un reste de mise en page) : le n° de leur ligne, pour le dire. */
+    const liaisons = [], toutes = [], laissees = [];
     for (let r = rt.ligne + 1; r < brutes.length; r++) {
       if (!brutes[r].trim()) continue;
       // ce que `lectureDuFichier` a lu d'un retest corrigé par VOLTA : sa feuille « VOLTA », ses journaux
       if (brutes[r].startsWith(MARQUE_VOLTA)) { try { volta = JSON.parse(brutes[r].slice(MARQUE_VOLTA.length)); } catch (_) { volta = null; } continue; }
       if (brutes[r].startsWith(MARQUE_JOURNAL)) { journaux.push(brutes[r].slice(MARQUE_JOURNAL.length)); continue; }
-      const row = cellules(brutes[r]);
-      // une autre ligne d'en-tête (la feuille suivante d'un classeur, un extrait collé à la suite) : ses colonnes prennent le relais
-      const e = colonnesRetest(row); if (e) { c = e.col; enMm = mm(row); entetes++; continue; }
+      // une autre ligne d'en-tête (la feuille suivante d'un classeur, un extrait collé à la suite) : ses colonnes, et son séparateur, prennent le relais
+      if (/device|quip|rep[eè]re/i.test(brutes[r])) { const s2 = sepDeLigne(brutes[r]), h = cellules(brutes[r], s2), e = colonnesRetest(h);
+        if (e) { c = e.col; sep = s2; enMm = mm(h); autres = colonnesInconnues(h, c); entetes++; continue; } }
+      const row = cellules(brutes[r], sep);
+      if (!row.some(x => x)) continue;   // une ligne de séparateurs seuls (« ;;;; ») : vide
+      const lg = c.length != null ? g(row, c.length) : '', a = {}; let na = 0; autres.forEach(([nom, i]) => { const v = g(row, i); if (v) { a[nom] = v; na++; } });
       const l = liaison({ de: g(row, c.device1), borneDe: g(row, c.pin1), pnDe: g(row, c.pn1),
                           vers: g(row, c.device2), borneVers: g(row, c.pin2), pnVers: g(row, c.pn2),
                           cable: g(row, c.cabletag), type: g(row, c.cabletg),
                           route: g(row, c.route), plan: g(row, c.fwd),
                           // le FWD fait le folio, et reste gardé tel quel (le DESSIN d'origine) ; les descriptions aussi
                           fwd: g(row, c.fwd), descriptionDe: g(row, c.desc1), descriptionVers: g(row, c.desc2),
-                          longueur: c.length != null && g(row, c.length) !== '' ? g(row, c.length) + (enMm ? ' mm' : '') : '',
-                          harness: g(row, c.harness), appareil: g(row, c.appareil), retest: g(row, c.retest) });
-      // l'installation et son ECP, quand la ligne les dit : la bibliothèque y range le plan (le moteur ne les lit pas)
-      const ins = String(g(row, c.install)).trim(); if (ins) l.install = ins;
-      const ecp = String(g(row, c.ecp)).trim(); if (ecp) l.ecp = ecp;
-      if (liaisonComplete(l)) liaisons.push(l);
+                          longueur: lg !== '' ? lg + (enMm ? ' mm' : '') : '', longueurBrute: lg,
+                          harness: g(row, c.harness), appareil: g(row, c.appareil), retest: g(row, c.retest),
+                          // l'installation et son ECP, quand la ligne les dit : la bibliothèque y range le plan (le moteur ne les lit pas)
+                          install: g(row, c.install), ecp: g(row, c.ecp), autres: na ? a : null });
+      if (liaisonComplete(l)) { liaisons.push(l); toutes.push(l); }
+      else if (l.de || l.vers || l.cable) toutes.push(l);
+      else laissees.push(r + 1);
     }
     // les contacts choisis à la main vivent sur la liaison : ils y reviennent ici, quel que soit le chemin du fichier ; le
     // reste (les profils de charge, les choix du contrat) se reprend sur le plan qu'il devient (08-export, `retenirVolta`)
     if (volta && Array.isArray(volta.contacts) && volta.contacts.length) { const par = new Map(volta.contacts.map(x => [x.cle, x]));
       liaisons.forEach(l => { const x = par.get([l.de, l.borneDe, l.vers, l.borneVers, l.cable].join('|')); if (!x) return; if (x.contactDe) l.contactDe = x.contactDe; if (x.contactVers) l.contactVers = x.contactVers; }); }
     if ((volta || journaux.length) && typeof retenirVolta === 'function') retenirVolta(volta, liaisons, journaux);
-    return { liaisons, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))], installs: [...new Set(liaisons.map(l => l.install).filter(Boolean))], volta, journaux };
+    return { liaisons, toutes, incompletes: toutes.length - liaisons.length, laissees, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))], installs: [...new Set(liaisons.map(l => l.install).filter(Boolean))], volta, journaux };
   }
 
   let map = null, debut = 0; const premiere = cellules(pleines[0]);
@@ -213,18 +239,34 @@ function lireFeuilleVolta(rows) { const v = { charges: [], hypotheses: {}, conta
     else if (s === 'contact') v.contacts.push({ cle: k, contactDe: x.contactDe || '', contactVers: x.contactVers || '' });
     else if (s === 'designation') v.designations.push([k, x]); else if (s === 'sexe') v.sexes.push([k, x]); else if (s === 'raccord') v.raccords.push([k, x]); });
   return entete && /^volta/.test(format) ? { format, ...v } : null; }
+/* (v84) UNE CASE D'EXCEL EN TEXTE, comme la lecture au fil de l'eau la rend (09-references, `cellulesXml`) : le nombre tel
+   qu'Excel le garde, une DATE en jj/mm/aaaa — une case date du retest se lisait « 45957 » ici, « 27/10/2025 » dans un
+   gros fichier. `lignesDeFeuille(ws)` : les lignes d'une feuille SheetJS (lue avec `cellNF`, qui garde le format). */
+const dateDeSerie = v => { const d = new Date(Math.round((+v - 25569) * 864e5)); if (isNaN(d)) return String(v); const z = n => (n < 10 ? '0' : '') + n; return z(d.getUTCDate()) + '/' + z(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); };
+const caseDate = c => !!c && ((c.t === 'n' && c.z && typeof XLSX !== 'undefined' && XLSX.SSF && XLSX.SSF.is_date(c.z)) || c.t === 'd');
+function lignesDeFeuille(ws) { if (!ws) return [];
+  const voir = c => { if (!caseDate(c)) return; const v = c.t === 'd' ? (c.v instanceof Date ? c.v.getTime() : Date.parse(c.v)) / 864e5 + 25569 : c.v; c.t = 's'; c.v = dateDeSerie(v); };
+  if (Array.isArray(ws)) ws.forEach(r => { if (Array.isArray(r)) r.forEach(voir); }); else Object.keys(ws).forEach(k => { if (k[0] !== '!') voir(ws[k]); });
+  return XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: true, defval: '' }).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c))); }
+/* Une ligne d'Excel en texte tabulé : une case qui porte une tabulation, un retour à la ligne (Alt+Entrée dans une
+   description) ou un guillemet s'entoure de guillemets, comme un CSV — sans eux, la ligne se coupait en deux et les
+   colonnes de la seconde moitié glissaient (v84). */
+const caseEnTexte = v => /[\t\r\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+// le texte d'un CSV : UTF-8, sinon Windows-1252 (le CSV de l'Excel français : ses accents se lisaient « � »)
+async function texteDuCsv(fichier) { if (!fichier.arrayBuffer) return fichier.text(); const u8 = new Uint8Array(await fichier.arrayBuffer());
+  let t; try { t = new TextDecoder('utf-8', { fatal: true }).decode(u8); } catch (_) { t = new TextDecoder('windows-1252').decode(u8); } return t.charCodeAt(0) === 0xfeff ? t.slice(1) : t; }
 async function lectureDuFichier(fichier) {
   const nom = (fichier.name || '').toLowerCase();
-  const excel = /\.xls[xm]?$/.test(nom) || /sheet|excel/.test(fichier.type || '');
-  if (!excel) return { texte: await fichier.text(), feuilles: [], lues: [], ignorees: [], journaux: [], volta: null };
+  const excel = /\.xls[xmb]?$/.test(nom) || /sheet|excel/.test(fichier.type || '');
+  if (!excel) return { texte: await texteDuCsv(fichier), feuilles: [], lues: [], ignorees: [], journaux: [], volta: null };
   if (typeof XLSX === 'undefined') throw new Error('bibliothèque Excel absente');
-  const wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array' });
+  const wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array', cellNF: true });
   let volta = null; const journaux = [];
   const feuilles = wb.SheetNames.map(n => {
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: true, defval: '' }).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c)));
+    const rows = lignesDeFeuille(wb.Sheets[n]);
     if (NORM(n) === 'volta') { const v = lireFeuilleVolta(rows); if (v) { volta = v; return null; } }
     if (estJournal(n, rows)) { journaux.push(n); return null; }
-    return { nom: n, retest: !!trouverEnteteRetest(rows), lignes: rows.filter(r => r.some(Boolean)).length, texte: rows.map(r => r.join('\t')).join('\n') }; }).filter(Boolean);
+    return { nom: n, retest: !!trouverEnteteRetest(rows), lignes: rows.filter(r => r.some(Boolean)).length, texte: rows.map(r => r.map(caseEnTexte).join('\t')).join('\n') }; }).filter(Boolean);
   const retests = feuilles.filter(f => f.retest), lues = retests.length ? retests : feuilles.slice(0, 1);
   // un retest relu porte, après ses liaisons, ce qu'on a lu à part : la feuille « VOLTA », les journaux laissés de côté
   const marques = retests.length ? [volta ? MARQUE_VOLTA + JSON.stringify(volta) : '', ...journaux.map(j => MARQUE_JOURNAL + j)].filter(Boolean) : [];

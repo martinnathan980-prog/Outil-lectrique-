@@ -154,13 +154,24 @@ function arbreVue(nom, cal, rows) { const n = rows.length; if (!n) return '<p cl
     + `<path class="vu-bus" d="M92 ${yC}H112M112 22V${16 + (n - 1) * rh + 6}"/>${lignes}</svg>`; }
 
 /* ---- LE CHEMIN d'un câble : un bout, ce qu'il traverse, l'autre bout, à la couleur de sa route ---- */
-function cheminVue(o, W, mini) { const H = mini ? 66 : 104, y = mini ? 26 : 42, a = 22, b = W - 22, m = (a + b) / 2;
-  const bt = (x, rep, borne, ancre, sous) => `<text class="vu-t-mono" x="${x}" y="${y + 28}" text-anchor="${ancre}">${esc(rep || '—')}<tspan class="vu-t">${borne ? ':' + esc(borne) : ''}</tspan></text>${!mini && sous ? `<text class="vu-t" x="${x}" y="${y + 45}" text-anchor="${ancre}">${esc(sous)}</text>` : ''}`;
-  return `<svg class="vu-chemin" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${escA('De ' + o.de + ' à ' + o.vers)}"><path class="vu-fil" d="M${a} ${y}H${b}" style="stroke:${o.couleur || 'currentColor'}"/>`
-    + `<circle class="vu-bout" cx="${a}" cy="${y}" r="6.5"/><circle class="vu-bout" cx="${b}" cy="${y}" r="6.5"/>`
-    + (o.via ? `<rect class="vu-via" x="${m - 18}" y="${y - 10}" width="36" height="20" rx="6"/><text class="vu-t-mono vu-milieu vu-petit" x="${m}" y="${y + 4}">${esc(o.via)}</text>` : '')
-    + (mini ? '' : `<text class="vu-t vu-milieu" x="${(a + (o.via ? m - 18 : b)) / 2}" y="${y - 12}">${esc(o.legende || '')}</text>`)
-    + bt(a - 4, o.de, o.borneDe, 'start', o.sousDe) + bt(b + 4, o.vers, o.borneVers, 'end', o.sousVers) + '</svg>'; }
+/* (v84) dessiné comme les brochages : chaque bout, son repère et sa borne en pastille (un clic l'ouvre, le contact
+   allumé) ; le trait à la couleur de la route, le type posé dessus, la longueur dessous ; la barrette ajoutée par VOLTA, au
+   milieu ; sous chaque bout, ce qu'on y sertit. o : { de, borneDe, vers, borneVers, via, couleur, type, legende, sousDe,
+   sousVers } */
+function cheminVue(o, W, mini) { const a = mini ? 112 : 168, b = W - a, y = mini ? 24 : 30, m = (a + b) / 2, sous = !mini && (o.sousDe || o.sousVers), H = y + (sous ? 46 : 28);
+  const bout = (cote, rep, borne, s) => { const g = cote === 'de', bo = String(borne || ''), r = String(rep || '—'), pw = bo ? 12 + bo.length * 6.6 : 0;
+    const xRep = g ? a - 12 - (bo ? pw + 6 : 0) : b + 12, xPin = g ? a - 12 - pw : b + 18 + r.length * 7.8;
+    return `<g class="vu-ch-bout" data-bout="${cote}" role="button" tabindex="0" aria-label="${escA('Ouvrir ' + r + (bo ? ', borne ' + bo : ''))}"><rect class="bro-zone" x="${g ? 0 : b + 4}" y="${y - 14}" width="${a - 4}" height="28" rx="6"/>`
+      + `<text class="bro-vers" x="${xRep}" y="${y + 4.5}" text-anchor="${g ? 'end' : 'start'}">${esc(r)}</text>`
+      + (bo ? `<rect class="bro-pin-f" x="${xPin}" y="${y - 9}" width="${pw}" height="18" rx="5"/><text class="bro-pin" x="${xPin + pw / 2}" y="${y + 4}">${esc(bo)}</text>` : '')
+      + (s && !mini ? `<text class="bro-mot vu-ch-sous" x="${g ? a - 12 : b + 12}" y="${y + 30}" text-anchor="${g ? 'end' : 'start'}">${esc(s)}</text>` : '') + '</g>'; };
+  const xT = o.via ? (a + m - 22) / 2 : m;
+  return `<svg class="vu-bro vu-chemin${mini ? ' petit' : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('De ' + o.de + ' à ' + o.vers)}">`
+    + `<path class="bro-fil vu-ch-fil" d="M${a} ${y}H${b}" style="stroke:${o.couleur || 'currentColor'}"/><circle class="bro-bout" cx="${a}" cy="${y}" r="3"/><circle class="bro-bout" cx="${b}" cy="${y}" r="3"/>`
+    + (o.via ? `<rect class="bro-piece vu-ch-via" x="${m - 22}" y="${y - 11}" width="44" height="22" rx="6"/><text class="bro-borne" x="${m}" y="${y + 4}">${esc(o.via)}</text>` : '')
+    + (o.type ? `<rect class="bro-type-f" x="${xT - 26}" y="${y - 16}" width="52" height="13" rx="3"/><text class="bro-type" x="${xT}" y="${y - 6}">${esc(o.type)}</text>` : '')
+    + (o.legende && !mini ? `<text class="bro-mot vu-ch-leg" x="${xT}" y="${y + 17}" text-anchor="middle">${esc(o.legende)}</text>` : '')
+    + bout('de', o.de, o.borneDe, o.sousDe) + bout('vers', o.vers, o.borneVers, o.sousVers) + '</svg>'; }
 
 /* ---- LA TRAVERSÉE d'une prise de coupure : ce qui arrive par la fiche (à gauche), la lettre du contact, ce qui repart
    par l'embase (à droite) — une ligne par contact ; son survol allume la lettre sur la face et le câble sur le plan ---- */
@@ -242,6 +253,29 @@ function brochageVue(nom, sous, cons, o) { const xs = (cons || []).filter(c => c
           // le défaut se dit au bout de la ligne, après la borne d'arrivée, s'il y tient ; sinon sous le câble
           return xk + String(l.ko).length * 6.2 < W - 4 ? `<text class="bro-ko bout" x="${xk}" y="${yy + 4}">${esc(l.ko)}</text>` : `<text class="bro-ko" x="${xm}" y="${yy + 12}">${esc(l.ko)}</text>`; })() : '') + '</g>'; }); });
   return `<svg class="vu-bro${petit ? ' petit' : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('Le brochage de ' + nom)}">${out}</svg>`; }
+
+/* ---- LA MASSE (v84) : ce qui y revient, dessiné comme le folio — chaque câble arrive de son équipement (son repère, sa
+   borne en pastille), son type sur le trait, à la couleur de sa route ; tous se rejoignent sur un trait commun qui finit
+   par le symbole de masse, son repère à côté. Survoler une ligne allume le câble sur le plan ; un clic ouvre sa fiche.
+   lignes : [{ vers, borneVers, type, couleur, ko, k }] ---- */
+function masseVue(nom, lignes, o) { if (!lignes.length) return ''; const petit = !!(o && o.petit);
+  const PAS = petit ? 26 : 30, HAUT = 12, W = petit ? 400 : 640, cx = 7.8, xBus = W - (petit ? 92 : 150), x0 = petit ? 150 : 236, n = lignes.length;
+  const y = i => HAUT + i * PAS + PAS / 2, yN = y(n - 1), yG = yN + (petit ? 16 : 20), H = yG + 22;
+  let out = '';
+  lignes.forEach((l, i) => { const yy = y(i), xm = (x0 + xBus) / 2, bo = String(l.borneVers || ''), pw = bo ? 12 + bo.length * 6.6 : 0, rep = String(l.vers || '—');
+    out += `<g class="bro-l fi-ia${l.ko ? ' ko' : ''}"${l.k ? ` data-i="${escA(l.k)}"` : ''}><rect class="bro-zone" x="0" y="${yy - PAS / 2}" width="${xBus + 6}" height="${PAS}" rx="6"/>`
+      + `<text class="bro-vers" x="${x0 - 12 - (bo ? pw + 6 : 0)}" y="${yy + 4.5}" text-anchor="end">${esc(rep)}</text>`
+      + (bo ? `<rect class="bro-pin-f" x="${x0 - 12 - pw}" y="${yy - 9}" width="${pw}" height="18" rx="5"/><text class="bro-pin" x="${x0 - 12 - pw / 2}" y="${yy + 4}">${esc(bo)}</text>` : '')
+      + `<circle class="bro-bout" cx="${x0}" cy="${yy}" r="2.6"/><path class="bro-fil" style="stroke:${l.couleur || 'currentColor'}" d="M${x0} ${yy}H${xBus}"/>`
+      + `<rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(l.type || '—')}</text>`
+      + (l.ko ? `<text class="bro-ko" x="${xm}" y="${yy + 12}">${esc(l.ko)}</text>` : '') + '</g>'; });
+  // le trait commun, ses points de jonction, puis le symbole de masse (trois traits qui décroissent), son repère à côté
+  const jonctions = lignes.map((_, i) => `<circle class="bro-noeud" cx="${xBus}" cy="${y(i)}" r="3"/>`).join('');
+  out += `<path class="bro-bus" d="M${xBus} ${y(0)}V${yG}"/>${n > 1 ? jonctions : ''}`
+    + `<path class="bro-terre" d="M${xBus - 14} ${yG}h28M${xBus - 9} ${yG + 5}h18M${xBus - 4} ${yG + 10}h8"/>`
+    + `<text class="bro-nom bro-nom-masse" x="${xBus + 22}" y="${(y(0) + yG) / 2 + (petit ? 2 : 0)}">${esc(nom)}</text>`
+    + (petit ? '' : `<text class="bro-sous bro-sous-masse" x="${xBus + 22}" y="${(y(0) + yG) / 2 + 17}">masse</text>`);
+  return `<svg class="vu-bro vu-masse${petit ? ' petit' : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('Les ' + n + ' câbles qui reviennent à ' + nom)}">${out}</svg>`; }
 
 /* ---- COMMENT VOLTA L'A DÉCIDÉ : des étapes numérotées, une phrase chacune et sa source ---- */
 // sources : fichier (votre fichier), norme, tables (les tables de VOLTA), calcul, hypothese, main (choisi ici), base (la base SEE)

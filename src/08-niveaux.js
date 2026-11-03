@@ -71,7 +71,10 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   const rep = t.champ ? `<input class="nc-rep-in" id="${t.champ}" value="${escA(nom)}" size="${Math.max(3, nom.length)}" style="width:calc(${Math.max(3, nom.length) + 1}ch + 14px)" aria-label="${escA(t.aide || 'Repère — écrire pour renommer partout')}" data-bulle="${escA(t.aide || 'Un clic pour le renommer : chaque câble suit')}" spellcheck="false" autocomplete="off">`
     : `<span class="nc-rep-t">${esc(nom)}</span>`;
   const ms = (o.meta || []).filter(Boolean), ref = ms.length === 1 && /class="id"/.test(ms[0]);
-  const meta = ms.length ? `<div class="nc-meta fi-identite">${ref ? `<span class="nc-meta-k">Référence</span>` : ''}${ms.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</div>` : '';
+  // (v84) une référence se lit en puce, à la chasse fixe ; une phrase (« ajoutée par VOLTA sur 102CB1:2 », « route PUISSANCE »)
+  // reste une phrase, en clair — une puce de code autour d'une phrase la fait passer pour une référence
+  const metaV = m => `<span class="nc-meta-v${/class="id"/.test(m) ? '' : ' texte'}">${m}</span>`;
+  const meta = ms.length ? `<div class="nc-meta fi-identite">${ref ? `<span class="nc-meta-k">Référence</span>` : ''}${ms.map(metaV).join('')}</div>` : '';
   // (v82) dans la carte, le genre court (« Barrette », « Prise ») : le titre tient sur une ligne, le tiret ne pend plus
   const genre = !grand && GENRES_COURTS[o.type] ? GENRES_COURTS[o.type] : GENRES_FICHE[o.type] || 'Élément';
   const sym = `<svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg>`, titre = `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-tiret" aria-hidden="true">—</span><span class="nc-rep">${rep}</span>`;
@@ -79,7 +82,7 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   // trace à l'ouverture — la signature de la tuile, reprise dans le grand
   // (v83) en grand, « module 2 de VT2 » se lit dans la première section (la barrette et tous ses modules) : pas deux fois
   const msG = ms.filter(m => !/^(module|partie) \S+ de /.test(m));
-  if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${msG.length ? `<span class="nc-meta fi-identite">${msG.map(m => `<span class="nc-meta-v">${m}</span>`).join('')}</span>` : ''}<span class="nv-fili" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span></div>`;
+  if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${msG.length ? `<span class="nc-meta fi-identite">${msG.map(metaV).join('')}</span>` : ''}<span class="nv-fili" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span></div>`;
   // le symbole : un filigrane dans le coin de la tuile, qui s'éveille au survol
   // (v79, le lecteur : « ce sigle en fond, ce micro-détail, cette interactivité, c'est vraiment la diff — on peut encore
   // faire mieux ») : au survol, un trait de cuivre parcourt le symbole, comme un courant qui passe
@@ -104,7 +107,8 @@ const designationFiche = o => { const t = o.tete || {}; if (!t.designation || !D
    changé ; pourquoi, en une phrase ; le bouton qui mène à sa section, allumée. `xs` : [{ titre, valeur (html), source,
    avant (html), pourquoi (html), vers (sélecteur), geste, etat }]. */
 function sommaireReglages(xs) { const ys = (xs || []).filter(Boolean); if (!ys.length) return '';
-  return `<section class="nv-somm"><h4 class="vu-titre">Ce que vous pouvez changer <span>${esc(ys.length > 1 ? ys.length + ' réglages' : '1 réglage')} · le bouton mène à sa section</span></h4><ol class="nv-somm-l">`
+  // (v84) le titre dit ce qu'on y fait ; chaque bouton ouvre son réglage sur place — ça se voit, inutile de l'écrire
+  return `<section class="nv-somm"><h4 class="vu-titre">Ce que vous pouvez changer <span>${esc(ys.length > 1 ? ys.length + ' réglages' : '1 réglage')}</span></h4><ol class="nv-somm-l">`
     + ys.map(x => `<li class="nv-somm-i${x.etat ? ' ' + x.etat : ''}"><span class="nv-somm-k">${esc(x.titre)}</span>`
       + `<span class="nv-somm-v">${x.avant ? `<s>${x.avant}</s><i class="nv-somm-f" aria-hidden="true">→</i>` : ''}<b>${x.valeur}${x.avant ? `<small class="nv-somm-av">au lieu de ${x.avant}</small>` : ''}</b>${x.source ? `<span class="vu-src ${escA(x.source)}">${esc(MOTS_SOURCES[x.source] || x.source)}</span>` : ''}</span>`
       + `<span class="nv-somm-p">${x.pourquoi || ''}</span>`
@@ -137,7 +141,10 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
    dans le grand). Un clic mène à l'onglet qui l'explique ; une valeur qui s'écrit s'écrit sur place. ---- */
 function chiffresHtml(xs, n) { const ys = (xs || []).filter(Boolean).slice(0, n || 3); if (!ys.length) return '';
   return `<div class="nc-chiffres" style="--n:${ys.length}">${ys.map(c => { const va = c.onglet ? ongletDeSection(NIVEAU.typeRendu, c.onglet) : '', bouton = va && !c.edit, tag = bouton ? 'button' : 'div';
-    return `<${tag}${bouton ? ` type="button" data-onglet-va="${escA(va)}"` : ''} class="nc-chiffre${c.etat ? ' ' + c.etat : ''}${c.edit ? ' edit' : ''}${/\d/.test(String(c.v).replace(/<[^>]*>/g, '')) ? '' : ' mot'}"${c.bulle ? ` data-bulle="${escA(c.bulle)}"` : ''}>`
+    // (v84) trois natures, trois tailles qui partagent une même ligne de pied : un nombre (le plus grand), un repère ou une
+    // référence (à la chasse fixe), un mot (« mâle »)
+    const forme = /class="id"/.test(String(c.v)) && !c.edit ? ' ident' : /\d/.test(String(c.v).replace(/<[^>]*>/g, '')) ? '' : ' mot';
+    return `<${tag}${bouton ? ` type="button" data-onglet-va="${escA(va)}"` : ''} class="nc-chiffre${c.etat ? ' ' + c.etat : ''}${c.edit ? ' edit' : ''}${forme}"${c.bulle ? ` data-bulle="${escA(c.bulle)}"` : ''}>`
       + `<span class="nc-k">${esc(c.k)}</span><span class="nc-v">${c.v}</span></${tag}>`; }).join('')}</div>`; }
 // la largeur d'un dessin du grand : celle de son panneau (au téléphone, l'écran)
 const largeurVue = () => typeof telephone === 'function' && telephone() ? 360 : 640;
@@ -199,7 +206,8 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
       + `<td class="nv-td-vers"><span class="nv-vers"><b class="id">${esc(r.bout && r.bout.rep ? r.bout.rep : '—')}</b>${r.bout && r.bout.borne ? `<span class="nv-borne">borne ${esc(r.bout.borne)}</span>` : ''}</span></td>`
       + `<td class="nv-td-i">${iH}</td><td class="nv-td-u">${uH}</td><td class="nv-td-lg">${lgH}</td>${avecCt ? `<td class="nv-td-ct">${ctH}</td>` : ''}</tr>`; }).join('');
   const tete2 = avecCt ? tete : tete.replace(/<th scope="col"[^>]*class="nv-th-ct"[\s\S]*?<\/th>/, '');
-  return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap"><b>${esc(o.titre || 'Ses câbles')}</b><span>${esc(rows.length + ' · un clic sur une ligne ouvre sa fiche')}</span></caption><thead><tr>${tete2}</tr></thead><tbody>${lignes}</tbody></table></div>${datalistCables()}`; }
+  // (v84) le titre et le compte ; qu'une ligne s'ouvre, son survol le montre (la ligne s'éclaire, une flèche paraît au bout)
+  return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap"><b>${esc(o.titre || 'Ses câbles')}</b><span>${esc(String(rows.length))}</span></caption><thead><tr>${tete2}</tr></thead><tbody>${lignes}</tbody></table></div>${datalistCables()}`; }
 
 /* ---- COMPOSER : la carte, ou le grand ------------------------------------------------------------------------------- */
 /* o : { type (equipement · disjoncteur · barrette · prise · masse · fil), tete ({ nom, champ, aide, designation }), meta
@@ -272,6 +280,12 @@ function lierSommaire(box) { const somm = box.querySelector('.nv-panneau[data-se
   const garde = NIVEAU.sommOuvert && [...pan.querySelectorAll('.nv-somm-b')].find(b => b.dataset.somm === NIVEAU.sommOuvert); if (garde) ouvrir(garde, true); }
 function lierNiveaux(box, c) { lierSommaire(box);
   box.querySelectorAll('[data-lpa]').forEach(b => b.onclick = e => { e.stopPropagation(); if (typeof exporterNomenclatureExcel === 'function') exporterNomenclatureExcel(); });
+  // (v84) une note qui mène à son réglage (« Longueur supposée… L'écrire ») : l'onglet Modifier, le réglage ouvert sur
+  // place sous sa ligne, le curseur dans son champ
+  box.querySelectorAll('[data-somm-va]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const sel = b.dataset.sommVa;
+    const ouvrirLa = () => { const p = activerOnglet('reglages', true); if (!p) return; const bt = [...p.querySelectorAll('.nv-somm-b')].find(x => x.dataset.somm === sel);
+      if (bt && bt.getAttribute('aria-expanded') !== 'true') bt.click(); const champ = p.querySelector(sel + ' input, ' + sel + ' select'); if (champ) setTimeout(() => { try { champ.focus(); champ.select && champ.select(); } catch (_) { } }, 60); };
+    if (ficheEnGrand()) ouvrirLa(); else { ouvrirGrand('reglages'); setTimeout(ouvrirLa, 120); } });
   // « Tout voir », une case de la carte, « et 2 autres points », une ligne des modifications : le grand, sur l'onglet
   box.querySelectorAll('[data-onglet-va]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const k = b.dataset.ongletVa || '';
     if (b.dataset.voirTout && ficheEnGrand()) { const r = b.parentElement.querySelector('.nc-reste'); if (r) { r.hidden = !r.hidden; b.classList.toggle('ouvert', !r.hidden); } return; }

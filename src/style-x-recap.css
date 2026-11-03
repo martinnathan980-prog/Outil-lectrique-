@@ -187,3 +187,69 @@
 
 /* v83 — une norme ne se coupe pas en deux lignes (« EN 3646- / 002 ») : il y a la place */
 #base td.rc-c-norme,#base td.rc-c-norme .rc-norme{white-space:nowrap}
+
+/* ═══ v84 — LA PASSE « RECAP » ═══════════════════════════════════════════════════════════════════════════════════════
+   Le blanc à droite se remplit de colonnes utiles (08-recap, `large`) ; l'onglet Problèmes se lit du plus grave au moins
+   grave, chaque ligne mène à sa fiche, le geste qui corrige se voit ; la barre ne laisse plus de filet orphelin ; tout est
+   aux jetons, à l'échelle de la direction (11 · 12 · 13 · 14 · 16 ; 400 · 500 · 600). */
+
+/* ─── 9. LA BARRE : rien d'orphelin ───
+   Défaut : sans puce à montrer (« Inconnus de la base 0 » se tait, style-v79), le filet qui sépare les puces de la
+   recherche restait seul, un point gris après le champ. Correction : la rangée sans puce visible n'a plus de filet ; un
+   groupe dont toutes les puces se taisent ne pose pas son creux vide. */
+#base .rc-puces-g:not(:has(.rc-chip:not(.zero),.rc-chip[aria-pressed="true"])){display:none}
+#base .rc-puces:not(:has(.rc-chip:not(.zero),.rc-chip[aria-pressed="true"])){border-left:none;padding-left:0;margin-left:0}
+/* la note d'un en-tête (« supposée ») à l'échelle : 11 px, plus 10,5 */
+#base .rc-tab th[data-note]::after{font-size:var(--f-11)}
+
+/* ─── 10. LA FEUILLE LARGE : les colonnes respirent d'un cran (le blanc qui reste se partage, il ne s'entasse pas à droite) ─── */
+@container rc-corps (min-width:1480px){ #base #ba-tab{--rc-pad:28px;--rc-fleche:144px} }
+
+/* ─── 11. LES PROBLÈMES : du plus grave au moins grave ───
+   Un intercalaire de NIVEAU (« PROBLÈMES 4 », « À VOIR 7 », à leur couleur), puis les GENRES (le compte à la couleur du
+   niveau, le mot, ses repères, le geste qui traite tout le genre) ; chaque ligne : l'objet, ce qui ne va pas, ce qu'il faut
+   faire — les deux phrases se partagent la largeur (plus de grand vide entre elles) ; au survol, « Voir › » au bout dit que
+   la ligne mène à la fiche, à la section qui démontre le point. */
+#base #ba-tab[data-onglet="problemes"] th.rc-c-pb{width:46%}
+#base #ba-tab[data-onglet="problemes"] th.rc-c-que{width:34%}
+#base #ba-tab[data-onglet="problemes"] td.rc-c-pb,#base #ba-tab[data-onglet="problemes"] td.rc-c-que{min-width:0}
+#base #ba-tab[data-onglet="problemes"] .rc-phrase{max-width:76ch}
+#base #ba-tab[data-onglet="problemes"] tbody tr[data-k]{cursor:pointer}
+/* le câble dont parle la phrase, en chasse fixe, à part : QUOI, puis POURQUOI */
+#base #ba-tab .rc-sujet{display:inline-block;margin-right:8px;font:500 var(--f-12)/1.45 var(--mono);letter-spacing:-.01em;color:var(--t-1);white-space:nowrap}
+/* l'objet qui se répète : à l'encre troisième ; le geste qui se répète : « ″ », doux, sous le début de la phrase */
+#base #ba-tab .rc-r.rc-meme{color:var(--t-3);font-weight:500}
+#base #ba-tab .rc-pareil{display:inline-block;padding:0 2px;font:500 var(--f-14)/1 var(--sans);color:var(--t-3);cursor:help}
+/* « Voir › », au bout de la ligne survolée ou tenue au clavier */
+#base #ba-tab[data-onglet="problemes"] :is(th,td).rc-suppr{width:72px;padding-right:16px;text-align:right}
+#base .rc-voir{display:inline-flex;align-items:center;gap:2px;font:500 var(--f-12)/1 var(--sans);color:var(--t-2);opacity:0;transform:translateX(-3px);
+  transition:opacity var(--d-rapide) var(--courbe),transform var(--d-rapide) var(--courbe),color var(--d-rapide) var(--courbe)}
+#base .rc-voir svg.ico{width:14px;height:14px;stroke-width:2}
+#base #ba-tab tbody tr[data-k]:is(:hover,:focus-within) .rc-voir{opacity:1;transform:none}
+#base #ba-tab tbody tr[data-k]:hover .rc-voir{color:var(--nv-cuivre,var(--t-1))}
+/* l'intercalaire de niveau : une capitale de rubrique, à la couleur de l'état, un point, le compte */
+#base #ba-tab tr.rc-niveau td{height:40px;padding:18px 12px 6px var(--rc-g);border-bottom:none;background:none;vertical-align:bottom}
+#base #ba-tab tr.rc-niveau + tr.rc-genre td{padding-top:8px;height:40px}
+#base .rc-niveau-l{display:inline-flex;align-items:center;gap:8px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase}
+#base .rc-niveau-l i{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+#base tr.rc-niveau.ko .rc-niveau-l{color:var(--ko)}
+#base tr.rc-niveau.att .rc-niveau-l{color:var(--warn)}
+#base #ba-tab tr.rc-niveau .rc-niveau-l .rc-n{font:600 var(--f-11)/1 var(--sans);letter-spacing:0;color:inherit}
+#base tr.rc-niveau.ko .rc-niveau-l i{box-shadow:var(--n-point-ko,none)}
+#base tr.rc-niveau.att .rc-niveau-l i{box-shadow:var(--n-point-att,none)}
+/* un genre : son compte à la couleur du niveau, son mot, ses repères à l'encre seconde, son geste */
+#base .rc-genre .rc-groupe-l{gap:10px}
+#base .rc-genre-n{min-width:2ch;font:600 var(--f-13)/1 var(--sans);font-variant-numeric:tabular-nums;text-align:right}
+#base tr.rc-genre.ko .rc-genre-n{color:var(--ko)}
+#base tr.rc-genre:not(.ko) .rc-genre-n{color:var(--warn)}
+#base .rc-genre .rc-groupe-n{font:400 var(--f-12)/1 var(--mono);color:var(--t-2)}
+#base .rc-genre .rc-genre-geste{margin-left:8px}
+#base .rc-genre .btn.rc-genre-geste{height:28px;padding:0 10px;font-size:var(--f-12)}
+#base .rc-genre .rc-lien.rc-genre-geste{font-size:var(--f-12);margin:-4px -6px -4px 2px}
+/* les gestes d'une ligne : le principal au trait, net ; le reste en lien */
+#base #ba-tab .rc-gestes .btn.papier{font-weight:500}
+
+/* ─── 12. UN AUTRE ONGLET : ses lignes paraissent d'un fondu court (08-recap, `rc-entre`) — rien ne glisse, rien ne clignote ─── */
+@keyframes rc-entre{from{opacity:.25}}
+#base #ba-tab.rc-entre tbody{animation:rc-entre var(--d-moyen) var(--courbe-entree) both}
+@media (prefers-reduced-motion:reduce){ #base #ba-tab.rc-entre tbody{animation:none} }

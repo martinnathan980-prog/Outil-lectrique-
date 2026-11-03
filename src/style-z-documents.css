@@ -1,0 +1,62 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES DOCUMENTS RARES (v84) — la dernière couche, posée sur la coquille (style.css), le gabarit des cartes (style-v79)
+   et la nuit cuivrée (style-x-nuit) : ce qui reste à mettre d'équerre dans les documents (Hypothèses, LPA, Normes et
+   bible, Vos fichiers, Bilan, Cartouche, Coller, Déjà fait, Comprendre, Raccourcis, le relevé de l'installation
+   corrigée, la base SEE) et le carnet.
+   · UNE ÉCHELLE COURTE (la direction v84, point 4) : la rubrique en capitales 11 px · 600 · 0,07 em ; le titre du
+     document 20 · 600 ; le titre d'une section 16 · 600 ; le texte 13 ; les notes 12 ; les en-têtes de tableau en
+     rubrique. Les graisses 400 · 500 · 600 ; 650 et 700 n'existent plus ici.
+   · LES TABLEAUX HOMOGÈNES (la charte) : un chiffre se centre sous son titre, en chiffres tabulaires.
+   · RIEN DE COUPÉ : la phrase d'un domaine des normes, la source d'une table passent à la ligne au lieu de finir en « … ».
+   Les couleurs sont des jetons (--t-*, --s-*, --nv-cuivre) : l'agent du cadre peut changer la matière sans toucher ici.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── LA TÊTE : la rubrique, le titre ─── */
+#fiche .fiche-tete .sur,.rk-tete .sur{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em}
+#fiche .fiche-tete .titre,.rk-tete h2{font:600 var(--f-20)/1.25 var(--sans);letter-spacing:-.015em}
+
+/* ─── LE TITRE D'UNE SECTION : 16 · 600, sa barre de cuivre ─── */
+#fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3,.cc-vide-t,.ca-t),
+.raccourcis .rk-groupe h3{font-weight:600;font-size:var(--f-16);letter-spacing:-.01em}
+#fiche .bl-auto h3{font:600 var(--f-16)/1.3 var(--sans)}
+/* ce qu'une section compte, à côté de son titre : 12, l'encre seconde */
+#fiche .no-st small{font:500 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+
+/* ─── LE CHAPEAU : la première phrase sous la tête ─── */
+#fiche .fiche-corps>:is(p.note,.vf-lead,.co-lead,.no-intro,.bl-chapeau){font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
+
+/* ─── LES TABLEAUX DES DOCUMENTS : l'en-tête en rubrique, un chiffre centré sous son titre ─── */
+#fiche .no-table th{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);padding-bottom:8px}
+#fiche .no-table :is(th.d,td.d){text-align:center;padding-left:6px;padding-right:12px}
+#fiche .no-table td.d{font:600 var(--f-13)/1.4 var(--sans);font-variant-numeric:tabular-nums}
+#fiche .no-table td{padding-top:10px;padding-bottom:10px}
+
+/* ─── LA LPA : ses chiffres en tête, grands et nus ─── */
+#fiche .no-tuile b{font:600 var(--f-28)/1.05 var(--sans);letter-spacing:-.025em}
+#fiche .no-tuile b small{font:500 var(--f-14) var(--sans);color:var(--t-2)}
+#fiche .no-tuile span{font:400 var(--f-12)/1.35 var(--sans);color:var(--t-2)}
+#fiche .fiche-corps>.no-intro{margin:0 2px 14px}
+
+/* ─── LES HYPOTHÈSES : la liste des calibres se lit en entier ; la phrase souligne son « ? » d'un pointillé discret ─── */
+#fiche .hy-champ .hyp-liste input{width:240px}
+#fiche .hy-sert .hy-q{text-decoration-color:color-mix(in srgb,var(--t-3) 45%,transparent)}
+
+/* ─── LES NORMES : rien ne finit en « … » — la phrase du domaine et la source d'une table passent à la ligne ─── */
+#fiche .nm-dom-sens{white-space:normal;overflow:visible;text-overflow:clip;text-wrap:pretty}
+#fiche .nm-t-source{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.45;color:var(--t-3)}
+
+/* ─── LE CARNET : sa tête à la même échelle ─── */
+#carnet .cn-tete b{font:600 var(--f-14)/1.2 var(--sans)}
+
+/* ─── « 1, 2, 3 » (la charte) : les gestes d'un document en trois phrases courtes — le Bilan, Coller ; un chiffre de
+   cuivre dans son rond, posés sur la page sous la tête, avant les sections ─── */
+#fiche .fiche-corps>.doc-etapes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0 2px 16px;padding:0;list-style:none;counter-reset:etape}
+.doc-etapes li{display:flex;align-items:flex-start;gap:10px;min-width:0;font:400 var(--f-13)/1.45 var(--sans);color:var(--t-2);counter-increment:etape;text-wrap:pretty}
+.doc-etapes li::before{content:counter(etape);flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;margin-top:-1px;
+  font:600 var(--f-12)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--nv-cuivre,var(--t-1));box-shadow:inset 0 0 0 1.5px var(--nv-cuivre-ligne,var(--s-line-2))}
+.doc-etapes li b{color:var(--t-1);font-weight:600}
+
+/* ─── LES TABLES DES NORMES : l'en-tête en rubrique, un chiffre centré ─── */
+#fiche .nm-tab th{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase}
+#fiche .nm-tab th[aria-sort="ascending"],#fiche .nm-tab th[aria-sort="descending"]{font-weight:600;color:var(--t-1)}
+#fiche .nm-tab :is(td.d,th.d){text-align:center}

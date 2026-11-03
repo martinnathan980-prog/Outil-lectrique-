@@ -51,8 +51,8 @@ const cpSvg = (vb, titre, corps) => `<svg class="vr-svg" viewBox="${vb}" role="i
 function cpSchemaCuisinier() { const carte = (y, c, cd, titre, sous, ex) => `<rect x="8" y="${y}" width="290" height="78" rx="12" fill="${CP.fond}" stroke="${CP.filet}"/><rect x="8" y="${y}" width="6" height="78" rx="3" fill="${c}"/>`
     + `<circle cx="42" cy="${y + 39}" r="17" fill="${cd}"/>` + cpT(42, y + 44, titre[0], { cls: 'vr-ico', couleur: c })
     + cpT(70, y + 26, titre[1], { cls: 'vr-titre', ancre: 'start' }) + cpT(70, y + 45, sous, { cls: 'vr-sous', ancre: 'start', couleur: c }) + cpT(70, y + 63, ex, { cls: 'vr-petit', ancre: 'start' });
-  const plat = ['les folios dessinés', 'une fiche par objet', 'la nomenclature', 'l’installation corrigée'];
-  return cpSvg('0 0 880 300', 'VOLTA est un cuisinier : la commande, le catalogue et les recettes entrent ; les folios, les fiches et la nomenclature sortent',
+  const plat = ['les folios dessinés', 'une fiche par objet', 'la LPA à commander', 'l’installation corrigée'];
+  return cpSvg('0 0 880 300', 'VOLTA est un cuisinier : la commande, le catalogue et les recettes entrent ; les folios, les fiches et la LPA sortent',
     carte(10, CP.cuivre, CP.cuivreDoux, ['1', 'La commande'], 'votre fichier d’installation', 'relier 102CB1 à 103RL1, en DR20')
     + carte(111, CP.cuivre, CP.cuivreDoux, ['2', 'Le catalogue'], 'la base SEE gardée', 'sinon les tables de VOLTA')
     + carte(212, CP.cuivre, CP.cuivreDoux, ['3', 'Les recettes'], 'la physique, les normes', 'ce qu’un câble supporte, quand couper')

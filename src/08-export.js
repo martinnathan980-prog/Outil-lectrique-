@@ -31,9 +31,25 @@ const COLONNES_RETEST = [['Harness', 'harness'], ['Device1', 'de'], ['Pin1', 'bo
 // une colonne en mots, pour le relevé (la colonne de l'Excel reste dans la bulle)
 const MOTS_COLONNES = { harness: 'harness', de: 'de', borneDe: 'borne', pnDe: 'part number', descriptionDe: 'description', type: 'type', cable: 'numéro', route: 'route',
   vers: 'vers', borneVers: 'borne', pnVers: 'part number', descriptionVers: 'description', fwd: 'folio', longueur: 'longueur', appareil: 'appareil', retest: 'date de l’installation' };
-// une valeur telle que la case l'écrit : la longueur en mm (VOLTA la garde en mètres), le FWD d'origine sinon le folio
-const valeurRetest = (l, ch) => ch === 'longueur' ? (l.longueur > 0 ? Math.round(l.longueur * 1000) : '') : ch === 'fwd' ? (l.fwd || l.plan || '') : l[ch] == null ? '' : l[ch];
-const motAvant = (ch, v) => v == null || v === '' ? 'vide' : ch === 'longueur' ? Math.round(v * 1000) + ' mm' : String(v);
+/* Une valeur telle que la case l'écrit : la longueur en mm (VOLTA la garde en mètres) — sans l'arrondir (3670,5 mm reste
+   3670,5), et telle que le fichier l'écrivait quand VOLTA ne la lit pas (« abc », « -3 » : la case revient, pas vide) —,
+   le FWD d'origine sinon le folio, un bout tel que le fichier l'écrivait (« 677VT2 51 » + « B », que VOLTA lit 677VT2:51B :
+   01, `ecritDuBout`). (v84 — la donnée du fichier reste intacte : l'aller-retour lire → exporter → relire rend les mêmes
+   liaisons, et les mêmes cases.) */
+const mmDe = m => Math.round(m * 1e6) / 1000;
+const BOUTS_RETEST = { de: ['de', 0], borneDe: ['de', 1], vers: ['vers', 0], borneVers: ['vers', 1] };
+const valeurRetest = (l, ch) => { if (ch === 'longueur') return l.longueur > 0 ? mmDe(l.longueur) : (l.longueurBrute || '');
+  if (ch === 'fwd') return l.fwd || l.plan || '';
+  const b = BOUTS_RETEST[ch]; if (b) { const e = ecritDuBout(l, b[0]); if (e) return e[b[1]]; }
+  return l[ch] == null ? '' : l[ch]; };
+const motAvant = (ch, v) => v == null || v === '' ? 'vide' : ch === 'longueur' ? String(mmDe(v)).replace('.', ',') + ' mm' : String(v);
+/* Les colonnes de l'installation corrigée : l'installation et l'ECP en tête quand le fichier les portait, les seize, puis
+   les colonnes que VOLTA ne lit pas (`autres`, 02 : « Remarque »…), dans l'ordre où elles paraissent. */
+function colonnesDuClasseur(V) { const tete = [['Install', 'install'], ['ECP', 'ecp']].filter(([, ch]) => V.some(l => l[ch])), autres = [], vus = new Set();
+  V.forEach(l => { if (l.autres) Object.keys(l.autres).forEach(k => { if (!vus.has(k)) { vus.add(k); autres.push(k); } }); });
+  return { tete, autres }; }
+// une liaison qu'on rend : ses deux bouts, ou ce qu'une ligne incomplète du fichier portait (un bout, un câble) — elle était au fichier
+const aRendre = l => !!l && !!(l.de || l.vers || l.cable);
 /* Les modifications d'une liaison : [colonne, champ, avant, après] pour chaque champ que `l.avant` garde et qui a changé. */
 function modificationsDe(l) { if (!l.avant) return [];
   return COLONNES_RETEST.filter(([, ch]) => ch in l.avant && (l.avant[ch] == null ? null : l.avant[ch]) !== (l[ch] == null ? null : l[ch]))
@@ -63,17 +79,17 @@ function origineDeCase(l, ch, ouvert) { const v = l.avant && l.avant[ORIGINE_VOL
    colonne « Modifié par VOLTA » qui les nomme), la feuille « Modifications » (avec son Origine) et, pour le plan ouvert
    (`o.volta`), la feuille cachée « VOLTA ». `o.ouvert` : ce sont les liaisons du plan sur la table (l'origine se lit
    aussi par ses disjoncteurs) ; la conversion en lot (08-bibliotheque) appelle sans. */
-function classeurRetestCorrige(V, nom, o) { o = o || {}; V = (V || []).filter(liaisonComplete); const mods = V.map(modificationsDe), n = mods.filter(m => m.length).length;
-  const quand = new Date().toLocaleDateString('fr-FR'), entetes = [...COLONNES_RETEST.map(c => c[0]), 'Modifié par VOLTA'];
+function classeurRetestCorrige(V, nom, o) { o = o || {}; V = (V || []).filter(aRendre); const mods = V.map(modificationsDe), n = mods.filter(m => m.length).length;
+  const K = colonnesDuClasseur(V), quand = new Date().toLocaleDateString('fr-FR'), entetes = [...K.tete.map(c => c[0]), ...COLONNES_RETEST.map(c => c[0]), ...K.autres, 'Modifié par VOLTA'];
   const lignes = [[`Installation corrigée par VOLTA — ${nom || 'plan'}`], [`Le ${quand} · ${plurielLie(V.length, 'liaison')} · ${plurielLie(n, 'liaison')} modifiée${n > 1 ? 's' : ''} : chaque case changée porte en commentaire ce qu'elle disait avant`], [], entetes,
-    ...V.map((l, i) => [...COLONNES_RETEST.map(([, ch]) => valeurRetest(l, ch)), mods[i].map(m => m[0]).join(', ')])];
+    ...V.map((l, i) => [...K.tete.map(([, ch]) => l[ch] || ''), ...COLONNES_RETEST.map(([, ch]) => valeurRetest(l, ch)), ...K.autres.map(k => (l.autres && l.autres[k]) || ''), mods[i].map(m => m[0]).join(', ')])];
   const ws = XLSX.utils.aoa_to_sheet(lignes), origine = (l, ch) => origineDeCase(l, ch, !!o.ouvert);
   // le commentaire de chaque case changée : ce que portait le fichier, et d'où vient le changement
-  V.forEach((l, i) => mods[i].forEach(([col, ch, av]) => { const c = COLONNES_RETEST.findIndex(x => x[1] === ch), ref = XLSX.utils.encode_cell({ r: 4 + i, c });
+  V.forEach((l, i) => mods[i].forEach(([col, ch, av]) => { const c = K.tete.length + COLONNES_RETEST.findIndex(x => x[1] === ch), ref = XLSX.utils.encode_cell({ r: 4 + i, c });
     if (!ws[ref]) ws[ref] = { t: 's', v: '' }; ws[ref].c = [{ a: 'VOLTA', t: 'Avant : ' + motAvant(ch, av) + (origine(l, ch) === 'volta' ? ' · ' + ORIGINES_MOTS.volta : '') }]; ws[ref].c.hidden = true; }));
   ws['!cols'] = entetes.map(h => ({ wch: Math.max(10, Math.min(28, h.length + 3)) })); ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 3, c: 0 }, e: { r: 3 + V.length, c: entetes.length - 1 } }) };
   const M = [['Harness', 'Cable Tag', 'Device1', 'Pin1', 'Device2', 'Pin2', 'Colonne', 'Avant', 'Après', 'Origine']];
-  V.forEach((l, i) => mods[i].forEach(([col, ch, av, ap]) => M.push([l.harness || '', l.cable || '', l.de, l.borneDe || '', l.vers, l.borneVers || '', col, motAvant(ch, av), motAvant(ch, ap), ORIGINES_MOTS[origine(l, ch)]])));
+  V.forEach((l, i) => mods[i].forEach(([col, ch, av, ap]) => M.push([l.harness || '', l.cable || '', ...['de', 'borneDe', 'vers', 'borneVers'].map(k => valeurRetest(l, k)), col, motAvant(ch, av), motAvant(ch, ap), ORIGINES_MOTS[origine(l, ch)]])));
   const wm = XLSX.utils.aoa_to_sheet(M.length > 1 ? M : [...M, ['', '', '', '', '', '', 'aucune modification', '', '', '']]); wm['!cols'] = M[0].map((h, j) => ({ wch: j < 6 ? 12 : j === 9 ? 30 : 22 }));
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Installation'); XLSX.utils.book_append_sheet(wb, wm, 'Modifications');
   if (o.volta) { XLSX.utils.book_append_sheet(wb, feuilleVolta(o.volta), FEUILLE_VOLTA); wb.Workbook = { Sheets: [{ Hidden: 0 }, { Hidden: 0 }, { Hidden: 1 }] }; }

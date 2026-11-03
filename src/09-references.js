@@ -539,13 +539,17 @@ async function lireLaBase(fichier, surProgres) { const prog = surProgres || (() 
         avant += f.x.brut; octets = avant; lec.finFeuille(); }
       lu = feuilles.length > 0; } }
   if (!lu && zip) { if (typeof XLSX === 'undefined') throw new Error('ce classeur ne se lit pas au fil de l’eau, et la bibliothèque Excel n’est pas là'); moteur = 'SheetJS';
-    const wb = XLSX.read(u8, { type: 'array', dense: true }); for (const n of wb.SheetNames) { lec.feuille(n);
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: true, defval: '', raw: false }); annonce += rows.length;
-      for (let i = 0; i < rows.length; i++) { if (lec.ligne((rows[i] || []).map(c => c == null ? '' : String(c)), i + 1) === false) break; dire(); } lec.finFeuille(); } }
+    // (v84) les cases comme la lecture au fil de l'eau les rend : le nombre tel qu'Excel le garde, la date en jj/mm/aaaa
+    // (02, `lignesDeFeuille`) — le texte formaté de SheetJS écrivait les dates à l'américaine (10/27/25)
+    const wb = XLSX.read(u8, { type: 'array', dense: true, cellNF: true }); for (const n of wb.SheetNames) { lec.feuille(n);
+      const rows = lignesDeFeuille(wb.Sheets[n]); annonce += rows.length;
+      for (let i = 0; i < rows.length; i++) { if (lec.ligne(rows[i] || [], i + 1) === false) break; dire(); } lec.finFeuille(); } }
   else if (!zip) { const texte = texteDesOctets(u8); let p = 0, num = 0; lec.feuille(''); octetsTotal = texte.length;
     for (let i = 0; ;) { i = texte.indexOf('\n', i); if (i < 0) break; annonce++; i++; } if (!texte.endsWith('\n')) annonce++;
+    // (v84) le séparateur du fichier, lu sur ses en-têtes (02, `trouverEnteteRetest`) : un « ; » dans une description d'un CSV à virgules ne découpe plus la ligne
+    const rt = trouverEnteteRetest(texte.slice(0, 64 * 1024).split(/\r?\n/).slice(0, 30)), sep = rt ? rt.sep : '';
     while (p < texte.length) { let q = texte.indexOf('\n', p); if (q < 0) q = texte.length; const ligne = texte.slice(p, q).replace(/\r$/, ''); p = q + 1; num++; octets = p;
-      if (lec.ligne(ligne.trim() ? cellules(ligne) : [], num) === false) break; dire(); }
+      if (lec.ligne(ligne.trim() ? cellules(ligne, sep) : [], num) === false) break; dire(); }
     lec.finFeuille(); }
   octets = octetsTotal; dire(true);
   const base = R.fin(nom, prog);

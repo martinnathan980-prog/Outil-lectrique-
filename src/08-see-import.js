@@ -272,7 +272,7 @@ const CONTROLES_SEE = [
   ['faces', 'f-compte', 'att', 'Nombre de contacts contre la désignation', 'Prise : la norme vérifiée garde la sienne, sinon SEE gagne.'],
   ['faces', 'f-tailles', 'att', 'Tailles contre la norme', 'La norme vérifiée garde sa face ; sinon SEE gagne.'],
   ['faces', 'f-casse', 'info', 'Casse des noms (c pour C)', 'VOLTA reprend les noms de la norme, aux places de SEE.'],
-  ['equipements', 'e-nature', 'ko', 'Paire de deux fiches ou de deux embases', 'Montrée telle quelle sur la fiche : à corriger dans SEE.'],
+  ['equipements', 'e-nature', 'ko', 'Paire de deux parties mobiles ou de deux parties fixes', 'Montrée telle quelle sur la fiche : à corriger dans SEE.'],
   ['equipements', 'e-sexe', 'ko', 'Paire de deux mêmes sexes (broches avec broches)', 'Montrée telle quelle sur la fiche : à corriger dans SEE.'],
   ['equipements', 'e-contacts', 'att', 'Paire dont les nombres de contacts diffèrent', 'Montrée telle quelle : à vérifier dans SEE.'],
   ['equipements', 'e-compte', 'att', 'Connecteur : nombre de contacts contre son arrangement', 'VOLTA dit celui du connecteur : à vérifier dans SEE.'],
@@ -612,7 +612,7 @@ async function relireBaseSEE() { if (typeof indexedDB === 'undefined') return fa
 function poserBaseSEE(base) { BASE_SEE.base = base || null; BASE_SEE.norme = null; BASE_SEE.index = null;
   if (typeof NORMES !== 'undefined' && NORMES.embarquee) { app.norme = normeComposee(NORMES.embarquee, NORMES.apports); if (typeof rafraichirApresNorme === 'function') rafraichirApresNorme(); } }
 async function adopterBaseSEE() { const I = SEE.import; if (!I) return;
-  try { await garderBaseSEE(I); } catch (e) { dire('Le navigateur refuse de garder la base SEE (navigation privée ?) : elle tient tant que l’onglet est ouvert.', true); }
+  try { await garderBaseSEE(I); } catch (e) { dire('Le navigateur refuse de garder la base SEE (navigation privée ?) : elle reste là tant que l’onglet est ouvert.', true); }
   poserBaseSEE(I); dire(`La base SEE est gardée sur ce PC : ${milliers(I.contacts.length)} contacts, ${milliers(I.cables.length)} câbles, ${milliers(I.modules.length)} faces passent devant les tables de VOLTA.`); rendreBaseSEE(); }
 // oublier se fait d'abord, et se rattrape dans le mot qui passe : « Rétablir » la garde de nouveau (jamais de confirm())
 async function oublierBaseSEE() { const avant = BASE_SEE.base; try { await oublierBaseSEEStockee(); } catch (_) { } poserBaseSEE(null); rendreBaseSEE();
@@ -684,7 +684,7 @@ function alertesSEE(e, pn) { if (!BASE_SEE.base || !pn) return [];
   if (e.st === 'obsolète') xs.push({ niveau: 'att', texte: 'obsolète dans SEE' });
   if (p && e.epf.length && !e.epf.includes(p)) xs.push({ niveau: 'att', texte: 'pas déclarée pour ' + p + ' dans SEE' });
   return xs; }
-const motsGenreSEE = e => [e.cx === 'Plug' ? 'fiche (prise mobile)' : e.cx === 'Receptacle' ? 'embase' : e.cx, e.g === 'Pin' ? 'broches' : e.g === 'Socket' ? 'douilles' : e.g === 'Mixed' ? 'broches et douilles' : e.g].filter(Boolean);
+const motsGenreSEE = e => [e.cx === 'Plug' ? 'partie mobile' : e.cx === 'Receptacle' ? 'partie fixe' : e.cx, e.g === 'Pin' ? 'broches' : e.g === 'Socket' ? 'douilles' : e.g === 'Mixed' ? 'broches et douilles' : e.g].filter(Boolean);
 /* La ligne « Dans SEE » d'un connecteur ou d'un équipement, sur sa fiche. */
 function ligneSEEHtml(pn) { if (!BASE_SEE.base || !pn) return ''; const e = equipementSEE(pn), al = alertesSEE(e, pn);
   if (!e) return `<p class="fi-see att"><span class="fi-see-k">SEE</span><span>Cette référence n’est pas dans la base SEE.</span></p>`;

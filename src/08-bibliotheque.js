@@ -134,13 +134,6 @@ const DESSIN_FOLIO = '<rect class="bf-papier" x=".5" y=".5" width="63" height="4
   + '<path class="bf-cadre" d="M41 33.5h19.5M47.5 33.5v7"/><rect class="bf-bloc" x="8.5" y="10.5" width="9" height="11" rx="1"/><rect class="bf-bloc" x="42.5" y="8.5" width="12" height="9" rx="1"/><rect class="bf-bloc" x="42.5" y="21.5" width="12" height="9" rx="1"/>'
   + '<path class="bf-fil bf-a" d="M17.5 13H42.5"/><path class="bf-fil bf-b" d="M17.5 18.5h11v7.5h14"/><circle class="bf-noeud" cx="28.5" cy="18.5" r="1.1"/>';
 const folioMini = cls => `<svg class="bi-folio ilot-clair${cls ? ' ' + cls : ''}" viewBox="0 0 64 44" aria-hidden="true">${DESSIN_FOLIO}</svg>`;
-/* L'accueil : une installation est une PILE DE FEUILLES — deux feuilles de papier dessous, un peu tournées, la vignette d'un
-   plan dessus (son cadre, son cartouche, un disjoncteur, deux équipements, deux câbles aux couleurs des routes, qui se
-   tracent quand l'accueil se pose : `pathLength` les mesure). Une flaque de lumière dessous la pose sur la table. */
-const pileAccueil = () => `<div class="bi-pile ilot-clair" aria-hidden="true"><i class="bi-pf bi-pf3"></i><i class="bi-pf bi-pf2"></i><svg class="bi-pf bi-pf1" viewBox="0 0 236 167">`
-  + '<rect class="bp-cadre" x="9.5" y="9.5" width="217" height="148" rx="1"/><rect class="bp-cart" x="140.5" y="132.5" width="86" height="25"/><path class="bp-cadre" d="M170 132.5v25"/>'
-  + '<rect class="bp-bloc" x="28.5" y="44.5" width="36" height="46" rx="1.5"/><rect class="bp-bloc" x="160.5" y="30.5" width="44" height="30" rx="1.5"/><rect class="bp-bloc" x="160.5" y="76.5" width="44" height="30" rx="1.5"/>'
-  + '<path class="bp-fil bf-a" pathLength="1" d="M64.5 56.5H112.5V45.5H160.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M64.5 78.5H120.5V91.5H160.5"/><circle class="bp-noeud" cx="112.5" cy="56.5" r="2.2"/></svg></div>';
 
 /* ---- ce que la bibliothèque sait d'un plan -------------------------------------------------------------------------- */
 /* Le résumé d'un contrat (gardé ou neuf) : combien de liaisons, de folios, ses harness, ses dessins, son appareil — ce que
@@ -240,7 +233,8 @@ async function chargerBibliotheque() { const [I, P] = await Promise.all([toutLir
 /* Montrer la bibliothèque — la racine, ou une installation (`id`). Le plan reste sur la table, dessous : ce qu'on y a fait est
    gardé, ce qui y était ouvert (la fiche, le tableau, la recherche) se ferme. */
 function montrerBibliotheque(vue, id) { const venait = BIB.vue === 'plan';
-  if (venait) { sauverMaintenant(); quitterLePlan(); }
+  // la table du plan s'efface sous le graphite de la bibliothèque en fondu (08-table, `fonduTable`) : pas de saut de matière
+  if (venait) { sauverMaintenant(); quitterLePlan(); if (typeof fonduTable === 'function') fonduTable(); }
   if (vue === 'install' && !BIB.installs.has(id)) vue = 'racine';
   if (BIB.vue === 'install' && (vue !== 'install' || id !== BIB.install)) BIB.nouveaux.clear();
   BIB.vue = vue || 'racine'; BIB.install = BIB.vue === 'install' ? id : ''; BIB.pop = null; BIB.edition = null; BIB.confirme = null;
@@ -251,6 +245,10 @@ function quitterLePlan() { if (app.cible || app.choisi) { app.cible = null; app.
   fermerInspecteur(); fermerBase(); fermerFiche(); fermerRecherche(); fermerMenu(); }
 /* Le plan sur la table, la bibliothèque s'efface (un plan ouvert, chargé, repris). */
 function montrerLePlan() { if (typeof retirerCarteLecture === 'function') retirerCarteLecture(); if (BIB.vue === 'plan') return; BIB.vue = 'plan'; BIB.pop = null; BIB.edition = null; BIB.confirme = null; BIB.ranger = null; BIB.nouveaux.clear();
+  // le passage : le graphite de la bibliothèque s'efface sur la table du plan (08-table, `fonduTable`), le folio paraît en
+  // fondu (`du-biblio`, style-z-accueil.css) — un enchaînement, pas une coupure
+  if (typeof fonduTable === 'function') fonduTable();
+  if (!mouvementReduit()) { document.body.classList.add('du-biblio'); clearTimeout(BIB.duT); BIB.duT = setTimeout(() => document.body.classList.remove('du-biblio'), 520); }
   $('bibliotheque').hidden = true; document.body.classList.remove('biblio', 'biblio-accueil'); synchroniserBibliotheque();
   // (v81, le lecteur : « Reprendre ne va pas directement sur la planche en mode centré ; le bouton en bas à droite centre ») :
   // le plan revient cadré sur sa feuille entière, comme ce bouton — une fois la table redevenue visible
@@ -469,30 +467,35 @@ function rendreBibliotheque(o) { const el = $('bi-page'); if (!el || BIB.vue ===
   avecGroupes(() => { const corps = (BIB.vue === 'install' ? teteInstallHtml() : teteRacineHtml()) + `<div class="bi-contenu" id="bi-contenu">${contenuHtml()}</div>`
       + `<div class="bi-lot-place" id="bi-lot"${BIB.lot ? '' : ' hidden'}>${lotHtml()}</div>`;
     const rail = BIB.vue === 'install' ? railHtml() : '';
-    el.classList.toggle('bi-avec-rail', !!rail); el.classList.toggle('bi-accueil', accueil()); el.classList.toggle('bi-en-lot', !!BIB.lot);
+    el.classList.toggle('bi-avec-rail', !!rail); el.classList.toggle('bi-accueil', accueil()); el.classList.toggle('bi-en-lot', !!BIB.lot); el.classList.toggle('bi-deja', BIB.intro === 'faite');
     el.innerHTML = rail ? rail + `<div class="bi-principal">${corps}</div>` : corps; });
   // l'accueil : la barre du haut s'efface, la marque flotte sur la table (style-bibliotheque.css)
   document.body.classList.toggle('biblio-accueil', accueil());
-  // ce que dit la bibliothèque quand on y glisse un fichier : où il va
-  $('bibliotheque').dataset.depotDit = 'Déposez vos installations : elles deviennent des plans de ' + guillemets(nomInstallCible());
+  // ce que dit la bibliothèque quand on y glisse un fichier : où il va (l'accueil : « À ranger » ne dirait rien encore)
+  $('bibliotheque').dataset.depotDit = accueil() ? 'Déposez votre Excel : il devient votre premier plan' : 'Déposez vos installations : elles deviennent des plans de ' + guillemets(nomInstallCible());
   glisser(); apresRendu(); }
-/* L'ARRIVÉE, une fois par session : ce qu'on voit se pose en cascade (la règle commune `.entre-v` : 420 ms, de --monte,
-   40 ms d'écart, six crans au plus) — l'accueil : la pile, le titre, la phrase, les gestes, la ligne, le dock, puis les
-   deux câbles de la vignette se tracent ; la bibliothèque : la tête, « Reprendre », l'intertitre, les cartes. Ensuite (le
-   retour du plan, une installation, la racine) : un fondu de 220 ms, rien ne bouge. Jamais à chaque lettre cherchée. */
-const ARRIVEE = ['.bi-pile', '.bi-vide-centre > h1', '.bi-devise', '.bi-vitrine', '.bi-chapeau', '.bi-vide-gestes', '.bi-vide-depot', '.bi-dock', '.bi-rail', '.bi-tete', '.bi-reprendre', '.bi-bandeau', '.bi-intertitre', '.bi-grille:not(.bi-grille-demo) > .bi-carte', '.bi-feuille', '.bi-essai'].join(', ');
-function poser() { const p = $('bi-page'); if (!p || mouvementReduit()) return; clearTimeout(BIB.poseT); p.classList.remove('entre-v', 'bi-fondu', 'bi-trace');
-  const fin = [...p.querySelectorAll('.entre-v')]; fin.forEach(e => e.classList.remove('entre-v'));
+/* L'ARRIVÉE, une fois par séance. L'accueil a sa mise en scène (style-z-accueil.css) : VOLTA se trace, le slogan monte, le
+   schéma se pose et ses câbles se tracent, puis les gestes et le dock — 1,7 s, et les courants partent. La bibliothèque
+   pleine se pose en cascade (la règle commune `.entre-v` : 420 ms, de --monte, 40 ms d'écart, six crans au plus) : la
+   tête, « Reprendre », l'intertitre, les cartes. Ensuite (le retour du plan, une installation, la racine, l'accueil
+   revenu) : un fondu de 220 ms, rien ne se rejoue (`bi-deja`) — jamais à chaque lettre cherchée. */
+const ARRIVEE = ['.bi-rail', '.bi-tete', '.bi-reprendre', '.bi-bandeau', '.bi-intertitre', '.bi-grille:not(.bi-grille-demo) > .bi-carte', '.bi-feuille', '.bi-essai'].join(', ');
+const DUREE_INTRO = 3200;
+function poser() { const p = $('bi-page'); if (!p) return; clearTimeout(BIB.poseT);
+  // la mise en scène ne se joue qu'une fois : au-delà (ou le mouvement réduit), tout est posé d'emblée
+  if (!BIB.intro) { BIB.intro = 'en-cours'; clearTimeout(BIB.introT); BIB.introT = setTimeout(() => { BIB.intro = 'faite'; const q = $('bi-page'); if (q) q.classList.add('bi-deja'); }, mouvementReduit() ? 0 : DUREE_INTRO); }
+  if (mouvementReduit()) return;
+  p.classList.remove('entre-v', 'bi-fondu'); [...p.querySelectorAll('.entre-v')].forEach(e => e.classList.remove('entre-v'));
   if (BIB.arrive) { void p.offsetWidth; p.classList.add('entre-v', 'bi-fondu'); BIB.poseT = setTimeout(() => p.classList.remove('entre-v', 'bi-fondu'), 400); return; }
-  BIB.arrive = true; const X = [...p.querySelectorAll(ARRIVEE)].filter(e => e.offsetParent && e.getBoundingClientRect().top < innerHeight);
+  BIB.arrive = true; if (p.querySelector('.bi-accueil')) return;
+  const X = [...p.querySelectorAll(ARRIVEE)].filter(e => e.offsetParent && e.getBoundingClientRect().top < innerHeight);
   X.forEach((e, k) => { e.style.setProperty('--k', Math.min(k, 6)); e.classList.add('entre-v'); });
-  if (p.querySelector('.bi-pile')) p.classList.add('bi-trace');
-  BIB.poseT = setTimeout(() => { X.forEach(e => { e.classList.remove('entre-v'); e.style.removeProperty('--k'); }); p.classList.remove('bi-trace'); }, 1600); }
+  BIB.poseT = setTimeout(() => { X.forEach(e => { e.classList.remove('entre-v'); e.style.removeProperty('--k'); }); }, 1600); }
 function rendreContenuBibliotheque() { const c = $('bi-contenu'); if (!c || BIB.vue === 'plan' || !BIB.pret) return; const glisser = glisserLesCartes(); c.innerHTML = avecGroupes(contenuHtml); glisser(); apresRendu(); }
 /* LES CARTES GLISSENT À LEUR NOUVELLE PLACE (une installation neuve pousse la grille, une recherche la resserre) : leurs
    places avant le rendu, puis chacune part de l'ancienne et glisse à la nouvelle (300 ms, --courbe-glisse) ; une carte qui
    n'était pas là paraît. Seulement dans la même vue ; le mouvement réduit coupe. */
-function glisserLesCartes() { const p = $('bi-page'); if (!p || mouvementReduit() || p.classList.contains('bi-trace')) return () => { };
+function glisserLesCartes() { const p = $('bi-page'); if (!p || mouvementReduit()) return () => { };
   const vue = BIB.vue + '|' + BIB.install, avant = new Map(); p.querySelectorAll('.bi-grille .bi-carte[data-install], .bi-grille .bi-carte-neuve').forEach(c => avant.set(c.dataset.install || 'neuve', c.getBoundingClientRect()));
   if (!avant.size || [...avant.values()].every(r => !r.width)) return () => { };
   return () => { if (BIB.vue + '|' + BIB.install !== vue) return; const courbe = getComputedStyle(document.documentElement).getPropertyValue('--courbe-glisse').trim() || 'ease';
@@ -520,13 +523,14 @@ const aUnEcp = i => !i.demo && i.id !== ID_A_RANGER;
 const accueil = () => BIB.vue === 'racine' && !installsVraies().length && !BIB.q && !baseDeReferences() && !(BIB.edition && BIB.edition.quoi === 'nouvelle');
 const pasGardeHtml = () => BIB.garde ? '' : '<span class="bi-pas-garde">pas gardée dans ce navigateur</span>';
 function teteRacineHtml() { const V = installsVraies(), nP = plansVrais().length, B = baseDeReferences(); if (accueil()) return '';
-  return `<header class="bi-tete"><div class="bi-titres"><p class="bi-marque-mini">VOLTA<span>${esc(SLOGAN)}</span></p><h1 class="bi-titre">Installations en cours</h1>`
+  // (la barre du haut dit déjà VOLTA : plus de marque ni de slogan au-dessus du titre — pas deux fois la même chose)
+  return `<header class="bi-tete"><div class="bi-titres"><h1 class="bi-titre">Installations en cours</h1>`
     + `<p class="bi-compte">${V.length ? esc(lies([plurielLie(V.length, 'installation'), nPlans(nP)])) : 'Vos installations et leurs plans'}${B ? `<span class="bi-compte-base">${esc(POINT + 'base de ' + milliers(B.meta.n) + ' lignes')}</span>` : ''}${BIB.garde ? '' : POINT + pasGardeHtml()}</p></div>`
     + (V.length || B ? `<div class="bi-outils">${chercheBiHtml(B ? 'Chercher partout : part number, repère, câble, ECP…' : 'Chercher un ECP, une installation…', !!B)}<button class="bi-btn" id="bi-nouvelle" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>` : '') + '</header>'; }
 /* L'intertitre des cartes, au filet (le designer v73 : le segment flottait entre deux blocs) : « Installations, par n° ECP »,
    et à droite le rangement — par ECP, par nom, les plus récentes d'abord (le choix se garde). */
-const TRI_DIT = { ecp: 'par n° ECP', nom: 'par nom', recentes: 'les plus récentes d’abord' };
-const triHtml = () => `<div class="bi-intertitre"><h2 class="bi-sous">Installations${installsVraies().length > 1 ? `<span class="bi-sous-par">, ${TRI_DIT[triChoisi()]}</span>` : ''}</h2>`
+/* (v84) le rangement se lit dans le sélecteur, à droite : l'intertitre ne le répète plus (« Installations, par n° ECP ») */
+const triHtml = () => `<div class="bi-intertitre"><h2 class="bi-sous">Installations</h2>`
   + (installsVraies().length > 1 ? `<span class="bi-tri-seg" role="group" aria-label="Ranger les installations">${TRIS.map(([k, mot]) => `<button data-bi="tri" data-tri="${k}" aria-pressed="${triChoisi() === k}">${mot}</button>`).join('')}</span>` : '') + '</div>';
 function racineHtml() { const t = cleTexte(BIB.q), toutes = installsTriees(), I = toutes.filter(i => installCorrespond(i, t)), vraies = I.filter(i => !i.demo), demo = I.filter(i => i.demo);
   if (accueil()) return videHtml(demo[0]);
@@ -562,63 +566,57 @@ function reprendreHtml() { if (!planSurLaTable()) return ''; const p = BIB.plans
    « Nouvelle installation » au verre), une ligne pour le dépôt (la fenêtre entière le reçoit) ; en bas, le DOCK. Plus
    d'encadré pointillé ni de « Pour essayer » : l'Exemple et la base des contrats déjà faits sont deux tuiles du dock (la
    phrase de la base, dans sa bulle). */
-/* (v78, le lecteur : « en général, on met le titre au-dessus ; une ligne par câble, Excel ou CSV, glisser n'importe où :
-   on enlève — c'est trop ; on met le nom du site, en gros ; les folios d'exemple, qui bougent ; et proprement, la
-   bibliothèque pour reprendre ») : le NOM en grand, trois FOLIOS qui flottent doucement (chacun un petit plan : un
-   disjoncteur et ses équipements, une barrette qui distribue, une prise de coupure), les deux gestes, le DOCK. Déposer
-   un fichier n'importe où marche toujours — sans le dire. */
-const FOLIOS_VITRINE = [
-  // un disjoncteur et ce qu'il alimente
-  { d: '<rect class="bp-bloc" x="28.5" y="44.5" width="36" height="46" rx="1.5"/><rect class="bp-bloc" x="160.5" y="30.5" width="44" height="30" rx="1.5"/><rect class="bp-bloc" x="160.5" y="76.5" width="44" height="30" rx="1.5"/>'
-      + '<path class="bp-fil bf-a" pathLength="1" d="M64.5 56.5H112.5V45.5H160.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M64.5 78.5H120.5V91.5H160.5"/><circle class="bp-noeud" cx="112.5" cy="56.5" r="2.2"/>'
-      + '<text class="bp-t" x="46.5" y="70">102CB1</text><text class="bp-t" x="182.5" y="48">101BT1</text><text class="bp-t" x="182.5" y="94">103RL1</text><text class="bp-c" x="88" y="52">DR12</text><text class="bp-c" x="138" y="88">DR22</text><text class="bp-b" x="69" y="54">1</text><text class="bp-b" x="69" y="76">2</text>',
-    p: 'M64.5 56.5H112.5V45.5H160.5' },
-  // une barrette qui distribue
-  { d: '<rect class="bp-bloc" x="24.5" y="50.5" width="40" height="52" rx="1.5"/><rect class="bp-barre" x="112.5" y="36.5" width="9" height="84" rx="2"/><rect class="bp-bloc" x="164.5" y="24.5" width="42" height="26" rx="1.5"/><rect class="bp-bloc" x="164.5" y="63.5" width="42" height="26" rx="1.5"/><rect class="bp-bloc" x="164.5" y="102.5" width="42" height="26" rx="1.5"/>'
-      + '<path class="bp-fil bf-a" pathLength="1" d="M64.5 64.5H112.5"/><path class="bp-fil bf-b" pathLength="1" d="M64.5 88.5H112.5"/><path class="bp-fil bf-a" pathLength="1" style="--j:1" d="M121.5 46.5H140.5V37.5H164.5"/><path class="bp-fil bf-a" pathLength="1" style="--j:1" d="M121.5 76.5H164.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M121.5 110.5H140.5V115.5H164.5"/>'
-      + '<text class="bp-t" x="44.5" y="79">300XC1</text><text class="bp-c bp-v" x="117" y="129">668VT31</text><text class="bp-t" x="185.5" y="40">381RL1</text><text class="bp-t" x="185.5" y="79">382RL2</text><text class="bp-t" x="185.5" y="118">383RL3</text><text class="bp-c" x="88" y="60">DR22</text><text class="bp-c" x="88" y="84">DR20</text>',
-    p: 'M64.5 64.5H112.5V46.5H140.5V37.5H164.5' },
-  // une prise de coupure
-  { d: '<rect class="bp-bloc" x="22.5" y="32.5" width="44" height="38" rx="1.5"/><rect class="bp-bloc" x="22.5" y="92.5" width="44" height="32" rx="1.5"/><rect class="bp-barre" x="106.5" y="38.5" width="7" height="82" rx="2"/><rect class="bp-barre" x="116.5" y="38.5" width="7" height="82" rx="2"/><rect class="bp-bloc" x="164.5" y="32.5" width="44" height="38" rx="1.5"/><rect class="bp-bloc" x="164.5" y="92.5" width="44" height="32" rx="1.5"/>'
-      + '<path class="bp-fil bf-a" pathLength="1" d="M66.5 44.5H106.5M123.5 44.5H164.5"/><path class="bp-fil bf-a" pathLength="1" d="M66.5 58.5H106.5M123.5 58.5H164.5"/><path class="bp-fil bf-b" pathLength="1" style="--j:1" d="M66.5 108.5H106.5M123.5 108.5H164.5"/>'
-      + '<text class="bp-t" x="44.5" y="54">500XC3</text><text class="bp-t" x="44.5" y="111">540VL5</text><text class="bp-c bp-v" x="115" y="129">412VC3B</text><text class="bp-t" x="186.5" y="54">530PM3</text><text class="bp-t" x="186.5" y="111">560HT1</text><text class="bp-c" x="86" y="41">DR20</text><text class="bp-c" x="144" y="105">DR22</text>',
-    p: 'M66.5 44.5H106.5M123.5 44.5H164.5' }];
 /* (v79, le lecteur : « pas moderne, peut-être trop de bleu, peut-être les lettres anciennes, c'est pas waouh ») : un
    SCHÉMA VIVANT, dessiné au trait clair sur le graphite — un disjoncteur, une barrette qui distribue, deux relais, une
    prise de coupure, une vanne, leurs masses ; les câbles se tracent à l'arrivée, puis le courant les parcourt (trois
-   points de cuivre) ; survoler une pièce l'allume. Leurs vrais mots : repères, types de câble, bornes. */
+   points de cuivre). Leurs vrais mots : repères, types de câble, bornes. */
 // (un relecteur : « un disjoncteur alimenté par la masse, un ingénieur le voit tout de suite ») : la borne 2 du disjoncteur
 // reçoit la barre d'alimentation — un rond de borne et sa tension ; les masses restent du côté des charges
 const sourceHero = (x, y) => `<circle class="hs-source" cx="${x}" cy="${y + 4}" r="4.2"/>`;
 const masseHero = (x, y) => `<path class="hs-masse" d="M${x} ${y}v9M${x - 8} ${y + 9}h16M${x - 5} ${y + 13}h10M${x - 2} ${y + 17}h4"/>`;
+/* Chaque câble : son tracé, son type et où l'écrire, ses deux bouts (les pièces qu'il relie), ce qu'il dit au survol. */
 const HERO_FILS = [
-  ['M186 110H330', 'DR12', 258, 104, '102CB1 : 1 → 668VT31'], ['M340 70H560', 'DR20', 450, 64, '668VT31 → 381RL1 : 1'], ['M340 150H560', 'DR20', 450, 144, '668VT31 → 382RL2 : 1'],
-  ['M340 224H758', 'DR22', 550, 218, '668VT31 → 412VC3B'], ['M776 224H900', 'DR22', 838, 218, '412VC3B → 540VL5 : 1'], ['M186 164H232V194', '', 0, 0, '102CB1 : 2 ← la barre 28 V CC'],
-  ['M670 78H726V100', '', 0, 0, '381RL1 : 2 → masse'], ['M670 158H726V180', '', 0, 0, '382RL2 : 2 → masse'], ['M1020 232H1070V252', '', 0, 0, '540VL5 : 2 → masse']];
+  ['M186 110H330', 'DR12', 258, 104, '102CB1 668VT31', 'DR12 · de 102CB1, borne 1, à la barrette 668VT31'], ['M340 70H560', 'DR20', 450, 64, '668VT31 381RL1', 'DR20 · de la barrette 668VT31 à 381RL1, borne 1'],
+  ['M340 150H560', 'DR20', 450, 144, '668VT31 382RL2', 'DR20 · de la barrette 668VT31 à 382RL2, borne 1'], ['M340 224H758', 'DR22', 550, 218, '668VT31 412VC3B', 'DR22 · de la barrette 668VT31 à la prise de coupure 412VC3B'],
+  ['M776 224H900', 'DR22', 838, 218, '412VC3B 540VL5', 'DR22 · de la prise de coupure 412VC3B à 540VL5, borne 1'], ['M186 164H232V194', '', 0, 0, '102CB1 28V', 'La barre 28 V CC arrive sur 102CB1, borne 2'],
+  ['M670 78H726V100', '', 0, 0, '381RL1', '381RL1, borne 2, va à la masse'], ['M670 158H726V180', '', 0, 0, '382RL2', '382RL2, borne 2, va à la masse'], ['M1020 232H1070V252', '', 0, 0, '540VL5', '540VL5, borne 2, va à la masse']];
+/* Chaque pièce dit ce qu'elle est ; la survoler allume les câbles qui la touchent (le courant qu'elle laisse passer). */
+const HERO_PIECES = { '102CB1': '102CB1 · disjoncteur de 15 A : il protège tout ce qui suit', '668VT31': '668VT31 · barrette de jonction : un câble entre, trois repartent',
+  '381RL1': '381RL1 · relais', '382RL2': '382RL2 · relais', '412VC3B': '412VC3B · prise de coupure : partie mobile et partie fixe', '540VL5': '540VL5 · vanne', '28V': 'La barre 28 V CC : l’alimentation du disjoncteur' };
 const HERO_COURANTS = ['M186 110H335V70H560', 'M186 110H335V150H560', 'M186 110H335V224H900'];
-/* (v79, un relecteur : « une planche technique plutôt qu'un site vitrine ») : le schéma posé dans le cadre d'un folio —
-   les numéros de colonne en marge, un petit cartouche — et chaque câble qui s'allume au survol en disant ce qu'il relie */
-function heroSchema() {
-  const bloc = (x, y, w, h, rep, sous, cls) => `<g class="hs-piece${cls ? ' ' + cls : ''}"><rect class="hs-bloc" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/><text class="hs-rep" x="${x + w / 2}" y="${y + h / 2 + (sous ? -1 : 4.5)}">${rep}</text>${sous ? `<text class="hs-sous" x="${x + w / 2}" y="${y + h / 2 + 15}">${sous}</text>` : ''}</g>`;
-  const fils = HERO_FILS.map(([d, t, tx, ty, dit], i) => `<g class="hs-f"><title>${esc((t ? t + ' · ' : '') + dit)}</title><path class="hs-prise" d="${d}"/><path class="hs-fil" pathLength="1" style="--i:${i}" d="${d}"/>${t ? `<text class="hs-c" x="${tx}" y="${ty}">${t}</text>` : ''}</g>`).join('');
+/* (v79, un relecteur : « une planche technique plutôt qu'un site vitrine ») : le schéma posé sous la règle d'un folio ;
+   survoler un câble ou une pièce l'allume, et la légende sous le schéma dit, en clair, ce que c'est et ce qu'il relie
+   (une seule bulle, la nôtre : plus le petit carré jaune du système). Les courants partent quand le schéma est tracé —
+   au premier accueil de la séance ; ensuite, tout de suite (`BIB.intro`). */
+function heroSchema() { const deja = BIB.intro === 'faite';
+  const bloc = (x, y, w, h, rep, sous, cls) => `<g class="hs-piece${cls ? ' ' + cls : ''}" data-rep="${rep}"><rect class="hs-bloc" x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/><text class="hs-rep" x="${x + w / 2}" y="${y + h / 2 + (sous ? -1 : 4.5)}">${rep}</text>${sous ? `<text class="hs-sous" x="${x + w / 2}" y="${y + h / 2 + 15}">${sous}</text>` : ''}</g>`;
+  const fils = HERO_FILS.map(([d, t, tx, ty, bouts, dit], i) => `<g class="hs-f" data-bouts="${bouts}" data-dit="${escA(dit)}"><path class="hs-prise" d="${d}"/><path class="hs-fil" pathLength="1" style="--i:${i}" d="${d}"/>${t ? `<text class="hs-c" x="${tx}" y="${ty}">${t}</text>` : ''}</g>`).join('');
   const bornes = [[192, 104, '1'], [192, 158, '2'], [552, 64, '1'], [552, 144, '1'], [676, 72, '2'], [676, 152, '2'], [892, 218, '1'], [1026, 226, '2']].map(([x, y, t]) => `<text class="hs-b" x="${x}" y="${y}">${t}</text>`).join('');
   // (v83, le lecteur : « j'aimais la ligne du haut avec 1, 2, 3… ; le reste du cadre, ça fait un casier ; la ligne seule,
   // qui s'efface sur les côtés, et c'est un schéma infini ») : la règle des colonnes seule, en dégradé vers les bords
   const marge = `<defs><linearGradient id="hs-regle" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#eceff5" stop-opacity="0"/><stop offset=".22" stop-color="#eceff5" stop-opacity=".22"/><stop offset=".78" stop-color="#eceff5" stop-opacity=".22"/><stop offset="1" stop-color="#eceff5" stop-opacity="0"/></linearGradient></defs>`
     + `<path class="hs-regle" d="M0 14.5H1200"/>` + [...Array(8)].map((_, k) => `<text class="hs-col" x="${24 + 72 + k * 144}" y="9">${k + 1}</text>${k < 7 ? `<path class="hs-regle" d="M${24 + (k + 1) * 144} 14.5v6"/>` : ''}`).join('');
-  return `<div class="bi-vitrine bi-hero" aria-hidden="true"><svg viewBox="0 -4 1200 316" preserveAspectRatio="xMidYMid meet">${marge}`
+  return `<div class="bi-vitrine bi-hero"><svg viewBox="0 -4 1200 316" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${marge}`
     + fils
-    + bloc(90, 92, 96, 90, '102CB1', '15 A', 'hs-dj') + `<g class="hs-piece hs-vt"><rect class="hs-barre" x="330" y="52" width="10" height="190" rx="3"/><text class="hs-rep" x="335" y="268">668VT31</text></g>`
+    + bloc(90, 92, 96, 90, '102CB1', '15 A', 'hs-dj') + `<g class="hs-piece hs-vt" data-rep="668VT31"><rect class="hs-barre" x="330" y="52" width="10" height="190" rx="3"/><rect class="hs-prise-p" x="318" y="52" width="34" height="226"/><text class="hs-rep" x="335" y="268">668VT31</text></g>`
     + bloc(560, 52, 110, 50, '381RL1', 'relais') + bloc(560, 132, 110, 50, '382RL2', 'relais')
-    + `<g class="hs-piece hs-vc"><rect class="hs-barre" x="758" y="196" width="7" height="58" rx="2"/><rect class="hs-barre" x="769" y="196" width="7" height="58" rx="2"/><text class="hs-rep" x="767" y="276">412VC3B</text></g>`
+    + `<g class="hs-piece hs-vc" data-rep="412VC3B"><rect class="hs-barre" x="758" y="196" width="7" height="58" rx="2"/><rect class="hs-barre" x="769" y="196" width="7" height="58" rx="2"/><rect class="hs-prise-p" x="744" y="190" width="46" height="94"/><text class="hs-rep" x="767" y="276">412VC3B</text></g>`
     + bloc(900, 204, 120, 50, '540VL5', 'vanne')
-    + sourceHero(232, 194) + masseHero(726, 100) + masseHero(726, 180) + masseHero(1070, 252)
-    + `<text class="hs-c hs-g" x="244" y="202">28 V CC</text>` + bornes
-    + HERO_COURANTS.map((d, i) => { const t = (2.4 + i * 1.1).toFixed(1) + 's';
+    + `<g class="hs-piece hs-28" data-rep="28V">${sourceHero(232, 194)}<text class="hs-c hs-g" x="244" y="202">28 V CC</text><rect class="hs-prise-p" x="224" y="188" width="76" height="20"/></g>` + masseHero(726, 100) + masseHero(726, 180) + masseHero(1070, 252)
+    + bornes
+    + HERO_COURANTS.map((d, i) => { const t = ((deja ? .5 : 2.2) + i * 1.1).toFixed(1) + 's';
       // (v83) caché jusqu'à son départ : avant, il attendait à l'origine du dessin, un point cuivré seul à gauche de la règle
       return `<circle class="hs-courant" r="3.2" opacity="0"><set attributeName="opacity" to="1" begin="${t}"/><animateMotion dur="${(2.6 + i * .5).toFixed(1)}s" begin="${t}" repeatCount="indefinite" path="${d}" keyPoints="0;1" keyTimes="0;1" calcMode="linear"/></circle>`; }).join('')
-    + `</svg></div>`; }
-const vitrineAccueil = heroSchema;
+    + `</svg><p class="hs-legende" aria-hidden="true"></p></div>`; }
+/* LE SURVOL DU SCHÉMA : une pièce allume ses câbles, un câble s'allume seul ; la légende dit ce qu'on montre. */
+function survolerHero(cible) { const h = document.querySelector('#bi-page .bi-hero'); if (!h) return;
+  const f = cible && cible.closest('.hs-f'), pc = !f && cible && cible.closest('.hs-piece'), rep = pc ? pc.dataset.rep : '';
+  h.querySelectorAll('.hs-f.allume').forEach(x => x.classList.remove('allume')); h.querySelectorAll('.hs-piece.allume').forEach(x => x.classList.remove('allume'));
+  if (f) f.classList.add('allume');
+  if (rep) { pc.classList.add('allume'); h.querySelectorAll('.hs-f').forEach(x => { if (x.dataset.bouts.split(' ').includes(rep)) x.classList.add('allume'); }); }
+  const dit = f ? f.dataset.dit : rep ? HERO_PIECES[rep] || rep : '', l = h.querySelector('.hs-legende');
+  if (l && dit) l.textContent = dit;
+  h.classList.toggle('montre', !!dit); }
 /* LA MARQUE (v81, le lecteur : « le titre, un peu plus sexy ; ça fait trop écriture classique, on ne sort pas du lot ») :
    VOLTA dessiné comme un câble — chaque lettre un trait continu, aux bouts ronds, qui se trace ; puis un courant de cuivre
    le parcourt, et la dernière lettre finit sur une borne. Trois variantes (le lecteur choisit) :
@@ -635,23 +633,25 @@ function marqueSvg(v) { v = v || MARQUE_ACCUEIL; const fin = v === 'fin', borne 
   const W = 492 + 4 * gap;
   return `<svg class="mq mq-${v}" viewBox="-8 -8 ${W + 16} 116" role="img" aria-label="VOLTA"><defs><linearGradient id="mq-acier" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="100"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#b3b8c2"/></linearGradient></defs>`
     + `<g class="mq-g" style="stroke-width:${ep}">${LETTRES_MARQUE.map(lettre).join('')}</g>`
-    + (v === 'fil' ? `<circle class="mq-borne" cx="492" cy="96" r="8.5"/><circle class="mq-courant" r="5"><animateMotion dur="6s" begin="2.4s" repeatCount="indefinite" path="${COURANT_MARQUE}" calcMode="paced"/></circle>` : '')
+    + (v === 'fil' ? `<circle class="mq-borne" cx="492" cy="96" r="8.5"/><circle class="mq-courant" r="5"><animateMotion dur="6s" begin="${BIB.intro === 'faite' ? '.3s' : '2s'}" repeatCount="indefinite" path="${COURANT_MARQUE}" calcMode="paced"/></circle>` : '')
     + `</svg>`; }
 
 // (v78c, le lecteur : « VOLTA tout en majuscule, une belle écriture, un peu plus en haut ; une phrase d'accroche, comme un slogan »)
 const SLOGAN = 'Du tableau au folio, chaque câble à sa place.';
-function videHtml(demo) { return `<section class="bi-vide bi-accueil"><div class="bi-vide-centre"><h1 class="bi-titre bi-marque bi-marque-svg"><span class="sr">VOLTA</span>${marqueSvg()}</h1><p class="bi-devise">${esc(SLOGAN)}</p>${vitrineAccueil()}`
+function videHtml(demo) { return `<section class="bi-vide bi-accueil"><div class="bi-vide-centre"><h1 class="bi-titre bi-marque bi-marque-svg"><span class="sr">VOLTA</span>${marqueSvg()}</h1><p class="bi-devise">${esc(SLOGAN)}</p>${heroSchema()}`
   + `${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
   // (v81, le lecteur : « ouvrir, nouvelle, pour commencer : pas assez classe, pas assez dynamique, pas assez waouh ») : un
   // geste principal, grand, cerné d'un courant de cuivre qui tourne ; le second à côté, en verre ; dessous, sans titre,
   // ce qu'on reprend ou découvre — tout entre l'un après l'autre
   + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir"><span class="bi-g-ico">${icoBi('depot')}</span><span class="bi-g-t"><b>Ouvrir une installation…</b><small>ou glissez votre Excel n’importe où</small></span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
   + `${dockHtml(demo)}</div></section>`; }
-/* LE DOCK : le verre des palets, en bas au milieu — « Reprendre » le plan resté sur la table (s'il y en a un), l'Exemple,
-   la base des contrats déjà faits : comme des applications. Une tuile : son image (une vignette, une icône), son nom, ce
-   qu'elle fait. */
+/* LE DOCK : deux tuiles de verre sous les deux gestes, de la même largeur qu'eux — « Reprendre » le plan resté sur la table
+   (s'il y en a un), sinon l'Exemple ; la base des contrats déjà faits. Une tuile : son image (une vignette, une icône), son
+   nom, ce qu'elle fait. Sur l'accueil, le plan resté sur la table ne peut être que l'Exemple (un fichier ouvert va dans
+   « À ranger », et la bibliothèque n'est plus vide) : « Reprendre » le remplace — deux tuiles pour le même plan, c'était
+   une de trop. */
 const BULLE_BASE = 'Un seul Excel qui porte tous vos contrats (Harness rempli) : chaque installation se crée avec ses contrats, même à 300 000 lignes.';
-function dockHtml(demo) { const rep = planSurLaTable() ? tuileReprendreHtml() : '', ex = demo ? tuileExempleHtml(demo) : '';
+function dockHtml(demo) { const rep = planSurLaTable() ? tuileReprendreHtml() : '', ex = demo && !(rep && app.planId === ID_EXEMPLE) ? tuileExempleHtml(demo) : '';
   const base = `<button class="bi-tuile" data-bi="base" aria-describedby="bi-bulle-base"><span class="bi-tuile-ico">${icoBi('base')}</span><span class="bi-tuile-t"><b>Base des contrats</b><small>déposer les contrats déjà faits</small></span><span class="bulle bi-bulle-haut" id="bi-bulle-base" aria-hidden="true">${esc(BULLE_BASE)}</span></button>`;
   return `<nav class="bi-dock" aria-label="Pour commencer autrement">${rep}${rep ? '<hr>' : ''}${ex}${ex ? '<hr>' : ''}${base}</nav>`; }
 function tuileReprendreHtml() { return `<button class="bi-tuile bi-tuile-reprendre" id="bi-reprendre" data-bi="reprendre">${folioMini('bi-tuile-vi')}<span class="bi-tuile-t"><b>Reprendre</b><small>${esc(nomAffiche(app.nom))}</small></span><kbd>Échap</kbd></button>`; }
@@ -668,8 +668,10 @@ function carteInstallHtml(i) { const P = plansDeInstall(i.id), vu = vueLe(i), pi
   const meta = i.demo ? lies(['démonstration', nPlans(P.length)]) : lies([P.length ? nPlans(P.length) : '', vu ? 'ouverte ' + quand(vu) : 'créée ' + leJour(i.cree)]);
   const montres = (t ? P.filter(p => planCorrespond(p, t)) : P).slice(0, 3), reste = P.length - montres.length;
   const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn"><i aria-hidden="true"></i><span>${esc(nomAffiche(p.nom))}</span></span>`).join('')}${reste > 0 ? `<span class="bi-pn-plus">+${INSECABLE}${esc(plurielLie(reste, 'autre'))}</span>` : ''}</span>`
-    : `<span class="bi-carte-plans bi-carte-plans-vide">Déposez-y un retest Excel, ou un clic pour l’ouvrir.</span>`;
-  const haut = i.demo ? folioMini() : aUnEcp(i) && i.ecp ? ecpHtml(i, 'bi-carte-ecp') : `<span class="bi-carte-ico">${icoBi('install')}</span>`;
+    : `<span class="bi-carte-plans bi-carte-plans-vide">${icoBi('depot')}<span>Déposez-y votre Excel : il devient un plan.</span></span>`;
+  // la ligne du haut a la même hauteur sur toutes les cartes (les noms s'alignent d'une carte à l'autre) : l'ECP, ou, pas
+  // encore saisi, « sans ECP » à l'encre calme (le technicien v73 : une alerte inquiétait) ; « À ranger » n'en a pas besoin
+  const haut = i.demo ? folioMini() : aUnEcp(i) ? (i.ecp ? ecpHtml(i, 'bi-carte-ecp') : '<span class="bi-ecp bi-ecp-vide bi-carte-ecp"><small>sans ECP</small></span>') : '<span class="bi-carte-ecp" aria-hidden="true"></span>';
   // l'Exemple : sa carte OUVRE son plan, d'un clic (audit v72, parcours P2-2 : une page pour une ligne, c'était un clic de trop)
   const geste = i.demo ? 'data-bi="exemple"' : `data-bi="install" data-id="${escA(i.id)}"`;
   // ce qu'il reste à faire dans ses plans (le compte gardé de chacun) : on voit d'un coup d'œil où il y a du travail
@@ -995,6 +997,10 @@ function lierBibliotheque() { if (BIB.lie) return; BIB.lie = true; const el = $(
       'ranger-tais': () => { const R = app.references, pref = preferencesBiblio(); if (R) { pref.baseTue = (R.nom || '') + '|' + (R.t || 0); garderPreferences(pref); } rendreContenuBibliotheque(); }
     }[b.dataset.bi];
     if (faire) { e.preventDefault(); faire(); } });
+  // le schéma de l'accueil : ce qu'on survole s'allume et se dit (`survolerHero`)
+  el.addEventListener('mouseover', e => { const h = e.target.closest && e.target.closest('.bi-hero'); if (!h && !BIB.survolHero) return;
+    const c = h ? e.target.closest('.hs-f, .hs-piece') : null; if (c !== BIB.survolHero) { BIB.survolHero = c; survolerHero(c); } });
+  el.addEventListener('mouseleave', () => { if (BIB.survolHero) { BIB.survolHero = null; survolerHero(null); } });
   el.addEventListener('input', e => { const t = e.target;
     /* l'ECP : des chiffres seulement ; une installation neuve, ses cinq chiffres tapés, le clavier passe au nom. Des lettres
        tapées dans l'ECP encore vide (on n'a pas d'ECP sous la main) : elles vont au nom, et le clavier avec. */

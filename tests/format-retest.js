@@ -132,6 +132,47 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     return out;
   });
   R.push(...R4);
+  /* v84 — LIRE EXACTEMENT, RENDRE INTACT (les fichiers piégés, la relecture de 02 et de 08-export) : une case date, une
+     description sur deux lignes (Alt+Entrée), un CSV de l'Excel français (Windows-1252), un CSV à virgules dont une
+     description porte un « ; », une longueur « 2 500 », des en-têtes en français ; les lignes à un bout vide gardées, les
+     lignes vides de tout dites ; puis l'aller-retour : lire → l'installation corrigée → relire rend les MÊMES liaisons et
+     les MÊMES cases (« 677VT2 51 » + « B », l'installation et l'ECP, une colonne « Remarque », une longueur illisible). */
+  const R5 = await p.evaluate(async () => {
+    const out = []; const ok = (n, c, d) => out.push((c ? '  ok   ' : '  KO   ') + n.padEnd(52) + (d || ''));
+    const classeur = lignes => { const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignes, { cellDates: false }), 'Installation'); return new File([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], 'essai.xlsx'); };
+    let f = classeur([['Device1', 'Pin1', 'Description1', 'Device2', 'Pin2', 'Cable T/G', 'Date retest'], ['101BT1', '1', 'BATTERIE\nPRINCIPALE', '102CB1', '1', 'DR16', new Date(Date.UTC(2025, 9, 27))], ['102CB1', '2', 'CB "10 A"', '103RL1', 'A1', 'DR20', new Date(Date.UTC(2025, 9, 28))]]);
+    let r = await lireFichier(f); const a = r.liaisons[0] || {}, b = r.liaisons[1] || {};
+    ok('une case date d’Excel se lit jj/mm/aaaa (pas « 45957 »)', a.retest === '27/10/2025' && b.retest === '28/10/2025', a.retest + ' · ' + b.retest);
+    ok('une description sur deux lignes, un guillemet : la ligne reste entière', r.liaisons.length === 2 && a.descriptionDe === 'BATTERIE\nPRINCIPALE' && a.vers === '102CB1' && a.type === 'DR16' && b.descriptionDe === 'CB "10 A"' && b.vers === '103RL1', r.liaisons.length + ' liaisons · ' + JSON.stringify(a.descriptionDe) + ' → ' + a.vers + ' ' + a.type);
+    const w1252 = Uint8Array.from([...'Device1;Pin1;Description1;Device2;Pin2\r\n101BT1;1;'].map(c => c.charCodeAt(0)).concat([0xC9, 0x71, 0x75, 0x69, 0x70, 0x2E, 0x20, 0xE0, 0x20, 0x6D, 0xEA, 0x6D, 0x65]).concat([...';102CB1;1\r\n'].map(c => c.charCodeAt(0))));
+    r = await lireFichier(new File([w1252], 'francais.csv', { type: 'text/csv' }));
+    ok('un CSV de l’Excel français (Windows-1252) : les accents lus', (r.liaisons[0] || {}).descriptionDe === 'Équip. à même', JSON.stringify((r.liaisons[0] || {}).descriptionDe));
+    r = lireTexte('Device1,Pin1,Description1,Device2,Pin2,Cable T/G\n101BT1,1,LAMPE; ROUGE,102CB1,1,DR16\n102CB1,2,,103RL1,A1,DR20');
+    ok('un CSV à virgules, un « ; » dans une description : les colonnes tiennent', r.liaisons.length === 2 && r.liaisons[0].vers === '102CB1' && r.liaisons[0].descriptionDe === 'LAMPE; ROUGE' && r.liaisons[0].type === 'DR16', r.liaisons.map(l => l.de + '→' + l.vers + ' ' + l.type).join(' · '));
+    r = lireTexte('Device1;Pin1;Device2;Pin2;Cable length (mm)\nA1X;1;B1X;2;2 500\nC1X;1;D1X;2;1e3\nE1X;1;F1X;2;3670,5');
+    ok('« 2 500 » mm → 2,5 m ; « 1e3 » mm → 1 m ; « 3670,5 » mm → 3,6705 m', r.liaisons.map(l => l.longueur).join(' ') === '2.5 1 3.6705', r.liaisons.map(l => l.longueur).join(' '));
+    r = lireTexte('Équipement 1;Borne 1;Équipement 2;Borne 2;Type de câble;Longueur (mm)\n101BT1;1;102CB1;1;DR16;900');
+    ok('des en-têtes en français (« Équipement 1 », « Longueur (mm) ») : lu comme une installation', r.format === 'retest' && r.liaisons.length === 1 && r.liaisons[0].type === 'DR16' && r.liaisons[0].longueur === 0.9, r.format + ' · ' + JSON.stringify(r.liaisons[0] || {}));
+    r = lireTexte('Device1;Pin1;Device2;Pin2;Cable Tag;Harness\n101BT1;1;;;W-1;H\n;;102CB1;2;W-2;H\n;;;;;H\n;;;;;Total : 3\n103RL1;A1;104LP1;1;W-3;H');
+    ok('un bout vide : la liaison gardée (incomplète) ; une ligne sans rien : dite', r.liaisons.length === 1 && r.toutes.length === 3 && r.incompletes === 2 && r.laissees.join() === '4,5', `${r.liaisons.length} entière · ${r.toutes.length} gardées · ${r.incompletes} incomplètes · lignes laissées ${r.laissees.join()}`);
+    // l'aller-retour
+    const T = 'Install;ECP;Harness;Device1;Pin1;PN1;Cable T/G;Cable Tag;Device2;Pin2;Remarque;Cable length (mm);Date retest\n'
+      + 'Antenne;12345;H-1;677VT2 51;B;NSA937;DR22;2564-1830;677VCH;1;à voir;3670,5;27/10/2025\n'
+      + 'Antenne;12345;H-1;101BT1;1;MS3470;DR16;W-1;102CB1;1;;abc;\n'
+      + 'Antenne;12345;H-1;102CB1;2;;DR20;W-2;;;bout manquant;;\n';
+    const r1 = lireTexte(T), C = classeurRetestCorrige(r1.toutes, 'essai'), buf = XLSX.write(C.wb, { type: 'array', bookType: 'xlsx' });
+    const rows = XLSX.utils.sheet_to_json(XLSX.read(buf, { type: 'array' }).Sheets.Installation, { header: 1, defval: '' }), h = rows[3], L1 = rows[4] || [], L2 = rows[5] || [];
+    const cell = (row, nom) => row[h.indexOf(nom)];
+    ok('l’installation corrigée rend Install, ECP, « Remarque », et la ligne incomplète', h[0] === 'Install' && h[1] === 'ECP' && h.includes('Remarque') && rows.length === 7 && cell(L1, 'Install') === 'Antenne' && String(cell(L1, 'ECP')) === '12345' && cell(L1, 'Remarque') === 'à voir', h.join('|') + ' · ' + (rows.length - 4) + ' lignes');
+    ok('les cases telles que le fichier les écrivait : « 677VT2 51 » + « B », 3670,5 mm, « abc »', cell(L1, 'Device1') === '677VT2 51' && cell(L1, 'Pin1') === 'B' && +cell(L1, 'Cable length (mm)') === 3670.5 && cell(L2, 'Cable length (mm)') === 'abc', [cell(L1, 'Device1'), cell(L1, 'Pin1'), cell(L1, 'Cable length (mm)'), cell(L2, 'Cable length (mm)')].join(' · '));
+    const r2 = await lireFichier(new File([buf], 'essai-corrige.xlsx')), sans = l => JSON.stringify(l, Object.keys(l).sort());
+    const memes = r2.toutes.length === r1.toutes.length && r2.toutes.every((l, i) => sans(l) === sans(r1.toutes[i]));
+    ok('lire → exporter → relire : les mêmes liaisons, champ pour champ', memes, memes ? r2.toutes.length + ' liaisons identiques' : r1.toutes.map(sans).join(' / ') + ' ≠ ' + r2.toutes.map(sans).join(' / '));
+    const C2 = classeurRetestCorrige(r2.toutes, 'essai'), rows2 = XLSX.utils.sheet_to_json(XLSX.read(XLSX.write(C2.wb, { type: 'array', bookType: 'xlsx' }), { type: 'array' }).Sheets.Installation, { header: 1, defval: '' });
+    ok('et la seconde installation corrigée a les mêmes cases que la première', JSON.stringify(rows2.slice(3)) === JSON.stringify(rows.slice(3)), rows2[3].join('|'));
+    return out;
+  });
+  R.push(...R5);
   R.forEach(x => console.log(x));
   const ko = R.filter(x => x.startsWith('  KO')).length;
   console.log('\n  ' + (R.length - ko) + ' / ' + R.length + (ko ? '  — ' + ko + ' PROBLÈME(S)' : '  — tout tient'));

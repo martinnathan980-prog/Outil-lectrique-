@@ -92,18 +92,35 @@ const estBornier  = r => estBarrette(r) || estCoupure(r);
 function boutLu(repere, borne) { const r = String(repere == null ? '' : repere).trim(), b = String(borne == null ? '' : borne).trim();
   const m = /^(\S+)\s+(\d+)$/.exec(r); if (!m || !lireRepere(m[1])) return [r, b];
   return [m[1], m[2] + (/^\d/.test(b) ? '-' : '') + b]; }
-// une longueur du retest : des mm (« 3670 ») ou des m (« 3,67 ») ; en mètres chez nous, ou null
-function longueurLue(v) { if (v == null || v === '') return null; if (typeof v === 'number') return v > 100 ? v / 1000 : v;
-  const t = String(v).trim().replace(',', '.'), m = /-?\d+(\.\d+)?/.exec(t); if (!m) return null; const x = parseFloat(m[0]); if (!(x > 0)) return null;
+/* Une longueur du retest : des mm (« 3670 ») ou des m (« 3,67 ») ; en mètres chez nous, ou null. (v84, les fichiers piégés :
+   « 2 500 » — l'espace des milliers d'Excel — se lisait 2 mm, « 1e3 » 1 mm.) Les espaces entre chiffres tombent, la
+   virgule décimale devient un point, une puissance de dix se lit. */
+function longueurLue(v) { if (v == null || v === '') return null; if (typeof v === 'number') return v > 100 ? v / 1000 : v > 0 ? v : null;
+  const t = String(v).trim().replace(/(\d)[\s  ]+(?=\d)/g, '$1').replace(',', '.'), m = /-?\d+(\.\d+)?(e[+-]?\d+)?/i.exec(t); if (!m) return null;
+  const x = parseFloat(m[0]); if (!(x > 0) || !isFinite(x)) return null;
   return /mm/i.test(t) || (!/\bm\b/i.test(t) && x > 100) ? x / 1000 : x; }
+/* (v84) CE QUE LE FICHIER ÉCRIVAIT, quand VOLTA le lit autrement : « 677VT2 51 » + « B » se lit 677VT2:51B (`boutLu`), une
+   longueur illisible (« abc », « -3 ») ne se lit pas — l'installation corrigée (08-export) les RÉÉCRIT comme le fichier
+   les portait, tant que la lecture n'a pas changé. `ecrit` : { de, borneDe, vers, borneVers } tels que le fichier les
+   écrivait ; il ne vaut que s'il se relit encore en la liaison (`ecritDuBout`). */
+const ecritDuBout = (l, cote) => { const e = l && l.ecrit, a = cote === 'de' ? 'de' : 'vers', b = cote === 'de' ? 'borneDe' : 'borneVers';
+  if (!e || e[a] == null) return null; const [r, n] = boutLu(e[a], e[b]); return r === l[a] && n === l[b] ? [e[a], e[b] == null ? '' : e[b]] : null; };
 function liaison(o) {
   const s = v => (v == null ? '' : String(v).trim()), [de, borneDe] = boutLu(o.de, o.borneDe), [vers, borneVers] = boutLu(o.vers, o.borneVers);
   const l = { de, borneDe, pnDe: s(o.pnDe), vers, borneVers, pnVers: s(o.pnVers), cable: s(o.cable), type: s(o.type), route: s(o.route), plan: s(o.plan) };
   // ce que le vrai retest porte en plus : le faisceau, la longueur (m), l'appareil, la date du retest, le dessin (FWD)
   // d'origine, les descriptions des deux équipements
-  const longueur = longueurLue(o.longueur); if (longueur != null) l.longueur = longueur;
+  const longueur = longueurLue(o.longueur); if (longueur != null) l.longueur = longueur; else if (s(o.longueurBrute)) l.longueurBrute = s(o.longueurBrute);
   if (s(o.harness)) l.harness = s(o.harness); if (s(o.appareil)) l.appareil = s(o.appareil); if (s(o.retest)) l.retest = s(o.retest);
   if (s(o.fwd)) l.fwd = s(o.fwd); if (s(o.descriptionDe)) l.descriptionDe = s(o.descriptionDe); if (s(o.descriptionVers)) l.descriptionVers = s(o.descriptionVers);
+  // (v84) l'installation et son ECP, et les colonnes que VOLTA ne lit pas (`autres` : { en-tête: valeur }) : gardées telles
+  // quelles, l'installation corrigée les rend (la donnée du fichier reste intacte)
+  if (s(o.install)) l.install = s(o.install); if (s(o.ecp)) l.ecp = s(o.ecp);
+  if (o.autres && typeof o.autres === 'object') { const a = {}; let n = 0; Object.keys(o.autres).forEach(k => { const v = s(o.autres[k]); if (k && v) { a[k] = v; n++; } }); if (n) l.autres = a; }
+  // le bout tel que le fichier l'écrivait, quand la lecture le change (« 677VT2 51 » + « B ») — ou tel qu'une liaison déjà lue le garde
+  const e = {}; [['de', 'borneDe', de, borneDe], ['vers', 'borneVers', vers, borneVers]].forEach(([a, b, r, n]) => { const ra = s(o[a]), rb = s(o[b]);
+    if (ra !== r || rb !== n) { e[a] = ra; e[b] = rb; } else if (o.ecrit && o.ecrit[a] != null) { const [r2, n2] = boutLu(o.ecrit[a], o.ecrit[b]); if (r2 === r && n2 === n) { e[a] = s(o.ecrit[a]); e[b] = s(o.ecrit[b]); } } });
+  if (Object.keys(e).length) l.ecrit = e;
   // le contact à sertir écrit à la main à un bout (le récapitulatif) : il passe devant celui que le plan donne
   if (s(o.contactDe)) l.contactDe = s(o.contactDe); if (s(o.contactVers)) l.contactVers = s(o.contactVers);
   // ce que le fichier portait là où on l'a corrigé (`changerLiaison`, `poserChamp`) : un plan rouvert le garde, et le

@@ -78,8 +78,15 @@ const telephone = () => window.innerWidth <= 700;
    Le numéro TIENT (`app.contrat.provisoires`, gardée avec le contrat) : poser VT1 ne renomme pas VT2 en VT1. */
 const folios = new Map();
 const signature = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.type, l.pnDe, l.pnVers, l.route]));
-function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComplete), L = plan === '*' ? L0 : L0.filter(l => l.plan === plan);
-  const P = plans(), depart = plan === '*' ? 0 : P.slice(0, Math.max(0, P.indexOf(plan))).reduce((n, p) => n + dedoublements(L0.filter(l => l.plan === p)).length, 0);
+/* Le nombre de barrettes à poser d'un folio ne dépend que des BOUTS de ses liaisons : compté une fois par jeu de bouts.
+   (v84, le parcours : un plan de 90 folios recomptait chaque folio d'avant à chaque folio demandé — 3 135 liaisons, 4 s
+   gelées pour changer de folio, 6 s à l'ouverture.) Les liaisons se rangent par folio en un seul passage. */
+const DEDOUBLES = new Map();
+function nDedoublements(L) { const k = L.map(l => l.de + '\u0001' + l.borneDe + '\u0001' + l.vers + '\u0001' + l.borneVers).join('\u0002'); let n = DEDOUBLES.get(k);
+  if (n == null) { n = dedoublements(L).length; if (DEDOUBLES.size > 600) DEDOUBLES.clear(); DEDOUBLES.set(k, n); } return n; }
+function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComplete); let L = L0, depart = 0;
+  if (plan !== '*') { const par = new Map(); for (const l of L0) { const xs = par.get(l.plan); if (xs) xs.push(l); else par.set(l.plan, [l]); }
+    L = par.get(plan) || []; const P = plans(), i = P.indexOf(plan); for (let j = 0; j < i; j++) { const xs = par.get(P[j]); if (xs) depart += nDedoublements(xs); } }
   const g = folios.get(plan), sig = depart + '|' + signature(L);
   if (g && g.sig === sig && g.L.length === L.length && g.L.every((l, i) => l === L[i])) return g.sortie;
   if (!app.contrat.provisoires) app.contrat.provisoires = new Map();
@@ -156,11 +163,17 @@ function affinerTout() { if (!affinage.actif) return;
   affinage.file = travaux.filter((t, i) => travaux.findIndex(u => u.cle === t.cle) === i); pomper(); }
 // le placement au loin a-t-il encore du travail ? (un folio attendu, en cours, ou un folio du contrat pas encore placé)
 const placementEnCours = () => placement.ailleurs && placement.worker !== false && (placement.attentes.size > 0 || !!placement.encours || !!prochainAuLoin());
-function pomper() { while (affinage.file.length && affinage.finis.has(affinage.file[0].cle)) affinage.file.shift();
+function pomper() { while (affinage.file.length && affinage.finis.has(affinage.file[0].cle)) affinage.file.shift(); lancerLAvance();
   if (affinage.encours || !affinage.file.length || placementEnCours()) { montrerBande(); return; }
   const w = travailleur(); if (!w) return;
   affinage.encours = affinage.file.shift(); affinage.etat = { k: 0, n: TOURS_PROFONDS };
   w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerBande(); }
+/* (v84, le parcours) le placement d'avance ne partait qu'au premier gros folio OUVERT : sur l'exemple (son folio 1 est
+   petit), les autres attendaient qu'on les ouvre — « Dessin du folio 3 · environ 5 s » au premier problème — et l'affinage,
+   qui attend la fin du placement, ne partait jamais. Rien ne tourne et un folio reste à placer : il part, juste après ce
+   rendu (pas au milieu de `calculer`). */
+function lancerLAvance() { if (lancerLAvance.t) return; lancerLAvance.t = setTimeout(() => { lancerLAvance.t = 0;
+  if (placement.ailleurs && placement.worker !== false && !placement.encours && !placement.attentes.size && prochainAuLoin()) pomperPlacement(); }, 60); }
 // un folio à placer passe avant : l'affinage en cours s'arrête (son folio retourne en tête de la file), il reprendra
 function suspendreAffinage() { if (!affinage.encours || !affinage.worker) return; const j = affinage.encours;
   try { affinage.worker.terminate(); } catch (_) { } affinage.worker = null; affinage.encours = null; affinage.etat = null;
@@ -1579,14 +1592,18 @@ const idDeObjet = (() => { const M = new WeakMap(); let n = 0; return o => !o ||
 function memoContrat(k, f) { const M = MEMO_CONTRAT, c = cleDuContrat(); if (c !== M.cle) { M.cle = c; M.valeurs.clear(); }
   if (!M.valeurs.has(k)) M.valeurs.set(k, f()); return M.valeurs.get(k); }
 // les repères du contrat, et les barrettes à poser de chaque folio : nom, genre, ce qu'on écrit dessous, ses folios
-const reperesDuContrat = () => memoContrat('reperes', () => { const V = verite(), out = [];
-  reperesDe(V).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).forEach(nom => { const des = app.contrat.designations.get(nom) || '';
+// (v84) les liaisons de chaque repère, rangées en un passage, dans l'ordre du contrat : l'index d'un plan de 3 000 câbles
+// relisait tout le contrat pour chacun de ses 800 repères
+const parRepere = L => { const m = new Map(), mettre = (r, l) => { const xs = m.get(r); if (xs) xs.push(l); else m.set(r, [l]); };
+  L.forEach(l => { mettre(l.de, l); if (l.vers !== l.de) mettre(l.vers, l); }); return m; };
+const reperesDuContrat = () => memoContrat('reperes', () => { const V = verite(), out = [], deV = parRepere(V), duPlan = parRepere(app.contrat.liaisons);
+  reperesDe(V).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).forEach(nom => { const des = app.contrat.designations.get(nom) || '', siens = deV.get(nom) || [];
     const genre = estCoupure(nom) ? 'coupure' : estBarrette(nom) ? 'barrette' : estDisjoncteur(nom) ? 'cb' : 'eqpt';
     let sous = des || designationDe(nom);
     if (genre === 'cb') { const c = calibreDe(nom); sous = (c ? amperes(c) : '') + (sous && sous !== 'disjoncteur' ? (c ? ' · ' : '') + sous : ''); }
-    if (!sous && genre === 'eqpt') sous = [...new Set(connecteursDe(nom, V).map(c => c.pn).filter(Boolean))].slice(0, 2).join(' · ');
-    if (!sous) sous = pluriel(V.filter(l => l.de === nom || l.vers === nom).length, 'câble');
-    out.push({ nom, genre, plans: plansDuRepere(nom).sort(triNaturel), sous }); });
+    if (!sous && genre === 'eqpt') sous = [...new Set(connecteursDe(nom, siens).map(c => c.pn).filter(Boolean))].slice(0, 2).join(' · ');
+    if (!sous) sous = pluriel(siens.length, 'câble');
+    out.push({ nom, genre, plans: [...new Set((duPlan.get(nom) || []).map(l => l.plan).filter(Boolean))].sort(triNaturel), sous }); });
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1')
     out.push({ nom: l.aPoser, genre: 'barrette', plan: p, plans: p === '*' ? [] : [p], sous: 'ajoutée par VOLTA sur ' + l.de + ':' + l.borneDe }); }));
   return out.sort((a, b) => triNaturel(a.nom, b.nom) || triNaturel(a.plan || '', b.plan || '')); });
@@ -2547,7 +2564,7 @@ function ficheCartouche() { const c = app.contrat.cartouche, W = CART_FOLIO + CA
   const apercu = () => `<svg viewBox="-1 -1 ${W + 2} ${CART_H + 2}" role="img" aria-label="Aperçu du cartouche">${cartoucheSvg(W, CART_H, c, folioCourant(), [])}</svg>`;
   const corps = tete('Réglages', 'Cartouche') + '<p class="note">Il s’écrit sur chaque folio, enregistré ou imprimé ; le numéro de folio se met tout seul.</p>'
     + `<figure class="ca-apercu"><figcaption class="ca-t">Aperçu, sur le folio ${esc(String(folioDuCartouche(folioCourant()).rang || ''))}</figcaption><div id="ca-apercu">${apercu()}</div></figure><div class="ca-form"><h3 class="ca-t">Ce qui s’écrit</h3>`
-    + champ('ca-titre', 'Titre', c.titre, { sans: true, ph: 'Le titre de la planche' }) + champ('ca-auteur', 'Dessiné par', c.auteur, { sans: true, ph: 'Initiales ou nom' })
+    + champ('ca-titre', 'Titre', c.titre, { sans: true, ph: 'Le titre du plan' }) + champ('ca-auteur', 'Dessiné par', c.auteur, { sans: true, ph: 'Initiales ou nom' })
     + `<div class="grille ca-trois">${champ('ca-indice', 'Indice', c.indice, { ph: 'A' })}${champ('ca-date', 'Date', c.date, { ph: 'aaaa-mm-jj' })}${champ('ca-echelle', 'Échelle', /^[—–-]$/.test(String(c.echelle || '').trim()) ? '' : c.echelle, { ph: 'sans' })}</div></div>`;
   ouvrirFiche({ mode: 'cartouche' }, corps, '');
   CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).addEventListener('input', e => { c[k] = e.target.value; $('ca-apercu').innerHTML = apercu(); }); $(id).addEventListener('change', () => { peindre(); rallumer(); sauver(); }); });
@@ -2984,7 +3001,7 @@ const RACCOURCIS = [
     ['Le problème suivant, le précédent|les problèmes, puis ce qui est à voir', ['P'], ['Maj', 'P']],
     ['Folio précédent, suivant', ['←'], ['→']], ['Toute la feuille, puis le dessin', ['0']], ['Zoomer, dézoomer', ['+'], ['−']], ['À 100 %, à 200 %', ['1'], ['2']],
     ['Déplacer la vue|en glissant, ou avec le bouton du milieu', ['Espace']]]],
-  ['Lire en tableaux', [['Le récapitulatif, en moitié', ['B']], ['Le récapitulatif, en page', ['Maj', 'B']], ['La nomenclature', ['N']], ['Corriger une case', ['Entrée'], ['F2']], ['La case suivante', ['Tab']]]],
+  ['Lire en tableaux', [['Le récapitulatif, en moitié', ['B']], ['Le récapitulatif, en page', ['Maj', 'B']], ['La LPA, ce qu’il faut commander', ['N']], ['Corriger une case', ['Entrée'], ['F2']], ['La case suivante', ['Tab']]]],
   ['Dans une fiche', [['La fiche d’avant, d’après|et revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']], ['Renommer le repère', ['F2']],
     ['Le calibre d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre, ou l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche', ['Échap']]]],
   ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['Pousser le bloc choisi|d’un carreau ; de cinq avec Maj', ['↑'], ['↓']]]],

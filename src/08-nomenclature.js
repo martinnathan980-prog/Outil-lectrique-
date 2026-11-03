@@ -1,6 +1,11 @@
 /* ===========================================================================
-   08 septies — LA NOMENCLATURE DU CONTRAT : ce qu'il faut commander et sertir
+   08 septies — LA LPA DU PLAN (la nomenclature) : ce qu'il faut commander et sertir
    ---------------------------------------------------------------------------
+   (v84) Le lecteur l'appelle la LPA, la liste de pré-approvisionnement : c'est
+   le nom qu'il lit partout (le document, ses exports, le dossier PDF). Les
+   noms du code (`nomenclatureDuContrat`, `ficheNomenclature`) restent : ils
+   ne se voient pas. Une prise se dit par ses mots : « partie mobile »,
+   « partie fixe » (jamais « fiche / embase »).
    Tout ce que les fiches disent connecteur par connecteur, rassemblé en un
    document : les CONTACTS à sertir (référence, fourreau, quantité, où), les
    MODULES de jonction des barrettes, les CONNECTEURS (part numbers), ce qui
@@ -68,8 +73,8 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
     try {
       if (barretteEnModules(r)) { const Q = planDeBarrette(r).plan; Q.modules.forEach(M => modules.plus(M.reference, { reference: M.reference, famille: nomDeFamille(app.norme, M.module.famille) }, r)); sertir(Q.fils, r); }
       else if (coupureEnModules(r)) { const { besoins: b, plan: Q } = planDeCoupure(r); if (Q.reference) connecteurs.plus(Q.reference, { reference: Q.reference, nature: 'prise de coupure' }, r);
-        const am = Q.fils.filter(x => x.f.amont), av = Q.fils.filter(x => !x.f.amont); sertir(am, r + ' fiche'); sertir(av, r + ' embase');
-        habiller(r + '|fiche', am.map(x => x.f), b.pn, r + ' fiche', Q.reference); habiller(r + '|embase', av.map(x => x.f), b.pn, r + ' embase', Q.reference); }
+        const am = Q.fils.filter(x => x.f.amont), av = Q.fils.filter(x => !x.f.amont); sertir(am, r + ' partie mobile'); sertir(av, r + ' partie fixe');
+        habiller(r + '|fiche', am.map(x => x.f), b.pn, r + ' partie mobile', Q.reference); habiller(r + '|embase', av.map(x => x.f), b.pn, r + ' partie fixe', Q.reference); }
       else if (!estBornier(r)) { const b = besoinsDeBarrette(r, V), C = connecteursDe(r, V).filter(c => c.nom), cav = new Map(cavitesDe(r).map(c => [c.nom, c]));
         C.forEach(c => { const k = cav.get(c.nom), ou = r + ' ' + c.nom, fils = c.bornes.flatMap(bo => b.parBorne.get(bo) || []);
           if (c.pn) connecteurs.plus(c.pn, { reference: c.pn, nature: 'connecteur' + (k && k.plan.modules[0] ? ' · ' + k.plan.modules[0].reference : '') }, ou);
@@ -99,7 +104,7 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
   const note = t => `<i class="no-note-l">${esc(t)}</i>`, rien = '<span class="no-rien">—</span>';
   const tuile = (v, u, t) => `<div class="no-tuile"><b>${v}${u ? `<small>${INSECABLE}${u}</small>` : ''}</b><span>${t}</span></div>`;
   const resume = `<div class="no-resume">${tuile(somme(N.contacts), '', 'contacts à sertir')}${tuile(somme(N.modules), '', 'modules de jonction')}${tuile(somme(N.connecteurs), '', 'connecteurs et prises')}`
-    + `${tuile(N.fils, '', N.fils > 1 ? 'câbles' : 'câble')}${tuile(nombre(Math.round(N.longueur)), 'm', 'de câble')}${N.masse > 0 ? tuile(nombre(Math.round(N.masse / 100) / 10), 'kg', 'de câble (masse)') : ''}</div>`;
+    + `${tuile(N.fils, '', N.fils > 1 ? 'câbles' : 'câble')}${tuile(nombre(Math.round(N.longueur)), 'm', 'de câble en tout')}${N.masse > 0 ? tuile(nombre(Math.round(N.masse / 100) / 10), 'kg', 'que pèsent les câbles') : ''}</div>`;
   /* une table : son titre et ce qu'elle compte ; les colonnes de chiffres se rangent à droite, leur en-tête avec elles ; une
      colonne que ses lignes ne remplissent pas ne s'écrit pas (DESIGN.md ; l'ingénieur : « la colonne Fourreau est vide de
      haut en bas »). `lignes` : des rangs de cases [html, vide?] */
@@ -112,7 +117,8 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
   const natureHtml = t => { const [n, ...r] = String(t || '').split(' · '); return esc(n) + (r.length ? `<span class="no-arr">${esc(r.join(' · '))}</span>` : ''); };
   // l'état d'un disjoncteur : le verdict à sa couleur (la table unique, 09 bis), « pas écrit au retest » en ambre dessous
   const etatDj = x => x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>${x.retest ? note('pas écrit dans l’installation') : ''}` : `<span class="no-rien">${esc(x.etat || '—')}</span>`;
-  const corps = tete('Le contrat', 'Nomenclature', true) + resume + `<p class="note no-intro">Ce qu’il faut commander et sertir, relu depuis le contrat, les normes et les choix des fiches. Les longueurs sont celles de l’installation ; sans longueur, l’hypothèse de la simulation (${esc(nombre(N.hypothese))} m par câble).</p>`
+  const nF = typeof plans === 'function' ? plans().length : 0;
+  const corps = tete('Liste de pré-approvisionnement', 'LPA', true) + `<p class="note no-intro">Tout ce qu’il faut commander pour monter le plan entier${nF > 1 ? ', ses ' + nF + ' folios' : ''}, compté depuis vos fichiers et les choix des fiches. Un câble sans longueur dans l’installation compte ${esc(nombre(N.hypothese))} m (les hypothèses).</p>` + resume
     + table('Contacts à sertir', refs(N.contacts, 'référence'), ['Contact', 'Fourreau', 'Qté', 'Où'], N.contacts.map(x => [td('ref', esc(x.reference) + (x.confiance === 'à confirmer' ? note('à confirmer') : '')), td('', x.accessoire ? esc(x.accessoire) : rien, !x.accessoire), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Modules de jonction', refs(N.modules, 'référence'), ['Module', 'Norme', 'Qté', 'Barrettes'], N.modules.map(x => [td('ref', esc(x.reference)), td('sans', esc(x.famille || ''), !x.famille), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Connecteurs et prises', refs(N.connecteurs, 'part number'), ['Part number', 'Nature', 'Qté', 'Repères'], N.connecteurs.map(x => [td('ref', esc(x.reference)), td('sans', natureHtml(x.nature), !x.nature), td('d', x.n), td('sans', ou(x.ou))]))
@@ -125,16 +131,16 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
       td('d', x.masse != null ? esc(nombre(Math.round(x.masse))) + ' g' : rien, x.masse == null), td('sans', x.cable ? esc([x.cable.nature, x.cable.diametre != null ? 'Ø ' + nombre(x.cable.diametre) : '', x.cable.section != null ? nombre(x.cable.section) + ' mm²' : ''].filter(Boolean).join(' · ')) : '<span class="no-ko">inconnu de la base</span>')]));
   // le pied : le classeur Excel, plein (on commande avec) ; le CSV et le suivi au trait, côte à côte (v74, l'ergonome v73 :
   // « le suivi, en lien à droite du pied, se perd »)
-  const pied = '<button class="btn papier" id="no-suivi" data-bulle="Le tableau de suivi des barrettes et des prises, en Excel">Exporter le suivi</button><span class="espace"></span><button class="btn papier" id="no-csv">Exporter CSV</button><button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : une ligne par article, sa section, sa quantité, où il va">Exporter Excel</button>';
+  const pied = '<button class="btn papier" id="no-suivi" data-bulle="Une ligne par pièce posée — barrette, prise, connecteur — avec sa référence, ses contacts et ses câbles, en CSV">Suivi de fabrication</button><span class="espace"></span><button class="btn papier" id="no-csv" data-bulle="La même liste, en CSV : une ligne par article">LPA en CSV</button><button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : une ligne par article, sa section, sa quantité, où il va">LPA en Excel</button>';
   ouvrirFiche({ mode: 'nomenclature', large: true }, corps, pied);
   $('no-xlsx').onclick = () => exporterNomenclatureExcel(N); $('no-csv').onclick = () => exporterNomenclature(N); $('no-suivi').onclick = exporterSuivi;
   // « +11 » déplie ses repères en place ; « moins » les replie (le clavier reste sur le bouton)
   const fc = $('fiche-corps'); if (fc && !fc.dataset.noPlus) { fc.dataset.noPlus = '1'; fc.addEventListener('click', e => { const b = e.target.closest('.no-plus'); if (!b) return;
     const r = b.parentElement.querySelector('.no-reste'), ouvre = r.hidden; r.hidden = !ouvre; b.setAttribute('aria-expanded', String(ouvre)); b.textContent = ouvre ? 'moins' : '+' + b.dataset.n;
     if (typeof cacherBulle === 'function') cacherBulle(); }); }
-  if (typeof lierBullesDoc === 'function') lierBullesDoc();
-  // le document prend le clavier : son action pleine (Tab mène au reste, Échap le ferme)
-  const b = $('no-xlsx'); if (b) setTimeout(() => { if (b.isConnected && !b.closest('[hidden]')) b.focus({ preventScroll: true }); }, 30); }
+  // (v84) le clavier entre par le titre, comme dans tous les documents : posé sur « LPA en Excel », il faisait paraître sa
+  // bulle à l'ouverture, par-dessus la liste
+  if (typeof lierBullesDoc === 'function') lierBullesDoc(); }
 /* Les lignes, une par article, avec sa section — pour le CSV et pour le classeur ; la quantité reste un nombre. */
 const ENTETES_NOMEN = ['Section', 'Référence', 'Détail', 'Quantité', 'Unité', 'Où'];
 function lignesNomenclature(N) { const L = [];
@@ -145,18 +151,18 @@ function lignesNomenclature(N) { const L = [];
   N.habits.forEach(x => L.push(['Habillage', x.reference, x.quoi + (x.note ? ' — ' + x.note : ''), x.n, 'pièce', x.ou.join(', ')]));
   N.cables.forEach(x => L.push(['Câbles', x.reference, pluriel(x.n, 'câble'), Math.round(x.longueur * 10) / 10, 'm', '']));
   return L; }
-const nomDeNomenclature = ext => (app.nom || 'contrat').replace(/\.[^.]+$/, '') + ' — nomenclature.' + ext;
+const nomDeNomenclature = ext => (app.nom || 'contrat').replace(/\.[^.]+$/, '') + ' — LPA.' + ext;
 /* Le CSV : une ligne par article, avec sa section, pour tableur. */
 function exporterNomenclature(N) { N = N || nomenclatureDuContrat(); const cell = v => { const t = typeof v === 'number' ? nombre(v) : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
   const L = [ENTETES_NOMEN.join(';'), ...lignesNomenclature(N).map(l => l.map(cell).join(';'))];
   telecharger(new Blob(['\ufeff' + L.join('\n')], { type: 'text/csv;charset=utf-8' }), nomDeNomenclature('csv'));
-  dire(pluriel(L.length - 1, 'ligne') + ' de nomenclature enregistrée' + (L.length > 2 ? 's' : '') + ' en CSV.'); }
+  dire('La LPA est enregistrée en CSV : ' + pluriel(L.length - 1, 'ligne') + '.'); }
 /* Le classeur Excel (SheetJS, embarqué dans la page) : la même table, l'en-tête filtrable, les colonnes à leur largeur,
    les quantités en nombres (un tableur les somme). */
 function exporterNomenclatureExcel(N) { N = N || nomenclatureDuContrat(); const L = lignesNomenclature(N);
   const ws = XLSX.utils.aoa_to_sheet([ENTETES_NOMEN, ...L]);
   ws['!cols'] = ENTETES_NOMEN.map((h, j) => ({ wch: Math.min(60, Math.max(h.length + 2, ...L.map(l => String(l[j] == null ? '' : l[j]).length + 1))) }));
   ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: L.length, c: ENTETES_NOMEN.length - 1 } }) };
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Nomenclature');
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'LPA');
   telecharger(new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nomDeNomenclature('xlsx'));
-  dire(pluriel(L.length, 'ligne') + ' de nomenclature enregistrée' + (L.length > 1 ? 's' : '') + ' en Excel.'); }
+  dire('La LPA est enregistrée en Excel : ' + pluriel(L.length, 'ligne') + '.'); }

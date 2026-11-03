@@ -63,15 +63,27 @@ const tableOccupee = () => !!((typeof BIB !== 'undefined' && BIB.lot && BIB.lot.
    temps avance d'autant — sauf pendant un geste ou sous une feuille. Endormie, la minuterie s'arrête : plus rien ne tourne. */
 function deriver() { const T = TABLE, n = performance.now(), dt = Math.min(.25, (n - T.derniere) / 1000); T.derniere = n;
   if (document.hidden) { arreterDerive(); return; }
-  if (T.cible && n - T.main > T.veilleApres) { T.cible = 0; T.el.classList.add('dort'); }
+  if (T.cible && n - T.main > T.veilleApres) { T.cible = 0; T.el.classList.add('dort'); reposerAccueil(true); }
   T.vitesse += (T.cible - T.vitesse) * Math.min(1, dt * 2.2);
   if (!T.cible && T.vitesse < .002) { T.vitesse = 0; arreterDerive(); return; }
   if (T.enGeste || tableCouverte() || tableOccupee()) return;
   T.temps += dt * T.vitesse; poserNappes(T.temps); }
 function arreterDerive() { clearInterval(TABLE.minuterie); TABLE.minuterie = 0; }
+/* L'ACCUEIL SE REPOSE AVEC LA TABLE : 90 s sans la main, les courants du schéma et de la marque s'arrêtent là où ils sont,
+   le liseré de cuivre du premier geste aussi (`au-repos`, style-z-accueil.css) ; un geste les relance d'où ils étaient. */
+function reposerAccueil(oui) { document.body.classList.toggle('au-repos', oui);
+  document.querySelectorAll('#bi-page svg.mq, #bi-page .bi-hero svg').forEach(s => { try { if (oui) s.pauseAnimations(); else s.unpauseAnimations(); } catch (_) { } }); }
+/* LE PASSAGE de la bibliothèque au plan, et retour (08-bibliotheque, `montrerLePlan`, `montrerBibliotheque`) : la table change
+   de matière (le graphite de l'accueil, la table du plan) — au lieu d'un saut, l'ancienne se pose par-dessus la nouvelle et
+   s'efface en 420 ms : un fondu enchaîné. Appelée AVANT que le corps change de classe (la table d'avant est encore là). */
+function fonduTable() { const t = $('table'), f = t && t.querySelector('.ta-fond'); if (!f || mouvementReduit()) return;
+  let v = t.querySelector('.ta-passe'); if (!v) { v = document.createElement('div'); v.className = 'ta-passe'; f.after(v); }
+  const s = getComputedStyle(f); v.getAnimations().forEach(a => a.cancel());
+  v.style.backgroundColor = s.backgroundColor; v.style.backgroundImage = s.backgroundImage;
+  v.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); }
 /* On est là (la souris, le clavier, la molette) : la dérive s'éveille, ou reste éveillée 90 s de plus. */
 function eveillerTable() { const T = TABLE; if (!T.el || mouvementReduit() || document.hidden) return; T.main = performance.now();
-  if (!T.cible) { T.cible = 1; T.el.classList.remove('dort'); }
+  if (!T.cible) { T.cible = 1; T.el.classList.remove('dort'); reposerAccueil(false); }
   if (!T.minuterie) { T.derniere = performance.now(); T.minuterie = setInterval(deriver, Math.round(1000 / T.hz)); }
   if (!T.courantT) planifierCourant(); }
 
