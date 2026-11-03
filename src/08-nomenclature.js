@@ -125,7 +125,7 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
       td('d', x.masse != null ? esc(nombre(Math.round(x.masse))) + ' g' : rien, x.masse == null), td('sans', x.cable ? esc([x.cable.nature, x.cable.diametre != null ? 'Ø ' + nombre(x.cable.diametre) : '', x.cable.section != null ? nombre(x.cable.section) + ' mm²' : ''].filter(Boolean).join(' · ')) : '<span class="no-ko">inconnu de la base</span>')]));
   // le pied : le classeur Excel, plein (on commande avec) ; le CSV et le suivi au trait, côte à côte (v74, l'ergonome v73 :
   // « le suivi, en lien à droite du pied, se perd »)
-  const pied = '<button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : une ligne par article, sa section, sa quantité, où il va">Exporter Excel</button><button class="btn papier" id="no-csv">Exporter CSV</button><button class="btn papier" id="no-suivi" data-bulle="Le tableau de suivi des barrettes et des prises, en Excel">Le suivi (barrettes, prises)</button>';
+  const pied = '<button class="btn papier" id="no-suivi" data-bulle="Le tableau de suivi des barrettes et des prises, en Excel">Exporter le suivi</button><span class="espace"></span><button class="btn papier" id="no-csv">Exporter CSV</button><button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : une ligne par article, sa section, sa quantité, où il va">Exporter Excel</button>';
   ouvrirFiche({ mode: 'nomenclature', large: true }, corps, pied);
   $('no-xlsx').onclick = () => exporterNomenclatureExcel(N); $('no-csv').onclick = () => exporterNomenclature(N); $('no-suivi').onclick = exporterSuivi;
   // « +11 » déplie ses repères en place ; « moins » les replie (le clavier reste sur le bouton)

@@ -9,7 +9,7 @@ fs.mkdirSync(DOSSIER, { recursive: true });
 const PAGES = ['hypotheses', 'nomenclature', 'normes', 'bible', 'dejafait', 'fichiers', 'bilan', 'carnet', 'cartouche', 'comprendre', 'raccourcis', 'suivi', 'pdf', 'coller'];
 (async () => { const { b, p, erreurs } = await ouvrir({ theme: THEME, l: +L, h: Math.round(+L * .625) }), nom = e => path.join(DOSSIER, `${THEME}-${e}.png`);
   const echap = async () => { for (let i = 0; i < 3; i++) { await p.keyboard.press('Escape'); await p.waitForTimeout(150); } };
-  await p.waitForTimeout(600); await p.screenshot({ path: nom('00-accueil') });
+  await p.mouse.move(+L * 0.48, 420); await p.waitForTimeout(4200); await p.screenshot({ path: nom('00-accueil') });
   await exemple(p); await p.screenshot({ path: nom('01-plan') });
   // le menu ⋮, puis ses deux sous-menus
   await p.click('#btnMenu'); await p.waitForTimeout(400); await p.screenshot({ path: nom('02-menu') });

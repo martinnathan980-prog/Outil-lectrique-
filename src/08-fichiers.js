@@ -274,15 +274,15 @@ function lireCollage(texte) { const brutes = lignesDuTexte(texte), pleines = bru
 function ficheColler() { const ouvert = verite().length > 0 && !bibliothequeOuverte();
   /* Trois temps, l'un sous l'autre, groupés par l'espace : ce qu'on colle (l'ordre des colonnes, un exemple qu'on peut
      coller d'un clic), le champ, ce qui est compris. */
-  const corps = tete('Sans fichier', 'Coller des lignes')
+  const corps = tete('Entrées', 'Coller des lignes')
     + '<p class="co-lead"><b>Une liaison par ligne</b>, copiée d’Excel ou tapée ; les colonnes séparées par une tabulation, <b>;</b> ou <b>,</b>. Sous les en-têtes de l’installation, elles sont reconnues à leur nom.</p>'
     + `<section class="co-bloc"><h3 class="co-etiquette">Sans en-têtes, dans cet ordre<small>seuls les deux équipements sont obligatoires</small></h3>`
     + `<ol class="co-ordre">${MODELE_COLLAGE.entetes.map((t, i) => `<li${MODELE_COLLAGE.requises.includes(t) ? ' class="req"' : ''}><i>${i + 1}</i>${esc(t)}</li>`).join('')}</ol></section>`
     + `<section class="co-bloc co-exemple"><h3 class="co-etiquette">Par exemple<button class="btn lien" id="co-essai">Coller cet exemple</button></h3>${apercuHtml(MODELE_COLLAGE)}</section>`
-    + '<label class="champ co-champ" id="co-champ"><span class="co-etiquette">Vos lignes</span><textarea id="co-txt" placeholder="102CB1;2;MS3320-10;103RL1;A1;;W-012;DR20;PUISSANCE;1" spellcheck="false" aria-describedby="co-apercu"></textarea></label>'
+    + '<label class="champ co-champ" id="co-champ"><span class="co-etiquette">Vos lignes</span><textarea id="co-txt" placeholder="102CB1;2;MS3320-10;103RL1;A1;;;DR20;PUISSANCE;1" spellcheck="false" aria-describedby="co-apercu"></textarea></label>'
     + '<section class="co-apercu" id="co-apercu" aria-live="polite"></section>';
-  const pied = ouvert ? '<button class="btn cuivre" id="co-ajouter" disabled>Ajouter au plan</button><button class="btn papier" id="co-remplacer" disabled>Remplacer le plan</button><span class="espace"></span><button class="btn lien" id="co-fichier">…ou un fichier</button>'
-    : '<button class="btn cuivre" id="co-remplacer" disabled>Charger</button><span class="espace"></span><button class="btn lien" id="co-fichier">…ou un fichier</button>';
+  const pied = ouvert ? '<button class="btn lien danger" id="co-remplacer" disabled data-bulle="Remplace les liaisons du plan ouvert par ces lignes ; Ctrl+Z les rend">Remplacer le plan</button><span class="espace"></span><button class="btn papier" id="co-fichier">Ouvrir un fichier…</button><button class="btn cuivre" id="co-ajouter" disabled>Ajouter au plan</button>'
+    : '<span class="espace"></span><button class="btn papier" id="co-fichier">Ouvrir un fichier…</button><button class="btn cuivre" id="co-remplacer" disabled>Charger</button>';
   ouvrirFiche({ mode: 'coller', large: true }, corps, pied);
   const txt = $('co-txt'); let lu = { liaisons: [], rejets: [] }, t = 0;
   const voir = () => { lu = lireCollage(txt.value); const n = lu.liaisons.length, vide = !txt.value.trim(), box = $('co-apercu');
@@ -346,7 +346,7 @@ const clesBaseHtml = () => `<dl class="vf-cles">${CLES_BASE.map(([k, d]) => `<di
 function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.erreurs[k];
   // la bibliothèque : ses installations et ses plans (l'Exemple n'en est pas)
   const nI = installsVraies().length, nP = plansVrais().length;
-  E.bibliotheque = nI ? { niveau: 'ok', dit: lies([plurielLie(nI, 'installation'), plurielLie(nP, 'plan'), BIB.garde ? 'gardés dans ce navigateur' : 'pas gardés dans ce navigateur']) } : { niveau: 'vide', dit: 'aucune installation pour l’instant' };
+  E.bibliotheque = nI ? { niveau: 'ok', dit: lies([plurielLie(nI, 'installation'), plurielLie(nP, 'plan'), BIB.garde ? 'gardés dans ce navigateur' : 'pas gardés dans ce navigateur']) } : { niveau: 'vide', dit: 'votre première installation s’y rangera' };
   // le retest : le plan sur la table, l'exemple, rien
   const n = V.length, exemple = n && app.nom === NOM_EXEMPLE, R = FICHIERS.retest && FICHIERS.retest.nom === app.nom ? FICHIERS.retest : null, P = plans().length;
   E.retest = err('retest') ? { niveau: 'ko', dit: 'le dernier fichier n’a pas pu être ouvert' + (n && !exemple ? ' — ' + (app.nom || 'le plan') + ' reste ouvert' : '') }
@@ -357,7 +357,7 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
   const B = app.references, M = B && B.base ? B.base.meta : null, K = typeof BASE !== 'undefined' ? BASE : {};
   E.base = K.lecture ? { niveau: 'att', dit: 'lecture de ' + K.lecture.nom + ' en cours' }
     : err('base') ? { niveau: 'ko', dit: 'le dernier dépôt n’a pas pu être lu' + (B ? ' — la base d’avant reste' : '') }
-    : !B || !M ? { niveau: 'vide', dit: 'aucune base dans ce navigateur' }
+    : !B || !M ? { niveau: 'vide', dit: 'à déposer quand vous l’aurez : facultatif' }
     : { niveau: 'ok', dit: lies([B.nom || 'base', B.t ? 'déposée ' + quand(B.t) : '', plurielLie(M.harnais, 'harness'), plurielLie(M.dessins, 'dessin'), plurielLie(M.n, 'liaison'), B.pret ? '' : '« Déjà fait » s’indexe']) };
   const nb = (app.bible || []).length; let tb = 0; try { const o = JSON.parse(localStorage.getItem(CLE_BIBLE) || 'null'); tb = o && o.t || 0; } catch (_) { }
   E.bible = err('bible') ? { niveau: 'ko', dit: 'le dernier fichier n’est pas une bible — ' + (app.bibleNom ? app.bibleNom : 'l’embarquée') + ' reste' }
@@ -367,7 +367,7 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
     : { niveau: 'ok', dit: lies([mod ? lies([pluriel(mod, 'table') + ' modifiée' + (mod > 1 ? 's' : '') + ' dans ce navigateur', app.normeNom, pluriel(lignes, 'ligne')]) : lies(['embarquées', pluriel(TABLES_NORME.length, 'table'), 'rien de modifié']),
         typeof BASE_SEE !== 'undefined' && BASE_SEE.base ? 'base SEE gardée ' + quand(BASE_SEE.base.quand) : ''].filter(Boolean)) };
   const H = app.simu || HYPOTHESES, d = ['longueur', 'courant', 'tension', 'ambiante'].some(k => H[k] !== HYPOTHESES[k]);
-  E.hypotheses = { niveau: 'ok', dit: lies([nombre(H.longueur) + ' m par câble sans longueur', nombre(H.courant) + ' A sans disjoncteur', nombre(H.tension) + ' V', nombre(H.ambiante) + ' °C', d ? 'réglées ici' : 'les valeurs de l’outil']) };
+  E.hypotheses = { niveau: 'ok', dit: lies([nombre(H.longueur) + ' m par câble sans longueur', nombre(H.courant) + ' A sans disjoncteur', nombre(H.tension) + ' V', nombre(H.ambiante) + ' °C', d ? 'réglées ici' : 'les valeurs de VOLTA']) };
   return E; }
 /* Une carte. `o` : { cle, titre, une (html : ce qu'elle attend, en une ligne), action: [vf, libelle], zone: [vf, mot] (la zone
    de dépôt, tant que l'entrée est vide), liens: [[vf, libelle]], boites (html), attend: { sous, format, apercu, ensuite,
@@ -387,7 +387,7 @@ function carteHtml(o, etat, focus, primaire) { const ouvert = FICHIERS.volets.ha
     + (zone ? `<button type="button" class="vf-zone" data-vf="${o.zone[0]}">${icoVf('depot')}<span><b>Glissez ${o.zone[1]} ici</b> ou cliquez</span></button>` : '')
     + (o.liens && o.liens.length ? `<div class="vf-liens">${o.liens.map(([vf, t]) => `<button class="btn lien" data-vf="${vf}">${esc(t)}</button>`).join('')}</div>` : '')
     + (o.boites || '')
-    + (A ? `<details class="vf-attend" data-volet="${o.cle}"${ouvert ? ' open' : ''}><summary><span class="vf-attend-t">Ce que j’attends</span><span class="vf-attend-s">${esc(A.sous || 'trois lignes d’exemple, un modèle')}</span>${ico('bas', 'vf-chevron')}</summary><div class="vf-corps">`
+    + (A ? `<details class="vf-attend" data-volet="${o.cle}"${ouvert ? ' open' : ''}><summary><span class="vf-attend-t">Le format attendu</span><span class="vf-attend-s">${esc(A.sous || 'trois lignes d’exemple, un modèle')}</span>${ico('bas', 'vf-chevron')}</summary><div class="vf-corps">`
       + (A.format ? `<p class="vf-format">${A.format}</p>` : '') + (A.apercu || '')
       + (A.ensuite ? `<p class="vf-ensuite">${A.ensuite}</p>` : '')
       + (A.gestes && A.gestes.length ? `<div class="vf-gestes">${A.gestes.map(([vf, t]) => `<button class="btn papier" data-vf="${vf}">${esc(t)}</button>`).join('')}</div>` : '')
@@ -436,7 +436,7 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
       attend: { apercu: apercuHtml(MODELE_BASE, { label: 'Trois lignes d’exemple de la base', colonnes: colonnes(MODELE_BASE, ['Harness', 'FWD', 'Appareil', 'Device1', 'Pin1', 'Device2', 'Pin2']) }),
         ensuite: 'Ensuite, chaque fiche dit « déjà fait sur H175, 92 % pareil » et reprend ce que vous cochez. Une colonne Installation (et ECP) range aussi chaque installation et ses plans dans la bibliothèque. Gardée dans ce navigateur.',
         gestes: [['modele-base', 'Modèle (CSV)']] } },
-    { cle: 'bible', titre: 'Bible des barrettes', depot: 'bible', action: ['bible', 'Importer la vôtre…'], liens: [['voir-bible', 'Voir la bible'], ...(app.bibleNom ? [['bible-outil', 'Revenir à la bible de l’outil']] : [])],
+    { cle: 'bible', titre: 'Bible des barrettes', depot: 'bible', action: ['bible', 'Importer la vôtre…'], liens: [['voir-bible', 'Voir la bible'], ...(app.bibleNom ? [['bible-outil', 'Revenir à la bible de VOLTA']] : [])],
       boites: erreurHtml('bible'),
       attend: { sous: pluriel(nb, 'référence') + ' embarquées, un modèle', format: `${id('Référence')} et ${id('Bornes')} au minimum ; les autres colonnes sont reconnues à leur nom.`,
         apercu: apercuHtml(MODELE_BIBLE, { label: 'Trois lignes d’exemple de la bible' }), gestes: [['modele-bible', 'Modèle (CSV)']] } },
@@ -445,8 +445,8 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
       attend: { sous: 'une table par bloc, ses gabarits', format: 'Une table par bloc : une ligne de titre, ses en-têtes (un gabarit par table), une ligne par entrée.',
         apercu: apercuHtml(MODELE_NORME, { label: 'Un exemple : la table Réseau' }), gestes: [['gabarit-reseau', 'Gabarit Réseau (CSV)'], ['gabarits', 'Tous les gabarits']] } },
     { cle: 'hypotheses', titre: 'Hypothèses', action: ['hypotheses', 'Régler…'] }];
-  return C.map(o => (o.cle === 'bible' ? '<h3 class="vf-groupe">Facultatif<span>l’outil a les siens</span></h3>' : '') + carteHtml(o, E[o.cle], focus, primaire === o.cle)).join(''); }
-function fichiersHtml(focus) { return tete('Ce que l’outil a reçu', 'Vos fichiers')
+  return C.map(o => (o.cle === 'bible' ? '<h3 class="vf-groupe">Facultatif<span>VOLTA a les siens</span></h3>' : '') + carteHtml(o, E[o.cle], focus, primaire === o.cle)).join(''); }
+function fichiersHtml(focus) { return tete('Entrées', 'Vos fichiers')
   + '<p class="vf-lead">Vos installations suffisent pour commencer : glissez un fichier sur son entrée, ou n’importe où.</p>'
   + `<div class="vf-cartes">${cartesFichiers(focus)}</div>`; }
 /* Ouvrir « Vos fichiers », sur une carte (`focus`) s'il y a lieu : elle vient sous les yeux, son volet ouvert. */
@@ -475,7 +475,7 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
       // chercher dans la base : la recherche de la bibliothèque, qui cherche partout (08-bibliotheque)
       'chercher-base': () => { fermerFiche(); montrerBibliotheque('racine'); setTimeout(() => { const q = $('bi-q'); if (q) q.focus(); }, 30); },
       'comparer-contrat': () => ficheDejaFaitContrat(),
-      'bible-outil': () => { adopterBible(bibleExemple(), ''); rendreFichiers(); dire('La bible de l’outil est rétablie.'); },
+      'bible-outil': () => { adopterBible(bibleExemple(), ''); rendreFichiers(); dire('La bible de VOLTA est rétablie.'); },
       'normes-outil': () => { adopterApports(apportsVides(), 'retour à la norme embarquée'); rendreFichiers(); dire('Norme embarquée rétablie.'); },
       'oublier-base': () => { FICHIERS.oubli = true; rendreFichiers(); }, 'oublier-base-non': () => { FICHIERS.oubli = false; rendreFichiers(); },
       'oublier-base-oui': () => { FICHIERS.oubli = false; adopterReferences([], ''); FICHIERS.succes = null; FICHIERS.rangee = null; rendreFichiers(); dire('La base des contrats déjà faits est oubliée.'); },

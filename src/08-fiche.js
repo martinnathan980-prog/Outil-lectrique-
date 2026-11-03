@@ -1057,7 +1057,7 @@ function autresArrangements(cle, points, fam, vs, retenu, sansTitre) { const N =
 function listeArrangements(cle, k, Q, M, autoRef) { if (FI.liste !== 'arr|' + cle) return '';
   const N = app.norme, fam = Q.famille || (M ? M.module.famille : ''), n = k.points.length, retenu = Q.main && M ? M.reference : '';
   const vs = arrangementsQuiLogent(k.points, N, fam), A = autresArrangements(cle, k.points, fam, vs, retenu);
-  const auto = `<button type="button" class="cand cand-auto" data-auto="${escA('arr:' + cle)}" aria-pressed="${!Q.main}" data-bulle="Le choix de l’outil : celui que la référence nomme, sinon le plus petit qui loge ces bornes"><i class="cand-etoile">${ico('etoile')}</i><b>Automatique</b><span>${esc(autoRef || 'aucun ne loge ces bornes')}</span></button>`;
+  const auto = `<button type="button" class="cand cand-auto" data-auto="${escA('arr:' + cle)}" aria-pressed="${!Q.main}" data-bulle="Le choix de VOLTA : celui que la référence nomme, sinon le plus petit qui loge ces bornes"><i class="cand-etoile">${ico('etoile')}</i><b>Automatique</b><span>${esc(autoRef || 'aucun ne loge ces bornes')}</span></button>`;
   return listeChoix('arr|' + cle, voletT('Arrangement') + `<div class="fi-cands">${auto}${vs.filter(m => m.reference !== autoRef || Q.main).map(m => candidat(cle, m, retenu)).join('')}</div>`
     + (vs.length ? '' : `<p class="fi-note">Aucun arrangement ${esc(nomDeFamille(N, fam) || fam || '')} ne loge ces ${pluriel(n, 'borne')}.</p>`) + A.html,
     { titre: 'Les arrangements de la norme', filtre: vs.length + A.n > 8 ? 'Filtrer les arrangements' : '', pied: M ? `<button type="button" class="fi-lien" data-bible="${escA(M.reference)}">${ico('livre')}voir dans la bible</button>` : '' }); }
@@ -1078,7 +1078,7 @@ function corpsConnecteur(nom, c, k, b, vt, enParts) { const cle = nom + '|' + c.
     arr = ligneChamp('Arrangement', `<b class="fi-ko-t" data-bulle="${escA(majuscule(phrase))}">${fautifs.length ? 'Aucun ne loge ' + esc([...new Set(fautifs.map(x => x.borne))].join(', ')) : 'Aucun ne loge ces bornes'}</b>${aide('arrangement', { plan: Q, fautifs, famille: fam })}`,
       // « Changer » ne disparaît jamais (v73, l'ingénieur : « 300XC1 B n'a plus de bouton Changer ») : toute la norme, pour forcer
       { changer: boutonChanger('arr|' + cle, 'Choisir un arrangement quand même — toute la norme'), liste: listeArrangements(cle, k, Q, null, ''),
-        sous: (dit ? `<span class="fi-fautifs">${dit}</span>` + fautifs.map(boutonReparer).join('') : '') + (Q.main ? '<button type="button" class="fi-lien" data-auto="' + escA('arr:' + cle) + '">revenir au choix de l’outil</button>' : '') }); }
+        sous: (dit ? `<span class="fi-fautifs">${dit}</span>` + fautifs.map(boutonReparer).join('') : '') + (Q.main ? '<button type="button" class="fi-lien" data-auto="' + escA('arr:' + cle) + '">revenir au choix de VOLTA</button>' : '') }); }
   // hors des normes chargées : on ne dit rien de ce qu'on ne sait pas — la référence seule
   // les contacts : une ligne par câble posé, borne par borne
   const sertirs = new Map(Q ? Q.fils.map(x => [x.f.l, x]) : []), fautes = new Map(fautifs.map(x => [x.f.l, x.mot]));
@@ -1377,7 +1377,7 @@ function galerieModules(nom, b, Q, main) { const N = app.norme, fams = famillesD
   if (autres[0] && autres[0].etat === 'ko') autres[0].raison = 'le plus proche — ' + autres[0].raison;
   const nomF = nomDeFamille(N, fam) || fam, autresH = autresCandidats(nom, `Les ${autres.length} autres modules ${nomF}, du plus proche au plus loin`, autres);
   const onglets = fams.length > 1 ? `<div class="fi-gal-onglets" role="group" aria-label="La norme">${fams.map(f => `<button type="button" class="fi-chip" data-gal-famille="${escA(f)}" aria-pressed="${f === fam}">${esc(nomDeFamille(N, f) || f)}</button>`).join('')}</div>` : '';
-  const auto = main || Q.main ? `<button type="button" class="btn papier fi-gal-auto" data-auto="${escA('arr:' + nom)}" data-bulle="Rendre le choix de l’outil : le plus petit module qui loge ces potentiels">Automatique</button>` : '<span class="fi-gal-mot">Automatique</span>';
+  const auto = main || Q.main ? `<button type="button" class="btn papier fi-gal-auto" data-auto="${escA('arr:' + nom)}" data-bulle="Rendre le choix de VOLTA : le plus petit module qui loge ces potentiels">Automatique</button>` : '<span class="fi-gal-mot">Automatique</span>';
   const cartes = vs.map((m, i) => { let Qv = null; try { Qv = remplirModules(b, N, m.reference); } catch (_) { Qv = null; }
     const pris = new Map(); (Qv ? Qv.fils : []).filter(x => x.module === 0).forEach(x => pris.set(x.contact.lettre, x));
     const f = faceModuleSvg(m, ct => { const x = pris.get(ct.lettre); if (!x) return null; const cl = coulDeFil(x.f); return { i: '', couleur: cl, couleurClaire: melanger(cl, 0.8), ko: x.jaugeOk === false }; });

@@ -134,7 +134,9 @@ function brochageVue(nom, sous, cons, o) { const xs = (cons || []).filter(c => c
         + (l.masse ? `<path class="bro-masse" d="M${x1} ${yy - 7}v14M${x1 + 4} ${yy - 4.5}v9M${x1 + 8} ${yy - 2}v4"/><text class="bro-vers" x="${xd}" y="${yy + 4.5}">${esc(l.vers)}</text><text class="bro-mot" x="${xd + 8 + l.vers.length * 7.8}" y="${yy + 4}">masse</text>`
           : `<circle class="bro-bout" cx="${x1}" cy="${yy}" r="2.6"/><text class="bro-vers" x="${xd}" y="${yy + 4.5}">${esc(l.vers)}</text>`
             + (l.borneVers ? `<rect class="bro-pin-f" x="${xd + 6 + l.vers.length * 7.8}" y="${yy - 9}" width="${12 + String(l.borneVers).length * 6.6}" height="18" rx="5"/><text class="bro-pin" x="${xd + 12 + l.vers.length * 7.8 + String(l.borneVers).length * 3.3}" y="${yy + 4}">${esc(l.borneVers)}</text>` : ''))
-        + (l.ko ? `<text class="bro-ko" x="${xm}" y="${yy + 12}">${esc(l.ko)}</text>` : '') + '</g>'; }); });
+        + (l.ko ? (() => { const xk = xd + l.vers.length * 7.8 + (l.borneVers ? 24 + String(l.borneVers).length * 6.6 : (l.masse ? 60 : 10));
+          // le défaut se dit au bout de la ligne, après la borne d'arrivée, s'il y tient ; sinon sous le câble
+          return xk + String(l.ko).length * 6.2 < W - 4 ? `<text class="bro-ko bout" x="${xk}" y="${yy + 4}">${esc(l.ko)}</text>` : `<text class="bro-ko" x="${xm}" y="${yy + 12}">${esc(l.ko)}</text>`; })() : '') + '</g>'; }); });
   return `<svg class="vu-bro${petit ? ' petit' : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('Le brochage de ' + nom)}">${out}</svg>`; }
 
 /* ---- COMMENT VOLTA L'A DÉCIDÉ : des étapes numérotées, une phrase chacune et sa source ---- */

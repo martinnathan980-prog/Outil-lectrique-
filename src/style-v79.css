@@ -12,9 +12,9 @@
      calibres (un plateau en creux), une attention (une carte ambrée), les chiffres (grands, nus), « Tout voir ».
    Jetons : --v-bande (la bande), --v-fond (la page sous les cartes), sur l'inspecteur, dans les deux thèmes.
    ═══════════════════════════════════════════════════════════════════════ */
-#inspecteur,.carte-double,#fiche{--v-bande:#26282d;--v-bande-2:#30333a;--v-bande-t:#e8e9ec;--v-bande-s:#a3a6ad;--v-fond:#f3f2ee;--v-cuivre-vif:#e59c64}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double,#fiche){--v-bande:#141518;--v-bande-2:#1f2024;--v-bande-t:#e8e9ec;--v-bande-s:#9a9da4;--v-fond:#1c1d21} }
-:root[data-theme="dark"] :is(#inspecteur,.carte-double,#fiche){--v-bande:#141518;--v-bande-2:#1f2024;--v-bande-t:#e8e9ec;--v-bande-s:#9a9da4;--v-fond:#1c1d21}
+#inspecteur,.carte-double,#fiche,#raccourcis{--v-bande:#26282d;--v-bande-2:#30333a;--v-bande-t:#e8e9ec;--v-bande-s:#a3a6ad;--v-fond:#f3f2ee;--v-cuivre-vif:#e59c64}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double,#fiche,#raccourcis){--v-bande:#141518;--v-bande-2:#1f2024;--v-bande-t:#e8e9ec;--v-bande-s:#9a9da4;--v-fond:#1c1d21} }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double,#fiche,#raccourcis){--v-bande:#141518;--v-bande-2:#1f2024;--v-bande-t:#e8e9ec;--v-bande-s:#9a9da4;--v-fond:#1c1d21}
 
 /* ─── LA BANDE DES ONGLETS ─── */
 .nv-grand .nv-onglets{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(132px,1fr);gap:4px;margin:6px 0 0;padding:8px 14px 0;border-radius:0;
@@ -256,7 +256,7 @@ body.biblio #table .ta-courant::after,body.table-graphite #table .ta-courant::af
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #base .rc-onglets{background:#19191c} }
 :root[data-theme="dark"] #base .rc-onglets{background:#19191c}
 /* une puce à zéro se tait à moitié */
-#base .rc-puces .zero{opacity:.45}
+#base :is(.rc-puces,#ba-puces) .rc-chip.zero:not([aria-pressed="true"]){display:none}
 /* un câble : l'intensité et la chute dans leur carte */
 .nv-grand .nv-panneau>.fi-mesures{margin:0;padding:18px 20px 16px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.04)}
 .nv-grand .nv-panneau>.fi-hyp-l{margin:0;padding:12px 16px;border-radius:12px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--warn)}
@@ -320,7 +320,7 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 #fiche .nm-nav .onglet[aria-selected="true"]{position:relative;background:var(--v-fond);color:var(--t-1);opacity:1;box-shadow:none}
 #fiche .nm-nav .onglet[aria-selected="true"]::after{content:"";position:absolute;left:16px;right:16px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--nv-cuivre)}
 #fiche .fiche-tete.avec-onglets .min0{flex:1;min-width:0}
-#fiche .fiche-tete.avec-onglets .titre.sr+.nm-nav{margin-top:10px}
+#fiche .fiche-tete.avec-onglets .titre+.nm-nav{margin-top:14px}
 /* le texte d'ouverture : une phrase posée sur la page */
 #fiche .fiche-corps>:is(p.note,.vf-lead,.co-lead,.no-intro,.bl-chapeau){margin:0 2px 14px;font:400 var(--f-13)/1.55 var(--sans);color:var(--t-2);max-width:68ch}
 /* les sections : des cartes */
@@ -336,8 +336,6 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 /* le titre d'une section : la barre de cuivre, comme dans la fiche */
 #fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3){position:relative;margin:0 0 10px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
 #fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3)::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
-#fiche label.co-champ>.co-etiquette::before{display:none}
-#fiche label.co-champ>.co-etiquette{padding-left:0}
 #fiche .nm-dom-sens{margin:0 0 10px 14px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
 /* le pied : posé, ses boutons alignés */
 #fiche .fiche-pied{gap:10px;padding:12px 18px;background:var(--s-surface);border-top:1px solid var(--s-line)}
@@ -361,3 +359,151 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 .en-retest-n{order:2;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#f2a46b;color:#1a1a1c;font:700 var(--f-11)/1 var(--sans)}
 .en-retest-n::after{display:none}
 .en-retest-mot{font-weight:600}
+
+/* ═══ TOUR DU SITE (2) — ce que les relecteurs ont vu dans les documents et les feuilles ═══ */
+/* la nomenclature : le titre d'une section porte sa barre de cuivre sur sa ligne (plus le filet hérité de .sous-titre) */
+#fiche .no-st{padding-top:0;border-top:0;margin-top:0}
+#fiche .fiche-corps>.no-section{margin-top:0}
+/* l'aperçu du cartouche : toujours sur le papier du folio, le jour comme la nuit */
+#fiche .ca-apercu{padding:14px}
+#fiche .ca-apercu svg{box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#fdfcf9;box-shadow:0 0 0 1px rgba(28,22,12,.10)}
+/* les onglets de Normes et Bible : la bande court jusqu'au bord, sans fondu de défilement (ils tiennent toujours) */
+#fiche .nm-nav{-webkit-mask-image:none;mask-image:none;animation:none;overflow:visible;padding-right:14px}
+#fiche .nm-nav .onglet:focus-visible{outline:2px solid var(--v-cuivre-vif);outline-offset:-6px;border-radius:12px 12px 0 0}
+#fiche .nm-nav .onglet[aria-selected="true"]:focus-visible{outline-color:color-mix(in srgb,var(--nv-cuivre) 55%,transparent)}
+
+/* la feuille des raccourcis : un document comme les autres — la tête (« Aide », le titre), la page en creux, chaque groupe
+   une carte titrée à la barre de cuivre ; le papier neutre (graphite la nuit, jamais le marine de la table) */
+.rk-feuille{width:min(1040px,100%);padding:0;background:var(--v-fond);box-shadow:var(--sh-carte);overflow:auto}
+.rk-tete{position:sticky;top:0;z-index:2;margin:0;padding:18px 18px 16px 24px;align-items:flex-start;background:var(--s-surface);border-bottom:1px solid var(--s-line)}
+.rk-tete .sur{margin:0 0 4px;font:650 var(--f-11)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--nv-cuivre)}
+.rk-tete h2{font:650 22px/1.2 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
+.raccourcis .rk-groupes{columns:3 290px;column-gap:14px;padding:18px 20px 4px}
+.raccourcis .rk-groupe{break-inside:avoid;display:inline-block;width:100%;margin:0 0 14px;padding:14px 16px 8px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.04)}
+.raccourcis .rk-groupe h3{position:relative;margin:0 0 6px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+.raccourcis .rk-groupe h3::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
+.raccourcis .rk-ligne{min-height:38px;padding:5px 0}
+.raccourcis .rk-ligne:last-child{border-bottom:0}
+.raccourcis .rk-ligne dt small{color:var(--t-3)}
+.raccourcis .rk-pied{margin:0;padding:4px 24px 18px;color:var(--t-3)}
+.raccourcis .rk-ligne kbd{background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2),0 1px 0 var(--s-line-2);color:var(--t-1)}
+
+/* le carnet de séance : le même papier ; son champ, un filet fin, le cuivre au focus ; posé au-dessus de la bande des folios */
+#carnet{box-shadow:var(--sh-carte)}
+#carnet textarea{border:1px solid var(--s-line-2);background:var(--s-sunken)}
+#carnet textarea:focus{outline:none;border-color:var(--nv-cuivre);box-shadow:var(--anneau)}
+#carnet .cn-tete b{position:relative;padding-left:14px}
+#carnet .cn-tete b::before{content:"";position:absolute;left:0;top:.15em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
+/* les vignettes de la bible, la nuit : toujours du papier (un dessin), mais un papier de nuit qui n'éblouit pas */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #fiche .picto{--s-papier:#e4e1da;--s-papier-grille:#d7d3ca;--s-surface:#efece6;--s-line-2:#c4bfb5} }
+:root[data-theme="dark"] #fiche .picto{--s-papier:#e4e1da;--s-papier-grille:#d7d3ca;--s-surface:#efece6;--s-line-2:#c4bfb5}
+/* le bouton principal d'un document, la nuit : la pierre, jamais le blanc pur (le plus lumineux de l'écran) */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#fiche,#raccourcis,#carnet) .btn.cuivre{background:#d8d4cc;border-color:#d8d4cc} :root:not([data-theme="light"]) :is(#fiche,#raccourcis,#carnet) .btn.cuivre:hover{background:#e8e5df;border-color:#e8e5df} }
+:root[data-theme="dark"] :is(#fiche,#raccourcis,#carnet) .btn.cuivre{background:#d8d4cc;border-color:#d8d4cc}
+:root[data-theme="dark"] :is(#fiche,#raccourcis,#carnet) .btn.cuivre:hover{background:#e8e5df;border-color:#e8e5df}
+#fiche .fiche-pied .espace{flex:1}
+.raccourcis .rk-groupes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;columns:auto;padding:18px 20px 14px}
+.raccourcis .rk-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.raccourcis .rk-col .rk-groupe{margin:0}
+@media (max-width:980px){ .raccourcis .rk-groupes{grid-template-columns:1fr} }
+/* le cartouche : ses deux cartes titrées, comme toutes les sections */
+#fiche .ca-t{position:relative;margin:0 0 12px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+#fiche .ca-t::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
+#fiche .ca-apercu{margin:0 0 14px}
+/* la bande d'onglets des normes passe sous la croix, jusqu'au bord ; l'onglet ouvert n'a pas d'anneau en plus de sa barre */
+#fiche .fiche-tete.avec-onglets .nm-nav{margin-right:-62px}
+#fiche .nm-nav .onglet[aria-selected="true"]:focus-visible{outline:none}
+
+/* ═══ LE CADRE (tour du site, 2) — aucun bleu dans les commandes : le bleu, c'est la table ═══ */
+#entete{background:rgba(20,21,24,.96)}
+.recherche{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16)}
+.recherche:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.26)}
+body.cherche .recherche{background:rgba(30,31,35,.96);border-color:var(--chrome-cuivre-ligne);box-shadow:0 0 0 3px var(--chrome-cuivre-soft)}
+.recherche .raccourci{background:rgba(255,255,255,.09)}
+/* le filet de cuivre sous la barre : une lueur très lente, à peine — plus une barre de chargement */
+#entete::after{background:linear-gradient(90deg,transparent 0%,rgba(232,160,106,0) 25%,rgba(232,160,106,.38) 50%,rgba(232,160,106,0) 75%,transparent 100%);background-size:200% 100%;animation-duration:46s}
+/* le sous-menu Exporter : ses groupes disent leur nom — ce folio, tout le plan */
+#mp-exporter .menu-bloc[data-groupe="folio"]::before,#mp-exporter .menu-bloc[data-groupe="contrat"]::before{content:attr(aria-label);display:block;padding:7px 12px 3px;font:650 10.5px/1.2 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--chrome-cuivre)}
+/* l'index des repères : un point seulement quand il y a quelque chose à voir ; « à voir » en ambre, jamais en rouge ;
+   pas de poignée de téléphone (la barre se tient quand même : la main au survol) */
+#inspecteur .ix-etat.ok{box-shadow:none}
+#inspecteur .ix-att{color:var(--warn);font-weight:500}
+body:is(.insp-flotte,.insp-epingle) #inspecteur .ix-tete::before{display:none}
+#inspecteur .ix-folio{font-family:var(--sans)}
+
+/* ═══ LE RÉCAPITULATIF (tour du site, 2) ═══ */
+/* une longueur supposée (l'hypothèse de la simulation) ne pèse pas comme une longueur mesurée : « ≈ », en gris */
+#base .rc-mesure.rc-suppose .rc-chiffre .rc-n{color:var(--t-3);font-weight:500}
+#base .rc-mesure.rc-suppose .rc-chiffre::before{content:"≈";order:-1;margin-right:1px;font:400 var(--f-12)/1 var(--sans);color:var(--t-3)}
+/* le champ qu'on écrit dans une case : le cuivre, un filet fin, jamais le gros bord blanc */
+#base .rc-saisie{border:1px solid var(--nv-cuivre);box-shadow:var(--anneau);outline:none}
+#base select.rc-saisie{-webkit-appearance:none;appearance:none;padding:0 26px 0 8px;background:var(--s-surface) no-repeat right 8px center/10px 10px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 3.5 5 7l3.5-3.5' fill='none' stroke='%23a9581f' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")}
+/* la barre d'alimentation qui arrive sur la borne 2 du disjoncteur : un rond de borne cuivré */
+.bi-hero .hs-source{fill:#1a1a1d;stroke:#f2a46b;stroke-width:1.4}
+/* les tuiles de l'accueil : rien de coupé — le nom tient sur sa ligne, le détail passe à la ligne s'il le faut ; la touche
+   de « Reprendre » ne paraît qu'au survol */
+.bi-accueil .bi-tuile,.bi-accueil .bi-dock .bi-demo .bi-carte-corps.bi-tuile{min-width:256px;max-width:330px;height:auto;min-height:72px;padding-top:10px;padding-bottom:10px}
+.bi-accueil .bi-tuile-t small{white-space:normal;overflow:visible;text-overflow:clip}
+.bi-accueil .bi-tuile-reprendre kbd{opacity:0;transition:opacity .2s}
+.bi-accueil .bi-tuile-reprendre:is(:hover,:focus-visible) kbd{opacity:1}
+.vu-bro .bro-ko.bout{font-size:11px;text-anchor:start}
+/* le récapitulatif étroit (une fiche rangée à côté) : les cases se resserrent, les longs textes passent à la ligne,
+   la flèche du câble raccourcit — rien ne sort à droite */
+#ba-corps{container-type:inline-size;container-name:rc-corps}
+@container rc-corps (max-width:860px){
+  .rc-tab th,.rc-tab td{padding-left:9px;padding-right:9px}
+  .rc-tab td.rc-c-cable{min-width:168px;padding-right:14px}
+  .rc-tab td.rc-c-bout{min-width:96px}
+  .rc-tab td.rc-c-etat{min-width:96px}
+  .rc-fleche{max-width:64px;min-width:28px}
+  .rc-tab td:is(.rc-c-id,.rc-c-norme) .rc-norme,.rc-tab td .rc-choix{white-space:normal}
+  .rc-tab td .rc-choix{display:inline}
+  .rc-tab td:has(.rc-choix),.rc-tab td:has(.rc-norme){white-space:normal;min-width:120px}
+  .rc-tab th.rc-c-mesure .rc-th-l{flex-wrap:wrap}
+}
+/* la fiche étroite (rangée à côté du récapitulatif) : tous ses onglets tiennent — de même largeur, resserrés */
+@container insp (max-width:620px){
+  .nv-grand .nv-onglets{grid-auto-columns:minmax(0,1fr);gap:2px;padding:8px 8px 0}
+  .nv-grand .nv-onglet{padding:0 10px}
+  .nv-grand .nv-onglet .nv-o-t{font-size:var(--f-14)}
+  .nv-grand .nv-onglet .nv-o-s{font-size:var(--f-11)}
+}
+#base .rc-retest .rc-chiffre{white-space:nowrap}
+#base .rc-retest.autre .rc-n{color:var(--t-3);text-decoration-thickness:1.5px}
+/* les flèches des liaisons partent toutes du même endroit : la case du type (et son ↻) a une largeur fixe */
+#base .rc-cable-type{display:inline-flex;align-items:center;gap:2px;min-width:78px;flex:none}
+
+/* ═══ LES HYPOTHÈSES (tour du site, 2) : l'unité dans le champ, un seul bord droit ; plus de « ? » — la phrase porte le
+   détail au survol (soulignée d'un pointillé) ═══ */
+#fiche .hy-ligne{grid-template-columns:minmax(0,1fr) auto auto}
+#fiche .hy-champ .hyp-n input{width:128px;padding-right:38px}
+#fiche .hy-champ .hyp-liste input{width:200px;padding-right:30px}
+#fiche .hy-champ .hyp-n .u{grid-column:3;justify-self:end;align-self:center;margin-right:12px;pointer-events:none;color:var(--t-3)}
+#fiche .hy-champ .hyp-n select{grid-column:3}
+#fiche .hy-champ .hyp-c input{grid-column:3}
+#fiche .hy-sert{display:block}
+#fiche .hy-sert .hy-q{display:inline;width:auto;height:auto;padding:0;border-radius:0;box-shadow:none;background:none;font:inherit;color:inherit;cursor:help;text-decoration:underline dotted color-mix(in srgb,var(--t-3) 70%,transparent);text-underline-offset:3px}
+#fiche .hy-sert .hy-q::before{display:none}
+#fiche .hy-sert .hy-q:is(:hover,:focus-visible){color:var(--t-1);text-decoration-color:var(--nv-cuivre);outline:none}
+/* Vos fichiers : la barre de cuivre suffit (plus d'icône carrée en double) ; un état neutre a un point gris, pas ambre */
+#fiche .vf-carte .vf-ic{display:none}
+#fiche .vf-carte.e-vide .vf-etat i{background:var(--t-3)}
+/* Coller des lignes : « Vos lignes » est une section comme les autres ; la précision d'un titre passe dessous ; l'exemple
+   défile s'il est plus large, un fondu le dit */
+#fiche .fiche-corps>label.co-champ{display:block;margin:0 0 14px;padding:16px 18px 18px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.04)}
+#fiche .fiche-corps>label.co-champ>.co-etiquette{display:block}
+#fiche .fiche-corps>label.co-champ textarea{margin-top:4px;background:var(--s-sunken)}
+#fiche .co-bloc>h3.co-etiquette:has(>small){display:block}
+#fiche .co-bloc>h3.co-etiquette>small{display:block;margin:3px 0 0;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-3)}
+#fiche .co-bloc>h3.co-etiquette>small::before{display:none}
+#fiche .co-exemple .vf-apercu{overflow-x:auto;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+/* l'anneau du clavier, sur le papier des fiches et des documents : le cuivre, jamais le bleu glacé */
+#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet{--anneau-c:var(--nv-cuivre)}
+#fiche .vr-def{text-decoration:underline dotted color-mix(in srgb,var(--t-3) 70%,transparent);text-underline-offset:3px;cursor:help}
+#fiche .vr-def:is(:hover,:focus-visible){text-decoration-color:var(--nv-cuivre);outline:none}
+#fiche .vr-sommaire button.on{box-shadow:inset 3px 0 0 var(--nv-cuivre)}
+#fiche .vf-carte .vf-tete,#fiche .vf-carte:not(.vf-grande) .vf-tete{grid-template-columns:minmax(0,1fr) auto}
+#fiche .vf-cartes>.vf-carte{--vf-retrait:0px}
+/* la bible : les références s'alignent à gauche (on les lit comme une liste), leur en-tête aussi */
+#fiche .bible th.c-ref{text-align:left}
+#fiche .bible td.ref .ref-btn{margin:0;justify-content:flex-start;text-align:left}

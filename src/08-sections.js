@@ -174,7 +174,7 @@ function bulleAideHtml(e) { const comment = e.etapes.length && !e.chiffres.lengt
   const volet = (cle, mot, html, ouvert) => `<button type="button" class="q-plier" data-q-volet="${cle}" aria-expanded="${ouvert}">${esc(mot)}<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="q-volet" data-q-corps="${cle}"${ouvert ? '' : ' hidden'}>${html}</div>`;
   const etapes = e.etapes.length ? volet('comment', 'Comment', `<ol class="q-etapes">${e.etapes.map((t, k) => `<li style="--k:${k}"><span>${k + 1}</span>${esc(t)}</li>`).join('')}</ol>`, comment) : '';
   const sources = e.sources ? volet('sources', 'D’où ça vient', `<p class="q-sources">${esc(e.sources)}</p>`, false) : '';
-  return `<div class="q-tete"><span class="q-ico" aria-hidden="true">?</span><b id="fi-q-titre">${esc(e.titre || 'Comment l’outil choisit')}</b></div>`
+  return `<div class="q-tete"><span class="q-ico" aria-hidden="true">?</span><b id="fi-q-titre">${esc(e.titre || 'Comment VOLTA choisit')}</b></div>`
     + `<p class="q-phrase">${esc(e.phrase || 'L’explication arrive.')}</p>${pastilles}${etapes || sources ? `<div class="q-volets">${etapes}${sources}</div>` : ''}`; }
 /* Le bouton « ? » d'une valeur : `cle` dit laquelle, `ctx` ce qui la précise — les objets mêmes du moteur (le verdict d'un
    disjoncteur, le plan d'un module, l'habillage d'un connecteur : ce que 08-explications sait lire). Ils se gardent le
@@ -184,7 +184,7 @@ const AIDE_CTX = { n: 0, m: new Map() };
 const remettreAides = () => { AIDE_CTX.n = 0; AIDE_CTX.m.clear(); };
 const aide = (cle, ctx) => { const t = (AIDES_PROVISOIRES[cle] || [cle])[0]; let id = '';
   if (ctx) { id = String(++AIDE_CTX.n); AIDE_CTX.m.set(id, ctx); }
-  return `<button type="button" class="fi-q" data-q="${escA(cle)}"${id ? ` data-q-id="${id}"` : ''} aria-label="${escA('Comment l’outil le choisit — ' + t)}" aria-expanded="false" aria-haspopup="dialog">?</button>`; };
+  return `<button type="button" class="fi-q" data-q="${escA(cle)}"${id ? ` data-q-id="${id}"` : ''} aria-label="${escA('Comment VOLTA le choisit — ' + t)}" aria-expanded="false" aria-haspopup="dialog">?</button>`; };
 /* LA BULLE du « ? » : une seule à la fois, sous le bouton (au-dessus s'il n'y a pas la place), qui suit le défilement. */
 const AIDE = { el: null, bouton: null };
 function fermerAide(rendreFocus) { const b = AIDE.bouton; AIDE.bouton = null; if (AIDE.el) AIDE.el.hidden = true;

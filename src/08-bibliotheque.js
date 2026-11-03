@@ -584,10 +584,13 @@ const FOLIOS_VITRINE = [
    SCHÉMA VIVANT, dessiné au trait clair sur le graphite — un disjoncteur, une barrette qui distribue, deux relais, une
    prise de coupure, une vanne, leurs masses ; les câbles se tracent à l'arrivée, puis le courant les parcourt (trois
    points de cuivre) ; survoler une pièce l'allume. Leurs vrais mots : repères, types de câble, bornes. */
+// (un relecteur : « un disjoncteur alimenté par la masse, un ingénieur le voit tout de suite ») : la borne 2 du disjoncteur
+// reçoit la barre d'alimentation — un rond de borne et sa tension ; les masses restent du côté des charges
+const sourceHero = (x, y) => `<circle class="hs-source" cx="${x}" cy="${y + 4}" r="4.2"/>`;
 const masseHero = (x, y) => `<path class="hs-masse" d="M${x} ${y}v9M${x - 8} ${y + 9}h16M${x - 5} ${y + 13}h10M${x - 2} ${y + 17}h4"/>`;
 const HERO_FILS = [
   ['M186 110H330', 'DR12', 258, 104, '102CB1 : 1 → 668VT31'], ['M340 70H560', 'DR20', 450, 64, '668VT31 → 381RL1 : 1'], ['M340 150H560', 'DR20', 450, 144, '668VT31 → 382RL2 : 1'],
-  ['M340 224H758', 'DR22', 550, 218, '668VT31 → 412VC3B'], ['M776 224H900', 'DR22', 838, 218, '412VC3B → 540VL5 : 1'], ['M186 164H232V198', '', 0, 0, '102CB1 : 2 → masse 901G'],
+  ['M340 224H758', 'DR22', 550, 218, '668VT31 → 412VC3B'], ['M776 224H900', 'DR22', 838, 218, '412VC3B → 540VL5 : 1'], ['M186 164H232V194', '', 0, 0, '102CB1 : 2 ← la barre 28 V CC'],
   ['M670 78H726V100', '', 0, 0, '381RL1 : 2 → masse'], ['M670 158H726V180', '', 0, 0, '382RL2 : 2 → masse'], ['M1020 232H1070V252', '', 0, 0, '540VL5 : 2 → masse']];
 const HERO_COURANTS = ['M186 110H335V70H560', 'M186 110H335V150H560', 'M186 110H335V224H900'];
 /* (v79, un relecteur : « une planche technique plutôt qu'un site vitrine ») : le schéma posé dans le cadre d'un folio —
@@ -604,8 +607,8 @@ function heroSchema() {
     + bloc(560, 52, 110, 50, '381RL1', 'relais') + bloc(560, 132, 110, 50, '382RL2', 'relais')
     + `<g class="hs-piece hs-vc"><rect class="hs-barre" x="758" y="196" width="7" height="58" rx="2"/><rect class="hs-barre" x="769" y="196" width="7" height="58" rx="2"/><text class="hs-rep" x="767" y="276">412VC3B</text></g>`
     + bloc(900, 204, 120, 50, '540VL5', 'vanne')
-    + masseHero(232, 198) + masseHero(726, 100) + masseHero(726, 180) + masseHero(1070, 252)
-    + `<text class="hs-c hs-g" x="246" y="214">901G</text>` + bornes
+    + sourceHero(232, 194) + masseHero(726, 100) + masseHero(726, 180) + masseHero(1070, 252)
+    + `<text class="hs-c hs-g" x="244" y="202">28 V CC</text>` + bornes
     + HERO_COURANTS.map((d, i) => `<circle class="hs-courant" r="3.2"><animateMotion dur="${(2.6 + i * .5).toFixed(1)}s" begin="${(2.4 + i * 1.1).toFixed(1)}s" repeatCount="indefinite" path="${d}" keyPoints="0;1" keyTimes="0;1" calcMode="linear"/></circle>`).join('')
     + `</svg></div>`; }
 const vitrineAccueil = heroSchema;

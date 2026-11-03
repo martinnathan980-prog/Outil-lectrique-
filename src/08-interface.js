@@ -1590,6 +1590,8 @@ const reperesDuContrat = () => memoContrat('reperes', () => { const V = verite()
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1')
     out.push({ nom: l.aPoser, genre: 'barrette', plan: p, plans: p === '*' ? [] : [p], sous: 'ajoutée par VOLTA sur ' + l.de + ':' + l.borneDe }); }));
   return out.sort((a, b) => triNaturel(a.nom, b.nom) || triNaturel(a.plan || '', b.plan || '')); });
+// les folios d'un repère, en toutes lettres : « folio 2 », « folios 1 · 3 », « 5 folios »
+const foliosDeLIndex = ps => ps.length > 3 ? ps.length + ' folios' : (ps.length > 1 ? 'folios ' : 'folio ') + ps.join(' · ');
 /* L'index : d'abord ce qu'il y a à reprendre (08 quater, par genre), puis les repères par genre — les disjoncteurs à part.
    Le filtre cherche dans les repères et ce qu'on écrit dessous (la désignation, la description du retest, le calibre, le
    part number) — et dans les CÂBLES (l'audit v72 : « l'index R trouve les câbles ») : un numéro, un type. */
@@ -1605,10 +1607,10 @@ function rendreIndex(box) { const etats = new Map();
   const groupes = [['cb', 'Disjoncteurs'], ['eqpt', 'Équipements'], ['barrette', 'Barrettes'], ['coupure', 'Prises de coupure']].map(([g, t]) => { const xs = items.filter(r => r.genre === g); if (!xs.length) return '';
     return `<div class="ix-groupe"><span>${t}</span><b>${xs.length}</b></div><ul class="ix-liste">` + xs.map(r => `<li><button class="ix-item" data-nom="${escA(r.nom)}"${r.plan ? ` data-plan="${escA(r.plan)}"` : ''}>`
       + `<span class="ix-etat ${etats.get(r.nom) || 'ok'}" aria-hidden="true"></span><span class="min0"><b>${marque(r.nom)}</b><small>${insecable(marque(r.sous))}</small></span>`
-      + (r.plans.length ? `<span class="ix-folio">${esc(r.plans.length > 3 ? r.plans.length + ' folios' : 'f. ' + r.plans.join(' · '))}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join('')
+      + (r.plans.length ? `<span class="ix-folio">${esc(foliosDeLIndex(r.plans))}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join('')
     + (cables.length ? `<div class="ix-groupe"><span>Câbles</span><b>${cables.length > 12 ? '12 / ' + cables.length : cables.length}</b></div><ul class="ix-liste">` + cables.slice(0, 12).map(l => { const p = plansDuFil(l.cable);
       return `<li><button class="ix-item ix-cable" data-cable="${escA(l.cable)}"><span class="ix-etat ok" aria-hidden="true"></span><span class="min0"><b>${marque(l.cable)}</b><small>${marque(l.type || 'sans type')} · ${esc(l.de)} → ${esc(l.vers)}</small></span>`
-        + (p.length ? `<span class="ix-folio">${esc(p.length > 3 ? p.length + ' folios' : 'f. ' + p.join(' · '))}</span>` : '') + '</button></li>'; }).join('') + '</ul>' : '');
+        + (p.length ? `<span class="ix-folio">${esc(foliosDeLIndex(p))}</span>` : '') + '</button></li>'; }).join('') + '</ul>' : '');
   const meme = box.dataset.cle === 'index', haut = box.scrollTop, nko = (CONTROLE.items || []).filter(x => x.niveau === 'ko').length, natt = (CONTROLE.items || []).length - nko;
   box.className = 'fi ix'; box.dataset.cle = 'index';
   // la fiche qu'on y a laissée : ‹ la rouvre (Alt+←), à la même place
@@ -1616,8 +1618,8 @@ function rendreIndex(box) { const etats = new Map();
   box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" data-bulle="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" data-bulle="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" data-bulle="Ajouter un équipement : son repère, puis ses câbles dans le tableau" aria-label="Ajouter un équipement" aria-expanded="${!!app.insp.ajout}">${ico('plus')}</button>${boutonTaille()}${boutonEpingle()}<button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer · Échap">${ico('fermer')}</button></header>`
     // ajouter un équipement : un champ en ligne, sous le titre (pas une boîte du navigateur)
     + (app.insp.ajout ? `<form class="ix-ajout" id="ix-ajout"><div class="filtre">${ico('plus')}<input id="ix-nouveau" placeholder="Repère du nouvel équipement, par exemple 105RL2" aria-label="Repère du nouvel équipement" autocomplete="off" spellcheck="false"></div><button class="btn cuivre" type="submit">Ajouter</button><button class="btn lien" type="button" id="ix-annuler">Annuler</button></form>` : '')
-    + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation, un câble" aria-label="Chercher un repère ou un câble" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
+    + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Filtrer la liste : un repère, une référence" aria-label="Filtrer la liste des repères" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
+    + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? `<span class="ix-att"> · ${natt} à voir</span>` : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
     + (groupes || `<div class="ix-vide"><span class="ix-vide-ico" aria-hidden="true">${ico('loupe')}</span><p>Aucun repère ni câble ne contient « ${esc(app.insp.filtre.trim())} ».</p><button class="btn papier" id="ix-effacer">Effacer la recherche</button></div>`);
   // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
   box.scrollTop = meme ? haut : 0; survolQuiSuit(box); if (typeof lierBulles === 'function') lierBulles(box);
@@ -2216,8 +2218,8 @@ const valeurDeLOutil = c => { const v = HYPOTHESES[c.k]; if (c.genre === 'choix'
   return v == null ? 'vide' : nombre(v) + (c.unite ? ' ' + c.unite : ''); };
 const ligneHypotheseHtml = (c, H) => { const reglee = c.k && c.k in HYPOTHESES && JSON.stringify(H[c.k]) !== JSON.stringify(HYPOTHESES[c.k]);
   return `<div class="hy-ligne${reglee ? ' reglee' : ''}"><div class="hy-champ">${champHypotheseHtml(c, H)}</div>`
-    + (reglee ? `<button class="hy-rendre" data-hy-rendre="${escA(c.k)}" data-bulle="${escA('Revenir à la valeur de l’outil : ' + valeurDeLOutil(c))}">↺ ${esc(valeurDeLOutil(c))}</button>` : '')
-    + `<p class="hy-sert">${esc(courtDe(c))}<button type="button" class="hy-q" data-bulle="${escA(c.sert + (c.genre === 'condition' && c.titre ? ' — ' + c.titre : ''))}" aria-label="${escA('Ce que fait « ' + c.lib + ' » : ' + c.sert)}">?</button></p></div>`; };
+    + (reglee ? `<button class="hy-rendre" data-hy-rendre="${escA(c.k)}" data-bulle="${escA('Revenir à la valeur de VOLTA : ' + valeurDeLOutil(c))}">↺ ${esc(valeurDeLOutil(c))}</button>` : '')
+    + `<p class="hy-sert"><span class="hy-q" tabindex="0" data-bulle="${escA(c.sert + (c.genre === 'condition' && c.titre ? ' — ' + c.titre : ''))}" aria-label="${escA('Ce que fait « ' + c.lib + ' » : ' + c.sert)}">${esc(courtDe(c))}</span></p></div>`; };
 /* LA FICHE DES HYPOTHÈSES : un document à droite (mode `hypotheses`), comme des réglages — un groupe par thème, une ligne
    par hypothèse : son nom, son champ aligné à droite, ce qu'elle fait en petit (style.css, `.hy-*`) ; le pied dit où l'on
    en est (les valeurs de l'outil, ou combien sont réglées ici) et « Revenir aux valeurs de l'outil » rend `HYPOTHESES`.
@@ -2227,16 +2229,16 @@ function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }
   const reglees = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k])).length, defaut = !reglees;
   // le chapeau dit où vont ces réglages (l'ingénieur v73 : « si j'envoie le dossier, on ne peut pas refaire le calcul ») : ils
   // partent avec chaque export — la page « Hypothèses et sources » du dossier PDF, la feuille « VOLTA » de l'installation corrigée
-  const corps = tete('Simulation', 'Hypothèses') + '<p class="note">Ce que l’installation ne porte pas, VOLTA le suppose ; chaque fiche qui s’en sert le dit (<b>hypothèse</b>). <b>Ces réglages sont écrits dans chaque export</b> — la page « Hypothèses et sources » du dossier PDF, la feuille « VOLTA » de l’installation corrigée.</p>'
+  const corps = tete('Réglages', 'Hypothèses') + '<p class="note">Ce que votre installation ne dit pas, VOLTA le suppose ; chaque fiche qui s’en sert le dit. <b>Ces réglages sont écrits dans chaque export</b> (le dossier PDF, l’installation corrigée). Le détail de chacun se lit au survol de sa phrase.</p>'
     + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><h3 class="hy-titre">${esc(t)}</h3>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
-  const pied = `<span class="hy-etat${defaut ? '' : ' regle'}">${defaut ? 'Les valeurs de l’outil' : `<b>${pluriel(reglees, 'hypothèse')}</b> réglée${reglees > 1 ? 's' : ''} ici`}</span><span class="espace"></span>`
-    + `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de l’outil</button>`;
+  const pied = `<span class="hy-etat${defaut ? '' : ' regle'}">${defaut ? 'Les valeurs de VOLTA' : `<b>${pluriel(reglees, 'hypothèse')}</b> réglée${reglees > 1 ? 's' : ''} ici`}</span><span class="espace"></span>`
+    + `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de VOLTA</button>`;
   const deja = app.fiche && app.fiche.mode === 'hypotheses', y = deja ? $('fiche-corps').scrollTop : 0;
   ouvrirFiche({ mode: 'hypotheses', large: true }, corps, pied); if (deja) $('fiche-corps').scrollTop = y;
   lierHypotheses($('fiche-corps'), ficheHypotheses);
   $('fiche-corps').querySelectorAll('[data-hy-rendre]').forEach(b => b.onclick = () => { const k = b.dataset.hyRendre, v = HYPOTHESES[k];
-    app.simu[k] = Array.isArray(v) ? [...v] : v; apresHypotheses(); ficheHypotheses(); dire('La valeur de l’outil est rendue (' + b.textContent.replace('↺', '').trim() + ').'); });
-  $('hy-defaut').onclick = () => { app.simu = { ...HYPOTHESES, conditions: [...HYPOTHESES.conditions], calibresPreferes: [...HYPOTHESES.calibresPreferes] }; apresHypotheses(); ficheHypotheses(); dire('Les hypothèses de l’outil sont rétablies.'); }; }
+    app.simu[k] = Array.isArray(v) ? [...v] : v; apresHypotheses(); ficheHypotheses(); dire('La valeur de VOLTA est rendue (' + b.textContent.replace('↺', '').trim() + ').'); });
+  $('hy-defaut').onclick = () => { app.simu = { ...HYPOTHESES, conditions: [...HYPOTHESES.conditions], calibresPreferes: [...HYPOTHESES.calibresPreferes] }; apresHypotheses(); ficheHypotheses(); dire('Les hypothèses de VOLTA sont rétablies.'); }; }
 /* Une hypothèse a changé : gardée, le contrôle se refait (sa clé l'oublie), la fiche ouverte dans l'inspecteur aussi. */
 // le calibre du folio suit les hypothèses (`peindre` ne repeint que si un calibre a changé)
 function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); peindre(); rafraichirCarte(); }
@@ -2544,10 +2546,10 @@ const CHAMPS_CARTOUCHE = [['ca-titre', 'titre', 'Titre'], ['ca-auteur', 'auteur'
    l'échelle. Le plan se repeint quand un champ est quitté. */
 function ficheCartouche() { const c = app.contrat.cartouche, W = CART_FOLIO + CART_TITRE;
   const apercu = () => `<svg viewBox="-1 -1 ${W + 2} ${CART_H + 2}" role="img" aria-label="Aperçu du cartouche">${cartoucheSvg(W, CART_H, c, folioCourant(), [])}</svg>`;
-  const corps = tete('Sur chaque folio', 'Cartouche') + '<p class="note">Il part avec chaque planche enregistrée ou imprimée ; le numéro de folio s’écrit tout seul.</p>'
-    + `<figure class="ca-apercu" id="ca-apercu">${apercu()}</figure><div class="ca-form">`
+  const corps = tete('Réglages', 'Cartouche') + '<p class="note">Il s’écrit sur chaque folio, enregistré ou imprimé ; le numéro de folio se met tout seul.</p>'
+    + `<figure class="ca-apercu"><figcaption class="ca-t">Aperçu, sur le folio ${esc(String(folioDuCartouche(folioCourant()).rang || ''))}</figcaption><div id="ca-apercu">${apercu()}</div></figure><div class="ca-form"><h3 class="ca-t">Ce qui s’écrit</h3>`
     + champ('ca-titre', 'Titre', c.titre, { sans: true, ph: 'Le titre de la planche' }) + champ('ca-auteur', 'Dessiné par', c.auteur, { sans: true, ph: 'Initiales ou nom' })
-    + `<div class="grille ca-trois">${champ('ca-indice', 'Indice', c.indice, { ph: 'A' })}${champ('ca-date', 'Date', c.date, { ph: 'aaaa-mm-jj' })}${champ('ca-echelle', 'Échelle', c.echelle, { ph: '1:1' })}</div></div>`;
+    + `<div class="grille ca-trois">${champ('ca-indice', 'Indice', c.indice, { ph: 'A' })}${champ('ca-date', 'Date', c.date, { ph: 'aaaa-mm-jj' })}${champ('ca-echelle', 'Échelle', /^[—–-]$/.test(String(c.echelle || '').trim()) ? '' : c.echelle, { ph: 'sans' })}</div></div>`;
   ouvrirFiche({ mode: 'cartouche' }, corps, '');
   CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).addEventListener('input', e => { c[k] = e.target.value; $('ca-apercu').innerHTML = apercu(); }); $(id).addEventListener('change', () => { peindre(); rallumer(); sauver(); }); });
 }
@@ -2708,7 +2710,7 @@ function recitDuGeste(de, vers, p, sens) { const quoi = (p && p.quoi) || '', V =
     new Set([...da.keys(), ...db.keys()]).forEach(k => { const va = da.get(k) || '', vb = db.get(k) || ''; if (va === vb) return; const xs = k.split('|');
       if (xs[0] === 'sertir') noter('contact', 'le contact de ' + xs[1] + ':' + xs.slice(2).join('|'), vb ? 'à ' + vb : 'à l’automatique');
       else if (xs[1] === 'nature') noter('nature', 'la nature de ' + xs[0], vb ? 'à ' + guillemets(vb) : 'au type du repère');
-      else noter('choix', xs[0], vb ? 'à ' + guillemets(vb.split('|')[0] || vb) : 'au choix de l’outil'); });
+      else noter('choix', xs[0], vb ? 'à ' + guillemets(vb.split('|')[0] || vb) : 'au choix de VOLTA'); });
     [['raccords', 'le raccord de '], ['sexes', 'le sexe des contacts de ']].forEach(([m, mot]) => { const x = de[m] || new Map(), y = vers[m] || new Map();
       new Set([...x.keys(), ...y.keys()]).forEach(k => { if (JSON.stringify(x.get(k) || null) !== JSON.stringify(y.get(k) || null)) noter(m, mot + k, sens === 'court' ? 'changé' : sens === 'revient' ? 'comme avant' : 'changé', 'etat'); }); });
     // le disjoncteur d'abord (la cause), puis ses câbles, puis le reste
@@ -2820,7 +2822,7 @@ const NOM_EXEMPLE = 'Contrat d’exemple';
    « Exemple »). La barre du haut et la bibliothèque suivent (08-bibliotheque). */
 function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : (app.planId ? 'Plan vide' : 'Aucun plan ouvert'), exemple = n && app.nom === NOM_EXEMPLE;
   // les nombres liés à leur mot (l'audit des pages : « 67 / repères » coupé au bout de la ligne du menu)
-  const sous = n ? (exemple ? 'l’exemple embarqué · ' : '') + plurielLie(n, 'liaison') + ' · ' + plurielLie(reperesDuContrat().length, 'repère') + (P.length > 1 ? ' · ' + plurielLie(P.length, 'folio') : '') : '';
+  const sous = n ? plurielLie(n, 'liaison') + ' · ' + plurielLie(reperesDuContrat().length, 'repère') + (P.length > 1 ? ' · ' + plurielLie(P.length, 'folio') : '') : '';
   $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous; $('ctx-nom').title = nom;
   if (typeof synchroniserBibliotheque === 'function') synchroniserBibliotheque();
   // « Comparer au déjà-fait » sans base déposée ne dit rien (le technicien) : éteint au gris lisible, sa bulle dit pourquoi
@@ -2856,7 +2858,7 @@ function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDe
     b.querySelector('.bulle').textContent = 'L’installation corrigée : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
     // elle paraît : elle tombe d'un rien, une fois
     if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }
-  const m = $('mn-retest'); if (m) m.textContent = n ? mod : 'aucune modification pour l’instant';
+  const m = $('mn-retest'); if (m) m.textContent = n ? motChangements(n) : 'telle que votre fichier, rien de changé';
   const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'installation corrigée · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
 function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
 /* LE RAIL SE DÉPLIE (le technicien : « la liste à puces avec une pastille, je la prends pour des notifications ; le ⊸+ pour un
@@ -2979,23 +2981,25 @@ function entreeDuMenu(o) { if (!MENU) MENU = { actions: {} }; const D = id => do
    dit TOUT — refaire, la palette (Ctrl+K), les touches d'une fiche et du cadran — et le clavier ne s'en échappe plus
    (aria-modal : Tab tourne dans la feuille). Une touche qui ne vaut qu'à un endroit le dit sous sa ligne. */
 const RACCOURCIS = [
-  ['Se repérer', [['Chercher un repère, un câble, un part number, une borne', ['/']], ['Chercher un objet ou une action (« pdf », « hypothèses »…)', ['Ctrl', 'K']], ['Les repères et les problèmes', ['R']],
-    ['Le problème suivant, le précédent (les problèmes, puis ce qui est à voir)', ['P'], ['Maj', 'P']],
-    ['Folio précédent, suivant', ['←'], ['→']], ['La feuille entière, puis le dessin au plus près', ['0']], ['Zoomer, dézoomer', ['+'], ['−']], ['À 100 %, à 200 %', ['1'], ['2']],
-    ['Déplacer la vue (en glissant ; le bouton du milieu aussi)', ['Espace']]]],
+  ['Se repérer', [['Chercher un repère, une borne, une action', ['/'], ['Ctrl', 'K']], ['Les repères et les problèmes', ['R']],
+    ['Le problème suivant, le précédent|les problèmes, puis ce qui est à voir', ['P'], ['Maj', 'P']],
+    ['Folio précédent, suivant', ['←'], ['→']], ['Toute la feuille, puis le dessin', ['0']], ['Zoomer, dézoomer', ['+'], ['−']], ['À 100 %, à 200 %', ['1'], ['2']],
+    ['Déplacer la vue|en glissant, ou avec le bouton du milieu', ['Espace']]]],
   ['Lire en tableaux', [['Le récapitulatif, en moitié', ['B']], ['Le récapitulatif, en page', ['Maj', 'B']], ['La nomenclature', ['N']], ['Corriger une case', ['Entrée'], ['F2']], ['La case suivante', ['Tab']]]],
-  ['Dans une fiche', [['La fiche d’avant, d’après ; revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']], ['Renommer le repère', ['F2']],
-    ['Le calibre : le cran d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre ; rendre l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche, revenir au plan', ['Échap']]]],
-  ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire ce qu’on vient de défaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['Pousser le bloc choisi d’un carreau (cinq avec Maj)', ['↑'], ['↓']]]],
-  ['Ouvrir, sortir', [['Ouvrir une installation', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert, revenir', ['Échap']], ['Cette feuille', ['?']]]],
-  ['Améliorer VOLTA', [['Noter une hésitation dans le carnet de séance|l’écran où vous êtes s’écrit avec elle', ['C']]]]];
+  ['Dans une fiche', [['La fiche d’avant, d’après|et revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']], ['Renommer le repère', ['F2']],
+    ['Le calibre d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre, ou l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche', ['Échap']]]],
+  ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['Pousser le bloc choisi|d’un carreau ; de cinq avec Maj', ['↑'], ['↓']]]],
+  ['Ouvrir, sortir', [['Ouvrir une installation', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert', ['Échap']], ['Cette feuille', ['?']]]],
+  ['Améliorer VOLTA', [['Noter une hésitation|l’écran où vous êtes s’écrit avec elle', ['C']]]]];
+// trois colonnes de même hauteur : se repérer (et améliorer), lire et corriger, la fiche et sortir
+const RK_COLONNES = [[0, 5], [1, 3], [2, 4]];
 const raccourcisOuverts = () => { const el = $('raccourcis'); return !!el && !el.hidden; };
 function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
   if (!el) { el = document.createElement('div'); el.id = 'raccourcis'; el.className = 'raccourcis'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'rk-titre');
     const touches = ks => ks.map(k => `<kbd>${esc(k)}</kbd>`).join(''), dt = q => { const [t, ou] = q.split('|'); return esc(t) + (ou ? `<small>${esc(ou)}</small>` : ''); };
-    el.innerHTML = `<div class="rk-feuille"><header class="rk-tete"><h2 id="rk-titre">Raccourcis clavier</h2><button type="button" class="fi-x" id="rk-fermer" aria-label="Fermer (Échap)">${ico('fermer')}<span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button></header>`
-      + `<div class="rk-groupes">${RACCOURCIS.map(([t, xs]) => `<section class="rk-groupe"><h3>${esc(t)}</h3><dl>${xs.map(([quoi, ...ks]) => `<div class="rk-ligne"><dt>${dt(quoi)}</dt><dd>${ks.map(touches).join('<span class="rk-ou">ou</span>')}</dd></div>`).join('')}</dl></section>`).join('')}</div>`
-      + `<p class="rk-pied">Le rail se déplie au survol : chaque outil y dit son nom et sa touche. Dans un champ, les touches s’écrivent.</p></div>`;
+    el.innerHTML = `<div class="rk-feuille"><header class="rk-tete"><div class="min0"><div class="sur">Aide</div><h2 id="rk-titre">Raccourcis clavier</h2></div><button type="button" class="fi-x" id="rk-fermer" aria-label="Fermer (Échap)">${ico('fermer')}<span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button></header>`
+      + `<div class="rk-groupes">${RK_COLONNES.map(c => `<div class="rk-col">${c.map(i => RACCOURCIS[i]).map(([t, xs]) => `<section class="rk-groupe"><h3>${esc(t)}</h3><dl>${xs.map(([quoi, ...ks]) => `<div class="rk-ligne"><dt>${dt(quoi)}</dt><dd>${ks.map(touches).join('<span class="rk-ou">ou</span>')}</dd></div>`).join('')}</dl></section>`).join('')}</div>`).join('')}</div>`
+      + `<p class="rk-pied">Le rail, à gauche, dit au survol le nom et la touche de chaque outil. Dans un champ, les touches s’écrivent.</p></div>`;
     document.body.appendChild(el);
     el.addEventListener('pointerdown', e => { if (!e.target.closest('.rk-feuille')) fermerRaccourcis(); });
     el.querySelector('#rk-fermer').onclick = fermerRaccourcis;

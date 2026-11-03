@@ -45,6 +45,7 @@ s'écrit ici, le jour même.
 - **VOLTA toujours en capitales.**
 - Vocabulaire électrique : « disjoncte / ne disjoncte pas » (jamais « tient »), courant, calibre, borne, repère,
   connecteur, câble, contact à sertir.
+- **Gauge** (son mot, pas « jauge ») ; **folio** (pas « planche ») ; « VOLTA » partout où l'on écrivait « l'outil ».
 - **Chaque chiffre s'explique en clair.** Jamais « 10 % de marge » sans dire de quoi et ce que ça change : « VOLTA veut
   que le courant reste au moins 10 % sous la courbe ; ici il n'en est qu'à 4 %, il pourrait disjoncter ».
 - Un problème se dit simplement, avec ce qu'il faut faire.

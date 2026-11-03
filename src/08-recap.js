@@ -261,7 +261,7 @@ const COLONNES_LIAISONS = [
   { k: 'pnDe', t: 'Part number de', option: true, g: 'Les deux bouts', html: r => estMasse(r.l.de) || estRenvoi(r.l.de) ? rien : valT('pnDe', r.l.pnDe, { cls: 'rc-pn', ph: 'part number' }) + rendu(r.l, 'pnDe'), tri: r => r.l.pnDe || '', texte: r => r.l.pnDe || '' },
   { k: 'pnVers', t: 'Part number vers', option: true, g: 'Les deux bouts', html: r => estMasse(r.l.vers) || estRenvoi(r.l.vers) ? rien : valT('pnVers', r.l.pnVers, { cls: 'rc-pn', ph: 'part number' }) + rendu(r.l, 'pnVers'), tri: r => r.l.pnVers || '', texte: r => r.l.pnVers || '' },
   { k: 'plan', t: 'Folio', cls: 'rc-c-folio', option: true, g: 'Le dossier', si: () => modeFolio() !== 'aucun', html: r => modeFolioMemo() === 'auto'
-      ? `<span data-bulle="Découpé par l’outil : le folio se lit, il ne s’écrit pas">${(foliosParSourceMemo().get(cleDe(r.l)) || []).map(p => `<button class="rc-f" data-plan="${escA(p)}">${esc(p)}</button>`).join('')}</span>` : valT('plan', r.l.plan, { ph: 'folio' }),
+      ? `<span data-bulle="Découpé par VOLTA : le folio se lit, il ne s’écrit pas">${(foliosParSourceMemo().get(cleDe(r.l)) || []).map(p => `<button class="rc-f" data-plan="${escA(p)}">${esc(p)}</button>`).join('')}</span>` : valT('plan', r.l.plan, { ph: 'folio' }),
     tri: r => premierFolio(r.l), texte: r => modeFolioMemo() === 'auto' ? (foliosParSourceMemo().get(cleDe(r.l)) || []).join(' ') : r.l.plan },
   { k: 'harness', t: 'Harness', option: true, g: 'Le dossier', html: r => valT('harness', r.l.harness, { ph: 'harness', cls: 'rc-pn' }), tri: r => r.l.harness || '', texte: r => r.l.harness || '' },
   { k: 'fwd', t: 'FWD', option: true, g: 'Le dossier', html: r => valT('fwd', r.l.fwd, { ph: 'dessin', cls: 'rc-pn' }), tri: r => r.l.fwd || '', texte: r => r.l.fwd || '' },
@@ -489,8 +489,8 @@ const COLONNES_DISJ = [COL_REPERE,
       return `<span class="rc-mesure">${chiffre(val('calibre', d.calibre ? fmt(d.calibre, 2) : '', { cls: 'rc-n rc-fort rc-gamme-v', ph: '—', titre: (main ? 'Choisi à la main' : propose ? 'Proposé par VOLTA, pas encore écrit dans l’installation' : 'Choisi automatiquement') + ' — un clic, Entrée ou un double-clic : toute la gamme' }), d.calibre ? 'A' : '')}`
         + `${main ? orig('main') + rond('calibre', D.rendu) : propose ? '<i class="rc-o rc-propose" data-bulle="VOLTA le retient ; l’installation garde le sien tant que « Passer en … » (la fiche) ou le relevé de l’installation corrigée ne l’écrit pas">proposé</i>' : ''}</span>`; },
     tri: r => infoDisj(r.nom).d.calibre || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibre ? amperes(d.calibre) : ''; } },
-  { k: 'retest', t: 'Installation', cls: 'rc-c-mesure', html: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; if (!c) return rien; const autre = d.calibre && c !== d.calibre;
-      return `<span class="rc-mesure rc-retest${autre ? ' autre' : ''}" data-bulle="${escA('L’installation porte ' + (pnDuRepere(r.nom) || 'son part number') + (autre ? ' : ' + amperes(c) + ' — VOLTA retient ' + amperes(d.calibre) : ''))}">${autre ? chiffre(`<s class="rc-n">${fmt(c, 2)}${unite('A')}</s>`) : chiffre(`<b class="rc-n">${fmt(c, 2)}</b>`, 'A')}</span>`; },
+  { k: 'retest', t: 'Votre fichier', cls: 'rc-c-mesure', html: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; if (!c) return rien; const autre = d.calibre && c !== d.calibre;
+      return `<span class="rc-mesure rc-retest${autre ? ' autre' : ''}" data-bulle="${escA('Votre fichier porte ' + (pnDuRepere(r.nom) || 'son part number') + (autre ? ', un ' + amperes(c) + ' : VOLTA retient le ' + amperes(d.calibre) + ' (la fiche dit pourquoi, en ampères)' : ''))}">${autre ? chiffre(`<s class="rc-n">${fmt(c, 2)}</s>`, 'A') : chiffre(`<b class="rc-n">${fmt(c, 2)}</b>`, 'A')}</span>`; },
     tri: r => calibreDuRetest(r) || 0, texte: r => { const c = calibreDuRetest(r); return c ? amperes(c) : ''; } },
   { k: 'verdict', t: 'Verdict', cls: 'rc-c-etat', html: r => { const v = verdictDuCalibre(infoDisj(r.nom).d); return etatHtml(v.n, v.mot, v.bulle); }, tri: r => rangEtat(verdictDuCalibre(infoDisj(r.nom).d).n), texte: r => verdictDuCalibre(infoDisj(r.nom).d).mot },
   COL_PROBLEMES,
@@ -736,7 +736,7 @@ const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, 
    phrases du contrôle disent « câble » et « gauge » (elles disaient « fil » et « jauge ») : on lit les deux. */
 function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.exec(t) || /un ([\d,.]+ A) suffirait/.exec(t);
   if (/^ajoutée par VOLTA sur/.test(t)) return ['Donner son vrai repère à la barrette que VOLTA a ajoutée (onglet Barrettes)', 'connecteur'];
-  if (/profil de charge est à renseigner/.test(t)) return ['Renseigner le profil de charge du disjoncteur : l’outil trouve le calibre', 'profil'];
+  if (/profil de charge est à renseigner/.test(t)) return ['Renseigner le profil de charge du disjoncteur : VOLTA trouve le calibre', 'profil'];
   if (/déclenche|aucun calibre/.test(t)) return [ideal ? 'Retenir ' + ideal[1] + ' (sa fiche, ou la case Calibre de l’onglet Disjoncteurs)' : 'Alléger le profil ou changer de famille de disjoncteur', 'calibre'];
   if (/suffirait|touche la courbe|l’idéal est|\bjuste\b/.test(t)) return [ideal ? 'Retenir ' + ideal[1] : 'Retenir le calibre que VOLTA propose', 'calibre'];
   if (/sélectivité/.test(t)) return ['L’amont au moins au double de l’aval : changer l’un des deux calibres', 'calibre'];
@@ -775,7 +775,9 @@ const COLONNES_PROBLEMES = [
     tri: p => p.que, texte: p => { const G = gestesDuPb(p); return G.some(g => !/^Voir /.test(g.mot)) ? G.map(g => g.mot).join(' · ') : p.que; } },
   { k: 'folio', t: 'Folio', cls: 'rc-c-folio', option: true, html: p => p.plans.length ? `<span class="rc-folios">f.${INSECABLE}${esc(p.plans[0])}</span>` : rien, tri: p => p.plans[0] || '', texte: p => p.plans.join(' ') },
   { k: 'section', t: 'Dans la fiche', option: true, html: p => p.sec && p.x.nom && SECTIONS[p.sec] ? `<span class="rc-mot">${esc(SECTIONS[p.sec])}</span>` : rien, tri: p => p.sec, texte: p => SECTIONS[p.sec] || '' }];
-const PROBLEMES = { colonnes: COLONNES_PROBLEMES, portee: true, lignes: problemes, surFolio: p => app.plan === '*' || !p.plans.length || p.plans.includes(app.plan), exact: (p, f) => p.x.nom === f, cherche: 'Chercher : repère, mot…',
+// (tour du site, un relecteur : « le seul problème rouge, sur le folio 3, ne se voit pas depuis le folio 1 ») : les
+// problèmes se lisent toujours sur tout le plan — ils sont peu nombreux, et chaque puce dit combien sont sur ce folio
+const PROBLEMES = { colonnes: COLONNES_PROBLEMES, portee: false, lignes: problemes, surFolio: p => app.plan === '*' || !p.plans.length || p.plans.includes(app.plan), exact: (p, f) => p.x.nom === f, cherche: 'Chercher : repère, mot…',
   choisie: p => !!app.cible && app.cible.type === 'bloc' && app.cible.nom === p.x.nom, etat: p => p.x.niveau,
   puces: () => [['niveau:ko', 'Problèmes', p => p.x.niveau === 'ko', '', 'niveau'], ['niveau:att', 'À voir', p => p.x.niveau !== 'ko', '', 'niveau']],
   choisir: p => { if (p.x.nom) choisirRepere(p.x.nom, p.x.plan); }, survol: p => { if (p.x.nom) survolRepere(p.x.nom); },
@@ -808,7 +810,7 @@ const COLONNES_NORMES = [
   { k: 'norme', t: 'Norme', cls: 'rc-c-id', html: x => `<span class="rc-norme">${esc(x.norme)}</span>`, tri: x => x.norme, texte: x => x.norme },
   { k: 'titre', t: 'Table', html: x => `<span class="rc-table"${x.juge ? ` data-bulle="${escA(x.juge)}"` : ''}><b>${esc(x.titre)}</b><small>${esc(x.domaine)}</small></span>`, tri: x => x.titre, texte: x => x.titre + ' ' + x.domaine },
   { k: 'objets', t: 'Ce qu’elle juge ici', cls: 'rc-c-n', html: x => x.n ? `<span class="rc-frac"><b class="rc-n">${x.n}</b><i>${esc(pluriel(x.n, x.mot).replace(/^\d+ /, ''))}</i></span>` : rien, tri: x => x.n, texte: x => x.n ? pluriel(x.n, x.mot) : '' },
-  { k: 'origine', t: 'Origine', html: x => x.modifiee ? `<span class="rc-mot">modifiée</span>${orig('main', 'Une table changée dans ce navigateur (Normes)')}` : '<span class="rc-mot doux">embarquée</span>', tri: x => x.modifiee ? 0 : 1, texte: x => x.modifiee ? 'modifiée' : 'embarquée' },
+  { k: 'origine', t: 'Origine', si: () => normes().some(x => x.modifiee), html: x => x.modifiee ? `<span class="rc-mot">modifiée</span>${orig('main', 'Une table changée dans ce navigateur (Normes)')}` : '<span class="rc-mot doux">embarquée</span>', tri: x => x.modifiee ? 0 : 1, texte: x => x.modifiee ? 'modifiée' : 'embarquée' },
   { k: 'aller', t: '', cls: 'rc-c-aller', html: () => '<button type="button" class="rc-lien" data-aller="1">Ouvrir la table</button>', texte: () => '' },
   { k: 'juge', t: 'À quoi elle sert', cls: 'rc-c-phrase', option: true, html: x => `<span class="rc-phrase">${esc(x.juge)}</span>`, tri: x => x.juge, texte: x => x.juge },
   { k: 'lignes', t: 'Lignes', cls: 'rc-c-n', option: true, html: x => `<b class="rc-n">${x.lignes}</b>`, tri: x => x.lignes, texte: x => String(x.lignes) }];
@@ -1007,7 +1009,7 @@ function rendreTable(O, C) { const b = app.base, tri = b.tri, n = C.length + 1, 
     [...par.keys()].sort((a, c) => a - c).forEach(i => { const g = G[i], rs = par.get(i);
       if (g) morceaux.push({ h: H_GROUPE + 8, f: () => { const ge = gesteDuGenre(g), noms = [...g.noms];
         return `<tr class="rc-groupe rc-genre ${g.niveau}"><td colspan="${n}"><span class="rc-groupe-l">${etatHtml(g.niveau, String(g.n))}<b class="rc-genre-mot">${esc(motDuGenre(g.genre, g.n))}</b>`
-          + `<span class="rc-groupe-n">${esc(noms.length === 1 ? noms[0] : noms.length ? plurielLie(noms.length, 'repère') : 'le tableau')}</span>`
+          + (noms.length === 1 && g.n > 1 ? `<span class="rc-groupe-n">${esc(noms[0])}</span>` : noms.length && noms.length !== g.n && noms.length !== 1 ? `<span class="rc-groupe-n">${esc(plurielLie(noms.length, 'repère'))}</span>` : !noms.length ? '<span class="rc-groupe-n">le tableau</span>' : '')
           + `<button type="button" class="rc-lien" data-premier="${escA(g.cle)}" data-bulle="Sa fiche, sur son folio ; P passe au point suivant">${rs.length > 1 ? 'Voir le premier' : 'Voir'}</button>`
           + (ge ? `<button type="button" class="rc-lien rc-fort" data-geste="${escA(g.cle)}" data-bulle="${escA(ge.aide)}">${esc(ge.mot)}</button>` : '') + '</span></td></tr>'; } });
       rs.forEach(ligne); }); }
@@ -1049,7 +1051,7 @@ function amenerLigne(k) { const V = RECAP.virtuel; if (!V) return; const i = V.m
 /* LES VIDES : une icône au trait dans un carré doux, une phrase (ce qui manque, puis pourquoi), UNE action — effacer ce
    qui filtre, voir tout le contrat, ou écrire la première ligne. */
 const VIDES = { liaisons: ['Aucune liaison', 'Écrivez la première ici, ou déposez une installation sur la table.'], equipements: ['Aucun équipement', 'Un équipement s’écrit ici ; ses câbles, dans l’onglet Liaisons.'],
-  disjoncteurs: ['Aucun disjoncteur', 'Un disjoncteur est un repère au code CB.'], barrettes: ['Aucune barrette', 'Ni posée au contrat, ni proposée par l’outil.'],
+  disjoncteurs: ['Aucun disjoncteur', 'Un disjoncteur est un repère au code CB.'], barrettes: ['Aucune barrette', 'Ni posée au contrat, ni proposée par VOLTA.'],
   prises: ['Aucune prise de coupure', 'Une prise de coupure est un repère au code VC.'], cables: ['Aucun câble complet', 'Un câble compte quand sa liaison a un « de » et un « vers ».'],
   raccords: ['Aucun connecteur', 'Un raccord se choisit pour chaque connecteur d’équipement.'], problemes: ['Rien à reprendre', 'Le contrôle ne relève aucun problème.'], normes: ['Aucune table ne juge ce contrat', 'Les normes s’appliquent dès qu’il a des liaisons.'] };
 const ICO_VIDE = { loupe: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/>', folio: '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 9h16M9 9v10"/>', ok: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',

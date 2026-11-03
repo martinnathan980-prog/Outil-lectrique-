@@ -220,7 +220,7 @@ const pluriel2 = (n, mot, mots) => n + ' ' + (n > 1 ? mots || mot + 's' : mot);
    admet en continu, si la courbe lente laisse passer plus qu'un fil ne tient à un palier, si un disjoncteur voisin
    n'est pas à 2:1. */
 function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMot = d.origine === 'pn' ? ' (part number)' : '';
-  if (!d.sansCourbe) { if (d.sansProfil) out.push({ niveau: 'att', texte: (d.calibre ? amperes(d.calibre) + ' · ' : '') + 'le profil de charge est à renseigner : l’outil trouve le calibre' });
+  if (!d.sansCourbe) { if (d.sansProfil) out.push({ niveau: 'att', texte: (d.calibre ? amperes(d.calibre) + ' · ' : '') + 'le profil de charge est à renseigner : VOLTA trouve le calibre' });
     else if (!(d.calibre > 0)) out.push({ niveau: 'att', texte: 'aucun calibre de la gamme ne tient ce profil' });
     else if (!d.valide) { const p = d.pire, m = p.marges[0], mini = d.calibreIdeal ? ` — l’idéal est un ${amperes(d.calibreIdeal)}` : ' — aucun calibre de la gamme ne tient';
       out.push({ niveau: 'ko', texte: (p.t === Infinity ? `le permanent (${amperes(p.i)}) fait déclencher le ${amperes(d.calibre)} à ${m.courbe} (il tient jusqu'à ${amperes(m.admis)})`
@@ -231,8 +231,8 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
       : !d.avecMarge ? `${amperes(d.calibre)}${pnMot} ${motDuVerdict('juste')} (${d.somme > d.marges.fraction ? motFraction(d.somme) + ' du temps de déclenchement consommé' : 'sans ' + nombre(d.marges.marge) + ' % de marge de courant'}) — l’idéal est un ${amperes(d.calibreIdeal)}`
       : `${amperes(d.calibre)}${pnMot} ${motDuVerdict('passe')} ; l’idéal est un ${amperes(d.calibreIdeal)} (sélectivité avec le voisin)` }); }
   // le retest porte un autre calibre que celui que l'outil retient : il déclenche (un problème), il est juste ou plus gros qu'il ne faut (à voir)
-  if (d.gPn && d.origine !== 'main' && !d.sansProfil && !d.sansCourbe && d.calibre > 0) { const k = cleDuVerdict(d.gPn), m = d.meilleur || {}, pnR = pnDuRepere(nom), retenu = 'l’outil retient le ' + amperes(d.calibre) + (m.pn && m.calibre === d.calibre ? ' (' + m.pn + ')' : '');
-    out.push({ niveau: k === 'passe' ? 'att' : 'ko', texte: k === 'passe' ? `l’installation porte un ${amperes(d.pn)} (${pnR}) : ${d.calibre < d.pn ? 'le ' + amperes(d.calibre) + ' suffit' : 'l’outil retient le ' + amperes(d.calibre) + (d.voisins.some(v => v.calibre > 0 && Math.max(v.calibre, d.pn) < SELECTIVITE * Math.min(v.calibre, d.pn) - 1e-9) ? ' (sélectivité avec le voisin)' : '')}`
+  if (d.gPn && d.origine !== 'main' && !d.sansProfil && !d.sansCourbe && d.calibre > 0) { const k = cleDuVerdict(d.gPn), m = d.meilleur || {}, pnR = pnDuRepere(nom), retenu = 'VOLTA retient le ' + amperes(d.calibre) + (m.pn && m.calibre === d.calibre ? ' (' + m.pn + ')' : '');
+    out.push({ niveau: k === 'passe' ? 'att' : 'ko', texte: k === 'passe' ? `l’installation porte un ${amperes(d.pn)} (${pnR}) : ${d.calibre < d.pn ? 'le ' + amperes(d.calibre) + ' suffit' : 'VOLTA retient le ' + amperes(d.calibre) + (d.voisins.some(v => v.calibre > 0 && Math.max(v.calibre, d.pn) < SELECTIVITE * Math.min(v.calibre, d.pn) - 1e-9) ? ' (sélectivité avec le voisin)' : '')}`
       : k === 'juste' ? `l’installation porte un ${amperes(d.pn)} (${pnR}), qui ${motDuVerdict('juste')} : ${retenu}` : `l’installation porte un ${amperes(d.pn)} (${pnR}) qui ${motDuVerdict('declenche')} : ${retenu}` }); }
   d.voisins.forEach(v => { if (v.calibre > 0 && d.calibre > 0 && Math.max(v.calibre, d.calibre) < SELECTIVITE * Math.min(v.calibre, d.calibre) - 1e-9) out.push({ niveau: 'att', texte: `sélectivité avec ${v.nom} (${amperes(v.calibre)}) : l’amont devrait faire au moins le double de l’aval` }); });
   d.fils.forEach(f => { const nomF = cableEtType(f);
@@ -264,7 +264,7 @@ function retenirCalibre(nom, cal) { const d = disjonctionDe(nom); if (!(cal > 0)
   if (nouveau && nouveau !== pn) verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
   // le mot qui passe dit ce que le calibre retenu fait (un calibre qui déclenche se retient : le lecteur veut voir pourquoi)
   poserCharge(nom, c); apresEdition(); const g = (disjonctionDe(nom).gamme || []).find(x => x.calibre === cal), k = cleDuVerdict(g);
-  dire(nom + ' : ' + amperes(cal) + ' retenu à la main' + (nouveau ? ' (' + nouveau + ')' : '') + (k ? ' — il ' + motDuVerdict(k) : '') + '. « Automatique » rend le choix de l’outil.'); return true; }
+  dire(nom + ' : ' + amperes(cal) + ' retenu à la main' + (nouveau ? ' (' + nouveau + ')' : '') + (k ? ' — il ' + motDuVerdict(k) : '') + '. « Automatique » rend le choix de VOLTA.'); return true; }
 /* « Automatique » : rendre le choix à l'outil — le part number du retest sur chaque liaison, plus de calibre écrit ; le
    calibre redevient le meilleur qui passe (sinon celui du part number). */
 function rendreCalibre(nom) { histPush('calibre de ' + nom + ' : automatique');
@@ -303,13 +303,13 @@ function deciderCalibre(nom) { const d = disjonctionDe(nom), cal = d.calibre; if
    carte de décision ne se montre pas (les mêmes conditions). */
 function decisionEnMots(nom, d) { if (!d || !d.gPn || d.origine === 'main' || d.sansProfil || d.sansCourbe || !(d.calibre > 0) || !d.pn) return null;
   const k = cleDuVerdict(d.gPn), passe = k === 'passe', cal = d.calibre;
-  return { passe, cal, titre: passe ? `L’installation porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'l’outil retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}`,
+  return { passe, cal, titre: passe ? `L’installation porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'VOLTA retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}`,
     suite: `le plus petit qui passe : ${amperes(cal)}` }; }
 function carteDecision(nom, d, autres) { if (!d.gPn || d.origine === 'main' || d.sansProfil || d.sansCourbe || !(d.calibre > 0) || !d.pn) return '';
   const g = d.gPn, k = cleDuVerdict(g), passe = k === 'passe', pn = pnDuRepere(nom), m = d.meilleur || {}, cal = d.calibre, xs = cal === m.calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   let p = null; try { p = verdictDisjonction(app.norme, d.courbe, d.pn, d.profil, d.contexte).pire; } catch (_) { p = null; }
   // « déclenche » ou « touche la courbe » (v77 : l'un et l'autre, un problème — rouge), ou il passe et l'outil en retient un autre
-  const titre = passe ? `L’installation porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'l’outil retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}`;
+  const titre = passe ? `L’installation porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'VOLTA retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}`;
   // deux lignes : ce que fait le retest (au démarrage, 9,31 A pendant 2,1 min touchent sa courbe), le plus petit qui passe
   const quoi = !passe && p ? `${majuscule(p.t === Infinity ? 'en permanence' : quandDuPoint(p))}, <b>${esc(amperes(p.i))}${p.t === Infinity ? '' : ' pendant ' + esc(secondes(p.t))}</b> ${k === 'declenche' ? 'font déclencher le' : 'touchent la courbe du'} ${ident(pn || amperes(d.pn))}. ` : '';
   // (les câbles qu'il demande : derrière le lien « Les 3 câbles », sur la ligne des liens)
@@ -515,7 +515,7 @@ function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, b
   const cles = d.sansProfil ? '' : `<p class="dj-cle">${items.some(y => y.cle === 'passe') ? '<span class="passe"><i aria-hidden="true"></i>passe</span>' : ''}${nonPasse ? '<span class="declenche"><i aria-hidden="true"></i>ne passe pas</span>' : ''}${items.some(y => y.retest && !y.retenu) ? '<span class="retest"><i aria-hidden="true"></i>celui de votre fichier</span>' : ''}</p>`;
   // le choix : « ★ Automatique » | « À la main ▾ » (toute la gamme, dès qu'elle a plus d'un calibre)
   const mainB = (d.gamme || []).length > 1 ? `<button type="button" class="dj-seg dj-main" data-changer="${escA(cleL)}" aria-expanded="${ouverte}" data-bulle="Toute la gamme : un clic retient un calibre, même s’il ne passe pas">${auto || !cal || propose ? 'À la main' : esc(amperes(cal)) + ' à la main'}${ico('bas', 'fi-chevron')}</button>` : '';
-  const actions = d.sansProfil ? '' : best || mainB ? `<span class="dj-choix" role="group" aria-label="Le choix du calibre">${best ? `<button type="button" class="dj-seg${auto ? ' dj-auto-pris' : ''}" id="dj-retenir" data-dj-geste="retenir" data-cal="${best}" aria-pressed="${auto}" data-bulle="${escA(phraseMeilleur(d) + (auto ? (propose ? ' Il est proposé : « Passer en ' + amperes(best) + ' » l’écrit dans l’installation.' : ' Il est retenu.') : ' Un clic rend ce choix à l’outil — Ctrl+Z le défait.') + (m.pn ? ' Part number ' + m.pn + ' : une désignation construite, à vérifier au catalogue.' : ''))}">${auto ? ico('etoile', 'dj-auto-etoile') : ''}Automatique${auto ? '' : ` (${esc(amperes(best))})`}</button>` : ''}${mainB}</span>` : '';
+  const actions = d.sansProfil ? '' : best || mainB ? `<span class="dj-choix" role="group" aria-label="Le choix du calibre">${best ? `<button type="button" class="dj-seg${auto ? ' dj-auto-pris' : ''}" id="dj-retenir" data-dj-geste="retenir" data-cal="${best}" aria-pressed="${auto}" data-bulle="${escA(phraseMeilleur(d) + (auto ? (propose ? ' Il est proposé : « Passer en ' + amperes(best) + ' » l’écrit dans l’installation.' : ' Il est retenu.') : ' Un clic rend ce choix à VOLTA — Ctrl+Z le défait.') + (m.pn ? ' Part number ' + m.pn + ' : une désignation construite, à vérifier au catalogue.' : ''))}">${auto ? ico('etoile', 'dj-auto-etoile') : ''}Automatique${auto ? '' : ` (${esc(amperes(best))})`}</button>` : ''}${mainB}</span>` : '';
   const liste = mainB ? listeChoix(cleL, panneauGamme(nom, d), { titre: 'Toute la gamme : un clic retient un calibre', cls: 'dj-gamme-choix' }) : '';
   return heros + cles + ligneDuVerdict(d, x, { nom }) + (actions ? `<div class="dj-h-actions">${actions}</div>` : '') + liste + ligneCablesAGrossir(nom, d); }
 /* « À LA MAIN » : TOUTE LA GAMME, en grille (l'ingénieur v73, point 1 ; le patron de tous les choix, point 7) — chaque
@@ -560,11 +560,11 @@ function phraseMeilleur(d) { const m = d.meilleur, cal = m.calibre, fam = m.fami
   const perm = m.marge.permanent, courts = d.points.some(p => p.t !== Infinity && p.i > 0);
   const tes = [perm > 0 ? (perm < 2 ? `votre ${amperes(perm)} permanent` : `vos ${amperes(perm)} permanents`) : '', courts ? 'vos pointes' : ''].filter(Boolean).join(' et ');
   const marge = m.marge.courant ? `avec ${nombre(m.marge.courant)} % de marge` : 'sans marge';
-  let s = m.serre ? `aucun ${fam} ne tient ${tes} ${marge} à ${T} °C : le ${amperes(cal)} les tient, mais sans la marge` : `le plus petit ${fam} qui tient ${tes} ${marge} à ${T} °C`;
+  let s = m.serre ? `aucun ${fam} ne passe ${tes} ${marge} à ${T} °C : le ${amperes(cal)} ne disjoncte pas, mais sans la marge` : `le plus petit ${fam} qui ne disjoncte pas sous ${tes}, ${marge}, à ${T} °C`;
   // pourquoi pas celui d'en dessous, en mots simples
   const cat = d.gamme.filter(g => g.catalogue), prev = cat.filter(g => g.calibre < cal - 1e-9).pop();
   if (prev && !m.serre) { const Ap = 'le ' + amperes(prev.calibre);
-    s += ' ; ' + (!prev.valide ? (!prev.permanentOk ? `${Ap} ne garantit que ${amperes(prev.tenu)} en permanence` : `${Ap} déclencherait en pointe`)
+    s += ' ; ' + (!prev.valide ? (!prev.permanentOk ? `${Ap} ne garantit que ${amperes(prev.tenu)} en permanence` : `${Ap} disjoncterait en pointe`)
       : !prev.marge ? (!prev.permanentMargeOk ? `${Ap} serait trop juste en permanence` : `${Ap} serait trop juste en pointe`)
       : prev.selectif === false ? `${Ap} ne serait pas à 2:1 avec le disjoncteur voisin` : `${Ap} conviendrait aussi`); }
   return majuscule(s) + '.'; }

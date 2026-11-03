@@ -22,7 +22,9 @@ const [, , THEME = 'clair', L = '1440'] = process.argv;
     function examiner(ou, racine) { if (!racine) return;
       // 1. des onglets de même largeur
       racine.querySelectorAll('.nv-onglets, [role="tablist"]').forEach(bar => { const os = [...bar.querySelectorAll(':scope > .nv-onglet, :scope > [role="tab"]')].filter(vu);
-        if (os.length > 1) { const ls = os.map(o => Math.round(o.getBoundingClientRect().width)); if (Math.max(...ls) - Math.min(...ls) > 2) dire(ou, 'onglets de largeurs inégales : ' + ls.join(' / ')); } });
+        if (os.length > 1) { const ls = os.map(o => Math.round(o.getBoundingClientRect().width)); if (Math.max(...ls) - Math.min(...ls) > 2) dire(ou, 'onglets de largeurs inégales : ' + ls.join(' / ')); }
+        // une bande qui défile : un onglet est caché au bout
+        if (os.length > 1 && bar.scrollWidth > bar.clientWidth + 2) dire(ou, `onglets qui ne tiennent pas (${bar.scrollWidth} px pour ${bar.clientWidth})`); });
       // 2. du texte coupé
       racine.querySelectorAll('*').forEach(e => { if (!vu(e) || !e.childNodes.length) return; const s = getComputedStyle(e);
         const texte = [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()); if (!texte) return;
@@ -47,6 +49,10 @@ const [, , THEME = 'clair', L = '1440'] = process.argv;
         reduireFiche(); } }
     if (NIVEAU.grand) reduireFiche(); basculerBase(); await pause(400);
     for (const x of [...document.querySelectorAll('#base .rc-onglet')]) { x.click(); await pause(250); examiner('récap ' + x.dataset.onglet, document.getElementById('base')); }
+    // le récapitulatif quand une fiche est rangée à côté (il rétrécit) : rien de coupé non plus
+    allerAuPlan(plans()[0]); await pause(150); const un = app.dessin.comps.find(k => k.kind !== 'tag' && !estMasse(k.name)); if (un) { montrerBloc(un.name); await pause(300); }
+    if (document.getElementById('base').hidden) { basculerBase(); await pause(400); }
+    for (const x of [...document.querySelectorAll('#base .rc-onglet')]) { x.click(); await pause(250); examiner('récap + fiche ' + x.dataset.onglet, document.getElementById('base')); }
     return out; });
   await b.close();
   const uniques = [...new Set(defauts.map(d => d.replace(/^f\d+ \S+ /, '')))];

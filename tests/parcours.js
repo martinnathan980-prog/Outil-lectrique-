@@ -419,7 +419,7 @@ function baseEssaiDansLaPage() {
     // la fiche s'ouvre pliée : « Calibre » se déplie d'un clic ; l'automatique y est déjà retenu (le lecteur, v62 : « commence directement par l'automatique »)
     await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="disjoncteur"]'); if (!d.open) d.querySelector('summary').click(); }); await page.waitForTimeout(500);
     e = await etat(page);
-    ok(await page.evaluate(() => calibreDe('102CB1') === 15 && !!$('dj-retenir') && $('dj-retenir').getAttribute('aria-pressed') === 'true' && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /^l’installation porte un 10 A \(MS3320-10\), qui touche la courbe : l’outil retient le 15 A \(MS3320-15\)$/.test(x.texte)) && !CONTROLE.items.some(x => x.nom === '102CB1' && /ne passe pas/.test(x.texte))),
+    ok(await page.evaluate(() => calibreDe('102CB1') === 15 && !!$('dj-retenir') && $('dj-retenir').getAttribute('aria-pressed') === 'true' && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /^l’installation porte un 10 A \(MS3320-10\), qui touche la courbe : VOLTA retient le 15 A \(MS3320-15\)$/.test(x.texte)) && !CONTROLE.items.some(x => x.nom === '102CB1' && /ne passe pas/.test(x.texte))),
       'la fiche de 102CB1, « Calibre » déplié d’un clic : le 15 A, l’automatique, déjà retenu (« Automatique » pressé, rien à cliquer) ; le contrôle dit que l’installation porte un 10 A qui TOUCHE LA COURBE — un problème (v77)', e.enEtat);
     await capture(page, 'C-3b-102CB1-15A');
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(500);
