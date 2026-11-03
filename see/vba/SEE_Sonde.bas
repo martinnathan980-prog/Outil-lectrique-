@@ -158,7 +158,7 @@ End Function
 
 Private Sub FinSonde(ByVal titre As String)
     Application.ScreenUpdating = True
-    mFeuille.Columns.AutoFit
+    AjusterColonnes
     Journal "Fin", titre, "", "terminé ; " & gNbErreurs & " erreur(s) d'appel" & IIf(mEnchaine, " depuis le début du test", "") & _
         " (normales en sonde : elles disent ce qui n'existe pas)"
     If mEnchaine Then Exit Sub
@@ -1201,10 +1201,13 @@ End Sub
 '  connexion déjà là. Le bouton 3 (EssaiSansFenetre, SEE_Pilote) l'appelle sur
 '  l'environnement du projet qu'il a ouvert (la coclasse SeeAutomation n'a pas
 '  de GetEnvironment : il l'ouvre par OpenEnvironment, et le referme).
-'  LECTURE SEULE. nbFam, nbSym : ce qui a été lu (0 sur une erreur imprévue,
-'  qui est au journal et ne sort pas d'ici).
+'  LECTURE SEULE. Vrai si le relevé est allé au bout ; Faux sur une erreur
+'  imprévue, qui ne sort pas d'ici : elle est au journal, et dans
+'  gDerniereErreur avec la famille en cours (JournalErreur), pour le bloc du
+'  bouton 3. nbFam, nbSym : ce qui a été lu, même si le relevé s'est arrêté.
 ' ============================================================================
-Public Sub RelireFormes(ByVal env As Object, ByRef nbFam As Long, ByRef nbSym As Long)
+Public Function RelireFormes(ByVal env As Object, ByRef nbFam As Long, ByRef nbSym As Long) As Boolean
+    Dim numErr As Long, descErr As String
     nbFam = 0
     nbSym = 0
     On Error GoTo Echec
@@ -1214,18 +1217,39 @@ Public Sub RelireFormes(ByVal env As Object, ByRef nbFam As Long, ByRef nbSym As
     Application.ScreenUpdating = False
     DecrireFormes env, nbFam, nbSym
     Application.ScreenUpdating = True
-    mFeuille.Columns.AutoFit
-    Exit Sub
+    AjusterColonnes
+    RelireFormes = True
+    Exit Function
 Echec:
-    Journal "Relevé des formes", "", "(sonde)", "ARRÊT IMPRÉVU du relevé (rien n'est écrit dans SEE)", Err.Number, Err.Description
+    numErr = Err.Number
+    descErr = Err.Description
+    On Error Resume Next
     Application.ScreenUpdating = True
+    ' DecrireFormes nomme chaque famille dans le contexte (SondeSymboles, son nom)
+    JournalErreur "relevé des formes, arrêt imprévu (" & IIf(gEtape = "SondeSymboles" And Len(gObjet) > 0, "famille « " & gObjet & " »", _
+        "avant la première famille") & ")", numErr, descErr
+    Journal "Relevé des formes", "", "(sonde)", "ARRÊT IMPRÉVU du relevé après " & nbFam & " famille(s), " & nbSym & _
+        " forme(s) (rien n'est écrit dans SEE)", numErr, descErr
+    If Not mFeuille Is Nothing Then AjusterColonnes
+    RelireFormes = False
+End Function
+
+' Les colonnes de la feuille de la sonde à la largeur de leur contenu. Sur
+' Sonde_Symboles, la colonne A ne dit que « SEE » ou « Utilisateur » : le
+' titre de section écrit en A1 n'y est pas compté (il déborde sur les cellules
+' vides à sa droite), et le nom des familles, leur nombre de formes et les
+' premières restent dans la photo du haut de la feuille.
+Private Sub AjusterColonnes()
+    mFeuille.Columns.AutoFit
+    If mFeuille.Name = "Sonde_Symboles" Then mFeuille.Columns(1).ColumnWidth = 13
 End Sub
 
 ' Les familles d'un environnement, SEE (eSEEFamily = 1) puis utilisateur (2),
 ' dans la feuille de la sonde en cours (mFeuille). En haut, une ligne par
 ' famille (son type, son nom, son nombre de formes, les premières : ce qu'une
 ' photo du haut de la feuille montre) ; dessous, chaque forme (EcrireForme).
-' LECTURE SEULE. nbFam, nbSym : ce qui a été lu.
+' LECTURE SEULE. nbFam, nbSym : ce qui a été lu (les familles lues jusqu'au
+' bout, les formes une à une).
 Private Sub DecrireFormes(ByVal env As Object, ByRef nbFam As Long, ByRef nbSym As Long)
     Dim t As Variant, fam As Variant, forme As Variant, familles As Collection, types As Collection, f As Object
     Dim ligneResume As Long, i As Long, n As Long, noms As String, typeFamille As Long
@@ -1251,7 +1275,6 @@ Private Sub DecrireFormes(ByVal env As Object, ByRef nbFam As Long, ByRef nbSym 
     For i = 1 To familles.Count
         Set f = familles.Item(i)
         typeFamille = CLng(types.Item(i))
-        nbFam = nbFam + 1
         Contexte "SondeSymboles", LireProp(f, "Name")
         n = 0
         noms = ""
@@ -1264,6 +1287,8 @@ Private Sub DecrireFormes(ByVal env As Object, ByRef nbFam As Long, ByRef nbSym 
         Next forme
         If n > 12 Then noms = noms & ", ..."
         EcrireLigne mFeuille, ligneResume + i, Array(IIf(typeFamille = FAMILLE_SEE, "SEE", "Utilisateur"), LireProp(f, "Name"), n, noms)
+        ' une famille comptée une fois lue (un relevé interrompu dit combien l'ont été)
+        nbFam = nbFam + 1
     Next i
     Journal "SondeSymboles", "", "", nbFam & " famille(s), " & nbSym & " symbole(s)"
 End Sub

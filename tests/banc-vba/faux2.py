@@ -258,18 +258,23 @@ rep('FauxVue', '''    Style "GetObjectsFromSelection", Not IsMissing(p)
 # --- LE BOUTON 3 ET LA CONNEXION (v3, puis v4 du classeur) : le faux SEE_Windows (FauxWindows.bas, chargé par banc.py)
 #     dit ce que Windows « répond » ; le faux SeeAutomation (FauxAuto) est l'objet qu'il crée, réglé sur ce que le bureau a
 #     vu le 2 novembre 2026 (V4R3, 4.89.99.5) : OpenProject (V4 : paramètre de sortie), Visible refusé (438), Quit (le
-#     programme s'arrête, ou en laisse gWinProcessusApresQuit), et son CreateObject :
-#       gAutoForme = 1 (le bureau) : SEULEMENT (type, projet, objet en sortie) ; deux arguments, ou un seul -> 450
-#                    (« nombre d'arguments ») ; trois dont le milieu n'est pas le projet ouvert (un Variant vide, Nothing,
-#                    0, "") -> 13 ; une sortie qui n'est pas une variable Object -> 13 (sauf gAutoSortie = 1 : un Variant
-#                    seulement) ;
-#       gAutoForme = 2 : SEULEMENT l'objet rendu, Set o = CreateObject(type) ; tout autre nombre d'arguments -> 450 ;
-#       gAutoForme = 0 : rien (450 pour un ou deux arguments, 13 pour trois).
+#     programme s'arrête, ou en laisse gWinProcessusApresQuit), et son CreateObject. Ses contrôles sont faits dans l'ordre
+#     que les codes du bureau montrent, AVANT que la méthode tourne : le milieu d'abord (un objet passe, Nothing compris ;
+#     un Variant vide, 0 ou "" -> 13 : au bureau, (type, Variant) -> 13 mais (type, variable Object) -> 450), puis le
+#     nombre d'arguments (autre que trois -> 450), puis la sortie (pas une variable Object -> 13 ; gAutoSortie = 1 :
+#     un Variant seulement). Ensuite la méthode TOURNE, et chaque appel qui tourne est tracé (« CreateObject.appel|milieu
+#     projet|sortie variable ») :
+#       gAutoForme = 1 (le bureau) : le projet ouvert au milieu -> l'objet ; un autre milieu (Nothing) -> 1001 ;
+#       gAutoForme = 3 : la méthode tourne et refuse (1000), sa sortie remise à Nothing ;
+#       gAutoForme = 4 : la méthode tourne et ne rend rien (sa sortie reste Nothing) ;
+#       gAutoForme = 0 : rien ne passe (13 pour trois arguments, après les contrôles du milieu et du nombre) ;
+#       gAutoForme = 2 : SEULEMENT l'objet rendu, Set o = CreateObject(type) ; tout autre nombre d'arguments -> 450.
 #     CloseProject : sans argument -> 450 (le bureau), avec le projet ouvert : accepté (tracé). OpenEnvironment (V4 :
 #     paramètre de sortie) rend le faux environnement ENV_FAUX (gAutoEnvRefuse : refusé, 1131), CloseEnvironment le prend
 #     en argument. Ni GetProject, ni GetEnvironment (absents d'ISeeAutomation) ; FauxProjet n'a pas de Close, mais un
 #     EnvironmentName et un GetShape (la forme par le projet). gAlbumFaux : l'environnement a aussi des familles
-#     « utilisateur », comme l'album du bureau.
+#     « utilisateur », comme l'album du bureau. gFamillesRefusees : la lecture des familles refusée (13) ; 1, toutes ; 2,
+#     seulement les familles « utilisateur » (l'album).
 rep('FauxSEE', 'Public gMuet As Boolean\n', '''Public gMuet As Boolean
 Public gAutoForme As Long
 Public gAutoSansVisible As Boolean
@@ -277,6 +282,7 @@ Public gAutoOuvertureRefusee As Boolean
 Public gAutoSortie As Long
 Public gAutoEnvRefuse As Boolean
 Public gAlbumFaux As Boolean
+Public gFamillesRefusees As Long
 
 ' Le type du paramètre de sortie de SeeAutomation (V4) : gAutoSortie = 0, OpenProject accepte tout ; 1, VARIANT* seulement
 ' (une variable Object est refusée) ; 2, IDispatch** seulement (un Variant est refusé). Le refus (13, « Type mismatch »)
@@ -313,6 +319,7 @@ End Sub''', '''    gMuet = False
     gAutoSortie = 0
     gAutoEnvRefuse = False
     gAlbumFaux = False
+    gFamillesRefusees = 0
     InitWindows
 End Sub''')
 # le projet : son environnement, et la forme lue par lui (ISEEProject.GetShape)
@@ -336,7 +343,8 @@ rep('FauxEnv', '''    Set c = New FauxColl
     If t = 1 Then
         Set f = New FauxFamille
         c.Add f
-    End If''', '''    Set c = New FauxColl
+    End If''', '''    If gFamillesRefusees = 1 Or (gFamillesRefusees = 2 And t = 2) Then Err.Raise 13, , "Type mismatch (panne simulée : familles " & t & " refusées)"
+    Set c = New FauxColl
     If t = 1 Then
         Set f = New FauxFamille
         c.Add f
@@ -392,7 +400,7 @@ Public Function OpenProject(ByVal chemin As String, ByVal mdp As String, Optiona
     If IsMissing(p) Then Set OpenProject = gProjet Else Set p = gProjet
 End Function
 Public Function CreateObject(ByVal t As Long, Optional ByRef a As Variant, Optional ByRef b As Variant) As Object
-    Dim n As Long
+    Dim n As Long, milieu As String, sortie As String
     n = 1
     If Not IsMissing(a) Then n = n + 1
     If Not IsMissing(b) Then n = n + 1
@@ -401,14 +409,31 @@ Public Function CreateObject(ByVal t As Long, Optional ByRef a As Variant, Optio
         Set CreateObject = NouveauFaux(t)
         Exit Function
     End If
+    ' les contrôles de Windows, avant que la méthode tourne : le milieu, le nombre d'arguments, la sortie
+    If n >= 2 Then
+        If Not IsObject(a) Then Err.Raise 13, , "Type mismatch : un objet attendu au milieu (faux)"
+    End If
     If n <> 3 Then Err.Raise 450, , "Wrong number of arguments or invalid property assignment (faux)"
     If gAutoForme = 0 Then Err.Raise 13, , "Type mismatch (panne simulée)"
-    If Not EstLeProjetFaux(a) Then Err.Raise 13, , "Type mismatch : le projet ouvert attendu au milieu (faux)"
     If gAutoSortie = 1 Then
         If IsObject(b) Then Err.Raise 13, , "Type mismatch : VARIANT* attendu (panne simulée)"
     ElseIf Not IsObject(b) Then
         Err.Raise 13, , "Type mismatch : IDispatch** attendu (faux)"
     End If
+    ' la méthode TOURNE (la sortie n'est lue que si c'est un objet : un Variant vide passé plus loin lève 91 dans LibreOffice)
+    milieu = "autre"
+    If EstLeProjetFaux(a) Then milieu = "projet"
+    sortie = "variable"
+    If IsObject(b) Then
+        If EstLeProjetFaux(b) Then sortie = "le projet"
+    End If
+    Trace "CreateObject.appel|milieu " & milieu & "|sortie " & sortie
+    If gAutoForme = 3 Then
+        Set b = Nothing
+        Err.Raise 1000, , "objet non créé (panne simulée : la méthode a tourné)"
+    End If
+    If gAutoForme = 4 Then Exit Function
+    If Not EstLeProjetFaux(a) Then Err.Raise 1001, , "pas de projet au milieu : objet non créé (faux)"
     Set b = NouveauFaux(t)
 End Function
 Public Sub CloseProject(Optional ByRef p As Variant)

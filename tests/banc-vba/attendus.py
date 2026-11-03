@@ -420,7 +420,10 @@ def bouton3(v, forme):
     Variant en sortie quand SEE ne prend que lui ; une connexion rejointe par le bouton 1 est lâchée au début (EX1) ;
     ensuite, les boutons 1 et 2 n'ouvrent jamais le projet d'essai noté dans Projet (SU2) ; le chemin entier du projet
     n'est jamais montré (SU3) ; OpenEnvironment refusé : le dessin, Save et CloseProject passent quand même ; seul l'objet
-    rendu marche : cette forme est retenue ; une forme se lit par le projet, jamais par un environnement."""
+    rendu marche : cette forme est retenue ; une forme se lit par le projet, jamais par un environnement. La relecture de
+    la v4 : la méthode qui tourne puis refuse, ou ne rend rien, ne tourne qu'une fois (EX1) ; un relevé interrompu est dit
+    INTERROMPU, avec la famille et le code (EX2) ; des familles refusées sont comptées, la dernière avec son code (TE3) ;
+    la colonne A de Sonde_Symboles reste étroite (TE4)."""
     rien = lambda ou: egal(f'{ou} : rien de fait (new:, copie, OpenProject, AddSheet, Save, CloseProject, Quit : 0)',
                            (lambda t, o=ou: tuple(nombres(rf'{m} (\d+)', o)(t) for m in ('new:', 'copies', 'OpenProject', 'AddSheet', 'Save', 'CloseProject', 'Quit'))), (0,) * 7)
     tout = lambda ou, n=(1, 1, 1, 1, 1, 1): egal(f'{ou} : copie, OpenProject, AddSheet, Save, CloseProject, Quit = {n}',
@@ -432,12 +435,17 @@ def bouton3(v, forme):
     forme_lue = 'CreateObject(type, projet, objet en sortie)' if forme == 1 else 'CreateObject(type) -> objet rendu'
     sortie = ' (variable de sortie : Variant)' if v4 else ''
     ouvert_env = 'OpenEnvironment(nom, environnement en sortie)' if v4 else 'OpenEnvironment(nom) -> environnement rendu'
-    # CreateObject refusé : chaque forme, dans l'ordre de la version, avec le code du bureau (450 : nombre d'arguments ; 13 : le milieu)
+    # CreateObject refusé : chaque forme, dans l'ordre de la version, avec le code du bureau (13 : le milieu, contrôlé d'abord,
+    # ou la sortie ; 450 : le nombre d'arguments ; au bureau, (type, Variant) -> 13, mais (type, variable Object) -> 450)
     formes_v4 = ['(type, projet, objet en sortie) : 13 (800A000D)', '(type, projet, Variant en sortie) : 13 (800A000D)', '(type) -> objet rendu : 450 (800A01C2)',
-                 '(type, objet en sortie) : 450 (800A01C2)', '(type, Variant en sortie) : 450 (800A01C2)', '(type, Nothing, objet en sortie) : 13 (800A000D)',
+                 '(type, objet en sortie) : 450 (800A01C2)', '(type, Variant en sortie) : 13 (800A000D)', '(type, Nothing, objet en sortie) : 13 (800A000D)',
                  '(type, 0, objet en sortie) : 13 (800A000D)', '(type, "", objet en sortie) : 13 (800A000D)',
                  '(type, projet dans un Variant, objet en sortie) : 13 (800A000D)', '(type, objet en sortie, projet) : 13 (800A000D)']
-    formes_refusees = formes_v4 if v4 else formes_v4[2:5] + formes_v4[:2] + formes_v4[5:]
+    # (V5 : l'objet rendu, puis les formes qui passent le projet, avant celles à deux arguments)
+    formes_refusees = formes_v4 if v4 else formes_v4[2:3] + formes_v4[:2] + formes_v4[3:]
+    # EX1 : la méthode tourne (forme 1), puis refuse ou ne rend rien : les essais s'arrêtent là (V5 : après l'objet rendu,
+    # que Windows refuse avant de la faire tourner)
+    avant_v5 = '' if v4 else '(type) -> objet rendu : 450 (800A01C2), '
     c = [rien('SEE ouvert'),
          egal('SEE ouvert : Windows revu cinq fois avant de refuser (Patienter 5)', nombres(r'SEE ouvert : Patienter (\d+)', 'SEE ouvert'), 5),
          ('SEE ouvert : « 1. SEE fermé ? = NON », puis : si tu vois SEE, File > Exit ; sinon, ferme Excel ; sinon, le Gestionnaire des tâches',
@@ -465,6 +473,10 @@ def bouton3(v, forme):
           lambda s: bool(s) and 'TypeFamille/Famille/Nb formes/Premières formes' in s and 'SEE/FAM/4/BOITE, BROCHE, BORNE, MASSE' in s
               and 'Utilisateur/Blackbox Family/3/BB_2, BB_4, BB_8' in s and 'Utilisateur/Ground Family/1/GND' in s and s.find('Blackbox') < s.find('Ground')),
          au_moins('complet : le motif dessiné (au moins 5 objets graphiques)', nombres(r'graphiques (\d+)', 'complet'), 5),
+         # TE4 : la colonne A de Sonde_Symboles (« SEE », « Utilisateur ») n'est pas élargie par le titre de A1 ; la complète, sans erreur de lecture
+         ('complet : Sonde_Symboles : la colonne A étroite (au plus 14 caractères), le titre de A1 n\'élargit rien',
+          nombres(r'Sonde_Symboles largeurs A (\d+) B (\d+)', 'complet'), lambda v: bool(v) and 8 <= v[0] <= 14 and v[1] >= 8),
+         ('complet : aucune erreur de lecture au relevé des formes', lambda t: partie(t, 'complet'), lambda s: bool(s) and 'erreur(s) de lecture' not in s),
          egal('complet : SEE V5R2 « classe non inscrite », puis V4R3 créé (2 new:)', nombres(r'new: (\d+)', 'complet'), 2),
          egal('complet : gApp lâché (aucun objet SEE gardé)', dans('complet', r'gApp lâché (\w+)'), 'oui'),
          egal('complet : Simulation reprend sa valeur (O)', dans('complet', r'Simulation après (\w)'), 'O'),
@@ -526,6 +538,33 @@ def bouton3(v, forme):
           lambda s: '8. Formes = non relevées : OpenEnvironment(« ENV_FAUX ») refusé, rien d\'autre n\'est tenté' in s and '1131 (800A046B)' in s
               and 'Résultat = DESSINÉ ET ENREGISTRÉ' in s and 'CloseProject(projet) : ok' in s and '9. SEE refermé = oui' in s
               and "l'onglet « Sonde_Symboles »" not in s),
+         # EX2 : une erreur imprévue au début de la 2e famille : « relevé INTERROMPU après 1 familles, 4 formes », la famille et le
+         # code dans le bloc ; le dessin, Save, CloseEnvironment et CloseProject passent ; la photo de Sonde_Symboles (partielle)
+         tout('relevé interrompu'),
+         egal('relevé interrompu : OpenEnvironment 1, CloseEnvironment 1 (refermé quand même), l\'album non lu',
+              (lambda t: (nombres(r'OpenEnvironment (\d+)', 'relevé interrompu')(t), nombres(r'CloseEnvironment (\d+)', 'relevé interrompu')(t),
+                          dans('relevé interrompu', r'Sonde_Symboles album (\w+)')(t))), (1, 1, 'non')),
+         ('relevé interrompu : « 8. Formes = relevé INTERROMPU après 1 familles, 4 formes », puis l\'erreur, sa famille et son code ; DESSINÉ ET ENREGISTRÉ, CloseEnvironment, CloseProject',
+          lambda t: partie(t, 'relevé interrompu'),
+          lambda s: '8. Formes = relevé INTERROMPU après 1 familles, 4 formes (feuille Sonde_Symboles, le détail est au journal)' in s
+              and '1 erreur(s) de lecture, la dernière : relevé des formes, arrêt imprévu (famille « Blackbox Family ») : 999 panne simulée du relevé (banc)' in s
+              and 'Résultat = DESSINÉ ET ENREGISTRÉ' in s and 'CloseEnvironment : ok' in s and 'CloseProject(projet) : ok' in s and '9. SEE refermé = oui' in s
+              and "clique sur l'onglet « Sonde_Symboles » et prends une photo de son haut" in s),
+         ('relevé interrompu : le haut de Sonde_Symboles : la famille lue (FAM), puis les lignes des familles non lues, vides',
+          dans('relevé interrompu', r'Sonde_Symboles haut = (.*?) ; chemin entier'), lambda s: bool(s) and 'SEE/FAM/4/BOITE, BROCHE, BORNE, MASSE' in s and 'Blackbox' not in s),
+         # TE3 : la lecture des familles refusée (13) : le bloc compte les erreurs de lecture et dit la dernière, avec son code
+         tout('familles refusées'),
+         ('familles refusées : « 8. Formes = 0 familles, 0 formes », puis « 2 erreur(s) de lecture » et la dernière (GetShapeFamilyCollection(2) : 13) ; la photo de Sonde_Symboles pas demandée',
+          lambda t: partie(t, 'familles refusées'),
+          lambda s: '8. Formes = 0 familles, 0 formes (feuille Sonde_Symboles)' in s
+              and '2 erreur(s) de lecture, la dernière : Environment.GetShapeFamilyCollection(2) : 13 Type mismatch (panne simulée : familles 2 refusées)' in s
+              and 'CloseEnvironment : ok' in s and 'CloseProject(projet) : ok' in s and "l'onglet « Sonde_Symboles »" not in s),
+         tout('album refusé'),
+         ('album refusé : « 8. Formes = 1 familles, 4 formes », puis « 1 erreur(s) de lecture » (les familles de l\'album, 13) ; la photo de Sonde_Symboles demandée',
+          lambda t: partie(t, 'album refusé'),
+          lambda s: '8. Formes = 1 familles, 4 formes (feuille Sonde_Symboles)' in s
+              and '1 erreur(s) de lecture, la dernière : Environment.GetShapeFamilyCollection(2) : 13 Type mismatch (panne simulée : familles 2 refusées)' in s
+              and "clique sur l'onglet « Sonde_Symboles » et prends une photo de son haut" in s),
          # la v4 : seul l'objet rendu marche : cette forme est retenue (en V4, après les formes à trois arguments, refusées : 450)
          tout('rendu seulement'),
          releve('rendu seulement'),
@@ -534,6 +573,18 @@ def bouton3(v, forme):
           (lambda s: 'création d\'objets : oui, forme retenue : CreateObject(type) -> objet rendu (avant : (type, projet, objet en sortie) : 450 (800A01C2), '
                      '(type, projet, Variant en sortie) : 450 (800A01C2))' in s) if v4 else
           (lambda s: 'création d\'objets : oui, forme retenue : CreateObject(type) -> objet rendu' in s and 'objet rendu (avant' not in s)),
+         # EX1 : la méthode TOURNE, puis refuse (1000) ou ne rend rien (-1) : une seule exécution, avec le projet au milieu ;
+         # aucune forme qui passe Nothing au milieu ou le projet en sortie ; le bloc garde le vrai code ; le relevé et la fermeture
+         *[x for ou, code in (('tourne et refuse', '1000 (800A03E8)'), ('tourne sans rien rendre', '-1')) for x in (
+             egal(f'{ou} : une seule exécution de CreateObject, le projet au milieu, une variable en sortie',
+                  dans(ou, r'appels (\d+ = .*?) ; chemin entier'), '1 = [milieu projet|sortie variable]'),
+             egal(f'{ou} : copie 1, OpenProject 1, AddSheet 0, graphiques 0, Save 0, CloseProject 1, Quit 1',
+                  (lambda t, o=ou: tuple(nombres(rf'{m} (\d+)', o)(t) for m in ('copies', 'OpenProject', 'AddSheet', 'graphiques', 'Save', 'CloseProject', 'Quit'))), (1, 1, 0, 0, 0, 1, 1)),
+             releve(ou),
+             (f'{ou} : « REFUSÉE (codes : … (type, projet, objet en sortie) : {code}) », rien d\'autre après ; pas d\'enregistrement ; CloseProject(projet)',
+              lambda t, o=ou: partie(t, o),
+              lambda s, c=code: f"création d'objets : REFUSÉE (codes : {avant_v5}(type, projet, objet en sortie) : {c})" in s
+                  and "7. Enregistré = non : rien n'a été dessiné" in s and 'CloseProject(projet) : ok' in s and '9. SEE refermé = oui' in s))],
          # la v4 : sous SeeAutomation, une forme se lit par le projet ouvert (ISEEProject.GetShape), jamais par l'environnement
          egal('forme par le projet : rendue, un Project.GetShape, aucun Environment.GetShape',
               nombres(r'Project\.GetShape (\d+) ; Environment\.GetShape au journal (\d+) ; Project\.GetShape au journal (\d+)', 'forme par le projet'), (1, 0, 1)),

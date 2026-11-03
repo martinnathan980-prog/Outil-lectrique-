@@ -13,6 +13,12 @@ def module(nom):
         assert t.count('Public Sub InitialiserClasseur()\n')==1, 'InitialiserClasseur introuvable : adapter banc.py'
         t=t.replace('Public Sub InitialiserClasseur()\n','Public Sub InitialiserClasseur()\n    If gPanneClasseur Then\n        gPanneClasseur = False\n'
                     '        Err.Raise 1004, , "feuille protégée (panne simulée)"\n    End If\n')
+    # une erreur imprévue au milieu du relevé des formes, à la demande (gPanneReleve, FauxWindows.bas) : au début de la
+    # famille n, une fois son nom dans le contexte
+    if nom=='SEE_Sonde':
+        a='        Contexte "SondeSymboles", LireProp(f, "Name")\n'
+        assert t.count(a)==1, 'DecrireFormes : le contexte de la famille introuvable : adapter banc.py'
+        t=t.replace(a, a+'        If gPanneReleve = i Then Err.Raise 999, , "panne simulée du relevé (banc)"\n')
     # LibreOffice ne sait pas « obj.Item(k) = v » sur une classe Basic : le banc écrit obj.Assigner k, v
     t=re.sub(r'(\b[\w]+(?:\([\w]+\))?)\.Item\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\) = (.+)$', r'\1.Assigner \2, \3', t, flags=re.M)
     return 'Option VBASupport 1\n'+t

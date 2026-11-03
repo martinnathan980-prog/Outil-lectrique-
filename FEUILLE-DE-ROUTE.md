@@ -310,18 +310,22 @@ enregistre, referme).
 la table des objets actifs : les boutons 1 et 2 ne rejoindront jamais la
 fenêtre, **le bouton 3 est la voie**. Il a créé `SeeAutomation` et **ouvert
 le projet d'essai tout seul** (`OpenProject`, projet en sortie dans une
-variable `Object`) ; son `CreateObject` a refusé (450 à deux arguments, 13 à
-trois avec un `Variant` vide au milieu : le milieu attend sans doute le
-projet). La v4 :
+variable `Object`) ; son `CreateObject` a refusé ((type, variable `Object`) :
+450 ; (type, `Variant`) : 13 ; 13 à trois avec un `Variant` vide au milieu :
+le milieu est contrôlé avant le nombre d'arguments, refuse un `Variant` vide,
+laisse passer `Nothing`, et attend sans doute le projet). La v4 :
 - essaie `CreateObject(type, projet, objet en sortie)` d'abord, puis les
-  autres formes (l'objet rendu compris), et garde la première qui rend un
-  objet ; le bloc la dit en clair ;
+  autres formes (l'objet rendu compris) tant que SEE les refuse avant de
+  faire tourner la méthode, et garde la première qui rend un objet ; une
+  forme qui a tourné, puis refusée ou sans rien rendre, arrête les essais ;
+  le bloc dit la forme retenue, ou les codes, en clair ;
 - ferme par `CloseProject(projet)` (sans argument : 450), puis `Close` et
   `Quit` comme avant ;
 - lit une forme par le projet (`prj.GetShape`), sans `GetEnvironment` ;
 - relève, en lecture seule, les familles et les formes de l'album
   (`OpenEnvironment` du projet, `Sonde_Symboles`, `CloseEnvironment`), après
-  `Save` et avant la fermeture, sans jamais l'empêcher ;
+  `Save` et avant la fermeture, sans jamais l'empêcher ; une lecture refusée
+  ou un relevé interrompu est dit dans le bloc, avec son code ;
 - n'essaie plus, pour rejoindre SEE, que les ProgID utiles, et le dit : sur
   ce poste, c'est le bouton 3 qui compte (le LIS-MOI, l'Accueil, le
   message du bouton 1).

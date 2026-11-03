@@ -25,6 +25,7 @@ Public gWinTenuParExcel As Boolean    ' SEE.exe ne s'arrête pas tant qu'Excel t
 Public gWinProcessusAuChoix As Long   ' >= 0 : le technicien ouvre SEE pendant la fenêtre « Ouvrir » (gWinProcessus prend cette valeur)
 Public gWinBloqueDeclare As Boolean   ' Windows arrête la macro au premier appel d'une fonction déclarée (règle de Defender) : End
 Public gPanneClasseur As Boolean      ' InitialiserClasseur lève 1004 une fois (sous Excel : feuille Reglages protégée ; banc.py)
+Public gPanneReleve As Long           ' le relevé des formes (DecrireFormes) lève 999 au début de la famille n (banc.py) ; 0 : jamais
 
 Public Sub InitWindows()
     Set gWinTrace = New Collection
@@ -46,6 +47,7 @@ Public Sub InitWindows()
     gWinProcessusAuChoix = -1
     gWinBloqueDeclare = False
     gPanneClasseur = False
+    gPanneReleve = 0
 End Sub
 
 Private Sub Prete()

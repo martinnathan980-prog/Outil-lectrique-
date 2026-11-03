@@ -358,7 +358,7 @@ const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships
 const LIGNES = [
   [2, 1, 'Pilote SEE', 36],
   [3, 2, 'Avec ton projet d\'essai (même vide), jamais avec un vrai projet.', 21],
-  [4, 2, 'Sur ce poste, c\'est le BOUTON 3 qui compte : ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 (orange, plus bas).', 21],
+  [4, 2, 'Sur ce poste, saute les étapes 1 et 2 : ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 (orange, plus bas).', 21],
   [5, 3, 'ÉTAPE 1.  Dans SEE Electrical Expert, ouvre ton projet d\'essai (même vide).', 27],
   [6, 3, 'Puis clique sur le bouton vert 1, attends le message, clique sur OK et prends la photo de la partie jaune.', 27],
   ...BOUTONS[0].lignes.map(r => [r, 0, '', HAUTEUR_BOUTON]),
@@ -367,7 +367,7 @@ const LIGNES = [
   [18, 3, 'Sinon : fais ce que dit le message. Souvent : ferme SEE (File > Exit), puis clique sur le bouton orange 3.', 27],
   [19, 4, 'Ne rouvre pas SEE toi-même pendant le bouton 3 : Excel s\'en charge. Les boutons sont toujours sur cet onglet « Accueil ».', 18],
   ...BOUTONS[2].lignes.map(r => [r, 0, '', HAUTEUR_BOUTON]),
-  [24, 3, 'ÉTAPE 3.  Après le bouton 2 ou 3 : prends les photos que demande le message de fin (Resultat_Test, Sonde_Folio, SEE).', 27],
+  [24, 3, 'ÉTAPE 3.  Après le bouton 2 ou 3 : prends les photos que demande le message de fin (Resultat_Test, Sonde_Symboles, Sonde_Folio, SEE).', 27],
   [25, 3, 'Envoie-moi les photos (ton téléphone, c\'est très bien). Pas besoin de renvoyer ce fichier.', 27],
   [27, 4, 'Si une barre jaune dit « MODE PROTÉGÉ » : clique d\'abord sur « Activer la modification », puis lis la barre qui suit.', 18],
   [28, 4, 'Si une barre jaune « Activer le contenu » est en haut de l\'écran : clique d\'abord dessus.', 18],

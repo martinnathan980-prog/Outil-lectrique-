@@ -1117,6 +1117,24 @@ Public Function HautDeFeuille(ByVal nom As String, ByVal n As Long) As String
     HautDeFeuille = s
 End Function
 
+' Les appels de CreateObject que le faux SeeAutomation a fait TOURNER (après ses contrôles) : « [milieu …|sortie …] ».
+Public Function AppelsCreation() As String
+    Dim i As Long, s As String
+    For i = 1 To gTrace.Count
+        If Left(CStr(gTrace.Item(i)), Len("CreateObject.appel|")) = "CreateObject.appel|" Then s = s & " [" & Mid(CStr(gTrace.Item(i)), Len("CreateObject.appel|") + 1) & "]"
+    Next i
+    AppelsCreation = s
+End Function
+
+' La largeur d'une colonne d'une feuille (en caractères, arrondie à l'entier), ou « absente ».
+Public Function LargeurColonne(ByVal nom As String, ByVal col As Long) As String
+    If Not FeuilleExiste(nom) Then
+        LargeurColonne = "absente"
+        Exit Function
+    End If
+    LargeurColonne = CStr(CLng(ThisWorkbook.Worksheets(nom).Columns(col).ColumnWidth))
+End Function
+
 ' Ce que le bouton 3 a fait : les appels à Windows et au faux SEE, la copie, puis Resultat_Test.
 Private Function BilanBouton3(ByVal projet As String) As String
     BilanBouton3 = "chemin entier montré " & CheminMontre(projet) & " ; " & _
@@ -1135,7 +1153,7 @@ End Function
 ' 2 : l'objet rendu seulement). Dans l'ordre : SEE ouvert ; Windows muet ; la copie ratée ; Annuler (la fenêtre
 ' « Ouvrir », puis la question) : rien n'est fait. Puis le parcours complet ; CreateObject refusé ; un SEE qui reste
 ' après Quit ; ... ; OpenEnvironment refusé (le dessin, Save et CloseProject passent quand même) ; seul l'objet rendu
-' marche ; la forme lue par le projet.
+' marche ; la méthode qui tourne, puis refuse ou ne rend rien (une seule forme qui tourne) ; la forme lue par le projet.
 Public Function BancBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal projet As String) As String
     Dim r As String, absent As String, n0 As Long
     On Error GoTo E
@@ -1166,6 +1184,7 @@ Public Function BancBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal proj
     gWinFichier = projet
     EssaiSansFenetre
     r = r & " | complet : Projet noté " & IIf(ValeurReglage("Projet") = projet, "oui", "non") & " ; Patienter " & CompterWin("Windows|Patienter") & _
+        " ; Sonde_Symboles largeurs A " & LargeurColonne("Sonde_Symboles", 1) & " B " & LargeurColonne("Sonde_Symboles", 2) & _
         " ; Sonde_Symboles haut = " & HautDeFeuille("Sonde_Symboles", 7) & " ; " & BilanBouton3(projet)
     PreparerBouton3 v4, 0, projet
     EssaiSansFenetre
@@ -1217,10 +1236,32 @@ Public Function BancBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal proj
     gAutoEnvRefuse = True
     EssaiSansFenetre
     r = r & " | env refusé : " & BilanBouton3(projet)
+    ' EX2, TE3 : le relevé arrêté par une erreur imprévue au début de la 2e famille ; la lecture des familles refusée
+    ' (toutes, puis seulement celles de l'album) : l'étape 8 le dit, avec le code, et la fermeture suit
+    PreparerBouton3 v4, forme, projet
+    gPanneReleve = 2
+    EssaiSansFenetre
+    r = r & " | relevé interrompu : Sonde_Symboles haut = " & HautDeFeuille("Sonde_Symboles", 6) & " ; " & BilanBouton3(projet)
+    PreparerBouton3 v4, forme, projet
+    gFamillesRefusees = 1
+    EssaiSansFenetre
+    r = r & " | familles refusées : " & BilanBouton3(projet)
+    PreparerBouton3 v4, forme, projet
+    gFamillesRefusees = 2
+    EssaiSansFenetre
+    r = r & " | album refusé : " & BilanBouton3(projet)
     ' la v4 : seul l'objet rendu marche (Set o = CreateObject(type)) : cette forme est retenue
     PreparerBouton3 v4, 2, projet
     EssaiSansFenetre
     r = r & " | rendu seulement : " & BilanBouton3(projet)
+    ' EX1 : la méthode TOURNE (les contrôles du milieu, du nombre d'arguments et de la sortie passés), puis refuse, ou ne
+    ' rend rien : aucune autre forme n'est essayée (elle passerait Nothing ou le projet à la mauvaise place)
+    PreparerBouton3 v4, 3, projet
+    EssaiSansFenetre
+    r = r & " | tourne et refuse : appels " & Compter("CreateObject.appel") & " =" & AppelsCreation() & " ; " & BilanBouton3(projet)
+    PreparerBouton3 v4, 4, projet
+    EssaiSansFenetre
+    r = r & " | tourne sans rien rendre : appels " & Compter("CreateObject.appel") & " =" & AppelsCreation() & " ; " & BilanBouton3(projet)
     ' la v4 : sous SeeAutomation, une forme (définition de symbole) se lit par le projet ouvert, jamais par l'environnement
     PreparerBouton3 v4, forme, projet
     Set gApp = New FauxAuto

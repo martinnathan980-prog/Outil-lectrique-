@@ -53,9 +53,13 @@ CETTE FOIS : SEULEMENT LE BOUTON 3 (10 minutes)
       (la liste de tes familles de symboles) ;
    c. si le message le demande : l'onglet « Sonde_Folio », une photo
       de son haut ;
-   d. puis ouvre SEE, ouvre ton projet d'essai, double-clic sur le
-      folio « ESSAI_PILOTE » dans l'arbre, à gauche, et prends une
-      photo de l'écran, même si le folio est vide ou de travers.
+   d. si le message le demande (« Ouvre SEE, ouvre ton projet
+      d'essai... ») : ouvre SEE, ouvre ton projet d'essai, double-clic
+      sur le folio « ESSAI_PILOTE » dans l'arbre, à gauche, et prends
+      une photo de l'écran, même si le folio est vide ou de travers ;
+   e. si la ligne « Et maintenant » te dit de recliquer sur le
+      bouton 3 : prends d'abord la photo a, puis fais ce que dit cette
+      ligne, dans l'ordre. Pour recliquer, reprends au point 4.
    Si le message dit « SEE tourne encore, caché » : fais d'abord
    « SI SEE TOURNE CACHÉ », plus bas, avant de rouvrir SEE.
 9. Envoie-moi les photos (l'étape F).
@@ -230,7 +234,8 @@ Une barre ROUGE « Microsoft a bloqué l'exécution des macros » :
 3. Clique sur « Propriétés ».
 4. En bas, coche « Débloquer ».
 5. Clique sur OK.
-6. Rouvre le fichier et reprends l'étape C.
+6. Rouvre le fichier et reprends là où tu en étais (cette fois :
+   « CETTE FOIS », point 2).
 
 Le bouton ne fait rien :
 1. Regarde en haut : s'il reste une barre jaune, clique sur son bouton
@@ -253,10 +258,10 @@ LES PHOTOS À PRENDRE
 - Après le bouton 2 : l'écran de SEE avec le folio « ESSAI_PILOTE »,
   puis le haut de la feuille Sonde_Folio (son onglet est en bas d'Excel).
 - Après le bouton 3 : la partie jaune de la feuille Resultat_Test, puis
-  le haut de la feuille Sonde_Symboles s'il est rempli, puis le haut de
-  la feuille Sonde_Folio si le message le demande (leurs onglets sont en
-  bas d'Excel), puis l'écran de SEE avec le folio « ESSAI_PILOTE »
-  (ouvert par toi).
+  le haut de la feuille Sonde_Symboles si le message le demande, puis
+  le haut de la feuille Sonde_Folio si le message le demande (leurs
+  onglets sont en bas d'Excel), puis, si le message le demande, l'écran
+  de SEE avec le folio « ESSAI_PILOTE » (ouvert par toi).
 - Tout message d'erreur ou de refus, tel quel, même un message de
   Windows (par exemple « Sécurité Windows »).
 Si une photo coupe le texte : prends la première photo, fais descendre

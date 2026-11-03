@@ -173,14 +173,21 @@ la même architecture `[nso-inv]` *(déduction technique)*.
   l'objet (version 4.89.99.5, API V4 ; `Visible` : 438) ; `OpenProject chemin, mdp, prj`, le projet en
   paramètre de sortie dans une variable `Object`, **ouvre le projet** (`prj.Name` rendu) *(établi)* ;
 - **son `CreateObject`** : (type, sortie) répond 13 avec un `Variant` et 450 (nombre d'arguments) avec une
-  variable `Object` ; (type, `Variant` vide, sortie) répond 13 avec l'une et l'autre. Deux arguments : 450 ;
-  trois : 13. La méthode a donc trois paramètres, et c'est celui du **milieu** qui refuse un `Variant` vide :
-  sans doute un objet, et le plus probable est le projet ouvert *(déduction)*. La forme qui rend l'objet
+  variable `Object` ; (type, `Variant` vide, sortie) répond 13 avec l'une et l'autre. Le deuxième argument
+  est donc contrôlé **avant** le nombre d'arguments : un `Variant` vide y est refusé (13) ; une variable
+  `Object`, même `Nothing`, passe, et c'est alors le nombre qui est refusé (450). Ce n'est donc pas « deux
+  arguments : 450 » : (type, `Variant`) a répondu 13. La méthode a trois paramètres, et c'est celui du
+  **milieu** qui refuse un `Variant` vide : sans doute un objet, et le plus probable est le projet ouvert
+  *(déduction ; ISeeAutomation V5R2 a `CreateObject(A_ObjectType, A_ppiObject)`, et le même nom est le
+  premier paramètre d'`OpenEnvironmentForProject(A_ppiObject, A_Name)` `[nso-index]`)*. Un `Nothing` au milieu
+  passerait ce contrôle : la méthode tournerait avec un projet nul. La forme qui rend l'objet
   (`Set o = gApp.CreateObject(type)`) n'avait pas été essayée en V4. La v4 du pilote essaie, dans l'ordre :
   (type, projet, objet en sortie), la même avec un `Variant` en sortie, l'objet rendu, les deux formes à deux
   arguments, puis `Nothing`, 0, "" et le projet passé dans un `Variant` au milieu, puis (type, objet en sortie,
-  projet) ; la première qui rend un
-  objet est retenue pour la macro ;
+  projet), **tant que SEE les refuse avant de faire tourner la méthode** (13, 449, 450) ; la première qui rend
+  un objet est retenue pour la macro. Une forme que SEE a fait tourner, puis refusée (un autre code) ou qui
+  n'a rien rendu, arrête les essais : le bloc garde son code. Le projet lui est passé par une copie de la
+  référence, jamais par la variable gardée ;
 - **la fermeture** : `CloseProject` sans argument répond 450, `Close` (du projet) et `Quit` 438 ; pourtant,
   après le relâchement des objets, aucun SEE.exe ne tournait plus. Dans ISeeAutomation V5R2,
   `CloseProject(A_piObject)` prend le projet en argument `[nso-index]` : la v4 appelle
@@ -339,7 +346,7 @@ Classé par ce que la réponse débloque. Une partie se relève par `see/diagnos
 | # | Question | Où regarder | Débloque |
 |---|---|---|---|
 | 6 | Le registre connaît-il `HKCR\CLSID\{829E4B3B-B128-4999-A66A-6E76F0B4B22F}`, `{29E25405-2755-42DA-A17D-C07EC1A16CCB}`, `HKCR\TypeLib\{9956A56F-B14C-4007-B6CF-B89B4A7CD08D}` (V5R2 ; CLSID V4R3 en 3.1) ? ProgID ? LocalServer32 ? | `reg query … /s`, diagnostic.ps1 | réglages ProgID, CLSID_* |
-| 7 | Un SEE ouvert est-il trouvé par GetObject ? **Vu : non** (429 pour les treize `GetObject(, x)` ; l'`Application` est absente du registre, SEE n'est pas dans la table des objets actifs). `SeeAutomation` créée SEE fermé (bouton 3) ouvre-t-elle le projet ? **Vu : oui** (`OpenProject`, projet en sortie dans une variable `Object`). Crée-t-elle des objets ? **Pas encore** : 450 à deux arguments, 13 à trois ; la v4 passe le projet au milieu | bouton 3 (bloc `Resultat_Test`) | s'attacher à SEE, dessiner |
+| 7 | Un SEE ouvert est-il trouvé par GetObject ? **Vu : non** (429 pour les treize `GetObject(, x)` ; l'`Application` est absente du registre, SEE n'est pas dans la table des objets actifs). `SeeAutomation` créée SEE fermé (bouton 3) ouvre-t-elle le projet ? **Vu : oui** (`OpenProject`, projet en sortie dans une variable `Object`). Crée-t-elle des objets ? **Pas encore** : (type, `Variant`) 13, (type, variable `Object`) 450, 13 à trois avec un `Variant` vide au milieu ; la v4 passe le projet au milieu | bouton 3 (bloc `Resultat_Test`) | s'attacher à SEE, dessiner |
 | 8 | L'Explorateur d'objets confirme-t-il les signatures (valeurs de retour, énumérations) ? | Excel > VBE > Références > SEE.exe, F2 | confiance dans NSO73 |
 | 9 | Une aide API est-elle installée (en V4R2 : \Doc\VBAHelp\SEEapp.chm), des .tlb, un dossier Plugins ? (En attendant : le chapitre VBA du manuel V4R2, en accès libre, voir 2.1.) | dossier d'installation | doc officielle |
 | 10 | Unité et origine des coordonnées : poser un symbole à la main à un endroit connu, relire sa position | sonde | Mode, Echelle, OrigineX/Y, SensY |

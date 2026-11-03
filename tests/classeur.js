@@ -315,9 +315,12 @@ function controler(parties) {
     [6, 18, 19, 24].map(cellule).map(c => c.slice(0, 30)).join(' | '));
   // la v4 (les photos du 2 novembre 2026) : sur le poste du bureau, seule la porte du bouton 3 s'ouvre ; l'Accueil le dit
   // en tête, avant l'étape 1
-  verif('l\'Accueil dit, avant l\'étape 1, que sur ce poste c\'est le bouton 3 qui compte (« Ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 »)',
-    /^Sur ce poste, c'est le BOUTON 3 qui compte : ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3/.test(cellule(4)) && /bouton 3 \(orange/.test(cellule(4)),
+  verif('l\'Accueil dit, avant l\'étape 1, que sur ce poste il faut sauter les étapes 1 et 2 (« ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 »), comme le mode d\'emploi',
+    /^Sur ce poste, saute les étapes 1 et 2 : ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3/.test(cellule(4)) && /bouton 3 \(orange/.test(cellule(4)),
     cellule(4).slice(0, 60));
+  // TE2 de la v4 : l'étape 3 cite toutes les photos que le bouton 3 peut demander
+  verif('l\'Accueil, étape 3 : les photos du message de fin, Sonde_Symboles comprise (Resultat_Test, Sonde_Symboles, Sonde_Folio, SEE)',
+    /\(Resultat_Test, Sonde_Symboles, Sonde_Folio, SEE\)/.test(etapes[2]), etapes[2].slice(-60));
   // TE10 : le bouton 3 tient sur un écran de portable (zoom 80 %, lignes de bouton basses)
   const vue = premier(ws, 'sheetView'), hauteurs = new Map([...ws.matchAll(/<row r="(\d+)" ht="([\d.]+)"/g)].map(m => [+m[1], +m[2]]));
   const basBouton3 = Array.from({ length: 22 }, (_, i) => hauteurs.get(i + 1) || 15).reduce((s, h) => s + h, 0) * 4 / 3 * (+vue.zoomScale || 100) / 100;
@@ -532,8 +535,16 @@ try { const k = K.kit({ dossierVba: AVEC }), z = lireZip(k.zip), ref = C.classeu
   ok('LIS-MOI-D-ABORD.txt, en tête (avant l\'étape A) : ce qui est acquis (le projet s\'ouvre tout seul ; « Ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 »), puis « CETTE FOIS : SEULEMENT LE BOUTON 3 » pas à pas : File > Exit, 30 secondes, le bouton orange 3, le projet dans « Robot » (pas un « avant-pilote »), OK, attendre sans toucher ; les photos : la partie jaune de Resultat_Test, le haut de Sonde_Symboles, puis SEE rouvert sur ESSAI_PILOTE ; les secours (Excel bloqué, SEE caché)',
     t.indexOf('ÉTAPE A') > 0 && /CE QUI EST ACQUIS[\s\S]*Le projet s'ouvre tout seul[\s\S]*Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3[\s\S]*BOUTON 3 qui compte[\s\S]*CETTE FOIS : SEULEMENT LE BOUTON 3[\s\S]*File, puis Exit[\s\S]*Attends 30 secondes[\s\S]*onglet « Accueil »[\s\S]*bouton orange « 3\. SEE FERMÉ »[\s\S]*Choisis ton projet d'ESSAI[\s\S]*dossier « Robot »[\s\S]*« avant-pilote »[\s\S]*clique sur OK[\s\S]*sans toucher à rien[\s\S]*SI EXCEL RESTE BLOQUÉ[\s\S]*partie jaune de la feuille Resultat_Test[\s\S]*« Sonde_Symboles »[\s\S]*photo du haut de cette feuille[\s\S]*« ESSAI_PILOTE »[\s\S]*SI SEE TOURNE CACHÉ/.test(tete)
       && !/Compte 20 minutes/.test(t));
-  ok('LIS-MOI-D-ABORD.txt, « LES PHOTOS À PRENDRE » : après le bouton 3, la partie jaune, PUIS le haut de Sonde_Symboles s\'il est rempli, puis SEE avec ESSAI_PILOTE',
-    /Après le bouton 3 : la partie jaune de la feuille Resultat_Test, puis\s+le haut de la feuille Sonde_Symboles s'il est rempli[\s\S]*« ESSAI_PILOTE »/.test(t.slice(t.indexOf('LES PHOTOS À PRENDRE'))));
+  ok('LIS-MOI-D-ABORD.txt, « LES PHOTOS À PRENDRE » : après le bouton 3, la partie jaune, PUIS le haut de Sonde_Symboles, puis SEE avec ESSAI_PILOTE, chacune si le message le demande',
+    /Après le bouton 3 : la partie jaune de la feuille Resultat_Test, puis\s+le haut de la feuille Sonde_Symboles si le message le demande[\s\S]*si le message le demande[\s\S]*si le message le demande, l'écran\s+de SEE avec le folio « ESSAI_PILOTE »/.test(t.slice(t.indexOf('LES PHOTOS À PRENDRE')))
+      && !/s'il est rempli/.test(t));
+  // TE1, TE5 de la v4 : « cette fois », SEE n'est rouvert que si le message le demande, et la ligne « Et maintenant » se suit
+  // (recliquer sur le bouton 3 : la photo d'abord, puis le point 4) ; le secours de la barre rouge ramène à « cette fois »
+  const cetteFois = t.slice(t.indexOf('CETTE FOIS : SEULEMENT LE BOUTON 3'), t.indexOf('POUR MÉMOIRE'));
+  ok('LIS-MOI-D-ABORD.txt, « CETTE FOIS » : SEE rouvert sur ESSAI_PILOTE seulement si le message le demande ; recliquer sur le bouton 3 si « Et maintenant » le dit (la photo a d\'abord, puis le point 4) ; la barre rouge ramène à « CETTE FOIS », pas à l\'étape C',
+    /d\. si le message le demande \(« Ouvre SEE, ouvre ton projet\s+d'essai\.\.\. »\) : ouvre SEE/.test(cetteFois) && !/puis ouvre SEE, ouvre ton projet d'essai/.test(cetteFois)
+      && /e\. si la ligne « Et maintenant » te dit de recliquer sur le\s+bouton 3 : prends d'abord la photo a, puis fais ce que dit cette\s+ligne, dans l'ordre\. Pour recliquer, reprends au point 4\./.test(cetteFois)
+      && /Rouvre le fichier et reprends là où tu en étais \(cette fois :\s+« CETTE FOIS », point 2\)/.test(t) && !/Rouvre le fichier et reprends l'étape C/.test(t));
   ok('LIS-MOI-D-ABORD.txt : « SI EXCEL RESTE BLOQUÉ » (action OLE : attendre 2 minutes, Ctrl + Maj + Échap, SEE, Fin de tâche)',
     /SI EXCEL RESTE BLOQUÉ[\s\S]*action OLE[\s\S]*2 minutes[\s\S]*Ctrl \+ Maj \+ Échap[\s\S]*SEE[\s\S]*Fin de tâche/.test(t));
   // la relecture de la v3 (TE1 à TE10, EX5, SU6)
@@ -598,8 +609,10 @@ const MUTATIONS = [
   ['une balise mal fermée', 'chaque partie XML est bien formée', avecTexte('xl/styles.xml', '</fonts>', '</font>')],
   ['l\'Accueil sans son zoom (le bouton 3 sous le bord d\'un écran de portable)', 'l\'Accueil : le bas du bouton orange 3', avecTexte('xl/worksheets/sheet1.xml', ' zoomScale="80" zoomScaleNormal="80"', '')],
   ['l\'Accueil qui envoie au bouton 3 pour tout message autre que BRAVO', 'l\'Accueil suit le mode d\'emploi', avecTexte('xl/sharedStrings.xml', 'Sinon : fais ce que dit le message. Souvent : ferme SEE', 'Sinon : ferme SEE')],
-  ['l\'Accueil qui ne dit plus que le bouton 3 compte', 'l\'Accueil dit, avant l\'étape 1, que sur ce poste c\'est le bouton 3 qui compte',
-    avecTexte('xl/sharedStrings.xml', 'c\'est le BOUTON 3 qui compte : ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3', 'les trois boutons comptent')],
+  ['l\'Accueil qui ne dit plus de sauter les étapes 1 et 2 (TE2)', 'l\'Accueil dit, avant l\'étape 1, que sur ce poste il faut sauter les étapes 1 et 2',
+    avecTexte('xl/sharedStrings.xml', 'saute les étapes 1 et 2 : ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3', 'c\'est le BOUTON 3 qui compte : ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3')],
+  ['l\'Accueil, étape 3, sans la photo de Sonde_Symboles (TE2)', 'l\'Accueil, étape 3 : les photos du message de fin, Sonde_Symboles comprise',
+    avecTexte('xl/sharedStrings.xml', '(Resultat_Test, Sonde_Symboles, Sonde_Folio, SEE)', '(Resultat_Test, Sonde_Folio, SEE)')],
   ['les éléments de la feuille dans le désordre', 'sheet1.xml : ses éléments', (() => { const p = new Map(parties), t = Buffer.from(p.get('xl/worksheets/sheet1.xml')).toString('utf8'), m = /<pageMargins[^>]*\/>/.exec(t);
     p.set('xl/worksheets/sheet1.xml', new Uint8Array(Buffer.from(t.replace(m[0], '').replace('<sheetData>', m[0] + '<sheetData>'), 'utf8'))); return p; })()],
 ];

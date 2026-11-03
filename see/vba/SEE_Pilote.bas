@@ -683,10 +683,13 @@ End Sub
 ' sortie ; sinon l'objet rendu), ses familles et ses formes dans la feuille
 ' Sonde_Symboles (RelireFormes, la sonde des symboles), puis CloseEnvironment.
 ' Rien n'est écrit dans l'environnement. Un refus est dit, avec son code, et
-' rien d'autre n'est tenté. Aucune erreur n'en sort : la fermeture suit.
+' rien d'autre n'est tenté. Les erreurs de lecture du relevé (les familles,
+' leurs formes) sont comptées, et la dernière est dite avec son code ;
+' un relevé arrêté par une erreur imprévue est dit INTERROMPU, avec ce qui a
+' été lu. Aucune erreur n'en sort : la fermeture suit.
 Private Sub ReleverFormes()
     Dim env As Object, numErr As Long, descErr As String, forme As String, nbFam As Long, nbSym As Long, ferme As String
-    Dim refus As String
+    Dim refus As String, e0 As Long, auBout As Boolean, lu As String
     On Error GoTo Imprevu
     Contexte "Bouton 3", "formes"
     EnCours3 8
@@ -700,8 +703,18 @@ Private Sub ReleverFormes()
         NoterEtape3 8, "non relevées : OpenEnvironment(« " & mNomEnv3 & " ») refusé, rien d'autre n'est tenté" & vbLf & refus
         Exit Sub
     End If
-    RelireFormes env, nbFam, nbSym
+    ' les erreurs du relevé : comptées depuis ici, la dernière dite (JournalErreur la note avec l'appel et le code)
+    e0 = gNbErreurs
+    gDerniereErreur = ""
+    auBout = RelireFormes(env, nbFam, nbSym)
     mFormesRelevees = (nbFam > 0)
+    If auBout Then
+        lu = nbFam & " familles, " & nbSym & " formes (feuille Sonde_Symboles)"
+    Else
+        lu = "relevé INTERROMPU après " & nbFam & " familles, " & nbSym & " formes (feuille Sonde_Symboles ; le détail est au journal)"
+    End If
+    If gNbErreurs > e0 Then lu = lu & vbLf & (gNbErreurs - e0) & " erreur(s) de lecture ; la dernière : " & _
+        IIf(Len(gDerniereErreur) > 0, gDerniereErreur, "(non dite)")
     ' l'environnement ouvert ici est refermé ici, sans rien y écrire
     On Error Resume Next
     Err.Clear
@@ -717,8 +730,8 @@ Private Sub ReleverFormes()
         Journal gEtape, gObjet, "SeeAutomation.CloseEnvironment(environnement)", "échec (sans gravité : on continue)", numErr, descErr
     End If
     Set env = Nothing
-    NoterEtape3 8, nbFam & " familles, " & nbSym & " formes (feuille Sonde_Symboles)" & vbLf & "environnement « " & mNomEnv3 & _
-        " », ouvert par OpenEnvironment" & forme & ", en lecture ; CloseEnvironment : " & ferme
+    NoterEtape3 8, lu & vbLf & "environnement « " & mNomEnv3 & " », ouvert par OpenEnvironment" & forme & ", en lecture ; CloseEnvironment : " & _
+        ferme
     Exit Sub
 Imprevu:
     numErr = Err.Number

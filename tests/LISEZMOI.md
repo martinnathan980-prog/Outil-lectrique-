@@ -120,10 +120,13 @@ node tests/vba.js              LES MACROS DU PILOTE SEE (see/vba/*.bas), sans Ex
                                dernier, après un bloc provisoire ; le paramètre de sortie d'OpenProject en Variant puis en
                                Object ; aucun chemin entier au bloc ni au journal ; la v4 : CreateObject de SeeAutomation
                                d'abord (type, projet, objet en sortie), chaque forme jusqu'à la première qui rend un objet,
-                               CloseProject(le projet) après Save et le relevé des formes (par la sonde des symboles, sans
-                               erreur qui en sorte), une forme lue par le projet, les ProgID essayés filtrés, le bouton 1 qui
-                               envoie droit au bouton 3 sans Application au registre ; et le contrôleur lui-même, éprouvé
-                               par quatre-vingt-douze fautes injectées, sans crier au loup sur une écriture dans le classeur
+                               une autre seulement si SEE a refusé avant de faire tourner la méthode, le projet passé par une
+                               copie ; CloseProject(le projet) après Save et le relevé des formes (par la sonde des symboles,
+                               sans erreur qui en sorte ; un relevé interrompu et les erreurs de lecture dits dans l'étape 8 ;
+                               la colonne A de Sonde_Symboles étroite), une forme lue par le projet, les ProgID essayés
+                               filtrés, le bouton 1 qui envoie droit au bouton 3 sans Application au registre ; et le
+                               contrôleur lui-même, éprouvé par cent fautes injectées, sans crier au loup
+                               sur une écriture dans le classeur
 tests/banc-vba/lancer.sh       LES MÊMES MACROS EXÉCUTÉES, dans LibreOffice (Basic en mode VBASupport) face à un FAUX SEE qui imite
                                l'API COM et trace chaque appel, et un FAUX SEE_Windows (ce que Windows répond : la table des
                                objets actifs, le registre, les programmes en marche, les fenêtres du bouton 3) :
@@ -164,8 +167,8 @@ node tests/classeur.js         LE CLASSEUR PILOTE TOUT PRÊT (see/classeur.js : 
                                1, rien d'écrit ; --sans-bouton l'écrit avec un avertissement), sur des copies des .bas dans un
                                dossier temporaire ; les recours de la feuille (mode protégé, Activer le contenu, barre rouge,
                                Alt+F8, Excel bloqué) ; l'Accueil à la mesure d'un écran de portable (zoom 80 %) et d'accord
-                               avec le mode d'emploi, et qui dit que sur ce poste c'est le bouton 3 qui compte ; le
-                               contrôleur éprouvé par vingt-six fautes injectées.
+                               avec le mode d'emploi, et qui dit de sauter les étapes 1 et 2 sur ce poste ; le
+                               contrôleur éprouvé par vingt-sept fautes injectées.
                                VBA_DOSSIER=… pour d'autres .bas. Il ne prouve pas qu'Excel ouvre le classeur (voir see/LISEZMOI.md)
 node tests/kit-pdf.js          LE KIT PDF (node see/kit.js --pdf : Kit-PDF.zip, la sonde par courriel), sans Python : le zip relu par
                                un lecteur écrit pour le test (répertoire central et en-têtes locaux d'accord, « stocké », CRC) ;

@@ -907,13 +907,22 @@ function controler(entrees) {
     const iVar = opa.indexOf('gApp.OpenProject chemin, mdp, r\n'), iRefus = opa.indexOf('ElseIf TypeRefuse(numErr) Then'), iObj = opa.indexOf('gApp.OpenProject chemin, mdp, prj');
     ok('SeeAutomation (V4) : le paramètre de sortie d\'OpenProject : un Variant, puis une variable Object seulement si SEE refuse le type',
       iVar >= 0 && iRefus > iVar && iObj > iRefus, `Variant ${iVar}, refus ${iRefus}, Object ${iObj}`);
-    // la v4 (le bureau : 2 arguments -> 450, un Variant vide au milieu -> 13) : le projet ouvert au milieu, d'abord
+    // la v4 (le bureau : (type, variable Object) -> 450, (type, Variant) -> 13, un Variant vide au milieu -> 13) : le projet
+    // ouvert au milieu, d'abord
     const oc = texteBrut(procDe('SEE_Commun', 'OrdreCreation')), nao = texteBrut(procDe('SEE_Commun', 'NouvelObjetAutomation'));
     ok('SeeAutomation : CreateObject d\'abord (type, projet, objet en sortie) en V4, le projet ouvert par OpenProject gardé pour lui ; chaque forme essayée jusqu\'à la première qui rend un objet, retenue',
-      /Case 1\s*\n\s*gApp\.CreateObject typeObjet, mProjetCreation, x\b/.test(ec) && /gApp\.CreateObject typeObjet, mProjetCreation, r\b/.test(ec)
+      /Set pc = mProjetCreation\n[\s\S]*Case 1\s*\n\s*gApp\.CreateObject typeObjet, pc, x\b/.test(ec) && /gApp\.CreateObject typeObjet, pc, r\b/.test(ec)
         && /Set o = gApp\.CreateObject\(typeObjet\)/.test(ec) && /If EstV4\(\) Then\s*\n\s*ordre = Array\(1, 2, 3, /.test(oc) && /Set mProjetCreation = prj/.test(opa)
         && /For Each forme In OrdreCreation\(\)\s*\n\s*If EssaiCreation\(CInt\(forme\)[^\n]*\n\s*mFormeCreation = CInt\(forme\)[\s\S]{0,400}?Exit Function[\s\S]*?Next forme/.test(nao),
       'EssaiCreation, OrdreCreation, SEE_OuvrirProjetAutomation ou NouvelObjetAutomation');
+    // EX1 de la v4 : une forme que SEE a fait TOURNER (refusée ensuite, ou qui n'a rien rendu) arrête les essais ; et SEE ne
+    // reçoit jamais, par référence, la variable gardée du projet (une copie locale)
+    const rav = texteBrut(procDe('SEE_Commun', 'RefusAvantAppel')), appelsCreation = [...sansChaines(ec).matchAll(/gApp\.CreateObject\b[^\n]*/g)].map(m => m[0]);
+    ok('SeeAutomation : CreateObject passe à une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode (le type ou le nombre des arguments) ; le projet lui est passé par une copie locale, jamais par la variable gardée',
+      /For Each forme In OrdreCreation\(\)[\s\S]*?mCodesCreation = [^\n]*\n[^\n]*\n(\s*'[^\n]*\n)?\s*If Not RefusAvantAppel\(numErr\) Then\n[\s\S]{0,300}?Exit For\n\s*End If\n\s*Next forme/.test(nao)
+        && /RefusAvantAppel = TypeRefuse\(numErr\) Or numErr = 449 Or numErr = 450 Or numErr = &H8002000E\b/.test(rav)
+        && /\n\s*Else\n\s*ordre = Array\(3, 1, 2, 4, 5, /.test(oc)
+        && appelsCreation.length >= 10 && !appelsCreation.some(a => /mProjetCreation/.test(a)), `${appelsCreation.length} appel(s) : ${appelsCreation.filter(a => /mProjetCreation/.test(a)).join(' ; ')}`);
     // la fermeture du bouton 3 : CloseProject(le projet), après Save et le relevé ; le projet gardé lâché avant d'attendre
     const fns = texteBrut(procDe('SEE_Pilote', 'FermerNotreSEE')), iClose = fns.indexOf('gApp.CloseProject prj\n'), iOublie = fns.indexOf('OublierCreation');
     ok('le bouton 3 ferme son projet par CloseProject(le projet), après Save et le relevé des formes ; le projet gardé pour CreateObject est lâché avant d\'attendre Windows',
@@ -923,10 +932,21 @@ function controler(entrees) {
     // le relevé des formes : en lecture, par la sonde des symboles ; il ne laisse sortir aucune erreur
     const rf = texteBrut(procDe('SEE_Pilote', 'ReleverFormes')), rlf = procDe('SEE_Sonde', 'RelireFormes');
     ok('le relevé des formes du bouton 3 : OpenEnvironment, la sonde des symboles (RelireFormes, comme SondeSymboles), CloseEnvironment ; aucun membre de l\'environnement appelé hors de la sonde ; aucune erreur n\'en sort',
-      rf.search(/^\s*On Error GoTo Imprevu\s*$/m) >= 0 && rf.search(/^\s*On Error GoTo Imprevu\s*$/m) < rf.indexOf('Contexte "Bouton 3", "formes"') && /SEE_OuvrirEnvironnementAutomation\(/.test(rf) && rf.indexOf('RelireFormes env') >= 0
-        && rf.indexOf('gApp.CloseEnvironment env') > rf.indexOf('RelireFormes env') && !/\benv\./.test(rf) && rlf && rlf.public
+      rf.search(/^\s*On Error GoTo Imprevu\s*$/m) >= 0 && rf.search(/^\s*On Error GoTo Imprevu\s*$/m) < rf.indexOf('Contexte "Bouton 3", "formes"') && /SEE_OuvrirEnvironnementAutomation\(/.test(rf) && rf.indexOf('RelireFormes(env') >= 0
+        && rf.indexOf('gApp.CloseEnvironment env') > rf.indexOf('RelireFormes(env') && !/\benv\./.test(rf) && rlf && rlf.public
         && /DecrireFormes env/.test(texteBrut(rlf)) && /DecrireFormes env/.test(texteBrut(procDe('SEE_Sonde', 'SondeSymboles'))) && /Resume ApresImprevu/.test(rf),
       'ReleverFormes ou RelireFormes');
+    // EX2, TE3 de la v4 : un relevé interrompu, ou des lectures refusées, sont dits dans l'étape 8 avec leur code (la photo)
+    const rlfB = texteBrut(rlf), echecRlf = rlfB.slice(rlfB.indexOf('\nEchec:'));
+    ok('le relevé des formes du bouton 3 : un relevé arrêté est dit INTERROMPU, et les erreurs de lecture comptées, la dernière avec son code, dans l\'étape 8 (le bloc à photographier)',
+      /auBout = RelireFormes\(env, nbFam, nbSym\)/.test(rf) && /If auBout Then\n[^\n]*\n\s*Else\n\s*lu = "relevé INTERROMPU/.test(rf)
+        && /e0 = gNbErreurs\n\s*gDerniereErreur = ""\n\s*auBout = RelireFormes/.test(rf) && /If gNbErreurs > e0 Then lu = lu & [^\n]*gDerniereErreur/.test(rf.replace(/ _\n\s*/g, ' '))
+        && /NoterEtape3 8, lu & /.test(rf) && rlf.genre === 'function' && /RelireFormes = True\n\s*Exit Function/.test(rlfB)
+        && /\bJournalErreur\b/.test(echecRlf) && /RelireFormes = False/.test(echecRlf), 'ReleverFormes ou RelireFormes');
+    // TE4 de la v4 : la colonne A de Sonde_Symboles n'est pas élargie par le titre de A1 (la photo du haut de la feuille)
+    ok('Sonde_Symboles : la colonne A gardée étroite après l\'ajustement des colonnes (le titre de A1 déborde), au relevé du bouton 3 et à la sonde des symboles',
+      /mFeuille\.Columns\.AutoFit\n\s*If mFeuille\.Name = "Sonde_Symboles" Then mFeuille\.Columns\(1\)\.ColumnWidth = \d+/.test(texteBrut(procDe('SEE_Sonde', 'AjusterColonnes')))
+        && /AjusterColonnes/.test(rlfB) && /AjusterColonnes/.test(texteBrut(procDe('SEE_Sonde', 'FinSonde'))) && !/Columns\.AutoFit/.test(rlfB), 'AjusterColonnes, RelireFormes ou FinSonde');
     ok('SeeAutomation : une forme (définition de symbole) se lit par le projet, jamais par un environnement (pas de GetEnvironment)',
       /If Not env Is Nothing And Not gEstAutomation Then/.test(texteBrut(procDe('SEE_Commun', 'SEE_Forme'))), 'SEE_Forme');
     // le registre : pour rejoindre SEE, seulement les ProgID d'un CLSID des réglages ou du programme de SEE
@@ -1207,7 +1227,15 @@ if (Object.keys(entrees).length === MODULES.length && Object.keys(analyses).leng
       remplacer('SEE_Commun', /        gApp\.OpenProject chemin, mdp, r\r\n/, '        gApp.OpenProject chemin, mdp, prj\r\n')],
     // --- la v4 : CreateObject (type, projet, objet en sortie), CloseProject(le projet), le relevé des formes, le registre
     ['CreateObject sans le projet au milieu', 'SeeAutomation : CreateObject d\'abord (type, projet, objet en sortie) en V4, le projet ouvert par OpenProject gardé pour lui ; chaque forme essayée jusqu\'à la première qui rend un objet, retenue',
-      remplacer('SEE_Commun', /gApp\.CreateObject typeObjet, mProjetCreation, x\r\n/, 'gApp.CreateObject typeObjet, rien, x\r\n')],
+      remplacer('SEE_Commun', /gApp\.CreateObject typeObjet, pc, x\r\n/, 'gApp.CreateObject typeObjet, rien, x\r\n')],
+    ['CreateObject qui continue après une forme que SEE a fait tourner (EX1)', 'SeeAutomation : CreateObject passe à une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode (le type ou le nombre des arguments) ; le projet lui est passé par une copie locale, jamais par la variable gardée',
+      remplacer('SEE_Commun', /        If Not RefusAvantAppel\(numErr\) Then\r\n(?:.*\r\n){2}        End If\r\n/, '')],
+    ['un refus après l\'appel pris pour un refus du type (EX1)', 'SeeAutomation : CreateObject passe à une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode (le type ou le nombre des arguments) ; le projet lui est passé par une copie locale, jamais par la variable gardée',
+      remplacer('SEE_Commun', /RefusAvantAppel = TypeRefuse\(numErr\) Or /, 'RefusAvantAppel = numErr <> 0 Or ')],
+    ['CreateObject en V5 : les formes à deux arguments avant celles qui passent le projet (EX1)', 'SeeAutomation : CreateObject passe à une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode (le type ou le nombre des arguments) ; le projet lui est passé par une copie locale, jamais par la variable gardée',
+      remplacer('SEE_Commun', /ordre = Array\(3, 1, 2, 4, 5, 6, 7, 8, 9, 10\)/, 'ordre = Array(3, 4, 5, 1, 2, 6, 7, 8, 9, 10)')],
+    ['la variable gardée du projet passée à CreateObject (EX1)', 'SeeAutomation : CreateObject passe à une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode (le type ou le nombre des arguments) ; le projet lui est passé par une copie locale, jamais par la variable gardée',
+      remplacer('SEE_Commun', /gApp\.CreateObject typeObjet, x, pc\r\n/, 'gApp.CreateObject typeObjet, x, mProjetCreation\r\n')],
     ['CreateObject : l\'objet rendu essayé d\'abord en V4', 'SeeAutomation : CreateObject d\'abord (type, projet, objet en sortie) en V4, le projet ouvert par OpenProject gardé pour lui ; chaque forme essayée jusqu\'à la première qui rend un objet, retenue',
       remplacer('SEE_Commun', /ordre = Array\(1, 2, 3, 4, 5, 6, 7, 8, 9, 10\)/, 'ordre = Array(3, 1, 2, 4, 5, 6, 7, 8, 9, 10)')],
     ['le projet ouvert non gardé pour CreateObject', 'SeeAutomation : CreateObject d\'abord (type, projet, objet en sortie) en V4, le projet ouvert par OpenProject gardé pour lui ; chaque forme essayée jusqu\'à la première qui rend un objet, retenue',
@@ -1220,7 +1248,15 @@ if (Object.keys(entrees).length === MODULES.length && Object.keys(analyses).leng
     ['le relevé des formes après la fermeture', 'le bouton 3 ferme son projet par CloseProject(le projet), après Save et le relevé des formes ; le projet gardé pour CreateObject est lâché avant d\'attendre Windows',
       remplacer('SEE_Pilote', /    ReleverFormes\r\nFermer:\r\n([\s\S]*?    If mNotreSEE Then FermerNotreSEE prj\r\n)/, 'Fermer:\r\n$1    ReleverFormes\r\n')],
     ['le relevé qui écrit dans l\'environnement', 'le relevé des formes du bouton 3 : OpenEnvironment, la sonde des symboles (RelireFormes, comme SondeSymboles), CloseEnvironment ; aucun membre de l\'environnement appelé hors de la sonde ; aucune erreur n\'en sort',
-      remplacer('SEE_Pilote', /(    RelireFormes env, nbFam, nbSym\r\n)/, '$1    env.UpdateMethodsXML 22, Nothing\r\n')],
+      remplacer('SEE_Pilote', /(    auBout = RelireFormes\(env, nbFam, nbSym\)\r\n)/, '$1    env.UpdateMethodsXML 22, Nothing\r\n')],
+    ['un relevé interrompu dit comme complet (EX2)', 'le relevé des formes du bouton 3 : un relevé arrêté est dit INTERROMPU, et les erreurs de lecture comptées, la dernière avec son code, dans l\'étape 8 (le bloc à photographier)',
+      remplacer('SEE_Pilote', /    If auBout Then\r\n(.*\r\n)    Else\r\n.*\r\n    End If\r\n/, '$1')],
+    ['les lectures refusées du relevé tues (TE3)', 'le relevé des formes du bouton 3 : un relevé arrêté est dit INTERROMPU, et les erreurs de lecture comptées, la dernière avec son code, dans l\'étape 8 (le bloc à photographier)',
+      remplacer('SEE_Pilote', /    If gNbErreurs > e0 Then lu = lu & .* _\r\n.*\r\n/, '')],
+    ['l\'arrêt du relevé hors de gDerniereErreur (TE3)', 'le relevé des formes du bouton 3 : un relevé arrêté est dit INTERROMPU, et les erreurs de lecture comptées, la dernière avec son code, dans l\'étape 8 (le bloc à photographier)',
+      remplacer('SEE_Sonde', /    JournalErreur "relevé des formes, arrêt imprévu \(" & [^\r]*\r\n[^\r]*\r\n/, '')],
+    ['la colonne A de Sonde_Symboles élargie par son titre (TE4)', 'Sonde_Symboles : la colonne A gardée étroite après l\'ajustement des colonnes (le titre de A1 déborde), au relevé du bouton 3 et à la sonde des symboles',
+      remplacer('SEE_Sonde', /    If mFeuille\.Name = "Sonde_Symboles" Then mFeuille\.Columns\(1\)\.ColumnWidth = 13\r\n/, '')],
     ['le relevé qui laisse sortir une erreur', 'le relevé des formes du bouton 3 : OpenEnvironment, la sonde des symboles (RelireFormes, comme SondeSymboles), CloseEnvironment ; aucun membre de l\'environnement appelé hors de la sonde ; aucune erreur n\'en sort', remplacer('SEE_Pilote', /    On Error GoTo Imprevu\r\n    Contexte "Bouton 3", "formes"/, '    Contexte "Bouton 3", "formes"')],
     ['une forme lue par l\'environnement sous SeeAutomation', 'SeeAutomation : une forme (définition de symbole) se lit par le projet, jamais par un environnement (pas de GetEnvironment)',
       remplacer('SEE_Commun', /If Not env Is Nothing And Not gEstAutomation Then/, 'If Not env Is Nothing Then')],

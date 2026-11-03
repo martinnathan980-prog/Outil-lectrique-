@@ -1509,22 +1509,29 @@ End Function
 
 ' La coclasse SeeAutomation : la signature de son CreateObject n'est pas
 ' établie (V5R2, d'après sa bibliothèque de types : type, objet en sortie).
-' Au bureau (V4R3, 4.89.99.5) : deux arguments -> 450 (nombre d'arguments) ;
-' trois, un Variant vide au milieu -> 13, quelle que soit la variable de
-' sortie : le paramètre du MILIEU refuse un Variant vide ; c'est sans doute un
-' objet, le projet ouvert. La première fois, les formes sont ESSAYÉES dans
-' l'ordre d'OrdreCreation, chacune au journal avec son code, jusqu'à la
-' première qui rend un objet. V4 : (type, projet, objet en sortie), la même
-' avec un Variant en sortie, l'objet rendu, les deux formes à deux arguments,
-' d'autres valeurs au milieu (Nothing, 0, "", le projet passé dans un
-' Variant), puis (type, objet en sortie, projet) ; V5 : l'objet rendu et les
-' formes à deux arguments d'abord. Le
-' projet est celui que SEE_OuvrirProjetAutomation a ouvert ; sans lui, les
-' formes qui le passent ne sont pas essayées. La forme qui marche est retenue
-' pour toute la suite de la macro (une nouvelle connexion l'oublie :
+' Au bureau (V4R3, 4.89.99.5) : (type, variable Object) -> 450 (nombre
+' d'arguments), mais (type, Variant) -> 13 ; trois arguments, un Variant vide
+' au milieu -> 13, quelle que soit la variable de sortie. Le paramètre du
+' MILIEU est donc contrôlé avant le nombre d'arguments : un Variant vide est
+' refusé, une variable Object passe, même Nothing ; c'est sans doute un objet,
+' le projet ouvert. La première fois, les formes sont ESSAYÉES dans l'ordre
+' d'OrdreCreation, chacune au journal avec son code, tant que SEE les refuse
+' AVANT de faire tourner la méthode (RefusAvantAppel : le type ou le nombre
+' des arguments). Une forme que SEE a fait tourner, puis refusée ou qui n'a
+' rien rendu, arrête les essais : les suivantes ne passeraient au milieu que
+' Nothing, 0 ou "" à la place du projet, et le bloc garde son code. V4 :
+' (type, projet, objet en sortie), la même avec un Variant en sortie, l'objet
+' rendu, les deux formes à deux arguments, d'autres valeurs au milieu
+' (Nothing, 0, "", le projet passé dans un Variant), puis (type, objet en
+' sortie, projet) ; V5 : l'objet rendu d'abord, puis les formes qui passent
+' le projet, avant celles à deux arguments (une variable Nothing y tiendrait
+' la place d'un objet, et la forme qui tournerait ainsi arrêterait les
+' essais). Le projet est celui que SEE_OuvrirProjetAutomation a ouvert ; sans
+' lui, les formes qui le passent ne sont pas essayées. La forme qui marche est
+' retenue pour toute la suite de la macro (une nouvelle connexion l'oublie :
 ' OublierCreation) ; si aucune ne marche, la création est dite refusée et
 ' n'est plus essayée (CreationDObjets le dit). Un objet créé n'existe qu'en
-' mémoire : l'essai est sans risque.
+' mémoire tant qu'il n'est pas ajouté au projet.
 Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
     Dim o As Object, numErr As Long, descErr As String, forme As Variant
     Set NouvelObjetAutomation = Nothing
@@ -1558,6 +1565,11 @@ Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
         End If
         mCodesCreation = mCodesCreation & IIf(Len(mCodesCreation) > 0, " ; ", "") & FormeCreation(CInt(forme)) & " : " & CodeDeWindows(numErr)
         Journal gEtape, gObjet, LibelleCreation(CInt(forme), typeObjet), "échec : " & ReponseDeWindows(numErr, descErr), numErr, descErr
+        ' une autre forme seulement si SEE a refusé AVANT de faire tourner la méthode
+        If Not RefusAvantAppel(numErr) Then
+            Journal gEtape, gObjet, "CreateObject", "SEE a fait tourner cette forme : sa réponse est la bonne, les autres formes ne sont pas essayées"
+            Exit For
+        End If
     Next forme
     mFormeCreation = -1
     gNbErreurs = gNbErreurs + 1
@@ -1567,15 +1579,18 @@ Private Function NouvelObjetAutomation(ByVal typeObjet As Long) As Object
 End Function
 
 ' Les formes de CreateObject à essayer, dans l'ordre (FormeCreation) : V4, les
-' formes à trois arguments d'abord ; V5, l'objet rendu et les formes à deux
-' arguments d'abord. Sans projet ouvert, celles qui le passent sont laissées.
+' formes à trois arguments d'abord ; V5, l'objet rendu d'abord, puis celles
+' qui passent le projet, avant les formes à deux arguments (si le deuxième
+' paramètre attend un objet, une variable Nothing passerait, la méthode
+' tournerait sans projet et les essais s'arrêteraient là). Sans projet ouvert,
+' celles qui le passent sont laissées.
 Private Function OrdreCreation() As Collection
     Dim res As Collection, f As Variant, ordre As Variant
     Set res = New Collection
     If EstV4() Then
         ordre = Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     Else
-        ordre = Array(3, 4, 5, 1, 2, 6, 7, 8, 9, 10)
+        ordre = Array(3, 1, 2, 4, 5, 6, 7, 8, 9, 10)
     End If
     For Each f In ordre
         If Not (FormeAvecProjet(CInt(f)) And mProjetCreation Is Nothing) Then res.Add f
@@ -1592,22 +1607,24 @@ End Function
 ' sinon Faux, le code (-1 : rien rendu) et sa description. Un « objet en
 ' sortie » est une variable Object (un IDispatch** n'accepte qu'elle), un
 ' « Variant en sortie » un Variant (un VARIANT* n'accepte que lui) ; le projet
-' est la variable gardée par SEE_OuvrirProjetAutomation (forme 9 : une copie
-' de la référence dans un Variant, pour le cas où SEE refuserait la variable
-' Object au milieu).
+' est une COPIE locale (pc) de la référence gardée par
+' SEE_OuvrirProjetAutomation : un argument passe par référence, et SEE ne doit
+' jamais pouvoir changer la variable gardée (forme 9 : la copie dans un
+' Variant, pour le cas où SEE refuserait la variable Object au milieu).
 Private Function EssaiCreation(ByVal forme As Integer, ByVal typeObjet As Long, ByRef o As Object, ByRef numErr As Long, _
         ByRef descErr As String) As Boolean
-    Dim r As Variant, x As Object, rien As Object, vp As Variant
+    Dim r As Variant, x As Object, rien As Object, vp As Variant, pc As Object
     Set o = Nothing
     numErr = 0
     descErr = ""
+    Set pc = mProjetCreation
     On Error GoTo Echec
     Select Case forme
         Case 1
-            gApp.CreateObject typeObjet, mProjetCreation, x
+            gApp.CreateObject typeObjet, pc, x
             Set o = x
         Case 2
-            gApp.CreateObject typeObjet, mProjetCreation, r
+            gApp.CreateObject typeObjet, pc, r
             If IsObject(r) Then Set o = r
         Case 3
             Set o = gApp.CreateObject(typeObjet)
@@ -1627,11 +1644,11 @@ Private Function EssaiCreation(ByVal forme As Integer, ByVal typeObjet As Long, 
             gApp.CreateObject typeObjet, "", x
             Set o = x
         Case 9
-            Set vp = mProjetCreation
+            Set vp = pc
             gApp.CreateObject typeObjet, vp, x
             Set o = x
         Case Else
-            gApp.CreateObject typeObjet, x, mProjetCreation
+            gApp.CreateObject typeObjet, x, pc
             Set o = x
     End Select
     If o Is Nothing Then
@@ -1652,6 +1669,15 @@ End Function
 ' ou DISP_E_TYPEMISMATCH. Ce refus vient AVANT que la méthode tourne.
 Public Function TypeRefuse(ByVal numErr As Long) As Boolean
     TypeRefuse = (numErr = 13 Or numErr = &H80020005)
+End Function
+
+' Vrai si SEE (Windows) a refusé un appel AVANT de faire tourner la méthode :
+' le type d'un argument (TypeRefuse), un argument manquant (449,
+' DISP_E_PARAMNOTOPTIONAL) ou leur nombre (450, DISP_E_BADPARAMCOUNT). Une
+' autre forme de l'appel peut alors être essayée. Tout autre code, ou -1
+' (rien rendu) : la méthode a tourné, et sa réponse est la bonne.
+Private Function RefusAvantAppel(ByVal numErr As Long) As Boolean
+    RefusAvantAppel = TypeRefuse(numErr) Or numErr = 449 Or numErr = 450 Or numErr = &H8002000E Or numErr = &H8002000F
 End Function
 
 ' Une forme de CreateObject, en clair (le bloc à photographier, le journal).
