@@ -142,8 +142,8 @@ async function liaisonsDuContrat(h, fwd) { if (!baseDeReferences() && BASE.charg
 /* ---- LIRE AILLEURS : le Worker, sa carte ------------------------------------------------------------------------------ */
 // le Worker : le moteur (09 lit le classeur), puis ce qui lui parle ; SheetJS lui est donné en texte, au cas où (un .xls)
 const PROGRAMME_BASE = `self.onmessage = async e => { const d = e.data; if (d.xlsx) self.__xlsx = d.xlsx;
-  try { const r = await lireLaBase(d.fichier, p => postMessage({ progres: p })); r.base.morceaux.forEach(m => postMessage({ morceau: m }));
-    postMessage({ fin: { lecture: r.lecture, meta: r.base.meta } }); } catch (err) { postMessage({ erreur: String(err && err.message || err) }); } };`;
+  try { const r = await lireLaBase(d.fichier, p => postMessage({ progres: p }), { plan: d.but === 'ouvrir' }); r.base.morceaux.forEach(m => postMessage({ morceau: m }));
+    postMessage({ fin: { lecture: r.lecture, meta: r.base.meta, plan: r.plan || null } }); } catch (err) { postMessage({ erreur: String(err && err.message || err) }); } };`;
 function urlTravailleurBase() { if (BASE.url) return BASE.url; const src = document.getElementById('moteur').textContent; return (BASE.url = URL.createObjectURL(new Blob([src, '\n', PROGRAMME_BASE], { type: 'text/javascript' }))); }
 // la balise de SheetJS : `#xlsx` si construire.js la nomme, sinon celle qui commence par son en-tête
 const texteXlsx = () => { if (BASE.xlsx == null) { const s = document.getElementById('xlsx') || [...document.scripts].find(x => /^\s*\/\*! xlsx\.js/.test(x.textContent.slice(0, 80))); BASE.xlsx = s ? s.textContent : ''; } return BASE.xlsx; };
@@ -158,7 +158,7 @@ function lireLaBaseAilleurs(fichier, but) { arreterLecture(); const L = { nom: f
     else if (m.fin) { w.terminate(); finDeLecture(L, m.fin); }
     else if (m.erreur) { w.terminate(); BASE.lecture = null; montrerLecture(); echecImport('base', { texte: `${esc(L.nom)} n’a pas pu être lu : ${esc(m.erreur)}.` }); } };
   w.onerror = e => { e.preventDefault(); if (BASE.lecture !== L) return; w.terminate(); BASE.lecture = null; montrerLecture(); echecImport('base', { texte: `${esc(L.nom)} n’a pas pu être lu : ${esc(e.message || 'erreur du lecteur')}.` }); };
-  w.postMessage({ fichier, xlsx: /\.xls$/i.test(L.nom) || !/\.(csv|tsv|txt)$/i.test(L.nom) ? texteXlsx() : '' }); return true; }
+  w.postMessage({ fichier, but: L.but, xlsx: /\.xls$/i.test(L.nom) || !/\.(csv|tsv|txt)$/i.test(L.nom) ? texteXlsx() : '' }); return true; }
 // la carte d'une lecture finie se retire seule (quinze secondes), ou dès qu'on ouvre un plan ou qu'on convertit
 function finirCarteLecture() { clearTimeout(BASE.finiT); BASE.finiT = setTimeout(() => { BASE.fini = null; montrerLecture(); }, 15000); }
 const retirerCarteLecture = () => { if (BASE.fini) { BASE.fini = null; montrerLecture(); } };
@@ -170,8 +170,13 @@ async function finDeLecture(L, fin) { BASE.lecture = null; const R = fin.lecture
   if (!R.entete) { montrerLecture(); echecImport('base', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(R.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] }, nom + ' : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
   if (!R.n) { montrerLecture(); echecImport('base', { texte: `« ${esc(nom)} » : les en-têtes de l’installation sont là (ligne ${R.entete}), mais aucune liaison dessous.`, liste }); return; }
   const C = B.meta.contrats, sans = !C.some(c => c.h !== '—');
-  // un seul contrat, ouvert comme un retest : il devient un plan, sans passer par la base
-  if (L.but === 'ouvrir' && C.length === 1) { const V = liaisonsDuContratDeLaBase(B, C[0]); montrerLecture();
+  // un seul contrat, ouvert comme un retest : il devient un plan, sans passer par la base — (v84) lu par le Worker EXACTEMENT
+  // comme un petit fichier (`fin.plan`, 09 `lireLaBase`) : colonnes inconnues, liaisons incomplètes, feuille « VOLTA » comprises
+  if (L.but === 'ouvrir' && C.length === 1) { montrerLecture();
+    if (fin.plan && typeof poserLaLecture === 'function') { const r = fin.plan; r.liaisons = (r.toutes || []).filter(liaisonComplete);
+      if ((r.volta || (r.journaux || []).length) && typeof retenirVolta === 'function') retenirVolta(r.volta, r.liaisons, r.journaux || []);
+      poserLaLecture(r, nom, (r.ignorees || []).map(n => guillemets(esc(n))), r.ignorees || [], ` — lu en ${secondesLues(ms)}`); return; }
+    const V = liaisonsDuContratDeLaBase(B, C[0]);
     chargerContrat(V, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest'); dire(pluriel(V.length, 'liaison') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + ` — lu en ${secondesLues(ms)}.`); return; }
   if (sans) { const V = liaisonsDuContratDeLaBase(B, C[0]), G = rangerLaBase(V, nom); montrerLecture();
     echecImport('base', { texte: `${esc(nom)} : ${R.harness ? 'la colonne <span class="id">Harness</span> est vide' : 'aucune colonne <span class="id">Harness</span>'}. Sans elle, je ne sais pas séparer les machines. Ajoutez-la, ou ouvrez ce fichier comme un plan.${G ? ` Ses ${esc(lies([plurielLie(G.installs, 'installation'), plurielLie(G.plans, 'plan')]))} sont rangés dans la bibliothèque.` : ''}`, liste }, nom + ' : aucune colonne Harness — sans elle, je ne sais pas séparer les machines.');

@@ -16,7 +16,7 @@ const bac = { console };
 vm.createContext(bac);
 vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { normeEmbarquee, bibleDeLOutil, contratExemple, liaison, besoinsDeBarrette, barretteInfos, remplirModules, '
   + 'placerDansGroupe, moduleDeReference, contactAccepte, potentielsDeBarrette, variantesQuiLogent, connecteursEnModules, coupureEnModule, remplirContacts, arrangementsQuiLogent, '
-  + 'sexeDuPn, habillage, remplirSelonNorme, physiqueDeBarrette, autreSexe, railsDeBarrette };', bac);
+  + 'sexeDuPn, habillage, remplirSelonNorme, physiqueDeBarrette, autreSexe, railsDeBarrette, connecteursDe, connecteurParBorne, moduleDeConnecteur, famillesDeModules, reperesDe, estBornier, estMasse };', bac);
 const X = bac.X, NE = X.normeEmbarquee(), BO = X.bibleDeLOutil(), L = X.contratExemple();
 let total = 0, echecs = 0;
 const ok = (nom, cond, mesure) => { total++; if (!cond) echecs++; console.log('  ' + (cond ? 'OK    ' : 'ÉCHEC ') + nom + (mesure ? '   — ' + mesure : '')); };
@@ -153,6 +153,23 @@ const lp = LP.find(l => l.de === '800XC9' && l.borneDe === 'A2'), sd = P.sertirD
 ok('les deux bouts d’un pont, vus du câble (le récapitulatif, la LPA) : chacun son contact, 2 et 3 — plus le même deux fois', sd.de && sd.vers && sd.de.contact.lettre === '2' && sd.vers.contact.lettre === '3', sd.de && sd.vers ? sd.de.contact.lettre + ' / ' + sd.vers.contact.lettre : 'rien');
 ok('le contact écrit à la main sur un bout du pont ne vaut que pour ce bout (A3, pas A2)', P.contactMain(lp, '800XC9', 'A3') === 'EN3155-019F2022' && P.contactMain(lp, '800XC9', 'A2') === '' && sd.vers.main && !sd.de.main);
 ok('les connecteurs sans pont ne bougent pas (300XC1 A : 11 contacts, aucun bout de pont)', (Q => Q.fils.length === 11 && !Q.fils.some(x => x.f.pont))(X.connecteursEnModules('300XC1', L, NE).find(c => c.nom === 'A').plan));
+
+console.log('\n12. LA VITESSE SUR UN GROS FICHIER : UN INDEX DES LIAISONS, LES MÊMES RÉSULTATS');
+// un gros fichier : l'exemple quinze fois, la zone décalée d'un millier (le piège « géant » de tests/pieges.js, 3135 liaisons)
+const G = []; for (let k = 0; k < 15; k++) L.forEach(l => { const z = r => String(r).replace(/^(\d+)/, m => String(+m + 1000 * (k + 1))); G.push(X.liaison({ ...l, de: z(l.de), vers: z(l.vers), cable: l.cable ? l.cable + '-' + k : '', plan: String(k * 6 + (+l.plan || 1)) })); });
+const eqG = X.reperesDe(G).filter(r => !X.estBornier(r) && !X.estMasse(r)), seul = r => G.filter(l => l.de === r || l.vers === r);   // la liste d'un repère seul : lue sans index
+const vu = (r, LL) => JSON.stringify([X.connecteursDe(r, LL), X.besoinsDeBarrette(r, LL).bornes, X.connecteursEnModules(r, LL, NE).map(c => [c.nom, c.plan.reference, c.plan.fils.map(x => x.contact.lettre)])]);
+ok(G.length + ' liaisons : pour chaque équipement, l’index rend exactement ce que rend sa seule liste (connecteurs, bornes, plans de contacts)', G.length > 3000 && eqG.every(r => vu(r, G) === vu(r, seul(r))), eqG.length + ' équipements');
+const tG = temps(() => eqG.forEach(r => X.connecteursDe(r, G)));
+ok('connecteursDe pour tous les équipements du gros fichier : moins de 100 ms (avant l’index : ~140 ms en node, ~150 ms dans la page, sans compter le reste)', tG < 100, tG + ' ms');
+const r0 = '1300XC1', l0 = G.find(l => l.de === r0 && l.borneDe === 'A1');
+l0.de = '1999XC9'; const apres = X.connecteursDe('1999XC9', G), avant0 = X.connecteursDe(r0, G).find(c => c.nom === 'A');
+ok('une liaison dont le bout est réécrit sur place : l’index se refait — le nouveau repère la voit, l’ancien plus', apres.length === 1 && apres[0].bornes.join() === 'A1' && !avant0.bornes.includes('A1'), JSON.stringify(apres.map(c => c.nom + ':' + c.bornes)));
+l0.de = r0; G.push(X.liaison({ de: '1999XC9', borneDe: 'B7', vers: '1998RL9', borneVers: '1', type: 'DR22', pnDe: 'EN4165-2M' }));
+ok('une liaison ajoutée à la liste : vue aussitôt', X.connecteursDe('1999XC9', G).map(c => c.nom + ':' + c.bornes).join() === 'B:B7');
+G[G.length - 1] = X.liaison({ de: '1999XC9', borneDe: 'C2', vers: '1998RL9', borneVers: '1', type: 'DR22', pnDe: 'EN4165-2M' });
+ok('une liaison remplacée dans la liste : vue aussitôt', X.connecteursDe('1999XC9', G).map(c => c.nom + ':' + c.bornes).join() === 'C:C2');
+ok('les modules d’une norme se trouvent par leur désignation, écrite autrement, comme avant (index des modules)', X.moduleDeReference(NE, 'NSA937901 20-04').variante === '20-04' && X.moduleDeConnecteur(NE, 'EN4165-002-08W16').variante === '08W16' && X.moduleDeConnecteur(NE, 'EN4165-2M') === null && X.famillesDeModules(NE, 'connecteur').join() === 'ASNE0059,EN2997,EN3645,EN3646,EN4165');
 
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);

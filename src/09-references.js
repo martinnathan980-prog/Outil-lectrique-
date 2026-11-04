@@ -455,7 +455,9 @@ const dateExcel = v => { let s = DATES_EXCEL.get(v); if (s !== undefined) return
   s = isNaN(d) ? String(v) : deuxChiffres(d.getUTCDate()) + '/' + deuxChiffres(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); if (DATES_EXCEL.size < 100000) DATES_EXCEL.set(v, s); return s; };
 const colonneDe = ref => { let c = 0; for (let i = 0; i < ref.length; i++) { const k = ref.charCodeAt(i); if (k < 65 || k > 90) break; c = c * 26 + k - 64; } return c - 1; };
 /* Les cellules d'une ligne <row> : une chaîne par colonne (vide quand la case l'est) — le mot partagé, le texte en ligne, le
-   nombre tel qu'Excel l'écrit, une date en jj/mm/aaaa. */
+   nombre tel qu'Excel l'écrit, une date en jj/mm/aaaa. (v84) Un nombre se lit comme SheetJS le lit (le XML garde parfois
+   17 chiffres : « 3.6699999999999999 » est 3,67) : les deux lectures d'un même classeur rendent la même case. */
+const nombreXml = raw => { const x = raw === '' ? NaN : +raw; return isFinite(x) ? String(x) : raw; };
 function cellulesXml(x, sst, dates) { const row = []; let p = 0, col = -1;
   for (;;) { p = x.indexOf('<c', p); if (p < 0) break; const k = x.charCodeAt(p + 2); if (k !== 32 && k !== 62 && k !== 47) { p += 2; continue; }
     const fa = x.indexOf('>', p), auto = x.charCodeAt(fa - 1) === 47, at = x.slice(p + 2, auto ? fa - 1 : fa); let inner = '';
@@ -463,8 +465,9 @@ function cellulesXml(x, sst, dates) { const row = []; let p = 0, col = -1;
     const r = attrXml(at, 'r'); col = r ? colonneDe(r) : col + 1; if (auto) continue;
     const t = attrXml(at, 't'); let v = '';
     if (t === 'inlineStr') { inner.replace(/<t(?:\s[^>]*)?>([^<]*)<\/t>/g, (m, s) => { v += s; return m; }); v = xmlTexte(v); }
-    else { const a = inner.indexOf('<v>'); if (a < 0) continue; const raw = inner.slice(a + 3, inner.indexOf('</v>', a));
-      v = t === 's' ? (sst[+raw] || '') : t === 'str' || t === 'e' ? xmlTexte(raw) : t === 'b' ? (raw === '1' ? 'TRUE' : 'FALSE') : t === 'd' ? dateExcel((Date.parse(raw) / 864e5) + 25569) : dates.has(+attrXml(at, 's')) ? dateExcel(raw) : raw; }
+    // (v84) <v xml:space="preserve"> — SheetJS l'écrit ainsi pour un texte sur deux lignes : la case se perdait
+    else { let a = inner.indexOf('<v>'); if (a < 0) { a = inner.indexOf('<v '); if (a < 0) continue; } const d = inner.indexOf('>', a) + 1, raw = inner.slice(d, inner.indexOf('</v>', d));
+      v = t === 's' ? (sst[+raw] || '') : t === 'str' || t === 'e' ? xmlTexte(raw) : t === 'b' ? (raw === '1' ? 'TRUE' : 'FALSE') : t === 'd' ? dateExcel((Date.parse(raw) / 864e5) + 25569) : dates.has(+attrXml(at, 's')) ? dateExcel(raw) : nombreXml(raw); }
     while (row.length < col) row.push(''); row[col] = v; }
   return row; }
 /* Une feuille, ligne à ligne : `surLigne(cellules, n° Excel)` ; rendre false l'arrête (une feuille qui n'est pas un retest).
@@ -477,7 +480,8 @@ async function lireFeuilleXml(u8, x, sst, dates, surLigne, surOctets) { let rest
       if (reste.charCodeAt(fa - 1) === 47) { p = fa + 1; continue; }
       const b = reste.indexOf('</row>', fa); if (b < 0) break;
       if (surLigne(cellulesXml(reste.slice(fa + 1, b), sst, dates), num) === false) { fini = true; return false; } p = b + 6; }
-    reste = reste.slice(p); if (surOctets) surOctets(vu); return !fini; }); }
+    reste = reste.slice(p); if (surOctets) surOctets(vu); return !fini; });
+  return reste; }   // (v84) ce qui suit la dernière ligne : les cases fusionnées (<mergeCells>) s'y lisent
 
 /* ---- LIRE LES LIGNES COMME UN RETEST ------------------------------------------------------------------------------- */
 /* La lecture de 02 (`lireTexte`), ligne à ligne : les en-têtes sont la ligne qui reconnaît le plus de colonnes parmi les
@@ -516,9 +520,24 @@ function texteDesOctets(u8) { let t; try { t = new TextDecoder('utf-8', { fatal:
    `surProgres({ etape, fait, total })` dit le vrai : 'ouvre' (le fichier arrive), 'mots' (les mots partagés), 'lignes'
    (fait / total : les lignes lues sur celles que la feuille annonce), 'range' (les morceaux faits). Un classeur qu'on ne
    sait pas lire au fil de l'eau (un .xls, un zip64) passe par SheetJS quand il est là. */
-async function lireLaBase(fichier, surProgres) { const prog = surProgres || (() => { }), nom = fichier.name || 'la base', t0 = Date.now();
+/* (v84) `o.plan` — un gros fichier OUVERT comme une installation (08-references, `lireLaBaseAilleurs(…, 'ouvrir')`) : en plus de la
+   base (qui ne garde que ses dix-huit champs), le Worker garde les lignes de chaque feuille telles quelles et les lit
+   EXACTEMENT comme la lecture d'un petit fichier (02 : `lectureDesFeuilles` puis `lireTexte`, les mêmes fonctions) — les
+   colonnes inconnues, les liaisons à un bout vide, la forme « 677VT2 51 », la feuille « VOLTA » et le journal reviennent ;
+   les cases fusionnées se recopient comme SheetJS les recopie (02, `lignesDeFeuille`). Rend `plan` : ce que `lireTexte` rend
+   (sans `liaisons` : `toutes` les porte), et les feuilles lues ou ignorées. Au-delà de PLAN_MAX lignes, plus de plan : c'est
+   une base, la base suffit. La feuille « Volta » et le journal « Modifications » n'entrent pas dans la base. */
+const PLAN_MAX = 400000;
+const fusionsXml = x => (String(x || '').match(/<mergeCell\b[^>]*>/g) || []).map(m => { const ref = attrXml(m, 'ref').split(':'), lire = c => ({ c: colonneDe(c), r: +c.replace(/^[A-Z]+/, '') - 1 }); return ref.length === 2 ? { s: lire(ref[0]), e: lire(ref[1]) } : null; }).filter(Boolean);
+function recopierFusions(rows, fusions) { fusions.forEach(m => { if (m.e.r <= m.s.r) return; const v = (rows[m.s.r] || [])[m.s.c]; if (v == null || v === '') return;
+  for (let r = m.s.r + 1; r <= m.e.r; r++) { const row = rows[r] || (rows[r] = []); if (row[m.s.c] == null || row[m.s.c] === '') { while (row.length < m.s.c) row.push(''); row[m.s.c] = v; } } }); }
+const feuilleDuJournal = nom => NORM(nom) === 'volta' || NORM(nom) === 'modifications';
+async function lireLaBase(fichier, surProgres, o) { const prog = surProgres || (() => { }), nom = fichier.name || 'la base', t0 = Date.now(); o = o || {};
   prog({ etape: 'ouvre', fait: 0, total: fichier.size || 0 });
   const u8 = new Uint8Array(await fichier.arrayBuffer()), R = rangeurDeBase(), lec = lecteurDeRetest(l => R.ajouter(l)), L = lec.L;
+  // le plan : les lignes de chaque feuille (rangées par leur n° Excel), ou le texte d'un CSV
+  let plan = !!o.plan, gardees = 0, textePlan = null; const feuillesPlan = [];
+  const garder = (rows, i, row) => { if (!plan) return; if (++gardees > PLAN_MAX) { plan = false; feuillesPlan.length = 0; return; } rows[i] = row; };
   // la barre : les octets décompressés sur ceux du fichier (le travail fait, vraiment) ; les mots : les lignes lues sur celles annoncées
   let annonce = 0, octets = 0, octetsTotal = 0, dernier = 0;
   const dire = force => { const t = Date.now(); if (force || t - dernier > 100) { dernier = t; prog({ etape: 'lignes', fait: L.n + L.rejets, total: annonce, n: L.n, octets, octetsTotal }); } };
@@ -533,27 +552,36 @@ async function lireLaBase(fichier, surProgres) { const prog = surProgres || (() 
       if (xs) { let reste = ''; await zipLire(u8, xs, t => { reste += t; const f = reste.lastIndexOf('</si>'); if (f >= 0) { lireMots(reste.slice(0, f + 5), sst); reste = reste.slice(f + 5); } }); }
       const dates = stylesDates(await zipTexte(u8, Z, 'xl/styles.xml'));
       octetsTotal = feuilles.reduce((s, f) => s + f.x.brut, 0); let avant = 0;
-      for (const f of feuilles) { lec.feuille(f.nom);
-        // le total que la feuille annonce (<dimension ref="A1:R300109"/>), lu sur son premier morceau
-        await lireFeuilleXml(u8, f.x, sst, dates, (row, num) => { const r = lec.ligne(row, num); dire(); return r; }, (vu, debut) => { octets = avant + vu; if (debut != null) annonce += lignesAnnoncees(debut); });
-        avant += f.x.brut; octets = avant; lec.finFeuille(); }
+      for (const f of feuilles) { const journal = feuilleDuJournal(f.nom), rows = []; let base = !journal; if (base) lec.feuille(f.nom);
+        // le total que la feuille annonce (<dimension ref="A1:R300109"/>), lu sur son premier morceau ; la base s'arrête sur une
+        // feuille sans en-têtes, le plan la lit jusqu'au bout (une feuille « Volta », un journal, une feuille ignorée à nommer)
+        const fin = await lireFeuilleXml(u8, f.x, sst, dates, (row, num) => { garder(rows, num - 1, row); if (base && lec.ligne(row, num) === false) base = false; dire(); return base || plan; },
+          (vu, debut) => { octets = avant + vu; if (debut != null) annonce += lignesAnnoncees(debut); });
+        avant += f.x.brut; octets = avant; if (!journal) lec.finFeuille();
+        if (plan) { for (let i = 0; i < rows.length; i++) if (!rows[i]) rows[i] = []; recopierFusions(rows, fusionsXml(fin)); feuillesPlan.push({ nom: f.nom, rows }); } }
       lu = feuilles.length > 0; } }
-  if (!lu && zip) { if (typeof XLSX === 'undefined') throw new Error('ce classeur ne se lit pas au fil de l’eau, et la bibliothèque Excel n’est pas là'); moteur = 'SheetJS';
+  if (!lu && zip) { if (typeof XLSX === 'undefined' && typeof self !== 'undefined' && self.__xlsx) (0, eval)(self.__xlsx);   // SheetJS, donné au Worker en texte (un .xls)
+    if (typeof XLSX === 'undefined') throw new Error('ce classeur ne se lit pas au fil de l’eau, et la bibliothèque Excel n’est pas là'); moteur = 'SheetJS';
     // (v84) les cases comme la lecture au fil de l'eau les rend : le nombre tel qu'Excel le garde, la date en jj/mm/aaaa
     // (02, `lignesDeFeuille`) — le texte formaté de SheetJS écrivait les dates à l'américaine (10/27/25)
-    const wb = XLSX.read(u8, { type: 'array', dense: true, cellNF: true }); for (const n of wb.SheetNames) { lec.feuille(n);
-      const rows = lignesDeFeuille(wb.Sheets[n]); annonce += rows.length;
+    const wb = XLSX.read(u8, { type: 'array', dense: true, cellNF: true }); for (const n of wb.SheetNames) { const journal = feuilleDuJournal(n);
+      const rows = lignesDeFeuille(wb.Sheets[n]); annonce += rows.length; if (plan) { gardees += rows.length; if (gardees > PLAN_MAX) { plan = false; feuillesPlan.length = 0; } else feuillesPlan.push({ nom: n, rows }); }
+      if (journal) continue; lec.feuille(n);
       for (let i = 0; i < rows.length; i++) { if (lec.ligne(rows[i] || [], i + 1) === false) break; dire(); } lec.finFeuille(); } }
-  else if (!zip) { const texte = texteDesOctets(u8); let p = 0, num = 0; lec.feuille(''); octetsTotal = texte.length;
+  else if (!zip) { const texte = texteDesOctets(u8); let p = 0, num = 0; lec.feuille(''); octetsTotal = texte.length; if (plan) textePlan = texte;
     for (let i = 0; ;) { i = texte.indexOf('\n', i); if (i < 0) break; annonce++; i++; } if (!texte.endsWith('\n')) annonce++;
     // (v84) le séparateur du fichier, lu sur ses en-têtes (02, `trouverEnteteRetest`) : un « ; » dans une description d'un CSV à virgules ne découpe plus la ligne
-    const rt = trouverEnteteRetest(texte.slice(0, 64 * 1024).split(/\r?\n/).slice(0, 30)), sep = rt ? rt.sep : '';
+    const rt = trouverEnteteRetest(texte.slice(0, 64 * 1024).split(/\r?\n/).slice(0, 60)), sep = rt ? rt.sep : '';
     while (p < texte.length) { let q = texte.indexOf('\n', p); if (q < 0) q = texte.length; const ligne = texte.slice(p, q).replace(/\r$/, ''); p = q + 1; num++; octets = p;
       if (lec.ligne(ligne.trim() ? cellules(ligne, sep) : [], num) === false) break; dire(); }
     lec.finFeuille(); }
   octets = octetsTotal; dire(true);
   const base = R.fin(nom, prog);
-  return { lecture: { nom, n: L.n, rejets: L.rejets, entete: L.entete, colonnes: L.colonnes, lues: L.lues, ignorees: L.ignorees.filter(Boolean), brutes: L.brutes.slice(0, 30), harness: L.harness, install: L.install, moteur, ms: Date.now() - t0 }, base }; }
+  // le plan, lu comme un petit fichier : les mêmes fonctions (02)
+  let lecturePlan = null;
+  if (plan) { const f = textePlan != null ? { texte: textePlan, feuilles: [], lues: [], ignorees: [], journaux: [] } : lectureDesFeuilles(feuillesPlan), r = lireTexte(f.texte);
+    if (r.format === 'retest') { lecturePlan = { ...r, feuilles: f.feuilles, lues: f.lues, ignorees: f.ignorees }; delete lecturePlan.liaisons; } }
+  return { lecture: { nom, n: L.n, rejets: L.rejets, entete: L.entete, colonnes: L.colonnes, lues: L.lues, ignorees: L.ignorees.filter(Boolean), brutes: L.brutes.slice(0, 30), harness: L.harness, install: L.install, moteur, ms: Date.now() - t0 }, base, plan: lecturePlan }; }
 /* Le total que la feuille annonce : ce que <dimension ref="A1:R300109"/> dit (lu par le Worker sur le premier morceau). */
 const lignesAnnoncees = x => { const m = /<dimension ref="[A-Z]+\d+:[A-Z]+(\d+)"/.exec(x); return m ? +m[1] : 0; };
 

@@ -200,20 +200,25 @@ async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichie
       guillemets(nom) + ' : les en-têtes sont là, mais aucune liaison dessous.'); return; }
     if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, nom); baseRecue(nom, avis, rangerLesContrats(app.references.base, nom));
       ficheHarnais(r, nom); signaler(pluriel(r.harnais.length, 'harness') + ' dans ' + guillemets(nom) + ' : gardés comme contrats déjà faits — lequel ouvrir sur la table ?', 'base'); return; }
-    // les liaisons à un bout vide restent au contrat, à leur rang (ni dessinées, ni vérifiées : le contrôle les dit) — 02, `toutes`
-    chargerContrat(r.toutes || r.liaisons, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest', avis);
-    if (typeof noterLecture === 'function') noterLecture(L, r);   // le bilan anonyme dit comment ce fichier a été lu (08-bilan)
-    // les feuilles laissées de côté se NOMMENT (le technicien v73 : « 1 feuille ignorée » m'inquiète : laquelle ?) ; le journal
-    // d'un retest corrigé (« Modifications ») n'en est plus une : la lecture le reconnaît et le dit (02, domaine C) ; (v84) les
-    // liaisons incomplètes et les lignes sans aucun bout se comptent aussi — rien ne se perd en silence
-    const noms = (L.lu && L.lu.ignorees) || [], n = r.liaisons.length, ni = r.incompletes || 0, nl = (r.laissees || []).length;
-    const msg = pluriel(n, 'liaison') + ' lue' + (n > 1 ? 's' : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '')
-      + (ni ? ' · ' + pluriel(ni, 'incomplète') + ' (un bout vide : ni dessinée' + (ni > 1 ? 's' : '') + ', ni vérifiée' + (ni > 1 ? 's' : '') + ')' : '')
-      + (nl ? ' · ' + pluriel(nl, 'ligne') + ' sans équipement ni câble, laissée' + (nl > 1 ? 's' : '') + ' de côté' : '')
-      + (noms.length === 1 ? ' · la feuille ' + guillemets(noms[0]) + ' est laissée de côté (pas les en-têtes d’une installation)' : noms.length ? ' · ' + noms.length + ' feuilles laissées de côté : ' + noms.slice(0, 3).map(guillemets).join(', ') + (noms.length > 3 ? '…' : '') : '') + '.';
-    if (avis) signaler(msg, 'retest'); else dire(msg);
-    proposerDejaFait();
+    poserLaLecture(r, nom, ig, (L.lu && L.lu.ignorees) || [], '', L);
   } catch (e) { echecImport('retest', { texte: `${guillemets(esc(nom))} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
+/* UNE INSTALLATION LUE DEVIENT UN PLAN — un petit fichier (ci-dessus) ou un gros, lu par le Worker (08-references,
+   `finDeLecture` : v84, la même lecture, le même plan, les mêmes mots). `r` : ce que `lireTexte` rend ; `ig` les feuilles
+   ignorées en HTML, `noms` en clair ; `plus` : la fin du mot (« — lu en 3 s ») ; `L` : le fichier lu, pour le bilan anonyme. */
+function poserLaLecture(r, nom, ig, noms, plus, L) { const avis = avisDeLecture(r, ig);
+  // les liaisons à un bout vide restent au contrat, à leur rang (ni dessinées, ni vérifiées : le contrôle les dit) — 02, `toutes`
+  chargerContrat(r.toutes || r.liaisons, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest', avis);
+  if (typeof noterLecture === 'function') noterLecture(L || null, r);   // le bilan anonyme dit comment ce fichier a été lu (08-bilan)
+  // les feuilles laissées de côté se NOMMENT (le technicien v73 : « 1 feuille ignorée » m'inquiète : laquelle ?) ; le journal
+  // d'un retest corrigé (« Modifications ») n'en est plus une : la lecture le reconnaît et le dit (02, domaine C) ; (v84) les
+  // liaisons incomplètes et les lignes sans aucun bout se comptent aussi — rien ne se perd en silence
+  const n = r.liaisons.length, ni = r.incompletes || 0, nl = (r.laissees || []).length;
+  const msg = pluriel(n, 'liaison') + ' lue' + (n > 1 ? 's' : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '')
+    + (ni ? ' · ' + pluriel(ni, 'incomplète') + ' (un bout vide : ni dessinée' + (ni > 1 ? 's' : '') + ', ni vérifiée' + (ni > 1 ? 's' : '') + ')' : '')
+    + (nl ? ' · ' + pluriel(nl, 'ligne') + ' sans équipement ni câble, laissée' + (nl > 1 ? 's' : '') + ' de côté' : '')
+    + (noms.length === 1 ? ' · la feuille ' + guillemets(noms[0]) + ' est laissée de côté (pas les en-têtes d’une installation)' : noms.length ? ' · ' + noms.length + ' feuilles laissées de côté : ' + noms.slice(0, 3).map(guillemets).join(', ') + (noms.length > 3 ? '…' : '') : '') + (plus || '') + '.';
+  if (avis) signaler(msg, 'retest'); else dire(msg);
+  proposerDejaFait(); }
 /* Une base reçue (un dépôt sur sa carte, ou un fichier de plusieurs harness) : la carte le dira, avec ses comptes et ce
    qu'elle a rangé dans la bibliothèque (`rangee`). */
 function baseRecue(nom, avis, rangee) { FICHIERS.base = null; effacerErreur('base'); FICHIERS.succes = 'base'; FICHIERS.rangee = rangee || null; FICHIERS.avis.base = avis || null; rendreFichiers(); }

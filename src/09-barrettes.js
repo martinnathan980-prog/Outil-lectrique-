@@ -110,11 +110,26 @@ async function lireBibleFichier(fichier) { return lireBible(await texteDuFichier
    une première lecture, à corriger avec la table de l'atelier. */
 function jaugeDuType(type) { const m = /(\d{1,2})\s*$/.exec(String(type || '').trim()); return m ? parseInt(m[1], 10) : null; }
 function blindeDuType(type) { return /^(ML|BL|SH|SC)/i.test(String(type || '').trim()); }
+/* (v84, la vitesse — l'agent « lecture » : sur un fichier de 3135 liaisons, le contrôle relisait toutes les liaisons pour
+   chaque repère) L'INDEX DES LIAISONS PAR REPÈRE : un seul passage, gardé avec la liste ; il se refait dès que la liste
+   change — une liaison ajoutée, retirée, remplacée, ou dont un bout (`de`, `vers`) a été réécrit sur place (la vérifier
+   ne coûte qu'une lecture par liaison, sans rien créer). Le reste d'une liaison (bornes, part numbers, type) se lit en
+   direct. Une petite liste (une fiche, un repère) se lit telle quelle. Rend les liaisons qui touchent `repere` — chacune
+   une fois, dans l'ordre de la liste : ceux qui les lisent rendent exactement ce qu'ils rendaient. */
+const INDEX_LIAISONS = new WeakMap(), PETITE_LISTE = 200;
+function liaisonsTouchant(repere, liaisons) { const L = liaisons || []; if (L.length < PETITE_LISTE) return L;
+  let x = INDEX_LIAISONS.get(L);
+  if (x && x.n === L.length) { for (let i = 0; i < L.length; i++) { const l = L[i]; if (l !== x.objets[i] || l.de !== x.de[i] || l.vers !== x.vers[i]) { x = null; break; } } } else x = null;
+  if (!x) { x = { n: L.length, objets: L.slice(), de: L.map(l => l.de), vers: L.map(l => l.vers), par: new Map() };
+    const mettre = (r, l) => (x.par.get(r) || x.par.set(r, []).get(r)).push(l);
+    L.forEach(l => { if (l.de) mettre(l.de, l); if (l.vers && l.vers !== l.de) mettre(l.vers, l); });
+    INDEX_LIAISONS.set(L, x); }
+  return x.par.get(repere) || []; }
 function besoinsDeBarrette(repere, liaisons) {
   const bornes = new Set(), jauges = [], pns = new Map(), ponts = [], parBorne = new Map(); let blindes = 0, shunts = 0, fils = 0;
   // AMONT : le fil arrive sur la barrette (elle est son « vers ») ; AVAL : il en repart. `l` : la liaison elle-même, pour la retrouver.
   const arrivee = (b, l, autre, borneAutre) => { if (!b) return; (parBorne.get(b) || parBorne.set(b, []).get(b)).push({ cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: autre, borne: borneAutre, amont: l.vers === repere, l }); };
-  liaisons.forEach(l => { const ici = [];
+  liaisonsTouchant(repere, liaisons).forEach(l => { const ici = [];
     if (l.de === repere) ici.push([l.borneDe, l.pnDe]);
     if (l.vers === repere) ici.push([l.borneVers, l.pnVers]);
     if (!ici.length) return;
@@ -237,7 +252,7 @@ function connecteurDeBorne(borne, pn) {
 }
 function connecteursDe(repere, liaisons) {
   const groupes = new Map();
-  liaisons.forEach(l => { [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
+  liaisonsTouchant(repere, liaisons).forEach(l => { [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
     if (r !== repere || !b) return; const c = connecteurDeBorne(b, pn); if (!c) return;
     const cle = (c.lettre ? 'L:' : 'P:') + c.nom;
     const g = groupes.get(cle) || groupes.set(cle, { nom: c.lettre ? c.nom : '', pn: c.pn, lettre: c.lettre, deduite: !c.lettre, bornes: new Set() }).get(cle);
@@ -1563,7 +1578,9 @@ function csvDuSuivi(lignes) {
    cette norme (un #20 ASNE 0599 prend du 24 au 20, un 20 NSA937901 du 24 au
    18). */
 const lettresDe = t => String(t == null ? '' : t).split(/[\s,]+/).filter(Boolean);
-const cleNorme = t => String(t == null ? '' : t).toUpperCase().replace(/[^A-Z0-9]/g, '');
+// (v84, la vitesse) la clé d'une même chaîne gardée : `moduleDeReference` la redemande pour chaque module, à chaque connecteur
+const CLES_NORME = new Map(), cleNorme = t => { const s = String(t == null ? '' : t); let k = CLES_NORME.get(s);
+  if (k === undefined) { if (CLES_NORME.size > 20000) CLES_NORME.clear(); CLES_NORME.set(s, k = s.toUpperCase().replace(/[^A-Z0-9]/g, '')); } return k; };
 // « 22D », « 20 », « #12 » : la clé d'une taille de contact ; son calibre est le nombre (22D → 22)
 const tailleCle = t => String(t == null ? '' : t).trim().toUpperCase().replace(/^#/, '').replace(/\s+/g, '');
 function tailleNorme(o) { const taille = tailleCle(o.taille), calibre = NUMERO(taille); if (!taille || calibre == null) return null;
@@ -1669,14 +1686,24 @@ function moduleNorme(o) { const variante = String(o.variante || '').trim().toUpp
 let normeDesModulesLue = null;
 const normeDesModules = norme => (norme && norme.modules && norme.modules.length) ? norme : (normeDesModulesLue || (normeDesModulesLue = normeEmbarquee()));
 // les familles de modules, dans l'ordre de la norme ; le nom à montrer d'une famille (« ASNE 0599 », « NSA 937901 »)
-const famillesDeModules = (norme, emploi) => [...new Set(normeDesModules(norme).modules.filter(m => m.emploi === (emploi || 'barrette')).map(m => m.famille))];
+/* (v84, la vitesse) L'INDEX DES MODULES d'une norme, fait une fois par table (refait si elle change de taille) : chaque
+   désignation et « famille + variante » vers le premier module qui la porte (ce que trouvait `find`, dans le même ordre),
+   les familles par emploi, les modules de connecteur d'une famille avec la clé de leur variante. */
+const INDEX_MODULES = new WeakMap();
+function indexDesModules(M) { let x = INDEX_MODULES.get(M); if (x && x.n === M.length) return x;
+  x = { n: M.length, cles: new Map(), familles: new Map(), connecteurs: new Map() };
+  M.forEach(m => { [cleNorme(m.reference), cleNorme(m.famille + m.variante)].forEach(k => { if (!x.cles.has(k)) x.cles.set(k, m); });
+    const fs = x.familles.get(m.emploi) || x.familles.set(m.emploi, []).get(m.emploi); if (!fs.includes(m.famille)) fs.push(m.famille);
+    if (m.emploi === 'connecteur' && m.contacts.length) (x.connecteurs.get(m.famille) || x.connecteurs.set(m.famille, []).get(m.famille)).push({ m, cle: cleNorme(m.variante) }); });
+  INDEX_MODULES.set(M, x); return x; }
+const famillesDeModules = (norme, emploi) => (indexDesModules(normeDesModules(norme).modules).familles.get(emploi || 'barrette') || []).slice();
 // une famille d'exemple (EN3646 de la norme d'exemple) ne nomme pas les modules d'une vraie norme : « EN3646 » se dit alors « EN 3646-002 »
 const nomDeFamille = (norme, f) => { const F = normeDesModules(norme).familles.find(x => cleNorme(x.famille) === f && !x.exemple);
   return F ? F.norme : String(f || '').replace(/^EN(\d{4})$/, 'EN $1-002'); };
 /* Le module d'une référence : sa désignation, ou famille et variante écrites autrement (« NSA937901 20-04 »,
    « E0599-1B204 »). */
 function moduleDeReference(norme, ref) { const r = cleNorme(ref); if (!r) return null; const M = normeDesModules(norme).modules;
-  const m = M.find(x => cleNorme(x.reference) === r || cleNorme(x.famille + x.variante) === r); if (m) return m;
+  const m = indexDesModules(M).cles.get(r); if (m) return m;
   const e = /^E0599-?1?([A-E]\d{3})/i.exec(String(ref).trim()); return e ? M.find(x => x.famille === 'E0599' && x.variante === e[1].toUpperCase()) || null : null; }
 // la famille de modules qu'une référence nomme (une désignation, ou le nom de la norme seul)
 const familleDeReference = (norme, ref, emploi) => { const r = cleNorme(ref); return r ? famillesDeModules(norme, emploi).find(f => r.startsWith(f)) || '' : ''; };
@@ -1858,8 +1885,7 @@ const numeroDeBorne = b => { const t = String(b == null ? '' : b).trim(), m = LE
    (« EN4165-002-08W16 », « …12-20… ») ; le plus long qui s'y lit. */
 function moduleDeConnecteur(norme, pn) { const m = moduleDeReference(norme, pn); if (m && m.emploi === 'connecteur') return m;
   const f = familleDeReference(norme, pn, 'connecteur'); if (!f) return null; const reste = cleNorme(pn).slice(f.length);
-  return normeDesModules(norme).modules.filter(x => x.famille === f && x.emploi === 'connecteur' && x.contacts.length && reste.includes(cleNorme(x.variante)))
-    .sort((a, b) => cleNorme(b.variante).length - cleNorme(a.variante).length)[0] || null; }
+  return (indexDesModules(normeDesModules(norme).modules).connecteurs.get(f) || []).filter(x => reste.includes(x.cle)).sort((a, b) => b.cle.length - a.cle.length).map(x => x.m)[0] || null; }
 /* Les POINTS d'un connecteur ou d'une prise : chaque borne, son numéro de contact, ses fils (jauge lue dans le type). */
 const pointsDe = (besoins, bornes) => bornes.slice().sort(triBornes).map(b => ({ borne: b, num: numeroDeBorne(b), fils: (besoins.parBorne.get(b) || []).map(f => ({ ...f, jauge: jaugeDuType(f.type) })) }));
 /* Les points dans un module : chaque borne sur son contact ; rend ce qui se pose et ce qui ne se pose pas. */
@@ -1955,15 +1981,15 @@ function arrangementsQuiLogent(points, norme, famille, sexeFil) { const N = norm
     .sort((a, b) => meilleurScore(cle(a), cle(b)) ? -1 : meilleurScore(cle(b), cle(a)) ? 1 : 0).map(x => x.m); }
 /* Les connecteurs EN 4165 d'un équipement : chaque cavité (connecteur A, B…) et son module. `retenue(nom)` : la
    désignation donnée à la main à « repère|lettre » ; `sexes(nom)` : le sexe des contacts choisi pour cette clé. */
-function connecteursEnModules(repere, liaisons, norme, retenue, sexes) { const b = avecPonts(besoinsDeBarrette(repere, liaisons), repere, liaisons), main = retenue || (() => ''), sx = sexes || (() => '');
-  return connecteursDe(repere, liaisons).filter(c => familleDeReference(norme, c.pn, 'connecteur') || moduleDeConnecteur(norme, c.pn))
+function connecteursEnModules(repere, liaisons, norme, retenue, sexes) { const T = liaisonsTouchant(repere, liaisons), b = avecPonts(besoinsDeBarrette(repere, T), repere, T), main = retenue || (() => ''), sx = sexes || (() => '');
+  return connecteursDe(repere, T).filter(c => familleDeReference(norme, c.pn, 'connecteur') || moduleDeConnecteur(norme, c.pn))
     .map(c => { const points = pointsDe(b, c.bornes); return { ...c, points, plan: remplirContacts(points, norme, { choix: main(repere + '|' + c.nom), pn: c.pn, sexe: sx(repere + '|' + c.nom) }) }; }); }
 /* LE PONT D'UN CONNECTEUR D'ÉQUIPEMENT (v84) : une liaison d'une borne à une autre du même équipement (A1 → A2) n'est pas un
    shunt de barrette — c'est un câble court, serti aux deux bouts dans la partie mobile. Chacun de ses bouts entre dans les
    câbles de sa borne (`pont` le marque ; `borne`, l'autre bout) : son contact se sertit, sa gauge se juge, une borne qui
    reçoit aussi un autre câble le dit. Un pont ne sort pas par l'entrée du raccord : le toron ne le compte pas. */
 function avecPonts(b, repere, liaisons) { const ponts = new Map(), mettre = (bo, f) => (ponts.get(bo) || ponts.set(bo, []).get(bo)).push(f);
-  liaisons.forEach(l => { if (l.de !== repere || l.vers !== repere || !l.borneDe || !l.borneVers || l.borneDe === l.borneVers) return;
+  liaisonsTouchant(repere, liaisons).forEach(l => { if (l.de !== repere || l.vers !== repere || !l.borneDe || !l.borneVers || l.borneDe === l.borneVers) return;
     const f = { cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: repere, l, pont: true };
     // `borneVers` : l'autre bout, pour que le câble se dise « DR22 vers 800XC9:A3 »
     mettre(l.borneDe, { ...f, borne: l.borneVers, borneVers: l.borneVers, amont: false }); mettre(l.borneVers, { ...f, borne: l.borneDe, borneVers: l.borneDe, amont: true }); });

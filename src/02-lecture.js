@@ -93,7 +93,9 @@ function colonnesRetest(row) {
    font une liaison. Un fichier réorganisé demain continuera de marcher. */
 function trouverEnteteRetest(lignes) {
   let meilleure = null;
-  for (let r = 0; r < Math.min(lignes.length, 30); r++) {
+  // les trente premières lignes NON VIDES (v84 : une feuille lue depuis A1 peut commencer par des lignes vides)
+  for (let r = 0, vues = 0; r < lignes.length && vues < 30; r++) {
+    const brute = lignes[r]; if (Array.isArray(brute) ? !brute.some(x => x != null && String(x).trim()) : !String(brute || '').replace(/[\t;,]/g, '').trim()) continue; vues++;
     // une ligne est un texte à découper, ou déjà un tableau de cellules (Excel) ; son séparateur devient celui du fichier
     const texte = !Array.isArray(lignes[r]), sep = texte ? sepDeLigne(lignes[r] || '') : '';
     const row = texte ? cellules(lignes[r] || '', sep) : lignes[r].map(x => String(x == null ? '' : x).trim());
@@ -254,7 +256,14 @@ function lignesDeFeuille(ws) { if (!ws) return [];
   const poser = (r, c, x) => { if (Array.isArray(ws)) { if (!ws[r]) ws[r] = []; ws[r][c] = x; } else ws[XLSX.utils.encode_cell({ r, c })] = x; };
   (ws['!merges'] || []).forEach(m => { if (!m || !m.s || !m.e || m.e.r <= m.s.r) return; const x = lire(m.s.r, m.s.c); if (!x || x.v == null || x.v === '') return;
     for (let r = m.s.r + 1; r <= m.e.r; r++) { const y = lire(r, m.s.c); if (!y || y.v == null || y.v === '') poser(r, m.s.c, { ...x }); } });
-  return XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: true, defval: '' }).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c))); }
+  // un booléen comme Excel l'écrit (TRUE, FALSE), comme la lecture au fil de l'eau
+  const bool = c => { if (c && c.t === 'b') { c.t = 's'; c.v = c.v ? 'TRUE' : 'FALSE'; } };
+  if (Array.isArray(ws)) ws.forEach(r => { if (Array.isArray(r)) r.forEach(bool); }); else Object.keys(ws).forEach(k => { if (k[0] !== '!') bool(ws[k]); });
+  /* les lignes depuis A1 (v84) : la ligne n de la liste est la ligne n + 1 d'Excel, la colonne k la (k + 1)ᵉ — même quand la
+     feuille ne commence pas en A1 (une première ligne vide) ; les numéros dits au lecteur sont ceux d'Excel, et la lecture au fil
+     de l'eau (09-references) range ses lignes de même */
+  const o = { header: 1, blankrows: true, defval: '' }; if (ws['!ref']) { const R = XLSX.utils.decode_range(ws['!ref']); R.s.r = 0; R.s.c = 0; o.range = R; }
+  return XLSX.utils.sheet_to_json(ws, o).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c))); }
 /* Une ligne d'Excel en texte tabulé : une case qui porte une tabulation, un retour à la ligne (Alt+Entrée dans une
    description) ou un guillemet s'entoure de guillemets, comme un CSV — sans eux, la ligne se coupait en deux et les
    colonnes de la seconde moitié glissaient (v84). */
@@ -270,9 +279,14 @@ async function lectureDuFichier(fichier) {
   let wb; try { wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array', cellNF: true }); }
   // ce que SheetJS dit en anglais, en mots : un classeur protégé, un fichier abîmé
   catch (e) { const m = String(e && e.message || e); throw new Error(/password|encrypt/i.test(m) ? 'il est protégé par un mot de passe — enregistrez-en une copie sans mot de passe' : /zip|end of data|corrupt|unsupported|invalid/i.test(m) ? 'le classeur semble abîmé ou d’un format inconnu' : m); }
+  return lectureDesFeuilles(wb.SheetNames.map(n => ({ nom: n, rows: lignesDeFeuille(wb.Sheets[n]) })));
+}
+/* LES FEUILLES D'UN CLASSEUR → le texte que `lireTexte` lit (v84 : une seule règle pour les deux chemins — ce fichier-ci avec
+   SheetJS, et la lecture au fil de l'eau d'un gros classeur dans le Worker, 09-references : les mêmes feuilles donnent le
+   même texte, donc les mêmes liaisons). `feuilles` : [{ nom, rows }] dans l'ordre du classeur. */
+function lectureDesFeuilles(liste) {
   let volta = null; const journaux = [];
-  const feuilles = wb.SheetNames.map(n => {
-    const rows = lignesDeFeuille(wb.Sheets[n]);
+  const feuilles = liste.map(({ nom: n, rows }) => {
     if (NORM(n) === 'volta') { const v = lireFeuilleVolta(rows); if (v) { volta = v; return null; } }
     if (estJournal(n, rows)) { journaux.push(n); return null; }
     return { nom: n, retest: !!trouverEnteteRetest(rows), lignes: rows.filter(r => r.some(Boolean)).length, texte: rows.map(r => r.map(caseEnTexte).join('\t')).join('\n') }; }).filter(Boolean);

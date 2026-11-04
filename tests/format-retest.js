@@ -179,6 +179,42 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     return out;
   });
   R.push(...R5);
+  /* v84 — LE GROS FICHIER LU PAR LE WORKER, EXACTEMENT COMME UN PETIT : un même classeur (titre, en-têtes en ligne 4, une
+     date, un FWD fusionné, une description sur deux lignes, « 677VT2 51 » + « B », Install, ECP, « Remarque », une ligne à un
+     bout vide, une ligne vide de tout, une feuille de notes) et l'installation corrigée de l'exemple (son journal, sa feuille
+     « Volta ») lus par les deux chemins — `lireFichier` (SheetJS) et `lireLaBase(…, { plan })` (la lecture au fil de l'eau
+     du Worker) — rendent les mêmes liaisons, champ pour champ ; puis un vrai CSV de plus de 1,5 Mo ouvert comme Ctrl+O
+     l'ouvre passe par le Worker et donne le même plan que sa lecture directe. */
+  const R6 = await p.evaluate(async () => {
+    const out = []; const ok = (n, c, d) => out.push((c ? '  ok   ' : '  KO   ') + n.padEnd(52) + (d || ''));
+    const cle = l => JSON.stringify(Object.keys(l).filter(k => l[k] !== undefined).sort().map(k => [k, l[k]]));
+    const comparer = (A, B) => { const ea = (A.toutes || []).map(cle), eb = (B && B.toutes || []).map(cle), i = ea.findIndex((x, k) => x !== eb[k]);
+      return { memes: ea.length === eb.length && i < 0 && JSON.stringify([A.incompletes, A.laissees, A.entete, A.entetes, A.ignorees, A.journaux, !!A.volta]) === JSON.stringify([B.incompletes, B.laissees, B.entete, B.entetes, B.ignorees, B.journaux, !!B.volta]),
+        dit: ea.length + ' / ' + eb.length + ' liaisons' + (i >= 0 ? ' · écart au rang ' + i + ' : ' + ea[i] + ' ≠ ' + eb[i] : '') + ' · ' + JSON.stringify([A.incompletes, A.laissees, A.entete, A.ignorees, A.journaux]) + ' / ' + JSON.stringify([B.incompletes, B.laissees, B.entete, B.ignorees, B.journaux]) }; };
+    const wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet([['Installation d’essai'], ['Mémo'], [], ['Install', 'ECP', 'Harness', 'Device1', 'Pin1', 'Description1', 'Cable T/G', 'Device2', 'Pin2', 'FWD', 'Cable length (mm)', 'Date retest', 'Remarque'],
+      ['Antenne', 12345, 'H-1', '677VT2 51', 'B', 'BARRETTE\n« fine »', 'DR22', '677VCH', 1, 'D-7', 3670.5, new Date(Date.UTC(2025, 9, 27)), 'à voir'],
+      ['Antenne', 12345, 'H-1', '101BT1', 1, 'BATTERIE "12 V"', 'DR16', '102CB1', 1, '', 1200, new Date(Date.UTC(2025, 9, 28)), ''],
+      ['Antenne', 12345, 'H-1', '102CB1', 2, '', 'DR20', '', '', '', 'abc', '', 'bout manquant'], [], ['', '', 'Total : 3'], ['Antenne', 12345, 'H-1', '103RL1', 'A2', '', 'DR22', '104LP1', 1, 'D-8', '2 500', '', '']], { cellDates: false });
+    ws['!merges'] = [{ s: { r: 4, c: 9 }, e: { r: 6, c: 9 } }]; XLSX.utils.book_append_sheet(wb, ws, 'Installation'); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Notes'], ['rien à lire']]), 'Notes');
+    const f1 = new File([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], 'essai.xlsx');
+    let A = await lireFichier(f1), B = (await lireLaBase(f1, null, { plan: true })).plan, c = comparer(A, B);
+    ok('un classeur abîmé : le Worker lit comme la page (liaisons, incomplètes, lignes vides de tout)', c.memes && A.toutes.length === 4 && A.toutes[1].plan === 'D-7', c.dit);
+    atelier.exemple(); await new Promise(r => setTimeout(r, 300)); changerLiaison(verite().find(x => x.cable === 'W-012'), 'type', 'DR16', 'essai');
+    const C = classeurRetestCorrige(verite(), 'essai', { ouvert: true, volta: voltaDuPlan() }), f2 = new File([XLSX.write(C.wb, { type: 'array', bookType: 'xlsx' })], 'corrige.xlsx');
+    A = await lireFichier(f2); const lu = await lectureDuFichier(f2); A.journaux = lu.journaux; A.volta = lu.volta; B = (await lireLaBase(f2, null, { plan: true })).plan; c = comparer({ ...A, journaux: A.journaux }, B);
+    ok('l’installation corrigée (journal, feuille « Volta ») : les deux lectures pareilles', c.memes && A.toutes.length === 209 && !!B.volta, c.dit);
+    // un vrai gros fichier : un CSV de plus de 1,5 Mo, ouvert comme Ctrl+O l'ouvre (le Worker), contre sa lecture directe
+    const E = contratExemple(), ent = 'Harness;Device1;Pin1;PN1;Description1;Cable T/G;Cable Tag;Route;Device2;Pin2;PN2;FWD;Cable length (mm);Remarque', lignes = [ent];
+    for (let k = 0; k < 50; k++) E.forEach((l, i) => { const z = r => String(r).replace(/^(\d+)/, m => String(+m + 1000 * (k + 1)));
+      lignes.push(['H-GROS', i % 97 === 0 ? '' : z(l.de), l.borneDe, l.pnDe, 'Équipement d’essai ' + k + '-' + i + ', une description longue comme celles du vrai fichier', l.type, (l.cable || '') + '-' + k, l.route, z(l.vers), l.borneVers, l.pnVers, String(k * 6 + (+l.plan || 1)), i % 13 === 0 ? '2 500' : '4000', i % 7 === 0 ? 'repère « ' + i + ' » ; à voir' : ''].map(v => /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v).join(';')); });
+    const texte = lignes.join('\r\n'), gros = new File([texte], 'gros.csv', { type: 'text/csv' }), direct = lireTexte(texte);
+    await ouvrirFichier(gros); const t0 = Date.now(); while ((app.nom !== 'gros.csv' || BASE.lecture) && Date.now() - t0 < 120000) await new Promise(r => setTimeout(r, 200));
+    const V = verite(), D = direct.toutes.map(liaison), iv = V.findIndex((l, i) => !D[i] || cle(l) !== cle(D[i]));
+    ok(`un CSV de ${Math.round(gros.size / 1e5) / 10} Mo ouvert : par le Worker, le même plan que lu directement`, gros.size > 1.5e6 && app.nom === 'gros.csv' && V.length === D.length && iv < 0 && V.some(l => l.autres) && V.some(l => !liaisonComplete(l)),
+      V.length + ' / ' + D.length + ' liaisons' + (iv >= 0 ? ' · écart au rang ' + iv + ' : ' + cle(V[iv]) + ' ≠ ' + (D[iv] ? cle(D[iv]) : 'absente') : ' · ' + V.filter(l => !liaisonComplete(l)).length + ' incomplètes, ' + V.filter(l => l.autres).length + ' « Remarque »'));
+    return out;
+  });
+  R.push(...R6);
   R.forEach(x => console.log(x));
   const ko = R.filter(x => x.startsWith('  KO')).length;
   console.log('\n  ' + (R.length - ko) + ' / ' + R.length + (ko ? '  — ' + ko + ' PROBLÈME(S)' : '  — tout tient'));
