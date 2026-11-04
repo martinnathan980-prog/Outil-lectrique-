@@ -22,7 +22,8 @@ body.biblio{--s-app:#141211;
   --nappe-a:radial-gradient(closest-side,rgba(229,156,100,.10),rgba(229,156,100,.035) 50%,rgba(229,156,100,0));
   --nappe-b:radial-gradient(closest-side,rgba(190,170,150,.07),rgba(190,170,150,.025) 52%,rgba(190,170,150,0));
   --grille-repos:rgba(255,236,216,.07); --s-grille-revele:rgba(255,236,216,.22);
-  --courant:linear-gradient(90deg,rgba(240,164,108,0),rgba(240,164,108,.8) 70%,#ffd7b8)}
+  --courant:linear-gradient(90deg,rgba(240,164,108,0),rgba(240,164,108,.8) 70%,#ffd7b8);
+  --table-lueur:radial-gradient(closest-side,rgba(255,240,228,.06),rgba(255,240,228,.02) 55%,rgba(255,240,228,0))}
 
 /* ─── la barre du haut, sur l'accueil : elle s'efface — la marque et le menu flottent, son filet de cuivre se tait, le nom
    de l'outil aussi (VOLTA est déjà là, en grand) ─── */
@@ -46,22 +47,24 @@ body.biblio-accueil .en-nom{display:none}
 /* (le bout rond d'un trait de longueur nulle fait un point : tant que la lettre attend son tour, elle est invisible) */
 @keyframes mq-trace{from{stroke-opacity:0}2%{stroke-opacity:1}to{stroke-dashoffset:0;stroke-opacity:1}}
 .mq .mq-t.cuivre{stroke:#f2a46b}
-.mq .mq-pin{fill:none;stroke:#b3b8c2;stroke-width:3.2;opacity:0;animation:hs-pose .4s var(--courbe) 1s both}
+.mq .mq-pin{fill:none;stroke:#b3b8c2;stroke-width:3.2;opacity:0;animation:hs-pose var(--d-lent) var(--courbe) 1s both}
 .mq .mq-pin.on{fill:#f2a46b;stroke:#f2a46b}
-.mq .mq-borne{fill:#141211;stroke:#f2a46b;stroke-width:3.4;opacity:0;animation:mq-borne .4s var(--courbe) 1.3s both}
-.mq .mq-courant{fill:#ffd9bd;filter:drop-shadow(0 0 5px rgba(242,164,107,.95)) drop-shadow(0 0 14px rgba(242,164,107,.55));opacity:0;animation:hs-pose .4s ease 2s both}
+.mq .mq-borne{fill:#141211;stroke:#f2a46b;stroke-width:3.4;opacity:0;animation:mq-borne var(--d-lent) var(--courbe) 1.3s both}
+.mq .mq-courant{fill:#ffd9bd;filter:drop-shadow(0 0 5px rgba(242,164,107,.95)) drop-shadow(0 0 14px rgba(242,164,107,.55));opacity:0;animation:hs-pose var(--d-lent) var(--courbe) 2s both}
 @keyframes mq-borne{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
 .mq .mq-borne{transform-box:fill-box;transform-origin:center}
 .mq-fin .mq-g{stroke:#f4f4f2}
 .mq-fin{width:clamp(320px,min(40vw,50vh),620px)}
 
 /* ─── LE SLOGAN : le cuivre, fin, un peu d'air entre les lettres ─── */
-.bi-accueil .bi-devise{margin:20px 0 0;font:400 clamp(14px,1.05vw,16px)/1.5 var(--sans);letter-spacing:.04em;color:rgba(229,156,100,.86)}
+.bi-accueil .bi-devise{margin:20px 0 0;font:400 var(--f-14)/1.5 var(--sans);letter-spacing:.04em;color:rgba(229,156,100,.86)}
+@media (min-width:1700px){ .bi-accueil .bi-devise{font-size:var(--f-16)} }
 
 /* ─── LE SCHÉMA VIVANT : au trait clair sur le graphite, sous la règle des colonnes ─── */
 .bi-vitrine.bi-hero{position:relative;flex:none;width:min(1400px,97vw,calc((100vh - 520px) * 4.2));height:auto;margin:28px 0 24px}
 .bi-hero svg{display:block;width:100%;height:auto;overflow:visible;transform:translate3d(calc(var(--px,0) * -14px),calc(var(--py,0) * -8px),0);transition:transform .9s var(--courbe)}
 .bi-hero .hs-regle{fill:none;stroke:url(#hs-regle);stroke-width:1}
+/* (les tailles du schéma sont des unités du dessin : il grandit avec la fenêtre — 1,16 à 1440, 1,17 à 1920) */
 .bi-hero .hs-col{font:500 9px var(--mono);fill:rgba(236,239,245,.24);text-anchor:middle}
 .bi-hero .hs-fil{fill:none;stroke:rgba(236,239,245,.5);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;
   animation:hs-trace 1s cubic-bezier(.4,0,.2,1) both;animation-delay:calc(.55s + var(--i) * .09s);transition:stroke var(--d-moyen) var(--courbe),stroke-width var(--d-moyen) var(--courbe)}
@@ -74,7 +77,7 @@ body.biblio-accueil .en-nom{display:none}
 .bi-hero .hs-sous{font:500 11px var(--sans);fill:rgba(236,239,245,.45);text-anchor:middle}
 .bi-hero .hs-c{font:500 11px var(--mono);fill:rgba(236,239,245,.55);text-anchor:middle;transition:fill var(--d-moyen) var(--courbe)}
 .bi-hero .hs-g{text-anchor:start}
-.bi-hero .hs-b{font:500 10.5px var(--mono);fill:rgba(236,239,245,.5)}
+.bi-hero .hs-b{font:500 11px var(--mono);fill:rgba(236,239,245,.5)}
 .bi-hero .hs-masse{fill:none;stroke:rgba(236,239,245,.6);stroke-width:1.3;stroke-linecap:round}
 .bi-hero .hs-source{fill:#1a1716;stroke:#f2a46b;stroke-width:1.4}
 .bi-hero .hs-courant{fill:#f2a46b;filter:drop-shadow(0 0 4px rgba(242,164,107,.95)) drop-shadow(0 0 10px rgba(242,164,107,.5))}
@@ -153,12 +156,12 @@ body.biblio-accueil .en-nom{display:none}
    les gestes, les tuiles), dans l'ordre dit en tête ─── */
 @keyframes hs-pose{from{opacity:0}to{opacity:1}}
 @keyframes bi-monte{from{opacity:0;transform:translateY(var(--monte))}to{opacity:1;transform:none}}
-.bi-hero :is(.hs-regle,.hs-col){animation:hs-pose .4s var(--courbe) .2s both}
-.bi-hero .hs-piece,.bi-hero .hs-masse,.bi-hero .hs-b{animation:hs-pose .6s var(--courbe) .4s both}
-.bi-hero .hs-f .hs-c{animation:hs-pose .4s var(--courbe) both;animation-delay:calc(.9s + var(--i) * .09s)}
-.bi-accueil .bi-devise{animation:bi-monte .4s var(--courbe) .7s both}
-.bi-accueil .bi-vide-gestes{animation:bi-monte .4s var(--courbe) 1.15s both}
-.bi-accueil .bi-dock{animation:bi-monte .4s var(--courbe) 1.3s both}
+.bi-hero :is(.hs-regle,.hs-col){animation:hs-pose var(--d-lent) var(--courbe) .2s both}
+.bi-hero .hs-piece,.bi-hero .hs-masse,.bi-hero .hs-b{animation:hs-pose var(--d-lent) var(--courbe) .4s both}
+.bi-hero .hs-f .hs-c{animation:hs-pose var(--d-lent) var(--courbe) both;animation-delay:calc(.9s + var(--i) * .09s)}
+.bi-accueil .bi-devise{animation:bi-monte var(--d-lent) var(--courbe) .7s both}
+.bi-accueil .bi-vide-gestes{animation:bi-monte var(--d-lent) var(--courbe) 1.15s both}
+.bi-accueil .bi-dock{animation:bi-monte var(--d-lent) var(--courbe) 1.3s both}
 /* une fois jouée (et toujours au mouvement réduit), tout est posé d'emblée */
 .bi-page.bi-deja .bi-accueil :is(.mq-t,.mq-o,.mq-pin,.mq-borne,.mq-courant,.hs-fil,.hs-piece,.hs-c,.hs-b,.hs-masse,.hs-col,.hs-regle,.bi-devise,.bi-vide-gestes,.bi-dock){animation:none;opacity:1;stroke-dashoffset:0}
 .bi-page.bi-deja .bi-accueil :is(.bi-devise,.bi-vide-gestes,.bi-dock){transform:none}
@@ -174,7 +177,8 @@ body.au-repos .bi-accueil .bi-btn-ouvrir::before{animation-play-state:paused}
 /* ─── LE PASSAGE AU PLAN (08-bibliotheque, `montrerLePlan`) : la table change de matière en fondu (08-table,
    `fonduTable`) ; le folio et son cadre paraissent dans le même temps — un enchaînement, pas une coupure ─── */
 @keyframes du-biblio{from{opacity:0}}
-body.du-biblio :is(#svg,#ombre,#rail,#folios){animation:du-biblio .42s var(--courbe) both}
+/* (la même courbe symétrique que le fondu de la table, 08-table : les deux matières se croisent au même pas) */
+body.du-biblio :is(#svg,#ombre,#rail,#folios){animation:du-biblio var(--d-lent) cubic-bezier(.4,0,.2,1) both}
 @media (prefers-reduced-motion:reduce){ body.du-biblio :is(#svg,#ombre,#rail,#folios){animation:none} }
 
 /* ─── une fenêtre étroite (le code reste, on ne le soigne plus) ─── */

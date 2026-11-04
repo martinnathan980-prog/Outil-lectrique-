@@ -250,7 +250,8 @@ const celluleIntensite = r => { const x = r.F().x; if (!x.fn) return rien;
   const niv = x.trop.length ? 'ko' : q > 0.8 ? 'att' : 'ok', i = pointe ? x.pointe.i : x.I, a = pointe ? x.pointe.admis : x.continu;
   return `<span class="rc-int">${chiffre(val('intensite', amp1(i), { cls: 'rc-n rc-calc', titre: 'Double-clic : ' + (x.al ? 'le profil de ' + x.al.nom : 'les hypothèses') }), 'A', niv === 'ko' ? 'ko' : '')}<span class="rc-adm">/ ${amp1(a)}</span>`
     // (v84) « pointe » se dit en clair dans sa bulle : ce qu'il tire, combien de temps, ce que le câble admet sur cette durée
-    + `<span class="rc-barre ${niv}"><i style="width:${Math.round(Math.min(1, q) * 100)}%"></i></span>${pointe ? `<i class="rc-o" data-bulle="${escA('Au plus fort du profil : ' + amperes(x.pointe.i) + ' pendant ' + secondes(x.pointe.t) + ' ; sur cette durée, le câble admet ' + amperes(x.pointe.admis))}">pointe</i>` : x.al ? '' : orig('hyp', 'Aucun disjoncteur en amont : le courant supposé par la simulation (menu ⋮ → Hypothèses)')}</span>`; };
+    // (le mot tient une place fixe, même vide : chaque case a la même largeur, les barres d'une colonne tombent l'une sous l'autre)
+    + `<span class="rc-barre ${niv}"><i style="width:${Math.round(Math.min(1, q) * 100)}%"></i></span><span class="rc-int-mot">${pointe ? `<i class="rc-o" data-bulle="${escA('Au plus fort du profil : ' + amperes(x.pointe.i) + ' pendant ' + secondes(x.pointe.t) + ' ; sur cette durée, le câble admet ' + amperes(x.pointe.admis))}">pointe</i>` : x.al ? '' : orig('hyp', 'Aucun disjoncteur en amont : le courant supposé par la simulation (menu ⋮ → Hypothèses)')}</span></span>`; };
 const celluleChute = r => { const c = r.F().c, u = c.total ? c.total.dU : c.dU; if (u == null) return rien;
   const niv = c.trop ? (c.reel ? 'ko' : 'att') : '';
   return `<span class="rc-mesure" data-bulle="${escA(c.total ? 'En ligne depuis ' + r.F().x.al.nom + ' : ' + volts(c.total.dU) + (c.max != null ? ' sur ' + volts(c.max) + ' admis' : '') + (c.reel ? '' : ' (longueurs d’hypothèse)') + '\nSur ce câble : ' + volts(c.dU) : 'Sur ce câble seul : aucun disjoncteur en amont')}">`
@@ -286,7 +287,7 @@ const COLONNES_LIAISONS = [
 const ligneLiaison = (l, i) => { const r = { l, i, k: String(i) }; let F = null; r.F = () => F || (F = infoFil(l)); return r; };
 const aReprendre = n => n === 'ko' || n === 'att';
 const LIAISONS = {
-  ajout: 'Liaison', aide: 'Une liaison de plus, en tête : le curseur dans « de » (sur un équipement choisi, « vers »)', cherche: 'Chercher : repère, borne, type de câble…',
+  ajout: 'Liaison', aide: 'Une liaison de plus, en tête : le curseur dans « de » (sur un équipement choisi, « vers »)', cherche: 'Chercher : repère, câble…',
   colonnes: COLONNES_LIAISONS, portee: true,
   lignes: () => verite().map(ligneLiaison),
   surFolio: r => surLeFolio(r.l),
@@ -421,7 +422,7 @@ const COLONNES_EQUIPEMENTS = [COL_REPERE,
   { k: 'deja', t: 'Déjà fait', cls: 'rc-c-n', option: true, si: () => !!indexReferences(), html: r => { const c = dejaFait(r.nom); return c ? `<span class="rc-deja" data-bulle="${escA(c.repere + ' de ' + c.harness)}"><b class="rc-n">${Math.round(c.taux * 100)}</b><i>%</i></span>` : rien; },
     tri: r => { const c = dejaFait(r.nom); return c ? c.taux : -1; }, texte: r => { const c = dejaFait(r.nom); return c ? Math.round(c.taux * 100) + ' %' : ''; } }];
 const EQUIPEMENTS = { ...ONGLET_REPERES,
-  ajout: 'Équipement', aide: 'Un équipement de plus, en tête : écrivez son repère, puis ses câbles dans Liaisons', cherche: 'Chercher : repère, type, norme…',
+  ajout: 'Équipement', aide: 'Un équipement de plus, en tête : écrivez son repère, puis ses câbles dans Liaisons', cherche: 'Chercher : repère, type…',
   colonnes: COLONNES_EQUIPEMENTS,
   // un équipement qu'on vient d'ajouter reste là, quel que soit son code
   lignes: () => { const n = app.base.neufs; return n.length ? reperes().filter(r => r.genre === 'eqpt' || (!r.aPoser && n.includes(r.nom))) : equipements(); },
@@ -621,7 +622,7 @@ const COLONNES_BARRETTES = [COL_REPERE,
   { k: 'potentiels', t: 'Potentiels', cls: 'rc-c-n', option: true, large: 1, html: r => { const Q = infoBarrette(r).Q; return Q ? chiffre(`<b class="rc-n">${Q.potentiels}</b>`) : rien; }, tri: r => (infoBarrette(r).Q || { potentiels: -1 }).potentiels, texte: r => String((infoBarrette(r).Q || {}).potentiels ?? ''), vide: r => !infoBarrette(r).Q },
   { k: 'cables', t: 'Câbles', cls: 'rc-c-n', option: true, large: 1, html: r => chiffre(`<b class="rc-n">${infoBarrette(r).cables}</b>`), tri: r => infoBarrette(r).cables, texte: r => String(infoBarrette(r).cables) },
   COL_FOLIO];
-const BARRETTES = { ...ONGLET_REPERES, colonnes: COLONNES_BARRETTES, lignes: barrettes, cherche: 'Chercher : repère, module, norme…',
+const BARRETTES = { ...ONGLET_REPERES, colonnes: COLONNES_BARRETTES, lignes: barrettes, cherche: 'Chercher : repère, module…',
   puces: () => [PUCE_A_REPRENDRE, ['aposer', 'Repère provisoire', r => r.aPoser, '', '', 'Les barrettes que VOLTA a ajoutées (plusieurs câbles sur une borne), au repère provisoire']],
   editeur: (r, f) => { const B = infoBarrette(r);
     if (f === 'rep') return { valeur: r.aPoser ? prochainRepereVT(r) : r.nom, toujours: r.aPoser, aide: r.aPoser ? 'le vrai repère de la barrette (Ctrl+Z rend le repère provisoire)' : '' };
@@ -656,7 +657,7 @@ const COLONNES_PRISES = [COL_REPERE,
   { k: 'fiche', t: 'Raccord partie mobile', option: true, html: r => { const I = infoPrise(r.nom); return I && I.fiche ? `<span class="rc-id">${esc(motRaccord(I.fiche))}</span>` : rien; }, tri: r => motRaccord((infoPrise(r.nom) || {}).fiche), texte: r => motRaccord((infoPrise(r.nom) || {}).fiche) },
   { k: 'embase', t: 'Raccord partie fixe', option: true, html: r => { const I = infoPrise(r.nom); return I && I.embase ? `<span class="rc-id">${esc(motRaccord(I.embase))}</span>` : rien; }, tri: r => motRaccord((infoPrise(r.nom) || {}).embase), texte: r => motRaccord((infoPrise(r.nom) || {}).embase) },
   { ...COL_FOLIO, large: 1 }];
-const PRISES = { ...ONGLET_REPERES, colonnes: COLONNES_PRISES, lignes: prises, cherche: 'Chercher : repère, arrangement, norme…',
+const PRISES = { ...ONGLET_REPERES, colonnes: COLONNES_PRISES, lignes: prises, cherche: 'Chercher : repère, norme…',
   choisir: r => choisirRepere(r.nom),
   puces: () => [PUCE_A_REPRENDRE],
   editeur: (r, f) => { const I = infoPrise(r.nom); if (f === 'rep') return { valeur: r.nom }; if (f === 'pn:') return { valeur: baseRepere(r.nom).b.pn || '', liste: 'pns', aide: 'toutes ses liaisons suivent' }; if (!I) return null;
@@ -769,7 +770,7 @@ const COLONNES_RACCORDS = [
   { k: 'toron', t: 'Toron Ø', cls: 'rc-c-mesure', option: true, large: 1, vide: x => { const h = habDe(x); return !(h && h.faisceau.diametre != null); }, html: x => { const h = habDe(x); return h && h.faisceau.diametre != null ? `<span class="rc-mesure">${chiffre(`<b class="rc-n">${fmt(h.faisceau.diametre, 1)}</b>`, 'mm')}${h.faisceau.complet ? '' : '<i class="rc-o" data-bulle="Un type de câble inconnu de la base : le toron est sous-estimé">?</i>'}</span>` : rien; },
     tri: x => { const h = habDe(x); return h && h.faisceau.diametre != null ? h.faisceau.diametre : -1; }, texte: x => { const h = habDe(x); return h && h.faisceau.diametre != null ? fmt(h.faisceau.diametre, 1) + ' mm' : ''; } },
   { k: 'folio', t: 'Folio', cls: 'rc-c-folio', option: true, large: 2, vide: x => !x.plans.length, html: x => x.plans.length ? `<span class="rc-folios">${esc(listeFolios(x.plans))}</span>` : rien, tri: x => x.plans[0] || '', texte: x => x.plans.join(' ') }];
-const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, surFolio: x => app.plan === '*' || x.plans.includes(app.plan), exact: (x, f) => x.nom === f, cherche: 'Chercher : repère, raccord, band-it…',
+const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, surFolio: x => app.plan === '*' || x.plans.includes(app.plan), exact: (x, f) => x.nom === f, cherche: 'Chercher : repère, raccord…',
   choisie: x => !!app.cible && app.cible.type === 'bloc' && app.cible.nom === x.nom, etat: x => { const h = habDe(x); return h && h.manquants.length ? 'att' : ''; },
   puces: () => [['completer', 'À compléter', x => { const h = habDe(x); return !!(h && h.manquants.length); }, '', '', 'Ce que la norme ne dit pas encore (une référence, une cote)']],
   choisir: x => choisirRepere(x.nom), survol: x => survolRepere(x.nom),
@@ -999,7 +1000,7 @@ function rendreOutils(O) { const b = app.base, pt = portee(O);
     const vide = b.portee === 'folio' && !tous.some(O.surFolio) && tous.length > 0;
     $('ba-portee').querySelectorAll('[data-portee]').forEach(x => x.setAttribute('aria-pressed', String(vide ? x.dataset.portee === 'tout' : x.dataset.portee === b.portee)));
     if (vide) $('ba-lib-folio').parentElement.dataset.bulle = 'Rien sur le folio ' + app.plan + ' : voici tout le plan'; }
-  const fi = $('ba-filtre'); if (fi.value !== b.filtre && document.activeElement !== fi) fi.value = b.filtre; $('ba-vider').hidden = !b.filtre; fi.placeholder = O.cherche || 'Chercher dans l’onglet';
+  const fi = $('ba-filtre'); if (fi.value !== b.filtre && document.activeElement !== fi) fi.value = b.filtre; $('ba-vider').hidden = !b.filtre; ajusterRecherche(O);
   const on = new Set(b.puces[b.onglet] || []), P = pucesDe(O), base = P.length ? lignesDe(O, true) : [], petit = base.length <= PAQUET * 2;
   /* « À REPRENDRE » COMPTE TOUT LE PLAN, le folio en second (le technicien v73 : « À reprendre 3 » sur le folio 1, 4 sur le
      plan — « je ne sais plus combien il m'en reste ») : « À reprendre 4 · 3 sur ce folio ». */
@@ -1024,6 +1025,13 @@ function rendreOutils(O) { const b = app.base, pt = portee(O);
   if ((!petit || !petitPlan) && P.some(p => p.lourd) && AU_REPOS) { const jeton = RECAP.jeton, go = () => { if (jeton !== RECAP.jeton || $('base').hidden || app.base.edition) return;
       P.filter(p => p.lourd).forEach(p => { document.querySelectorAll(`#ba-puces [data-puce="${CSS.escape(p.k)}"], #ba-filtrer-l [data-puce="${CSS.escape(p.k)}"]`).forEach(x => { x.querySelectorAll('small').forEach(s => s.remove()); x.insertAdjacentHTML('beforeend', compte({ ...p, lourd: false })); x.classList.toggle('zero', /^0$/.test(x.querySelector('small').textContent)); }); }); };
     if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 3000 }); else setTimeout(go, 500); } }
+/* (v84 : « Chercher : repère, borne, t… » — un texte coupé dans le champ) l'invite de la recherche tient dans sa place : la
+   phrase de l'onglet quand elle y tient, sinon « Chercher… » ; relue quand le champ s'élargit ou se resserre. */
+let MESURE_RECHERCHE = null;
+function ajusterRecherche(O) { const fi = $('ba-filtre'); if (!fi) return; const long = (O || onglet()).cherche || 'Chercher dans l’onglet', s = getComputedStyle(fi);
+  const place = fi.clientWidth - parseFloat(s.paddingLeft || 0) - parseFloat(s.paddingRight || 0) - 1; if (!(place > 0)) { fi.placeholder = long; return; }
+  try { MESURE_RECHERCHE = MESURE_RECHERCHE || document.createElement('canvas').getContext('2d'); MESURE_RECHERCHE.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+    fi.placeholder = MESURE_RECHERCHE.measureText(long).width <= place ? long : 'Chercher…'; } catch (_) { fi.placeholder = long; } }
 /* « FILTRER » : les puces qui ne tiennent pas dans la barre, dans un menu de verre (le patron des menus de documents) — une
    rubrique (la route, ce qui manque), une ligne par puce : sa coche, son trait, son mot, son compte. Une ligne cochée filtre
    (et sa puce paraît, pressée, dans la barre : on voit ce qui filtre, on l'ôte d'un clic) ; le menu reste ouvert d'une
@@ -1128,7 +1136,7 @@ function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.je
   // (v74) le geste qui se répète d'une ligne à la suivante, sans intercalaire entre elles : « ″ » (les lignes se posent après)
   // (v84) de même, l'objet qui se répète s'écrit plus doux
   RECAP.parGenre = !!parGenre; RECAP.pareils = new Set(); RECAP.memes = new Set();
-  if (O === PROBLEMES) { let avant = null, nom = null; morceaux.forEach(m => { if (m.k == null) { avant = null; nom = null; return; } const r = RECAP.vues.get(m.k), s = r ? signatureGestes(r) : '', x = r && r.x.nom;
+  if (O === PROBLEMES) { let avant = null, nom = null; morceaux.forEach(m => { if (m.k == null) { avant = null; nom = null; return; } const r = RECAP.vues.get(m.k), s = r ? (r.x.niveau === 'ko' ? 'ko' : 'att') + '\u0001' + signatureGestes(r) : '', x = r && r.x.nom;
     if (s && s === avant) RECAP.pareils.add(m.k); if (x && x === nom) RECAP.memes.add(m.k); avant = s; nom = x; }); }
   // un onglet vide le dit sous ses en-têtes, au milieu de la feuille (hors de la table : sa dernière colonne prend tout)
   // (v84) un onglet vide ne pose pas d'en-têtes : sans lignes, ils se tassaient à gauche (« DE CÂBLE VERS… »), sans rien dire
@@ -1437,6 +1445,8 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
   fi.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (fi.value) { fi.value = ''; fi.dispatchEvent(new Event('input')); } else fi.blur(); }
     else if (e.key === 'ArrowDown' || e.key === 'Enter') { const x = corps.querySelector('tr[data-k] [data-f]'); if (x) { e.preventDefault(); x.focus(); } } });
   $('ba-vider').onclick = () => { fi.value = ''; fi.dispatchEvent(new Event('input')); fi.focus(); };
+  // le champ s'élargit au focus, se resserre avec la feuille : son invite se relit (`ajusterRecherche`)
+  if (window.ResizeObserver) new ResizeObserver(() => ajusterRecherche()).observe(fi);
   // les puces et les onglets défilent de côté (la molette aussi) et s'effacent au bord qui cache quelque chose
   [$('ba-puces'), ong].forEach(x => { const bord = () => bordDe(x); x.addEventListener('scroll', bord, { passive: true }); if (window.ResizeObserver) new ResizeObserver(bord).observe(x);
     x.addEventListener('wheel', e => { if (x.scrollWidth <= x.clientWidth || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return; e.preventDefault(); x.scrollLeft += e.deltaY; }, { passive: false }); });

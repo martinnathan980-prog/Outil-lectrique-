@@ -45,7 +45,7 @@ function ongletActif(type, xs) { const k = NIVEAU.onglet[type]; if (k && xs.some
 function ongletsHtml(type, xs) { if (!xs.length) return '';
   const actif = ongletActif(type, xs);
   const tabs = xs.map(s => { const st = s.statut || {};
-    return `<button type="button" role="tab" class="nv-onglet" id="nv-o-${escA(s.cle)}" data-onglet="${escA(s.cle)}" aria-selected="${s.cle === actif}" aria-controls="nv-p-${escA(s.cle)}" tabindex="${s.cle === actif ? 0 : -1}">`
+    return `<button type="button" role="tab" class="nv-onglet" id="nv-o-${escA(s.cle)}" data-onglet="${escA(s.cle)}" aria-selected="${s.cle === actif}" aria-controls="nv-p-${escA(s.cle)}" tabindex="${s.cle === actif ? 0 : -1}"${st.bulle ? ` data-bulle="${escA(st.bulle)}"` : ''}>`
       + `<span class="nv-o-t">${esc(titreOnglet(s))}</span><span class="nv-o-s${st.etat ? ' ' + st.etat : ''}">${st.t != null && st.t !== '' ? esc(st.t) : '&nbsp;'}</span></button>`; }).join('');
   const panneaux = xs.map(s => `<section class="nv-panneau${s.vide ? ' fs-vide' : ''}" role="tabpanel" id="nv-p-${escA(s.cle)}" data-section="${escA(s.cle)}" aria-labelledby="nv-o-${escA(s.cle)}" tabindex="-1"${s.cle === actif ? '' : ' hidden'}>`
     + (s.vide ? `<p class="vu-note">${esc(majuscule(s.vide))}${s.action ? ' ' + s.action : ''}</p>` : '') + (s.contenu || '') + '</section>').join('');
@@ -54,7 +54,10 @@ function ongletsHtml(type, xs) { if (!xs.length) return '';
 const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === 'connecteur' ? 'essentiel' : s.cle, titre: s.cle === 'fils' || s.cle === 'connecteur' ? '' : s.titre, statut: s.resume ? { t: String(s.resume).replace(/<[^>]*>/g, '').slice(0, 40) } : null, contenu: s.contenu, vide: s.vide, action: s.action });
 
 // les onglets que toutes les fiches partagent : les câbles (la section d'hier, son statut en mots), la fabrication
-const ongletCables = sF => !sF ? null : { cle: 'cables', statut: { t: sF.vide ? 'aucun' : sF.nko ? sF.nko + (sF.nko > 1 ? ' câbles en défaut' : ' câble en défaut') : pluriel(sF.compte || 0, 'câble') + (false ? '' : sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' % max' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide };
+// (v84) le statut tient dans l'onglet le plus étroit : « 4 câbles · 51 % » ; ce que veut dire 51 %, sa bulle le dit
+const statutCables = sF => ({ t: sF.vide ? 'aucun' : sF.nko ? sF.nko + (sF.nko > 1 ? ' câbles en défaut' : ' câble en défaut') : pluriel(sF.compte || 0, 'câble') + (sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' %' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '',
+  bulle: !sF.vide && sF.charge != null ? 'Le plus chargé porte ' + Math.round(sF.charge * 100) + ' % du courant qu’il admet' : '' });
+const ongletCables = sF => !sF ? null : { cle: 'cables', statut: statutCables(sF), contenu: sF.contenu, vide: sF.vide };
 function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
   return { cle: 'fabrication', statut: { t: n + '\u00a0à commander' }, contenu: `<section class="vu-bloc"><h4 class="vu-titre nv-lpa-t">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span>

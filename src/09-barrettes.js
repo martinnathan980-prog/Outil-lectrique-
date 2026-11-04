@@ -1356,7 +1356,8 @@ function reactanceEstimee(section, hauteur, frequence) { if (!(section > 0)) ret
    défaut, ces + 10 % quand l'hypothèse « toron » vaut « Excel » (ou sans table Toron). */
 const FOISONNEMENT = 1.1;
 function faisceauDe(norme, fils) { const vus = new Map(), inconnus = new Set(); let k = 0;
-  (fils || []).forEach(f => { if (!f.type) return; const cle = f.cable ? 'W' + f.cable : 'n' + (k++); if (vus.has(cle)) return;
+  // un pont (deux bornes d'un même connecteur, `avecPonts`) reste derrière la face : il ne passe pas l'entrée du raccord
+  (fils || []).forEach(f => { if (!f.type || f.pont) return; const cle = f.cable ? 'W' + f.cable : 'n' + (k++); if (vus.has(cle)) return;
     const c = cableDuType(norme, f.type); if (!c) { inconnus.add(f.type); return; } vus.set(cle, c); });
   const cs = [...vus.values()], section = cs.reduce((s, c) => s + (c.section || 0), 0), masse = cs.reduce((s, c) => s + (c.masse || 0), 0);
   const deq = section > 0 ? 2 * Math.sqrt(section / Math.PI) : null;
@@ -1813,13 +1814,27 @@ function remplirModules(besoins, norme, choix) { const N = normeDesModules(norme
     verdicts.push({ niveau: 'ko', texte: `borne${s(p.bornes.length)} ${p.bornes.join('-')} : ${p.fils.length} câble${s(p.fils.length)}${js.length ? ' de gauge ' + js.join(', ') : ''} — aucun groupe ${ou} ne les reçoit`, bornes: p.bornes }); });
   // chaque fil, son contact à sertir quand la table Contacts connaît la famille (NSA937901, E0599 : les broches EN 3155-016, recherche R1)
   const fils = modules.flatMap((M, k) => M.places.flatMap(pl => pl.fils.map(([f, c]) => { const st = f.jauge == null ? null : contactDuFil(N, M.module.famille, c.taille, '', f.type, f.jauge);
-    return { f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel, taille: c.taille, sexe: st ? st.sexe : '',
+    return { f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel, borne: f.borneBarrette, taille: c.taille, sexe: st ? st.sexe : '',
       jaugeOk: f.jauge == null ? null : contactAccepte(N, M.module.famille, c.taille, f.jauge), sertir: sertirDe(N, st) }; })));
   const contacts = modules.reduce((n, M) => n + M.module.contacts.length, 0);
   const parRef = new Map(); modules.forEach(M => parRef.set(M.reference, (parRef.get(M.reference) || 0) + 1));
   const reference = [...parRef].map(([r, n]) => (n > 1 ? n + ' × ' : '') + r).join(' + ');
   return { modules, fils, verdicts, potentiels: nPot, places: nPot - restants.length, restants, contacts, utilises: fils.length, reference,
            famille, variante: V.module ? V.module.variante : '', main: V.main, nomme, choix: choix || '' }; }
+/* LE RAIL D'UNE BARRETTE (v84) : il porte TOUS ses modules — ceux de ses repères frères (668VT31 et 669VT32 sont les
+   modules 1 et 2 de VT3), quel que soit leur folio — et se commande UNE fois. Un rail par norme de modules : la ligne
+   « rail » de la table Accessoires de la norme ; sa référence au nombre de modules (NN : 001751 102 00 pour deux modules
+   ASNE 0599) et sa longueur (le pas de la ligne × le nombre de modules ; un module seul, la longueur que dit la note :
+   18 mm), ou un profilé à couper (NSA937901RB2000, 2 m). `plans` : les plans de remplissage des modules frères
+   (`remplirModules`). Rend [{ reference, famille, n, longueur, coupe, quantite: 1, sous, role, equivalent, source, ligne }]. */
+function railsDeBarrette(norme, plans) { const N = normeDesModules(norme), parFamille = new Map();
+  (plans || []).forEach(Q => ((Q && Q.modules) || []).forEach(M => parFamille.set(M.module.famille, (parFamille.get(M.module.famille) || 0) + 1)));
+  return [...parFamille].map(([f, n]) => { const a = accessoiresDe(N, f).find(x => /^rail/i.test(String(x.role || ''))); if (!a) return null;
+    const texte = String(a.role || '') + ' ' + String(a.note || ''), aNN = /NN/.test(a.reference), pas = /pas (\d+(?:[.,]\d+)?) mm/.exec(texte), seul = /(\d+(?:[.,]\d+)?) mm pour un seul/.exec(texte);
+    const longueur = aNN && pas ? (n === 1 && seul ? NUMERO(seul[1]) : NUMERO(pas[1]) * n) : null, coupe = !aNN && /2000|\b2 m\b/.test(texte + ' ' + a.reference);
+    return { reference: aNN ? String(a.reference).replace(/NN/, String(n).padStart(2, '0')) : String(a.reference), famille: f, n, longueur, coupe, quantite: 1,
+      sous: n + ' module' + (n > 1 ? 's' : '') + (longueur != null ? ' · ' + nombreFr(longueur) + ' mm' : coupe ? ' · à couper à la longueur des modules' : ''),
+      role: a.role || '', equivalent: a.equivalent || '', source: a.origine || a.note || '', ligne: a }; }).filter(Boolean); }
 /* Les variantes qui logent la barrette d'un seul module, de la mieux à la moins bien taillée — les candidates de la
    carte ; d'une norme, ou des deux. */
 function variantesQuiLogent(besoins, norme, famille) { const N = normeDesModules(norme), pots = potentielsDeBarrette(besoins).sort((a, b) => b.fils.length - a.fils.length);
@@ -1882,7 +1897,7 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
     modules.push({ module: m, reference: m.reference, places: mieux.r.pl.map(x => ({ potentiel: { bornes: [x.p.borne], fils: x.p.fils }, groupe: m.groupes[x.c.groupe], fils: x.p.fils.map(f => [f, x.c]), perte: 0 })) });
     mieux.r.pl.forEach(x => x.p.fils.forEach(f => { const sx = sexeFil(f), st = contactDuFil(N, m.famille, x.c.taille, sx, f.type, f.jauge), sertir = sertirDe(N, st);
       const joint = filContreJoint(N, m.famille, x.c.taille, sertir ? sertir.fut : null, f.type, st ? st.accessoire : '');
-      fils.push({ f, contact: x.c, module: 0, groupe: m.groupes[x.c.groupe], potentiel: { bornes: [x.p.borne], fils: x.p.fils }, taille: x.c.taille, sexe: sx,
+      fils.push({ f, contact: x.c, module: 0, groupe: m.groupes[x.c.groupe], potentiel: { bornes: [x.p.borne], fils: x.p.fils }, borne: x.p.borne, taille: x.c.taille, sexe: sx,
         jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge, sx, f.type), sertir, joint }); }));
     // le fil contre le joint arrière (table Joint arrière) : trop gros, il n'entre pas ; trop fin sans manchon d'étanchéité, l'eau passe
     fils.forEach(x => { const j = x.joint; if (!j || !j.verdict || j.verdict === 'dans' || (j.verdict === 'sous' && j.manchon)) return; const J = j.joint, plage = (J.dmin != null ? nombreFr(J.dmin) : '?') + '–' + (J.dmax != null ? nombreFr(J.dmax) : '?') + ' mm';
@@ -1940,9 +1955,21 @@ function arrangementsQuiLogent(points, norme, famille, sexeFil) { const N = norm
     .sort((a, b) => meilleurScore(cle(a), cle(b)) ? -1 : meilleurScore(cle(b), cle(a)) ? 1 : 0).map(x => x.m); }
 /* Les connecteurs EN 4165 d'un équipement : chaque cavité (connecteur A, B…) et son module. `retenue(nom)` : la
    désignation donnée à la main à « repère|lettre » ; `sexes(nom)` : le sexe des contacts choisi pour cette clé. */
-function connecteursEnModules(repere, liaisons, norme, retenue, sexes) { const b = besoinsDeBarrette(repere, liaisons), main = retenue || (() => ''), sx = sexes || (() => '');
+function connecteursEnModules(repere, liaisons, norme, retenue, sexes) { const b = avecPonts(besoinsDeBarrette(repere, liaisons), repere, liaisons), main = retenue || (() => ''), sx = sexes || (() => '');
   return connecteursDe(repere, liaisons).filter(c => familleDeReference(norme, c.pn, 'connecteur') || moduleDeConnecteur(norme, c.pn))
     .map(c => { const points = pointsDe(b, c.bornes); return { ...c, points, plan: remplirContacts(points, norme, { choix: main(repere + '|' + c.nom), pn: c.pn, sexe: sx(repere + '|' + c.nom) }) }; }); }
+/* LE PONT D'UN CONNECTEUR D'ÉQUIPEMENT (v84) : une liaison d'une borne à une autre du même équipement (A1 → A2) n'est pas un
+   shunt de barrette — c'est un câble court, serti aux deux bouts dans la partie mobile. Chacun de ses bouts entre dans les
+   câbles de sa borne (`pont` le marque ; `borne`, l'autre bout) : son contact se sertit, sa gauge se juge, une borne qui
+   reçoit aussi un autre câble le dit. Un pont ne sort pas par l'entrée du raccord : le toron ne le compte pas. */
+function avecPonts(b, repere, liaisons) { const ponts = new Map(), mettre = (bo, f) => (ponts.get(bo) || ponts.set(bo, []).get(bo)).push(f);
+  liaisons.forEach(l => { if (l.de !== repere || l.vers !== repere || !l.borneDe || !l.borneVers || l.borneDe === l.borneVers) return;
+    const f = { cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: repere, l, pont: true };
+    // `borneVers` : l'autre bout, pour que le câble se dise « DR22 vers 800XC9:A3 »
+    mettre(l.borneDe, { ...f, borne: l.borneVers, borneVers: l.borneVers, amont: false }); mettre(l.borneVers, { ...f, borne: l.borneDe, borneVers: l.borneDe, amont: true }); });
+  if (!ponts.size) return b; const parBorne = new Map(b.parBorne);
+  ponts.forEach((fs, bo) => parBorne.set(bo, [...(parBorne.get(bo) || []), ...fs]));
+  return { ...b, parBorne }; }
 /* La prise de coupure en module : ses contacts, un fil de chaque côté (fiche et embase). `sexe` : celui de la fiche. */
 function coupureEnModule(repere, liaisons, norme, choix, sexe) { const b = besoinsDeBarrette(repere, liaisons), points = pointsDe(b, b.bornes);
   return { besoins: b, points, plan: remplirContacts(points, norme, { choix, pn: b.pn, prise: true, sexe }) }; }

@@ -119,7 +119,7 @@
 .dj-chip{position:relative;min-width:0;min-height:48px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:6px 8px 6px 9px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);
   font:600 var(--f-14)/1 var(--sans);color:var(--t-1);cursor:pointer;text-align:left;transition:background var(--rapide),border-color var(--rapide),transform var(--d-instant) var(--courbe)}
 .dj-chip-l{display:flex;align-items:baseline;justify-content:space-between;gap:4px;width:100%}
-.dj-chip-l em{font:600 10px/1 var(--sans);font-style:normal;letter-spacing:.01em;color:var(--t-2);padding:2px 4px;border-radius:4px;border:1px dashed color-mix(in srgb,var(--t-2) 60%,transparent)}
+.dj-chip-l em{font:600 var(--f-11)/1 var(--sans);font-style:normal;letter-spacing:.01em;color:var(--t-2);padding:2px 4px;border-radius:4px;border:1px dashed color-mix(in srgb,var(--t-2) 60%,transparent)}
 .dj-chip[aria-pressed="true"] .dj-chip-l em{color:var(--t-inverse);border-color:currentColor}
 .dj-chip b{display:inline-flex;align-items:baseline;gap:2px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .dj-chip b small{font:500 var(--f-12) var(--sans);color:var(--t-2);margin-left:1px}

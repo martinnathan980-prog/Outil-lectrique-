@@ -2547,7 +2547,7 @@ body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-lueur{display:
 .dj-chip{position:relative;min-width:0;min-height:48px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:6px 8px 6px 9px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);
   font:600 var(--f-14)/1 var(--sans);color:var(--t-1);cursor:pointer;text-align:left;transition:background var(--rapide),border-color var(--rapide),transform var(--d-instant) var(--courbe)}
 .dj-chip-l{display:flex;align-items:baseline;justify-content:space-between;gap:4px;width:100%}
-.dj-chip-l em{font:600 10px/1 var(--sans);font-style:normal;letter-spacing:.01em;color:var(--t-2);padding:2px 4px;border-radius:4px;border:1px dashed color-mix(in srgb,var(--t-2) 60%,transparent)}
+.dj-chip-l em{font:600 var(--f-11)/1 var(--sans);font-style:normal;letter-spacing:.01em;color:var(--t-2);padding:2px 4px;border-radius:4px;border:1px dashed color-mix(in srgb,var(--t-2) 60%,transparent)}
 .dj-chip[aria-pressed="true"] .dj-chip-l em{color:var(--t-inverse);border-color:currentColor}
 .dj-chip b{display:inline-flex;align-items:baseline;gap:2px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .dj-chip b small{font:500 var(--f-12) var(--sans);color:var(--t-2);margin-left:1px}
@@ -2874,7 +2874,7 @@ details.fs[data-section="disjoncteur"][open]>.fs-tete .fs-resume{display:none}
 .fi-des:hover{background:var(--fi-voile)}
 .fi-des:focus{outline:none;opacity:1;background:var(--s-surface);border-color:var(--accent);box-shadow:var(--anneau);color:var(--t-1)}
 .fi-nom-ligne{display:flex;align-items:center;gap:2px;max-width:100%;min-width:0}
-.fi-nom{display:block;min-width:0;max-width:100%;border:none;background:none;margin:0 0 0 -6px;padding:1px 6px;font:600 var(--f-24)/1.2 var(--mono);letter-spacing:-.01em;color:var(--t-1);border-radius:var(--r-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-nom{display:block;min-width:0;max-width:100%;border:none;background:none;margin:0 0 0 -6px;padding:1px 6px;font:600 var(--f-20)/1.2 var(--mono);letter-spacing:-.01em;color:var(--t-1);border-radius:var(--r-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 input.fi-nom{field-sizing:content;min-width:5ch;cursor:text;transition:box-shadow var(--rapide),background var(--rapide)}
 input.fi-nom:hover{background:var(--fi-voile)}
 input.fi-nom:focus{outline:none;background:var(--s-surface);box-shadow:inset 0 0 0 1.5px var(--accent),var(--anneau)}
@@ -3157,7 +3157,7 @@ details.fs[data-type="barrette"][data-section="connecteur"][open]>.fs-tete .fs-r
 .cand-l{display:grid;grid-template-columns:16px minmax(0,1fr) auto;column-gap:8px;row-gap:1px;align-items:baseline;width:100%;min-height:36px;margin:0;padding:6px 8px;border:none;border-radius:var(--r-1);background:none;text-align:left;color:var(--t-2);cursor:pointer;transition:background var(--rapide)}
 .cand-l+.cand-l{box-shadow:0 -1px 0 var(--s-line)}
 .cand-l:hover{background:var(--s-hover)}
-.cand-l-m{font:700 var(--f-12)/1 var(--sans);font-style:normal;text-align:center}
+.cand-l-m{font:600 var(--f-12)/1 var(--sans);font-style:normal;text-align:center}
 .cand-l.ko .cand-l-m{color:var(--ko)}
 .cand-l.att .cand-l-m{color:var(--warn)}
 .cand-l b{font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -3171,7 +3171,7 @@ details.fs[data-type="barrette"][data-section="connecteur"][open]>.fs-tete .fs-r
 .fi-norme-puce.main{border-color:color-mix(in srgb,var(--warn) 55%,var(--s-line-2))}
 .fi-norme-puce.ko{color:var(--ko);border-color:var(--ko);background:var(--ko-soft)}
 /* un contact de la liste : ✓ il admet le câble, ✕ il ne l'admet pas (cliquable quand même) */
-.ct-chip .ct-chip-m{margin-left:6px;font:700 var(--f-12)/1 var(--sans)}
+.ct-chip .ct-chip-m{margin-left:6px;font:600 var(--f-12)/1 var(--sans)}
 .ct-chip.ok .ct-chip-m{color:var(--ok)}
 .ct-chip.ko{color:var(--t-2)}
 .ct-chip.ko .ct-chip-m{color:var(--ko)}
@@ -3291,7 +3291,7 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .fi-sertir.meme{color:var(--t-2)}
 .fi-sertir.main{color:var(--warn);font-weight:600}
 .fi-jg{display:inline-flex;align-items:center;gap:4px;font:600 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap;font-variant-numeric:tabular-nums}
-.fi-jg i{font:700 var(--f-12) var(--sans)}
+.fi-jg i{font:600 var(--f-12) var(--sans)}
 .fi-jg.ok i{color:var(--ok)}
 .fi-jg.ko{color:var(--ko)}
 .fi-jg.ko i{color:var(--ko)}
@@ -3405,7 +3405,7 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .fi-sertir.fi-ct-puce:hover{border-color:var(--t-3);background:var(--s-surface)}
 .fi-sertir.fi-ct-puce.main{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--s-line))}
 .fi-sertir.fi-ct-puce.ko{color:var(--ko);border-color:color-mix(in srgb,var(--ko) 40%,var(--s-line));background:var(--ko-soft)}
-.fi-sertir.fi-ct-puce i{font:700 var(--f-11) var(--sans);color:var(--ko)}
+.fi-sertir.fi-ct-puce i{font:600 var(--f-11) var(--sans);color:var(--ko)}
 /* une barre d'état, fine : elle se remplit de sa couleur contre ce qui est admis */
 .fi-barre{display:block;height:4px;border-radius:2px;background:var(--s-line);overflow:hidden;min-width:40px}
 .fi-barre i{display:block;height:100%;border-radius:2px;background:var(--t-3);transform-origin:left center;transition:width var(--moyen)}
@@ -4088,8 +4088,8 @@ body.insp-grand #inspecteur .nv-poignee :is(button,input){cursor:pointer}
 .nc-genre-mot{min-width:0;padding:3px 0 1px;font:600 var(--f-12)/1.4 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nc-rep{display:flex;align-items:center;min-width:0;max-width:100%}
 .nc-rep-in,.nc-rep-t{min-width:3ch;max-width:100%;height:40px;margin:0 0 0 -7px;padding:0 7px;border:1px solid transparent;border-radius:var(--r-btn);background:none;color:var(--t-1);
-  font:600 30px/1 var(--mono);letter-spacing:-.025em;text-overflow:ellipsis;transition:background var(--rapide),border-color var(--rapide)}
-.nc-rep-t{display:flex;align-items:center;font-family:var(--sans);font-size:26px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden}
+  font:600 var(--f-28)/1 var(--mono);letter-spacing:-.025em;text-overflow:ellipsis;transition:background var(--rapide),border-color var(--rapide)}
+.nc-rep-t{display:flex;align-items:center;font-family:var(--sans);font-size:var(--f-28);letter-spacing:-.02em;white-space:nowrap;overflow:hidden}
 .nc-rep-in:hover{background:var(--s-hover);cursor:text}
 .nc-rep-in:focus{outline:none;border-color:var(--nv-cuivre);background:var(--s-surface);box-shadow:var(--anneau)}
 /* ce qui l'identifie : des mots séparés d'un point, au centre */
@@ -4136,7 +4136,7 @@ button.nc-chiffre:hover .nc-k{color:var(--t-1)}
 button.nc-chiffre:hover .nc-v{color:var(--nv-cuivre)}
 button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:4px}
 .nc-k{max-width:100%;font:600 var(--f-11)/1.3 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color var(--rapide)}
-.nc-v{display:block;max-width:100%;min-height:30px;font:600 24px/1.25 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color var(--rapide)}
+.nc-v{display:block;max-width:100%;min-height:30px;font:700 var(--f-28)/1.25 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color var(--rapide)}
 .nc-v small{margin-left:3px;font:500 var(--f-13) var(--sans);letter-spacing:0;color:var(--t-2)}
 .nc-v .id{font:600 var(--f-16)/1.5 var(--mono);letter-spacing:-.015em}
 .nc-chiffre.ko .nc-v{color:var(--ko)}
@@ -4166,7 +4166,7 @@ button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offse
 .vu-c.ret b{background:var(--ok);color:#fff;box-shadow:0 6px 14px -6px color-mix(in srgb,var(--ok) 70%,transparent);transform:scale(1.1)}
 .vu-c.ret.non b{background:var(--ko)}
 .vu-c.act b{box-shadow:inset 0 0 0 1.5px currentColor;outline:1.5px dashed currentColor;outline-offset:2px}
-.vu-c small{height:13px;font:600 10.5px/13px var(--sans);color:var(--t-2);white-space:nowrap}
+.vu-c small{height:13px;font:600 var(--f-11)/13px var(--sans);color:var(--t-2);white-space:nowrap}
 .vu-c.ret small{color:var(--ok)}
 .vu-c.ret.non small{color:var(--ko)}
 /* les connecteurs d'un équipement, d'un coup d'œil */
@@ -4180,7 +4180,7 @@ button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offse
 .vu-con.ko .vu-con-t small{color:var(--ko)}
 .vu-con-b{display:block;height:6px;border-radius:3px;background:var(--s-line);overflow:hidden}
 .vu-con-b i{display:block;height:100%;border-radius:3px;background:var(--nv-cuivre)}
-.vu-con-n{font:600 var(--f-15)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
+.vu-con-n{font:600 var(--f-14)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
 .vu-con-n small{margin-left:1px;font:500 var(--f-12) var(--sans);color:var(--t-2)}
 
 /* ─── LE TRAJET D'UN CÂBLE : un bout, la ligne à la couleur de sa route, l'autre bout ─── */
@@ -4205,7 +4205,7 @@ button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offse
 .nc-tete.fine .nc-sym{width:34px;height:34px;border-radius:10px}
 .nc-tete.fine .nc-sym svg{width:24px;height:24px}
 .nc-tete.fine .nc-genre-mot{flex:none;font-size:var(--f-11)}
-.nc-tete.fine .nc-rep-in,.nc-tete.fine .nc-rep-t{height:34px;font-size:22px;margin:0}
+.nc-tete.fine .nc-rep-in,.nc-tete.fine .nc-rep-t{height:34px;font-size:var(--f-20);margin:0}
 .nc-tete.fine .nc-meta{flex:0 1 auto;min-width:0;flex-wrap:nowrap;justify-content:flex-start;overflow:hidden;white-space:nowrap;font-size:var(--f-13);margin-left:4px}
 .nc-tete.fine .nc-meta>span:first-child::before{content:"";width:3px;height:3px;margin:0 9px 0 0;border-radius:50%;background:var(--t-3);opacity:.7}
 @container corps (max-width:620px){ .nc-tete.fine .nc-genre-mot,.nc-tete.fine .nc-meta{display:none} }
@@ -4218,7 +4218,7 @@ button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offse
 .nv-onglet{position:relative;flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:4px;min-width:104px;max-width:220px;height:58px;margin:0;padding:0 14px;border:0;border-radius:10px;background:none;
   color:var(--t-2);font:inherit;text-align:left;cursor:pointer;transition:color var(--rapide),background var(--rapide),box-shadow var(--rapide)}
 .nv-onglet:hover{color:var(--t-1);background:color-mix(in srgb,var(--s-surface) 60%,transparent)}
-.nv-o-t{font:600 var(--f-15)/1.2 var(--sans);letter-spacing:-.01em;white-space:nowrap}
+.nv-o-t{font:600 var(--f-14)/1.2 var(--sans);letter-spacing:-.01em;white-space:nowrap}
 .nv-o-s{display:inline-flex;align-items:center;gap:5px;max-width:100%;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nv-o-s:is(.ok,.att,.ko)::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--ok)}
 .nv-o-s.att{color:var(--warn)}
@@ -4252,7 +4252,7 @@ button.nc-chiffre:focus-visible{outline:2px solid var(--nv-cuivre);outline-offse
 .nv-liste-t{flex:none;display:flex;align-items:baseline;gap:8px;padding:18px 16px 10px;font:600 var(--f-12) var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--t-2)}
 .nv-liste-t>b{font-weight:600;color:var(--t-1)}
 .nv-liste-t>span{font:600 var(--f-12) var(--sans);letter-spacing:0;text-transform:none;color:var(--t-3)}
-.nv-liste-t .nv-liste-ko{margin-left:auto;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--ko);color:var(--t-inverse);font:700 var(--f-11)/1 var(--sans)}
+.nv-liste-t .nv-liste-ko{margin-left:auto;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--ko);color:var(--t-inverse);font:600 var(--f-11)/1 var(--sans)}
 .nv-liste-f{flex:none;margin:0 12px 8px;height:32px}
 .nv-liste-l{flex:1 1 auto;min-height:0;margin:0;padding:2px 8px 16px;list-style:none;overflow:auto;scrollbar-width:thin}
 .nv-liste-l>li[hidden]{display:none}
@@ -4589,7 +4589,7 @@ body.insp-flotte #inspecteur.taillee{height:var(--carte-h)}
 /* le titre : le genre, un tiret, le repère — même police, même taille, même graisse */
 .nc{position:relative;isolation:isolate}
 .nc-tete{display:flex;justify-content:center;margin:2px 0 0}
-.nc-titre{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0 10px;min-width:0;font:600 22px/1.25 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
+.nc-titre{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0 10px;min-width:0;font:600 var(--f-20)/1.25 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
 .nc-titre .nc-genre-mot{padding:0;font:inherit;letter-spacing:inherit;text-transform:none;color:var(--t-1);overflow:visible}
 .nc-tiret{color:var(--t-3);font-weight:400}
 .nc-titre .nc-rep{display:inline-flex}
@@ -4605,7 +4605,7 @@ body.insp-flotte #inspecteur.taillee{height:var(--carte-h)}
 .nc-filigrane svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
 .nc:hover .nc-filigrane{opacity:.1;transform:rotate(-6deg) scale(1.04)}
 /* le grand : la même ligne de titre, plus petite */
-.nc-tete.fine .nc-titre{flex-wrap:nowrap;font-size:18px}
+.nc-tete.fine .nc-titre{flex-wrap:nowrap;font-size:var(--f-20)}
 .nc-tete.fine .nc-titre .nc-rep-in,.nc-tete.fine .nc-titre .nc-rep-t{height:30px}
 .nc-tete.fine .nc-meta{font:inherit}
 .nc-tete.fine .nc-meta-v,.nc-tete.fine .nc-meta-v .id{font:600 var(--f-13) var(--mono);color:var(--t-2)}
@@ -6295,7 +6295,7 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
 .fi-q-bulle{position:fixed;z-index:210;width:min(340px,calc(100vw - 16px));padding:14px 16px 10px;border-radius:var(--r-2);background:var(--s-flottant);color:var(--t-1);border:1px solid var(--s-line);box-shadow:var(--sh-2);
   animation:fi-bulle var(--rapide)}
 .q-tete{display:flex;align-items:center;gap:8px}
-.q-ico{flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:700 11px/1 var(--sans)}
+.q-ico{flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:600 var(--f-11)/1 var(--sans)}
 .q-tete b{font:600 var(--f-14)/1.3 var(--sans);letter-spacing:-.01em}
 .q-phrase{margin:8px 0 0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-1);text-wrap:pretty}
 .q-chiffres{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
@@ -6684,15 +6684,9 @@ details[open]>summary .see-ctl-g::after{transform:translateY(1px) rotate(-135deg
    maquettes/accueil-vivant.html). Puis l'attente d'un folio (la barre, ce qu'on peut faire pendant), le fondu d'un dessin
    qui en remplace un autre, la petite bande qui dit ce qui travaille. */
 :root{
-  /* les nappes : deux ellipses de lumière (cuivre, lin), rastérisées une fois, que la dérive déplace — la table de chaque
-     écran les reteinte (le plan : style-z-cadre.css ; la bibliothèque : style-z-accueil.css) */
-  --nappe-a:radial-gradient(closest-side,rgba(236,165,112,.075),rgba(236,165,112,.025) 50%,rgba(236,165,112,0));
-  --nappe-b:radial-gradient(closest-side,rgba(255,236,216,.05),rgba(255,236,216,.018) 52%,rgba(255,236,216,0));
-  /* les points au repos (la grille se devine), sous la lueur (elle se révèle), estompés vers les bords */
-  --grille-repos:rgba(255,236,216,.075); --s-grille-revele:rgba(255,236,216,.22);
-  --points-vignette:radial-gradient(ellipse 72% 68% at 50% 46%,#000 35%,rgba(0,0,0,.35) 75%,transparent);
-  /* le courant : un trait de cuivre qui s'éclaire vers sa tête */
-  --courant:linear-gradient(90deg,rgba(236,165,112,0),rgba(236,165,112,.75) 70%,#ffd7b8)}
+  /* les nappes, les points, le courant : la table de chaque écran les teinte (le plan : style-z-cadre.css ; la
+     bibliothèque : style-z-accueil.css) — ici, ce que les couches partagent : le fondu des points vers les bords */
+  --points-vignette:radial-gradient(ellipse 72% 68% at 50% 46%,#000 35%,rgba(0,0,0,.35) 75%,transparent)}
 /* les nappes : centrées sur l'écran, plus grandes que lui ; la dérive (08-table) les pose à leur place et les promène */
 #table .ta-nappe{inset:auto;left:50%;top:50%;will-change:transform,opacity}
 #table .ta-nappe-a{width:120vmax;height:90vmax;margin:-45vmax 0 0 -60vmax;background:var(--nappe-a)}
@@ -6700,8 +6694,8 @@ details[open]>summary .see-ctl-g::after{transform:translateY(1px) rotate(-135deg
 /* les points : un calque d'un pas plus grand que l'écran, que la parallaxe glisse (un transform, rien à repeindre) */
 #table .ta-points{inset:-24px;will-change:transform;background-image:radial-gradient(circle at 1px 1px,var(--grille-repos) 1px,transparent 1.5px);
   -webkit-mask-image:var(--points-vignette);mask-image:var(--points-vignette)}
-/* la lueur : un disque de lumière froide, posé par un ressort ; elle paraît quand la souris est vue */
-#table .ta-lueur{width:400px;height:400px;margin:-200px 0 0 -200px;transition:opacity .8s ease;background:var(--table-lueur)}
+/* la lueur : un disque de lumière (--table-lueur), posé par un ressort ; elle paraît quand la souris est vue */
+#table .ta-lueur{width:400px;height:400px;margin:-200px 0 0 -200px;transition:opacity var(--d-lent) var(--courbe);background:var(--table-lueur)}
 /* ce qu'elle révèle : les mêmes points, plus vifs, dans un disque estompé qui la suit (08-table les recale sur la grille) */
 #table .ta-revele{inset:auto;left:0;top:0;width:240px;height:240px;margin:-120px 0 0 -120px;overflow:hidden;border-radius:50%;opacity:0;transition:opacity .8s ease;will-change:transform;
   -webkit-mask-image:radial-gradient(closest-side,#000,rgba(0,0,0,.45) 55%,transparent);mask-image:radial-gradient(closest-side,#000,rgba(0,0,0,.45) 55%,transparent)}
@@ -6709,7 +6703,7 @@ details[open]>summary .see-ctl-g::after{transform:translateY(1px) rotate(-135deg
   background-image:radial-gradient(circle at 1px 1px,var(--s-grille-revele) 1.1px,transparent 1.6px);background-size:24px 24px}
 #table.vue:not(.sur-lu) .ta-revele{opacity:1}
 #table.sur-lu .ta-revele{transition-duration:.35s}
-/* le courant : 150 × 1,5 px et sa tête (un point de glace, un halo) ; 08-table le fait courir (Web Animations) */
+/* le courant : 150 × 1,5 px et sa tête (un point de cuivre, un halo) ; 08-table le fait courir (Web Animations) */
 #table .ta-courant{inset:auto;left:0;top:0;width:150px;height:1.5px;border-radius:1px;opacity:0;will-change:transform,opacity;background:var(--courant);box-shadow:0 0 6px 1px color-mix(in srgb,var(--glace) 35%,transparent)}
 #table .ta-courant::after{content:"";position:absolute;right:-2px;top:-1.5px;width:4.5px;height:4.5px;border-radius:50%;background:color-mix(in srgb,var(--glace) 30%,#fff);box-shadow:0 0 8px 2px color-mix(in srgb,var(--glace) 55%,transparent)}
 /* le fondu d'une table à l'autre (08-table, `fonduTable`) : l'ancienne, posée par-dessus, qui s'efface */
@@ -6759,7 +6753,7 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 .nv-grand .nv-onglets{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(132px,1fr);gap:4px;margin:6px 0 0;padding:8px 14px 0;border-radius:0;
   background:var(--v-bande);box-shadow:none;overflow-x:auto}
 .nv-grand .nv-onglet{min-width:0;max-width:none;width:auto;height:60px;padding:0 16px;border-radius:12px 12px 0 0;background:none;box-shadow:none;color:var(--v-bande-s)}
-.nv-grand .nv-onglet .nv-o-t{color:var(--v-bande-t);opacity:.82;font:600 var(--f-15)/1.2 var(--sans);letter-spacing:-.01em}
+.nv-grand .nv-onglet .nv-o-t{color:var(--v-bande-t);opacity:.82;font:600 var(--f-14)/1.2 var(--sans);letter-spacing:-.01em}
 .nv-grand .nv-onglet .nv-o-s{color:var(--v-bande-s)}
 .nv-grand .nv-onglet .nv-o-s.att{color:#f2b55c}
 .nv-grand .nv-onglet .nv-o-s.ko{color:#ff8f84}
@@ -6767,7 +6761,7 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 .nv-grand .nv-onglet:hover{background:var(--v-bande-2)}
 .nv-grand .nv-onglet:hover .nv-o-t{opacity:1}
 .nv-grand .nv-onglet[aria-selected="true"]{background:var(--v-fond);box-shadow:none}
-.nv-grand .nv-onglet[aria-selected="true"] .nv-o-t{color:var(--t-1);opacity:1;font-weight:650}
+.nv-grand .nv-onglet[aria-selected="true"] .nv-o-t{color:var(--t-1);opacity:1;font-weight:600}
 .nv-grand .nv-onglet[aria-selected="true"] .nv-o-s{color:var(--t-2)}
 .nv-grand .nv-onglet[aria-selected="true"] .nv-o-s.att{color:var(--warn)}
 .nv-grand .nv-onglet[aria-selected="true"] .nv-o-s.ko{color:var(--ko)}
@@ -6789,7 +6783,7 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 
 /* LE TITRE D'UNE SECTION : une barre de cuivre, le titre à l'encre, sa précision en gris — le même partout */
 .nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.fs-groupe)>:is(.vu-titre,.fs-st),.nv-grand .nv-panneau>.vu-schema .vu-titre,.nv-grand .nv-reg-t h4{
-  position:relative;display:flex;align-items:baseline;gap:10px;margin:0 0 4px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
+  position:relative;display:flex;align-items:baseline;gap:10px;margin:0 0 4px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
 .nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.fs-groupe)>:is(.vu-titre,.fs-st)::before,.nv-grand .nv-panneau>.vu-schema .vu-titre::before,.nv-grand .nv-reg-t h4::before{
   content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
 .nv-grand .nv-panneau .vu-titre>span,.nv-grand .nv-panneau .fs-st>span:first-child i{font:500 var(--f-13) var(--sans);letter-spacing:0;color:var(--t-3)}
@@ -6801,9 +6795,9 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 
 /* ─── LA TUILE : une forme par nature d'information ─── */
 .nc{gap:18px}
-.nc-tete .nc-titre{font-size:26px}
+.nc-tete .nc-titre{font-size:var(--f-28)}
 .nc-meta{margin-top:-8px}
-.nc-meta .nc-meta-k{font:650 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
+.nc-meta .nc-meta-k{font:600 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
 .nc-meta .nc-meta-v{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:7px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:600 var(--f-13)/1 var(--mono);color:var(--t-1)}
 .nc-vignette{background:var(--s-sunken);border-color:transparent;box-shadow:inset 0 0 0 1px var(--s-line)}
 .nc-vignette:hover{box-shadow:inset 0 0 0 1px var(--s-line-2),0 10px 22px -16px rgba(0,0,0,.35)}
@@ -6812,8 +6806,8 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 .nc>.nc-taches .nc-tache.ko{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
 /* les chiffres : grands, nus, la ligne du bas de la tuile */
 .nc-chiffres{border-top:0;padding-top:2px}
-.nc-chiffre .nc-v{font-size:30px;letter-spacing:-.02em}
-.nc-chiffre .nc-k{font:650 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
+.nc-chiffre .nc-v{font-size:var(--f-28);letter-spacing:-.02em}
+.nc-chiffre .nc-k{font:600 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
 .nc-tete.fine .nc-meta{align-self:center;margin-left:8px}
 .nc-tete.fine .nc-meta>span:first-child::before{display:none}
 .nc-tete.fine .nc-meta .nc-meta-v{height:24px;font-size:var(--f-12)}
@@ -6826,15 +6820,15 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 .vu-bro .bro-piece{fill:var(--s-sunken);stroke:var(--t-1);stroke-width:1.2}
 .vu-bro .bro-lettre{font:700 12px var(--mono);fill:var(--nv-cuivre);text-anchor:middle}
 .vu-bro .bro-ref{font:500 11px var(--mono);fill:var(--t-3)}
-.vu-bro .bro-borne{font:650 11px var(--mono);fill:var(--t-1);text-anchor:middle}
+.vu-bro .bro-borne{font:600 11px var(--mono);fill:var(--t-1);text-anchor:middle}
 .vu-bro .bro-fil{fill:none;stroke-width:2.2;stroke-linecap:round}
 .vu-bro .bro-type-f{fill:var(--s-surface)}
-.vu-bro .bro-type{font:600 10.5px var(--mono);fill:var(--t-2);text-anchor:middle}
+.vu-bro .bro-type{font:600 11px var(--mono);fill:var(--t-2);text-anchor:middle}
 .vu-bro .bro-bout{fill:var(--t-1)}
 .vu-bro .bro-masse{fill:none;stroke:var(--t-1);stroke-width:1.6;stroke-linecap:round}
-.vu-bro .bro-vers{font:650 13px var(--mono);fill:var(--t-1)}
+.vu-bro .bro-vers{font:600 13px var(--mono);fill:var(--t-1)}
 .vu-bro .bro-pin-f{fill:var(--s-sunken);stroke:var(--s-line-2)}
-.vu-bro .bro-pin{font:650 10.5px var(--mono);fill:var(--t-1);text-anchor:middle}
+.vu-bro .bro-pin{font:600 11px var(--mono);fill:var(--t-1);text-anchor:middle}
 .vu-bro .bro-mot{font:500 11px var(--sans);fill:var(--t-3)}
 .vu-bro .bro-ko{font:600 10px var(--sans);fill:var(--ko);text-anchor:middle}
 .vu-bro .bro-zone{fill:transparent;transition:fill var(--rapide)}
@@ -6855,19 +6849,19 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 .nv-grand .nv-panneau .dj-etats{max-width:none;gap:0;margin:4px 0 0;border-radius:12px;box-shadow:0 0 0 1px var(--s-line);overflow:hidden}
 .nv-grand .nv-panneau .dj-entete,.nv-grand .nv-panneau .dj-etat{grid-template-columns:14px minmax(140px,1fr) minmax(110px,170px) minmax(110px,170px) 32px;column-gap:16px;padding:0 10px 0 16px}
 .nv-grand .nv-panneau .dj-entete{min-height:36px;background:var(--s-sunken);border-bottom:1px solid var(--s-line)}
-.nv-grand .nv-panneau .dj-entete span{font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-3)}
+.nv-grand .nv-panneau .dj-entete span{font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-3)}
 .nv-grand .nv-panneau .dj-etat{min-height:52px;border-radius:0;background:var(--s-surface);box-shadow:none}
 .nv-grand .nv-panneau .dj-etat+.dj-etat{border-top:1px solid var(--s-line)}
 .nv-grand .nv-panneau .dj-etat+.dj-etat::before{display:none}
 .nv-grand .nv-panneau .dj-etat:hover{background:var(--s-hover)}
 .nv-grand .nv-panneau .dj-etat .dj-nom{font:600 var(--f-14)/1.2 var(--sans);color:var(--t-1)}
 .nv-grand .nv-panneau .dj-etat .dj-champ{height:34px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
-.nv-grand .nv-panneau .dj-etat .dj-champ input{font:650 var(--f-15) var(--sans);text-align:right}
+.nv-grand .nv-panneau .dj-etat .dj-champ input{font:600 var(--f-14) var(--sans);text-align:right}
 .nv-grand .nv-panneau .dj-etat .dj-champ:hover{box-shadow:inset 0 0 0 1px var(--s-line-2)}
 .nv-grand .nv-panneau .dj-etat .dj-champ:focus-within{box-shadow:inset 0 0 0 1px var(--nv-cuivre),var(--anneau);background:var(--s-surface)}
 .nv-grand .nv-panneau .dj-etat:has(.dj-champ[data-min]){min-height:60px;padding-bottom:10px}
 .vu-seuil{margin:2px 0 0;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-3)}
-.vu-explique b{font-weight:650;color:var(--t-1)}
+.vu-explique b{font-weight:600;color:var(--t-1)}
 .nv-reg-n{font:500 var(--f-13) var(--sans);color:var(--t-3)}
 .nv-reg-c>.fs-champs{margin:0}
 .nv-reg-c .fi-faces{margin:12px 0 0}
@@ -6878,12 +6872,12 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 .nv-grand .nv-cables{border-collapse:separate;border-spacing:0}
 .nv-grand .nv-cap{caption-side:top;position:relative;display:flex;align-items:baseline;gap:10px;padding:8px 0 14px 14px;text-align:left}
 .nv-grand .nv-cap::before{content:"";position:absolute;left:0;top:calc(8px + .2em);width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
-.nv-grand .nv-cap b{font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+.nv-grand .nv-cap b{font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
 .nv-grand .nv-cap span{font:500 var(--f-13) var(--sans);color:var(--t-3)}
 .nv-grand .nv-cables thead th{height:38px;background:var(--s-sunken);border-bottom:1px solid var(--s-line);vertical-align:middle}
 .nv-grand .nv-cables thead th:first-child{border-radius:10px 0 0 10px}
 .nv-grand .nv-cables thead th:last-child{border-radius:0 10px 10px 0}
-.nv-grand .nv-cables thead .nv-tri{font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2)}
+.nv-grand .nv-cables thead .nv-tri{font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2)}
 .nv-grand .nv-cables thead .nv-tri:hover,.nv-grand .nv-cables thead th[aria-sort$="ending"] .nv-tri{color:var(--t-1)}
 .nv-grand .nv-cables tbody tr:hover td{background:var(--s-hover)}
 .nv-grand .nv-panneau>.cb-note{margin:0;padding:12px 16px;border-radius:12px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--t-3);font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
@@ -6901,18 +6895,8 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 .nc:hover .nc-filigrane .nc-fil-trace *{stroke-dashoffset:0}
 @media (prefers-reduced-motion:reduce){ .nc-filigrane,.nc-filigrane .nc-fil-trace *{transition:none} }
 
-/* ═══ L'ACCUEIL v79 — « moderne, waouh, moins de bleu, des lettres modernes, vivant » ═══
-   La table de la bibliothèque, en graphite d'atelier : un noir chaud, une lueur neutre, deux nappes à peine teintées
-   (cuivre, acier), les points blancs. Ce qui s'y pose (la marque, le schéma vivant, les cartes) : style-z-accueil.css. */
-body.biblio,body.table-graphite{--table-fond:radial-gradient(ellipse 90% 70% at 50% -10%,#1d1f25 0%,#111215 52%,#0a0b0d 100%);
-  --nappe-a:radial-gradient(closest-side,rgba(229,156,100,.10),rgba(229,156,100,.035) 50%,rgba(229,156,100,0));
-  --nappe-b:radial-gradient(closest-side,rgba(150,165,190,.08),rgba(150,165,190,.03) 52%,rgba(150,165,190,0));
-  --grille-repos:rgba(255,255,255,.07); --s-grille-revele:rgba(255,255,255,.22);
-  --courant:linear-gradient(90deg,rgba(240,164,108,0),rgba(240,164,108,.8) 70%,#ffd7b8)}
-body.biblio #table .ta-lueur,body.table-graphite #table .ta-lueur{background:radial-gradient(closest-side,rgba(255,240,228,.06),rgba(255,240,228,.02) 55%,rgba(255,240,228,0))}
-body.biblio #table .ta-courant,body.table-graphite #table .ta-courant{box-shadow:0 0 6px 1px rgba(240,164,108,.35)}
-body.biblio #table .ta-courant::after,body.table-graphite #table .ta-courant::after{background:#ffe2cc;box-shadow:0 0 8px 2px rgba(240,164,108,.6)}
-/* (v84) les règles de l'accueil et de la bibliothèque qui suivaient ici vivent dans style-z-accueil.css */
+/* (v84) l'accueil et la bibliothèque — leur table, la marque, le schéma vivant, les cartes — vivent dans
+   style-z-accueil.css et style-bibliotheque.css ; la variante `body.table-graphite` du plan est tranchée (style-z-cadre.css) */
 .nc-vignette .vu-bro.petit{max-width:100%}
 .vu-bro.petit .bro-nom{font-size:13px}
 .vu-bro.petit .bro-type{font-size:10px}
@@ -6922,7 +6906,7 @@ body.biblio #table .ta-courant::after,body.table-graphite #table .ta-courant::af
 .nc .nv-trajet{justify-content:center;gap:10px}
 .nv-bout{align-items:center;gap:7px;height:34px;padding:0 7px 0 12px;line-height:1}
 .nv-bout b{line-height:1}
-.nv-bout i{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:6px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2);font:650 var(--f-11)/1 var(--mono);font-style:normal;color:var(--t-1)}
+.nv-bout i{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:6px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2);font:600 var(--f-11)/1 var(--mono);font-style:normal;color:var(--t-1)}
 .nv-trajet-f{height:3px}
 
 /* ═══ v79 — CE QUE LES RELECTEURS ONT VU ═══ */
@@ -6944,7 +6928,7 @@ body.biblio #table .ta-courant::after,body.table-graphite #table .ta-courant::af
 .vu-c.ret.non b{background:color-mix(in srgb,var(--ko) 12%,var(--s-surface));color:var(--ko)}
 .vu-c.ret small,.vu-c.ret.non small{color:var(--nv-cuivre)}
 /* un titre long (« Prise de coupure — 408VC1A ») reste sur une ligne */
-.nc-tete .nc-titre.long{font-size:21px}
+.nc-tete .nc-titre.long{font-size:var(--f-20)}
 /* les commandes à segments : des parts égales */
 .bi-tri-seg,#base .ba-portee{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr}
 .bi-tri-seg>button,#base .ba-portee>button{justify-content:center;text-align:center}
@@ -6985,8 +6969,8 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 #fiche{background:var(--s-surface);color:var(--t-1)}
 #fiche .fiche-corps{background:var(--v-fond);padding-bottom:22px}
 #fiche .fiche-tete{position:sticky;top:0;z-index:3;display:flex;align-items:flex-start;gap:12px;margin:0 -20px 16px;padding:18px 18px 16px 22px;background:var(--s-surface);border-bottom:1px solid var(--s-line)}
-#fiche .fiche-tete .sur{margin:0 0 4px;font:650 var(--f-11)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--nv-cuivre)}
-#fiche .fiche-tete .titre{margin:0;font:650 22px/1.2 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
+#fiche .fiche-tete .sur{margin:0 0 4px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--nv-cuivre)}
+#fiche .fiche-tete .titre{margin:0;font:600 var(--f-20)/1.2 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
 /* les deux vues des normes : la bande d'onglets de la fiche */
 #fiche .fiche-tete.avec-onglets{flex-wrap:wrap;padding-bottom:0}
 #fiche .nm-nav{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;margin:12px -18px 0 -22px;padding:8px 14px 0;background:var(--v-bande);border:0;border-radius:0}
@@ -7009,7 +6993,7 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 #fiche .nm>.nm-outils{margin:0 0 14px}
 #fiche .nm>.bible-filtres{margin:0 0 12px}
 /* le titre d'une section : la barre de cuivre, comme dans la fiche */
-#fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3){position:relative;margin:0 0 10px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
+#fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3){position:relative;margin:0 0 10px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
 #fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3)::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
 #fiche .nm-dom-sens{margin:0 0 10px 14px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
 /* le pied : posé, ses boutons alignés */
@@ -7018,9 +7002,9 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 #fiche .nm-nav .onglet::after{display:none}
 #fiche .nm-nav .onglet[aria-selected="true"]::after{display:block}
 #fiche .nm>table.bible{width:100%;margin:0 0 14px;border-collapse:separate;border-spacing:0;border-radius:16px;overflow:hidden;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line)}
-#fiche .nm>table.bible thead th{background:var(--s-sunken);font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);height:38px}
+#fiche .nm>table.bible thead th{background:var(--s-sunken);font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);height:38px}
 #fiche .fiche-corps>.cc-vide{margin:0 0 14px;padding:20px 20px 22px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line)}
-#fiche .cc-vide-t{position:relative;margin:0 0 8px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);color:var(--t-1)}
+#fiche .cc-vide-t{position:relative;margin:0 0 8px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);color:var(--t-1)}
 #fiche .cc-vide-t::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
 #fiche .cc-vide p{margin:0 0 12px;font:400 var(--f-13)/1.55 var(--sans);color:var(--t-2);max-width:62ch}
 #fiche .cc-vide-l{margin:0 0 16px;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
@@ -7051,11 +7035,11 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
    une carte titrée à la barre de cuivre ; le papier neutre (graphite la nuit, jamais le marine de la table) */
 .rk-feuille{width:min(1040px,100%);padding:0;background:var(--v-fond);box-shadow:var(--sh-carte);overflow:auto}
 .rk-tete{position:sticky;top:0;z-index:2;margin:0;padding:18px 18px 16px 24px;align-items:flex-start;background:var(--s-surface);border-bottom:1px solid var(--s-line)}
-.rk-tete .sur{margin:0 0 4px;font:650 var(--f-11)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--nv-cuivre)}
-.rk-tete h2{font:650 22px/1.2 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
+.rk-tete .sur{margin:0 0 4px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--nv-cuivre)}
+.rk-tete h2{font:600 var(--f-20)/1.2 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
 .raccourcis .rk-groupes{columns:3 290px;column-gap:14px;padding:18px 20px 4px}
 .raccourcis .rk-groupe{break-inside:avoid;display:inline-block;width:100%;margin:0 0 14px;padding:14px 16px 8px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.04)}
-.raccourcis .rk-groupe h3{position:relative;margin:0 0 6px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+.raccourcis .rk-groupe h3{position:relative;margin:0 0 6px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
 .raccourcis .rk-groupe h3::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
 .raccourcis .rk-ligne{min-height:38px;padding:5px 0}
 .raccourcis .rk-ligne:last-child{border-bottom:0}
@@ -7082,23 +7066,17 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 .raccourcis .rk-col .rk-groupe{margin:0}
 @media (max-width:980px){ .raccourcis .rk-groupes{grid-template-columns:1fr} }
 /* le cartouche : ses deux cartes titrées, comme toutes les sections */
-#fiche .ca-t{position:relative;margin:0 0 12px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+#fiche .ca-t{position:relative;margin:0 0 12px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
 #fiche .ca-t::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
 #fiche .ca-apercu{margin:0 0 14px}
 /* la bande d'onglets des normes passe sous la croix, jusqu'au bord ; l'onglet ouvert n'a pas d'anneau en plus de sa barre */
 #fiche .fiche-tete.avec-onglets .nm-nav{margin-right:-62px}
 #fiche .nm-nav .onglet[aria-selected="true"]:focus-visible{outline:none}
 
-/* ═══ LE CADRE (tour du site, 2) — aucun bleu dans les commandes : le bleu, c'est la table ═══ */
-#entete{background:rgba(20,21,24,.96)}
-.recherche{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16)}
-.recherche:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.26)}
-body.cherche .recherche{background:rgba(30,31,35,.96);border-color:var(--chrome-cuivre-ligne);box-shadow:0 0 0 3px var(--chrome-cuivre-soft)}
-.recherche .raccourci{background:rgba(255,255,255,.09)}
-/* le filet de cuivre sous la barre : une lueur très lente, à peine — plus une barre de chargement */
-#entete::after{background:linear-gradient(90deg,transparent 0%,rgba(232,160,106,0) 25%,rgba(232,160,106,.38) 50%,rgba(232,160,106,0) 75%,transparent 100%);background-size:200% 100%;animation-duration:46s}
+/* ═══ LE CADRE (tour du site, 2) — la barre, la recherche et le filet de cuivre sont repris aux jetons par style-z-cadre.css
+   (v84) ; reste ici ce qui crée les rubriques du sous-menu Exporter ═══ */
 /* le sous-menu Exporter : ses groupes disent leur nom — ce folio, tout le plan */
-#mp-exporter .menu-bloc[data-groupe="folio"]::before,#mp-exporter .menu-bloc[data-groupe="contrat"]::before{content:attr(aria-label);display:block;padding:7px 12px 3px;font:650 10.5px/1.2 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--chrome-cuivre)}
+#mp-exporter .menu-bloc[data-groupe="folio"]::before,#mp-exporter .menu-bloc[data-groupe="contrat"]::before{content:attr(aria-label);display:block;padding:7px 12px 3px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--chrome-cuivre)}
 /* l'index des repères : un point seulement quand il y a quelque chose à voir ; « à voir » en ambre, jamais en rouge ;
    pas de poignée de téléphone (la barre se tient quand même : la main au survol) */
 #inspecteur .ix-etat.ok{box-shadow:none}
@@ -7176,12 +7154,6 @@ body:is(.insp-flotte,.insp-epingle) #inspecteur .ix-tete::before{display:none}
 #fiche .bible th.c-ref{text-align:left}
 #fiche .bible td.ref .ref-btn{margin:0;justify-content:flex-start;text-align:left}
 
-/* ═══ VARIANTE À MONTRER (pas encore choisie par le lecteur) : la table du plan en graphite — un cran plus claire que
-   l'accueil, les îlots un cran au-dessus avec leur filet, un halo très doux sous la feuille. Inerte tant que
-   `body.table-graphite` n'est pas posé sur le plan. ═══ */
-body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at 52% 48%,#27282c 0%,#1e1f22 52%,#17181a 100%);--grille-repos:rgba(255,255,255,.06);
-  --palet:rgba(40,41,46,.96);--palet-2:rgba(50,51,57,.97);--sh-palet:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px rgba(255,255,255,.12),0 14px 30px -12px rgba(0,0,0,.6)}
-
 /* ═══ v81 — LA FICHE (le lecteur : « la tête plus sexy ; en sombre, beaucoup de noir ; les attentions, on peut faire mieux ;
    le profil de charge : tout en vert à gauche, ça se mélange avec « ne disjoncte pas » ») ═══ */
 /* la tête : plus d'air, le symbole dans un carreau cuivré, le genre et le repère à la même taille, la référence en
@@ -7190,10 +7162,10 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 .nv-grand .nc-tete.fine{position:relative;gap:14px}
 .nv-grand .nc-tete.fine .nc-sym{width:40px;height:40px;border-radius:12px;background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne);color:var(--nv-cuivre)}
 .nv-grand .nc-tete.fine .nc-sym svg{width:26px;height:26px}
-.nv-grand .nc-tete.fine .nc-titre{font-size:22px;gap:10px}
+.nv-grand .nc-tete.fine .nc-titre{font-size:var(--f-20);gap:10px}
 .nv-grand .nc-tete.fine .nc-titre .nc-genre-mot{font-weight:500;color:var(--t-2)}
 .nv-grand .nc-tete.fine .nc-tiret{color:var(--nv-cuivre);opacity:.8}
-.nv-grand .nc-tete.fine .nc-titre .nc-rep-in,.nv-grand .nc-tete.fine .nc-titre .nc-rep-t{height:34px;font-size:22px;font-weight:650;letter-spacing:-.01em}
+.nv-grand .nc-tete.fine .nc-titre .nc-rep-in,.nv-grand .nc-tete.fine .nc-titre .nc-rep-t{height:34px;font-size:var(--f-20);font-weight:600;letter-spacing:-.01em}
 .nv-grand .nc-tete.fine .nc-meta .nc-meta-v{height:26px;padding:0 10px;border-radius:8px;background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne)}
 .nv-grand .nc-tete.fine .nc-meta .nc-meta-v,.nv-grand .nc-tete.fine .nc-meta .nc-meta-v .id{color:var(--t-1)}
 .nv-fili{display:none}
@@ -7239,12 +7211,12 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 .nv-grand table.nv-cables :is(.nv-td-i,.nv-td-u,.nv-td-lg,.nv-td-ct){text-align:center}
 .nv-grand table.nv-cables :is(.nv-td-i,.nv-td-u) .nv-mes{width:124px;justify-content:flex-start;text-align:left}
 .nv-grand table.nv-cables .nv-td-lg .nv-cab-lg{justify-content:center;min-width:70px}
-.nv-grand table.nv-cables .nv-cab-lg.supp b{color:var(--t-3);font-weight:550}
+.nv-grand table.nv-cables .nv-cab-lg.supp b{color:var(--t-3);font-weight:500}
 .nv-grand table.nv-cables .nv-cab-lg .nv-env{font:400 var(--f-13) var(--sans);font-style:normal;color:var(--t-3);margin-right:2px}
 .nv-grand table.nv-cables td{overflow:hidden;text-overflow:ellipsis}
 .nv-grand .nv-fili{width:86px;height:86px;right:60px;opacity:.15}
 /* une longueur supposée dans sa case : le chiffre en gris (plus en ambre), « ≈ » devant */
-.nv-grand table.nv-cables .nv-cab-lg.supp .fc-in::placeholder{color:var(--t-3);font-weight:550}
+.nv-grand table.nv-cables .nv-cab-lg.supp .fc-in::placeholder{color:var(--t-3);font-weight:500}
 .nv-grand table.nv-cables .nv-cab-lg.supp .fc-in{color:var(--t-2)}
 /* la liste des contacts : des colonnes réparties, les chiffres et le câble centrés sous leur titre */
 .nv-grand .ct-legende,.nv-grand .ct-ligne{grid-template-columns:var(--ct-pin) minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr)}
@@ -7252,7 +7224,7 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 .nv-grand .ct-legende span:nth-last-child(-n+2){justify-self:center}
 .nv-grand .ct-ligne>.ct-jg,.nv-grand .ct-ligne>.ct-cab{justify-self:center}
 .nv-grand .ct-sans .ct-legende span:first-child,.nv-grand .ct-sans .ct-ligne>.ct-pin{justify-self:center}
-.nv-grand .ct-legende{font:650 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase}
+.nv-grand .ct-legende{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase}
 .nv-grand .fi-note.ct-note{margin:0 0 10px;padding:10px 14px;border-radius:10px;background:var(--s-sunken);color:var(--t-2);font:400 var(--f-13)/1.5 var(--sans)}
 /* le raccord : sa tête (le Ø du toron en pastille, les options à droite), puis une liste de pièces sur une ligne chacune —
    ce que c'est, sa référence, son état — dans un cadre fin ; plus de libellés perdus au-dessus de leur valeur */
@@ -7271,10 +7243,10 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 .nv-grand .vu-fig-module{display:flex;flex-direction:column;align-items:center;gap:10px;margin:4px auto 0;padding:18px 28px 14px}
 .nv-grand .vu-fig-module svg{width:min(300px,100%);height:auto}
 .nv-grand .vu-fig-module .vu-faces-g{display:flex;gap:18px;justify-content:center}
-.vu-trav .bro-lettre{font-size:11px;font-family:var(--sans);font-weight:650;letter-spacing:.04em}
+.vu-trav .bro-lettre{font-size:11px;font-family:var(--sans);font-weight:600;letter-spacing:.04em}
 .nv-grand .vu-fig-module svg.vu-face{width:auto;height:auto;max-height:260px;min-height:180px;max-width:100%}
 .nv-grand .vu-fig-module .vu-faces-g svg.vu-face{min-height:220px}
-.vu-trav .bro-cote{font:650 10.5px var(--sans);letter-spacing:.06em;text-transform:uppercase;fill:var(--nv-cuivre)}
+.vu-trav .bro-cote{font:600 11px var(--sans);letter-spacing:.06em;text-transform:uppercase;fill:var(--nv-cuivre)}
 .vu-trav .bro-sens{font:500 11.5px var(--sans);fill:var(--t-3)}
 
 /* ═══ v81 — LE RÉCAPITULATIF (le lecteur : « des flèches pas de la même taille, pas de la même épaisseur ; le tableau des
@@ -7316,14 +7288,14 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 
 /* ═══ v82 ═══ */
 /* l'anneau d'un câble porte sa part, en pourcentage (le lecteur : « 9,31 A sur 21 : un pourcentage, léger, pratique ») */
-svg.vu-anneau .vu-an-t{font:650 9.5px var(--sans);fill:var(--t-1);text-anchor:middle;font-variant-numeric:tabular-nums}
+svg.vu-anneau .vu-an-t{font:600 9.5px var(--sans);fill:var(--t-1);text-anchor:middle;font-variant-numeric:tabular-nums}
 svg.vu-anneau .vu-an-t .vu-an-pc{font-size:6.5px;font-weight:500;fill:var(--t-3)}
 .nv-grand table.nv-cables :is(.nv-td-i,.nv-td-u) .nv-mes{width:140px}
 /* les problèmes et attentions : une seule section compacte — le compte en tête, une ligne par point */
 .nc-taches.nc-pbs{display:flex;flex-direction:column;gap:0;padding:0;border-radius:14px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--warn);overflow:hidden}
 .nc-taches.nc-pbs.ko{box-shadow:0 0 0 1px color-mix(in srgb,var(--ko) 26%,var(--s-line)),inset 3px 0 0 var(--ko)}
 .nc-pbs-tete{display:flex;align-items:center;gap:8px;padding:9px 14px 7px 16px}
-.nc-pbs-n{display:inline-flex;align-items:baseline;gap:7px;font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase}
+.nc-pbs-n{display:inline-flex;align-items:baseline;gap:7px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase}
 .nc-pbs-n b.ko{color:var(--ko)} .nc-pbs-n b.att{color:var(--warn)} .nc-pbs-n i{font-style:normal;color:var(--t-3)}
 .nc-taches.nc-pbs .nc-tache,.nv-grand .nv-afaire .nc-taches.nc-pbs .nc-tache,.nv-afaire .nc-taches.nc-pbs .nc-tache,.nc>.nc-taches.nc-pbs .nc-tache{display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;column-gap:10px;margin:0;padding:8px 14px 8px 16px;border-radius:0;background:none;box-shadow:none;border-top:1px solid var(--s-line)}
 .nc-taches.nc-pbs .nc-tache:hover{background:var(--s-hover);box-shadow:none}
@@ -7331,7 +7303,7 @@ svg.vu-anneau .vu-an-t .vu-an-pc{font-size:6.5px;font-weight:500;fill:var(--t-3)
 .nc-taches.nc-pbs .nc-tache.ko .nc-rond{background:var(--ko)}
 .nc-taches.nc-pbs .nc-tache .nc-rond svg{display:none}
 .nc-taches.nc-pbs .nc-t{padding:0}
-.nc-taches.nc-pbs .nc-t b{font:550 var(--f-13)/1.35 var(--sans);color:var(--t-1)}
+.nc-taches.nc-pbs .nc-t b{font:600 var(--f-13)/1.35 var(--sans);color:var(--t-1)}
 .nc-taches.nc-pbs .nc-tache.ko .nc-t b{color:var(--t-1)}
 .nc-taches.nc-pbs .nc-t small{display:none}
 .nc-taches.nc-pbs .nc-geste .btn{height:28px;font-size:var(--f-12)}
@@ -7354,8 +7326,8 @@ svg.vu-face .vu-ct-g.va:focus{outline:none}
 .vu-fr{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;padding:11px 14px 12px;border:0;border-radius:12px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);color:var(--t-1);text-align:left;cursor:pointer;transition:box-shadow var(--rapide),transform var(--rapide)}
 .vu-fr:hover{box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne);transform:translateY(-1px)}
 .vu-fr.ici{background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1.5px var(--nv-cuivre);cursor:default;transform:none}
-.vu-fr-n{font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--nv-cuivre)}
-.vu-fr b.id{font:650 var(--f-14) var(--mono)}
+.vu-fr-n{font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--nv-cuivre)}
+.vu-fr b.id{font:600 var(--f-14) var(--mono)}
 .vu-fr small{font:500 var(--f-11) var(--mono);color:var(--t-3);max-width:100%;overflow-wrap:anywhere}
 .vu-fr-f{font:500 var(--f-11) var(--sans);color:var(--t-2)}
 .vu-fr.ko .vu-fr-n::after,.vu-fr.att .vu-fr-n::after{content:"";display:inline-block;width:6px;height:6px;margin-left:6px;border-radius:50%;background:var(--warn);vertical-align:1px}
@@ -7391,17 +7363,10 @@ svg.vu-face .vu-ct-g.va:focus{outline:none}
 
 
 /* ═══ v82 — LES FONDS (palette retenue après l’étude des couleurs) ═══ */
-/* ═══ PALETTE « Nuit bleue raffinée » ═══
-   La table garde la nuit bleue que le lecteur aime, mais plus claire en bas, moins saturée : une ardoise bleue,
-   plus une encre. Dessus, le cadre en graphite et le papier neutre : blanc pierre le jour, graphite chaud la nuit
-   (trois crans nets : la page, les cartes, la bande — la bande est la plus claire, elle se lit comme le menu).
-   Jetons : la table (--table-fond, --s-app, nappes, points), le cadre (#entete, --palet), le papier des feuilles
-   (--s-*, --t-*), la page sous les cartes (--v-fond), la bande d'onglets (--v-bande…), l'en-tête des tableaux
-   (--v-tete, --v-tete-t). ═══ */
+/* Le papier des feuilles (--s-*, --t-*), la page sous les cartes (--v-fond), la bande d'onglets (--v-bande…), l'en-tête
+   des tableaux (--v-tete, --v-tete-t). (v84 : la table et le cadre bleus d'ici sont repris aux jetons graphite / pierre par
+   style.css et style-z-cadre.css — retirés.) */
 /* ─── le jour ─── */
-:root{--s-app:#18233a;--palet:rgba(30,31,35,.95);--palet-2:rgba(44,45,50,.97)}
-body:not(.biblio){--table-fond:radial-gradient(1100px 760px at 92% -12%,rgba(132,160,218,.24),rgba(132,160,218,0) 62%),linear-gradient(160deg,#26344f 0%,#1c2840 46%,#141d30 100%);--nappe-a:radial-gradient(closest-side,rgba(110,148,222,.18),rgba(110,148,222,.06) 48%,rgba(110,148,222,0));--nappe-b:radial-gradient(closest-side,rgba(64,118,168,.15),rgba(64,118,168,.05) 52%,rgba(64,118,168,0));--grille-repos:rgba(172,196,240,.12);--s-grille-revele:rgba(196,216,255,.30)}
-#entete{background:rgba(24,25,29,.95)}
 #inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet{--s-surface:#ffffff;--s-sunken:#f5f4f0;--s-hover:#f0eee9;--s-line:#e6e3dc;--s-line-2:#d6d2c9;--s-flottant:#ffffff;--t-1:#1c1c1f;--t-2:#53555b;--t-3:#67696f;--accent-soft:#efede8;--accent-line:#cfcac0;--info-soft:#f1efea;--v-fond:#f0efea;--v-bande:#2b2d33;--v-bande-2:#373a41;--v-bande-t:#eef0f2;--v-bande-s:#aeb1b8;--v-tete:#efede7;--v-tete-t:#53555b;--v-carte-haut:transparent;--v-bande-att:#f2b55c;--v-bande-ko:#ff8f84;--filet-champ:#8c8e94}
 /* ─── la nuit : le réglage du système, puis le choix explicite ─── */
 @media (prefers-color-scheme: dark){
@@ -7446,10 +7411,10 @@ body:not(.biblio){--table-fond:radial-gradient(1100px 760px at 92% -12%,rgba(132
    seconde), le repère seul en grand dessous — on lit « ce que c'est », puis « lequel » ; le titre est étroit, le coin
    droit est libre : le filigrane s'y loge, plus petit, sans rien toucher. */
 .fi.nv-c .nc-tete{margin-top:-2px}
-.fi.nv-c .nc-tete .nc-titre{flex-direction:column;flex-wrap:nowrap;align-items:center;gap:2px;font-size:30px}
+.fi.nv-c .nc-tete .nc-titre{flex-direction:column;flex-wrap:nowrap;align-items:center;gap:2px;font-size:var(--f-28)}
 .fi.nv-c .nc-titre .nc-tiret{display:none}
-.fi.nv-c .nc-titre .nc-genre-mot{font:650 var(--f-12)/1.3 var(--sans);letter-spacing:.11em;text-transform:uppercase;color:var(--t-2)}
-.fi.nv-c .nc-titre .nc-rep-in,.fi.nv-c .nc-titre .nc-rep-t{height:38px;font:700 30px/1 var(--sans);letter-spacing:-.025em;text-align:center}
+.fi.nv-c .nc-titre .nc-genre-mot{font:600 var(--f-11)/1.3 var(--sans);letter-spacing:.11em;text-transform:uppercase;color:var(--t-2)}
+.fi.nv-c .nc-titre .nc-rep-in,.fi.nv-c .nc-titre .nc-rep-t{height:38px;font:700 var(--f-28)/1 var(--sans);letter-spacing:-.025em;text-align:center}
 .fi.nv-c .nc-meta{margin-top:-6px}
 .fi.nv-c .nc-filigrane{top:-18px;right:-12px;width:96px;height:96px}
 
@@ -7498,7 +7463,7 @@ svg.vu-face:has(circle.vu-corps) text.pris{fill:#fff}
 .nv-grand #nv-p-reglages .fs-champs{display:flex;flex-direction:column;gap:0;width:100%;max-width:none;margin:2px 0 0}
 .nv-grand #nv-p-reglages .fs-champs>.fc{box-sizing:border-box;width:100%;max-width:none;align-self:stretch;display:grid;grid-template-columns:132px minmax(0,1fr);column-gap:16px;row-gap:6px;align-items:center;padding:12px 0;border-top:1px solid var(--s-line)}
 .nv-grand #nv-p-reglages .fs-champs>.fc:first-child{border-top:0;padding-top:4px}
-.nv-grand #nv-p-reglages .fs-champs>.fc>.fc-k{grid-column:1;font:550 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
+.nv-grand #nv-p-reglages .fs-champs>.fc>.fc-k{grid-column:1;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
 .nv-grand #nv-p-reglages .fs-champs>.fc>.fc-v{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .nv-grand #nv-p-reglages .fs-champs>.fc>.fc-sous{grid-column:2;margin:0;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
 /* ce qui se choisit : un champ */
@@ -7638,10 +7603,10 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 .nv-grand .nv-panneau .vu-cals>button.vu-cal{position:relative;min-width:0;height:58px;margin:0;padding:0 4px 9px;gap:0;border:0;border-radius:10px;background:none;box-shadow:none;color:var(--t-1);
   transition:background var(--rapide),box-shadow var(--rapide),color var(--rapide),transform var(--d-instant,.08s) var(--courbe)}
 /* le chiffre : toujours à la même hauteur, qu'il porte un mot dessous ou non */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal>b{display:inline-flex;align-items:baseline;font:600 19px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1)}
+.nv-grand .nv-panneau .vu-cals>button.vu-cal>b{display:inline-flex;align-items:baseline;font:600 var(--f-20)/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1)}
 .nv-grand .nv-panneau .vu-cals>button.vu-cal>b small{margin-left:2px;font:500 12px/1 var(--sans);letter-spacing:0;color:var(--t-3)}
 .nv-grand .nv-panneau .vu-cals>button.vu-cal.non>b{color:var(--t-2)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal>small{position:absolute;left:0;right:0;bottom:8px;font:600 10.5px/1 var(--sans);letter-spacing:.02em;text-align:center;color:var(--t-3)}
+.nv-grand .nv-panneau .vu-cals>button.vu-cal>small{position:absolute;left:0;right:0;bottom:8px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.02em;text-align:center;color:var(--t-3)}
 .nv-grand .nv-panneau .vu-cals>button.vu-cal>small:empty{display:none}
 .nv-grand .nv-panneau .vu-cals>button.vu-cal:hover{background:color-mix(in srgb,var(--t-1) 6%,transparent);border:0}
 .nv-grand .nv-panneau .vu-cals>button.vu-cal:active{transform:scale(var(--presse))}
@@ -7719,7 +7684,7 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 .nv-grand .nv-panneau .dj-etat .dj-champ{justify-self:center;width:108px;height:34px;padding:0 10px;border:1px solid transparent;border-radius:9px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
 .nv-grand .nv-panneau .dj-etat .dj-champ:hover{border:1px solid transparent;border-radius:9px;box-shadow:inset 0 0 0 1px var(--s-line-2)}
 .nv-grand .nv-panneau .dj-etat .dj-champ:focus-within{border:1px solid transparent;border-radius:9px;background:var(--s-surface);box-shadow:inset 0 0 0 1.5px var(--nv-cuivre),0 0 0 3px var(--nv-cuivre-soft)}
-.nv-grand .nv-panneau .dj-etat .dj-champ input{font:600 var(--f-15)/1 var(--sans);letter-spacing:-.005em;text-align:center;font-variant-numeric:tabular-nums;color:var(--t-1)}
+.nv-grand .nv-panneau .dj-etat .dj-champ input{font:600 var(--f-14)/1 var(--sans);letter-spacing:-.005em;text-align:center;font-variant-numeric:tabular-nums;color:var(--t-1)}
 .nv-grand .nv-panneau .dj-etat .dj-champ input::placeholder{font-weight:400;color:var(--t-3)}
 /* « 2 min », centré sous sa case */
 .nv-grand .nv-panneau .dj-etat .dj-champ[data-min]::after{left:0;right:0;top:calc(100% + 2px);text-align:center;font:500 var(--f-11)/1 var(--sans);color:var(--t-3)}
@@ -8263,6 +8228,7 @@ svg.vu-anneau.ko .vu-an-v,svg.vu-arbre .vu-an.ko .vu-an-v{filter:var(--n-lueur-k
    point et ont toutes la même longueur (la charte : une colonne homogène) */
 #base #ba-tab .rc-int .rc-adm{display:inline-block;min-width:42px;margin-left:5px}
 #base #ba-tab .rc-int .rc-barre{margin-left:6px}
+#base #ba-tab .rc-int .rc-int-mot{display:inline-block;min-width:60px;text-align:left}
 
 /* ─── 13. LE CLAVIER SE VOIT ───
    Défaut : une valeur qui porte sa propre pastille (la borne, le type d'un câble) gardait son filet au focus — l'anneau
@@ -8301,7 +8267,8 @@ body.biblio{--s-app:#141211;
   --nappe-a:radial-gradient(closest-side,rgba(229,156,100,.10),rgba(229,156,100,.035) 50%,rgba(229,156,100,0));
   --nappe-b:radial-gradient(closest-side,rgba(190,170,150,.07),rgba(190,170,150,.025) 52%,rgba(190,170,150,0));
   --grille-repos:rgba(255,236,216,.07); --s-grille-revele:rgba(255,236,216,.22);
-  --courant:linear-gradient(90deg,rgba(240,164,108,0),rgba(240,164,108,.8) 70%,#ffd7b8)}
+  --courant:linear-gradient(90deg,rgba(240,164,108,0),rgba(240,164,108,.8) 70%,#ffd7b8);
+  --table-lueur:radial-gradient(closest-side,rgba(255,240,228,.06),rgba(255,240,228,.02) 55%,rgba(255,240,228,0))}
 
 /* ─── la barre du haut, sur l'accueil : elle s'efface — la marque et le menu flottent, son filet de cuivre se tait, le nom
    de l'outil aussi (VOLTA est déjà là, en grand) ─── */
@@ -8325,22 +8292,24 @@ body.biblio-accueil .en-nom{display:none}
 /* (le bout rond d'un trait de longueur nulle fait un point : tant que la lettre attend son tour, elle est invisible) */
 @keyframes mq-trace{from{stroke-opacity:0}2%{stroke-opacity:1}to{stroke-dashoffset:0;stroke-opacity:1}}
 .mq .mq-t.cuivre{stroke:#f2a46b}
-.mq .mq-pin{fill:none;stroke:#b3b8c2;stroke-width:3.2;opacity:0;animation:hs-pose .4s var(--courbe) 1s both}
+.mq .mq-pin{fill:none;stroke:#b3b8c2;stroke-width:3.2;opacity:0;animation:hs-pose var(--d-lent) var(--courbe) 1s both}
 .mq .mq-pin.on{fill:#f2a46b;stroke:#f2a46b}
-.mq .mq-borne{fill:#141211;stroke:#f2a46b;stroke-width:3.4;opacity:0;animation:mq-borne .4s var(--courbe) 1.3s both}
-.mq .mq-courant{fill:#ffd9bd;filter:drop-shadow(0 0 5px rgba(242,164,107,.95)) drop-shadow(0 0 14px rgba(242,164,107,.55));opacity:0;animation:hs-pose .4s ease 2s both}
+.mq .mq-borne{fill:#141211;stroke:#f2a46b;stroke-width:3.4;opacity:0;animation:mq-borne var(--d-lent) var(--courbe) 1.3s both}
+.mq .mq-courant{fill:#ffd9bd;filter:drop-shadow(0 0 5px rgba(242,164,107,.95)) drop-shadow(0 0 14px rgba(242,164,107,.55));opacity:0;animation:hs-pose var(--d-lent) var(--courbe) 2s both}
 @keyframes mq-borne{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
 .mq .mq-borne{transform-box:fill-box;transform-origin:center}
 .mq-fin .mq-g{stroke:#f4f4f2}
 .mq-fin{width:clamp(320px,min(40vw,50vh),620px)}
 
 /* ─── LE SLOGAN : le cuivre, fin, un peu d'air entre les lettres ─── */
-.bi-accueil .bi-devise{margin:20px 0 0;font:400 clamp(14px,1.05vw,16px)/1.5 var(--sans);letter-spacing:.04em;color:rgba(229,156,100,.86)}
+.bi-accueil .bi-devise{margin:20px 0 0;font:400 var(--f-14)/1.5 var(--sans);letter-spacing:.04em;color:rgba(229,156,100,.86)}
+@media (min-width:1700px){ .bi-accueil .bi-devise{font-size:var(--f-16)} }
 
 /* ─── LE SCHÉMA VIVANT : au trait clair sur le graphite, sous la règle des colonnes ─── */
 .bi-vitrine.bi-hero{position:relative;flex:none;width:min(1400px,97vw,calc((100vh - 520px) * 4.2));height:auto;margin:28px 0 24px}
 .bi-hero svg{display:block;width:100%;height:auto;overflow:visible;transform:translate3d(calc(var(--px,0) * -14px),calc(var(--py,0) * -8px),0);transition:transform .9s var(--courbe)}
 .bi-hero .hs-regle{fill:none;stroke:url(#hs-regle);stroke-width:1}
+/* (les tailles du schéma sont des unités du dessin : il grandit avec la fenêtre — 1,16 à 1440, 1,17 à 1920) */
 .bi-hero .hs-col{font:500 9px var(--mono);fill:rgba(236,239,245,.24);text-anchor:middle}
 .bi-hero .hs-fil{fill:none;stroke:rgba(236,239,245,.5);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;
   animation:hs-trace 1s cubic-bezier(.4,0,.2,1) both;animation-delay:calc(.55s + var(--i) * .09s);transition:stroke var(--d-moyen) var(--courbe),stroke-width var(--d-moyen) var(--courbe)}
@@ -8353,7 +8322,7 @@ body.biblio-accueil .en-nom{display:none}
 .bi-hero .hs-sous{font:500 11px var(--sans);fill:rgba(236,239,245,.45);text-anchor:middle}
 .bi-hero .hs-c{font:500 11px var(--mono);fill:rgba(236,239,245,.55);text-anchor:middle;transition:fill var(--d-moyen) var(--courbe)}
 .bi-hero .hs-g{text-anchor:start}
-.bi-hero .hs-b{font:500 10.5px var(--mono);fill:rgba(236,239,245,.5)}
+.bi-hero .hs-b{font:500 11px var(--mono);fill:rgba(236,239,245,.5)}
 .bi-hero .hs-masse{fill:none;stroke:rgba(236,239,245,.6);stroke-width:1.3;stroke-linecap:round}
 .bi-hero .hs-source{fill:#1a1716;stroke:#f2a46b;stroke-width:1.4}
 .bi-hero .hs-courant{fill:#f2a46b;filter:drop-shadow(0 0 4px rgba(242,164,107,.95)) drop-shadow(0 0 10px rgba(242,164,107,.5))}
@@ -8432,12 +8401,12 @@ body.biblio-accueil .en-nom{display:none}
    les gestes, les tuiles), dans l'ordre dit en tête ─── */
 @keyframes hs-pose{from{opacity:0}to{opacity:1}}
 @keyframes bi-monte{from{opacity:0;transform:translateY(var(--monte))}to{opacity:1;transform:none}}
-.bi-hero :is(.hs-regle,.hs-col){animation:hs-pose .4s var(--courbe) .2s both}
-.bi-hero .hs-piece,.bi-hero .hs-masse,.bi-hero .hs-b{animation:hs-pose .6s var(--courbe) .4s both}
-.bi-hero .hs-f .hs-c{animation:hs-pose .4s var(--courbe) both;animation-delay:calc(.9s + var(--i) * .09s)}
-.bi-accueil .bi-devise{animation:bi-monte .4s var(--courbe) .7s both}
-.bi-accueil .bi-vide-gestes{animation:bi-monte .4s var(--courbe) 1.15s both}
-.bi-accueil .bi-dock{animation:bi-monte .4s var(--courbe) 1.3s both}
+.bi-hero :is(.hs-regle,.hs-col){animation:hs-pose var(--d-lent) var(--courbe) .2s both}
+.bi-hero .hs-piece,.bi-hero .hs-masse,.bi-hero .hs-b{animation:hs-pose var(--d-lent) var(--courbe) .4s both}
+.bi-hero .hs-f .hs-c{animation:hs-pose var(--d-lent) var(--courbe) both;animation-delay:calc(.9s + var(--i) * .09s)}
+.bi-accueil .bi-devise{animation:bi-monte var(--d-lent) var(--courbe) .7s both}
+.bi-accueil .bi-vide-gestes{animation:bi-monte var(--d-lent) var(--courbe) 1.15s both}
+.bi-accueil .bi-dock{animation:bi-monte var(--d-lent) var(--courbe) 1.3s both}
 /* une fois jouée (et toujours au mouvement réduit), tout est posé d'emblée */
 .bi-page.bi-deja .bi-accueil :is(.mq-t,.mq-o,.mq-pin,.mq-borne,.mq-courant,.hs-fil,.hs-piece,.hs-c,.hs-b,.hs-masse,.hs-col,.hs-regle,.bi-devise,.bi-vide-gestes,.bi-dock){animation:none;opacity:1;stroke-dashoffset:0}
 .bi-page.bi-deja .bi-accueil :is(.bi-devise,.bi-vide-gestes,.bi-dock){transform:none}
@@ -8453,7 +8422,8 @@ body.au-repos .bi-accueil .bi-btn-ouvrir::before{animation-play-state:paused}
 /* ─── LE PASSAGE AU PLAN (08-bibliotheque, `montrerLePlan`) : la table change de matière en fondu (08-table,
    `fonduTable`) ; le folio et son cadre paraissent dans le même temps — un enchaînement, pas une coupure ─── */
 @keyframes du-biblio{from{opacity:0}}
-body.du-biblio :is(#svg,#ombre,#rail,#folios){animation:du-biblio .42s var(--courbe) both}
+/* (la même courbe symétrique que le fondu de la table, 08-table : les deux matières se croisent au même pas) */
+body.du-biblio :is(#svg,#ombre,#rail,#folios){animation:du-biblio var(--d-lent) cubic-bezier(.4,0,.2,1) both}
 @media (prefers-reduced-motion:reduce){ body.du-biblio :is(#svg,#ombre,#rail,#folios){animation:none} }
 
 /* ─── une fenêtre étroite (le code reste, on ne le soigne plus) ─── */
@@ -9177,7 +9147,7 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '84e0b8270118';
+const VERSION_MOTEUR = '2eb11826fa8d';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -16078,7 +16048,8 @@ function reactanceEstimee(section, hauteur, frequence) { if (!(section > 0)) ret
    défaut, ces + 10 % quand l'hypothèse « toron » vaut « Excel » (ou sans table Toron). */
 const FOISONNEMENT = 1.1;
 function faisceauDe(norme, fils) { const vus = new Map(), inconnus = new Set(); let k = 0;
-  (fils || []).forEach(f => { if (!f.type) return; const cle = f.cable ? 'W' + f.cable : 'n' + (k++); if (vus.has(cle)) return;
+  // un pont (deux bornes d'un même connecteur, `avecPonts`) reste derrière la face : il ne passe pas l'entrée du raccord
+  (fils || []).forEach(f => { if (!f.type || f.pont) return; const cle = f.cable ? 'W' + f.cable : 'n' + (k++); if (vus.has(cle)) return;
     const c = cableDuType(norme, f.type); if (!c) { inconnus.add(f.type); return; } vus.set(cle, c); });
   const cs = [...vus.values()], section = cs.reduce((s, c) => s + (c.section || 0), 0), masse = cs.reduce((s, c) => s + (c.masse || 0), 0);
   const deq = section > 0 ? 2 * Math.sqrt(section / Math.PI) : null;
@@ -16535,13 +16506,27 @@ function remplirModules(besoins, norme, choix) { const N = normeDesModules(norme
     verdicts.push({ niveau: 'ko', texte: `borne${s(p.bornes.length)} ${p.bornes.join('-')} : ${p.fils.length} câble${s(p.fils.length)}${js.length ? ' de gauge ' + js.join(', ') : ''} — aucun groupe ${ou} ne les reçoit`, bornes: p.bornes }); });
   // chaque fil, son contact à sertir quand la table Contacts connaît la famille (NSA937901, E0599 : les broches EN 3155-016, recherche R1)
   const fils = modules.flatMap((M, k) => M.places.flatMap(pl => pl.fils.map(([f, c]) => { const st = f.jauge == null ? null : contactDuFil(N, M.module.famille, c.taille, '', f.type, f.jauge);
-    return { f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel, taille: c.taille, sexe: st ? st.sexe : '',
+    return { f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel, borne: f.borneBarrette, taille: c.taille, sexe: st ? st.sexe : '',
       jaugeOk: f.jauge == null ? null : contactAccepte(N, M.module.famille, c.taille, f.jauge), sertir: sertirDe(N, st) }; })));
   const contacts = modules.reduce((n, M) => n + M.module.contacts.length, 0);
   const parRef = new Map(); modules.forEach(M => parRef.set(M.reference, (parRef.get(M.reference) || 0) + 1));
   const reference = [...parRef].map(([r, n]) => (n > 1 ? n + ' × ' : '') + r).join(' + ');
   return { modules, fils, verdicts, potentiels: nPot, places: nPot - restants.length, restants, contacts, utilises: fils.length, reference,
            famille, variante: V.module ? V.module.variante : '', main: V.main, nomme, choix: choix || '' }; }
+/* LE RAIL D'UNE BARRETTE (v84) : il porte TOUS ses modules — ceux de ses repères frères (668VT31 et 669VT32 sont les
+   modules 1 et 2 de VT3), quel que soit leur folio — et se commande UNE fois. Un rail par norme de modules : la ligne
+   « rail » de la table Accessoires de la norme ; sa référence au nombre de modules (NN : 001751 102 00 pour deux modules
+   ASNE 0599) et sa longueur (le pas de la ligne × le nombre de modules ; un module seul, la longueur que dit la note :
+   18 mm), ou un profilé à couper (NSA937901RB2000, 2 m). `plans` : les plans de remplissage des modules frères
+   (`remplirModules`). Rend [{ reference, famille, n, longueur, coupe, quantite: 1, sous, role, equivalent, source, ligne }]. */
+function railsDeBarrette(norme, plans) { const N = normeDesModules(norme), parFamille = new Map();
+  (plans || []).forEach(Q => ((Q && Q.modules) || []).forEach(M => parFamille.set(M.module.famille, (parFamille.get(M.module.famille) || 0) + 1)));
+  return [...parFamille].map(([f, n]) => { const a = accessoiresDe(N, f).find(x => /^rail/i.test(String(x.role || ''))); if (!a) return null;
+    const texte = String(a.role || '') + ' ' + String(a.note || ''), aNN = /NN/.test(a.reference), pas = /pas (\d+(?:[.,]\d+)?) mm/.exec(texte), seul = /(\d+(?:[.,]\d+)?) mm pour un seul/.exec(texte);
+    const longueur = aNN && pas ? (n === 1 && seul ? NUMERO(seul[1]) : NUMERO(pas[1]) * n) : null, coupe = !aNN && /2000|\b2 m\b/.test(texte + ' ' + a.reference);
+    return { reference: aNN ? String(a.reference).replace(/NN/, String(n).padStart(2, '0')) : String(a.reference), famille: f, n, longueur, coupe, quantite: 1,
+      sous: n + ' module' + (n > 1 ? 's' : '') + (longueur != null ? ' · ' + nombreFr(longueur) + ' mm' : coupe ? ' · à couper à la longueur des modules' : ''),
+      role: a.role || '', equivalent: a.equivalent || '', source: a.origine || a.note || '', ligne: a }; }).filter(Boolean); }
 /* Les variantes qui logent la barrette d'un seul module, de la mieux à la moins bien taillée — les candidates de la
    carte ; d'une norme, ou des deux. */
 function variantesQuiLogent(besoins, norme, famille) { const N = normeDesModules(norme), pots = potentielsDeBarrette(besoins).sort((a, b) => b.fils.length - a.fils.length);
@@ -16604,7 +16589,7 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
     modules.push({ module: m, reference: m.reference, places: mieux.r.pl.map(x => ({ potentiel: { bornes: [x.p.borne], fils: x.p.fils }, groupe: m.groupes[x.c.groupe], fils: x.p.fils.map(f => [f, x.c]), perte: 0 })) });
     mieux.r.pl.forEach(x => x.p.fils.forEach(f => { const sx = sexeFil(f), st = contactDuFil(N, m.famille, x.c.taille, sx, f.type, f.jauge), sertir = sertirDe(N, st);
       const joint = filContreJoint(N, m.famille, x.c.taille, sertir ? sertir.fut : null, f.type, st ? st.accessoire : '');
-      fils.push({ f, contact: x.c, module: 0, groupe: m.groupes[x.c.groupe], potentiel: { bornes: [x.p.borne], fils: x.p.fils }, taille: x.c.taille, sexe: sx,
+      fils.push({ f, contact: x.c, module: 0, groupe: m.groupes[x.c.groupe], potentiel: { bornes: [x.p.borne], fils: x.p.fils }, borne: x.p.borne, taille: x.c.taille, sexe: sx,
         jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge, sx, f.type), sertir, joint }); }));
     // le fil contre le joint arrière (table Joint arrière) : trop gros, il n'entre pas ; trop fin sans manchon d'étanchéité, l'eau passe
     fils.forEach(x => { const j = x.joint; if (!j || !j.verdict || j.verdict === 'dans' || (j.verdict === 'sous' && j.manchon)) return; const J = j.joint, plage = (J.dmin != null ? nombreFr(J.dmin) : '?') + '–' + (J.dmax != null ? nombreFr(J.dmax) : '?') + ' mm';
@@ -16662,9 +16647,21 @@ function arrangementsQuiLogent(points, norme, famille, sexeFil) { const N = norm
     .sort((a, b) => meilleurScore(cle(a), cle(b)) ? -1 : meilleurScore(cle(b), cle(a)) ? 1 : 0).map(x => x.m); }
 /* Les connecteurs EN 4165 d'un équipement : chaque cavité (connecteur A, B…) et son module. `retenue(nom)` : la
    désignation donnée à la main à « repère|lettre » ; `sexes(nom)` : le sexe des contacts choisi pour cette clé. */
-function connecteursEnModules(repere, liaisons, norme, retenue, sexes) { const b = besoinsDeBarrette(repere, liaisons), main = retenue || (() => ''), sx = sexes || (() => '');
+function connecteursEnModules(repere, liaisons, norme, retenue, sexes) { const b = avecPonts(besoinsDeBarrette(repere, liaisons), repere, liaisons), main = retenue || (() => ''), sx = sexes || (() => '');
   return connecteursDe(repere, liaisons).filter(c => familleDeReference(norme, c.pn, 'connecteur') || moduleDeConnecteur(norme, c.pn))
     .map(c => { const points = pointsDe(b, c.bornes); return { ...c, points, plan: remplirContacts(points, norme, { choix: main(repere + '|' + c.nom), pn: c.pn, sexe: sx(repere + '|' + c.nom) }) }; }); }
+/* LE PONT D'UN CONNECTEUR D'ÉQUIPEMENT (v84) : une liaison d'une borne à une autre du même équipement (A1 → A2) n'est pas un
+   shunt de barrette — c'est un câble court, serti aux deux bouts dans la partie mobile. Chacun de ses bouts entre dans les
+   câbles de sa borne (`pont` le marque ; `borne`, l'autre bout) : son contact se sertit, sa gauge se juge, une borne qui
+   reçoit aussi un autre câble le dit. Un pont ne sort pas par l'entrée du raccord : le toron ne le compte pas. */
+function avecPonts(b, repere, liaisons) { const ponts = new Map(), mettre = (bo, f) => (ponts.get(bo) || ponts.set(bo, []).get(bo)).push(f);
+  liaisons.forEach(l => { if (l.de !== repere || l.vers !== repere || !l.borneDe || !l.borneVers || l.borneDe === l.borneVers) return;
+    const f = { cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: repere, l, pont: true };
+    // `borneVers` : l'autre bout, pour que le câble se dise « DR22 vers 800XC9:A3 »
+    mettre(l.borneDe, { ...f, borne: l.borneVers, borneVers: l.borneVers, amont: false }); mettre(l.borneVers, { ...f, borne: l.borneDe, borneVers: l.borneDe, amont: true }); });
+  if (!ponts.size) return b; const parBorne = new Map(b.parBorne);
+  ponts.forEach((fs, bo) => parBorne.set(bo, [...(parBorne.get(bo) || []), ...fs]));
+  return { ...b, parBorne }; }
 /* La prise de coupure en module : ses contacts, un fil de chaque côté (fiche et embase). `sexe` : celui de la fiche. */
 function coupureEnModule(repere, liaisons, norme, choix, sexe) { const b = besoinsDeBarrette(repere, liaisons), points = pointsDe(b, b.bornes);
   return { besoins: b, points, plan: remplirContacts(points, norme, { choix, pn: b.pn, prise: true, sexe }) }; }
@@ -24777,7 +24774,7 @@ function tableContacts(xs, o) { o = o || {}; let prec = '';
    d'endroit, et le retour en arrière, ça sert à rien ») — celle qui est retenue est pressée. Une prise : la fiche (ce
    qui arrive) femelle ou mâle, l'embase l'inverse. */
 const pucesSexe = (cle, sexe, mots) => `<span class="fi-seg-mini" role="group" aria-label="Sexe des contacts">${(mots || [['F', 'Femelles'], ['M', 'Mâles']]).map(([v, t, tt]) => `<button type="button" class="fi-chip" data-sexe="${escA(cle)}" data-v="${v}" aria-pressed="${sexe === v}"${tt ? ` data-bulle="${escA(tt)}"` : ''}>${esc(t)}</button>`).join('')}</span>`;
-const sexeDeLaFiche = (cle, sexe) => pucesSexe(cle, sexe === 'M' ? 'M' : 'F', [['F', 'Partie mobile femelle', 'La partie mobile (ce qui arrive) en douilles, la partie fixe en broches'], ['M', 'Partie mobile mâle', 'La partie mobile (ce qui arrive) en broches, l’embase en douilles']]);
+const sexeDeLaFiche = (cle, sexe) => pucesSexe(cle, sexe === 'M' ? 'M' : 'F', [['F', 'Partie mobile femelle', 'La partie mobile (ce qui arrive) en douilles, la partie fixe en broches'], ['M', 'Partie mobile mâle', 'La partie mobile (ce qui arrive) en broches, la partie fixe en douilles']]);
 
 /* ---- LES CÂBLES : un TABLEAU dense — le numéro, le type, la gauge, la longueur s'y écrivent ; l'intensité ET la chute -- */
 /* Le lecteur (version 62 : « on doit pouvoir modifier le câble, son type et sa gauge ; intensité et chute, c'est le plus
@@ -25421,7 +25418,7 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
         + `<section class="vu-bloc"><h4 class="vu-titre">Ce qu’il alimente <span>${esc(pluriel(rows.length, 'câble'))}</span></h4>${arbreVue(nom, cal, rows)}</section>` },
     { cle: 'calibre', statut: { t: d.sansProfil ? 'profil à écrire' : ch.perm ? 'profil ' + amperes(ch.perm) + (ch.pointe ? ' · ' + amperes(ch.pointe) : '') : '', etat: d.sansProfil ? 'att' : '' },
       contenu: (decision || '') + (touches ? `<section class="vu-bloc"><h4 class="vu-titre">Le calibre <span>un clic en retient un autre</span></h4>${touches}</section>` : '') + (P.profil || '') + (P.courbe || '') + (P.profil ? '' : sD.contenu || '') },
-    sF && { cle: 'cables', statut: { t: sF.vide ? 'aucun' : sF.nko ? sF.nko + (sF.nko > 1 ? ' câbles en défaut' : ' câble en défaut') : pluriel(sF.compte || 0, 'câble') + (false ? '' : sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' % max' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide },
+    sF && { cle: 'cables', statut: statutCables(sF), contenu: sF.contenu, vide: sF.vide },
     sections[2] ? ongletDeLaSection(sections[2]) : null];
   return composerFiche({ type: 'disjoncteur', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pn ? ident(pn) : ''], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
     vignette: calibresVue(d, o, cal), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation) porte un / : null,
@@ -25448,10 +25445,10 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   // pourquoi l'outil écarte celui du retest (l'ingénieur v73 : « je ne vois pas pourquoi le 1A101Z du retest est écarté »)
   let pqR = ''; if (ecartRetest) { try { const r = raisonDuModule(b, ecartRetest, potentielsDeBarrette(b).sort((a, c) => c.fils.length - a.fils.length)); pqR = ecartRetest.variante + ' : ' + (r.raison === 'loge tout' ? 'il convient aussi, mais VOLTA prend le plus petit qui loge tous les groupes' : r.raison); } catch (_) { pqR = ''; } }
   const ecart = ecartRetest ? `<span class="fi-ecart">votre fichier donne ${ident(b.pn)} <button type="button" class="fi-lien" data-garder="${escA(b.pn)}">garder celui de votre fichier</button>${pqR ? `<span class="fi-ecart-r">${insecable(esc(pqR))}</span>` : ''}</span>` : '';
-  const valeur = Q.reference ? `<span class="fi-norme-puce statique" data-bulle="${escA(main ? 'Choisi ici' : Q.modules.length > 1 ? `${Q.potentiels} potentiels sur ${Q.modules.length} modules` : `Le plus petit module qui loge ${pluriel(Q.potentiels, 'potentiel')}`)}">${esc(Q.reference)}</span>` : '<b class="fi-ko-t">Aucun module</b>';
+  const valeur = Q.reference ? `<span class="fi-norme-puce statique" data-bulle="${escA(main ? 'Choisi ici' : Q.nomme ? 'Celui de votre fichier : il loge tous les groupes' : Q.modules.length > 1 ? `${Q.potentiels} potentiels sur ${Q.modules.length} modules` : `Le plus petit module qui loge ${pluriel(Q.potentiels, 'potentiel')}`)}">${esc(Q.reference)}</span>` : '<b class="fi-ko-t">Aucun module</b>';
   const galerie = aPoser || FI.liste !== 'bar|' + nom ? '' : listeChoix('bar|' + nom, galerieModules(nom, b, Q, main), { titre: 'Les assemblages de la norme qui logent ces potentiels', cls: 'fi-galerie-choix', pied: M0 ? `<button type="button" class="fi-lien" data-bible="${escA(M0.reference)}">voir dans la bible</button>` : '' });
   // le module en puce : un clic ouvre la galerie des assemblages de la norme, sous lui (la norme ne s'écrit plus à part)
-  const moduleV = aPoser || !Q.reference ? valeur : `<button type="button" class="fi-norme-puce fi-norme-gal${main || Q.main ? ' main' : ''}${(main || Q.main) && (Q.restants || []).length ? ' ko' : ''}" data-changer="${escA('bar|' + nom)}" aria-expanded="${FI.liste === 'bar|' + nom}" data-bulle="${escA((main ? 'Choisi ici' : 'Le plus petit module qui loge ces câbles') + ' — un clic montre tous les assemblages de la norme, pour en choisir un autre')}">${esc(Q.reference)}${ico('bas', 'fi-chevron')}</button>`;
+  const moduleV = aPoser || !Q.reference ? valeur : `<button type="button" class="fi-norme-puce fi-norme-gal${main || Q.main ? ' main' : ''}${(main || Q.main) && (Q.restants || []).length ? ' ko' : ''}" data-changer="${escA('bar|' + nom)}" aria-expanded="${FI.liste === 'bar|' + nom}" data-bulle="${escA((main ? 'Choisi ici' : Q.nomme ? 'Celui de votre fichier : il loge tous les groupes' : 'Le plus petit module qui loge ces câbles') + ' — un clic montre tous les assemblages de la norme, pour en choisir un autre')}">${esc(Q.reference)}${ico('bas', 'fi-chevron')}</button>`;
   // plusieurs modules (le lecteur : « la référence de chaque module, tout seul ») : une puce numérotée chacun ; « Changer »
   // ouvre la galerie
   const plusieurs = Q.modules.length > 1, refs = plusieurs ? `<span class="fi-modules">${Q.modules.map((M, k) => `<span class="fi-mod"><i>${k + 1}</i>${ident(M.reference)}</span>`).join('')}</span>` : '';
@@ -25499,7 +25496,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
     aPoser ? { html: `VOLTA l’a ajoutée${sur ? ` sur <b class="id">${esc(sur)}</b>` : ''} : plusieurs câbles y partent de la même borne, la barrette les relie. Elle entre au contrat quand elle a son vrai repère.`, source: 'calcul', etat: 'att' } : null,
     nf ? { html: `Votre fichier y relie <b>${esc(pluriel(nf, 'câble'))}</b>, en <b>${esc(pluriel(Q.potentiels, 'groupe'))}</b> : les câbles d’une même borne, ou de bornes pontées, sont reliés entre eux.`, source: 'fichier' } : null,
     famNom ? { html: `Norme <b>${esc(famNom)}</b> : dans un module, les contacts d’un même groupe sont reliés ; chaque groupe de câbles prend un groupe de contacts.`, source: 'norme' } : null,
-    M0 ? { html: plusieurs ? `<b class="id">${esc(Q.reference)}</b> : un seul module ne loge pas ces ${esc(pluriel(Q.potentiels, 'groupe'))}.` : `Module <b class="id">${esc(Q.reference)}</b> : ${main || Q.main ? 'choisi ici, à la main' : 'le plus petit qui loge ces ' + esc(pluriel(Q.potentiels, 'groupe')) + ', chaque câble dans un contact qui admet sa gauge'}.`, source: main || Q.main ? 'main' : 'calcul' }
+    M0 ? { html: plusieurs ? `<b class="id">${esc(Q.reference)}</b> : un seul module ne loge pas ces ${esc(pluriel(Q.potentiels, 'groupe'))}.` : `Module <b class="id">${esc(Q.reference)}</b> : ${main || Q.main ? 'choisi ici, à la main' : Q.nomme ? 'celui de votre fichier : il loge tous les groupes, chaque câble dans un contact qui admet sa gauge' : 'le plus petit qui loge ces ' + esc(pluriel(Q.potentiels, 'groupe')) + ', chaque câble dans un contact qui admet sa gauge'}.`, source: main || Q.main ? 'main' : Q.nomme ? 'fichier' : 'calcul' }
       : aPoser ? null : { html: esc(Q.verdicts[0] ? majuscule(Q.verdicts[0].texte) + '.' : 'Aucun module de la norme ne loge ces câbles.'), source: 'calcul', etat: 'ko' },
     ecartRetest ? { html: `Votre fichier dit <b class="id">${esc(b.pn)}</b>${pqR ? ' — ' + esc(pqR) : ''}.`, source: 'fichier', etat: 'att' } : null,
     R ? { html: `Rail <b class="id">${esc(R.reference)}</b>${R.sous ? ', ' + esc(R.sous) : ''} : il porte ${plusieurs ? 'les modules' : 'le module'}.`, source: 'tables', bulle: sansLiens(R.source) } : null,
@@ -25525,8 +25522,8 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
     { cle: 'essentiel', statut: { t: M0 ? prisSur(Q.utilises || 0, places, '') : aPoser ? 'à poser' : 'aucun module', etat: refuses.length || (!M0 && !aPoser) ? 'ko' : 'ok' }, contenu: essB },
     ongletCables(sF), ongletFabrication(fabB, 'Ce qu’il faut pour la monter'),
     { cle: 'reglages', statut: { t: aPoser && !M0 ? 'son vrai repère' : 'module, contacts' }, contenu: (aPoser && !M0 ? '' : sommaireReglages([
-        { titre: plusieurs ? 'Ses modules' : 'Le module', valeur: Q.reference ? `<span class="id">${esc(Q.reference)}</span>` : 'aucun', avant: ecartRetest ? `<span class="id">${esc(b.pn)}</span>` : '', source: main || Q.main ? 'main' : 'calcul', etat: Q.reference ? '' : 'ko',
-          pourquoi: ecartRetest ? 'Votre fichier donne l’autre : VOLTA prend le plus petit qui loge tous les groupes.' : 'Le plus petit qui loge tous les groupes, chaque câble dans un contact qui admet sa gauge.', vers: '[data-reg="le-module-et-son-rail"]' },
+        { titre: plusieurs ? 'Ses modules' : 'Le module', valeur: Q.reference ? `<span class="id">${esc(Q.reference)}</span>` : 'aucun', avant: ecartRetest ? `<span class="id">${esc(b.pn)}</span>` : '', source: main || Q.main ? 'main' : Q.nomme && !ecartRetest ? 'fichier' : 'calcul', etat: Q.reference ? '' : 'ko',
+          pourquoi: ecartRetest ? 'Votre fichier donne l’autre : VOLTA prend le plus petit qui loge tous les groupes.' : Q.nomme ? 'Celui de votre fichier : il loge tous les groupes.' : 'Le plus petit qui loge tous les groupes, chaque câble dans un contact qui admet sa gauge.', vers: '[data-reg="le-module-et-son-rail"]' },
         R ? { titre: 'Le rail', valeur: `<span class="id">${esc(R.reference)}</span>`, source: 'tables', pourquoi: 'Il suit le module : il change avec lui.' } : null,
         nf ? { titre: 'Les contacts à sertir', valeur: esc(pluriel(nf, 'contact')), source: Q.fils.some(x => x.sertir && x.sertir.main) ? 'main' : 'tables', pourquoi: 'Un par câble, selon sa gauge. Une lettre de la face mène à son contact.', vers: '[data-reg="les-contacts-a-sertir"]' } : null]))
       + regCarte(aPoser && !M0 ? 'La barrette à poser' : 'Le module et son rail', aPoser && !M0 ? 'VOLTA l’a ajoutée : donnez-lui son vrai repère quand elle sera posée.' : 'Un clic sur le module montre les assemblages de la norme, pour en imposer un autre ; le rail suit.', tete)
@@ -25685,7 +25682,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   const places = M ? M.module.contacts.length : 0, nPris = M ? M.module.contacts.filter(ct => Q.fils.some(x => x.contact === ct)).length : 0;
   const rond = M ? formeDuCorps(M.module) === 'circulaire' : false, koP = Q.fils.some(x => x.jaugeOk === false);
   const etatCt = ct => { const xs = Q.fils.filter(x => x.contact === ct); return !xs.length ? '' : xs.some(x => x.jaugeOk === false) ? 'ko' : 'pris'; };
-  const faceP = mini => M ? faceVue(M.module.contacts, etatCt, { rond, mini, lettres: true, pas: mini ? 22 : 28, r: mini ? 8 : 9.5, w: mini ? 112 : undefined, echelle: mini ? 1 : 1.8, titre: 'La face de la fiche ' + M.reference,
+  const faceP = mini => M ? faceVue(M.module.contacts, etatCt, { rond, mini, lettres: true, pas: mini ? 22 : 28, r: mini ? 8 : 9.5, w: mini ? 112 : undefined, echelle: mini ? 1 : 1.8, titre: 'La face de la partie mobile ' + M.reference,
     // (v83, le lecteur : « quand je clique sur A, B, C, ça ne me mène pas au câble ») : une lettre prise mène à son câble
     va: mini ? null : ct => { const x = Q.fils.find(y => y.contact === ct && y.f.l); return x ? { onglet: 'cables', vers: `[data-i="${cleFil(x.f.l)}"]` } : null; } }) : faceVue([], () => '', { w: mini ? 64 : 180 });
   const coteP = (lt, am) => { const ct = M.module.contacts.find(k => k.lettre === lt), x = Q.fils.find(y => y.contact === ct && !!y.f.amont === am); if (!x) return null;
@@ -27581,7 +27578,8 @@ const filsDeBarretteAPoser = nom => { const L = liaisonsDuPlan(); return ((app.d
 // les couleurs des routes, dans l'ordre où elles se donnent (les routes par leur nom) : ni le rouge ni le vert des ÉTATS
 // en tête (l'audit v72 : « une prise saine montre quatre contacts rouges ») — le bleu, le violet, la sarcelle, le brun,
 // l'ardoise, l'olive, le magenta ; l'orange, le rouge et le vert en dernier, pour un contrat à huit routes et plus
-const PALETTE_ROUTES = ['#1f5fbf', '#7d3c98', '#117a8b', '#9a6324', '#9c7a00', '#5d6d1e', '#c2185b', '#d35400', '#c0392b', '#1e8449'];
+// (v84) les six teintes froides du dessin (06, `TEINTES_ROUTES`) : ni rouge, ni ambre, ni vert des états, ni fuchsia, ni cuivre
+const PALETTE_ROUTES = TEINTES_ROUTES;
 function couleursDesRoutes() { const choisies = app.contrat.couleursRoutes || {}, m = new Map();
   [...new Set(app.contrat.liaisons.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, choisies[r] || PALETTE_ROUTES[i % PALETTE_ROUTES.length]));
   return m; }
@@ -27623,10 +27621,10 @@ function peindre() {
   const designation = n => { if (!des.has(n)) des.set(n, designationDe(n)); return des.get(n); };
   const disjoncteur = n => { if (!cal.has(n)) cal.set(n, calibresDuFolio(n)); return cal.get(n); };
   const sig = JSON.stringify([folio, app.contrat.cartouche, D.comps.map(c => [designation(c.name), c.kind === 'equip' && estDisjoncteur(c.name) ? [disjoncteur(c.name).calibre, disjoncteur(c.name).retest || null] : null, c.kind === 'equip' ? ail(c.name) : null])]);
-  if (peint.dessin === D && peint.sig === sig && $('scene')) { peindreChoix(); appliquerVue(); montrerAttente(); return; }
+  if (peint.dessin === D && peint.sig === sig && $('scene')) { peindreChoix(); peindreEtats(); appliquerVue(); montrerAttente(); return; }
   svg.innerHTML = styleDessin() + `<g id="scene" transform="translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})">`
     + sceneSvg(D, app.contrat.cartouche, folio, designation, null, disjoncteur, ail) + '</g>';
-  peint = { dessin: D, sig }; peindreChoix(); appliquerVue(); montrerAttente();
+  peint = { dessin: D, sig }; peindreChoix(); peindreEtats(); appliquerVue(); montrerAttente();
 }
 /* Les autres folios où paraît chaque repère, par leur rang (« ↔ f. 2 · 4 » sous le repère, 06) : une passe sur le contrat. */
 function ailleursDesReperes() { const P = plans(), ou = new Map(); if (P.length < 2 || app.plan === '*') return () => null;
@@ -27642,6 +27640,13 @@ function peindreChoix() { const sc = $('scene'); if (!sc || !app.dessin) return;
   const gs = [...sc.querySelectorAll('.comp')].filter(g => g.dataset.name === n), ici = gs.some(g => +g.dataset.k === app.choisiK) ? app.choisiK : gs.length ? +gs[0].dataset.k : -1;
   gs.forEach(g => { const c = D.comps[+g.dataset.k]; if (!c) return; const h = crochetsDe(c); g.insertAdjacentHTML('afterbegin', gs.length > 1 && +g.dataset.k !== ici ? h.replace('class="selbox"', 'class="selbox selbox-autre"') : h); });
   sc.querySelectorAll('.vt').forEach(g => { if (g.dataset.vt !== n) return; const b = (D.barrettes || []).find(x => x.nomVT === nom); if (!b) return; g.classList.add('sel'); g.insertAdjacentHTML('beforeend', crochetsDeBarrette(b)); }); }
+/* (v84) LES ÉTATS SUR LE PLAN : le bloc qui porte un problème se borde du rouge des états, celui qui a un point à voir de
+   l'ambre (style-dessin.css, `.etat-ko`, `.etat-att`), d'après le contrôle (08-controle, `CONTROLE.items`). À l'écran
+   seulement : posés sur le folio affiché, jamais dans ce qui s'exporte (le SVG, le PNG, le PDF refont leur dessin). Refaits
+   à chaque rendu (`peindre`) et à chaque contrôle (`synchroniser` : une correction, un Ctrl+Z, une hypothèse). */
+function peindreEtats() { const sc = $('scene'); if (!sc) return; const niv = new Map();
+  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).forEach(x => { if (x.nom && niv.get(String(x.nom)) !== 'ko') niv.set(String(x.nom), x.niveau === 'ko' ? 'ko' : 'att'); });
+  sc.querySelectorAll('.comp[data-name]').forEach(g => { const e = niv.get(g.dataset.name) || ''; g.classList.toggle('etat-ko', e === 'ko'); g.classList.toggle('etat-att', e === 'att'); }); }
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 
 /* ---- la vue : zoom, cadrage, l'ombre sous la feuille ------------------- */
@@ -29775,7 +29780,7 @@ function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDe
     if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }
   const m = $('mn-retest'); if (m) m.textContent = n ? motChangements(n) : 'telle que votre fichier, rien de changé';
   const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'installation corrigée · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
-function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); peindreEtats(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
 /* LE RAIL SE DÉPLIE (le technicien : « la liste à puces avec une pastille, je la prends pour des notifications ; le ⊸+ pour un
    curseur de réglage ») : au survol prolongé — 250 ms, une main qui passe ne l'ouvre pas —, il montre le mot et la touche
    de chaque outil (style.css, `#rail.deplie`). Il se replie dès qu'on clique (et ne se rouvre pas sous la main restée là :
@@ -29971,13 +29976,13 @@ function lierPanneau() {
   const strip = $('fo-strip'); strip.addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
   // le nom entier d'un folio, dans la bulle de la planche (pas l'infobulle du système) : une bulle pour toute la bande,
   // posée au-dessus de la puce survolée — dans la puce, elle serait rognée par la bande qui défile. Elle suit la règle des
-  // bulles du chrome (08-menu) : 400 ms la première, tout de suite si une bulle vient de se fermer, éteinte au clic
+  // bulles du chrome (08-menu) : `--bulle-delai` la première, tout de suite si une bulle vient de se fermer, éteinte au clic
   const bulle = document.createElement('span'); bulle.className = 'bulle fo-bulle'; bulle.setAttribute('aria-hidden', 'true'); $('folios').appendChild(bulle);
   let tempo = 0; const cacher = () => { clearTimeout(tempo); if (bulle.classList.contains('on') && typeof bulleEteinte === 'function') bulleEteinte(); bulle.classList.remove('on'); };
   strip.addEventListener('pointerover', e => { const c = e.target.closest('.chip'); if (!c || e.pointerType === 'touch') return; clearTimeout(tempo);
     const vite = bulle.classList.contains('on') || (typeof bulleChaude === 'function' && bulleChaude());
     tempo = setTimeout(() => { const r = c.getBoundingClientRect(), f = $('folios').getBoundingClientRect(); bulle.textContent = c.dataset.nom;
-      bulle.style.left = Math.max(4, Math.min(r.left + r.width / 2 - f.left, f.width - 4)) + 'px'; bulle.classList.add('on'); }, vite ? 0 : 400); });
+      bulle.style.left = Math.max(4, Math.min(r.left + r.width / 2 - f.left, f.width - 4)) + 'px'; bulle.classList.add('on'); }, vite ? 0 : (typeof delaiBulle === 'function' ? delaiBulle() : 400)); });
   strip.addEventListener('pointerleave', cacher); strip.addEventListener('pointerdown', cacher); strip.addEventListener('scroll', cacher, { passive: true });
   // la bande des folios défile à la molette (elle n'a pas de barre), la liste déroulante y va d'un choix
   strip.addEventListener('wheel', e => { if (!e.deltaY || e.deltaX || strip.scrollWidth <= strip.clientWidth) return; e.preventDefault(); strip.scrollLeft += e.deltaY; }, { passive: false });
@@ -30048,7 +30053,7 @@ function lierPanneau() {
    =========================================================================== */
 
 /* LA RÈGLE DU TEMPS, une pour toutes les bulles du chrome (le panel v73 : le designer, § 5.4 ; l'ergonome) :
-     · la première paraît après 400 ms de survol — une main qui passe ne fait rien clignoter ;
+     · la première paraît après `--bulle-delai` (350 ms) de survol — une main qui passe ne fait rien clignoter ;
      · tant qu'une bulle vient de s'éteindre (`--bulle-chaude`, 1,2 s), la suivante paraît TOUT DE SUITE : on balaie le
        rail, les noms se suivent, comme sur macOS ;
      · au clavier, tout de suite — sauf quand le clavier est RENDU par programme (Échap ferme le menu et rend le clavier
@@ -30059,7 +30064,11 @@ function lierPanneau() {
    raccourcis — la montre par la classe `.bulle-on` (style.css). Juste avant de paraître, la bulle prévient son bouton
    (l'événement `bulle`) : il peut l'écrire à ce moment-là (↶ et ↷ disent ce qu'ils feraient, 08-interface). */
 const BULLES = { vise: null, attend: null, tempo: 0, chaud: 0, muette: null, taire: null, lie: false };
-const DELAI_BULLE = 400, BULLE_CHAUDE = 1200;
+/* le délai se lit sur la feuille de style (`--bulle-delai`, 350 ms : la règle unique des bulles, v84) — 400 ms si elle se tait */
+const delaiBulle = () => { if (delaiBulle.ms) return delaiBulle.ms; let ms = 400;
+  try { const v = getComputedStyle(document.documentElement).getPropertyValue('--bulle-delai').trim(), x = parseFloat(v); if (x > 0) ms = /ms$/.test(v) ? x : x * 1000; } catch (_) { }
+  return (delaiBulle.ms = Math.round(ms)); };
+const BULLE_CHAUDE = 1200;
 const bulleChaude = () => Date.now() < BULLES.chaud;
 const bulleEteinte = () => { BULLES.chaud = Date.now() + BULLE_CHAUDE; };
 // rendre le clavier à un bouton sans faire paraître sa bulle (Échap, la fermeture d'une feuille)
@@ -30076,7 +30085,7 @@ function lierBullesDuChrome() { if (BULLES.lie) return; BULLES.lie = true;
     // sur le rail replié, la bulle attend toujours : le rail se déplie avant elle (250 ms), elle paraît déjà dans sa forme
     // dépliée — sinon elle changerait de texte sous les yeux
     const rail = b.closest('#rail'), attendLeRail = rail && !rail.classList.contains('deplie') && matchMedia('(min-width: 701px) and (hover: hover)').matches;
-    if (bulleChaude() && !attendLeRail) montrer(b); else { BULLES.attend = b; BULLES.tempo = setTimeout(() => { BULLES.attend = null; if (b.matches(':hover')) montrer(b); }, DELAI_BULLE); } }, true);
+    if (bulleChaude() && !attendLeRail) montrer(b); else { BULLES.attend = b; BULLES.tempo = setTimeout(() => { BULLES.attend = null; if (b.matches(':hover')) montrer(b); }, delaiBulle()); } }, true);
   document.addEventListener('pointerout', e => { const b = porteur(e.target); if (!b || b.contains(e.relatedTarget)) return; if (BULLES.muette === b) BULLES.muette = null;
     if (BULLES.attend === b) attendre(); if (b === BULLES.vise && !b.matches(':focus-visible')) eteindre(b); }, true);
   document.addEventListener('pointerdown', e => { attendre(); if (BULLES.vise) eteindre(BULLES.vise); BULLES.muette = porteur(e.target); }, true);
@@ -30253,15 +30262,29 @@ const planDeCoupure = nom => coupureEnModule(nom, verite(), app.norme, app.contr
    la fiche) passe devant celui de la table : `main` le dit, `auto` garde celui de la table. */
 function sertirDuFil(l) { const bout = (rep, borne) => { if (!rep || VT_A_POSER.test(rep) || estMasse(rep) || estRenvoi(rep)) return null; let x = null;
     try { const plans = coupureEnModules(rep) ? [planDeCoupure(rep).plan] : barretteEnModules(rep) ? [planDeBarrette(rep).plan] : cavitesDe(rep).map(c => c.plan);
-      for (const Q of plans) { x = (Q.fils || []).find(y => y.f.l === l); if (x) break; } } catch (_) { }
+      // un pont (A1 → A2 du même connecteur, `avecPonts`) a deux bouts dans le même plan : chacun se reconnaît à sa borne
+      for (const Q of plans) { x = (Q.fils || []).find(y => y.f.l === l && (l.de !== l.vers || String(y.borne) === String(borne))); if (x) break; } } catch (_) { }
     const main = contactMain(l, rep, borne), auto = x ? x.sertir || null : null;
     if (main) return { sertir: { reference: main, accessoire: '' }, auto, main: true, contact: x ? x.contact : null, sexe: x ? x.sexe || '' : '', ko: false };
     return x ? { sertir: auto, auto, main: false, contact: x.contact, sexe: x.sexe || '', ko: x.jaugeOk === false } : null; };
   return { de: bout(l.de, l.borneDe), vers: bout(l.vers, l.borneVers) }; }
+/* LA BARRETTE PARENTE et son rail (v84, le lecteur : « une barrette peut avoir plusieurs modules ») : les repères frères
+   (`rangDuParent`, 08-fiche : 668VT31 et 669VT32, modules 1 et 2 de VT3, sur tous les folios), leurs plans, et le rail
+   qui les porte tous (`railsDeBarrette`, 09) — commandé UNE fois, au PORTEUR, le frère de plus petit rang : sa fiche
+   (Pièces) et la LPA du plan le comptent, les autres modules renvoient à lui. Un repère sans parent (une barrette à
+   poser VT1, un 700VT) est sa propre barrette. Rend { parent, freres, porteur, rails, plans }. */
+function barretteParente(nom) { const f = typeof rangDuParent === 'function' ? rangDuParent(nom) : null, rang = r => (rangDuParent(r) || {}).rang || '';
+  const freres = f ? reperesDe(verite()).filter(r => barretteEnModules(r) && (rangDuParent(r) || {}).parent === f.parent).sort((a, b) => triBornes(rang(a), rang(b)) || triBornes(a, b)) : [];
+  if (!freres.includes(nom)) freres.push(nom);
+  const plans = freres.map(r => { try { return planDeBarrette(r).plan; } catch (_) { return null; } }).filter(Boolean);
+  return { parent: f ? f.parent : nom, freres, porteur: freres[0], rails: railsDeBarrette(app.norme, plans), plans }; }
 /* LE CONTACT ÉCRIT À LA MAIN au bout `rep` (borne `borne`) d'un fil : sur la liaison (le récapitulatif : `contactDe`,
    `contactVers`), sinon choisi sur la fiche (gardé avec le contrat : `designations`, « sertir|repère|borne »). Le
    récapitulatif, la fiche, la nomenclature et le contrôle lisent celui-ci. */
-function contactMain(l, rep, borne) { if (!l || !rep) return ''; const k = rep === l.de && l.contactDe ? l.contactDe : rep === l.vers && l.contactVers ? l.contactVers : '';
+function contactMain(l, rep, borne) { if (!l || !rep) return '';
+  // un pont (les deux bouts sur le même repère) : le bout se lit à sa borne
+  const cote = l.de === l.vers && rep === l.de ? (borne != null && String(borne) === String(l.borneVers) ? 'vers' : 'de') : rep === l.de ? 'de' : rep === l.vers ? 'vers' : '';
+  const k = cote === 'de' ? l.contactDe || '' : cote === 'vers' ? l.contactVers || '' : '';
   return k || (app.contrat.designations && app.contrat.designations.get('sertir|' + rep + '|' + (borne != null ? borne : rep === l.de ? l.borneDe : l.borneVers))) || ''; }
 
 /* ───────── 08-niveaux.js ───────── */
@@ -30311,7 +30334,7 @@ function ongletActif(type, xs) { const k = NIVEAU.onglet[type]; if (k && xs.some
 function ongletsHtml(type, xs) { if (!xs.length) return '';
   const actif = ongletActif(type, xs);
   const tabs = xs.map(s => { const st = s.statut || {};
-    return `<button type="button" role="tab" class="nv-onglet" id="nv-o-${escA(s.cle)}" data-onglet="${escA(s.cle)}" aria-selected="${s.cle === actif}" aria-controls="nv-p-${escA(s.cle)}" tabindex="${s.cle === actif ? 0 : -1}">`
+    return `<button type="button" role="tab" class="nv-onglet" id="nv-o-${escA(s.cle)}" data-onglet="${escA(s.cle)}" aria-selected="${s.cle === actif}" aria-controls="nv-p-${escA(s.cle)}" tabindex="${s.cle === actif ? 0 : -1}"${st.bulle ? ` data-bulle="${escA(st.bulle)}"` : ''}>`
       + `<span class="nv-o-t">${esc(titreOnglet(s))}</span><span class="nv-o-s${st.etat ? ' ' + st.etat : ''}">${st.t != null && st.t !== '' ? esc(st.t) : '&nbsp;'}</span></button>`; }).join('');
   const panneaux = xs.map(s => `<section class="nv-panneau${s.vide ? ' fs-vide' : ''}" role="tabpanel" id="nv-p-${escA(s.cle)}" data-section="${escA(s.cle)}" aria-labelledby="nv-o-${escA(s.cle)}" tabindex="-1"${s.cle === actif ? '' : ' hidden'}>`
     + (s.vide ? `<p class="vu-note">${esc(majuscule(s.vide))}${s.action ? ' ' + s.action : ''}</p>` : '') + (s.contenu || '') + '</section>').join('');
@@ -30320,7 +30343,10 @@ function ongletsHtml(type, xs) { if (!xs.length) return '';
 const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === 'connecteur' ? 'essentiel' : s.cle, titre: s.cle === 'fils' || s.cle === 'connecteur' ? '' : s.titre, statut: s.resume ? { t: String(s.resume).replace(/<[^>]*>/g, '').slice(0, 40) } : null, contenu: s.contenu, vide: s.vide, action: s.action });
 
 // les onglets que toutes les fiches partagent : les câbles (la section d'hier, son statut en mots), la fabrication
-const ongletCables = sF => !sF ? null : { cle: 'cables', statut: { t: sF.vide ? 'aucun' : sF.nko ? sF.nko + (sF.nko > 1 ? ' câbles en défaut' : ' câble en défaut') : pluriel(sF.compte || 0, 'câble') + (false ? '' : sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' % max' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '' }, contenu: sF.contenu, vide: sF.vide };
+// (v84) le statut tient dans l'onglet le plus étroit : « 4 câbles · 51 % » ; ce que veut dire 51 %, sa bulle le dit
+const statutCables = sF => ({ t: sF.vide ? 'aucun' : sF.nko ? sF.nko + (sF.nko > 1 ? ' câbles en défaut' : ' câble en défaut') : pluriel(sF.compte || 0, 'câble') + (sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' %' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '',
+  bulle: !sF.vide && sF.charge != null ? 'Le plus chargé porte ' + Math.round(sF.charge * 100) + ' % du courant qu’il admet' : '' });
+const ongletCables = sF => !sF ? null : { cle: 'cables', statut: statutCables(sF), contenu: sF.contenu, vide: sF.vide };
 function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
   return { cle: 'fabrication', statut: { t: n + '\u00a0à commander' }, contenu: `<section class="vu-bloc"><h4 class="vu-titre nv-lpa-t">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span>
@@ -32660,7 +32686,8 @@ const celluleIntensite = r => { const x = r.F().x; if (!x.fn) return rien;
   const niv = x.trop.length ? 'ko' : q > 0.8 ? 'att' : 'ok', i = pointe ? x.pointe.i : x.I, a = pointe ? x.pointe.admis : x.continu;
   return `<span class="rc-int">${chiffre(val('intensite', amp1(i), { cls: 'rc-n rc-calc', titre: 'Double-clic : ' + (x.al ? 'le profil de ' + x.al.nom : 'les hypothèses') }), 'A', niv === 'ko' ? 'ko' : '')}<span class="rc-adm">/ ${amp1(a)}</span>`
     // (v84) « pointe » se dit en clair dans sa bulle : ce qu'il tire, combien de temps, ce que le câble admet sur cette durée
-    + `<span class="rc-barre ${niv}"><i style="width:${Math.round(Math.min(1, q) * 100)}%"></i></span>${pointe ? `<i class="rc-o" data-bulle="${escA('Au plus fort du profil : ' + amperes(x.pointe.i) + ' pendant ' + secondes(x.pointe.t) + ' ; sur cette durée, le câble admet ' + amperes(x.pointe.admis))}">pointe</i>` : x.al ? '' : orig('hyp', 'Aucun disjoncteur en amont : le courant supposé par la simulation (menu ⋮ → Hypothèses)')}</span>`; };
+    // (le mot tient une place fixe, même vide : chaque case a la même largeur, les barres d'une colonne tombent l'une sous l'autre)
+    + `<span class="rc-barre ${niv}"><i style="width:${Math.round(Math.min(1, q) * 100)}%"></i></span><span class="rc-int-mot">${pointe ? `<i class="rc-o" data-bulle="${escA('Au plus fort du profil : ' + amperes(x.pointe.i) + ' pendant ' + secondes(x.pointe.t) + ' ; sur cette durée, le câble admet ' + amperes(x.pointe.admis))}">pointe</i>` : x.al ? '' : orig('hyp', 'Aucun disjoncteur en amont : le courant supposé par la simulation (menu ⋮ → Hypothèses)')}</span></span>`; };
 const celluleChute = r => { const c = r.F().c, u = c.total ? c.total.dU : c.dU; if (u == null) return rien;
   const niv = c.trop ? (c.reel ? 'ko' : 'att') : '';
   return `<span class="rc-mesure" data-bulle="${escA(c.total ? 'En ligne depuis ' + r.F().x.al.nom + ' : ' + volts(c.total.dU) + (c.max != null ? ' sur ' + volts(c.max) + ' admis' : '') + (c.reel ? '' : ' (longueurs d’hypothèse)') + '\nSur ce câble : ' + volts(c.dU) : 'Sur ce câble seul : aucun disjoncteur en amont')}">`
@@ -32696,7 +32723,7 @@ const COLONNES_LIAISONS = [
 const ligneLiaison = (l, i) => { const r = { l, i, k: String(i) }; let F = null; r.F = () => F || (F = infoFil(l)); return r; };
 const aReprendre = n => n === 'ko' || n === 'att';
 const LIAISONS = {
-  ajout: 'Liaison', aide: 'Une liaison de plus, en tête : le curseur dans « de » (sur un équipement choisi, « vers »)', cherche: 'Chercher : repère, borne, type de câble…',
+  ajout: 'Liaison', aide: 'Une liaison de plus, en tête : le curseur dans « de » (sur un équipement choisi, « vers »)', cherche: 'Chercher : repère, câble…',
   colonnes: COLONNES_LIAISONS, portee: true,
   lignes: () => verite().map(ligneLiaison),
   surFolio: r => surLeFolio(r.l),
@@ -32831,7 +32858,7 @@ const COLONNES_EQUIPEMENTS = [COL_REPERE,
   { k: 'deja', t: 'Déjà fait', cls: 'rc-c-n', option: true, si: () => !!indexReferences(), html: r => { const c = dejaFait(r.nom); return c ? `<span class="rc-deja" data-bulle="${escA(c.repere + ' de ' + c.harness)}"><b class="rc-n">${Math.round(c.taux * 100)}</b><i>%</i></span>` : rien; },
     tri: r => { const c = dejaFait(r.nom); return c ? c.taux : -1; }, texte: r => { const c = dejaFait(r.nom); return c ? Math.round(c.taux * 100) + ' %' : ''; } }];
 const EQUIPEMENTS = { ...ONGLET_REPERES,
-  ajout: 'Équipement', aide: 'Un équipement de plus, en tête : écrivez son repère, puis ses câbles dans Liaisons', cherche: 'Chercher : repère, type, norme…',
+  ajout: 'Équipement', aide: 'Un équipement de plus, en tête : écrivez son repère, puis ses câbles dans Liaisons', cherche: 'Chercher : repère, type…',
   colonnes: COLONNES_EQUIPEMENTS,
   // un équipement qu'on vient d'ajouter reste là, quel que soit son code
   lignes: () => { const n = app.base.neufs; return n.length ? reperes().filter(r => r.genre === 'eqpt' || (!r.aPoser && n.includes(r.nom))) : equipements(); },
@@ -33031,7 +33058,7 @@ const COLONNES_BARRETTES = [COL_REPERE,
   { k: 'potentiels', t: 'Potentiels', cls: 'rc-c-n', option: true, large: 1, html: r => { const Q = infoBarrette(r).Q; return Q ? chiffre(`<b class="rc-n">${Q.potentiels}</b>`) : rien; }, tri: r => (infoBarrette(r).Q || { potentiels: -1 }).potentiels, texte: r => String((infoBarrette(r).Q || {}).potentiels ?? ''), vide: r => !infoBarrette(r).Q },
   { k: 'cables', t: 'Câbles', cls: 'rc-c-n', option: true, large: 1, html: r => chiffre(`<b class="rc-n">${infoBarrette(r).cables}</b>`), tri: r => infoBarrette(r).cables, texte: r => String(infoBarrette(r).cables) },
   COL_FOLIO];
-const BARRETTES = { ...ONGLET_REPERES, colonnes: COLONNES_BARRETTES, lignes: barrettes, cherche: 'Chercher : repère, module, norme…',
+const BARRETTES = { ...ONGLET_REPERES, colonnes: COLONNES_BARRETTES, lignes: barrettes, cherche: 'Chercher : repère, module…',
   puces: () => [PUCE_A_REPRENDRE, ['aposer', 'Repère provisoire', r => r.aPoser, '', '', 'Les barrettes que VOLTA a ajoutées (plusieurs câbles sur une borne), au repère provisoire']],
   editeur: (r, f) => { const B = infoBarrette(r);
     if (f === 'rep') return { valeur: r.aPoser ? prochainRepereVT(r) : r.nom, toujours: r.aPoser, aide: r.aPoser ? 'le vrai repère de la barrette (Ctrl+Z rend le repère provisoire)' : '' };
@@ -33066,7 +33093,7 @@ const COLONNES_PRISES = [COL_REPERE,
   { k: 'fiche', t: 'Raccord partie mobile', option: true, html: r => { const I = infoPrise(r.nom); return I && I.fiche ? `<span class="rc-id">${esc(motRaccord(I.fiche))}</span>` : rien; }, tri: r => motRaccord((infoPrise(r.nom) || {}).fiche), texte: r => motRaccord((infoPrise(r.nom) || {}).fiche) },
   { k: 'embase', t: 'Raccord partie fixe', option: true, html: r => { const I = infoPrise(r.nom); return I && I.embase ? `<span class="rc-id">${esc(motRaccord(I.embase))}</span>` : rien; }, tri: r => motRaccord((infoPrise(r.nom) || {}).embase), texte: r => motRaccord((infoPrise(r.nom) || {}).embase) },
   { ...COL_FOLIO, large: 1 }];
-const PRISES = { ...ONGLET_REPERES, colonnes: COLONNES_PRISES, lignes: prises, cherche: 'Chercher : repère, arrangement, norme…',
+const PRISES = { ...ONGLET_REPERES, colonnes: COLONNES_PRISES, lignes: prises, cherche: 'Chercher : repère, norme…',
   choisir: r => choisirRepere(r.nom),
   puces: () => [PUCE_A_REPRENDRE],
   editeur: (r, f) => { const I = infoPrise(r.nom); if (f === 'rep') return { valeur: r.nom }; if (f === 'pn:') return { valeur: baseRepere(r.nom).b.pn || '', liste: 'pns', aide: 'toutes ses liaisons suivent' }; if (!I) return null;
@@ -33179,7 +33206,7 @@ const COLONNES_RACCORDS = [
   { k: 'toron', t: 'Toron Ø', cls: 'rc-c-mesure', option: true, large: 1, vide: x => { const h = habDe(x); return !(h && h.faisceau.diametre != null); }, html: x => { const h = habDe(x); return h && h.faisceau.diametre != null ? `<span class="rc-mesure">${chiffre(`<b class="rc-n">${fmt(h.faisceau.diametre, 1)}</b>`, 'mm')}${h.faisceau.complet ? '' : '<i class="rc-o" data-bulle="Un type de câble inconnu de la base : le toron est sous-estimé">?</i>'}</span>` : rien; },
     tri: x => { const h = habDe(x); return h && h.faisceau.diametre != null ? h.faisceau.diametre : -1; }, texte: x => { const h = habDe(x); return h && h.faisceau.diametre != null ? fmt(h.faisceau.diametre, 1) + ' mm' : ''; } },
   { k: 'folio', t: 'Folio', cls: 'rc-c-folio', option: true, large: 2, vide: x => !x.plans.length, html: x => x.plans.length ? `<span class="rc-folios">${esc(listeFolios(x.plans))}</span>` : rien, tri: x => x.plans[0] || '', texte: x => x.plans.join(' ') }];
-const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, surFolio: x => app.plan === '*' || x.plans.includes(app.plan), exact: (x, f) => x.nom === f, cherche: 'Chercher : repère, raccord, band-it…',
+const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, surFolio: x => app.plan === '*' || x.plans.includes(app.plan), exact: (x, f) => x.nom === f, cherche: 'Chercher : repère, raccord…',
   choisie: x => !!app.cible && app.cible.type === 'bloc' && app.cible.nom === x.nom, etat: x => { const h = habDe(x); return h && h.manquants.length ? 'att' : ''; },
   puces: () => [['completer', 'À compléter', x => { const h = habDe(x); return !!(h && h.manquants.length); }, '', '', 'Ce que la norme ne dit pas encore (une référence, une cote)']],
   choisir: x => choisirRepere(x.nom), survol: x => survolRepere(x.nom),
@@ -33409,7 +33436,7 @@ function rendreOutils(O) { const b = app.base, pt = portee(O);
     const vide = b.portee === 'folio' && !tous.some(O.surFolio) && tous.length > 0;
     $('ba-portee').querySelectorAll('[data-portee]').forEach(x => x.setAttribute('aria-pressed', String(vide ? x.dataset.portee === 'tout' : x.dataset.portee === b.portee)));
     if (vide) $('ba-lib-folio').parentElement.dataset.bulle = 'Rien sur le folio ' + app.plan + ' : voici tout le plan'; }
-  const fi = $('ba-filtre'); if (fi.value !== b.filtre && document.activeElement !== fi) fi.value = b.filtre; $('ba-vider').hidden = !b.filtre; fi.placeholder = O.cherche || 'Chercher dans l’onglet';
+  const fi = $('ba-filtre'); if (fi.value !== b.filtre && document.activeElement !== fi) fi.value = b.filtre; $('ba-vider').hidden = !b.filtre; ajusterRecherche(O);
   const on = new Set(b.puces[b.onglet] || []), P = pucesDe(O), base = P.length ? lignesDe(O, true) : [], petit = base.length <= PAQUET * 2;
   /* « À REPRENDRE » COMPTE TOUT LE PLAN, le folio en second (le technicien v73 : « À reprendre 3 » sur le folio 1, 4 sur le
      plan — « je ne sais plus combien il m'en reste ») : « À reprendre 4 · 3 sur ce folio ». */
@@ -33434,6 +33461,13 @@ function rendreOutils(O) { const b = app.base, pt = portee(O);
   if ((!petit || !petitPlan) && P.some(p => p.lourd) && AU_REPOS) { const jeton = RECAP.jeton, go = () => { if (jeton !== RECAP.jeton || $('base').hidden || app.base.edition) return;
       P.filter(p => p.lourd).forEach(p => { document.querySelectorAll(`#ba-puces [data-puce="${CSS.escape(p.k)}"], #ba-filtrer-l [data-puce="${CSS.escape(p.k)}"]`).forEach(x => { x.querySelectorAll('small').forEach(s => s.remove()); x.insertAdjacentHTML('beforeend', compte({ ...p, lourd: false })); x.classList.toggle('zero', /^0$/.test(x.querySelector('small').textContent)); }); }); };
     if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 3000 }); else setTimeout(go, 500); } }
+/* (v84 : « Chercher : repère, borne, t… » — un texte coupé dans le champ) l'invite de la recherche tient dans sa place : la
+   phrase de l'onglet quand elle y tient, sinon « Chercher… » ; relue quand le champ s'élargit ou se resserre. */
+let MESURE_RECHERCHE = null;
+function ajusterRecherche(O) { const fi = $('ba-filtre'); if (!fi) return; const long = (O || onglet()).cherche || 'Chercher dans l’onglet', s = getComputedStyle(fi);
+  const place = fi.clientWidth - parseFloat(s.paddingLeft || 0) - parseFloat(s.paddingRight || 0) - 1; if (!(place > 0)) { fi.placeholder = long; return; }
+  try { MESURE_RECHERCHE = MESURE_RECHERCHE || document.createElement('canvas').getContext('2d'); MESURE_RECHERCHE.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+    fi.placeholder = MESURE_RECHERCHE.measureText(long).width <= place ? long : 'Chercher…'; } catch (_) { fi.placeholder = long; } }
 /* « FILTRER » : les puces qui ne tiennent pas dans la barre, dans un menu de verre (le patron des menus de documents) — une
    rubrique (la route, ce qui manque), une ligne par puce : sa coche, son trait, son mot, son compte. Une ligne cochée filtre
    (et sa puce paraît, pressée, dans la barre : on voit ce qui filtre, on l'ôte d'un clic) ; le menu reste ouvert d'une
@@ -33538,7 +33572,7 @@ function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.je
   // (v74) le geste qui se répète d'une ligne à la suivante, sans intercalaire entre elles : « ″ » (les lignes se posent après)
   // (v84) de même, l'objet qui se répète s'écrit plus doux
   RECAP.parGenre = !!parGenre; RECAP.pareils = new Set(); RECAP.memes = new Set();
-  if (O === PROBLEMES) { let avant = null, nom = null; morceaux.forEach(m => { if (m.k == null) { avant = null; nom = null; return; } const r = RECAP.vues.get(m.k), s = r ? signatureGestes(r) : '', x = r && r.x.nom;
+  if (O === PROBLEMES) { let avant = null, nom = null; morceaux.forEach(m => { if (m.k == null) { avant = null; nom = null; return; } const r = RECAP.vues.get(m.k), s = r ? (r.x.niveau === 'ko' ? 'ko' : 'att') + '\u0001' + signatureGestes(r) : '', x = r && r.x.nom;
     if (s && s === avant) RECAP.pareils.add(m.k); if (x && x === nom) RECAP.memes.add(m.k); avant = s; nom = x; }); }
   // un onglet vide le dit sous ses en-têtes, au milieu de la feuille (hors de la table : sa dernière colonne prend tout)
   // (v84) un onglet vide ne pose pas d'en-têtes : sans lignes, ils se tassaient à gauche (« DE CÂBLE VERS… »), sans rien dire
@@ -33847,6 +33881,8 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
   fi.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (fi.value) { fi.value = ''; fi.dispatchEvent(new Event('input')); } else fi.blur(); }
     else if (e.key === 'ArrowDown' || e.key === 'Enter') { const x = corps.querySelector('tr[data-k] [data-f]'); if (x) { e.preventDefault(); x.focus(); } } });
   $('ba-vider').onclick = () => { fi.value = ''; fi.dispatchEvent(new Event('input')); fi.focus(); };
+  // le champ s'élargit au focus, se resserre avec la feuille : son invite se relit (`ajusterRecherche`)
+  if (window.ResizeObserver) new ResizeObserver(() => ajusterRecherche()).observe(fi);
   // les puces et les onglets défilent de côté (la molette aussi) et s'effacent au bord qui cache quelque chose
   [$('ba-puces'), ong].forEach(x => { const bord = () => bordDe(x); x.addEventListener('scroll', bord, { passive: true }); if (window.ResizeObserver) new ResizeObserver(bord).observe(x);
     x.addEventListener('wheel', e => { if (x.scrollWidth <= x.clientWidth || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return; e.preventDefault(); x.scrollLeft += e.deltaY; }, { passive: false }); });
@@ -36036,12 +36072,12 @@ function rapportCoherenceSEE(I, copie) { const K = I && I.coherence; if (!K) ret
 
 /* ───────── 08-table.js ───────── */
 /* ===========================================================================
-   08 — LA TABLE VIVANTE (v73, « Nuit bleue » sublimée)
+   08 — LA TABLE VIVANTE (v73 ; v84 : le graphite chaud et le cuivre)
    Le lecteur (v72) : « un fond pas que noir, un peu dégradé, un petit peu interactif, qui bouge comme une application un
    peu futuriste — mais pas trop, pas m'as-tu-vu ». Puis (v73) : « le fond est statique, sauf la lumière qui suit la souris :
    il doit bouger un peu ». La table vit donc, doucement, même quand la main se repose — et s'endort quand on n'est plus là.
    Ses couches (page.html `#table`, leur dessin dans style-table.css), de bas en haut :
-   · le FOND, l'encre bleu nuit dégradée (la lumière du coin haut-droit) : immobile ;
+   · le FOND, le graphite dégradé (la pierre claire, le jour du plan) et sa lumière de coin : immobile ;
    · deux NAPPES de lumière qui DÉRIVENT — translation seule, sur des périodes premières entre elles (47 s et 61 s : ça ne
      se répète jamais à l'œil), ±4 vw et ±3 vh ; la seconde respire aussi (24 s, son opacité seule). Elles remplacent le
      souffle d'avant. Écrites à 10 Hz, pas à 60 : à quelques pixels par seconde l'œil ne voit pas la différence, et deux
@@ -36049,10 +36085,10 @@ function rapportCoherenceSEE(I, copie) { const K = I && I.coherence; if (!K) ret
      repos ; la rotation de calques plein écran, essayée, faisait tomber la cadence à 30 images/s : écartée) ;
    · les POINTS, un tous les 24 px, plus discrets au repos et estompés vers les bords ; ils glissent d'un dixième sous le
      plan (la parallaxe) ;
-   · la LUEUR froide qui suit la souris, sur un ressort amorti critique (posée en une demi-seconde, sans dépassement) et
+   · la LUEUR qui suit la souris, sur un ressort amorti critique (posée en une demi-seconde, sans dépassement) et
      qui s'arrête avec la main ; sous elle, la grille se RÉVÈLE (les mêmes points, plus vifs, recalés sur la grille) : la
      souris est une lampe posée sur la table ;
-   · le COURANT : de temps en temps (14 à 22 s), un éclat de glace court le long d'une rangée de points — l'électricité,
+   · le COURANT : de temps en temps (14 à 22 s), un éclat de cuivre court le long d'une rangée de points — l'électricité,
      discrète —, seulement sur la bibliothèque, dans une bande libre, jamais sous ce qu'on lit, jamais deux à la fois.
    SOBRE : 90 s sans la main, la dérive ralentit jusqu'à l'arrêt (2 s) et plus rien ne tourne ; un geste la relance (1,2 s).
    Pendant un long travail (la conversion en lot, le dossier PDF, le placement d'un folio), elle attend aussi.
@@ -36111,13 +36147,14 @@ function reposerAccueil(oui) { document.body.classList.toggle('au-repos', oui);
   document.querySelectorAll('#bi-page svg.mq, #bi-page .bi-hero svg').forEach(s => { try { if (oui) s.pauseAnimations(); else s.unpauseAnimations(); } catch (_) { } }); }
 /* LE PASSAGE de la bibliothèque au plan, et retour (08-bibliotheque, `montrerLePlan`, `montrerBibliotheque`) : la table change
    de matière (le graphite de l'accueil, la table du plan) — au lieu d'un saut, l'ancienne se pose par-dessus la nouvelle et
-   s'efface en 420 ms : un fondu enchaîné. Appelée AVANT que le corps change de classe (la table d'avant est encore là). */
+   s'efface en 400 ms (la durée d'entrée) : un fondu enchaîné. Sa courbe est symétrique, pas la courbe vive des gestes :
+   avec elle, le graphite était parti en 130 ms — du noir au clair, l'œil le prenait pour un éclair. Appelée AVANT que le corps change de classe (la table d'avant est encore là). */
 function fonduTable() { const t = $('table'), f = t && t.querySelector('.ta-fond'); if (!f || mouvementReduit()) return;
   // (par-dessus toutes les couches : les nappes et les points de la table neuve ne percent pas l'ancienne pendant le fondu)
   let v = t.querySelector('.ta-passe'); if (!v) { v = document.createElement('div'); v.className = 'ta-passe'; t.appendChild(v); }
   const s = getComputedStyle(f); v.getAnimations().forEach(a => a.cancel());
   v.style.backgroundColor = s.backgroundColor; v.style.backgroundImage = s.backgroundImage;
-  v.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); }
+  v.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); }
 /* On est là (la souris, le clavier, la molette) : la dérive s'éveille, ou reste éveillée 90 s de plus. */
 function eveillerTable() { const T = TABLE; if (!T.el || mouvementReduit() || document.hidden) return; T.main = performance.now();
   if (!T.cible) { T.cible = 1; T.el.classList.remove('dort'); reposerAccueil(false); }
@@ -36134,7 +36171,7 @@ function pasDeLaLueur(n) { const T = TABLE, dt = Math.min(.05, (n - (T.t || n)) 
   T.vx += ax * dt; T.vy += ay * dt; T.px += T.vx * dt; T.py += T.vy * dt; poserLueur();
   T.anim = Math.abs(T.x - T.px) + Math.abs(T.y - T.py) > .4 || Math.abs(T.vx) + Math.abs(T.vy) > 2 ? requestAnimationFrame(pasDeLaLueur) : 0; if (!T.anim) T.t = 0; }
 
-/* LE COURANT : un éclat de glace sur une rangée de points, dans une bande que rien ne couvre (la bibliothèque : sa
+/* LE COURANT : un éclat de cuivre sur une rangée de points, dans une bande que rien ne couvre (la bibliothèque : sa
    composition, ses cartes, le dock ; la barre du haut). Sur le plan, la table se tait : on y travaille. */
 function planifierCourant() { clearTimeout(TABLE.courantT); TABLE.courantT = setTimeout(courir, 6000 + Math.random() * 5000); }
 function rangeesLibres() { const H = innerHeight, haut = (typeof $ === 'function' && $('entete') ? $('entete').getBoundingClientRect().bottom : 52) + 20;

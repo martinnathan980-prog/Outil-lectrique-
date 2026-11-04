@@ -8,7 +8,7 @@
 'use strict';
 
 /* LA RÈGLE DU TEMPS, une pour toutes les bulles du chrome (le panel v73 : le designer, § 5.4 ; l'ergonome) :
-     · la première paraît après 400 ms de survol — une main qui passe ne fait rien clignoter ;
+     · la première paraît après `--bulle-delai` (350 ms) de survol — une main qui passe ne fait rien clignoter ;
      · tant qu'une bulle vient de s'éteindre (`--bulle-chaude`, 1,2 s), la suivante paraît TOUT DE SUITE : on balaie le
        rail, les noms se suivent, comme sur macOS ;
      · au clavier, tout de suite — sauf quand le clavier est RENDU par programme (Échap ferme le menu et rend le clavier
@@ -19,7 +19,11 @@
    raccourcis — la montre par la classe `.bulle-on` (style.css). Juste avant de paraître, la bulle prévient son bouton
    (l'événement `bulle`) : il peut l'écrire à ce moment-là (↶ et ↷ disent ce qu'ils feraient, 08-interface). */
 const BULLES = { vise: null, attend: null, tempo: 0, chaud: 0, muette: null, taire: null, lie: false };
-const DELAI_BULLE = 400, BULLE_CHAUDE = 1200;
+/* le délai se lit sur la feuille de style (`--bulle-delai`, 350 ms : la règle unique des bulles, v84) — 400 ms si elle se tait */
+const delaiBulle = () => { if (delaiBulle.ms) return delaiBulle.ms; let ms = 400;
+  try { const v = getComputedStyle(document.documentElement).getPropertyValue('--bulle-delai').trim(), x = parseFloat(v); if (x > 0) ms = /ms$/.test(v) ? x : x * 1000; } catch (_) { }
+  return (delaiBulle.ms = Math.round(ms)); };
+const BULLE_CHAUDE = 1200;
 const bulleChaude = () => Date.now() < BULLES.chaud;
 const bulleEteinte = () => { BULLES.chaud = Date.now() + BULLE_CHAUDE; };
 // rendre le clavier à un bouton sans faire paraître sa bulle (Échap, la fermeture d'une feuille)
@@ -36,7 +40,7 @@ function lierBullesDuChrome() { if (BULLES.lie) return; BULLES.lie = true;
     // sur le rail replié, la bulle attend toujours : le rail se déplie avant elle (250 ms), elle paraît déjà dans sa forme
     // dépliée — sinon elle changerait de texte sous les yeux
     const rail = b.closest('#rail'), attendLeRail = rail && !rail.classList.contains('deplie') && matchMedia('(min-width: 701px) and (hover: hover)').matches;
-    if (bulleChaude() && !attendLeRail) montrer(b); else { BULLES.attend = b; BULLES.tempo = setTimeout(() => { BULLES.attend = null; if (b.matches(':hover')) montrer(b); }, DELAI_BULLE); } }, true);
+    if (bulleChaude() && !attendLeRail) montrer(b); else { BULLES.attend = b; BULLES.tempo = setTimeout(() => { BULLES.attend = null; if (b.matches(':hover')) montrer(b); }, delaiBulle()); } }, true);
   document.addEventListener('pointerout', e => { const b = porteur(e.target); if (!b || b.contains(e.relatedTarget)) return; if (BULLES.muette === b) BULLES.muette = null;
     if (BULLES.attend === b) attendre(); if (b === BULLES.vise && !b.matches(':focus-visible')) eteindre(b); }, true);
   document.addEventListener('pointerdown', e => { attendre(); if (BULLES.vise) eteindre(BULLES.vise); BULLES.muette = porteur(e.target); }, true);

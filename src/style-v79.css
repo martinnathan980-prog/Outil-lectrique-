@@ -20,7 +20,7 @@
 .nv-grand .nv-onglets{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(132px,1fr);gap:4px;margin:6px 0 0;padding:8px 14px 0;border-radius:0;
   background:var(--v-bande);box-shadow:none;overflow-x:auto}
 .nv-grand .nv-onglet{min-width:0;max-width:none;width:auto;height:60px;padding:0 16px;border-radius:12px 12px 0 0;background:none;box-shadow:none;color:var(--v-bande-s)}
-.nv-grand .nv-onglet .nv-o-t{color:var(--v-bande-t);opacity:.82;font:600 var(--f-15)/1.2 var(--sans);letter-spacing:-.01em}
+.nv-grand .nv-onglet .nv-o-t{color:var(--v-bande-t);opacity:.82;font:600 var(--f-14)/1.2 var(--sans);letter-spacing:-.01em}
 .nv-grand .nv-onglet .nv-o-s{color:var(--v-bande-s)}
 .nv-grand .nv-onglet .nv-o-s.att{color:#f2b55c}
 .nv-grand .nv-onglet .nv-o-s.ko{color:#ff8f84}
@@ -28,7 +28,7 @@
 .nv-grand .nv-onglet:hover{background:var(--v-bande-2)}
 .nv-grand .nv-onglet:hover .nv-o-t{opacity:1}
 .nv-grand .nv-onglet[aria-selected="true"]{background:var(--v-fond);box-shadow:none}
-.nv-grand .nv-onglet[aria-selected="true"] .nv-o-t{color:var(--t-1);opacity:1;font-weight:650}
+.nv-grand .nv-onglet[aria-selected="true"] .nv-o-t{color:var(--t-1);opacity:1;font-weight:600}
 .nv-grand .nv-onglet[aria-selected="true"] .nv-o-s{color:var(--t-2)}
 .nv-grand .nv-onglet[aria-selected="true"] .nv-o-s.att{color:var(--warn)}
 .nv-grand .nv-onglet[aria-selected="true"] .nv-o-s.ko{color:var(--ko)}
@@ -50,7 +50,7 @@
 
 /* LE TITRE D'UNE SECTION : une barre de cuivre, le titre à l'encre, sa précision en gris — le même partout */
 .nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.fs-groupe)>:is(.vu-titre,.fs-st),.nv-grand .nv-panneau>.vu-schema .vu-titre,.nv-grand .nv-reg-t h4{
-  position:relative;display:flex;align-items:baseline;gap:10px;margin:0 0 4px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
+  position:relative;display:flex;align-items:baseline;gap:10px;margin:0 0 4px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
 .nv-grand .nv-panneau>:is(.vu-bloc,.vu-pq,.fs-groupe)>:is(.vu-titre,.fs-st)::before,.nv-grand .nv-panneau>.vu-schema .vu-titre::before,.nv-grand .nv-reg-t h4::before{
   content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
 .nv-grand .nv-panneau .vu-titre>span,.nv-grand .nv-panneau .fs-st>span:first-child i{font:500 var(--f-13) var(--sans);letter-spacing:0;color:var(--t-3)}
@@ -62,9 +62,9 @@
 
 /* ─── LA TUILE : une forme par nature d'information ─── */
 .nc{gap:18px}
-.nc-tete .nc-titre{font-size:26px}
+.nc-tete .nc-titre{font-size:var(--f-28)}
 .nc-meta{margin-top:-8px}
-.nc-meta .nc-meta-k{font:650 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
+.nc-meta .nc-meta-k{font:600 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
 .nc-meta .nc-meta-v{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:7px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:600 var(--f-13)/1 var(--mono);color:var(--t-1)}
 .nc-vignette{background:var(--s-sunken);border-color:transparent;box-shadow:inset 0 0 0 1px var(--s-line)}
 .nc-vignette:hover{box-shadow:inset 0 0 0 1px var(--s-line-2),0 10px 22px -16px rgba(0,0,0,.35)}
@@ -73,8 +73,8 @@
 .nc>.nc-taches .nc-tache.ko{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
 /* les chiffres : grands, nus, la ligne du bas de la tuile */
 .nc-chiffres{border-top:0;padding-top:2px}
-.nc-chiffre .nc-v{font-size:30px;letter-spacing:-.02em}
-.nc-chiffre .nc-k{font:650 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
+.nc-chiffre .nc-v{font-size:var(--f-28);letter-spacing:-.02em}
+.nc-chiffre .nc-k{font:600 var(--f-11)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3)}
 .nc-tete.fine .nc-meta{align-self:center;margin-left:8px}
 .nc-tete.fine .nc-meta>span:first-child::before{display:none}
 .nc-tete.fine .nc-meta .nc-meta-v{height:24px;font-size:var(--f-12)}
@@ -87,15 +87,15 @@
 .vu-bro .bro-piece{fill:var(--s-sunken);stroke:var(--t-1);stroke-width:1.2}
 .vu-bro .bro-lettre{font:700 12px var(--mono);fill:var(--nv-cuivre);text-anchor:middle}
 .vu-bro .bro-ref{font:500 11px var(--mono);fill:var(--t-3)}
-.vu-bro .bro-borne{font:650 11px var(--mono);fill:var(--t-1);text-anchor:middle}
+.vu-bro .bro-borne{font:600 11px var(--mono);fill:var(--t-1);text-anchor:middle}
 .vu-bro .bro-fil{fill:none;stroke-width:2.2;stroke-linecap:round}
 .vu-bro .bro-type-f{fill:var(--s-surface)}
-.vu-bro .bro-type{font:600 10.5px var(--mono);fill:var(--t-2);text-anchor:middle}
+.vu-bro .bro-type{font:600 11px var(--mono);fill:var(--t-2);text-anchor:middle}
 .vu-bro .bro-bout{fill:var(--t-1)}
 .vu-bro .bro-masse{fill:none;stroke:var(--t-1);stroke-width:1.6;stroke-linecap:round}
-.vu-bro .bro-vers{font:650 13px var(--mono);fill:var(--t-1)}
+.vu-bro .bro-vers{font:600 13px var(--mono);fill:var(--t-1)}
 .vu-bro .bro-pin-f{fill:var(--s-sunken);stroke:var(--s-line-2)}
-.vu-bro .bro-pin{font:650 10.5px var(--mono);fill:var(--t-1);text-anchor:middle}
+.vu-bro .bro-pin{font:600 11px var(--mono);fill:var(--t-1);text-anchor:middle}
 .vu-bro .bro-mot{font:500 11px var(--sans);fill:var(--t-3)}
 .vu-bro .bro-ko{font:600 10px var(--sans);fill:var(--ko);text-anchor:middle}
 .vu-bro .bro-zone{fill:transparent;transition:fill var(--rapide)}
@@ -116,19 +116,19 @@
 .nv-grand .nv-panneau .dj-etats{max-width:none;gap:0;margin:4px 0 0;border-radius:12px;box-shadow:0 0 0 1px var(--s-line);overflow:hidden}
 .nv-grand .nv-panneau .dj-entete,.nv-grand .nv-panneau .dj-etat{grid-template-columns:14px minmax(140px,1fr) minmax(110px,170px) minmax(110px,170px) 32px;column-gap:16px;padding:0 10px 0 16px}
 .nv-grand .nv-panneau .dj-entete{min-height:36px;background:var(--s-sunken);border-bottom:1px solid var(--s-line)}
-.nv-grand .nv-panneau .dj-entete span{font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-3)}
+.nv-grand .nv-panneau .dj-entete span{font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-3)}
 .nv-grand .nv-panneau .dj-etat{min-height:52px;border-radius:0;background:var(--s-surface);box-shadow:none}
 .nv-grand .nv-panneau .dj-etat+.dj-etat{border-top:1px solid var(--s-line)}
 .nv-grand .nv-panneau .dj-etat+.dj-etat::before{display:none}
 .nv-grand .nv-panneau .dj-etat:hover{background:var(--s-hover)}
 .nv-grand .nv-panneau .dj-etat .dj-nom{font:600 var(--f-14)/1.2 var(--sans);color:var(--t-1)}
 .nv-grand .nv-panneau .dj-etat .dj-champ{height:34px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
-.nv-grand .nv-panneau .dj-etat .dj-champ input{font:650 var(--f-15) var(--sans);text-align:right}
+.nv-grand .nv-panneau .dj-etat .dj-champ input{font:600 var(--f-14) var(--sans);text-align:right}
 .nv-grand .nv-panneau .dj-etat .dj-champ:hover{box-shadow:inset 0 0 0 1px var(--s-line-2)}
 .nv-grand .nv-panneau .dj-etat .dj-champ:focus-within{box-shadow:inset 0 0 0 1px var(--nv-cuivre),var(--anneau);background:var(--s-surface)}
 .nv-grand .nv-panneau .dj-etat:has(.dj-champ[data-min]){min-height:60px;padding-bottom:10px}
 .vu-seuil{margin:2px 0 0;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-3)}
-.vu-explique b{font-weight:650;color:var(--t-1)}
+.vu-explique b{font-weight:600;color:var(--t-1)}
 .nv-reg-n{font:500 var(--f-13) var(--sans);color:var(--t-3)}
 .nv-reg-c>.fs-champs{margin:0}
 .nv-reg-c .fi-faces{margin:12px 0 0}
@@ -139,12 +139,12 @@
 .nv-grand .nv-cables{border-collapse:separate;border-spacing:0}
 .nv-grand .nv-cap{caption-side:top;position:relative;display:flex;align-items:baseline;gap:10px;padding:8px 0 14px 14px;text-align:left}
 .nv-grand .nv-cap::before{content:"";position:absolute;left:0;top:calc(8px + .2em);width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
-.nv-grand .nv-cap b{font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+.nv-grand .nv-cap b{font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
 .nv-grand .nv-cap span{font:500 var(--f-13) var(--sans);color:var(--t-3)}
 .nv-grand .nv-cables thead th{height:38px;background:var(--s-sunken);border-bottom:1px solid var(--s-line);vertical-align:middle}
 .nv-grand .nv-cables thead th:first-child{border-radius:10px 0 0 10px}
 .nv-grand .nv-cables thead th:last-child{border-radius:0 10px 10px 0}
-.nv-grand .nv-cables thead .nv-tri{font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2)}
+.nv-grand .nv-cables thead .nv-tri{font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2)}
 .nv-grand .nv-cables thead .nv-tri:hover,.nv-grand .nv-cables thead th[aria-sort$="ending"] .nv-tri{color:var(--t-1)}
 .nv-grand .nv-cables tbody tr:hover td{background:var(--s-hover)}
 .nv-grand .nv-panneau>.cb-note{margin:0;padding:12px 16px;border-radius:12px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--t-3);font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
@@ -162,18 +162,8 @@
 .nc:hover .nc-filigrane .nc-fil-trace *{stroke-dashoffset:0}
 @media (prefers-reduced-motion:reduce){ .nc-filigrane,.nc-filigrane .nc-fil-trace *{transition:none} }
 
-/* ═══ L'ACCUEIL v79 — « moderne, waouh, moins de bleu, des lettres modernes, vivant » ═══
-   La table de la bibliothèque, en graphite d'atelier : un noir chaud, une lueur neutre, deux nappes à peine teintées
-   (cuivre, acier), les points blancs. Ce qui s'y pose (la marque, le schéma vivant, les cartes) : style-z-accueil.css. */
-body.biblio,body.table-graphite{--table-fond:radial-gradient(ellipse 90% 70% at 50% -10%,#1d1f25 0%,#111215 52%,#0a0b0d 100%);
-  --nappe-a:radial-gradient(closest-side,rgba(229,156,100,.10),rgba(229,156,100,.035) 50%,rgba(229,156,100,0));
-  --nappe-b:radial-gradient(closest-side,rgba(150,165,190,.08),rgba(150,165,190,.03) 52%,rgba(150,165,190,0));
-  --grille-repos:rgba(255,255,255,.07); --s-grille-revele:rgba(255,255,255,.22);
-  --courant:linear-gradient(90deg,rgba(240,164,108,0),rgba(240,164,108,.8) 70%,#ffd7b8)}
-body.biblio #table .ta-lueur,body.table-graphite #table .ta-lueur{background:radial-gradient(closest-side,rgba(255,240,228,.06),rgba(255,240,228,.02) 55%,rgba(255,240,228,0))}
-body.biblio #table .ta-courant,body.table-graphite #table .ta-courant{box-shadow:0 0 6px 1px rgba(240,164,108,.35)}
-body.biblio #table .ta-courant::after,body.table-graphite #table .ta-courant::after{background:#ffe2cc;box-shadow:0 0 8px 2px rgba(240,164,108,.6)}
-/* (v84) les règles de l'accueil et de la bibliothèque qui suivaient ici vivent dans style-z-accueil.css */
+/* (v84) l'accueil et la bibliothèque — leur table, la marque, le schéma vivant, les cartes — vivent dans
+   style-z-accueil.css et style-bibliotheque.css ; la variante `body.table-graphite` du plan est tranchée (style-z-cadre.css) */
 .nc-vignette .vu-bro.petit{max-width:100%}
 .vu-bro.petit .bro-nom{font-size:13px}
 .vu-bro.petit .bro-type{font-size:10px}
@@ -183,7 +173,7 @@ body.biblio #table .ta-courant::after,body.table-graphite #table .ta-courant::af
 .nc .nv-trajet{justify-content:center;gap:10px}
 .nv-bout{align-items:center;gap:7px;height:34px;padding:0 7px 0 12px;line-height:1}
 .nv-bout b{line-height:1}
-.nv-bout i{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:6px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2);font:650 var(--f-11)/1 var(--mono);font-style:normal;color:var(--t-1)}
+.nv-bout i{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:6px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2);font:600 var(--f-11)/1 var(--mono);font-style:normal;color:var(--t-1)}
 .nv-trajet-f{height:3px}
 
 /* ═══ v79 — CE QUE LES RELECTEURS ONT VU ═══ */
@@ -205,7 +195,7 @@ body.biblio #table .ta-courant::after,body.table-graphite #table .ta-courant::af
 .vu-c.ret.non b{background:color-mix(in srgb,var(--ko) 12%,var(--s-surface));color:var(--ko)}
 .vu-c.ret small,.vu-c.ret.non small{color:var(--nv-cuivre)}
 /* un titre long (« Prise de coupure — 408VC1A ») reste sur une ligne */
-.nc-tete .nc-titre.long{font-size:21px}
+.nc-tete .nc-titre.long{font-size:var(--f-20)}
 /* les commandes à segments : des parts égales */
 .bi-tri-seg,#base .ba-portee{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr}
 .bi-tri-seg>button,#base .ba-portee>button{justify-content:center;text-align:center}
@@ -246,8 +236,8 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 #fiche{background:var(--s-surface);color:var(--t-1)}
 #fiche .fiche-corps{background:var(--v-fond);padding-bottom:22px}
 #fiche .fiche-tete{position:sticky;top:0;z-index:3;display:flex;align-items:flex-start;gap:12px;margin:0 -20px 16px;padding:18px 18px 16px 22px;background:var(--s-surface);border-bottom:1px solid var(--s-line)}
-#fiche .fiche-tete .sur{margin:0 0 4px;font:650 var(--f-11)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--nv-cuivre)}
-#fiche .fiche-tete .titre{margin:0;font:650 22px/1.2 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
+#fiche .fiche-tete .sur{margin:0 0 4px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--nv-cuivre)}
+#fiche .fiche-tete .titre{margin:0;font:600 var(--f-20)/1.2 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
 /* les deux vues des normes : la bande d'onglets de la fiche */
 #fiche .fiche-tete.avec-onglets{flex-wrap:wrap;padding-bottom:0}
 #fiche .nm-nav{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;margin:12px -18px 0 -22px;padding:8px 14px 0;background:var(--v-bande);border:0;border-radius:0}
@@ -270,7 +260,7 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 #fiche .nm>.nm-outils{margin:0 0 14px}
 #fiche .nm>.bible-filtres{margin:0 0 12px}
 /* le titre d'une section : la barre de cuivre, comme dans la fiche */
-#fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3){position:relative;margin:0 0 10px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
+#fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3){position:relative;margin:0 0 10px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--t-1)}
 #fiche :is(.hy-titre,.no-st,.co-etiquette,.nm-dom-t,.bl-carnet-tete>h3,.bl-carnet-tete>b,.vf-carte h3)::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
 #fiche .nm-dom-sens{margin:0 0 10px 14px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
 /* le pied : posé, ses boutons alignés */
@@ -279,9 +269,9 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 #fiche .nm-nav .onglet::after{display:none}
 #fiche .nm-nav .onglet[aria-selected="true"]::after{display:block}
 #fiche .nm>table.bible{width:100%;margin:0 0 14px;border-collapse:separate;border-spacing:0;border-radius:16px;overflow:hidden;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line)}
-#fiche .nm>table.bible thead th{background:var(--s-sunken);font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);height:38px}
+#fiche .nm>table.bible thead th{background:var(--s-sunken);font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);height:38px}
 #fiche .fiche-corps>.cc-vide{margin:0 0 14px;padding:20px 20px 22px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line)}
-#fiche .cc-vide-t{position:relative;margin:0 0 8px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);color:var(--t-1)}
+#fiche .cc-vide-t{position:relative;margin:0 0 8px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);color:var(--t-1)}
 #fiche .cc-vide-t::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
 #fiche .cc-vide p{margin:0 0 12px;font:400 var(--f-13)/1.55 var(--sans);color:var(--t-2);max-width:62ch}
 #fiche .cc-vide-l{margin:0 0 16px;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
@@ -312,11 +302,11 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
    une carte titrée à la barre de cuivre ; le papier neutre (graphite la nuit, jamais le marine de la table) */
 .rk-feuille{width:min(1040px,100%);padding:0;background:var(--v-fond);box-shadow:var(--sh-carte);overflow:auto}
 .rk-tete{position:sticky;top:0;z-index:2;margin:0;padding:18px 18px 16px 24px;align-items:flex-start;background:var(--s-surface);border-bottom:1px solid var(--s-line)}
-.rk-tete .sur{margin:0 0 4px;font:650 var(--f-11)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--nv-cuivre)}
-.rk-tete h2{font:650 22px/1.2 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
+.rk-tete .sur{margin:0 0 4px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--nv-cuivre)}
+.rk-tete h2{font:600 var(--f-20)/1.2 var(--sans);letter-spacing:-.015em;color:var(--t-1)}
 .raccourcis .rk-groupes{columns:3 290px;column-gap:14px;padding:18px 20px 4px}
 .raccourcis .rk-groupe{break-inside:avoid;display:inline-block;width:100%;margin:0 0 14px;padding:14px 16px 8px;border-radius:16px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.04)}
-.raccourcis .rk-groupe h3{position:relative;margin:0 0 6px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+.raccourcis .rk-groupe h3{position:relative;margin:0 0 6px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
 .raccourcis .rk-groupe h3::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
 .raccourcis .rk-ligne{min-height:38px;padding:5px 0}
 .raccourcis .rk-ligne:last-child{border-bottom:0}
@@ -343,23 +333,17 @@ body.insp-epingle:not(.insp-grand) #inspecteur{bottom:auto;height:auto;max-heigh
 .raccourcis .rk-col .rk-groupe{margin:0}
 @media (max-width:980px){ .raccourcis .rk-groupes{grid-template-columns:1fr} }
 /* le cartouche : ses deux cartes titrées, comme toutes les sections */
-#fiche .ca-t{position:relative;margin:0 0 12px;padding-left:14px;font:650 var(--f-15)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+#fiche .ca-t{position:relative;margin:0 0 12px;padding-left:14px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
 #fiche .ca-t::before{content:"";position:absolute;left:0;top:.2em;width:4px;height:1em;border-radius:2px;background:var(--nv-cuivre)}
 #fiche .ca-apercu{margin:0 0 14px}
 /* la bande d'onglets des normes passe sous la croix, jusqu'au bord ; l'onglet ouvert n'a pas d'anneau en plus de sa barre */
 #fiche .fiche-tete.avec-onglets .nm-nav{margin-right:-62px}
 #fiche .nm-nav .onglet[aria-selected="true"]:focus-visible{outline:none}
 
-/* ═══ LE CADRE (tour du site, 2) — aucun bleu dans les commandes : le bleu, c'est la table ═══ */
-#entete{background:rgba(20,21,24,.96)}
-.recherche{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16)}
-.recherche:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.26)}
-body.cherche .recherche{background:rgba(30,31,35,.96);border-color:var(--chrome-cuivre-ligne);box-shadow:0 0 0 3px var(--chrome-cuivre-soft)}
-.recherche .raccourci{background:rgba(255,255,255,.09)}
-/* le filet de cuivre sous la barre : une lueur très lente, à peine — plus une barre de chargement */
-#entete::after{background:linear-gradient(90deg,transparent 0%,rgba(232,160,106,0) 25%,rgba(232,160,106,.38) 50%,rgba(232,160,106,0) 75%,transparent 100%);background-size:200% 100%;animation-duration:46s}
+/* ═══ LE CADRE (tour du site, 2) — la barre, la recherche et le filet de cuivre sont repris aux jetons par style-z-cadre.css
+   (v84) ; reste ici ce qui crée les rubriques du sous-menu Exporter ═══ */
 /* le sous-menu Exporter : ses groupes disent leur nom — ce folio, tout le plan */
-#mp-exporter .menu-bloc[data-groupe="folio"]::before,#mp-exporter .menu-bloc[data-groupe="contrat"]::before{content:attr(aria-label);display:block;padding:7px 12px 3px;font:650 10.5px/1.2 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--chrome-cuivre)}
+#mp-exporter .menu-bloc[data-groupe="folio"]::before,#mp-exporter .menu-bloc[data-groupe="contrat"]::before{content:attr(aria-label);display:block;padding:7px 12px 3px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--chrome-cuivre)}
 /* l'index des repères : un point seulement quand il y a quelque chose à voir ; « à voir » en ambre, jamais en rouge ;
    pas de poignée de téléphone (la barre se tient quand même : la main au survol) */
 #inspecteur .ix-etat.ok{box-shadow:none}
@@ -437,12 +421,6 @@ body:is(.insp-flotte,.insp-epingle) #inspecteur .ix-tete::before{display:none}
 #fiche .bible th.c-ref{text-align:left}
 #fiche .bible td.ref .ref-btn{margin:0;justify-content:flex-start;text-align:left}
 
-/* ═══ VARIANTE À MONTRER (pas encore choisie par le lecteur) : la table du plan en graphite — un cran plus claire que
-   l'accueil, les îlots un cran au-dessus avec leur filet, un halo très doux sous la feuille. Inerte tant que
-   `body.table-graphite` n'est pas posé sur le plan. ═══ */
-body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at 52% 48%,#27282c 0%,#1e1f22 52%,#17181a 100%);--grille-repos:rgba(255,255,255,.06);
-  --palet:rgba(40,41,46,.96);--palet-2:rgba(50,51,57,.97);--sh-palet:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px rgba(255,255,255,.12),0 14px 30px -12px rgba(0,0,0,.6)}
-
 /* ═══ v81 — LA FICHE (le lecteur : « la tête plus sexy ; en sombre, beaucoup de noir ; les attentions, on peut faire mieux ;
    le profil de charge : tout en vert à gauche, ça se mélange avec « ne disjoncte pas » ») ═══ */
 /* la tête : plus d'air, le symbole dans un carreau cuivré, le genre et le repère à la même taille, la référence en
@@ -451,10 +429,10 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 .nv-grand .nc-tete.fine{position:relative;gap:14px}
 .nv-grand .nc-tete.fine .nc-sym{width:40px;height:40px;border-radius:12px;background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne);color:var(--nv-cuivre)}
 .nv-grand .nc-tete.fine .nc-sym svg{width:26px;height:26px}
-.nv-grand .nc-tete.fine .nc-titre{font-size:22px;gap:10px}
+.nv-grand .nc-tete.fine .nc-titre{font-size:var(--f-20);gap:10px}
 .nv-grand .nc-tete.fine .nc-titre .nc-genre-mot{font-weight:500;color:var(--t-2)}
 .nv-grand .nc-tete.fine .nc-tiret{color:var(--nv-cuivre);opacity:.8}
-.nv-grand .nc-tete.fine .nc-titre .nc-rep-in,.nv-grand .nc-tete.fine .nc-titre .nc-rep-t{height:34px;font-size:22px;font-weight:650;letter-spacing:-.01em}
+.nv-grand .nc-tete.fine .nc-titre .nc-rep-in,.nv-grand .nc-tete.fine .nc-titre .nc-rep-t{height:34px;font-size:var(--f-20);font-weight:600;letter-spacing:-.01em}
 .nv-grand .nc-tete.fine .nc-meta .nc-meta-v{height:26px;padding:0 10px;border-radius:8px;background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne)}
 .nv-grand .nc-tete.fine .nc-meta .nc-meta-v,.nv-grand .nc-tete.fine .nc-meta .nc-meta-v .id{color:var(--t-1)}
 .nv-fili{display:none}
@@ -500,12 +478,12 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 .nv-grand table.nv-cables :is(.nv-td-i,.nv-td-u,.nv-td-lg,.nv-td-ct){text-align:center}
 .nv-grand table.nv-cables :is(.nv-td-i,.nv-td-u) .nv-mes{width:124px;justify-content:flex-start;text-align:left}
 .nv-grand table.nv-cables .nv-td-lg .nv-cab-lg{justify-content:center;min-width:70px}
-.nv-grand table.nv-cables .nv-cab-lg.supp b{color:var(--t-3);font-weight:550}
+.nv-grand table.nv-cables .nv-cab-lg.supp b{color:var(--t-3);font-weight:500}
 .nv-grand table.nv-cables .nv-cab-lg .nv-env{font:400 var(--f-13) var(--sans);font-style:normal;color:var(--t-3);margin-right:2px}
 .nv-grand table.nv-cables td{overflow:hidden;text-overflow:ellipsis}
 .nv-grand .nv-fili{width:86px;height:86px;right:60px;opacity:.15}
 /* une longueur supposée dans sa case : le chiffre en gris (plus en ambre), « ≈ » devant */
-.nv-grand table.nv-cables .nv-cab-lg.supp .fc-in::placeholder{color:var(--t-3);font-weight:550}
+.nv-grand table.nv-cables .nv-cab-lg.supp .fc-in::placeholder{color:var(--t-3);font-weight:500}
 .nv-grand table.nv-cables .nv-cab-lg.supp .fc-in{color:var(--t-2)}
 /* la liste des contacts : des colonnes réparties, les chiffres et le câble centrés sous leur titre */
 .nv-grand .ct-legende,.nv-grand .ct-ligne{grid-template-columns:var(--ct-pin) minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr)}
@@ -513,7 +491,7 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 .nv-grand .ct-legende span:nth-last-child(-n+2){justify-self:center}
 .nv-grand .ct-ligne>.ct-jg,.nv-grand .ct-ligne>.ct-cab{justify-self:center}
 .nv-grand .ct-sans .ct-legende span:first-child,.nv-grand .ct-sans .ct-ligne>.ct-pin{justify-self:center}
-.nv-grand .ct-legende{font:650 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase}
+.nv-grand .ct-legende{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase}
 .nv-grand .fi-note.ct-note{margin:0 0 10px;padding:10px 14px;border-radius:10px;background:var(--s-sunken);color:var(--t-2);font:400 var(--f-13)/1.5 var(--sans)}
 /* le raccord : sa tête (le Ø du toron en pastille, les options à droite), puis une liste de pièces sur une ligne chacune —
    ce que c'est, sa référence, son état — dans un cadre fin ; plus de libellés perdus au-dessus de leur valeur */
@@ -532,10 +510,10 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 .nv-grand .vu-fig-module{display:flex;flex-direction:column;align-items:center;gap:10px;margin:4px auto 0;padding:18px 28px 14px}
 .nv-grand .vu-fig-module svg{width:min(300px,100%);height:auto}
 .nv-grand .vu-fig-module .vu-faces-g{display:flex;gap:18px;justify-content:center}
-.vu-trav .bro-lettre{font-size:11px;font-family:var(--sans);font-weight:650;letter-spacing:.04em}
+.vu-trav .bro-lettre{font-size:11px;font-family:var(--sans);font-weight:600;letter-spacing:.04em}
 .nv-grand .vu-fig-module svg.vu-face{width:auto;height:auto;max-height:260px;min-height:180px;max-width:100%}
 .nv-grand .vu-fig-module .vu-faces-g svg.vu-face{min-height:220px}
-.vu-trav .bro-cote{font:650 10.5px var(--sans);letter-spacing:.06em;text-transform:uppercase;fill:var(--nv-cuivre)}
+.vu-trav .bro-cote{font:600 11px var(--sans);letter-spacing:.06em;text-transform:uppercase;fill:var(--nv-cuivre)}
 .vu-trav .bro-sens{font:500 11.5px var(--sans);fill:var(--t-3)}
 
 /* ═══ v81 — LE RÉCAPITULATIF (le lecteur : « des flèches pas de la même taille, pas de la même épaisseur ; le tableau des
@@ -577,14 +555,14 @@ body.table-graphite:not(.biblio){--table-fond:radial-gradient(ellipse 80% 70% at
 
 /* ═══ v82 ═══ */
 /* l'anneau d'un câble porte sa part, en pourcentage (le lecteur : « 9,31 A sur 21 : un pourcentage, léger, pratique ») */
-svg.vu-anneau .vu-an-t{font:650 9.5px var(--sans);fill:var(--t-1);text-anchor:middle;font-variant-numeric:tabular-nums}
+svg.vu-anneau .vu-an-t{font:600 9.5px var(--sans);fill:var(--t-1);text-anchor:middle;font-variant-numeric:tabular-nums}
 svg.vu-anneau .vu-an-t .vu-an-pc{font-size:6.5px;font-weight:500;fill:var(--t-3)}
 .nv-grand table.nv-cables :is(.nv-td-i,.nv-td-u) .nv-mes{width:140px}
 /* les problèmes et attentions : une seule section compacte — le compte en tête, une ligne par point */
 .nc-taches.nc-pbs{display:flex;flex-direction:column;gap:0;padding:0;border-radius:14px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line),inset 3px 0 0 var(--warn);overflow:hidden}
 .nc-taches.nc-pbs.ko{box-shadow:0 0 0 1px color-mix(in srgb,var(--ko) 26%,var(--s-line)),inset 3px 0 0 var(--ko)}
 .nc-pbs-tete{display:flex;align-items:center;gap:8px;padding:9px 14px 7px 16px}
-.nc-pbs-n{display:inline-flex;align-items:baseline;gap:7px;font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase}
+.nc-pbs-n{display:inline-flex;align-items:baseline;gap:7px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase}
 .nc-pbs-n b.ko{color:var(--ko)} .nc-pbs-n b.att{color:var(--warn)} .nc-pbs-n i{font-style:normal;color:var(--t-3)}
 .nc-taches.nc-pbs .nc-tache,.nv-grand .nv-afaire .nc-taches.nc-pbs .nc-tache,.nv-afaire .nc-taches.nc-pbs .nc-tache,.nc>.nc-taches.nc-pbs .nc-tache{display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;column-gap:10px;margin:0;padding:8px 14px 8px 16px;border-radius:0;background:none;box-shadow:none;border-top:1px solid var(--s-line)}
 .nc-taches.nc-pbs .nc-tache:hover{background:var(--s-hover);box-shadow:none}
@@ -592,7 +570,7 @@ svg.vu-anneau .vu-an-t .vu-an-pc{font-size:6.5px;font-weight:500;fill:var(--t-3)
 .nc-taches.nc-pbs .nc-tache.ko .nc-rond{background:var(--ko)}
 .nc-taches.nc-pbs .nc-tache .nc-rond svg{display:none}
 .nc-taches.nc-pbs .nc-t{padding:0}
-.nc-taches.nc-pbs .nc-t b{font:550 var(--f-13)/1.35 var(--sans);color:var(--t-1)}
+.nc-taches.nc-pbs .nc-t b{font:600 var(--f-13)/1.35 var(--sans);color:var(--t-1)}
 .nc-taches.nc-pbs .nc-tache.ko .nc-t b{color:var(--t-1)}
 .nc-taches.nc-pbs .nc-t small{display:none}
 .nc-taches.nc-pbs .nc-geste .btn{height:28px;font-size:var(--f-12)}
@@ -615,8 +593,8 @@ svg.vu-face .vu-ct-g.va:focus{outline:none}
 .vu-fr{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;padding:11px 14px 12px;border:0;border-radius:12px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);color:var(--t-1);text-align:left;cursor:pointer;transition:box-shadow var(--rapide),transform var(--rapide)}
 .vu-fr:hover{box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne);transform:translateY(-1px)}
 .vu-fr.ici{background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1.5px var(--nv-cuivre);cursor:default;transform:none}
-.vu-fr-n{font:650 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--nv-cuivre)}
-.vu-fr b.id{font:650 var(--f-14) var(--mono)}
+.vu-fr-n{font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--nv-cuivre)}
+.vu-fr b.id{font:600 var(--f-14) var(--mono)}
 .vu-fr small{font:500 var(--f-11) var(--mono);color:var(--t-3);max-width:100%;overflow-wrap:anywhere}
 .vu-fr-f{font:500 var(--f-11) var(--sans);color:var(--t-2)}
 .vu-fr.ko .vu-fr-n::after,.vu-fr.att .vu-fr-n::after{content:"";display:inline-block;width:6px;height:6px;margin-left:6px;border-radius:50%;background:var(--warn);vertical-align:1px}
@@ -652,17 +630,10 @@ svg.vu-face .vu-ct-g.va:focus{outline:none}
 
 
 /* ═══ v82 — LES FONDS (palette retenue après l’étude des couleurs) ═══ */
-/* ═══ PALETTE « Nuit bleue raffinée » ═══
-   La table garde la nuit bleue que le lecteur aime, mais plus claire en bas, moins saturée : une ardoise bleue,
-   plus une encre. Dessus, le cadre en graphite et le papier neutre : blanc pierre le jour, graphite chaud la nuit
-   (trois crans nets : la page, les cartes, la bande — la bande est la plus claire, elle se lit comme le menu).
-   Jetons : la table (--table-fond, --s-app, nappes, points), le cadre (#entete, --palet), le papier des feuilles
-   (--s-*, --t-*), la page sous les cartes (--v-fond), la bande d'onglets (--v-bande…), l'en-tête des tableaux
-   (--v-tete, --v-tete-t). ═══ */
+/* Le papier des feuilles (--s-*, --t-*), la page sous les cartes (--v-fond), la bande d'onglets (--v-bande…), l'en-tête
+   des tableaux (--v-tete, --v-tete-t). (v84 : la table et le cadre bleus d'ici sont repris aux jetons graphite / pierre par
+   style.css et style-z-cadre.css — retirés.) */
 /* ─── le jour ─── */
-:root{--s-app:#18233a;--palet:rgba(30,31,35,.95);--palet-2:rgba(44,45,50,.97)}
-body:not(.biblio){--table-fond:radial-gradient(1100px 760px at 92% -12%,rgba(132,160,218,.24),rgba(132,160,218,0) 62%),linear-gradient(160deg,#26344f 0%,#1c2840 46%,#141d30 100%);--nappe-a:radial-gradient(closest-side,rgba(110,148,222,.18),rgba(110,148,222,.06) 48%,rgba(110,148,222,0));--nappe-b:radial-gradient(closest-side,rgba(64,118,168,.15),rgba(64,118,168,.05) 52%,rgba(64,118,168,0));--grille-repos:rgba(172,196,240,.12);--s-grille-revele:rgba(196,216,255,.30)}
-#entete{background:rgba(24,25,29,.95)}
 #inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet{--s-surface:#ffffff;--s-sunken:#f5f4f0;--s-hover:#f0eee9;--s-line:#e6e3dc;--s-line-2:#d6d2c9;--s-flottant:#ffffff;--t-1:#1c1c1f;--t-2:#53555b;--t-3:#67696f;--accent-soft:#efede8;--accent-line:#cfcac0;--info-soft:#f1efea;--v-fond:#f0efea;--v-bande:#2b2d33;--v-bande-2:#373a41;--v-bande-t:#eef0f2;--v-bande-s:#aeb1b8;--v-tete:#efede7;--v-tete-t:#53555b;--v-carte-haut:transparent;--v-bande-att:#f2b55c;--v-bande-ko:#ff8f84;--filet-champ:#8c8e94}
 /* ─── la nuit : le réglage du système, puis le choix explicite ─── */
 @media (prefers-color-scheme: dark){
@@ -707,10 +678,10 @@ body:not(.biblio){--table-fond:radial-gradient(1100px 760px at 92% -12%,rgba(132
    seconde), le repère seul en grand dessous — on lit « ce que c'est », puis « lequel » ; le titre est étroit, le coin
    droit est libre : le filigrane s'y loge, plus petit, sans rien toucher. */
 .fi.nv-c .nc-tete{margin-top:-2px}
-.fi.nv-c .nc-tete .nc-titre{flex-direction:column;flex-wrap:nowrap;align-items:center;gap:2px;font-size:30px}
+.fi.nv-c .nc-tete .nc-titre{flex-direction:column;flex-wrap:nowrap;align-items:center;gap:2px;font-size:var(--f-28)}
 .fi.nv-c .nc-titre .nc-tiret{display:none}
-.fi.nv-c .nc-titre .nc-genre-mot{font:650 var(--f-12)/1.3 var(--sans);letter-spacing:.11em;text-transform:uppercase;color:var(--t-2)}
-.fi.nv-c .nc-titre .nc-rep-in,.fi.nv-c .nc-titre .nc-rep-t{height:38px;font:700 30px/1 var(--sans);letter-spacing:-.025em;text-align:center}
+.fi.nv-c .nc-titre .nc-genre-mot{font:600 var(--f-11)/1.3 var(--sans);letter-spacing:.11em;text-transform:uppercase;color:var(--t-2)}
+.fi.nv-c .nc-titre .nc-rep-in,.fi.nv-c .nc-titre .nc-rep-t{height:38px;font:700 var(--f-28)/1 var(--sans);letter-spacing:-.025em;text-align:center}
 .fi.nv-c .nc-meta{margin-top:-6px}
 .fi.nv-c .nc-filigrane{top:-18px;right:-12px;width:96px;height:96px}
 
@@ -759,7 +730,7 @@ svg.vu-face:has(circle.vu-corps) text.pris{fill:#fff}
 .nv-grand #nv-p-reglages .fs-champs{display:flex;flex-direction:column;gap:0;width:100%;max-width:none;margin:2px 0 0}
 .nv-grand #nv-p-reglages .fs-champs>.fc{box-sizing:border-box;width:100%;max-width:none;align-self:stretch;display:grid;grid-template-columns:132px minmax(0,1fr);column-gap:16px;row-gap:6px;align-items:center;padding:12px 0;border-top:1px solid var(--s-line)}
 .nv-grand #nv-p-reglages .fs-champs>.fc:first-child{border-top:0;padding-top:4px}
-.nv-grand #nv-p-reglages .fs-champs>.fc>.fc-k{grid-column:1;font:550 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
+.nv-grand #nv-p-reglages .fs-champs>.fc>.fc-k{grid-column:1;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
 .nv-grand #nv-p-reglages .fs-champs>.fc>.fc-v{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .nv-grand #nv-p-reglages .fs-champs>.fc>.fc-sous{grid-column:2;margin:0;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
 /* ce qui se choisit : un champ */

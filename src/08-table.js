@@ -1,10 +1,10 @@
 /* ===========================================================================
-   08 — LA TABLE VIVANTE (v73, « Nuit bleue » sublimée)
+   08 — LA TABLE VIVANTE (v73 ; v84 : le graphite chaud et le cuivre)
    Le lecteur (v72) : « un fond pas que noir, un peu dégradé, un petit peu interactif, qui bouge comme une application un
    peu futuriste — mais pas trop, pas m'as-tu-vu ». Puis (v73) : « le fond est statique, sauf la lumière qui suit la souris :
    il doit bouger un peu ». La table vit donc, doucement, même quand la main se repose — et s'endort quand on n'est plus là.
    Ses couches (page.html `#table`, leur dessin dans style-table.css), de bas en haut :
-   · le FOND, l'encre bleu nuit dégradée (la lumière du coin haut-droit) : immobile ;
+   · le FOND, le graphite dégradé (la pierre claire, le jour du plan) et sa lumière de coin : immobile ;
    · deux NAPPES de lumière qui DÉRIVENT — translation seule, sur des périodes premières entre elles (47 s et 61 s : ça ne
      se répète jamais à l'œil), ±4 vw et ±3 vh ; la seconde respire aussi (24 s, son opacité seule). Elles remplacent le
      souffle d'avant. Écrites à 10 Hz, pas à 60 : à quelques pixels par seconde l'œil ne voit pas la différence, et deux
@@ -12,10 +12,10 @@
      repos ; la rotation de calques plein écran, essayée, faisait tomber la cadence à 30 images/s : écartée) ;
    · les POINTS, un tous les 24 px, plus discrets au repos et estompés vers les bords ; ils glissent d'un dixième sous le
      plan (la parallaxe) ;
-   · la LUEUR froide qui suit la souris, sur un ressort amorti critique (posée en une demi-seconde, sans dépassement) et
+   · la LUEUR qui suit la souris, sur un ressort amorti critique (posée en une demi-seconde, sans dépassement) et
      qui s'arrête avec la main ; sous elle, la grille se RÉVÈLE (les mêmes points, plus vifs, recalés sur la grille) : la
      souris est une lampe posée sur la table ;
-   · le COURANT : de temps en temps (14 à 22 s), un éclat de glace court le long d'une rangée de points — l'électricité,
+   · le COURANT : de temps en temps (14 à 22 s), un éclat de cuivre court le long d'une rangée de points — l'électricité,
      discrète —, seulement sur la bibliothèque, dans une bande libre, jamais sous ce qu'on lit, jamais deux à la fois.
    SOBRE : 90 s sans la main, la dérive ralentit jusqu'à l'arrêt (2 s) et plus rien ne tourne ; un geste la relance (1,2 s).
    Pendant un long travail (la conversion en lot, le dossier PDF, le placement d'un folio), elle attend aussi.
@@ -75,13 +75,14 @@ function reposerAccueil(oui) { document.body.classList.toggle('au-repos', oui);
   document.querySelectorAll('#bi-page svg.mq, #bi-page .bi-hero svg').forEach(s => { try { if (oui) s.pauseAnimations(); else s.unpauseAnimations(); } catch (_) { } }); }
 /* LE PASSAGE de la bibliothèque au plan, et retour (08-bibliotheque, `montrerLePlan`, `montrerBibliotheque`) : la table change
    de matière (le graphite de l'accueil, la table du plan) — au lieu d'un saut, l'ancienne se pose par-dessus la nouvelle et
-   s'efface en 420 ms : un fondu enchaîné. Appelée AVANT que le corps change de classe (la table d'avant est encore là). */
+   s'efface en 400 ms (la durée d'entrée) : un fondu enchaîné. Sa courbe est symétrique, pas la courbe vive des gestes :
+   avec elle, le graphite était parti en 130 ms — du noir au clair, l'œil le prenait pour un éclair. Appelée AVANT que le corps change de classe (la table d'avant est encore là). */
 function fonduTable() { const t = $('table'), f = t && t.querySelector('.ta-fond'); if (!f || mouvementReduit()) return;
   // (par-dessus toutes les couches : les nappes et les points de la table neuve ne percent pas l'ancienne pendant le fondu)
   let v = t.querySelector('.ta-passe'); if (!v) { v = document.createElement('div'); v.className = 'ta-passe'; t.appendChild(v); }
   const s = getComputedStyle(f); v.getAnimations().forEach(a => a.cancel());
   v.style.backgroundColor = s.backgroundColor; v.style.backgroundImage = s.backgroundImage;
-  v.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); }
+  v.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); }
 /* On est là (la souris, le clavier, la molette) : la dérive s'éveille, ou reste éveillée 90 s de plus. */
 function eveillerTable() { const T = TABLE; if (!T.el || mouvementReduit() || document.hidden) return; T.main = performance.now();
   if (!T.cible) { T.cible = 1; T.el.classList.remove('dort'); reposerAccueil(false); }
@@ -98,7 +99,7 @@ function pasDeLaLueur(n) { const T = TABLE, dt = Math.min(.05, (n - (T.t || n)) 
   T.vx += ax * dt; T.vy += ay * dt; T.px += T.vx * dt; T.py += T.vy * dt; poserLueur();
   T.anim = Math.abs(T.x - T.px) + Math.abs(T.y - T.py) > .4 || Math.abs(T.vx) + Math.abs(T.vy) > 2 ? requestAnimationFrame(pasDeLaLueur) : 0; if (!T.anim) T.t = 0; }
 
-/* LE COURANT : un éclat de glace sur une rangée de points, dans une bande que rien ne couvre (la bibliothèque : sa
+/* LE COURANT : un éclat de cuivre sur une rangée de points, dans une bande que rien ne couvre (la bibliothèque : sa
    composition, ses cartes, le dock ; la barre du haut). Sur le plan, la table se tait : on y travaille. */
 function planifierCourant() { clearTimeout(TABLE.courantT); TABLE.courantT = setTimeout(courir, 6000 + Math.random() * 5000); }
 function rangeesLibres() { const H = innerHeight, haut = (typeof $ === 'function' && $('entete') ? $('entete').getBoundingClientRect().bottom : 52) + 20;

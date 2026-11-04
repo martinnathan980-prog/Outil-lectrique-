@@ -698,7 +698,8 @@ const filsDeBarretteAPoser = nom => { const L = liaisonsDuPlan(); return ((app.d
 // les couleurs des routes, dans l'ordre où elles se donnent (les routes par leur nom) : ni le rouge ni le vert des ÉTATS
 // en tête (l'audit v72 : « une prise saine montre quatre contacts rouges ») — le bleu, le violet, la sarcelle, le brun,
 // l'ardoise, l'olive, le magenta ; l'orange, le rouge et le vert en dernier, pour un contrat à huit routes et plus
-const PALETTE_ROUTES = ['#1f5fbf', '#7d3c98', '#117a8b', '#9a6324', '#9c7a00', '#5d6d1e', '#c2185b', '#d35400', '#c0392b', '#1e8449'];
+// (v84) les six teintes froides du dessin (06, `TEINTES_ROUTES`) : ni rouge, ni ambre, ni vert des états, ni fuchsia, ni cuivre
+const PALETTE_ROUTES = TEINTES_ROUTES;
 function couleursDesRoutes() { const choisies = app.contrat.couleursRoutes || {}, m = new Map();
   [...new Set(app.contrat.liaisons.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, choisies[r] || PALETTE_ROUTES[i % PALETTE_ROUTES.length]));
   return m; }
@@ -740,10 +741,10 @@ function peindre() {
   const designation = n => { if (!des.has(n)) des.set(n, designationDe(n)); return des.get(n); };
   const disjoncteur = n => { if (!cal.has(n)) cal.set(n, calibresDuFolio(n)); return cal.get(n); };
   const sig = JSON.stringify([folio, app.contrat.cartouche, D.comps.map(c => [designation(c.name), c.kind === 'equip' && estDisjoncteur(c.name) ? [disjoncteur(c.name).calibre, disjoncteur(c.name).retest || null] : null, c.kind === 'equip' ? ail(c.name) : null])]);
-  if (peint.dessin === D && peint.sig === sig && $('scene')) { peindreChoix(); appliquerVue(); montrerAttente(); return; }
+  if (peint.dessin === D && peint.sig === sig && $('scene')) { peindreChoix(); peindreEtats(); appliquerVue(); montrerAttente(); return; }
   svg.innerHTML = styleDessin() + `<g id="scene" transform="translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})">`
     + sceneSvg(D, app.contrat.cartouche, folio, designation, null, disjoncteur, ail) + '</g>';
-  peint = { dessin: D, sig }; peindreChoix(); appliquerVue(); montrerAttente();
+  peint = { dessin: D, sig }; peindreChoix(); peindreEtats(); appliquerVue(); montrerAttente();
 }
 /* Les autres folios où paraît chaque repère, par leur rang (« ↔ f. 2 · 4 » sous le repère, 06) : une passe sur le contrat. */
 function ailleursDesReperes() { const P = plans(), ou = new Map(); if (P.length < 2 || app.plan === '*') return () => null;
@@ -759,6 +760,13 @@ function peindreChoix() { const sc = $('scene'); if (!sc || !app.dessin) return;
   const gs = [...sc.querySelectorAll('.comp')].filter(g => g.dataset.name === n), ici = gs.some(g => +g.dataset.k === app.choisiK) ? app.choisiK : gs.length ? +gs[0].dataset.k : -1;
   gs.forEach(g => { const c = D.comps[+g.dataset.k]; if (!c) return; const h = crochetsDe(c); g.insertAdjacentHTML('afterbegin', gs.length > 1 && +g.dataset.k !== ici ? h.replace('class="selbox"', 'class="selbox selbox-autre"') : h); });
   sc.querySelectorAll('.vt').forEach(g => { if (g.dataset.vt !== n) return; const b = (D.barrettes || []).find(x => x.nomVT === nom); if (!b) return; g.classList.add('sel'); g.insertAdjacentHTML('beforeend', crochetsDeBarrette(b)); }); }
+/* (v84) LES ÉTATS SUR LE PLAN : le bloc qui porte un problème se borde du rouge des états, celui qui a un point à voir de
+   l'ambre (style-dessin.css, `.etat-ko`, `.etat-att`), d'après le contrôle (08-controle, `CONTROLE.items`). À l'écran
+   seulement : posés sur le folio affiché, jamais dans ce qui s'exporte (le SVG, le PNG, le PDF refont leur dessin). Refaits
+   à chaque rendu (`peindre`) et à chaque contrôle (`synchroniser` : une correction, un Ctrl+Z, une hypothèse). */
+function peindreEtats() { const sc = $('scene'); if (!sc) return; const niv = new Map();
+  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).forEach(x => { if (x.nom && niv.get(String(x.nom)) !== 'ko') niv.set(String(x.nom), x.niveau === 'ko' ? 'ko' : 'att'); });
+  sc.querySelectorAll('.comp[data-name]').forEach(g => { const e = niv.get(g.dataset.name) || ''; g.classList.toggle('etat-ko', e === 'ko'); g.classList.toggle('etat-att', e === 'att'); }); }
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 
 /* ---- la vue : zoom, cadrage, l'ombre sous la feuille ------------------- */
@@ -2892,7 +2900,7 @@ function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDe
     if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }
   const m = $('mn-retest'); if (m) m.textContent = n ? motChangements(n) : 'telle que votre fichier, rien de changé';
   const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'installation corrigée · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
-function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); peindreEtats(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
 /* LE RAIL SE DÉPLIE (le technicien : « la liste à puces avec une pastille, je la prends pour des notifications ; le ⊸+ pour un
    curseur de réglage ») : au survol prolongé — 250 ms, une main qui passe ne l'ouvre pas —, il montre le mot et la touche
    de chaque outil (style.css, `#rail.deplie`). Il se replie dès qu'on clique (et ne se rouvre pas sous la main restée là :
@@ -3088,13 +3096,13 @@ function lierPanneau() {
   const strip = $('fo-strip'); strip.addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
   // le nom entier d'un folio, dans la bulle de la planche (pas l'infobulle du système) : une bulle pour toute la bande,
   // posée au-dessus de la puce survolée — dans la puce, elle serait rognée par la bande qui défile. Elle suit la règle des
-  // bulles du chrome (08-menu) : 400 ms la première, tout de suite si une bulle vient de se fermer, éteinte au clic
+  // bulles du chrome (08-menu) : `--bulle-delai` la première, tout de suite si une bulle vient de se fermer, éteinte au clic
   const bulle = document.createElement('span'); bulle.className = 'bulle fo-bulle'; bulle.setAttribute('aria-hidden', 'true'); $('folios').appendChild(bulle);
   let tempo = 0; const cacher = () => { clearTimeout(tempo); if (bulle.classList.contains('on') && typeof bulleEteinte === 'function') bulleEteinte(); bulle.classList.remove('on'); };
   strip.addEventListener('pointerover', e => { const c = e.target.closest('.chip'); if (!c || e.pointerType === 'touch') return; clearTimeout(tempo);
     const vite = bulle.classList.contains('on') || (typeof bulleChaude === 'function' && bulleChaude());
     tempo = setTimeout(() => { const r = c.getBoundingClientRect(), f = $('folios').getBoundingClientRect(); bulle.textContent = c.dataset.nom;
-      bulle.style.left = Math.max(4, Math.min(r.left + r.width / 2 - f.left, f.width - 4)) + 'px'; bulle.classList.add('on'); }, vite ? 0 : 400); });
+      bulle.style.left = Math.max(4, Math.min(r.left + r.width / 2 - f.left, f.width - 4)) + 'px'; bulle.classList.add('on'); }, vite ? 0 : (typeof delaiBulle === 'function' ? delaiBulle() : 400)); });
   strip.addEventListener('pointerleave', cacher); strip.addEventListener('pointerdown', cacher); strip.addEventListener('scroll', cacher, { passive: true });
   // la bande des folios défile à la molette (elle n'a pas de barre), la liste déroulante y va d'un choix
   strip.addEventListener('wheel', e => { if (!e.deltaY || e.deltaX || strip.scrollWidth <= strip.clientWidth) return; e.preventDefault(); strip.scrollLeft += e.deltaY; }, { passive: false });

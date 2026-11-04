@@ -144,13 +144,27 @@ const planDeCoupure = nom => coupureEnModule(nom, verite(), app.norme, app.contr
    la fiche) passe devant celui de la table : `main` le dit, `auto` garde celui de la table. */
 function sertirDuFil(l) { const bout = (rep, borne) => { if (!rep || VT_A_POSER.test(rep) || estMasse(rep) || estRenvoi(rep)) return null; let x = null;
     try { const plans = coupureEnModules(rep) ? [planDeCoupure(rep).plan] : barretteEnModules(rep) ? [planDeBarrette(rep).plan] : cavitesDe(rep).map(c => c.plan);
-      for (const Q of plans) { x = (Q.fils || []).find(y => y.f.l === l); if (x) break; } } catch (_) { }
+      // un pont (A1 → A2 du même connecteur, `avecPonts`) a deux bouts dans le même plan : chacun se reconnaît à sa borne
+      for (const Q of plans) { x = (Q.fils || []).find(y => y.f.l === l && (l.de !== l.vers || String(y.borne) === String(borne))); if (x) break; } } catch (_) { }
     const main = contactMain(l, rep, borne), auto = x ? x.sertir || null : null;
     if (main) return { sertir: { reference: main, accessoire: '' }, auto, main: true, contact: x ? x.contact : null, sexe: x ? x.sexe || '' : '', ko: false };
     return x ? { sertir: auto, auto, main: false, contact: x.contact, sexe: x.sexe || '', ko: x.jaugeOk === false } : null; };
   return { de: bout(l.de, l.borneDe), vers: bout(l.vers, l.borneVers) }; }
+/* LA BARRETTE PARENTE et son rail (v84, le lecteur : « une barrette peut avoir plusieurs modules ») : les repères frères
+   (`rangDuParent`, 08-fiche : 668VT31 et 669VT32, modules 1 et 2 de VT3, sur tous les folios), leurs plans, et le rail
+   qui les porte tous (`railsDeBarrette`, 09) — commandé UNE fois, au PORTEUR, le frère de plus petit rang : sa fiche
+   (Pièces) et la LPA du plan le comptent, les autres modules renvoient à lui. Un repère sans parent (une barrette à
+   poser VT1, un 700VT) est sa propre barrette. Rend { parent, freres, porteur, rails, plans }. */
+function barretteParente(nom) { const f = typeof rangDuParent === 'function' ? rangDuParent(nom) : null, rang = r => (rangDuParent(r) || {}).rang || '';
+  const freres = f ? reperesDe(verite()).filter(r => barretteEnModules(r) && (rangDuParent(r) || {}).parent === f.parent).sort((a, b) => triBornes(rang(a), rang(b)) || triBornes(a, b)) : [];
+  if (!freres.includes(nom)) freres.push(nom);
+  const plans = freres.map(r => { try { return planDeBarrette(r).plan; } catch (_) { return null; } }).filter(Boolean);
+  return { parent: f ? f.parent : nom, freres, porteur: freres[0], rails: railsDeBarrette(app.norme, plans), plans }; }
 /* LE CONTACT ÉCRIT À LA MAIN au bout `rep` (borne `borne`) d'un fil : sur la liaison (le récapitulatif : `contactDe`,
    `contactVers`), sinon choisi sur la fiche (gardé avec le contrat : `designations`, « sertir|repère|borne »). Le
    récapitulatif, la fiche, la nomenclature et le contrôle lisent celui-ci. */
-function contactMain(l, rep, borne) { if (!l || !rep) return ''; const k = rep === l.de && l.contactDe ? l.contactDe : rep === l.vers && l.contactVers ? l.contactVers : '';
+function contactMain(l, rep, borne) { if (!l || !rep) return '';
+  // un pont (les deux bouts sur le même repère) : le bout se lit à sa borne
+  const cote = l.de === l.vers && rep === l.de ? (borne != null && String(borne) === String(l.borneVers) ? 'vers' : 'de') : rep === l.de ? 'de' : rep === l.vers ? 'vers' : '';
+  const k = cote === 'de' ? l.contactDe || '' : cote === 'vers' ? l.contactVers || '' : '';
   return k || (app.contrat.designations && app.contrat.designations.get('sertir|' + rep + '|' + (borne != null ? borne : rep === l.de ? l.borneDe : l.borneVers))) || ''; }

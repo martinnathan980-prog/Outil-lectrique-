@@ -6,15 +6,9 @@
    maquettes/accueil-vivant.html). Puis l'attente d'un folio (la barre, ce qu'on peut faire pendant), le fondu d'un dessin
    qui en remplace un autre, la petite bande qui dit ce qui travaille. */
 :root{
-  /* les nappes : deux ellipses de lumière (cuivre, lin), rastérisées une fois, que la dérive déplace — la table de chaque
-     écran les reteinte (le plan : style-z-cadre.css ; la bibliothèque : style-z-accueil.css) */
-  --nappe-a:radial-gradient(closest-side,rgba(236,165,112,.075),rgba(236,165,112,.025) 50%,rgba(236,165,112,0));
-  --nappe-b:radial-gradient(closest-side,rgba(255,236,216,.05),rgba(255,236,216,.018) 52%,rgba(255,236,216,0));
-  /* les points au repos (la grille se devine), sous la lueur (elle se révèle), estompés vers les bords */
-  --grille-repos:rgba(255,236,216,.075); --s-grille-revele:rgba(255,236,216,.22);
-  --points-vignette:radial-gradient(ellipse 72% 68% at 50% 46%,#000 35%,rgba(0,0,0,.35) 75%,transparent);
-  /* le courant : un trait de cuivre qui s'éclaire vers sa tête */
-  --courant:linear-gradient(90deg,rgba(236,165,112,0),rgba(236,165,112,.75) 70%,#ffd7b8)}
+  /* les nappes, les points, le courant : la table de chaque écran les teinte (le plan : style-z-cadre.css ; la
+     bibliothèque : style-z-accueil.css) — ici, ce que les couches partagent : le fondu des points vers les bords */
+  --points-vignette:radial-gradient(ellipse 72% 68% at 50% 46%,#000 35%,rgba(0,0,0,.35) 75%,transparent)}
 /* les nappes : centrées sur l'écran, plus grandes que lui ; la dérive (08-table) les pose à leur place et les promène */
 #table .ta-nappe{inset:auto;left:50%;top:50%;will-change:transform,opacity}
 #table .ta-nappe-a{width:120vmax;height:90vmax;margin:-45vmax 0 0 -60vmax;background:var(--nappe-a)}
@@ -22,8 +16,8 @@
 /* les points : un calque d'un pas plus grand que l'écran, que la parallaxe glisse (un transform, rien à repeindre) */
 #table .ta-points{inset:-24px;will-change:transform;background-image:radial-gradient(circle at 1px 1px,var(--grille-repos) 1px,transparent 1.5px);
   -webkit-mask-image:var(--points-vignette);mask-image:var(--points-vignette)}
-/* la lueur : un disque de lumière froide, posé par un ressort ; elle paraît quand la souris est vue */
-#table .ta-lueur{width:400px;height:400px;margin:-200px 0 0 -200px;transition:opacity .8s ease;background:var(--table-lueur)}
+/* la lueur : un disque de lumière (--table-lueur), posé par un ressort ; elle paraît quand la souris est vue */
+#table .ta-lueur{width:400px;height:400px;margin:-200px 0 0 -200px;transition:opacity var(--d-lent) var(--courbe);background:var(--table-lueur)}
 /* ce qu'elle révèle : les mêmes points, plus vifs, dans un disque estompé qui la suit (08-table les recale sur la grille) */
 #table .ta-revele{inset:auto;left:0;top:0;width:240px;height:240px;margin:-120px 0 0 -120px;overflow:hidden;border-radius:50%;opacity:0;transition:opacity .8s ease;will-change:transform;
   -webkit-mask-image:radial-gradient(closest-side,#000,rgba(0,0,0,.45) 55%,transparent);mask-image:radial-gradient(closest-side,#000,rgba(0,0,0,.45) 55%,transparent)}
@@ -31,7 +25,7 @@
   background-image:radial-gradient(circle at 1px 1px,var(--s-grille-revele) 1.1px,transparent 1.6px);background-size:24px 24px}
 #table.vue:not(.sur-lu) .ta-revele{opacity:1}
 #table.sur-lu .ta-revele{transition-duration:.35s}
-/* le courant : 150 × 1,5 px et sa tête (un point de glace, un halo) ; 08-table le fait courir (Web Animations) */
+/* le courant : 150 × 1,5 px et sa tête (un point de cuivre, un halo) ; 08-table le fait courir (Web Animations) */
 #table .ta-courant{inset:auto;left:0;top:0;width:150px;height:1.5px;border-radius:1px;opacity:0;will-change:transform,opacity;background:var(--courant);box-shadow:0 0 6px 1px color-mix(in srgb,var(--glace) 35%,transparent)}
 #table .ta-courant::after{content:"";position:absolute;right:-2px;top:-1.5px;width:4.5px;height:4.5px;border-radius:50%;background:color-mix(in srgb,var(--glace) 30%,#fff);box-shadow:0 0 8px 2px color-mix(in srgb,var(--glace) 55%,transparent)}
 /* le fondu d'une table à l'autre (08-table, `fonduTable`) : l'ancienne, posée par-dessus, qui s'efface */

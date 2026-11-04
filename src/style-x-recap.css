@@ -265,6 +265,7 @@
    point et ont toutes la même longueur (la charte : une colonne homogène) */
 #base #ba-tab .rc-int .rc-adm{display:inline-block;min-width:42px;margin-left:5px}
 #base #ba-tab .rc-int .rc-barre{margin-left:6px}
+#base #ba-tab .rc-int .rc-int-mot{display:inline-block;min-width:60px;text-align:left}
 
 /* ─── 13. LE CLAVIER SE VOIT ───
    Défaut : une valeur qui porte sa propre pastille (la borne, le type d'un câble) gardait son filet au focus — l'anneau

@@ -78,7 +78,7 @@
 .fi-des:hover{background:var(--fi-voile)}
 .fi-des:focus{outline:none;opacity:1;background:var(--s-surface);border-color:var(--accent);box-shadow:var(--anneau);color:var(--t-1)}
 .fi-nom-ligne{display:flex;align-items:center;gap:2px;max-width:100%;min-width:0}
-.fi-nom{display:block;min-width:0;max-width:100%;border:none;background:none;margin:0 0 0 -6px;padding:1px 6px;font:600 var(--f-24)/1.2 var(--mono);letter-spacing:-.01em;color:var(--t-1);border-radius:var(--r-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-nom{display:block;min-width:0;max-width:100%;border:none;background:none;margin:0 0 0 -6px;padding:1px 6px;font:600 var(--f-20)/1.2 var(--mono);letter-spacing:-.01em;color:var(--t-1);border-radius:var(--r-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 input.fi-nom{field-sizing:content;min-width:5ch;cursor:text;transition:box-shadow var(--rapide),background var(--rapide)}
 input.fi-nom:hover{background:var(--fi-voile)}
 input.fi-nom:focus{outline:none;background:var(--s-surface);box-shadow:inset 0 0 0 1.5px var(--accent),var(--anneau)}
@@ -361,7 +361,7 @@ details.fs[data-type="barrette"][data-section="connecteur"][open]>.fs-tete .fs-r
 .cand-l{display:grid;grid-template-columns:16px minmax(0,1fr) auto;column-gap:8px;row-gap:1px;align-items:baseline;width:100%;min-height:36px;margin:0;padding:6px 8px;border:none;border-radius:var(--r-1);background:none;text-align:left;color:var(--t-2);cursor:pointer;transition:background var(--rapide)}
 .cand-l+.cand-l{box-shadow:0 -1px 0 var(--s-line)}
 .cand-l:hover{background:var(--s-hover)}
-.cand-l-m{font:700 var(--f-12)/1 var(--sans);font-style:normal;text-align:center}
+.cand-l-m{font:600 var(--f-12)/1 var(--sans);font-style:normal;text-align:center}
 .cand-l.ko .cand-l-m{color:var(--ko)}
 .cand-l.att .cand-l-m{color:var(--warn)}
 .cand-l b{font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -375,7 +375,7 @@ details.fs[data-type="barrette"][data-section="connecteur"][open]>.fs-tete .fs-r
 .fi-norme-puce.main{border-color:color-mix(in srgb,var(--warn) 55%,var(--s-line-2))}
 .fi-norme-puce.ko{color:var(--ko);border-color:var(--ko);background:var(--ko-soft)}
 /* un contact de la liste : ✓ il admet le câble, ✕ il ne l'admet pas (cliquable quand même) */
-.ct-chip .ct-chip-m{margin-left:6px;font:700 var(--f-12)/1 var(--sans)}
+.ct-chip .ct-chip-m{margin-left:6px;font:600 var(--f-12)/1 var(--sans)}
 .ct-chip.ok .ct-chip-m{color:var(--ok)}
 .ct-chip.ko{color:var(--t-2)}
 .ct-chip.ko .ct-chip-m{color:var(--ko)}
@@ -495,7 +495,7 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .fi-sertir.meme{color:var(--t-2)}
 .fi-sertir.main{color:var(--warn);font-weight:600}
 .fi-jg{display:inline-flex;align-items:center;gap:4px;font:600 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap;font-variant-numeric:tabular-nums}
-.fi-jg i{font:700 var(--f-12) var(--sans)}
+.fi-jg i{font:600 var(--f-12) var(--sans)}
 .fi-jg.ok i{color:var(--ok)}
 .fi-jg.ko{color:var(--ko)}
 .fi-jg.ko i{color:var(--ko)}
@@ -609,7 +609,7 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .fi-sertir.fi-ct-puce:hover{border-color:var(--t-3);background:var(--s-surface)}
 .fi-sertir.fi-ct-puce.main{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--s-line))}
 .fi-sertir.fi-ct-puce.ko{color:var(--ko);border-color:color-mix(in srgb,var(--ko) 40%,var(--s-line));background:var(--ko-soft)}
-.fi-sertir.fi-ct-puce i{font:700 var(--f-11) var(--sans);color:var(--ko)}
+.fi-sertir.fi-ct-puce i{font:600 var(--f-11) var(--sans);color:var(--ko)}
 /* une barre d'état, fine : elle se remplit de sa couleur contre ce qui est admis */
 .fi-barre{display:block;height:4px;border-radius:2px;background:var(--s-line);overflow:hidden;min-width:40px}
 .fi-barre i{display:block;height:100%;border-radius:2px;background:var(--t-3);transform-origin:left center;transition:width var(--moyen)}
