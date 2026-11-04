@@ -226,9 +226,11 @@ const pluriel2 = (n, mot, mots) => n + ' ' + (n > 1 ? mots || mot + 's' : mot);
 function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMot = d.origine === 'pn' ? ' (part number)' : '';
   if (!d.sansCourbe) { if (d.sansProfil) out.push({ niveau: 'att', texte: (d.calibre ? amperes(d.calibre) + ' · ' : '') + 'le profil de charge est à renseigner : VOLTA trouve le calibre' });
     else if (!(d.calibre > 0)) out.push({ niveau: 'att', texte: 'aucun calibre de la gamme ne tient ce profil' });
-    else if (!d.valide) { const p = d.pire, m = p.marges[0], mini = d.calibreIdeal ? ` — l’idéal est un ${amperes(d.calibreIdeal)}` : ' — aucun calibre de la gamme ne tient';
-      out.push({ niveau: 'ko', texte: (p.t === Infinity ? `le permanent (${amperes(p.i)}) fait déclencher le ${amperes(d.calibre)} à ${m.courbe} (il tient jusqu'à ${amperes(m.admis)})`
-        : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche à ${m.courbe} (${motFraction(d.somme)} du temps de déclenchement consommé, il tient ${secondes(m.temps)} à ce courant)`) + mini }); }
+    // (v84) le point qui décide, en ampères : le seuil sur cette durée, le temps avant de disjoncter — plus de « tient » ni de pourcentage
+    else if (!d.valide) { const p = d.pire, m = p.marges[0], A = amperes(d.calibre), mini = d.calibreIdeal ? ` — l’idéal est un ${amperes(d.calibreIdeal)}` : ' — aucun calibre de la gamme ne convient';
+      out.push({ niveau: 'ko', texte: (p.t === Infinity ? `le permanent (${amperes(p.i)}) fait disjoncter le ${A} à ${m.courbe} : en permanence, il disjoncte dès ${amperes(m.admis)}`
+        : p.parLaSomme ? `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : seul, le ${A} ne disjoncterait qu’au-delà de ${amperes(m.admis)} à ${m.courbe}, mais les états mis bout à bout le font disjoncter`
+        : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${A} disjoncte dès ${amperes(m.admis)} à ${m.courbe}, au bout de ${secondes(m.temps)}`) + mini }); }
     // (v77, le lecteur : « si ça touche, c'est rouge ») : TOUCHER LA COURBE est un problème, comme déclencher ; un calibre plus
     // gros qu'il ne faut, ou la sélectivité, reste à voir
     else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: d.calibre < d.calibreIdeal && !d.avecMarge ? 'ko' : 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${pnMot} : un ${amperes(d.calibreIdeal)} suffirait`
@@ -413,14 +415,17 @@ function tempsDeCoupure(d, cal, i, p) { const c = (d.courbes || [])[0]; if (!c |
    (le permanent sans sa marge, la pointe majorée qui le ferait couper, la part du temps de déclenchement consommée) ; PASSE
    — avec la marge, et ce qu'il demande encore (des câbles plus gros, la sélectivité). `g` : sa case de la gamme. La ligne
    détaillée du verdict, sous le cadran ; la bulle d'un cran prend la phrase du domaine C (09, `pourquoiDuCalibre`). */
-function raisonDuCalibre(d, g) { const k = cleDuVerdict(g), c = g.calibre, ch = chargeDuProfil(d), p = ch.pointeP, M = d.marges || {}, kM = M.k || 1;
-  if (k === 'declenche') { if (g.permanentOk === false && ch.perm) return `il ne garantit que ${amperes(g.tenu)} en permanence, il en faut ${amperes(ch.perm)}`;
-    if (p) { const t = tempsDeCoupure(d, c, p.i, p); return `${amperes(p.i)} ${quandDuPoint(p)} pendant ${secondes(p.t)} : il coupe ${t === Infinity ? 'quand le bilan s’accumule' : 'en ' + secondes(t)}`; }
-    return 'il déclenche'; }
-  if (k === 'juste') { if (g.permanentMargeOk === false && ch.perm) return `le permanent passe sans ${nombre(M.marge || 0)} % de marge : il garantit ${amperes(g.tenu)} pour ${amperes(ch.perm)}`;
-    if (p && g.sommeMarge != null && g.sommeMarge >= 1) { const t = tempsDeCoupure(d, c, p.i * kM, p); return `il touche la courbe : avec ${nombre(M.marge || 0)} % de marge, ${amperes(Math.round(p.i * kM * 100) / 100)} le feraient couper en ${secondes(t)} (${quandDuPoint(p)}, ${secondes(p.t)})`; }
-    if (p && g.somme != null) return `il touche la courbe : ${quandDuPoint(p)}, ${amperes(p.i)} consomment ${motFraction(g.somme)} de son temps de déclenchement (${Math.round((M.fraction || 1) * 100)} % au plus)`;
-    return 'il passe sans la marge : il touche la courbe'; }
+function raisonDuCalibre(d, g) { const k = cleDuVerdict(g), c = g.calibre, ch = chargeDuProfil(d), p = ch.pointeP;
+  // (v84) un calibre qui disjoncte : SON point qui décide (09 bis, `g.pire` — le permanent s'il est en cause, sinon l'état qui
+  // passe le plus loin au-delà de son seuil), ses chiffres en ampères ; plus la plus forte pointe, qui peut passer. Plus de
+  // « juste » ni de marge : valide ou pas valide.
+  if (k === 'declenche' || k === 'juste') { const q = g.pire;
+    if (q && q.t === Infinity) return `il ne garantit que ${amperes(q.seuil)} en permanence, il en faut ${amperes(q.i)}`;
+    if (q && q.parLaSomme) return `${amperes(q.i)} ${quandDuPoint(q)} pendant ${secondes(q.t)} : seul, il ne disjoncterait qu’au-delà de ${amperes(q.seuil)} ; mis bout à bout, les états le font disjoncter`;
+    if (q) return `${amperes(q.i)} ${quandDuPoint(q)} pendant ${secondes(q.t)} : il disjoncte dès ${amperes(q.seuil)}, au bout de ${secondes(q.avant)}`;
+    if (g.permanentOk === false && ch.perm) return `il ne garantit que ${amperes(g.tenu)} en permanence, il en faut ${amperes(ch.perm)}`;
+    if (p) { const t = tempsDeCoupure(d, c, p.i, p); return `${amperes(p.i)} ${quandDuPoint(p)} pendant ${secondes(p.t)} : il disjoncte ${t === Infinity ? 'quand les états s’ajoutent' : 'au bout de ' + secondes(t)}`; }
+    return 'il disjoncte'; }
   if (k === 'passe') { const r = []; if (g.fils === false) r.push('des câbles à grossir'); if (g.selectif === false) r.push('pas à 2:1 avec le voisin'); return r.join(' · '); }
   return 'rien ne se juge sans profil de charge'; }
 /* LES CALIBRES DU CADRAN (et de « À la main ») : chaque calibre de la gamme — `tout` : de toute la famille —, jugé, avec
@@ -599,7 +604,8 @@ function tableauProfil(d, plus) { const P = d.profil, E = etatsDuProfil(P), parI
     const auCourant = `À ${amperes(p.i)}, le ${C}`;
     if (p.ok) return T === Infinity ? { mot: 'ne disjoncte jamais à ce courant', bulle: `${auCourant} ne disjoncte jamais : ce courant reste sous le seuil de sa courbe.` }
       : { mot: `ne disjoncterait qu’après ${secondes(T)}`, bulle: `${auCourant} ne disjoncterait qu’au bout de ${secondes(T)} ; ${dure} : il ne disjoncte pas.` };
-    if (perm && T === Infinity) return { mot: `disjoncte au-delà de ${amperes(m.garanti || 0)}`, bulle: `En permanence, le ${C} ne garantit de ne pas disjoncter que jusqu’à ${amperes(m.garanti || 0)} ; il en tire ${amperes(p.i)} : il disjoncte.` };
+    // (v84) « dès » : pile sur ce qu'il garantit, ou arrondi au même centième, « au-delà de » se contredirait
+    if (perm && T === Infinity) return { mot: `disjoncte dès ${amperes(m.garanti || 0)}`, bulle: `En permanence, le ${C} ne garantit de ne pas disjoncter que jusqu’à ${amperes(m.garanti || 0)} ; il en tire ${amperes(p.i)} : il disjoncte.` };
     if (perm || T <= p.t) return { mot: `disjoncte au bout de ${secondes(T)}`, bulle: `${auCourant} disjoncte au bout de ${secondes(T)}${perm ? ', et ce courant dure toujours' : ' ; ' + dure} : il disjoncte.` };
     return { mot: 'disjoncte avec les autres états', bulle: `Seul, cet état ne le ferait disjoncter qu’au bout de ${secondes(T)} ; mais chaque état chauffe le disjoncteur, et, mis bout à bout, les états font disjoncter le ${C}.` }; };
   // (un disjoncteur est valide ou pas : le verdict de la ligne est rouge quand le moteur dit que ce point fait disjoncter, gris sinon)

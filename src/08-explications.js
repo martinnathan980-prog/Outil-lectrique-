@@ -20,7 +20,7 @@
    dans les hypothèses (`HYPOTHESES`, `app.simu`), pas dans le texte.
    `contexte` (facultatif) dit la valeur concrète ; sans lui, la phrase
    générale. Ce qu'il peut porter, par clé :
-     calibre      { calibre, origine ('main' | 'pn' | 'ideal'), meilleur (A), permanent, marge, temperature, garanti, famille }
+     calibre      { calibre, origine ('main' | 'pn' | 'ideal'), meilleur (A), permanent, temperature, garanti, famille }
                   — ou `verdict` (`disjonctionDe(…)`), ou `meilleur`, l'objet du moteur
      courbe       { famille, tableauMin, tableauMax }
      profil       { permanent, pointe: { i, t }, somme } (somme : la part du temps de déclenchement)
@@ -62,7 +62,8 @@ const EXPLICATIONS = {
     const cal = c && exPositif(c.calibre) ? c.calibre : d && exPositif(d.calibre) ? d.calibre : m && exPositif(m.calibre) ? m.calibre : null;
     const best = c && exPositif(c.meilleur) ? c.meilleur : m && exPositif(m.calibre) ? m.calibre : null, origine = (c && c.origine) || (d && d.origine) || (c && c.main ? 'main' : '');
     const perm = c && exPositif(c.permanent) ? c.permanent : exPositif(mg.permanent) ? mg.permanent : null, garanti = c && exPositif(c.garanti) ? c.garanti : exPositif(mg.garanti) ? mg.garanti : null;
-    const marge = c && c.marge != null && isFinite(+c.marge) ? +c.marge : mg.courant != null ? mg.courant : +H.marge, T = c && c.temperature != null && isFinite(+c.temperature) ? +c.temperature : isFinite(mg.temperature) ? mg.temperature : +H.tableauMax;
+    // (v84) plus de marge : valide ou pas valide (v80) — la température qui juge, seule
+    const T = c && c.temperature != null && isFinite(+c.temperature) ? +c.temperature : isFinite(mg.temperature) ? mg.temperature : +H.tableauMax;
     // la gamme ESSAYÉE (v73, l'ingénieur : « il cite 25 A dans la gamme MS3320 ») : celle de la famille du part number, filtrée
     // par vos calibres préférés — le cadran la montre ; le catalogue entier de la famille, quand il en a plus
     const F = d && d.famille && typeof d.famille === 'object' ? d.famille : null, essayes = d && Array.isArray(d.catalogue) && d.catalogue.length ? d.catalogue : null;
@@ -70,24 +71,24 @@ const EXPLICATIONS = {
     const gamme = essayes ? essayes.map(exN).join(' · ') + ' A' : exGamme(H), filtre = essayes && tout && tout.length > essayes.length ? ` (${essayes.length} sur ${tout.length} : vos préférés)` : '';
     const essaie = essayes ? `Essaie la gamme${F && F.famille ? ' ' + F.famille : ''}, du plus petit au plus grand : ${gamme}${filtre}` : `Essaie chaque calibre de votre gamme${gamme ? ' (' + gamme + ')' : ''}, du plus petit au plus grand`;
     const fam = (c && typeof c.famille === 'string' ? c.famille : '') || (m && m.famille) || '', autre = best && cal && Math.abs(best - cal) > 1e-9;
-    const phrase = !cal ? `Le plus petit calibre de votre gamme qui passe votre profil, avec ${exN(marge)} % de marge.`
+    const phrase = !cal ? 'Le plus petit calibre de votre gamme qui ne disjoncte pas sous votre profil.'
       : origine === 'main' ? `${exA(cal)}, choisi à la main${autre ? ` — « Automatique » prend ${exA(best)}` : ''}.`
-      : autre ? `Le meilleur est ${exA(best)} : le plus petit de votre gamme${fam ? ' ' + fam : ''} qui passe ; le ${exA(cal)} ${cal < best ? 'ne passe pas' : 'est plus gros que nécessaire'}.`
-      : best ? `${exA(cal)} : le plus petit de votre gamme${fam ? ' ' + fam : ''} qui passe votre profil.` : origine === 'pn' ? `${exA(cal)} : lu dans la référence du disjoncteur.` : `${exA(cal)}.`;
-    return exE('Le calibre', phrase, [['Permanent', perm ? exA(perm) : null, ''], ['Marge', exN(marge) + ' %', ''], ['Juge à', exN(T) + ' °C', ''], ['Garanti', garanti ? exA(garanti) : null, 'ok']],
-      [essaie, `Garde le premier qui ne déclenche pas à ${exN(+H.tableauMax)} °C, avec ${exN(+H.marge)} % de marge : il passe ; sans la marge, il est juste`, 'Un câble trop fin, il le grossit — il ne monte jamais le calibre pour lui', 'Il reste à 2:1 de ses voisins'],
+      : autre ? `Le meilleur est ${exA(best)} : le plus petit de votre gamme${fam ? ' ' + fam : ''} qui ne disjoncte pas ; le ${exA(cal)} ${cal < best ? 'disjoncte' : 'est plus gros que nécessaire'}.`
+      : best ? `${exA(cal)} : le plus petit de votre gamme${fam ? ' ' + fam : ''} qui ne disjoncte pas sous votre profil.` : origine === 'pn' ? `${exA(cal)} : lu dans la référence du disjoncteur.` : `${exA(cal)}.`;
+    return exE('Le calibre', phrase, [['Permanent', perm ? exA(perm) : null, ''], ['Juge à', exN(T) + ' °C', ''], ['Garanti', garanti ? exA(garanti) : null, 'ok']],
+      [essaie, `Garde le premier qui ne disjoncte pas à ${exN(T)} °C : chaque état sous son seuil, aucune marge`, 'Un câble trop fin, il le grossit — il ne monte jamais le calibre pour lui', 'La sélectivité 2:1 avec ses voisins se dit ; elle ne fait pas monter le calibre'],
       'Les courbes de votre Excel (un E-T-A 483 / 4120) et des constructeurs, la garantie MS3320N, la méthode NASA TM-102179, la FAA AC 43.13-1B.'); },
 
   courbe: c => { const H = exHypotheses(c), tmin = c && c.tableauMin != null ? +c.tableauMin : +H.tableauMin, tmax = c && c.tableauMax != null ? +c.tableauMax : +H.tableauMax;
     const f = c && c.famille, fam = typeof f === 'string' ? f : f && typeof f === 'object' ? String(f.courbe || f.famille || '') : '';
     return exE('La courbe de déclenchement', 'Pour chaque multiple du calibre (In), le temps avant que le disjoncteur s’ouvre.', [['Courbes', fam || null, ''], ['Juge', exN(tmax) + ' °C', 'ko'], ['Câble', String(exN(tmin)).replace('-', '−') + ' °C', '']],
-      ['À gauche des courbes, il ne déclenche pas (vert) ; à droite, il déclenche (rouge)', 'Entre les deux, ça dépend de la température', `La plus rapide (${exN(tmax)} °C) juge votre profil`, `La plus lente (${String(exN(tmin)).replace('-', '−')} °C) dit ce qui passe dans le câble`],
+      ['À gauche des courbes, il ne disjoncte pas (vert) ; à droite, il disjoncte (rouge)', 'Entre les deux, ça dépend de la température', `La plus rapide (${exN(tmax)} °C) juge votre profil`, `La plus lente (${String(exN(tmin)).replace('-', '−')} °C) dit ce qui passe dans le câble`],
       'Les quatre courbes de votre Excel « Calibre disjoncteur » (E-T-A 483 / 4120), lissées pour le dessin ; le jugement se fait sur les points lus.'); },
 
   profil: c => { const H = exHypotheses(c), perm = c && exPositif(c.permanent) ? c.permanent : null, p = c && c.pointe && exPositif(c.pointe.i) ? c.pointe : null, so = c && c.somme != null && isFinite(c.somme) ? c.somme : null;
     const phrase = perm || p ? `Votre profil : ${[perm ? exA(perm) + ' permanents' : '', p ? 'une pointe de ' + exA(p.i) + (exPositif(p.t) && isFinite(p.t) ? ' pendant ' + exS(p.t) : '') : ''].filter(Boolean).join(' et ')}.` : 'Ce que tire l’équipement protégé, état par état.';
-    return exE('Le profil de charge', phrase, [['Permanent', perm ? exA(perm) : null, ''], ['Pointe', p ? exA(p.i) + (exPositif(p.t) && isFinite(p.t) ? ' · ' + exS(p.t) : '') : null, ''], ['Temps consommé', so != null ? exPct(so) : null, so == null ? '' : so > 1 ? 'ko' : so > +H.margeTemps / 100 ? 'att' : 'ok']],
-      ['Chaque état : un courant (A) pendant une durée (s) — le permanent dure toujours', 'Chaque état devient un point de la courbe : glissez-le pour l’ajuster', `Leurs parts du temps de déclenchement s’additionnent : ${exN(+H.margeTemps)} % au plus`, 'L’installation ne le porte pas : vous l’écrivez, VOLTA n’invente rien'],
+    return exE('Le profil de charge', phrase, [['Permanent', perm ? exA(perm) : null, ''], ['Pointe', p ? exA(p.i) + (exPositif(p.t) && isFinite(p.t) ? ' · ' + exS(p.t) : '') : null, ''], ['Temps consommé', so != null ? exPct(so) : null, so == null ? '' : so >= 1 ? 'ko' : 'ok']],
+      ['Chaque état : un courant (A) pendant une durée (s) — le permanent dure toujours', 'Chaque état devient un point de la courbe : glissez-le pour l’ajuster', 'Leurs parts du temps de déclenchement s’additionnent : sous 100 %, il ne disjoncte pas', 'L’installation ne le porte pas : vous l’écrivez, VOLTA n’invente rien'],
       `La méthode NASA TM-102179 ; un état après le permanent trouve le disjoncteur chaud (son temps ÷ ${exN(+H.prechauffage)}, feuille MS3320N).`); },
 
   module: c => { const P = c && c.plan ? c.plan : null, libres = P && P.contacts != null && P.utilises != null ? P.contacts - P.utilises : null;

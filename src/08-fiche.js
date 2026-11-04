@@ -1279,8 +1279,10 @@ function calibreEnClair(d, cal) { const A = amperes(cal), g = (d.gamme || []).fi
   const q = p && p.marges && p.marges[0], enPerm = !p || p.t === Infinity || p.duree === Infinity;
   const adm = enPerm ? (g && g.tenu) : q && isFinite(q.admis) ? q.admis : null;
   const quand = !p ? 'au plus fort' : enPerm ? 'en permanent' : String(p.nom || 'en pointe').toLowerCase().replace(/^démarrage et transition$|^démarrage$/, 'au démarrage').replace(/^transition$/, 'en transition');
-  const tire = p ? `${quand}, il tire ${amperes(p.i)}${enPerm ? '' : ' pendant ' + secondes(p.duree || p.t)}` : '';
-  if (g && g.permanentOk === false) return `${A} : disjoncte — en permanent, il tire ${amperes(ch.perm || 0)} ; un ${A} disjoncte au-delà de ${amperes(g.tenu)}.`;
+  // (v84) la durée écrite est celle sur laquelle le seuil se lit : la marche de l'escalier (`p.t`) — plus longue que l'état quand
+  // des états plus forts le précèdent, et il tire alors « au moins » ce courant ; un permanent qui disjoncte, « dès » son seuil
+  const tire = p ? `${quand}, il tire ${!enPerm && p.duree < p.t ? 'au moins ' : ''}${amperes(p.i)}${enPerm ? '' : ' pendant ' + secondes(p.t)}` : '';
+  if (g && g.permanentOk === false) return `${A} : disjoncte — en permanent, il tire ${amperes(ch.perm || 0)} ; un ${A} disjoncte dès ${amperes(g.tenu)}.`;
   if (g && g.valide) return adm ? `${A} : ne disjoncte pas — ${tire} ; ${enPerm ? '' : 'sur cette durée, '}un ${A} ne disjoncte qu’au-delà de ${amperes(adm)}.` : `${A} : ne disjoncte pas — ${tire || 'le profil reste sous sa courbe'}.`;
   if (g && g.somme > 1 && p && !enPerm && adm && p.i <= adm) return `${A} : disjoncte — ${tire} ; chaque pointe passe seule, mais leur somme le fait déclencher (${Math.round(g.somme * 100)} % de son temps de déclenchement).`;
   const tc = q && isFinite(q.temps) ? q.temps : null;

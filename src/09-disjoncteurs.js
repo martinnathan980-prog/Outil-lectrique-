@@ -94,9 +94,20 @@ const PRECHARGE = 0.6;
 const margesDuMeilleur = () => ({ marge: 0, k: 1, fraction: 1 });
 /* Des mots pour les phrases du moteur (`nombreFr` est dans 09-barrettes). */
 const motA = x => nombreFr(x) + ' A';
-const motPct = x => x > 9.995 ? '> 1 000 %' : nombreFr(Math.round(x * 100)) + ' %';
 const motDuree = t => !isFinite(t) ? 'toujours' : t < 1 ? nombreFr(Math.round(t * 1000)) + ' ms' : t < 60 ? nombreFr(Math.round(t * 10) / 10) + ' s' : t < 3600 ? nombreFr(Math.round(t / 6) / 10) + ' min' : nombreFr(Math.round(t / 360) / 10) + ' h';
 const motPalier = p => p === 2 ? 'pour 2 s' : p === 10 ? 'pour 10 s' : p === 60 ? 'pour 1 min' : 'en continu';
+// deux courants comparés, écrits sans que l'arrondi les confonde (09 quater, `enOrdre` : « 9,655 A … au-delà de 9,656 A »)
+const deuxA = (a, b) => (typeof enOrdre === 'function' ? enOrdre(a, b) : [Math.round(a * 100) / 100, Math.round(b * 100) / 100]).map(x => String(x).replace('.', ',') + ' A');
+/* LE POINT QUI DÉCIDE, EN MOTS (v84 : « chaque chiffre s'explique en clair » — ce qu'il tire, pendant combien de temps, et
+   le seuil de ce calibre sur cette durée ; aucune réserve, aucun pourcentage) : « démarrage et transition, 9,31 A pendant
+   2,1 min ; sur cette durée, il ne disjoncte qu’au-delà de 9,66 A » ; « le permanent, 6 A ; il disjoncte dès 4,62 A » ;
+   le point que le bilan désigne : « seul, il ne disjoncterait qu’au-delà de 17,23 A, mais les états mis bout à bout le
+   font disjoncter ». Une marche plus longue que son état (des états plus forts avant lui) tire « au moins » ce courant. */
+function motDuPoint(q) { if (!q) return ''; const perm = q.t === Infinity, [I, S] = isFinite(q.seuil) ? deuxA(q.i, q.seuil) : [motA(q.i), ''];
+  const quoi = perm ? `le permanent, ${I}` : `${q.nom}, ${q.duree < q.t ? 'au moins ' : ''}${I} pendant ${motDuree(q.t)}`;
+  if (!S) return `${quoi} ; sur cette durée, il ne disjoncte jamais`;
+  if (q.parLaSomme) return `${quoi} ; seul, il ne disjoncterait qu’au-delà de ${S}, mais les états mis bout à bout le font disjoncter`;
+  return `${quoi} ; ${perm ? '' : 'sur cette durée, '}il ${q.ok === false ? 'disjoncte dès' : 'ne disjoncte qu’au-delà de'} ${S}`; }
 /* LES FAMILLES de disjoncteurs d'aéronef (Sensata 2TC/3TC/6TC/9TC/7274, Crouzet, Safran, listings EN) : la norme, les
    pôles, la gamme de calibres, la compensation en température, l'ambiante admise, la masse (g), la famille de courbes
    de normes/disjoncteurs.csv (les compensés ; un 7274 demanderait les siennes), et les motifs de part number qui les
@@ -400,21 +411,19 @@ function verdictDeCalibre(g) { if (!g || g.sansProfil || g.sansCourbe) return nu
   const v = g.valide, m = g.marge != null && typeof g.marge !== 'object' ? g.marge : g.avecMarge; if (v == null) return null;
   return v === false ? VERDICTS_CALIBRE.declenche : m ? VERDICTS_CALIBRE.passe : VERDICTS_CALIBRE.juste; }
 /* LE POURQUOI CHIFFRÉ d'un calibre de la gamme, en une ligne (la bulle d'un cran, d'une puce, d'une ligne du
-   récapitulatif) : « 5 A — disjoncte : démarrage et transition, 9,31 A pendant 2,1 min » (son point qui décide),
-   « 15 A — ne disjoncte pas : ses pointes consomment 31 % du temps de déclenchement ». `d` : le verdict d'un disjoncteur
-   (`disjonctionDe`, 08 : son profil, sa courbe, son contexte). Rend { verdict, phrase } ou null. */
+   récapitulatif), son point qui décide en ampères (`motDuPoint`) : « 7,5 A — disjoncte : démarrage et transition, 9,31 A
+   pendant 2,1 min ; sur cette durée, il disjoncte dès 7,24 A », « 10 A — ne disjoncte pas : … ; sur cette durée, il ne
+   disjoncte qu’au-delà de 9,66 A ». `d` : le verdict d'un disjoncteur (`disjonctionDe`, 08 : son profil, sa courbe, son
+   contexte). Rend { verdict, phrase } ou null. */
 function pourquoiDuCalibre(norme, d, cal) { if (!d || !(cal > 0) || d.sansProfil || d.sansCourbe) return null;
   // (v84) la ligne de sa gamme porte déjà son point qui décide : le moteur ne rejuge plus tout le profil pour une bulle
   const ligne = G => (G || []).find(x => Math.abs(x.calibre - cal) < 1e-9);
   let g = ligne(d.gamme); if (!g) try { g = ligne(verdictDisjonction(norme, d.courbe || '', cal, d.profil, d.contexte || {}).gamme); } catch (_) { g = null; }
   const v = verdictDeCalibre(g); if (!v) return null;
-  const A = motA(cal), p = g.pire, s = g.somme, T = g.tenu;
-  const quand = q => q.t === Infinity ? `le permanent, ${motA(q.i)} pour toujours` : `${q.nom}, ${motA(q.i)} pendant ${motDuree(q.t)}`;
-  let suite = '';
-  // (« juste » n'existe plus que de nom : il disjoncte, comme « déclenche » — aucune marge)
-  if (v !== VERDICTS_CALIBRE.passe) suite = p ? quand(p) + (p.t === Infinity && T ? ` : il ne garantit que ${motA(T)}` : '') : '';
-  else suite = s != null && s > 0 ? `ses pointes consomment ${motPct(s)} du temps de déclenchement` : 'le profil reste sous sa courbe, avec la marge';
+  // (v84) son point qui décide, en ampères — plus de « ses pointes consomment 6 % », plus de « avec la marge » (il n'y en a pas)
+  let suite = motDuPoint(g.pire);
   if (g.fils === false && v === VERDICTS_CALIBRE.passe) suite += (suite ? ' ; ' : '') + 'des câbles à grossir';
+  const A = motA(cal);
   return { verdict: v, phrase: `${A} — ${v.mot}${suite ? ' : ' + suite : ''}` }; }
 /* LE CATALOGUE ENTIER d'une famille, sans la liste préférée du lecteur (« Tout le catalogue MS3320 (13) ») : ses calibres
    (une plage « 1 à 25 » prend la série d'aéronef qu'elle couvre) ; sans famille, la gamme du lecteur. */
@@ -445,8 +454,8 @@ function meilleurDe(norme, o) { const { F, H, M, tenue, courbes, pts, fils, gamm
   // ne pas disjoncter est monotone en calibre (un calibre plus gros a un temps de déclenchement plus long à chaque courant,
   // garantit plus au permanent, se préchauffe moins) : au-dessus du retenu, aucun ne disjoncte (tests/disjoncteur-maths.js)
   const g = cat.find(x => x.valide) || null;
-  if (!g) return { ...vide, pourquoi: `aucun calibre ${nomF} (${cat.map(x => nombreFr(x.calibre)).join(', ')} A) ne tient ce profil à ${courbes[0].nom}` };
-  const cal = g.calibre, perm = pts.filter(p => p.t === Infinity).reduce((m, p) => Math.max(m, p.i), 0), courts = pts.some(p => p.t !== Infinity);
+  if (!g) return { ...vide, pourquoi: `aucun calibre ${nomF} (${cat.map(x => nombreFr(x.calibre)).join(', ')} A) ne supporte ce profil sans disjoncter à ${courbes[0].nom}` };
+  const cal = g.calibre, perm = pts.filter(p => p.t === Infinity).reduce((m, p) => Math.max(m, p.i), 0);
   // les fils qui ne suivent pas ce calibre, et la jauge qui les suivrait
   const filsAChanger = [], contactsTouches = [], filsInconnus = [];
   fils.forEach(f => { const p = protegerFil(norme, cal, f, H, protCtx); if (p.verdict === 'inconnu') { filsInconnus.push(f.type ? f.type + (f.autre ? ' vers ' + f.autre : '') : '?'); return; } if (filSuit(p)) return;
@@ -461,13 +470,13 @@ function meilleurDe(norme, o) { const { F, H, M, tenue, courbes, pts, fils, gamm
   const marge = { courant: M.marge, temps: Math.round(M.fraction * 100), permanent: perm, garanti: g.tenu, tient: tenue ? tenue.tient : null, temperature: +H.tableauMax,
     source: tenue ? tenue.famille + (tenue.source ? ' — ' + tenue.source : '') : 'la courbe ' + courbes[0].nom, fraction: g.somme, fractionMarge: g.somme, reste: perm > 0 && g.tenu ? g.tenu / perm - 1 : null, horsPlage: !!(tenue && tenue.horsPlage) };
   const reserve = filsAChanger.length ? 'fils' : g.selectif === false ? 'selectivite' : '';
-  // pourquoi, en une phrase : ce qu'il tient, pourquoi pas le calibre d'en dessous, ce qui reste à faire
-  const tient = [perm > 0 ? `le permanent (${motA(perm)}, sous les ${motA(g.tenu)} qu’il garantit à ${nombreFr(+H.tableauMax)} °C)` : '',
-    courts ? `les pointes (${motPct(g.somme)} de son temps de déclenchement à ${courbes[0].nom} ; au plus ${marge.temps} %)` : ''].filter(Boolean).join(' et ');
-  const prev = cat.filter(x => x.calibre < cal - 1e-9).pop(), Ap = prev ? motA(prev.calibre) : '';
-  const pourquoiPas = !prev ? '' : !prev.valide ? (!prev.permanentOk ? `le ${Ap} ne garantit que ${motA(prev.tenu)} au permanent` : `le ${Ap} déclenche (${motPct(prev.somme)} de son temps de déclenchement)`)
-    : prev.selectif === false ? `le ${Ap} n’est pas à 2:1 avec le disjoncteur voisin` : '';
-  const phrases = [`${motA(cal)} : le plus petit calibre ${nomF} qui tient ${tient}`];
+  // pourquoi, en une phrase (la bulle « Meilleur » du récapitulatif — v84 : en ampères, sans « tient » ni pourcentage) : son
+  // point qui décide et ce qu'il garantit en permanence, pourquoi pas le calibre d'en dessous (il disjoncte, forcément : le
+  // retenu est le premier qui ne disjoncte pas), ce qui reste à faire
+  const q = g.pire, enPerm = perm > 0 && q && q.t !== Infinity ? ` ; en permanence, ${motA(perm)} sous les ${motA(g.tenu)} qu’il garantit à ${nombreFr(+H.tableauMax)} °C` : '';
+  const prev = cat.filter(x => x.calibre < cal - 1e-9).pop(), Ap = prev ? motA(prev.calibre) : '', qp = prev && prev.pire;
+  const pourquoiPas = !qp ? '' : q && qp.k === q.k && !qp.parLaSomme && isFinite(qp.seuil) ? `le ${Ap}, lui, disjoncte dès ${deuxA(qp.i, qp.seuil)[1]}` : `le ${Ap} disjoncte : ${motDuPoint(qp)}`;
+  const phrases = [`${motA(cal)} : le plus petit calibre ${nomF} qui ne disjoncte pas — ${motDuPoint(q)}${enPerm}`];
   if (pourquoiPas) phrases.push(pourquoiPas);
   if (g.selectif === false) phrases.push('il n’est pas à 2:1 avec le disjoncteur voisin : à voir');
   if (filsAChanger.length) phrases.push(filsAChanger.map(x => (x.actuel || 'un câble') + (x.bouts && x.bouts.length ? ' vers ' + x.bouts[x.bouts.length - 1] : '') + ' ' + (x.propose ? 'en ' + x.propose : '— ' + x.aucune)).join(', ') + (contactsTouches.length ? ' (' + (contactsTouches.length > 1 ? contactsTouches.length + ' contacts changent' : 'un contact change') + ' de taille)' : ''));

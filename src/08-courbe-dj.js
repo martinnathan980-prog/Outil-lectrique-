@@ -330,8 +330,8 @@ function pointsSvg(points, G, P) { const pts = points.filter(p => p.i > 0).sort(
       + `<circle class="dj-halo" cx="${f2(x)}" cy="${f2(y)}" r="12"/><circle class="dj-point" cx="${f2(x)}" cy="${f2(y)}" r="4.5"/></g>`; }).join('') + nommes; }
 
 /* ---- le graphique vivant ------------------------------------------------------------------ */
-/* La bulle du survol, courte : un titre (le courant, la durée), une ligne (ce que le calibre tient à la courbe qui juge),
-   un verdict. */
+/* La bulle du survol, courte : un titre (le courant, la durée), une ligne (l'état, le calibre, la courbe qui juge), un
+   verdict (son mot, le seuil sur cette durée, le temps avant de disjoncter). */
 function carteTip(titre, sous, verdict, cls) { const lie = h => String(h).replace(/(\d) (°C|A|s|ms|min|h|In|%)(?![\wé])/g, '$1\u00a0$2');   // « 125 °C » ne se coupe pas
   return `<div class="dj-tip-t"><b>${lie(titre)}</b>${sous ? `<span>${lie(sous)}</span>` : ''}</div>` + (verdict ? `<div class="dj-tip-v${cls ? ' ' + cls : ''}">${lie(verdict)}</div>` : ''); }
 // un multiple du calibre, en mots : « 1,2 In »
@@ -356,18 +356,24 @@ function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg 
     const bas = py + 16 + h <= rf.height - 2; tip.style.left = Math.max(2, Math.min(px - w / 2, rf.width - w - 2)) + 'px'; tip.style.top = (bas ? py + 16 : Math.max(2, py - 16 - h)) + 'px'; };
   const cacher = () => { tip.hidden = true; vise.hidden = true; };
   const croix = p => { const [a, b] = vise.querySelectorAll('line'); a.setAttribute('x1', f2(p.x)); a.setAttribute('x2', f2(p.x)); a.setAttribute('y1', T); a.setAttribute('y2', H - B); b.setAttribute('x1', L); b.setAttribute('x2', W - R); b.setAttribute('y1', f2(p.y)); b.setAttribute('y2', f2(p.y)); vise.hidden = false; };
-  // la bulle d'un point : ce que le calibre tient à la courbe qui juge, le verdict (les courbes qui déclenchent, s'il en est)
-  const cartePoint = pt => { const m0 = pt.marges[0], titre = esc(amperes(pt.i)) + (pt.t === Infinity ? ' · toujours' : ' · ' + esc(secondes(pt.t))); if (!m0) return carteTip(titre, esc(pt.nom), 'pas jugé', 'info');
-    const rates = pt.marges.filter(m => !m.ok).map(m => m.courbe), bilan = pt.t === Infinity ? '' : ' · ' + esc(motFraction(m0.somme)) + ' du temps consommé';
-    const sous = esc(pt.nom) + (!cal ? '' : ' — le ' + esc(amperes(cal)) + (pt.t === Infinity ? ' garantit ' + esc(amperes(m0.admis)) : m0.temps === Infinity ? ' ne déclenche pas' : ' tient ' + esc(secondes(m0.temps))) + ' à ' + esc(m0.courbe));
-    // LES TROIS MOTS, comme le calibre (v73, l'ingénieur, point 8 : « les mots changent d'un écran à l'autre ») : déclenche, juste
-    // (il touche la courbe, sans la marge), passe — la table du domaine C (`motDuVerdict`, 08-disjoncteurs)
-    const M = k => typeof motDuVerdict === 'function' ? motDuVerdict(k) : { passe: 'passe', juste: 'juste', declenche: 'déclenche' }[k];
-    const verdict = pt.ok === false ? `<em>${esc(M('declenche'))}</em> à ${rates.length === pt.marges.length ? 'toute température' : esc(rates.join(', '))}${bilan}` : pt.serre ? (pt.t === Infinity ? `<em>${esc(M('juste'))}</em> : sans ` + esc(nombre(d.marges.marge)) + ' % de marge' : `<em>${esc(M('juste'))}</em>` + bilan) : (pt.t === Infinity ? esc(M('passe')) + ' : ne déclenche jamais' : esc(M('passe')) + ' à toute température' + bilan);
-    return carteTip(titre, sous, verdict, pt.ok === false || pt.serre ? 'ko' : 'ok'); };
-  // le réticule : à ce courant (et ce multiple de In), ce que le calibre retenu tient à la courbe qui juge
+  // LA BULLE D'UN POINT (v84 : plus de « tient », plus de pourcentage — valide ou pas valide) : le courant et la durée en titre ;
+  // l'état, le calibre et la courbe qui juge dessous ; puis le mot du verdict et ses chiffres, lus dans le moteur (09 bis :
+  // `seuil`, `avant`, `parLaSomme` — les mêmes que le verdict, par construction) : le seuil de ce calibre sur cette durée, en
+  // ampères, et le temps avant de disjoncter à ce courant
+  const cartePoint = pt => { const m0 = pt.marges[0], perm = pt.t === Infinity, titre = esc(amperes(pt.i)) + (perm ? ' · toujours' : ' · ' + esc(secondes(pt.t))); if (!m0) return carteTip(titre, esc(pt.nom), 'pas jugé', 'info');
+    const sous = esc(pt.nom) + (cal ? ' — le ' + esc(amperes(cal)) + ' à ' + esc(m0.courbe) : '');
+    const M = k => typeof motDuVerdict === 'function' ? motDuVerdict(k) : { passe: 'ne disjoncte pas', declenche: 'disjoncte' }[k];
+    const seuil = pt.seuil != null ? pt.seuil : m0.admis, avant = pt.avant != null ? pt.avant : m0.temps, ko = pt.ok === false;
+    // deux courants comparés que l'arrondi ne confond pas (09 quater, `enOrdre`)
+    const [I, S] = (typeof enOrdre === 'function' && isFinite(seuil) ? enOrdre(pt.i, seuil) : [pt.i, seuil].map(x => Math.round(x * 100) / 100)).map(x => isFinite(x) ? nombre(x) + ' A' : '');
+    const duree = perm ? 'en permanence' : 'sur ' + secondes(pt.t), quand = avant === Infinity ? `à ${I}, il ne disjoncte jamais` : `à ${I}, il ${ko ? 'disjoncte au bout de ' : 'ne disjoncterait qu’après '}${secondes(avant)}`;
+    const dit = !S ? quand : pt.parLaSomme ? `seul, ${duree}, il ne disjoncterait qu’au-delà de ${S} ; mais les états mis bout à bout le font disjoncter`
+      : `${duree}, il ${ko ? 'disjoncte dès' : 'ne disjoncte qu’au-delà de'} ${S}` + (perm && avant === Infinity ? '' : ` ; ${quand}`);
+    return carteTip(titre, sous, `<em>${esc(M(ko ? 'declenche' : 'passe'))}</em> — ${esc(dit)}`, ko ? 'ko' : 'ok'); };
+  // le réticule : à ce courant (et ce multiple de In), le temps avant de disjoncter ; sur cette durée, le seuil — à la courbe qui juge
   const carteReticule = (i, t) => { if (!cal) return carteTip(esc(amperes(i)) + ' · ' + esc(secondes(t)), '', '', '');
-    const tt = tempsDeDeclenchement(C[0], i / cal); return carteTip(esc(motIn(i, cal)) + ' · ' + esc(secondes(t)), 'soit ' + esc(amperes(i)) + ' — le ' + esc(amperes(cal)) + (tt === Infinity ? ' n’y déclenche jamais' : ' y tient ' + esc(secondes(tt))) + ' à ' + esc(C[0].nom), '', ''); };
+    const tt = tempsDeDeclenchement(C[0], i / cal), s = multipleAdmis(C[0], t) * cal;
+    return carteTip(esc(motIn(i, cal)) + ' · ' + esc(secondes(t)), 'soit ' + esc(amperes(i)) + ' — le ' + esc(amperes(cal)) + (tt === Infinity ? ' n’y disjoncte jamais' : ' y disjoncte au bout de ' + esc(secondes(tt))) + (isFinite(s) ? ' ; sur ' + esc(secondes(t)) + ', au-delà de ' + esc(amperes(s)) : '') + ' (' + esc(C[0].nom) + ')', '', ''); };
   // glisser un point : le profil se rejuge en direct (l'escalier, les points et la gamme), le contrat s'écrit au lâcher ; les noms
   // des points évitent les traits des courbes et les étiquettes déjà posées (le poseur du dessin, refait une fois)
   let prise = null, base = null;

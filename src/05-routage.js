@@ -168,11 +168,17 @@ function formerLesFils(layout, G, permis, C) {
   barrieres.forEach(B => B.sort((u, v) => u - v));
   const avant = (B, v) => { let a = 0, b = B.length; while (a < b) { const m = (a + b) >> 1; if (B[m] < v) a = m + 1; else b = m; } return a; };
   const coupe = (ch, ya, yb) => { const B = barrieres[ch], lo = Math.min(ya, yb), hi = Math.max(ya, yb); return Math.max(0, avant(B, hi - 0.5) - avant(B, lo + 0.5 + 1e-9)); };
+  /* le même compte, entre yb et des y CROISSANTS (le balayage des couloirs) : deux curseurs qui ne reculent jamais, au lieu
+     de deux dichotomies à chaque pas */
+  const compteur = (ch, yb) => { const B = barrieres[ch], n = B.length, K1 = avant(B, yb - 0.5), K2 = avant(B, yb + 0.5 + 1e-9); let p = 0, q = 0;
+    return y => { if (y < yb) { const v = y + 0.5 + 1e-9; while (p < n && B[p] < v) p++; return Math.max(0, K1 - p); }
+      if (y > yb) { const v = y - 0.5; while (q < n && B[q] < v) q++; return Math.max(0, q - K2); }
+      return Math.max(0, K1 - K2); }; };
   /* 2) les autres, par la forme qui croise le moins de barrières — ceux que la main a réglés d'abord : ils prennent leur
         couloir avant que les autres ne cherchent le leur */
   const ordre = [...layout.links.keys()]; if (C) ordre.sort((a, b) => !!consigne(b) - !!consigne(a));
   ordre.forEach(li => { const l = layout.links[li]; if (l.boucle || l.shunt || fils.has(li)) return;
-    const [A, B] = bouts(li), K = { G, coupe, pris, surUneBorne, ex: exclusDe(l), li, A, B, mA: murDe(A), mB: murDe(B) }, k = consigne(li);
+    const [A, B] = bouts(li), K = { G, coupe, compteur, pris, surUneBorne, ex: exclusDe(l), li, A, B, mA: murDe(A), mB: murDe(B) }, k = consigne(li);
     const choix = formesDirectes(K);
     /* un passage par une goulotte voisine ne se cherche que si le direct
        coûte ; il n'est pris que s'il est PERMIS — le routeur l'essaie pour de
@@ -220,7 +226,7 @@ const vraiZ = (y, yb) => Math.abs(y - yb) >= Z_MIN - 1e-9;
    corridor entre les deux avec un Z dans chaque goulotte. Le coût d'une forme
    est le nombre de fils droits que ses verticales enjambent. */
 function formesDirectes(K) {
-  const { G, coupe, pris, surUneBorne, ex, li, A, B, mA, mB } = K;
+  const { G, coupe, compteur, pris, surUneBorne, ex, li, A, B, mA, mB } = K;
   K.attache = (ep, mur) => ({ y: ep.y, mur, bout: cle(li, ep.tag) });
   K.libre = (y, mur) => ({ y, mur, bout: null });
   const att = K.attache, libre = K.libre, choix = [];
@@ -233,13 +239,13 @@ function formesDirectes(K) {
   // il passe à Z_MIN au moins des deux bornes : à leur hauteur, c'est une arrivée ou un départ, plus près c'est une marche
   const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y), bandes = G.bandes(G.x0(A.ch) + 2, G.x1(B.ch) - 2); let meilleur = null;
   const y0 = Math.max(G.yMin - 12, lo - 240), yFin = Math.min(G.yMax + 12, hi + 240);
-  const mi = (lo + hi) / 2;
+  const mi = (lo + hi) / 2, nA = compteur(A.ch, A.y), nB = compteur(B.ch, B.y);
   for (let y = y0; y <= yFin; y += 4) {
     const b = G.bande(bandes, y); if (b) { y = surLaGrille(y0, 4, b[1]) - 4; continue; }
     // ce qu'un couloir coûte au moins (aucune barrière enjambée) : pas sous le meilleur, rien à chercher ; passé le milieu, ce plancher ne fait que croître
     if (meilleur) { const plancher = 0.5 + 0.0005 * Math.abs(y - mi) + (y < lo || y > hi ? 0.4 : 0); if (plancher >= meilleur.cout) { if (y >= mi) break; continue; } }
     if (!vraiZ(y, A.y) || !vraiZ(y, B.y) || surUneBorne(A.ch, y) || surUneBorne(B.ch, y)) continue;
-    const c = coupe(A.ch, A.y, y) + coupe(B.ch, y, B.y) + 0.5 + 0.0005 * Math.abs(y - mi) + (y < lo || y > hi ? 0.4 : 0);
+    const c = nA(y) + nB(y) + 0.5 + 0.0005 * Math.abs(y - mi) + (y < lo || y > hi ? 0.4 : 0);
     if (meilleur && c >= meilleur.cout) continue;
     if (pris(G.x1(A.ch), G.x0(B.ch), y)) continue;
     meilleur = { forme: 'couloir', cout: c, y }; }

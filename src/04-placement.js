@@ -1204,8 +1204,8 @@ function frolementsDuSegment(a, b, de, vers, blocs) { let n = 0;
       const d = a.x < c.x ? c.x - a.x : a.x - (c.x + c.w); if (!(d > 0 && d < DEGAGEMENT_V)) continue; }
     const nom = String(c.name); if (nom !== de && nom !== vers) n++; }
   return n; }
-function compterFrolements(fils, blocs) { let n = 0;
-  fils.forEach(w => { const de = String(w.de), vers = String(w.vers); for (let i = 0; i < w.pts.length - 1; i++) n += frolementsDuSegment(w.pts[i], w.pts[i + 1], de, vers, blocs); });
+function compterFrolements(fils, blocs) { let n = 0; const equips = blocs.filter(c => c.kind === 'equip');       // seuls les équipements se frôlent
+  fils.forEach(w => { const de = String(w.de), vers = String(w.vers); for (let i = 0; i < w.pts.length - 1; i++) n += frolementsDuSegment(w.pts[i], w.pts[i + 1], de, vers, equips); });
   return n; }
 /* La FORME : le lecteur veut un dessin SERRÉ, à la forme de la feuille (« c'est vachement dans la longueur… l'œil se perd
    à vouloir le recentrer » : un folio étalé sur une rangée pour n'avoir rien à descendre, un bloc rejeté au bout de la
@@ -1273,7 +1273,7 @@ function bat(a, b, tolerant) {
    calculent une fois par jeu de blocs (`L.comps`) — l'estimation d'un autre ordre des bornes (`estimerOrdre`) garde les
    blocs du meilleur, et la descente sur les paires d'un connecteur l'appelait des centaines de fois par geste. */
 const BLOCS_ESTIMES = new WeakMap();
-const blocsEstimes = comps => { let e = BLOCS_ESTIMES.get(comps); if (!e) { e = { blocs: comps.filter(c => c.kind !== 'tag'), bandes: new Map() }; BLOCS_ESTIMES.set(comps, e); } return e; };
+const blocsEstimes = comps => { let e = BLOCS_ESTIMES.get(comps); if (!e) { e = { blocs: comps.filter(c => c.kind !== 'tag'), equips: comps.filter(c => c.kind === 'equip'), bandes: new Map() }; BLOCS_ESTIMES.set(comps, e); } return e; };
 // combien de valeurs d'un tableau trié sont au plus v (dichotomie)
 const auPlus = (T, v) => { let a = 0, b = T.length; while (a < b) { const m = (a + b) >> 1; if (T[m] <= v) a = m + 1; else b = m; } return a; };
 function estimer(L) {
@@ -1291,12 +1291,18 @@ function estimer(L) {
   let droits = 0, frolements = 0; const plies = [], frole = NIVEAU_JUGE >= 1;
   fils.forEach(f => { const { A, B } = f;
     if (Math.abs(A.y - B.y) <= 0.75 && mur(A) === 'L' && mur(B) === 'R' && libre(A.x + 2, B.x - 2, A.y, f.de, f.vers)) { if (!f.pont) droits++;          // un pont de barrette coupée n'est pas un fil droit gagné (05, compterDroits)
-      if (frole) frolements += frolementsDuSegment(A, B, f.de, f.vers, blocs);                // un fil droit frôle ce qu'il longe ; les pliés, le routeur les écarte
+      if (frole) frolements += frolementsDuSegment(A, B, f.de, f.vers, EB.equips);                // un fil droit frôle ce qu'il longe ; les pliés, le routeur les écarte
       // il barre les goulottes qu'il traverse de part en part (le fil d'une pastille reste dans sa colonne)
       for (let ch = A.ch; ch <= B.ch; ch++) if (A.x <= x0(ch) + 1 && B.x >= x1(ch) - 1) barrieres[ch].push(A.y); } else plies.push(f); });
   barrieres.forEach(b => b.sort((u, v) => u - v));
   // les barrières strictement au-dessus de min + 0,5 et au plus à max − 0,5
   const coupe = (ch, ya, yb) => { const lo = Math.min(ya, yb) + 0.5, hi = Math.max(ya, yb) - 0.5; if (!(hi > lo)) return 0; const B = barrieres[ch]; return auPlus(B, hi) - auPlus(B, lo); };
+  /* le même compte, entre yb et des y CROISSANTS (le balayage des couloirs) : deux curseurs qui ne reculent jamais, au lieu
+     de deux dichotomies à chaque pas */
+  const compteur = (ch, yb) => { const B = barrieres[ch], n = B.length, K1 = auPlus(B, yb - 0.5), K2 = auPlus(B, yb + 0.5); let p = 0, q = 0;
+    return y => { const lo = Math.min(yb, y) + 0.5, hi = Math.max(yb, y) - 0.5; if (!(hi > lo)) return 0;
+      if (y < yb) { const v = y + 0.5; while (p < n && B[p] <= v) p++; return K1 - p; }
+      const v = y - 0.5; while (q < n && B[q] <= v) q++; return q - K2; }; };
   const vert = (ch, a0, a1) => verticales[ch].push({ lo: Math.min(a0.y, a1.y), hi: Math.max(a0.y, a1.y), att: [a0, a1] });
   // les bandes d'ordonnées que les colonnes entre deux goulottes occupent : un couloir passe entre elles (calculées une fois par paire de goulottes)
   const bandes = EB.bandes; const couloirLibre = (ca, cb, y) => { const k = ca + ':' + cb; let B = bandes.get(k);
@@ -1308,12 +1314,12 @@ function estimer(L) {
     if (mA === 'L' && libre(A.x + 2, x0(B.ch) + 2, A.y, de, vers)) choix.push({ c: coupe(B.ch, A.y, B.y), pose: () => vert(B.ch, { y: A.y, mur: 'L' }, { y: B.y, mur: mB }) });
     if (mB === 'R' && libre(x1(A.ch) - 2, B.x - 2, B.y, de, vers)) choix.push({ c: coupe(A.ch, A.y, B.y), pose: () => vert(A.ch, { y: A.y, mur: mA }, { y: B.y, mur: 'R' }) });
     // un couloir entre les deux goulottes, libre à travers les colonnes entières, celui qui enjambe le moins
-    const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y), mi = (lo + hi) / 2; let ym = null, cm = Infinity;
+    const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y), mi = (lo + hi) / 2, nA = compteur(A.ch, A.y), nB = compteur(B.ch, B.y); let ym = null, cm = Infinity;
     /* ce qu'un couloir coûte au moins (aucune barrière enjambée) : s'il n'est pas sous le meilleur, rien à compter — et
        passé le milieu, ce plancher ne fait que croître : plus rien ne gagnera */
     for (let y = lo - 240; y <= hi + 240; y += 8) { const plancher = 0.5 + 0.0005 * Math.abs(y - mi) + (y < lo || y > hi ? 0.4 : 0);
       if (plancher >= cm) { if (y >= mi) break; continue; }
-      const c = coupe(A.ch, A.y, y) + coupe(B.ch, y, B.y) + 0.5 + 0.0005 * Math.abs(y - mi) + (y < lo || y > hi ? 0.4 : 0);
+      const c = nA(y) + nB(y) + 0.5 + 0.0005 * Math.abs(y - mi) + (y < lo || y > hi ? 0.4 : 0);
       if (c < cm && couloirLibre(A.ch, B.ch, y)) { cm = c; ym = y; } }
     if (ym != null) choix.push({ c: cm, pose: () => { vert(A.ch, { y: A.y, mur: mA }, { y: ym, mur: 'R' }); vert(B.ch, { y: ym, mur: 'L' }, { y: B.y, mur: mB }); } });
     if (choix.length) choix.sort((u, v) => u.c - v.c)[0].pose(); });

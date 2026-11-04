@@ -271,7 +271,7 @@ function lierBaseSEE() { const c = $('fiche-corps'); if (!c) return;
   // (v84) l'onglet « Feuilles » : sa liste s'ouvre, se ferme (Échap, un clic dehors, un choix), se parcourt aux flèches
   if (typeof lierMenusDoc === 'function') lierMenusDoc(c);
   // une feuille choisie : le clavier revient sur l'onglet « Feuilles » (la liste fermée)
-  const fs = c.querySelector('.see-feuilles>summary'); if (fs && SEE.focusFeuilles) { SEE.focusFeuilles = false; try { fs.focus({ preventScroll: true }); } catch (_) { } }
+  const fs = c.querySelector('.see-feuilles>summary'); if (fs && SEE.focusFeuilles) { SEE.focusFeuilles = false; try { if (typeof rendreLeClavier === 'function') rendreLeClavier(fs); else fs.focus({ preventScroll: true }); } catch (_) { } }
   c.querySelectorAll('.see-feuilles-l [data-see-vue]').forEach(b => b.addEventListener('click', () => { SEE.focusFeuilles = true; }, { capture: true }));
   const ex = $('see-ex'); if (ex) ex.onchange = () => { SEE.exemples = ex.checked; rendreBaseSEE(); };
   if ($('see-prec')) $('see-prec').onclick = () => pasSEE(-1);

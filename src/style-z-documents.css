@@ -72,3 +72,8 @@
 /* ─── LA BIBLE, sur un grand écran : sa note passe à la ligne (deux ou trois lignes tiennent dans la hauteur d'une ligne,
    celle de la vignette) au lieu de finir en « … » ─── */
 #fiche .bible td.bible-note{white-space:normal;overflow:visible;text-overflow:clip;max-width:none;line-height:1.35;padding-top:6px;padding-bottom:6px;text-wrap:pretty}
+
+/* ─── COMPARER AU DÉJÀ-FAIT (décision v84) : une ligne qui manque chez nous se marque d'un trait d'encre en pointillé à
+   gauche, neutre — plus de vert (style-ref.css dit de même la barre, la légende et le dessin) ─── */
+#fiche .cc-manque{background:linear-gradient(var(--t-1) 0 60%,transparent 0) left top/2px 6px repeat-y,color-mix(in srgb,var(--t-1) 4%,transparent)}
+#fiche .cc-manque .cc-e{color:var(--t-1)}

@@ -870,8 +870,8 @@ const RE_NORME = /\b(EN ?\d{4}(?:-\d{3})?|AC 43\.13-1B|ASNE ?\d{4}|NSA ?\d{6}|AS
 const normeCourte = v => { if (NORME_DE_VUE[v]) return NORME_DE_VUE[v]; const F = FICHES_TABLES[vueDe(v).table] || {}, m = RE_NORME.exec(F.source || ''); return m ? m[1] : String(F.source || '').split(/[,;(:]/)[0].trim().slice(0, 32); };
 // ce qu'une table juge : la première phrase de « à quoi elle sert »
 // (v84 : la colonne a la place d'office sur une feuille large — la phrase se coupe à une virgule plutôt qu'au milieu d'un mot)
-const phrase = t => { const x = String(t || '').split(/\. (?=[A-ZÀ-Ý])/)[0].replace(/\.$/, ''); if (x.length <= 210) return x;
-  const c = x.slice(0, 210), v = Math.max(c.lastIndexOf(', '), c.lastIndexOf(' : '), c.lastIndexOf(' — ')); return v > 120 ? c.slice(0, v) + '…' : c.replace(/\s+\S*$/, '') + '…'; };
+const phrase = t => { const x = String(t || '').split(/\. (?=[A-ZÀ-Ý])/)[0].replace(/\.$/, ''); if (x.length <= 170) return x;
+  const c = x.slice(0, 170), v = Math.max(c.lastIndexOf(', '), c.lastIndexOf(' : '), c.lastIndexOf(' — ')); return v > 90 ? c.slice(0, v) + '…' : c.replace(/\s+\S*$/, '') + '…'; };
 function normes() { return memo('normes', () => { const V = verite(), cab = V.filter(l => liaisonComplete(l) && l.de !== l.vers && l.type).length, R = reperes();
   const n = g => R.filter(r => r.genre === g).length, connecteurs = raccords().length, cb = n('cb'), barr = n('barrette'), pr = n('coupure');
   const objets = { fils: [cab, 'câble'], cables: [cab, 'câble'], cablesFamilles: [cab, 'câble'], reseau: [cb ? cab : 0, 'câble'], declassements: [cab, 'câble'],
