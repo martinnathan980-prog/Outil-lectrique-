@@ -6342,20 +6342,39 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
    pastille ; la barre colle sous la tête, défile de côté quand les feuilles sont nombreuses et s'estompe au bord qui cache
    un onglet (le fondu suit le défilement) ; à droite, les exemples ── */
 .see-barre{position:sticky;top:var(--fi-tete,0px);z-index:5;display:flex;align-items:center;gap:var(--sp-3);min-width:0;margin:0 -20px;padding:0 20px;background:var(--s-surface);box-shadow:inset 0 -1px 0 var(--s-line)}
-.see-onglets{display:flex;gap:2px;overflow-x:auto;min-width:0;flex:0 1 auto;scrollbar-width:none;padding-right:28px;
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fondu-g),#000 calc(100% - var(--fondu-d)),transparent);mask-image:linear-gradient(90deg,transparent,#000 var(--fondu-g),#000 calc(100% - var(--fondu-d)),transparent)}
-@supports (animation-timeline:scroll()){ .see-onglets{animation:onglets-bords linear both;animation-timeline:scroll(self inline)} }
-.see-onglets::-webkit-scrollbar{display:none}
-.see-onglets button{position:relative;flex:none;border:none;background:none;height:var(--h-onglet);padding:0 10px;border-radius:0;display:inline-flex;align-items:center;gap:6px;font:500 var(--f-13)/1 var(--sans);color:var(--t-2);white-space:nowrap;transition:color var(--rapide)}
-.see-onglets button::after{content:"";position:absolute;left:8px;right:8px;bottom:0;height:2px;border-radius:2px 2px 0 0;background:transparent;transition:background var(--rapide)}
-.see-onglets button b{font-weight:500}
-.see-onglets button span{font:500 var(--f-12)/1 var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
-.see-onglets button:hover{color:var(--t-1)}
-.see-onglets button:hover::after{background:var(--s-line-2)}
-.see-onglets button:focus-visible{outline-offset:-4px;border-radius:var(--r-1)}
-.see-onglets button[aria-selected="true"]{color:var(--t-1)}
-.see-onglets button[aria-selected="true"] b{font-weight:600}
-.see-onglets button[aria-selected="true"]::after{background:var(--t-1)}
+/* (v84) les onglets ont TOUS LA MÊME LARGEUR (la charte) : une grille de colonnes égales sur toute la barre — Import,
+   Cohérence, Liens, Codes et « Feuilles », la liste des feuilles du classeur (un menu, plus quatorze onglets inégaux qui
+   défilaient) ; le nom au milieu de sa case, son compte à côté */
+.see-onglets{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;min-width:0;flex:1 1 auto;overflow:visible}
+.see-onglets>button,.see-feuilles>summary{position:relative;width:100%;min-width:0;border:none;background:none;min-height:var(--h-onglet);padding:6px 10px;border-radius:0;display:flex;align-items:center;justify-content:center;gap:6px;
+  font:500 var(--f-13)/1.2 var(--sans);color:var(--t-2);text-align:center;cursor:pointer;transition:color var(--rapide)}
+.see-onglets>button::after,.see-feuilles>summary::after{content:"";position:absolute;left:8px;right:8px;bottom:0;height:2px;border-radius:2px 2px 0 0;background:transparent;transition:background var(--rapide)}
+.see-onglets b{font-weight:500;min-width:0;overflow-wrap:anywhere}
+.see-onglets span{flex:none;font:500 var(--f-12)/1 var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
+.see-onglets>button:hover,.see-feuilles>summary:hover{color:var(--t-1)}
+.see-onglets>button:hover::after,.see-feuilles>summary:hover::after{background:var(--s-line-2)}
+.see-onglets>button:focus-visible,.see-feuilles>summary:focus-visible{outline-offset:-4px;border-radius:var(--r-1)}
+.see-onglets [aria-selected="true"]{color:var(--t-1)}
+.see-onglets [aria-selected="true"] b{font-weight:600}
+.see-onglets>button[aria-selected="true"]::after,.see-feuilles>summary[aria-selected="true"]::after{background:var(--t-1)}
+/* l'onglet « Feuilles » : un menu qui tombe sous lui, aligné à droite de la barre ; ouvert, son onglet se souligne d'un filet */
+.see-feuilles{position:relative;min-width:0}
+.see-feuilles>summary{list-style:none}
+.see-feuilles>summary::-webkit-details-marker{display:none}
+.see-feuilles[open]>summary{background:none;color:var(--t-1)}
+.see-feuilles[open]>summary:not([aria-selected="true"])::after{background:var(--s-line-2)}
+.see-f-v{flex:none;width:14px;height:14px;color:var(--t-3);transition:transform var(--d-rapide) var(--courbe)}
+.see-feuilles[open] .see-f-v{transform:rotate(180deg)}
+.see-feuilles-l{top:calc(100% + 4px);right:0;left:auto;min-width:300px;max-width:420px;max-height:min(60vh,520px);overflow:auto;overscroll-behavior:contain}
+.see-feuilles-l button{gap:2px}
+.see-f-n{display:flex;align-items:baseline;justify-content:space-between;gap:12px;width:100%}
+.see-f-n b{font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.see-f-n i{flex:none;font:500 var(--f-12)/1.3 var(--sans);font-style:normal;color:var(--t-2);font-variant-numeric:tabular-nums}
+.see-feuilles-l button small{font:400 var(--f-11)/1.35 var(--mono);color:var(--t-2);overflow-wrap:anywhere}
+.see-feuilles-l button[aria-current="true"]{background:var(--voile-2)}
+.see-feuilles-l button[aria-current="true"] .see-f-n b::before{content:"";display:inline-block;width:6px;height:6px;margin:0 7px 1px 0;border-radius:50%;background:currentColor;vertical-align:middle}
+/* les exemples de valeurs : sous la barre, à droite, sur les vues du classeur */
+.see-outils{display:flex;justify-content:flex-end;margin:12px 0 0}
 .see-sep{flex:none;width:1px;height:18px;align-self:center;margin:0 6px;background:var(--s-line-2)}
 /* le nom du groupe des feuilles, après le filet (l'ingénieur v73 : « un séparateur et un sous-titre avant les feuilles ») */
 .see-groupe-t{flex:none;align-self:center;margin:0 4px 0 2px;font:500 var(--f-11)/1 var(--sans);color:var(--t-2);white-space:nowrap}
@@ -6373,7 +6392,7 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
 @media (min-width:701px){ html body.fiche-ouverte:has(#fiche[data-mode="see"]) #toast{top:auto;bottom:calc(var(--jeu) + 76px)} }
 /* les exemples de valeurs : une PUCE qu'on presse (style.css, `.puce` — l'outil n'a pas d'autre interrupteur à cet endroit),
    une coche dedans */
-.see-ex{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:7px;height:var(--h-puce);padding:0 10px 0 8px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);
+.see-ex{flex:none;display:inline-flex;align-items:center;gap:7px;height:var(--h-puce);padding:0 10px 0 8px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);
   font:500 var(--f-12)/1 var(--sans);color:var(--t-1);cursor:pointer;white-space:nowrap;transition:background var(--rapide),border-color var(--rapide)}
 .see-ex:hover{background:var(--s-hover);border-color:color-mix(in srgb,var(--t-1) 25%,var(--s-line-2))}
 .see-ex:has(input:checked){background:var(--accent-soft);border-color:var(--accent-line)}
@@ -8894,9 +8913,9 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
             </div>
             <div class="menu-bloc" role="group" aria-label="Lire et sortir">
               <button role="menuitem" data-act="recapitulatif" data-aide="Tout le plan en tableaux : liaisons, équipements, disjoncteurs, câbles, raccords, problèmes… On y corrige comme sur la fiche."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg><span class="menu-l">Récapitulatif</span><span class="raccourci">B</span></button>
-              <button role="menuitem" data-act="nomenclature" data-aide="Ce qu’il faut commander, compté sur tout le plan : contacts, modules, connecteurs, câbles. S’enregistre en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">Nomenclature</span><span class="raccourci">N</span></button>
+              <button role="menuitem" data-act="nomenclature" data-aide="La LPA : ce qu’il faut commander, compté sur tout le plan — contacts, modules, connecteurs, câbles. S’enregistre en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">LPA</span><span class="raccourci">N</span></button>
               <button role="menuitem" data-act="dejafait" data-aide="Les contrats de la base les plus proches du plan ouvert : ce qui est pareil, ce qui diffère, dessin par dessin."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M6 9h2M6 13h2M16 9h2M16 13h2"/></svg><span class="menu-l">Comparer au déjà-fait</span></button>
-              <button role="menuitem" data-sous="exporter" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-exporter" data-aide="D’abord l’installation corrigée, en Excel : ce que vous renvoyez. Puis le folio (SVG, PNG, A3) et le plan entier (PDF, Visio, suivi, nomenclature)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg><span class="menu-l">Exporter<small id="mn-exporter" hidden></small></span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+              <button role="menuitem" data-sous="exporter" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-exporter" data-aide="D’abord l’installation corrigée, en Excel : ce que vous renvoyez. Puis le folio (SVG, PNG, A3) et le plan entier (PDF, Visio, suivi, LPA)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg><span class="menu-l">Exporter<small id="mn-exporter" hidden></small></span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Le reste">
               <button role="menuitem" data-sous="plus" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-plus" data-aide="Coller des lignes, l’exemple, un schéma en PDF ou en Visio, la bible, les normes, les hypothèses, le cartouche, comment VOLTA réfléchit, les raccourcis."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu-l">Plus</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
@@ -8918,9 +8937,9 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
               <button role="menuitem" data-act="imprimer" data-aide="Le folio affiché, seul, sur une feuille A3 paysage."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg><span class="menu-l">Imprimer</span><span class="raccourci">Ctrl+P</span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Tout le plan" data-groupe="contrat">
-              <button role="menuitem" data-act="dossierpdf" data-aide="Tous les folios en A3 avec leur cartouche, une page de garde (ce qui reste à reprendre), la nomenclature : un PDF vectoriel que VOLTA sait relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l4 4v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M16 3v4h4M4 7v13a1 1 0 0 0 1 1h11M10.5 11h6M10.5 14.5h6"/></svg><span class="menu-l">Dossier PDF, tous les folios</span></button>
+              <button role="menuitem" data-act="dossierpdf" data-aide="Tous les folios en A3 avec leur cartouche, une page de garde (ce qui reste à reprendre), la LPA : un PDF vectoriel que VOLTA sait relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l4 4v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M16 3v4h4M4 7v13a1 1 0 0 0 1 1h11M10.5 11h6M10.5 14.5h6"/></svg><span class="menu-l">Dossier PDF, tous les folios</span></button>
               <button role="menuitem" data-act="suivi" data-aide="Une ligne par pièce posée — barrette, prise, connecteur — avec sa référence, ses contacts et ses câbles, en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg><span class="menu-l">Suivi de fabrication (CSV)</span></button>
-              <button role="menuitem" data-act="nomenclaturecsv" data-aide="Ce qu’il faut commander pour tout le plan — contacts, modules, connecteurs, câbles —, en CSV, sans ouvrir la nomenclature."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">Nomenclature (CSV)</span></button>
+              <button role="menuitem" data-act="nomenclaturecsv" data-aide="La LPA du plan entier — contacts, modules, connecteurs, câbles —, en CSV, sans l’ouvrir."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">LPA en CSV</span></button>
             </div>
           </div>
           <!-- PLUS : sans fichier (coller, l'exemple), ce qui juge (la bible, les normes, les hypothèses), le cartouche. Plus
@@ -26530,8 +26549,9 @@ async function lireLeFichier(fichier) { const nom = fichier.name || 'le fichier'
 function ceQueJaiLu(brutes) { let best = null;
   brutes.slice(0, 30).forEach((l, i) => { const cs = cellules(l).filter(Boolean); if (cs.length && (!best || cs.length > best.cs.length)) best = { i, cs }; });
   if (!best) return ''; const cs = best.cs.slice(0, 8).map(c => c.length > 28 ? c.slice(0, 27) + '…' : c);
-  return `J’ai lu${best.i ? ', ligne ' + (best.i + 1) : ''} : <span class="id">${cs.map(esc).join('</span>' + POINT + '<span class="id">')}</span>${best.cs.length > 8 ? '…' : ''}.`; }
-const IL_ME_FAUT = 'Il me faut au moins <span class="id">Device1</span>, <span class="id">Pin1</span>, <span class="id">Device2</span>, <span class="id">Pin2</span>.';
+  return `VOLTA a lu${best.i ? ', ligne ' + (best.i + 1) : ''} : <span class="id">${cs.map(esc).join('</span>' + POINT + '<span class="id">')}</span>${best.cs.length > 8 ? '…' : ''}.`; }
+// (v84 : VOLTA parle de lui à la troisième personne, le lecteur est vouvoyé ; chaque message dit ce qu'il faut faire)
+const IL_ME_FAUT = 'Il faut au moins les colonnes <span class="id">Device1</span>, <span class="id">Pin1</span>, <span class="id">Device2</span>, <span class="id">Pin2</span> : vérifiez la ligne d’en-têtes, ou partez du modèle.';
 const feuillesHtml = lu => lu && lu.ignorees && lu.ignorees.length ? lu.ignorees.map(n => guillemets(esc(n))) : [];
 /* (v84 — « rien ne se perd en silence ») CE QUE LA LECTURE A LAISSÉ DE CÔTÉ, pour la carte de l'installation : les feuilles
    sans les en-têtes, les lignes qui ne nomment ni équipement ni câble (leur n° de ligne Excel, quand le fichier n'a qu'une
@@ -26608,10 +26628,10 @@ function lireAvecCarte(pleines, map, debut) { const g = (row, i) => i != null &&
 function comprisHtml(D) { const parCol = new Map(); ROLES.forEach(([k, mot]) => { const i = D.map[k]; if (i != null && i !== '') parCol.set(+i, mot); });
   return [...parCol].sort((a, b) => a[0] - b[0]).map(([i, mot]) => `<span class="id">${esc(D.entete ? D.entete[i] || 'colonne ' + (i + 1) : 'colonne ' + (i + 1))}</span>\u00a0→ ${mot}`).join(', '); }
 function proposerRattrapage(nom, L) { const D = devinerTableau(L.pleines), lu = lireAvecCarte(L.pleines, D.map, D.debut);
-  if (!lu.liaisons.length) { echecImport('retest', { texte: `${esc(nom)} : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-retest', 'Télécharger un modèle']] },
-    nom + ' : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
+  if (!lu.liaisons.length) { echecImport('retest', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-retest', 'Télécharger un modèle']] },
+    nom + ' : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — vérifiez la ligne d’en-têtes.'); return; }
   effacerErreur('retest'); FICHIERS.attente = { nom, pleines: L.pleines, ...D }; FICHIERS.corriger = false;
-  ficheFichiers('retest'); signaler(nom + ' n’a pas les en-têtes de l’installation : voici ce que j’ai compris — rien n’est chargé avant « Charger ».', 'retest'); }
+  ficheFichiers('retest'); signaler(nom + ' n’a pas les en-têtes de l’installation : voici ce que VOLTA en a compris — vérifiez, rien n’est chargé avant « Charger ».', 'retest'); }
 function chargerRattrapage() { const A = FICHIERS.attente; if (!A) return; const lu = lireAvecCarte(A.pleines, A.map, A.debut); if (!lu.liaisons.length) return;
   chargerContrat(lu.liaisons, 'ouverture de ' + A.nom, A.nom, { nouveau: true }); contratRecu(A.nom, 'colonnes devinées');
   dire(pluriel(lu.liaisons.length, 'liaison') + ' chargée' + (lu.liaisons.length > 1 ? 's' : '') + ' de ' + guillemets(A.nom) + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.'); }
@@ -26620,7 +26640,7 @@ function apercuLiaisonsHtml(L, max) { const cols = [['de', 'De'], ['borneDe', 'B
   return `<div class="vf-apercu"><table><thead><tr>${cols.map(([k, t]) => `<th${k === 'de' || k === 'vers' ? ' class="req"' : ''}>${t}</th>`).join('')}</tr></thead><tbody>${L.slice(0, max || 3).map(l => `<tr>${cols.map(([k]) => `<td${k === 'de' || k === 'vers' ? ' class="req"' : ''}>${esc(l[k] == null ? '' : l[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
     + (L.length > (max || 3) ? `<p class="vf-note">… et ${pluriel(L.length - (max || 3), 'autre liaison')}.</p>` : ''); }
 function attenteHtml() { const A = FICHIERS.attente; if (!A) return ''; const lu = lireAvecCarte(A.pleines, A.map, A.debut);
-  const dit = A.entete && A.devine ? `${esc(A.nom)} n’a pas les en-têtes de l’installation. J’ai compris : ${comprisHtml(A)}.` : `${esc(A.nom)} n’a pas d’en-têtes que je reconnaisse : je l’ai lu dans l’ordre du collage — ${comprisHtml(A)}.`;
+  const dit = A.entete && A.devine ? `${esc(A.nom)} n’a pas les en-têtes de l’installation. VOLTA a compris : ${comprisHtml(A)}. Vérifiez l’aperçu, ou corrigez une colonne.` : `${esc(A.nom)} n’a pas d’en-têtes que VOLTA reconnaisse : il l’a lu dans l’ordre du collage — ${comprisHtml(A)}. Vérifiez l’aperçu, ou corrigez une colonne.`;
   const choix = FICHIERS.corriger ? `<div class="vf-carte-cols" role="group" aria-label="Le rôle de chaque colonne">${Array.from({ length: A.n }, (_, i) => { const role = ROLES.find(([k]) => A.map[k] !== '' && A.map[k] != null && +A.map[k] === i), ex = cellules(A.pleines[A.debut] || '')[i] || '';
       return `<label class="vf-col"><span class="vf-col-nom">${esc(A.entete ? A.entete[i] || 'colonne ' + (i + 1) : 'colonne ' + (i + 1))}</span><span class="vf-col-ex id">${esc(ex) || '—'}</span><select data-colonne="${i}" aria-label="${escA('Lire la colonne ' + (i + 1) + ' comme')}"><option value="">ignorer</option>${ROLES.map(([k, mot, en]) => `<option value="${k}"${role && role[0] === k ? ' selected' : ''}>${mot} (${en})</option>`).join('')}</select></label>`; }).join('')}</div>` : '';
   return `<div class="vf-boite vf-attente"><p>${dit}</p>${lu.liaisons.length ? apercuLiaisonsHtml(lu.liaisons, 3) : '<p class="vf-note">Avec ces colonnes, aucune ligne ne nomme ses deux bouts.</p>'}${lu.rejets.length ? `<p class="vf-note">${pluriel(lu.rejets.length, 'ligne')} sans ses deux bouts, laissée${lu.rejets.length > 1 ? 's' : ''} de côté.</p>` : ''}${choix}`
@@ -28877,7 +28897,7 @@ const PALETTE = { el: null, sel: 0, lignes: [], avant: null };
 // ce qu'on tape aussi pour trouver une action (ses mots d'atelier, sans accent)
 const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx installation corrigee retest modifications envoyer livrable', svg: 'image vectorielle dessin',
   png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge', normes: 'tables sources', bible: 'barrettes modules references',
-  nomenclature: 'bom pieces commander liste magasin', nomenclaturecsv: 'bom csv pieces', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
+  nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
   bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
   raccourcis: 'clavier touches aide', suivi: 'csv barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft' };
 const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
@@ -35827,13 +35847,20 @@ function baseSEEHtml() { const L = SEE.lu, v = SEE.vue, I = baseMontreeSEE();
     + lire('VOLTA se sert de cette base à la place de ses tables. Pour la mettre à jour, déposez le nouvel Excel de SEE (Données → Actualiser tout, puis enregistrer).')
     + `<div class="see-barre"><div class="see-onglets" role="tablist" aria-label="La base">${imp}${coh}</div></div>${corpsBase}</div>`;
   const nl = L.liens.filter(x => x.cibles.length).length;
-  // les feuilles du classeur, après un filet et leur nom de groupe ; chacune sous un nom court (sans EED_, OBJ_, LNK_), le nom entier dans sa bulle
-  const onglets = `<div class="see-onglets" role="tablist" aria-label="Le classeur">${imp}${coh}${onglet('liens', 'Liens', String(nl), 'Ce qui se relie à quoi, d’une feuille à l’autre')}${onglet('codes', 'Codes', null, 'Les valeurs des colonnes de codes, et le plan ouvert face à SEE')}<span class="see-sep" aria-hidden="true"></span><span class="see-groupe-t" aria-hidden="true">Feuilles du classeur</span>`
-    + L.feuilles.map((f, i) => onglet(i, nomOngletSEE(f.nom), milliers(f.lignes), '', f.nom)).join('') + '</div>';
-  const corps = v === 'import' || v === 'coherence' ? corpsBase : v === 'liens' ? liensSEEHtml() : v === 'codes' ? codesSEEHtml() : feuilleSEEHtml(L.feuilles[v] || L.feuilles[0]);
+  /* (v84) CINQ ONGLETS ÉGAUX (la charte : tous les onglets d'une barre ont la même largeur) : Import, Cohérence, Liens,
+     Codes, et « Feuilles » — un onglet qui ouvre la liste des feuilles du classeur (un menu, `details.doc-menu`, 08-normes
+     `lierMenusDoc`) ; une feuille choisie, l'onglet porte son nom court (sans EED_, OBJ_, LNK_) et son compte, le nom
+     entier dans sa bulle. Avant : quatorze onglets de largeurs inégales dans une bande qui défilait. */
+  const fv = typeof v === 'number' ? L.feuilles[v] : null, fleche = '<svg class="ico see-f-v" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  const feuilles = `<details class="doc-menu see-feuilles"><summary role="tab" aria-selected="${!!fv}" aria-haspopup="menu" data-bulle="${escA(fv ? fv.nom + ' — les autres feuilles du classeur' : 'Les ' + L.feuilles.length + ' feuilles du classeur, telles quelles')}"><b>${esc(fv ? nomOngletSEE(fv.nom) : 'Feuilles')}</b><span>${esc(fv ? milliers(fv.lignes) : String(L.feuilles.length))}</span>${fleche}</summary>`
+    + `<div class="doc-menu-l see-feuilles-l" role="menu" aria-label="Les feuilles du classeur">${L.feuilles.map((f, i) => `<button type="button" role="menuitem" data-see-vue="${i}"${v === i ? ' aria-current="true"' : ''}><span class="see-f-n"><b>${esc(nomOngletSEE(f.nom))}</b><i>${esc(plurielLie(f.lignes, 'ligne'))}</i></span><small>${esc(f.nom)}</small></button>`).join('')}</div></details>`;
+  const onglets = `<div class="see-onglets" role="tablist" aria-label="Le classeur">${imp}${coh}${onglet('liens', 'Liens', String(nl), 'Ce qui se relie à quoi, d’une feuille à l’autre')}${onglet('codes', 'Codes', null, 'Les valeurs des colonnes de codes, et le plan ouvert face à SEE')}${feuilles}</div>`;
+  // les exemples de valeurs : sous la barre, à droite, sur les vues du classeur (dans la barre, ils changeaient la largeur des onglets d'une vue à l'autre)
+  const outils = `<div class="see-outils"><label class="see-ex"><input type="checkbox" id="see-ex"${SEE.exemples ? ' checked' : ''}> Exemples de valeurs</label></div>`;
+  const corps = v === 'import' || v === 'coherence' ? corpsBase : outils + (v === 'liens' ? liensSEEHtml() : v === 'codes' ? codesSEEHtml() : feuilleSEEHtml(L.feuilles[v] || L.feuilles[0]));
   return `<div class="see">${nmTitre('Base SEE · lue sur ce poste, rien n’en sort', L.nom)}${verdict}`
     + lire('VOLTA a lu votre Excel ici, en entier, et l’a vérifié ligne par ligne. <b>Import</b> dit ce qu’il en prend et ce qui change dans ses tables : « Garder dans VOLTA » le garde sur ce PC, et rien ne sort. <b>Cohérence</b> dit ce qui cloche dans la base. Les autres onglets montrent le classeur tel quel.')
-    + `<div class="see-barre">${onglets}${v === 'import' || v === 'coherence' ? '' : `<label class="see-ex"><input type="checkbox" id="see-ex"${SEE.exemples ? ' checked' : ''}> Exemples de valeurs</label>`}</div>${corps}</div>`; }
+    + `<div class="see-barre">${onglets}</div>${corps}</div>`; }
 /* Une colonne d'une feuille, sur une ligne : son nom, son taux, deux exemples (la gauge AWG d'une section en mm²) ; un
    identifiant dit où il mène. */
 function versSEE(fi, c) { const L = SEE.lu, F = L.feuilles; if (estCleSEE(F[fi], c)) return '<i>identifiant</i>';
@@ -35900,6 +35927,11 @@ function changerVueSEE(cle) { if (!ORDRE_SEE().some(x => String(x) === String(cl
 function pasSEE(d) { const o = ORDRE_SEE(), k = o.findIndex(x => String(x) === String(SEE.vue)); changerVueSEE(o[Math.max(0, Math.min(o.length - 1, k + d))]); }
 function lierBaseSEE() { const c = $('fiche-corps'); if (!c) return;
   c.querySelectorAll('[data-see-vue]').forEach(b => b.onclick = () => changerVueSEE(/^\d+$/.test(b.dataset.seeVue) ? +b.dataset.seeVue : b.dataset.seeVue));
+  // (v84) l'onglet « Feuilles » : sa liste s'ouvre, se ferme (Échap, un clic dehors, un choix), se parcourt aux flèches
+  if (typeof lierMenusDoc === 'function') lierMenusDoc(c);
+  // une feuille choisie : le clavier revient sur l'onglet « Feuilles » (la liste fermée)
+  const fs = c.querySelector('.see-feuilles>summary'); if (fs && SEE.focusFeuilles) { SEE.focusFeuilles = false; try { fs.focus({ preventScroll: true }); } catch (_) { } }
+  c.querySelectorAll('.see-feuilles-l [data-see-vue]').forEach(b => b.addEventListener('click', () => { SEE.focusFeuilles = true; }, { capture: true }));
   const ex = $('see-ex'); if (ex) ex.onchange = () => { SEE.exemples = ex.checked; rendreBaseSEE(); };
   if ($('see-prec')) $('see-prec').onclick = () => pasSEE(-1);
   if ($('see-suiv')) $('see-suiv').onclick = () => pasSEE(1);

@@ -52,7 +52,7 @@ s'écrit ici, le jour même.
   connecteur, câble, contact à sertir.
 - **Gauge** (son mot, pas « jauge ») ; **folio** (pas « planche ») ; « VOLTA » partout où l'on écrivait « l'outil ».
 - **Chaque chiffre s'explique en clair** : de quoi il parle et ce qu'il change (« au démarrage il tire 9,31 A pendant
-  5 s ; sur 5 s, un 7,5 A ne disjoncte qu'au-delà de 21 A : il ne disjoncte pas »).
+  5 s ; sur 5 s, un 7,5 A ne disjoncte qu'au-delà de 10,9 A : il ne disjoncte pas »).
 - **Le nom des onglets dit ce qu'on y trouve** : « Fabrication » sonnait « usine » — c'est devenu « Pièces » (ce qu'il faut commander pour le monter).
 - Un problème se dit simplement, avec ce qu'il faut faire.
 

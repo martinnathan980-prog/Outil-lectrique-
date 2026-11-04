@@ -159,8 +159,9 @@ async function lireLeFichier(fichier) { const nom = fichier.name || 'le fichier'
 function ceQueJaiLu(brutes) { let best = null;
   brutes.slice(0, 30).forEach((l, i) => { const cs = cellules(l).filter(Boolean); if (cs.length && (!best || cs.length > best.cs.length)) best = { i, cs }; });
   if (!best) return ''; const cs = best.cs.slice(0, 8).map(c => c.length > 28 ? c.slice(0, 27) + '…' : c);
-  return `J’ai lu${best.i ? ', ligne ' + (best.i + 1) : ''} : <span class="id">${cs.map(esc).join('</span>' + POINT + '<span class="id">')}</span>${best.cs.length > 8 ? '…' : ''}.`; }
-const IL_ME_FAUT = 'Il me faut au moins <span class="id">Device1</span>, <span class="id">Pin1</span>, <span class="id">Device2</span>, <span class="id">Pin2</span>.';
+  return `VOLTA a lu${best.i ? ', ligne ' + (best.i + 1) : ''} : <span class="id">${cs.map(esc).join('</span>' + POINT + '<span class="id">')}</span>${best.cs.length > 8 ? '…' : ''}.`; }
+// (v84 : VOLTA parle de lui à la troisième personne, le lecteur est vouvoyé ; chaque message dit ce qu'il faut faire)
+const IL_ME_FAUT = 'Il faut au moins les colonnes <span class="id">Device1</span>, <span class="id">Pin1</span>, <span class="id">Device2</span>, <span class="id">Pin2</span> : vérifiez la ligne d’en-têtes, ou partez du modèle.';
 const feuillesHtml = lu => lu && lu.ignorees && lu.ignorees.length ? lu.ignorees.map(n => guillemets(esc(n))) : [];
 /* (v84 — « rien ne se perd en silence ») CE QUE LA LECTURE A LAISSÉ DE CÔTÉ, pour la carte de l'installation : les feuilles
    sans les en-têtes, les lignes qui ne nomment ni équipement ni câble (leur n° de ligne Excel, quand le fichier n'a qu'une
@@ -237,10 +238,10 @@ function lireAvecCarte(pleines, map, debut) { const g = (row, i) => i != null &&
 function comprisHtml(D) { const parCol = new Map(); ROLES.forEach(([k, mot]) => { const i = D.map[k]; if (i != null && i !== '') parCol.set(+i, mot); });
   return [...parCol].sort((a, b) => a[0] - b[0]).map(([i, mot]) => `<span class="id">${esc(D.entete ? D.entete[i] || 'colonne ' + (i + 1) : 'colonne ' + (i + 1))}</span>\u00a0→ ${mot}`).join(', '); }
 function proposerRattrapage(nom, L) { const D = devinerTableau(L.pleines), lu = lireAvecCarte(L.pleines, D.map, D.debut);
-  if (!lu.liaisons.length) { echecImport('retest', { texte: `${esc(nom)} : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-retest', 'Télécharger un modèle']] },
-    nom + ' : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
+  if (!lu.liaisons.length) { echecImport('retest', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-retest', 'Télécharger un modèle']] },
+    nom + ' : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — vérifiez la ligne d’en-têtes.'); return; }
   effacerErreur('retest'); FICHIERS.attente = { nom, pleines: L.pleines, ...D }; FICHIERS.corriger = false;
-  ficheFichiers('retest'); signaler(nom + ' n’a pas les en-têtes de l’installation : voici ce que j’ai compris — rien n’est chargé avant « Charger ».', 'retest'); }
+  ficheFichiers('retest'); signaler(nom + ' n’a pas les en-têtes de l’installation : voici ce que VOLTA en a compris — vérifiez, rien n’est chargé avant « Charger ».', 'retest'); }
 function chargerRattrapage() { const A = FICHIERS.attente; if (!A) return; const lu = lireAvecCarte(A.pleines, A.map, A.debut); if (!lu.liaisons.length) return;
   chargerContrat(lu.liaisons, 'ouverture de ' + A.nom, A.nom, { nouveau: true }); contratRecu(A.nom, 'colonnes devinées');
   dire(pluriel(lu.liaisons.length, 'liaison') + ' chargée' + (lu.liaisons.length > 1 ? 's' : '') + ' de ' + guillemets(A.nom) + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.'); }
@@ -249,7 +250,7 @@ function apercuLiaisonsHtml(L, max) { const cols = [['de', 'De'], ['borneDe', 'B
   return `<div class="vf-apercu"><table><thead><tr>${cols.map(([k, t]) => `<th${k === 'de' || k === 'vers' ? ' class="req"' : ''}>${t}</th>`).join('')}</tr></thead><tbody>${L.slice(0, max || 3).map(l => `<tr>${cols.map(([k]) => `<td${k === 'de' || k === 'vers' ? ' class="req"' : ''}>${esc(l[k] == null ? '' : l[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
     + (L.length > (max || 3) ? `<p class="vf-note">… et ${pluriel(L.length - (max || 3), 'autre liaison')}.</p>` : ''); }
 function attenteHtml() { const A = FICHIERS.attente; if (!A) return ''; const lu = lireAvecCarte(A.pleines, A.map, A.debut);
-  const dit = A.entete && A.devine ? `${esc(A.nom)} n’a pas les en-têtes de l’installation. J’ai compris : ${comprisHtml(A)}.` : `${esc(A.nom)} n’a pas d’en-têtes que je reconnaisse : je l’ai lu dans l’ordre du collage — ${comprisHtml(A)}.`;
+  const dit = A.entete && A.devine ? `${esc(A.nom)} n’a pas les en-têtes de l’installation. VOLTA a compris : ${comprisHtml(A)}. Vérifiez l’aperçu, ou corrigez une colonne.` : `${esc(A.nom)} n’a pas d’en-têtes que VOLTA reconnaisse : il l’a lu dans l’ordre du collage — ${comprisHtml(A)}. Vérifiez l’aperçu, ou corrigez une colonne.`;
   const choix = FICHIERS.corriger ? `<div class="vf-carte-cols" role="group" aria-label="Le rôle de chaque colonne">${Array.from({ length: A.n }, (_, i) => { const role = ROLES.find(([k]) => A.map[k] !== '' && A.map[k] != null && +A.map[k] === i), ex = cellules(A.pleines[A.debut] || '')[i] || '';
       return `<label class="vf-col"><span class="vf-col-nom">${esc(A.entete ? A.entete[i] || 'colonne ' + (i + 1) : 'colonne ' + (i + 1))}</span><span class="vf-col-ex id">${esc(ex) || '—'}</span><select data-colonne="${i}" aria-label="${escA('Lire la colonne ' + (i + 1) + ' comme')}"><option value="">ignorer</option>${ROLES.map(([k, mot, en]) => `<option value="${k}"${role && role[0] === k ? ' selected' : ''}>${mot} (${en})</option>`).join('')}</select></label>`; }).join('')}</div>` : '';
   return `<div class="vf-boite vf-attente"><p>${dit}</p>${lu.liaisons.length ? apercuLiaisonsHtml(lu.liaisons, 3) : '<p class="vf-note">Avec ces colonnes, aucune ligne ne nomme ses deux bouts.</p>'}${lu.rejets.length ? `<p class="vf-note">${pluriel(lu.rejets.length, 'ligne')} sans ses deux bouts, laissée${lu.rejets.length > 1 ? 's' : ''} de côté.</p>` : ''}${choix}`

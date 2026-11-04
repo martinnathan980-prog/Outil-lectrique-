@@ -1997,7 +1997,7 @@ const PALETTE = { el: null, sel: 0, lignes: [], avant: null };
 // ce qu'on tape aussi pour trouver une action (ses mots d'atelier, sans accent)
 const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx installation corrigee retest modifications envoyer livrable', svg: 'image vectorielle dessin',
   png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge', normes: 'tables sources', bible: 'barrettes modules references',
-  nomenclature: 'bom pieces commander liste magasin', nomenclaturecsv: 'bom csv pieces', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
+  nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
   bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
   raccourcis: 'clavier touches aide', suivi: 'csv barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft' };
 const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];

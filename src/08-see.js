@@ -188,13 +188,20 @@ function baseSEEHtml() { const L = SEE.lu, v = SEE.vue, I = baseMontreeSEE();
     + lire('VOLTA se sert de cette base à la place de ses tables. Pour la mettre à jour, déposez le nouvel Excel de SEE (Données → Actualiser tout, puis enregistrer).')
     + `<div class="see-barre"><div class="see-onglets" role="tablist" aria-label="La base">${imp}${coh}</div></div>${corpsBase}</div>`;
   const nl = L.liens.filter(x => x.cibles.length).length;
-  // les feuilles du classeur, après un filet et leur nom de groupe ; chacune sous un nom court (sans EED_, OBJ_, LNK_), le nom entier dans sa bulle
-  const onglets = `<div class="see-onglets" role="tablist" aria-label="Le classeur">${imp}${coh}${onglet('liens', 'Liens', String(nl), 'Ce qui se relie à quoi, d’une feuille à l’autre')}${onglet('codes', 'Codes', null, 'Les valeurs des colonnes de codes, et le plan ouvert face à SEE')}<span class="see-sep" aria-hidden="true"></span><span class="see-groupe-t" aria-hidden="true">Feuilles du classeur</span>`
-    + L.feuilles.map((f, i) => onglet(i, nomOngletSEE(f.nom), milliers(f.lignes), '', f.nom)).join('') + '</div>';
-  const corps = v === 'import' || v === 'coherence' ? corpsBase : v === 'liens' ? liensSEEHtml() : v === 'codes' ? codesSEEHtml() : feuilleSEEHtml(L.feuilles[v] || L.feuilles[0]);
+  /* (v84) CINQ ONGLETS ÉGAUX (la charte : tous les onglets d'une barre ont la même largeur) : Import, Cohérence, Liens,
+     Codes, et « Feuilles » — un onglet qui ouvre la liste des feuilles du classeur (un menu, `details.doc-menu`, 08-normes
+     `lierMenusDoc`) ; une feuille choisie, l'onglet porte son nom court (sans EED_, OBJ_, LNK_) et son compte, le nom
+     entier dans sa bulle. Avant : quatorze onglets de largeurs inégales dans une bande qui défilait. */
+  const fv = typeof v === 'number' ? L.feuilles[v] : null, fleche = '<svg class="ico see-f-v" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  const feuilles = `<details class="doc-menu see-feuilles"><summary role="tab" aria-selected="${!!fv}" aria-haspopup="menu" data-bulle="${escA(fv ? fv.nom + ' — les autres feuilles du classeur' : 'Les ' + L.feuilles.length + ' feuilles du classeur, telles quelles')}"><b>${esc(fv ? nomOngletSEE(fv.nom) : 'Feuilles')}</b><span>${esc(fv ? milliers(fv.lignes) : String(L.feuilles.length))}</span>${fleche}</summary>`
+    + `<div class="doc-menu-l see-feuilles-l" role="menu" aria-label="Les feuilles du classeur">${L.feuilles.map((f, i) => `<button type="button" role="menuitem" data-see-vue="${i}"${v === i ? ' aria-current="true"' : ''}><span class="see-f-n"><b>${esc(nomOngletSEE(f.nom))}</b><i>${esc(plurielLie(f.lignes, 'ligne'))}</i></span><small>${esc(f.nom)}</small></button>`).join('')}</div></details>`;
+  const onglets = `<div class="see-onglets" role="tablist" aria-label="Le classeur">${imp}${coh}${onglet('liens', 'Liens', String(nl), 'Ce qui se relie à quoi, d’une feuille à l’autre')}${onglet('codes', 'Codes', null, 'Les valeurs des colonnes de codes, et le plan ouvert face à SEE')}${feuilles}</div>`;
+  // les exemples de valeurs : sous la barre, à droite, sur les vues du classeur (dans la barre, ils changeaient la largeur des onglets d'une vue à l'autre)
+  const outils = `<div class="see-outils"><label class="see-ex"><input type="checkbox" id="see-ex"${SEE.exemples ? ' checked' : ''}> Exemples de valeurs</label></div>`;
+  const corps = v === 'import' || v === 'coherence' ? corpsBase : outils + (v === 'liens' ? liensSEEHtml() : v === 'codes' ? codesSEEHtml() : feuilleSEEHtml(L.feuilles[v] || L.feuilles[0]));
   return `<div class="see">${nmTitre('Base SEE · lue sur ce poste, rien n’en sort', L.nom)}${verdict}`
     + lire('VOLTA a lu votre Excel ici, en entier, et l’a vérifié ligne par ligne. <b>Import</b> dit ce qu’il en prend et ce qui change dans ses tables : « Garder dans VOLTA » le garde sur ce PC, et rien ne sort. <b>Cohérence</b> dit ce qui cloche dans la base. Les autres onglets montrent le classeur tel quel.')
-    + `<div class="see-barre">${onglets}${v === 'import' || v === 'coherence' ? '' : `<label class="see-ex"><input type="checkbox" id="see-ex"${SEE.exemples ? ' checked' : ''}> Exemples de valeurs</label>`}</div>${corps}</div>`; }
+    + `<div class="see-barre">${onglets}</div>${corps}</div>`; }
 /* Une colonne d'une feuille, sur une ligne : son nom, son taux, deux exemples (la gauge AWG d'une section en mm²) ; un
    identifiant dit où il mène. */
 function versSEE(fi, c) { const L = SEE.lu, F = L.feuilles; if (estCleSEE(F[fi], c)) return '<i>identifiant</i>';
@@ -261,6 +268,11 @@ function changerVueSEE(cle) { if (!ORDRE_SEE().some(x => String(x) === String(cl
 function pasSEE(d) { const o = ORDRE_SEE(), k = o.findIndex(x => String(x) === String(SEE.vue)); changerVueSEE(o[Math.max(0, Math.min(o.length - 1, k + d))]); }
 function lierBaseSEE() { const c = $('fiche-corps'); if (!c) return;
   c.querySelectorAll('[data-see-vue]').forEach(b => b.onclick = () => changerVueSEE(/^\d+$/.test(b.dataset.seeVue) ? +b.dataset.seeVue : b.dataset.seeVue));
+  // (v84) l'onglet « Feuilles » : sa liste s'ouvre, se ferme (Échap, un clic dehors, un choix), se parcourt aux flèches
+  if (typeof lierMenusDoc === 'function') lierMenusDoc(c);
+  // une feuille choisie : le clavier revient sur l'onglet « Feuilles » (la liste fermée)
+  const fs = c.querySelector('.see-feuilles>summary'); if (fs && SEE.focusFeuilles) { SEE.focusFeuilles = false; try { fs.focus({ preventScroll: true }); } catch (_) { } }
+  c.querySelectorAll('.see-feuilles-l [data-see-vue]').forEach(b => b.addEventListener('click', () => { SEE.focusFeuilles = true; }, { capture: true }));
   const ex = $('see-ex'); if (ex) ex.onchange = () => { SEE.exemples = ex.checked; rendreBaseSEE(); };
   if ($('see-prec')) $('see-prec').onclick = () => pasSEE(-1);
   if ($('see-suiv')) $('see-suiv').onclick = () => pasSEE(1);
