@@ -670,7 +670,8 @@ function tableContacts(xs, o) { o = o || {}; let prec = '';
     const dSee = ligne && typeof differenceSEEMots === 'function' && ligne.reference === (st.reference || '') ? differenceSEEMots('contacts', ligne) : '';
     // v74 : la gauge et le contact OUVRENT le contact (`carteContact`) — sa norme, sa table, sa source ; et, quand il se change
     // (un connecteur : `sertir:…`), les autres contacts de la taille dessous ; sinon (une barrette, une prise) la carte seule (`ct:…`)
-    const cleCt = !ks && P && P.Q && st && f && f.l ? x.ctCle || (x.rep || 'ct') + '|' + cleFil(f.l) : '', ouvre = ks ? `data-sertir="${escA(ks)}"` : cleCt ? `data-ct="${escA(cleCt)}"` : '';
+    // (v84) la borne dans la clé : les deux bouts d'un pont (même câble, deux bornes du même connecteur) s'ouvrent chacun seul
+    const cleCt = !ks && P && P.Q && st && f && f.l ? x.ctCle || (x.rep || 'ct') + '|' + cleFil(f.l) + (x.borne ? '|' + x.borne : '') : '', ouvre = ks ? `data-sertir="${escA(ks)}"` : cleCt ? `data-ct="${escA(cleCt)}"` : '';
     const tit = (mot ? 'Contact ' + mot + (st.main ? ' (choisi ici)' : ligne && ligne.source === 'SEE' ? ' (la base SEE)' : ' (la table de la norme)') : 'La table de la norme ne le dit pas') + (dSee ? ' — ' + dSee : '') + (ks ? ' — cliquer pour l’ouvrir : sa norme, sa table, et les autres contacts' : cleCt ? ' — cliquer pour l’ouvrir : sa norme, sa table, sa source' : '');
     const marque = dSee ? '<i class="ct-see" aria-hidden="true">SEE</i>' : '', conf = ligne && !meme && ligne.reference === (st.reference || '') ? repereConfiance(ligne, 'Vos tables SEE') : '';
     const sertir = ouvre ? `<button type="button" class="fi-sertir ct-ref${st && st.main ? ' main' : ''}${meme ? ' meme' : ''}" ${ouvre} aria-label="${escA(tit)}">${mot ? esc(mot) : '<i>choisir</i>'}${marque}</button>`
@@ -1369,7 +1370,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   // ouvre la galerie
   const plusieurs = Q.modules.length > 1, refs = plusieurs ? `<span class="fi-modules">${Q.modules.map((M, k) => `<span class="fi-mod"><i>${k + 1}</i>${ident(M.reference)}</span>`).join('')}</span>` : '';
   // le rail (le lecteur : « la bonne référence du rail, celui qui porte tous les modules ») : la table Accessoires de la norme
-  const R = aPoser ? null : railDeBarrette(Q), railH = R ? `<span class="fi-rail" data-bulle="${escA([R.role, R.equivalent ? 'équivalent ' + R.equivalent : '', sansLiens(R.source)].filter(Boolean).join(' — '))}">${ident(R.reference)}</span>${repereConfiance(R.ligne, 'Vos tables')}${aide('rail', { rail: R })}` : '';
+  const BP = aPoser ? null : barretteParente(nom), porteRail = !!(BP && BP.porteur === nom), R = BP && BP.rails[0] ? { ...BP.rails[0], sous: (BP.freres.length > 1 ? 'barrette ' + BP.parent + ', ' : '') + BP.rails[0].sous } : null, railH = R ? `<span class="fi-rail" data-bulle="${escA([R.role, R.equivalent ? 'équivalent ' + R.equivalent : '', sansLiens(R.source)].filter(Boolean).join(' — '))}">${ident(R.reference)}</span>${repereConfiance(R.ligne, 'Vos tables')}${aide('rail', { rail: R })}` : '';
   const tete = aPoser && !M0 ? '<p class="fi-note">Le module se choisit quand la barrette est posée au contrat.</p>' : champs([
     ligneChamp(plusieurs ? 'Modules' : 'Module', (plusieurs ? refs : moduleV) + aide('module', { plan: Q }), { changer: plusieurs && !aPoser ? boutonChanger('bar|' + nom, 'Les assemblages de la norme', 'Changer') : '', sous: ecart, liste: galerie, cls: 'fc-norme' }),
     R ? ligneChamp('Rail', railH, { sous: R.sous ? `<span>${esc(R.sous)}</span>` : '' }) : '']);
@@ -1415,12 +1416,12 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
     M0 ? { html: plusieurs ? `<b class="id">${esc(Q.reference)}</b> : un seul module ne loge pas ces ${esc(pluriel(Q.potentiels, 'groupe'))}.` : `Module <b class="id">${esc(Q.reference)}</b> : ${main || Q.main ? 'choisi ici, à la main' : Q.nomme ? 'celui de votre fichier : il loge tous les groupes, chaque câble dans un contact qui admet sa gauge' : 'le plus petit qui loge ces ' + esc(pluriel(Q.potentiels, 'groupe')) + ', chaque câble dans un contact qui admet sa gauge'}.`, source: main || Q.main ? 'main' : Q.nomme ? 'fichier' : 'calcul' }
       : aPoser ? null : { html: esc(Q.verdicts[0] ? majuscule(Q.verdicts[0].texte) + '.' : 'Aucun module de la norme ne loge ces câbles.'), source: 'calcul', etat: 'ko' },
     ecartRetest ? { html: `Votre fichier dit <b class="id">${esc(b.pn)}</b>${pqR ? ' — ' + esc(pqR) : ''}.`, source: 'fichier', etat: 'att' } : null,
-    R ? { html: `Rail <b class="id">${esc(R.reference)}</b>${R.sous ? ', ' + esc(R.sous) : ''} : il porte ${plusieurs ? 'les modules' : 'le module'}.`, source: 'tables', bulle: sansLiens(R.source) } : null,
+    R ? { html: `Rail <b class="id">${esc(R.reference)}</b>${R.sous ? ', ' + esc(R.sous) : ''} : il porte ${BP.freres.length > 1 ? 'les ' + R.n + ' modules de ' + BP.parent + (porteRail ? '' : ' — compté avec le module 1, ' + BP.porteur) : plusieurs ? 'les modules' : 'le module'}.`, source: 'tables', bulle: sansLiens(R.source) } : null,
     refsCt.length ? { html: `Contacts à sertir : ${refsCt.map(x => `<b class="id">${esc(x.ref)}</b>${x.q > 1 ? ' × ' + x.q : ''}`).join(', ')}.`, source: 'tables' } : null,
     refuses.length ? { html: `${esc(majuscule(pluriel(refuses.length, 'câble')))} trop gros pour leur contact : la gauge est refusée.`, source: 'tables', etat: 'ko' } : null];
   const libresT = new Map(); Q.modules.forEach((M, k) => M.module.contacts.forEach(ct => { if (!par.has(k + '|' + ct.lettre)) libresT.set(ct.taille, (libresT.get(ct.taille) || 0) + 1); }));
   const obts = M0 ? [...libresT].map(([t, q]) => { let o = null; try { o = obturateurDe(N, M0.module.famille, t); } catch (_) { o = null; } return o && o.obturateur ? { q, ref: String(o.obturateur), role: 'obturateur, contact libre taille ' + t, statut: 'selon la zone' } : null; }).filter(Boolean) : [];
-  const fabB = M0 ? [{ titre: 'Barrette ' + nom, sous: famNom, lignes: [...compterParReference(Q.modules.map(M => M.reference), 'module de jonction'), R ? { q: 1, ref: R.reference, role: 'rail' + (R.sous ? ', ' + R.sous : '') } : null, ...refsCt, ...obts].filter(Boolean) }] : [];
+  const fabB = M0 ? [{ titre: 'Barrette ' + nom, sous: famNom, lignes: [...compterParReference(Q.modules.map(M => M.reference), 'module de jonction'), R && porteRail ? { q: 1, ref: R.reference, role: 'rail' + (R.sous ? ', ' + R.sous : '') } : null, ...refsCt, ...obts].filter(Boolean) }] : [];
   /* (v81, le lecteur : « ce qu'elle relie, une grande ligne où il y a tout ; on ne comprend pas ; le schéma est petit ;
      “3 contacts pris sur 8”, c'est trop, on le voit ») : CE QU'ELLE RELIE devient un brochage dessiné, comme pour un
      équipement — chaque groupe de contacts reliés est une pièce, ses câbles à la couleur du groupe (la même que sur la
@@ -1440,7 +1441,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
     { cle: 'reglages', statut: { t: aPoser && !M0 ? 'son vrai repère' : 'module, contacts' }, contenu: (aPoser && !M0 ? '' : sommaireReglages([
         { titre: plusieurs ? 'Ses modules' : 'Le module', valeur: Q.reference ? `<span class="id">${esc(Q.reference)}</span>` : 'aucun', avant: ecartRetest ? `<span class="id">${esc(b.pn)}</span>` : '', source: main || Q.main ? 'main' : Q.nomme && !ecartRetest ? 'fichier' : 'calcul', etat: Q.reference ? '' : 'ko',
           pourquoi: ecartRetest ? 'Votre fichier donne l’autre : VOLTA prend le plus petit qui loge tous les groupes.' : Q.nomme ? 'Celui de votre fichier : il loge tous les groupes.' : 'Le plus petit qui loge tous les groupes, chaque câble dans un contact qui admet sa gauge.', vers: '[data-reg="le-module-et-son-rail"]' },
-        R ? { titre: 'Le rail', valeur: `<span class="id">${esc(R.reference)}</span>`, source: 'tables', pourquoi: 'Il suit le module : il change avec lui.' } : null,
+        R ? { titre: 'Le rail', valeur: `<span class="id">${esc(R.reference)}</span>`, source: 'tables', pourquoi: BP.freres.length > 1 ? (porteRail ? 'Il porte les ' + R.n + ' modules de ' + BP.parent + ' : commandé une fois, ici.' : 'Celui de ' + BP.parent + ' : commandé une fois, avec le module 1 (' + BP.porteur + ').') : 'Il suit le module : il change avec lui.' } : null,
         nf ? { titre: 'Les contacts à sertir', valeur: esc(pluriel(nf, 'contact')), source: Q.fils.some(x => x.sertir && x.sertir.main) ? 'main' : 'tables', pourquoi: 'Un par câble, selon sa gauge. Une lettre de la face mène à son contact.', vers: '[data-reg="les-contacts-a-sertir"]' } : null]))
       + regCarte(aPoser && !M0 ? 'La barrette à poser' : 'Le module et son rail', aPoser && !M0 ? 'VOLTA l’a ajoutée : donnez-lui son vrai repère quand elle sera posée.' : 'Un clic sur le module montre les assemblages de la norme, pour en imposer un autre ; le rail suit.', tete)
         + regCarte('Les contacts à sertir', 'Double-clic sur un contact pour en prendre un autre.', contacts, { droite: nf ? `<span class="nv-reg-n">${esc(pluriel(nf, 'contact'))}</span>` : '' }) },
@@ -1485,11 +1486,6 @@ function galerieModules(nom, b, Q, main) { const N = app.norme, fams = famillesD
     + (cartes ? `<div class="fi-galerie">${cartes}</div>` : '') + autresH; }
 /* LE RAIL d'une barrette : la ligne « rail » de la table Accessoires de sa norme (NN y devient le nombre de modules : le
    rail Amphenol se commande au nombre de modules) ; sa longueur quand la ligne la dit au pas. null sans ligne. */
-function railDeBarrette(Q) { const M0 = Q && Q.modules && Q.modules[0]; if (!M0) return null; const n = Q.modules.length;
-  const a = accessoiresDe(app.norme, M0.module.famille).find(x => /^rail/i.test(String(x.role || ''))); if (!a) return null;
-  const reference = String(a.reference).replace(/NN/, String(n).padStart(2, '0')), pas = /pas (\d+(?:[.,]\d+)?) mm/.exec(String(a.role || '') + ' ' + String(a.note || ''));
-  const longueur = /NN/.test(a.reference) && pas ? (n === 1 ? 18 : nombreLu(pas[1]) * n) : null;
-  return { reference, role: a.role || '', equivalent: a.equivalent || '', source: a.origine || a.note || '', ligne: a, n, sous: longueur ? `${plurielLie(n, 'module')} · ${nombre(longueur)} mm` : /2000|2 m/.test(String(a.role || '') + a.reference) ? 'à couper à la longueur des modules' : '' }; }
 /* Le prochain repère libre d'un code dans la zone d'un équipement : « 102VT1 » si personne ne le porte. */
 function repereLibre(voisin, code) { const q = lireRepere(voisin), zone = q && q.num ? q.num : '', pris = new Set(reperesDe(verite()));
   for (let n = 1; n < 1000; n++) { const r = zone + code + n; if (!pris.has(r)) return r; } return zone + code + '1'; }

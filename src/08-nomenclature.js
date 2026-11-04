@@ -39,7 +39,7 @@ function disjoncteursDeLaNomenclature(V) { return reperesDe(V || verite()).filte
 function nombreDeReperes(folio, L) { if (!L && typeof reperesDuContrat === 'function') { const R = reperesDuContrat(); return folio == null ? R.length : R.filter(r => (r.plans || []).includes(folio)).length; }
   return reperesDe(L || verite()).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).length; }
 /* La nomenclature : relue depuis le contrat, les normes et les choix (références, sexes, raccords). */
-function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESES, contacts = compteur(), modules = compteur(), connecteurs = compteur(), habits = compteur(), cables = compteur();
+function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESES, contacts = compteur(), modules = compteur(), connecteurs = compteur(), habits = compteur(), cables = compteur(), rails = compteur();
   // le contact écrit à la main à un bout (le récapitulatif ou la fiche : `contactMain`) passe devant celui du plan ;
   // un contact « à confirmer » (une référence que la recherche R1 n'a pas pu vérifier) le reste dans la nomenclature
   const force = (x, r) => { const l = x.f && x.f.l, k = l ? contactMain(l, r.split(' ')[0], x.borne) : ''; return k ? { ...x, sertir: { reference: k, accessoire: '' } } : x; };
@@ -71,7 +71,9 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
     if (h.choix.gaine) habits.plus('gaine|' + (G ? G.reference : h.choix.gaine), { quoi: 'gaine ' + h.choix.gaine + (G ? ' (' + G.role + ')' : ''), reference: G ? G.reference : 'aucune ne va au toron', note: G ? (G.role === 'surblindage' ? 'Ø int. ' + nombre(G.dint) + ' mm' : 'toron ' + nombre(G.dmin) + '–' + nombre(G.dmax) + ' mm') : '' }, ou); };
   reperesDe(V).forEach(r => { if (estMasse(r) || estRenvoi(r) || estRail(r) || estDisjoncteur(r)) return;
     try {
-      if (barretteEnModules(r)) { const Q = planDeBarrette(r).plan; Q.modules.forEach(M => modules.plus(M.reference, { reference: M.reference, famille: nomDeFamille(app.norme, M.module.famille) }, r)); sertir(Q.fils, r); }
+      if (barretteEnModules(r)) { const Q = planDeBarrette(r).plan; Q.modules.forEach(M => modules.plus(M.reference, { reference: M.reference, famille: nomDeFamille(app.norme, M.module.famille) }, r)); sertir(Q.fils, r);
+        // le rail : un par barrette parente (VT3 = 668VT31 + 669VT32), compté à son module 1 (`barretteParente`, 08-modules)
+        const BP = barretteParente(r); if (BP.porteur === r) BP.rails.forEach(R => rails.plus(R.reference, { reference: R.reference, famille: nomDeFamille(app.norme, R.famille), note: R.coupe ? 'à couper à la longueur des modules' : R.longueur != null ? nombre(R.longueur) + ' mm' : '' }, BP.parent)); }
       else if (coupureEnModules(r)) { const { besoins: b, plan: Q } = planDeCoupure(r); if (Q.reference) connecteurs.plus(Q.reference, { reference: Q.reference, nature: 'prise de coupure' }, r);
         const am = Q.fils.filter(x => x.f.amont), av = Q.fils.filter(x => !x.f.amont); sertir(am, r + ' partie mobile'); sertir(av, r + ' partie fixe');
         habiller(r + '|fiche', am.map(x => x.f), b.pn, r + ' partie mobile', Q.reference); habiller(r + '|embase', av.map(x => x.f), b.pn, r + ' partie fixe', Q.reference); }
@@ -85,7 +87,7 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
     cables.plus(l.type, { reference: l.type, cable: cableDuType(app.norme, l.type) }, null, 1);
     longueurs.set(l.type, (longueurs.get(l.type) || 0) + L); if (l.longueur > 0) reelles.set(l.type, (reelles.get(l.type) || 0) + 1); });
   const lc = cables.lignes().map(c => ({ ...c, longueur: longueurs.get(c.reference) || 0, reelles: reelles.get(c.reference) || 0, masse: c.cable && c.cable.masse != null ? c.cable.masse * (longueurs.get(c.reference) || 0) : null }));
-  return { contacts: contacts.lignes(), modules: modules.lignes(), connecteurs: connecteurs.lignes(), disjoncteurs: disjoncteursDeLaNomenclature(V), habits: habits.lignes(), cables: lc,
+  return { contacts: contacts.lignes(), modules: modules.lignes(), rails: rails.lignes(), connecteurs: connecteurs.lignes(), disjoncteurs: disjoncteursDeLaNomenclature(V), habits: habits.lignes(), cables: lc,
            fils: V.filter(l => liaisonComplete(l) && l.de !== l.vers).length, longueur: lc.reduce((s, c) => s + c.longueur, 0), masse: lc.reduce((s, c) => s + (c.masse || 0), 0), hypothese: H.longueur }; }
 
 /* ---- le document ---------------------------------------------------------------
@@ -122,6 +124,7 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
     // (v84) le fourreau sous son contact, pas dans une colonne de tirets (la charte : « pas de colonne pleine de tirets »)
     + table('Contacts à sertir', refs(N.contacts, 'référence'), ['Contact', 'Qté', 'Où'], N.contacts.map(x => [td('ref', esc(x.reference) + (x.accessoire ? `<span class="no-arr">avec ${esc(x.accessoire)}</span>` : '') + (x.confiance === 'à confirmer' ? note('à confirmer') : '')), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Modules de jonction', refs(N.modules, 'référence'), ['Module', 'Norme', 'Qté', 'Barrettes'], N.modules.map(x => [td('ref', esc(x.reference)), td('sans', esc(x.famille || ''), !x.famille), td('d', x.n), td('sans', ou(x.ou))]))
+    + table('Rails des barrettes', refs(N.rails, 'référence'), ['Rail', 'Norme', 'Qté', 'Barrettes'], N.rails.map(x => [td('ref', esc(x.reference) + (x.note ? `<span class="no-arr">${esc(x.note)}</span>` : '')), td('sans', esc(x.famille || ''), !x.famille), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Connecteurs et prises', refs(N.connecteurs, 'part number'), ['Part number', 'Nature', 'Qté', 'Repères'], N.connecteurs.map(x => [td('ref', esc(x.reference)), td('sans', natureHtml(x.nature), !x.nature), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Disjoncteurs', plurielLie(N.disjoncteurs.length, 'disjoncteur'), ['Repère', 'Part number à commander', 'Calibre', 'Installation', 'État'], N.disjoncteurs.map(x => [td('ref', esc(x.repere)),
       td('ref', esc(x.reference) + (x.construit ? `<i class="no-note-l no-construit" data-bulle="Le part number du calibre que VOLTA retient, construit dans la famille du retest : à vérifier au catalogue">construit · à vérifier</i>` : '')),
@@ -147,6 +150,7 @@ const ENTETES_NOMEN = ['Section', 'Référence', 'Détail', 'Quantité', 'Unité
 function lignesNomenclature(N) { const L = [];
   N.contacts.forEach(x => L.push(['Contacts', x.reference, [x.accessoire, x.confiance === 'à confirmer' ? 'à confirmer' : ''].filter(Boolean).join(' — '), x.n, 'pièce', x.ou.join(', ')]));
   N.modules.forEach(x => L.push(['Modules', x.reference, x.famille || '', x.n, 'pièce', x.ou.join(', ')]));
+  (N.rails || []).forEach(x => L.push(['Rails', x.reference, [x.famille, x.note].filter(Boolean).join(' — '), x.n, 'pièce', x.ou.join(', ')]));
   N.connecteurs.forEach(x => L.push(['Connecteurs', x.reference, x.nature || '', x.n, 'pièce', x.ou.join(', ')]));
   (N.disjoncteurs || []).forEach(x => L.push(['Disjoncteurs', x.reference, [x.calibre ? 'calibre ' + nombre(x.calibre) + ' A' : '', x.retest ? 'installation ' + x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat, x.construit ? 'part number construit, à vérifier au catalogue' : ''].filter(Boolean).join(' — '), 1, 'pièce', x.repere]));
   N.habits.forEach(x => L.push(['Habillage', x.reference, x.quoi + (x.note ? ' — ' + x.note : ''), x.n, 'pièce', x.ou.join(', ')]));

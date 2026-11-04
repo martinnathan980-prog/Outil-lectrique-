@@ -422,6 +422,8 @@ function pagesNomenclaturePdf(nom) { let N; try { N = nomenclatureDuContrat(); }
       lignes: N.contacts.map(x => [x.reference + (x.accessoire ? ' avec ' + x.accessoire : '') + (x.confiance === 'à confirmer' ? ' (à confirmer)' : ''), x.n, ou(x.ou)]) },
     { titre: 'Modules de jonction', compte: motPdf(somme(N.modules), 'pièce', 'pièces'), colonnes: [['Module', 0.2, { mono: true }], ['Norme', 0.16], ['Qté', 0.07, { centre: true }], ['Barrettes', 0.57, { gris: true }]],
       lignes: N.modules.map(x => [x.reference, x.famille || '', x.n, ou(x.ou)]) },
+    { titre: 'Rails des barrettes', compte: motPdf(somme(N.rails || []), 'pièce', 'pièces'), colonnes: [['Rail', 0.2, { mono: true }], ['Norme', 0.16], ['Qté', 0.07, { centre: true }], ['Barrettes', 0.57, { gris: true }]],
+      lignes: (N.rails || []).map(x => [x.reference + (x.note ? ' (' + x.note + ')' : ''), x.famille || '', x.n, ou(x.ou)]) },
     { titre: 'Connecteurs et prises', compte: motPdf(somme(N.connecteurs), 'pièce', 'pièces'), colonnes: [['Part number', 0.2, { mono: true }], ['Nature', 0.3], ['Qté', 0.07, { centre: true }], ['Repères', 0.43, { gris: true }]],
       lignes: N.connecteurs.map(x => [x.reference, x.nature || '', x.n, ou(x.ou)]) },
     { titre: 'Disjoncteurs', compte: motPdf((N.disjoncteurs || []).length, 'pièce', 'pièces'), colonnes: [['Repère', 0.12, { mono: true }], ['Part number à commander', 0.22, { mono: true }], ['Calibre', 0.1, { centre: true }], ['Installation', 0.2, { mono: true, gris: true }], ['État', 0.36]],
