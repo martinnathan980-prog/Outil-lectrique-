@@ -231,7 +231,11 @@ console.log('\n6. CE QUE LE CÂBLE ADMET : LE MÊME CALCUL QUE LA FICHE D’UN C
   ok('ce que le câble admet à chaque état est LE calcul de la fiche d’un câble (`admissionDuFil`) — quatre jeux d’hypothèses (95 °C, 70 °C, 120 °C sans faisceau, 15 câbles à 20 % à 30 000 ft), trois gauges, des états de 1,5 s à 125 s et le permanent',
     ecarts === 0 && vus.length > 40, ecarts + ' écarts');
   ok('le facteur suit le PALIER de la durée : à 70 °C d’ambiante, un état de 125 s se juge sur le continu, AVEC l’ambiante (' + p125.admise.toFixed(2) + ' A, comme le permanent) — avant v84, sans elle (' + (A70.fil.intensite * A70.facteurCourt).toFixed(2) + ' A)',
-    X.palierDe(125) === Infinity && proche(p125.admise, amb.continu, 1e-12) && !proche(p125.admise, A70.fil.intensite * A70.facteurCourt, 1e-3)); }
+    X.palierDe(125) === Infinity && proche(p125.admise, amb.continu, 1e-12) && !proche(p125.admise, A70.fil.intensite * A70.facteurCourt, 1e-3));
+  // le courant par branche : un câble qui n'alimente qu'une partie du disjoncteur, sa consommation écrite, se juge à SON courant
+  const branche = X.pointsDuProfil({ dem: { i: 3, t: 5 }, perm: { i: 1.5 } }), [tronc, br] = X.protectionDesFils(NE, 10, P, [{ type: 'DR24' }, { type: 'DR24', points: branche }], {});
+  ok('le courant PAR BRANCHE : un DR24 qui n’alimente qu’une partie du 10 A (3 A au démarrage, 1,5 A permanents, écrits) se juge à son courant — il porte sa charge ; sans branche écrite, au profil du disjoncteur (9,31 A : trop fin) ; ce que le 10 A laisse passer reste le même',
+    br.parBranche && !tronc.parBranche && br.permanent === 1.5 && tronc.permanent === 5 && br.phases.map(p => p.i).join() === '3,1.5' && br.verdict !== 'fil' && tronc.verdict === 'fil' && JSON.stringify(br.laisse) === JSON.stringify(tronc.laisse), br.verdict + ' / ' + tronc.verdict); }
 
 console.log(`\n${total - echecs} / ${total} contrôles passés${echecs ? ` — ${echecs} échec(s)` : '  —  tout est vert'}`);
 process.exit(echecs ? 1 : 0);

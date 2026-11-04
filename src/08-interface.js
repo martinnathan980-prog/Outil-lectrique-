@@ -2715,7 +2715,10 @@ function recitDuGeste(de, vers, p, sens) { const quoi = (p && p.quoi) || '', V =
     if (/^retouche de ce folio/.test(quoi)) return sens === 'court' ? 'le dessin automatique de ce folio' : sens === 'revient' ? 'vos retouches reviennent sur ce folio' : 'le dessin automatique revient sur ce folio';
     return sens === 'court' ? quoi : quoi + (sens === 'revient' ? ' : défait' : ' : refait'); }
   const phrases = [], A = de.liaisons || [], B = vers.liaisons || [];
-  const nomC = l => l.cable || (l.de && l.vers ? l.de + ' → ' + l.vers : 'une liaison');
+  // (v84, le parcours : « Défait : W-011 revient en DR16 ») un câble n'a plus de numéro à l'écran : il se dit par son type et
+  // ses deux bouts — « DR18 101BT1:1 → 102CB1:1 revient en DR16 » (le type qu'il avait, `t`, quand c'est le type qui change)
+  const bout = (r, b) => r + (b ? ':' + b : ''), nomC = (l, t) => { const ty = String((t != null ? t : l.type) || '').trim();
+    return l.de && l.vers ? (ty || 'le câble') + ' ' + bout(l.de, l.borneDe) + ' → ' + bout(l.vers, l.borneVers) : 'une liaison'; };
   // des liaisons en plus ou en moins : lesquelles (par leurs bouts et leur numéro)
   if (A.length !== B.length) { const cle = l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable].join('|'), cles = xs => xs.reduce((m, l) => m.set(cle(l), (m.get(cle(l)) || 0) + 1), new Map());
     const plus = B.length > A.length, [grand, petit] = plus ? [B, A] : [A, B], reste = cles(petit), xs = grand.filter(l => { const n = reste.get(cle(l)) || 0; if (n) { reste.set(cle(l), n - 1); return false; } return true; });
@@ -2728,7 +2731,7 @@ function recitDuGeste(de, vers, p, sens) { const quoi = (p && p.quoi) || '', V =
     const vide = v => v == null || v === '';
     B.forEach((b, i) => { const a = A[i]; if (!a) return;
       ['type', 'pnDe', 'pnVers', 'longueur', 'route', 'cable', 'de', 'borneDe', 'vers', 'borneVers', 'contactDe', 'contactVers', 'plan'].forEach(ch => { const va = a[ch] == null ? '' : a[ch], vb = b[ch] == null ? '' : b[ch]; if (va === vb) return;
-        if (ch === 'type') noter('type', nomC(b), vide(vb) ? 'sans type' : 'en ' + vb);
+        if (ch === 'type') noter('type', nomC(b, va), vide(vb) ? 'sans type' : 'en ' + vb);
         // le part number d'un disjoncteur porte son calibre : on dit le calibre (« 102CB1 revient à 10 A (MS3320-10) »)
         else if (ch === 'pnDe' || ch === 'pnVers') { const c = !vide(vb) && typeof calibreDuPn === 'function' ? calibreDuPn(vb) : null;
           noter('pn', ch === 'pnDe' ? b.de : b.vers, vide(vb) ? 'sans part number' : c > 0 ? 'à ' + amperes(c) + ' (' + vb + ')' : 'en ' + vb); }

@@ -787,7 +787,7 @@ const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, 
 function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.exec(t) || /un ([\d,.]+ A) suffirait/.exec(t);
   if (/^ajoutée par VOLTA sur/.test(t)) return ['Lui donner son vrai repère', 'connecteur'];
   if (/profil de charge est à renseigner/.test(t)) return ['Écrire son profil de charge : VOLTA en déduit le calibre', 'profil'];
-  if (/déclenche|aucun calibre/.test(t)) return [ideal ? 'Retenir ' + ideal[1] : 'Alléger le profil, ou une autre famille de disjoncteur', 'calibre'];
+  if (/déclenche|disjoncte —|aucun calibre/.test(t)) return [ideal ? 'Retenir ' + ideal[1] : 'Alléger le profil, ou une autre famille de disjoncteur', 'calibre'];
   if (/suffirait|touche la courbe|l’idéal est|\bjuste\b/.test(t)) return [ideal ? 'Retenir ' + ideal[1] : 'Retenir le calibre que VOLTA propose', 'calibre'];
   if (/sélectivité/.test(t)) return ['Un amont au moins double de l’aval : changer l’un des deux calibres', 'calibre'];
   if (/chute en ligne/.test(t)) return [/hypothèse/.test(t) ? 'Écrire les longueurs mesurées' : 'Une gauge plus forte, ou un chemin plus court', 'chute'];

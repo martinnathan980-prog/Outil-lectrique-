@@ -85,10 +85,14 @@ function pnDuRepere(nom) { for (const l of verite()) { if (l.de === nom && l.pnD
    fiches le connaissent (`taille`, le plus faible des deux bouts — le courant du contact en dépend). */
 // (v84) sans le côté source : le câble qui vient de la batterie (d'une génératrice, d'un transfo-redresseur) nourrit le
 // disjoncteur, il n'est pas protégé par lui — les câbles des chemins en amont (`cheminsDepuis`, `amont`) n'en sont pas
+// (v84) LE COURANT PAR BRANCHE : chaque câble, direct ou au-delà d'un passage, garde la branche que `filsDepuis` lui trouve
+// (09 quater) et, quand la consommation de ce qu'il alimente est écrite, les `points` de son profil — la protection les
+// juge à la place de ceux du disjoncteur (09 bis, `protegerFil`)
 function filsDuDisjoncteur(nom) { const V = verite(), source = new Set(cheminsDepuis(V, nom).filter(ch => ch.amont).flatMap(ch => ch.segments.filter(s => s.fil).map(s => s.fil)));
+  const tous = filsDepuis(V, nom), parL = new Map(tous.map(f => [f.l, f])), branche = l => { const f = parL.get(l); return { branche: f ? f.branche || null : null, points: f ? f.points || null : null }; };
   const directs = V.filter(l => (l.de === nom || l.vers === nom) && l.de !== l.vers && !source.has(l))
-    .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), amont: l.vers === nom, direct: true, via: '', l }));
-  const vus = new Set(directs.map(f => f.l)), suite = filsDepuis(V, nom).filter(f => !vus.has(f.l)).map(f => ({ ...f, amont: false }));
+    .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), amont: l.vers === nom, direct: true, via: '', l, ...branche(l) }));
+  const vus = new Set(directs.map(f => f.l)), suite = tous.filter(f => !vus.has(f.l)).map(f => ({ ...f, amont: false }));
   return directs.concat(suite).map(f => ({ ...f, ...contactDuPlan(f.l) })); }
 /* Ce qu'un fil supporte, en mots : la limite de DOMMAGE (R2 : un fil cuivre est protégé tant que ce que le disjoncteur
    laisse passer reste sous ce qu'il supporte avant de s'abîmer), sinon — aluminium, CCA, sans courbe — son intensité de
@@ -321,7 +325,7 @@ function carteDecision(nom, d, autres) { if (!d.gPn || d.origine === 'main' || d
   // « déclenche » ou « touche la courbe » (v77 : l'un et l'autre, un problème — rouge), ou il passe et l'outil en retient un autre
   const titre = passe ? `L’installation porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'VOLTA retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}`;
   // deux lignes : ce que fait le retest (au démarrage, 9,31 A pendant 2,1 min touchent sa courbe), le plus petit qui passe
-  const quoi = !passe && p ? `${majuscule(p.t === Infinity ? 'en permanence' : quandDuPoint(p))}, <b>${esc(amperes(p.i))}${p.t === Infinity ? '' : ' pendant ' + esc(secondes(p.t))}</b> ${k === 'declenche' ? 'font déclencher le' : 'touchent la courbe du'} ${ident(pn || amperes(d.pn))}. ` : '';
+  const quoi = !passe && p ? `${majuscule(p.t === Infinity ? 'en permanence' : quandDuPoint(p))}, <b>${esc(amperes(p.i))}${p.t === Infinity ? '' : ' pendant ' + esc(secondes(p.t))}</b> ${k === 'declenche' ? 'font disjoncter le' : 'touchent la courbe du'} ${ident(pn || amperes(d.pn))}. ` : '';
   // (les câbles qu'il demande : derrière le lien « Les 3 câbles », sur la ligne des liens)
   const suite = `Le plus petit qui passe : <b>${esc(amperes(cal))}</b>.`;
   // ce qu'il faudrait pour que le retest passe : le permanent sous ce qu'il garantit (avec la marge), des pointes assez courtes

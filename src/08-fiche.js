@@ -1289,9 +1289,9 @@ function calibreEnClair(d, cal) { const A = amperes(cal), g = (d.gamme || []).fi
   const tire = p ? `${quand}, il tire ${!enPerm && p.duree < p.t ? 'au moins ' : ''}${amperes(p.i)}${enPerm ? '' : ' pendant ' + secondes(p.t)}` : '';
   if (g && g.permanentOk === false) return `${A} : disjoncte — en permanent, il tire ${amperes(ch.perm || 0)} ; un ${A} disjoncte dès ${amperes(g.tenu)}.`;
   if (g && g.valide) return adm ? `${A} : ne disjoncte pas — ${tire} ; ${enPerm ? '' : 'sur cette durée, '}un ${A} ne disjoncte qu’au-delà de ${amperes(adm)}.` : `${A} : ne disjoncte pas — ${tire || 'le profil reste sous sa courbe'}.`;
-  if (g && g.somme > 1 && p && !enPerm && adm && p.i <= adm) return `${A} : disjoncte — ${tire} ; chaque pointe passe seule, mais leur somme le fait déclencher (${Math.round(g.somme * 100)} % de son temps de déclenchement).`;
+  if (g && g.somme > 1 && p && !enPerm && adm && p.i <= adm) return `${A} : disjoncte — ${tire} ; chaque pointe passe seule, mais enchaînées elles le chauffent jusqu’à disjoncter.`;
   const tc = q && isFinite(q.temps) ? q.temps : null;
-  return `${A} : disjoncte — ${tire}${adm ? ` ; ${enPerm ? '' : 'sur cette durée, '}un ${A} disjoncte dès ${amperes(adm)}` : ''}${tc ? ` : il déclenche au bout de ${secondes(tc)}` : ''}.`; }
+  return `${A} : disjoncte — ${tire}${adm ? ` ; ${enPerm ? '' : 'sur cette durée, '}un ${A} disjoncte dès ${amperes(adm)}` : ''}${tc ? ` : il disjoncte au bout de ${secondes(tc)}` : ''}.`; }
 function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origineDuCalibre(nom, d), H = app.simu || HYPOTHESES;
   const rows = lignesFilsDisjoncteur(nom, d), nL = rows.filter(r => r.l && !(r.l.longueur > 0)).length;
   // (v74 : ce qui est supposé, dit une fois et en clair — `noteSupposes` ; plus d'italique)

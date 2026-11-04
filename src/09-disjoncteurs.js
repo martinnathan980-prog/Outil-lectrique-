@@ -548,7 +548,10 @@ function contexteDeProtection(norme, H, courbes, pts) { const cs = courbes || co
    courbe lente, `courbe` sa famille). La tenue du câble à l'ambiante est dite aussi (`tenue`). */
 function protectionDesFils(norme, calibre, profil, fils, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, ctx = contexteDeProtection(norme, H, null, pointsDuProfil(profil));
   return (fils || []).map(f => protegerFil(norme, calibre, f, H, ctx)); }
-function protegerFil(norme, calibre, f, H, ctx) { const { k, lente, pts } = ctx;
+// (v84) LE COURANT PAR BRANCHE : un câble dont la consommation en aval est écrite apporte ses `points` (09 quater,
+// `filsDepuis`) — sa charge, son contact se jugent à SON courant ; sinon, au profil du disjoncteur (la règle prudente). Ce
+// que le disjoncteur laisse passer, lui, ne dépend que du calibre.
+function protegerFil(norme, calibre, f, H, ctx) { const { k, lente } = ctx, parBranche = Array.isArray(f.points) && f.points.length > 0, pts = parBranche ? f.points : ctx.pts;
   const jauge = jaugeDuType(f.type), fil = filDeNorme(norme, f.type, jauge), rd = resistanceDuFil(norme, f.type, jauge, H.tconducteur), tenue = tenueEnTemperature(norme, f.type, H.ambiante);
   const protection = protectionDeJauge(norme, jauge), calibreMax = protection ? protection.disjoncteurMax : null, horsTable = !!(calibre > 0 && calibreMax != null && calibre > calibreMax + 1e-9);
   // le contact : celui du plan si l'appelant le donne, sinon la taille usuelle de la jauge (table Protection, sinon la plus petite qui l'admet) — et la ligne de la table des contacts qui lui répond,
@@ -556,7 +559,7 @@ function protegerFil(norme, calibre, f, H, ctx) { const { k, lente, pts } = ctx;
   const taille = f.taille || (protection && protection.tailleContact) || tailleDeJauge(norme, f.famille || '', jauge), ic = intensiteDeContact(norme, taille, jauge, null, f.fut != null ? f.fut : null), contact = ic ? { ...ic, taille: f.taille || ic.taille, parLePlan: !!f.taille } : null;
   const permanent = pts.filter(p => p.t === Infinity).reduce((m, p) => Math.max(m, p.i), 0);
   const contactSurcharge = !!(contact && calibre > 0 && calibre > contact.intensite + 1e-9), contactDepasse = !!(contact && permanent > contact.intensite + 1e-9);
-  const commun = { fil: fil || null, jauge, conducteur: rd.conducteur, kConducteur: rd.kConducteur, tenue, calibreMax, horsTable, contact, contactSurcharge, contactDepasse, permanent, courbeLente: lente ? lente.nom : '' };
+  const commun = { fil: fil || null, jauge, conducteur: rd.conducteur, kConducteur: rd.kConducteur, tenue, calibreMax, horsTable, contact, contactSurcharge, contactDepasse, permanent, parBranche, courbeLente: lente ? lente.nom : '' };
   if (!fil || fil.intensite == null || rd.refuse) return { ...f, ...commun, continu: null, facteur: 1, facteurCourt: 1, phases: [], pire: null, laisse: [], pireLaisse: null, protege: null, jugeSur: '', dommage: null, verdict: 'inconnu', refuse: !!rd.refuse };
   // ce que le câble admet, déclassé : LE calcul de la fiche d'un câble (09 quater, `admissionDuFil`) — le facteur suit le
   // PALIER de la durée (v84 : un état de 2,1 min se juge sur le continu, donc avec l'ambiante ; avant, le facteur du continu
