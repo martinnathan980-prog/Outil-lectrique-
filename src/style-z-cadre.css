@@ -121,3 +121,8 @@ body.cherche .recherche{background:var(--s-surface);border-color:var(--chrome-cu
 .recherche .raccourci{background:var(--voile-2)}
 /* les rubriques du sous-menu Exporter (ce folio, tout le plan) : une capitale de rubrique — 11 px, 600, 0,07 em — au cuivre */
 #mp-exporter .menu-bloc[data-groupe="folio"]::before,#mp-exporter .menu-bloc[data-groupe="contrat"]::before{padding:8px 10px 4px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;color:var(--chrome-cuivre)}
+
+/* v84 (intégration) — le passage de l'accueil (graphite) au plan (clair, le jour) : la barre du haut, le rail et les folios
+   changent de matière en douceur, au rythme du fondu de la table, au lieu de basculer d'un coup */
+#entete,#rail,#folios{transition:background-color var(--d-lent) var(--courbe),color var(--d-lent) var(--courbe),box-shadow var(--d-lent) var(--courbe),border-color var(--d-lent) var(--courbe)}
+@media (prefers-reduced-motion:reduce){ #entete,#rail,#folios{transition:none} }

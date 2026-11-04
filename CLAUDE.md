@@ -39,6 +39,9 @@ s'écrit ici, le jour même.
 - **Les connecteurs des équipements sont fournis par le fournisseur.** Nous choisissons : barrettes, prises de coupure,
   relais, raccords, tyraps, contacts à sertir.
 - Un fichier peut donner un **calibre** ; VOLTA peut le contester s'il le justifie (« actuel : celui de votre fichier »).
+- **Le courant d'un câble** (v84) : celui de ce qu'il alimente en aval quand la consommation est écrite ; sinon le courant
+  total de son disjoncteur, et la fiche le dit. Un câble côté source (vers une batterie, une génératrice, un TR) n'est pas
+  protégé par le disjoncteur qu'il nourrit.
 - **Un disjoncteur, c'est mathématique : valide ou pas valide, point** (v80, le lecteur insiste : « je te l'ai dit plein
   de fois »). La courbe a une zone où il ne disjoncte pas et une zone où il disjoncte ; chaque point du profil tombe
   d'un côté ou de l'autre. **Aucune réserve, aucune marge, aucun « 10 % », aucun « trop juste »**. Le calibre retenu est
@@ -111,6 +114,10 @@ s'écrit ici, le jour même.
   un schéma infini, pas un casier.
 - **Modifier se lit sans défiler** : un sommaire, et chaque réglage s'ouvre sur place.
 - **Les tableaux du récapitulatif** : le câble est porté par la flèche entre ses deux bouts ; l'état se dit en mots.
+- **Les messages** (v84) : VOLTA parle de lui à la troisième personne (« VOLTA a lu 209 liaisons »), jamais « je » ; après un
+  geste annulable, le message propose « Défaire ». La nomenclature s'appelle **LPA** partout.
+- **Les routes** se distinguent par des teintes froides de catégorie, jamais rouge, ambre, vert ni fuchsia ; sur le plan, un
+  bloc qui a un problème porte un bord rouge ou ambre (à l'écran seulement, jamais à l'export).
 
 ## La méthode
 
