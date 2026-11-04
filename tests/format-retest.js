@@ -209,9 +209,9 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
       lignes.push(['H-GROS', i % 97 === 0 ? '' : z(l.de), l.borneDe, l.pnDe, 'Équipement d’essai ' + k + '-' + i + ', une description longue comme celles du vrai fichier', l.type, (l.cable || '') + '-' + k, l.route, z(l.vers), l.borneVers, l.pnVers, String(k * 6 + (+l.plan || 1)), i % 13 === 0 ? '2 500' : '4000', i % 7 === 0 ? 'repère « ' + i + ' » ; à voir' : ''].map(v => /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v).join(';')); });
     const texte = lignes.join('\r\n'), gros = new File([texte], 'gros.csv', { type: 'text/csv' }), direct = lireTexte(texte);
     await ouvrirFichier(gros); const t0 = Date.now(); while ((app.nom !== 'gros.csv' || BASE.lecture) && Date.now() - t0 < 120000) await new Promise(r => setTimeout(r, 200));
-    const V = verite(), D = direct.toutes.map(liaison), iv = V.findIndex((l, i) => !D[i] || cle(l) !== cle(D[i]));
-    ok(`un CSV de ${Math.round(gros.size / 1e5) / 10} Mo ouvert : par le Worker, le même plan que lu directement`, gros.size > 1.5e6 && app.nom === 'gros.csv' && V.length === D.length && iv < 0 && V.some(l => l.autres) && V.some(l => !liaisonComplete(l)),
-      V.length + ' / ' + D.length + ' liaisons' + (iv >= 0 ? ' · écart au rang ' + iv + ' : ' + cle(V[iv]) + ' ≠ ' + (D[iv] ? cle(D[iv]) : 'absente') : ' · ' + V.filter(l => !liaisonComplete(l)).length + ' incomplètes, ' + V.filter(l => l.autres).length + ' « Remarque »'));
+    const V = verite(), D = direct.toutes.map(liaison), iv = V.findIndex((l, i) => !D[i] || cle(l) !== cle(D[i])), parLeWorker = / — lu en /.test(document.getElementById('toast').textContent);   // le mot du Worker
+    ok(`un CSV de ${Math.round(gros.size / 1e5) / 10} Mo ouvert : par le Worker, le même plan que lu directement`, gros.size > 1.5e6 && parLeWorker && app.nom === 'gros.csv' && V.length === D.length && iv < 0 && V.some(l => l.autres) && V.some(l => !liaisonComplete(l)),
+      (parLeWorker ? 'par le Worker · ' : 'PAS par le Worker · ') + V.length + ' / ' + D.length + ' liaisons' + (iv >= 0 ? ' · écart au rang ' + iv + ' : ' + cle(V[iv]) + ' ≠ ' + (D[iv] ? cle(D[iv]) : 'absente') : ' · ' + V.filter(l => !liaisonComplete(l)).length + ' incomplètes, ' + V.filter(l => l.autres).length + ' « Remarque »'));
     return out;
   });
   R.push(...R6);
