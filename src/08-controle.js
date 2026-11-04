@@ -252,8 +252,8 @@ function controleAJour() { const V = verite();
   return CONTROLE.items; }
 function rendreControle() { if (typeof reprendreVoltaEnAttente === 'function') reprendreVoltaEnAttente();
   const xs = controleAJour(), C = compteProblemes(), b = $('btnIndex');
-  // le relevé du retest corrigé, ouvert, suit le plan (08-export)
-  if (typeof suivreLeReleve === 'function') suivreLeReleve(); if (!b) return;
+  // le relevé du retest corrigé, ouvert, suit le plan (08-export) ; (v84) le bord rouge / ambre des blocs suit le contrôle
+  if (typeof suivreLeReleve === 'function') suivreLeReleve(); if (typeof peindreEtats === 'function') peindreEtats(); if (!b) return;
   // la pastille : les problèmes ROUGES du plan ; sans rouge, ce qui est à voir, en ambre (le technicien, n° 5 : une règle)
   let p = b.querySelector('.rd-point'); if (!p) { p = document.createElement('i'); p.className = 'rd-point'; b.appendChild(p); }
   p.hidden = !xs.length; p.className = 'rd-point ' + (C.ko ? 'ko' : 'att'); p.textContent = String(C.ko || C.att);

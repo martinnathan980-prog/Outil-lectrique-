@@ -251,9 +251,16 @@ function composerFiche(o) { const probs = o.probs || []; NIVEAU.typeRendu = o.ty
    (Échap, le bouton) : le grand redevient la carte, près de son bloc. */
 function ouvrirGrand(onglet, but) { if (onglet) { const t = typeDeLaFicheMontree(); if (t) NIVEAU.onglet[t] = ongletDeSection(t, onglet); }
   if (NIVEAU.grand) { if (onglet) activerOnglet(onglet, true); if (but && but.viser) viserDansLaFiche(but.viser); return; }
+  const avait = clavierDansLaFiche();
   NIVEAU.grand = true; if (typeof epinglerCarte === 'function') epinglerCarte(true); else rendreFiche();
-  if (but && but.viser) viserDansLaFiche(but.viser); }
-function reduireFiche() { if (!NIVEAU.grand) return; NIVEAU.grand = false; if (typeof epinglerCarte === 'function') epinglerCarte(false); else rendreFiche(); }
+  if (but && but.viser) viserDansLaFiche(but.viser);
+  // (v84, le parcours) le clavier ne se perd pas : il passe sur l'onglet montré du grand
+  if (avait) poserLeClavier('.nv-grand .nv-onglet[aria-selected="true"]'); }
+function reduireFiche() { if (!NIVEAU.grand) return; const avait = clavierDansLaFiche(); NIVEAU.grand = false; if (typeof epinglerCarte === 'function') epinglerCarte(false); else rendreFiche();
+  if (avait) poserLeClavier('#fi-tout-voir'); }
+// le clavier est-il dans la fiche (ou nulle part) ? alors on le garde dans la fiche quand elle change de taille
+const clavierDansLaFiche = () => { const a = document.activeElement, box = $('ba-equip'); return !a || a === document.body || !!(box && box.contains(a)); };
+const poserLeClavier = sel => setTimeout(() => { const e = $('ba-equip') && $('ba-equip').querySelector(sel); if (e && e.isConnected) try { e.focus({ preventScroll: true }); } catch (_) { } }, 40);
 // le genre de la fiche montrée (l'onglet retenu en dépend) : celui que porte le grand, sinon celui de la cible
 const typeDeLaFicheMontree = () => { const g = document.querySelector('#ba-equip .nv-grand'); if (g) return g.dataset.nvType; const c = app.cible; if (!c) return '';
   return c.type === 'fil' ? 'fil' : estDisjoncteur(c.nom) ? 'disjoncteur' : VT_A_POSER.test(c.nom) || barretteEnModules(c.nom) ? 'barrette' : coupureEnModules(c.nom) ? 'prise' : estMasse(c.nom) ? 'masse' : 'equipement'; };

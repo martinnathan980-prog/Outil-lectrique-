@@ -937,7 +937,9 @@ function freresVue(nom, genre) { const xs = freresDe(nom, genre); if (xs.length 
     + '</div></section>'; }
 /* ---- UN ÉQUIPEMENT ------------------------------------------------------------------------------------------------ */
 // la section qu'un point du disjoncteur démontre : ses câbles (la charge, la protection, la chute en ligne), sinon lui
-const sectionDj = t => /^chute en ligne/.test(t) || /^(?![\d])\S+ \(|^(fil|câble) sans numéro|^câble \S+ :|^borne /.test(t) ? 'fils' : 'disjoncteur';
+// (v84) un point qui parle d'un câble (« DR24 vers 395SW1:1 : … », une chute, un contact) se démontre dans l'onglet Câbles,
+// pas dans Calibre, où tout est vert
+const sectionDj = t => /chute en ligne/i.test(t) || /^[A-Z]{1,4}\d{1,2} vers /.test(t) || /contact/i.test(t) || /^(?![\d])\S+ \(|^(fil|câble) sans numéro|^câble \S+ :|^borne /.test(t) ? 'fils' : 'disjoncteur';
 /* LA BORNE FAUTIVE d'un connecteur qu'aucun arrangement ne loge (l'audit v72 : « six bornes accusées pour une seule
    fautive ; W-370 est vert ») — le moteur la nomme (09, `remplirContacts` : `coupables`, et `proche`, la référence de
    l'arrangement le plus proche) : pour chaque câble de la borne, ce qui cloche contre le contact de même rang du plus
@@ -2108,7 +2110,10 @@ function ecrireChampFil(l, champ, brut) { if (!l) return; let v = String(brut ==
   if (champ === 'famille' || champ === 'jauge') { const p = partiesDuType(l.type), f = champ === 'famille' ? v.toUpperCase().replace(/[^A-Z]/g, '') : p.famille, j = champ === 'jauge' ? (v.replace(/\D/g, '') || null) : p.jauge;
     if (champ === 'jauge' && v && !/^\d{1,2}$/.test(v)) { dire('Une gauge en AWG : un nombre (22, 20…).', true); rendreFiche(); return; }
     // une famille seule, sans gauge : la gauge d'avant reste ; une famille vide efface le type
-    changerLiaison(l, 'type', f ? typeDe(f, j) : null, (champ === 'famille' ? 'type' : 'gauge') + ' de ' + cableDit(l)); return; }
+    // (v84, le parcours) un retour dit que c'est fait, avec « Défaire » (le message se lit avant le changement)
+    const avant = cableDit(l), nouveau = f ? typeDe(f, j) : null;
+    changerLiaison(l, 'type', nouveau, (champ === 'famille' ? 'type' : 'gauge') + ' de ' + avant);
+    dire(nouveau ? majuscule(avant) + ' passe en ' + nouveau + ' (Ctrl+Z le rend).' : majuscule(avant) + ' n’a plus de type (Ctrl+Z le rend).'); return; }
   if (champ === 'longueur') { if (!v) { changerLiaison(l, 'longueur', null, 'longueur de ' + cableDit(l)); return; } const x = nombreEcrit(v); if (!(x > 0)) { dire('Une longueur en mètres, plus grande que zéro.', true); rendreFiche(); return; } v = x; }
   if (champ === 'type') v = v.toUpperCase();
   changerLiaison(l, champ, v === '' ? null : v, ({ cable: 'numéro', type: 'type', route: 'route', longueur: 'longueur', plan: 'folio' }[champ] || champ) + ' de ' + (cableDit(l) || 'câble')); }
@@ -2197,7 +2202,9 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
   // « Tout régler » (la fiche d'un câble dont le disjoncteur est la cause) : le geste de la carte de décision du disjoncteur
   box.querySelectorAll('[data-tout-regler]').forEach(b => b.onclick = e => { e.stopPropagation(); const cb = b.dataset.toutRegler, fait = typeof toutRegler === 'function' ? toutRegler(cb) : typeof deciderCalibre === 'function' ? parVolta(() => deciderCalibre(cb)) : false; if (fait && !rafraichirFicheEnPlace()) rendreFiche(); });
   box.querySelectorAll('[data-reparer]').forEach(b => b.onclick = e => { e.stopPropagation(); const x = liaisonDeCle(b.dataset.reparer), y = x ? sourceDe(x) || x : null; if (!y) return;
-    if (parVolta(() => changerLiaison(y, 'type', b.dataset.type, 'type de ' + cableDit(y) + ' : ' + b.dataset.type))) dire(majuscule(cableDit(y)) + ' passe en ' + b.dataset.type + ' (Ctrl+Z le rend).'); });
+    // (v84) le câble se dit AVANT le changement : après, cableDit(y) donne déjà le nouveau type (« DR18 … passe en DR18 »)
+    const avant = cableDit(y);
+    if (parVolta(() => changerLiaison(y, 'type', b.dataset.type, 'type de ' + avant + ' : ' + b.dataset.type))) dire(majuscule(avant) + ' passe en ' + b.dataset.type + ' (Ctrl+Z le rend).'); });
   box.querySelectorAll('[data-ouvrir-pbs]').forEach(b => b.onclick = () => { const d = $('fi-pbs'); if (!d) return; d.open = true; FI.pbs = box.dataset.cle; try { d.scrollIntoView({ block: 'nearest', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { } });
   if (!nom) return;
   // le repère, dans l'en-tête ; le type et la désignation, à côté
