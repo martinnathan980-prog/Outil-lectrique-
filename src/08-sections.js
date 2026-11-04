@@ -149,7 +149,7 @@ const AIDES_PROVISOIRES = {
   rail: ['Le rail', 'Le profilé qui porte tous les modules de la barrette, coupé à leur longueur. Sa référence vient de la table Accessoires de la norme ; quand la norme ne le nomme pas, celle du catalogue du fabricant.'],
   module: ['Le module', 'L’outil prend le plus petit module de la norme qui loge tous les potentiels de la barrette, chaque câble dans un contact qui admet sa gauge. Les modules viennent de la bible des barrettes.'],
   arrangement: ['L’arrangement', 'Celui que le part number nomme, sinon le plus petit arrangement de la norme qui a toutes les bornes et dont les contacts admettent les gauges des câbles.'],
-  prise: ['L’arrangement de la prise', 'Le plus petit arrangement de la norme qui loge tous les contacts de la prise, côté fiche et côté embase, avec les gauges de leurs câbles.'],
+  prise: ['L’arrangement de la prise', 'Le plus petit arrangement de la norme qui loge tous les contacts de la prise, côté partie mobile et côté partie fixe, avec les gauges de leurs câbles.'],
   contact: ['Le contact à sertir', 'La table Contacts de la norme donne, pour la taille du contact, son sexe et la gauge du câble, la référence à sertir.'],
   gauge: ['La gauge acceptée', 'La gauge du câble se lit dans son type (DR20 : 20 AWG) ; la norme dit quelles gauges la taille du contact accepte.'],
   raccord: ['Le raccord', 'Choisi dans la table des raccords selon la norme du connecteur, sa taille, la reprise de blindage, l’étanchéité et l’orientation.'],

@@ -180,7 +180,11 @@ const motFolios = fs => !fs.length ? '' : (fs.length > 1 ? 'folios ' : 'folio ')
 const descriptionDuRetest = nom => { for (const l of verite()) { const d = l.de === nom ? l.descriptionDe : l.vers === nom ? l.descriptionVers : ''; if (d && String(d).trim()) return String(d).trim(); } return ''; };
 const identite = morceaux => morceaux.filter(Boolean).join(' · ');
 // un nombre écrit à la française (« 5,2 ») ; null s'il n'y en a pas
-const nombreEcrit = t => { const x = parseFloat(String(t == null ? '' : t).trim().replace(',', '.')); return isFinite(x) ? x : null; };
+// (v84) un nombre tapé : « 2 500 » (espaces de milliers, insécables compris), « 2.500,5 » (points de milliers, virgule
+// décimale), « 2,5 », « 1e3 » — comme la lecture du fichier (`longueurLue`)
+const nombreEcrit = t => { let s = String(t == null ? '' : t).trim().replace(/[\s  ]/g, '');
+  s = /,/.test(s) && /\./.test(s) ? s.replace(/\./g, '').replace(',', '.') : s.replace(',', '.');
+  const x = parseFloat(s); return isFinite(x) ? x : null; };
 
 /* ---- LA NAVIGATION : la pile de l'inspecteur ------------------------------------------------------------------- */
 /* `app.insp.pile` : les fiches vues, 30 au plus, et `app.insp.pos` celle qu'on regarde. Une entrée : { type: 'bloc' |

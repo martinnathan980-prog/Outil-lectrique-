@@ -110,7 +110,7 @@ const EXPLICATIONS = {
   prise: c => { const P = c && c.plan ? c.plan : null;
     const phrase = P && P.reference ? `${P.reference}${P.main ? ', retenue à la main' : ''} : ${exN(P.utilises)} contact${P.utilises > 1 ? 's' : ''} pris sur ${exN(P.contacts)}.` : 'Deux moitiés : la fiche (mobile) et l’embase (fixe).';
     return exE('La prise de coupure', phrase, [['Pris', P && P.utilises != null ? exN(P.utilises) : null, ''], ['Libres', P && P.contacts != null && P.utilises != null ? exN(P.contacts - P.utilises) : null, 'ok']],
-      ['La fiche reçoit ce qui arrive, l’embase ce qui repart', 'Un câble par contact, de chaque côté', 'L’arrangement se choisit comme pour un connecteur', 'Fiche femelle par défaut : le bouton l’inverse'],
+      ['La partie mobile reçoit ce qui arrive, la partie fixe ce qui repart', 'Un câble par contact, de chaque côté', 'L’arrangement se choisit comme pour un connecteur', 'Partie mobile femelle par défaut : le bouton l’inverse'],
       'Les normes EN 4165, EN 2997, EN 3646 ; votre codification (A/B, P/S) pour le sexe.'); },
 
   contact: c => { const s = c && c.sertir ? c.sertir : c || {}, ref = s.reference || '', sexe = (c && c.sexe) || s.sexe || '', taille = (c && c.taille) || '', type = (c && c.type) || '', statut = (c && c.statut) || s.statut || '';

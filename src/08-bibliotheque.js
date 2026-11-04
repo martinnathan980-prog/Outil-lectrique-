@@ -343,12 +343,12 @@ async function plansDuFichier(f) { const nom = f.name || 'le fichier', L = await
   if (!trouverEnteteRetest(L.brutes)) { if (await rangerAilleurs(L, nom, f)) return { plans: [] };
     const D = devinerTableau(L.pleines), lu = D.entete && D.devine ? lireAvecCarte(L.pleines, D.map, D.debut) : null;
     if (lu && lu.liaisons.length) return { plans: [{ nom, liaisons: lu.liaisons }], devine: texteBrut(comprisHtml(D)) };
-    return { erreur: nom + ' n’a pas les en-têtes de l’installation : il me faut au moins Device1, Pin1, Device2 et Pin2.', lu: L }; }
+    return { erreur: nom + ' n’a pas les en-têtes de l’installation : VOLTA a besoin au moins de Device1, Pin1, Device2 et Pin2.', lu: L }; }
   const r = lireTexte(L.texte); if (!r.liaisons.length) return { erreur: nom + ' : les en-têtes de l’installation sont là, mais aucune liaison dessous.' };
   // la feuille « VOLTA » d'une installation corrigée (02-lecture) suit le plan qu'elle devient : elle se reprend à son ouverture
-  const volta = r.volta || null;
-  if (r.harnais.length > 1) return { plans: r.harnais.map(h => ({ nom: h, liaisons: r.liaisons.filter(l => l.harness === h), volta })) };
-  return { plans: [{ nom, liaisons: r.liaisons, volta }] }; }
+  const volta = r.volta || null, toutes = r.toutes || r.liaisons;   // (v84) les lignes incomplètes restent au plan, comme à l'ouverture
+  if (r.harnais.length > 1) return { plans: r.harnais.map(h => ({ nom: h, liaisons: toutes.filter(l => l.harness === h), volta })) };
+  return { plans: [{ nom, liaisons: toutes, volta }] }; }
 /* AJOUTER DES PLANS à une installation (celle qu'on regarde, sinon celle du plan sur la table) : chaque fichier se lit dans
    sa ligne (« Lecture… »), puis devient un plan — marqué « nouveau » — ou dit ce qui ne va pas. Rien ne s'ouvre : un clic le
    fera. Un PDF de schéma n'est pas un retest : il va au lecteur de PDF (08-pdf), un schéma Visio à sa relecture (08-visio) ;

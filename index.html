@@ -20433,12 +20433,12 @@ async function plansDuFichier(f) { const nom = f.name || 'le fichier', L = await
   if (!trouverEnteteRetest(L.brutes)) { if (await rangerAilleurs(L, nom, f)) return { plans: [] };
     const D = devinerTableau(L.pleines), lu = D.entete && D.devine ? lireAvecCarte(L.pleines, D.map, D.debut) : null;
     if (lu && lu.liaisons.length) return { plans: [{ nom, liaisons: lu.liaisons }], devine: texteBrut(comprisHtml(D)) };
-    return { erreur: nom + ' n’a pas les en-têtes de l’installation : il me faut au moins Device1, Pin1, Device2 et Pin2.', lu: L }; }
+    return { erreur: nom + ' n’a pas les en-têtes de l’installation : VOLTA a besoin au moins de Device1, Pin1, Device2 et Pin2.', lu: L }; }
   const r = lireTexte(L.texte); if (!r.liaisons.length) return { erreur: nom + ' : les en-têtes de l’installation sont là, mais aucune liaison dessous.' };
   // la feuille « VOLTA » d'une installation corrigée (02-lecture) suit le plan qu'elle devient : elle se reprend à son ouverture
-  const volta = r.volta || null;
-  if (r.harnais.length > 1) return { plans: r.harnais.map(h => ({ nom: h, liaisons: r.liaisons.filter(l => l.harness === h), volta })) };
-  return { plans: [{ nom, liaisons: r.liaisons, volta }] }; }
+  const volta = r.volta || null, toutes = r.toutes || r.liaisons;   // (v84) les lignes incomplètes restent au plan, comme à l'ouverture
+  if (r.harnais.length > 1) return { plans: r.harnais.map(h => ({ nom: h, liaisons: toutes.filter(l => l.harness === h), volta })) };
+  return { plans: [{ nom, liaisons: toutes, volta }] }; }
 /* AJOUTER DES PLANS à une installation (celle qu'on regarde, sinon celle du plan sur la table) : chaque fichier se lit dans
    sa ligne (« Lecture… »), puis devient un plan — marqué « nouveau » — ou dit ce qui ne va pas. Rien ne s'ouvre : un clic le
    fera. Un PDF de schéma n'est pas un retest : il va au lecteur de PDF (08-pdf), un schéma Visio à sa relecture (08-visio) ;
@@ -21869,7 +21869,7 @@ function cpSchemaRoutes() { const cable = (x1, y1, x2, y2, c, t, ty) => `<path d
     + `<rect x="372" y="222" width="196" height="46" rx="10" fill="${CP.ambreDoux}" stroke="${CP.ambre}"/>` + cpT(470, 241, 'branchement en chaîne', { cls: 'vr-sous', couleur: CP.ambre }) + cpT(470, 258, 'gauche et droite mêlées : à voir', { cls: 'vr-petit' }) + '</g>';
   const prise = `<g>${cpT(760, 36, 'Une prise de coupure', { cls: 'vr-titre' })}<rect x="728" y="74" width="28" height="128" rx="6" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.5"/><rect x="764" y="74" width="28" height="128" rx="6" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.5"/>`
     + cable(640, 110, 728, 110, CP.violet, '1MO') + cable(640, 160, 728, 160, CP.violet, '1MO') + cable(792, 110, 876, 110, CP.violet, '3HO') + cable(792, 160, 876, 160, CP.violet, '3HO')
-    + cpT(684, 196, 'côté fiche', { cls: 'vr-petit' }) + cpT(836, 196, 'côté embase', { cls: 'vr-petit' })
+    + cpT(684, 196, 'partie mobile', { cls: 'vr-petit' }) + cpT(836, 196, 'partie fixe', { cls: 'vr-petit' })
     + `<rect x="652" y="222" width="216" height="46" rx="10" fill="${CP.vertDoux}" stroke="${CP.vert}"/>` + cpT(760, 241, 'elle change de route : bien', { cls: 'vr-sous', couleur: CP.vert }) + cpT(760, 258, 'chaque côté se juge à part', { cls: 'vr-petit' }) + '</g>';
   return cpSvg('0 0 880 300', 'Les routes : impair à gauche, pair à droite ; un connecteur qui mélange les deux côtés ; une prise de coupure qui change de route', helico + connecteur + prise); }
 /* 5. « MANQUE » : la chaîne d'un raccord qui s'arrête, et les quatre mots de l'outil. */
@@ -23759,7 +23759,7 @@ const EXPLICATIONS = {
   prise: c => { const P = c && c.plan ? c.plan : null;
     const phrase = P && P.reference ? `${P.reference}${P.main ? ', retenue à la main' : ''} : ${exN(P.utilises)} contact${P.utilises > 1 ? 's' : ''} pris sur ${exN(P.contacts)}.` : 'Deux moitiés : la fiche (mobile) et l’embase (fixe).';
     return exE('La prise de coupure', phrase, [['Pris', P && P.utilises != null ? exN(P.utilises) : null, ''], ['Libres', P && P.contacts != null && P.utilises != null ? exN(P.contacts - P.utilises) : null, 'ok']],
-      ['La fiche reçoit ce qui arrive, l’embase ce qui repart', 'Un câble par contact, de chaque côté', 'L’arrangement se choisit comme pour un connecteur', 'Fiche femelle par défaut : le bouton l’inverse'],
+      ['La partie mobile reçoit ce qui arrive, la partie fixe ce qui repart', 'Un câble par contact, de chaque côté', 'L’arrangement se choisit comme pour un connecteur', 'Partie mobile femelle par défaut : le bouton l’inverse'],
       'Les normes EN 4165, EN 2997, EN 3646 ; votre codification (A/B, P/S) pour le sexe.'); },
 
   contact: c => { const s = c && c.sertir ? c.sertir : c || {}, ref = s.reference || '', sexe = (c && c.sexe) || s.sexe || '', taille = (c && c.taille) || '', type = (c && c.type) || '', statut = (c && c.statut) || s.statut || '';
@@ -24309,7 +24309,11 @@ const motFolios = fs => !fs.length ? '' : (fs.length > 1 ? 'folios ' : 'folio ')
 const descriptionDuRetest = nom => { for (const l of verite()) { const d = l.de === nom ? l.descriptionDe : l.vers === nom ? l.descriptionVers : ''; if (d && String(d).trim()) return String(d).trim(); } return ''; };
 const identite = morceaux => morceaux.filter(Boolean).join(' · ');
 // un nombre écrit à la française (« 5,2 ») ; null s'il n'y en a pas
-const nombreEcrit = t => { const x = parseFloat(String(t == null ? '' : t).trim().replace(',', '.')); return isFinite(x) ? x : null; };
+// (v84) un nombre tapé : « 2 500 » (espaces de milliers, insécables compris), « 2.500,5 » (points de milliers, virgule
+// décimale), « 2,5 », « 1e3 » — comme la lecture du fichier (`longueurLue`)
+const nombreEcrit = t => { let s = String(t == null ? '' : t).trim().replace(/[\s  ]/g, '');
+  s = /,/.test(s) && /\./.test(s) ? s.replace(/\./g, '').replace(',', '.') : s.replace(',', '.');
+  const x = parseFloat(s); return isFinite(x) ? x : null; };
 
 /* ---- LA NAVIGATION : la pile de l'inspecteur ------------------------------------------------------------------- */
 /* `app.insp.pile` : les fiches vues, 30 au plus, et `app.insp.pos` celle qu'on regarde. Une entrée : { type: 'bloc' |
@@ -34208,7 +34212,7 @@ function arreterLecture() { const L = BASE.lecture; if (!L) return; try { L.w.te
    gardée, rangée dans la bibliothèque — et la carte de lecture dit ce qu'il y a, et en combien de temps. */
 async function finDeLecture(L, fin) { BASE.lecture = null; const R = fin.lecture, B = { meta: fin.meta, morceaux: L.morceaux }, nom = L.nom, ms = Math.round(performance.now() - L.t0);
   const liste = R.ignorees.length ? ['Feuilles ignorées (pas les en-têtes de l’installation) : ' + R.ignorees.map(n => guillemets(esc(n))).join(', ')] : [];
-  if (!R.entete) { montrerLecture(); echecImport('base', { texte: `${esc(nom)} : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(R.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] }, nom + ' : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
+  if (!R.entete) { montrerLecture(); echecImport('base', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(R.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] }, nom + ' : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
   if (!R.n) { montrerLecture(); echecImport('base', { texte: `« ${esc(nom)} » : les en-têtes de l’installation sont là (ligne ${R.entete}), mais aucune liaison dessous.`, liste }); return; }
   const C = B.meta.contrats, sans = !C.some(c => c.h !== '—');
   // un seul contrat, ouvert comme un retest : il devient un plan, sans passer par la base
@@ -34276,8 +34280,8 @@ async function importerReferences(fichier) { if (!fichier) return; const nom = f
   dire('Lecture de « ' + nom + ' »…'); const L = await lireLeFichier(fichier); FICHIERS.base = null;
   if (L.erreur) { echecImport('base', L.erreur); return; }
   try { const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), liste = ig.length ? ['Feuilles ignorées (pas les en-têtes de l’installation) : ' + ig.join(', ')] : [];
-    if (r.format !== 'retest') { echecImport('base', { texte: `${esc(nom)} : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] },
-      nom + ' : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
+    if (r.format !== 'retest') { echecImport('base', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] },
+      nom + ' : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
     if (!r.liaisons.length) { echecImport('base', { texte: `«\u00a0${esc(nom)}\u00a0» : les en-têtes de l’installation sont là (ligne ${r.entete}), mais aucune liaison dessous.`, liste }); return; }
     if (!r.harnais.length) { const e = trouverEnteteRetest(L.brutes), sans = !e || e.col.harness == null, G = rangerLaBase(r.liaisons, nom);
       // sans harness, pas de comparaison ; ses installations, si elle les dit, entrent quand même dans la bibliothèque (un plan par dessin)
@@ -34784,7 +34788,7 @@ const AIDES_PROVISOIRES = {
   rail: ['Le rail', 'Le profilé qui porte tous les modules de la barrette, coupé à leur longueur. Sa référence vient de la table Accessoires de la norme ; quand la norme ne le nomme pas, celle du catalogue du fabricant.'],
   module: ['Le module', 'L’outil prend le plus petit module de la norme qui loge tous les potentiels de la barrette, chaque câble dans un contact qui admet sa gauge. Les modules viennent de la bible des barrettes.'],
   arrangement: ['L’arrangement', 'Celui que le part number nomme, sinon le plus petit arrangement de la norme qui a toutes les bornes et dont les contacts admettent les gauges des câbles.'],
-  prise: ['L’arrangement de la prise', 'Le plus petit arrangement de la norme qui loge tous les contacts de la prise, côté fiche et côté embase, avec les gauges de leurs câbles.'],
+  prise: ['L’arrangement de la prise', 'Le plus petit arrangement de la norme qui loge tous les contacts de la prise, côté partie mobile et côté partie fixe, avec les gauges de leurs câbles.'],
   contact: ['Le contact à sertir', 'La table Contacts de la norme donne, pour la taille du contact, son sexe et la gauge du câble, la référence à sertir.'],
   gauge: ['La gauge acceptée', 'La gauge du câble se lit dans son type (DR20 : 20 AWG) ; la norme dit quelles gauges la taille du contact accepte.'],
   raccord: ['Le raccord', 'Choisi dans la table des raccords selon la norme du connecteur, sa taille, la reprise de blindage, l’étanchéité et l’orientation.'],

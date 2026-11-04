@@ -107,7 +107,7 @@ function cpSchemaRoutes() { const cable = (x1, y1, x2, y2, c, t, ty) => `<path d
     + `<rect x="372" y="222" width="196" height="46" rx="10" fill="${CP.ambreDoux}" stroke="${CP.ambre}"/>` + cpT(470, 241, 'branchement en chaîne', { cls: 'vr-sous', couleur: CP.ambre }) + cpT(470, 258, 'gauche et droite mêlées : à voir', { cls: 'vr-petit' }) + '</g>';
   const prise = `<g>${cpT(760, 36, 'Une prise de coupure', { cls: 'vr-titre' })}<rect x="728" y="74" width="28" height="128" rx="6" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.5"/><rect x="764" y="74" width="28" height="128" rx="6" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.5"/>`
     + cable(640, 110, 728, 110, CP.violet, '1MO') + cable(640, 160, 728, 160, CP.violet, '1MO') + cable(792, 110, 876, 110, CP.violet, '3HO') + cable(792, 160, 876, 160, CP.violet, '3HO')
-    + cpT(684, 196, 'côté fiche', { cls: 'vr-petit' }) + cpT(836, 196, 'côté embase', { cls: 'vr-petit' })
+    + cpT(684, 196, 'partie mobile', { cls: 'vr-petit' }) + cpT(836, 196, 'partie fixe', { cls: 'vr-petit' })
     + `<rect x="652" y="222" width="216" height="46" rx="10" fill="${CP.vertDoux}" stroke="${CP.vert}"/>` + cpT(760, 241, 'elle change de route : bien', { cls: 'vr-sous', couleur: CP.vert }) + cpT(760, 258, 'chaque côté se juge à part', { cls: 'vr-petit' }) + '</g>';
   return cpSvg('0 0 880 300', 'Les routes : impair à gauche, pair à droite ; un connecteur qui mélange les deux côtés ; une prise de coupure qui change de route', helico + connecteur + prise); }
 /* 5. « MANQUE » : la chaîne d'un raccord qui s'arrête, et les quatre mots de l'outil. */

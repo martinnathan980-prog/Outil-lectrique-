@@ -167,7 +167,7 @@ function arreterLecture() { const L = BASE.lecture; if (!L) return; try { L.w.te
    gardée, rangée dans la bibliothèque — et la carte de lecture dit ce qu'il y a, et en combien de temps. */
 async function finDeLecture(L, fin) { BASE.lecture = null; const R = fin.lecture, B = { meta: fin.meta, morceaux: L.morceaux }, nom = L.nom, ms = Math.round(performance.now() - L.t0);
   const liste = R.ignorees.length ? ['Feuilles ignorées (pas les en-têtes de l’installation) : ' + R.ignorees.map(n => guillemets(esc(n))).join(', ')] : [];
-  if (!R.entete) { montrerLecture(); echecImport('base', { texte: `${esc(nom)} : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(R.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] }, nom + ' : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
+  if (!R.entete) { montrerLecture(); echecImport('base', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(R.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] }, nom + ' : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
   if (!R.n) { montrerLecture(); echecImport('base', { texte: `« ${esc(nom)} » : les en-têtes de l’installation sont là (ligne ${R.entete}), mais aucune liaison dessous.`, liste }); return; }
   const C = B.meta.contrats, sans = !C.some(c => c.h !== '—');
   // un seul contrat, ouvert comme un retest : il devient un plan, sans passer par la base
@@ -235,8 +235,8 @@ async function importerReferences(fichier) { if (!fichier) return; const nom = f
   dire('Lecture de « ' + nom + ' »…'); const L = await lireLeFichier(fichier); FICHIERS.base = null;
   if (L.erreur) { echecImport('base', L.erreur); return; }
   try { const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), liste = ig.length ? ['Feuilles ignorées (pas les en-têtes de l’installation) : ' + ig.join(', ')] : [];
-    if (r.format !== 'retest') { echecImport('base', { texte: `${esc(nom)} : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] },
-      nom + ' : je ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
+    if (r.format !== 'retest') { echecImport('base', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] },
+      nom + ' : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
     if (!r.liaisons.length) { echecImport('base', { texte: `«\u00a0${esc(nom)}\u00a0» : les en-têtes de l’installation sont là (ligne ${r.entete}), mais aucune liaison dessous.`, liste }); return; }
     if (!r.harnais.length) { const e = trouverEnteteRetest(L.brutes), sans = !e || e.col.harness == null, G = rangerLaBase(r.liaisons, nom);
       // sans harness, pas de comparaison ; ses installations, si elle les dit, entrent quand même dans la bibliothèque (un plan par dessin)
