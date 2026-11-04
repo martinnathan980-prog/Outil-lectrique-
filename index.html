@@ -9175,7 +9175,7 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '0b8fcd3073db';
+const VERSION_MOTEUR = '72fec88b5daa';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -11664,7 +11664,6 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   const gestes = [
     ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerBornes, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS), 0)],
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
-    ['dégagement', () => degagements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['bande', () => bandes(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['tassement', () => tassements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['redressement', () => redressements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps, p2 => estimerMemo(assemblerMemo(M, meilleur.E, p2)).lisibilite)],
@@ -11714,7 +11713,6 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
     ['compaction', () => compactions(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['étirement', () => etirements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
-    ['dégagement', () => degagements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['bande', () => bandes(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['tassement', () => tassements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerTout, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS_FINAL, true), exacte ? Infinity : TAMIS_FINAL)],
@@ -11949,29 +11947,6 @@ function permutationsDeBornes(M, E, posDe, copie, essayer, temps, estimerOrdre, 
       if (!gagne) break; }
     if (bouge && essai(ordre)) { any = true; return; }
     for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { if (!temps()) return; const c = cles(); if (utile(g.id, c[i], c[j]) && essai(echange(c, i, j))) any = true; } });
-  return any;
-}
-/* Un bloc S'ÉCARTE d'un fil qu'il barre : un fil plié dont les deux bouts sont à la même hauteur fait le tour par une
-   goulotte parce qu'un bloc étranger, sur son chemin, le touche à trois unités près (v84, folio 6 : 600XC4 A5 → 672VT51,
-   un U sous 611LP4, posé deux unités trop haut). Le bloc descend (ou monte) juste assez pour que le fil passe droit sans
-   le frôler, et pousse ce qui est devant lui dans sa colonne ; le juge tranche. Aucun glissement ne le trouvait : ils
-   mettent un bloc EN FACE de ses partenaires, jamais à l'écart d'un fil qui ne le concerne pas. */
-function degagements(M, E, meilleurDe, copie, essayer, temps) {
-  let any = false; const m = meilleurDe(), blocs = m.L.comps.filter(c => c.kind !== 'tag');
-  const barres = m.R.fils.filter(w => !w.shunt && w.pts.length > 2 && w.epA && w.epB && Math.abs(w.epA.y - w.epB.y) < 0.75);
-  for (const w of barres) { if (!temps()) break;
-    const y = w.epA.y, xa = Math.min(w.epA.x, w.epB.x), xb = Math.max(w.epA.x, w.epB.x), siens = [String(w.de), String(w.vers)];
-    const genants = blocs.filter(c => !siens.includes(String(c.name)) && xb > c.x + 1 && xa < c.x + c.w - 1 && y > c.y - 3 && y < c.y + c.h + 3);
-    if (genants.length !== 1) continue;                          // un seul bloc barre le passage : plusieurs, c'est un autre dessin
-    const c = genants[0], id = c.id, pos = meilleurDe().pos; if (!pos.haut.has(id)) continue;
-    const bas = y + DEGAGEMENT - c.y, haut = (y - DEGAGEMENT) - (c.y + c.h);           // descendre (bas > 0) ou monter (haut < 0)
-    for (const dy of [bas, haut].sort((u, v) => Math.abs(u) - Math.abs(v))) { if (!temps() || Math.abs(dy) > 4 * PRH) continue;
-      const p2 = copie(pos); glisserBloc(M, p2, id, dy);
-      // ce qui est devant lui dans sa colonne s'écarte, de proche en proche
-      const s = Math.sign(dy), pile = (E.piles.get(E.pileDe(id)) || []).filter(o => o !== id && s * (pos.haut.get(o) - pos.haut.get(id)) > 0).sort((u, v) => s * (pos.haut.get(u) - pos.haut.get(v)));
-      let bord = s > 0 ? p2.bas.get(id) + VGAP : p2.haut.get(id) - VGAP;
-      pile.forEach(o => { const d = s > 0 ? bord - p2.haut.get(o) : bord - p2.bas.get(o); if (s * d > 0) glisserBloc(M, p2, o, d); bord = s > 0 ? p2.bas.get(o) + VGAP : p2.haut.get(o) - VGAP; });
-      if (essayer(p2)) { any = true; break; } } }
   return any;
 }
 /* Un bloc glisse en face d'un partenaire, du plus court glissement au plus
@@ -22098,7 +22073,7 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   contacts.forEach((xs, l) => { const fam = cableFamilleDe(N, l.type); if (!fam || !fam.conducteur || fam.conducteur === 'cuivre') return;
     xs.forEach(x => { if (x.sertir && x.sertir.reference && !contactPourCca(x.sertir.reference)) att(x.repere, `${cableEtType(l)} : conducteur ${fam.conducteur} sur un contact ${x.sertir.reference} — qualification CCA à confirmer`, { cables: [l] }); }); });
   // les disjoncteurs : tout ce qu'ils nourrissent, la table 11-3, les contacts, la chute en ligne
-  reperes.filter(estDisjoncteur).forEach(r => { try { controleProtection(r, contacts, V, N, H).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte, { cables: x.cables || [] })); } catch (_) { } });
+  reperes.filter(estDisjoncteur).forEach(r => { try { controleProtection(r, contacts, V, N, H).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte, { cables: x.cables || [], ...(x.genre ? { genre: x.genre } : {}), ...(x.section ? { section: x.section } : {}) })); } catch (_) { } });
   // les barrettes à poser, folio par folio
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => {
     if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1') att(l.aPoser, `ajoutée par VOLTA sur ${l.de}:${l.borneDe} (plusieurs câbles sur une borne) — repère provisoire`, { plan: p }); }));
@@ -22183,7 +22158,7 @@ function genreDuPoint(x) { const t = x.texte || '';
   if (/^ajoutée par VOLTA sur/.test(t)) return 'aposer';
   if (/qualification CCA/.test(t)) return 'cca';
   if (/profil de charge est à renseigner/.test(t)) return 'profil';
-  if (/^chute en ligne/.test(t)) return 'chute';
+  if (/(^|: )chute en ligne/.test(t)) return 'chute';
   if (/aucun arrangement|n['’]a pas de contact|ne loge /.test(t)) return 'arrangement';
   if (/refusé|aucun contact|dépasse le contact|contact taille \S+ (supposé )?\(|joint arrière|contact \S+ : \d+ câbles/.test(t)) return 'contact';
   if (/pas protégé|admis en continu|> [\d,]+ A admis|table 11-3|sans résistance dans la base/.test(t)) return 'protection';
@@ -22237,9 +22212,15 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
   const C = typeof chutesDuDisjoncteur === 'function' ? chutesDuDisjoncteur(nom) : null, I = C && C.I > 0 ? C.I : d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : cal > 0 ? cal : H.courant;
   const cs = C && C.cs ? C.cs : chutesDepuis(N, V, nom, I, H, d.points.filter(p => p.t !== Infinity && p.i > 0), { famille: d.famille, calibre: cal });
   const pire = c => typeof pireChuteEnPointe === 'function' ? pireChuteEnPointe(c) : (c.pointes || []).find(x => x.trop);
-  cs.forEach(c => { const ou = c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : ''), hyp = c.reel ? '' : ' (longueurs d’hypothèse)', niveau = c.reel ? 'ko' : 'att', cables = c.segments.filter(s => s.fil).map(s => s.fil);
-    if (c.trop) { const [u, a] = chiffresEnOrdre(c.dU, c.admis, 'V'); out.push({ niveau, cables, texte: `chute en ligne vers ${ou} : ${u} à ${amperes(I)} > ${a} admis sous ${nombre(c.tension)} V${hyp}` }); }
-    else { const p = pire(c); if (p) { const [u, a] = chiffresEnOrdre(p.dU, p.admis, 'V'); out.push({ niveau, cables, texte: `chute en ligne vers ${ou} en pointe : ${u} à ${amperes(p.i)} pendant ${secondes(p.t)} > ${a} admis${p.intermittent && p.admis !== c.admis ? ' en intermittent' : ''}${hyp}` }); } } });
+  /* (v84, l'agent « recap » : un problème commence par son câble) la phrase dit le câble qui arrive au bout du chemin
+     (« DR24 vers 395SW1:1 », « (par 411VC3A) » quand il traverse des passages), puis la chute : « chute en ligne de 4,63 V
+     à 5 A, plus que les 2 V admis sous 28 V » ; le courant n'est dit que si tout le chemin porte le même (une branche
+     dont la consommation est écrite porte la sienne) */
+  cs.forEach(c => { const ou = c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : ''), hyp = c.reel ? '' : ' (longueurs d’hypothèse)', niveau = c.reel ? 'ko' : 'att', fils = c.segments.filter(s => s.fil), cables = fils.map(s => s.fil);
+    const dernier = fils[fils.length - 1], par = c.segments.filter(s => s.passage).map(s => s.passage), quoi = `${(dernier && dernier.fil.type) || 'câble'} vers ${ou}${par.length ? ' (par ' + par.join(', ') + ')' : ''}`;
+    const uni = fils.every(s => s.courant == null || Math.abs(s.courant - I) < 1e-9), plus = { niveau, cables, genre: 'chute', section: 'fils' };
+    if (c.trop) { const [u, a] = chiffresEnOrdre(c.dU, c.admis, 'V'); out.push({ ...plus, texte: `${quoi} : chute en ligne de ${u}${uni ? ' à ' + amperes(I) : ''}, plus que les ${a} admis sous ${nombre(c.tension)} V${hyp}` }); }
+    else { const p = pire(c); if (p) { const [u, a] = chiffresEnOrdre(p.dU, p.admis, 'V'); out.push({ ...plus, texte: `${quoi} : chute en ligne de ${u} en pointe (${uni ? amperes(p.i) + ' ' : ''}pendant ${secondes(p.t)}), plus que les ${a} admis${p.intermittent && p.admis !== c.admis ? ' en intermittent' : ''}${hyp}` }); } } });
   return out; }
 /* LES PART NUMBERS d'un repère, chacun avec les câbles qui le portent : [{ pn, cables, liaisons: [[l, champ]] }], du plus
    porté au moins porté. Un disjoncteur n'en a qu'un ; deux, c'est une faute (« Unifier sur… »). */
@@ -25928,6 +25909,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
     // protection ; sans profil de charge, le courant retenu est le calibre du disjoncteur — chaque cas se dit tel qu'il est
     + (x.al && x.al.amont ? ` ${esc('Côté source de')} ${source} ${esc(': il l’alimente, il n’est pas sous sa protection.')}`
       : x.al && x.source === 'calibre' ? ` ${esc('Le courant vient de')} ${source} ${esc('— son calibre, faute de profil de charge.')}`
+      : x.al && x.source === 'branche' && x.aval ? ` ${esc('Sa branche : ' + x.aval.bouts.join(', ') + ', ' + (x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite') + ' (sous')} ${source}${esc(').')}`
+      : x.al && x.totalFaute ? ` ${esc('Courant total de')} ${source} ${esc(': la consommation de ce qui est en aval n’est pas écrite.')}`
       : x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
   const intens = !x.fn ? `<p class="fi-note">${l.type ? 'Hors de l’EN 2853 : ce qu’il admet ne se lit pas.' : 'Sans type, ce qu’il admet ne se lit pas.'}</p>`
     : mesure('Courant', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
@@ -25969,8 +25952,13 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       : { html: 'Votre fichier ne donne pas son type : la gauge ne se vérifie pas.', source: 'fichier', etat: 'att' },
     // (v84, l'agent « câbles ») trois cas : côté source du disjoncteur, il l'alimente et n'est pas sous sa protection ; sans
     // profil de charge, le courant retenu est le calibre ; sinon, ce que tirent les équipements qu'il alimente
-    x.al && x.al.amont ? { html: `Il est côté source de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : il l’alimente, et n’est pas sous sa protection ; il porte <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
-      : x.al && x.source === 'calibre' ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b> : faute de profil de charge, VOLTA retient le calibre du disjoncteur, <b>${esc(amperes(x.I))}</b>.`, source: 'calcul', etat: 'att' }
+    // (v84, le courant par branche) quatre cas, dits tels qu'ils sont : il nourrit le disjoncteur (côté source) ; il porte sa
+    // propre branche (la consommation écrite de ce qu'il alimente) ; il porte le total faute de consommation écrite en aval ;
+    // le profil du disjoncteur manque et VOLTA prend son calibre
+    x.al && x.al.amont ? { html: `Il nourrit <b class="id">${esc(x.al.nom)}</b> : il porte ses <b>${esc(amperes(x.I))}</b>, mais ${esc(x.al.nom)} ne le protège pas.`, source: 'calcul' }
+      : x.al && x.source === 'branche' && x.aval ? { html: `Il alimente ${x.aval.bouts.map(r => `<b class="id">${esc(r)}</b>`).join(', ')} : <b>${esc(amperes(x.I))}</b> en continu, ${x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite'}.`, source: 'calcul' }
+      : x.al && x.source === 'calibre' ? { html: `Le profil de <b class="id">${esc(x.al.nom)}</b> n’est pas écrit : VOLTA prend son calibre, <b>${esc(amperes(x.I))}</b>, au pire.`, source: 'calcul', etat: 'att' }
+      : x.al && x.totalFaute && x.aval && x.aval.manque.length ? { html: `Courant total de <b class="id">${esc(x.al.nom)}</b>, <b>${esc(amperes(x.I))}</b> en continu : la consommation de ce qui est en aval (${x.aval.manque.map(r => `<b class="id">${esc(r)}</b>`).join(', ')}) n’est pas écrite.`, source: 'calcul', etat: 'att' }
       : x.al ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : ce que tirent les équipements qu’il alimente, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
       : { html: `Aucun disjoncteur en amont : VOLTA suppose <b>${esc(nombre(H.courant))} A</b>.`, source: 'hypothese', etat: 'att' },
     x.fn ? { html: `Il admet <b>${esc(amperes(x.continu))}</b> en continu${x.fac && Math.abs(x.fac - 1) > 1e-9 ? ' (déclassé × ' + esc(nombre(arrondi(x.fac, 2))) + ')' : ''}.`, source: 'norme', mot: 'EN 2853' } : null,

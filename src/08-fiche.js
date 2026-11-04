@@ -1780,6 +1780,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
     // protection ; sans profil de charge, le courant retenu est le calibre du disjoncteur — chaque cas se dit tel qu'il est
     + (x.al && x.al.amont ? ` ${esc('Côté source de')} ${source} ${esc(': il l’alimente, il n’est pas sous sa protection.')}`
       : x.al && x.source === 'calibre' ? ` ${esc('Le courant vient de')} ${source} ${esc('— son calibre, faute de profil de charge.')}`
+      : x.al && x.source === 'branche' && x.aval ? ` ${esc('Sa branche : ' + x.aval.bouts.join(', ') + ', ' + (x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite') + ' (sous')} ${source}${esc(').')}`
+      : x.al && x.totalFaute ? ` ${esc('Courant total de')} ${source} ${esc(': la consommation de ce qui est en aval n’est pas écrite.')}`
       : x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
   const intens = !x.fn ? `<p class="fi-note">${l.type ? 'Hors de l’EN 2853 : ce qu’il admet ne se lit pas.' : 'Sans type, ce qu’il admet ne se lit pas.'}</p>`
     : mesure('Courant', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
@@ -1821,8 +1823,13 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       : { html: 'Votre fichier ne donne pas son type : la gauge ne se vérifie pas.', source: 'fichier', etat: 'att' },
     // (v84, l'agent « câbles ») trois cas : côté source du disjoncteur, il l'alimente et n'est pas sous sa protection ; sans
     // profil de charge, le courant retenu est le calibre ; sinon, ce que tirent les équipements qu'il alimente
-    x.al && x.al.amont ? { html: `Il est côté source de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : il l’alimente, et n’est pas sous sa protection ; il porte <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
-      : x.al && x.source === 'calibre' ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b> : faute de profil de charge, VOLTA retient le calibre du disjoncteur, <b>${esc(amperes(x.I))}</b>.`, source: 'calcul', etat: 'att' }
+    // (v84, le courant par branche) quatre cas, dits tels qu'ils sont : il nourrit le disjoncteur (côté source) ; il porte sa
+    // propre branche (la consommation écrite de ce qu'il alimente) ; il porte le total faute de consommation écrite en aval ;
+    // le profil du disjoncteur manque et VOLTA prend son calibre
+    x.al && x.al.amont ? { html: `Il nourrit <b class="id">${esc(x.al.nom)}</b> : il porte ses <b>${esc(amperes(x.I))}</b>, mais ${esc(x.al.nom)} ne le protège pas.`, source: 'calcul' }
+      : x.al && x.source === 'branche' && x.aval ? { html: `Il alimente ${x.aval.bouts.map(r => `<b class="id">${esc(r)}</b>`).join(', ')} : <b>${esc(amperes(x.I))}</b> en continu, ${x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite'}.`, source: 'calcul' }
+      : x.al && x.source === 'calibre' ? { html: `Le profil de <b class="id">${esc(x.al.nom)}</b> n’est pas écrit : VOLTA prend son calibre, <b>${esc(amperes(x.I))}</b>, au pire.`, source: 'calcul', etat: 'att' }
+      : x.al && x.totalFaute && x.aval && x.aval.manque.length ? { html: `Courant total de <b class="id">${esc(x.al.nom)}</b>, <b>${esc(amperes(x.I))}</b> en continu : la consommation de ce qui est en aval (${x.aval.manque.map(r => `<b class="id">${esc(r)}</b>`).join(', ')}) n’est pas écrite.`, source: 'calcul', etat: 'att' }
       : x.al ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : ce que tirent les équipements qu’il alimente, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
       : { html: `Aucun disjoncteur en amont : VOLTA suppose <b>${esc(nombre(H.courant))} A</b>.`, source: 'hypothese', etat: 'att' },
     x.fn ? { html: `Il admet <b>${esc(amperes(x.continu))}</b> en continu${x.fac && Math.abs(x.fac - 1) > 1e-9 ? ' (déclassé × ' + esc(nombre(arrondi(x.fac, 2))) + ')' : ''}.`, source: 'norme', mot: 'EN 2853' } : null,

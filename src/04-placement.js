@@ -1544,7 +1544,6 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   const gestes = [
     ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerBornes, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS), 0)],
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
-    ['dégagement', () => degagements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['bande', () => bandes(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['tassement', () => tassements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['redressement', () => redressements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps, p2 => estimerMemo(assemblerMemo(M, meilleur.E, p2)).lisibilite)],
@@ -1594,7 +1593,6 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
     ['compaction', () => compactions(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['étirement', () => etirements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
-    ['dégagement', () => degagements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['bande', () => bandes(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['tassement', () => tassements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerTout, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS_FINAL, true), exacte ? Infinity : TAMIS_FINAL)],
@@ -1829,29 +1827,6 @@ function permutationsDeBornes(M, E, posDe, copie, essayer, temps, estimerOrdre, 
       if (!gagne) break; }
     if (bouge && essai(ordre)) { any = true; return; }
     for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { if (!temps()) return; const c = cles(); if (utile(g.id, c[i], c[j]) && essai(echange(c, i, j))) any = true; } });
-  return any;
-}
-/* Un bloc S'ÉCARTE d'un fil qu'il barre : un fil plié dont les deux bouts sont à la même hauteur fait le tour par une
-   goulotte parce qu'un bloc étranger, sur son chemin, le touche à trois unités près (v84, folio 6 : 600XC4 A5 → 672VT51,
-   un U sous 611LP4, posé deux unités trop haut). Le bloc descend (ou monte) juste assez pour que le fil passe droit sans
-   le frôler, et pousse ce qui est devant lui dans sa colonne ; le juge tranche. Aucun glissement ne le trouvait : ils
-   mettent un bloc EN FACE de ses partenaires, jamais à l'écart d'un fil qui ne le concerne pas. */
-function degagements(M, E, meilleurDe, copie, essayer, temps) {
-  let any = false; const m = meilleurDe(), blocs = m.L.comps.filter(c => c.kind !== 'tag');
-  const barres = m.R.fils.filter(w => !w.shunt && w.pts.length > 2 && w.epA && w.epB && Math.abs(w.epA.y - w.epB.y) < 0.75);
-  for (const w of barres) { if (!temps()) break;
-    const y = w.epA.y, xa = Math.min(w.epA.x, w.epB.x), xb = Math.max(w.epA.x, w.epB.x), siens = [String(w.de), String(w.vers)];
-    const genants = blocs.filter(c => !siens.includes(String(c.name)) && xb > c.x + 1 && xa < c.x + c.w - 1 && y > c.y - 3 && y < c.y + c.h + 3);
-    if (genants.length !== 1) continue;                          // un seul bloc barre le passage : plusieurs, c'est un autre dessin
-    const c = genants[0], id = c.id, pos = meilleurDe().pos; if (!pos.haut.has(id)) continue;
-    const bas = y + DEGAGEMENT - c.y, haut = (y - DEGAGEMENT) - (c.y + c.h);           // descendre (bas > 0) ou monter (haut < 0)
-    for (const dy of [bas, haut].sort((u, v) => Math.abs(u) - Math.abs(v))) { if (!temps() || Math.abs(dy) > 4 * PRH) continue;
-      const p2 = copie(pos); glisserBloc(M, p2, id, dy);
-      // ce qui est devant lui dans sa colonne s'écarte, de proche en proche
-      const s = Math.sign(dy), pile = (E.piles.get(E.pileDe(id)) || []).filter(o => o !== id && s * (pos.haut.get(o) - pos.haut.get(id)) > 0).sort((u, v) => s * (pos.haut.get(u) - pos.haut.get(v)));
-      let bord = s > 0 ? p2.bas.get(id) + VGAP : p2.haut.get(id) - VGAP;
-      pile.forEach(o => { const d = s > 0 ? bord - p2.haut.get(o) : bord - p2.bas.get(o); if (s * d > 0) glisserBloc(M, p2, o, d); bord = s > 0 ? p2.bas.get(o) + VGAP : p2.haut.get(o) - VGAP; });
-      if (essayer(p2)) { any = true; break; } } }
   return any;
 }
 /* Un bloc glisse en face d'un partenaire, du plus court glissement au plus

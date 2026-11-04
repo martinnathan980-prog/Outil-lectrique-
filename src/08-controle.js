@@ -82,7 +82,7 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   contacts.forEach((xs, l) => { const fam = cableFamilleDe(N, l.type); if (!fam || !fam.conducteur || fam.conducteur === 'cuivre') return;
     xs.forEach(x => { if (x.sertir && x.sertir.reference && !contactPourCca(x.sertir.reference)) att(x.repere, `${cableEtType(l)} : conducteur ${fam.conducteur} sur un contact ${x.sertir.reference} — qualification CCA à confirmer`, { cables: [l] }); }); });
   // les disjoncteurs : tout ce qu'ils nourrissent, la table 11-3, les contacts, la chute en ligne
-  reperes.filter(estDisjoncteur).forEach(r => { try { controleProtection(r, contacts, V, N, H).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte, { cables: x.cables || [] })); } catch (_) { } });
+  reperes.filter(estDisjoncteur).forEach(r => { try { controleProtection(r, contacts, V, N, H).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte, { cables: x.cables || [], ...(x.genre ? { genre: x.genre } : {}), ...(x.section ? { section: x.section } : {}) })); } catch (_) { } });
   // les barrettes à poser, folio par folio
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => {
     if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1') att(l.aPoser, `ajoutée par VOLTA sur ${l.de}:${l.borneDe} (plusieurs câbles sur une borne) — repère provisoire`, { plan: p }); }));
@@ -167,7 +167,7 @@ function genreDuPoint(x) { const t = x.texte || '';
   if (/^ajoutée par VOLTA sur/.test(t)) return 'aposer';
   if (/qualification CCA/.test(t)) return 'cca';
   if (/profil de charge est à renseigner/.test(t)) return 'profil';
-  if (/^chute en ligne/.test(t)) return 'chute';
+  if (/(^|: )chute en ligne/.test(t)) return 'chute';
   if (/aucun arrangement|n['’]a pas de contact|ne loge /.test(t)) return 'arrangement';
   if (/refusé|aucun contact|dépasse le contact|contact taille \S+ (supposé )?\(|joint arrière|contact \S+ : \d+ câbles/.test(t)) return 'contact';
   if (/pas protégé|admis en continu|> [\d,]+ A admis|table 11-3|sans résistance dans la base/.test(t)) return 'protection';
@@ -221,9 +221,15 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
   const C = typeof chutesDuDisjoncteur === 'function' ? chutesDuDisjoncteur(nom) : null, I = C && C.I > 0 ? C.I : d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : cal > 0 ? cal : H.courant;
   const cs = C && C.cs ? C.cs : chutesDepuis(N, V, nom, I, H, d.points.filter(p => p.t !== Infinity && p.i > 0), { famille: d.famille, calibre: cal });
   const pire = c => typeof pireChuteEnPointe === 'function' ? pireChuteEnPointe(c) : (c.pointes || []).find(x => x.trop);
-  cs.forEach(c => { const ou = c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : ''), hyp = c.reel ? '' : ' (longueurs d’hypothèse)', niveau = c.reel ? 'ko' : 'att', cables = c.segments.filter(s => s.fil).map(s => s.fil);
-    if (c.trop) { const [u, a] = chiffresEnOrdre(c.dU, c.admis, 'V'); out.push({ niveau, cables, texte: `chute en ligne vers ${ou} : ${u} à ${amperes(I)} > ${a} admis sous ${nombre(c.tension)} V${hyp}` }); }
-    else { const p = pire(c); if (p) { const [u, a] = chiffresEnOrdre(p.dU, p.admis, 'V'); out.push({ niveau, cables, texte: `chute en ligne vers ${ou} en pointe : ${u} à ${amperes(p.i)} pendant ${secondes(p.t)} > ${a} admis${p.intermittent && p.admis !== c.admis ? ' en intermittent' : ''}${hyp}` }); } } });
+  /* (v84, l'agent « recap » : un problème commence par son câble) la phrase dit le câble qui arrive au bout du chemin
+     (« DR24 vers 395SW1:1 », « (par 411VC3A) » quand il traverse des passages), puis la chute : « chute en ligne de 4,63 V
+     à 5 A, plus que les 2 V admis sous 28 V » ; le courant n'est dit que si tout le chemin porte le même (une branche
+     dont la consommation est écrite porte la sienne) */
+  cs.forEach(c => { const ou = c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : ''), hyp = c.reel ? '' : ' (longueurs d’hypothèse)', niveau = c.reel ? 'ko' : 'att', fils = c.segments.filter(s => s.fil), cables = fils.map(s => s.fil);
+    const dernier = fils[fils.length - 1], par = c.segments.filter(s => s.passage).map(s => s.passage), quoi = `${(dernier && dernier.fil.type) || 'câble'} vers ${ou}${par.length ? ' (par ' + par.join(', ') + ')' : ''}`;
+    const uni = fils.every(s => s.courant == null || Math.abs(s.courant - I) < 1e-9), plus = { niveau, cables, genre: 'chute', section: 'fils' };
+    if (c.trop) { const [u, a] = chiffresEnOrdre(c.dU, c.admis, 'V'); out.push({ ...plus, texte: `${quoi} : chute en ligne de ${u}${uni ? ' à ' + amperes(I) : ''}, plus que les ${a} admis sous ${nombre(c.tension)} V${hyp}` }); }
+    else { const p = pire(c); if (p) { const [u, a] = chiffresEnOrdre(p.dU, p.admis, 'V'); out.push({ ...plus, texte: `${quoi} : chute en ligne de ${u} en pointe (${uni ? amperes(p.i) + ' ' : ''}pendant ${secondes(p.t)}), plus que les ${a} admis${p.intermittent && p.admis !== c.admis ? ' en intermittent' : ''}${hyp}` }); } } });
   return out; }
 /* LES PART NUMBERS d'un repère, chacun avec les câbles qui le portent : [{ pn, cables, liaisons: [[l, champ]] }], du plus
    porté au moins porté. Un disjoncteur n'en a qu'un ; deux, c'est une faute (« Unifier sur… »). */
