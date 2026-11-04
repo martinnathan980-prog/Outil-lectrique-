@@ -53,7 +53,9 @@
 
 /* ─── LE GRAND RANGÉ : aux deux tiers droits (sa largeur se tire par le bord gauche : --grand-l) ─── */
 body.insp-grand{--insp-l:min(var(--grand-l,calc((100vw - var(--rail) - 3 * var(--jeu)) * .64)),calc(100vw - var(--rail) - 300px))}
-body.insp-grand #inspecteur{transition:width var(--moyen)}
+/* (v84) plus de transition de largeur : la fiche glisse déjà de la carte au grand (08-carte, `epinglerCarte`) ; une largeur
+   qui s'anime en plus fait refluer le texte pendant l'ouverture, et traîne derrière la main quand on tire le bord */
+body.insp-grand #inspecteur{transition:none}
 /* ─── LE GRAND DÉTACHÉ : une fenêtre, où on l'a lâchée, de la taille qu'on lui a donnée ─── */
 body.insp-grand-libre #inspecteur{top:var(--fen-y,72px);left:var(--fen-x,auto);right:auto;bottom:auto;width:var(--fen-l,900px);height:var(--fen-h,640px);max-height:none;
   z-index:30;border-radius:var(--r-carte);box-shadow:var(--sh-carte);transition:box-shadow var(--moyen)}

@@ -25,11 +25,14 @@ const bac = { console }; vm.createContext(bac);
 vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code
   // la page, remplacée par le moteur : la norme, les hypothèses, le disjoncteur en amont et ses chutes (comme 08-disjoncteurs, `chutesDe`)
   + '\nconst app = { norme: normeEmbarquee(), simu: { ...HYPOTHESES } };\nconst nombre = x => x == null ? "—" : String(x).replace(".", ",");\n'
-  + 'let ALIMS = new Map(), CHUTES_DJ = new Map();\nconst alimentationDuFil = l => ALIMS.get(l) || null;\n'
+  + 'let ALIMS = new Map(), CHUTES_DJ = new Map(), CONSOS = new Map();\nconst alimentationDuFil = l => ALIMS.get(l) || null;\n'
+  // les consommations écrites des équipements (« Ce qu'il consomme ») : la page les donne au moteur par `consommationDuRepere`
+  + 'function consommationDuRepere(r) { return CONSOS.get(r) || null; }\n'
   + 'const chuteEnLigne = (l, cb) => (CHUTES_DJ.get(cb) || []).find(c => c.segments.some(s => s.fil === l)) || null;\n'
   + 'const intensiteDuFil = l => intensiteCalculee(l);\n'
   + 'function brancher(L, cb, profil, calibre) { const pts = pointsDuProfil(profil), perm = pts.find(p => p.t === Infinity), I = perm ? perm.i : calibre;\n'
-  + '  cheminsDepuis(L, cb).forEach(ch => ch.segments.forEach(s => { if (s.fil && !ALIMS.has(s.fil)) ALIMS.set(s.fil, { nom: cb, calibre, perm: perm ? perm.i : null, pointe: pts[0] && pts[0].t !== Infinity ? pts[0] : null, points: pts, amont: !!ch.amont }); }));\n'
+  + '  const B = branchesDepuis(L, cb);\n'
+  + '  cheminsDepuis(L, cb).forEach(ch => ch.segments.forEach(s => { if (s.fil && !ALIMS.has(s.fil)) ALIMS.set(s.fil, { nom: cb, calibre, perm: perm ? perm.i : null, pointe: pts[0] && pts[0].t !== Infinity ? pts[0] : null, points: pts, amont: !!ch.amont, branche: ch.amont ? null : B.get(s.fil) || null }); }));\n'
   + '  CHUTES_DJ.set(cb, chutesDepuis(app.norme, L, cb, I, app.simu, pts.filter(p => p.t !== Infinity), { famille: null, calibre }).sort((a, b) => b.dU - a.dU)); }\n'
   + fiche + '\nthis.ev = s => eval(s);', bac);
 const ev = s => bac.ev(s);
@@ -126,6 +129,38 @@ console.log('\n7. LA FICHE D’UN CÂBLE (08-fiche) : UNE SEULE VÉRITÉ');
 { const W12 = L.find(l => l.cable === 'W-012'); bac.Wc = W12; bac.Wc5 = ev('liaison')({ ...W12, longueur: 5 });
   ok('le coût d’un câble grossi : (masse du nouveau − masse de l’ancien) g/m × longueur m — DR20 → DR16 sur 5 m : (14,61 − 6,85) × 5 = +39 g', ev('coutDuType(Wc5, "DR16")') === '+39 g sur 5 m', ev('coutDuType(Wc5, "DR16")'));
   ok('sans longueur au fichier, sur la longueur supposée, et dit (« supposés ») ; plus fin : un signe moins ; un type que la base ne pèse pas : rien', ev('coutDuType(Wc, "DR16")') === '+39 g sur 5 m supposés' && ev('coutDuType(Wc5, "DR22")') === '−14 g sur 5 m' && ev('coutDuType(Wc5, "ZZ16")') === '', ev('coutDuType(Wc5, "DR22")')); }
+
+console.log('\n8. LE COURANT D’UNE BRANCHE : CE QU’ELLE ALIMENTE EN AVAL');
+{ // l'exemple : 102CB1:2 dessert le relais 103RL1 (W-012, DR20) et l'interrupteur 395SW1 (W-015, DR24 : la commande de la bobine)
+  const P = ev('pointsDuProfil(chargesExemple().get("102CB1"))'), T = i => 95 + 40 * Math.pow(i / 3.9, 2); bac.P = P;
+  ev('CONSOS = new Map()');
+  const B0 = ev('branchesDepuis(contratExemple(), "102CB1")'), b15 = [...B0].find(([l]) => l.cable === 'W-015')[1], b12 = [...B0].find(([l]) => l.cable === 'W-012')[1];
+  ok('sans consommation écrite : W-015 et W-012 n’alimentent chacun qu’une partie de 102CB1 — courant total, et la branche dit ce qui manque (395SW1, 103RL1)', !b15.ecrite && !b15.tout && b15.manque.join() === '395SW1' && !b12.ecrite && b12.manque.join() === '103RL1' && !B0.has(ev('contratExemple()').find(l => l.cable === 'W-011')), b15.manque.join() + ' · ' + b12.manque.join());
+  ev('CONSOS = new Map([["103RL1", { perm: { i: 4.9 }, dem: { i: 9.2, t: 125 } }], ["395SW1", { perm: { i: 0.1 } }]])');
+  const B1 = ev('branchesDepuis(contratExemple(), "102CB1")'), c15 = [...B1].find(([l]) => l.cable === 'W-015')[1], c12 = [...B1].find(([l]) => l.cable === 'W-012')[1];
+  ok('consommations écrites (103RL1 : 4,9 A, 9,2 A au démarrage pendant 125 s ; 395SW1 : 0,1 A) : W-015 porte 0,1 A, W-012 porte 4,9 A et 9,2 A en pointe', c15.ecrite && c15.perm === 0.1 && c15.pointe === 0.1 && c12.ecrite && c12.perm === 4.9 && c12.pointe === 9.2 && c12.points[0].t === 125, `W-015 ${c15.perm} A · W-012 ${c12.perm} A / ${c12.pointe} A`);
+  const F = ev('filsDepuis(contratExemple(), "102CB1")'), f15 = F.find(f => f.cable === 'W-015');
+  ok('la protection reçoit le profil de la branche (`points`) : W-015, 0,1 A pour toujours', f15.points && f15.points.length === 1 && f15.points[0].i === 0.1 && f15.points[0].t === Infinity);
+  const C = ev('chutesDepuis(app.norme, contratExemple(), "102CB1", 5, {}, P.filter(p => p.t !== Infinity), { famille: null, calibre: 10 })'), k15 = C.find(c => c.bout[0] === '395SW1');
+  ok('la chute vers 395SW1 : le DR24 à 0,1 A (114 mΩ/m, 95 °C + presque rien, 5 m) + 0,2 V du 10 A (le disjoncteur porte le total) — 0,27 V au lieu de 4,63 V : plus de chute trop forte', pres(k15.segments[0].courant, 0.1) && pres(k15.dU, 0.114 * (234.5 + T(0.1)) / 254.5 * 5 * 0.1 + 0.2) && !k15.trop && !k15.tropPointe, k15.dU.toFixed(4) + ' V');
+  const k12 = C.find(c => c.bout[0] === '103RL1'), T12 = i => 95 + 40 * Math.pow(i / 6.9, 2);
+  ok('vers 103RL1 : le DR20 à 4,9 A au permanent, à 9,2 A pendant la pointe de 102CB1 (125 s : il chauffe)', pres(k12.segments[0].courant, 4.9) && pres(k12.dU, 0.0332 * (234.5 + T12(4.9)) / 254.5 * 25 / 5 * 4.9 + 0.2) && pres(k12.pointes[0].dU, 0.0332 * (234.5 + T12(9.2)) / 254.5 * 5 * 9.2 + 0.2), `${k12.dU.toFixed(4)} V · pointe ${k12.pointes[0].dU.toFixed(4)} V`);
+  const li = (de, bDe, vers, bVers, cable, type) => ev('liaison')({ de, borneDe: bDe, vers, borneVers: bVers, cable, type });
+  bac.D = [li('5CB1', '2', '50VT1', '1', 'W-a', 'DR16'), li('50VT1', '1', '50VT1', '2', 'W-s', 'DR16'), li('50VT1', '1', '51EQ1', '1', 'W-b', 'DR22'), li('50VT1', '2', '52EQ2', '1', 'W-c', 'DR22'), li('5CB1', '2', '53EQ3', '1', 'W-d', 'DR22')];
+  ev('CONSOS = new Map([["51EQ1", { perm: { i: 2 }, dem: { i: 5, t: 3 } }], ["52EQ2", { perm: { i: 1 } }]])');
+  const B2 = ev('branchesDepuis(D, "5CB1")'), ba = [...B2].find(([l]) => l.cable === 'W-a')[1], bb = [...B2].find(([l]) => l.cable === 'W-b')[1], bd = [...B2].find(([l]) => l.cable === 'W-d')[1];
+  ok('par une barrette : W-a alimente 51EQ1 et 52EQ2 — la somme (2 + 1 = 3 A ; au démarrage 5 + 1 = 6 A pendant 3 s) ; W-b, 51EQ1 seul ; W-d, 53EQ3 sans consommation : le total, et il le dit', ba.ecrite && ba.perm === 3 && ba.pointe === 6 && ba.points[0].t === 3 && bb.perm === 2 && bb.pointe === 5 && !bd.ecrite && bd.manque.join() === '53EQ3', `W-a ${ba.perm} / ${ba.pointe} A · W-b ${bb.perm} / ${bb.pointe} A`);
+  bac.E = [li('6CB1', '2', '60EQ1', '1', 'W-e', 'DR22')];
+  const be = [...ev('branchesDepuis(E, "6CB1")')][0][1];
+  ok('un disjoncteur à une seule charge : son câble alimente tout — le courant total du profil, exact (`tout`), sans rien demander', be.tout && !be.ecrite && !be.manque.length);
+  // la fiche du câble, avec et sans les consommations
+  ev('CONSOS = new Map([["103RL1", { perm: { i: 4.9 }, dem: { i: 9.2, t: 125 } }], ["395SW1", { perm: { i: 0.1 } }]]); ALIMS = new Map(); CHUTES_DJ = new Map(); brancher(contratExemple(), "102CB1", chargesExemple().get("102CB1"), 10)');
+  const x15 = ev('intensiteCalculee([...ALIMS.keys()].find(l => l.cable === "W-015"))'), d15 = ev('chuteDuFil([...ALIMS.keys()].find(l => l.cable === "W-015"))');
+  ok('la fiche de W-015, consommations écrites : il porte 0,1 A (`source` « branche ») sur 3,9 A admis — plus de pointe qui dépasse ; sa chute à 0,1 A', x15.source === 'branche' && pres(x15.I, 0.1) && !x15.trop.length && !x15.pointe && !x15.totalFaute && pres(d15.I, 0.1) && pres(d15.dU, d15.total.segments[0].dU), `${x15.I} A · ${d15.dU.toFixed(4)} V`);
+  ev('CONSOS = new Map(); ALIMS = new Map(); CHUTES_DJ = new Map(); brancher(contratExemple(), "102CB1", chargesExemple().get("102CB1"), 10)');
+  const y15 = ev('intensiteCalculee([...ALIMS.keys()].find(l => l.cable === "W-015"))'), y11 = ev('intensiteCalculee([...ALIMS.keys()].find(l => l.cable === "W-011"))');
+  ok('sans consommation : W-015 porte le total de 102CB1 (5 A, 9,31 A en pointe), et la fiche peut le dire — `totalFaute`, ce qui manque : 395SW1', y15.source === 'profil' && y15.I === 5 && y15.trop.length === 2 && y15.totalFaute && y15.aval.manque.join() === '395SW1');
+  ok('le câble de la batterie (W-011, en amont) porte le total sans « faute » : il nourrit tout', y11.I === 5 && !y11.totalFaute && !y11.aval); }
 
 console.log(`\n  ${total - echecs} / ${total} contrôles passés  —  ${echecs ? echecs + ' ÉCHEC(S)' : 'tout est vert'}`);
 process.exit(echecs ? 1 : 0);

@@ -549,11 +549,14 @@ function protegerFil(norme, calibre, f, H, ctx) { const { k, lente, pts } = ctx;
   const contactSurcharge = !!(contact && calibre > 0 && calibre > contact.intensite + 1e-9), contactDepasse = !!(contact && permanent > contact.intensite + 1e-9);
   const commun = { fil: fil || null, jauge, conducteur: rd.conducteur, kConducteur: rd.kConducteur, tenue, calibreMax, horsTable, contact, contactSurcharge, contactDepasse, permanent, courbeLente: lente ? lente.nom : '' };
   if (!fil || fil.intensite == null || rd.refuse) return { ...f, ...commun, continu: null, facteur: 1, facteurCourt: 1, phases: [], pire: null, laisse: [], pireLaisse: null, protege: null, jugeSur: '', dommage: null, verdict: 'inconnu', refuse: !!rd.refuse };
-  const kc = rd.kConducteur || 1, facteur = k * facteurAmbiante(fil, H.ambiante) * kc, facteurCourt = k * kc, facteurDe = t => t === Infinity ? facteur : facteurCourt, continu = fil.intensite * facteur;
-  const phases = pts.map(p => { const admise = intensiteAdmise(fil, p.t) * facteurDe(p.t); return { ...p, admise, palier: palierDe(p.t), ok: p.i <= admise + 1e-9 }; });
+  // ce que le câble admet, déclassé : LE calcul de la fiche d'un câble (09 quater, `admissionDuFil`) — le facteur suit le
+  // PALIER de la durée (v84 : un état de 2,1 min se juge sur le continu, donc avec l'ambiante ; avant, le facteur du continu
+  // n'allait qu'au permanent, et hors de 95 °C la transition de 102CB1 était jugée sans l'ambiante)
+  const A = admissionDuFil(norme, f.type, H), facteur = A.facteurContinu, facteurCourt = A.facteurCourt, continu = A.continu, service = A.admise;
+  const phases = pts.map(p => { const admise = service(p.t); return { ...p, admise, palier: palierDe(p.t), ok: p.i <= admise + 1e-9 }; });
   const pire = phases.filter(p => !p.ok).sort((a, b) => b.i / b.admise - a.i / a.admise)[0] || null;
   // LA PROTECTION : contre la courbe de dommage du fil ; à défaut, contre ses intensités de service (la règle d'avant, plus sévère)
-  const dom = dommageDuFil(norme, f.type, jauge, fil, rd, H, k), service = t => intensiteAdmise(fil, t) * facteurDe(t), limite = t => dom ? dom.limite(t) : service(t);
+  const dom = dommageDuFil(norme, f.type, jauge, fil, rd, H, k), limite = t => dom ? dom.limite(t) : service(t);
   const laisse = lente && calibre > 0 ? PALIERS_EN2853.map(([t, mot]) => { const multiple = multipleAdmis(lente, t), courant = multiple * calibre, admise = limite(t);
     return { palier: t, mot, multiple, courant, admise, service: service(t), dommage: dom ? admise : null, ok: courant <= admise + 1e-9 }; }) : [];
   const pireLaisse = laisse.filter(x => !x.ok).sort((a, b) => b.courant / b.admise - a.courant / a.admise)[0] || null;

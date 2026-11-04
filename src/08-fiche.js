@@ -396,10 +396,18 @@ const avantDe = (l, c) => l && l.avant && c in l.avant ? (l.avant[c] == null || 
    passe par le câble), gardée tant que le contrat ne change pas (la clé du contrôle). */
 // (la carte est faite des liaisons elles-mêmes : un Ctrl+Z rend des copies d'un contrat de même clé — on la refait aussi
 // quand la liste des liaisons n'est plus la même)
-const ALIM = { cle: null, carte: null, V: null, premier: null, dj: new Map() };
+const ALIM = { cle: null, carte: null, V: null, premier: null, dj: new Map(), br: new Map() };
+/* (v84) CE QUE CONSOMME UN REPÈRE, pour le courant des branches (09 quater, `branchesDepuis` : le moteur l'appelle) : un
+   équipement, sa consommation écrite (« Ce qu'il consomme » : 08-disjoncteurs, `consoDe`) ; un disjoncteur en aval, son
+   profil (écrit, ou la somme de ce qu'il alimente) ; sinon rien. */
+function consommationDuRepere(r) { if (!r || estMasse(r)) return null;
+  if (estDisjoncteur(r)) { const c = typeof chargeDe === 'function' ? chargeDe(r) : null; return typeof phaseEcrite === 'function' && phaseEcrite(c) ? c : null; }
+  return typeof consoDe === 'function' ? consoDe(r) : null; }
+// les branches d'un disjoncteur (le courant que porte chacun de ses câbles), gardées avec la carte
+const branchesDu = cb => { if (!ALIM.br.has(cb)) { let B; try { B = branchesDepuis(verite(), cb); } catch (_) { B = new Map(); } ALIM.br.set(cb, B); } return ALIM.br.get(cb); };
 function carteDesAlimentations() { const cle = typeof CONTROLE !== 'undefined' ? CONTROLE.cle : null, V = verite();
   if (ALIM.carte && cle && ALIM.cle === cle && ALIM.V === V && ALIM.premier === V[0]) return ALIM.carte;
-  const m = new Map(), tous = []; ALIM.dj = new Map();
+  const m = new Map(), tous = []; ALIM.dj = new Map(); ALIM.br = new Map();
   reperesDe(V).filter(estDisjoncteur).forEach(cb => { try { cheminsDepuis(V, cb).forEach(ch => tous.push({ cb, ch })); } catch (_) { } });
   // (v84) un câble est d'abord alimenté par le disjoncteur EN AVAL duquel il est ; le câble de la source (en amont : 09 quater,
   // `cheminsDepuis`) porte le courant du disjoncteur qu'il nourrit, mais celui-ci ne le protège pas : `amont` le dit
@@ -407,28 +415,32 @@ function carteDesAlimentations() { const cle = typeof CONTROLE !== 'undefined' ?
   ALIM.cle = cle; ALIM.carte = m; ALIM.V = V; ALIM.premier = V[0]; return m; }
 function infosDisjoncteur(cb) { if (ALIM.dj.has(cb)) return ALIM.dj.get(cb); const d = disjonctionDe(cb), pts = d.points.length ? d.points : pointsDuProfil(d.profil), perm = pts.find(p => p.t === Infinity), pointe = pts[0];
   const x = { nom: cb, calibre: d.calibre, perm: perm ? perm.i : null, pointe: pointe && pointe.t !== Infinity ? pointe : null, points: pts }; ALIM.dj.set(cb, x); return x; }
-const alimentationDuFil = l => { const a = carteDesAlimentations().get(l); return a ? { ...infosDisjoncteur(a.cb), chemin: a.chemin, amont: !!a.amont } : null; };
+const alimentationDuFil = l => { const a = carteDesAlimentations().get(l); return a ? { ...infosDisjoncteur(a.cb), chemin: a.chemin, amont: !!a.amont, branche: a.amont ? null : branchesDu(a.cb).get(l) || null } : null; };
 /* CE QU'UN CÂBLE PORTE ET CE QU'IL ADMET : le courant, sa pointe, ce que la norme des câbles admet, déclassé comme la
    simulation (le faisceau, la charge, l'altitude, l'ambiante, le conducteur), et ce qui dépasse.
    (v84) LE MÊME CALCUL QUE LA PROTECTION (09 quater, `admissionDuFil`) : l'ambiante ne déclasse que le continu, et le
    palier d'un état se lit sur sa durée — `admise(t)` est le seuil que chaque phrase doit montrer. LE COURANT : le
    permanent du disjoncteur en amont (`source` 'profil') ; sans permanent, son CALIBRE, au pire (`source` 'calibre' — la
    chute en ligne prend le même : 08-disjoncteurs, `chutesDe` ; avant v84, la fiche prenait l'hypothèse, 2 A, et la chute
-   le calibre) ; sans disjoncteur, l'hypothèse (`source` 'hypothese'). SA RÉSISTANCE `rd` est celle de son conducteur
-   sous ce courant (`tc` : la température estimée, AC 43.13-1B § 11-66 d(6), ou l'hypothèse « fixe ») — la même que sa
-   chute : R × I s'y vérifie. */
+   le calibre) ; sans disjoncteur, l'hypothèse (`source` 'hypothese'). LA BRANCHE (v84, `al.branche` : 09 quater,
+   `branchesDepuis`) : quand le câble n'alimente qu'une partie de ce que dessert son disjoncteur et que la consommation de
+   chacun de ses bouts est écrite, il porte leur somme (`source` 'branche', son propre profil `pts`) ; quand elle manque,
+   le courant total du disjoncteur, et `totalFaute` le dit (`aval` : ses bouts, `manque` : ceux sans consommation). SA
+   RÉSISTANCE `rd` est celle de son conducteur sous ce courant (`tc` : la température estimée, AC 43.13-1B § 11-66 d(6),
+   ou l'hypothèse « fixe ») — la même que sa chute : R × I s'y vérifie. */
 const CALCULS = new Map();   // le temps d'un rendu : l'intensité de chaque câble, calculée une fois (vidé par rendreFiche)
 function intensiteDuFil(l) { if (CALCULS.has(l)) return CALCULS.get(l); const x = intensiteCalculee(l); CALCULS.set(l, x); return x; }
 function intensiteCalculee(l) { const H = app.simu || HYPOTHESES, jauge = jaugeDuType(l.type), neuf = l.origine === null;
   const A = l.type ? admissionDuFil(app.norme, l.type, H) : null, fn = A ? A.fil : null;
   const decl = fn ? A.decl : 1, amb = fn ? A.amb : 1, fac = fn ? A.facteurContinu : 1, facCourt = fn ? A.facteurCourt : 1, admise = t => fn && fn.intensite != null ? intensiteAdmise(fn, t) * A.facteur(t) : null;
-  const continu = fn && fn.intensite != null ? fn.intensite * fac : null, al = neuf ? null : alimentationDuFil(l);
-  const source = al && al.perm ? 'profil' : al && al.calibre > 0 ? 'calibre' : 'hypothese', I = source === 'profil' ? al.perm : source === 'calibre' ? al.calibre : H.courant;
+  const continu = fn && fn.intensite != null ? fn.intensite * fac : null, al = neuf ? null : alimentationDuFil(l), b = al && al.branche, propre = !!(b && b.ecrite);
+  const source = propre ? 'branche' : al && al.perm ? 'profil' : al && al.calibre > 0 ? 'calibre' : 'hypothese', I = propre ? b.perm : source === 'profil' ? al.perm : source === 'calibre' ? al.calibre : H.courant;
   const tc = l.type ? temperatureDuConducteur(app.norme, l.type, I, H) : { T: +H.tconducteur, estimee: false };
   const rd = l.type ? resistanceDuFil(app.norme, l.type, jauge, tc.T) : { rho: null, kConducteur: 1, conducteur: 'cuivre' };
-  const pts = al ? al.points : [{ nom: 'hypothèse', i: I, t: Infinity }], trop = fn ? pts.filter(pt => pt.i > admise(pt.t) + 1e-9) : [];
-  const pointe = al && al.pointe ? { ...al.pointe, admis: admise(al.pointe.t) } : null;
-  return { H, jauge, fn, rd, tc, decl, amb, fac, facCourt, admise, continu, al, I, source, pointe, trop, charge: continu ? I / continu : null }; }
+  const pts = propre ? b.points : al ? al.points : [{ nom: 'hypothèse', i: I, t: Infinity }], trop = fn ? pts.filter(pt => pt.i > admise(pt.t) + 1e-9) : [];
+  const p0 = propre ? pts.find(p => p.t !== Infinity) || null : al && al.pointe, pointe = p0 ? { ...p0, admis: admise(p0.t) } : null;
+  const aval = b ? { bouts: b.bouts, manque: b.manque, tout: b.tout } : null, totalFaute = !!(b && !b.tout && !b.ecrite && (source === 'profil' || source === 'calibre'));
+  return { H, jauge, fn, rd, tc, decl, amb, fac, facCourt, admise, continu, al, I, source, pts, pointe, trop, aval, totalFaute, charge: continu ? I / continu : null }; }
 /* LA CHUTE ADMISE : celle que le moteur rend pour la tension, le régime et les hypothèses de la simulation (la règle du
    lecteur : 2 V en monophasé et en continu, 4 V en triphasé ; sinon la table Réseau) — jamais un chiffre écrit ici. */
 const chuteAdmiseDe = H => chuteAdmise(app.norme, H.tension, H.regime, H);
@@ -458,13 +470,12 @@ function chuteDuFil(l, x) { x = x || intensiteDuFil(l); const H = x.H;
   const total = x.al ? chuteEnLigne(l, x.al.nom) : null, seg = total ? total.segments.find(s => s.fil === l) || null : null, c = seg || chuteDuCable(app.norme, l, x.I, H);
   const L = c && c.longueur > 0 ? c.longueur : l.longueur > 0 ? l.longueur : H.longueur, dU = c && c.dU != null ? c.dU : null;
   const admise = chuteAdmiseDe(H), max = total && total.admis != null ? total.admis : admise && admise.chuteMax != null ? admise.chuteMax : null, pointe = pireChuteEnPointe(total);
-  return { L, dU, rho: c ? c.rho : null, T: c ? c.T : null, I: seg && total.courant > 0 ? total.courant : x.I, total, max, regle: total && total.regle ? total.regle : admise ? admise.regle || '' : '', hyp: !(l.longueur > 0), trop: !!(total && total.trop), reel: !!(total && total.reel), pointe, etat: etatDeChute(total, pointe) }; }
+  return { L, dU, rho: c ? c.rho : null, T: c ? c.T : null, I: seg && seg.courant != null ? seg.courant : x.I, total, max, regle: total && total.regle ? total.regle : admise ? admise.regle || '' : '', hyp: !(l.longueur > 0), trop: !!(total && total.trop), reel: !!(total && total.reel), pointe, etat: etatDeChute(total, pointe) }; }
 /* CE QU'UN AUTRE TYPE DE CÂBLE PORTERAIT à la place de celui-ci (la même famille, une autre gauge) : le courant qu'il
    porte (le profil du disjoncteur en amont, sinon l'hypothèse) contre ce que ce type admet, déclassé de même. Rend ce
    qu'il admet en continu, ou null s'il ne tient pas (ou que la norme ne le connaît pas). */
 function tientLeCourant(l, type) { const x = intensiteDuFil(l), A = jaugeDuType(type) != null ? admissionDuFil(app.norme, type, x.H) : null; if (!A || !A.fil || A.fil.intensite == null) return null;
-  const pts = x.al ? x.al.points : [{ nom: 'hypothèse', i: x.I, t: Infinity }];
-  return pts.every(p => p.i <= intensiteAdmise(A.fil, p.t) * A.facteur(p.t) + 1e-9) ? A.fil.intensite * A.facteurContinu : null; }
+  return (x.pts || []).every(p => p.i <= intensiteAdmise(A.fil, p.t) * A.facteur(p.t) + 1e-9) ? A.fil.intensite * A.facteurContinu : null; }
 // les gauges d'une famille de câbles dans la base, de la plus grosse à la plus fine (DR : 6 … 26)
 const gaugesDeFamille = fam => [...(famillesCables().get(String(fam || '').toUpperCase()) || [])].sort((a, b) => a - b);
 /* LE PLUS FIN QUI TIENT (le parcours v72 : « W-012 en 18 reste rouge ; on essaie, on se trompe ») : sous un disjoncteur,

@@ -1538,6 +1538,7 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   const gestes = [
     ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerBornes, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS), 0)],
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
+    ['dégagement', () => degagements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['bande', () => bandes(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['tassement', () => tassements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['redressement', () => redressements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps, p2 => estimerMemo(assemblerMemo(M, meilleur.E, p2)).lisibilite)],
@@ -1587,6 +1588,7 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
     ['compaction', () => compactions(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['étirement', () => etirements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
+    ['dégagement', () => degagements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['bande', () => bandes(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['tassement', () => tassements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerTout, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS_FINAL, true), exacte ? Infinity : TAMIS_FINAL)],
@@ -1656,10 +1658,16 @@ function changementsDeColonne(M, meilleurDe, copie, heriter, confirmer) {
        les deux prises ; posée sous la seconde, ses deux fils croisaient les deux qui la traversent) */
     const c0 = E.col.get(id), decalages = hub != null ? (barrette ? [-1, 1, -2, 2, -0.5, 0.5] : [-1, 1, -2, 2])
       : [...colonnesDesPartenaires].filter(c => colonnesDesPartenaires.has(c + 1) && c + 0.5 !== c0).map(c => c + 0.5 - c0);
-    for (const d of decalages) { const c1 = c0 + d;
+    /* ses fils vers ses partenaires autres que le hub, de chaque côté du hub : un bloc dont ces fils partent tous de L'AUTRE
+       côté a sa place là-bas — resté du sien, ses fils faisaient le tour du hub (v84, folio 6 : 673VT52 posé au bord
+       droit, derrière 600XC4, et ses deux fils vers 630RL5 et 631RL6 passaient sous lui sur toute la largeur) */
+    const filsDuCote = s => parts.filter(q => q.id !== hub && E.col.has(q.id) && Math.sign(E.col.get(q.id) - ch) === s).length;
+    const autreCote = hub != null && id !== hub && filsDuCote(-Math.sign(c0 - ch)) > filsDuCote(Math.sign(c0 - ch));
+    for (const d of (autreCote ? [...decalages, ...[-3, 3, -4, 4].filter(x => Math.sign(c0 + x - ch) === -Math.sign(c0 - ch))] : decalages)) { const c1 = c0 + d;
       if (c1 < cMin - 1 || c1 > cMax + 1) continue;
-      // le hub reste seul dans sa colonne, et un bloc garde son côté du hub (de l'autre côté, ses fils feraient le tour)
-      if (hub != null && id !== hub && (c1 === ch || Math.sign(c1 - ch) === -Math.sign(c0 - ch))) continue;
+      // le hub reste seul dans sa colonne, et un bloc garde son côté du hub (de l'autre côté, ses fils feraient le tour) — sauf
+      // quand ce sont ses fils à lui qui le demandent (ci-dessus)
+      if (hub != null && id !== hub && (c1 === ch || (Math.sign(c1 - ch) === -Math.sign(c0 - ch) && !autreCote))) continue;
       // un bloc se met À CÔTÉ de ses partenaires (leur colonne, ou la voisine) : au bord, seul, il gagne des croisements
       // au juge et perd le lecteur (une pompe partie à l'écart de sa jumelle, ses fils traversant toute la feuille)
       if (![...colonnesDesPartenaires].some(pc => Math.abs(pc - c1) <= 1)) continue;
@@ -1815,6 +1823,29 @@ function permutationsDeBornes(M, E, posDe, copie, essayer, temps, estimerOrdre, 
       if (!gagne) break; }
     if (bouge && essai(ordre)) { any = true; return; }
     for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { if (!temps()) return; const c = cles(); if (utile(g.id, c[i], c[j]) && essai(echange(c, i, j))) any = true; } });
+  return any;
+}
+/* Un bloc S'ÉCARTE d'un fil qu'il barre : un fil plié dont les deux bouts sont à la même hauteur fait le tour par une
+   goulotte parce qu'un bloc étranger, sur son chemin, le touche à trois unités près (v84, folio 6 : 600XC4 A5 → 672VT51,
+   un U sous 611LP4, posé deux unités trop haut). Le bloc descend (ou monte) juste assez pour que le fil passe droit sans
+   le frôler, et pousse ce qui est devant lui dans sa colonne ; le juge tranche. Aucun glissement ne le trouvait : ils
+   mettent un bloc EN FACE de ses partenaires, jamais à l'écart d'un fil qui ne le concerne pas. */
+function degagements(M, E, meilleurDe, copie, essayer, temps) {
+  let any = false; const m = meilleurDe(), blocs = m.L.comps.filter(c => c.kind !== 'tag');
+  const barres = m.R.fils.filter(w => !w.shunt && w.pts.length > 2 && w.epA && w.epB && Math.abs(w.epA.y - w.epB.y) < 0.75);
+  for (const w of barres) { if (!temps()) break;
+    const y = w.epA.y, xa = Math.min(w.epA.x, w.epB.x), xb = Math.max(w.epA.x, w.epB.x), siens = [String(w.de), String(w.vers)];
+    const genants = blocs.filter(c => !siens.includes(String(c.name)) && xb > c.x + 1 && xa < c.x + c.w - 1 && y > c.y - 3 && y < c.y + c.h + 3);
+    if (genants.length !== 1) continue;                          // un seul bloc barre le passage : plusieurs, c'est un autre dessin
+    const c = genants[0], id = c.id, pos = meilleurDe().pos; if (!pos.haut.has(id)) continue;
+    const bas = y + DEGAGEMENT - c.y, haut = (y - DEGAGEMENT) - (c.y + c.h);           // descendre (bas > 0) ou monter (haut < 0)
+    for (const dy of [bas, haut].sort((u, v) => Math.abs(u) - Math.abs(v))) { if (!temps() || Math.abs(dy) > 4 * PRH) continue;
+      const p2 = copie(pos); glisserBloc(M, p2, id, dy);
+      // ce qui est devant lui dans sa colonne s'écarte, de proche en proche
+      const s = Math.sign(dy), pile = (E.piles.get(E.pileDe(id)) || []).filter(o => o !== id && s * (pos.haut.get(o) - pos.haut.get(id)) > 0).sort((u, v) => s * (pos.haut.get(u) - pos.haut.get(v)));
+      let bord = s > 0 ? p2.bas.get(id) + VGAP : p2.haut.get(id) - VGAP;
+      pile.forEach(o => { const d = s > 0 ? bord - p2.haut.get(o) : bord - p2.bas.get(o); if (s * d > 0) glisserBloc(M, p2, o, d); bord = s > 0 ? p2.bas.get(o) + VGAP : p2.haut.get(o) - VGAP; });
+      if (essayer(p2)) { any = true; break; } } }
   return any;
 }
 /* Un bloc glisse en face d'un partenaire, du plus court glissement au plus
@@ -2226,7 +2257,33 @@ function* concoursEnPas(M, opt, budget, graphe) {
   const polis = yield { phase: [0.56, 0.94], taches: tous.map((r, i) => ({ genre: 'finir', M, graphe, r, budget: i < nTetes ? finale : part, niveau: NIVEAU_JUGE })) };
   let fini = polis[0]; polis.forEach(f => { if (bat(f.j, fini.j)) fini = f; });
   // les autres finalistes, finis : la recherche profonde en repart aussi
-  fini.autres = polis.filter(f => f !== fini).sort((a, b) => bat(a.j, b.j) ? -1 : 1); return fini;
+  fini.autres = polis.filter(f => f !== fini).sort((a, b) => bat(a.j, b.j) ? -1 : 1);
+  /* LE RETOUR auprès de ses partenaires : un bloc resté d'un côté du hub alors que ses fils (hors hub) partent de l'autre
+     se rebâtit là-bas — chaque colonne voisine de ses partenaires —, cherché et fini comme un finaliste, et gagne s'il
+     bat le dessin du concours. La recherche locale ne le trouvait pas : changer un bloc de côté défait tout l'ordre des
+     fils qui passent entre les deux, et seul un dessin rebâti puis poli le voit (v84, folio 6 : 673VT52 au bord droit,
+     derrière 600XC4, ses fils vers 630RL5 et 631RL6 sous lui sur toute la largeur — rebâti entre les lampes et le
+     calculateur, trois fils droits de plus, aucun détour). Sans un tel bloc, rien ne change. */
+  const retours = aNiveau(0, () => retoursAuxPartenaires(M, fini).map(col => { const E = etatDepuisColonnes(M, col, fini.E.options); return evaluer(M, E, ordonnerLesBlocs(M, E)); }));
+  if (retours.length) {
+    const cherches = yield { phase: [0.94, 0.97], taches: retours.map(c => ({ genre: 'a', M, graphe, c, principal: budget, niveau: 0 })) };
+    const finisR = yield { phase: [0.97, 1], taches: cherches.map(r => ({ genre: 'finir', M, graphe, r, budget: finale, niveau: NIVEAU_JUGE })) };
+    finisR.forEach(f => { if (bat(f.j, fini.j)) { f.autres = [fini, ...fini.autres]; fini = f; } }); }
+  return fini;
+}
+/* Les mises en colonnes du RETOUR : pour chaque bloc d'un côté du hub dont les fils vers d'autres blocs que le hub partent
+   plus nombreux de l'autre côté, le bloc dans chaque colonne voisine d'un de ces partenaires, de l'autre côté (jamais
+   dans celle du hub) — quatre au plus. */
+function retoursAuxPartenaires(M, m) {
+  const H = hubDe(M); if (H == null) return [];
+  const col = m.E.col, ch = col.get(H), out = [], vues = new Set();
+  M.ids.forEach(id => { if (id === H || M.estTag(id) || !col.has(id)) return; const c0 = col.get(id), s0 = Math.sign(c0 - ch); if (!s0) return;
+    let ici = 0, la = 0; const cibles = new Set();
+    M.blocs.get(id).bornes.forEach(p => M.partenairesBlocs(K(id, p.cle)).forEach(q => { if (q.id === H || q.id === id || !col.has(q.id)) return; const s = Math.sign(col.get(q.id) - ch);
+      if (s === s0) ici++; else if (s === -s0) { la++; [col.get(q.id) - 1, col.get(q.id) + 1].forEach(c => { if (Math.sign(c - ch) === -s0) cibles.add(c); }); } }));
+    if (la <= ici) return;
+    [...cibles].sort((a, b) => a - b).forEach(c => { const k = normaliser(new Map(col).set(id, c)), sig = signatureDe(k); if (!vues.has(sig)) { vues.add(sig); out.push(k); } }); });
+  return out.slice(0, 4);
 }
 /* FINIR une disposition : resserrée, polie par la passe finale (au niveau de la finition), étirée au format, ses corps
    étirés tassés — puis rejugée au niveau du choix. */

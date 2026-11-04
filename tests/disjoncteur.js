@@ -3,8 +3,8 @@
        NODE_PATH=/opt/node22/lib/node_modules node tests/disjoncteur.js [--fichier=chemin]
 
    Le moteur : les familles de disjoncteurs (NSA935401 est un collier), le
-   bilan thermique en somme des fractions, la marge de l'idéal (10 % de
-   courant, 75 % du temps de déclenchement), la protection des fils sur la
+   bilan thermique en somme des fractions, plus de marge (v80 : valide ou pas
+   valide ; les mathématiques en détail : tests/disjoncteur-maths.js), la protection des fils sur la
    courbe lente (l'ambiante sur le continu seulement), la sélectivité 2:1,
    l'interpolation log-log que le dessin échantillonne.
    L'écran, sur 102CB1 : la gamme de la famille en segments jugés, le retenu pressé et
@@ -30,19 +30,20 @@ let total = 0, echecs = 0;
 const ok = (c, nom, detail) => { total++; if (!c) echecs++; console.log('  ' + (c ? 'ok ' : 'KO ') + ' ' + nom + (detail ? '   ' + detail : '')); };
 
 console.log('\nLE MOTEUR');
-{ const code = ['01-modele.js', '02-lecture.js', '09-barrettes.js', '09-disjoncteurs.js'].map(f => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
+{ const code = ['01-modele.js', '02-lecture.js', '09-barrettes.js', '09-chute.js', '09-disjoncteurs.js'].map(f => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
   const normes = fs.readdirSync(NORMES).filter(f => /\.csv$/i.test(f)).sort().map(f => fs.readFileSync(path.join(NORMES, f), 'utf8')).join('\n\n');
   const bac = { console }; vm.createContext(bac);
   vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { normeEmbarquee, courbesDeDisjonction, tempsDeDeclenchement, multipleAdmis, pointsDuProfil, verdictDisjonction, protectionDesFils, calibreDuPn, familleDuPn, FAMILLES_DISJONCTEURS, CALIBRES, MARGE_DISJONCTION, MARGE_FRACTION, SELECTIVITE, HYPOTHESES, tenueGarantie, calibresDeLaFamille, pnAvecCalibre };', bac);
   const X = bac.X, NE = X.normeEmbarquee(), C = X.courbesDeDisjonction(NE), c125 = C[0], lente = C[C.length - 1];
-  ok(X.MARGE_DISJONCTION === 1.1 && X.MARGE_FRACTION === 0.75 && X.SELECTIVITE === 2 && X.FAMILLES_DISJONCTEURS.length >= 9, 'les marges de l’idéal : 10 % de courant, 75 % du temps de déclenchement ; la sélectivité 2:1 ; neuf familles de disjoncteurs');
+  // (v84 : les contrôles de la marge — 10 % de courant, 75 % du temps — sont tombés avec elle en v80 : valide ou pas valide)
+  ok(X.MARGE_DISJONCTION === 1 && X.MARGE_FRACTION === 1 && X.SELECTIVITE === 2 && X.FAMILLES_DISJONCTEURS.length >= 9, 'plus de marge (v80) : le facteur de courant et la part du temps de déclenchement admise valent 1 ; la sélectivité 2:1 ; neuf familles de disjoncteurs');
   ok(X.calibreDuPn('NSA935401-10') === null && X.familleDuPn('NSA935401-10') === null && X.calibreDuPn('MS3320-10') === 10 && X.familleDuPn('MS3320-10').famille === 'MS3320' && X.familleDuPn('MS3320-10').courbe === 'ETA483' && X.familleDuPn('2TC7-20').famille === '2TC' && X.familleDuPn('2TC7-20').courbe === '2TC' && X.familleDuPn('MS14154-5').courbe === '6TC' && X.familleDuPn('483-G533-J1M1-B2S0ZN-5A').famille === 'ETA483' && X.familleDuPn('MS33201-5').famille === 'MS33201' && X.calibreDuPn('2TC7-20') === 20 && X.calibreDuPn('MS3320-2-1/2') === 2.5 && X.calibreDuPn('7274-11-1/2') === 0.5 && X.calibreDuPn('MS22073-5') === 5 && X.calibreDuPn('EN2995-001-7,5') === 7.5 && X.calibreDuPn('MS3320-99') === null && X.calibreDuPn('ABC-7,5A') === null && X.calibreDuPn('MS3470L14-5P') === null,
     'le calibre ne se lit qu’après une famille de disjoncteur : NSA935401-10 (un collier) → rien ; MS3320-10 → 10 (famille MS3320, courbes ETA483 : la feuille du lecteur) ; 2TC7-20 → 20 (courbes 2TC) ; MS14154-5 → 6TC ; 483-G533-J1M1-B2S0ZN-5A → ETA483 ; MS33201-5 → Crouzet, pas MS3320 ; MS3320-2-1/2 → 2,5 ; 7274-11-1/2 → ½ ; MS22073-5 → 5 ; EN2995-001-7,5 → 7,5 ; MS3320-99 (hors gamme), ABC-7,5A, MS3470L14-5P → rien');
   const PROFIL = { dem: { i: 9.31, t: 5 }, trans: { i: 9.31, t: 120 }, perm: { i: 5 } }, V = X.verdictDisjonction(NE, '', 10, PROFIL);
-  ok(V.valide && V.serre && !V.avecMarge && V.somme > 0.05 && V.somme < 0.07 && V.points[0].serre && V.calibreIdeal === 15 && V.reserve === '' && V.gamme.map(g => g.valide ? (g.serre ? 's' : 'o') : 'x').join('') === 'xxxxsooo',
-    'l’Excel du lecteur sur un 10 A : tient (6 % du temps de déclenchement consommé) mais touche la courbe — avec 10 % de courant en plus, 9,31 A font 1,02 In et le 125 °C déclenche en 31 s ; l’idéal est le 15 A ; la gamme du lecteur (1, 3, 5, 7,5, 10, 15, 20, 25 A : le 20 y est désormais) déclenche jusqu’au 7,5 A', V.gamme.map(g => g.calibre + (g.valide ? (g.serre ? ' serré' : ' ok') : ' ko')).join(' · ') + ' · Σ ' + V.somme.toFixed(3));
+  ok(V.valide && !V.serre && V.avecMarge && V.somme > 0.05 && V.somme < 0.07 && !V.points[0].serre && V.calibreIdeal === 10 && V.reserve === '' && V.gamme.map(g => g.valide ? (g.serre ? 's' : 'o') : 'x').join('') === 'xxxxoooo',
+    'l’Excel du lecteur sur un 10 A : 9,31 A pendant 2,1 min, il ne disjoncte qu’au-delà de 9,66 A — il ne disjoncte pas, c’est le plus petit qui ne disjoncte pas (v80 : plus de marge ; avec 10 % de courant en plus c’était le 15 A) ; la gamme du lecteur (1, 3, 5, 7,5, 10, 15, 20, 25 A) disjoncte jusqu’au 7,5 A', V.gamme.map(g => g.calibre + (g.valide ? (g.serre ? ' serré' : ' ok') : ' ko')).join(' · ') + ' · Σ ' + V.somme.toFixed(3));
   const P9 = X.verdictDisjonction(NE, '', 10, { perm: { i: 9.0 } });
-  ok(P9.valide && P9.serre && P9.points[0].serre && P9.calibreIdeal === 15, 'un permanent de 9 A sur un 10 A (admis 9,24 A, 2,6 % de marge) tient mais TOUCHE la courbe : l’idéal passe au 15 A', 'admis ' + P9.points[0].marges[0].admis.toFixed(2) + ' A');
+  ok(P9.valide && !P9.serre && !P9.points[0].serre && P9.calibreIdeal === 10, 'un permanent de 9 A sur un 10 A : il ne disjoncte qu’au-delà de 9,24 A, il ne disjoncte pas — le 10 A est retenu (v80 : plus de « touche la courbe »)', 'seuil ' + P9.points[0].marges[0].admis.toFixed(2) + ' A');
   const P8 = X.verdictDisjonction(NE, '', 10, { perm: { i: 8.3 } });
   ok(P8.valide && !P8.serre && P8.avecMarge && P8.calibreIdeal === 10, 'à 8,3 A (11 % de marge) le permanent est dans le vert, l’idéal reste le 10 A');
   // la somme des fractions : chaque point tient seul, et pourtant le bilame déclenche
@@ -50,7 +51,7 @@ console.log('\nLE MOTEUR');
   ok(S.points.filter(p => p.t !== Infinity).every(p => p.marges[0].temps > p.t) && !S.valide && S.somme > 1 && S.points.filter(p => p.ok === false).length === 1 && S.points.find(p => p.ok === false).i === 15 && S.pire && S.pire.i === 15,
     '15 A pendant 3 s (tient 4,5 s) puis 12 A pendant 6 s (tient 10,4 s) : chaque point reste à gauche de la courbe, mais 67 % + 58 % du temps de déclenchement = déclenche ; le point qui pèse le plus est le fautif', 'Σ ' + S.somme.toFixed(2));
   const S15 = X.verdictDisjonction(NE, '', 15, { dem: { i: 20, t: 5 }, trans: { i: 12, t: 60 }, perm: { i: 5 } });
-  ok(S15.valide && S15.serre && !S15.avecMarge && S15.somme > 0.7 && S15.somme < 0.76 && S15.points.find(p => p.i === 20).serre, 'sur un 15 A, 20 A pendant 5 s (tient 6,8 s : 74 %) puis 12 A (0,8 In : jamais) : tient, mais serré — avec 10 % de courant en plus, le démarrage consomme tout', 'Σ ' + S15.somme.toFixed(2));
+  ok(S15.valide && !S15.serre && S15.avecMarge && S15.somme > 0.7 && S15.somme < 0.76 && !S15.points.find(p => p.i === 20).serre && S15.calibreIdeal === 15, 'sur un 15 A, 20 A pendant 5 s (il disjoncterait au bout de 6,8 s : 74 %) puis 12 A (0,8 In : jamais) : il ne disjoncte pas — v80 : plus de « serré » ; le 10 A disjoncte (2 In pendant 5 s)', 'Σ ' + S15.somme.toFixed(2));
   // la protection du fil sur la courbe lente, la charge contre le fil, l'ambiante sur le continu seulement
   const FILS = [{ cable: 'W-011', type: 'DR16', borne: '1' }, { cable: 'W-012', type: 'DR20', borne: '2' }, { cable: 'W-015', type: 'DR24', borne: '2' }];
   ok(Math.abs(X.multipleAdmis(lente, 60) - 1.91) < 0.01 && Math.abs(X.multipleAdmis(lente, Infinity) - 1.469) < 0.001, 'la courbe lente (−55 °C) laisse passer 1,91 In pendant 1 min, 1,47 In pour toujours');
@@ -66,8 +67,8 @@ console.log('\nLE MOTEUR');
     'à 70 °C d’ambiante, le continu du DR16 monte à 19,5 × 1,27 A en service (et 19,5 × √(190/40) avant dommage), mais les paliers courts (adiabatiques) restent ceux de la norme : 81,5 A de service pendant 2 s, √(23 767 / 2) = 109 A avant dommage');
   // l'idéal à quatre conditions : la charge, les fils, le continu, la sélectivité — et sa réserve
   const VF = X.verdictDisjonction(NE, '', 10, PROFIL, { fils: FILS, hyp: { conditions: ['faisceau'] } });
-  ok(VF.calibreIdeal === 15 && VF.reserve === 'fils' && VF.gamme.find(g => g.calibre === 1).fils === true && VF.gamme.filter(g => g.calibre >= 3).every(g => g.fils === false),
-    'avec ses fils : seul le 1 A les protégerait tous, mais il déclenche ; l’idéal reste celui de la charge (15 A) et la réserve dit « fils »');
+  ok(VF.calibreIdeal === 10 && VF.reserve === 'fils' && VF.gamme.find(g => g.calibre === 1).fils === true && VF.gamme.filter(g => g.calibre >= 3).every(g => g.fils === false),
+    'avec ses fils : seul le 1 A les protégerait tous, mais il disjoncte ; le retenu reste celui de la charge (10 A, le plus petit qui ne disjoncte pas) et la réserve dit « fils »');
   const VS = X.verdictDisjonction(NE, '', 10, { perm: { i: 2 } }, { autres: [15] });
   ok(VS.calibreIdeal === 3 && VS.gamme.find(g => g.calibre === 10).selectif === false && VS.gamme.find(g => g.calibre === 7.5).selectif === true && VS.gamme.find(g => g.calibre === 1).valide === false && VS.reserve === '',
     'un voisin de 15 A : le 10 A n’est pas à 2:1 (15 < 20), le 7,5 A l’est (15 ≥ 15) ; pour 2 A permanents l’idéal est le 3 A (le 1 A déclenche)');
@@ -86,17 +87,17 @@ console.log('\nLE MOTEUR');
     'la gamme : le lecteur pose 1, 3, 5, 7,5, 10, 15, 20, 25 A (« 0,5, 0,75 n’existent pas ») — elle filtre le catalogue de la famille du part number (MS3320 : ½ à 20 A, table Familles et feuille MS3320N — pas de 25 A ; une plage, EN 3773 « 1 à 25 », prend la série d’aéronef), au-delà de 25 A la famille garde les siens (MS14105 : 30, 35 A) ; vide, tout le catalogue ; sans famille, la gamme du lecteur');
   // la sélectivité ne fait pas sauter le voisin : sous un 5 A, 1,5 A de charge garde son 3 A (le 2,5 A, à 2:1, n’est plus proposé), jamais le 10 A
   const V26 = X.verdictDisjonction(NE, '', 3, { perm: { i: 1.5 } }, { famille: MS, pn: 'MS3320-3', autres: [5] }), V25 = X.verdictDisjonction(NE, '', 5, { perm: { i: 2 } }, { famille: MS, pn: 'MS3320-5', autres: [3] });
-  ok(V26.calibreIdeal === 3 && V26.reserve === 'selectivite' && V26.gamme.find(g => g.calibre === 10).selectif === true && V25.calibreIdeal === 7.5 && V25.meilleur.pn === 'MS3320-7-1/2',
-    '206CB6 et 205CB5 du contrat inventé : l’aval (1,5 A sous un 5 A) garde son 3 A, réserve « sélectivité » — le 10 A serait à 2:1, mais deviendrait l’amont de son amont ; l’amont (2 A au-dessus d’un 3 A) passe au 7,5 A, à 2:1');
+  ok(V26.calibreIdeal === 3 && V26.reserve === 'selectivite' && V26.gamme.find(g => g.calibre === 10).selectif === true && V25.calibreIdeal === 3 && V25.reserve === 'selectivite' && V25.meilleur.pn === 'MS3320-3' && V25.gamme.find(g => g.calibre === 7.5).selectif === true,
+    '206CB6 et 205CB5 du contrat inventé : l’aval (1,5 A sous un 5 A) garde son 3 A, réserve « sélectivité » ; l’amont (2 A au-dessus d’un 3 A) aussi : le 3 A, le plus petit qui ne disjoncte pas — la sélectivité se dit, elle ne fait plus monter le calibre (v80 : « 7,5 A ne disjoncte pas, pourquoi 10 A retenu ? »)');
   const T125 = X.tenueGarantie(NE, MS, 'ETA483', 125), T70 = X.tenueGarantie(NE, MS, 'ETA483', 73), T2TC = X.tenueGarantie(NE, X.familleDuPn('2TC7-20', NE), '2TC', 121), TE = X.tenueGarantie(NE, null, 'ETA483', 125);
   ok(T125.tient === 0.8 && T125.horsPlage && Math.abs(T70.tient - (1.15 + (73 - 25) / 96 * (0.80 - 1.15))) < 1e-9 && T70.interpolee && T2TC.tient === 0.85 && TE.tient === 0.93,
     'ce que le disjoncteur garantit de tenir (table Calibration) : MS3320N 0,80 In à 121 °C (et au-delà) ; à 73 °C, interpolé entre 25 °C (1,15) et 121 °C : 0,975 ; Klixon 2TC 0,85 In à 121 °C ; sans famille, la courbe ETA483 lue (0,93)', [T125.tient, T70.tient, T2TC.tient, TE.tient].join(' '));
   const P92 = X.verdictDisjonction(NE, '', 10, { perm: { i: 8.5 } }, { famille: MS });
   ok(!P92.valide && Math.abs(P92.points[0].marges[0].admis - 8) < 1e-9 && P92.points[0].marges[0].garanti === 8 && P92.calibreIdeal === 15,
     'un MS3320-10 au tableau à 125 °C ne garantit que 8 A : 8,5 A permanents (sous les 9,24 A de la courbe typique) ne sont plus sûrs — R2 règle 4 ; le meilleur passe au 15 A');
-  const FIL3 = FILS.map(f => ({ ...f })), M10 = X.verdictDisjonction(NE, '', 10, PROFIL, { famille: MS, pn: 'MS3320-10', fils: FIL3, hyp: { conditions: ['faisceau'] } }).meilleur, M0 = X.verdictDisjonction(NE, '', 10, PROFIL, { famille: MS, pn: 'MS3320-10', fils: FIL3, hyp: { conditions: ['faisceau'], marge: 0 } }).meilleur;
-  ok(M10.calibre === 15 && M10.pn === 'MS3320-15' && M10.reserve === 'fils' && M10.filsAChanger.map(x => x.cable + '→' + x.propose).join() === 'W-011→DR12,W-012→DR12,W-015→DR12' && M10.contactsTouches.length === 3 && M10.marge.courant === 10 && Math.abs(M10.marge.garanti - 12) < 1e-9 && /le 10 A est serré/.test(M10.pourquoi),
-    'le meilleur, 102CB1 avec 10 % de marge au tableau à 125 °C (R2 § 3.4) : 15 A (MS3320-15 : le 10 A consomme 405 % de son temps de déclenchement à 9,31 × 1,1 A), et les trois fils en DR12 — le DR14 n’admet que 14,4 A en service, moins que le calibre ; les contacts passent en taille 12', M10.pourquoi);
+  const FIL3 = FILS.map(f => ({ ...f })), M10 = X.verdictDisjonction(NE, '', 10, PROFIL, { famille: MS, pn: 'MS3320-10', fils: FIL3, hyp: { conditions: ['faisceau'], marge: 10, margeTemps: 75 } }).meilleur, M0 = X.verdictDisjonction(NE, '', 10, PROFIL, { famille: MS, pn: 'MS3320-10', fils: FIL3, hyp: { conditions: ['faisceau'], marge: 0 } }).meilleur;
+  ok(JSON.stringify(M10) === JSON.stringify(M0) && M10.calibre === 10 && M10.marge.courant === 0 && M10.marge.garanti === 8 && !M10.serre,
+    'les hypothèses « marge 10 % » et « 75 % du temps » d’autrefois ne changent plus rien (v80) : le meilleur de 102CB1 reste le 10 A (MS3320-10), qui garantit 8 A au tableau à 125 °C', M10.pourquoi);
   ok(M0.calibre === 10 && M0.pn === 'MS3320-10' && M0.filsAChanger.map(x => x.cable + '→' + x.propose).join() === 'W-012→DR16,W-015→DR16' && M0.filsAChanger.every(x => x.masseProposee === 14.61) && /ne porte pas démarrage et transition 9,31 A/.test(M0.filsAChanger[0].raison) && M0.contactsTouches.map(x => x.propose).join() === '16,16',
     'sans marge (le profil sort du bilan au pire cas) : 10 A, W-012 et W-015 en DR16 (14,6 g/m), le DR16 W-011 suit déjà — « 10 A avec les trois fils en DR16 » de R2 ; jamais un calibre plus gros pour sauver un fil', M0.pourquoi);
   ok(X.pnAvecCalibre('MS3320-10', MS, 7.5) === 'MS3320-7-1/2' && X.pnAvecCalibre('EN2995-001-7,5', X.familleDuPn('EN2995-001-7,5', NE), 10) === 'EN2995-001-10' && X.pnAvecCalibre('483-G533-J1M1-B2S0ZN-5A', X.familleDuPn('483-G533-J1M1-B2S0ZN-5A', NE), 2.5) === '483-G533-J1M1-B2S0ZN-2-1/2A' && X.pnAvecCalibre('', MS, 15) === 'MS3320-15',

@@ -19,14 +19,16 @@
    OÙ SONT LES JETONS
    · ici, `:root` : la base, et le GRAPHITE de la table et du cadre (la nuit, l'accueil) ; les feuilles du jour, puis
      celles de la nuit (les deux blocs « le thème sombre ») ; l'îlot du cadre (le graphite, `#entete,#rail…`) ;
-   · style-z-cadre.css (chargé en dernier, le dernier mot) : LE JOUR DU PLAN — la pierre de la table et le cadre clair —,
-     et ce que des couches plus anciennes (style-table.css, style-v79.css) redéfinissaient encore en bleu.
+   · style-z-cadre.css (chargé après les couches anciennes : le dernier mot du cadre) : LE JOUR DU PLAN — la pierre de la
+     table et le cadre clair —, et ce que des couches plus anciennes (style-table.css, style-v79.css) redéfinissaient
+     encore en bleu.
    LES JETONS (v84), ce qu'ils disent :
    · la table : --s-app (sa couleur moyenne), --table-fond, --table-lueur, --nappe-a/-b, --grille-repos,
      --s-grille-revele, --courant ; ce qui s'écrit dessus : --t-table, --t-table-2, --t-table-warn, --t-table-ko,
      --l-table, --l-table-2, --s-table-champ, --s-table-survol ; l'ombre du folio : --sh-feuille ;
    · le cadre : --palet, --palet-2, --palet-plein (le palet sans transparence : l'anneau d'une pastille posée dessus),
-     --sh-palet, --voile-1…4 (les voiles d'un survol, d'un pressé), --entete-fond, --entete-ombre ; le folio courant :
+     --sh-palet, --voile-1…4 (les voiles d'un survol, d'un pressé), --entete-fond, --entete-ombre ; les pastilles de
+     compte du rail : --pastille-ko, --pastille-att (et leur chiffre, -t) ; le folio courant :
      --chip-on, --chip-on-t, --chip-on-ombre ; ce qui est ouvert : --chrome-cuivre, --chrome-cuivre-soft,
      --chrome-cuivre-ligne, --chrome-cuivre-t (l'icône posée sur le voile de cuivre) ;
    · l'accent : --glace (le nom est resté : c'est le CUIVRE, l'accent rare — la lueur d'une pièce choisie, une barre de
@@ -87,8 +89,8 @@
   /* la bulle : l'inverse de son fond — claire sur la nuit et sur l'accueil (ici), sombre sur le jour du plan (style-z-cadre) */
   --bulle:#f6f1ea; --bulle-t:#1f1c19; --bulle-t2:#5b544c; --bulle-kbd:rgba(31,28,25,.08);
   --sh-bulle:0 0 0 1px rgba(0,0,0,.2),0 14px 32px -10px rgba(0,0,0,.6);
-  --voile:rgba(26,20,14,.30);                            /* derrière un calque plein écran */
-  --voile-fort:rgba(26,20,14,.58);                       /* derrière une fenêtre (le dessin d'un contrat fait) */
+  --voile:rgba(26,20,14,.24);                            /* derrière un calque plein écran */
+  --voile-fort:rgba(26,20,14,.44);                       /* derrière une fenêtre (le dessin d'un contrat fait) */
   --route-a:#2c62b0; --route-b:#0e7a7c;                  /* deux routes du dessin (la vignette d'un plan) : les deux premières teintes de 06 `TEINTES_ROUTES` */
   --route-voile:transparent;                             /* posé sur une couleur de route hors du papier : l'éclaircit en sombre */
   /* les anciens jetons des barres : les palets */
@@ -133,6 +135,7 @@
   /* les encres posées À MÊME LA TABLE graphite (mesurées) : le --ko des feuilles n'y fait que 3:1 */
   --t-table-ko:#ff8a7e;      /* 6,9:1 sur la table                                                              */
   --pastille-ko:#ff6b5e; --pastille-ko-t:#2a0806;   /* une pastille rouge sur un palet graphite : 4,3:1, son chiffre 6,6:1 */
+  --pastille-att:#f2b55c; --pastille-att-t:#2a1a00;  /* une pastille ambre (ce qui est à voir), les deux thèmes : son chiffre 9:1 */
   --kbd-clair-t:#4a443e; --kbd-clair-fond:rgba(40,30,20,.07);   /* une touche écrite sur un bouton clair : 8:1   */
   --halo-geste:0 16px 36px -12px rgba(236,165,112,.55);        /* le geste clair survolé, sur la table          */
   /* l'anneau du focus clavier : le CUIVRE, net — foncé sur le papier et le jour, clair sur la nuit (ci-dessous) */
@@ -481,7 +484,8 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 .en-install:disabled{cursor:default;color:var(--t-1)}
 .en-plan{min-width:0;color:var(--t-1);font:500 var(--f-13)/1.2 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .en-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
-.en-actions .rd{width:36px;height:36px}
+/* les contrôles de la barre : une seule hauteur, 34 px — la recherche, la pilule du retest, le ⋮ */
+.en-actions .rd{width:34px;height:34px}
 .en-actions .rd svg.ico{width:18px;height:18px}
 #menuBoite{position:relative}
 #entete .bulle{left:50%;top:calc(100% + 10px);transform:translate(-50%,-3px)}
@@ -633,7 +637,7 @@ body.cherche .recherche .rc-fermer{display:inline}
 /* le compte de ce qu'il y a à reprendre, sur le bouton des repères : les PROBLÈMES du plan (rouges), une pastille accrochée
    à l'icône (elle ne suit pas le palet qui se déplie) ; sans problème rouge, ce qui est à voir, en ambre (08-controle). Sa
    bulle dit tout : « 4 problèmes · 8 à voir » */
-.rd-point{position:absolute;top:-3px;left:19px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 var(--f-11)/16px var(--sans);font-style:normal;text-align:center;color:#2a1a00;background:var(--p-warn);box-shadow:0 0 0 2px var(--palet-plein);pointer-events:none}
+.rd-point{position:absolute;top:-3px;left:19px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 var(--f-11)/16px var(--sans);font-style:normal;text-align:center;color:var(--pastille-att-t);background:var(--pastille-att);box-shadow:0 0 0 2px var(--palet-plein);pointer-events:none}
 .rd-point.ko{background:var(--pastille-ko);color:var(--pastille-ko-t)}
 
 /* les palets passent au-dessus des feuilles (l'ombre d'une feuille ne les grise pas : ils ne se chevauchent jamais) ; la

@@ -83,8 +83,9 @@ s'écrit ici, le jour même.
   ligne), pas en cartes ; la courbe de déclenchement est « parfaite » — on n'y touche pas ; l'essentiel d'un équipement
   montre son **brochage dessiné** (ce qu'il relie), jamais un tableau de tirets ; un calibre s'explique en **ampères** (ce
   qu'il tire, pendant combien de temps, le seuil où il disjoncte sur cette durée — sans réserve ni pourcentage).
-- **L'accueil et la bibliothèque** sont sur le **graphite** (noir chaud, cuivre) ; le plan garde sa table bleu nuit tant que
-  le lecteur ne dit pas le contraire.
+- **L'accueil et la bibliothèque** sont sur le **graphite** (noir chaud, cuivre) ; la table du plan aussi (v84) : **graphite
+  chaud** la nuit, **pierre claire chaude** le jour, le folio blanc posé d'une ombre douce — plus de bleu nuit ; le cadre
+  (barre du haut, rail, folios, menus) suit le thème : clair le jour, graphite la nuit.
 - **L'accueil, à la manière d'Apple** (v80) : VOLTA seul, presque rien autour — plus de sur-titre ; le slogan garde la
   couleur cuivre ; un titre qui sort du lot (pas une écriture classique) ; le schéma vivant reste ; les gestes d'entrée
   (ouvrir, nouvelle, pour commencer) doivent être classe, dynamiques, « waouh ».

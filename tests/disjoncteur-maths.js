@@ -14,7 +14,9 @@
      3. le bilan thermique, l'escalier, le préchauffage ;
      4. le calibre retenu, la gamme, la désignation construite, la chute ;
      5. les cas limites : courant nul, profil vide, durée infinie, courant énorme,
-        calibre hors catalogue, courbe partielle, norme sans courbe.
+        calibre hors catalogue, courbe partielle, norme sans courbe ;
+     6. ce que le câble admet : le même calcul que la fiche d'un câble, au palier
+        de la durée.
    Rend 1 au premier échec.
    ========================================================================= */
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -22,7 +24,7 @@ const SRC = path.join(__dirname, '..', 'src'), NORMES = path.join(__dirname, '..
 const code = ['01-modele.js', '02-lecture.js', '09-barrettes.js', '09-disjoncteurs.js', '09-raccords.js', '09-chute.js', '09-references.js'].map(f => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
 const normes = fs.readdirSync(NORMES).filter(f => /\.csv$/i.test(f)).sort().map(f => fs.readFileSync(path.join(NORMES, f), 'utf8')).join('\n\n');
 const bac = { console }; vm.createContext(bac);
-vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { normeEmbarquee, lireNorme, courbesDeDisjonction, tempsDeDeclenchement, multipleAdmis, pointsDuProfil, phasesDuProfil, verdictDisjonction, verdictDeCalibre, pourquoiDuCalibre, familleDuPn, calibreDuPn, calibresEnQueue, calibresDeLaFamille, catalogueDeLaFamille, pnAvecCalibre, chuteDuDisjoncteur, tenueGarantie, bilanThermique, facteurPrechauffage, HYPOTHESES, CALIBRES, motA, motDuree };', bac);
+vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { normeEmbarquee, lireNorme, courbesDeDisjonction, tempsDeDeclenchement, multipleAdmis, pointsDuProfil, phasesDuProfil, verdictDisjonction, verdictDeCalibre, pourquoiDuCalibre, familleDuPn, calibreDuPn, calibresEnQueue, calibresDeLaFamille, catalogueDeLaFamille, pnAvecCalibre, chuteDuDisjoncteur, tenueGarantie, bilanThermique, facteurPrechauffage, HYPOTHESES, CALIBRES, motA, motDuree, protectionDesFils, admissionDuFil, palierDe };', bac);
 const X = bac.X, NE = X.normeEmbarquee();
 let total = 0, echecs = 0; const T0 = Date.now();
 const ok = (nom, cond, mesure) => { total++; if (!cond) echecs++; console.log('  ' + (cond ? 'OK    ' : 'ÉCHEC ') + nom + (mesure ? '   — ' + mesure : '')); };
@@ -210,6 +212,20 @@ console.log('\n5. LES CAS LIMITES');
   const P74 = X.verdictDisjonction(NE, '', 5, { dem: { i: 60, t: 0.02 }, perm: { i: 2 } }, { famille: X.familleDuPn('MS22073-5', NE) }), p74 = P74.points[0];
   ok('une courbe partielle (MS22073 : la 7274 à 71 °C, lue jusqu’à 6,3 In) juge au-delà de son dernier point comme les autres : 12 In pendant 20 ms — il disjoncterait au bout de ' + (p74.avant * 1000).toFixed(1) + ' ms, seuil ' + p74.seuil.toFixed(1) + ' A ; le verdict, le seuil et le temps d’accord',
     p74.avant < 0.0615 && (p74.ok === (p74.t < p74.avant)) && (p74.ok === (p74.i < p74.seuil)) && P74.valide === p74.ok); }
+
+console.log('\n6. CE QUE LE CÂBLE ADMET : LE MÊME CALCUL QUE LA FICHE D’UN CÂBLE');
+{ const P = { dem: { i: 9.31, t: 5 }, trans: { i: 30, t: 1.5 }, plus: [{ nom: 'pointe', i: 12, t: 30 }, { nom: 'moteur', i: 11, t: 125 }], perm: { i: 5 } }, FILS = [{ cable: 'W-1', type: 'DR16' }, { cable: 'W-2', type: 'DR20' }, { cable: 'W-3', type: 'DR24' }];
+  let ecarts = 0; const vus = [];
+  for (const hyp of [{}, { ambiante: 70 }, { ambiante: 120, conditions: [] }, { conditions: ['faisceau'], fils: 15, charge: 20, altitude: 30000 }]) {
+    const H = { ...X.HYPOTHESES, ...hyp };
+    X.protectionDesFils(NE, 10, P, FILS, hyp).forEach(f => { const A = X.admissionDuFil(NE, f.type, H);
+      if (!proche(f.continu, A.continu, 1e-12) || !proche(f.facteur, A.facteurContinu, 1e-12) || !proche(f.facteurCourt, A.facteurCourt, 1e-12)) ecarts++;
+      f.phases.forEach(p => { if (!proche(p.admise, A.admise(p.t), 1e-12)) ecarts++; vus.push(p.t); }); }); }
+  const amb = X.protectionDesFils(NE, 10, P, [FILS[0]], { ambiante: 70 })[0], A70 = X.admissionDuFil(NE, 'DR16', { ...X.HYPOTHESES, ambiante: 70 }), p125 = amb.phases.find(p => p.t > 60 && p.t !== Infinity);
+  ok('ce que le câble admet à chaque état est LE calcul de la fiche d’un câble (`admissionDuFil`) — quatre jeux d’hypothèses (95 °C, 70 °C, 120 °C sans faisceau, 15 câbles à 20 % à 30 000 ft), trois gauges, des états de 1,5 s à 125 s et le permanent',
+    ecarts === 0 && vus.length > 40, ecarts + ' écarts');
+  ok('le facteur suit le PALIER de la durée : à 70 °C d’ambiante, un état de 125 s se juge sur le continu, AVEC l’ambiante (' + p125.admise.toFixed(2) + ' A, comme le permanent) — avant v84, sans elle (' + (A70.fil.intensite * A70.facteurCourt).toFixed(2) + ' A)',
+    X.palierDe(125) === Infinity && proche(p125.admise, amb.continu, 1e-12) && !proche(p125.admise, A70.fil.intensite * A70.facteurCourt, 1e-3)); }
 
 console.log(`\n${total - echecs} / ${total} contrôles passés${echecs ? ` — ${echecs} échec(s)` : '  —  tout est vert'}`);
 process.exit(echecs ? 1 : 0);

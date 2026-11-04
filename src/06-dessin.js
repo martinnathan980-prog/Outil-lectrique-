@@ -53,13 +53,14 @@ const largeurTexte = (n, fs, ls) => n * (CAR * fs + (ls || 0));
    d'écran (08-interface, `S100`) et la plus petite écriture — le numéro dans une pastille de barrette, 5,4 — en fait 9 ;
    en deçà, à l'écran seulement, les petites écritures se taisent (style-dessin.css, le zoom sémantique). */
 const ENCRE_FOLIO = '#1e1f22', CABLE_FOLIO = '#2a2b2f', CUIVRE_FOLIO = '#9a5220';
-/* LES TEINTES DES ROUTES (v84) : des teintes de CATÉGORIE — des bleus, des sarcelles, un indigo, une ardoise —, distinctes
-   entre elles, lisibles sur le blanc (4,5:1 et plus : un câble de 0,95 se suit) et à l'impression ; jamais le rouge, l'ambre
-   ou le vert des états, jamais le fuchsia, jamais le cuivre (l'accent : ce que VOLTA ajoute). L'ordre sépare d'abord ce
-   qui se voit le plus souvent ensemble : les trois premières (bleu, sarcelle, indigo) ne se confondent pas. L'interface
-   les donne aux routes du contrat, dans l'ordre (08-interface `PALETTE_ROUTES`) ; une couleur choisie au contrat passe
-   devant. */
-const TEINTES_ROUTES = Object.freeze(['#2c62b0', '#0e7a7c', '#5a4fb3', '#4a6278', '#1f7f9e', '#33437f', '#3f7f6c', '#6d5a9c']);
+/* LES TEINTES DES ROUTES (v84) : des teintes de CATÉGORIE, de la famille froide — un bleu, une sarcelle, un indigo, une
+   ardoise, un cyan profond, un bleu nuit —, distinctes entre elles par la teinte ou par la valeur, lisibles sur le blanc
+   (4,5:1 et plus : un câble de 0,95 se suit) et à l'impression ; jamais le rouge, l'ambre ou le vert des états, jamais le
+   fuchsia, jamais le cuivre (l'accent : ce que VOLTA ajoute). Avant : un violet (#7d3c98, la PUISSANCE de l'exemple), un
+   magenta, un rouge, un vert, un orange — des états et du fuchsia. Les trois premières (bleu, sarcelle, indigo) ne se
+   confondent pas ; au-delà de six routes, elles reviennent. L'interface les donne aux routes du contrat, dans l'ordre
+   (08-interface `PALETTE_ROUTES`) ; une couleur choisie au contrat passe devant. */
+const TEINTES_ROUTES = Object.freeze(['#2c62b0', '#0e7a7c', '#5a4fb3', '#4a6278', '#1f7f9e', '#33437f']);
 function styleDessin() {
   return `<defs>
    <pattern id="gfine" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#efefec" stroke-width=".8"/></pattern>

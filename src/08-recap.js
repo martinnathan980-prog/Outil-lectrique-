@@ -249,7 +249,8 @@ const celluleIntensite = r => { const x = r.F().x; if (!x.fn) return rien;
   const rP = x.continu ? x.I / x.continu : 0, rT = x.pointe && x.pointe.admis ? x.pointe.i / x.pointe.admis : 0, pointe = rT > rP, q = Math.max(rP, rT);
   const niv = x.trop.length ? 'ko' : q > 0.8 ? 'att' : 'ok', i = pointe ? x.pointe.i : x.I, a = pointe ? x.pointe.admis : x.continu;
   return `<span class="rc-int">${chiffre(val('intensite', amp1(i), { cls: 'rc-n rc-calc', titre: 'Double-clic : ' + (x.al ? 'le profil de ' + x.al.nom : 'les hypothèses') }), 'A', niv === 'ko' ? 'ko' : '')}<span class="rc-adm">/ ${amp1(a)}</span>`
-    + `<span class="rc-barre ${niv}"><i style="width:${Math.round(Math.min(1, q) * 100)}%"></i></span>${pointe ? '<i class="rc-o">pointe</i>' : x.al ? '' : orig('hyp', 'Aucun disjoncteur en amont : le courant supposé par la simulation (menu ⋮ → Hypothèses)')}</span>`; };
+    // (v84) « pointe » se dit en clair dans sa bulle : ce qu'il tire, combien de temps, ce que le câble admet sur cette durée
+    + `<span class="rc-barre ${niv}"><i style="width:${Math.round(Math.min(1, q) * 100)}%"></i></span>${pointe ? `<i class="rc-o" data-bulle="${escA('Au plus fort du profil : ' + amperes(x.pointe.i) + ' pendant ' + secondes(x.pointe.t) + ' ; sur cette durée, le câble admet ' + amperes(x.pointe.admis))}">pointe</i>` : x.al ? '' : orig('hyp', 'Aucun disjoncteur en amont : le courant supposé par la simulation (menu ⋮ → Hypothèses)')}</span>`; };
 const celluleChute = r => { const c = r.F().c, u = c.total ? c.total.dU : c.dU; if (u == null) return rien;
   const niv = c.trop ? (c.reel ? 'ko' : 'att') : '';
   return `<span class="rc-mesure" data-bulle="${escA(c.total ? 'En ligne depuis ' + r.F().x.al.nom + ' : ' + volts(c.total.dU) + (c.max != null ? ' sur ' + volts(c.max) + ' admis' : '') + (c.reel ? '' : ' (longueurs d’hypothèse)') + '\nSur ce câble : ' + volts(c.dU) : 'Sur ce câble seul : aucun disjoncteur en amont')}">`
@@ -816,7 +817,7 @@ const pointSeul = (n, mot) => `<span class="rc-etat ${n} seul"><i aria-hidden="t
 /* La phrase d'un point : le câble dont elle parle (« DR20 vers 103RL1:A1 ») en chasse fixe, à part — l'œil trouve QUOI,
    puis lit POURQUOI ; le reste, tel que le contrôle l'écrit. */
 const phraseDuPoint = t => { const m = /^(\S+ vers \S+) : ([\s\S]+)$/.exec(String(t || ''));
-  return m ? `<span class="rc-phrase"><span class="rc-sujet">${esc(m[1])}</span>${insecable(esc(majuscule(m[2])))}</span>` : `<span class="rc-phrase">${insecable(esc(majuscule(t)))}</span>`; };
+  return m ? `<span class="rc-phrase"><span class="rc-sujet">${m[1].split(' vers ').map(esc).join('<i>vers</i>')}</span>${insecable(esc(majuscule(m[2])))}</span>` : `<span class="rc-phrase">${insecable(esc(majuscule(t)))}</span>`; };
 const reparateurs = p => gestesDuPb(p).filter(g => !(p.x.nom && /^Voir /.test(g.mot)));
 const signatureGestes = p => { const G = reparateurs(p); return (G.length ? '' : p.que) + '\u0001' + G.map(g => g.mot).join('\u0001'); };
 /* Voir un point depuis sa ligne : sa fiche, sur son folio, ouverte à la section qui le démontre — sans filtrer l'onglet sur
@@ -1076,9 +1077,12 @@ const groupesParGenre = () => app.base.onglet === 'problemes' && !app.base.tri &
    répétitions ») : une colonne qui sait se dire vide (`vide`) et l'est pour chaque ligne montrée — l'état quand tout va bien,
    la norme ou le band-it que rien ne porte, le calibre du fichier quand c'est le retenu — s'efface ; une ligne qui la
    remplit la fait revenir. Au-delà d'une table virtuelle, on ne lit pas toutes les lignes pour le savoir : elle reste. */
-function colonnesUtiles(C, rs) { const xs = rs.filter(r => !r.nouveau), tri = app.base.tri; if (!xs.length || xs.length > VIRTUEL_DES) return C;
+function colonnesUtiles(C, rs) { const xs = rs.filter(r => !r.nouveau), tri = app.base.tri, choix = app.base.colonnes[app.base.onglet] || {}; if (!xs.length || xs.length > VIRTUEL_DES) return C;
+  // (v84) une colonne venue d'office avec la largeur (`large`, que personne n'a cochée) doit servir à au moins la moitié des
+  // lignes : sinon c'est une grande colonne vide sous les yeux (les contacts de quelques câbles seulement)
+  const auto = c => c.option && c.large && !(c.k in choix);
   // (la colonne qui trie reste : son en-tête est le seul geste qui défait le tri)
-  return C.filter(c => { if (!c.vide || (tri && tri.k === c.k)) return true; try { return !xs.every(c.vide); } catch (_) { return true; } }); }
+  return C.filter(c => { if (!c.vide || (tri && tri.k === c.k)) return true; try { if (auto(c)) return xs.filter(r => !c.vide(r)).length * 2 >= xs.length; return !xs.every(c.vide); } catch (_) { return true; } }); }
 function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.jeton; if (GAMME.el) fermerGamme();
   $('ba-tab').dataset.onglet = b.onglet;
   // (v84) un autre onglet : ses lignes paraissent d'un fondu court (une fois — pas à chaque correction)

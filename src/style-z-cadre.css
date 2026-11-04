@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LE CADRE — le dernier mot (v84, « graphite et cuivre »). Chargé APRÈS toutes les feuilles (construire.js : style.css,
-   puis les style-*.css par ordre alphabétique) : ce qui suit l'emporte sur les couches anciennes.
+   LE CADRE — le dernier mot (v84, « graphite et cuivre »). Chargé APRÈS les couches anciennes (construire.js : style.css,
+   puis les style-*.css par ordre alphabétique — jusqu'aux style-x-*) : ce qui suit l'emporte sur elles. Les autres
+   style-z-* (l'accueil, les documents, la fiche) ne touchent pas au cadre.
    1. LA TABLE DU PLAN, en GRAPHITE CHAUD (la nuit) : des couches plus anciennes (style-table.css, style-v79.css) la
       peignaient encore en bleu nuit, à même `body` — on la reprend ici, à la même place. L'accueil (`body.biblio`) garde
       la sienne (le graphite d'atelier, style-v79.css).
@@ -46,7 +47,7 @@ body:not(.biblio) #table .ta-courant::after{background:color-mix(in srgb,var(--g
     --palet:rgba(255,255,255,.97); --palet-2:#f5f3ef; --palet-plein:#ffffff;
     --voile-1:rgba(60,48,36,.04); --voile-2:rgba(60,48,36,.07); --voile-3:rgba(60,48,36,.11); --voile-4:rgba(60,48,36,.16);
     --sh-palet:0 0 0 1px rgba(60,48,36,.10),0 12px 28px -14px rgba(60,48,36,.34),0 2px 5px -1px rgba(60,48,36,.10);
-    --p-ligne:rgba(60,48,36,.10); --p-hover:rgba(60,48,36,.06); --p-t1:#1c1b1a; --p-t2:#4f4a44; --p-t3:#6b655e; --p-accent:#1c1b1a; --p-ok:#1d7a3c; --p-ko:#c3271f;
+    --p-ligne:rgba(60,48,36,.10); --p-hover:rgba(60,48,36,.06); --p-t1:#1c1b1a; --p-t2:#4f4a44; --p-t3:#6b655e; --p-accent:#1c1b1a; --p-ok:#1d7a3c; --p-warn:#965800; --p-ko:#c3271f;
     --entete-fond:rgba(250,249,246,.95); --entete-ombre:0 1px 0 rgba(60,48,36,.10),0 10px 26px -22px rgba(60,48,36,.5);
     --chip-on:#f3e5d8; --chip-on-t:#1c1b1a; --chip-on-ombre:inset 0 0 0 1px rgba(169,88,31,.40),0 3px 10px -4px rgba(169,88,31,.35);
     --chrome-cuivre:#a9581f; --chrome-cuivre-soft:rgba(169,88,31,.10); --chrome-cuivre-ligne:rgba(169,88,31,.34); --chrome-cuivre-t:#8a4516;
@@ -63,7 +64,7 @@ body:not(.biblio) #table .ta-courant::after{background:color-mix(in srgb,var(--g
     --accent:#1c1b1a; --accent-2:#000000; --accent-soft:rgba(169,88,31,.10); --accent-line:rgba(169,88,31,.32); --on-accent:#ffffff;
     --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#4f4a44; --info-soft:rgba(60,48,36,.05);
     --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;
-    --voile:rgba(26,20,14,.30); --voile-fort:rgba(26,20,14,.58);
+    --voile:rgba(26,20,14,.24); --voile-fort:rgba(26,20,14,.44);
     --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent;
     --sh-1:0 1px 2px rgba(40,30,20,.06); --sh-2:0 0 0 1px rgba(60,48,36,.10),0 20px 44px -16px rgba(60,48,36,.34),0 4px 10px -4px rgba(60,48,36,.12);
     --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 24px 56px -18px rgba(60,48,36,.42),0 6px 16px -8px rgba(60,48,36,.2);
@@ -85,7 +86,7 @@ body:not(.biblio) #table .ta-courant::after{background:color-mix(in srgb,var(--g
   --palet:rgba(255,255,255,.97); --palet-2:#f5f3ef; --palet-plein:#ffffff;
   --voile-1:rgba(60,48,36,.04); --voile-2:rgba(60,48,36,.07); --voile-3:rgba(60,48,36,.11); --voile-4:rgba(60,48,36,.16);
   --sh-palet:0 0 0 1px rgba(60,48,36,.10),0 12px 28px -14px rgba(60,48,36,.34),0 2px 5px -1px rgba(60,48,36,.10);
-  --p-ligne:rgba(60,48,36,.10); --p-hover:rgba(60,48,36,.06); --p-t1:#1c1b1a; --p-t2:#4f4a44; --p-t3:#6b655e; --p-accent:#1c1b1a; --p-ok:#1d7a3c; --p-ko:#c3271f;
+  --p-ligne:rgba(60,48,36,.10); --p-hover:rgba(60,48,36,.06); --p-t1:#1c1b1a; --p-t2:#4f4a44; --p-t3:#6b655e; --p-accent:#1c1b1a; --p-ok:#1d7a3c; --p-warn:#965800; --p-ko:#c3271f;
   --entete-fond:rgba(250,249,246,.95); --entete-ombre:0 1px 0 rgba(60,48,36,.10),0 10px 26px -22px rgba(60,48,36,.5);
   --chip-on:#f3e5d8; --chip-on-t:#1c1b1a; --chip-on-ombre:inset 0 0 0 1px rgba(169,88,31,.40),0 3px 10px -4px rgba(169,88,31,.35);
   --chrome-cuivre:#a9581f; --chrome-cuivre-soft:rgba(169,88,31,.10); --chrome-cuivre-ligne:rgba(169,88,31,.34); --chrome-cuivre-t:#8a4516;
@@ -100,7 +101,7 @@ body:not(.biblio) #table .ta-courant::after{background:color-mix(in srgb,var(--g
   --accent:#1c1b1a; --accent-2:#000000; --accent-soft:rgba(169,88,31,.10); --accent-line:rgba(169,88,31,.32); --on-accent:#ffffff;
   --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#4f4a44; --info-soft:rgba(60,48,36,.05);
   --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;
-  --voile:rgba(26,20,14,.30); --voile-fort:rgba(26,20,14,.58);
+  --voile:rgba(26,20,14,.24); --voile-fort:rgba(26,20,14,.44);
   --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent;
   --sh-1:0 1px 2px rgba(40,30,20,.06); --sh-2:0 0 0 1px rgba(60,48,36,.10),0 20px 44px -16px rgba(60,48,36,.34),0 4px 10px -4px rgba(60,48,36,.12);
   --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 24px 56px -18px rgba(60,48,36,.42),0 6px 16px -8px rgba(60,48,36,.2);

@@ -201,7 +201,11 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
   // le courant de chaque contact du câble, borné par la gauge du câble serti (R1) et le fût du contact ; le plus faible des deux bouts juge
   const fils = filsDepuis(V, nom).map(f => { const xs = (contacts.get(f.l) || []).map(x => ({ x, i: intensiteDuContactPose(N, x) })).filter(y => y.i).sort((a, b) => a.i.intensite - b.i.intensite);
     return xs.length ? { ...f, taille: xs[0].x.taille, contactRepere: xs[0].x.repere, fut: xs[0].x.fut } : f; });
-  protectionDesFils(N, cal, d.profil, fils, H).forEach(f => { const nomF = nomDuCableDit(f) + (f.direct ? '' : ' (par ' + f.via + ')'), cables = f.l ? [f.l] : [];
+  /* (v84) chaque câble jugé comme sa fiche le juge : les hypothèses du disjoncteur (sa famille de courbes : `d.contexte.hyp`
+     — la courbe par défaut jugeait jusqu'ici les câbles au-delà des passages), et le profil de SA BRANCHE quand la
+     consommation de ce qu'il alimente est écrite (09 quater, `filsDepuis` : `points`), sinon celui du disjoncteur */
+  const Hd = { ...HYPOTHESES, ...(d.contexte && d.contexte.hyp ? d.contexte.hyp : H) }, ctx = contexteDeProtection(N, Hd, null, pointsDuProfil(d.profil));
+  fils.map(f => protegerFil(N, cal, f, Hd, f.points ? { ...ctx, pts: f.points } : ctx)).forEach(f => { const nomF = nomDuCableDit(f) + (f.direct ? '' : ' (par ' + f.via + ')'), cables = f.l ? [f.l] : [];
     if (!f.direct) {
       if (f.verdict === 'fil') { const [i, a] = chiffresEnOrdre(f.pire.i, f.pire.admise, 'A'); out.push({ niveau: 'ko', cables, texte: `${nomF} : ${f.pire.nom} ${i}${f.pire.t === Infinity ? '' : ' pendant ' + secondes(f.pire.t)} > ${a} admis ${pourPalier(f.pire.palier)}${motDeclasse(N, H, f, f.pire.t)}` }); }
       else if (f.verdict === 'calibre') { const [a, c] = chiffresEnOrdre(f.continu, cal, 'A'); out.push({ niveau: 'att', cables, texte: `${nomF} : ${a} admis en continu${motDeclasse(N, H, f, Infinity)} < calibre ${c} — pas protégé en surcharge` }); }

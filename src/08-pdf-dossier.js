@@ -418,8 +418,8 @@ function pagesDeTablesPdf(titre, resume, sections, o) { o = o || {}; const pages
 function pagesNomenclaturePdf(nom) { let N; try { N = nomenclatureDuContrat(); } catch (_) { return []; }
   const somme = xs => xs.reduce((s, x) => s + x.n, 0), ou = xs => xs.join(', ');
   const sections = [
-    { titre: 'Contacts à sertir', compte: motPdf(somme(N.contacts), 'pièce', 'pièces'), colonnes: [['Contact', 0.2, { mono: true }], ['Fourreau', 0.16, { mono: true }], ['Qté', 0.07, { centre: true }], ['Où', 0.57, { gris: true }]],
-      lignes: N.contacts.map(x => [x.reference + (x.confiance === 'à confirmer' ? ' (à confirmer)' : ''), x.accessoire || '—', x.n, ou(x.ou)]) },
+    { titre: 'Contacts à sertir', compte: motPdf(somme(N.contacts), 'pièce', 'pièces'), colonnes: [['Contact', 0.28, { mono: true }], ['Qté', 0.07, { centre: true }], ['Où', 0.65, { gris: true }]],
+      lignes: N.contacts.map(x => [x.reference + (x.accessoire ? ' avec ' + x.accessoire : '') + (x.confiance === 'à confirmer' ? ' (à confirmer)' : ''), x.n, ou(x.ou)]) },
     { titre: 'Modules de jonction', compte: motPdf(somme(N.modules), 'pièce', 'pièces'), colonnes: [['Module', 0.2, { mono: true }], ['Norme', 0.16], ['Qté', 0.07, { centre: true }], ['Barrettes', 0.57, { gris: true }]],
       lignes: N.modules.map(x => [x.reference, x.famille || '', x.n, ou(x.ou)]) },
     { titre: 'Connecteurs et prises', compte: motPdf(somme(N.connecteurs), 'pièce', 'pièces'), colonnes: [['Part number', 0.2, { mono: true }], ['Nature', 0.3], ['Qté', 0.07, { centre: true }], ['Repères', 0.43, { gris: true }]],

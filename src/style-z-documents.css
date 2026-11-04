@@ -68,3 +68,7 @@
 :root[data-theme="dark"] :is(#pdf,#visio){--nv-cuivre:#eca570}
 .pdf-haut .fiche-tete .sur{font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--nv-cuivre)}
 .pdf-haut .fiche-tete .titre{font:600 var(--f-20)/1.25 var(--sans);letter-spacing:-.015em}
+
+/* ─── LA BIBLE, sur un grand écran : sa note passe à la ligne (deux ou trois lignes tiennent dans la hauteur d'une ligne,
+   celle de la vignette) au lieu de finir en « … » ─── */
+#fiche .bible td.bible-note{white-space:normal;overflow:visible;text-overflow:clip;max-width:none;line-height:1.35;padding-top:6px;padding-bottom:6px;text-wrap:pretty}

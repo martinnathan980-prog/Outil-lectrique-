@@ -40,7 +40,13 @@ function montrerAT(ou, fait, total, mots) { const el = panneauAT(); el.hidden = 
    bilan (false : ne pas rouvrir le bilan à la fin — les bancs) } */
 async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assign({ listes: true, budget: AUTOTEST.budget }, o || {});
   if (!verite().length) { dire('Aucun plan ouvert : ouvrez votre installation, puis relancez l’autotest.', true); return; }
-  const T0 = performance.now(), P = plans(), depart = app.plan, R = { quand: Date.now(), genres: {}, vides: 0, coupe: '', exports: [], listes: 0, listesSautees: 0, sections: 0, folios: P.length }, listesVues = new Set();
+  const T0 = performance.now(), P = plans(), depart = app.plan, R = { quand: Date.now(), genres: {}, vides: 0, coupe: '', exports: [], listes: 0, pareilles: 0, sections: 0, folios: P.length }, vues = new Set();
+  /* (v84, la vitesse : le plan géant des fichiers piégés — 3 135 liaisons, 90 folios — ne passait pas le 53e folio en 25 min,
+     et un vrai fichier de cette taille ne voyait jamais ses derniers folios dans le budget) UNE FICHE PAREILLE À UNE FICHE DÉJÀ
+     PARCOURUE ne se refait pas : même genre, mêmes câbles — type, route, longueur, bornes, part numbers, l'autre bout —, mêmes
+     choix, les repères lus sans leurs chiffres (1101BT1 et 2101BT1 câblés pareil sont la même fiche ; « 300xc1 » et
+     « 300XC1 », non). Chaque folio se dessine toujours ; chaque fiche différente se rend, ses sections, son grand, ses listes. */
+  const pareille = sig => { if (!sig) return false; if (vues.has(sig)) { R.pareilles++; return true; } vues.add(sig); return false; };
   Object.assign(AUTOTEST, { enCours: true, stop: false, erreurs: [], etape: '', captures: [] });
   const echap = e => { if (e.key === 'Escape' && AUTOTEST.enCours) { AUTOTEST.stop = true; e.preventDefault(); e.stopPropagation(); } }; window.addEventListener('keydown', echap, true);
   // la console qui crie pendant le parcours, et les téléchargements (fabriqués, jamais enregistrés)
@@ -70,11 +76,6 @@ async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assi
     const rendre = () => { if (enGrand) try { reduireFiche(); } catch (_) { } };
     if (!o.listes) { rendre(); return; }
     const cles = [...new Set([...box.querySelectorAll('[data-changer]')].map(b => b.dataset.changer))].slice(0, 12);
-    /* (v84, la vitesse : sur le plan géant, douze listes par fiche refaisaient la fiche entière douze fois — l'essentiel des
-       4 minutes) Les listes d'une fiche IDENTIQUE à une fiche déjà parcourue — même genre, mêmes câbles (type, bornes, part
-       numbers, la nature de l'autre bout), les repères réduits à leur code — ont déjà été ouvertes : la fiche se rend et ses
-       sections se déplient, ses listes ne se rouvrent pas. Un vrai fichier a des dizaines de relais câblés pareil. */
-    const sig = signatureDeFicheAT(app.cible, cles); if (sig && listesVues.has(sig)) { R.listesSautees++; rendre(); return; } if (sig) listesVues.add(sig);
     for (const k of cles) { if (fini()) { rendre(); return; } AUTOTEST.etape = ou + ' · une liste « Changer »';
       try { FI.liste = k; rendreFiche(); R.listes++; } catch (e) { noterErreurAT('liste', (e && e.message) || e, pileCourte(e)); }
       await pauseAT(0); }
@@ -116,10 +117,12 @@ async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assi
       if (!app.dessin) continue;
       const blocs = (app.dessin.comps || []).filter(c => c && c.name && c.kind !== 'tag' && !(typeof estRenvoi === 'function' && estRenvoi(c.name)));
       for (let k = 0; k < blocs.length && !fini(); k++) { const c = blocs[k], ou = 'fiche ' + natureAnonyme(c.name) + (fo ? ' · ' + fo : '');
+        if (pareille(signatureDuBlocAT(c.name))) continue;
         montrerAT(fo, i + k / Math.max(1, blocs.length) * .6, P.length, `fiche ${k + 1} / ${blocs.length} · ${pl(AUTOTEST.erreurs.length, 'erreur')}`);
         await etape(genreDeFiche(c.name), ou, async () => { choisirBloc(c); await exercerFiche(ou); }); }
-      const fils = (app.dessin.fils || []).filter(f => f && f.i != null);
+      const fils = (app.dessin.fils || []).filter(f => f && f.i != null), LP = liaisonsDuPlan();
       for (let k = 0; k < fils.length && !fini(); k++) { const f = fils[k], ou = 'fiche d’un câble' + (fo ? ' · ' + fo : '');
+        { const l = LP[f.i]; if (l && pareille(signatureDuCableAT((typeof sourceDe === 'function' && sourceDe(l)) || l))) continue; }
         montrerAT(fo, i + .6 + k / Math.max(1, fils.length) * .4, P.length, `câble ${k + 1} / ${fils.length} · ${pl(AUTOTEST.erreurs.length, 'erreur')}`);
         await etape('câble', ou, async () => { choisirFil(f); await exercerFiche(ou); }); }
       try { deselectionner(); fermerInspecteur(); } catch (_) { } }
@@ -134,17 +137,18 @@ async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assi
     try { FI.liste = ''; fermerBase(); fermerFiche(true); deselectionner(); fermerInspecteur(); if (depart && plans().includes(depart)) allerAuPlan(depart); } catch (_) { }
     dire(`Autotest ${R.coupe ? 'arrêté' : 'fini'} en ${msLisible(R.duree)} : ${pl(R.erreurs.length, 'erreur')}${R.vides ? ', ' + pl(R.vides, 'fiche non rendue', 'fiches non rendues') : ''}. Le résultat est dans le bilan anonyme.`, !!R.erreurs.length);
     if (o.bilan !== false && typeof ficheBilan === 'function') ficheBilan(); } }
-/* LA SIGNATURE D'UNE FICHE D'OBJET, pour ses listes « Changer » (v84) : son genre et son code, ses listes, chacun de ses câbles
-   réduit à ce que la fiche en lit (le type, la route, la longueur, ses bornes et part numbers, le code de l'autre bout) et
-   les choix du contrat qui le nomment (désignations, sexes, raccords, profil de charge). Les repères ne comptent que par leur
-   code : 1101BT1 et 2101BT1 câblés pareil ont la même. '' : pas de signature (la fiche d'un câble : toujours parcourue). */
-function signatureDeFicheAT(c, cles) { if (!c || c.type !== 'bloc' || !c.nom) return ''; const nom = c.nom;
-  const code = r => { const q = lireRepere(r); return q ? q.code : String(r == null ? '' : r); };
-  const L = verite().filter(l => liaisonComplete(l) && (l.de === nom || l.vers === nom));
-  const xs = L.map(l => { const ici = l.de === nom ? [l.borneDe, l.pnDe, l.vers === nom ? '=' : code(l.vers), l.borneVers, l.pnVers] : [l.borneVers, l.pnVers, code(l.de), l.borneDe, l.pnDe];
-    return JSON.stringify([l.type, l.route, l.longueur || 0, ...ici]); }).sort();
-  const choix = ['designations', 'sexes', 'raccords', 'charges'].map(m => { const M = app.contrat[m], out = []; if (M && M.forEach) M.forEach((v, k) => { if (String(k).includes(nom)) out.push(String(k).split(nom).join('#') + '=' + JSON.stringify(v)); }); return out.sort().join(','); });
-  return genreDeFiche(nom) + '|' + code(nom) + '|' + cles.join(',') + '|' + xs.join(';') + '|' + choix.join('/'); }
+/* LA SIGNATURE D'UNE FICHE (v84) : ce qui la fait — pour un objet, son genre, son nom sans ses chiffres, chacun de ses câbles
+   (type, route, longueur, ses bornes et part numbers, l'autre bout sans ses chiffres) et les choix du contrat qui le nomment
+   (désignations, sexes, raccords, profil de charge) ; pour un câble, ses deux bouts de même, son type, sa route, sa longueur,
+   ce que VOLTA y a ajouté. Deux fiches de même signature se rendent pareil. */
+const sansChiffresAT = r => String(r == null ? '' : r).replace(/\d+/g, '#');
+const choixDuRepereAT = nom => ['designations', 'sexes', 'raccords', 'charges'].map(m => { const M = app.contrat[m], out = []; if (M && M.forEach) M.forEach((v, k) => { if (String(k).includes(nom)) out.push(String(k).split(nom).join('@') + '=' + JSON.stringify(v)); }); return out.sort().join(','); }).join('/');
+function signatureDuBlocAT(nom) { if (!nom) return '';
+  const xs = verite().filter(l => liaisonComplete(l) && (l.de === nom || l.vers === nom)).map(l => { const ici = l.de === nom ? [l.borneDe, l.pnDe, l.vers === nom ? '=' : sansChiffresAT(l.vers), l.borneVers, l.pnVers] : [l.borneVers, l.pnVers, sansChiffresAT(l.de), l.borneDe, l.pnDe];
+    return JSON.stringify([l.type, l.route, l.longueur || 0, l.contactDe || '', l.contactVers || '', ...ici]); }).sort();
+  return 'bloc|' + genreDeFiche(nom) + '|' + sansChiffresAT(nom) + '|' + xs.join(';') + '|' + choixDuRepereAT(nom); }
+function signatureDuCableAT(l) { if (!l) return '';
+  return 'câble|' + JSON.stringify([sansChiffresAT(l.de), l.borneDe, l.pnDe, sansChiffresAT(l.vers), l.borneVers, l.pnVers, l.type, l.route, l.longueur || 0, l.contactDe || '', l.contactVers || '', l.origine === null, !!l.aPoser]) + '|' + choixDuRepereAT(l.de) + '|' + choixDuRepereAT(l.vers); }
 const genreDeFiche = r => VT_A_POSER.test(r || '') ? 'barrette ajoutée' : estMasse(r) ? 'masse' : estDisjoncteur(r) ? 'disjoncteur' : estBarrette(r) ? 'barrette' : estCoupure(r) ? 'prise' : 'équipement';
 
 /* CE QUE L'AUTOTEST DIT DANS LE BILAN : la durée, chaque genre (combien, la moyenne, le plus long et où), les erreurs
@@ -152,7 +156,7 @@ const genreDeFiche = r => VT_A_POSER.test(r || '') ? 'barrette ajoutée' : estMa
 function sectionAutotest(masque) { const R = AUTOTEST.resultat; if (!R) return ['pas encore lancé (⋮ › Plus › Autotest du plan, ou le bouton du bilan)'];
   const G = Object.entries(R.genres).map(([g, x]) => `${g} : ${x.n} en ${msLisible(x.ms)} (moyenne ${msLisible(x.ms / x.n)}, le plus long ${msLisible(x.max)} — ${x.ouMax})`);
   return [`lancé le ${new Date(R.quand).toLocaleString('fr-FR')} · ${msLisible(R.duree)}${R.coupe ? ' · ' + R.coupe : ' · parcours complet'}`,
-    `${pl(R.folios, 'folio')} · ${pl(R.sections, 'section dépliée', 'sections dépliées')} · ${pl(R.listes, 'liste « Changer » ouverte', 'listes « Changer » ouvertes')}${R.listesSautees ? ` (celles de ${pl(R.listesSautees, 'fiche câblée comme une autre déjà vue', 'fiches câblées comme une autre déjà vue')} : non rouvertes)` : ''}`, ...G,
+    `${pl(R.folios, 'folio')} · ${pl(R.sections, 'section dépliée', 'sections dépliées')} · ${pl(R.listes, 'liste « Changer » ouverte', 'listes « Changer » ouvertes')}`, R.pareilles ? `${pl(R.pareilles, 'fiche pareille', 'fiches pareilles')} à une fiche déjà parcourue (même câblage, les repères lus sans leurs chiffres) : non refaite${R.pareilles > 1 ? 's' : ''}` : '', ...G,
     R.exports.length ? 'exports fabriqués (rien d’enregistré) : ' + R.exports.join(' · ') : '',
     R.vides ? `${pl(R.vides, 'fiche non rendue', 'fiches non rendues')} (le rendu a échoué sans le dire)` : 'fiches non rendues : aucune',
     R.erreurs.length ? `${pl(R.erreurs.length, 'erreur')} :` : 'erreurs : aucune',

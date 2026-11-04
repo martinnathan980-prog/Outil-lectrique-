@@ -50,8 +50,9 @@ const chargeDe = nom => { const c = chargeEcrite(nom); if (phaseEcrite(c) || !es
    démarrages aussi — tous au même instant, le pire —, sur la durée la plus longue. Écrire son profil le remplace. */
 const phaseEcrite = c => !!c && ['dem', 'trans', 'perm'].some(k => c[k] && nombreLu(c[k].i) > 0);
 const consoDe = nom => { const c = nom && !estDisjoncteur(nom) ? chargeEcrite(nom) : null; return phaseEcrite(c) ? c : null; };
-// ce qu'un disjoncteur alimente : les bouts des chemins qui partent de lui (ni disjoncteur, ni masse)
-const consommateursDe = nom => !estDisjoncteur(nom) ? [] : [...new Set(cheminsDepuis(verite(), nom).map(ch => ch.bout[0]).filter(r => r && r !== nom && !estDisjoncteur(r) && !estMasse(r)))].sort(triNaturel);
+// ce qu'un disjoncteur alimente : les bouts des chemins qui partent de lui (ni disjoncteur, ni masse) — pas le côté source
+// (v84 : un chemin qui finit sur une batterie, une génératrice, un transfo-redresseur est en amont, `amont` de `cheminsDepuis`)
+const consommateursDe = nom => !estDisjoncteur(nom) ? [] : [...new Set(cheminsDepuis(verite(), nom).filter(ch => !ch.amont).map(ch => ch.bout[0]).filter(r => r && r !== nom && !estDisjoncteur(r) && !estMasse(r)))].sort(triNaturel);
 // les disjoncteurs qui alimentent un équipement
 const disjoncteursDe = nom => reperesDe(verite()).filter(estDisjoncteur).filter(d => consommateursDe(d).includes(nom)).sort(triNaturel);
 let CONSOS = { v: null, sig: '', m: new Map() };
@@ -82,7 +83,10 @@ function pnDuRepere(nom) { for (const l of verite()) { if (l.de === nom && l.pnD
 /* Les fils d'un disjoncteur : ceux qui le touchent, des deux côtés (la borne, l'autre bout, `amont`), puis tout ce qu'il
    nourrit au-delà des prises de coupure et des barrettes (`via` : le passage), chacun avec le contact du plan quand les
    fiches le connaissent (`taille`, le plus faible des deux bouts — le courant du contact en dépend). */
-function filsDuDisjoncteur(nom) { const V = verite(), directs = V.filter(l => (l.de === nom || l.vers === nom) && l.de !== l.vers)
+// (v84) sans le côté source : le câble qui vient de la batterie (d'une génératrice, d'un transfo-redresseur) nourrit le
+// disjoncteur, il n'est pas protégé par lui — les câbles des chemins en amont (`cheminsDepuis`, `amont`) n'en sont pas
+function filsDuDisjoncteur(nom) { const V = verite(), source = new Set(cheminsDepuis(V, nom).filter(ch => ch.amont).flatMap(ch => ch.segments.filter(s => s.fil).map(s => s.fil)));
+  const directs = V.filter(l => (l.de === nom || l.vers === nom) && l.de !== l.vers && !source.has(l))
     .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), amont: l.vers === nom, direct: true, via: '', l }));
   const vus = new Set(directs.map(f => f.l)), suite = filsDepuis(V, nom).filter(f => !vus.has(f.l)).map(f => ({ ...f, amont: false }));
   return directs.concat(suite).map(f => ({ ...f, ...contactDuPlan(f.l) })); }
@@ -235,9 +239,13 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
     out.push({ niveau: k === 'passe' ? 'att' : 'ko', texte: k === 'passe' ? `l’installation porte un ${amperes(d.pn)} (${pnR}) : ${d.calibre < d.pn ? 'le ' + amperes(d.calibre) + ' suffit' : 'VOLTA retient le ' + amperes(d.calibre) + (d.voisins.some(v => v.calibre > 0 && Math.max(v.calibre, d.pn) < SELECTIVITE * Math.min(v.calibre, d.pn) - 1e-9) ? ' (sélectivité avec le voisin)' : '')}`
       : k === 'juste' ? `l’installation porte un ${amperes(d.pn)} (${pnR}), qui ${motDuVerdict('juste')} : ${retenu}` : `l’installation porte un ${amperes(d.pn)} (${pnR}) qui ${motDuVerdict('declenche')} : ${retenu}` }); }
   d.voisins.forEach(v => { if (v.calibre > 0 && d.calibre > 0 && Math.max(v.calibre, d.calibre) < SELECTIVITE * Math.min(v.calibre, d.calibre) - 1e-9) out.push({ niveau: 'att', texte: `sélectivité avec ${v.nom} (${amperes(v.calibre)}) : l’amont devrait faire au moins le double de l’aval` }); });
+  // (v84) le déclassement en clair (« 11,5 A × 0,6 : faisceau de 8 câbles à 60 % », 09 quater `motDuDeclassement`) et deux
+  // chiffres comparés que l'arrondi n'inverse pas (`enOrdre`) — les mêmes phrases que les câbles au-delà des passages (08-controle)
+  const Hd = { ...HYPOTHESES, ...((d.contexte && d.contexte.hyp) || {}) }, enClair = (f, t) => typeof motDeclasse === 'function' ? motDeclasse(app.norme, Hd, f, t) : motFacteur(t === Infinity ? f.facteur : f.facteurCourt);
+  const deux = (a, b) => typeof enOrdre === 'function' ? enOrdre(a, b).map(x => nombre(x) + ' A') : [amperes(a), amperes(b)];
   d.fils.forEach(f => { const nomF = cableEtType(f);
-    if (f.verdict === 'fil') out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)}${f.pire.t === Infinity ? '' : ' / ' + secondes(f.pire.t)} > ${amperes(f.pire.admise)} admis ${pourPalier(f.pire.palier)}${motFacteur(f.pire.palier === Infinity ? f.facteur : f.facteurCourt)}` });
-    else if (f.verdict === 'calibre') out.push({ niveau: 'att', texte: `${nomF} : ${amperes(f.continu)} admis en continu${motFacteur(f.facteur)} < calibre ${amperes(d.calibre)} — pas protégé en surcharge` });
+    if (f.verdict === 'fil') { const [i, a] = deux(f.pire.i, f.pire.admise); out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${i}${f.pire.t === Infinity ? '' : ' pendant ' + secondes(f.pire.t)} > ${a} admis ${pourPalier(f.pire.palier)}${enClair(f, f.pire.t)}` }); }
+    else if (f.verdict === 'calibre') { const [a, c] = deux(f.continu, d.calibre); out.push({ niveau: 'att', texte: `${nomF} : ${a} admis en continu${enClair(f, Infinity)} < calibre ${c} — pas protégé en surcharge` }); }
     else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(d.calibre)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuFil(f, x)}` }); } });
   return out; }
 

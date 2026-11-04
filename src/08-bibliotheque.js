@@ -9,34 +9,33 @@
    et aller d'une à l'autre très facilement — l'outil est partagé, chacun est
    sur la sienne. »
 
-   L'OUTIL S'OUVRE SUR ELLE, posée sur la table bleu nuit (`#bibliotheque`) :
+   L'OUTIL S'OUVRE SUR ELLE, posée sur le graphite (`#bibliotheque` ; la charte :
+   le noir chaud et le cuivre, dans les deux thèmes) :
      · la RACINE : une carte par installation — son numéro d'ECP, son nom,
-       combien de plans, la dernière ouverture, le nom de ses premiers plans —,
-       rangées par ECP (ou par nom, ou les plus récentes d'abord : on choisit,
-       le choix se garde), « Nouvelle installation » (l'ECP, puis le nom), une
-       recherche (un ECP, une installation, un plan, un harness, un dessin) ; le
-       plan resté sur la table se reprend d'un clic ; l'Exemple, une
-       installation de démonstration, discrète, en dernier ;
+       ses premiers plans, quand on l'a ouverte —, rangées par ECP (ou par nom,
+       ou les plus récentes d'abord : on choisit, le choix se garde),
+       « Nouvelle installation » (l'ECP, puis le nom), une recherche (un ECP,
+       une installation, un plan, un harness, un dessin) ; le plan resté sur la
+       table se reprend d'un clic ; l'Exemple, une installation de
+       démonstration, discrète, en dernier (« Pour essayer ») ;
      · une INSTALLATION : à gauche, toutes les installations (un clic passe de
        l'une à l'autre, Alt+↑ / Alt+↓ aussi) ; à droite son ECP et son nom (un
        clic les modifie), créée quand, modifiée quand ; ses plans (un plan = un
-       retest : son nom, ses folios, créé, modifié, ouvert), « Ajouter un plan »
-       (un ou plusieurs retests, Excel ou CSV, choisis ou déposés) ; un clic
-       ouvre le plan sur la table, avec ses folios.
-   L'ACCUEIL (rien encore) : une VITRINE (le lecteur, v73 : « comme l'écran
-   d'accueil d'un iPhone, stylisé, travaillé ») — au centre optique de la table,
-   une pile de trois feuilles, « Ouvrez votre installation » en affiche (v74 :
-   le fichier du lecteur s'appelle une installation), une phrase, deux gestes
-   (« Ouvrir une installation… » clair sur la nuit, ses touches Ctrl O ;
-   « Nouvelle installation » au verre), une ligne (« ou glissez-le n'importe où
-   dans la fenêtre ») ; en bas, le DOCK de verre : l'Exemple et la base des
-   contrats déjà faits, comme deux applications (« Reprendre » le plan resté sur
-   la table s'y ajoute). Elle se pose en cascade, une fois, puis les deux câbles
-   de la vignette se tracent ; la barre du haut s'efface : la marque flotte.
-   LA BIBLIOTHÈQUE PLEINE : la tête en affiche, « Reprendre » en verre (le papier
-   est réservé à ce qu'on choisit), « Installations, par n° ECP » et son filet,
-   les cartes en grille — chacune une vraie pile de feuilles, qui s'évente au
-   survol, son état en pastille —, l'Exemple au trait, en dernier.
+       retest : son nom, ses folios, ce qu'il reste à reprendre, modifié,
+       ouvert), « Ajouter un plan » (un ou plusieurs retests, Excel ou CSV,
+       choisis ou déposés) ; un clic ouvre le plan sur la table, avec ses folios.
+   L'ACCUEIL (rien encore), à la manière d'Apple (v80-v84) : VOLTA seul, dessiné
+   comme un câble qui se trace ; le slogan en cuivre ; le SCHÉMA VIVANT sous la
+   règle des colonnes (survoler une pièce allume ce qu'elle relie, la légende le
+   dit) ; deux gestes (« Ouvrir une installation… », sa pierre claire cernée d'un
+   liseré de cuivre qui tourne, Ctrl O ; « Nouvelle installation » au verre) ;
+   dessous, deux tuiles de la même largeur : « Reprendre » (ou l'Exemple) et la
+   base des contrats déjà faits. La mise en scène se joue une fois par séance
+   (style-z-accueil.css) ; la barre du haut s'efface : la marque flotte.
+   LA BIBLIOTHÈQUE PLEINE : la tête (le titre, la recherche, le geste),
+   « Reprendre » en verre, « Installations » et son filet, les cartes en grille —
+   chacune une vraie pile de feuilles, qui s'évente au survol, son état en
+   pastille —, l'Exemple au trait, en dernier.
    Ce qui est un plan se montre en VIGNETTE (une petite feuille blanche, son
    dessin à l'encre, deux fils aux couleurs des routes) : l'Exemple,
    « Reprendre », l'accueil.

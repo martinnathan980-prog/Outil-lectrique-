@@ -217,6 +217,7 @@
 #base #ba-tab[data-onglet="problemes"] tbody tr[data-k]{cursor:pointer}
 /* le câble dont parle la phrase, en chasse fixe, à part : QUOI, puis POURQUOI */
 #base #ba-tab .rc-sujet{display:inline-block;margin-right:8px;font:500 var(--f-12)/1.45 var(--mono);letter-spacing:-.01em;color:var(--t-1);white-space:nowrap}
+#base #ba-tab .rc-sujet i{margin:0 5px;font:400 var(--f-12)/1 var(--sans);font-style:normal;letter-spacing:0;color:var(--t-2)}
 /* l'objet qui se répète : à l'encre troisième ; le geste qui se répète : « ″ », doux, sous le début de la phrase */
 #base #ba-tab .rc-r.rc-meme{color:var(--t-3);font-weight:500}
 #base #ba-tab .rc-pareil{display:inline-block;padding:0 2px;font:500 var(--f-14)/1 var(--sans);color:var(--t-3);cursor:help}
@@ -230,8 +231,10 @@
 /* l'intercalaire de niveau : une capitale de rubrique, à la couleur de l'état, un point, le compte */
 #base #ba-tab tr.rc-niveau td{height:40px;padding:18px 12px 6px var(--rc-g);border-bottom:none;background:none;vertical-align:bottom}
 #base #ba-tab tr.rc-niveau + tr.rc-genre td{padding-top:8px;height:40px}
-#base .rc-niveau-l{display:inline-flex;align-items:center;gap:8px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase}
-#base .rc-niveau-l i{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+/* (le point du niveau tient la place du compte d'un genre — 18 px — : « PROBLÈMES » et le mot de chaque genre commencent
+   sur la même verticale) */
+#base .rc-niveau-l{display:inline-flex;align-items:center;gap:10px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase}
+#base .rc-niveau-l i{width:7px;height:7px;margin-left:11px;border-radius:50%;background:currentColor;flex:none}
 #base tr.rc-niveau.ko .rc-niveau-l{color:var(--ko)}
 #base tr.rc-niveau.att .rc-niveau-l{color:var(--warn)}
 #base #ba-tab tr.rc-niveau .rc-niveau-l .rc-n{font:600 var(--f-11)/1 var(--sans);letter-spacing:0;color:inherit}
@@ -239,7 +242,7 @@
 #base tr.rc-niveau.att .rc-niveau-l i{box-shadow:var(--n-point-att,none)}
 /* un genre : son compte à la couleur du niveau, son mot, ses repères à l'encre seconde, son geste */
 #base .rc-genre .rc-groupe-l{gap:10px}
-#base .rc-genre-n{min-width:2ch;font:600 var(--f-13)/1 var(--sans);font-variant-numeric:tabular-nums;text-align:right}
+#base .rc-genre-n{min-width:18px;font:600 var(--f-13)/1 var(--sans);font-variant-numeric:tabular-nums;text-align:right}
 #base tr.rc-genre.ko .rc-genre-n{color:var(--ko)}
 #base tr.rc-genre:not(.ko) .rc-genre-n{color:var(--warn)}
 #base .rc-genre .rc-groupe-n{font:400 var(--f-12)/1 var(--mono);color:var(--t-2)}
@@ -254,6 +257,14 @@
 #base #ba-tab .rc-pareil{vertical-align:-2px}
 /* les gestes d'une ligne : le principal au trait, net ; le reste en lien */
 #base #ba-tab .rc-gestes .btn.papier{font-weight:500}
+
+/* l'intensité : « pointe » et « supposé » disent la même sorte de chose (d'où vient le chiffre) — un seul style, un mot doux
+   (plus une pastille pour l'un, un mot pour l'autre) */
+#base #ba-tab .rc-int .rc-o{background:none;padding:0;margin-left:8px;font:500 var(--f-12)/1 var(--sans);color:var(--t-2)}
+/* « / 11,7 » et « / 6,9 » n'ont pas la même largeur : l'admis tient une place fixe, les barres partent toutes du même
+   point et ont toutes la même longueur (la charte : une colonne homogène) */
+#base #ba-tab .rc-int .rc-adm{display:inline-block;min-width:42px;margin-left:5px}
+#base #ba-tab .rc-int .rc-barre{margin-left:6px}
 
 /* ─── 13. LE CLAVIER SE VOIT ───
    Défaut : une valeur qui porte sa propre pastille (la borne, le type d'un câble) gardait son filet au focus — l'anneau

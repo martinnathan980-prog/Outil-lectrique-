@@ -77,7 +77,8 @@ function reposerAccueil(oui) { document.body.classList.toggle('au-repos', oui);
    de matière (le graphite de l'accueil, la table du plan) — au lieu d'un saut, l'ancienne se pose par-dessus la nouvelle et
    s'efface en 420 ms : un fondu enchaîné. Appelée AVANT que le corps change de classe (la table d'avant est encore là). */
 function fonduTable() { const t = $('table'), f = t && t.querySelector('.ta-fond'); if (!f || mouvementReduit()) return;
-  let v = t.querySelector('.ta-passe'); if (!v) { v = document.createElement('div'); v.className = 'ta-passe'; f.after(v); }
+  // (par-dessus toutes les couches : les nappes et les points de la table neuve ne percent pas l'ancienne pendant le fondu)
+  let v = t.querySelector('.ta-passe'); if (!v) { v = document.createElement('div'); v.className = 'ta-passe'; t.appendChild(v); }
   const s = getComputedStyle(f); v.getAnimations().forEach(a => a.cancel());
   v.style.backgroundColor = s.backgroundColor; v.style.backgroundImage = s.backgroundImage;
   v.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); }
