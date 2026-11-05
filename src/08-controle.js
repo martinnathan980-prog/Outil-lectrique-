@@ -277,7 +277,8 @@ function unifierPartNumber(nom, pn) { const xs = partNumbersDuRepere(nom).filter
    repères porte le compte ; l'index ouvert se refait. */
 function controleAJour() { const V = verite();
   // les hypothèses de la simulation comptent aussi : l'ambiante, le tableau, le retour changent ce que le contrôle relève
-  const cle = signature(V) + '|' + JSON.stringify([...app.contrat.designations]) + '|' + JSON.stringify([...(app.contrat.sexes || [])]) + '|' + JSON.stringify([...(app.contrat.charges || [])]) + '|' + JSON.stringify([...(app.contrat.raccords || [])]) + '|' + (app.normeNom || '') + '|' + (app.bibleNom || '') + '|' + JSON.stringify(app.simu || {});
+  // (v86) et ce que le fichier écrivait (`ecrit`) : « Écrire 103RL1 partout » ne change pas le repère lu, mais règle un point
+  const cle = signature(V) + '|' + V.map(l => l.ecrit ? JSON.stringify(l.ecrit) : '').join(',') + '|' + JSON.stringify([...app.contrat.designations]) + '|' + JSON.stringify([...(app.contrat.sexes || [])]) + '|' + JSON.stringify([...(app.contrat.charges || [])]) + '|' + JSON.stringify([...(app.contrat.raccords || [])]) + '|' + (app.normeNom || '') + '|' + (app.bibleNom || '') + '|' + JSON.stringify(app.simu || {});
   if (cle !== CONTROLE.cle) { CONTROLE.cle = cle; CONTROLE.items = V.length ? controleDuContrat() : []; }
   return CONTROLE.items; }
 function rendreControle() { if (typeof reprendreVoltaEnAttente === 'function') reprendreVoltaEnAttente();

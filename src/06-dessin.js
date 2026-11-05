@@ -60,14 +60,19 @@ const FS_BORNE = 7.5, FS_BORNE_CONN = 5.6, FS_BORNE_PETITE = 5.4;
    d'écran (08-interface, `S100`) et la plus petite écriture — le numéro d'une pastille, 5,4 — en fait 9,3. (v86) En
    deçà, rien ne grandit ni ne se tait : le dessin reste fixe, ses écritures à leur place et à leur taille. */
 const ENCRE_FOLIO = '#1e1f22', CABLE_FOLIO = '#2a2b2f', CUIVRE_FOLIO = '#9a5220';
-/* LES TEINTES DES ROUTES (v84) : des teintes de CATÉGORIE, de la famille froide — un bleu, une sarcelle, un indigo, une
-   ardoise, un cyan profond, un bleu nuit —, distinctes entre elles par la teinte ou par la valeur, lisibles sur le blanc
+/* LES TEINTES DES ROUTES (v84) : des teintes de CATÉGORIE, de la famille froide, distinctes entre elles, lisibles sur le blanc
    (4,5:1 et plus : un câble de 0,95 se suit) et à l'impression ; jamais le rouge, l'ambre ou le vert des états, jamais le
-   fuchsia, jamais le cuivre (l'accent : ce que VOLTA ajoute). Avant : un violet (#7d3c98, la PUISSANCE de l'exemple), un
-   magenta, un rouge, un vert, un orange — des états et du fuchsia. Les trois premières (bleu, sarcelle, indigo) ne se
-   confondent pas ; au-delà de six routes, elles reviennent. L'interface les donne aux routes du contrat, dans l'ordre
-   (08-interface `PALETTE_ROUTES`) ; une couleur choisie au contrat passe devant. */
-const TEINTES_ROUTES = Object.freeze(['#2c62b0', '#0e7a7c', '#5a4fb3', '#4a6278', '#1f7f9e', '#33437f']);
+   fuchsia, jamais le cuivre (l'accent : ce que VOLTA ajoute). L'interface les donne aux routes du contrat, dans l'ordre de
+   leurs noms (08-interface `PALETTE_ROUTES`) ; une couleur choisie au contrat passe devant ; au-delà de six routes, elles
+   reviennent.
+   (v86, l'audit F10 : « BLINDÉ (bleu) et SIGNAL (violet) se confondent au cadrage ».) Un trait fin vu de loin se mêle au
+   blanc : il ne garde que sa VALEUR, la teinte s'efface — le bleu #2c62b0 et l'indigo #5a4fb3, de même clarté, n'en faisaient
+   plus qu'un (écart 1,1 au cadrage, 0,2 pour un daltonien). Les trois premières se séparent donc par la valeur autant que par
+   la teinte : un BLEU franc (#265ac1, clarté OKLCH 0,50), une SARCELLE claire (#168382, 0,55), une ENCRE INDIGO (#3d3376, 0,37
+   — l'encre du dessin, teintée : la route la plus chargée de l'exemple se lit calme, les deux autres ressortent). Deux à
+   deux, en OKLab ×100 : 15 au moins en vision normale, 14 pour un daltonien (protanope, deutéranope), trois fois plus qu'avant
+   au cadrage. Puis une sarcelle profonde, une lavande, une ardoise, choisies au plus loin des trois premières. */
+const TEINTES_ROUTES = Object.freeze(['#265ac1', '#168382', '#3d3376', '#005655', '#736cb5', '#445f85']);
 function styleDessin() {
   return `<defs>
    <pattern id="gfine" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#efefec" stroke-width=".8"/></pattern>

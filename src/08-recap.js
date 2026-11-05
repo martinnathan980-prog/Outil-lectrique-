@@ -540,16 +540,21 @@ function verdictDuCalibre(d) { if (!d.calibre) return { n: '', mot: '' };
    barré ») ; la colonne se dit « Installation » (v74), la clé `retest` reste. */
 const calibreDuRetest = r => { const D = infoDisj(r.nom), o = origineDuCalibre(r.nom, D.d); return o.calRetest || D.d.pn || null; };
 const COLONNES_DISJ = [COL_REPERE,
-  /* (v86 — l'intégrateur : « le calibre écrit vient du fichier : plus de Manuel libre ») LE CALIBRE RETENU SE LIT : le plus
-     petit qui ne disjoncte pas, sa bulle dit pourquoi en ampères ; seule la proposition justifiée de VOLTA garde son geste,
-     « Passer en 7,5 A » (le même que la fiche : `deciderCalibre`), qui l'écrit dans l'Excel corrigé. Un calibre retenu à la
-     main avant la v86 garde « manuel » et ↺. */
+  /* (v86 — l'intégrateur, G8 : « le calibre écrit vient du fichier : plus de choix libre ») LE CALIBRE RETENU SE LIT, sa bulle
+     dit pourquoi en ampères ; celui de votre fichier se change dans votre fichier (un double-clic le dit). Un seul geste, celui
+     de la fiche : la carte de décision quand le calibre du fichier disjoncte (« Passer en 15 A », `deciderCalibre`), sinon la
+     proposition justifiée de VOLTA (« Retenir le 7,5 A », `propositionDuCalibre`) — elle part dans l'Excel corrigé, son message
+     propose « Défaire » ; un calibre retenu à la main par une version d'avant garde « manuel », et la proposition le rend. */
   { k: 'calibre', t: 'Calibre', cls: 'rc-c-mesure', html: r => { const D = infoDisj(r.nom), d = D.d, main = D.origine === 'main', propose = typeof propositionNonEcrite === 'function' && propositionNonEcrite(d);
-      const v = verdictDuCalibre(d), dec = propose && typeof decisionEnMots === 'function' ? (() => { try { return decisionEnMots(r.nom, d); } catch (_) { return null; } })() : null;
-      const bulle = [main ? 'Retenu à la main avant la v86 : ↺ rend le calcul de VOLTA' : propose ? 'Proposé par VOLTA : votre fichier garde le sien tant que vous ne l’acceptez pas' : 'Le plus petit qui ne disjoncte pas', v.bulle || ''].filter(Boolean).join('\n');
-      return `<span class="rc-mesure"${d.calibre ? ` data-bulle="${escA(bulle)}"` : ''}>${chiffre(`<b class="rc-n rc-fort">${d.calibre ? fmt(d.calibre, 2) : ''}</b>`, d.calibre ? 'A' : '')}`
-        + `${main ? orig('main', 'Retenu à la main avant la v86 : ↺ rend le calcul de VOLTA') + rond('calibre', D.rendu) : propose ? '<i class="rc-o rc-propose" data-bulle="VOLTA le retient ; votre fichier garde le sien tant que vous n’acceptez pas la proposition — elle part alors dans l’Excel corrigé">proposé</i>' : ''}`
-        + `${dec ? `<button type="button" class="btn cuivre dense rc-decider" data-decider="1" data-bulle="${escA('Écrit dans l’Excel corrigé : ' + amperes(d.calibre) + ', et les câbles qu’il demande — « Défaire » rend le tout')}">${esc('Passer en ' + amperes(d.calibre))}</button>` : ''}</span>`; },
+      const essai = f => { try { return f(); } catch (_) { return null; } }, v = verdictDuCalibre(d);
+      const dec = propose && typeof decisionEnMots === 'function' ? essai(() => decisionEnMots(r.nom, d)) : null, p = !dec && typeof propositionDuCalibre === 'function' ? essai(() => propositionDuCalibre(r.nom, d)) : null;
+      const deFichier = d.pn > 0 && d.calibre > 0 && Math.abs(d.pn - d.calibre) < 1e-9 && !main && !(typeof pnDeVolta === 'function' && pnDeVolta(r.nom));
+      const tete = main ? 'Retenu à la main par une version d’avant' : propose ? 'Proposé par VOLTA : votre fichier garde le sien tant que vous ne l’acceptez pas' : deFichier ? 'Celui de votre fichier : il ne disjoncte pas, VOLTA le garde — à changer dans votre fichier' : 'Le plus petit qui ne disjoncte pas, écrit par VOLTA : il ira dans l’Excel corrigé';
+      const nf = p ? p.fils.length : 0, geste = dec ? `<button type="button" class="btn cuivre dense rc-decider" data-decider="1" data-bulle="${escA('Écrit dans l’Excel corrigé : ' + amperes(d.calibre) + ', et les câbles qu’il demande — « Défaire » rend le tout')}">${esc('Passer en ' + amperes(d.calibre))}</button>`
+        : p ? `<button type="button" class="btn cuivre dense rc-decider" data-proposer="1" data-bulle="${escA((p.main ? (p.fichier ? 'Reprend le calibre de votre fichier' : 'Rend le calibre au calcul de VOLTA') : 'Le plus petit qui ne disjoncte pas — il ira dans l’Excel corrigé' + (nf ? ', et ' + pluriel(nf, 'câble') + ' grossi' + (nf > 1 ? 's' : '') : '')) + (p.m && p.m.bulle ? '.\n' + p.m.bulle : '') + '\n« Défaire » le reprend.')}">${esc('Retenir le ' + amperes(p.cal) + (nf ? ' et grossir ' + (nf > 1 ? 'les ' + nf + ' câbles' : 'le câble') : ''))}</button>` : '';
+      const bulle = [tete, v.bulle || ''].filter(Boolean).join('\n');
+      return `<span class="rc-mesure">${chiffre(luFichier('calibre', d.calibre ? `<b class="rc-n rc-fort">${fmt(d.calibre, 2)}</b>` : '', { titre: d.calibre ? bulle : '' }), d.calibre ? 'A' : '')}`
+        + `${main ? orig('main', 'Retenu à la main par une version d’avant : la proposition de VOLTA le rend') + (p ? '' : rond('calibre', D.rendu)) : propose ? '<i class="rc-o rc-propose" data-bulle="VOLTA le retient ; votre fichier garde le sien tant que vous n’acceptez pas la proposition — elle part alors dans l’Excel corrigé">proposé</i>' : ''}${geste}</span>`; },
     tri: r => infoDisj(r.nom).d.calibre || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibre ? amperes(d.calibre) : ''; } },
   { k: 'retest', t: 'Votre fichier', cls: 'rc-c-mesure', html: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; if (!c) return rien; const autre = d.calibre && c !== d.calibre;
       return `<span class="rc-mesure rc-retest${autre ? ' autre' : ''}" data-bulle="${escA('Votre fichier porte ' + (pnDuRepere(r.nom) || 'son part number') + (autre ? ', un ' + amperes(c) + ' : VOLTA retient le ' + amperes(d.calibre) + ' (la fiche dit pourquoi, en ampères)' : ''))}">${autre ? chiffre(`<s class="rc-n">${fmt(c, 2)}</s>`, 'A') : chiffre(`<b class="rc-n">${fmt(c, 2)}</b>`, 'A')}</span>`; },
@@ -558,7 +563,8 @@ const COLONNES_DISJ = [COL_REPERE,
   { k: 'verdict', t: 'Verdict', cls: 'rc-c-etat', html: r => { const v = verdictDuCalibre(infoDisj(r.nom).d); return etatHtml(v.n, v.mot, v.bulle); }, tri: r => rangEtat(verdictDuCalibre(infoDisj(r.nom).d).n), texte: r => verdictDuCalibre(infoDisj(r.nom).d).mot },
   COL_PROBLEMES,
   { k: 'ideal', t: 'Meilleur', cls: 'rc-c-mesure', option: true, html: r => { const d = infoDisj(r.nom).d; if (!d.calibreIdeal) return rien; const pq = d.meilleur && d.meilleur.pourquoi;
-      return `<span class="rc-mesure"${pq ? ` data-bulle="${escA(majuscule(pq))}"` : ''}>${chiffre(`<i class="rc-etoile" aria-label="le meilleur">${ico('etoile')}</i><b class="rc-n">${fmt(d.calibreIdeal, 2)}</b>`, 'A')}${d.calibre !== d.calibreIdeal ? `<button type="button" class="rc-lien" data-retenir="${d.calibreIdeal}" data-bulle="${escA('Retenir le ' + amperes(d.calibreIdeal) + ' que VOLTA justifie : il part dans l’Excel corrigé — « Défaire » le rend')}">Retenir</button>` : ''}</span>`; },
+      return `<span class="rc-mesure"${pq ? ` data-bulle="${escA(majuscule(pq))}"` : ''}>${chiffre(`<i class="rc-etoile" aria-label="le meilleur">${ico('etoile')}</i><b class="rc-n">${fmt(d.calibreIdeal, 2)}</b>`, 'A')}</span>`; },
+    // (v86, G8 : plus de « Retenir » libre ici — la proposition de VOLTA, quand il y en a une, est dans la case Calibre)
     tri: r => infoDisj(r.nom).d.calibreIdeal || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibreIdeal ? amperes(d.calibreIdeal) : ''; } },
   { k: 'pn', t: 'Part number', option: true, html: r => luFichierT('pn:', infoDisj(r.nom).pn, { cls: 'rc-pn' }), tri: r => infoDisj(r.nom).pn, texte: r => infoDisj(r.nom).pn },
   { k: 'profil', t: 'Permanent', cls: 'rc-c-mesure', w: 72, option: true, large: 1, html: r => { const D = infoDisj(r.nom);
@@ -586,60 +592,14 @@ const DISJONCTEURS = { ...ONGLET_REPERES, colonnes: COLONNES_DISJ, lignes: disjo
     if (f === 'perm') { const x = v ? nombreLu(v) : null; if (v && x == null) { dire('Écrivez un courant en ampères (3,5).', true); return false; } return ecrireCharge(nom, c => { c.perm = { ...(c.perm || {}), i: x }; }, 'profil de charge de ' + nom); }
     return false; },
   rendre: (r, f) => { if (f !== 'calibre') return false; rendreCalibre(r.nom); return true; } };
-/* ---- LE CHOIX DU CALIBRE : la liste qui tombe de la case (v73) ---------------------------------------------------------
-   Le lecteur : « sur un disjoncteur, je ne peux choisir que les calibres du dessus ; je dois TOUT pouvoir sélectionner ».
-   La case Calibre ouvre TOUTE la gamme — le même composant que le cadran et « À la main » de la fiche (`choixDuCalibre`,
-   08-disjoncteurs : un calibre, sa clé et son mot — passe, juste, déclenche —, sa raison sur une ligne, le retenu,
-   l'automatique, celui du retest, ceux hors des calibres préférés) — dans le verre des menus : la marque et le mot dans la
-   couleur de leur état, la raison dessous ; TOUS se choisissent (un calibre qui déclenche se retient, rouge partout, Ctrl+Z
-   le rend) ; « Tout le catalogue MS3320 (13) » ajoute ceux que les Hypothèses écartent ; « Rendre l'automatique » quand
-   le calibre a été choisi à la main. ↑ ↓ parcourent, Entrée retient, Échap rend le clavier à la case. */
-const GAMME = { el: null, nom: '', cle: null, tout: {} };
-// sans le composant de la fiche, la même liste, lue dans la gamme jugée du moteur
-function calibresDuChoix(nom, tout) { if (typeof choixDuCalibre === 'function') { try { return choixDuCalibre(nom, tout); } catch (_) { } }
-  const d = disjonctionDe(nom); if (d.sansCourbe) return [];
-  return (d.gamme || []).slice().sort((a, b) => a.calibre - b.calibre).map(g => { const v = verdictTrois(g) || {}, cle = Object.keys(MOTS_TROIS).find(k => MOTS_TROIS[k].mot === v.mot) || '';
-    let pq = null; try { pq = typeof pourquoiDuCalibre === 'function' ? pourquoiDuCalibre(app.norme, d, g.calibre) : null; } catch (_) { }
-    return { calibre: g.calibre, cle, mot: v.mot || '', etat: v.etat || '', raison: pq ? pq.phrase.replace(/^[^—]*—\s*[^:]*:?\s*/, '') : '', retenu: g.calibre === d.calibre, auto: g.calibre === d.passe, retest: g.calibre === d.pn, hors: false, bulle: pq ? pq.phrase : '' }; }); }
-const MARQUE_GAMME = { passe: '<path d="m5 12.5 4.5 4.5L19 7.5"/>', juste: '<path d="M4.5 13.5c2.2-3.2 4.3-3.2 6.5 0s4.3 3.2 6.5 0"/>', declenche: '<path d="M6 6l12 12M18 6 6 18"/>' };
-const marqueGamme = k => MARQUE_GAMME[k] ? `<svg class="ico rc-g-marque" viewBox="0 0 24 24" aria-hidden="true">${MARQUE_GAMME[k]}</svg>` : '<i class="rc-g-marque"></i>';
-function gammeHtml(nom) { const tout = !!GAMME.tout[nom], xs = calibresDuChoix(nom, tout), D = infoDisj(nom), d = D.d, F = d.famille, fam = (F && (F.famille || F.nom)) || '';
-  const nPref = (d.catalogue || d.gamme || []).length, nTout = typeof catalogueDeLaFamille === 'function' && F ? catalogueDeLaFamille(F).length : nPref;
-  const ligne = x => `<button type="button" role="option" class="rc-g-l ${x.cle || 'inconnu'}${x.hors ? ' hors' : ''}" data-cal="${x.calibre}" aria-selected="${!!x.retenu}" tabindex="-1"`
-    + ` aria-label="${escA(amperes(x.calibre) + (x.mot ? ', ' + x.mot : '') + (x.retenu ? ', retenu' : '') + (x.auto ? ', l’automatique' : '') + (x.retest ? ', celui de l’installation' : ''))}"${x.bulle ? ` aria-description="${escA(x.bulle)}"` : ''}>`
-    + `<span class="rc-g-h">${marqueGamme(x.cle)}<b>${esc(nombre(x.calibre))}<small>A</small></b><em>${esc(x.mot || 'pas jugé')}</em>`
-    + `<span class="rc-g-tags">${x.auto ? `<i class="rc-g-tag auto">${ico('etoile')}${x.propose || (x.retenu && typeof propositionNonEcrite === 'function' && propositionNonEcrite(d)) ? 'proposé' : 'automatique'}</i>` : ''}${x.retest && !x.retenu ? '<i class="rc-g-tag">installation</i>' : ''}${x.hors ? '<i class="rc-g-tag hors">hors préférés</i>' : ''}</span></span>`
-    + (x.raison ? `<span class="rc-g-r">${esc(majuscule(x.raison))}</span>` : '') + '</button>';
-  return `<div class="rc-g-tete"><b>${esc(nom)}</b><span>${esc(fam ? 'Gamme ' + fam : 'La gamme')}${xs.length ? ' · ' + pluriel(xs.length, 'calibre') : ''}</span></div>`
-    + `<div class="rc-g-liste" role="listbox" aria-label="${escA('Le calibre de ' + nom)}">${xs.map(ligne).join('')}</div>`
-    + `<div class="rc-g-pied">${nTout > nPref ? `<button type="button" class="rc-g-cat" data-g-tout="${tout ? 0 : 1}">${tout ? `Seulement vos calibres préférés (${nPref})` : `Tout le catalogue ${esc(fam)} (${nTout})`}</button>` : ''}`
-    + `${D.origine === 'main' ? `<button type="button" class="rc-g-cat" data-g-rendre="1">Rendre ${esc(D.rendu)}</button>` : ''}</div>`; }
-function ouvrirGamme(cellule, nom) { fermerGamme(); const tr = cellule.closest('tr[data-k]');
-  const el = document.createElement('div'); el.id = 'rc-gamme'; el.className = 'rc-gamme menu-verre entre-v'; el.innerHTML = gammeHtml(nom); document.body.appendChild(el);
-  GAMME.el = el; GAMME.nom = nom; GAMME.cle = tr ? { k: tr.dataset.k, f: 'calibre' } : null; cellule.setAttribute('aria-expanded', 'true');
-  placerGamme(cellule); lierGamme(el, nom);
-  const b = el.querySelector('.rc-g-l[aria-selected="true"]') || el.querySelector('.rc-g-l'); if (b) { b.tabIndex = 0; b.focus({ preventScroll: true }); b.scrollIntoView({ block: 'nearest' }); } }
-function placerGamme(cellule) { const el = GAMME.el; if (!el) return; const r = cellule.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight, W = innerWidth, H = innerHeight;
-  const bas = r.bottom + 6 + h <= H - 8, y = bas ? r.bottom + 6 : Math.max(8, r.top - 6 - h);
-  el.style.left = Math.max(8, Math.min(r.left - 14, W - w - 8)) + 'px'; el.style.top = y + 'px'; el.style.setProperty('--entre-y', bas ? '-4px' : '4px'); }
-function fermerGamme(rendre) { const el = GAMME.el; if (!el) return; GAMME.el = null; el.remove(); document.querySelectorAll('#ba-tbody [aria-expanded="true"][data-f="calibre"]').forEach(c => c.removeAttribute('aria-expanded'));
-  if (rendre && GAMME.cle) { const c = elementDe(GAMME.cle); if (c) { try { c.focus({ preventScroll: true }); } catch (_) { c.focus(); } } } }
-function retenirDeLaGamme(nom, cal) { const x = calibresDuChoix(nom, !!GAMME.tout[nom]).find(y => y.calibre === cal), cle = GAMME.cle; fermerGamme();
-  const rendre = () => { const c = cle && elementDe(cle); if (c) { try { c.focus({ preventScroll: true }); } catch (_) { c.focus(); } } };
-  if (!x || x.retenu) { rendre(); return; }
-  retenirCalibre(nom, cal); requestAnimationFrame(rendre); }
-function lierGamme(el, nom) { const lignes = () => [...el.querySelectorAll('.rc-g-l, .rc-g-cat')];
-  el.addEventListener('click', e => { const l = e.target.closest('.rc-g-l'); if (l) { retenirDeLaGamme(nom, +l.dataset.cal); return; }
-    const t = e.target.closest('[data-g-tout]'); if (t) { GAMME.tout[nom] = t.dataset.gTout === '1'; const c = GAMME.cle && elementDe(GAMME.cle); if (c) { ouvrirGamme(c, nom); const n = GAMME.el && GAMME.el.querySelector('[data-g-tout]'); if (n) n.focus(); } return; }
-    if (e.target.closest('[data-g-rendre]')) { fermerGamme(); rendreCalibre(nom); requestAnimationFrame(() => { const c = GAMME.cle && elementDe(GAMME.cle); if (c) c.focus({ preventScroll: true }); }); } });
-  el.addEventListener('keydown', e => { const xs = lignes(), i = xs.indexOf(document.activeElement);
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermerGamme(true); return; }
-    if (e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); fermerGamme(true); return; }
-    const pas = { ArrowDown: 1, ArrowUp: -1, Home: -Infinity, End: Infinity }[e.key]; if (pas == null || !xs.length) return; e.preventDefault(); e.stopPropagation();
-    const j = pas === -Infinity ? 0 : pas === Infinity ? xs.length - 1 : Math.max(0, Math.min(xs.length - 1, (i < 0 ? 0 : i) + pas)); xs.forEach(x => { x.tabIndex = -1; }); xs[j].tabIndex = 0; xs[j].focus(); xs[j].scrollIntoView({ block: 'nearest' }); }); }
-// un appui ailleurs, la table qui défile, la fenêtre qui change : la liste se replie
-document.addEventListener('pointerdown', e => { if (GAMME.el && !GAMME.el.contains(e.target)) { GAMME.ferme = Date.now(); fermerGamme(); } }, true);
-window.addEventListener('resize', () => fermerGamme());
+/* (v86, l'intégrateur, G8 : « le calibre écrit vient du fichier ») LE CHOIX LIBRE D'UN CALIBRE EST PARTI : la case ne déroule
+   plus toute la gamme. Le seul geste qui écrit un calibre est LA PROPOSITION JUSTIFIÉE DE VOLTA, la même que la fiche
+   (08-disjoncteurs, `propositionDuCalibre`) : « Retenir le 7,5 A » (le plus petit qui ne disjoncte pas, sous `parVolta` : il
+   part dans l'Excel corrigé), ou, pour un calibre retenu à la main par une version d'avant, son retour au calcul de VOLTA ; le
+   message propose « Défaire ». Quand la carte de décision existe (le calibre du fichier disjoncte), son geste « Passer en … ». */
+function accepterLeCalibre(nom) { const d = disjonctionDe(nom), p = typeof propositionDuCalibre === 'function' ? propositionDuCalibre(nom, d) : null; if (!p) return false;
+  if (p.main) { rendreCalibre(nom); const d2 = disjonctionDe(nom); dire(nom + ' : ' + (d2.calibre ? amperes(d2.calibre) + ', ' : '') + (p.fichier ? 'celui de votre fichier.' : 'le calcul de VOLTA.'), false, typeof defaire === 'function' ? { geste: 'Défaire', faire: () => defaire() } : undefined); return true; }
+  return (typeof parVolta === 'function' ? parVolta : f => f())(() => deciderCalibre(nom, p.cal)); }
 function ecrireCharge(nom, f, quoi) { const avant = chargeDe(nom), c = JSON.parse(JSON.stringify(avant || {})); f(c);
   if (JSON.stringify(c) === JSON.stringify(avant || {})) return false; histPush(quoi); if (!app.contrat.charges) app.contrat.charges = new Map(); app.contrat.charges.set(nom, c); apresEdition(); return true; }
 
@@ -1154,7 +1114,7 @@ function colonnesUtiles(C, rs) { const xs = rs.filter(r => !r.nouveau), tri = ap
   const auto = c => c.option && c.large && !(c.k in choix);
   // (la colonne qui trie reste : son en-tête est le seul geste qui défait le tri)
   return C.filter(c => { if (!c.vide || (tri && tri.k === c.k)) return true; try { if (auto(c)) return xs.filter(r => !c.vide(r)).length * 2 >= xs.length; return !xs.every(c.vide); } catch (_) { return true; } }); }
-function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.jeton; if (GAMME.el) fermerGamme();
+function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.jeton;
   $('ba-tab').dataset.onglet = b.onglet;
   // (v84) un autre onglet : ses lignes paraissent d'un fondu court (une fois — pas à chaque correction)
   if (RECAP.ongletVu !== b.onglet) { const t = $('ba-tab'), premier = RECAP.ongletVu == null; RECAP.ongletVu = b.onglet;
@@ -1328,7 +1288,6 @@ function editer(el) { const b = app.base, O = onglet(), c = caseDe(el); if (!c |
   if (!O.editeur) return false;
   const E = O.editeur(r, c.f); if (!E) return false;
   if (E.action) { E.action(); return true; }
-  if (E.gamme) { ouvrirGamme(el, r.nom); return true; }
   if (typeof cacherBulle === 'function') cacherBulle();
   if (r.l) { app.actif = r.l; if (!(app.cible && app.cible.type === 'bloc')) app.cible = { type: 'fil', l: r.l }; rallumer(); }
   let inp;
@@ -1414,7 +1373,7 @@ function ouvrirBase(taille) { const b = app.base, t = taille === 'page' ? 'page'
   basculerModeCarte();   // la fiche ouverte se range en volet : le tableau s'arrête à côté d'elle (08-carte)
   rendreBase(true); memoriserBase(); laisserLePlan(etait); }
 function fermerBase() { const b = app.base; if (!b.ouvert) return; if (b.edition) finirEdition('annule', null);
-  b.ouvert = false; b.neuves = []; b.neufs = []; b.nouveau = false; b.toutes = false; fermerMenuColonnes(); fermerGamme(); ['ba-csv-menu', 'ba-filtrer'].forEach(id => { const m = $(id); if (m) m.open = false; }); if (typeof cacherBulle === 'function') cacherBulle();
+  b.ouvert = false; b.neuves = []; b.neufs = []; b.nouveau = false; b.toutes = false; fermerMenuColonnes(); ['ba-csv-menu', 'ba-filtrer'].forEach(id => { const m = $(id); if (m) m.open = false; }); if (typeof cacherBulle === 'function') cacherBulle();
   const el = $('base'); el.hidden = true; el.classList.remove('page'); document.body.classList.remove('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'false');
   memoriserBase(); rendreLePlan(); basculerModeCarte(); }   // la fiche redevient une carte, près de son bloc
 /* B : ouvre en moitié, ou ferme ; Maj+B : passe en page, et de la page revient en moitié. */
@@ -1510,7 +1469,7 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
   col.insertAdjacentHTML('afterbegin', '<svg class="ico rc-col-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9.5 5v14M14.5 5v14"/></svg>');
   t.addEventListener('animationend', e => { if (e.target.closest && e.target.closest('tbody') === corps) t.classList.remove('rc-entre'); });
   // la table virtuelle se repeint en défilant (une image au plus)
-  let raf = 0; $('ba-corps').addEventListener('scroll', () => { if (GAMME.el) fermerGamme(); if (RECAP.virtuel && !raf) raf = requestAnimationFrame(() => { raf = 0; peindreFenetre(); }); }, { passive: true });
+  let raf = 0; $('ba-corps').addEventListener('scroll', () => { if (RECAP.virtuel && !raf) raf = requestAnimationFrame(() => { raf = 0; peindreFenetre(); }); }, { passive: true });
   $('ba-ajouter').onclick = () => { const O = onglet(); if (O.ajouter) O.ajouter(); };
   // le pourquoi d'un état, d'une norme, d'une origine : la bulle de la fiche, au survol (08-fiche)
   if (typeof lierBulles === 'function') lierBulles($('base'));
@@ -1564,7 +1523,7 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
     const au = e.target.closest('button[data-auto]'); if (au) { if (O.rendre) O.rendre(r, au.dataset.auto); return; }
     if (e.target.closest('[data-aller]')) { if (O.aller) O.aller(r); return; }
     if (e.target.closest('[data-voir-fils]')) { if (O.voirFils) O.voirFils(r); return; }
-    const re = e.target.closest('[data-retenir]'); if (re) { retenirCalibre(r.nom, +re.dataset.retenir); return; }
+    if (e.target.closest('[data-proposer]')) { accepterLeCalibre(r.nom); return; }
     // (v86) les gestes de VOLTA, les mêmes que la fiche : donner son repère à une barrette ajoutée, accepter le calibre proposé
     if (e.target.closest('[data-poser]')) { if (r.plan && r.plan !== app.plan && plans().includes(r.plan)) allerAuPlan(r.plan); if (typeof poserLesBarrettes === 'function') poserLesBarrettes([r.nom]); return; }
     if (e.target.closest('[data-decider]')) { if (typeof deciderCalibre === 'function') (typeof parVolta === 'function' ? parVolta : f => f())(() => deciderCalibre(r.nom)); return; }
@@ -1573,7 +1532,7 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
        la ligne qu'on a choisie, un clic sur une valeur l'écrit, comme dans la fiche ; ailleurs, le premier clic choisit la
        ligne et pose le clavier sur la valeur — une touche, Entrée ou un second clic l'écrivent. Le double-clic reste. */
     const v = e.target.closest('.rc-v[data-f]'); if (e.detail > 1) return;   // le second appui d'un double-clic : l'appui l'a déjà traité (plus bas)
-    if (v && !v.classList.contains('rc-calc') && !v.classList.contains('rc-lu') && O.choisie(r) && !(v.dataset.f === 'calibre' && Date.now() - (GAMME.ferme || 0) < 350)) { editer(v); return; }
+    if (v && !v.classList.contains('rc-calc') && !v.classList.contains('rc-lu') && O.choisie(r)) { editer(v); return; }
     if (O.choisir) O.choisir(r);
     if (v) { const c = caseDe(v); requestAnimationFrame(() => { const n = elementDe(c); if (n && document.activeElement !== n && !b.edition) { try { n.focus({ preventScroll: true }); } catch (_) { n.focus(); } } }); } });
   /* LE DOUBLE APPUI se reconnaît ici, pas au « dblclick » : le premier clic choisit la ligne, ouvre sa fiche à droite (le
@@ -1585,7 +1544,7 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
     if (p && e.detail === 2 && Math.abs(e.clientX - p.x) < 8 && Math.abs(e.clientY - p.y) < 8) { premier = null; const v = elementDe(p.c);
       if (v && !v.classList.contains('edite') && !b.edition) { e.preventDefault(); editer(v); } return; }
     const c = caseDe(e.target); premier = c && e.detail <= 1 ? { c, x: e.clientX, y: e.clientY } : null; });
-  corps.addEventListener('dblclick', e => { const v = e.target.closest('[data-f]'); if (v && !v.classList.contains('edite') && !b.edition && !GAMME.el) { e.preventDefault(); editer(v); } });
+  corps.addEventListener('dblclick', e => { const v = e.target.closest('[data-f]'); if (v && !v.classList.contains('edite') && !b.edition) { e.preventDefault(); editer(v); } });
   // survoler une ligne allume ce qu'elle désigne sur le plan (son câble, son repère, les câbles d'un type) — une fois par
   // ligne entrée, pas à chaque case traversée ; la quitter rend ce qui était choisi
   corps.addEventListener('mouseover', e => { if (b.edition) return; const tr = e.target.closest('tr[data-k]'); if (tr === RECAP.survolee) return; RECAP.survolee = tr;

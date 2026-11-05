@@ -50,7 +50,8 @@ const FICHIER = P.fichierDemande();
   const ensuite = await page.waitForFunction(() => { const p = etatPlacement(), a = atelier.etatAffinage(); return !p.encours && !p.attentes.length && a.encours ? { prets: p.prets, affine: a.encours } : null; }, null, { timeout: 600000 }).then(h => h.jsonValue(), () => null);
   ok(!!ensuite, 'les folios placés, l’affinage part', JSON.stringify(ensuite));
   const mot = await page.evaluate(() => $('af-txt').textContent);
-  ok(/s’affine/.test(mot) && !/affinage|moteur/.test(mot), 'la bande le dit en mots : « Le dessin s’affine… »', mot);
+  // (v86, l'audit G3 : « 0 / 48 · 5 en attente », 48 de quoi ?) des mots, sans compte de tours
+  ok(/^VOLTA peaufine encore (\d+ folios|ce folio|un folio)$/.test(mot) && !/affinage|moteur|\/|attente/.test(mot), 'la bande le dit en mots : « VOLTA peaufine encore 5 folios »', mot);
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

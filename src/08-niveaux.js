@@ -219,12 +219,18 @@ function cableDuPoint(p, o) { if (p.cable) return p.cable;
    « – » : votre fichier ne dit pas le sens. Un câble qui ne touche pas cet objet (au-delà d'une barrette) garde sa phrase. */
 function amontDuCable(l) { try { const a = typeof carteDesAlimentations === 'function' ? carteDesAlimentations().get(l) : null, s = a && a.chemin && a.chemin.segments.find(y => y.fil === l);
   return !s ? '' : a.amont ? s.vers[0] : s.de[0]; } catch (_) { return ''; } }
-function quiVuDIci(q, p, o) { const m = /^(\S+) vers (\S+?)(?::(\S+))?( \(par [^)]+\))?$/.exec(q), nom = o.tete && o.tete.nom, type = m ? m[1] : '';
+// `ligne` : le point parle de toute la ligne (une chute en ligne) — au-delà d'un passage, sa phrase (« vers 104LP1:1 (par
+// 103RL1) ») dit le chemin mieux que le seul dernier câble
+function quiVuDIci(q, p, o, ligne) { const m = /^(\S+) vers (\S+?)(?::(\S+))?( \(par [^)]+\))?$/.exec(q), nom = o.tete && o.tete.nom, type = m ? m[1] : '';
   if (!m || !nom || o.type === 'fil') return { titre: q, type };
-  const l = cableDuPoint(p, o); if (!l || l.de === l.vers || (l.de !== nom && l.vers !== nom)) return { titre: q, type };
-  const ici = l.de === nom, b = String((ici ? l.borneDe : l.borneVers) || ''), r = ici ? l.vers : l.de, rb = String((ici ? l.borneVers : l.borneDe) || '');
-  const amont = amontDuCable(l), sens = !amont ? '–' : amont === nom ? '→' : '←';
-  return { titre: `${b ? b + ' ' : ''}${sens} ${r}${rb ? ':' + rb : ''} · ${type || 'câble'}`, type, autre: r }; }
+  const l = cableDuPoint(p, o); if (!l || l.de === l.vers) return { titre: q, type };
+  const amont = amontDuCable(l), bout = (r, b) => r + (b != null && b !== '' ? ':' + b : '');
+  // (un câble au-delà d'une barrette, d'un relais : ses deux bouts, comme le récapitulatif — « 103RL1:A2 → 104LP1:1 · DR22 »)
+  if (l.de !== nom && l.vers !== nom) { if (ligne) return { titre: q, type }; const [a, z] = amont === l.vers ? [bout(l.vers, l.borneVers), bout(l.de, l.borneDe)] : [bout(l.de, l.borneDe), bout(l.vers, l.borneVers)];
+    return { titre: `${a} ${amont ? '→' : '–'} ${z} · ${type || 'câble'}`, type }; }
+  const ici = l.de === nom, b = String((ici ? l.borneDe : l.borneVers) || ''), r = ici ? l.vers : l.de, rb = ici ? l.borneVers : l.borneDe;
+  const sens = !amont ? '–' : amont === nom ? '→' : '←';
+  return { titre: `${b ? b + ' ' : ''}${sens} ${bout(r, rb)} · ${type || 'câble'}`, type, autre: r }; }
 /* (v86, l'audit G5 : « (11,5 A × 0,6 : faisceau de 8 câbles à 60 %) ne s'explique nulle part en clair ») — CE QUI CLOCHE, EN
    MOTS. La phrase du contrôle (« démarrage et transition 9,31 A pendant 2,1 min > 6,9 A admis en continu (11,5 A × 0,6 :
    faisceau de 8 câbles à 60 %) ») devient une phrase : ce qu'il porte, pendant combien de temps, ce qu'il admet — la carte
@@ -309,7 +315,7 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
     // QUI d'abord, VU D'ICI (« A1 ← 102CB1:2 · DR20 »), puis ce qui cloche, EN MOTS : la carte dit l'essentiel en deux lignes au
     // plus, le grand dit tout (d'où vient l'admis, pourquoi VOLTA suppose un contact) ; la bulle de la carte dit ce que le grand dit
     const qui = /^(\S+ vers \S+(?: \(par [^)]+\))?) : (.+)$/.exec(titre);
-    if (qui) { const vu = quiVuDIci(qui[1], p, o), M = motsDuProbleme(qui[2], suite, vu.type), glose = k > 0 || M.sansGlose ? '' : gloseDuProbleme(p.texte);
+    if (qui) { const vu = quiVuDIci(qui[1], p, o, /^chute en ligne/i.test(qui[2])), M = motsDuProbleme(qui[2], suite, vu.type), glose = k > 0 || M.sansGlose ? '' : gloseDuProbleme(p.texte);
       // « — sous 102CB1 » : le disjoncteur, quand le titre ne le nomme pas déjà
       const sous = /^sous (\S+)$/.exec(suite), plus = M.mange || !suite ? '' : sous ? (vu.titre.includes(sous[1]) ? '' : ` Son disjoncteur : ${sous[1]}.`) : ' ' + majuscule(suite) + '.';
       titre = vu.titre; tout = M.long + plus + (glose ? ' ' + glose : ''); detail = grand ? tout : M.court; }
