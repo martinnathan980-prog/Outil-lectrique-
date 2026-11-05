@@ -97,7 +97,10 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
    CARTES — chacune son titre, une phrase qui dit ce que ça change, puis le réglage. */
 const DESIGNATION_SAISIE = false;
 const slugReg = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-const regCarte = (titre, phrase, corps, o) => !corps ? '' : `<section class="nv-reg${o && o.cls ? ' ' + o.cls : ''}" data-reg="${escA(o && o.reg ? o.reg : slugReg(titre))}"><header class="nv-reg-t"><h4>${esc(titre)}</h4>${phrase ? `<p>${phrase}</p>` : ''}${o && o.droite ? `<span class="nv-reg-d">${o.droite}</span>` : ''}</header><div class="nv-reg-c">${corps}</div></section>`;
+// (v85) `o.paresseux` : une liste longue (les modules de la norme, les arrangements) ne se calcule qu'ouverte — fermée, la
+// section est là, vide, marquée ; l'ouvrir refait la fiche (`lierSommaire`)
+const regCarte = (titre, phrase, corps, o) => { o = o || {}; if (!corps && !o.paresseux) return '';
+  return `<section class="nv-reg${o.cls ? ' ' + o.cls : ''}" data-reg="${escA(o.reg || slugReg(titre))}"${!corps ? ' data-paresseux="1"' : ''}><header class="nv-reg-t"><h4>${esc(titre)}</h4>${phrase ? `<p>${phrase}</p>` : ''}${o.droite ? `<span class="nv-reg-d">${o.droite}</span>` : ''}</header><div class="nv-reg-c">${corps || ''}</div></section>`; };
 // (v79, le lecteur : « c'est pas à moi de mettre un nom : je change le fichier de base si je veux un nom ; tout au même
 // endroit ») : plus de saisie du nom dans la fiche — la carte reste (`regCarte`) pour d'autres réglages
 const designationFiche = o => { const t = o.tete || {}; if (!t.designation || !DESIGNATION_SAISIE) return ''; const des = app.contrat.designations.get(t.designation) || '';
@@ -109,14 +112,41 @@ const designationFiche = o => { const t = o.tete || {}; if (!t.designation || !D
    tête de l'onglet, une ligne par réglage — ce que c'est ; ce qui est retenu et d'où ça vient ; avant → après quand il a
    changé ; pourquoi, en une phrase ; le bouton qui mène à sa section, allumée. `xs` : [{ titre, valeur (html), source,
    avant (html), pourquoi (html), vers (sélecteur), geste, etat }]. */
+/* MODIFIER EN TROIS SORTES (v85, le lecteur : « ce qui vient de mon fichier, je ne veux plus le saisir ici — une seule
+   source, sinon je m'emmêle les pinceaux ; les choix de VOLTA, avec un Automatique / Manuel bien visible ; l'information,
+   ce que je ne dois pas modifier, se lit ») : trois cartes, chacune son titre, son signe et sa phrase.
+     · DANS VOTRE FICHIER — la valeur, d'où elle vient ; aucune saisie : elle se change dans le fichier. Seule une
+       PROPOSITION justifiée de VOLTA (« Passer en DR20 », « Tout régler ») se prend d'un clic : ce qu'elle change, ce
+       qu'elle coûte ; elle ira dans l'Excel corrigé, qui devient le fichier source ;
+     · CHOIX DE VOLTA — la valeur, pourquoi VOLTA l'a prise, et AUTOMATIQUE | MANUEL : Manuel ouvre les possibles sur
+       place (on en prend un, un mot le dit, « Défaire ») ; Automatique, d'un geste, rend le choix à VOLTA ;
+     · INFORMATION — ce qui se calcule et ne se règle pas : ça se lit, sans bouton.
+   `xs` : [{ sorte ('fichier' · 'choix' · 'info'), titre, valeur (html), source, motSource, avant (html), pourquoi (html),
+   etat ; choix : vers (la section des possibles), manuel, auto (la clé du retour : « arr:… », « sexe:… »), motAuto (ce que dit
+   le retour) ; fichier : proposition ({ phrase (html), cout, bouton (html) }) }] */
+const SORTES_REG = {
+  fichier: { titre: 'Dans votre fichier', phrase: 'VOLTA le lit tel quel. Pour le changer, changez votre fichier : tout reste au même endroit.', ico: '<path d="M7 3.5h6.5L18 8v12.5H7z"/><path d="M13.5 3.5V8H18M10 12.5h5M10 16h5"/>' },
+  choix: { titre: 'Choix de VOLTA', phrase: 'VOLTA choisit et dit pourquoi. En Manuel, vous prenez le vôtre parmi les possibles.', ico: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>' },
+  info: { titre: 'Information', phrase: 'Calculé par VOLTA : cela se lit, cela ne se règle pas.', ico: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.9v.1"/>' } };
+// la fiche montrée, pour la section ouverte : une autre fiche ne rouvre pas le réglage de la précédente
+const cleDuReglage = () => { const c = typeof app !== 'undefined' && app.cible; return !c ? '' : c.type === 'fil' ? 'fil|' + (typeof cleFil === 'function' ? cleFil(c.l) : '') : 'bloc|' + (c.nom || ''); };
+const reglageOuvert = sel => !!sel && NIVEAU.sommOuvert === sel && NIVEAU.sommCle === cleDuReglage();
+const pastilleSource = (s, mot) => s ? `<span class="vu-src ${escA(s)}">${esc(mot || MOTS_SOURCES[s] || s)}</span>` : '';
+// AUTOMATIQUE | MANUEL : deux segments qui ne bougent pas, celui qui vaut est pressé ; Manuel ouvre les possibles sous la ligne
+function selecteurAM(x) { const man = !!x.manuel, quoi = String(x.titre || '').toLowerCase();
+  return `<span class="nv-am${man ? ' manuel' : ''}" role="group" aria-label="${escA('Qui choisit ' + quoi)}">`
+    + `<button type="button" class="nv-am-b" data-am="auto"${x.auto ? ` data-am-cle="${escA(x.auto)}"` : ''}${x.motAuto ? ` data-am-mot="${escA(x.motAuto)}"` : ''} aria-pressed="${!man}" data-bulle="${escA(man ? 'Rendre le choix à VOLTA' : 'VOLTA choisit — c’est le cas')}">Automatique</button>`
+    + `<button type="button" class="nv-am-b nv-somm-b" data-am="manuel" data-somm="${escA(x.vers)}" aria-pressed="${man}" aria-expanded="false" data-bulle="${escA(man ? 'Retenu à la main — un clic montre les possibles' : 'Voir les possibles et en prendre un')}">Manuel</button></span>`; }
+// une proposition de VOLTA sur une valeur du fichier : ce qu'elle change, ce qu'elle coûte, son geste
+const propositionReg = p => !p || !p.bouton ? '' : `<li class="nv-prop"><span class="nv-prop-k">Proposition de VOLTA</span><span class="nv-prop-t"><span>${p.phrase}${p.cout ? ` <span class="fi-cout">${esc(p.cout)}</span>` : ''}</span><small>Elle ira dans l’Excel corrigé, votre nouveau fichier.</small></span><span class="nv-prop-b">${p.bouton}</span></li>`;
+const ligneReg = x => { const s = x.sorte || 'info';
+  return `<li class="nv-somm-i ${s}${x.etat ? ' ' + x.etat : ''}"${x.vers ? ` data-somm-l="${escA(x.vers)}"` : ''}><span class="nv-somm-k">${esc(x.titre)}</span>`
+    + `<span class="nv-somm-v"><b>${x.valeur}${x.avant ? `<small class="nv-somm-av">au lieu de ${x.avant}</small>` : ''}</b>${pastilleSource(x.source, x.motSource)}</span>`
+    + `<span class="nv-somm-p">${x.pourquoi || ''}</span>${s === 'choix' && x.vers ? selecteurAM(x) : ''}</li>` + propositionReg(x.proposition); };
 function sommaireReglages(xs) { const ys = (xs || []).filter(Boolean); if (!ys.length) return '';
-  // (v84) le titre dit ce qu'on y fait ; chaque bouton ouvre son réglage sur place — ça se voit, inutile de l'écrire
-  return `<section class="nv-somm"><h4 class="vu-titre">Ce que vous pouvez changer <span>${esc(ys.length > 1 ? ys.length + ' réglages' : '1 réglage')}</span></h4><ol class="nv-somm-l">`
-    + ys.map(x => `<li class="nv-somm-i${x.etat ? ' ' + x.etat : ''}"><span class="nv-somm-k">${esc(x.titre)}</span>`
-      + `<span class="nv-somm-v">${x.avant ? `<s>${x.avant}</s><i class="nv-somm-f" aria-hidden="true">→</i>` : ''}<b>${x.valeur}${x.avant ? `<small class="nv-somm-av">au lieu de ${x.avant}</small>` : ''}</b>${x.source ? `<span class="vu-src ${escA(x.source)}">${esc(MOTS_SOURCES[x.source] || x.source)}</span>` : ''}</span>`
-      + `<span class="nv-somm-p">${x.pourquoi || ''}</span>`
-      + (x.vers ? `<button type="button" class="btn papier dense nv-somm-b" data-somm="${escA(x.vers)}" data-mot="${escA(x.geste || 'Changer')}" aria-expanded="false">${esc(x.geste || 'Changer')}${ico('bas')}</button>` : '<span></span>') + '</li>').join('')
-    + '</ol></section>'; }
+  return ['fichier', 'choix', 'info'].map(s => { const g = ys.filter(x => (x.sorte || 'info') === s), S = SORTES_REG[s]; if (!g.length) return '';
+    return `<section class="nv-somm nv-mod ${s}" aria-label="${escA(S.titre)}"><header class="nv-mod-t"><span class="nv-mod-i" aria-hidden="true"><svg viewBox="0 0 24 24">${S.ico}</svg></span><h4>${esc(S.titre)}</h4><p>${esc(S.phrase)}</p></header>`
+      + `<ol class="nv-somm-l">${g.map(ligneReg).join('')}</ol></section>`; }).join(''); }
 
 /* ---- À FAIRE : chaque point devient une tâche — ce qui cloche, puis (après « — ») ce que ça veut dire ; le geste qui
    répare au bout de la première ; un clic sur une tâche mène à l'onglet qui la démontre. Rien à reprendre : rien. ---- */
@@ -198,7 +228,7 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
   // alignée sous les autres) ; si aucune n'en porte, la valeur seule, centrée sous son titre
   const fini = v => v != null && isFinite(v), anI = xs.some(x => fini(x.r.charge.r)), anU = xs.some(x => fini(x.r.chute.u != null && x.r.chute.max ? x.r.chute.u / x.r.chute.max : null));
   const anneauOuPlace = (v, a) => !a ? '' : anneauVue(v, { r: 16, ep: 3.2, texte: true });
-  const lignes = xs.slice().sort(cmp).map(({ r, ct, L }) => { const ed = r.l && r.l.origine !== null && r.k && r.k[0] !== 'p' ? editionsDuCable(r) : null;
+  const lignes = xs.slice().sort(cmp).map(({ r, ct, L }) => {
     // (v78, le lecteur : « équipement et borne, mal présentés ; l'intensité, la chute : juste un rapport ») : une nomenclature —
     // le câble, où il va et sur quelle borne, la charge et la chute en anneaux (la part de l'admis), la longueur
     const type = `<span class="nv-cab-id">${r.puce || ''}<b class="id nv-cab-type">${esc(r.type || 'sans type')}</b></span>`;
@@ -206,7 +236,8 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
     const uH = `<span class="nv-mes${anU ? '' : ' seul'}">${anneauOuPlace(ru, anU)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
     // (v81) une longueur supposée s'écrit « ≈ 5 m » en gris, comme au récapitulatif — la cellule reste centrée sous son titre
-    const lgH = `<span class="nv-cab-lg${L == null ? ' supp' : ''}"${L == null ? ` data-bulle="${escA('Votre fichier ne donne pas sa longueur : VOLTA suppose ' + nombre(H.longueur) + ' m (Hypothèses)')}"` : ''}>${L == null ? '<i class="nv-env">≈</i>' : ''}${ed ? ed.lon : `<b>${L != null ? esc(nombre(arrondi(L, 2))) : esc(nombre(H.longueur))}</b>`}<small>m</small></span>`;
+    // (v85, le lecteur : « ce qui vient de mon fichier, plus aucune saisie ») : la longueur se lit, elle se change dans le fichier
+    const lgH = `<span class="nv-cab-lg${L == null ? ' supp' : ''}" data-bulle="${escA(L == null ? 'Votre fichier ne donne pas sa longueur : VOLTA suppose ' + nombre(H.longueur) + ' m (Hypothèses) — à écrire dans votre fichier' : 'Celle de votre fichier')}">${L == null ? '<i class="nv-env">≈</i>' : ''}<b>${L != null ? esc(nombre(arrondi(L, 2))) : esc(nombre(H.longueur))}</b><small>m</small></span>`;
     const ctH = ct && ct.st && ct.st.reference ? `<span class="id nv-cab-ct${ct.ko ? ' ko' : ''}" data-bulle="${escA(motSertir(ct.st) + (ct.rep ? ' — ' + ct.rep + (ct.borne ? ':' + ct.borne : '') : ''))}">${esc(ct.st.reference)}</span>` : '<span class="nv-muet">—</span>';
     return `<tr class="fi-ia nv-cab${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}" tabindex="0"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle + (r.pourquoi ? '\n' + r.pourquoi : ''))}"` : ''}>`
       + `<td class="nv-td-type">${type}</td>`
@@ -214,7 +245,7 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
       + `<td class="nv-td-i">${iH}</td><td class="nv-td-u">${uH}</td><td class="nv-td-lg">${lgH}</td>${avecCt ? `<td class="nv-td-ct">${ctH}</td>` : ''}</tr>`; }).join('');
   const tete2 = avecCt ? tete : tete.replace(/<th scope="col"[^>]*class="nv-th-ct"[\s\S]*?<\/th>/, '');
   // (v84) le titre et le compte ; qu'une ligne s'ouvre, son survol le montre (la ligne s'éclaire, une flèche paraît au bout)
-  return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap"><b>${esc(o.titre || 'Ses câbles')}</b><span>${esc(String(rows.length))}</span></caption><thead><tr>${tete2}</tr></thead><tbody>${lignes}</tbody></table></div>${datalistCables()}`; }
+  return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap"><b>${esc(o.titre || 'Ses câbles')}</b><span>${esc(String(rows.length))}</span></caption><thead><tr>${tete2}</tr></thead><tbody>${lignes}</tbody></table></div>`; }
 
 /* ---- COMPOSER : la carte, ou le grand ------------------------------------------------------------------------------- */
 /* o : { type (equipement · disjoncteur · barrette · prise · masse · fil), tete ({ nom, champ, aide, designation }), meta
@@ -282,16 +313,32 @@ function viserDansLaFiche(k) { const box = $('ba-equip'); if (!box || !k) return
 /* MODIFIER SE LIT SANS DÉFILER (v83, le lecteur : « plein de sections, il faut scroller ; fluide, simple, carré, propre ») :
    sous le sommaire, les sections se rangent ; le bouton d'une ligne déplie SA section juste sous elle (une seule à la
    fois), et la replie ; la section ouverte se garde quand la fiche se refait. */
-function lierSommaire(box) { const somm = box.querySelector('.nv-panneau[data-section="reglages"] .nv-somm, .nv-panneau .nv-somm'); if (!somm) return;
+function lierSommaire(box) { const somm = box.querySelector('.nv-panneau[data-section="reglages"] .nv-somm, .nv-panneau .nv-somm'); if (!somm) { NIVEAU.devoiler = null; return; }
   const pan = somm.closest('.nv-panneau'); pan.classList.add('avec-somm');
   const fermer = () => { pan.querySelectorAll('.nv-somm-x').forEach(x => { const sec = x.firstElementChild; if (sec) (x.dataset.retour ? pan.querySelector(x.dataset.retour) || pan : pan).appendChild(sec); x.remove(); });
-    pan.querySelectorAll('.nv-somm-b').forEach(b => { b.setAttribute('aria-expanded', 'false'); b.closest('.nv-somm-i').classList.remove('ouvert'); }); };
-  const ouvrir = (b, doux) => { const sel = b.dataset.somm, sec = pan.querySelector(sel); if (!sec) return; const li = b.closest('.nv-somm-i'), parent = sec.parentElement;
-    const x = document.createElement('li'); x.className = 'nv-somm-x'; if (parent && parent !== pan && parent.classList.contains('fi-panneau')) x.dataset.retour = '.fi-panneau'; li.after(x); x.appendChild(sec);
-    b.setAttribute('aria-expanded', 'true'); li.classList.add('ouvert'); NIVEAU.sommOuvert = sel;
+    pan.querySelectorAll('.nv-somm-i.ouvert').forEach(li => li.classList.remove('ouvert')); pan.querySelectorAll('.nv-somm-b').forEach(b => b.setAttribute('aria-expanded', 'false')); };
+  // la section `sel` dépliée sous sa ligne (le bouton Manuel, s'il y en a un, dit qu'elle est ouverte)
+  const deplier = (li, sec, b, doux) => { const parent = sec.parentElement, x = document.createElement('li'); x.className = 'nv-somm-x';
+    if (parent && parent !== pan && parent.classList.contains('fi-panneau')) x.dataset.retour = '.fi-panneau'; li.after(x); x.appendChild(sec);
+    if (b) b.setAttribute('aria-expanded', 'true'); li.classList.add('ouvert');
     if (!doux) { x.classList.add('naît'); try { li.scrollIntoView({ block: 'nearest', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { } } };
+  const ouvrir = (b, doux) => { const sel = b.dataset.somm, sec = pan.querySelector(sel); if (!sec) return;
+    NIVEAU.sommOuvert = sel; NIVEAU.sommCle = cleDuReglage();
+    // (v85) les possibles d'une liste longue ne se calculent qu'à l'ouverture : la fiche se refait, et la rouvre ici
+    if (sec.dataset.paresseux && !doux) { if (!rafraichirFicheEnPlace()) rendreFiche(); return; }
+    deplier(b.closest('.nv-somm-i'), sec, b, doux); };
   pan.querySelectorAll('.nv-somm-b').forEach(b => { b.onclick = e => { e.preventDefault(); e.stopPropagation(); const deja = b.getAttribute('aria-expanded') === 'true'; fermer(); if (deja) { NIVEAU.sommOuvert = ''; return; } ouvrir(b); }; });
-  const garde = NIVEAU.sommOuvert && [...pan.querySelectorAll('.nv-somm-b')].find(b => b.dataset.somm === NIVEAU.sommOuvert); if (garde) ouvrir(garde, true); }
+  // AUTOMATIQUE : déjà le cas, il replie les possibles ; sinon, d'un geste, le choix revient à VOLTA — le mot le dit, « Défaire »
+  pan.querySelectorAll('[data-am="auto"]').forEach(b => { b.onclick = e => { e.preventDefault(); e.stopPropagation(); NIVEAU.sommOuvert = '';
+    if (b.getAttribute('aria-pressed') === 'true') { fermer(); return; }
+    const cle = b.dataset.amCle, mot = b.dataset.amMot; if (!cle || typeof retourAutomatique !== 'function') return; FI.liste = '';
+    retourAutomatique({ dataset: { auto: cle } }, app.cible); if (mot) dire(mot, false, { geste: 'Défaire', faire: defaire }); }; });
+  // une ligne d'information qui a son détail (les contacts d'une barrette, où mène une lettre de sa face) : il se déplie
+  // sous elle quand un lien y mène (`aller`, plus bas)
+  NIVEAU.devoiler = el => { const sec = el && el.closest && el.closest('.nv-reg'); if (!sec || !pan.contains(sec) || sec.closest('.nv-somm-x')) return;
+    const li = [...pan.querySelectorAll('.nv-somm-i[data-somm-l]')].find(x => { try { return x.dataset.sommL && sec.matches(x.dataset.sommL); } catch (_) { return false; } }); if (!li) return;
+    fermer(); const b = li.querySelector('.nv-somm-b'); NIVEAU.sommOuvert = li.dataset.sommL; NIVEAU.sommCle = cleDuReglage(); deplier(li, sec, b, true); };
+  const garde = NIVEAU.sommOuvert && NIVEAU.sommCle === cleDuReglage() && [...pan.querySelectorAll('.nv-somm-b')].find(b => b.dataset.somm === NIVEAU.sommOuvert); if (garde) ouvrir(garde, true); }
 function lierNiveaux(box, c) { lierSommaire(box);
   box.querySelectorAll('[data-lpa]').forEach(b => b.onclick = e => { e.stopPropagation(); if (typeof exporterNomenclatureExcel === 'function') exporterNomenclatureExcel(); });
   // (v84) une note qui mène à son réglage (« Longueur supposée… L'écrire ») : l'onglet Modifier, le réglage ouvert sur
@@ -350,14 +397,20 @@ function lierNiveaux(box, c) { lierSommaire(box);
   if (!box.dataset.vaLie) { box.dataset.vaLie = '1';
     const aller = (li, e) => { const t = e.target.closest('details, summary, button, a, input'); if (t && t !== li && li.contains(t)) return; e.preventDefault(); e.stopPropagation();
       const p = li.dataset.vaOnglet ? activerOnglet(li.dataset.vaOnglet, false) : li.closest('.nv-panneau'), cible = p && li.dataset.vaVers ? p.querySelector(li.dataset.vaVers) : null;
-      if (!cible) return; try { cible.scrollIntoView({ block: 'center', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { cible.scrollIntoView(); }
+      if (!cible) return; if (typeof NIVEAU.devoiler === 'function') NIVEAU.devoiler(cible);
+      try { cible.scrollIntoView({ block: 'center', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { cible.scrollIntoView(); }
       cible.classList.remove('vu-allume'); void cible.offsetWidth; cible.classList.add('vu-allume'); setTimeout(() => cible.classList.remove('vu-allume'), 1600); };
     box.addEventListener('click', e => { const li = e.target.closest && e.target.closest('[data-va-onglet]'); if (li && box.contains(li)) aller(li, e); });
     box.addEventListener('keydown', e => { if (e.key !== 'Enter' && e.key !== ' ') return; const li = e.target.closest && e.target.closest('[data-va-onglet]'); if (li && li === e.target) aller(li, e); }); }
   // (v78) les touches du calibre : un clic retient ce calibre ; « Revenir au choix de VOLTA » rend l'automatique
   const refaire = () => { if (!$('inspecteur').hidden && app.cible && !rafraichirFicheEnPlace()) rendreFiche(); };
-  box.querySelectorAll('[data-nv-cal]').forEach(b => b.onclick = e => { e.stopPropagation(); if (c && c.nom && retenirCalibre(c.nom, +b.dataset.nvCal) !== false) refaire(); });
-  box.querySelectorAll('[data-nv-auto]').forEach(b => b.onclick = e => { e.stopPropagation(); rendreCalibre(b.dataset.nvAuto); refaire(); });
+  // (v85) AUTOMATIQUE | MANUEL du calibre : chaque geste se dit, avec « Défaire » ; Manuel montre les calibres à prendre
+  const direDefaire = () => { const t = $('toast'), m = t && t.firstChild && t.firstChild.nodeType === 3 ? t.firstChild.textContent : ''; if (m) dire(m, false, { geste: 'Défaire', faire: defaire }); };
+  box.querySelectorAll('[data-nv-cal]').forEach(b => b.onclick = e => { e.stopPropagation(); if (c && c.nom && retenirCalibre(c.nom, +b.dataset.nvCal) !== false) { refaire(); direDefaire(); } });
+  box.querySelectorAll('[data-nv-auto]').forEach(b => b.onclick = e => { e.stopPropagation(); if (b.getAttribute('aria-pressed') === 'true') return; rendreCalibre(b.dataset.nvAuto); refaire(); direDefaire(); });
+  box.querySelectorAll('[data-am-cal]').forEach(b => b.onclick = e => { e.stopPropagation(); const cs = box.querySelector('.vu-cals'); if (!cs) return;
+    cs.classList.remove('a-prendre'); void cs.offsetWidth; cs.classList.add('a-prendre'); const t = cs.querySelector('.vu-cal.oui:not(.on)') || cs.querySelector('.vu-cal'); if (t) try { t.focus({ preventScroll: true }); } catch (_) { }
+    if (b.getAttribute('aria-pressed') !== 'true') dire('Prenez un calibre : un clic le retient à la place de celui de VOLTA.'); });
   if (c && c.type !== 'ref') document.body.classList.toggle('insp-grand-ouvert', ficheEnGrand()); }
 
 /* ---- LA LISTE, LE PANNEAU : leur défilement se garde d'un rendu de la même fiche à l'autre -------------------------- */
