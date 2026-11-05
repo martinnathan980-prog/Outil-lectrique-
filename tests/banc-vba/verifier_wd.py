@@ -292,9 +292,9 @@ def verifier(dossier, P, schema):
     return s
 
 def essai():
-    """Les fichiers d'EssaiWD (robot-wd) : un par schéma trouvé, puis les essais « plus » de la 3.10 ; ceux de la 3.10
-    valides pour xmllint ; Essai-WD-3.10.xml sans WiresNumber ni Class ; le Type du bornier TB1 et de la masse GB1 des
-    essais « plus »."""
+    """Les fichiers d'EssaiWD (robot-wd) : un par schéma trouvé, puis la série d'essais T01 à T10 de la 3.10 ;
+    Essai-WD-3.10.xml valide pour xmllint, sans WiresNumber ni Class ; chaque essai T valide pour xmllint ; le Type de
+    l'appareil seul des essais T06 à T10 (masse GB1, bornier TB1, barrette BB1, épissure SP1, prise de coupure PB1)."""
     d = os.path.join(TRAVAIL, 'robot-wd')
     noms = sorted(n for n in os.listdir(d) if n.startswith('Essai-WD-')) if os.path.isdir(d) else []
     def valide(n):
@@ -302,11 +302,12 @@ def essai():
         return os.path.exists(f) and subprocess.run(['xmllint', '--noout', '--schema', XSD, f], capture_output=True).returncode == 0
     f = os.path.join(d, 'Essai-WD-3.10.xml')
     interdits = sum(1 for e in etree.parse(f).getroot().iter() for a in e.attrib if a in ('WiresNumber', 'Class')) if os.path.exists(f) else -1
-    plus = [n for n in ('Essai-WD-plus-3.10.xml', 'Essai-WD-plus-diagramme-3.10.xml') if os.path.exists(os.path.join(d, n))]
-    types = sorted({e.get('Type') for n in plus for e in etree.parse(os.path.join(d, n)).getroot().iter('ConnectiveDevice') if e.get('Tag') in ('TB1', 'GB1')})
-    return (f'robot-wd : fichiers d\'essai {len(noms)} [{", ".join(noms)}] ; Essai-WD-3.10.xml xmllint {"valide" if valide("Essai-WD-3.10.xml") else "REFUSÉ"} ; '
-            f'WiresNumber ou Class {interdits} ; essais plus de la 3.10 valides pour xmllint {sum(1 for n in plus if valide(n))}/{len(plus)} ; '
-            f'bornier et masse {"/".join(types) or "aucun"}')
+    serie = [n for n in noms if n.startswith('Essai-WD-T')]
+    types = sorted({f"{e.get('Tag')}={e.get('Type')}" for n in serie for e in etree.parse(os.path.join(d, n)).getroot().iter('ConnectiveDevice')
+                    if e.get('Tag') in ('GB1', 'TB1', 'BB1', 'SP1', 'PB1')})
+    return (f'robot-wd : fichiers d\'essai {len(noms)} ; Essai-WD-3.10.xml xmllint {"valide" if valide("Essai-WD-3.10.xml") else "REFUSÉ"} ; '
+            f'WiresNumber ou Class {interdits} ; série T de la 3.10 : {len(serie)} fichiers, valides pour xmllint {sum(1 for n in serie if valide(n))} ; '
+            f'appareils seuls {",".join(types) or "aucun"}')
 
 P, V, H = lire(PAQUET), lire(VARIANTE), lire(UN_HARNESS)
 for dossier, paquet, schema in (('WD-paquet-exemple', P, True), ('WD-paquet-wd', V, True), ('WD-paquet-wd-h1', H, True), ('WD-paquet-wd-refus', P, True),

@@ -59,7 +59,8 @@ importer. Il ne touche pas à SEE. Il te faut le paquet que l'Atelier a
 10. Dans SEE : menu Insert, puis From Wiring list. Une fenêtre
    « Component Insertion » s'ouvre : prends-la en photo (ses onglets
    Equipment, Connective Equipment, Cables). Si tu ne sais pas quoi y
-   choisir : clique sur Cancel.
+   choisir : clique sur Cancel. Si elle ne s'ouvre pas : prends l'écran
+   de SEE en photo, c'est une réponse aussi.
 11. Si SEE a dit « successful » au point 9 : importe de la même façon
    le fichier suivant de la feuille Export_WD (par exemple WD-2.xml),
    prends en photo le message de SEE, puis refais le point 10. Je

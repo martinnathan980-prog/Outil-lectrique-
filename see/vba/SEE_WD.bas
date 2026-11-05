@@ -20,9 +20,9 @@ Attribute VB_Name = "SEE_WD"
 '                  côté du paquet ; chacun vérifié par Windows ;
 '                  la feuille Export_WD, puis une boîte courte
 '    EssaiWD       une petite liste de fils (deux connecteurs, deux fils)
-'                  pour chaque schéma « Wiring Diagram » trouvé, puis les
-'                  essais « plus » (équipements, paire, bornier, masse,
-'                  épissure ; avec et sans WireDiagram) (Essai_WD)
+'                  pour chaque schéma « Wiring Diagram » trouvé, puis la
+'                  série d'essais T01 à T10 (le fichier simple plus une
+'                  chose) (Essai_WD)
 '    LireFormatWD  les schémas et les XML trouvés sous IGE+XAO, décrits
 '                  élément par élément (Format_WD)
 '  Les outils du schéma : ParcourirIGE (les XSD sous IGE+XAO), SchemasWD (les
@@ -187,12 +187,12 @@ End Function
 '  List » de SEE ouvre), sinon à côté du classeur, puis VÉRIFIÉ par Windows
 '  (MSXML 6) contre son schéma. Un attribut n'est écrit que si le schéma le
 '  permet (WiresNumber, Class : la 2.18 les exige, la 3.10 les refuse).
-'  Puis, pour le schéma qu'ExporterWD retient (le plus haut des 3.xx), les
-'  essais « plus » : Essai-WD-plus-<version>.xml (équipements avec et sans
-'  classe, leurs connecteurs, une paire en ligne, un bornier, une masse, une
-'  épissure) et Essai-WD-plus-diagramme-<version>.xml (le même, avec un
-'  WireDiagram), vérifiés de même (bureau, 5 novembre : la 3.10 refuse TB et
-'  GB, elle dit TerminalBlock et GroundBlock).
+'  Puis, pour le schéma qu'ExporterWD retient (le plus haut des 3.xx), la
+'  série d'essais T01 à T10 : le fichier simple plus UNE chose (paire,
+'  équipements, symbole, classe, extrémités, masse, bornier, barrette,
+'  épissure, prise de coupure), chacun vérifié de même (bureau, 5 novembre :
+'  la 3.10 refuse TB et GB, elle dit TerminalBlock et GroundBlock ; après
+'  l'import du fichier « plus », Component Insertion ne s'ouvrait plus).
 '  Feuille Essai_WD : un verdict par fichier, chaque erreur, les règles des
 '  types de la plus haute version, les attributs que le schéma permet. Sans SEE.
 ' ============================================================================
@@ -201,7 +201,7 @@ Public Sub EssaiWD()
     Dim attrs As Object, enfants As Object, ordre As Collection, entete As String, espace As String, cheminXml As String, version As String
     Dim erreurs As Collection, e As Variant, ok As Boolean, k As Variant, ecrit As Boolean, dossier As String, nomDossier As String
     Dim bilan As String, premier As Boolean, nbFils As Boolean, classe As Boolean, nomXml As String, trouves As Collection
-    Dim permis As String, requis As String, typeBornier As String, typeMasse As String, j As Long
+    Dim permis As String, typeBornier As String, typeMasse As String, j As Long, x As String, nbOk As Long, nbEssais As Long
     On Error Resume Next
     Set ws = FeuilleCreee("Essai_WD", True)
     l = 1
@@ -265,9 +265,10 @@ Public Sub EssaiWD()
             premier = False
         End If
     Next p
-    ' les essais « plus », pour le schéma qu'ExporterWD retient (le plus haut des 3.xx ; aucun : le plus haut) : des
-    ' équipements (avec et sans classe), leurs connecteurs, une paire en ligne, un connecteur seul, un bornier, une masse,
-    ' une épissure ; puis la même liste avec un WireDiagram
+    ' la série d'essais T01 à T10, pour le schéma qu'ExporterWD retient (le plus haut des 3.xx ; aucun : le plus haut) :
+    ' chacun est le fichier simple (même faisceau ESSAI_PILOTE) plus UNE chose ; le technicien les importe dans l'ordre et
+    ' dit, pour chacun, si la fenêtre « Component Insertion » s'ouvre (au bureau : le fichier simple l'ouvre, le fichier
+    ' « plus » la bloquait)
     p = SchemaRetenuWD(trouves)
     If Len(CStr(p)) = 0 Then p = schemas.Item(1)
     n = Mid$(CStr(p), InStrRev(CStr(p), "\") + 1)
@@ -281,32 +282,37 @@ Public Sub EssaiWD()
     ' le bornier et la masse : TerminalBlock et GroundBlock (3.10), TB et GB si le schéma ne connaît qu'eux (2.18)
     typeBornier = TypeDuSchemaWD(attrs, "TerminalBlock", "TB")
     typeMasse = TypeDuSchemaWD(attrs, "GroundBlock", "GB")
-    requis = AttributsRequis(attrs, enfants, "complexType cWireDiagram")
     l = l + 1
-    EcrireLigne ws, l, Array("permis " & version, "attributs écrits", Replace(Mid$(permis, 2), "|", ", ") & " ; WireDiagram exige : " & _
-        Replace(Mid$(requis, 2), "|", ", ") & " ; bornier " & typeBornier & ", masse " & typeMasse)
-    For j = 0 To 1
-        nomXml = IIf(j = 0, "Essai-WD-plus-", "Essai-WD-plus-diagramme-") & version & ".xml"
-        If j = 1 And (InStr(1, permis, "|WireDiagram|") = 0 Or Not DiagrammePossible(requis)) Then
-            l = l + 1
-            EcrireLigne ws, l, Array("VERDICT", nomXml, "PAS ÉCRIT : le schéma n'a pas de WireDiagram, ou il exige " & Replace(Mid$(requis, 2), "|", ", "))
+    EcrireLigne ws, l, Array("permis " & version, "attributs écrits", Replace(Mid$(permis, 2), "|", ", ") & " ; bornier " & typeBornier & ", masse " & typeMasse)
+    nbEssais = 10
+    For j = 1 To nbEssais
+        nomXml = "Essai-WD-T" & Format$(j, "00") & "-" & NomEssaiWD(j) & ".xml"
+        x = XmlEssaiWDTest(j, version, espace, permis, attrs, typeBornier, typeMasse)
+        l = l + 1
+        If Len(x) = 0 Then
+            EcrireLigne ws, l, Array("T" & Format$(j, "00"), nomXml, "PAS ÉCRIT : ce schéma n'a pas ce type ; " & QuoiEssaiWD(j, typeBornier, typeMasse))
+            bilan = bilan & ", T" & Format$(j, "00") & " absent"
         Else
             cheminXml = dossier & "\" & nomXml
-            ecrit = EcrireFichierTexte(cheminXml, XmlEssaiWDPlus(version, espace, permis, j = 1, typeBornier, typeMasse))
+            ecrit = EcrireFichierTexte(cheminXml, x)
             Set erreurs = New Collection
             ok = False
             If ecrit Then ok = ValiderXmlParXsd(cheminXml, CStr(p), espace, erreurs)
-            l = l + 1
-            EcrireLigne ws, l, Array("VERDICT", nomXml, IIf(Not ecrit, "PAS ÉCRIT (dossier « " & nomDossier & " » en lecture seule ?)", _
-                IIf(ok, "VALIDE (schéma " & n & ")", "REFUSÉ : " & erreurs.Count & " erreur(s), ci-dessous")))
+            EcrireLigne ws, l, Array("T" & Format$(j, "00"), nomXml, IIf(Not ecrit, "PAS ÉCRIT (dossier « " & nomDossier & " » en lecture seule ?)", _
+                IIf(ok, "VALIDE", "REFUSÉ : " & erreurs.Count & " erreur(s), ci-dessous")) & " ; " & QuoiEssaiWD(j, typeBornier, typeMasse))
             ws.Rows(l).Font.Bold = True
             For Each e In erreurs
                 l = l + 1
                 EcrireLigne ws, l, Array("erreur", nomXml, MasquerChemins(CStr(e)))
             Next e
-            bilan = bilan & ", " & IIf(j = 0, "plus ", "plus-diagramme ") & IIf(ok, "VALIDE", "REFUSÉ")
+            If ok Then
+                nbOk = nbOk + 1
+            Else
+                bilan = bilan & ", T" & Format$(j, "00") & " REFUSÉ"
+            End If
         End If
     Next j
+    bilan = bilan & ", essais T01 à T" & Format$(nbEssais, "00") & " : " & nbOk & " VALIDE(S)"
     l = l + 1
     EcrireLigne ws, l, Array("dossier", nomDossier, "les fichiers Essai-WD-*.xml y sont (" & schemas.Count & " schéma(s) Wiring Diagram trouvé(s))")
     ws.Columns("A:B").AutoFit
@@ -393,7 +399,7 @@ Private Function XmlEssaiWD(ByVal version As String, ByVal espace As String, ByV
     XmlEssaiWD = Replace(s, "{NS}", IIf(Len(espace) > 0, " xmlns=""" & espace & """", ""))
 End Function
 
-' Les attributs que le schéma permet pour l'essai « plus », en une chaîne
+' Les attributs que le schéma permet pour la série d'essais, en une chaîne
 ' « |Class|ParentTag|... | » : ceux d'un ConnectiveDevice (élément local, ou
 ' type cConnectiveDevice), ParentTag d'une extrémité (ExtParentTag), Class
 ' d'un fil (WireClass), WiresNumber du faisceau, le WireDiagram (sous la
@@ -416,46 +422,7 @@ Private Function PermisWD(ByVal attrs As Object, ByVal enfants As Object) As Str
     PermisWD = s
 End Function
 
-' Les attributs obligatoires (« * ») d'un contexte, ses groupes d'attributs et
-' le type qu'il étend compris : « |Tag|Solution| ».
-Private Function AttributsRequis(ByVal attrs As Object, ByVal enfants As Object, ByVal ctx As String) As String
-    Dim aVoir As Collection, c As String, a As Variant, s As String, r As String, tours As Long, i As Long
-    Set aVoir = New Collection
-    aVoir.Add ctx
-    Do While aVoir.Count > 0 And tours < 20
-        tours = tours + 1
-        c = aVoir.Item(1)
-        aVoir.Remove 1
-        For Each a In Split(ListeDe(attrs, c), ", ")
-            s = CStr(a)
-            i = InStr(s, "*")
-            If i > 1 And Left$(s, 1) <> "=" Then
-                If InStr(Left$(s, i - 1), " ") = 0 And InStr(Left$(s, i - 1), "(") = 0 Then r = r & "|" & Left$(s, i - 1)
-            End If
-        Next a
-        For Each a In Split(ListeDe(enfants, c), ", ")
-            s = CStr(a)
-            If Left$(s, 15) = "attributeGroup " Then
-                aVoir.Add s
-            ElseIf Left$(s, 13) = "extension de " Then
-                aVoir.Add "complexType " & Mid$(s, 14)
-            End If
-        Next a
-    Loop
-    AttributsRequis = r & "|"
-End Function
 
-' Vrai si l'essai sait remplir chaque attribut obligatoire du WireDiagram
-' (Tag, Solution, Version).
-Private Function DiagrammePossible(ByVal requis As String) As Boolean
-    Dim a As Variant
-    DiagrammePossible = True
-    For Each a In Split(requis, "|")
-        If Len(CStr(a)) > 0 Then
-            If CStr(a) <> "Tag" And CStr(a) <> "Solution" And CStr(a) <> "Version" Then DiagrammePossible = False
-        End If
-    Next a
-End Function
 
 ' Le nom d'un type d'appareil dans un schéma lu : nouveau (3.10 : TerminalBlock,
 ' GroundBlock), sauf si ses énumérations n'ont que l'ancien (2.18 : TB, GB).
@@ -515,53 +482,109 @@ Private Function BoutEssaiWD(ByVal fil As String, ByVal rang As String, ByVal br
     BoutEssaiWD = s & "/>" & vbCrLf
 End Function
 
-' L'essai « plus » : le faisceau ESSAI_PLUS. EQ1 (équipement, classe AC,
-' symbole 000 / 0001 : la boîte noire vue dans SEE) et son connecteur EQ1-A ;
-' EQ2 et EQ2-A, sans classe ; la paire en ligne P2 / J2 (MatingTag) ; P3, seul
-' ; le bornier TB1, la masse GB1 (types TerminalBlock et GroundBlock en 3.x,
-' TB et GB en 2.18), l'épissure SP1 ; six fils entre eux.
-' diagramme : un WireDiagram WD_ESSAI avant le faisceau.
-Private Function XmlEssaiWDPlus(ByVal version As String, ByVal espace As String, ByVal permis As String, ByVal diagramme As Boolean, _
+' La série d'essais T01 à T10 (EssaiWD) : le nom court du fichier.
+Private Function NomEssaiWD(ByVal i As Long) As String
+    NomEssaiWD = Choose(i, "paire", "equipement", "equipement-symbole", "equipement-classe", "extremites-parent", "masse", "bornier", _
+        "barrette-busbar", "epissure", "prise-de-coupure")
+End Function
+
+' Ce que l'essai i ajoute au fichier simple, en clair.
+Private Function QuoiEssaiWD(ByVal i As Long, ByVal typeBornier As String, ByVal typeMasse As String) As String
+    QuoiEssaiWD = Choose(i, "P1 et J1 en paire (MatingTag)", _
+        "deux équipements EQ1 et EQ2 (type Equipment), leurs connecteurs EQ1-A et EQ2-A (ParentTag), deux fils", _
+        "le T02, plus le symbole 000 / 0001 sur EQ1 et EQ2", _
+        "le T02, plus la classe AC sur EQ1, EQ2 et leurs connecteurs", _
+        "le T02, plus ParentTag (l'équipement) sur les extrémités des fils", _
+        "une masse GB1 (type " & typeMasse & ") et un connecteur C6, un fil", _
+        "un bornier TB1 (type " & typeBornier & ") et un connecteur C7, deux fils", _
+        "une barrette BB1 (type Busbar) et un connecteur C8, deux fils", _
+        "une épissure SP1 (type Splice) et un connecteur C9, deux fils sur la même broche", _
+        "une prise de coupure PB1 (type ProductionBreak) et un connecteur C10, deux fils")
+End Function
+
+' Un fil de la série d'essais (le même que ceux du fichier simple).
+Private Function FilEssaiWD(ByVal tag As String, ByVal permis As String) As String
+    FilEssaiWD = "      <Wire" & AttributXml("Tag", tag) & AttributXml("Wire_Type", "WIRE") & AttributXml("Gauge", "22") & AttributXml("Length", "1000") & _
+        AttributXml("Length_Status", "Manual") & AttributXml("Type", "Normal") & AttributXml("Segregation", "1") & _
+        AttrPermis(permis, "WireClass", "Class", "A") & "/>" & vbCrLf
+End Function
+
+' L'essai i de la série : le fichier simple (faisceau ESSAI_PILOTE ; P1 :
+' broches 1 et 2 ; J1 : A et B ; W1 : P1-1 vers J1-A ; W2 : P1-2 vers J1-B)
+' plus une chose (QuoiEssaiWD). Un type absent des énumérations du schéma
+' (attrs : ValeurDuSchema) : "" rendu, pas d'essai. Un attribut n'est écrit
+' que si le schéma le permet (permis).
+Private Function XmlEssaiWDTest(ByVal i As Long, ByVal version As String, ByVal espace As String, ByVal permis As String, ByVal attrs As Object, _
         ByVal typeBornier As String, ByVal typeMasse As String) As String
-    Dim s As String, w As Variant
+    Dim dev As String, fils As String, bouts As String, s As String, cl As String, fam As String, sym As String, pa1 As String, pa2 As String
+    Dim typ As String, tag As String, partenaire As String, nbFils As Long
+    ' l'appareil seul des essais 6 à 10 : son type absent du schéma, pas d'essai
+    Select Case i
+        Case 6
+            typ = typeMasse
+        Case 7
+            typ = typeBornier
+        Case 8
+            typ = "Busbar"
+        Case 9
+            typ = "Splice"
+        Case 10
+            typ = "ProductionBreak"
+    End Select
+    If Len(typ) > 0 Then
+        If Not ValeurDuSchema(attrs, typ) Then Exit Function
+    End If
+    dev = DevWD("P1", "Connector", "", "", "Plug", IIf(i = 1, "J1", ""), "", "", "", "1;2", permis)
+    dev = dev & DevWD("J1", "Connector", "", "", "Receptacle", IIf(i = 1, "P1", ""), "", "", "", "A;B", permis)
+    fils = FilEssaiWD("W1", permis) & FilEssaiWD("W2", permis)
+    bouts = BoutEssaiWD("W1", "1", "1", "P1", "", permis) & BoutEssaiWD("W1", "2", "A", "J1", "", permis)
+    bouts = bouts & BoutEssaiWD("W2", "1", "2", "P1", "", permis) & BoutEssaiWD("W2", "2", "B", "J1", "", permis)
+    nbFils = 2
+    If i >= 2 And i <= 5 Then
+        If i = 4 Then cl = "AC"
+        If i = 3 Then
+            fam = "000"
+            sym = "0001"
+        End If
+        If i = 5 Then
+            pa1 = "EQ1"
+            pa2 = "EQ2"
+        End If
+        dev = dev & DevWD("EQ1", "Equipment", cl, "", "", "", "BOITIER ESSAI 1", fam, sym, "", permis)
+        dev = dev & DevWD("EQ1-A", "Connector", cl, "EQ1", "Receptacle", "", "", "", "", "1;2", permis)
+        dev = dev & DevWD("EQ2", "Equipment", cl, "", "", "", "BOITIER ESSAI 2", fam, sym, "", permis)
+        dev = dev & DevWD("EQ2-A", "Connector", cl, "EQ2", "Receptacle", "", "", "", "", "1;2", permis)
+        fils = fils & FilEssaiWD("W3", permis) & FilEssaiWD("W4", permis)
+        bouts = bouts & BoutEssaiWD("W3", "1", "1", "EQ1-A", pa1, permis) & BoutEssaiWD("W3", "2", "1", "EQ2-A", pa2, permis)
+        bouts = bouts & BoutEssaiWD("W4", "1", "2", "EQ1-A", pa1, permis) & BoutEssaiWD("W4", "2", "2", "EQ2-A", pa2, permis)
+        nbFils = 4
+    ElseIf i >= 6 Then
+        tag = Choose(i - 5, "GB1", "TB1", "BB1", "SP1", "PB1")
+        partenaire = "C" & CStr(i)
+        If i = 6 Then
+            dev = dev & DevWD(tag, typ, "", "", "", "", "", "", "", "1", permis)
+            dev = dev & DevWD(partenaire, "Connector", "", "", "Plug", "", "", "", "", "1", permis)
+            fils = fils & FilEssaiWD("W5", permis)
+            bouts = bouts & BoutEssaiWD("W5", "1", "1", partenaire, "", permis) & BoutEssaiWD("W5", "2", "1", tag, "", permis)
+            nbFils = 3
+        Else
+            dev = dev & DevWD(tag, typ, "", "", "", "", "", "", "", IIf(i = 9, "1", "1;2"), permis)
+            dev = dev & DevWD(partenaire, "Connector", "", "", "Plug", "", "", "", "", "1;2", permis)
+            fils = fils & FilEssaiWD("W5", permis) & FilEssaiWD("W6", permis)
+            bouts = bouts & BoutEssaiWD("W5", "1", "1", partenaire, "", permis) & BoutEssaiWD("W5", "2", "1", tag, "", permis)
+            bouts = bouts & BoutEssaiWD("W6", "1", "2", partenaire, "", permis) & BoutEssaiWD("W6", "2", IIf(i = 9, "1", "2"), tag, "", permis)
+            nbFils = 4
+        End If
+    End If
     s = DECLARATION_XML & vbCrLf & "<IGE-XAO_WIRE_HARNESS"
     If Len(espace) > 0 Then s = s & AttributXml("xmlns", espace)
     s = s & AttributXml("EDB_InstanceID", "1") & AttributXml("XSDversion", version) & AttributXml("LengthUnit", "millimeter") & ">" & vbCrLf
-    If diagramme Then
-        s = s & "  <WireDiagram" & AttrPermis(permis, "WDTag", "Tag", "WD_ESSAI") & AttrPermis(permis, "WDSolution", "Solution", "1") & _
-            AttrPermis(permis, "WDVersion", "Version", "1") & "/>" & vbCrLf
-    End If
-    s = s & "  <WireHarness" & AttributXml("Tag", "ESSAI_PLUS") & AttrPermis(permis, "WiresNumber", "WiresNumber", "6") & ">" & vbCrLf
-    s = s & "    <ConnectiveDevicesList>" & vbCrLf
-    s = s & DevWD("EQ1", "Equipment", "AC", "", "", "", "EQUIPEMENT 1 AVEC CLASSE", "000", "0001", "", permis)
-    s = s & DevWD("EQ1-A", "Connector", "AC", "EQ1", "Receptacle", "", "", "", "", "1;2", permis)
-    s = s & DevWD("EQ2", "Equipment", "", "", "", "", "EQUIPEMENT 2 SANS CLASSE", "", "", "", permis)
-    s = s & DevWD("EQ2-A", "Connector", "", "EQ2", "Receptacle", "", "", "", "", "1;2", permis)
-    s = s & DevWD("P2", "Connector", "AC", "", "Plug", "J2", "", "", "", "1;2", permis)
-    s = s & DevWD("J2", "Connector", "AC", "", "Receptacle", "P2", "", "", "", "1;2", permis)
-    s = s & DevWD("P3", "Connector", "AC", "", "Plug", "", "", "", "", "1;2", permis)
-    s = s & DevWD("TB1", typeBornier, "AC", "", "", "", "", "", "", "1;2", permis)
-    s = s & DevWD("GB1", typeMasse, "AC", "", "", "", "", "", "", "1", permis)
-    s = s & DevWD("SP1", "Splice", "AC", "", "", "", "", "", "", "1", permis)
-    s = s & "    </ConnectiveDevicesList>" & vbCrLf
-    s = s & "    <WiresList>" & vbCrLf
-    For Each w In Array("W11", "W12", "W13", "W14", "W15", "W16")
-        s = s & "      <Wire" & AttributXml("Tag", CStr(w)) & AttributXml("Wire_Type", "WIRE") & AttributXml("Gauge", "22") & AttributXml("Length", "1000") & _
-            AttributXml("Length_Status", "Manual") & AttributXml("Type", "Normal") & AttributXml("Segregation", "1") & _
-            AttrPermis(permis, "WireClass", "Class", "A") & "/>" & vbCrLf
-    Next w
-    s = s & "    </WiresList>" & vbCrLf
-    s = s & "    <WiresExtremitiesList>" & vbCrLf
-    s = s & BoutEssaiWD("W11", "1", "1", "EQ1-A", "EQ1", permis) & BoutEssaiWD("W11", "2", "1", "P2", "", permis)
-    s = s & BoutEssaiWD("W12", "1", "2", "EQ1-A", "EQ1", permis) & BoutEssaiWD("W12", "2", "1", "TB1", "", permis)
-    s = s & BoutEssaiWD("W13", "1", "1", "J2", "", permis) & BoutEssaiWD("W13", "2", "1", "EQ2-A", "EQ2", permis)
-    s = s & BoutEssaiWD("W14", "1", "2", "J2", "", permis) & BoutEssaiWD("W14", "2", "1", "GB1", "", permis)
-    s = s & BoutEssaiWD("W15", "1", "1", "P3", "", permis) & BoutEssaiWD("W15", "2", "1", "SP1", "", permis)
-    s = s & BoutEssaiWD("W16", "1", "2", "TB1", "", permis) & BoutEssaiWD("W16", "2", "2", "EQ2-A", "EQ2", permis)
-    s = s & "    </WiresExtremitiesList>" & vbCrLf
+    s = s & "  <WireHarness" & AttributXml("Tag", "ESSAI_PILOTE") & AttrPermis(permis, "WiresNumber", "WiresNumber", CStr(nbFils)) & ">" & vbCrLf
+    s = s & "    <ConnectiveDevicesList>" & vbCrLf & dev & "    </ConnectiveDevicesList>" & vbCrLf
+    s = s & "    <WiresList>" & vbCrLf & fils & "    </WiresList>" & vbCrLf
+    s = s & "    <WiresExtremitiesList>" & vbCrLf & bouts & "    </WiresExtremitiesList>" & vbCrLf
     s = s & "  </WireHarness>" & vbCrLf
-    s = s & FIN_XML & vbCrLf
-    XmlEssaiWDPlus = s
+    XmlEssaiWDTest = s & FIN_XML & vbCrLf
 End Function
 
 ' Un fichier texte entier (les octets tels quels : les noms de XML sont en ASCII).

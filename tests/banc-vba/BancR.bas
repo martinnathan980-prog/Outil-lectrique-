@@ -1395,19 +1395,24 @@ End Function
 
 ' Les verdicts de la feuille Essai_WD (EssaiWD) : « verdicts n = <fichier> <détail> / … ».
 Private Function VerdictsEssaiWD() As String
-    Dim ws As Object, i As Long, n As Long, s As String
+    Dim ws As Object, i As Long, n As Long, s As String, nT As Long, nTok As Long, a As String
     If Not FeuilleExiste("Essai_WD") Then
         VerdictsEssaiWD = "Essai_WD absente"
         Exit Function
     End If
     Set ws = ThisWorkbook.Worksheets("Essai_WD")
     For i = 2 To 200
-        If CStr(ws.Cells(i, 1).Value) = "VERDICT" Then
+        a = CStr(ws.Cells(i, 1).Value)
+        If a = "VERDICT" Then
             n = n + 1
             s = s & IIf(Len(s) > 0, " / ", "") & CStr(ws.Cells(i, 2).Value) & " " & CStr(ws.Cells(i, 3).Value)
+        ElseIf Len(a) = 3 And Left(a, 1) = "T" And IsNumeric(Mid(a, 2)) Then
+            ' la série d'essais T01 à T10
+            nT = nT + 1
+            If Left(CStr(ws.Cells(i, 3).Value), 6) = "VALIDE" Then nTok = nTok + 1
         End If
     Next i
-    VerdictsEssaiWD = "verdicts " & n & " = " & SansSeparateurs(s)
+    VerdictsEssaiWD = "verdicts " & n & " = " & SansSeparateurs(s) & " ; essais T " & nT & " (VALIDE " & nTok & ")"
 End Function
 
 ' ExporterWD : le paquet d'exemple ; Annuler la fenêtre « Ouvrir » ; la variante (v_wd.js : échappement, noms de
@@ -1416,7 +1421,7 @@ End Function
 ' (bureau : …/Users/utilisateur-banc/Bureau, son nom ne doit paraître nulle part) ; le schéma introuvable (le dossier
 ' IGE+XAO du banc renommé le temps du passage) ; un paquet illisible. Chaque passage a son paquet (une copie de l'exemple pour le
 ' refus et le schéma introuvable), donc son dossier WD-… : relecture.py les relit tous. Puis EssaiWD, déplacé dans
-' SEE_WD avec les outils du schéma : un fichier d'essai par schéma trouvé, puis les essais « plus », dans le dossier du
+' SEE_WD avec les outils du schéma : un fichier d'essai par schéma trouvé, puis la série T01 à T10, dans le dossier du
 ' projet d'essai (essai : un .seeprj, réglage Projet). travail : le dossier de travail (aucun chemin entier ne doit
 ' paraître dans Export_WD) ; ige : le dossier IGE+XAO du banc.
 Public Function BancExporterWD(ByVal chemin As String, ByVal variante As String, ByVal refus As String, ByVal sans As String, _

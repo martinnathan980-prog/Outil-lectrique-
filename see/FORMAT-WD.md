@@ -58,6 +58,11 @@ On ne change pas une correspondance sans la changer ici d'abord, ni sans
   permet `Class`, `ParentTag`, `MatingTag`, `SymbolFamily`, `SymbolName`,
   `Description` ; `WireExtremity` permet `ParentTag` ; `WireDiagram` exige
   `Tag`, `Solution` et `Version` (feuille Essai_WD, même essai).
+- Après l'import du fichier simple, *Insert > From Wiring list* ouvre
+  « Component Insertion » ; après celui du fichier « plus » (équipements,
+  classes, paires, bornier, masse, épissure), la fenêtre ne s'ouvre plus, sans
+  message : un de ses morceaux la bloque. `EssaiWD` écrit la série T01 à T10
+  (le fichier simple plus une seule chose) pour trouver lequel.
 
 ## Les fichiers
 
@@ -202,6 +207,12 @@ journal) :
   `PartNumber` et `Description` sont permis par le schéma (2.18 photographié ;
   en 3.10, Windows a validé tout l'essai « plus » sauf `TB` et `GB`), mais
   aucun fichier qui les porte n'a encore été importé.
+- **Ce qui bloque « Component Insertion ».** ExporterWD écrit plusieurs des
+  morceaux du fichier « plus » : des équipements et leurs connecteurs
+  (`ParentTag`), des prises (`MatingTag`), `PartNumber`, `Description`,
+  `TerminalBlock`, `GroundBlock`. Celui que la série T01 à T10 désignera ne
+  devra plus s'écrire, ou autrement ; d'ici là, un fichier d'ExporterWD peut
+  s'importer sans que la fenêtre s'ouvre (LIS-MOI, « CETTE FOIS », point 10).
 - **Un 2e fichier du même harness.** Importé après le 1er dans le même
   projet, s'ajoute-t-il au harness, ou le remplace-t-il ? À voir sur le
   projet d'essai, avant tout import en série (LIS-MOI, « CETTE FOIS », point

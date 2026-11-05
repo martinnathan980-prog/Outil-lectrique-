@@ -711,18 +711,19 @@ def exporter_wd():
           lambda t: partie(t, 'sans schéma'), lambda s: 'Schéma/introuvable : version 3.10, seulement les attributs de l\'essai du bureau' in s
               and 'bornier TerminalBlock, masse GroundBlock' in s and "Windows n'a pas pu vérifier" in s),
          ('paquet illisible : une boîte, aucune vérification', lambda t: partie(t, 'illisible'), lambda s: 'boîtes 1 ; validations 0' in s and "Le paquet n'a pas pu être lu" in s),
-         egal('EssaiWD (déplacé dans SEE_WD) : un fichier d\'essai par schéma trouvé (4.00, 3.10, 3.07, 2.18), puis les essais « plus » et « plus-diagramme » '
-              'pour la 3.10 (le plus haut des 3.xx), chacun vérifié', nombres(r'essai : validations (\d+) ; verdicts (\d+)', 'essai'), (6, 6)),
-         ('EssaiWD : les essais « plus » de la 3.10 VALIDE (Essai-WD-plus-3.10.xml, Essai-WD-plus-diagramme-3.10.xml)', dans('essai', r'(Essai-WD-plus-3\.10\.xml .*)$'),
-          lambda s: bool(s) and 'Essai-WD-plus-3.10.xml VALIDE' in s and 'Essai-WD-plus-diagramme-3.10.xml VALIDE' in s),
+         egal('EssaiWD (déplacé dans SEE_WD) : un fichier d\'essai par schéma trouvé (4.00, 3.10, 3.07, 2.18), chacun vérifié, puis la série T01 à T10 pour la '
+              '3.10 (le plus haut des 3.xx), chacun vérifié', nombres(r'essai : validations (\d+) ; verdicts (\d+)', 'essai'), (14, 4)),
+         egal('EssaiWD : la série T01 à T10 de la 3.10, dix fichiers, tous VALIDE (la reconstitution a les types Busbar, Splice, ProductionBreak)',
+              nombres(r'essais T (\d+) \(VALIDE (\d+)\)', 'essai'), (10, 10)),
          ('EssaiWD : la 3.10 sans WiresNumber ni Class (« absent du schéma »)', dans('essai', r'(Essai-WD-3\.10\.xml [^/]*)'),
           lambda s: bool(s) and 'VALIDE (schéma IGE-XAO Wiring Diagram 3.10.xsd)' in s and 'WiresNumber absent du schéma, Class absent du schéma' in s),
-         egal('EssaiWD : ses six fichiers dans le dossier du projet d\'essai ; Essai-WD-3.10.xml valide pour xmllint (reconstitution), sans WiresNumber ni Class',
-              lambda t: (lambda m: m.groups() if m else None)(re.search(r'robot-wd : fichiers d\'essai (\d+) \[[^\]]*\] ; Essai-WD-3\.10\.xml xmllint (\w+) ; WiresNumber ou Class (-?\d+)', t)),
-              ('6', 'valide', '0')),
-         egal('EssaiWD : les deux essais « plus » de la 3.10 valides pour xmllint (reconstitution) ; le bornier et la masse aux types que le schéma nomme',
-              lambda t: (lambda m: m.groups() if m else None)(re.search(r'essais plus de la 3\.10 valides pour xmllint (\d+)/(\d+) ; bornier et masse (\S+)', t)),
-              ('2', '2', 'GroundBlock/TerminalBlock')),
+         egal('EssaiWD : ses quatorze fichiers dans le dossier du projet d\'essai ; Essai-WD-3.10.xml valide pour xmllint (reconstitution), sans WiresNumber ni Class',
+              lambda t: (lambda m: m.groups() if m else None)(re.search(r'robot-wd : fichiers d\'essai (\d+) ; Essai-WD-3\.10\.xml xmllint (\w+) ; WiresNumber ou Class (-?\d+)', t)),
+              ('14', 'valide', '0')),
+         egal('EssaiWD : les dix essais T de la 3.10 valides pour xmllint (reconstitution) ; la masse GroundBlock et le bornier TerminalBlock, la barrette Busbar, '
+              'l\'épissure Splice, la prise de coupure ProductionBreak',
+              lambda t: (lambda m: m.groups() if m else None)(re.search(r'série T de la 3\.10 : (\d+) fichiers, valides pour xmllint (\d+) ; appareils seuls (\S+)', t)),
+              ('10', '10', 'BB1=Busbar,GB1=GroundBlock,PB1=ProductionBreak,SP1=Splice,TB1=TerminalBlock')),
          egal('EchapperXml : & < > " \' échappés, é et € en références numériques, la tabulation en espace (« ; » lu « ~ »)',
               dans('échappement', r'échappement : (.*)$'), 'A&amp~B&lt~C&gt~&quot~D&quot~&apos~E&apos~ &#233~&#8364~ !')]
     for d, harnais in (('WD-paquet-exemple', 6), ('WD-paquet-wd', 5), ('WD-paquet-wd-h1', 1), ('WD-paquet-wd-refus', 6), ('WD-paquet-wd-sans', 6)):
