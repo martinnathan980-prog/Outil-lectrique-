@@ -125,8 +125,9 @@ s'écrit ici, le jour même.
   bien visible ; **l'information** (calculs) se lit, sans geste.
 - **Une barrette, c'est plusieurs modules** (v85) : sa fiche la dessine entière, les modules alignés sur leur rail comme la
   vraie pièce, chacun avec ses lettres ; une borne de barrette se dit comme dans ses fichiers, **module + lettre** (51B).
-- **Sur le plan, rien n'est caché** : les bornes des équipements et des barrettes se lisent sans zoomer ni survoler, et une
-  borne n'apparaît qu'une fois.
+- **Sur le plan, rien n'est caché et rien ne bouge** (v86) : les bornes des équipements et des barrettes sont toujours là,
+  fines comme sur le papier (au cadrage elles sont petites, on zoome pour lire) ; jamais un numéro qui grossit au dézoom ni
+  qui glisse d'un zoom à l'autre ; une borne n'apparaît qu'une fois.
 - **Une fiche qui s'ouvre sur un autre objet commence à L'essentiel** (pas sur l'onglet de l'objet d'avant).
 - **Le dessin des folios montre où il en est** : chaque folio dit s'il est prêt.
 - **Ce qui demande une action se voit d'abord** : un problème à régler a l'air d'une action (son geste en évidence) ; un point

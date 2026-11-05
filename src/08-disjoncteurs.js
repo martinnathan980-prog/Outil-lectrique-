@@ -679,7 +679,8 @@ function ecrireConclusion(el, m, titre) { if (!el || !m) return; el.classList.to
 const FLUX = { periode: 22, base: 10, parA: 3.4, max: 96 };   // le motif du flux (px), sa vitesse : 10 px/s + 3,4 px/s par ampère, au plus 96
 const nomDuPoint = p => p.k === 'perm' ? 'Permanent' : p.k === 'dem' ? 'Démarrage' : p.k === 'trans' ? 'Transition' : majuscule(String(p.nom || 'état'));
 function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
-  const cal = d.calibre, gamme = (d.gamme || []).filter(g => g.calibre > 0), pts = (d.points || []).filter(p => p.i > 0).slice(0, 5);
+  // (un état plus faible que le permanent dure « toujours » sur l'escalier : le permanent, plus fort, dit déjà tout — pas de barre)
+  const cal = d.calibre, gamme = (d.gamme || []).filter(g => g.calibre > 0), pts = (d.points || []).filter(p => p.i > 0 && (p.k === 'perm' || p.t !== Infinity)).slice(0, 5);
   if (d.sansProfil || !gamme.length || !pts.length) return `<p class="vu-note">${esc(d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : 'Aucune gamme de calibres connue pour ce part number.')}</p>`;
   const fic = o.calRetest && o.calRetest !== cal ? o.calRetest : propositionNonEcrite(d) ? d.pn : null;
   // chaque calibre jugé sur ce profil (sans les câbles : le seuil d'un point n'en dépend pas) — le seuil de chaque barre
@@ -702,14 +703,15 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
   const cals = gamme.map(g => { const c = g.calibre, k = cleDuVerdict(g), m = motsDuCalibre(d, c) || { titre: amperes(c), detail: '', cle: k }, ret = c === cal, f = c === fic, montre = kept.some(x => x.c === c);
     const seuils = pts.map(p => { const s = seuilDe(c, p); return s != null ? f1(s) : ''; }).join(' '), oks = pts.map(p => { const q = point(c, p); return q && q.ok === false ? '0' : '1'; }).join('');
     return `<span class="dj-fx-cal ${k === 'passe' ? 'oui' : 'non'}${ret ? ' ret' : ''}${f ? ' fic' : ''}${montre ? '' : ' tu'}" style="left:${pc(c).toFixed(2)}%" tabindex="0" role="button" data-cal="${c}" data-seuils="${seuils}" data-oks="${oks}" data-cle="${escA(m.cle)}" data-titre="${escA(m.titre)}" data-detail="${escA(m.detail)}"`
-      + ` aria-label="${escA(m.titre + (ret ? ' Retenu.' : f ? ' Celui de votre fichier.' : '') + ' ' + m.detail)}" data-bulle="${escA(m.titre + (m.detail ? '\n' + m.detail : '') + (ret ? '\nRetenu.' : f ? '\nCelui de votre fichier.' : ''))}">`
+      // (pas de bulle : le survol écrit déjà sa conclusion en tête, pas deux fois la même chose)
+      + ` aria-label="${escA(m.titre + (ret ? ' Retenu.' : f ? ' Celui de votre fichier.' : '') + ' ' + m.detail)}">`
       + `<i></i><b>${esc(nombre(c))}<small>A</small></b>${ret ? '<em>retenu</em>' : f ? '<em>votre fichier</em>' : ''}</span>`; }).join('');
   // le calibre de votre fichier, quand VOLTA en retient un autre : sa conclusion, une ligne dessous
   const mF = fic ? motsDuCalibre(d, fic) : null, ligneF = mF ? `<p class="dj-concl-fic ${mF.cle === 'passe' ? 'ok' : 'ko'}">${marqueVerdict(mF.cle)}<span><b>Votre fichier porte un ${esc(amperes(fic))}</b> : il ${mF.cle === 'passe' ? 'ne disjoncte pas' : 'disjoncte'}. ${insecable(esc(mF.detail))}</span></p>` : '';
   // (v81) le retenu est celui du fichier et il ne disjoncte pas, mais un plus petit suffirait : VOLTA le garde, et le dit
   const mini = (gamme.find(g => g.valide && g.catalogue !== false) || {}).calibre, deFichier = d.pn && cal && Math.abs(d.pn - cal) < 1e-9 && d.origine !== 'main' && !pnDeVolta(nom);
   const note = deFichier && mini && mini < cal - 1e-9 ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(mini))} — un clic sur lui, dans l’onglet Calibre, le retient.</p>` : '';
-  const leg = `<p class="dj-fx-leg"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="zone"></i><span class="dj-fx-leg-z">où le ${esc(A)} disjoncte</span></span>${fic ? '<span><i class="fic"></i>celui de votre fichier</span>' : ''}</p>`;
+  const leg = `<p class="dj-fx-leg"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="zone"></i><span class="dj-fx-leg-z">où le ${esc(A)} disjoncte</span></span></p>`;
   return `<div class="dj-ca" data-disj="${escA(nom)}" data-max="${f1(max)}" data-cal="${calZ}">${conclusionCalibre(d, 'dj-concl-g')}${ligneF}`
     + `<div class="dj-flux" role="group" aria-label="${escA('Ce qu’il tire, sur l’échelle de ses calibres')}">${lignes}<div class="dj-fx-echelle"><span></span><span class="dj-fx-cals">${cals}</span></div></div>${leg}${note}</div>`; }
 // survoler (ou parcourir au clavier) un calibre de l'échelle : ses zones glissent sur les barres, sa conclusion s'écrit ; la
