@@ -33629,7 +33629,8 @@ function ongletReglages(xs, sections, o) { o = o || {}; const ys = (xs || []).fi
 const gestePrincipal = p => { const gs = (p && p.gestes || []).filter(x => x && x.mot && typeof x.faire === 'function'); return gs.find(x => x.principal) || gs[0] || null; };
 // un geste qui RÈGLE (« Voir 102CB1 » mène ailleurs : il ne règle rien)
 const gesteQuiRegle = p => { const gs = (p && p.gestes || []).filter(x => x && x.mot && typeof x.faire === 'function' && !/^Voir\b/.test(x.mot)); return gs.find(x => x.principal) || gs[0] || null; };
-const gesteQuiMene = p => (p && p.gestes || []).find(x => x && x.mot && typeof x.faire === 'function' && /^Voir\b/.test(x.mot)) || null;
+// (jamais « Voir 102CB1 » dans la fiche de 102CB1 : on y est déjà)
+const gesteQuiMene = (p, ici) => (p && p.gestes || []).find(x => x && x.mot && typeof x.faire === 'function' && /^Voir\b/.test(x.mot) && !(ici && x.mot === 'Voir ' + ici)) || null;
 // le câble dont parle un point : celui qu'il vise, sinon celui que nomme sa phrase (« DR20 vers 103RL1:A1 : … »), vu de la fiche
 function cableDuPoint(p, o) { if (p.cable) return p.cable;
   const v = p.viser ? liaisonDeCle(p.viser) : null; if (v) return sourceDe(v) || v;
@@ -33746,7 +33747,9 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
     if (qui) { const vu = quiVuDIci(qui[1], p, o, /^chute en ligne/i.test(qui[2])), M = motsDuProbleme(qui[2], suite, vu.type), glose = k > 0 || M.sansGlose ? '' : gloseDuProbleme(p.texte);
       // « — sous 102CB1 » : le disjoncteur, quand le titre ne le nomme pas déjà
       const sous = /^sous (\S+)$/.exec(suite), plus = M.mange || !suite ? '' : sous ? (vu.titre.includes(sous[1]) ? '' : ` Son disjoncteur : ${sous[1]}.`) : ' ' + majuscule(suite) + '.';
-      titre = vu.titre; tout = M.long + plus + (glose ? ' ' + glose : ''); detail = grand ? tout : M.court; }
+      // (intégration v86) le grand aussi dit l'essentiel en une phrase — sept problèmes de quatre lignes faisaient un pavé où la
+      // même explication revenait sept fois ; d'où vient l'admis se lit au survol, en clair (la bulle), comme dans la carte
+      titre = vu.titre; tout = M.long + plus + (glose ? ' ' + glose : ''); detail = M.court; }
     // « B · aucun arrangement EN 4165-002 ne loge B5 : DR12 vers 397TB1 » (un connecteur) : le câble en titre, vu d'ici
     // (« B5 → 397TB1:3 · DR12 »), ce qui cloche dessous — le plus proche, dans le grand
     else if ((ar = /^(\S+) · aucun arrangement (.+?) ne loge (\S+) : (\S+) vers (\S+)$/i.exec(titre))) { const [, cn, fam, bo, type, vers] = ar, nom = o.tete && o.tete.nom;
@@ -33756,11 +33759,11 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
     // une phrase longue qui finit sur sa parenthèse (« … admis en continu (11,5 A × 0,6 : faisceau de 8 câbles à 60 %) ») : la
     // parenthèse passe dessous, le titre se lit d'un trait
     else if (titre.length > 48) { const m = /^(.+?) \(([^()]+)\)$/.exec(titre); if (m) { titre = m[1]; detail = majuscule(m[2]) + (detail ? ' · ' + detail.replace(/^\S/, c => c.toLowerCase()) : ''); } }
-    const va = ongletDeSection(o.type, p.section), bulleT = [!grand && tout && tout !== detail ? tout : '', p.bulle || ''].filter(Boolean).join('\n'), bulle = escA(bulleT);
+    const va = ongletDeSection(o.type, p.section), bulleT = [tout && tout !== detail ? tout : '', p.bulle || ''].filter(Boolean).join('\n'), bulle = escA(bulleT);
     const cible = `data-onglet-va="${escA(va)}"${p.viser ? ` data-viser="${escA(p.viser)}"` : ''}${p.connecteur ? ` data-connecteur="${escA(p.connecteur)}"` : ''}`, etat = p.niveau === 'ko' ? 'ko' : 'att';
     if (!x.regler) return `<div class="nc-tache fi-pb-l ${etat} info"><span class="nc-rond" aria-hidden="true"></span><button type="button" class="nc-t" ${cible}${bulleT ? ` data-bulle="${bulle}"` : ''}><b class="fi-pb-t">${insecable(esc(titre))}</b>${qui ? ` <small>${insecable(esc(detail))}</small>` : ''}</button></div>`;
     // sans geste qui règle : ce qu'il faut faire, en mots (ceux du récapitulatif) — et le geste qui mène à la cause, s'il y en a un
-    const que = !x.agir && typeof remede === 'function' ? (remede({ texte: p.texte }) || [])[0] : '', mene = !x.agir ? gesteQuiMene(p) : null;
+    const que = !x.agir && typeof remede === 'function' ? (remede({ texte: p.texte }) || [])[0] : '', mene = !x.agir ? gesteQuiMene(p, o.tete && o.tete.nom) : null;
     const geste = x.html || (x.g ? bouton(x.g) : mene ? bouton(mene, 'papier dense') : '');
     // (le titre est le bouton qui mène à l'onglet ; la phrase dessous y mène aussi, à la souris — le geste, à droite, sur la
     // ligne du titre : il ne pousse pas la ligne d'un étage)

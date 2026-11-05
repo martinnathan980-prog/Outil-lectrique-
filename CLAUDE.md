@@ -47,6 +47,11 @@ s'écrit ici, le jour même.
   d'un côté ou de l'autre. **Aucune réserve, aucune marge, aucun « 10 % », aucun « trop juste »**. Le calibre retenu est
   le plus petit qui ne disjoncte pas. Ce qui s'explique : ce qu'il tire, pendant combien de temps, et le seuil où ce
   calibre disjoncte sur cette durée.
+- **Le courant traverse un relais ou un interrupteur** (v86) : le contact est supposé fermé (le pire cas) et la fiche le dit
+  (« à travers 103RL1, contact supposé fermé ») ; une bobine consomme, elle ne traverse pas. Une branche de commande sans
+  consommation écrite dit « courant inconnu » et demande la consommation : jamais « Passer en DR16 » sur un fil de commande.
+- **Le calibre écrit vient du fichier** (v86) : pas de « Manuel » sur le calibre ; seule la proposition justifiée de VOLTA
+  (« Retenir le 7,5 A ») écrit, dans l'Excel corrigé.
 
 ## Les mots
 
@@ -58,6 +63,13 @@ s'écrit ici, le jour même.
   5 s ; sur 5 s, un 7,5 A ne disjoncte qu'au-delà de 10,9 A : il ne disjoncte pas »).
 - **Le nom des onglets dit ce qu'on y trouve** : « Fabrication » sonnait « usine » — c'est devenu « Pièces » (ce qu'il faut commander pour le monter).
 - Un problème se dit simplement, avec ce qu'il faut faire.
+- **« Votre fichier »** pour ce qui vient du lecteur ; **« l'Excel corrigé »** pour ce que VOLTA renvoie (v86) ;
+  « installation » ne nomme plus que le classement de la bibliothèque (et la colonne Install de ses fichiers).
+- **Un contact a un seul nom partout** (v86) : sur le plan, dans la fiche, le récapitulatif, la recherche, l'Excel corrigé —
+  celui que porte la pièce (la lettre de la face, module + lettre pour une barrette, même ajoutée par VOLTA) ; une minuscule
+  (51e) se souligne d'un trait fin.
+- **Un statut ne montre pas un pourcentage qui demande « de quoi ? »** (v86, « 2 câbles · 80 % ») : le compte, ou l'état en
+  mots (« 1 à régler ») ; le pourcentage vit dans le tableau, sous son titre.
 
 ## L'œil humain (la vraie différence)
 
@@ -133,6 +145,13 @@ s'écrit ici, le jour même.
 - **Ce qui demande une action se voit d'abord** : un problème à régler a l'air d'une action (son geste en évidence) ; un point
   d'information reste calme.
 - **Dans un tableau, une mesure a toujours son anneau** quand elle a une valeur : jamais l'un avec, l'autre sans.
+- **Chaque genre se reconnaît d'un coup d'œil** (v86) : la carte porte la silhouette de l'objet (sa forme du plan) et dit sa
+  nature quand le code la donne (« Relais », « Interrupteur », « Batterie ») ; un en-tête homogène, deux graisses, sans fond.
+- **Le disjoncteur se lit vivant** (v86) : la conclusion d'abord, en ampères (« 10 A : il ne disjoncte pas ») ; le courant
+  avance dans les barres ; le profil de charge s'écrit à côté de la courbe, qui bouge en direct ; ce que le graphique montre
+  (« disjoncterait après 36 min »), on ne l'écrit pas.
+- **Les problèmes d'une fiche disent l'essentiel en une phrase** (v86), même en grand ; le détail (d'où vient l'admis) se lit
+  au survol — jamais la même explication répétée sept fois.
 
 ## La méthode
 
