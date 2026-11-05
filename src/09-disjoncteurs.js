@@ -458,7 +458,8 @@ function meilleurDe(norme, o) { const { F, H, M, tenue, courbes, pts, fils, gamm
   const cal = g.calibre, perm = pts.filter(p => p.t === Infinity).reduce((m, p) => Math.max(m, p.i), 0);
   // les fils qui ne suivent pas ce calibre, et la jauge qui les suivrait
   const filsAChanger = [], contactsTouches = [], filsInconnus = [];
-  fils.forEach(f => { const p = protegerFil(norme, cal, f, H, protCtx); if (p.verdict === 'inconnu') { filsInconnus.push(f.type ? f.type + (f.autre ? ' vers ' + f.autre : '') : '?'); return; } if (filSuit(p)) return;
+  // (v86) un câble de commande (09 quater, `commande` : il ne mène qu'à des bobines, à des entrées) ne grossit pas pour le calibre
+  fils.forEach(f => { const p = protegerFil(norme, cal, f, H, protCtx); if (p.verdict === 'inconnu') { filsInconnus.push(f.type ? f.type + (f.autre ? ' vers ' + f.autre : '') : '?'); return; } if (filSuit(p) || f.commande) return;
     const prop = jaugeQuiSuit(norme, cal, f, H, protCtx), bouts = f.l ? [f.l.de, f.l.vers].filter(r => r && !estMasse(r) && !estDisjoncteur(r)) : [], cabA = cableDuType(norme, f.type);
     filsAChanger.push({ cable: f.cable || '', actuel: f.type, propose: prop ? prop.type : null, raison: raisonsDuFil(p, cal).join(' ; '), jaugeActuelle: p.jauge, jaugeProposee: prop ? prop.cable.jauge : null,
       masseActuelle: cabA && cabA.masse != null ? cabA.masse : null, masseProposee: prop && prop.cable.masse != null ? prop.cable.masse : null, direct: f.direct !== false, via: f.via || '', bouts,
@@ -551,7 +552,9 @@ function protectionDesFils(norme, calibre, profil, fils, hyp) { const H = { ...H
 // (v84) LE COURANT PAR BRANCHE : un câble dont la consommation en aval est écrite apporte ses `points` (09 quater,
 // `filsDepuis`) — sa charge, son contact se jugent à SON courant ; sinon, au profil du disjoncteur (la règle prudente). Ce
 // que le disjoncteur laisse passer, lui, ne dépend que du calibre.
-function protegerFil(norme, calibre, f, H, ctx) { const { k, lente } = ctx, parBranche = Array.isArray(f.points) && f.points.length > 0, pts = parBranche ? f.points : ctx.pts;
+// (v86, l'audit B1) un câble de COMMANDE au courant inconnu (09 quater, `filsDepuis` : `inconnu` — il ne mène qu'à une bobine,
+// à une entrée de calculateur, et rien n'est écrit) : ce qu'il porte ne se juge pas, jamais au courant total du disjoncteur
+function protegerFil(norme, calibre, f, H, ctx) { const { k, lente } = ctx, parBranche = Array.isArray(f.points) && f.points.length > 0, pts = parBranche ? f.points : f.inconnu ? [] : ctx.pts;
   const jauge = jaugeDuType(f.type), fil = filDeNorme(norme, f.type, jauge), rd = resistanceDuFil(norme, f.type, jauge, H.tconducteur), tenue = tenueEnTemperature(norme, f.type, H.ambiante);
   const protection = protectionDeJauge(norme, jauge), calibreMax = protection ? protection.disjoncteurMax : null, horsTable = !!(calibre > 0 && calibreMax != null && calibre > calibreMax + 1e-9);
   // le contact : celui du plan si l'appelant le donne, sinon la taille usuelle de la jauge (table Protection, sinon la plus petite qui l'admet) — et la ligne de la table des contacts qui lui répond,

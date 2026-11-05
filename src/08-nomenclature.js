@@ -120,7 +120,15 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
   // l'état d'un disjoncteur : le verdict à sa couleur (la table unique, 09 bis), « pas écrit au retest » en ambre dessous
   const etatDj = x => x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>${x.retest ? note('pas écrit dans l’installation') : ''}` : `<span class="no-rien">${esc(x.etat || '—')}</span>`;
   const nF = typeof plans === 'function' ? plans().length : 0;
-  const corps = tete('Liste de pré-approvisionnement', 'LPA', true) + `<p class="note no-intro">Tout ce qu’il faut commander pour monter le plan entier${nF > 1 ? ', ses ' + nF + ' folios' : ''}, compté depuis vos fichiers et les choix des fiches. Un câble sans longueur dans l’installation compte ${esc(nombre(N.hypothese))} m (les hypothèses).</p>` + resume
+  /* (v86, l'audit G6 : « la LPA compte les modules choisis par VOLTA, l'Excel garde ceux du fichier : les deux sorties se
+     contredisent sans le dire ») : quand VOLTA retient un module ou un calibre que votre Excel n'a pas encore, une ligne le
+     dit — lesquels — et mène au relevé, où ils s'écrivent d'un geste */
+  const nonEcrits = propositionsDeLaLPA(), ne = nonEcrits.length;
+  // (la référence en chasse fixe, le reste en mots : « E0599-1B202Z pour 667VT2, module 52 » ; « 102CB1 en 15 A »)
+  const quoiNonEcrit = p => p.genre === 'calibre' ? `${esc(p.repere)} en ${esc(amperes(p.retenu))}` : `<span class="id">${esc(p.retenu)}</span> pour ${esc(String(p.repere).replace(' · ', ', '))}`;
+  const avertir = ne ? `<div class="no-volta" role="note"><p><b>Comptée selon les choix de VOLTA</b>, dont ${ne > 1 ? ne + ' pas encore écrits' : '1 pas encore écrit'} dans votre Excel : ${nonEcrits.map(quoiNonEcrit).join(' · ')}.</p>`
+    + `<button type="button" class="btn papier dense" id="no-releve" data-bulle="Le relevé de ce qui part dans l’Excel corrigé : ces choix s’y écrivent d’un geste">Relire ce qui part</button></div>` : '';
+  const corps = tete('Liste de pré-approvisionnement', 'LPA', true) + `<p class="note no-intro">Tout ce qu’il faut commander pour monter le plan entier${nF > 1 ? ', ses ' + nF + ' folios' : ''}, compté depuis vos fichiers et les choix des fiches. Un câble sans longueur dans l’installation compte ${esc(nombre(N.hypothese))} m (les hypothèses).</p>` + avertir + resume
     // (v84) le fourreau sous son contact, pas dans une colonne de tirets (la charte : « pas de colonne pleine de tirets »)
     + table('Contacts à sertir', refs(N.contacts, 'référence'), ['Contact', 'Qté', 'Où'], N.contacts.map(x => [td('ref', esc(x.reference) + (x.accessoire ? `<span class="no-arr">avec ${esc(x.accessoire)}</span>` : '') + (x.confiance === 'à confirmer' ? note('à confirmer') : '')), td('d', x.n), td('sans', ou(x.ou))]))
     + table('Modules de jonction', refs(N.modules, 'référence'), ['Module', 'Norme', 'Qté', 'Barrettes'], N.modules.map(x => [td('ref', esc(x.reference)), td('sans', esc(x.famille || ''), !x.famille), td('d', x.n), td('sans', ou(x.ou))]))
@@ -138,6 +146,7 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
   const pied = '<button class="btn papier" id="no-suivi" data-bulle="Une ligne par pièce posée — barrette, prise, connecteur — avec sa référence, ses contacts et ses câbles, en CSV">Suivi de fabrication</button><span class="espace"></span><button class="btn papier" id="no-csv" data-bulle="La même liste, en CSV : une ligne par article">LPA en CSV</button><button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : une ligne par article, sa section, sa quantité, où il va">LPA en Excel</button>';
   ouvrirFiche({ mode: 'nomenclature', large: true }, corps, pied);
   $('no-xlsx').onclick = () => exporterNomenclatureExcel(N); $('no-csv').onclick = () => exporterNomenclature(N); $('no-suivi').onclick = exporterSuivi;
+  const rel = $('no-releve'); if (rel) rel.onclick = () => { if (typeof exporterRetestCorrige === 'function') exporterRetestCorrige(); };
   // « +11 » déplie ses repères en place ; « moins » les replie (le clavier reste sur le bouton)
   const fc = $('fiche-corps'); if (fc && !fc.dataset.noPlus) { fc.dataset.noPlus = '1'; fc.addEventListener('click', e => { const b = e.target.closest('.no-plus'); if (!b) return;
     const r = b.parentElement.querySelector('.no-reste'), ouvre = r.hidden; r.hidden = !ouvre; b.setAttribute('aria-expanded', String(ouvre)); b.textContent = ouvre ? 'moins' : '+' + b.dataset.n;
@@ -157,11 +166,15 @@ function lignesNomenclature(N) { const L = [];
   N.cables.forEach(x => L.push(['Câbles', x.reference, pluriel(x.n, 'câble'), Math.round(x.longueur * 10) / 10, 'm', '']));
   return L; }
 const nomDeNomenclature = ext => (app.nom || 'contrat').replace(/\.[^.]+$/, '') + ' — LPA.' + ext;
+// (v86, G6) les choix de VOLTA que votre Excel n'a pas encore (un module, un calibre) : la LPA les compte, elle le dit
+const propositionsDeLaLPA = () => { try { return typeof propositionsNonEcrites === 'function' ? propositionsNonEcrites() : []; } catch (_) { return []; } };
+// (v86, l'audit F3) le message d'un enregistrement dit le nom du fichier — et, s'il le faut, que la LPA suit des choix pas encore écrits
+const motLPA = (ext, n) => { const ne = propositionsDeLaLPA().length; return 'LPA enregistrée : ' + nomAscii(nomDeNomenclature(ext)) + ' — ' + pluriel(n, 'ligne') + (ne ? ', selon les choix de VOLTA (' + (ne > 1 ? ne + ' pas encore écrits' : '1 pas encore écrit') + ' dans votre Excel)' : '') + '.'; };
 /* Le CSV : une ligne par article, avec sa section, pour tableur. */
 function exporterNomenclature(N) { N = N || nomenclatureDuContrat(); const cell = v => { const t = typeof v === 'number' ? nombre(v) : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
   const L = [ENTETES_NOMEN.join(';'), ...lignesNomenclature(N).map(l => l.map(cell).join(';'))];
   telecharger(new Blob(['\ufeff' + L.join('\n')], { type: 'text/csv;charset=utf-8' }), nomDeNomenclature('csv'));
-  dire('La LPA est enregistrée en CSV : ' + pluriel(L.length - 1, 'ligne') + '.'); }
+  dire(motLPA('csv', L.length - 1)); }
 /* Le classeur Excel (SheetJS, embarqué dans la page) : la même table, l'en-tête filtrable, les colonnes à leur largeur,
    les quantités en nombres (un tableur les somme). */
 function exporterNomenclatureExcel(N) { N = N || nomenclatureDuContrat(); const L = lignesNomenclature(N);
@@ -170,4 +183,4 @@ function exporterNomenclatureExcel(N) { N = N || nomenclatureDuContrat(); const 
   ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: L.length, c: ENTETES_NOMEN.length - 1 } }) };
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'LPA');
   telecharger(new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nomDeNomenclature('xlsx'));
-  dire('La LPA est enregistrée en Excel : ' + pluriel(L.length, 'ligne') + '.'); }
+  dire(motLPA('xlsx', L.length)); }

@@ -1468,8 +1468,11 @@ function lierPlanche() {
       /* le DOUBLE appui se reconnaît ici : le premier clic choisit le bloc et redessine la page, et le navigateur
          n'émet alors ni « click » ni « dblclick » — deux appuis à moins de 400 ms, au même endroit */
       const t = Date.now(), d = dernierAppui; dernierAppui = { t, x: e.clientX, y: e.clientY }; appuiDuPlan = { ...dernierAppui, nom: dernierBloc && dernierBloc.nom };
-      if (d && t - d.t < 400 && Math.abs(e.clientX - d.x) < 8 && Math.abs(e.clientY - d.y) < 8) { dernierAppui = null; doubleAppui(e); }
-      else cliquer(versMonde(e.clientX, e.clientY)); survolCle = ''; }
+      // (v86, F6) le second appui d'un double-clic sur un RENVOI : le premier a déjà mené au folio d'en face, celui-ci ne fait
+      // rien (il y zoomait, ou y défaisait le câble qu'on venait d'y choisir)
+      if (d && d.renvoi && t - d.t < 400) dernierAppui = null;
+      else if (d && t - d.t < 400 && Math.abs(e.clientX - d.x) < 8 && Math.abs(e.clientY - d.y) < 8) { dernierAppui = null; doubleAppui(e); }
+      else if (cliquer(versMonde(e.clientX, e.clientY)) === 'renvoi' && dernierAppui) dernierAppui.renvoi = true; survolCle = ''; }
     mode = null; pan = null; prise = null; };
   /* double appui : sur une borne, un fil, une barrette à poser que la main a retouchés, ils sont rendus au moteur ;
      ailleurs, on zoome */
@@ -1532,9 +1535,9 @@ function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => 
     + l_(pluriel(n, 'câble') + ' sur ce folio' + (ail.length ? ' · aussi sur f. ' + ail.join(' · ') : ''))
     + (estRenvoi(nom) || c.rail ? '' : l_('Clic : sa fiche · glisser : le déplacer')); }
 let appuiDuPlan = null;   // le dernier appui simple sur la planche (l'instant, l'endroit, le bloc) : un double-clic peut finir ailleurs
-/* Un clic sur la planche : un bloc, un renvoi, un fil, ou le vide. */
+/* Un clic sur la planche : un bloc, un renvoi, un fil, ou le vide. Rend 'renvoi' quand il a mené au folio d'en face. */
 function cliquer(w) { const c = blocSous(w);
-  if (c) { if (estRenvoi(c.name)) { suivreRenvoi(c, w); return; }
+  if (c) { if (estRenvoi(c.name)) { suivreRenvoi(c, w); return 'renvoi'; }
     if (c.rail) return; choisirBloc(c); return; }
   const vt = barretteAPoserSous(w); if (vt) { choisirBarretteAPoser(vt); return; }
   const f = filSous(w); if (f) choisirFil(f); else deselectionner(); }
@@ -1683,9 +1686,8 @@ function rendreIndex(box) { const etats = new Map();
   box.className = 'fi ix'; box.dataset.cle = 'index';
   // la fiche qu'on y a laissée : ‹ la rouvre (Alt+←), à la même place
   const I = typeof pileInsp === 'function' ? pileInsp() : null, laissee = I && I.pile[I.pos];
-  box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" data-bulle="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" data-bulle="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" data-bulle="Ajouter un équipement : son repère, puis ses câbles dans le tableau" aria-label="Ajouter un équipement" aria-expanded="${!!app.insp.ajout}">${ico('plus')}</button>${boutonTaille()}${boutonEpingle()}<button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer · Échap">${ico('fermer')}</button></header>`
-    // ajouter un équipement : un champ en ligne, sous le titre (pas une boîte du navigateur)
-    + (app.insp.ajout ? `<form class="ix-ajout" id="ix-ajout"><div class="filtre">${ico('plus')}<input id="ix-nouveau" placeholder="Repère du nouvel équipement, par exemple 105RL2" aria-label="Repère du nouvel équipement" autocomplete="off" spellcheck="false"></div><button class="btn cuivre" type="submit">Ajouter</button><button class="btn lien" type="button" id="ix-annuler">Annuler</button></form>` : '')
+  box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" data-bulle="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" data-bulle="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span>${boutonTaille()}${boutonEpingle()}<button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer · Échap">${ico('fermer')}</button></header>`
+    // (v86, une seule source : un équipement s'ajoute dans le fichier — plus de « + » ni de champ ici)
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Filtrer la liste : un repère, une référence" aria-label="Filtrer la liste des repères" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
     + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? `<span class="ix-att"> · ${natt} à voir</span>` : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
     + (groupes || `<div class="ix-vide"><span class="ix-vide-ico" aria-hidden="true">${ico('loupe')}</span><p>Aucun repère ni câble ne contient « ${esc(app.insp.filtre.trim())} ».</p><button class="btn papier" id="ix-effacer">Effacer la recherche</button></div>`);
@@ -1711,11 +1713,6 @@ function rendreIndex(box) { const etats = new Map();
     else if (e.key === 'Enter') { const b = (app.insp.actif >= 0 && box.querySelector('.ix-item.actif')) || box.querySelector('.ix-item[data-nom], .ix-item[data-cable]'); if (b) { e.preventDefault(); b.click(); } } });
   const effacer = () => { app.insp.filtre = ''; rendreIndex(box); const q2 = $('ix-q'); if (q2) q2.focus(); };
   ['ix-vider', 'ix-effacer'].forEach(id => { const b = $(id); if (b) b.onclick = effacer; });
-  $('ix-plus').onclick = () => { app.insp.ajout = !app.insp.ajout; rendreIndex(box); const n = $('ix-nouveau'); if (n) n.focus(); };
-  const aj = $('ix-ajout'); if (aj) { const n = $('ix-nouveau'), fin = () => { app.insp.ajout = false; rendreIndex(box); };
-    aj.addEventListener('submit', e => { e.preventDefault(); const r = n.value.trim(); if (!r) { n.focus(); return; } fin();
-      if (!app.base.ouvert) ouvrirBase(); ajouterLiaison(r); dire(r + ' : écrivez ses câbles dans le tableau, le plan suit.'); });
-    $('ix-annuler').onclick = fin; n.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); fin(); } }); }
   const det = box.querySelector('.ix-controle'); if (det) det.addEventListener('toggle', () => { CONTROLE.ouvert = det.open; });
   if (det) lierListeControle(det, () => rendreIndex(box));
   box.querySelectorAll('.ix-item.co-item').forEach(b => b.onclick = () => { const L = lignesDuControle(), i = L.findIndex(l => l.cle === b.dataset.ligne); if (i >= 0) CONTROLE.pas = { cle: L[i].cle, rang: i }; allerAuControle(CONTROLE.items[+b.dataset.k]); });
@@ -1771,12 +1768,42 @@ function boiteDeLaCible() { const d = app.dessin, c = app.cible; if (!d || !c) r
 /* R5 — LE PLAN NE BOUGE PAS pour rien : ouvrir une fiche depuis une fiche allume l'objet ; le plan ne glisse que si
    l'objet est hors de la place libre (sous un panneau, hors de l'écran), et alors à la même échelle quand il y tient.
    `b` : la boîte de l'objet, dans le repère du dessin. */
+/* (v86, l'audit F9) LE VOISINAGE de ce qui est choisi, dans le dessin : l'objet, ses câbles de ce folio, les blocs où ils
+   arrivent (avec leurs étiquettes : la lettre d'un connecteur au-dessus, le repère dessous). Rend sa boîte et celles des
+   voisins, une par bloc. */
+function voisinageDeLaCible(b) { const d = app.dessin, c = app.cible; if (!d || !c || !b) return { x: b.x, y: b.y, w: b.w, h: b.h, voisins: [] };
+  let x0 = b.x, y0 = b.y, x1 = b.x + b.w, y1 = b.y + b.h; const v = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  const L = liaisonsDuPlan(), noms = new Set(), nom = c.type === 'bloc' ? c.nom : null, voisins = [];
+  const fils = c.type === 'fil' ? [c.f || filDe(c.l)].filter(Boolean) : d.fils.filter(f => { const l = L[f.i]; return l && l.de !== l.vers && (l.de === nom || l.vers === nom); });
+  fils.forEach(f => { (f.pts || []).forEach(p => v(p.x, p.y)); const l = L[f.i]; if (l) { if (l.de !== nom) noms.add(l.de); if (l.vers !== nom) noms.add(l.vers); } });
+  noms.forEach(n => { const k = d.compDe.get(n); if (k) { const q = { x: k.x, y: k.y - 16, w: k.w, h: k.h + 30 }; voisins.push(q); v(q.x, q.y); v(q.x + q.w, q.y + q.h); } });
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0, voisins }; }
+/* Le décalage d'un objet trop entouré pour tout montrer : centré, ou poussé — jusqu'à garder son centre dans la moitié du
+   milieu — pour que le plus de voisins se voient ENTIERS (un bout de repère coupé sous le rail ne dit rien) ; à égalité, le
+   plus près du centre. `s` : l'échelle ; L, R : la place libre (déjà moins son air). */
+function decalageDesVoisins(b, voisins, s, L, R) { const t0 = (L + R) / 2 - (b.x + b.w / 2) * s, W = R - L;
+  const ok = t => b.x * s + t >= L && (b.x + b.w) * s + t <= R && Math.abs((b.x + b.w / 2) * s + t - (L + R) / 2) <= W / 4;
+  const note = t => voisins.reduce((n, q) => { const a = q.x * s + t, z = (q.x + q.w) * s + t; return n + (a >= L && z <= R ? 10 : a < R && z > L ? -4 : 0); }, 0) - 3 * Math.abs(t - t0) / W;
+  let best = t0, nb = note(t0); voisins.forEach(q => [L - q.x * s, R - (q.x + q.w) * s].forEach(t => { if (!ok(t)) return; const n = note(t); if (n > nb + 1e-6) { best = t; nb = n; } }));
+  return best; }
 function montrerSiCache(b, centrer) { if (!b || !app.dessin) return; const r = cadre(), m = marges(), s = app.vue.s;
   const X0 = app.vue.tx + b.x * s, Y0 = app.vue.ty + b.y * s, X1 = X0 + b.w * s, Y1 = Y0 + b.h * s, L = m.gauche, T = m.haut, R = r.width - m.droite, B = r.height - m.bas;
   // (v78) à côté du grand, le plan n'a qu'un tiers : l'objet s'y cadre lisible (ses voisins autour), sauf s'il l'est déjà
+  /* (v86, l'audit F9 et F6) SANS RIEN COUPER QUI COMPTE : l'objet ET son voisinage se cadrent ensemble quand ils tiennent
+     encore lisibles (80 % de l'échelle de lecture au moins) ; sinon l'objet, lisible, au milieu — poussé juste ce qu'il faut
+     pour que le plus de voisins se voient entiers (l'étiquette d'un voisin ne passe plus à moitié sous le rail) ; un bloc
+     plus haut que la place : son haut. Une échelle déjà lisible et proche de la visée (à 12 % près) se garde : un double-clic
+     n'est plus un saut de zoom de 62 à 66 %. */
   if (document.body.classList.contains('insp-grand') && document.body.classList.contains('insp-epingle')) { const lisible = Math.min(LISIBLE_BUREAU, Math.max(0.42, Math.min((R - L) / (b.w + 260), (B - T) / (b.h + 200))));
     if (!centrer && X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1 && s >= Math.min(0.42, lisible) - 1e-3) return;
-    animerVue({ s: lisible, tx: (L + R) / 2 - (b.x + b.w / 2) * lisible, ty: (T + B) / 2 - (b.y + b.h / 2) * lisible }, true); return; }
+    const nb = voisinageDeLaCible(b), M = 20, l0 = L + M, r0 = R - M, t0 = T + M, b0 = B - M, sNb = Math.min((r0 - l0) / Math.max(1, nb.w), (b0 - t0) / Math.max(1, nb.h)), lisMin = Math.max(0.42, 0.8 * lisible);
+    let s1 = sNb >= lisMin ? Math.min(lisible, sNb) : lisible;
+    if (s >= lisMin && Math.abs(s - s1) <= 0.12 * s1 && (sNb < lisMin || s <= sNb + 1e-6)) s1 = s;
+    const cale = (v, lo, hi) => lo <= hi ? Math.max(lo, Math.min(hi, v)) : v;
+    let tx = (L + R) / 2 - (b.x + b.w / 2) * s1, ty = b.h * s1 > B - T - 16 ? T + 12 - b.y * s1 : (T + B) / 2 - (b.y + b.h / 2) * s1;
+    if (nb.h * s1 <= b0 - t0 + 0.5) ty = cale(ty, t0 - nb.y * s1, b0 - (nb.y + nb.h) * s1);
+    tx = nb.w * s1 <= r0 - l0 + 0.5 ? cale(tx, l0 - nb.x * s1, r0 - (nb.x + nb.w) * s1) : decalageDesVoisins(b, nb.voisins, s1, l0, r0);
+    animerVue({ s: s1, tx, ty }, true); return; }
   if (X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1) return;
   if (b.w * s > R - L || b.h * s > B - T) { centrerSur(b.x, b.y, b.w, b.h); return; }
   animerVue({ s, tx: (L + R) / 2 - (b.x + b.w / 2) * s, ty: (T + B) / 2 - (b.y + b.h / 2) * s }, true); }
@@ -2060,8 +2087,10 @@ const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde',
   png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge calibres preferes', normes: 'tables sources', bible: 'barrettes connecteurs prises modules references',
   nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
   bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
-  raccourcis: 'clavier touches aide', suivi: 'csv barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft' };
-const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
+  raccourcis: 'clavier touches aide', suivi: 'csv barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft',
+  // (v86) l'historique du plan entier (08-journal)
+  historique: 'historique journal changements modifications defaire annuler qui quand avant apres change' };
+const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);
     const l = b.querySelector('.menu-l'), mot = (l ? [...l.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('') : b.textContent).trim();
@@ -2078,7 +2107,6 @@ function actionsDeLaPalette() { const xs = [], vu = new Set();
     en('feuille', 'Voir la feuille entière', '0', () => { VUE.cadrage = 'feuille'; ajuster(true); }, { mots: 'cadrer ajuster cartouche page', ico: I('zfit') });
     en('dessin', 'Voir le dessin, au plus près', '0', () => { VUE.cadrage = 'dessin'; ajuster(true); }, { mots: 'cadrer ajuster zoom', ico: I('zfit') });
     en('cent', 'Zoomer à 100 %', '1', () => zoomerA(1), { mots: 'zoom lire taille reelle', ico: I('zin') }); en('deuxcents', 'Zoomer à 200 %', '2', () => zoomerA(2), { mots: 'zoom loupe', ico: I('zin') });
-    en('liaison', 'Ajouter une liaison', '', () => nouvelleLiaison(), { mots: 'nouveau cable liaison', ico: I('btnLiaison') });
     if (P.length > 1) { en('folio+', 'Folio suivant', '→', () => allerAuFolio(1), { mots: 'folio page suivant', ico: I('fo-next') }); en('folio-', 'Folio précédent', '←', () => allerAuFolio(-1), { mots: 'folio page precedent', ico: I('fo-prev') });
       P.forEach((p, i) => en('folio:' + p, 'Folio ' + p, '', () => allerAuPlan(p), { des: pluriel(liaisonsDe(p).length, 'câble'), mots: 'folio f' + (i + 1) + ' page ' + (i + 1) })); }
     const cle = cleCourante(); if (cle && app.retouches.has(cle)) en('auto', 'Revenir au dessin automatique', '', revenirAutomatique, { mots: 'retouche moteur annuler dessin' }); }
@@ -2260,7 +2288,9 @@ function hypothesesDe(N, H, ctx) { ctx = ctx || {}; const regime = REGIMES[H.reg
     nb('si-I', 'courant', 'courant', 'A', '0.5', 'fil', 'Le courant d’un câble qu’aucun disjoncteur n’alimente, et celui de la simulation d’une barrette ou d’une prise.'),
     nb('si-U', 'tension', 'tension', 'V', '1', 'fil', 'La tension du réseau : le pourcentage de chute, et la ligne de la table Réseau quand la chute admise de la règle du lecteur est vidée.'),
     N.fils.some(f => f.tr != null) ? nb('si-T', 'ambiante', 'ambiante', '°C', '5', 'temperature', 'L’ambiante autour des câbles : l’EN 2853 déclasse ce qu’un câble admet (note 2), et sa tenue en température se juge dessus (+ 40 °C au conducteur).') : null,
-    nb('si-Tc', 'tconducteur', 'conducteur', '°C', '5', 'temperature', 'La température du conducteur, pour sa résistance : 20 °C, la convention de la base des câbles ; 135 °C, le cas de l’EN 2853.'),
+    // (v86, l'audit G7 : « Conducteur 20 °C » laissait croire que la chute se calcule à 20 °C ; par défaut, VOLTA estime la
+    // température de chaque câble sous son courant — celle-ci ne sert qu'à la chute « fixe »)
+    nb('si-Tc', 'tconducteur', 'conducteur (si fixe)', '°C', '5', 'temperature', 'Ne sert que si la chute se calcule à température fixe (« Température des conducteurs », plus bas) : la résistance de chaque câble se prend alors à cette température. 20 °C par défaut, celle des tables (la base des câbles, EN 2853 : la résistance à 20 °C) et de votre Excel. Sinon, VOLTA estime la température de chaque câble sous son courant — l’ambiante, plus l’échauffement que ce courant lui donne — et c’est elle que les fiches disent.'),
     { genre: 'choix', id: 'si-Ret', k: 'retour', lib: 'retour', aria: 'Retour du courant', options: Object.entries(RETOURS), valeur: H.retour || 'structure', groupe: 'fil', sert: 'Par la structure, l’aller seul compte (AC 43.13-1B : du bus à la masse de l’équipement) ; par un câble identique, la résistance double — le câble et ses contacts, deux fois.' },
     { genre: 'choix', id: 'si-R', k: 'regime', lib: 'régime', aria: 'Régime du réseau', options: Object.entries(REGIMES), valeur: regime, groupe: 'reseau', sert: 'Continu, monophasé ou triphasé : la formule de la chute, et la chute admise — en triphasé, la chute composée (√3 ×) se compare aux 4 V de la règle du lecteur.' },
     regime !== 'continu' ? { genre: 'choix', id: 'si-C', k: 'cosphi', lib: 'cos φ', aria: 'cos φ', options: [['0.8', '0,8 · régime permanent'], ['0.35', '0,35 · démarrage moteur']], valeur: Math.abs(H.cosphi - 0.35) < 1e-9 ? '0.35' : Math.abs(H.cosphi - 0.8) < 1e-9 ? '0.8' : '', groupe: 'reseau', sert: '0,8 en régime permanent, 0,35 au démarrage d’un moteur.' } : null,
@@ -2278,10 +2308,12 @@ function hypothesesDe(N, H, ctx) { ctx = ctx || {}; const regime = REGIMES[H.reg
 function hypothesesR2(N, H, nb) { const dj = !!(N.disjoncteurs && N.disjoncteurs.length), reseau = U => { const r = chuteAdmise(N, U, U === 115 ? 'tri' : 'continu', { chuteMono: null, chuteTri: null }); return r ? nombre(r.chuteMax) + ' V' : '—'; };
   return [
     // la chute admise : la règle du lecteur (octobre 2026), en hypothèse ; vidée, la table Réseau de la norme reprend
-    nb('si-Cm', 'chuteMono', 'chute admise, continu et monophasé', 'V', '0.5', 'chute', 'La règle du lecteur (octobre 2026) : « 2 V au maximum en monophasé » — le continu (le 28 V) aussi, et une pointe n’a pas droit au double. Vide : la table Réseau de la norme reprend (' + reseau(28) + ' sous 28 V ; l’AC 43.13-1B double pour une pointe de 2 min au plus).', { vide: 'table Réseau' }),
+    // (v86, l'audit G7 : la phrase se contredisait — « 1 V sous 28 V » pour source d'un 2 V) : la valeur, puis ce que dit
+    // l'AC 43.13-1B, sans mélanger les deux ; la valeur ne change pas (l'intégrateur pose la question au lecteur)
+    nb('si-Cm', 'chuteMono', 'chute admise, continu et monophasé', 'V', '0.5', 'chute', '2 V par défaut, la valeur de VOLTA (la règle notée en octobre 2026, « 2 V au maximum en monophasé », prise aussi pour le continu ; l’AC 43.13-1B, table 11-1, dit 1 V en continu et 2 V en intermittent sous 28 V). Une pointe n’y a pas droit au double. Vide : la table Réseau de la norme juge (' + reseau(28) + ' en continu sous 28 V, le double pour une pointe de 2 min au plus).', { vide: 'table Réseau' }),
     nb('si-Ct', 'chuteTri', 'chute admise, triphasé', 'V', '0.5', 'chute', 'La règle du lecteur (octobre 2026) : « 4 V en triphasé », contre la chute composée (entre deux phases). Vide : la ligne de la tension composée de la table Réseau reprend (' + reseau(115) + ' entre phases sous 115 V).', { vide: 'table Réseau' }),
-    { genre: 'choix', id: 'si-Cc', k: 'chuteConducteur', lib: 'température des conducteurs', aria: 'Température des conducteurs pour la chute', options: [['estimee', 'estimée sous le courant'], ['fixe', 'fixe : « conducteur » (20 °C)']], valeur: H.chuteConducteur === 'fixe' ? 'fixe' : 'estimee', groupe: 'chute',
-      sert: 'Estimée (par défaut) : chaque câble à la température que son courant lui donne, ambiante + 40 °C × (I / I admise)², AC 43.13-1B § 11-66 d(6). Fixe : à l’hypothèse « conducteur », 20 °C comme l’Excel et les fiches constructeur.' },
+    { genre: 'choix', id: 'si-Cc', k: 'chuteConducteur', lib: 'température des conducteurs', aria: 'Température des conducteurs pour la chute', options: [['estimee', 'estimée sous le courant'], ['fixe', 'fixe : « conducteur (si fixe) », ' + nombre(+H.tconducteur) + ' °C']], valeur: H.chuteConducteur === 'fixe' ? 'fixe' : 'estimee', groupe: 'chute',
+      sert: 'Estimée (par défaut, AC 43.13-1B § 11-66) : chaque câble à la température que son courant lui donne — l’ambiante, plus 40 °C × (I / I admise)² ; c’est elle que les fiches disent. Fixe : chaque câble à « conducteur (si fixe) », 20 °C par défaut, comme l’Excel et les fiches constructeur.' },
     dj ? { genre: 'case', id: 'si-Cd', k: 'chuteDisjoncteur', lib: 'compter la chute du disjoncteur', groupe: 'chute',
       sert: 'Cochée (par défaut) : la chute du disjoncteur entre dans la chute en ligne — celle de votre table (« Du max », comptée entière), sinon celle de sa famille au prorata I / In. La génération est négligée : elle garantit 28 V en sortie des panneaux de disjoncteurs (votre note).' } : null,
     nb('si-F', 'frequence', 'fréquence', 'Hz', '10', 'reseau', 'En alternatif, la réactance saisie (à 400 Hz) monte avec la fréquence (X = 2πfL) : 400 Hz par défaut, un réseau à fréquence fixe ; 800 en fréquence variable (MIL-STD-704F, 360 à 800 Hz). Sans effet en continu.'),
@@ -2303,10 +2335,10 @@ const GROUPES_HYPOTHESES = [['fil', 'Le câble'], ['temperature', 'La températu
 /* CE QUE FAIT CHAQUE RÉGLAGE, EN UNE PHRASE (l'ergonome v73 : « 232 mots à lire : chaque réglage porte un paragraphe ») ; le
    paragraphe entier — la règle, la source, la valeur par défaut — se lit dans le « ? » de sa ligne. */
 const COURT_HYPOTHESES = { longueur: 'La longueur d’un câble que l’installation ne mesure pas.', courant: 'Le courant d’un câble qu’aucun disjoncteur n’alimente.', tension: 'La tension du réseau.',
-  ambiante: 'L’air autour des câbles : ce qu’un câble admet en dépend.', tconducteur: 'La température qui donne sa résistance à un câble.', retour: 'Par où le courant revient : la structure, ou un câble.',
+  ambiante: 'L’air autour des câbles : ce qu’un câble admet en dépend.', tconducteur: 'La température des câbles quand la chute se calcule à température fixe ; par défaut, VOLTA l’estime sous leur courant.', retour: 'Par où le courant revient : la structure, ou un câble.',
   regime: 'Continu, monophasé ou triphasé.', cosphi: 'Le facteur de puissance, en alternatif.', reactance: 'La réactance d’un gros câble, en alternatif.', charge: 'La part de ce que le faisceau admet qui y circule vraiment.',
   altitude: 'L’altitude de vol.', tableauMin: 'L’ambiante la plus basse du tableau de disjoncteurs.', tableauMax: 'L’ambiante la plus haute du tableau de disjoncteurs.',
-  chuteMono: 'La chute en ligne admise : votre règle, 2 V.', chuteTri: 'En triphasé, la chute admise entre phases : votre règle, 4 V.', chuteConducteur: 'La température des câbles, pour la chute en ligne.',
+  chuteMono: 'La chute en ligne admise : 2 V, la valeur de VOLTA ; l’AC 43.13-1B dit 1 V en continu et 2 V en intermittent sous 28 V.', chuteTri: 'En triphasé, la chute admise entre phases : votre règle, 4 V.', chuteConducteur: 'Estimée sous le courant de chaque câble (par défaut), ou fixe.',
   chuteDisjoncteur: 'La chute propre du disjoncteur compte dans la chute en ligne.', frequence: 'La fréquence du réseau alternatif.', marge: 'La marge du meilleur calibre sur chaque courant du profil.',
   margeTemps: 'Ce qu’une pointe peut consommer du temps de déclenchement.', prechauffage: 'Un état en service trouve le bilame chaud.', calibresPreferes: 'Les calibres que vous posez : le meilleur se choisit parmi eux.',
   // v74 (la règle du calibre) : la case a sa phrase courte, son paragraphe reste dans le « ? »
@@ -2906,13 +2938,14 @@ function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.
 function exporterSuivi() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || '');
   if (!L.length) { dire('Rien à suivre : ni barrette, ni prise, ni connecteur dans ce contrat.'); return; }
   telecharger(new Blob(['\ufeff' + csvDuSuivi(L)], { type: 'text/csv;charset=utf-8' }), nomContrat() + '-suivi.csv');
-  dire(pluriel(L.length, 'ligne') + ' de suivi enregistrée' + (L.length > 1 ? 's' : '') + '.'); }
-function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); dire('Folio enregistré en SVG.'); }
+  // (v86, l'audit F3) chaque enregistrement dit le nom du fichier : VOLTA ne sait pas où le navigateur le range
+  dire('Suivi enregistré : ' + nomContrat() + '-suivi.csv — ' + pluriel(L.length, 'ligne') + '.'); }
+function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); dire('Folio enregistré : ' + nomAscii(nomFolio() + '.svg')); }
 function exporterPNG() { const S = svgDuFolio(); if (!S) return;
   const k = Math.max(1, Math.min(3, 12e6 / Math.max(1, S.w * S.h))); const img = new Image();
   img.onload = () => { const cv = document.createElement('canvas'); cv.width = Math.round(S.w * k); cv.height = Math.round(S.h * k);
     const g = cv.getContext('2d'); g.fillStyle = '#fbfbf7'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
-    cv.toBlob(b => { if (b) { telecharger(b, nomFolio() + '.png'); dire('Folio enregistré en PNG.'); } }, 'image/png'); };
+    cv.toBlob(b => { if (b) { telecharger(b, nomFolio() + '.png'); dire('Folio enregistré : ' + nomAscii(nomFolio() + '.png')); } }, 'image/png'); };
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(S.txt); }
 /* Imprimer : la planche seule, sur fond blanc, sur un A3 paysage — la
    feuille de tous les folios. */
@@ -3100,10 +3133,11 @@ const RACCOURCIS = [
     ['Le problème suivant, le précédent|les problèmes, puis ce qui est à voir', ['P'], ['Maj', 'P']],
     ['Folio précédent, suivant', ['←'], ['→']], ['Toute la feuille, puis le dessin', ['0']], ['Zoomer, dézoomer', ['+'], ['−']], ['À 100 %, à 200 %', ['1'], ['2']],
     ['Déplacer la vue|en glissant, ou avec le bouton du milieu', ['Espace']]]],
-  ['Lire en tableaux', [['Le récapitulatif, en moitié', ['B']], ['Le récapitulatif, en page', ['Maj', 'B']], ['La LPA, ce qu’il faut commander', ['N']], ['Corriger une case', ['Entrée'], ['F2']], ['La case suivante', ['Tab']]]],
-  ['Dans une fiche', [['La fiche d’avant, d’après|et revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']], ['Renommer le repère', ['F2']],
+  // (v86, une seule source : ce qui vient du fichier ne se corrige ni ne se renomme dans VOLTA — seuls les choix de VOLTA se règlent)
+  ['Lire en tableaux', [['Le récapitulatif, en moitié', ['B']], ['Le récapitulatif, en page', ['Maj', 'B']], ['La LPA, ce qu’il faut commander', ['N']], ['Régler un choix de VOLTA|un contact, un module, un arrangement', ['Entrée']], ['D’une case à l’autre', ['←'], ['→']]]],
+  ['Dans une fiche', [['La fiche d’avant, d’après|et revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']],
     ['Le calibre d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre, ou l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche', ['Échap']]]],
-  ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['Pousser le bloc choisi|d’un carreau ; de cinq avec Maj', ['↑'], ['↓']]]],
+  ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['L’historique du plan|chaque changement, et « Défaire »', ['H']], ['Pousser le bloc choisi|d’un carreau ; de cinq avec Maj', ['↑'], ['↓']]]],
   ['Ouvrir, sortir', [['Ouvrir une installation', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert', ['Échap']], ['Cette feuille', ['?']]]],
   ['Améliorer VOLTA', [['Noter une hésitation|l’écran où vous êtes s’écrit avec elle', ['C']]]]];
 // trois colonnes de même hauteur : se repérer (et améliorer), lire et corriger, la fiche et sortir
@@ -3130,6 +3164,51 @@ function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
 function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a.focus && a.isConnected) try { rendreLeClavier(a); } catch (_) { } }
 function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
+/* ---- TAB NE SE PERD JAMAIS (v86, l'audit F7 : « le clavier sort de la fiche ; le focus finit sur body, sans anneau — sur
+   l'accueil aussi ») -----------------------------------------------------------------------------------------------------
+   · LA FICHE OUVERTE (la carte, le grand) est une fenêtre : Tab y tourne, de son dernier élément au premier et l'inverse ;
+     on en sort par Échap (le grand se réduit, la carte se ferme, le clavier rentre d'où il venait). À côté du
+     récapitulatif, elle n'est qu'un volet : Tab y passe sans tourner.
+   · AILLEURS (l'accueil, le plan) : du dernier élément de la page, Tab revient au premier, et l'inverse — jamais sur la page
+     nue ; le clavier qui en sortirait quand même (son élément fermé sous lui) rentre au premier.
+   La palette, la feuille des raccourcis et le menu tiennent leur propre Tab : ils passent avant. */
+const SEL_TABULABLES = 'a[href],button,input,select,textarea,summary,[tabindex]';
+function estTabulable(e) { if (!(e.tabIndex >= 0) || e.disabled || (e.tagName === 'INPUT' && e.type === 'hidden') || e.closest('[inert],[hidden],[aria-hidden="true"]')) return false;
+  const dt = e.closest('details:not([open])'); if (dt && !(e.tagName === 'SUMMARY' && e.parentElement === dt)) return false;
+  return e.checkVisibility ? e.checkVisibility({ checkVisibilityCSS: true }) : e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden'; }
+// le premier (ou le dernier) élément qui prend Tab dans `racine`, sans tout trier : on part du bout
+function bordTabulable(racine, dernier) { const xs = racine.querySelectorAll(SEL_TABULABLES);
+  for (let k = 0; k < xs.length; k++) { const e = xs[dernier ? xs.length - 1 - k : k]; if (estTabulable(e)) return e; } return null; }
+const fenetreDuClavier = () => { const el = $('inspecteur'); return el && !el.hidden && !telephone() && !(app.base && app.base.ouvert) ? el : null; };
+function lierTabulation() {
+  const poser = e => { if (!e) return false; try { e.focus(); } catch (_) { return false; } return document.activeElement === e; };
+  document.addEventListener('keydown', e => { if (e.key !== 'Tab' || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+    if ((typeof paletteOuverte === 'function' && paletteOuverte()) || (typeof raccourcisOuverts === 'function' && raccourcisOuverts()) || !$('menu').hidden) return;
+    const a = document.activeElement, F = fenetreDuClavier(), dansF = !!F && !!a && (a === F || F.contains(a)), racine = dansF ? F : document;
+    // une case du récapitulatif en saisie : Tab y mène à la case suivante (08-recap) — il est à elle
+    if (a && a.closest && a.closest('#base') && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;
+    const premier = bordTabulable(racine, false), dernier = bordTabulable(racine, true);
+    const vers = !a || a === document.body || a === F ? (dansF ? (e.shiftKey ? dernier : premier) : null)
+      : !e.shiftKey && a === dernier ? premier : e.shiftKey && a === premier ? dernier : null;
+    if (vers && poser(vers)) { e.preventDefault(); return; }
+    // le Tab du navigateur : s'il sort de la fenêtre (un élément qui disparaît en route) ou de la page, il y rentre
+    setTimeout(() => { const b = document.activeElement; if (dansF && F.isConnected && !F.hidden && b && b !== document.body && F.contains(b)) return;
+      if (dansF && F.isConnected && !F.hidden) { poser(e.shiftKey ? bordTabulable(F, true) : bordTabulable(F, false)); return; }
+      if (!b || b === document.body) poser(bordTabulable(document, e.shiftKey)); }, 0); }, true); }
+/* (v86, F7) ÉCHAP DANS UN CHAMP DE LA FICHE : on le quitte — le clavier reste dans la fiche, sur le titre de sa section (ou
+   la fiche elle-même), plutôt que sur la page nue : le Tab suivant reprend là. */
+function quitterLeChamp(f) { const F = fenetreDuClavier() || $('inspecteur'); try { f.blur(); } catch (_) { }
+  if (!F || F.hidden || !F.contains(f)) return;
+  const sec = f.closest('.nv-reg, .vu-bloc, .nv-somm, section'), h = sec && sec.querySelector('h4[tabindex]');
+  try { (h || F).focus({ preventScroll: true }); } catch (_) { } }
+/* (v86, F7) ÉCHAP REFERME D'ABORD CE QUE LE CLAVIER A DÉPLIÉ DANS LA FICHE : la section d'un réglage ouverte sous sa ligne
+   (Manuel, ses possibles), les points « à voir » dépliés — le clavier revient sur le bouton qui les avait ouverts. Rend vrai
+   s'il a replié quelque chose. */
+function replierSousLeClavier() { const a = document.activeElement, box = $('ba-equip'); if (!a || !box || !box.contains(a)) return false;
+  const x = a.closest('.nv-somm-x'), li = x ? x.previousElementSibling : a.closest('.nv-somm-i.ouvert'), b = li && li.querySelector('.nv-somm-b[aria-expanded="true"]');
+  const r = !b && a.closest('.nc-reste:not([hidden])'), g = b || (r && [...r.parentElement.querySelectorAll('[data-voir-tout][aria-expanded="true"]')].find(y => y.nextElementSibling === r));
+  if (!g) return false; g.click(); try { g.focus({ preventScroll: true }); } catch (_) { } return true; }
+
 /* ---- tout relier -------------------------------------------------------- */
 function lierPanneau() {
   const o = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
@@ -3141,7 +3220,9 @@ function lierPanneau() {
   // le bouton des repères ; un clic sur son compte rouge ouvre les PROBLÈMES (l'index, « à reprendre » déplié) — et ne
   // referme pas l'index déjà ouvert (on croyait ouvrir les problèmes, on fermait le panneau)
   o('btnIndex', e => { if (e && e.target && e.target.closest && e.target.closest('.rd-point')) ouvrirProblemes(); else basculerIndex(); });
-  o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible);
+  // (v86, une seule source) « Ajouter une liaison » ouvrait une ligne vide dans le récapitulatif : une liaison s'ajoute dans
+  // le fichier — le bouton du rail se range (page.html le porte encore)
+  { const bl = $('btnLiaison'); if (bl) { bl.hidden = true; bl.setAttribute('aria-hidden', 'true'); } } o('btnBible', basculerBible);
   // le menu (page.html) : la bibliothèque (l'entrée principale), ouvrir un retest (il devient un plan de l'installation ouverte),
   // vos fichiers (la base des contrats déjà faits y a sa carte), le récapitulatif, la nomenclature ; Exporter (SVG, PNG,
   // imprimer, le suivi) ; Plus (coller, l'exemple, la bible, les normes, les hypothèses, le cartouche). Ce qui porte sur le
@@ -3185,7 +3266,7 @@ function lierPanneau() {
       if (bas > q.top + 2 && haut >= r.top - 2 && g >= r.left - 2 && d <= r.right + 2) ajuster(true); } catch (_) { } }, 120); }
     hInsp = h; }).observe(insp);
   o('zin', () => zoomer(1.25)); o('zout', () => zoomer(1 / 1.25)); o('zfit', () => ajuster(true)); o('zlbl', () => ajuster(true));
-  lierRecherche(); lierDepot(); lierBase(); lierControle();
+  lierRecherche(); lierDepot(); lierBase(); lierControle(); lierTabulation();
   window.addEventListener('keydown', e => {
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
     // C : le carnet de séance, sur tous les écrans (08-bilan) — jamais dans un champ, ni sous la feuille des raccourcis
@@ -3199,7 +3280,9 @@ function lierPanneau() {
     if (e.key === 'Escape') { if (raccourcisOuverts()) fermerRaccourcis(); else if (!$('menu').hidden) { fermerMenu(); rendreLeClavier($('btnMenu')); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
       else if (plusFiche && !plusFiche.hidden) { plusFiche.hidden = true; const m = $('fi-menu'); if (m) { m.setAttribute('aria-expanded', 'false'); m.focus(); } }
       else if (colonnes && !colonnes.hidden) { fermerMenuColonnes(); $('ba-colonnes').focus(); }
-      else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
+      else if (dansChamp) quitterLeChamp(e.target);   // dans un champ, Échap ne fait que le quitter
+      // (v86, F7) ce que le clavier a déplié dans la fiche se replie d'abord (un réglage ouvert sous sa ligne, les points à voir)
+      else if (replierSousLeClavier()) { }
       else if (app.fiche) fermerFiche(true);
       // (v78) le grand se réduit d'abord en carte ; la carte se ferme au second appui
       else if (app.cible && typeof NIVEAU !== 'undefined' && NIVEAU.grand && !$('inspecteur').hidden) reduireFiche();
@@ -3220,6 +3303,8 @@ function lierPanneau() {
     else if (e.key === 'b') basculerBase();
     else if (e.key === 'r') { e.preventDefault(); basculerIndex(); }   // sinon le « r » s'écrit dans le champ de l'index qui vient de prendre le focus
     else if (e.key === 'n') { if (app.fiche && app.fiche.mode === 'nomenclature') fermerFiche(true); else if (verite().length) ficheNomenclature(); }
+    // (v86) H : l'historique du plan entier (08-journal) ; une seconde fois, il se ferme
+    else if (e.key === 'h') { if (typeof basculerJournal === 'function') basculerJournal(); }
     // ← → : le folio voisin, sauf le clavier sur un contrôle d'un panneau (`flechesAuFolio`, « les folios », v74)
     else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && flechesAuFolio(e.target)) allerAuFolio(e.key === 'ArrowLeft' ? -1 : 1);
     else if (e.key === '+' || e.key === '=') zoomer(1.25); else if (e.key === '-') zoomer(1 / 1.25); else if (e.key === '0' || e.key === 'f') ajuster(true); });

@@ -1,0 +1,30 @@
+/* ===========================================================================
+   LE CLAVIER ET LA BIBLIOTHÈQUE (v86, l'agent « clavier » : l'audit F7, F11)
+   · L'ANNEAU CUIVRE SE VOIT PARTOUT DANS LA FICHE (la charte : « un anneau cuivre toujours visible ») — sur un dessin aussi
+     (un contact de la face, un module, une ligne du brochage, un point de la courbe : rond autour d'un rond), sur le segment
+     pressé d'« Automatique | Manuel » (son halo à 16 % ne se voyait pas), et sur le titre d'une section, que Tab joint
+     désormais (08-niveaux, `clavierDuGrand`) ;
+   · « À REPRENDRE », dans la liste des plans : la pastille des problèmes, et dessous, calmes, les points à voir.
+   =========================================================================== */
+
+/* un tracé de la fiche qui prend Tab : l'anneau autour de lui (la branche d'un disjoncteur et le chemin d'un câble ont déjà le
+   leur, tracé sur leur fond : ils le gardent) */
+#inspecteur svg [tabindex]:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:6px}
+#inspecteur svg :is(.vu-branche,.vu-ch-bout)[tabindex]:focus-visible{outline:none}
+/* un contact, un point de la courbe : rond (un module porte aussi `vu-ct-g` : il garde ses coins) */
+#inspecteur svg :is(.vu-ct-g,.dj-pt):not(.vu-bar-m)[tabindex]:focus-visible{outline-offset:3px;border-radius:50%}
+/* une ligne du brochage : son fond s'éclaire comme au survol, l'anneau l'entoure */
+#inspecteur svg .bro-l[tabindex]:focus-visible{outline-offset:1px;border-radius:7px}
+#inspecteur svg .bro-l[tabindex]:focus-visible .bro-zone{fill:var(--nv-cuivre-soft)}
+
+/* Automatique | Manuel : le segment qui a le clavier porte l'anneau net, pressé ou non */
+#inspecteur .nv-am-b:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
+
+/* le titre d'une section, joint au clavier : l'anneau autour de lui, un peu d'air au-dessus quand il vient sous les yeux */
+#inspecteur .nv-panneau :is(h4.vu-titre,.nv-mod-t>h4,.nv-reg-t>h4)[tabindex]{scroll-margin-block:18px}
+#inspecteur .nv-panneau :is(h4.vu-titre,.nv-mod-t>h4,.nv-reg-t>h4)[tabindex]:focus{outline:none}
+#inspecteur .nv-panneau :is(h4.vu-titre,.nv-mod-t>h4,.nv-reg-t>h4)[tabindex]:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:4px;border-radius:6px}
+
+/* (F11) la bibliothèque : des problèmes et des points à voir — la pastille rouge, puis « et 5 à voir », discret */
+.bi-pb-c{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;min-width:0}
+.bi-pb-c>small{padding-left:9px;font-size:var(--f-11);line-height:1.2;color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}

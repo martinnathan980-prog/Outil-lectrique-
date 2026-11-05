@@ -26,7 +26,7 @@ const normes = fs.readdirSync(NORMES).filter(f => /\.csv$/i.test(f)).sort().map(
 const bac = { console, TextDecoder, Blob, DecompressionStream, Intl }; vm.createContext(bac);
 vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { liaison, lireTexte, contratExemple, CODES, decoderRepere, direRepere, lireBorne, direBorne, fwdDe, indexerReferences, dessinDe, dessinPrincipal, resumeDessin, chercherReferences, candidatsDeReference, flotteDe,'
   + ' correspondre, correspondanceDesReperes, voisinsDe, voisinageDe, differentiel, comparerEnsemble, comparerDessin, comparerVoisinage, liaisonsAReprendre, liaisonsDEnsembleAReprendre, lignesDeRepere, cleRef, ecartDeReperes, fixesDe,'
-  + ' avecBarrettesAPoser, dedoublements, nouveauContrat, lireLaBase, baseDesLiaisons, chercherDansLaBase, genreTrouve, liaisonsDuContratDeLaBase, indexeurDeReferences, contratsProches, comparerAuContrat };', bac);
+  + ' avecBarrettesAPoser, estRaccordAPoser, dedoublements, nouveauContrat, lireLaBase, baseDesLiaisons, chercherDansLaBase, genreTrouve, liaisonsDuContratDeLaBase, indexeurDeReferences, contratsProches, comparerAuContrat };', bac);
 const X = bac.X;
 let total = 0, echecs = 0;
 const ok = (nom, cond, mesure) => { total++; if (!cond) echecs++; console.log('  ' + (cond ? 'OK    ' : 'ÉCHEC ') + nom + (mesure ? '   — ' + mesure : '')); };
@@ -150,7 +150,8 @@ ok('comparer un dessin entier (69 fils, 19 équipements) en moins de 100 ms ; ch
 
 console.log('\n8. LES REPÈRES PROVISOIRES (01) : UN NOM QUI TIENT QUAND UNE BARRETTE EST POSÉE');
 // les barrettes à poser de l'exemple : VT1 sur 102CB1:2 (folio 1), VT2 sur 340AB1:4 (folio 2), VT3 sur 600XC4:A11 (folio 6) — `depart` = celles des folios d'avant
-const folio = p => E.filter(l => l.plan === p), nomsVT = L => [...new Set(L.filter(l => l.aPoser).map(l => l.aPoser))].join(), sur = L => L.filter(l => l.origine === null && l.borneVers === '1').map(l => l.aPoser + ' sur ' + l.de + ':' + l.borneDe).join();
+// (v86) le câble à créer ne se dit plus « borne 1 » : ses bornes se nomment comme la face (« 51H ») — il se reconnaît à sa marque (01, `estRaccordAPoser`)
+const folio = p => E.filter(l => l.plan === p), nomsVT = L => [...new Set(L.filter(l => l.aPoser).map(l => l.aPoser))].join(), sur = L => L.filter(l => l.origine === null && X.estRaccordAPoser(l)).map(l => l.aPoser + ' sur ' + l.de + ':' + l.borneDe).join();
 ok('sans mémoire, comme toujours : VT1 sur 102CB1:2, VT2 sur 340AB1:4, VT3 sur 600XC4:A11 (depart 0, 1, 2) ; le folio 3 n’en a pas', nomsVT(X.avecBarrettesAPoser(folio('1'), 0)) === 'VT1' && nomsVT(X.avecBarrettesAPoser(folio('2'), 1)) === 'VT2' && nomsVT(X.avecBarrettesAPoser(folio('6'), 2)) === 'VT3' && X.dedoublements(folio('3')).length === 0 && sur(X.avecBarrettesAPoser(folio('2'), 1)) === 'VT2 sur 340AB1:4');
 const M = X.nouveauContrat().provisoires;
 ok('avec la mémoire du contrat (vide), les mêmes noms, dans n’importe quel ordre de calcul (le folio 6 d’abord) ; chaque borne retient son numéro', typeof M.get === 'function' && M.size === 0 && nomsVT(X.avecBarrettesAPoser(folio('6'), 2, M)) === 'VT3' && nomsVT(X.avecBarrettesAPoser(folio('1'), 0, M)) === 'VT1' && nomsVT(X.avecBarrettesAPoser(folio('2'), 1, M)) === 'VT2' && M.get('102CB1\u00012') === 1 && M.get('340AB1\u00014') === 2 && M.get('600XC4\u0001A11') === 3, JSON.stringify([...M]));

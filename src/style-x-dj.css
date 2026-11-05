@@ -45,7 +45,7 @@
 .nv-grand .nv-panneau .vu-cals>.vu-cal.oui:first-child::before,.nv-grand .nv-panneau .vu-cals>.vu-cal.non+.vu-cal.oui::before{content:"ne disjoncte pas";color:var(--ok)}
 /* la légende ne redit plus ce que la règle montre : seul « actuel : celui de votre fichier » (et le retour à VOLTA) reste */
 .nv-grand .nv-panneau .vu-bloc>.vu-cals~.vu-legende>span:has(>i:is(.ok,.ko,.ret)){display:none}
-.nv-grand .nv-panneau .vu-bloc>.vu-cals~.vu-legende:not(:has(i.act,button)){display:none}
+.nv-grand .nv-panneau .vu-bloc>.vu-cals~.vu-legende:not(:has(i.act,i.hors,button)){display:none}
 .nv-grand .nv-panneau .vu-bloc>.vu-cals~.vu-legende{align-items:center;margin-top:-2px;color:var(--t-3)}
 .nv-grand .nv-panneau .vu-bloc>.vu-cals~.vu-legende i.act{width:14px;height:10px;border-radius:4px;box-shadow:none;outline:1.5px dashed color-mix(in srgb,var(--t-2) 70%,transparent);outline-offset:-1px}
 /* « Revenir au choix de VOLTA (10 A) » : un geste, à droite, au cuivre */
@@ -279,3 +279,22 @@
 .dj-frise .vu-c[data-bulle]{cursor:help}
 .dj-frise .vu-c.hors b{background:none;color:var(--t-3);box-shadow:inset 0 0 0 1px var(--s-line-2)}
 .dj-frise .vu-c.neutre b{background:var(--s-sunken);color:var(--t-2);box-shadow:inset 0 0 0 1px var(--s-line)}
+/* le geste de la proposition : le cuivre des gestes « À régler » (style-z-fiche), le jour comme la nuit */
+.dj-prop>.btn.cuivre{height:32px;padding:0 14px;border:0;border-radius:9px;background:var(--nv-cuivre);color:#fff;font:600 var(--f-13)/1 var(--sans);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 1px 2px rgba(0,0,0,.18)}
+.dj-prop>.btn.cuivre:hover{background:color-mix(in srgb,var(--nv-cuivre) 86%,#000)}
+.dj-prop>.btn.cuivre:focus-visible{outline:none;box-shadow:0 0 0 2px var(--s-surface),0 0 0 4px var(--nv-cuivre)}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .dj-prop>.btn.cuivre{color:#1c1209} :root:not([data-theme="light"]) .dj-prop>.btn.cuivre:hover{background:color-mix(in srgb,var(--nv-cuivre) 85%,#fff)} }
+:root[data-theme="dark"] .dj-prop>.btn.cuivre{color:#1c1209}
+:root[data-theme="dark"] .dj-prop>.btn.cuivre:hover{background:color-mix(in srgb,var(--nv-cuivre) 85%,#fff)}
+/* un calibre de vos Hypothèses que la famille ne fait pas : son mot dans la légende (une pastille grise, vide) */
+.vu-legende i.hors,.dj-fx-leg i.hors{width:14px;height:10px;border-radius:4px;background:none;box-shadow:inset 0 0 0 1.5px var(--s-line-2);outline:none}
+.dj-frise .vu-legende i.hors{width:12px;height:9px}
+/* une carte étroite (la fiche rangée à côté du récapitulatif) : le tableau serré, comme côte à côte */
+@container dj-pc (max-width:560px){
+  .nv-grand .nv-panneau .dj-pc .dj-etats>:is(.dj-entete,.dj-etat){grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr) 30px;column-gap:6px;padding-left:16px}
+  .nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span{letter-spacing:.04em}
+  .nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span i::before,.nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span i::after{content:none}
+  .nv-grand .nv-panneau .dj-pc .dj-etat :is(.dj-champ,.dj-inf){width:min(100%,82px)}
+  .nv-grand .nv-panneau .dj-pc .dj-etats .dj-plus{padding:0 16px}
+  .nv-grand .nv-panneau .dj-pc .dj-etat .dj-x{width:28px;height:28px}
+}

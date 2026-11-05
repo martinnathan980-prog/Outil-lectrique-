@@ -95,6 +95,7 @@ function styleDessin() {
      .connnom{fill:${ENCRE_FOLIO};font-size:6.5px;font-weight:600;letter-spacing:.3px}
      .connpin{fill:#2e3034;font-size:${FS_BORNE_CONN}px;font-weight:500}
      .prnum{fill:${ENCRE_FOLIO};font-size:${FS_BORNE_PETITE}px;font-weight:600}
+     .prmin{fill:none;stroke:${ENCRE_FOLIO};stroke-width:.45;stroke-linecap:butt}
      .barre{fill:none;stroke:${ENCRE_FOLIO};stroke-width:1;stroke-dasharray:3 2.2;stroke-linecap:butt}
      .bardot{fill:${ENCRE_FOLIO};stroke:none}
      .pontage{stroke:${ENCRE_FOLIO};stroke-width:1.1;stroke-linecap:butt}
@@ -104,6 +105,7 @@ function styleDessin() {
      .pont{stroke:${ENCRE_FOLIO};stroke-width:1;stroke-linecap:butt}
      .bpast{fill:${ENCRE_FOLIO};stroke:none}
      .bpnum{fill:#ffffff;font-size:${FS_BORNE_PETITE}px;font-weight:600}
+     .bpmin{fill:none;stroke:#ffffff;stroke-width:.45;stroke-linecap:butt}
      .rep-petit{fill:#141518;font-size:5.6px;font-weight:600;letter-spacing:.35px}
      .vt .barre{stroke:${CUIVRE_FOLIO}}
      .vt .bpast,.vt .bardot{fill:${CUIVRE_FOLIO}}
@@ -349,8 +351,20 @@ function pastilleSvg(x, y, etiq, o) { o = o || {}; const t = String(etiq), y1 = 
   const fs = Math.max(4.4, Math.min(FS_BORNE_PETITE, (w - 2 * PAST_PAD + 0.6) / Math.max(1, t.length) / CAR));
   // un chemin (pas un rect à coins ronds : l'export Visio les ferait carrés) ; ses bouts en demi-cercles
   return `<path class="bpast" d="${pilule(x - w / 2, ym - h / 2, w, h)}"/>`
-    + `<text class="bpnum"${fs < FS_BORNE_PETITE ? ` style="font-size:${f1(fs)}px"` : ''} x="${f1(x)}" y="${f1(ym + 0.365 * fs)}" text-anchor="middle">${esc(t)}</text>`;
+    + `<text class="bpnum"${fs < FS_BORNE_PETITE ? ` style="font-size:${f1(fs)}px"` : ''} x="${f1(x)}" y="${f1(ym + 0.365 * fs)}" text-anchor="middle">${esc(t)}</text>`
+    + soulignement(t, x, ym + 0.365 * fs, fs, 'bpmin');
 }
+/* (v86, l'audit G10) UNE MINUSCULE SE DISTINGUE D'UN COUP D'ŒIL. La grande face ASNE 0599 (36 contacts : A…X, puis a…s)
+   porte 51E et 51e, 51F et 51f ; à 5,4, la casse seule ne les sépare pas. La lettre minuscule d'une borne de barrette ou
+   d'un contact de prise est SOULIGNÉE d'un trait fin, à la couleur de son écriture — l'usage des plans de câblage, où une
+   minuscule se souligne pour ne jamais se lire en capitale. Une marque sobre et constante : à l'écran comme à l'export (un
+   chemin, pas une décoration de texte que l'export Visio ou le PDF perdraient). `t` est écrit centré en `x`, sa ligne de
+   base en `yb`, en `fs` : la chasse fixe (CAR) dit où tombe chaque lettre. */
+// (le trait juste sous la ligne de base, à 0,12 corps : plus bas, sous la dernière lettre d'une pilule, il sortait par le bout arrondi)
+function soulignement(t, x, yb, fs, cls) { const s = String(t == null ? '' : t); if (!/[a-z]/.test(s)) return '';
+  const w = CAR * fs, x0 = x - s.length * w / 2; let d = '';
+  [...s].forEach((ch, i) => { if (/[a-z]/.test(ch)) d += `M${f1(x0 + i * w + w * 0.1)} ${f1(yb + fs * 0.12)}h${f1(w * 0.8)}`; });
+  return `<path class="${cls}" d="${d}"/>`; }
 // une pilule : un rectangle aux bouts arrondis du rayon de sa plus petite dimension (ronde quand elle est carrée)
 function pilule(x, y, w, h) { const r = Math.min(w, h) / 2, R = f1(r);
   return `M${f1(x + r)} ${f1(y)}H${f1(x + w - r)}A${R} ${R} 0 0 1 ${f1(x + w)} ${f1(y + r)}V${f1(y + h - r)}A${R} ${R} 0 0 1 ${f1(x + w - r)} ${f1(y + h)}H${f1(x + r)}A${R} ${R} 0 0 1 ${f1(x)} ${f1(y + h - r)}V${f1(y + r)}A${R} ${R} 0 0 1 ${f1(x + r)} ${f1(y)}Z`; }
@@ -431,7 +445,7 @@ function symboleDePastille(c) { if (c.kind !== 'tag') return null;
   const genre = estMasse(c.name) ? 'masse' : estBarrette(c.name) ? 'barrette' : null; if (!genre) return null;
   const p = (c.rangs.S || [])[0] || { y: c.y + c.h / 2, dir: -1 }, d = (p.dir || -1) < 0 ? 1 : -1, r = genre === 'masse' ? 4 : 7;
   return { genre, y: p.y, d, xs: d > 0 ? c.x + r : c.x + c.w - r, etiq: p.etiq }; }
-function reperesCandidats(c) {
+function reperesCandidats(c, haut) {
   const bw = c.w - c.lw - c.rw, mid = c.x + c.lw + bw / 2, rs = c.rangs.S || [];
   const M = symboleDePastille(c);
   // masse, morceau de barrette collé, prise de coupure, barrette : le même petit repère
@@ -445,16 +459,31 @@ function reperesCandidats(c) {
   if (c.kind === 'strip' || estBarrette(c.name)) {
     const ys = (c.kind === 'strip' ? rs : [...(c.rangs.L || []), ...(c.rangs.R || [])]).map(p => p.y);
     const yh = (ys.length ? Math.min(...ys) : c.y + c.h / 2) - BOUT_REGLETTE, yb = (ys.length ? Math.max(...ys) : c.y + c.h / 2) + BOUT_REGLETTE;
+    // (v86) le dernier groupe d'une colonne : au-dessus, c'est au-dessus du premier groupe de la colonne (`haut`)
+    const ysH = haut && haut !== c ? (haut.rangs.S || []).map(p => p.y) : null, yhC = ysH && ysH.length ? Math.min(...ysH) - BOUT_REGLETTE : yh;
     return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 14), yh, yb, mid, cands: [
-      { x: mid, y: yb + 8, a: 'middle' }, { x: mid + 5, y: yb + 2.2, a: 'start' }, { x: mid - 5, y: yb + 2.2, a: 'end' }, { x: mid, y: yh - 3.5, a: 'middle' }, { x: mid, y: yb + 16, a: 'middle' }] }; }
+      { x: mid, y: yb + 8, a: 'middle' }, { x: mid + 5, y: yb + 2.2, a: 'start' }, { x: mid - 5, y: yb + 2.2, a: 'end' }, { x: mid, y: yhC - 3.5, a: 'middle' }, { x: mid, y: yb + 16, a: 'middle' }] }; }
   return null;
 }
 /* (v86) un repère garde de l'AIR au-dessus de ses capitales : la boîte d'un texte descend sous sa ligne de base (0,16 corps)
    mais ne monte qu'au ras des capitales — posé au-dessus d'une pastille, « 667VT2 » touchait presque le câble passant un pas
    plus haut (folio 2, 51B ; folio 4, 51C). Une unité de plus au-dessus, pour la seule recherche de sa place. */
 const avecAir = b => ({ ...b, y0: b.y0 - 1 });
-function poserReperes(comps, occ) {
-  comps.slice().sort((u, v) => u.y - v.y || u.x - v.x).forEach(c => { const R = reperesCandidats(c); if (!R) { c.repere = null; return; }
+/* (v86, l'audit G10) LE REPÈRE D'UNE BARRETTE, UNE FOIS PAR COLONNE. Ses groupes posés l'un sous l'autre (672VT5 : sept groupes
+   au folio 6) ne répètent plus son repère sous chacun : il s'écrit une fois, sous le dernier de la colonne, que l'œil suit
+   d'un trait. Un morceau posé ailleurs (une autre colonne, ou à plus de trois pas sous le précédent) garde le sien : il dit
+   à quelle barrette il appartient. Sa place : sous le dernier groupe, sinon au-dessus du PREMIER (jamais entre deux groupes,
+   où il semblerait n'en nommer qu'un). Rend Map(bloc qui porte son repère → le premier bloc de sa colonne). */
+const PILE_REPERE = 3 * PRH;
+const axeDeRepere = c => { const M = symboleDePastille(c); return M ? M.xs : c.x + c.lw + (c.w - c.lw - c.rw) / 2; };
+function porteursDeRepere(comps) { const out = new Map(comps.map(c => [c, c])), parNom = new Map();
+  comps.forEach(c => { if ((c.kind === 'strip' || c.kind === 'tag') && estBarrette(c.name) && !estCoupure(c.name)) (parNom.get(c.name) || parNom.set(c.name, []).get(c.name)).push(c); });
+  parNom.forEach(cs => { if (cs.length < 2) return; const colonnes = [];
+    cs.slice().sort((u, v) => u.y - v.y).forEach(c => { const m = axeDeRepere(c), k = colonnes.find(q => Math.abs(q.m - m) < 2 && c.y - q.bas < PILE_REPERE);
+      if (k) { out.delete(k.dernier); out.set(c, k.haut); k.dernier = c; k.bas = c.y + c.h; } else colonnes.push({ m, bas: c.y + c.h, dernier: c, haut: c }); }); });
+  return out; }
+function poserReperes(comps, occ) { const porteurs = porteursDeRepere(comps);
+  comps.slice().sort((u, v) => u.y - v.y || u.x - v.x).forEach(c => { c.repereAilleurs = !porteurs.has(c); const R = c.repereAilleurs ? null : reperesCandidats(c, porteurs.get(c)); if (!R) { c.repere = null; return; }
     let choix = null; const boite = k => boiteDeTexte(k.x, k.y, k.a, R.nom.length, R.fs, R.ls);
     for (const k of R.cands) { const b = boite(k); if (occ.libre(avecAir(b), 1, c.id)) { choix = { ...k, b }; break; } }
     if (!choix) { const k = R.cands[0]; choix = { ...k, b: boite(k) }; }
@@ -647,7 +676,8 @@ function paquetsDePonts(shunts) {
 }
 /* Le repère d'un bloc à repère mobile, en coordonnées du bloc ; à défaut
    d'une place cherchée (un dessin sans occupation), la place attendue. */
-function repereDe(c) { const r = c.repere || (() => { const R = reperesCandidats(c); return R ? { ...R.cands[0], cls: R.cls, nom: R.nom } : null; })();
+function repereDe(c) { if (c.repereAilleurs) return '';   // (v86) un groupe d'une colonne dont le dernier porte le repère
+  const r = c.repere || (() => { const R = reperesCandidats(c); return R ? { ...R.cands[0], cls: R.cls, nom: R.nom } : null; })();
   return r ? repereTexte({ ...r, x: r.x - c.x, y: r.y - c.y }) : ''; }
 
 /* ---- le disjoncteur --------------------------------------------------- */
@@ -915,10 +945,13 @@ function blocSvg(c, designation, choisi, couleurBout, info, k, ailleurs) {
       if ((p.dir || 0) <= 0) s += `<line class="lead"${traitDe(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
       if ((p.dir || 0) >= 0) s += `<line class="lead"${traitDe(aDroite(p.y))} x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     /* le numéro du contact se lit dans la PARTIE MOBILE : c'est là que l'atelier l'écrit — UNE fois par contact (v85) : des
-       rangées du même contact qui se suivent n'en portent qu'un, au milieu ; à 5,4, resserré s'il est long */
+       rangées du même contact qui se suivent n'en portent qu'un, au milieu ; à 5,4, resserré s'il est long. (v86) C'est le
+       nom que la borne porte dans le fichier : la lettre de la face (A, B…), comme la fiche la dessine ; une minuscule (a…z
+       d'une grande face) soulignée d'un trait fin */
     bornesUniques(rs.slice().sort((u, v) => u.y - v.y)).forEach(g => { if (!g.etiq) return; const n = clip(g.etiq, 4), ly = (g.y0 + g.y1) / 2 - c.y, W = WM - 2;
       const fs = Math.max(4.4, Math.min(FS_BORNE_PETITE, W / (n.length * CAR)));
-      s += `<text class="prnum"${fs < FS_BORNE_PETITE ? ` style="font-size:${f1(fs)}px"` : ''} x="${f1(xm0 + WM / 2)}" y="${f1(ly + 0.365 * fs)}" text-anchor="middle">${esc(n)}</text>`; });
+      s += `<text class="prnum"${fs < FS_BORNE_PETITE ? ` style="font-size:${f1(fs)}px"` : ''} x="${f1(xm0 + WM / 2)}" y="${f1(ly + 0.365 * fs)}" text-anchor="middle">${esc(n)}</text>`
+        + soulignement(n, xm0 + WM / 2, ly + 0.365 * fs, fs, 'prmin'); });
     s += repereDe(c);
   } else if (c.kind === 'strip' || estBarrette(c.name)) {
     /* BARRETTE (et tout bornier, tout potentiel) : une fine ligne pointillée

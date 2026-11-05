@@ -226,13 +226,8 @@ table.rc-tab{width:100%;border-collapse:separate;border-spacing:0;font:400 var(-
 .rc-tab tr.neuve td{background:color-mix(in srgb,var(--accent-soft) 55%,var(--s-surface))}
 .rc-tab tr.neuve td:first-child{box-shadow:inset 3px 0 0 var(--accent-line)}
 .rc-tab tr.rc-hors .rc-r{color:var(--t-2)}
-/* la dernière colonne prend ce qui reste (la croix d'une liaison, au survol) */
+/* la dernière colonne prend ce qui reste (v86 : plus de croix « Supprimer » — retirer une liaison, c'est changer le fichier) */
 .rc-tab th.rc-suppr,.rc-tab td.rc-suppr{width:100%;padding:0 12px 0 8px;text-align:right}
-.rc-suppr button{width:28px;height:28px;display:inline-grid;place-items:center;border:none;background:none;border-radius:var(--r-1);color:var(--t-2);opacity:0;padding:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
-.rc-suppr button svg.ico{width:14px;height:14px}
-.rc-tab tr:hover .rc-suppr button,.rc-tab tr:focus-within .rc-suppr button,.rc-suppr button:focus-visible{opacity:1}
-.rc-suppr button:hover{background:var(--ko-soft);color:var(--ko)}
-@media (hover:none){.rc-suppr button{opacity:1}}
 
 /* ─── une valeur qu'on corrige ───
    La ligne survolée souligne d'un pointillé ce qui s'écrit ; sous le pointeur, la valeur prend l'air d'un champ (le
@@ -342,13 +337,9 @@ b.rc-n{font-weight:500}
 .rc-u{font-style:normal;font-size:var(--f-12);color:var(--t-2)}
 .rc-adm{font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums;margin-left:6px}
 .rc-tab th.rc-c-n,.rc-tab td.rc-c-n{text-align:right}
-/* l'intensité contre l'admis (en plus) : le chiffre, « / l'admis », la barre de la fiche */
+/* l'intensité contre l'admis : l'anneau de la fiche, le chiffre, « sur l'admis » (v86 : style-x-recap, 15) */
 .rc-int{display:inline-flex;align-items:center;white-space:nowrap}
 .rc-int .rc-chiffre{min-width:44px}
-.rc-barre{position:relative;width:56px;height:4px;margin-left:10px;border-radius:2px;background:var(--s-line);overflow:hidden;flex:none}
-.rc-barre i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--ok)}
-.rc-barre.att i{background:var(--warn)}
-.rc-barre.ko i{background:var(--ko)}
 /* le contact de chaque bout (en plus) : en chasse fixe ; refusé, en rouge */
 .rc-ctc{display:inline-flex;align-items:center;gap:2px}
 .rc-ct{font:400 var(--f-13) var(--mono);color:var(--t-1)}
@@ -459,8 +450,6 @@ b.rc-n{font-weight:500}
 .rc-gestes .btn{font-size:var(--f-12);white-space:normal;text-align:left;line-height:1.25;padding-top:3px;padding-bottom:3px;min-height:30px;height:auto}
 .rc-gestes .btn.lien{padding-left:6px;padding-right:6px}
 .rc-tab td.rc-c-que{min-width:260px}
-/* (v74) le même geste qu'à la ligne du dessus : « ″ », à l'encre seconde ; sa bulle le redit */
-.rc-pareil{display:inline-block;padding:2px 14px;font:500 var(--f-16)/1 var(--sans);color:var(--t-2);cursor:help}
 /* le calibre de l'INSTALLATION, à côté du retenu : barré quand Volta en retient un autre */
 .rc-retest s.rc-n{color:var(--t-2);text-decoration-thickness:1.5px;text-decoration-color:color-mix(in srgb,var(--t-2) 70%,transparent)}
 .rc-retest.autre .rc-u{color:var(--t-2);margin-left:3px}
@@ -527,7 +516,6 @@ b.rc-n{font-weight:500}
 }
 @media (pointer:coarse){
   .rc-chip,.rc-onglet{height:36px}
-  .rc-suppr button{width:36px;height:36px}
 }
 
 /* v74 : le ↺ d'une case changée par Volta — 22 px dessinés, 26 px au clic (WCAG 2.5.8) */

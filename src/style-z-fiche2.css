@@ -38,3 +38,14 @@
 .nv-cables svg.vu-anneau .vu-an-f{stroke:color-mix(in srgb,currentColor 18%,transparent)}
 .nv-cables svg.vu-anneau .vu-an-t{font:600 11px var(--sans);font-variant-numeric:tabular-nums;letter-spacing:-.02em;fill:var(--t-1);transform:translateY(.8px)}
 .nv-cables svg.vu-anneau .vu-an-t .vu-an-pc{font-size:8px;font-weight:500;letter-spacing:0;fill:var(--t-3)}
+/* l'arbre d'un disjoncteur (ce qu'il alimente) : le même compteur — un trait plus fin, le chiffre d'un cran plus grand */
+svg.vu-arbre .vu-an{color:var(--ok)}
+svg.vu-arbre .vu-an.att{color:var(--warn)}
+svg.vu-arbre .vu-an.ko{color:var(--ko)}
+svg.vu-arbre .vu-an .vu-an-f,svg.vu-arbre .vu-an .vu-an-v{stroke-width:3px}
+svg.vu-arbre .vu-an .vu-an-f{stroke:color-mix(in srgb,currentColor 18%,transparent)}
+svg.vu-arbre .vu-an .vu-an-t{font:700 9.5px var(--sans);font-variant-numeric:tabular-nums;letter-spacing:-.03em;transform:translateY(.4px)}
+
+/* ─── LE GRAND : une étape de « Comment VOLTA a choisi », une description de problème — des lignes égales, pas un mot seul en
+   bout de paragraphe ─── */
+#inspecteur .nv-grand :is(.vu-pq-t,.nc-tache .nc-d){text-wrap:balance}

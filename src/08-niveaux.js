@@ -243,13 +243,16 @@ function motsDuProbleme(reste, suite, type) { const r = String(reste || ''), fin
   if ((m = /^(.+?) ([\d,]+ A)(?: pendant ([\d,]+ (?:ms|s|min|h)))? > ([\d,]+ A) admis(?: (en continu|pour [\d,]+ (?:s|min)))?(?: \(([\d,]+ A) × ([\d,]+)(?: : ([^)]+))?\))?$/.exec(r))) {
     // (la carte : le courant, la durée, l'admis — deux lignes ; le grand nomme l'état du profil et dit d'où vient l'admis)
     const [, nom, i, t, a, palier, seul, k, pq] = m, quoi = `${i}${t ? ' pendant ' + t : ''}`, sur = ` : plus que les ${a} qu’il admet${palier ? ' ' + palier : ''}`;
-    const d = seul && k ? ` Seul à l’air libre, ${type ? 'un ' + type : 'ce câble'} admet ${seul}${palier ? ' ' + palierEnMots(palier) : ''}${pq ? ' ; ' + conditionsEnMots(pq) + ',' : ' ; ici,'} il n’en admet que ${a} (× ${k}).` : '';
-    const cont = palier === 'en continu' && t ? ' Au-delà d’une minute, c’est ce qu’il admet en continu qui compte.' : '';
+    // (« ces 6,9 A » : d'où ils viennent — la table pour un câble seul, le facteur et ce qui le donne)
+    const d = seul && k ? ` Ces ${a} : ${seul}${palier && palier !== 'en continu' ? ' ' + palierEnMots(palier) : ''} pour ${type ? 'un ' + type : 'ce câble'} seul à l’air libre, × ${k} ${pq ? conditionsEnMots(pq) : 'ici'}.` : '';
+    const cont = palier === 'en continu' && t ? ' Au-delà d’une minute, c’est le continu qui compte.' : '';
     return { court: fin(quoi + sur), long: fin(quoi + (nom ? ' (' + nom.toLowerCase() + ')' : '') + sur) + d + cont }; }
   // le permanent contre le contact
   if ((m = /^le permanent \(([\d,]+ A)\) dépasse le contact taille (\S+) (?:supposé \(([\d,]+ A)\)|\(([\d,]+ A), ([^)]+)\))$/i.exec(r))) {
     const court = m[3] ? fin(`Il porte ${m[1]} en permanence, plus que les ${m[3]} du contact taille ${m[2]} que VOLTA suppose`) : fin(`Il porte ${m[1]} en permanence, plus que les ${m[4]} de son contact taille ${m[2]} (${m[5]})`);
-    return { court, long: court }; }
+    // (supposé : pourquoi celui-là, sans redire sa taille ni son courant)
+    const j = type && typeof jaugeDuType === 'function' ? jaugeDuType(type) : null;
+    return { court, long: court + (m[3] ? ` Le plan ne dit pas quel contact est serti au bout de ce ${type || 'câble'} : VOLTA prend le plus petit qui admet ${j != null ? 'un ' + j + ' AWG' : 'sa gauge'}, par prudence.` : ''), sansGlose: true }; }
   // le calibre au-delà de la table 11-3
   if ((m = /^calibre ([\d,]+ A) > ([\d,]+ A), le maximum de l’AC 43\.13-1B \(table 11-3\) pour du (\S+) AWG$/i.exec(r))) {
     const court = fin(`Le ${m[1]} dépasse ${m[2]}, le plus fort calibre que l’AC 43.13-1B (table 11-3) permet sur un ${m[3]} AWG`); return { court, long: court }; }
@@ -299,7 +302,7 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
     // QUI d'abord, VU D'ICI (« A1 ← 102CB1:2 · DR20 »), puis ce qui cloche, EN MOTS : la carte dit l'essentiel en deux lignes au
     // plus, le grand dit tout (d'où vient l'admis, pourquoi VOLTA suppose un contact) ; la bulle de la carte dit ce que le grand dit
     const qui = /^(\S+ vers \S+(?: \(par [^)]+\))?) : (.+)$/.exec(titre);
-    if (qui) { const vu = quiVuDIci(qui[1], p, o), M = motsDuProbleme(qui[2], suite, vu.type), glose = k > 0 ? '' : gloseDuProbleme(p.texte);
+    if (qui) { const vu = quiVuDIci(qui[1], p, o), M = motsDuProbleme(qui[2], suite, vu.type), glose = k > 0 || M.sansGlose ? '' : gloseDuProbleme(p.texte);
       // « — sous 102CB1 » : le disjoncteur, quand le titre ne le nomme pas déjà
       const sous = /^sous (\S+)$/.exec(suite), plus = M.mange || !suite ? '' : sous ? (vu.titre.includes(sous[1]) ? '' : ` Son disjoncteur : ${sous[1]}.`) : ' ' + majuscule(suite) + '.';
       titre = vu.titre; tout = M.long + plus + (glose ? ' ' + glose : ''); detail = grand ? tout : M.court; }
@@ -603,9 +606,23 @@ function lierNiveaux(box, c) { lierSommaire(box);
   box.querySelectorAll('[data-am-cal]').forEach(b => b.onclick = e => { e.stopPropagation(); const cs = box.querySelector('.vu-cals'); if (!cs) return;
     cs.classList.remove('a-prendre'); void cs.offsetWidth; cs.classList.add('a-prendre'); const t = cs.querySelector('.vu-cal.oui:not(.on)') || cs.querySelector('.vu-cal'); if (t) try { t.focus({ preventScroll: true }); } catch (_) { }
     if (b.getAttribute('aria-pressed') !== 'true') dire('Prenez un calibre : un clic le retient à la place de celui de VOLTA.'); });
+  clavierDuGrand(box);
   if (c && c.type !== 'ref') document.body.classList.toggle('insp-grand-ouvert', ficheEnGrand());
   // (v86) la silhouette se trace quand la fiche s'ouvre sur un objet (pas quand elle se refait sur le même : 08-carte)
   if (typeof eveillerSceau === 'function') eveillerSceau(box); }
+/* (v86, l'audit F7) LE CLAVIER PARCOURT TOUTE LA FICHE, dans l'ordre où on la lit : la croix, l'onglet (← → passent aux
+   autres), puis, panneau par panneau, chaque SECTION (son titre prend Tab : la section vient sous les yeux, l'anneau cuivre
+   l'entoure), ses gestes et ses étapes ; un tracé qui s'ouvre au clic s'ouvre aussi au clavier (une ligne du brochage : son
+   câble, Entrée ou Espace — 08-fiche, `lierFils`) ; un câble qui a le clavier s'allume sur le plan, comme au survol. Tab
+   tourne dans la fiche (08-interface, `lierTabulation`) ; Échap la réduit, puis la ferme. */
+function clavierDuGrand(box) {
+  box.querySelectorAll('.nv-panneau :is(h4.vu-titre, .nv-mod-t > h4, .nv-reg-t > h4):not([tabindex])').forEach(h => { h.tabIndex = 0; });
+  box.querySelectorAll('.nv-panneau svg .bro-l[data-i]:not([tabindex])').forEach(g => { const t = s => { const e = g.querySelector(s); return e ? e.textContent.trim() : ''; }, type = t('.bro-type'), b = t('.bro-borne'), v = t('.bro-vers');
+    g.tabIndex = 0; g.setAttribute('role', 'button'); g.setAttribute('aria-label', 'Ouvrir le câble ' + [type && type !== '—' ? type : '', b ? 'de la borne ' + b : '', v ? 'vers ' + v : ''].filter(Boolean).join(' ')); });
+  if (box.dataset.clavierLie) return; box.dataset.clavierLie = '1';
+  const ligne = t => t && t.closest && t.closest('#ba-equip [data-i]');
+  box.addEventListener('focusin', e => { const el = ligne(e.target); if (el && e.target.matches(':focus-visible') && typeof allumerCle === 'function') allumerCle(el.dataset.i); });
+  box.addEventListener('focusout', e => { if (!ligne(e.target) || ligne(e.relatedTarget) || typeof rallumer !== 'function') return; rallumer(); if (typeof FI !== 'undefined' && FI.choisi && typeof allumerCle === 'function') allumerCle(FI.choisi); }); }
 
 /* ---- LA LISTE, LE PANNEAU : leur défilement se garde d'un rendu de la même fiche à l'autre -------------------------- */
 const DEFILEMENTS = { liste: 0, panneau: 0, cle: '' };

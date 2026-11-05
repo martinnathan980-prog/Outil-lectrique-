@@ -205,9 +205,17 @@ function planPour(o, nom, L) { let p;
   if (!o.nouveau && app.planId && app.planId !== ID_EXEMPLE && BIB.plans.has(app.planId)) return app.planId;
   p = creerPlan(installCourante(), nom, L, { contrat: false, source: o.source || 'fichier' }); marquerVu(p); BIB.nouveaux.add(p.id);
   return p.id; }
-/* Le plan sur la table vient d'être enregistré (08-interface, `ecrireContrat`) : son contrat et son résumé se gardent. */
+/* Le plan sur la table vient d'être enregistré (08-interface, `ecrireContrat`) : son contrat et son résumé se gardent.
+   (v86, l'audit F11) MODIFIÉ, C'EST CHANGÉ : un plan s'enregistre dès qu'on l'ouvre et à chaque folio parcouru — la colonne
+   « Modifié » répétait « Ouvert », mot pour mot. Sa date ne bouge plus que si ce qu'il porte a changé (ses liaisons, les
+   choix, le cartouche : la signature gardée), ou qu'un geste s'est fait depuis le dernier enregistrement (l'historique a
+   bougé : un bloc déplacé, défait). */
+const signatureDuPlan = o => { const t = JSON.stringify([o.liaisons, o.source, o.nFolios, o.budget, o.nom, o.designations, o.sexes, o.charges, o.raccords, o.provisoires, o.cartouche]);
+  let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36) + '.' + t.length.toString(36); };
 function garderLePlan(o) { const p = o.planId && BIB.plans.get(o.planId); if (!p) return;
-  Object.assign(p, resumeDe(o), { nom: o.nom || p.nom, modifie: o.t });
+  const sig = signatureDuPlan(o), n = (app.hist || []).length, H = BIB.histVu, geste = !!(H && H.plan === p.id && H.n !== n);
+  const change = (!!p.sig && p.sig !== sig) || geste; BIB.histVu = { plan: p.id, n };
+  Object.assign(p, resumeDe(o), { nom: o.nom || p.nom, sig }, change || !p.modifie ? { modifie: change ? o.t : p.modifie || p.cree || o.t } : null);
   // ce qu'il reste à faire : le compte du contrôle tel qu'il est quand le plan se garde, lu à sa source unique (08-controle,
   // `compteProblemes` : les nombres de la pastille du rail) — la bibliothèque le dit
   if (typeof compteProblemes === 'function' && typeof CONTROLE !== 'undefined' && CONTROLE.cle) { const c = compteProblemes(); p.problemes = { ko: c.ko, att: c.att }; }
@@ -761,8 +769,10 @@ const sousPlan = p => { if (p.source === 'base') return lies([p.appareil, p.rete
   const h = (p.harness || []).filter(x => cleTexte(x) !== cleTexte(nomAffiche(p.nom)));
   return lies([h.slice(0, 2).join(', ') + (h.length > 2 ? '…' : ''), p.dessins > 1 ? plurielLie(p.dessins, 'dessin') : '']); };
 // ce qu'il reste à faire, d'après le dernier contrôle gardé
+// (v86, l'audit F11) des problèmes ET des points à voir : les deux se disent — les points à voir dessous, calmes (ils informent)
 const problemesHtml = p => { const x = p.problemes; if (!x) return '<span class="bi-pb bi-pb-rien">pas encore contrôlé</span>';
-  return x.ko ? `<span class="bi-pb ko">${esc(plurielLie(x.ko, 'problème'))}</span>` : x.att ? `<span class="bi-pb att">${x.att}${INSECABLE}à voir</span>` : '<span class="bi-pb ok">rien à reprendre</span>'; };
+  if (x.ko) return `<span class="bi-pb-c"><span class="bi-pb ko">${esc(plurielLie(x.ko, 'problème'))}</span>${x.att ? `<small>et ${x.att}${INSECABLE}à voir</small>` : ''}</span>`;
+  return x.att ? `<span class="bi-pb att">${x.att}${INSECABLE}à voir</span>` : '<span class="bi-pb ok">rien à reprendre</span>'; };
 function lignePlanHtml(p, avecInstall) { const i = BIB.installs.get(p.install), table = p.id === app.planId && planSurLaTable(), neuf = BIB.nouveaux.has(p.id), lot = !!BIB.lot, choisi = lot && BIB.lot.ids.has(p.id);
   const edite = BIB.edition && BIB.edition.quoi === 'plan' && BIB.edition.id === p.id, confirme = BIB.confirme && BIB.confirme.quoi === 'plan' && BIB.confirme.id === p.id;
   if (confirme) return `<li class="bi-plan bi-confirmant" data-plan="${escA(p.id)}">${confirmeHtml('plan', p.id, 'Supprimer ' + guillemets(nomAffiche(p.nom)) + ' ?', 'Ses liaisons et ce qu’on y a fait partent avec lui.')}</li>`;

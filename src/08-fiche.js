@@ -384,7 +384,8 @@ function signaturesDuPlan() { const S = new Set(), C = (app && app.contrat) || {
   (C.sexes ? [...C.sexes] : []).forEach(([k, v]) => S.add('s|' + k + '|' + v));
   (C.charges ? [...C.charges] : []).forEach(([k, v]) => { S.add('c|' + k + '|' + profilSansCalibre(v)); if (v && v.calibre > 0) S.add('cal|' + k + '|' + v.calibre); });
   // (v86) une barrette ajoutée par VOLTA qui a reçu son repère ; le dessin retouché d'un folio (08-journal, l'historique du plan)
-  try { barrettesPosees().forEach(p => S.add('p|' + p.vt + '|' + p.nom)); retouchesDuPlan().forEach(d => S.add(signatureDuDessin(d))); } catch (_) { }
+  try { barrettesPosees().forEach(p => S.add('p|' + p.vt + '|' + p.nom)); retouchesDuPlan().forEach(d => S.add(signatureDuDessin(d)));
+    verite().forEach(l => { if (l.avant && l.avant.copies > 0) S.add('l|' + cleFil(l) + '|copies|' + l.avant.copies); }); } catch (_) { }
   return S; }
 function sauverHeures(id) { try { const t = JSON.parse(localStorage.getItem(CLE_QUAND) || '{}') || {}; delete t[id]; t[id] = Object.fromEntries([...QUAND.m].filter(([, v]) => v));
   const ks = Object.keys(t); ks.slice(0, Math.max(0, ks.length - 12)).forEach(k => delete t[k]); localStorage.setItem(CLE_QUAND, JSON.stringify(t)); } catch (_) { } }
@@ -568,13 +569,19 @@ function intensiteCalculee(l) { const H = app.simu || HYPOTHESES, jauge = jaugeD
   const A = l.type ? admissionDuFil(app.norme, l.type, H) : null, fn = A ? A.fil : null;
   const decl = fn ? A.decl : 1, amb = fn ? A.amb : 1, fac = fn ? A.facteurContinu : 1, facCourt = fn ? A.facteurCourt : 1, admise = t => fn && fn.intensite != null ? intensiteAdmise(fn, t) * A.facteur(t) : null;
   const continu = fn && fn.intensite != null ? fn.intensite * fac : null, al = neuf ? null : alimentationDuFil(l), b = al && al.branche, propre = !!(b && b.ecrite);
-  const source = propre ? 'branche' : al && al.perm ? 'profil' : al && al.calibre > 0 ? 'calibre' : 'hypothese', I = propre ? b.perm : source === 'profil' ? al.perm : source === 'calibre' ? al.calibre : H.courant;
-  const tc = l.type ? temperatureDuConducteur(app.norme, l.type, I, H) : { T: +H.tconducteur, estimee: false };
+  /* (v86, l'audit B1) une BRANCHE DE COMMANDE dont rien n'est écrit (09 quater, `inconnu` : elle ne mène qu'à des bobines, à
+     des entrées de calculateur) : `source` 'commande', son courant INCONNU (`I` null) — jamais le courant total du
+     disjoncteur : rien ne le juge, rien ne le grossit ; la fiche demande la consommation de la bobine. `traverses` : les
+     relais et interrupteurs que le courant passe pour arriver à lui, contact supposé fermé */
+  const inconnu = !!(b && b.inconnu), source = propre ? 'branche' : inconnu ? 'commande' : al && al.perm ? 'profil' : al && al.calibre > 0 ? 'calibre' : 'hypothese';
+  const I = propre ? b.perm : inconnu ? null : source === 'profil' ? al.perm : source === 'calibre' ? al.calibre : H.courant;
+  const tc = l.type ? temperatureDuConducteur(app.norme, l.type, I || 0, H) : { T: +H.tconducteur, estimee: false };
   const rd = l.type ? resistanceDuFil(app.norme, l.type, jauge, tc.T) : { rho: null, kConducteur: 1, conducteur: 'cuivre' };
-  const pts = propre ? b.points : al ? al.points : [{ nom: 'hypothèse', i: I, t: Infinity }], trop = fn ? pts.filter(pt => pt.i > admise(pt.t) + 1e-9) : [];
-  const p0 = propre ? pts.find(p => p.t !== Infinity) || null : al && al.pointe, pointe = p0 ? { ...p0, admis: admise(p0.t) } : null;
-  const aval = b ? { bouts: b.bouts, manque: b.manque, tout: b.tout } : null, totalFaute = !!(b && !b.tout && !b.ecrite && (source === 'profil' || source === 'calibre'));
-  return { H, jauge, fn, rd, tc, decl, amb, fac, facCourt, admise, continu, al, I, source, pts, pointe, trop, aval, totalFaute, charge: continu ? I / continu : null }; }
+  const pts = propre ? b.points : inconnu ? [] : al ? al.points : [{ nom: 'hypothèse', i: I, t: Infinity }], trop = fn ? pts.filter(pt => pt.i > admise(pt.t) + 1e-9) : [];
+  const p0 = propre ? pts.find(p => p.t !== Infinity) || null : inconnu ? null : al && al.pointe, pointe = p0 ? { ...p0, admis: admise(p0.t) } : null;
+  const aval = b ? { bouts: b.bouts, manque: b.manque, tout: b.tout, sans: b.sans || [], commande: !!b.commande } : null, totalFaute = !!(b && !b.tout && !b.ecrite && !inconnu && (source === 'profil' || source === 'calibre'));
+  const traverses = al && al.chemin && typeof traverseesDuChemin === 'function' ? traverseesDuChemin(al.chemin, l) : [];
+  return { H, jauge, fn, rd, tc, decl, amb, fac, facCourt, admise, continu, al, I, source, pts, pointe, trop, aval, totalFaute, commande: !!(b && b.commande), traverses, charge: continu && I != null ? I / continu : null }; }
 /* LA CHUTE ADMISE : celle que le moteur rend pour la tension, le régime et les hypothèses de la simulation (la règle du
    lecteur : 2 V en monophasé et en continu, 4 V en triphasé ; sinon la table Réseau) — jamais un chiffre écrit ici. */
 const chuteAdmiseDe = H => chuteAdmise(app.norme, H.tension, H.regime, H);
@@ -600,8 +607,9 @@ const pireChuteEnPointe = c => c ? (c.pointes || []).filter(p => p.trop).sort((a
    régime et le même retour (avant, « ce câble en fait 0,83 V » sous un total de 1,34 V dont il faisait 1,14 V : sa part
    se calculait à 20 °C) ; sans chemin de disjoncteur, le même calcul sur lui seul (09 quater, `chuteDuCable`), au
    courant de sa fiche. `rho` (Ω/km), `T` (°C) et `I` (A) : ce qui a servi. */
+// (v86) un câble de commande au courant inconnu n'a pas de chute qui se calcule (09 quater : elle dépend de ce courant)
 function chuteDuFil(l, x) { x = x || intensiteDuFil(l); const H = x.H;
-  const total = x.al ? chuteEnLigne(l, x.al.nom) : null, seg = total ? total.segments.find(s => s.fil === l) || null : null, c = seg || chuteDuCable(app.norme, l, x.I, H);
+  const total = x.al ? chuteEnLigne(l, x.al.nom) : null, seg = total ? total.segments.find(s => s.fil === l) || null : null, c = seg || (x.I == null ? null : chuteDuCable(app.norme, l, x.I, H));
   const L = c && c.longueur > 0 ? c.longueur : l.longueur > 0 ? l.longueur : H.longueur, dU = c && c.dU != null ? c.dU : null;
   const admise = chuteAdmiseDe(H), max = total && total.admis != null ? total.admis : admise && admise.chuteMax != null ? admise.chuteMax : null, pointe = pireChuteEnPointe(total);
   return { L, dU, rho: c ? c.rho : null, T: c ? c.T : null, I: seg && seg.courant != null ? seg.courant : x.I, total, max, regle: total && total.regle ? total.regle : admise ? admise.regle || '' : '', hyp: !(l.longueur > 0), trop: !!(total && total.trop), reel: !!(total && total.reel), pointe, etat: etatDeChute(total, pointe) }; }
@@ -618,7 +626,8 @@ const gaugesDeFamille = fam => [...(famillesCables().get(String(fam || '').toUpp
    `calibre` : celui sous lequel chercher — v73 (le technicien, n° 1 : « un câble DR12 dimensionné pour un 15 A qui n'est
    pas dans le fichier ») : tant que le calibre que l'outil propose n'est pas écrit, c'est celui du retest. Rend
    { type, pourquoi } ou null. */
-function plusFinQuiTient(l, calibre) { const x = intensiteDuFil(l), p = partiesDuType(l.type); if (!l.type || p.jauge == null) return null;
+// (v86, l'audit B1 : « un DR16 proposé sur le fil d'un interrupteur de commande ») un câble de commande ne grossit pas
+function plusFinQuiTient(l, calibre) { const x = intensiteDuFil(l), p = partiesDuType(l.type); if (!l.type || p.jauge == null || x.commande || x.source === 'commande') return null;
   if (x.al) { try { const d = disjonctionDe(x.al.nom), f = (d.contexte.fils || []).find(y => y.l === l), cal = calibre > 0 ? calibre : d.calibre; if (f && cal > 0) { const H = { ...HYPOTHESES, ...(d.contexte.hyp || {}) }, ctx = contexteDeProtection(app.norme, H, d.courbes, pointsDuProfil(d.profil)), q = protegerFil(app.norme, cal, f, H, ctx);
     if (filSuit(q)) return null; const s = jaugeQuiSuit(app.norme, cal, f, H, ctx); return s ? { type: s.type, pourquoi: `le plus fin que protège le ${amperes(cal)}${calibre > 0 && calibre !== d.calibre ? ' de l’installation' : ''} de ${x.al.nom}` } : null; } } catch (_) { } }
   if (!x.trop.length) return null;
@@ -899,25 +908,29 @@ function listeCables(rows, o) { o = o || {}; if (ficheEnGrand()) return tableCab
 /* La ligne d'un câble d'un repère : son intensité contre ce qu'il admet (au pire du permanent et de la pointe), sa chute
    en ligne depuis le disjoncteur en amont (sinon sur le câble seul), pourquoi il est à voir, et la bulle qui dit d'où
    viennent les chiffres. `f.coupable` : ce que le plan d'un connecteur en dit (aucun arrangement ne le loge). */
-function ligneDeFil(f) { const l = f.l, x = intensiteDuFil(l), c = chuteDuFil(l, x);
-  const rP = x.continu ? x.I / x.continu : null, rT = x.pointe && x.pointe.admis ? x.pointe.i / x.pointe.admis : null, r = Math.max(rP || 0, rT || 0), trop = x.trop.length > 0, pointeI = rT != null && rT > (rP || 0);
+// (v86, l'audit B1) ce que demande une branche de commande au courant inconnu, en mots : la consommation de sa bobine à écrire ;
+// une entrée de calculateur seule ne demande rien (quelques milliampères)
+const motDeCommande = x => { const s = (x && x.aval && x.aval.sans) || [], bob = s.filter(y => y.nature === 'bobine').map(y => y.repere), ent = s.filter(y => y.nature === 'entree').map(y => y.repere);
+  return bob.length ? 'écrivez la consommation de la bobine de ' + listeEt(bob) : ent.length ? 'une entrée de ' + listeEt(ent) + ', quelques milliampères' : ''; };
+function ligneDeFil(f) { const l = f.l, x = intensiteDuFil(l), c = chuteDuFil(l, x), cmd = x.I == null;
+  const rP = x.continu && !cmd ? x.I / x.continu : null, rT = x.pointe && x.pointe.admis ? x.pointe.i / x.pointe.admis : null, r = Math.max(rP || 0, rT || 0), trop = x.trop.length > 0, pointeI = rT != null && rT > (rP || 0);
   const u = c.total ? c.total.dU : c.dU, supp = c.total ? !c.total.reel : c.hyp, motSupp = supp ? ', longueurs supposées' : '';
   // (v86) en mots, sans « > » : ce qu'il porte, pour ce qu'il admet
-  const pourquoi = [trop ? `trop fin (${x.trop[0].nom}) : ${amperes(x.trop[0].i)} pour ${amperes(x.admise(x.trop[0].t))} admis` : '',
+  const pourquoi = [cmd ? 'courant de commande inconnu' : '', trop ? `trop fin (${x.trop[0].nom}) : ${amperes(x.trop[0].i)} pour ${amperes(x.admise(x.trop[0].t))} admis` : '',
     c.trop ? `chute en ligne ${volts(c.total.dU)} pour ${volts(c.max)} admis${motSupp}` : c.pointe ? `chute en pointe ${volts(c.pointe.dU)} pour ${volts(c.pointe.admis)} admis${motSupp}` : '', f.coupable || ''].filter(Boolean).join(' · ');
   const bulle = [`${l.origine === null ? 'câble à créer' + (l.type ? ' · ' + l.type : '') : cableDit({ ...l, vers: f.vers, borneVers: f.borneVers })} · ${x.al ? 'sous ' + x.al.nom + (x.al.calibre ? ' (' + amperes(x.al.calibre) + ')' : '') : amperes(x.H.courant) + ' supposés (aucun disjoncteur en amont)'}`,
-    x.fn ? `permanent ${amperes(x.I)} sur ${amperes(x.continu)} admis en continu${motFacteur(x.fac)}` : (l.type ? 'hors de la norme des câbles : ce qu’il admet ne se lit pas' : 'sans type : ce qu’il admet ne se lit pas'),
+    cmd ? `courant de commande inconnu : ${motDeCommande(x)}` : x.fn ? `permanent ${amperes(x.I)} sur ${amperes(x.continu)} admis en continu${motFacteur(x.fac)}` : (l.type ? 'hors de la norme des câbles : ce qu’il admet ne se lit pas' : 'sans type : ce qu’il admet ne se lit pas'),
     x.pointe && x.pointe.admis ? `pointe ${amperes(x.pointe.i)} pendant ${secondes(x.pointe.t)} sur ${amperes(x.pointe.admis)} admis` : '',
     c.total ? `chute en ligne depuis ${x.al.nom} vers ${c.total.bout[0]}${c.total.bout[1] ? ':' + c.total.bout[1] : ''} : ${volts(c.total.dU)}${c.max != null ? ' (' + volts(c.max) + ' admis)' : ''}${motSupp}` : c.dU != null ? `chute sur ce câble seul : ${volts(c.dU)}${c.max != null ? ' sur les ' + volts(c.max) + ' admis en ligne' : ''} (${nombre(arrondi(c.L, 2))} m${c.hyp ? ' supposés' : ''})` : '',
     c.pointe ? `en pointe : ${volts(c.pointe.dU)} à ${amperes(c.pointe.i)} > ${volts(c.pointe.admis)} admis` : ''].filter(Boolean).join('\n');
   return { l, k: cleFil(l), num: nomDuFil({ ...f, cable: l.cable }), neuf: l.origine === null, puce: puceFil(f), jauge: x.jauge, type: l.type, bout: { rep: f.vers, borne: f.borneVers },
     // les chiffres de la barre : au pire, comme elle — la pointe quand c'est elle qui serre le plus
-    charge: { r: x.fn ? r : null, mot: pointeI ? `${nombreA(x.pointe.i)} / ${nombreA(x.pointe.admis)} A` : x.continu ? `${nombreA(x.I)} / ${nombreA(x.continu)} A` : `${nombreA(x.I)} A`,
+    charge: { r: x.fn && !cmd ? r : null, mot: cmd ? 'inconnu' : pointeI ? `${nombreA(x.pointe.i)} / ${nombreA(x.pointe.admis)} A` : x.continu ? `${nombreA(x.I)} / ${nombreA(x.continu)} A` : `${nombreA(x.I)} A`,
       i: pointeI ? x.pointe.i : x.I, admis: pointeI ? x.pointe.admis : x.continu || null, supp: !x.al },
     // (v85, le lecteur : « vers 104LP1, DR22, chute en ligne 0,79 V, pas de rond avec le pourcentage : pas homogène ») : sans
     // chemin de disjoncteur, la chute du câble seul se mesure aussi contre la chute admise des Hypothèses (2 V sous 28 V) — sa
     // part de ce que la ligne entière peut perdre ; l'anneau la montre comme pour les autres
-    chute: { mot: volts(u), u, max: c.max, regle: c.regle, supp, seul: !c.total }, etat: trop || c.etat === 'ko' || f.coupable ? 'ko' : c.etat === 'att' ? 'att' : '', pourquoi, bulle }; }
+    chute: { mot: volts(u), u, max: c.max, regle: c.regle, supp, seul: !c.total }, etat: trop || c.etat === 'ko' || f.coupable ? 'ko' : c.etat === 'att' || (cmd && /^écrivez/.test(motDeCommande(x))) ? 'att' : '', pourquoi, bulle }; }
 /* LA SECTION DES CÂBLES : le tableau, son résumé (combien, combien à régler — ou, quand tous portent leur courant, le plus chargé),
    sa pastille. `o.note` : ce qui est supposé, dit une fois, en tête. */
 function sectionFils(rows, probs, o) { o = o || {}; if (!rows.length) return { cle: 'fils', titre: o.titre, vide: 'aucun câble' };
@@ -2004,7 +2017,19 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   // fichier ; plus de champ ici (les Hypothèses règlent la longueur supposée de tous)
   const hypL = L == null && !neuf ? `<p class="fi-hyp-l">${ico('alerte')}<span><b>${esc('Longueur supposée : ' + nombre(H.longueur) + ' m')}</b>${esc(' — votre fichier ne la donne pas, et la chute en dépend : à écrire dans votre fichier.')}</span></p>` : '';
   const pointeI = rT != null && x.continu && rT > x.I / x.continu, iV = x.fn ? (pointeI ? x.pointe.i : x.I) : null, iA = x.fn ? (pointeI ? x.pointe.admis : x.continu) : null;
-  const brins = cab ? [(cab.brins > 1 ? cab.brins + ' brins' : '1 brin') + (cab.blindage ? ' + blindage' : ''), cab.nature, cab.diametre != null ? 'Ø ' + nombre(cab.diametre) + ' mm' : '', cab.section != null ? nombre(cab.section) + ' mm² hors-tout' : '', cab.resistance != null ? nombre(cab.resistance) + ' mΩ/m' : '', cab.masse != null ? nombre(cab.masse) + ' g/m' : ''].filter(Boolean).join(' · ') : '';
+  const brins = cab ? [(cab.brins > 1 ? cab.brins + ' brins' : '1 brin') + (cab.blindage ? ' + blindage' : ''), cab.nature, cab.diametre != null ? 'Ø ' + nombre(cab.diametre) + ' mm' : '', cab.section != null ? nombre(cab.section) + ' mm² hors-tout' : '', cab.resistance != null ? nombre(cab.resistance) + ' mΩ/m à 20 °C' : '', cab.masse != null ? nombre(cab.masse) + ' g/m' : ''].filter(Boolean).join(' · ') : '';
+  /* (v86, l'audit G7 : « 60 mΩ/m » dans D'où viennent ces chiffres, puis « 79,1 Ω/km × 5 m × 2 A » dans la chute, sans un mot
+     sur le lien) : une seule unité, le mΩ/m de la base, et d'où vient la valeur chaude — la résistance à 20 °C, portée à la
+     température que son courant donne au câble (ou à la température fixe des Hypothèses) */
+  // (« Ces 79,1 mΩ/m : 60 mΩ/m à 20 °C, portés à 101 °C (95 °C autour, plus l'échauffement sous 2 A) » ; rien à 20 °C)
+  const rhoChaud = (() => { const rd = x.rd || {}, tc = x.tc || {}; if (rd.rho == null || rd.rho20 == null) return ''; const T = Math.round(tc.T != null ? tc.T : 20); if (Math.abs(T - 20) < 0.5) return '';
+    const pourquoi = tc.estimee ? `${nombre(Math.round(tc.tu))} °C autour, plus l’échauffement sous ${nombre(arrondi(x.I, 2))} A${tc.borne ? ', borné à ce que le câble tient' : ''}` : 'la température fixe des Hypothèses';
+    return `Ces ${nombre(arrondi(rd.rho, 1))} mΩ/m : ${nombre(arrondi(rd.rho20, 1))} mΩ/m à 20 °C, portés à ${T} °C (${pourquoi}).`; })();
+  // (v86, l'audit G5 : « déclassé × 0,6 » ne disait pas d'où venait le facteur) : ce que la table donne pour un câble seul, et
+  // ce qui le réduit — les mêmes mots que les problèmes (08-niveaux, `conditionsEnMots`)
+  const admisEnMots = (() => { if (!x.fn || !x.fac || Math.abs(x.fac - 1) < 1e-9) return ''; let m = null;
+    try { m = /^([\d,]+ A) × ([\d,]+)(?: : (.+))?$/.exec(typeof motDuDeclassement === 'function' ? motDuDeclassement(app.norme, l.type, x.H, Infinity) || '' : ''); } catch (_) { m = null; }
+    return m ? ` : ${m[1]} pour un ${l.type} seul à l’air libre, × ${m[2]} ${m[3] && typeof conditionsEnMots === 'function' ? conditionsEnMots(m[3]) : 'ici'}` : ` (× ${nombre(arrondi(x.fac, 2))})`; })();
   // le câble que la base SEE a mis à la place de celui de VOLTA (08 nonies) : la différence se dit dans Modifier, sous le type
   const dCab = cab && typeof differenceSEEMots === 'function' ? differenceSEEMots('cables', cab) : '';
   /* D'OÙ À OÙ : son chemin, une étape par ligne (un bout, la barrette par laquelle il passe, l'autre bout) sur un trait à
@@ -2040,24 +2065,31 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const calS = prot && prot.calEcrit ? prot.calEcrit : x.al ? x.al.calibre : null, causeS = prot && prot.cause;
   const source = x.al ? `<button type="button" class="fi-sertir fi-ct-puce fi-dj-puce${causeS ? ' ' + (causeS.k === 'declenche' ? 'ko' : 'main') : ''}" data-choisir-bloc="${escA(x.al.nom)}" aria-label="${escA('Son disjoncteur : ' + x.al.nom + (calS ? ', ' + amperes(calS) : ''))}" data-bulle="${escA('Son disjoncteur : ' + x.al.nom + (calS ? ', ' + amperes(calS) + (prot && prot.calEcrit ? ' (votre fichier)' : '') : '') + (causeS ? ' — il est la cause : ' + (causeS.k === 'declenche' ? 'il déclenche' : 'il est juste') : '') + ' — son profil de charge, sa courbe')}">${esc(x.al.nom)}${calS ? ' · ' + esc(amperes(calS)) : ''}${causeS ? ' <i>⚠</i>' : ''}</button>` : `${esc(nombre(H.courant))} A ${origine('hyp', 'Aucun disjoncteur en amont : VOLTA suppose ' + nombre(H.courant) + ' A', 'supposés')}`;
   const bulleI = r.bulle.split('\n').filter(t => !/^chute|^en pointe/.test(t)).slice(1).join('\n');
-  const bulleU = ch.total ? `En ligne depuis ${x.al.nom} jusqu’à ${ch.total.bout[0]}${ch.total.bout[1] ? ':' + ch.total.bout[1] : ''} : ${volts(ch.total.dU)}${ch.max != null ? ' (' + volts(ch.max) + ' admis)' : ''}${ch.reel ? '' : ', longueurs supposées'}\nSur ce câble : ${volts(ch.dU)} (${nombre(arrondi(ch.L, 2))} m${ch.hyp ? ' supposés' : ''})${ch.pointe ? `\nEn pointe : ${volts(ch.pointe.dU)} à ${amperes(ch.pointe.i)} > ${volts(ch.pointe.admis)} admis` : ''}` : ch.dU != null ? `Sur ce câble : ${volts(ch.dU)} = ${nombre(arrondi(x.rd.rho, 1))} Ω/km × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A` : 'La résistance du câble est inconnue';
+  const bulleU = ch.total ? `En ligne depuis ${x.al.nom} jusqu’à ${ch.total.bout[0]}${ch.total.bout[1] ? ':' + ch.total.bout[1] : ''} : ${volts(ch.total.dU)}${ch.max != null ? ' (' + volts(ch.max) + ' admis)' : ''}${ch.reel ? '' : ', longueurs supposées'}\nSur ce câble : ${volts(ch.dU)} (${nombre(arrondi(ch.L, 2))} m${ch.hyp ? ' supposés' : ''})${ch.pointe ? `\nEn pointe : ${volts(ch.pointe.dU)} à ${amperes(ch.pointe.i)} > ${volts(ch.pointe.admis)} admis` : ''}` : ch.dU != null ? `Sur ce câble : ${volts(ch.dU)} = ${nombre(arrondi(x.rd.rho, 1))} mΩ/m × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A` : x.I == null ? 'Le courant de la branche n’est pas écrit : la chute ne se calcule pas' : 'La résistance du câble est inconnue';
   // l'intensité : au pire du permanent et de la pointe, « sur » ce qu'il admet pour cette durée ; dessous, en clair, l'autre
   // régime et d'où vient le courant (son disjoncteur en puce, ou l'hypothèse)
   const dT = x.pointe ? ' pendant ' + secondes(x.pointe.t) : '';
+  /* (v86, l'audit B1) LE COURANT TRAVERSE CE QUI CONDUIT : un câble au-delà d'un relais, d'un interrupteur vient de son
+     disjoncteur « à travers 103RL1, contact supposé fermé » (le pire cas, dit) ; une branche de commande dont rien n'est écrit a
+     un courant INCONNU (`source` 'commande') — jamais le courant total, jamais « Aucun disjoncteur en amont » */
+  const cmdF = x.I == null, nT = (x.traverses || []).length, parT = nT && x.al && !x.al.amont ? ' ' + esc(`À travers ${listeEt(x.traverses.map(t => t.repere))}, ${nT > 1 ? 'contacts supposés fermés' : 'contact supposé fermé'}.`) : '';
   // (v86) sans type, le courant se lit quand même : d'où il vient, comme pour les autres
-  const dI = (!x.fn ? '' : pointeI ? esc(`Le plus fort : ${x.pointe.nom || 'la pointe'}${dT}${Math.abs(x.pointe.admis - x.continu) > 0.05 ? ' (sur cette durée, il admet plus qu’en continu)' : ''}. En continu : ${amperes(x.I)} sur ${amperes(x.continu)}.`)
+  const dI = (!x.fn || cmdF ? '' : pointeI ? esc(`Le plus fort : ${x.pointe.nom || 'la pointe'}${dT}${Math.abs(x.pointe.admis - x.continu) > 0.05 ? ' (sur cette durée, il admet plus qu’en continu)' : ''}. En continu : ${amperes(x.I)} sur ${amperes(x.continu)}.`)
       : x.pointe && x.pointe.admis ? esc(`Le plus fort : en continu. ${majuscule(x.pointe.nom || 'la pointe')} :${amperes(x.pointe.i)}${dT}, sur ${amperes(x.pointe.admis)} admis.`) : esc('En continu.'))
     // (v84, l'agent « câbles ») côté source du disjoncteur (vers une batterie, une génératrice, un TR), il n'est pas sous sa
     // protection ; sans profil de charge, le courant retenu est le calibre du disjoncteur — chaque cas se dit tel qu'il est
     + (x.al && x.al.amont ? ` ${esc('Côté source de')} ${source} ${esc(': il l’alimente, il n’est pas sous sa protection.')}`
+      : x.al && cmdF ? `${esc('Courant de commande inconnu, sous')} ${source}${esc(' : ' + motDeCommande(x) + '.')}`
       : x.al && x.source === 'calibre' ? ` ${esc('Le courant vient de')} ${source} ${esc('— son calibre, faute de profil de charge.')}`
       : x.al && x.source === 'branche' && x.aval ? ` ${esc('Sa branche : ' + x.aval.bouts.join(', ') + ', ' + (x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite') + ' (sous')} ${source}${esc(').')}`
       : x.al && x.totalFaute ? ` ${esc('Courant total de')} ${source} ${esc(': la consommation de ce qui est en aval n’est pas écrite.')}`
-      : x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
+      : x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`) + parT;
   // (v86, le lecteur : « un câble sans type n'a pas de courant affiché : le courant doit se lire quand même ») : la valeur, sans
   // barre ni anneau (la part de l'admis est impossible), et pourquoi en clair
   const motInconnu = l.type ? l.type + ' n’est pas dans l’EN 2853' : 'votre fichier ne donne pas son type';
-  const intens = !x.fn ? mesure('Courant', '', `<b>${esc(amperes(x.I))}</b> <span class="fi-mes-inc">${esc(l.type ? 'hors norme : admis inconnu' : 'sans type : admis inconnu')}</span>`, null, '', esc(majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas, VOLTA ne peut pas dire s’il porte ce courant.') + dI, bulleI)
+  // (v86) une branche de commande au courant inconnu : « inconnu », sans barre — ce qu'il faut écrire, dessous
+  const intens = cmdF ? mesure('Courant', '', `<b>${esc('inconnu')}</b> <span class="fi-mes-inc">${esc('une branche de commande')}</span>`, null, '', dI, bulleI)
+    : !x.fn ? mesure('Courant', '', `<b>${esc(amperes(x.I))}</b> <span class="fi-mes-inc">${esc(l.type ? 'hors norme : admis inconnu' : 'sans type : admis inconnu')}</span>`, null, '', esc(majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas, VOLTA ne peut pas dire s’il porte ce courant.') + dI, bulleI)
     : mesure('Courant', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
   // la chute : en ligne depuis le disjoncteur jusqu'au bout du chemin, sur ce qui est admis ; dessous, le chemin, la part de
   // ce câble, la pointe qui dépasse (de la couleur de sa mesure) — les longueurs supposées sont dites une fois, sous les tuiles
@@ -2065,17 +2097,18 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const autresSupp = ch.total && !ch.reel && !ch.hyp ? ` ${esc(`D’autres câbles du chemin n’ont pas de longueur : ${nombre(H.longueur)} m supposés chacun.`)}` : '';
   const dU = ch.total ? esc(`Chute depuis ${x.al.nom} jusqu’à ${boutU}, tout le chemin compris ; dont ${volts(ch.dU)} dans ce câble.`) + autresSupp
       + (ch.pointe ? ` <span class="fi-mes-pointe ${classeMesure(ch.pointe.dU / ch.pointe.admis)}">${esc(`En pointe : ${volts(ch.pointe.dU)} à ${amperes(ch.pointe.i)}, ${ch.pointe.dU > ch.pointe.admis ? 'plus que' : 'pour'} les ${volts(ch.pointe.admis)} admis.`)}</span>` : '')
-    : ch.dU != null ? esc(`Sur ce câble seul : ${nombre(arrondi(x.rd.rho, 1))} Ω/km × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A.`) : esc('La résistance du câble est inconnue : la chute ne se calcule pas.');
+    : ch.dU != null ? esc(`Sur ce câble seul : ${nombre(arrondi(x.rd.rho, 1))} mΩ/m × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A.${rhoChaud ? ' ' + rhoChaud : ''}`)
+    : cmdF ? esc('Elle dépend du courant de la branche, qui n’est pas écrit : ' + motDeCommande(x) + '.') : esc('La résistance du câble est inconnue : la chute ne se calcule pas.');
   const chute = mesure('Chute', aide('chute', ch.total ? { chemin: { ...ch.total, admis: ch.max, regle: ch.regle } } : { dU: ch.dU, admis: ch.max, regle: ch.regle }),
     // (v84) sans admis à comparer, pas de barre vide : la valeur seule
-    ch.total ? `<b>${esc(volts(ch.total.dU))}</b>${ch.max != null ? ' sur ' + esc(volts(ch.max)) + ' admis' : ''}` : `<b>${esc(volts(ch.dU))}</b>`, rU != null && isFinite(rU) ? rU : null, etatU, dU, bulleU);
+    ch.total ? `<b>${esc(volts(ch.total.dU))}</b>${ch.max != null ? ' sur ' + esc(volts(ch.max)) + ' admis' : ''}` : ch.dU == null && cmdF ? `<b>${esc('inconnue')}</b>` : `<b>${esc(volts(ch.dU))}</b>`, rU != null && isFinite(rU) ? rU : null, etatU, dU, bulleU);
   // le plus fin qui tient : la gauge que le moteur dit pour son disjoncteur (sinon la plus fine qui porte le courant), d'un clic
   // (« Seulement ce câble », sous le calibre ÉCRIT : celui du domaine C, 08-controle, `plusFinSousLeRetest`, sinon le nôtre)
   let seul = null; if (!neuf && prot && prot.cause && typeof plusFinSousLeRetest === 'function') { try { seul = plusFinSousLeRetest(l); } catch (_) { seul = null; } }
   const fin = neuf ? null : seul || plusFinQuiTient(l, prot && prot.calEcrit), cause = causeDuCable(l, prot, fin);
   const reparer = fin && !cause ? `<p class="fi-reparer-l"><span>${esc(majuscule(fin.pourquoi))} : <b class="id">${esc(fin.type)}</b> (${esc(String(jaugeDuType(fin.type)))} AWG)${(m => m ? ` <span class="fi-cout">· ${esc(m)}</span>` : '')(coutDuType(l, fin.type))}</span><button type="button" class="btn papier fi-reparer" data-reparer="${escA(cleFil(l))}" data-type="${escA(fin.type)}" data-bulle="${escA(majuscule(cableDit(l)) + ' passe en ' + fin.type + (coutDuType(l, fin.type) ? ' (' + coutDuType(l, fin.type) + ')' : '') + ' — « Défaire » le rend')}">Passer en ${esc(fin.type)}</button></p>` : '';
   // le résumé, section pliée, dit les deux valeurs (v74 : l'intensité n'a plus de tuile) — « 9,31 A sur 21 A · chute 0,37 V sur 2 V »
-  const resumeI = !x.fn ? esc(amperes(x.I)) + ' · ce qu’il admet ne se lit pas' : [`${esc(amperes(iV))} sur ${esc(amperes(iA))}`, ch.total ? `chute ${esc(volts(ch.total.dU))}${ch.max != null ? ' sur ' + esc(volts(ch.max)) : ''}` : ch.dU != null ? 'chute ' + esc(volts(ch.dU)) : ''].filter(Boolean).join(' · ');
+  const resumeI = cmdF ? esc('courant de commande inconnu') : !x.fn ? esc(amperes(x.I)) + ' · ce qu’il admet ne se lit pas' : [`${esc(amperes(iV))} sur ${esc(amperes(iA))}`, ch.total ? `chute ${esc(volts(ch.total.dU))}${ch.max != null ? ' sur ' + esc(volts(ch.max)) : ''}` : ch.dU != null ? 'chute ' + esc(volts(ch.dU)) : ''].filter(Boolean).join(' · ');
   const sections = [{ cle: 'trajet', resume: esc(`${l.de}${l.borneDe ? ':' + l.borneDe : ''} → ${l.vers}${l.borneVers ? ':' + l.borneVers : ''}`), badge: badgeProblemes(probs, 'trajet'), contenu: trajet },
     { cle: 'fils', titre: 'Intensité et chute', resume: insecable(resumeI), badge: badgeProblemes(probs, 'fils') || (x.fn ? { t: ico('coche'), etat: 'ok' } : { t: '—', etat: '' }), contenu: `<div class="fi-mesures">${intens}${chute}</div>${reparer}` }];
   const id = identite([l.route ? 'route ' + esc(l.route) : '', esc(motFolios(neuf ? [] : foliosDe(l).map(String)))]);
@@ -2101,12 +2134,16 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
     // propre branche (la consommation écrite de ce qu'il alimente) ; il porte le total faute de consommation écrite en aval ;
     // le profil du disjoncteur manque et VOLTA prend son calibre
     x.al && x.al.amont ? { html: `Il nourrit <b class="id">${esc(x.al.nom)}</b> : il porte ses <b>${esc(amperes(x.I))}</b>, mais ${esc(x.al.nom)} ne le protège pas.`, source: 'calcul' }
-      : x.al && x.source === 'branche' && x.aval ? { html: `Il alimente ${x.aval.bouts.map(r => `<b class="id">${esc(r)}</b>`).join(', ')} : <b>${esc(amperes(x.I))}</b> en continu, ${x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite'}.`, source: 'calcul' }
+      // (v86) la commande dont rien n'est écrit : son courant est inconnu, jamais le total — ce qu'il faut écrire
+      : x.al && cmdF ? { html: `Il ne mène qu’à de la commande, sous <b class="id">${esc(x.al.nom)}</b> : son courant est inconnu — ${esc(motDeCommande(x))}. VOLTA ne lui prête pas le courant total du disjoncteur.`, source: 'calcul', etat: /^écrivez/.test(motDeCommande(x)) ? 'att' : '' }
+      : x.al && x.source === 'branche' && x.aval ? { html: `Il alimente ${x.aval.bouts.map(r => `<b class="id">${esc(r)}</b>`).join(', ')} : <b>${esc(amperes(x.I))}</b> en continu, ${x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite'}${(x.aval.sans || []).length ? esc(' — sans ' + listeEt(x.aval.sans.map(y => (y.nature === 'bobine' ? 'la bobine de ' : 'l’entrée de ') + y.repere)) + ', que VOLTA ne connaît pas') : ''}.`, source: 'calcul' }
       : x.al && x.source === 'calibre' ? { html: `Le profil de <b class="id">${esc(x.al.nom)}</b> n’est pas écrit : VOLTA prend son calibre, <b>${esc(amperes(x.I))}</b>, au pire.`, source: 'calcul', etat: 'att' }
       : x.al && x.totalFaute && x.aval && x.aval.manque.length ? { html: `Courant total de <b class="id">${esc(x.al.nom)}</b>, <b>${esc(amperes(x.I))}</b> en continu : la consommation de ce qui est en aval (${x.aval.manque.map(r => `<b class="id">${esc(r)}</b>`).join(', ')}) n’est pas écrite.`, source: 'calcul', etat: 'att' }
       : x.al ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : ce que tirent les équipements qu’il alimente, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
       : { html: `Aucun disjoncteur en amont : VOLTA suppose <b>${esc(nombre(H.courant))} A</b>.`, source: 'hypothese', etat: 'att' },
-    x.fn ? { html: `Il admet <b>${esc(amperes(x.continu))}</b> en continu${x.fac && Math.abs(x.fac - 1) > 1e-9 ? ' (déclassé × ' + esc(nombre(arrondi(x.fac, 2))) + ')' : ''}.`, source: 'norme', mot: 'EN 2853' } : null,
+    // (v86) ce que le courant traverse pour arriver à lui : un relais, un interrupteur, le contact supposé fermé (le pire cas)
+    nT && x.al && !x.al.amont ? { html: `Le courant de <b class="id">${esc(x.al.nom)}</b> lui arrive à travers ${x.traverses.map(t => `<b class="id">${esc(t.repere)}</b> (${esc(t.quoi === 'interrupteur' ? 'interrupteur' : t.quoi + ', ' + t.de + ' → ' + t.a)})`).join(', ')} : ${nT > 1 ? 'contacts supposés fermés' : 'contact supposé fermé'}, le pire cas.`, source: 'calcul' } : null,
+    x.fn ? { html: `Il admet <b>${esc(amperes(x.continu))}</b> en continu${esc(admisEnMots)}.`, source: 'norme', mot: 'EN 2853' } : null,
     L != null ? { html: `Longueur <b>${esc(nombre(arrondi(L, 2)))} m</b>.`, source: 'fichier' } : { html: `Longueur supposée <b>${esc(nombre(H.longueur))} m</b> : votre fichier ne la donne pas, et la chute en dépend.`, source: 'hypothese', etat: 'att' },
     ch.total ? { html: `Chute <b>${esc(volts(ch.total.dU))}</b> de ${esc(x.al.nom)} jusqu’à ${esc(boutU)}${ch.max != null ? ', pour ' + esc(volts(ch.max)) + ' admis' : ''} ; ce câble en fait ${esc(volts(ch.dU))}.`, source: 'calcul', etat: ch.trop ? (ch.reel ? 'ko' : 'att') : '' }
       : ch.dU != null ? { html: `Chute <b>${esc(volts(ch.dU))}</b> sur ce câble seul.`, source: 'calcul' } : null,

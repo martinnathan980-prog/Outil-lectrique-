@@ -2,6 +2,9 @@
    sur le récapitulatif :
      · les onglets d'une même barre ont tous la même largeur ;
      · aucun texte coupé (« … » ou débordement caché) dans un titre, une étiquette, un onglet, une cellule ;
+     · aucun texte coupé EN HAUTEUR (v86, l'audit : « …faisceau de 8 câbles … » tronqué à deux lignes, les grands chiffres
+       rognés de 3 px) : une boîte qui cache ce qui dépasse en hauteur (overflow caché, -webkit-line-clamp) et dont le
+       texte dépasse de plus de 2 px — ou dont une ligne de texte passe à moitié sous le bord ;
      · aucun texte qui en chevauche un autre ;
      · aucun élément visible qui sort de la fiche.
        node tests/ecran/oeil.js [clair|sombre] [largeur]
@@ -19,7 +22,11 @@ const [, , THEME = 'clair', L = '1440'] = process.argv;
       return { left: x0, top: y0, right: x1, bottom: y1, width: x1 - x0, height: y1 - y0 }; };
     const vu = e => !!boite(e);
     const dire = (ou, quoi) => { if (out.length < 400) out.push(ou + ' — ' + quoi); };
-    function examiner(ou, racine) { if (!racine) return;
+    /* (v86) l'œil juge ce que le lecteur voit une fois la fiche posée : la carte qui naît (opacité 0 puis 1, une échelle) cachait
+       tout à 80 ms — son contenu n'était jamais examiné. Chaque animation finie se termine d'abord (une animation sans fin,
+       comme une lueur qui respire, est laissée telle quelle). */
+    const finir = () => document.getAnimations().forEach(a => { try { const t = a.effect && a.effect.getComputedTiming ? a.effect.getComputedTiming() : null; if (t && isFinite(t.endTime)) a.finish(); } catch (_) { } });
+    function examiner(ou, racine) { if (!racine) return; finir();
       // 1. des onglets de même largeur
       racine.querySelectorAll('.nv-onglets, [role="tablist"]').forEach(bar => { const os = [...bar.querySelectorAll(':scope > .nv-onglet, :scope > [role="tab"]')].filter(vu);
         if (os.length > 1) { const ls = os.map(o => Math.round(o.getBoundingClientRect().width)); if (Math.max(...ls) - Math.min(...ls) > 2) dire(ou, 'onglets de largeurs inégales : ' + ls.join(' / ')); }
@@ -30,6 +37,17 @@ const [, , THEME = 'clair', L = '1440'] = process.argv;
         const texte = [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()); if (!texte) return;
         const coupe = (s.textOverflow === 'ellipsis' || s.overflow === 'hidden' || s.overflowX === 'hidden') && e.scrollWidth > e.clientWidth + 1;
         if (coupe && !e.closest('svg') && e.tagName !== 'INPUT') dire(ou, `texte coupé : « ${e.textContent.trim().slice(0, 50)} » (${e.className || e.tagName})`); });
+      // 2 bis. du texte coupé en hauteur (audit/s23-clamp.js) : la boîte qui coupe — son texte dépasse (plus de 2 px : le haut
+      // et le bas d'une police à interligne 1 débordent de 2 px sans rien cacher d'encre), ou une ligne de ses enfants passe à
+      // moitié sous son bord ; une boîte qui défile (auto, scroll) ne coupe pas : on y défile
+      racine.querySelectorAll('*').forEach(e => { if (e.closest('svg') || e.tagName === 'INPUT' || e.tagName === 'TEXTAREA' || !vu(e)) return; const s = getComputedStyle(e);
+        const clamp = !!s.webkitLineClamp && s.webkitLineClamp !== 'none', coupeY = clamp || s.overflowY === 'hidden' || s.overflowY === 'clip';
+        if (!coupeY || e.clientHeight < 6 || e.scrollHeight <= e.clientHeight + 2) return;
+        const quoi = x => (x.className && typeof x.className === 'string' ? x.className : x.tagName);
+        if (clamp || [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) { dire(ou, `texte coupé en hauteur : « ${e.textContent.trim().slice(0, 50)} » (${quoi(e)}, ${e.clientHeight} px sur ${e.scrollHeight})`); return; }
+        const q = e.getBoundingClientRect(), bas = q.top + e.clientTop + e.clientHeight;
+        const moitie = [...e.querySelectorAll('span, b, small, strong, em, i, p, li, td, th, label, h1, h2, h3, h4, button, a')].find(f => !f.closest('svg') && [...f.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && (r => r.height > 0 && r.top < bas - 2 && r.bottom > bas + 2)(f.getBoundingClientRect()));
+        if (moitie) dire(ou, `texte coupé en hauteur : « ${moitie.textContent.trim().slice(0, 50)} » (sous le bord de ${quoi(e)})`); });
       // 3. des textes qui se chevauchent (feuilles de texte seulement, hors svg)
       const feuilles = [...racine.querySelectorAll('span, b, small, strong, em, i, h1, h2, h3, h4, p, label, button, td, th, li')].filter(e => vu(e) && !e.closest('svg') && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && ![...e.children].length);
       const R = feuilles.filter(e => e.getClientRects().length <= 1).map(e => ({ e, r: boite(e) })).filter(x => x.r);   // un texte sur deux lignes : sa boîte englobe tout, pas un chevauchement

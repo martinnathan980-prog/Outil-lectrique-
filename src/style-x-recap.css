@@ -218,9 +218,8 @@
 /* le câble dont parle la phrase, en chasse fixe, à part : QUOI, puis POURQUOI */
 #base #ba-tab .rc-sujet{display:inline-block;margin-right:8px;font:500 var(--f-12)/1.45 var(--mono);letter-spacing:-.01em;color:var(--t-1);white-space:nowrap}
 #base #ba-tab .rc-sujet i{margin:0 5px;font:400 var(--f-12)/1 var(--sans);font-style:normal;letter-spacing:0;color:var(--t-2)}
-/* l'objet qui se répète : à l'encre troisième ; le geste qui se répète : « ″ », doux, sous le début de la phrase */
+/* l'objet qui se répète : à l'encre troisième (v86 : le geste qui se répète ne s'écrit plus « ″ » — les lignes se regroupent, 17) */
 #base #ba-tab .rc-r.rc-meme{color:var(--t-3);font-weight:500}
-#base #ba-tab .rc-pareil{display:inline-block;padding:0 2px;font:500 var(--f-14)/1 var(--sans);color:var(--t-3);cursor:help}
 /* « Voir › », au bout de la ligne survolée ou tenue au clavier */
 #base #ba-tab[data-onglet="problemes"] :is(th,td).rc-suppr{width:72px;padding-right:16px;text-align:right}
 #base .rc-voir{display:inline-flex;align-items:center;gap:2px;font:500 var(--f-12)/1 var(--sans);color:var(--t-2);opacity:0;transform:translateX(-3px);
@@ -254,18 +253,13 @@
 #base #ba-tab[data-onglet="normes"] th.rc-c-phrase{width:42%}
 #base #ba-tab[data-onglet="normes"] td.rc-c-phrase{min-width:0}
 #base #ba-tab[data-onglet="normes"] :is(th,td).rc-suppr{width:auto}
-#base #ba-tab .rc-pareil{vertical-align:-2px}
 /* les gestes d'une ligne : le principal au trait, net ; le reste en lien */
 #base #ba-tab .rc-gestes .btn.papier{font-weight:500}
 
 /* l'intensité : « pointe » et « supposé » disent la même sorte de chose (d'où vient le chiffre) — un seul style, un mot doux
    (plus une pastille pour l'un, un mot pour l'autre) */
 #base #ba-tab .rc-int .rc-o{background:none;padding:0;margin-left:8px;font:500 var(--f-12)/1 var(--sans);color:var(--t-2)}
-/* « / 11,7 » et « / 6,9 » n'ont pas la même largeur : l'admis tient une place fixe, les barres partent toutes du même
-   point et ont toutes la même longueur (la charte : une colonne homogène) */
-#base #ba-tab .rc-int .rc-adm{display:inline-block;min-width:42px;margin-left:5px}
-#base #ba-tab .rc-int .rc-barre{margin-left:6px}
-#base #ba-tab .rc-int .rc-int-mot{display:inline-block;min-width:60px;text-align:left}
+/* (v86 : l'admis et le mot de l'instant tiennent une place fixe — section 15 ; la barre a laissé la place à l'anneau) */
 
 /* ─── 13. LE CLAVIER SE VOIT ───
    Défaut : une valeur qui porte sa propre pastille (la borne, le type d'un câble) gardait son filet au focus — l'anneau
@@ -278,3 +272,65 @@
 @keyframes rc-entre{from{opacity:.25}}
 #base #ba-tab.rc-entre tbody{animation:rc-entre var(--d-moyen) var(--courbe-entree) both}
 @media (prefers-reduced-motion:reduce){ #base #ba-tab.rc-entre tbody{animation:none} }
+
+/* ═══ v86 — LA PASSE « RECAP2 » ════════════════════════════════════════════════════════════════════════════════════════
+   Une seule source : ce qui vient du fichier se lit, il n'a plus l'air d'un champ ; l'intensité et la chute disent le même
+   instant, dessinées en anneaux comme dans la fiche ; chaque problème porte son geste en cuivre ; les lignes qui demandent la
+   même chose se regroupent sous une seule case. */
+
+/* ─── 14. CE QUI VIENT DU FICHIER SE LIT ───
+   Défaut : un double-clic ouvrait en saisie De, Câble, Vers, Longueur ; la ligne survolée soulignait chaque valeur d'un
+   pointillé, le pointeur prenait la forme du texte. Correction : une case du fichier (08-recap, `luFichier`) n'a ni
+   pointillé, ni cadre de champ, ni curseur de texte ; l'anneau du clavier reste (les flèches passent de case en case) ; un
+   double-clic, Entrée ou F2 disent dans une bulle où la changer. */
+#base #ba-tab .rc-v.rc-lu{cursor:inherit;text-decoration:none}
+#base #ba-tab tbody tr:is(:hover,.on) .rc-v.rc-lu{text-decoration-color:transparent}
+#base #ba-tab tbody tr:hover .rc-v.rc-lu:hover{background:none;box-shadow:none}
+#base #ba-tab .rc-v.rc-lu.rc-vide::before{content:none}
+#base #ba-tab tbody tr:hover .rc-cable-type:has(.rc-lu:hover){box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 62%,var(--s-surface))}
+#base #ba-tab[data-onglet="cables"] tbody tr:hover .rc-type.rc-lu:hover{box-shadow:inset 0 0 0 1px var(--s-line-2)}
+
+/* ─── 15. L'INTENSITÉ ET LA CHUTE, AU MÊME INSTANT, EN ANNEAUX (B7, F1, F2) ───
+   Défaut : une barre ici, un anneau dans la fiche ; « 9,3 A pointe » à côté d'une chute prise au permanent, en neutre même en
+   défaut. Correction : l'anneau de la fiche, petit, devant la valeur (sa couleur d'état ; la teinte du problème quand la
+   mesure dépasse) ; « sur 6,9 A » à l'encre seconde, dans une place fixe ; le mot de l'instant (« pointe », « supposé »)
+   dans une place fixe — chaque case d'une colonne a la même largeur, centrée sous son titre : les anneaux et les virgules
+   tombent l'un sous l'autre. Les anneaux ne rejouent pas leur remplissage à chaque rendu (la table se refait souvent). */
+#base #ba-tab :is(.rc-int,.rc-chute){display:inline-flex;align-items:center;white-space:nowrap}
+#base #ba-tab .rc-anneau{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;margin-right:8px}
+#base #ba-tab .rc-anneau svg.vu-anneau .vu-an-v{animation:none}
+#base #ba-tab .rc-anneau .vu-anneau-vide{display:inline-block;height:1px}
+#base #ba-tab :is(.rc-int,.rc-chute) .rc-adm{display:inline-block;margin-left:6px;text-align:left}
+#base #ba-tab .rc-int .rc-adm{min-width:66px}
+#base #ba-tab .rc-chute .rc-adm{min-width:48px}
+#base #ba-tab :is(.rc-int,.rc-chute) .rc-int-mot{display:inline-block;min-width:54px;text-align:left}
+#base #ba-tab .rc-chute .rc-o{background:none;padding:0;margin-left:8px;font:500 var(--f-12)/1 var(--sans);color:var(--t-2)}
+
+/* ─── 16. LE GESTE QUI RÈGLE, EN CUIVRE (G1) ───
+   Défaut : « Ce qu'il faut faire » en texte, quand la fiche montre « Passer en DR16 ». Correction : le même bouton que la
+   fiche (style-z-fiche, `.nc-geste`) — le cuivre plein, on voit d'un coup d'œil où agir ; en sombre, l'encre foncée sur le
+   cuivre clair. « Lui donner son repère » (une barrette ajoutée) et « Passer en 7,5 A » (un calibre proposé) le portent
+   aussi. Dans « Ce qu'il faut faire », un geste long passe à la ligne plutôt que de pousser la colonne. */
+#base #ba-tab .btn.cuivre{height:28px;padding:0 12px;border:0;border-radius:8px;background:var(--nv-cuivre);color:#fff;font:600 var(--f-12)/1 var(--sans);letter-spacing:0;white-space:nowrap;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 4px 12px -6px var(--nv-cuivre);transition:background var(--d-rapide,120ms) var(--courbe),transform var(--d-rapide,120ms) var(--courbe)}
+#base #ba-tab .btn.cuivre:hover{background:color-mix(in srgb,var(--nv-cuivre) 86%,#000)}
+#base #ba-tab .btn.cuivre:active{transform:translateY(1px)}
+#base #ba-tab .btn.cuivre:focus-visible{outline:none;box-shadow:0 0 0 2px var(--s-surface),0 0 0 4px var(--nv-cuivre)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) #base #ba-tab .btn.cuivre{color:#1c1209;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 18px -8px var(--nv-cuivre)}
+  :root:not([data-theme="light"]) #base #ba-tab .btn.cuivre:hover{background:var(--v-cuivre-vif,color-mix(in srgb,var(--nv-cuivre) 85%,#fff))} }
+:root[data-theme="dark"] #base #ba-tab .btn.cuivre{color:#1c1209;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 18px -8px var(--nv-cuivre)}
+:root[data-theme="dark"] #base #ba-tab .btn.cuivre:hover{background:var(--v-cuivre-vif,color-mix(in srgb,var(--nv-cuivre) 85%,#fff))}
+#base #ba-tab .rc-gestes .btn.cuivre{height:auto;min-height:28px;padding-top:6px;padding-bottom:6px;line-height:1.25;white-space:normal;text-align:left}
+#base #ba-tab .rc-mesure .btn.cuivre{margin-left:12px}
+#base #ba-tab .rc-aposer .btn.cuivre{margin-left:2px}
+/* la phrase, quand aucun geste ne règle le point : calme, à l'encre seconde (un point d'information ne crie pas) */
+#base #ba-tab .rc-que .rc-phrase{color:var(--t-2)}
+
+/* ─── 17. LES LIGNES QUI DEMANDENT LA MÊME CHOSE (G1) ───
+   Défaut : « ″ » sous un geste répété — un signe que personne ne lit. Correction : une seule case « Ce qu'il faut faire »
+   court sur les lignes du groupe (08-recap, `rowspan`), son contenu au milieu, un filet à sa gauche qui les tient
+   ensemble ; les filets entre les lignes s'arrêtent devant elle ; elle ne prend ni le survol ni le choix d'une seule. */
+#base #ba-tab td.rc-c-que[rowspan]{position:relative;vertical-align:middle;padding-left:calc(var(--rc-pad) + 12px)}
+#base #ba-tab td.rc-c-que[rowspan]::before{content:"";position:absolute;left:var(--rc-pad);top:14px;bottom:14px;width:2px;border-radius:1px;background:var(--s-line-2)}
+#base #ba-tab tbody tr[data-k]:hover td.rc-c-que[rowspan],#base #ba-tab tr.on td.rc-c-que[rowspan]{background:none}

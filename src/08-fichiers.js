@@ -209,16 +209,76 @@ function poserLaLecture(r, nom, ig, noms, plus, L) { const avis = avisDeLecture(
   // les liaisons à un bout vide restent au contrat, à leur rang (ni dessinées, ni vérifiées : le contrôle les dit) — 02, `toutes`
   chargerContrat(r.toutes || r.liaisons, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest', avis);
   if (typeof noterLecture === 'function') noterLecture(L || null, r);   // le bilan anonyme dit comment ce fichier a été lu (08-bilan)
-  // les feuilles laissées de côté se NOMMENT (le technicien v73 : « 1 feuille ignorée » m'inquiète : laquelle ?) ; le journal
-  // d'un retest corrigé (« Modifications ») n'en est plus une : la lecture le reconnaît et le dit (02, domaine C) ; (v84) les
-  // liaisons incomplètes et les lignes sans aucun bout se comptent aussi — rien ne se perd en silence
-  const n = r.liaisons.length, ni = r.incompletes || 0, nl = (r.laissees || []).length;
-  const msg = pluriel(n, 'liaison') + ' lue' + (n > 1 ? 's' : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '')
-    + (ni ? ' · ' + pluriel(ni, 'incomplète') + ' (un bout vide : ni dessinée' + (ni > 1 ? 's' : '') + ', ni vérifiée' + (ni > 1 ? 's' : '') + ')' : '')
-    + (nl ? ' · ' + pluriel(nl, 'ligne') + ' sans équipement ni câble, laissée' + (nl > 1 ? 's' : '') + ' de côté' : '')
-    + (noms.length === 1 ? ' · la feuille ' + guillemets(noms[0]) + ' est laissée de côté (pas les en-têtes d’une installation)' : noms.length ? ' · ' + noms.length + ' feuilles laissées de côté : ' + noms.slice(0, 3).map(guillemets).join(', ') + (noms.length > 3 ? '…' : '') : '') + (plus || '') + '.';
-  if (avis) signaler(msg, 'retest'); else dire(msg);
+  /* (v86, l'audit M6) LE BILAN D'OUVERTURE : ce que la lecture seule sait — la ligne d'Excel de chaque liaison (en mémoire), ce
+     qu'elle a laissé de côté et combien de points elle a relevés (gardés avec la carte) ; les points eux-mêmes viennent du
+     contrôle, le même compte que partout (`bilanDuPlan`) */
+  // (les liaisons gardées au plan, incomplètes comprises : le même compte que la carte et le récapitulatif)
+  const n = (r.toutes || r.liaisons).length, nl = (r.laissees || []).length, B = bilanDuPlan();
+  FICHIERS.lecture = { nom, rangs: rangsDeLaLecture(r) };
+  if (FICHIERS.retest) { FICHIERS.retest.lecture = { n, laissees: (r.laissees || []).slice(0, 12), nl, ignorees: noms.slice(0, 6), releves: B.ko.length + B.att.length }; memoriserFichiers(); rendreFichiers(); }
+  /* le mot qui passe : ce que VOLTA a lu, puis ce qui est à régler (nommé), puis ce qui est à voir (nommé s'il reste peu) ;
+     les feuilles laissées de côté se NOMMENT (le technicien v73 : « 1 feuille ignorée » m'inquiète : laquelle ?) — le journal
+     d'un retest corrigé (« Modifications ») n'en est pas une : la lecture le reconnaît et le dit (02, domaine C) ; « Voir »
+     ouvre le bilan, dans « Vos fichiers » */
+  const msg = 'VOLTA a lu ' + pluriel(n, 'liaison') + (plans().length > 1 ? ' sur ' + plans().length + ' folios' : '') + motDuBilan(B, nl, noms)
+    + (noms.length === 1 ? ' · la feuille ' + guillemets(noms[0]) + ' est laissée de côté (pas les en-têtes d’une installation)' : noms.length > 1 ? ' · ' + noms.length + ' feuilles laissées de côté : ' + noms.slice(0, 3).map(guillemets).join(', ') + (noms.length > 3 ? '…' : '') : '') + (plus || '') + '.';
+  if (avis || B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg);
   proposerDejaFait(); }
+/* ---- LE BILAN D'OUVERTURE (v86, l'audit M6 : « un résumé que l'on peut cliquer ») ------------------------------------
+   À l'ouverture d'un fichier, le mot qui passe dit ce que VOLTA a lu et ce qui demande l'attention ; « Voir » ouvre la carte
+   « Votre installation », où le BILAN reste : une ligne par point — À RÉGLER d'abord, leur geste en évidence (une ligne en
+   double, un repère écrit de deux façons : la proposition de VOLTA, qui part dans l'Excel corrigé), puis À VOIR, calmes (un
+   type de câble inconnu, une longueur illisible, une liaison à un bout vide…) —, chacune avec la ligne d'Excel où elle
+   est ; un clic mène à ce qu'elle désigne (sa fiche sur son folio, ou le récapitulatif sur elle). Les points sont ceux du
+   contrôle sur les écritures du fichier (08-controle) ; la lecture ajoute les n° de ligne et ce qu'elle a laissé de côté.
+   Un point réglé s'en va ; le bilan dit combien l'ont été. */
+const GENRES_DU_FICHIER = new Set(['doublon', 'casse', 'fichier']);
+// les points du contrôle qui parlent du fichier : { ko, att }
+function bilanDuPlan() { let xs = []; try { xs = verite().length ? controleAJour() : []; } catch (_) { }
+  const F = xs.filter(x => GENRES_DU_FICHIER.has(x.genre)); return { ko: F.filter(x => x.niveau === 'ko'), att: F.filter(x => x.niveau !== 'ko') }; }
+// ce qu'un point compte, et son mot : [nombre, singulier, pluriel] — « 1 ligne en double », « 2 types inconnus »
+const compteDuPoint = x => { const n = (x.cables || []).length || 1;
+  return x.genre === 'doublon' ? [x.doublon && x.doublon.copies || 1, 'ligne en double', 'lignes en double'] : x.genre === 'casse' ? [1, 'repère écrit de deux façons', 'repères écrits de deux façons']
+    : x.types ? [x.types.length, 'type inconnu', 'types inconnus'] : x.longueurs ? [n, 'longueur illisible', 'longueurs illisibles']
+    : x.incompletes ? [n, 'liaison incomplète', 'liaisons incomplètes'] : /sans type/.test(x.texte) ? [n, 'câble sans type', 'câbles sans type'] : [1, 'autre point', 'autres points']; };
+// les mots de points, réunis par sorte : « 2 repères écrits de deux façons, 1 ligne en double »
+function motsDuBilan(xs) { const par = new Map(); xs.forEach(x => { const [v, un, plus] = compteDuPoint(x), e = par.get(un) || par.set(un, { v: 0, plus }).get(un); e.v += v; });
+  return [...par].map(([un, e]) => e.v + ' ' + (e.v > 1 ? e.plus : un)); }
+function motDuBilan(B, nl, noms) { const ko = motsDuBilan(B.ko), att = motsDuBilan(B.att), na = B.att.length + (nl ? 1 : 0);
+  if (nl) att.push(pluriel(nl, 'ligne') + ' sans rien, laissée' + (nl > 1 ? 's' : '') + ' de côté');
+  if (ko.length) return ' — à régler : ' + ko.join(', ') + (na ? ' ; ' + (na > 1 ? na + ' points à voir' : '1 point à voir') : '');
+  return att.length ? ' — à voir : ' + (att.length > 3 ? att.slice(0, 2).join(', ') + ' et ' + (att.length - 2) + ' de plus' : att.join(', ')) : ''; }
+// la ligne d'Excel de chaque liaison lue (02, `rangs`), par sa clé (01, `cleDeDoublon`) : les copies d'une ligne en double partagent la leur
+function rangsDeLaLecture(r) { const m = new Map(), T = r.toutes || r.liaisons || [];
+  T.forEach((l, i) => { const n = (r.rangs || [])[i]; if (!n) return; const k = cleDeDoublon(l); (m.get(k) || m.set(k, []).get(k)).push(n); }); return m; }
+// les lignes d'Excel d'un point : « ligne 8 », « lignes 7 et 30 », « lignes 4, 9, 12… » (le plan ouvert depuis son fichier seulement)
+function lignesDuPoint(x) { const R = FICHIERS.lecture && FICHIERS.lecture.nom === app.nom ? FICHIERS.lecture.rangs : null; if (!R) return '';
+  const ns = [...new Set((x.cables || []).flatMap(l => R.get(cleDeDoublon(l)) || []))].sort((a, b) => a - b); if (!ns.length) return '';
+  return ns.length === 1 ? 'ligne ' + ns[0] : 'lignes ' + (ns.length > 3 ? ns.slice(0, 3).join(', ') + '…' : ns.slice(0, -1).join(', ') + ' et ' + ns[ns.length - 1]); }
+const boutsDits = l => [l.de ? l.de + (l.borneDe ? ':' + l.borneDe : '') : '(vide)', l.vers ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : '(vide)'].join(' → ');
+// un point dit pour le bilan : ce qu'il désigne d'abord, puis ce que VOLTA en fait (la phrase entière reste dans la bulle)
+function phraseDuBilan(x) { const L = x.cables || [], l = L[0], un = L.length === 1, H = app.simu || HYPOTHESES;
+  if (x.genre === 'doublon' && l) return `Ligne en double : ${boutsDits(l)}${l.type ? ', ' + l.type : ''} — ` + (x.doublon && !x.doublon.identiques ? 'les copies diffèrent : gardez la bonne dans votre fichier' : 'VOLTA ne la dessine qu’une fois');
+  if (x.genre === 'casse' && x.casse) return `${x.casse.cible} s’écrit aussi ${(x.casse.autres || []).map(w => '« ' + w + ' »').join(', ')} — ` + (/un seul équipement/.test(x.texte) ? `VOLTA le lit ${x.casse.cible}, un seul équipement` : 'pour VOLTA, deux équipements');
+  if (x.types) return `Type de câble inconnu : ${x.types.join(', ')}${un ? ' (' + boutsDits(l) + ')' : ' (' + pluriel(L.length, 'câble') + ')'} — ${un ? 'sa' : 'leur'} gauge ne se vérifie pas`;
+  if (x.longueurs) return (un ? `Longueur illisible : « ${l.longueurBrute} » (${boutsDits(l)})` : `${L.length} longueurs illisibles : ${[...new Set(L.map(y => '« ' + y.longueurBrute + ' »'))].slice(0, 3).join(', ')}`) + ` — VOLTA prend ${nombre(H.longueur)} m, l’hypothèse`;
+  if (x.incompletes) return un ? `Liaison à un bout vide : ${boutsDits(l)} — gardée, ni dessinée ni vérifiée` : `${L.length} liaisons à un bout vide — gardées, ni dessinées ni vérifiées`;
+  const t = String(x.texte || ''), k = t.indexOf(' — '); return (x.nom ? x.nom + ' : ' : '') + (k > 0 ? t.slice(0, k) : majuscule(t)); }
+/* LE BILAN, dans la carte « Votre installation » : le plan ouvert (pas l'exemple) ; rien quand il n'y a rien à dire. Chaque
+   ligne mène à ce qu'elle désigne (`FICHIERS.bilan` : ce que chaque bouton fait, le temps du rendu). */
+function bilanHtml() { FICHIERS.bilan = []; const V = verite(); if (!V.length || app.nom === NOM_EXEMPLE) return '';
+  const R = FICHIERS.retest && FICHIERS.retest.nom === app.nom ? FICHIERS.retest.lecture || null : null, B = bilanDuPlan(), xs = [...B.ko, ...B.att];
+  const nl = R ? R.nl || 0 : 0, ig = R ? R.ignorees || [] : [];
+  if (!xs.length && !nl && !ig.length && !(R && R.releves)) return '';
+  const regles = R && R.releves > xs.length ? R.releves - xs.length : 0;
+  const ligne = x => { const k = FICHIERS.bilan.push({ x, gestes: (gestesDuPoint(x) || []).filter(g => g && typeof g.faire === 'function') }) - 1, G = FICHIERS.bilan[k].gestes, agir = x.niveau === 'ko' ? G.filter(g => !/^Voir\b/.test(g.mot)) : [];
+    const ou = lignesDuPoint(x), t = phraseDuBilan(x), insecable_ = typeof insecable === 'function' ? insecable : s => s;
+    return `<li><button type="button" class="fi-pb-l ${x.niveau === 'ko' ? 'ko' : 'att'}" data-vf="bilan-voir" data-k="${k}" data-bulle="${escA(majuscule((x.nom ? x.nom + ' : ' : '') + x.texte))}"><i aria-hidden="true"></i><span class="fi-pb-t">${insecable_(esc(t))}</span>${ou ? `<span class="fi-pb-s">${esc(ou)}</span>` : ''}</button>`
+      + (agir.length ? `<span class="fi-pb-gestes">${agir.map((g, i) => `<button type="button" class="btn ${g.principal || i === 0 ? 'papier' : 'lien'} dense" data-vf="bilan-geste" data-k="${k}" data-g="${G.indexOf(g)}"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`).join('')}</span>` : '') + '</li>'; };
+  const n = R ? R.n : V.length, nk = B.ko.length, na = B.att.length;
+  const tete = `<p><b>VOLTA a lu ${esc(pluriel(n, 'liaison'))}</b>${nk || na ? ' et relève ' + [nk ? pluriel(nk, 'point') + ' à régler' : '', na ? (nk ? na + ' à voir' : pluriel(na, 'point') + ' à voir') : ''].filter(Boolean).join(', ') : ' : rien à reprendre dans l’écriture du fichier'}${regles ? ` — ${regles > 1 ? regles + ' réglés' : '1 réglé'} depuis l’ouverture` : ''}.</p>`;
+  const cote = [nl ? (nl > 1 ? 'les lignes ' : 'la ligne ') + (R.laissees || []).join(', ') + (nl > (R.laissees || []).length ? '…' : '') + ' (ni équipement ni câble)' : '', ...ig.map(f => 'la feuille ' + guillemets(esc(f)) + ' (pas les en-têtes d’une installation)')].filter(Boolean);
+  return `<div class="vf-une vf-bilan">${tete}${xs.length ? `<ul class="fi-pbs">${xs.map(ligne).join('')}</ul>` : ''}${cote.length ? `<p class="vf-note">Laissé de côté : ${cote.join(', ')}.</p>` : ''}</div>`; }
 /* Une base reçue (un dépôt sur sa carte, ou un fichier de plusieurs harness) : la carte le dira, avec ses comptes et ce
    qu'elle a rangé dans la bibliothèque (`rangee`). */
 function baseRecue(nom, avis, rangee) { FICHIERS.base = null; effacerErreur('base'); FICHIERS.succes = 'base'; FICHIERS.rangee = rangee || null; FICHIERS.avis.base = avis || null; rendreFichiers(); }
@@ -238,6 +298,7 @@ function lireAvecCarte(pleines, map, debut) { const g = (row, i) => i != null &&
     const l = liaison({ de: g(row, map.eq1), borneDe: g(row, map.b1), pnDe: g(row, map.pn1), vers: g(row, map.eq2), borneVers: g(row, map.b2), pnVers: g(row, map.pn2),
       cable: g(row, map.cable), type: g(row, map.type), route: g(row, map.route), plan: g(row, map.plan) });
     if (liaisonComplete(l)) liaisons.push(l); else rejets.push(r + 1); }
+  unifierLesReperes(liaisons);   // (v86) un repère écrit de deux façons se lit d'une seule, comme dans une installation (02)
   return { liaisons, rejets }; }
 /* « J'ai compris : Equipement → De, Broche → Borne… » : chaque colonne lue, dans l'ordre du fichier. */
 function comprisHtml(D) { const parCol = new Map(); ROLES.forEach(([k, mot]) => { const i = D.map[k]; if (i != null && i !== '') parCol.set(+i, mot); });
@@ -444,7 +505,8 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
     { cle: 'retest', titre: 'Votre installation', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir une installation…'], zone: ['ouvrir', 'l’installation'],
       une: `<p>Un Excel ou un CSV, <b>une ligne par câble</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’installation ouverte.</p>`,
       liens: [['pdf', 'Un schéma en PDF ? Le lire…'], ...(V.length ? [] : [['exemple', 'Pas de fichier sous la main ? Ouvrir l’exemple']])],
-      boites: attenteHtml() + erreurHtml('retest') + avisHtml('retest'),
+      // (v86) le bilan d'ouverture : ce que VOLTA a lu et relevé, chaque point vers ce qu'il désigne (il reprend « ce qui est laissé de côté »)
+      boites: attenteHtml() + erreurHtml('retest') + bilanHtml(),
       attend: { format: 'Les en-têtes sont reconnus par leur nom ; les autres colonnes de l’installation (Harness, PN, Route, FWD, longueur…) sont lues si elles sont là.',
         apercu: apercuHtml(MODELE_RETEST, { label: 'Trois lignes d’exemple de l’installation', colonnes: colonnes(MODELE_RETEST, ['Device1', 'Pin1', 'Cable TG', 'Cable Tag', 'Device2', 'Pin2', 'FWD']) }),
         ensuite: 'Ensuite, les folios se dessinent et chaque câble est jugé. Plusieurs harness : on vous demande lequel ouvrir.',
@@ -501,6 +563,10 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
       'oublier-base-oui': () => { FICHIERS.oubli = false; adopterReferences([], ''); FICHIERS.succes = null; FICHIERS.rangee = null; rendreFichiers(); dire('La base des contrats déjà faits est oubliée.'); },
       bibliotheque: () => { fermerFiche(); montrerBibliotheque('racine'); }, 'ajouter-plans': () => $('fichier-plans').click(),
       ranger: () => { fermerFiche(); ouvrirRanger(); },
+      // (v86) le bilan d'ouverture : une ligne mène à ce qu'elle désigne (la fiche du câble en double, du repère, le récapitulatif) ; un geste se fait sur place
+      'bilan-voir': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k]; if (!p) return; const x = p.x, G = p.gestes.find(g => /^Voir\b/.test(g.mot)); fermerFiche();
+        if (x.genre === 'doublon' && x.doublon && x.doublon.identiques && x.cables && x.cables[0] && typeof montrerFil === 'function') montrerFil(x.cables[0]); else if (G) G.faire(); else allerAuControle(x); },
+      'bilan-geste': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k], g = p && p.gestes[+b.dataset.g]; if (!g) return; g.faire(); rendreFichiers(); },
       'deja-fait': voirDejaFait, charger: chargerRattrapage, corriger: () => { FICHIERS.corriger = !FICHIERS.corriger; rendreFichiers(); },
       abandonner: () => { FICHIERS.attente = null; FICHIERS.corriger = false; rendreFichiers(); },
       'oublier-erreur': () => { effacerErreur(b.dataset.entree); rendreFichiers(); },

@@ -17,7 +17,8 @@ vm.createContext(bac);
 vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { normeEmbarquee, bibleDeLOutil, contratExemple, liaison, besoinsDeBarrette, barretteInfos, remplirModules, '
   + 'placerDansGroupe, moduleDeReference, contactAccepte, potentielsDeBarrette, variantesQuiLogent, connecteursEnModules, coupureEnModule, remplirContacts, arrangementsQuiLogent, '
   + 'sexeDuPn, habillage, remplirSelonNorme, physiqueDeBarrette, autreSexe, railsDeBarrette, connecteursDe, connecteurParBorne, moduleDeConnecteur, famillesDeModules, reperesDe, estBornier, estMasse, '
-  + 'moduleEtContact, bornesLettrees, choixDesModules, retenirModule, moduleAutomatique, modulesPossibles, lireBorne, casesDuModule, nomenclatureDe };', bac);
+  + 'moduleEtContact, bornesLettrees, choixDesModules, retenirModule, moduleAutomatique, modulesPossibles, lireBorne, casesDuModule, nomenclatureDe, '
+  + 'avecBarrettesAPoser, sansBarrettesAPoser, estRaccordAPoser, lettresDeBarretteAPoser, dedoublements, nouveauContrat, numeroDeBorne };', bac);
 const X = bac.X, NE = X.normeEmbarquee(), BO = X.bibleDeLOutil(), L = X.contratExemple();
 /* (v85) l'exemple écrit ses barrettes comme les fichiers du lecteur (« 667VT2 51 » + « A ») ; les règles d'une barrette
    NUMÉROTÉE (1, 2, 3… : une barrette à poser, un fichier d'une autre forme) se vérifient sur l'ancienne écriture de ses
@@ -237,6 +238,44 @@ ok('modulesDeLaBarrette : 51 (celui du fichier) et 52 (le B202, celui du fichier
 const DES = bac.app.contrat.designations, fait = P.choisirModuleDeBarrette('667VT2', '52', 'E0599-1B204Z'), d1 = DES.get('667VT2'), pris = P.modulesDeLaBarrette('667VT2')[1];
 P.moduleDeBarretteAutomatique('667VT2', '52');
 ok('choisirModuleDeBarrette retient le module (une entrée d’historique), moduleDeBarretteAutomatique le rend à VOLTA', fait && d1 === '52=E0599-1B204Z' && pris.main && pris.reference === 'E0599-1B204Z' && !DES.has('667VT2') && HIST.length === 2 && P.modulesPossiblesDe('667VT2', '52').retenu === 'E0599-1B202Z', HIST.join(' · '));
+
+console.log('\n14. (v86) UN CONTACT, UN NOM : LES BARRETTES À POSER NOMMÉES COMME LEUR FACE, LES PRISES PAR LEURS LETTRES');
+/* L'audit B2 : VT2 portait 1, 2, 3 sur le plan et H, J, K sur sa fiche ; 408VC1A « 1 » sur le plan, « A » sur sa face. VOLTA crée
+   la barrette à poser : il nomme ses bornes comme sa face (« 51H » : le module 51, la lettre du contact). Le câble à créer se
+   reconnaît à sa marque (01, `estRaccordAPoser`), plus à sa borne 1 — sauf une liaison d'avant, sans marque. */
+const folio = p => L.filter(l => l.plan === p), vtDe = (Lf, v) => Lf.filter(l => l.de === v || l.vers === v), bout = l => l.de + ':' + l.borneDe + '→' + l.vers + ':' + l.borneVers;
+const F1 = X.avecBarrettesAPoser(folio('1'), 0), V1 = vtDe(F1, 'VT1'), R1 = V1.filter(l => X.estRaccordAPoser(l));
+ok('VT1 (102CB1:2) : le câble à créer sur 51H, le DR20 vers 103RL1:A1 sur 51J, le DR24 de 395SW1 sur 51K, les shunts 51H-51J et 51J-51K — les lettres de sa face',
+  R1.length === 1 && bout(R1[0]) === '102CB1:2→VT1:51H' && R1[0].aCreer === true && V1.some(l => bout(l) === 'VT1:51J→103RL1:A1') && V1.some(l => bout(l) === '395SW1:1→VT1:51K')
+  && V1.filter(l => l.de === 'VT1' && l.vers === 'VT1').map(bout).join() === 'VT1:51H→VT1:51J,VT1:51J→VT1:51K', V1.map(bout).join(' | '));
+const Q1 = X.remplirModules(X.besoinsDeBarrette('VT1', V1), NE, '');
+ok('sa fiche lit la même chose : une barrette en modules, le module 51 sur le NSA937901M20-11 (celui que VOLTA avait choisi), H, J et K dans une même zone, rien à redire',
+  Q1.lettres === true && Q1.reference === 'NSA937901M20-11' && Q1.fils.map(x => x.borne + '=' + x.contact.lettre).sort().join() === '51H=H,51J=J,51K=K' && !Q1.verdicts.length, Q1.reference + ' · ' + Q1.verdicts.map(v => v.texte).join(' | '));
+ok('les trois barrettes à poser de l’exemple (VT1, VT2, VT3) : 51H, 51J et 51K ; le câble à créer seul porte la marque, les câbles du contrat gardent leur `origine`',
+  [['1', 0, 'VT1'], ['2', 1, 'VT2'], ['6', 2, 'VT3']].every(([p, d, v]) => { const xs = vtDe(X.avecBarrettesAPoser(folio(p), d), v);
+    return [...new Set(xs.flatMap(l => [l.de === v ? l.borneDe : null, l.vers === v ? l.borneVers : null]).filter(Boolean))].sort().join() === '51H,51J,51K' && xs.filter(l => l.aCreer).length === 1 && xs.filter(l => l.origine).length === 2; }));
+const S1 = X.sansBarrettesAPoser(F1), SW = X.sansBarrettesAPoser(F1.map(({ origine, ...l }) => l));
+ok('le moteur (03) la retire comme avant : chaque câble revient sur 102CB1:2 ; sans `origine` (ce que reçoit le Worker), la marque suffit',
+  S1.filter(l => l.aPoser === 'VT1').every(l => (l.de === '102CB1' && l.borneDe === '2') || (l.vers === '102CB1' && l.borneVers === '2')) && !S1.some(l => l.de === 'VT1' || l.vers === 'VT1') && !SW.some(l => l.de === 'VT1' || l.vers === 'VT1'));
+ok('estRaccordAPoser : le câble à créer marqué (51H) ; une liaison d’avant, sans marque, à sa borne 1 ; jamais un câble du contrat (51J, 51K), un shunt, ni une barrette posée',
+  X.estRaccordAPoser({ de: '102CB1', borneDe: '2', vers: 'VT1', borneVers: '51H', aCreer: true }) && X.estRaccordAPoser({ de: '102CB1', borneDe: '2', vers: 'VT1', borneVers: '1' })
+  && !X.estRaccordAPoser({ de: 'VT1', borneDe: '51J', vers: '103RL1', borneVers: 'A1' }) && !X.estRaccordAPoser({ de: '395SW1', borneDe: '1', vers: 'VT1', borneVers: '51K' })
+  && !X.estRaccordAPoser({ de: 'VT1', borneDe: '51H', vers: 'VT1', borneVers: '51J', aCreer: true }) && !X.estRaccordAPoser({ de: '102CB1', borneDe: '2', vers: '102VT9', borneVers: '51H', aCreer: true }) && !X.estRaccordAPoser(null));
+// une barrette qu'aucun module ne loge garde ses numéros (et le câble à créer reste reconnu) : 36 câbles et le câble à créer,
+// quand la plus grande zone de la norme (E0599-1A106Z) en a 36
+const tant = []; for (let k = 0; k < 36; k++) tant.push(X.liaison({ de: '800XC1', borneDe: 'A1', vers: '8' + String(k).padStart(2, '0') + 'LP1', borneVers: '1', cable: 'W-8' + k, type: 'DR22', plan: '9' }));
+const FT = X.avecBarrettesAPoser(tant, 0), VT = [...new Set(FT.filter(l => l.aPoser).map(l => l.aPoser))][0], RT = FT.filter(l => X.estRaccordAPoser(l));
+ok('trente-six câbles sur une borne, qu’aucune zone ne loge : la barrette garde ses numéros (1 pour le câble à créer), et le moteur la retrouve',
+  X.lettresDeBarretteAPoser(VT, vtDe(FT, VT)) === null && RT.length === 1 && RT[0].borneVers === '1' && !X.sansBarrettesAPoser(FT).some(l => l.de === VT || l.vers === VT), VT + ' · ' + RT.map(bout).join());
+// posée au contrat (08-interface, `poserBarrette` : `liaison({ ...l, de, vers })`) : le câble créé garde sa marque, les bornes leurs lettres
+const pose = V1.map(l => X.liaison({ ...l, de: l.de === 'VT1' ? '102VT9' : l.de, vers: l.vers === 'VT1' ? '102VT9' : l.vers })), cree = pose.find(l => l.aCreer);
+ok('posée au contrat sous 102VT9, elle garde ses lettres (102VT9:51H) et le câble créé sa marque : une barrette en modules, que VOLTA vérifie sans rien changer',
+  cree && bout(cree) === '102CB1:2→102VT9:51H' && !X.estRaccordAPoser(cree) && X.bornesLettrees(X.besoinsDeBarrette('102VT9', pose))
+  && (Q => Q.fils.map(x => x.borne + '=' + x.contact.lettre).sort().join() === '51H=H,51J=J,51K=K' && !Q.verdicts.length)(X.remplirModules(X.besoinsDeBarrette('102VT9', pose), NE, '')));
+// les prises de l'exemple : leurs bornes sont les lettres de leur face
+ok('les prises de l’exemple s’écrivent comme leur face : 408VC1A A ; 409VC2A A, B, C ; 410VC2B A, B ; 411VC3A A…H ; 412VC3B A…G — chaque borne sur sa lettre, rien à redire',
+  [['408VC1A', 'A'], ['409VC2A', 'ABC'], ['410VC2B', 'AB'], ['411VC3A', 'ABCDEFGH'], ['412VC3B', 'ABCDEFG']].every(([r, ls]) => { const c = X.coupureEnModule(r, L, NE);
+    return X.besoinsDeBarrette(r, L).bornes.slice().sort().join('') === ls && c.plan.fils.every(x => x.contact.lettre === x.borne) && !c.plan.verdicts.length; }));
 
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);

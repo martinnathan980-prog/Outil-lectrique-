@@ -130,11 +130,13 @@ function feuilleVolta(v) { const L = [['VOLTA — ce que les colonnes de l’ins
    lit `nombreDeChangements()`. */
 function changementsDuRetest() { const V = verite().filter(liaisonComplete), par = new Map(); let liaisons = 0, cases = 0;
   V.forEach(l => { const m = modificationsDe(l); if (!m.length) return; liaisons++; cases += m.length;
-    m.forEach(([col, ch, av, ap]) => { const pn = /^pn/.test(ch), objet = pn ? (ch === 'pnDe' ? l.de : l.vers) : (l.cable || l.de + ' → ' + l.vers), origine = origineDeCase(l, ch, true);
+    // (v86, l'audit B6 : « Ce qui part · W-012 type DR20 → DR16 ») un câble se dit par son type et ses deux bouts, jamais par
+    // son numéro, qui reste écrit dans l'Excel, intact ; quand c'est son type qui change, ses deux bouts seuls (08-journal)
+    m.forEach(([col, ch, av, ap]) => { const pn = /^pn/.test(ch), objet = pn ? (ch === 'pnDe' ? l.de : l.vers) : ch === 'type' ? boutsDuCable(l) : cableParSesBouts(l), origine = origineDeCase(l, ch, true);
       const k = [objet, MOTS_COLONNES[ch] || col, av, ap, origine].join('\u0001');
       // le part number d'un disjoncteur : le calibre qu'il porte, en clair (« 10 → 15 A »)
       let calibres = ''; if (pn && estDisjoncteur(objet)) { const a = familleDuPn(av, app.norme), b = familleDuPn(ap, app.norme); if (a && b && a.calibre > 0 && b.calibre > 0) calibres = nombre(a.calibre) + ' → ' + nombre(b.calibre) + ' A'; }
-      const e = par.get(k) || par.set(k, { objet, mono: true, colonne: MOTS_COLONNES[ch] || col, calibres, colonnes: new Set(), champ: ch, avant: motAvant(ch, av), apres: motAvant(ch, ap), origine, n: 0, liaisons: [] }).get(k);
+      const e = par.get(k) || par.set(k, { objet, mono: true, colonne: MOTS_COLONNES[ch] || col, calibres, colonnes: new Set(), champ: ch, av, ap, avant: motAvant(ch, av), apres: motAvant(ch, ap), origine, n: 0, liaisons: [] }).get(k);
       e.colonnes.add(col); e.n++; e.liaisons.push(l); }); });
   // (v86) une ligne en double retirée : toute la ligne quitte l'Excel, une proposition de VOLTA ; le câble se dit par ses bouts
   V.forEach(l => { const c = copiesRetirees(l); if (!c) return; if (!modificationsDe(l).length) liaisons++;
@@ -143,8 +145,21 @@ function changementsDuRetest() { const V = verite().filter(liaisonComplete), par
       bulle: (c > 1 ? c + ' copies identiques de cette ligne quittent' : 'Sa copie identique quitte') + ' l’Excel corrigé — « Retirer la ligne en double »' }); });
   const ecrits = [...par.values()].map(e => ({ ...e, colonnes: [...e.colonnes] })).sort((a, b) => triNaturel(a.objet, b.objet) || a.colonne.localeCompare(b.colonne));
   let problemes = { ko: 0, att: 0, mot: '' }; try { problemes = compteProblemes(); } catch (_) { }
-  return { liaisons, cases, ecrits, proposes: propositionsNonEcrites(), problemes }; }
-const nombreDeChangements = () => { let n = 0; verite().forEach(l => { if (liaisonComplete(l) && (modificationsDe(l).length || copiesRetirees(l))) n++; }); return n; };
+  // (v86) les barrettes ajoutées par VOLTA qui ont reçu leur repère : elles sont dans l'installation, leurs lignes partent (08-journal)
+  let ajouts = []; try { ajouts = barrettesPosees(); } catch (_) { ajouts = []; }
+  return { liaisons, cases, ecrits, ajouts, proposes: propositionsNonEcrites(), problemes }; }
+// (v86) une barrette ajoutée qui a reçu son repère compte ses lignes : son câble à créer, ses shunts, les câbles qui arrivent sur elle
+const nombreDeChangements = () => { let n = 0; verite().forEach(l => { if (liaisonComplete(l) && (modificationsDe(l).length || copiesRetirees(l))) n++; });
+  try { barrettesPosees().forEach(p => { n += 1 + p.shunts.length + p.arrivent.filter(l => !(modificationsDe(l).length || copiesRetirees(l))).length; }); } catch (_) { } return n; };
+/* RETIRER une ligne de ce qui part (l'audit M2) : le même retour que l'Historique (08-fiche, `ligneDuFichier`) — la valeur de
+   votre fichier revient ; un calibre que VOLTA écrit de lui-même se reprend à la main (rendu, il se réécrirait). Une ligne
+   en double retirée revient, telle que votre fichier l'écrivait (08-journal, `remettreLesCopies`). Rend { faire, dit, aide }. */
+function retirerDuReleve(e) { if (!e || !e.liaisons || !e.liaisons.length) return null; const ch = e.champ, l = e.liaisons[0];
+  if (ch === 'copies') return { faire: () => remettreLesCopies(l), aide: 'La ligne en double revient dans votre installation, comme votre fichier l’écrivait', dit: 'Retiré de l’Excel corrigé : la ligne en double ' + boutsDuCable(l) + ' revient, comme dans votre fichier.' };
+  let y; try { y = ligneDuFichier({ rendre: e.liaisons.map(x => [x, ch]), avant: motValeur(ch, e.av), apres: motValeur(ch, e.ap), champ: MOTS_CHAMPS[ch] || ch }, { type: 'fil' }); } catch (_) { return null; }
+  if (!y || typeof y.faire !== 'function') return null;
+  const dit = /^pn/.test(ch) ? y.dit : ch === 'type' ? `le câble ${boutsDuCable(l)} revient en ${y.avant}, comme dans votre fichier.` : `${(y.quoi || '').toLowerCase()} de ${cableParSesBouts(l)} : ${y.avant}, ${y.depuis === 'hyp' ? 'supposée' : 'comme dans votre fichier'}.`;
+  return { faire: y.faire, aide: y.aide, dit: 'Retiré de l’Excel corrigé : ' + dit.charAt(0).toLowerCase() + dit.slice(1) }; }
 const motChangements = n => n > 1 ? n + ' changements' : n === 1 ? '1 changement' : 'aucun changement';
 /* LES CHOIX DE VOLTA PAS ENCORE ÉCRITS : un disjoncteur dont l'outil retient un autre calibre que celui de son part number
    (le meilleur qui passe), une barrette dont il retient un autre module que celui du retest. Chacun : ce que dit le retest,
@@ -157,9 +172,11 @@ function propositionsNonEcrites() { const V = verite(), out = [];
     // un part number dont la famille ne se lit pas ne sait pas porter un autre calibre : VOLTA ne l'écrit pas, il le dit
     const ecrivable = !!(pnVolta && pnVolta !== pnRetest);
     out.push({ genre: 'calibre', repere: r, retest: d.pn, retenu: d.calibre, pnRetest, pnVolta, ecrivable, verdictRetest: verdictDeCalibre(d.gPn), verdictRetenu: verdictDeCalibre(d),
-      cables: xs.map(p => ({ cable: p.x.cable || 'sans n°', actuel: p.x.actuel, propose: p.x.propose })),
+      // (v86, B6) chaque câble par ses deux bouts, jamais par son numéro
+      cables: xs.map(p => ({ cable: p.f && p.f.l ? boutsDuCable(sourceDe(p.f.l) || p.f.l) : (p.x.bouts || []).join(' → ') || 'un câble', actuel: p.x.actuel, propose: p.x.propose })),
       geste: `Écrire ${amperes(d.calibre)}${nc ? ' et grossir ' + (nc > 1 ? 'les ' + nc + ' câbles' : 'le câble') : ''}`,
-      suite: (nc ? `Le ${amperes(d.calibre)} demande ${xs.map(p => p.x.cable || 'le ' + cableDit(p.x)).join(', ')} en ${types.length === 1 ? types[0] : 'plus gros'}.` : '') + (ecrivable ? '' : ` Son part number (${pnRetest}) ne dit pas sa famille : VOLTA ne sait pas l’écrire, à reporter à la main.`),
+      // (les câbles se lisent juste dessous, par leurs deux bouts : la phrase dit combien, pas lesquels)
+      suite: (nc ? `Le ${amperes(d.calibre)} demande ${nc > 1 ? 'ces ' + nc + ' câbles' : 'ce câble'} en ${types.length === 1 ? types[0] : 'plus gros'}.` : '') + (ecrivable ? '' : ` Son part number (${pnRetest}) ne dit pas sa famille : VOLTA ne sait pas l’écrire, à reporter à la main.`),
       faire: ecrivable ? () => avecOrigineVolta(() => deciderCalibre(r)) : null }); });
   // les barrettes : le module que VOLTA retient à la place de celui du retest
   reperesDe(V).filter(r => !VT_A_POSER.test(r) && barretteEnModules(r)).sort(triNaturel).forEach(r => { try { const b = besoinsDeBarrette(r, V), Q = planDeBarrette(r).plan;
@@ -185,7 +202,9 @@ const ICO_TELECHARGER = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"
 const nomDuRetestCorrige = () => nomContrat() + '-retest-corrige.xlsx';
 // la clé de ce que le relevé montre : quand elle change, il se refait (et ce qui avait été enregistré ne l'est plus tel quel)
 const cleDuReleve = () => { try { return signature(verite()) + '|' + JSON.stringify(verite().map(l => l.avant || 0)) + '|' + JSON.stringify([...(app.contrat.charges || [])]); } catch (_) { return String(Date.now()); } };
-function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, n = C.liaisons, np = C.proposes.length;
+function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, np = C.proposes.length;
+  // (une barrette ajoutée qui a reçu son repère : ses lignes comptent, celles qu'elle crée et celles qui arrivent sur elle)
+  const n = C.liaisons + C.ajouts.reduce((s, p) => s + 1 + p.shunts.length + p.arrivent.filter(l => !(modificationsDe(l).length || copiesRetirees(l))).length, 0);
   // l'arrivée, une fois : le ticket puis chaque partie, en cascade (`.entre-v`, le socle)
   let k = 0; const entre = () => arrive ? ` entre-v" style="--k:${++k}` : '';
   // le ticket : trois chiffres sur une grille de filets
@@ -194,11 +213,21 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
     + chiffre(np, np > 1 ? 'choix de VOLTA à écrire' : np === 1 ? 'choix de VOLTA à écrire' : 'tout est écrit', np ? 'att' : '', np ? 'VOLTA les retient, mais ils ne partent que si vous les écrivez' : 'Chaque choix de VOLTA est dans l’installation')
     + chiffre(P.ko ? P.ko : P.att, P.ko ? (P.ko > 1 ? 'problèmes' : 'problème') + (P.att ? ` · ${P.att} à voir` : '') : P.att ? (P.att > 1 ? 'points à voir' : 'point à voir') : 'rien à reprendre', P.ko ? 'ko' : P.att ? 'att-doux' : 'ok', P.mot) + '</div>';
   k++;   // « Ce qui part » vient juste après le ticket
-  const enr = RELEVE.enregistre && RELEVE.enregistre.cle === RELEVE.cle ? `<p class="rv-fait" role="status">${ico('coche')}<span>Enregistré à ${esc(RELEVE.enregistre.heure)} dans vos Téléchargements · <span class="id">${esc(RELEVE.enregistre.nom)}</span></span></p>` : '';
-  // ce qui part
-  const ligne = e => `<li class="rv-l" data-bulle="${escA(e.bulle || (e.n > 1 ? pluriel(e.n, 'liaison') + ' · ' : '') + 'colonne' + (e.colonnes.length > 1 ? 's ' : ' ') + e.colonnes.join(', ') + ' de l’Excel')}"><span class="rv-objet id">${esc(e.objet)}</span><span class="rv-col">${esc(e.colonne)}${e.calibres ? ` · <b>${esc(e.calibres)}</b>` : ''}${e.n > 1 ? `<small> · ${e.n} liaisons</small>` : ''}</span>`
-    + `<span class="rv-av"><s class="id">${esc(e.avant)}</s>${ico('fleche')}<b class="id">${esc(e.apres)}</b></span><span class="rv-orig ${e.origine}">${e.origine === 'volta' ? ico('etoile') + 'VOLTA' : 'à la main'}</span></li>`;
-  const part = C.ecrits.length ? `<ul class="rv-liste">${C.ecrits.map(ligne).join('')}</ul>` : '<p class="rv-vide">Rien n’a changé : l’Excel sera votre installation telle que VOLTA l’a lue.</p>';
+  // (v86, l'audit F3) VOLTA ne sait pas où le navigateur range le fichier : il dit son nom, pas « dans vos Téléchargements »
+  const enr = RELEVE.enregistre && RELEVE.enregistre.cle === RELEVE.cle ? `<p class="rv-fait" role="status">${ico('coche')}<span>Enregistré à ${esc(RELEVE.enregistre.heure)} · <span class="id">${esc(RELEVE.enregistre.nom)}</span></span></p>` : '';
+  // ce qui part : chaque ligne, son objet (un câble par ses deux bouts), avant → après, qui, et « Retirer » (l'audit M2 : la
+  // valeur de votre fichier revient — le message offre « Défaire »)
+  const orig = o => `<span class="rv-orig ${o}">${o === 'volta' ? ico('etoile') + 'VOLTA' : 'à la main'}</span>`;
+  const retirer = (attr, aide) => `<button type="button" class="rv-retirer" ${attr} data-bulle="${escA('Retirer de l’Excel corrigé' + (aide ? ' : ' + aide.charAt(0).toLowerCase() + aide.slice(1) : ''))}">${ico('retour')}<span>Retirer</span></button>`;
+  const ligne = (e, i) => { const R = retirerDuReleve(e);
+    return `<li class="rv-l" data-bulle="${escA(e.bulle || (e.n > 1 ? pluriel(e.n, 'liaison') + ' · ' : '') + 'colonne' + (e.colonnes.length > 1 ? 's ' : ' ') + e.colonnes.join(', ') + ' de l’Excel')}"><span class="rv-objet id">${esc(e.objet)}</span>`
+      + `<span class="rv-det"><span class="rv-col">${esc(e.colonne)}${e.calibres ? ` · <b>${esc(e.calibres)}</b>` : ''}${e.n > 1 ? `<small> · ${e.n} liaisons</small>` : ''}</span><span class="rv-av"><s class="id">${esc(e.avant)}</s>${ico('fleche')}<b class="id">${esc(e.apres)}</b></span></span>`
+      + orig(e.origine) + (R ? retirer(`data-retirer="${i}"`, R.aide) : '') + '</li>'; };
+  // une barrette ajoutée par VOLTA qui a reçu son repère : ses lignes entrent dans l'Excel (son câble à créer, ses shunts)
+  const ajout = (p, i) => `<li class="rv-l rv-ajout" data-bulle="${escA('VOLTA l’a ajoutée sur ' + p.sur + ', où votre fichier met plusieurs câbles ; vous lui avez donné son repère. ' + majuscule(pluriel(1 + p.shunts.length, 'ligne')) + ' de plus dans l’Excel corrigé : son câble à créer et ' + pluriel(p.shunts.length, 'shunt') + ' ; les câbles de ' + p.sur + ' partent d’elle')}">`
+    + `<span class="rv-objet id">${esc(p.nom)}</span><span class="rv-det"><span class="rv-col">barrette ajoutée sur <span class="id">${esc(p.sur)}</span> · <b>${esc(pluriel(1 + p.shunts.length, 'ligne'))} de plus</b></span><span class="rv-av"><s class="id">${esc(p.vt)}</s>${ico('fleche')}<b class="id">${esc(p.nom)}</b></span></span>`
+    + orig('volta') + retirer(`data-retirer-ajout="${i}"`, 'Elle redevient ' + p.vt + ', la barrette que VOLTA propose') + '</li>';
+  const part = C.ecrits.length || C.ajouts.length ? `<ul class="rv-liste">${C.ecrits.map(ligne).join('')}${C.ajouts.map(ajout).join('')}</ul>` : '<p class="rv-vide">Rien n’a changé : l’Excel sera votre installation telle que VOLTA l’a lue.</p>';
   // ce que VOLTA a choisi sans l'écrire
   const prop = (p, i) => { const vR = p.verdictRetest, vV = p.verdictRetenu;
     const dit = p.genre === 'calibre' ? `l’installation dit <s class="id">${esc(amperes(p.retest))}</s>${vR ? ` · <span class="rv-v ${vR.etat}" data-bulle="${escA(vR.bulle)}">${esc(vR.mot)}</span>` : ''}` : `l’installation dit <s class="id">${esc(p.retest)}</s>`;
@@ -220,16 +249,22 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
         + `<button type="button" class="btn lien rv-tout" id="rv-problemes" data-bulle="${escA('L’index des repères, sur ce qui reste à reprendre — P passe au point suivant')}">${G.length > 5 ? 'Tout voir sur le plan' : 'Les voir sur le plan'}<kbd>R</kbd></button>`; } } catch (_) { }
   return tete(nomAffichePlan() + ' · installation corrigée', 'Ce qui part dans l’Excel')
     + `<p class="note">VOLTA n’écrit dans votre installation que ce que vous avez demandé. Relisez, puis enregistrez.</p>`
-    + enr + ticket + `<h3 class="sous-titre rv-st${arrive ? ' entre-v" style="--k:2' : ''}">Ce qui part<small>${C.cases ? pluriel(C.cases, 'case') : ''}</small></h3>` + part + props + reste
+    + enr + ticket + `<h3 class="sous-titre rv-st${arrive ? ' entre-v" style="--k:2' : ''}">Ce qui part<small>${esc([C.cases ? pluriel(C.cases, 'case') : '', C.ajouts.length ? pluriel(C.ajouts.length, 'barrette') : ''].filter(Boolean).join(' · '))}</small></h3>` + part + props + reste
     + `<p class="note rv-volta">Une feuille cachée « VOLTA » garde vos profils de charge, vos hypothèses et vos choix : rouverte dans VOLTA, cette installation reprend où vous en étiez. La feuille Modifications dit l’origine de chaque case.</p>`; }
 const nomAffichePlan = () => app.nom ? String(app.nom).replace(/\.[^.]+$/, '') : 'Plan';
 function rendreReleve(ouvrir) { if (!ouvrir && (!RELEVE.ouvert || !app.fiche || app.fiche.mode !== 'releve')) { RELEVE.ouvert = false; return; }
   const corps = $('fiche-corps'), haut = corps ? corps.scrollTop : 0; RELEVE.cle = cleDuReleve();
   const fait = RELEVE.enregistre && RELEVE.enregistre.cle === RELEVE.cle;
-  ouvrirFiche({ mode: 'releve', large: true }, releveHtml(!!ouvrir), `<button type="button" class="btn ${fait ? 'papier' : 'cuivre'}" id="rv-enregistrer">${ICO_TELECHARGER}${fait ? 'Enregistrer de nouveau' : 'Enregistrer l’Excel'}</button><span class="rv-fichier id" data-bulle="Le nom du fichier, dans vos Téléchargements">${esc(nomDuRetestCorrige())}</span>`);
+  ouvrirFiche({ mode: 'releve', large: true }, releveHtml(!!ouvrir), `<button type="button" class="btn ${fait ? 'papier' : 'cuivre'}" id="rv-enregistrer">${ICO_TELECHARGER}${fait ? 'Enregistrer de nouveau' : 'Enregistrer l’Excel'}</button><span class="rv-fichier id" data-bulle="Le nom du fichier que le navigateur enregistre">${esc(nomDuRetestCorrige())}</span>`);
   if (corps) corps.scrollTop = haut; lierReleve(); }
-function lierReleve() { const P = changementsDuRetest().proposes;
+function lierReleve() { const C = changementsDuRetest(), P = C.proposes;
   $('rv-enregistrer').onclick = () => enregistrerRetestCorrige();
+  // (v86, M2) « Retirer » : la valeur de votre fichier revient ; le message le dit et « Défaire » rend la case, le relevé rouvert
+  const direDuReleve = mot => dire(mot, false, { geste: 'Défaire', faire: () => { const q = defaire(); if (q) setTimeout(() => exporterRetestCorrige(), 0); } });
+  document.querySelectorAll('#fiche [data-retirer]').forEach(b => b.onclick = e => { e.stopPropagation(); const R = retirerDuReleve(C.ecrits[+b.dataset.retirer]); if (!R) return;
+    const avant = app.hist.length; R.faire(); if (app.hist.length !== avant || app.hist.length >= 40) direDuReleve(R.dit); });
+  document.querySelectorAll('#fiche [data-retirer-ajout]').forEach(b => b.onclick = e => { e.stopPropagation(); const p = C.ajouts[+b.dataset.retirerAjout];
+    if (p && deposerBarrette(p)) direDuReleve('Retiré de l’Excel corrigé : ' + p.nom + ' redevient ' + p.vt + ', les câbles reviennent sur ' + p.sur + '.'); });
   document.querySelectorAll('#fiche [data-proposition]').forEach(b => b.onclick = () => { const k = b.dataset.proposition;
     if (k === 'modules') { const ms = P.filter(p => p.genre === 'module'); if (!ms.length) return; avecOrigineVolta(() => changerLiaisons(ms.flatMap(p => p.ecritures()), ms.length > 1 ? 'les modules de ' + ms.length + ' barrettes écrits dans l’installation' : ms[0].repere + ' : le module ' + ms[0].retenu + ' écrit dans l’installation')); }
     else { const p = P[+k]; if (!p || !p.faire) return; p.faire(); }
@@ -247,11 +282,14 @@ function enregistrerRetestCorrige() { const V = verite(); if (!V.length) { dire(
   const R = classeurRetestCorrige(V, app.nom, { ouvert: true, volta: voltaDuPlan() }), nom = nomDuRetestCorrige();
   telecharger(new Blob([XLSX.write(R.wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nom);
   const d = new Date(); RELEVE.enregistre = { cle: RELEVE.ouvert ? RELEVE.cle || cleDuReleve() : cleDuReleve(), heure: String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'), nom: nomAscii(nom) };
-  dire(`Enregistré dans vos Téléchargements : ${nomAscii(nom)} — ${R.modifiees ? plurielLie(R.modifiees, 'liaison') + ' modifiée' + (R.modifiees > 1 ? 's' : '') : 'aucune modification'}.`);
+  // (v86, l'audit F3) le nom du fichier, pas « dans vos Téléchargements » : VOLTA ne sait pas où le navigateur le range
+  dire(`Enregistré : ${nomAscii(nom)} — ${R.modifiees ? plurielLie(R.modifiees, 'liaison') + ' modifiée' + (R.modifiees > 1 ? 's' : '') : 'aucune modification'}.`);
   if (RELEVE.ouvert && app.fiche && app.fiche.mode === 'releve') { rendreReleve(); const b = $('rv-enregistrer'); if (b) b.focus({ preventScroll: true }); }
   return R; }
 // le relevé ouvert suit le plan : un Ctrl+Z, un geste ailleurs le refont (08-interface appelle `synchroniser` → le contrôle)
-function suivreLeReleve() { if (!RELEVE.ouvert) return; if (!app.fiche || app.fiche.mode !== 'releve') { RELEVE.ouvert = false; return; }
+// (v86) l'historique du plan ouvert suit de même (08-journal) : le contrôle n'appelle que ceci
+function suivreLeReleve() { if (typeof suivreLeJournal === 'function') try { suivreLeJournal(); } catch (_) { }
+  if (!RELEVE.ouvert) return; if (!app.fiche || app.fiche.mode !== 'releve') { RELEVE.ouvert = false; return; }
   if (cleDuReleve() !== RELEVE.cle) rendreReleve(); }
 
 /* ---- LE CALIBRE QUE LE FOLIO ÉCRIT (v73, l'ingénieur, n° 6 : « le folio écrit 15 A, la nomenclature commande un

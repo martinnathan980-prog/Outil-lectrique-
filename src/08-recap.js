@@ -106,11 +106,15 @@ function relireBase() { const b = app.base, lire = k => { try { return JSON.pars
   b.tri = b.tris[b.onglet] || null; b.filtre = typeof b.filtres[b.onglet] === 'string' ? b.filtres[b.onglet] : ''; appliquerTailleBase(); }
 
 /* ---- ce que l'onglet lit du moteur : une fois par état du contrat --------- */
-const RECAP = { notes: {}, pareils: new Set(), memes: new Set(), palier: 0, parGenre: false, jeton: 0, cle: null, memo: new Map(), norme: null, bible: null, refs: null, items: null, itemsN: 0, parCable: null, parNom: null, rendu: null, vues: new Map(), liste: [], datalist: 0 };
-function assurerModele() { const C = app.contrat;
-  const k = JSON.stringify(verite()) + '|' + JSON.stringify([...C.designations]) + '|' + JSON.stringify([...(C.sexes || [])]) + '|' + JSON.stringify([...(C.charges || [])])
+const RECAP = { notes: {}, groupes: new Map(), memes: new Set(), palier: 0, parGenre: false, jeton: 0, cle: null, memo: new Map(), norme: null, bible: null, refs: null, items: null, itemsN: 0, parCable: null, parNom: null, rendu: null, vues: new Map(), liste: [], datalist: 0 };
+function assurerModele() { const C = app.contrat, V = verite();
+  const k = JSON.stringify(V) + '|' + JSON.stringify([...C.designations]) + '|' + JSON.stringify([...(C.sexes || [])]) + '|' + JSON.stringify([...(C.charges || [])])
     + '|' + JSON.stringify([...(C.raccords || [])]) + '|' + JSON.stringify(app.simu || {}) + '|' + app.plan + '|' + app.nFolios;
-  if (k !== RECAP.cle || RECAP.norme !== app.norme || RECAP.bible !== app.bible || RECAP.refs !== app.references) { RECAP.cle = k; RECAP.norme = app.norme; RECAP.bible = app.bible; RECAP.refs = app.references; RECAP.memo.clear(); }
+  // (v86) un Défaire rend des COPIES des liaisons, de même contenu : la clé ne change pas, mais les plans et les gestes gardés
+  // tiennent aux liaisons elles-mêmes — la liste qui n'est plus la même refait tout
+  if (k !== RECAP.cle || RECAP.V !== V || RECAP.premier !== V[0] || RECAP.norme !== app.norme || RECAP.bible !== app.bible || RECAP.refs !== app.references) {
+    if (RECAP.V !== V || RECAP.premier !== V[0]) RECAP.versV = (RECAP.versV || 0) + 1;   // (le rendu le sait : ses lignes tiennent aux liaisons)
+    RECAP.cle = k; RECAP.V = V; RECAP.premier = V[0]; RECAP.norme = app.norme; RECAP.bible = app.bible; RECAP.refs = app.references; RECAP.memo.clear(); }
   if (RECAP.items !== CONTROLE.items) { RECAP.items = CONTROLE.items; RECAP.itemsN++; RECAP.parCable = null; RECAP.parNom = null; RECAP.memo.delete('fils'); } }
 const memo = (k, f) => { if (!RECAP.memo.has(k)) RECAP.memo.set(k, f()); return RECAP.memo.get(k); };
 const routes = () => memo('routes', couleursDesRoutes);
@@ -314,7 +318,8 @@ const celluleChute = r => { const F = r.F(), c = F.c, I = instantsDuFil(F), s = 
   const autre = I.autre && I.autre.u != null ? `\n${majuscule(instantDit(I.autre))} : ${volts(I.autre.u)}` + (I.autre.umax ? ' sur ' + volts(I.autre.umax) + ' admis' : '') + '.' : '';
   const bulle = `${ou}, ${instantDit(s)} : ${volts(u)} perdus${s.umax ? ' sur ' + volts(s.umax) + ' admis' + (s.pointe && s.inter ? ' en intermittent' : '') + ' (' + pourcentDe(q) + ')' : ''}${trop ? ' : la ligne perd trop' + (c.reel ? '.' : ', sur des longueurs supposées — à voir.') : '.'}`
     + (c.total && c.dU != null && !s.pointe ? `\nSur ce câble : ${volts(c.dU)}.` : '') + autre;
-  return `<span class="rc-mesure rc-chute" data-bulle="${escA(bulle)}">${anneau(q, niv)}${chiffre(`<b class="rc-n">${voltsN(u)}</b>`, 'V', niv)}<span class="rc-adm">${s.umax ? 'sur ' + voltsN(s.umax) + INSECABLE + 'V' : ''}</span>${s.pointe ? motInstant('pointe', 'Les deux colonnes disent la pointe du profil : ' + s.nom + ', ' + amperes(s.i) + ' pendant ' + secondes(s.t) + '.') : motInstant('')}</span>`; };
+  // (« pointe » ne se répète pas dans la case : l'intensité le dit, et l'en-tête de la colonne dit « au même instant »)
+  return `<span class="rc-mesure rc-chute" data-bulle="${escA(bulle)}">${anneau(q, niv)}${chiffre(`<b class="rc-n">${voltsN(u)}</b>`, 'V', niv)}<span class="rc-adm">${s.umax ? 'sur ' + voltsN(s.umax) + INSECABLE + 'V' : ''}</span></span>`; };
 const COLONNES_LIAISONS = [
   // « de » se range contre la flèche (à droite de sa case), « vers » part de sa pointe (à gauche) : la phrase se lit d'un trait
   { k: 'de', t: 'De', cls: 'rc-c-bout rc-c-de', html: r => bout(r.l, 'de') + rendu(r.l, 'de'), tri: r => r.l.de + '\u0001' + r.l.borneDe, texte: r => r.l.de + (r.l.borneDe ? ':' + r.l.borneDe : '') },
@@ -333,6 +338,8 @@ const COLONNES_LIAISONS = [
     texte: r => { const s = instantsDuFil(r.F()).le; return s.i == null ? '' : ampere(s.i) + ' A' + (s.admis ? ' sur ' + ampere(s.admis) + ' A' : '') + (s.pointe ? ' (pointe)' : r.F().x.al ? '' : ' (supposé)'); },
     vide: r => { const s = instantsDuFil(r.F()).le; return s.i == null || !isFinite(s.i); } },
   { k: 'chute', t: 'Chute', option: true, large: 1, g: 'Le câble', cls: 'rc-c-mesure', html: celluleChute,
+    // la règle de la colonne, dite une fois dans son en-tête : la chute de chaque ligne est prise à l'instant de son intensité
+    note: () => colonnesVues(LIAISONS).some(c => c.k === 'intensite') ? ['au même instant', 'La chute de chaque ligne est prise au même instant que son intensité : la pointe du profil quand c’est elle qui pèse le plus (« pointe »), sinon le permanent. La bulle de chaque valeur donne l’autre instant.'] : null,
     tri: r => { const s = instantsDuFil(r.F()).le; return s.u == null ? -1 : s.umax ? s.u / s.umax : s.u / 100; },
     texte: r => { const s = instantsDuFil(r.F()).le; return s.u == null ? '' : voltsN(s.u) + ' V' + (s.umax ? ' sur ' + voltsN(s.umax) + ' V' : '') + (s.pointe ? ' (pointe)' : ''); },
     vide: r => { const s = instantsDuFil(r.F()).le; return s.u == null || !isFinite(s.u); } },
@@ -814,24 +821,29 @@ const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, 
 /* (v84, « chaque problème dit simplement ce qui ne va pas et ce qu'il faut faire, en peu de mots ») : une phrase courte, à
    l'impératif doux, sans renvoi d'onglet quand la ligne y mène d'un clic ; « le plus fin qui convient », plus « qui tient »
    (les mots de la charte). */
+/* (v86, G1 — l'audit : « un conseil renvoie à « Changer », un bouton qui n'existe plus ») : le bon chemin, dans les mots de
+   la fiche — un choix de VOLTA se règle dans sa fiche, « Choix de VOLTA », Manuel ; ce qui vient du fichier se change « dans
+   votre fichier » (une seule source). Quand un geste règle le point, c'est lui qui s'affiche, pas la phrase. */
 function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.exec(t) || /un ([\d,.]+ A) suffirait/.exec(t);
-  if (/^ajoutée par VOLTA sur/.test(t)) return ['Lui donner son vrai repère', 'connecteur'];
+  if (/^ajoutée par VOLTA sur/.test(t)) return ['Lui donner son repère', 'connecteur'];
   if (/profil de charge est à renseigner/.test(t)) return ['Écrire son profil de charge : VOLTA en déduit le calibre', 'profil'];
-  if (/déclenche|disjoncte —|aucun calibre/.test(t)) return [ideal ? 'Retenir ' + ideal[1] : 'Alléger le profil, ou une autre famille de disjoncteur', 'calibre'];
-  if (/suffirait|touche la courbe|l’idéal est|\bjuste\b/.test(t)) return [ideal ? 'Retenir ' + ideal[1] : 'Retenir le calibre que VOLTA propose', 'calibre'];
-  if (/sélectivité/.test(t)) return ['Un amont au moins double de l’aval : changer l’un des deux calibres', 'calibre'];
-  if (/chute en ligne/.test(t)) return [/hypothèse/.test(t) ? 'Écrire les longueurs mesurées' : 'Une gauge plus forte, ou un chemin plus court', 'chute'];
+  if (/déclenche|disjoncte —|aucun calibre/.test(t)) return [ideal ? 'Retenir le ' + ideal[1] + ' que VOLTA propose' : 'Alléger le profil, ou une autre famille de disjoncteur dans votre fichier', 'calibre'];
+  if (/suffirait|touche la courbe|l’idéal est|\bjuste\b/.test(t)) return [ideal ? 'Retenir le ' + ideal[1] + ' que VOLTA propose' : 'Retenir le calibre que VOLTA propose', 'calibre'];
+  if (/sélectivité/.test(t)) return ['Un amont au moins double de l’aval : l’un des deux calibres, dans votre fichier', 'calibre'];
+  if (/chute en ligne|chute en pointe/.test(t)) return [/hypothèse|supposé/.test(t) ? 'Écrire les longueurs mesurées dans votre fichier' : 'Une gauge plus forte, ou un chemin plus court', 'chute'];
   if (/maximum de l’AC|table 11-3/.test(t)) return ['Un calibre plus petit, ou un câble plus gros (AC 43.13-1B, table 11-3)', 'fils'];
+  // un CONTACT que le calibre ne protège pas (« Contact taille 20 (7,5 A) < calibre 10 A — pas protégé ») : c'est le contact
+  if (/contact taille[^—]*— pas protégé/i.test(t)) return ['Un contact plus gros : sa fiche › Choix de VOLTA › Manuel', 'contacts'];
   // (plus « ou un calibre plus petit » : sous un profil qui déclenche déjà le calibre, c'est faux — l'ingénieur v73)
   if (/admis|pas protégé/.test(t)) return ['Un câble plus gros : sa fiche propose le plus fin qui convient', 'fils'];
-  if (/contact taille|dépasse le contact/.test(t)) return ['Un contact plus gros, ou moins de courant', 'contacts'];
-  if (/refusé|aucun contact|jauge|gauge/.test(t)) return ['Un autre type de câble, ou un autre arrangement du connecteur', 'contacts'];
-  if (/aucun arrangement|aucun module|ne loge/.test(t)) return ['Un autre arrangement, ou une autre norme (sa fiche, « Changer »)', 'connecteur'];
+  if (/contact taille|dépasse le contact/.test(t)) return ['Un contact plus gros (sa fiche › Choix de VOLTA › Manuel), ou moins de courant', 'contacts'];
+  if (/refusé|aucun contact|jauge|gauge/.test(t)) return ['Un autre type de câble dans votre fichier, ou un autre arrangement (sa fiche › Choix de VOLTA › Manuel)', 'contacts'];
+  if (/aucun arrangement|aucun module|ne loge/.test(t)) return ['Un autre arrangement : sa fiche › Choix de VOLTA › Manuel — ou une gauge plus fine dans votre fichier', 'connecteur'];
   if (/branchement en chaîne/.test(t)) return ['Séparer gauche et droite, si le câblage le permet', 'connecteur'];
   if (/famille de disjoncteur inconnue/.test(t)) return ['Ajouter la famille de ce part number (Normes › Familles de disjoncteurs)', 'disjoncteur'];
-  if (/types? de (fil|câble)s? inconnus?/.test(t)) return ['Corriger le type, ou ajouter le câble à la base (Normes › Câbles)', ''];
-  if (/sans type/.test(t)) return ['Écrire le type de chaque câble', ''];
-  if (/incomplète/.test(t)) return ['Écrire « de » et « vers »', ''];
+  if (/types? de (fil|câble)s? inconnus?/.test(t)) return ['Corriger le type dans votre fichier, ou ajouter le câble à la base (Normes › Câbles)', ''];
+  if (/sans type/.test(t)) return ['Écrire le type de chaque câble dans votre fichier', ''];
+  if (/incomplète/.test(t)) return ['Écrire « de » et « vers » dans votre fichier', ''];
   if (/ambiante/.test(t)) return ['Un câble qui supporte plus chaud, ou revoir l’ambiante (⋮ › Hypothèses)', ''];
   if (/CCA/.test(t)) return ['Qualifier le contact pour l’aluminium cuivré, ou un câble cuivre', 'contacts'];
   return ['Voir sa fiche', 'problemes']; }
@@ -847,10 +859,23 @@ const pointSeul = (n, mot) => `<span class="rc-etat ${n} seul"><i aria-hidden="t
    (`voirLePoint`) ; les boutons ne gardent que ce qui corrige — et « Voir les liaisons », quand le point est au tableau. */
 /* La phrase d'un point : le câble dont elle parle (« DR20 vers 103RL1:A1 ») en chasse fixe, à part — l'œil trouve QUOI,
    puis lit POURQUOI ; le reste, tel que le contrôle l'écrit. */
-const phraseDuPoint = t => { const m = /^(\S+ vers \S+) : ([\s\S]+)$/.exec(String(t || ''));
-  return m ? `<span class="rc-phrase"><span class="rc-sujet">${m[1].split(' vers ').map(esc).join('<i>vers</i>')}</span>${insecable(esc(majuscule(m[2])))}</span>` : `<span class="rc-phrase">${insecable(esc(majuscule(t)))}</span>`; };
-const reparateurs = p => gestesDuPb(p).filter(g => !(p.x.nom && /^Voir /.test(g.mot)));
-const signatureGestes = p => { const G = reparateurs(p); return (G.length ? '' : p.que) + '\u0001' + G.map(g => g.mot).join('\u0001'); };
+// (v86 : « DR24 vers 300XC1:A5 (par 395SW1) : … » — le passage par lequel le câble est nourri reste avec lui, à l'encre seconde)
+const phraseDuPoint = t => { const m = /^(\S+ vers \S+)( \(par [^()]+\))? : ([\s\S]+)$/.exec(String(t || ''));
+  return m ? `<span class="rc-phrase"><span class="rc-sujet">${m[1].split(' vers ').map(esc).join('<i>vers</i>')}${m[2] ? `<i>${esc(m[2].trim())}</i>` : ''}</span>${insecable(esc(majuscule(m[3])))}</span>` : `<span class="rc-phrase">${insecable(esc(majuscule(t)))}</span>`; };
+/* LE GESTE D'UN POINT, LE MÊME QUE DANS LA FICHE (v86, G1 — l'audit : « dans le récapitulatif, les problèmes n'ont pas leur
+   geste, alors que la fiche montre Passer en DR16 » ; 08-niveaux, `tachesFiche`) : celui du contrôle qui RÈGLE (« Tout
+   régler… », « Unifier sur… », « Lui donner son repère » : 08-controle, `gestesDuPoint`), sinon celui que VOLTA sait faire
+   pour un câble trop fin ou mal protégé (« Passer en DR16 » : 08-niveaux, `gesteDuPoint`). « Voir 102CB1 » ne règle rien :
+   la ligne y mène. `cle` : deux lignes qui portent la même clé demandent le même geste (elles se regroupent). */
+const reparateurs = p => memo('repare|' + RECAP.itemsN + '|' + p.k, () => { const x = p.x, G = gestesDuPb(p);
+  const regle = G.filter(g => g && g.mot && typeof g.faire === 'function' && !/^Voir\b/.test(g.mot)).map(g => ({ ...g, cle: g.cle || (x.nom || '') + '|' + g.mot }));
+  if (regle.length || typeof gesteDuPoint !== 'function') return regle;
+  // (le câble du point : la liaison vivante — après un Défaire, le contrôle peut garder la copie d'avant, de même clé)
+  try { const c0 = (x.cables || []).length === 1 && x.cables[0] && typeof x.cables[0] === 'object' ? x.cables[0] : null, V = verite();
+    const c = c0 ? (V.includes(c0) ? c0 : V.find(l => typeof memeLiaison === 'function' && memeLiaison(l, c0)) || null) : null;
+    const g = gesteDuPoint({ texte: x.texte, cable: c, gestes: G }, { type: x.nom && estDisjoncteur(x.nom) ? 'disjoncteur' : 'equipement', tete: { nom: x.nom || '' } });
+    return g ? [{ ...g, principal: true }] : []; } catch (_) { return []; } });
+const signatureGestes = p => { const G = reparateurs(p); return G.length ? G.map(g => g.cle).join('\u0001') : '\u0002' + p.que; };
 /* Voir un point depuis sa ligne : sa fiche, sur son folio, ouverte à la section qui le démontre — sans filtrer l'onglet sur
    lui (la liste reste sous les yeux ; « Voir 102CB1 » la réduisait à 102CB1). */
 function voirLePoint(p) { const x = p.x; if (!x.nom || x.tableau != null || VT_A_POSER.test(x.nom)) { allerAuControle(x); return; }
@@ -869,13 +894,13 @@ const COLONNES_PROBLEMES = [
   { k: 'objet', t: 'Objet', cls: 'rc-c-rep', html: p => p.x.nom ? `<span class="rc-r${RECAP.memes.has(p.k) ? ' rc-meme' : ''}">${esc(p.x.nom)}</span>` : '<span class="rc-mot doux">le tableau</span>', tri: p => p.x.nom || '', texte: p => p.x.nom || 'tableau',
     vide: p => !!app.base.filtreAuto && !!p.x.nom && p.x.nom === app.base.filtre.trim() },
   { k: 'texte', t: 'Ce qui ne va pas', cls: 'rc-c-phrase rc-c-pb', html: p => phraseDuPoint(p.x.texte), tri: p => p.x.texte, texte: p => p.x.texte },
-  /* CE QU'IL FAUT FAIRE, en peu de mots : la phrase (`remede`), ou — quand il existe — le GESTE qui corrige, en bouton (v73,
-     l'ingénieur n° 8 ; `gestesDuPoint`) : « Tout régler : 102CB1 en 15 A et 3 câbles en DR12 », « Unifier sur MS3320-15 »,
-     « Lui donner son repère » — le premier au trait, les autres en lien. Aller voir, c'est la ligne. */
+  /* CE QU'IL FAUT FAIRE : le GESTE qui règle, en bouton cuivre — celui de la fiche (`reparateurs`) : « Passer en DR16 »,
+     « Lui donner son repère », « Tout régler : 102CB1 en 15 A… » ; sans geste, la phrase courte (`remede`), calme. Des lignes
+     qui se suivent et demandent la même chose ne le répètent pas : une seule case pour elles toutes (v86 — plus de « ″ »,
+     obscur), qui court sur leurs lignes (`RECAP.groupes`, `ligneHtml`). Aller voir, c'est la ligne. */
   { k: 'que', t: 'Ce qu’il faut faire', cls: 'rc-c-phrase rc-c-que', html: p => { const G = reparateurs(p);
-      if (RECAP.pareils.has(p.k)) return `<span class="rc-pareil" data-bulle="${escA('Comme à la ligne du dessus : ' + (G.length ? G.map(g => g.mot).join(' · ') : p.que))}" aria-label="Comme à la ligne du dessus">″</span>`;
-      return `<span class="rc-que">${G.length ? `<span class="rc-gestes">${G.map(g => `<button type="button" class="btn ${g.principal ? 'papier' : 'lien'} dense" data-geste-pb="${escA(g.mot)}" data-bulle="${escA(g.aide || '')}">${esc(g.mot)}</button>`).join('')}</span>` : `<span class="rc-phrase">${esc(p.que)}</span>`}</span>`; },
-    tri: p => p.que, texte: p => { const G = reparateurs(p); return G.length ? G.map(g => g.mot).join(' · ') : p.que; } },
+      return `<span class="rc-que">${G.length ? `<span class="rc-gestes">${G.map((g, i) => `<button type="button" class="btn ${i ? 'lien' : 'cuivre'} dense" data-geste-pb="${escA(g.cle)}" data-bulle="${escA(g.aide || '')}">${esc(g.mot)}</button>`).join('')}</span>` : `<span class="rc-phrase">${insecable(esc(p.que))}</span>`}</span>`; },
+    tri: p => { const G = reparateurs(p); return G.length ? '\u0001' + G[0].mot : p.que; }, texte: p => { const G = reparateurs(p); return G.length ? G.map(g => g.mot).join(' · ') : p.que; } },
   { k: 'folio', t: 'Folio', cls: 'rc-c-folio', option: true, html: p => p.plans.length ? `<span class="rc-folios">f.${INSECABLE}${esc(p.plans[0])}</span>` : rien, tri: p => p.plans[0] || '', texte: p => p.plans.join(' ') },
   { k: 'section', t: 'Dans la fiche', option: true, html: p => p.sec && p.x.nom && SECTIONS[p.sec] ? `<span class="rc-mot">${esc(SECTIONS[p.sec])}</span>` : rien, tri: p => p.sec, texte: p => SECTIONS[p.sec] || '' }];
 // (tour du site, un relecteur : « le seul problème rouge, sur le folio 3, ne se voit pas depuis le folio 1 ») : les
@@ -987,7 +1012,7 @@ function compteOnglet(k) { const items = CONTROLE.items || [];
 function rendreBase(force) { const b = app.base; b.sale = false; if ($('base').hidden) { b.sale = true; return; }
   if (b.edition && !force) { b.sale = true; return; }
   assurerModele(); RECAP.palier = palierDuCorps(); const O = onglet(), C = colonnesVues(O);
-  const cle = [RECAP.cle, RECAP.itemsN, b.onglet, b.portee, b.filtre, b.filtreAuto, JSON.stringify(b.tri), JSON.stringify(b.puces[b.onglet] || []), C.map(c => c.k).join(','), b.toutes, b.neuves.length, b.neufs.join(','), b.nouveau].join('\u0002');
+  const cle = [RECAP.cle, RECAP.versV, RECAP.itemsN, b.onglet, b.portee, b.filtre, b.filtreAuto, JSON.stringify(b.tri), JSON.stringify(b.puces[b.onglet] || []), C.map(c => c.k).join(','), b.toutes, b.neuves.length, b.neufs.join(','), b.nouveau].join('\u0002');
   const avaitFocus = $('ba-tab').contains(document.activeElement), focus = b.focus || (avaitFocus ? caseDe(document.activeElement) : null);
   if (!force && cle === RECAP.rendu) { marquerLignes(); defiler(); return; }
   RECAP.rendu = cle; if (typeof cacherBulle === 'function') cacherBulle(); rendreTete(O); rendreOnglets(); rendreOutils(O); rendreTable(O, C);
@@ -1161,11 +1186,15 @@ function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.je
   else L.forEach(ligne);
   // le pied (onglet Câbles : le total, la masse par route), dès qu'il y a de quoi additionner
   if (O.total && L.length > 1) morceaux.push({ h: H_LIGNE, f: () => O.total(L, C) });
-  // (v74) le geste qui se répète d'une ligne à la suivante, sans intercalaire entre elles : « ″ » (les lignes se posent après)
-  // (v84) de même, l'objet qui se répète s'écrit plus doux
-  RECAP.parGenre = !!parGenre; RECAP.pareils = new Set(); RECAP.memes = new Set();
-  if (O === PROBLEMES) { let avant = null, nom = null; morceaux.forEach(m => { if (m.k == null) { avant = null; nom = null; return; } const r = RECAP.vues.get(m.k), s = r ? (r.x.niveau === 'ko' ? 'ko' : 'att') + '\u0001' + signatureGestes(r) : '', x = r && r.x.nom;
-    if (s && s === avant) RECAP.pareils.add(m.k); if (x && x === nom) RECAP.memes.add(m.k); avant = s; nom = x; }); }
+  /* (v86, G1) LES LIGNES QUI DEMANDENT LA MÊME CHOSE SE REGROUPENT : sans intercalaire entre elles, au même niveau, le même
+     geste (la même clé : le même câble, le même disjoncteur) ou la même phrase — une seule case « Ce qu'il faut faire »
+     court sur leurs lignes (plus de « ″ » dessous) ; une table virtuelle (au-delà de 300 lignes) garde une case par ligne.
+     (v84) L'objet qui se répète d'une ligne à la suivante s'écrit plus doux. Les lignes se posent après : le calcul est prêt. */
+  RECAP.parGenre = !!parGenre; RECAP.groupes = new Map(); RECAP.memes = new Set();
+  if (O === PROBLEMES) { let tete = null, avant = null, nom = null; const virtuel = morceaux.length > VIRTUEL_DES;
+    morceaux.forEach(m => { if (m.k == null) { tete = null; avant = null; nom = null; return; } const r = RECAP.vues.get(m.k), s = r ? (r.x.niveau === 'ko' ? 'ko' : 'att') + '\u0001' + signatureGestes(r) : '', x = r && r.x.nom;
+      if (!virtuel) { if (s && s === avant && tete) { RECAP.groupes.get(tete).n++; RECAP.groupes.set(m.k, { suite: true, tete }); } else { tete = m.k; RECAP.groupes.set(m.k, { n: 1 }); } }
+      if (x && x === nom) RECAP.memes.add(m.k); avant = s; nom = x; }); }
   // un onglet vide le dit sous ses en-têtes, au milieu de la feuille (hors de la table : sa dernière colonne prend tout)
   // (v84) un onglet vide ne pose pas d'en-têtes : sans lignes, ils se tassaient à gauche (« DE CÂBLE VERS… »), sans rien dire
   const vide = assurerVide(), rien = !L.length && !tete.length; vide.innerHTML = rien ? videRecap(O, tous.length) : ''; vide.hidden = !rien; $('ba-thead').hidden = rien;
@@ -1214,7 +1243,8 @@ function amenerLigne(k) { const V = RECAP.virtuel; if (!V) return; const i = V.m
    qui filtre, voir tout le contrat, ou écrire la première ligne. */
 /* (v84, la charte : « jamais de “aucun …” — rien, ou une information pertinente ») : chaque vide dit ce qui viendra ici, et
    d'où. */
-const VIDES = { liaisons: ['Les liaisons s’écrivent ici', 'Écrivez la première, ou déposez une installation sur la table.'], equipements: ['Les équipements s’écrivent ici', 'Leurs câbles, ensuite, dans l’onglet Liaisons.'],
+// (v86) les liaisons et les équipements viennent de votre fichier : le vide dit d'où ils viendront, pas « écrivez-les ici »
+const VIDES = { liaisons: ['Les liaisons de votre fichier viendront ici', 'Déposez une installation sur la table : VOLTA en lit chaque ligne.'], equipements: ['Les équipements de votre fichier viendront ici', 'Chaque repère de vos liaisons qui n’est ni un disjoncteur, ni une barrette, ni une prise.'],
   disjoncteurs: ['Les disjoncteurs viendront ici', 'Un repère au code CB : son calibre, son verdict et son profil de charge se lisent ici.'], barrettes: ['Les barrettes viendront ici', 'Celles du contrat (code VT), et celles que VOLTA ajoute quand plusieurs câbles partagent une borne.'],
   prises: ['Les prises de coupure viendront ici', 'Un repère au code VC : son arrangement et ses contacts se lisent ici.'], cables: ['Les types de câble viendront ici', 'Un câble compte dès que sa liaison a un « de » et un « vers ».'],
   raccords: ['Les raccords viendront ici', 'Un raccord se choisit pour chaque connecteur d’équipement.'], problemes: ['Rien à reprendre', 'Chaque câble, chaque calibre, chaque contact est vérifié.'], normes: ['Les normes viendront ici', 'Elles jugent le contrat dès qu’il a des liaisons.'] };
@@ -1250,10 +1280,15 @@ function assurerVide() { let v = $('ba-vide'); if (v) return v; v = document.cre
 // (les lignes qui tiennent au bloc par lui — ses liaisons, ses problèmes, ses raccords — : la recherche dit déjà son nom,
 // elles ne se teintent pas toutes de cuivre ; seule la ligne qui EST l'objet choisi se pose sur le cuivre)
 const parUnBloc = O => (O === LIAISONS || O === PROBLEMES || O === RACCORDS) && !!app.cible && app.cible.type === 'bloc';
-function ligneHtml(O, C, r, neuve) { RECAP.vues.set(r.k, r); const et = r.nouveau ? '' : O.etat(r), on = !r.nouveau && O.choisie(r), lie = on && parUnBloc(O);
-  const cls = [et, on ? 'on' : '', lie ? 'lie' : '', neuve ? 'neuve' : '', O.hors && O.hors(r) ? 'rc-hors' : ''].filter(Boolean).join(' ');
-  return `<tr data-k="${escA(r.k)}"${r.l ? ` data-i="${r.i}"` : ''}${cls ? ` class="${cls}"` : ''}>` + C.map(c => `<td class="${c.cls || ''}"${largeurCol(c)}>${r.nouveau ? (c.k === 'rep' ? valT('rep', '', { cls: 'rc-r', ph: 'repère' }) : '') : c.html(r)}</td>`).join('')
-    + `<td class="rc-suppr">${O.supprimer && !r.nouveau ? `<button data-x="1" aria-label="Supprimer la liaison" data-bulle="Supprimer cette liaison (« Rétablir » ou Ctrl+Z la rend)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>` : O === PROBLEMES ? FLECHE_VOIR : ''}</td></tr>`; }
+/* UNE LIGNE : ses cases, puis la dernière, qui prend la place qui reste (« Voir › » au bout d'un problème). (v86 : plus de
+   croix « Supprimer » — retirer une liaison, c'est changer le fichier.) Un groupe de problèmes qui demandent la même chose :
+   la case « Ce qu'il faut faire » de sa première ligne court sur les suivantes (`rowspan`), qui n'en posent pas. */
+function ligneHtml(O, C, r, neuve) { RECAP.vues.set(r.k, r); const et = O.etat(r), on = O.choisie(r), lie = on && parUnBloc(O);
+  const G = O === PROBLEMES ? RECAP.groupes.get(r.k) : null, groupe = G && G.n > 1 ? 'tete' : G && G.suite ? 'suite' : '';
+  const cls = [et, on ? 'on' : '', lie ? 'lie' : '', neuve ? 'neuve' : '', O.hors && O.hors(r) ? 'rc-hors' : '', groupe ? 'rc-grp-' + groupe : ''].filter(Boolean).join(' ');
+  return `<tr data-k="${escA(r.k)}"${r.l ? ` data-i="${r.i}"` : ''}${cls ? ` class="${cls}"` : ''}>`
+    + C.map(c => c.k === 'que' && groupe === 'suite' ? '' : `<td class="${c.cls || ''}"${largeurCol(c)}${c.k === 'que' && groupe === 'tete' ? ` rowspan="${G.n}"` : ''}>${c.html(r)}</td>`).join('')
+    + `<td class="rc-suppr">${O === PROBLEMES ? FLECHE_VOIR : ''}</td></tr>`; }
 // (v84) une ligne de problème mène à sa fiche : au survol, une flèche le dit au bout de la ligne
 const FLECHE_VOIR = '<span class="rc-voir" aria-hidden="true">Voir<svg class="ico" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span>';
 function marquerLignes() { if ($('base').hidden) return; const O = onglet(), bloc = parUnBloc(O) ? app.cible.nom : '';
@@ -1270,7 +1305,17 @@ function editerCase(k, f) { if (!elementDe({ k, f })) amenerLigne(k); const el =
 function datalist(nom) { const V = verite(), xs = nom === 'reperes' ? reperesDe(V) : nom === 'pns' ? [...new Set(V.flatMap(l => [l.pnDe, l.pnVers]).filter(Boolean))]
     : nom === 'types' ? [...new Set([...V.map(l => l.type), ...cablesDe(app.norme).map(c => c.cable || c.type)].filter(Boolean))] : nom === 'routes' ? [...routes().keys()] : nom === 'folios' ? plans() : [];
   return xs.sort(triNaturel); }
-function editer(el) { const b = app.base, O = onglet(), c = caseDe(el); if (!c || b.edition) return false; const r = RECAP.vues.get(c.k); if (!r || !O.editeur) return false;
+/* (v86, une seule source) UNE CASE DU FICHIER NE S'ÉDITE PAS : un double-clic, Entrée ou F2 posent sur elle une bulle qui dit
+   d'où vient la valeur et où la changer — dans votre fichier, que VOLTA relira. */
+function signalerFichier(el, f) { const t = motDuFichier(f) + ' vient de votre fichier.\nÀ changer dans votre fichier : VOLTA le relira.', c = caseDe(el);
+  if (typeof montrerBulle !== 'function') { dire(t.replace('\n', ' ')); return; }
+  const montrer = () => { const e = (c && elementDe(c)) || el; if (!e || !e.isConnected) return; const avant = e.getAttribute('data-bulle');
+    e.setAttribute('data-bulle', t); montrerBulle(e); if (avant != null) e.setAttribute('data-bulle', avant); else e.removeAttribute('data-bulle'); };
+  // (le premier appui d'un double-clic a pu choisir la ligne et ouvrir sa fiche : la table se refait et éteint la bulle — elle revient)
+  montrer(); setTimeout(montrer, 220); }
+function editer(el) { const b = app.base, O = onglet(), c = caseDe(el); if (!c || b.edition) return false; const r = RECAP.vues.get(c.k); if (!r) return false;
+  if (el.classList.contains('rc-lu')) { signalerFichier(el, c.f); return true; }
+  if (!O.editeur) return false;
   const E = O.editeur(r, c.f); if (!E) return false;
   if (E.action) { E.action(); return true; }
   if (E.gamme) { ouvrirGamme(el, r.nom); return true; }
@@ -1314,7 +1359,8 @@ function finirEdition(mode, vers) { const b = app.base, ed = b.edition; if (!ed)
 // la case d'à côté : dans l'ordre des cases de la table (une ligne, puis la suivante), ou la même case une ligne plus bas
 function voisine(ed, vers) { const tab = vers === 'suivante' || vers === 'precedente';
   // Tab passe d'une valeur qu'on écrit à la suivante : une valeur calculée qui mène ailleurs (l'intensité) se saute
-  const toutes = [...$('ba-tbody').querySelectorAll('tr[data-k] [data-f]')].filter(x => x.tagName !== 'INPUT' && x.tagName !== 'SELECT' && (!tab || x === ed.el || !x.classList.contains('rc-calc'))), i = toutes.indexOf(ed.el);
+  // (v86 : et une case du fichier, qui ne s'écrit pas)
+  const toutes = [...$('ba-tbody').querySelectorAll('tr[data-k] [data-f]')].filter(x => x.tagName !== 'INPUT' && x.tagName !== 'SELECT' && (!tab || x === ed.el || !x.classList.contains('rc-calc') && !x.classList.contains('rc-lu'))), i = toutes.indexOf(ed.el);
   if (vers === 'meme') return { k: ed.k, f: ed.f };
   if (vers === 'dessous' || vers === 'dessus') { const trs = [...$('ba-tbody').querySelectorAll('tr[data-k]')], j = trs.findIndex(t => t.dataset.k === ed.k);
     for (let n = j + (vers === 'dessous' ? 1 : -1); n >= 0 && n < trs.length; n += vers === 'dessous' ? 1 : -1) if (trs[n].querySelector(`[data-f="${CSS.escape(ed.f)}"]`)) return { k: trs[n].dataset.k, f: ed.f };
@@ -1504,19 +1550,20 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
     const f = e.target.closest('button[data-plan]'); if (f) { allerAuPlan(f.dataset.plan); return; }
     const pr = e.target.closest('[data-premier]'); if (pr) { allerAuGenre(pr.dataset.premier); return; }
     const ge = e.target.closest('[data-geste]'); if (ge) { faireLeGeste(ge.dataset.geste); return; }
-    if (!r || r.nouveau) return;
-    if (e.target.closest('button[data-x]')) { O.supprimer(r); return; }
+    if (!r) return;
     const au = e.target.closest('button[data-auto]'); if (au) { if (O.rendre) O.rendre(r, au.dataset.auto); return; }
     if (e.target.closest('[data-aller]')) { if (O.aller) O.aller(r); return; }
     if (e.target.closest('[data-voir-fils]')) { if (O.voirFils) O.voirFils(r); return; }
     const re = e.target.closest('[data-retenir]'); if (re) { retenirCalibre(r.nom, +re.dataset.retenir); return; }
-    if (e.target.closest('[data-poser]')) { editerCase(r.k, 'rep'); return; }
-    const gp = e.target.closest('[data-geste-pb]'); if (gp) { const g = gestesDuPb(r).find(y => y.mot === gp.dataset.gestePb); if (g && g.faire) g.faire(); return; }
+    // (v86) les gestes de VOLTA, les mêmes que la fiche : donner son repère à une barrette ajoutée, accepter le calibre proposé
+    if (e.target.closest('[data-poser]')) { if (r.plan && r.plan !== app.plan && plans().includes(r.plan)) allerAuPlan(r.plan); if (typeof poserLesBarrettes === 'function') poserLesBarrettes([r.nom]); return; }
+    if (e.target.closest('[data-decider]')) { if (typeof deciderCalibre === 'function') (typeof parVolta === 'function' ? parVolta : f => f())(() => deciderCalibre(r.nom)); return; }
+    const gp = e.target.closest('[data-geste-pb]'); if (gp) { const g = reparateurs(r).find(y => y.cle === gp.dataset.gestePb); if (g && g.faire) g.faire(); return; }
     /* UN SEUL GESTE POUR ÉCRIRE, PARTOUT (l'ergonome v73 : « on corrige au double-clic ici, d'un clic dans la fiche ») : sur
        la ligne qu'on a choisie, un clic sur une valeur l'écrit, comme dans la fiche ; ailleurs, le premier clic choisit la
        ligne et pose le clavier sur la valeur — une touche, Entrée ou un second clic l'écrivent. Le double-clic reste. */
     const v = e.target.closest('.rc-v[data-f]'); if (e.detail > 1) return;   // le second appui d'un double-clic : l'appui l'a déjà traité (plus bas)
-    if (v && !v.classList.contains('rc-calc') && O.choisie(r) && !(v.dataset.f === 'calibre' && Date.now() - (GAMME.ferme || 0) < 350)) { editer(v); return; }
+    if (v && !v.classList.contains('rc-calc') && !v.classList.contains('rc-lu') && O.choisie(r) && !(v.dataset.f === 'calibre' && Date.now() - (GAMME.ferme || 0) < 350)) { editer(v); return; }
     if (O.choisir) O.choisir(r);
     if (v) { const c = caseDe(v); requestAnimationFrame(() => { const n = elementDe(c); if (n && document.activeElement !== n && !b.edition) { try { n.focus({ preventScroll: true }); } catch (_) { n.focus(); } } }); } });
   /* LE DOUBLE APPUI se reconnaît ici, pas au « dblclick » : le premier clic choisit la ligne, ouvre sa fiche à droite (le
@@ -1551,7 +1598,7 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
     // une touche qu'on écrit, sur une valeur qui a le clavier : son champ s'ouvre et la reçoit (comme un tableur) — sauf les
     // touches de l'outil (v74, fusion : après Entrée, la case du dessous a le clavier, et « b » écrivait un « b » dans le
     // câble suivant au lieu de fermer le récapitulatif) : b, p, P, r, n, f, « / », « ? » gardent leur sens ; Entrée ou F2 éditent
-    if (e.key.length === 1 && e.key !== ' ' && !TOUCHES_DE_L_OUTIL.has(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && !v.classList.contains('rc-calc')) { const k = e.key;
+    if (e.key.length === 1 && e.key !== ' ' && !TOUCHES_DE_L_OUTIL.has(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && !v.classList.contains('rc-calc') && !v.classList.contains('rc-lu')) { const k = e.key;
       if (editer(v)) { e.preventDefault(); e.stopPropagation(); const ed = b.edition; if (ed && ed.inp.tagName === 'INPUT') { ed.inp.value = k; ed.inp.dispatchEvent(new Event('input')); } } return; }
     const pas = { ArrowRight: 'suivante', ArrowLeft: 'precedente', ArrowDown: 'dessous', ArrowUp: 'dessus' }[e.key]; if (!pas || e.ctrlKey || e.metaKey || e.altKey) return;
     e.preventDefault(); e.stopPropagation(); const c = caseDe(v), n = elementDe(voisine({ k: c.k, f: c.f, el: v }, pas)); if (n) { n.focus(); n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } });

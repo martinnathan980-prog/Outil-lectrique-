@@ -19,11 +19,28 @@
    `filsDepuis` liste tout ce qu'un disjoncteur nourrit, à travers les
    passages, pour que la protection juge chaque fil et pas seulement les
    fils sertis sur lui.
+   (v86, l'audit B1 : « le courant ne traverse ni un relais ni un
+   interrupteur ») LE COURANT TRAVERSE CE QUI CONDUIT. Un chemin ne s'arrête
+   plus au premier équipement : il passe par le CONTACT d'un relais ou d'un
+   contacteur (les bornes d'une même lettre, A1-A2-A3), par un INTERRUPTEUR
+   (ses bornes), et par la BORNE d'un équipement où arrivent plusieurs
+   câbles (un même potentiel) — le contact supposé FERMÉ, le pire cas, et
+   dit ; la BOBINE d'un relais (X1, X2) consomme : le chemin y finit
+   (`traverseeDe`, `natureDuBout`). Le courant d'un câble est celui de ce
+   qu'il alimente en aval ; une BRANCHE DE COMMANDE — qui ne mène qu'à des
+   bobines ou à des entrées de calculateur — n'est jamais jugée au courant
+   total du disjoncteur : son courant est inconnu tant qu'il n'est pas
+   écrit, et rien ne la fait grossir (`branchesDepuis`). Le CIRCUIT d'un
+   disjoncteur, de la source aux charges et à la masse, sens du courant
+   compris, se lit d'un appel (`circuitDuDisjoncteur` : le plan l'éclaire).
    Rien ici ne touche à la page : le moteur, comme 09.
    =========================================================================== */
 'use strict';
 
-const PROFONDEUR_CHUTE = 12;
+/* La profondeur d'un chemin (en segments : un câble, un passage) et le nombre de chemins d'un disjoncteur : au-delà, le chemin
+   est rendu tel quel (`fini: false`). Un relais et un interrupteur traversés allongent les chemins (v86) : 16 segments, c'est
+   huit câbles bout à bout. */
+const PROFONDEUR_CHUTE = 16, MAX_CHEMINS = 4000;
 /* Un bout « de passage » : une prise de coupure, une barrette, une barrette à poser — le courant y entre et en ressort. */
 const estPassage = r => estCoupure(r) || estBarrette(r) || VT_A_POSER.test(String(r || ''));
 /* Les bornes d'un passage qui sont au même potentiel que `borne` : le même contact d'une prise ; les bornes shuntées
@@ -39,28 +56,82 @@ function memePotentiel(liaisons, repere, borne) { if (VT_A_POSER.test(repere)) r
    rien dire, et le câble de la batterie n'est pas protégé par ce disjoncteur (il est en amont). */
 const CODES_SOURCE = new Set(['BT', 'GN', 'TR']);
 const estSource = r => { const q = lireRepere(r); return !!(q && CODES_SOURCE.has(q.code)); };
+/* (v86) CE QUI CONDUIT dans un équipement, le contact supposé FERMÉ — le pire cas : tout ce qu'il peut alimenter l'est, et
+   la fiche le dit (« à travers 103RL1, contact supposé fermé ») :
+     · un RELAIS (RL) ou un CONTACTEUR (CT) : ses contacts de puissance s'écrivent par pôle, une lettre et un chiffre — A1,
+       A2, A3 sont le pôle A (le commun et ses deux positions), B1, B2, B3 le pôle B — : les bornes d'un même pôle sont
+       reliées. Sa BOBINE (X1, X2) ne conduit pas : elle consomme, le chemin y finit (`natureDuBout`). Un relais dont les
+       bornes ne disent pas leur rôle (1, 2, 3, 4) ne se traverse pas : VOLTA ne devine pas laquelle est sa bobine ;
+     · un INTERRUPTEUR (SW), un BOUTON-POUSSOIR (PB), un PRESSOSTAT (PR) : ses bornes conduisent entre elles — toutes, ou
+       celles d'un même pôle quand elles s'écrivent par lettre (A1, A2 · B1, B2) : un interrupteur à quatre bornes 1, 2, 3, 4
+       les relie toutes (ses pôles ne se lisent pas dans le fichier).
+   `bornes` : les bornes de l'équipement que le fichier câble, sur tous les folios. Rend { quoi: 'relais' | 'contacteur' |
+   'interrupteur', pole, bornes: [les autres bornes reliées à `borne`] } ou null (rien n'y conduit : une charge). */
+const CODES_RELAIS = new Set(['RL', 'CT']), CODES_INTERRUPTEURS = new Set(['SW', 'PB', 'PR']), BORNE_DE_POLE = /^([A-Z])(\d{1,2})$/i;
+const poleDeBorne = b => { const m = BORNE_DE_POLE.exec(String(b == null ? '' : b).trim()); return m ? m[1].toUpperCase() : ''; };
+function traverseeDe(repere, borne, bornes) { const q = lireRepere(repere), b = String(borne == null ? '' : borne).trim(); if (!q || !q.num || !b) return null;
+  const autres = [...new Set((bornes || []).map(x => String(x == null ? '' : x).trim()))].filter(x => x && x !== b), p = poleDeBorne(b);
+  if (CODES_RELAIS.has(q.code)) return p && p !== 'X' ? { quoi: q.code === 'CT' ? 'contacteur' : 'relais', pole: p, bornes: autres.filter(x => poleDeBorne(x) === p) } : null;
+  if (CODES_INTERRUPTEURS.has(q.code)) return { quoi: 'interrupteur', pole: p, bornes: p ? autres.filter(x => poleDeBorne(x) === p) : autres };
+  return null; }
+/* (v86) CE QUE TIRE LE BOUT D'UN CHEMIN. Deux ENTRÉES DE COMMANDE : la BOBINE d'un relais ou d'un contacteur (RL, CT, à sa borne
+   X1, X2) — elle tire ce que dit « Ce qu'il consomme » du relais —, et l'ENTRÉE d'un calculateur ou du connecteur d'un
+   équipement (CP, XC) — quelques milliampères : la consommation d'un calculateur se tire sur ses broches d'alimentation, elle
+   ne se compte pas sur une entrée. Le reste est une CHARGE (une lampe, une pompe, une vanne, un disjoncteur en aval…). Rend
+   'bobine', 'entree' ou 'charge'. */
+const CODES_ENTREES = new Set(['CP', 'XC']);
+function natureDuBout(repere, borne) { const q = lireRepere(repere); if (!q || !q.num) return 'charge';
+  if (CODES_RELAIS.has(q.code) && poleDeBorne(borne) === 'X') return 'bobine';
+  return CODES_ENTREES.has(q.code) ? 'entree' : 'charge'; }
 /* LES CHEMINS depuis un repère (un disjoncteur) : pour chaque fil qui en part, la suite des segments jusqu'à un
    équipement — [{ fil: liaison, de, vers }, { passage: repère, borne }, …]. Une barrette qui dessert plusieurs fils
    donne plusieurs chemins. Un chemin qui tourne en rond ou n'aboutit pas est rendu tel quel (`fini: false`). Chaque
    chemin dit sa borne de départ (`depart`) et s'il est en AMONT (`amont`) : il finit sur une source, ou il part de la
    même borne qu'un chemin qui y finit (la borne de ligne du disjoncteur) quand une autre borne alimente des charges.
-   La chute en ligne et les câbles que le disjoncteur alimente (`chutesDepuis`, `filsDepuis`) laissent l'amont de côté. */
+   La chute en ligne et les câbles que le disjoncteur alimente (`chutesDepuis`, `filsDepuis`) laissent l'amont de côté.
+   (v86) À TRAVERS LES ÉQUIPEMENTS : arrivé sur un équipement, le chemin passe le contact d'un relais, un interrupteur
+   (`traverseeDe`) — un segment { passage, borne, borneSortie, traverse: 'relais' | 'contacteur' | 'interrupteur' } — et
+   repart par les autres câbles de la même borne (`traverse` 'jonction' : un même potentiel ; l'équipement reste un bout du
+   chemin, il consomme). Jamais vers une masse : un contact supposé fermé ne fait pas un court-circuit. Un chemin qui revient
+   sur le disjoncteur d'où il part est une boucle : il ne compte pas. */
 function cheminsDepuis(liaisons, repere) { const out = cheminsBruts(liaisons, repere);
   out.forEach(c => { const s0 = c.segments.find(s => s.fil); c.depart = s0 && s0.de[1] != null ? String(s0.de[1]) : ''; c.amont = estSource(c.bout[0]); });
   const lignes = new Set(out.filter(c => c.amont && c.depart).map(c => c.depart));
   if (lignes.size && out.some(c => !lignes.has(c.depart))) out.forEach(c => { if (lignes.has(c.depart)) c.amont = true; });
   return out; }
-function cheminsBruts(liaisons, repere) { const L = liaisons.filter(l => l.de && l.vers && l.de !== l.vers), out = [];
-  const bouts = l => [[l.de, l.borneDe], [l.vers, l.borneVers]];
-  const suivre = (chemin, ici, borne, vus) => { if (chemin.length > PROFONDEUR_CHUTE) { out.push({ segments: chemin, fini: false, bout: [ici, borne] }); return; }
-    if (!estPassage(ici)) { out.push({ segments: chemin, fini: true, bout: [ici, borne] }); return; }
-    // le potentiel se lit sur TOUTES les liaisons (les shunts d'une barrette vont d'elle à elle-même : L les a ôtés)
-    const pot = memePotentiel(liaisons, ici, borne), suites = L.filter(l => !vus.has(l) && bouts(l).some(([r, b]) => r === ici && (!pot || pot.has(b))));
-    if (!suites.length) { out.push({ segments: chemin, fini: false, bout: [ici, borne] }); return; }
-    suites.forEach(l => { const [a, b] = bouts(l)[0][0] === ici && (!pot || pot.has(bouts(l)[0][1])) ? bouts(l) : bouts(l).slice().reverse();
-      suivre([...chemin, { passage: ici, borne, borneSortie: a[1] }, { fil: l, de: a, vers: b }], b[0], b[1], new Set([...vus, l])); }); };
-  L.filter(l => l.de === repere || l.vers === repere).forEach(l => { const [a, b] = l.de === repere ? bouts(l) : bouts(l).slice().reverse();
-    suivre([{ fil: l, de: a, vers: b }], b[0], b[1], new Set([l])); });
+function cheminsBruts(liaisons, repere) { const out = [], tous = (liaisons || []).filter(l => l && l.de && l.vers);
+  // l'index, une passe : chaque repère et ses liaisons — les shunts d'une barrette (d'elle à elle-même) compris : ils font son
+  // potentiel (avant v86, chaque pas relisait tout le contrat)
+  const parRep = new Map(), mettre = (r, l) => { const xs = parRep.get(r); if (!xs) parRep.set(r, [l]); else if (xs[xs.length - 1] !== l) xs.push(l); };
+  tous.forEach(l => { mettre(l.de, l); mettre(l.vers, l); });
+  const du = r => parRep.get(r) || [], txt = b => String(b == null ? '' : b), bouts = l => [[l.de, l.borneDe], [l.vers, l.borneVers]];
+  // les câbles d'un repère qui partent d'une de ses bornes (`bs` : un Set, null : n'importe laquelle), et un câble orienté depuis ce bout
+  const partant = (r, bs) => du(r).filter(l => l.de !== l.vers && bouts(l).some(([x, b]) => x === r && (!bs || bs.has(txt(b)))));
+  const depuis = (l, r, bs) => { const [a, z] = bouts(l); return a[0] === r && (!bs || bs.has(txt(a[1]))) ? [a, z] : [z, a]; };
+  const bornesDu = r => [...new Set(du(r).flatMap(l => bouts(l).filter(([x]) => x === r).map(([, b]) => txt(b))))];
+  const suivre = (chemin, ici, borne, vus) => { if (out.length >= MAX_CHEMINS) return;
+    if (chemin.length > PROFONDEUR_CHUTE) { out.push({ segments: chemin, fini: false, bout: [ici, borne] }); return; }
+    if (ici === repere) return;   // revenu sur le disjoncteur d'où il part : une boucle
+    const passer = (l, bs, seg) => { const [a, z] = depuis(l, ici, bs); suivre([...chemin, { ...seg, borneSortie: a[1] }, { fil: l, de: a, vers: z }], z[0], z[1], new Set([...vus, l])); };
+    if (estPassage(ici)) { const pot = memePotentiel(du(ici), ici, borne), suites = partant(ici, pot).filter(l => !vus.has(l));
+      if (!suites.length) { out.push({ segments: chemin, fini: false, bout: [ici, borne] }); return; }
+      suites.forEach(l => passer(l, pot, { passage: ici, borne })); return; }
+    // un équipement : une masse, une source, un disjoncteur en aval, un repère qui n'en est pas un finissent le chemin
+    const q = lireRepere(ici), b0 = txt(borne).trim();
+    if (estMasse(ici) || estSource(ici) || estDisjoncteur(ici) || !q || !q.num || !b0) { out.push({ segments: chemin, fini: true, bout: [ici, borne] }); return; }
+    const t = traverseeDe(ici, b0, bornesDu(ici)), loin = (l, bs) => depuis(l, ici, bs)[1][0], ouvert = (l, bs) => !vus.has(l) && !estMasse(loin(l, bs));
+    const B0 = new Set([b0]), jonction = partant(ici, B0).filter(l => ouvert(l, B0)), BT = t ? new Set(t.bornes) : null, contact = t ? partant(ici, BT).filter(l => ouvert(l, BT) && !jonction.includes(l)) : [];
+    // une charge est un bout (même quand sa borne mène plus loin) ; ce qui conduit n'en est un que s'il ne mène nulle part
+    if (!t || (!jonction.length && !contact.length)) out.push({ segments: chemin, fini: true, bout: [ici, borne] });
+    jonction.forEach(l => passer(l, B0, { passage: ici, borne, traverse: 'jonction' }));
+    contact.forEach(l => passer(l, BT, { passage: ici, borne, traverse: t.quoi, pole: t.pole })); };
+  partant(repere, null).forEach(l => { const [a, b] = depuis(l, repere, null); suivre([{ fil: l, de: a, vers: b }], b[0], b[1], new Set([l])); });
+  return out; }
+/* (v86) LES TRAVERSÉES d'un chemin jusqu'à un câble (ou jusqu'au bout) : les relais, contacteurs et interrupteurs qu'il passe,
+   contact supposé fermé — [{ repere, quoi, de, a }] (les bornes d'entrée et de sortie). La fiche d'un câble les dit. */
+function traverseesDuChemin(chemin, jusqua) { const out = [];
+  for (const s of (chemin && chemin.segments) || []) { if (s.fil && s.fil === jusqua) break;
+    if (s.passage && s.traverse && s.traverse !== 'jonction' && !out.some(x => x.repere === s.passage && x.de === s.borne)) out.push({ repere: s.passage, quoi: s.traverse, de: String(s.borne == null ? '' : s.borne), a: String(s.borneSortie == null ? '' : s.borneSortie) }); }
   return out; }
 /* LA CHUTE d'un chemin : chaque câble (ρ × L × I, ρ à la température de son conducteur — estimée sous ce courant,
    T2 = Tu + 40 × (I / I admise)², AC 43.13-1B § 11-66 d(6) ; ou celle de l'hypothèse, 20 °C comme l'Excel, si
@@ -76,7 +147,16 @@ function cheminsBruts(liaisons, repere) { const L = liaisons.filter(l => l.de &&
    l'appelant les connaît (le calibre retenu), sinon ceux de son part number. `courants` (v84) : Map(câble → A), le
    courant de chaque câble quand il n'est pas le total (une branche dont la consommation est écrite : `branchesDepuis`) ;
    un passage porte le courant du câble qui y arrive, le disjoncteur le total. Rend { segments: [{…, dU, T, courant,
-   porte}], disjoncteur: { nom, famille, calibre, chuteIn, R, dU } | null, dU, longueur, inconnus, reel, courant }. */
+   porte}], disjoncteur: { nom, famille, calibre, chuteIn, R, dU } | null, dU, longueur, inconnus, reel, courant }.
+   (v86) UN ÉQUIPEMENT TRAVERSÉ : le contact d'un relais, d'un contacteur, la chute d'un composant traversé de l'Excel du
+   lecteur (table Chute disjoncteur, lignes RELAIS 0,2 V et CONTACTEUR 0,12 V — des « Du max » : entière dès qu'un courant
+   passe, sur l'aller seul, comme le disjoncteur : `fixe`) ; un interrupteur n'est dans aucune table : sa chute n'est pas
+   comptée, et le chemin le dit (`inconnus`) ; une borne commune à deux câbles (une jonction) ne chute pas. */
+// la chute d'un composant traversé (l'Excel du lecteur) : 'relais' → la ligne RELAIS, 'contacteur' → CONTACTEUR ; null sinon
+function chuteDuComposant(norme, quoi) { const k = quoi === 'relais' ? 'RELAIS' : quoi === 'contacteur' ? 'CONTACTEUR' : ''; if (!k) return null;
+  const r = (normeDesModules(norme).chutesDisjoncteurs || []).find(x => x.famille === k && !(x.calibres || []).length && x.chuteMax != null);
+  return r ? { chute: r.chuteMax, nom: r.nom, note: r.note } : null; }
+const MOTS_TRAVERSEE = { relais: 'relais', contacteur: 'contacteur', interrupteur: 'interrupteur', jonction: 'borne commune' };
 function chuteDuChemin(norme, chemin, courant, hyp, disjoncteur, courants) { const H = { ...HYPOTHESES, ...(hyp || {}) }, segs = [], inconnus = []; let dU = 0, longueur = 0, filPrecedent = null, reel = true;
   const regime = REGIMES[H.regime] ? H.regime : 'continu', cosphi = regime === 'continu' ? 1 : Math.min(1, Math.max(0, +H.cosphi || 0.8)), sinphi = Math.sqrt(Math.max(0, 1 - cosphi * cosphi));
   const kReg = regime === 'tri' ? Math.sqrt(3) : 1, kR = kRetour(H, regime), xParM = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * facteurFrequence(H);
@@ -85,6 +165,9 @@ function chuteDuChemin(norme, chemin, courant, hyp, disjoncteur, courants) { con
       const r = rd.rho != null ? rd.rho / 1000 * L * kR : null, X = xParM * L * kR, d = r == null ? null : kReg * (r * cosphi + X * sinphi) * I;
       if (d == null) inconnus.push((l.type || 'câble') + ' vers ' + l.vers + ' : type ' + (l.type || 'inconnu') + ', résistance inconnue' + (rd.refuse ? ' (conducteur ' + rd.conducteur + ' : la ligne cuivre ne vaut pas)' : '')); else dU += d; longueur += L;
       segs.push({ ...s, longueur: L, reelle: l.longueur > 0, rho: rd.rho, rho20: rd.rho20, T: rd.T, tEstimee: tc.estimee, rhoSource: rd.source, conducteur: rd.conducteur, R: r, X, dU: d, courant: I, porte: l }); }
+    else if (s.traverse) { const I = courantDe(filPrecedent), comp = chuteDuComposant(norme, s.traverse), d = s.traverse === 'jonction' ? 0 : comp ? (I > 0 ? comp.chute : 0) : null;
+      if (d == null) inconnus.push(s.passage + ' (' + MOTS_TRAVERSEE[s.traverse] + ') : sa chute n’est dans aucune table, elle n’est pas comptée'); else dU += d;
+      segs.push({ ...s, R: s.traverse === 'jonction' ? 0 : null, dU: d, fixe: !!comp, composant: comp ? comp.nom : '', courant: I, porte: filPrecedent }); }
     else { const pn = pnDuPassage(norme, chemin, s.passage), coupure = estCoupure(s.passage), F = coupure ? familleDeNorme(norme, null, pn) : null, I = courantDe(filPrecedent);
       // la résistance de l'atelier par la gauge du câble qui arrive (l'Excel du lecteur) d'abord ; sinon celle de la famille de la prise, sinon celle de la taille
       const jauge = filPrecedent ? jaugeDuType(filPrecedent.type) : null, rAtelier = resistanceAtelier(norme, jauge), taille = tailleDeJauge(norme, F ? F.famille : '', jauge), rTaille = resistanceDeContact(norme, taille);
@@ -134,20 +217,43 @@ const INTERMITTENT_MAX = 120;
        écrite (la fiche : « courant total du disjoncteur : la consommation de ce qui est en aval n'est pas écrite »).
    Les consommations viennent de la page (`consommationDuRepere`, 08-fiche) ; le moteur seul (un Worker, une batterie)
    n'en a pas — `conso` les donne alors : repère → profil { perm: { i }, dem: { i, t }, … } ou null. Les chemins en amont
-   ne comptent pas. Rend Map(câble → { tout, ecrite, bouts, manque, profil, points, perm, pointe }). */
+   ne comptent pas. Rend Map(câble → { tout, ecrite, commande, inconnu, bouts, manque, sans, profil, points, perm, pointe }).
+   (v86, l'audit B1 : « un DR16 proposé sur le fil d'un interrupteur de commande ») LA BRANCHE DE COMMANDE. Chaque bout dit
+   ce qu'il est (`natureDuBout`) : une BOBINE de relais ou une ENTRÉE de calculateur — une entrée de commande — ou une
+   CHARGE. Une bobine compte la consommation écrite de son relais ; une entrée ne compte jamais celle de son calculateur
+   (elle se tire sur ses broches d'alimentation). Alors :
+     · une CHARGE sans consommation écrite : la règle prudente, le courant total du disjoncteur (`manque` : ce qui reste à
+       écrire, ses charges et ses bobines) — une branche de puissance ;
+     · sinon, des entrées de commande sans consommation (`sans` : [{ repere, nature }]) et rien d'écrit : son courant est
+       INCONNU (`inconnu`) — jamais le total : rien ne le juge sur ce qu'il porte, rien ne le grossit, la fiche demande la
+       consommation de la bobine ;
+     · sinon, la somme de ce qui est écrit (`ecrite`), sans ces entrées de commande que `sans` nomme.
+   `commande` : tout ce que la branche alimente est une entrée de commande (une bobine, une entrée de calculateur) — même
+   quand son courant est écrit, un câble de commande ne grossit pas pour le disjoncteur (09 bis, `meilleurDe` ; 08-fiche,
+   `plusFinQuiTient`) : sa surcharge ne se peut pas, une bobine ne tire pas plus que sa bobine. */
 const consommationEcrite = r => { try { return typeof consommationDuRepere === 'function' ? consommationDuRepere(r) : null; } catch (_) { return null; } };
 function profilDesBouts(profils) { let perm = 0, pic = 0, t = 0, pointe = false;
   profils.forEach(c => { const pts = pointsDuProfil(c), p = pts.find(x => x.t === Infinity), courts = pts.filter(x => x.t !== Infinity), ip = p ? p.i : 0;
     perm += ip; pic += courts.length ? courts[0].i : ip; if (courts.length) { pointe = true; t = Math.max(t, ...courts.map(x => x.t)); } });
   const out = {}; if (perm > 0) out.perm = { i: perm }; if (pointe && pic > perm) out.dem = { i: pic, t }; return out; }
+const NATURES_DE_COMMANDE = new Set(['bobine', 'entree']);
 function branchesDepuis(liaisons, repere, conso) { const lire = typeof conso === 'function' ? conso : consommationEcrite, chs = cheminsDepuis(liaisons, repere).filter(ch => !ch.amont);
   const tous = [...new Set(chs.map(ch => ch.bout[0]).filter(Boolean))], parFil = new Map(), out = new Map(), profils = new Map();
-  chs.forEach(ch => ch.segments.forEach(s => { if (s.fil) (parFil.get(s.fil) || parFil.set(s.fil, new Set()).get(s.fil)).add(ch.bout[0]); }));
+  // chaque câble : les bouts qu'il alimente, et ce qu'est chacun à son arrivée (une bobine, une entrée, une charge)
+  chs.forEach(ch => { const r = ch.bout[0], n = r ? natureDuBout(r, ch.bout[1]) : '';
+    ch.segments.forEach(s => { if (!s.fil) return; const M = parFil.get(s.fil) || parFil.set(s.fil, new Map()).get(s.fil); if (r) (M.get(r) || M.set(r, new Set()).get(r)).add(n); }); });
   const profilDe = r => { if (!profils.has(r)) { const c = r ? lire(r) : null; profils.set(r, c && pointsDuProfil(c).length ? c : null); } return profils.get(r); };
-  parFil.forEach((B, l) => { const bouts = [...B].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), 'fr', { numeric: true })), tout = tous.every(r => B.has(r)), manque = tout ? [] : bouts.filter(r => !profilDe(r));
-    if (tout || manque.length || !bouts.length) { out.set(l, { tout, ecrite: false, bouts, manque, profil: null, points: null, perm: null, pointe: null }); return; }
-    const profil = profilDesBouts(bouts.map(profilDe)), points = pointsDuProfil(profil), p = points.find(x => x.t === Infinity);
-    out.set(l, { tout: false, ecrite: true, bouts, manque: [], profil, points, perm: p ? p.i : 0, pointe: points.length ? points[0].i : 0 }); });
+  parFil.forEach((M, l) => { const bouts = [...M.keys()].sort((a, b) => String(a).localeCompare(String(b), 'fr', { numeric: true })), tout = tous.every(r => M.has(r));
+    const deCommande = r => [...M.get(r)].every(n => NATURES_DE_COMMANDE.has(n)), entree = r => [...M.get(r)].every(n => n === 'entree');
+    const commande = bouts.length > 0 && bouts.every(deCommande), base = { tout, ecrite: false, commande, inconnu: false, bouts, manque: [], sans: [], profil: null, points: null, perm: null, pointe: null };
+    if (tout || !bouts.length) { out.set(l, base); return; }
+    // ce qui se compte : la consommation écrite d'une charge, d'une bobine (celle de son relais) — jamais celle d'un calculateur sur une entrée
+    const compte = r => entree(r) ? null : profilDe(r), manque = bouts.filter(r => !compte(r)), charges = manque.filter(r => !deCommande(r));
+    const sans = manque.filter(deCommande).map(r => ({ repere: r, nature: entree(r) ? 'entree' : 'bobine' })), ecrits = bouts.filter(r => compte(r));
+    if (charges.length) { out.set(l, { ...base, manque: manque.filter(r => !entree(r)), sans }); return; }   // la règle prudente
+    if (!ecrits.length) { out.set(l, { ...base, inconnu: true, manque: manque.filter(r => !entree(r)), sans }); return; }   // de la commande, rien d'écrit
+    const profil = profilDesBouts(ecrits.map(profilDe)), points = pointsDuProfil(profil), p = points.find(x => x.t === Infinity);
+    out.set(l, { ...base, ecrite: true, sans, profil, points, perm: p ? p.i : 0, pointe: points.length ? points[0].i : 0 }); });
   return out; }
 /* Toutes les chutes depuis un repère, prêtes à lire : la destination, le chemin en mots, le total — au courant
    permanent `courant`, comparé à la chute admise (`chuteAdmise` : la règle du lecteur, sinon la table Réseau) ; et, si
@@ -164,18 +270,21 @@ function branchesDepuis(liaisons, repere, conso) { const lire = typeof conso ===
    `disjoncteur` : { famille, calibre } du repère quand l'appelant les connaît (sa chute propre, `chuteDuChemin`). Les
    chemins en amont (vers la source : `cheminsDepuis`) ne sont pas des chutes en ligne. (v84) LES BRANCHES : un câble
    dont la consommation en aval est écrite (`branchesDepuis` ; `conso` pour le moteur seul) porte la sienne — son
-   permanent au permanent, sa pointe à chaque pointe —, les autres le courant du disjoncteur ; le disjoncteur, le total. */
+   permanent au permanent, sa pointe à chaque pointe —, les autres le courant du disjoncteur ; le disjoncteur, le total.
+   (v86) Un chemin qui passe par un câble au courant INCONNU (une branche de commande dont rien n'est écrit : `branchesDepuis`)
+   n'a pas de chute en ligne : elle dépend de ce courant — la fiche du câble le dit, rien ne la juge. Un composant traversé
+   (un relais : sa chute « Du max ») garde sa chute à chaque pointe. */
 function chutesDepuis(norme, liaisons, repere, courant, hyp, pointes, disjoncteur, conso) { const H = { ...HYPOTHESES, ...(hyp || {}) }, regime = REGIMES[H.regime] ? H.regime : 'continu', chute = chuteAdmise(norme, H.tension, regime, H);
   const admis = chute && chute.chuteMax != null ? chute.chuteMax : null, inter = chute ? (chute.chuteInter != null ? chute.chuteInter : chute.chuteMax) : null;
   const P = (pointes || []).filter(p => p && p.i > 0 && p.t > 0 && isFinite(p.t));
-  const Iperm = new Map(), Ipointe = new Map(); branchesDepuis(liaisons, repere, conso).forEach((b, l) => { if (b.ecrite) { Iperm.set(l, b.perm); Ipointe.set(l, b.pointe); } });
-  return cheminsDepuis(liaisons, repere).filter(ch => !ch.amont).map(ch => { const c = chuteDuChemin(norme, ch, courant, H, disjoncteur, Iperm), pct = H.tension ? c.dU / H.tension * 100 : null;
+  const Iperm = new Map(), Ipointe = new Map(), inconnus = new Set(); branchesDepuis(liaisons, repere, conso).forEach((b, l) => { if (b.ecrite) { Iperm.set(l, b.perm); Ipointe.set(l, b.pointe); } else if (b.inconnu) inconnus.add(l); });
+  return cheminsDepuis(liaisons, repere).filter(ch => !ch.amont && !ch.segments.some(s => s.fil && inconnus.has(s.fil))).map(ch => { const c = chuteDuChemin(norme, ch, courant, H, disjoncteur, Iperm), pct = H.tension ? c.dU / H.tension * 100 : null;
     const dCb = c.disjoncteur && c.disjoncteur.dU != null ? c.disjoncteur.dU : 0, fixe = !!(c.disjoncteur && c.disjoncteur.fixe);
     // à une pointe : chaque câble au courant de sa pointe (celle de sa branche, sinon celle du disjoncteur) ; sous une minute, à la température du permanent (chaque segment monte avec son courant)
     const ps = P.map(p => { const enPointe = l => l && Ipointe.has(l) ? Ipointe.get(l) : p.i;
       const chauffe = !(courant > 0) || palierDe(p.t) === Infinity || c.segments.some(s => !(s.courant > 0) && enPointe(s.porte) > 0);
       const dU = chauffe ? chuteDuChemin(norme, ch, p.i, H, disjoncteur, Ipointe).dU
-        : c.segments.reduce((u, s) => u + (s.dU != null && s.courant > 0 ? s.dU * enPointe(s.porte) / s.courant : 0), 0) + (fixe ? dCb : dCb * p.i / courant), intermittent = p.t <= INTERMITTENT_MAX, a = intermittent ? inter : admis;
+        : c.segments.reduce((u, s) => u + (s.dU != null && s.courant > 0 ? (s.fixe ? s.dU : s.dU * enPointe(s.porte) / s.courant) : 0), 0) + (fixe ? dCb : dCb * p.i / courant), intermittent = p.t <= INTERMITTENT_MAX, a = intermittent ? inter : admis;
       return { i: p.i, t: p.t, nom: p.nom || '', dU, admis: a, intermittent, chauffe, trop: !!(a != null && dU > a + 1e-9) }; });
     return { ...c, pct, admis, trop: !!(admis != null && c.dU > admis + 1e-9), tension: chute ? chute.tension : H.tension, regle: chute ? chute.regle : '', pointes: ps, tropPointe: ps.some(p => p.trop),
              mots: c.segments.map(s => s.fil ? (s.fil.type || 'câble') : '⇄ ' + s.passage).join(' → ') + ' → ' + c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : '') }; }); }
@@ -185,11 +294,50 @@ function chutesDepuis(norme, liaisons, repere, courant, hyp, pointes, disjoncteu
    pas seulement ce qui est serti sur lui — et pas ce qui le nourrit (le côté source : `cheminsDepuis`, `amont`).
    (v84) Chacun dit sa BRANCHE (`branchesDepuis`) et, quand la consommation de ce qu'il alimente est écrite, les
    `points` de son profil à lui — la protection les prend à la place de ceux du disjoncteur (09 bis, `protegerFil`).
-   Rend [{ cable, type, borne, autre, l, direct, via, branche, points }]. */
+   (v86) `commande` : il ne mène qu'à des entrées de commande (des bobines, des entrées de calculateur) ; `inconnu` : son
+   courant n'est pas connu (rien d'écrit) — la protection ne juge alors pas ce qu'il porte (jamais le courant total).
+   Rend [{ cable, type, borne, autre, l, direct, via, branche, points, commande, inconnu }]. */
 function filsDepuis(liaisons, repere, conso) { const vus = new Map(), B = branchesDepuis(liaisons, repere, conso);
   cheminsDepuis(liaisons, repere).filter(ch => !ch.amont).forEach(ch => { let via = ''; ch.segments.forEach(s => { if (s.passage) { via = s.passage; return; } const l = s.fil; if (vus.has(l)) return; const b = B.get(l) || null;
-    vus.set(l, { cable: l.cable, type: l.type, borne: s.de[1], autre: s.vers[0] + (s.vers[1] ? ':' + s.vers[1] : ''), l, direct: s.de[0] === repere, via, branche: b, points: b && b.ecrite ? b.points : null }); }); });
+    vus.set(l, { cable: l.cable, type: l.type, borne: s.de[1], autre: s.vers[0] + (s.vers[1] ? ':' + s.vers[1] : ''), l, direct: s.de[0] === repere, via, branche: b, points: b && b.ecrite ? b.points : null, commande: !!(b && b.commande), inconnu: !!(b && b.inconnu) }); }); });
   return [...vus.values()]; }
+/* (v86, l'audit M3 : « voir le circuit d'un disjoncteur ») LE CIRCUIT D'UN DISJONCTEUR, tel que le plan l'éclaire : ce que le
+   courant parcourt, et dans quel sens —
+     · LA SOURCE : les câbles du côté ligne (`amont`), de la batterie, de la génératrice, du TR jusqu'à lui, et le retour de
+       la source à la masse (le courant revient par là) ;
+     · L'ALLER : chaque câble de chaque chemin jusqu'aux charges, à travers les prises, les barrettes, les contacts supposés
+       fermés (`cheminsDepuis`) ;
+     · LE RETOUR : de chaque charge (une lampe, la bobine d'un relais, un calculateur) à la masse, par ses autres bornes — à
+       travers une prise, une barrette, un interrupteur (une commande côté masse) s'il le faut.
+   Chaque câble dit son SENS (`sens` : 'de' quand le courant y entre par son bout `de`, 'vers' sinon), son rôle, et les
+   chemins où il est (`chemins` : leurs rangs ; un câble de la source est de tous). Rend { repere, cables: Map(liaison → {
+   sens, role: 'source' | 'aller' | 'retour', chemins }), reperes: [les repères parcourus], charges: [{ repere, borne,
+   nature, chemins }], traverses: [{ repere, quoi }], n: le nombre de chemins }. */
+function circuitDuDisjoncteur(liaisons, repere) { const tous = (liaisons || []).filter(l => l && l.de && l.vers), chs = cheminsDepuis(tous, repere);
+  const parRep = new Map(); tous.forEach(l => [l.de, l.vers].forEach(r => { const xs = parRep.get(r); if (!xs) parRep.set(r, [l]); else if (xs[xs.length - 1] !== l) xs.push(l); }));
+  const du = r => parRep.get(r) || [], txt = b => String(b == null ? '' : b), bornesDu = r => [...new Set(du(r).flatMap(l => [[l.de, l.borneDe], [l.vers, l.borneVers]].filter(([x]) => x === r).map(([, b]) => txt(b))))];
+  const cables = new Map(), reperes = new Set([repere]), charges = new Map(), traverses = new Map(), entre = (l, r, b) => l.de === r && txt(l.borneDe) === txt(b) ? 'de' : 'vers';
+  const poser = (l, sens, role, i) => { let x = cables.get(l); if (!x) cables.set(l, x = { sens, role, chemins: [] }); if (i != null && !x.chemins.includes(i)) x.chemins.push(i); };
+  /* LE RETOUR d'un repère vers la masse, par ses bornes `bs` : [[câble, sens depuis le repère]] de chaque suite qui y arrive */
+  const versLaMasse = (r0, bs0) => { const res = [];
+    const aller = (ici, bs, pile, vus, n) => { if (n > 6) return;
+      du(ici).forEach(l => { if (l.de === l.vers || vus.has(l)) return; const a = [[l.de, l.borneDe], [l.vers, l.borneVers]].find(([x, b]) => x === ici && (!bs || bs.has(txt(b)))); if (!a) return;
+        const z = a[0] === l.de && a[1] === l.borneDe ? [l.vers, l.borneVers] : [l.de, l.borneDe], p = [...pile, [l, entre(l, a[0], a[1])]], v = new Set([...vus, l]);
+        if (estMasse(z[0])) { res.push({ cables: p, masse: z[0] }); return; }
+        if (estPassage(z[0])) { aller(z[0], memePotentiel(du(z[0]), z[0], z[1]), p, v, n + 1); return; }
+        const t = traverseeDe(z[0], txt(z[1]), bornesDu(z[0])); if (t && t.quoi === 'interrupteur') aller(z[0], new Set(t.bornes), p, v, n + 1); }); };
+    aller(r0, bs0, [], new Set(), 0); return res; };
+  chs.forEach((ch, i) => { const r = ch.bout[0];
+    ch.segments.forEach(s => { if (s.fil) { const e = entre(s.fil, s.de[0], s.de[1]); poser(s.fil, ch.amont ? (e === 'de' ? 'vers' : 'de') : e, ch.amont ? 'source' : 'aller', ch.amont ? null : i); }
+      else { reperes.add(s.passage); if (s.traverse && s.traverse !== 'jonction' && !ch.amont) traverses.set(s.passage, s.traverse); } });
+    if (r) reperes.add(r);
+    if (ch.amont && r && estSource(r)) versLaMasse(r, new Set(bornesDu(r).filter(b => b !== txt(ch.bout[1])))).forEach(x => { x.cables.forEach(([l, e]) => poser(l, e === 'de' ? 'vers' : 'de', 'source', null)); reperes.add(x.masse); });
+    if (!ch.amont && r && ch.fini && !estMasse(r) && !estDisjoncteur(r)) { const k = r + '\u0001' + txt(ch.bout[1]), c = charges.get(k) || charges.set(k, { repere: r, borne: txt(ch.bout[1]), nature: natureDuBout(r, ch.bout[1]), chemins: [] }).get(k); c.chemins.push(i); } });
+  // le retour de chaque charge, par ses autres bornes (une charge vue à deux bornes : ni l'une ni l'autre ne sont son retour) ;
+  // une entrée de calculateur n'en a pas qui se dessine : ses quelques milliampères reviennent par le calculateur
+  const arrivees = new Map(); charges.forEach(c => (arrivees.get(c.repere) || arrivees.set(c.repere, new Set()).get(c.repere)).add(c.borne));
+  charges.forEach(c => c.nature !== 'entree' && versLaMasse(c.repere, new Set(bornesDu(c.repere).filter(b => !arrivees.get(c.repere).has(b)))).forEach(x => { x.cables.forEach(([l, e]) => { if (!cables.has(l) || cables.get(l).role === 'retour') c.chemins.forEach(i => poser(l, e, 'retour', i)); }); reperes.add(x.masse); }));
+  return { repere, cables, reperes: [...reperes], charges: [...charges.values()], traverses: [...traverses].map(([r, quoi]) => ({ repere: r, quoi })), n: chs.length }; }
 
 /* ---- CE QU'UN CÂBLE ADMET : la table, le déclassement, en un seul endroit ---------------------------------------------
    L'intensité de l'EN 2853 (un câble seul à l'air libre, ambiante 95 °C, conducteur à 135 °C), déclassée :

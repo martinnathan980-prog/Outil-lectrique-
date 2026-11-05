@@ -159,18 +159,22 @@ function paquetsDeBarrette(bornes, ponts) {
 /* La barrette telle qu'elle est physiquement : tous les modules de la
    référence retenue (ou au moins ceux qu'on utilise), chacun avec ses fils
    de tous les folios, son paquet, et s'il est libre. Ce que la fiche
-   visuelle dessine. */
+   visuelle dessine. (v86) Une réglette dont les bornes sont des lettres (une prise de coupure : A, B, C… comme sa face)
+   range chacune à son rang dans l'ordre des lettres des normes de connecteurs (`LETTRES_DE_FACE`). */
+const LETTRES_DE_FACE = 'ABCDEFGHJKLMNPRSTUVWXYZabcdefghijkmnpqrstuvwxyz';   // ni I, ni O, ni Q ; puis les minuscules, ni l ni o
+const rangDeLettre = l => { const k = LETTRES_DE_FACE.indexOf(String(l == null ? '' : l)); return String(l).length === 1 && k >= 0 ? k + 1 : 0; };
 function physiqueDeBarrette(repere, liaisons, bible, retenue) {
   const I = (estCoupure(repere) ? coupureInfos : barretteInfos)(repere, liaisons, bible);
   const ref = retenue || I.reference, entree = (bible || []).find(e => e.reference === ref) || I.choix || null;
-  const n = Math.max(entree && entree.bornes || 0, I.borneMax || 0, I.nBornes);
+  const lettree = I.bornes.length > 0 && I.bornes.every(b => rangDeLettre(b) > 0);
+  const n = Math.max(entree && entree.bornes || 0, lettree ? Math.max(...I.bornes.map(rangDeLettre)) : Math.max(I.borneMax || 0, I.nBornes));
   const paquets = paquetsDeBarrette(I.bornes, I.ponts);
   const paquetDe = new Map(); paquets.forEach((p, k) => p.bornes.forEach(b => paquetDe.set(b, k)));
   const utilisees = new Set(I.bornes.map(String));
   const modules = [];
-  for (let k = 1; k <= n; k++) { const b = String(k);
+  for (let k = 1; k <= n; k++) { const b = lettree && k <= LETTRES_DE_FACE.length ? LETTRES_DE_FACE[k - 1] : String(k);
     modules.push({ borne: b, utilisee: utilisees.has(b), paquet: paquetDe.has(b) ? paquetDe.get(b) : null, fils: I.parBorne.get(b) || [] }); }
-  I.bornes.filter(b => !/^\d+$/.test(String(b))).sort(triBornes).forEach(b => modules.push({ borne: b, utilisee: true, paquet: paquetDe.get(b) ?? null, fils: I.parBorne.get(b) || [] }));
+  if (!lettree) I.bornes.filter(b => !/^\d+$/.test(String(b))).sort(triBornes).forEach(b => modules.push({ borne: b, utilisee: true, paquet: paquetDe.get(b) ?? null, fils: I.parBorne.get(b) || [] }));
   return { repere, reference: ref, entree, modules, paquets, libres: modules.filter(m => !m.utilisee).length, nature: estCoupure(repere) ? 'prise de coupure' : (I.blindes ? 'barrette de blindage' : 'barrette') };
 }
 /* La même physique pour une référence de la bible, sans contrat : tous ses
@@ -2086,8 +2090,9 @@ function lettresDeBarretteAPoser(nom, L, norme) { const N = normeDesModules(norm
    que sa taille admette la jauge du fil. Le remplissage choisit
    l'arrangement : celui que le part number nomme, sinon le plus petit qui
    loge toutes les bornes, l'arrangement de base avant ses variantes. */
-// le numéro de contact d'une borne : « A11 » (connecteur A) → « 11 », « 7 » → « 7 »
-const numeroDeBorne = b => { const t = String(b == null ? '' : b).trim(), m = LETTRE_CONNECTEUR.exec(t); return (m ? m[2] : t).toUpperCase(); };
+// le numéro de contact d'une borne : « A11 » (connecteur A) → « 11 », « 7 » → « 7 » ; (v86, l'audit G10) une lettre seule garde
+// sa casse : « a » n'est pas « A » (une grande face porte les deux : A…Z, puis a…z)
+const numeroDeBorne = b => { const t = String(b == null ? '' : b).trim(), m = LETTRE_CONNECTEUR.exec(t); return m ? m[2].toUpperCase() : /^[A-Za-z]{1,2}$/.test(t) ? t : t.toUpperCase(); };
 /* Le module qu'un part number de connecteur nomme : une désignation de la norme, ou son arrangement écrit dedans
    (« EN4165-002-08W16 », « …12-20… ») ; le plus long qui s'y lit. */
 function moduleDeConnecteur(norme, pn) { const m = moduleDeReference(norme, pn); if (m && m.emploi === 'connecteur') return m;
@@ -2097,8 +2102,14 @@ function moduleDeConnecteur(norme, pn) { const m = moduleDeReference(norme, pn);
 const pointsDe = (besoins, bornes) => bornes.slice().sort(triBornes).map(b => ({ borne: b, num: numeroDeBorne(b), fils: (besoins.parBorne.get(b) || []).map(f => ({ ...f, jauge: jaugeDuType(f.type) })) }));
 /* Les points dans un module : chaque borne sur son contact ; rend ce qui se pose et ce qui ne se pose pas. */
 function poserPoints(norme, mod, points, sexeFil) { const pl = [], manque = [], refus = []; sexeFil = sexeFil || (() => '');
-  // des contacts lettrés (EN 3646) et une borne numérotée : la borne n prend la lettre de rang n, dans l'ordre de la norme
-  const lettres = !mod.contacts.some(x => /^\d+$/.test(x.lettre)), contactDe = num => mod.contacts.find(x => x.lettre === num) || (lettres && /^\d+$/.test(num) ? mod.contacts[+num - 1] || null : null);
+  // des contacts lettrés (EN 3646) et une borne numérotée : la borne n prend la lettre de rang n, dans l'ordre de la norme ;
+  // (v86) l'inverse — des contacts numérotés (EN 4165, EN 2997) et une borne lettrée (une prise écrite comme sa face) : la
+  // lettre de rang n (A, B… sans I, O ni Q) prend le contact n ; une lettre écrite dans l'autre casse ne vaut que si la face
+  // n'a pas les deux (une face A…H : « c » est C ; sur une face A…Z, a…z, « c » reste c)
+  const lettres = !mod.contacts.some(x => /^\d+$/.test(x.lettre)), numeros = !lettres && mod.contacts.every(x => /^\d+$/.test(x.lettre));
+  const sansCasse = num => { const u = String(num).toUpperCase(), xs = mod.contacts.filter(x => String(x.lettre).toUpperCase() === u); return xs.length === 1 ? xs[0] : null; };
+  const contactDe = num => mod.contacts.find(x => x.lettre === num) || (lettres && /^\d+$/.test(num) ? mod.contacts[+num - 1] || null : null)
+    || (numeros && rangDeLettre(num) ? mod.contacts.find(x => +x.lettre === rangDeLettre(num)) || null : null) || (/^[A-Za-z]{1,2}$/.test(num) ? sansCasse(num) : null);
   points.forEach(p => { const c = contactDe(p.num); if (!c) { manque.push(p); return; }
     const ko = p.fils.filter(f => !contactAccepte(norme, mod.famille, c.taille, f.jauge, sexeFil(f), f.type)); if (ko.length) refus.push({ p, c, ko });
     pl.push({ p, c, ok: !ko.length }); });
@@ -2136,7 +2147,9 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
     fils.forEach(x => { const j = x.joint; if (!j || !j.verdict || j.verdict === 'dans' || (j.verdict === 'sous' && j.manchon)) return; const J = j.joint, plage = (J.dmin != null ? nombreFr(J.dmin) : '?') + '–' + (J.dmax != null ? nombreFr(J.dmax) : '?') + ' mm';
       verdicts.push({ niveau: 'attention', texte: `borne ${x.potentiel.bornes[0]} : ${cableDit(x.f)} (Ø ${nombreFr(j.d)} mm) ${j.verdict === 'dessus' ? 'plus gros que le joint arrière du contact ' + x.contact.lettre + ' n’admet (' + plage + ') : il n’entre pas' : 'sous la plage du joint arrière du contact ' + x.contact.lettre + ' (' + plage + ') et sans manchon d’étanchéité : l’eau passe'}${J.confiance && J.confiance !== 'vérifié' ? ' (plage ' + J.confiance + ')' : ''}`, bornes: x.potentiel.bornes }); });
     mieux.r.manque.forEach(p => verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : l'arrangement ${m.variante} n'a pas de contact ${p.num}`, bornes: [p.borne] }));
-    if (mieux.r.pl.some(x => x.c.lettre !== x.p.num)) verdicts.push({ niveau: 'info', texte: `contacts lettrés : chaque borne numérotée prend la lettre de même rang (${mieux.r.pl.slice(0, 4).map(x => x.p.num + ' → ' + x.c.lettre).join(', ')}${mieux.r.pl.length > 4 ? '…' : ''})`, bornes: [] });
+    // une borne qui n'a pas le nom de son contact (seule la casse ne compte pas) : le rapprochement se dit, dans le bon sens
+    const ecarts = mieux.r.pl.filter(x => String(x.c.lettre).toUpperCase() !== String(x.p.num).toUpperCase()), versNumeros = ecarts.some(x => /^\d+$/.test(x.c.lettre));
+    if (ecarts.length) verdicts.push({ niveau: 'info', texte: `${versNumeros ? 'contacts numérotés : chaque borne lettrée prend le contact de même rang' : 'contacts lettrés : chaque borne numérotée prend la lettre de même rang'} (${ecarts.slice(0, 4).map(x => x.p.num + ' → ' + x.c.lettre).join(', ')}${ecarts.length > 4 ? '…' : ''})`, bornes: [] });
     mieux.r.refus.forEach(({ p, c, ko }) => { const table = contactsDeTaille(N, m.famille, c.taille).length;
       verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : ${ko.map(f => cableDit(f)).join(', ')} — ` + (table ? `aucun contact ${nomDuSexe(sexeFil(ko[0]))} de taille ${c.taille} (${nomDeFamille(N, m.famille)}) pour ce câble` : `gauge refusée par le contact ${c.lettre} (taille ${c.taille})`), bornes: [p.borne] }); });
     mieux.r.pl.forEach(({ p, c }) => { const cotes = opts.prise ? [p.fils.filter(f => f.amont), p.fils.filter(f => !f.amont)] : [p.fils];

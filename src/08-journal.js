@@ -19,11 +19,11 @@
 
 const JOURNAL = { ouvert: false, sorte: '', folio: '', cle: '', memo: null, memoCle: '' };
 const CHAMPS_DU_JOURNAL = ['type', 'longueur', 'route', 'pnDe', 'pnVers', 'contactDe', 'contactVers'];
-// les sortes : celles de Modifier (08-niveaux, `SORTES_REG` : leurs mots, leurs icônes), et le dessin
+// les sortes : celles de Modifier (08-niveaux, `SORTES_REG` : votre fichier, les choix de VOLTA), et le dessin
 const SORTES_JOURNAL = [
-  ['fichier', 'Votre fichier', 'Une valeur de votre fichier a changé : elle part dans l’Excel corrigé', '<path d="M7 3.5h6.5L18 8v12.5H7z"/><path d="M13.5 3.5V8H18M10 12.5h5M10 16h5"/>'],
-  ['choix', 'Choix de VOLTA', 'Un choix de VOLTA (module, arrangement, contact, raccord, consommation) : pris en Manuel, ou fait par VOLTA', '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>'],
-  ['dessin', 'Le dessin', 'Un bloc, une borne ou un câble déplacé à la main sur un folio', '<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="m14.5 7.5 3 3"/>']];
+  ['fichier', 'Votre fichier', 'Une valeur de votre fichier a changé : elle part dans l’Excel corrigé'],
+  ['choix', 'Choix de VOLTA', 'Un choix de VOLTA (module, arrangement, contact, raccord, consommation) : pris en Manuel, ou fait par VOLTA'],
+  ['dessin', 'Le dessin', 'Un bloc, une borne ou un câble déplacé à la main sur un folio']];
 const ICO_JOURNAL = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4.5V8h3.5"/><path d="M12 8v4.2l2.8 1.8"/></svg>';
 // une valeur qui est une phrase, pas une référence : elle ne se met pas en chasse fixe
 const PHRASE_JOURNAL = /^(celui|le sien|pas écrite|sans option|vide|≈|aucune|rien)/;
@@ -44,7 +44,8 @@ const typeDuRepere = nom => estDisjoncteur(nom) ? 'disjoncteur' : VT_A_POSER.tes
 function barrettesPosees() { const P = app.contrat && app.contrat.provisoires; if (!P || !P.size) return [];
   const V = verite(), out = [], vus = new Set();
   P.forEach((n, k) => { const i = String(k).indexOf('\u0001'); if (i < 0) return; const r = k.slice(0, i), b = k.slice(i + 1);
-    const cree = V.find(l => l.de === r && String(l.borneDe) === b && l.borneVers === '1' && !l.cable && l.vers && l.vers !== r && !VT_A_POSER.test(l.vers));
+    // (le câble à créer garde sa marque, `aCreer` : ses bornes se nomment comme la face, « 51H » ; un plan d'avant, sa borne 1)
+    const cree = V.find(l => l.de === r && String(l.borneDe) === b && (l.aCreer === true || l.borneVers === '1') && !l.cable && l.vers && l.vers !== r && !VT_A_POSER.test(l.vers));
     if (!cree || vus.has(cree.vers)) return; const nom = cree.vers;
     const shunts = V.filter(l => l.de === nom && l.vers === nom), arrivent = V.filter(l => l !== cree && l.de !== l.vers && (l.de === nom || l.vers === nom));
     if (!shunts.length || !arrivent.length) return; vus.add(nom);
@@ -59,6 +60,15 @@ function deposerBarrette(x) { const V = verite(); if (!x || !V.includes(x.cree))
   const partent = new Set([x.cree, ...x.shunts]); for (let i = V.length - 1; i >= 0; i--) if (partent.has(V[i])) V.splice(i, 1);
   if (app.cible && app.cible.type === 'bloc' && app.cible.nom === x.nom) { app.cible = null; app.choisi = null; }
   apresEdition(); return true; }
+/* UNE LIGNE EN DOUBLE RETIRÉE (08-controle, `retirerLignesEnDouble` : la ligne gardée porte le compte, `avant.copies`) : ses
+   copies reviennent juste après elle, telles que votre fichier les écrivait (les valeurs d'avant de la ligne gardée). Une
+   entrée d'historique. */
+function remettreLesCopies(l) { const V = verite(), i = V.indexOf(l), n = l && l.avant ? l.avant.copies || 0 : 0; if (i < 0 || !(n > 0)) return false;
+  histPush(n > 1 ? 'retour de ' + n + ' lignes en double' : 'retour d’une ligne en double');
+  const fichier = {}; Object.keys(l.avant).forEach(k => { if (k !== 'copies' && k.indexOf(ORIGINE_VOLTA) !== 0) fichier[k] = l.avant[k]; });
+  const copie = () => { const o = { ...l, ...fichier }; delete o.avant; Object.keys(fichier).forEach(k => { if (fichier[k] == null) delete o[k]; }); return liaison(o); };
+  const av = { ...l.avant }; delete av.copies; if (Object.keys(av).length) l.avant = av; else delete l.avant;
+  V.splice(i + 1, 0, ...Array.from({ length: n }, copie)); apresEdition(); return true; }
 /* LUI DONNER SON REPÈRE (G2 : un seul verbe, partout) : la barrette ajoutée reçoit le repère proposé — celui du
    récapitulatif et de « À reprendre » (`prochainRepereVT`, la suite de la barrette du contrat la plus proche), ou celui que
    vous écrivez — ; le message dit lequel (« VT2 devient 667VT3 ») et offre « Défaire ». Rend le repère donné, ou ''. */
@@ -98,6 +108,10 @@ function lignesDuJournal() { const V = verite(), C = app.contrat, xs = [];
     const sur = pn ? rep : ct ? boutDit(rep, c === 'contactDe' ? l.borneDe : l.borneVers) : (c === 'type' ? boutsDuCable(l) : cableParSesBouts(l)) + (autres > 0 ? ' (et ' + pluriel(autres, 'autre') + ')' : '');
     const dit = pn || ct ? y.dit : c === 'type' ? `Le câble ${boutsDuCable(l)} revient en ${y.avant}, comme dans votre fichier.` : `${majuscule(y.quoi)} de ${cableParSesBouts(l)} : ${y.avant}, ${y.depuis === 'hyp' ? 'supposée' : 'comme dans votre fichier'}.`;
     xs.push({ ...y, de: '', sur, surId: true, dit, objet: pn || ct ? { bloc: rep } : { fil: l }, folios: pn || ct ? duRepere(rep) : folios(x.rendre.map(r => r[0])), sorte: ct ? 'choix' : 'fichier', champ: c, rep }); });
+  // 1 bis. LES LIGNES EN DOUBLE RETIRÉES (08-controle : une proposition de VOLTA acceptée, la copie quitte votre installation)
+  V.forEach(l => { const n = typeof copiesRetirees === 'function' ? copiesRetirees(l) : 0; if (!n) return; const k = 'l|' + cleFil(l) + '|copies|' + n;
+    xs.push({ cle: k, t: heureDuChangement(k), quoi: n > 1 ? 'Lignes en double retirées' : 'Ligne en double retirée', sur: cableParSesBouts(l), surId: true, de: '', avant: (n + 1) + ' lignes', depuis: 'fichier', apres: '1 ligne', qui: 'prop', mono: false, excel: true, objet: { fil: l }, folios: folios([l]), sorte: 'fichier',
+      pourquoi: 'Votre fichier écrivait cette ligne ' + (n > 1 ? (n + 1) + ' fois' : 'deux fois') + ', à l’identique : VOLTA ne la garde qu’une fois.', faire: () => remettreLesCopies(l), aide: 'La ligne en double revient, comme votre fichier l’écrivait', dit: 'La ligne en double ' + boutsDuCable(l) + ' revient, comme dans votre fichier.' }); });
   // 2. LES CHOIX DE VOLTA pris en Manuel, et ce que VOLTA retient de lui-même (un module), repère par repère — seulement
   // ceux qui portent un choix écrit, et les barrettes (le module de votre fichier écarté)
   const presents = new Set(reperesDe(V)), candidats = new Set(), prendre = k => { const r = String(k).split('|')[0]; if (r && r !== 'sertir' && presents.has(r)) candidats.add(r); };
@@ -121,7 +135,8 @@ function lignesDuJournal() { const V = verite(), C = app.contrat, xs = [];
   // 5. LE DESSIN, folio par folio
   retouchesDuPlan().forEach(d => { const k = signatureDuDessin(d), nb = d.blocs.length, f = d.plan === '*' ? '' : String(d.plan);
     const morceaux = [nb ? pluriel(nb, 'bloc') + ' déplacé' + (nb > 1 ? 's' : '') : '', d.bornes ? pluriel(d.bornes, 'borne') + ' déplacée' + (d.bornes > 1 ? 's' : '') : '', d.fils ? pluriel(d.fils, 'câble') + ' retracé' + (d.fils > 1 ? 's' : '') : ''].filter(Boolean);
-    xs.push({ cle: k, t: heureDuChangement(k), quoi: 'Le dessin', sur: f ? 'folio ' + f : 'le folio', surId: false, de: '', avant: 'celui de VOLTA', depuisMot: 'dessin automatique', apres: morceaux.length ? etListe(morceaux) : 'retouché', qui: 'vous', mono: false, objet: { plan: d.plan }, folios: f ? [f] : [], sorte: 'dessin',
+    // (« Le dessin du folio 1 » : le folio se lit dans la phrase, la puce ne le redit pas)
+    xs.push({ cle: k, t: heureDuChangement(k), quoi: 'Le dessin', sur: f ? 'du folio ' + f : '', surId: false, sansOu: true, de: '', avant: 'celui de VOLTA', depuisMot: 'dessin automatique', apres: morceaux.length ? etListe(morceaux) : 'retouché', qui: 'vous', mono: false, objet: { plan: d.plan }, folios: f ? [f] : [], sorte: 'dessin',
       pourquoi: nb ? (nb > 1 ? 'Déplacés à la main : ' : 'Déplacé à la main : ') + etListe(d.blocs.slice(0, 6)) + (nb > 6 ? ' et ' + (nb - 6) + ' autres' : '') + '.' : '',
       faire: () => rendreLeDessin(d), aide: 'Rendre ' + (f ? 'le folio ' + f : 'ce folio') + ' au dessin automatique de VOLTA', dit: 'Le dessin automatique revient sur ' + (f ? 'le folio ' + f : 'ce folio') + '.' }); });
   // le plus récent en haut ; sans heure connue, après, dans l'ordre où ils viennent
@@ -134,7 +149,7 @@ function journalDuPlan() { const k = cleDuJournal(); if (JOURNAL.memo && JOURNAL
   let xs = []; try { xs = lignesDuJournal(); } catch (e) { xs = []; if (typeof console !== 'undefined') console.warn(e); }
   JOURNAL.memo = xs; JOURNAL.memoCle = cleDuJournal(); return xs; }
 // pour le menu : « 3 changements », ou rien
-const motDuJournal = () => { const n = verite().length ? journalDuPlan().length : 0; return n ? (n > 1 ? n + ' changements' : '1 changement') + ' · Défaire' : 'rien n’a changé'; };
+const motDuJournal = () => { const n = verite().length ? journalDuPlan().length : 0; return n ? (n > 1 ? n + ' changements' : '1 changement') : 'rien n’a changé'; };
 
 /* ---- LE DOCUMENT ---------------------------------------------------------------------------------------------------
    La coquille des documents (08-interface : la tête, le chapeau) ; une ligne dit ce qui part dans l'Excel corrigé ; deux
@@ -149,10 +164,10 @@ function jourDuJournal(x) { if (!x.t) return x.qui === 'volta' ? ['zz', 'À la l
 const quiDuJournal = x => x.quiMot || (x.qui === 'vous' && x.auto ? 'en Manuel, par vous' : (typeof MOTS_QUI !== 'undefined' && MOTS_QUI[x.qui]) || '');
 const depuisDuJournal = x => x.depuisMot || (typeof MOTS_DEPUIS !== 'undefined' && MOTS_DEPUIS[x.depuis]) || '';
 const ouDuJournal = x => !x.folios || !x.folios.length ? '' : x.folios.length > 3 ? x.folios.length + ' folios' : 'f. ' + x.folios.join(', ');
-function ligneJournalHtml(x, i) { const val = (v, mono, b) => `<${b ? 'b' : 's'}${mono ? ' class="id"' : ''}>${insecable(esc(v))}</${b ? 'b' : 's'}>`, ou = ouDuJournal(x);
-  const manuel = x.qui === 'vous' && x.auto;
+function ligneJournalHtml(x, i) { const val = (v, mono, b) => `<${b ? 'b' : 's'}${mono ? ' class="id"' : ''}>${insecable(esc(v))}</${b ? 'b' : 's'}>`, ou = x.sansOu ? '' : ouDuJournal(x);
+  const manuel = x.qui === 'vous' && x.auto, ouMot = ouDuJournal(x).replace(' ', ' ');
   return `<li class="hi-i jo-i ${esc(x.qui)}${manuel ? ' manuel' : ''}" data-jo="${i}">`
-    + `<div class="hi-t"><b>${esc(x.quoi)}</b> <button type="button" class="jo-sur${x.surId ? ' id' : ''}" data-jo-va="${i}" data-bulle="${escA('Le voir sur le plan' + (ou ? ' (' + ou.replace(' ', ' ') + ')' : ''))}">${esc(x.sur)}</button>${x.de ? ` <span class="jo-de">${esc(x.de)}</span>` : ''}</div>`
+    + `<div class="hi-t"><b>${esc(x.quoi)}</b>${x.sur ? ` <button type="button" class="jo-sur${x.surId ? ' id' : ''}" data-jo-va="${i}" data-bulle="${escA('Le voir sur le plan' + (ouMot ? ' (' + ouMot + ')' : ''))}">${esc(x.sur)}</button>` : ''}${x.de ? ` <span class="jo-de">${esc(x.de)}</span>` : ''}</div>`
     + `<span class="hi-q jo-q">${ou ? `<span class="jo-f">${esc(ou)}</span>` : ''}${x.t ? `<time datetime="${new Date(x.t).toISOString()}" data-bulle="${escA(typeof quandDit === 'function' ? majuscule(quandDit(x.t)) : '')}">${esc(heureDit(x.t))}</time>` : ''}</span>`
     + `<div class="hi-v"><span class="hi-av">${val(x.avant, x.mono && !PHRASE_JOURNAL.test(x.avant))}<small>${esc(depuisDuJournal(x))}</small></span><span class="hi-f" aria-hidden="true">${ico('fleche')}</span>`
     + `<span class="hi-ap">${val(x.apres, x.mono && !PHRASE_JOURNAL.test(x.apres), true)}<small>${esc(quiDuJournal(x))}${x.excel ? '<i class="jo-xl" data-bulle="Part dans l’Excel corrigé"> · dans l’Excel</i>' : ''}</small></span></div>`
@@ -161,7 +176,8 @@ function ligneJournalHtml(x, i) { const val = (v, mono, b) => `<${b ? 'b' : 's'}
     + (x.pourquoi ? `<p class="hi-p">${insecable(esc(x.pourquoi))}</p>` : '') + '</li>'; }
 // ce qui part dans l'Excel corrigé, en une ligne (le relevé le détaille : 08-export)
 function excelDuJournal() { let R; try { R = changementsDuRetest(); } catch (_) { return ''; } const np = R.proposes.length, poses = barrettesPosees();
-  const morceaux = [R.cases ? pluriel(R.cases, 'case') + (R.liaisons ? ' sur ' + pluriel(R.liaisons, 'liaison') : '') : '', poses.length ? (poses.length > 1 ? poses.length + ' barrettes ajoutées et leurs lignes' : 'la barrette ' + poses[0].nom + ' et ses lignes') : ''].filter(Boolean);
+  const lignesDe = p => 1 + p.shunts.length, nl = poses.reduce((s, p) => s + lignesDe(p), 0);
+  const morceaux = [R.cases ? pluriel(R.cases, 'case') + (R.liaisons ? ' sur ' + pluriel(R.liaisons, 'liaison') : '') : '', poses.length ? (poses.length > 1 ? poses.length + ' barrettes ajoutées, avec leurs ' + nl + ' lignes' : 'la barrette ' + poses[0].nom + ', avec ses ' + nl + ' lignes') : ''].filter(Boolean);
   if (!morceaux.length && !np) return '';
   const att = np ? `<span class="jo-att">${np > 1 ? np + ' choix de VOLTA pas encore écrits' : '1 choix de VOLTA pas encore écrit'}</span>` : '';
   return `<div class="jo-excel" role="note"><span class="jo-excel-i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/></svg></span>`
@@ -178,9 +194,11 @@ function journalHtml(arrive) { const X = journalDuPlan(), S = JOURNAL;
   // les filtres : les sortes présentes (Tout en tête), les folios qui portent un changement
   const sortes = SORTES_JOURNAL.filter(([s]) => X.some(x => x.sorte === s)), fols = [...new Set(X.flatMap(x => x.folios))].sort(triNaturel);
   const seg = sortes.length > 1 ? `<div class="jo-seg" role="group" aria-label="La sorte de changement" style="--n:${sortes.length + 1}">`
-    + [['', 'Tout', 'Tous les changements', '']].concat(sortes).map(([s, mot, aide, svg]) => `<button type="button" class="jo-seg-b" data-jo-sorte="${s}" aria-pressed="${S.sorte === s}" data-bulle="${escA(aide)}">${svg ? `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${svg}</svg>` : ''}<span>${esc(mot)}</span><b>${X.filter(x => (!s || x.sorte === s) && parFolio(x)).length}</b></button>`).join('') + '</div>' : '';
+    + [['', 'Tout', 'Tous les changements']].concat(sortes).map(([s, mot, aide]) => `<button type="button" class="jo-seg-b" data-jo-sorte="${s}" aria-pressed="${S.sorte === s}" data-bulle="${escA(aide)}"><span>${esc(mot)}</span><b>${X.filter(x => (!s || x.sorte === s) && parFolio(x)).length}</b></button>`).join('') + '</div>' : '';
+  // (une puce dit son folio et son compte sans qu'on les lise d'un bloc : « f. 1 · 3 », pas « 1 3 »)
   const folio = fols.length > 1 ? `<div class="jo-fol" role="group" aria-label="Le folio"><span class="jo-fol-k">Folio</span>`
-    + [['', 'Tous']].concat(fols.map(f => [f, f])).map(([f, mot]) => `<button type="button" class="jo-fol-b" data-jo-folio="${escA(f)}" aria-pressed="${S.folio === f}" data-bulle="${escA(f ? 'Les changements du folio ' + f : 'Tous les folios')}">${esc(mot)}<b>${X.filter(x => (!f || x.folios.includes(f)) && parSorte(x)).length}</b></button>`).join('') + '</div>' : '';
+    + [['', 'Tous']].concat(fols.map(f => [f, 'f. ' + f])).map(([f, mot]) => { const n = X.filter(x => (!f || x.folios.includes(f)) && parSorte(x)).length;
+      return `<button type="button" class="jo-fol-b" data-jo-folio="${escA(f)}" aria-pressed="${S.folio === f}" data-bulle="${escA((f ? 'Le folio ' + f : 'Tous les folios') + ' : ' + pluriel(n, 'changement'))}">${esc(mot)}<i aria-hidden="true">·</i><b>${n}</b></button>`; }).join('') + '</div>' : '';
   const filtres = seg || folio ? `<div class="jo-filtres${entre()}">${seg}${folio}</div>` : '';
   // les jours, du plus récent ; sans heure, « Plus tôt », puis ce que VOLTA a fait en lisant votre fichier
   const jours = new Map(); vus.forEach(x => { const [cle, titre, bulle] = jourDuJournal(x); const j = jours.get(cle) || jours.set(cle, { titre, bulle, xs: [] }).get(cle); j.xs.push(x); });

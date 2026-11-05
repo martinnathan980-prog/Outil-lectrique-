@@ -62,6 +62,53 @@ function rangsNaturels(b) { if (b.rangNat) return b.rangNat;
   const tries = b.bornes.slice().sort((u, v) => ordreNaturel(u.etiq, v.etiq)), rangs = new Map(); let r = 0;
   tries.forEach((p, i) => { if (i && ordreNaturel(tries[i - 1].etiq, p.etiq) !== 0) r = i; rangs.set(p.cle, r); });
   return (b.rangNat = rangs); }
+/* (v86) L'ORDRE DE LA FACE d'une barrette. Ses contacts portent leur vrai nom sur le plan (« 51N » : le module 51, le
+   contact N) ; ils se lisent donc comme sur la pièce — module par module (51, 52, 53), et dans un module les capitales
+   puis les minuscules (A, B, C… puis a, b…), l'ordre de l'ASNE 0599 (09, `triBornesDeModule`) ; une barrette numérotée
+   (une barrette à poser) 1, 2, 3. Avant, les ronds d'un morceau se rangeaient dans n'importe quel ordre (ils sont pontés) :
+   le plan se lisait 51P, 51N, 51R (folio 3), 53A, 53D, 53C, 53B (le lecteur, par l'agent « zoom » : « sur la vraie pièce, A
+   est à côté de B »). Le RANG de chaque borne dans cet ordre, calculé une fois par bloc (deux ronds d'un même contact ont
+   le même rang : ils restent côte à côte, dans l'ordre qui croise le moins). */
+const triDeFace = (a, b) => typeof triBornesDeModule === 'function' ? triBornesDeModule(String(a ?? ''), String(b ?? '')) : ordreNaturel(a, b);
+function rangsDeFace(b) { if (b.rangFace) return b.rangFace;
+  const tries = b.bornes.slice().sort((u, v) => triDeFace(u.etiq, v.etiq)), rangs = new Map(); let r = 0;
+  tries.forEach((p, i) => { if (i && triDeFace(tries[i - 1].etiq, p.etiq) !== 0) r = i; rangs.set(p.cle, r); });
+  b.premierFace = tries.length ? tries[0].etiq : '';
+  return (b.rangFace = rangs); }
+// le premier contact d'un morceau de barrette dans l'ordre de la face (« 51N » pour N-P-R) : sa place dans la colonne
+const premierDeFace = (M, id) => { const b = M.blocs.get(id); if (b.premierFace === undefined) rangsDeFace(b); return b.premierFace; };
+/* Dans une colonne, les MORCEAUX d'une même barrette se suivent dans l'ordre de la face (51N-P-R au-dessus de 51S-T, le
+   module 52 sous le 51 ; folio 6 : 51J-K passait au-dessus de 51E-F-G) : les autres blocs de la pile gardent leur place,
+   les morceaux s'échangent les leurs. Rend la pile. */
+function rangerLesMorceaux(M, pile) { let parNom = null;
+  pile.forEach((id, i) => { const b = M.blocs.get(id); if (b.genre !== 'barrette') return; parNom = parNom || new Map(); (parNom.get(b.nom) || parNom.set(b.nom, []).get(b.nom)).push(i); });
+  if (parNom) parNom.forEach(idx => { if (idx.length < 2) return; const ids = idx.map(i => pile[i]).sort((u, v) => triDeFace(premierDeFace(M, u), premierDeFace(M, v)));
+    idx.forEach((i, k) => { pile[i] = ids[k]; }); });
+  return pile; }
+/* LES DÉSORDRES DE FACE d'un dessin : un morceau de barrette dont les contacts ne se lisent pas dans l'ordre de la pièce
+   (51P au-dessus de 51N), deux morceaux d'une même barrette inversés dans leur colonne (51J-K au-dessus de 51E-F-G). Chacun
+   coûte DESORDRE au juge (`juger`, `estimer`) : plus qu'un croisement — le lecteur : « si l'ordre parfait coûte un
+   croisement, préfère-le quand même » —, moins que deux : un dessin vraiment pire ne se paie pas pour l'ordre (il se dit
+   alors, `jugement.desordres`). Et un quart de fil droit par paire de contacts voisins à l'envers, pour que la recherche
+   s'en approche pas à pas (l'échange de deux ronds d'un morceau de quatre). Une contrainte dure (aucun geste qui romprait
+   l'ordre) égarait la recherche : le folio 4 perdait quatre fils droits, le folio 6 trois. Gardé par jeu de blocs. */
+const DESORDRE = 2.5, DESORDRE_PAS = 0.25, DESORDRES_LUS = new WeakMap();
+// le premier contact d'un morceau dessiné, dans l'ordre de la face
+const premierDuDessin = c => (c.rangs.S || []).reduce((m, p) => m == null || triDeFace(p.etiq, m) < 0 ? p.etiq : m, null);
+// les paires de contacts voisins (de haut en bas) à l'envers dans une liste de bornes
+const marchesDeFace = (S, etiq) => { let k = 0; for (let i = 1; i < S.length; i++) if (triDeFace(etiq(S[i - 1]), etiq(S[i])) > 0) k++; return k; };
+function desordresDeFace(comps) { let d = DESORDRES_LUS.get(comps); if (d) return d; d = { n: 0, pas: 0 }; let parCol = null;
+  for (const c of comps) { if (c.kind !== 'strip' || !barretteLue(c.name) || !c.rangs || !c.rangs.S) continue;
+    const k = c.rangs.S.length > 1 ? marchesDeFace(c.rangs.S, p => p.etiq) : 0; if (k) { d.n++; d.pas += k; }      // `rangs.S` : de haut en bas (`contrat`)
+    parCol = parCol || new Map(); const cle = c.col + '|' + c.name; (parCol.get(cle) || parCol.set(cle, []).get(cle)).push(c); }
+  if (parCol) parCol.forEach(cs => { if (cs.length < 2) return; const s = cs.slice().sort((u, v) => u.y - v.y);
+    for (let i = 1; i < s.length; i++) if (triDeFace(premierDuDessin(s[i - 1]), premierDuDessin(s[i])) > 0) d.n++; });
+  DESORDRES_LUS.set(comps, d); return d; }
+const coutDesDesordres = d => DESORDRE * d.n + DESORDRE_PAS * d.pas;
+// le même coût pour un ordre de bornes d'un morceau (de haut en bas, par leur clé) : l'estimation d'une permutation
+function coutDeLOrdreDeFace(M, id, cles) { const b = M.blocs.get(id); if (b.genre !== 'barrette' || cles.length < 2) return 0;
+  const R = rangsDeFace(b); let k = 0; for (let i = 1; i < cles.length; i++) if (R.get(cles[i]) < R.get(cles[i - 1])) k++;
+  return k ? DESORDRE + DESORDRE_PAS * k : 0; }
 /* LES FORMES des repères (barrette, prise de coupure, masse : 01, `formeDe`), lues une fois chacune : le juge les
    demandait des milliers de fois par concours, une expression régulière à chaque fois. La forme ne dépend que du
    repère (la nature dite par l'ingénieur ne change pas la forme du dessin). */
@@ -528,7 +575,8 @@ function flancs(M, place) {
   // 1. ce que les partenaires d'un côté imposent ; null reste à décider
   for (const id of M.ids) { const b = M.blocs.get(id);
     if (b.genre === 'tag') { listes.set(id, { S: b.bornes.slice() }); continue; }
-    if (b.genre !== 'equip') { const R = rangsNaturels(b); listes.set(id, { S: b.bornes.slice().sort((u, v) => R.get(u.cle) - R.get(v.cle)) });
+    // une barrette dans l'ordre de sa face (51A, 51B… 51a, 52A), une prise dans l'ordre de ses numéros
+    if (b.genre !== 'equip') { const R = b.genre === 'barrette' ? rangsDeFace(b) : rangsNaturels(b); listes.set(id, { S: b.bornes.slice().sort((u, v) => R.get(u.cle) - R.get(v.cle)) });
       b.bornes.forEach(p => { const cs = M.partenairesBlocs(K(id, p.cle)).map(q => cote(id, q)); const meme = cs.includes(0); const sides = new Set(cs.filter(s => s));
         let d; if (b.genre === 'coupure') d = 0; else if (sides.size === 2) d = 0; else if (sides.size === 1) d = meme ? 0 : [...sides][0];
         else d = (meme || !M.partenairesDe(K(id, p.cle)).length) ? null : (penchant.get(id) < 0 ? -1 : 1);
@@ -607,6 +655,7 @@ function etatDepuisColonnes(M, col, opt) {
   E.pileDe = id => { const p = place.get(id); return p.r + '|' + p.c; };
   E.piles = new Map();
   M.ids.forEach(id => { if (M.estTag(id)) return; const k = E.pileDe(id); (E.piles.get(k) || E.piles.set(k, []).get(k)).push(id); });
+  E.piles.forEach(pile => rangerLesMorceaux(M, pile));
   construireRuns(M, E);
   return E;
 }
@@ -823,7 +872,7 @@ function barycentre(M, E, y, moyenne, parite) {
     if (ss) { const somme = new Map(); pile.forEach(id => { const g = ss.get(id); if (g == null) return; const t = somme.get(g) || somme.set(g, [0, 0]).get(g); t[0] += cle.get(id); t[1]++; });
       somme.forEach(([s0, n], g) => groupe.set(g, s0 / n)); }
     const cleDe = id => (ss && ss.has(id) ? groupe.get(ss.get(id)) : cle.get(id));
-    pile.sort((a, b) => (cleDe(a) - cleDe(b)) || (cle.get(a) - cle.get(b))); });
+    pile.sort((a, b) => (cleDe(a) - cleDe(b)) || (cle.get(a) - cle.get(b))); rangerLesMorceaux(M, pile); });
   // les bornes d'un équipement : un connecteur au centre de ses partenaires, ses bornes dans l'ordre vertical des leurs ; un paquet ponté reste ensemble
   M.ids.forEach(id => { const b = M.blocs.get(id); if (b.genre !== 'equip' || !auTour(id)) return;
     ['L', 'R'].forEach(lid => { const L = E.listes.get(id)[lid]; if (L.length < 2) return;
@@ -1144,11 +1193,11 @@ function juger(L, R) {
   const tient = (r <= FORMAT_MAX * 1.005 && r >= FORMAT_MIN / 1.005) || tientALEchelle(w, h), tiendra = tient || (r <= FORMAT_MAX * ETIRABLE && compterBandes(blocs) >= 2);
   // les frôlements ne comptent dans la lisibilité qu'à partir de la finition : au juge de structure, ils se comptent à la demande
   let frolements = NIVEAU_JUGE >= 1 ? compterFrolements(fils, blocs) : null;
-  const contours = compterContours(fils), descentes = compterDescentes(boutsDesLiaisons(L.links)), forme = coutDeForme(w, h);
+  const contours = compterContours(fils), descentes = compterDescentes(boutsDesLiaisons(L.links)), forme = coutDeForme(w, h), desordres = desordresDeFace(L.comps);
   let muets = null;      // les muets coûtent cher à compter (le dessin pose ses étiquettes) : au niveau du choix, ou quand droits et croisements sont à égalité
   const j = { sain: t.etrangers === 0 && chevauchements(L.comps) === 0 && bornesSuperposees(L.comps) === 0 && filsRompus(R.fils, R.barrettes) === 0, tient, tiendra, format: r, largeur: w,
-    droits, croisements, partages, etires, marches, tours: compterTours(L), propres: t.propres.size, contours, forme,
-    escaliers, sousHub, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - PAR_MARCHE * marches - ESCALIER * escaliers - ETIRE * etires - TOUR * compterTours(L) - SOUS_HUB * sousHub - contours - DESCENTE * (descentes + excesEtires)
+    droits, croisements, partages, etires, marches, tours: compterTours(L), propres: t.propres.size, contours, forme, desordres: desordres.n,
+    escaliers, sousHub, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - PAR_MARCHE * marches - ESCALIER * escaliers - ETIRE * etires - TOUR * compterTours(L) - SOUS_HUB * sousHub - contours - DESCENTE * (descentes + excesEtires) - coutDesDesordres(desordres)
       - (NIVEAU_JUGE >= 1 ? FROLE * frolements : 0) - (NIVEAU_JUGE >= 2 ? forme + MUET * (muets = compterMuets(R, L.comps)) : 0), descentes, exces: compterExces(blocs), genees: compterPastillesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
     encombrement: Math.min(Math.max(w / A3, h), Math.max(w, h / A3)), surface: w * h, longueur };
   Object.defineProperty(j, 'muets', { enumerable: true, get() { if (muets == null) muets = compterMuets(R, L.comps); return muets; } });
@@ -1344,9 +1393,9 @@ function estimer(L) {
   // les corps étirés se voient sans router : l'estimation les compte comme le juge
   const etires = compterEtires(blocs), tours = compterTours(L), descentes = compterDescentes(boutsDesLiaisons(L.links)), excesEtires = excesDesEtires(blocs);
   let gx = 1e9, dx = -1e9, hy = 1e9, by = -1e9; blocs.forEach(c => { gx = Math.min(gx, c.x); dx = Math.max(dx, c.x + c.w); hy = Math.min(hy, c.y); by = Math.max(by, c.y + c.h); });
-  const forme = coutDeForme(dx - gx, by - hy);
-  return { droits, croisements, etires, tours, descentes, frolements, forme, detail,
-    lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - ETIRE * etires - TOUR * tours - DESCENTE * (descentes + excesEtires) - (NIVEAU_JUGE >= 1 ? FROLE * frolements : 0) - (NIVEAU_JUGE >= 2 ? forme : 0) };
+  const forme = coutDeForme(dx - gx, by - hy), desordres = desordresDeFace(L.comps);
+  return { droits, croisements, etires, tours, descentes, frolements, forme, detail, desordres: desordres.n,
+    lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - ETIRE * etires - TOUR * tours - DESCENTE * (descentes + excesEtires) - coutDesDesordres(desordres) - (NIVEAU_JUGE >= 1 ? FROLE * frolements : 0) - (NIVEAU_JUGE >= 2 ? forme : 0) };
 }
 /* Évaluer un état à une position : assembler, router, juger. Le routage
    RAPIDE (le routeur sans ses détours par une goulotte voisine, qu'il
@@ -1483,7 +1532,9 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
     const links = L.links.map((l, li) => { const w = M.liens[li]; let ya = yDe.get(K(w.a.id, w.a.cle)), yb = yDe.get(K(w.b.id, w.b.cle)); if (ya == null && yb == null) return l;
       if (ya == null && M.estTag(w.a.id)) ya = yb; if (yb == null && M.estTag(w.b.id)) yb = ya;
       return { ...l, epA: ya == null ? l.epA : { ...l.epA, y: ya }, epB: yb == null ? l.epB : { ...l.epB, y: yb } }; });
-    const e = estimer({ comps: L.comps, links, geom: L.geom }); G.set(cle, e); return e; };
+    // les blocs du meilleur portent son ordre de face : celui d'un morceau de barrette se reprend pour le nouvel ordre
+    let e = estimer({ comps: L.comps, links, geom: L.geom }); const d = coutDeLOrdreDeFace(M, id, ordre) - coutDeLOrdreDeFace(M, id, cles);
+    if (d) e = { ...e, lisibilite: e.lisibilite - d }; G.set(cle, e); return e; };
   // après un geste géométrique gardé, l'état reprend l'ordre des ordonnées
   const ordonnerParY = (E, pos) => { M.ids.forEach(id => { if (M.estTag(id)) return; E.clesListes(id).forEach(lid => E.listes.get(id)[lid].sort((u, v) => pos.y.get(K(id, u.cle)) - pos.y.get(K(id, v.cle)))); });
     construireRuns(M, E);
@@ -1767,6 +1818,7 @@ const permutations = a => a.length <= 1 ? [a] : a.flatMap((x, i) => permutations
    parce que les deux prises sur le chemin gardaient leurs contacts dans l'ordre des numéros). */
 function groupesDeBornes(M, E) { const groupes = [];
   M.ids.forEach(id => { const b = M.blocs.get(id);
+    // (v86) un morceau de barrette part de l'ordre de sa face ; s'en écarter se paie au juge (`desordresDeFace`)
     if (b.genre === 'barrette' || b.genre === 'coupure') { const S = E.listes.get(id).S; if (S && S.length >= 2) groupes.push({ id, cles: S.map(p => p.cle), libre: true }); return; }
     if (b.genre !== 'equip') return;
     ['L', 'R'].forEach(lid => { const L = E.listes.get(id)[lid], vus = new Set(), libres = [];

@@ -91,10 +91,11 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
     // (v86, le bilan d'ouverture) ses câbles : leur fiche le dit, et un seul type mène au récapitulatif filtré sur lui
     if (inc.length) { const cs = V.filter(l => liaisonComplete(l) && l.de !== l.vers && inc.includes(l.type));
       att('', (inc.length > 1 ? inc.length + ' types de câble inconnus' : 'un type de câble inconnu') + ' de la base des câbles : ' + inc.slice(0, 5).join(', ') + (inc.length > 5 ? '…' : '') + ' — ' + (cs.length > 1 ? pluriel(cs.length, 'câble') + ' dont la gauge' : 'sa gauge') + ' ne se vérifie pas', { tableau: inc.length === 1 ? inc[0] : '', cables: cs, genre: 'fichier', types: inc }); } }
-  const sansType = V.filter(l => liaisonComplete(l) && l.de !== l.vers && !l.type).length;
-  if (sansType) att('', pluriel(sansType, 'câble') + ' sans type : ' + (sansType > 1 ? 'leur' : 'sa') + ' gauge ne se vérifie pas', { tableau: '' });
-  const inc = V.filter(l => !liaisonComplete(l) && (l.de || l.vers || l.cable)).length;
-  if (inc) att('', pluriel(inc, 'liaison') + ' incomplète' + (inc > 1 ? 's' : '') + ' : ni dessinée' + (inc > 1 ? 's' : '') + ', ni vérifiée' + (inc > 1 ? 's' : ''), { tableau: '' });
+  // (v86) des écritures du fichier, avec leurs câbles : le bilan d'ouverture et la fiche du câble les désignent
+  const sansType = V.filter(l => liaisonComplete(l) && l.de !== l.vers && !l.type);
+  if (sansType.length) att('', pluriel(sansType.length, 'câble') + ' sans type : ' + (sansType.length > 1 ? 'leur' : 'sa') + ' gauge ne se vérifie pas', { tableau: '', cables: sansType, genre: 'fichier' });
+  const incompletes = V.filter(l => !liaisonComplete(l) && (l.de || l.vers || l.cable)), inc = incompletes.length;
+  if (inc) att('', pluriel(inc, 'liaison') + ' incomplète' + (inc > 1 ? 's' : '') + ' : ni dessinée' + (inc > 1 ? 's' : '') + ', ni vérifiée' + (inc > 1 ? 's' : ''), { tableau: '', cables: incompletes, genre: 'fichier', incompletes: true });
   // les câbles qui ne tiennent pas l'ambiante de la simulation (l'EN 2853 les échauffe de 40 °C) : une fois par famille
   const tenues = new Map(); V.forEach(l => { if (!liaisonComplete(l) || l.de === l.vers || !l.type) return; const t = tenueEnTemperature(N, l.type, H.ambiante); if (t && !t.ok && !tenues.has(typeDuFil(l.type))) tenues.set(typeDuFil(l.type), t); });
   if (tenues.size) att('', `ambiante ${nombre(H.ambiante)} °C : ${[...tenues].map(([f, t]) => f + ' (' + nombre(t.tmax) + ' °C max)').join(', ')} ne ${tenues.size > 1 ? 'supportent' : 'supporte'} pas l’échauffement de 40 °C de l’EN 2853 (${nombre(H.ambiante + ECHAUFFEMENT_EN2853)} °C au conducteur)`, { tableau: '' });
@@ -514,6 +515,7 @@ function allerAuControle(x) {
   // (v86, le bilan d'ouverture) un point du tableau qui ne parle que d'un câble mène à sa fiche ; des longueurs illisibles, aux câbles à longueur supposée
   if (x.tableau != null && x.cables && x.cables.length === 1 && liaisonComplete(x.cables[0]) && typeof montrerFil === 'function') { montrerFil(x.cables[0]); return; }
   if (x.tableau != null && x.longueurs) { ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout'); return; }
+  if (x.tableau != null && x.incompletes) { ouvrirOngletFiltre('liaisons', ['probleme'], null, 'tout'); return; }
   if (x.tableau != null) { app.base.filtreAuto = false; changerOnglet('liaisons', true); app.base.filtre = x.tableau; app.base.portee = 'tout';
     app.base.tri = x.texte.includes('sans type') ? { k: 'jauge', sens: -1 } : { k: 'de', sens: 1 }; if (app.base.ouvert) rendreBase(true); else ouvrirBase(); return; }
   if (x.plan && x.plan !== app.plan && plans().includes(x.plan)) allerAuPlan(x.plan);

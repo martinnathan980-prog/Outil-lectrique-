@@ -1,0 +1,112 @@
+/* ═══ v86 — L'HISTORIQUE DU PLAN, et ce qui en dépend (l'agent « journal ») ═══════════════════════════════════════════
+   Le document « Historique » (08-journal) reprend les cartes de l'onglet Historique des fiches (`.hi-*`, style-z-mots) :
+   les mêmes mots, le même dessin. S'y ajoutent ici : la ligne de l'Excel corrigé, les deux filtres (la sorte, le folio),
+   les jours, et l'objet de chaque carte, qui mène au plan. Puis : le bandeau d'une barrette ajoutée (« VOLTA propose …
+   Lui donner son repère »), « Retirer » sur chaque ligne du relevé, la ligne de la LPA qui dit les choix de VOLTA pas encore
+   écrits. Les jetons du thème seulement : le clair et le sombre suivent. */
+
+/* ─── 1. LE CHAPEAU : ce qui part dans l'Excel corrigé, en une ligne, et son relevé ─── */
+.jo-excel{display:flex;align-items:center;gap:12px;margin:16px 0 0;padding:11px 12px 11px 16px;border-radius:12px;
+  background:color-mix(in srgb,var(--nv-cuivre) 7%,var(--s-surface));box-shadow:inset 3px 0 0 var(--nv-cuivre),inset 0 0 0 1px color-mix(in srgb,var(--nv-cuivre) 18%,transparent)}
+.jo-excel-i{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--s-surface);color:var(--nv-cuivre);box-shadow:inset 0 0 0 1px var(--s-line)}
+.jo-excel-i svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.jo-excel p{flex:1 1 auto;min-width:0;margin:0;font:400 var(--f-13)/1.45 var(--sans);color:var(--t-2);text-wrap:pretty}
+.jo-excel p b{font-weight:600;color:var(--t-1)}
+.jo-excel .jo-att{color:var(--warn);font-weight:500}
+.jo-excel .btn{flex:none}
+
+/* ─── 2. LES FILTRES : la sorte (trois segments égaux, Tout en tête), le folio (des puces) ─── */
+.jo-filtres{display:flex;flex-direction:column;gap:10px;margin:18px 0 0}
+.jo-seg{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));padding:3px;border-radius:11px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.jo-seg-b{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;height:32px;padding:0 8px;border:0;border-radius:8px;background:none;
+  color:var(--t-2);font:500 var(--f-12) var(--sans);white-space:nowrap;cursor:pointer;transition:background var(--rapide,.15s),color var(--rapide,.15s),box-shadow var(--rapide,.15s)}
+.jo-seg-b span{min-width:0}
+.jo-seg-b b{flex:none;font:600 var(--f-11)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-3)}
+.jo-seg-b:hover{color:var(--t-1);background:var(--s-hover)}
+.jo-seg-b[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.14),inset 0 0 0 1px var(--nv-cuivre-ligne)}
+.jo-seg-b[aria-pressed="true"] b{color:var(--nv-cuivre)}
+.jo-seg-b:focus-visible,.jo-fol-b:focus-visible{outline:none;box-shadow:var(--anneau)}
+.jo-fol{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.jo-fol-k{margin-right:4px;font:500 var(--f-12)/1 var(--sans);color:var(--t-3)}
+.jo-fol-b{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid var(--s-line-2);border-radius:999px;background:var(--s-surface);
+  color:var(--t-2);font:600 var(--f-12)/1 var(--sans);font-variant-numeric:tabular-nums;cursor:pointer;transition:border-color var(--rapide,.15s),background var(--rapide,.15s),color var(--rapide,.15s)}
+.jo-fol-b b{font:500 var(--f-11)/1 var(--sans);color:var(--t-3)}
+.jo-fol-b i{margin:0 -2px;font-style:normal;font-weight:400;color:var(--t-3)}
+.jo-fol-b:hover{color:var(--t-1);border-color:var(--nv-cuivre-ligne)}
+.jo-fol-b[aria-pressed="true"]{color:var(--t-1);border-color:var(--nv-cuivre);background:color-mix(in srgb,var(--nv-cuivre) 10%,var(--s-surface))}
+.jo-fol-b[aria-pressed="true"] b{color:var(--nv-cuivre)}
+.jo-rien{margin:18px 0 0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+
+/* ─── 3. LES JOURS, puis une carte par changement (celle de la fiche : `.hi-i`) ─── */
+.jo-st{display:flex;align-items:baseline;gap:10px}
+.jo-st small{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2);font-variant-numeric:tabular-nums}
+.jo-st[data-bulle]{cursor:help}
+.jo>.jo-jour:first-child .jo-st{margin-top:22px}
+.jo-l{margin-top:12px}
+/* la carte mène à l'objet : elle se lève sous la main ; son objet est le lien, en chasse fixe */
+.hi-i.jo-i{cursor:pointer}
+.hi-i.jo-i:hover{border-color:var(--nv-cuivre-ligne);box-shadow:0 2px 10px -6px rgba(0,0,0,.25)}
+.hi-i.jo-i:focus-within{border-color:var(--nv-cuivre-ligne)}
+.jo .hi-v{grid-template-columns:minmax(0,1fr) 22px minmax(0,1.25fr)}
+.jo-sur{display:inline;padding:0;border:0;background:none;color:var(--t-1);font:600 var(--f-13)/1.35 var(--sans);text-align:left;cursor:pointer;
+  text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;text-decoration-thickness:1px;transition:text-decoration-color var(--rapide,.15s),color var(--rapide,.15s)}
+.jo-sur.id{font-family:var(--mono);font-size:var(--f-12);letter-spacing:-.01em}
+.jo-i:hover .jo-sur,.jo-sur:hover{text-decoration-color:var(--nv-cuivre)}
+.jo-sur:focus-visible{outline:none;border-radius:4px;box-shadow:var(--anneau)}
+.jo-de{color:var(--t-2)}
+.jo-q{display:inline-flex;align-items:center;gap:8px}
+.jo-f{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:6px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);
+  color:var(--t-2);font:500 var(--f-11)/1 var(--sans);font-variant-numeric:tabular-nums}
+.jo-q time[data-bulle]{cursor:help}
+.jo-xl{font-style:normal}
+/* QUI, au bord : un choix pris en Manuel est de vous (le cuivre), comme dans la fiche */
+.hi-i.manuel{--qui:var(--nv-cuivre)}
+.hi-i.manuel .hi-ap small{color:var(--nv-cuivre)}
+/* ce que VOLTA a ajouté et qui attend un geste (une barrette à qui donner son repère) : le geste se voit, au cuivre */
+.hi-d.jo-agir{color:var(--nv-cuivre);border-color:var(--nv-cuivre-ligne);white-space:nowrap}
+.hi-d.jo-agir:hover{color:var(--t-1);border-color:var(--nv-cuivre);background:color-mix(in srgb,var(--nv-cuivre) 12%,transparent)}
+/* la fiche : sous ses cartes, l'historique du plan entier */
+.hi-plan{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;margin-top:2px}
+.hi-plan kbd{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:5px;border:1px solid var(--s-line-2);border-bottom-width:2px;background:var(--s-sunken);color:var(--t-2);font:600 var(--f-11)/1 var(--sans)}
+@media (max-width:700px){
+  .jo .hi-i{grid-template-areas:"t t" "q q" "v v" "p p" "d d";padding-left:18px}
+  .jo .hi-q{justify-self:start}
+  .jo .hi-v{grid-template-columns:22px minmax(0,1fr);row-gap:6px}
+  .jo .hi-av{grid-column:1 / -1}
+  .jo .hi-f{transform:rotate(90deg);padding-top:0}
+  .jo .hi-d{justify-self:start}
+}
+
+/* ─── 4. UNE BARRETTE AJOUTÉE : « VOLTA propose [repère] — Lui donner son repère », un seul geste (G2, F13) ─── */
+.fi-poser{flex-wrap:wrap;row-gap:8px}
+.fi-poser-t{flex:none;white-space:nowrap}
+.fi-poser-g{display:flex;align-items:center;gap:10px;margin-left:auto;min-width:0}
+.fi-poser .fi-poser-g .btn{margin-left:0;flex:none;white-space:nowrap}
+/* le repère proposé se voit comme un champ qu'on peut réécrire (la fiche rend ses champs transparents au repos) */
+#ba-equip .fi-poser .fc-in,#ba-equip .fi-poser .fc-in:not(:focus){background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line-2);text-align:left}
+#ba-equip .fi-poser .fc-in:hover{box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne)}
+#ba-equip .fi-poser .fc-in:focus{box-shadow:inset 0 0 0 1px var(--nv-cuivre),var(--anneau)}
+/* dans la carte, étroite : le repère et le geste prennent la ligne */
+.nc .fi-poser-g{flex:1 1 100%}
+.nc .fi-poser .fc-in{flex:1 1 auto;width:auto;min-width:0}
+
+/* ─── 5. LE RELEVÉ : l'objet en tête (un câble par ses deux bouts), le détail dessous, qui, et « Retirer » (B6, M2) ─── */
+#fiche .rv-l{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"objet orig ret" "det orig ret";gap:4px 10px}
+#fiche .rv-objet{white-space:normal;overflow-wrap:anywhere}
+.rv-det{grid-area:det;display:flex;align-items:center;flex-wrap:wrap;gap:3px 12px;min-width:0}
+.rv-det .rv-col,.rv-det .rv-av{grid-area:auto}
+.rv-det .rv-col .id{font-size:var(--f-11)}
+.rv-retirer{grid-area:ret;align-self:center;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border:1px solid var(--s-line-2);border-radius:8px;background:none;
+  color:var(--t-2);font:600 var(--f-12) var(--sans);white-space:nowrap;cursor:pointer;transition:color var(--rapide,.15s),border-color var(--rapide,.15s),background var(--rapide,.15s)}
+.rv-retirer .ico{width:13px;height:13px;transition:transform var(--rapide,.15s)}
+.rv-retirer:hover{color:var(--t-1);border-color:var(--nv-cuivre);background:color-mix(in srgb,var(--nv-cuivre) 9%,transparent)}
+.rv-retirer:hover .ico{transform:translateX(-2px)}
+.rv-retirer:focus-visible{outline:none;box-shadow:var(--anneau)}
+@media (prefers-reduced-motion:reduce){ .rv-retirer .ico{transition:none} .rv-retirer:hover .ico{transform:none} }
+
+/* ─── 6. LA LPA : comptée selon les choix de VOLTA, dont certains pas encore écrits dans votre Excel (G6) ─── */
+.no-volta{display:flex;align-items:center;gap:12px;margin:14px 0 0;padding:10px 12px 10px 16px;border-radius:12px;background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
+.no-volta p{flex:1 1 auto;min-width:0;margin:0;font:400 var(--f-13)/1.45 var(--sans);color:var(--t-2);text-wrap:pretty}
+.no-volta p b{font-weight:600;color:var(--t-1)}
+.no-volta p .id{font-family:var(--mono);font-size:var(--f-12);color:var(--t-1)}
+.no-volta .btn{flex:none}
