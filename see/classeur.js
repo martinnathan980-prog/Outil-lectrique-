@@ -39,7 +39,7 @@
      VBA/<module>       le texte du module, compressé, sans cache (§ 2.3.4.3)
    Les modules : ThisWorkbook et Feuil1, modules de DOCUMENT (VB_Base des
    classes Workbook et Worksheet d'Excel, le texte qu'Excel écrit pour un
-   module vide), puis SEE_Commun, SEE_Sonde, SEE_Pilote, SEE_Windows, modules STANDARD :
+   module vide), puis SEE_Commun, SEE_Sonde, SEE_Pilote, SEE_Windows, SEE_WD, modules STANDARD :
    leur texte EXACT, octet pour octet (Windows-1252, CRLF, lignes Attribute
    comprises). Les choix (références, ordre, valeurs) sont ceux des
    vbaProject.bin écrits par Excel 2007 et 2010, comparés enregistrement par
@@ -64,7 +64,7 @@
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const RACINE = path.join(__dirname, '..');
 
-const MODULES_STANDARD = ['SEE_Commun', 'SEE_Sonde', 'SEE_Pilote', 'SEE_Windows'];
+const MODULES_STANDARD = ['SEE_Commun', 'SEE_Sonde', 'SEE_Pilote', 'SEE_Windows', 'SEE_WD'];
 const MACRO_DU_BOUTON = 'TesterSEE';
 /* Les boutons de la feuille Accueil, dans l'ordre des étapes : la macro, le texte (les messages de TesterSEE citent
    ceux des boutons 2 et 3), le fond et le bord, et les lignes qu'il couvre (trois lignes de HAUTEUR_BOUTON points,

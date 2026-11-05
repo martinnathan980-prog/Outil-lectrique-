@@ -2,7 +2,7 @@ import sys, os, re, uno, time
 sys.dont_write_bytecode = True   # pas de __pycache__ dans le dépôt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lo_run import connect, pv
-from chemins import VBA, ICI, TRAVAIL
+from chemins import VBA, ICI, TRAVAIL, IGE
 def module(nom):
     t=open(f'{VBA}/{nom}.bas','rb').read().decode('cp1252').replace('\r\n','\n')
     t=re.sub(r'^Attribute VB_Name = .*\n','',t)
@@ -19,6 +19,13 @@ def module(nom):
         a='        Contexte "SondeSymboles", LireProp(f, "Name")\n'
         assert t.count(a)==1, 'DecrireFormes : le contexte de la famille introuvable : adapter banc.py'
         t=t.replace(a, a+'        If gPanneReleve = i Then Err.Raise 999, , "panne simulée du relevé (banc)"\n')
+    # SEE_WD : les schémas de SEE sont cherchés dans le faux dossier IGE+XAO du banc (relecture.py y copie la
+    # reconstitution du schéma 3.10), et les chemins de Windows deviennent ceux de Linux (sous Linux, la barre
+    # inverse ferait partie du nom du fichier)
+    if nom=='SEE_WD':
+        a='Private Const RACINES_IGE As String = "C:\\Program Files (x86)\\IGE+XAO|C:\\Program Files\\IGE+XAO"\n'
+        assert t.count(a)==1, 'SEE_WD : RACINES_IGE introuvable : adapter banc.py'
+        t=t.replace(a, f'Private Const RACINES_IGE As String = "{IGE}"\n').replace('\\', '/')
     # LibreOffice ne sait pas « obj.Item(k) = v » sur une classe Basic : le banc écrit obj.Assigner k, v
     t=re.sub(r'(\b[\w]+(?:\([\w]+\))?)\.Item\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\) = (.+)$', r'\1.Assigner \2, \3', t, flags=re.M)
     return 'Option VBASupport 1\n'+t
@@ -30,7 +37,7 @@ def charger(extra):
     libs.VBACompatibilityMode=True
     lib=libs.getByName("Standard")
     # SEE_Windows (PtrSafe, StrPtr, WMI) ne se charge pas dans LibreOffice : son faux, aux mêmes fonctions publiques, le remplace
-    mods=[('DicoTest',open(f'{ICI}/DicoTest.bas', encoding='utf-8').read()),('FauxWindows',open(f'{ICI}/FauxWindows.bas', encoding='utf-8').read())]+[(m,module(m)) for m in ['SEE_Commun','SEE_Sonde','SEE_Pilote']]+extra
+    mods=[('DicoTest',open(f'{ICI}/DicoTest.bas', encoding='utf-8').read()),('FauxWindows',open(f'{ICI}/FauxWindows.bas', encoding='utf-8').read())]+[(m,module(m)) for m in ['SEE_Commun','SEE_Sonde','SEE_Pilote','SEE_WD']]+extra
     for n,c in mods: lib.insertByName(n,c)
     return doc
 def lancer(doc, macro, args=()):

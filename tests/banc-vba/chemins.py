@@ -6,7 +6,8 @@
 #   TRAVAIL = le dossier de travail (trace, paquets, sorties) : BANC_VBA_TRAVAIL,
 #             sinon <répertoire temporaire du système>/banc-vba ; JAMAIS dans le dépôt ;
 #   TRACE   = TRAVAIL/trace.txt, la trace des appels au faux SEE (EcrireTrace) ;
-#   PORT    = le port du soffice à joindre (BANC_VBA_PORT, sinon 2002).
+#   PORT    = le port du soffice à joindre (BANC_VBA_PORT, sinon 2002) ;
+#   IGE     = TRAVAIL/IGE+XAO, le faux dossier d'installation de SEE où ExporterWD cherche ses schémas (banc.py).
 # « python3 chemins.py » écrit le dossier de travail (lancer.sh s'en sert).
 import os, tempfile
 ICI = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +17,7 @@ XLSX = os.path.join(RACINE, 'lib', 'xlsx.min.js')
 TRAVAIL = os.path.abspath(os.environ.get('BANC_VBA_TRAVAIL') or os.path.join(tempfile.gettempdir(), 'banc-vba'))
 TRACE = os.path.join(TRAVAIL, 'trace.txt')
 PORT = int(os.environ.get('BANC_VBA_PORT') or 2002)
+IGE = os.path.join(TRAVAIL, 'IGE+XAO')
 if os.path.commonpath([TRAVAIL, RACINE]) == RACINE:
     raise SystemExit(f'le dossier de travail {TRAVAIL} est dans le dépôt : choisir BANC_VBA_TRAVAIL ailleurs')
 os.makedirs(TRAVAIL, exist_ok=True)

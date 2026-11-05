@@ -80,7 +80,13 @@
    aucune erreur ; une forme lue par le projet sous SeeAutomation ; pour
    rejoindre SEE, seulement les ProgID d'un CLSID des réglages ou du
    programme de SEE ; l'Application absente du registre, le bouton 1 envoie
-   droit au bouton 3.
+   droit au bouton 3. Et la liste de fils (SEE_WD, le 5 novembre 2026) :
+   ExporterWD, EssaiWD et LireFormatWD ne touchent pas SEE (ni gApp, ni
+   connexion, ni couche SEE_*, ni le pilote ; aucun membre d'objet SEE dans
+   SEE_WD) ; chaque valeur d'attribut XML passe par EchapperXml (seul
+   AttributXml écrit nom="…") ; chaque fichier écrit est vérifié par Windows
+   (ValiderXmlParXsd) ; aucun chemin entier dans Export_WD ; le schéma retenu
+   est le plus haut des 3.xx.
    Puis le contrôleur s'éprouve lui-même : des fautes sont injectées une à
    une dans une copie des modules (mutations), chacune doit être attrapée
    par le contrôle attendu ; et une écriture dans le classeur (feuille,
@@ -91,7 +97,7 @@
    ========================================================================= */
 const fs = require('fs'), path = require('path');
 const DOSSIER = process.env.VBA_DOSSIER || path.resolve(__dirname, '..', 'see', 'vba');
-const MODULES = ['SEE_Commun', 'SEE_Sonde', 'SEE_Pilote', 'SEE_Windows'];
+const MODULES = ['SEE_Commun', 'SEE_Sonde', 'SEE_Pilote', 'SEE_Windows', 'SEE_WD'];
 // le seul module qui déclare des fonctions de Windows (Declare PtrSafe), les seules bibliothèques et les seules
 // fonctions permises : rien qui lise la table des objets actifs par appels de vtable (GetRunningObjectTable…)
 const MODULE_WINDOWS = 'SEE_Windows', BIBLIOTHEQUES = new Set(['ole32', 'oleaut32']), DECLARES_PERMIS = new Set(['clsidfromstring', 'getactiveobject']);
@@ -100,6 +106,13 @@ const FAUX_WINDOWS = path.resolve(__dirname, 'banc-vba', 'FauxWindows.bas');
 // la liste des réglages qui fait foi pour l'Atelier : la section « Le pilote : ses réglages » du contrat
 const CONTRAT = fs.readFileSync(path.resolve(__dirname, '..', 'see', 'FORMAT-PAQUET.md'), 'utf8');
 const REGLAGES_DOC = CONTRAT.slice(CONTRAT.indexOf('## Le pilote : ses réglages'));
+
+// --- les contrôles de la liste de fils (SEE_WD), nommés une fois : les mutations les citent
+const WD_SEE = 'SEE_WD : ExporterWD, EssaiWD, LireFormatWD (Public Sub sans argument) ne touchent pas SEE (ni gApp, ni connexion, ni couche SEE_*, ni le pilote) ; aucun membre d\'objet SEE dans SEE_WD';
+const WD_ECHAPPE = 'SEE_WD : chaque valeur d\'attribut XML passe par EchapperXml (seul AttributXml écrit nom="…", hors l\'essai fixe XmlEssaiWD)';
+const WD_VERIFIE = 'SEE_WD : chaque fichier de liste de fils écrit est vérifié par Windows (EcrireEtVerifierWD et EssaiWD, seuls à écrire un XML, appellent ValiderXmlParXsd)';
+const WD_CHEMIN = 'SEE_WD : aucun chemin entier dans Export_WD ni Essai_WD (le haut, les erreurs de Windows, ce qui n\'est pas écrit tel quel : MasquerChemins)';
+const WD_VERSION = 'SEE_WD : ExporterWD retient le schéma « Wiring Diagram » le plus haut (SchemasWD) dont la version commence par « 3. » (SchemaRetenuWD)';
 
 // --- Windows-1252 : les 32 caractères de 0x80 à 0x9F (undefined = octet interdit)
 const CP1252_80 = [0x20AC, undefined, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, undefined, 0x017D, undefined,
@@ -130,7 +143,7 @@ function sequencesUtf8(buf) {
 }
 
 // --- les fonctions, objets et constantes de VBA / Excel que le code peut nommer sans les définir
-const BUILTINS = new Set(`abs array asc chr choose cbool cbyte ccur cdate cdbl cdec cint clng clnglng clngptr csng cstr cvar
+const BUILTINS = new Set(`abs array asc ascw chr choose cbool cbyte ccur cdate cdbl cdec cint clng clnglng clngptr csng cstr cvar
   callbyname createobject curdir strptr date dateadd datediff day doevents environ eof err error exp filelen fix format freefile
   filecopy dir chdir chdrive timeserial timevalue vbdirectory vbhidden vbsystem vbnormal vbreadonly getattr mkdir lof
   getobject hex hour iif instr instrrev int isarray isdate isempty iserror ismissing isnull isnumeric isobject join lbound lcase left len
@@ -1086,6 +1099,33 @@ function controler(entrees) {
       ok('SEE_Sonde : TesterSEE lit le registre (SondeRegistre) AVANT de joindre SEE (ses ProgID servent à le rejoindre)', iReg >= 0 && iApp > iReg);
     }
   }
+  // --- la liste de fils (SEE_WD) : ExporterWD lit le disque et le paquet, écrit des fichiers et des feuilles du classeur ;
+  //     il ne touche jamais SEE. Chaque valeur d'attribut est échappée ; chaque fichier, vérifié par Windows ; aucun
+  //     chemin entier sur la photo ; le schéma retenu, le plus haut des 3.xx
+  if (ecritures && analyses.SEE_WD) {
+    const macros = ['ExporterWD', 'EssaiWD', 'LireFormatWD'].map(n => procDe('SEE_WD', n)).filter(Boolean);
+    const CONNEXION = /^(connectersee|creerparclsid|nouvelobjet|nouvelobjetautomation|objetactifparnom|objetactifparclsid|objetnouveauparclsid|objetcreeparnom|see_\w+)$/i;
+    const touche = [...atteintesDepuis(macros)].filter(p => p.module === 'SEE_Pilote' || CONNEXION.test(p.nom)
+      || p.lignes.some(l => /\bgApp\b/i.test(sansChaines(sansCommentaire(l.code))))).map(p => `${p.module}.${p.nom}`);
+    const { fautes } = ecritures.fautesDe(analyses.SEE_WD.procs);
+    ok(WD_SEE, macros.length === 3 && macros.every(p => p.public && p.genre === 'sub' && !p.params.length) && !touche.length && !fautes.length,
+      macros.length < 3 ? 'macro absente' : (touche.concat(fautes).slice(0, 4).join(' ; ') || 'une macro n\'est pas une Public Sub sans argument'));
+    const brutes = codeDe('SEE_WD').filter(x => x.p !== 'AttributXml' && x.p !== 'XmlEssaiWD'
+      && [...x.code.matchAll(/"((?:[^"]|"")*)"/g)].some(m => /=""|='/.test(m[1]))).map(x => `${x.p}:${x.n}`);
+    ok(WD_ECHAPPE, !brutes.length && /=""" & EchapperXml\(valeur\) & """"/.test(texteBrut(procDe('SEE_WD', 'AttributXml'))), brutes.join(' ; ') || 'AttributXml');
+    const ecrivent = codeDe('SEE_WD').filter(x => /\bEcrireFichierTexte\(/.test(sansChaines(x.code))).map(x => x.p);
+    ok(WD_VERIFIE, ecrivent.length >= 2 && ecrivent.every(p => p === 'EcrireEtVerifierWD' || p === 'EssaiWD')
+      && /ElseIf ValiderXmlParXsd\(chemin, cheminXsd, espace, erreurs\) Then\n\s*EcrireEtVerifierWD = "VALIDE"/.test(texteBrut(procDe('SEE_WD', 'EcrireEtVerifierWD')))
+      && /ok = ValiderXmlParXsd\(cheminXml, CStr\(p\), espace, erreurs\)/.test(texteBrut(procDe('SEE_WD', 'EssaiWD'))), ecrivent.join(', '));
+    ok(WD_CHEMIN, /Array\(rubrique, MasquerChemins\(texte\)\)/.test(texteBrut(procDe('SEE_WD', 'LigneHautWD')))
+      && /MasquerChemins\(CStr\(v\(1\)\)\), MasquerChemins\(CStr\(v\(2\)\)\)/.test(texteBrut(procDe('SEE_WD', 'ExporterPaquetWD')))
+      && /MasquerChemins\(CStr\(e\)\)/.test(texteBrut(procDe('SEE_WD', 'EcrireEtVerifierWD')))
+      && /Array\("erreur", version, MasquerChemins\(CStr\(e\)\)\)/.test(texteBrut(procDe('SEE_WD', 'EssaiWD'))), 'LigneHautWD, ExporterPaquetWD, EcrireEtVerifierWD ou EssaiWD');
+    ok(WD_VERSION, /If Left\$\(VersionDuSchema\(CStr\(p\)\), 2\) = "3\." Then/.test(texteBrut(procDe('SEE_WD', 'SchemaRetenuWD')))
+      && /cheminXsd = SchemaRetenuWD\(SchemasWD\(xsd\)\)/.test(texteBrut(procDe('SEE_WD', 'LireSchemaWD')))
+      && /If Val\(VersionDuSchema\(CStr\(trouves\.Item\(i\)\)\)\) > Val\(VersionDuSchema\(CStr\(trouves\.Item\(j\)\)\)\) Then j = i/.test(texteBrut(procDe('SEE_WD', 'SchemasWD'))),
+      'SchemaRetenuWD, LireSchemaWD ou SchemasWD');
+  }
   return { res, analyses };
 }
 
@@ -1306,6 +1346,20 @@ if (Object.keys(entrees).length === MODULES.length && Object.keys(analyses).leng
       remplacer('SEE_Sonde', /    If StrComp\(ServeurDuCLSID\(clsid\), mServeurSEE, vbTextCompare\) = 0 Then RaisonDEssayer/, '    RaisonDEssayer')],
     ['le bouton 1 qui ne dit pas que le bouton 3 est la voie (Application absente)', 'bouton 1 : l\'Application absente du registre, le message va droit au bouton 3 (« Ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 »)',
       remplacer('SEE_Sonde', /Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3/, 'Essaie peut-être le bouton 3')],
+    // --- la liste de fils (SEE_WD)
+    ['ExporterWD qui rejoint SEE', WD_SEE, remplacer('SEE_WD', /(    ExporterPaquetWD chemin\r\n)/, '    If ConnecterSEE(False) Then Beep\r\n$1')],
+    ['SEE_WD qui écrit dans SEE', WD_SEE, ajout('SEE_WD', ['gApp.GetProject().Save'])],
+    ['ExporterWD qui dessine par le pilote', WD_SEE, remplacer('SEE_WD', /(    ExporterPaquetWD chemin\r\n)/, '    DessinerPaquetFichier chemin, True\r\n$1')],
+    ['ExporterWD avec un argument (absente d\'Alt+F8)', WD_SEE, remplacer('SEE_WD', /Public Sub ExporterWD\(\)/, 'Public Sub ExporterWD(Optional ByVal zz As Long = 0)')],
+    ['un attribut XML écrit sans EchapperXml', WD_ECHAPPE, ajout('SEE_WD', ['Dim zzS As String, zzV As String', 'zzS = zzS & " Tag=""" & zzV & """"'])],
+    ['AttributXml qui n\'échappe plus la valeur', WD_ECHAPPE, remplacer('SEE_WD', /=""" & EchapperXml\(valeur\) & """"/, '=""" & valeur & """"')],
+    ['un fichier de liste de fils écrit sans être vérifié', WD_VERIFIE, remplacer('SEE_WD', /    ElseIf ValiderXmlParXsd\(chemin, cheminXsd, espace, erreurs\) Then\r\n/, '    ElseIf True Then\r\n')],
+    ['ExporterWD qui écrit un XML hors d\'EcrireEtVerifierWD', WD_VERIFIE, remplacer('SEE_WD', /(    ExporterPaquetWD chemin\r\n)/, '    If EcrireFichierTexte(chemin & ".xml", "x") Then Beep\r\n$1')],
+    ['le haut de Export_WD qui montre un chemin entier', WD_CHEMIN, remplacer('SEE_WD', /Array\(rubrique, MasquerChemins\(texte\)\)/, 'Array(rubrique, texte)')],
+    ['les erreurs de Windows montrées avec leur chemin (Essai_WD)', WD_CHEMIN, remplacer('SEE_WD', /Array\("erreur", version, MasquerChemins\(CStr\(e\)\)\)/, 'Array("erreur", version, CStr(e))')],
+    ['les erreurs de Windows montrées avec leur chemin (Export_WD)', WD_CHEMIN, remplacer('SEE_WD', /(ERREURS_MONTREES Then detail = detail & IIf\(Len\(detail\) > 0, vbLf, ""\) & )MasquerChemins\(CStr\(e\)\)/, '$1CStr(e)')],
+    ['ExporterWD qui retient une version 2.xx', WD_VERSION, remplacer('SEE_WD', /, 2\) = "3\." Then/, ', 2) = "2." Then')],
+    ['les schémas rangés du plus bas au plus haut', WD_VERSION, remplacer('SEE_WD', /\)\) > Val\(VersionDuSchema\(CStr\(trouves\.Item\(j\)\)\)\) Then j = i/, ')) < Val(VersionDuSchema(CStr(trouves.Item(j)))) Then j = i')],
     ['le bloc à photographier qui montre le chemin entier (SU3)', 'le bloc à photographier et le journal ne montrent pas le chemin entier (MasquerChemins)',
       remplacer('SEE_Commun', /EcrireLigne ws, l, Array\(rubrique, MasquerChemins\(texte\)\)/, 'EcrireLigne ws, l, Array(rubrique, texte)')],
   ];

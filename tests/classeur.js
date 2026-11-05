@@ -28,11 +28,14 @@
        allers-retours (vide, 1 octet, 4 096, 4 097, répétitif, aléatoire) ;
      · le chiffrement : les exemples de § 3.1.6 et d'un projet écrit par Excel ;
      · la sortie est déterministe ; le kit (see/kit.js) porte ce classeur en
-       tête (ses quatre modules standard, SEE_Windows compris), son LIS-MOI
+       tête (ses cinq modules standard, SEE_Windows et SEE_WD compris), son LIS-MOI
        est en UTF-8 avec BOM et CRLF et dit les trois boutons, les photos, et
        quoi faire si Excel reste bloqué ; en tête, ce qui est acquis et « cette
        fois : seulement le bouton 3 », pas à pas, avec ses photos (la partie
-       jaune, le haut de Sonde_Symboles, SEE rouvert sur ESSAI_PILOTE) ;
+       jaune, le haut de Sonde_Symboles, SEE rouvert sur ESSAI_PILOTE) ; et la
+       liste de fils pas à pas (Alt+F8, ExporterWD, le paquet, la photo
+       d'Export_WD, puis dans SEE : File > Import > Wire List, Insert > From
+       Wiring list) ;
      · le REFUS : sans la macro du bouton (ou avec un .bas que le classeur ne
        lit pas), classeur.js et kit.js lèvent une exception, sortent avec le
        code 1 et n'écrivent rien, sauf --sans-bouton ; essayé sur des copies
@@ -61,7 +64,7 @@ const latin1 = o => Buffer.from(o).toString('latin1');
 
 /* ce que le projet doit contenir, dit ici, sans le générateur */
 const MODULES = [{ nom: 'ThisWorkbook', document: true }, { nom: 'Feuil1', document: true },
-  { nom: 'SEE_Commun' }, { nom: 'SEE_Sonde' }, { nom: 'SEE_Pilote' }, { nom: 'SEE_Windows' }];
+  { nom: 'SEE_Commun' }, { nom: 'SEE_Sonde' }, { nom: 'SEE_Pilote' }, { nom: 'SEE_Windows' }, { nom: 'SEE_WD' }];
 /* les trois boutons, dits ici sans le générateur : la macro et le texte */
 const BOUTONS_ATTENDUS = [['TesterSEE', '1. TESTER SEE'], ['EssaiDessinReel', '2. SEE DESSINE'], ['EssaiSansFenetre', '3. SEE FERMÉ']];
 const DOC_EXCEL = (nom, base) => [`Attribute VB_Name = "${nom}"`, `Attribute VB_Base = "${base}"`, 'Attribute VB_GlobalNameSpace = False',
@@ -376,7 +379,7 @@ function controler(parties) {
     if (!ok1) fautesModules.push(m.nom); });
   verif('chaque MODULE : nom (Windows-1252 et UTF-16), flux du même nom, sans description, aide 0, cookie 0xFFFF', !fautesModules.length, fautesModules.join(' '));
   const typesFaux = MODULES.filter((m, i) => !modulesLus[i] || modulesLus[i].b[7].id !== (m.document ? 0x22 : 0x21)).map(m => m.nom);
-  verif('MODULETYPE : ThisWorkbook et Feuil1 modules de document (0x22), SEE_Commun, SEE_Sonde, SEE_Pilote modules standard (0x21)', !typesFaux.length, typesFaux.join(' '));
+  verif('MODULETYPE : ThisWorkbook et Feuil1 modules de document (0x22), SEE_Commun, SEE_Sonde, SEE_Pilote, SEE_Windows, SEE_WD modules standard (0x21)', !typesFaux.length, typesFaux.join(' '));
   // --- le texte des modules
   const textesLus = {};
   MODULES.forEach((m, i) => { const b = (modulesLus[i] || {}).b, brut = F.get('VBA/' + m.nom) || new Uint8Array(0);
@@ -567,7 +570,13 @@ try { const k = K.kit({ dossierVba: AVEC }), z = lireZip(k.zip), ref = C.classeu
   const bloque = t.slice(t.indexOf('SI ÇA BLOQUE'));
   ok('LIS-MOI-D-ABORD.txt, « Le bouton ne fait rien » : d\'abord la barre jaune qui reste (Activer la modification ou le contenu), puis Alt+F8 et les trois macros',
     /Le bouton ne fait rien[\s\S]*barre jaune[\s\S]*Activer la modification[\s\S]*Activer le contenu[\s\S]*Alt\+F8[\s\S]*TesterSEE[\s\S]*EssaiDessinReel[\s\S]*EssaiSansFenetre/.test(bloque));
-  ok('le kit porte les quatre modules standard du classeur, SEE_Windows compris', ref.modules.filter(m => !m.document).map(m => m.nom).join(',') === 'SEE_Commun,SEE_Sonde,SEE_Pilote,SEE_Windows'
+  // la liste de fils (5 novembre 2026) : ExporterWD par Alt+F8, le paquet, la photo d'Export_WD, puis dans SEE, sur le projet d'essai
+  const wd = etape('LISTE DE FILS POUR SEE : ExporterWD', 'POUR MÉMOIRE');
+  ok('LIS-MOI-D-ABORD.txt, « LISTE DE FILS POUR SEE : ExporterWD », pas à pas : Alt + F8, ExporterWD, Exécuter, le paquet de l\'Atelier, Ouvrir, OK, la photo d\'Export_WD (et ses lignes « erreur »), puis SEE sur le projet d\'essai TEST_… : File > Import > Wire List, le dossier « WD-… », le fichier du message, Open, jamais un fichier REFUSÉ, la photo du message, Insert > From Wiring list',
+    t.indexOf('LISTE DE FILS POUR SEE') > t.indexOf('CETTE FOIS : SEULEMENT LE BOUTON 3') && t.indexOf('LISTE DE FILS POUR SEE') < t.indexOf('POUR MÉMOIRE')
+      && /Alt \+ F8[\s\S]*« ExporterWD »[\s\S]*Exécuter[\s\S]*paquet[\s\S]*Ouvrir[\s\S]*clique sur OK[\s\S]*photo du haut de la feuille « Export_WD »[\s\S]*« erreur »[\s\S]*projet d'essai \(son nom commence par TEST_…\)[\s\S]*Jamais un vrai projet[\s\S]*menu File, puis Import, puis Wire List[\s\S]*dossier « WD-… »[\s\S]*WD-1\.xml[\s\S]*« Open »[\s\S]*N'importe jamais un fichier marqué\s+REFUSÉ[\s\S]*photo le message de SEE[\s\S]*menu Insert, puis From Wiring list[\s\S]*« Component Insertion »[\s\S]*l'étape F/.test(wd)
+      && /Après ExporterWD : le haut de la feuille Export_WD[\s\S]*File > Import > Wire List[\s\S]*« Component Insertion »/.test(t.slice(t.indexOf('LES PHOTOS À PRENDRE'))));
+  ok('le kit porte les cinq modules standard du classeur, SEE_Windows et SEE_WD compris', ref.modules.filter(m => !m.document).map(m => m.nom).join(',') === 'SEE_Commun,SEE_Sonde,SEE_Pilote,SEE_Windows,SEE_WD'
     && egaux([...z[0].octets], [...ref.octets]), ref.modules.map(m => m.nom).join(', ')); }
 catch (e) { ok('le kit s\'écrit', false, e.message); }
 

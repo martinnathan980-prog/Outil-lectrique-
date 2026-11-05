@@ -1292,3 +1292,165 @@ Public Function BancBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal proj
 E:
     BancBouton3 = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
 End Function
+
+' ---------------------------------------------------------------------------- ExporterWD : le paquet en listes de fils
+' XML que SEE importe (File > Import > Wire List). Le faux Windows choisit le paquet (gWinFichier) et vérifie chaque
+' fichier (ValiderXmlParXsd : Vrai, sauf gWinXmlRefuse) ; relecture.py relit ensuite les fichiers (verifier_wd.py :
+' xmllint contre la reconstitution du schéma 3.10, et le paquet).
+
+' Un passage d'ExporterWD : le faux Windows et le faux SEE remis à zéro, aucun SEE joint, le classeur prêt ; sous
+' gSansDialogue, la boîte de fin va au journal.
+Private Sub PreparerWD()
+    InitFaux False
+    Set gApp = Nothing
+    gSansDialogue = True
+    InitialiserClasseur
+End Sub
+
+' Un texte du classeur dans le résultat du banc : sans « | » ni « ; », qui en séparent les morceaux.
+Private Function SansSeparateurs(ByVal s As String) As String
+    SansSeparateurs = Replace(Replace(Replace(Replace(s, " | ", " / "), " ; ", ", "), ";", ","), vbLf, " / ")
+End Function
+
+' Les appels au faux Windows qui commencent par prefixe et contiennent texte.
+Private Function CompterWinAvec(ByVal prefixe As String, ByVal texte As String) As Long
+    Dim i As Long, n As Long
+    For i = 1 To gWinTrace.Count
+        If Left(gWinTrace.Item(i), Len(prefixe)) = prefixe And InStr(1, gWinTrace.Item(i), texte) > 0 Then n = n + 1
+    Next i
+    CompterWinAvec = n
+End Function
+
+' Les boîtes d'ExporterWD (dites au journal sous gSansDialogue), et le texte de la dernière.
+Private Function BoitesWD() As Long
+    Dim ws As Object, i As Long, n As Long
+    Set ws = ThisWorkbook.Worksheets("Journal")
+    For i = 2 To 30000
+        If Len(CStr(ws.Cells(i, 1).Value)) = 0 Then Exit For
+        If CStr(ws.Cells(i, 2).Value) = "Dialogue" And CStr(ws.Cells(i, 3).Value) = "Pilote SEE - ExporterWD" Then n = n + 1
+    Next i
+    BoitesWD = n
+End Function
+Private Function BoiteWD() As String
+    Dim ws As Object, i As Long, s As String
+    Set ws = ThisWorkbook.Worksheets("Journal")
+    For i = 2 To 30000
+        If Len(CStr(ws.Cells(i, 1).Value)) = 0 Then Exit For
+        If CStr(ws.Cells(i, 2).Value) = "Dialogue" And CStr(ws.Cells(i, 3).Value) = "Pilote SEE - ExporterWD" Then s = CStr(ws.Cells(i, 5).Value)
+    Next i
+    BoiteWD = SansSeparateurs(s)
+End Function
+
+' Ce qu'ExporterWD a laissé : la feuille Export_WD (les verdicts du tableau, les erreurs montrées, ce qui n'est pas
+' écrit tel quel, le haut), les appels au faux Windows et au faux SEE, la boîte de fin, et si le dossier de travail
+' (un chemin entier) paraît dans la feuille.
+Private Function BilanWD(ByVal travail As String) As String
+    Dim ws As Object, i As Long, j As Long, a As String, k As String, nF As Long, nV As Long, nR As Long, nN As Long
+    Dim nP As Long, nE As Long, nEc As Long, fin As Boolean, montre As String, haut As String, fichiers As String
+    BilanWD = "validations " & CompterWin("Windows|ValiderXml") & " (schéma 3.10 : " & CompterWinAvec("Windows|ValiderXml|", "Wiring Diagram 3.10.xsd") & _
+        ") ; choisir " & CompterWin("Windows|ChoisirFichier") & " ; traces SEE " & Compter("") & " ; boîtes " & BoitesWD() & " ; "
+    If Not FeuilleExiste("Export_WD") Then
+        BilanWD = BilanWD & "Export_WD absente ; boîte = " & BoiteWD()
+        Exit Function
+    End If
+    Set ws = ThisWorkbook.Worksheets("Export_WD")
+    For i = 9 To 5000
+        a = CStr(ws.Cells(i, 1).Value)
+        k = CStr(ws.Cells(i, 11).Value)
+        If a = "PAS ÉCRIT TEL QUEL" Then
+            fin = True
+        ElseIf fin Then
+            If Len(a) = 0 And Len(CStr(ws.Cells(i, 2).Value)) = 0 Then Exit For
+            If Len(CStr(ws.Cells(i, 2).Value)) > 0 Then nEc = nEc + 1
+        ElseIf Left(a, 3) = "WD-" Then
+            nF = nF + 1
+            fichiers = fichiers & IIf(Len(fichiers) > 0, ",", "") & a
+            If k = "VALIDE" Then nV = nV + 1
+            If Left(k, 6) = "REFUSÉ" Then nR = nR + 1
+            If k = "NON VÉRIFIÉ" Then nN = nN + 1
+            If k = "PAS ÉCRIT" Then nP = nP + 1
+        ElseIf Trim(a) = "erreur" Then
+            nE = nE + 1
+        End If
+    Next i
+    montre = "non"
+    For i = 1 To 200
+        For j = 1 To 11
+            If InStr(1, CStr(ws.Cells(i, j).Value), travail) > 0 Then montre = "oui"
+        Next j
+    Next i
+    For i = 1 To 6
+        haut = haut & IIf(i > 1, " § ", "") & CStr(ws.Cells(i, 1).Value) & "/" & CStr(ws.Cells(i, 2).Value)
+    Next i
+    BilanWD = BilanWD & "fichiers " & nF & " ; VALIDE " & nV & " ; REFUSÉ " & nR & " ; NON VÉRIFIÉ " & nN & " ; PAS ÉCRIT " & nP & _
+        " ; erreurs montrées " & nE & " ; écarts " & nEc & " ; chemin entier montré " & montre & " ; noms = " & SansSeparateurs(fichiers) & _
+        " ; haut = " & SansSeparateurs(haut) & " ; boîte = " & BoiteWD()
+End Function
+
+' Les verdicts de la feuille Essai_WD (EssaiWD) : « verdicts n = <fichier> <détail> / … ».
+Private Function VerdictsEssaiWD() As String
+    Dim ws As Object, i As Long, n As Long, s As String
+    If Not FeuilleExiste("Essai_WD") Then
+        VerdictsEssaiWD = "Essai_WD absente"
+        Exit Function
+    End If
+    Set ws = ThisWorkbook.Worksheets("Essai_WD")
+    For i = 2 To 200
+        If CStr(ws.Cells(i, 1).Value) = "VERDICT" Then
+            n = n + 1
+            s = s & IIf(Len(s) > 0, " / ", "") & CStr(ws.Cells(i, 2).Value) & " " & CStr(ws.Cells(i, 3).Value)
+        End If
+    Next i
+    VerdictsEssaiWD = "verdicts " & n & " = " & SansSeparateurs(s)
+End Function
+
+' ExporterWD : le paquet d'exemple ; Annuler la fenêtre « Ouvrir » ; la variante (v_wd.js : échappement, noms de
+' fichier, natures, longueurs) ; un refus de Windows (le fichier du folio 1 : la boîte envoie au suivant) ; le schéma
+' introuvable (le dossier IGE+XAO du banc renommé le temps du passage) ; un paquet illisible. Chaque passage a son
+' paquet (une copie de l'exemple pour le refus et le schéma introuvable), donc son dossier WD-… : relecture.py les relit
+' tous. Puis EssaiWD, déplacé dans SEE_WD avec les outils du schéma : un fichier d'essai par schéma trouvé, dans le
+' dossier du projet d'essai (essai : un .seeprj, réglage Projet). travail : le dossier de travail (aucun chemin entier
+' ne doit paraître dans Export_WD) ; ige : le dossier IGE+XAO du banc.
+Public Function BancExporterWD(ByVal chemin As String, ByVal variante As String, ByVal refus As String, ByVal sans As String, _
+        ByVal ige As String, ByVal travail As String, ByVal essai As String) As String
+    Dim r As String
+    On Error GoTo E
+    PreparerWD
+    gWinFichier = chemin
+    ExporterWD
+    r = "export : " & BilanWD(travail)
+    PreparerWD
+    gWinFichier = ""
+    ExporterWD
+    r = r & " | annuler : choisir " & CompterWin("Windows|ChoisirFichier") & " ; validations " & CompterWin("Windows|ValiderXml") & _
+        " ; boîtes " & BoitesWD() & " ; dit au journal " & JournalContient("aucun paquet choisi")
+    PreparerWD
+    gWinFichier = variante
+    ExporterWD
+    r = r & " | variante : " & BilanWD(travail)
+    PreparerWD
+    gWinFichier = refus
+    gWinXmlRefuse = "WD-1.xml"
+    ExporterWD
+    r = r & " | refus : " & BilanWD(travail)
+    Name ige As ige & "_cache"
+    PreparerWD
+    gWinFichier = sans
+    ExporterWD
+    Name ige & "_cache" As ige
+    r = r & " | sans schéma : " & BilanWD(travail)
+    PreparerWD
+    gWinFichier = chemin & ".absent.xlsx"
+    ExporterWD
+    r = r & " | illisible : boîtes " & BoitesWD() & " ; validations " & CompterWin("Windows|ValiderXml") & " ; boîte = " & BoiteWD()
+    PreparerWD
+    FixerReglage "Projet", essai
+    EssaiWD
+    r = r & " | essai : validations " & CompterWin("Windows|ValiderXml") & " ; " & VerdictsEssaiWD()
+    ' (les « ; » des entités deviennent « ~ » : « ; » sépare les morceaux du résultat)
+    r = r & " | échappement : " & Replace(EchapperXml("A&B<C>""D""'E' é" & ChrW(8364) & Chr(9) & "!"), ";", "~")
+    BancExporterWD = r
+    Exit Function
+E:
+    BancExporterWD = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
+End Function

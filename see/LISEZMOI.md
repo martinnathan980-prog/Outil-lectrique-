@@ -34,7 +34,7 @@ retest (Excel)
 paquet SEE (.xlsx)  ← menu « Exporter pour SEE… » : chaque folio en millimètres
    │                   (blocs, connecteurs, bornes, fils et leur tracé)
    ▼
-Pilote-SEE.xlsm (le classeur pilote, ses trois modules VBA déjà dedans)
+Pilote-SEE.xlsm (le classeur pilote, ses modules VBA déjà dedans)
    │  lit le paquet et commande SEE par COM, folio par folio
    ▼
 SEE Electrical Expert (projet sorti de SPM)  →  check-in dans SPM
@@ -43,6 +43,14 @@ SEE Electrical Expert (projet sorti de SPM)  →  check-in dans SPM
 Repli si le pilote ne peut pas commander SEE : l'Atelier écrit **un DXF par
 folio**, que SEE importe d'un coup (voir plus bas).
 
+Depuis le 5 novembre 2026 (SEE refuse de créer des objets par son API, et sa
+licence refuse les imports DXF et Excel) : la **liste de fils XML**. La macro
+`ExporterWD` du classeur pilote (`Alt+F8`, module `SEE_WD`) écrit, à partir du
+paquet, un fichier `WD-<folio>.xml` par folio et `WD-TOUT.xml`, chacun vérifié
+par Windows contre le schéma de SEE ; SEE les importe par *File > Import >
+Wire List*, puis *Insert > From Wiring list* pose les composants. La
+correspondance, ce qui est établi et ce qui est supposé : `FORMAT-WD.md`.
+
 ## Ce qu'il y a dans ce dossier
 
 | Fichier | À quoi il sert |
@@ -50,10 +58,11 @@ folio**, que SEE importe d'un coup (voir plus bas).
 | `kit.js` | `node see/kit.js` écrit **Kit-SEE.zip**, le seul fichier à emporter au bureau, par courriel : DEUX fichiers, `Pilote-SEE.xlsm` puis `LIS-MOI-D-ABORD.txt`. Rien dedans que la messagerie refuse, même zippé (ni `.cmd`, ni `.ps1`, ni `.js`…) : il le vérifie ; le reste (diagnostic, `.bas` du repli, l'Atelier) s'envoie à part, seulement s'il le faut. Il **refuse** (code 1, pas de zip) tant que la macro d'un bouton (`TesterSEE`, `EssaiDessinReel`, `EssaiSansFenetre`) manque |
 | `kit/LIS-MOI-D-ABORD.txt` | les étapes du bureau, une action par ligne, les trois boutons, les photos à prendre, et quoi faire si Excel reste bloqué (UTF-8 avec BOM, CRLF : le Bloc-notes l'ouvre tel quel) |
 | `kit.js --pdf` | `node see/kit.js --pdf` écrit **Kit-PDF.zip**, la sonde PDF par courriel : `sonde_pdf.py` (copié de `pdf/`, il se lance d'un double-clic et lit le dossier `PDF-A-LIRE`), son `LIS-MOI-D-ABORD.txt` (`pdf/kit/`) et le dossier vide `PDF-A-LIRE` ; pas de `.bat` (la messagerie le refuserait, il reste dans `pdf/` pour une clé USB ou un partage), même contrôle des types refusés ; voir `pdf/LISEZMOI.md` |
-| `classeur.js` | `node see/classeur.js` écrit **Pilote-SEE.xlsm** : le classeur pilote, les quatre modules déjà dedans, une feuille « Accueil » en trois étapes et trois gros boutons, « 1. TESTER SEE », « 2. SEE DESSINE » et « 3. SEE FERMÉ » (voir « Le classeur pilote tout prêt ») |
-| `vba/SEE_Commun.bas`, `vba/SEE_Sonde.bas`, `vba/SEE_Pilote.bas`, `vba/SEE_Windows.bas` | les quatre modules du classeur pilote : `classeur.js` les met dans `Pilote-SEE.xlsm` ; en repli, ils s'importent à la main dans Excel. `SEE_Windows` est le seul qui parle à Windows : rejoindre un programme ouvert (`GetObject(, nom)`, `GetActiveObject` par CLSID), créer l'objet SEE du bouton 3, lire le registre et les programmes en marche (WMI, lecture seule), les fenêtres du bouton 3 |
+| `classeur.js` | `node see/classeur.js` écrit **Pilote-SEE.xlsm** : le classeur pilote, les cinq modules déjà dedans, une feuille « Accueil » en trois étapes et trois gros boutons, « 1. TESTER SEE », « 2. SEE DESSINE » et « 3. SEE FERMÉ » (voir « Le classeur pilote tout prêt ») |
+| `vba/SEE_Commun.bas`, `vba/SEE_Sonde.bas`, `vba/SEE_Pilote.bas`, `vba/SEE_Windows.bas`, `vba/SEE_WD.bas` | les cinq modules du classeur pilote : `classeur.js` les met dans `Pilote-SEE.xlsm` ; en repli, ils s'importent à la main dans Excel. `SEE_Windows` est le seul qui parle à Windows : rejoindre un programme ouvert (`GetObject(, nom)`, `GetActiveObject` par CLSID), créer l'objet SEE du bouton 3, lire le registre et les programmes en marche (WMI, lecture seule), les fenêtres du bouton 3, vérifier un XML contre un schéma (MSXML 6). `SEE_WD` est la liste de fils XML (`ExporterWD`, `EssaiWD`, `LireFormatWD`) : elle ne touche pas SEE |
 | `diagnostic.cmd`, `diagnostic.ps1` | le relevé du poste, en lecture seule (double-clic sur le `.cmd`) ; seulement si le test ne passe pas. Hors du kit : la messagerie refuse ces fichiers, même zippés ; ils s'enverraient à part |
 | `FORMAT-PAQUET.md` | ce que contient le paquet SEE, colonne par colonne, et la liste des réglages du pilote |
+| `FORMAT-WD.md` | la liste de fils XML qu'écrit `ExporterWD` : les fichiers, le schéma, la correspondance avec le paquet, ce qui est établi et ce qui est supposé |
 | `FORMAT-DXF.md` | le DXF de repli : calques, noms de blocs, attributs |
 | `RECHERCHE.md` | ce que la recherche a établi sur SEE, avec ses sources et son niveau de certitude |
 | `exporter.js` | l'export en lot sans navigateur (`node see/exporter.js retest.xlsx`), pour qui a Node |
@@ -416,7 +425,7 @@ contient :
 - **le projet VBA** (`xl/vbaProject.bin`), construit selon la spécification
   de Microsoft [MS-OVBA] dans un fichier composé [MS-CFB] : `ThisWorkbook` et
   `Feuil1` (modules de document, vides, comme Excel les écrit), puis
-  `SEE_Commun`, `SEE_Sonde`, `SEE_Pilote`, `SEE_Windows`, leur texte **exact**, octet pour
+  `SEE_Commun`, `SEE_Sonde`, `SEE_Pilote`, `SEE_Windows`, `SEE_WD`, leur texte **exact**, octet pour
   octet. Le projet ne porte **aucun code compilé** : son en-tête
   (`_VBA_PROJECT`, version `0xFFFF`) dit à Office de tout recompiler depuis
   le texte, ce que la spécification demande à qui écrit un projet. Non

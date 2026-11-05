@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  RECONSTITUTION PARTIELLE D'APRÈS PHOTOS, PAS LE SCHÉMA D'IGE+XAO.
+
+  Pour le banc seulement (tests/banc-vba, scénario « exporter WD ») : relecture.py la copie sous le nom
+  « IGE-XAO Wiring Diagram 3.10.xsd » dans un faux dossier IGE+XAO, où ExporterWD la trouve et la lit comme le
+  schéma de SEE ; puis verifier_wd.py vérifie chaque fichier produit contre elle (xmllint). Le vrai schéma est
+  livré avec SEE Electrical Expert V4R3 (…\4.8\SEE_Soft\PARAM\XSD\IGE-XAO Wiring Diagram 3.10.xsd) : ce fichier
+  n'en est pas une copie, et ne doit jamais être présenté comme lui.
+
+  D'où vient chaque morceau (photos de Format_WD et d'Essai_WD, 5 novembre 2026) :
+  - VU EN 3.10 : la racine (ses trois attributs, ses quatre enfants), les enfants de cWireHarness et son groupe
+    d'attributs agWireHarness (Tag obligatoire ; pas de WiresNumber, que Windows a refusé), cWiresList, les types
+    simples tEDB_InstanceID, tXSDVersion, tLengthUnit, tTag, tExtendedTag, tWireType, tGauge, tNonNegativeDouble,
+    tClass, tSegregation, tSolutionNumber, tVersionNb, tColor, tWHType, tConnectType, tPinType ; cWire sans Class
+    (refusé par Windows en 3.10).
+  - VU EN 2.18, SUPPOSÉ INCHANGÉ EN 3.10 : ConnectiveDevice (élément au type déclaré sur place) et ses attributs,
+    Shunt, cPin, les attributs de cWire (moins Class), cWireExtremity, WiresExtremitiesList (deux bouts au moins).
+  - SUPPOSÉ : le reste des attributs de agWireHarness (Description, PartNumber, Segregation, Type, Solution,
+    VersionNb : ceux de cWireHarness en 2.18), les longueurs de tDescription et tPartNumber (255), les types non
+    photographiés (chaînes libres), et l'ordre des attributs (sans effet en XML).
+  Aucune contrainte d'unicité (xs:key, xs:unique) : les photos n'en disent rien ; verifier_wd.py contrôle l'unicité
+  des Tag et que chaque bout de fil cite une broche qui existe.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+  <!-- ===================================================================== la racine (vue en 3.10) -->
+  <xs:element name="IGE-XAO_WIRE_HARNESS">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="FunctionalGroup" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="WireDiagram" type="cWireDiagram" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="WireHarness" type="cWireHarness" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element name="LogsList" type="ctLogs" minOccurs="0" maxOccurs="1"/>
+      </xs:sequence>
+      <xs:attribute name="EDB_InstanceID" type="tEDB_InstanceID" use="required"/>
+      <xs:attribute name="XSDversion" type="tXSDVersion" use="required"/>
+      <xs:attribute name="LengthUnit" type="tLengthUnit"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="FunctionalGroup" type="cFunctionalGroup"/>
+  <xs:complexType name="cFunctionalGroup">
+    <xs:sequence>
+      <xs:element name="Version" type="cVersion" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="UserAttribute" type="cUserAttribute" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element ref="FunctionalGroup" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="WireDiagram" type="cWireDiagram" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+    <xs:attribute name="Tag" type="tTag" use="required"/>
+    <xs:attribute name="Description" type="tDescription"/>
+  </xs:complexType>
+  <xs:complexType name="cWireDiagram">
+    <xs:sequence>
+      <xs:element name="UserAttribute" type="cUserAttribute" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="Tag" type="tTag"/>
+    <xs:attribute name="Solution" type="tSolutionNumber" use="required"/>
+    <xs:attribute name="Version" type="tVersionNb" use="required"/>
+    <xs:attribute name="Format" type="xs:string"/>
+    <xs:attribute name="Designer_Name" type="xs:string"/>
+    <xs:attribute name="ProjectID" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="ctLogs">
+    <xs:sequence>
+      <xs:element name="ErrorsList" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="WarningsList" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="InformationsList" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+    <xs:attribute name="Language" type="xs:string"/>
+  </xs:complexType>
+
+  <!-- ===================================================================== le faisceau (vu en 3.10) -->
+  <xs:complexType name="cWireHarness">
+    <xs:sequence>
+      <xs:element name="ConnectiveDevicesList" type="cConnectiveDevicesList" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="PassThroughDeviceList" type="cPassThroughDeviceList" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="WiresList" type="cWiresList" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="WiresExtremitiesList" minOccurs="0" maxOccurs="1">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="WireExtremity" type="cWireExtremity" minOccurs="2" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="UserAttribute" type="cUserAttribute" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="Accessory" type="cAccessory" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attributeGroup ref="agWireHarness"/>
+  </xs:complexType>
+  <xs:attributeGroup name="agWireHarness">
+    <xs:attribute name="Tag" type="tTag" use="required"/>
+    <xs:attribute name="Description" type="tDescription"/>
+    <xs:attribute name="PartNumber" type="tPartNumber"/>
+    <xs:attribute name="Segregation" type="tSegregation"/>
+    <xs:attribute name="Type" type="tWHType"/>
+    <xs:attribute name="Solution" type="tSolutionNumber"/>
+    <xs:attribute name="VersionNb" type="tVersionNb"/>
+  </xs:attributeGroup>
+
+  <!-- ===================================================================== les appareils (vus en 2.18) -->
+  <xs:complexType name="cConnectiveDevicesList">
+    <xs:sequence>
+      <xs:element name="ConnectiveDevice" minOccurs="1" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Pin" type="cPin" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="Shunt" minOccurs="0" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="Pin" type="cPin" minOccurs="1" maxOccurs="unbounded"/>
+                </xs:sequence>
+                <xs:attribute name="Tag" type="tTag" use="required"/>
+                <xs:attribute name="Type" type="xs:string"/>
+              </xs:complexType>
+            </xs:element>
+            <xs:element name="Cavity" type="cCavity" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="Version" type="cVersion" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="UserAttribute" type="cUserAttribute" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="Accessory" type="cAccessory" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+          <xs:attribute name="Tag" type="tExtendedTag" use="required"/>
+          <xs:attribute name="Label" type="tTag"/>
+          <xs:attribute name="StartXOffset" type="xs:double"/>
+          <xs:attribute name="ConnectivityType">
+            <xs:simpleType>
+              <xs:restriction base="xs:string">
+                <xs:enumeration value=""/>
+                <xs:enumeration value="Plug"/>
+                <xs:enumeration value="Receptacle"/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:attribute>
+          <xs:attribute name="GB_GroundCategory" type="xs:string"/>
+          <xs:attribute name="TB_NbPosition" type="xs:integer"/>
+          <xs:attribute name="TB_Position" type="xs:integer"/>
+          <xs:attribute name="TT_NbPosition" type="xs:integer"/>
+          <xs:attribute name="MatingTag" type="tExtendedTag"/>
+          <xs:attribute name="Type" use="required">
+            <xs:simpleType>
+              <xs:restriction base="xs:string">
+                <xs:enumeration value="Connector"/>
+                <xs:enumeration value="TB"/>
+                <xs:enumeration value="GB"/>
+                <xs:enumeration value="Splice"/>
+                <xs:enumeration value="Equipment"/>
+                <xs:enumeration value="Shell"/>
+                <xs:enumeration value="Shell Module"/>
+                <xs:enumeration value="Terminal Track"/>
+                <xs:enumeration value="ProductionBreak"/>
+                <xs:enumeration value="JunctionBox"/>
+                <xs:enumeration value="Current Transformer"/>
+                <xs:enumeration value="Pressure Seal"/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:attribute>
+          <xs:attribute name="Shape">
+            <xs:simpleType>
+              <xs:restriction base="xs:string">
+                <xs:enumeration value=""/>
+                <xs:enumeration value="Rectangular"/>
+                <xs:enumeration value="Circular"/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:attribute>
+          <xs:attribute name="Included" type="tYesNo"/>
+          <xs:attribute name="PartNumber" type="tPartNumber"/>
+          <xs:attribute name="ParentTag" type="tExtendedTag"/>
+          <xs:attribute name="LocationTag" type="tExtendedTag"/>
+          <xs:attribute name="Class" type="tClass"/>
+          <xs:attribute name="SymbolName" type="xs:string"/>
+          <xs:attribute name="SymbolFamily" type="xs:string"/>
+          <xs:attribute name="Description" type="tDescription"/>
+          <xs:attribute name="Function" type="tDescription"/>
+          <xs:attribute name="EquipmentCenter" type="tExtendedTag"/>
+          <xs:attribute name="EquipmentCenterRequirement" type="xs:string"/>
+          <xs:attribute name="SubSectionRequirement" type="xs:string"/>
+          <xs:attribute name="Mass" type="xs:double"/>
+          <xs:attribute name="EstimatedCost" type="xs:double"/>
+          <xs:attribute name="NearEquipmentTag" type="tTag"/>
+          <xs:attribute name="ProvidedWithEquipment" type="tYesNo"/>
+          <xs:attribute name="FloatingEquipment" type="tYesNo"/>
+          <xs:attribute name="ElectricalType" type="xs:string"/>
+          <xs:attribute name="CodingType" type="xs:string"/>
+          <xs:attribute name="CodingValue" type="xs:string"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="cPin">
+    <xs:sequence>
+      <xs:element name="Version" type="cVersion" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="UserAttribute" type="cUserAttribute" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="EndFittingPartNumbers" type="cEndFittingPartNumbers" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="Tag" type="tTag" use="required"/>
+    <xs:attribute name="Type" type="tPinType"/>
+    <xs:attribute name="ContactGauge" type="tGauge"/>
+    <xs:attribute name="PartNumber" type="tPartNumber"/>
+    <xs:attribute name="Gender" type="xs:string"/>
+    <xs:attribute name="PinGroup" type="xs:string"/>
+    <xs:attribute name="PinGroupFamily" type="xs:string"/>
+    <xs:attribute name="ManufacturerSignal" type="xs:string"/>
+    <xs:attribute name="InterfaceType" type="xs:string"/>
+    <xs:attribute name="SignalDirection" type="xs:string"/>
+    <xs:attribute name="SignalType" type="xs:string"/>
+    <xs:attribute name="SignalCategory" type="xs:string"/>
+    <xs:attribute name="PowerName" type="xs:string"/>
+    <xs:attribute name="MaxVoltageDrop" type="tNonNegativeDouble"/>
+    <xs:attribute name="Intensity" type="tNonNegativeDouble"/>
+    <xs:attribute name="IntensityMax" type="tNonNegativeDouble"/>
+    <xs:attribute name="IntensityBlocked" type="tNonNegativeDouble"/>
+    <xs:attribute name="Power" type="tNonNegativeDouble"/>
+  </xs:complexType>
+  <xs:complexType name="cCavity">
+    <xs:attribute name="Tag" type="tTag" use="required"/>
+    <xs:attribute name="Type" type="xs:string"/>
+    <xs:attribute name="Side" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="cPassThroughDeviceList">
+    <xs:sequence>
+      <xs:element name="Pass_Through" minOccurs="1" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:attribute name="Tag" type="tTag" use="required"/>
+          <xs:attribute name="Type" type="xs:string" use="required"/>
+          <xs:attribute name="ParentTag" type="tTag" use="required"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ===================================================================== les fils (cWiresList vu en 3.10 ; cWire vu en 2.18, sans Class en 3.10) -->
+  <xs:complexType name="cWiresList">
+    <xs:sequence>
+      <xs:element name="Wire" type="cWire" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="WireGroup" type="cWireGroup" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="cWire">
+    <xs:sequence>
+      <xs:element name="Version" type="cVersion" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="UserAttribute" type="cUserAttribute" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="EndFittingPartNumbers" type="cEndFittingPartNumbers" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="WireRoute" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+    <xs:attribute name="Tag" type="tTag" use="required"/>
+    <xs:attribute name="Wire_Type" type="tWireType" use="required"/>
+    <xs:attribute name="Gauge" type="tGauge" use="required"/>
+    <xs:attribute name="Description" type="tDescription"/>
+    <xs:attribute name="PartNumber" type="tPartNumber"/>
+    <xs:attribute name="Length" type="tNonNegativeDouble" use="required"/>
+    <xs:attribute name="Length_Status" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="Real"/>
+          <xs:enumeration value="Estimation"/>
+          <xs:enumeration value="Manual"/>
+          <xs:enumeration value="Out Of Date"/>
+          <xs:enumeration value=""/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="Type" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="Unknown"/>
+          <xs:enumeration value="Normal"/>
+          <xs:enumeration value="Shield"/>
+          <xs:enumeration value="PickUpShielding"/>
+          <xs:enumeration value="ShieldingDaisyChain"/>
+          <xs:enumeration value="Other"/>
+          <xs:enumeration value="PickUpStandard"/>
+          <xs:enumeration value="Shunt"/>
+          <xs:enumeration value="Overshielding"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="Color" type="tColor"/>
+    <xs:attribute name="Segregation" type="tSegregation" use="required"/>
+    <xs:attribute name="ExternalWiringDiagram" type="tTag"/>
+    <xs:attribute name="Net" type="tExtendedTag"/>
+    <xs:attribute name="Cost" type="tNonNegativeDouble"/>
+    <xs:attribute name="LinearMass" type="tNonNegativeDouble"/>
+    <xs:attribute name="Mass" type="tNonNegativeDouble"/>
+    <xs:attribute name="Material" type="xs:string"/>
+    <xs:attribute name="MaterialType" type="xs:string"/>
+    <xs:attribute name="EquipmentCenter" type="xs:string"/>
+    <xs:attribute name="EquivalentConnection" type="tNonNegativeDouble"/>
+    <xs:attribute name="GroundType" type="xs:string"/>
+    <xs:attribute name="ExternalDiameter" type="tNonNegativeDouble"/>
+    <xs:attribute name="Resistivity" type="tNonNegativeDouble"/>
+    <xs:attribute name="Section" type="tNonNegativeDouble"/>
+    <xs:attribute name="TemperatureZone" type="xs:double"/>
+    <xs:attribute name="ProvidedWithEquipment" type="tYesNo"/>
+    <xs:attribute name="ColorReq" type="tColor"/>
+    <xs:attribute name="SignalCategory" type="xs:string"/>
+    <xs:attribute name="Technology" type="xs:string"/>
+    <xs:attribute name="TagType" type="xs:string"/>
+    <xs:attribute name="CableOrder" type="xs:string"/>
+    <xs:attribute name="WireOrder" type="xs:nonNegativeInteger"/>
+  </xs:complexType>
+  <xs:complexType name="cWireGroup">
+    <xs:sequence>
+      <xs:element name="Wire" type="cWire" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="WireGroup" type="cWireGroup" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="Version" type="cVersion" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="UserAttribute" type="cUserAttribute" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="Tag" type="tTag"/>
+    <xs:attribute name="Wire_Type" type="tWireType" use="required"/>
+    <xs:attribute name="Type" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="Unknown"/>
+          <xs:enumeration value="Cable Twisted"/>
+          <xs:enumeration value="Cable Shielded"/>
+          <xs:enumeration value="Cable Twisted Shielded"/>
+          <xs:enumeration value="Coaxial"/>
+          <xs:enumeration value="Triaxial"/>
+          <xs:enumeration value="Twinax"/>
+          <xs:enumeration value="Quadrax"/>
+          <xs:enumeration value="Wire"/>
+          <xs:enumeration value="Other"/>
+          <xs:enumeration value="Grouped Return"/>
+          <xs:enumeration value="Optic Fiber"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="PartNumber" type="tPartNumber"/>
+    <xs:attribute name="Length" type="tNonNegativeDouble" use="required"/>
+    <xs:attribute name="Gauge" type="tGauge" use="required"/>
+    <xs:attribute name="Description" type="tDescription"/>
+    <xs:attribute name="Segregation" type="tSegregation" use="required"/>
+    <xs:attribute name="Color" type="tColor"/>
+  </xs:complexType>
+
+  <!-- ===================================================================== les bouts de fil (vus en 2.18) -->
+  <xs:complexType name="cWireExtremity">
+    <xs:sequence>
+      <xs:element name="Version" type="cVersion" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="UserAttribute" type="cUserAttribute" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="EndFittingPartNumbers" type="cEndFittingPartNumbers" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="ID" type="tTag" use="required"/>
+    <xs:attribute name="WireTag" type="tTag" use="required"/>
+    <xs:attribute name="Pin" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string"/>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="ShuntTag" type="tTag"/>
+    <xs:attribute name="PinParent" type="tExtendedTag" use="required"/>
+    <xs:attribute name="ParentTag" type="tExtendedTag"/>
+    <xs:attribute name="ConnectType" type="tConnectType"/>
+    <xs:attribute name="ContactNumber" type="xs:double"/>
+    <xs:attribute name="NearEquipmentTag" type="tTag"/>
+    <xs:attribute name="Side" type="xs:string"/>
+    <xs:attribute name="ConnectOrder" type="xs:string"/>
+  </xs:complexType>
+
+  <!-- ===================================================================== les petits types communs (vus en 2.18) -->
+  <xs:complexType name="cVersion">
+    <xs:attribute name="Number" type="xs:string"/>
+    <xs:attribute name="Status" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="cUserAttribute">
+    <xs:attribute name="AttributeName" type="xs:string"/>
+    <xs:attribute name="AttributeValue" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="cAccessory">
+    <xs:attribute name="PartNumber" type="tPartNumber" use="required"/>
+    <xs:attribute name="Quantity" type="xs:int" use="required"/>
+    <xs:attribute name="Status" type="xs:string" use="required"/>
+    <xs:attribute name="Type" type="xs:string"/>
+  </xs:complexType>
+  <xs:complexType name="cEndFittingPartNumbers">
+    <xs:sequence>
+      <xs:element name="PartNumber" minOccurs="0" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:attribute name="PartNumber" type="tPartNumber" use="required"/>
+          <xs:attribute name="Quantity" type="tNonNegativeDouble"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ===================================================================== les types simples -->
+  <!-- vus en 3.10 (photo d'Essai_WD et de Format_WD) -->
+  <xs:simpleType name="tEDB_InstanceID"><xs:restriction base="xs:string"><xs:minLength value="1"/><xs:maxLength value="255"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tXSDVersion"><xs:restriction base="xs:decimal"><xs:minInclusive value="3.00"/><xs:maxInclusive value="3.10"/><xs:fractionDigits value="2"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tLengthUnit">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="meter"/><xs:enumeration value="decimeter"/><xs:enumeration value="centimeter"/>
+      <xs:enumeration value="millimeter"/><xs:enumeration value="foot"/><xs:enumeration value="inch"/><xs:enumeration value="yard"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTag"><xs:restriction base="xs:string"><xs:minLength value="1"/><xs:maxLength value="128"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tExtendedTag"><xs:restriction base="xs:string"><xs:minLength value="0"/><xs:maxLength value="255"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tWireType"><xs:restriction base="xs:string"><xs:minLength value="0"/><xs:maxLength value="50"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tGauge"><xs:restriction base="xs:string"><xs:minLength value="0"/><xs:maxLength value="10"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tNonNegativeDouble"><xs:restriction base="xs:double"><xs:minInclusive value="0"/><xs:maxExclusive value="INF"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tClass"><xs:restriction base="xs:string"><xs:minLength value="0"/><xs:maxLength value="255"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tSegregation"><xs:restriction base="xs:string"><xs:minLength value="0"/><xs:maxLength value="255"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tSolutionNumber"><xs:restriction base="xs:string"><xs:minLength value="0"/><xs:maxLength value="100"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tVersionNb"><xs:restriction base="xs:string"><xs:minLength value="1"/><xs:maxLength value="20"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tColor"><xs:restriction base="xs:string"><xs:minLength value="0"/><xs:maxLength value="61"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tWHType"><xs:restriction base="xs:string"><xs:enumeration value="Harness"/><xs:enumeration value="Assembly"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tConnectType"><xs:restriction base="xs:string"><xs:enumeration value="Connected"/><xs:enumeration value="Not Connected"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tPinType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Standard"/><xs:enumeration value="Connector"/><xs:enumeration value="Stud"/>
+      <xs:enumeration value="Not Connected"/><xs:enumeration value="Cap &amp; Stow"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <!-- supposés (non photographiés) -->
+  <xs:simpleType name="tDescription"><xs:restriction base="xs:string"><xs:minLength value="0"/><xs:maxLength value="255"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tPartNumber"><xs:restriction base="xs:string"><xs:minLength value="0"/><xs:maxLength value="255"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="tYesNo"><xs:restriction base="xs:string"><xs:enumeration value="Yes"/><xs:enumeration value="No"/></xs:restriction></xs:simpleType>
+</xs:schema>

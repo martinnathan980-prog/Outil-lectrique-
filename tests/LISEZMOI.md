@@ -124,13 +124,16 @@ node tests/vba.js              LES MACROS DU PILOTE SEE (see/vba/*.bas), sans Ex
                                copie ; CloseProject(le projet) après Save et le relevé des formes (par la sonde des symboles,
                                sans erreur qui en sorte ; un relevé interrompu et les erreurs de lecture dits dans l'étape 8 ;
                                la colonne A de Sonde_Symboles étroite), une forme lue par le projet, les ProgID essayés
-                               filtrés, le bouton 1 qui envoie droit au bouton 3 sans Application au registre ; et le
-                               contrôleur lui-même, éprouvé par cent fautes injectées, sans crier au loup
+                               filtrés, le bouton 1 qui envoie droit au bouton 3 sans Application au registre ; la liste de
+                               fils (SEE_WD) : ExporterWD, EssaiWD et LireFormatWD ne touchent pas SEE, chaque valeur
+                               d'attribut passe par EchapperXml, chaque fichier est vérifié par Windows, aucun chemin entier
+                               dans Export_WD, le schéma retenu est le plus haut des 3.xx ; et le
+                               contrôleur lui-même, éprouvé par cent vingt-deux fautes injectées, sans crier au loup
                                sur une écriture dans le classeur
 tests/banc-vba/lancer.sh       LES MÊMES MACROS EXÉCUTÉES, dans LibreOffice (Basic en mode VBASupport) face à un FAUX SEE qui imite
                                l'API COM et trace chaque appel, et un FAUX SEE_Windows (ce que Windows répond : la table des
                                objets actifs, le registre, les programmes en marche, les fenêtres du bouton 3) :
-                               quarante et un scénarios (V5 et V4, folios complets, reprise après panne, Remplacer, sauvegardes,
+                               quarante-deux scénarios (V5 et V4, folios complets, reprise après panne, Remplacer, sauvegardes,
                                simulation sans aucune écriture, variantes de paquet, le matériel associé confronté au paquet, le
                                matériel déjà porté ni écrasé ni doublé, TesterSEE avec et sans SEE, sans folio affiché, SEE qui
                                cesse de répondre ; les boutons 1 et 2 qui rejoignent SEE par un ProgID du registre ou par son
@@ -143,7 +146,9 @@ tests/banc-vba/lancer.sh       LES MÊMES MACROS EXÉCUTÉES, dans LibreOffice (
                                le relevé de l'album dans Sonde_Symboles, OpenEnvironment refusé, seul l'objet rendu qui
                                marche, la forme lue par le projet, le registre du bureau sans Application ; Windows qui arrête
                                la macro sur GetActiveObject ;
-                               une erreur dans InitialiserClasseur) ; hors de
+                               une erreur dans InitialiserClasseur ; ExporterWD, le paquet en listes de fils XML, sur
+                               l'exemple et une variante, vérifiées par xmllint contre une reconstitution du schéma 3.10 et
+                               recalculées depuis le paquet) ; hors de
                                tests/toutes.js (il demande LibreOffice et python3-uno, environ dix minutes) ; voir son LISEZMOI :
                                il prouve la cohérence du code, pas le comportement du vrai SEE ni d'Excel
 node tests/classeur.js         LE CLASSEUR PILOTE TOUT PRÊT (see/classeur.js : Pilote-SEE.xlsm, les macros déjà dedans), sans Excel
@@ -158,11 +163,11 @@ node tests/classeur.js         LE CLASSEUR PILOTE TOUT PRÊT (see/classeur.js : 
                                PROJECTwm, et le texte de chaque module décompressé par un décompresseur écrit à part, comparé
                                octet pour octet aux .bas ; la compression (les trois exemples de la spécification au bit près,
                                des allers-retours), le chiffrement (l'exemple de la spécification et un projet d'Excel), la sortie
-                               déterministe, le kit (le classeur en tête, ses quatre modules standard, SEE_Windows compris ; le
+                               déterministe, le kit (le classeur en tête, ses cinq modules standard, SEE_Windows et SEE_WD compris ; le
                                LIS-MOI : le dossier « Robot », le bouton 3 pas à pas, rien que des photos, « Excel bloqué »,
                                les onglets à cliquer, OK avant la photo, SEE caché, la copie à ne pas toucher ; en tête, ce
                                qui est acquis et « cette fois : seulement le bouton 3 », avec ses photos, Sonde_Symboles
-                               comprise) ;
+                               comprise ; la liste de fils pas à pas, ExporterWD puis l'import dans SEE) ;
                                le REFUS sans TesterSEE, sans EssaiSansFenetre ou avec un .bas non lu (exception, code de sortie
                                1, rien d'écrit ; --sans-bouton l'écrit avec un avertissement), sur des copies des .bas dans un
                                dossier temporaire ; les recours de la feuille (mode protégé, Activer le contenu, barre rouge,

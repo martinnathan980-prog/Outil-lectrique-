@@ -78,6 +78,35 @@ CETTE FOIS : SEULEMENT LE BOUTON 3 (10 minutes)
 9. Envoie-moi les photos (l'étape F).
 
 
+LISTE DE FILS POUR SEE : ExporterWD (10 minutes)
+------------------------------------------------
+Excel écrit, pour chaque plan du paquet, une liste de fils que SEE sait
+importer. Il ne touche pas à SEE. Il te faut le paquet que l'Atelier a
+écrit (menu « Exporter pour SEE »), dans un dossier à toi (le Bureau).
+1. Dans Excel (Pilote-SEE.xlsm), appuie ensemble sur Alt + F8.
+2. Dans la liste, clique sur « ExporterWD », puis sur « Exécuter ».
+3. Une fenêtre « Choisis le paquet SEE de l'Atelier » s'ouvre : clique
+   sur ton paquet (un fichier .xlsx), puis sur « Ouvrir ».
+4. Attends le message (quelques secondes ; une minute ou plus pour
+   beaucoup de plans), puis clique sur OK.
+5. Prends une photo du haut de la feuille « Export_WD » : la partie
+   jaune et les premières lignes du tableau. S'il y a des lignes
+   « erreur », prends-les aussi.
+6. Ouvre SEE, puis ton projet d'essai (son nom commence par TEST_…).
+   Jamais un vrai projet.
+7. Dans SEE : menu File, puis Import, puis Wire List. Va dans le
+   dossier « WD-… » qui est à côté de ton paquet (son nom est sur la
+   photo), clique sur le fichier que dit le message (par exemple
+   WD-1.xml), puis sur « Open ». N'importe jamais un fichier marqué
+   REFUSÉ dans la feuille Export_WD.
+8. Prends en photo le message de SEE.
+9. Dans SEE : menu Insert, puis From Wiring list. Une fenêtre
+   « Component Insertion » s'ouvre : prends-la en photo (ses onglets
+   Equipment, Connective Equipment, Cables). Si tu ne sais pas quoi y
+   choisir : clique sur Cancel.
+10. Envoie-moi les photos (l'étape F).
+
+
 POUR MÉMOIRE : TOUTES LES ÉTAPES DU DÉBUT
 =========================================
 Elles ont servi les fois d'avant. Cette fois, ne les suis que si le
@@ -275,6 +304,9 @@ LES PHOTOS À PRENDRE
   le haut de la feuille Sonde_Folio si le message le demande (leurs
   onglets sont en bas d'Excel), puis, si le message le demande, l'écran
   de SEE avec le folio « ESSAI_PILOTE » (ouvert par toi).
+- Après ExporterWD : le haut de la feuille Export_WD, puis, dans SEE, le
+  message de l'import (File > Import > Wire List) et la fenêtre
+  « Component Insertion ».
 - Tout message d'erreur ou de refus, tel quel, même un message de
   Windows (par exemple « Sécurité Windows »).
 Si une photo coupe le texte : prends la première photo, fais descendre

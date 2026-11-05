@@ -1,9 +1,9 @@
 # Les scénarios de la reprise : python3 relecture.py <paquet> <variante> [scénario...]
-import sys, os, json, subprocess
+import sys, os, json, subprocess, shutil, glob
 sys.dont_write_bytecode = True   # pas de __pycache__ dans le dépôt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from banc import charger, lancer, feuille
-from chemins import ICI, TRACE, XLSX, TRAVAIL
+from chemins import ICI, TRACE, XLSX, TRAVAIL, IGE
 import faux2
 PAQUET, VARIANTE = (sys.argv[1], sys.argv[2]) if __name__ == '__main__' else ('', '')
 choisis = sys.argv[3:]
@@ -41,6 +41,36 @@ console.log(JSON.stringify(XLSX.utils.sheet_to_json(wb.Sheets.Blocs,{defval:null
     T = [l.split('|') for l in open(TRACE, encoding='utf-8', errors='replace').read().split('\n') if l.startswith('AddSymbol|')]
     m = [t for t in T if t[2] == 'MASSE']
     return f"masses Sens D {sens.count('D')} / G {sens.count('G')} ; symboles MASSE posés à 180° : {sum(1 for t in m if float(t[4]) == 180)}, à 0° : {sum(1 for t in m if float(t[4]) == 0)}"
+# ExporterWD (la liste de fils XML) : le faux dossier IGE+XAO du banc (banc.py y fait chercher les schémas), avec la
+# reconstitution du schéma 3.10 et, pour voir que la plus haute version 3.xx est retenue, une 3.07 (la même, bornée à
+# 3.07), une 2.18 et une 4.00 factices ; une copie du paquet d'exemple par passage qui en a besoin (chaque paquet a son
+# dossier WD-…) ; les dossiers WD-… d'un passage précédent effacés.
+RECONSTITUTION = os.path.join(ICI, 'wd-3.10-reconstitution.xsd')
+ESSAI_WD = os.path.join(TRAVAIL, 'robot-wd')
+def wd_preparer():
+    xsd = os.path.join(IGE, 'SEE Electrical Expert V4R3', '4.8', 'SEE_Soft', 'PARAM', 'XSD')
+    for d in [IGE, IGE + '_cache'] + glob.glob(os.path.join(TRAVAIL, 'WD-paquet-*')):
+        shutil.rmtree(d, ignore_errors=True)
+    os.makedirs(xsd)
+    texte = open(RECONSTITUTION, encoding='utf-8').read()
+    open(os.path.join(xsd, 'IGE-XAO Wiring Diagram 3.10.xsd'), 'w', encoding='utf-8').write(texte)
+    open(os.path.join(xsd, 'IGE-XAO Wiring Diagram 3.07.xsd'), 'w', encoding='utf-8').write(texte.replace('<xs:maxInclusive value="3.10"/>', '<xs:maxInclusive value="3.07"/>'))
+    factice = '<?xml version="1.0" encoding="UTF-8"?>\n<!-- factice (banc) -->\n<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>\n'
+    for v in ('2.18', '4.00'):
+        open(os.path.join(xsd, f'IGE-XAO Wiring Diagram {v}.xsd'), 'w', encoding='utf-8').write(factice)
+    copies = []
+    for nom in ('refus', 'sans'):
+        copies.append(os.path.join(TRAVAIL, f'paquet-wd-{nom}.xlsx'))
+        shutil.copy(PAQUET, copies[-1])
+    # EssaiWD écrit ses fichiers dans le dossier du projet d'essai (réglage Projet) : un dossier à lui
+    shutil.rmtree(ESSAI_WD, ignore_errors=True)
+    os.makedirs(ESSAI_WD)
+    return (PAQUET, VARIANTE, copies[0], copies[1], IGE, TRAVAIL, os.path.join(ESSAI_WD, 'TEST_WD.seeprj'))
+def verifier_wd():
+    r = subprocess.run(['python3', f'{ICI}/verifier_wd.py', TRAVAIL, PAQUET, VARIANTE, RECONSTITUTION], capture_output=True, text=True)
+    s = r.stdout.strip().replace('\n', ' || ')
+    if r.returncode: s += ' || verifier_wd en échec : ' + (r.stderr.strip().split('\n') or [''])[-1]
+    return s
 SCEN = [
     ('complet V5', lambda d: lancer(d, 'BancR.BancComplet', (PAQUET, False, False)), lambda: verifier(PAQUET) + ' || ' + angles(PAQUET)),
     ('complet V4', lambda d: lancer(d, 'BancR.BancComplet', (PAQUET, True, False)), lambda: verifier(PAQUET) + ' || ' + angles(PAQUET)),
@@ -80,6 +110,9 @@ SCEN = [
     ('arret Windows', lambda d: (sans_texte(d, 'BancR.BancArret'), lancer(d, 'BancR.ApresArret', ())), None),
     # InitialiserClasseur qui lève une erreur : gSansDialogue reprend sa valeur
     ('panne classeur', lambda d: lancer(d, 'BancR.BancPanneClasseur', ()), None),
+    # ExporterWD : le paquet en listes de fils XML (une par folio, et WD-TOUT), sur l'exemple et sur la variante
+    # v_wd.js ; puis chaque fichier relu par verifier_wd.py (xmllint contre la reconstitution du schéma 3.10, et le paquet)
+    ('exporter WD', lambda d: lancer(d, 'BancR.BancExporterWD', wd_preparer()), lambda: verifier_wd()),
 ]
 if __name__ == "__main__":
  inconnus = [c for c in choisis if c not in [n for n, _, _ in SCEN]]

@@ -24,7 +24,7 @@ import ast, os, re, sys
 ICI = os.path.dirname(os.path.abspath(__file__))
 VARIANTES = [('tout', 'paquet-variante.xlsx'), ('casse', 'paquet-casse.xlsx'), ('noms', 'paquet-noms.xlsx'), ('long', 'paquet-long.xlsx')]
 # les scénarios qui jouent un autre paquet que celui de l'exemple (v_pn.js : des PN vides, un connecteur à deux PN)
-VARIANTE_DE = {'materiel V5': 'paquet-pn.xlsx', 'materiel V4': 'paquet-pn.xlsx'}
+VARIANTE_DE = {'materiel V5': 'paquet-pn.xlsx', 'materiel V4': 'paquet-pn.xlsx', 'exporter WD': 'paquet-wd.xlsx'}
 
 
 # ---------------------------------------------------------------- lecture d'une sortie
@@ -645,6 +645,81 @@ def panne_classeur():
             ('bouton 3 : « ARRÊT IMPRÉVU » dit, gSansDialogue inchangé (Vrai), rien créé', lambda t: partie(t, 'bouton 3'),
              lambda s: re.search(r'arrêt imprévu dit [1-9]', s) is not None and 'gSansDialogue Vrai' in s and 'new: 0' in s)]
 
+def ligne_wd(dossier):
+    """La ligne de verifier_wd.py pour un dossier WD-… (relecture.py les joint par « || », après le résultat)."""
+    def f(t):
+        m = re.search(re.escape(dossier) + r' : (.*?)(?: \|\| |\n|$)', t)
+        return m.group(1) if m else ''
+    return f
+
+def wd(dossier, motif):
+    """Les entiers capturés par « motif » dans la ligne de verifier_wd.py d'un dossier : un tuple (None s'il n'y est pas)."""
+    def f(t):
+        m = re.search(motif, ligne_wd(dossier)(t))
+        return tuple(int(x) for x in m.groups()) if m else None
+    return f
+
+def exporter_wd():
+    """INTENTION (ExporterWD, la liste de fils XML que SEE importe : see/FORMAT-WD.md). Le banc lance ExporterWD sur le
+    paquet d'exemple, Annuler, la variante v_wd.js (échappement, noms de fichier, natures, longueurs), un refus du faux
+    Windows (le fichier du folio 1), le schéma introuvable, un paquet illisible ; puis verifier_wd.py relit chaque
+    fichier : xmllint contre la reconstitution du schéma 3.10, et ce que le paquet demande, calculé à part du VBA.
+    Les comptes de l'exemple sont RELEVÉS (le paquet d'exemple du 5 novembre 2026)."""
+    compte = r'fichiers (\d+) ; VALIDE (\d+) ; REFUSÉ (\d+) ; NON VÉRIFIÉ (\d+) ; PAS ÉCRIT (\d+) ; erreurs montrées (\d+) ; écarts (\d+)'
+    c = [egal('export : 7 vérifications par Windows, toutes contre le schéma 3.10 (le plus haut des 3.xx : ni la 4.00, ni la 3.07, ni la 2.18)',
+              nombres(r'validations (\d+) \(schéma 3\.10 : (\d+)\)', 'export'), (7, 7)),
+         egal('export : une fenêtre « Ouvrir », rien demandé au faux SEE (traces 0), une boîte', nombres(r'choisir (\d+) ; traces SEE (\d+) ; boîtes (\d+)', 'export'), (1, 0, 1)),
+         egal('export : 7 fichiers, 7 VALIDE, 0 REFUSÉ, 0 NON VÉRIFIÉ, 0 PAS ÉCRIT, aucune erreur montrée, rien de pas écrit tel quel', nombres(compte, 'export'), (7, 7, 0, 0, 0, 0, 0)),
+         egal('export : un fichier par folio (WD-<nom du folio>.xml), puis WD-TOUT.xml', dans('export', r'noms = ([^;]*?) ;'),
+              'WD-1.xml,WD-2.xml,WD-3.xml,WD-4.xml,WD-5.xml,WD-6.xml,WD-TOUT.xml'),
+         egal('export : aucun chemin entier dans Export_WD (le dossier par son nom)', dans('export', r'chemin entier montré (\w+)'), 'non'),
+         ('export : le haut de Export_WD (la photo) : 7 VALIDE(S), le dossier « WD-paquet-exemple », le schéma 3.10, puis dans SEE sur TEST_… : File > Import > Wire List, WD-1.xml, Insert > From Wiring list',
+          dans('export', r'haut = (.*?) ; boîte ='), lambda s: bool(s) and all(x in s for x in ('7 VALIDE(S)', '« WD-paquet-exemple »', 'IGE-XAO Wiring Diagram 3.10.xsd',
+              "ton projet d'essai TEST_...", 'File > Import > Wire List', 'choisis WD-1.xml', 'Insert > From Wiring list'))),
+         ('export : la boîte, courte : les fichiers valides, le dossier, « importe d\'abord WD-1.xml dans ton projet d\'essai TEST_… » par File > Import > Wire List, puis la photo de Export_WD',
+          dans('export', r'boîte = (.*)$'), lambda s: bool(s) and all(x in s for x in ('7 VALIDE(S)', 'Dossier « WD-paquet-exemple »',
+              "Importe d'abord WD-1.xml dans ton projet d'essai TEST_...", 'File > Import > Wire List', 'la feuille Export_WD'))),
+         egal('annuler (la fenêtre « Ouvrir ») : rien vérifié, aucune boîte, le journal le dit', nombres(r'choisir (\d+) ; validations (\d+) ; boîtes (\d+) ; dit au journal (\d+)', 'annuler'), (1, 0, 0, 1)),
+         egal('variante : 7 fichiers VALIDE ; 16 éléments pas écrits tel quel (un renvoi et son bout, un numéro en double, une borne de prise sans côté et son bout, '
+              '4 Tag trop longs, deux noms de fichier pris, un harness en double dans WD-TOUT, un bloc absent de Blocs, un fil sans borne et ses deux bouts)',
+              nombres(compte, 'variante'), (7, 7, 0, 0, 0, 0, 16)),
+         egal('variante : les noms de fichier nettoyés (2/B:"x"), le folio sans nom (F4), un nom déjà pris (-F5), « tout » (WD-TOUT est pris : -F6)',
+              dans('variante', r'noms = ([^;]*?) ;'), 'WD-1.xml,WD-2_B__x_.xml,WD-3.xml,WD-F4.xml,WD-1-F5.xml,WD-tout-F6.xml,WD-TOUT.xml'),
+         egal('variante : aucun chemin entier dans Export_WD', dans('variante', r'chemin entier montré (\w+)'), 'non'),
+         egal('refus (le faux Windows refuse WD-1.xml, six erreurs) : 6 VALIDE, 1 REFUSÉ, 5 erreurs montrées', nombres(compte, 'refus'), (7, 6, 1, 0, 0, 5, 0)),
+         ('refus : la boîte le dit, envoie au premier fichier valide (WD-2.xml) et dit de ne jamais importer un fichier REFUSÉ',
+          dans('refus', r'boîte = (.*)$'), lambda s: bool(s) and all(x in s for x in ('1 REFUSÉ(S)', "Importe d'abord WD-2.xml", "N'importe jamais un fichier REFUSÉ"))),
+         egal('sans schéma : aucune vérification ; 7 fichiers NON VÉRIFIÉ', nombres(r'validations (\d+) \(.*?' + compte, 'sans schéma'), (0, 7, 0, 0, 7, 0, 0, 0)),
+         ('sans schéma : le haut le dit (introuvable, version 3.10, attributs de l\'essai du bureau), la boîte aussi (si SEE refuse, la photo)',
+          lambda t: partie(t, 'sans schéma'), lambda s: 'Schéma/introuvable : version 3.10, seulement les attributs de l\'essai du bureau' in s and "Windows n'a pas pu vérifier" in s),
+         ('paquet illisible : une boîte, aucune vérification', lambda t: partie(t, 'illisible'), lambda s: 'boîtes 1 ; validations 0' in s and "Le paquet n'a pas pu être lu" in s),
+         egal('EssaiWD (déplacé dans SEE_WD) : un fichier d\'essai par schéma trouvé (4.00, 3.10, 3.07, 2.18), puis les essais « plus » et « plus-diagramme » '
+              'pour la 3.10 (le plus haut des 3.xx), chacun vérifié', nombres(r'essai : validations (\d+) ; verdicts (\d+)', 'essai'), (6, 6)),
+         ('EssaiWD : les essais « plus » de la 3.10 VALIDE (Essai-WD-plus-3.10.xml, Essai-WD-plus-diagramme-3.10.xml)', dans('essai', r'(Essai-WD-plus-3\.10\.xml .*)$'),
+          lambda s: bool(s) and 'Essai-WD-plus-3.10.xml VALIDE' in s and 'Essai-WD-plus-diagramme-3.10.xml VALIDE' in s),
+         ('EssaiWD : la 3.10 sans WiresNumber ni Class (« absent du schéma »)', dans('essai', r'(Essai-WD-3\.10\.xml [^/]*)'),
+          lambda s: bool(s) and 'VALIDE (schéma IGE-XAO Wiring Diagram 3.10.xsd)' in s and 'WiresNumber absent du schéma, Class absent du schéma' in s),
+         egal('EssaiWD : ses six fichiers dans le dossier du projet d\'essai ; Essai-WD-3.10.xml valide pour xmllint (reconstitution), sans WiresNumber ni Class',
+              lambda t: (lambda m: m.groups() if m else None)(re.search(r'robot-wd : fichiers d\'essai (\d+) \[[^\]]*\] ; Essai-WD-3\.10\.xml xmllint (\w+) ; WiresNumber ou Class (-?\d+)', t)),
+              ('6', 'valide', '0')),
+         egal('EssaiWD : les deux essais « plus » de la 3.10 valides pour xmllint (reconstitution) ; le bornier et la masse aux types que le schéma nomme',
+              lambda t: (lambda m: m.groups() if m else None)(re.search(r'essais plus de la 3\.10 valides pour xmllint (\d+)/(\d+) ; bornier et masse (\S+)', t)),
+              ('2', '2', 'GB/TB')),
+         egal('EchapperXml : & < > " \' échappés, é et € en références numériques, la tabulation en espace (« ; » lu « ~ »)',
+              dans('échappement', r'échappement : (.*)$'), 'A&amp~B&lt~C&gt~&quot~D&quot~&apos~E&apos~ &#233~&#8364~ !')]
+    for d in ('WD-paquet-exemple', 'WD-paquet-wd', 'WD-paquet-wd-refus', 'WD-paquet-wd-sans'):
+        c += [egal(f'{d} : les 7 fichiers attendus ; xmllint (reconstitution du schéma 3.10) 7/7 ; en ASCII 7/7',
+                   wd(d, r'fichiers (\d+) / attendus (\d+) ; xmllint valides (\d+)/(\d+) ; ASCII (\d+)/(\d+)'), (7, 7, 7, 7, 7, 7)),
+              egal(f'{d} : ni WiresNumber ni Class ; chaque bout de fil sur une broche de son appareil ; aucun Tag en double',
+                   wd(d, r'WiresNumber ou Class (\d+) ; bouts sans broche (\d+) ; Tag en double (\d+)'), (0, 0, 0)),
+              egal(f'{d} : écrit = calculé depuis le paquet (harness, appareils et broches, fils, bouts, WD-TOUT)', wd(d, r'écarts au calcul (\d+)'), (0,))]
+    c += [egal('WD-paquet-exemple : 146 appareils (54 équipements, 70 connecteurs, 9 barrettes, 13 masses), 323 broches, 210 fils, 420 bouts (RELEVÉ, = calculés)',
+               wd('WD-paquet-exemple', r'appareils (\d+)/(\d+) ; broches (\d+)/(\d+) ; fils (\d+)/(\d+) ; bouts (\d+)/(\d+)'), (146, 146, 323, 323, 210, 210, 420, 420)),
+          ('WD-paquet-wd : les valeurs à échapper (& < > " \' é : titre, description, route, broche, PN, harness) relues à l\'identique',
+           wd('WD-paquet-wd', r'valeurs à échapper relues (\d+)/(\d+)'), lambda v: bool(v) and v[0] == v[1] and v[1] > 58),
+          egal('WD-paquet-wd-sans : seulement les attributs de l\'essai du bureau', wd('WD-paquet-wd-sans', r'attributs hors essai (\d+)'), (0,))]
+    return c
+
 ATTENDUS = {
     # ---- relecture.py (BancR.bas) ----
     'complet V5': complet(5, relecture_impossible=0),     # RELEVÉ (« relecture impossible » 0 : relecture ratée en diffère)
@@ -700,6 +775,7 @@ ATTENDUS = {
     'bouton 3 V5': bouton3('V5', 2),                        # idem, V5 et l'objet rendu
     'arret Windows': arret_windows(),                       # INTENTION (EX3 : Windows arrête la macro sur une fonction déclarée)
     'panne classeur': panne_classeur(),                     # INTENTION (SU4, EX6 : gSansDialogue remis sur une erreur)
+    'exporter WD': exporter_wd(),                           # INTENTION, et des comptes RELEVÉS (ExporterWD, la liste de fils XML)
     # ---- regression.py (BancFaux, dans faux.py) ----
     'simulation sans SEE': [                                # INTENTION : une simulation ne dessine rien
         tous('bilan tout SIMULE', bilan_regression, 'SIMULE')],

@@ -26,6 +26,7 @@ Public gWinProcessusAuChoix As Long   ' >= 0 : le technicien ouvre SEE pendant l
 Public gWinBloqueDeclare As Boolean   ' Windows arrête la macro au premier appel d'une fonction déclarée (règle de Defender) : End
 Public gPanneClasseur As Boolean      ' InitialiserClasseur lève 1004 une fois (sous Excel : feuille Reglages protégée ; banc.py)
 Public gPanneReleve As Long           ' le relevé des formes (DecrireFormes) lève 999 au début de la famille n (banc.py) ; 0 : jamais
+Public gWinXmlRefuse As String        ' ValiderXmlParXsd refuse (six erreurs) un XML dont le chemin contient ce texte ; "" : aucun
 
 Public Sub InitWindows()
     Set gWinTrace = New Collection
@@ -48,6 +49,7 @@ Public Sub InitWindows()
     gWinBloqueDeclare = False
     gPanneClasseur = False
     gPanneReleve = 0
+    gWinXmlRefuse = ""
 End Sub
 
 Private Sub Prete()
@@ -246,9 +248,20 @@ Public Function ChoisirFichier(ByVal filtre As String, ByVal titre As String, By
     If gWinFichier = "=" Then ChoisirFichier = depart Else ChoisirFichier = gWinFichier
 End Function
 
+' Le vrai fait vérifier le XML par MSXML 6 ; le faux dit Vrai (verifier_wd.py, lui, vérifie les fichiers avec xmllint),
+' sauf pour un XML que le banc veut voir refusé (gWinXmlRefuse) : six erreurs.
 Public Function ValiderXmlParXsd(ByVal cheminXml As String, ByVal cheminXsd As String, ByVal espace As String, ByRef erreurs As Collection) As Boolean
-    TraceWin "ValiderXml|" & cheminXml
+    Dim i As Long
+    TraceWin "ValiderXml|" & cheminXml & "|" & cheminXsd
     Set erreurs = New Collection
+    If Len(gWinXmlRefuse) > 0 Then
+        If InStr(1, cheminXml, gWinXmlRefuse) > 0 Then
+            For i = 1 To 6
+                erreurs.Add "ligne " & (i + 2) & " : refus simulé n° " & i & " (banc) [/IGE-XAO_WIRE_HARNESS/WireHarness[1]]"
+            Next i
+            Exit Function
+        End If
+    End If
     ValiderXmlParXsd = True
 End Function
 
