@@ -91,7 +91,8 @@ function rangerLesMorceaux(M, pile) { let parNom = null;
    croisement, préfère-le quand même » —, moins que deux : un dessin vraiment pire ne se paie pas pour l'ordre (il se dit
    alors, `jugement.desordres`). Et un quart de fil droit par paire de contacts voisins à l'envers, pour que la recherche
    s'en approche pas à pas (l'échange de deux ronds d'un morceau de quatre). Une contrainte dure (aucun geste qui romprait
-   l'ordre) égarait la recherche : le folio 4 perdait quatre fils droits, le folio 6 trois. Gardé par jeu de blocs. */
+   l'ordre) l'imposait à tout prix : la « réglette VT traversante » du banc, servie par trois sources entrelacées, y gagnait
+   six croisements ; payé au juge, l'ordre cède quand il coûte vraiment trop. Gardé par jeu de blocs. */
 const DESORDRE = 2.5, DESORDRE_PAS = 0.25, DESORDRES_LUS = new WeakMap();
 // le premier contact d'un morceau dessiné, dans l'ordre de la face
 const premierDuDessin = c => (c.rangs.S || []).reduce((m, p) => m == null || triDeFace(p.etiq, m) < 0 ? p.etiq : m, null);
