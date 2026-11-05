@@ -324,32 +324,35 @@ function deciderCalibre(nom) { const d = disjonctionDe(nom), cal = d.calibre; if
    carte de décision ne se montre pas (les mêmes conditions). */
 function decisionEnMots(nom, d) { if (!d || !d.gPn || d.origine === 'main' || d.sansProfil || d.sansCourbe || !(d.calibre > 0) || !d.pn) return null;
   const k = cleDuVerdict(d.gPn), passe = k === 'passe', cal = d.calibre;
-  return { passe, cal, titre: passe ? `L’installation porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'VOLTA retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}`,
-    suite: `le plus petit qui passe : ${amperes(cal)}` }; }
+  return { passe, cal, titre: passe ? `Votre fichier porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'VOLTA retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de votre fichier ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}`,
+    suite: `le plus petit qui ne disjoncte pas : ${amperes(cal)}` }; }
 function carteDecision(nom, d, autres) { if (!d.gPn || d.origine === 'main' || d.sansProfil || d.sansCourbe || !(d.calibre > 0) || !d.pn) return '';
   const g = d.gPn, k = cleDuVerdict(g), passe = k === 'passe', pn = pnDuRepere(nom), m = d.meilleur || {}, cal = d.calibre, xs = cal === m.calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   let p = null; try { p = verdictDisjonction(app.norme, d.courbe, d.pn, d.profil, d.contexte).pire; } catch (_) { p = null; }
   // « déclenche » ou « touche la courbe » (v77 : l'un et l'autre, un problème — rouge), ou il passe et l'outil en retient un autre
-  const titre = passe ? `L’installation porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'VOLTA retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}`;
+  const titre = passe ? `Votre fichier porte un ${amperes(d.pn)} : ${cal < d.pn ? 'un ' + amperes(cal) + ' suffit' : 'VOLTA retient le ' + amperes(cal)}` : `Le ${amperes(d.pn)} de votre fichier ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}`;
   // deux lignes : ce que fait le retest (au démarrage, 9,31 A pendant 2,1 min touchent sa courbe), le plus petit qui passe
   const quoi = !passe && p ? `${majuscule(p.t === Infinity ? 'en permanence' : quandDuPoint(p))}, <b>${esc(amperes(p.i))}${p.t === Infinity ? '' : ' pendant ' + esc(secondes(p.t))}</b> ${k === 'declenche' ? 'font disjoncter le' : 'touchent la courbe du'} ${ident(pn || amperes(d.pn))}. ` : '';
   // (les câbles qu'il demande : derrière le lien « Les 3 câbles », sur la ligne des liens)
-  const suite = `Le plus petit qui passe : <b>${esc(amperes(cal))}</b>.`;
+  const suite = `Le plus petit qui ne disjoncte pas : <b>${esc(amperes(cal))}</b>.`;
   // ce qu'il faudrait pour que le retest passe : le permanent sous ce qu'il garantit (avec la marge), des pointes assez courtes
   const M = d.marges || {}, kM = M.k || 1, garder = [];
   if (!passe && g.tenu && !g.permanentMargeOk) { const perm = (d.points || []).find(x => x.t === Infinity); garder.push(`un permanent d’au plus ${amperes(Math.floor(g.tenu / kM * 100) / 100)}${perm ? ' (il est de ' + amperes(perm.i) + ')' : ''} : le ${amperes(d.pn)} n’en garantit que ${amperes(g.tenu)}${M.marge ? ', moins ' + nombre(M.marge) + ' % de marge' : ''}`); }
   if (!passe && p && p.t !== Infinity && g.sommeMarge > (M.fraction || 1) + 1e-9) { const r = (M.fraction || 1) / g.sommeMarge; garder.push(`des pointes plus courtes : ${p.nom} en ${secondes(p.t * r)} au plus (${secondes(p.t)} aujourd’hui)`); }
+  /* (v86, l'intégrateur, G8 : le calibre écrit vient du fichier — plus de « Retenir le 10 A quand même », un calibre écrit à la
+     main) : le garder ne demande aucun geste (ne pas prendre la proposition) ; le panneau dit ce qu'il faudrait pour qu'il ne
+     disjoncte plus, et mène au profil */
   const cleG = 'garder|' + nom, ouvert = FI.liste === cleG;
-  const panneau = listeChoix(cleG, (passe ? `<p class="fi-note">Le ${esc(amperes(d.pn))} de l’installation passe aussi : le garder ne change pas les câbles.</p>`
-      : `<p class="fi-note">Pour que le ${esc(amperes(d.pn))} passe, il faudrait ${garder.length ? garder.map(esc).join(' ; ou ') : 'un profil plus léger'}. Gardé tel quel, il se dira « ${esc(motDuVerdict(k))} ».</p>`)
-    + `<div class="fi-puces"><button type="button" class="btn papier" data-dj-geste="retenir" data-cal="${d.pn}">Retenir le ${esc(amperes(d.pn))}${passe ? '' : ' quand même'}</button>${passe ? '' : '<button type="button" class="btn lien" data-dj-geste="voir-profil">Corriger le profil de charge</button>'}</div>`, { titre: 'Garder le calibre de l’installation', cls: 'fi-decision-garder' });
+  const panneau = listeChoix(cleG, (passe ? `<p class="fi-note">Le ${esc(amperes(d.pn))} de votre fichier ne disjoncte pas non plus : le garder ne demande rien, il suffit de ne pas prendre la proposition.</p>`
+      : `<p class="fi-note">Pour que le ${esc(amperes(d.pn))} de votre fichier ne disjoncte plus, il faudrait ${garder.length ? garder.map(esc).join(' ; ou ') : 'un profil plus léger'}. Gardé tel quel, il disjoncte.</p>`)
+    + (passe ? '' : `<div class="fi-puces"><button type="button" class="btn lien" data-dj-geste="voir-profil">Corriger le profil de charge</button></div>`), { titre: 'Le calibre de votre fichier', cls: 'fi-decision-garder' });
   // les câbles qu'il demande, repliés (le designer v73 : la carte de décision tient en 180 px, le cadran reste en vue dessous)
   const cleC = 'cables|' + nom, montres = !!FI.tous[cleC];
   const lignes = xs.length ? `<ul class="fi-decision-cables" id="dj-decision-cables"${montres ? '' : ' hidden'}>${xs.map(({ x, f }) => `<li${f && f.l ? ` data-i="${cleFil(f.l)}"` : ''} data-bulle="${escA(majuscule(x.raison))}"><span class="id">${esc(x.actuel)}</span><small class="id">${esc(f && f.autre ? 'vers ' + f.autre : '')}</small>${ico('fleche')}<b class="id">${esc(x.propose)}</b></li>`).join('')}</ul>` : '';
   return `<section class="fi-decision ${k === 'passe' ? 'att' : 'ko'}" aria-label="${escA(titre)}"><h3 class="fi-decision-t">${ico('alerte')}<span>${esc(titre)}</span></h3><p class="fi-decision-p">${insecable(quoi + suite)}</p>`
-    + `<div class="fi-decision-gestes"><button type="button" class="btn cuivre" id="dj-decider" data-dj-geste="decider" data-bulle="${escA('Écrit dans l’installation : ' + (m.pn && m.calibre === cal ? m.pn : amperes(cal)) + (xs.length ? ', et ' + xs.map(({ x }) => (x.cable || 'un câble') + ' en ' + x.propose).join(', ') : '') + ' — une seule entrée d’historique, Ctrl+Z défait le tout')}">Passer en ${esc(amperes(cal))}${xs.length ? ' et grossir ' + (xs.length > 1 ? 'les ' + xs.length + ' câbles' : 'le câble') : ''}</button>`
+    + `<div class="fi-decision-gestes"><button type="button" class="btn cuivre" id="dj-decider" data-dj-geste="decider" data-bulle="${escA('Écrit dans l’Excel corrigé : ' + (m.pn && m.calibre === cal ? m.pn : amperes(cal)) + (xs.length ? ', et ' + xs.map(({ x }) => (x.type || x.actuel || 'un câble') + ' en ' + x.propose).join(', ') : '') + ' — une seule entrée d’historique, « Défaire » la reprend')}">Passer en ${esc(amperes(cal))}${xs.length ? ' et grossir ' + (xs.length > 1 ? 'les ' + xs.length + ' câbles' : 'le câble') : ''}</button>`
     // les gestes seconds, des liens sur une ligne (la carte tient en 180 px) : les câbles qu'il demande, garder le retest, les autres points
-    + `</div><div class="fi-decision-liens">${xs.length ? `<button type="button" class="btn lien dense fi-decision-voir" data-dj-cables="${escA(cleC)}" aria-expanded="${montres}" aria-controls="dj-decision-cables" data-bulle="${escA(xs.map(({ x, f }) => x.actuel + (f && f.autre ? ' vers ' + f.autre : '') + ' → ' + x.propose).join('\n'))}">${ico('droite', 'fi-chevron')}Les ${esc(pluriel2(xs.length, 'câble'))}</button>` : ''}<button type="button" class="btn lien dense fi-decision-garder-b" data-changer="${escA(cleG)}" aria-expanded="${ouvert}">Garder le ${esc(amperes(d.pn))}…</button>`
+    + `</div><div class="fi-decision-liens">${xs.length ? `<button type="button" class="btn lien dense fi-decision-voir" data-dj-cables="${escA(cleC)}" aria-expanded="${montres}" aria-controls="dj-decision-cables" data-bulle="${escA(xs.map(({ x, f }) => x.actuel + (f && f.autre ? ' vers ' + f.autre : '') + ' → ' + x.propose).join('\n'))}">${ico('droite', 'fi-chevron')}Les ${esc(pluriel2(xs.length, 'câble'))}</button>` : ''}<button type="button" class="btn lien dense fi-decision-garder-b" data-changer="${escA(cleG)}" aria-expanded="${ouvert}">${passe ? 'Et le ' + esc(amperes(d.pn)) + ' de votre fichier ?' : 'Pourquoi pas le ' + esc(amperes(d.pn)) + ' ?'}</button>`
     // (« et 10 autres points » n'y est plus : la barre des problèmes suit, juste dessous)
     + `</div>${lignes}${panneau}</section>`; }
 
@@ -360,7 +363,7 @@ function carteDecision(nom, d, autres) { if (!d.gPn || d.origine === 'main' || d
 const VUE_DJ_FICHE = Object.freeze({ comparer: false, temperatures: true });
 const vueDeLaCourbe = () => typeof DJ_VUE === 'object' && DJ_VUE ? DJ_VUE : VUE_DJ_FICHE;
 /* UNE PROPOSITION PAS ENCORE ÉCRITE (le technicien v73, point 1 : « le cadran affiche 15 A, “le retenu”, et le retest
-   corrigé garde MS3320-10 ») : l'outil retient un autre calibre que celui que l’installation porte, et rien n'a été écrit —
+   corrigé garde MS3320-10 ») : l'outil retient un autre calibre que celui que votre fichier porte, et rien n'a été écrit —
    la fiche le dit partout (« 10 A retest → 15 A proposé »), jamais « le retenu » sur une valeur qui ne partira pas. */
 const propositionNonEcrite = d => !!(d.gPn && d.origine !== 'main' && !d.sansProfil && !d.sansCourbe && d.calibre > 0 && d.pn && d.pn !== d.calibre);
 /* LA SECTION « CALIBRE » (08-sections) : trois groupes, chacun dans un `.fi-dj[data-disj][data-part]` que
@@ -390,8 +393,8 @@ function sectionDisjoncteur(nom, d, o, probs) { d = d || disjonctionDe(nom); o =
   const fam = (d.famille && (d.famille.famille || d.famille.nom)) || '', propose = propositionNonEcrite(d), retest = !propose && o.calRetest && o.calRetest !== cal && !pnDeVolta(nom) ? o.calRetest : null;
   const kR = propose ? cleDuVerdict(d.gPn) : v.cle, mot = k => k && k !== 'passe' ? `<span class="dj-resume-mot ${etatDuVerdict(k)}">${esc(motDuVerdict(k))}</span>` : '';
   const resume = !cal ? '' : propose
-    ? `<b class="dj-resume">${nombreCourt(d.pn)}<small>A</small></b>${mot(kR)}<span class="dj-resume-sous">installation ${ico('fleche')} <b>${esc(amperes(cal))}</b> proposé${fam ? ' · ' + esc(fam) : ''}</span>`
-    : `<b class="dj-resume">${nombreCourt(cal)}<small>A</small></b>${mot(kR)}<span class="dj-resume-sous">${[fam ? esc(fam) : '', retest ? `installation <s>${esc(amperes(retest))}</s>` : ''].filter(Boolean).join(' · ')}</span>`;
+    ? `<b class="dj-resume">${nombreCourt(d.pn)}<small>A</small></b>${mot(kR)}<span class="dj-resume-sous">votre fichier ${ico('fleche')} <b>${esc(amperes(cal))}</b> proposé${fam ? ' · ' + esc(fam) : ''}</span>`
+    : `<b class="dj-resume">${nombreCourt(cal)}<small>A</small></b>${mot(kR)}<span class="dj-resume-sous">${[fam ? esc(fam) : '', retest ? `votre fichier <s>${esc(amperes(retest))}</s>` : ''].filter(Boolean).join(' · ')}</span>`;
   return { cle: 'disjoncteur', resume, contenu: tete + courbe + profil, parts: { tete, courbe, profil } }; }
 // ce que le « ? » de la courbe et du profil lit (08-explications) : la famille de courbes ; le permanent, la pointe, la part consommée
 function contexteAide(cle, d) { if (cle === 'courbe') return { famille: d.famille || d.courbe || '' };
@@ -455,7 +458,7 @@ function calibresDuCadran(d, tout, nom) { const best = d.passe, cal = d.calibre,
     // le pourquoi chiffré d'un cran : la phrase du moteur (le domaine C, `pourquoiDuCalibre` — la même que le récapitulatif et le
     // contrôle), sinon la nôtre
     let pq = null; if (typeof pourquoiDuCalibre === 'function') { try { pq = pourquoiDuCalibre(app.norme, d, g.calibre); } catch (_) { pq = null; } }
-    const role = [auto ? (propose ? 'l’automatique, proposé — « Passer en ' + A + ' » l’écrit dans l’installation' : 'l’automatique, le plus petit qui passe') : '', retest && !retenu ? 'le calibre de l’installation' : '', hors ? 'hors de vos calibres préférés (Hypothèses)' : ''].filter(Boolean).join(' · ');
+    const role = [auto ? (propose ? 'l’automatique, proposé — « Passer en ' + A + ' » l’écrit dans l’Excel corrigé' : 'l’automatique, le plus petit qui passe') : '', retest && !retenu ? 'le calibre de votre fichier' : '', hors ? 'hors de vos calibres préférés (Hypothèses)' : ''].filter(Boolean).join(' · ');
     const geste = retenu && !propose ? 'Retenu.' : retenu ? '' : 'Un clic le retient' + (cle && cle !== 'passe' ? ', même s’il ne passe pas' : '') + ' — Ctrl+Z le rend.';
     return { calibre: g.calibre, g, cle, mot: M.mot || '', etat: M.etat || '', raison, retenu, auto, retest, hors, propose: retenu && propose,
       bulle: `${pq && pq.phrase ? pq.phrase : A + ' — ' + (M.mot || 'pas jugé') + ' : ' + raison}${role ? '\n' + majuscule(role) : ''}${geste ? '\n' + geste : ''}` }; }); }
@@ -500,7 +503,7 @@ function cadranCalibre(d, items, propose) { const cats = items.map(x => x.calibr
 function boutonsDuCadran(items) { const G = geometrieCadran(items.map(x => x.calibre)), C = CADRAN, focal = Math.max(0, items.findIndex(x => x.retenu));
   return `<div class="dj-crans" role="group" aria-label="Les calibres de la gamme — ← → les parcourent, Entrée retient, Échap revient">` + items.map((x, k) => { const [px, py] = G.pt(G.angCran(k), C.Rn);
     return `<button type="button" class="dj-cran ${x.cle || 'inconnu'}${x.retenu ? ' retenu' : ''}${x.auto ? ' auto' : ''}${x.retest ? ' retest' : ''}" data-cal="${x.calibre}" data-k="${k}" style="left:${px.toFixed(1)}px;top:${py.toFixed(1)}px" tabindex="${k === focal ? 0 : -1}" aria-pressed="${x.retenu}"`
-      + ` aria-label="${escA(amperes(x.calibre) + (x.mot ? ', ' + x.mot : '') + (x.retenu ? (x.propose ? ', proposé' : ', retenu') : '') + (x.retest ? ', celui de l’installation' : ''))}" data-bulle="${escA(x.bulle)}"><span class="dj-arc-n">${nombreCourt(x.calibre)}</span></button>`; }).join('') + '</div>'; }
+      + ` aria-label="${escA(amperes(x.calibre) + (x.mot ? ', ' + x.mot : '') + (x.retenu ? (x.propose ? ', proposé' : ', retenu') : '') + (x.retest ? ', celui de votre fichier' : ''))}" data-bulle="${escA(x.bulle)}"><span class="dj-arc-n">${nombreCourt(x.calibre)}</span></button>`; }).join('') + '</div>'; }
 // les marques des trois mots : ✓ passe, ~ juste, ✕ déclenche (des icônes : les polices embarquées n'ont pas ces glyphes)
 const MARQUES_VERDICT = { passe: 'coche', juste: 'fermer', declenche: 'fermer' };   // (v77) ce qui touche la courbe ne passe pas : la même croix
 const marqueVerdict = k => MARQUES_VERDICT[k] ? ico(MARQUES_VERDICT[k], 'dj-marque') : '';
@@ -556,8 +559,8 @@ function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, b
    les calibres que la liste préférée des hypothèses écarte, en pointillé, et la phrase qui le dit. */
 function panneauGamme(nom, d) { const tout = !!FI.catalogue[nom], items = calibresDuCadran(d, tout, nom), F = d.famille, fam = (F && (F.famille || F.nom)) || '';
   const chips = items.map(x => `<button type="button" class="dj-chip ${x.cle || 'inconnu'}${x.auto ? ' ideal' : ''}${x.hors ? ' hors' : ''}${x.retest ? ' retest' : ''}" data-cal="${x.calibre}" aria-pressed="${x.retenu}" data-bulle="${escA(x.bulle)}"`
-    + ` aria-label="${escA(amperes(x.calibre) + (x.mot ? ', ' + x.mot : '') + (x.retenu ? ', retenu' : '') + (x.retest ? ', celui de l’installation' : '') + (x.hors ? ', hors des calibres préférés' : ''))}">`
-    + `<span class="dj-chip-l"><b>${x.auto ? `<i class="dj-etoile" aria-hidden="true">${ico('etoile')}</i>` : ''}${nombreCourt(x.calibre)}<small>A</small></b>${x.retest ? '<em>installation</em>' : ''}</span><span class="dj-chip-v">${marqueVerdict(x.cle)}${esc(x.mot || '—')}</span></button>`).join('');
+    + ` aria-label="${escA(amperes(x.calibre) + (x.mot ? ', ' + x.mot : '') + (x.retenu ? ', retenu' : '') + (x.retest ? ', celui de votre fichier' : '') + (x.hors ? ', hors des calibres préférés' : ''))}">`
+    + `<span class="dj-chip-l"><b>${x.auto ? `<i class="dj-etoile" aria-hidden="true">${ico('etoile')}</i>` : ''}${nombreCourt(x.calibre)}<small>A</small></b>${x.retest ? '<em>votre fichier</em>' : ''}</span><span class="dj-chip-v">${marqueVerdict(x.cle)}${esc(x.mot || '—')}</span></button>`).join('');
   const nPref = (d.catalogue || []).length, complet = F ? gammeComplete(d, nom).length : nPref, hors = items.filter(x => x.hors).length;
   const prefs = (d.catalogue || []).map(c => nombre(c)).join(' · ');
   const pied = complet > nPref ? `<p class="dj-gamme-pied">${tout ? `<button type="button" class="btn lien dense" data-dj-catalogue="0">Seulement vos calibres préférés (${nPref})</button><span>${esc(pluriel2(hors, 'calibre'))} hors de vos calibres préférés, en pointillé — les Hypothèses les règlent</span>`
@@ -657,7 +660,34 @@ function motsDuCalibre(d, cal) { if (!d || !(cal > 0) || d.sansProfil || d.sansC
   const detail = !S ? `${tire} ; à ce courant, ce calibre ne disjoncte jamais.`
     : q.parLaSomme ? `${tire}. Chaque état passe seul, mais enchaînés, ils le chauffent jusqu’à disjoncter.`
     : `${tire} ; ce calibre ${q.ok === false ? 'disjoncte dès' : 'ne disjoncte qu’au-delà de'} ${S}${perm ? '' : ' sur cette durée'}.`;
-  return { cal, cle: ok ? 'passe' : 'declenche', titre, detail, courbe: q.marges && q.marges[0] ? q.marges[0].courbe : '', pire: q }; }
+  // (v86, l'intégrateur, G8) la bulle d'un calibre de la frise, à la manière de la charte : « au démarrage, il tire 9,31 A pendant
+  // 2,1 min ; sur 2,1 min, un 7,5 A disjoncte dès 7,24 A : il disjoncte »
+  const un = 'un ' + amperes(cal), bulle = !S ? `${tire} ; à ce courant, ${un} ne disjoncte jamais : il ne disjoncte pas.`
+    : q.parLaSomme ? `${tire} : chaque état passe seul, mais enchaînés, ils font disjoncter ${un}.`
+    : `${tire} ; ${perm ? '' : 'sur ' + secondes(q.t) + ', '}${un} ${q.ok === false ? 'disjoncte dès' : 'ne disjoncte qu’au-delà de'} ${S} : il ${ok ? 'ne disjoncte pas' : 'disjoncte'}.`;
+  return { cal, cle: ok ? 'passe' : 'declenche', titre, detail, bulle, courbe: q.marges && q.marges[0] ? q.marges[0].courbe : '', pire: q }; }
+/* UNE SEULE LISTE DE CALIBRES PARTOUT (v86, l'intégrateur, G7 : « les calibres préférés des Hypothèses vont de 1 à 25 A, la
+   frise s'arrête à 20 A ») : la gamme jugée (la famille du part number, filtrée par vos calibres préférés : 09 bis,
+   `calibresDeLaFamille`), plus chaque calibre préféré que la famille ne fait pas — montré, à part (`hors`), et dit (`motHors`) :
+   la frise de la carte, celle de l'onglet Calibre et l'échelle de l'essentiel lisent la même liste. */
+function listeDesCalibres(d) { const xs = (d.gamme || []).filter(g => g.calibre > 0).map(g => ({ calibre: g.calibre, g, hors: false }));
+  const H = (d.contexte && d.contexte.hyp) || app.simu || HYPOTHESES, pref = (H.calibresPreferes || []).map(Number).filter(x => x > 0);
+  if (d.famille && xs.length) pref.forEach(c => { if (!xs.some(x => Math.abs(x.calibre - c) < 1e-9)) xs.push({ calibre: c, g: null, hors: true }); });
+  return xs.sort((a, b) => a.calibre - b.calibre); }
+const famDe = d => (d.famille && (d.famille.famille || d.famille.nom)) || '';
+const motHors = (d, c) => { const cs = ((d.famille && d.famille.calibres) || []).filter(x => x > 0), fam = famDe(d) || 'cette famille';
+  return `Pas de ${fam} en ${amperes(c)}${cs.length ? ` : vos tables le donnent de ${nombre(Math.min(...cs))} à ${nombre(Math.max(...cs))} A` : ''}. Il reste dans vos calibres préférés (Hypothèses), pour vos autres familles.`; };
+/* LA PROPOSITION DE VOLTA SUR LE CALIBRE (v86, l'intégrateur, G8 : « le calibre écrit vient du fichier ; plus de Manuel libre —
+   seul le geste « Retenir le X A » proposé et justifié par VOLTA reste ; il part dans l'Excel corrigé, avec Défaire ») :
+   votre fichier porte un calibre plus gros qu'il ne faut (il ne disjoncte pas, le plus petit suffit), ou un calibre retenu à
+   la main par une version d'avant — VOLTA propose le plus petit qui ne disjoncte pas. Un calibre du fichier qui disjoncte, lui,
+   a sa carte de décision (« Passer en 15 A ») ou est déjà réécrit par VOLTA (la règle v74). Rend { cal, main, m, fils } ou null. */
+function propositionDuCalibre(nom, d) { const passe = d.passe, cal = d.calibre; if (!(passe > 0) || d.sansProfil || d.sansCourbe || Math.abs(passe - (cal || 0)) < 1e-9) return null;
+  const m = motsDuCalibre(d, passe); if (!m || m.cle !== 'passe') return null;
+  if (d.origine === 'main') return { cal: passe, main: true, m, fils: [] };
+  if (!(cal > passe)) return null;
+  const fils = passe === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
+  return { cal: passe, main: false, m, fils }; }
 // d'où vient le seuil (la bulle de la conclusion) : la courbe qui juge, la plus rapide de la famille
 const bulleDuSeuil = m => m && m.courbe ? `Le seuil se lit sur la courbe ${m.courbe}, la plus rapide de la famille : sous le seuil, il ne disjoncte pas ; au-dessus, il disjoncte.` : '';
 /* LA CONCLUSION, dessinée : la marque du verdict (une coche verte, une croix rouge), la phrase grande, le détail dessous.

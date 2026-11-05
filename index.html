@@ -24423,7 +24423,34 @@ function motsDuCalibre(d, cal) { if (!d || !(cal > 0) || d.sansProfil || d.sansC
   const detail = !S ? `${tire} ; à ce courant, ce calibre ne disjoncte jamais.`
     : q.parLaSomme ? `${tire}. Chaque état passe seul, mais enchaînés, ils le chauffent jusqu’à disjoncter.`
     : `${tire} ; ce calibre ${q.ok === false ? 'disjoncte dès' : 'ne disjoncte qu’au-delà de'} ${S}${perm ? '' : ' sur cette durée'}.`;
-  return { cal, cle: ok ? 'passe' : 'declenche', titre, detail, courbe: q.marges && q.marges[0] ? q.marges[0].courbe : '', pire: q }; }
+  // (v86, l'intégrateur, G8) la bulle d'un calibre de la frise, à la manière de la charte : « au démarrage, il tire 9,31 A pendant
+  // 2,1 min ; sur 2,1 min, un 7,5 A disjoncte dès 7,24 A : il disjoncte »
+  const un = 'un ' + amperes(cal), bulle = !S ? `${tire} ; à ce courant, ${un} ne disjoncte jamais : il ne disjoncte pas.`
+    : q.parLaSomme ? `${tire} : chaque état passe seul, mais enchaînés, ils font disjoncter ${un}.`
+    : `${tire} ; ${perm ? '' : 'sur ' + secondes(q.t) + ', '}${un} ${q.ok === false ? 'disjoncte dès' : 'ne disjoncte qu’au-delà de'} ${S} : il ${ok ? 'ne disjoncte pas' : 'disjoncte'}.`;
+  return { cal, cle: ok ? 'passe' : 'declenche', titre, detail, bulle, courbe: q.marges && q.marges[0] ? q.marges[0].courbe : '', pire: q }; }
+/* UNE SEULE LISTE DE CALIBRES PARTOUT (v86, l'intégrateur, G7 : « les calibres préférés des Hypothèses vont de 1 à 25 A, la
+   frise s'arrête à 20 A ») : la gamme jugée (la famille du part number, filtrée par vos calibres préférés : 09 bis,
+   `calibresDeLaFamille`), plus chaque calibre préféré que la famille ne fait pas — montré, à part (`hors`), et dit (`motHors`) :
+   la frise de la carte, celle de l'onglet Calibre et l'échelle de l'essentiel lisent la même liste. */
+function listeDesCalibres(d) { const xs = (d.gamme || []).filter(g => g.calibre > 0).map(g => ({ calibre: g.calibre, g, hors: false }));
+  const H = (d.contexte && d.contexte.hyp) || app.simu || HYPOTHESES, pref = (H.calibresPreferes || []).map(Number).filter(x => x > 0);
+  if (d.famille && xs.length) pref.forEach(c => { if (!xs.some(x => Math.abs(x.calibre - c) < 1e-9)) xs.push({ calibre: c, g: null, hors: true }); });
+  return xs.sort((a, b) => a.calibre - b.calibre); }
+const famDe = d => (d.famille && (d.famille.famille || d.famille.nom)) || '';
+const motHors = (d, c) => { const cs = ((d.famille && d.famille.calibres) || []).filter(x => x > 0), fam = famDe(d) || 'cette famille';
+  return `Pas de ${fam} en ${amperes(c)}${cs.length ? ` : vos tables le donnent de ${nombre(Math.min(...cs))} à ${nombre(Math.max(...cs))} A` : ''}. Il reste dans vos calibres préférés (Hypothèses), pour vos autres familles.`; };
+/* LA PROPOSITION DE VOLTA SUR LE CALIBRE (v86, l'intégrateur, G8 : « le calibre écrit vient du fichier ; plus de Manuel libre —
+   seul le geste « Retenir le X A » proposé et justifié par VOLTA reste ; il part dans l'Excel corrigé, avec Défaire ») :
+   votre fichier porte un calibre plus gros qu'il ne faut (il ne disjoncte pas, le plus petit suffit), ou un calibre retenu à
+   la main par une version d'avant — VOLTA propose le plus petit qui ne disjoncte pas. Un calibre du fichier qui disjoncte, lui,
+   a sa carte de décision (« Passer en 15 A ») ou est déjà réécrit par VOLTA (la règle v74). Rend { cal, main, m, fils } ou null. */
+function propositionDuCalibre(nom, d) { const passe = d.passe, cal = d.calibre; if (!(passe > 0) || d.sansProfil || d.sansCourbe || Math.abs(passe - (cal || 0)) < 1e-9) return null;
+  const m = motsDuCalibre(d, passe); if (!m || m.cle !== 'passe') return null;
+  if (d.origine === 'main') return { cal: passe, main: true, m, fils: [] };
+  if (!(cal > passe)) return null;
+  const fils = passe === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
+  return { cal: passe, main: false, m, fils }; }
 // d'où vient le seuil (la bulle de la conclusion) : la courbe qui juge, la plus rapide de la famille
 const bulleDuSeuil = m => m && m.courbe ? `Le seuil se lit sur la courbe ${m.courbe}, la plus rapide de la famille : sous le seuil, il ne disjoncte pas ; au-dessus, il disjoncte.` : '';
 /* LA CONCLUSION, dessinée : la marque du verdict (une coche verte, une croix rouge), la phrase grande, le détail dessous.
@@ -26464,9 +26491,15 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
     probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste, vignette, identite: id,
     ok: 'Ses connecteurs logent tous ses câbles, et chacun porte son courant.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 // la case « Câbles » des chiffres (v78) : combien, combien en défaut, ce que porte le plus chargé
-const chiffreCables = s => !s ? null : s.vide ? { k: 'Câbles', v: '0', onglet: 'fils' }
-  : { k: 'Câbles', v: String(s.compte || 0), etat: s.nko ? 'ko' : s.natt ? 'att' : '', barre: s.charge != null ? s.charge : null, onglet: 'fils',
-    sous: s.nko ? esc(s.nko + ' à régler') : s.natt ? esc(s.natt + ' à voir') : s.charge != null ? esc('chargés à ' + Math.round(s.charge * 100) + ' % au plus') : '' };
+/* (v86, l'audit : « le 4 en rouge sur la carte de 103RL1, sans dire pourquoi ») : le compte reste à l'encre — c'est un
+   nombre de câbles, pas un nombre de problèmes — et ce qui cloche se dit à côté, dans sa couleur : « 4 · 1 à régler ». Tout
+   passe : le compte seul (le pourcentage ne se lit que dans le tableau des câbles, sous « % de l'admis ») ; la bulle nomme
+   les câbles en cause. */
+const chiffreCables = s => { if (!s) return null; if (s.vide) return { k: 'Câbles', v: '0', onglet: 'fils' };
+  const n = s.compte || 0, ko = s.nko || 0, att = ko ? 0 : s.natt || 0, raisons = (s.raisons || []).slice(0, 4).join('\n');
+  const etat = ko ? `<small class="nc-etat ko">· ${ko} à régler</small>` : att ? `<small class="nc-etat att">· ${att} à voir</small>` : '';
+  return { k: 'Câbles', v: String(n) + etat, onglet: 'fils',
+    bulle: ko || att ? `${pluriel(n, 'câble')}, dont ${ko || att} ${ko ? 'à régler' : 'à voir'}${raisons ? ' :\n' + raisons : ''}` : `${n > 1 ? 'Ses ' + n + ' câbles portent leur courant' : 'Son câble porte son courant'} ; le détail, câble par câble, dans l’onglet Câbles` }; };
 /* LA CONSOMMATION (le lecteur, v74 : « le courant de chaque équipement, c'est moi qui l'ai — je le rajoute à la main ») :
    le permanent, le démarrage et sa durée ; dessous, le disjoncteur qui l'alimente et le calibre qu'il en tire (la somme
    de tout ce qu'il alimente, 08 bis `profilDesConsommateurs`). Rien pour une masse, un renvoi, un disjoncteur. */
@@ -27147,10 +27180,12 @@ function ficheMasse(nom) { const fils = filsDuRepere(nom), probs = problemesDesF
   const sF = sectionFilsDuRepere(fils, probs), jauges = [...new Set(fils.map(f => jaugeDuType(f.l.type)).filter(j => j != null))].sort((a, b) => a - b);
   const dessin = masseVue(nom, lignes);
   const ess = !fils.length ? '' : `<section class="vu-bloc vu-bloc-bro"><h4 class="vu-titre">Ce qui y revient <span>${esc(pluriel(fils.length, 'câble'))}</span></h4>${dessin}</section>`;
-  const onglets = [{ cle: 'essentiel', statut: { t: jauges.length ? 'gauge ' + (jauges.length > 1 ? jauges[0] + ' à ' + jauges[jauges.length - 1] : jauges[0]) : pluriel(fils.length, 'câble'), etat: probs.some(p => p.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: ess, vide: fils.length ? '' : 'aucun câble ne revient à cette masse' },
+  const onglets = [{ cle: 'essentiel', statut: { t: jauges.length ? 'gauge ' + (jauges.length > 1 ? jauges[0] + ' à ' + jauges[jauges.length - 1] : jauges[0]) + ' AWG' : pluriel(fils.length, 'câble'), etat: probs.some(p => p.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: ess, vide: fils.length ? '' : 'aucun câble ne revient à cette masse' },
     ongletCables(sF)];
-  const chiffres = [{ k: 'Câbles', v: String(fils.length), etat: sF && sF.nko ? 'ko' : '', onglet: 'fils' },
-    jauges.length ? { k: 'Gauge', v: jauges.length > 1 ? `${jauges[0]}<small class="nc-a">à</small>${jauges[jauges.length - 1]}` : String(jauges[0]), bulle: 'Les gauges des câbles qui y reviennent, du plus gros au plus fin : la cosse les reprend', onglet: 'fils' } : null];
+  // (v86, l'audit : « GAUGE 20 sur la carte d'une masse, 20 AWG sur celle d'un câble ») : une gauge s'écrit partout avec son
+  // unité, « 20 AWG », « 16 à 22 AWG » ; le compte des câbles, comme sur les autres cartes (`chiffreCables`)
+  const chiffres = [chiffreCables(sF) || { k: 'Câbles', v: String(fils.length), onglet: 'fils' },
+    jauges.length ? { k: 'Gauge', v: (jauges.length > 1 ? `${jauges[0]}<small class="nc-a">à</small>${jauges[jauges.length - 1]}` : String(jauges[0])) + '<small>AWG</small>', bulle: 'Les gauges des câbles qui y reviennent, du plus gros au plus fin : la cosse les reprend', onglet: 'fils' } : null];
   return composerFiche({ type: 'masse', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [esc('retour au corps de l’appareil')], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [],
     chiffres, vignette: masseVue(nom, lignes, { petit: true }), ok: 'Un retour au corps de l’appareil : ni connecteur ni contact.', pied: { tableau: nom, menu: [['fi-copier', 'Copier la fiche']] } }); }
 
@@ -34158,13 +34193,15 @@ if (typeof document !== 'undefined') lierEntreesPdf();
        rien pour les lignes montrées ne se pose pas (`colonnesUtiles`).
      · LA COULEUR NE DIT QUE L'ÉTAT, et la route d'un câble ; le reste est à
        l'encre, les identifiants en chasse fixe.
-     · TOUT SE CORRIGE SUR PLACE : une valeur qu'on peut écrire prend au
-       survol l'air d'un champ (et la ligne survolée souligne les siennes) ;
-       double-clic, Entrée ou F2 l'édite, Tab passe à la suivante, Échap
-       annule, les flèches se déplacent ; une valeur que l'outil calcule (la
-       longueur d'hypothèse, le contact, le type, le calibre, le module)
-       forcée à la main porte « main » et ↺, qui rend l'automatique. Chaque
-       correction est une entrée d'historique (Ctrl+Z).
+     · UNE SEULE SOURCE (v86, la charte v85) : ce qui vient du fichier — un
+       repère, une borne, un type, une longueur, une route, un part number —
+       SE LIT, sans champ ; un double-clic, Entrée ou F2 disent dans une bulle
+       qu'il se change dans le fichier. On n'ajoute ni ne supprime une
+       liaison ou un équipement ici : c'est changer le fichier. Seuls LES
+       CHOIX DE VOLTA (le contact d'un bout, le module, l'arrangement, la
+       norme, le sexe, le raccord) et le profil de charge se règlent sur
+       place : Automatique ou Manuel (« manuel » et ↺, qui rend l'automatique).
+       Chaque réglage est une entrée d'historique (Ctrl+Z).
      · FILTRER, TRIER, CHOISIR SES COLONNES, EXPORTER : la portée (Folio n /
        Tout), un champ qui cherche dans l'onglet, des puces, le tri à
        l'en-tête, le CSV de ce qu'on voit. Un clic sur une ligne ouvre sa

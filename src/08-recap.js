@@ -27,13 +27,15 @@
        rien pour les lignes montrées ne se pose pas (`colonnesUtiles`).
      · LA COULEUR NE DIT QUE L'ÉTAT, et la route d'un câble ; le reste est à
        l'encre, les identifiants en chasse fixe.
-     · TOUT SE CORRIGE SUR PLACE : une valeur qu'on peut écrire prend au
-       survol l'air d'un champ (et la ligne survolée souligne les siennes) ;
-       double-clic, Entrée ou F2 l'édite, Tab passe à la suivante, Échap
-       annule, les flèches se déplacent ; une valeur que l'outil calcule (la
-       longueur d'hypothèse, le contact, le type, le calibre, le module)
-       forcée à la main porte « main » et ↺, qui rend l'automatique. Chaque
-       correction est une entrée d'historique (Ctrl+Z).
+     · UNE SEULE SOURCE (v86, la charte v85) : ce qui vient du fichier — un
+       repère, une borne, un type, une longueur, une route, un part number —
+       SE LIT, sans champ ; un double-clic, Entrée ou F2 disent dans une bulle
+       qu'il se change dans le fichier. On n'ajoute ni ne supprime une
+       liaison ou un équipement ici : c'est changer le fichier. Seuls LES
+       CHOIX DE VOLTA (le contact d'un bout, le module, l'arrangement, la
+       norme, le sexe, le raccord) et le profil de charge se règlent sur
+       place : Automatique ou Manuel (« manuel » et ↺, qui rend l'automatique).
+       Chaque réglage est une entrée d'historique (Ctrl+Z).
      · FILTRER, TRIER, CHOISIR SES COLONNES, EXPORTER : la portée (Folio n /
        Tout), un champ qui cherche dans l'onglet, des puces, le tri à
        l'en-tête, le CSV de ce qu'on voit. Un clic sur une ligne ouvre sa

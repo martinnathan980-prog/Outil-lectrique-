@@ -1211,9 +1211,15 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
     probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste, vignette, identite: id,
     ok: 'Ses connecteurs logent tous ses câbles, et chacun porte son courant.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 // la case « Câbles » des chiffres (v78) : combien, combien en défaut, ce que porte le plus chargé
-const chiffreCables = s => !s ? null : s.vide ? { k: 'Câbles', v: '0', onglet: 'fils' }
-  : { k: 'Câbles', v: String(s.compte || 0), etat: s.nko ? 'ko' : s.natt ? 'att' : '', barre: s.charge != null ? s.charge : null, onglet: 'fils',
-    sous: s.nko ? esc(s.nko + ' à régler') : s.natt ? esc(s.natt + ' à voir') : s.charge != null ? esc('chargés à ' + Math.round(s.charge * 100) + ' % au plus') : '' };
+/* (v86, l'audit : « le 4 en rouge sur la carte de 103RL1, sans dire pourquoi ») : le compte reste à l'encre — c'est un
+   nombre de câbles, pas un nombre de problèmes — et ce qui cloche se dit à côté, dans sa couleur : « 4 · 1 à régler ». Tout
+   passe : le compte seul (le pourcentage ne se lit que dans le tableau des câbles, sous « % de l'admis ») ; la bulle nomme
+   les câbles en cause. */
+const chiffreCables = s => { if (!s) return null; if (s.vide) return { k: 'Câbles', v: '0', onglet: 'fils' };
+  const n = s.compte || 0, ko = s.nko || 0, att = ko ? 0 : s.natt || 0, raisons = (s.raisons || []).slice(0, 4).join('\n');
+  const etat = ko ? `<small class="nc-etat ko">· ${ko} à régler</small>` : att ? `<small class="nc-etat att">· ${att} à voir</small>` : '';
+  return { k: 'Câbles', v: String(n) + etat, onglet: 'fils',
+    bulle: ko || att ? `${pluriel(n, 'câble')}, dont ${ko || att} ${ko ? 'à régler' : 'à voir'}${raisons ? ' :\n' + raisons : ''}` : `${n > 1 ? 'Ses ' + n + ' câbles portent leur courant' : 'Son câble porte son courant'} ; le détail, câble par câble, dans l’onglet Câbles` }; };
 /* LA CONSOMMATION (le lecteur, v74 : « le courant de chaque équipement, c'est moi qui l'ai — je le rajoute à la main ») :
    le permanent, le démarrage et sa durée ; dessous, le disjoncteur qui l'alimente et le calibre qu'il en tire (la somme
    de tout ce qu'il alimente, 08 bis `profilDesConsommateurs`). Rien pour une masse, un renvoi, un disjoncteur. */
@@ -1894,10 +1900,12 @@ function ficheMasse(nom) { const fils = filsDuRepere(nom), probs = problemesDesF
   const sF = sectionFilsDuRepere(fils, probs), jauges = [...new Set(fils.map(f => jaugeDuType(f.l.type)).filter(j => j != null))].sort((a, b) => a - b);
   const dessin = masseVue(nom, lignes);
   const ess = !fils.length ? '' : `<section class="vu-bloc vu-bloc-bro"><h4 class="vu-titre">Ce qui y revient <span>${esc(pluriel(fils.length, 'câble'))}</span></h4>${dessin}</section>`;
-  const onglets = [{ cle: 'essentiel', statut: { t: jauges.length ? 'gauge ' + (jauges.length > 1 ? jauges[0] + ' à ' + jauges[jauges.length - 1] : jauges[0]) : pluriel(fils.length, 'câble'), etat: probs.some(p => p.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: ess, vide: fils.length ? '' : 'aucun câble ne revient à cette masse' },
+  const onglets = [{ cle: 'essentiel', statut: { t: jauges.length ? 'gauge ' + (jauges.length > 1 ? jauges[0] + ' à ' + jauges[jauges.length - 1] : jauges[0]) + ' AWG' : pluriel(fils.length, 'câble'), etat: probs.some(p => p.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: ess, vide: fils.length ? '' : 'aucun câble ne revient à cette masse' },
     ongletCables(sF)];
-  const chiffres = [{ k: 'Câbles', v: String(fils.length), etat: sF && sF.nko ? 'ko' : '', onglet: 'fils' },
-    jauges.length ? { k: 'Gauge', v: jauges.length > 1 ? `${jauges[0]}<small class="nc-a">à</small>${jauges[jauges.length - 1]}` : String(jauges[0]), bulle: 'Les gauges des câbles qui y reviennent, du plus gros au plus fin : la cosse les reprend', onglet: 'fils' } : null];
+  // (v86, l'audit : « GAUGE 20 sur la carte d'une masse, 20 AWG sur celle d'un câble ») : une gauge s'écrit partout avec son
+  // unité, « 20 AWG », « 16 à 22 AWG » ; le compte des câbles, comme sur les autres cartes (`chiffreCables`)
+  const chiffres = [chiffreCables(sF) || { k: 'Câbles', v: String(fils.length), onglet: 'fils' },
+    jauges.length ? { k: 'Gauge', v: (jauges.length > 1 ? `${jauges[0]}<small class="nc-a">à</small>${jauges[jauges.length - 1]}` : String(jauges[0])) + '<small>AWG</small>', bulle: 'Les gauges des câbles qui y reviennent, du plus gros au plus fin : la cosse les reprend', onglet: 'fils' } : null];
   return composerFiche({ type: 'masse', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [esc('retour au corps de l’appareil')], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [],
     chiffres, vignette: masseVue(nom, lignes, { petit: true }), ok: 'Un retour au corps de l’appareil : ni connecteur ni contact.', pied: { tableau: nom, menu: [['fi-copier', 'Copier la fiche']] } }); }
 
