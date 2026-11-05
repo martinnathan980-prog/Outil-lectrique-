@@ -561,3 +561,44 @@ seconde vérification.
   « CableTagsDisplay » et « MAJ pour CGMv4 ».
 - Prochain essai : l'import DXF d'un folio dans SEE visible
   (see/FORMAT-DXF.md, « L'essai au bureau »).
+
+### Les familles utilisateur de l'album ATA-PD (photos du 5 novembre 2026)
+
+Le bureau ne dessine qu'avec les **User Families** de l'album (« avec ça, on
+peut tout faire »). L'explorateur de SEE montre les DESCRIPTIONS ; SEE range
+les symboles sous des codes courts : « Black Box complete » est la famille
+« 000 », symbole « 0001 » (vu dans Component Insertion) ; une masse « Ground 2
+Connections » a pour bulle « GRND 103 . P01 / Slave - Slave Ground ». Les codes
+des autres symboles restent à relever (bulle de l'explorateur, ou la fenêtre
+Component Insertion).
+
+| Famille | Symboles (descriptions) |
+|---|---|
+| Blackbox Family | Black Box complete, Black Box complete Vertical, Bar BUS (deux), Black Box dash, Black Box dash Vertical |
+| Equipment Family | Connector Receptacle for Equipment, Connector Plug for Equipment, Module Plug for Equipment, Module Receptacle for Equipment |
+| Production Break Family | Connector Production Break, Module Production Break |
+| Ground Family | VG, Ground, Ground 1 Connection (quatre), Ground 2 Connections (six), Ground 3 Connections (quatre), Ground 4 Connections, VN Right, VN Left |
+| Coaxial Adaptator Family | Connector Coaxial Production…, Coaxial Body I, Coaxial Body T, Coaxial Connector, Coaxial Adaptator Left, Coaxial Adaptator Right |
+| VT Family | VT/TM, Pass Through VT |
+| End Cap Family | end cap left, flat end cap left, end cap right, flat end cap right |
+| Splices Family | Splice 4 cnx, Splice 3 cnx left, Splice 3 cnx right, Splice 2 cnx |
+| Lug & Stud family | One Stud Right, One Stud Left, One Stud Top, Stud Top, Stud Right, Stud Left |
+| TI Family | Current transformer |
+| Pressure Seal Family | Pressure Seal L-H |
+| Overshield Family | Overshield |
+| Renvois Family | Renvois FWD, Renvois Destination FTI, Renvois Source FTI, Renvois right, Renvois left |
+| Title Block Family | Add a Modification |
+| Phone Family | Loud speaker (deux) |
+
+Le type d'un ConnectiveDevice dans le schéma Wiring Diagram 3.10 :
+Connector, TerminalBlock, GroundBlock, Splice, Equipment, Shell,
+ShellModule, TerminalTrack, ProductionBreak, JunctionBox, Current
+Transformer, Pressure Seal, Busbar (2.18 : TB et GB au lieu de
+TerminalBlock et GroundBlock). Correspondance PROPOSÉE, à vérifier au
+bureau : équipement = Equipment (Blackbox Family) ; ses connecteurs =
+Connector avec ParentTag (Equipment Family) ; prise de coupure =
+ProductionBreak (Production Break Family) ; masse = GroundBlock (Ground
+Family) ; barrette = Busbar ou TerminalBlock (Bar BUS) ; épissure = Splice
+(Splices Family) ; traversée étanche = Pressure Seal ; transformateur =
+Current Transformer (TI Family). Les renvois de folio (Renvois Family) ne
+sont pas des appareils de la liste de fils.
