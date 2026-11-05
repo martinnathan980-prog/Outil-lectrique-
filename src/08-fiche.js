@@ -1620,7 +1620,10 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
      la règle de la norme (les zones), puis une étape par module : sa référence, et pourquoi */
   const ex0 = Q.fils[0], exB = ex0 ? etiquette(ex0.module, ex0.contact) : '';
   const etapesM = !Q.lettres ? null : [
-    nf ? { html: `Votre fichier pose <b>${esc(pluriel(nf, 'câble'))}</b> sur <b>${esc(pluriel(Q.modules.length, 'module'))}</b> : chaque borne dit son module et son contact${exB ? ` (<b class="id">${esc(exB)}</b> : module ${esc(ex0.numero)}, contact ${esc(ex0.contact.lettre)})` : ''}. VOLTA n’en change aucun.`, source: 'fichier' } : null,
+    // (v86) une barrette ajoutée par VOLTA : c'est lui qui nomme ses bornes, comme sa face (01, `avecBarrettesAPoser`)
+    aPoser && nf ? (() => { const ls = [...new Set(Q.fils.map(x => x.contact.lettre))].sort(triContacts), r0 = raccord ? raccord.borneVers : '', num = Q.modules[0] ? Q.modules[0].numero : '';
+      return { html: `VOLTA nomme ses bornes comme sa face${r0 ? ` : <b class="id">${esc(r0)}</b> pour le câble à créer, puis une par câble` : ''}${num && ls.length ? ` (module ${esc(num)}, contact${ls.length > 1 ? 's' : ''} ${esc(listeEt(ls))})` : ''} — le plan dit les mêmes.`, source: 'calcul' }; })()
+    : nf ? { html: `Votre fichier pose <b>${esc(pluriel(nf, 'câble'))}</b> sur <b>${esc(pluriel(Q.modules.length, 'module'))}</b> : chaque borne dit son module et son contact${exB ? ` (<b class="id">${esc(exB)}</b> : module ${esc(ex0.numero)}, contact ${esc(ex0.contact.lettre)})` : ''}. VOLTA n’en change aucun.`, source: 'fichier' } : null,
     famNom ? { html: `Norme <b>${esc(famNom)}</b> : les contacts d’une même zone sont reliés. Les câbles reliés vont dans une même zone, deux groupes jamais dans la même.`, source: 'norme' } : null,
     ...Q.modules.map(M => { const ref = `<b class="id">${esc(M.reference)}</b>`, num = `Module <b>${esc(M.numero)}</b>`;
       if (M.defauts && M.defauts.length) return { html: `${num} : ${ref}${M.main ? ', choisi ici' : ''} — ${esc(M.defauts[0].texte)}.`, source: M.main ? 'main' : 'calcul', etat: 'ko' };
@@ -2097,7 +2100,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const autresSupp = ch.total && !ch.reel && !ch.hyp ? ` ${esc(`D’autres câbles du chemin n’ont pas de longueur : ${nombre(H.longueur)} m supposés chacun.`)}` : '';
   const dU = ch.total ? esc(`Chute depuis ${x.al.nom} jusqu’à ${boutU}, tout le chemin compris ; dont ${volts(ch.dU)} dans ce câble.`) + autresSupp
       + (ch.pointe ? ` <span class="fi-mes-pointe ${classeMesure(ch.pointe.dU / ch.pointe.admis)}">${esc(`En pointe : ${volts(ch.pointe.dU)} à ${amperes(ch.pointe.i)}, ${ch.pointe.dU > ch.pointe.admis ? 'plus que' : 'pour'} les ${volts(ch.pointe.admis)} admis.`)}</span>` : '')
-    : ch.dU != null ? esc(`Sur ce câble seul : ${nombre(arrondi(x.rd.rho, 1))} mΩ/m × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A.${rhoChaud ? ' ' + rhoChaud : ''}`)
+    // (le courant montré au-dessus est la pointe : la chute dit qu'elle se lit en continu, le même instant que sa phrase)
+    : ch.dU != null ? esc(`Sur ce câble seul${pointeI ? ', en continu' : ''} : ${nombre(arrondi(x.rd.rho, 1))} mΩ/m × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A.${rhoChaud ? ' ' + rhoChaud : ''}`)
     : cmdF ? esc('Elle dépend du courant de la branche, qui n’est pas écrit : ' + motDeCommande(x) + '.') : esc('La résistance du câble est inconnue : la chute ne se calcule pas.');
   const chute = mesure('Chute', aide('chute', ch.total ? { chemin: { ...ch.total, admis: ch.max, regle: ch.regle } } : { dU: ch.dU, admis: ch.max, regle: ch.regle }),
     // (v84) sans admis à comparer, pas de barre vide : la valeur seule
@@ -2178,17 +2182,19 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       pourquoi: ctMain.length ? 'Choisi ici côté ' + ctMain.map(k => esc(l[k])).join(' et ') + '.' : 'Un par bout, lu dans la table de la norme.',
       manuel: ctMain.length > 0, auto: 'sertirs:' + ctMain.map(k => cts[k].ks).join(';'), vers: '[data-reg="les-contacts"]', motAuto: 'Les contacts à sertir reviennent à ceux de la table.' }
       : sansCt.length ? { sorte: 'info', titre: 'Les contacts à sertir', valeur: 'à préciser', etat: 'att', source: 'norme', pourquoi: `La norme côté ${sansCt.map(r => ident(r)).join(' et ')} est inconnue : ils viendront avec elle.` } : null,
-    x.fn ? { sorte: 'info', titre: 'Courant et chute', valeur: `${esc(amperes(iV))} <small>sur ${esc(amperes(iA))}</small>` + (ch.total ? ` · ${esc(volts(ch.total.dU))}${ch.max != null ? ` <small>sur ${esc(volts(ch.max))}</small>` : ''}` : ch.dU != null ? ' · ' + esc(volts(ch.dU)) : ''), source: 'calcul', etat: classeMesure(r.charge.r) === 'ko' || etatU === 'ko' ? 'ko' : '', pourquoi: 'Ils suivent le type, la longueur, la charge.' }
+    cmdF ? { sorte: 'info', titre: 'Courant et chute', valeur: esc('inconnus'), source: 'calcul', etat: /^écrivez/.test(motDeCommande(x)) ? 'att' : '', pourquoi: esc('Une branche de commande : ' + motDeCommande(x) + '.') }
+    : x.fn ? { sorte: 'info', titre: 'Courant et chute', valeur: `${esc(amperes(iV))} <small>sur ${esc(amperes(iA))}</small>` + (ch.total ? ` · ${esc(volts(ch.total.dU))}${ch.max != null ? ` <small>sur ${esc(volts(ch.max))}</small>` : ''}` : ch.dU != null ? ' · ' + esc(volts(ch.dU)) : ''), source: 'calcul', etat: classeMesure(r.charge.r) === 'ko' || etatU === 'ko' ? 'ko' : '', pourquoi: 'Ils suivent le type, la longueur, la charge.' }
       : { sorte: 'info', titre: 'Courant', valeur: esc(amperes(x.I)), source: 'calcul', pourquoi: esc(majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas.') }],
     ctsMots.length ? regCarte('Les contacts à sertir', 'Un clic sur un contact montre ceux de sa taille : un autre se retient d’un clic.', `<ol class="fi-chemin" style="--c:${coul}">${etapes}</ol>${choixCt}`, { reg: 'les-contacts' }) : '');
   const onglets = [
-    { cle: 'essentiel', statut: { t: x.fn ? amperes(iV) + ' sur ' + amperes(iA) : neuf ? 'à créer' : amperes(x.I) + (l.type ? ', hors norme' : ', sans type'), etat: probs.some(q => q.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: essF },
+    { cle: 'essentiel', statut: { t: cmdF ? 'courant de commande inconnu' : x.fn ? amperes(iV) + ' sur ' + amperes(iA) : neuf ? 'à créer' : amperes(x.I) + (l.type ? ', hors norme' : ', sans type'), etat: probs.some(q => q.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: essF },
     ongletFabrication(fabF, 'Ce qu’il faut pour le poser'),
     reglagesF];
   // (v84) LES CHIFFRES de la carte : trois mesures, de même nature — le courant et la chute contre l'admis, la longueur ;
   // (v85) la longueur se lit (elle vient du fichier) : un clic mène à Modifier, qui dit d'où elle vient ; le type est le titre
   const chiffres = neuf ? [{ k: 'Type', v: l.type ? `<span class="id">${esc(l.type)}</span>` : '—' }, { k: 'Gauge', v: jauge != null ? valeurU(jauge, 'AWG') : '—' }] : [
-    x.fn ? { k: 'Courant', v: valeurU(nombreA(iV), 'A'), barre: r.charge.r, etat: classeMesure(r.charge.r) === 'ko' ? 'ko' : '', bulle: 'sur ' + amperes(iA) + ' admis' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' }
+    cmdF ? { k: 'Courant', v: esc('inconnu'), bulle: 'Courant de commande inconnu : ' + motDeCommande(x), onglet: 'fils' }
+    : x.fn ? { k: 'Courant', v: valeurU(nombreA(iV), 'A'), barre: r.charge.r, etat: classeMesure(r.charge.r) === 'ko' ? 'ko' : '', bulle: 'sur ' + amperes(iA) + ' admis' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' }
       : { k: 'Courant', v: valeurU(nombreA(x.I), 'A'), bulle: majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' },
     ch.total || ch.dU != null ? { k: 'Chute', v: valeurU(volts(ch.total ? ch.total.dU : ch.dU).replace(/ V$/, ''), 'V'), barre: rU, etat: etatU === 'ko' ? (ch.reel ? 'ko' : 'att') : '', bulle: (ch.max != null && ch.total ? 'sur ' + volts(ch.max) + ' admis' : 'sur ce câble seul') + (ch.reel ? '' : ' — longueurs supposées'), onglet: 'fils' } : null,
     { k: 'Longueur', v: `${L == null ? '<i class="nv-env" aria-hidden="true">≈</i>' : ''}${esc(nombre(L != null ? arrondi(L, 2) : H.longueur))}<small>m</small>`, etat: L == null ? 'supp' : '', bulle: L == null ? 'Supposée : votre fichier ne la donne pas — à écrire dans votre fichier' : 'Celle de votre fichier', onglet: 'reglages' }];

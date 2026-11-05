@@ -304,7 +304,10 @@
 #base #ba-tab .rc-int .rc-adm{min-width:66px}
 #base #ba-tab .rc-chute .rc-adm{min-width:48px}
 #base #ba-tab :is(.rc-int,.rc-chute) .rc-int-mot{display:inline-block;min-width:54px;text-align:left}
+#base #ba-tab .rc-int .rc-int-mot{min-width:66px}
 #base #ba-tab .rc-chute .rc-o{background:none;padding:0;margin-left:8px;font:500 var(--f-12)/1 var(--sans);color:var(--t-2)}
+/* un courant de commande inconnu (la bobine d'un relais) : le mot à la place du chiffre, à l'encre seconde — ce n'est pas un défaut */
+#base #ba-tab .rc-adm.rc-inconnu{color:var(--t-2)}
 
 /* ─── 16. LE GESTE QUI RÈGLE, EN CUIVRE (G1) ───
    Défaut : « Ce qu'il faut faire » en texte, quand la fiche montre « Passer en DR16 ». Correction : le même bouton que la

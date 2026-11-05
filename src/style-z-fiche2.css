@@ -27,7 +27,7 @@
 /* ─── LE GRAND : une mesure de lecture, environ 80 lettres (60 ch d'Inter) — à 1920, plus de lignes de 1000 px ───
    (une phrase qui porte un filet garde son filet entier : la marge de droite fait la mesure ; une phrase en retrait, le
    retrait en plus) */
-#inspecteur .nv-grand :is(.nc-tache .nc-d,.nc-tache .nc-que,.fi-mes-d,.vu-pq-t,.vu-pq-dc>p){max-width:60ch}
+#inspecteur .nv-grand :is(.nc-tache .nc-d,.nc-tache .nc-que,.nc-tache.info .nc-t small,.fi-mes-d,.vu-pq-t,.vu-pq-dc>p){max-width:60ch}
 #inspecteur .nv-grand .dj-concl-d{box-sizing:content-box;max-width:60ch}
 #inspecteur .nv-grand .hi-p{padding-right:max(0px,calc(100% - 60ch))}
 

@@ -96,6 +96,11 @@ function faceVue(contacts, etatDe, o) { o = o || {}; const n = (contacts || []).
   // (v84) `echelle` : la face agrandie d'un même facteur, quel que soit le module — deux modules montrent des contacts de
   // même taille (un module de dix contacts n'est plus deux fois plus gros qu'un de dix-huit)
   return `<svg class="vu-face${o.mini ? ' mini' : ''}${F.zones ? ' a-zones' : ''}" viewBox="0 0 ${F.W.toFixed(0)} ${F.H.toFixed(0)}" width="${o.w || Math.round(F.W * (o.echelle || 1))}" role="img" aria-label="${escA(o.titre || 'La face')}">${F.svg}</svg>`; }
+/* (v86, l'audit G10) LE TRAIT SOUS LES MINUSCULES d'une écriture en chasse fixe : « 51e » se lit d'un coup d'œil autre que
+   « 51E ». Dans le même texte, une seconde ligne posée au même x : un « _ » sous chaque minuscule, une espace insécable sous
+   le reste — le trait fin de la police, à la couleur de la lettre quel que soit son état ou le thème (la marque du plan, 06
+   `soulignement`). Rien pour une écriture sans minuscule. */
+const sousMinuscules = (t, x) => { const s = String(t == null ? '' : t); return /[a-z]/.test(s) ? `<tspan x="${x}">${[...s].map(ch => /[a-z]/.test(ch) ? '_' : ' ').join('')}</tspan>` : ''; };
 /* (v85) LE DESSIN d'une face, sans son cadre <svg> : le corps, les plages des groupes, les contacts — dans un repère de
    (0, 0) à (W, H). La face seule (`faceVue`) et la barrette entière (`barretteVue`) le posent. */
 function faceDessin(contacts, etatDe, o) {
@@ -111,7 +116,11 @@ function faceDessin(contacts, etatDe, o) {
   const ct = c => { const [x, y] = pos(c), st = etatDe(c) || '', col = o.couleur ? o.couleur(c) : '', L = String(c.lettre || '');
     const style = col ? (st === 'pris' ? ` style="fill:${col};stroke:${col}"` : ` style="stroke:${col}"`) : '';
     const va = o.va ? o.va(c) : null;
-    return `<g class="vu-ct-g${va ? ' va' : ''}" data-ct="${escA(L)}"${va ? ` data-va-onglet="${escA(va.onglet)}" data-va-vers="${escA(va.vers)}" role="button" tabindex="0" aria-label="${escA('Le contact ' + L)}"` : ''}><circle class="vu-ct ${st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"${style}/>${o.lettres ? `<text class="${st}${L.length > 2 ? ' long' : ''}" x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}">${esc(L)}</text>` : ''}</g>`; };
+    /* (v86, l'audit G10) une minuscule (« e » d'une grande face, qui a aussi « E ») est soulignée comme sur le plan : un trait
+       fin sous la lettre, celui de la police (« _ » posé sous elle, dans le même texte : la couleur de la lettre, quel que soit
+       son état ou le thème) */
+    const min = /^[a-z]+$/.test(L);
+    return `<g class="vu-ct-g${va ? ' va' : ''}" data-ct="${escA(L)}"${va ? ` data-va-onglet="${escA(va.onglet)}" data-va-vers="${escA(va.vers)}" role="button" tabindex="0" aria-label="${escA('Le contact ' + L + (min ? ' (minuscule)' : ''))}"` : ''}><circle class="vu-ct ${st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"${style}/>${o.lettres ? `<text class="${st}${L.length > 2 ? ' long' : ''}" x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}">${esc(L)}${sousMinuscules(L, x.toFixed(1))}</text>` : ''}</g>`; };
   // (v83) LES GROUPES RELIÉS : chaque groupe, sa plage puis ses contacts par-dessus (un survol de l'un éveille la plage
   // entière) ; teintée à la couleur du groupe s'il porte des câbles — la même que ses câbles dans la fiche —, neutre sinon
   const cle = c => (+c.r || 0) + ':' + (+c.c || 0), sienDe = new Map(); grp.forEach((g, k) => g.contacts.forEach(c => sienDe.set(cle(c), k)));
@@ -247,7 +256,7 @@ function traverseeDessin(nom, lettres, cote, o) { if (!lettres.length) return ''
     + `<rect class="bro-embase" x="${xE}" y="${yB0}" width="${wE}" height="${yB1 - yB0}"/><rect class="bro-fiche" x="${xF}" y="${yF0}" width="${wB}" height="${yF1 - yF0}"/>`;
   lettres.forEach((l, i) => { const yy = HAUT + i * PAS + PAS / 2, g = cote(l, true), d = cote(l, false);
     out += `<g class="bro-l fi-ia${(g && g.ko) || (d && d.ko) ? ' ko' : ''}"${(g && g.k) || (d && d.k) ? ` data-i="${escA((g && g.k) || d.k)}"` : ''}><rect class="bro-zone" x="0" y="${yy - PAS / 2}" width="${W}" height="${PAS}" rx="6"/>`
-      + `<text class="bro-borne" x="${xF + wB / 2}" y="${yy + 4}">${esc(l)}</text>`;
+      + `<text class="bro-borne" x="${xF + wB / 2}" y="${yy + 4}">${esc(l)}${sousMinuscules(l, xF + wB / 2)}</text>`;
     if (g) { const [rep, bo] = bout(g.de), pw = bo ? 12 + bo.length * 6.6 : 0, xm = (x0 + xF) / 2;
       out += `<path class="bro-fil" style="stroke:${g.couleur || 'currentColor'}" d="M${x0} ${yy}H${xF}"/><rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(g.type || '—')}</text><circle class="bro-bout" cx="${x0}" cy="${yy}" r="2.6"/>`
         + (bo ? `<rect class="bro-pin-f" x="${x0 - 10 - pw}" y="${yy - 9}" width="${pw}" height="18" rx="5"/><text class="bro-pin" x="${x0 - 10 - pw / 2}" y="${yy + 4}">${esc(bo)}</text>` : '')
@@ -293,12 +302,12 @@ function brochageVue(nom, sous, cons, o) { const xs = (cons || []).filter(c => c
       + (c.ref && !petit ? `<text class="bro-ref" x="${xC + wC + 8}" y="${y0 - 7}">${esc(c.ref)}</text>` : '');
     c.lignes.forEach((l, i) => { const yy = y0 + i * PAS + PAS / 2, xm = (x0 + x1) / 2;
       out += `<g class="bro-l fi-ia${l.ko ? ' ko' : ''}"${l.k ? ` data-i="${escA(l.k)}"` : ''}><rect class="bro-zone" x="${xC}" y="${yy - PAS / 2}" width="${W - xC}" height="${PAS}" rx="6"/>`
-        + `<text class="bro-borne" x="${xC + wC / 2 - 2}" y="${yy + 4}">${esc(l.borne)}</text>`
+        + `<text class="bro-borne" x="${xC + wC / 2 - 2}" y="${yy + 4}">${esc(l.borne)}${sousMinuscules(l.borne, xC + wC / 2 - 2)}</text>`
         + `<path class="bro-fil" style="stroke:${l.couleur || 'currentColor'}" d="M${x0} ${yy}H${x1}"/>`
         + `<rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(l.type || '—')}</text>`
         + (l.masse ? `<path class="bro-masse" d="M${x1} ${yy - 7}v14M${x1 + 4} ${yy - 4.5}v9M${x1 + 8} ${yy - 2}v4"/><text class="bro-vers" x="${xd}" y="${yy + 4.5}">${esc(l.vers)}</text><text class="bro-mot" x="${xd + 8 + l.vers.length * 7.8}" y="${yy + 4}">masse</text>`
           : `<circle class="bro-bout" cx="${x1}" cy="${yy}" r="2.6"/><text class="bro-vers" x="${xd}" y="${yy + 4.5}">${esc(l.vers)}</text>`
-            + (l.borneVers ? `<rect class="bro-pin-f" x="${xd + 6 + l.vers.length * 7.8}" y="${yy - 9}" width="${12 + String(l.borneVers).length * 6.6}" height="18" rx="5"/><text class="bro-pin" x="${xd + 12 + l.vers.length * 7.8 + String(l.borneVers).length * 3.3}" y="${yy + 4}">${esc(l.borneVers)}</text>` : ''))
+            + (l.borneVers ? `<rect class="bro-pin-f" x="${xd + 6 + l.vers.length * 7.8}" y="${yy - 9}" width="${12 + String(l.borneVers).length * 6.6}" height="18" rx="5"/><text class="bro-pin" x="${xd + 12 + l.vers.length * 7.8 + String(l.borneVers).length * 3.3}" y="${yy + 4}">${esc(l.borneVers)}${sousMinuscules(l.borneVers, xd + 12 + l.vers.length * 7.8 + String(l.borneVers).length * 3.3)}</text>` : ''))
         + (l.ko ? (() => { const xk = xd + l.vers.length * 7.8 + (l.borneVers ? 24 + String(l.borneVers).length * 6.6 : (l.masse ? 60 : 10));
           // le défaut se dit au bout de la ligne, après la borne d'arrivée, s'il y tient ; sinon sous le câble
           return xk + String(l.ko).length * 6.2 < W - 4 ? `<text class="bro-ko bout" x="${xk}" y="${yy + 4}">${esc(l.ko)}</text>` : `<text class="bro-ko" x="${xm}" y="${yy + 12}">${esc(l.ko)}</text>`; })() : '') + '</g>'; }); });

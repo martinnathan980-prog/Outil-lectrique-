@@ -8449,7 +8449,10 @@ svg.vu-anneau.ko .vu-an-v,svg.vu-arbre .vu-an.ko .vu-an-v{filter:var(--n-lueur-k
 #base #ba-tab .rc-int .rc-adm{min-width:66px}
 #base #ba-tab .rc-chute .rc-adm{min-width:48px}
 #base #ba-tab :is(.rc-int,.rc-chute) .rc-int-mot{display:inline-block;min-width:54px;text-align:left}
+#base #ba-tab .rc-int .rc-int-mot{min-width:66px}
 #base #ba-tab .rc-chute .rc-o{background:none;padding:0;margin-left:8px;font:500 var(--f-12)/1 var(--sans);color:var(--t-2)}
+/* un courant de commande inconnu (la bobine d'un relais) : le mot à la place du chiffre, à l'encre seconde — ce n'est pas un défaut */
+#base #ba-tab .rc-adm.rc-inconnu{color:var(--t-2)}
 
 /* ─── 16. LE GESTE QUI RÈGLE, EN CUIVRE (G1) ───
    Défaut : « Ce qu'il faut faire » en texte, quand la fiche montre « Passer en DR16 ». Correction : le même bouton que la
@@ -8917,6 +8920,9 @@ body #inspecteur .fi.nv-c>.fi-nav::before{display:none}
    · « À REPRENDRE », dans la liste des plans : la pastille des problèmes, et dessous, calmes, les points à voir.
    =========================================================================== */
 
+/* l'anneau de la fiche est cuivre, toujours : quelques contrôles le prenaient à l'encre (`--accent` : noir le jour) — les
+   onglets gardent leur cuivre vif, posé pour la bande sombre */
+#inspecteur :focus-visible:not(.nv-onglet){outline-color:var(--nv-cuivre)}
 /* un tracé de la fiche qui prend Tab : l'anneau autour de lui (la branche d'un disjoncteur et le chemin d'un câble ont déjà le
    leur, tracé sur leur fond : ils le gardent) */
 #inspecteur svg [tabindex]:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:6px}
@@ -8937,7 +8943,7 @@ body #inspecteur .fi.nv-c>.fi-nav::before{display:none}
 
 /* (F11) la bibliothèque : des problèmes et des points à voir — la pastille rouge, puis « et 5 à voir », discret */
 .bi-pb-c{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;min-width:0}
-.bi-pb-c>small{padding-left:9px;font-size:var(--f-11);line-height:1.2;color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.bi-pb-c>small{padding-left:20px;font-size:var(--f-11);line-height:1.2;color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 
 /* ───────── style-z-couleur.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -9347,7 +9353,7 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
 /* ─── LE GRAND : une mesure de lecture, environ 80 lettres (60 ch d'Inter) — à 1920, plus de lignes de 1000 px ───
    (une phrase qui porte un filet garde son filet entier : la marge de droite fait la mesure ; une phrase en retrait, le
    retrait en plus) */
-#inspecteur .nv-grand :is(.nc-tache .nc-d,.nc-tache .nc-que,.fi-mes-d,.vu-pq-t,.vu-pq-dc>p){max-width:60ch}
+#inspecteur .nv-grand :is(.nc-tache .nc-d,.nc-tache .nc-que,.nc-tache.info .nc-t small,.fi-mes-d,.vu-pq-t,.vu-pq-dc>p){max-width:60ch}
 #inspecteur .nv-grand .dj-concl-d{box-sizing:content-box;max-width:60ch}
 #inspecteur .nv-grand .hi-p{padding-right:max(0px,calc(100% - 60ch))}
 
@@ -10008,7 +10014,7 @@ svg.vu-arbre .vu-an .vu-an-t{font:700 9.5px var(--sans);font-variant-numeric:tab
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '374707329524';
+const VERSION_MOTEUR = 'e6b20983e7d3';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -13359,16 +13365,23 @@ function* concoursEnPas(M, opt, budget, graphe) {
 }
 /* Les mises en colonnes du RETOUR : pour chaque bloc d'un côté du hub dont les fils vers d'autres blocs que le hub partent
    plus nombreux de l'autre côté, le bloc dans chaque colonne voisine d'un de ces partenaires, de l'autre côté (jamais
-   dans celle du hub) — quatre au plus. */
+   dans celle du hub) ; et chaque MORCEAU EN U (ci-dessous) — quatre au plus. */
 function retoursAuxPartenaires(M, m) {
-  const H = hubDe(M); if (H == null) return [];
-  const col = m.E.col, ch = col.get(H), out = [], vues = new Set();
-  M.ids.forEach(id => { if (id === H || M.estTag(id) || !col.has(id)) return; const c0 = col.get(id), s0 = Math.sign(c0 - ch); if (!s0) return;
+  const H = hubDe(M), col = m.E.col, ch = H == null ? null : col.get(H), out = [], vues = new Set();
+  const garder = (id, c) => { if (H != null && c === ch) return; const k = normaliser(new Map(col).set(id, c)), sig = signatureDe(k); if (!vues.has(sig)) { vues.add(sig); out.push(k); } };
+  if (H != null) M.ids.forEach(id => { if (id === H || M.estTag(id) || !col.has(id)) return; const c0 = col.get(id), s0 = Math.sign(c0 - ch); if (!s0) return;
     let ici = 0, la = 0; const cibles = new Set();
     M.blocs.get(id).bornes.forEach(p => M.partenairesBlocs(K(id, p.cle)).forEach(q => { if (q.id === H || q.id === id || !col.has(q.id)) return; const s = Math.sign(col.get(q.id) - ch);
       if (s === s0) ici++; else if (s === -s0) { la++; [col.get(q.id) - 1, col.get(q.id) + 1].forEach(c => { if (Math.sign(c - ch) === -s0) cibles.add(c); }); } }));
     if (la <= ici) return;
-    [...cibles].sort((a, b) => a - b).forEach(c => { const k = normaliser(new Map(col).set(id, c)), sig = signatureDe(k); if (!vues.has(sig)) { vues.add(sig); out.push(k); } }); });
+    [...cibles].sort((a, b) => a - b).forEach(c => garder(id, c)); });
+  /* (v86) LE MORCEAU EN U : un morceau de barrette posé dans la colonne d'un bloc qu'il sert ne le rejoint que par un U, par
+     la goulotte — au folio 2, le câble de 667VT2 51D sortait à gauche, passait par-dessus 115CD et revenait sur sa borne 3
+     (l'agent « zoom » : un dessinateur ne le ferait pas). Il essaie la colonne de chacun de ses autres partenaires : il y
+     sert ce bloc-là d'un fil droit, et seul le fil vers l'autre fait le tour, s'il le faut, au plus court. */
+  M.ids.forEach(id => { const b = M.blocs.get(id); if (b.genre !== 'barrette' || M.estTag(id) || !col.has(id)) return; const c0 = col.get(id), cibles = new Set(); let enU = false;
+    b.bornes.forEach(p => M.partenairesBlocs(K(id, p.cle)).forEach(q => { if (q.id === id || !col.has(q.id)) return; const c = col.get(q.id); if (c === c0) enU = true; else cibles.add(c); }));
+    if (enU) [...cibles].sort((a, b) => a - b).forEach(c => garder(id, c)); });
   return out.slice(0, 4);
 }
 /* FINIR une disposition : resserrée, polie par la passe finale (au niveau de la finition), étirée au format, ses corps
@@ -23234,8 +23247,10 @@ function eviterLeBloc() { const el = $('inspecteur'); if (!carteFlottante() || e
    tard, on est encore dans la barre des folios ») : une carte qui s'ouvre — d'un clic, par la recherche, par P — PREND LE
    CLAVIER (Tab commence dans la carte) ; fermée (Échap, ×, un clic dehors), elle le rend d'où il venait : le bouton qui
    l'avait ouverte, la ligne du récapitulatif ; la recherche refermée, son bouton du rail ; sinon la page. ------------ */
-function prendreLeClavier(el) { const a = document.activeElement;
-  CARTE.ouvreur = a && a !== document.body && !el.contains(a) ? a : null;
+// (v86, F7) `CARTE.ouvreurSuivant` : qui rendra le clavier quand l'ouvreur n'a plus le focus au moment où elle s'ouvre (la
+// palette, refermée avant d'aller à l'objet : sans lui, la carte fermée rendait le clavier à la page nue)
+function prendreLeClavier(el) { const a = document.activeElement, s = CARTE.ouvreurSuivant; CARTE.ouvreurSuivant = null;
+  CARTE.ouvreur = a && a !== document.body && !el.contains(a) ? a : s && s.el && s.el.isConnected && Date.now() - s.t < 8000 ? s.el : null;
   if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
   try { el.focus({ preventScroll: true }); } catch (_) { el.focus(); } }
 function rendreLeClavierDeLaCarte() { const o = CARTE.ouvreur; CARTE.ouvreur = null; const a = document.activeElement;
@@ -24758,7 +24773,7 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
      milliampères). Puis les câbles DIRECTS ; ceux au-delà d'un passage (une prise, une barrette, un contact traversé), le
      contrôle les dit avec leur « (par … ) » (08-controle, `controleProtection`) : une seule phrase par fait. */
   d.fils.forEach(f => { const bob = f.inconnu && f.branche ? (f.branche.sans || []).filter(x => x.nature === 'bobine').map(x => x.repere) : [];
-    if (bob.length) out.push({ niveau: 'att', l: f.l, texte: `${cableEtType(f)}${f.direct ? '' : ' (par ' + f.via + ')'} : courant de commande inconnu — écrivez la consommation de la bobine de ${listeEt(bob)}` }); });
+    if (bob.length) out.push({ niveau: 'att', l: f.l, texte: `${cableEtType(f)} : courant de commande inconnu : écrivez la consommation de la bobine de ${listeEt(bob)}` }); });
   d.fils.forEach(f => { const nomF = cableEtType(f); if (f.direct === false) return;
     if (f.verdict === 'fil') { const [i, a] = deux(f.pire.i, f.pire.admise); out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${i}${f.pire.t === Infinity ? '' : ' pendant ' + secondes(f.pire.t)} > ${a} admis ${pourPalier(f.pire.palier)}${enClair(f, f.pire.t)}` }); }
     else if (f.verdict === 'calibre') { const [a, c] = deux(f.continu, d.calibre); out.push({ niveau: 'att', texte: `${nomF} : ${a} admis en continu${enClair(f, Infinity)} < calibre ${c} — pas protégé en surcharge` }); }
@@ -27758,7 +27773,10 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
      la règle de la norme (les zones), puis une étape par module : sa référence, et pourquoi */
   const ex0 = Q.fils[0], exB = ex0 ? etiquette(ex0.module, ex0.contact) : '';
   const etapesM = !Q.lettres ? null : [
-    nf ? { html: `Votre fichier pose <b>${esc(pluriel(nf, 'câble'))}</b> sur <b>${esc(pluriel(Q.modules.length, 'module'))}</b> : chaque borne dit son module et son contact${exB ? ` (<b class="id">${esc(exB)}</b> : module ${esc(ex0.numero)}, contact ${esc(ex0.contact.lettre)})` : ''}. VOLTA n’en change aucun.`, source: 'fichier' } : null,
+    // (v86) une barrette ajoutée par VOLTA : c'est lui qui nomme ses bornes, comme sa face (01, `avecBarrettesAPoser`)
+    aPoser && nf ? (() => { const ls = [...new Set(Q.fils.map(x => x.contact.lettre))].sort(triContacts), r0 = raccord ? raccord.borneVers : '', num = Q.modules[0] ? Q.modules[0].numero : '';
+      return { html: `VOLTA nomme ses bornes comme sa face${r0 ? ` : <b class="id">${esc(r0)}</b> pour le câble à créer, puis une par câble` : ''}${num && ls.length ? ` (module ${esc(num)}, contact${ls.length > 1 ? 's' : ''} ${esc(listeEt(ls))})` : ''} — le plan dit les mêmes.`, source: 'calcul' }; })()
+    : nf ? { html: `Votre fichier pose <b>${esc(pluriel(nf, 'câble'))}</b> sur <b>${esc(pluriel(Q.modules.length, 'module'))}</b> : chaque borne dit son module et son contact${exB ? ` (<b class="id">${esc(exB)}</b> : module ${esc(ex0.numero)}, contact ${esc(ex0.contact.lettre)})` : ''}. VOLTA n’en change aucun.`, source: 'fichier' } : null,
     famNom ? { html: `Norme <b>${esc(famNom)}</b> : les contacts d’une même zone sont reliés. Les câbles reliés vont dans une même zone, deux groupes jamais dans la même.`, source: 'norme' } : null,
     ...Q.modules.map(M => { const ref = `<b class="id">${esc(M.reference)}</b>`, num = `Module <b>${esc(M.numero)}</b>`;
       if (M.defauts && M.defauts.length) return { html: `${num} : ${ref}${M.main ? ', choisi ici' : ''} — ${esc(M.defauts[0].texte)}.`, source: M.main ? 'main' : 'calcul', etat: 'ko' };
@@ -28235,7 +28253,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const autresSupp = ch.total && !ch.reel && !ch.hyp ? ` ${esc(`D’autres câbles du chemin n’ont pas de longueur : ${nombre(H.longueur)} m supposés chacun.`)}` : '';
   const dU = ch.total ? esc(`Chute depuis ${x.al.nom} jusqu’à ${boutU}, tout le chemin compris ; dont ${volts(ch.dU)} dans ce câble.`) + autresSupp
       + (ch.pointe ? ` <span class="fi-mes-pointe ${classeMesure(ch.pointe.dU / ch.pointe.admis)}">${esc(`En pointe : ${volts(ch.pointe.dU)} à ${amperes(ch.pointe.i)}, ${ch.pointe.dU > ch.pointe.admis ? 'plus que' : 'pour'} les ${volts(ch.pointe.admis)} admis.`)}</span>` : '')
-    : ch.dU != null ? esc(`Sur ce câble seul : ${nombre(arrondi(x.rd.rho, 1))} mΩ/m × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A.${rhoChaud ? ' ' + rhoChaud : ''}`)
+    // (le courant montré au-dessus est la pointe : la chute dit qu'elle se lit en continu, le même instant que sa phrase)
+    : ch.dU != null ? esc(`Sur ce câble seul${pointeI ? ', en continu' : ''} : ${nombre(arrondi(x.rd.rho, 1))} mΩ/m × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A.${rhoChaud ? ' ' + rhoChaud : ''}`)
     : cmdF ? esc('Elle dépend du courant de la branche, qui n’est pas écrit : ' + motDeCommande(x) + '.') : esc('La résistance du câble est inconnue : la chute ne se calcule pas.');
   const chute = mesure('Chute', aide('chute', ch.total ? { chemin: { ...ch.total, admis: ch.max, regle: ch.regle } } : { dU: ch.dU, admis: ch.max, regle: ch.regle }),
     // (v84) sans admis à comparer, pas de barre vide : la valeur seule
@@ -28272,11 +28291,15 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
     // propre branche (la consommation écrite de ce qu'il alimente) ; il porte le total faute de consommation écrite en aval ;
     // le profil du disjoncteur manque et VOLTA prend son calibre
     x.al && x.al.amont ? { html: `Il nourrit <b class="id">${esc(x.al.nom)}</b> : il porte ses <b>${esc(amperes(x.I))}</b>, mais ${esc(x.al.nom)} ne le protège pas.`, source: 'calcul' }
-      : x.al && x.source === 'branche' && x.aval ? { html: `Il alimente ${x.aval.bouts.map(r => `<b class="id">${esc(r)}</b>`).join(', ')} : <b>${esc(amperes(x.I))}</b> en continu, ${x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite'}.`, source: 'calcul' }
+      // (v86) la commande dont rien n'est écrit : son courant est inconnu, jamais le total — ce qu'il faut écrire
+      : x.al && cmdF ? { html: `Il ne mène qu’à de la commande, sous <b class="id">${esc(x.al.nom)}</b> : son courant est inconnu — ${esc(motDeCommande(x))}. VOLTA ne lui prête pas le courant total du disjoncteur.`, source: 'calcul', etat: /^écrivez/.test(motDeCommande(x)) ? 'att' : '' }
+      : x.al && x.source === 'branche' && x.aval ? { html: `Il alimente ${x.aval.bouts.map(r => `<b class="id">${esc(r)}</b>`).join(', ')} : <b>${esc(amperes(x.I))}</b> en continu, ${x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite'}${(x.aval.sans || []).length ? esc(' — sans ' + listeEt(x.aval.sans.map(y => (y.nature === 'bobine' ? 'la bobine de ' : 'l’entrée de ') + y.repere)) + ', que VOLTA ne connaît pas') : ''}.`, source: 'calcul' }
       : x.al && x.source === 'calibre' ? { html: `Le profil de <b class="id">${esc(x.al.nom)}</b> n’est pas écrit : VOLTA prend son calibre, <b>${esc(amperes(x.I))}</b>, au pire.`, source: 'calcul', etat: 'att' }
       : x.al && x.totalFaute && x.aval && x.aval.manque.length ? { html: `Courant total de <b class="id">${esc(x.al.nom)}</b>, <b>${esc(amperes(x.I))}</b> en continu : la consommation de ce qui est en aval (${x.aval.manque.map(r => `<b class="id">${esc(r)}</b>`).join(', ')}) n’est pas écrite.`, source: 'calcul', etat: 'att' }
       : x.al ? { html: `Le courant vient de <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : ce que tirent les équipements qu’il alimente, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
       : { html: `Aucun disjoncteur en amont : VOLTA suppose <b>${esc(nombre(H.courant))} A</b>.`, source: 'hypothese', etat: 'att' },
+    // (v86) ce que le courant traverse pour arriver à lui : un relais, un interrupteur, le contact supposé fermé (le pire cas)
+    nT && x.al && !x.al.amont ? { html: `Le courant de <b class="id">${esc(x.al.nom)}</b> lui arrive à travers ${x.traverses.map(t => `<b class="id">${esc(t.repere)}</b> (${esc(t.quoi === 'interrupteur' ? 'interrupteur' : t.quoi + ', ' + t.de + ' → ' + t.a)})`).join(', ')} : ${nT > 1 ? 'contacts supposés fermés' : 'contact supposé fermé'}, le pire cas.`, source: 'calcul' } : null,
     x.fn ? { html: `Il admet <b>${esc(amperes(x.continu))}</b> en continu${esc(admisEnMots)}.`, source: 'norme', mot: 'EN 2853' } : null,
     L != null ? { html: `Longueur <b>${esc(nombre(arrondi(L, 2)))} m</b>.`, source: 'fichier' } : { html: `Longueur supposée <b>${esc(nombre(H.longueur))} m</b> : votre fichier ne la donne pas, et la chute en dépend.`, source: 'hypothese', etat: 'att' },
     ch.total ? { html: `Chute <b>${esc(volts(ch.total.dU))}</b> de ${esc(x.al.nom)} jusqu’à ${esc(boutU)}${ch.max != null ? ', pour ' + esc(volts(ch.max)) + ' admis' : ''} ; ce câble en fait ${esc(volts(ch.dU))}.`, source: 'calcul', etat: ch.trop ? (ch.reel ? 'ko' : 'att') : '' }
@@ -28312,17 +28335,19 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       pourquoi: ctMain.length ? 'Choisi ici côté ' + ctMain.map(k => esc(l[k])).join(' et ') + '.' : 'Un par bout, lu dans la table de la norme.',
       manuel: ctMain.length > 0, auto: 'sertirs:' + ctMain.map(k => cts[k].ks).join(';'), vers: '[data-reg="les-contacts"]', motAuto: 'Les contacts à sertir reviennent à ceux de la table.' }
       : sansCt.length ? { sorte: 'info', titre: 'Les contacts à sertir', valeur: 'à préciser', etat: 'att', source: 'norme', pourquoi: `La norme côté ${sansCt.map(r => ident(r)).join(' et ')} est inconnue : ils viendront avec elle.` } : null,
-    x.fn ? { sorte: 'info', titre: 'Courant et chute', valeur: `${esc(amperes(iV))} <small>sur ${esc(amperes(iA))}</small>` + (ch.total ? ` · ${esc(volts(ch.total.dU))}${ch.max != null ? ` <small>sur ${esc(volts(ch.max))}</small>` : ''}` : ch.dU != null ? ' · ' + esc(volts(ch.dU)) : ''), source: 'calcul', etat: classeMesure(r.charge.r) === 'ko' || etatU === 'ko' ? 'ko' : '', pourquoi: 'Ils suivent le type, la longueur, la charge.' }
+    cmdF ? { sorte: 'info', titre: 'Courant et chute', valeur: esc('inconnus'), source: 'calcul', etat: /^écrivez/.test(motDeCommande(x)) ? 'att' : '', pourquoi: esc('Une branche de commande : ' + motDeCommande(x) + '.') }
+    : x.fn ? { sorte: 'info', titre: 'Courant et chute', valeur: `${esc(amperes(iV))} <small>sur ${esc(amperes(iA))}</small>` + (ch.total ? ` · ${esc(volts(ch.total.dU))}${ch.max != null ? ` <small>sur ${esc(volts(ch.max))}</small>` : ''}` : ch.dU != null ? ' · ' + esc(volts(ch.dU)) : ''), source: 'calcul', etat: classeMesure(r.charge.r) === 'ko' || etatU === 'ko' ? 'ko' : '', pourquoi: 'Ils suivent le type, la longueur, la charge.' }
       : { sorte: 'info', titre: 'Courant', valeur: esc(amperes(x.I)), source: 'calcul', pourquoi: esc(majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas.') }],
     ctsMots.length ? regCarte('Les contacts à sertir', 'Un clic sur un contact montre ceux de sa taille : un autre se retient d’un clic.', `<ol class="fi-chemin" style="--c:${coul}">${etapes}</ol>${choixCt}`, { reg: 'les-contacts' }) : '');
   const onglets = [
-    { cle: 'essentiel', statut: { t: x.fn ? amperes(iV) + ' sur ' + amperes(iA) : neuf ? 'à créer' : amperes(x.I) + (l.type ? ', hors norme' : ', sans type'), etat: probs.some(q => q.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: essF },
+    { cle: 'essentiel', statut: { t: cmdF ? 'courant de commande inconnu' : x.fn ? amperes(iV) + ' sur ' + amperes(iA) : neuf ? 'à créer' : amperes(x.I) + (l.type ? ', hors norme' : ', sans type'), etat: probs.some(q => q.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: essF },
     ongletFabrication(fabF, 'Ce qu’il faut pour le poser'),
     reglagesF];
   // (v84) LES CHIFFRES de la carte : trois mesures, de même nature — le courant et la chute contre l'admis, la longueur ;
   // (v85) la longueur se lit (elle vient du fichier) : un clic mène à Modifier, qui dit d'où elle vient ; le type est le titre
   const chiffres = neuf ? [{ k: 'Type', v: l.type ? `<span class="id">${esc(l.type)}</span>` : '—' }, { k: 'Gauge', v: jauge != null ? valeurU(jauge, 'AWG') : '—' }] : [
-    x.fn ? { k: 'Courant', v: valeurU(nombreA(iV), 'A'), barre: r.charge.r, etat: classeMesure(r.charge.r) === 'ko' ? 'ko' : '', bulle: 'sur ' + amperes(iA) + ' admis' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' }
+    cmdF ? { k: 'Courant', v: esc('inconnu'), bulle: 'Courant de commande inconnu : ' + motDeCommande(x), onglet: 'fils' }
+    : x.fn ? { k: 'Courant', v: valeurU(nombreA(iV), 'A'), barre: r.charge.r, etat: classeMesure(r.charge.r) === 'ko' ? 'ko' : '', bulle: 'sur ' + amperes(iA) + ' admis' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' }
       : { k: 'Courant', v: valeurU(nombreA(x.I), 'A'), bulle: majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' },
     ch.total || ch.dU != null ? { k: 'Chute', v: valeurU(volts(ch.total ? ch.total.dU : ch.dU).replace(/ V$/, ''), 'V'), barre: rU, etat: etatU === 'ko' ? (ch.reel ? 'ko' : 'att') : '', bulle: (ch.max != null && ch.total ? 'sur ' + volts(ch.max) + ' admis' : 'sur ce câble seul') + (ch.reel ? '' : ' — longueurs supposées'), onglet: 'fils' } : null,
     { k: 'Longueur', v: `${L == null ? '<i class="nv-env" aria-hidden="true">≈</i>' : ''}${esc(nombre(L != null ? arrondi(L, 2) : H.longueur))}<small>m</small>`, etat: L == null ? 'supp' : '', bulle: L == null ? 'Supposée : votre fichier ne la donne pas — à écrire dans votre fichier' : 'Celle de votre fichier', onglet: 'reglages' }];
@@ -29475,7 +29500,9 @@ function provisoire(a, L) { if (!a) return null; const d = placement.derniers.ge
   if (d && d.bouts.length === L.length && boutsDe(L).every((b, i) => b === d.bouts[i])) {
     const maj = o => o && L[o.i] ? { ...o, cable: L[o.i].cable, type: L[o.i].type, route: L[o.i].route, pnDe: L[o.i].pnDe, pnVers: L[o.i].pnVers } : o;
     return { ...d.P, links: d.P.links.map(maj), routage: { ...d.P.routage, fils: d.P.routage.fils.map(maj) }, provisoire: 'avant' }; }
-  return a.esquisse || null; }
+  // l'esquisse, si elle sert (le définitif encore loin, `esquisseUtile`) ; montrée une fois, elle reste jusqu'au définitif
+  if (a.esquisse && esquisseUtile(a)) { a.montree = true; return a.esquisse; }
+  return null; }
 
 /* ---- l'AFFINAGE : la recherche profonde, en arrière-plan ---------------- */
 /* Le dessin qu'on voit d'abord est celui du concours. Puis la recherche
@@ -29506,9 +29533,12 @@ function affinerTout() { if (!affinage.actif) return;
 // le placement au loin a-t-il encore du travail ? (un folio attendu, en cours, ou un folio du contrat pas encore placé)
 const placementEnCours = () => placement.ailleurs && placement.worker !== false && (placement.attentes.size > 0 || !!placement.encours || !!prochainAuLoin());
 function pomper() { while (affinage.file.length && affinage.finis.has(affinage.file[0].cle)) affinage.file.shift(); lancerLAvance();
+  if (!affinage.encours && !affinage.file.length) affinage.lot = null;
   if (affinage.encours || !affinage.file.length || placementEnCours()) { montrerBande(); return; }
   const w = travailleur(); if (!w) return;
   affinage.encours = affinage.file.shift(); affinage.etat = { k: 0, n: TOURS_PROFONDS };
+  // (v86) le LOT : les folios que VOLTA peaufine d'affilée, pour que la bande dise où il en est sur tous (`montrerBande`)
+  const lot = affinage.lot || (affinage.lot = { total: 0, faits: 0 }); lot.total = Math.max(lot.total, lot.faits + 1 + affinage.file.length);
   w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerBande(); }
 /* (v84, le parcours) le placement d'avance ne partait qu'au premier gros folio OUVERT : sur l'exemple (son folio 1 est
    petit), les autres attendaient qu'on les ouvre — « Dessin du folio 3 · environ 5 s » au premier problème — et l'affinage,
@@ -29536,7 +29566,7 @@ function recevoirAffinage(e) { const d = e.data, j = affinage.encours; if (!j ||
   if (d.P && !d.fini) { affinage.profonds.set(d.cle, d.P); if (cleCourante() === d.cle) { affinage.vu = Date.now(); remplacerDessin(); } }
   if (d.erreur) affinage.erreur = d.erreur;
   if (d.fini || d.erreur) { affinage.finis.add(d.cle); if (d.P) { affinage.profonds.set(d.cle, d.P); garderAffine(d.cle, d.P); }
-    affinage.encours = null; pomper(); }
+    if (affinage.lot) affinage.lot.faits++; affinage.encours = null; pomper(); }
   montrerBande(); }
 // le dessin se remplace, la vue reste où elle est
 function rafraichirDessin() { calculer(); peindre(); synchroniser(); rallumer(); }
@@ -29570,7 +29600,7 @@ function copieDesCables(sc) { const g = document.createElementNS(NS_SVG, 'g');
   return g; }
 /* LE DESSIN SE RANGE. Pour chaque bloc présent dans les deux dessins (par son repère ; plusieurs du même nom — trois
    masses 906G — chacun avec le plus proche), l'écart entre sa place d'avant et la nouvelle, à l'écran : le bloc neuf part
-   de là et glisse à sa place (420 ms, `--courbe-glisse`), le plus proche de son arrivée d'abord (+6 ms par rang, 120 ms au
+   de là et glisse à sa place (400 ms, `--courbe-glisse`), le plus proche de son arrivée d'abord (+6 ms par rang, 120 ms au
    plus). Les câbles de l'esquisse s'effacent en 120 ms ; ceux du définitif attendent, puis paraissent quand les blocs
    arrivent (260 à 520 ms) : jamais deux jeux de câbles à la fois. Un bloc qui n'existait pas paraît à +200 ms (220 ms). Un transform par
    bloc, rien d'autre ne bouge ; le mouvement réduit coupe net. */
@@ -29598,7 +29628,7 @@ function rangerLeDessin(avant) { const sc = $('scene'), svg = $('svg'), D = app.
   sc.querySelectorAll(':scope > .loupe').forEach(l => RANGE.anims.push(l.animate([{ opacity: 0 }, { opacity: 1 }], vient)));
   vont.filter(v => !v.neuf).sort((a, b) => a.d - b.d).forEach((v, rang) => { if (v.d < 0.5) return;
     RANGE.anims.push(v.g.animate([{ transform: `translate(${v.c.x + v.dx}px,${v.c.y + v.dy}px)` }, { transform: `translate(${v.c.x}px,${v.c.y}px)` }],
-      { duration: 420, delay: Math.min(120, rang * 6), easing: 'cubic-bezier(.65,0,.35,1)', fill: 'backwards' })); });
+      { duration: 400, delay: Math.min(120, rang * 6), easing: 'cubic-bezier(.65,0,.35,1)', fill: 'backwards' })); });
   vont.filter(v => v.neuf).forEach(v => { const cx = v.c.x + v.c.w * 0.02, cy = v.c.y + v.c.h * 0.02;
     RANGE.anims.push(v.g.animate([{ opacity: 0, transform: `translate(${cx}px,${cy}px) scale(.96)` }, { opacity: 1, transform: `translate(${v.c.x}px,${v.c.y}px)` }],
       { duration: 220, delay: 200, easing: 'cubic-bezier(.32,.72,0,1)', fill: 'backwards' })); }); }
@@ -29722,12 +29752,12 @@ function recevoirDuLoin(e) { const d = e.data || {}; if (!placement.encours || d
   const a = placement.attentes.get(d.cle);
   if (d.etape != null) { if (a) a.p = Math.max(a.p, +d.etape || 0); return; }
   // l'esquisse : montrée tout de suite si le folio est affiché et n'a rien d'autre à montrer (ni son dessin d'avant)
-  if (d.esquisse) { if (a && !a.esquisse) { a.esquisse = { ...d.esquisse, provisoire: 'esquisse' };
+  if (d.esquisse) { if (a && !a.esquisse) { a.esquisse = { ...d.esquisse, provisoire: 'esquisse' }; a.esquisseRecue = performance.now();
       if (cleCourante() === d.cle && !app.dessin) { rafraichirDessin(); finirAttente(a); } }
     montrerAttente(); return; }
   const duree = performance.now() - placement.encours.t; placement.encours = null;
   if (d.erreur) { placement.erreur = d.erreur; placerIci(d.cle); return; }
-  placement.faits++; if (a && d.P) etalonner(a.L.length, duree); recevoirPlacement(d.cle, d.P, true); }
+  placement.faits++; if (a && d.P) etalonner(a, duree); recevoirPlacement(d.cle, d.P, true); }
 /* Sans Worker (refusé, ou en erreur) : le chemin d'avant, dans la page — juste après que l'attente s'est affichée, pour
    qu'on sache ce qui se passe ; le folio affiché d'abord. */
 function placerIci(cle) { const ici = cleCourante(), cles = (cle ? [cle] : [...placement.attentes.keys()]).sort((a, b) => (b === ici) - (a === ici));
@@ -29753,22 +29783,44 @@ function reporterCible(cible) { if (cible.type === 'fil') { const l = verite().f
   ouvrirInspecteur(); }
 
 /* ---- l'ATTENTE, honnête ------------------------------------------------- */
-/* Combien de temps ? Le concours croît comme n^2,2 (n : les liaisons du folio, l'audit) ; la constante est celle de CET
-   ordinateur, apprise sur chaque folio placé (une moyenne glissante) et gardée dans ce navigateur. La première fois, celle
-   d'un ordinateur de bureau ordinaire. */
-const ETALON = (() => { const e = { c: 0.5, n: 0 }; try { const x = JSON.parse(localStorage.getItem('volta.placement.etalon') || 'null'); if (x && x.c > 0 && isFinite(x.c)) Object.assign(e, x); } catch (_) { } return e; })();
-const dureeEstimee = n => ETALON.c * Math.pow(Math.max(1, n), 2.2);
-function etalonner(n, ms) { if (!(n > SEUIL_ICI) || !(ms > 0)) return; const c = ms / Math.pow(n, 2.2);
+/* Combien de temps ? (v86, l'audit G3 : « environ 30 s » annoncées, le dessin venu en 5 s.) Le concours se paie en
+   ÉVALUATIONS : son budget (04, `budgetDe` : 2 400 jusqu'à vingt nœuds, 1 200 jusqu'à quarante, 800, puis 600), chacune au
+   prix d'un routage, qui croît comme le nombre de fils — le TRAVAIL d'un folio est son budget fois ses fils. La loi d'avant
+   (n^2,2 liaisons) l'ignorait : un petit folio, au plus gros budget, apprenait à l'étalon une constante qui gonflait les gros
+   (mesuré, quatre cœurs : 1,9 s pour 23 liaisons, 4,1 s pour 69 — la loi en annonçait 21). La constante est celle de CET
+   ordinateur, ses cœurs compris (le concours se partage avec les aides), apprise sur chaque folio placé (une moyenne
+   glissante) et gardée dans ce navigateur ; la première fois, celle d'un ordinateur de quatre cœurs. */
+const DEPART_PLACEMENT = 300;   // ms : le Worker qui s'éveille, le graphe, les premiers candidats
+const ETALON = (() => { const e = { c: 0.045, n: 0 }; try { const x = JSON.parse(localStorage.getItem('volta.placement.etalon2') || 'null'); if (x && x.c > 0 && isFinite(x.c)) Object.assign(e, x); } catch (_) { } return e; })();
+// le travail d'un folio, gardé dans son attente : le budget de son concours fois ses fils (le graphe se lit en quelques millisecondes)
+function travailDuFolio(a) { if (a.travail) return a.travail; let t = 1200 * Math.max(1, a.L.length);
+  try { const M = modele(construireGraphe(a.L)); t = budgetDe(M) * Math.max(1, M.liens.filter(w => !w.shunt && !w.boucle).length); } catch (_) { }
+  return (a.travail = t); }
+const dureeEstimee = a => DEPART_PLACEMENT + ETALON.c * travailDuFolio(a);
+function etalonner(a, ms) { if (!a || !(a.L.length > SEUIL_ICI) || !(ms > DEPART_PLACEMENT)) return; const c = (ms - DEPART_PLACEMENT) / travailDuFolio(a);
   ETALON.c = ETALON.n ? 0.6 * ETALON.c + 0.4 * c : c; ETALON.n++;
-  try { localStorage.setItem('volta.placement.etalon', JSON.stringify(ETALON)); } catch (_) { } }
+  try { localStorage.setItem('volta.placement.etalon2', JSON.stringify(ETALON)); } catch (_) { } }
 // une durée, en mots : « 8 s », « 25 s », « 2 min »
 const enSecondes = ms => { const s = ms / 1000; return s < 15 ? Math.max(1, Math.round(s)) + ' s' : s < 60 ? Math.round(s / 5) * 5 + ' s' : s < 100 ? '1 min' + (s >= 80 ? ' 30' : '') : Math.round(s / 60) + ' min'; };
 /* Où en est le folio `a` : une fraction (le temps écoulé sur le temps estimé, ce que le Worker rapporte), et ce qu'il
    reste, en mots. En file derrière un autre folio : il attend son tour. */
-function avancement(a) { const est = dureeEstimee(a.L.length);
-  if (!a.debut) return { p: 0, mot: 'environ ' + enSecondes(est), file: !!placement.encours && placement.encours.cle !== a.cle };
+function avancement(a) { const est = dureeEstimee(a);
+  if (!a.debut) return { p: 0, reste: est, mot: 'environ ' + enSecondes(est), file: !!placement.encours && placement.encours.cle !== a.cle };
   const ecoule = performance.now() - a.debut, p = Math.min(0.97, Math.max(a.p || 0, ecoule / est)), reste = est - ecoule;
-  return { p, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : 'presque fini' }; }
+  return { p, reste, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : 'presque fini' }; }
+/* L'ESQUISSE NE SE MONTRE QUE SI ELLE SERT (v86, l'audit G3 : au folio 3, elle paraissait 66 ms, puis tout bougeait). Le
+   dessin définitif à moins de trois secondes, elle passerait sous les yeux pour laisser aussitôt la place : l'attente reste,
+   le définitif vient d'un coup. Plus loin, elle se montre — et le définitif la range en glissant (`rangerLeDessin`). Si
+   l'estimation s'est trompée (le définitif tarde encore deux secondes et demie après l'esquisse), elle se montre quand même. */
+const ESQUISSE_UTILE = 3000, ESQUISSE_PATIENCE = 2500;
+const esquisseUtile = a => !!a && !!a.esquisse && (!!a.montree || avancement(a).reste >= ESQUISSE_UTILE || performance.now() - (a.esquisseRecue || 0) >= ESQUISSE_PATIENCE);
+// l'esquisse retenue devient utile (le définitif tarde) : elle se montre, comme si elle venait d'arriver (l'horloge de l'attente)
+function verifierEsquisse() { const a = attenteCourante(); if (!a || app.dessin || !app.contrat.liaisons.length || !esquisseUtile(a)) return; rafraichirDessin(); finirAttente(a); }
+/* (v86, l'audit M5) prendre un bloc sur l'esquisse : son déplacement figerait l'esquisse, ou se perdrait au définitif. Le geste
+   ne prend pas (la vue glisse), et le mot dit pourquoi et quand. */
+function refuserPendantEsquisse(P) { const a = attenteCourante(), v = a ? avancement(a) : null;
+  dire((P.provisoire === 'esquisse' ? 'Le folio se dessine encore' : 'Le folio se redessine') + (v && v.reste > 1500 ? ' : son dessin définitif arrive dans ' + enSecondes(v.reste) + ' environ.' : ' : son dessin définitif arrive.')
+    + ' Vous déplacerez les blocs dès qu’il sera posé.'); }
 // le nom du folio et sa place : « 3 / 20 », ou « MEE…003A (3 / 20) »
 function folioEtRang(plan) { const P = plans(), i = P.indexOf(plan) + 1; if (!i) return String(plan); return String(plan) === String(i) ? i + ' / ' + P.length : plan + ' (' + i + ' / ' + P.length + ')'; }
 // ce qu'on peut faire pendant ce temps : les problèmes du contrat (l'index « à reprendre »), le récapitulatif — comptés
@@ -29823,7 +29875,7 @@ function motDuFolio(p, court) { const nom = 'Folio ' + p, e = travailDeFond() ? 
   if (e.etat === 'dessin') return nom + ' : dessin en cours' + (court ? '' : ', ' + e.mot) + (e.esquisse && app.plan === p && !court ? ' (l’esquisse se lit déjà)' : '');
   if (e.etat === 'attente') { const enc = placement.encours && placement.attentes.get(placement.encours.cle);
     return nom + ' : en attente' + (court || !enc || enc.plan === p ? '' : ', après le folio ' + enc.plan); }
-  if (e.etat === 'affinage') return nom + ' : prêt' + (court ? ', VOLTA l’affine' : ' — VOLTA affine encore son dessin');
+  if (e.etat === 'affinage') return nom + ' : prêt' + (court ? ', VOLTA le peaufine' : ' — VOLTA peaufine encore son dessin');
   return nom + ' : prêt'; }
 function peindreEtatsDesFolios() { const strip = $('fo-strip'); if (!strip) return; const fond = travailDeFond(), K = fond ? clesDesFolios() : null;
   strip.querySelectorAll('.chip').forEach(c => { const e = fond ? etatDuFolio(c.dataset.plan, K) : null, etat = e ? e.etat : 'pret';
@@ -29836,7 +29888,7 @@ function peindreEtatsDesFolios() { const strip = $('fo-strip'); if (!strip) retu
   const b = $('folios') && $('folios').querySelector('.fo-bulle.on'); if (b && b.dataset.plan) { const t = typo(motDuFolio(b.dataset.plan)); if (b.textContent !== t) b.textContent = t; } }
 // l'horloge de l'attente : quatre fois par seconde tant qu'un folio se calcule ou s'esquisse, rien sinon
 function remonterHorloge() { const utile = placement.ailleurs && (!!placement.encours || placement.attentes.size > 0);
-  if (utile && !placement.horloge) placement.horloge = setInterval(() => { montrerAttente(); }, 250);
+  if (utile && !placement.horloge) placement.horloge = setInterval(() => { verifierEsquisse(); montrerAttente(); }, 250);
   else if (!utile && placement.horloge) { clearInterval(placement.horloge); placement.horloge = 0; } }
 /* Les folios prêts : placés (dans cette session, ou relus de ce navigateur), affinés, retouchés, ou assez petits pour
    se placer à l'instant. Rend { n, N, pas: les folios pas encore prêts } ; compté au plus deux fois par seconde. */
@@ -29856,12 +29908,19 @@ function montrerBande() { peindreEtatsDesFolios(); const el = $('affinage'); if 
     el.setAttribute('aria-label', bulle ? mot + ' — ' + bulle : mot); el.removeAttribute('title'); };
   const a = attenteCourante();
   if (a && app.dessin && app.dessin.provisoire) { const v = avancement(a);
-    poser((app.dessin.provisoire === 'esquisse' ? 'Esquisse · le dessin définitif ' : 'Dessin d’avant · le nouveau ') + (v.mot === 'presque fini' ? 'arrive' : 'dans ' + v.mot.replace(/^encore /, '')), v.p, false, 'le folio se lit déjà ; son dessin définitif le remplacera sans bouger la feuille'); return; }
+    // (v86) une durée honnête (`dureeEstimee`), dans l'ordre où on la lit : « Esquisse — le dessin définitif dans 4 s environ »
+    const quand = v.reste > 1500 ? 'dans ' + enSecondes(v.reste) + ' environ' : 'arrive';
+    poser((app.dessin.provisoire === 'esquisse' ? 'Esquisse — le dessin définitif ' : 'Dessin d’avant — le nouveau ') + quand, v.p, false,
+      'le folio se lit déjà ; le dessin définitif prendra sa place en glissant, la feuille immobile, et ses blocs se déplaceront dès qu’il sera posé'); return; }
   const prets = foliosPrets();
   if (prets && prets.n < prets.N && (placement.encours || placement.attentes.size)) { poser(prets.n + ' / ' + prets.N + ' folios prêts', prets.n / prets.N, true, 'les autres folios se dessinent en arrière-plan, l’un après l’autre'); return; }
   const j = affinage.encours, e = affinage.etat;
   if (affinage.actif && j) { const ici = j.cle === cleCourante(), reste = affinage.file.length;
-    poser((ici ? 'Le dessin s’affine' : 'Un autre folio s’affine') + (e ? ' · ' + e.k + ' / ' + e.n : '') + (reste ? ' · ' + reste + ' en attente' : ''), e && e.n ? e.k / e.n : null, !ici, 'chaque mieux trouvé remplace le dessin, et se garde dans ce navigateur'); return; }
+    /* (v86, l'audit G3 : « 0 / 48 · 5 en attente », 48 de quoi ?) des mots : combien de folios VOLTA peaufine encore, celui-ci
+       compris ; la barre, où il en est sur tout le lot (les folios finis, et les tours du folio en cours) */
+    const n = 1 + reste, lot = affinage.lot || { total: n, faits: 0 }, p = (lot.faits + (e && e.n ? e.k / e.n : 0)) / Math.max(1, lot.total, lot.faits + n);
+    poser(n > 1 ? 'VOLTA peaufine encore ' + n + ' folios' : ici ? 'VOLTA peaufine encore ce folio' : 'VOLTA peaufine encore un folio', p, !ici,
+      'chaque meilleur dessin trouvé remplace l’actuel sans bouger la feuille, et se garde dans ce navigateur'); return; }
   el.hidden = true; }
 const montrerAffinage = montrerBande;
 // le concours gardé : une entrée par version du moteur et folio ; les concours d'un moteur passé s'effacent, une fois par session
@@ -30651,6 +30710,7 @@ function lierPlanche() {
         return quoi + pres + ' · double-clic sur le câble pour le rendre au moteur · Ctrl+Z pour défaire.'; } } };
   const commencerPrise = () => { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null; if (!cle) return false;
     const P = placementDe(L), G = prise && GESTES[prise.genre]; if (!P || !G) return false;
+    if (P.provisoire) { refuserPendantEsquisse(P); return false; }   // (v86, M5) l'esquisse ne se retouche pas
     Object.assign(prise, { cle, P, avant: app.retouches.get(cle) || null, vise: null, place: null, posee: false, refuse: false, P2: null });
     const quoi = G.preparer(prise, P); if (!quoi) return false;
     const mot = $('toast'); if (mot) mot.classList.remove('on');   // le mot du geste d'avant s'en va : celui-ci aura le sien, s'il bouge
@@ -31141,7 +31201,8 @@ function montrerSiCache(b, centrer) { if (!b || !app.dessin) return; const r = c
     const nb = voisinageDeLaCible(b), M = 20, l0 = L + M, r0 = R - M, t0 = T + M, b0 = B - M, sNb = Math.min((r0 - l0) / Math.max(1, nb.w), (b0 - t0) / Math.max(1, nb.h)), lisMin = Math.max(0.42, 0.8 * lisible);
     let s1 = sNb >= lisMin ? Math.min(lisible, sNb) : lisible;
     if (s >= lisMin && Math.abs(s - s1) <= 0.12 * s1 && (sNb < lisMin || s <= sNb + 1e-6)) s1 = s;
-    const cale = (v, lo, hi) => lo <= hi ? Math.max(lo, Math.min(hi, v)) : v;
+    // (le voisinage qui tient au pixel près : ses deux bornes se croisent d'un arrondi — on le pose au milieu)
+    const cale = (v, lo, hi) => lo <= hi ? Math.max(lo, Math.min(hi, v)) : (lo + hi) / 2;
     let tx = (L + R) / 2 - (b.x + b.w / 2) * s1, ty = b.h * s1 > B - T - 16 ? T + 12 - b.y * s1 : (T + B) / 2 - (b.y + b.h / 2) * s1;
     if (nb.h * s1 <= b0 - t0 + 0.5) ty = cale(ty, t0 - nb.y * s1, b0 - (nb.y + nb.h) * s1);
     tx = nb.w * s1 <= r0 - l0 + 0.5 ? cale(tx, l0 - nb.x * s1, r0 - (nb.x + nb.w) * s1) : decalageDesVoisins(b, nb.voisins, s1, l0, r0);
@@ -31248,6 +31309,10 @@ function aller(cible) { const P = plans(); const nom = cible.nom;
   // un type de câble : tous ses câbles, dans le récapitulatif (le plan reste où il est) ; une nature, son onglet
   if (cible.type === 'type') { montrerLiaisons(nom); return; }
   if (cible.type === 'nature') { montrerNature(cible); return; }
+  // (v86) une barrette ajoutée par VOLTA (VT1…), ou l'une de ses bornes : son folio, puis sa fiche (elle n'est pas un bloc du dessin)
+  if (cible.type !== 'fil' && VT_A_POSER.test(String(nom || ''))) { const p = (P.length ? P : ['*']).find(x => liaisonsDe(x).some(l => l.aPoser === nom));
+    if (P.length > 1 && app.plan !== '*' && p && p !== app.plan) allerAuPlan(p);
+    if (!app.dessin && attenteCourante()) { reporterCible(cible); return; } if (typeof montrerBloc === 'function') montrerBloc(nom); return; }
   const ou = cible.type === 'fil' ? plansDuFil(nom) : plansDuRepere(nom);
   if (P.length > 1 && app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]);
   if (!app.dessin && attenteCourante()) { reporterCible(cible); return; }   // le folio se place au loin : la cible attend le dessin (finirAttente)
@@ -31317,16 +31382,31 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   const L = verite(), D = app.contrat.designations, info = new Map(), cal = calibreCherche(q);
   L.forEach(l => [[l.de, l.pnDe, l.descriptionDe], [l.vers, l.pnVers, l.descriptionVers]].forEach(([n, pn, d]) => { if (!n || estRenvoi(n)) return;
     const x = info.get(n) || info.set(n, { n: 0, pns: new Set(), descs: new Set() }).get(n); x.n++; if (pn) x.pns.add(String(pn)); if (d) x.descs.add(String(d).trim()); }));
+  // (v86) les barrettes ajoutées par VOLTA (VT1…) ne vivent que sur leur folio : elles se trouvent aussi, et leurs bornes par le
+  // nom de leur face (« VT2:51H »)
+  const LV = (plans().length ? plans() : ['*']).flatMap(p => liaisonsDe(p).filter(l => l.aPoser && (VT_A_POSER.test(l.de) || VT_A_POSER.test(l.vers))));
+  LV.forEach(l => [l.de, l.vers].forEach(n => { if (!VT_A_POSER.test(n)) return; const x = info.get(n) || info.set(n, { n: 0, pns: new Set(), descs: new Set() }).get(n);
+    if (l.de !== l.vers) x.n++; if (estRaccordAPoser(l)) x.descs.add('barrette ajoutée par VOLTA sur ' + l.de + ':' + l.borneDe); }));
   const rang = n => rangAPlat(n, Q, Qz), contient = t => rangAPlat(t, Q, Qz) < 2;
   // une borne : « 300XC1:B5 », « 300XC1 B5 », « 300xc1b5 » — le repère exact, la borne qui commence par ce qu'on tape
   const bornes = [], m = /^(\S+?)\s*[:\s]\s*(\S*)$/.exec(q);
   let rep0 = null, bq = '';
   if (m) { rep0 = [...info.keys()].find(n => aPlat(n) === aPlat(m[1])); bq = aPlat(m[2]); }
   if (!rep0 && Q.length > 3) { const r = [...info.keys()].filter(n => Q.startsWith(aPlat(n)) && Q.length > aPlat(n).length).sort((a, b) => aPlat(b).length - aPlat(a).length)[0]; if (r) { rep0 = r; bq = Q.slice(aPlat(r).length); } }
-  if (rep0) { const vues = new Set(); L.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
+  const desBorne = (l, autre, bAutre) => (SANS_NUMERO_DE_CABLE || !l.cable ? (l.type || 'câble') : l.cable + (l.type ? ' · ' + l.type : '')) + ' → ' + autre + (bAutre ? ':' + bAutre : '');
+  // une borne se décrit par son câble vers un autre repère avant un pontage de la même barrette (`vues` garde le premier)
+  const LB = [...L, ...LV].filter(l => l.de !== l.vers).concat([...L, ...LV].filter(l => l.de === l.vers));
+  if (rep0) { const vues = new Set(); LB.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
       if (r !== rep0 || !b || vues.has(b) || !aPlat(b).startsWith(bq)) return; vues.add(b);
-      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: (SANS_NUMERO_DE_CABLE || !l.cable ? (l.type || 'câble') : l.cable + (l.type ? ' · ' + l.type : '')) + ' → ' + autre + (bAutre ? ':' + bAutre : '') }); }));
+      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: desBorne(l, autre, bAutre) }); }));
     bornes.sort((a, b) => triNaturel(a.borne, b.borne)); }
+  /* (v86, l'audit G4 et B2) UNE BORNE SEULE, telle que vos fichiers l'écrivent — « 51B » (le module 51, le contact B), « 51e » — :
+     chaque barrette qui la porte, celle qui l'écrit à la même casse d'abord (« 51e » montre 51e avant 51E, deux contacts) */
+  if (!rep0 && /^\d+(-\w+|[A-Za-z]\w?)$/.test(q)) { const vues = new Set();
+    LB.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
+      if (!r || !b || !estBarrette(r) || String(b).toLowerCase() !== q.toLowerCase() || vues.has(r + '\u0001' + b)) return; vues.add(r + '\u0001' + b);
+      bornes.push({ type: 'borne', nom: r, borne: String(b), l, cote: c, casse: String(b) === q, des: desBorne(l, autre, bAutre) + (/[a-z]/.test(String(b)) ? ' · minuscule' : '') }); }));
+    bornes.sort((a, b) => (b.casse - a.casse) || triNaturel(a.nom, b.nom)); }
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };
   if (cal && !natures.includes('CB')) natures.push('CB');
@@ -31534,8 +31614,9 @@ function rendrePalette() { const el = PALETTE.el; if (!el) return; const q = el.
 function marquerPalette(defiler) { const el = PALETTE.el; if (!el) return; const q = el.querySelector('#pa-q');
   el.querySelectorAll('.pa-l').forEach(b => { const on = +b.dataset.i === PALETTE.sel; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); if (on && defiler) b.scrollIntoView({ block: 'nearest' }); });
   q.setAttribute('aria-activedescendant', PALETTE.lignes.length ? 'pa-o-' + PALETTE.sel : ''); }
-function faireDeLaPalette(i) { const x = PALETTE.lignes[i]; if (!x || x.eteint) return; fermerPalette(false);
-  if (x.objet) { aller(x.objet); return; }
+function faireDeLaPalette(i) { const x = PALETTE.lignes[i]; if (!x || x.eteint) return; const avant = PALETTE.avant; fermerPalette(false);
+  // (v86, F7) la fiche qu'elle ouvre rendra le clavier d'où la recherche était partie (sinon la loupe du rail), pas à la page nue
+  if (x.objet) { if (typeof CARTE !== 'undefined') CARTE.ouvreurSuivant = { el: avant && avant !== document.body && avant.isConnected ? avant : $('btnCherche'), t: Date.now() }; aller(x.objet); return; }
   try { x.faire(); } catch (err) { dire('Ce geste n’a pas abouti : ' + ((err && err.message) || err), true); } }
 
 /* ---- les folios d'une liaison (le récapitulatif, la fiche du fil) -------- */
@@ -32537,12 +32618,16 @@ function lierTabulation() {
     setTimeout(() => { const b = document.activeElement; if (dansF && F.isConnected && !F.hidden && b && b !== document.body && F.contains(b)) return;
       if (dansF && F.isConnected && !F.hidden) { poser(e.shiftKey ? bordTabulable(F, true) : bordTabulable(F, false)); return; }
       if (!b || b === document.body) poser(bordTabulable(document, e.shiftKey)); }, 0); }, true); }
-/* (v86, F7) ÉCHAP DANS UN CHAMP DE LA FICHE : on le quitte — le clavier reste dans la fiche, sur le titre de sa section (ou
-   la fiche elle-même), plutôt que sur la page nue : le Tab suivant reprend là. */
+/* (v86, F7) ÉCHAP DANS UN CHAMP DE LA FICHE : on le quitte — le clavier reste dans la fiche, sur le titre de la section qui
+   le porte (le dernier titre avant lui, dans son panneau), sinon sur le contrôle d'après (la carte n'a pas de titres) — plutôt
+   que sur la page nue, sans anneau. Aussi quand le champ s'est quitté lui-même (08-fiche le rend tel qu'il était) :
+   08-niveaux, `clavierDuGrand`, nous rappelle. */
 function quitterLeChamp(f) { const F = fenetreDuClavier() || $('inspecteur'); try { f.blur(); } catch (_) { }
   if (!F || F.hidden || !F.contains(f)) return;
-  const sec = f.closest('.nv-reg, .vu-bloc, .nv-somm, section'), h = sec && sec.querySelector('h4[tabindex]');
-  try { (h || F).focus({ preventScroll: true }); } catch (_) { } }
+  const pan = f.closest('.nv-panneau') || F, hs = [...pan.querySelectorAll('h4[tabindex]')].filter(h => estTabulable(h) && (h.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING));
+  const xs = hs.length ? null : [...F.querySelectorAll(SEL_TABULABLES)].filter(x => x !== f && estTabulable(x)), apres = x => !!(f.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING);
+  const vers = hs[hs.length - 1] || (xs && (xs.find(apres) || xs.filter(x => !apres(x)).pop())) || F;
+  try { vers.focus({ preventScroll: true }); } catch (_) { } }
 /* (v86, F7) ÉCHAP REFERME D'ABORD CE QUE LE CLAVIER A DÉPLIÉ DANS LA FICHE : la section d'un réglage ouverte sous sa ligne
    (Manuel, ses possibles), les points « à voir » dépliés — le clavier revient sur le bouton qui les avait ouverts. Rend vrai
    s'il a replié quelque chose. */
@@ -32834,7 +32919,11 @@ function ligneJournalHtml(x, i) { const val = (v, mono, b) => `<${b ? 'b' : 's'}
 // ce qui part dans l'Excel corrigé, en une ligne (le relevé le détaille : 08-export)
 function excelDuJournal() { let R; try { R = changementsDuRetest(); } catch (_) { return ''; } const np = R.proposes.length, poses = barrettesPosees();
   const lignesDe = p => 1 + p.shunts.length, nl = poses.reduce((s, p) => s + lignesDe(p), 0);
-  const morceaux = [R.cases ? pluriel(R.cases, 'case') + (R.liaisons ? ' sur ' + pluriel(R.liaisons, 'liaison') : '') : '', poses.length ? (poses.length > 1 ? poses.length + ' barrettes ajoutées, avec leurs ' + nl + ' lignes' : 'la barrette ' + poses[0].nom + ', avec ses ' + nl + ' lignes') : ''].filter(Boolean);
+  // (une ligne en double retirée part aussi : elle n'est pas une case, c'est une ligne de moins)
+  const nd = R.ecrits.filter(e => e.champ === 'copies').reduce((s, e) => s + (typeof copiesRetirees === 'function' ? copiesRetirees(e.liaisons[0]) : 1), 0), nc = R.ecrits.filter(e => e.champ !== 'copies').reduce((s, e) => s + e.liaisons.length, 0);
+  const morceaux = [R.cases ? pluriel(R.cases, 'case') + (nc ? ' sur ' + pluriel(new Set(R.ecrits.filter(e => e.champ !== 'copies').flatMap(e => e.liaisons)).size, 'liaison') : '') : '',
+    nd ? (nd > 1 ? nd + ' lignes en double retirées' : 'une ligne en double retirée') : '',
+    poses.length ? (poses.length > 1 ? poses.length + ' barrettes ajoutées, avec leurs ' + nl + ' lignes' : 'la barrette ' + poses[0].nom + ', avec ses ' + nl + ' lignes') : ''].filter(Boolean);
   if (!morceaux.length && !np) return '';
   const att = np ? `<span class="jo-att">${np > 1 ? np + ' choix de VOLTA pas encore écrits' : '1 choix de VOLTA pas encore écrit'}</span>` : '';
   return `<div class="jo-excel" role="note"><span class="jo-excel-i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/></svg></span>`
@@ -32861,7 +32950,7 @@ function journalHtml(arrive) { const X = journalDuPlan(), S = JOURNAL;
   const jours = new Map(); vus.forEach(x => { const [cle, titre, bulle] = jourDuJournal(x); const j = jours.get(cle) || jours.set(cle, { titre, bulle, xs: [] }).get(cle); j.xs.push(x); });
   const liste = [...jours.entries()].sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0).map(([, j]) => `<section class="jo-jour${entre()}"><h3 class="sous-titre jo-st"${j.bulle ? ` data-bulle="${escA(j.bulle)}"` : ''}>${esc(j.titre)}<small>${j.xs.length}</small></h3>`
     + `<ol class="hi-l jo-l">${j.xs.map(x => ligneJournalHtml(x, X.indexOf(x))).join('')}</ol></section>`).join('');
-  return tete(nomAffichePlan() + ' · tout le plan', 'Historique') + `<p class="note jo-intro">${esc(intro)}</p>` + (X.length ? excelDuJournal() : '') + filtres
+  return tete(app.nom ? nomAffichePlan() + ' · tout le plan' : 'Tout le plan', 'Historique') + `<p class="note jo-intro">${esc(intro)}</p>` + (X.length ? excelDuJournal() : '') + filtres
     + (X.length && !vus.length ? `<p class="jo-rien">Rien de cette sorte ici. <button type="button" class="fi-lien" data-jo-tout>Tout voir</button></p>` : '') + `<div class="jo">${liste}</div>`; }
 function rendreJournal(ouvrir) { if (!ouvrir && (!JOURNAL.ouvert || !app.fiche || app.fiche.mode !== 'journal')) { JOURNAL.ouvert = false; return; }
   const corps = $('fiche-corps'), haut = corps && app.fiche && app.fiche.mode === 'journal' ? corps.scrollTop : 0;
@@ -33417,6 +33506,11 @@ function motsDuProbleme(reste, suite, type) { const r = String(reste || ''), fin
     const d = seul && k ? ` Ces ${a} : ${seul}${palier && palier !== 'en continu' ? ' ' + palierEnMots(palier) : ''} pour ${type ? 'un ' + type : 'ce câble'} seul à l’air libre, × ${k} ${pq ? conditionsEnMots(pq) : 'ici'}.` : '';
     const cont = palier === 'en continu' && t ? ' Au-delà d’une minute, c’est le continu qui compte.' : '';
     return { court: fin(quoi + sur), long: fin(quoi + (nom ? ' (' + nom.toLowerCase() + ')' : '') + sur) + d + cont }; }
+  // ce qu'il admet en continu, sous le calibre : une surcharge entre les deux le chauffe sans que le disjoncteur disjoncte
+  if ((m = /^([\d,]+ A) admis en continu(?: \(([\d,]+ A) × ([\d,]+)(?: : ([^)]+))?\))? < calibre ([\d,]+ A)$/i.exec(r))) {
+    const court = fin(`Il admet ${m[1]} en continu, moins que le calibre de ${m[5]} : il n’est pas protégé en surcharge`);
+    const d = m[2] && m[3] ? ` Ces ${m[1]} : ${m[2]} pour ${type ? 'un ' + type : 'ce câble'} seul à l’air libre, × ${m[3]} ${m[4] ? conditionsEnMots(m[4]) : 'ici'}.` : '';
+    return { court, long: court + ' Entre les deux, il chauffe sans que le disjoncteur disjoncte.' + d, mange: true }; }
   // le permanent contre le contact
   if ((m = /^le permanent \(([\d,]+ A)\) dépasse le contact taille (\S+) (?:supposé \(([\d,]+ A)\)|\(([\d,]+ A), ([^)]+)\))$/i.exec(r))) {
     const court = m[3] ? fin(`Il porte ${m[1]} en permanence, plus que les ${m[3]} du contact taille ${m[2]} que VOLTA suppose`) : fin(`Il porte ${m[1]} en permanence, plus que les ${m[4]} de son contact taille ${m[2]} (${m[5]})`);
@@ -33435,7 +33529,9 @@ function motsDuProbleme(reste, suite, type) { const r = String(reste || ''), fin
     const court = fin(`La ligne perd ${m[1]}${m[2] ? ' sous ' + m[2] : ''}, plus que les ${m[3]} admis${m[4] || ''}${m[5] ? ' — sur des longueurs supposées' : ''}`); return { court, long: court }; }
   if ((m = /^chute en ligne de ([\d,]+ V) en pointe \(([^)]+)\), plus que les ([\d,]+ V) admis( en intermittent)?( \(longueurs d’hypothèse\))?$/i.exec(r))) {
     const court = fin(`En pointe (${m[2]}), la ligne perd ${m[1]}, plus que les ${m[3]} admis${m[4] || ''}${m[5] ? ' — sur des longueurs supposées' : ''}`); return { court, long: court }; }
-  const tel = majuscule(r) + (suite ? ' · ' + suite.replace(/^\S/, c => c.toLowerCase()) : ''); return { court: tel, long: tel, mange: !!suite }; }
+  // (une phrase que VOLTA ne sait pas dire autrement : telle quelle, sa suite après deux points — « Courant de commande inconnu :
+  // écrivez la consommation de la bobine de 103RL1. »)
+  const tel = fin(majuscule(r) + (suite ? ' : ' + suite.replace(/^\S/, c => c.toLowerCase()) : '')); return { court: tel, long: tel, mange: !!suite }; }
 /* LE GESTE QUE VOLTA SAIT FAIRE pour un point qui n'en porte pas : un câble trop fin pour son courant (ou que son calibre
    ne protège pas) passe au plus fin qui convient (`plusFinQuiTient` — la même proposition que sa fiche) ; deux câbles sur
    une borne, que VOLTA relie par une barrette à poser : la barrette reçoit son repère (le geste du contrôle). Rend
@@ -33468,7 +33564,7 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
   const R = ordre.filter(x => x.regler), V = ordre.filter(x => !x.regler), nko = R.filter(x => x.p.niveau === 'ko').length;
   const bouton = (g, cls) => { const n = FI.gestesPb.push([g]) - 1; return `<button type="button" class="btn ${cls || 'cuivre dense nc-agir'}" data-geste-pb="${n}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; };
   const ligne = x => { const p = x.p, t = x.phrase || majuscule(motDuProbleme(p.texte));
-    const k = t.indexOf(' — '), suite = k > 0 ? t.slice(k + 3) : ''; let titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(suite) : gloseDuProbleme(p.texte), tout = '';
+    const k = t.indexOf(' — '), suite = k > 0 ? t.slice(k + 3) : ''; let titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(suite) : gloseDuProbleme(p.texte), tout = '', ar = null;
     // QUI d'abord, VU D'ICI (« A1 ← 102CB1:2 · DR20 »), puis ce qui cloche, EN MOTS : la carte dit l'essentiel en deux lignes au
     // plus, le grand dit tout (d'où vient l'admis, pourquoi VOLTA suppose un contact) ; la bulle de la carte dit ce que le grand dit
     const qui = /^(\S+ vers \S+(?: \(par [^)]+\))?) : (.+)$/.exec(titre);
@@ -33476,6 +33572,12 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
       // « — sous 102CB1 » : le disjoncteur, quand le titre ne le nomme pas déjà
       const sous = /^sous (\S+)$/.exec(suite), plus = M.mange || !suite ? '' : sous ? (vu.titre.includes(sous[1]) ? '' : ` Son disjoncteur : ${sous[1]}.`) : ' ' + majuscule(suite) + '.';
       titre = vu.titre; tout = M.long + plus + (glose ? ' ' + glose : ''); detail = grand ? tout : M.court; }
+    // « B · aucun arrangement EN 4165-002 ne loge B5 : DR12 vers 397TB1 » (un connecteur) : le câble en titre, vu d'ici
+    // (« B5 → 397TB1:3 · DR12 »), ce qui cloche dessous — le plus proche, dans le grand
+    else if ((ar = /^(\S+) · aucun arrangement (.+?) ne loge (\S+) : (\S+) vers (\S+)$/i.exec(titre))) { const [, cn, fam, bo, type, vers] = ar, nom = o.tete && o.tete.nom;
+      let f = null; try { f = nom ? filsDuRepere(nom).find(y => String(y.borne) === bo && y.vers === vers) : null; } catch (_) { f = null; }
+      const court = `Aucun arrangement ${fam} ne loge ce ${type} au connecteur ${cn}.`;
+      titre = quiVuDIci(`${type} vers ${vers}`, { cable: f ? f.l : null }, o).titre; tout = suite ? court.replace(/\.$/, ' : ' + suite.replace(/^\S/, c => c.toLowerCase()) + '.') : court; detail = grand ? tout : court; }
     // une phrase longue qui finit sur sa parenthèse (« … admis en continu (11,5 A × 0,6 : faisceau de 8 câbles à 60 %) ») : la
     // parenthèse passe dessous, le titre se lit d'un trait
     else if (titre.length > 48) { const m = /^(.+?) \(([^()]+)\)$/.exec(titre); if (m) { titre = m[1]; detail = majuscule(m[2]) + (detail ? ' · ' + detail.replace(/^\S/, c => c.toLowerCase()) : ''); } }
@@ -33790,6 +33892,11 @@ function clavierDuGrand(box) {
   box.querySelectorAll('.nv-panneau svg .bro-l[data-i]:not([tabindex])').forEach(g => { const t = s => { const e = g.querySelector(s); return e ? e.textContent.trim() : ''; }, type = t('.bro-type'), b = t('.bro-borne'), v = t('.bro-vers');
     g.tabIndex = 0; g.setAttribute('role', 'button'); g.setAttribute('aria-label', 'Ouvrir le câble ' + [type && type !== '—' ? type : '', b ? 'de la borne ' + b : '', v ? 'vers ' + v : ''].filter(Boolean).join(' ')); });
   if (box.dataset.clavierLie) return; box.dataset.clavierLie = '1';
+  // Échap dans un champ de la fiche : 08-fiche le rend tel qu'il était et le quitte — le clavier tombait sur la page nue ; il
+  // revient sur le titre de sa section (08-interface, `quitterLeChamp`)
+  box.addEventListener('keydown', e => { if (e.key !== 'Escape' || !/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return; box._echap = e.target; setTimeout(() => { box._echap = null; }, 0); }, true);
+  box.addEventListener('focusout', e => { const f = e.target; if (box._echap !== f) return; box._echap = null; if (e.relatedTarget) return;
+    setTimeout(() => { const a = document.activeElement; if ((!a || a === document.body) && f.isConnected && typeof quitterLeChamp === 'function') quitterLeChamp(f); }, 0); });
   const ligne = t => t && t.closest && t.closest('#ba-equip [data-i]');
   box.addEventListener('focusin', e => { const el = ligne(e.target); if (el && e.target.matches(':focus-visible') && typeof allumerCle === 'function') allumerCle(el.dataset.i); });
   box.addEventListener('focusout', e => { if (!ligne(e.target) || ligne(e.relatedTarget) || typeof rallumer !== 'function') return; rallumer(); if (typeof FI !== 'undefined' && FI.choisi && typeof allumerCle === 'function') allumerCle(FI.choisi); }); }
@@ -35782,7 +35889,7 @@ function etatDuFil(l, F) { const ko = new Set(), att = new Set(), x = F.x, c = F
   const trop = l.de !== l.vers && liaisonComplete(l) && x.trop.length > 0, chute = c.trop || c.pointe ? (c.reel ? 'ko' : 'att') : '';
   const niveau = ko.size || trop || chute === 'ko' ? 'ko' : att.size || chute ? 'att' : l.de === l.vers ? '' : 'ok';
   const cmp = (a, b) => a > b + 1e-9 ? '>' : 'sur', supp = c.reel ? '' : ' (longueurs supposées)';
-  const chiffres = [x.fn ? `Intensité : ${amperes(x.I)} ${cmp(x.I, x.continu)} ${amperes1(x.continu)} admis en continu${x.al ? ', sous ' + x.al.nom : ' (supposé)'}` : '',
+  const chiffres = [x.I == null ? `Intensité : inconnue — une branche de commande${x.al ? ', sous ' + x.al.nom : ''}` : x.fn ? `Intensité : ${amperes(x.I)} ${cmp(x.I, x.continu)} ${amperes1(x.continu)} admis en continu${x.al ? ', sous ' + x.al.nom : ' (supposé)'}` : '',
     x.fn && x.pointe && x.pointe.admis ? `En pointe : ${amperes(x.pointe.i)} pendant ${secondes(x.pointe.t)} ${cmp(x.pointe.i, x.pointe.admis)} ${amperes1(x.pointe.admis)} admis` : '',
     c.total ? `Chute en ligne : ${volts(c.total.dU)} ${c.max != null ? cmp(c.total.dU, c.max) + ' ' + volts(c.max) + ' admis' : ''}${supp}` : c.dU != null ? `Chute sur ce câble : ${volts(c.dU)}` : '',
     c.pointe ? `Chute en pointe : ${volts(c.pointe.dU)} > ${volts(c.pointe.admis)} admis${supp}` : ''].filter(Boolean);
@@ -35792,7 +35899,7 @@ function etatDuFil(l, F) { const ko = new Set(), att = new Set(), x = F.x, c = F
 // UN CHOIX DE VOLTA qu'on règle : au survol il prend l'air d'un champ ; double-clic, Entrée ou F2 ouvre Automatique et
 // les choix possibles ; vide, il dit ce qu'on y choisirait (sur la ligne survolée ou choisie)
 const val = (f, html, opt) => { opt = opt || {}; const vide = html == null || html === '';
-  return `<span class="rc-v${opt.cls ? ' ' + opt.cls : ''}${vide ? ' rc-vide' : ''}" data-f="${escA(f)}" tabindex="-1" ${opt.titre ? ` data-bulle="${escA(opt.titre)}"` : ''} aria-description="${escA(opt.titre || 'Double-clic pour choisir')}"${opt.ph ? ` data-ph="${escA(opt.ph)}"` : ''}>${vide ? '' : html}</span>`; };
+  return `<span class="rc-v${opt.cls ? ' ' + opt.cls : ''}${vide ? ' rc-vide' : ''}" data-f="${escA(f)}" tabindex="-1" ${opt.titre ? ` data-bulle="${escA(opt.titre)}"` : ''} aria-description="${escA(opt.aria || opt.titre || 'Double-clic pour choisir')}"${opt.ph ? ` data-ph="${escA(opt.ph)}"` : ''}>${vide ? '' : html}</span>`; };
 const valT = (f, t, opt) => val(f, t == null || t === '' ? '' : esc(t), opt);
 /* CE QUI VIENT DU FICHIER SE LIT (v86 — la charte v85 : « une seule source ») : pas l'air d'un champ, pas de saisie ; la case
    garde sa place dans le parcours du clavier (les flèches), et un double-clic, Entrée ou F2 disent dans une bulle qu'elle se
@@ -35909,14 +36016,20 @@ const instantDit = s => s.pointe ? 'en pointe (' + s.nom + ', ' + secondes(s.t) 
 const motInstant = (mot, bulle) => `<span class="rc-int-mot">${mot ? `<i class="rc-o"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}>${mot}</i>` : ''}</span>`;
 /* L'INTENSITÉ, à l'instant de la ligne : ce qu'il porte, sur ce qu'il admet pour cette durée (EN 2853, déclassé), l'anneau de la
    part ; un câble sans type garde son courant (V86, 8 : « le courant doit se lire quand même ») — sans admis, sans anneau. */
-const celluleIntensite = r => { const F = r.F(), x = F.x, I = instantsDuFil(F), s = I.le; if (s.i == null || !isFinite(s.i)) return rien;
+const celluleIntensite = r => { const F = r.F(), x = F.x, I = instantsDuFil(F), s = I.le;
+  /* (v86, comme la fiche) une BRANCHE DE COMMANDE dont rien n'est écrit (la bobine d'un relais, l'entrée d'un calculateur) : son
+     courant est INCONNU — jamais le courant total du disjoncteur ; « inconnu », et la bulle dit ce qu'il faut écrire */
+  if (x.I == null && x.source === 'commande') { const quoi = typeof motDeCommande === 'function' ? motDeCommande(x) : '';
+    return `<span class="rc-int" data-bulle="${escA('Courant de commande inconnu, sous ' + (x.al ? x.al.nom : 'son disjoncteur') + (quoi ? ' : ' + quoi : '') + '. Rien ne le juge, rien ne le grossit tant qu’il n’est pas écrit.')}">${anneau(null)}${chiffre('')}<span class="rc-adm rc-inconnu">inconnu</span>${motInstant('commande')}</span>`; }
+  if (s.i == null || !isFinite(s.i)) return rien;
   const q = s.admis ? s.i / s.admis : null, trop = q != null && q > 1 + 1e-9;
   const quoi = x.al ? (x.source === 'branche' ? 'ce qu’alimente ce câble' : 'le profil de ' + x.al.nom) : 'l’hypothèse de la simulation';
   const autre = I.autre && I.autre.admis ? `\n${majuscule(instantDit(I.autre))} : ${amperes(I.autre.i)} sur ${amperes1(I.autre.admis)} admis` + (I.autre.i > I.autre.admis + 1e-9 ? ' — il ne les porte pas.' : '.') : '';
   const bulle = s.admis ? `${majuscule(instantDit(s))} : ${amperes(s.i)}, selon ${quoi} ; ${s.pointe ? 'sur cette durée, ' : ''}le ${F.l.type || 'câble'} admet ${amperes1(s.admis)} (${pourcentDe(q)})${trop ? ' : il ne les porte pas.' : '.'}${autre}`
     : `${majuscule(instantDit(s))} : ${amperes(s.i)}, selon ${quoi}.\n${F.l.type ? F.l.type + ' n’est pas dans l’EN 2853' : 'Votre fichier ne donne pas son type'} : ce qu’il admet ne se lit pas.`;
   const mot = s.pointe ? motInstant('pointe', 'Les deux colonnes disent la pointe du profil : ' + s.nom + ', ' + amperes(s.i) + ' pendant ' + secondes(s.t) + '.') : x.al ? motInstant('') : motInstant('supposé', 'Aucun disjoncteur en amont : le courant supposé par la simulation (menu ⋮ → Hypothèses)');
-  return `<span class="rc-int" data-bulle="${escA(bulle)}">${anneau(q, trop ? 'ko' : '')}${chiffre(val('intensite', ampere(s.i), { cls: 'rc-n rc-calc', titre: '' }), 'A', trop ? 'ko' : '')}<span class="rc-adm">${s.admis ? 'sur ' + ampere(s.admis) + INSECABLE + 'A' : 'admis inconnu'}</span>${mot}</span>`; };
+  const mene = x.al ? 'Double-clic : le profil de ' + x.al.nom : 'Double-clic : les hypothèses';
+  return `<span class="rc-int" data-bulle="${escA(bulle + '\n' + mene + '.')}">${anneau(q, trop ? 'ko' : '')}${chiffre(val('intensite', ampere(s.i), { cls: 'rc-n rc-calc', aria: mene }), 'A', trop ? 'ko' : '')}<span class="rc-adm">${s.admis ? 'sur ' + ampere(s.admis) + INSECABLE + 'A' : 'admis inconnu'}</span>${mot}</span>`; };
 /* LA CHUTE, au même instant : la tension perdue depuis le disjoncteur jusqu'au bout du chemin le plus long qui passe par lui,
    sur ce qui est admis (sans disjoncteur en amont : sur lui seul) ; en défaut, la teinte du problème — rouge sur des longueurs
    de votre fichier, ambre (à voir) sur des longueurs supposées. */
@@ -35943,8 +36056,8 @@ const COLONNES_LIAISONS = [
   // (v86, B7) l'intensité et la chute au même instant (`instantsDuFil`) — à l'écran, au tri et dans le CSV
   { k: 'intensite', t: 'Intensité', option: true, large: 1, g: 'Le câble', cls: 'rc-c-int', html: celluleIntensite,
     tri: r => { const s = instantsDuFil(r.F()).le; return s.admis ? s.i / s.admis : s.i != null ? s.i / 1000 : -1; },
-    texte: r => { const s = instantsDuFil(r.F()).le; return s.i == null ? '' : ampere(s.i) + ' A' + (s.admis ? ' sur ' + ampere(s.admis) + ' A' : '') + (s.pointe ? ' (pointe)' : r.F().x.al ? '' : ' (supposé)'); },
-    vide: r => { const s = instantsDuFil(r.F()).le; return s.i == null || !isFinite(s.i); } },
+    texte: r => { const s = instantsDuFil(r.F()).le; return s.i == null ? (r.F().x.source === 'commande' ? 'inconnu (commande)' : '') : ampere(s.i) + ' A' + (s.admis ? ' sur ' + ampere(s.admis) + ' A' : '') + (s.pointe ? ' (pointe)' : r.F().x.al ? '' : ' (supposé)'); },
+    vide: r => { const s = instantsDuFil(r.F()).le; return (s.i == null || !isFinite(s.i)) && r.F().x.source !== 'commande'; } },
   { k: 'chute', t: 'Chute', option: true, large: 1, g: 'Le câble', cls: 'rc-c-mesure', html: celluleChute,
     // la règle de la colonne, dite une fois dans son en-tête : la chute de chaque ligne est prise à l'instant de son intensité
     note: () => colonnesVues(LIAISONS).some(c => c.k === 'intensite') ? ['au même instant', 'La chute de chaque ligne est prise au même instant que son intensité : la pointe du profil quand c’est elle qui pèse le plus (« pointe »), sinon le permanent. La bulle de chaque valeur donne l’autre instant.'] : null,
@@ -36404,7 +36517,7 @@ const COLONNES_RACCORDS = [
   // (v74) ce qu'on a choisi à l'encre, ce qui reste par défaut à l'encre seconde : l'œil va aux choix, pas aux quatre mots
   // que chaque ligne répète
   { k: 'choix', t: 'Choix', html: x => { const c = (habDe(x) || { choix: {} }).choix, o = app.contrat.raccords.get(x.k) || {};
-      return `<span class="rc-choix">${['orientation', 'blindage', 'etanche', 'gaine'].map(k => valT(k, motChoix(k, c[k]), { cls: k in o ? '' : 'rc-defaut', titre: (k in o ? 'Choisi ici' : 'Par défaut') + ' — double-clic pour changer : la fiche et la nomenclature suivent' })).join('<i class="rc-pt">·</i>')}</span>`; },
+      return `<span class="rc-choix">${['orientation', 'blindage', 'etanche', 'gaine'].map(k => valT(k, motChoix(k, c[k]), { cls: k in o ? '' : 'rc-defaut', titre: (k in o ? 'Manuel' : 'Automatique') + ' — double-clic : Automatique, ou un autre choix ; la fiche et la LPA suivent' })).join('<i class="rc-pt">·</i>')}</span>`; },
     tri: x => { const c = (habDe(x) || { choix: {} }).choix; return [c.orientation, c.blindage, c.etanche, c.gaine].join(' '); }, texte: x => { const c = (habDe(x) || { choix: {} }).choix; return ['orientation', 'blindage', 'etanche', 'gaine'].map(k => motChoix(k, c[k])).join(' · '); } },
   { k: 'etat', t: 'État', cls: 'rc-c-etat', html: x => { const h = habDe(x); return h ? etatHtml(h.manquants.length ? 'att' : 'ok', h.manquants.length ? 'à compléter' : 'ok', h.manquants.map(majuscule).join('\n')) : rien; },
     tri: x => { const h = habDe(x); return h && h.manquants.length ? 0 : 1; }, texte: x => { const h = habDe(x); return h && h.manquants.length ? 'à compléter' : 'ok'; }, vide: x => { const h = habDe(x); return !(h && h.manquants.length); } },
@@ -36419,8 +36532,12 @@ const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, 
   choisie: x => !!app.cible && app.cible.type === 'bloc' && app.cible.nom === x.nom, etat: x => { const h = habDe(x); return h && h.manquants.length ? 'att' : ''; },
   puces: () => [['completer', 'À compléter', x => { const h = habDe(x); return !!(h && h.manquants.length); }, '', '', 'Ce que la norme ne dit pas encore (une référence, une cote)']],
   choisir: x => choisirRepere(x.nom), survol: x => survolRepere(x.nom),
-  editeur: (x, f) => CHOIX[f] ? { valeur: String((habDe(x) || { choix: {} }).choix[f] ?? ''), options: CHOIX[f] } : null,
-  ecrire: (x, f, v) => { if (!CHOIX[f]) return false; const o = { ...(app.contrat.raccords.get(x.k) || {}) }, w = v === 'true' ? true : v === 'false' ? false : v; if (String((habDe(x) || { choix: {} }).choix[f]) === String(w)) return false;
+  // les choix d'un raccord sont des choix de VOLTA : Automatique (le calcul), ou Manuel (un choix de la liste) — v86, comme la fiche
+  editeur: (x, f) => { if (!CHOIX[f]) return null; const o = app.contrat.raccords.get(x.k) || {}, c = (habDe(x) || { choix: {} }).choix;
+    return { valeur: f in o ? String(o[f]) : '*auto', options: [['*auto', 'Automatique' + (f in o ? '' : ' · ' + motChoix(f, c[f]))], ...CHOIX[f]] }; },
+  ecrire: (x, f, v) => { if (!CHOIX[f]) return false; const o = { ...(app.contrat.raccords.get(x.k) || {}) }, c = (habDe(x) || { choix: {} }).choix;
+    if (v === '*auto') { if (!(f in o)) return false; histPush('raccord de ' + x.k + ' : automatique'); delete o[f]; app.contrat.raccords.set(x.k, o); apresEdition(); return true; }
+    const w = v === 'true' ? true : v === 'false' ? false : v; if (f in o ? String(o[f]) === String(w) : String(c[f]) === String(w)) return false;
     histPush('raccord de ' + x.k); o[f] = w; app.contrat.raccords.set(x.k, o); apresEdition(); return true; } };
 
 /* ---- PROBLÈMES (un verdict du contrôle par ligne) ----------------------------- */
@@ -39334,6 +39451,93 @@ function rapportCoherenceSEE(I, copie) { const K = I && I.coherence; if (!K) ret
     A.accessoires ? `Accessoires : ${m(A.accessoires.lignes)}${A.accessoires.types.length ? ' (' + A.accessoires.types.map(([v, n]) => v + ' ' + n).join(', ') + ')' : ''} ; tyraps : ${A.accessoires.tyraps}${A.accessoires.tyrapsVolta ? ` ; des ${A.accessoires.tyrapsVolta} tyraps de VOLTA, ${A.accessoires.tyrapsDansSEE} y sont` : ''}` : '');
   return out.filter(x => x !== '').join('\n').replace(/\n(== )/g, '\n\n$1') + '\n'; }
 
+/* ───────── 08-survol.js ───────── */
+/* ===========================================================================
+   08 — LE SURVOL D'UNE BORNE (v86, l'audit M4)
+   Sur le plan, chaque borne porte son nom, lisible sans zoomer. Au survol, une bulle sobre en dit le reste : le nom, le
+   même que sur la pièce (« 667VT2 · 51B », « 411VC3A · A ») ; la lettre de la face quand le fichier numérote ses bornes
+   (« 1 · contact A ») ; une minuscule dite telle (« 51e, minuscule ») ; chaque câble par son type et l'autre bout ; le
+   contact à sertir. Elle n'apparaît qu'au repos sur une borne, ne grossit rien, ne décale rien (charte v86 : sur le plan,
+   rien ne bouge) et ne va jamais à l'export : c'est une bulle de la page, posée par-dessus le plan, avec la matière des
+   bulles de VOLTA (`.bulle-texte`), pas un trait du dessin. La borne se trouve par la géométrie du dessin : là où elle se
+   prend à la souris (06, `bornesPrenables`), la pastille d'une barrette à poser ou d'un morceau de barrette, la lettre d'un
+   contact de prise dans sa partie mobile.
+   =========================================================================== */
+
+const SURVOL_BORNE = { el: null, t: 0, cle: '', muet: '', montre: false, fin: 0 };
+
+/* LA BORNE SOUS UN POINT du dessin (x, y, en unités du dessin) : { nom, borne, zone } — ou null. */
+function borneSous(x, y) { const D = app.dessin; if (!D) return null;
+  // une barrette à poser (VT1…) : ses pastilles, sur sa ligne
+  for (const b of D.barrettes || []) { if (!b.nomVT) continue;
+    for (const p of bornesDePiquage(b)) { const r = R_PASTILLE(String(p.n)) + 1.5;
+      if (Math.abs(x - b.x) <= r && Math.abs(y - p.y) <= PAST_H / 2 + 1.5) return { nom: b.nomVT, borne: String(p.n), zone: { x0: b.x - r, x1: b.x + r, y0: p.y - PAST_H / 2, y1: p.y + PAST_H / 2 } }; } }
+  for (const c of D.comps) { if ((c.kind === 'tag' && estMasse(c.name)) || estDrapeau(c) || estMasse(c.name)) continue;
+    if (x < c.x - 6 || x > c.x + c.w + 6 || y < c.y - 10 || y > c.y + c.h + 10) continue;
+    const zs = bornesPrenables(c).slice();
+    // une prise : la lettre du contact, écrite dans la partie mobile, entre ses deux amenées
+    if (c.kind === 'strip' && estCoupure(c.name)) { const mid = c.x + c.lw + (c.w - c.lw - c.rw) / 2, xm0 = mid - (PRISE.WE + PRISE.WM) / 2, xe1 = mid + (PRISE.WE + PRISE.WM) / 2;
+      (c.rangs.S || []).forEach(p => zs.push({ y: p.y, etiq: p.etiq, x0: xm0, x1: xe1, y0: p.y - PRH / 2 + 1, y1: p.y + PRH / 2 - 1 })); }
+    // un morceau de barrette collé à sa borne : sa pastille
+    if (c.kind === 'tag' && estBarrette(c.name)) { const M = symboleDePastille(c); if (M) { const r = R_PASTILLE(String(M.etiq || '')) + 1.5;
+      zs.push({ y: M.y, etiq: M.etiq, x0: M.xs - r, x1: M.xs + r, y0: M.y - PAST_H / 2 - 1, y1: M.y + PAST_H / 2 + 1 }); } }
+    const z = zs.find(q => q.etiq != null && String(q.etiq) !== '' && x >= q.x0 && x <= q.x1 && y >= q.y0 && y <= q.y1);
+    if (z) return { nom: c.name, borne: String(z.etiq), zone: z }; }
+  return null; }
+
+/* CE QUE LA BULLE DIT d'une borne : son nom (et la lettre de sa face, si le fichier la numérote), chaque câble par son type
+   et l'autre bout (une prise : par quelle partie), le contact à sertir. Les liaisons du folio : une barrette à poser y vit. */
+function texteDuSurvol(t) { const L = liaisonsDuPlan(), b = t.borne;
+  const xs = L.filter(l => (l.de === t.nom && String(l.borneDe) === b) || (l.vers === t.nom && String(l.borneVers) === b)); if (!xs.length) return '';
+  const prise = estCoupure(t.nom), aPoser = VT_A_POSER.test(t.nom), sertir = new Set(); let face = '';
+  let Q = null; if (aPoser) { try { Q = planDeBarrette(t.nom).plan; } catch (_) { Q = null; } }
+  const lignes = xs.slice().sort((u, v) => (u.de === u.vers) - (v.de === v.vers)).map(l => { const ici = l.de === t.nom && String(l.borneDe) === b, cote = ici ? 'de' : 'vers';
+    const autre = ici ? l.vers : l.de, bAutre = ici ? l.borneVers : l.borneDe;
+    // le contact à sertir à ce bout, et la lettre de la face quand elle n'est pas le nom de la borne
+    let ct = null; try { ct = aPoser ? (Q && Q.fils.find(y => y.f.l === l && String(y.borne) === b)) || null : (sertirDuFil(l) || {})[cote] || null; } catch (_) { ct = null; }
+    if (ct && ct.sertir && ct.sertir.reference) sertir.add(ct.sertir.reference);
+    // (« A12 » est le contact 12 de son connecteur : rien à ajouter ; « 51B » le dit déjà ; « 1 » d'une prise lettrée : contact A)
+    if (ct && ct.contact && ct.contact.lettre && !face && String(ct.contact.lettre).toUpperCase() !== String(numeroDeBorne(b)).toUpperCase() && !/^\d+[A-Za-z]{1,2}$/.test(b)) face = String(ct.contact.lettre);
+    if (l.de === l.vers) return 'pontage vers ' + (ici ? l.borneVers : l.borneDe);
+    const quoi = estRaccordAPoser(l) ? 'câble à créer' : (l.type || 'câble');
+    // une prise : le câble qui arrive est dans la partie mobile, celui qui repart dans la partie fixe (06, le dessin)
+    return (prise ? (ici ? 'partie fixe · ' : 'partie mobile · ') : '') + quoi + ' vers ' + autre + (bAutre ? ':' + bAutre : ''); });
+  const min = /[a-z]/.test(b) ? ', minuscule' : '';
+  return [t.nom + ' · ' + b + (face ? ' · contact ' + face : '') + min, ...lignes.slice(0, 4), ...(lignes.length > 4 ? ['et ' + (lignes.length - 4) + ' de plus'] : []),
+    ...(sertir.size ? ['contact à sertir : ' + [...sertir].join(', ')] : [])].join('\n'); }
+
+// la boîte d'écran d'une zone du dessin (la matrice d'écran de la scène)
+function zoneEcran(z, M) { const a = new DOMPoint(z.x0, z.y0).matrixTransform(M), c = new DOMPoint(z.x1, z.y1).matrixTransform(M);
+  return { left: Math.min(a.x, c.x), right: Math.max(a.x, c.x), top: Math.min(a.y, c.y), bottom: Math.max(a.y, c.y) }; }
+function cacherSurvol() { clearTimeout(SURVOL_BORNE.t); if (SURVOL_BORNE.montre) SURVOL_BORNE.fin = performance.now(); SURVOL_BORNE.montre = false; if (SURVOL_BORNE.el) SURVOL_BORNE.el.hidden = true; }
+/* La bulle sous la borne (au-dessus quand la place manque), dans le plan, à 12 px au moins des bords de l'écran. */
+function montrerSurvol(t) { const sc = $('scene'), M = sc && sc.getScreenCTM(); if (!M) return; const txt = texteDuSurvol(t); if (!txt) return;
+  if (!SURVOL_BORNE.el) { const el = document.createElement('div'); el.className = 'fi-bulle bulle-texte'; el.id = 'plan-bulle'; el.setAttribute('role', 'tooltip'); el.hidden = true; document.body.appendChild(el); SURVOL_BORNE.el = el; }
+  const el = SURVOL_BORNE.el; el.textContent = txt; el.hidden = false; SURVOL_BORNE.montre = true;
+  const r = zoneEcran(t.zone, M), P = $('planche').getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
+  const L = Math.max(12, P.left + 8), R = Math.min(window.innerWidth - 12, P.right - 8), T = Math.max(12, P.top + 8), B = Math.min(window.innerHeight - 12, P.bottom - 8);
+  const x = Math.max(L, Math.min(r.left, R - w)), y = r.bottom + 8 + h <= B ? r.bottom + 8 : r.top - 8 - h >= T ? r.top - 8 - h : Math.max(T, B - h);
+  el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(y) + 'px'; }
+
+/* LES GESTES : au repos sur une borne, la bulle (450 ms la première, tout de suite les suivantes, comme les bulles de la
+   fiche) ; elle part dès que la main quitte la borne, appuie, tourne la molette ou tape une touche — et la borne appuyée
+   reste muette tant que la main ne l'a pas quittée (la bulle ne couvre jamais ce que le clic vient d'ouvrir). Rien au doigt,
+   rien pendant un glissé. */
+function lierSurvol() { const stage = $('planche'); if (!stage || stage.dataset.survol) return; stage.dataset.survol = '1';
+  stage.addEventListener('pointermove', e => { if (e.pointerType === 'touch' || e.buttons) { cacherSurvol(); SURVOL_BORNE.cle = ''; return; }
+    const sc = $('scene'), M = sc && app.dessin ? sc.getScreenCTM() : null; if (!M) return;
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(M.inverse()), t = borneSous(p.x, p.y), cle = t ? t.nom + '\u0001' + t.borne : '';
+    if (SURVOL_BORNE.muet && cle !== SURVOL_BORNE.muet) SURVOL_BORNE.muet = '';
+    if (cle === SURVOL_BORNE.cle) return;
+    cacherSurvol(); SURVOL_BORNE.cle = cle; if (!t || cle === SURVOL_BORNE.muet) return;
+    const chaude = performance.now() - SURVOL_BORNE.fin < 1200;
+    SURVOL_BORNE.t = setTimeout(() => { if (SURVOL_BORNE.cle === cle) montrerSurvol(t); }, chaude ? 0 : 450); }, { passive: true });
+  stage.addEventListener('pointerdown', () => { SURVOL_BORNE.muet = SURVOL_BORNE.cle; cacherSurvol(); }, { passive: true });
+  stage.addEventListener('pointerleave', () => { cacherSurvol(); SURVOL_BORNE.cle = ''; SURVOL_BORNE.muet = ''; }, { passive: true });
+  stage.addEventListener('wheel', () => { cacherSurvol(); SURVOL_BORNE.cle = ''; }, { passive: true });
+  document.addEventListener('keydown', () => { if (SURVOL_BORNE.montre) cacherSurvol(); }, true); }
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lierSurvol); else lierSurvol();
+
 /* ───────── 08-table.js ───────── */
 /* ===========================================================================
    08 — LA TABLE VIVANTE (v73 ; v84 : le graphite chaud et le cuivre)
@@ -39876,6 +40080,11 @@ function faceVue(contacts, etatDe, o) { o = o || {}; const n = (contacts || []).
   // (v84) `echelle` : la face agrandie d'un même facteur, quel que soit le module — deux modules montrent des contacts de
   // même taille (un module de dix contacts n'est plus deux fois plus gros qu'un de dix-huit)
   return `<svg class="vu-face${o.mini ? ' mini' : ''}${F.zones ? ' a-zones' : ''}" viewBox="0 0 ${F.W.toFixed(0)} ${F.H.toFixed(0)}" width="${o.w || Math.round(F.W * (o.echelle || 1))}" role="img" aria-label="${escA(o.titre || 'La face')}">${F.svg}</svg>`; }
+/* (v86, l'audit G10) LE TRAIT SOUS LES MINUSCULES d'une écriture en chasse fixe : « 51e » se lit d'un coup d'œil autre que
+   « 51E ». Dans le même texte, une seconde ligne posée au même x : un « _ » sous chaque minuscule, une espace insécable sous
+   le reste — le trait fin de la police, à la couleur de la lettre quel que soit son état ou le thème (la marque du plan, 06
+   `soulignement`). Rien pour une écriture sans minuscule. */
+const sousMinuscules = (t, x) => { const s = String(t == null ? '' : t); return /[a-z]/.test(s) ? `<tspan x="${x}">${[...s].map(ch => /[a-z]/.test(ch) ? '_' : ' ').join('')}</tspan>` : ''; };
 /* (v85) LE DESSIN d'une face, sans son cadre <svg> : le corps, les plages des groupes, les contacts — dans un repère de
    (0, 0) à (W, H). La face seule (`faceVue`) et la barrette entière (`barretteVue`) le posent. */
 function faceDessin(contacts, etatDe, o) {
@@ -39891,7 +40100,11 @@ function faceDessin(contacts, etatDe, o) {
   const ct = c => { const [x, y] = pos(c), st = etatDe(c) || '', col = o.couleur ? o.couleur(c) : '', L = String(c.lettre || '');
     const style = col ? (st === 'pris' ? ` style="fill:${col};stroke:${col}"` : ` style="stroke:${col}"`) : '';
     const va = o.va ? o.va(c) : null;
-    return `<g class="vu-ct-g${va ? ' va' : ''}" data-ct="${escA(L)}"${va ? ` data-va-onglet="${escA(va.onglet)}" data-va-vers="${escA(va.vers)}" role="button" tabindex="0" aria-label="${escA('Le contact ' + L)}"` : ''}><circle class="vu-ct ${st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"${style}/>${o.lettres ? `<text class="${st}${L.length > 2 ? ' long' : ''}" x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}">${esc(L)}</text>` : ''}</g>`; };
+    /* (v86, l'audit G10) une minuscule (« e » d'une grande face, qui a aussi « E ») est soulignée comme sur le plan : un trait
+       fin sous la lettre, celui de la police (« _ » posé sous elle, dans le même texte : la couleur de la lettre, quel que soit
+       son état ou le thème) */
+    const min = /^[a-z]+$/.test(L);
+    return `<g class="vu-ct-g${va ? ' va' : ''}" data-ct="${escA(L)}"${va ? ` data-va-onglet="${escA(va.onglet)}" data-va-vers="${escA(va.vers)}" role="button" tabindex="0" aria-label="${escA('Le contact ' + L + (min ? ' (minuscule)' : ''))}"` : ''}><circle class="vu-ct ${st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}"${style}/>${o.lettres ? `<text class="${st}${L.length > 2 ? ' long' : ''}" x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}">${esc(L)}${sousMinuscules(L, x.toFixed(1))}</text>` : ''}</g>`; };
   // (v83) LES GROUPES RELIÉS : chaque groupe, sa plage puis ses contacts par-dessus (un survol de l'un éveille la plage
   // entière) ; teintée à la couleur du groupe s'il porte des câbles — la même que ses câbles dans la fiche —, neutre sinon
   const cle = c => (+c.r || 0) + ':' + (+c.c || 0), sienDe = new Map(); grp.forEach((g, k) => g.contacts.forEach(c => sienDe.set(cle(c), k)));
@@ -40027,7 +40240,7 @@ function traverseeDessin(nom, lettres, cote, o) { if (!lettres.length) return ''
     + `<rect class="bro-embase" x="${xE}" y="${yB0}" width="${wE}" height="${yB1 - yB0}"/><rect class="bro-fiche" x="${xF}" y="${yF0}" width="${wB}" height="${yF1 - yF0}"/>`;
   lettres.forEach((l, i) => { const yy = HAUT + i * PAS + PAS / 2, g = cote(l, true), d = cote(l, false);
     out += `<g class="bro-l fi-ia${(g && g.ko) || (d && d.ko) ? ' ko' : ''}"${(g && g.k) || (d && d.k) ? ` data-i="${escA((g && g.k) || d.k)}"` : ''}><rect class="bro-zone" x="0" y="${yy - PAS / 2}" width="${W}" height="${PAS}" rx="6"/>`
-      + `<text class="bro-borne" x="${xF + wB / 2}" y="${yy + 4}">${esc(l)}</text>`;
+      + `<text class="bro-borne" x="${xF + wB / 2}" y="${yy + 4}">${esc(l)}${sousMinuscules(l, xF + wB / 2)}</text>`;
     if (g) { const [rep, bo] = bout(g.de), pw = bo ? 12 + bo.length * 6.6 : 0, xm = (x0 + xF) / 2;
       out += `<path class="bro-fil" style="stroke:${g.couleur || 'currentColor'}" d="M${x0} ${yy}H${xF}"/><rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(g.type || '—')}</text><circle class="bro-bout" cx="${x0}" cy="${yy}" r="2.6"/>`
         + (bo ? `<rect class="bro-pin-f" x="${x0 - 10 - pw}" y="${yy - 9}" width="${pw}" height="18" rx="5"/><text class="bro-pin" x="${x0 - 10 - pw / 2}" y="${yy + 4}">${esc(bo)}</text>` : '')
@@ -40073,12 +40286,12 @@ function brochageVue(nom, sous, cons, o) { const xs = (cons || []).filter(c => c
       + (c.ref && !petit ? `<text class="bro-ref" x="${xC + wC + 8}" y="${y0 - 7}">${esc(c.ref)}</text>` : '');
     c.lignes.forEach((l, i) => { const yy = y0 + i * PAS + PAS / 2, xm = (x0 + x1) / 2;
       out += `<g class="bro-l fi-ia${l.ko ? ' ko' : ''}"${l.k ? ` data-i="${escA(l.k)}"` : ''}><rect class="bro-zone" x="${xC}" y="${yy - PAS / 2}" width="${W - xC}" height="${PAS}" rx="6"/>`
-        + `<text class="bro-borne" x="${xC + wC / 2 - 2}" y="${yy + 4}">${esc(l.borne)}</text>`
+        + `<text class="bro-borne" x="${xC + wC / 2 - 2}" y="${yy + 4}">${esc(l.borne)}${sousMinuscules(l.borne, xC + wC / 2 - 2)}</text>`
         + `<path class="bro-fil" style="stroke:${l.couleur || 'currentColor'}" d="M${x0} ${yy}H${x1}"/>`
         + `<rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(l.type || '—')}</text>`
         + (l.masse ? `<path class="bro-masse" d="M${x1} ${yy - 7}v14M${x1 + 4} ${yy - 4.5}v9M${x1 + 8} ${yy - 2}v4"/><text class="bro-vers" x="${xd}" y="${yy + 4.5}">${esc(l.vers)}</text><text class="bro-mot" x="${xd + 8 + l.vers.length * 7.8}" y="${yy + 4}">masse</text>`
           : `<circle class="bro-bout" cx="${x1}" cy="${yy}" r="2.6"/><text class="bro-vers" x="${xd}" y="${yy + 4.5}">${esc(l.vers)}</text>`
-            + (l.borneVers ? `<rect class="bro-pin-f" x="${xd + 6 + l.vers.length * 7.8}" y="${yy - 9}" width="${12 + String(l.borneVers).length * 6.6}" height="18" rx="5"/><text class="bro-pin" x="${xd + 12 + l.vers.length * 7.8 + String(l.borneVers).length * 3.3}" y="${yy + 4}">${esc(l.borneVers)}</text>` : ''))
+            + (l.borneVers ? `<rect class="bro-pin-f" x="${xd + 6 + l.vers.length * 7.8}" y="${yy - 9}" width="${12 + String(l.borneVers).length * 6.6}" height="18" rx="5"/><text class="bro-pin" x="${xd + 12 + l.vers.length * 7.8 + String(l.borneVers).length * 3.3}" y="${yy + 4}">${esc(l.borneVers)}${sousMinuscules(l.borneVers, xd + 12 + l.vers.length * 7.8 + String(l.borneVers).length * 3.3)}</text>` : ''))
         + (l.ko ? (() => { const xk = xd + l.vers.length * 7.8 + (l.borneVers ? 24 + String(l.borneVers).length * 6.6 : (l.masse ? 60 : 10));
           // le défaut se dit au bout de la ligne, après la borne d'arrivée, s'il y tient ; sinon sous le câble
           return xk + String(l.ko).length * 6.2 < W - 4 ? `<text class="bro-ko bout" x="${xk}" y="${yy + 4}">${esc(l.ko)}</text>` : `<text class="bro-ko" x="${xm}" y="${yy + 12}">${esc(l.ko)}</text>`; })() : '') + '</g>'; }); });

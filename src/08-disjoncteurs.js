@@ -263,7 +263,7 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
      milliampères). Puis les câbles DIRECTS ; ceux au-delà d'un passage (une prise, une barrette, un contact traversé), le
      contrôle les dit avec leur « (par … ) » (08-controle, `controleProtection`) : une seule phrase par fait. */
   d.fils.forEach(f => { const bob = f.inconnu && f.branche ? (f.branche.sans || []).filter(x => x.nature === 'bobine').map(x => x.repere) : [];
-    if (bob.length) out.push({ niveau: 'att', l: f.l, texte: `${cableEtType(f)}${f.direct ? '' : ' (par ' + f.via + ')'} : courant de commande inconnu — écrivez la consommation de la bobine de ${listeEt(bob)}` }); });
+    if (bob.length) out.push({ niveau: 'att', l: f.l, texte: `${cableEtType(f)} : courant de commande inconnu : écrivez la consommation de la bobine de ${listeEt(bob)}` }); });
   d.fils.forEach(f => { const nomF = cableEtType(f); if (f.direct === false) return;
     if (f.verdict === 'fil') { const [i, a] = deux(f.pire.i, f.pire.admise); out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${i}${f.pire.t === Infinity ? '' : ' pendant ' + secondes(f.pire.t)} > ${a} admis ${pourPalier(f.pire.palier)}${enClair(f, f.pire.t)}` }); }
     else if (f.verdict === 'calibre') { const [a, c] = deux(f.continu, d.calibre); out.push({ niveau: 'att', texte: `${nomF} : ${a} admis en continu${enClair(f, Infinity)} < calibre ${c} — pas protégé en surcharge` }); }

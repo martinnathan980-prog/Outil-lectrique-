@@ -2306,16 +2306,23 @@ function* concoursEnPas(M, opt, budget, graphe) {
 }
 /* Les mises en colonnes du RETOUR : pour chaque bloc d'un côté du hub dont les fils vers d'autres blocs que le hub partent
    plus nombreux de l'autre côté, le bloc dans chaque colonne voisine d'un de ces partenaires, de l'autre côté (jamais
-   dans celle du hub) — quatre au plus. */
+   dans celle du hub) ; et chaque MORCEAU EN U (ci-dessous) — quatre au plus. */
 function retoursAuxPartenaires(M, m) {
-  const H = hubDe(M); if (H == null) return [];
-  const col = m.E.col, ch = col.get(H), out = [], vues = new Set();
-  M.ids.forEach(id => { if (id === H || M.estTag(id) || !col.has(id)) return; const c0 = col.get(id), s0 = Math.sign(c0 - ch); if (!s0) return;
+  const H = hubDe(M), col = m.E.col, ch = H == null ? null : col.get(H), out = [], vues = new Set();
+  const garder = (id, c) => { if (H != null && c === ch) return; const k = normaliser(new Map(col).set(id, c)), sig = signatureDe(k); if (!vues.has(sig)) { vues.add(sig); out.push(k); } };
+  if (H != null) M.ids.forEach(id => { if (id === H || M.estTag(id) || !col.has(id)) return; const c0 = col.get(id), s0 = Math.sign(c0 - ch); if (!s0) return;
     let ici = 0, la = 0; const cibles = new Set();
     M.blocs.get(id).bornes.forEach(p => M.partenairesBlocs(K(id, p.cle)).forEach(q => { if (q.id === H || q.id === id || !col.has(q.id)) return; const s = Math.sign(col.get(q.id) - ch);
       if (s === s0) ici++; else if (s === -s0) { la++; [col.get(q.id) - 1, col.get(q.id) + 1].forEach(c => { if (Math.sign(c - ch) === -s0) cibles.add(c); }); } }));
     if (la <= ici) return;
-    [...cibles].sort((a, b) => a - b).forEach(c => { const k = normaliser(new Map(col).set(id, c)), sig = signatureDe(k); if (!vues.has(sig)) { vues.add(sig); out.push(k); } }); });
+    [...cibles].sort((a, b) => a - b).forEach(c => garder(id, c)); });
+  /* (v86) LE MORCEAU EN U : un morceau de barrette posé dans la colonne d'un bloc qu'il sert ne le rejoint que par un U, par
+     la goulotte — au folio 2, le câble de 667VT2 51D sortait à gauche, passait par-dessus 115CD et revenait sur sa borne 3
+     (l'agent « zoom » : un dessinateur ne le ferait pas). Il essaie la colonne de chacun de ses autres partenaires : il y
+     sert ce bloc-là d'un fil droit, et seul le fil vers l'autre fait le tour, s'il le faut, au plus court. */
+  M.ids.forEach(id => { const b = M.blocs.get(id); if (b.genre !== 'barrette' || M.estTag(id) || !col.has(id)) return; const c0 = col.get(id), cibles = new Set(); let enU = false;
+    b.bornes.forEach(p => M.partenairesBlocs(K(id, p.cle)).forEach(q => { if (q.id === id || !col.has(q.id)) return; const c = col.get(q.id); if (c === c0) enU = true; else cibles.add(c); }));
+    if (enU) [...cibles].sort((a, b) => a - b).forEach(c => garder(id, c)); });
   return out.slice(0, 4);
 }
 /* FINIR une disposition : resserrée, polie par la passe finale (au niveau de la finition), étirée au format, ses corps

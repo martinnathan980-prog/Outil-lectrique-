@@ -7,6 +7,9 @@
    · « À REPRENDRE », dans la liste des plans : la pastille des problèmes, et dessous, calmes, les points à voir.
    =========================================================================== */
 
+/* l'anneau de la fiche est cuivre, toujours : quelques contrôles le prenaient à l'encre (`--accent` : noir le jour) — les
+   onglets gardent leur cuivre vif, posé pour la bande sombre */
+#inspecteur :focus-visible:not(.nv-onglet){outline-color:var(--nv-cuivre)}
 /* un tracé de la fiche qui prend Tab : l'anneau autour de lui (la branche d'un disjoncteur et le chemin d'un câble ont déjà le
    leur, tracé sur leur fond : ils le gardent) */
 #inspecteur svg [tabindex]:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:6px}
@@ -27,4 +30,4 @@
 
 /* (F11) la bibliothèque : des problèmes et des points à voir — la pastille rouge, puis « et 5 à voir », discret */
 .bi-pb-c{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;min-width:0}
-.bi-pb-c>small{padding-left:9px;font-size:var(--f-11);line-height:1.2;color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.bi-pb-c>small{padding-left:20px;font-size:var(--f-11);line-height:1.2;color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}

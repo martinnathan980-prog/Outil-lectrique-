@@ -133,7 +133,9 @@ function provisoire(a, L) { if (!a) return null; const d = placement.derniers.ge
   if (d && d.bouts.length === L.length && boutsDe(L).every((b, i) => b === d.bouts[i])) {
     const maj = o => o && L[o.i] ? { ...o, cable: L[o.i].cable, type: L[o.i].type, route: L[o.i].route, pnDe: L[o.i].pnDe, pnVers: L[o.i].pnVers } : o;
     return { ...d.P, links: d.P.links.map(maj), routage: { ...d.P.routage, fils: d.P.routage.fils.map(maj) }, provisoire: 'avant' }; }
-  return a.esquisse || null; }
+  // l'esquisse, si elle sert (le définitif encore loin, `esquisseUtile`) ; montrée une fois, elle reste jusqu'au définitif
+  if (a.esquisse && esquisseUtile(a)) { a.montree = true; return a.esquisse; }
+  return null; }
 
 /* ---- l'AFFINAGE : la recherche profonde, en arrière-plan ---------------- */
 /* Le dessin qu'on voit d'abord est celui du concours. Puis la recherche
@@ -164,9 +166,12 @@ function affinerTout() { if (!affinage.actif) return;
 // le placement au loin a-t-il encore du travail ? (un folio attendu, en cours, ou un folio du contrat pas encore placé)
 const placementEnCours = () => placement.ailleurs && placement.worker !== false && (placement.attentes.size > 0 || !!placement.encours || !!prochainAuLoin());
 function pomper() { while (affinage.file.length && affinage.finis.has(affinage.file[0].cle)) affinage.file.shift(); lancerLAvance();
+  if (!affinage.encours && !affinage.file.length) affinage.lot = null;
   if (affinage.encours || !affinage.file.length || placementEnCours()) { montrerBande(); return; }
   const w = travailleur(); if (!w) return;
   affinage.encours = affinage.file.shift(); affinage.etat = { k: 0, n: TOURS_PROFONDS };
+  // (v86) le LOT : les folios que VOLTA peaufine d'affilée, pour que la bande dise où il en est sur tous (`montrerBande`)
+  const lot = affinage.lot || (affinage.lot = { total: 0, faits: 0 }); lot.total = Math.max(lot.total, lot.faits + 1 + affinage.file.length);
   w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerBande(); }
 /* (v84, le parcours) le placement d'avance ne partait qu'au premier gros folio OUVERT : sur l'exemple (son folio 1 est
    petit), les autres attendaient qu'on les ouvre — « Dessin du folio 3 · environ 5 s » au premier problème — et l'affinage,
@@ -194,7 +199,7 @@ function recevoirAffinage(e) { const d = e.data, j = affinage.encours; if (!j ||
   if (d.P && !d.fini) { affinage.profonds.set(d.cle, d.P); if (cleCourante() === d.cle) { affinage.vu = Date.now(); remplacerDessin(); } }
   if (d.erreur) affinage.erreur = d.erreur;
   if (d.fini || d.erreur) { affinage.finis.add(d.cle); if (d.P) { affinage.profonds.set(d.cle, d.P); garderAffine(d.cle, d.P); }
-    affinage.encours = null; pomper(); }
+    if (affinage.lot) affinage.lot.faits++; affinage.encours = null; pomper(); }
   montrerBande(); }
 // le dessin se remplace, la vue reste où elle est
 function rafraichirDessin() { calculer(); peindre(); synchroniser(); rallumer(); }
@@ -228,7 +233,7 @@ function copieDesCables(sc) { const g = document.createElementNS(NS_SVG, 'g');
   return g; }
 /* LE DESSIN SE RANGE. Pour chaque bloc présent dans les deux dessins (par son repère ; plusieurs du même nom — trois
    masses 906G — chacun avec le plus proche), l'écart entre sa place d'avant et la nouvelle, à l'écran : le bloc neuf part
-   de là et glisse à sa place (420 ms, `--courbe-glisse`), le plus proche de son arrivée d'abord (+6 ms par rang, 120 ms au
+   de là et glisse à sa place (400 ms, `--courbe-glisse`), le plus proche de son arrivée d'abord (+6 ms par rang, 120 ms au
    plus). Les câbles de l'esquisse s'effacent en 120 ms ; ceux du définitif attendent, puis paraissent quand les blocs
    arrivent (260 à 520 ms) : jamais deux jeux de câbles à la fois. Un bloc qui n'existait pas paraît à +200 ms (220 ms). Un transform par
    bloc, rien d'autre ne bouge ; le mouvement réduit coupe net. */
@@ -256,7 +261,7 @@ function rangerLeDessin(avant) { const sc = $('scene'), svg = $('svg'), D = app.
   sc.querySelectorAll(':scope > .loupe').forEach(l => RANGE.anims.push(l.animate([{ opacity: 0 }, { opacity: 1 }], vient)));
   vont.filter(v => !v.neuf).sort((a, b) => a.d - b.d).forEach((v, rang) => { if (v.d < 0.5) return;
     RANGE.anims.push(v.g.animate([{ transform: `translate(${v.c.x + v.dx}px,${v.c.y + v.dy}px)` }, { transform: `translate(${v.c.x}px,${v.c.y}px)` }],
-      { duration: 420, delay: Math.min(120, rang * 6), easing: 'cubic-bezier(.65,0,.35,1)', fill: 'backwards' })); });
+      { duration: 400, delay: Math.min(120, rang * 6), easing: 'cubic-bezier(.65,0,.35,1)', fill: 'backwards' })); });
   vont.filter(v => v.neuf).forEach(v => { const cx = v.c.x + v.c.w * 0.02, cy = v.c.y + v.c.h * 0.02;
     RANGE.anims.push(v.g.animate([{ opacity: 0, transform: `translate(${cx}px,${cy}px) scale(.96)` }, { opacity: 1, transform: `translate(${v.c.x}px,${v.c.y}px)` }],
       { duration: 220, delay: 200, easing: 'cubic-bezier(.32,.72,0,1)', fill: 'backwards' })); }); }
@@ -380,12 +385,12 @@ function recevoirDuLoin(e) { const d = e.data || {}; if (!placement.encours || d
   const a = placement.attentes.get(d.cle);
   if (d.etape != null) { if (a) a.p = Math.max(a.p, +d.etape || 0); return; }
   // l'esquisse : montrée tout de suite si le folio est affiché et n'a rien d'autre à montrer (ni son dessin d'avant)
-  if (d.esquisse) { if (a && !a.esquisse) { a.esquisse = { ...d.esquisse, provisoire: 'esquisse' };
+  if (d.esquisse) { if (a && !a.esquisse) { a.esquisse = { ...d.esquisse, provisoire: 'esquisse' }; a.esquisseRecue = performance.now();
       if (cleCourante() === d.cle && !app.dessin) { rafraichirDessin(); finirAttente(a); } }
     montrerAttente(); return; }
   const duree = performance.now() - placement.encours.t; placement.encours = null;
   if (d.erreur) { placement.erreur = d.erreur; placerIci(d.cle); return; }
-  placement.faits++; if (a && d.P) etalonner(a.L.length, duree); recevoirPlacement(d.cle, d.P, true); }
+  placement.faits++; if (a && d.P) etalonner(a, duree); recevoirPlacement(d.cle, d.P, true); }
 /* Sans Worker (refusé, ou en erreur) : le chemin d'avant, dans la page — juste après que l'attente s'est affichée, pour
    qu'on sache ce qui se passe ; le folio affiché d'abord. */
 function placerIci(cle) { const ici = cleCourante(), cles = (cle ? [cle] : [...placement.attentes.keys()]).sort((a, b) => (b === ici) - (a === ici));
@@ -411,22 +416,44 @@ function reporterCible(cible) { if (cible.type === 'fil') { const l = verite().f
   ouvrirInspecteur(); }
 
 /* ---- l'ATTENTE, honnête ------------------------------------------------- */
-/* Combien de temps ? Le concours croît comme n^2,2 (n : les liaisons du folio, l'audit) ; la constante est celle de CET
-   ordinateur, apprise sur chaque folio placé (une moyenne glissante) et gardée dans ce navigateur. La première fois, celle
-   d'un ordinateur de bureau ordinaire. */
-const ETALON = (() => { const e = { c: 0.5, n: 0 }; try { const x = JSON.parse(localStorage.getItem('volta.placement.etalon') || 'null'); if (x && x.c > 0 && isFinite(x.c)) Object.assign(e, x); } catch (_) { } return e; })();
-const dureeEstimee = n => ETALON.c * Math.pow(Math.max(1, n), 2.2);
-function etalonner(n, ms) { if (!(n > SEUIL_ICI) || !(ms > 0)) return; const c = ms / Math.pow(n, 2.2);
+/* Combien de temps ? (v86, l'audit G3 : « environ 30 s » annoncées, le dessin venu en 5 s.) Le concours se paie en
+   ÉVALUATIONS : son budget (04, `budgetDe` : 2 400 jusqu'à vingt nœuds, 1 200 jusqu'à quarante, 800, puis 600), chacune au
+   prix d'un routage, qui croît comme le nombre de fils — le TRAVAIL d'un folio est son budget fois ses fils. La loi d'avant
+   (n^2,2 liaisons) l'ignorait : un petit folio, au plus gros budget, apprenait à l'étalon une constante qui gonflait les gros
+   (mesuré, quatre cœurs : 1,9 s pour 23 liaisons, 4,1 s pour 69 — la loi en annonçait 21). La constante est celle de CET
+   ordinateur, ses cœurs compris (le concours se partage avec les aides), apprise sur chaque folio placé (une moyenne
+   glissante) et gardée dans ce navigateur ; la première fois, celle d'un ordinateur de quatre cœurs. */
+const DEPART_PLACEMENT = 300;   // ms : le Worker qui s'éveille, le graphe, les premiers candidats
+const ETALON = (() => { const e = { c: 0.045, n: 0 }; try { const x = JSON.parse(localStorage.getItem('volta.placement.etalon2') || 'null'); if (x && x.c > 0 && isFinite(x.c)) Object.assign(e, x); } catch (_) { } return e; })();
+// le travail d'un folio, gardé dans son attente : le budget de son concours fois ses fils (le graphe se lit en quelques millisecondes)
+function travailDuFolio(a) { if (a.travail) return a.travail; let t = 1200 * Math.max(1, a.L.length);
+  try { const M = modele(construireGraphe(a.L)); t = budgetDe(M) * Math.max(1, M.liens.filter(w => !w.shunt && !w.boucle).length); } catch (_) { }
+  return (a.travail = t); }
+const dureeEstimee = a => DEPART_PLACEMENT + ETALON.c * travailDuFolio(a);
+function etalonner(a, ms) { if (!a || !(a.L.length > SEUIL_ICI) || !(ms > DEPART_PLACEMENT)) return; const c = (ms - DEPART_PLACEMENT) / travailDuFolio(a);
   ETALON.c = ETALON.n ? 0.6 * ETALON.c + 0.4 * c : c; ETALON.n++;
-  try { localStorage.setItem('volta.placement.etalon', JSON.stringify(ETALON)); } catch (_) { } }
+  try { localStorage.setItem('volta.placement.etalon2', JSON.stringify(ETALON)); } catch (_) { } }
 // une durée, en mots : « 8 s », « 25 s », « 2 min »
 const enSecondes = ms => { const s = ms / 1000; return s < 15 ? Math.max(1, Math.round(s)) + ' s' : s < 60 ? Math.round(s / 5) * 5 + ' s' : s < 100 ? '1 min' + (s >= 80 ? ' 30' : '') : Math.round(s / 60) + ' min'; };
 /* Où en est le folio `a` : une fraction (le temps écoulé sur le temps estimé, ce que le Worker rapporte), et ce qu'il
    reste, en mots. En file derrière un autre folio : il attend son tour. */
-function avancement(a) { const est = dureeEstimee(a.L.length);
-  if (!a.debut) return { p: 0, mot: 'environ ' + enSecondes(est), file: !!placement.encours && placement.encours.cle !== a.cle };
+function avancement(a) { const est = dureeEstimee(a);
+  if (!a.debut) return { p: 0, reste: est, mot: 'environ ' + enSecondes(est), file: !!placement.encours && placement.encours.cle !== a.cle };
   const ecoule = performance.now() - a.debut, p = Math.min(0.97, Math.max(a.p || 0, ecoule / est)), reste = est - ecoule;
-  return { p, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : 'presque fini' }; }
+  return { p, reste, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : 'presque fini' }; }
+/* L'ESQUISSE NE SE MONTRE QUE SI ELLE SERT (v86, l'audit G3 : au folio 3, elle paraissait 66 ms, puis tout bougeait). Le
+   dessin définitif à moins de trois secondes, elle passerait sous les yeux pour laisser aussitôt la place : l'attente reste,
+   le définitif vient d'un coup. Plus loin, elle se montre — et le définitif la range en glissant (`rangerLeDessin`). Si
+   l'estimation s'est trompée (le définitif tarde encore deux secondes et demie après l'esquisse), elle se montre quand même. */
+const ESQUISSE_UTILE = 3000, ESQUISSE_PATIENCE = 2500;
+const esquisseUtile = a => !!a && !!a.esquisse && (!!a.montree || avancement(a).reste >= ESQUISSE_UTILE || performance.now() - (a.esquisseRecue || 0) >= ESQUISSE_PATIENCE);
+// l'esquisse retenue devient utile (le définitif tarde) : elle se montre, comme si elle venait d'arriver (l'horloge de l'attente)
+function verifierEsquisse() { const a = attenteCourante(); if (!a || app.dessin || !app.contrat.liaisons.length || !esquisseUtile(a)) return; rafraichirDessin(); finirAttente(a); }
+/* (v86, l'audit M5) prendre un bloc sur l'esquisse : son déplacement figerait l'esquisse, ou se perdrait au définitif. Le geste
+   ne prend pas (la vue glisse), et le mot dit pourquoi et quand. */
+function refuserPendantEsquisse(P) { const a = attenteCourante(), v = a ? avancement(a) : null;
+  dire((P.provisoire === 'esquisse' ? 'Le folio se dessine encore' : 'Le folio se redessine') + (v && v.reste > 1500 ? ' : son dessin définitif arrive dans ' + enSecondes(v.reste) + ' environ.' : ' : son dessin définitif arrive.')
+    + ' Vous déplacerez les blocs dès qu’il sera posé.'); }
 // le nom du folio et sa place : « 3 / 20 », ou « MEE…003A (3 / 20) »
 function folioEtRang(plan) { const P = plans(), i = P.indexOf(plan) + 1; if (!i) return String(plan); return String(plan) === String(i) ? i + ' / ' + P.length : plan + ' (' + i + ' / ' + P.length + ')'; }
 // ce qu'on peut faire pendant ce temps : les problèmes du contrat (l'index « à reprendre »), le récapitulatif — comptés
@@ -481,7 +508,7 @@ function motDuFolio(p, court) { const nom = 'Folio ' + p, e = travailDeFond() ? 
   if (e.etat === 'dessin') return nom + ' : dessin en cours' + (court ? '' : ', ' + e.mot) + (e.esquisse && app.plan === p && !court ? ' (l’esquisse se lit déjà)' : '');
   if (e.etat === 'attente') { const enc = placement.encours && placement.attentes.get(placement.encours.cle);
     return nom + ' : en attente' + (court || !enc || enc.plan === p ? '' : ', après le folio ' + enc.plan); }
-  if (e.etat === 'affinage') return nom + ' : prêt' + (court ? ', VOLTA l’affine' : ' — VOLTA affine encore son dessin');
+  if (e.etat === 'affinage') return nom + ' : prêt' + (court ? ', VOLTA le peaufine' : ' — VOLTA peaufine encore son dessin');
   return nom + ' : prêt'; }
 function peindreEtatsDesFolios() { const strip = $('fo-strip'); if (!strip) return; const fond = travailDeFond(), K = fond ? clesDesFolios() : null;
   strip.querySelectorAll('.chip').forEach(c => { const e = fond ? etatDuFolio(c.dataset.plan, K) : null, etat = e ? e.etat : 'pret';
@@ -494,7 +521,7 @@ function peindreEtatsDesFolios() { const strip = $('fo-strip'); if (!strip) retu
   const b = $('folios') && $('folios').querySelector('.fo-bulle.on'); if (b && b.dataset.plan) { const t = typo(motDuFolio(b.dataset.plan)); if (b.textContent !== t) b.textContent = t; } }
 // l'horloge de l'attente : quatre fois par seconde tant qu'un folio se calcule ou s'esquisse, rien sinon
 function remonterHorloge() { const utile = placement.ailleurs && (!!placement.encours || placement.attentes.size > 0);
-  if (utile && !placement.horloge) placement.horloge = setInterval(() => { montrerAttente(); }, 250);
+  if (utile && !placement.horloge) placement.horloge = setInterval(() => { verifierEsquisse(); montrerAttente(); }, 250);
   else if (!utile && placement.horloge) { clearInterval(placement.horloge); placement.horloge = 0; } }
 /* Les folios prêts : placés (dans cette session, ou relus de ce navigateur), affinés, retouchés, ou assez petits pour
    se placer à l'instant. Rend { n, N, pas: les folios pas encore prêts } ; compté au plus deux fois par seconde. */
@@ -514,12 +541,19 @@ function montrerBande() { peindreEtatsDesFolios(); const el = $('affinage'); if 
     el.setAttribute('aria-label', bulle ? mot + ' — ' + bulle : mot); el.removeAttribute('title'); };
   const a = attenteCourante();
   if (a && app.dessin && app.dessin.provisoire) { const v = avancement(a);
-    poser((app.dessin.provisoire === 'esquisse' ? 'Esquisse · le dessin définitif ' : 'Dessin d’avant · le nouveau ') + (v.mot === 'presque fini' ? 'arrive' : 'dans ' + v.mot.replace(/^encore /, '')), v.p, false, 'le folio se lit déjà ; son dessin définitif le remplacera sans bouger la feuille'); return; }
+    // (v86) une durée honnête (`dureeEstimee`), dans l'ordre où on la lit : « Esquisse — le dessin définitif dans 4 s environ »
+    const quand = v.reste > 1500 ? 'dans ' + enSecondes(v.reste) + ' environ' : 'arrive';
+    poser((app.dessin.provisoire === 'esquisse' ? 'Esquisse — le dessin définitif ' : 'Dessin d’avant — le nouveau ') + quand, v.p, false,
+      'le folio se lit déjà ; le dessin définitif prendra sa place en glissant, la feuille immobile, et ses blocs se déplaceront dès qu’il sera posé'); return; }
   const prets = foliosPrets();
   if (prets && prets.n < prets.N && (placement.encours || placement.attentes.size)) { poser(prets.n + ' / ' + prets.N + ' folios prêts', prets.n / prets.N, true, 'les autres folios se dessinent en arrière-plan, l’un après l’autre'); return; }
   const j = affinage.encours, e = affinage.etat;
   if (affinage.actif && j) { const ici = j.cle === cleCourante(), reste = affinage.file.length;
-    poser((ici ? 'Le dessin s’affine' : 'Un autre folio s’affine') + (e ? ' · ' + e.k + ' / ' + e.n : '') + (reste ? ' · ' + reste + ' en attente' : ''), e && e.n ? e.k / e.n : null, !ici, 'chaque mieux trouvé remplace le dessin, et se garde dans ce navigateur'); return; }
+    /* (v86, l'audit G3 : « 0 / 48 · 5 en attente », 48 de quoi ?) des mots : combien de folios VOLTA peaufine encore, celui-ci
+       compris ; la barre, où il en est sur tout le lot (les folios finis, et les tours du folio en cours) */
+    const n = 1 + reste, lot = affinage.lot || { total: n, faits: 0 }, p = (lot.faits + (e && e.n ? e.k / e.n : 0)) / Math.max(1, lot.total, lot.faits + n);
+    poser(n > 1 ? 'VOLTA peaufine encore ' + n + ' folios' : ici ? 'VOLTA peaufine encore ce folio' : 'VOLTA peaufine encore un folio', p, !ici,
+      'chaque meilleur dessin trouvé remplace l’actuel sans bouger la feuille, et se garde dans ce navigateur'); return; }
   el.hidden = true; }
 const montrerAffinage = montrerBande;
 // le concours gardé : une entrée par version du moteur et folio ; les concours d'un moteur passé s'effacent, une fois par session
@@ -1309,6 +1343,7 @@ function lierPlanche() {
         return quoi + pres + ' · double-clic sur le câble pour le rendre au moteur · Ctrl+Z pour défaire.'; } } };
   const commencerPrise = () => { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null; if (!cle) return false;
     const P = placementDe(L), G = prise && GESTES[prise.genre]; if (!P || !G) return false;
+    if (P.provisoire) { refuserPendantEsquisse(P); return false; }   // (v86, M5) l'esquisse ne se retouche pas
     Object.assign(prise, { cle, P, avant: app.retouches.get(cle) || null, vise: null, place: null, posee: false, refuse: false, P2: null });
     const quoi = G.preparer(prise, P); if (!quoi) return false;
     const mot = $('toast'); if (mot) mot.classList.remove('on');   // le mot du geste d'avant s'en va : celui-ci aura le sien, s'il bouge
@@ -1799,7 +1834,8 @@ function montrerSiCache(b, centrer) { if (!b || !app.dessin) return; const r = c
     const nb = voisinageDeLaCible(b), M = 20, l0 = L + M, r0 = R - M, t0 = T + M, b0 = B - M, sNb = Math.min((r0 - l0) / Math.max(1, nb.w), (b0 - t0) / Math.max(1, nb.h)), lisMin = Math.max(0.42, 0.8 * lisible);
     let s1 = sNb >= lisMin ? Math.min(lisible, sNb) : lisible;
     if (s >= lisMin && Math.abs(s - s1) <= 0.12 * s1 && (sNb < lisMin || s <= sNb + 1e-6)) s1 = s;
-    const cale = (v, lo, hi) => lo <= hi ? Math.max(lo, Math.min(hi, v)) : v;
+    // (le voisinage qui tient au pixel près : ses deux bornes se croisent d'un arrondi — on le pose au milieu)
+    const cale = (v, lo, hi) => lo <= hi ? Math.max(lo, Math.min(hi, v)) : (lo + hi) / 2;
     let tx = (L + R) / 2 - (b.x + b.w / 2) * s1, ty = b.h * s1 > B - T - 16 ? T + 12 - b.y * s1 : (T + B) / 2 - (b.y + b.h / 2) * s1;
     if (nb.h * s1 <= b0 - t0 + 0.5) ty = cale(ty, t0 - nb.y * s1, b0 - (nb.y + nb.h) * s1);
     tx = nb.w * s1 <= r0 - l0 + 0.5 ? cale(tx, l0 - nb.x * s1, r0 - (nb.x + nb.w) * s1) : decalageDesVoisins(b, nb.voisins, s1, l0, r0);
@@ -1906,6 +1942,10 @@ function aller(cible) { const P = plans(); const nom = cible.nom;
   // un type de câble : tous ses câbles, dans le récapitulatif (le plan reste où il est) ; une nature, son onglet
   if (cible.type === 'type') { montrerLiaisons(nom); return; }
   if (cible.type === 'nature') { montrerNature(cible); return; }
+  // (v86) une barrette ajoutée par VOLTA (VT1…), ou l'une de ses bornes : son folio, puis sa fiche (elle n'est pas un bloc du dessin)
+  if (cible.type !== 'fil' && VT_A_POSER.test(String(nom || ''))) { const p = (P.length ? P : ['*']).find(x => liaisonsDe(x).some(l => l.aPoser === nom));
+    if (P.length > 1 && app.plan !== '*' && p && p !== app.plan) allerAuPlan(p);
+    if (!app.dessin && attenteCourante()) { reporterCible(cible); return; } if (typeof montrerBloc === 'function') montrerBloc(nom); return; }
   const ou = cible.type === 'fil' ? plansDuFil(nom) : plansDuRepere(nom);
   if (P.length > 1 && app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]);
   if (!app.dessin && attenteCourante()) { reporterCible(cible); return; }   // le folio se place au loin : la cible attend le dessin (finirAttente)
@@ -1975,16 +2015,31 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   const L = verite(), D = app.contrat.designations, info = new Map(), cal = calibreCherche(q);
   L.forEach(l => [[l.de, l.pnDe, l.descriptionDe], [l.vers, l.pnVers, l.descriptionVers]].forEach(([n, pn, d]) => { if (!n || estRenvoi(n)) return;
     const x = info.get(n) || info.set(n, { n: 0, pns: new Set(), descs: new Set() }).get(n); x.n++; if (pn) x.pns.add(String(pn)); if (d) x.descs.add(String(d).trim()); }));
+  // (v86) les barrettes ajoutées par VOLTA (VT1…) ne vivent que sur leur folio : elles se trouvent aussi, et leurs bornes par le
+  // nom de leur face (« VT2:51H »)
+  const LV = (plans().length ? plans() : ['*']).flatMap(p => liaisonsDe(p).filter(l => l.aPoser && (VT_A_POSER.test(l.de) || VT_A_POSER.test(l.vers))));
+  LV.forEach(l => [l.de, l.vers].forEach(n => { if (!VT_A_POSER.test(n)) return; const x = info.get(n) || info.set(n, { n: 0, pns: new Set(), descs: new Set() }).get(n);
+    if (l.de !== l.vers) x.n++; if (estRaccordAPoser(l)) x.descs.add('barrette ajoutée par VOLTA sur ' + l.de + ':' + l.borneDe); }));
   const rang = n => rangAPlat(n, Q, Qz), contient = t => rangAPlat(t, Q, Qz) < 2;
   // une borne : « 300XC1:B5 », « 300XC1 B5 », « 300xc1b5 » — le repère exact, la borne qui commence par ce qu'on tape
   const bornes = [], m = /^(\S+?)\s*[:\s]\s*(\S*)$/.exec(q);
   let rep0 = null, bq = '';
   if (m) { rep0 = [...info.keys()].find(n => aPlat(n) === aPlat(m[1])); bq = aPlat(m[2]); }
   if (!rep0 && Q.length > 3) { const r = [...info.keys()].filter(n => Q.startsWith(aPlat(n)) && Q.length > aPlat(n).length).sort((a, b) => aPlat(b).length - aPlat(a).length)[0]; if (r) { rep0 = r; bq = Q.slice(aPlat(r).length); } }
-  if (rep0) { const vues = new Set(); L.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
+  const desBorne = (l, autre, bAutre) => (SANS_NUMERO_DE_CABLE || !l.cable ? (l.type || 'câble') : l.cable + (l.type ? ' · ' + l.type : '')) + ' → ' + autre + (bAutre ? ':' + bAutre : '');
+  // une borne se décrit par son câble vers un autre repère avant un pontage de la même barrette (`vues` garde le premier)
+  const LB = [...L, ...LV].filter(l => l.de !== l.vers).concat([...L, ...LV].filter(l => l.de === l.vers));
+  if (rep0) { const vues = new Set(); LB.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
       if (r !== rep0 || !b || vues.has(b) || !aPlat(b).startsWith(bq)) return; vues.add(b);
-      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: (SANS_NUMERO_DE_CABLE || !l.cable ? (l.type || 'câble') : l.cable + (l.type ? ' · ' + l.type : '')) + ' → ' + autre + (bAutre ? ':' + bAutre : '') }); }));
+      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: desBorne(l, autre, bAutre) }); }));
     bornes.sort((a, b) => triNaturel(a.borne, b.borne)); }
+  /* (v86, l'audit G4 et B2) UNE BORNE SEULE, telle que vos fichiers l'écrivent — « 51B » (le module 51, le contact B), « 51e » — :
+     chaque barrette qui la porte, celle qui l'écrit à la même casse d'abord (« 51e » montre 51e avant 51E, deux contacts) */
+  if (!rep0 && /^\d+(-\w+|[A-Za-z]\w?)$/.test(q)) { const vues = new Set();
+    LB.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
+      if (!r || !b || !estBarrette(r) || String(b).toLowerCase() !== q.toLowerCase() || vues.has(r + '\u0001' + b)) return; vues.add(r + '\u0001' + b);
+      bornes.push({ type: 'borne', nom: r, borne: String(b), l, cote: c, casse: String(b) === q, des: desBorne(l, autre, bAutre) + (/[a-z]/.test(String(b)) ? ' · minuscule' : '') }); }));
+    bornes.sort((a, b) => (b.casse - a.casse) || triNaturel(a.nom, b.nom)); }
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };
   if (cal && !natures.includes('CB')) natures.push('CB');
@@ -2192,8 +2247,9 @@ function rendrePalette() { const el = PALETTE.el; if (!el) return; const q = el.
 function marquerPalette(defiler) { const el = PALETTE.el; if (!el) return; const q = el.querySelector('#pa-q');
   el.querySelectorAll('.pa-l').forEach(b => { const on = +b.dataset.i === PALETTE.sel; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); if (on && defiler) b.scrollIntoView({ block: 'nearest' }); });
   q.setAttribute('aria-activedescendant', PALETTE.lignes.length ? 'pa-o-' + PALETTE.sel : ''); }
-function faireDeLaPalette(i) { const x = PALETTE.lignes[i]; if (!x || x.eteint) return; fermerPalette(false);
-  if (x.objet) { aller(x.objet); return; }
+function faireDeLaPalette(i) { const x = PALETTE.lignes[i]; if (!x || x.eteint) return; const avant = PALETTE.avant; fermerPalette(false);
+  // (v86, F7) la fiche qu'elle ouvre rendra le clavier d'où la recherche était partie (sinon la loupe du rail), pas à la page nue
+  if (x.objet) { if (typeof CARTE !== 'undefined') CARTE.ouvreurSuivant = { el: avant && avant !== document.body && avant.isConnected ? avant : $('btnCherche'), t: Date.now() }; aller(x.objet); return; }
   try { x.faire(); } catch (err) { dire('Ce geste n’a pas abouti : ' + ((err && err.message) || err), true); } }
 
 /* ---- les folios d'une liaison (le récapitulatif, la fiche du fil) -------- */
@@ -3195,12 +3251,16 @@ function lierTabulation() {
     setTimeout(() => { const b = document.activeElement; if (dansF && F.isConnected && !F.hidden && b && b !== document.body && F.contains(b)) return;
       if (dansF && F.isConnected && !F.hidden) { poser(e.shiftKey ? bordTabulable(F, true) : bordTabulable(F, false)); return; }
       if (!b || b === document.body) poser(bordTabulable(document, e.shiftKey)); }, 0); }, true); }
-/* (v86, F7) ÉCHAP DANS UN CHAMP DE LA FICHE : on le quitte — le clavier reste dans la fiche, sur le titre de sa section (ou
-   la fiche elle-même), plutôt que sur la page nue : le Tab suivant reprend là. */
+/* (v86, F7) ÉCHAP DANS UN CHAMP DE LA FICHE : on le quitte — le clavier reste dans la fiche, sur le titre de la section qui
+   le porte (le dernier titre avant lui, dans son panneau), sinon sur le contrôle d'après (la carte n'a pas de titres) — plutôt
+   que sur la page nue, sans anneau. Aussi quand le champ s'est quitté lui-même (08-fiche le rend tel qu'il était) :
+   08-niveaux, `clavierDuGrand`, nous rappelle. */
 function quitterLeChamp(f) { const F = fenetreDuClavier() || $('inspecteur'); try { f.blur(); } catch (_) { }
   if (!F || F.hidden || !F.contains(f)) return;
-  const sec = f.closest('.nv-reg, .vu-bloc, .nv-somm, section'), h = sec && sec.querySelector('h4[tabindex]');
-  try { (h || F).focus({ preventScroll: true }); } catch (_) { } }
+  const pan = f.closest('.nv-panneau') || F, hs = [...pan.querySelectorAll('h4[tabindex]')].filter(h => estTabulable(h) && (h.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING));
+  const xs = hs.length ? null : [...F.querySelectorAll(SEL_TABULABLES)].filter(x => x !== f && estTabulable(x)), apres = x => !!(f.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING);
+  const vers = hs[hs.length - 1] || (xs && (xs.find(apres) || xs.filter(x => !apres(x)).pop())) || F;
+  try { vers.focus({ preventScroll: true }); } catch (_) { } }
 /* (v86, F7) ÉCHAP REFERME D'ABORD CE QUE LE CLAVIER A DÉPLIÉ DANS LA FICHE : la section d'un réglage ouverte sous sa ligne
    (Manuel, ses possibles), les points « à voir » dépliés — le clavier revient sur le bouton qui les avait ouverts. Rend vrai
    s'il a replié quelque chose. */

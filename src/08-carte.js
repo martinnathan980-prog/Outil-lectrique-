@@ -371,8 +371,10 @@ function eviterLeBloc() { const el = $('inspecteur'); if (!carteFlottante() || e
    tard, on est encore dans la barre des folios ») : une carte qui s'ouvre — d'un clic, par la recherche, par P — PREND LE
    CLAVIER (Tab commence dans la carte) ; fermée (Échap, ×, un clic dehors), elle le rend d'où il venait : le bouton qui
    l'avait ouverte, la ligne du récapitulatif ; la recherche refermée, son bouton du rail ; sinon la page. ------------ */
-function prendreLeClavier(el) { const a = document.activeElement;
-  CARTE.ouvreur = a && a !== document.body && !el.contains(a) ? a : null;
+// (v86, F7) `CARTE.ouvreurSuivant` : qui rendra le clavier quand l'ouvreur n'a plus le focus au moment où elle s'ouvre (la
+// palette, refermée avant d'aller à l'objet : sans lui, la carte fermée rendait le clavier à la page nue)
+function prendreLeClavier(el) { const a = document.activeElement, s = CARTE.ouvreurSuivant; CARTE.ouvreurSuivant = null;
+  CARTE.ouvreur = a && a !== document.body && !el.contains(a) ? a : s && s.el && s.el.isConnected && Date.now() - s.t < 8000 ? s.el : null;
   if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
   try { el.focus({ preventScroll: true }); } catch (_) { el.focus(); } }
 function rendreLeClavierDeLaCarte() { const o = CARTE.ouvreur; CARTE.ouvreur = null; const a = document.activeElement;

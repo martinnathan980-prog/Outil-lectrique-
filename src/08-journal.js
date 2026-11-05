@@ -177,7 +177,11 @@ function ligneJournalHtml(x, i) { const val = (v, mono, b) => `<${b ? 'b' : 's'}
 // ce qui part dans l'Excel corrigé, en une ligne (le relevé le détaille : 08-export)
 function excelDuJournal() { let R; try { R = changementsDuRetest(); } catch (_) { return ''; } const np = R.proposes.length, poses = barrettesPosees();
   const lignesDe = p => 1 + p.shunts.length, nl = poses.reduce((s, p) => s + lignesDe(p), 0);
-  const morceaux = [R.cases ? pluriel(R.cases, 'case') + (R.liaisons ? ' sur ' + pluriel(R.liaisons, 'liaison') : '') : '', poses.length ? (poses.length > 1 ? poses.length + ' barrettes ajoutées, avec leurs ' + nl + ' lignes' : 'la barrette ' + poses[0].nom + ', avec ses ' + nl + ' lignes') : ''].filter(Boolean);
+  // (une ligne en double retirée part aussi : elle n'est pas une case, c'est une ligne de moins)
+  const nd = R.ecrits.filter(e => e.champ === 'copies').reduce((s, e) => s + (typeof copiesRetirees === 'function' ? copiesRetirees(e.liaisons[0]) : 1), 0), nc = R.ecrits.filter(e => e.champ !== 'copies').reduce((s, e) => s + e.liaisons.length, 0);
+  const morceaux = [R.cases ? pluriel(R.cases, 'case') + (nc ? ' sur ' + pluriel(new Set(R.ecrits.filter(e => e.champ !== 'copies').flatMap(e => e.liaisons)).size, 'liaison') : '') : '',
+    nd ? (nd > 1 ? nd + ' lignes en double retirées' : 'une ligne en double retirée') : '',
+    poses.length ? (poses.length > 1 ? poses.length + ' barrettes ajoutées, avec leurs ' + nl + ' lignes' : 'la barrette ' + poses[0].nom + ', avec ses ' + nl + ' lignes') : ''].filter(Boolean);
   if (!morceaux.length && !np) return '';
   const att = np ? `<span class="jo-att">${np > 1 ? np + ' choix de VOLTA pas encore écrits' : '1 choix de VOLTA pas encore écrit'}</span>` : '';
   return `<div class="jo-excel" role="note"><span class="jo-excel-i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/></svg></span>`
@@ -204,7 +208,7 @@ function journalHtml(arrive) { const X = journalDuPlan(), S = JOURNAL;
   const jours = new Map(); vus.forEach(x => { const [cle, titre, bulle] = jourDuJournal(x); const j = jours.get(cle) || jours.set(cle, { titre, bulle, xs: [] }).get(cle); j.xs.push(x); });
   const liste = [...jours.entries()].sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0).map(([, j]) => `<section class="jo-jour${entre()}"><h3 class="sous-titre jo-st"${j.bulle ? ` data-bulle="${escA(j.bulle)}"` : ''}>${esc(j.titre)}<small>${j.xs.length}</small></h3>`
     + `<ol class="hi-l jo-l">${j.xs.map(x => ligneJournalHtml(x, X.indexOf(x))).join('')}</ol></section>`).join('');
-  return tete(nomAffichePlan() + ' · tout le plan', 'Historique') + `<p class="note jo-intro">${esc(intro)}</p>` + (X.length ? excelDuJournal() : '') + filtres
+  return tete(app.nom ? nomAffichePlan() + ' · tout le plan' : 'Tout le plan', 'Historique') + `<p class="note jo-intro">${esc(intro)}</p>` + (X.length ? excelDuJournal() : '') + filtres
     + (X.length && !vus.length ? `<p class="jo-rien">Rien de cette sorte ici. <button type="button" class="fi-lien" data-jo-tout>Tout voir</button></p>` : '') + `<div class="jo">${liste}</div>`; }
 function rendreJournal(ouvrir) { if (!ouvrir && (!JOURNAL.ouvert || !app.fiche || app.fiche.mode !== 'journal')) { JOURNAL.ouvert = false; return; }
   const corps = $('fiche-corps'), haut = corps && app.fiche && app.fiche.mode === 'journal' ? corps.scrollTop : 0;
