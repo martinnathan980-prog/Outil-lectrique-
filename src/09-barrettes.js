@@ -2050,6 +2050,30 @@ function modulesPossibles(besoins, norme, numero, choix) { if (!bornesLettrees(b
   return { numero: num, famille, nomFamille: nomDeFamille(N, famille), retenu: M ? M.reference : '', auto: A ? A.reference : '', fichier: F.pn, main: !!(M && M.main),
            candidats: [...ok, ...rares, ...ko].map(({ rang, n, ...c }) => c) }; }
 
+/* ---- (v86) LES BORNES D'UNE BARRETTE À POSER, NOMMÉES COMME SA FACE ---------------------------------------------------
+   L'audit (B2) : sur le plan, VT2 portait 1, 2, 3 quand sa fiche dessinait son module avec H, J, K pris — un même contact,
+   deux noms. VOLTA crée la barrette (01, `avecBarrettesAPoser`) : c'est donc lui qui nomme ses bornes, comme vos fichiers
+   nomment celles d'une barrette — le module, puis la lettre du contact (« 51H ») — et comme sa fiche les dessine. Le module
+   est le premier du rail : 51, comme vos fichiers les numérotent. Chaque câble prend le contact que le remplissage lui
+   donne (`remplirModules` : le plus petit module qui loge le groupe, chaque câble sur le plus petit contact libre qui admet
+   sa gauge, le câble à créer d'abord). Le plan, la fiche, la recherche et, la barrette posée au contrat, l'installation
+   corrigée disent alors la même chose. `L` : les liaisons de la barrette `nom`, ses bornes encore numérotées (1 : le câble
+   à créer, puis une par câble ; les shunts). Rend Map(borne numérotée → « 51H »), ou null — sans module de barrette dans
+   la norme, ou quand aucun groupe ne loge ses câbles (trop de câbles pour une zone, une gauge qu'aucun contact n'admet) :
+   la barrette garde alors ses numéros, et sa fiche dit pourquoi aucun module ne convient. Le remplissage ne dépend que des
+   câbles (leur gauge, leur ordre) : il se garde. */
+const MODULE_A_POSER = '51', LETTRES_A_POSER = new WeakMap();
+function lettresDeBarretteAPoser(nom, L, norme) { const N = normeDesModules(norme);
+  if (!(N.modules || []).some(m => m.emploi === 'barrette' && m.auto)) return null;
+  const besoins = besoinsDeBarrette(nom, L), bornes = besoins.bornes.slice().sort(triBornes);
+  const cle = JSON.stringify([bornes, bornes.map(b => (besoins.parBorne.get(b) || []).map(f => [f.type || '', f.cable || ''])), besoins.ponts]);
+  let par = LETTRES_A_POSER.get(N); if (!par) { par = new Map(); LETTRES_A_POSER.set(N, par); }
+  if (!par.has(cle)) { const Q = remplirModules(besoins, N, ''), m = new Map();
+    if (Q.modules.length === 1 && !Q.restants.length) Q.fils.forEach(x => { if (x.borne != null && x.contact && x.contact.lettre) m.set(String(x.borne), MODULE_A_POSER + x.contact.lettre); });
+    if (par.size > 2000) par.clear();
+    par.set(cle, bornes.length && bornes.every(b => m.has(String(b))) && new Set(m.values()).size === m.size ? [...m] : null); }
+  const r = par.get(cle); return r ? new Map(r) : null; }
+
 /* ---- les modules de connecteur (EN 4165, EN 2997) ------------------------
    EN 2997 : un connecteur circulaire porte un seul insert, lu comme un module de même façon.
    Un connecteur EN 4165 reçoit un MODULE par cavité (A, B, C…) ; une prise

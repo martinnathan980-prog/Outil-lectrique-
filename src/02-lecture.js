@@ -166,7 +166,8 @@ function lireTexte(texte) {
        dont un bout manque, à leur rang — le contrat les garde (ni dessinées, ni vérifiées : le contrôle et le récapitulatif
        les disent ; l'installation corrigée les rend) ; `laissees` les lignes qui ne nomment aucun bout ni aucun câble (une
        ligne de total, un reste de mise en page) : le n° de leur ligne, pour le dire. */
-    const liaisons = [], toutes = [], laissees = [];
+    // (v86) `rangs` : la ligne d'Excel de chaque liaison de `toutes` (le bilan d'ouverture la nomme : « lignes 7 et 30 »)
+    const liaisons = [], toutes = [], laissees = [], rangs = [];
     for (let r = rt.ligne + 1; r < brutes.length; r++) {
       if (!brutes[r].trim()) continue;
       // ce que `lectureDuFichier` a lu d'un retest corrigé par VOLTA : sa feuille « VOLTA », ses journaux
@@ -188,16 +189,18 @@ function lireTexte(texte) {
                           harness: g(row, c.harness), appareil: g(row, c.appareil), retest: g(row, c.retest),
                           // l'installation et son ECP, quand la ligne les dit : la bibliothèque y range le plan (le moteur ne les lit pas)
                           install: g(row, c.install), ecp: g(row, c.ecp), autres: na ? a : null });
-      if (liaisonComplete(l)) { liaisons.push(l); toutes.push(l); }
-      else if (l.de || l.vers || l.cable) toutes.push(l);
+      if (liaisonComplete(l)) { liaisons.push(l); toutes.push(l); rangs.push(r + 1); }
+      else if (l.de || l.vers || l.cable) { toutes.push(l); rangs.push(r + 1); }
       else laissees.push(r + 1);
     }
+    // un repère écrit de deux façons se lit d'une seule (avant les contacts de la feuille « VOLTA », qui le nomment ainsi)
+    const lectures = unifierLesReperes(toutes);
     // les contacts choisis à la main vivent sur la liaison : ils y reviennent ici, quel que soit le chemin du fichier ; le
     // reste (les profils de charge, les choix du contrat) se reprend sur le plan qu'il devient (08-export, `retenirVolta`)
     if (volta && Array.isArray(volta.contacts) && volta.contacts.length) { const par = new Map(volta.contacts.map(x => [x.cle, x]));
       liaisons.forEach(l => { const x = par.get([l.de, l.borneDe, l.vers, l.borneVers, l.cable].join('|')); if (!x) return; if (x.contactDe) l.contactDe = x.contactDe; if (x.contactVers) l.contactVers = x.contactVers; }); }
     if ((volta || journaux.length) && typeof retenirVolta === 'function') retenirVolta(volta, liaisons, journaux);
-    return { liaisons, toutes, incompletes: toutes.length - liaisons.length, laissees, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))], installs: [...new Set(liaisons.map(l => l.install).filter(Boolean))], volta, journaux };
+    return { liaisons, toutes, rangs, lectures, incompletes: toutes.length - liaisons.length, laissees, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))], installs: [...new Set(liaisons.map(l => l.install).filter(Boolean))], volta, journaux };
   }
 
   let map = null, debut = 0; const premiere = cellules(pleines[0]);
@@ -211,8 +214,23 @@ function lireTexte(texte) {
                         vers: g(row, map.eq2), borneVers: g(row, map.b2), pnVers: g(row, map.pn2),
                         cable: g(row, map.cable), type: g(row, map.type), route: g(row, map.route), plan: g(row, map.plan) });
     if (liaisonComplete(l)) liaisons.push(l); }
-  return { liaisons, format: 'libre' };
+  return { liaisons, lectures: unifierLesReperes(liaisons), format: 'libre' };
 }
+/* (v86, l'audit B3) UN REPÈRE ÉCRIT DE DEUX FAÇONS — « 103rl1 » et « 103RL1 », « 101 BT1 » et « 101BT1 » : le même
+   équipement, une faute de frappe, que VOLTA dessinait deux fois (et chiffrait deux fois). Il se LIT d'une seule façon :
+   celle du fichier en capitales sans espace s'il l'écrit ainsi, sinon la plus fréquente. Le fichier n'est pas réécrit :
+   chaque liaison lue autrement garde ce qu'il écrivait (`ecrit`, 01 : l'installation corrigée le rend tel quel) ; le
+   contrôle le dit, à régler, avec son geste (« Écrire 103RL1 partout », 08-controle) — seul ce geste l'écrit.
+   Rend [{ lu, ecritures: [[écriture, nombre de bouts]] }], la façon lue en tête. */
+function unifierLesReperes(L) { const par = new Map(), cibles = new Map(), out = [];
+  L.forEach(l => ['de', 'vers'].forEach(a => { const r = l[a]; if (!r) return; const f = formeEcrite(r), m = par.get(f) || par.set(f, new Map()).get(f); m.set(r, (m.get(r) || 0) + 1); }));
+  par.forEach((m, f) => { if (m.size < 2) return;
+    const xs = [...m].sort((x, y) => (y[0] === f) - (x[0] === f) || y[1] - x[1] || COLLATEUR_FR.compare(x[0], y[0])), lu = xs[0][0];
+    xs.slice(1).forEach(([r]) => cibles.set(r, lu)); out.push({ lu, ecritures: xs }); });
+  if (cibles.size) L.forEach(l => [['de', 'borneDe'], ['vers', 'borneVers']].forEach(([a, b]) => { const lu = cibles.get(l[a]); if (!lu) return;
+    // ce que le fichier écrivait : déjà gardé si la lecture changeait ce bout (« 677vt2 51 » + « B »), sinon tel quel
+    const e = { ...(l.ecrit || {}) }; if (e[a] == null) { e[a] = l[a]; e[b] = l[b]; } l.ecrit = e; l[a] = lu; }));
+  return out; }
 
 /* Un fichier (Excel ou texte) → son texte tabulé, et ce qu'on en a lu : les
    FEUILLES d'un classeur (nom, est-ce un retest, combien de lignes). Un

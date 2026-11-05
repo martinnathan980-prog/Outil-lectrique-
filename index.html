@@ -7617,34 +7617,33 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
   background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
 /* peu de calibres : des touches à leur taille, pas étirées sur toute la carte */
 .nv-grand .nv-panneau .vu-cals:not(:has(>:nth-child(5))){align-self:flex-start;grid-auto-columns:112px}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal{position:relative;min-width:0;height:58px;margin:0;padding:0 4px 9px;gap:0;border:0;border-radius:10px;background:none;box-shadow:none;color:var(--t-1);
+.nv-grand .nv-panneau .vu-cals>.vu-cal{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;height:58px;margin:0;padding:0 4px 9px;gap:0;border:0;border-radius:10px;background:none;box-shadow:none;color:var(--t-1);cursor:help;outline:none;
   transition:background var(--rapide),box-shadow var(--rapide),color var(--rapide),transform var(--d-instant,.08s) var(--courbe)}
 /* le chiffre : toujours à la même hauteur, qu'il porte un mot dessous ou non */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal>b{display:inline-flex;align-items:baseline;font:600 var(--f-20)/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal>b small{margin-left:2px;font:500 12px/1 var(--sans);letter-spacing:0;color:var(--t-3)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.non>b{color:var(--t-2)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal>small{position:absolute;left:0;right:0;bottom:8px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.02em;text-align:center;color:var(--t-3)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal>small:empty{display:none}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:hover{background:color-mix(in srgb,var(--t-1) 6%,transparent);border:0}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:active{transform:scale(var(--presse))}
+.nv-grand .nv-panneau .vu-cals>.vu-cal>b{display:inline-flex;align-items:baseline;font:600 var(--f-20)/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal>b small{margin-left:2px;font:500 12px/1 var(--sans);letter-spacing:0;color:var(--t-3)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.non>b{color:var(--t-2)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal>small{position:absolute;left:0;right:0;bottom:8px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.02em;text-align:center;color:var(--t-3)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal>small:empty{display:none}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:hover{background:color-mix(in srgb,var(--t-1) 6%,transparent);border:0}
 /* le retenu : la touche se lève, au filet de cuivre (la nuit, son voile et sa lueur de cuivre : --n-cal-on, style-x-nuit) */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.on,.nv-grand .nv-panneau .vu-cals>button.vu-cal.on:hover{background:var(--n-cal-on,var(--s-surface));box-shadow:0 0 0 1.5px var(--nv-cuivre),var(--n-cal-on-lueur,0 2px 6px rgba(0,0,0,.10));cursor:default;transform:none}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.on>b{color:var(--n-cal-on-t,var(--t-1))}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.on>small{color:var(--nv-cuivre)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.on,.nv-grand .nv-panneau .vu-cals>.vu-cal.on:hover{background:var(--n-cal-on,var(--s-surface));box-shadow:0 0 0 1.5px var(--nv-cuivre),var(--n-cal-on-lueur,0 2px 6px rgba(0,0,0,.10));transform:none}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.on>b{color:var(--n-cal-on-t,var(--t-1))}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.on>small{color:var(--nv-cuivre)}
 /* celui de votre fichier, quand VOLTA en retient un autre : un anneau pointillé */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.fichier:not(.on){border:0;outline:1.5px dashed color-mix(in srgb,var(--t-2) 70%,transparent);outline-offset:-5px}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:1px}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.fichier:not(.on){border:0;outline:1.5px dashed color-mix(in srgb,var(--t-2) 70%,transparent);outline-offset:-5px}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:1px}
 /* LE FILET SOUS LA RÈGLE : rouge sous ce qui disjoncte, vert sous ce qui ne disjoncte pas — continu d'une touche à l'autre */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal::after{content:"";position:absolute;left:-2px;right:-2px;top:calc(100% + 9px);height:3px;border-radius:0;background:var(--ok);box-shadow:none;pointer-events:none}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.non::after{background:color-mix(in srgb,var(--ko) 85%,var(--s-surface))}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:first-child::after{left:0;border-radius:2px 0 0 2px}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:last-child::after{right:0;border-radius:0 2px 2px 0}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:only-child::after{border-radius:2px}
+.nv-grand .nv-panneau .vu-cals>.vu-cal::after{content:"";position:absolute;left:-2px;right:-2px;top:calc(100% + 9px);height:3px;border-radius:0;background:var(--ok);box-shadow:none;pointer-events:none}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.non::after{background:color-mix(in srgb,var(--ko) 85%,var(--s-surface))}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:first-child::after{left:0;border-radius:2px 0 0 2px}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:last-child::after{right:0;border-radius:0 2px 2px 0}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:only-child::after{border-radius:2px}
 /* le mot, au début de chaque zone (le point du coin s'en va) */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal::before{content:none;position:absolute;inset:auto auto auto 1px;top:calc(100% + 19px);width:auto;height:auto;border-radius:0;background:none;box-shadow:none;
+.nv-grand .nv-panneau .vu-cals>.vu-cal::before{content:none;position:absolute;inset:auto auto auto 1px;top:calc(100% + 19px);width:auto;height:auto;border-radius:0;background:none;box-shadow:none;
   font:500 var(--f-12)/1 var(--sans);letter-spacing:0;white-space:nowrap;color:var(--ok);pointer-events:none}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.non:first-child::before,.nv-grand .nv-panneau .vu-cals>button.vu-cal.oui+button.vu-cal.non::before{content:"disjoncte";color:var(--ko)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.oui:first-child::before,.nv-grand .nv-panneau .vu-cals>button.vu-cal.non+button.vu-cal.oui::before{content:"ne disjoncte pas";color:var(--ok)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.non:first-child::before,.nv-grand .nv-panneau .vu-cals>.vu-cal.oui+.vu-cal.non::before{content:"disjoncte";color:var(--ko)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.oui:first-child::before,.nv-grand .nv-panneau .vu-cals>.vu-cal.non+.vu-cal.oui::before{content:"ne disjoncte pas";color:var(--ok)}
 /* la légende ne redit plus ce que la règle montre : seul « actuel : celui de votre fichier » (et le retour à VOLTA) reste */
 .nv-grand .nv-panneau .vu-bloc>.vu-cals~.vu-legende>span:has(>i:is(.ok,.ko,.ret)){display:none}
 .nv-grand .nv-panneau .vu-bloc>.vu-cals~.vu-legende:not(:has(i.act,button)){display:none}
@@ -7847,6 +7846,40 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 .dj-graphe .dj-prof .dj-escalier{transition:d .24s var(--courbe),stroke .2s}
 .dj-graphe svg.tient .dj-prof :is(.dj-point,.dj-halo,.dj-escalier){transition:none}
 @media (prefers-reduced-motion:reduce){ .dj-graphe .dj-prof :is(.dj-point,.dj-halo,.dj-escalier){transition:none} }
+
+/* ── 6. (v86, l'intégrateur, G7 et G8) LA FRISE NE SE CLIQUE PLUS, UNE SEULE LISTE PARTOUT ──
+   Les calibres de la frise sont des repères, plus des boutons : le survol dit ce que chacun fait sur la durée du profil ; un
+   calibre de vos Hypothèses que la famille ne fait pas reste, à part (« pas en MS3320 ») ; un calibre qu'on ne juge pas (pas de
+   profil) reste neutre. Le seul geste qui écrit un calibre : la proposition de VOLTA, sous la frise. */
+.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible{box-shadow:0 0 0 2px var(--nv-cuivre)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.on:focus-visible{box-shadow:0 0 0 1.5px var(--nv-cuivre),0 0 0 4px var(--nv-cuivre-soft)}
+.nv-grand .nv-panneau .vu-bloc>.vu-cals>.vu-cal::after{box-shadow:var(--n-filet-ok,none)}
+.nv-grand .nv-panneau .vu-bloc>.vu-cals>.vu-cal.non::after{box-shadow:var(--n-filet-ko,none)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:is(.hors,.neutre)::after{background:var(--s-line-2);box-shadow:none}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.hors>b{color:var(--t-3)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.hors>b small{color:var(--t-3);opacity:.8}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.hors>small{font-weight:500;color:var(--t-3)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.neutre>b{color:var(--t-2)}
+/* les mots des zones sautent un calibre hors famille au milieu de la frise */
+.nv-grand .nv-panneau .vu-cals>.vu-cal.non+.vu-cal.hors+.vu-cal.oui::before{content:"ne disjoncte pas";color:var(--ok)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.oui+.vu-cal.hors+.vu-cal.non::before{content:"disjoncte";color:var(--ko)}
+/* LA PROPOSITION DE VOLTA : son geste de cuivre, et pourquoi en une phrase */
+.dj-prop{display:flex;align-items:center;gap:16px;margin:2px 0 0;padding:12px 16px;border-radius:12px;background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne)}
+.dj-prop>.btn{flex:none}
+.dj-prop>p{margin:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty}
+.dj-prop>p b{font-weight:600;color:var(--t-1)}
+.dj-prop>p span{color:var(--t-3)}
+/* L'ÉCHELLE DE L'ESSENTIEL : un calibre que la famille ne fait pas, en gris */
+.dj-fx-cal.hors>i{background:var(--s-line-2)}
+.dj-fx-cal.hors>b{color:var(--t-3);font-weight:500}
+.dj-fx-cal.hors{cursor:help}
+/* LA FRISE DE LA CARTE : chaque calibre en ampères (« 7,5 A »), serrés pour tenir sur une ligne */
+.dj-frise .vu-calv-l{gap:5px}
+.dj-frise .vu-c b{display:inline-flex;align-items:baseline;justify-content:center;gap:1px;min-width:0;padding:0 6px;line-height:32px}
+.dj-frise .vu-c b small{height:auto;font:500 10px/1 var(--sans);color:inherit;opacity:.72}
+.dj-frise .vu-c[data-bulle]{cursor:help}
+.dj-frise .vu-c.hors b{background:none;color:var(--t-3);box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.dj-frise .vu-c.neutre b{background:var(--s-sunken);color:var(--t-2);box-shadow:inset 0 0 0 1px var(--s-line)}
 
 /* ───────── style-x-faces.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -9711,7 +9744,7 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = 'bfbe7d72dc55';
+const VERSION_MOTEUR = 'c811bf4d504a';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -9828,8 +9861,14 @@ function longueurLue(v) { if (v == null || v === '') return null; if (typeof v =
    longueur illisible (« abc », « -3 ») ne se lit pas — l'installation corrigée (08-export) les RÉÉCRIT comme le fichier
    les portait, tant que la lecture n'a pas changé. `ecrit` : { de, borneDe, vers, borneVers } tels que le fichier les
    écrivait ; il ne vaut que s'il se relit encore en la liaison (`ecritDuBout`). */
+/* (v86, l'audit B3) un repère écrit de deux façons — « 103rl1 » et « 103RL1 », « 101 BT1 » et « 101BT1 » — se LIT d'une seule
+   (02, `unifierLesReperes`) : sa forme, en capitales sans espace, est la même ; l'écriture du fichier reste valable tant que
+   seule la casse ou une espace diffère, et l'installation corrigée la rend telle quelle (seul le geste « Écrire 103RL1
+   partout », 08-controle, l'écrit). */
+const formeEcrite = r => String(r == null ? '' : r).toUpperCase().replace(/\s+/g, '');
+const memeRepereEcrit = (x, y) => x === y || formeEcrite(x) === formeEcrite(y);
 const ecritDuBout = (l, cote) => { const e = l && l.ecrit, a = cote === 'de' ? 'de' : 'vers', b = cote === 'de' ? 'borneDe' : 'borneVers';
-  if (!e || e[a] == null) return null; const [r, n] = boutLu(e[a], e[b]); return r === l[a] && n === l[b] ? [e[a], e[b] == null ? '' : e[b]] : null; };
+  if (!e || e[a] == null) return null; const [r, n] = boutLu(e[a], e[b]); return memeRepereEcrit(r, l[a]) && n === l[b] ? [e[a], e[b] == null ? '' : e[b]] : null; };
 function liaison(o) {
   const s = v => (v == null ? '' : String(v).trim()), [de, borneDe] = boutLu(o.de, o.borneDe), [vers, borneVers] = boutLu(o.vers, o.borneVers);
   const l = { de, borneDe, pnDe: s(o.pnDe), vers, borneVers, pnVers: s(o.pnVers), cable: s(o.cable), type: s(o.type), route: s(o.route), plan: s(o.plan) };
@@ -9844,7 +9883,7 @@ function liaison(o) {
   if (o.autres && typeof o.autres === 'object') { const a = {}; let n = 0; Object.keys(o.autres).forEach(k => { const v = s(o.autres[k]); if (k && v) { a[k] = v; n++; } }); if (n) l.autres = a; }
   // le bout tel que le fichier l'écrivait, quand la lecture le change (« 677VT2 51 » + « B ») — ou tel qu'une liaison déjà lue le garde
   const e = {}; [['de', 'borneDe', de, borneDe], ['vers', 'borneVers', vers, borneVers]].forEach(([a, b, r, n]) => { const ra = s(o[a]), rb = s(o[b]);
-    if (ra !== r || rb !== n) { e[a] = ra; e[b] = rb; } else if (o.ecrit && o.ecrit[a] != null) { const [r2, n2] = boutLu(o.ecrit[a], o.ecrit[b]); if (r2 === r && n2 === n) { e[a] = s(o.ecrit[a]); e[b] = s(o.ecrit[b]); } } });
+    if (ra !== r || rb !== n) { e[a] = ra; e[b] = rb; } else if (o.ecrit && o.ecrit[a] != null) { const [r2, n2] = boutLu(o.ecrit[a], o.ecrit[b]); if (memeRepereEcrit(r2, r) && n2 === n) { e[a] = s(o.ecrit[a]); e[b] = s(o.ecrit[b]); } } });
   if (Object.keys(e).length) l.ecrit = e;
   // le contact à sertir écrit à la main à un bout (le récapitulatif) : il passe devant celui que le plan donne
   if (s(o.contactDe)) l.contactDe = s(o.contactDe); if (s(o.contactVers)) l.contactVers = s(o.contactVers);
@@ -9879,15 +9918,34 @@ const cableEtType = l => cableDit(l);
    que l'outil ajoute) : la base, elle, reste celle du contrat. Les bornes de barrette, de prise et de masse ne sont pas
    concernées (leur moteur sait recevoir plusieurs fils). */
 const VT_A_POSER = /^VT\d+$/i;
+/* (v86) LE CÂBLE À CRÉER d'une barrette à poser : de la borne dédoublée (un équipement) à sa barrette (VT1…). Ses bornes
+   se nomment désormais comme sa face (« 51H », 09 `lettresDeBarretteAPoser`) : il se reconnaît à sa marque, `aCreer`, qu'il
+   garde jusque dans le moteur en Worker (la page lui retire `origine`) ; une liaison d'avant, sans marque, à sa borne 1.
+   Tous ceux qui cherchent le câble à créer d'une barrette (le dessin, la fiche, le contrôle, le récapitulatif) passent ici. */
+const estRaccordAPoser = l => !!l && !!l.de && VT_A_POSER.test(String(l.vers || '')) && !VT_A_POSER.test(String(l.de))
+  && (l.aCreer === true || (l.aCreer === undefined && String(l.borneVers) === '1'));
+/* (v86, l'audit B3) UNE LIGNE EN DOUBLE — la même ligne écrite deux fois dans le fichier (une copie d'Excel) : les mêmes deux
+   bouts (dans un sens ou dans l'autre), le même type, le même numéro, le même folio, le même harness. Ce n'est pas
+   « plusieurs câbles sur une borne » : elle ne fait jamais poser de barrette et ne se dessine qu'une fois ; le contrôle la
+   dit, « à régler », avec son geste (08-controle, « Retirer la ligne en double »). `rangsEnDouble(L)` : les rangs des
+   copies (la première ligne reste). */
+const cleDeDoublon = l => { const a = l.de + '\u0002' + l.borneDe, b = l.vers + '\u0002' + l.borneVers;
+  return [a < b ? a + '\u0001' + b : b + '\u0001' + a, l.type || '', l.cable || '', l.plan || '', l.harness || ''].join('\u0001'); };
+function rangsEnDouble(L) { const vus = new Set(), copies = new Set();
+  L.forEach((l, i) => { if (!l || !liaisonComplete(l) || l.origine === null) return; const k = cleDeDoublon(l); if (vus.has(k)) copies.add(i); else vus.add(k); });
+  return copies; }
 // les bornes d'équipement dédoublées d'un folio : [clé repère\u0001borne, [{ i, cote }]] — une barrette à poser chacune
+// (une ligne en double n'y compte qu'une fois)
 function dedoublements(L) {
-  const parBorne = new Map();
-  L.forEach((l, i) => { if (l.de === l.vers) return;
+  const parBorne = new Map(), copies = rangsEnDouble(L);
+  L.forEach((l, i) => { if (l.de === l.vers || copies.has(i)) return;
     [[l.de, l.borneDe, 'de'], [l.vers, l.borneVers, 'vers']].forEach(([r, b, cote]) => {
       if (!r || !b || estBornier(r) || estMasse(r) || VT_A_POSER.test(r)) return;
       const k = r + '\u0001' + b; (parBorne.get(k) || parBorne.set(k, []).get(k)).push({ i, cote }); }); });
   return [...parBorne].filter(([, xs]) => xs.length > 1); }
-function avecBarrettesAPoser(L, depart = 0, memoire = null) {
+function avecBarrettesAPoser(L, depart = 0, memoire = null, norme = null) {
+  // une ligne en double ne se dessine qu'une fois (le contrôle la dit)
+  const copies = rangsEnDouble(L); if (copies.size) L = L.filter((_, i) => !copies.has(i));
   const groupes = dedoublements(L);
   if (!groupes.length) return L;
   const remplace = new Map(), ajouts = [];
@@ -9901,7 +9959,7 @@ function avecBarrettesAPoser(L, depart = 0, memoire = null) {
   groupes.forEach(([k, xs], g) => { const [r, b] = k.split('\u0001'), nom = 'VT' + numero(k, g), l0 = L[xs[0].i];
     const types = xs.map(x => L[x.i].type).filter(Boolean), gros = types.slice().sort((u, v) => jauge(u) - jauge(v))[0] || '';
     const pn = xs[0].cote === 'de' ? l0.pnDe : l0.pnVers, commun = { route: l0.route, plan: l0.plan, origine: null, aPoser: nom };
-    ajouts.push({ de: r, borneDe: b, pnDe: pn, vers: nom, borneVers: '1', pnVers: '', cable: '', type: gros, ...commun });
+    ajouts.push({ de: r, borneDe: b, pnDe: pn, vers: nom, borneVers: '1', pnVers: '', cable: '', type: gros, ...commun, aCreer: true });
     xs.forEach((x, j) => { const cur = remplace.get(x.i) || { ...L[x.i], origine: L[x.i], aPoser: nom };
       if (x.cote === 'de') { cur.de = nom; cur.borneDe = String(j + 2); cur.pnDe = ''; } else { cur.vers = nom; cur.borneVers = String(j + 2); cur.pnVers = ''; }
       remplace.set(x.i, cur); });
@@ -10434,7 +10492,8 @@ function lireTexte(texte) {
        dont un bout manque, à leur rang — le contrat les garde (ni dessinées, ni vérifiées : le contrôle et le récapitulatif
        les disent ; l'installation corrigée les rend) ; `laissees` les lignes qui ne nomment aucun bout ni aucun câble (une
        ligne de total, un reste de mise en page) : le n° de leur ligne, pour le dire. */
-    const liaisons = [], toutes = [], laissees = [];
+    // (v86) `rangs` : la ligne d'Excel de chaque liaison de `toutes` (le bilan d'ouverture la nomme : « lignes 7 et 30 »)
+    const liaisons = [], toutes = [], laissees = [], rangs = [];
     for (let r = rt.ligne + 1; r < brutes.length; r++) {
       if (!brutes[r].trim()) continue;
       // ce que `lectureDuFichier` a lu d'un retest corrigé par VOLTA : sa feuille « VOLTA », ses journaux
@@ -10456,16 +10515,18 @@ function lireTexte(texte) {
                           harness: g(row, c.harness), appareil: g(row, c.appareil), retest: g(row, c.retest),
                           // l'installation et son ECP, quand la ligne les dit : la bibliothèque y range le plan (le moteur ne les lit pas)
                           install: g(row, c.install), ecp: g(row, c.ecp), autres: na ? a : null });
-      if (liaisonComplete(l)) { liaisons.push(l); toutes.push(l); }
-      else if (l.de || l.vers || l.cable) toutes.push(l);
+      if (liaisonComplete(l)) { liaisons.push(l); toutes.push(l); rangs.push(r + 1); }
+      else if (l.de || l.vers || l.cable) { toutes.push(l); rangs.push(r + 1); }
       else laissees.push(r + 1);
     }
+    // un repère écrit de deux façons se lit d'une seule (avant les contacts de la feuille « VOLTA », qui le nomment ainsi)
+    const lectures = unifierLesReperes(toutes);
     // les contacts choisis à la main vivent sur la liaison : ils y reviennent ici, quel que soit le chemin du fichier ; le
     // reste (les profils de charge, les choix du contrat) se reprend sur le plan qu'il devient (08-export, `retenirVolta`)
     if (volta && Array.isArray(volta.contacts) && volta.contacts.length) { const par = new Map(volta.contacts.map(x => [x.cle, x]));
       liaisons.forEach(l => { const x = par.get([l.de, l.borneDe, l.vers, l.borneVers, l.cable].join('|')); if (!x) return; if (x.contactDe) l.contactDe = x.contactDe; if (x.contactVers) l.contactVers = x.contactVers; }); }
     if ((volta || journaux.length) && typeof retenirVolta === 'function') retenirVolta(volta, liaisons, journaux);
-    return { liaisons, toutes, incompletes: toutes.length - liaisons.length, laissees, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))], installs: [...new Set(liaisons.map(l => l.install).filter(Boolean))], volta, journaux };
+    return { liaisons, toutes, rangs, lectures, incompletes: toutes.length - liaisons.length, laissees, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))], installs: [...new Set(liaisons.map(l => l.install).filter(Boolean))], volta, journaux };
   }
 
   let map = null, debut = 0; const premiere = cellules(pleines[0]);
@@ -10479,8 +10540,23 @@ function lireTexte(texte) {
                         vers: g(row, map.eq2), borneVers: g(row, map.b2), pnVers: g(row, map.pn2),
                         cable: g(row, map.cable), type: g(row, map.type), route: g(row, map.route), plan: g(row, map.plan) });
     if (liaisonComplete(l)) liaisons.push(l); }
-  return { liaisons, format: 'libre' };
+  return { liaisons, lectures: unifierLesReperes(liaisons), format: 'libre' };
 }
+/* (v86, l'audit B3) UN REPÈRE ÉCRIT DE DEUX FAÇONS — « 103rl1 » et « 103RL1 », « 101 BT1 » et « 101BT1 » : le même
+   équipement, une faute de frappe, que VOLTA dessinait deux fois (et chiffrait deux fois). Il se LIT d'une seule façon :
+   celle du fichier en capitales sans espace s'il l'écrit ainsi, sinon la plus fréquente. Le fichier n'est pas réécrit :
+   chaque liaison lue autrement garde ce qu'il écrivait (`ecrit`, 01 : l'installation corrigée le rend tel quel) ; le
+   contrôle le dit, à régler, avec son geste (« Écrire 103RL1 partout », 08-controle) — seul ce geste l'écrit.
+   Rend [{ lu, ecritures: [[écriture, nombre de bouts]] }], la façon lue en tête. */
+function unifierLesReperes(L) { const par = new Map(), cibles = new Map(), out = [];
+  L.forEach(l => ['de', 'vers'].forEach(a => { const r = l[a]; if (!r) return; const f = formeEcrite(r), m = par.get(f) || par.set(f, new Map()).get(f); m.set(r, (m.get(r) || 0) + 1); }));
+  par.forEach((m, f) => { if (m.size < 2) return;
+    const xs = [...m].sort((x, y) => (y[0] === f) - (x[0] === f) || y[1] - x[1] || COLLATEUR_FR.compare(x[0], y[0])), lu = xs[0][0];
+    xs.slice(1).forEach(([r]) => cibles.set(r, lu)); out.push({ lu, ecritures: xs }); });
+  if (cibles.size) L.forEach(l => [['de', 'borneDe'], ['vers', 'borneVers']].forEach(([a, b]) => { const lu = cibles.get(l[a]); if (!lu) return;
+    // ce que le fichier écrivait : déjà gardé si la lecture changeait ce bout (« 677vt2 51 » + « B »), sinon tel quel
+    const e = { ...(l.ecrit || {}) }; if (e[a] == null) { e[a] = l[a]; e[b] = l[b]; } l.ecrit = e; l[a] = lu; }));
+  return out; }
 
 /* Un fichier (Excel ou texte) → son texte tabulé, et ce qu'on en a lu : les
    FEUILLES d'un classeur (nom, est-ce un retest, combien de lignes). Un
@@ -17405,6 +17481,30 @@ function modulesPossibles(besoins, norme, numero, choix) { if (!bornesLettrees(b
   return { numero: num, famille, nomFamille: nomDeFamille(N, famille), retenu: M ? M.reference : '', auto: A ? A.reference : '', fichier: F.pn, main: !!(M && M.main),
            candidats: [...ok, ...rares, ...ko].map(({ rang, n, ...c }) => c) }; }
 
+/* ---- (v86) LES BORNES D'UNE BARRETTE À POSER, NOMMÉES COMME SA FACE ---------------------------------------------------
+   L'audit (B2) : sur le plan, VT2 portait 1, 2, 3 quand sa fiche dessinait son module avec H, J, K pris — un même contact,
+   deux noms. VOLTA crée la barrette (01, `avecBarrettesAPoser`) : c'est donc lui qui nomme ses bornes, comme vos fichiers
+   nomment celles d'une barrette — le module, puis la lettre du contact (« 51H ») — et comme sa fiche les dessine. Le module
+   est le premier du rail : 51, comme vos fichiers les numérotent. Chaque câble prend le contact que le remplissage lui
+   donne (`remplirModules` : le plus petit module qui loge le groupe, chaque câble sur le plus petit contact libre qui admet
+   sa gauge, le câble à créer d'abord). Le plan, la fiche, la recherche et, la barrette posée au contrat, l'installation
+   corrigée disent alors la même chose. `L` : les liaisons de la barrette `nom`, ses bornes encore numérotées (1 : le câble
+   à créer, puis une par câble ; les shunts). Rend Map(borne numérotée → « 51H »), ou null — sans module de barrette dans
+   la norme, ou quand aucun groupe ne loge ses câbles (trop de câbles pour une zone, une gauge qu'aucun contact n'admet) :
+   la barrette garde alors ses numéros, et sa fiche dit pourquoi aucun module ne convient. Le remplissage ne dépend que des
+   câbles (leur gauge, leur ordre) : il se garde. */
+const MODULE_A_POSER = '51', LETTRES_A_POSER = new WeakMap();
+function lettresDeBarretteAPoser(nom, L, norme) { const N = normeDesModules(norme);
+  if (!(N.modules || []).some(m => m.emploi === 'barrette' && m.auto)) return null;
+  const besoins = besoinsDeBarrette(nom, L), bornes = besoins.bornes.slice().sort(triBornes);
+  const cle = JSON.stringify([bornes, bornes.map(b => (besoins.parBorne.get(b) || []).map(f => [f.type || '', f.cable || ''])), besoins.ponts]);
+  let par = LETTRES_A_POSER.get(N); if (!par) { par = new Map(); LETTRES_A_POSER.set(N, par); }
+  if (!par.has(cle)) { const Q = remplirModules(besoins, N, ''), m = new Map();
+    if (Q.modules.length === 1 && !Q.restants.length) Q.fils.forEach(x => { if (x.borne != null && x.contact && x.contact.lettre) m.set(String(x.borne), MODULE_A_POSER + x.contact.lettre); });
+    if (par.size > 2000) par.clear();
+    par.set(cle, bornes.length && bornes.every(b => m.has(String(b))) && new Set(m.values()).size === m.size ? [...m] : null); }
+  const r = par.get(cle); return r ? new Map(r) : null; }
+
 /* ---- les modules de connecteur (EN 4165, EN 2997) ------------------------
    EN 2997 : un connecteur circulaire porte un seul insert, lu comme un module de même façon.
    Un connecteur EN 4165 reçoit un MODULE par cavité (A, B, C…) ; une prise
@@ -22998,7 +23098,9 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
     if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1') att(l.aPoser, `ajoutée par VOLTA sur ${l.de}:${l.borneDe} (plusieurs câbles sur une borne) — repère provisoire`, { plan: p }); }));
   // les types de fil que la base des câbles ne connaît pas (une faute de frappe, un câble à ajouter)
   if (cablesDe(N).length) { const inc = [...new Set(V.filter(l => liaisonComplete(l) && l.de !== l.vers && l.type && !cableDuType(N, l.type)).map(l => l.type))].sort(triNaturel);
-    if (inc.length) att('', (inc.length > 1 ? inc.length + ' types de câble inconnus' : 'un type de câble inconnu') + ' de la base des câbles : ' + inc.slice(0, 5).join(', ') + (inc.length > 5 ? '…' : ''), { tableau: '' }); }
+    // (v86, le bilan d'ouverture) ses câbles : leur fiche le dit, et un seul type mène au récapitulatif filtré sur lui
+    if (inc.length) { const cs = V.filter(l => liaisonComplete(l) && l.de !== l.vers && inc.includes(l.type));
+      att('', (inc.length > 1 ? inc.length + ' types de câble inconnus' : 'un type de câble inconnu') + ' de la base des câbles : ' + inc.slice(0, 5).join(', ') + (inc.length > 5 ? '…' : '') + ' — ' + (cs.length > 1 ? pluriel(cs.length, 'câble') + ' dont la gauge' : 'sa gauge') + ' ne se vérifie pas', { tableau: inc.length === 1 ? inc[0] : '', cables: cs, genre: 'fichier', types: inc }); } }
   const sansType = V.filter(l => liaisonComplete(l) && l.de !== l.vers && !l.type).length;
   if (sansType) att('', pluriel(sansType, 'câble') + ' sans type : ' + (sansType > 1 ? 'leur' : 'sa') + ' gauge ne se vérifie pas', { tableau: '' });
   const inc = V.filter(l => !liaisonComplete(l) && (l.de || l.vers || l.cable)).length;
@@ -23006,7 +23108,8 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   // les câbles qui ne tiennent pas l'ambiante de la simulation (l'EN 2853 les échauffe de 40 °C) : une fois par famille
   const tenues = new Map(); V.forEach(l => { if (!liaisonComplete(l) || l.de === l.vers || !l.type) return; const t = tenueEnTemperature(N, l.type, H.ambiante); if (t && !t.ok && !tenues.has(typeDuFil(l.type))) tenues.set(typeDuFil(l.type), t); });
   if (tenues.size) att('', `ambiante ${nombre(H.ambiante)} °C : ${[...tenues].map(([f, t]) => f + ' (' + nombre(t.tmax) + ' °C max)').join(', ')} ne ${tenues.size > 1 ? 'supportent' : 'supporte'} pas l’échauffement de 40 °C de l’EN 2853 (${nombre(H.ambiante + ECHAUFFEMENT_EN2853)} °C au conducteur)`, { tableau: '' });
-  try { controleDeStructure(V).forEach(x => att(x.nom, x.texte, x.plus)); } catch (_) { }
+  // (v86) une ligne en double, un repère écrit de deux façons : à régler ; le reste de la structure, à voir
+  try { controleDeStructure(V).forEach(x => (x.niveau === 'ko' ? ko : att)(x.nom, x.texte, x.plus)); } catch (_) { }
   /* CHAQUE DÉFAUT UNE FOIS (v84) : deux chemins qui relèvent la même phrase sur le même repère (un fil direct et le même vu à
      travers une prise) n'en font qu'un point — ses câbles réunis. */
   const uniques = new Map(), sortie = [];
@@ -23016,41 +23119,58 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   sortie.forEach(x => { if (x.nom && x.plan == null) x.plan = plansDuRepere(x.nom).sort(triNaturel)[0] || ''; x.genre = genreDuPoint(x); });
   return sortie; }
 /* ---- LA STRUCTURE DU FICHIER (v84) -----------------------------------------------------------------------------------
-   Ce que le fichier écrit de travers, que VOLTA ne corrige jamais (le retest est la source dure : c'est au fichier de
-   changer) mais qu'il DIT, une fois, sur son repère, avec ce qu'il faut faire — tous « à voir », aucun n'est faux à coup
-   sûr :
-     · deux lignes identiques (les mêmes bouts, le même câble) : une ligne copiée, ou deux câbles voulus en parallèle ;
-     · un repère écrit de deux façons (« 101bt1 » et « 101BT1 », une espace de trop) : deux équipements pour VOLTA ;
-     · une borne écrite de deux façons sur un même repère (« 1 » et « 01 », « 1.0 ») : deux bornes pour VOLTA ;
-     · un câble qui part et arrive sur la même borne : sans effet ;
-     · un câble sans borne sur un repère dont les autres câbles en ont une : son contact ne se place pas ;
-     · un connecteur à lettre (A12, B3) qui porte deux part numbers : VOLTA ne lit que le premier ;
-     · des liaisons sans folio quand le fichier en a plusieurs : elles ne se dessinent sur aucun.
-   Rend [{ nom, texte, plus }] ; `plus.cables` : les liaisons dont il parle (la fiche du câble les montre). */
-const formeDuRepere = r => String(r || '').toUpperCase().replace(/\s+/g, '');
+   Ce que le fichier écrit de travers, que VOLTA ne corrige jamais de lui-même (le retest est la source dure : c'est au
+   fichier de changer) mais qu'il DIT, une fois, sur son repère, avec ce qu'il faut faire :
+     · À RÉGLER (v86, l'audit B3 : VOLTA dessinait et chiffrait sur une erreur qu'il avait lui-même vue) — chacun a son
+       geste, une proposition de VOLTA qui part dans l'Excel corrigé, et rien d'autre ne l'écrit :
+         - une ligne en double (01, `cleDeDoublon` : les mêmes bouts, le même type, le même numéro, le même folio) : VOLTA ne la
+           dessine qu'une fois, sans barrette ; « Retirer la ligne en double » quand les copies sont pareilles en tout — si
+           elles diffèrent ailleurs (une longueur, une route), VOLTA ne choisit pas : il dit en quoi ;
+         - un repère écrit de deux façons (« 103rl1 » et « 103RL1 ») : VOLTA le lit d'une seule (02, `unifierLesReperes`) ;
+           « Écrire 103RL1 partout » ;
+     · à voir (aucun n'est faux à coup sûr) : une borne écrite de deux façons sur un même repère (« 1 » et « 01 ») ; un câble
+       qui part et arrive sur la même borne ; un câble sans borne quand les autres en ont une (son contact ne se place pas) ;
+       un connecteur à lettre (A12) qui porte deux part numbers (VOLTA ne lit que le premier) ; des liaisons sans folio
+       quand le fichier en a plusieurs ; une longueur que VOLTA ne sait pas lire (« abc » : le câble prend l'hypothèse).
+   Rend [{ nom, texte, niveau, plus }] ; `plus.cables` : les liaisons dont il parle (la fiche du câble les montre). */
+const formeDuRepere = formeEcrite;
+// ce qui distingue les copies d'une même ligne (ses autres cases) : « longueur 5 m / 3 m » ; rien quand elles sont pareilles en tout
+const CASES_DES_COPIES = [['pnDe', 'part number'], ['pnVers', 'part number'], ['route', 'route'], ['longueur', 'longueur'], ['longueurBrute', 'longueur'], ['descriptionDe', 'description'], ['descriptionVers', 'description'],
+  ['fwd', 'FWD'], ['appareil', 'appareil'], ['retest', 'date'], ['install', 'Install'], ['ecp', 'ECP']];
+function ecartsDesCopies(xs) { const out = [];
+  CASES_DES_COPIES.forEach(([ch, mot]) => { const vs = [...new Set(xs.map(l => l[ch] == null ? '' : String(l[ch])))]; if (vs.length > 1) out.push(mot + ' ' + vs.map(v => v === '' ? 'vide' : ch === 'longueur' ? nombre(+v) + ' m' : v).join(' / ')); });
+  if (new Set(xs.map(l => JSON.stringify(l.autres || {}))).size > 1) out.push('d’autres colonnes');
+  return [...new Set(out)].slice(0, 2); }
 // (v85) sur une barrette, une borne « module + contact » garde sa casse : 51a et 51A sont deux contacts (l'ASNE 0599 en a 36)
 const formeDeLaBorne = (b, r) => { const t = String(b || '').replace(/\s+/g, ''), casse = !!(r && estBarrette(r) && /^\d+[A-Za-z]\w*$/.test(t));
   return (casse ? t : t.toUpperCase()).replace(/(\d+)[.,]0+$/, '$1').replace(/\d+/g, d => String(+d)); };
-function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete), dire = (nom, texte, plus) => out.push({ nom, texte, plus: { genre: 'fichier', ...(plus || {}) } });
+function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete), dire = (nom, texte, plus, niveau) => out.push({ nom, texte, niveau: niveau || 'att', plus: { genre: 'fichier', ...(plus || {}) } });
   const potentiel = r => estMasse(r) || estRail(r) || VT_A_POSER.test(r);
-  // les lignes identiques : les deux bouts (dans un sens ou dans l'autre), le type et le numéro du câble
+  // les lignes en double : la même clé que le dessin, qui ne les dessine qu'une fois (01, `cleDeDoublon`)
   const pareilles = new Map();
-  L.forEach(l => { const a = l.de + '\u0002' + l.borneDe, b = l.vers + '\u0002' + l.borneVers, k = (a < b ? a + '\u0001' + b : b + '\u0001' + a) + '\u0001' + (l.type || '') + '\u0001' + (l.cable || '');
-    (pareilles.get(k) || pareilles.set(k, []).get(k)).push(l); });
-  pareilles.forEach(xs => { if (xs.length < 2) return; const l = xs[0];
-    dire(l.de, `${cableDit(l)} : ${xs.length} lignes identiques dans le fichier — une ligne en double (à retirer du fichier), ou ${xs.length} câbles voulus en parallèle`, { cables: xs }); });
+  L.forEach(l => { const k = cleDeDoublon(l); (pareilles.get(k) || pareilles.set(k, []).get(k)).push(l); });
+  pareilles.forEach((xs, k) => { if (xs.length < 2) return; const l = xs[0], n = xs.length, ecarts = ecartsDesCopies(xs);
+    dire(l.de, ecarts.length ? `${cableDit(l)} : écrit ${n} fois dans votre fichier, mais pas à l’identique (${ecarts.join(' ; ')}) — VOLTA ne le dessine qu’une fois ; gardez la bonne ligne dans votre fichier`
+      : `${cableDit(l)} : la même ligne ${n} fois dans votre fichier — ${n > 2 ? n - 1 + ' lignes' : 'une ligne'} en double ; VOLTA ne la dessine qu’une fois, sans barrette`,
+      { genre: 'doublon', cables: xs, doublon: { cle: k, identiques: !ecarts.length, copies: n - 1 } }, 'ko'); });
   // un câble qui part et arrive sur la même borne
   L.forEach(l => { if (l.de === l.vers && l.borneDe === l.borneVers) dire(l.de, `${cableDit(l)} : il part et arrive sur la même borne (${l.de}${l.borneDe ? ':' + l.borneDe : ''}) — sans effet, sans doute une faute de saisie dans le fichier`, { cables: [l] }); });
-  // les repères écrits de deux façons, et, sur un même repère, les bornes écrites de deux façons ; les câbles sans borne
-  const parForme = new Map(), bornes = new Map();
+  /* les repères écrits de deux façons, d'après ce que le FICHIER écrivait (`ecrit` : VOLTA les lit déjà d'une seule, 02) —
+     un plan lu avant la v86 en garde deux au contrat : pour VOLTA, deux équipements, que le même geste réunit — ; sur un
+     même repère, les bornes écrites de deux façons ; les câbles sans borne */
+  const ecritures = new Map(), bornes = new Map();
+  V.forEach(l => ['de', 'vers'].forEach(a => { const r = l[a]; if (!r) return; const e = ecritDuBout(l, a), w = e ? boutLu(e[0], e[1])[0] : r, f = formeDuRepere(w);
+    const m = ecritures.get(f) || ecritures.set(f, new Map()).get(f), x = m.get(w) || m.set(w, { n: 0, lus: new Set(), cables: new Set() }).get(w); x.n++; x.lus.add(r); x.cables.add(l); }));
+  ecritures.forEach((m, f) => { if (m.size < 2) return; const xs = [...m], lus = new Set(xs.flatMap(([, x]) => [...x.lus])), un = lus.size === 1;
+    // la façon que VOLTA lit (02 : en capitales sans espace si le fichier l'écrit ainsi, sinon la plus fréquente) ; les autres
+    const cible = un ? [...lus][0] : xs.slice().sort((a, b) => (b[0] === f) - (a[0] === f) || b[1].n - a[1].n || triNaturel(a[0], b[0]))[0][0], autres = xs.filter(([w]) => w !== cible);
+    dire(cible, `s’écrit aussi ${autres.map(([w, x]) => '« ' + w + ' » (' + pluriel(x.cables.size, 'ligne') + ')').join(', ')} dans votre fichier : ${un ? 'VOLTA le lit ' + cible + ', un seul équipement' : 'pour VOLTA, ' + (lus.size > 2 ? lus.size : 'deux') + ' équipements différents'} — à écrire pareil partout`,
+      { genre: 'casse', cables: [...new Set(autres.flatMap(([, x]) => [...x.cables]))], casse: { forme: f, cible } }, 'ko'); });
   L.forEach(l => [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
-    const f = formeDuRepere(r), e = parForme.get(f) || parForme.set(f, new Map()).get(f); e.set(r, (e.get(r) || 0) + 1);
     if (potentiel(r)) return; const x = bornes.get(r) || bornes.set(r, { formes: new Map(), sans: [], avec: 0, pns: new Map() }).get(r);
     if (!b) { x.sans.push(l); return; } x.avec++; const fb = formeDeLaBorne(b, r), y = x.formes.get(fb) || x.formes.set(fb, new Map()).get(fb); y.set(b, (y.get(b) || 0) + 1);
     // le part number de chaque connecteur à lettre (A12 : le connecteur A)
     const c = pn ? connecteurDeBorne(b, pn) : null; if (c && c.lettre) { const m = x.pns.get(c.nom) || x.pns.set(c.nom, new Map()).get(c.nom); (m.get(pn) || m.set(pn, []).get(pn)).push(l); } }));
-  parForme.forEach(e => { if (e.size < 2) return; const xs = [...e].sort((a, b) => b[1] - a[1] || triNaturel(a[0], b[0])), [r] = xs[0];
-    dire(r, `s’écrit aussi ${xs.slice(1).map(([s, n]) => '« ' + s + ' » (' + pluriel(n, 'ligne') + ')').join(', ')} : pour VOLTA, ${xs.length > 2 ? 'ce sont des' : 'deux'} équipements différents — à unifier dans le fichier s’il s’agit du même`); });
   bornes.forEach((x, r) => {
     x.formes.forEach(y => { if (y.size < 2) return; const xs = [...y].sort((a, b) => b[1] - a[1] || triNaturel(a[0], b[0]));
       dire(r, `bornes ${xs.map(([s]) => '« ' + s + ' »').join(' et ')} : sans doute la même borne, écrite de ${xs.length > 2 ? xs.length : 'deux'} façons — pour VOLTA, ${xs.length > 2 ? 'des' : 'deux'} bornes différentes ; à unifier dans le fichier`); });
@@ -23062,6 +23182,11 @@ function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete),
   // des liaisons sans folio, quand le fichier en a plusieurs : aucun folio ne les dessine
   const P = plansDe(V); if (P.length > 1) { const n = L.filter(l => !l.plan).length;
     if (n) dire('', `${pluriel(n, 'liaison')} sans folio (FWD vide) : ${n > 1 ? 'elles ne se dessinent' : 'elle ne se dessine'} sur aucun des ${P.length} folios — le FWD est à écrire dans le fichier`, { tableau: '' }); }
+  // (v86, l'audit M6) une longueur que VOLTA ne sait pas lire (« abc », « -3 ») : le câble prend l'hypothèse — jusqu'ici sans un mot
+  const illisibles = L.filter(l => l.de !== l.vers && !(l.longueur > 0) && l.longueurBrute);
+  if (illisibles.length) { const vs = [...new Set(illisibles.map(l => l.longueurBrute))], H = app.simu || HYPOTHESES, n = illisibles.length;
+    dire('', `${n > 1 ? n + ' longueurs illisibles' : 'une longueur illisible'} dans votre fichier (${vs.slice(0, 3).map(v => '« ' + v + ' »').join(', ')}${vs.length > 3 ? '…' : ''}) : VOLTA prend ${nombre(H.longueur)} m, l’hypothèse — ${n > 1 ? 'les longueurs sont' : 'la longueur est'} à écrire dans le fichier`,
+      { tableau: '', cables: illisibles, longueurs: true }); }
   return out; }
 /* LE GENRE D'UN POINT (audit v72 : sur un grand retest, 192 lignes une par repère, quand huit genres disent tout) :
    chaque point se range dans un genre, que l'index et le récapitulatif montrent groupé, avec son compte et le geste qui
@@ -24073,13 +24198,16 @@ const pulserGrossis = xs => { if (xs.length && typeof pulser === 'function') pul
    l'outil — le part number du calibre retenu sur chaque liaison du disjoncteur (sans famille qui le construise, le calibre
    s'écrit au profil), les câbles que ce calibre demande à leur type proposé —, le fichier gardé dans `avant` (« Par
    rapport au retest » les liste). UNE entrée d'historique pour le tout. Le calibre reste l'automatique. */
-function deciderCalibre(nom) { const d = disjonctionDe(nom), cal = d.calibre; if (!(cal > 0)) return false;
+// (v86) `voulu` : le calibre que VOLTA propose ailleurs que sur la carte de décision (« Retenir le 7,5 A » : le plus petit qui ne
+// disjoncte pas, quand votre fichier en porte un plus gros) — sinon le retenu
+function deciderCalibre(nom, voulu) { const d = disjonctionDe(nom), cal = voulu > 0 ? voulu : d.calibre; if (!(cal > 0)) return false;
   const pn = pnDuRepere(nom), F = d.famille, nouveau = F && pn ? pnAvecCalibre(pn, F, cal) : null, xs = cal === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   histPush(nom + ' : ' + amperes(cal) + (xs.length ? ' et ' + pluriel2(xs.length, 'câble') + ' grossi' + (xs.length > 1 ? 's' : '') : ''));
   if (nouveau && nouveau !== pn) verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
   else if (!nouveau) poserCharge(nom, { ...(chargeEcrite(nom) || {}), calibre: cal });
   xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition(); pulserGrossis(xs);
-  dire(nom + ' : ' + amperes(cal) + (nouveau ? ' (' + nouveau + ')' : '') + (xs.length ? ', ' + xs.map(p => (p.x.actuel || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + '. Ctrl+Z défait le tout.'); return true; }
+  // (v84, la charte : après un geste annulable, le message propose « Défaire »)
+  dire(nom + ' : ' + amperes(cal) + (nouveau ? ' (' + nouveau + ')' : '') + (xs.length ? ', ' + xs.map(p => (p.x.actuel || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + ' — il ira dans l’Excel corrigé.', false, typeof defaire === 'function' ? { geste: 'Défaire', faire: () => defaire() } : undefined); return true; }
 /* LA CARTE DE DÉCISION (le parcours v72 : « 102CB1 coche 15 A en vert sous 4 problèmes rouges ; la vraie histoire est la
    première des onze lignes de la barre, repliée ») : en tête de la fiche, quand le calibre que l'outil retient n'est pas
    celui du retest — ce que fait le retest (il déclenche, il touche la courbe ; ou il est plus gros qu'il ne faut), le
@@ -24137,8 +24265,10 @@ const propositionNonEcrite = d => !!(d.gPn && d.origine !== 'main' && !d.sansPro
    problèmes de la fiche (la pastille compte ceux qu'elle démontre). */
 function sectionDisjoncteur(nom, d, o, probs) { d = d || disjonctionDe(nom); o = o || origineDuCalibre(nom, d);
   const part = (cle, titre, html, droite, aideCle) => groupeSection(titre, html, { cls: `fi-dj dj-part dj-${cle}`, attrs: `data-disj="${escA(nom)}" data-part="${cle}"`, droite, aide: aideCle ? [aideCle, contexteAide(aideCle, d)] : null });
-  const tete = part('calibre', '', heroCalibre(nom, d, o));
-  if (d.sansCourbe) return { cle: 'disjoncteur', vide: 'aucune courbe de disjonction dans la norme : rien ne se choisit', contenu: tete };
+  /* (v86, l'intégrateur, G8 : plus de choix libre du calibre) le cadran et « À la main » ne se montrent plus : l'onglet Calibre
+     lit la frise (08-fiche, `blocDuCalibre`) ; sans courbe dans vos tables, une phrase dit pourquoi rien ne se juge */
+  const tete = '';
+  if (d.sansCourbe) return { cle: 'disjoncteur', vide: 'aucune courbe de disjonction dans la norme : rien ne se choisit', contenu: part('calibre', '', `<p class="fi-note">Vos tables n’ont pas de courbe de disjonction pour ${esc(famDe(d) || 'sa famille')} : VOLTA ne juge pas le calibre${d.pn > 0 ? ' ; celui de votre fichier reste, ' + esc(amperes(d.pn)) : ''}.</p>`) };
   const cal = d.calibre, v = verdictDuRetenu(d);
   // « + Ajouter un état » : la dernière ligne du tableau (le designer v83 : le geste au bout de la liste, là où l'œil le
   // cherche, plus en haut à droite) — ou, quand un état de base a été supprimé, la petite liste qui le rend
@@ -24454,6 +24584,37 @@ function propositionDuCalibre(nom, d) { const passe = d.passe, cal = d.calibre; 
   if (!(cal > passe)) return null;
   const fils = passe === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   return { cal: passe, main: false, m, fils }; }
+/* LE CALIBRE, dans son onglet (v86, l'intégrateur, G8) : la frise des calibres — UNE SEULE LISTE, celle des Hypothèses
+   (`listeDesCalibres`), chacun en ampères — qui ne se clique plus : son survol dit, en ampères, ce que ce calibre fait sur la
+   durée du profil (« au démarrage, il tire 9,31 A pendant 2,1 min ; sur 2,1 min, un 7,5 A disjoncte dès 7,24 A : il
+   disjoncte ») ; dessous, le seul geste qui écrit un calibre : la proposition justifiée de VOLTA (« Retenir le 7,5 A »), qui
+   part dans l'Excel corrigé, « Défaire » dans son message. `avecDecision` : la carte de décision, en tête, porte déjà la sienne. */
+function blocDuCalibre(nom, d, o, avecDecision) { const xs = listeDesCalibres(d); if (!xs.length) return '';
+  const cal = d.calibre, propose = propositionNonEcrite(d), fam = famDe(d), v = verdictDuRetenu(d);
+  const items = xs.map(x => { const c = x.calibre, A = amperes(c);
+    if (x.hors) return `<span class="vu-cal hors" role="listitem" tabindex="0" aria-label="${escA(motHors(d, c))}" data-bulle="${escA(motHors(d, c))}"><b>${esc(nombre(c))}<small>A</small></b><small>${esc(fam ? 'pas en ' + fam : 'hors famille')}</small></span>`;
+    const k = cleDuVerdict(x.g), on = Math.abs(c - (cal || 0)) < 1e-9, fic = o.calRetest === c || (propose && d.pn === c), m = motsDuCalibre(d, c);
+    const mot = on ? (d.pn === c && d.origine !== 'main' && !pnDeVolta(nom) ? 'fichier' : 'retenu') : fic ? 'actuel' : '';
+    const bulle = (m ? m.titre + '\n' + m.bulle : A + ' : pas jugé, le profil de charge manque.') + (on ? '\nC’est le calibre retenu.' : fic ? '\nC’est celui de votre fichier.' : '');
+    return `<span class="vu-cal ${k === 'passe' ? 'oui' : k ? 'non' : 'neutre'}${on ? ' on' : ''}${fic ? ' fichier' : ''}" role="listitem" tabindex="0" data-cal="${c}" aria-label="${escA(bulle.replace(/\n/g, ' '))}" data-bulle="${escA(bulle)}"><b>${esc(nombre(c))}<small>A</small></b><small>${esc(mot)}</small></span>`; }).join('');
+  const legende = o.calRetest || propose ? `<p class="vu-legende"><span><i class="act"></i>actuel : celui de votre fichier</span></p>` : '';
+  // la proposition de VOLTA : son geste, et pourquoi en une phrase
+  const p = avecDecision ? null : propositionDuCalibre(nom, d), nf = p ? p.fils.length : 0;
+  const prop = !p ? '' : `<div class="dj-prop"><button type="button" class="btn cuivre dense" data-dj-prop="${escA(nom)}" data-bulle="${escA(p.main ? 'Rend le calibre au calcul de VOLTA' : 'Écrit dans l’Excel corrigé : ' + (pnAvecCalibre(pnDuRepere(nom), d.famille, p.cal) || amperes(p.cal)) + (nf ? ', et ' + pluriel2(nf, 'câble') + ' grossi' + (nf > 1 ? 's' : '') : '') + ' — « Défaire » la reprend')}">Retenir le ${esc(amperes(p.cal))}${nf ? ' et grossir ' + (nf > 1 ? 'les ' + nf + ' câbles' : 'le câble') : ''}</button>`
+    + `<p><b>${p.main ? 'Le calcul de VOLTA' : 'Le plus petit qui ne disjoncte pas'}</b> — ${insecable(esc(p.m.bulle))}${p.main ? '' : ' <span>Il ira dans l’Excel corrigé.</span>'}</p></div>`;
+  const deFichier = d.pn > 0 && cal > 0 && Math.abs(d.pn - cal) < 1e-9 && !pnDeVolta(nom);
+  const sous = d.sansProfil ? 'sans profil de charge, VOLTA ne le juge pas' : !(cal > 0) ? 'aucun calibre ne convient'
+    : d.origine === 'main' ? (deFichier && !pnChangeIci(nom) ? 'celui de votre fichier, gardé' : 'retenu à la main')
+    : deFichier ? 'celui de votre fichier : il ' + (v.etat === 'ko' ? 'disjoncte' : 'ne disjoncte pas') : v.etat === 'ko' ? 'il disjoncte' : 'le plus petit qui ne disjoncte pas';
+  return `<section class="vu-bloc vu-bloc-cal"><h4 class="vu-titre">Le calibre <span>${esc(sous)}</span></h4><div class="vu-cals" role="list" aria-label="${escA('Les calibres de vos Hypothèses' + (fam ? ', en ' + fam : '') + ' : survolez-en un pour voir ce qu’il fait')}">${items}</div>${legende}${prop}</section>`; }
+/* LA FRISE DE LA CARTE (v86, l'intégrateur, G7) : la même liste, chaque calibre en ampères (« 7,5 A »), le retenu, l'actuel (celui
+   de votre fichier), ceux que la famille ne fait pas à part ; le survol dit ce que chacun fait, comme dans l'onglet Calibre. */
+function friseDeLaCarte(nom, d, o) { const xs = listeDesCalibres(d); if (!xs.length) return ''; const cal = d.calibre, act = o && o.calRetest ? o.calRetest : d.pn && d.pn !== cal ? d.pn : null;
+  return `<span class="vu-calv dj-frise"><span class="vu-calv-l">${xs.map(x => { const c = x.calibre;
+      if (x.hors) return `<span class="vu-c hors" data-bulle="${escA(motHors(d, c))}"><b>${esc(nombre(c))}<small>A</small></b><small></small></span>`;
+      const k = cleDuVerdict(x.g), r = Math.abs(c - (cal || 0)) < 1e-9, a = act === c && !r, m = motsDuCalibre(d, c);
+      return `<span class="vu-c ${k === 'passe' ? 'oui' : k ? 'non' : 'neutre'}${r ? ' ret' : ''}${a ? ' act' : ''}"${m ? ` data-bulle="${escA(m.titre + '\n' + m.bulle)}"` : ''}><b>${esc(nombre(c))}<small>A</small></b><small>${r ? 'retenu' : a ? 'actuel' : ''}</small></span>`; }).join('')}</span>`
+    + `<span class="vu-legende"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span>${act && act !== cal ? '<span>actuel : celui de votre fichier</span>' : ''}</span></span>`; }
 // d'où vient le seuil (la bulle de la conclusion) : la courbe qui juge, la plus rapide de la famille
 const bulleDuSeuil = m => m && m.courbe ? `Le seuil se lit sur la courbe ${m.courbe}, la plus rapide de la famille : sous le seuil, il ne disjoncte pas ; au-dessus, il disjoncte.` : '';
 /* LA CONCLUSION, dessinée : la marque du verdict (une coche verte, une croix rouge), la phrase grande, le détail dessous.
@@ -24489,7 +24650,8 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
   // chaque calibre jugé sur ce profil (sans les câbles : le seuil d'un point n'en dépend pas) — le seuil de chaque barre
   const ctx = { ...(d.contexte || {}), fils: [] }, juges = new Map(gamme.map(g => { let j = null; try { j = verdictDisjonction(app.norme, d.courbe || '', g.calibre, d.profil, ctx); } catch (_) { j = null; } return [g.calibre, j]; }));
   const point = (c, p) => { const j = juges.get(c); return j ? j.points.find(x => x.k === p.k) || null : null; };
-  const max = Math.max(...gamme.map(g => g.calibre), ...pts.map(p => p.i)) * 1.08, pc = v => Math.max(0, Math.min(100, v / max * 100)), f1 = v => (Math.round(v * 100) / 100).toString();
+  // (v86, G7) l'échelle porte la liste des Hypothèses entière : un calibre que la famille ne fait pas y reste, à part
+  const liste = listeDesCalibres(d), max = Math.max(...liste.map(x => x.calibre), ...pts.map(p => p.i)) * 1.08, pc = v => Math.max(0, Math.min(100, v / max * 100)), f1 = v => (Math.round(v * 100) / 100).toString();
   const seuilDe = (c, p) => { const q = point(c, p); return q && isFinite(q.seuil) ? q.seuil : null; };
   const calZ = cal > 0 ? cal : gamme[gamme.length - 1].calibre, A = amperes(calZ);
   const lignes = pts.map(p => { const s = seuilDe(calZ, p), q = point(calZ, p), ko = !!q && q.ok === false, perm = p.t === Infinity, v = Math.min(FLUX.max, FLUX.base + FLUX.parA * p.i), dedans = pc(p.i) > 80;
@@ -24501,9 +24663,11 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
       + `<i class="dj-fx-barre" style="width:${pc(p.i).toFixed(2)}%;--flux:${(FLUX.periode / v).toFixed(2)}s"></i>`
       + `<b class="dj-fx-val${dedans ? ' dedans' : ''}" style="left:${pc(p.i).toFixed(2)}%">${esc(amperes(p.i))}</b></span></div>`; }).join('');
   // l'échelle : chaque calibre à sa place ; deux chiffres trop proches, le plus petit se tait (son point reste, sa bulle le dit)
-  const piste = Math.max(240, largeurVue() - 150), kept = []; gamme.forEach(g => { const x = pc(g.calibre) / 100 * piste, w = 14 + String(nombre(g.calibre) + ' A').length * 7, imp = g.calibre === cal || g.calibre === fic;
+  const piste = Math.max(240, largeurVue() - 150), kept = []; liste.forEach(g => { const x = pc(g.calibre) / 100 * piste, w = 14 + String(nombre(g.calibre) + ' A').length * 7, imp = g.calibre === cal || g.calibre === fic;
     const voisin = kept.find(k => Math.abs(k.x - x) < (k.w + w) / 2 + 6); if (!voisin) kept.push({ c: g.calibre, x, w }); else if (imp && voisin.c !== cal && voisin.c !== fic) { kept.splice(kept.indexOf(voisin), 1, { c: g.calibre, x, w }); } });
-  const cals = gamme.map(g => { const c = g.calibre, k = cleDuVerdict(g), m = motsDuCalibre(d, c) || { titre: amperes(c), detail: '', cle: k }, ret = c === cal, f = c === fic, montre = kept.some(x => x.c === c);
+  // un calibre que la famille ne fait pas : son point gris, son chiffre, sa bulle (rien ne se survole en aperçu : il n'a pas de seuil)
+  const horsDe = c => `<span class="dj-fx-cal hors${kept.some(y => y.c === c) ? '' : ' tu'}" style="left:${pc(c).toFixed(2)}%" role="listitem" tabindex="0" aria-label="${escA(motHors(d, c))}" data-bulle="${escA(motHors(d, c))}"><i></i><b>${esc(nombre(c))}<small>A</small></b></span>`;
+  const cals = liste.map(x => { if (x.hors) return horsDe(x.calibre); const g = x.g, c = g.calibre, k = cleDuVerdict(g), m = motsDuCalibre(d, c) || { titre: amperes(c), detail: '', cle: k }, ret = c === cal, f = c === fic, montre = kept.some(y => y.c === c);
     const seuils = pts.map(p => { const s = seuilDe(c, p); return s != null ? f1(s) : ''; }).join(' '), oks = pts.map(p => { const q = point(c, p); return q && q.ok === false ? '0' : '1'; }).join('');
     return `<span class="dj-fx-cal ${k === 'passe' ? 'oui' : 'non'}${ret ? ' ret' : ''}${f ? ' fic' : ''}${montre ? '' : ' tu'}" style="left:${pc(c).toFixed(2)}%" tabindex="0" role="listitem" data-cal="${c}" data-seuils="${seuils}" data-oks="${oks}" data-cle="${escA(m.cle)}" data-titre="${escA(m.titre)}" data-detail="${escA(m.detail)}"`
       // (pas de bulle : le survol écrit déjà sa conclusion en tête, pas deux fois la même chose)
@@ -24512,15 +24676,16 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
   // le calibre de votre fichier, quand VOLTA en retient un autre : sa conclusion, une ligne dessous
   const mF = fic ? motsDuCalibre(d, fic) : null, ligneF = mF ? `<p class="dj-concl-fic ${mF.cle === 'passe' ? 'ok' : 'ko'}">${marqueVerdict(mF.cle)}<span><b>Votre fichier porte un ${esc(amperes(fic))}</b> : il ${mF.cle === 'passe' ? 'ne disjoncte pas' : 'disjoncte'}. ${insecable(esc(mF.detail))}</span></p>` : '';
   // (v81) le retenu est celui du fichier et il ne disjoncte pas, mais un plus petit suffirait : VOLTA le garde, et le dit
-  const mini = (gamme.find(g => g.valide && g.catalogue !== false) || {}).calibre, deFichier = d.pn && cal && Math.abs(d.pn - cal) < 1e-9 && d.origine !== 'main' && !pnDeVolta(nom);
-  const note = deFichier && mini && mini < cal - 1e-9 ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(mini))} — un clic sur lui, dans l’onglet Calibre, le retient.</p>` : '';
+  // (v86, G8 : la frise ne se clique plus — le geste est la proposition de VOLTA, dans l'onglet Calibre)
+  const pr = propositionDuCalibre(nom, d), deFichier = d.pn && cal && Math.abs(d.pn - cal) < 1e-9 && d.origine !== 'main' && !pnDeVolta(nom);
+  const note = deFichier && pr && !pr.main ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(pr.cal))} : « Retenir le ${esc(amperes(pr.cal))} », dans l’onglet Calibre, l’écrit dans l’Excel corrigé.</p>` : '';
   const leg = `<p class="dj-fx-leg"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="zone"></i><span class="dj-fx-leg-z">où le ${esc(A)} disjoncte</span></span></p>`;
   return `<div class="dj-ca" data-disj="${escA(nom)}" data-max="${f1(max)}" data-cal="${calZ}">${conclusionCalibre(d, 'dj-concl-g')}${ligneF}`
     + `<div class="dj-flux" role="group" aria-label="${escA('Ce qu’il tire, sur l’échelle de ses calibres')}">${lignes}<div class="dj-fx-echelle"><span></span><span class="dj-fx-cals" role="list" aria-label="Les calibres de la gamme : survolez-en un pour voir où il disjoncte">${cals}</span></div></div>${leg}${note}</div>`; }
 // survoler (ou parcourir au clavier) un calibre de l'échelle : ses zones glissent sur les barres, sa conclusion s'écrit ; la
 // souris partie, le retenu revient
 function lierCourantAppele(ca) { const max = +ca.dataset.max || 1, lignes = [...ca.querySelectorAll('.dj-fx-l')], concl = ca.querySelector('.dj-concl-g'), legZ = ca.querySelector('.dj-fx-leg-z');
-  const ret = ca.querySelector(`.dj-fx-cal[data-cal="${CSS.escape(ca.dataset.cal || '')}"]`), cals = [...ca.querySelectorAll('.dj-fx-cal')], t0 = concl ? concl.querySelector('.dj-concl-t span') : null, titre0 = t0 ? t0.textContent : '';
+  const ret = ca.querySelector(`.dj-fx-cal[data-cal="${CSS.escape(ca.dataset.cal || '')}"]`), cals = [...ca.querySelectorAll('.dj-fx-cal:not(.hors)')], t0 = concl ? concl.querySelector('.dj-concl-t span') : null, titre0 = t0 ? t0.textContent : '';
   const montrer = el => { if (!el) return; const s = (el.dataset.seuils || '').split(' '), oks = el.dataset.oks || '';
     lignes.forEach((l, i) => { const z = l.querySelector('.dj-fx-zone'), v = parseFloat(s[i]); if (z) z.style.left = (isFinite(v) ? Math.max(0, Math.min(100, v / max * 100)) : 100).toFixed(2) + '%'; l.classList.toggle('ko', oks[i] === '0'); });
     if (concl) ecrireConclusion(concl, { cle: el.dataset.cle, titre: el.dataset.titre, detail: el.dataset.detail }, el === ret ? titre0 : '');
@@ -24700,7 +24865,7 @@ function lierDisjonction(nom, conteneur) {
   const suivreVif = dd => { const m = motsDuCalibre(dd, dd.calibre);
     QA('.dj-concl-pc').forEach(el => ecrireConclusion(el, m)); racine.querySelectorAll(`.dj-ca[data-disj="${CSS.escape(nom)}"] .dj-concl-g`).forEach(el => ecrireConclusion(el, m));
     // la rangée des calibres (08-fiche, `.vu-cals`) : chacun son mot, sur ce profil
-    racine.querySelectorAll('.vu-cals [data-nv-cal]').forEach(b => { const g = (dd.gamme || []).find(x => Math.abs(x.calibre - +b.dataset.nvCal) < 1e-9); if (!g) return; const k = cleDuVerdict(g); b.classList.toggle('oui', k === 'passe'); b.classList.toggle('non', k !== 'passe'); });
+    racine.querySelectorAll('.vu-cals .vu-cal[data-cal]').forEach(b => { const g = (dd.gamme || []).find(x => Math.abs(x.calibre - +b.dataset.cal) < 1e-9); if (!g) return; const k = cleDuVerdict(g); b.classList.toggle('oui', k === 'passe'); b.classList.toggle('non', !!k && k !== 'passe'); b.classList.toggle('neutre', !k); });
     // chaque ligne : son point, et « disjoncte » quand il fait disjoncter
     const parI = new Map((dd.points || []).map(p => [p.i, p]));
     QA('.dj-etat').forEach(row => { const inp = row.querySelector('[data-q="i"]'), i = inp ? nombreLu(inp.value) : null, p = i > 0 ? parI.get(i) : null, ko = !!p && p.ok === false, v = row.querySelector('.dj-verdict');
@@ -24771,6 +24936,13 @@ function lierDisjonction(nom, conteneur) {
       row.addEventListener('focusout', e => { if (!row.contains(e.relatedTarget)) row._allumer(row, false); }); });
     // l'essentiel : survoler un calibre de l'échelle montre ses zones et sa conclusion
     racine.querySelectorAll(`.dj-ca[data-disj="${CSS.escape(nom)}"]`).forEach(lierCourantAppele);
+    /* (v86, l'intégrateur, G8) LE SEUL GESTE QUI ÉCRIT UN CALIBRE : la proposition justifiée de VOLTA (« Retenir le 7,5 A ») —
+       elle part dans l'Excel corrigé (le part number du calibre, marqué « proposition de VOLTA acceptée »), son message
+       propose « Défaire » ; un calibre retenu à la main par une version d'avant revient au calcul de VOLTA */
+    racine.querySelectorAll(`[data-dj-prop="${CSS.escape(nom)}"]`).forEach(b => { b.onclick = () => { const p = propositionDuCalibre(nom, E.d); if (!p) return; const avant = parts()[0];
+      if (p.main) { rendreCalibre(nom); const d2 = disjonctionDe(nom); dire(nom + ' : ' + (d2.calibre ? amperes(d2.calibre) + ', ' : '') + 'le calcul de VOLTA.', false, { geste: 'Défaire', faire: () => defaire() }); }
+      else parVolta(() => deciderCalibre(nom, p.cal));
+      b.blur(); apres(avant, false); }; });
     lierGraphe();
     /* LE VOYAGE : le calibre au centre a changé depuis le dernier rendu de CETTE fiche (un clic, Entrée, « Automatique »,
        Ctrl+Z) — l'index part d'où il était, longe l'arc jusqu'au nouveau, le chiffre roule, la ligne du verdict s'écrit.
@@ -25533,8 +25705,12 @@ function barreNav(o) { o = o || {};
     + `<button type="button" class="fi-pas" id="fi-suiv"${suiv ? '' : ' disabled'} aria-label="${escA(tSuiv + ' (Alt+→)')}" data-bulle="${escA(tSuiv + ' › — Alt+→')}">${ico('droite')}</button>`
     + (o.milieu ? `<span class="fi-nav-milieu">${o.milieu}</span>` : `<span class="fi-nav-nom" aria-hidden="true">${esc(o.nom || '')}</span>`) + `${boutonEpingle()}${boutonTaille()}${o.fermer === false ? '' : `<button type="button" class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer — Échap">${ico('fermer')}</button>`}</nav>`; }
 /* Les câbles d'un repère que le courant dépasse : des problèmes de la fiche, montrés dans « Câbles ». */
+// (v86) la même phrase que le contrôle dans la fiche de son disjoncteur — le palier de la durée, d'où vient l'admis — : les
+// deux fiches disent le même problème avec les mêmes mots (08-niveaux, `motsDuProbleme`)
 const problemesDesFils = fils => fils.flatMap(f => { const x = intensiteDuFil(f.l); if (!x.trop.length) return []; const p = x.trop[0];
-  return [{ niveau: 'ko', texte: `${cableEtType(f.l)} : ${p.nom} ${amperes(p.i)}${p.t === Infinity ? '' : ' pendant ' + secondes(p.t)} > ${amperes(x.admise(p.t))} admis${x.al ? ' — sous ' + x.al.nom : ''}`, section: 'fils', viser: cleFil(f.l) }]; });
+  const palier = typeof pourPalier === 'function' && typeof palierDe === 'function' ? ' ' + pourPalier(palierDe(p.t)) : '';
+  let decl = ''; try { decl = typeof motDuDeclassement === 'function' && f.l.type ? motDuDeclassement(app.norme, f.l.type, x.H, p.t) : ''; } catch (_) { decl = ''; }
+  return [{ niveau: 'ko', texte: `${cableEtType(f.l)} : ${p.nom} ${amperes(p.i)}${p.t === Infinity ? '' : ' pendant ' + secondes(p.t)} > ${amperes(x.admise(p.t))} admis${palier}${decl ? ' (' + decl + ')' : ''}${x.al ? ' — sous ' + x.al.nom : ''}`, section: 'fils', viser: cleFil(f.l) }]; });
 
 /* ---- L'EN-TÊTE --------------------------------------------------------------------------------------------------- */
 /* Le SYMBOLE du type, à plat : l'équipement (un boîtier et son connecteur), le disjoncteur (deux bornes, le levier,
@@ -26478,7 +26654,16 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   if (c && c.pn && !nomF && !M) etapesC.push({ html: 'VOLTA ne connaît pas encore la norme de cette référence : sa face et ses contacts à sertir restent à préciser.', source: 'norme', etat: 'att' });
   const blocFace = M ? `<section class="vu-bloc vu-bloc-face"><h4 class="vu-titre">La face du connecteur ${esc(c.nom)} <span>${esc(prisSur(Q.utilises || broches.length, M.module.contacts.length))}</span></h4>`
       + (ids.length > 1 ? `<div class="vu-face-choix">${bulles}</div>` : '') + `<figure class="vu-fig vu-fig-face">${faceG}<figcaption>${esc(M.module.variante + ' · vue côté contacts')}</figcaption>${legendeFaceVue(broches.some(x => x.ko))}</figure></section>` : '';
-  const ess = !ids.length ? '<p class="vu-note">Cet équipement n’a pas encore de câble.</p>' : `${blocB}${blocFace}${c ? pourquoiVue('D’où vient le connecteur ' + c.nom, etapesC) : ''}`;
+  /* (v86, l'audit : « D'où vient le connecteur A » ne parlait que de A, alors que 103RL1 a aussi X) : sans face dessinée (la
+     norme est inconnue), aucune bulle ne passe d'un connecteur à l'autre — la section les dit TOUS, ceux qui partagent une
+     référence ensemble (« Connecteurs A et X : référence … »). Avec la face, les bulles A · X choisissent celui qu'elle dit. */
+  const tousC = !M && C.length > 1 ? (() => { const parPn = new Map(); C.forEach(x => { const kx = x.pn || ''; (parPn.get(kx) || parPn.set(kx, []).get(kx)).push(x.nom); });
+    const noms = xs => xs.length > 1 ? 'Connecteurs ' + xs.slice(0, -1).map(n => `<b class="id">${esc(n)}</b>`).join(', ') + ' et ' + `<b class="id">${esc(xs[xs.length - 1])}</b>` : `Connecteur <b class="id">${esc(xs[0])}</b>`;
+    const connue = pn => C.some(x => x.pn === pn && ((parNom.get(x.nom) || {}).plan || {}).famille) || !!familleDeReference(Nn, pn, 'connecteur');
+    const pns = [...parPn.keys()].filter(Boolean), inconnus = pns.filter(pn => !connue(pn));
+    return [...[...parPn].map(([pn, xs]) => pn ? { html: `${noms(xs)} : référence <b class="id">${esc(pn)}</b>.`, source: 'fichier', mot: 'votre fichier' } : { html: `${noms(xs)} : votre fichier ne donne pas de référence.`, source: 'fichier', etat: 'att' }),
+      inconnus.length ? { html: `VOLTA ne connaît pas encore la norme de ${inconnus.length > 1 ? 'ces références' : 'cette référence'} : la face et les contacts à sertir ${C.length > 1 ? 'de ces connecteurs' : 'de ce connecteur'} restent à préciser.`, source: 'norme', etat: 'att' } : null].filter(Boolean); })() : null;
+  const ess = !ids.length ? '<p class="vu-note">Cet équipement n’a pas encore de câble.</p>' : `${blocB}${blocFace}${tousC ? pourquoiVue('D’où viennent ses connecteurs', tousC) : c ? pourquoiVue('D’où vient le connecteur ' + c.nom, etapesC) : ''}`;
   const onglets = [
     { cle: 'essentiel', statut: quels.length <= 1 && places ? statutContacts(pris, places, quels.some(fautif) ? 'ko' : 'ok') : { t: quels.length > 1 ? (quels.some(fautif) ? quels.filter(fautif).join(', ') + ' à régler' : pluriel(quels.length, 'connecteur')) : pluriel(ids.length, 'connecteur'), etat: quels.some(fautif) ? 'ko' : 'ok',
       bulle: quels.some(fautif) ? 'Connecteur ' + quels.filter(fautif).join(', ') + ' : aucun arrangement ne loge ses câbles' : quels.length > 1 ? 'Connecteurs ' + quels.join(', ') + ' : chacun loge ses câbles' : '' }, contenu: ess },
@@ -26722,9 +26907,10 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     ch.pointe ? { k: quand, v: valeurU(nombreCourt(ch.pointe), 'A'), onglet: 'calibre' } : null,
     chiffreCables(sections[1])];
   const dec = typeof decisionEnMots === 'function' ? decisionEnMots(nom, d) : null;
-  const geste = dec ? `<button type="button" class="btn cuivre dense" data-nv-decider="${escA(nom)}" data-bulle="${escA('Écrit dans l’installation : ' + amperes(cal) + ', et les câbles qu’il demande — une seule entrée d’historique, Ctrl+Z défait le tout')}">${esc('Passer en ' + amperes(cal))}</button>` : '';
+  const geste = dec ? `<button type="button" class="btn cuivre dense" data-nv-decider="${escA(nom)}" data-bulle="${escA('Écrit dans l’Excel corrigé : ' + amperes(cal) + ', et les câbles qu’il demande — une seule entrée d’historique, « Défaire » la reprend')}">${esc('Passer en ' + amperes(cal))}</button>` : '';
   /* (v78) L'ESSENTIEL — ce qu'il tire contre ses calibres, comment VOLTA a choisi, ce qu'il alimente ; LE CALIBRE — les
-     calibres de la gamme en touches (un clic en retient un), le profil qui s'écrit, la courbe */
+     calibres de vos Hypothèses en frise (v86 : le survol explique, seule la proposition de VOLTA écrit), le profil qui s'écrit
+     et sa courbe, ensemble */
   const sD = sections[0] || {}, P = sD.parts || {}, sF = sections[1], gamme = (d.gamme || []).filter(g => g.calibre > 0);
   const ec = phaseEcrite(chargeEcrite(nom)), conso = consommateursDe(nom).filter(r => phaseEcrite(chargeEcrite(r))), dur = ch.pointeP && ch.pointeP.t !== Infinity ? secondes(ch.pointeP.t) : '';
   const nonP = gamme.filter(g => cleDuVerdict(g) !== 'passe').map(g => nombre(g.calibre)), oui = gamme.filter(g => cleDuVerdict(g) === 'passe').map(g => nombre(g.calibre));
@@ -26742,25 +26928,21 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     pire ? { html: `${rows.length > 1 ? `Le plus chargé de ses ${rows.length} câbles` : 'Son câble'}${pire.type ? ` (<span class="id">${esc(pire.type)}</span>${pire.bout ? ' vers <span class="id">' + esc(pire.bout.rep) + '</span>' : ''})` : ''} tire <b>${esc(amperes(pire.charge.i))}</b> ; il ${pire.charge.r > 1 ? 'n’en admet que' : 'en admet'} <b>${esc(amperes(pire.charge.admis))}</b>.`, source: 'norme', mot: 'EN 2853', etat: pire.charge.r > 1 ? 'ko' : '', va: { onglet: 'essentiel', vers: '.vu-arbre', mot: 'ses câbles' } } : null];
   /* (v86) « Courant appelé et calibres » — la conclusion en grand, le courant qui s'écoule dans ses barres, les calibres en
      ampères, la note du fichier — : 08-disjoncteurs, `courantAppele` */
-  const touches = gamme.length ? `<div class="vu-cals" role="group" aria-label="Les calibres de la gamme">${gamme.map(g => { const k = cleDuVerdict(g), on = g.calibre === cal, fic = o.calRetest === g.calibre || (propose && d.pn === g.calibre);
-      return `<button type="button" class="vu-cal ${k === 'passe' ? 'oui' : 'non'}${on ? ' on' : ''}${fic ? ' fichier' : ''}" data-nv-cal="${g.calibre}" aria-pressed="${on}" data-bulle="${escA((phraseDe(g.calibre) || amperes(g.calibre) + ' : il ' + motDuVerdict(k)) + (fic ? ' — c’est celui de votre fichier' : '') + (on ? ' — retenu' : ' — un clic le retient'))}"><b>${esc(nombre(g.calibre))}<small>A</small></b><small>${esc(on ? (d.pn && Math.abs(d.pn - g.calibre) < 1e-9 && d.origine !== 'main' && !pnDeVolta(nom) ? 'fichier' : 'retenu') : fic ? 'actuel' : '')}</small></button>`; }).join('')}</div>`
-    + `<p class="vu-legende"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="ret"></i>retenu</span>${o.calRetest || propose ? '<span><i class="act"></i>actuel : celui de votre fichier</span>' : ''}</p>` : '';
-  /* (v85, le lecteur : « soit je laisse VOLTA faire, comme d'habitude, soit manuel ») : le calibre porte le sélecteur
-     AUTOMATIQUE | MANUEL de tous les choix de VOLTA — Automatique rend le choix de VOLTA d'un geste (plus de lien « Revenir
-     au choix de VOLTA » dans la légende) ; Manuel désigne les calibres à prendre */
-  const manCal = d.origine === 'main', amCal = touches ? `<span class="nv-am${manCal ? ' manuel' : ''}" role="group" aria-label="Qui choisit le calibre">`
-    + `<button type="button" class="nv-am-b" data-nv-auto="${escA(nom)}" aria-pressed="${!manCal}" data-bulle="${escA(manCal ? 'Rendre le choix à VOLTA' + (d.passe ? ' : ' + amperes(d.passe) + ', le plus petit qui ne disjoncte pas' : '') : 'VOLTA choisit — c’est le cas')}">Automatique</button>`
-    + `<button type="button" class="nv-am-b" data-am-cal="${escA(nom)}" aria-pressed="${manCal}" data-bulle="${escA(manCal ? 'Retenu à la main — un clic sur un autre calibre le retient' : 'Prendre un calibre vous-même : un clic dessus le retient')}">Manuel</button></span>` : '';
+  /* (v86, l'intégrateur, G8 : « le calibre écrit vient du fichier » — plus d'AUTOMATIQUE | MANUEL, la frise ne se clique plus) :
+     « Le calibre » — la frise des calibres de vos Hypothèses, chacun en ampères, qui explique au survol ; le seul geste, la
+     proposition justifiée de VOLTA (« Retenir le 7,5 A ») — : 08-disjoncteurs, `blocDuCalibre` */
+  const blocCal = blocDuCalibre(nom, d, o, !!decision);
   const onglets = [
-    { cle: 'essentiel', statut: { t: cal ? amperes(cal) + (v.etat === 'ko' ? ', disjoncte' : ', ne disjoncte pas') : 'sans calibre', etat: v.etat === 'ko' ? 'ko' : cal ? 'ok' : '' },
+    // (v86, l'agent « mots » : le statut tient dans l'onglet le plus étroit, à côté du récapitulatif)
+    { cle: 'essentiel', statut: { t: cal ? amperes(cal) + (v.etat === 'ko' ? ' · disjoncte' : ' · valide') : 'sans calibre', etat: v.etat === 'ko' ? 'ko' : cal ? 'ok' : '' },
       contenu: `<section class="vu-bloc vu-bloc-courant"><h4 class="vu-titre">Courant appelé et calibres</h4>${courantAppele(nom, d, o)}</section>${pourquoiVue('Comment VOLTA a choisi le calibre', etapes)}`
         + `<section class="vu-bloc"><h4 class="vu-titre">Ce qu’il alimente <span>${esc(pluriel(rows.length, 'câble'))}</span></h4>${arbreVue(nom, cal, rows)}</section>` },
     { cle: 'calibre', statut: { t: d.sansProfil ? 'profil à écrire' : ch.perm ? 'profil ' + amperes(ch.perm) + (ch.pointe ? ' · ' + amperes(ch.pointe) : '') : '', etat: d.sansProfil ? 'att' : '' },
-      contenu: (decision || '') + (touches ? `<section class="vu-bloc vu-bloc-cal"><h4 class="vu-titre nv-am-t">Le calibre <span>${esc(manCal ? 'retenu à la main' : v.etat === 'ko' ? 'choisi par VOLTA' : d.pn && cal && Math.abs(d.pn - cal) < 1e-9 && !pnDeVolta(nom) ? 'celui de votre fichier : il ne disjoncte pas' : 'le plus petit qui ne disjoncte pas')}</span>${amCal}</h4>${touches}</section>` : '') + (P.profil || '') + (P.courbe || '') + (P.profil ? '' : sD.contenu || '') },
+      contenu: (decision || '') + blocCal + (P.profil || '') + (P.courbe || '') + (P.profil ? '' : sD.contenu || '') },
     sF && { cle: 'cables', statut: statutCables(sF), contenu: sF.contenu, vide: sF.vide },
     sections[2] ? ongletDeLaSection(sections[2]) : null];
   return composerFiche({ type: 'disjoncteur', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pn ? ident(pn) : ''], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
-    vignette: calibresVue(d, o, cal), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation) porte un / : null,
+    vignette: friseDeLaCarte(nom, d, o), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation) porte un / : null,
     ok: d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : `Le ${cal ? amperes(cal) : 'calibre'} passe, et ses câbles portent leur courant.`, pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 
 /* ---- UNE BARRETTE (et une barrette à poser) ------------------------------------------------------------------------ */
@@ -30231,7 +30413,7 @@ function aller(cible) { const P = plans(); const nom = cible.nom;
   const ou = cible.type === 'fil' ? plansDuFil(nom) : plansDuRepere(nom);
   if (P.length > 1 && app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]);
   if (!app.dessin && attenteCourante()) { reporterCible(cible); return; }   // le folio se place au loin : la cible attend le dessin (finirAttente)
-  if (cible.type === 'fil') { const f = app.dessin && app.dessin.fils.find(w => w.cable === nom); if (!f) { dire('« ' + nom + ' » n’est pas dessiné.'); return; }
+  if (cible.type === 'fil') { const f = app.dessin && app.dessin.fils.find(w => w.cable === nom); if (!f) { dire(cible.aff ? 'Le câble ' + cible.aff + ' n’est pas dessiné.' : '« ' + nom + ' » n’est pas dessiné.'); return; }
     choisirFil(f); viserFil(f); pulser({ type: 'fil', f }); return; }
   const c = app.dessin && app.dessin.compDe.get(nom); if (!c) { dire('« ' + nom + ' » n’est sur aucun folio.'); return; }
   // une borne : la fiche du repère sur son connecteur, la ligne du contact allumée (08-fiche, `rouvrir` et son but)
@@ -30277,8 +30459,24 @@ function distanceFrappe(a, b, max) { if (Math.abs(a.length - b.length) > max) re
       if (p2 && i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) c[j] = Math.min(c[j], p2[j - 2] + 1); bas = Math.min(bas, c[j]); }
     if (bas > max) return max + 1; p2 = p; p = c; }
   return p[b.length]; }
+/* (v86, l'audit G4) LE NUMÉRO D'UN CÂBLE se cherche encore, même s'il ne s'écrit plus à l'écran (charte : un câble se dit
+   par son type et ses deux bouts) : « W-101 », le numéro de son Excel, trouve le câble, montré « DR24 · 210SP1:B12 →
+   667VT2:51A », et la ligne dit d'où vient la trouvaille (« n° W-101 de votre fichier ») — sans elle, « w10 » donnerait dix
+   lignes qu'on ne saurait départager. `nom` garde le numéro : c'est par lui qu'`aller` retrouve le câble sur son folio. */
+const boutsDuCable = l => bornePlusRepere(l.de, l.borneDe) + ' → ' + bornePlusRepere(l.vers, l.borneVers);
+const candidatCable = (l, r, propose) => SANS_NUMERO_DE_CABLE
+  ? { type: 'fil', nom: l.cable, aff: (l.type ? l.type + ' · ' : '') + boutsDuCable(l), des: 'n° ' + l.cable + ' de votre fichier', r, propose }
+  : { type: 'fil', nom: l.cable, des: l.de + ' → ' + l.vers, r, propose };
+/* (v86, l'audit G4) LE CALIBRE : « calibre », « calibres » (trois lettres au moins : « cal »), « calibre 10 », « 7,5 A » —
+   les disjoncteurs, chacun avec son calibre (« 102CB1 · calibre 10 A ») ; un nombre ne garde que ceux de ce calibre.
+   Rend null, ou { amp } (null : tous). */
+function calibreCherche(q) { const t = String(q || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const m = /^(cal[a-z]*)?\s*(\d+(?:[.,]\d+)?)?\s*(a|amperes?)?$/.exec(t); if (!m || !(m[1] || m[2])) return null;
+  const mot = m[1] && m[1].length >= 3 && 'calibres'.startsWith(m[1]);
+  if (!(mot || (!m[1] && m[2] && m[3]))) return null;
+  return { amp: m[2] ? parseFloat(m[2].replace(',', '.')) : null }; }
 function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if (!Q) return [];
-  const L = verite(), D = app.contrat.designations, info = new Map();
+  const L = verite(), D = app.contrat.designations, info = new Map(), cal = calibreCherche(q);
   L.forEach(l => [[l.de, l.pnDe, l.descriptionDe], [l.vers, l.pnVers, l.descriptionVers]].forEach(([n, pn, d]) => { if (!n || estRenvoi(n)) return;
     const x = info.get(n) || info.set(n, { n: 0, pns: new Set(), descs: new Set() }).get(n); x.n++; if (pn) x.pns.add(String(pn)); if (d) x.descs.add(String(d).trim()); }));
   const rang = n => rangAPlat(n, Q, Qz), contient = t => rangAPlat(t, Q, Qz) < 2;
@@ -30293,7 +30491,12 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
     bornes.sort((a, b) => triNaturel(a.borne, b.borne)); }
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };
+  if (cal && !natures.includes('CB')) natures.push('CB');
   info.forEach((x, n) => { const des = D.get(n) || ''; let r = rang(n), dit = des || [...x.descs][0] || '';
+    // le calibre cherché : chaque disjoncteur dit le sien, en tête ; « calibre 10 » ne garde que ceux de 10 A
+    if (cal && estDisjoncteur(n)) { const c = typeof calibreAuFolio === 'function' ? calibreAuFolio(n) : null;
+      if (cal.amp != null && !(c > 0 && Math.abs(c - cal.amp) < 1e-6)) return;
+      rep.push({ type: 'repere', nom: n, des: (c > 0 ? 'calibre ' + amperesCb(c) : 'disjoncteur') + (des && des !== 'disjoncteur' ? ' · ' + des : ''), n: x.n, r: 0.5 }); return; }
     if (r === 2 && natures.includes(codeDe(n))) { r = 1.5; dit = CODES[codeDe(n)].nom + (estDisjoncteur(n) && typeof calibreAuFolio === 'function' && calibreAuFolio(n) ? ' · ' + amperesCb(calibreAuFolio(n)) : '') + (dit ? ' · ' + dit : ''); }
     if (r === 2) { const d = contient(des) ? des : [...x.descs].find(contient), pn = d ? null : [...x.pns].find(contient); if (!d && !pn) return; dit = d || pn; r = d ? 2 : 3; }
     // ni désignation ni description : sa nature (« disjoncteur · 15 A »), plutôt qu'une ligne vide
@@ -30302,10 +30505,11 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   rep.sort((a, b) => a.r - b.r || b.n - a.n || triNaturel(a.nom, b.nom));
   // la nature entière : « tous les disjoncteurs », dans le récapitulatif
   const nat = natures.map(code => { const k = rep.filter(r => codeDe(r.nom) === code).length; if (!k) return null; const nom = CODES[code].nom, onglet = ONGLET_DE_NATURE[code] || 'equipements';
-    return { type: 'nature', nom: k > 1 ? nom.replace(/^(\S+?)([sxz]?)(?=\s|$)/, (t, a, b) => a + (b || 's')) : nom, code, onglet, filtre: onglet === 'equipements' ? nom : '', des: 'tous, dans le récapitulatif', n: k, sansCable: true }; }).filter(Boolean).slice(0, 2);
-  // les câbles par leur numéro ; un type de câble (deux lettres au moins) : la ligne « tous les DR12 », puis quelques-uns
+    return { type: 'nature', nom: k > 1 ? nom.replace(/^(\S+?)([sxz]?)(?=\s|$)/, (t, a, b) => a + (b || 's')) : nom, code, onglet, filtre: onglet === 'equipements' ? nom : '', des: cal && code === 'CB' ? 'leurs calibres, dans le récapitulatif' : 'tous, dans le récapitulatif', n: k, sansCable: true }; }).filter(Boolean).slice(0, 2);
+  // les câbles par leur numéro (celui du fichier, même s'il ne s'écrit plus : `candidatCable`) ; un type de câble (deux
+  // lettres au moins) : la ligne « tous les DR12 », puis quelques-uns
   const fils = [], vus = new Set(), types = new Map();
-  L.forEach(l => { const c = SANS_NUMERO_DE_CABLE ? '' : l.cable; if (c && !vus.has(c) && contient(c)) { vus.add(c); fils.push({ type: 'fil', nom: c, des: l.de + ' → ' + l.vers, r: rang(c) }); }
+  L.forEach(l => { const c = l.cable; if (c && !vus.has(c) && contient(c)) { vus.add(c); fils.push(candidatCable(l, rang(c))); }
     if (Q.length >= 2 && l.type && contient(l.type) && l.de !== l.vers) types.set(l.type, (types.get(l.type) || 0) + 1); });
   fils.sort((a, b) => a.r - b.r || triNaturel(a.nom, b.nom));
   const ty = [...types].sort((a, b) => rang(a[0]) - rang(b[0]) || b[1] - a[1]).slice(0, 2).map(([t, n]) => ({ type: 'type', nom: t, des: 'tous les câbles de ce type, dans le récapitulatif', n }));
@@ -30318,11 +30522,11 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
 function proposition(Q, info, L) { const Qz = sansZeros(Q), max = Qz.length <= 3 ? 0 : Qz.length <= 6 ? 1 : 2; if (!max) return [];
   let best = null; const essayer = (t, quoi) => { const d = distanceFrappe(sansZeros(aPlat(t)), Qz, best ? Math.min(max, best.d) : max); if (d <= max && (!best || d < best.d)) best = { d, t, quoi }; };
   info.forEach((x, n) => essayer(n, 'repere')); const vus = new Set(), types = new Set();
-  for (const l of L) { if (!SANS_NUMERO_DE_CABLE && l.cable && !vus.has(l.cable)) { vus.add(l.cable); essayer(l.cable, 'fil'); } if (l.type) types.add(l.type); if (best && best.d === 1 && vus.size > 5000) break; }
+  for (const l of L) { if (l.cable && !vus.has(l.cable)) { vus.add(l.cable); essayer(l.cable, 'fil'); } if (l.type) types.add(l.type); if (best && best.d === 1 && vus.size > 5000) break; }
   types.forEach(t => essayer(t, 'type'));
   if (!best) return [];
-  const l = best.quoi === 'fil' ? L.find(x => x.cable === best.t) : null;
-  return [{ type: best.quoi, nom: best.t, propose: true, des: best.quoi === 'fil' ? l.de + ' → ' + l.vers : best.quoi === 'type' ? 'tous les câbles de ce type' : (app.contrat.designations.get(best.t) || natureDe(best.t)) }]; }
+  if (best.quoi === 'fil') return [candidatCable(L.find(x => x.cable === best.t), 0, true)];
+  return [{ type: best.quoi, nom: best.t, propose: true, des: best.quoi === 'type' ? 'tous les câbles de ce type' : (app.contrat.designations.get(best.t) || natureDe(best.t)) }]; }
 let qSel = 0, qCands = [];
 const GENRE_CANDIDAT = { repere: 'repère', fil: 'câble', borne: 'borne', type: 'type', nature: 'nature' };
 /* Les lignes de la liste ne prennent pas Tab (v74) : ↑ ↓ les parcourent depuis le champ (`aria-activedescendant`), un clic
@@ -30332,7 +30536,7 @@ function montrerCandidats() { const box = $('q-liste'), q = $('q').value; qCands
   const propose = qCands.length && qCands[0].propose;
   box.innerHTML = (propose ? `<div class="q-rien q-rien-tete">Rien qui s’écrive « ${esc(q.trim())} ».</div>` : '')
     + (qCands.length ? qCands.map((c, i) => `<button class="q-item${i === qSel ? ' on' : ''}${c.propose ? ' q-propose' : ''}" role="option" id="q-opt-${i}" data-i="${i}" tabindex="-1" aria-selected="${i === qSel}">
-      <span class="genre">${c.propose ? 'Vouliez-vous dire' : GENRE_CANDIDAT[c.type] || c.type}</span><span class="nom">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.nom)}${c.propose ? ' ?' : ''}</span><span class="des${c.type === 'fil' || c.type === 'borne' ? ' mono' : ''}">${esc(c.des)}</span>${c.n ? `<span class="cpt">${esc(c.sansCable ? String(c.n) : pluriel(c.n, 'câble'))}</span>` : ''}</button>`).join('')
+      <span class="genre">${c.propose ? 'Vouliez-vous dire' : GENRE_CANDIDAT[c.type] || c.type}</span><span class="nom">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.aff || c.nom)}${c.propose ? ' ?' : ''}</span><span class="des${c.type === 'fil' || c.type === 'borne' ? ' mono' : ''}">${esc(c.des)}</span>${c.n ? `<span class="cpt">${esc(c.sansCable ? String(c.n) : pluriel(c.n, 'câble'))}</span>` : ''}</button>`).join('')
     : '<div class="q-rien">Rien qui corresponde — un repère, un câble, un part number, un type, une nature (« disjoncteur »), une description, ou « repère:borne ».</div>');
   $('q').setAttribute('aria-activedescendant', qCands.length ? 'q-opt-' + qSel : ''); }
 /* La fenêtre de recherche s'ouvre à côté du rail, par le bouton ou « / »,
@@ -30381,7 +30585,7 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
 const PALETTE = { el: null, sel: 0, lignes: [], avant: null };
 // ce qu'on tape aussi pour trouver une action (ses mots d'atelier, sans accent)
 const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx installation corrigee retest modifications envoyer livrable', svg: 'image vectorielle dessin',
-  png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge', normes: 'tables sources', bible: 'barrettes modules references',
+  png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge calibres preferes', normes: 'tables sources', bible: 'barrettes connecteurs prises modules references',
   nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
   bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
   raccourcis: 'clavier touches aide', suivi: 'csv barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft' };
@@ -30477,7 +30681,7 @@ function rendrePalette() { const el = PALETTE.el; if (!el) return; const q = el.
   let i = 0;
   liste.innerHTML = L.length ? L.map(x => { if (x.titre) return `<div class="pa-groupe" role="presentation">${esc(x.titre)}</div>`; const k = i++;
       if (x.objet) { const c = x.objet; return `<div class="pa-l" role="option" id="pa-o-${k}" data-i="${k}" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONE_OBJET[c.type] || ICONE_OBJET.repere}</svg>`
-        + `<span class="pa-mot"><b class="pa-id">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.nom)}</b><small>${c.propose ? 'Vouliez-vous dire ? · ' : ''}${esc([GENRE_CANDIDAT[c.type] || c.type, c.des].filter(Boolean).join(' · '))}</small></span>`
+        + `<span class="pa-mot"><b class="pa-id">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.aff || c.nom)}</b><small>${c.propose ? 'Vouliez-vous dire ? · ' : ''}${esc([GENRE_CANDIDAT[c.type] || c.type, c.des].filter(Boolean).join(' · '))}</small></span>`
         + `${c.n ? `<span class="pa-cpt">${esc(c.sansCable ? String(c.n) : pluriel(c.n, 'câble'))}</span>` : ''}</div>`; }
       const a = x, ico = a.ico || ICONE_OBJET[a.act === 'geste' ? 'geste' : /^folio:/.test(a.act) ? 'folio' : 'action'];
       return `<div class="pa-l${a.eteint ? ' eteint' : ''}${a.act === 'geste' ? ' pa-geste ' + (a.niveau || '') : ''}" role="option" id="pa-o-${k}" data-i="${k}" aria-selected="false"${a.eteint ? ' aria-disabled="true"' : ''}><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ico}</svg>`
@@ -32027,10 +32231,62 @@ const gesteQuiMene = p => (p && p.gestes || []).find(x => x && x.mot && typeof x
 function cableDuPoint(p, o) { if (p.cable) return p.cable;
   const v = p.viser ? liaisonDeCle(p.viser) : null; if (v) return sourceDe(v) || v;
   if (o.type === 'fil') { const c = app.cible; return c && c.type === 'fil' && c.l && c.l.origine !== null ? sourceDe(c.l) || c.l : null; }
-  const m = /^(\S+ vers \S+) : /.exec(String(p.texte || '')), nom = o.tete && o.tete.nom; if (!m || !nom) return null;
-  try { if (o.type === 'disjoncteur') { const f = (disjonctionDe(nom).fils || []).find(y => y.l && cableEtType(y) === m[1]); if (f) return sourceDe(f.l) || f.l; } } catch (_) { }
-  try { const f = filsDuRepere(nom).find(y => cableDit({ type: y.l.type, vers: y.vers, borneVers: y.borneVers }) === m[1]); if (f) return f.l; } catch (_) { }
+  const m = /^(\S+ vers \S+)(?: \(par [^)]+\))? : /i.exec(String(p.texte || '')), nom = o.tete && o.tete.nom; if (!m || !nom) return null;
+  const dit = m[1].replace(/^\S/, c => c.toUpperCase()), egal = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
+  try { if (o.type === 'disjoncteur') { const f = (disjonctionDe(nom).fils || []).find(y => y.l && egal(cableEtType(y), dit)); if (f) return sourceDe(f.l) || f.l; } } catch (_) { }
+  // (vu d'ici, ou dans le sens de votre fichier : « DR20 vers 103RL1:A1 » dans la fiche de 103RL1 nomme le câble qui y arrive)
+  try { const f = filsDuRepere(nom).find(y => egal(cableDit({ type: y.l.type, vers: y.vers, borneVers: y.borneVers }), dit)) || filsDuRepere(nom).find(y => egal(cableDit(y.l), dit)); if (f) return f.l; } catch (_) { }
   return null; }
+/* (v86, l'audit G9 : « dans la fiche de 103RL1, le titre est “DR20 vers 103RL1:A1” : on parle de lui comme d'un autre ») —
+   QUI, VU D'ICI. Le contrôle écrit un câble comme son disjoncteur le voit ; la fiche part de la borne de SON objet, puis
+   l'autre bout, puis le type : « A1 ← 102CB1:2 · DR20 ». La flèche suit le courant — « ← » il arrive de là, « → » il y va —
+   quand VOLTA sait d'où il vient (le chemin de son disjoncteur : 08-fiche, `carteDesAlimentations`) ; sinon un trait neutre,
+   « – » : votre fichier ne dit pas le sens. Un câble qui ne touche pas cet objet (au-delà d'une barrette) garde sa phrase. */
+function amontDuCable(l) { try { const a = typeof carteDesAlimentations === 'function' ? carteDesAlimentations().get(l) : null, s = a && a.chemin && a.chemin.segments.find(y => y.fil === l);
+  return !s ? '' : a.amont ? s.vers[0] : s.de[0]; } catch (_) { return ''; } }
+function quiVuDIci(q, p, o) { const m = /^(\S+) vers (\S+?)(?::(\S+))?( \(par [^)]+\))?$/.exec(q), nom = o.tete && o.tete.nom, type = m ? m[1] : '';
+  if (!m || !nom || o.type === 'fil') return { titre: q, type };
+  const l = cableDuPoint(p, o); if (!l || l.de === l.vers || (l.de !== nom && l.vers !== nom)) return { titre: q, type };
+  const ici = l.de === nom, b = String((ici ? l.borneDe : l.borneVers) || ''), r = ici ? l.vers : l.de, rb = String((ici ? l.borneVers : l.borneDe) || '');
+  const amont = amontDuCable(l), sens = !amont ? '–' : amont === nom ? '→' : '←';
+  return { titre: `${b ? b + ' ' : ''}${sens} ${r}${rb ? ':' + rb : ''} · ${type || 'câble'}`, type, autre: r }; }
+/* (v86, l'audit G5 : « (11,5 A × 0,6 : faisceau de 8 câbles à 60 %) ne s'explique nulle part en clair ») — CE QUI CLOCHE, EN
+   MOTS. La phrase du contrôle (« démarrage et transition 9,31 A pendant 2,1 min > 6,9 A admis en continu (11,5 A × 0,6 :
+   faisceau de 8 câbles à 60 %) ») devient une phrase : ce qu'il porte, pendant combien de temps, ce qu'il admet — la carte
+   s'arrête là (`court`, deux lignes au plus) ; le grand dit en plus d'où vient l'admis (`long`) : « Seul à l'air libre, un
+   DR20 admet 11,5 A en continu ; en faisceau de 8 câbles chargé à 60 %, il n'en admet que 6,9 A (× 0,6). » Une phrase que
+   VOLTA ne sait pas dire autrement reste telle quelle. `suite` : ce qui suivait « — » (« pas protégé en surcharge »). */
+const conditionsEnMots = s => String(s || '').split(', ').map(c => { let m;
+  if ((m = /^faisceau de (\S+) câbles à (\S+) %$/.exec(c))) return `en faisceau de ${m[1]} câbles chargé à ${m[2]} %`;
+  if ((m = /^ambiante (\S+) °C$/.exec(c))) return `à ${m[1]} °C autour`;
+  if ((m = /^conducteur (.+)$/.exec(c))) return `en ${m[1]}`;
+  if ((m = /^(.+) ft$/.exec(c))) return `à ${m[1]} ft`;
+  return c; }).join(', ');
+const palierEnMots = p => p === 'en continu' ? 'en continu' : p ? p.replace(/^pour /, 'pendant ') : '';
+function motsDuProbleme(reste, suite, type) { const r = String(reste || ''), fin = s => majuscule(s.replace(/\s+$/, '')) + (/[.!?…]$/.test(s) ? '' : '.'); let m;
+  // le courant contre ce que le câble admet
+  if ((m = /^(.+?) ([\d,]+ A)(?: pendant ([\d,]+ (?:ms|s|min|h)))? > ([\d,]+ A) admis(?: (en continu|pour [\d,]+ (?:s|min)))?(?: \(([\d,]+ A) × ([\d,]+)(?: : ([^)]+))?\))?$/.exec(r))) {
+    const [, nom, i, t, a, palier, seul, k, pq] = m, court = fin(`${i}${t ? ' pendant ' + t : ''}${nom ? ' (' + nom.toLowerCase() + ')' : ''} : plus que les ${a} qu’il admet${palier ? ' ' + palier : ''}`);
+    const d = seul && k ? ` Seul à l’air libre, ${type ? 'un ' + type : 'ce câble'} admet ${seul}${palier ? ' ' + palierEnMots(palier) : ''}${pq ? ' ; ' + conditionsEnMots(pq) + ',' : ' ; ici,'} il n’en admet que ${a} (× ${k}).` : '';
+    const cont = palier === 'en continu' && t ? ' Au-delà d’une minute, c’est ce qu’il admet en continu qui compte.' : '';
+    return { court, long: court + d + cont }; }
+  // le permanent contre le contact
+  if ((m = /^le permanent \(([\d,]+ A)\) dépasse le contact taille (\S+) (?:supposé \(([\d,]+ A)\)|\(([\d,]+ A), ([^)]+)\))$/i.exec(r))) {
+    const court = m[3] ? fin(`Il porte ${m[1]} en permanence, plus que les ${m[3]} du contact taille ${m[2]} que VOLTA suppose`) : fin(`Il porte ${m[1]} en permanence, plus que les ${m[4]} de son contact taille ${m[2]} (${m[5]})`);
+    return { court, long: court }; }
+  // le calibre au-delà de la table 11-3
+  if ((m = /^calibre ([\d,]+ A) > ([\d,]+ A), le maximum de l’AC 43\.13-1B \(table 11-3\) pour du (\S+) AWG$/i.exec(r))) {
+    const court = fin(`Le ${m[1]} dépasse ${m[2]}, le plus fort calibre que l’AC 43.13-1B (table 11-3) permet sur un ${m[3]} AWG`); return { court, long: court }; }
+  // le contact plus faible que le calibre
+  if ((m = /^contact taille (\S+) (?:supposé \(([\d,]+ A)\)|\(([\d,]+ A), ([^)]+)\)) < calibre ([\d,]+ A)$/i.exec(r))) {
+    const qui = m[2] ? `Le contact taille ${m[1]} que VOLTA suppose admet ${m[2]}` : `Son contact taille ${m[1]} (${m[4]}) admet ${m[3]}`;
+    const court = fin(`${qui}, moins que le calibre de ${m[5]}${/protégé/.test(suite || '') ? ' : il n’est pas protégé en surcharge' : ''}`); return { court, long: court, mange: /protégé/.test(suite || '') }; }
+  // la chute en ligne, au permanent, puis en pointe
+  if ((m = /^chute en ligne de ([\d,]+ V)(?: à ([\d,]+ A))?, plus que les ([\d,]+ V) admis( sous [\d,]+ V)?( \(longueurs d’hypothèse\))?$/i.exec(r))) {
+    const court = fin(`La ligne perd ${m[1]}${m[2] ? ' sous ' + m[2] : ''}, plus que les ${m[3]} admis${m[4] || ''}${m[5] ? ' — sur des longueurs supposées' : ''}`); return { court, long: court }; }
+  if ((m = /^chute en ligne de ([\d,]+ V) en pointe \(([^)]+)\), plus que les ([\d,]+ V) admis( en intermittent)?( \(longueurs d’hypothèse\))?$/i.exec(r))) {
+    const court = fin(`En pointe (${m[2]}), la ligne perd ${m[1]}, plus que les ${m[3]} admis${m[4] || ''}${m[5] ? ' — sur des longueurs supposées' : ''}`); return { court, long: court }; }
+  const tel = majuscule(r) + (suite ? ' · ' + suite.replace(/^\S/, c => c.toLowerCase()) : ''); return { court: tel, long: tel, mange: !!suite }; }
 /* LE GESTE QUE VOLTA SAIT FAIRE pour un point qui n'en porte pas : un câble trop fin pour son courant (ou que son calibre
    ne protège pas) passe au plus fin qui convient (`plusFinQuiTient` — la même proposition que sa fiche) ; deux câbles sur
    une borne, que VOLTA relie par une barrette à poser : la barrette reçoit son repère (le geste du contrôle). Rend
@@ -32063,22 +32319,27 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
   const R = ordre.filter(x => x.regler), V = ordre.filter(x => !x.regler), nko = R.filter(x => x.p.niveau === 'ko').length;
   const bouton = (g, cls) => { const n = FI.gestesPb.push([g]) - 1; return `<button type="button" class="btn ${cls || 'cuivre dense nc-agir'}" data-geste-pb="${n}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; };
   const ligne = x => { const p = x.p, t = x.phrase || majuscule(motDuProbleme(p.texte));
-    const k = t.indexOf(' — '); let titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(t.slice(k + 3)) : gloseDuProbleme(p.texte);
-    // QUI d'abord (« DR20 vers 103RL1:A1 »), puis ce qui cloche : le câble en titre, la phrase dessous
-    const qui = /^(\S+ vers \S+) : (.+)$/.exec(titre); if (qui) { titre = qui[1]; detail = majuscule(qui[2]) + (detail ? ' · ' + detail.replace(/^\S/, c => c.toLowerCase()) : ''); }
+    const k = t.indexOf(' — '), suite = k > 0 ? t.slice(k + 3) : ''; let titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(suite) : gloseDuProbleme(p.texte), tout = '';
+    // QUI d'abord, VU D'ICI (« A1 ← 102CB1:2 · DR20 »), puis ce qui cloche, EN MOTS : la carte dit l'essentiel en deux lignes au
+    // plus, le grand dit tout (d'où vient l'admis, pourquoi VOLTA suppose un contact) ; la bulle de la carte dit ce que le grand dit
+    const qui = /^(\S+ vers \S+(?: \(par [^)]+\))?) : (.+)$/.exec(titre);
+    if (qui) { const vu = quiVuDIci(qui[1], p, o), M = motsDuProbleme(qui[2], suite, vu.type), glose = k > 0 ? '' : gloseDuProbleme(p.texte);
+      // « — sous 102CB1 » : le disjoncteur, quand le titre ne le nomme pas déjà
+      const sous = /^sous (\S+)$/.exec(suite), plus = M.mange || !suite ? '' : sous ? (vu.titre.includes(sous[1]) ? '' : ` Son disjoncteur : ${sous[1]}.`) : ' ' + majuscule(suite) + '.';
+      titre = vu.titre; tout = M.long + plus + (glose ? ' ' + glose : ''); detail = grand ? tout : M.court; }
     // une phrase longue qui finit sur sa parenthèse (« … admis en continu (11,5 A × 0,6 : faisceau de 8 câbles à 60 %) ») : la
     // parenthèse passe dessous, le titre se lit d'un trait
     else if (titre.length > 48) { const m = /^(.+?) \(([^()]+)\)$/.exec(titre); if (m) { titre = m[1]; detail = majuscule(m[2]) + (detail ? ' · ' + detail.replace(/^\S/, c => c.toLowerCase()) : ''); } }
-    const va = ongletDeSection(o.type, p.section), bulle = escA([qui ? qui[1] + ' : ' + qui[2] : titre, k > 0 ? majuscule(t.slice(k + 3)) : '', p.bulle || ''].filter(Boolean).join('\n'));
+    const va = ongletDeSection(o.type, p.section), bulleT = [!grand && tout && tout !== detail ? tout : '', p.bulle || ''].filter(Boolean).join('\n'), bulle = escA(bulleT);
     const cible = `data-onglet-va="${escA(va)}"${p.viser ? ` data-viser="${escA(p.viser)}"` : ''}${p.connecteur ? ` data-connecteur="${escA(p.connecteur)}"` : ''}`, etat = p.niveau === 'ko' ? 'ko' : 'att';
-    if (!x.regler) return `<div class="nc-tache fi-pb-l ${etat} info"><span class="nc-rond" aria-hidden="true"></span><button type="button" class="nc-t" ${cible} data-bulle="${bulle}"><b class="fi-pb-t">${insecable(esc(titre))}</b>${qui ? ` <small>${insecable(esc(majuscule(qui[2])))}</small>` : ''}</button></div>`;
+    if (!x.regler) return `<div class="nc-tache fi-pb-l ${etat} info"><span class="nc-rond" aria-hidden="true"></span><button type="button" class="nc-t" ${cible}${bulleT ? ` data-bulle="${bulle}"` : ''}><b class="fi-pb-t">${insecable(esc(titre))}</b>${qui ? ` <small>${insecable(esc(detail))}</small>` : ''}</button></div>`;
     // sans geste qui règle : ce qu'il faut faire, en mots (ceux du récapitulatif) — et le geste qui mène à la cause, s'il y en a un
     const que = !x.agir && typeof remede === 'function' ? (remede({ texte: p.texte }) || [])[0] : '', mene = !x.agir ? gesteQuiMene(p) : null;
     const geste = x.html || (x.g ? bouton(x.g) : mene ? bouton(mene, 'papier dense') : '');
     // (le titre est le bouton qui mène à l'onglet ; la phrase dessous y mène aussi, à la souris — le geste, à droite, sur la
     // ligne du titre : il ne pousse pas la ligne d'un étage)
     return `<div class="nc-tache fi-pb-l ${etat} agir${x.agir ? ' a-geste' : ''}${titre.length > 30 ? ' long' : ''}"><span class="nc-rond" aria-hidden="true">${ico('alerte')}</span>`
-      + `<button type="button" class="nc-t" ${cible} data-bulle="${bulle}"><b class="fi-pb-t">${insecable(esc(titre))}</b></button>${geste ? `<span class="nc-geste">${geste}</span>` : ''}`
+      + `<button type="button" class="nc-t" ${cible}${bulleT ? ` data-bulle="${bulle}"` : ''}><b class="fi-pb-t">${insecable(esc(titre))}</b></button>${geste ? `<span class="nc-geste">${geste}</span>` : ''}`
       + `${detail ? `<small class="nc-d" ${cible}>${insecable(esc(detail))}</small>` : ''}${que && que !== 'Voir sa fiche' ? `<em class="nc-que">${insecable(esc(que))}</em>` : ''}</div>`; };
   const inter = (cls, mot, n, b) => b ? `<button type="button" class="nc-pbs-g ${cls}${b.cls ? ' ' + b.cls : ''}" ${b.attrs}><i aria-hidden="true"></i><span>${esc(mot)}</span><b>${n}</b>${ico('droite')}</button>`
     : `<div class="nc-pbs-g ${cls}"><i aria-hidden="true"></i><span>${esc(mot)}</span><b>${n}</b></div>`;
@@ -34319,7 +34580,7 @@ function contactDuBout(l, cote) { const r = cote === 'de' ? l.de : l.vers, force
    disjoncteur contre la chute admise du moteur (`chuteDuFil`) —, la longueur, le contact de chaque bout ; puis l'état. */
 function infoFil(l) { const M = memo('fils', () => new Map()); let F = M.get(l); if (F) return F;
   const x = intensiteCalculee(l), c = chuteDuFil(l, x), cab = l.type ? cableDuType(app.norme, l.type) : null;
-  F = { x, c, jauge: x.jauge, cab, L: c.L, R: x.rd.rho != null ? x.rd.rho / 1000 * c.L : null, masse: cab && cab.masse != null ? cab.masse * c.L : null, de: contactDuBout(l, 'de'), vers: contactDuBout(l, 'vers') };
+  F = { l, x, c, jauge: x.jauge, cab, L: c.L, R: x.rd.rho != null ? x.rd.rho / 1000 * c.L : null, masse: cab && cab.masse != null ? cab.masse * c.L : null, de: contactDuBout(l, 'de'), vers: contactDuBout(l, 'vers') };
   F.etat = etatDuFil(l, F); M.set(l, F); return F; }
 /* L'ÉTAT d'une liaison, en un mot : un problème (le câble ne porte pas son courant, la chute en ligne dépasse sur des
    longueurs mesurées, un contact refuse sa gauge, le contrôle le dit), à voir (sans type, hors de la norme, la chute sur
@@ -34332,13 +34593,15 @@ function etatDuFil(l, F) { const ko = new Set(), att = new Set(), x = F.x, c = F
     // ce que le contrôle dit déjà d'un câble sous un disjoncteur, il le dit dans ses mots : on ne le répète pas
     [['de', l.de], ['vers', l.vers]].forEach(([k, r]) => { if (F[k] && F[k].ko) ko.add('Le contact côté ' + r + ' refuse sa gauge'); }); }
   controle.forEach(y => (y.niveau === 'ko' ? ko : att).add(majuscule(y.texte)));
-  // l'intensité et la chute comptent dans l'état ; leurs chiffres ouvrent la bulle (« > » quand ça dépasse)
-  const trop = l.de !== l.vers && liaisonComplete(l) && x.trop.length > 0, chute = c.trop ? (c.reel ? 'ko' : 'att') : '';
+  // l'intensité et la chute comptent dans l'état — la chute en pointe aussi, comme la fiche (`etatDeChute`) ; leurs chiffres
+  // ouvrent la bulle (« > » quand ça dépasse)
+  const trop = l.de !== l.vers && liaisonComplete(l) && x.trop.length > 0, chute = c.trop || c.pointe ? (c.reel ? 'ko' : 'att') : '';
   const niveau = ko.size || trop || chute === 'ko' ? 'ko' : att.size || chute ? 'att' : l.de === l.vers ? '' : 'ok';
-  const cmp = (a, b) => a > b + 1e-9 ? '>' : 'sur';
-  const chiffres = [x.fn ? `Intensité : ${amperes(x.I)} ${cmp(x.I, x.continu)} ${amperes(x.continu)} admis en continu${x.al ? ', sous ' + x.al.nom : ' (hypothèse)'}` : '',
-    x.fn && x.pointe && x.pointe.admis ? `Pointe : ${amperes(x.pointe.i)} pendant ${secondes(x.pointe.t)} ${cmp(x.pointe.i, x.pointe.admis)} ${amperes(x.pointe.admis)} admis` : '',
-    c.total ? `Chute en ligne : ${volts(c.total.dU)} ${c.max != null ? cmp(c.total.dU, c.max) + ' ' + volts(c.max) + ' admis' : ''}${c.reel ? '' : ' (longueurs d’hypothèse)'}` : c.dU != null ? `Chute sur ce câble : ${volts(c.dU)}` : ''].filter(Boolean);
+  const cmp = (a, b) => a > b + 1e-9 ? '>' : 'sur', supp = c.reel ? '' : ' (longueurs supposées)';
+  const chiffres = [x.fn ? `Intensité : ${amperes(x.I)} ${cmp(x.I, x.continu)} ${amperes1(x.continu)} admis en continu${x.al ? ', sous ' + x.al.nom : ' (supposé)'}` : '',
+    x.fn && x.pointe && x.pointe.admis ? `En pointe : ${amperes(x.pointe.i)} pendant ${secondes(x.pointe.t)} ${cmp(x.pointe.i, x.pointe.admis)} ${amperes1(x.pointe.admis)} admis` : '',
+    c.total ? `Chute en ligne : ${volts(c.total.dU)} ${c.max != null ? cmp(c.total.dU, c.max) + ' ' + volts(c.max) + ' admis' : ''}${supp}` : c.dU != null ? `Chute sur ce câble : ${volts(c.dU)}` : '',
+    c.pointe ? `Chute en pointe : ${volts(c.pointe.dU)} > ${volts(c.pointe.admis)} admis${supp}` : ''].filter(Boolean);
   return { niveau, ko: [...ko], att: [...att], bulle: [chiffres.join('\n'), [...ko, ...att].join('\n')].filter(Boolean).join('\n\n') }; }
 
 /* ---- petits morceaux de rendu ------------------------------------------- */
@@ -34368,9 +34631,13 @@ const orig = (o, bulle, mot) => o === 'hyp' ? `<i class="rc-o rc-hyp" data-bulle
 const unite = u => `<i class="rc-u">${u}</i>`;
 const rien = '<span class="rc-rien">—</span>';
 const fmt = (x, n) => x == null || !isFinite(x) ? '' : nombre(Math.round(x * Math.pow(10, n)) / Math.pow(10, n));
-const amp1 = x => x == null || !isFinite(x) ? '' : nombre((Math.round(x * 10) / 10).toFixed(1));
-// deux décimales, toujours : les longueurs s'alignent sous leur virgule (« 0,80 », « 0,84 », « 1,10 »)
-const metres = x => nombre((Math.round(x * 100) / 100).toFixed(2));
+/* (v86, F1 : « 9,3 A ici, 9,31 A dans la fiche ; ≈ 5,00 m ici, ≈ 5 m là ») LES NOMBRES S'ÉCRIVENT COMME DANS LA FICHE : un
+   courant à deux décimales sous 10 A, une au-delà (`nombreA`, 08-fiche : 9,31 A, 2 A, 11,7 A) ; une tension comme `volts`
+   (1,34 V, 2 V) ; une longueur au centimètre, sans zéro de traîne (5 m, 3,5 m, 0,84 m). Les chiffres d'une colonne restent
+   alignés à droite dans leur place (`calerChiffres`). */
+const ampere = x => x == null || !isFinite(x) ? '' : typeof nombreA === 'function' ? nombreA(x) : fmt(x, x < 10 ? 2 : 1);
+const voltsN = u => u == null || !isFinite(u) ? '' : fmt(u, u < 0.1 ? 3 : 2);
+const metres = x => fmt(x, 2);
 // un nombre et son unité, alignés à droite dans leur place ; ce qui suit (l'origine, ↺) se range derrière
 const chiffre = (html, u, cls) => `<span class="rc-chiffre${cls ? ' ' + cls : ''}">${html}${u ? unite(u) : ''}</span>`;
 // une fraction (« 7 / 10 ») : le premier nombre dans la place des chiffres de sa colonne — les barres tombent l'une sous l'autre
@@ -34405,12 +34672,14 @@ const premierFolio = l => (modeFolioMemo() === 'auto' ? (foliosParSourceMemo().g
 // un bout : le repère et sa borne, en chasse fixe ; une masse, un renvoi le disent en un mot ; le repère du bloc choisi
 // sur le plan se surligne (`ici`)
 const bout = (l, c) => { const de = c === 'de', r = l[c], b = l[de ? 'borneDe' : 'borneVers'], nat = estMasse(r) ? 'masse' : estRenvoi(r) ? 'renvoi' : '', ici = !!r && !!app.cible && app.cible.type === 'bloc' && app.cible.nom === r;
-  return `<span class="rc-bout${ici ? ' ici' : ''}">${valT(c, r, { cls: 'rc-r', ph: de ? 'de' : 'vers' })}<i class="rc-sep${b ? '' : ' rc-vide'}">:</i>${valT(de ? 'borneDe' : 'borneVers', b, { cls: 'rc-b', ph: 'borne' })}${nat ? `<small class="rc-nat">${nat}</small>` : ''}</span>`; };
-// ce que la ligne dit de la valeur d'un champ du fichier, forcée ici : « ↺ » rend celle du retest
-const rendu = (l, f) => origineChamp(l, f) === 'main' && l.avant && l.avant[f] ? rond(f, 'la valeur de l’installation (' + l.avant[f] + ')') : '';
+  return `<span class="rc-bout${ici ? ' ici' : ''}">${luT(c, r, { cls: 'rc-r' })}<i class="rc-sep${b ? '' : ' rc-vide'}">:</i>${luT(de ? 'borneDe' : 'borneVers', b, { cls: 'rc-b' })}${nat ? `<small class="rc-nat">${nat}</small>` : ''}</span>`; };
+// une valeur du fichier qu'une proposition de VOLTA a changée (« Passer en DR16 ») : « ↺ » rend celle de votre fichier
+const rendu = (l, f) => origineChamp(l, f) === 'main' && l.avant && l.avant[f] ? rond(f, 'celle de votre fichier (' + l.avant[f] + ')') : '';
+/* LE CONTACT D'UN BOUT, UN CHOIX DE VOLTA (la table des contacts, à la taille et au sexe de la cavité, à la gauge du câble) :
+   Automatique, ou Manuel — un contact de la table qu'on lui préfère ; « manuel » et ↺ le disent. */
 const contactH = (l, F, c) => { const x = F[c], f = c === 'de' ? 'contactDe' : 'contactVers'; if (!x) return rien;
-  const titre = x.main ? 'Écrit à la main' + (x.auto ? ' — le calcul donne ' + x.auto : '') : x.ko ? 'Ce contact refuse la gauge du câble' : !x.ref ? (x.connu ? 'Aucun contact de la table ne va à ce câble' : 'Aucun plan ne connaît ce connecteur : écrivez le contact') : (x.taille ? 'Contact taille ' + x.taille + (x.sexe ? ' · ' + (x.sexe === 'M' ? 'mâle' : 'femelle') : '') : '');
-  return `<span class="rc-ctc">${valT(f, x.ref, { cls: 'rc-ct' + (x.ko ? ' ko' : ''), ph: 'contact', titre: (titre ? titre + ' — ' : '') + 'double-clic pour en choisir un autre' })}${x.acc ? `<small class="rc-acc">+ ${esc(x.acc)}</small>` : ''}${x.main ? orig('main') + rond(f, x.auto ? 'le contact calculé (' + x.auto + ')' : 'le calcul') : ''}</span>`; };
+  const titre = x.main ? 'Manuel' + (x.auto ? ' — l’automatique serait ' + x.auto : '') : x.ko ? 'Ce contact refuse la gauge du câble' : !x.ref ? (x.connu ? 'Aucun contact de la table ne va à ce câble' : 'Aucun plan ne connaît ce connecteur : choisissez le contact') : (x.taille ? 'Automatique : contact taille ' + x.taille + (x.sexe ? ' · ' + (x.sexe === 'M' ? 'mâle' : 'femelle') : '') : 'Automatique');
+  return `<span class="rc-ctc">${valT(f, x.ref, { cls: 'rc-ct' + (x.ko ? ' ko' : ''), ph: 'contact', titre: titre + ' — double-clic : Automatique, ou un autre contact' })}${x.acc ? `<small class="rc-acc">+ ${esc(x.acc)}</small>` : ''}${x.main ? orig('main') + rond(f, x.auto ? 'l’automatique (' + x.auto + ')' : 'l’automatique') : ''}</span>`; };
 const motEtatFil = r => { const n = r.F().etat.niveau; return n ? MOTS_ETAT[n] : ''; };
 /* LE CÂBLE EST LE LIEN (le lecteur : « la flèche, tu la mets immense, tu dis ça va de là à là, mais en fait tu as mis le câble
    entre ; ce n'est pas du tout propre »). De → Vers se lit d'un trait : « de » finit contre la flèche, « vers » part de sa
@@ -34420,58 +34689,103 @@ const motEtatFil = r => { const n = r.F().etat.niveau; return n ? MOTS_ETAT[n] :
 const celluleCable = r => { const l = r.l, g = r.F().jauge, c = routes().get(l.route || '') || '', dit = typeDitJauge(l.type, g);
   const bulle = (l.route ? 'Route ' + l.route : 'Sans route') + (g != null ? ' · gauge ' + g + ' AWG' : ' · gauge inconnue');
   return `<span class="rc-cable${c ? '' : ' sans-route'}${g == null ? ' sans-jauge' : ''}"${c ? ` style="--c:${c}"` : ''} data-bulle="${escA(bulle)}"><i class="rc-fleche" aria-hidden="true"></i>`
-    + `<span class="rc-cable-type${l.type || (g != null && !dit) ? '' : ' vide'}">${valT('type', l.type, { cls: 'rc-type', ph: 'type' })}${g != null && !dit ? `<i class="rc-jauge">${g}</i>` : ''}${rendu(l, 'type')}</span></span>`; };
+    + `<span class="rc-cable-type${l.type || (g != null && !dit) ? '' : ' vide'}">${luT('type', l.type, { cls: 'rc-type' })}${g != null && !dit ? `<i class="rc-jauge">${g}</i>` : ''}${rendu(l, 'type')}</span></span>`; };
+// la longueur : celle de votre fichier ; sans elle, « ≈ » et l'hypothèse de la simulation, que la bulle dit où écrire
 const celluleLongueur = r => { const l = r.l, o = l.longueur > 0 ? origineChamp(l, 'longueur') : 'hyp';
-  return `<span class="rc-mesure${o === 'hyp' ? ' rc-suppose' : ''}">${chiffre(val('longueur', metres(r.F().L), { cls: 'rc-n', titre: o === 'hyp' ? 'Aucune longueur dans l’installation : la longueur supposée par la simulation. Double-clic pour écrire la longueur mesurée.' : '' }), 'm')}`
+  const bulle = o === 'hyp' ? 'Votre fichier ne donne pas sa longueur : VOLTA suppose ' + metres(H_().longueur) + ' m (Hypothèses) — à écrire dans votre fichier' : '';
+  return `<span class="rc-mesure${o === 'hyp' ? ' rc-suppose' : ''}">${chiffre(lu('longueur', metres(r.F().L), { cls: 'rc-n', titre: bulle }), 'm')}`
     // « supposée » une fois : dans l'en-tête quand toutes les longueurs montrées le sont (la note de sa colonne), sinon sur
     // chaque ligne qui l'est — l'exception se voit, la règle ne se répète pas
-    + `${o === 'hyp' ? (RECAP.notes.longueur ? '' : orig('hyp', 'Aucune longueur dans l’installation : la longueur supposée par la simulation (menu ⋮ → Hypothèses)', 'supposée')) : o === 'main' ? orig('main') + rond('longueur', r.l.avant && r.l.avant.longueur > 0 ? 'la longueur de l’installation (' + metres(r.l.avant.longueur) + ' m)' : 'l’hypothèse (' + metres(H_().longueur) + ' m)') : ''}</span>`; };
-// l'intensité contre ce que le câble admet : au pire du permanent et de la pointe, une barre comme celle de la fiche
-const celluleIntensite = r => { const x = r.F().x; if (!x.fn) return rien;
-  const rP = x.continu ? x.I / x.continu : 0, rT = x.pointe && x.pointe.admis ? x.pointe.i / x.pointe.admis : 0, pointe = rT > rP, q = Math.max(rP, rT);
-  const niv = x.trop.length ? 'ko' : q > 0.8 ? 'att' : 'ok', i = pointe ? x.pointe.i : x.I, a = pointe ? x.pointe.admis : x.continu;
-  return `<span class="rc-int">${chiffre(val('intensite', amp1(i), { cls: 'rc-n rc-calc', titre: 'Double-clic : ' + (x.al ? 'le profil de ' + x.al.nom : 'les hypothèses') }), 'A', niv === 'ko' ? 'ko' : '')}<span class="rc-adm">/ ${amp1(a)}</span>`
-    // (v84) « pointe » se dit en clair dans sa bulle : ce qu'il tire, combien de temps, ce que le câble admet sur cette durée
-    // (le mot tient une place fixe, même vide : chaque case a la même largeur, les barres d'une colonne tombent l'une sous l'autre)
-    + `<span class="rc-barre ${niv}"><i style="width:${Math.round(Math.min(1, q) * 100)}%"></i></span><span class="rc-int-mot">${pointe ? `<i class="rc-o" data-bulle="${escA('Au plus fort du profil : ' + amperes(x.pointe.i) + ' pendant ' + secondes(x.pointe.t) + ' ; sur cette durée, le câble admet ' + amperes(x.pointe.admis))}">pointe</i>` : x.al ? '' : orig('hyp', 'Aucun disjoncteur en amont : le courant supposé par la simulation (menu ⋮ → Hypothèses)')}</span></span>`; };
-const celluleChute = r => { const c = r.F().c, u = c.total ? c.total.dU : c.dU; if (u == null) return rien;
-  const niv = c.trop ? (c.reel ? 'ko' : 'att') : '';
-  return `<span class="rc-mesure" data-bulle="${escA(c.total ? 'En ligne depuis ' + r.F().x.al.nom + ' : ' + volts(c.total.dU) + (c.max != null ? ' sur ' + volts(c.max) + ' admis' : '') + (c.reel ? '' : ' (longueurs d’hypothèse)') + '\nSur ce câble : ' + volts(c.dU) : 'Sur ce câble seul : aucun disjoncteur en amont')}">`
-    + `${chiffre(`<b class="rc-n">${fmt(u, u < 0.1 ? 3 : 2)}</b>`, 'V', niv)}${c.total && c.max != null ? `<span class="rc-adm">/ ${fmt(c.max, 2)}</span>` : ''}</span>`; };
+    + `${o === 'hyp' ? (RECAP.notes.longueur ? '' : orig('hyp', bulle, 'supposée')) : o === 'main' ? rond('longueur', l.avant && l.avant.longueur > 0 ? 'celle de votre fichier (' + metres(l.avant.longueur) + ' m)' : 'l’hypothèse (' + metres(H_().longueur) + ' m)') : ''}</span>`; };
+/* L'INSTANT D'UNE LIGNE (v86, B7 — l'audit : « 9,3 A pointe à côté d'une chute prise au permanent : le lecteur rapproche les
+   deux colonnes et ne retombe pas sur ses pieds ») : l'intensité et la chute disent LE MÊME INSTANT, le plus dur pour ce câble
+   — une pointe du profil quand elle pèse plus que le permanent (sur le courant contre ce qu'il admet pour sa durée, ou sur la
+   chute contre ce qui est admis), sinon le permanent. « pointe » le dit dans les deux cases ; leur bulle donne l'autre
+   instant. La chute à une pointe : celle de la ligne que le moteur a déjà comptée (09-chute, `pointes`) ; sur un câble sans
+   chemin de disjoncteur, sur lui seul, au courant de la pointe (`chuteDuCable`). Rend { le, perm, autre }. */
+function instantsDuFil(F) { if (F.inst) return F.inst; const x = F.x, c = F.c, total = c.total;
+  const perm = { pointe: false, i: x.I, admis: x.continu, u: total ? total.dU : c.dU, umax: c.max, nom: 'permanent', t: Infinity };
+  const admisU = t => { try { const A = chuteAdmiseDe(x.H); return A ? (t <= (typeof INTERMITTENT_MAX === 'number' ? INTERMITTENT_MAX : 120) && A.chuteInter != null ? A.chuteInter : A.chuteMax) : c.max; } catch (_) { return c.max; } };
+  const pointes = (x.pts || []).filter(p => p.t !== Infinity && p.i > 0).map(p => { let u = null, umax = null, inter = false;
+    const q = total ? (total.pointes || []).find(y => y.t === p.t && (y.nom || '') === (p.nom || '')) || (total.pointes || []).find(y => y.t === p.t) : null;
+    if (q) { u = q.dU; umax = q.admis; inter = !!q.intermittent; }
+    else if (!total && c.dU != null && F.l) { try { const k = chuteDuCable(app.norme, F.l, p.i, x.H); if (k && k.dU != null) { u = k.dU; umax = admisU(p.t); inter = p.t <= 120; } } catch (_) { } }
+    return { pointe: true, i: p.i, admis: x.fn && x.admise ? x.admise(p.t) : null, u, umax, nom: p.nom || 'pointe', t: p.t, inter }; });
+  const dur = s => Math.max(s.admis ? s.i / s.admis : 0, s.u != null && s.umax ? s.u / s.umax : 0);
+  let le = perm; pointes.forEach(s => { if (dur(s) > dur(le) + 1e-9) le = s; });
+  return (F.inst = { le, perm, autre: le === perm ? pointes.slice().sort((a, z) => dur(z) - dur(a))[0] || null : perm }); }
+/* L'ANNEAU (v86, F2 — « une barre ici, un anneau dans les fiches ») : la part de l'admis, dessinée comme la fiche (`anneauVue`,
+   08-vues, sa couleur d'état), petite et sans chiffre dedans — la valeur est à côté, la part dans la bulle. Sans admis, sa place
+   reste (les valeurs d'une colonne tombent l'une sous l'autre). `niv` : la teinte du problème, quand la mesure dépasse. */
+const anneau = (ratio, niv) => { if (typeof anneauVue !== 'function') return ''; let h = anneauVue(ratio, { r: 7, ep: 2.6 });
+  if (niv && ratio != null && isFinite(ratio)) h = h.replace(/class="vu-anneau [a-z]*"/, `class="vu-anneau ${niv}"`); return `<span class="rc-anneau" aria-hidden="true">${h}</span>`; };
+const pourcentDe = r => r != null && isFinite(r) ? Math.round(r * 100) + INSECABLE + '%' : '';
+const instantDit = s => s.pointe ? 'en pointe (' + s.nom + ', ' + secondes(s.t) + ')' : 'au permanent';
+// le mot d'un instant ou d'une origine (« pointe », « supposé ») : une place fixe, même vide — chaque case de la colonne a la même largeur
+const motInstant = (mot, bulle) => `<span class="rc-int-mot">${mot ? `<i class="rc-o"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}>${mot}</i>` : ''}</span>`;
+/* L'INTENSITÉ, à l'instant de la ligne : ce qu'il porte, sur ce qu'il admet pour cette durée (EN 2853, déclassé), l'anneau de la
+   part ; un câble sans type garde son courant (V86, 8 : « le courant doit se lire quand même ») — sans admis, sans anneau. */
+const celluleIntensite = r => { const F = r.F(), x = F.x, I = instantsDuFil(F), s = I.le; if (s.i == null || !isFinite(s.i)) return rien;
+  const q = s.admis ? s.i / s.admis : null, trop = q != null && q > 1 + 1e-9;
+  const quoi = x.al ? (x.source === 'branche' ? 'ce qu’alimente ce câble' : 'le profil de ' + x.al.nom) : 'l’hypothèse de la simulation';
+  const autre = I.autre && I.autre.admis ? `\n${majuscule(instantDit(I.autre))} : ${amperes(I.autre.i)} sur ${amperes1(I.autre.admis)} admis` + (I.autre.i > I.autre.admis + 1e-9 ? ' — il ne les porte pas.' : '.') : '';
+  const bulle = s.admis ? `${majuscule(instantDit(s))} : ${amperes(s.i)}, selon ${quoi} ; ${s.pointe ? 'sur cette durée, ' : ''}le ${F.l.type || 'câble'} admet ${amperes1(s.admis)} (${pourcentDe(q)})${trop ? ' : il ne les porte pas.' : '.'}${autre}`
+    : `${majuscule(instantDit(s))} : ${amperes(s.i)}, selon ${quoi}.\n${F.l.type ? F.l.type + ' n’est pas dans l’EN 2853' : 'Votre fichier ne donne pas son type'} : ce qu’il admet ne se lit pas.`;
+  const mot = s.pointe ? motInstant('pointe', 'Les deux colonnes disent la pointe du profil : ' + s.nom + ', ' + amperes(s.i) + ' pendant ' + secondes(s.t) + '.') : x.al ? motInstant('') : motInstant('supposé', 'Aucun disjoncteur en amont : le courant supposé par la simulation (menu ⋮ → Hypothèses)');
+  return `<span class="rc-int" data-bulle="${escA(bulle)}">${anneau(q, trop ? 'ko' : '')}${chiffre(val('intensite', ampere(s.i), { cls: 'rc-n rc-calc', titre: '' }), 'A', trop ? 'ko' : '')}<span class="rc-adm">${s.admis ? 'sur ' + ampere(s.admis) + INSECABLE + 'A' : 'admis inconnu'}</span>${mot}</span>`; };
+/* LA CHUTE, au même instant : la tension perdue depuis le disjoncteur jusqu'au bout du chemin le plus long qui passe par lui,
+   sur ce qui est admis (sans disjoncteur en amont : sur lui seul) ; en défaut, la teinte du problème — rouge sur des longueurs
+   de votre fichier, ambre (à voir) sur des longueurs supposées. */
+const celluleChute = r => { const F = r.F(), c = F.c, I = instantsDuFil(F), s = I.le, u = s.u; if (u == null || !isFinite(u)) return rien;
+  const q = s.umax ? u / s.umax : null, trop = q != null && q > 1 + 1e-9, niv = trop ? (c.reel ? 'ko' : 'att') : '';
+  const ou = c.total ? 'En ligne depuis ' + F.x.al.nom : 'Sur ce câble seul (aucun disjoncteur en amont n’en donne le chemin)';
+  const autre = I.autre && I.autre.u != null ? `\n${majuscule(instantDit(I.autre))} : ${volts(I.autre.u)}` + (I.autre.umax ? ' sur ' + volts(I.autre.umax) + ' admis' : '') + '.' : '';
+  const bulle = `${ou}, ${instantDit(s)} : ${volts(u)} perdus${s.umax ? ' sur ' + volts(s.umax) + ' admis' + (s.pointe && s.inter ? ' en intermittent' : '') + ' (' + pourcentDe(q) + ')' : ''}${trop ? ' : la ligne perd trop' + (c.reel ? '.' : ', sur des longueurs supposées — à voir.') : '.'}`
+    + (c.total && c.dU != null && !s.pointe ? `\nSur ce câble : ${volts(c.dU)}.` : '') + autre;
+  return `<span class="rc-mesure rc-chute" data-bulle="${escA(bulle)}">${anneau(q, niv)}${chiffre(`<b class="rc-n">${voltsN(u)}</b>`, 'V', niv)}<span class="rc-adm">${s.umax ? 'sur ' + voltsN(s.umax) + INSECABLE + 'V' : ''}</span>${s.pointe ? motInstant('pointe', 'Les deux colonnes disent la pointe du profil : ' + s.nom + ', ' + amperes(s.i) + ' pendant ' + secondes(s.t) + '.') : motInstant('')}</span>`; };
 const COLONNES_LIAISONS = [
   // « de » se range contre la flèche (à droite de sa case), « vers » part de sa pointe (à gauche) : la phrase se lit d'un trait
   { k: 'de', t: 'De', cls: 'rc-c-bout rc-c-de', html: r => bout(r.l, 'de') + rendu(r.l, 'de'), tri: r => r.l.de + '\u0001' + r.l.borneDe, texte: r => r.l.de + (r.l.borneDe ? ':' + r.l.borneDe : '') },
   { k: 'cable', t: 'Câble', cls: 'rc-c-cable', html: celluleCable, tri: r => r.l.type || '', texte: r => [r.l.type, r.F().jauge != null ? r.F().jauge + ' AWG' : ''].filter(Boolean).join(' ') },
   { k: 'vers', t: 'Vers', cls: 'rc-c-bout rc-c-vers', html: r => bout(r.l, 'vers') + rendu(r.l, 'vers'), tri: r => r.l.vers + '\u0001' + r.l.borneVers, texte: r => r.l.vers + (r.l.borneVers ? ':' + r.l.borneVers : '') },
-  { k: 'longueur', t: 'Longueur', cls: 'rc-c-mesure', html: celluleLongueur, tri: r => r.F().L, texte: r => metres(r.F().L) + ' m' + (r.l.longueur > 0 ? '' : ' (hypothèse)'),
-    note: L => L.every(r => !(r.l.longueur > 0)) ? ['supposée', 'Aucune longueur dans l’installation : chaque câble compte ' + metres(H_().longueur) + ' m, l’hypothèse de la simulation (menu ⋮ → Hypothèses). Écrivez la longueur mesurée d’un double-clic.'] : null },
+  { k: 'longueur', t: 'Longueur', cls: 'rc-c-mesure', html: celluleLongueur, tri: r => r.F().L, texte: r => metres(r.F().L) + ' m' + (r.l.longueur > 0 ? '' : ' (supposée)'),
+    note: L => L.every(r => !(r.l.longueur > 0)) ? ['supposée', 'Votre fichier ne donne aucune longueur : chaque câble compte ' + metres(H_().longueur) + ' m, l’hypothèse de la simulation (menu ⋮ → Hypothèses). Les longueurs mesurées s’écrivent dans votre fichier.'] : null },
   { k: 'etat', t: 'État', cls: 'rc-c-etat', html: r => { const e = r.F().etat; return etatHtml(e.niveau, '', e.bulle); }, tri: r => rangEtat(r.F().etat.niveau), texte: motEtatFil, vide: r => !aReprendre(r.F().etat.niveau) },
   // en plus, au choix — (v84) l'intensité et la chute d'office dès que la feuille est large, les contacts à sertir sur une
   // très large (`large`, `colonnesVues`)
   { k: 'jauge', t: 'Gauge', cls: 'rc-c-n', option: true, g: 'Le câble', html: r => chiffre(pastilleJauge(r.F().jauge)), tri: r => r.F().jauge == null ? 99 : r.F().jauge, texte: r => r.F().jauge != null ? r.F().jauge + ' AWG' : '' },
-  { k: 'route', t: 'Route', option: true, g: 'Le câble', html: r => `<span class="rc-route">${traitRoute(routes().get(r.l.route || ''))}${valT('route', r.l.route, { ph: 'route' })}${rendu(r.l, 'route')}</span>`, tri: r => r.l.route, texte: r => r.l.route },
-  { k: 'intensite', t: 'Intensité', option: true, large: 1, g: 'Le câble', cls: 'rc-c-int', html: celluleIntensite, tri: r => { const x = r.F().x; return x.continu ? x.I / x.continu : -1; }, texte: r => { const x = r.F().x; return x.fn ? amp1(x.I) + ' A / ' + amp1(x.continu) + ' A' : ''; }, vide: r => !r.F().x.fn },
-  { k: 'chute', t: 'Chute', option: true, large: 1, g: 'Le câble', cls: 'rc-c-mesure', html: celluleChute, tri: r => { const c = r.F().c; return c.total ? c.total.dU : c.dU ?? -1; }, texte: r => { const c = r.F().c, u = c.total ? c.total.dU : c.dU; return u == null ? '' : fmt(u, 2) + ' V'; },
-    vide: r => { const c = r.F().c; return (c.total ? c.total.dU : c.dU) == null; } },
+  { k: 'route', t: 'Route', option: true, g: 'Le câble', html: r => `<span class="rc-route">${traitRoute(routes().get(r.l.route || ''))}${luT('route', r.l.route)}${rendu(r.l, 'route')}</span>`, tri: r => r.l.route, texte: r => r.l.route },
+  // (v86, B7) l'intensité et la chute au même instant (`instantsDuFil`) — à l'écran, au tri et dans le CSV
+  { k: 'intensite', t: 'Intensité', option: true, large: 1, g: 'Le câble', cls: 'rc-c-int', html: celluleIntensite,
+    tri: r => { const s = instantsDuFil(r.F()).le; return s.admis ? s.i / s.admis : s.i != null ? s.i / 1000 : -1; },
+    texte: r => { const s = instantsDuFil(r.F()).le; return s.i == null ? '' : ampere(s.i) + ' A' + (s.admis ? ' sur ' + ampere(s.admis) + ' A' : '') + (s.pointe ? ' (pointe)' : r.F().x.al ? '' : ' (supposé)'); },
+    vide: r => { const s = instantsDuFil(r.F()).le; return s.i == null || !isFinite(s.i); } },
+  { k: 'chute', t: 'Chute', option: true, large: 1, g: 'Le câble', cls: 'rc-c-mesure', html: celluleChute,
+    tri: r => { const s = instantsDuFil(r.F()).le; return s.u == null ? -1 : s.umax ? s.u / s.umax : s.u / 100; },
+    texte: r => { const s = instantsDuFil(r.F()).le; return s.u == null ? '' : voltsN(s.u) + ' V' + (s.umax ? ' sur ' + voltsN(s.umax) + ' V' : '') + (s.pointe ? ' (pointe)' : ''); },
+    vide: r => { const s = instantsDuFil(r.F()).le; return s.u == null || !isFinite(s.u); } },
   { k: 'contactDe', t: 'Contact de', option: true, large: 2, g: 'Les deux bouts', cls: 'rc-c-ct', html: r => contactH(r.l, r.F(), 'de'), tri: r => (r.F().de || {}).ref || '', texte: r => (r.F().de || {}).ref || '', vide: r => !(r.F().de && r.F().de.ref) },
   { k: 'contactVers', t: 'Contact vers', option: true, large: 2, g: 'Les deux bouts', cls: 'rc-c-ct', html: r => contactH(r.l, r.F(), 'vers'), tri: r => (r.F().vers || {}).ref || '', texte: r => (r.F().vers || {}).ref || '', vide: r => !(r.F().vers && r.F().vers.ref) },
-  { k: 'pnDe', t: 'Part number de', option: true, g: 'Les deux bouts', html: r => estMasse(r.l.de) || estRenvoi(r.l.de) ? rien : valT('pnDe', r.l.pnDe, { cls: 'rc-pn', ph: 'part number' }) + rendu(r.l, 'pnDe'), tri: r => r.l.pnDe || '', texte: r => r.l.pnDe || '' },
-  { k: 'pnVers', t: 'Part number vers', option: true, g: 'Les deux bouts', html: r => estMasse(r.l.vers) || estRenvoi(r.l.vers) ? rien : valT('pnVers', r.l.pnVers, { cls: 'rc-pn', ph: 'part number' }) + rendu(r.l, 'pnVers'), tri: r => r.l.pnVers || '', texte: r => r.l.pnVers || '' },
+  { k: 'pnDe', t: 'Part number de', option: true, g: 'Les deux bouts', html: r => estMasse(r.l.de) || estRenvoi(r.l.de) ? rien : luT('pnDe', r.l.pnDe, { cls: 'rc-pn' }) + rendu(r.l, 'pnDe'), tri: r => r.l.pnDe || '', texte: r => r.l.pnDe || '' },
+  { k: 'pnVers', t: 'Part number vers', option: true, g: 'Les deux bouts', html: r => estMasse(r.l.vers) || estRenvoi(r.l.vers) ? rien : luT('pnVers', r.l.pnVers, { cls: 'rc-pn' }) + rendu(r.l, 'pnVers'), tri: r => r.l.pnVers || '', texte: r => r.l.pnVers || '' },
   { k: 'plan', t: 'Folio', cls: 'rc-c-folio', option: true, g: 'Le dossier', si: () => modeFolio() !== 'aucun', html: r => modeFolioMemo() === 'auto'
-      ? `<span data-bulle="Découpé par VOLTA : le folio se lit, il ne s’écrit pas">${(foliosParSourceMemo().get(cleDe(r.l)) || []).map(p => `<button class="rc-f" data-plan="${escA(p)}">${esc(p)}</button>`).join('')}</span>` : valT('plan', r.l.plan, { ph: 'folio' }),
+      ? `<span data-bulle="Découpé par VOLTA : le folio se lit, il ne s’écrit pas">${(foliosParSourceMemo().get(cleDe(r.l)) || []).map(p => `<button class="rc-f" data-plan="${escA(p)}">${esc(p)}</button>`).join('')}</span>` : luT('plan', r.l.plan),
     tri: r => premierFolio(r.l), texte: r => modeFolioMemo() === 'auto' ? (foliosParSourceMemo().get(cleDe(r.l)) || []).join(' ') : r.l.plan },
-  { k: 'harness', t: 'Harness', option: true, g: 'Le dossier', html: r => valT('harness', r.l.harness, { ph: 'harness', cls: 'rc-pn' }), tri: r => r.l.harness || '', texte: r => r.l.harness || '' },
-  { k: 'fwd', t: 'FWD', option: true, g: 'Le dossier', html: r => valT('fwd', r.l.fwd, { ph: 'dessin', cls: 'rc-pn' }), tri: r => r.l.fwd || '', texte: r => r.l.fwd || '' },
-  { k: 'descriptionDe', t: 'Description 1', option: true, g: 'Les deux bouts', html: r => valT('descriptionDe', r.l.descriptionDe, { ph: 'description', cls: 'rc-texte' }), tri: r => r.l.descriptionDe || '', texte: r => r.l.descriptionDe || '' },
-  { k: 'descriptionVers', t: 'Description 2', option: true, g: 'Les deux bouts', html: r => valT('descriptionVers', r.l.descriptionVers, { ph: 'description', cls: 'rc-texte' }), tri: r => r.l.descriptionVers || '', texte: r => r.l.descriptionVers || '' },
+  { k: 'harness', t: 'Harness', option: true, g: 'Le dossier', html: r => luT('harness', r.l.harness, { cls: 'rc-pn' }), tri: r => r.l.harness || '', texte: r => r.l.harness || '' },
+  { k: 'fwd', t: 'FWD', option: true, g: 'Le dossier', html: r => luT('fwd', r.l.fwd, { cls: 'rc-pn' }), tri: r => r.l.fwd || '', texte: r => r.l.fwd || '' },
+  { k: 'descriptionDe', t: 'Description 1', option: true, g: 'Les deux bouts', html: r => luT('descriptionDe', r.l.descriptionDe, { cls: 'rc-texte' }), tri: r => r.l.descriptionDe || '', texte: r => r.l.descriptionDe || '' },
+  { k: 'descriptionVers', t: 'Description 2', option: true, g: 'Les deux bouts', html: r => luT('descriptionVers', r.l.descriptionVers, { cls: 'rc-texte' }), tri: r => r.l.descriptionVers || '', texte: r => r.l.descriptionVers || '' },
   { k: 'resistance', t: 'Résistance', cls: 'rc-c-n', option: true, g: 'Le câble', html: r => r.F().R == null ? rien : chiffre(`<b class="rc-n">${fmt(r.F().R * 1000, 0)}</b>`, 'mΩ'), tri: r => r.F().R ?? -1, texte: r => r.F().R == null ? '' : fmt(r.F().R * 1000, 0) + ' mΩ' },
   { k: 'masse', t: 'Masse', cls: 'rc-c-n', option: true, g: 'Le câble', html: r => r.F().masse == null ? rien : chiffre(`<b class="rc-n">${fmt(r.F().masse, 1)}</b>`, 'g'), tri: r => r.F().masse ?? -1, texte: r => r.F().masse == null ? '' : fmt(r.F().masse, 1) + ' g' }];
 const ligneLiaison = (l, i) => { const r = { l, i, k: String(i) }; let F = null; r.F = () => F || (F = infoFil(l)); return r; };
 const aReprendre = n => n === 'ko' || n === 'att';
+/* (v86, B5) une ligne tout à fait vide (ni « de », ni « vers », ni type, ni numéro) ne vient d'aucun fichier : celles que
+   « + Liaison » puis Échap laissaient avant la v86 ne se montrent ni ne se comptent plus */
+const liaisonVide = l => !l.de && !l.vers && !l.type && !l.cable && !(l.longueur > 0);
 const LIAISONS = {
-  ajout: 'Liaison', aide: 'Une liaison de plus, en tête : le curseur dans « de » (sur un équipement choisi, « vers »)', cherche: 'Chercher : repère, câble…',
+  cherche: 'Chercher : repère, câble…',
   colonnes: COLONNES_LIAISONS, portee: true,
-  lignes: () => verite().map(ligneLiaison),
+  lignes: () => verite().map(ligneLiaison).filter(r => !liaisonVide(r.l)),
   surFolio: r => surLeFolio(r.l),
   exact: (r, f) => r.l.de === f || r.l.vers === f,
   etat: r => r.F().etat.niveau,
@@ -34481,53 +34795,42 @@ const LIAISONS = {
     ...[...routes()].map(([route, c]) => ['route:' + route, route, r => r.l.route === route, traitRoute(c), 'route']),
     ['hyp', 'Sans longueur', r => !(r.l.longueur > 0), '', '', 'Les câbles sans longueur dans l’installation : l’hypothèse de la simulation compte pour eux', false, 'Ce qui manque'],
     ['sanscontact', 'Sans contact', r => [r.F().de, r.F().vers].some(x => x && !x.ref), '', '', 'Un bout dont aucun plan ne donne le contact à sertir', true, 'Ce qui manque']],
-  ajouter: () => ajouterLiaison(app.cible && app.cible.type === 'bloc' && !VT_A_POSER.test(app.cible.nom) ? app.cible.nom : ''),
   choisir: r => choisirLigneFil(r.l),
   survol: r => { const w = filDe(r.l); if (w) allumerFil(w); },
-  supprimer: r => { const l = r.l; supprimerLiaison(r.i); direRetablir('Liaison ' + (l.de || '?') + ' → ' + (l.vers || '?') + ' supprimée.'); },
   editeur: (r, f) => editeurFil(r, f),
-  ecrire: (r, f, v) => ecrireFil(r.l, f, v),
+  ecrire: (r, f, v) => f === 'contactDe' || f === 'contactVers' ? (v === '' ? LIAISONS.rendre(r, f) : ecrireFil(r.l, f, v)) : false,
+  // ↺ : le contact automatique revient ; une valeur du fichier qu'une proposition de VOLTA a changée retrouve celle du fichier
   rendre: (r, f) => { const l = r.l; if (f === 'contactDe' || f === 'contactVers') { const de = f === 'contactDe'; app.contrat.designations.delete('sertir|' + (de ? l.de : l.vers) + '|' + (de ? l.borneDe : l.borneVers)); return ecrireFil(l, f, ''); }
     return rendreChamp(l, f); } };
-const LISTES = { de: 'reperes', vers: 'reperes', pnDe: 'pns', pnVers: 'pns', type: 'types', route: 'routes', plan: 'folios', contactDe: 'contacts', contactVers: 'contacts' };
-// le nom d'un champ qu'on écrit, pour qui ne voit pas l'écran
-const LIBELLES_CHAMPS = { cable: 'Numéro du câble', type: 'Type de câble', borneDe: 'Borne de départ', borneVers: 'Borne d’arrivée', pnDe: 'Part number de départ', pnVers: 'Part number d’arrivée', perm: 'Courant permanent', 'pn:': 'Part number' };
-function editeurFil(r, f) { const l = r.l;
+// le nom d'un champ qu'on règle, pour qui ne voit pas l'écran
+const LIBELLES_CHAMPS = { contactDe: 'Contact à sertir, côté de', contactVers: 'Contact à sertir, côté vers', perm: 'Courant permanent' };
+/* Ce qui se règle dans une ligne de liaison : le CONTACT de chaque bout (Automatique, puis les contacts de la table qui vont
+   à sa cavité et à sa gauge) ; l'intensité mène au profil qui la donne. Le reste vient du fichier : rien. */
+function editeurFil(r, f) {
   if (f === 'intensite') { const x = r.F().x; return { action: () => { if (x.al) choisirRepere(x.al.nom); else ficheHypotheses(); } }; }
-  if (f === 'plan' && modeFolio() === 'auto') return null;
-  if (f === 'longueur') return { valeur: l.longueur > 0 ? metres(l.longueur) : '', ph: 'm (hypothèse : ' + metres(H_().longueur) + ')', aide: 'en mètres (3,5) ou en millimètres (3500 mm)' };
   if (f === 'contactDe' || f === 'contactVers') { const F = r.F(), x = F[f === 'contactDe' ? 'de' : 'vers']; if (!x) return null;
-    return { valeur: x.main ? x.ref : '', ph: x.ref || 'contact à sertir', liste: candidatsContact(F.jauge, x), aide: x.main ? 'vide : le contact calculé revient' : '' }; }
-  return { valeur: l[f] == null ? '' : String(l[f]), liste: LISTES[f] }; }
+    const auto = x.main ? x.auto : x.ref, xs = candidatsContact(F.jauge, x).filter(c => c !== auto); if (x.main && x.ref && !xs.includes(x.ref)) xs.unshift(x.ref);
+    return { valeur: x.main ? x.ref : '', options: [['', 'Automatique' + (auto ? ' · ' + auto : '')], ...xs.map(c => [c, c])] }; }
+  return null; }
 /* Les contacts de la table (la norme des modules) qui vont à cette gauge — et à la taille et au sexe du plan, s'il les dit. */
 function candidatsContact(jauge, x) { const T = normeDesModules(app.norme).contacts || [], vus = new Set();
   return T.filter(c => (c.jauge === '*' || jauge == null || +c.jauge === jauge) && (!x.taille || String(c.taille) === String(x.taille)) && (!x.sexe || c.sexe === x.sexe))
     .map(c => c.reference).filter(c => c && !vus.has(c) && vus.add(c)).slice(0, 40); }
-/* Écrire un champ d'une liaison : une entrée d'historique, ce que le fichier portait gardé (`changerLiaison`, 08-sections).
-   Un champ du fichier vidé reste une chaîne vide (de, vers, borne… : le modèle ne connaît pas « rien »). */
-const CHAMPS_DE_BASE = new Set(['de', 'borneDe', 'pnDe', 'vers', 'borneVers', 'pnVers', 'cable', 'type', 'route', 'plan']);
-function ecrireFil(l, f, v) { const avant = l[f] == null ? '' : String(l[f]);
-  if (f === 'longueur') { if (v === '') { if (!(l.longueur > 0)) return false; }
-    else { const x = longueurLue(v); if (x == null) { dire('Longueur illisible : écrivez des mètres (3,5) ou des millimètres (3500 mm).', true); return false; } if (x === l.longueur) return false; v = x; } }
-  else if (avant === v) return false;
+/* Régler le contact d'un bout (un choix de VOLTA) : une entrée d'historique (`changerLiaison`, 08-sections) qui dit le bout,
+   jamais le numéro du câble ; vide, l'automatique revient. Rien d'autre d'une liaison ne s'écrit ici. */
+function ecrireFil(l, f, v) { if (f !== 'contactDe' && f !== 'contactVers') return false; const avant = l[f] == null ? '' : String(l[f]); if (avant === v) return false;
   if (!(app.cible && app.cible.type === 'bloc')) app.cible = { type: 'fil', l };
-  const quoi = f === 'longueur' ? 'longueur de ' + (l.cable || 'la liaison') : /^contact/.test(f) ? 'contact de ' + (l.cable || 'la liaison') : 'modification d’une liaison';
-  if (CHAMPS_DE_BASE.has(f) && v === '') { histPush(quoi); if (!(l.avant && f in l.avant)) l.avant = { ...(l.avant || {}), [f]: l[f] == null ? null : l[f] }; l[f] = ''; app.actif = l; apresEdition(); return true; }
-  return changerLiaison(l, f, v === '' ? null : v, quoi); }
+  const bout = f === 'contactDe' ? l.de + (l.borneDe ? ':' + l.borneDe : '') : l.vers + (l.borneVers ? ':' + l.borneVers : '');
+  return changerLiaison(l, f, v === '' ? null : v, 'contact de ' + bout + ' : ' + (v || 'automatique')); }
 /* Choisir une liaison : sa fiche à droite, son câble allumé ; sur un autre folio, on y va. */
 function choisirLigneFil(l) { if (app.choisi) { app.choisi = null; peindre(); } app.cible = { type: 'fil', l };
   const ou = foliosDe(l); if (app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]);
   ouvrirInspecteur(); const w = filDe(l); if (w) allumerFil(w); marquerLignes(); }
-/* Une liaison de plus, EN TÊTE de l'onglet : le curseur dans la première case (sur un équipement choisi, « de » est
-   déjà écrit : le curseur va dans « vers »). Elle est au bout du contrat ; elle reste en tête jusqu'à ce qu'on ferme. */
-function ajouterLiaison(de) { histPush('ajout d’une liaison'); const b = app.base;
-  const n = liaison({ de: de || '', plan: (modeFolio() === 'fichier' && app.plan !== '*') ? app.plan : '' }); verite().push(n);
-  const i = verite().length - 1, sousBloc = de && app.cible && app.cible.type === 'bloc' && app.cible.nom === de;
-  if (!sousBloc) app.cible = { type: 'fil', l: n };
-  b.neuves.unshift(n); if (b.onglet !== 'liaisons') changerOnglet('liaisons', true);
-  if (!b.ouvert) ouvrirBase(); apresEdition(); rendreBase();
-  editerCase(String(i), de ? 'vers' : 'de'); }
-function nouvelleLiaison() { ajouterLiaison(app.cible && app.cible.type === 'bloc' && !VT_A_POSER.test(app.cible.nom) ? app.cible.nom : ''); }
+/* (v86 — l'intégrateur, « une seule source » ; l'audit, B4 et B5) AJOUTER UNE LIAISON, C'EST CHANGER LE FICHIER : plus
+   aucune ligne ne se crée ici (« + Liaison » puis Échap laissait une liaison vide, comptée partout et jusque dans la
+   bibliothèque). Un geste resté ailleurs qui l'appelle encore dit simplement où le faire. */
+function ajouterLiaison(de) { dire((de ? 'Un câble de plus pour ' + de : 'Une liaison de plus') + ' : elle s’ajoute dans votre fichier — VOLTA la lira en le rouvrant.'); return false; }
+function nouvelleLiaison() { return ajouterLiaison(app.cible && app.cible.type === 'bloc' && !VT_A_POSER.test(app.cible.nom) ? app.cible.nom : ''); }
 
 /* ---- LES REPÈRES : ce que les onglets Équipements, Disjoncteurs, Barrettes et Prises partagent ---- */
 const genreDuRepere = nom => estCoupure(nom) ? 'coupure' : estBarrette(nom) ? 'barrette' : estDisjoncteur(nom) ? 'cb' : 'eqpt';
@@ -34568,9 +34871,12 @@ const natureModifiable = r => !r.aPoser && (r.genre === 'eqpt' || r.genre === 'c
 const etatRepere = nom => { const e = etatDuNom(nom);
   return { niveau: e.niveau || 'ok', mot: e.ko.length ? pluriel(e.ko.length, 'problème') : e.att.length ? e.att.length + INSECABLE + 'à voir' : 'ok', bulle: [...e.ko, ...e.att].map(majuscule).join('\n') }; };
 /* Les colonnes que les onglets de repères partagent : le repère (en tête), ses problèmes (au bout), son folio (en plus). */
+/* LE REPÈRE se lit (le retest est la source : un repère se change dans le fichier, « tout au même endroit ») ; celui d'une
+   barrette que VOLTA a ajoutée est provisoire : « ajoutée » le dit, et « Lui donner son repère » — le même geste que la fiche
+   et l'onglet Problèmes (08-controle, `poserLesBarrettes`) — lui donne celui que VOLTA propose. */
 const COL_REPERE = { k: 'rep', t: 'Repère', cls: 'rc-c-rep', html: r => r.aPoser
-    ? `<span class="rc-aposer">${valT('rep', r.nom, { cls: 'rc-r aposer', titre: 'Barrette ajoutée par VOLTA (plusieurs câbles sur une borne), repère provisoire : double-clic pour écrire son vrai repère' })}<small class="rc-ajout" data-bulle="${escA(majuscule(r.sous) + ' : plusieurs câbles sur une borne')}">ajoutée</small><button type="button" class="rc-poser" data-poser="1" data-bulle="${escA('Lui donner son vrai repère (' + prochainRepereVT(r) + ' proposé) : elle entre au contrat')}">Poser</button></span>`
-    : valT('rep', r.nom, { cls: 'rc-r', titre: 'Double-clic pour renommer : chaque câble suit' }),
+    ? `<span class="rc-aposer">${luT('rep', r.nom, { cls: 'rc-r aposer', titre: 'Barrette ajoutée par VOLTA (plusieurs câbles sur une borne) : son repère est provisoire' })}<small class="rc-ajout" data-bulle="${escA(majuscule(r.sous) + ' : plusieurs câbles sur une borne')}">ajoutée</small><button type="button" class="btn cuivre dense rc-poser" data-poser="1" data-bulle="${escA('Elle prend ' + prochainRepereVT(r) + ', le repère que VOLTA propose (la suite de la barrette la plus proche) — « Défaire » rend le provisoire')}">Lui donner son repère</button></span>`
+    : luT('rep', r.nom, { cls: 'rc-r' }),
   tri: r => r.nom, texte: r => r.nom + (r.aPoser ? ' (repère provisoire)' : '') };
 // (« État », comme dans Liaisons, Câbles, Raccords : la case dit « 3 problèmes », « 1 à voir » ; tout va bien, elle se tait)
 const COL_PROBLEMES = { k: 'etat', t: 'État', cls: 'rc-c-etat', html: r => { const e = etatRepere(r.nom); return etatHtml(e.niveau, e.mot, e.bulle); },
@@ -34585,15 +34891,16 @@ const PUCE_A_REPRENDRE = ['probleme', 'À reprendre', r => !!etatDuNom(r.nom).ni
 /* ---- ÉQUIPEMENTS (les équipements seuls : les disjoncteurs, barrettes et prises ont leur onglet) ---- */
 const equipements = () => memo('eqpts', () => reperes().filter(r => r.genre === 'eqpt'));
 const COLONNES_EQUIPEMENTS = [COL_REPERE,
-  { k: 'nature', t: 'Type', cls: 'rc-c-nature', html: r => { const d = natureDite(r.nom);
-      return `<span class="rc-nature">${valT('nature', majuscule(natureDe(r.nom)), { titre: (d ? 'Dit à la main ; le code du repère dit « ' + natureAuto(r.nom) + ' »' : 'Lu dans le code du repère') + ' — double-clic pour le changer' })}${d ? orig('main') + rond('nature', 'le type que dit le code (' + natureAuto(r.nom) + ')') : ''}</span>`; },
+  // (v86) la nature se lit dans le code du repère (le fichier) ; une nature dite à la main avant la v86 garde « manuel » et ↺
+  { k: 'nature', t: 'Type', cls: 'rc-c-nature', html: r => { const d = natureDite(r.nom), q = lireRepere(r.nom), code = q && (q.codeLu || q.code);
+      return `<span class="rc-nature">${luT('nature', majuscule(natureDe(r.nom)), { titre: d ? 'Dit à la main ; le code du repère dit « ' + natureAuto(r.nom) + ' »' : 'Lu dans le code du repère' + (code ? ' (' + code + ')' : '') })}${d ? orig('main', 'Dit à la main avant la v86 : la nature se lit dans le code du repère, ↺ la rend') + rond('nature', 'celle que dit le code (' + natureAuto(r.nom) + ')') : ''}</span>`; },
     tri: r => natureDe(r.nom), texte: r => majuscule(natureDe(r.nom)) },
   { k: 'norme', t: 'Norme', cls: 'rc-c-norme', si: () => memo('eq-normes', () => reperes().some(r => r.genre === 'eqpt' && normesDuRepere(r.nom).length)), html: r => { const N = normesDuRepere(r.nom); return N.length ? `<span class="rc-norme" data-bulle="${escA(N.flatMap(n => n.cs).join('\n'))}">${N.map(n => esc(n.norme)).join('<i class="rc-pt">·</i>')}</span>` : rien; },
     tri: r => normesDuRepere(r.nom).map(n => n.norme).join(' '), texte: r => normesDuRepere(r.nom).map(n => n.norme).join(' · '), vide: r => !normesDuRepere(r.nom).length },
   COL_PROBLEMES,
-  { k: 'des', t: 'Désignation', option: true, g: 'Ce qu’il est', html: r => valT('des', app.contrat.designations.get(r.nom) || '', { cls: 'rc-texte', ph: 'à écrire' }), tri: r => app.contrat.designations.get(r.nom) || '', texte: r => app.contrat.designations.get(r.nom) || '' },
+  // (v86 : plus de « Désignation » à écrire — un nom en clair doublerait le fichier, la charte l'exclut)
   { k: 'pn', t: 'Part number', option: true, g: 'Ce qu’il est', html: r => { const I = baseRepere(r.nom);
-      return `<span class="rc-pns">${I.pns.map(c => `<span class="rc-pnl">${I.pns.length > 1 ? `<i class="rc-cn">${esc(c.nom)}</i>` : ''}${valT('pn:' + c.nom, c.pn, { cls: 'rc-pn', ph: 'part number', titre: 'Double-clic : toutes ses liaisons le prennent' })}</span>`).join('')}</span>`; },
+      return `<span class="rc-pns">${I.pns.map(c => `<span class="rc-pnl">${I.pns.length > 1 ? `<i class="rc-cn">${esc(c.nom)}</i>` : ''}${luT('pn:' + c.nom, c.pn, { cls: 'rc-pn' })}</span>`).join('')}</span>`; },
     tri: r => baseRepere(r.nom).pns.map(c => c.pn).join(' '), texte: r => baseRepere(r.nom).pns.map(c => c.pn).filter(Boolean).join(' ') },
   { k: 'connecteurs', t: 'Connecteurs', option: true, large: 1, g: 'Ce qu’il est', html: r => { const I = infoRepere(r); return I.connecteurs.length ? `<span class="rc-cnx">${I.connecteurs.map(c => `<i class="${c.ko ? 'ko' : ''}" data-bulle="${escA((c.pn || 'sans part number') + (c.ref ? ' · ' + c.ref : '') + ' · ' + pluriel(c.bornes.length, 'borne') + (c.ko ? ' — aucun arrangement ne convient' : ''))}">${esc(c.nom)}</i>`).join('')}</span>` : rien; },
     tri: r => infoRepere(r).connecteurs.length, texte: r => infoRepere(r).connecteurs.map(c => c.nom).join(' '), vide: r => !infoRepere(r).connecteurs.length },

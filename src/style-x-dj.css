@@ -16,34 +16,33 @@
   background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
 /* peu de calibres : des touches à leur taille, pas étirées sur toute la carte */
 .nv-grand .nv-panneau .vu-cals:not(:has(>:nth-child(5))){align-self:flex-start;grid-auto-columns:112px}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal{position:relative;min-width:0;height:58px;margin:0;padding:0 4px 9px;gap:0;border:0;border-radius:10px;background:none;box-shadow:none;color:var(--t-1);
+.nv-grand .nv-panneau .vu-cals>.vu-cal{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;height:58px;margin:0;padding:0 4px 9px;gap:0;border:0;border-radius:10px;background:none;box-shadow:none;color:var(--t-1);cursor:help;outline:none;
   transition:background var(--rapide),box-shadow var(--rapide),color var(--rapide),transform var(--d-instant,.08s) var(--courbe)}
 /* le chiffre : toujours à la même hauteur, qu'il porte un mot dessous ou non */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal>b{display:inline-flex;align-items:baseline;font:600 var(--f-20)/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal>b small{margin-left:2px;font:500 12px/1 var(--sans);letter-spacing:0;color:var(--t-3)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.non>b{color:var(--t-2)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal>small{position:absolute;left:0;right:0;bottom:8px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.02em;text-align:center;color:var(--t-3)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal>small:empty{display:none}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:hover{background:color-mix(in srgb,var(--t-1) 6%,transparent);border:0}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:active{transform:scale(var(--presse))}
+.nv-grand .nv-panneau .vu-cals>.vu-cal>b{display:inline-flex;align-items:baseline;font:600 var(--f-20)/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--t-1)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal>b small{margin-left:2px;font:500 12px/1 var(--sans);letter-spacing:0;color:var(--t-3)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.non>b{color:var(--t-2)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal>small{position:absolute;left:0;right:0;bottom:8px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.02em;text-align:center;color:var(--t-3)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal>small:empty{display:none}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:hover{background:color-mix(in srgb,var(--t-1) 6%,transparent);border:0}
 /* le retenu : la touche se lève, au filet de cuivre (la nuit, son voile et sa lueur de cuivre : --n-cal-on, style-x-nuit) */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.on,.nv-grand .nv-panneau .vu-cals>button.vu-cal.on:hover{background:var(--n-cal-on,var(--s-surface));box-shadow:0 0 0 1.5px var(--nv-cuivre),var(--n-cal-on-lueur,0 2px 6px rgba(0,0,0,.10));cursor:default;transform:none}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.on>b{color:var(--n-cal-on-t,var(--t-1))}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.on>small{color:var(--nv-cuivre)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.on,.nv-grand .nv-panneau .vu-cals>.vu-cal.on:hover{background:var(--n-cal-on,var(--s-surface));box-shadow:0 0 0 1.5px var(--nv-cuivre),var(--n-cal-on-lueur,0 2px 6px rgba(0,0,0,.10));transform:none}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.on>b{color:var(--n-cal-on-t,var(--t-1))}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.on>small{color:var(--nv-cuivre)}
 /* celui de votre fichier, quand VOLTA en retient un autre : un anneau pointillé */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.fichier:not(.on){border:0;outline:1.5px dashed color-mix(in srgb,var(--t-2) 70%,transparent);outline-offset:-5px}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:1px}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.fichier:not(.on){border:0;outline:1.5px dashed color-mix(in srgb,var(--t-2) 70%,transparent);outline-offset:-5px}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:1px}
 /* LE FILET SOUS LA RÈGLE : rouge sous ce qui disjoncte, vert sous ce qui ne disjoncte pas — continu d'une touche à l'autre */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal::after{content:"";position:absolute;left:-2px;right:-2px;top:calc(100% + 9px);height:3px;border-radius:0;background:var(--ok);box-shadow:none;pointer-events:none}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.non::after{background:color-mix(in srgb,var(--ko) 85%,var(--s-surface))}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:first-child::after{left:0;border-radius:2px 0 0 2px}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:last-child::after{right:0;border-radius:0 2px 2px 0}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal:only-child::after{border-radius:2px}
+.nv-grand .nv-panneau .vu-cals>.vu-cal::after{content:"";position:absolute;left:-2px;right:-2px;top:calc(100% + 9px);height:3px;border-radius:0;background:var(--ok);box-shadow:none;pointer-events:none}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.non::after{background:color-mix(in srgb,var(--ko) 85%,var(--s-surface))}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:first-child::after{left:0;border-radius:2px 0 0 2px}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:last-child::after{right:0;border-radius:0 2px 2px 0}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:only-child::after{border-radius:2px}
 /* le mot, au début de chaque zone (le point du coin s'en va) */
-.nv-grand .nv-panneau .vu-cals>button.vu-cal::before{content:none;position:absolute;inset:auto auto auto 1px;top:calc(100% + 19px);width:auto;height:auto;border-radius:0;background:none;box-shadow:none;
+.nv-grand .nv-panneau .vu-cals>.vu-cal::before{content:none;position:absolute;inset:auto auto auto 1px;top:calc(100% + 19px);width:auto;height:auto;border-radius:0;background:none;box-shadow:none;
   font:500 var(--f-12)/1 var(--sans);letter-spacing:0;white-space:nowrap;color:var(--ok);pointer-events:none}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.non:first-child::before,.nv-grand .nv-panneau .vu-cals>button.vu-cal.oui+button.vu-cal.non::before{content:"disjoncte";color:var(--ko)}
-.nv-grand .nv-panneau .vu-cals>button.vu-cal.oui:first-child::before,.nv-grand .nv-panneau .vu-cals>button.vu-cal.non+button.vu-cal.oui::before{content:"ne disjoncte pas";color:var(--ok)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.non:first-child::before,.nv-grand .nv-panneau .vu-cals>.vu-cal.oui+.vu-cal.non::before{content:"disjoncte";color:var(--ko)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.oui:first-child::before,.nv-grand .nv-panneau .vu-cals>.vu-cal.non+.vu-cal.oui::before{content:"ne disjoncte pas";color:var(--ok)}
 /* la légende ne redit plus ce que la règle montre : seul « actuel : celui de votre fichier » (et le retour à VOLTA) reste */
 .nv-grand .nv-panneau .vu-bloc>.vu-cals~.vu-legende>span:has(>i:is(.ok,.ko,.ret)){display:none}
 .nv-grand .nv-panneau .vu-bloc>.vu-cals~.vu-legende:not(:has(i.act,button)){display:none}
@@ -246,3 +245,37 @@
 .dj-graphe .dj-prof .dj-escalier{transition:d .24s var(--courbe),stroke .2s}
 .dj-graphe svg.tient .dj-prof :is(.dj-point,.dj-halo,.dj-escalier){transition:none}
 @media (prefers-reduced-motion:reduce){ .dj-graphe .dj-prof :is(.dj-point,.dj-halo,.dj-escalier){transition:none} }
+
+/* ── 6. (v86, l'intégrateur, G7 et G8) LA FRISE NE SE CLIQUE PLUS, UNE SEULE LISTE PARTOUT ──
+   Les calibres de la frise sont des repères, plus des boutons : le survol dit ce que chacun fait sur la durée du profil ; un
+   calibre de vos Hypothèses que la famille ne fait pas reste, à part (« pas en MS3320 ») ; un calibre qu'on ne juge pas (pas de
+   profil) reste neutre. Le seul geste qui écrit un calibre : la proposition de VOLTA, sous la frise. */
+.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible{box-shadow:0 0 0 2px var(--nv-cuivre)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.on:focus-visible{box-shadow:0 0 0 1.5px var(--nv-cuivre),0 0 0 4px var(--nv-cuivre-soft)}
+.nv-grand .nv-panneau .vu-bloc>.vu-cals>.vu-cal::after{box-shadow:var(--n-filet-ok,none)}
+.nv-grand .nv-panneau .vu-bloc>.vu-cals>.vu-cal.non::after{box-shadow:var(--n-filet-ko,none)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal:is(.hors,.neutre)::after{background:var(--s-line-2);box-shadow:none}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.hors>b{color:var(--t-3)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.hors>b small{color:var(--t-3);opacity:.8}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.hors>small{font-weight:500;color:var(--t-3)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.neutre>b{color:var(--t-2)}
+/* les mots des zones sautent un calibre hors famille au milieu de la frise */
+.nv-grand .nv-panneau .vu-cals>.vu-cal.non+.vu-cal.hors+.vu-cal.oui::before{content:"ne disjoncte pas";color:var(--ok)}
+.nv-grand .nv-panneau .vu-cals>.vu-cal.oui+.vu-cal.hors+.vu-cal.non::before{content:"disjoncte";color:var(--ko)}
+/* LA PROPOSITION DE VOLTA : son geste de cuivre, et pourquoi en une phrase */
+.dj-prop{display:flex;align-items:center;gap:16px;margin:2px 0 0;padding:12px 16px;border-radius:12px;background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne)}
+.dj-prop>.btn{flex:none}
+.dj-prop>p{margin:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty}
+.dj-prop>p b{font-weight:600;color:var(--t-1)}
+.dj-prop>p span{color:var(--t-3)}
+/* L'ÉCHELLE DE L'ESSENTIEL : un calibre que la famille ne fait pas, en gris */
+.dj-fx-cal.hors>i{background:var(--s-line-2)}
+.dj-fx-cal.hors>b{color:var(--t-3);font-weight:500}
+.dj-fx-cal.hors{cursor:help}
+/* LA FRISE DE LA CARTE : chaque calibre en ampères (« 7,5 A »), serrés pour tenir sur une ligne */
+.dj-frise .vu-calv-l{gap:5px}
+.dj-frise .vu-c b{display:inline-flex;align-items:baseline;justify-content:center;gap:1px;min-width:0;padding:0 6px;line-height:32px}
+.dj-frise .vu-c b small{height:auto;font:500 10px/1 var(--sans);color:inherit;opacity:.72}
+.dj-frise .vu-c[data-bulle]{cursor:help}
+.dj-frise .vu-c.hors b{background:none;color:var(--t-3);box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.dj-frise .vu-c.neutre b{background:var(--s-sunken);color:var(--t-2);box-shadow:inset 0 0 0 1px var(--s-line)}

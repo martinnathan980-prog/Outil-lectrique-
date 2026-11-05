@@ -114,8 +114,14 @@ function longueurLue(v) { if (v == null || v === '') return null; if (typeof v =
    longueur illisible (« abc », « -3 ») ne se lit pas — l'installation corrigée (08-export) les RÉÉCRIT comme le fichier
    les portait, tant que la lecture n'a pas changé. `ecrit` : { de, borneDe, vers, borneVers } tels que le fichier les
    écrivait ; il ne vaut que s'il se relit encore en la liaison (`ecritDuBout`). */
+/* (v86, l'audit B3) un repère écrit de deux façons — « 103rl1 » et « 103RL1 », « 101 BT1 » et « 101BT1 » — se LIT d'une seule
+   (02, `unifierLesReperes`) : sa forme, en capitales sans espace, est la même ; l'écriture du fichier reste valable tant que
+   seule la casse ou une espace diffère, et l'installation corrigée la rend telle quelle (seul le geste « Écrire 103RL1
+   partout », 08-controle, l'écrit). */
+const formeEcrite = r => String(r == null ? '' : r).toUpperCase().replace(/\s+/g, '');
+const memeRepereEcrit = (x, y) => x === y || formeEcrite(x) === formeEcrite(y);
 const ecritDuBout = (l, cote) => { const e = l && l.ecrit, a = cote === 'de' ? 'de' : 'vers', b = cote === 'de' ? 'borneDe' : 'borneVers';
-  if (!e || e[a] == null) return null; const [r, n] = boutLu(e[a], e[b]); return r === l[a] && n === l[b] ? [e[a], e[b] == null ? '' : e[b]] : null; };
+  if (!e || e[a] == null) return null; const [r, n] = boutLu(e[a], e[b]); return memeRepereEcrit(r, l[a]) && n === l[b] ? [e[a], e[b] == null ? '' : e[b]] : null; };
 function liaison(o) {
   const s = v => (v == null ? '' : String(v).trim()), [de, borneDe] = boutLu(o.de, o.borneDe), [vers, borneVers] = boutLu(o.vers, o.borneVers);
   const l = { de, borneDe, pnDe: s(o.pnDe), vers, borneVers, pnVers: s(o.pnVers), cable: s(o.cable), type: s(o.type), route: s(o.route), plan: s(o.plan) };
@@ -130,7 +136,7 @@ function liaison(o) {
   if (o.autres && typeof o.autres === 'object') { const a = {}; let n = 0; Object.keys(o.autres).forEach(k => { const v = s(o.autres[k]); if (k && v) { a[k] = v; n++; } }); if (n) l.autres = a; }
   // le bout tel que le fichier l'écrivait, quand la lecture le change (« 677VT2 51 » + « B ») — ou tel qu'une liaison déjà lue le garde
   const e = {}; [['de', 'borneDe', de, borneDe], ['vers', 'borneVers', vers, borneVers]].forEach(([a, b, r, n]) => { const ra = s(o[a]), rb = s(o[b]);
-    if (ra !== r || rb !== n) { e[a] = ra; e[b] = rb; } else if (o.ecrit && o.ecrit[a] != null) { const [r2, n2] = boutLu(o.ecrit[a], o.ecrit[b]); if (r2 === r && n2 === n) { e[a] = s(o.ecrit[a]); e[b] = s(o.ecrit[b]); } } });
+    if (ra !== r || rb !== n) { e[a] = ra; e[b] = rb; } else if (o.ecrit && o.ecrit[a] != null) { const [r2, n2] = boutLu(o.ecrit[a], o.ecrit[b]); if (memeRepereEcrit(r2, r) && n2 === n) { e[a] = s(o.ecrit[a]); e[b] = s(o.ecrit[b]); } } });
   if (Object.keys(e).length) l.ecrit = e;
   // le contact à sertir écrit à la main à un bout (le récapitulatif) : il passe devant celui que le plan donne
   if (s(o.contactDe)) l.contactDe = s(o.contactDe); if (s(o.contactVers)) l.contactVers = s(o.contactVers);
@@ -165,15 +171,34 @@ const cableEtType = l => cableDit(l);
    que l'outil ajoute) : la base, elle, reste celle du contrat. Les bornes de barrette, de prise et de masse ne sont pas
    concernées (leur moteur sait recevoir plusieurs fils). */
 const VT_A_POSER = /^VT\d+$/i;
+/* (v86) LE CÂBLE À CRÉER d'une barrette à poser : de la borne dédoublée (un équipement) à sa barrette (VT1…). Ses bornes
+   se nomment désormais comme sa face (« 51H », 09 `lettresDeBarretteAPoser`) : il se reconnaît à sa marque, `aCreer`, qu'il
+   garde jusque dans le moteur en Worker (la page lui retire `origine`) ; une liaison d'avant, sans marque, à sa borne 1.
+   Tous ceux qui cherchent le câble à créer d'une barrette (le dessin, la fiche, le contrôle, le récapitulatif) passent ici. */
+const estRaccordAPoser = l => !!l && !!l.de && VT_A_POSER.test(String(l.vers || '')) && !VT_A_POSER.test(String(l.de))
+  && (l.aCreer === true || (l.aCreer === undefined && String(l.borneVers) === '1'));
+/* (v86, l'audit B3) UNE LIGNE EN DOUBLE — la même ligne écrite deux fois dans le fichier (une copie d'Excel) : les mêmes deux
+   bouts (dans un sens ou dans l'autre), le même type, le même numéro, le même folio, le même harness. Ce n'est pas
+   « plusieurs câbles sur une borne » : elle ne fait jamais poser de barrette et ne se dessine qu'une fois ; le contrôle la
+   dit, « à régler », avec son geste (08-controle, « Retirer la ligne en double »). `rangsEnDouble(L)` : les rangs des
+   copies (la première ligne reste). */
+const cleDeDoublon = l => { const a = l.de + '\u0002' + l.borneDe, b = l.vers + '\u0002' + l.borneVers;
+  return [a < b ? a + '\u0001' + b : b + '\u0001' + a, l.type || '', l.cable || '', l.plan || '', l.harness || ''].join('\u0001'); };
+function rangsEnDouble(L) { const vus = new Set(), copies = new Set();
+  L.forEach((l, i) => { if (!l || !liaisonComplete(l) || l.origine === null) return; const k = cleDeDoublon(l); if (vus.has(k)) copies.add(i); else vus.add(k); });
+  return copies; }
 // les bornes d'équipement dédoublées d'un folio : [clé repère\u0001borne, [{ i, cote }]] — une barrette à poser chacune
+// (une ligne en double n'y compte qu'une fois)
 function dedoublements(L) {
-  const parBorne = new Map();
-  L.forEach((l, i) => { if (l.de === l.vers) return;
+  const parBorne = new Map(), copies = rangsEnDouble(L);
+  L.forEach((l, i) => { if (l.de === l.vers || copies.has(i)) return;
     [[l.de, l.borneDe, 'de'], [l.vers, l.borneVers, 'vers']].forEach(([r, b, cote]) => {
       if (!r || !b || estBornier(r) || estMasse(r) || VT_A_POSER.test(r)) return;
       const k = r + '\u0001' + b; (parBorne.get(k) || parBorne.set(k, []).get(k)).push({ i, cote }); }); });
   return [...parBorne].filter(([, xs]) => xs.length > 1); }
-function avecBarrettesAPoser(L, depart = 0, memoire = null) {
+function avecBarrettesAPoser(L, depart = 0, memoire = null, norme = null) {
+  // une ligne en double ne se dessine qu'une fois (le contrôle la dit)
+  const copies = rangsEnDouble(L); if (copies.size) L = L.filter((_, i) => !copies.has(i));
   const groupes = dedoublements(L);
   if (!groupes.length) return L;
   const remplace = new Map(), ajouts = [];
@@ -187,12 +212,17 @@ function avecBarrettesAPoser(L, depart = 0, memoire = null) {
   groupes.forEach(([k, xs], g) => { const [r, b] = k.split('\u0001'), nom = 'VT' + numero(k, g), l0 = L[xs[0].i];
     const types = xs.map(x => L[x.i].type).filter(Boolean), gros = types.slice().sort((u, v) => jauge(u) - jauge(v))[0] || '';
     const pn = xs[0].cote === 'de' ? l0.pnDe : l0.pnVers, commun = { route: l0.route, plan: l0.plan, origine: null, aPoser: nom };
-    ajouts.push({ de: r, borneDe: b, pnDe: pn, vers: nom, borneVers: '1', pnVers: '', cable: '', type: gros, ...commun });
+    ajouts.push({ de: r, borneDe: b, pnDe: pn, vers: nom, borneVers: '1', pnVers: '', cable: '', type: gros, ...commun, aCreer: true });
     xs.forEach((x, j) => { const cur = remplace.get(x.i) || { ...L[x.i], origine: L[x.i], aPoser: nom };
       if (x.cote === 'de') { cur.de = nom; cur.borneDe = String(j + 2); cur.pnDe = ''; } else { cur.vers = nom; cur.borneVers = String(j + 2); cur.pnVers = ''; }
       remplace.set(x.i, cur); });
     for (let j = 1; j <= xs.length; j++) ajouts.push({ de: nom, borneDe: String(j), vers: nom, borneVers: String(j + 1), pnDe: '', pnVers: '', cable: '', type: '', ...commun }); });
-  return [...L.map((l, i) => remplace.get(i) || l), ...ajouts]; }
+  const out = [...L.map((l, i) => remplace.get(i) || l), ...ajouts];
+  // (v86) chaque barrette nomme ses bornes comme sa face (« 51H », 09) ; sans module qui la loge, elle garde ses numéros
+  if (typeof lettresDeBarretteAPoser === 'function') { const neufs = [...remplace.values(), ...ajouts];
+    [...new Set(ajouts.map(l => l.aPoser))].forEach(nom => { const siens = neufs.filter(l => l.de === nom || l.vers === nom), noms = lettresDeBarretteAPoser(nom, siens, norme); if (!noms) return;
+      siens.forEach(l => { if (l.de === nom) l.borneDe = noms.get(l.borneDe) || l.borneDe; if (l.vers === nom) l.borneVers = noms.get(l.borneVers) || l.borneVers; }); }); }
+  return out; }
 
 /* L'inverse, pour le MOTEUR (03) : une barrette à poser n'y est pas un bloc. Le dessin se place comme si ses fils
    partaient encore de la borne (c'est ce dessin-là que le lecteur trouvait « très, très bien »), et c'est le routage qui
@@ -201,7 +231,7 @@ function avecBarrettesAPoser(L, depart = 0, memoire = null) {
    dessine. Les liaisons qui n'en touchent aucune sont rendues telles quelles — les mêmes objets, au même rang. */
 function sansBarrettesAPoser(L) {
   const bornes = new Map();   // VTn -> [repère, borne, part number] de la borne dédoublée (le fil à créer les porte)
-  L.forEach(l => { if (VT_A_POSER.test(l.vers) && l.borneVers === '1' && l.de && !VT_A_POSER.test(l.de)) bornes.set(l.vers, [l.de, l.borneDe, l.pnDe]); });
+  L.forEach(l => { if (estRaccordAPoser(l)) bornes.set(l.vers, [l.de, l.borneDe, l.pnDe]); });
   if (!bornes.size) return L;
   return L.map(l => { const a = bornes.get(l.de), b = bornes.get(l.vers); if (!a && !b) return l;
     const o = { ...l }; if (a) { o.de = a[0]; o.borneDe = a[1]; o.pnDe = a[2]; } if (b) { o.vers = b[0]; o.borneVers = b[1]; o.pnVers = b[2]; } return o; });

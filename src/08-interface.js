@@ -1882,7 +1882,7 @@ function aller(cible) { const P = plans(); const nom = cible.nom;
   const ou = cible.type === 'fil' ? plansDuFil(nom) : plansDuRepere(nom);
   if (P.length > 1 && app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]);
   if (!app.dessin && attenteCourante()) { reporterCible(cible); return; }   // le folio se place au loin : la cible attend le dessin (finirAttente)
-  if (cible.type === 'fil') { const f = app.dessin && app.dessin.fils.find(w => w.cable === nom); if (!f) { dire('« ' + nom + ' » n’est pas dessiné.'); return; }
+  if (cible.type === 'fil') { const f = app.dessin && app.dessin.fils.find(w => w.cable === nom); if (!f) { dire(cible.aff ? 'Le câble ' + cible.aff + ' n’est pas dessiné.' : '« ' + nom + ' » n’est pas dessiné.'); return; }
     choisirFil(f); viserFil(f); pulser({ type: 'fil', f }); return; }
   const c = app.dessin && app.dessin.compDe.get(nom); if (!c) { dire('« ' + nom + ' » n’est sur aucun folio.'); return; }
   // une borne : la fiche du repère sur son connecteur, la ligne du contact allumée (08-fiche, `rouvrir` et son but)
@@ -1928,8 +1928,24 @@ function distanceFrappe(a, b, max) { if (Math.abs(a.length - b.length) > max) re
       if (p2 && i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) c[j] = Math.min(c[j], p2[j - 2] + 1); bas = Math.min(bas, c[j]); }
     if (bas > max) return max + 1; p2 = p; p = c; }
   return p[b.length]; }
+/* (v86, l'audit G4) LE NUMÉRO D'UN CÂBLE se cherche encore, même s'il ne s'écrit plus à l'écran (charte : un câble se dit
+   par son type et ses deux bouts) : « W-101 », le numéro de son Excel, trouve le câble, montré « DR24 · 210SP1:B12 →
+   667VT2:51A », et la ligne dit d'où vient la trouvaille (« n° W-101 de votre fichier ») — sans elle, « w10 » donnerait dix
+   lignes qu'on ne saurait départager. `nom` garde le numéro : c'est par lui qu'`aller` retrouve le câble sur son folio. */
+const boutsDuCable = l => bornePlusRepere(l.de, l.borneDe) + ' → ' + bornePlusRepere(l.vers, l.borneVers);
+const candidatCable = (l, r, propose) => SANS_NUMERO_DE_CABLE
+  ? { type: 'fil', nom: l.cable, aff: (l.type ? l.type + ' · ' : '') + boutsDuCable(l), des: 'n° ' + l.cable + ' de votre fichier', r, propose }
+  : { type: 'fil', nom: l.cable, des: l.de + ' → ' + l.vers, r, propose };
+/* (v86, l'audit G4) LE CALIBRE : « calibre », « calibres » (trois lettres au moins : « cal »), « calibre 10 », « 7,5 A » —
+   les disjoncteurs, chacun avec son calibre (« 102CB1 · calibre 10 A ») ; un nombre ne garde que ceux de ce calibre.
+   Rend null, ou { amp } (null : tous). */
+function calibreCherche(q) { const t = String(q || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const m = /^(cal[a-z]*)?\s*(\d+(?:[.,]\d+)?)?\s*(a|amperes?)?$/.exec(t); if (!m || !(m[1] || m[2])) return null;
+  const mot = m[1] && m[1].length >= 3 && 'calibres'.startsWith(m[1]);
+  if (!(mot || (!m[1] && m[2] && m[3]))) return null;
+  return { amp: m[2] ? parseFloat(m[2].replace(',', '.')) : null }; }
 function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if (!Q) return [];
-  const L = verite(), D = app.contrat.designations, info = new Map();
+  const L = verite(), D = app.contrat.designations, info = new Map(), cal = calibreCherche(q);
   L.forEach(l => [[l.de, l.pnDe, l.descriptionDe], [l.vers, l.pnVers, l.descriptionVers]].forEach(([n, pn, d]) => { if (!n || estRenvoi(n)) return;
     const x = info.get(n) || info.set(n, { n: 0, pns: new Set(), descs: new Set() }).get(n); x.n++; if (pn) x.pns.add(String(pn)); if (d) x.descs.add(String(d).trim()); }));
   const rang = n => rangAPlat(n, Q, Qz), contient = t => rangAPlat(t, Q, Qz) < 2;
@@ -1944,7 +1960,12 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
     bornes.sort((a, b) => triNaturel(a.borne, b.borne)); }
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };
+  if (cal && !natures.includes('CB')) natures.push('CB');
   info.forEach((x, n) => { const des = D.get(n) || ''; let r = rang(n), dit = des || [...x.descs][0] || '';
+    // le calibre cherché : chaque disjoncteur dit le sien, en tête ; « calibre 10 » ne garde que ceux de 10 A
+    if (cal && estDisjoncteur(n)) { const c = typeof calibreAuFolio === 'function' ? calibreAuFolio(n) : null;
+      if (cal.amp != null && !(c > 0 && Math.abs(c - cal.amp) < 1e-6)) return;
+      rep.push({ type: 'repere', nom: n, des: (c > 0 ? 'calibre ' + amperesCb(c) : 'disjoncteur') + (des && des !== 'disjoncteur' ? ' · ' + des : ''), n: x.n, r: 0.5 }); return; }
     if (r === 2 && natures.includes(codeDe(n))) { r = 1.5; dit = CODES[codeDe(n)].nom + (estDisjoncteur(n) && typeof calibreAuFolio === 'function' && calibreAuFolio(n) ? ' · ' + amperesCb(calibreAuFolio(n)) : '') + (dit ? ' · ' + dit : ''); }
     if (r === 2) { const d = contient(des) ? des : [...x.descs].find(contient), pn = d ? null : [...x.pns].find(contient); if (!d && !pn) return; dit = d || pn; r = d ? 2 : 3; }
     // ni désignation ni description : sa nature (« disjoncteur · 15 A »), plutôt qu'une ligne vide
@@ -1953,10 +1974,11 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   rep.sort((a, b) => a.r - b.r || b.n - a.n || triNaturel(a.nom, b.nom));
   // la nature entière : « tous les disjoncteurs », dans le récapitulatif
   const nat = natures.map(code => { const k = rep.filter(r => codeDe(r.nom) === code).length; if (!k) return null; const nom = CODES[code].nom, onglet = ONGLET_DE_NATURE[code] || 'equipements';
-    return { type: 'nature', nom: k > 1 ? nom.replace(/^(\S+?)([sxz]?)(?=\s|$)/, (t, a, b) => a + (b || 's')) : nom, code, onglet, filtre: onglet === 'equipements' ? nom : '', des: 'tous, dans le récapitulatif', n: k, sansCable: true }; }).filter(Boolean).slice(0, 2);
-  // les câbles par leur numéro ; un type de câble (deux lettres au moins) : la ligne « tous les DR12 », puis quelques-uns
+    return { type: 'nature', nom: k > 1 ? nom.replace(/^(\S+?)([sxz]?)(?=\s|$)/, (t, a, b) => a + (b || 's')) : nom, code, onglet, filtre: onglet === 'equipements' ? nom : '', des: cal && code === 'CB' ? 'leurs calibres, dans le récapitulatif' : 'tous, dans le récapitulatif', n: k, sansCable: true }; }).filter(Boolean).slice(0, 2);
+  // les câbles par leur numéro (celui du fichier, même s'il ne s'écrit plus : `candidatCable`) ; un type de câble (deux
+  // lettres au moins) : la ligne « tous les DR12 », puis quelques-uns
   const fils = [], vus = new Set(), types = new Map();
-  L.forEach(l => { const c = SANS_NUMERO_DE_CABLE ? '' : l.cable; if (c && !vus.has(c) && contient(c)) { vus.add(c); fils.push({ type: 'fil', nom: c, des: l.de + ' → ' + l.vers, r: rang(c) }); }
+  L.forEach(l => { const c = l.cable; if (c && !vus.has(c) && contient(c)) { vus.add(c); fils.push(candidatCable(l, rang(c))); }
     if (Q.length >= 2 && l.type && contient(l.type) && l.de !== l.vers) types.set(l.type, (types.get(l.type) || 0) + 1); });
   fils.sort((a, b) => a.r - b.r || triNaturel(a.nom, b.nom));
   const ty = [...types].sort((a, b) => rang(a[0]) - rang(b[0]) || b[1] - a[1]).slice(0, 2).map(([t, n]) => ({ type: 'type', nom: t, des: 'tous les câbles de ce type, dans le récapitulatif', n }));
@@ -1969,11 +1991,11 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
 function proposition(Q, info, L) { const Qz = sansZeros(Q), max = Qz.length <= 3 ? 0 : Qz.length <= 6 ? 1 : 2; if (!max) return [];
   let best = null; const essayer = (t, quoi) => { const d = distanceFrappe(sansZeros(aPlat(t)), Qz, best ? Math.min(max, best.d) : max); if (d <= max && (!best || d < best.d)) best = { d, t, quoi }; };
   info.forEach((x, n) => essayer(n, 'repere')); const vus = new Set(), types = new Set();
-  for (const l of L) { if (!SANS_NUMERO_DE_CABLE && l.cable && !vus.has(l.cable)) { vus.add(l.cable); essayer(l.cable, 'fil'); } if (l.type) types.add(l.type); if (best && best.d === 1 && vus.size > 5000) break; }
+  for (const l of L) { if (l.cable && !vus.has(l.cable)) { vus.add(l.cable); essayer(l.cable, 'fil'); } if (l.type) types.add(l.type); if (best && best.d === 1 && vus.size > 5000) break; }
   types.forEach(t => essayer(t, 'type'));
   if (!best) return [];
-  const l = best.quoi === 'fil' ? L.find(x => x.cable === best.t) : null;
-  return [{ type: best.quoi, nom: best.t, propose: true, des: best.quoi === 'fil' ? l.de + ' → ' + l.vers : best.quoi === 'type' ? 'tous les câbles de ce type' : (app.contrat.designations.get(best.t) || natureDe(best.t)) }]; }
+  if (best.quoi === 'fil') return [candidatCable(L.find(x => x.cable === best.t), 0, true)];
+  return [{ type: best.quoi, nom: best.t, propose: true, des: best.quoi === 'type' ? 'tous les câbles de ce type' : (app.contrat.designations.get(best.t) || natureDe(best.t)) }]; }
 let qSel = 0, qCands = [];
 const GENRE_CANDIDAT = { repere: 'repère', fil: 'câble', borne: 'borne', type: 'type', nature: 'nature' };
 /* Les lignes de la liste ne prennent pas Tab (v74) : ↑ ↓ les parcourent depuis le champ (`aria-activedescendant`), un clic
@@ -1983,7 +2005,7 @@ function montrerCandidats() { const box = $('q-liste'), q = $('q').value; qCands
   const propose = qCands.length && qCands[0].propose;
   box.innerHTML = (propose ? `<div class="q-rien q-rien-tete">Rien qui s’écrive « ${esc(q.trim())} ».</div>` : '')
     + (qCands.length ? qCands.map((c, i) => `<button class="q-item${i === qSel ? ' on' : ''}${c.propose ? ' q-propose' : ''}" role="option" id="q-opt-${i}" data-i="${i}" tabindex="-1" aria-selected="${i === qSel}">
-      <span class="genre">${c.propose ? 'Vouliez-vous dire' : GENRE_CANDIDAT[c.type] || c.type}</span><span class="nom">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.nom)}${c.propose ? ' ?' : ''}</span><span class="des${c.type === 'fil' || c.type === 'borne' ? ' mono' : ''}">${esc(c.des)}</span>${c.n ? `<span class="cpt">${esc(c.sansCable ? String(c.n) : pluriel(c.n, 'câble'))}</span>` : ''}</button>`).join('')
+      <span class="genre">${c.propose ? 'Vouliez-vous dire' : GENRE_CANDIDAT[c.type] || c.type}</span><span class="nom">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.aff || c.nom)}${c.propose ? ' ?' : ''}</span><span class="des${c.type === 'fil' || c.type === 'borne' ? ' mono' : ''}">${esc(c.des)}</span>${c.n ? `<span class="cpt">${esc(c.sansCable ? String(c.n) : pluriel(c.n, 'câble'))}</span>` : ''}</button>`).join('')
     : '<div class="q-rien">Rien qui corresponde — un repère, un câble, un part number, un type, une nature (« disjoncteur »), une description, ou « repère:borne ».</div>');
   $('q').setAttribute('aria-activedescendant', qCands.length ? 'q-opt-' + qSel : ''); }
 /* La fenêtre de recherche s'ouvre à côté du rail, par le bouton ou « / »,
@@ -2032,7 +2054,7 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
 const PALETTE = { el: null, sel: 0, lignes: [], avant: null };
 // ce qu'on tape aussi pour trouver une action (ses mots d'atelier, sans accent)
 const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx installation corrigee retest modifications envoyer livrable', svg: 'image vectorielle dessin',
-  png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge', normes: 'tables sources', bible: 'barrettes modules references',
+  png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge calibres preferes', normes: 'tables sources', bible: 'barrettes connecteurs prises modules references',
   nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
   bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
   raccourcis: 'clavier touches aide', suivi: 'csv barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft' };
@@ -2128,7 +2150,7 @@ function rendrePalette() { const el = PALETTE.el; if (!el) return; const q = el.
   let i = 0;
   liste.innerHTML = L.length ? L.map(x => { if (x.titre) return `<div class="pa-groupe" role="presentation">${esc(x.titre)}</div>`; const k = i++;
       if (x.objet) { const c = x.objet; return `<div class="pa-l" role="option" id="pa-o-${k}" data-i="${k}" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONE_OBJET[c.type] || ICONE_OBJET.repere}</svg>`
-        + `<span class="pa-mot"><b class="pa-id">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.nom)}</b><small>${c.propose ? 'Vouliez-vous dire ? · ' : ''}${esc([GENRE_CANDIDAT[c.type] || c.type, c.des].filter(Boolean).join(' · '))}</small></span>`
+        + `<span class="pa-mot"><b class="pa-id">${esc(c.type === 'borne' ? c.nom + ':' + c.borne : c.aff || c.nom)}</b><small>${c.propose ? 'Vouliez-vous dire ? · ' : ''}${esc([GENRE_CANDIDAT[c.type] || c.type, c.des].filter(Boolean).join(' · '))}</small></span>`
         + `${c.n ? `<span class="pa-cpt">${esc(c.sansCable ? String(c.n) : pluriel(c.n, 'câble'))}</span>` : ''}</div>`; }
       const a = x, ico = a.ico || ICONE_OBJET[a.act === 'geste' ? 'geste' : /^folio:/.test(a.act) ? 'folio' : 'action'];
       return `<div class="pa-l${a.eteint ? ' eteint' : ''}${a.act === 'geste' ? ' pa-geste ' + (a.niveau || '') : ''}" role="option" id="pa-o-${k}" data-i="${k}" aria-selected="false"${a.eteint ? ' aria-disabled="true"' : ''}><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ico}</svg>`

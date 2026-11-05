@@ -88,7 +88,9 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
     if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1') att(l.aPoser, `ajoutée par VOLTA sur ${l.de}:${l.borneDe} (plusieurs câbles sur une borne) — repère provisoire`, { plan: p }); }));
   // les types de fil que la base des câbles ne connaît pas (une faute de frappe, un câble à ajouter)
   if (cablesDe(N).length) { const inc = [...new Set(V.filter(l => liaisonComplete(l) && l.de !== l.vers && l.type && !cableDuType(N, l.type)).map(l => l.type))].sort(triNaturel);
-    if (inc.length) att('', (inc.length > 1 ? inc.length + ' types de câble inconnus' : 'un type de câble inconnu') + ' de la base des câbles : ' + inc.slice(0, 5).join(', ') + (inc.length > 5 ? '…' : ''), { tableau: '' }); }
+    // (v86, le bilan d'ouverture) ses câbles : leur fiche le dit, et un seul type mène au récapitulatif filtré sur lui
+    if (inc.length) { const cs = V.filter(l => liaisonComplete(l) && l.de !== l.vers && inc.includes(l.type));
+      att('', (inc.length > 1 ? inc.length + ' types de câble inconnus' : 'un type de câble inconnu') + ' de la base des câbles : ' + inc.slice(0, 5).join(', ') + (inc.length > 5 ? '…' : '') + ' — ' + (cs.length > 1 ? pluriel(cs.length, 'câble') + ' dont la gauge' : 'sa gauge') + ' ne se vérifie pas', { tableau: inc.length === 1 ? inc[0] : '', cables: cs, genre: 'fichier', types: inc }); } }
   const sansType = V.filter(l => liaisonComplete(l) && l.de !== l.vers && !l.type).length;
   if (sansType) att('', pluriel(sansType, 'câble') + ' sans type : ' + (sansType > 1 ? 'leur' : 'sa') + ' gauge ne se vérifie pas', { tableau: '' });
   const inc = V.filter(l => !liaisonComplete(l) && (l.de || l.vers || l.cable)).length;
@@ -96,7 +98,8 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   // les câbles qui ne tiennent pas l'ambiante de la simulation (l'EN 2853 les échauffe de 40 °C) : une fois par famille
   const tenues = new Map(); V.forEach(l => { if (!liaisonComplete(l) || l.de === l.vers || !l.type) return; const t = tenueEnTemperature(N, l.type, H.ambiante); if (t && !t.ok && !tenues.has(typeDuFil(l.type))) tenues.set(typeDuFil(l.type), t); });
   if (tenues.size) att('', `ambiante ${nombre(H.ambiante)} °C : ${[...tenues].map(([f, t]) => f + ' (' + nombre(t.tmax) + ' °C max)').join(', ')} ne ${tenues.size > 1 ? 'supportent' : 'supporte'} pas l’échauffement de 40 °C de l’EN 2853 (${nombre(H.ambiante + ECHAUFFEMENT_EN2853)} °C au conducteur)`, { tableau: '' });
-  try { controleDeStructure(V).forEach(x => att(x.nom, x.texte, x.plus)); } catch (_) { }
+  // (v86) une ligne en double, un repère écrit de deux façons : à régler ; le reste de la structure, à voir
+  try { controleDeStructure(V).forEach(x => (x.niveau === 'ko' ? ko : att)(x.nom, x.texte, x.plus)); } catch (_) { }
   /* CHAQUE DÉFAUT UNE FOIS (v84) : deux chemins qui relèvent la même phrase sur le même repère (un fil direct et le même vu à
      travers une prise) n'en font qu'un point — ses câbles réunis. */
   const uniques = new Map(), sortie = [];
@@ -106,41 +109,58 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   sortie.forEach(x => { if (x.nom && x.plan == null) x.plan = plansDuRepere(x.nom).sort(triNaturel)[0] || ''; x.genre = genreDuPoint(x); });
   return sortie; }
 /* ---- LA STRUCTURE DU FICHIER (v84) -----------------------------------------------------------------------------------
-   Ce que le fichier écrit de travers, que VOLTA ne corrige jamais (le retest est la source dure : c'est au fichier de
-   changer) mais qu'il DIT, une fois, sur son repère, avec ce qu'il faut faire — tous « à voir », aucun n'est faux à coup
-   sûr :
-     · deux lignes identiques (les mêmes bouts, le même câble) : une ligne copiée, ou deux câbles voulus en parallèle ;
-     · un repère écrit de deux façons (« 101bt1 » et « 101BT1 », une espace de trop) : deux équipements pour VOLTA ;
-     · une borne écrite de deux façons sur un même repère (« 1 » et « 01 », « 1.0 ») : deux bornes pour VOLTA ;
-     · un câble qui part et arrive sur la même borne : sans effet ;
-     · un câble sans borne sur un repère dont les autres câbles en ont une : son contact ne se place pas ;
-     · un connecteur à lettre (A12, B3) qui porte deux part numbers : VOLTA ne lit que le premier ;
-     · des liaisons sans folio quand le fichier en a plusieurs : elles ne se dessinent sur aucun.
-   Rend [{ nom, texte, plus }] ; `plus.cables` : les liaisons dont il parle (la fiche du câble les montre). */
-const formeDuRepere = r => String(r || '').toUpperCase().replace(/\s+/g, '');
+   Ce que le fichier écrit de travers, que VOLTA ne corrige jamais de lui-même (le retest est la source dure : c'est au
+   fichier de changer) mais qu'il DIT, une fois, sur son repère, avec ce qu'il faut faire :
+     · À RÉGLER (v86, l'audit B3 : VOLTA dessinait et chiffrait sur une erreur qu'il avait lui-même vue) — chacun a son
+       geste, une proposition de VOLTA qui part dans l'Excel corrigé, et rien d'autre ne l'écrit :
+         - une ligne en double (01, `cleDeDoublon` : les mêmes bouts, le même type, le même numéro, le même folio) : VOLTA ne la
+           dessine qu'une fois, sans barrette ; « Retirer la ligne en double » quand les copies sont pareilles en tout — si
+           elles diffèrent ailleurs (une longueur, une route), VOLTA ne choisit pas : il dit en quoi ;
+         - un repère écrit de deux façons (« 103rl1 » et « 103RL1 ») : VOLTA le lit d'une seule (02, `unifierLesReperes`) ;
+           « Écrire 103RL1 partout » ;
+     · à voir (aucun n'est faux à coup sûr) : une borne écrite de deux façons sur un même repère (« 1 » et « 01 ») ; un câble
+       qui part et arrive sur la même borne ; un câble sans borne quand les autres en ont une (son contact ne se place pas) ;
+       un connecteur à lettre (A12) qui porte deux part numbers (VOLTA ne lit que le premier) ; des liaisons sans folio
+       quand le fichier en a plusieurs ; une longueur que VOLTA ne sait pas lire (« abc » : le câble prend l'hypothèse).
+   Rend [{ nom, texte, niveau, plus }] ; `plus.cables` : les liaisons dont il parle (la fiche du câble les montre). */
+const formeDuRepere = formeEcrite;
+// ce qui distingue les copies d'une même ligne (ses autres cases) : « longueur 5 m / 3 m » ; rien quand elles sont pareilles en tout
+const CASES_DES_COPIES = [['pnDe', 'part number'], ['pnVers', 'part number'], ['route', 'route'], ['longueur', 'longueur'], ['longueurBrute', 'longueur'], ['descriptionDe', 'description'], ['descriptionVers', 'description'],
+  ['fwd', 'FWD'], ['appareil', 'appareil'], ['retest', 'date'], ['install', 'Install'], ['ecp', 'ECP']];
+function ecartsDesCopies(xs) { const out = [];
+  CASES_DES_COPIES.forEach(([ch, mot]) => { const vs = [...new Set(xs.map(l => l[ch] == null ? '' : String(l[ch])))]; if (vs.length > 1) out.push(mot + ' ' + vs.map(v => v === '' ? 'vide' : ch === 'longueur' ? nombre(+v) + ' m' : v).join(' / ')); });
+  if (new Set(xs.map(l => JSON.stringify(l.autres || {}))).size > 1) out.push('d’autres colonnes');
+  return [...new Set(out)].slice(0, 2); }
 // (v85) sur une barrette, une borne « module + contact » garde sa casse : 51a et 51A sont deux contacts (l'ASNE 0599 en a 36)
 const formeDeLaBorne = (b, r) => { const t = String(b || '').replace(/\s+/g, ''), casse = !!(r && estBarrette(r) && /^\d+[A-Za-z]\w*$/.test(t));
   return (casse ? t : t.toUpperCase()).replace(/(\d+)[.,]0+$/, '$1').replace(/\d+/g, d => String(+d)); };
-function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete), dire = (nom, texte, plus) => out.push({ nom, texte, plus: { genre: 'fichier', ...(plus || {}) } });
+function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete), dire = (nom, texte, plus, niveau) => out.push({ nom, texte, niveau: niveau || 'att', plus: { genre: 'fichier', ...(plus || {}) } });
   const potentiel = r => estMasse(r) || estRail(r) || VT_A_POSER.test(r);
-  // les lignes identiques : les deux bouts (dans un sens ou dans l'autre), le type et le numéro du câble
+  // les lignes en double : la même clé que le dessin, qui ne les dessine qu'une fois (01, `cleDeDoublon`)
   const pareilles = new Map();
-  L.forEach(l => { const a = l.de + '\u0002' + l.borneDe, b = l.vers + '\u0002' + l.borneVers, k = (a < b ? a + '\u0001' + b : b + '\u0001' + a) + '\u0001' + (l.type || '') + '\u0001' + (l.cable || '');
-    (pareilles.get(k) || pareilles.set(k, []).get(k)).push(l); });
-  pareilles.forEach(xs => { if (xs.length < 2) return; const l = xs[0];
-    dire(l.de, `${cableDit(l)} : ${xs.length} lignes identiques dans le fichier — une ligne en double (à retirer du fichier), ou ${xs.length} câbles voulus en parallèle`, { cables: xs }); });
+  L.forEach(l => { const k = cleDeDoublon(l); (pareilles.get(k) || pareilles.set(k, []).get(k)).push(l); });
+  pareilles.forEach((xs, k) => { if (xs.length < 2) return; const l = xs[0], n = xs.length, ecarts = ecartsDesCopies(xs);
+    dire(l.de, ecarts.length ? `${cableDit(l)} : écrit ${n} fois dans votre fichier, mais pas à l’identique (${ecarts.join(' ; ')}) — VOLTA ne le dessine qu’une fois ; gardez la bonne ligne dans votre fichier`
+      : `${cableDit(l)} : la même ligne ${n} fois dans votre fichier — ${n > 2 ? n - 1 + ' lignes' : 'une ligne'} en double ; VOLTA ne la dessine qu’une fois, sans barrette`,
+      { genre: 'doublon', cables: xs, doublon: { cle: k, identiques: !ecarts.length, copies: n - 1 } }, 'ko'); });
   // un câble qui part et arrive sur la même borne
   L.forEach(l => { if (l.de === l.vers && l.borneDe === l.borneVers) dire(l.de, `${cableDit(l)} : il part et arrive sur la même borne (${l.de}${l.borneDe ? ':' + l.borneDe : ''}) — sans effet, sans doute une faute de saisie dans le fichier`, { cables: [l] }); });
-  // les repères écrits de deux façons, et, sur un même repère, les bornes écrites de deux façons ; les câbles sans borne
-  const parForme = new Map(), bornes = new Map();
+  /* les repères écrits de deux façons, d'après ce que le FICHIER écrivait (`ecrit` : VOLTA les lit déjà d'une seule, 02) —
+     un plan lu avant la v86 en garde deux au contrat : pour VOLTA, deux équipements, que le même geste réunit — ; sur un
+     même repère, les bornes écrites de deux façons ; les câbles sans borne */
+  const ecritures = new Map(), bornes = new Map();
+  V.forEach(l => ['de', 'vers'].forEach(a => { const r = l[a]; if (!r) return; const e = ecritDuBout(l, a), w = e ? boutLu(e[0], e[1])[0] : r, f = formeDuRepere(w);
+    const m = ecritures.get(f) || ecritures.set(f, new Map()).get(f), x = m.get(w) || m.set(w, { n: 0, lus: new Set(), cables: new Set() }).get(w); x.n++; x.lus.add(r); x.cables.add(l); }));
+  ecritures.forEach((m, f) => { if (m.size < 2) return; const xs = [...m], lus = new Set(xs.flatMap(([, x]) => [...x.lus])), un = lus.size === 1;
+    // la façon que VOLTA lit (02 : en capitales sans espace si le fichier l'écrit ainsi, sinon la plus fréquente) ; les autres
+    const cible = un ? [...lus][0] : xs.slice().sort((a, b) => (b[0] === f) - (a[0] === f) || b[1].n - a[1].n || triNaturel(a[0], b[0]))[0][0], autres = xs.filter(([w]) => w !== cible);
+    dire(cible, `s’écrit aussi ${autres.map(([w, x]) => '« ' + w + ' » (' + pluriel(x.cables.size, 'ligne') + ')').join(', ')} dans votre fichier : ${un ? 'VOLTA le lit ' + cible + ', un seul équipement' : 'pour VOLTA, ' + (lus.size > 2 ? lus.size : 'deux') + ' équipements différents'} — à écrire pareil partout`,
+      { genre: 'casse', cables: [...new Set(autres.flatMap(([, x]) => [...x.cables]))], casse: { forme: f, cible } }, 'ko'); });
   L.forEach(l => [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
-    const f = formeDuRepere(r), e = parForme.get(f) || parForme.set(f, new Map()).get(f); e.set(r, (e.get(r) || 0) + 1);
     if (potentiel(r)) return; const x = bornes.get(r) || bornes.set(r, { formes: new Map(), sans: [], avec: 0, pns: new Map() }).get(r);
     if (!b) { x.sans.push(l); return; } x.avec++; const fb = formeDeLaBorne(b, r), y = x.formes.get(fb) || x.formes.set(fb, new Map()).get(fb); y.set(b, (y.get(b) || 0) + 1);
     // le part number de chaque connecteur à lettre (A12 : le connecteur A)
     const c = pn ? connecteurDeBorne(b, pn) : null; if (c && c.lettre) { const m = x.pns.get(c.nom) || x.pns.set(c.nom, new Map()).get(c.nom); (m.get(pn) || m.set(pn, []).get(pn)).push(l); } }));
-  parForme.forEach(e => { if (e.size < 2) return; const xs = [...e].sort((a, b) => b[1] - a[1] || triNaturel(a[0], b[0])), [r] = xs[0];
-    dire(r, `s’écrit aussi ${xs.slice(1).map(([s, n]) => '« ' + s + ' » (' + pluriel(n, 'ligne') + ')').join(', ')} : pour VOLTA, ${xs.length > 2 ? 'ce sont des' : 'deux'} équipements différents — à unifier dans le fichier s’il s’agit du même`); });
   bornes.forEach((x, r) => {
     x.formes.forEach(y => { if (y.size < 2) return; const xs = [...y].sort((a, b) => b[1] - a[1] || triNaturel(a[0], b[0]));
       dire(r, `bornes ${xs.map(([s]) => '« ' + s + ' »').join(' et ')} : sans doute la même borne, écrite de ${xs.length > 2 ? xs.length : 'deux'} façons — pour VOLTA, ${xs.length > 2 ? 'des' : 'deux'} bornes différentes ; à unifier dans le fichier`); });
@@ -152,11 +172,18 @@ function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete),
   // des liaisons sans folio, quand le fichier en a plusieurs : aucun folio ne les dessine
   const P = plansDe(V); if (P.length > 1) { const n = L.filter(l => !l.plan).length;
     if (n) dire('', `${pluriel(n, 'liaison')} sans folio (FWD vide) : ${n > 1 ? 'elles ne se dessinent' : 'elle ne se dessine'} sur aucun des ${P.length} folios — le FWD est à écrire dans le fichier`, { tableau: '' }); }
+  // (v86, l'audit M6) une longueur que VOLTA ne sait pas lire (« abc », « -3 ») : le câble prend l'hypothèse — jusqu'ici sans un mot
+  const illisibles = L.filter(l => l.de !== l.vers && !(l.longueur > 0) && l.longueurBrute);
+  if (illisibles.length) { const vs = [...new Set(illisibles.map(l => l.longueurBrute))], H = app.simu || HYPOTHESES, n = illisibles.length;
+    dire('', `${n > 1 ? n + ' longueurs illisibles' : 'une longueur illisible'} dans votre fichier (${vs.slice(0, 3).map(v => '« ' + v + ' »').join(', ')}${vs.length > 3 ? '…' : ''}) : VOLTA prend ${nombre(H.longueur)} m, l’hypothèse — ${n > 1 ? 'les longueurs sont' : 'la longueur est'} à écrire dans le fichier`,
+      { tableau: '', cables: illisibles, longueurs: true }); }
   return out; }
 /* LE GENRE D'UN POINT (audit v72 : sur un grand retest, 192 lignes une par repère, quand huit genres disent tout) :
    chaque point se range dans un genre, que l'index et le récapitulatif montrent groupé, avec son compte et le geste qui
    le traite. L'ordre de GENRES_CONTROLE est celui de la lecture : ce qui casse d'abord. */
-const GENRES_CONTROLE = [['arrangement', 'connecteurs qu’aucun arrangement ne loge', 'connecteur qu’aucun arrangement ne loge'], ['contact', 'contacts à revoir', 'contact à revoir'],
+// (v86) une ligne en double, un repère écrit de deux façons d'abord : des fautes du fichier qui faussent le dessin et les comptes, réglées d'un geste
+const GENRES_CONTROLE = [['doublon', 'lignes en double', 'ligne en double'], ['casse', 'repères écrits de deux façons', 'repère écrit de deux façons'],
+  ['arrangement', 'connecteurs qu’aucun arrangement ne loge', 'connecteur qu’aucun arrangement ne loge'], ['contact', 'contacts à revoir', 'contact à revoir'],
   ['calibre', 'calibres à revoir', 'calibre à revoir'], ['pn', 'disjoncteurs à deux part numbers', 'disjoncteur à deux part numbers'], ['protection', 'câbles mal protégés par leur disjoncteur', 'câble mal protégé par son disjoncteur'],
   ['chute', 'chutes de tension trop fortes', 'chute de tension trop forte'], ['profil', 'disjoncteurs sans profil de charge', 'disjoncteur sans profil de charge'],
   ['segregation', 'mélanges gauche / droite', 'mélange gauche / droite'], ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['fichier', 'écritures du fichier à vérifier', 'écriture du fichier à vérifier'], ['retest', 'points de l’installation', 'point de l’installation'], ['autre', 'autres points', 'autre point']];
@@ -304,7 +331,7 @@ function causeDuDisjoncteur(nom) { let d; try { d = disjonctionDe(nom); } catch 
   const v = verdictDeCalibre(d.gPn); if (!v || v === VERDICTS_CALIBRE.passe) return null;
   const m = d.meilleur || {}, xs = d.calibre === m.calibre && typeof filsDuMeilleur === 'function' ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   const types = [...new Set(xs.map(p => p.x.propose))];
-  const mot = `${nom} : le ${amperes(d.pn)} de l’installation ${v.cle === 'juste' || v.mot === 'touche la courbe' ? 'touche la courbe' : 'disjoncte'} — VOLTA retient ${amperes(d.calibre)}${xs.length ? ', qui demande ' + (xs.length > 1 ? xs.length + ' câbles' : 'un câble') + (types.length === 1 ? ' en ' + types[0] : ' plus gros') : ''}`;
+  const mot = `${nom} : le ${amperes(d.pn)} de votre fichier ${v.cle === 'juste' || v.mot === 'touche la courbe' ? 'touche la courbe' : 'disjoncte'} — VOLTA retient ${amperes(d.calibre)}${xs.length ? ', qui demande ' + (xs.length > 1 ? xs.length + ' câbles' : 'un câble') + (types.length === 1 ? ' en ' + types[0] : ' plus gros') : ''}`;
   // le pourquoi chiffré du retest (09 bis), pour la bulle : « touche la courbe », « sans la marge » s'y disent, pas dans le mot
   let bulle = v.bulle; try { const q = pourquoiDuCalibre(app.norme, d, d.pn); if (q) bulle = majuscule(q.phrase) + '.\n' + v.bulle + ' Il protège ce câble.'; } catch (_) { }
   return { repere: nom, retest: d.pn, retenu: d.calibre, verdict: v, cables: xs.map(p => ({ cable: p.x.cable, actuel: p.x.actuel, propose: p.x.propose })), mot, bulle }; }
@@ -320,7 +347,7 @@ function plusFinSousLeRetest(l) { if (!l) return null; const s = l.origine ? (ty
   const f = (d.contexte && d.contexte.fils || []).find(y => memeLiaison(y.l, s)); if (!f) return null;
   const H = { ...HYPOTHESES, ...(d.contexte.hyp || {}) }, ctx = contexteDeProtection(app.norme, H, d.courbes, pointsDuProfil(d.profil));
   if (filSuit(protegerFil(app.norme, cal, f, H, ctx))) return null; const j = jaugeQuiSuit(app.norme, cal, f, H, ctx);
-  return j ? { type: j.type, calibre: cal, pourquoi: `le plus fin que protège le ${amperes(cal)} de ${cb}${d.pn === cal ? ', celui de l’installation' : ''}` } : null; }
+  return j ? { type: j.type, calibre: cal, pourquoi: `le plus fin que protège le ${amperes(cal)} de ${cb}${d.pn === cal ? ', celui de votre fichier' : ''}` } : null; }
 function problemesDuCable(l) { if (!l) return []; const s = l.origine ? (typeof sourceDe === 'function' ? sourceDe(l) : null) || l : l, out = [];
   controleAJour().forEach(x => { if (!parleDuCable(x, s)) return;
     out.push({ niveau: x.niveau, texte: majuscule(sansLeCable(x.texte, s)), section: 'fils', genre: x.genre, repere: x.nom || '', gestes: gestesDuPoint(x), point: x }); });

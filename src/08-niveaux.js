@@ -206,10 +206,62 @@ const gesteQuiMene = p => (p && p.gestes || []).find(x => x && x.mot && typeof x
 function cableDuPoint(p, o) { if (p.cable) return p.cable;
   const v = p.viser ? liaisonDeCle(p.viser) : null; if (v) return sourceDe(v) || v;
   if (o.type === 'fil') { const c = app.cible; return c && c.type === 'fil' && c.l && c.l.origine !== null ? sourceDe(c.l) || c.l : null; }
-  const m = /^(\S+ vers \S+) : /.exec(String(p.texte || '')), nom = o.tete && o.tete.nom; if (!m || !nom) return null;
-  try { if (o.type === 'disjoncteur') { const f = (disjonctionDe(nom).fils || []).find(y => y.l && cableEtType(y) === m[1]); if (f) return sourceDe(f.l) || f.l; } } catch (_) { }
-  try { const f = filsDuRepere(nom).find(y => cableDit({ type: y.l.type, vers: y.vers, borneVers: y.borneVers }) === m[1]); if (f) return f.l; } catch (_) { }
+  const m = /^(\S+ vers \S+)(?: \(par [^)]+\))? : /i.exec(String(p.texte || '')), nom = o.tete && o.tete.nom; if (!m || !nom) return null;
+  const dit = m[1].replace(/^\S/, c => c.toUpperCase()), egal = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
+  try { if (o.type === 'disjoncteur') { const f = (disjonctionDe(nom).fils || []).find(y => y.l && egal(cableEtType(y), dit)); if (f) return sourceDe(f.l) || f.l; } } catch (_) { }
+  // (vu d'ici, ou dans le sens de votre fichier : « DR20 vers 103RL1:A1 » dans la fiche de 103RL1 nomme le câble qui y arrive)
+  try { const f = filsDuRepere(nom).find(y => egal(cableDit({ type: y.l.type, vers: y.vers, borneVers: y.borneVers }), dit)) || filsDuRepere(nom).find(y => egal(cableDit(y.l), dit)); if (f) return f.l; } catch (_) { }
   return null; }
+/* (v86, l'audit G9 : « dans la fiche de 103RL1, le titre est “DR20 vers 103RL1:A1” : on parle de lui comme d'un autre ») —
+   QUI, VU D'ICI. Le contrôle écrit un câble comme son disjoncteur le voit ; la fiche part de la borne de SON objet, puis
+   l'autre bout, puis le type : « A1 ← 102CB1:2 · DR20 ». La flèche suit le courant — « ← » il arrive de là, « → » il y va —
+   quand VOLTA sait d'où il vient (le chemin de son disjoncteur : 08-fiche, `carteDesAlimentations`) ; sinon un trait neutre,
+   « – » : votre fichier ne dit pas le sens. Un câble qui ne touche pas cet objet (au-delà d'une barrette) garde sa phrase. */
+function amontDuCable(l) { try { const a = typeof carteDesAlimentations === 'function' ? carteDesAlimentations().get(l) : null, s = a && a.chemin && a.chemin.segments.find(y => y.fil === l);
+  return !s ? '' : a.amont ? s.vers[0] : s.de[0]; } catch (_) { return ''; } }
+function quiVuDIci(q, p, o) { const m = /^(\S+) vers (\S+?)(?::(\S+))?( \(par [^)]+\))?$/.exec(q), nom = o.tete && o.tete.nom, type = m ? m[1] : '';
+  if (!m || !nom || o.type === 'fil') return { titre: q, type };
+  const l = cableDuPoint(p, o); if (!l || l.de === l.vers || (l.de !== nom && l.vers !== nom)) return { titre: q, type };
+  const ici = l.de === nom, b = String((ici ? l.borneDe : l.borneVers) || ''), r = ici ? l.vers : l.de, rb = String((ici ? l.borneVers : l.borneDe) || '');
+  const amont = amontDuCable(l), sens = !amont ? '–' : amont === nom ? '→' : '←';
+  return { titre: `${b ? b + ' ' : ''}${sens} ${r}${rb ? ':' + rb : ''} · ${type || 'câble'}`, type, autre: r }; }
+/* (v86, l'audit G5 : « (11,5 A × 0,6 : faisceau de 8 câbles à 60 %) ne s'explique nulle part en clair ») — CE QUI CLOCHE, EN
+   MOTS. La phrase du contrôle (« démarrage et transition 9,31 A pendant 2,1 min > 6,9 A admis en continu (11,5 A × 0,6 :
+   faisceau de 8 câbles à 60 %) ») devient une phrase : ce qu'il porte, pendant combien de temps, ce qu'il admet — la carte
+   s'arrête là (`court`, deux lignes au plus) ; le grand dit en plus d'où vient l'admis (`long`) : « Seul à l'air libre, un
+   DR20 admet 11,5 A en continu ; en faisceau de 8 câbles chargé à 60 %, il n'en admet que 6,9 A (× 0,6). » Une phrase que
+   VOLTA ne sait pas dire autrement reste telle quelle. `suite` : ce qui suivait « — » (« pas protégé en surcharge »). */
+const conditionsEnMots = s => String(s || '').split(', ').map(c => { let m;
+  if ((m = /^faisceau de (\S+) câbles à (\S+) %$/.exec(c))) return `en faisceau de ${m[1]} câbles chargé à ${m[2]} %`;
+  if ((m = /^ambiante (\S+) °C$/.exec(c))) return `à ${m[1]} °C autour`;
+  if ((m = /^conducteur (.+)$/.exec(c))) return `en ${m[1]}`;
+  if ((m = /^(.+) ft$/.exec(c))) return `à ${m[1]} ft`;
+  return c; }).join(', ');
+const palierEnMots = p => p === 'en continu' ? 'en continu' : p ? p.replace(/^pour /, 'pendant ') : '';
+function motsDuProbleme(reste, suite, type) { const r = String(reste || ''), fin = s => majuscule(s.replace(/\s+$/, '')) + (/[.!?…]$/.test(s) ? '' : '.'); let m;
+  // le courant contre ce que le câble admet
+  if ((m = /^(.+?) ([\d,]+ A)(?: pendant ([\d,]+ (?:ms|s|min|h)))? > ([\d,]+ A) admis(?: (en continu|pour [\d,]+ (?:s|min)))?(?: \(([\d,]+ A) × ([\d,]+)(?: : ([^)]+))?\))?$/.exec(r))) {
+    const [, nom, i, t, a, palier, seul, k, pq] = m, court = fin(`${i}${t ? ' pendant ' + t : ''}${nom ? ' (' + nom.toLowerCase() + ')' : ''} : plus que les ${a} qu’il admet${palier ? ' ' + palier : ''}`);
+    const d = seul && k ? ` Seul à l’air libre, ${type ? 'un ' + type : 'ce câble'} admet ${seul}${palier ? ' ' + palierEnMots(palier) : ''}${pq ? ' ; ' + conditionsEnMots(pq) + ',' : ' ; ici,'} il n’en admet que ${a} (× ${k}).` : '';
+    const cont = palier === 'en continu' && t ? ' Au-delà d’une minute, c’est ce qu’il admet en continu qui compte.' : '';
+    return { court, long: court + d + cont }; }
+  // le permanent contre le contact
+  if ((m = /^le permanent \(([\d,]+ A)\) dépasse le contact taille (\S+) (?:supposé \(([\d,]+ A)\)|\(([\d,]+ A), ([^)]+)\))$/i.exec(r))) {
+    const court = m[3] ? fin(`Il porte ${m[1]} en permanence, plus que les ${m[3]} du contact taille ${m[2]} que VOLTA suppose`) : fin(`Il porte ${m[1]} en permanence, plus que les ${m[4]} de son contact taille ${m[2]} (${m[5]})`);
+    return { court, long: court }; }
+  // le calibre au-delà de la table 11-3
+  if ((m = /^calibre ([\d,]+ A) > ([\d,]+ A), le maximum de l’AC 43\.13-1B \(table 11-3\) pour du (\S+) AWG$/i.exec(r))) {
+    const court = fin(`Le ${m[1]} dépasse ${m[2]}, le plus fort calibre que l’AC 43.13-1B (table 11-3) permet sur un ${m[3]} AWG`); return { court, long: court }; }
+  // le contact plus faible que le calibre
+  if ((m = /^contact taille (\S+) (?:supposé \(([\d,]+ A)\)|\(([\d,]+ A), ([^)]+)\)) < calibre ([\d,]+ A)$/i.exec(r))) {
+    const qui = m[2] ? `Le contact taille ${m[1]} que VOLTA suppose admet ${m[2]}` : `Son contact taille ${m[1]} (${m[4]}) admet ${m[3]}`;
+    const court = fin(`${qui}, moins que le calibre de ${m[5]}${/protégé/.test(suite || '') ? ' : il n’est pas protégé en surcharge' : ''}`); return { court, long: court, mange: /protégé/.test(suite || '') }; }
+  // la chute en ligne, au permanent, puis en pointe
+  if ((m = /^chute en ligne de ([\d,]+ V)(?: à ([\d,]+ A))?, plus que les ([\d,]+ V) admis( sous [\d,]+ V)?( \(longueurs d’hypothèse\))?$/i.exec(r))) {
+    const court = fin(`La ligne perd ${m[1]}${m[2] ? ' sous ' + m[2] : ''}, plus que les ${m[3]} admis${m[4] || ''}${m[5] ? ' — sur des longueurs supposées' : ''}`); return { court, long: court }; }
+  if ((m = /^chute en ligne de ([\d,]+ V) en pointe \(([^)]+)\), plus que les ([\d,]+ V) admis( en intermittent)?( \(longueurs d’hypothèse\))?$/i.exec(r))) {
+    const court = fin(`En pointe (${m[2]}), la ligne perd ${m[1]}, plus que les ${m[3]} admis${m[4] || ''}${m[5] ? ' — sur des longueurs supposées' : ''}`); return { court, long: court }; }
+  const tel = majuscule(r) + (suite ? ' · ' + suite.replace(/^\S/, c => c.toLowerCase()) : ''); return { court: tel, long: tel, mange: !!suite }; }
 /* LE GESTE QUE VOLTA SAIT FAIRE pour un point qui n'en porte pas : un câble trop fin pour son courant (ou que son calibre
    ne protège pas) passe au plus fin qui convient (`plusFinQuiTient` — la même proposition que sa fiche) ; deux câbles sur
    une borne, que VOLTA relie par une barrette à poser : la barrette reçoit son repère (le geste du contrôle). Rend
@@ -242,22 +294,27 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
   const R = ordre.filter(x => x.regler), V = ordre.filter(x => !x.regler), nko = R.filter(x => x.p.niveau === 'ko').length;
   const bouton = (g, cls) => { const n = FI.gestesPb.push([g]) - 1; return `<button type="button" class="btn ${cls || 'cuivre dense nc-agir'}" data-geste-pb="${n}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; };
   const ligne = x => { const p = x.p, t = x.phrase || majuscule(motDuProbleme(p.texte));
-    const k = t.indexOf(' — '); let titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(t.slice(k + 3)) : gloseDuProbleme(p.texte);
-    // QUI d'abord (« DR20 vers 103RL1:A1 »), puis ce qui cloche : le câble en titre, la phrase dessous
-    const qui = /^(\S+ vers \S+) : (.+)$/.exec(titre); if (qui) { titre = qui[1]; detail = majuscule(qui[2]) + (detail ? ' · ' + detail.replace(/^\S/, c => c.toLowerCase()) : ''); }
+    const k = t.indexOf(' — '), suite = k > 0 ? t.slice(k + 3) : ''; let titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(suite) : gloseDuProbleme(p.texte), tout = '';
+    // QUI d'abord, VU D'ICI (« A1 ← 102CB1:2 · DR20 »), puis ce qui cloche, EN MOTS : la carte dit l'essentiel en deux lignes au
+    // plus, le grand dit tout (d'où vient l'admis, pourquoi VOLTA suppose un contact) ; la bulle de la carte dit ce que le grand dit
+    const qui = /^(\S+ vers \S+(?: \(par [^)]+\))?) : (.+)$/.exec(titre);
+    if (qui) { const vu = quiVuDIci(qui[1], p, o), M = motsDuProbleme(qui[2], suite, vu.type), glose = k > 0 ? '' : gloseDuProbleme(p.texte);
+      // « — sous 102CB1 » : le disjoncteur, quand le titre ne le nomme pas déjà
+      const sous = /^sous (\S+)$/.exec(suite), plus = M.mange || !suite ? '' : sous ? (vu.titre.includes(sous[1]) ? '' : ` Son disjoncteur : ${sous[1]}.`) : ' ' + majuscule(suite) + '.';
+      titre = vu.titre; tout = M.long + plus + (glose ? ' ' + glose : ''); detail = grand ? tout : M.court; }
     // une phrase longue qui finit sur sa parenthèse (« … admis en continu (11,5 A × 0,6 : faisceau de 8 câbles à 60 %) ») : la
     // parenthèse passe dessous, le titre se lit d'un trait
     else if (titre.length > 48) { const m = /^(.+?) \(([^()]+)\)$/.exec(titre); if (m) { titre = m[1]; detail = majuscule(m[2]) + (detail ? ' · ' + detail.replace(/^\S/, c => c.toLowerCase()) : ''); } }
-    const va = ongletDeSection(o.type, p.section), bulle = escA([qui ? qui[1] + ' : ' + qui[2] : titre, k > 0 ? majuscule(t.slice(k + 3)) : '', p.bulle || ''].filter(Boolean).join('\n'));
+    const va = ongletDeSection(o.type, p.section), bulleT = [!grand && tout && tout !== detail ? tout : '', p.bulle || ''].filter(Boolean).join('\n'), bulle = escA(bulleT);
     const cible = `data-onglet-va="${escA(va)}"${p.viser ? ` data-viser="${escA(p.viser)}"` : ''}${p.connecteur ? ` data-connecteur="${escA(p.connecteur)}"` : ''}`, etat = p.niveau === 'ko' ? 'ko' : 'att';
-    if (!x.regler) return `<div class="nc-tache fi-pb-l ${etat} info"><span class="nc-rond" aria-hidden="true"></span><button type="button" class="nc-t" ${cible} data-bulle="${bulle}"><b class="fi-pb-t">${insecable(esc(titre))}</b>${qui ? ` <small>${insecable(esc(majuscule(qui[2])))}</small>` : ''}</button></div>`;
+    if (!x.regler) return `<div class="nc-tache fi-pb-l ${etat} info"><span class="nc-rond" aria-hidden="true"></span><button type="button" class="nc-t" ${cible}${bulleT ? ` data-bulle="${bulle}"` : ''}><b class="fi-pb-t">${insecable(esc(titre))}</b>${qui ? ` <small>${insecable(esc(detail))}</small>` : ''}</button></div>`;
     // sans geste qui règle : ce qu'il faut faire, en mots (ceux du récapitulatif) — et le geste qui mène à la cause, s'il y en a un
     const que = !x.agir && typeof remede === 'function' ? (remede({ texte: p.texte }) || [])[0] : '', mene = !x.agir ? gesteQuiMene(p) : null;
     const geste = x.html || (x.g ? bouton(x.g) : mene ? bouton(mene, 'papier dense') : '');
     // (le titre est le bouton qui mène à l'onglet ; la phrase dessous y mène aussi, à la souris — le geste, à droite, sur la
     // ligne du titre : il ne pousse pas la ligne d'un étage)
     return `<div class="nc-tache fi-pb-l ${etat} agir${x.agir ? ' a-geste' : ''}${titre.length > 30 ? ' long' : ''}"><span class="nc-rond" aria-hidden="true">${ico('alerte')}</span>`
-      + `<button type="button" class="nc-t" ${cible} data-bulle="${bulle}"><b class="fi-pb-t">${insecable(esc(titre))}</b></button>${geste ? `<span class="nc-geste">${geste}</span>` : ''}`
+      + `<button type="button" class="nc-t" ${cible}${bulleT ? ` data-bulle="${bulle}"` : ''}><b class="fi-pb-t">${insecable(esc(titre))}</b></button>${geste ? `<span class="nc-geste">${geste}</span>` : ''}`
       + `${detail ? `<small class="nc-d" ${cible}>${insecable(esc(detail))}</small>` : ''}${que && que !== 'Voir sa fiche' ? `<em class="nc-que">${insecable(esc(que))}</em>` : ''}</div>`; };
   const inter = (cls, mot, n, b) => b ? `<button type="button" class="nc-pbs-g ${cls}${b.cls ? ' ' + b.cls : ''}" ${b.attrs}><i aria-hidden="true"></i><span>${esc(mot)}</span><b>${n}</b>${ico('droite')}</button>`
     : `<div class="nc-pbs-g ${cls}"><i aria-hidden="true"></i><span>${esc(mot)}</span><b>${n}</b></div>`;

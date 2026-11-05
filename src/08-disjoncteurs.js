@@ -307,13 +307,16 @@ const pulserGrossis = xs => { if (xs.length && typeof pulser === 'function') pul
    l'outil — le part number du calibre retenu sur chaque liaison du disjoncteur (sans famille qui le construise, le calibre
    s'écrit au profil), les câbles que ce calibre demande à leur type proposé —, le fichier gardé dans `avant` (« Par
    rapport au retest » les liste). UNE entrée d'historique pour le tout. Le calibre reste l'automatique. */
-function deciderCalibre(nom) { const d = disjonctionDe(nom), cal = d.calibre; if (!(cal > 0)) return false;
+// (v86) `voulu` : le calibre que VOLTA propose ailleurs que sur la carte de décision (« Retenir le 7,5 A » : le plus petit qui ne
+// disjoncte pas, quand votre fichier en porte un plus gros) — sinon le retenu
+function deciderCalibre(nom, voulu) { const d = disjonctionDe(nom), cal = voulu > 0 ? voulu : d.calibre; if (!(cal > 0)) return false;
   const pn = pnDuRepere(nom), F = d.famille, nouveau = F && pn ? pnAvecCalibre(pn, F, cal) : null, xs = cal === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   histPush(nom + ' : ' + amperes(cal) + (xs.length ? ' et ' + pluriel2(xs.length, 'câble') + ' grossi' + (xs.length > 1 ? 's' : '') : ''));
   if (nouveau && nouveau !== pn) verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
   else if (!nouveau) poserCharge(nom, { ...(chargeEcrite(nom) || {}), calibre: cal });
   xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition(); pulserGrossis(xs);
-  dire(nom + ' : ' + amperes(cal) + (nouveau ? ' (' + nouveau + ')' : '') + (xs.length ? ', ' + xs.map(p => (p.x.actuel || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + '. Ctrl+Z défait le tout.'); return true; }
+  // (v84, la charte : après un geste annulable, le message propose « Défaire »)
+  dire(nom + ' : ' + amperes(cal) + (nouveau ? ' (' + nouveau + ')' : '') + (xs.length ? ', ' + xs.map(p => (p.x.actuel || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + ' — il ira dans l’Excel corrigé.', false, typeof defaire === 'function' ? { geste: 'Défaire', faire: () => defaire() } : undefined); return true; }
 /* LA CARTE DE DÉCISION (le parcours v72 : « 102CB1 coche 15 A en vert sous 4 problèmes rouges ; la vraie histoire est la
    première des onze lignes de la barre, repliée ») : en tête de la fiche, quand le calibre que l'outil retient n'est pas
    celui du retest — ce que fait le retest (il déclenche, il touche la courbe ; ou il est plus gros qu'il ne faut), le
@@ -690,6 +693,37 @@ function propositionDuCalibre(nom, d) { const passe = d.passe, cal = d.calibre; 
   if (!(cal > passe)) return null;
   const fils = passe === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   return { cal: passe, main: false, m, fils }; }
+/* LE CALIBRE, dans son onglet (v86, l'intégrateur, G8) : la frise des calibres — UNE SEULE LISTE, celle des Hypothèses
+   (`listeDesCalibres`), chacun en ampères — qui ne se clique plus : son survol dit, en ampères, ce que ce calibre fait sur la
+   durée du profil (« au démarrage, il tire 9,31 A pendant 2,1 min ; sur 2,1 min, un 7,5 A disjoncte dès 7,24 A : il
+   disjoncte ») ; dessous, le seul geste qui écrit un calibre : la proposition justifiée de VOLTA (« Retenir le 7,5 A »), qui
+   part dans l'Excel corrigé, « Défaire » dans son message. `avecDecision` : la carte de décision, en tête, porte déjà la sienne. */
+function blocDuCalibre(nom, d, o, avecDecision) { const xs = listeDesCalibres(d); if (!xs.length) return '';
+  const cal = d.calibre, propose = propositionNonEcrite(d), fam = famDe(d), v = verdictDuRetenu(d);
+  const items = xs.map(x => { const c = x.calibre, A = amperes(c);
+    if (x.hors) return `<span class="vu-cal hors" role="listitem" tabindex="0" aria-label="${escA(motHors(d, c))}" data-bulle="${escA(motHors(d, c))}"><b>${esc(nombre(c))}<small>A</small></b><small>${esc(fam ? 'pas en ' + fam : 'hors famille')}</small></span>`;
+    const k = cleDuVerdict(x.g), on = Math.abs(c - (cal || 0)) < 1e-9, fic = o.calRetest === c || (propose && d.pn === c), m = motsDuCalibre(d, c);
+    const mot = on ? (d.pn === c && d.origine !== 'main' && !pnDeVolta(nom) ? 'fichier' : 'retenu') : fic ? 'actuel' : '';
+    const bulle = (m ? m.titre + '\n' + m.bulle : A + ' : pas jugé, le profil de charge manque.') + (on ? '\nC’est le calibre retenu.' : fic ? '\nC’est celui de votre fichier.' : '');
+    return `<span class="vu-cal ${k === 'passe' ? 'oui' : k ? 'non' : 'neutre'}${on ? ' on' : ''}${fic ? ' fichier' : ''}" role="listitem" tabindex="0" data-cal="${c}" aria-label="${escA(bulle.replace(/\n/g, ' '))}" data-bulle="${escA(bulle)}"><b>${esc(nombre(c))}<small>A</small></b><small>${esc(mot)}</small></span>`; }).join('');
+  const legende = o.calRetest || propose ? `<p class="vu-legende"><span><i class="act"></i>actuel : celui de votre fichier</span></p>` : '';
+  // la proposition de VOLTA : son geste, et pourquoi en une phrase
+  const p = avecDecision ? null : propositionDuCalibre(nom, d), nf = p ? p.fils.length : 0;
+  const prop = !p ? '' : `<div class="dj-prop"><button type="button" class="btn cuivre dense" data-dj-prop="${escA(nom)}" data-bulle="${escA(p.main ? 'Rend le calibre au calcul de VOLTA' : 'Écrit dans l’Excel corrigé : ' + (pnAvecCalibre(pnDuRepere(nom), d.famille, p.cal) || amperes(p.cal)) + (nf ? ', et ' + pluriel2(nf, 'câble') + ' grossi' + (nf > 1 ? 's' : '') : '') + ' — « Défaire » la reprend')}">Retenir le ${esc(amperes(p.cal))}${nf ? ' et grossir ' + (nf > 1 ? 'les ' + nf + ' câbles' : 'le câble') : ''}</button>`
+    + `<p><b>${p.main ? 'Le calcul de VOLTA' : 'Le plus petit qui ne disjoncte pas'}</b> — ${insecable(esc(p.m.bulle))}${p.main ? '' : ' <span>Il ira dans l’Excel corrigé.</span>'}</p></div>`;
+  const deFichier = d.pn > 0 && cal > 0 && Math.abs(d.pn - cal) < 1e-9 && !pnDeVolta(nom);
+  const sous = d.sansProfil ? 'sans profil de charge, VOLTA ne le juge pas' : !(cal > 0) ? 'aucun calibre ne convient'
+    : d.origine === 'main' ? (deFichier && !pnChangeIci(nom) ? 'celui de votre fichier, gardé' : 'retenu à la main')
+    : deFichier ? 'celui de votre fichier : il ' + (v.etat === 'ko' ? 'disjoncte' : 'ne disjoncte pas') : v.etat === 'ko' ? 'il disjoncte' : 'le plus petit qui ne disjoncte pas';
+  return `<section class="vu-bloc vu-bloc-cal"><h4 class="vu-titre">Le calibre <span>${esc(sous)}</span></h4><div class="vu-cals" role="list" aria-label="${escA('Les calibres de vos Hypothèses' + (fam ? ', en ' + fam : '') + ' : survolez-en un pour voir ce qu’il fait')}">${items}</div>${legende}${prop}</section>`; }
+/* LA FRISE DE LA CARTE (v86, l'intégrateur, G7) : la même liste, chaque calibre en ampères (« 7,5 A »), le retenu, l'actuel (celui
+   de votre fichier), ceux que la famille ne fait pas à part ; le survol dit ce que chacun fait, comme dans l'onglet Calibre. */
+function friseDeLaCarte(nom, d, o) { const xs = listeDesCalibres(d); if (!xs.length) return ''; const cal = d.calibre, act = o && o.calRetest ? o.calRetest : d.pn && d.pn !== cal ? d.pn : null;
+  return `<span class="vu-calv dj-frise"><span class="vu-calv-l">${xs.map(x => { const c = x.calibre;
+      if (x.hors) return `<span class="vu-c hors" data-bulle="${escA(motHors(d, c))}"><b>${esc(nombre(c))}<small>A</small></b><small></small></span>`;
+      const k = cleDuVerdict(x.g), r = Math.abs(c - (cal || 0)) < 1e-9, a = act === c && !r, m = motsDuCalibre(d, c);
+      return `<span class="vu-c ${k === 'passe' ? 'oui' : k ? 'non' : 'neutre'}${r ? ' ret' : ''}${a ? ' act' : ''}"${m ? ` data-bulle="${escA(m.titre + '\n' + m.bulle)}"` : ''}><b>${esc(nombre(c))}<small>A</small></b><small>${r ? 'retenu' : a ? 'actuel' : ''}</small></span>`; }).join('')}</span>`
+    + `<span class="vu-legende"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span>${act && act !== cal ? '<span>actuel : celui de votre fichier</span>' : ''}</span></span>`; }
 // d'où vient le seuil (la bulle de la conclusion) : la courbe qui juge, la plus rapide de la famille
 const bulleDuSeuil = m => m && m.courbe ? `Le seuil se lit sur la courbe ${m.courbe}, la plus rapide de la famille : sous le seuil, il ne disjoncte pas ; au-dessus, il disjoncte.` : '';
 /* LA CONCLUSION, dessinée : la marque du verdict (une coche verte, une croix rouge), la phrase grande, le détail dessous.
@@ -725,7 +759,8 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
   // chaque calibre jugé sur ce profil (sans les câbles : le seuil d'un point n'en dépend pas) — le seuil de chaque barre
   const ctx = { ...(d.contexte || {}), fils: [] }, juges = new Map(gamme.map(g => { let j = null; try { j = verdictDisjonction(app.norme, d.courbe || '', g.calibre, d.profil, ctx); } catch (_) { j = null; } return [g.calibre, j]; }));
   const point = (c, p) => { const j = juges.get(c); return j ? j.points.find(x => x.k === p.k) || null : null; };
-  const max = Math.max(...gamme.map(g => g.calibre), ...pts.map(p => p.i)) * 1.08, pc = v => Math.max(0, Math.min(100, v / max * 100)), f1 = v => (Math.round(v * 100) / 100).toString();
+  // (v86, G7) l'échelle porte la liste des Hypothèses entière : un calibre que la famille ne fait pas y reste, à part
+  const liste = listeDesCalibres(d), max = Math.max(...liste.map(x => x.calibre), ...pts.map(p => p.i)) * 1.08, pc = v => Math.max(0, Math.min(100, v / max * 100)), f1 = v => (Math.round(v * 100) / 100).toString();
   const seuilDe = (c, p) => { const q = point(c, p); return q && isFinite(q.seuil) ? q.seuil : null; };
   const calZ = cal > 0 ? cal : gamme[gamme.length - 1].calibre, A = amperes(calZ);
   const lignes = pts.map(p => { const s = seuilDe(calZ, p), q = point(calZ, p), ko = !!q && q.ok === false, perm = p.t === Infinity, v = Math.min(FLUX.max, FLUX.base + FLUX.parA * p.i), dedans = pc(p.i) > 80;
@@ -737,9 +772,11 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
       + `<i class="dj-fx-barre" style="width:${pc(p.i).toFixed(2)}%;--flux:${(FLUX.periode / v).toFixed(2)}s"></i>`
       + `<b class="dj-fx-val${dedans ? ' dedans' : ''}" style="left:${pc(p.i).toFixed(2)}%">${esc(amperes(p.i))}</b></span></div>`; }).join('');
   // l'échelle : chaque calibre à sa place ; deux chiffres trop proches, le plus petit se tait (son point reste, sa bulle le dit)
-  const piste = Math.max(240, largeurVue() - 150), kept = []; gamme.forEach(g => { const x = pc(g.calibre) / 100 * piste, w = 14 + String(nombre(g.calibre) + ' A').length * 7, imp = g.calibre === cal || g.calibre === fic;
+  const piste = Math.max(240, largeurVue() - 150), kept = []; liste.forEach(g => { const x = pc(g.calibre) / 100 * piste, w = 14 + String(nombre(g.calibre) + ' A').length * 7, imp = g.calibre === cal || g.calibre === fic;
     const voisin = kept.find(k => Math.abs(k.x - x) < (k.w + w) / 2 + 6); if (!voisin) kept.push({ c: g.calibre, x, w }); else if (imp && voisin.c !== cal && voisin.c !== fic) { kept.splice(kept.indexOf(voisin), 1, { c: g.calibre, x, w }); } });
-  const cals = gamme.map(g => { const c = g.calibre, k = cleDuVerdict(g), m = motsDuCalibre(d, c) || { titre: amperes(c), detail: '', cle: k }, ret = c === cal, f = c === fic, montre = kept.some(x => x.c === c);
+  // un calibre que la famille ne fait pas : son point gris, son chiffre, sa bulle (rien ne se survole en aperçu : il n'a pas de seuil)
+  const horsDe = c => `<span class="dj-fx-cal hors${kept.some(y => y.c === c) ? '' : ' tu'}" style="left:${pc(c).toFixed(2)}%" role="listitem" tabindex="0" aria-label="${escA(motHors(d, c))}" data-bulle="${escA(motHors(d, c))}"><i></i><b>${esc(nombre(c))}<small>A</small></b></span>`;
+  const cals = liste.map(x => { if (x.hors) return horsDe(x.calibre); const g = x.g, c = g.calibre, k = cleDuVerdict(g), m = motsDuCalibre(d, c) || { titre: amperes(c), detail: '', cle: k }, ret = c === cal, f = c === fic, montre = kept.some(y => y.c === c);
     const seuils = pts.map(p => { const s = seuilDe(c, p); return s != null ? f1(s) : ''; }).join(' '), oks = pts.map(p => { const q = point(c, p); return q && q.ok === false ? '0' : '1'; }).join('');
     return `<span class="dj-fx-cal ${k === 'passe' ? 'oui' : 'non'}${ret ? ' ret' : ''}${f ? ' fic' : ''}${montre ? '' : ' tu'}" style="left:${pc(c).toFixed(2)}%" tabindex="0" role="listitem" data-cal="${c}" data-seuils="${seuils}" data-oks="${oks}" data-cle="${escA(m.cle)}" data-titre="${escA(m.titre)}" data-detail="${escA(m.detail)}"`
       // (pas de bulle : le survol écrit déjà sa conclusion en tête, pas deux fois la même chose)
@@ -748,15 +785,16 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
   // le calibre de votre fichier, quand VOLTA en retient un autre : sa conclusion, une ligne dessous
   const mF = fic ? motsDuCalibre(d, fic) : null, ligneF = mF ? `<p class="dj-concl-fic ${mF.cle === 'passe' ? 'ok' : 'ko'}">${marqueVerdict(mF.cle)}<span><b>Votre fichier porte un ${esc(amperes(fic))}</b> : il ${mF.cle === 'passe' ? 'ne disjoncte pas' : 'disjoncte'}. ${insecable(esc(mF.detail))}</span></p>` : '';
   // (v81) le retenu est celui du fichier et il ne disjoncte pas, mais un plus petit suffirait : VOLTA le garde, et le dit
-  const mini = (gamme.find(g => g.valide && g.catalogue !== false) || {}).calibre, deFichier = d.pn && cal && Math.abs(d.pn - cal) < 1e-9 && d.origine !== 'main' && !pnDeVolta(nom);
-  const note = deFichier && mini && mini < cal - 1e-9 ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(mini))} — un clic sur lui, dans l’onglet Calibre, le retient.</p>` : '';
+  // (v86, G8 : la frise ne se clique plus — le geste est la proposition de VOLTA, dans l'onglet Calibre)
+  const pr = propositionDuCalibre(nom, d), deFichier = d.pn && cal && Math.abs(d.pn - cal) < 1e-9 && d.origine !== 'main' && !pnDeVolta(nom);
+  const note = deFichier && pr && !pr.main ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(pr.cal))} : « Retenir le ${esc(amperes(pr.cal))} », dans l’onglet Calibre, l’écrit dans l’Excel corrigé.</p>` : '';
   const leg = `<p class="dj-fx-leg"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="zone"></i><span class="dj-fx-leg-z">où le ${esc(A)} disjoncte</span></span></p>`;
   return `<div class="dj-ca" data-disj="${escA(nom)}" data-max="${f1(max)}" data-cal="${calZ}">${conclusionCalibre(d, 'dj-concl-g')}${ligneF}`
     + `<div class="dj-flux" role="group" aria-label="${escA('Ce qu’il tire, sur l’échelle de ses calibres')}">${lignes}<div class="dj-fx-echelle"><span></span><span class="dj-fx-cals" role="list" aria-label="Les calibres de la gamme : survolez-en un pour voir où il disjoncte">${cals}</span></div></div>${leg}${note}</div>`; }
 // survoler (ou parcourir au clavier) un calibre de l'échelle : ses zones glissent sur les barres, sa conclusion s'écrit ; la
 // souris partie, le retenu revient
 function lierCourantAppele(ca) { const max = +ca.dataset.max || 1, lignes = [...ca.querySelectorAll('.dj-fx-l')], concl = ca.querySelector('.dj-concl-g'), legZ = ca.querySelector('.dj-fx-leg-z');
-  const ret = ca.querySelector(`.dj-fx-cal[data-cal="${CSS.escape(ca.dataset.cal || '')}"]`), cals = [...ca.querySelectorAll('.dj-fx-cal')], t0 = concl ? concl.querySelector('.dj-concl-t span') : null, titre0 = t0 ? t0.textContent : '';
+  const ret = ca.querySelector(`.dj-fx-cal[data-cal="${CSS.escape(ca.dataset.cal || '')}"]`), cals = [...ca.querySelectorAll('.dj-fx-cal:not(.hors)')], t0 = concl ? concl.querySelector('.dj-concl-t span') : null, titre0 = t0 ? t0.textContent : '';
   const montrer = el => { if (!el) return; const s = (el.dataset.seuils || '').split(' '), oks = el.dataset.oks || '';
     lignes.forEach((l, i) => { const z = l.querySelector('.dj-fx-zone'), v = parseFloat(s[i]); if (z) z.style.left = (isFinite(v) ? Math.max(0, Math.min(100, v / max * 100)) : 100).toFixed(2) + '%'; l.classList.toggle('ko', oks[i] === '0'); });
     if (concl) ecrireConclusion(concl, { cle: el.dataset.cle, titre: el.dataset.titre, detail: el.dataset.detail }, el === ret ? titre0 : '');
@@ -936,7 +974,7 @@ function lierDisjonction(nom, conteneur) {
   const suivreVif = dd => { const m = motsDuCalibre(dd, dd.calibre);
     QA('.dj-concl-pc').forEach(el => ecrireConclusion(el, m)); racine.querySelectorAll(`.dj-ca[data-disj="${CSS.escape(nom)}"] .dj-concl-g`).forEach(el => ecrireConclusion(el, m));
     // la rangée des calibres (08-fiche, `.vu-cals`) : chacun son mot, sur ce profil
-    racine.querySelectorAll('.vu-cals [data-nv-cal]').forEach(b => { const g = (dd.gamme || []).find(x => Math.abs(x.calibre - +b.dataset.nvCal) < 1e-9); if (!g) return; const k = cleDuVerdict(g); b.classList.toggle('oui', k === 'passe'); b.classList.toggle('non', k !== 'passe'); });
+    racine.querySelectorAll('.vu-cals .vu-cal[data-cal]').forEach(b => { const g = (dd.gamme || []).find(x => Math.abs(x.calibre - +b.dataset.cal) < 1e-9); if (!g) return; const k = cleDuVerdict(g); b.classList.toggle('oui', k === 'passe'); b.classList.toggle('non', !!k && k !== 'passe'); b.classList.toggle('neutre', !k); });
     // chaque ligne : son point, et « disjoncte » quand il fait disjoncter
     const parI = new Map((dd.points || []).map(p => [p.i, p]));
     QA('.dj-etat').forEach(row => { const inp = row.querySelector('[data-q="i"]'), i = inp ? nombreLu(inp.value) : null, p = i > 0 ? parI.get(i) : null, ko = !!p && p.ok === false, v = row.querySelector('.dj-verdict');
@@ -1007,6 +1045,13 @@ function lierDisjonction(nom, conteneur) {
       row.addEventListener('focusout', e => { if (!row.contains(e.relatedTarget)) row._allumer(row, false); }); });
     // l'essentiel : survoler un calibre de l'échelle montre ses zones et sa conclusion
     racine.querySelectorAll(`.dj-ca[data-disj="${CSS.escape(nom)}"]`).forEach(lierCourantAppele);
+    /* (v86, l'intégrateur, G8) LE SEUL GESTE QUI ÉCRIT UN CALIBRE : la proposition justifiée de VOLTA (« Retenir le 7,5 A ») —
+       elle part dans l'Excel corrigé (le part number du calibre, marqué « proposition de VOLTA acceptée »), son message
+       propose « Défaire » ; un calibre retenu à la main par une version d'avant revient au calcul de VOLTA */
+    racine.querySelectorAll(`[data-dj-prop="${CSS.escape(nom)}"]`).forEach(b => { b.onclick = () => { const p = propositionDuCalibre(nom, E.d); if (!p) return; const avant = parts()[0];
+      if (p.main) { rendreCalibre(nom); const d2 = disjonctionDe(nom); dire(nom + ' : ' + (d2.calibre ? amperes(d2.calibre) + ', ' : '') + 'le calcul de VOLTA.', false, { geste: 'Défaire', faire: () => defaire() }); }
+      else parVolta(() => deciderCalibre(nom, p.cal));
+      b.blur(); apres(avant, false); }; });
     lierGraphe();
     /* LE VOYAGE : le calibre au centre a changé depuis le dernier rendu de CETTE fiche (un clic, Entrée, « Automatique »,
        Ctrl+Z) — l'index part d'où il était, longe l'arc jusqu'au nouveau, le chiffre roule, la ligne du verdict s'écrit.
