@@ -122,3 +122,122 @@
 .nv-grand .nv-panneau .dj-etats>.dj-ajout{border-top:1px solid var(--s-line)}
 .nv-grand .nv-panneau .dj-etats .dj-plus{min-height:46px;padding:0 22px}
 .nv-grand .nv-panneau .dj-profil>.fi-choix{margin:0}
+
+/* ═══ v86 — LE COURANT, LA CONCLUSION, LE PROFIL SUR SA COURBE ══════════════════════════════════════════════════════
+   Le lecteur : « plus interactif : du courant qui avance sur les deux barres ; les calibres en ampères ; une conclusion
+   que tout le monde comprenne » ; « le profil et le graphique sont liés : je veux écrire le profil en voyant le graphique » ;
+   « "ne disjoncterait qu'après 36 min" : on le voit sur le graphique, rester propre ». */
+
+/* ── 3. LA CONCLUSION : la marque du verdict, une phrase grande ; le détail dessous, à l'encre seconde ── */
+.dj-concl{display:flex;flex-direction:column;gap:5px;margin:0}
+.dj-concl>p{margin:0}
+.dj-concl-t{display:flex;align-items:center;gap:10px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.011em;color:var(--t-1)}
+.dj-concl-t svg.dj-marque{flex:none;width:22px;height:22px;padding:4px;border-radius:50%;box-sizing:border-box;stroke-width:2.6}
+.dj-concl.ok .dj-concl-t svg.dj-marque{background:var(--ok-soft);color:var(--ok)}
+.dj-concl.ko .dj-concl-t svg.dj-marque{background:var(--ko-soft);color:var(--ko)}
+.dj-concl.ko .dj-concl-t span{color:var(--ko)}
+.dj-concl-d{padding-left:32px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty;cursor:help}
+/* en grand, sur l'essentiel : LA phrase qu'on lit d'abord */
+.dj-concl-g .dj-concl-t{gap:12px;font-size:var(--f-20);letter-spacing:-.018em}
+.dj-concl-g .dj-concl-t svg.dj-marque{width:28px;height:28px;padding:6px}
+.dj-concl-g .dj-concl-d{padding-left:40px;font-size:var(--f-14)}
+/* le calibre de votre fichier, quand VOLTA en retient un autre : une ligne, plus calme */
+.dj-concl-fic{display:flex;align-items:flex-start;gap:10px;margin:-4px 0 0;padding-left:6px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty}
+.dj-concl-fic svg.dj-marque{flex:none;width:18px;height:18px;margin-top:1px;padding:3px;border-radius:50%;box-sizing:border-box}
+.dj-concl-fic.ko svg.dj-marque{background:var(--ko-soft);color:var(--ko)} .dj-concl-fic.ok svg.dj-marque{background:var(--ok-soft);color:var(--ok)}
+.dj-concl-fic b{font-weight:600;color:var(--t-1)}
+/* l'aperçu d'un autre calibre (le survol de l'échelle) : la même phrase, en retrait */
+.dj-ca.apercu .dj-concl-g{opacity:.86}
+
+/* ── 4. COURANT APPELÉ ET CALIBRES : une barre par point du profil, le courant qui s'y écoule ── */
+.dj-ca{display:flex;flex-direction:column;gap:18px;margin-top:12px}
+.dj-flux{display:flex;flex-direction:column;gap:14px;margin:4px 0 0}
+.dj-fx-l,.dj-fx-echelle{display:grid;grid-template-columns:112px minmax(0,1fr);column-gap:18px;align-items:end}
+.dj-fx-nom{display:flex;flex-direction:column;gap:1px;min-width:0;padding-bottom:0}
+.dj-fx-nom b{font:600 var(--f-13)/1.25 var(--sans);color:var(--t-1)}
+.dj-fx-nom small{display:flex;align-items:center;min-height:15px;font:500 var(--f-12)/1.25 var(--sans);color:var(--t-3);font-variant-numeric:tabular-nums}
+.dj-fx-nom small svg.ico{width:15px;height:15px}
+/* la piste : l'échelle des ampères ; la place de la valeur au-dessus */
+.dj-fx-piste{position:relative;height:12px;margin-top:22px;border-radius:6px;background:var(--n-rail,color-mix(in srgb,var(--t-1) 8%,var(--s-surface)))}
+/* la barre : le cuivre (le démarrage plus clair), et LE COURANT QUI S'ÉCOULE — un reflet qui court, à sa vitesse (--flux) */
+.dj-fx-barre{position:absolute;left:0;top:0;bottom:0;min-width:12px;border-radius:6px;overflow:hidden;background:var(--nv-cuivre);transition:width .32s var(--courbe)}
+.dj-fx-l.pointe .dj-fx-barre{background:color-mix(in srgb,var(--nv-cuivre) 58%,var(--s-surface))}
+.dj-fx-barre::after{content:"";position:absolute;top:0;bottom:0;left:-22px;right:0;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,0) 0,rgba(255,255,255,0) 7px,rgba(255,255,255,.42) 12px,rgba(255,255,255,0) 17px,rgba(255,255,255,0) 22px);
+  animation:dj-flux var(--flux,1s) linear infinite;will-change:transform}
+@keyframes dj-flux{to{transform:translateX(22px)}}
+/* LA ZONE OÙ LE CALIBRE DISJONCTE, pour la durée de cette barre : du seuil au bout, un rouge léger, par-dessus la barre (la
+   part de la barre qui y entre rougit) ; elle glisse quand on survole un autre calibre */
+.dj-fx-zone{position:absolute;top:-3px;bottom:-3px;right:0;z-index:1;border-radius:0 7px 7px 0;background:color-mix(in srgb,var(--ko) 15%,transparent);box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ko) 75%,transparent);
+  transition:left .34s var(--courbe);pointer-events:none}
+/* sa valeur, au-dessus du bout de la barre */
+.dj-fx-val{position:absolute;bottom:calc(100% + 5px);transform:translateX(-100%);font:600 var(--f-13)/1 var(--sans);letter-spacing:-.005em;color:var(--t-1);white-space:nowrap;font-variant-numeric:tabular-nums;transition:left .32s var(--courbe)}
+.dj-fx-l.ko .dj-fx-val,.dj-fx-l.ko .dj-fx-nom b{color:var(--ko)}
+.dj-fx-l[data-bulle]{cursor:help}
+/* l'échelle : un filet, un point par calibre (vert, rouge), son chiffre en ampères ; le retenu dans sa pastille de cuivre */
+.dj-fx-echelle{align-items:start;margin-top:2px}
+.dj-fx-cals{position:relative;height:50px;border-top:1px solid var(--s-line-2)}
+.dj-fx-cal{position:absolute;top:-4px;display:flex;flex-direction:column;align-items:center;gap:5px;transform:translateX(-50%);outline:none;cursor:default}
+.dj-fx-cal>i{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px var(--n-carte,var(--s-surface))}
+.dj-fx-cal.non>i{background:var(--ko)}
+.dj-fx-cal>b{display:inline-flex;align-items:baseline;gap:1px;height:20px;padding:0 6px;border-radius:7px;align-items:center;font:600 var(--f-12)/1 var(--sans);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums;transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide)}
+.dj-fx-cal>b small{font:500 11px/1 var(--sans);color:var(--t-3);margin-left:2px}
+.dj-fx-cal>em{margin-top:-2px;font:600 var(--f-11)/1 var(--sans);font-style:normal;color:var(--t-3);white-space:nowrap}
+.dj-fx-cal.tu>b,.dj-fx-cal.tu>em{visibility:hidden}
+.dj-fx-cal.ret>b{background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1.5px var(--nv-cuivre);color:var(--t-1)}
+.dj-fx-cal.ret>em{color:var(--nv-cuivre)}
+.dj-fx-cal.fic:not(.ret)>b{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--t-2) 55%,transparent);outline:none;background-image:none}
+.dj-fx-cal.fic:not(.ret)>b{border:1.5px dashed color-mix(in srgb,var(--t-2) 65%,transparent);box-shadow:none;padding:0 5px}
+/* survolé (ou parcouru au clavier) : il se lève, ses zones s'affichent */
+.dj-fx-cal:is(:hover,:focus-visible,.vu)>b{background:color-mix(in srgb,var(--t-1) 8%,transparent);color:var(--t-1)}
+.dj-fx-cal.tu:is(:hover,:focus-visible,.vu)>b{visibility:visible}
+.dj-fx-cal:focus-visible>b{box-shadow:0 0 0 2px var(--nv-cuivre)}
+.dj-fx-cal.ret:is(:hover,:focus-visible)>b{background:var(--nv-cuivre-soft)}
+/* la légende : deux mots, la zone, le fichier */
+.dj-fx-leg{display:flex;flex-wrap:wrap;gap:6px 18px;margin:-6px 0 0;font:400 var(--f-12)/1.3 var(--sans);color:var(--t-3)}
+.dj-fx-leg>span{display:inline-flex;align-items:center;gap:7px}
+.dj-fx-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.dj-fx-leg i.ko{background:var(--ko)}
+.dj-fx-leg i.zone{width:16px;height:10px;border-radius:0 4px 4px 0;background:color-mix(in srgb,var(--ko) 15%,transparent);box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ko) 75%,transparent)}
+.dj-fx-leg i.fic{width:16px;height:10px;border-radius:4px;background:none;border:1.5px dashed color-mix(in srgb,var(--t-2) 65%,transparent);box-sizing:border-box}
+.dj-ca>.vu-fichier{margin:0}
+/* à l'ouverture de la fiche, les barres se remplissent */
+.fi.fondu .dj-fx-barre{animation:dj-fx-entre .7s var(--courbe) both}
+@keyframes dj-fx-entre{from{clip-path:inset(0 100% 0 0 round 6px)}to{clip-path:inset(0 0 0 0 round 6px)}}
+@media (prefers-reduced-motion:reduce){ .dj-fx-barre::after{animation:none} .fi.fondu .dj-fx-barre{animation:none} .dj-fx-zone,.dj-fx-barre,.dj-fx-val{transition:none} }
+
+/* ── 5. LE PROFIL ET SA COURBE, ensemble : côte à côte quand la carte le permet (700 px), sinon l'un sous l'autre, collés ── */
+.nv-grand .nv-panneau>.dj-profil{container:dj-pc / inline-size}
+.dj-pc{display:flex;flex-direction:column;gap:16px;min-width:0}
+.dj-pc-g{display:flex;flex-direction:column;gap:14px;min-width:0}
+.dj-pc-d{min-width:0;border-radius:var(--r-2)}
+.dj-pc-sous{display:inline-flex;align-items:baseline;gap:6px;font:400 var(--f-13) var(--sans);letter-spacing:0;color:var(--t-3)}
+@container dj-pc (min-width:700px){
+  .dj-pc{display:grid;grid-template-columns:312px minmax(0,1fr);gap:20px;align-items:start}
+  /* le tableau, serré dans sa colonne : l'état plus large, les deux chiffres, la croix */
+  .nv-grand .nv-panneau .dj-pc .dj-etats>:is(.dj-entete,.dj-etat){grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr) 34px;padding-left:16px}
+  .nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span{letter-spacing:.04em}
+  .nv-grand .nv-panneau .dj-pc .dj-etat :is(.dj-champ,.dj-inf){width:min(100%,82px)}
+  .nv-grand .nv-panneau .dj-pc .dj-etats .dj-plus{padding:0 16px}
+  .nv-grand .nv-panneau .dj-pc .dj-etat .dj-x{width:28px;height:28px}
+}
+@container dj-pc (min-width:900px){
+  .dj-pc{grid-template-columns:360px minmax(0,1fr)}
+  .nv-grand .nv-panneau .dj-pc .dj-etat :is(.dj-champ,.dj-inf){width:min(100%,92px)}
+}
+/* sous le tableau, la conclusion, qui suit la saisie */
+.dj-concl-pc{padding:12px 14px 13px;border-radius:12px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.dj-concl-pc .dj-concl-t{font-size:var(--f-14)}
+.dj-concl-pc .dj-concl-t svg.dj-marque{width:20px;height:20px;padding:4px}
+.dj-concl-pc .dj-concl-d{padding-left:30px;font-size:var(--f-12)}
+/* plus de phrase sous un état qui ne disjoncte pas ; « disjoncte », en rouge, sous celui qui fait disjoncter */
+.dj-etats .dj-verdict:empty{display:none}
+/* une ligne et son point, allumés ensemble */
+.nv-grand .nv-panneau .dj-etats>.dj-etat.lie{background:var(--nv-cuivre-soft)}
+.dj-graphe .dj-pt.lie .dj-halo{fill:var(--t-papier);fill-opacity:.1}
+.dj-graphe .dj-pt.lie .dj-point{r:6px}
+/* les points GLISSENT quand le profil s'écrit (le même dessin, ses points déplacés : 08-disjoncteurs, `courbeVive`) */
+.dj-graphe .dj-prof .dj-point,.dj-graphe .dj-prof .dj-halo{transition:cx .24s var(--courbe),cy .24s var(--courbe),r .16s var(--courbe),fill .2s}
+.dj-graphe .dj-prof .dj-escalier{transition:d .24s var(--courbe),stroke .2s}
+.dj-graphe svg.tient .dj-prof :is(.dj-point,.dj-halo,.dj-escalier){transition:none}
+@media (prefers-reduced-motion:reduce){ .dj-graphe .dj-prof :is(.dj-point,.dj-halo,.dj-escalier){transition:none} }

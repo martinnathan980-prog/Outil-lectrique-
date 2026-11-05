@@ -62,9 +62,20 @@ function ongletsHtml(type, xs) { if (!xs.length) return '';
 const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === 'connecteur' ? 'essentiel' : s.cle, titre: s.cle === 'fils' || s.cle === 'connecteur' ? '' : s.titre, statut: s.resume ? { t: String(s.resume).replace(/<[^>]*>/g, '').slice(0, 40) } : null, contenu: s.contenu, vide: s.vide, action: s.action });
 
 // les onglets que toutes les fiches partagent : les câbles (la section d'hier, son statut en mots), la fabrication
-// (v84) le statut tient dans l'onglet le plus étroit : « 4 câbles · 51 % » ; ce que veut dire 51 %, sa bulle le dit
-const statutCables = sF => ({ t: sF.vide ? 'aucun' : sF.nko ? sF.nko + (sF.nko > 1 ? ' câbles en défaut' : ' câble en défaut') : pluriel(sF.compte || 0, 'câble') + (sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' %' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '',
-  bulle: !sF.vide && sF.charge != null ? 'Le plus chargé porte ' + Math.round(sF.charge * 100) + ' % du courant qu’il admet' : '' });
+/* (v86, le lecteur : « 2 câbles · 80 % : on ne comprend pas ce que veut dire 80 % ; si je me pose la question, c'est que ce
+   n'est pas bon ») : le statut se lit sans réfléchir et tient dans l'onglet le plus étroit (132 px, à côté du récapitulatif)
+   — « chargés à 80 % » (le plus chargé porte 80 % du courant qu'il admet), « 2 à régler », « 1 à voir » (les mots des
+   problèmes de la fiche ; « en défaut » se lisait comme un court-circuit) ; sans type, pas de pourcentage. La bulle nomme
+   le câble et dit les ampères, ou ce qui cloche, câble par câble. `sF` : la section des câbles (08-fiche, `sectionFils`). */
+const statutCables = sF => { if (sF.vide) return { t: 'aucun', etat: '' };
+  const n = sF.compte || 0, p = sF.pire, pc = sF.charge != null ? Math.round(sF.charge * 100) : null, raisons = (sF.raisons || []).slice(0, 4).join('\n');
+  if (sF.nko) return { t: sF.nko + ' à régler', etat: 'ko', bulle: (sF.nko > 1 ? sF.nko + ' câbles à régler' : '1 câble à régler') + (raisons ? ' :\n' + raisons : '') };
+  if (sF.natt) return { t: sF.natt + ' à voir', etat: 'att', bulle: (sF.natt > 1 ? sF.natt + ' câbles à voir' : '1 câble à voir') + (raisons ? ' :\n' + raisons : '') };
+  const sans = sF.nsans ? (sF.nsans > 1 ? sF.nsans + ' câbles sans type' : '1 câble sans type') + ' : ce qu’' + (sF.nsans > 1 ? 'ils admettent' : 'il admet') + ' est inconnu' : '';
+  if (pc == null) return { t: n > 1 && sF.nsans === n ? n + ' sans type' : sF.nsans ? 'sans type' : pluriel(n, 'câble'), etat: '', bulle: sans };
+  const qui = n > 1 ? 'Le plus chargé de ses ' + n + ' câbles' + (p && p.nom ? ', ' + p.nom + ',' : '') : 'Son câble' + (p && p.nom ? ', ' + p.nom + ',' : '');
+  return { t: (n > 1 ? 'chargés à ' : 'chargé à ') + pc + ' %', etat: '',
+    bulle: qui + (p && p.i != null && p.admis != null ? ' porte ' + nombreA(p.i) + ' A ; il en admet ' + nombreA(p.admis) + ' : il est chargé à ' + pc + ' %.' : ' porte ' + pc + ' % du courant qu’il admet.') + (sans ? '\n' + majuscule(sans) + '.' : '') }; };
 const ongletCables = sF => !sF ? null : { cle: 'cables', statut: statutCables(sF), contenu: sF.contenu, vide: sF.vide };
 function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
@@ -75,7 +86,6 @@ function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g
    et proprement à côté, son nom ; en dessous, sa référence, sa gamme — le folio, on s'en fout ; plus de pastille d'état »)
    : le symbole du genre en grand, le genre en mot, le repère à côté (il se renomme d'un clic) ; dessous, ce qui l'identifie.
    Dans le grand, la même chose sur une ligne fine : la barre qu'on tient pour déplacer la fenêtre. ---- */
-const GENRES_COURTS = { barrette: 'Barrette', prise: 'Prise' };
 const GENRES_FICHE = { equipement: 'Équipement', disjoncteur: 'Disjoncteur', barrette: 'Barrette de jonction', prise: 'Prise de coupure', masse: 'Masse', fil: 'Câble' };
 function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   // (v78, le lecteur : « le genre et la référence, même taille, même police — un tiret au milieu ; pas d'écarts de gras »)
@@ -83,25 +93,31 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   // repère (son champ porte une aide qui le dit)
   const rep = t.champ && t.aide ? `<input class="nc-rep-in" id="${t.champ}" value="${escA(nom)}" size="${Math.max(3, nom.length)}" style="width:calc(${Math.max(3, nom.length) + 1}ch + 14px)" aria-label="${escA(t.aide || 'Repère — écrire pour renommer partout')}" data-bulle="${escA(t.aide || 'Un clic pour le renommer : chaque câble suit')}" spellcheck="false" autocomplete="off">`
     : `<span class="nc-rep-t">${esc(nom)}</span>`;
-  const ms = (o.meta || []).filter(Boolean), ref = ms.length === 1 && /class="id"/.test(ms[0]);
+  const ms = (o.meta || []).filter(Boolean);
   // (v84) une référence se lit en puce, à la chasse fixe ; une phrase (« ajoutée par VOLTA sur 102CB1:2 », « route PUISSANCE »)
   // reste une phrase, en clair — une puce de code autour d'une phrase la fait passer pour une référence
-  const metaV = m => `<span class="nc-meta-v${/class="id"/.test(m) ? '' : ' texte'}">${m}</span>`;
-  const meta = ms.length ? `<div class="nc-meta fi-identite">${ref ? `<span class="nc-meta-k">Référence</span>` : ''}${ms.map(metaV).join('')}</div>` : '';
-  // (v82) dans la carte, le genre court (« Barrette », « Prise ») : le titre tient sur une ligne, le tiret ne pend plus
-  const genre = !grand && GENRES_COURTS[o.type] ? GENRES_COURTS[o.type] : GENRES_FICHE[o.type] || 'Élément';
-  const sym = `<svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg>`, titre = `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-tiret" aria-hidden="true">—</span><span class="nc-rep">${rep}</span>`;
-  // (v81, le lecteur : « la tête, tu peux la rendre un peu plus sexy ») : le symbole en grand filigrane, à droite, qui se
-  // trace à l'ouverture — la signature de la tuile, reprise dans le grand
+  // (v86) plus d'étiquette « Référence » devant la puce : sous un repère, un code au trait se lit de lui-même (sa bulle le dit)
+  const metaV = m => /class="id"/.test(m) ? `<span class="nc-meta-v" data-bulle="Sa référence">${m}</span>` : `<span class="nc-meta-v texte">${m}</span>`;
+  const meta = ms.length ? `<div class="nc-meta fi-identite">${ms.map(metaV).join('')}</div>` : '';
+  /* (v86, le lecteur : « Disjoncteur, 102CB1, Référence : trop de variations de couleurs et de fonds, trop de gras différents ;
+     quelque chose de plus homogène » — et : « je ne sais pas différencier les équipements des disjoncteurs, des barrettes ») :
+     UNE hiérarchie, la même dans la carte et dans le grand — la SILHOUETTE de l'objet, sa forme du folio en trait de cuivre
+     (08-vues, `silhouetteVue` : le genre se reconnaît d'un coup d'œil), qui se trace à l'ouverture ; le genre en mot, en gris,
+     discret ; le REPÈRE, le seul grand ; la référence dessous, une seule pastille au trait. Deux graisses (500, 600), l'encre
+     et un gris, aucun fond (style-z-carte). Dans la carte, la silhouette est le SCEAU de la barre (à la place de la poignée :
+     la barre se tient toujours) ; dans le grand, elle ouvre la ligne. */
+  const genre = GENRES_FICHE[o.type] || 'Élément';
+  const titre = `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-rep">${rep}</span>`;
+  const sil = silhouetteVue(o.type, silhouetteDe(o));
   // (v83) en grand, « module 2 de VT2 » se lit dans la première section (la barrette et tous ses modules) : pas deux fois
   const msG = ms.filter(m => !/^(module|partie) \S+ de /.test(m));
-  if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${msG.length ? `<span class="nc-meta fi-identite">${msG.map(metaV).join('')}</span>` : ''}<span class="nv-fili" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span></div>`;
-  // le symbole : un filigrane dans le coin de la tuile, qui s'éveille au survol
-  // (v79, le lecteur : « ce sigle en fond, ce micro-détail, cette interactivité, c'est vraiment la diff — on peut encore
-  // faire mieux ») : au survol, un trait de cuivre parcourt le symbole, comme un courant qui passe
-  const trace = (SYMBOLES[o.type] || SYMBOLES.equipement).replace(/<(path|circle|rect|line)\b/g, '<$1 pathLength="1"');
-  const long = ((GENRES_FICHE[o.type] || '') + ' — ' + ((o.tete || {}).nom || '')).length > 22;
-  return `<span class="nc-filigrane" aria-hidden="true"><svg viewBox="0 0 30 30"><g class="nc-fil-base">${SYMBOLES[o.type] || SYMBOLES.equipement}</g><g class="nc-fil-trace">${trace}</g></svg></span><div class="nc-tete"><span class="nc-titre${long ? ' long' : ''}">${titre}</span></div>${meta}`; }
+  if (grand) return `<div class="nc-tete fine"><span class="nc-sil" aria-hidden="true">${sil}</span><span class="nc-titre">${titre}</span>${msG.length ? `<span class="nc-meta fi-identite">${msG.map(metaV).join('')}</span>` : ''}</div>`;
+  return `<span class="nc-sceau" aria-hidden="true">${sil}</span><div class="nc-tete"><span class="nc-titre${nom.length > 9 ? ' long' : ''}">${titre}</span></div>${meta}`; }
+// ce que la silhouette dessine de CET objet : les modules d'une barrette, les connecteurs d'un équipement
+function silhouetteDe(o) { const nom = (o.tete || {}).nom || '';
+  try { if (o.type === 'barrette') { const n = typeof modulesDeLaBarrette === 'function' ? modulesDeLaBarrette(nom).length : 0; return { modules: n || 3 }; }
+    if (o.type === 'equipement' && typeof connecteursDe === 'function') return { connecteurs: connecteursDe(nom, verite()).filter(c => c.nom).length || 1 }; } catch (_) { }
+  return {}; }
 // la désignation (un texte libre, gardé avec le contrat) : dans l'onglet « Modifier » du grand
 /* (v78c, le lecteur : « Modifier, faut tout reprendre, c'est pas hyper compréhensible ») : l'onglet « Modifier » se lit en
    CARTES — chacune son titre, une phrase qui dit ce que ça change, puis le réglage. */
@@ -303,6 +319,12 @@ function listeDuGenre(c, etatIci) { const { genre, xs } = objetsDuGenre(c), q = 
 /* ---- LES CÂBLES EN TABLEAU TRIABLE (le grand) : une ligne par câble ; un clic sur un en-tête trie (un second clic
    renverse), un clic sur une ligne ouvre le câble, son survol l'allume sur le plan ; la longueur s'écrit sur place. ---- */
 const COLONNES_TABLE_CABLES = [['type', 'Câble'], ['vers', 'Vers'], ['i', 'Courant'], ['u', 'Chute en ligne'], ['lg', 'Longueur'], ['ct', 'Contact à sertir']];
+/* (v86, le lecteur : « 80 %, on ne comprend pas ») : l'anneau dit une part — le titre de sa colonne dit de quoi, en petit
+   sous le mot, et sa bulle explique d'où vient l'admis */
+const SOUS_COLONNES_CABLES = { i: '% de ce qu’il admet', u: '% de la chute admise' };
+const BULLES_COLONNES_CABLES = {
+  i: 'Le courant qu’il porte, sur celui qu’il admet (EN 2853, déclassé selon son faisceau, l’altitude et l’ambiante). L’anneau en montre la part : au-delà de 100 %, il est trop fin.',
+  u: 'La tension perdue depuis son disjoncteur jusqu’au bout du chemin, sur la chute admise pour ce réseau. L’anneau en montre la part : au-delà de 100 %, la ligne perd trop.' };
 function contactDeLaLigne(r) { const c = app.cible, l = r.l; if (!l || !c || c.type !== 'bloc' || l.origine === null) return null;
   const nom = c.nom, borne = l.de === nom ? l.borneDe : l.vers === nom ? l.borneVers : null;
   try { return (borne != null ? contactAuBout(l, nom, borne) : null) || (r.bout && r.bout.rep ? contactAuBout(l, r.bout.rep, r.bout.borne) : null); } catch (_) { return null; } }
@@ -313,7 +335,8 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
   const cmp = (a, b) => { const k = T.col; if (!k) return rang(a) - rang(b) || triNaturel(a.cles.type, b.cles.type); const va = a.cles[k], vb = b.cles[k];
     const n = typeof va === 'number' || typeof vb === 'number' ? ((va == null ? -1 : va) - (vb == null ? -1 : vb)) : triNaturel(String(va || ''), String(vb || '')); return (n || triNaturel(a.cles.type, b.cles.type)) * T.sens; };
   const tete = COLONNES_TABLE_CABLES.map(([k, t]) => { const s = T.col === k ? (T.sens > 0 ? 'ascending' : 'descending') : 'none';
-    return `<th scope="col" aria-sort="${s}" class="nv-th-${k}"><button type="button" class="nv-tri" data-tri="${k}" data-bulle="${escA('Trier par ' + t.toLowerCase() + (s === 'none' ? '' : ' — un clic renverse'))}">${esc(t)}<span class="nv-tri-f" aria-hidden="true">${s === 'ascending' ? '↑' : s === 'descending' ? '↓' : '↕'}</span></button></th>`; }).join('');
+    const tri = 'Un clic trie par ' + t.toLowerCase() + (s === 'none' ? '' : ', un second renverse'), sous = SOUS_COLONNES_CABLES[k];
+    return `<th scope="col" aria-sort="${s}" class="nv-th-${k}${sous ? ' a-sous' : ''}"><button type="button" class="nv-tri" data-tri="${k}" data-bulle="${escA(BULLES_COLONNES_CABLES[k] ? BULLES_COLONNES_CABLES[k] + '\n' + tri + '.' : majuscule(tri))}"><span class="nv-tri-m">${esc(t)}${sous ? `<small class="nv-th-s">${esc(sous)}</small>` : ''}</span><span class="nv-tri-f" aria-hidden="true">${s === 'ascending' ? '↑' : s === 'descending' ? '↓' : '↕'}</span></button></th>`; }).join('');
   const avecCt = xs.some(x => x.ct && x.ct.st && x.ct.st.reference);
   // (v84) une colonne homogène : si une ligne y porte un anneau, celles qui n'en ont pas gardent sa place (la valeur reste
   // alignée sous les autres) ; si aucune n'en porte, la valeur seule, centrée sous son titre
@@ -323,7 +346,7 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     // (v78, le lecteur : « équipement et borne, mal présentés ; l'intensité, la chute : juste un rapport ») : une nomenclature —
     // le câble, où il va et sur quelle borne, la charge et la chute en anneaux (la part de l'admis), la longueur
     const type = `<span class="nv-cab-id">${r.puce || ''}<b class="id nv-cab-type">${esc(r.type || 'sans type')}</b></span>`;
-    const iH = `<span class="nv-mes${anI ? '' : ' seul'}">${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : ''}</span></span>`;
+    const iH = `<span class="nv-mes${anI ? '' : ' seul'}">${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : r.charge.i != null && r.charge.r == null ? `<small class="nv-mes-inc">${esc(r.type ? 'hors norme : admis inconnu' : 'sans type : admis inconnu')}</small>` : ''}</span></span>`;
     const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
     // (v85) sans chemin de disjoncteur, la chute du câble seul — contre la chute admise de toute la ligne : la bulle le dit
     const uH = `<span class="nv-mes${anU ? '' : ' seul'}"${r.chute.seul && r.chute.u != null && r.chute.max != null ? ` data-bulle="${escA('Sur ce câble seul : ' + volts(r.chute.u) + ', ' + Math.round(r.chute.u / r.chute.max * 100) + ' % des ' + volts(r.chute.max) + ' que la ligne entière peut perdre — aucun disjoncteur en amont n’en donne le chemin')}"` : ''}>${anneauOuPlace(ru, anU)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
@@ -351,7 +374,9 @@ function composerFiche(o) { const probs = o.probs || []; NIVEAU.typeRendu = o.ty
   if (!ficheEnGrand()) {
     // LA CARTE — le premier regard : ce que c'est et son nom, la pièce dessinée (un clic ouvre tout), ce qui cloche, trois
     // chiffres, « Tout voir » ; rien d'autre (le lecteur : « épuré, classe »)
-    return `<div class="nc">${enteteFiche(o, false)}${o.avant || ''}`
+    // (v86, le lecteur : « fais quelque chose d'un peu plus interactif en fond ») : sous la carte, une LUMIÈRE de cuivre qui
+    // suit la souris et révèle la trame du folio d'où la carte est née (08-carte, `lierLumiere` ; style-z-carte)
+    return `<span class="nc-lumiere" aria-hidden="true"><i></i></span><div class="nc">${enteteFiche(o, false)}${o.avant || ''}`
       + (o.vignette ? `<button type="button" class="nc-vignette" data-onglet-va="essentiel" aria-label="Tout voir : la fiche entière">${o.vignette}</button>` : '')
       + tachesFiche(o, probs, 2) + chiffresHtml(o.chiffres, 3) + '</div>'
       + `<footer class="fi-pied nc-pied"><button type="button" class="nc-tout" id="fi-tout-voir" data-bulle="La fiche entière, le plan à côté — ou un double-clic sur l’objet">Tout voir${ico('droite')}</button></footer>` + (o.fin || ''); }
@@ -512,7 +537,9 @@ function lierNiveaux(box, c) { lierSommaire(box);
   box.querySelectorAll('[data-am-cal]').forEach(b => b.onclick = e => { e.stopPropagation(); const cs = box.querySelector('.vu-cals'); if (!cs) return;
     cs.classList.remove('a-prendre'); void cs.offsetWidth; cs.classList.add('a-prendre'); const t = cs.querySelector('.vu-cal.oui:not(.on)') || cs.querySelector('.vu-cal'); if (t) try { t.focus({ preventScroll: true }); } catch (_) { }
     if (b.getAttribute('aria-pressed') !== 'true') dire('Prenez un calibre : un clic le retient à la place de celui de VOLTA.'); });
-  if (c && c.type !== 'ref') document.body.classList.toggle('insp-grand-ouvert', ficheEnGrand()); }
+  if (c && c.type !== 'ref') document.body.classList.toggle('insp-grand-ouvert', ficheEnGrand());
+  // (v86) la silhouette se trace quand la fiche s'ouvre sur un objet (pas quand elle se refait sur le même : 08-carte)
+  if (typeof eveillerSceau === 'function') eveillerSceau(box); }
 
 /* ---- LA LISTE, LE PANNEAU : leur défilement se garde d'un rendu de la même fiche à l'autre -------------------------- */
 const DEFILEMENTS = { liste: 0, panneau: 0, cle: '' };

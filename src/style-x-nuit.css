@@ -127,10 +127,11 @@
   --nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d9cfc5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E");
 }
 
-/* ─── LE JOUR : les mêmes lumières, en plus doux — la bande d'onglets prend un graphite chaud (l'espresso), la barre des
+/* ─── LE JOUR : les mêmes lumières, en plus doux — la bande d'onglets prend le GRAPHITE CHAUD de VOLTA (celui de la nuit
+   et de l'accueil ; v86 : l'espresso, brun, était la seule grande surface teintée sur la table d'aluminium), la barre des
    titres un dégradé de cuivre, la tête et les cartes un rien de lumière chaude, « Tout voir » le cuivre ─── */
 #inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet{
-  --n-bande:linear-gradient(180deg,#3a2f27 0%,#2f2620 100%);
+  --n-bande:linear-gradient(180deg,#34302d 0%,#2a2725 100%);
   --n-bande-ombre:inset 0 1px 0 rgba(255,214,180,.10);
   --n-barre:linear-gradient(180deg,#d98e55 0%,#a9581f 100%);
   --n-tete:radial-gradient(380px 130px at calc(100% - 120px) 50%,rgba(196,111,48,.08),rgba(196,111,48,0) 72%),#ffffff;
@@ -140,7 +141,7 @@
   --n-tout:linear-gradient(180deg,#fbf3ec 0%,#f6ebe1 100%); --n-tout-bord:#dfbb9c; --n-tout-t:#8a4516;
   --n-tout-survol:linear-gradient(180deg,#faefe6 0%,#f5e6d9 100%); --n-tout-lueur:0 8px 20px -10px rgba(169,88,31,.45);
   --n-nav-carte:transparent; --n-tout-t-survol:#8a4516;
-  --v-bande-2:#463930; --v-bande-s:#c9bcb0 }
+  --v-bande-2:#403c38; --v-bande-s:#c6bfb8 }
 
 /* ─── LA FICHE AGRANDIE : la tête, la bande, la page ─── */
 .nv-grand .nv-tete .fi-nav{background:var(--n-tete,var(--s-surface))}

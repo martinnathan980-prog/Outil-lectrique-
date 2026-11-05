@@ -816,20 +816,14 @@ const cadre = () => $('planche').getBoundingClientRect();
    petite écriture du dessin, 9 px) ; 1 et 2 vont à 100 et 200 %, les pas tombent sur les mêmes crans. */
 const S100 = 11 / FS_FIL;
 const zoomEnPourcent = s => Math.round(s / S100 * 100);
-/* LE ZOOM DE LECTURE (v85, il remplace le zoom sémantique : sous 7 px d'écran, les bornes, les pastilles, les lettres des
-   connecteurs se taisaient — le lecteur : « au folio 6, les bornes n'apparaissent pas, sauf si je zoome beaucoup ou si je
-   survole ; de base, rien ne doit être caché »). L'échelle de la vue se dit à la scène (`--s`) : quand on s'éloigne, les
-   numéros de borne et les petits repères grandissent dans leur place (style-z-plan.css) ; au cadrage, tout se lit. Bien
-   plus loin que la feuille entière (SEUIL_POUSSIERE), une écriture ferait moins de 3 px : elles se taisent (`.tait`), ce
-   qu'on survole ou qu'on a choisi parle toujours (`.hl`). */
-const SEUIL_POUSSIERE = 0.31;
+/* LE DESSIN EST FIXE (v86). Le zoom ne change que l'échelle de la scène : aucune écriture ne grandit, ne se tait ni ne se
+   déplace quand on approche ou qu'on recule (la v85 faisait grandir les numéros de borne au dézoom, chacun depuis son point :
+   le lecteur, « quand je zoome et dézoome, plus rien ne se suit, les bornes se décalent — la catastrophe »). Au cadrage, les
+   numéros sont fins mais présents ; on zoome pour lire. */
 function appliquerVue() {
   const sc = $('scene'); if (sc) { sc.setAttribute('transform', `translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})`);
     // LOIN : un trait de câble ferait moins d'un pixel d'écran — les traits s'épaississent (06), les routes gardent leur couleur
     const loin = app.vue.s * 0.95 < 0.9; if (sc.classList.contains('loin') !== loin) sc.classList.toggle('loin', loin);
-    const tait = app.vue.s < SEUIL_POUSSIERE; if (sc.classList.contains('tait') !== tait) sc.classList.toggle('tait', tait);
-    // l'échelle, à deux millièmes près : chaque pas ne refait pas le style de toutes les écritures pour rien
-    const s3 = app.vue.s.toFixed(3); if (sc.style.getPropertyValue('--s') !== s3) sc.style.setProperty('--s', s3);
     if (LOUPE.s !== app.vue.s) poserLoupe(); }
   // la table glisse d'un rien sous la feuille (08-table), le fil de la carte suit son bloc (08-carte)
   parallaxeTable(); dessinerLien();

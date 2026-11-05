@@ -387,6 +387,8 @@ function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg 
   svg.onpointermove = e => { const p = local(e);
     if (prise) { const i = Math.max(0.01, G.iDe(Math.min(W - R, Math.max(L, p.x)))), t = G.tDe(Math.min(H - B, Math.max(T, p.y))), el = prise.etat, ri = +i.toPrecision(3), rt = +t.toPrecision(2);
       el.i = ri; if (prise.k !== 'perm') el.t = rt; const dd = juger(prise.profil), pt = dd.points.find(x => x.k === prise.k) || dd.points.find(x => x.i === ri);
+      // (v86) le profil suit la main : ses cases, la conclusion, les calibres (08-disjoncteurs, `E.suivre`)
+      if (typeof E.suivre === 'function') E.suivre(prise.k, el, dd);
       montrer(p, pt ? cartePoint(pt) : carteTip(esc(amperes(ri)) + (prise.k === 'perm' ? '' : ' · ' + esc(secondes(rt))), esc(el.nom || ''), '', '')); return; }
     const g = e.target.closest && e.target.closest('.dj-pt');
     if (g) { const pt = d.points.find(x => x.k === g.dataset.k); if (pt) { vise.hidden = true; montrer(p, cartePoint(pt)); return; } }

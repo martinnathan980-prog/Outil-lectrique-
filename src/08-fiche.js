@@ -787,13 +787,16 @@ function ligneDeFil(f) { const l = f.l, x = intensiteDuFil(l), c = chuteDuFil(l,
     // chemin de disjoncteur, la chute du câble seul se mesure aussi contre la chute admise des Hypothèses (2 V sous 28 V) — sa
     // part de ce que la ligne entière peut perdre ; l'anneau la montre comme pour les autres
     chute: { mot: volts(u), u, max: c.max, regle: c.regle, supp, seul: !c.total }, etat: trop || c.etat === 'ko' || f.coupable ? 'ko' : c.etat === 'att' ? 'att' : '', pourquoi, bulle }; }
-/* LA SECTION DES CÂBLES : le tableau, son résumé (combien, combien en défaut — ou, quand tous tiennent, le plus chargé),
+/* LA SECTION DES CÂBLES : le tableau, son résumé (combien, combien à régler — ou, quand tous portent leur courant, le plus chargé),
    sa pastille. `o.note` : ce qui est supposé, dit une fois, en tête. */
 function sectionFils(rows, probs, o) { o = o || {}; if (!rows.length) return { cle: 'fils', titre: o.titre, vide: 'aucun câble' };
   const ko = rows.filter(r => r.etat === 'ko').length, att = rows.filter(r => r.etat === 'att').length, rs = rows.filter(r => r.charge.r != null && isFinite(r.charge.r)), pire = rs.length ? rs.reduce((a, b) => (b.charge.r > a.charge.r ? b : a)) : null;
   // (v74, lot F — le lecteur : « “Tous tiennent”, c'est obscur ») : aucun problème, et le plus chargé nommé, avec ce qu'il porte de ce qu'il admet
-  const resume = [pluriel(rows.length, 'câble'), ko ? `<span class="fi-ko-t">${ko} en défaut</span>` : att ? `<span class="fi-att-t">${att} à voir</span>` : 'aucun problème' + (pire ? ` · le plus chargé, ${esc(nomCourtDuCable(pire))}, porte ${Math.round(pire.charge.r * 100)} % de ce qu’il admet` : '')].join(' · ');
-  return { cle: 'fils', titre: o.titre, compte: rows.length, nko: ko, natt: att, charge: pire ? pire.charge.r : null, resume: insecable(resume), badge: badgeProblemes(probs, 'fils') || (ko ? { t: String(ko), etat: 'ko' } : att ? { t: String(att), etat: 'att' } : { t: ico('coche'), etat: 'ok' }),
+  const resume = [pluriel(rows.length, 'câble'), ko ? `<span class="fi-ko-t">${ko} à régler</span>` : att ? `<span class="fi-att-t">${att} à voir</span>` : 'aucun problème' + (pire ? ` · le plus chargé, ${esc(nomCourtDuCable(pire))}, porte ${Math.round(pire.charge.r * 100)} % de ce qu’il admet` : '')].join(' · ');
+  // (v86) pour le statut de l'onglet (08-niveaux, `statutCables`) : le plus chargé (son nom, ses ampères, ce qu'il admet), ce
+  // qui cloche câble par câble, les câbles sans type (leur courant se lit, la part de l'admis non)
+  const raisons = rows.filter(r => ko ? r.etat === 'ko' : r.etat === 'att').map(r => nomCourtDuCable(r) + (r.pourquoi ? ' : ' + r.pourquoi : ''));
+  return { cle: 'fils', titre: o.titre, compte: rows.length, nko: ko, natt: att, charge: pire ? pire.charge.r : null, pire: pire ? { nom: nomCourtDuCable(pire), i: pire.charge.i, admis: pire.charge.admis } : null, raisons, nsans: rows.filter(r => !r.type).length, resume: insecable(resume), badge: badgeProblemes(probs, 'fils') || (ko ? { t: String(ko), etat: 'ko' } : att ? { t: String(att), etat: 'att' } : { t: ico('coche'), etat: 'ok' }),
     contenu: (o.note ? `<p class="fi-note cb-note">${o.note}</p>` : '') + listeCables(rows, o) }; }
 /* Les câbles d'un repère (équipement, barrette, prise) : une ligne chacun ; ce qui est supposé (le courant quand aucun
    disjoncteur n'est en amont, la longueur que le retest ne porte pas), dit une fois. `coupables` : câble → ce que le plan
@@ -960,6 +963,9 @@ function problemesEquipement(nom, cav, b, vt, dj) { const probs = [];
 const ecritsDuRepere = nom => changementsEcrits(verite().filter(l => (l.de === nom || l.vers === nom) && l.avant).map(l => [l, ['type', 'longueur', 'route', ...(l.de === nom ? ['pnDe', 'contactDe'] : []), ...(l.vers === nom ? ['pnVers', 'contactVers'] : [])]]));
 /* (v79) « 1 contact pris sur 3 », « 4 contacts pris sur 18 » : accordé */
 const prisSur = (n, m, mot) => `${n} contact${n > 1 ? 's' : ''}${mot === '' ? '' : ' ' + (mot || 'pris')} sur ${m}`;
+/* (v86) le statut de L'essentiel tient dans l'onglet le plus étroit (« 16 contacts sur 54 » passait à la ligne à côté du
+   récapitulatif) : « 16/54 contacts » ; la bulle le dit en mots, avec ce qui reste libre */
+const statutContacts = (n, m, etat) => ({ t: n + '/' + m + ' contacts', etat, bulle: prisSur(n, m) + (m - n > 0 ? ' : ' + plurielLie(m - n, 'libre') : ' : tous pris') });
 function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V), dj = estDisjoncteur(nom);
   const C = connecteursDe(nom, V).filter(c => c.nom), cav = cavitesDe(nom), parNom = new Map(cav.map(c => [c.nom, c])), vt = barrettesSur(nom);
   const sans = [...b.parBorne.keys()].filter(bo => !C.some(c => c.bornes.includes(bo))).sort(triNaturel);
@@ -1080,7 +1086,8 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
       + (ids.length > 1 ? `<div class="vu-face-choix">${bulles}</div>` : '') + `<figure class="vu-fig vu-fig-face">${faceG}<figcaption>${esc(M.module.variante + ' · vue côté contacts')}</figcaption>${legendeFaceVue(broches.some(x => x.ko))}</figure></section>` : '';
   const ess = !ids.length ? '<p class="vu-note">Cet équipement n’a pas encore de câble.</p>' : `${blocB}${blocFace}${c ? pourquoiVue('D’où vient le connecteur ' + c.nom, etapesC) : ''}`;
   const onglets = [
-    { cle: 'essentiel', statut: { t: quels.length > 1 ? (quels.some(fautif) ? quels.filter(fautif).join(', ') + ' bloque' : pluriel(quels.length, 'connecteur')) : places ? prisSur(pris, places, '') : pluriel(ids.length, 'connecteur'), etat: quels.some(fautif) ? 'ko' : 'ok' }, contenu: ess },
+    { cle: 'essentiel', statut: quels.length <= 1 && places ? statutContacts(pris, places, quels.some(fautif) ? 'ko' : 'ok') : { t: quels.length > 1 ? (quels.some(fautif) ? quels.filter(fautif).join(', ') + ' à régler' : pluriel(quels.length, 'connecteur')) : pluriel(ids.length, 'connecteur'), etat: quels.some(fautif) ? 'ko' : 'ok',
+      bulle: quels.some(fautif) ? 'Connecteur ' + quels.filter(fautif).join(', ') + ' : aucun arrangement ne loge ses câbles' : quels.length > 1 ? 'Connecteurs ' + quels.join(', ') + ' : chacun loge ses câbles' : '' }, contenu: ess },
     ongletCables(sFils), ongletFabrication(fabC, 'Ce qu’il faut pour le monter'),
     reglagesEquipement(),
     sDeja ? ongletDeLaSection(sDeja) : null];
@@ -1095,7 +1102,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
 // la case « Câbles » des chiffres (v78) : combien, combien en défaut, ce que porte le plus chargé
 const chiffreCables = s => !s ? null : s.vide ? { k: 'Câbles', v: '0', onglet: 'fils' }
   : { k: 'Câbles', v: String(s.compte || 0), etat: s.nko ? 'ko' : s.natt ? 'att' : '', barre: s.charge != null ? s.charge : null, onglet: 'fils',
-    sous: s.nko ? esc(s.nko + ' en défaut') : s.natt ? esc(s.natt + ' à voir') : s.charge != null ? esc('au plus ' + Math.round(s.charge * 100) + ' % de l’admis') : '' };
+    sous: s.nko ? esc(s.nko + ' à régler') : s.natt ? esc(s.natt + ' à voir') : s.charge != null ? esc('chargés à ' + Math.round(s.charge * 100) + ' % au plus') : '' };
 /* LA CONSOMMATION (le lecteur, v74 : « le courant de chaque équipement, c'est moi qui l'ai — je le rajoute à la main ») :
    le permanent, le démarrage et sa durée ; dessous, le disjoncteur qui l'alimente et le calibre qu'il en tire (la somme
    de tout ce qu'il alimente, 08 bis `profilDesConsommateurs`). Rien pour une masse, un renvoi, un disjoncteur. */
@@ -1292,20 +1299,12 @@ function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (
    tension basse, un moteur qui force). */
 /* UN CALIBRE EN CLAIR (v80, le lecteur : « valide, pas valide, point — pas de réserve ») : ce qu'il tire, pendant combien de
    temps, et le seuil où ce calibre disjoncte sur cette durée ; rien d'autre. */
-function calibreEnClair(d, cal) { const A = amperes(cal), g = (d.gamme || []).find(x => Math.abs(x.calibre - cal) < 1e-9);
-  let j = null; try { j = verdictDisjonction(app.norme, d.courbe || '', cal, d.profil, d.contexte || {}); } catch (_) { j = null; }
-  const p = j && j.pire, ch = chargeDuProfil(d);
-  const q = p && p.marges && p.marges[0], enPerm = !p || p.t === Infinity || p.duree === Infinity;
-  const adm = enPerm ? (g && g.tenu) : q && isFinite(q.admis) ? q.admis : null;
-  const quand = !p ? 'au plus fort' : enPerm ? 'en permanent' : String(p.nom || 'en pointe').toLowerCase().replace(/^démarrage et transition$|^démarrage$/, 'au démarrage').replace(/^transition$/, 'en transition');
-  // (v84) la durée écrite est celle sur laquelle le seuil se lit : la marche de l'escalier (`p.t`) — plus longue que l'état quand
-  // des états plus forts le précèdent, et il tire alors « au moins » ce courant ; un permanent qui disjoncte, « dès » son seuil
-  const tire = p ? `${quand}, il tire ${!enPerm && p.duree < p.t ? 'au moins ' : ''}${amperes(p.i)}${enPerm ? '' : ' pendant ' + secondes(p.t)}` : '';
-  if (g && g.permanentOk === false) return `${A} : disjoncte — en permanent, il tire ${amperes(ch.perm || 0)} ; un ${A} disjoncte dès ${amperes(g.tenu)}.`;
-  if (g && g.valide) return adm ? `${A} : ne disjoncte pas — ${tire} ; ${enPerm ? '' : 'sur cette durée, '}un ${A} ne disjoncte qu’au-delà de ${amperes(adm)}.` : `${A} : ne disjoncte pas — ${tire || 'le profil reste sous sa courbe'}.`;
-  if (g && g.somme > 1 && p && !enPerm && adm && p.i <= adm) return `${A} : disjoncte — ${tire} ; chaque pointe passe seule, mais enchaînées elles le chauffent jusqu’à disjoncter.`;
-  const tc = q && isFinite(q.temps) ? q.temps : null;
-  return `${A} : disjoncte — ${tire}${adm ? ` ; ${enPerm ? '' : 'sur cette durée, '}un ${A} disjoncte dès ${amperes(adm)}` : ''}${tc ? ` : il disjoncte au bout de ${secondes(tc)}` : ''}.`; }
+/* (v86) la même phrase que la conclusion (08-disjoncteurs, `motsDuCalibre` : le point qui décide de la ligne de la gamme,
+   `g.pire` — le moteur ne rejuge plus tout le profil pour une bulle), en une ligne : « 10 A : ne disjoncte pas — au
+   démarrage, il tire 9,31 A pendant 2,1 min ; ce calibre ne disjoncte qu’au-delà de 9,66 A sur cette durée. » */
+function calibreEnClair(d, cal) { const A = amperes(cal), m = typeof motsDuCalibre === 'function' ? motsDuCalibre(d, cal) : null;
+  if (!m) return `${A} : pas jugé — le profil de charge manque.`;
+  return `${A} : ${m.cle === 'passe' ? 'ne disjoncte pas' : 'disjoncte'}${m.detail ? ' — ' + m.detail.charAt(0).toLowerCase() + m.detail.slice(1) : '.'}`; }
 function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origineDuCalibre(nom, d), H = app.simu || HYPOTHESES;
   const rows = lignesFilsDisjoncteur(nom, d), nL = rows.filter(r => r.l && !(r.l.longueur > 0)).length;
   // (v74 : ce qui est supposé, dit une fois et en clair — `noteSupposes` ; plus d'italique)
@@ -1340,10 +1339,8 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     o.calRetest && o.calRetest !== cal ? { html: `Votre fichier porte <b class="id">${esc(o.pnRetest || amperes(o.calRetest))}</b>, un ${esc(amperes(o.calRetest))} : il ${esc(motDuVerdict(cleDuVerdict(gamme.find(g => g.calibre === o.calRetest) || {})) || 'ne passe pas')}.`, source: 'fichier', etat: 'ko', va: { onglet: 'calibre', vers: '.vu-cals', mot: 'les calibres' } } : propose ? { html: `Votre fichier porte un <b>${esc(amperes(d.pn))}</b> : il ${esc(motDuVerdict(cleDuVerdict(d.gPn)))}.`, source: 'fichier', etat: 'ko', va: { onglet: 'calibre', vers: '.vu-cals', mot: 'les calibres' } } : null,
     cal ? { html: d.origine === 'main' ? `Retenu à la main : <b>${esc(amperes(cal))}</b>. VOLTA aurait pris ${esc(amperes(d.passe || cal))}.` : `VOLTA retient le plus petit qui ne disjoncte pas : <b>${esc(amperes(cal))}</b>${pn ? ` (<span class="id">${esc(pn)}</span>)` : ''}.`, source: d.origine === 'main' ? 'main' : 'calcul', etat: v.etat === 'ko' ? 'ko' : 'ok', detail: calcul, va: { onglet: 'calibre', vers: '[data-part="courbe"]', mot: 'la courbe' } } : null,
     pire ? { html: `Ses ${rows.length > 1 ? rows.length + ' câbles portent' : 'câble porte'} au plus <b>${Math.round(pire.charge.r * 100)} %</b> de ce qu’${rows.length > 1 ? 'ils admettent' : 'il admet'}.`, source: 'norme', mot: 'EN 2853', etat: pire.charge.r > 1 ? 'ko' : '', va: { onglet: 'essentiel', vers: '.vu-arbre', mot: 'ses câbles' } } : null];
-  const explique = cal && !d.sansProfil ? `<ul class="vu-explique">${[o.calRetest && o.calRetest !== cal ? o.calRetest : propose ? d.pn : null, cal].filter(Boolean).map(c => { const g = gamme.find(x => x.calibre === c), k = cleDuVerdict(g || {}); return `<li class="${k === 'passe' ? 'ok' : 'ko'}"><i></i><span>${esc(calibreEnClair(d, c)).replace(/^([^—]+—)/, '<b>$1</b>')}</span></li>`; }).join('')}</ul>${(() => { const mini = (gamme.find(g => g.valide && g.catalogue !== false) || {}).calibre, deFichier = d.pn && Math.abs(d.pn - cal) < 1e-9 && d.origine !== 'main';
-    // (v81, le lecteur : « 10 A retenu, or 7,5 en vert ne disjoncte pas : bizarre ») : le retenu est celui du fichier — il ne
-    // disjoncte pas, VOLTA le garde ; on dit qu'un plus petit suffirait, et comment le prendre
-    return deFichier && mini && mini < cal - 1e-9 ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(mini))} — un clic sur lui, dans l’onglet Calibre, le retient.</p>` : ''; })()}<p class="vu-seuil">Le seuil de chaque calibre se lit sur sa courbe à 125 °C, le cas le plus chaud du tableau.</p>` : '';
+  /* (v86) « Courant appelé et calibres » — la conclusion en grand, le courant qui s'écoule dans ses barres, les calibres en
+     ampères, la note du fichier — : 08-disjoncteurs, `courantAppele` */
   const touches = gamme.length ? `<div class="vu-cals" role="group" aria-label="Les calibres de la gamme">${gamme.map(g => { const k = cleDuVerdict(g), on = g.calibre === cal, fic = o.calRetest === g.calibre || (propose && d.pn === g.calibre);
       return `<button type="button" class="vu-cal ${k === 'passe' ? 'oui' : 'non'}${on ? ' on' : ''}${fic ? ' fichier' : ''}" data-nv-cal="${g.calibre}" aria-pressed="${on}" data-bulle="${escA((phraseDe(g.calibre) || amperes(g.calibre) + ' : il ' + motDuVerdict(k)) + (fic ? ' — c’est celui de votre fichier' : '') + (on ? ' — retenu' : ' — un clic le retient'))}"><b>${esc(nombre(g.calibre))}<small>A</small></b><small>${esc(on ? (d.pn && Math.abs(d.pn - g.calibre) < 1e-9 && d.origine !== 'main' ? 'fichier' : 'retenu') : fic ? 'actuel' : '')}</small></button>`; }).join('')}</div>`
     + `<p class="vu-legende"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="ret"></i>retenu</span>${o.calRetest || propose ? '<span><i class="act"></i>actuel : celui de votre fichier</span>' : ''}</p>` : '';
@@ -1355,7 +1352,7 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     + `<button type="button" class="nv-am-b" data-am-cal="${escA(nom)}" aria-pressed="${manCal}" data-bulle="${escA(manCal ? 'Retenu à la main — un clic sur un autre calibre le retient' : 'Prendre un calibre vous-même : un clic dessus le retient')}">Manuel</button></span>` : '';
   const onglets = [
     { cle: 'essentiel', statut: { t: cal ? amperes(cal) + (v.etat === 'ko' ? ', disjoncte' : ', ne disjoncte pas') : 'sans calibre', etat: v.etat === 'ko' ? 'ko' : cal ? 'ok' : '' },
-      contenu: `<section class="vu-bloc"><h4 class="vu-titre">Courant appelé et calibres</h4>${chargeVue(d, o, largeurVue())}${legendeChargeVue()}${explique}</section>${pourquoiVue('Comment VOLTA a choisi le calibre', etapes)}`
+      contenu: `<section class="vu-bloc vu-bloc-courant"><h4 class="vu-titre">Courant appelé et calibres</h4>${courantAppele(nom, d, o)}</section>${pourquoiVue('Comment VOLTA a choisi le calibre', etapes)}`
         + `<section class="vu-bloc"><h4 class="vu-titre">Ce qu’il alimente <span>${esc(pluriel(rows.length, 'câble'))}</span></h4>${arbreVue(nom, cal, rows)}</section>` },
     { cle: 'calibre', statut: { t: d.sansProfil ? 'profil à écrire' : ch.perm ? 'profil ' + amperes(ch.perm) + (ch.pointe ? ' · ' + amperes(ch.pointe) : '') : '', etat: d.sansProfil ? 'att' : '' },
       contenu: (decision || '') + (touches ? `<section class="vu-bloc vu-bloc-cal"><h4 class="vu-titre nv-am-t">Le calibre <span>${esc(manCal ? 'retenu à la main' : v.etat === 'ko' ? 'choisi par VOLTA' : d.pn && cal && Math.abs(d.pn - cal) < 1e-9 ? 'celui de votre fichier : il ne disjoncte pas' : 'le plus petit qui ne disjoncte pas')}</span>${amCal}</h4>${touches}</section>` : '') + (P.profil || '') + (P.courbe || '') + (P.profil ? '' : sD.contenu || '') },
@@ -1497,7 +1494,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
       + (broB ? `<section class="vu-bloc vu-bloc-bro"><h4 class="vu-titre">Ce qu’elle relie <span>${esc(lies([pluriel(nf || consG.reduce((n, g) => n + g.lignes.length, 0), 'câble'), pluriel(groupesV.length, 'groupe')]))}</span></h4>${broB}</section>` : '')) + pourquoiVue('Comment VOLTA a choisi ' + (Q.modules.length > 1 ? 'les modules' : 'le module'), etapesB);
   const sF = sections.find(x => x && x.cle === 'fils'), sD = sections.find(x => x && x.cle === 'dejafait');
   const onglets = [
-    { cle: 'essentiel', statut: { t: M0 ? prisSur(Q.utilises || 0, places, '') : aPoser ? 'à poser' : 'aucun module', etat: refuses.length || (!M0 && !aPoser) ? 'ko' : 'ok' }, contenu: essB },
+    { cle: 'essentiel', statut: M0 ? statutContacts(Q.utilises || 0, places, refuses.length ? 'ko' : 'ok') : { t: aPoser ? 'à poser' : 'aucun module', etat: !aPoser ? 'ko' : 'ok' }, contenu: essB },
     ongletCables(sF), ongletFabrication(fabB, 'Ce qu’il faut pour la monter'),
     /* (v85) MODIFIER, en trois sortes — DANS VOTRE FICHIER : le module que votre fichier écrit, quand VOLTA en retient un autre ;
        CHOIX DE VOLTA : le module (Automatique | Manuel : tous les modules de la norme, dessinés) ; INFORMATION : le rail (il
@@ -1736,7 +1733,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     + pourquoiVue('Comment VOLTA a choisi la prise', etapesP);
   const sF = sections.find(x => x && x.cle === 'fils'), sD = sections.find(x => x && x.cle === 'dejafait');
   const onglets = [
-    { cle: 'essentiel', statut: { t: M ? prisSur(nPris, places, '') : 'aucun arrangement', etat: !M || koP ? 'ko' : 'ok' }, contenu: essP },
+    { cle: 'essentiel', statut: M ? statutContacts(nPris, places, koP ? 'ko' : 'ok') : { t: 'aucun arrangement', etat: 'ko' }, contenu: essP },
     ongletCables(sF), ongletFabrication(fabP, 'Ce qu’il faut pour la monter'),
     /* (v85) MODIFIER, en trois sortes — DANS VOTRE FICHIER : sa référence ; CHOIX DE VOLTA : l'arrangement, le sexe des
        contacts, le raccord (Automatique | Manuel chacun) ; INFORMATION : les contacts à sertir de chaque côté, qui suivent */
@@ -1893,7 +1890,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   // l'intensité : au pire du permanent et de la pointe, « sur » ce qu'il admet pour cette durée ; dessous, en clair, l'autre
   // régime et d'où vient le courant (son disjoncteur en puce, ou l'hypothèse)
   const dT = x.pointe ? ' pendant ' + secondes(x.pointe.t) : '';
-  const dI = !x.fn ? '' : (pointeI ? esc(`Au pire, ${x.pointe.nom || 'la pointe'}${dT}${Math.abs(x.pointe.admis - x.continu) > 0.05 ? ' (sur cette durée, il admet plus qu’en continu)' : ''}. En continu : ${amperes(x.I)} sur ${amperes(x.continu)}.`)
+  // (v86) sans type, le courant se lit quand même : d'où il vient, comme pour les autres
+  const dI = (!x.fn ? '' : pointeI ? esc(`Au pire, ${x.pointe.nom || 'la pointe'}${dT}${Math.abs(x.pointe.admis - x.continu) > 0.05 ? ' (sur cette durée, il admet plus qu’en continu)' : ''}. En continu : ${amperes(x.I)} sur ${amperes(x.continu)}.`)
       : x.pointe && x.pointe.admis ? esc(`En continu, au pire. ${majuscule(x.pointe.nom || 'la pointe')} : ${amperes(x.pointe.i)}${dT}, sur ${amperes(x.pointe.admis)} admis.`) : esc('En continu.'))
     // (v84, l'agent « câbles ») côté source du disjoncteur (vers une batterie, une génératrice, un TR), il n'est pas sous sa
     // protection ; sans profil de charge, le courant retenu est le calibre du disjoncteur — chaque cas se dit tel qu'il est
@@ -1902,7 +1900,10 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       : x.al && x.source === 'branche' && x.aval ? ` ${esc('Sa branche : ' + x.aval.bouts.join(', ') + ', ' + (x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite') + ' (sous')} ${source}${esc(').')}`
       : x.al && x.totalFaute ? ` ${esc('Courant total de')} ${source} ${esc(': la consommation de ce qui est en aval n’est pas écrite.')}`
       : x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
-  const intens = !x.fn ? `<p class="fi-note">${l.type ? 'Hors de l’EN 2853 : ce qu’il admet ne se lit pas.' : 'Sans type, ce qu’il admet ne se lit pas.'}</p>`
+  // (v86, le lecteur : « un câble sans type n'a pas de courant affiché : le courant doit se lire quand même ») : la valeur, sans
+  // barre ni anneau (la part de l'admis est impossible), et pourquoi en clair
+  const motInconnu = l.type ? l.type + ' n’est pas dans l’EN 2853' : 'votre fichier ne donne pas son type';
+  const intens = !x.fn ? mesure('Courant', '', `<b>${esc(amperes(x.I))}</b> <span class="fi-mes-inc">${esc(l.type ? 'hors norme : admis inconnu' : 'sans type : admis inconnu')}</span>`, null, '', esc(majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas, VOLTA ne peut pas dire s’il porte ce courant.') + dI, bulleI)
     : mesure('Courant', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
   // la chute : en ligne depuis le disjoncteur jusqu'au bout du chemin, sur ce qui est admis ; dessous, le chemin, la part de
   // ce câble, la pointe qui dépasse (de la couleur de sa mesure) — les longueurs supposées sont dites une fois, sous les tuiles
@@ -1920,7 +1921,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const fin = neuf ? null : seul || plusFinQuiTient(l, prot && prot.calEcrit), cause = causeDuCable(l, prot, fin);
   const reparer = fin && !cause ? `<p class="fi-reparer-l"><span>${esc(majuscule(fin.pourquoi))} : <b class="id">${esc(fin.type)}</b> (${esc(String(jaugeDuType(fin.type)))} AWG)${(m => m ? ` <span class="fi-cout">· ${esc(m)}</span>` : '')(coutDuType(l, fin.type))}</span><button type="button" class="btn papier fi-reparer" data-reparer="${escA(cleFil(l))}" data-type="${escA(fin.type)}" data-bulle="${escA(majuscule(cableDit(l)) + ' passe en ' + fin.type + (coutDuType(l, fin.type) ? ' (' + coutDuType(l, fin.type) + ')' : '') + ' — une entrée d’historique, Ctrl+Z le rend')}">Passer en ${esc(fin.type)}</button></p>` : '';
   // le résumé, section pliée, dit les deux valeurs (v74 : l'intensité n'a plus de tuile) — « 9,31 A sur 21 A · chute 0,37 V sur 2 V »
-  const resumeI = !x.fn ? 'ce qu’il admet ne se lit pas' : [`${esc(amperes(iV))} sur ${esc(amperes(iA))}`, ch.total ? `chute ${esc(volts(ch.total.dU))}${ch.max != null ? ' sur ' + esc(volts(ch.max)) : ''}` : ch.dU != null ? 'chute ' + esc(volts(ch.dU)) : ''].filter(Boolean).join(' · ');
+  const resumeI = !x.fn ? esc(amperes(x.I)) + ' · ce qu’il admet ne se lit pas' : [`${esc(amperes(iV))} sur ${esc(amperes(iA))}`, ch.total ? `chute ${esc(volts(ch.total.dU))}${ch.max != null ? ' sur ' + esc(volts(ch.max)) : ''}` : ch.dU != null ? 'chute ' + esc(volts(ch.dU)) : ''].filter(Boolean).join(' · ');
   const sections = [{ cle: 'trajet', resume: esc(`${l.de}${l.borneDe ? ':' + l.borneDe : ''} → ${l.vers}${l.borneVers ? ':' + l.borneVers : ''}`), badge: badgeProblemes(probs, 'trajet'), contenu: trajet },
     { cle: 'fils', titre: 'Intensité et chute', resume: insecable(resumeI), badge: badgeProblemes(probs, 'fils') || (x.fn ? { t: ico('coche'), etat: 'ok' } : { t: '—', etat: '' }), contenu: `<div class="fi-mesures">${intens}${chute}</div>${reparer}` }];
   const id = identite([l.route ? 'route ' + esc(l.route) : '', esc(motFolios(neuf ? [] : foliosDe(l).map(String)))]);
@@ -1986,16 +1987,18 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       pourquoi: ctMain.length ? 'Choisi ici côté ' + ctMain.map(k => esc(l[k])).join(' et ') + '.' : 'Un par bout, lu dans la table de la norme.',
       manuel: ctMain.length > 0, auto: 'sertirs:' + ctMain.map(k => cts[k].ks).join(';'), vers: '[data-reg="les-contacts"]', motAuto: 'Les contacts à sertir reviennent à ceux de la table.' }
       : sansCt.length ? { sorte: 'info', titre: 'Les contacts à sertir', valeur: 'à préciser', etat: 'att', source: 'norme', pourquoi: `La norme côté ${sansCt.map(r => ident(r)).join(' et ')} est inconnue : ils viendront avec elle.` } : null,
-    x.fn ? { sorte: 'info', titre: 'Courant et chute', valeur: `${esc(amperes(iV))} <small>sur ${esc(amperes(iA))}</small>` + (ch.total ? ` · ${esc(volts(ch.total.dU))}${ch.max != null ? ` <small>sur ${esc(volts(ch.max))}</small>` : ''}` : ch.dU != null ? ' · ' + esc(volts(ch.dU)) : ''), source: 'calcul', etat: classeMesure(r.charge.r) === 'ko' || etatU === 'ko' ? 'ko' : '', pourquoi: 'Ils suivent le type, la longueur, la charge.' } : null],
+    x.fn ? { sorte: 'info', titre: 'Courant et chute', valeur: `${esc(amperes(iV))} <small>sur ${esc(amperes(iA))}</small>` + (ch.total ? ` · ${esc(volts(ch.total.dU))}${ch.max != null ? ` <small>sur ${esc(volts(ch.max))}</small>` : ''}` : ch.dU != null ? ' · ' + esc(volts(ch.dU)) : ''), source: 'calcul', etat: classeMesure(r.charge.r) === 'ko' || etatU === 'ko' ? 'ko' : '', pourquoi: 'Ils suivent le type, la longueur, la charge.' }
+      : { sorte: 'info', titre: 'Courant', valeur: esc(amperes(x.I)), source: 'calcul', pourquoi: esc(majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas.') }],
     ctsMots.length ? regCarte('Les contacts à sertir', 'Un clic sur un contact montre ceux de sa taille : un autre se retient d’un clic.', `<ol class="fi-chemin" style="--c:${coul}">${etapes}</ol>${choixCt}`, { reg: 'les-contacts' }) : '');
   const onglets = [
-    { cle: 'essentiel', statut: { t: x.fn ? amperes(iV) + ' sur ' + amperes(iA) : l.type ? 'hors EN 2853' : 'sans type', etat: probs.some(q => q.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: essF },
+    { cle: 'essentiel', statut: { t: x.fn ? amperes(iV) + ' sur ' + amperes(iA) : neuf ? 'à créer' : amperes(x.I) + (l.type ? ', hors norme' : ', sans type'), etat: probs.some(q => q.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: essF },
     ongletFabrication(fabF, 'Ce qu’il faut pour le poser'),
     reglagesF];
   // (v84) LES CHIFFRES de la carte : trois mesures, de même nature — le courant et la chute contre l'admis, la longueur ;
   // (v85) la longueur se lit (elle vient du fichier) : un clic mène à Modifier, qui dit d'où elle vient ; le type est le titre
   const chiffres = neuf ? [{ k: 'Type', v: l.type ? `<span class="id">${esc(l.type)}</span>` : '—' }, { k: 'Gauge', v: jauge != null ? valeurU(jauge, 'AWG') : '—' }] : [
-    x.fn ? { k: 'Courant', v: valeurU(nombreA(iV), 'A'), barre: r.charge.r, etat: classeMesure(r.charge.r) === 'ko' ? 'ko' : '', bulle: 'sur ' + amperes(iA) + ' admis' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' } : null,
+    x.fn ? { k: 'Courant', v: valeurU(nombreA(iV), 'A'), barre: r.charge.r, etat: classeMesure(r.charge.r) === 'ko' ? 'ko' : '', bulle: 'sur ' + amperes(iA) + ' admis' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' }
+      : { k: 'Courant', v: valeurU(nombreA(x.I), 'A'), bulle: majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' },
     ch.total || ch.dU != null ? { k: 'Chute', v: valeurU(volts(ch.total ? ch.total.dU : ch.dU).replace(/ V$/, ''), 'V'), barre: rU, etat: etatU === 'ko' ? (ch.reel ? 'ko' : 'att') : '', bulle: (ch.max != null && ch.total ? 'sur ' + volts(ch.max) + ' admis' : 'sur ce câble seul') + (ch.reel ? '' : ' — longueurs supposées'), onglet: 'fils' } : null,
     { k: 'Longueur', v: `${L == null ? '<i class="nv-env" aria-hidden="true">≈</i>' : ''}${esc(nombre(L != null ? arrondi(L, 2) : H.longueur))}<small>m</small>`, etat: L == null ? 'supp' : '', bulle: L == null ? 'Supposée : votre fichier ne la donne pas — à écrire dans votre fichier' : 'Celle de votre fichier', onglet: 'reglages' }];
   // le geste qui répare : « Tout régler » quand son disjoncteur est la cause, sinon le plus fin qui tient, sinon la gauge qui se loge

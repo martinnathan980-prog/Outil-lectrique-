@@ -33,8 +33,9 @@
 
    UNE SEULE FAMILLE DE MATIÈRES : le graphite chaud et le cuivre. La nuit bleue est partie.
    · LA TABLE (page.html `#table`, 08-table, style-table.css) : sous tout, d'un bord à l'autre. La nuit : un GRAPHITE
-     CHAUD dégradé, une lumière de cuivre au coin haut-droit ; le jour (v85) : un LIN, sable chaud et présent (pas du
-     blanc : le folio s'en détache), une lumière blanche au même coin. Le folio y est une feuille blanche posée d'une ombre douce, un liseré le jour.
+     CHAUD dégradé, une lumière de cuivre au coin haut-droit ; le jour (v86) : l'ALUMINIUM, un gris neutre (aucune teinte :
+     le blanc du papier reste blanc, les couleurs des fils restent justes ; pas du blanc : le folio s'en détache à 1,6:1),
+     une lumière blanche au même coin. Le folio y est une feuille blanche posée d'une ombre douce, un liseré le jour.
      L'accueil (la bibliothèque) reste sur le graphite dans les deux thèmes (la charte) : il garde ses jetons à lui.
    · LE CADRE (la barre du haut, le rail, les folios, le zoom, les menus, le mot qui passe, les outils d'un PDF) :
      des PALETS qui suivent le thème — clairs le jour, graphite la nuit, graphite toujours sur l'accueil. Plus de chrome
@@ -49,9 +50,10 @@
    OÙ SONT LES JETONS
    · ici, `:root` : la base, et le GRAPHITE de la table et du cadre (la nuit, l'accueil) ; les feuilles du jour, puis
      celles de la nuit (les deux blocs « le thème sombre ») ; l'îlot du cadre (le graphite, `#entete,#rail…`) ;
-   · style-z-cadre.css (chargé après les couches anciennes : le dernier mot du cadre) : LE JOUR DU PLAN — le lin de la
-     table et le cadre clair —, et ce que des couches plus anciennes (style-table.css, style-v79.css) redéfinissaient
-     encore en bleu.
+   · style-z-cadre.css (chargé après les couches anciennes : le dernier mot du cadre) : LE JOUR DU PLAN — l'aluminium de
+     la table et le cadre clair —, et ce que des couches plus anciennes (style-table.css, style-v79.css) redéfinissaient
+     encore en bleu ; style-z-couleur.css : ce qui, posé sur la table du jour, doit en prendre la neutralité (l'ombre de
+     la carte et du grand).
    LES JETONS (v84), ce qu'ils disent :
    · la table : --s-app (sa couleur moyenne), --table-fond, --table-lueur, --nappe-a/-b, --grille-repos,
      --s-grille-revele, --courant ; ce qui s'écrit dessus : --t-table, --t-table-2, --t-table-warn, --t-table-ko,
@@ -2361,9 +2363,9 @@ body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-lueur{display:
    flèches. */
 #planche[data-prise="bloc"] #svg *{cursor:pointer}
 
-/* LE ZOOM DE LECTURE (v85 : il remplace le zoom sémantique, qui taisait sous 7 px d'écran les bornes, les pastilles, les
-   lettres des connecteurs — le lecteur : « au folio 6, les bornes n'apparaissent pas, sauf si je zoome beaucoup ou si je
-   survole ; de base, rien ne doit être caché ») : style-z-plan.css. */
+/* LE DESSIN EST FIXE (v86, style-z-plan.css) : aucune écriture ne grandit ni ne se tait au zoom. Le texte du folio se dessine
+   à ses mesures exactes (06 `styleDessin`, `text-rendering:geometricPrecision` : sans lui, les chasses s'arrondissaient au
+   pixel autrement à chaque échelle, et un numéro centré glissait jusqu'à 0,75 unité quand on zoomait). */
 #planche svg text,#planche svg .halo{transition:opacity var(--d-rapide) var(--courbe)}
 
 /* LE REPÈRE DESSINÉ PLUSIEURS FOIS (08 `peindreChoix`) : ses autres occurrences, des crochets en pointillé */
@@ -7722,6 +7724,125 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 .nv-grand .nv-panneau .dj-etats .dj-plus{min-height:46px;padding:0 22px}
 .nv-grand .nv-panneau .dj-profil>.fi-choix{margin:0}
 
+/* ═══ v86 — LE COURANT, LA CONCLUSION, LE PROFIL SUR SA COURBE ══════════════════════════════════════════════════════
+   Le lecteur : « plus interactif : du courant qui avance sur les deux barres ; les calibres en ampères ; une conclusion
+   que tout le monde comprenne » ; « le profil et le graphique sont liés : je veux écrire le profil en voyant le graphique » ;
+   « "ne disjoncterait qu'après 36 min" : on le voit sur le graphique, rester propre ». */
+
+/* ── 3. LA CONCLUSION : la marque du verdict, une phrase grande ; le détail dessous, à l'encre seconde ── */
+.dj-concl{display:flex;flex-direction:column;gap:5px;margin:0}
+.dj-concl>p{margin:0}
+.dj-concl-t{display:flex;align-items:center;gap:10px;font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.011em;color:var(--t-1)}
+.dj-concl-t svg.dj-marque{flex:none;width:22px;height:22px;padding:4px;border-radius:50%;box-sizing:border-box;stroke-width:2.6}
+.dj-concl.ok .dj-concl-t svg.dj-marque{background:var(--ok-soft);color:var(--ok)}
+.dj-concl.ko .dj-concl-t svg.dj-marque{background:var(--ko-soft);color:var(--ko)}
+.dj-concl.ko .dj-concl-t span{color:var(--ko)}
+.dj-concl-d{padding-left:32px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty;cursor:help}
+/* en grand, sur l'essentiel : LA phrase qu'on lit d'abord */
+.dj-concl-g .dj-concl-t{gap:12px;font-size:var(--f-20);letter-spacing:-.018em}
+.dj-concl-g .dj-concl-t svg.dj-marque{width:28px;height:28px;padding:6px}
+.dj-concl-g .dj-concl-d{padding-left:40px;font-size:var(--f-14)}
+/* le calibre de votre fichier, quand VOLTA en retient un autre : une ligne, plus calme */
+.dj-concl-fic{display:flex;align-items:flex-start;gap:10px;margin:-4px 0 0;padding-left:6px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty}
+.dj-concl-fic svg.dj-marque{flex:none;width:18px;height:18px;margin-top:1px;padding:3px;border-radius:50%;box-sizing:border-box}
+.dj-concl-fic.ko svg.dj-marque{background:var(--ko-soft);color:var(--ko)} .dj-concl-fic.ok svg.dj-marque{background:var(--ok-soft);color:var(--ok)}
+.dj-concl-fic b{font-weight:600;color:var(--t-1)}
+/* l'aperçu d'un autre calibre (le survol de l'échelle) : la même phrase, en retrait */
+.dj-ca.apercu .dj-concl-g{opacity:.86}
+
+/* ── 4. COURANT APPELÉ ET CALIBRES : une barre par point du profil, le courant qui s'y écoule ── */
+.dj-ca{display:flex;flex-direction:column;gap:18px;margin-top:12px}
+.dj-flux{display:flex;flex-direction:column;gap:14px;margin:4px 0 0}
+.dj-fx-l,.dj-fx-echelle{display:grid;grid-template-columns:112px minmax(0,1fr);column-gap:18px;align-items:end}
+.dj-fx-nom{display:flex;flex-direction:column;gap:1px;min-width:0;padding-bottom:0}
+.dj-fx-nom b{font:600 var(--f-13)/1.25 var(--sans);color:var(--t-1)}
+.dj-fx-nom small{display:flex;align-items:center;min-height:15px;font:500 var(--f-12)/1.25 var(--sans);color:var(--t-3);font-variant-numeric:tabular-nums}
+.dj-fx-nom small svg.ico{width:15px;height:15px}
+/* la piste : l'échelle des ampères ; la place de la valeur au-dessus */
+.dj-fx-piste{position:relative;height:12px;margin-top:22px;border-radius:6px;background:var(--n-rail,color-mix(in srgb,var(--t-1) 8%,var(--s-surface)))}
+/* la barre : le cuivre (le démarrage plus clair), et LE COURANT QUI S'ÉCOULE — un reflet qui court, à sa vitesse (--flux) */
+.dj-fx-barre{position:absolute;left:0;top:0;bottom:0;min-width:12px;border-radius:6px;overflow:hidden;background:var(--nv-cuivre);transition:width .32s var(--courbe)}
+.dj-fx-l.pointe .dj-fx-barre{background:color-mix(in srgb,var(--nv-cuivre) 58%,var(--s-surface))}
+.dj-fx-barre::after{content:"";position:absolute;top:0;bottom:0;left:-22px;right:0;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,0) 0,rgba(255,255,255,0) 7px,rgba(255,255,255,.42) 12px,rgba(255,255,255,0) 17px,rgba(255,255,255,0) 22px);
+  animation:dj-flux var(--flux,1s) linear infinite;will-change:transform}
+@keyframes dj-flux{to{transform:translateX(22px)}}
+/* LA ZONE OÙ LE CALIBRE DISJONCTE, pour la durée de cette barre : du seuil au bout, un rouge léger, par-dessus la barre (la
+   part de la barre qui y entre rougit) ; elle glisse quand on survole un autre calibre */
+.dj-fx-zone{position:absolute;top:-3px;bottom:-3px;right:0;z-index:1;border-radius:0 7px 7px 0;background:color-mix(in srgb,var(--ko) 15%,transparent);box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ko) 75%,transparent);
+  transition:left .34s var(--courbe);pointer-events:none}
+/* sa valeur, au-dessus du bout de la barre */
+.dj-fx-val{position:absolute;bottom:calc(100% + 5px);transform:translateX(-100%);font:600 var(--f-13)/1 var(--sans);letter-spacing:-.005em;color:var(--t-1);white-space:nowrap;font-variant-numeric:tabular-nums;transition:left .32s var(--courbe)}
+.dj-fx-l.ko .dj-fx-val,.dj-fx-l.ko .dj-fx-nom b{color:var(--ko)}
+.dj-fx-l[data-bulle]{cursor:help}
+/* l'échelle : un filet, un point par calibre (vert, rouge), son chiffre en ampères ; le retenu dans sa pastille de cuivre */
+.dj-fx-echelle{align-items:start;margin-top:2px}
+.dj-fx-cals{position:relative;height:50px;border-top:1px solid var(--s-line-2)}
+.dj-fx-cal{position:absolute;top:-4px;display:flex;flex-direction:column;align-items:center;gap:5px;transform:translateX(-50%);outline:none;cursor:default}
+.dj-fx-cal>i{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px var(--n-carte,var(--s-surface))}
+.dj-fx-cal.non>i{background:var(--ko)}
+.dj-fx-cal>b{display:inline-flex;align-items:baseline;gap:1px;height:20px;padding:0 6px;border-radius:7px;align-items:center;font:600 var(--f-12)/1 var(--sans);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums;transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide)}
+.dj-fx-cal>b small{font:500 11px/1 var(--sans);color:var(--t-3);margin-left:2px}
+.dj-fx-cal>em{margin-top:-2px;font:600 var(--f-11)/1 var(--sans);font-style:normal;color:var(--t-3);white-space:nowrap}
+.dj-fx-cal.tu>b,.dj-fx-cal.tu>em{visibility:hidden}
+.dj-fx-cal.ret>b{background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1.5px var(--nv-cuivre);color:var(--t-1)}
+.dj-fx-cal.ret>em{color:var(--nv-cuivre)}
+.dj-fx-cal.fic:not(.ret)>b{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--t-2) 55%,transparent);outline:none;background-image:none}
+.dj-fx-cal.fic:not(.ret)>b{border:1.5px dashed color-mix(in srgb,var(--t-2) 65%,transparent);box-shadow:none;padding:0 5px}
+/* survolé (ou parcouru au clavier) : il se lève, ses zones s'affichent */
+.dj-fx-cal:is(:hover,:focus-visible,.vu)>b{background:color-mix(in srgb,var(--t-1) 8%,transparent);color:var(--t-1)}
+.dj-fx-cal.tu:is(:hover,:focus-visible,.vu)>b{visibility:visible}
+.dj-fx-cal:focus-visible>b{box-shadow:0 0 0 2px var(--nv-cuivre)}
+.dj-fx-cal.ret:is(:hover,:focus-visible)>b{background:var(--nv-cuivre-soft)}
+/* la légende : deux mots, la zone, le fichier */
+.dj-fx-leg{display:flex;flex-wrap:wrap;gap:6px 18px;margin:-6px 0 0;font:400 var(--f-12)/1.3 var(--sans);color:var(--t-3)}
+.dj-fx-leg>span{display:inline-flex;align-items:center;gap:7px}
+.dj-fx-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.dj-fx-leg i.ko{background:var(--ko)}
+.dj-fx-leg i.zone{width:16px;height:10px;border-radius:0 4px 4px 0;background:color-mix(in srgb,var(--ko) 15%,transparent);box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ko) 75%,transparent)}
+.dj-fx-leg i.fic{width:16px;height:10px;border-radius:4px;background:none;border:1.5px dashed color-mix(in srgb,var(--t-2) 65%,transparent);box-sizing:border-box}
+.dj-ca>.vu-fichier{margin:0}
+/* à l'ouverture de la fiche, les barres se remplissent */
+.fi.fondu .dj-fx-barre{animation:dj-fx-entre .7s var(--courbe) both}
+@keyframes dj-fx-entre{from{clip-path:inset(0 100% 0 0 round 6px)}to{clip-path:inset(0 0 0 0 round 6px)}}
+@media (prefers-reduced-motion:reduce){ .dj-fx-barre::after{animation:none} .fi.fondu .dj-fx-barre{animation:none} .dj-fx-zone,.dj-fx-barre,.dj-fx-val{transition:none} }
+
+/* ── 5. LE PROFIL ET SA COURBE, ensemble : côte à côte quand la carte le permet (700 px), sinon l'un sous l'autre, collés ── */
+.nv-grand .nv-panneau>.dj-profil{container:dj-pc / inline-size}
+.dj-pc{display:flex;flex-direction:column;gap:16px;min-width:0}
+.dj-pc-g{display:flex;flex-direction:column;gap:14px;min-width:0}
+.dj-pc-d{min-width:0;border-radius:var(--r-2)}
+.dj-pc-sous{display:inline-flex;align-items:baseline;gap:6px;font:400 var(--f-13) var(--sans);letter-spacing:0;color:var(--t-3)}
+@container dj-pc (min-width:700px){
+  .dj-pc{display:grid;grid-template-columns:312px minmax(0,1fr);gap:20px;align-items:start}
+  /* le tableau, serré dans sa colonne : l'état plus large, les deux chiffres, la croix */
+  .nv-grand .nv-panneau .dj-pc .dj-etats>:is(.dj-entete,.dj-etat){grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr) 34px;padding-left:16px}
+  .nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span{letter-spacing:.04em}
+  .nv-grand .nv-panneau .dj-pc .dj-etat :is(.dj-champ,.dj-inf){width:min(100%,82px)}
+  .nv-grand .nv-panneau .dj-pc .dj-etats .dj-plus{padding:0 16px}
+  .nv-grand .nv-panneau .dj-pc .dj-etat .dj-x{width:28px;height:28px}
+}
+@container dj-pc (min-width:900px){
+  .dj-pc{grid-template-columns:360px minmax(0,1fr)}
+  .nv-grand .nv-panneau .dj-pc .dj-etat :is(.dj-champ,.dj-inf){width:min(100%,92px)}
+}
+/* sous le tableau, la conclusion, qui suit la saisie */
+.dj-concl-pc{padding:12px 14px 13px;border-radius:12px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.dj-concl-pc .dj-concl-t{font-size:var(--f-14)}
+.dj-concl-pc .dj-concl-t svg.dj-marque{width:20px;height:20px;padding:4px}
+.dj-concl-pc .dj-concl-d{padding-left:30px;font-size:var(--f-12)}
+/* plus de phrase sous un état qui ne disjoncte pas ; « disjoncte », en rouge, sous celui qui fait disjoncter */
+.dj-etats .dj-verdict:empty{display:none}
+/* une ligne et son point, allumés ensemble */
+.nv-grand .nv-panneau .dj-etats>.dj-etat.lie{background:var(--nv-cuivre-soft)}
+.dj-graphe .dj-pt.lie .dj-halo{fill:var(--t-papier);fill-opacity:.1}
+.dj-graphe .dj-pt.lie .dj-point{r:6px}
+/* les points GLISSENT quand le profil s'écrit (le même dessin, ses points déplacés : 08-disjoncteurs, `courbeVive`) */
+.dj-graphe .dj-prof .dj-point,.dj-graphe .dj-prof .dj-halo{transition:cx .24s var(--courbe),cy .24s var(--courbe),r .16s var(--courbe),fill .2s}
+.dj-graphe .dj-prof .dj-escalier{transition:d .24s var(--courbe),stroke .2s}
+.dj-graphe svg.tient .dj-prof :is(.dj-point,.dj-halo,.dj-escalier){transition:none}
+@media (prefers-reduced-motion:reduce){ .dj-graphe .dj-prof :is(.dj-point,.dj-halo,.dj-escalier){transition:none} }
+
 /* ───────── style-x-faces.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
    LES PLAGES D'UNE BARRETTE (v83, 08-vues `faceVue`, `faceZone`) — chargée en dernier.
@@ -7875,10 +7996,11 @@ svg.vu-face:not(.mini) .vu-zone-g:hover .vu-zone.libre{fill:color-mix(in srgb,va
   --nv-crayon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d9cfc5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16v4z'/%3E%3Cpath d='m13.5 6.5 4 4'/%3E%3C/svg%3E");
 }
 
-/* ─── LE JOUR : les mêmes lumières, en plus doux — la bande d'onglets prend un graphite chaud (l'espresso), la barre des
+/* ─── LE JOUR : les mêmes lumières, en plus doux — la bande d'onglets prend le GRAPHITE CHAUD de VOLTA (celui de la nuit
+   et de l'accueil ; v86 : l'espresso, brun, était la seule grande surface teintée sur la table d'aluminium), la barre des
    titres un dégradé de cuivre, la tête et les cartes un rien de lumière chaude, « Tout voir » le cuivre ─── */
 #inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet{
-  --n-bande:linear-gradient(180deg,#3a2f27 0%,#2f2620 100%);
+  --n-bande:linear-gradient(180deg,#34302d 0%,#2a2725 100%);
   --n-bande-ombre:inset 0 1px 0 rgba(255,214,180,.10);
   --n-barre:linear-gradient(180deg,#d98e55 0%,#a9581f 100%);
   --n-tete:radial-gradient(380px 130px at calc(100% - 120px) 50%,rgba(196,111,48,.08),rgba(196,111,48,0) 72%),#ffffff;
@@ -7888,7 +8010,7 @@ svg.vu-face:not(.mini) .vu-zone-g:hover .vu-zone.libre{fill:color-mix(in srgb,va
   --n-tout:linear-gradient(180deg,#fbf3ec 0%,#f6ebe1 100%); --n-tout-bord:#dfbb9c; --n-tout-t:#8a4516;
   --n-tout-survol:linear-gradient(180deg,#faefe6 0%,#f5e6d9 100%); --n-tout-lueur:0 8px 20px -10px rgba(169,88,31,.45);
   --n-nav-carte:transparent; --n-tout-t-survol:#8a4516;
-  --v-bande-2:#463930; --v-bande-s:#c9bcb0 }
+  --v-bande-2:#403c38; --v-bande-s:#c6bfb8 }
 
 /* ─── LA FICHE AGRANDIE : la tête, la bande, la page ─── */
 .nv-grand .nv-tete .fi-nav{background:var(--n-tete,var(--s-surface))}
@@ -8456,12 +8578,15 @@ body.du-biblio :is(#svg,#ombre,#rail,#folios){animation:du-biblio var(--d-lent) 
    1. LA TABLE DU PLAN, en GRAPHITE CHAUD (la nuit) : des couches plus anciennes (style-table.css, style-v79.css) la
       peignaient encore en bleu nuit, à même `body` — on la reprend ici, à la même place. L'accueil (`body.biblio`) garde
       la sienne (le graphite d'atelier, style-v79.css).
-   2. LE JOUR DU PLAN : la table devient un LIN (v85 : la « pierre claire » v84 était trop blanche, le folio ne s'en
-      détachait pas — 1,3:1 ; le lin le pose à 1,6:1, chaud et présent sans être coloré), le folio blanc s'en détache d'une
-      ombre portée douce et d'un liseré ; deux autres tables sont prêtes (le galet, le graphite clair : passe84/jour/notes.md,
-      à recopier dans les deux blocs) ; le cadre (barre du haut, rail, folios, zoom, menus, mot qui passe, outils d'un PDF) devient CLAIR, la bulle
-      devient sombre, le cuivre se fonce pour rester net sur le clair. Deux blocs aux mêmes valeurs : le réglage du
-      système, puis le choix explicite (data-theme) — comme la nuit dans style.css.
+   2. LE JOUR DU PLAN : la table devient l'ALUMINIUM (v86), un gris NEUTRE à la profondeur du lin. Pourquoi : un fond
+      teinté se voit dans le blanc du papier (le lin, beige, le faisait paraître « pas propre ») et décale les couleurs des
+      routes et des états ; un gris neutre les laisse justes, comme les fonds de travail des outils de couleur ; à 1,6:1
+      le folio s'en détache (la « pierre » v84, à 1,3:1, était trop blanche) ; le cuivre y reste le seul accent. Le folio
+      blanc s'en détache d'une ombre portée douce et d'un liseré ; trois autres tables sont prêtes (le grège, l'acier, le
+      graphite clair : passe84/couleur/notes.md, à recopier dans les deux blocs) ; le cadre (barre du haut, rail, folios,
+      zoom, menus, mot qui passe, outils d'un PDF) devient CLAIR à l'encre neutre, la bulle devient sombre, le cuivre se
+      fonce pour rester net sur le clair. Deux blocs aux mêmes valeurs : le réglage du système, puis le choix explicite
+      (data-theme) — comme la nuit dans style.css. La nuit (§ 1) ne change pas : le graphite chaud.
    3. CE QUE LES COUCHES ANCIENNES ÉCRIVAIENT EN DUR dans le cadre (style-v79.css : la barre du haut, la recherche, les
       rubriques d'Exporter ; style-table.css : la lueur et le courant de la table) : repris avec les jetons.
    Les jetons eux-mêmes sont décrits en tête de style.css.
@@ -8485,80 +8610,85 @@ body:not(.biblio) #table .ta-courant::after{background:color-mix(in srgb,var(--g
 /* ─── 2. LE JOUR DU PLAN — le réglage du système ─── */
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]) body:not(.biblio){
-    /* la table : le LIN — un sable chaud, plus présent que la pierre (le folio blanc s'en détache), une lumière blanche
-       au coin haut-droit, un souffle de cuivre en bas à gauche ; ses encres repassent l'AA sur son coin le plus sombre */
-    --s-app:#dbcbb8;
-    --table-fond:radial-gradient(1200px 820px at 90% -12%,rgba(255,251,245,.60),rgba(255,251,245,0) 60%),radial-gradient(1000px 720px at -4% 110%,rgba(160,82,28,.09),rgba(160,82,28,0) 60%),linear-gradient(160deg,#e4d7c7 0%,#dbcbb8 50%,#d0bdaa 100%);
-    --nappe-a:radial-gradient(closest-side,rgba(255,252,246,.42),rgba(255,252,246,.14) 50%,rgba(255,252,246,0));
-    --nappe-b:radial-gradient(closest-side,rgba(176,108,52,.09),rgba(176,108,52,.03) 52%,rgba(176,108,52,0));
-    --grille-repos:rgba(78,58,34,.17); --s-grille-revele:rgba(78,58,34,.36);
+    /* la table : l'ALUMINIUM (v86) — un gris NEUTRE (aucune teinte : le blanc du folio reste blanc, les routes et les états
+       gardent leur couleur juste, le cuivre reste le seul accent), à la profondeur du lin (le folio s'en détache à 1,6:1) ;
+       une lumière blanche au coin haut-droit, un souffle de cuivre à peine en bas à gauche ; ses encres repassent l'AA sur
+       son coin le plus sombre (#c2c3c4) */
+    --s-app:#cdcecf;
+    --table-fond:radial-gradient(1200px 820px at 90% -12%,rgba(255,255,255,.42),rgba(255,255,255,0) 60%),radial-gradient(1000px 720px at -4% 110%,rgba(160,82,28,.025),rgba(160,82,28,0) 60%),linear-gradient(160deg,#d5d6d7 0%,#cdcecf 50%,#c2c3c4 100%);
+    --nappe-a:radial-gradient(closest-side,rgba(255,255,255,.40),rgba(255,255,255,.13) 50%,rgba(255,255,255,0));
+    --nappe-b:radial-gradient(closest-side,rgba(16,18,19,.05),rgba(16,18,19,.017) 52%,rgba(16,18,19,0));
+    --grille-repos:rgba(25,27,28,.17); --s-grille-revele:rgba(25,27,28,.36);
     --courant:linear-gradient(90deg,rgba(169,88,31,0),rgba(169,88,31,.6) 70%,#b5662c);
-    --table-lueur:radial-gradient(closest-side,rgba(255,252,246,.50),rgba(255,252,246,.16) 55%,rgba(255,252,246,0));
-    --t-table:#26211b; --t-table-2:#4f4842; --t-table-warn:#6e4100; --t-table-ko:#951c16;
-    --l-table:rgba(70,52,30,.13); --l-table-2:rgba(70,52,30,.28); --s-table-champ:rgba(255,255,255,.72); --s-table-survol:rgba(70,52,30,.06);
-    --sh-feuille:0 0 0 1px rgba(70,52,30,.10),0 1px 2px rgba(70,52,30,.12),0 34px 70px -26px rgba(60,42,20,.50),0 12px 26px -14px rgba(60,42,20,.26);
-    /* le cadre : des palets blancs, un filet chaud, une ombre douce ; les voiles d'encre */
-    --palet:rgba(255,255,255,.97); --palet-2:#f5f3ef; --palet-plein:#ffffff;
-    --voile-1:rgba(60,48,36,.04); --voile-2:rgba(60,48,36,.07); --voile-3:rgba(60,48,36,.11); --voile-4:rgba(60,48,36,.16);
-    --sh-palet:0 0 0 1px rgba(70,52,30,.10),0 12px 28px -14px rgba(60,42,20,.36),0 2px 5px -1px rgba(60,42,20,.12);
-    --p-ligne:rgba(60,48,36,.10); --p-hover:rgba(60,48,36,.06); --p-t1:#1c1b1a; --p-t2:#4f4a44; --p-t3:#6b655e; --p-accent:#1c1b1a; --p-ok:#1d7a3c; --p-warn:#965800; --p-ko:#c3271f;
-    --entete-fond:rgba(252,250,247,.96); --entete-ombre:0 1px 0 rgba(60,48,36,.10),0 10px 26px -22px rgba(60,48,36,.5);
+    --table-lueur:radial-gradient(closest-side,rgba(255,255,255,.50),rgba(255,255,255,.16) 55%,rgba(255,255,255,0));
+    --t-table:#1e1f21; --t-table-2:#4d4e50; --t-table-warn:#7b3e00; --t-table-ko:#971b17;
+    --l-table:rgba(25,27,28,.13); --l-table-2:rgba(25,27,28,.28); --s-table-champ:rgba(255,255,255,.72); --s-table-survol:rgba(25,27,28,.06);
+    --sh-feuille:0 0 0 1px rgba(16,18,19,.10),0 1px 2px rgba(16,18,19,.12),0 34px 70px -26px rgba(16,18,19,.46),0 12px 26px -14px rgba(16,18,19,.24);
+    /* le cadre : des palets blancs, un filet neutre, une ombre douce ; les voiles d'encre ; ce qui voile la table (la
+       palette, le dépôt) : un gris neutre, plus un brun */
+    --palet:rgba(255,255,255,.97); --palet-2:#f4f5f6; --palet-plein:#ffffff;
+    --voile-1:rgba(25,27,28,.04); --voile-2:rgba(25,27,28,.07); --voile-3:rgba(25,27,28,.11); --voile-4:rgba(25,27,28,.16);
+    --voile:rgba(16,18,20,.24); --voile-fort:rgba(16,18,20,.44);
+    --sh-palet:0 0 0 1px rgba(16,18,19,.10),0 12px 28px -14px rgba(16,18,19,.32),0 2px 5px -1px rgba(16,18,19,.10);
+    --p-ligne:rgba(25,27,28,.10); --p-hover:rgba(25,27,28,.06); --p-t1:#171819; --p-t2:#4f5051; --p-t3:#68696a; --p-accent:#171819; --p-ok:#1d7a3c; --p-warn:#965800; --p-ko:#c3271f;
+    --entete-fond:rgba(255,255,255,.96); --entete-ombre:0 1px 0 rgba(25,27,28,.10),0 10px 26px -22px rgba(16,18,19,.5);
     --chip-on:#f3e5d8; --chip-on-t:#1c1b1a; --chip-on-ombre:inset 0 0 0 1px rgba(169,88,31,.40),0 3px 10px -4px rgba(169,88,31,.35);
     --chrome-cuivre:#a9581f; --chrome-cuivre-soft:rgba(169,88,31,.10); --chrome-cuivre-ligne:rgba(169,88,31,.34); --chrome-cuivre-t:#8a4516;
-    /* l'accent, foncé pour le clair ; la bulle, sombre ; la pastille rouge, franche */
+    /* l'accent, foncé pour le clair ; la bulle, sombre et neutre ; la pastille rouge, franche */
     --glace:#a9581f; --lien:#c27a42; --anneau-c:#a9581f;
-    --bulle:#2a2724; --bulle-t:#f7f3ee; --bulle-t2:#cbc3b9; --bulle-kbd:rgba(255,255,255,.14); --sh-bulle:0 0 0 1px rgba(0,0,0,.06),0 12px 28px -10px rgba(40,28,16,.5);
+    --bulle:#26272a; --bulle-t:#f5f5f6; --bulle-t2:#c4c5c8; --bulle-kbd:rgba(255,255,255,.14); --sh-bulle:0 0 0 1px rgba(0,0,0,.06),0 12px 28px -10px rgba(16,18,19,.5);
     --pastille-ko:#d4372c; --pastille-ko-t:#ffffff }
   :root:not([data-theme="dark"]) body:not(.biblio) #planche{color-scheme:light}
-  /* l'îlot du cadre, le jour : l'encre sur le blanc (style.css lui donne le graphite) */
+  /* l'îlot du cadre, le jour : l'encre neutre sur le blanc (style.css lui donne le graphite) */
   :where(:root:not([data-theme="dark"]) body:not(.biblio)) :is(#entete,#rail,#folios,#toast),
   :where(:root:not([data-theme="dark"]) body:not(.biblio)) :is(.ilot-sombre,.menu-verre,.doc-menu-l){
-    --s-surface:#ffffff; --s-sunken:#f4f2ee; --s-hover:rgba(60,48,36,.06); --s-line:rgba(60,48,36,.10); --s-line-2:rgba(60,48,36,.20); --s-flottant:rgba(255,255,255,.98);
-    --t-1:#1c1b1a; --t-2:#4f4a44; --t-3:#6b655e; --t-inverse:#ffffff;
-    --accent:#1c1b1a; --accent-2:#000000; --accent-soft:rgba(169,88,31,.10); --accent-line:rgba(169,88,31,.32); --on-accent:#ffffff;
-    --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#4f4a44; --info-soft:rgba(60,48,36,.05);
+    --s-surface:#ffffff; --s-sunken:#f2f3f4; --s-hover:rgba(25,27,28,.06); --s-line:rgba(25,27,28,.10); --s-line-2:rgba(25,27,28,.20); --s-flottant:rgba(255,255,255,.98);
+    --t-1:#171819; --t-2:#4f5051; --t-3:#68696a; --t-inverse:#ffffff;
+    --accent:#171819; --accent-2:#000000; --accent-soft:rgba(169,88,31,.10); --accent-line:rgba(169,88,31,.32); --on-accent:#ffffff;
+    --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#4f5051; --info-soft:rgba(25,27,28,.05);
     --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;
-    --voile:rgba(26,20,14,.24); --voile-fort:rgba(26,20,14,.44);
+    --voile:rgba(16,18,20,.24); --voile-fort:rgba(16,18,20,.44);
     --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent;
-    --sh-1:0 1px 2px rgba(40,30,20,.06); --sh-2:0 0 0 1px rgba(60,48,36,.10),0 20px 44px -16px rgba(60,48,36,.34),0 4px 10px -4px rgba(60,48,36,.12);
-    --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 24px 56px -18px rgba(60,48,36,.42),0 6px 16px -8px rgba(60,48,36,.2);
+    --sh-1:0 1px 2px rgba(16,18,19,.06); --sh-2:0 0 0 1px rgba(25,27,28,.10),0 20px 44px -16px rgba(16,18,19,.30),0 4px 10px -4px rgba(16,18,19,.10);
+    --sh-panneau:0 0 0 1px rgba(25,27,28,.10),0 24px 56px -18px rgba(16,18,19,.38),0 6px 16px -8px rgba(16,18,19,.18);
     --anneau:0 0 0 3px rgba(169,88,31,.18);
     color-scheme:light }
 }
 /* ─── 2 bis. LE JOUR DU PLAN — le choix explicite (les mêmes valeurs) ─── */
 :root[data-theme="light"] body:not(.biblio){
-  --s-app:#dbcbb8;
-  --table-fond:radial-gradient(1200px 820px at 90% -12%,rgba(255,251,245,.60),rgba(255,251,245,0) 60%),radial-gradient(1000px 720px at -4% 110%,rgba(160,82,28,.09),rgba(160,82,28,0) 60%),linear-gradient(160deg,#e4d7c7 0%,#dbcbb8 50%,#d0bdaa 100%);
-  --nappe-a:radial-gradient(closest-side,rgba(255,252,246,.42),rgba(255,252,246,.14) 50%,rgba(255,252,246,0));
-  --nappe-b:radial-gradient(closest-side,rgba(176,108,52,.09),rgba(176,108,52,.03) 52%,rgba(176,108,52,0));
-  --grille-repos:rgba(78,58,34,.17); --s-grille-revele:rgba(78,58,34,.36);
+  --s-app:#cdcecf;
+  --table-fond:radial-gradient(1200px 820px at 90% -12%,rgba(255,255,255,.42),rgba(255,255,255,0) 60%),radial-gradient(1000px 720px at -4% 110%,rgba(160,82,28,.025),rgba(160,82,28,0) 60%),linear-gradient(160deg,#d5d6d7 0%,#cdcecf 50%,#c2c3c4 100%);
+  --nappe-a:radial-gradient(closest-side,rgba(255,255,255,.40),rgba(255,255,255,.13) 50%,rgba(255,255,255,0));
+  --nappe-b:radial-gradient(closest-side,rgba(16,18,19,.05),rgba(16,18,19,.017) 52%,rgba(16,18,19,0));
+  --grille-repos:rgba(25,27,28,.17); --s-grille-revele:rgba(25,27,28,.36);
   --courant:linear-gradient(90deg,rgba(169,88,31,0),rgba(169,88,31,.6) 70%,#b5662c);
-  --table-lueur:radial-gradient(closest-side,rgba(255,252,246,.50),rgba(255,252,246,.16) 55%,rgba(255,252,246,0));
-  --t-table:#26211b; --t-table-2:#4f4842; --t-table-warn:#6e4100; --t-table-ko:#951c16;
-  --l-table:rgba(70,52,30,.13); --l-table-2:rgba(70,52,30,.28); --s-table-champ:rgba(255,255,255,.72); --s-table-survol:rgba(70,52,30,.06);
-  --sh-feuille:0 0 0 1px rgba(70,52,30,.10),0 1px 2px rgba(70,52,30,.12),0 34px 70px -26px rgba(60,42,20,.50),0 12px 26px -14px rgba(60,42,20,.26);
-  --palet:rgba(255,255,255,.97); --palet-2:#f5f3ef; --palet-plein:#ffffff;
-  --voile-1:rgba(60,48,36,.04); --voile-2:rgba(60,48,36,.07); --voile-3:rgba(60,48,36,.11); --voile-4:rgba(60,48,36,.16);
-  --sh-palet:0 0 0 1px rgba(70,52,30,.10),0 12px 28px -14px rgba(60,42,20,.36),0 2px 5px -1px rgba(60,42,20,.12);
-  --p-ligne:rgba(60,48,36,.10); --p-hover:rgba(60,48,36,.06); --p-t1:#1c1b1a; --p-t2:#4f4a44; --p-t3:#6b655e; --p-accent:#1c1b1a; --p-ok:#1d7a3c; --p-warn:#965800; --p-ko:#c3271f;
-  --entete-fond:rgba(252,250,247,.96); --entete-ombre:0 1px 0 rgba(60,48,36,.10),0 10px 26px -22px rgba(60,48,36,.5);
+  --table-lueur:radial-gradient(closest-side,rgba(255,255,255,.50),rgba(255,255,255,.16) 55%,rgba(255,255,255,0));
+  --t-table:#1e1f21; --t-table-2:#4d4e50; --t-table-warn:#7b3e00; --t-table-ko:#971b17;
+  --l-table:rgba(25,27,28,.13); --l-table-2:rgba(25,27,28,.28); --s-table-champ:rgba(255,255,255,.72); --s-table-survol:rgba(25,27,28,.06);
+  --sh-feuille:0 0 0 1px rgba(16,18,19,.10),0 1px 2px rgba(16,18,19,.12),0 34px 70px -26px rgba(16,18,19,.46),0 12px 26px -14px rgba(16,18,19,.24);
+  --palet:rgba(255,255,255,.97); --palet-2:#f4f5f6; --palet-plein:#ffffff;
+  --voile-1:rgba(25,27,28,.04); --voile-2:rgba(25,27,28,.07); --voile-3:rgba(25,27,28,.11); --voile-4:rgba(25,27,28,.16);
+  --voile:rgba(16,18,20,.24); --voile-fort:rgba(16,18,20,.44);
+  --sh-palet:0 0 0 1px rgba(16,18,19,.10),0 12px 28px -14px rgba(16,18,19,.32),0 2px 5px -1px rgba(16,18,19,.10);
+  --p-ligne:rgba(25,27,28,.10); --p-hover:rgba(25,27,28,.06); --p-t1:#171819; --p-t2:#4f5051; --p-t3:#68696a; --p-accent:#171819; --p-ok:#1d7a3c; --p-warn:#965800; --p-ko:#c3271f;
+  --entete-fond:rgba(255,255,255,.96); --entete-ombre:0 1px 0 rgba(25,27,28,.10),0 10px 26px -22px rgba(16,18,19,.5);
   --chip-on:#f3e5d8; --chip-on-t:#1c1b1a; --chip-on-ombre:inset 0 0 0 1px rgba(169,88,31,.40),0 3px 10px -4px rgba(169,88,31,.35);
   --chrome-cuivre:#a9581f; --chrome-cuivre-soft:rgba(169,88,31,.10); --chrome-cuivre-ligne:rgba(169,88,31,.34); --chrome-cuivre-t:#8a4516;
   --glace:#a9581f; --lien:#c27a42; --anneau-c:#a9581f;
-  --bulle:#2a2724; --bulle-t:#f7f3ee; --bulle-t2:#cbc3b9; --bulle-kbd:rgba(255,255,255,.14); --sh-bulle:0 0 0 1px rgba(0,0,0,.06),0 12px 28px -10px rgba(40,28,16,.5);
+  --bulle:#26272a; --bulle-t:#f5f5f6; --bulle-t2:#c4c5c8; --bulle-kbd:rgba(255,255,255,.14); --sh-bulle:0 0 0 1px rgba(0,0,0,.06),0 12px 28px -10px rgba(16,18,19,.5);
   --pastille-ko:#d4372c; --pastille-ko-t:#ffffff }
 :root[data-theme="light"] body:not(.biblio) #planche{color-scheme:light}
 :where(:root[data-theme="light"] body:not(.biblio)) :is(#entete,#rail,#folios,#toast),
 :where(:root[data-theme="light"] body:not(.biblio)) :is(.ilot-sombre,.menu-verre,.doc-menu-l){
-  --s-surface:#ffffff; --s-sunken:#f4f2ee; --s-hover:rgba(60,48,36,.06); --s-line:rgba(60,48,36,.10); --s-line-2:rgba(60,48,36,.20); --s-flottant:rgba(255,255,255,.98);
-  --t-1:#1c1b1a; --t-2:#4f4a44; --t-3:#6b655e; --t-inverse:#ffffff;
-  --accent:#1c1b1a; --accent-2:#000000; --accent-soft:rgba(169,88,31,.10); --accent-line:rgba(169,88,31,.32); --on-accent:#ffffff;
-  --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#4f4a44; --info-soft:rgba(60,48,36,.05);
+  --s-surface:#ffffff; --s-sunken:#f2f3f4; --s-hover:rgba(25,27,28,.06); --s-line:rgba(25,27,28,.10); --s-line-2:rgba(25,27,28,.20); --s-flottant:rgba(255,255,255,.98);
+  --t-1:#171819; --t-2:#4f5051; --t-3:#68696a; --t-inverse:#ffffff;
+  --accent:#171819; --accent-2:#000000; --accent-soft:rgba(169,88,31,.10); --accent-line:rgba(169,88,31,.32); --on-accent:#ffffff;
+  --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#4f5051; --info-soft:rgba(25,27,28,.05);
   --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;
-  --voile:rgba(26,20,14,.24); --voile-fort:rgba(26,20,14,.44);
+  --voile:rgba(16,18,20,.24); --voile-fort:rgba(16,18,20,.44);
   --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent;
-  --sh-1:0 1px 2px rgba(40,30,20,.06); --sh-2:0 0 0 1px rgba(60,48,36,.10),0 20px 44px -16px rgba(60,48,36,.34),0 4px 10px -4px rgba(60,48,36,.12);
-  --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 24px 56px -18px rgba(60,48,36,.42),0 6px 16px -8px rgba(60,48,36,.2);
+  --sh-1:0 1px 2px rgba(16,18,19,.06); --sh-2:0 0 0 1px rgba(25,27,28,.10),0 20px 44px -16px rgba(16,18,19,.30),0 4px 10px -4px rgba(16,18,19,.10);
+  --sh-panneau:0 0 0 1px rgba(25,27,28,.10),0 24px 56px -18px rgba(16,18,19,.38),0 6px 16px -8px rgba(16,18,19,.18);
   --anneau:0 0 0 3px rgba(169,88,31,.18);
   color-scheme:light }
 
@@ -8580,6 +8710,118 @@ body.cherche .recherche{background:var(--s-surface);border-color:var(--chrome-cu
    changent de matière en douceur, au rythme du fondu de la table, au lieu de basculer d'un coup */
 #entete,#rail,#folios{transition:background-color var(--d-lent) var(--courbe),color var(--d-lent) var(--courbe),box-shadow var(--d-lent) var(--courbe),border-color var(--d-lent) var(--courbe)}
 @media (prefers-reduced-motion:reduce){ #entete,#rail,#folios{transition:none} }
+
+/* ───────── style-z-carte.css ───────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA CARTE ET LA TÊTE DU GRAND, v86 — 08-niveaux (`enteteFiche`), 08-vues (`silhouetteVue`), 08-carte (`eveillerSceau`,
+   `lierLumiere`).
+   Le lecteur : « Disjoncteur, 102CB1, Référence : trop de variations de couleurs et de fonds, trop de gras différents » ;
+   « je ne sais pas différencier les équipements des disjoncteurs, des barrettes : quelque chose d'innovant, comme Apple » ;
+   « regarde la couleur de la tuile, et fais quelque chose d'un peu plus interactif en fond ».
+   · UNE ÉCRITURE, la même dans la carte et dans le grand : la silhouette en cuivre ; le genre en mot, 13 px, 500, gris ; le
+     REPÈRE, le seul grand, 600, à l'encre ; la référence dessous, une seule pastille AU TRAIT (aucun fond), 13 px, 500. Deux
+     graisses, l'encre et un gris. Les trois chiffres de la carte passent à 24 px, 600 : le repère reste le seul grand.
+   · LE SCEAU : la silhouette de l'objet, sa forme du folio en trait fin (72 × 28), au milieu de la barre de la carte, à la
+     place de la poignée — la barre se tient toujours, la main ouverte au survol. Elle se trace à l'ouverture (08-carte) ; un
+     éclat de courant la parcourt, et repasse quand on survole la barre ou la tête.
+   · LA LUMIÈRE : sous la carte, une lueur de cuivre suit la souris avec un rien de retard (--lx, --ly, déclarées pour
+     s'animer) et révèle la trame du folio ; la souris partie, elle revient sous le sceau. Rien ne clignote ; le mouvement
+     réduit la laisse sous le sceau.
+   Les couleurs : les jetons seulement (--nv-cuivre, --t-1, --t-2, --s-line-2). Chargée avant style-z-fiche : chaque règle
+   porte #inspecteur (ou .carte-double, le double qui se résorbe) pour passer devant les couches d'hier.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@property --lx{syntax:'<length-percentage>';inherits:true;initial-value:50%}
+@property --ly{syntax:'<length-percentage>';inherits:true;initial-value:0px}
+
+/* ─── LA SILHOUETTE (partout où elle est dessinée) ─── */
+svg.silhouette{display:block;width:100%;height:100%;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+svg.silhouette .sl-trait>*{stroke-dasharray:1 1;stroke-dashoffset:0}
+/* l'éclat de courant : un trait court, plus clair, qui court le long du chemin du courant — invisible au repos */
+svg.silhouette .sl-courant{stroke:color-mix(in srgb,var(--nv-cuivre) 62%,#ffd2a6);stroke-width:2.4;stroke-dasharray:.24 1.3;stroke-dashoffset:.24;
+  filter:drop-shadow(0 0 2px color-mix(in srgb,var(--nv-cuivre) 75%,transparent))}
+@keyframes sl-courant{from{stroke-dashoffset:.24}to{stroke-dashoffset:-1}}
+
+/* ─── LA CARTE : le sceau dans la barre ─── */
+body #inspecteur .fi.nv-c>.fi-nav::before{display:none}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-sceau{position:absolute;z-index:1;top:-36px;left:50%;width:80px;height:31px;margin-left:-40px;color:var(--nv-cuivre);pointer-events:none}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-sceau svg.silhouette{stroke-width:1.3}
+/* il s'éveille : la barre ou la tête survolée, le courant repasse */
+#inspecteur .fi.nv-c:has(>.fi-nav:hover,>.nc>.nc-tete:hover,>.nc>.nc-meta:hover) .nc-sceau .sl-courant{animation:sl-courant .9s cubic-bezier(.5,0,.3,1)}
+
+/* ─── LA CARTE : la tête — le genre, le repère, la référence ─── */
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-tete{display:flex;justify-content:center;margin:0}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-tete .nc-titre{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:center;gap:2px;min-width:0;max-width:100%;font:inherit}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-titre .nc-genre-mot{padding:0;font:500 var(--f-13)/1.3 var(--sans);letter-spacing:0;text-transform:none;color:var(--t-2);overflow:visible}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-titre .nc-rep{display:flex;justify-content:center;max-width:100%}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-titre :is(.nc-rep-t,.nc-rep-in){height:36px;margin:0;padding:0 6px;font:600 var(--f-28)/1 var(--sans);letter-spacing:-.022em;color:var(--t-1);text-align:center}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-titre.long :is(.nc-rep-t,.nc-rep-in){font-size:24px}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-meta{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 12px;margin:-4px 0 0}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-meta>span+span::before{content:none}
+/* la référence : une pastille au trait, rien dedans que le code */
+:is(#inspecteur,.carte-double) :is(.fi.nv-c,.nv-grand) .nc-meta .nc-meta-v:not(.texte){display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:7px;background:none;
+  box-shadow:inset 0 0 0 1px var(--s-line-2);font:500 var(--f-13)/1 var(--mono);color:var(--t-1)}
+:is(#inspecteur,.carte-double) :is(.fi.nv-c,.nv-grand) .nc-meta .nc-meta-v .id{font:inherit;letter-spacing:-.01em;color:inherit}
+/* une phrase (« route PUISSANCE », « ajoutée par VOLTA sur 102CB1:2 ») : du gris, sans pastille */
+:is(#inspecteur,.carte-double) :is(.fi.nv-c,.nv-grand) .nc-meta .nc-meta-v.texte{height:auto;padding:0;border-radius:0;background:none;box-shadow:none;font:500 var(--f-13)/1.4 var(--sans);color:var(--t-2)}
+:is(#inspecteur,.carte-double) :is(.fi.nv-c,.nv-grand) .nc-meta .nc-meta-v.texte .id{font:500 var(--f-13) var(--mono);color:var(--t-2)}
+
+/* ─── LA CARTE : les trois chiffres — 24 px, 600 : lisibles d'un coup, sous le repère ─── */
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre .nc-v{height:30px;font:600 24px/1 var(--sans);letter-spacing:-.018em}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre .nc-v small{margin-left:4px;font-weight:500}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre.edit .fc-in{height:30px;font:600 24px/1 var(--sans)}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre.mot .nc-v{font:600 var(--f-20)/1 var(--sans)}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre.ident .nc-v .id{font:500 var(--f-20)/1 var(--mono)}
+
+/* ─── LA CARTE : la lumière qui suit la souris, la trame du folio ─── */
+:is(#inspecteur,.carte-double) .fi.nv-c{--carte-lueur:color-mix(in srgb,var(--nv-cuivre) 7%,transparent);--carte-trame:color-mix(in srgb,var(--t-1) 12%,transparent)}
+:is(#inspecteur,.carte-double) .fi.nv-c>.nc-lumiere{position:absolute;inset:0;z-index:0;overflow:hidden;border-radius:inherit;pointer-events:none;--lx:50%;--ly:-12px;
+  background:radial-gradient(250px circle at var(--lx) var(--ly),var(--carte-lueur),transparent 72%);
+  transition:--lx .8s cubic-bezier(.2,.8,.2,1),--ly .8s cubic-bezier(.2,.8,.2,1)}
+:is(#inspecteur,.carte-double) .fi.nv-c>.nc-lumiere>i{position:absolute;inset:0;background:radial-gradient(circle,var(--carte-trame) .8px,transparent 1.2px) 6px 6px/12px 12px;
+  -webkit-mask:radial-gradient(150px circle at var(--lx) var(--ly),#000,rgba(0,0,0,.5) 45%,transparent);mask:radial-gradient(150px circle at var(--lx) var(--ly),#000,rgba(0,0,0,.5) 45%,transparent)}
+/* (le pied passe devant la lumière, comme le contenu) */
+:is(#inspecteur,.carte-double) .fi.nv-c>.nc-pied{position:relative}
+
+/* ─── LE GRAND : la même règle, sur une ligne — la silhouette, le genre sur le repère, la référence au bout ─── */
+#inspecteur .nv-grand .nc-tete.fine{position:relative;gap:14px;align-items:center;padding-right:0}
+#inspecteur .nv-grand .nc-tete.fine .nc-sil{flex:none;width:58px;height:23px;color:var(--nv-cuivre)}
+#inspecteur .nv-grand .nc-tete.fine .nc-sil svg.silhouette{stroke-width:1.7}
+#inspecteur .nv-grand .nc-tete.fine:hover .nc-sil .sl-courant{animation:sl-courant .9s cubic-bezier(.5,0,.3,1)}
+#inspecteur .nv-grand .nc-tete.fine .nc-titre{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:1px;min-width:0;font:inherit}
+#inspecteur .nv-grand .nc-tete.fine .nc-titre .nc-genre-mot{padding:0;font:500 var(--f-12)/1.25 var(--sans);letter-spacing:0;text-transform:none;color:var(--t-2)}
+#inspecteur .nv-grand .nc-tete.fine .nc-titre :is(.nc-rep-t,.nc-rep-in){height:26px;margin:0 0 0 -6px;padding:0 6px;font:600 var(--f-20)/1 var(--sans);letter-spacing:-.012em;color:var(--t-1)}
+#inspecteur .nv-grand .nc-tete.fine .nc-titre .nc-rep-t{margin:0;padding:0}
+#inspecteur .nv-grand .nc-tete.fine .nc-meta{flex:0 1 auto;align-self:flex-end;min-width:0;margin:0 0 1px 4px;gap:10px}
+#inspecteur .nv-grand .nc-tete.fine .nc-meta>span:first-child::before{display:none}
+
+/* ─── LA NUIT : le cuivre s'allume un peu, la trame se voit à peine ─── */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double) .fi.nv-c{--carte-lueur:color-mix(in srgb,var(--nv-cuivre) 13%,transparent);--carte-trame:color-mix(in srgb,var(--t-1) 10%,transparent)}
+  :root:not([data-theme="light"]) :is(#inspecteur,.carte-double) :is(.nc-sceau,.nc-sil) svg.silhouette{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--nv-cuivre) 32%,transparent))} }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double) .fi.nv-c{--carte-lueur:color-mix(in srgb,var(--nv-cuivre) 13%,transparent);--carte-trame:color-mix(in srgb,var(--t-1) 10%,transparent)}
+:root[data-theme="dark"] :is(#inspecteur,.carte-double) :is(.nc-sceau,.nc-sil) svg.silhouette{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--nv-cuivre) 32%,transparent))}
+
+@media (prefers-reduced-motion:reduce){
+  :is(#inspecteur,.carte-double) .fi.nv-c>.nc-lumiere{transition:none}
+  svg.silhouette .sl-courant{animation:none!important} }
+
+/* ───────── style-z-couleur.css ───────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA COULEUR DE LA TABLE — ce qui se pose sur elle en prend la neutralité (v86, « quelle est la meilleure couleur de
+   fond ? »). La table du jour est l'ALUMINIUM, un gris neutre (style-z-cadre.css § 2) ; la nuit reste le graphite chaud.
+   Ici : l'ombre de la carte, du grand et des feuilles posées sur la table, le jour. Elle tirait sur le brun (pour le lin,
+   style-z-fiche.css § 10 bis) ; sur un gris neutre, une ombre brune salit le pied de la carte : même forme, encre neutre.
+   Ce fichier se charge AVANT style-z-fiche.css (l'ordre des noms) : ses sélecteurs portent un `html` de plus pour avoir
+   le dernier mot sans dépendre de l'ordre.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: light){ html:root:not([data-theme="dark"]) :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
+  --sh-carte:0 0 0 1px rgba(25,27,28,.10),0 30px 72px -20px rgba(16,18,19,.50),0 10px 26px -12px rgba(16,18,19,.28);
+  --sh-carte-tenue:0 0 0 1px rgba(25,27,28,.14),0 46px 100px -20px rgba(16,18,19,.58),0 16px 34px -12px rgba(16,18,19,.34);
+  --sh-panneau:0 0 0 1px rgba(25,27,28,.10),0 28px 64px -18px rgba(16,18,19,.48),0 6px 18px -8px rgba(16,18,19,.26) } }
+html:root[data-theme="light"] :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
+  --sh-carte:0 0 0 1px rgba(25,27,28,.10),0 30px 72px -20px rgba(16,18,19,.50),0 10px 26px -12px rgba(16,18,19,.28);
+  --sh-carte-tenue:0 0 0 1px rgba(25,27,28,.14),0 46px 100px -20px rgba(16,18,19,.58),0 16px 34px -12px rgba(16,18,19,.34);
+  --sh-panneau:0 0 0 1px rgba(25,27,28,.10),0 28px 64px -18px rgba(16,18,19,.48),0 6px 18px -8px rgba(16,18,19,.26)}
 
 /* ───────── style-z-documents.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -9061,37 +9303,16 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
 
 /* ───────── style-z-plan.css ───────── */
 /* ===========================================================================
-   LE PLAN (v85) — les numéros de borne qui se lisent au cadrage, l'état de chaque folio dans la barre du bas.
+   LE PLAN (v85, v86) — un dessin fixe à tout zoom, l'état de chaque folio dans la barre du bas.
    =========================================================================== */
 
-/* LE ZOOM DE LECTURE (08 `appliquerVue` pose `--s`, l'échelle de la vue, sur la scène). Rien ne se tait au cadrage : les
-   numéros de borne (équipement, pièce de connecteur, pastille de barrette, contact de prise), la lettre d'un connecteur, le
-   folio d'un renvoi, les petits repères GRANDISSENT quand on s'éloigne, pour garder 9 px d'écran — jusqu'à ce que leur place
-   le permette : le pas des bornes, la pièce, le corps (06 : la limite de chaque famille, et `--km` sur celui dont la place
-   est plus courte). À 100 % et au-delà, chacun a sa taille du dessin ; l'export, toujours. Chacun grandit depuis là où il
-   tient : son milieu, son bord contre le corps, son pied contre son amenée. La pastille grandit avec son numéro (le même
-   calcul, la même limite) ; haute de deux rangées, elle ne grandit en hauteur que de ce que grandit une pastille d'une
-   rangée (`--kv`). */
-#planche svg{--cible:9}
-#planche svg :is(.pinlbl,.connpin,.connnom,.bpnum,.bpast,.prnum,.dr-f,.rep-petit){transform-box:fill-box;transform-origin:center;transform:scale(var(--k,1))}
-#planche svg .pinlbl{--k:clamp(1, calc(var(--cible) / (7.5 * var(--s, 9))), min(1.3, var(--km, 9)))}
-#planche svg .connpin{--k:clamp(1, calc(var(--cible) / (6.2 * var(--s, 9))), min(1.5, var(--km, 9)))}
-#planche svg .connnom{--k:clamp(1, calc(var(--cible) / (6.5 * var(--s, 9))), 1.3);transform-origin:center bottom}
-#planche svg :is(.bpnum,.bpast){--k:clamp(1, calc(var(--cible) / (6.2 * var(--s, 9))), min(1.35, var(--km, 9)))}
-#planche svg .bpast{transform:scale(var(--k,1), calc(1 + (var(--k,1) - 1) * var(--kv, 1)))}
-#planche svg .prnum{--k:clamp(1, calc(var(--cible) / (6.2 * var(--s, 9))), min(1.45, var(--km, 9)))}
-#planche svg .dr-f{--k:clamp(1, calc(var(--cible) / (7.5 * var(--s, 9))), min(1.3, var(--km, 9)))}
-#planche svg .rep-petit{--k:clamp(1, calc(var(--cible) / (5.6 * var(--s, 9))), 1.25)}
-#planche svg :is(.pinlbl,.dr-f,.rep-petit)[text-anchor="start"]{transform-origin:left center}
-#planche svg :is(.pinlbl,.dr-f,.rep-petit)[text-anchor="end"]{transform-origin:right center}
-#planche svg .pinlbl.sur[text-anchor="start"]{transform-origin:left bottom}
-#planche svg .pinlbl.sur[text-anchor="end"]{transform-origin:right bottom}
-#planche svg .pinlbl.sous[text-anchor="start"]{transform-origin:left top}
-#planche svg .pinlbl.sous[text-anchor="end"]{transform-origin:right top}
-/* Bien plus loin que la feuille entière (`.tait`, sous un tiers de l'échelle 1), une écriture ferait moins de 3 px : de la
-   poussière. Elles se taisent ; les traits, les pastilles, les repères restent. Ce qui est allumé (`.hl`) parle toujours. */
-#planche .tait :is(text.filnum,rect.halo,.pinlbl,.connpin,.connnom,.bpnum,.prnum,.dr-f,.dr-ou,.rname,.des,.xref,.cb-ret,.bsname):not(.hl){opacity:0}
-#planche .tait :is(.comp,.vt).hl :is(.pinlbl,.connpin,.connnom,.bpnum,.prnum,.dr-f,.dr-ou,.rname,.des,.xref,.cb-ret,.bsname){opacity:1}
+/* LE DESSIN EST FIXE (v86). Le zoom de lecture de la v85 faisait GRANDIR à l'écran, quand on reculait, les numéros de borne,
+   les pastilles, les lettres des connecteurs (une mise à l'échelle par écriture, chacune depuis son propre point) : le
+   lecteur — « les bornes sont beaucoup trop grosses quand on recule sur les barrettes ; quand je zoome et dézoome, plus rien
+   ne se suit : les bornes se décalent, ce n'est plus fixe — la catastrophe ». Il est retiré, et rien ne le remplace : le
+   folio est un papier qu'on approche ou qu'on éloigne. Chaque écriture garde sa taille et sa place du dessin à tout zoom,
+   rien ne se tait (au cadrage, les numéros sont fins mais présents : on zoome pour lire). La scène ne porte plus l'échelle
+   (`--s`), ni de classe qui efface les écritures de loin. */
 
 /* L'ÉTAT DE CHAQUE FOLIO, dans sa puce (08 `peindreEtatsDesFolios`) : une PISTE fine sous le chiffre. En attente, la piste
    est vide et le chiffre pâle ; pendant le dessin, elle se remplit au cuivre (`--fo-p`, ce que le moteur rapporte) ; prêt,
@@ -9430,7 +9651,7 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '53cb32aa0e49';
+const VERSION_MOTEUR = 'd15f41d4651f';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -14052,19 +14273,13 @@ const clip = (s, n) => { s = String(s); return s.length > n ? s.slice(0, n - 1) 
 const FS_FIL = 6.4;                 // le numéro d'un fil
 const CAR = 0.60;                   // la chasse d'un caractère, en part du corps
 const largeurTexte = (n, fs, ls) => n * (CAR * fs + (ls || 0));
-/* LES NUMÉROS DE BORNE (v85, le lecteur : « au folio 6, les bornes n'apparaissent pas, sauf si je zoome beaucoup ou si je
-   survole ; de base, rien ne doit être caché »). Une borne d'équipement s'écrit à 7,5 dans le corps ; une borne dans une
-   pièce de connecteur, une pastille de barrette, un contact de prise, à 6,2 (5,4 et 5,6 avant : 4 px d'écran au cadrage).
-   À l'écran, ils ne se taisent plus : quand on s'éloigne, ils GRANDISSENT jusqu'à ce que la place autour d'eux le permette
-   (le pas des bornes, la pièce, le corps — style-z-plan.css, `--s` posé par 08 `appliquerVue`) ; chacun peut porter sa
-   limite (`--km`) quand sa place est plus courte. L'export garde les tailles du dessin. */
-const FS_BORNE = 7.5, FS_BORNE_PETITE = 6.2;
-/* jusqu'où une écriture grandit à l'écran : une borne d'équipement, jamais plus haut que le repère (10,5) ; une pastille,
-   jusqu'à frôler sa voisine au pas des bornes (14 : 9,6 × 1,35 = 13) ; un petit repère, dans la place réservée pour lui */
-const K_BORNE = 1.3, K_PASTILLE = 1.35, K_REPERE = 1.25;
-// la limite d'une écriture, écrite sur elle quand sa place est plus courte que celle de sa famille
-const limiteCss = (k, kmax) => k < kmax - 0.005 ? `--km:${Math.max(1, Math.floor(k * 100) / 100)};` : '';
-const limite = (k, kmax) => { const d = limiteCss(k, kmax); return d ? ` style="${d}"` : ''; };
+/* LES NUMÉROS DE BORNE, À LEUR TAILLE DU DESSIN (v86). Une borne d'équipement s'écrit à 7,5 dans le corps ; une borne dans
+   une pièce de connecteur à 5,6 ; le numéro d'une pastille de barrette et d'un contact de prise à 5,4 — fins, comme sur un
+   plan. Ils ne grandissent pas, ne se taisent pas, ne bougent pas quand on zoome : le dessin est un papier qu'on approche
+   (la v85 les faisait grandir au dézoom, chacun depuis son point — le lecteur : « les bornes sont beaucoup trop grosses quand
+   on recule sur les barrettes, je préférais avant quand c'était fin ; quand je zoome et dézoome, plus rien ne se suit »).
+   Au cadrage ils sont petits mais présents ; à 100 %, 9 à 10 px d'écran. L'écran et l'export ont les mêmes. */
+const FS_BORNE = 7.5, FS_BORNE_CONN = 5.6, FS_BORNE_PETITE = 5.4;
 
 /* LE STYLE DU FOLIO. Un papier technique sobre : NOIR SUR BLANC, des gris neutres (plus de gris bleutés : la feuille se
    pose sur la pierre ou le graphite, elle ne doit pas y paraître froide), le repère et tout ce qui s'écrit en JetBrains
@@ -14080,9 +14295,8 @@ const limite = (k, kmax) => { const d = limiteCss(k, kmax); return d ? ` style="
    zoom (un feutre de 6 px à 200 % masquait le dessin). Ce qu'on SURVOLE pendant qu'un objet est choisi se marque à peine
    (`.sv`) : le choix reste plein. LOIN (un trait de câble sous le pixel d'écran) : les traits s'épaississent, les routes
    gardent leur couleur. LISIBLE À 100 % (v73, l'ergonome : 4 à 6 px hier) : à « 100 % », un numéro de câble fait 11 px
-   d'écran (08-interface, `S100`) et la plus petite écriture — un petit repère, 5,6 — en fait 9,6. (v85) En deçà, à
-   l'écran seulement, les numéros de borne et les petits repères grandissent dans leur place (style-z-plan.css) : rien ne
-   se tait au cadrage. */
+   d'écran (08-interface, `S100`) et la plus petite écriture — le numéro d'une pastille, 5,4 — en fait 9,3. (v86) En
+   deçà, rien ne grandit ni ne se tait : le dessin reste fixe, ses écritures à leur place et à leur taille. */
 const ENCRE_FOLIO = '#1e1f22', CABLE_FOLIO = '#2a2b2f', CUIVRE_FOLIO = '#9a5220';
 /* LES TEINTES DES ROUTES (v84) : des teintes de CATÉGORIE, de la famille froide — un bleu, une sarcelle, un indigo, une
    ardoise, un cyan profond, un bleu nuit —, distinctes entre elles par la teinte ou par la valeur, lisibles sur le blanc
@@ -14096,7 +14310,7 @@ function styleDessin() {
   return `<defs>
    <pattern id="gfine" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#efefec" stroke-width=".8"/></pattern>
    <style>
-     text{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+     text{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;text-rendering:geometricPrecision}
      .sym{fill:none;stroke:${ENCRE_FOLIO};stroke-width:1;stroke-linecap:round;stroke-linejoin:round}
      .dot-fix{fill:${ENCRE_FOLIO};stroke:none}
      .cab{fill:none;stroke:${CABLE_FOLIO};stroke-width:.95;stroke-linecap:round;stroke-linejoin:round;transition:opacity .12s}
@@ -14117,7 +14331,7 @@ function styleDessin() {
      .lead{stroke:${CABLE_FOLIO};stroke-width:.95;stroke-linecap:butt}
      .conn{fill:#ffffff;stroke:${ENCRE_FOLIO};stroke-width:.75}
      .connnom{fill:${ENCRE_FOLIO};font-size:6.5px;font-weight:600;letter-spacing:.3px}
-     .connpin{fill:#2e3034;font-size:${FS_BORNE_PETITE}px;font-weight:500}
+     .connpin{fill:#2e3034;font-size:${FS_BORNE_CONN}px;font-weight:500}
      .prnum{fill:${ENCRE_FOLIO};font-size:${FS_BORNE_PETITE}px;font-weight:600}
      .barre{fill:none;stroke:${ENCRE_FOLIO};stroke-width:1;stroke-dasharray:3 2.2;stroke-linecap:butt}
      .bardot{fill:${ENCRE_FOLIO};stroke:none}
@@ -14128,7 +14342,8 @@ function styleDessin() {
      .pont{stroke:${ENCRE_FOLIO};stroke-width:1;stroke-linecap:butt}
      .bpast{fill:${ENCRE_FOLIO};stroke:none}
      .bpnum{fill:#ffffff;font-size:${FS_BORNE_PETITE}px;font-weight:600}
-     .rep-petit{fill:#141518;font-size:5.6px;font-weight:600;letter-spacing:.35px}     .vt .barre{stroke:${CUIVRE_FOLIO}}
+     .rep-petit{fill:#141518;font-size:5.6px;font-weight:600;letter-spacing:.35px}
+     .vt .barre{stroke:${CUIVRE_FOLIO}}
      .vt .bpast,.vt .bardot{fill:${CUIVRE_FOLIO}}
      .vt .rep-petit{fill:${CUIVRE_FOLIO}}
      .rpill{fill:#ffffff;stroke:#96979b;stroke-width:.8}
@@ -14337,9 +14552,12 @@ function crochetsDeBarrette(b) { const bs = bornesDePiquage(b), y0 = bs[0].y, y1
    avec le numéro (« 51A », module et contact : la convention du lecteur) ; sur une même réglette, toutes ont la largeur
    de la plus large. Une borne qui porte deux rangées qui se suivent (le fil qui arrive, celui qui repart) a UNE pastille,
    haute de ses deux rangées, son numéro au milieu (`bornesUniques`). La demi-largeur, pour l'occupation. */
-const PAST_H = 9.6, PAST_PAD = 2.3, PAST_LARGE_MAX = 22;
-// la ligne d'une barrette dépasse sa première et sa dernière borne de BOUT_REGLETTE (9 avant v85 : la pastille a grandi)
-const BOUT_REGLETTE = 10.5;
+/* (v86) fine, comme le point noir d'avant : haute de 7,8 — ronde pour un signe, à peine ovale pour deux (8,9), une pilule
+   de 12,1 pour « 51A » —, 6,2 d'air entre deux pastilles au pas des bornes (14) ; 9,6 en v85, pour un numéro à 6,2 qui
+   grandissait encore à l'écran. Le liseré (1,2) garde les coins du numéro dans les bouts arrondis. */
+const PAST_H = 7.8, PAST_PAD = 1.2, PAST_LARGE_MAX = 22;
+// la ligne d'une barrette dépasse sa première et sa dernière borne de BOUT_REGLETTE
+const BOUT_REGLETTE = 9;
 const largeurPastille = etiq => Math.min(PAST_LARGE_MAX, Math.max(PAST_H, largeurTexte(String(etiq).length, FS_BORNE_PETITE, 0) + 2 * PAST_PAD));
 const R_PASTILLE = etiq => largeurPastille(etiq) / 2;
 /* Le bout de fil qui entre dans un bloc — le raccord d'une borne, l'amorce d'une masse, d'un morceau de barrette, d'une
@@ -14362,16 +14580,14 @@ function boutsDesFils(fils, couleurDe) { const m = new Map(), cle = (x, y) => Ma
 const couleurDuBout = b => !b ? null : typeof b === 'string' ? b : b.c || null;
 const indicesDuBout = b => b && typeof b === 'object' && b.i && b.i.length ? ` data-i="${b.i.join(' ')}"` : '';
 const traitDe = b => indicesDuBout(b) + styleTrait(couleurDuBout(b));
-/* La pastille : centrée en x sur la ligne, de y à y1 (une borne sur deux rangées), le numéro à 6,2 (10,7 px d'écran à
+/* La pastille : centrée en x sur la ligne, de y à y1 (une borne sur deux rangées), le numéro à 5,4 (9,3 px d'écran à
    100 %), son milieu au milieu de la pastille ; un numéro trop long pour PAST_LARGE_MAX se resserre. `o.larg` : la largeur
-   de la réglette (la plus large de ses pastilles) ; `o.place` : la largeur où elle peut grandir à l'écran (sa réglette),
-   et `--kv` dit à une pastille haute de ne grandir en hauteur que de ce que grandit une pastille d'une rangée. */
+   de la réglette (la plus large de ses pastilles). */
 function pastilleSvg(x, y, etiq, o) { o = o || {}; const t = String(etiq), y1 = o.y1 != null ? o.y1 : y, w = o.larg || largeurPastille(t), h = y1 - y + PAST_H, ym = (y + y1) / 2;
   const fs = Math.max(4.4, Math.min(FS_BORNE_PETITE, (w - 2 * PAST_PAD + 0.6) / Math.max(1, t.length) / CAR));
-  const lim = limiteCss((o.place || 24) / w, K_PASTILLE), style = (...xs) => xs.join('') ? ` style="${xs.join('')}"` : '';
   // un chemin (pas un rect à coins ronds : l'export Visio les ferait carrés) ; ses bouts en demi-cercles
-  return `<path class="bpast" d="${pilule(x - w / 2, ym - h / 2, w, h)}"${style(lim, h > PAST_H + 0.1 ? `--kv:${(PAST_H / h).toFixed(3)};` : '')}/>`
-    + `<text class="bpnum"${style(lim, fs < FS_BORNE_PETITE ? `font-size:${f1(fs)}px;` : '')} x="${f1(x)}" y="${f1(ym + 0.365 * fs)}" text-anchor="middle">${esc(t)}</text>`;
+  return `<path class="bpast" d="${pilule(x - w / 2, ym - h / 2, w, h)}"/>`
+    + `<text class="bpnum"${fs < FS_BORNE_PETITE ? ` style="font-size:${f1(fs)}px"` : ''} x="${f1(x)}" y="${f1(ym + 0.365 * fs)}" text-anchor="middle">${esc(t)}</text>`;
 }
 // une pilule : un rectangle aux bouts arrondis du rayon de sa plus petite dimension (ronde quand elle est carrée)
 function pilule(x, y, w, h) { const r = Math.min(w, h) / 2, R = f1(r);
@@ -14383,7 +14599,7 @@ function pilule(x, y, w, h) { const r = Math.min(w, h) / 2, R = f1(r);
    la ligne, quand rien ne passe entre elles de son côté (ni l'amenée d'une autre borne, ni une pastille assez large pour
    toucher le coude) — sinon elle garde sa pastille et son numéro, plutôt qu'un dessin qui mentirait. `cote(p)` : le côté
    de l'amenée d'une rangée (-1 à gauche, 1 à droite, 0 des deux). Rend les groupes { etiq, y0, y1, rangs, coude? }. */
-const COUDE = 13;   // au-delà de la pastille la plus large grandie à l'écran (22 / 2 × K_PASTILLE ≈ 15 : un numéro de trois signes, 10,7)
+const COUDE = 13;   // au-delà de la demi-largeur des pastilles (6 pour « 51A ») : le coude se lit à côté, jamais dessous
 function bornesUniques(rangs, cote) { const groupes = [], E = p => String(p.etiq == null ? '' : p.etiq).trim();
   rangs.forEach(p => { const e = E(p), g = groupes[groupes.length - 1];
     if (e && g && g.etiq === e && p.y - g.y1 <= PRH + 0.6) { g.y1 = p.y; g.rangs.push(p); } else groupes.push({ etiq: e, y0: p.y, y1: p.y, rangs: [p] }); });
@@ -14391,7 +14607,7 @@ function bornesUniques(rangs, cote) { const groupes = [], E = p => String(p.etiq
   parEtiq.forEach(gs => { if (gs.length < 2 || !cote) return; const m = gs.reduce((a, b) => b.rangs.length > a.rangs.length ? b : a, gs[0]);
     gs.forEach(g => { if (g === m || g.rangs.length > 1) return; const p = g.rangs[0], s = cote(p); if (!s) return;
       const yc = p.y > m.y1 ? m.y1 : m.y0, lo = Math.min(yc, p.y), hi = Math.max(yc, p.y);
-      const libre = rangs.every(q => q === p || q.y <= lo + 0.3 || q.y >= hi - 0.3 || (cote(q) === -s && R_PASTILLE(E(q)) * K_PASTILLE <= COUDE - 1));
+      const libre = rangs.every(q => q === p || q.y <= lo + 0.3 || q.y >= hi - 0.3 || (cote(q) === -s && R_PASTILLE(E(q)) <= COUDE - 1));
       if (libre) g.coude = { cote: s, y: yc, croise: m.rangs.some(q => Math.abs(q.y - yc) < 0.6 && (cote(q) === s || cote(q) === 0)) }; }); });
   return groupes; }
 
@@ -14412,13 +14628,13 @@ function occupationDe(fils, barrettes, comps) {
     // le corps d'un équipement compte avec ses pièces de connecteur et leurs lettres ; celui d'une réglette, sa colonne
     /* un morceau de barrette finit par son point de départ, au ras de son cadre : un texte s'en garde de quatre (un numéro
        de fil s'écrivait contre le point du morceau 668VT31, le fil passant un pas sous sa dernière borne) */
-    if (c.kind !== 'tag') { const d = c.kind === 'equip' ? CONN_W : 0, pied = c.kind === 'strip' && !estCoupure(c.name) ? 5.5 : 0;
+    if (c.kind !== 'tag') { const d = c.kind === 'equip' ? CONN_W : 0, pied = c.kind === 'strip' && !estCoupure(c.name) ? 4 : 0;
       corps.push({ x0: c.x + c.lw - d, y0: c.y, x1: c.x + c.w - c.rw + d, y1: c.y + c.h + pied, id: c.id });
       if (c.kind === 'equip') piecesDeConnecteur(c).forEach(p => boites.push({ x0: p.x0, x1: p.x1, y0: p.t - 8.5, y1: p.t - 1, id: c.id })); return; }
     // une pastille : les barres d'une masse, le pointillé d'un morceau de barrette, la pilule d'un rail — le bout de fil qui y mène reste libre
     const M = symboleDePastille(c);
     if (M && M.genre === 'masse') boites.push({ x0: Math.min(M.xs, M.xs + M.d * 6.4), x1: Math.max(M.xs, M.xs + M.d * 6.4), y0: M.y - 6, y1: M.y + 6, id: c.id });
-    else if (M) { const r = Math.max(5, R_PASTILLE(M.etiq || '') * K_PASTILLE); boites.push({ x0: M.xs - r, x1: M.xs + r, y0: M.y - 7.5, y1: M.y + 8.4, id: c.id }); }
+    else if (M) { const r = Math.max(5, R_PASTILLE(M.etiq || '')); boites.push({ x0: M.xs - r, x1: M.xs + r, y0: M.y - 6.5, y1: M.y + 7.5, id: c.id }); }
     else boites.push({ x0: c.x, x1: c.x + c.w, y0: c.y + c.h / 2 - 6, y1: c.y + c.h / 2 + 6, id: c.id }); });
   const O = { H, V, boites, corps };
   // `sauf` : le bloc dont on pose le repère ne se gêne pas lui-même ; sans `sauf`, TOUT compte (les textes déjà posés n'ont pas d'id)
@@ -14461,22 +14677,24 @@ function reperesCandidats(c) {
     return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 10), cands: [
       { x: cx, y: M.y + 11.6, a: 'middle' }, { x: cx, y: M.y - 8.4, a: 'middle' }, { x: M.xs + M.d * 9.5, y: M.y + 2, a: M.d > 0 ? 'start' : 'end' }] }; }
   if (M) return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 10), cands: [
-    { x: M.xs, y: M.y + 14.6, a: 'middle' }, { x: M.xs, y: M.y - 8.6, a: 'middle' }, { x: M.xs + M.d * (R_PASTILLE(M.etiq || '') * K_PASTILLE + 1.5), y: M.y + 2, a: M.d > 0 ? 'start' : 'end' }] };
+    { x: M.xs, y: M.y + 12.4, a: 'middle' }, { x: M.xs, y: M.y - 8.4, a: 'middle' }, { x: M.xs + M.d * (R_PASTILLE(M.etiq || '') + 1.5), y: M.y + 2, a: M.d > 0 ? 'start' : 'end' }] };
   if (c.kind === 'strip' && estCoupure(c.name)) return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 14), cands: [
     { x: mid, y: c.y + c.h + 8, a: 'middle' }, { x: mid, y: c.y - 4, a: 'middle' }, { x: mid, y: c.y + c.h + 16, a: 'middle' }] };
   if (c.kind === 'strip' || estBarrette(c.name)) {
     const ys = (c.kind === 'strip' ? rs : [...(c.rangs.L || []), ...(c.rangs.R || [])]).map(p => p.y);
     const yh = (ys.length ? Math.min(...ys) : c.y + c.h / 2) - BOUT_REGLETTE, yb = (ys.length ? Math.max(...ys) : c.y + c.h / 2) + BOUT_REGLETTE;
     return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 14), yh, yb, mid, cands: [
-      { x: mid, y: yb + 8.5, a: 'middle' }, { x: mid + 5.5, y: yb + 2.2, a: 'start' }, { x: mid - 5.5, y: yb + 2.2, a: 'end' }, { x: mid, y: yh - 3.5, a: 'middle' }, { x: mid, y: yb + 16.5, a: 'middle' }] }; }
+      { x: mid, y: yb + 8, a: 'middle' }, { x: mid + 5, y: yb + 2.2, a: 'start' }, { x: mid - 5, y: yb + 2.2, a: 'end' }, { x: mid, y: yh - 3.5, a: 'middle' }, { x: mid, y: yb + 16, a: 'middle' }] }; }
   return null;
 }
-/* (v85) un petit repère grandit à l'écran quand on s'éloigne (K_REPERE, style-z-plan.css) : sa place se réserve à sa taille
-   la plus grande — il ne grandit jamais sur un voisin */
+/* (v86) un repère garde de l'AIR au-dessus de ses capitales : la boîte d'un texte descend sous sa ligne de base (0,16 corps)
+   mais ne monte qu'au ras des capitales — posé au-dessus d'une pastille, « 667VT2 » touchait presque le câble passant un pas
+   plus haut (folio 2, 51B ; folio 4, 51C). Une unité de plus au-dessus, pour la seule recherche de sa place. */
+const avecAir = b => ({ ...b, y0: b.y0 - 1 });
 function poserReperes(comps, occ) {
   comps.slice().sort((u, v) => u.y - v.y || u.x - v.x).forEach(c => { const R = reperesCandidats(c); if (!R) { c.repere = null; return; }
-    let choix = null; const k1 = R.cls === 'rep-petit' ? K_REPERE : 1, boite = k => boiteDeTexte(k.x, k.y, k.a, R.nom.length, R.fs * k1, R.ls * k1);
-    for (const k of R.cands) { const b = boite(k); if (occ.libre(b, 1, c.id)) { choix = { ...k, b }; break; } }
+    let choix = null; const boite = k => boiteDeTexte(k.x, k.y, k.a, R.nom.length, R.fs, R.ls);
+    for (const k of R.cands) { const b = boite(k); if (occ.libre(avecAir(b), 1, c.id)) { choix = { ...k, b }; break; } }
     if (!choix) { const k = R.cands[0]; choix = { ...k, b: boite(k) }; }
     occ.poser(choix.b); c.repere = { x: choix.x, y: choix.y, a: choix.a, cls: R.cls, nom: R.nom }; });
 }
@@ -14484,12 +14702,13 @@ function poserReperes(comps, occ) {
    départs ; sinon de l'autre côté ; sinon sous la dernière borne, au-dessus de la première. Comme les repères des blocs :
    avant les numéros de fil, qui se logent dans ce qui reste. */
 function poserReperesVT(barrettes, occ) {
-  (barrettes || []).forEach(b => { if (!b.nomVT) { delete b.repere; return; } const bs = bornesDePiquage(b), fs = 6 * K_REPERE, ls = 0.3 * K_REPERE;
+  (barrettes || []).forEach(b => { if (!b.nomVT) { delete b.repere; return; } const bs = bornesDePiquage(b), fs = 6, ls = 0.3;
     let ecart = { y: (bs[0].y + bs[bs.length - 1].y) / 2, d: 0 }; for (let i = 1; i < bs.length; i++) { const d = bs[i].y - bs[i - 1].y; if (d > ecart.d) ecart = { y: (bs[i].y + bs[i - 1].y) / 2, d }; }
-    // (v85) à 8 de la ligne : la pastille, plus large, grandit à l'écran
-    const cands = [{ x: b.x + b.dir * 8, y: ecart.y + 2.1, a: b.dir > 0 ? 'start' : 'end' }, { x: b.x - b.dir * 8, y: ecart.y + 2.1, a: b.dir > 0 ? 'end' : 'start' },
-      { x: b.x, y: bs[bs.length - 1].y + 13, a: 'middle' }, { x: b.x, y: bs[0].y - 7.5, a: 'middle' }, { x: b.x + b.dir * 8, y: bs[bs.length - 1].y + 2.1, a: b.dir > 0 ? 'start' : 'end' }];
-    let choix = null; for (const k of cands) { const bo = boiteDeTexte(k.x, k.y, k.a, b.nomVT.length, fs, ls); if (occ.libre(bo, 1)) { choix = { ...k, bo }; break; } }
+    // à côté de la ligne, au-delà de sa pastille la plus large (le liseré de l'occupation compris)
+    const dx = Math.max(6, Math.max(...bs.map(p => R_PASTILLE(String(p.n)))) + 1.5);
+    const cands = [{ x: b.x + b.dir * dx, y: ecart.y + 2.1, a: b.dir > 0 ? 'start' : 'end' }, { x: b.x - b.dir * dx, y: ecart.y + 2.1, a: b.dir > 0 ? 'end' : 'start' },
+      { x: b.x, y: bs[bs.length - 1].y + 11, a: 'middle' }, { x: b.x, y: bs[0].y - 5.5, a: 'middle' }, { x: b.x + b.dir * dx, y: bs[bs.length - 1].y + 2.1, a: b.dir > 0 ? 'start' : 'end' }];
+    let choix = null; for (const k of cands) { const bo = boiteDeTexte(k.x, k.y, k.a, b.nomVT.length, fs, ls); if (occ.libre(avecAir(bo), 1)) { choix = { ...k, bo }; break; } }
     if (!choix) { const k = cands[2]; choix = { ...k, bo: boiteDeTexte(k.x, k.y, k.a, b.nomVT.length, fs, ls) }; }
     occ.poser(choix.bo); b.repere = { x: choix.x, y: choix.y, a: choix.a }; });
 }
@@ -14581,25 +14800,17 @@ function tronconDePiquage(w, barrettes) {
 /* Les bornes d'un équipement : le fil entre par le flanc et continue jusqu'au
    corps, où une petite borne ronde marque le contact ; le numéro s'écrit DANS
    le corps, contre le bord, comme sur un plan de câblage. Pas de boîte. */
-/* (v85) Chaque numéro dit jusqu'où il peut grandir à l'écran (`limite`) : dans sa pièce de connecteur, la largeur de la
-   pièce ; dans le corps, la moitié du corps, et jamais sur le repère, la désignation ou la référence croisée écrits au
-   milieu (`garde` : leurs boîtes, en coordonnées du bloc ; `bw` : la largeur du corps). */
-function bornesSvg(xCorps, dir, prof, rangs, baseY, connecteurDe, couleurA, garde, bw) {
+function bornesSvg(xCorps, dir, prof, rangs, baseY, connecteurDe, couleurA) {
   let out = '';
   rangs.forEach(p => { const y = p.y - baseY, xo = xCorps + dir * prof, c = connecteurDe ? connecteurDe(p.etiq) : null;
     // dans un connecteur, le fil s'arrête sur le connecteur ; sinon il va jusqu'au corps — à la couleur de son fil
     const xb = c ? xCorps + dir * CONN_W : xCorps;
     out += `<line class="lead"${traitDe(couleurA && couleurA(p.y))} x1="${f1(xo)}" y1="${f1(y)}" x2="${f1(xb)}" y2="${f1(y)}"/>`;
     if (!p.etiq) return;
-    // le numéro tient dans la pièce, un liseré de part et d'autre ; il grandit à l'écran jusqu'à garder 1,5 de chaque côté
-    if (c) { const t = clip(etiquetteDansConnecteur(p.etiq, c.nom), 4), W = CONN_W - 1.6, fs = Math.max(4.4, Math.min(FS_BORNE_PETITE, W / (t.length * CAR)));
-      const st = (fs < FS_BORNE_PETITE ? 'font-size:' + f1(fs) + 'px;' : '') + limiteCss((CONN_W - 3) / largeurTexte(t.length, fs, 0), 1.5);
-      out += `<text class="connpin"${st ? ` style="${st}"` : ''} x="${f1(xCorps + dir * CONN_W / 2)}" y="${f1(y + 0.36 * fs)}" text-anchor="middle">${esc(t)}</text>`; return; }
-    const t = clip(String(p.etiq), 5), w = largeurTexte(t.length, FS_BORNE, 0.2), x = xCorps - dir * 4, h = 2.75 * K_BORNE + 1;
-    // la place : la moitié du corps, moins ce qui est écrit au milieu à cette hauteur
-    let place = (bw || 104) / 2 - 8;
-    (garde || []).forEach(B => { if (y + h > B.y0 && y - h < B.y1) place = Math.min(place, dir < 0 ? B.x0 - 2.5 - x : x - B.x1 - 2.5); });
-    out += `<text class="pinlbl"${limite(place / w, K_BORNE)} x="${f1(x)}" y="${f1(y + 2.6)}" text-anchor="${dir > 0 ? 'end' : 'start'}">${esc(t)}</text>`; });
+    // le numéro tient dans la pièce, un liseré de part et d'autre, son milieu sur l'axe du fil ; resserré s'il est long
+    if (c) { const t = clip(etiquetteDansConnecteur(p.etiq, c.nom), 4), W = CONN_W - 1.6, fs = Math.max(4.4, Math.min(FS_BORNE_CONN, W / (t.length * CAR)));
+      out += `<text class="connpin"${fs < FS_BORNE_CONN ? ` style="font-size:${f1(fs)}px"` : ''} x="${f1(xCorps + dir * CONN_W / 2)}" y="${f1(y + 0.365 * fs)}" text-anchor="middle">${esc(t)}</text>`; return; }
+    out += `<text class="pinlbl" x="${f1(xCorps - dir * 4)}" y="${f1(y + 2.6)}" text-anchor="${dir > 0 ? 'end' : 'start'}">${esc(clip(String(p.etiq), 5))}</text>`; });
   return out;
 }
 /* « A12 » dans le connecteur A s'écrit « 12 » : la lettre est déjà en tête. */
@@ -14612,8 +14823,8 @@ function etiquetteDansConnecteur(etiq, nom) {
    dedans, sa lettre au-dessus. Un connecteur dont les bornes ne se suivent
    pas a plusieurs pièces de la même lettre. */
 const CONN_W = 13;
-/* LA PRISE DE COUPURE : la largeur de sa partie fixe (WE) et de sa partie mobile (WM, 9 avant v85 : son numéro de contact
-   y tient à 6,2, et grandit à l'écran) */
+/* LA PRISE DE COUPURE : la largeur de sa partie fixe (WE) et de sa partie mobile (WM, 9 avant v85 : un numéro de contact de
+   trois signes y tient à 5,4 avec son liseré) */
 const PRISE = Object.freeze({ WE: 6, WM: 12 });
 /* Les pièces d'un flanc, en coordonnées du bloc : des bornes qui se suivent
    sous la même lettre font une pièce { nom, x0, x1, t, b }. */
@@ -14658,8 +14869,8 @@ function boiteDuSymbole(c) {
   const bw = c.w - c.lw - c.rw, mid = c.lw + bw / 2;
   if (c.kind === 'strip' && estCoupure(c.name)) { const L = PRISE.WE + PRISE.WM; return { x: mid - L / 2, y: 0, w: L, h: c.h }; }
   if (c.kind === 'strip') { const ys = (c.rangs.S || []).map(p => p.y - c.y), yh = (ys.length ? Math.min(...ys) : c.h / 2) - BOUT_REGLETTE, yb = (ys.length ? Math.max(...ys) : c.h / 2) + BOUT_REGLETTE;
-    /* (v85) autour de la pastille la plus large (« 51A » : 16), pas seulement de la ligne ; en hauteur, des pastilles (grandies
-       à l'écran) au point de départ — les coins passaient sur le repère écrit juste dessus ou dessous */
+    /* (v85) autour de la pastille la plus large (« 51A » : 12), pas seulement de la ligne ; en hauteur, des pastilles au
+       point de départ — les coins passaient sur le repère écrit juste dessus ou dessous */
     const W = Math.max(12, ...(c.rangs.S || []).map(p => largeurPastille(String(p.etiq == null ? '' : p.etiq).trim()) + 2));
     return { x: mid - W / 2, y: yh + 4, w: W, h: yb - yh - 6.5 }; }
   return { x: 0, y: 0, w: c.w, h: c.h }; }
@@ -14752,7 +14963,7 @@ function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
   /* le numéro d'une borne : contre elle (ou contre son coude), sur son amenée — au-dessus si le symbole est debout,
      au-dessous s'il est couché (au-dessus, il y a le repère et le calibre) */
   const numero = (b, x, y, d, dessous) => { if (b.etiq == null || String(b.etiq).trim() === '') return; const t = clip(String(b.etiq).trim(), 5), a = d > 0 ? 'start' : 'end', yb = dessous ? y + 8.3 : y - 2.4;
-    nums.push({ t, x, y: yb, a, b: boiteDeTexte(x, yb, a, t.length, 7.5, 0.2), dessous: !!dessous, ly: y }); };
+    nums.push({ t, x, y: yb, a, b: boiteDeTexte(x, yb, a, t.length, 7.5, 0.2) }); };
 
   if (debouts.length) {
     /* DEBOUT : les fils d'un même flanc (d = +1 : à droite). Les bornes au milieu, aux hauteurs des fils ; l'arc vers le
@@ -14859,14 +15070,7 @@ function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
   /* la ZONE : le corps, invisible sur le folio (mais on peut y cliquer, comme dans le corps d'un équipement) ; le calque
      des dessins déjà faits (style-ref.css) la teinte pour dire « manque », « proposé », comme le corps d'un équipement */
   let s = `<rect class="cb-zone" x="${f1(c.lw)}" y="0" width="${f1(c.w - c.lw - c.rw)}" height="${f1(c.h)}"/>` + fils + arcs + lien + `<path class="cb-bouton" d="${bouton}"/>` + bornes;
-  /* (v85) le numéro d'une borne grandit à l'écran depuis son amenée (au-dessus : vers le haut, `sur` ; au-dessous : vers le
-     bas, `sous`), jusqu'à toucher un texte, le symbole, une autre amenée ou un autre numéro — sa limite écrite sur lui */
-  const grandi = (n, k) => { const b = n.b, w = (b.x1 - b.x0) * k, h = (b.y1 - b.y0) * k, x0 = n.a === 'end' ? b.x1 - w : b.x0, y0 = n.dessous ? b.y0 : b.y1 - h; return { x0, x1: x0 + w, y0, y1: y0 + h }; };
-  nums.forEach(n => { let k = K_BORNE; const tous = [...choix.map(l => l.b), ...symboles, ...nums.filter(m => m !== n).map(m => m.b)];
-    // son amenée (le trait horizontal à sa hauteur) le porte : elle ne compte pas
-    const autres = traits.filter(t => !(Math.abs(t.y0 - t.y1) < 0.01 && Math.abs(t.y0 - n.ly) < 0.6));
-    while (k > 1.001 && (tous.some(o => touche(grandi(n, k), o, 0.8)) || autres.some(t => touche(grandi(n, k), t, 0.6)))) k -= 0.05;
-    s += `<text class="pinlbl ${n.dessous ? 'sous' : 'sur'}"${limite(k, K_BORNE)} x="${f1(n.x)}" y="${f1(n.y)}" text-anchor="${n.a}">${esc(n.t)}</text>`; });
+  nums.forEach(n => { s += `<text class="pinlbl" x="${f1(n.x)}" y="${f1(n.y)}" text-anchor="${n.a}">${esc(n.t)}</text>`; });
   choix.forEach(l => { s += `<text class="${l.cls}"${l.cls === 'rep-big' || (l.cls === 'des' && l.fs < 6.8) || (l.cls === 'cb-ret' && l.fs < 6) ? ` style="font-size:${f1(l.fs)}px"` : ''} x="${f1(l.x)}" y="${f1(l.y)}" text-anchor="${l.a}">${esc(l.t)}</text>`; });
   return s;
 }
@@ -14890,8 +15094,7 @@ function drapeauxSvg(c, aGauche, aDroite) {
     s += `<line class="lead"${traitDe(d > 0 ? aGauche(p.y) : aDroite(p.y))} x1="${f1(x0)}" y1="${f1(y)}" x2="${f1(xa)}" y2="${f1(y)}"/>`;
     s += `<path class="drapeau" d="M${f1(xa)} ${f1(y - 4.5)} l${d * 7} 4.5 l${-d * 7} 4.5 z"/>`;
     const xf = xa + d * 10, a = d > 0 ? 'start' : 'end', ou = autreBoutDuRenvoi(p.etiq), xo = xf + d * (wF + 3.5);
-    // (v85) le folio grandit à l'écran jusqu'à l'autre bout écrit après lui (3,5 plus loin)
-    s += `<text class="dr-f"${limite(ou ? 1 + 2.5 / wF : K_BORNE, K_BORNE)} x="${f1(xf)}" y="${f1(y + 2.6)}" text-anchor="${a}">${esc(fF)}</text>`;
+    s += `<text class="dr-f" x="${f1(xf)}" y="${f1(y + 2.6)}" text-anchor="${a}">${esc(fF)}</text>`;
     if (!ou) return;
     // jusqu'où l'autre bout peut aller : le flanc d'en face, ou le milieu quand les deux flancs portent des drapeaux
     const lim = deux ? c.w / 2 - d * 2 : (d > 0 ? c.w - 2 : 2), W = Math.max(8, d * (lim - xo)), fs = Math.max(4.5, Math.min(7, W / (ou.length * CAR)));
@@ -14927,8 +15130,7 @@ function blocSvg(c, designation, choisi, couleurBout, info, k, ailleurs) {
        repère écrit juste dessous (« 126VT1 », audit v72) — le dessin seul, l'occupation ne bouge pas. */
     const M = symboleDePastille(c), ly = M.y - c.y, xs = M.xs - c.x, x0 = M.d > 0 ? 0 : c.w;
     s += `<line class="lead"${traitDe(M.d > 0 ? aGauche(M.y) : aDroite(M.y))} x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
-    // (v85) la pastille a grandi : le pointillé et son point de départ s'allongent d'autant, le repère descend d'autant
-    s += `<line class="barre" x1="${f1(xs)}" y1="${f1(ly - 7.5)}" x2="${f1(xs)}" y2="${f1(ly + 7.2)}"/><circle class="bardot" cx="${f1(xs)}" cy="${f1(ly + 7.2)}" r="1.2"/>`;
+    s += `<line class="barre" x1="${f1(xs)}" y1="${f1(ly - 6.4)}" x2="${f1(xs)}" y2="${f1(ly + 5.8)}"/><circle class="bardot" cx="${f1(xs)}" cy="${f1(ly + 5.8)}" r="1.2"/>`;
     s += pastilleSvg(xs, ly, M.etiq ? String(M.etiq) : '');
     s += repereDe(c);
   } else if (c.kind === 'tag') {
@@ -14950,11 +15152,10 @@ function blocSvg(c, designation, choisi, couleurBout, info, k, ailleurs) {
       if ((p.dir || 0) <= 0) s += `<line class="lead"${traitDe(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
       if ((p.dir || 0) >= 0) s += `<line class="lead"${traitDe(aDroite(p.y))} x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     /* le numéro du contact se lit dans la PARTIE MOBILE : c'est là que l'atelier l'écrit — UNE fois par contact (v85) : des
-       rangées du même contact qui se suivent n'en portent qu'un, au milieu ; à 6,2 (5 et 5,4 avant), resserré s'il est long,
-       et il grandit à l'écran dans la largeur de la partie mobile */
+       rangées du même contact qui se suivent n'en portent qu'un, au milieu ; à 5,4, resserré s'il est long */
     bornesUniques(rs.slice().sort((u, v) => u.y - v.y)).forEach(g => { if (!g.etiq) return; const n = clip(g.etiq, 4), ly = (g.y0 + g.y1) / 2 - c.y, W = WM - 2;
-      const fs = Math.max(4.4, Math.min(FS_BORNE_PETITE, W / (n.length * CAR))), st = (fs < FS_BORNE_PETITE ? 'font-size:' + f1(fs) + 'px;' : '') + limiteCss((WM - 1.2) / largeurTexte(n.length, fs, 0), 1.45);
-      s += `<text class="prnum"${st ? ` style="${st}"` : ''} x="${f1(xm0 + WM / 2)}" y="${f1(ly + 0.36 * fs)}" text-anchor="middle">${esc(n)}</text>`; });
+      const fs = Math.max(4.4, Math.min(FS_BORNE_PETITE, W / (n.length * CAR)));
+      s += `<text class="prnum"${fs < FS_BORNE_PETITE ? ` style="font-size:${f1(fs)}px"` : ''} x="${f1(xm0 + WM / 2)}" y="${f1(ly + 0.365 * fs)}" text-anchor="middle">${esc(n)}</text>`; });
     s += repereDe(c);
   } else if (c.kind === 'strip' || estBarrette(c.name)) {
     /* BARRETTE (et tout bornier, tout potentiel) : une fine ligne pointillée
@@ -14979,7 +15180,7 @@ function blocSvg(c, designation, choisi, couleurBout, info, k, ailleurs) {
       if (d >= 0) s += `<line class="lead"${traitDe(aDroite(p.y))} x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     // chaque borne est une pastille sur la ligne, son numéro dedans ; toutes de la largeur de la plus large
     const larg = Math.max(PAST_H, ...gs.filter(g => !g.coude).map(g => largeurPastille(g.etiq)));
-    gs.forEach(g => { if (!g.coude) s += pastilleSvg(mid, g.y0 - c.y, g.etiq, { y1: g.y1 - c.y, larg, place: bw }); });
+    gs.forEach(g => { if (!g.coude) s += pastilleSvg(mid, g.y0 - c.y, g.etiq, { y1: g.y1 - c.y, larg }); });
     s += repereDe(c);
   } else if (estMasse(c.name)) {
     /* MASSE : le fil descend d'un court trait sur le symbole CEI 60617-02 —
@@ -15003,19 +15204,16 @@ function blocSvg(c, designation, choisi, couleurBout, info, k, ailleurs) {
     const cg = rl.length ? connecteursSvg(bx, -1, rl, c.y, connDe) : '', cd = rr.length ? connecteursSvg(bx + bw, +1, rr, c.y, connDe) : '';
     s += cg + cd;
     s += repereSvg('rep-big', mid, yRep, clip(c.name, 14), bw, 14);
-    // (v85) ce qui s'écrit au milieu du corps : les numéros de borne ne grandissent jamais dessus (`bornesSvg`)
-    const garde = [], milieu = (y, n, fs, ls) => { const b = boiteDeTexte(mid, y, 'middle', n, fs, ls); garde.push(b); };
-    { const nom = clip(c.name, 14), fs = Math.max(7, Math.min(10.5, (bw - 28) / (0.66 * nom.length))); milieu(yRep, nom.length, fs, 1.15); }
-    if (c.h > 380) { s += `<text class="bsname" x="${f1(mid)}" y="${f1(c.h - 9)}" text-anchor="middle">${esc(clip(c.name, 12))}</text>`; milieu(c.h - 9, clip(c.name, 12).length, 6.5, 0.9); }
-    if (designation) { s += `<text class="des" x="${f1(mid)}" y="${f1(yRep + 10)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`; milieu(yRep + 10, clip(designation, 18).length, 6.8, 0.4); }
+    if (c.h > 380) s += `<text class="bsname" x="${f1(mid)}" y="${f1(c.h - 9)}" text-anchor="middle">${esc(clip(c.name, 12))}</text>`;
+    if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(yRep + 10)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
     /* la RÉFÉRENCE CROISÉE : le même repère paraît sur d'autres folios (« ↔ f. 2 · 4 ») — sous le repère, dans le corps,
        entre les numéros de borne ; un corps trop court n'en a pas la place (la bulle du survol le dit) */
     const yX = yRep + (designation ? 19 : 10), place = Math.floor((bw - 2 * 30) / (CAR * 6.2 + 0.3));
     let xr = ailleurs && ailleurs.length ? '↔ f. ' + ailleurs.join(' · ') : '';
     if (xr.length > place) xr = place >= 8 ? xr.slice(0, place - 1).replace(/[\s·]+$/, '') + '…' : '';
-    if (xr && yX + 2.5 <= c.h) { s += `<text class="xref" x="${f1(mid)}" y="${f1(yX)}" text-anchor="middle">${esc(xr)}</text>`; milieu(yX, xr.length, 6.2, 0.3); }
-    if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y, connDe, aGauche, garde, bw);
-    if (rr.length) s += bornesSvg(bx + bw, +1, c.rw, rr, c.y, connDe, aDroite, garde, bw);
+    if (xr && yX + 2.5 <= c.h) s += `<text class="xref" x="${f1(mid)}" y="${f1(yX)}" text-anchor="middle">${esc(xr)}</text>`;
+    if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y, connDe, aGauche);
+    if (rr.length) s += bornesSvg(bx + bw, +1, c.rw, rr, c.y, connDe, aDroite);
     // un shunt entre bornes d'un connecteur : un pontage fin, juste devant la pièce, un point sur chaque borne pontée
     paquetsDePonts(c.shunts || []).forEach(([y1, y2]) => { const aDroite = rr.some(p => Math.abs(p.y - y1) < 0.6) && !rl.some(p => Math.abs(p.y - y1) < 0.6);
       const xs = aDroite ? bx + bw + CONN_W + 3.5 : bx - CONN_W - 3.5, entre = (aDroite ? rr : rl).filter(p => p.y >= y1 - 0.6 && p.y <= y2 + 0.6);
@@ -22181,7 +22379,8 @@ const echelleDuBloc = (b, r) => Math.min(0.5, Math.max(0.16, b.width / r.width, 
 function naitreCarte(el, de) { if (mouvementReduit()) { dessinerLien(); lacherLeSurvol(); return; }
   const r = el.getBoundingClientRect(), box = $('ba-equip');
   // pas de fondu d'entrée de la fiche pendant qu'elle naît : la vignette se lit tout de suite
-  if (box) { box.classList.remove('fondu'); box.getAnimations({ subtree: true }).forEach(a => { try { a.finish(); } catch (_) { } }); }
+  // (v86) sauf le sceau, qui se trace pendant qu'elle se pose (`eveillerSceau`)
+  if (box) { box.classList.remove('fondu'); box.getAnimations({ subtree: true }).forEach(a => { const t = a.effect && a.effect.target; if (t && t.closest && t.closest('.nc-sceau')) return; try { a.finish(); } catch (_) { } }); }
   const fin = () => { el.classList.remove('carte-nait'); dessinerLien(); lacherLeSurvol(); }; el.classList.add('carte-nait');
   if (!de || !r.width) { el.animate([{ opacity: 0, transform: 'translateY(8px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: courbeCarte('entree') }).onfinish = () => { fin(); dessinerLien(true); }; return; }
   // (l'origine de la carte est son coin haut-gauche : son centre part du centre du bloc)
@@ -22218,6 +22417,32 @@ function resorberCarte(el) { const de = el.getBoundingClientRect(), vers = rectD
   f.animate([{ transform: 'none' }, { transform: `translate(${tx}px,${ty}px) scale(${s})` }], { duration: 240, easing: courbeCarte('sortie'), fill: 'forwards' }).onfinish = () => f.remove();
   // (l'opacité suit le temps, pas la courbe : pleine jusqu'à la moitié, éteinte à 70 %)
   f.animate([{ opacity: 1 }, { opacity: 1, offset: 0.45 }, { opacity: 0, offset: 0.7 }, { opacity: 0 }], { duration: 240, fill: 'forwards' }); }
+
+/* ---- LE SCEAU (v86) : la silhouette de l'objet (08-vues, `silhouetteVue` ; dans la barre de la carte, en tête du grand) SE
+   TRACE quand la fiche s'ouvre sur un objet — chaque trait à son tour, en un peu plus d'une demi-seconde —, puis un éclat de
+   courant la parcourt une fois. Refaite sur le même objet (un réglage, un tri), rien ne bouge ; refermée, elle se retracera.
+   08-niveaux (`lierNiveaux`) l'appelle à chaque rendu ; c'est aussi là que la lumière reprend sa place sous la souris. ---- */
+function eveillerSceau(box) { lumiereEnPlace(box); const s = box && box.querySelector('.nc-sceau svg, .nc-sil svg'); if (!s) return;
+  const cle = (s.closest('.nc-sil') ? 'g|' : 'c|') + (box.dataset.cle || (typeof cleObjet === 'function' ? cleObjet() : '')); if (CARTE.sceau === cle) return; CARTE.sceau = cle;
+  if (mouvementReduit()) return;
+  const traits = [...s.querySelectorAll('.sl-trait > *')], pas = Math.min(55, 360 / Math.max(1, traits.length)), d0 = 80;
+  traits.forEach((t, i) => t.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 560, delay: d0 + i * pas, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' }));
+  const c = s.querySelector('.sl-courant'); if (c) c.animate([{ strokeDashoffset: .24 }, { strokeDashoffset: -1 }], { duration: 820, delay: d0 + traits.length * pas + 420, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'backwards' }); }
+
+/* ---- LA LUMIÈRE (v86, le lecteur : « fais quelque chose d'un peu plus interactif en fond ») : sous la carte, une lueur de
+   cuivre suit la souris — avec un rien de retard (la transition de --lx / --ly, style-z-carte) — et révèle la trame du folio
+   d'où la carte est née ; la souris partie, elle revient se poser sous le sceau. Au doigt, dans le grand, ou le mouvement
+   réduit : elle reste sous le sceau. ---- */
+const LUMIERE = { pos: null, rq: 0 };
+function poserLumiere(l, sansElan) { if (!l) return; const p = LUMIERE.pos, f = l.parentElement;
+  if (sansElan) { l.style.transition = 'none'; requestAnimationFrame(() => requestAnimationFrame(() => l.style.removeProperty('transition'))); }
+  if (!p || !f) { l.style.removeProperty('--lx'); l.style.removeProperty('--ly'); return; }
+  const r = f.getBoundingClientRect(); l.style.setProperty('--lx', Math.round(p.x - r.left) + 'px'); l.style.setProperty('--ly', Math.round(p.y - r.top + f.scrollTop) + 'px'); }
+// la carte refaite (un réglage, un autre objet) : la nouvelle lumière naît là où était l'ancienne, sans glisser depuis le haut
+const lumiereEnPlace = box => { if (LUMIERE.pos && box) poserLumiere(box.querySelector(':scope > .nc-lumiere'), true); };
+function lierLumiere(el) { const suivre = () => { LUMIERE.rq = 0; poserLumiere(el.querySelector('.fi.nv-c > .nc-lumiere')); };
+  el.addEventListener('pointermove', e => { if (e.pointerType === 'touch' || NIVEAU.grand || mouvementReduit()) return; LUMIERE.pos = { x: e.clientX, y: e.clientY }; if (!LUMIERE.rq) LUMIERE.rq = requestAnimationFrame(suivre); }, { passive: true });
+  el.addEventListener('pointerleave', () => { LUMIERE.pos = null; if (!LUMIERE.rq) LUMIERE.rq = requestAnimationFrame(suivre); }); }
 
 /* ---- LE FIL : du bloc à la carte, une courbe fine (#carte-lien, page.html) ---------------------------------------- */
 const auBord = (r, x, y) => ({ x: Math.max(r.left, Math.min(r.left + r.width, x)), y: Math.max(r.top, Math.min(r.top + r.height, y)) });
@@ -22353,7 +22578,9 @@ function lierCarte() { const el = $('inspecteur');
   // (v78) chaque fiche s'ouvre en carte ; le grand ne se garde pas d'une session à l'autre — sa largeur, si
   CARTE.epingle = false; CARTE.grande = false; NIVEAU.grand = false; CARTE.taille = tailleEnMemoire(); CARTE.volet = voletEnMemoire(); appliquerVolet(); fenetreEnMemoire(); FENETRE.libre = false; lierBords(el);
   // fermée, d'où qu'on la ferme (08-interface, `fermerInspecteur`), elle rend le clavier
-  if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) rendreLeClavierDeLaCarte(); }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
+  // (v86) et son sceau se retracera à la prochaine ouverture, même sur le même objet
+  if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) { rendreLeClavierDeLaCarte(); CARTE.sceau = ''; LUMIERE.pos = null; } }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
+  lierLumiere(el);
   // l'endroit du dernier appui sur la planche : la fiche d'un câble naît de là, un clic sur le plan fait glisser la carte
   $('planche').addEventListener('pointerdown', e => { CARTE.appui = { x: e.clientX, y: e.clientY, t: Date.now() }; }, true);
   // où est la souris (la carte qui se pose dessous fait oublier au plan son survol : `lacherLeSurvol`)
@@ -23455,6 +23682,8 @@ function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg 
   svg.onpointermove = e => { const p = local(e);
     if (prise) { const i = Math.max(0.01, G.iDe(Math.min(W - R, Math.max(L, p.x)))), t = G.tDe(Math.min(H - B, Math.max(T, p.y))), el = prise.etat, ri = +i.toPrecision(3), rt = +t.toPrecision(2);
       el.i = ri; if (prise.k !== 'perm') el.t = rt; const dd = juger(prise.profil), pt = dd.points.find(x => x.k === prise.k) || dd.points.find(x => x.i === ri);
+      // (v86) le profil suit la main : ses cases, la conclusion, les calibres (08-disjoncteurs, `E.suivre`)
+      if (typeof E.suivre === 'function') E.suivre(prise.k, el, dd);
       montrer(p, pt ? cartePoint(pt) : carteTip(esc(amperes(ri)) + (prise.k === 'perm' ? '' : ' · ' + esc(secondes(rt))), esc(el.nom || ''), '', '')); return; }
     const g = e.target.closest && e.target.closest('.dj-pt');
     if (g) { const pt = d.points.find(x => x.k === g.dataset.k); if (pt) { vise.hidden = true; montrer(p, cartePoint(pt)); return; } }
@@ -23835,13 +24064,20 @@ function sectionDisjoncteur(nom, d, o, probs) { d = d || disjonctionDe(nom); o =
   const tete = part('calibre', '', heroCalibre(nom, d, o));
   if (d.sansCourbe) return { cle: 'disjoncteur', vide: 'aucune courbe de disjonction dans la norme : rien ne se choisit', contenu: tete };
   const cal = d.calibre, v = verdictDuRetenu(d);
-  const courbe = part('courbe', 'Courbe de déclenchement', `<figure class="dj-graphe ilot-clair">${grapheSvg(d, vueDeLaCourbe(), largeurGrapheEstimee())}<div class="dj-tip" hidden></div></figure>`, confianceDeLaCourbe(d), 'courbe');
   // « + Ajouter un état » : la dernière ligne du tableau (le designer v83 : le geste au bout de la liste, là où l'œil le
   // cherche, plus en haut à droite) — ou, quand un état de base a été supprimé, la petite liste qui le rend
   const supprimes = ['dem', 'trans', 'perm'].filter(k => d.profil && d.profil[k] === null), cleP = 'djplus|' + nom;
   const plus = `<button type="button" class="dj-plus" id="dj-plus"${supprimes.length ? ` data-changer="${escA(cleP)}" aria-expanded="${FI.liste === cleP}"` : ''} data-bulle="Un état de plus : un courant, une durée">${ico('plus')}<span>Ajouter un état</span></button>`;
   const ajouts = supprimes.length ? listeChoix(cleP, `<div class="fi-puces">${supprimes.map(k => `<button type="button" class="fi-chip" data-dj-ajout="${k}">${esc(majuscule(NOMS_PHASES[k] || k))}</button>`).join('')}<button type="button" class="fi-chip" data-dj-ajout="plus">Autre état</button></div>`, { titre: 'Ajouter un état' }) : '';
-  const profil = part('profil', 'Profil de charge', tableauProfil(d, plus) + ajouts, '', 'profil');
+  /* (v86, le lecteur : « le profil de charge et le graphique sont dans deux sections ; normalement c'est lié : le profil fait
+     varier le graphique en temps réel — je veux écrire le profil en voyant le graphique ») : UNE section, le tableau et la
+     courbe ensemble — côte à côte quand la carte le permet, sinon l'un sous l'autre, collés (`.dj-pc`, style-x-dj.css) ;
+     sous le tableau, la conclusion, qui suit la saisie comme les points de la courbe (`lierDisjonction`). La courbe garde
+     son repère `data-part="courbe"` : « Comment VOLTA a choisi » y mène. */
+  const graphe = `<figure class="dj-graphe ilot-clair">${grapheSvg(d, vueDeLaCourbe(), largeurDuGraphe(nom))}<div class="dj-tip" hidden></div></figure>`;
+  const sous = `<span class="dj-pc-sous">et courbe de déclenchement${cal ? ' du ' + esc(amperes(cal)) : ''}${aide('courbe', contexteAide('courbe', d))}</span>${confianceDeLaCourbe(d)}`;
+  const profil = part('profil', 'Profil de charge', `<div class="dj-pc"><div class="dj-pc-g">${tableauProfil(d, plus)}${ajouts}${conclusionCalibre(d, 'dj-concl-pc')}</div><div class="dj-pc-d" data-part="courbe">${graphe}</div></div>`, sous, 'profil');
+  const courbe = '';
   // pliée, la ligne dit le calibre en grand, son mot quand il ne passe pas, sa gamme ; et, tant que la proposition de
   // l'outil n'est pas écrite (l'ergonome v73 : « est-il à 10 ou à 15 ? »), le calibre du RETEST en grand et « → 15 A proposé »
   const fam = (d.famille && (d.famille.famille || d.famille.nom)) || '', propose = propositionNonEcrite(d), retest = !propose && o.calRetest && o.calRetest !== cal && !pnDeVolta(nom) ? o.calRetest : null;
@@ -24068,32 +24304,135 @@ function phraseMeilleur(d) { const m = d.meilleur, cal = m.calibre, fam = m.fami
 function tableauProfil(d, plus) { const P = d.profil, E = etatsDuProfil(P), parI = new Map(d.points.map(p => [p.i, p])), k = x => E.find(e => e.k === x), la = x => !P || P[x] !== null;
   const ordre = [la('dem') ? k('dem') : null, la('trans') ? k('trans') : null, la('perm') ? k('perm') : null, ...E.filter(e => /^plus/.test(e.k))].filter(Boolean);
   const val = (e, q) => e[q] != null && isFinite(e[q]) ? nombre(e[q]) : '';
-  /* LE VERDICT DE LA LIGNE, sous le nom (v83, le lecteur : « le temps avant de disjoncter ») : avec le calibre retenu, au
-     courant de cet état, le temps où il disjoncterait — lu dans le jugement du moteur (09, `verdictDisjonction` : le temps
-     de déclenchement du point sur la courbe qui juge, le préchauffage compris), rien de recalculé. Une information, pas
-     une marge : « ne disjoncterait qu’après 14 min » ; plus court que l'état, « disjoncte au bout de 9 s » ; sous le
-     seuil de la courbe, « ne disjoncte jamais à ce courant ». La bulle dit tout, en ampères et en secondes. */
+  /* LA BULLE D'UN ÉTAT QUI FAIT DISJONCTER le calibre retenu — lue dans le jugement du moteur (09, `verdictDisjonction` : le
+     temps de déclenchement du point sur la courbe qui juge, le préchauffage compris), rien de recalculé : plus court que
+     l'état, « disjoncte au bout de 9 s » ; un permanent au-delà de ce qu'il garantit ; des états qui, mis bout à bout, le
+     font disjoncter. (v86 : un état qui ne disjoncte pas ne dit plus rien ici — la courbe et la bulle de son point.) */
   // (deux états au même courant ne font qu'un point : sa durée est la leur, mise bout à bout — la bulle les nomme)
   const C = d.calibre > 0 ? amperes(d.calibre) : 'calibre retenu', meme = p => E.filter(x => x.i === p.i && x.t > 0 && x.t !== Infinity).length > 1;
-  const verdictLigne = p => { const m = p && p.marges && p.marges[0]; if (!m || p.ok == null) return null; const T = m.temps, perm = p.t === Infinity, dure = perm ? '' : `il tire ce courant ${secondes(p.t)}${meme(p) ? ' (' + p.nom + ')' : ''}`;
+  const verdictLigne = p => { const m = p && p.marges && p.marges[0]; if (!m || p.ok == null || p.ok) return null; const T = m.temps, perm = p.t === Infinity, dure = perm ? '' : `il tire ce courant ${secondes(p.t)}${meme(p) ? ' (' + p.nom + ')' : ''}`;
     const auCourant = `À ${amperes(p.i)}, le ${C}`;
-    if (p.ok) return T === Infinity ? { mot: 'ne disjoncte jamais à ce courant', bulle: `${auCourant} ne disjoncte jamais : ce courant reste sous le seuil de sa courbe.` }
-      : { mot: `ne disjoncterait qu’après ${secondes(T)}`, bulle: `${auCourant} ne disjoncterait qu’au bout de ${secondes(T)} ; ${dure} : il ne disjoncte pas.` };
     // (v84) « dès » : pile sur ce qu'il garantit, ou arrondi au même centième, « au-delà de » se contredirait
     if (perm && T === Infinity) return { mot: `disjoncte dès ${amperes(m.garanti || 0)}`, bulle: `En permanence, le ${C} ne garantit de ne pas disjoncter que jusqu’à ${amperes(m.garanti || 0)} ; il en tire ${amperes(p.i)} : il disjoncte.` };
     if (perm || T <= p.t) return { mot: `disjoncte au bout de ${secondes(T)}`, bulle: `${auCourant} disjoncte au bout de ${secondes(T)}${perm ? ', et ce courant dure toujours' : ' ; ' + dure} : il disjoncte.` };
     return { mot: 'disjoncte avec les autres états', bulle: `Seul, cet état ne le ferait disjoncter qu’au bout de ${secondes(T)} ; mais chaque état chauffe le disjoncteur, et, mis bout à bout, les états font disjoncter le ${C}.` }; };
-  // (un disjoncteur est valide ou pas : le verdict de la ligne est rouge quand le moteur dit que ce point fait disjoncter, gris sinon)
-  const ligne = e => { const ajoute = /^plus/.test(e.k), p = e.i > 0 ? parI.get(e.i) : null, ko = !!p && p.ok === false, v = verdictLigne(p);
-    return `<div class="dj-etat${e.k === 'perm' ? ' perm' : ''}${ko ? ' ko' : ''}" data-k="${e.k}" role="row"><span class="dj-c-nom" role="cell">`
+  // (un disjoncteur est valide ou pas : le verdict de la ligne est rouge quand le moteur dit que ce point fait disjoncter)
+  /* (v86, le lecteur : « "ne disjoncterait qu'après 36 min" dans le tableau du profil : non, on le voit sur le graphique ; rester
+     propre ») : plus de phrase sous un état qui ne disjoncte pas — la courbe le montre, et la bulle de son point le dit (le
+     survol d'une ligne allume son point) ; un état qui fait disjoncter dit seulement « disjoncte », en rouge, sa bulle le
+     détail. `data-pt` : le point de la courbe qui le porte (deux états au même courant n'en font qu'un). */
+  const ligne = e => { const ajoute = /^plus/.test(e.k), p = e.i > 0 ? parI.get(e.i) : null, ko = !!p && p.ok === false, v = ko ? verdictLigne(p) : null;
+    return `<div class="dj-etat${e.k === 'perm' ? ' perm' : ''}${ko ? ' ko' : ''}" data-k="${e.k}"${p ? ` data-pt="${escA(p.k)}"` : ''} role="row"><span class="dj-c-nom" role="cell">`
       + (ajoute ? `<input class="dj-nom" data-dj="${e.k}" data-q="nom" value="${escA(e.nom)}" aria-label="Nom de l’état" spellcheck="false" autocomplete="off">` : `<span class="dj-nom">${esc(majuscule(e.nom))}</span>`)
-      + (v ? `<i class="dj-verdict ${ko ? 'ko' : 'ok'}" data-bulle="${escA(v.bulle)}">${esc(v.mot)}</i>` : '') + '</span>'
+      + `<i class="dj-verdict${ko ? ' ko' : ''}"${v ? ` data-bulle="${escA(v.bulle)}"` : ''}>${ko ? 'disjoncte' : ''}</i></span>`
       + `<label class="dj-champ"><input data-dj="${e.k}" data-q="i" value="${escA(val(e, 'i'))}" inputmode="decimal" placeholder="—" autocomplete="off" aria-label="${escA(e.nom + ' : courant en ampères')}"></label>`
       // une durée d'une minute ou plus se lit aussi en minutes, en petit sous elle (l'ingénieur v73 : « 120 s, 2 min »)
       + (e.k === 'perm' ? `<span class="dj-inf" data-bulle="Pour toujours : il tire ce courant tant qu’il est alimenté" role="img" aria-label="Pour toujours">${ico('infini')}</span>` : `<label class="dj-champ"${e.t >= 60 && isFinite(e.t) ? ` data-min="${escA(secondes(e.t))}"` : ''}><input data-dj="${e.k}" data-q="t" value="${escA(val(e, 't'))}" inputmode="decimal" placeholder="—" autocomplete="off" aria-label="${escA(e.nom + ' : durée en secondes' + (e.t >= 60 && isFinite(e.t) ? ', soit ' + secondes(e.t) : ''))}"></label>`)
       + `<button type="button" class="dj-x" data-x="${e.k}" tabindex="-1" aria-label="${escA('Supprimer l’état « ' + e.nom + ' »')}" data-bulle="Supprimer cet état">${ico('fermer')}</button></div>`; };
   return `<div class="dj-etats" role="table" aria-label="Profil de charge"><div class="dj-entete" role="row"><span role="columnheader">État</span><span role="columnheader">Courant <i>A</i></span><span role="columnheader">Durée <i>s</i></span><span aria-hidden="true"></span></div>`
     + ordre.map(ligne).join('') + (plus ? `<div class="dj-ajout" role="row">${plus}</div>` : '') + '</div>'; }
+
+/* ---- LA CONCLUSION D'UN CALIBRE (v86, le lecteur : « une conclusion plus simple, que tout le monde comprenne — 10 A, ne
+   disjoncte pas ») ------------------------------------------------------------------------------------------------------
+   En une phrase courte et grande, le verdict (« 10 A : il ne disjoncte pas. ») ; dessous, en une phrase, le point qui
+   décide (09 bis, `g.pire` : le permanent s'il est en cause, sinon l'état le plus près de son seuil) — ce qu'il tire,
+   pendant combien de temps, et le seuil où ce calibre disjoncte sur cette durée. Valide ou pas valide : aucune réserve,
+   aucun pourcentage ; les deux courants écrits sans que l'arrondi les confonde (`deuxA`, 09). Rend { cal, cle ('passe' |
+   'declenche'), titre, detail, courbe (celle qui juge), pire } ou null (rien ne se juge). */
+function motsDuCalibre(d, cal) { if (!d || !(cal > 0) || d.sansProfil || d.sansCourbe) return null;
+  let g = (d.gamme || []).find(x => Math.abs(x.calibre - cal) < 1e-9);
+  if (!g || g.valide == null) { try { const j = verdictDisjonction(app.norme, d.courbe || '', cal, d.profil, d.contexte || {}); g = (j.gamme || []).find(x => Math.abs(x.calibre - cal) < 1e-9) || { calibre: cal, valide: j.valide, pire: j.pire }; } catch (_) { return null; } }
+  if (!g || g.valide == null) return null;
+  const ok = g.valide === true, q = g.pire, titre = `${amperes(cal)} : il ${ok ? 'ne disjoncte pas' : 'disjoncte'}.`;
+  if (!q) return { cal, cle: ok ? 'passe' : 'declenche', titre, detail: '', courbe: '', pire: null };
+  const perm = q.t === Infinity, S0 = isFinite(q.seuil) ? q.seuil : null, [I, S] = S0 != null ? (typeof deuxA === 'function' ? deuxA(q.i, S0) : [amperes(q.i), amperes(S0)]) : [amperes(q.i), ''];
+  const quand = perm ? 'En permanence' : majuscule(quandDuPoint(q)), tire = `${quand}, il tire ${!perm && q.duree < q.t - 1e-9 ? 'au moins ' : ''}${I}${perm ? '' : ' pendant ' + secondes(q.t)}`;
+  const detail = !S ? `${tire} ; à ce courant, ce calibre ne disjoncte jamais.`
+    : q.parLaSomme ? `${tire}. Chaque état passe seul, mais enchaînés, ils le chauffent jusqu’à disjoncter.`
+    : `${tire} ; ce calibre ${q.ok === false ? 'disjoncte dès' : 'ne disjoncte qu’au-delà de'} ${S}${perm ? '' : ' sur cette durée'}.`;
+  return { cal, cle: ok ? 'passe' : 'declenche', titre, detail, courbe: q.marges && q.marges[0] ? q.marges[0].courbe : '', pire: q }; }
+// d'où vient le seuil (la bulle de la conclusion) : la courbe qui juge, la plus rapide de la famille
+const bulleDuSeuil = m => m && m.courbe ? `Le seuil se lit sur la courbe ${m.courbe}, la plus rapide de la famille : sous le seuil, il ne disjoncte pas ; au-dessus, il disjoncte.` : '';
+/* LA CONCLUSION, dessinée : la marque du verdict (une coche verte, une croix rouge), la phrase grande, le détail dessous.
+   `cls` : sa taille (« dj-concl-g », l'essentiel ; « dj-concl-pc », sous le profil). Sans calibre qui convienne : le plus
+   gros de la gamme, et ce qui le fait disjoncter. */
+function conclusionCalibre(d, cls) { const cal = d.calibre, gamme = (d.gamme || []).filter(g => g.calibre > 0);
+  let m = motsDuCalibre(d, cal), titre = m ? m.titre : '';
+  if (!m && !d.sansProfil && gamme.length && !(cal > 0)) { const gros = gamme[gamme.length - 1].calibre; m = motsDuCalibre(d, gros); if (m) titre = `Aucun calibre ne convient : même le ${amperes(gros)} disjoncte.`; }
+  if (!m) return '';
+  return `<div class="dj-concl ${m.cle === 'passe' ? 'ok' : 'ko'}${cls ? ' ' + cls : ''}" aria-live="polite"><p class="dj-concl-t">${marqueVerdict(m.cle)}<span>${esc(titre)}</span></p>`
+    + `<p class="dj-concl-d"${bulleDuSeuil(m) ? ` data-bulle="${escA(bulleDuSeuil(m))}"` : ''}>${insecable(esc(m.detail))}</p></div>`; }
+// la conclusion refaite en place (le profil qui s'écrit, un calibre survolé) : sa marque, sa phrase, son détail
+function ecrireConclusion(el, m, titre) { if (!el || !m) return; el.classList.toggle('ok', m.cle === 'passe'); el.classList.toggle('ko', m.cle !== 'passe');
+  const t = el.querySelector('.dj-concl-t'), dd = el.querySelector('.dj-concl-d'); if (t) t.innerHTML = marqueVerdict(m.cle) + `<span>${esc(titre || m.titre)}</span>`;
+  if (dd) { dd.innerHTML = insecable(esc(m.detail)); if (bulleDuSeuil(m)) dd.dataset.bulle = bulleDuSeuil(m); } }
+
+/* ---- COURANT APPELÉ ET CALIBRES (l'essentiel ; v86, le lecteur : « plus interactif : du courant qui avance sur les deux
+   barres, démarrage et permanent ; les calibres en ampères, 3 A, 5 A…, pour qu'on comprenne ») ----------------------------
+   La conclusion en tête, grande ; dessous, une barre par point du profil (le démarrage, le permanent…), sur l'échelle des
+   ampères : son nom et sa durée, la barre où LE COURANT S'ÉCOULE — un flux de cuivre, plus rapide quand le courant est plus
+   fort, à l'arrêt quand le système demande moins de mouvement —, sa valeur au bout ; et, sur la piste de chaque barre, la
+   ZONE OÙ LE CALIBRE RETENU DISJONCTE pour cette durée (du seuil au bout de l'échelle, d'un rouge léger) : la barre qui reste
+   avant elle ne disjoncte pas. Au pied, les calibres de la gamme en ampères, chacun son point (vert : il ne disjoncte pas ;
+   rouge : il disjoncte), le retenu dans sa pastille de cuivre, celui de votre fichier en pointillé. Survoler un calibre (ou
+   le parcourir au clavier) montre SES zones et SA conclusion ; la souris partie, le retenu revient. */
+const FLUX = { periode: 22, base: 10, parA: 3.4, max: 96 };   // le motif du flux (px), sa vitesse : 10 px/s + 3,4 px/s par ampère, au plus 96
+const nomDuPoint = p => p.k === 'perm' ? 'Permanent' : p.k === 'dem' ? 'Démarrage' : p.k === 'trans' ? 'Transition' : majuscule(String(p.nom || 'état'));
+function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
+  const cal = d.calibre, gamme = (d.gamme || []).filter(g => g.calibre > 0), pts = (d.points || []).filter(p => p.i > 0).slice(0, 5);
+  if (d.sansProfil || !gamme.length || !pts.length) return `<p class="vu-note">${esc(d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : 'Aucune gamme de calibres connue pour ce part number.')}</p>`;
+  const fic = o.calRetest && o.calRetest !== cal ? o.calRetest : propositionNonEcrite(d) ? d.pn : null;
+  // chaque calibre jugé sur ce profil (sans les câbles : le seuil d'un point n'en dépend pas) — le seuil de chaque barre
+  const ctx = { ...(d.contexte || {}), fils: [] }, juges = new Map(gamme.map(g => { let j = null; try { j = verdictDisjonction(app.norme, d.courbe || '', g.calibre, d.profil, ctx); } catch (_) { j = null; } return [g.calibre, j]; }));
+  const point = (c, p) => { const j = juges.get(c); return j ? j.points.find(x => x.k === p.k) || null : null; };
+  const max = Math.max(...gamme.map(g => g.calibre), ...pts.map(p => p.i)) * 1.08, pc = v => Math.max(0, Math.min(100, v / max * 100)), f1 = v => (Math.round(v * 100) / 100).toString();
+  const seuilDe = (c, p) => { const q = point(c, p); return q && isFinite(q.seuil) ? q.seuil : null; };
+  const calZ = cal > 0 ? cal : gamme[gamme.length - 1].calibre, A = amperes(calZ);
+  const lignes = pts.map(p => { const s = seuilDe(calZ, p), q = point(calZ, p), ko = !!q && q.ok === false, perm = p.t === Infinity, v = Math.min(FLUX.max, FLUX.base + FLUX.parA * p.i), dedans = pc(p.i) > 80;
+    const S = s != null ? (typeof deuxA === 'function' ? deuxA(p.i, s)[1] : amperes(s)) : '';
+    const bulle = `${nomDuPoint(p)} : ${amperes(p.i)}${perm ? ' en permanence' : ' pendant ' + secondes(p.t)}.` + (S ? `\n${perm ? 'En permanence' : 'Sur cette durée'}, le ${A} ${ko ? 'disjoncte dès' : 'ne disjoncte qu’au-delà de'} ${S} : la zone rouge commence là.` : '');
+    return `<div class="dj-fx-l ${perm ? 'perm' : 'pointe'}${ko ? ' ko' : ''}" data-k="${escA(p.k)}" data-bulle="${escA(bulle)}">`
+      + `<span class="dj-fx-nom"><b>${esc(nomDuPoint(p))}</b><small>${perm ? ico('infini') : esc(secondes(p.t))}</small></span>`
+      + `<span class="dj-fx-piste"><i class="dj-fx-zone" style="left:${s != null ? pc(s).toFixed(2) : 100}%"></i>`
+      + `<i class="dj-fx-barre" style="width:${pc(p.i).toFixed(2)}%;--flux:${(FLUX.periode / v).toFixed(2)}s"></i>`
+      + `<b class="dj-fx-val${dedans ? ' dedans' : ''}" style="left:${pc(p.i).toFixed(2)}%">${esc(amperes(p.i))}</b></span></div>`; }).join('');
+  // l'échelle : chaque calibre à sa place ; deux chiffres trop proches, le plus petit se tait (son point reste, sa bulle le dit)
+  const piste = Math.max(240, largeurVue() - 150), kept = []; gamme.forEach(g => { const x = pc(g.calibre) / 100 * piste, w = 14 + String(nombre(g.calibre) + ' A').length * 7, imp = g.calibre === cal || g.calibre === fic;
+    const voisin = kept.find(k => Math.abs(k.x - x) < (k.w + w) / 2 + 6); if (!voisin) kept.push({ c: g.calibre, x, w }); else if (imp && voisin.c !== cal && voisin.c !== fic) { kept.splice(kept.indexOf(voisin), 1, { c: g.calibre, x, w }); } });
+  const cals = gamme.map(g => { const c = g.calibre, k = cleDuVerdict(g), m = motsDuCalibre(d, c) || { titre: amperes(c), detail: '', cle: k }, ret = c === cal, f = c === fic, montre = kept.some(x => x.c === c);
+    const seuils = pts.map(p => { const s = seuilDe(c, p); return s != null ? f1(s) : ''; }).join(' '), oks = pts.map(p => { const q = point(c, p); return q && q.ok === false ? '0' : '1'; }).join('');
+    return `<span class="dj-fx-cal ${k === 'passe' ? 'oui' : 'non'}${ret ? ' ret' : ''}${f ? ' fic' : ''}${montre ? '' : ' tu'}" style="left:${pc(c).toFixed(2)}%" tabindex="0" role="button" data-cal="${c}" data-seuils="${seuils}" data-oks="${oks}" data-cle="${escA(m.cle)}" data-titre="${escA(m.titre)}" data-detail="${escA(m.detail)}"`
+      + ` aria-label="${escA(m.titre + (ret ? ' Retenu.' : f ? ' Celui de votre fichier.' : '') + ' ' + m.detail)}" data-bulle="${escA(m.titre + (m.detail ? '\n' + m.detail : '') + (ret ? '\nRetenu.' : f ? '\nCelui de votre fichier.' : ''))}">`
+      + `<i></i><b>${esc(nombre(c))}<small>A</small></b>${ret ? '<em>retenu</em>' : f ? '<em>votre fichier</em>' : ''}</span>`; }).join('');
+  // le calibre de votre fichier, quand VOLTA en retient un autre : sa conclusion, une ligne dessous
+  const mF = fic ? motsDuCalibre(d, fic) : null, ligneF = mF ? `<p class="dj-concl-fic ${mF.cle === 'passe' ? 'ok' : 'ko'}">${marqueVerdict(mF.cle)}<span><b>Votre fichier porte un ${esc(amperes(fic))}</b> : il ${mF.cle === 'passe' ? 'ne disjoncte pas' : 'disjoncte'}. ${insecable(esc(mF.detail))}</span></p>` : '';
+  // (v81) le retenu est celui du fichier et il ne disjoncte pas, mais un plus petit suffirait : VOLTA le garde, et le dit
+  const mini = (gamme.find(g => g.valide && g.catalogue !== false) || {}).calibre, deFichier = d.pn && cal && Math.abs(d.pn - cal) < 1e-9 && d.origine !== 'main';
+  const note = deFichier && mini && mini < cal - 1e-9 ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(mini))} — un clic sur lui, dans l’onglet Calibre, le retient.</p>` : '';
+  const leg = `<p class="dj-fx-leg"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="zone"></i><span class="dj-fx-leg-z">où le ${esc(A)} disjoncte</span></span>${fic ? '<span><i class="fic"></i>celui de votre fichier</span>' : ''}</p>`;
+  return `<div class="dj-ca" data-disj="${escA(nom)}" data-max="${f1(max)}" data-cal="${calZ}">${conclusionCalibre(d, 'dj-concl-g')}${ligneF}`
+    + `<div class="dj-flux" role="group" aria-label="${escA('Ce qu’il tire, sur l’échelle de ses calibres')}">${lignes}<div class="dj-fx-echelle"><span></span><span class="dj-fx-cals">${cals}</span></div></div>${leg}${note}</div>`; }
+// survoler (ou parcourir au clavier) un calibre de l'échelle : ses zones glissent sur les barres, sa conclusion s'écrit ; la
+// souris partie, le retenu revient
+function lierCourantAppele(ca) { const max = +ca.dataset.max || 1, lignes = [...ca.querySelectorAll('.dj-fx-l')], concl = ca.querySelector('.dj-concl-g'), legZ = ca.querySelector('.dj-fx-leg-z');
+  const ret = ca.querySelector(`.dj-fx-cal[data-cal="${CSS.escape(ca.dataset.cal || '')}"]`), cals = [...ca.querySelectorAll('.dj-fx-cal')], t0 = concl ? concl.querySelector('.dj-concl-t span') : null, titre0 = t0 ? t0.textContent : '';
+  const montrer = el => { if (!el) return; const s = (el.dataset.seuils || '').split(' '), oks = el.dataset.oks || '';
+    lignes.forEach((l, i) => { const z = l.querySelector('.dj-fx-zone'), v = parseFloat(s[i]); if (z) z.style.left = (isFinite(v) ? Math.max(0, Math.min(100, v / max * 100)) : 100).toFixed(2) + '%'; l.classList.toggle('ko', oks[i] === '0'); });
+    if (concl) ecrireConclusion(concl, { cle: el.dataset.cle, titre: el.dataset.titre, detail: el.dataset.detail }, el === ret ? titre0 : '');
+    if (legZ) legZ.textContent = 'où le ' + amperes(+el.dataset.cal) + ' disjoncte';
+    cals.forEach(c => c.classList.toggle('vu', c === el && c !== ret)); ca.classList.toggle('apercu', el !== ret); };
+  const revenir = () => montrer(ret);
+  cals.forEach(c => { c.onpointerenter = () => montrer(c); c.onfocus = () => montrer(c); c.onblur = revenir; });
+  const ech = ca.querySelector('.dj-fx-cals'); if (ech) ech.onpointerleave = revenir; }
+/* LA LARGEUR DE LA COURBE, quand elle se dessine : celle qu'elle a déjà à l'écran (une saisie, un rendu de la même fiche) ;
+   sinon celle qu'elle aura — le panneau de l'onglet, moins le tableau du profil quand ils sont côte à côte (`.dj-pc`, à
+   partir de 700 px de carte : style-x-dj.css). Le graphique se redessine de toute façon à sa vraie largeur (`lierGraphe`). */
+const PC = { cote: 700, large: 900, table: 312, tableL: 360, ecart: 20 };
+function largeurDuGraphe(nom) { const box = typeof $ === 'function' ? $('ba-equip') : null, vu = box && box.querySelector(`.fi-dj[data-disj="${CSS.escape(nom)}"] .dj-graphe`);
+  if (vu && vu.clientWidth > 200) return Math.round(vu.clientWidth);
+  if (!(box && box.clientWidth > 200)) return 392;
+  const carte = Math.min(1000, box.clientWidth - (typeof grandLarge === 'function' && grandLarge() ? 264 : 0) - 84);
+  return carte >= PC.cote ? Math.max(300, carte - (carte >= PC.large ? PC.tableL : PC.table) - PC.ecart) : Math.max(300, Math.min(760, carte)); }
 
 /* ---- ses câbles, pour la section commune « Câbles » (08-fiche, `listeCables`) ------------ */
 /* La chute en ligne depuis le disjoncteur, chemin par chemin : au courant permanent du profil (sinon le calibre, sinon
@@ -24180,7 +24519,7 @@ const ecrireLaLigne = el => { if (el && !mouvementReduit()) el.animate([{ opacit
 // colonne Origine du retest corrigé — le domaine C, 08-export, `avecOrigineVolta`)
 const parVolta = faire => typeof avecOrigineVolta === 'function' ? avecOrigineVolta(faire) : faire();
 // la saisie du profil en cours (v82) : le disjoncteur dont la saisie a déjà pris son entrée d'historique, et le souffle
-const PROFIL_VIF = { nom: '', minuteur: 0 };
+const PROFIL_VIF = { nom: '', minuteur: 0, image: 0 };
 function lierDisjonction(nom, conteneur) {
   const racine = conteneur || (($('ba-equip') && $('ba-equip').querySelector(`.fi-dj[data-disj="${CSS.escape(nom)}"]`)) ? $('ba-equip') : document);
   const parts = () => [...racine.querySelectorAll(`.fi-dj[data-disj="${CSS.escape(nom)}"]`)];
@@ -24225,6 +24564,44 @@ function lierDisjonction(nom, conteneur) {
   const finApercu = () => { if (AP.cal == null) return; AP.cal = null; const x = items().find(y => y.retenu); if (x) montrer(x.calibre); else { const h = Q('.dj-heros'); if (h) h.classList.remove('apercu'); } };
   const apercu = cal => { if (cal === E.d.calibre) { finApercu(); return; } AP.cal = cal; montrer(cal, { apercu: true }); };
 
+  /* LE PROFIL EN DIRECT (v86, le lecteur : « je veux écrire le profil en voyant le graphique ») : chaque touche rejuge le profil
+     tel qu'il s'écrit, au calibre retenu (09 bis, `verdictDisjonction` : moins d'une milliseconde) — les points GLISSENT sur
+     la courbe (le même dessin, ses points déplacés : `courbeVive`), la conclusion, les calibres et le mot « disjoncte » des
+     lignes suivent (`suivreVif`) — ; le contrat s'écrit un souffle après la dernière touche (`vif`) et la fiche entière suit,
+     le calibre automatique compris (la bande glisse alors jusqu'à lui). Glisser un point de la courbe fait l'inverse : ses
+     cases suivent (`E.suivre`, appelé par 08-courbe-dj). */
+  const memeForme = (a, b) => a.children.length === b.children.length && [...a.children].every((x, i) => x.tagName === b.children[i].tagName && memeForme(x, b.children[i]));
+  const greffeSvg = (a, b) => { [...a.attributes].forEach(x => { if (!b.hasAttribute(x.name)) a.removeAttribute(x.name); }); [...b.attributes].forEach(x => { if (a.getAttribute(x.name) !== x.value) a.setAttribute(x.name, x.value); });
+    if (!b.children.length) { if (a.textContent !== b.textContent) a.textContent = b.textContent; return; } [...a.children].forEach((x, i) => greffeSvg(x, b.children[i])); };
+  const courbeVive = dd => { const fig = Q('.dj-graphe'); if (!fig || !(dd.courbes || []).length) return; const svg = fig.querySelector('svg'), w = +((svg && svg.dataset.w) || 0) || Math.round(fig.clientWidth); if (!(w > 200)) return;
+    const t = document.createElement('template'); t.innerHTML = grapheSvg(dd, vueDeLaCourbe(), w); const neuf = t.content.firstElementChild, pa = svg && svg.querySelector('.dj-prof'), pb = neuf.querySelector('.dj-prof');
+    // le même cadre et autant de points : on les déplace (ils glissent, style-x-dj.css) ; sinon le dessin entier change
+    if (svg && pa && pb && neuf.dataset.xlo === svg.dataset.xlo && neuf.dataset.xhi === svg.dataset.xhi && memeForme(pa, pb)) { greffeSvg(pa, pb); const ea = svg.querySelector('.dj-etiquettes'), eb = neuf.querySelector('.dj-etiquettes'); if (ea && eb && !ea.isEqualNode(eb)) ea.replaceWith(eb); }
+    else if (svg) svg.replaceWith(neuf); else fig.prepend(neuf);
+    lierGraphique(fig, nom, { ...E, d: dd }, lire, ecrire, retenir); };
+  const suivreVif = dd => { const m = motsDuCalibre(dd, dd.calibre);
+    QA('.dj-concl-pc').forEach(el => ecrireConclusion(el, m)); racine.querySelectorAll(`.dj-ca[data-disj="${CSS.escape(nom)}"] .dj-concl-g`).forEach(el => ecrireConclusion(el, m));
+    // la rangée des calibres (08-fiche, `.vu-cals`) : chacun son mot, sur ce profil
+    racine.querySelectorAll('.vu-cals [data-nv-cal]').forEach(b => { const g = (dd.gamme || []).find(x => Math.abs(x.calibre - +b.dataset.nvCal) < 1e-9); if (!g) return; const k = cleDuVerdict(g); b.classList.toggle('oui', k === 'passe'); b.classList.toggle('non', k !== 'passe'); });
+    // chaque ligne : son point, et « disjoncte » quand il fait disjoncter
+    const parI = new Map((dd.points || []).map(p => [p.i, p]));
+    QA('.dj-etat').forEach(row => { const inp = row.querySelector('[data-q="i"]'), i = inp ? nombreLu(inp.value) : null, p = i > 0 ? parI.get(i) : null, ko = !!p && p.ok === false, v = row.querySelector('.dj-verdict');
+      row.classList.toggle('ko', ko); if (p) row.dataset.pt = p.k; else delete row.dataset.pt;
+      if (v) { v.classList.toggle('ko', ko); v.textContent = ko ? 'disjoncte' : ''; if (!ko) delete v.dataset.bulle; } });
+    const f = ligneAuClavier(); if (f) allumer(f, true); };
+  const profilVif = () => { const profil = lire(); let dd; try { dd = { ...E.d, ...verdictDisjonction(app.norme, E.d.courbe, E.d.calibre, profil, E.d.contexte), profil }; } catch (_) { return; }
+    courbeVive(dd); suivreVif(dd); };
+  E.suivre = (k, etat, dd) => { const row = Q(`.dj-etat[data-k="${CSS.escape(k)}"]`), a = document.activeElement;
+    if (row) { const i = row.querySelector('[data-q="i"]'), t = row.querySelector('[data-q="t"]'); if (i && i !== a && etat.i != null) i.value = nombre(etat.i); if (t && t !== a && etat.t != null) t.value = nombre(etat.t); }
+    suivreVif(dd); };
+  // la ligne où le clavier écrit ; une ligne et son point, allumés ou éteints (la bulle du point : celle de son focus)
+  const ligneAuClavier = () => { const a = document.activeElement, r = a && a.closest ? a.closest('.dj-etat') : null; return r && parts().some(p => p.contains(r)) ? r : null; };
+  const allumer = (row, oui) => { const fig = Q('.dj-graphe'), g = fig && row && row.dataset.pt ? fig.querySelector(`.dj-pt[data-k="${CSS.escape(row.dataset.pt)}"]`) : null;
+    if (fig) fig.querySelectorAll('.dj-pt.lie').forEach(x => { if (x !== g || !oui) x.classList.remove('lie'); });
+    QA('.dj-etat.lie').forEach(r => r.classList.remove('lie'));
+    if (!g) { if (fig && !oui) { const tip = fig.querySelector('.dj-tip'), vise = fig.querySelector('.dj-vise'); if (tip) tip.hidden = true; if (vise) vise.hidden = true; } return; }
+    g.classList.toggle('lie', !!oui); if (oui && g.onfocus) g.onfocus(); else if (!oui && g.onblur) g.onblur(); };
+
   const relier = () => {
     // un calibre retenu d'un clic — un cran du cadran, une puce de « À la main » : TOUS, même ceux qui ne passent pas ;
     // la gamme reste ouverte (on essaie, on compare) ; « Automatique (15 A) » retient le meilleur
@@ -24253,8 +24630,10 @@ function lierDisjonction(nom, conteneur) {
     // profil s'écrit pendant la frappe (un souffle après la dernière touche) — l'essentiel, la courbe, les câbles suivent ;
     // une seule entrée d'historique par saisie, prise à la première touche
     const vif = () => { const c = lire(), avant = parts()[0]; if (PROFIL_VIF.nom !== nom) { histPush('profil de charge de ' + nom); PROFIL_VIF.nom = nom; } poserCharge(nom, c); apresEdition(); apres(avant, true); };
+    // (v86) chaque touche montre tout de suite ce qu'elle change (`profilVif` : les points sur la courbe, la conclusion, les
+    // calibres) ; le contrat s'écrit un souffle après la dernière
     QA('.dj-etats input').forEach(el => {
-      el.oninput = () => { clearTimeout(PROFIL_VIF.minuteur); PROFIL_VIF.minuteur = setTimeout(vif, 420); };
+      el.oninput = () => { cancelAnimationFrame(PROFIL_VIF.image); PROFIL_VIF.image = requestAnimationFrame(profilVif); clearTimeout(PROFIL_VIF.minuteur); PROFIL_VIF.minuteur = setTimeout(vif, 360); };
       el.onchange = () => { clearTimeout(PROFIL_VIF.minuteur); if (PROFIL_VIF.nom === nom) { const avant = parts()[0]; poserCharge(nom, lire()); apresEdition(); apres(avant, dansUnChamp()); PROFIL_VIF.nom = ''; } else ecrire('profil de charge de ' + nom, lire()); }; });
     // « + État » : un état de plus — ou, quand le démarrage, la transition ou le permanent ont été supprimés, une petite
     // liste (08-fiche, `[data-changer]`) qui les rend ; × supprime un état, quel qu'il soit
@@ -24262,6 +24641,15 @@ function lierDisjonction(nom, conteneur) {
     const plus = Q('#dj-plus'); if (plus && !plus.dataset.changer) plus.onclick = () => ajouter('plus');
     QA('[data-dj-ajout]').forEach(b => { b.onclick = () => ajouter(b.dataset.djAjout); });
     QA('.dj-x').forEach(b => { b.onclick = () => { const c = lire(), k = b.dataset.x; if (/^plus/.test(k)) c.plus.splice(+k.slice(4), 1); else c[k] = null; ecrire('un état de moins sur ' + nom, c); }; });
+    // une ligne du profil et son point sur la courbe s'allument ensemble : la survoler (ou y écrire) montre la bulle du point
+    // (`allumer`) ; survoler un point allume sa ligne (`lierGraphe`)
+    QA('.dj-etat').forEach(row => { row._allumer = allumer; if (row._lie) return; row._lie = true;
+      row.addEventListener('pointerenter', () => row._allumer(row, true));
+      row.addEventListener('pointerleave', () => { const f = ligneAuClavier(); row._allumer(f || row, !!f); });
+      row.addEventListener('focusin', () => row._allumer(row, true));
+      row.addEventListener('focusout', e => { if (!row.contains(e.relatedTarget)) row._allumer(row, false); }); });
+    // l'essentiel : survoler un calibre de l'échelle montre ses zones et sa conclusion
+    racine.querySelectorAll(`.dj-ca[data-disj="${CSS.escape(nom)}"]`).forEach(lierCourantAppele);
     lierGraphe();
     /* LE VOYAGE : le calibre au centre a changé depuis le dernier rendu de CETTE fiche (un clic, Entrée, « Automatique »,
        Ctrl+Z) — l'index part d'où il était, longe l'arc jusqu'au nouveau, le chiffre roule, la ligne du verdict s'écrit.
@@ -24276,6 +24664,9 @@ function lierDisjonction(nom, conteneur) {
   const lierGraphe = () => { const fig = Q('.dj-graphe'); if (!fig) return; const svg = fig.querySelector('svg'), w = Math.round(fig.clientWidth);
     if (svg && w > 200 && Math.abs(w - +svg.dataset.w) > 1) { svg.outerHTML = grapheSvg(E.d, vueDeLaCourbe(), w); }
     lierGraphique(fig, nom, E, lire, ecrire, retenir);
+    // survoler un point allume la ligne du profil qui l'écrit
+    fig._ligne = k => QA('.dj-etat').forEach(r => r.classList.toggle('lie', !!k && r.dataset.pt === k));
+    if (!fig._lie) { fig._lie = true; fig.addEventListener('pointerover', e => { const g = e.target.closest && e.target.closest('.dj-pt'); if (fig._ligne) fig._ligne(g ? g.dataset.k : ''); }); fig.addEventListener('pointerleave', () => { if (fig._ligne) fig._ligne(''); }); }
     if (DJ_OBS) DJ_OBS.disconnect(); if (typeof ResizeObserver === 'function') { let large = w; DJ_OBS = new ResizeObserver(() => { const ww = Math.round(fig.clientWidth); if (!fig.isConnected) { DJ_OBS.disconnect(); return; } if (ww > 200 && Math.abs(ww - large) > 1) { large = ww; redessinerGraphe(); } }); DJ_OBS.observe(fig); } };
   relier(); }
 
@@ -25558,13 +25949,16 @@ function ligneDeFil(f) { const l = f.l, x = intensiteDuFil(l), c = chuteDuFil(l,
     // chemin de disjoncteur, la chute du câble seul se mesure aussi contre la chute admise des Hypothèses (2 V sous 28 V) — sa
     // part de ce que la ligne entière peut perdre ; l'anneau la montre comme pour les autres
     chute: { mot: volts(u), u, max: c.max, regle: c.regle, supp, seul: !c.total }, etat: trop || c.etat === 'ko' || f.coupable ? 'ko' : c.etat === 'att' ? 'att' : '', pourquoi, bulle }; }
-/* LA SECTION DES CÂBLES : le tableau, son résumé (combien, combien en défaut — ou, quand tous tiennent, le plus chargé),
+/* LA SECTION DES CÂBLES : le tableau, son résumé (combien, combien à régler — ou, quand tous portent leur courant, le plus chargé),
    sa pastille. `o.note` : ce qui est supposé, dit une fois, en tête. */
 function sectionFils(rows, probs, o) { o = o || {}; if (!rows.length) return { cle: 'fils', titre: o.titre, vide: 'aucun câble' };
   const ko = rows.filter(r => r.etat === 'ko').length, att = rows.filter(r => r.etat === 'att').length, rs = rows.filter(r => r.charge.r != null && isFinite(r.charge.r)), pire = rs.length ? rs.reduce((a, b) => (b.charge.r > a.charge.r ? b : a)) : null;
   // (v74, lot F — le lecteur : « “Tous tiennent”, c'est obscur ») : aucun problème, et le plus chargé nommé, avec ce qu'il porte de ce qu'il admet
-  const resume = [pluriel(rows.length, 'câble'), ko ? `<span class="fi-ko-t">${ko} en défaut</span>` : att ? `<span class="fi-att-t">${att} à voir</span>` : 'aucun problème' + (pire ? ` · le plus chargé, ${esc(nomCourtDuCable(pire))}, porte ${Math.round(pire.charge.r * 100)} % de ce qu’il admet` : '')].join(' · ');
-  return { cle: 'fils', titre: o.titre, compte: rows.length, nko: ko, natt: att, charge: pire ? pire.charge.r : null, resume: insecable(resume), badge: badgeProblemes(probs, 'fils') || (ko ? { t: String(ko), etat: 'ko' } : att ? { t: String(att), etat: 'att' } : { t: ico('coche'), etat: 'ok' }),
+  const resume = [pluriel(rows.length, 'câble'), ko ? `<span class="fi-ko-t">${ko} à régler</span>` : att ? `<span class="fi-att-t">${att} à voir</span>` : 'aucun problème' + (pire ? ` · le plus chargé, ${esc(nomCourtDuCable(pire))}, porte ${Math.round(pire.charge.r * 100)} % de ce qu’il admet` : '')].join(' · ');
+  // (v86) pour le statut de l'onglet (08-niveaux, `statutCables`) : le plus chargé (son nom, ses ampères, ce qu'il admet), ce
+  // qui cloche câble par câble, les câbles sans type (leur courant se lit, la part de l'admis non)
+  const raisons = rows.filter(r => ko ? r.etat === 'ko' : r.etat === 'att').map(r => nomCourtDuCable(r) + (r.pourquoi ? ' : ' + r.pourquoi : ''));
+  return { cle: 'fils', titre: o.titre, compte: rows.length, nko: ko, natt: att, charge: pire ? pire.charge.r : null, pire: pire ? { nom: nomCourtDuCable(pire), i: pire.charge.i, admis: pire.charge.admis } : null, raisons, nsans: rows.filter(r => !r.type).length, resume: insecable(resume), badge: badgeProblemes(probs, 'fils') || (ko ? { t: String(ko), etat: 'ko' } : att ? { t: String(att), etat: 'att' } : { t: ico('coche'), etat: 'ok' }),
     contenu: (o.note ? `<p class="fi-note cb-note">${o.note}</p>` : '') + listeCables(rows, o) }; }
 /* Les câbles d'un repère (équipement, barrette, prise) : une ligne chacun ; ce qui est supposé (le courant quand aucun
    disjoncteur n'est en amont, la longueur que le retest ne porte pas), dit une fois. `coupables` : câble → ce que le plan
@@ -25731,6 +26125,9 @@ function problemesEquipement(nom, cav, b, vt, dj) { const probs = [];
 const ecritsDuRepere = nom => changementsEcrits(verite().filter(l => (l.de === nom || l.vers === nom) && l.avant).map(l => [l, ['type', 'longueur', 'route', ...(l.de === nom ? ['pnDe', 'contactDe'] : []), ...(l.vers === nom ? ['pnVers', 'contactVers'] : [])]]));
 /* (v79) « 1 contact pris sur 3 », « 4 contacts pris sur 18 » : accordé */
 const prisSur = (n, m, mot) => `${n} contact${n > 1 ? 's' : ''}${mot === '' ? '' : ' ' + (mot || 'pris')} sur ${m}`;
+/* (v86) le statut de L'essentiel tient dans l'onglet le plus étroit (« 16 contacts sur 54 » passait à la ligne à côté du
+   récapitulatif) : « 16/54 contacts » ; la bulle le dit en mots, avec ce qui reste libre */
+const statutContacts = (n, m, etat) => ({ t: n + '/' + m + ' contacts', etat, bulle: prisSur(n, m) + (m - n > 0 ? ' : ' + plurielLie(m - n, 'libre') : ' : tous pris') });
 function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V), dj = estDisjoncteur(nom);
   const C = connecteursDe(nom, V).filter(c => c.nom), cav = cavitesDe(nom), parNom = new Map(cav.map(c => [c.nom, c])), vt = barrettesSur(nom);
   const sans = [...b.parBorne.keys()].filter(bo => !C.some(c => c.bornes.includes(bo))).sort(triNaturel);
@@ -25851,7 +26248,8 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
       + (ids.length > 1 ? `<div class="vu-face-choix">${bulles}</div>` : '') + `<figure class="vu-fig vu-fig-face">${faceG}<figcaption>${esc(M.module.variante + ' · vue côté contacts')}</figcaption>${legendeFaceVue(broches.some(x => x.ko))}</figure></section>` : '';
   const ess = !ids.length ? '<p class="vu-note">Cet équipement n’a pas encore de câble.</p>' : `${blocB}${blocFace}${c ? pourquoiVue('D’où vient le connecteur ' + c.nom, etapesC) : ''}`;
   const onglets = [
-    { cle: 'essentiel', statut: { t: quels.length > 1 ? (quels.some(fautif) ? quels.filter(fautif).join(', ') + ' bloque' : pluriel(quels.length, 'connecteur')) : places ? prisSur(pris, places, '') : pluriel(ids.length, 'connecteur'), etat: quels.some(fautif) ? 'ko' : 'ok' }, contenu: ess },
+    { cle: 'essentiel', statut: quels.length <= 1 && places ? statutContacts(pris, places, quels.some(fautif) ? 'ko' : 'ok') : { t: quels.length > 1 ? (quels.some(fautif) ? quels.filter(fautif).join(', ') + ' à régler' : pluriel(quels.length, 'connecteur')) : pluriel(ids.length, 'connecteur'), etat: quels.some(fautif) ? 'ko' : 'ok',
+      bulle: quels.some(fautif) ? 'Connecteur ' + quels.filter(fautif).join(', ') + ' : aucun arrangement ne loge ses câbles' : quels.length > 1 ? 'Connecteurs ' + quels.join(', ') + ' : chacun loge ses câbles' : '' }, contenu: ess },
     ongletCables(sFils), ongletFabrication(fabC, 'Ce qu’il faut pour le monter'),
     reglagesEquipement(),
     sDeja ? ongletDeLaSection(sDeja) : null];
@@ -25866,7 +26264,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
 // la case « Câbles » des chiffres (v78) : combien, combien en défaut, ce que porte le plus chargé
 const chiffreCables = s => !s ? null : s.vide ? { k: 'Câbles', v: '0', onglet: 'fils' }
   : { k: 'Câbles', v: String(s.compte || 0), etat: s.nko ? 'ko' : s.natt ? 'att' : '', barre: s.charge != null ? s.charge : null, onglet: 'fils',
-    sous: s.nko ? esc(s.nko + ' en défaut') : s.natt ? esc(s.natt + ' à voir') : s.charge != null ? esc('au plus ' + Math.round(s.charge * 100) + ' % de l’admis') : '' };
+    sous: s.nko ? esc(s.nko + ' à régler') : s.natt ? esc(s.natt + ' à voir') : s.charge != null ? esc('chargés à ' + Math.round(s.charge * 100) + ' % au plus') : '' };
 /* LA CONSOMMATION (le lecteur, v74 : « le courant de chaque équipement, c'est moi qui l'ai — je le rajoute à la main ») :
    le permanent, le démarrage et sa durée ; dessous, le disjoncteur qui l'alimente et le calibre qu'il en tire (la somme
    de tout ce qu'il alimente, 08 bis `profilDesConsommateurs`). Rien pour une masse, un renvoi, un disjoncteur. */
@@ -26063,20 +26461,12 @@ function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (
    tension basse, un moteur qui force). */
 /* UN CALIBRE EN CLAIR (v80, le lecteur : « valide, pas valide, point — pas de réserve ») : ce qu'il tire, pendant combien de
    temps, et le seuil où ce calibre disjoncte sur cette durée ; rien d'autre. */
-function calibreEnClair(d, cal) { const A = amperes(cal), g = (d.gamme || []).find(x => Math.abs(x.calibre - cal) < 1e-9);
-  let j = null; try { j = verdictDisjonction(app.norme, d.courbe || '', cal, d.profil, d.contexte || {}); } catch (_) { j = null; }
-  const p = j && j.pire, ch = chargeDuProfil(d);
-  const q = p && p.marges && p.marges[0], enPerm = !p || p.t === Infinity || p.duree === Infinity;
-  const adm = enPerm ? (g && g.tenu) : q && isFinite(q.admis) ? q.admis : null;
-  const quand = !p ? 'au plus fort' : enPerm ? 'en permanent' : String(p.nom || 'en pointe').toLowerCase().replace(/^démarrage et transition$|^démarrage$/, 'au démarrage').replace(/^transition$/, 'en transition');
-  // (v84) la durée écrite est celle sur laquelle le seuil se lit : la marche de l'escalier (`p.t`) — plus longue que l'état quand
-  // des états plus forts le précèdent, et il tire alors « au moins » ce courant ; un permanent qui disjoncte, « dès » son seuil
-  const tire = p ? `${quand}, il tire ${!enPerm && p.duree < p.t ? 'au moins ' : ''}${amperes(p.i)}${enPerm ? '' : ' pendant ' + secondes(p.t)}` : '';
-  if (g && g.permanentOk === false) return `${A} : disjoncte — en permanent, il tire ${amperes(ch.perm || 0)} ; un ${A} disjoncte dès ${amperes(g.tenu)}.`;
-  if (g && g.valide) return adm ? `${A} : ne disjoncte pas — ${tire} ; ${enPerm ? '' : 'sur cette durée, '}un ${A} ne disjoncte qu’au-delà de ${amperes(adm)}.` : `${A} : ne disjoncte pas — ${tire || 'le profil reste sous sa courbe'}.`;
-  if (g && g.somme > 1 && p && !enPerm && adm && p.i <= adm) return `${A} : disjoncte — ${tire} ; chaque pointe passe seule, mais enchaînées elles le chauffent jusqu’à disjoncter.`;
-  const tc = q && isFinite(q.temps) ? q.temps : null;
-  return `${A} : disjoncte — ${tire}${adm ? ` ; ${enPerm ? '' : 'sur cette durée, '}un ${A} disjoncte dès ${amperes(adm)}` : ''}${tc ? ` : il disjoncte au bout de ${secondes(tc)}` : ''}.`; }
+/* (v86) la même phrase que la conclusion (08-disjoncteurs, `motsDuCalibre` : le point qui décide de la ligne de la gamme,
+   `g.pire` — le moteur ne rejuge plus tout le profil pour une bulle), en une ligne : « 10 A : ne disjoncte pas — au
+   démarrage, il tire 9,31 A pendant 2,1 min ; ce calibre ne disjoncte qu’au-delà de 9,66 A sur cette durée. » */
+function calibreEnClair(d, cal) { const A = amperes(cal), m = typeof motsDuCalibre === 'function' ? motsDuCalibre(d, cal) : null;
+  if (!m) return `${A} : pas jugé — le profil de charge manque.`;
+  return `${A} : ${m.cle === 'passe' ? 'ne disjoncte pas' : 'disjoncte'}${m.detail ? ' — ' + m.detail.charAt(0).toLowerCase() + m.detail.slice(1) : '.'}`; }
 function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origineDuCalibre(nom, d), H = app.simu || HYPOTHESES;
   const rows = lignesFilsDisjoncteur(nom, d), nL = rows.filter(r => r.l && !(r.l.longueur > 0)).length;
   // (v74 : ce qui est supposé, dit une fois et en clair — `noteSupposes` ; plus d'italique)
@@ -26111,10 +26501,8 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     o.calRetest && o.calRetest !== cal ? { html: `Votre fichier porte <b class="id">${esc(o.pnRetest || amperes(o.calRetest))}</b>, un ${esc(amperes(o.calRetest))} : il ${esc(motDuVerdict(cleDuVerdict(gamme.find(g => g.calibre === o.calRetest) || {})) || 'ne passe pas')}.`, source: 'fichier', etat: 'ko', va: { onglet: 'calibre', vers: '.vu-cals', mot: 'les calibres' } } : propose ? { html: `Votre fichier porte un <b>${esc(amperes(d.pn))}</b> : il ${esc(motDuVerdict(cleDuVerdict(d.gPn)))}.`, source: 'fichier', etat: 'ko', va: { onglet: 'calibre', vers: '.vu-cals', mot: 'les calibres' } } : null,
     cal ? { html: d.origine === 'main' ? `Retenu à la main : <b>${esc(amperes(cal))}</b>. VOLTA aurait pris ${esc(amperes(d.passe || cal))}.` : `VOLTA retient le plus petit qui ne disjoncte pas : <b>${esc(amperes(cal))}</b>${pn ? ` (<span class="id">${esc(pn)}</span>)` : ''}.`, source: d.origine === 'main' ? 'main' : 'calcul', etat: v.etat === 'ko' ? 'ko' : 'ok', detail: calcul, va: { onglet: 'calibre', vers: '[data-part="courbe"]', mot: 'la courbe' } } : null,
     pire ? { html: `Ses ${rows.length > 1 ? rows.length + ' câbles portent' : 'câble porte'} au plus <b>${Math.round(pire.charge.r * 100)} %</b> de ce qu’${rows.length > 1 ? 'ils admettent' : 'il admet'}.`, source: 'norme', mot: 'EN 2853', etat: pire.charge.r > 1 ? 'ko' : '', va: { onglet: 'essentiel', vers: '.vu-arbre', mot: 'ses câbles' } } : null];
-  const explique = cal && !d.sansProfil ? `<ul class="vu-explique">${[o.calRetest && o.calRetest !== cal ? o.calRetest : propose ? d.pn : null, cal].filter(Boolean).map(c => { const g = gamme.find(x => x.calibre === c), k = cleDuVerdict(g || {}); return `<li class="${k === 'passe' ? 'ok' : 'ko'}"><i></i><span>${esc(calibreEnClair(d, c)).replace(/^([^—]+—)/, '<b>$1</b>')}</span></li>`; }).join('')}</ul>${(() => { const mini = (gamme.find(g => g.valide && g.catalogue !== false) || {}).calibre, deFichier = d.pn && Math.abs(d.pn - cal) < 1e-9 && d.origine !== 'main';
-    // (v81, le lecteur : « 10 A retenu, or 7,5 en vert ne disjoncte pas : bizarre ») : le retenu est celui du fichier — il ne
-    // disjoncte pas, VOLTA le garde ; on dit qu'un plus petit suffirait, et comment le prendre
-    return deFichier && mini && mini < cal - 1e-9 ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(mini))} — un clic sur lui, dans l’onglet Calibre, le retient.</p>` : ''; })()}<p class="vu-seuil">Le seuil de chaque calibre se lit sur sa courbe à 125 °C, le cas le plus chaud du tableau.</p>` : '';
+  /* (v86) « Courant appelé et calibres » — la conclusion en grand, le courant qui s'écoule dans ses barres, les calibres en
+     ampères, la note du fichier — : 08-disjoncteurs, `courantAppele` */
   const touches = gamme.length ? `<div class="vu-cals" role="group" aria-label="Les calibres de la gamme">${gamme.map(g => { const k = cleDuVerdict(g), on = g.calibre === cal, fic = o.calRetest === g.calibre || (propose && d.pn === g.calibre);
       return `<button type="button" class="vu-cal ${k === 'passe' ? 'oui' : 'non'}${on ? ' on' : ''}${fic ? ' fichier' : ''}" data-nv-cal="${g.calibre}" aria-pressed="${on}" data-bulle="${escA((phraseDe(g.calibre) || amperes(g.calibre) + ' : il ' + motDuVerdict(k)) + (fic ? ' — c’est celui de votre fichier' : '') + (on ? ' — retenu' : ' — un clic le retient'))}"><b>${esc(nombre(g.calibre))}<small>A</small></b><small>${esc(on ? (d.pn && Math.abs(d.pn - g.calibre) < 1e-9 && d.origine !== 'main' ? 'fichier' : 'retenu') : fic ? 'actuel' : '')}</small></button>`; }).join('')}</div>`
     + `<p class="vu-legende"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="ret"></i>retenu</span>${o.calRetest || propose ? '<span><i class="act"></i>actuel : celui de votre fichier</span>' : ''}</p>` : '';
@@ -26126,7 +26514,7 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     + `<button type="button" class="nv-am-b" data-am-cal="${escA(nom)}" aria-pressed="${manCal}" data-bulle="${escA(manCal ? 'Retenu à la main — un clic sur un autre calibre le retient' : 'Prendre un calibre vous-même : un clic dessus le retient')}">Manuel</button></span>` : '';
   const onglets = [
     { cle: 'essentiel', statut: { t: cal ? amperes(cal) + (v.etat === 'ko' ? ', disjoncte' : ', ne disjoncte pas') : 'sans calibre', etat: v.etat === 'ko' ? 'ko' : cal ? 'ok' : '' },
-      contenu: `<section class="vu-bloc"><h4 class="vu-titre">Courant appelé et calibres</h4>${chargeVue(d, o, largeurVue())}${legendeChargeVue()}${explique}</section>${pourquoiVue('Comment VOLTA a choisi le calibre', etapes)}`
+      contenu: `<section class="vu-bloc vu-bloc-courant"><h4 class="vu-titre">Courant appelé et calibres</h4>${courantAppele(nom, d, o)}</section>${pourquoiVue('Comment VOLTA a choisi le calibre', etapes)}`
         + `<section class="vu-bloc"><h4 class="vu-titre">Ce qu’il alimente <span>${esc(pluriel(rows.length, 'câble'))}</span></h4>${arbreVue(nom, cal, rows)}</section>` },
     { cle: 'calibre', statut: { t: d.sansProfil ? 'profil à écrire' : ch.perm ? 'profil ' + amperes(ch.perm) + (ch.pointe ? ' · ' + amperes(ch.pointe) : '') : '', etat: d.sansProfil ? 'att' : '' },
       contenu: (decision || '') + (touches ? `<section class="vu-bloc vu-bloc-cal"><h4 class="vu-titre nv-am-t">Le calibre <span>${esc(manCal ? 'retenu à la main' : v.etat === 'ko' ? 'choisi par VOLTA' : d.pn && cal && Math.abs(d.pn - cal) < 1e-9 ? 'celui de votre fichier : il ne disjoncte pas' : 'le plus petit qui ne disjoncte pas')}</span>${amCal}</h4>${touches}</section>` : '') + (P.profil || '') + (P.courbe || '') + (P.profil ? '' : sD.contenu || '') },
@@ -26268,7 +26656,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
       + (broB ? `<section class="vu-bloc vu-bloc-bro"><h4 class="vu-titre">Ce qu’elle relie <span>${esc(lies([pluriel(nf || consG.reduce((n, g) => n + g.lignes.length, 0), 'câble'), pluriel(groupesV.length, 'groupe')]))}</span></h4>${broB}</section>` : '')) + pourquoiVue('Comment VOLTA a choisi ' + (Q.modules.length > 1 ? 'les modules' : 'le module'), etapesB);
   const sF = sections.find(x => x && x.cle === 'fils'), sD = sections.find(x => x && x.cle === 'dejafait');
   const onglets = [
-    { cle: 'essentiel', statut: { t: M0 ? prisSur(Q.utilises || 0, places, '') : aPoser ? 'à poser' : 'aucun module', etat: refuses.length || (!M0 && !aPoser) ? 'ko' : 'ok' }, contenu: essB },
+    { cle: 'essentiel', statut: M0 ? statutContacts(Q.utilises || 0, places, refuses.length ? 'ko' : 'ok') : { t: aPoser ? 'à poser' : 'aucun module', etat: !aPoser ? 'ko' : 'ok' }, contenu: essB },
     ongletCables(sF), ongletFabrication(fabB, 'Ce qu’il faut pour la monter'),
     /* (v85) MODIFIER, en trois sortes — DANS VOTRE FICHIER : le module que votre fichier écrit, quand VOLTA en retient un autre ;
        CHOIX DE VOLTA : le module (Automatique | Manuel : tous les modules de la norme, dessinés) ; INFORMATION : le rail (il
@@ -26507,7 +26895,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     + pourquoiVue('Comment VOLTA a choisi la prise', etapesP);
   const sF = sections.find(x => x && x.cle === 'fils'), sD = sections.find(x => x && x.cle === 'dejafait');
   const onglets = [
-    { cle: 'essentiel', statut: { t: M ? prisSur(nPris, places, '') : 'aucun arrangement', etat: !M || koP ? 'ko' : 'ok' }, contenu: essP },
+    { cle: 'essentiel', statut: M ? statutContacts(nPris, places, koP ? 'ko' : 'ok') : { t: 'aucun arrangement', etat: 'ko' }, contenu: essP },
     ongletCables(sF), ongletFabrication(fabP, 'Ce qu’il faut pour la monter'),
     /* (v85) MODIFIER, en trois sortes — DANS VOTRE FICHIER : sa référence ; CHOIX DE VOLTA : l'arrangement, le sexe des
        contacts, le raccord (Automatique | Manuel chacun) ; INFORMATION : les contacts à sertir de chaque côté, qui suivent */
@@ -26664,7 +27052,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   // l'intensité : au pire du permanent et de la pointe, « sur » ce qu'il admet pour cette durée ; dessous, en clair, l'autre
   // régime et d'où vient le courant (son disjoncteur en puce, ou l'hypothèse)
   const dT = x.pointe ? ' pendant ' + secondes(x.pointe.t) : '';
-  const dI = !x.fn ? '' : (pointeI ? esc(`Au pire, ${x.pointe.nom || 'la pointe'}${dT}${Math.abs(x.pointe.admis - x.continu) > 0.05 ? ' (sur cette durée, il admet plus qu’en continu)' : ''}. En continu : ${amperes(x.I)} sur ${amperes(x.continu)}.`)
+  // (v86) sans type, le courant se lit quand même : d'où il vient, comme pour les autres
+  const dI = (!x.fn ? '' : pointeI ? esc(`Au pire, ${x.pointe.nom || 'la pointe'}${dT}${Math.abs(x.pointe.admis - x.continu) > 0.05 ? ' (sur cette durée, il admet plus qu’en continu)' : ''}. En continu : ${amperes(x.I)} sur ${amperes(x.continu)}.`)
       : x.pointe && x.pointe.admis ? esc(`En continu, au pire. ${majuscule(x.pointe.nom || 'la pointe')} : ${amperes(x.pointe.i)}${dT}, sur ${amperes(x.pointe.admis)} admis.`) : esc('En continu.'))
     // (v84, l'agent « câbles ») côté source du disjoncteur (vers une batterie, une génératrice, un TR), il n'est pas sous sa
     // protection ; sans profil de charge, le courant retenu est le calibre du disjoncteur — chaque cas se dit tel qu'il est
@@ -26673,7 +27062,10 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       : x.al && x.source === 'branche' && x.aval ? ` ${esc('Sa branche : ' + x.aval.bouts.join(', ') + ', ' + (x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite') + ' (sous')} ${source}${esc(').')}`
       : x.al && x.totalFaute ? ` ${esc('Courant total de')} ${source} ${esc(': la consommation de ce qui est en aval n’est pas écrite.')}`
       : x.al ? ` ${esc('Le courant vient de')} ${source}.` : ` ${esc(`Aucun disjoncteur en amont : VOLTA suppose ${nombre(H.courant)} A — une`)} ${motHypothese}.`);
-  const intens = !x.fn ? `<p class="fi-note">${l.type ? 'Hors de l’EN 2853 : ce qu’il admet ne se lit pas.' : 'Sans type, ce qu’il admet ne se lit pas.'}</p>`
+  // (v86, le lecteur : « un câble sans type n'a pas de courant affiché : le courant doit se lire quand même ») : la valeur, sans
+  // barre ni anneau (la part de l'admis est impossible), et pourquoi en clair
+  const motInconnu = l.type ? l.type + ' n’est pas dans l’EN 2853' : 'votre fichier ne donne pas son type';
+  const intens = !x.fn ? mesure('Courant', '', `<b>${esc(amperes(x.I))}</b> <span class="fi-mes-inc">${esc(l.type ? 'hors norme : admis inconnu' : 'sans type : admis inconnu')}</span>`, null, '', esc(majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas, VOLTA ne peut pas dire s’il porte ce courant.') + dI, bulleI)
     : mesure('Courant', aide('intensite', { type: l.type, admis: x.continu, base: x.fn.intensite, facteur: x.fac }), `<b>${esc(amperes(iV))}</b> sur ${esc(amperes(iA))} admis`, r.charge.r, classeMesure(r.charge.r), dI, bulleI);
   // la chute : en ligne depuis le disjoncteur jusqu'au bout du chemin, sur ce qui est admis ; dessous, le chemin, la part de
   // ce câble, la pointe qui dépasse (de la couleur de sa mesure) — les longueurs supposées sont dites une fois, sous les tuiles
@@ -26691,7 +27083,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const fin = neuf ? null : seul || plusFinQuiTient(l, prot && prot.calEcrit), cause = causeDuCable(l, prot, fin);
   const reparer = fin && !cause ? `<p class="fi-reparer-l"><span>${esc(majuscule(fin.pourquoi))} : <b class="id">${esc(fin.type)}</b> (${esc(String(jaugeDuType(fin.type)))} AWG)${(m => m ? ` <span class="fi-cout">· ${esc(m)}</span>` : '')(coutDuType(l, fin.type))}</span><button type="button" class="btn papier fi-reparer" data-reparer="${escA(cleFil(l))}" data-type="${escA(fin.type)}" data-bulle="${escA(majuscule(cableDit(l)) + ' passe en ' + fin.type + (coutDuType(l, fin.type) ? ' (' + coutDuType(l, fin.type) + ')' : '') + ' — une entrée d’historique, Ctrl+Z le rend')}">Passer en ${esc(fin.type)}</button></p>` : '';
   // le résumé, section pliée, dit les deux valeurs (v74 : l'intensité n'a plus de tuile) — « 9,31 A sur 21 A · chute 0,37 V sur 2 V »
-  const resumeI = !x.fn ? 'ce qu’il admet ne se lit pas' : [`${esc(amperes(iV))} sur ${esc(amperes(iA))}`, ch.total ? `chute ${esc(volts(ch.total.dU))}${ch.max != null ? ' sur ' + esc(volts(ch.max)) : ''}` : ch.dU != null ? 'chute ' + esc(volts(ch.dU)) : ''].filter(Boolean).join(' · ');
+  const resumeI = !x.fn ? esc(amperes(x.I)) + ' · ce qu’il admet ne se lit pas' : [`${esc(amperes(iV))} sur ${esc(amperes(iA))}`, ch.total ? `chute ${esc(volts(ch.total.dU))}${ch.max != null ? ' sur ' + esc(volts(ch.max)) : ''}` : ch.dU != null ? 'chute ' + esc(volts(ch.dU)) : ''].filter(Boolean).join(' · ');
   const sections = [{ cle: 'trajet', resume: esc(`${l.de}${l.borneDe ? ':' + l.borneDe : ''} → ${l.vers}${l.borneVers ? ':' + l.borneVers : ''}`), badge: badgeProblemes(probs, 'trajet'), contenu: trajet },
     { cle: 'fils', titre: 'Intensité et chute', resume: insecable(resumeI), badge: badgeProblemes(probs, 'fils') || (x.fn ? { t: ico('coche'), etat: 'ok' } : { t: '—', etat: '' }), contenu: `<div class="fi-mesures">${intens}${chute}</div>${reparer}` }];
   const id = identite([l.route ? 'route ' + esc(l.route) : '', esc(motFolios(neuf ? [] : foliosDe(l).map(String)))]);
@@ -26757,16 +27149,18 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       pourquoi: ctMain.length ? 'Choisi ici côté ' + ctMain.map(k => esc(l[k])).join(' et ') + '.' : 'Un par bout, lu dans la table de la norme.',
       manuel: ctMain.length > 0, auto: 'sertirs:' + ctMain.map(k => cts[k].ks).join(';'), vers: '[data-reg="les-contacts"]', motAuto: 'Les contacts à sertir reviennent à ceux de la table.' }
       : sansCt.length ? { sorte: 'info', titre: 'Les contacts à sertir', valeur: 'à préciser', etat: 'att', source: 'norme', pourquoi: `La norme côté ${sansCt.map(r => ident(r)).join(' et ')} est inconnue : ils viendront avec elle.` } : null,
-    x.fn ? { sorte: 'info', titre: 'Courant et chute', valeur: `${esc(amperes(iV))} <small>sur ${esc(amperes(iA))}</small>` + (ch.total ? ` · ${esc(volts(ch.total.dU))}${ch.max != null ? ` <small>sur ${esc(volts(ch.max))}</small>` : ''}` : ch.dU != null ? ' · ' + esc(volts(ch.dU)) : ''), source: 'calcul', etat: classeMesure(r.charge.r) === 'ko' || etatU === 'ko' ? 'ko' : '', pourquoi: 'Ils suivent le type, la longueur, la charge.' } : null],
+    x.fn ? { sorte: 'info', titre: 'Courant et chute', valeur: `${esc(amperes(iV))} <small>sur ${esc(amperes(iA))}</small>` + (ch.total ? ` · ${esc(volts(ch.total.dU))}${ch.max != null ? ` <small>sur ${esc(volts(ch.max))}</small>` : ''}` : ch.dU != null ? ' · ' + esc(volts(ch.dU)) : ''), source: 'calcul', etat: classeMesure(r.charge.r) === 'ko' || etatU === 'ko' ? 'ko' : '', pourquoi: 'Ils suivent le type, la longueur, la charge.' }
+      : { sorte: 'info', titre: 'Courant', valeur: esc(amperes(x.I)), source: 'calcul', pourquoi: esc(majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas.') }],
     ctsMots.length ? regCarte('Les contacts à sertir', 'Un clic sur un contact montre ceux de sa taille : un autre se retient d’un clic.', `<ol class="fi-chemin" style="--c:${coul}">${etapes}</ol>${choixCt}`, { reg: 'les-contacts' }) : '');
   const onglets = [
-    { cle: 'essentiel', statut: { t: x.fn ? amperes(iV) + ' sur ' + amperes(iA) : l.type ? 'hors EN 2853' : 'sans type', etat: probs.some(q => q.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: essF },
+    { cle: 'essentiel', statut: { t: x.fn ? amperes(iV) + ' sur ' + amperes(iA) : neuf ? 'à créer' : amperes(x.I) + (l.type ? ', hors norme' : ', sans type'), etat: probs.some(q => q.niveau === 'ko') ? 'ko' : probs.length ? 'att' : 'ok' }, contenu: essF },
     ongletFabrication(fabF, 'Ce qu’il faut pour le poser'),
     reglagesF];
   // (v84) LES CHIFFRES de la carte : trois mesures, de même nature — le courant et la chute contre l'admis, la longueur ;
   // (v85) la longueur se lit (elle vient du fichier) : un clic mène à Modifier, qui dit d'où elle vient ; le type est le titre
   const chiffres = neuf ? [{ k: 'Type', v: l.type ? `<span class="id">${esc(l.type)}</span>` : '—' }, { k: 'Gauge', v: jauge != null ? valeurU(jauge, 'AWG') : '—' }] : [
-    x.fn ? { k: 'Courant', v: valeurU(nombreA(iV), 'A'), barre: r.charge.r, etat: classeMesure(r.charge.r) === 'ko' ? 'ko' : '', bulle: 'sur ' + amperes(iA) + ' admis' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' } : null,
+    x.fn ? { k: 'Courant', v: valeurU(nombreA(iV), 'A'), barre: r.charge.r, etat: classeMesure(r.charge.r) === 'ko' ? 'ko' : '', bulle: 'sur ' + amperes(iA) + ' admis' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' }
+      : { k: 'Courant', v: valeurU(nombreA(x.I), 'A'), bulle: majuscule(motInconnu) + ' : ce qu’il admet ne se lit pas' + (x.al ? '' : ' — courant supposé'), onglet: 'fils' },
     ch.total || ch.dU != null ? { k: 'Chute', v: valeurU(volts(ch.total ? ch.total.dU : ch.dU).replace(/ V$/, ''), 'V'), barre: rU, etat: etatU === 'ko' ? (ch.reel ? 'ko' : 'att') : '', bulle: (ch.max != null && ch.total ? 'sur ' + volts(ch.max) + ' admis' : 'sur ce câble seul') + (ch.reel ? '' : ' — longueurs supposées'), onglet: 'fils' } : null,
     { k: 'Longueur', v: `${L == null ? '<i class="nv-env" aria-hidden="true">≈</i>' : ''}${esc(nombre(L != null ? arrondi(L, 2) : H.longueur))}<small>m</small>`, etat: L == null ? 'supp' : '', bulle: L == null ? 'Supposée : votre fichier ne la donne pas — à écrire dans votre fichier' : 'Celle de votre fichier', onglet: 'reglages' }];
   // le geste qui répare : « Tout régler » quand son disjoncteur est la cause, sinon le plus fin qui tient, sinon la gauge qui se loge
@@ -28528,20 +28922,14 @@ const cadre = () => $('planche').getBoundingClientRect();
    petite écriture du dessin, 9 px) ; 1 et 2 vont à 100 et 200 %, les pas tombent sur les mêmes crans. */
 const S100 = 11 / FS_FIL;
 const zoomEnPourcent = s => Math.round(s / S100 * 100);
-/* LE ZOOM DE LECTURE (v85, il remplace le zoom sémantique : sous 7 px d'écran, les bornes, les pastilles, les lettres des
-   connecteurs se taisaient — le lecteur : « au folio 6, les bornes n'apparaissent pas, sauf si je zoome beaucoup ou si je
-   survole ; de base, rien ne doit être caché »). L'échelle de la vue se dit à la scène (`--s`) : quand on s'éloigne, les
-   numéros de borne et les petits repères grandissent dans leur place (style-z-plan.css) ; au cadrage, tout se lit. Bien
-   plus loin que la feuille entière (SEUIL_POUSSIERE), une écriture ferait moins de 3 px : elles se taisent (`.tait`), ce
-   qu'on survole ou qu'on a choisi parle toujours (`.hl`). */
-const SEUIL_POUSSIERE = 0.31;
+/* LE DESSIN EST FIXE (v86). Le zoom ne change que l'échelle de la scène : aucune écriture ne grandit, ne se tait ni ne se
+   déplace quand on approche ou qu'on recule (la v85 faisait grandir les numéros de borne au dézoom, chacun depuis son point :
+   le lecteur, « quand je zoome et dézoome, plus rien ne se suit, les bornes se décalent — la catastrophe »). Au cadrage, les
+   numéros sont fins mais présents ; on zoome pour lire. */
 function appliquerVue() {
   const sc = $('scene'); if (sc) { sc.setAttribute('transform', `translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})`);
     // LOIN : un trait de câble ferait moins d'un pixel d'écran — les traits s'épaississent (06), les routes gardent leur couleur
     const loin = app.vue.s * 0.95 < 0.9; if (sc.classList.contains('loin') !== loin) sc.classList.toggle('loin', loin);
-    const tait = app.vue.s < SEUIL_POUSSIERE; if (sc.classList.contains('tait') !== tait) sc.classList.toggle('tait', tait);
-    // l'échelle, à deux millièmes près : chaque pas ne refait pas le style de toutes les écritures pour rien
-    const s3 = app.vue.s.toFixed(3); if (sc.style.getPropertyValue('--s') !== s3) sc.style.setProperty('--s', s3);
     if (LOUPE.s !== app.vue.s) poserLoupe(); }
   // la table glisse d'un rien sous la feuille (08-table), le fil de la carte suit son bloc (08-carte)
   parallaxeTable(); dessinerLien();
@@ -31252,9 +31640,20 @@ function ongletsHtml(type, xs) { if (!xs.length) return '';
 const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === 'connecteur' ? 'essentiel' : s.cle, titre: s.cle === 'fils' || s.cle === 'connecteur' ? '' : s.titre, statut: s.resume ? { t: String(s.resume).replace(/<[^>]*>/g, '').slice(0, 40) } : null, contenu: s.contenu, vide: s.vide, action: s.action });
 
 // les onglets que toutes les fiches partagent : les câbles (la section d'hier, son statut en mots), la fabrication
-// (v84) le statut tient dans l'onglet le plus étroit : « 4 câbles · 51 % » ; ce que veut dire 51 %, sa bulle le dit
-const statutCables = sF => ({ t: sF.vide ? 'aucun' : sF.nko ? sF.nko + (sF.nko > 1 ? ' câbles en défaut' : ' câble en défaut') : pluriel(sF.compte || 0, 'câble') + (sF.charge != null ? ' · ' + Math.round(sF.charge * 100) + ' %' : ''), etat: sF.nko ? 'ko' : sF.natt ? 'att' : '',
-  bulle: !sF.vide && sF.charge != null ? 'Le plus chargé porte ' + Math.round(sF.charge * 100) + ' % du courant qu’il admet' : '' });
+/* (v86, le lecteur : « 2 câbles · 80 % : on ne comprend pas ce que veut dire 80 % ; si je me pose la question, c'est que ce
+   n'est pas bon ») : le statut se lit sans réfléchir et tient dans l'onglet le plus étroit (132 px, à côté du récapitulatif)
+   — « chargés à 80 % » (le plus chargé porte 80 % du courant qu'il admet), « 2 à régler », « 1 à voir » (les mots des
+   problèmes de la fiche ; « en défaut » se lisait comme un court-circuit) ; sans type, pas de pourcentage. La bulle nomme
+   le câble et dit les ampères, ou ce qui cloche, câble par câble. `sF` : la section des câbles (08-fiche, `sectionFils`). */
+const statutCables = sF => { if (sF.vide) return { t: 'aucun', etat: '' };
+  const n = sF.compte || 0, p = sF.pire, pc = sF.charge != null ? Math.round(sF.charge * 100) : null, raisons = (sF.raisons || []).slice(0, 4).join('\n');
+  if (sF.nko) return { t: sF.nko + ' à régler', etat: 'ko', bulle: (sF.nko > 1 ? sF.nko + ' câbles à régler' : '1 câble à régler') + (raisons ? ' :\n' + raisons : '') };
+  if (sF.natt) return { t: sF.natt + ' à voir', etat: 'att', bulle: (sF.natt > 1 ? sF.natt + ' câbles à voir' : '1 câble à voir') + (raisons ? ' :\n' + raisons : '') };
+  const sans = sF.nsans ? (sF.nsans > 1 ? sF.nsans + ' câbles sans type' : '1 câble sans type') + ' : ce qu’' + (sF.nsans > 1 ? 'ils admettent' : 'il admet') + ' est inconnu' : '';
+  if (pc == null) return { t: n > 1 && sF.nsans === n ? n + ' sans type' : sF.nsans ? 'sans type' : pluriel(n, 'câble'), etat: '', bulle: sans };
+  const qui = n > 1 ? 'Le plus chargé de ses ' + n + ' câbles' + (p && p.nom ? ', ' + p.nom + ',' : '') : 'Son câble' + (p && p.nom ? ', ' + p.nom + ',' : '');
+  return { t: (n > 1 ? 'chargés à ' : 'chargé à ') + pc + ' %', etat: '',
+    bulle: qui + (p && p.i != null && p.admis != null ? ' porte ' + nombreA(p.i) + ' A ; il en admet ' + nombreA(p.admis) + ' : il est chargé à ' + pc + ' %.' : ' porte ' + pc + ' % du courant qu’il admet.') + (sans ? '\n' + majuscule(sans) + '.' : '') }; };
 const ongletCables = sF => !sF ? null : { cle: 'cables', statut: statutCables(sF), contenu: sF.contenu, vide: sF.vide };
 function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
@@ -31265,7 +31664,6 @@ function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g
    et proprement à côté, son nom ; en dessous, sa référence, sa gamme — le folio, on s'en fout ; plus de pastille d'état »)
    : le symbole du genre en grand, le genre en mot, le repère à côté (il se renomme d'un clic) ; dessous, ce qui l'identifie.
    Dans le grand, la même chose sur une ligne fine : la barre qu'on tient pour déplacer la fenêtre. ---- */
-const GENRES_COURTS = { barrette: 'Barrette', prise: 'Prise' };
 const GENRES_FICHE = { equipement: 'Équipement', disjoncteur: 'Disjoncteur', barrette: 'Barrette de jonction', prise: 'Prise de coupure', masse: 'Masse', fil: 'Câble' };
 function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   // (v78, le lecteur : « le genre et la référence, même taille, même police — un tiret au milieu ; pas d'écarts de gras »)
@@ -31273,25 +31671,31 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   // repère (son champ porte une aide qui le dit)
   const rep = t.champ && t.aide ? `<input class="nc-rep-in" id="${t.champ}" value="${escA(nom)}" size="${Math.max(3, nom.length)}" style="width:calc(${Math.max(3, nom.length) + 1}ch + 14px)" aria-label="${escA(t.aide || 'Repère — écrire pour renommer partout')}" data-bulle="${escA(t.aide || 'Un clic pour le renommer : chaque câble suit')}" spellcheck="false" autocomplete="off">`
     : `<span class="nc-rep-t">${esc(nom)}</span>`;
-  const ms = (o.meta || []).filter(Boolean), ref = ms.length === 1 && /class="id"/.test(ms[0]);
+  const ms = (o.meta || []).filter(Boolean);
   // (v84) une référence se lit en puce, à la chasse fixe ; une phrase (« ajoutée par VOLTA sur 102CB1:2 », « route PUISSANCE »)
   // reste une phrase, en clair — une puce de code autour d'une phrase la fait passer pour une référence
-  const metaV = m => `<span class="nc-meta-v${/class="id"/.test(m) ? '' : ' texte'}">${m}</span>`;
-  const meta = ms.length ? `<div class="nc-meta fi-identite">${ref ? `<span class="nc-meta-k">Référence</span>` : ''}${ms.map(metaV).join('')}</div>` : '';
-  // (v82) dans la carte, le genre court (« Barrette », « Prise ») : le titre tient sur une ligne, le tiret ne pend plus
-  const genre = !grand && GENRES_COURTS[o.type] ? GENRES_COURTS[o.type] : GENRES_FICHE[o.type] || 'Élément';
-  const sym = `<svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg>`, titre = `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-tiret" aria-hidden="true">—</span><span class="nc-rep">${rep}</span>`;
-  // (v81, le lecteur : « la tête, tu peux la rendre un peu plus sexy ») : le symbole en grand filigrane, à droite, qui se
-  // trace à l'ouverture — la signature de la tuile, reprise dans le grand
+  // (v86) plus d'étiquette « Référence » devant la puce : sous un repère, un code au trait se lit de lui-même (sa bulle le dit)
+  const metaV = m => /class="id"/.test(m) ? `<span class="nc-meta-v" data-bulle="Sa référence">${m}</span>` : `<span class="nc-meta-v texte">${m}</span>`;
+  const meta = ms.length ? `<div class="nc-meta fi-identite">${ms.map(metaV).join('')}</div>` : '';
+  /* (v86, le lecteur : « Disjoncteur, 102CB1, Référence : trop de variations de couleurs et de fonds, trop de gras différents ;
+     quelque chose de plus homogène » — et : « je ne sais pas différencier les équipements des disjoncteurs, des barrettes ») :
+     UNE hiérarchie, la même dans la carte et dans le grand — la SILHOUETTE de l'objet, sa forme du folio en trait de cuivre
+     (08-vues, `silhouetteVue` : le genre se reconnaît d'un coup d'œil), qui se trace à l'ouverture ; le genre en mot, en gris,
+     discret ; le REPÈRE, le seul grand ; la référence dessous, une seule pastille au trait. Deux graisses (500, 600), l'encre
+     et un gris, aucun fond (style-z-carte). Dans la carte, la silhouette est le SCEAU de la barre (à la place de la poignée :
+     la barre se tient toujours) ; dans le grand, elle ouvre la ligne. */
+  const genre = GENRES_FICHE[o.type] || 'Élément';
+  const titre = `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-rep">${rep}</span>`;
+  const sil = silhouetteVue(o.type, silhouetteDe(o));
   // (v83) en grand, « module 2 de VT2 » se lit dans la première section (la barrette et tous ses modules) : pas deux fois
   const msG = ms.filter(m => !/^(module|partie) \S+ de /.test(m));
-  if (grand) return `<div class="nc-tete fine"><span class="nc-sym" aria-hidden="true">${sym}</span><span class="nc-titre">${titre}</span>${msG.length ? `<span class="nc-meta fi-identite">${msG.map(metaV).join('')}</span>` : ''}<span class="nv-fili" aria-hidden="true"><svg viewBox="0 0 30 30">${SYMBOLES[o.type] || SYMBOLES.equipement}</svg></span></div>`;
-  // le symbole : un filigrane dans le coin de la tuile, qui s'éveille au survol
-  // (v79, le lecteur : « ce sigle en fond, ce micro-détail, cette interactivité, c'est vraiment la diff — on peut encore
-  // faire mieux ») : au survol, un trait de cuivre parcourt le symbole, comme un courant qui passe
-  const trace = (SYMBOLES[o.type] || SYMBOLES.equipement).replace(/<(path|circle|rect|line)\b/g, '<$1 pathLength="1"');
-  const long = ((GENRES_FICHE[o.type] || '') + ' — ' + ((o.tete || {}).nom || '')).length > 22;
-  return `<span class="nc-filigrane" aria-hidden="true"><svg viewBox="0 0 30 30"><g class="nc-fil-base">${SYMBOLES[o.type] || SYMBOLES.equipement}</g><g class="nc-fil-trace">${trace}</g></svg></span><div class="nc-tete"><span class="nc-titre${long ? ' long' : ''}">${titre}</span></div>${meta}`; }
+  if (grand) return `<div class="nc-tete fine"><span class="nc-sil" aria-hidden="true">${sil}</span><span class="nc-titre">${titre}</span>${msG.length ? `<span class="nc-meta fi-identite">${msG.map(metaV).join('')}</span>` : ''}</div>`;
+  return `<span class="nc-sceau" aria-hidden="true">${sil}</span><div class="nc-tete"><span class="nc-titre${nom.length > 9 ? ' long' : ''}">${titre}</span></div>${meta}`; }
+// ce que la silhouette dessine de CET objet : les modules d'une barrette, les connecteurs d'un équipement
+function silhouetteDe(o) { const nom = (o.tete || {}).nom || '';
+  try { if (o.type === 'barrette') { const n = typeof modulesDeLaBarrette === 'function' ? modulesDeLaBarrette(nom).length : 0; return { modules: n || 3 }; }
+    if (o.type === 'equipement' && typeof connecteursDe === 'function') return { connecteurs: connecteursDe(nom, verite()).filter(c => c.nom).length || 1 }; } catch (_) { }
+  return {}; }
 // la désignation (un texte libre, gardé avec le contrat) : dans l'onglet « Modifier » du grand
 /* (v78c, le lecteur : « Modifier, faut tout reprendre, c'est pas hyper compréhensible ») : l'onglet « Modifier » se lit en
    CARTES — chacune son titre, une phrase qui dit ce que ça change, puis le réglage. */
@@ -31493,6 +31897,12 @@ function listeDuGenre(c, etatIci) { const { genre, xs } = objetsDuGenre(c), q = 
 /* ---- LES CÂBLES EN TABLEAU TRIABLE (le grand) : une ligne par câble ; un clic sur un en-tête trie (un second clic
    renverse), un clic sur une ligne ouvre le câble, son survol l'allume sur le plan ; la longueur s'écrit sur place. ---- */
 const COLONNES_TABLE_CABLES = [['type', 'Câble'], ['vers', 'Vers'], ['i', 'Courant'], ['u', 'Chute en ligne'], ['lg', 'Longueur'], ['ct', 'Contact à sertir']];
+/* (v86, le lecteur : « 80 %, on ne comprend pas ») : l'anneau dit une part — le titre de sa colonne dit de quoi, en petit
+   sous le mot, et sa bulle explique d'où vient l'admis */
+const SOUS_COLONNES_CABLES = { i: '% de ce qu’il admet', u: '% de la chute admise' };
+const BULLES_COLONNES_CABLES = {
+  i: 'Le courant qu’il porte, sur celui qu’il admet (EN 2853, déclassé selon son faisceau, l’altitude et l’ambiante). L’anneau en montre la part : au-delà de 100 %, il est trop fin.',
+  u: 'La tension perdue depuis son disjoncteur jusqu’au bout du chemin, sur la chute admise pour ce réseau. L’anneau en montre la part : au-delà de 100 %, la ligne perd trop.' };
 function contactDeLaLigne(r) { const c = app.cible, l = r.l; if (!l || !c || c.type !== 'bloc' || l.origine === null) return null;
   const nom = c.nom, borne = l.de === nom ? l.borneDe : l.vers === nom ? l.borneVers : null;
   try { return (borne != null ? contactAuBout(l, nom, borne) : null) || (r.bout && r.bout.rep ? contactAuBout(l, r.bout.rep, r.bout.borne) : null); } catch (_) { return null; } }
@@ -31503,7 +31913,8 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
   const cmp = (a, b) => { const k = T.col; if (!k) return rang(a) - rang(b) || triNaturel(a.cles.type, b.cles.type); const va = a.cles[k], vb = b.cles[k];
     const n = typeof va === 'number' || typeof vb === 'number' ? ((va == null ? -1 : va) - (vb == null ? -1 : vb)) : triNaturel(String(va || ''), String(vb || '')); return (n || triNaturel(a.cles.type, b.cles.type)) * T.sens; };
   const tete = COLONNES_TABLE_CABLES.map(([k, t]) => { const s = T.col === k ? (T.sens > 0 ? 'ascending' : 'descending') : 'none';
-    return `<th scope="col" aria-sort="${s}" class="nv-th-${k}"><button type="button" class="nv-tri" data-tri="${k}" data-bulle="${escA('Trier par ' + t.toLowerCase() + (s === 'none' ? '' : ' — un clic renverse'))}">${esc(t)}<span class="nv-tri-f" aria-hidden="true">${s === 'ascending' ? '↑' : s === 'descending' ? '↓' : '↕'}</span></button></th>`; }).join('');
+    const tri = 'Un clic trie par ' + t.toLowerCase() + (s === 'none' ? '' : ', un second renverse'), sous = SOUS_COLONNES_CABLES[k];
+    return `<th scope="col" aria-sort="${s}" class="nv-th-${k}${sous ? ' a-sous' : ''}"><button type="button" class="nv-tri" data-tri="${k}" data-bulle="${escA(BULLES_COLONNES_CABLES[k] ? BULLES_COLONNES_CABLES[k] + '\n' + tri + '.' : majuscule(tri))}"><span class="nv-tri-m">${esc(t)}${sous ? `<small class="nv-th-s">${esc(sous)}</small>` : ''}</span><span class="nv-tri-f" aria-hidden="true">${s === 'ascending' ? '↑' : s === 'descending' ? '↓' : '↕'}</span></button></th>`; }).join('');
   const avecCt = xs.some(x => x.ct && x.ct.st && x.ct.st.reference);
   // (v84) une colonne homogène : si une ligne y porte un anneau, celles qui n'en ont pas gardent sa place (la valeur reste
   // alignée sous les autres) ; si aucune n'en porte, la valeur seule, centrée sous son titre
@@ -31513,7 +31924,7 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     // (v78, le lecteur : « équipement et borne, mal présentés ; l'intensité, la chute : juste un rapport ») : une nomenclature —
     // le câble, où il va et sur quelle borne, la charge et la chute en anneaux (la part de l'admis), la longueur
     const type = `<span class="nv-cab-id">${r.puce || ''}<b class="id nv-cab-type">${esc(r.type || 'sans type')}</b></span>`;
-    const iH = `<span class="nv-mes${anI ? '' : ' seul'}">${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : ''}</span></span>`;
+    const iH = `<span class="nv-mes${anI ? '' : ' seul'}">${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : r.charge.i != null && r.charge.r == null ? `<small class="nv-mes-inc">${esc(r.type ? 'hors norme : admis inconnu' : 'sans type : admis inconnu')}</small>` : ''}</span></span>`;
     const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
     // (v85) sans chemin de disjoncteur, la chute du câble seul — contre la chute admise de toute la ligne : la bulle le dit
     const uH = `<span class="nv-mes${anU ? '' : ' seul'}"${r.chute.seul && r.chute.u != null && r.chute.max != null ? ` data-bulle="${escA('Sur ce câble seul : ' + volts(r.chute.u) + ', ' + Math.round(r.chute.u / r.chute.max * 100) + ' % des ' + volts(r.chute.max) + ' que la ligne entière peut perdre — aucun disjoncteur en amont n’en donne le chemin')}"` : ''}>${anneauOuPlace(ru, anU)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
@@ -31541,7 +31952,9 @@ function composerFiche(o) { const probs = o.probs || []; NIVEAU.typeRendu = o.ty
   if (!ficheEnGrand()) {
     // LA CARTE — le premier regard : ce que c'est et son nom, la pièce dessinée (un clic ouvre tout), ce qui cloche, trois
     // chiffres, « Tout voir » ; rien d'autre (le lecteur : « épuré, classe »)
-    return `<div class="nc">${enteteFiche(o, false)}${o.avant || ''}`
+    // (v86, le lecteur : « fais quelque chose d'un peu plus interactif en fond ») : sous la carte, une LUMIÈRE de cuivre qui
+    // suit la souris et révèle la trame du folio d'où la carte est née (08-carte, `lierLumiere` ; style-z-carte)
+    return `<span class="nc-lumiere" aria-hidden="true"><i></i></span><div class="nc">${enteteFiche(o, false)}${o.avant || ''}`
       + (o.vignette ? `<button type="button" class="nc-vignette" data-onglet-va="essentiel" aria-label="Tout voir : la fiche entière">${o.vignette}</button>` : '')
       + tachesFiche(o, probs, 2) + chiffresHtml(o.chiffres, 3) + '</div>'
       + `<footer class="fi-pied nc-pied"><button type="button" class="nc-tout" id="fi-tout-voir" data-bulle="La fiche entière, le plan à côté — ou un double-clic sur l’objet">Tout voir${ico('droite')}</button></footer>` + (o.fin || ''); }
@@ -31702,7 +32115,9 @@ function lierNiveaux(box, c) { lierSommaire(box);
   box.querySelectorAll('[data-am-cal]').forEach(b => b.onclick = e => { e.stopPropagation(); const cs = box.querySelector('.vu-cals'); if (!cs) return;
     cs.classList.remove('a-prendre'); void cs.offsetWidth; cs.classList.add('a-prendre'); const t = cs.querySelector('.vu-cal.oui:not(.on)') || cs.querySelector('.vu-cal'); if (t) try { t.focus({ preventScroll: true }); } catch (_) { }
     if (b.getAttribute('aria-pressed') !== 'true') dire('Prenez un calibre : un clic le retient à la place de celui de VOLTA.'); });
-  if (c && c.type !== 'ref') document.body.classList.toggle('insp-grand-ouvert', ficheEnGrand()); }
+  if (c && c.type !== 'ref') document.body.classList.toggle('insp-grand-ouvert', ficheEnGrand());
+  // (v86) la silhouette se trace quand la fiche s'ouvre sur un objet (pas quand elle se refait sur le même : 08-carte)
+  if (typeof eveillerSceau === 'function') eveillerSceau(box); }
 
 /* ---- LA LISTE, LE PANNEAU : leur défilement se garde d'un rendu de la même fiche à l'autre -------------------------- */
 const DEFILEMENTS = { liste: 0, panneau: 0, cle: '' };
@@ -37963,6 +38378,38 @@ function fabricationVue(groupes) { const gs = (groupes || []).filter(g => g && g
     + g.lignes.map(l => `<div class="vu-fab-l"><span class="vu-q">${l.q}<small>×</small></span><span class="vu-r"><b class="id">${esc(l.ref || '—')}</b><small>${esc(l.role || '')}</small></span>${l.statut ? `<span class="vu-st${/confirmer|manque/.test(l.statut) ? ' att' : ''}">${esc(l.statut)}</span>` : '<span></span>'}</div>`).join('') + '</section>').join('')}</div>`; }
 const compterParReference = (refs, role) => { const m = new Map(); refs.filter(Boolean).forEach(r => m.set(r, (m.get(r) || 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]).map(([ref, q]) => ({ q, ref, role })); };
 const piecesFabrication = h => { try { return piecesHabillage(h).map(p => ({ q: p.quantite || 1, ref: p.reference || '', role: ({ cheminee: 'cheminée, à la place du raccord', tyrap: 'collier', raccord: 'raccord', bande: 'collier de blindage (band-it)', manchon: 'manchon', gaine: 'gaine', obturateur: 'obturateur des contacts libres' })[p.role] || p.libelle || p.role || '', statut: p.statut || '' })).filter(p => p.ref); } catch (_) { return []; } };
+
+/* ---- (v86) LA SILHOUETTE D'UN OBJET — la signature de sa fiche (le sceau de la carte, la tête du grand). Le lecteur : « je
+   ne sais pas différencier les équipements des disjoncteurs, des barrettes, proprement : quelque chose d'innovant ». Chaque
+   genre a SA forme, celle du folio, en trait fin de cuivre : le disjoncteur (ses deux bornes, l'arc, le poussoir) ; le
+   corps d'un équipement et son connecteur (un de chaque côté s'il en a plusieurs) ; la barrette, ses modules sur leur rail
+   (autant qu'elle en a, quatre au plus) ; la prise, le grand rectangle et le petit ; le câble, entre ses deux bouts ; la
+   masse, le râteau. Un dessin de 72 × 28 : chaque trait se trace quand la fiche s'ouvre (`pathLength` = 1), puis un éclat
+   de courant suit le chemin du courant (`.sl-courant`) — et repasse quand on survole la tête (style-z-carte).
+   `o` : { modules (barrette), connecteurs (équipement) }. ---- */
+function silhouetteVue(type, o) { o = o || {}; const L = s => s.replace(/<(path|circle|rect)\b/g, '<$1 pathLength="1"'), n1 = v => String(Math.round(v * 10) / 10);
+  let forme = '', courant = '';
+  if (type === 'disjoncteur') {
+    forme = '<path d="M5 19H24.4M47.6 19H67"/><circle cx="27" cy="19" r="2.6"/><circle cx="45" cy="19" r="2.6"/><path d="M27 16.4A11 11 0 0 1 45 16.4"/><path d="M36 11.7V5.6M31.6 5.6H40.4"/>';
+    courant = 'M5 19H27V16.4A11 11 0 0 1 45 16.4V19H67'; }
+  else if (type === 'barrette') { const n = Math.max(1, Math.min(4, Math.round(o.modules) || 3)), w = 11, e = 2.5, W = n * w + (n - 1) * e, x0 = 36 - W / 2;
+    forme = `<rect x="4" y="10.5" width="3" height="7" rx="1"/><rect x="65" y="10.5" width="3" height="7" rx="1"/><path d="M7 14H${n1(x0)}M${n1(x0 + W)} 14H65${Array.from({ length: n - 1 }, (_, i) => `M${n1(x0 + (i + 1) * w + i * e)} 14h${e}`).join('')}"/>`
+      + Array.from({ length: n }, (_, i) => { const x = x0 + i * (w + e); return `<rect x="${n1(x)}" y="4" width="${w}" height="20" rx="2.6"/>` + [10.5, 17.5].map(y => `<circle cx="${n1(x + 3.7)}" cy="${y}" r="1.25"/><circle cx="${n1(x + 7.3)}" cy="${y}" r="1.25"/>`).join(''); }).join('');
+    courant = 'M5.5 14H66.5'; }
+  else if (type === 'prise') {
+    forme = '<path d="M5 14H26.5M45.5 14H67"/><rect x="26.5" y="7" width="14" height="14" rx="1.4"/><rect x="40.5" y="4" width="5" height="20" rx="1.2"/>';
+    courant = 'M5 14H67'; }
+  else if (type === 'fil') {
+    forme = '<circle cx="7" cy="19" r="2.3"/><circle cx="65" cy="9" r="2.3"/><path d="M9.3 19H31a3 3 0 0 0 3-3v-4a3 3 0 0 1 3-3h25.7"/>';
+    courant = 'M7 19H31a3 3 0 0 0 3-3v-4a3 3 0 0 1 3-3H65'; }
+  else if (type === 'masse') {
+    forme = '<path d="M54 14H28"/><path d="M28 5V23M23 8.5V19.5M18 12V16"/>';
+    courant = 'M54 14H28'; }
+  else { const deux = (o.connecteurs || 1) > 1, bx = deux ? 22 : 11, bout = deux ? 68 : 61;
+    forme = `<rect x="${bx}" y="4" width="28" height="20" rx="2"/><rect x="${bx + 28}" y="8" width="6" height="12" rx="1"/><path d="M${bx + 34} 11H${bout}M${bx + 34} 17H${bout}"/>`
+      + (deux ? '<rect x="16" y="8" width="6" height="12" rx="1"/><path d="M16 11H4M16 17H4"/>' : '');
+    courant = deux ? 'M4 11H16M56 11H68' : `M${bout} 11H${bx + 34}`; }
+  return `<svg class="silhouette sl-${type === 'fil' || type === 'masse' || type === 'prise' || type === 'barrette' || type === 'disjoncteur' ? type : 'equipement'}" viewBox="0 0 72 28" aria-hidden="true" focusable="false"><g class="sl-trait">${L(forme)}</g><path class="sl-courant" pathLength="1" d="${courant}"/></svg>`; }
 
 /* ───────── 10-demarrage.js ───────── */
 /* ===========================================================================

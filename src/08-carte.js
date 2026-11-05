@@ -216,7 +216,8 @@ const echelleDuBloc = (b, r) => Math.min(0.5, Math.max(0.16, b.width / r.width, 
 function naitreCarte(el, de) { if (mouvementReduit()) { dessinerLien(); lacherLeSurvol(); return; }
   const r = el.getBoundingClientRect(), box = $('ba-equip');
   // pas de fondu d'entrée de la fiche pendant qu'elle naît : la vignette se lit tout de suite
-  if (box) { box.classList.remove('fondu'); box.getAnimations({ subtree: true }).forEach(a => { try { a.finish(); } catch (_) { } }); }
+  // (v86) sauf le sceau, qui se trace pendant qu'elle se pose (`eveillerSceau`)
+  if (box) { box.classList.remove('fondu'); box.getAnimations({ subtree: true }).forEach(a => { const t = a.effect && a.effect.target; if (t && t.closest && t.closest('.nc-sceau')) return; try { a.finish(); } catch (_) { } }); }
   const fin = () => { el.classList.remove('carte-nait'); dessinerLien(); lacherLeSurvol(); }; el.classList.add('carte-nait');
   if (!de || !r.width) { el.animate([{ opacity: 0, transform: 'translateY(8px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: courbeCarte('entree') }).onfinish = () => { fin(); dessinerLien(true); }; return; }
   // (l'origine de la carte est son coin haut-gauche : son centre part du centre du bloc)
@@ -253,6 +254,32 @@ function resorberCarte(el) { const de = el.getBoundingClientRect(), vers = rectD
   f.animate([{ transform: 'none' }, { transform: `translate(${tx}px,${ty}px) scale(${s})` }], { duration: 240, easing: courbeCarte('sortie'), fill: 'forwards' }).onfinish = () => f.remove();
   // (l'opacité suit le temps, pas la courbe : pleine jusqu'à la moitié, éteinte à 70 %)
   f.animate([{ opacity: 1 }, { opacity: 1, offset: 0.45 }, { opacity: 0, offset: 0.7 }, { opacity: 0 }], { duration: 240, fill: 'forwards' }); }
+
+/* ---- LE SCEAU (v86) : la silhouette de l'objet (08-vues, `silhouetteVue` ; dans la barre de la carte, en tête du grand) SE
+   TRACE quand la fiche s'ouvre sur un objet — chaque trait à son tour, en un peu plus d'une demi-seconde —, puis un éclat de
+   courant la parcourt une fois. Refaite sur le même objet (un réglage, un tri), rien ne bouge ; refermée, elle se retracera.
+   08-niveaux (`lierNiveaux`) l'appelle à chaque rendu ; c'est aussi là que la lumière reprend sa place sous la souris. ---- */
+function eveillerSceau(box) { lumiereEnPlace(box); const s = box && box.querySelector('.nc-sceau svg, .nc-sil svg'); if (!s) return;
+  const cle = (s.closest('.nc-sil') ? 'g|' : 'c|') + (box.dataset.cle || (typeof cleObjet === 'function' ? cleObjet() : '')); if (CARTE.sceau === cle) return; CARTE.sceau = cle;
+  if (mouvementReduit()) return;
+  const traits = [...s.querySelectorAll('.sl-trait > *')], pas = Math.min(55, 360 / Math.max(1, traits.length)), d0 = 80;
+  traits.forEach((t, i) => t.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 560, delay: d0 + i * pas, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'backwards' }));
+  const c = s.querySelector('.sl-courant'); if (c) c.animate([{ strokeDashoffset: .24 }, { strokeDashoffset: -1 }], { duration: 820, delay: d0 + traits.length * pas + 420, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'backwards' }); }
+
+/* ---- LA LUMIÈRE (v86, le lecteur : « fais quelque chose d'un peu plus interactif en fond ») : sous la carte, une lueur de
+   cuivre suit la souris — avec un rien de retard (la transition de --lx / --ly, style-z-carte) — et révèle la trame du folio
+   d'où la carte est née ; la souris partie, elle revient se poser sous le sceau. Au doigt, dans le grand, ou le mouvement
+   réduit : elle reste sous le sceau. ---- */
+const LUMIERE = { pos: null, rq: 0 };
+function poserLumiere(l, sansElan) { if (!l) return; const p = LUMIERE.pos, f = l.parentElement;
+  if (sansElan) { l.style.transition = 'none'; requestAnimationFrame(() => requestAnimationFrame(() => l.style.removeProperty('transition'))); }
+  if (!p || !f) { l.style.removeProperty('--lx'); l.style.removeProperty('--ly'); return; }
+  const r = f.getBoundingClientRect(); l.style.setProperty('--lx', Math.round(p.x - r.left) + 'px'); l.style.setProperty('--ly', Math.round(p.y - r.top + f.scrollTop) + 'px'); }
+// la carte refaite (un réglage, un autre objet) : la nouvelle lumière naît là où était l'ancienne, sans glisser depuis le haut
+const lumiereEnPlace = box => { if (LUMIERE.pos && box) poserLumiere(box.querySelector(':scope > .nc-lumiere'), true); };
+function lierLumiere(el) { const suivre = () => { LUMIERE.rq = 0; poserLumiere(el.querySelector('.fi.nv-c > .nc-lumiere')); };
+  el.addEventListener('pointermove', e => { if (e.pointerType === 'touch' || NIVEAU.grand || mouvementReduit()) return; LUMIERE.pos = { x: e.clientX, y: e.clientY }; if (!LUMIERE.rq) LUMIERE.rq = requestAnimationFrame(suivre); }, { passive: true });
+  el.addEventListener('pointerleave', () => { LUMIERE.pos = null; if (!LUMIERE.rq) LUMIERE.rq = requestAnimationFrame(suivre); }); }
 
 /* ---- LE FIL : du bloc à la carte, une courbe fine (#carte-lien, page.html) ---------------------------------------- */
 const auBord = (r, x, y) => ({ x: Math.max(r.left, Math.min(r.left + r.width, x)), y: Math.max(r.top, Math.min(r.top + r.height, y)) });
@@ -388,7 +415,9 @@ function lierCarte() { const el = $('inspecteur');
   // (v78) chaque fiche s'ouvre en carte ; le grand ne se garde pas d'une session à l'autre — sa largeur, si
   CARTE.epingle = false; CARTE.grande = false; NIVEAU.grand = false; CARTE.taille = tailleEnMemoire(); CARTE.volet = voletEnMemoire(); appliquerVolet(); fenetreEnMemoire(); FENETRE.libre = false; lierBords(el);
   // fermée, d'où qu'on la ferme (08-interface, `fermerInspecteur`), elle rend le clavier
-  if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) rendreLeClavierDeLaCarte(); }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
+  // (v86) et son sceau se retracera à la prochaine ouverture, même sur le même objet
+  if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) { rendreLeClavierDeLaCarte(); CARTE.sceau = ''; LUMIERE.pos = null; } }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
+  lierLumiere(el);
   // l'endroit du dernier appui sur la planche : la fiche d'un câble naît de là, un clic sur le plan fait glisser la carte
   $('planche').addEventListener('pointerdown', e => { CARTE.appui = { x: e.clientX, y: e.clientY, t: Date.now() }; }, true);
   // où est la souris (la carte qui se pose dessous fait oublier au plan son survol : `lacherLeSurvol`)

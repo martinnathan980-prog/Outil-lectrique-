@@ -23,9 +23,9 @@
    flèches. */
 #planche[data-prise="bloc"] #svg *{cursor:pointer}
 
-/* LE ZOOM DE LECTURE (v85 : il remplace le zoom sémantique, qui taisait sous 7 px d'écran les bornes, les pastilles, les
-   lettres des connecteurs — le lecteur : « au folio 6, les bornes n'apparaissent pas, sauf si je zoome beaucoup ou si je
-   survole ; de base, rien ne doit être caché ») : style-z-plan.css. */
+/* LE DESSIN EST FIXE (v86, style-z-plan.css) : aucune écriture ne grandit ni ne se tait au zoom. Le texte du folio se dessine
+   à ses mesures exactes (06 `styleDessin`, `text-rendering:geometricPrecision` : sans lui, les chasses s'arrondissaient au
+   pixel autrement à chaque échelle, et un numéro centré glissait jusqu'à 0,75 unité quand on zoomait). */
 #planche svg text,#planche svg .halo{transition:opacity var(--d-rapide) var(--courbe)}
 
 /* LE REPÈRE DESSINÉ PLUSIEURS FOIS (08 `peindreChoix`) : ses autres occurrences, des crochets en pointillé */

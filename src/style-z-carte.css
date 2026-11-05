@@ -1,0 +1,92 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA CARTE ET LA TÊTE DU GRAND, v86 — 08-niveaux (`enteteFiche`), 08-vues (`silhouetteVue`), 08-carte (`eveillerSceau`,
+   `lierLumiere`).
+   Le lecteur : « Disjoncteur, 102CB1, Référence : trop de variations de couleurs et de fonds, trop de gras différents » ;
+   « je ne sais pas différencier les équipements des disjoncteurs, des barrettes : quelque chose d'innovant, comme Apple » ;
+   « regarde la couleur de la tuile, et fais quelque chose d'un peu plus interactif en fond ».
+   · UNE ÉCRITURE, la même dans la carte et dans le grand : la silhouette en cuivre ; le genre en mot, 13 px, 500, gris ; le
+     REPÈRE, le seul grand, 600, à l'encre ; la référence dessous, une seule pastille AU TRAIT (aucun fond), 13 px, 500. Deux
+     graisses, l'encre et un gris. Les trois chiffres de la carte passent à 24 px, 600 : le repère reste le seul grand.
+   · LE SCEAU : la silhouette de l'objet, sa forme du folio en trait fin (72 × 28), au milieu de la barre de la carte, à la
+     place de la poignée — la barre se tient toujours, la main ouverte au survol. Elle se trace à l'ouverture (08-carte) ; un
+     éclat de courant la parcourt, et repasse quand on survole la barre ou la tête.
+   · LA LUMIÈRE : sous la carte, une lueur de cuivre suit la souris avec un rien de retard (--lx, --ly, déclarées pour
+     s'animer) et révèle la trame du folio ; la souris partie, elle revient sous le sceau. Rien ne clignote ; le mouvement
+     réduit la laisse sous le sceau.
+   Les couleurs : les jetons seulement (--nv-cuivre, --t-1, --t-2, --s-line-2). Chargée avant style-z-fiche : chaque règle
+   porte #inspecteur (ou .carte-double, le double qui se résorbe) pour passer devant les couches d'hier.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@property --lx{syntax:'<length-percentage>';inherits:true;initial-value:50%}
+@property --ly{syntax:'<length-percentage>';inherits:true;initial-value:0px}
+
+/* ─── LA SILHOUETTE (partout où elle est dessinée) ─── */
+svg.silhouette{display:block;width:100%;height:100%;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+svg.silhouette .sl-trait>*{stroke-dasharray:1 1;stroke-dashoffset:0}
+/* l'éclat de courant : un trait court, plus clair, qui court le long du chemin du courant — invisible au repos */
+svg.silhouette .sl-courant{stroke:color-mix(in srgb,var(--nv-cuivre) 62%,#ffd2a6);stroke-width:2.4;stroke-dasharray:.24 1.3;stroke-dashoffset:.24;
+  filter:drop-shadow(0 0 2px color-mix(in srgb,var(--nv-cuivre) 75%,transparent))}
+@keyframes sl-courant{from{stroke-dashoffset:.24}to{stroke-dashoffset:-1}}
+
+/* ─── LA CARTE : le sceau dans la barre ─── */
+body #inspecteur .fi.nv-c>.fi-nav::before{display:none}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-sceau{position:absolute;z-index:1;top:-36px;left:50%;width:80px;height:31px;margin-left:-40px;color:var(--nv-cuivre);pointer-events:none}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-sceau svg.silhouette{stroke-width:1.3}
+/* il s'éveille : la barre ou la tête survolée, le courant repasse */
+#inspecteur .fi.nv-c:has(>.fi-nav:hover,>.nc>.nc-tete:hover,>.nc>.nc-meta:hover) .nc-sceau .sl-courant{animation:sl-courant .9s cubic-bezier(.5,0,.3,1)}
+
+/* ─── LA CARTE : la tête — le genre, le repère, la référence ─── */
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-tete{display:flex;justify-content:center;margin:0}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-tete .nc-titre{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:center;gap:2px;min-width:0;max-width:100%;font:inherit}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-titre .nc-genre-mot{padding:0;font:500 var(--f-13)/1.3 var(--sans);letter-spacing:0;text-transform:none;color:var(--t-2);overflow:visible}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-titre .nc-rep{display:flex;justify-content:center;max-width:100%}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-titre :is(.nc-rep-t,.nc-rep-in){height:36px;margin:0;padding:0 6px;font:600 var(--f-28)/1 var(--sans);letter-spacing:-.022em;color:var(--t-1);text-align:center}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-titre.long :is(.nc-rep-t,.nc-rep-in){font-size:24px}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-meta{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 12px;margin:-4px 0 0}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-meta>span+span::before{content:none}
+/* la référence : une pastille au trait, rien dedans que le code */
+:is(#inspecteur,.carte-double) :is(.fi.nv-c,.nv-grand) .nc-meta .nc-meta-v:not(.texte){display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:7px;background:none;
+  box-shadow:inset 0 0 0 1px var(--s-line-2);font:500 var(--f-13)/1 var(--mono);color:var(--t-1)}
+:is(#inspecteur,.carte-double) :is(.fi.nv-c,.nv-grand) .nc-meta .nc-meta-v .id{font:inherit;letter-spacing:-.01em;color:inherit}
+/* une phrase (« route PUISSANCE », « ajoutée par VOLTA sur 102CB1:2 ») : du gris, sans pastille */
+:is(#inspecteur,.carte-double) :is(.fi.nv-c,.nv-grand) .nc-meta .nc-meta-v.texte{height:auto;padding:0;border-radius:0;background:none;box-shadow:none;font:500 var(--f-13)/1.4 var(--sans);color:var(--t-2)}
+:is(#inspecteur,.carte-double) :is(.fi.nv-c,.nv-grand) .nc-meta .nc-meta-v.texte .id{font:500 var(--f-13) var(--mono);color:var(--t-2)}
+
+/* ─── LA CARTE : les trois chiffres — 24 px, 600 : lisibles d'un coup, sous le repère ─── */
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre .nc-v{height:30px;font:600 24px/1 var(--sans);letter-spacing:-.018em}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre .nc-v small{margin-left:4px;font-weight:500}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre.edit .fc-in{height:30px;font:600 24px/1 var(--sans)}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre.mot .nc-v{font:600 var(--f-20)/1 var(--sans)}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre.ident .nc-v .id{font:500 var(--f-20)/1 var(--mono)}
+
+/* ─── LA CARTE : la lumière qui suit la souris, la trame du folio ─── */
+:is(#inspecteur,.carte-double) .fi.nv-c{--carte-lueur:color-mix(in srgb,var(--nv-cuivre) 7%,transparent);--carte-trame:color-mix(in srgb,var(--t-1) 12%,transparent)}
+:is(#inspecteur,.carte-double) .fi.nv-c>.nc-lumiere{position:absolute;inset:0;z-index:0;overflow:hidden;border-radius:inherit;pointer-events:none;--lx:50%;--ly:-12px;
+  background:radial-gradient(250px circle at var(--lx) var(--ly),var(--carte-lueur),transparent 72%);
+  transition:--lx .8s cubic-bezier(.2,.8,.2,1),--ly .8s cubic-bezier(.2,.8,.2,1)}
+:is(#inspecteur,.carte-double) .fi.nv-c>.nc-lumiere>i{position:absolute;inset:0;background:radial-gradient(circle,var(--carte-trame) .8px,transparent 1.2px) 6px 6px/12px 12px;
+  -webkit-mask:radial-gradient(150px circle at var(--lx) var(--ly),#000,rgba(0,0,0,.5) 45%,transparent);mask:radial-gradient(150px circle at var(--lx) var(--ly),#000,rgba(0,0,0,.5) 45%,transparent)}
+/* (le pied passe devant la lumière, comme le contenu) */
+:is(#inspecteur,.carte-double) .fi.nv-c>.nc-pied{position:relative}
+
+/* ─── LE GRAND : la même règle, sur une ligne — la silhouette, le genre sur le repère, la référence au bout ─── */
+#inspecteur .nv-grand .nc-tete.fine{position:relative;gap:14px;align-items:center;padding-right:0}
+#inspecteur .nv-grand .nc-tete.fine .nc-sil{flex:none;width:58px;height:23px;color:var(--nv-cuivre)}
+#inspecteur .nv-grand .nc-tete.fine .nc-sil svg.silhouette{stroke-width:1.7}
+#inspecteur .nv-grand .nc-tete.fine:hover .nc-sil .sl-courant{animation:sl-courant .9s cubic-bezier(.5,0,.3,1)}
+#inspecteur .nv-grand .nc-tete.fine .nc-titre{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:1px;min-width:0;font:inherit}
+#inspecteur .nv-grand .nc-tete.fine .nc-titre .nc-genre-mot{padding:0;font:500 var(--f-12)/1.25 var(--sans);letter-spacing:0;text-transform:none;color:var(--t-2)}
+#inspecteur .nv-grand .nc-tete.fine .nc-titre :is(.nc-rep-t,.nc-rep-in){height:26px;margin:0 0 0 -6px;padding:0 6px;font:600 var(--f-20)/1 var(--sans);letter-spacing:-.012em;color:var(--t-1)}
+#inspecteur .nv-grand .nc-tete.fine .nc-titre .nc-rep-t{margin:0;padding:0}
+#inspecteur .nv-grand .nc-tete.fine .nc-meta{flex:0 1 auto;align-self:flex-end;min-width:0;margin:0 0 1px 4px;gap:10px}
+#inspecteur .nv-grand .nc-tete.fine .nc-meta>span:first-child::before{display:none}
+
+/* ─── LA NUIT : le cuivre s'allume un peu, la trame se voit à peine ─── */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double) .fi.nv-c{--carte-lueur:color-mix(in srgb,var(--nv-cuivre) 13%,transparent);--carte-trame:color-mix(in srgb,var(--t-1) 10%,transparent)}
+  :root:not([data-theme="light"]) :is(#inspecteur,.carte-double) :is(.nc-sceau,.nc-sil) svg.silhouette{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--nv-cuivre) 32%,transparent))} }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double) .fi.nv-c{--carte-lueur:color-mix(in srgb,var(--nv-cuivre) 13%,transparent);--carte-trame:color-mix(in srgb,var(--t-1) 10%,transparent)}
+:root[data-theme="dark"] :is(#inspecteur,.carte-double) :is(.nc-sceau,.nc-sil) svg.silhouette{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--nv-cuivre) 32%,transparent))}
+
+@media (prefers-reduced-motion:reduce){
+  :is(#inspecteur,.carte-double) .fi.nv-c>.nc-lumiere{transition:none}
+  svg.silhouette .sl-courant{animation:none!important} }

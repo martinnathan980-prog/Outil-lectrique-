@@ -3,8 +3,9 @@
 
    UNE SEULE FAMILLE DE MATIÈRES : le graphite chaud et le cuivre. La nuit bleue est partie.
    · LA TABLE (page.html `#table`, 08-table, style-table.css) : sous tout, d'un bord à l'autre. La nuit : un GRAPHITE
-     CHAUD dégradé, une lumière de cuivre au coin haut-droit ; le jour (v85) : un LIN, sable chaud et présent (pas du
-     blanc : le folio s'en détache), une lumière blanche au même coin. Le folio y est une feuille blanche posée d'une ombre douce, un liseré le jour.
+     CHAUD dégradé, une lumière de cuivre au coin haut-droit ; le jour (v86) : l'ALUMINIUM, un gris neutre (aucune teinte :
+     le blanc du papier reste blanc, les couleurs des fils restent justes ; pas du blanc : le folio s'en détache à 1,6:1),
+     une lumière blanche au même coin. Le folio y est une feuille blanche posée d'une ombre douce, un liseré le jour.
      L'accueil (la bibliothèque) reste sur le graphite dans les deux thèmes (la charte) : il garde ses jetons à lui.
    · LE CADRE (la barre du haut, le rail, les folios, le zoom, les menus, le mot qui passe, les outils d'un PDF) :
      des PALETS qui suivent le thème — clairs le jour, graphite la nuit, graphite toujours sur l'accueil. Plus de chrome
@@ -19,9 +20,10 @@
    OÙ SONT LES JETONS
    · ici, `:root` : la base, et le GRAPHITE de la table et du cadre (la nuit, l'accueil) ; les feuilles du jour, puis
      celles de la nuit (les deux blocs « le thème sombre ») ; l'îlot du cadre (le graphite, `#entete,#rail…`) ;
-   · style-z-cadre.css (chargé après les couches anciennes : le dernier mot du cadre) : LE JOUR DU PLAN — le lin de la
-     table et le cadre clair —, et ce que des couches plus anciennes (style-table.css, style-v79.css) redéfinissaient
-     encore en bleu.
+   · style-z-cadre.css (chargé après les couches anciennes : le dernier mot du cadre) : LE JOUR DU PLAN — l'aluminium de
+     la table et le cadre clair —, et ce que des couches plus anciennes (style-table.css, style-v79.css) redéfinissaient
+     encore en bleu ; style-z-couleur.css : ce qui, posé sur la table du jour, doit en prendre la neutralité (l'ombre de
+     la carte et du grand).
    LES JETONS (v84), ce qu'ils disent :
    · la table : --s-app (sa couleur moyenne), --table-fond, --table-lueur, --nappe-a/-b, --grille-repos,
      --s-grille-revele, --courant ; ce qui s'écrit dessus : --t-table, --t-table-2, --t-table-warn, --t-table-ko,

@@ -362,3 +362,35 @@ function fabricationVue(groupes) { const gs = (groupes || []).filter(g => g && g
     + g.lignes.map(l => `<div class="vu-fab-l"><span class="vu-q">${l.q}<small>×</small></span><span class="vu-r"><b class="id">${esc(l.ref || '—')}</b><small>${esc(l.role || '')}</small></span>${l.statut ? `<span class="vu-st${/confirmer|manque/.test(l.statut) ? ' att' : ''}">${esc(l.statut)}</span>` : '<span></span>'}</div>`).join('') + '</section>').join('')}</div>`; }
 const compterParReference = (refs, role) => { const m = new Map(); refs.filter(Boolean).forEach(r => m.set(r, (m.get(r) || 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]).map(([ref, q]) => ({ q, ref, role })); };
 const piecesFabrication = h => { try { return piecesHabillage(h).map(p => ({ q: p.quantite || 1, ref: p.reference || '', role: ({ cheminee: 'cheminée, à la place du raccord', tyrap: 'collier', raccord: 'raccord', bande: 'collier de blindage (band-it)', manchon: 'manchon', gaine: 'gaine', obturateur: 'obturateur des contacts libres' })[p.role] || p.libelle || p.role || '', statut: p.statut || '' })).filter(p => p.ref); } catch (_) { return []; } };
+
+/* ---- (v86) LA SILHOUETTE D'UN OBJET — la signature de sa fiche (le sceau de la carte, la tête du grand). Le lecteur : « je
+   ne sais pas différencier les équipements des disjoncteurs, des barrettes, proprement : quelque chose d'innovant ». Chaque
+   genre a SA forme, celle du folio, en trait fin de cuivre : le disjoncteur (ses deux bornes, l'arc, le poussoir) ; le
+   corps d'un équipement et son connecteur (un de chaque côté s'il en a plusieurs) ; la barrette, ses modules sur leur rail
+   (autant qu'elle en a, quatre au plus) ; la prise, le grand rectangle et le petit ; le câble, entre ses deux bouts ; la
+   masse, le râteau. Un dessin de 72 × 28 : chaque trait se trace quand la fiche s'ouvre (`pathLength` = 1), puis un éclat
+   de courant suit le chemin du courant (`.sl-courant`) — et repasse quand on survole la tête (style-z-carte).
+   `o` : { modules (barrette), connecteurs (équipement) }. ---- */
+function silhouetteVue(type, o) { o = o || {}; const L = s => s.replace(/<(path|circle|rect)\b/g, '<$1 pathLength="1"'), n1 = v => String(Math.round(v * 10) / 10);
+  let forme = '', courant = '';
+  if (type === 'disjoncteur') {
+    forme = '<path d="M5 19H24.4M47.6 19H67"/><circle cx="27" cy="19" r="2.6"/><circle cx="45" cy="19" r="2.6"/><path d="M27 16.4A11 11 0 0 1 45 16.4"/><path d="M36 11.7V5.6M31.6 5.6H40.4"/>';
+    courant = 'M5 19H27V16.4A11 11 0 0 1 45 16.4V19H67'; }
+  else if (type === 'barrette') { const n = Math.max(1, Math.min(4, Math.round(o.modules) || 3)), w = 11, e = 2.5, W = n * w + (n - 1) * e, x0 = 36 - W / 2;
+    forme = `<rect x="4" y="10.5" width="3" height="7" rx="1"/><rect x="65" y="10.5" width="3" height="7" rx="1"/><path d="M7 14H${n1(x0)}M${n1(x0 + W)} 14H65${Array.from({ length: n - 1 }, (_, i) => `M${n1(x0 + (i + 1) * w + i * e)} 14h${e}`).join('')}"/>`
+      + Array.from({ length: n }, (_, i) => { const x = x0 + i * (w + e); return `<rect x="${n1(x)}" y="4" width="${w}" height="20" rx="2.6"/>` + [10.5, 17.5].map(y => `<circle cx="${n1(x + 3.7)}" cy="${y}" r="1.25"/><circle cx="${n1(x + 7.3)}" cy="${y}" r="1.25"/>`).join(''); }).join('');
+    courant = 'M5.5 14H66.5'; }
+  else if (type === 'prise') {
+    forme = '<path d="M5 14H26.5M45.5 14H67"/><rect x="26.5" y="7" width="14" height="14" rx="1.4"/><rect x="40.5" y="4" width="5" height="20" rx="1.2"/>';
+    courant = 'M5 14H67'; }
+  else if (type === 'fil') {
+    forme = '<circle cx="7" cy="19" r="2.3"/><circle cx="65" cy="9" r="2.3"/><path d="M9.3 19H31a3 3 0 0 0 3-3v-4a3 3 0 0 1 3-3h25.7"/>';
+    courant = 'M7 19H31a3 3 0 0 0 3-3v-4a3 3 0 0 1 3-3H65'; }
+  else if (type === 'masse') {
+    forme = '<path d="M54 14H28"/><path d="M28 5V23M23 8.5V19.5M18 12V16"/>';
+    courant = 'M54 14H28'; }
+  else { const deux = (o.connecteurs || 1) > 1, bx = deux ? 22 : 11, bout = deux ? 68 : 61;
+    forme = `<rect x="${bx}" y="4" width="28" height="20" rx="2"/><rect x="${bx + 28}" y="8" width="6" height="12" rx="1"/><path d="M${bx + 34} 11H${bout}M${bx + 34} 17H${bout}"/>`
+      + (deux ? '<rect x="16" y="8" width="6" height="12" rx="1"/><path d="M16 11H4M16 17H4"/>' : '');
+    courant = deux ? 'M4 11H16M56 11H68' : `M${bout} 11H${bx + 34}`; }
+  return `<svg class="silhouette sl-${type === 'fil' || type === 'masse' || type === 'prise' || type === 'barrette' || type === 'disjoncteur' ? type : 'equipement'}" viewBox="0 0 72 28" aria-hidden="true" focusable="false"><g class="sl-trait">${L(forme)}</g><path class="sl-courant" pathLength="1" d="${courant}"/></svg>`; }
