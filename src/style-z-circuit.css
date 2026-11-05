@@ -13,15 +13,14 @@
    =========================================================================== */
 :root {
   --ci-cuivre: #a9531a;                 /* le courant, sur le papier blanc du folio */
-  --ci-lueur: rgba(169, 83, 26, .30);
   --ci-cable: .30;                      /* ce qui n'est pas du circuit : à peine estompé */
   --ci-bloc: .42;
   --ci-texte: .38;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --ci-cuivre: #b45d20; --ci-lueur: rgba(196, 104, 42, .34); }
+  :root:not([data-theme="light"]) { --ci-cuivre: #b45d20; }
 }
-:root[data-theme="dark"] { --ci-cuivre: #b45d20; --ci-lueur: rgba(196, 104, 42, .34); }
+:root[data-theme="dark"] { --ci-cuivre: #b45d20; }
 
 /* le reste du folio s'estompe, légèrement — les blocs plus que les traits n'y perdent (on lit encore où l'on est) */
 #svg #scene.circuit .cab:not(.ci),
@@ -40,7 +39,8 @@
 #svg #scene > .ci-flux path {
   fill: none; stroke: var(--ci-cuivre); stroke-width: var(--ci-epais, 2); stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: var(--ci-trait, 6) var(--ci-vide, 10); stroke-dashoffset: 0;
-  filter: drop-shadow(0 0 1px var(--ci-lueur));
+  /* (pas de halo : un filtre sur un trait qui bouge se refait à chaque image — sur un circuit de cinquante câbles, la
+     fluidité d'abord) */
   animation: ci-courant 1.15s linear infinite;
   transition: opacity .2s cubic-bezier(.2, .7, .2, 1)
 }

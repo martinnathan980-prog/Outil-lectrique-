@@ -2104,7 +2104,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       + (ch.pointe ? ` <span class="fi-mes-pointe ${classeMesure(ch.pointe.dU / ch.pointe.admis)}">${esc(`En pointe : ${volts(ch.pointe.dU)} à ${amperes(ch.pointe.i)}, ${ch.pointe.dU > ch.pointe.admis ? 'plus que' : 'pour'} les ${volts(ch.pointe.admis)} admis.`)}</span>` : '')
     // (le courant montré au-dessus est la pointe : la chute dit qu'elle se lit en continu, le même instant que sa phrase)
     : ch.dU != null ? esc(`Sur ce câble seul${pointeI ? ', en continu' : ''} : ${nombre(arrondi(x.rd.rho, 1))} mΩ/m × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A.${rhoChaud ? ' ' + rhoChaud : ''}`)
-    : cmdF ? esc('Elle dépend du courant de la branche, qui n’est pas écrit : ' + motDeCommande(x) + '.') : esc('La résistance du câble est inconnue : la chute ne se calcule pas.');
+    // (ce qu'il faut écrire est dit juste au-dessus, au courant : pas deux fois)
+    : cmdF ? esc('Elle dépend du courant de la branche, qui n’est pas encore écrit.') : esc('La résistance du câble est inconnue : la chute ne se calcule pas.');
   const chute = mesure('Chute', aide('chute', ch.total ? { chemin: { ...ch.total, admis: ch.max, regle: ch.regle } } : { dU: ch.dU, admis: ch.max, regle: ch.regle }),
     // (v84) sans admis à comparer, pas de barre vide : la valeur seule
     ch.total ? `<b>${esc(volts(ch.total.dU))}</b>${ch.max != null ? ' sur ' + esc(volts(ch.max)) + ' admis' : ''}` : ch.dU == null && cmdF ? `<b>${esc('inconnue')}</b>` : `<b>${esc(volts(ch.dU))}</b>`, rU != null && isFinite(rU) ? rU : null, etatU, dU, bulleU);

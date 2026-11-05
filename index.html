@@ -8877,15 +8877,14 @@ body #inspecteur .fi.nv-c>.fi-nav::before{display:none}
    =========================================================================== */
 :root {
   --ci-cuivre: #a9531a;                 /* le courant, sur le papier blanc du folio */
-  --ci-lueur: rgba(169, 83, 26, .30);
   --ci-cable: .30;                      /* ce qui n'est pas du circuit : à peine estompé */
   --ci-bloc: .42;
   --ci-texte: .38;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --ci-cuivre: #b45d20; --ci-lueur: rgba(196, 104, 42, .34); }
+  :root:not([data-theme="light"]) { --ci-cuivre: #b45d20; }
 }
-:root[data-theme="dark"] { --ci-cuivre: #b45d20; --ci-lueur: rgba(196, 104, 42, .34); }
+:root[data-theme="dark"] { --ci-cuivre: #b45d20; }
 
 /* le reste du folio s'estompe, légèrement — les blocs plus que les traits n'y perdent (on lit encore où l'on est) */
 #svg #scene.circuit .cab:not(.ci),
@@ -8904,7 +8903,8 @@ body #inspecteur .fi.nv-c>.fi-nav::before{display:none}
 #svg #scene > .ci-flux path {
   fill: none; stroke: var(--ci-cuivre); stroke-width: var(--ci-epais, 2); stroke-linecap: round; stroke-linejoin: round;
   stroke-dasharray: var(--ci-trait, 6) var(--ci-vide, 10); stroke-dashoffset: 0;
-  filter: drop-shadow(0 0 1px var(--ci-lueur));
+  /* (pas de halo : un filtre sur un trait qui bouge se refait à chaque image — sur un circuit de cinquante câbles, la
+     fluidité d'abord) */
   animation: ci-courant 1.15s linear infinite;
   transition: opacity .2s cubic-bezier(.2, .7, .2, 1)
 }
@@ -28317,7 +28317,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
       + (ch.pointe ? ` <span class="fi-mes-pointe ${classeMesure(ch.pointe.dU / ch.pointe.admis)}">${esc(`En pointe : ${volts(ch.pointe.dU)} à ${amperes(ch.pointe.i)}, ${ch.pointe.dU > ch.pointe.admis ? 'plus que' : 'pour'} les ${volts(ch.pointe.admis)} admis.`)}</span>` : '')
     // (le courant montré au-dessus est la pointe : la chute dit qu'elle se lit en continu, le même instant que sa phrase)
     : ch.dU != null ? esc(`Sur ce câble seul${pointeI ? ', en continu' : ''} : ${nombre(arrondi(x.rd.rho, 1))} mΩ/m × ${nombre(arrondi(ch.L, 2))} m × ${nombre(arrondi(x.I, 2))} A.${rhoChaud ? ' ' + rhoChaud : ''}`)
-    : cmdF ? esc('Elle dépend du courant de la branche, qui n’est pas écrit : ' + motDeCommande(x) + '.') : esc('La résistance du câble est inconnue : la chute ne se calcule pas.');
+    // (ce qu'il faut écrire est dit juste au-dessus, au courant : pas deux fois)
+    : cmdF ? esc('Elle dépend du courant de la branche, qui n’est pas encore écrit.') : esc('La résistance du câble est inconnue : la chute ne se calcule pas.');
   const chute = mesure('Chute', aide('chute', ch.total ? { chemin: { ...ch.total, admis: ch.max, regle: ch.regle } } : { dU: ch.dU, admis: ch.max, regle: ch.regle }),
     // (v84) sans admis à comparer, pas de barre vide : la valeur seule
     ch.total ? `<b>${esc(volts(ch.total.dU))}</b>${ch.max != null ? ' sur ' + esc(volts(ch.max)) + ' admis' : ''}` : ch.dU == null && cmdF ? `<b>${esc('inconnue')}</b>` : `<b>${esc(volts(ch.dU))}</b>`, rU != null && isFinite(rU) ? rU : null, etatU, dU, bulleU);
