@@ -3005,8 +3005,11 @@ function heureSauve(t) { const el = $('ctx-sauve');
   if (!t) { el.textContent = 'non enregistré'; el.classList.add('ko'); el.title = 'Le navigateur refuse d’enregistrer (navigation privée ?). Le travail tient tant que l’onglet est ouvert.'; return; }
   const d = new Date(t); el.textContent = 'enregistré ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); el.classList.remove('ko');
   el.title = 'Gardé dans ce navigateur. Rien n’est parti sur le réseau.'; }
+// (v86, une seule source) une liaison entièrement vide — laissée par l'ancien « + Liaison » puis Échap — n'est pas du fichier :
+// elle part à l'ouverture, pour que les comptes (récapitulatif, bibliothèque) disent les lignes du fichier
+const liaisonPleine = l => !!l && !!(l.de || l.vers || l.type || l.cable || l.longueur > 0);
 function poserEtat(o) { app.contrat = contratNeuf(); app.planId = o.planId || '';
-  app.contrat.liaisons = o.liaisons.map(liaison); app.source = o.source ? o.source.map(liaison) : null; app.nFolios = o.nFolios || 0; app.budget = o.budget || 16; app.plan = o.plan || '*'; app.nom = o.nom || '';
+  app.contrat.liaisons = o.liaisons.map(liaison).filter(liaisonPleine); app.source = o.source ? o.source.map(liaison).filter(liaisonPleine) : null; app.nFolios = o.nFolios || 0; app.budget = o.budget || 16; app.plan = o.plan || '*'; app.nom = o.nom || '';
   app.contrat.designations = new Map(o.designations || []); app.contrat.sexes = new Map(o.sexes || []); app.contrat.charges = new Map(o.charges || []); app.contrat.raccords = new Map(o.raccords || []); app.contrat.provisoires = new Map(o.provisoires || []); if (o.cartouche) Object.assign(app.contrat.cartouche, o.cartouche);
   const P = plans(); if (app.plan === '*' && P.length > 1) app.plan = P[0];
   app.choisi = null; app.cible = null; app.actif = null;

@@ -1253,7 +1253,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
       return { nom: x.nom, ref: x.pn || (Mx ? Mx.reference : ''), pris: kx ? kx.plan.utilises || 0 : 0, places: Mx ? Mx.module.contacts.length : 0, cables: x.bornes.reduce((n, bo) => n + (b.parBorne.get(bo) || []).length, 0), ko: fautif(x.nom) ? 'un câble ne se loge pas' : '' }; }));
   return composerFiche({ type: 'equipement', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pns.length === 1 ? ident(pns[0]) : pns.length ? esc(pluriel(pns.length, 'référence')) : ''],
     probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste, vignette, identite: id,
-    ok: 'Ses connecteurs logent tous ses câbles, et chacun porte son courant.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
+    ok: 'Ses connecteurs logent tous ses câbles, et chacun porte son courant.', pied: { tableau: nom, menu: MENU_BLOC } }); }
 // la case « Câbles » des chiffres (v78) : combien, combien en défaut, ce que porte le plus chargé
 /* (v86, l'audit : « le 4 en rouge sur la carte de 103RL1, sans dire pourquoi ») : le compte reste à l'encre — c'est un
    nombre de câbles, pas un nombre de problèmes — et ce qui cloche se dit à côté, dans sa couleur : « 4 · 1 à régler ». Tout
@@ -1519,7 +1519,7 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     sections[2] ? ongletDeLaSection(sections[2]) : null];
   return composerFiche({ type: 'disjoncteur', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pn ? ident(pn) : ''], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
     vignette: friseDeLaCarte(nom, d, o), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation) porte un / : null,
-    ok: d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : `Le ${cal ? amperes(cal) : 'calibre'} passe, et ses câbles portent leur courant.`, pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
+    ok: d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : `Le ${cal ? amperes(cal) : 'calibre'} passe, et ses câbles portent leur courant.`, pied: { tableau: nom, menu: MENU_BLOC } }); }
 
 /* ---- UNE BARRETTE (et une barrette à poser) ------------------------------------------------------------------------ */
 /* Module (sa référence en puce et son « ? » — un clic ouvre, sous elle, la GALERIE des assemblages de la norme ; l'écart
@@ -1693,7 +1693,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
     // (v84, la charte : « ce que VOLTA ajoute est marqué comme ajouté et se retrouve dans l'Historique ») : la barrette à poser
     // y a sa ligne — sur 102CB1:2, aucune barrette → VT1, par VOLTA
     probs, onglets, sections, avant: poser, ecrits: aPoser ? [] : ecritsDuRepere(nom), proposes: aPoser ? (sur ? [{ sujet: '', champ: 'barrette', colonne: '', objet: sur, avant: 'aucune', apres: nom, geste: 'VOLTA' }] : []) : proposes, chiffres, vignette, identite: id, ok: 'Son module loge tous ses câbles, chacun dans un contact qui admet sa gauge.',
-    pied: aPoser ? { voir: raccord && raccord.de } : { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
+    pied: aPoser ? { voir: raccord && raccord.de } : { tableau: nom, menu: MENU_BLOC } }); }
 /* (v85) MODIFIER, D'UNE BARRETTE EN MODULES (« 667VT2 51 » + « A ») — module par module, puisque le fichier dit le module
    et la lettre de chaque câble et que VOLTA ne choisit que la référence de chaque module :
      · DANS VOTRE FICHIER : le module que votre fichier écrit, quand VOLTA en retient un autre, et pourquoi ;
@@ -1935,7 +1935,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   const vignette = M ? (lettresP.length ? `<span class="vu-trav-v">${traverseeDessin(nom, lettresP, coteP, { petit: true })}</span>` : `<span class="vu-faces"><span class="vu-face-v${koP ? ' ko' : ''}">${faceP(true)}<b class="id">${esc(M.module.variante)}</b></span></span>`) : '';
   return composerFiche({ type: 'prise', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [b.pn ? ident(b.pn) : M ? ident(M.reference) : '', freresDe(nom, 'coupure').length > 1 ? esc('partie ' + rangDuParent(nom).rang + ' de ' + rangDuParent(nom).parent) : ''],
     probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, vignette, identite: id,
-    geste: fautifs.length ? boutonReparer(fautifs.find(x => x.propose) || {}).replace('btn papier', 'btn cuivre dense') : '', ok: 'L’arrangement loge tous ses contacts, de chaque côté, avec leurs gauges.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
+    geste: fautifs.length ? boutonReparer(fautifs.find(x => x.propose) || {}).replace('btn papier', 'btn cuivre dense') : '', ok: 'L’arrangement loge tous ses contacts, de chaque côté, avec leurs gauges.', pied: { tableau: nom, menu: MENU_BLOC } }); }
 
 /* ---- UNE MASSE ------------------------------------------------------------------------------------------------------ */
 /* Le lecteur : « une masse : dis-moi la quantité de câbles, mais pas en tuile ; pas d'identité ; mets directement les
@@ -2207,8 +2207,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
     gestesTus: cause ? /^(Tout régler|Voir )/ : null, ok: x.fn ? 'Il porte son courant, et sa chute reste sous l’admis.' : 'Rien à reprendre.', pied: neuf ? { voir: l.aPoser } : { tableau: l.de, menu: MENU_FIL } }); }
 
 /* ---- LE PIED ---------------------------------------------------------------------------------------------------------- */
-/* Le récapitulatif (filtré sur l'objet), « + câble » (une liaison de plus depuis ce repère), « voir », et sous
-   « ··· » ce qu'on fait rarement. Collé en bas, toujours en vue, sobre : le premier geste est le principal (au filet),
+/* Le récapitulatif (filtré sur l'objet), « voir », et sous « ··· » ce qu'on fait rarement (plus de « + câble » : une
+   liaison de plus, c'est votre fichier). Collé en bas, toujours en vue, sobre : le premier geste est le principal (au filet),
    les suivants en clair (`.fantome`). */
 function fiPied(o) { o = o || {};
   // (v78) dans la carte, « Tout voir » d'abord : la fiche entière, en grand, le plan à côté (08-niveaux)
@@ -2219,10 +2219,11 @@ function fiPied(o) { o = o || {};
   const boutons = gestes.map((g, k) => `<button type="button" class="fi-bouton${k ? ' fantome' : ''}" ${g.attrs}${g.titre ? ` data-bulle="${escA(g.titre)}"` : ''}>${ico(g.ico)}<span>${esc(g.mot)}</span></button>`).join('');
   const menu = (o.menu || []).map(([id, t, cls]) => `<button type="button" role="menuitem" id="${id}"${cls ? ` class="${cls}"` : ''}>${esc(t)}</button>`).join('');
   return `<footer class="fi-pied">${boutons}<span class="espace"></span>${menu ? `<div class="fi-plus"><button type="button" class="fi-x" id="fi-menu" aria-haspopup="true" aria-expanded="false" aria-label="Plus d’actions" data-bulle="${escA((o.menu || []).map(([, t]) => t).join(', '))}">${ico('points')}</button><div class="fi-menu" id="fi-menu-liste" role="menu" hidden>${menu}</div></div>` : ''}</footer>`; }
-// le « ⋯ » (l'audit : « Renommer double le crayon, Désignation double le champ du nom ; seul Supprimer est neuf ») : copier la
-// fiche en texte (pour un courriel, une fiche d'écart), supprimer — fait tout de suite, « Rétablir » dans le toast
-const MENU_BLOC = [['fi-copier', 'Copier la fiche'], ['eq-del', 'Supprimer', 'danger']];
-const MENU_FIL = [['fi-copier', 'Copier la fiche'], ['fil-tableau', 'Voir dans le récapitulatif'], ['fil-del', 'Supprimer ce câble', 'danger']];
+// le « ⋯ » : copier la fiche en texte (pour un courriel, une fiche d'écart). (v86, une seule source) Supprimer un équipement ou
+// un câble, ou en ajouter un (« + Câble »), c'est changer votre fichier : ces gestes ont quitté la fiche — on change le fichier,
+// VOLTA le relit. (Leurs gestionnaires, `eq-del`, `fil-del`, `fi-fil-plus`, ne trouvent plus de bouton.)
+const MENU_BLOC = [['fi-copier', 'Copier la fiche']];
+const MENU_FIL = [['fi-copier', 'Copier la fiche'], ['fil-tableau', 'Voir dans le récapitulatif']];
 
 /* ---- LE RENDU ----------------------------------------------------------------------------------------------------------- */
 // ce qui identifie un bouton de la fiche d'un rendu à l'autre : ses données et son identifiant (pas son texte, qui change)

@@ -10033,7 +10033,7 @@ svg.vu-arbre .vu-an .vu-an-t{font:700 9.5px var(--sans);font-variant-numeric:tab
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '40eb58a0e4aa';
+const VERSION_MOTEUR = 'd432306787d2';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -12624,7 +12624,7 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
       if (ya == null && M.estTag(w.a.id)) ya = yb; if (yb == null && M.estTag(w.b.id)) yb = ya;
       return { ...l, epA: ya == null ? l.epA : { ...l.epA, y: ya }, epB: yb == null ? l.epB : { ...l.epB, y: yb } }; });
     // les blocs du meilleur portent son ordre de face : celui d'un morceau de barrette se reprend pour le nouvel ordre
-    let e = estimer({ comps: L.comps, links, geom: L.geom, vt: L.vt }); const d = coutDeLOrdreDeFace(M, id, ordre) - coutDeLOrdreDeFace(M, id, cles);
+    let e = estimer({ comps: L.comps, links, geom: L.geom }); const d = coutDeLOrdreDeFace(M, id, ordre) - coutDeLOrdreDeFace(M, id, cles);
     if (d) e = { ...e, lisibilite: e.lisibilite - d }; G.set(cle, e); return e; };
   // après un geste géométrique gardé, l'état reprend l'ordre des ordonnées
   const ordonnerParY = (E, pos) => { M.ids.forEach(id => { if (M.estTag(id)) return; E.clesListes(id).forEach(lid => E.listes.get(id)[lid].sort((u, v) => pos.y.get(K(id, u.cle)) - pos.y.get(K(id, v.cle)))); });
@@ -13495,7 +13495,7 @@ function tasserLesEtires(M, m) {
 const budgetDe = M => { const nB = M.ids.length; return nB <= 20 ? 2400 : nB <= 40 ? 1200 : nB <= 80 ? 800 : 600; };
 function* placementEnPas(liaisons) {
   const G = construireGraphe(liaisons); if (!G.ids.length) return null;
-  const placerSur = function* (G, part, graphe) { const M = modele(G, liaisons), m = yield* concoursEnPas(M, {}, Math.round(budgetDe(M) * (part || 1)), graphe); m.M = M; return m; };
+  const placerSur = function* (G, part, graphe) { const M = modele(G), m = yield* concoursEnPas(M, {}, Math.round(budgetDe(M) * (part || 1)), graphe); m.M = M; return m; };
   let meilleur = yield* placerSur(G, 1, { coupes: null });
   // une barrette dont les bornes partent des deux côtés se COUPE, et le dessin coupé concourt contre l'entier
   const coupes = coupesParCote(meilleur.M, meilleur.E, meilleur.pos);
@@ -13538,7 +13538,7 @@ function faireTacheEnDonnees(cle, liaisons, d) {
   if (MODELES_DES_AIDES.cle !== cle) MODELES_DES_AIDES = { cle, M: new Map() };
   const k = d.graphe.coupes ? d.graphe.coupes.join(',') : '';
   let M = MODELES_DES_AIDES.M.get(k);
-  if (!M) { M = modele(construireGraphe(liaisons, d.graphe.coupes ? new Set(d.graphe.coupes.map(i => liaisons[i])) : undefined), liaisons); MODELES_DES_AIDES.M.set(k, M); }
+  if (!M) { M = modele(construireGraphe(liaisons, d.graphe.coupes ? new Set(d.graphe.coupes.map(i => liaisons[i])) : undefined)); MODELES_DES_AIDES.M.set(k, M); }
   const etat = desDonnees(M, d.etat), t = { genre: d.genre, M, graphe: d.graphe, principal: d.principal, budget: d.budget, niveau: d.niveau };
   if (d.genre === 'finir') t.r = etat; else t.c = etat;
   return enDonnees(faireTache(t), true); }
@@ -23977,7 +23977,7 @@ function gestesDuPoint(x) { if (!x) return []; const out = [];
   if (x.genre === 'pn' && x.nom) (x.pns || []).forEach((pn, i) => out.push({ mot: 'Unifier sur ' + pn, aide: `Toutes les liaisons de ${x.nom} prennent ${pn} — Ctrl+Z le défait`, faire: () => unifierPartNumber(x.nom, pn), principal: i === 0 }));
   const c = x.nom && estDisjoncteur(x.nom) && x.genre !== 'pn' ? causeDuDisjoncteur(x.nom) : null;
   if (c) out.push({ mot: motToutRegler(c), aide: 'Le calibre que VOLTA retient part dans l’Excel corrigé, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(x.nom), principal: !out.length });
-  if (x.genre === 'aposer' && x.nom) out.push({ mot: 'Lui donner son repère', aide: 'Elle prend le repère que VOLTA propose (la suite de la barrette la plus proche) — Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes([x.nom]), principal: !out.length });
+  if (x.genre === 'aposer' && x.nom) out.push({ mot: 'Lui donner son repère', aide: 'Elle prend le repère que VOLTA propose (la suite de la barrette la plus proche) — « Défaire » rend le repère provisoire', faire: () => poserLesBarrettes([x.nom]), principal: !out.length });
   // (v86, l'audit B3) une ligne en double, un repère écrit de deux façons : la proposition de VOLTA, qui part dans l'Excel corrigé
   if (x.genre === 'doublon' && x.doublon) out.push(x.doublon.identiques
     ? { mot: x.doublon.copies > 1 ? 'Retirer les ' + x.doublon.copies + ' lignes en double' : 'Retirer la ligne en double', aide: 'La copie quitte le plan et l’Excel corrigé — une proposition de VOLTA ; Défaire la remet', faire: () => retirerLignesEnDouble([x]), principal: !out.length }
@@ -23990,7 +23990,7 @@ function gestesDuPoint(x) { if (!x) return []; const out = [];
    grand retest, quand huit genres disent tout) ------------------------------------------------------------------------
    Les points se rangent par niveau (les problèmes, puis ce qui est à voir), puis par genre, dans l'ordre de la lecture ;
    chaque genre dit son compte et ses repères, « Voir le premier » y mène, et le GESTE qui le traite d'un coup quand il
-   existe (« Toutes les poser », « Écrire les profils », « Écrire les longueurs », « Voir les disjoncteurs »). Déplié, un
+   existe (« Leur donner leur repère », « Écrire les profils », « Voir les câbles sans longueur », « Voir les disjoncteurs »). Déplié, un
    genre montre ses LIGNES (`.co-item`, une par repère : chacun de ses points, en clair) ; un genre se déplie d'office
    quand toute la liste est courte. P mène au point suivant (Maj+P au précédent), d'un bout à l'autre de la liste : le
    mot dit où l'on en est (« 3 / 10 »). Le récapitulatif (l'onglet Problèmes) range ses lignes de même. */
@@ -24009,7 +24009,7 @@ function genresDuControle() { const G = new Map();
 /* LE GESTE QUI TRAITE UN GENRE, quand il existe : { mot, aide, faire }. Les barrettes à poser se posent toutes d'un coup
    (chacune sous le repère que l'outil propose, un seul Ctrl+Z) ; les autres mènent au tableau qui les corrige, filtré. */
 function gesteDuGenre(g) { const xs = g.lignes.flatMap(l => l.xs);
-  if (g.genre === 'aposer') return { mot: g.lignes.length > 1 ? 'Leur donner leur repère' : 'Lui donner son repère', aide: 'Chacune prend le repère que VOLTA propose (la suite de la barrette la plus proche) ; « Rétablir » ou Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes(g.lignes.map(l => l.nom)) };
+  if (g.genre === 'aposer') return { mot: g.lignes.length > 1 ? 'Leur donner leur repère' : 'Lui donner son repère', aide: 'Chacune prend le repère que VOLTA propose (la suite de la barrette la plus proche) ; « Défaire » les rend provisoires', faire: () => poserLesBarrettes(g.lignes.map(l => l.nom)) };
   if (g.genre === 'profil') return { mot: 'Écrire les profils', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux sans profil de charge, la colonne Permanent à écrire', faire: () => ouvrirOngletFiltre('disjoncteurs', ['sansprofil'], ['profil']) };
   if (g.genre === 'pn' && g.lignes.length === 1) { const G = gestesDuPoint(g.lignes[0].xs[0])[0]; if (G) return { mot: G.mot, aide: G.aide, faire: G.faire }; }
   // (v86) toutes les lignes en double d'un coup (celles pareilles en tout), tous les repères écrits de deux façons : un seul Défaire
@@ -24018,23 +24018,26 @@ function gesteDuGenre(g) { const xs = g.lignes.flatMap(l => l.xs);
   if (g.genre === 'casse') { const ps = xs.filter(x => x.casse); if (!ps.length) return null;
     return { mot: ps.length > 1 ? 'Les écrire pareil partout' : 'Écrire ' + ps[0].casse.cible + ' partout', aide: 'Chaque repère s’écrit comme VOLTA le lit, dans l’Excel corrigé — une proposition de VOLTA ; Défaire le rend', faire: () => ecrireLesReperes(ps) }; }
   if (g.genre === 'calibre' || g.genre === 'protection' || g.genre === 'pn') return { mot: 'Voir les disjoncteurs', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux qui ont quelque chose à reprendre', faire: () => ouvrirOngletFiltre('disjoncteurs', ['probleme']) };
-  if (g.genre === 'chute') return xs.every(x => /hypothèse/.test(x.texte)) ? { mot: 'Écrire les longueurs', aide: 'Ces chutes se calculent sur des longueurs supposées : l’onglet Liaisons, les câbles sans longueur dans votre fichier', faire: () => ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout') }
+  // (v86) la longueur vient du fichier : le geste mène aux câbles sans longueur, il n'écrit rien dans VOLTA
+  if (g.genre === 'chute') return xs.every(x => /hypothèse/.test(x.texte)) ? { mot: 'Voir les câbles sans longueur', aide: 'Ces chutes se calculent sur des longueurs supposées : l’onglet Liaisons, les câbles sans longueur dans votre fichier', faire: () => ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout') }
     : { mot: 'Voir les câbles', aide: 'L’onglet Liaisons du récapitulatif : les liaisons à reprendre', faire: () => ouvrirOngletFiltre('liaisons', ['probleme'], null, 'tout') };
   return null; }
 // un onglet du récapitulatif, ses puces pressées (et rien d'autre), des colonnes en plus, la portée
 function ouvrirOngletFiltre(onglet, puces, colonnes, portee) { const b = app.base; b.filtreAuto = false; b.filtre = ''; changerOnglet(onglet, true);
   b.puces[onglet] = puces || []; if (colonnes) { const ch = b.colonnes[onglet] || (b.colonnes[onglet] = {}); colonnes.forEach(c => { ch[c] = true; }); }
   if (portee) b.portee = portee; b.filtre = ''; b.tri = null; memoriserBase(); if (b.ouvert) rendreBase(true); else ouvrirBase(); }
-/* Toutes les barrettes à poser d'un coup : chacune sous le repère proposé (celui du récapitulatif, `prochainRepereVT`,
-   relu après chaque pose : les noms se suivent) ; une seule entrée d'historique. */
-function poserLesBarrettes(noms) { const vus = new Set(); let n = 0;
-  const vts = noms.filter(v => VT_A_POSER.test(v) && !vus.has(v) && vus.add(v)); if (!vts.length) return 0;
-  histPush('pose de ' + pluriel(vts.length, 'barrette'));
-  vts.forEach(vt => { assurerModele(); const r = reperes().find(x => x.aPoser && x.nom === vt), nom = r ? prochainRepereVT(r) : '';
-    if (nom && poserBarrette(vt, nom, { plan: r.plan || '*' })) n++; });
-  if (!n) { app.hist.pop(); synchroniserHistorique(); } else { if (app.hist.length) app.hist[app.hist.length - 1].quoi = 'pose de ' + pluriel(n, 'barrette'); apresEdition(); }
-  if (n) direRetablir(n > 1 ? n + ' barrettes posées au contrat, chacune sous le repère proposé.' : 'La barrette est posée au contrat sous le repère proposé.');
-  else dire('Aucune barrette n’a pu être posée.', true); return n; }
+/* LUI DONNER SON REPÈRE, une barrette ou toutes d'un coup (v86, G2 : un seul verbe, un seul geste) : chacune par
+   `donnerSonRepere` (08-journal : le repère proposé, celui du récapitulatif, relu après chaque pose — les noms se suivent),
+   qui dit le repère donné (« VT2 devient 667VT3 ») et offre « Défaire ». Plusieurs : leurs entrées d'historique n'en font
+   qu'une — « Défaire » les rend toutes provisoires — et un seul message les nomme. */
+function poserLesBarrettes(noms) { const vus = new Set(), faits = [];
+  const vts = (noms || []).filter(v => VT_A_POSER.test(v) && !vus.has(v) && vus.add(v)); if (!vts.length || typeof donnerSonRepere !== 'function') return 0;
+  vts.forEach(vt => { assurerModele(); const r = reperes().find(x => x.aPoser && x.nom === vt), nom = donnerSonRepere(vt, r ? r.plan || '' : ''); if (nom) faits.push([vt, nom]); });
+  if (!faits.length) { dire('Aucune barrette n’a pu recevoir son repère.', true); return 0; }
+  if (faits.length > 1) { const debut = app.hist.length - faits.length;   // chaque pose a écrit la sienne, à la suite
+    if (debut >= 0 && app.hist[debut]) { app.hist.splice(debut + 1); app.hist[debut].quoi = 'pose de ' + pluriel(faits.length, 'barrette'); synchroniserHistorique(); }
+    dire(faits.map(([vt, nom]) => vt + ' devient ' + nom).join(', ') + ' : elles entrent dans votre installation, chacune avec son câble à créer et ses shunts.', false, { geste: 'Défaire', faire: defaire }); }
+  return faits.length; }
 /* (v86, l'audit B3) LES GESTES DES ÉCRITURES DU FICHIER — des propositions de VOLTA, qui partent dans l'Excel corrigé (rien
    d'autre ne réécrit le fichier : jusque-là, VOLTA dessine juste et rend le fichier tel qu'il l'a lu) ; chacun une entrée
    d'historique, que « Défaire » rend.
@@ -27448,7 +27451,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
       return { nom: x.nom, ref: x.pn || (Mx ? Mx.reference : ''), pris: kx ? kx.plan.utilises || 0 : 0, places: Mx ? Mx.module.contacts.length : 0, cables: x.bornes.reduce((n, bo) => n + (b.parBorne.get(bo) || []).length, 0), ko: fautif(x.nom) ? 'un câble ne se loge pas' : '' }; }));
   return composerFiche({ type: 'equipement', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pns.length === 1 ? ident(pns[0]) : pns.length ? esc(pluriel(pns.length, 'référence')) : ''],
     probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste, vignette, identite: id,
-    ok: 'Ses connecteurs logent tous ses câbles, et chacun porte son courant.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
+    ok: 'Ses connecteurs logent tous ses câbles, et chacun porte son courant.', pied: { tableau: nom, menu: MENU_BLOC } }); }
 // la case « Câbles » des chiffres (v78) : combien, combien en défaut, ce que porte le plus chargé
 /* (v86, l'audit : « le 4 en rouge sur la carte de 103RL1, sans dire pourquoi ») : le compte reste à l'encre — c'est un
    nombre de câbles, pas un nombre de problèmes — et ce qui cloche se dit à côté, dans sa couleur : « 4 · 1 à régler ». Tout
@@ -27714,7 +27717,7 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     sections[2] ? ongletDeLaSection(sections[2]) : null];
   return composerFiche({ type: 'disjoncteur', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pn ? ident(pn) : ''], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
     vignette: friseDeLaCarte(nom, d, o), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation) porte un / : null,
-    ok: d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : `Le ${cal ? amperes(cal) : 'calibre'} passe, et ses câbles portent leur courant.`, pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
+    ok: d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : `Le ${cal ? amperes(cal) : 'calibre'} passe, et ses câbles portent leur courant.`, pied: { tableau: nom, menu: MENU_BLOC } }); }
 
 /* ---- UNE BARRETTE (et une barrette à poser) ------------------------------------------------------------------------ */
 /* Module (sa référence en puce et son « ? » — un clic ouvre, sous elle, la GALERIE des assemblages de la norme ; l'écart
@@ -27888,7 +27891,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
     // (v84, la charte : « ce que VOLTA ajoute est marqué comme ajouté et se retrouve dans l'Historique ») : la barrette à poser
     // y a sa ligne — sur 102CB1:2, aucune barrette → VT1, par VOLTA
     probs, onglets, sections, avant: poser, ecrits: aPoser ? [] : ecritsDuRepere(nom), proposes: aPoser ? (sur ? [{ sujet: '', champ: 'barrette', colonne: '', objet: sur, avant: 'aucune', apres: nom, geste: 'VOLTA' }] : []) : proposes, chiffres, vignette, identite: id, ok: 'Son module loge tous ses câbles, chacun dans un contact qui admet sa gauge.',
-    pied: aPoser ? { voir: raccord && raccord.de } : { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
+    pied: aPoser ? { voir: raccord && raccord.de } : { tableau: nom, menu: MENU_BLOC } }); }
 /* (v85) MODIFIER, D'UNE BARRETTE EN MODULES (« 667VT2 51 » + « A ») — module par module, puisque le fichier dit le module
    et la lettre de chaque câble et que VOLTA ne choisit que la référence de chaque module :
      · DANS VOTRE FICHIER : le module que votre fichier écrit, quand VOLTA en retient un autre, et pourquoi ;
@@ -28130,7 +28133,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   const vignette = M ? (lettresP.length ? `<span class="vu-trav-v">${traverseeDessin(nom, lettresP, coteP, { petit: true })}</span>` : `<span class="vu-faces"><span class="vu-face-v${koP ? ' ko' : ''}">${faceP(true)}<b class="id">${esc(M.module.variante)}</b></span></span>`) : '';
   return composerFiche({ type: 'prise', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [b.pn ? ident(b.pn) : M ? ident(M.reference) : '', freresDe(nom, 'coupure').length > 1 ? esc('partie ' + rangDuParent(nom).rang + ' de ' + rangDuParent(nom).parent) : ''],
     probs, onglets, sections, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, vignette, identite: id,
-    geste: fautifs.length ? boutonReparer(fautifs.find(x => x.propose) || {}).replace('btn papier', 'btn cuivre dense') : '', ok: 'L’arrangement loge tous ses contacts, de chaque côté, avec leurs gauges.', pied: { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
+    geste: fautifs.length ? boutonReparer(fautifs.find(x => x.propose) || {}).replace('btn papier', 'btn cuivre dense') : '', ok: 'L’arrangement loge tous ses contacts, de chaque côté, avec leurs gauges.', pied: { tableau: nom, menu: MENU_BLOC } }); }
 
 /* ---- UNE MASSE ------------------------------------------------------------------------------------------------------ */
 /* Le lecteur : « une masse : dis-moi la quantité de câbles, mais pas en tuile ; pas d'identité ; mets directement les
@@ -28402,8 +28405,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
     gestesTus: cause ? /^(Tout régler|Voir )/ : null, ok: x.fn ? 'Il porte son courant, et sa chute reste sous l’admis.' : 'Rien à reprendre.', pied: neuf ? { voir: l.aPoser } : { tableau: l.de, menu: MENU_FIL } }); }
 
 /* ---- LE PIED ---------------------------------------------------------------------------------------------------------- */
-/* Le récapitulatif (filtré sur l'objet), « + câble » (une liaison de plus depuis ce repère), « voir », et sous
-   « ··· » ce qu'on fait rarement. Collé en bas, toujours en vue, sobre : le premier geste est le principal (au filet),
+/* Le récapitulatif (filtré sur l'objet), « voir », et sous « ··· » ce qu'on fait rarement (plus de « + câble » : une
+   liaison de plus, c'est votre fichier). Collé en bas, toujours en vue, sobre : le premier geste est le principal (au filet),
    les suivants en clair (`.fantome`). */
 function fiPied(o) { o = o || {};
   // (v78) dans la carte, « Tout voir » d'abord : la fiche entière, en grand, le plan à côté (08-niveaux)
@@ -28414,10 +28417,11 @@ function fiPied(o) { o = o || {};
   const boutons = gestes.map((g, k) => `<button type="button" class="fi-bouton${k ? ' fantome' : ''}" ${g.attrs}${g.titre ? ` data-bulle="${escA(g.titre)}"` : ''}>${ico(g.ico)}<span>${esc(g.mot)}</span></button>`).join('');
   const menu = (o.menu || []).map(([id, t, cls]) => `<button type="button" role="menuitem" id="${id}"${cls ? ` class="${cls}"` : ''}>${esc(t)}</button>`).join('');
   return `<footer class="fi-pied">${boutons}<span class="espace"></span>${menu ? `<div class="fi-plus"><button type="button" class="fi-x" id="fi-menu" aria-haspopup="true" aria-expanded="false" aria-label="Plus d’actions" data-bulle="${escA((o.menu || []).map(([, t]) => t).join(', '))}">${ico('points')}</button><div class="fi-menu" id="fi-menu-liste" role="menu" hidden>${menu}</div></div>` : ''}</footer>`; }
-// le « ⋯ » (l'audit : « Renommer double le crayon, Désignation double le champ du nom ; seul Supprimer est neuf ») : copier la
-// fiche en texte (pour un courriel, une fiche d'écart), supprimer — fait tout de suite, « Rétablir » dans le toast
-const MENU_BLOC = [['fi-copier', 'Copier la fiche'], ['eq-del', 'Supprimer', 'danger']];
-const MENU_FIL = [['fi-copier', 'Copier la fiche'], ['fil-tableau', 'Voir dans le récapitulatif'], ['fil-del', 'Supprimer ce câble', 'danger']];
+// le « ⋯ » : copier la fiche en texte (pour un courriel, une fiche d'écart). (v86, une seule source) Supprimer un équipement ou
+// un câble, ou en ajouter un (« + Câble »), c'est changer votre fichier : ces gestes ont quitté la fiche — on change le fichier,
+// VOLTA le relit. (Leurs gestionnaires, `eq-del`, `fil-del`, `fi-fil-plus`, ne trouvent plus de bouton.)
+const MENU_BLOC = [['fi-copier', 'Copier la fiche']];
+const MENU_FIL = [['fi-copier', 'Copier la fiche'], ['fil-tableau', 'Voir dans le récapitulatif']];
 
 /* ---- LE RENDU ----------------------------------------------------------------------------------------------------------- */
 // ce qui identifie un bouton de la fiche d'un rendu à l'autre : ses données et son identifiant (pas son texte, qui change)
@@ -32436,8 +32440,11 @@ function heureSauve(t) { const el = $('ctx-sauve');
   if (!t) { el.textContent = 'non enregistré'; el.classList.add('ko'); el.title = 'Le navigateur refuse d’enregistrer (navigation privée ?). Le travail tient tant que l’onglet est ouvert.'; return; }
   const d = new Date(t); el.textContent = 'enregistré ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); el.classList.remove('ko');
   el.title = 'Gardé dans ce navigateur. Rien n’est parti sur le réseau.'; }
+// (v86, une seule source) une liaison entièrement vide — laissée par l'ancien « + Liaison » puis Échap — n'est pas du fichier :
+// elle part à l'ouverture, pour que les comptes (récapitulatif, bibliothèque) disent les lignes du fichier
+const liaisonPleine = l => !!l && !!(l.de || l.vers || l.type || l.cable || l.longueur > 0);
 function poserEtat(o) { app.contrat = contratNeuf(); app.planId = o.planId || '';
-  app.contrat.liaisons = o.liaisons.map(liaison); app.source = o.source ? o.source.map(liaison) : null; app.nFolios = o.nFolios || 0; app.budget = o.budget || 16; app.plan = o.plan || '*'; app.nom = o.nom || '';
+  app.contrat.liaisons = o.liaisons.map(liaison).filter(liaisonPleine); app.source = o.source ? o.source.map(liaison).filter(liaisonPleine) : null; app.nFolios = o.nFolios || 0; app.budget = o.budget || 16; app.plan = o.plan || '*'; app.nom = o.nom || '';
   app.contrat.designations = new Map(o.designations || []); app.contrat.sexes = new Map(o.sexes || []); app.contrat.charges = new Map(o.charges || []); app.contrat.raccords = new Map(o.raccords || []); app.contrat.provisoires = new Map(o.provisoires || []); if (o.cartouche) Object.assign(app.contrat.cartouche, o.cartouche);
   const P = plans(); if (app.plan === '*' && P.length > 1) app.plan = P[0];
   app.choisi = null; app.cible = null; app.actif = null;

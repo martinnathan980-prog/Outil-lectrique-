@@ -365,7 +365,7 @@ function gestesDuPoint(x) { if (!x) return []; const out = [];
   if (x.genre === 'pn' && x.nom) (x.pns || []).forEach((pn, i) => out.push({ mot: 'Unifier sur ' + pn, aide: `Toutes les liaisons de ${x.nom} prennent ${pn} — Ctrl+Z le défait`, faire: () => unifierPartNumber(x.nom, pn), principal: i === 0 }));
   const c = x.nom && estDisjoncteur(x.nom) && x.genre !== 'pn' ? causeDuDisjoncteur(x.nom) : null;
   if (c) out.push({ mot: motToutRegler(c), aide: 'Le calibre que VOLTA retient part dans l’Excel corrigé, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(x.nom), principal: !out.length });
-  if (x.genre === 'aposer' && x.nom) out.push({ mot: 'Lui donner son repère', aide: 'Elle prend le repère que VOLTA propose (la suite de la barrette la plus proche) — Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes([x.nom]), principal: !out.length });
+  if (x.genre === 'aposer' && x.nom) out.push({ mot: 'Lui donner son repère', aide: 'Elle prend le repère que VOLTA propose (la suite de la barrette la plus proche) — « Défaire » rend le repère provisoire', faire: () => poserLesBarrettes([x.nom]), principal: !out.length });
   // (v86, l'audit B3) une ligne en double, un repère écrit de deux façons : la proposition de VOLTA, qui part dans l'Excel corrigé
   if (x.genre === 'doublon' && x.doublon) out.push(x.doublon.identiques
     ? { mot: x.doublon.copies > 1 ? 'Retirer les ' + x.doublon.copies + ' lignes en double' : 'Retirer la ligne en double', aide: 'La copie quitte le plan et l’Excel corrigé — une proposition de VOLTA ; Défaire la remet', faire: () => retirerLignesEnDouble([x]), principal: !out.length }
@@ -378,7 +378,7 @@ function gestesDuPoint(x) { if (!x) return []; const out = [];
    grand retest, quand huit genres disent tout) ------------------------------------------------------------------------
    Les points se rangent par niveau (les problèmes, puis ce qui est à voir), puis par genre, dans l'ordre de la lecture ;
    chaque genre dit son compte et ses repères, « Voir le premier » y mène, et le GESTE qui le traite d'un coup quand il
-   existe (« Toutes les poser », « Écrire les profils », « Écrire les longueurs », « Voir les disjoncteurs »). Déplié, un
+   existe (« Leur donner leur repère », « Écrire les profils », « Voir les câbles sans longueur », « Voir les disjoncteurs »). Déplié, un
    genre montre ses LIGNES (`.co-item`, une par repère : chacun de ses points, en clair) ; un genre se déplie d'office
    quand toute la liste est courte. P mène au point suivant (Maj+P au précédent), d'un bout à l'autre de la liste : le
    mot dit où l'on en est (« 3 / 10 »). Le récapitulatif (l'onglet Problèmes) range ses lignes de même. */
@@ -397,7 +397,7 @@ function genresDuControle() { const G = new Map();
 /* LE GESTE QUI TRAITE UN GENRE, quand il existe : { mot, aide, faire }. Les barrettes à poser se posent toutes d'un coup
    (chacune sous le repère que l'outil propose, un seul Ctrl+Z) ; les autres mènent au tableau qui les corrige, filtré. */
 function gesteDuGenre(g) { const xs = g.lignes.flatMap(l => l.xs);
-  if (g.genre === 'aposer') return { mot: g.lignes.length > 1 ? 'Leur donner leur repère' : 'Lui donner son repère', aide: 'Chacune prend le repère que VOLTA propose (la suite de la barrette la plus proche) ; « Rétablir » ou Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes(g.lignes.map(l => l.nom)) };
+  if (g.genre === 'aposer') return { mot: g.lignes.length > 1 ? 'Leur donner leur repère' : 'Lui donner son repère', aide: 'Chacune prend le repère que VOLTA propose (la suite de la barrette la plus proche) ; « Défaire » les rend provisoires', faire: () => poserLesBarrettes(g.lignes.map(l => l.nom)) };
   if (g.genre === 'profil') return { mot: 'Écrire les profils', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux sans profil de charge, la colonne Permanent à écrire', faire: () => ouvrirOngletFiltre('disjoncteurs', ['sansprofil'], ['profil']) };
   if (g.genre === 'pn' && g.lignes.length === 1) { const G = gestesDuPoint(g.lignes[0].xs[0])[0]; if (G) return { mot: G.mot, aide: G.aide, faire: G.faire }; }
   // (v86) toutes les lignes en double d'un coup (celles pareilles en tout), tous les repères écrits de deux façons : un seul Défaire
@@ -406,23 +406,26 @@ function gesteDuGenre(g) { const xs = g.lignes.flatMap(l => l.xs);
   if (g.genre === 'casse') { const ps = xs.filter(x => x.casse); if (!ps.length) return null;
     return { mot: ps.length > 1 ? 'Les écrire pareil partout' : 'Écrire ' + ps[0].casse.cible + ' partout', aide: 'Chaque repère s’écrit comme VOLTA le lit, dans l’Excel corrigé — une proposition de VOLTA ; Défaire le rend', faire: () => ecrireLesReperes(ps) }; }
   if (g.genre === 'calibre' || g.genre === 'protection' || g.genre === 'pn') return { mot: 'Voir les disjoncteurs', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux qui ont quelque chose à reprendre', faire: () => ouvrirOngletFiltre('disjoncteurs', ['probleme']) };
-  if (g.genre === 'chute') return xs.every(x => /hypothèse/.test(x.texte)) ? { mot: 'Écrire les longueurs', aide: 'Ces chutes se calculent sur des longueurs supposées : l’onglet Liaisons, les câbles sans longueur dans votre fichier', faire: () => ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout') }
+  // (v86) la longueur vient du fichier : le geste mène aux câbles sans longueur, il n'écrit rien dans VOLTA
+  if (g.genre === 'chute') return xs.every(x => /hypothèse/.test(x.texte)) ? { mot: 'Voir les câbles sans longueur', aide: 'Ces chutes se calculent sur des longueurs supposées : l’onglet Liaisons, les câbles sans longueur dans votre fichier', faire: () => ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout') }
     : { mot: 'Voir les câbles', aide: 'L’onglet Liaisons du récapitulatif : les liaisons à reprendre', faire: () => ouvrirOngletFiltre('liaisons', ['probleme'], null, 'tout') };
   return null; }
 // un onglet du récapitulatif, ses puces pressées (et rien d'autre), des colonnes en plus, la portée
 function ouvrirOngletFiltre(onglet, puces, colonnes, portee) { const b = app.base; b.filtreAuto = false; b.filtre = ''; changerOnglet(onglet, true);
   b.puces[onglet] = puces || []; if (colonnes) { const ch = b.colonnes[onglet] || (b.colonnes[onglet] = {}); colonnes.forEach(c => { ch[c] = true; }); }
   if (portee) b.portee = portee; b.filtre = ''; b.tri = null; memoriserBase(); if (b.ouvert) rendreBase(true); else ouvrirBase(); }
-/* Toutes les barrettes à poser d'un coup : chacune sous le repère proposé (celui du récapitulatif, `prochainRepereVT`,
-   relu après chaque pose : les noms se suivent) ; une seule entrée d'historique. */
-function poserLesBarrettes(noms) { const vus = new Set(); let n = 0;
-  const vts = noms.filter(v => VT_A_POSER.test(v) && !vus.has(v) && vus.add(v)); if (!vts.length) return 0;
-  histPush('pose de ' + pluriel(vts.length, 'barrette'));
-  vts.forEach(vt => { assurerModele(); const r = reperes().find(x => x.aPoser && x.nom === vt), nom = r ? prochainRepereVT(r) : '';
-    if (nom && poserBarrette(vt, nom, { plan: r.plan || '*' })) n++; });
-  if (!n) { app.hist.pop(); synchroniserHistorique(); } else { if (app.hist.length) app.hist[app.hist.length - 1].quoi = 'pose de ' + pluriel(n, 'barrette'); apresEdition(); }
-  if (n) direRetablir(n > 1 ? n + ' barrettes posées au contrat, chacune sous le repère proposé.' : 'La barrette est posée au contrat sous le repère proposé.');
-  else dire('Aucune barrette n’a pu être posée.', true); return n; }
+/* LUI DONNER SON REPÈRE, une barrette ou toutes d'un coup (v86, G2 : un seul verbe, un seul geste) : chacune par
+   `donnerSonRepere` (08-journal : le repère proposé, celui du récapitulatif, relu après chaque pose — les noms se suivent),
+   qui dit le repère donné (« VT2 devient 667VT3 ») et offre « Défaire ». Plusieurs : leurs entrées d'historique n'en font
+   qu'une — « Défaire » les rend toutes provisoires — et un seul message les nomme. */
+function poserLesBarrettes(noms) { const vus = new Set(), faits = [];
+  const vts = (noms || []).filter(v => VT_A_POSER.test(v) && !vus.has(v) && vus.add(v)); if (!vts.length || typeof donnerSonRepere !== 'function') return 0;
+  vts.forEach(vt => { assurerModele(); const r = reperes().find(x => x.aPoser && x.nom === vt), nom = donnerSonRepere(vt, r ? r.plan || '' : ''); if (nom) faits.push([vt, nom]); });
+  if (!faits.length) { dire('Aucune barrette n’a pu recevoir son repère.', true); return 0; }
+  if (faits.length > 1) { const debut = app.hist.length - faits.length;   // chaque pose a écrit la sienne, à la suite
+    if (debut >= 0 && app.hist[debut]) { app.hist.splice(debut + 1); app.hist[debut].quoi = 'pose de ' + pluriel(faits.length, 'barrette'); synchroniserHistorique(); }
+    dire(faits.map(([vt, nom]) => vt + ' devient ' + nom).join(', ') + ' : elles entrent dans votre installation, chacune avec son câble à créer et ses shunts.', false, { geste: 'Défaire', faire: defaire }); }
+  return faits.length; }
 /* (v86, l'audit B3) LES GESTES DES ÉCRITURES DU FICHIER — des propositions de VOLTA, qui partent dans l'Excel corrigé (rien
    d'autre ne réécrit le fichier : jusque-là, VOLTA dessine juste et rend le fichier tel qu'il l'a lu) ; chacun une entrée
    d'historique, que « Défaire » rend.
