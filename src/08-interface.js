@@ -1640,7 +1640,7 @@ function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => 
   const n = D.fils.filter(w => !w.shunt && (w.de === nom || w.vers === nom)).length, ail = rangsDesFolios(plansDuRepere(nom).filter(p => p !== app.plan));
   const genre = estMasse(nom) ? 'masse' : c.kind === 'tag' && estBarrette(nom) ? 'morceau de barrette' : estCoupure(nom) ? 'prise de coupure' : estBarrette(nom) ? 'barrette' : estDisjoncteur(nom) ? 'disjoncteur' : '';
   const d = c.kind === 'tag' ? '' : designationDe(nom), cc = estDisjoncteur(nom) && c.kind === 'equip' ? calibresDuFolio(nom) : null, cal = cc && cc.calibre;
-  return T(nom) + ((genre || d || cal) ? l_(esc([genre, cal ? amperesCb(cal) + (cc.retest ? ' (installation ' + amperesCb(cc.retest) + ')' : '') : '', d].filter(Boolean).join(' · '))) : '')
+  return T(nom) + ((genre || d || cal) ? l_(esc([genre, cal ? amperesCb(cal) + (cc.retest ? ' (votre fichier ' + amperesCb(cc.retest) + ')' : '') : '', d].filter(Boolean).join(' · '))) : '')
     + l_(pluriel(n, 'câble') + ' sur ce folio' + (ail.length ? ' · aussi sur f. ' + ail.join(' · ') : ''))
     + (estRenvoi(nom) || c.rail ? '' : l_('Clic : sa fiche · glisser : le déplacer')); }
 let appuiDuPlan = null;   // le dernier appui simple sur la planche (l'instant, l'endroit, le bloc) : un double-clic peut finir ailleurs
@@ -1739,7 +1739,7 @@ function synchroniserRail() { const p = (id, on) => { const b = $(id); if (b) b.
    repères — équipements, barrettes (celles à poser comprises), prises —, chacun avec son état et ses folios ; on y
    cherche ; un clic ouvre la fiche, la flèche ramène à la liste. Rien n'est caché derrière le plan. */
 function basculerIndex() { if (!$('inspecteur').hidden && app.insp.index) { if (app.cible) retourIndex(); else fermerInspecteur(); return; }   // depuis une fiche venue de l'index, R ramène à la liste
-  if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : ouvrez d’abord une installation.'); return; }
+  if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : ouvrez d’abord votre fichier.'); return; }
   app.insp.index = true; if (app.cible) { const c = app.cible; app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
     if (c.type === 'bloc' && app.base.filtreAuto) { app.base.filtre = ''; app.base.filtreAuto = false; rendreBase(); } eteindre(); marquerLignes(); }
   ouvrirInspecteur(); const q = $('ix-q'); if (q && !telephone()) q.focus(); }
@@ -2465,7 +2465,7 @@ function champHypotheseHtml(c, H) {
 const GROUPES_HYPOTHESES = [['fil', 'Le câble'], ['temperature', 'La température'], ['chute', 'La chute en ligne'], ['reseau', 'Le réseau'], ['declassement', 'Le déclassement'], ['tableau', 'Les disjoncteurs']];
 /* CE QUE FAIT CHAQUE RÉGLAGE, EN UNE PHRASE (l'ergonome v73 : « 232 mots à lire : chaque réglage porte un paragraphe ») ; le
    paragraphe entier — la règle, la source, la valeur par défaut — se lit dans le « ? » de sa ligne. */
-const COURT_HYPOTHESES = { longueur: 'La longueur d’un câble que l’installation ne mesure pas.', courant: 'Le courant d’un câble qu’aucun disjoncteur n’alimente.', tension: 'La tension du réseau.',
+const COURT_HYPOTHESES = { longueur: 'La longueur d’un câble que votre fichier ne donne pas.', courant: 'Le courant d’un câble qu’aucun disjoncteur n’alimente.', tension: 'La tension du réseau.',
   ambiante: 'L’air autour des câbles : ce qu’un câble admet en dépend.', tconducteur: 'La température des câbles quand la chute se calcule à température fixe ; par défaut, VOLTA l’estime sous leur courant.', retour: 'Par où le courant revient : la structure, ou un câble.',
   regime: 'Continu, monophasé ou triphasé.', cosphi: 'Le facteur de puissance, en alternatif.', reactance: 'La réactance d’un gros câble, en alternatif.', charge: 'La part de ce que le faisceau admet qui y circule vraiment.',
   altitude: 'L’altitude de vol.', tableauMin: 'L’ambiante la plus basse du tableau de disjoncteurs.', tableauMax: 'L’ambiante la plus haute du tableau de disjoncteurs.',
@@ -2493,7 +2493,7 @@ function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }
   const reglees = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k])).length, defaut = !reglees;
   // le chapeau dit où vont ces réglages (l'ingénieur v73 : « si j'envoie le dossier, on ne peut pas refaire le calcul ») : ils
   // partent avec chaque export — la page « Hypothèses et sources » du dossier PDF, la feuille « VOLTA » de l'installation corrigée
-  const corps = tete('Réglages', 'Hypothèses') + '<p class="note">Ce que votre installation ne dit pas, VOLTA le suppose ; chaque fiche qui s’en sert le dit. <b>Ces réglages sont écrits dans chaque export</b> (le dossier PDF, l’installation corrigée). Le détail de chacun se lit au survol de sa phrase.</p>'
+  const corps = tete('Réglages', 'Hypothèses') + '<p class="note">Ce que votre fichier ne dit pas, VOLTA le suppose ; chaque fiche qui s’en sert le dit. <b>Ces réglages sont écrits dans chaque export</b> (le dossier PDF, l’installation corrigée). Le détail de chacun se lit au survol de sa phrase.</p>'
     + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><h3 class="hy-titre">${esc(t)}</h3>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
   const pied = `<span class="hy-etat${defaut ? '' : ' regle'}">${defaut ? 'Les valeurs de VOLTA' : `<b>${pluriel(reglees, 'hypothèse')}</b> réglée${reglees > 1 ? 's' : ''} ici`}</span><span class="espace"></span>`
     + `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de VOLTA</button>`;
@@ -2507,7 +2507,7 @@ function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }
 // le calibre du folio suit les hypothèses (`peindre` ne repeint que si un calibre a changé)
 function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); peindre(); rafraichirCarte(); }
 function carteSimulation(nom, P, S) { const H = S.hyp, V = verite(), N = app.norme || normeVide();
-  let s = `<div class="simu"><div class="simu-tete"><span class="sur">Simulation</span><span class="simu-note">hypothèses, pas des mesures : l’installation ne porte ni longueur ni courant</span></div>
+  let s = `<div class="simu"><div class="simu-tete"><span class="sur">Simulation</span><span class="simu-note">hypothèses, pas des mesures : votre fichier ne porte ni longueur ni courant</span></div>
     <div class="hyp">${hypothesesDe(N, H, { fils: S.fils }).map(c => champHypotheseHtml(c, H)).join('')}</div>`;
   if (S.sansNorme) return s + `<p class="simu-vide">Aucune norme ne connaît cette famille ni ces câbles : rien n’est calculé. Importez une norme depuis la bible.</p></div>`;
   if (!S.lignes.length) return s + `<p class="simu-vide">Aucun câble dans un trou : rien à simuler.</p></div>`;
@@ -3125,12 +3125,12 @@ function bulleDesReperes() { const s = $('bulle-index'), d = $('bulle-index-deta
 function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDeChangements() : 0, b = $('btnRetest'); if (!b) return;
   const avant = b.hidden, mod = plurielLie(n, 'liaison') + ' modifiée' + (n > 1 ? 's' : ''); b.hidden = !n;
   // (v79, un relecteur : « 3 changements · Installation corrigée : un état ou un bouton ? ») : le bouton dit son geste, le compte en pastille
-  if (n) { $('en-retest-n').textContent = String(n); $('en-retest-n').title = motChangements(n); b.setAttribute('aria-label', 'L’installation corrigée — ' + mod + ' ; relire ce qui part, puis l’enregistrer');
-    b.querySelector('.bulle').textContent = 'L’installation corrigée : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
+  if (n) { $('en-retest-n').textContent = String(n); $('en-retest-n').title = motChangements(n); b.setAttribute('aria-label', 'L’Excel corrigé — ' + mod + ' ; relire ce qui part, puis l’enregistrer');
+    b.querySelector('.bulle').textContent = 'L’Excel corrigé : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
     // elle paraît : elle tombe d'un rien, une fois
     if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }
   const m = $('mn-retest'); if (m) m.textContent = n ? motChangements(n) : 'telle que votre fichier, rien de changé';
-  const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'installation corrigée · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
+  const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'Excel corrigé · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
 function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); peindreEtats(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
 /* LE RAIL SE DÉPLIE (le technicien : « la liste à puces avec une pastille, je la prends pour des notifications ; le ⊸+ pour un
    curseur de réglage ») : au survol prolongé — 250 ms, une main qui passe ne l'ouvre pas —, il montre le mot et la touche
@@ -3272,7 +3272,7 @@ const RACCOURCIS = [
   ['Dans une fiche', [['La fiche d’avant, d’après|et revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']],
     ['Le calibre d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre, ou l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche', ['Échap']]]],
   ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['L’historique du plan|chaque changement, et « Défaire »', ['H']], ['Pousser le bloc choisi|d’un carreau ; de cinq avec Maj', ['↑'], ['↓']]]],
-  ['Ouvrir, sortir', [['Ouvrir une installation', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert', ['Échap']], ['Cette feuille', ['?']]]],
+  ['Ouvrir, sortir', [['Ouvrir un fichier', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert', ['Échap']], ['Cette feuille', ['?']]]],
   ['Améliorer VOLTA', [['Noter une hésitation|l’écran où vous êtes s’écrit avec elle', ['C']]]]];
 // trois colonnes de même hauteur : se repérer (et améliorer), lire et corriger, la fiche et sortir
 const RK_COLONNES = [[0, 5], [1, 3], [2, 4]];

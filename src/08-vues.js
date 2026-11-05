@@ -206,9 +206,12 @@ function arbreVue(nom, cal, rows) { const n = rows.length; if (!n) return '<p cl
     return `<g class="vu-branche fi-ia${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}" tabindex="0" role="button" aria-label="${escA('Ouvrir le câble ' + (r.type || '') + ' vers ' + (r.bout ? r.bout.rep : ''))}"` : ''}>`
       + `<rect class="vu-b-fond" x="140" y="${y - 18}" width="${W - 140}" height="${rh - 4}" rx="9"/><path class="vu-br" d="M112 ${y}H220" style="stroke:${col}"/><circle class="vu-noeud" cx="112" cy="${y}" r="3.5"/>`
       + `<text class="vu-t-mono" x="232" y="${y + 4}">${esc(r.type || 'sans type')}</text><text class="vu-t" x="286" y="${y + 4}">vers</text><text class="vu-t-mono" x="316" y="${y + 4}">${esc(r.bout ? r.bout.rep : '—')}<tspan class="vu-t">${r.bout && r.bout.borne ? ':' + esc(r.bout.borne) : ''}</tspan></text>`
-      + (() => { const Ra = 12, C = 2 * Math.PI * Ra, cx = 450, pc = r.charge.r != null && isFinite(r.charge.r) ? Math.round(r.charge.r * 100) : null;
-          return `<g class="vu-an ${m}"><circle class="vu-an-f" cx="${cx}" cy="${y}" r="${Ra}"/><circle class="vu-an-v" cx="${cx}" cy="${y}" r="${Ra}" style="stroke-dasharray:${(C * w).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${cx} ${y})"/>${pc != null ? `<text class="vu-an-t" x="${cx}" y="${y + 3}">${pc}</text>` : ''}</g>`; })()
-      + `<text class="vu-t-fort" x="474" y="${y + 4}">${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : '—'}<tspan class="vu-t-sur">${r.charge.admis != null ? ' sur ' + esc(nombreA(r.charge.admis)) + ' A' : ''}</tspan></text></g>`; }).join('');
+      // (v86) un courant inconnu (une branche de commande, une bobine sans consommation écrite) : le mot, sans anneau vide — une
+      // mesure n'a son anneau que quand elle a une valeur (charte)
+      + (r.charge.i == null ? '' : (() => { const Ra = 12, C = 2 * Math.PI * Ra, cx = 450, pc = r.charge.r != null && isFinite(r.charge.r) ? Math.round(r.charge.r * 100) : null;
+          return `<g class="vu-an ${m}"><circle class="vu-an-f" cx="${cx}" cy="${y}" r="${Ra}"/><circle class="vu-an-v" cx="${cx}" cy="${y}" r="${Ra}" style="stroke-dasharray:${(C * w).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${cx} ${y})"/>${pc != null ? `<text class="vu-an-t" x="${cx}" y="${y + 3}">${pc}</text>` : ''}</g>`; })())
+      + (r.charge.i != null ? `<text class="vu-t-fort" x="474" y="${y + 4}">${esc(nombreA(r.charge.i)) + ' A'}<tspan class="vu-t-sur">${r.charge.admis != null ? ' sur ' + esc(nombreA(r.charge.admis)) + ' A' : ''}</tspan></text>`
+        : `<text class="vu-t" x="474" y="${y + 4}">${esc(r.charge.mot || 'inconnu')}</text>`) + `</g>`; }).join('');
   return `<svg class="vu-arbre" viewBox="0 0 ${W} ${H}" width="${W}" role="group" aria-label="${escA('Les ' + n + ' câbles de ' + nom)}"><rect class="vu-boite" x="4" y="${yC - 25}" width="88" height="50" rx="10"/><text class="vu-t-mono vu-milieu" x="48" y="${yC - 2}">${esc(nom)}</text><text class="vu-t vu-milieu" x="48" y="${yC + 14}">${cal ? esc(amperes(cal)) : ''}</text>`
     + `<path class="vu-bus" d="M92 ${yC}H112M112 22V${16 + (n - 1) * rh + 6}"/>${lignes}</svg>`; }
 

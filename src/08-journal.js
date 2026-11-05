@@ -77,7 +77,7 @@ function donnerSonRepere(vt, plan, repere) { const r = (typeof reperes === 'func
   const nom = String(repere || (r && typeof prochainRepereVT === 'function' ? prochainRepereVT(r) : '')).trim(); if (!nom) return '';
   const n = liaisonsDuPlan().filter(l => l.aPoser === vt && l.de === vt && l.vers === vt).length;
   if (!poserBarrette(vt, nom)) return '';
-  dire(`${vt} devient ${nom} : elle entre dans votre installation, avec un câble à créer et ${pluriel(n, 'shunt')}.`, false, { geste: 'Défaire', faire: defaire });
+  dire(`${vt} devient ${nom} : elle entre dans l’Excel corrigé, avec un câble à créer et ${pluriel(n, 'shunt')}.`, false, { geste: 'Défaire', faire: defaire });
   return nom; }
 
 /* ---- LE DESSIN RETOUCHÉ À LA MAIN, folio par folio (les retouches : 08-interface, `app.retouches`) ------------------- */

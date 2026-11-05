@@ -926,7 +926,7 @@ async function convertirLeLot() { const L = BIB.lot; if (!L || L.encours || !L.i
   const arrete = E.arret, ins = BIB.vue === 'install' && BIB.installs.get(BIB.install), nomZip = nomAscii((ins ? ins.nom : 'contrats-deja-faits') + '-' + els.length + '-contrats') + '.zip';
   if (L.zip && fichiers.length) telecharger(zipSimple(fichiers), nomZip);
   BIB.lot = null; rendreBibliotheque();
-  const fait = lies([nx ? nx + INSECABLE + (nx > 1 ? 'installations corrigées' : 'installation corrigée') + ' (Excel)' : '', np ? np + INSECABLE + (np > 1 ? 'dossiers PDF' : 'dossier PDF') : '']), ms = Math.round(performance.now() - t0);
+  const fait = lies([nx ? nx + INSECABLE + (nx > 1 ? 'Excel corrigés' : 'Excel corrigé') : '', np ? np + INSECABLE + (np > 1 ? 'dossiers PDF' : 'dossier PDF') : '']), ms = Math.round(performance.now() - t0);
   dire((arrete ? 'Arrêté : ' : '') + (fait || 'rien à sortir') + (L.zip && fichiers.length ? ' dans ' + guillemets(nomZip) : '') + (fait ? ' — ' + (ms < 1000 ? ms + ' ms' : nombre(Math.round(ms / 100) / 10) + ' s') : '') + '.'
     + (L.pdf && !pdfDisponible() ? ' Le dossier PDF n’est pas encore dans cette version.' : '') + (rates.length ? ' Sans liaisons : ' + rates.slice(0, 3).join(', ') + (rates.length > 3 ? '…' : '') + '.' : '')
     + (sansPdf.length ? ' Pas de dossier PDF pour ' + sansPdf.slice(0, 3).join(', ') + (sansPdf.length > 3 ? '…' : '') + ' (un folio ne se dessine pas).' : ''), !fait); }

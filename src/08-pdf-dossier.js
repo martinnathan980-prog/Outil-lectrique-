@@ -92,7 +92,7 @@ async function pdfDuPlan(liaisons, nom, options) { const o = options || {}, ouve
   verifier(); annoncer(PLACER + (1 - PLACER) * 0.92, 'La page de garde, la LPA…', prets);
   const garde = o.garde !== false, hypo = ouvert ? pagesHypothesesPdf(nom) : [], debut = (garde ? 2 : 1) + hypo.length, annexes = [];
   let suite = debut + total; const ajouter = (pages, titre, mot) => { if (!pages.length) return []; annexes.push({ titre, mot, page: suite, pages }); suite += pages.length; return pages; };
-  if (ouvert) { ajouter(pagesNomenclaturePdf(nom), 'la LPA', 'la LPA (ce qu’il faut commander)'); ajouter(pagesModificationsPdf(nom), 'les modifications de l’installation', 'les modifications de l’installation'); }
+  if (ouvert) { ajouter(pagesNomenclaturePdf(nom), 'la LPA', 'la LPA (ce qu’il faut commander)'); ajouter(pagesModificationsPdf(nom), 'les modifications de votre fichier', 'les modifications de votre fichier'); }
   const nPages = suite - 1, ecrites = [];
   if (garde) { let problemes = null; if (ouvert && typeof controleDuContrat === 'function') { try { problemes = (typeof controleAJour === 'function' ? controleAJour() : (rendreControle(), CONTROLE.items) || []).slice(); } catch (_) { problemes = null; } }
     const modifiees = ouvert && typeof nombreDeChangements === 'function' ? nombreDeChangements() : null;
@@ -442,7 +442,7 @@ function pagesModificationsPdf(nom) { if (typeof modificationsDe !== 'function')
   const lignes = []; let n = 0; verite().filter(liaisonComplete).forEach(l => { const m = modificationsDe(l); if (!m.length) return; n++;
     m.forEach(([col, ch, av, ap]) => lignes.push([l.cable || '—', l.de + (l.borneDe ? ':' + l.borneDe : ''), l.vers + (l.borneVers ? ':' + l.borneVers : ''), col, motAvant(ch, av), motAvant(ch, ap), typeof origineDeCase === 'function' ? ORIGINES_MOTS[origineDeCase(l, ch, true)] : ''])); });
   if (!lignes.length) return [];
-  return pagesDeTablesPdf('Modifications de l’installation — ' + nom, `${motPdf(n, 'liaison modifiée', 'liaisons modifiées')} · ${motPdf(lignes.length, 'case', 'cases')} : ce que portait le fichier, ce que VOLTA y a mis, et d’où vient le changement (à la main, ou une proposition de VOLTA acceptée).`,
+  return pagesDeTablesPdf('Modifications de votre fichier — ' + nom, `${motPdf(n, 'liaison modifiée', 'liaisons modifiées')} · ${motPdf(lignes.length, 'case', 'cases')} : ce que portait le fichier, ce que VOLTA y a mis, et d’où vient le changement (à la main, ou une proposition de VOLTA acceptée).`,
     [{ titre: 'Les cases changées', colonnes: [['Câble', 0.1, { mono: true }], ['De', 0.13, { mono: true }], ['Vers', 0.13, { mono: true }], ['Colonne', 0.12], ['Avant', 0.15, { gris: true, mono: true }], ['Après', 0.15, { mono: true }], ['Origine', 0.22]], lignes }]); }
 /* LES HYPOTHÈSES ET LES SOURCES (v73, l'ingénieur, n° 9 : « si j'envoie le dossier à un vérificateur, il ne peut pas refaire
    le calcul ») : juste après la garde, en deux colonnes — les RÉGLAGES (ceux de la page des hypothèses, `hypothesesDe` :
@@ -473,7 +473,7 @@ function pagesHypothesesPdf(nom) { if (typeof hypothesesDe !== 'function') retur
     xs.forEach(x => { const f = String(x.confiance || ''); if (f === 'vérifié') k.v++; else if (f === 'déduit' || f === 'structure') k.d++; else if (f) k.c++; else k.l++; });
     return [(typeof TITRES_NORME !== 'undefined' && TITRES_NORME[t]) || t, xs.length, k.v || '', k.d || '', k.c || '', k.l || '']; }).filter(Boolean);
   const reglees = reglages.filter(r => r[2]).length;
-  return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que l’installation ne porte pas, VOLTA le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de VOLTA est à côté)' : ', les valeurs de VOLTA'}, les profils de charge des disjoncteurs et d’où viennent les tables. L’installation corrigée les garde dans sa feuille « VOLTA ».`, [
+  return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que votre fichier ne porte pas, VOLTA le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de VOLTA est à côté)' : ', les valeurs de VOLTA'}, les profils de charge des disjoncteurs et d’où viennent les tables. L’installation corrigée les garde dans sa feuille « VOLTA ».`, [
     { titre: 'Les réglages', compte: motPdf(reglages.length, 'réglage', 'réglages'), colonnes: [['Réglage', 0.3], ['Valeur', 0.24], ['Valeur de VOLTA', 0.18, { gris: true }], ['Source', 0.28, { gris: true }]], lignes: reglages },
     { titre: 'Les profils de charge', compte: motPdf(profils.length, 'disjoncteur', 'disjoncteurs'), colonnes: [['Repère', 0.14, { mono: true }], ['Calibre', 0.11, { centre: true }], ['Installation', 0.11, { centre: true, gris: true }], ['Démarrage', 0.15], ['Transition', 0.15], ['Permanent', 0.12], ['Autres états', 0.22]], lignes: profils },
     { titre: 'Le statut des tables', compte: motPdf(statuts.length, 'table', 'tables'), colonnes: [['Table', 0.3], ['Lignes', 0.12, { centre: true }], ['Vérifiées', 0.14, { centre: true }], ['Déduites', 0.14, { centre: true }], ['À confirmer', 0.15, { centre: true }], ['Vos tables', 0.15, { centre: true }]], lignes: statuts }], { deux: true }); }

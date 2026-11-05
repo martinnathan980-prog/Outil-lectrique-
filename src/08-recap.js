@@ -378,7 +378,7 @@ const LIAISONS = {
   hors: r => !(liaisonComplete(r.l) && surLeFolio(r.l)),
   puces: () => [['probleme', 'À reprendre', r => aReprendre(r.F().etat.niveau), '', '', 'Les liaisons à reprendre : un problème ou un point à voir', true],
     ...[...routes()].map(([route, c]) => ['route:' + route, route, r => r.l.route === route, traitRoute(c), 'route']),
-    ['hyp', 'Sans longueur', r => !(r.l.longueur > 0), '', '', 'Les câbles sans longueur dans l’installation : l’hypothèse de la simulation compte pour eux', false, 'Ce qui manque'],
+    ['hyp', 'Sans longueur', r => !(r.l.longueur > 0), '', '', 'Les câbles sans longueur dans votre fichier : l’hypothèse de la simulation compte pour eux', false, 'Ce qui manque'],
     ['sanscontact', 'Sans contact', r => [r.F().de, r.F().vers].some(x => x && !x.ref), '', '', 'Un bout dont aucun plan ne donne le contact à sertir', true, 'Ce qui manque']],
   choisir: r => choisirLigneFil(r.l),
   survol: r => { const w = filDe(r.l); if (w) allumerFil(w); },
@@ -519,7 +519,7 @@ function infoDisj(nom) { return memo('dj|' + nom, () => { const d = disjonctionD
   const ok = d.fils.filter(f => f.verdict !== 'fil' && f.verdict !== 'calibre' && f.protege !== false).length;
   const pointe = d.points.find(p => p.t !== Infinity) || null, perm = etatsDuProfil(d.profil).find(e => e.k === 'perm');
   const o = origineDuCalibre(nom, d);
-  return { d, pire, ok, n: d.fils.length, pointe, perm: perm && perm.i > 0 ? perm.i : null, pn: pnDuRepere(nom), origine: o.origine, rendu: o.calRetest ? 'celui de l’installation (' + amperes(o.calRetest) + ')' : 'l’automatique' + (d.calibreIdeal ? ' (' + amperes(d.calibreIdeal) + ')' : '') }; }); }
+  return { d, pire, ok, n: d.fils.length, pointe, perm: perm && perm.i > 0 ? perm.i : null, pn: pnDuRepere(nom), origine: o.origine, rendu: o.calRetest ? 'celui de votre fichier (' + amperes(o.calRetest) + ')' : 'l’automatique' + (d.calibreIdeal ? ' (' + amperes(d.calibreIdeal) + ')' : '') }; }); }
 /* LE VERDICT du calibre retenu, en TROIS MOTS — passe, juste, déclenche —, ceux de la fiche, du cadran, des problèmes et du
    dossier (v73, l'ingénieur n° 8 : « tient », « touche la courbe » ici, « passe » là ; la table unique est celle du moteur,
    `VERDICTS_CALIBRE`, 09-disjoncteurs) ; « touche la courbe », « sans la marge » vont dans la bulle, avec le pourquoi
@@ -688,7 +688,7 @@ const etatCable = c => !c.type ? 'att' : !c.cab && !c.fn ? 'att' : '';
 // une masse : en g, en kg dès 1 000 g (deux décimales : la dizaine de grammes) ; supposée, « ≈ » en gris (la classe des longueurs)
 const masseNombre = g => g >= 1000 ? nombre((Math.round(g / 10) / 100).toFixed(2)) : fmt(g, 0), masseUnite = g => g >= 1000 ? 'kg' : 'g', masseMot = g => masseNombre(g) + ' ' + masseUnite(g);
 const celluleMasse = (g, suppose, bulle) => `<span class="rc-mesure${suppose ? ' rc-suppose' : ''}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}>${chiffre(`<b class="rc-n">${masseNombre(g)}</b>`, masseUnite(g))}</span>`;
-const suppositionDe = c => pluriel(c.n - c.reelles, 'câble') + ' sur ' + c.n + ' sans longueur dans l’installation : la longueur supposée par la simulation (' + metres(H_().longueur) + ' m) compte pour eux';
+const suppositionDe = c => pluriel(c.n - c.reelles, 'câble') + ' sur ' + c.n + ' sans longueur dans votre fichier : la longueur supposée par la simulation (' + metres(H_().longueur) + ' m) compte pour eux';
 /* LE PIED DE L'ONGLET CÂBLES : le total des types montrés — leur nombre, leur longueur, leur masse — et la masse de chaque
    route (PUISSANCE, SIGNAL…), chacune avec son trait. Il reste collé au bas de la feuille. */
 function totalCables(L, C) { const n = L.reduce((s, c) => s + c.n, 0), Lt = L.reduce((s, c) => s + c.L, 0), sup = L.some(c => c.reelles < c.n), pesees = L.filter(c => c.masse != null), M = pesees.reduce((s, c) => s + c.masse, 0);
@@ -710,7 +710,7 @@ const COLONNES_CABLES = [
   // leur juste largeur, serrées sur le type ; chaque nombre aligné à droite dans une place fixe, centrée sous son titre
   { k: 'n', t: 'Nombre', cls: 'rc-c-n', html: c => chiffre(`<b class="rc-n">${c.n}</b>`), tri: c => c.n, texte: c => String(c.n) },
   { k: 'longueur', t: 'Longueur totale', cls: 'rc-c-mesure', w: 100, html: c => `<span class="rc-mesure${c.reelles < c.n ? ' rc-suppose' : ''}"${c.reelles < c.n ? ` data-bulle="${escA(suppositionDe(c))}"` : ''}>${chiffre(`<b class="rc-n">${fmt(c.L, 1)}</b>`, 'm')}</span>`, tri: c => c.L, texte: c => fmt(c.L, 1) + ' m',
-    note: L => L.every(c => c.reelles < c.n) ? ['en partie supposée', 'Des câbles de chaque type n’ont pas de longueur dans l’installation : la longueur supposée par la simulation compte pour eux (menu ⋮ → Hypothèses)'] : null },
+    note: L => L.every(c => c.reelles < c.n) ? ['en partie supposée', 'Des câbles de chaque type n’ont pas de longueur dans votre fichier : la longueur supposée par la simulation compte pour eux (menu ⋮ → Hypothèses)'] : null },
   /* LA MASSE d'un type (le lecteur) : sa longueur totale × sa masse linéique (la base des câbles, `cableDuType` : g/m) — en g,
      en kg dès 1 000 g ; « ≈ » en gris quand une partie des longueurs est supposée, comme la longueur ; sa bulle dit le calcul.
      Un type que la base ne pèse pas : rien ; aucun : la colonne ne se pose pas. Le total, et sa part par route, au pied. */
@@ -1237,7 +1237,7 @@ function amenerLigne(k) { const V = RECAP.virtuel; if (!V) return; const i = V.m
 /* (v84, la charte : « jamais de “aucun …” — rien, ou une information pertinente ») : chaque vide dit ce qui viendra ici, et
    d'où. */
 // (v86) les liaisons et les équipements viennent de votre fichier : le vide dit d'où ils viendront, pas « écrivez-les ici »
-const VIDES = { liaisons: ['Les liaisons de votre fichier viendront ici', 'Déposez une installation sur la table : VOLTA en lit chaque ligne.'], equipements: ['Les équipements de votre fichier viendront ici', 'Chaque repère de vos liaisons qui n’est ni un disjoncteur, ni une barrette, ni une prise.'],
+const VIDES = { liaisons: ['Les liaisons de votre fichier viendront ici', 'Déposez votre fichier sur la table : VOLTA en lit chaque ligne.'], equipements: ['Les équipements de votre fichier viendront ici', 'Chaque repère de vos liaisons qui n’est ni un disjoncteur, ni une barrette, ni une prise.'],
   disjoncteurs: ['Les disjoncteurs viendront ici', 'Un repère au code CB : son calibre, son verdict et son profil de charge se lisent ici.'], barrettes: ['Les barrettes viendront ici', 'Celles du contrat (code VT), et celles que VOLTA ajoute quand plusieurs câbles partagent une borne.'],
   prises: ['Les prises de coupure viendront ici', 'Un repère au code VC : son arrangement et ses contacts se lisent ici.'], cables: ['Les types de câble viendront ici', 'Un câble compte dès que sa liaison a un « de » et un « vers ».'],
   raccords: ['Les raccords viendront ici', 'Un raccord se choisit pour chaque connecteur d’équipement.'], problemes: ['Rien à reprendre', 'Chaque câble, chaque calibre, chaque contact est vérifié.'], normes: ['Les normes viendront ici', 'Elles jugent le contrat dès qu’il a des liaisons.'] };
@@ -1401,8 +1401,8 @@ function fermerBase() { const b = app.base; if (!b.ouvert) return; if (b.edition
   memoriserBase(); rendreLePlan(); basculerModeCarte(); }   // la fiche redevient une carte, près de son bloc
 /* B : ouvre en moitié, ou ferme ; Maj+B : passe en page, et de la page revient en moitié. */
 function basculerBase(taille) { const b = app.base;
-  if (taille === 'page') { if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : ouvrez d’abord une installation.'); return; } ouvrirBase(b.ouvert && b.taille === 'page' ? 'moitie' : 'page'); return; }
-  if (b.ouvert) fermerBase(); else if (app.contrat.liaisons.length || verite().length) ouvrirBase('moitie'); else dire('Rien à montrer : ouvrez d’abord une installation.'); }
+  if (taille === 'page') { if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : ouvrez d’abord votre fichier.'); return; } ouvrirBase(b.ouvert && b.taille === 'page' ? 'moitie' : 'page'); return; }
+  if (b.ouvert) fermerBase(); else if (app.contrat.liaisons.length || verite().length) ouvrirBase('moitie'); else dire('Rien à montrer : ouvrez d’abord votre fichier.'); }
 /* Le récapitulatif d'un objet (le pied d'une fiche) : l'onglet de son type, filtré sur lui — un câble sur son numéro. */
 function recapitulatifDe(c) { c = c || app.cible; const b = app.base; if (!c || !(c.nom || c.l)) { basculerBase(); return; }
   const k = c.type === 'fil' ? 'liaisons' : estDisjoncteur(c.nom) ? 'disjoncteurs' : estBarrette(c.nom) ? 'barrettes' : estCoupure(c.nom) ? 'prises' : 'equipements';
@@ -1430,7 +1430,7 @@ function rendreExport(O) { const P = porteeDeLExport(O), l = $('ba-csv-l'); if (
   const lignes = [P.n ? ['ba-csv-vu', P.partiel ? 'Ce qui est montré' : 'Tout l’onglet ' + nom, plural(P.n) + (P.dit ? ' · ' + P.dit : '') + ', les colonnes affichées'] : ['ba-csv-vu', 'Rien à mettre en CSV', 'l’onglet ne montre aucune ligne', ' aria-disabled="true"'],
     P.partiel ? ['ba-csv-tout', 'Tout l’onglet ' + nom, plural(P.total) + ', sans folio ni filtre'] : null,
     typeof exporterRetestCorrige === 'function' && verite().length ? null : false,
-    typeof exporterRetestCorrige === 'function' && verite().length ? ['ba-csv-retest', 'L’installation corrigée (Excel)', 'le livrable à renvoyer : relu avant d’enregistrer'] : false].filter(x => x !== false);
+    typeof exporterRetestCorrige === 'function' && verite().length ? ['ba-csv-retest', 'L’Excel corrigé', 'le livrable à renvoyer : relu avant d’enregistrer'] : false].filter(x => x !== false);
   l.innerHTML = lignes.map(g => g === null ? '<hr>' : `<button role="menuitem" id="${g[0]}"${g[3] || ''}>${esc(g[1])}<small>${esc(g[2])}</small></button>`).join('').replace(/^<hr>|<hr>$/g, ''); }
 function exporterRecap(tout) { assurerModele(); RECAP.palier = palierDuCorps(); const O = onglet(), C = colonnesVues(O).filter(c => c.texte && (c.t || c.titre)), M = lignesMontrees(O);
   const lignes = tout === true ? O.lignes() : [...M.tete.filter(r => !r.nouveau), ...M.L];

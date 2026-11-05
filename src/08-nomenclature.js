@@ -30,7 +30,7 @@ function compteur() { const m = new Map();
 function disjoncteursDeLaNomenclature(V) { return reperesDe(V || verite()).filter(estDisjoncteur).sort(triNaturel).map(r => { const pn = pnDuRepere(r); let d = null; try { d = disjonctionDe(r); } catch (_) { d = null; }
   const F = d && d.famille, cal = d && d.calibre > 0 ? d.calibre : null, calPn = F && F.calibre > 0 ? F.calibre : null, differe = !!(cal && calPn && Math.abs(cal - calPn) > 1e-9);
   const commande = differe && F ? pnAvecCalibre(pn, F, cal) || pn : pn, v = d ? verdictDeCalibre(d) : null;
-  const etat = !d || d.sansProfil ? 'profil de charge à écrire' : v ? v.mot + (differe ? ' · pas écrit dans l’installation' : '') : '';
+  const etat = !d || d.sansProfil ? 'profil de charge à écrire' : v ? v.mot + (differe ? ' · pas écrit dans votre fichier' : '') : '';
   return { repere: r, reference: commande || '—', pnRetest: differe ? pn : '', calibre: cal, retest: differe ? calPn : null, verdict: v, etat, construit: differe, n: 1, ou: [r] }; }); }
 /* UN SEUL COMPTE DE REPÈRES (v73, l'ingénieur : « la garde annonce 77 repères, le récapitulatif 67 ») : celui du menu et du
    récapitulatif (`reperesDuContrat`, 08-interface : sans les masses, les rails, les renvois ; les barrettes à poser
@@ -118,7 +118,7 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
   // la nature d'un connecteur et l'arrangement que la norme lui donne : le mot, puis la référence dessous en chasse fixe
   const natureHtml = t => { const [n, ...r] = String(t || '').split(' · '); return esc(n) + (r.length ? `<span class="no-arr">${esc(r.join(' · '))}</span>` : ''); };
   // l'état d'un disjoncteur : le verdict à sa couleur (la table unique, 09 bis), « pas écrit au retest » en ambre dessous
-  const etatDj = x => x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>${x.retest ? note('pas écrit dans l’installation') : ''}` : `<span class="no-rien">${esc(x.etat || '—')}</span>`;
+  const etatDj = x => x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>${x.retest ? note('pas écrit dans votre fichier') : ''}` : `<span class="no-rien">${esc(x.etat || '—')}</span>`;
   const nF = typeof plans === 'function' ? plans().length : 0;
   /* (v86, l'audit G6 : « la LPA compte les modules choisis par VOLTA, l'Excel garde ceux du fichier : les deux sorties se
      contredisent sans le dire ») : quand VOLTA retient un module ou un calibre que votre Excel n'a pas encore, une ligne le
@@ -161,7 +161,7 @@ function lignesNomenclature(N) { const L = [];
   N.modules.forEach(x => L.push(['Modules', x.reference, x.famille || '', x.n, 'pièce', x.ou.join(', ')]));
   (N.rails || []).forEach(x => L.push(['Rails', x.reference, [x.famille, x.note].filter(Boolean).join(' — '), x.n, 'pièce', x.ou.join(', ')]));
   N.connecteurs.forEach(x => L.push(['Connecteurs', x.reference, x.nature || '', x.n, 'pièce', x.ou.join(', ')]));
-  (N.disjoncteurs || []).forEach(x => L.push(['Disjoncteurs', x.reference, [x.calibre ? 'calibre ' + nombre(x.calibre) + ' A' : '', x.retest ? 'installation ' + x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat, x.construit ? 'part number construit, à vérifier au catalogue' : ''].filter(Boolean).join(' — '), 1, 'pièce', x.repere]));
+  (N.disjoncteurs || []).forEach(x => L.push(['Disjoncteurs', x.reference, [x.calibre ? 'calibre ' + nombre(x.calibre) + ' A' : '', x.retest ? 'votre fichier : ' + x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat, x.construit ? 'part number construit, à vérifier au catalogue' : ''].filter(Boolean).join(' — '), 1, 'pièce', x.repere]));
   N.habits.forEach(x => L.push(['Habillage', x.reference, x.quoi + (x.note ? ' — ' + x.note : ''), x.n, 'pièce', x.ou.join(', ')]));
   N.cables.forEach(x => L.push(['Câbles', x.reference, pluriel(x.n, 'câble'), Math.round(x.longueur * 10) / 10, 'm', '']));
   return L; }

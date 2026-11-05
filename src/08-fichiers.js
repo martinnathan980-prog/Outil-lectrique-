@@ -445,7 +445,7 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
   const n = V.length, exemple = n && app.nom === NOM_EXEMPLE, R = FICHIERS.retest && FICHIERS.retest.nom === app.nom ? FICHIERS.retest : null, P = plans().length;
   E.retest = err('retest') ? { niveau: 'ko', dit: 'le dernier fichier n’a pas pu être ouvert' + (n && !exemple ? ' — ' + (app.nom || 'le plan') + ' reste ouvert' : '') }
     : FICHIERS.attente ? { niveau: 'att', dit: FICHIERS.attente.nom + ' attend « Charger »' }
-    : !n ? { niveau: 'vide', dit: 'aucun plan ouvert : la bibliothèque, ou votre installation' }
+    : !n ? { niveau: 'vide', dit: 'aucun plan ouvert : la bibliothèque, ou votre fichier' }
     : exemple ? { niveau: 'vide', dit: 'l’exemple embarqué est ouvert — pas votre contrat' }
     : { niveau: 'ok', dit: lies([app.nom === 'Collage' ? 'des lignes collées' : app.nom || 'sans nom', R ? 'ouvert ' + quand(R.t) : '', pluriel(n, 'liaison'), P > 1 ? pluriel(P, 'folio') : '']) };
   const B = app.references, M = B && B.base ? B.base.meta : null, K = typeof BASE !== 'undefined' ? BASE : {};
@@ -518,7 +518,7 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
   const C = [
     { cle: 'bibliotheque', titre: 'Bibliothèque', depot: 'plans', grande: true, action: ['bibliotheque', 'Ouvrir la bibliothèque'], zone: ['ajouter-plans', 'vos installations'],
       une: `<p><b>Un plan par installation</b>. Ceux qu’on glisse ici vont dans ${esc(guillemets(nomInstallCible()))}.</p>` },
-    { cle: 'retest', titre: 'Votre installation', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir une installation…'], zone: ['ouvrir', 'l’installation'],
+    { cle: 'retest', titre: 'Votre fichier', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir un fichier…'], zone: ['ouvrir', 'votre fichier'],
       // ce qu'elle attend se dit tant qu'aucun plan n'est ouvert ; ensuite, « Le format attendu » (replié) le garde
       une: planOuvert ? '' : `<p>Un Excel ou un CSV, <b>une ligne par câble</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’installation ouverte.</p>`,
       avant: devant ? '' : bilan, replie: !!bilan,

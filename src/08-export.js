@@ -155,7 +155,7 @@ const nombreDeChangements = () => { let n = 0; verite().forEach(l => { if (liais
    votre fichier revient ; un calibre que VOLTA écrit de lui-même se reprend à la main (rendu, il se réécrirait). Une ligne
    en double retirée revient, telle que votre fichier l'écrivait (08-journal, `remettreLesCopies`). Rend { faire, dit, aide }. */
 function retirerDuReleve(e) { if (!e || !e.liaisons || !e.liaisons.length) return null; const ch = e.champ, l = e.liaisons[0];
-  if (ch === 'copies') return { faire: () => remettreLesCopies(l), aide: 'La ligne en double revient dans votre installation, comme votre fichier l’écrivait', dit: 'Retiré de l’Excel corrigé : la ligne en double ' + boutsDuCable(l) + ' revient, comme dans votre fichier.' };
+  if (ch === 'copies') return { faire: () => remettreLesCopies(l), aide: 'La ligne en double revient dans l’Excel corrigé, comme votre fichier l’écrivait', dit: 'Retiré de l’Excel corrigé : la ligne en double ' + boutsDuCable(l) + ' revient, comme dans votre fichier.' };
   let y; try { y = ligneDuFichier({ rendre: e.liaisons.map(x => [x, ch]), avant: motValeur(ch, e.av), apres: motValeur(ch, e.ap), champ: MOTS_CHAMPS[ch] || ch }, { type: 'fil' }); } catch (_) { return null; }
   if (!y || typeof y.faire !== 'function') return null;
   const dit = /^pn/.test(ch) ? y.dit : ch === 'type' ? `le câble ${boutsDuCable(l)} revient en ${y.avant}, comme dans votre fichier.` : `${(y.quoi || '').toLowerCase()} de ${cableParSesBouts(l)} : ${y.avant}, ${y.depuis === 'hyp' ? 'supposée' : 'comme dans votre fichier'}.`;
@@ -185,12 +185,12 @@ function propositionsNonEcrites() { const V = verite(), out = [];
       if (Q.lettres) { (Q.modules || []).forEach(M => { if (!M.fichier || !M.reference || cleNorme(M.fichier) === cleNorme(M.reference)) return;
           const ecritures = () => casesDuModule(r, verite(), M.numero).map(([l, c]) => [l, c, M.reference]);
           out.push({ genre: 'module', repere: r + ' · module ' + M.numero, retest: M.fichier, retenu: M.reference, cables: [], geste: 'Écrire ' + M.reference, suite: '', ecritures,
-            faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ', module ' + M.numero + ' : ' + M.reference + ' écrit dans l’installation')) }); });
+            faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ', module ' + M.numero + ' : ' + M.reference + ' écrit dans l’Excel corrigé')) }); });
         return; }
       if (!b.pn || !Q.reference || cleNorme(b.pn) === cleNorme(Q.reference) || !moduleDeReference(app.norme, b.pn)) return;
       const ecritures = () => { const xs = []; verite().forEach(l => { if (l.de === r && l.pnDe) xs.push([l, 'pnDe', Q.reference]); if (l.vers === r && l.pnVers) xs.push([l, 'pnVers', Q.reference]); }); return xs; };
       out.push({ genre: 'module', repere: r, retest: b.pn, retenu: Q.reference, cables: [], geste: 'Écrire ' + Q.reference, suite: '', ecritures,
-        faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ' : le module ' + Q.reference + ' écrit dans l’installation')) }); } catch (_) { } });
+        faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ' : le module ' + Q.reference + ' écrit dans l’Excel corrigé')) }); } catch (_) { } });
   return out; }
 
 /* ---- LE RELEVÉ, avant d'enregistrer ---------------------------------------------------------------------------------
@@ -247,8 +247,8 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
   let reste = ''; try { const G = genresDuControle(); if (G.length) { const ligneG = g => { const noms = [...g.noms]; return `<li class="rv-g ${g.niveau}"><i aria-hidden="true"></i><b>${g.n}</b><span>${esc(motDuGenre(g.genre, g.n))}</span><small>${esc(noms.length === 1 ? noms[0] : noms.length ? plurielLie(noms.length, 'repère') : 'le tableau')}</small></li>`; };
       reste = `<h3 class="sous-titre rv-st${entre()}">Ce qui reste à reprendre<small>${esc(P.mot)}</small></h3><ul class="rv-reste">${G.slice(0, 5).map(ligneG).join('')}</ul>`
         + `<button type="button" class="btn lien rv-tout" id="rv-problemes" data-bulle="${escA('L’index des repères, sur ce qui reste à reprendre — P passe au point suivant')}">${G.length > 5 ? 'Tout voir sur le plan' : 'Les voir sur le plan'}<kbd>R</kbd></button>`; } } catch (_) { }
-  return tete(nomAffichePlan() + ' · installation corrigée', 'Ce qui part dans l’Excel')
-    + `<p class="note">VOLTA n’écrit dans votre installation que ce que vous avez demandé. Relisez, puis enregistrez.</p>`
+  return tete(nomAffichePlan() + ' · Excel corrigé', 'Ce qui part dans l’Excel')
+    + `<p class="note">VOLTA n’écrit dans l’Excel corrigé que ce que vous avez demandé. Relisez, puis enregistrez.</p>`
     + enr + ticket + `<h3 class="sous-titre rv-st${arrive ? ' entre-v" style="--k:2' : ''}">Ce qui part<small>${esc([C.cases ? pluriel(C.cases, 'case') : '', C.ajouts.length ? pluriel(C.ajouts.length, 'barrette') : ''].filter(Boolean).join(' · '))}</small></h3>` + part + props + reste
     + `<p class="note rv-volta">Une feuille cachée « VOLTA » garde vos profils de charge, vos hypothèses et vos choix : rouverte dans VOLTA, cette installation reprend où vous en étiez. La feuille Modifications dit l’origine de chaque case.</p>`; }
 const nomAffichePlan = () => app.nom ? String(app.nom).replace(/\.[^.]+$/, '') : 'Plan';
@@ -266,7 +266,7 @@ function lierReleve() { const C = changementsDuRetest(), P = C.proposes;
   document.querySelectorAll('#fiche [data-retirer-ajout]').forEach(b => b.onclick = e => { e.stopPropagation(); const p = C.ajouts[+b.dataset.retirerAjout];
     if (p && deposerBarrette(p)) direDuReleve('Retiré de l’Excel corrigé : ' + p.nom + ' redevient ' + p.vt + ', les câbles reviennent sur ' + p.sur + '.'); });
   document.querySelectorAll('#fiche [data-proposition]').forEach(b => b.onclick = () => { const k = b.dataset.proposition;
-    if (k === 'modules') { const ms = P.filter(p => p.genre === 'module'); if (!ms.length) return; avecOrigineVolta(() => changerLiaisons(ms.flatMap(p => p.ecritures()), ms.length > 1 ? 'les modules de ' + ms.length + ' barrettes écrits dans l’installation' : ms[0].repere + ' : le module ' + ms[0].retenu + ' écrit dans l’installation')); }
+    if (k === 'modules') { const ms = P.filter(p => p.genre === 'module'); if (!ms.length) return; avecOrigineVolta(() => changerLiaisons(ms.flatMap(p => p.ecritures()), ms.length > 1 ? 'les modules de ' + ms.length + ' barrettes écrits dans l’installation' : ms[0].repere + ' : le module ' + ms[0].retenu + ' écrit dans l’Excel corrigé')); }
     else { const p = P[+k]; if (!p || !p.faire) return; p.faire(); }
     rendreReleve();
     const e = $('rv-enregistrer'); if (e) e.focus({ preventScroll: true }); });

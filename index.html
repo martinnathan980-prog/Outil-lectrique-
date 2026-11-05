@@ -9751,9 +9751,9 @@ svg.vu-arbre .vu-an .vu-an-t{font:700 9.5px var(--sans);font-variant-numeric:tab
       <!-- LE RETEST CORRIGÉ, le vrai livrable : dès que le plan porte un changement, une pilule de verre le dit (« 3 changements
            · Retest corrigé ») ; un clic ouvre le relevé de ce qui part, puis l'enregistre (08-export). 08-interface la tient à
            jour (`synchroniserRetest`). -->
-      <button type="button" class="en-retest" id="btnRetest" hidden aria-label="Enregistrer l’installation corrigée">
+      <button type="button" class="en-retest" id="btnRetest" hidden aria-label="Enregistrer l’Excel corrigé">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/><path d="m14.5 16.5 1.5 1.5 3-3"/></svg>
-        <span class="en-retest-n" id="en-retest-n"></span><span class="en-retest-mot">Exporter l’installation corrigée</span>
+        <span class="en-retest-n" id="en-retest-n"></span><span class="en-retest-mot">Exporter l’Excel corrigé</span>
         <span class="bulle" aria-hidden="true"></span>
       </button>
       <div id="menuBoite">
@@ -9782,7 +9782,7 @@ svg.vu-arbre .vu-an .vu-an-t{font:700 9.5px var(--sans);font-variant-numeric:tab
               <!-- (v86) l'historique du plan entier (08-journal) : son compte, dessous, se relit quand le menu s'ouvre -->
               <button role="menuitem" data-act="historique" class="menu-2l" data-aide="Tout ce qui a changé dans ce plan, par vous ou par VOLTA : avant, après, d’où venait la valeur, quand — et « Défaire » sur chaque ligne."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4.5V8h3.5"/><path d="M12 8v4.2l2.8 1.8"/></svg><span class="menu-l">Historique<small id="mn-historique">ce qui a changé, et Défaire</small></span><span class="raccourci">H</span></button>
               <button role="menuitem" data-act="dejafait" data-aide="Les contrats de la base les plus proches du plan ouvert : ce qui est pareil, ce qui diffère, dessin par dessin."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M6 9h2M6 13h2M16 9h2M16 13h2"/></svg><span class="menu-l">Comparer au déjà-fait</span></button>
-              <button role="menuitem" data-sous="exporter" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-exporter" data-aide="D’abord l’installation corrigée, en Excel : ce que vous renvoyez. Puis le folio (SVG, PNG, A3) et le plan entier (PDF, Visio, suivi, LPA)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg><span class="menu-l">Exporter<small id="mn-exporter" hidden></small></span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+              <button role="menuitem" data-sous="exporter" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-exporter" data-aide="D’abord l’Excel corrigé : ce que vous renvoyez. Puis le folio (SVG, PNG, A3) et le plan entier (PDF, Visio, suivi, LPA)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg><span class="menu-l">Exporter<small id="mn-exporter" hidden></small></span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Le reste">
               <button role="menuitem" data-sous="plus" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-plus" data-aide="Coller des lignes, l’exemple, un schéma en PDF ou en Visio, la bible, les normes, les hypothèses, le cartouche, comment VOLTA réfléchit, les raccourcis."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu-l">Plus</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
@@ -9796,7 +9796,7 @@ svg.vu-arbre .vu-an .vu-an-t{font:700 9.5px var(--sans);font-variant-numeric:tab
           <div class="menu-panneau" id="mp-exporter" role="group" aria-label="Exporter" hidden>
             <button role="menuitem" class="menu-retour" data-retour><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span class="menu-l">Exporter</span></button>
             <div class="menu-bloc menu-livrable" role="group" aria-label="Le livrable" data-groupe="retest">
-              <button role="menuitem" data-act="retestcorrige" class="menu-2l" data-aide="Ce qui part dans votre installation, relu avant d’enregistrer : chaque case changée dit ce qu’elle portait, et si c’est vous ou une proposition de VOLTA."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/><path d="m14.5 16.5 1.5 1.5 3-3"/></svg><span class="menu-l">L’installation corrigée (Excel)<small id="mn-retest">aucune modification pour l’instant</small></span></button>
+              <button role="menuitem" data-act="retestcorrige" class="menu-2l" data-aide="Ce qui part dans l’Excel corrigé, relu avant d’enregistrer : chaque case changée dit ce qu’elle portait, et si c’est vous ou une proposition de VOLTA."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4"/><path d="m14.5 16.5 1.5 1.5 3-3"/></svg><span class="menu-l">L’installation corrigée (Excel)<small id="mn-retest">aucune modification pour l’instant</small></span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Ce folio" data-groupe="folio">
               <button role="menuitem" data-act="svg" data-aide="Le folio affiché et son cartouche, en vectoriel : net à toute échelle."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 18.5C6 11 11 6 18.5 5.5"/><rect x="3" y="17" width="4" height="4" rx="1"/><rect x="17" y="3" width="4" height="4" rx="1"/></svg><span class="menu-l">En SVG, vectoriel</span></button>
@@ -9985,7 +9985,7 @@ svg.vu-arbre .vu-an .vu-an-t{font:700 9.5px var(--sans);font-variant-numeric:tab
       <!-- LE TABLEAU EN CSV (v73 : le technicien prenait « Exporter » pour l'installation corrigée, l'ingénieur confondait son
            « Tout » avec celui de la portée) : un menu qui dit ce qu'il sort — ce qui est montré, tout l'onglet — et, sous un
            filet, l'installation corrigée, l'Excel à renvoyer (08-recap, `rendreExport`) -->
-      <details class="doc-menu rc-export" id="ba-csv-menu"><summary class="btn papier" id="ba-csv" aria-label="Tableau en CSV" data-bulle="Le tableau de cet onglet, en CSV — pas l’installation corrigée : elle est au bas de ce menu, et dans ⋮ › Exporter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 10h17M3.5 14.5h17M9.5 10v9"/></svg><span class="rc-csv-mot">Tableau en CSV</span><svg class="ico rc-csv-v" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="doc-menu-l" role="menu" id="ba-csv-l"></div></details>
+      <details class="doc-menu rc-export" id="ba-csv-menu"><summary class="btn papier" id="ba-csv" aria-label="Tableau en CSV" data-bulle="Le tableau de cet onglet, en CSV — pas l’Excel corrigé : elle est au bas de ce menu, et dans ⋮ › Exporter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 10h17M3.5 14.5h17M9.5 10v9"/></svg><span class="rc-csv-mot">Tableau en CSV</span><svg class="ico rc-csv-v" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="doc-menu-l" role="menu" id="ba-csv-l"></div></details>
       <!-- la croix : le lecteur cherchait comment fermer — « Plan » le faisait, mais ne se lisait pas comme une sortie -->
       <button class="rond fermer" id="ba-x" aria-label="Fermer le récapitulatif (B ou Échap)" data-bulle="Fermer le récapitulatif (B)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </header>
@@ -10033,7 +10033,7 @@ svg.vu-arbre .vu-an .vu-an-t{font:700 9.5px var(--sans);font-variant-numeric:tab
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '1744b5a027d9';
+const VERSION_MOTEUR = '5a5e97137afd';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -18092,7 +18092,7 @@ function arrangementsRecommandes(points, norme, famille, opts) { opts = opts || 
   const cleC = L => L.map(y => y.cote + '|' + y.reference + '|' + y.accessoire).sort().join(), bA = boitierDe(actuel);
   return arrangementsQuiLogent(points, N, famille, sexeFil).map(m => { const C = contactsAdmissibles(N, m, points, sexeFil, prise), b = boitierDe(m), retenu = !!actuel && m.reference === actuel.reference;
     const memeBoitier = !!(bA && b && b === bA), memesContacts = !!(A && A.liste.length && cleC(C.liste) === cleC(A.liste)), libres = Math.max(0, m.contacts.length - C.pris), raisons = [];
-    if (retenu) raisons.push(opts.nomme ? 'celui de l’installation : sa référence le nomme' : 'le choix de VOLTA : le plus petit qui loge tout');
+    if (retenu) raisons.push(opts.nomme ? 'celui de votre fichier : sa référence le nomme' : 'le choix de VOLTA : le plus petit qui loge tout');
     else { if (b) raisons.push(memeBoitier ? 'même boîtier (taille ' + b + ') : le même raccord' : 'boîtier ' + b + (bA ? ' au lieu de ' + bA : '') + ' : un autre raccord');
       raisons.push(memesContacts ? 'les mêmes contacts à sertir' : 'd’autres contacts à sertir'); }
     raisons.push(libres ? libres + ' contact' + (libres > 1 ? 's' : '') + ' libre' + (libres > 1 ? 's (un obturateur chacun)' : ' (un obturateur)') : 'aucun contact libre');
@@ -21535,7 +21535,7 @@ function montrerAT(ou, fait, total, mots) { const el = panneauAT(); el.hidden = 
 /* LE PARCOURS. o : { listes (ouvrir chaque « Changer » : le plus long), budget (ms, 20 min d'office), sauter (des exports),
    bilan (false : ne pas rouvrir le bilan à la fin — les bancs) } */
 async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assign({ listes: true, budget: AUTOTEST.budget }, o || {});
-  if (!verite().length) { dire('Aucun plan ouvert : ouvrez votre installation, puis relancez l’autotest.', true); return; }
+  if (!verite().length) { dire('Aucun plan ouvert : ouvrez votre fichier, puis relancez l’autotest.', true); return; }
   const T0 = performance.now(), P = plans(), depart = app.plan, R = { quand: Date.now(), genres: {}, vides: 0, coupe: '', exports: [], listes: 0, pareilles: 0, sections: 0, folios: P.length }, vues = new Set();
   /* (v84, la vitesse : le plan géant des fichiers piégés — 3 135 liaisons, 90 folios — ne passait pas le 53e folio en 25 min,
      et un vrai fichier de cette taille ne voyait jamais ses derniers folios dans le budget) UNE FICHE PAREILLE À UNE FICHE DÉJÀ
@@ -22589,7 +22589,7 @@ async function convertirLeLot() { const L = BIB.lot; if (!L || L.encours || !L.i
   const arrete = E.arret, ins = BIB.vue === 'install' && BIB.installs.get(BIB.install), nomZip = nomAscii((ins ? ins.nom : 'contrats-deja-faits') + '-' + els.length + '-contrats') + '.zip';
   if (L.zip && fichiers.length) telecharger(zipSimple(fichiers), nomZip);
   BIB.lot = null; rendreBibliotheque();
-  const fait = lies([nx ? nx + INSECABLE + (nx > 1 ? 'installations corrigées' : 'installation corrigée') + ' (Excel)' : '', np ? np + INSECABLE + (np > 1 ? 'dossiers PDF' : 'dossier PDF') : '']), ms = Math.round(performance.now() - t0);
+  const fait = lies([nx ? nx + INSECABLE + (nx > 1 ? 'Excel corrigés' : 'Excel corrigé') : '', np ? np + INSECABLE + (np > 1 ? 'dossiers PDF' : 'dossier PDF') : '']), ms = Math.round(performance.now() - t0);
   dire((arrete ? 'Arrêté : ' : '') + (fait || 'rien à sortir') + (L.zip && fichiers.length ? ' dans ' + guillemets(nomZip) : '') + (fait ? ' — ' + (ms < 1000 ? ms + ' ms' : nombre(Math.round(ms / 100) / 10) + ' s') : '') + '.'
     + (L.pdf && !pdfDisponible() ? ' Le dossier PDF n’est pas encore dans cette version.' : '') + (rates.length ? ' Sans liaisons : ' + rates.slice(0, 3).join(', ') + (rates.length > 3 ? '…' : '') + '.' : '')
     + (sansPdf.length ? ' Pas de dossier PDF pour ' + sansPdf.slice(0, 3).join(', ') + (sansPdf.length > 3 ? '…' : '') + ' (un folio ne se dessine pas).' : ''), !fait); }
@@ -23449,7 +23449,7 @@ const cpSvg = (vb, titre, corps) => `<svg class="vr-svg" viewBox="${vb}" role="i
 function cpSchemaCuisinier() { const carte = (y, c, cd, titre, sous, ex) => `<rect x="8" y="${y}" width="290" height="78" rx="12" fill="${CP.fond}" stroke="${CP.filet}"/><rect x="8" y="${y}" width="6" height="78" rx="3" fill="${c}"/>`
     + `<circle cx="42" cy="${y + 39}" r="17" fill="${cd}"/>` + cpT(42, y + 44, titre[0], { cls: 'vr-ico', couleur: c })
     + cpT(70, y + 26, titre[1], { cls: 'vr-titre', ancre: 'start' }) + cpT(70, y + 45, sous, { cls: 'vr-sous', ancre: 'start', couleur: c }) + cpT(70, y + 63, ex, { cls: 'vr-petit', ancre: 'start' });
-  const plat = ['les folios dessinés', 'une fiche par objet', 'la LPA à commander', 'l’installation corrigée'];
+  const plat = ['les folios dessinés', 'une fiche par objet', 'la LPA à commander', 'l’Excel corrigé'];
   return cpSvg('0 0 880 300', 'VOLTA est un cuisinier : la commande, le catalogue et les recettes entrent ; les folios, les fiches et la LPA sortent',
     carte(10, CP.cuivre, CP.cuivreDoux, ['1', 'La commande'], 'votre fichier d’installation', 'relier 102CB1 à 103RL1, en DR20')
     + carte(111, CP.cuivre, CP.cuivreDoux, ['2', 'Le catalogue'], 'la base SEE gardée', 'sinon les tables de VOLTA')
@@ -23543,7 +23543,7 @@ function cpBase() { const I = typeof BASE_SEE !== 'undefined' && BASE_SEE.base; 
 function comprendreHtml() {
   const sommaire = `<nav class="vr-sommaire" aria-label="Les chapitres"><ol>${CHAPITRES_COMPRENDRE.map(([id, t], i) => `<li><button type="button" data-vr-ch="${id}"${i ? '' : ' data-clavier'}><span>${i + 1}</span>${esc(t)}</button></li>`).join('')}</ol></nav>`;
   const ch = [
-    cpChapitre('cuisinier', 1, 'VOLTA est un cuisinier', 'Votre installation est <b>la commande</b>, la <span class="vr-def" tabindex="0" data-bulle="La base des pièces de votre logiciel de schéma, déposée et gardée sur ce PC : les contacts, les câbles, les faces que vous utilisez déjà">base SEE</span> est <b>le catalogue</b>, la physique est <b>les recettes</b>. VOLTA lit la commande, prend les pièces dans le catalogue, suit les recettes — et sert le plat. Il n’invente jamais une pièce : si elle n’est pas au catalogue, il écrit « manque ».', cpSchemaCuisinier(),
+    cpChapitre('cuisinier', 1, 'VOLTA est un cuisinier', 'Votre fichier est <b>la commande</b>, la <span class="vr-def" tabindex="0" data-bulle="La base des pièces de votre logiciel de schéma, déposée et gardée sur ce PC : les contacts, les câbles, les faces que vous utilisez déjà">base SEE</span> est <b>le catalogue</b>, la physique est <b>les recettes</b>. VOLTA lit la commande, prend les pièces dans le catalogue, suit les recettes — et sert le plat. Il n’invente jamais une pièce : si elle n’est pas au catalogue, il écrit « manque ».', cpSchemaCuisinier(),
       ['<b>La commande</b> dit ce qu’on veut : relier telle borne à telle autre, avec tel câble, sur tel folio. VOLTA ne la change jamais sans vous : ce qu’il propose s’écrit seulement d’un geste.',
         '<b>Le catalogue</b> dit ce qui existe : les contacts à sertir, les câbles, les faces des connecteurs. Si votre base SEE est gardée sur ce PC, c’est elle ; sinon, les tables de VOLTA (vos photos des tables de SEE, recoupées sur des sources publiques).',
         '<b>Les recettes</b> disent ce qui est admis : ce qu’un câble supporte, quand un disjoncteur disjoncte, la chute de tension admise (2 V, votre règle). Elles ne viennent jamais du catalogue : la base SEE n’a ni courbes ni intensités.',
@@ -23948,7 +23948,8 @@ const parleDuCable = (x, l) => (x.cables || []).some(c => memeLiaison(c, l));
 // une phrase de disjoncteur vue depuis le câble : son nom en tête s'efface (« W-012 (DR20) : démarrage… » → « Démarrage… »)
 const sansLeCable = (texte, l) => { const t = String(texte || ''), n = nomDuCableDit(l); if (t.startsWith(n + ' : ')) return t.slice(n.length + 3);
   // (v78 : un câble se dit « DR12 vers 103RL1:A1 » — l'autre bout dépend d'où on le regarde)
-  const m = /^\S+ vers \S+ : /.exec(t); if (m) return t.slice(m[0].length);
+  // (v86) … même quand le courant arrive « (par 395SW1) », à travers un équipement (09-chute, la traversée)
+  const m = /^\S+ vers \S+(?: \(par [^)]*\))? : /.exec(t); if (m) return t.slice(m[0].length);
   if (t.startsWith(n + ' (par ')) { const k = t.indexOf(') : ', n.length); if (k > 0) return t.slice(k + 4); } return t; };
 // le disjoncteur en amont d'un câble : celui dont un chemin passe par lui
 function disjoncteurDuCable(l) { if (typeof alimentationDuFil === 'function') { try { const a = alimentationDuFil(l); if (a && a.nom) return a.nom; } catch (_) { } }
@@ -24816,8 +24817,8 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
       : `${amperes(d.calibre)}${pnMot} ${motDuVerdict('passe')} ; l’idéal est un ${amperes(d.calibreIdeal)} (sélectivité avec le voisin)` }); }
   // le retest porte un autre calibre que celui que l'outil retient : il déclenche (un problème), il est juste ou plus gros qu'il ne faut (à voir)
   if (d.gPn && d.origine !== 'main' && !d.sansProfil && !d.sansCourbe && d.calibre > 0) { const k = cleDuVerdict(d.gPn), m = d.meilleur || {}, pnR = pnDuRepere(nom), retenu = 'VOLTA retient le ' + amperes(d.calibre) + (m.pn && m.calibre === d.calibre ? ' (' + m.pn + ')' : '');
-    out.push({ niveau: k === 'passe' ? 'att' : 'ko', texte: k === 'passe' ? `l’installation porte un ${amperes(d.pn)} (${pnR}) : ${d.calibre < d.pn ? 'le ' + amperes(d.calibre) + ' suffit' : 'VOLTA retient le ' + amperes(d.calibre) + (d.voisins.some(v => v.calibre > 0 && Math.max(v.calibre, d.pn) < SELECTIVITE * Math.min(v.calibre, d.pn) - 1e-9) ? ' (sélectivité avec le voisin)' : '')}`
-      : k === 'juste' ? `l’installation porte un ${amperes(d.pn)} (${pnR}), qui ${motDuVerdict('juste')} : ${retenu}` : `l’installation porte un ${amperes(d.pn)} (${pnR}) qui ${motDuVerdict('declenche')} : ${retenu}` }); }
+    out.push({ niveau: k === 'passe' ? 'att' : 'ko', texte: k === 'passe' ? `votre fichier porte un ${amperes(d.pn)} (${pnR}) : ${d.calibre < d.pn ? 'le ' + amperes(d.calibre) + ' suffit' : 'VOLTA retient le ' + amperes(d.calibre) + (d.voisins.some(v => v.calibre > 0 && Math.max(v.calibre, d.pn) < SELECTIVITE * Math.min(v.calibre, d.pn) - 1e-9) ? ' (sélectivité avec le voisin)' : '')}`
+      : k === 'juste' ? `votre fichier porte un ${amperes(d.pn)} (${pnR}), qui ${motDuVerdict('juste')} : ${retenu}` : `votre fichier porte un ${amperes(d.pn)} (${pnR}) qui ${motDuVerdict('declenche')} : ${retenu}` }); }
   d.voisins.forEach(v => { if (v.calibre > 0 && d.calibre > 0 && Math.max(v.calibre, d.calibre) < SELECTIVITE * Math.min(v.calibre, d.calibre) - 1e-9) out.push({ niveau: 'att', texte: `sélectivité avec ${v.nom} (${amperes(v.calibre)}) : l’amont devrait faire au moins le double de l’aval` }); });
   // (v84) le déclassement en clair (« 11,5 A × 0,6 : faisceau de 8 câbles à 60 % », 09 quater `motDuDeclassement`) et deux
   // chiffres comparés que l'arrondi n'inverse pas (`enOrdre`) — les mêmes phrases que les câbles au-delà des passages (08-controle)
@@ -26037,7 +26038,7 @@ const nombreDeChangements = () => { let n = 0; verite().forEach(l => { if (liais
    votre fichier revient ; un calibre que VOLTA écrit de lui-même se reprend à la main (rendu, il se réécrirait). Une ligne
    en double retirée revient, telle que votre fichier l'écrivait (08-journal, `remettreLesCopies`). Rend { faire, dit, aide }. */
 function retirerDuReleve(e) { if (!e || !e.liaisons || !e.liaisons.length) return null; const ch = e.champ, l = e.liaisons[0];
-  if (ch === 'copies') return { faire: () => remettreLesCopies(l), aide: 'La ligne en double revient dans votre installation, comme votre fichier l’écrivait', dit: 'Retiré de l’Excel corrigé : la ligne en double ' + boutsDuCable(l) + ' revient, comme dans votre fichier.' };
+  if (ch === 'copies') return { faire: () => remettreLesCopies(l), aide: 'La ligne en double revient dans l’Excel corrigé, comme votre fichier l’écrivait', dit: 'Retiré de l’Excel corrigé : la ligne en double ' + boutsDuCable(l) + ' revient, comme dans votre fichier.' };
   let y; try { y = ligneDuFichier({ rendre: e.liaisons.map(x => [x, ch]), avant: motValeur(ch, e.av), apres: motValeur(ch, e.ap), champ: MOTS_CHAMPS[ch] || ch }, { type: 'fil' }); } catch (_) { return null; }
   if (!y || typeof y.faire !== 'function') return null;
   const dit = /^pn/.test(ch) ? y.dit : ch === 'type' ? `le câble ${boutsDuCable(l)} revient en ${y.avant}, comme dans votre fichier.` : `${(y.quoi || '').toLowerCase()} de ${cableParSesBouts(l)} : ${y.avant}, ${y.depuis === 'hyp' ? 'supposée' : 'comme dans votre fichier'}.`;
@@ -26067,12 +26068,12 @@ function propositionsNonEcrites() { const V = verite(), out = [];
       if (Q.lettres) { (Q.modules || []).forEach(M => { if (!M.fichier || !M.reference || cleNorme(M.fichier) === cleNorme(M.reference)) return;
           const ecritures = () => casesDuModule(r, verite(), M.numero).map(([l, c]) => [l, c, M.reference]);
           out.push({ genre: 'module', repere: r + ' · module ' + M.numero, retest: M.fichier, retenu: M.reference, cables: [], geste: 'Écrire ' + M.reference, suite: '', ecritures,
-            faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ', module ' + M.numero + ' : ' + M.reference + ' écrit dans l’installation')) }); });
+            faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ', module ' + M.numero + ' : ' + M.reference + ' écrit dans l’Excel corrigé')) }); });
         return; }
       if (!b.pn || !Q.reference || cleNorme(b.pn) === cleNorme(Q.reference) || !moduleDeReference(app.norme, b.pn)) return;
       const ecritures = () => { const xs = []; verite().forEach(l => { if (l.de === r && l.pnDe) xs.push([l, 'pnDe', Q.reference]); if (l.vers === r && l.pnVers) xs.push([l, 'pnVers', Q.reference]); }); return xs; };
       out.push({ genre: 'module', repere: r, retest: b.pn, retenu: Q.reference, cables: [], geste: 'Écrire ' + Q.reference, suite: '', ecritures,
-        faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ' : le module ' + Q.reference + ' écrit dans l’installation')) }); } catch (_) { } });
+        faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ' : le module ' + Q.reference + ' écrit dans l’Excel corrigé')) }); } catch (_) { } });
   return out; }
 
 /* ---- LE RELEVÉ, avant d'enregistrer ---------------------------------------------------------------------------------
@@ -26129,8 +26130,8 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
   let reste = ''; try { const G = genresDuControle(); if (G.length) { const ligneG = g => { const noms = [...g.noms]; return `<li class="rv-g ${g.niveau}"><i aria-hidden="true"></i><b>${g.n}</b><span>${esc(motDuGenre(g.genre, g.n))}</span><small>${esc(noms.length === 1 ? noms[0] : noms.length ? plurielLie(noms.length, 'repère') : 'le tableau')}</small></li>`; };
       reste = `<h3 class="sous-titre rv-st${entre()}">Ce qui reste à reprendre<small>${esc(P.mot)}</small></h3><ul class="rv-reste">${G.slice(0, 5).map(ligneG).join('')}</ul>`
         + `<button type="button" class="btn lien rv-tout" id="rv-problemes" data-bulle="${escA('L’index des repères, sur ce qui reste à reprendre — P passe au point suivant')}">${G.length > 5 ? 'Tout voir sur le plan' : 'Les voir sur le plan'}<kbd>R</kbd></button>`; } } catch (_) { }
-  return tete(nomAffichePlan() + ' · installation corrigée', 'Ce qui part dans l’Excel')
-    + `<p class="note">VOLTA n’écrit dans votre installation que ce que vous avez demandé. Relisez, puis enregistrez.</p>`
+  return tete(nomAffichePlan() + ' · Excel corrigé', 'Ce qui part dans l’Excel')
+    + `<p class="note">VOLTA n’écrit dans l’Excel corrigé que ce que vous avez demandé. Relisez, puis enregistrez.</p>`
     + enr + ticket + `<h3 class="sous-titre rv-st${arrive ? ' entre-v" style="--k:2' : ''}">Ce qui part<small>${esc([C.cases ? pluriel(C.cases, 'case') : '', C.ajouts.length ? pluriel(C.ajouts.length, 'barrette') : ''].filter(Boolean).join(' · '))}</small></h3>` + part + props + reste
     + `<p class="note rv-volta">Une feuille cachée « VOLTA » garde vos profils de charge, vos hypothèses et vos choix : rouverte dans VOLTA, cette installation reprend où vous en étiez. La feuille Modifications dit l’origine de chaque case.</p>`; }
 const nomAffichePlan = () => app.nom ? String(app.nom).replace(/\.[^.]+$/, '') : 'Plan';
@@ -26148,7 +26149,7 @@ function lierReleve() { const C = changementsDuRetest(), P = C.proposes;
   document.querySelectorAll('#fiche [data-retirer-ajout]').forEach(b => b.onclick = e => { e.stopPropagation(); const p = C.ajouts[+b.dataset.retirerAjout];
     if (p && deposerBarrette(p)) direDuReleve('Retiré de l’Excel corrigé : ' + p.nom + ' redevient ' + p.vt + ', les câbles reviennent sur ' + p.sur + '.'); });
   document.querySelectorAll('#fiche [data-proposition]').forEach(b => b.onclick = () => { const k = b.dataset.proposition;
-    if (k === 'modules') { const ms = P.filter(p => p.genre === 'module'); if (!ms.length) return; avecOrigineVolta(() => changerLiaisons(ms.flatMap(p => p.ecritures()), ms.length > 1 ? 'les modules de ' + ms.length + ' barrettes écrits dans l’installation' : ms[0].repere + ' : le module ' + ms[0].retenu + ' écrit dans l’installation')); }
+    if (k === 'modules') { const ms = P.filter(p => p.genre === 'module'); if (!ms.length) return; avecOrigineVolta(() => changerLiaisons(ms.flatMap(p => p.ecritures()), ms.length > 1 ? 'les modules de ' + ms.length + ' barrettes écrits dans l’installation' : ms[0].repere + ' : le module ' + ms[0].retenu + ' écrit dans l’Excel corrigé')); }
     else { const p = P[+k]; if (!p || !p.faire) return; p.faire(); }
     rendreReleve();
     const e = $('rv-enregistrer'); if (e) e.focus({ preventScroll: true }); });
@@ -26842,7 +26843,7 @@ const gaugesDeFamille = fam => [...(famillesCables().get(String(fam || '').toUpp
 // (v86, l'audit B1 : « un DR16 proposé sur le fil d'un interrupteur de commande ») un câble de commande ne grossit pas
 function plusFinQuiTient(l, calibre) { const x = intensiteDuFil(l), p = partiesDuType(l.type); if (!l.type || p.jauge == null || x.commande || x.source === 'commande') return null;
   if (x.al) { try { const d = disjonctionDe(x.al.nom), f = (d.contexte.fils || []).find(y => y.l === l), cal = calibre > 0 ? calibre : d.calibre; if (f && cal > 0) { const H = { ...HYPOTHESES, ...(d.contexte.hyp || {}) }, ctx = contexteDeProtection(app.norme, H, d.courbes, pointsDuProfil(d.profil)), q = protegerFil(app.norme, cal, f, H, ctx);
-    if (filSuit(q)) return null; const s = jaugeQuiSuit(app.norme, cal, f, H, ctx); return s ? { type: s.type, pourquoi: `le plus fin que protège le ${amperes(cal)}${calibre > 0 && calibre !== d.calibre ? ' de l’installation' : ''} de ${x.al.nom}` } : null; } } catch (_) { } }
+    if (filSuit(q)) return null; const s = jaugeQuiSuit(app.norme, cal, f, H, ctx); return s ? { type: s.type, pourquoi: `le plus fin que protège le ${amperes(cal)}${calibre > 0 && calibre !== d.calibre ? ' de votre fichier' : ''} de ${x.al.nom}` } : null; } } catch (_) { } }
   if (!x.trop.length) return null;
   const t = gaugesDeFamille(p.famille).filter(j => j < p.jauge).reverse().map(j => typeDe(p.famille, j)).find(ty => tientLeCourant(l, ty) != null);
   return t ? { type: t, pourquoi: 'le plus fin qui porte ' + (x.al ? 'son profil' : amperes(x.I) + ' supposés') } : null; }
@@ -26860,11 +26861,11 @@ function protectionDuCable(l, x) { const out = { probs: [], cause: null, calEcri
   let deC = null; if (typeof problemesDuCable === 'function') { try { deC = problemesDuCable(l); } catch (_) { deC = null; } }
   // (de sa liste, la fiche garde ce qu'elle ne calcule pas elle-même — la protection, le contact contre le calibre, la cause — :
   // la charge et la chute du câble sont déjà ses lignes)
-  const garde = p => !!p && (!!p.cause || /^(protection|contact|calibre|cause)$/.test(p.genre || '') || /protég|contact taille|calibre|retest|installation/.test(p.texte || ''));
+  const garde = p => !!p && (!!p.cause || /^(protection|contact|calibre|cause)$/.test(p.genre || '') || /protég|contact taille|calibre|retest|installation|votre fichier/.test(p.texte || ''));
   let causeDeC = false;
   if (Array.isArray(deC)) deC.filter(garde).forEach(p => { if (p.cause || /retest|de l’installation|de votre fichier/.test(p.texte || '')) causeDeC = true; out.probs.push({ niveau: p.niveau === 'ko' ? 'ko' : 'att', texte: p.texte, section: p.section || 'fils' }); });
   // (jugé sous le calibre ÉCRIT : tant que l'outil propose un autre calibre sans qu'il soit écrit, celui du retest — jamais le 15 A fantôme)
-  else { const nonEcrit = typeof propositionNonEcrite === 'function' && propositionNonEcrite(d) && d.pn > 0, cal = nonEcrit ? d.pn : d.calibre, du = nonEcrit ? ' de l’installation' : '';
+  else { const nonEcrit = typeof propositionNonEcrite === 'function' && propositionNonEcrite(d) && d.pn > 0, cal = nonEcrit ? d.pn : d.calibre, du = nonEcrit ? ' de votre fichier' : '';
     let f = (d.fils || []).find(y => y.l === l || (y.cable && l.cable && y.cable === l.cable && y.type === l.type));
     if (nonEcrit) { const f0 = (d.contexte.fils || []).find(y => y.l === l); f = null; if (f0) try { const H = { ...HYPOTHESES, ...(d.contexte.hyp || {}) }; f = protegerFil(app.norme, cal, f0, H, contexteDeProtection(app.norme, H, d.courbes, pointsDuProfil(d.profil))); } catch (_) { f = null; } }
     if (f && f.verdict === 'calibre') out.probs.push({ niveau: 'att', texte: `pas protégé en surcharge : ${amperes(f.continu)} admis en continu${typeof motFacteur === 'function' ? motFacteur(f.facteur) : ''} < le ${amperes(cal)}${du} de ${cb}`, section: 'fils' });
@@ -27314,7 +27315,7 @@ function problemesEquipement(nom, cav, b, vt, dj) { const probs = [];
     probs.push({ niveau: 'att', texte: `${majuscule(nombreEnMots(fs.length))} câbles arrivent sur la borne ${bo} — Une borne n’en reçoit qu’un : ${vt.has(String(bo)) ? 'VOLTA ajoute une barrette (' + vt.get(String(bo)) + ') qui les relie, à poser au contrat' : 'il faut une barrette pour les relier'}`, section: dj ? 'fils' : 'connecteur', connecteur: !dj && g ? g.nom : undefined }); });
   if (dj) controleDisjonction(nom).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: sectionDj(x.texte) }));
   // ce que le contrôle du contrat relève en plus sur ce repère (un conducteur CCA, ce qu'un disjoncteur nourrit au-delà d'un passage)
-  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: dj ? sectionDj(x.texte) : x.section || 'connecteur' }));
+  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: dj ? sectionDj(x.texte) : x.section || 'connecteur', gestes: typeof gestesDuPoint === 'function' ? gestesDuPoint(x) : [], point: x }));
   return probs; }
 /* Ce qui a été écrit ici sur les liaisons d'un repère (« Par rapport au retest ») : de son côté, la référence et le
    contact ; de ses câbles, le numéro, le type, la longueur, la route. */
@@ -27584,7 +27585,7 @@ const sourceDeLigne = (x, table) => { if (!x) return ''; const n = String(x.note
 // (v74, lot F : la chaîne se partage — « D'où vient chaque pièce » sous les contacts, et le récit de la référence, `recitReference`)
 function chaineConnecteur(c, Q, M, xs) { const N = app.norme, fam = Q && Q.famille ? Q.famille : familleDeReference(N, c.pn, 'connecteur'), nomF = fam ? nomDeFamille(N, fam) || fam : '';
   const maillon = (k, v, d) => `<li><span class="fi-tr-k">${esc(k)}</span><span class="fi-tr-v">${v}</span><span class="fi-tr-d">${esc(d)}</span></li>`;
-  const lignes = [maillon('Référence', c.pn ? ident(c.pn) : '<em>aucune</em>', c.pn ? 'colonne du fichier d’installation' : 'à écrire dans le fichier ou ici')];
+  const lignes = [maillon('Référence', c.pn ? ident(c.pn) : '<em>aucune</em>', c.pn ? 'colonne de votre fichier' : 'à écrire dans le fichier ou ici')];
   if (!c.pn) return { lignes, parFil: '', fam, nomF };
   if (!fam) lignes.push(maillon('Famille', '<b class="fi-ko-t">inconnue</b>', 'aucune famille de connecteur ne commence comme cette référence — ni dans les tables de VOLTA, ni dans la base SEE gardée : la chaîne s’arrête ici, d’où les contacts vides'));
   else { lignes.push(maillon('Famille', esc(nomF), 'le début de la référence est celui de la famille ' + fam + ' (table des connecteurs)'));
@@ -27618,7 +27619,7 @@ function famillesVoisines(pn, retenue) { const N = app.norme, r = cleNorme(pn), 
     .sort((a, b) => b.k - a.k || (b.nature === 'connecteur') - (a.nature === 'connecteur') || b.modules - a.modules || triNaturel(a.nom, b.nom)); }
 function origineDeLaReference(nom, bornes) { const xs = nom ? liaisonsDuConnecteur(nom, bornes) : [], cols = [...new Set(xs.map(([, ch]) => ch === 'pnDe' ? 'PN1' : 'PN2'))].sort();
   const ecrite = xs.find(([l, ch]) => l.avant && ch in l.avant && l.avant[ch] !== l[ch]);
-  return ecrite ? `écrite ici — le fichier d’installation portait ${avantDe(ecrite[0], ecrite[1])}` : xs.length ? `lue dans le fichier d’installation : colonne ${cols.join(' et ')}, sur ${pluriel(xs.length, 'liaison')}` : 'lue dans le fichier d’installation'; }
+  return ecrite ? `écrite ici — votre fichier portait ${avantDe(ecrite[0], ecrite[1])}` : xs.length ? `lue dans votre fichier : colonne ${cols.join(' et ')}, sur ${pluriel(xs.length, 'liaison')}` : 'lue dans le fichier d’installation'; }
 /* (v77, le lecteur : « pourquoi c'est cette norme… pas évident… plus simple » ; « que je comprenne d'où elle vient, de
    quelle base de données, que je clique dessus, je vois son schéma ») : plus de récit en cinq pas — une carte d'identité.
    D'où elle vient (votre fichier, ou écrite ici), sa norme et LA BASE qui la donne (les tables de VOLTA, ou la base SEE
@@ -27636,7 +27637,7 @@ function recitReference(o) { if (FI.liste !== o.cle) return '';   // (calculé �
     : esc(`Aucune norme que VOLTA connaît ne commence comme « ${pn || '?'} » : il ne sait pas quel arrangement ni quels contacts lire.`);
   const vs = fam ? [] : famillesVoisines(pn, '').filter(x => x.k > 0).slice(0, 3);
   const proches = vs.length ? `<small>Les plus proches : ${vs.map(x => `<b class="id">${esc(x.nom)}</b>${x.nature !== 'connecteur' ? esc(' (une barrette, pas un connecteur)') : !x.modules ? esc(' (VOLTA n’a pas ses arrangements)') : ''}`).join(', ')}.</small>` : '';
-  const dl = `<dl class="rf-dl">${ligne('Vient de', pn ? esc(majuscule(origineDeLaReference(o.nom, o.bornes || '*'))) : esc('Ni le fichier d’installation ni la fiche ne la donnent : à écrire.'))}`
+  const dl = `<dl class="rf-dl">${ligne('Vient de', pn ? esc(majuscule(origineDeLaReference(o.nom, o.bornes || '*'))) : esc('Votre fichier ne la donne pas : à y écrire.'))}`
     + ligne('Sa base', fam ? `<b>${deSEE ? 'La base SEE' : 'Les tables de VOLTA'}</b>${esc(deSEE ? ' gardée sur ce PC' : ' (les normes embarquées)')} : ${esc('norme ' + nomF)}` : '<b class="fi-ko-t">aucune</b>' + esc(' : ni les tables de VOLTA ni la base SEE ne la reconnaissent'))
     + ligne('Pourquoi', pourquoi + proches) + (see ? ligne('Base SEE', esc(majuscule(see))) : '') + '</dl>';
   // SON SCHÉMA : la face de l'arrangement retenu, les câbles posés dessus
@@ -27644,7 +27645,7 @@ function recitReference(o) { if (FI.liste !== o.cle) return '';   // (calculé �
   if (M) { const par = new Map(((Q && Q.fils) || []).filter(x => x.contact).map(x => [x.contact.lettre, x]));
     try { schema = `<div class="rf-schema">${faceAjustee(faceModuleSvg(M.module, ct => { const x = par.get(ct.lettre); return x ? occupant(x.f, x.jaugeOk === false, ct.lettre) : null; }), 'Son schéma · arrangement ' + (M.module.variante || M.reference) + ' · face côté contacts')}</div>`; } catch (_) { schema = ''; } }
   else if (fam) schema = `<p class="fi-note rf-sans">${esc('Aucun arrangement de l’' + nomF + ' ne loge ces câbles : pas de schéma (« Changer », sous Arrangement, les montre tous).')}</p>`;
-  const faire = fam ? '' : `<p class="rf-faire">${esc('Vérifier la référence dans le fichier d’installation, ou envoyer la table de sa norme :')} <button type="button" class="fi-lien recit-lien" data-action="normes">${esc('Normes')}${ico('droite')}</button></p>`;
+  const faire = fam ? '' : `<p class="rf-faire">${esc('Vérifiez la référence dans votre fichier, ou ajoutez la table de sa norme :')} <button type="button" class="fi-lien recit-lien" data-action="normes">${esc('Normes')}${ico('droite')}</button></p>`;
   const pied = M ? `<button type="button" class="fi-lien" data-bible="${escA(M.reference)}">${ico('livre')}voir dans la bible</button>` : '';
   return listeChoix(o.cle, `<div class="rf-carte">${dl}${schema}${faire}</div>`, { titre: 'D’où vient cette référence', cls: 'recit-recit', pied }); }
 /* Sous la référence, toujours : d'où elle vient, en trois mots (votre fichier · sa norme et sa base · la base SEE). */
@@ -27731,7 +27732,7 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     sF && { cle: 'cables', statut: statutCables(sF), contenu: sF.contenu, vide: sF.vide },
     sections[2] ? ongletDeLaSection(sections[2]) : null];
   return composerFiche({ type: 'disjoncteur', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pn ? ident(pn) : ''], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
-    vignette: friseDeLaCarte(nom, d, o), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation) porte un / : null,
+    vignette: friseDeLaCarte(nom, d, o), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation|votre fichier) porte un / : null,
     ok: d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : `Le ${cal ? amperes(cal) : 'calibre'} passe, et ses câbles portent leur courant.`, pied: { tableau: nom, menu: MENU_BLOC } }); }
 
 /* ---- UNE BARRETTE (et une barrette à poser) ------------------------------------------------------------------------ */
@@ -27746,7 +27747,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const raccord = aPoser ? L.find(l => l.aPoser === nom && l.origine === null && l.vers === nom && estRaccordAPoser(l)) : null, sur = raccord ? raccord.de + ':' + raccord.borneDe : '';
   // (v86, l'audit F13) une barrette ajoutée n'a plus, en plus de son bandeau, un point « À voir » qui redit la même chose
   // sans geste : le bandeau « Lui donner son repère » est son seul appel
-  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte) && !/^ajoutée par VOLTA sur/.test(x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur' }));
+  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte) && !/^ajoutée par VOLTA sur/.test(x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur', gestes: typeof gestesDuPoint === 'function' ? gestesDuPoint(x) : [], point: x }));
   const libres = Q.contacts - Q.utilises, famNom = M0 ? nomDeFamille(N, M0.module.famille) || M0.module.famille : Q.famille ? nomDeFamille(N, Q.famille) || Q.famille : '';
   /* le MODULE : sa référence en puce, qui ouvre la galerie (plusieurs modules : chacun sa référence) ; l'écart avec le
      retest ; le RAIL qui les porte ; la face */
@@ -27999,7 +28000,7 @@ function carteRecommandee(nom, x, points, Q, enAuto) { const N = app.norme, m = 
     + `<span class="pr-c-r">${insecable(esc(majuscule(x.raisons.join(' · '))))}</span>${cotes ? `<span class="pr-c-ct">${cotes}</span>` : ''}</span></button>`; }
 function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupure(nom), M = Q.modules[0], N = app.norme;
   const cps0 = coupablesDu(Q, points), probs = Q.verdicts.filter(v => v.niveau === 'ko' || v.niveau === 'attention').map(v => ({ niveau: v.niveau === 'ko' ? 'ko' : 'att', texte: v.texte, section: 'connecteur', viser: v.coupables && cps0[0] ? cleFil(cps0[0].l) : undefined }));
-  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur' }));
+  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur', gestes: typeof gestesDuPoint === 'function' ? gestesDuPoint(x) : [], point: x }));
   const nums = points.map(p => p.num).join(', '), types = typesDe(Q.fils.map(x => x.f)), fam = nomDeFamille(N, Q.famille) || Q.famille || '';
   const pourquoi = Q.main ? 'Choisi ici' : Q.nomme ? `Le part number du fichier (${b.pn}) nomme cet arrangement` : !M ? 'Aucun arrangement ne loge ces contacts avec ces gauges' : `Le plus petit arrangement qui a les contacts ${nums} et accepte ${types || 'ces câbles'}`;
   const amont = Q.fils.filter(x => x.f.amont), aval = Q.fils.filter(x => !x.f.amont);
@@ -28212,8 +28213,13 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   // v73 — LE CONTRÔLE RATTACHE AU CÂBLE ses problèmes (le domaine C, 08-controle, `problemesDuCable`) : sa charge, sa protection,
   // son contact contre le calibre, la chute de son chemin, et LA CAUSE quand son disjoncteur ne passe pas — avec leurs gestes ;
   // une seule phrase pour un même fait, celle du contrôle. Sans elle, la fiche les calcule (`protectionDuCable`)
-  let deC = null; if (!neuf && x.al && typeof problemesDuCable === 'function') { try { deC = problemesDuCable(l); } catch (_) { deC = null; } }
-  if (deC) deC.forEach(p => probs.push({ niveau: p.niveau === 'ko' ? 'ko' : 'att', texte: p.texte, bulle: p.bulle, section: p.section || 'fils', gestes: p.gestes, cause: p.cause, genre: p.genre }));
+  let deC = null; if (!neuf && typeof problemesDuCable === 'function') { try { deC = problemesDuCable(l); } catch (_) { deC = null; } }
+  // (v86) sans disjoncteur en amont, la fiche calcule elle-même sa charge et sa protection ; du contrôle, elle garde ce qui parle
+  // de votre fichier (une ligne en double, un type inconnu, une longueur illisible), avec son geste
+  const duFichier = deC && !x.al ? deC.filter(p => /^(doublon|casse|fichier)$/.test(p.genre || '')) : []; if (!x.al) deC = null;
+  const pousser = p => probs.push({ niveau: p.niveau === 'ko' ? 'ko' : 'att', texte: p.texte, bulle: p.bulle, section: p.section || 'fils', gestes: p.gestes, cause: p.cause, genre: p.genre });
+  duFichier.forEach(pousser);
+  if (deC) deC.forEach(pousser);
   else x.trop.forEach(pt => probs.push({ niveau: 'ko', texte: `${pt.nom} ${amperes(pt.i)}${pt.t === Infinity ? '' : ' pendant ' + secondes(pt.t)} : plus que ce que le câble admet (${amperes(x.admise(pt.t))})`, section: 'fils' }));
   // ses PROPRES problèmes de protection, et la cause quand c'est son disjoncteur (v73 : l'ingénieur, point 5 ; le technicien, n° 1)
   const prot = neuf ? null : protectionDuCable(l, x); if (prot && !deC) probs.push(...prot.probs);
@@ -29295,7 +29301,7 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
   const n = V.length, exemple = n && app.nom === NOM_EXEMPLE, R = FICHIERS.retest && FICHIERS.retest.nom === app.nom ? FICHIERS.retest : null, P = plans().length;
   E.retest = err('retest') ? { niveau: 'ko', dit: 'le dernier fichier n’a pas pu être ouvert' + (n && !exemple ? ' — ' + (app.nom || 'le plan') + ' reste ouvert' : '') }
     : FICHIERS.attente ? { niveau: 'att', dit: FICHIERS.attente.nom + ' attend « Charger »' }
-    : !n ? { niveau: 'vide', dit: 'aucun plan ouvert : la bibliothèque, ou votre installation' }
+    : !n ? { niveau: 'vide', dit: 'aucun plan ouvert : la bibliothèque, ou votre fichier' }
     : exemple ? { niveau: 'vide', dit: 'l’exemple embarqué est ouvert — pas votre contrat' }
     : { niveau: 'ok', dit: lies([app.nom === 'Collage' ? 'des lignes collées' : app.nom || 'sans nom', R ? 'ouvert ' + quand(R.t) : '', pluriel(n, 'liaison'), P > 1 ? pluriel(P, 'folio') : '']) };
   const B = app.references, M = B && B.base ? B.base.meta : null, K = typeof BASE !== 'undefined' ? BASE : {};
@@ -29368,7 +29374,7 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
   const C = [
     { cle: 'bibliotheque', titre: 'Bibliothèque', depot: 'plans', grande: true, action: ['bibliotheque', 'Ouvrir la bibliothèque'], zone: ['ajouter-plans', 'vos installations'],
       une: `<p><b>Un plan par installation</b>. Ceux qu’on glisse ici vont dans ${esc(guillemets(nomInstallCible()))}.</p>` },
-    { cle: 'retest', titre: 'Votre installation', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir une installation…'], zone: ['ouvrir', 'l’installation'],
+    { cle: 'retest', titre: 'Votre fichier', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir un fichier…'], zone: ['ouvrir', 'votre fichier'],
       // ce qu'elle attend se dit tant qu'aucun plan n'est ouvert ; ensuite, « Le format attendu » (replié) le garde
       une: planOuvert ? '' : `<p>Un Excel ou un CSV, <b>une ligne par câble</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’installation ouverte.</p>`,
       avant: devant ? '' : bilan, replie: !!bilan,
@@ -31092,7 +31098,7 @@ function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => 
   const n = D.fils.filter(w => !w.shunt && (w.de === nom || w.vers === nom)).length, ail = rangsDesFolios(plansDuRepere(nom).filter(p => p !== app.plan));
   const genre = estMasse(nom) ? 'masse' : c.kind === 'tag' && estBarrette(nom) ? 'morceau de barrette' : estCoupure(nom) ? 'prise de coupure' : estBarrette(nom) ? 'barrette' : estDisjoncteur(nom) ? 'disjoncteur' : '';
   const d = c.kind === 'tag' ? '' : designationDe(nom), cc = estDisjoncteur(nom) && c.kind === 'equip' ? calibresDuFolio(nom) : null, cal = cc && cc.calibre;
-  return T(nom) + ((genre || d || cal) ? l_(esc([genre, cal ? amperesCb(cal) + (cc.retest ? ' (installation ' + amperesCb(cc.retest) + ')' : '') : '', d].filter(Boolean).join(' · '))) : '')
+  return T(nom) + ((genre || d || cal) ? l_(esc([genre, cal ? amperesCb(cal) + (cc.retest ? ' (votre fichier ' + amperesCb(cc.retest) + ')' : '') : '', d].filter(Boolean).join(' · '))) : '')
     + l_(pluriel(n, 'câble') + ' sur ce folio' + (ail.length ? ' · aussi sur f. ' + ail.join(' · ') : ''))
     + (estRenvoi(nom) || c.rail ? '' : l_('Clic : sa fiche · glisser : le déplacer')); }
 let appuiDuPlan = null;   // le dernier appui simple sur la planche (l'instant, l'endroit, le bloc) : un double-clic peut finir ailleurs
@@ -31191,7 +31197,7 @@ function synchroniserRail() { const p = (id, on) => { const b = $(id); if (b) b.
    repères — équipements, barrettes (celles à poser comprises), prises —, chacun avec son état et ses folios ; on y
    cherche ; un clic ouvre la fiche, la flèche ramène à la liste. Rien n'est caché derrière le plan. */
 function basculerIndex() { if (!$('inspecteur').hidden && app.insp.index) { if (app.cible) retourIndex(); else fermerInspecteur(); return; }   // depuis une fiche venue de l'index, R ramène à la liste
-  if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : ouvrez d’abord une installation.'); return; }
+  if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : ouvrez d’abord votre fichier.'); return; }
   app.insp.index = true; if (app.cible) { const c = app.cible; app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
     if (c.type === 'bloc' && app.base.filtreAuto) { app.base.filtre = ''; app.base.filtreAuto = false; rendreBase(); } eteindre(); marquerLignes(); }
   ouvrirInspecteur(); const q = $('ix-q'); if (q && !telephone()) q.focus(); }
@@ -31917,7 +31923,7 @@ function champHypotheseHtml(c, H) {
 const GROUPES_HYPOTHESES = [['fil', 'Le câble'], ['temperature', 'La température'], ['chute', 'La chute en ligne'], ['reseau', 'Le réseau'], ['declassement', 'Le déclassement'], ['tableau', 'Les disjoncteurs']];
 /* CE QUE FAIT CHAQUE RÉGLAGE, EN UNE PHRASE (l'ergonome v73 : « 232 mots à lire : chaque réglage porte un paragraphe ») ; le
    paragraphe entier — la règle, la source, la valeur par défaut — se lit dans le « ? » de sa ligne. */
-const COURT_HYPOTHESES = { longueur: 'La longueur d’un câble que l’installation ne mesure pas.', courant: 'Le courant d’un câble qu’aucun disjoncteur n’alimente.', tension: 'La tension du réseau.',
+const COURT_HYPOTHESES = { longueur: 'La longueur d’un câble que votre fichier ne donne pas.', courant: 'Le courant d’un câble qu’aucun disjoncteur n’alimente.', tension: 'La tension du réseau.',
   ambiante: 'L’air autour des câbles : ce qu’un câble admet en dépend.', tconducteur: 'La température des câbles quand la chute se calcule à température fixe ; par défaut, VOLTA l’estime sous leur courant.', retour: 'Par où le courant revient : la structure, ou un câble.',
   regime: 'Continu, monophasé ou triphasé.', cosphi: 'Le facteur de puissance, en alternatif.', reactance: 'La réactance d’un gros câble, en alternatif.', charge: 'La part de ce que le faisceau admet qui y circule vraiment.',
   altitude: 'L’altitude de vol.', tableauMin: 'L’ambiante la plus basse du tableau de disjoncteurs.', tableauMax: 'L’ambiante la plus haute du tableau de disjoncteurs.',
@@ -31945,7 +31951,7 @@ function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }
   const reglees = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k])).length, defaut = !reglees;
   // le chapeau dit où vont ces réglages (l'ingénieur v73 : « si j'envoie le dossier, on ne peut pas refaire le calcul ») : ils
   // partent avec chaque export — la page « Hypothèses et sources » du dossier PDF, la feuille « VOLTA » de l'installation corrigée
-  const corps = tete('Réglages', 'Hypothèses') + '<p class="note">Ce que votre installation ne dit pas, VOLTA le suppose ; chaque fiche qui s’en sert le dit. <b>Ces réglages sont écrits dans chaque export</b> (le dossier PDF, l’installation corrigée). Le détail de chacun se lit au survol de sa phrase.</p>'
+  const corps = tete('Réglages', 'Hypothèses') + '<p class="note">Ce que votre fichier ne dit pas, VOLTA le suppose ; chaque fiche qui s’en sert le dit. <b>Ces réglages sont écrits dans chaque export</b> (le dossier PDF, l’installation corrigée). Le détail de chacun se lit au survol de sa phrase.</p>'
     + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><h3 class="hy-titre">${esc(t)}</h3>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
   const pied = `<span class="hy-etat${defaut ? '' : ' regle'}">${defaut ? 'Les valeurs de VOLTA' : `<b>${pluriel(reglees, 'hypothèse')}</b> réglée${reglees > 1 ? 's' : ''} ici`}</span><span class="espace"></span>`
     + `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de VOLTA</button>`;
@@ -31959,7 +31965,7 @@ function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }
 // le calibre du folio suit les hypothèses (`peindre` ne repeint que si un calibre a changé)
 function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); peindre(); rafraichirCarte(); }
 function carteSimulation(nom, P, S) { const H = S.hyp, V = verite(), N = app.norme || normeVide();
-  let s = `<div class="simu"><div class="simu-tete"><span class="sur">Simulation</span><span class="simu-note">hypothèses, pas des mesures : l’installation ne porte ni longueur ni courant</span></div>
+  let s = `<div class="simu"><div class="simu-tete"><span class="sur">Simulation</span><span class="simu-note">hypothèses, pas des mesures : votre fichier ne porte ni longueur ni courant</span></div>
     <div class="hyp">${hypothesesDe(N, H, { fils: S.fils }).map(c => champHypotheseHtml(c, H)).join('')}</div>`;
   if (S.sansNorme) return s + `<p class="simu-vide">Aucune norme ne connaît cette famille ni ces câbles : rien n’est calculé. Importez une norme depuis la bible.</p></div>`;
   if (!S.lignes.length) return s + `<p class="simu-vide">Aucun câble dans un trou : rien à simuler.</p></div>`;
@@ -32577,12 +32583,12 @@ function bulleDesReperes() { const s = $('bulle-index'), d = $('bulle-index-deta
 function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDeChangements() : 0, b = $('btnRetest'); if (!b) return;
   const avant = b.hidden, mod = plurielLie(n, 'liaison') + ' modifiée' + (n > 1 ? 's' : ''); b.hidden = !n;
   // (v79, un relecteur : « 3 changements · Installation corrigée : un état ou un bouton ? ») : le bouton dit son geste, le compte en pastille
-  if (n) { $('en-retest-n').textContent = String(n); $('en-retest-n').title = motChangements(n); b.setAttribute('aria-label', 'L’installation corrigée — ' + mod + ' ; relire ce qui part, puis l’enregistrer');
-    b.querySelector('.bulle').textContent = 'L’installation corrigée : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
+  if (n) { $('en-retest-n').textContent = String(n); $('en-retest-n').title = motChangements(n); b.setAttribute('aria-label', 'L’Excel corrigé — ' + mod + ' ; relire ce qui part, puis l’enregistrer');
+    b.querySelector('.bulle').textContent = 'L’Excel corrigé : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
     // elle paraît : elle tombe d'un rien, une fois
     if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }
   const m = $('mn-retest'); if (m) m.textContent = n ? motChangements(n) : 'telle que votre fichier, rien de changé';
-  const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'installation corrigée · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
+  const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'Excel corrigé · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
 function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); peindreEtats(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
 /* LE RAIL SE DÉPLIE (le technicien : « la liste à puces avec une pastille, je la prends pour des notifications ; le ⊸+ pour un
    curseur de réglage ») : au survol prolongé — 250 ms, une main qui passe ne l'ouvre pas —, il montre le mot et la touche
@@ -32724,7 +32730,7 @@ const RACCOURCIS = [
   ['Dans une fiche', [['La fiche d’avant, d’après|et revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']],
     ['Le calibre d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre, ou l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche', ['Échap']]]],
   ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['L’historique du plan|chaque changement, et « Défaire »', ['H']], ['Pousser le bloc choisi|d’un carreau ; de cinq avec Maj', ['↑'], ['↓']]]],
-  ['Ouvrir, sortir', [['Ouvrir une installation', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert', ['Échap']], ['Cette feuille', ['?']]]],
+  ['Ouvrir, sortir', [['Ouvrir un fichier', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert', ['Échap']], ['Cette feuille', ['?']]]],
   ['Améliorer VOLTA', [['Noter une hésitation|l’écran où vous êtes s’écrit avec elle', ['C']]]]];
 // trois colonnes de même hauteur : se repérer (et améliorer), lire et corriger, la fiche et sortir
 const RK_COLONNES = [[0, 5], [1, 3], [2, 4]];
@@ -32982,7 +32988,7 @@ function donnerSonRepere(vt, plan, repere) { const r = (typeof reperes === 'func
   const nom = String(repere || (r && typeof prochainRepereVT === 'function' ? prochainRepereVT(r) : '')).trim(); if (!nom) return '';
   const n = liaisonsDuPlan().filter(l => l.aPoser === vt && l.de === vt && l.vers === vt).length;
   if (!poserBarrette(vt, nom)) return '';
-  dire(`${vt} devient ${nom} : elle entre dans votre installation, avec un câble à créer et ${pluriel(n, 'shunt')}.`, false, { geste: 'Défaire', faire: defaire });
+  dire(`${vt} devient ${nom} : elle entre dans l’Excel corrigé, avec un câble à créer et ${pluriel(n, 'shunt')}.`, false, { geste: 'Défaire', faire: defaire });
   return nom; }
 
 /* ---- LE DESSIN RETOUCHÉ À LA MAIN, folio par folio (les retouches : 08-interface, `app.retouches`) ------------------- */
@@ -34107,7 +34113,7 @@ function compteur() { const m = new Map();
 function disjoncteursDeLaNomenclature(V) { return reperesDe(V || verite()).filter(estDisjoncteur).sort(triNaturel).map(r => { const pn = pnDuRepere(r); let d = null; try { d = disjonctionDe(r); } catch (_) { d = null; }
   const F = d && d.famille, cal = d && d.calibre > 0 ? d.calibre : null, calPn = F && F.calibre > 0 ? F.calibre : null, differe = !!(cal && calPn && Math.abs(cal - calPn) > 1e-9);
   const commande = differe && F ? pnAvecCalibre(pn, F, cal) || pn : pn, v = d ? verdictDeCalibre(d) : null;
-  const etat = !d || d.sansProfil ? 'profil de charge à écrire' : v ? v.mot + (differe ? ' · pas écrit dans l’installation' : '') : '';
+  const etat = !d || d.sansProfil ? 'profil de charge à écrire' : v ? v.mot + (differe ? ' · pas écrit dans votre fichier' : '') : '';
   return { repere: r, reference: commande || '—', pnRetest: differe ? pn : '', calibre: cal, retest: differe ? calPn : null, verdict: v, etat, construit: differe, n: 1, ou: [r] }; }); }
 /* UN SEUL COMPTE DE REPÈRES (v73, l'ingénieur : « la garde annonce 77 repères, le récapitulatif 67 ») : celui du menu et du
    récapitulatif (`reperesDuContrat`, 08-interface : sans les masses, les rails, les renvois ; les barrettes à poser
@@ -34195,7 +34201,7 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
   // la nature d'un connecteur et l'arrangement que la norme lui donne : le mot, puis la référence dessous en chasse fixe
   const natureHtml = t => { const [n, ...r] = String(t || '').split(' · '); return esc(n) + (r.length ? `<span class="no-arr">${esc(r.join(' · '))}</span>` : ''); };
   // l'état d'un disjoncteur : le verdict à sa couleur (la table unique, 09 bis), « pas écrit au retest » en ambre dessous
-  const etatDj = x => x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>${x.retest ? note('pas écrit dans l’installation') : ''}` : `<span class="no-rien">${esc(x.etat || '—')}</span>`;
+  const etatDj = x => x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>${x.retest ? note('pas écrit dans votre fichier') : ''}` : `<span class="no-rien">${esc(x.etat || '—')}</span>`;
   const nF = typeof plans === 'function' ? plans().length : 0;
   /* (v86, l'audit G6 : « la LPA compte les modules choisis par VOLTA, l'Excel garde ceux du fichier : les deux sorties se
      contredisent sans le dire ») : quand VOLTA retient un module ou un calibre que votre Excel n'a pas encore, une ligne le
@@ -34238,7 +34244,7 @@ function lignesNomenclature(N) { const L = [];
   N.modules.forEach(x => L.push(['Modules', x.reference, x.famille || '', x.n, 'pièce', x.ou.join(', ')]));
   (N.rails || []).forEach(x => L.push(['Rails', x.reference, [x.famille, x.note].filter(Boolean).join(' — '), x.n, 'pièce', x.ou.join(', ')]));
   N.connecteurs.forEach(x => L.push(['Connecteurs', x.reference, x.nature || '', x.n, 'pièce', x.ou.join(', ')]));
-  (N.disjoncteurs || []).forEach(x => L.push(['Disjoncteurs', x.reference, [x.calibre ? 'calibre ' + nombre(x.calibre) + ' A' : '', x.retest ? 'installation ' + x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat, x.construit ? 'part number construit, à vérifier au catalogue' : ''].filter(Boolean).join(' — '), 1, 'pièce', x.repere]));
+  (N.disjoncteurs || []).forEach(x => L.push(['Disjoncteurs', x.reference, [x.calibre ? 'calibre ' + nombre(x.calibre) + ' A' : '', x.retest ? 'votre fichier : ' + x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat, x.construit ? 'part number construit, à vérifier au catalogue' : ''].filter(Boolean).join(' — '), 1, 'pièce', x.repere]));
   N.habits.forEach(x => L.push(['Habillage', x.reference, x.quoi + (x.note ? ' — ' + x.note : ''), x.n, 'pièce', x.ou.join(', ')]));
   N.cables.forEach(x => L.push(['Câbles', x.reference, pluriel(x.n, 'câble'), Math.round(x.longueur * 10) / 10, 'm', '']));
   return L; }
@@ -35054,7 +35060,7 @@ async function pdfDuPlan(liaisons, nom, options) { const o = options || {}, ouve
   verifier(); annoncer(PLACER + (1 - PLACER) * 0.92, 'La page de garde, la LPA…', prets);
   const garde = o.garde !== false, hypo = ouvert ? pagesHypothesesPdf(nom) : [], debut = (garde ? 2 : 1) + hypo.length, annexes = [];
   let suite = debut + total; const ajouter = (pages, titre, mot) => { if (!pages.length) return []; annexes.push({ titre, mot, page: suite, pages }); suite += pages.length; return pages; };
-  if (ouvert) { ajouter(pagesNomenclaturePdf(nom), 'la LPA', 'la LPA (ce qu’il faut commander)'); ajouter(pagesModificationsPdf(nom), 'les modifications de l’installation', 'les modifications de l’installation'); }
+  if (ouvert) { ajouter(pagesNomenclaturePdf(nom), 'la LPA', 'la LPA (ce qu’il faut commander)'); ajouter(pagesModificationsPdf(nom), 'les modifications de votre fichier', 'les modifications de votre fichier'); }
   const nPages = suite - 1, ecrites = [];
   if (garde) { let problemes = null; if (ouvert && typeof controleDuContrat === 'function') { try { problemes = (typeof controleAJour === 'function' ? controleAJour() : (rendreControle(), CONTROLE.items) || []).slice(); } catch (_) { problemes = null; } }
     const modifiees = ouvert && typeof nombreDeChangements === 'function' ? nombreDeChangements() : null;
@@ -35404,7 +35410,7 @@ function pagesModificationsPdf(nom) { if (typeof modificationsDe !== 'function')
   const lignes = []; let n = 0; verite().filter(liaisonComplete).forEach(l => { const m = modificationsDe(l); if (!m.length) return; n++;
     m.forEach(([col, ch, av, ap]) => lignes.push([l.cable || '—', l.de + (l.borneDe ? ':' + l.borneDe : ''), l.vers + (l.borneVers ? ':' + l.borneVers : ''), col, motAvant(ch, av), motAvant(ch, ap), typeof origineDeCase === 'function' ? ORIGINES_MOTS[origineDeCase(l, ch, true)] : ''])); });
   if (!lignes.length) return [];
-  return pagesDeTablesPdf('Modifications de l’installation — ' + nom, `${motPdf(n, 'liaison modifiée', 'liaisons modifiées')} · ${motPdf(lignes.length, 'case', 'cases')} : ce que portait le fichier, ce que VOLTA y a mis, et d’où vient le changement (à la main, ou une proposition de VOLTA acceptée).`,
+  return pagesDeTablesPdf('Modifications de votre fichier — ' + nom, `${motPdf(n, 'liaison modifiée', 'liaisons modifiées')} · ${motPdf(lignes.length, 'case', 'cases')} : ce que portait le fichier, ce que VOLTA y a mis, et d’où vient le changement (à la main, ou une proposition de VOLTA acceptée).`,
     [{ titre: 'Les cases changées', colonnes: [['Câble', 0.1, { mono: true }], ['De', 0.13, { mono: true }], ['Vers', 0.13, { mono: true }], ['Colonne', 0.12], ['Avant', 0.15, { gris: true, mono: true }], ['Après', 0.15, { mono: true }], ['Origine', 0.22]], lignes }]); }
 /* LES HYPOTHÈSES ET LES SOURCES (v73, l'ingénieur, n° 9 : « si j'envoie le dossier à un vérificateur, il ne peut pas refaire
    le calcul ») : juste après la garde, en deux colonnes — les RÉGLAGES (ceux de la page des hypothèses, `hypothesesDe` :
@@ -35435,7 +35441,7 @@ function pagesHypothesesPdf(nom) { if (typeof hypothesesDe !== 'function') retur
     xs.forEach(x => { const f = String(x.confiance || ''); if (f === 'vérifié') k.v++; else if (f === 'déduit' || f === 'structure') k.d++; else if (f) k.c++; else k.l++; });
     return [(typeof TITRES_NORME !== 'undefined' && TITRES_NORME[t]) || t, xs.length, k.v || '', k.d || '', k.c || '', k.l || '']; }).filter(Boolean);
   const reglees = reglages.filter(r => r[2]).length;
-  return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que l’installation ne porte pas, VOLTA le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de VOLTA est à côté)' : ', les valeurs de VOLTA'}, les profils de charge des disjoncteurs et d’où viennent les tables. L’installation corrigée les garde dans sa feuille « VOLTA ».`, [
+  return pagesDeTablesPdf('Hypothèses et sources — ' + nom, `Ce que votre fichier ne porte pas, VOLTA le suppose : voici les réglages avec lesquels ce dossier a été jugé${reglees ? ' (' + motPdf(reglees, 'réglage changé', 'réglages changés') + ' dans ce navigateur : la valeur de VOLTA est à côté)' : ', les valeurs de VOLTA'}, les profils de charge des disjoncteurs et d’où viennent les tables. L’installation corrigée les garde dans sa feuille « VOLTA ».`, [
     { titre: 'Les réglages', compte: motPdf(reglages.length, 'réglage', 'réglages'), colonnes: [['Réglage', 0.3], ['Valeur', 0.24], ['Valeur de VOLTA', 0.18, { gris: true }], ['Source', 0.28, { gris: true }]], lignes: reglages },
     { titre: 'Les profils de charge', compte: motPdf(profils.length, 'disjoncteur', 'disjoncteurs'), colonnes: [['Repère', 0.14, { mono: true }], ['Calibre', 0.11, { centre: true }], ['Installation', 0.11, { centre: true, gris: true }], ['Démarrage', 0.15], ['Transition', 0.15], ['Permanent', 0.12], ['Autres états', 0.22]], lignes: profils },
     { titre: 'Le statut des tables', compte: motPdf(statuts.length, 'table', 'tables'), colonnes: [['Table', 0.3], ['Lignes', 0.12, { centre: true }], ['Vérifiées', 0.14, { centre: true }], ['Déduites', 0.14, { centre: true }], ['À confirmer', 0.15, { centre: true }], ['Vos tables', 0.15, { centre: true }]], lignes: statuts }], { deux: true }); }
@@ -36262,7 +36268,7 @@ const LIAISONS = {
   hors: r => !(liaisonComplete(r.l) && surLeFolio(r.l)),
   puces: () => [['probleme', 'À reprendre', r => aReprendre(r.F().etat.niveau), '', '', 'Les liaisons à reprendre : un problème ou un point à voir', true],
     ...[...routes()].map(([route, c]) => ['route:' + route, route, r => r.l.route === route, traitRoute(c), 'route']),
-    ['hyp', 'Sans longueur', r => !(r.l.longueur > 0), '', '', 'Les câbles sans longueur dans l’installation : l’hypothèse de la simulation compte pour eux', false, 'Ce qui manque'],
+    ['hyp', 'Sans longueur', r => !(r.l.longueur > 0), '', '', 'Les câbles sans longueur dans votre fichier : l’hypothèse de la simulation compte pour eux', false, 'Ce qui manque'],
     ['sanscontact', 'Sans contact', r => [r.F().de, r.F().vers].some(x => x && !x.ref), '', '', 'Un bout dont aucun plan ne donne le contact à sertir', true, 'Ce qui manque']],
   choisir: r => choisirLigneFil(r.l),
   survol: r => { const w = filDe(r.l); if (w) allumerFil(w); },
@@ -36403,7 +36409,7 @@ function infoDisj(nom) { return memo('dj|' + nom, () => { const d = disjonctionD
   const ok = d.fils.filter(f => f.verdict !== 'fil' && f.verdict !== 'calibre' && f.protege !== false).length;
   const pointe = d.points.find(p => p.t !== Infinity) || null, perm = etatsDuProfil(d.profil).find(e => e.k === 'perm');
   const o = origineDuCalibre(nom, d);
-  return { d, pire, ok, n: d.fils.length, pointe, perm: perm && perm.i > 0 ? perm.i : null, pn: pnDuRepere(nom), origine: o.origine, rendu: o.calRetest ? 'celui de l’installation (' + amperes(o.calRetest) + ')' : 'l’automatique' + (d.calibreIdeal ? ' (' + amperes(d.calibreIdeal) + ')' : '') }; }); }
+  return { d, pire, ok, n: d.fils.length, pointe, perm: perm && perm.i > 0 ? perm.i : null, pn: pnDuRepere(nom), origine: o.origine, rendu: o.calRetest ? 'celui de votre fichier (' + amperes(o.calRetest) + ')' : 'l’automatique' + (d.calibreIdeal ? ' (' + amperes(d.calibreIdeal) + ')' : '') }; }); }
 /* LE VERDICT du calibre retenu, en TROIS MOTS — passe, juste, déclenche —, ceux de la fiche, du cadran, des problèmes et du
    dossier (v73, l'ingénieur n° 8 : « tient », « touche la courbe » ici, « passe » là ; la table unique est celle du moteur,
    `VERDICTS_CALIBRE`, 09-disjoncteurs) ; « touche la courbe », « sans la marge » vont dans la bulle, avec le pourquoi
@@ -36572,7 +36578,7 @@ const etatCable = c => !c.type ? 'att' : !c.cab && !c.fn ? 'att' : '';
 // une masse : en g, en kg dès 1 000 g (deux décimales : la dizaine de grammes) ; supposée, « ≈ » en gris (la classe des longueurs)
 const masseNombre = g => g >= 1000 ? nombre((Math.round(g / 10) / 100).toFixed(2)) : fmt(g, 0), masseUnite = g => g >= 1000 ? 'kg' : 'g', masseMot = g => masseNombre(g) + ' ' + masseUnite(g);
 const celluleMasse = (g, suppose, bulle) => `<span class="rc-mesure${suppose ? ' rc-suppose' : ''}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}>${chiffre(`<b class="rc-n">${masseNombre(g)}</b>`, masseUnite(g))}</span>`;
-const suppositionDe = c => pluriel(c.n - c.reelles, 'câble') + ' sur ' + c.n + ' sans longueur dans l’installation : la longueur supposée par la simulation (' + metres(H_().longueur) + ' m) compte pour eux';
+const suppositionDe = c => pluriel(c.n - c.reelles, 'câble') + ' sur ' + c.n + ' sans longueur dans votre fichier : la longueur supposée par la simulation (' + metres(H_().longueur) + ' m) compte pour eux';
 /* LE PIED DE L'ONGLET CÂBLES : le total des types montrés — leur nombre, leur longueur, leur masse — et la masse de chaque
    route (PUISSANCE, SIGNAL…), chacune avec son trait. Il reste collé au bas de la feuille. */
 function totalCables(L, C) { const n = L.reduce((s, c) => s + c.n, 0), Lt = L.reduce((s, c) => s + c.L, 0), sup = L.some(c => c.reelles < c.n), pesees = L.filter(c => c.masse != null), M = pesees.reduce((s, c) => s + c.masse, 0);
@@ -36594,7 +36600,7 @@ const COLONNES_CABLES = [
   // leur juste largeur, serrées sur le type ; chaque nombre aligné à droite dans une place fixe, centrée sous son titre
   { k: 'n', t: 'Nombre', cls: 'rc-c-n', html: c => chiffre(`<b class="rc-n">${c.n}</b>`), tri: c => c.n, texte: c => String(c.n) },
   { k: 'longueur', t: 'Longueur totale', cls: 'rc-c-mesure', w: 100, html: c => `<span class="rc-mesure${c.reelles < c.n ? ' rc-suppose' : ''}"${c.reelles < c.n ? ` data-bulle="${escA(suppositionDe(c))}"` : ''}>${chiffre(`<b class="rc-n">${fmt(c.L, 1)}</b>`, 'm')}</span>`, tri: c => c.L, texte: c => fmt(c.L, 1) + ' m',
-    note: L => L.every(c => c.reelles < c.n) ? ['en partie supposée', 'Des câbles de chaque type n’ont pas de longueur dans l’installation : la longueur supposée par la simulation compte pour eux (menu ⋮ → Hypothèses)'] : null },
+    note: L => L.every(c => c.reelles < c.n) ? ['en partie supposée', 'Des câbles de chaque type n’ont pas de longueur dans votre fichier : la longueur supposée par la simulation compte pour eux (menu ⋮ → Hypothèses)'] : null },
   /* LA MASSE d'un type (le lecteur) : sa longueur totale × sa masse linéique (la base des câbles, `cableDuType` : g/m) — en g,
      en kg dès 1 000 g ; « ≈ » en gris quand une partie des longueurs est supposée, comme la longueur ; sa bulle dit le calcul.
      Un type que la base ne pèse pas : rien ; aucun : la colonne ne se pose pas. Le total, et sa part par route, au pied. */
@@ -37121,7 +37127,7 @@ function amenerLigne(k) { const V = RECAP.virtuel; if (!V) return; const i = V.m
 /* (v84, la charte : « jamais de “aucun …” — rien, ou une information pertinente ») : chaque vide dit ce qui viendra ici, et
    d'où. */
 // (v86) les liaisons et les équipements viennent de votre fichier : le vide dit d'où ils viendront, pas « écrivez-les ici »
-const VIDES = { liaisons: ['Les liaisons de votre fichier viendront ici', 'Déposez une installation sur la table : VOLTA en lit chaque ligne.'], equipements: ['Les équipements de votre fichier viendront ici', 'Chaque repère de vos liaisons qui n’est ni un disjoncteur, ni une barrette, ni une prise.'],
+const VIDES = { liaisons: ['Les liaisons de votre fichier viendront ici', 'Déposez votre fichier sur la table : VOLTA en lit chaque ligne.'], equipements: ['Les équipements de votre fichier viendront ici', 'Chaque repère de vos liaisons qui n’est ni un disjoncteur, ni une barrette, ni une prise.'],
   disjoncteurs: ['Les disjoncteurs viendront ici', 'Un repère au code CB : son calibre, son verdict et son profil de charge se lisent ici.'], barrettes: ['Les barrettes viendront ici', 'Celles du contrat (code VT), et celles que VOLTA ajoute quand plusieurs câbles partagent une borne.'],
   prises: ['Les prises de coupure viendront ici', 'Un repère au code VC : son arrangement et ses contacts se lisent ici.'], cables: ['Les types de câble viendront ici', 'Un câble compte dès que sa liaison a un « de » et un « vers ».'],
   raccords: ['Les raccords viendront ici', 'Un raccord se choisit pour chaque connecteur d’équipement.'], problemes: ['Rien à reprendre', 'Chaque câble, chaque calibre, chaque contact est vérifié.'], normes: ['Les normes viendront ici', 'Elles jugent le contrat dès qu’il a des liaisons.'] };
@@ -37285,8 +37291,8 @@ function fermerBase() { const b = app.base; if (!b.ouvert) return; if (b.edition
   memoriserBase(); rendreLePlan(); basculerModeCarte(); }   // la fiche redevient une carte, près de son bloc
 /* B : ouvre en moitié, ou ferme ; Maj+B : passe en page, et de la page revient en moitié. */
 function basculerBase(taille) { const b = app.base;
-  if (taille === 'page') { if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : ouvrez d’abord une installation.'); return; } ouvrirBase(b.ouvert && b.taille === 'page' ? 'moitie' : 'page'); return; }
-  if (b.ouvert) fermerBase(); else if (app.contrat.liaisons.length || verite().length) ouvrirBase('moitie'); else dire('Rien à montrer : ouvrez d’abord une installation.'); }
+  if (taille === 'page') { if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : ouvrez d’abord votre fichier.'); return; } ouvrirBase(b.ouvert && b.taille === 'page' ? 'moitie' : 'page'); return; }
+  if (b.ouvert) fermerBase(); else if (app.contrat.liaisons.length || verite().length) ouvrirBase('moitie'); else dire('Rien à montrer : ouvrez d’abord votre fichier.'); }
 /* Le récapitulatif d'un objet (le pied d'une fiche) : l'onglet de son type, filtré sur lui — un câble sur son numéro. */
 function recapitulatifDe(c) { c = c || app.cible; const b = app.base; if (!c || !(c.nom || c.l)) { basculerBase(); return; }
   const k = c.type === 'fil' ? 'liaisons' : estDisjoncteur(c.nom) ? 'disjoncteurs' : estBarrette(c.nom) ? 'barrettes' : estCoupure(c.nom) ? 'prises' : 'equipements';
@@ -37314,7 +37320,7 @@ function rendreExport(O) { const P = porteeDeLExport(O), l = $('ba-csv-l'); if (
   const lignes = [P.n ? ['ba-csv-vu', P.partiel ? 'Ce qui est montré' : 'Tout l’onglet ' + nom, plural(P.n) + (P.dit ? ' · ' + P.dit : '') + ', les colonnes affichées'] : ['ba-csv-vu', 'Rien à mettre en CSV', 'l’onglet ne montre aucune ligne', ' aria-disabled="true"'],
     P.partiel ? ['ba-csv-tout', 'Tout l’onglet ' + nom, plural(P.total) + ', sans folio ni filtre'] : null,
     typeof exporterRetestCorrige === 'function' && verite().length ? null : false,
-    typeof exporterRetestCorrige === 'function' && verite().length ? ['ba-csv-retest', 'L’installation corrigée (Excel)', 'le livrable à renvoyer : relu avant d’enregistrer'] : false].filter(x => x !== false);
+    typeof exporterRetestCorrige === 'function' && verite().length ? ['ba-csv-retest', 'L’Excel corrigé', 'le livrable à renvoyer : relu avant d’enregistrer'] : false].filter(x => x !== false);
   l.innerHTML = lignes.map(g => g === null ? '<hr>' : `<button role="menuitem" id="${g[0]}"${g[3] || ''}>${esc(g[1])}<small>${esc(g[2])}</small></button>`).join('').replace(/^<hr>|<hr>$/g, ''); }
 function exporterRecap(tout) { assurerModele(); RECAP.palier = palierDuCorps(); const O = onglet(), C = colonnesVues(O).filter(c => c.texte && (c.t || c.titre)), M = lignesMontrees(O);
   const lignes = tout === true ? O.lignes() : [...M.tete.filter(r => !r.nouveau), ...M.L];
@@ -38243,11 +38249,11 @@ function rendreChamps(xs, quoi) { const ys = xs.filter(([l, c]) => l && l.avant 
 /* ---- LE « ? » : comment l'outil a choisi -------------------------------------------------------------------------- */
 /* Les textes provisoires, courts : ceux de `explication` (08-explications) les remplacent dès qu'elle est là. */
 const AIDES_PROVISOIRES = {
-  calibre: ['Le calibre', 'L’outil essaie chaque calibre de la gamme du part number, du plus petit au plus grand, et garde le premier dont la courbe tient tout le profil de charge, avec la marge des hypothèses. Les courbes viennent de la norme de la famille du disjoncteur.'],
-  courbe: ['La courbe de déclenchement', 'Le temps que met le disjoncteur à couper selon le courant, à chaque température de la norme. Un point du profil à gauche des courbes ne déclenche pas.'],
+  calibre: ['Le calibre', 'VOLTA essaie chaque calibre de la gamme du part number, du plus petit au plus grand, et garde le premier qui ne disjoncte sur aucun point du profil de charge. Les courbes viennent de la norme de la famille du disjoncteur.'],
+  courbe: ['La courbe de déclenchement', 'Le temps que met le disjoncteur à couper selon le courant, à chaque température de la norme. Un point du profil à gauche des courbes ne disjoncte pas.'],
   profil: ['Le profil de charge', 'Ce que l’équipement tire : le démarrage, la transition, le permanent, et les états qu’on ajoute. Chaque état se juge sur la courbe.'],
   rail: ['Le rail', 'Le profilé qui porte tous les modules de la barrette, coupé à leur longueur. Sa référence vient de la table Accessoires de la norme ; quand la norme ne le nomme pas, celle du catalogue du fabricant.'],
-  module: ['Le module', 'L’outil prend le plus petit module de la norme qui loge tous les potentiels de la barrette, chaque câble dans un contact qui admet sa gauge. Les modules viennent de la bible des barrettes.'],
+  module: ['Le module', 'VOLTA prend le plus petit module de la norme qui loge tous les potentiels de la barrette, chaque câble dans un contact qui admet sa gauge. Les modules viennent de la bible.'],
   arrangement: ['L’arrangement', 'Celui que le part number nomme, sinon le plus petit arrangement de la norme qui a toutes les bornes et dont les contacts admettent les gauges des câbles.'],
   prise: ['L’arrangement de la prise', 'Le plus petit arrangement de la norme qui loge tous les contacts de la prise, côté partie mobile et côté partie fixe, avec les gauges de leurs câbles.'],
   contact: ['Le contact à sertir', 'La table Contacts de la norme donne, pour la taille du contact, son sexe et la gauge du câble, la référence à sertir.'],
@@ -40328,9 +40334,12 @@ function arbreVue(nom, cal, rows) { const n = rows.length; if (!n) return '<p cl
     return `<g class="vu-branche fi-ia${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}" tabindex="0" role="button" aria-label="${escA('Ouvrir le câble ' + (r.type || '') + ' vers ' + (r.bout ? r.bout.rep : ''))}"` : ''}>`
       + `<rect class="vu-b-fond" x="140" y="${y - 18}" width="${W - 140}" height="${rh - 4}" rx="9"/><path class="vu-br" d="M112 ${y}H220" style="stroke:${col}"/><circle class="vu-noeud" cx="112" cy="${y}" r="3.5"/>`
       + `<text class="vu-t-mono" x="232" y="${y + 4}">${esc(r.type || 'sans type')}</text><text class="vu-t" x="286" y="${y + 4}">vers</text><text class="vu-t-mono" x="316" y="${y + 4}">${esc(r.bout ? r.bout.rep : '—')}<tspan class="vu-t">${r.bout && r.bout.borne ? ':' + esc(r.bout.borne) : ''}</tspan></text>`
-      + (() => { const Ra = 12, C = 2 * Math.PI * Ra, cx = 450, pc = r.charge.r != null && isFinite(r.charge.r) ? Math.round(r.charge.r * 100) : null;
-          return `<g class="vu-an ${m}"><circle class="vu-an-f" cx="${cx}" cy="${y}" r="${Ra}"/><circle class="vu-an-v" cx="${cx}" cy="${y}" r="${Ra}" style="stroke-dasharray:${(C * w).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${cx} ${y})"/>${pc != null ? `<text class="vu-an-t" x="${cx}" y="${y + 3}">${pc}</text>` : ''}</g>`; })()
-      + `<text class="vu-t-fort" x="474" y="${y + 4}">${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : '—'}<tspan class="vu-t-sur">${r.charge.admis != null ? ' sur ' + esc(nombreA(r.charge.admis)) + ' A' : ''}</tspan></text></g>`; }).join('');
+      // (v86) un courant inconnu (une branche de commande, une bobine sans consommation écrite) : le mot, sans anneau vide — une
+      // mesure n'a son anneau que quand elle a une valeur (charte)
+      + (r.charge.i == null ? '' : (() => { const Ra = 12, C = 2 * Math.PI * Ra, cx = 450, pc = r.charge.r != null && isFinite(r.charge.r) ? Math.round(r.charge.r * 100) : null;
+          return `<g class="vu-an ${m}"><circle class="vu-an-f" cx="${cx}" cy="${y}" r="${Ra}"/><circle class="vu-an-v" cx="${cx}" cy="${y}" r="${Ra}" style="stroke-dasharray:${(C * w).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 ${cx} ${y})"/>${pc != null ? `<text class="vu-an-t" x="${cx}" y="${y + 3}">${pc}</text>` : ''}</g>`; })())
+      + (r.charge.i != null ? `<text class="vu-t-fort" x="474" y="${y + 4}">${esc(nombreA(r.charge.i)) + ' A'}<tspan class="vu-t-sur">${r.charge.admis != null ? ' sur ' + esc(nombreA(r.charge.admis)) + ' A' : ''}</tspan></text>`
+        : `<text class="vu-t" x="474" y="${y + 4}">${esc(r.charge.mot || 'inconnu')}</text>`) + `</g>`; }).join('');
   return `<svg class="vu-arbre" viewBox="0 0 ${W} ${H}" width="${W}" role="group" aria-label="${escA('Les ' + n + ' câbles de ' + nom)}"><rect class="vu-boite" x="4" y="${yC - 25}" width="88" height="50" rx="10"/><text class="vu-t-mono vu-milieu" x="48" y="${yC - 2}">${esc(nom)}</text><text class="vu-t vu-milieu" x="48" y="${yC + 14}">${cal ? esc(amperes(cal)) : ''}</text>`
     + `<path class="vu-bus" d="M92 ${yC}H112M112 22V${16 + (n - 1) * rh + 6}"/>${lignes}</svg>`; }
 

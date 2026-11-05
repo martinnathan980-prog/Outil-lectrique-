@@ -321,7 +321,8 @@ const parleDuCable = (x, l) => (x.cables || []).some(c => memeLiaison(c, l));
 // une phrase de disjoncteur vue depuis le câble : son nom en tête s'efface (« W-012 (DR20) : démarrage… » → « Démarrage… »)
 const sansLeCable = (texte, l) => { const t = String(texte || ''), n = nomDuCableDit(l); if (t.startsWith(n + ' : ')) return t.slice(n.length + 3);
   // (v78 : un câble se dit « DR12 vers 103RL1:A1 » — l'autre bout dépend d'où on le regarde)
-  const m = /^\S+ vers \S+ : /.exec(t); if (m) return t.slice(m[0].length);
+  // (v86) … même quand le courant arrive « (par 395SW1) », à travers un équipement (09-chute, la traversée)
+  const m = /^\S+ vers \S+(?: \(par [^)]*\))? : /.exec(t); if (m) return t.slice(m[0].length);
   if (t.startsWith(n + ' (par ')) { const k = t.indexOf(') : ', n.length); if (k > 0) return t.slice(k + 4); } return t; };
 // le disjoncteur en amont d'un câble : celui dont un chemin passe par lui
 function disjoncteurDuCable(l) { if (typeof alimentationDuFil === 'function') { try { const a = alimentationDuFil(l); if (a && a.nom) return a.nom; } catch (_) { } }

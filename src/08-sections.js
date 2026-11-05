@@ -143,11 +143,11 @@ function rendreChamps(xs, quoi) { const ys = xs.filter(([l, c]) => l && l.avant 
 /* ---- LE « ? » : comment l'outil a choisi -------------------------------------------------------------------------- */
 /* Les textes provisoires, courts : ceux de `explication` (08-explications) les remplacent dès qu'elle est là. */
 const AIDES_PROVISOIRES = {
-  calibre: ['Le calibre', 'L’outil essaie chaque calibre de la gamme du part number, du plus petit au plus grand, et garde le premier dont la courbe tient tout le profil de charge, avec la marge des hypothèses. Les courbes viennent de la norme de la famille du disjoncteur.'],
-  courbe: ['La courbe de déclenchement', 'Le temps que met le disjoncteur à couper selon le courant, à chaque température de la norme. Un point du profil à gauche des courbes ne déclenche pas.'],
+  calibre: ['Le calibre', 'VOLTA essaie chaque calibre de la gamme du part number, du plus petit au plus grand, et garde le premier qui ne disjoncte sur aucun point du profil de charge. Les courbes viennent de la norme de la famille du disjoncteur.'],
+  courbe: ['La courbe de déclenchement', 'Le temps que met le disjoncteur à couper selon le courant, à chaque température de la norme. Un point du profil à gauche des courbes ne disjoncte pas.'],
   profil: ['Le profil de charge', 'Ce que l’équipement tire : le démarrage, la transition, le permanent, et les états qu’on ajoute. Chaque état se juge sur la courbe.'],
   rail: ['Le rail', 'Le profilé qui porte tous les modules de la barrette, coupé à leur longueur. Sa référence vient de la table Accessoires de la norme ; quand la norme ne le nomme pas, celle du catalogue du fabricant.'],
-  module: ['Le module', 'L’outil prend le plus petit module de la norme qui loge tous les potentiels de la barrette, chaque câble dans un contact qui admet sa gauge. Les modules viennent de la bible des barrettes.'],
+  module: ['Le module', 'VOLTA prend le plus petit module de la norme qui loge tous les potentiels de la barrette, chaque câble dans un contact qui admet sa gauge. Les modules viennent de la bible.'],
   arrangement: ['L’arrangement', 'Celui que le part number nomme, sinon le plus petit arrangement de la norme qui a toutes les bornes et dont les contacts admettent les gauges des câbles.'],
   prise: ['L’arrangement de la prise', 'Le plus petit arrangement de la norme qui loge tous les contacts de la prise, côté partie mobile et côté partie fixe, avec les gauges de leurs câbles.'],
   contact: ['Le contact à sertir', 'La table Contacts de la norme donne, pour la taille du contact, son sexe et la gauge du câble, la référence à sertir.'],

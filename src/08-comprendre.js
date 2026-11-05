@@ -51,7 +51,7 @@ const cpSvg = (vb, titre, corps) => `<svg class="vr-svg" viewBox="${vb}" role="i
 function cpSchemaCuisinier() { const carte = (y, c, cd, titre, sous, ex) => `<rect x="8" y="${y}" width="290" height="78" rx="12" fill="${CP.fond}" stroke="${CP.filet}"/><rect x="8" y="${y}" width="6" height="78" rx="3" fill="${c}"/>`
     + `<circle cx="42" cy="${y + 39}" r="17" fill="${cd}"/>` + cpT(42, y + 44, titre[0], { cls: 'vr-ico', couleur: c })
     + cpT(70, y + 26, titre[1], { cls: 'vr-titre', ancre: 'start' }) + cpT(70, y + 45, sous, { cls: 'vr-sous', ancre: 'start', couleur: c }) + cpT(70, y + 63, ex, { cls: 'vr-petit', ancre: 'start' });
-  const plat = ['les folios dessinés', 'une fiche par objet', 'la LPA à commander', 'l’installation corrigée'];
+  const plat = ['les folios dessinés', 'une fiche par objet', 'la LPA à commander', 'l’Excel corrigé'];
   return cpSvg('0 0 880 300', 'VOLTA est un cuisinier : la commande, le catalogue et les recettes entrent ; les folios, les fiches et la LPA sortent',
     carte(10, CP.cuivre, CP.cuivreDoux, ['1', 'La commande'], 'votre fichier d’installation', 'relier 102CB1 à 103RL1, en DR20')
     + carte(111, CP.cuivre, CP.cuivreDoux, ['2', 'Le catalogue'], 'la base SEE gardée', 'sinon les tables de VOLTA')
@@ -145,7 +145,7 @@ function cpBase() { const I = typeof BASE_SEE !== 'undefined' && BASE_SEE.base; 
 function comprendreHtml() {
   const sommaire = `<nav class="vr-sommaire" aria-label="Les chapitres"><ol>${CHAPITRES_COMPRENDRE.map(([id, t], i) => `<li><button type="button" data-vr-ch="${id}"${i ? '' : ' data-clavier'}><span>${i + 1}</span>${esc(t)}</button></li>`).join('')}</ol></nav>`;
   const ch = [
-    cpChapitre('cuisinier', 1, 'VOLTA est un cuisinier', 'Votre installation est <b>la commande</b>, la <span class="vr-def" tabindex="0" data-bulle="La base des pièces de votre logiciel de schéma, déposée et gardée sur ce PC : les contacts, les câbles, les faces que vous utilisez déjà">base SEE</span> est <b>le catalogue</b>, la physique est <b>les recettes</b>. VOLTA lit la commande, prend les pièces dans le catalogue, suit les recettes — et sert le plat. Il n’invente jamais une pièce : si elle n’est pas au catalogue, il écrit « manque ».', cpSchemaCuisinier(),
+    cpChapitre('cuisinier', 1, 'VOLTA est un cuisinier', 'Votre fichier est <b>la commande</b>, la <span class="vr-def" tabindex="0" data-bulle="La base des pièces de votre logiciel de schéma, déposée et gardée sur ce PC : les contacts, les câbles, les faces que vous utilisez déjà">base SEE</span> est <b>le catalogue</b>, la physique est <b>les recettes</b>. VOLTA lit la commande, prend les pièces dans le catalogue, suit les recettes — et sert le plat. Il n’invente jamais une pièce : si elle n’est pas au catalogue, il écrit « manque ».', cpSchemaCuisinier(),
       ['<b>La commande</b> dit ce qu’on veut : relier telle borne à telle autre, avec tel câble, sur tel folio. VOLTA ne la change jamais sans vous : ce qu’il propose s’écrit seulement d’un geste.',
         '<b>Le catalogue</b> dit ce qui existe : les contacts à sertir, les câbles, les faces des connecteurs. Si votre base SEE est gardée sur ce PC, c’est elle ; sinon, les tables de VOLTA (vos photos des tables de SEE, recoupées sur des sources publiques).',
         '<b>Les recettes</b> disent ce qui est admis : ce qu’un câble supporte, quand un disjoncteur disjoncte, la chute de tension admise (2 V, votre règle). Elles ne viennent jamais du catalogue : la base SEE n’a ni courbes ni intensités.',

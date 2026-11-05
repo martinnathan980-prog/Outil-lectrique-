@@ -39,7 +39,7 @@ function montrerAT(ou, fait, total, mots) { const el = panneauAT(); el.hidden = 
 /* LE PARCOURS. o : { listes (ouvrir chaque « Changer » : le plus long), budget (ms, 20 min d'office), sauter (des exports),
    bilan (false : ne pas rouvrir le bilan à la fin — les bancs) } */
 async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assign({ listes: true, budget: AUTOTEST.budget }, o || {});
-  if (!verite().length) { dire('Aucun plan ouvert : ouvrez votre installation, puis relancez l’autotest.', true); return; }
+  if (!verite().length) { dire('Aucun plan ouvert : ouvrez votre fichier, puis relancez l’autotest.', true); return; }
   const T0 = performance.now(), P = plans(), depart = app.plan, R = { quand: Date.now(), genres: {}, vides: 0, coupe: '', exports: [], listes: 0, pareilles: 0, sections: 0, folios: P.length }, vues = new Set();
   /* (v84, la vitesse : le plan géant des fichiers piégés — 3 135 liaisons, 90 folios — ne passait pas le 53e folio en 25 min,
      et un vrai fichier de cette taille ne voyait jamais ses derniers folios dans le budget) UNE FICHE PAREILLE À UNE FICHE DÉJÀ

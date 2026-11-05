@@ -629,7 +629,7 @@ const gaugesDeFamille = fam => [...(famillesCables().get(String(fam || '').toUpp
 // (v86, l'audit B1 : « un DR16 proposé sur le fil d'un interrupteur de commande ») un câble de commande ne grossit pas
 function plusFinQuiTient(l, calibre) { const x = intensiteDuFil(l), p = partiesDuType(l.type); if (!l.type || p.jauge == null || x.commande || x.source === 'commande') return null;
   if (x.al) { try { const d = disjonctionDe(x.al.nom), f = (d.contexte.fils || []).find(y => y.l === l), cal = calibre > 0 ? calibre : d.calibre; if (f && cal > 0) { const H = { ...HYPOTHESES, ...(d.contexte.hyp || {}) }, ctx = contexteDeProtection(app.norme, H, d.courbes, pointsDuProfil(d.profil)), q = protegerFil(app.norme, cal, f, H, ctx);
-    if (filSuit(q)) return null; const s = jaugeQuiSuit(app.norme, cal, f, H, ctx); return s ? { type: s.type, pourquoi: `le plus fin que protège le ${amperes(cal)}${calibre > 0 && calibre !== d.calibre ? ' de l’installation' : ''} de ${x.al.nom}` } : null; } } catch (_) { } }
+    if (filSuit(q)) return null; const s = jaugeQuiSuit(app.norme, cal, f, H, ctx); return s ? { type: s.type, pourquoi: `le plus fin que protège le ${amperes(cal)}${calibre > 0 && calibre !== d.calibre ? ' de votre fichier' : ''} de ${x.al.nom}` } : null; } } catch (_) { } }
   if (!x.trop.length) return null;
   const t = gaugesDeFamille(p.famille).filter(j => j < p.jauge).reverse().map(j => typeDe(p.famille, j)).find(ty => tientLeCourant(l, ty) != null);
   return t ? { type: t, pourquoi: 'le plus fin qui porte ' + (x.al ? 'son profil' : amperes(x.I) + ' supposés') } : null; }
@@ -647,11 +647,11 @@ function protectionDuCable(l, x) { const out = { probs: [], cause: null, calEcri
   let deC = null; if (typeof problemesDuCable === 'function') { try { deC = problemesDuCable(l); } catch (_) { deC = null; } }
   // (de sa liste, la fiche garde ce qu'elle ne calcule pas elle-même — la protection, le contact contre le calibre, la cause — :
   // la charge et la chute du câble sont déjà ses lignes)
-  const garde = p => !!p && (!!p.cause || /^(protection|contact|calibre|cause)$/.test(p.genre || '') || /protég|contact taille|calibre|retest|installation/.test(p.texte || ''));
+  const garde = p => !!p && (!!p.cause || /^(protection|contact|calibre|cause)$/.test(p.genre || '') || /protég|contact taille|calibre|retest|installation|votre fichier/.test(p.texte || ''));
   let causeDeC = false;
   if (Array.isArray(deC)) deC.filter(garde).forEach(p => { if (p.cause || /retest|de l’installation|de votre fichier/.test(p.texte || '')) causeDeC = true; out.probs.push({ niveau: p.niveau === 'ko' ? 'ko' : 'att', texte: p.texte, section: p.section || 'fils' }); });
   // (jugé sous le calibre ÉCRIT : tant que l'outil propose un autre calibre sans qu'il soit écrit, celui du retest — jamais le 15 A fantôme)
-  else { const nonEcrit = typeof propositionNonEcrite === 'function' && propositionNonEcrite(d) && d.pn > 0, cal = nonEcrit ? d.pn : d.calibre, du = nonEcrit ? ' de l’installation' : '';
+  else { const nonEcrit = typeof propositionNonEcrite === 'function' && propositionNonEcrite(d) && d.pn > 0, cal = nonEcrit ? d.pn : d.calibre, du = nonEcrit ? ' de votre fichier' : '';
     let f = (d.fils || []).find(y => y.l === l || (y.cable && l.cable && y.cable === l.cable && y.type === l.type));
     if (nonEcrit) { const f0 = (d.contexte.fils || []).find(y => y.l === l); f = null; if (f0) try { const H = { ...HYPOTHESES, ...(d.contexte.hyp || {}) }; f = protegerFil(app.norme, cal, f0, H, contexteDeProtection(app.norme, H, d.courbes, pointsDuProfil(d.profil))); } catch (_) { f = null; } }
     if (f && f.verdict === 'calibre') out.probs.push({ niveau: 'att', texte: `pas protégé en surcharge : ${amperes(f.continu)} admis en continu${typeof motFacteur === 'function' ? motFacteur(f.facteur) : ''} < le ${amperes(cal)}${du} de ${cb}`, section: 'fils' });
@@ -1101,7 +1101,7 @@ function problemesEquipement(nom, cav, b, vt, dj) { const probs = [];
     probs.push({ niveau: 'att', texte: `${majuscule(nombreEnMots(fs.length))} câbles arrivent sur la borne ${bo} — Une borne n’en reçoit qu’un : ${vt.has(String(bo)) ? 'VOLTA ajoute une barrette (' + vt.get(String(bo)) + ') qui les relie, à poser au contrat' : 'il faut une barrette pour les relier'}`, section: dj ? 'fils' : 'connecteur', connecteur: !dj && g ? g.nom : undefined }); });
   if (dj) controleDisjonction(nom).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: sectionDj(x.texte) }));
   // ce que le contrôle du contrat relève en plus sur ce repère (un conducteur CCA, ce qu'un disjoncteur nourrit au-delà d'un passage)
-  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: dj ? sectionDj(x.texte) : x.section || 'connecteur' }));
+  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: dj ? sectionDj(x.texte) : x.section || 'connecteur', gestes: typeof gestesDuPoint === 'function' ? gestesDuPoint(x) : [], point: x }));
   return probs; }
 /* Ce qui a été écrit ici sur les liaisons d'un repère (« Par rapport au retest ») : de son côté, la référence et le
    contact ; de ses câbles, le numéro, le type, la longueur, la route. */
@@ -1371,7 +1371,7 @@ const sourceDeLigne = (x, table) => { if (!x) return ''; const n = String(x.note
 // (v74, lot F : la chaîne se partage — « D'où vient chaque pièce » sous les contacts, et le récit de la référence, `recitReference`)
 function chaineConnecteur(c, Q, M, xs) { const N = app.norme, fam = Q && Q.famille ? Q.famille : familleDeReference(N, c.pn, 'connecteur'), nomF = fam ? nomDeFamille(N, fam) || fam : '';
   const maillon = (k, v, d) => `<li><span class="fi-tr-k">${esc(k)}</span><span class="fi-tr-v">${v}</span><span class="fi-tr-d">${esc(d)}</span></li>`;
-  const lignes = [maillon('Référence', c.pn ? ident(c.pn) : '<em>aucune</em>', c.pn ? 'colonne du fichier d’installation' : 'à écrire dans le fichier ou ici')];
+  const lignes = [maillon('Référence', c.pn ? ident(c.pn) : '<em>aucune</em>', c.pn ? 'colonne de votre fichier' : 'à écrire dans le fichier ou ici')];
   if (!c.pn) return { lignes, parFil: '', fam, nomF };
   if (!fam) lignes.push(maillon('Famille', '<b class="fi-ko-t">inconnue</b>', 'aucune famille de connecteur ne commence comme cette référence — ni dans les tables de VOLTA, ni dans la base SEE gardée : la chaîne s’arrête ici, d’où les contacts vides'));
   else { lignes.push(maillon('Famille', esc(nomF), 'le début de la référence est celui de la famille ' + fam + ' (table des connecteurs)'));
@@ -1405,7 +1405,7 @@ function famillesVoisines(pn, retenue) { const N = app.norme, r = cleNorme(pn), 
     .sort((a, b) => b.k - a.k || (b.nature === 'connecteur') - (a.nature === 'connecteur') || b.modules - a.modules || triNaturel(a.nom, b.nom)); }
 function origineDeLaReference(nom, bornes) { const xs = nom ? liaisonsDuConnecteur(nom, bornes) : [], cols = [...new Set(xs.map(([, ch]) => ch === 'pnDe' ? 'PN1' : 'PN2'))].sort();
   const ecrite = xs.find(([l, ch]) => l.avant && ch in l.avant && l.avant[ch] !== l[ch]);
-  return ecrite ? `écrite ici — le fichier d’installation portait ${avantDe(ecrite[0], ecrite[1])}` : xs.length ? `lue dans le fichier d’installation : colonne ${cols.join(' et ')}, sur ${pluriel(xs.length, 'liaison')}` : 'lue dans le fichier d’installation'; }
+  return ecrite ? `écrite ici — votre fichier portait ${avantDe(ecrite[0], ecrite[1])}` : xs.length ? `lue dans votre fichier : colonne ${cols.join(' et ')}, sur ${pluriel(xs.length, 'liaison')}` : 'lue dans le fichier d’installation'; }
 /* (v77, le lecteur : « pourquoi c'est cette norme… pas évident… plus simple » ; « que je comprenne d'où elle vient, de
    quelle base de données, que je clique dessus, je vois son schéma ») : plus de récit en cinq pas — une carte d'identité.
    D'où elle vient (votre fichier, ou écrite ici), sa norme et LA BASE qui la donne (les tables de VOLTA, ou la base SEE
@@ -1423,7 +1423,7 @@ function recitReference(o) { if (FI.liste !== o.cle) return '';   // (calculé �
     : esc(`Aucune norme que VOLTA connaît ne commence comme « ${pn || '?'} » : il ne sait pas quel arrangement ni quels contacts lire.`);
   const vs = fam ? [] : famillesVoisines(pn, '').filter(x => x.k > 0).slice(0, 3);
   const proches = vs.length ? `<small>Les plus proches : ${vs.map(x => `<b class="id">${esc(x.nom)}</b>${x.nature !== 'connecteur' ? esc(' (une barrette, pas un connecteur)') : !x.modules ? esc(' (VOLTA n’a pas ses arrangements)') : ''}`).join(', ')}.</small>` : '';
-  const dl = `<dl class="rf-dl">${ligne('Vient de', pn ? esc(majuscule(origineDeLaReference(o.nom, o.bornes || '*'))) : esc('Ni le fichier d’installation ni la fiche ne la donnent : à écrire.'))}`
+  const dl = `<dl class="rf-dl">${ligne('Vient de', pn ? esc(majuscule(origineDeLaReference(o.nom, o.bornes || '*'))) : esc('Votre fichier ne la donne pas : à y écrire.'))}`
     + ligne('Sa base', fam ? `<b>${deSEE ? 'La base SEE' : 'Les tables de VOLTA'}</b>${esc(deSEE ? ' gardée sur ce PC' : ' (les normes embarquées)')} : ${esc('norme ' + nomF)}` : '<b class="fi-ko-t">aucune</b>' + esc(' : ni les tables de VOLTA ni la base SEE ne la reconnaissent'))
     + ligne('Pourquoi', pourquoi + proches) + (see ? ligne('Base SEE', esc(majuscule(see))) : '') + '</dl>';
   // SON SCHÉMA : la face de l'arrangement retenu, les câbles posés dessus
@@ -1431,7 +1431,7 @@ function recitReference(o) { if (FI.liste !== o.cle) return '';   // (calculé �
   if (M) { const par = new Map(((Q && Q.fils) || []).filter(x => x.contact).map(x => [x.contact.lettre, x]));
     try { schema = `<div class="rf-schema">${faceAjustee(faceModuleSvg(M.module, ct => { const x = par.get(ct.lettre); return x ? occupant(x.f, x.jaugeOk === false, ct.lettre) : null; }), 'Son schéma · arrangement ' + (M.module.variante || M.reference) + ' · face côté contacts')}</div>`; } catch (_) { schema = ''; } }
   else if (fam) schema = `<p class="fi-note rf-sans">${esc('Aucun arrangement de l’' + nomF + ' ne loge ces câbles : pas de schéma (« Changer », sous Arrangement, les montre tous).')}</p>`;
-  const faire = fam ? '' : `<p class="rf-faire">${esc('Vérifier la référence dans le fichier d’installation, ou envoyer la table de sa norme :')} <button type="button" class="fi-lien recit-lien" data-action="normes">${esc('Normes')}${ico('droite')}</button></p>`;
+  const faire = fam ? '' : `<p class="rf-faire">${esc('Vérifiez la référence dans votre fichier, ou ajoutez la table de sa norme :')} <button type="button" class="fi-lien recit-lien" data-action="normes">${esc('Normes')}${ico('droite')}</button></p>`;
   const pied = M ? `<button type="button" class="fi-lien" data-bible="${escA(M.reference)}">${ico('livre')}voir dans la bible</button>` : '';
   return listeChoix(o.cle, `<div class="rf-carte">${dl}${schema}${faire}</div>`, { titre: 'D’où vient cette référence', cls: 'recit-recit', pied }); }
 /* Sous la référence, toujours : d'où elle vient, en trois mots (votre fichier · sa norme et sa base · la base SEE). */
@@ -1518,7 +1518,7 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
     sF && { cle: 'cables', statut: statutCables(sF), contenu: sF.contenu, vide: sF.vide },
     sections[2] ? ongletDeLaSection(sections[2]) : null];
   return composerFiche({ type: 'disjoncteur', tete: { nom, champ: 'eq-rep', designation: nom }, meta: [pn ? ident(pn) : ''], probs, onglets, ecrits: ecritsDuRepere(nom), proposes: [], chiffres, geste,
-    vignette: friseDeLaCarte(nom, d, o), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation) porte un / : null,
+    vignette: friseDeLaCarte(nom, d, o), phrase: dec ? dec.titre + ' — ' + majuscule(dec.suite) : '', taire: decision ? /^(le retest|l’installation|votre fichier) porte un / : null,
     ok: d.sansProfil ? 'Sans profil de charge, rien ne se juge : écrivez-le dans l’onglet Calibre.' : `Le ${cal ? amperes(cal) : 'calibre'} passe, et ses câbles portent leur courant.`, pied: { tableau: nom, menu: MENU_BLOC } }); }
 
 /* ---- UNE BARRETTE (et une barrette à poser) ------------------------------------------------------------------------ */
@@ -1533,7 +1533,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const raccord = aPoser ? L.find(l => l.aPoser === nom && l.origine === null && l.vers === nom && estRaccordAPoser(l)) : null, sur = raccord ? raccord.de + ':' + raccord.borneDe : '';
   // (v86, l'audit F13) une barrette ajoutée n'a plus, en plus de son bandeau, un point « À voir » qui redit la même chose
   // sans geste : le bandeau « Lui donner son repère » est son seul appel
-  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte) && !/^ajoutée par VOLTA sur/.test(x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur' }));
+  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte) && !/^ajoutée par VOLTA sur/.test(x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur', gestes: typeof gestesDuPoint === 'function' ? gestesDuPoint(x) : [], point: x }));
   const libres = Q.contacts - Q.utilises, famNom = M0 ? nomDeFamille(N, M0.module.famille) || M0.module.famille : Q.famille ? nomDeFamille(N, Q.famille) || Q.famille : '';
   /* le MODULE : sa référence en puce, qui ouvre la galerie (plusieurs modules : chacun sa référence) ; l'écart avec le
      retest ; le RAIL qui les porte ; la face */
@@ -1786,7 +1786,7 @@ function carteRecommandee(nom, x, points, Q, enAuto) { const N = app.norme, m = 
     + `<span class="pr-c-r">${insecable(esc(majuscule(x.raisons.join(' · '))))}</span>${cotes ? `<span class="pr-c-ct">${cotes}</span>` : ''}</span></button>`; }
 function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupure(nom), M = Q.modules[0], N = app.norme;
   const cps0 = coupablesDu(Q, points), probs = Q.verdicts.filter(v => v.niveau === 'ko' || v.niveau === 'attention').map(v => ({ niveau: v.niveau === 'ko' ? 'ko' : 'att', texte: v.texte, section: 'connecteur', viser: v.coupables && cps0[0] ? cleFil(cps0[0].l) : undefined }));
-  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur' }));
+  ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur', gestes: typeof gestesDuPoint === 'function' ? gestesDuPoint(x) : [], point: x }));
   const nums = points.map(p => p.num).join(', '), types = typesDe(Q.fils.map(x => x.f)), fam = nomDeFamille(N, Q.famille) || Q.famille || '';
   const pourquoi = Q.main ? 'Choisi ici' : Q.nomme ? `Le part number du fichier (${b.pn}) nomme cet arrangement` : !M ? 'Aucun arrangement ne loge ces contacts avec ces gauges' : `Le plus petit arrangement qui a les contacts ${nums} et accepte ${types || 'ces câbles'}`;
   const amont = Q.fils.filter(x => x.f.amont), aval = Q.fils.filter(x => !x.f.amont);
@@ -1999,8 +1999,13 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   // v73 — LE CONTRÔLE RATTACHE AU CÂBLE ses problèmes (le domaine C, 08-controle, `problemesDuCable`) : sa charge, sa protection,
   // son contact contre le calibre, la chute de son chemin, et LA CAUSE quand son disjoncteur ne passe pas — avec leurs gestes ;
   // une seule phrase pour un même fait, celle du contrôle. Sans elle, la fiche les calcule (`protectionDuCable`)
-  let deC = null; if (!neuf && x.al && typeof problemesDuCable === 'function') { try { deC = problemesDuCable(l); } catch (_) { deC = null; } }
-  if (deC) deC.forEach(p => probs.push({ niveau: p.niveau === 'ko' ? 'ko' : 'att', texte: p.texte, bulle: p.bulle, section: p.section || 'fils', gestes: p.gestes, cause: p.cause, genre: p.genre }));
+  let deC = null; if (!neuf && typeof problemesDuCable === 'function') { try { deC = problemesDuCable(l); } catch (_) { deC = null; } }
+  // (v86) sans disjoncteur en amont, la fiche calcule elle-même sa charge et sa protection ; du contrôle, elle garde ce qui parle
+  // de votre fichier (une ligne en double, un type inconnu, une longueur illisible), avec son geste
+  const duFichier = deC && !x.al ? deC.filter(p => /^(doublon|casse|fichier)$/.test(p.genre || '')) : []; if (!x.al) deC = null;
+  const pousser = p => probs.push({ niveau: p.niveau === 'ko' ? 'ko' : 'att', texte: p.texte, bulle: p.bulle, section: p.section || 'fils', gestes: p.gestes, cause: p.cause, genre: p.genre });
+  duFichier.forEach(pousser);
+  if (deC) deC.forEach(pousser);
   else x.trop.forEach(pt => probs.push({ niveau: 'ko', texte: `${pt.nom} ${amperes(pt.i)}${pt.t === Infinity ? '' : ' pendant ' + secondes(pt.t)} : plus que ce que le câble admet (${amperes(x.admise(pt.t))})`, section: 'fils' }));
   // ses PROPRES problèmes de protection, et la cause quand c'est son disjoncteur (v73 : l'ingénieur, point 5 ; le technicien, n° 1)
   const prot = neuf ? null : protectionDuCable(l, x); if (prot && !deC) probs.push(...prot.probs);
