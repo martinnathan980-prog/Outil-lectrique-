@@ -5546,14 +5546,7 @@ table.rc-tab{width:100%;border-collapse:separate;border-spacing:0;font:400 var(-
 .rc-v:focus-visible,.rc-v:focus{box-shadow:0 0 0 2px var(--anneau-c);background:var(--s-surface);text-decoration-color:transparent}
 .rc-v.rc-calc{cursor:pointer}
 .rc-v[aria-expanded="true"]{box-shadow:0 0 0 2px var(--anneau-c);background:var(--s-surface);text-decoration-color:transparent}
-/* le calibre : un choix dans la gamme, pas un texte — le cadre et l'anneau prennent le nombre ET son unité */
-.rc-tab .rc-chiffre:has(> .rc-gamme-v){position:relative;border-radius:5px;padding:2px 5px;margin:-2px -5px;transition:background var(--rapide),box-shadow var(--rapide)}
-.rc-tab tbody tr .rc-chiffre > .rc-gamme-v.rc-v{padding:0;margin:0;border-radius:0;cursor:pointer}
-/* la main prend toute la case, l'unité comprise (28 px de haut) */
-.rc-tab tbody tr .rc-chiffre > .rc-gamme-v.rc-v::after{content:"";position:absolute;inset:-3px 0}
-.rc-tab tbody tr .rc-chiffre > .rc-gamme-v.rc-v:is(:hover,:focus,:focus-visible,[aria-expanded="true"]){box-shadow:none;background:none}
-.rc-tab tbody tr:hover .rc-chiffre:has(> .rc-gamme-v:hover){background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--filet-champ),var(--sh-1)}
-.rc-tab tbody tr .rc-chiffre:has(> .rc-gamme-v:is(:focus,[aria-expanded="true"])){background:var(--s-surface);box-shadow:0 0 0 2px var(--anneau-c)}
+/* (v86, G8 : le calibre ne déroule plus la gamme — il se lit ; la proposition de VOLTA porte son geste, style-x-recap 16) */
 .rc-v.rc-vide{min-width:24px;min-height:1.3em;vertical-align:middle;text-decoration:none}
 .rc-v.rc-vide::before{content:attr(data-ph);color:var(--t-3);font:400 var(--f-12) var(--sans);opacity:0;transition:opacity var(--rapide)}
 .rc-tab tr:hover .rc-v.rc-vide::before,.rc-tab tr.on .rc-v.rc-vide::before,.rc-tab tr.neuve .rc-v.rc-vide::before,.rc-v.rc-vide:focus::before{opacity:1}
@@ -36279,8 +36272,10 @@ const COLONNES_DISJ = [COL_REPERE,
       const tete = main ? 'Retenu à la main par une version d’avant' : propose ? 'Proposé par VOLTA : votre fichier garde le sien tant que vous ne l’acceptez pas' : deFichier ? 'Celui de votre fichier : il ne disjoncte pas, VOLTA le garde — à changer dans votre fichier' : 'Le plus petit qui ne disjoncte pas, écrit par VOLTA : il ira dans l’Excel corrigé';
       const nf = p ? p.fils.length : 0, geste = dec ? `<button type="button" class="btn cuivre dense rc-decider" data-decider="1" data-bulle="${escA('Écrit dans l’Excel corrigé : ' + amperes(d.calibre) + ', et les câbles qu’il demande — « Défaire » rend le tout')}">${esc('Passer en ' + amperes(d.calibre))}</button>`
         : p ? `<button type="button" class="btn cuivre dense rc-decider" data-proposer="1" data-bulle="${escA((p.main ? (p.fichier ? 'Reprend le calibre de votre fichier' : 'Rend le calibre au calcul de VOLTA') : 'Le plus petit qui ne disjoncte pas — il ira dans l’Excel corrigé' + (nf ? ', et ' + pluriel(nf, 'câble') + ' grossi' + (nf > 1 ? 's' : '') : '')) + (p.m && p.m.bulle ? '.\n' + p.m.bulle : '') + '\n« Défaire » le reprend.')}">${esc('Retenir le ' + amperes(p.cal) + (nf ? ' et grossir ' + (nf > 1 ? 'les ' + nf + ' câbles' : 'le câble') : ''))}</button>` : '';
-      const bulle = [tete, v.bulle || ''].filter(Boolean).join('\n');
-      return `<span class="rc-mesure">${chiffre(luFichier('calibre', d.calibre ? `<b class="rc-n rc-fort">${fmt(d.calibre, 2)}</b>` : '', { titre: d.calibre ? bulle : '' }), d.calibre ? 'A' : '')}`
+      const bulle = [tete, v.bulle || ''].filter(Boolean).join('\n'), valeur = d.calibre ? `<b class="rc-n rc-fort">${fmt(d.calibre, 2)}</b>` : '';
+      // (celui de votre fichier est une case du fichier : un double-clic dit où le changer ; celui de VOLTA se lit, sa bulle dit pourquoi)
+      const caseCal = deFichier ? luFichier('calibre', valeur, { titre: bulle }) : `<span${d.calibre ? ` data-bulle="${escA(bulle)}"` : ''}>${valeur}</span>`;
+      return `<span class="rc-mesure">${chiffre(caseCal, d.calibre ? 'A' : '')}`
         + `${main ? orig('main', 'Retenu à la main par une version d’avant : la proposition de VOLTA le rend') + (p ? '' : rond('calibre', D.rendu)) : propose ? '<i class="rc-o rc-propose" data-bulle="VOLTA le retient ; votre fichier garde le sien tant que vous n’acceptez pas la proposition — elle part alors dans l’Excel corrigé">proposé</i>' : ''}${geste}</span>`; },
     tri: r => infoDisj(r.nom).d.calibre || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibre ? amperes(d.calibre) : ''; } },
   { k: 'retest', t: 'Votre fichier', cls: 'rc-c-mesure', html: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; if (!c) return rien; const autre = d.calibre && c !== d.calibre;
