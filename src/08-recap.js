@@ -174,17 +174,29 @@ function etatDuFil(l, F) { const ko = new Set(), att = new Set(), x = F.x, c = F
   return { niveau, ko: [...ko], att: [...att], bulle: [chiffres.join('\n'), [...ko, ...att].join('\n')].filter(Boolean).join('\n\n') }; }
 
 /* ---- petits morceaux de rendu ------------------------------------------- */
-// une valeur qu'on corrige : au survol elle prend l'air d'un champ ; double-clic, Entrée ou F2 l'édite ; vide, elle dit
-// ce qu'on y écrirait (sur la ligne survolée, choisie ou neuve)
+// UN CHOIX DE VOLTA qu'on règle : au survol il prend l'air d'un champ ; double-clic, Entrée ou F2 ouvre Automatique et
+// les choix possibles ; vide, il dit ce qu'on y choisirait (sur la ligne survolée ou choisie)
 const val = (f, html, opt) => { opt = opt || {}; const vide = html == null || html === '';
-  return `<span class="rc-v${opt.cls ? ' ' + opt.cls : ''}${vide ? ' rc-vide' : ''}" data-f="${escA(f)}" tabindex="-1" ${opt.titre ? ` data-bulle="${escA(opt.titre)}"` : ''} aria-description="${escA(opt.titre || 'Double-clic pour modifier')}"${opt.ph ? ` data-ph="${escA(opt.ph)}"` : ''}>${vide ? '' : html}</span>`; };
+  return `<span class="rc-v${opt.cls ? ' ' + opt.cls : ''}${vide ? ' rc-vide' : ''}" data-f="${escA(f)}" tabindex="-1" ${opt.titre ? ` data-bulle="${escA(opt.titre)}"` : ''} aria-description="${escA(opt.titre || 'Double-clic pour choisir')}"${opt.ph ? ` data-ph="${escA(opt.ph)}"` : ''}>${vide ? '' : html}</span>`; };
 const valT = (f, t, opt) => val(f, t == null || t === '' ? '' : esc(t), opt);
+/* CE QUI VIENT DU FICHIER SE LIT (v86 — la charte v85 : « une seule source ») : pas l'air d'un champ, pas de saisie ; la case
+   garde sa place dans le parcours du clavier (les flèches), et un double-clic, Entrée ou F2 disent dans une bulle qu'elle se
+   change dans le fichier (`signalerFichier`). `titre` : sa bulle de survol, quand elle explique quelque chose. */
+const lu = (f, html, opt) => { opt = opt || {}; const vide = html == null || html === '';
+  return `<span class="rc-v rc-lu${opt.cls ? ' ' + opt.cls : ''}${vide ? ' rc-vide' : ''}" data-f="${escA(f)}" tabindex="-1"${opt.titre ? ` data-bulle="${escA(opt.titre)}"` : ''}>${vide ? '' : html}</span>`; };
+const luT = (f, t, opt) => lu(f, t == null || t === '' ? '' : esc(t), opt);
+// le nom de ce qu'une case du fichier porte, pour la bulle qui dit où le changer
+const MOTS_DU_FICHIER = { de: 'Ce repère', vers: 'Ce repère', rep: 'Ce repère', borneDe: 'Cette borne', borneVers: 'Cette borne', type: 'Ce type de câble', longueur: 'Cette longueur',
+  route: 'Cette route', pnDe: 'Ce part number', pnVers: 'Ce part number', 'pn:': 'Ce part number', plan: 'Ce folio', harness: 'Ce harness', fwd: 'Ce dessin', descriptionDe: 'Cette description',
+  descriptionVers: 'Cette description', nature: 'Sa nature', calibre: 'Ce calibre' };
+const motDuFichier = f => MOTS_DU_FICHIER[f] || (/^pn:/.test(f) ? 'Ce part number' : 'Cette valeur');
 // « ↺ » : rend le calcul (ou ce que le fichier portait) à une valeur forcée ; son titre dit ce qui revient
 const rond = (f, quoi) => `<button type="button" class="rc-auto" data-auto="${escA(f)}" data-bulle="${escA('Rendre ' + quoi)}" aria-label="${escA('Rendre ' + quoi)}">↺</button>`;
-// l'origine d'une valeur, seulement quand elle n'est pas celle du calcul : « main », « supposée » (une hypothèse de la
-// simulation — plus « hyp. », une abréviation que le lecteur n'emploie pas) ; `mot` : le mot accordé à la valeur
+// l'origine d'une valeur, seulement quand elle n'est pas celle du calcul : « manuel » (un choix de VOLTA réglé à la main —
+// le mot de la fiche, Automatique · Manuel), « supposée » (une hypothèse de la simulation — plus « hyp. », une
+// abréviation que le lecteur n'emploie pas) ; `mot` : le mot accordé à la valeur
 const orig = (o, bulle, mot) => o === 'hyp' ? `<i class="rc-o rc-hyp" data-bulle="${escA(bulle || 'Une hypothèse de la simulation (menu ⋮ → Hypothèses)')}">${mot || 'supposé'}</i>`
-  : o === 'main' ? `<i class="rc-o main" data-bulle="${escA(bulle || 'Écrit à la main')}">main</i>` : '';
+  : o === 'main' ? `<i class="rc-o main" data-bulle="${escA(bulle || 'Réglé à la main (Manuel) : ↺ rend le choix automatique de VOLTA')}">${mot || 'manuel'}</i>` : '';
 const unite = u => `<i class="rc-u">${u}</i>`;
 const rien = '<span class="rc-rien">—</span>';
 const fmt = (x, n) => x == null || !isFinite(x) ? '' : nombre(Math.round(x * Math.pow(10, n)) / Math.pow(10, n));
