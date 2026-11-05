@@ -1,0 +1,63 @@
+/* ===========================================================================
+   style-z-circuit — LE CIRCUIT D'UN DISJONCTEUR SUR LE PLAN (v86, l'audit M3)
+   La fiche d'un disjoncteur ouverte : son circuit s'éclaire — la source, le
+   disjoncteur, chaque câble jusqu'aux charges, à travers les contacts
+   supposés fermés, et le retour à la masse — et un courant de cuivre discret
+   y avance, dans le sens du courant ; le reste du folio s'estompe à peine.
+   Survoler une ligne de « Ce qu'il alimente » met sa branche en avant. Rien ne
+   clignote ; le mouvement réduit garde la lumière, sans le courant qui
+   avance. À l'écran seulement (08-interface, `allumerCircuit`) : l'export
+   refait son dessin, sans rien de ceci. Le motif du courant (`--ci-trait`,
+   `--ci-vide`, `--ci-epais`) est en unités du dessin, posé à chaque zoom pour
+   garder son pas à l'écran (`fluxAuZoom`).
+   =========================================================================== */
+:root {
+  --ci-cuivre: #a9531a;                 /* le courant, sur le papier blanc du folio */
+  --ci-lueur: rgba(169, 83, 26, .30);
+  --ci-cable: .30;                      /* ce qui n'est pas du circuit : à peine estompé */
+  --ci-bloc: .42;
+  --ci-texte: .38;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --ci-cuivre: #b45d20; --ci-lueur: rgba(196, 104, 42, .34); }
+}
+:root[data-theme="dark"] { --ci-cuivre: #b45d20; --ci-lueur: rgba(196, 104, 42, .34); }
+
+/* le reste du folio s'estompe, légèrement — les blocs plus que les traits n'y perdent (on lit encore où l'on est) */
+#svg #scene.circuit .cab:not(.ci),
+#svg #scene.circuit .jn { opacity: var(--ci-cable); transition: opacity .2s cubic-bezier(.2, .7, .2, 1) }
+#svg #scene.circuit :is(.comp, .vt):not(.ci) { opacity: var(--ci-bloc); transition: opacity .2s cubic-bezier(.2, .7, .2, 1) }
+#svg #scene.circuit :is(.filnum, .halo):not(.ci) { opacity: var(--ci-texte) }
+/* dans un bloc éclairé, le bout d'un câble qui n'est pas du circuit s'estompe aussi */
+#svg #scene.circuit .comp.ci :is(.lead, .earth)[data-i]:not(.ci) { opacity: var(--ci-cable) }
+/* le circuit : ses câbles un peu plus présents, à la couleur de leur route ; la barrette à poser au cuivre */
+#svg #scene.circuit .cab.ci { stroke-width: 1.5px; vector-effect: non-scaling-stroke }
+#svg #scene.circuit .comp.ci :is(.lead, .earth).ci { stroke-width: 1.5px; vector-effect: non-scaling-stroke }
+#svg #scene.circuit .filnum.ci { font-weight: 600 }
+
+/* LE COURANT : un trait de cuivre pointillé, posé sur chaque câble du circuit, qui glisse dans le sens du courant */
+#svg #scene > .ci-flux { pointer-events: none }
+#svg #scene > .ci-flux path {
+  fill: none; stroke: var(--ci-cuivre); stroke-width: var(--ci-epais, 2); stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: var(--ci-trait, 6) var(--ci-vide, 10); stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 1px var(--ci-lueur));
+  animation: ci-courant 1.15s linear infinite;
+  transition: opacity .2s cubic-bezier(.2, .7, .2, 1)
+}
+#svg #scene > .ci-flux path.ci-rev { animation-direction: reverse }
+@keyframes ci-courant { from { stroke-dashoffset: 0 } to { stroke-dashoffset: calc(-1 * var(--ci-periode, 16)) } }
+
+/* une ligne de « Ce qu'il alimente » survolée : sa branche en avant, le reste du circuit en retrait (sans courant) */
+#svg #scene.circuit.ci-une .cab.ci:not(.ci-br) { opacity: .5 }
+#svg #scene.circuit.ci-une .comp.ci :is(.lead, .earth).ci:not(.ci-br) { opacity: .5 }
+#svg #scene.circuit.ci-une > .ci-flux path:not(.ci-br) { opacity: 0 }
+
+/* le mouvement réduit : la lumière reste, le courant ne bouge pas (un trait plein, discret) */
+@media (prefers-reduced-motion: reduce) {
+  #svg #scene > .ci-flux path { animation: none; stroke-dasharray: none; opacity: .5 }
+  #svg #scene.circuit :is(.cab, .lead, .earth, .jn, .comp, .vt), #svg #scene > .ci-flux path { transition: none }
+}
+
+/* la barre des folios : un point de cuivre sur les folios où le circuit continue */
+#fo-strip .chip.ci-suite,
+#fo-strip .chip.ci-suite:hover { background-image: radial-gradient(circle at calc(100% - 6px) 6px, var(--ci-cuivre) 0 2.1px, transparent 2.6px) }

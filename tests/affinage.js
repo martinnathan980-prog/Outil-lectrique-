@@ -51,7 +51,7 @@ const FICHIER = P.fichierDemande();
   ok(!!ensuite, 'les folios placés, l’affinage part', JSON.stringify(ensuite));
   const mot = await page.evaluate(() => $('af-txt').textContent);
   // (v86, l'audit G3 : « 0 / 48 · 5 en attente », 48 de quoi ?) des mots, sans compte de tours
-  ok(/^VOLTA peaufine encore (\d+ folios|ce folio|un folio)$/.test(mot) && !/affinage|moteur|\/|attente/.test(mot), 'la bande le dit en mots : « VOLTA peaufine encore 5 folios »', mot);
+  ok(/^VOLTA\speaufine\sencore\s(\d+\sfolios|ce\sfolio|un\sfolio)$/.test(mot) && !/affinage|moteur|\/|attente/.test(mot), 'la bande le dit en mots : « VOLTA peaufine encore 5 folios »', mot);
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

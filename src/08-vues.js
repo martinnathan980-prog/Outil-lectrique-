@@ -256,7 +256,9 @@ function traverseeDessin(nom, lettres, cote, o) { if (!lettres.length) return ''
     + `<rect class="bro-embase" x="${xE}" y="${yB0}" width="${wE}" height="${yB1 - yB0}"/><rect class="bro-fiche" x="${xF}" y="${yF0}" width="${wB}" height="${yF1 - yF0}"/>`;
   lettres.forEach((l, i) => { const yy = HAUT + i * PAS + PAS / 2, g = cote(l, true), d = cote(l, false);
     out += `<g class="bro-l fi-ia${(g && g.ko) || (d && d.ko) ? ' ko' : ''}"${(g && g.k) || (d && d.k) ? ` data-i="${escA((g && g.k) || d.k)}"` : ''}><rect class="bro-zone" x="0" y="${yy - PAS / 2}" width="${W}" height="${PAS}" rx="6"/>`
-      + `<text class="bro-borne" x="${xF + wB / 2}" y="${yy + 4}">${esc(l)}${sousMinuscules(l, xF + wB / 2)}</text>`;
+      + (() => { // (v86) la borne telle que le fichier l'écrit, quand elle n'est pas la lettre de la face (un fichier qui numérote : « 1·A »)
+        const nb = (g && g.borne) || (d && d.borne) || '', lab = nb && String(nb).toUpperCase() !== String(l).toUpperCase() ? nb + '·' + l : l;
+        return `<text class="bro-borne" x="${xF + wB / 2}" y="${yy + 4}">${esc(lab)}${sousMinuscules(lab, xF + wB / 2)}</text>`; })();
     if (g) { const [rep, bo] = bout(g.de), pw = bo ? 12 + bo.length * 6.6 : 0, xm = (x0 + xF) / 2;
       out += `<path class="bro-fil" style="stroke:${g.couleur || 'currentColor'}" d="M${x0} ${yy}H${xF}"/><rect class="bro-type-f" x="${xm - 24}" y="${yy - 15}" width="48" height="12" rx="3"/><text class="bro-type" x="${xm}" y="${yy - 5.5}">${esc(g.type || '—')}</text><circle class="bro-bout" cx="${x0}" cy="${yy}" r="2.6"/>`
         + (bo ? `<rect class="bro-pin-f" x="${x0 - 10 - pw}" y="${yy - 9}" width="${pw}" height="18" rx="5"/><text class="bro-pin" x="${x0 - 10 - pw / 2}" y="${yy + 4}">${esc(bo)}</text>` : '')

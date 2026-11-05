@@ -36,6 +36,11 @@ const PIEGES = {
   vides: () => csv(EX.map(l => { const x = { ...l }; ['de', 'borneDe', 'pnDe', 'vers', 'borneVers', 'pnVers', 'cable', 'type', 'route', 'plan', 'lg'].forEach(k => { if (hasard() < .2) x[k] = ''; }); return x; })),
   // chaque liaison deux fois ; un même numéro de câble sur dix lignes ; un repère avec deux références différentes
   doublons: () => csv([...EX, ...EX.slice(0, 80)].map((l, i) => ({ ...l, cable: i % 20 === 0 ? 'W-777' : l.cable, pnDe: l.de === '300XC1' && i % 2 ? 'EN3645W12-35SN' : l.pnDe }))),
+  /* (v86, l'audit B3 et M6) les écritures d'un vrai fichier, sur les folios 1 et 2 : une ligne recopiée deux fois (104LP1:2 →
+     901G), un repère en minuscules (« 103rl1 »), un type inconnu (XX99), une borne vide, une longueur illisible (« abc »), une
+     liaison à un bout vide */
+  ecritures: () => { const L = EX.filter(l => l.plan === '1' || l.plan === '2').map(l => ({ ...l }));
+    L[2].type = 'XX99'; L[3].borneDe = ''; L[4].de = ' 103rl1 '; L.push({ ...L[5] }); L[6].lg = 'abc'; L[7].vers = ''; return csv(L); },
   // des caractères qui piègent : casse, espaces, barres, guillemets, balises, accents, émojis, textes immenses
   caracteres: () => csv(EX.map((l, i) => ({ ...l,
     de: i % 7 === 0 ? ' ' + l.de.toLowerCase() + '  ' : l.de, vers: i % 11 === 0 ? l.vers + '/A' : l.vers,
@@ -95,6 +100,21 @@ const PIEGES = {
       return { n: A.length, relues: T.length, ecarts }; });
     ok(`${nom} : lire → installation corrigée → relire : ${AR.relues} / ${AR.n} liaisons identiques`, AR.relues === AR.n && !AR.ecarts.length, AR.ecarts.join(' · ').slice(0, 400));
     console.log(R[R.length - 1]);
+    /* (v86) LES ÉCRITURES DU FICHIER : aucune barrette pour une ligne en double, un seul équipement pour « 103rl1 », le fichier
+       rendu tel quel tant que rien n'est écrit ; le mot d'ouverture et le contrôle les disent, à régler, avec leur geste ; les
+       gestes partent dans l'Excel corrigé, Défaire les rend (le plan revient tel qu'il a été lu, pour l'autotest) */
+    if (nom === 'ecritures') { const E = await p.evaluate(() => { const xl = () => { const C = classeurRetestCorrige(verite(), 'essai', { ouvert: true }), rows = XLSX.utils.sheet_to_json(C.wb.Sheets.Installation, { header: 1, defval: '' }), h = rows[3];
+          return { n: rows.length - 4, d1: rows.slice(4).map(x => x[h.indexOf('Device1')]), M: XLSX.utils.sheet_to_json(C.wb.Sheets.Modifications, { header: 1, defval: '' }).slice(1).map(m => m[6]).filter(m => m && m !== 'aucune modification') }; };
+        const vt = plans().flatMap(pl => liaisonsDe(pl)).filter(l => l.origine === null && l.aPoser && l.borneVers !== undefined).map(l => l.de + ':' + l.borneDe), X = controleAJour(), avant = xl();
+        const toast = document.getElementById('toast').textContent.replace(/\s+/g, ' '), d = X.find(x => x.genre === 'doublon'), c = X.find(x => x.genre === 'casse');
+        const r = { vt: [...new Set(vt)], minuscules: reperesDe(verite()).filter(x => x === '103rl1').length, d: d && d.niveau, c: c && c.niveau, xx99: X.some(x => x.types && x.types.includes('XX99')), abc: X.some(x => x.longueurs), toast, avant };
+        if (d) gestesDuPoint(d)[0].faire(); const c2 = controleAJour().find(x => x.genre === 'casse'); if (c2) gestesDuPoint(c2)[0].faire();
+        r.apres = xl(); r.nApres = verite().length; defaire(); defaire(); r.nDefait = verite().length; r.defait = xl(); return r; });
+      ok('ecritures : la ligne en double ne pose pas de barrette, « 103rl1 » ne fait pas un second équipement', !E.vt.includes('104LP1:2') && !E.minuscules, 'barrettes sur ' + E.vt.join(', '));
+      ok('ecritures : à régler (doublon, casse), à voir (XX99, « abc ») ; le mot d’ouverture les annonce', E.d === 'ko' && E.c === 'ko' && E.xx99 && E.abc && /à régler : 1 ligne en double, 1 repère écrit de deux façons/.test(E.toast), E.toast.slice(0, 160));
+      ok('ecritures : rien d’écrit sans geste ; les gestes partent dans l’Excel corrigé ; Défaire les rend', E.avant.d1.includes('103rl1') && !E.avant.M.length && E.apres.n === E.avant.n - 1 && !E.apres.d1.includes('103rl1') && E.apres.M.includes('Ligne entière') && E.apres.M.includes('Device1') && E.nDefait === E.avant.n && E.defait.d1.includes('103rl1') && !E.defait.M.length,
+        `avant ${E.avant.n} lignes, ${E.avant.M.length} modification · après ${E.apres.n} lignes, ${E.apres.M.join(' + ')} · défait ${E.defait.n} lignes`);
+      console.log(R.slice(-3).join('\n')); }
     const budget = nom === 'geant' ? 240000 : 180000;
     await p.evaluate(o => lancerAutotest(o), { listes: !VITE, budget, bilan: false, sauter: nom === 'geant' ? ['dossierpdf', 'png'] : [] });
     await p.waitForFunction(() => typeof AUTOTEST !== 'undefined' && !AUTOTEST.enCours && AUTOTEST.resultat, null, { polling: 500 });

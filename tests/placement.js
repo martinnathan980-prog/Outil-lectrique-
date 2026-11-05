@@ -102,7 +102,7 @@ const cadreDansLaPage = nom => { const d = app.dessin, c = d && d.comps.find(k =
   // l'esquisse d'abord : un dessin complet, sain, que la petite bande annonce ; l'attente s'efface
   const t0 = Date.now(); await page.waitForFunction(p => app.plan === p && !!app.dessin, gros.folio); const tEsquisse = Date.now() - t0;
   const esq = await page.evaluate(() => ({ ...attenteDansLaPage(), feuille: feuilleDansLaPage(), empreinte: empreinteDansLaPage() }));
-  ok(esq.provisoire === 'esquisse' && !esq.visible && /^Esquisse — le dessin définitif (dans \d+ (s|min)( \d+)? environ|arrive)$/.test(esq.bande), 'l’ESQUISSE arrive d’abord : le folio se lit, l’attente s’efface, la bande dit « Esquisse — le dessin définitif dans… environ »', tEsquisse + ' ms · ' + esq.bande);
+  ok(esq.provisoire === 'esquisse' && !esq.visible && /^Esquisse\s—\sle\sdessin\sdéfinitif\s(dans\s\d+\s(s|min)(\s\d+)?\senviron|arrive|se\scalcule\sencore)$/.test(esq.bande), 'l’ESQUISSE arrive d’abord : le folio se lit, l’attente s’efface, la bande dit « Esquisse — le dessin définitif dans… environ »', tEsquisse + ' ms · ' + esq.bande);
   // (v86, M5) un bloc pris sur l'esquisse ne bouge pas : le mot dit pourquoi et quand
   const prisEsq = await page.evaluate(() => { const L = liaisonsDuPlan(), P = placementDe(L); if (!P || !P.provisoire) return { provisoire: false };
     refuserPendantEsquisse(P); return { provisoire: true, mot: $('toast').textContent }; });

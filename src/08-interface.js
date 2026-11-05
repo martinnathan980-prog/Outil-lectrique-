@@ -430,7 +430,9 @@ function travailDuFolio(a) { if (a.travail) return a.travail; let t = 1200 * Mat
   try { const M = modele(construireGraphe(a.L)); t = budgetDe(M) * Math.max(1, M.liens.filter(w => !w.shunt && !w.boucle).length); } catch (_) { }
   return (a.travail = t); }
 const dureeEstimee = a => DEPART_PLACEMENT + ETALON.c * travailDuFolio(a);
-function etalonner(a, ms) { if (!a || !(a.L.length > SEUIL_ICI) || !(ms > DEPART_PLACEMENT)) return; const c = (ms - DEPART_PLACEMENT) / travailDuFolio(a);
+function etalonner(a, ms) { if (!a || !(a.L.length > SEUIL_ICI) || !(ms > DEPART_PLACEMENT)) return; let c = (ms - DEPART_PLACEMENT) / travailDuFolio(a);
+  // un folio placé pendant que l'ordinateur faisait autre chose ne fait pas tripler l'estimation suivante : un pas au plus du double
+  if (ETALON.n) c = Math.max(ETALON.c / 2, Math.min(ETALON.c * 2, c));
   ETALON.c = ETALON.n ? 0.6 * ETALON.c + 0.4 * c : c; ETALON.n++;
   try { localStorage.setItem('volta.placement.etalon2', JSON.stringify(ETALON)); } catch (_) { } }
 // une durée, en mots : « 8 s », « 25 s », « 2 min »
@@ -440,7 +442,9 @@ const enSecondes = ms => { const s = ms / 1000; return s < 15 ? Math.max(1, Math
 function avancement(a) { const est = dureeEstimee(a);
   if (!a.debut) return { p: 0, reste: est, mot: 'environ ' + enSecondes(est), file: !!placement.encours && placement.encours.cle !== a.cle };
   const ecoule = performance.now() - a.debut, p = Math.min(0.97, Math.max(a.p || 0, ecoule / est)), reste = est - ecoule;
-  return { p, reste, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : 'presque fini' }; }
+  // l'estimation dépassée (un ordinateur occupé ailleurs) : on ne promet plus rien — « presque fini » deux secondes, puis « en calcul »
+  const depasse = reste < -2000;
+  return { p, reste, depasse, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : depasse ? 'encore en calcul' : 'presque fini' }; }
 /* L'ESQUISSE NE SE MONTRE QUE SI ELLE SERT (v86, l'audit G3 : au folio 3, elle paraissait 66 ms, puis tout bougeait). Le
    dessin définitif à moins de trois secondes, elle passerait sous les yeux pour laisser aussitôt la place : l'attente reste,
    le définitif vient d'un coup. Plus loin, elle se montre — et le définitif la range en glissant (`rangerLeDessin`). Si
@@ -452,7 +456,7 @@ function verifierEsquisse() { const a = attenteCourante(); if (!a || app.dessin 
 /* (v86, l'audit M5) prendre un bloc sur l'esquisse : son déplacement figerait l'esquisse, ou se perdrait au définitif. Le geste
    ne prend pas (la vue glisse), et le mot dit pourquoi et quand. */
 function refuserPendantEsquisse(P) { const a = attenteCourante(), v = a ? avancement(a) : null;
-  dire((P.provisoire === 'esquisse' ? 'Le folio se dessine encore' : 'Le folio se redessine') + (v && v.reste > 1500 ? ' : son dessin définitif arrive dans ' + enSecondes(v.reste) + ' environ.' : ' : son dessin définitif arrive.')
+  dire((P.provisoire === 'esquisse' ? 'Le folio se dessine encore' : 'Le folio se redessine') + (v && v.reste > 1500 ? ' : son dessin définitif arrive dans ' + enSecondes(v.reste) + ' environ.' : v && v.depasse ? ' : son dessin définitif se calcule.' : ' : son dessin définitif arrive.')
     + ' Vous déplacerez les blocs dès qu’il sera posé.'); }
 // le nom du folio et sa place : « 3 / 20 », ou « MEE…003A (3 / 20) »
 function folioEtRang(plan) { const P = plans(), i = P.indexOf(plan) + 1; if (!i) return String(plan); return String(plan) === String(i) ? i + ' / ' + P.length : plan + ' (' + i + ' / ' + P.length + ')'; }
@@ -542,7 +546,7 @@ function montrerBande() { peindreEtatsDesFolios(); const el = $('affinage'); if 
   const a = attenteCourante();
   if (a && app.dessin && app.dessin.provisoire) { const v = avancement(a);
     // (v86) une durée honnête (`dureeEstimee`), dans l'ordre où on la lit : « Esquisse — le dessin définitif dans 4 s environ »
-    const quand = v.reste > 1500 ? 'dans ' + enSecondes(v.reste) + ' environ' : 'arrive';
+    const quand = v.reste > 1500 ? 'dans ' + enSecondes(v.reste) + ' environ' : v.depasse ? 'se calcule encore' : 'arrive';
     poser((app.dessin.provisoire === 'esquisse' ? 'Esquisse — le dessin définitif ' : 'Dessin d’avant — le nouveau ') + quand, v.p, false,
       'le folio se lit déjà ; le dessin définitif prendra sa place en glissant, la feuille immobile, et ses blocs se déplaceront dès qu’il sera posé'); return; }
   const prets = foliosPrets();
@@ -858,7 +862,9 @@ function appliquerVue() {
   const sc = $('scene'); if (sc) { sc.setAttribute('transform', `translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})`);
     // LOIN : un trait de câble ferait moins d'un pixel d'écran — les traits s'épaississent (06), les routes gardent leur couleur
     const loin = app.vue.s * 0.95 < 0.9; if (sc.classList.contains('loin') !== loin) sc.classList.toggle('loin', loin);
-    if (LOUPE.s !== app.vue.s) poserLoupe(); }
+    if (LOUPE.s !== app.vue.s) poserLoupe();
+    // (v86, M3) le courant du circuit éclairé garde son pas à l'écran
+    if (CIRCUIT.nom) fluxAuZoom(sc); }
   // la table glisse d'un rien sous la feuille (08-table), le fil de la carte suit son bloc (08-carte)
   parallaxeTable(); dessinerLien();
   $('zlbl').textContent = zoomEnPourcent(app.vue.s) + ' %';
@@ -1003,7 +1009,63 @@ function viserFil(f) { const xs = f.pts.map(p => p.x), ys = f.pts.map(p => p.y);
    allumé — les trois masses 906G d'un folio ne s'allument plus pour un seul de leurs fils. */
 function eteindre() { const sc = $('scene'); if (!sc) return; effacerSurvolLeger(sc);
   if (sc.classList.contains('focus')) { sc.classList.remove('focus'); sc.querySelectorAll('.hl').forEach(el => el.classList.remove('hl')); }
-  retirerLoupe(sc); }
+  eteindreCircuit(sc); retirerLoupe(sc); }
+/* ---- LE CIRCUIT D'UN DISJONCTEUR SUR LE PLAN (v86, l'audit M3 : « un clic sur 102CB1 éclaire son circuit ») -------------------
+   La fiche d'un disjoncteur ouverte, le plan éclaire son CIRCUIT (09 quater, `circuitDuDisjoncteur`) : la source, le
+   disjoncteur, chaque câble jusqu'aux charges — à travers les prises, les barrettes, les contacts supposés fermés — et le retour
+   à la masse ; un COURANT DE CUIVRE discret y avance, dans le sens du courant (`.ci-flux` : un trait pointillé dont le motif
+   glisse, du même pas à l'écran à tous les zooms : `fluxAuZoom`). Le reste du folio s'estompe à peine (style-z-circuit.css).
+   Survoler une ligne de « Ce qu'il alimente » met sa BRANCHE en avant (`allumerCle`) ; la barre des folios marque d'un point de
+   cuivre ceux où le circuit continue. Le mouvement réduit garde la lumière, sans le courant qui avance ; rien ne clignote. À
+   l'écran seulement : le SVG, le PNG, le PDF refont leur dessin, sans rien de ceci. */
+const CIRCUIT = { cle: null, V: null, n: 0, m: new Map(), nom: null, dessin: null, lit: null, vts: null };
+function circuitDe(nom) { const cle = typeof CONTROLE !== 'undefined' ? CONTROLE.cle : null, V = verite();
+  if (CIRCUIT.cle !== cle || CIRCUIT.V !== V || CIRCUIT.n !== V.length) { CIRCUIT.cle = cle; CIRCUIT.V = V; CIRCUIT.n = V.length; CIRCUIT.m = new Map(); }
+  if (!CIRCUIT.m.has(nom)) { let c = null; try { c = circuitDuDisjoncteur(V, nom); } catch (_) { c = null; } CIRCUIT.m.set(nom, c); }
+  return CIRCUIT.m.get(nom); }
+const FLUX_CIRCUIT = { trait: 6, vide: 10, epais: 2 };   // le motif du courant, en pixels d'écran à tous les zooms
+function fluxAuZoom(sc) { const g = sc && sc.querySelector(':scope > .ci-flux'); if (!g) return; const s = app.vue.s || 1, px = v => (v / s).toFixed(3);
+  g.style.setProperty('--ci-trait', px(FLUX_CIRCUIT.trait)); g.style.setProperty('--ci-vide', px(FLUX_CIRCUIT.vide)); g.style.setProperty('--ci-periode', px(FLUX_CIRCUIT.trait + FLUX_CIRCUIT.vide)); g.style.setProperty('--ci-epais', px(FLUX_CIRCUIT.epais)); }
+function eteindreCircuit(sc) { CIRCUIT.nom = null; CIRCUIT.dessin = null; CIRCUIT.lit = null; CIRCUIT.vts = null; const strip = $('fo-strip'); if (strip) strip.querySelectorAll('.chip.ci-suite').forEach(c => c.classList.remove('ci-suite'));
+  sc = sc || $('scene'); if (!sc || !sc.classList.contains('circuit')) return; sc.classList.remove('circuit', 'ci-une');
+  sc.querySelectorAll('.ci, .ci-br').forEach(e => e.classList.remove('ci', 'ci-br')); const g = sc.querySelector(':scope > .ci-flux'); if (g) g.remove(); }
+/* Éclairer le circuit de `nom` sur le folio affiché — `branche` : un câble du circuit (une liaison du contrat), dont les chemins
+   passent devant les autres. Rend vrai s'il a quelque chose sur ce folio. Le circuit déjà éclairé ne se refait pas (le courant
+   ne repart pas de zéro) : seule la branche change. */
+function allumerCircuit(nom, branche) { const sc = $('scene'), D = app.dessin; if (!sc || !D || !nom) return false;
+  const C = circuitDe(nom); if (!C || !C.cables.size) return false;
+  if (!(CIRCUIT.nom === nom && CIRCUIT.dessin === D && sc.classList.contains('circuit') && sc.querySelector(':scope > .ci-flux'))) {
+    const L = liaisonsDuPlan(), lit = new Map(), deCle = new Map();
+    D.fils.forEach(w => { if (w.shunt) return; const l = L[w.i], s = l ? sourceDe(l) : null, x = s ? C.cables.get(s) : null; if (x) { lit.set(w.i, { ...x, l: s }); deCle.set(s, w.i); } });
+    // une barrette à poser du circuit (VT1, sur 102CB1:2) : éclairée avec ses câbles ; son câble à créer porte le courant depuis la borne qu'elle double quand
+    // cette borne est en amont de ses câbles (la borne d'un disjoncteur), vers elle sinon
+    const vts = new Map(); L.forEach((l, i) => { if (!l || !l.aPoser || !l.origine || !lit.has(i)) return; const x = lit.get(i), s = x.l, r = L.find(y => y && y.origine === null && y.vers === l.aPoser && y.de && y.de !== l.aPoser);   // son câble à créer (pas un shunt)
+      if (!r || vts.has(l.aPoser)) return; const bout = s.de === r.de && String(s.borneDe) === String(r.borneDe) ? 'de' : 'vers'; vts.set(l.aPoser, { amont: x.sens === bout, chemins: x.chemins }); });
+    if (!lit.size && !vts.size) return false;
+    eteindre(); sc.classList.add('circuit'); CIRCUIT.nom = nom; CIRCUIT.dessin = D; CIRCUIT.lit = lit; CIRCUIT.vts = vts;
+    const blocs = new Set(); D.fils.forEach(w => { if (lit.has(w.i)) blocsDuFil(w).forEach(k => blocs.add(k)); }); D.comps.forEach((c, k) => { if (c.name === nom) blocs.add(k); });
+    sc.querySelectorAll('[data-i]').forEach(e => { if (e.dataset.i.split(' ').some(i => lit.has(+i))) e.classList.add('ci'); });
+    sc.querySelectorAll('.comp').forEach(g => { if (blocs.has(+g.dataset.k)) g.classList.add('ci'); });
+    sc.querySelectorAll('[data-vt]').forEach(g => { if (vts.has(g.dataset.vt)) g.classList.add('ci'); });
+    // le courant : un trait de cuivre par câble éclairé, sur son tracé, dans le sens du courant (le tracé va de son bout `de` à son bout `vers`)
+    const g = document.createElementNS(NS_SVG, 'g'); g.setAttribute('class', 'ci-flux'); g.setAttribute('aria-hidden', 'true');
+    const trait = (d, rev, cle) => { const p = document.createElementNS(NS_SVG, 'path'); p.setAttribute('d', d); p.setAttribute('class', rev ? 'ci-rev' : ''); p.dataset.ci = cle; g.appendChild(p); };
+    lit.forEach((x, i) => { const p = sc.querySelector(`path.cab[data-i="${i}"]`); if (p) trait(p.getAttribute('d'), x.sens !== 'de', String(i)); });
+    vts.forEach((v, nomVT) => { const p = sc.querySelector(`path.cab[data-vt="${CSS.escape(nomVT)}"]`), b = sc.querySelector(`g.vt[data-vt="${CSS.escape(nomVT)}"] .barre`); if (!p) return;
+      let versLaBarrette = true; try { const a = p.getPointAtLength(0), xb = b ? +b.getAttribute('x1') : NaN; versLaBarrette = !(Math.abs(a.x - xb) < 0.8); } catch (_) { }
+      trait(p.getAttribute('d'), v.amont !== versLaBarrette, 'vt:' + nomVT); });
+    sc.appendChild(g); fluxAuZoom(sc);
+    // la barre des folios : un point de cuivre sur ceux où le circuit continue
+    const ailleurs = new Set([...C.cables.keys()].map(l => String(l.plan || '')).filter(p => p && p !== String(app.plan))), strip = $('fo-strip');
+    if (strip) strip.querySelectorAll('.chip').forEach(c => c.classList.toggle('ci-suite', ailleurs.has(String(c.dataset.plan)))); }
+  // la branche en avant : les chemins qui passent par son câble, leurs retours ; la source est de tous
+  const xb = branche ? C.cables.get(branche) : null, chs = xb && xb.role !== 'source' ? new Set(xb.chemins) : null, dans = x => !chs || x.role === 'source' || x.chemins.some(i => chs.has(i));
+  sc.classList.toggle('ci-une', !!chs);
+  sc.querySelectorAll('.ci-br').forEach(e => e.classList.remove('ci-br'));
+  if (chs) { const ok = new Set([...CIRCUIT.lit].filter(([, x]) => dans(x)).map(([i]) => i));
+    sc.querySelectorAll('[data-i].ci').forEach(e => { if (e.dataset.i.split(' ').some(i => ok.has(+i))) e.classList.add('ci-br'); });
+    sc.querySelectorAll(':scope > .ci-flux path').forEach(p => { const k = p.dataset.ci; if (k.startsWith('vt:') ? [...(CIRCUIT.vts.get(k.slice(3)) || { chemins: [] }).chemins].some(i => chs.has(i)) : ok.has(+k)) p.classList.add('ci-br'); }); }
+  return true; }
 // les blocs (leur place dans le dessin) où arrive un bout du fil
 function blocsDuFil(w) { const D = app.dessin, out = []; if (!D) return out; const bouts = [w.epA, w.epB, w.pts[0], w.pts[w.pts.length - 1]].filter(Boolean);
   D.comps.forEach((c, k) => { if ((c.name === w.de || c.name === w.vers) && bouts.some(q => q.x >= c.x - 0.6 && q.x <= c.x + c.w + 0.6 && q.y >= c.y - 0.6 && q.y <= c.y + c.h + 0.6)) out.push(k); });
@@ -1089,12 +1151,16 @@ function survolLeger(ws, blocs) { const sc = $('scene'); if (!sc) return; efface
   sc.querySelectorAll('[data-i]').forEach(e => { if (!e.classList.contains('hl') && porteUnDe(e, A.idx)) e.classList.add('sv'); });
   sc.querySelectorAll('.comp').forEach(g => { if (A.blocs.has(+g.dataset.k) && !g.classList.contains('hl')) g.classList.add('sv'); }); }
 function effacerSurvolLeger(sc) { sc = sc || $('scene'); if (sc) sc.querySelectorAll('.sv').forEach(e => e.classList.remove('sv')); }
-function allumerCle(k) { const w = filDeCle(k); if (w) { allumerFil(w); return true; }
+function allumerCle(k) {
+  // (v86, M3) le circuit d'un disjoncteur éclairé : un câble survolé de « Ce qu'il alimente » met sa branche en avant
+  if (CIRCUIT.nom && typeof liaisonDeCle === 'function') { const l = liaisonDeCle(k), s = l ? sourceDe(l) : null, C = s ? circuitDe(CIRCUIT.nom) : null; if (C && C.cables.has(s) && allumerCircuit(CIRCUIT.nom, s)) return true; }
+  const w = filDeCle(k); if (w) { allumerFil(w); return true; }
   const l = k && k[0] === 'p' ? liaisonsDuPlan()[+k.slice(1)] : null; if (l && l.aPoser) { allumerBarretteAPoser(l.aPoser); return true; } return false; }
 /* Ce qui est choisi reste allumé après un survol ou un redessin ; la ligne
-   qu'on écrit passe devant. */
+   qu'on écrit passe devant. (v86, M3) Un disjoncteur choisi : son circuit, sur ce folio — même quand il est dessiné ailleurs. */
 function rallumer() { const c = app.cible, w = app.actif && filDe(app.actif);
   if (w) allumerFil(w);
+  else if (c && c.type === 'bloc' && app.dessin && estDisjoncteur(c.nom) && allumerCircuit(c.nom)) { /* son circuit */ }
   else if (c && c.type === 'bloc' && app.dessin && app.dessin.compDe.has(c.nom)) allumerBloc(c.nom);
   else if (c && c.type === 'bloc' && app.dessin && barretteAPoser(c.nom)) allumerFils(filsDeBarretteAPoser(c.nom));
   else if (c && c.type === 'fil' && app.dessin) { const w = filDe(c.l); if (w) allumerFil(w); else eteindre(); }
@@ -1540,7 +1606,10 @@ function lierPlanche() {
 }
 /* Ce que la bulle du plan montrerait sous un point du dessin : un câble, un bloc, une borne, une barrette à poser, un renvoi
    (et une clé, pour qu'elle reste tant qu'on reste dessus). */
-function objetDeBulle(w) { const D = app.dessin; if (!D) return null; const p = priseSous(w);
+function objetDeBulle(w) { const D = app.dessin; if (!D) return null;
+  // (v86, M4) une borne — d'équipement, de barrette, de prise, d'une barrette à poser — : 08-survol, `borneSous` et `texteDeBorneHtml`
+  const tb = typeof borneSous === 'function' ? borneSous(w.x, w.y) : null; if (tb) return { cle: 'B' + tb.nom + ':' + tb.borne, genre: 'borneM4', t: tb, w };
+  const p = priseSous(w);
   if (p && (p.genre === 'bloc' || p.genre === 'borne')) { const k = D.comps.indexOf(p.c);
     if (estRenvoi(p.c.name)) { const f = filDuRenvoi(p.c, w.y, w.x); return { cle: 'r' + k + ':' + (f ? f.i : ''), genre: 'renvoi', c: p.c, f }; }
     return p.genre === 'borne' ? { cle: 'p' + k + ':' + p.y, genre: 'borne', c: p.c, y: p.y, etiq: p.etiq } : { cle: 'b' + k, genre: 'bloc', c: p.c }; }
@@ -1551,6 +1620,7 @@ const bornePlusRepere = (n, b) => String(n || '') + (b != null && String(b) !== 
 const boutLisible = (n, b) => { const [r, x] = boutSource(n, b); return bornePlusRepere(r, x); };
 const rangsDesFolios = ps => { const P = plans(); return ps.map(p => P.indexOf(p) + 1).filter(r => r > 0).sort((a, b) => a - b); };
 function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => `<b class="pl-b-t">${esc(t)}</b>`, l_ = t => `<span class="pl-b-l">${t}</span>`, id = t => `<span class="pl-b-id">${esc(t)}</span>`;
+  if (q.genre === 'borneM4' && typeof texteDeBorneHtml === 'function') return texteDeBorneHtml(q.t, q.w);
   if (q.genre === 'rendre') return T('Rendre au moteur') + l_('ce qu’on a changé ici revient au dessin automatique');
   const lignesDeFil = f => { const l = L[f.i] || {}, s = sourceDe(l) || l; return id(s.type || 'câble') + ' · ' + id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)); };
   if (q.genre === 'fil') { const l = L[q.f.i] || {}, s = sourceDe(l) || l, c = D.couleurDe && D.couleurDe(q.f), lg = parseFloat(String(s.longueur || '').replace(',', '.'));
@@ -1617,7 +1687,8 @@ const filtreDuBloc = nom => { if (!VT_A_POSER.test(nom)) return nom; const r = l
 /* Choisir un bloc : sa fiche dans l'inspecteur ; le tableau, s'il est ouvert, se filtre sur lui. */
 function choisirBloc(c) { app.choisi = c.name; app.cible = { type: 'bloc', nom: c.name }; app.choisiK = app.dessin ? app.dessin.comps.indexOf(c) : -1;
   if (app.base.ouvert) { app.base.filtre = filtreDuBloc(c.name); app.base.filtreAuto = true; app.base.defiler = true; rendreBase(); }
-  peindre(); ouvrirInspecteur(); allumerBloc(c.name); }
+  // (v86, M3) un disjoncteur choisi : son circuit s'éclaire, le courant y avance
+  peindre(); ouvrirInspecteur(); if (!(estDisjoncteur(c.name) && allumerCircuit(c.name))) allumerBloc(c.name); }
 /* Choisir un fil : sa fiche ; dans le tableau ouvert, sa ligne se marque et vient sous les yeux. */
 function choisirFil(f) { const l = liaisonsDuPlan()[f.i]; if (!l) return; const src = sourceDe(l) || l;
   if (app.choisi) { app.choisi = null; peindre(); }

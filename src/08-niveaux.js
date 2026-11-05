@@ -234,9 +234,9 @@ function quiVuDIci(q, p, o, ligne) { const m = /^(\S+) vers (\S+?)(?::(\S+))?( \
 /* (v86, l'audit G5 : « (11,5 A × 0,6 : faisceau de 8 câbles à 60 %) ne s'explique nulle part en clair ») — CE QUI CLOCHE, EN
    MOTS. La phrase du contrôle (« démarrage et transition 9,31 A pendant 2,1 min > 6,9 A admis en continu (11,5 A × 0,6 :
    faisceau de 8 câbles à 60 %) ») devient une phrase : ce qu'il porte, pendant combien de temps, ce qu'il admet — la carte
-   s'arrête là (`court`, deux lignes au plus) ; le grand dit en plus d'où vient l'admis (`long`) : « Seul à l'air libre, un
-   DR20 admet 11,5 A en continu ; en faisceau de 8 câbles chargé à 60 %, il n'en admet que 6,9 A (× 0,6). » Une phrase que
-   VOLTA ne sait pas dire autrement reste telle quelle. `suite` : ce qui suivait « — » (« pas protégé en surcharge »). */
+   s'arrête là (`court`, deux lignes au plus) ; le grand nomme l'état du profil et dit d'où vient l'admis (`long`) : « Ces
+   6,9 A : 11,5 A pour un DR20 seul à l'air libre, × 0,6 en faisceau de 8 câbles chargé à 60 %. » Une phrase que VOLTA ne
+   sait pas dire autrement reste telle quelle. `suite` : ce qui suivait « — » (« pas protégé en surcharge »). */
 const conditionsEnMots = s => String(s || '').split(', ').map(c => { let m;
   if ((m = /^faisceau de (\S+) câbles à (\S+) %$/.exec(c))) return `en faisceau de ${m[1]} câbles chargé à ${m[2]} %`;
   if ((m = /^ambiante (\S+) °C$/.exec(c))) return `à ${m[1]} °C autour`;

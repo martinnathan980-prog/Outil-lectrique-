@@ -216,6 +216,47 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     return out;
   });
   R.push(...R6);
+  /* v86 — UN FICHIER ABÎMÉ COMME LES VRAIS (l'audit, B3 et M6) : une ligne recopiée deux fois, un repère écrit en minuscules,
+     un type inconnu, une longueur illisible. La ligne en double ne fait jamais poser de barrette et ne se dessine qu'une fois ;
+     « 103rl1 » se lit 103RL1 — un seul équipement — sans que le fichier soit réécrit : l'installation corrigée rend « 103rl1 »
+     tant que le lecteur n'a pas fait « Écrire 103RL1 partout » ; les deux sont à régler, chacun avec son geste, qui part dans
+     l'Excel corrigé ; le mot d'ouverture les annonce ; Défaire rend le fichier tel qu'il était. */
+  const R7 = await p.evaluate(async () => {
+    const out = []; const ok = (n, c, d) => out.push((c ? '  ok   ' : '  KO   ') + n.padEnd(52) + (d || ''));
+    const T = 'Device1;Pin1;Cable T/G;Cable Tag;Device2;Pin2;FWD;Cable length (mm)\n102CB1;2;DR20;W-012;103RL1;A1;1;5000\n103RL1;A2;XX99;W-013;104LP1;1;1;5000\n'
+      + ' 103rl1 ;X1;DR24;W-014;395SW1;2;1;5000\n104LP1;2;DR22;W-016;901G;;1;5000\n103RL1;X2;DR24;W-017;901G;;1;abc\n104LP1;2;DR22;W-016;901G;;1;5000\n';
+    const r = lireTexte(T), l3 = r.liaisons[2] || {};
+    ok('« 103rl1 » se lit 103RL1 (un seul équipement), l’écriture du fichier gardée', l3.de === '103RL1' && l3.ecrit && l3.ecrit.de === '103rl1' && (r.lectures || []).length === 1 && r.lectures[0].lu === '103RL1' && reperesDe(r.liaisons).filter(x => /^103rl1$/i.test(x)).length === 1, JSON.stringify([l3.de, l3.ecrit, r.lectures]));
+    ok('chaque liaison garde sa ligne d’Excel (le bilan la nomme)', (r.rangs || []).join() === '2,3,4,5,6,7', (r.rangs || []).join());
+    const re = liaison(l3);
+    ok('l’écriture du fichier tient quand la liaison se refait (un plan rouvert, Ctrl+Z)', !!re.ecrit && re.ecrit.de === '103rl1' && (ecritDuBout(re, 'de') || [])[0] === '103rl1', JSON.stringify(re.ecrit));
+    const D = dedoublements(r.liaisons), S = avecBarrettesAPoser(r.liaisons, 0, new Map());
+    ok('la ligne en double ne fait pas poser de barrette, et ne se dessine qu’une fois', !D.length && !S.some(l => l.aPoser) && S.length === r.liaisons.length - 1, D.length + ' dédoublement(s) · ' + S.length + ' / ' + r.liaisons.length + ' liaisons dessinées');
+    const lignes = V => { const C = classeurRetestCorrige(V, 'essai', { ouvert: true }), rows = XLSX.utils.sheet_to_json(C.wb.Sheets.Installation, { header: 1, defval: '' }), h = rows[3];
+      return { n: rows.length - 4, d1: rows.slice(4).map(x => x[h.indexOf('Device1')]).join(','), M: XLSX.utils.sheet_to_json(C.wb.Sheets.Modifications, { header: 1, defval: '' }).slice(1).filter(m => m[6] && m[6] !== 'aucune modification').map(m => [m[6], m[7], m[8], m[9]].join(' | ')) }; };
+    let E = lignes(r.toutes);
+    ok('rien d’écrit sans geste : l’installation corrigée rend « 103rl1 » et la ligne en double', E.n === 6 && E.d1.split(',').includes('103rl1') && !E.M.length, E.n + ' lignes · ' + E.d1 + ' · ' + E.M.join(' / '));
+    // le plan ouvert comme Ctrl+O l'ouvre : le contrôle, le mot d'ouverture, les gestes
+    await ouvrirFichier(new File([T], 'abime.csv', { type: 'text/csv' })); await new Promise(f => setTimeout(f, 900));
+    // (la typographie de la page pose une espace fine insécable devant « : » : les espaces se comparent à plat)
+    const toast = document.getElementById('toast').textContent.replace(/\s+/g, ' '), X = controleAJour(), d = X.find(x => x.genre === 'doublon'), c = X.find(x => x.genre === 'casse');
+    ok('à régler : la ligne en double, le repère écrit de deux façons — chacun avec son geste', !!d && d.niveau === 'ko' && !!c && c.niveau === 'ko' && gestesDuPoint(d)[0].mot === 'Retirer la ligne en double' && gestesDuPoint(c)[0].mot === 'Écrire 103RL1 partout' && !reperesDe(verite()).includes('103rl1'), X.filter(x => x.genre === 'doublon' || x.genre === 'casse').map(x => x.niveau + ' ' + x.nom + ' : ' + x.texte).join(' / '));
+    ok('à voir : le type inconnu XX99, la longueur illisible « abc », l’hypothèse dite', X.some(x => x.niveau === 'att' && x.types && x.types.includes('XX99')) && X.some(x => x.niveau === 'att' && x.longueurs && /« abc »/.test(x.texte) && /l’hypothèse/.test(x.texte)), X.filter(x => x.genre === 'fichier').map(x => x.texte).join(' / '));
+    ok('le mot d’ouverture les annonce, « Voir » mène au bilan', /^VOLTA a lu 6 liaisons/.test(toast) && /à régler : 1 ligne en double, 1 repère écrit de deux façons/.test(toast) && !!document.querySelector('#toast .toast-voir'), toast);
+    ficheFichiers('retest'); await new Promise(f => setTimeout(f, 300));
+    const bilan = [...document.querySelectorAll('#vf-retest .vf-bilan .fi-pb-l')].map(b => b.textContent.replace(/\s+/g, ' ').trim()), gestes = [...document.querySelectorAll('#vf-retest [data-vf="bilan-geste"]')].map(b => b.textContent.replace(/\s+/g, ' ').trim());
+    ok('le bilan, dans « Vos fichiers » : chaque point, sa ligne d’Excel, les gestes à régler', bilan.length >= 4 && /^Ligne en double : 104LP1:2 → 901G/.test(bilan[0]) && /lignes 5 et 7$/.test(bilan[0]) && /103RL1 s’écrit aussi « 103rl1 ».*ligne 4$/.test(bilan[1]) && gestes.join() === 'Retirer la ligne en double,Écrire 103RL1 partout', bilan.join(' / ') + ' · ' + gestes.join(', '));
+    document.querySelector('#vf-retest [data-vf="bilan-geste"]').click(); await new Promise(f => setTimeout(f, 300));
+    E = lignes(verite());
+    ok('« Retirer la ligne en double » : la copie quitte le plan et l’Excel corrigé, la feuille Modifications le dit', verite().length === 5 && E.n === 5 && E.M.some(m => /^Ligne entière \| 2 lignes identiques \| 1 ligne \| proposition de VOLTA/.test(m)), verite().length + ' liaisons · ' + E.M.join(' / '));
+    const c2 = controleAJour().find(x => x.genre === 'casse'); if (c2) gestesDuPoint(c2)[0].faire();
+    E = lignes(verite());
+    ok('« Écrire 103RL1 partout » : la case devient 103RL1 (avant : 103rl1, proposition de VOLTA), le point s’en va', !E.d1.split(',').includes('103rl1') && E.M.some(m => m === 'Device1 | 103rl1 | 103RL1 | proposition de VOLTA acceptée') && !controleAJour().some(x => x.genre === 'casse'), E.d1 + ' · ' + E.M.join(' / '));
+    defaire(); defaire(); E = lignes(verite());
+    ok('Défaire, deux fois : le fichier tel qu’il était', verite().length === 6 && E.d1.split(',').includes('103rl1') && !E.M.length && controleAJour().some(x => x.genre === 'doublon'), verite().length + ' liaisons · ' + E.d1);
+    fermerFiche(); return out;
+  });
+  R.push(...R7);
   R.forEach(x => console.log(x));
   const ko = R.filter(x => x.startsWith('  KO')).length;
   console.log('\n  ' + (R.length - ko) + ' / ' + R.length + (ko ? '  — ' + ko + ' PROBLÈME(S)' : '  — tout tient'));

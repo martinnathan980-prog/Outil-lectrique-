@@ -255,14 +255,14 @@ function rangsDeLaLecture(r) { const m = new Map(), T = r.toutes || r.liaisons |
 function lignesDuPoint(x) { const R = FICHIERS.lecture && FICHIERS.lecture.nom === app.nom ? FICHIERS.lecture.rangs : null; if (!R) return '';
   const ns = [...new Set((x.cables || []).flatMap(l => R.get(cleDeDoublon(l)) || []))].sort((a, b) => a - b); if (!ns.length) return '';
   return ns.length === 1 ? 'ligne ' + ns[0] : 'lignes ' + (ns.length > 3 ? ns.slice(0, 3).join(', ') + '…' : ns.slice(0, -1).join(', ') + ' et ' + ns[ns.length - 1]); }
-const boutsDits = l => [l.de ? l.de + (l.borneDe ? ':' + l.borneDe : '') : '(vide)', l.vers ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : '(vide)'].join(' → ');
+const boutsDits = l => [l.de ? l.de + (l.borneDe ? ':' + l.borneDe : '') : 'bout vide', l.vers ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : 'bout vide'].join(' → ');
 // un point dit pour le bilan : ce qu'il désigne d'abord, puis ce que VOLTA en fait (la phrase entière reste dans la bulle)
 function phraseDuBilan(x) { const L = x.cables || [], l = L[0], un = L.length === 1, H = app.simu || HYPOTHESES;
   if (x.genre === 'doublon' && l) return `Ligne en double : ${boutsDits(l)}${l.type ? ', ' + l.type : ''} — ` + (x.doublon && !x.doublon.identiques ? 'les copies diffèrent : gardez la bonne dans votre fichier' : 'VOLTA ne la dessine qu’une fois');
   if (x.genre === 'casse' && x.casse) return `${x.casse.cible} s’écrit aussi ${(x.casse.autres || []).map(w => '« ' + w + ' »').join(', ')} — ` + (/un seul équipement/.test(x.texte) ? `VOLTA le lit ${x.casse.cible}, un seul équipement` : 'pour VOLTA, deux équipements');
   if (x.types) return `Type de câble inconnu : ${x.types.join(', ')}${un ? ' (' + boutsDits(l) + ')' : ' (' + pluriel(L.length, 'câble') + ')'} — ${un ? 'sa' : 'leur'} gauge ne se vérifie pas`;
   if (x.longueurs) return (un ? `Longueur illisible : « ${l.longueurBrute} » (${boutsDits(l)})` : `${L.length} longueurs illisibles : ${[...new Set(L.map(y => '« ' + y.longueurBrute + ' »'))].slice(0, 3).join(', ')}`) + ` — VOLTA prend ${nombre(H.longueur)} m, l’hypothèse`;
-  if (x.incompletes) return un ? `Liaison à un bout vide : ${boutsDits(l)} — gardée, ni dessinée ni vérifiée` : `${L.length} liaisons à un bout vide — gardées, ni dessinées ni vérifiées`;
+  if (x.incompletes) return un ? `Liaison incomplète : ${boutsDits(l)} — gardée, ni dessinée ni vérifiée` : `${L.length} liaisons incomplètes, à un bout vide — gardées, ni dessinées ni vérifiées`;
   const t = String(x.texte || ''), k = t.indexOf(' — '); return (x.nom ? x.nom + ' : ' : '') + (k > 0 ? t.slice(0, k) : majuscule(t)); }
 /* LE BILAN, dans la carte « Votre installation » : le plan ouvert (pas l'exemple) ; rien quand il n'y a rien à dire. Chaque
    ligne mène à ce qu'elle désigne (`FICHIERS.bilan` : ce que chaque bouton fait, le temps du rendu). */
@@ -454,7 +454,7 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
    de dépôt, tant que l'entrée est vide), liens: [[vf, libelle]], boites (html), attend: { sous, format, apercu, ensuite,
    gestes: [[vf, libelle]] } } — « Ce que j'attends » se déplie : replié d'office (la ligne et la zone de dépôt disent
    l'essentiel), ouvert sur la carte qu'on vient chercher ; l'outil se souvient de ce qu'on ouvre ou ferme à la main */
-function carteHtml(o, etat, focus, primaire) { const ouvert = FICHIERS.volets.has(o.cle) ? FICHIERS.volets.get(o.cle) : focus === o.cle;
+function carteHtml(o, etat, focus, primaire) { const ouvert = FICHIERS.volets.has(o.cle) ? FICHIERS.volets.get(o.cle) : focus === o.cle && !o.replie;
   const A = o.attend;
   /* ALLÉGÉ (v73 : « trois zones pointillées et deux « Ce que j'attends » d'un coup » — le designer ; « deux façons d'ouvrir le
      retest l'une sous l'autre » — le technicien) : seule l'entrée qu'on vient chercher (la première qui manque) garde sa
@@ -465,6 +465,7 @@ function carteHtml(o, etat, focus, primaire) { const ouvert = FICHIERS.volets.ha
     + `<div class="vf-tete"><span class="vf-ic">${icoVf(o.cle)}</span><div class="vf-titres"><h3 id="vf-t-${o.cle}">${esc(o.titre)}</h3><div class="vf-etat"><i aria-hidden="true"></i><span class="sr">${{ ok: 'reçu et lu', vide: 'rien', att: 'en attente', ko: 'erreur' }[etat.niveau]} : </span><span>${esc(etat.dit)}</span></div></div>`
     + (o.action && !zone ? `<button class="btn ${primaire ? 'cuivre' : 'papier'} vf-action" data-vf="${o.action[0]}">${esc(o.action[1])}</button>` : '') + '</div>'
     + (o.une ? `<div class="vf-une">${o.une}</div>` : '')
+    + (o.avant || '')   // (v86) ce qui compte d'abord sous l'état : le bilan d'ouverture
     + (zone ? `<button type="button" class="vf-zone" data-vf="${o.zone[0]}">${icoVf('depot')}<span><b>Glissez ${o.zone[1]} ici</b> ou cliquez</span></button>` : '')
     + (o.liens && o.liens.length ? `<div class="vf-liens">${o.liens.map(([vf, t]) => `<button class="btn lien" data-vf="${vf}">${esc(t)}</button>`).join('')}</div>` : '')
     + (o.boites || '')
@@ -499,14 +500,18 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
   // les aperçus : sept colonnes, celles qui comptent — le reste du retest est lu s'il est là
   const colonnes = (M, noms) => noms.map(n => M.entetes.indexOf(n)).filter(i => i >= 0);
   const nonRanges = app.references ? aRanger().length : 0;
+  // (v86) le bilan d'ouverture : sous l'état de la carte, sauf quand une erreur ou un fichier à « Charger » passe devant
+  const bilan = bilanHtml(), devant = !!(FICHIERS.erreurs.retest || FICHIERS.attente), planOuvert = E.retest.niveau === 'ok';
   const C = [
     { cle: 'bibliotheque', titre: 'Bibliothèque', depot: 'plans', grande: true, action: ['bibliotheque', 'Ouvrir la bibliothèque'], zone: ['ajouter-plans', 'vos installations'],
       une: `<p><b>Un plan par installation</b>. Ceux qu’on glisse ici vont dans ${esc(guillemets(nomInstallCible()))}.</p>` },
     { cle: 'retest', titre: 'Votre installation', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir une installation…'], zone: ['ouvrir', 'l’installation'],
-      une: `<p>Un Excel ou un CSV, <b>une ligne par câble</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’installation ouverte.</p>`,
+      // ce qu'elle attend se dit tant qu'aucun plan n'est ouvert ; ensuite, « Le format attendu » (replié) le garde
+      une: planOuvert ? '' : `<p>Un Excel ou un CSV, <b>une ligne par câble</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’installation ouverte.</p>`,
+      avant: devant ? '' : bilan, replie: !!bilan,
       liens: [['pdf', 'Un schéma en PDF ? Le lire…'], ...(V.length ? [] : [['exemple', 'Pas de fichier sous la main ? Ouvrir l’exemple']])],
       // (v86) le bilan d'ouverture : ce que VOLTA a lu et relevé, chaque point vers ce qu'il désigne (il reprend « ce qui est laissé de côté »)
-      boites: attenteHtml() + erreurHtml('retest') + bilanHtml(),
+      boites: attenteHtml() + erreurHtml('retest') + (devant ? bilan : ''),
       attend: { format: 'Les en-têtes sont reconnus par leur nom ; les autres colonnes de l’installation (Harness, PN, Route, FWD, longueur…) sont lues si elles sont là.',
         apercu: apercuHtml(MODELE_RETEST, { label: 'Trois lignes d’exemple de l’installation', colonnes: colonnes(MODELE_RETEST, ['Device1', 'Pin1', 'Cable TG', 'Cable Tag', 'Device2', 'Pin2', 'FWD']) }),
         ensuite: 'Ensuite, les folios se dessinent et chaque câble est jugé. Plusieurs harness : on vous demande lequel ouvrir.',
@@ -536,7 +541,9 @@ function ficheFichiers(focus) { const deja = app.fiche && app.fiche.mode === 'fi
   if (focus) FICHIERS.volets.delete(focus);
   ouvrirFiche({ mode: 'fichiers', large: true, focus: focus || '' }, fichiersHtml(focus || ''), '');
   lierFichiers(); const c = $('fiche-corps');
-  if (focus) { const el = $('vf-' + focus); if (el) { c.scrollTop = 0; c.scrollTop = Math.max(0, el.getBoundingClientRect().top - c.getBoundingClientRect().top - 8); } }
+  // (v86) l'en-tête du document reste collé en haut : la carte vient juste dessous, son titre visible
+  if (focus) { const el = $('vf-' + focus); if (el) { const t = c.querySelector('.fiche-tete'), hh = t && getComputedStyle(t).position === 'sticky' ? t.offsetHeight : 0;
+    c.scrollTop = 0; c.scrollTop = Math.max(0, el.getBoundingClientRect().top - c.getBoundingClientRect().top - 8 - hh); } }
   else if (deja) c.scrollTop = y; }
 /* Refaire « Vos fichiers » sur place (après un dépôt, une erreur) — la lecture reste où elle était. */
 function rendreFichiers() { if (typeof document === 'undefined' || !(app.fiche && app.fiche.mode === 'fichiers')) return;
@@ -564,8 +571,7 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
       bibliotheque: () => { fermerFiche(); montrerBibliotheque('racine'); }, 'ajouter-plans': () => $('fichier-plans').click(),
       ranger: () => { fermerFiche(); ouvrirRanger(); },
       // (v86) le bilan d'ouverture : une ligne mène à ce qu'elle désigne (la fiche du câble en double, du repère, le récapitulatif) ; un geste se fait sur place
-      'bilan-voir': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k]; if (!p) return; const x = p.x, G = p.gestes.find(g => /^Voir\b/.test(g.mot)); fermerFiche();
-        if (x.genre === 'doublon' && x.doublon && x.doublon.identiques && x.cables && x.cables[0] && typeof montrerFil === 'function') montrerFil(x.cables[0]); else if (G) G.faire(); else allerAuControle(x); },
+      'bilan-voir': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k]; if (!p) return; const G = p.gestes.find(g => /^Voir\b/.test(g.mot)); fermerFiche(); if (G) G.faire(); else allerAuControle(p.x); },
       'bilan-geste': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k], g = p && p.gestes[+b.dataset.g]; if (!g) return; g.faire(); rendreFichiers(); },
       'deja-fait': voirDejaFait, charger: chargerRattrapage, corriger: () => { FICHIERS.corriger = !FICHIERS.corriger; rendreFichiers(); },
       abandonner: () => { FICHIERS.attente = null; FICHIERS.corriger = false; rendreFichiers(); },

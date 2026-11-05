@@ -447,50 +447,8 @@ b.rc-n{font-weight:500}
 .rc-retest s.rc-n{color:var(--t-2);text-decoration-thickness:1.5px;text-decoration-color:color-mix(in srgb,var(--t-2) 70%,transparent)}
 .rc-retest.autre .rc-u{color:var(--t-2);margin-left:3px}
 
-/* ─── LE CHOIX DU CALIBRE : la liste qui tombe de la case Calibre (08-recap, `ouvrirGamme`) — le verre des menus ; une ligne
-   par calibre : la marque et le mot dans la couleur de leur état (✓ passe, ~ juste, ✕ déclenche), le calibre en chiffres
-   tabulaires, l'automatique étoilé, celui du retest dit ; dessous, sa raison, sur une ligne. Le retenu est la pièce claire. ─── */
-.rc-gamme{position:fixed;z-index:60;width:376px;max-width:calc(100vw - 16px);padding:6px;--entre-y:-4px;animation-duration:var(--d-moyen)}
-.rc-g-tete{display:flex;align-items:baseline;gap:8px;padding:6px 10px 8px;border-bottom:1px solid var(--voile-2);margin-bottom:4px}
-.rc-g-tete b{font:600 var(--f-13) var(--mono);color:var(--t-1)}
-.rc-g-tete span{font-size:var(--f-12);color:var(--t-2)}
-.rc-g-liste{display:flex;flex-direction:column;gap:2px;max-height:min(420px,calc(100vh - 160px));overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
-.rc-g-l{display:flex;flex-direction:column;align-items:stretch;gap:2px;width:100%;min-height:40px;padding:6px 10px 7px;border:none;border-radius:8px;background:none;color:var(--t-1);text-align:left;font:inherit;cursor:pointer;
-  transition:background var(--d-rapide) var(--courbe)}
-.rc-g-l:hover{background:var(--voile-2)}
-.rc-g-l:focus-visible{outline:none;background:var(--voile-2);box-shadow:inset 0 0 0 2px var(--glace)}
-.rc-g-l:active{transform:scale(.99);transition-duration:var(--d-instant)}
-.rc-g-h{display:flex;align-items:center;gap:8px;min-width:0}
-.rc-g-h b{min-width:46px;font:600 var(--f-14)/1.2 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
-.rc-g-h b small{margin-left:2px;font:500 var(--f-12) var(--sans);color:var(--t-2)}
-.rc-g-h em{font:500 var(--f-13)/1.2 var(--sans);font-style:normal}
-.rc-g-marque{width:14px;height:14px;flex:none;stroke-width:2.4}
-.rc-g-l.passe :is(.rc-g-marque,em){color:var(--ok)}
-.rc-g-l.juste :is(.rc-g-marque,em){color:var(--ko)}
-.rc-g-l.declenche :is(.rc-g-marque,em){color:var(--ko)}
-.rc-g-l.inconnu em{color:var(--t-2)}
-.rc-g-tags{display:inline-flex;gap:4px;margin-left:auto;flex:none}
-.rc-g-tag{display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 7px;border-radius:999px;background:var(--voile-1);font:500 var(--f-11)/1 var(--sans);font-style:normal;color:var(--t-2);white-space:nowrap}
-.rc-g-tag svg.ico{width:11px;height:11px}
-.rc-g-tag.auto{color:var(--t-1);background:var(--voile-2)}
-.rc-g-tag.hors{background:none;box-shadow:inset 0 0 0 1px var(--voile-3)}
-.rc-g-r{padding-left:22px;font-size:var(--f-12);line-height:1.35;color:var(--t-2);text-wrap:pretty}
-.rc-g-l.hors{background:none;box-shadow:inset 0 0 0 1px var(--voile-2)}
-.rc-g-l.hors:hover{background:var(--voile-1)}
-/* le retenu : (v84) la pièce de cuivre doux, cerclée d'un filet de cuivre — plus la pièce bleutée (« jamais de bleu ») ; la
-   liste est un menu du cadre (dans <body>, `menu-verre`) : elle prend le cuivre du cadre (--chrome-cuivre…), clair ou graphite */
-.rc-gamme{--g-cuivre:var(--chrome-cuivre,var(--glace));--g-cuivre-soft:var(--chrome-cuivre-soft,rgba(236,165,112,.16));--g-cuivre-ligne:var(--chrome-cuivre-ligne,rgba(236,165,112,.42))}
-.rc-g-l[aria-selected="true"]{background:var(--g-cuivre-soft);box-shadow:inset 0 0 0 1px var(--g-cuivre-ligne);cursor:default}
-.rc-g-l[aria-selected="true"] :is(b,.rc-g-r){color:var(--t-1)}
-.rc-g-l[aria-selected="true"] .rc-g-tag{background:var(--voile-2);color:var(--t-1)}
-.rc-g-l[aria-selected="true"]:focus-visible{box-shadow:inset 0 0 0 2px var(--g-cuivre)}
-.rc-g-l:focus-visible{box-shadow:inset 0 0 0 2px var(--g-cuivre)}
-.rc-g-cat:focus-visible{box-shadow:inset 0 0 0 2px var(--g-cuivre)}
-.rc-g-pied{display:flex;flex-direction:column;gap:0;margin-top:4px;padding-top:4px;border-top:1px solid var(--voile-2)}
-.rc-g-pied:empty{display:none}
-.rc-g-cat{min-height:34px;padding:0 10px;border:none;border-radius:8px;background:none;color:var(--t-1);text-align:left;font:500 var(--f-13) var(--sans);cursor:pointer;transition:background var(--d-rapide) var(--courbe)}
-.rc-g-cat:hover,.rc-g-cat:focus-visible{background:var(--voile-2);outline:none}
-.rc-g-cat:focus-visible{box-shadow:inset 0 0 0 2px var(--glace)}
+/* (v86, G8 : plus de liste de la gamme sous la case Calibre — le calibre écrit vient du fichier ; seule la proposition de
+   VOLTA écrit, d’un bouton, style-x-recap 16) */
 
 /* ─── la tablette et le téléphone (le code reste, on ne le soigne plus) ─── */
 @media (max-width:700px){
