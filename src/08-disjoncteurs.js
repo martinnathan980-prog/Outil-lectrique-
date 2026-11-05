@@ -853,14 +853,18 @@ function lignesFilsDisjoncteur(nom, d) { d = d || disjonctionDe(nom); const cal 
   return d.fils.map(f => { const j = jugementDuFil(f, cal), c = f.l ? chuteEnLigne(f.l, nom) : null, pointe = pireChuteEnPointe(c), etatU = etatDeChute(c, pointe), motSupp = c && !c.reel ? ', longueurs supposées' : '';
     const etat = j.etat === 'ko' || etatU === 'ko' ? 'ko' : j.etat === 'att' || etatU === 'att' ? 'att' : '';
     const pourquoi = [j.dit, c && c.trop ? `chute en ligne ${volts(c.dU)} > ${volts(c.admis)}${motSupp}` : pointe ? `chute en pointe ${volts(pointe.dU)} > ${volts(pointe.admis)}${motSupp}` : ''].filter(Boolean).join(' · ');
-    const bulle = [`${f.type || 'câble'} · ${f.amont ? '← ' : '→ '}${f.autre}${f.via ? ' (par ' + f.via + ')' : ''}`, j.dit ? majuscule(j.dit) : '', j.contact || '',
+    // (v86, l'audit B1) une branche de commande dont rien n'est écrit : « inconnu » dans le tableau, la raison dans la bulle — jamais un tiret
+    const sansC = f.inconnu && f.branche ? f.branche.sans || [] : [], bobC = sansC.filter(x => x.nature === 'bobine').map(x => x.repere), entC = sansC.filter(x => x.nature === 'entree').map(x => x.repere);
+    const motC = !f.inconnu ? '' : bobC.length ? `Courant de commande inconnu : écrivez la consommation de la bobine de ${listeEt(bobC)}. La chute en ligne en dépend.` : `Une entrée de ${listeEt(entC)} : quelques milliampères — VOLTA ne lui prête pas le courant de ${nom}, et sa chute ne se calcule pas.`;
+    const bulle = [`${f.type || 'câble'} · ${f.amont ? '← ' : '→ '}${f.autre}${f.via ? ' (par ' + f.via + ')' : ''}`, motC, j.dit ? majuscule(j.dit) : '', j.contact || '',
       j.charge ? `au pire ${amperes(j.charge.i)} sur ${amperes1(j.charge.admise)} admis ${j.charge.quand}` : '',
       c && c.dU != null ? `chute en ligne vers ${c.bout[0]}${c.bout[1] ? ':' + c.bout[1] : ''} : ${volts(c.dU)}${c.pct != null ? ' (' + nombre(Math.round(c.pct * 10) / 10) + ' %)' : ''}${c.admis != null ? ', ' + volts(c.admis) + ' admis' : ''}${c.reel ? '' : ' — longueurs supposées'}${c.disjoncteur && c.disjoncteur.dU != null ? ', dont ' + mV(c.disjoncteur.dU) + ' dans le disjoncteur' : ''}` : '',
       pointe ? `en pointe : ${volts(pointe.dU)} à ${amperes(pointe.i)} > ${volts(pointe.admis)} admis${pointe.intermittent ? ' en intermittent' : ''}` : ''].filter(Boolean).join('\n');
     const [rep, ...b] = String(f.autre || '').split(':');
     return { l: f.l, k: f.l ? cleFil(f.l) : '', num: f.type || '—', puce: puceFil(f), jauge: jaugeDuType(f.type), type: f.type, bout: rep ? { rep, borne: b.join(':') } : null,
-      charge: j.charge ? { r: j.charge.r, mot: `${nombreA(j.charge.i)} / ${nombreA(j.charge.admise)} A`, i: j.charge.i, admis: j.charge.admise } : { r: null, mot: '—' },
-      chute: { mot: c && c.dU != null ? volts(c.dU) : '—', u: c && c.dU != null ? c.dU : null, max: c && c.admis != null ? c.admis : null, regle: c ? c.regle || '' : '', supp: !!(c && !c.reel) }, etat, pourquoi, bulle }; }); }
+      charge: j.charge ? { r: j.charge.r, mot: `${nombreA(j.charge.i)} / ${nombreA(j.charge.admise)} A`, i: j.charge.i, admis: j.charge.admise } : { r: null, mot: f.inconnu ? 'inconnu' : '—' },
+      chute: { mot: c && c.dU != null ? volts(c.dU) : f.inconnu ? 'inconnue' : '—', u: c && c.dU != null ? c.dU : null, max: c && c.admis != null ? c.admis : null, regle: c ? c.regle || '' : '', supp: !!(c && !c.reel) }, etat, pourquoi, bulle,
+      inconnu: !!f.inconnu, commande: !!f.commande, via: f.via || '' }; }); }
 /* Le jugement d'un câble, en mots : son état (ko : la charge le dépasse ou dépasse son contact ; att : pas protégé, sous le
    calibre, hors de la table 11-3, contact sous le calibre ; ok), la charge au pire (le courant d'une phase contre ce qu'il
    admet pour cette durée) et ce qui ne va pas, en une ligne. */

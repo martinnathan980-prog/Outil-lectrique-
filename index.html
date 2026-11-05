@@ -8949,6 +8949,9 @@ body #inspecteur .fi.nv-c>.fi-nav::before{display:none}
 #inspecteur svg .bro-l[tabindex]:focus-visible{outline-offset:1px;border-radius:7px}
 #inspecteur svg .bro-l[tabindex]:focus-visible .bro-zone{fill:var(--nv-cuivre-soft)}
 
+/* un bouton de la fiche (« Passer en DR16 », « Lui donner son repère ») : l'anneau en trait, qu'aucune ombre ne remplace — la
+   nuit posait sa lueur à la place de l'anneau, qui disparaissait (l'identifiant doublé passe devant ces règles-là) */
+#inspecteur#inspecteur .btn:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
 /* Automatique | Manuel : le segment qui a le clavier porte l'anneau net, pressé ou non */
 #inspecteur .nv-am-b:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
 
@@ -10030,7 +10033,7 @@ svg.vu-arbre .vu-an .vu-an-t{font:700 9.5px var(--sans);font-variant-numeric:tab
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '5d4b8b206fd1';
+const VERSION_MOTEUR = '40eb58a0e4aa';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -11179,6 +11182,11 @@ function desordresDeFace(comps) { let d = DESORDRES_LUS.get(comps); if (d) retur
   if (parCol) parCol.forEach(cs => { if (cs.length < 2) return; const s = cs.slice().sort((u, v) => u.y - v.y);
     for (let i = 1; i < s.length; i++) if (triDeFace(premierDuDessin(s[i - 1]), premierDuDessin(s[i])) > 0) d.n++; });
   DESORDRES_LUS.set(comps, d); return d; }
+/* (Une barrette À POSER — VT3 au folio 6, lue 51J, 51H, 51K : son raccord pris entre ses deux fils — n'est pas comptée : le
+   routage la pose après coup (05), au ras de la borne dédoublée, et la compter au juge d'après les liaisons trompait la
+   recherche — essayé : le folio 1 perdait un fil droit pour un ordre que le routage défaisait. Ses contacts se nomment
+   mieux dans l'ordre où le plan les dessine : c'est le nommage, 01 / 09.) */
+const desordresDe = L => desordresDeFace(L.comps);
 const coutDesDesordres = d => DESORDRE * d.n + DESORDRE_PAS * d.pas;
 // le même coût pour un ordre de bornes d'un morceau (de haut en bas, par leur clé) : l'estimation d'une permutation
 function coutDeLOrdreDeFace(M, id, cles) { const b = M.blocs.get(id); if (b.genre !== 'barrette' || cles.length < 2) return 0;
@@ -11927,7 +11935,7 @@ function resoudre(M, E, guide) {
    borne de bornier (ordre imposé) DICTE, une borne d'équipement suit ; un
    bornier écoute tout le monde. Un partenaire d'une autre rangée compte en
    miroir, pour que les fils de retour d'un repli s'emboîtent. */
-function barycentre(M, E, y, moyenne, parite) {
+function barycentre(M, E, y, moyenne, parite, ranger) {
   const centre = v => (moyenne ? v.reduce((a, b) => a + b, 0) / v.length : mediane(v));
   // une colonne sur deux à chaque passe, les autres servant de repère : deux colonnes qui se réordonnent l'une sur l'autre en même temps s'inversent sans fin
   const auTour = id => (E.place.get(id).c % 2) === parite;
@@ -11947,7 +11955,7 @@ function barycentre(M, E, y, moyenne, parite) {
     if (ss) { const somme = new Map(); pile.forEach(id => { const g = ss.get(id); if (g == null) return; const t = somme.get(g) || somme.set(g, [0, 0]).get(g); t[0] += cle.get(id); t[1]++; });
       somme.forEach(([s0, n], g) => groupe.set(g, s0 / n)); }
     const cleDe = id => (ss && ss.has(id) ? groupe.get(ss.get(id)) : cle.get(id));
-    pile.sort((a, b) => (cleDe(a) - cleDe(b)) || (cle.get(a) - cle.get(b))); rangerLesMorceaux(M, pile); });
+    pile.sort((a, b) => (cleDe(a) - cleDe(b)) || (cle.get(a) - cle.get(b))); if (ranger) rangerLesMorceaux(M, pile); });
   // les bornes d'un équipement : un connecteur au centre de ses partenaires, ses bornes dans l'ordre vertical des leurs ; un paquet ponté reste ensemble
   M.ids.forEach(id => { const b = M.blocs.get(id); if (b.genre !== 'equip' || !auTour(id)) return;
     ['L', 'R'].forEach(lid => { const L = E.listes.get(id)[lid]; if (L.length < 2) return;
@@ -11986,8 +11994,16 @@ function ordonnerLesBlocs(M, E, maxit) {
   const note = pos => estimerMemo(assemblerMemo(M, E, pos)).lisibilite;
   let pos = resoudre(M, E, null), best = pos, bestNote = note(pos), bestOrdre = photoOrdres(E), stagne = 0;
   const MAXIT = maxit || (M.ids.length > 300 ? 8 : 20);
-  for (let it = 0; it < MAXIT && stagne < 6; it++) { barycentre(M, E, pos.y, (it >> 1) % 2 === 1, it % 2); pos = resoudre(M, E, pos.y);
-    const n = note(pos); if (n > bestNote + 0.01) { best = pos; bestNote = n; bestOrdre = photoOrdres(E); stagne = 0; } else stagne++; }
+  const tourner = ranger => { for (let it = 0; it < MAXIT && stagne < 6; it++) { barycentre(M, E, pos.y, (it >> 1) % 2 === 1, it % 2, ranger); pos = resoudre(M, E, pos.y);
+    const n = note(pos); if (n > bestNote + 0.01) { best = pos; bestNote = n; bestOrdre = photoOrdres(E); stagne = 0; } else stagne++; } };
+  tourner(false);
+  /* (v86) puis, quand une colonne porte plusieurs morceaux d'une même barrette, les mêmes tours en les gardant dans l'ordre
+     de la face (`rangerLesMorceaux`), depuis le meilleur : les bornes des équipements les suivent. L'estimation tranche (elle
+     compte les désordres) : libre, une barrette servie par trois sources s'y regroupe par source (six croisements de moins,
+     le banc « réglette VT traversante ») ; rangée, celle du folio 6 se lit 51A-D, 51E-G, 51J-K… sans rien perdre. */
+  const parMorceaux = [...E.piles.values()].some(pile => { const vus = new Set(); return pile.some(id => { const b = M.blocs.get(id); if (b.genre !== 'barrette') return false; if (vus.has(b.nom)) return true; vus.add(b.nom); return false; }); });
+  if (parMorceaux) { revenirOrdres(E, bestOrdre); E.piles.forEach(pile => rangerLesMorceaux(M, pile)); pos = resoudre(M, E, best.y);
+    const n0 = note(pos); if (n0 > bestNote + 0.01) { best = pos; bestNote = n0; bestOrdre = photoOrdres(E); } stagne = 0; tourner(true); }
   revenirOrdres(E, bestOrdre);
   return best;
 }
@@ -12268,7 +12284,7 @@ function juger(L, R) {
   const tient = (r <= FORMAT_MAX * 1.005 && r >= FORMAT_MIN / 1.005) || tientALEchelle(w, h), tiendra = tient || (r <= FORMAT_MAX * ETIRABLE && compterBandes(blocs) >= 2);
   // les frôlements ne comptent dans la lisibilité qu'à partir de la finition : au juge de structure, ils se comptent à la demande
   let frolements = NIVEAU_JUGE >= 1 ? compterFrolements(fils, blocs) : null;
-  const contours = compterContours(fils), descentes = compterDescentes(boutsDesLiaisons(L.links)), forme = coutDeForme(w, h), desordres = desordresDeFace(L.comps);
+  const contours = compterContours(fils), descentes = compterDescentes(boutsDesLiaisons(L.links)), forme = coutDeForme(w, h), desordres = desordresDe(L);
   let muets = null;      // les muets coûtent cher à compter (le dessin pose ses étiquettes) : au niveau du choix, ou quand droits et croisements sont à égalité
   const j = { sain: t.etrangers === 0 && chevauchements(L.comps) === 0 && bornesSuperposees(L.comps) === 0 && filsRompus(R.fils, R.barrettes) === 0, tient, tiendra, format: r, largeur: w,
     droits, croisements, partages, etires, marches, tours: compterTours(L), propres: t.propres.size, contours, forme, desordres: desordres.n,
@@ -12468,7 +12484,7 @@ function estimer(L) {
   // les corps étirés se voient sans router : l'estimation les compte comme le juge
   const etires = compterEtires(blocs), tours = compterTours(L), descentes = compterDescentes(boutsDesLiaisons(L.links)), excesEtires = excesDesEtires(blocs);
   let gx = 1e9, dx = -1e9, hy = 1e9, by = -1e9; blocs.forEach(c => { gx = Math.min(gx, c.x); dx = Math.max(dx, c.x + c.w); hy = Math.min(hy, c.y); by = Math.max(by, c.y + c.h); });
-  const forme = coutDeForme(dx - gx, by - hy), desordres = desordresDeFace(L.comps);
+  const forme = coutDeForme(dx - gx, by - hy), desordres = desordresDe(L);
   return { droits, croisements, etires, tours, descentes, frolements, forme, detail, desordres: desordres.n,
     lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - ETIRE * etires - TOUR * tours - DESCENTE * (descentes + excesEtires) - coutDesDesordres(desordres) - (NIVEAU_JUGE >= 1 ? FROLE * frolements : 0) - (NIVEAU_JUGE >= 2 ? forme : 0) };
 }
@@ -12608,7 +12624,7 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
       if (ya == null && M.estTag(w.a.id)) ya = yb; if (yb == null && M.estTag(w.b.id)) yb = ya;
       return { ...l, epA: ya == null ? l.epA : { ...l.epA, y: ya }, epB: yb == null ? l.epB : { ...l.epB, y: yb } }; });
     // les blocs du meilleur portent son ordre de face : celui d'un morceau de barrette se reprend pour le nouvel ordre
-    let e = estimer({ comps: L.comps, links, geom: L.geom }); const d = coutDeLOrdreDeFace(M, id, ordre) - coutDeLOrdreDeFace(M, id, cles);
+    let e = estimer({ comps: L.comps, links, geom: L.geom, vt: L.vt }); const d = coutDeLOrdreDeFace(M, id, ordre) - coutDeLOrdreDeFace(M, id, cles);
     if (d) e = { ...e, lisibilite: e.lisibilite - d }; G.set(cle, e); return e; };
   // après un geste géométrique gardé, l'état reprend l'ordre des ordonnées
   const ordonnerParY = (E, pos) => { M.ids.forEach(id => { if (M.estTag(id)) return; E.clesListes(id).forEach(lid => E.listes.get(id)[lid].sort((u, v) => pos.y.get(K(id, u.cle)) - pos.y.get(K(id, v.cle)))); });
@@ -13479,7 +13495,7 @@ function tasserLesEtires(M, m) {
 const budgetDe = M => { const nB = M.ids.length; return nB <= 20 ? 2400 : nB <= 40 ? 1200 : nB <= 80 ? 800 : 600; };
 function* placementEnPas(liaisons) {
   const G = construireGraphe(liaisons); if (!G.ids.length) return null;
-  const placerSur = function* (G, part, graphe) { const M = modele(G), m = yield* concoursEnPas(M, {}, Math.round(budgetDe(M) * (part || 1)), graphe); m.M = M; return m; };
+  const placerSur = function* (G, part, graphe) { const M = modele(G, liaisons), m = yield* concoursEnPas(M, {}, Math.round(budgetDe(M) * (part || 1)), graphe); m.M = M; return m; };
   let meilleur = yield* placerSur(G, 1, { coupes: null });
   // une barrette dont les bornes partent des deux côtés se COUPE, et le dessin coupé concourt contre l'entier
   const coupes = coupesParCote(meilleur.M, meilleur.E, meilleur.pos);
@@ -13522,7 +13538,7 @@ function faireTacheEnDonnees(cle, liaisons, d) {
   if (MODELES_DES_AIDES.cle !== cle) MODELES_DES_AIDES = { cle, M: new Map() };
   const k = d.graphe.coupes ? d.graphe.coupes.join(',') : '';
   let M = MODELES_DES_AIDES.M.get(k);
-  if (!M) { M = modele(construireGraphe(liaisons, d.graphe.coupes ? new Set(d.graphe.coupes.map(i => liaisons[i])) : undefined)); MODELES_DES_AIDES.M.set(k, M); }
+  if (!M) { M = modele(construireGraphe(liaisons, d.graphe.coupes ? new Set(d.graphe.coupes.map(i => liaisons[i])) : undefined), liaisons); MODELES_DES_AIDES.M.set(k, M); }
   const etat = desDonnees(M, d.etat), t = { genre: d.genre, M, graphe: d.graphe, principal: d.principal, budget: d.budget, niveau: d.niveau };
   if (d.genre === 'finir') t.r = etat; else t.c = etat;
   return enDonnees(faireTache(t), true); }
@@ -25385,14 +25401,18 @@ function lignesFilsDisjoncteur(nom, d) { d = d || disjonctionDe(nom); const cal 
   return d.fils.map(f => { const j = jugementDuFil(f, cal), c = f.l ? chuteEnLigne(f.l, nom) : null, pointe = pireChuteEnPointe(c), etatU = etatDeChute(c, pointe), motSupp = c && !c.reel ? ', longueurs supposées' : '';
     const etat = j.etat === 'ko' || etatU === 'ko' ? 'ko' : j.etat === 'att' || etatU === 'att' ? 'att' : '';
     const pourquoi = [j.dit, c && c.trop ? `chute en ligne ${volts(c.dU)} > ${volts(c.admis)}${motSupp}` : pointe ? `chute en pointe ${volts(pointe.dU)} > ${volts(pointe.admis)}${motSupp}` : ''].filter(Boolean).join(' · ');
-    const bulle = [`${f.type || 'câble'} · ${f.amont ? '← ' : '→ '}${f.autre}${f.via ? ' (par ' + f.via + ')' : ''}`, j.dit ? majuscule(j.dit) : '', j.contact || '',
+    // (v86, l'audit B1) une branche de commande dont rien n'est écrit : « inconnu » dans le tableau, la raison dans la bulle — jamais un tiret
+    const sansC = f.inconnu && f.branche ? f.branche.sans || [] : [], bobC = sansC.filter(x => x.nature === 'bobine').map(x => x.repere), entC = sansC.filter(x => x.nature === 'entree').map(x => x.repere);
+    const motC = !f.inconnu ? '' : bobC.length ? `Courant de commande inconnu : écrivez la consommation de la bobine de ${listeEt(bobC)}. La chute en ligne en dépend.` : `Une entrée de ${listeEt(entC)} : quelques milliampères — VOLTA ne lui prête pas le courant de ${nom}, et sa chute ne se calcule pas.`;
+    const bulle = [`${f.type || 'câble'} · ${f.amont ? '← ' : '→ '}${f.autre}${f.via ? ' (par ' + f.via + ')' : ''}`, motC, j.dit ? majuscule(j.dit) : '', j.contact || '',
       j.charge ? `au pire ${amperes(j.charge.i)} sur ${amperes1(j.charge.admise)} admis ${j.charge.quand}` : '',
       c && c.dU != null ? `chute en ligne vers ${c.bout[0]}${c.bout[1] ? ':' + c.bout[1] : ''} : ${volts(c.dU)}${c.pct != null ? ' (' + nombre(Math.round(c.pct * 10) / 10) + ' %)' : ''}${c.admis != null ? ', ' + volts(c.admis) + ' admis' : ''}${c.reel ? '' : ' — longueurs supposées'}${c.disjoncteur && c.disjoncteur.dU != null ? ', dont ' + mV(c.disjoncteur.dU) + ' dans le disjoncteur' : ''}` : '',
       pointe ? `en pointe : ${volts(pointe.dU)} à ${amperes(pointe.i)} > ${volts(pointe.admis)} admis${pointe.intermittent ? ' en intermittent' : ''}` : ''].filter(Boolean).join('\n');
     const [rep, ...b] = String(f.autre || '').split(':');
     return { l: f.l, k: f.l ? cleFil(f.l) : '', num: f.type || '—', puce: puceFil(f), jauge: jaugeDuType(f.type), type: f.type, bout: rep ? { rep, borne: b.join(':') } : null,
-      charge: j.charge ? { r: j.charge.r, mot: `${nombreA(j.charge.i)} / ${nombreA(j.charge.admise)} A`, i: j.charge.i, admis: j.charge.admise } : { r: null, mot: '—' },
-      chute: { mot: c && c.dU != null ? volts(c.dU) : '—', u: c && c.dU != null ? c.dU : null, max: c && c.admis != null ? c.admis : null, regle: c ? c.regle || '' : '', supp: !!(c && !c.reel) }, etat, pourquoi, bulle }; }); }
+      charge: j.charge ? { r: j.charge.r, mot: `${nombreA(j.charge.i)} / ${nombreA(j.charge.admise)} A`, i: j.charge.i, admis: j.charge.admise } : { r: null, mot: f.inconnu ? 'inconnu' : '—' },
+      chute: { mot: c && c.dU != null ? volts(c.dU) : f.inconnu ? 'inconnue' : '—', u: c && c.dU != null ? c.dU : null, max: c && c.admis != null ? c.admis : null, regle: c ? c.regle || '' : '', supp: !!(c && !c.reel) }, etat, pourquoi, bulle,
+      inconnu: !!f.inconnu, commande: !!f.commande, via: f.via || '' }; }); }
 /* Le jugement d'un câble, en mots : son état (ko : la charge le dépasse ou dépasse son contact ; att : pas protégé, sous le
    calibre, hors de la table 11-3, contact sous le calibre ; ok), la charge au pire (le courant d'une phase contre ce qu'il
    admet pour cette durée) et ce qui ne va pas, en une ligne. */
@@ -25984,7 +26004,7 @@ function changementsDuRetest() { const V = verite().filter(liaisonComplete), par
       e.colonnes.add(col); e.n++; e.liaisons.push(l); }); });
   // (v86) une ligne en double retirée : toute la ligne quitte l'Excel, une proposition de VOLTA ; le câble se dit par ses bouts
   V.forEach(l => { const c = copiesRetirees(l); if (!c) return; if (!modificationsDe(l).length) liaisons++;
-    const objet = l.de + (l.borneDe ? ':' + l.borneDe : '') + ' → ' + l.vers + (l.borneVers ? ':' + l.borneVers : '');
+    const objet = typeof cableParSesBouts === 'function' ? cableParSesBouts(l) : l.de + (l.borneDe ? ':' + l.borneDe : '') + ' → ' + l.vers + (l.borneVers ? ':' + l.borneVers : '');
     par.set('copies\u0001' + par.size + '\u0001' + objet, { objet, mono: true, colonne: 'ligne en double', calibres: '', colonnes: new Set(['toutes']), champ: 'copies', avant: (c + 1) + ' lignes', apres: '1 ligne', origine: 'volta', n: 1, liaisons: [l],
       bulle: (c > 1 ? c + ' copies identiques de cette ligne quittent' : 'Sa copie identique quitte') + ' l’Excel corrigé — « Retirer la ligne en double »' }); });
   const ecrits = [...par.values()].map(e => ({ ...e, colonnes: [...e.colonnes] })).sort((a, b) => triNaturel(a.objet, b.objet) || a.colonne.localeCompare(b.colonne));
@@ -28053,7 +28073,8 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     // (v83, le lecteur : « quand je clique sur A, B, C, ça ne me mène pas au câble ») : une lettre prise mène à son câble
     va: mini ? null : ct => { const x = Q.fils.find(y => y.contact === ct && y.f.l); return x ? { onglet: 'cables', vers: `[data-i="${cleFil(x.f.l)}"]` } : null; } }) : faceVue([], () => '', { w: mini ? 64 : 180 });
   const coteP = (lt, am) => { const ct = M.module.contacts.find(k => k.lettre === lt), x = Q.fils.find(y => y.contact === ct && !!y.f.amont === am); if (!x) return null;
-    return { type: x.f.type, de: x.f.vers + (x.f.borne ? ':' + x.f.borne : ''), couleur: coulDeFil(x.f), ko: x.jaugeOk === false, k: x.f.l ? cleFil(x.f.l) : '' }; };
+    // (v86) `borne` : la borne de la prise telle que le fichier l'écrit — un fichier qui numérote, « 1 » pour le contact A (08-vues, « 1·A »)
+    return { type: x.f.type, de: x.f.vers + (x.f.borne ? ':' + x.f.borne : ''), couleur: coulDeFil(x.f), ko: x.jaugeOk === false, k: x.f.l ? cleFil(x.f.l) : '', borne: x.borne }; };
   const lettresP = M ? M.module.contacts.filter(ct => Q.fils.some(x => x.contact === ct)).map(ct => ct.lettre) : [];
   const refsDe = xs => compterParReference(xs.map(x => x.sertir ? motSertir(x.sertir) : ''), 'contact à sertir');
   const rAm = refsDe(amont), rAv = refsDe(aval), dits = r => r.map(x => `<b class="id">${esc(x.ref)}</b>${x.q > 1 ? ' × ' + x.q : ''}`).join(', ');
@@ -29083,10 +29104,23 @@ function bilanHtml() { FICHIERS.bilan = []; const V = verite(); if (!V.length ||
     const ou = lignesDuPoint(x), t = phraseDuBilan(x), insecable_ = typeof insecable === 'function' ? insecable : s => s;
     return `<li><button type="button" class="fi-pb-l ${x.niveau === 'ko' ? 'ko' : 'att'}" data-vf="bilan-voir" data-k="${k}" data-bulle="${escA(majuscule((x.nom ? x.nom + ' : ' : '') + x.texte))}"><i aria-hidden="true"></i><span class="fi-pb-t">${insecable_(esc(t))}</span>${ou ? `<span class="fi-pb-s">${esc(ou)}</span>` : ''}</button>`
       + (agir.length ? `<span class="fi-pb-gestes">${agir.map((g, i) => `<button type="button" class="btn ${g.principal || i === 0 ? 'papier' : 'lien'} dense" data-vf="bilan-geste" data-k="${k}" data-g="${G.indexOf(g)}"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`).join('')}</span>` : '') + '</li>'; };
+  /* un genre nombreux (plus de trois points à régler) se dit en UNE ligne — son compte, son geste d'un coup —, et au-delà de
+     six points à voir, le reste mène à la liste « à reprendre » (R) : jamais un pavé de quatre-vingts lignes */
+  const groupe = (genre, xs) => { const G = typeof gesteDuGenre === 'function' ? gesteDuGenre({ genre, lignes: [{ xs }] }) : null, k = FICHIERS.bilan.push({ x: xs[0], groupe: true, gestes: G ? [G] : [] }) - 1;
+    const copies = ys => ys.reduce((s, x) => s + (x.doublon && x.doublon.copies || 1), 0), n = genre === 'doublon' ? copies(xs) : xs.length, ou = lignesDuPoint({ cables: xs.flatMap(x => x.cables || []) });
+    // (des copies qui diffèrent ailleurs — une longueur, une route — ne se retirent pas d'un geste : VOLTA ne choisit pas laquelle garder)
+    const autres = genre === 'doublon' ? copies(xs.filter(x => !(x.doublon && x.doublon.identiques))) : 0;
+    const t = genre === 'doublon' ? (autres === n ? `${n} lignes en double, pas à l’identique — gardez la bonne de chacune dans votre fichier` : `${n} lignes en double${autres ? ', dont ' + autres + ' pas à l’identique' : ''} — VOLTA ne dessine chacune qu’une fois`)
+      : `${n} repères écrits de deux façons (${xs.slice(0, 3).map(x => x.casse ? x.casse.cible : x.nom).join(', ')}${n > 3 ? '…' : ''}) — VOLTA lit chacun d’une seule`;
+    return `<li><button type="button" class="fi-pb-l ko" data-vf="bilan-voir" data-k="${k}" data-bulle="${escA('Chacun dans la liste « à reprendre » (R)')}"><i aria-hidden="true"></i><span class="fi-pb-t">${esc(t)}</span>${ou ? `<span class="fi-pb-s">${esc(ou)}</span>` : ''}</button>`
+      + (G ? `<span class="fi-pb-gestes"><button type="button" class="btn papier dense" data-vf="bilan-geste" data-k="${k}" data-g="0" data-bulle="${escA(G.aide || '')}">${esc(G.mot)}</button></span>` : '') + '</li>'; };
+  const lignesKo = ['doublon', 'casse'].map(g => { const ys = B.ko.filter(x => x.genre === g); return ys.length > 3 ? groupe(g, ys) : ys.map(ligne).join(''); }).join('') + B.ko.filter(x => x.genre !== 'doublon' && x.genre !== 'casse').map(ligne).join('');
+  const vus = B.att.slice(0, 6), reste = B.att.length - vus.length;
+  const lignesAtt = vus.map(ligne).join('') + (reste ? `<li><button type="button" class="fi-pb-l att" data-vf="bilan-reste"><i aria-hidden="true"></i><span class="fi-pb-t">et ${reste > 1 ? reste + ' autres points' : 'un autre point'} à voir, dans la liste « à reprendre »</span><span class="fi-pb-s">R</span></button></li>` : '');
   const n = R ? R.n : V.length, nk = B.ko.length, na = B.att.length;
   const tete = `<p><b>VOLTA a lu ${esc(pluriel(n, 'liaison'))}</b>${nk || na ? ' et relève ' + [nk ? pluriel(nk, 'point') + ' à régler' : '', na ? (nk ? na + ' à voir' : pluriel(na, 'point') + ' à voir') : ''].filter(Boolean).join(', ') : ' : rien à reprendre dans l’écriture du fichier'}${regles ? ` — ${regles > 1 ? regles + ' réglés' : '1 réglé'} depuis l’ouverture` : ''}.</p>`;
   const cote = [nl ? (nl > 1 ? 'les lignes ' : 'la ligne ') + (R.laissees || []).join(', ') + (nl > (R.laissees || []).length ? '…' : '') + ' (ni équipement ni câble)' : '', ...ig.map(f => 'la feuille ' + guillemets(esc(f)) + ' (pas les en-têtes d’une installation)')].filter(Boolean);
-  return `<div class="vf-une vf-bilan">${tete}${xs.length ? `<ul class="fi-pbs">${xs.map(ligne).join('')}</ul>` : ''}${cote.length ? `<p class="vf-note">Laissé de côté : ${cote.join(', ')}.</p>` : ''}</div>`; }
+  return `<div class="vf-une vf-bilan">${tete}${xs.length ? `<ul class="fi-pbs">${lignesKo}${lignesAtt}</ul>` : ''}${cote.length ? `<p class="vf-note">Laissé de côté : ${cote.join(', ')}.</p>` : ''}</div>`; }
 /* Une base reçue (un dépôt sur sa carte, ou un fichier de plusieurs harness) : la carte le dira, avec ses comptes et ce
    qu'elle a rangé dans la bibliothèque (`rangee`). */
 function baseRecue(nom, avis, rangee) { FICHIERS.base = null; effacerErreur('base'); FICHIERS.succes = 'base'; FICHIERS.rangee = rangee || null; FICHIERS.avis.base = avis || null; rendreFichiers(); }
@@ -29379,7 +29413,9 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
       bibliotheque: () => { fermerFiche(); montrerBibliotheque('racine'); }, 'ajouter-plans': () => $('fichier-plans').click(),
       ranger: () => { fermerFiche(); ouvrirRanger(); },
       // (v86) le bilan d'ouverture : une ligne mène à ce qu'elle désigne (la fiche du câble en double, du repère, le récapitulatif) ; un geste se fait sur place
-      'bilan-voir': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k]; if (!p) return; const G = p.gestes.find(g => /^Voir\b/.test(g.mot)); fermerFiche(); if (G) G.faire(); else allerAuControle(p.x); },
+      'bilan-voir': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k]; if (!p) return; const G = p.gestes.find(g => /^Voir\b/.test(g.mot)); fermerFiche();
+        if (p.groupe) ouvrirProblemes(); else if (G) G.faire(); else allerAuControle(p.x); },
+      'bilan-reste': () => { fermerFiche(); ouvrirProblemes(); },
       'bilan-geste': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k], g = p && p.gestes[+b.dataset.g]; if (!g) return; g.faire(); rendreFichiers(); },
       'deja-fait': voirDejaFait, charger: chargerRattrapage, corriger: () => { FICHIERS.corriger = !FICHIERS.corriger; rendreFichiers(); },
       abandonner: () => { FICHIERS.attente = null; FICHIERS.corriger = false; rendreFichiers(); },
@@ -33794,7 +33830,7 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     const iH = `<span class="nv-mes${anI ? '' : ' seul'}">${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : r.charge.i != null && r.charge.r == null ? `<small class="nv-mes-inc" data-bulle="${escA(r.type ? r.type + ' n’est pas dans l’EN 2853 : ce qu’il admet ne se lit pas' : 'Votre fichier ne donne pas son type : ce qu’il admet ne se lit pas')}">admis inconnu</small>` : ''}</span></span>`;
     const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
     // (v85) sans chemin de disjoncteur, la chute du câble seul — contre la chute admise de toute la ligne : la bulle le dit
-    const uH = `<span class="nv-mes${anU ? '' : ' seul'}"${r.chute.seul && r.chute.u != null && r.chute.max != null ? ` data-bulle="${escA('Sur ce câble seul : ' + volts(r.chute.u) + ', ' + Math.round(r.chute.u / r.chute.max * 100) + ' % des ' + volts(r.chute.max) + ' que la ligne entière peut perdre — aucun disjoncteur en amont n’en donne le chemin')}"` : ''}>${anneauOuPlace(ru, anU)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null && r.chute.u != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
+    const uH = `<span class="nv-mes${anU ? '' : ' seul'}"${r.chute.seul && r.chute.u != null && r.chute.max != null ? ` data-bulle="${escA('Sur ce câble seul : ' + volts(r.chute.u) + ', ' + Math.round(r.chute.u / r.chute.max * 100) + ' % des ' + volts(r.chute.max) + ' que la ligne entière peut perdre — aucun disjoncteur en amont n’en donne le chemin')}"` : ''}>${anneauOuPlace(ru, anU)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : esc(r.chute.mot || '—')}</b>${r.chute.max != null && r.chute.u != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
     // (v81) une longueur supposée s'écrit « ≈ 5 m » en gris, comme au récapitulatif — la cellule reste centrée sous son titre
     // (v85, le lecteur : « ce qui vient de mon fichier, plus aucune saisie ») : la longueur se lit, elle se change dans le fichier
     const lgH = `<span class="nv-cab-lg${L == null ? ' supp' : ''}" data-bulle="${escA(L == null ? 'Votre fichier ne donne pas sa longueur : VOLTA suppose ' + nombre(H.longueur) + ' m (Hypothèses) — à écrire dans votre fichier' : 'Celle de votre fichier')}">${L == null ? '<i class="nv-env">≈</i>' : ''}<b>${L != null ? esc(nombre(arrondi(L, 2))) : esc(nombre(H.longueur))}</b><small>m</small></span>`;
@@ -36638,6 +36674,8 @@ function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.
   if (/incomplète/.test(t)) return ['Écrire « de » et « vers » dans votre fichier', ''];
   if (/ambiante/.test(t)) return ['Un câble qui supporte plus chaud, ou revoir l’ambiante (⋮ › Hypothèses)', ''];
   if (/CCA/.test(t)) return ['Qualifier le contact pour l’aluminium cuivré, ou un câble cuivre', 'contacts'];
+  // (v86) une branche de commande au courant inconnu : écrire ce que consomme ce qu'elle alimente (la bobine d'un relais)
+  if (/courant de commande inconnu/i.test(t)) { const b = /bobine de (\S+?)\.?$/.exec(t); return [b ? 'Écrire ce que consomme ' + b[1] + ' : sa fiche, « Ce qu’il consomme »' : 'Écrire ce que consomme sa charge, dans sa fiche', 'profil']; }
   return ['Voir sa fiche', 'problemes']; }
 // les gestes d'un point du contrôle (08-controle), une fois par état du contrat
 const gestesDuPb = p => memo('gestes|' + RECAP.itemsN + '|' + p.k, () => { try { return typeof gestesDuPoint === 'function' ? gestesDuPoint(p.x) : []; } catch (_) { return []; } });
@@ -36649,11 +36687,32 @@ const pointSeul = (n, mot) => `<span class="rc-etat ${n} seul"><i aria-hidden="t
 /* (v84) LE GESTE QUI RÈGLE SE VOIT : « Voir 102CB1 », répété en bouton sur chaque ligne, couvrait les vrais gestes (« Tout
    régler… », « Unifier sur… », « Lui donner son repère »). La LIGNE mène à la fiche, à la section qui démontre le point
    (`voirLePoint`) ; les boutons ne gardent que ce qui corrige — et « Voir les liaisons », quand le point est au tableau. */
-/* La phrase d'un point : le câble dont elle parle (« DR20 vers 103RL1:A1 ») en chasse fixe, à part — l'œil trouve QUOI,
-   puis lit POURQUOI ; le reste, tel que le contrôle l'écrit. */
-// (v86 : « DR24 vers 300XC1:A5 (par 395SW1) : … » — le passage par lequel le câble est nourri reste avec lui, à l'encre seconde)
-const phraseDuPoint = t => { const m = /^(\S+ vers \S+)( \(par [^()]+\))? : ([\s\S]+)$/.exec(String(t || ''));
-  return m ? `<span class="rc-phrase"><span class="rc-sujet">${m[1].split(' vers ').map(esc).join('<i>vers</i>')}${m[2] ? `<i>${esc(m[2].trim())}</i>` : ''}</span>${insecable(esc(majuscule(m[3])))}</span>` : `<span class="rc-phrase">${insecable(esc(majuscule(t)))}</span>`; };
+/* (v86, l'intégrateur : « que les deux disent la même chose avec les mêmes mots ») CE QUI NE VA PAS, DANS LES MOTS DE LA
+   FICHE (08-niveaux, l'agent « fiche2 ») : QUI, vu de l'objet de la ligne (« 2 → 103RL1:A1 · DR20 » — la flèche suit le
+   courant : `quiVuDIci`), en chasse fixe, à part — l'œil trouve QUOI ; puis ce qui cloche, en clair (`motsDuProbleme` :
+   « 9,31 A pendant 2,1 min : plus que les 6,9 A qu'il admet en continu. ») ; la bulle dit tout (d'où vient l'admis,
+   `conditionsEnMots` ; pourquoi VOLTA suppose un contact). Une phrase que VOLTA ne sait pas dire autrement reste telle
+   quelle. Rend { sujet, court, long }. */
+// le câble d'un point : la liaison vivante — après un Défaire, le contrôle peut garder la copie d'avant, de même clé
+const cableDuPb = x => { const c0 = (x.cables || []).length === 1 && x.cables[0] && typeof x.cables[0] === 'object' ? x.cables[0] : null, V = verite();
+  return c0 ? (V.includes(c0) ? c0 : V.find(l => typeof memeLiaison === 'function' && memeLiaison(l, c0)) || null) : null; };
+const motsDuPb = p => memo('mots|' + RECAP.itemsN + '|' + p.k, () => { const x = p.x, t = majuscule(typeof motDuProbleme === 'function' ? motDuProbleme(x.texte) : String(x.texte || ''));
+  const k = t.indexOf(' — '), suite = k > 0 ? t.slice(k + 3) : '', titre = k > 0 ? t.slice(0, k) : t, tel = { sujet: '', court: t, long: t };
+  if (typeof motsDuProbleme !== 'function' || typeof quiVuDIci !== 'function' || !x.nom) return tel;
+  const o = { type: estDisjoncteur(x.nom) ? 'disjoncteur' : 'equipement', tete: { nom: x.nom } }, pt = { texte: x.texte, cable: cableDuPb(x) };
+  try { const qui = /^(\S+ vers \S+(?: \(par [^)]+\))?) : (.+)$/.exec(titre);
+    if (qui) { const vu = quiVuDIci(qui[1], pt, o, /^chute en ligne/i.test(qui[2])), M = motsDuProbleme(qui[2], suite, vu.type), glose = k > 0 || M.sansGlose || typeof gloseDuProbleme !== 'function' ? '' : gloseDuProbleme(x.texte);
+      const sous = /^sous (\S+)$/.exec(suite), plus = M.mange || !suite ? '' : sous ? (String(vu.titre).includes(sous[1]) ? '' : ' Son disjoncteur : ' + sous[1] + '.') : ' ' + majuscule(suite) + '.';
+      return { sujet: vu.titre, court: M.court, long: M.long + plus + (glose ? ' ' + glose : '') }; }
+    // « B · aucun arrangement EN 4165-002 ne loge B5 : DR12 vers 397TB1 » (un connecteur) : le câble en sujet, vu d'ici
+    const ar = /^(\S+) · aucun arrangement (.+?) ne loge (\S+) : (\S+) vers (\S+)$/i.exec(titre);
+    if (ar) { const [, cn, fam, bo, type, vers] = ar; let f = null; try { f = typeof filsDuRepere === 'function' ? filsDuRepere(x.nom).find(y => String(y.borne) === bo && y.vers === vers) : null; } catch (_) { f = null; }
+      const court = `Aucun arrangement ${fam} ne loge ce ${type} au connecteur ${cn}.`;
+      return { sujet: quiVuDIci(`${type} vers ${vers}`, { cable: f ? f.l : null }, o).titre, court, long: suite ? court.replace(/\.$/, ' : ' + suite.replace(/^\S/, c => c.toLowerCase()) + '.') : court }; }
+  } catch (_) { }
+  return tel; });
+const phraseDuPoint = p => { const M = motsDuPb(p), sujet = M.sujet ? `<span class="rc-sujet">${esc(M.sujet).replace(/ (→|←|–) /g, '<i>$1</i>').replace(/ · /g, '<i>·</i>')}</span>` : '';
+  return `<span class="rc-phrase"${M.long !== M.court ? ` data-bulle="${escA(M.long)}"` : ''}>${sujet}${insecable(esc(M.court))}</span>`; };
 /* LE GESTE D'UN POINT, LE MÊME QUE DANS LA FICHE (v86, G1 — l'audit : « dans le récapitulatif, les problèmes n'ont pas leur
    geste, alors que la fiche montre Passer en DR16 » ; 08-niveaux, `tachesFiche`) : celui du contrôle qui RÈGLE (« Tout
    régler… », « Unifier sur… », « Lui donner son repère » : 08-controle, `gestesDuPoint`), sinon celui que VOLTA sait faire
@@ -36662,9 +36721,7 @@ const phraseDuPoint = t => { const m = /^(\S+ vers \S+)( \(par [^()]+\))? : ([\s
 const reparateurs = p => memo('repare|' + RECAP.itemsN + '|' + p.k, () => { const x = p.x, G = gestesDuPb(p);
   const regle = G.filter(g => g && g.mot && typeof g.faire === 'function' && !/^Voir\b/.test(g.mot)).map(g => ({ ...g, cle: g.cle || (x.nom || '') + '|' + g.mot }));
   if (regle.length || typeof gesteDuPoint !== 'function') return regle;
-  // (le câble du point : la liaison vivante — après un Défaire, le contrôle peut garder la copie d'avant, de même clé)
-  try { const c0 = (x.cables || []).length === 1 && x.cables[0] && typeof x.cables[0] === 'object' ? x.cables[0] : null, V = verite();
-    const c = c0 ? (V.includes(c0) ? c0 : V.find(l => typeof memeLiaison === 'function' && memeLiaison(l, c0)) || null) : null;
+  try { const c = cableDuPb(x);
     const g = gesteDuPoint({ texte: x.texte, cable: c, gestes: G }, { type: x.nom && estDisjoncteur(x.nom) ? 'disjoncteur' : 'equipement', tete: { nom: x.nom || '' } });
     return g ? [{ ...g, principal: true }] : []; } catch (_) { return []; } });
 const signatureGestes = p => { const G = reparateurs(p); return G.length ? G.map(g => g.cle).join('\u0001') : '\u0002' + p.que; };
@@ -36685,7 +36742,7 @@ const COLONNES_PROBLEMES = [
   // même objet qu'à la ligne du dessus s'écrit à l'encre troisième : l'œil voit où un autre commence
   { k: 'objet', t: 'Objet', cls: 'rc-c-rep', html: p => p.x.nom ? `<span class="rc-r${RECAP.memes.has(p.k) ? ' rc-meme' : ''}">${esc(p.x.nom)}</span>` : '<span class="rc-mot doux">le tableau</span>', tri: p => p.x.nom || '', texte: p => p.x.nom || 'tableau',
     vide: p => !!app.base.filtreAuto && !!p.x.nom && p.x.nom === app.base.filtre.trim() },
-  { k: 'texte', t: 'Ce qui ne va pas', cls: 'rc-c-phrase rc-c-pb', html: p => phraseDuPoint(p.x.texte), tri: p => p.x.texte, texte: p => p.x.texte },
+  { k: 'texte', t: 'Ce qui ne va pas', cls: 'rc-c-phrase rc-c-pb', html: p => phraseDuPoint(p), tri: p => p.x.texte, texte: p => { const M = motsDuPb(p); return (M.sujet ? M.sujet + ' : ' : '') + M.long; } },
   /* CE QU'IL FAUT FAIRE : le GESTE qui règle, en bouton cuivre — celui de la fiche (`reparateurs`) : « Passer en DR16 »,
      « Lui donner son repère », « Tout régler : 102CB1 en 15 A… » ; sans geste, la phrase courte (`remede`), calme. Des lignes
      qui se suivent et demandent la même chose ne le répètent pas : une seule case pour elles toutes (v86 — plus de « ″ »,

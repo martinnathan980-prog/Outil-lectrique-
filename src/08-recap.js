@@ -818,6 +818,8 @@ function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.
   if (/incomplète/.test(t)) return ['Écrire « de » et « vers » dans votre fichier', ''];
   if (/ambiante/.test(t)) return ['Un câble qui supporte plus chaud, ou revoir l’ambiante (⋮ › Hypothèses)', ''];
   if (/CCA/.test(t)) return ['Qualifier le contact pour l’aluminium cuivré, ou un câble cuivre', 'contacts'];
+  // (v86) une branche de commande au courant inconnu : écrire ce que consomme ce qu'elle alimente (la bobine d'un relais)
+  if (/courant de commande inconnu/i.test(t)) { const b = /bobine de (\S+?)\.?$/.exec(t); return [b ? 'Écrire ce que consomme ' + b[1] + ' : sa fiche, « Ce qu’il consomme »' : 'Écrire ce que consomme sa charge, dans sa fiche', 'profil']; }
   return ['Voir sa fiche', 'problemes']; }
 // les gestes d'un point du contrôle (08-controle), une fois par état du contrat
 const gestesDuPb = p => memo('gestes|' + RECAP.itemsN + '|' + p.k, () => { try { return typeof gestesDuPoint === 'function' ? gestesDuPoint(p.x) : []; } catch (_) { return []; } });
@@ -829,11 +831,32 @@ const pointSeul = (n, mot) => `<span class="rc-etat ${n} seul"><i aria-hidden="t
 /* (v84) LE GESTE QUI RÈGLE SE VOIT : « Voir 102CB1 », répété en bouton sur chaque ligne, couvrait les vrais gestes (« Tout
    régler… », « Unifier sur… », « Lui donner son repère »). La LIGNE mène à la fiche, à la section qui démontre le point
    (`voirLePoint`) ; les boutons ne gardent que ce qui corrige — et « Voir les liaisons », quand le point est au tableau. */
-/* La phrase d'un point : le câble dont elle parle (« DR20 vers 103RL1:A1 ») en chasse fixe, à part — l'œil trouve QUOI,
-   puis lit POURQUOI ; le reste, tel que le contrôle l'écrit. */
-// (v86 : « DR24 vers 300XC1:A5 (par 395SW1) : … » — le passage par lequel le câble est nourri reste avec lui, à l'encre seconde)
-const phraseDuPoint = t => { const m = /^(\S+ vers \S+)( \(par [^()]+\))? : ([\s\S]+)$/.exec(String(t || ''));
-  return m ? `<span class="rc-phrase"><span class="rc-sujet">${m[1].split(' vers ').map(esc).join('<i>vers</i>')}${m[2] ? `<i>${esc(m[2].trim())}</i>` : ''}</span>${insecable(esc(majuscule(m[3])))}</span>` : `<span class="rc-phrase">${insecable(esc(majuscule(t)))}</span>`; };
+/* (v86, l'intégrateur : « que les deux disent la même chose avec les mêmes mots ») CE QUI NE VA PAS, DANS LES MOTS DE LA
+   FICHE (08-niveaux, l'agent « fiche2 ») : QUI, vu de l'objet de la ligne (« 2 → 103RL1:A1 · DR20 » — la flèche suit le
+   courant : `quiVuDIci`), en chasse fixe, à part — l'œil trouve QUOI ; puis ce qui cloche, en clair (`motsDuProbleme` :
+   « 9,31 A pendant 2,1 min : plus que les 6,9 A qu'il admet en continu. ») ; la bulle dit tout (d'où vient l'admis,
+   `conditionsEnMots` ; pourquoi VOLTA suppose un contact). Une phrase que VOLTA ne sait pas dire autrement reste telle
+   quelle. Rend { sujet, court, long }. */
+// le câble d'un point : la liaison vivante — après un Défaire, le contrôle peut garder la copie d'avant, de même clé
+const cableDuPb = x => { const c0 = (x.cables || []).length === 1 && x.cables[0] && typeof x.cables[0] === 'object' ? x.cables[0] : null, V = verite();
+  return c0 ? (V.includes(c0) ? c0 : V.find(l => typeof memeLiaison === 'function' && memeLiaison(l, c0)) || null) : null; };
+const motsDuPb = p => memo('mots|' + RECAP.itemsN + '|' + p.k, () => { const x = p.x, t = majuscule(typeof motDuProbleme === 'function' ? motDuProbleme(x.texte) : String(x.texte || ''));
+  const k = t.indexOf(' — '), suite = k > 0 ? t.slice(k + 3) : '', titre = k > 0 ? t.slice(0, k) : t, tel = { sujet: '', court: t, long: t };
+  if (typeof motsDuProbleme !== 'function' || typeof quiVuDIci !== 'function' || !x.nom) return tel;
+  const o = { type: estDisjoncteur(x.nom) ? 'disjoncteur' : 'equipement', tete: { nom: x.nom } }, pt = { texte: x.texte, cable: cableDuPb(x) };
+  try { const qui = /^(\S+ vers \S+(?: \(par [^)]+\))?) : (.+)$/.exec(titre);
+    if (qui) { const vu = quiVuDIci(qui[1], pt, o, /^chute en ligne/i.test(qui[2])), M = motsDuProbleme(qui[2], suite, vu.type), glose = k > 0 || M.sansGlose || typeof gloseDuProbleme !== 'function' ? '' : gloseDuProbleme(x.texte);
+      const sous = /^sous (\S+)$/.exec(suite), plus = M.mange || !suite ? '' : sous ? (String(vu.titre).includes(sous[1]) ? '' : ' Son disjoncteur : ' + sous[1] + '.') : ' ' + majuscule(suite) + '.';
+      return { sujet: vu.titre, court: M.court, long: M.long + plus + (glose ? ' ' + glose : '') }; }
+    // « B · aucun arrangement EN 4165-002 ne loge B5 : DR12 vers 397TB1 » (un connecteur) : le câble en sujet, vu d'ici
+    const ar = /^(\S+) · aucun arrangement (.+?) ne loge (\S+) : (\S+) vers (\S+)$/i.exec(titre);
+    if (ar) { const [, cn, fam, bo, type, vers] = ar; let f = null; try { f = typeof filsDuRepere === 'function' ? filsDuRepere(x.nom).find(y => String(y.borne) === bo && y.vers === vers) : null; } catch (_) { f = null; }
+      const court = `Aucun arrangement ${fam} ne loge ce ${type} au connecteur ${cn}.`;
+      return { sujet: quiVuDIci(`${type} vers ${vers}`, { cable: f ? f.l : null }, o).titre, court, long: suite ? court.replace(/\.$/, ' : ' + suite.replace(/^\S/, c => c.toLowerCase()) + '.') : court }; }
+  } catch (_) { }
+  return tel; });
+const phraseDuPoint = p => { const M = motsDuPb(p), sujet = M.sujet ? `<span class="rc-sujet">${esc(M.sujet).replace(/ (→|←|–) /g, '<i>$1</i>').replace(/ · /g, '<i>·</i>')}</span>` : '';
+  return `<span class="rc-phrase"${M.long !== M.court ? ` data-bulle="${escA(M.long)}"` : ''}>${sujet}${insecable(esc(M.court))}</span>`; };
 /* LE GESTE D'UN POINT, LE MÊME QUE DANS LA FICHE (v86, G1 — l'audit : « dans le récapitulatif, les problèmes n'ont pas leur
    geste, alors que la fiche montre Passer en DR16 » ; 08-niveaux, `tachesFiche`) : celui du contrôle qui RÈGLE (« Tout
    régler… », « Unifier sur… », « Lui donner son repère » : 08-controle, `gestesDuPoint`), sinon celui que VOLTA sait faire
@@ -842,9 +865,7 @@ const phraseDuPoint = t => { const m = /^(\S+ vers \S+)( \(par [^()]+\))? : ([\s
 const reparateurs = p => memo('repare|' + RECAP.itemsN + '|' + p.k, () => { const x = p.x, G = gestesDuPb(p);
   const regle = G.filter(g => g && g.mot && typeof g.faire === 'function' && !/^Voir\b/.test(g.mot)).map(g => ({ ...g, cle: g.cle || (x.nom || '') + '|' + g.mot }));
   if (regle.length || typeof gesteDuPoint !== 'function') return regle;
-  // (le câble du point : la liaison vivante — après un Défaire, le contrôle peut garder la copie d'avant, de même clé)
-  try { const c0 = (x.cables || []).length === 1 && x.cables[0] && typeof x.cables[0] === 'object' ? x.cables[0] : null, V = verite();
-    const c = c0 ? (V.includes(c0) ? c0 : V.find(l => typeof memeLiaison === 'function' && memeLiaison(l, c0)) || null) : null;
+  try { const c = cableDuPb(x);
     const g = gesteDuPoint({ texte: x.texte, cable: c, gestes: G }, { type: x.nom && estDisjoncteur(x.nom) ? 'disjoncteur' : 'equipement', tete: { nom: x.nom || '' } });
     return g ? [{ ...g, principal: true }] : []; } catch (_) { return []; } });
 const signatureGestes = p => { const G = reparateurs(p); return G.length ? G.map(g => g.cle).join('\u0001') : '\u0002' + p.que; };
@@ -865,7 +886,7 @@ const COLONNES_PROBLEMES = [
   // même objet qu'à la ligne du dessus s'écrit à l'encre troisième : l'œil voit où un autre commence
   { k: 'objet', t: 'Objet', cls: 'rc-c-rep', html: p => p.x.nom ? `<span class="rc-r${RECAP.memes.has(p.k) ? ' rc-meme' : ''}">${esc(p.x.nom)}</span>` : '<span class="rc-mot doux">le tableau</span>', tri: p => p.x.nom || '', texte: p => p.x.nom || 'tableau',
     vide: p => !!app.base.filtreAuto && !!p.x.nom && p.x.nom === app.base.filtre.trim() },
-  { k: 'texte', t: 'Ce qui ne va pas', cls: 'rc-c-phrase rc-c-pb', html: p => phraseDuPoint(p.x.texte), tri: p => p.x.texte, texte: p => p.x.texte },
+  { k: 'texte', t: 'Ce qui ne va pas', cls: 'rc-c-phrase rc-c-pb', html: p => phraseDuPoint(p), tri: p => p.x.texte, texte: p => { const M = motsDuPb(p); return (M.sujet ? M.sujet + ' : ' : '') + M.long; } },
   /* CE QU'IL FAUT FAIRE : le GESTE qui règle, en bouton cuivre — celui de la fiche (`reparateurs`) : « Passer en DR16 »,
      « Lui donner son repère », « Tout régler : 102CB1 en 15 A… » ; sans geste, la phrase courte (`remede`), calme. Des lignes
      qui se suivent et demandent la même chose ne le répètent pas : une seule case pour elles toutes (v86 — plus de « ″ »,

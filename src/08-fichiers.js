@@ -275,10 +275,23 @@ function bilanHtml() { FICHIERS.bilan = []; const V = verite(); if (!V.length ||
     const ou = lignesDuPoint(x), t = phraseDuBilan(x), insecable_ = typeof insecable === 'function' ? insecable : s => s;
     return `<li><button type="button" class="fi-pb-l ${x.niveau === 'ko' ? 'ko' : 'att'}" data-vf="bilan-voir" data-k="${k}" data-bulle="${escA(majuscule((x.nom ? x.nom + ' : ' : '') + x.texte))}"><i aria-hidden="true"></i><span class="fi-pb-t">${insecable_(esc(t))}</span>${ou ? `<span class="fi-pb-s">${esc(ou)}</span>` : ''}</button>`
       + (agir.length ? `<span class="fi-pb-gestes">${agir.map((g, i) => `<button type="button" class="btn ${g.principal || i === 0 ? 'papier' : 'lien'} dense" data-vf="bilan-geste" data-k="${k}" data-g="${G.indexOf(g)}"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`).join('')}</span>` : '') + '</li>'; };
+  /* un genre nombreux (plus de trois points à régler) se dit en UNE ligne — son compte, son geste d'un coup —, et au-delà de
+     six points à voir, le reste mène à la liste « à reprendre » (R) : jamais un pavé de quatre-vingts lignes */
+  const groupe = (genre, xs) => { const G = typeof gesteDuGenre === 'function' ? gesteDuGenre({ genre, lignes: [{ xs }] }) : null, k = FICHIERS.bilan.push({ x: xs[0], groupe: true, gestes: G ? [G] : [] }) - 1;
+    const copies = ys => ys.reduce((s, x) => s + (x.doublon && x.doublon.copies || 1), 0), n = genre === 'doublon' ? copies(xs) : xs.length, ou = lignesDuPoint({ cables: xs.flatMap(x => x.cables || []) });
+    // (des copies qui diffèrent ailleurs — une longueur, une route — ne se retirent pas d'un geste : VOLTA ne choisit pas laquelle garder)
+    const autres = genre === 'doublon' ? copies(xs.filter(x => !(x.doublon && x.doublon.identiques))) : 0;
+    const t = genre === 'doublon' ? (autres === n ? `${n} lignes en double, pas à l’identique — gardez la bonne de chacune dans votre fichier` : `${n} lignes en double${autres ? ', dont ' + autres + ' pas à l’identique' : ''} — VOLTA ne dessine chacune qu’une fois`)
+      : `${n} repères écrits de deux façons (${xs.slice(0, 3).map(x => x.casse ? x.casse.cible : x.nom).join(', ')}${n > 3 ? '…' : ''}) — VOLTA lit chacun d’une seule`;
+    return `<li><button type="button" class="fi-pb-l ko" data-vf="bilan-voir" data-k="${k}" data-bulle="${escA('Chacun dans la liste « à reprendre » (R)')}"><i aria-hidden="true"></i><span class="fi-pb-t">${esc(t)}</span>${ou ? `<span class="fi-pb-s">${esc(ou)}</span>` : ''}</button>`
+      + (G ? `<span class="fi-pb-gestes"><button type="button" class="btn papier dense" data-vf="bilan-geste" data-k="${k}" data-g="0" data-bulle="${escA(G.aide || '')}">${esc(G.mot)}</button></span>` : '') + '</li>'; };
+  const lignesKo = ['doublon', 'casse'].map(g => { const ys = B.ko.filter(x => x.genre === g); return ys.length > 3 ? groupe(g, ys) : ys.map(ligne).join(''); }).join('') + B.ko.filter(x => x.genre !== 'doublon' && x.genre !== 'casse').map(ligne).join('');
+  const vus = B.att.slice(0, 6), reste = B.att.length - vus.length;
+  const lignesAtt = vus.map(ligne).join('') + (reste ? `<li><button type="button" class="fi-pb-l att" data-vf="bilan-reste"><i aria-hidden="true"></i><span class="fi-pb-t">et ${reste > 1 ? reste + ' autres points' : 'un autre point'} à voir, dans la liste « à reprendre »</span><span class="fi-pb-s">R</span></button></li>` : '');
   const n = R ? R.n : V.length, nk = B.ko.length, na = B.att.length;
   const tete = `<p><b>VOLTA a lu ${esc(pluriel(n, 'liaison'))}</b>${nk || na ? ' et relève ' + [nk ? pluriel(nk, 'point') + ' à régler' : '', na ? (nk ? na + ' à voir' : pluriel(na, 'point') + ' à voir') : ''].filter(Boolean).join(', ') : ' : rien à reprendre dans l’écriture du fichier'}${regles ? ` — ${regles > 1 ? regles + ' réglés' : '1 réglé'} depuis l’ouverture` : ''}.</p>`;
   const cote = [nl ? (nl > 1 ? 'les lignes ' : 'la ligne ') + (R.laissees || []).join(', ') + (nl > (R.laissees || []).length ? '…' : '') + ' (ni équipement ni câble)' : '', ...ig.map(f => 'la feuille ' + guillemets(esc(f)) + ' (pas les en-têtes d’une installation)')].filter(Boolean);
-  return `<div class="vf-une vf-bilan">${tete}${xs.length ? `<ul class="fi-pbs">${xs.map(ligne).join('')}</ul>` : ''}${cote.length ? `<p class="vf-note">Laissé de côté : ${cote.join(', ')}.</p>` : ''}</div>`; }
+  return `<div class="vf-une vf-bilan">${tete}${xs.length ? `<ul class="fi-pbs">${lignesKo}${lignesAtt}</ul>` : ''}${cote.length ? `<p class="vf-note">Laissé de côté : ${cote.join(', ')}.</p>` : ''}</div>`; }
 /* Une base reçue (un dépôt sur sa carte, ou un fichier de plusieurs harness) : la carte le dira, avec ses comptes et ce
    qu'elle a rangé dans la bibliothèque (`rangee`). */
 function baseRecue(nom, avis, rangee) { FICHIERS.base = null; effacerErreur('base'); FICHIERS.succes = 'base'; FICHIERS.rangee = rangee || null; FICHIERS.avis.base = avis || null; rendreFichiers(); }
@@ -571,7 +584,9 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
       bibliotheque: () => { fermerFiche(); montrerBibliotheque('racine'); }, 'ajouter-plans': () => $('fichier-plans').click(),
       ranger: () => { fermerFiche(); ouvrirRanger(); },
       // (v86) le bilan d'ouverture : une ligne mène à ce qu'elle désigne (la fiche du câble en double, du repère, le récapitulatif) ; un geste se fait sur place
-      'bilan-voir': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k]; if (!p) return; const G = p.gestes.find(g => /^Voir\b/.test(g.mot)); fermerFiche(); if (G) G.faire(); else allerAuControle(p.x); },
+      'bilan-voir': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k]; if (!p) return; const G = p.gestes.find(g => /^Voir\b/.test(g.mot)); fermerFiche();
+        if (p.groupe) ouvrirProblemes(); else if (G) G.faire(); else allerAuControle(p.x); },
+      'bilan-reste': () => { fermerFiche(); ouvrirProblemes(); },
       'bilan-geste': () => { const p = (FICHIERS.bilan || [])[+b.dataset.k], g = p && p.gestes[+b.dataset.g]; if (!g) return; g.faire(); rendreFichiers(); },
       'deja-fait': voirDejaFait, charger: chargerRattrapage, corriger: () => { FICHIERS.corriger = !FICHIERS.corriger; rendreFichiers(); },
       abandonner: () => { FICHIERS.attente = null; FICHIERS.corriger = false; rendreFichiers(); },

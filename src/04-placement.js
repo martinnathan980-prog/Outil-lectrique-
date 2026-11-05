@@ -104,6 +104,11 @@ function desordresDeFace(comps) { let d = DESORDRES_LUS.get(comps); if (d) retur
   if (parCol) parCol.forEach(cs => { if (cs.length < 2) return; const s = cs.slice().sort((u, v) => u.y - v.y);
     for (let i = 1; i < s.length; i++) if (triDeFace(premierDuDessin(s[i - 1]), premierDuDessin(s[i])) > 0) d.n++; });
   DESORDRES_LUS.set(comps, d); return d; }
+/* (Une barrette À POSER — VT3 au folio 6, lue 51J, 51H, 51K : son raccord pris entre ses deux fils — n'est pas comptée : le
+   routage la pose après coup (05), au ras de la borne dédoublée, et la compter au juge d'après les liaisons trompait la
+   recherche — essayé : le folio 1 perdait un fil droit pour un ordre que le routage défaisait. Ses contacts se nomment
+   mieux dans l'ordre où le plan les dessine : c'est le nommage, 01 / 09.) */
+const desordresDe = L => desordresDeFace(L.comps);
 const coutDesDesordres = d => DESORDRE * d.n + DESORDRE_PAS * d.pas;
 // le même coût pour un ordre de bornes d'un morceau (de haut en bas, par leur clé) : l'estimation d'une permutation
 function coutDeLOrdreDeFace(M, id, cles) { const b = M.blocs.get(id); if (b.genre !== 'barrette' || cles.length < 2) return 0;
@@ -852,7 +857,7 @@ function resoudre(M, E, guide) {
    borne de bornier (ordre imposé) DICTE, une borne d'équipement suit ; un
    bornier écoute tout le monde. Un partenaire d'une autre rangée compte en
    miroir, pour que les fils de retour d'un repli s'emboîtent. */
-function barycentre(M, E, y, moyenne, parite) {
+function barycentre(M, E, y, moyenne, parite, ranger) {
   const centre = v => (moyenne ? v.reduce((a, b) => a + b, 0) / v.length : mediane(v));
   // une colonne sur deux à chaque passe, les autres servant de repère : deux colonnes qui se réordonnent l'une sur l'autre en même temps s'inversent sans fin
   const auTour = id => (E.place.get(id).c % 2) === parite;
@@ -872,7 +877,7 @@ function barycentre(M, E, y, moyenne, parite) {
     if (ss) { const somme = new Map(); pile.forEach(id => { const g = ss.get(id); if (g == null) return; const t = somme.get(g) || somme.set(g, [0, 0]).get(g); t[0] += cle.get(id); t[1]++; });
       somme.forEach(([s0, n], g) => groupe.set(g, s0 / n)); }
     const cleDe = id => (ss && ss.has(id) ? groupe.get(ss.get(id)) : cle.get(id));
-    pile.sort((a, b) => (cleDe(a) - cleDe(b)) || (cle.get(a) - cle.get(b))); rangerLesMorceaux(M, pile); });
+    pile.sort((a, b) => (cleDe(a) - cleDe(b)) || (cle.get(a) - cle.get(b))); if (ranger) rangerLesMorceaux(M, pile); });
   // les bornes d'un équipement : un connecteur au centre de ses partenaires, ses bornes dans l'ordre vertical des leurs ; un paquet ponté reste ensemble
   M.ids.forEach(id => { const b = M.blocs.get(id); if (b.genre !== 'equip' || !auTour(id)) return;
     ['L', 'R'].forEach(lid => { const L = E.listes.get(id)[lid]; if (L.length < 2) return;
@@ -911,8 +916,16 @@ function ordonnerLesBlocs(M, E, maxit) {
   const note = pos => estimerMemo(assemblerMemo(M, E, pos)).lisibilite;
   let pos = resoudre(M, E, null), best = pos, bestNote = note(pos), bestOrdre = photoOrdres(E), stagne = 0;
   const MAXIT = maxit || (M.ids.length > 300 ? 8 : 20);
-  for (let it = 0; it < MAXIT && stagne < 6; it++) { barycentre(M, E, pos.y, (it >> 1) % 2 === 1, it % 2); pos = resoudre(M, E, pos.y);
-    const n = note(pos); if (n > bestNote + 0.01) { best = pos; bestNote = n; bestOrdre = photoOrdres(E); stagne = 0; } else stagne++; }
+  const tourner = ranger => { for (let it = 0; it < MAXIT && stagne < 6; it++) { barycentre(M, E, pos.y, (it >> 1) % 2 === 1, it % 2, ranger); pos = resoudre(M, E, pos.y);
+    const n = note(pos); if (n > bestNote + 0.01) { best = pos; bestNote = n; bestOrdre = photoOrdres(E); stagne = 0; } else stagne++; } };
+  tourner(false);
+  /* (v86) puis, quand une colonne porte plusieurs morceaux d'une même barrette, les mêmes tours en les gardant dans l'ordre
+     de la face (`rangerLesMorceaux`), depuis le meilleur : les bornes des équipements les suivent. L'estimation tranche (elle
+     compte les désordres) : libre, une barrette servie par trois sources s'y regroupe par source (six croisements de moins,
+     le banc « réglette VT traversante ») ; rangée, celle du folio 6 se lit 51A-D, 51E-G, 51J-K… sans rien perdre. */
+  const parMorceaux = [...E.piles.values()].some(pile => { const vus = new Set(); return pile.some(id => { const b = M.blocs.get(id); if (b.genre !== 'barrette') return false; if (vus.has(b.nom)) return true; vus.add(b.nom); return false; }); });
+  if (parMorceaux) { revenirOrdres(E, bestOrdre); E.piles.forEach(pile => rangerLesMorceaux(M, pile)); pos = resoudre(M, E, best.y);
+    const n0 = note(pos); if (n0 > bestNote + 0.01) { best = pos; bestNote = n0; bestOrdre = photoOrdres(E); } stagne = 0; tourner(true); }
   revenirOrdres(E, bestOrdre);
   return best;
 }
@@ -1193,7 +1206,7 @@ function juger(L, R) {
   const tient = (r <= FORMAT_MAX * 1.005 && r >= FORMAT_MIN / 1.005) || tientALEchelle(w, h), tiendra = tient || (r <= FORMAT_MAX * ETIRABLE && compterBandes(blocs) >= 2);
   // les frôlements ne comptent dans la lisibilité qu'à partir de la finition : au juge de structure, ils se comptent à la demande
   let frolements = NIVEAU_JUGE >= 1 ? compterFrolements(fils, blocs) : null;
-  const contours = compterContours(fils), descentes = compterDescentes(boutsDesLiaisons(L.links)), forme = coutDeForme(w, h), desordres = desordresDeFace(L.comps);
+  const contours = compterContours(fils), descentes = compterDescentes(boutsDesLiaisons(L.links)), forme = coutDeForme(w, h), desordres = desordresDe(L);
   let muets = null;      // les muets coûtent cher à compter (le dessin pose ses étiquettes) : au niveau du choix, ou quand droits et croisements sont à égalité
   const j = { sain: t.etrangers === 0 && chevauchements(L.comps) === 0 && bornesSuperposees(L.comps) === 0 && filsRompus(R.fils, R.barrettes) === 0, tient, tiendra, format: r, largeur: w,
     droits, croisements, partages, etires, marches, tours: compterTours(L), propres: t.propres.size, contours, forme, desordres: desordres.n,
@@ -1393,7 +1406,7 @@ function estimer(L) {
   // les corps étirés se voient sans router : l'estimation les compte comme le juge
   const etires = compterEtires(blocs), tours = compterTours(L), descentes = compterDescentes(boutsDesLiaisons(L.links)), excesEtires = excesDesEtires(blocs);
   let gx = 1e9, dx = -1e9, hy = 1e9, by = -1e9; blocs.forEach(c => { gx = Math.min(gx, c.x); dx = Math.max(dx, c.x + c.w); hy = Math.min(hy, c.y); by = Math.max(by, c.y + c.h); });
-  const forme = coutDeForme(dx - gx, by - hy), desordres = desordresDeFace(L.comps);
+  const forme = coutDeForme(dx - gx, by - hy), desordres = desordresDe(L);
   return { droits, croisements, etires, tours, descentes, frolements, forme, detail, desordres: desordres.n,
     lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - ETIRE * etires - TOUR * tours - DESCENTE * (descentes + excesEtires) - coutDesDesordres(desordres) - (NIVEAU_JUGE >= 1 ? FROLE * frolements : 0) - (NIVEAU_JUGE >= 2 ? forme : 0) };
 }

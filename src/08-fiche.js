@@ -1878,7 +1878,8 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     // (v83, le lecteur : « quand je clique sur A, B, C, ça ne me mène pas au câble ») : une lettre prise mène à son câble
     va: mini ? null : ct => { const x = Q.fils.find(y => y.contact === ct && y.f.l); return x ? { onglet: 'cables', vers: `[data-i="${cleFil(x.f.l)}"]` } : null; } }) : faceVue([], () => '', { w: mini ? 64 : 180 });
   const coteP = (lt, am) => { const ct = M.module.contacts.find(k => k.lettre === lt), x = Q.fils.find(y => y.contact === ct && !!y.f.amont === am); if (!x) return null;
-    return { type: x.f.type, de: x.f.vers + (x.f.borne ? ':' + x.f.borne : ''), couleur: coulDeFil(x.f), ko: x.jaugeOk === false, k: x.f.l ? cleFil(x.f.l) : '' }; };
+    // (v86) `borne` : la borne de la prise telle que le fichier l'écrit — un fichier qui numérote, « 1 » pour le contact A (08-vues, « 1·A »)
+    return { type: x.f.type, de: x.f.vers + (x.f.borne ? ':' + x.f.borne : ''), couleur: coulDeFil(x.f), ko: x.jaugeOk === false, k: x.f.l ? cleFil(x.f.l) : '', borne: x.borne }; };
   const lettresP = M ? M.module.contacts.filter(ct => Q.fils.some(x => x.contact === ct)).map(ct => ct.lettre) : [];
   const refsDe = xs => compterParReference(xs.map(x => x.sertir ? motSertir(x.sertir) : ''), 'contact à sertir');
   const rAm = refsDe(amont), rAv = refsDe(aval), dits = r => r.map(x => `<b class="id">${esc(x.ref)}</b>${x.q > 1 ? ' × ' + x.q : ''}`).join(', ');

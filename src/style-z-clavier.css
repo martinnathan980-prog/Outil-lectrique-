@@ -20,6 +20,9 @@
 #inspecteur svg .bro-l[tabindex]:focus-visible{outline-offset:1px;border-radius:7px}
 #inspecteur svg .bro-l[tabindex]:focus-visible .bro-zone{fill:var(--nv-cuivre-soft)}
 
+/* un bouton de la fiche (« Passer en DR16 », « Lui donner son repère ») : l'anneau en trait, qu'aucune ombre ne remplace — la
+   nuit posait sa lueur à la place de l'anneau, qui disparaissait (l'identifiant doublé passe devant ces règles-là) */
+#inspecteur#inspecteur .btn:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
 /* Automatique | Manuel : le segment qui a le clavier porte l'anneau net, pressé ou non */
 #inspecteur .nv-am-b:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
 

@@ -140,7 +140,7 @@ function changementsDuRetest() { const V = verite().filter(liaisonComplete), par
       e.colonnes.add(col); e.n++; e.liaisons.push(l); }); });
   // (v86) une ligne en double retirée : toute la ligne quitte l'Excel, une proposition de VOLTA ; le câble se dit par ses bouts
   V.forEach(l => { const c = copiesRetirees(l); if (!c) return; if (!modificationsDe(l).length) liaisons++;
-    const objet = l.de + (l.borneDe ? ':' + l.borneDe : '') + ' → ' + l.vers + (l.borneVers ? ':' + l.borneVers : '');
+    const objet = typeof cableParSesBouts === 'function' ? cableParSesBouts(l) : l.de + (l.borneDe ? ':' + l.borneDe : '') + ' → ' + l.vers + (l.borneVers ? ':' + l.borneVers : '');
     par.set('copies\u0001' + par.size + '\u0001' + objet, { objet, mono: true, colonne: 'ligne en double', calibres: '', colonnes: new Set(['toutes']), champ: 'copies', avant: (c + 1) + ' lignes', apres: '1 ligne', origine: 'volta', n: 1, liaisons: [l],
       bulle: (c > 1 ? c + ' copies identiques de cette ligne quittent' : 'Sa copie identique quitte') + ' l’Excel corrigé — « Retirer la ligne en double »' }); });
   const ecrits = [...par.values()].map(e => ({ ...e, colonnes: [...e.colonnes] })).sort((a, b) => triNaturel(a.objet, b.objet) || a.colonne.localeCompare(b.colonne));
