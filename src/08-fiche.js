@@ -1445,10 +1445,10 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
       return { titre: o.titre, sous: mini ? M.module.variante : M.reference, contacts: M.module.contacts, etat: ct => { const x = pr.get(ct.lettre); return x ? (x.jaugeOk === false ? 'ko' : 'pris') : ''; },
         couleur: ct => couleurDe(coul.get(ct.lettre)), bus: (M.module.groupes || []).filter(g => g.contacts.length > 1).map(g => ({ contacts: g.contacts, couleur: couleurDe(coul.get(g.contacts[0].lettre)) })),
         va: mini || P !== Q ? null : ct => pr.has(ct.lettre) ? { onglet: 'reglages', vers: `[data-lettre="${etq(ct)}"]` } : null, ici: o.ici, ko,
-        lien: mini || o.frere ? null : { onglet: 'reglages', vers: regMod }, frere: mini ? '' : o.frere || '', bulle: mini ? '' : o.bulle }; };
+        lien: mini || o.frere ? null : { onglet: 'reglages', vers: o.vers || regMod }, frere: mini ? '' : o.frere || '', bulle: mini ? '' : o.bulle }; };
     if (!Q.lettres && BP && BP.freres.length > 1) return BP.freres.flatMap((r, i) => { const P = r === nom ? Q : BP.plans[i]; return P ? P.modules.map((M, k) => unModule(P, M, k, { titre: r, ici: r === nom, frere: r === nom ? '' : r, bulle: r === nom ? 'Le module ' + M.reference + ' — le changer' : 'Ouvrir ' + r })) : []; });
     return Q.modules.map((M, k) => { const mot = M.main ? 'choisi ici' : M.nomme ? 'celui de votre fichier' : M.fichier ? 'votre fichier dit ' + M.fichier : 'le plus petit qui convient';
-      return unModule(Q, M, k, { titre: Q.lettres ? M.numero : plusieurs ? String(k + 1) : '', ici: ailleurs && foliosDe(Q, k).has(app.plan), bulle: (Q.lettres ? 'Module ' + M.numero + ' · ' : '') + M.reference + ', ' + mot + ' — le changer' }); }); };
+      return unModule(Q, M, k, { titre: Q.lettres ? M.numero : plusieurs ? String(k + 1) : '', ici: ailleurs && foliosDe(Q, k).has(app.plan), vers: Q.lettres ? `[data-reg="le-module-${M.numero}"]` : '', bulle: (Q.lettres ? 'Module ' + M.numero + ' · ' : '') + M.reference + ', ' + mot + ' — le changer' }); }); };
   const barreV = mini => barretteVue(modsV(mini), { mini, titre: 'La barrette ' + nom + ' et ses modules' });
   const filV = f => ({ type: f.type, vers: f.vers + (f.borne ? ':' + f.borne : ''), amont: f.amont, k: f.l ? cleFil(f.l) : '' });
   const groupesV = Q.modules.flatMap((M, k) => M.places.map(pl => ({ lettres: pl.fils.map(([, c]) => etiquette(k, c)), fils: pl.fils.map(([f]) => filV(f)) })));
@@ -1503,6 +1503,8 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
        CHOIX DE VOLTA : le module (Automatique | Manuel : tous les modules de la norme, dessinés) ; INFORMATION : le rail (il
        suit le module) et les contacts à sertir (un par câble, selon sa gauge — une lettre de la face y mène) */
     (() => { const regMod = '[data-reg="le-module"]', man = !!(main || Q.main), dif = !aPoser && b.pn && Q.reference && cleNorme(b.pn) !== cleNorme(Q.reference), refsT = refsCt.map(x => ident(x.ref) + (x.q > 1 ? ' × ' + x.q : ''));
+      // (v85) une barrette en modules (« 667VT2 51 » + « A ») : module par module (`reglagesModulesBarrette`, plus bas)
+      if (Q.lettres && M0 && !aPoser) return reglagesModulesBarrette(nom, Q, { colsPn, R, refsT, contacts, nf });
       const xs = aPoser && !M0 ? [{ sorte: 'info', titre: 'Le module', valeur: 'à venir', source: 'calcul', pourquoi: 'VOLTA l’a ajoutée : son module se choisit quand elle a son vrai repère.' }] : [
         dif ? { sorte: 'fichier', titre: 'Le module écrit', valeur: ident(b.pn), source: 'fichier', motSource: colsPn ? 'votre fichier · ' + colsPn : '', pourquoi: Q.modules.length > 1 && Q.modules.some(M => cleNorme(M.reference) === cleNorme(b.pn)) ? 'VOLTA le garde et lui ajoute un module : un seul ne loge pas tous les groupes.' : ecartRetest ? (pqR ? esc(majuscule(pqR)) + '.' : 'VOLTA en retient un autre.') : !moduleDeReference(N, b.pn) ? 'VOLTA ne le trouve pas dans ses normes : il en retient un qui loge tous les groupes.' : 'VOLTA en retient un autre, qui loge tous les groupes.' } : null,
         { sorte: 'choix', titre: plusieurs ? 'Ses modules' : 'Le module', valeur: Q.reference ? ident(Q.reference) : 'aucun', etat: Q.reference ? (man && (Q.restants || []).length ? 'ko' : '') : 'ko', source: man ? 'main' : Q.nomme ? 'fichier' : 'calcul', motSource: Q.nomme && !man ? 'votre fichier' : '',
@@ -1527,6 +1529,44 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
     // y a sa ligne — sur 102CB1:2, aucune barrette → VT1, par VOLTA
     probs, onglets, sections, avant: poser, ecrits: aPoser ? [] : ecritsDuRepere(nom), proposes: aPoser ? (sur ? [{ sujet: '', champ: 'barrette', colonne: '', objet: sur, avant: 'aucune', apres: nom, geste: 'VOLTA' }] : []) : proposes, chiffres, vignette, identite: id, ok: 'Son module loge tous ses câbles, chacun dans un contact qui admet sa gauge.',
     pied: aPoser ? { voir: raccord && raccord.de, menu: [['fi-renommer', 'Lui donner son vrai repère']] } : { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
+/* (v85) MODIFIER, D'UNE BARRETTE EN MODULES (« 667VT2 51 » + « A ») — module par module, puisque le fichier dit le module
+   et la lettre de chaque câble et que VOLTA ne choisit que la référence de chaque module :
+     · DANS VOTRE FICHIER : le module que votre fichier écrit, quand VOLTA en retient un autre, et pourquoi ;
+     · CHOIX DE VOLTA : chaque module, Automatique | Manuel — Manuel ouvre ses possibles (`possiblesDuModule`) ; un clic en
+       retient un (`choisirModuleDeBarrette`, 08-modules), « Automatique » le rend à VOLTA (`retourAutomatique`, « mod: ») ;
+     · INFORMATION : le rail, les contacts à sertir.
+   (L'ancienne liste disait « aucun des 29 ne loge ces 4 groupes d'un seul module » puis montrait des modules qui « logent
+   4 / 4 » : elle jugeait la barrette entière ; chaque module se juge maintenant avec ses seules lettres.) */
+function reglagesModulesBarrette(nom, Q, o) { const xs = [], secs = [];
+  Q.modules.forEach(M => { const num = M.numero, sel = `[data-reg="le-module-${num}"]`, d = (M.defauts || [])[0];
+    if (M.ecart && M.fichier) xs.push({ sorte: 'fichier', titre: 'Le module ' + num + ' écrit', valeur: ident(M.fichier), source: 'fichier', motSource: o.colsPn ? 'votre fichier · ' + o.colsPn : '',
+      pourquoi: M.ecart.convient ? 'Il convient aussi : vous en avez choisi un autre.' : !M.ecart.module ? 'VOLTA ne le trouve pas dans ses normes : ' + (M.main ? 'un autre est choisi ici.' : 'il prend le plus petit qui convient.') : esc(majuscule(M.ecart.raison)) + (M.main ? ' : un autre est choisi ici.' : ' : VOLTA en prend un autre.') });
+    xs.push({ sorte: 'choix', titre: 'Le module ' + num, valeur: ident(M.reference), etat: d ? 'ko' : '', source: M.main ? 'main' : M.nomme ? 'fichier' : 'calcul', motSource: M.nomme && !M.main ? 'votre fichier' : '',
+      pourquoi: d ? esc(majuscule(d.texte)) + '.' : M.main ? 'Choisi ici, à la main.' : M.nomme ? 'Celui de votre fichier : chaque contact admet sa gauge, les câbles reliés sont dans une même zone.' : M.fichier ? 'Le plus petit qui convient : celui de votre fichier ne convient pas.' : 'Le plus petit qui convient : votre fichier n’en nomme pas.',
+      manuel: !!M.main, auto: 'mod:' + nom + '|' + num, vers: sel, motAuto: 'Le module ' + num + ' revient au choix de VOLTA.' });
+    secs.push(regCarte('Le module ' + num, M.main ? 'Choisi ici. Un autre se prend d’un clic ; « Automatique » rend celui de VOLTA.' : 'Les modules de la norme pour ce module, avec ses lettres : un clic en retient un, à la place de celui de VOLTA.',
+      reglageOuvert(sel) ? possiblesDuModule(nom, num) : '', { reg: 'le-module-' + num, paresseux: true })); });
+  if (o.R) xs.push({ sorte: 'info', titre: 'Le rail', valeur: ident(o.R.reference), source: 'tables', pourquoi: Q.modules.length > 1 ? `Il porte les ${o.R.n} modules : il suit leur nombre et leur norme.` : 'Il suit le module : il change avec lui.' });
+  if (o.nf) xs.push({ sorte: 'info', titre: 'Les contacts à sertir', valeur: o.refsT.length ? o.refsT.slice(0, 2).join(' · ') + (o.refsT.length > 2 ? ' …' : '') : esc(pluriel(o.nf, 'contact')), source: 'tables', pourquoi: 'Un par câble : ils suivent le module et la gauge.', vers: '[data-reg="les-contacts-a-sertir"]' });
+  return ongletReglages(xs, secs.join('') + (o.nf ? regCarte('Les contacts à sertir', '', o.contacts, { reg: 'les-contacts-a-sertir' }) : '')); }
+/* LES POSSIBLES D'UN MODULE (09, `modulesPossibles`) : ceux de la norme de la barrette qui conviennent — dessinés, ses
+   lettres prises à la couleur de leurs câbles, ce qu'ils laissent libre ; le mieux taillé étoilé (celui de VOLTA), celui de
+   votre fichier et le retenu marqués —, puis les autres, ce qu'ils logent (« loge 1 / 2 groupes ») et pourquoi. */
+function possiblesDuModule(nom, num) { const P = modulesPossiblesDe(nom, num); if (!P) return '';
+  const b = besoinsDeBarrette(nom, liaisonsDeRepere(nom)), parL = new Map();
+  b.bornes.forEach(bo => { const x = moduleEtContact(bo); if (x && x.module === String(num)) parL.set(x.contact, b.parBorne.get(bo) || []); });
+  const ok = P.candidats.filter(c => c.convient), ko = P.candidats.filter(c => !c.convient), attrs = c => `data-mod-nom="${escA(nom)}" data-mod-num="${escA(num)}" data-ref="${escA(c.reference)}" aria-pressed="${!!c.retenu}"`;
+  const marques = c => [c.retenu ? 'retenu' : '', c.fichier ? 'votre fichier' : '', c.jamaisSeul ? motUsage(c.usage) : ''].filter(Boolean).join(' · ');
+  const carte = c => { const m = c.m, f = faceModuleSvg(m, ct => { const fs = parL.get(ct.lettre); if (!fs || !fs.length) return null; const cl = coulDeFil(fs[0]);
+      return { i: '', couleur: cl, couleurClaire: melanger(cl, 0.8), ko: fs.some(y => { const j = jaugeDuType(y.type); return j != null && !contactAccepte(app.norme, m.famille, ct.taille, j); }) }; });
+    return `<button type="button" class="cand cand-g${c.retenu ? ' retenue' : ''}" ${attrs(c)} data-bulle="${escA(c.reference + ' · ' + resumeModule(m) + (c.mieux ? ' — le mieux taillé' : '') + (c.retenu ? ' — retenu' : ' — cliquer pour le retenir'))}">`
+      + `<span class="cand-face"><svg class="mj" viewBox="0 0 ${f1(f.w)} ${f1(f.h)}" aria-hidden="true">${f.svg}</svg></span>`
+      + `<span class="cand-nom">${c.mieux ? `<i class="cand-etoile" aria-label="Le mieux taillé" role="img">${ico('etoile')}</i>` : ''}<b>${esc(c.variante)}</b></span><span class="cand-mot">${plurielLie(c.libres, 'libre')}${marques(c) ? ' · ' + esc(marques(c)) : ''}</span></button>`; };
+  const ligne = c => `<button type="button" class="cand-l ko${c.retenu ? ' main' : ''}" ${attrs(c)} data-bulle="${escA(c.reference + ' — ' + (c.raisons[0] || '') + (c.retenu ? ' — retenu ici' : ' — un clic le retient quand même'))}">`
+    + `<i class="cand-l-m" aria-hidden="true">${MARQUE_CAND.ko}</i><b>${esc(c.variante)}</b><span class="cand-l-n">${esc('loge ' + c.loge + ' / ' + pluriel(c.groupes, 'groupe'))}${c.retenu ? ' · <em>main</em>' : ''}${c.fichier ? ' · votre fichier' : ''}</span><span class="cand-l-r">${insecable(esc(majuscule(c.raisons[0] || '')))}</span></button>`;
+  const n = P.candidats.length, compte = `<p class="fi-gal-n">${ok.length ? `${ok.length} des ${n} modules ${esc(P.nomFamille)} conviennent au module ${esc(num)}` : `Aucun des ${n} modules ${esc(P.nomFamille)} ne convient au module ${esc(num)} : les plus proches d’abord`}</p>`;
+  return compte + (ok.length ? `<div class="fi-galerie">${ok.map(carte).join('')}</div>` : '')
+    + (ko.length ? `<p class="fi-rac-t cand-l-t">${esc(`Les ${ko.length} autres, du plus proche au plus loin`)}</p><div class="cand-ls">${ko.map(ligne).join('')}</div>` : ''); }
 /* LA GALERIE des assemblages d'une norme (le lecteur : « quand on clique sur la norme, on voit tous les assemblages de
    la norme, très visuel, pour savoir lequel est le mieux, si on peut mieux faire ») : chaque variante qui loge les
    potentiels d'un seul module, dessinée en petit avec ses contacts pris, ce qu'elle laisse de libre ; la retenue
@@ -1921,7 +1961,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   /* (v84, la passe « fiche » : le câble avait moins de soin que les autres) — L'ESSENTIEL en sections titrées, comme les
      autres fiches : ce qu'il relie (dessiné), le courant et la chute contre l'admis, d'où viennent ces chiffres */
   const essF = `<section class="vu-bloc vu-bloc-bro vu-bloc-chemin"><h4 class="vu-titre">Ce qu’il relie</h4>${cheminG}</section>${cause || ''}${hypL}`
-    + `<section class="vu-bloc vu-bloc-mes"><h4 class="vu-titre">Courant et chute</h4><div class="fi-mesures">${intens}${chute}</div>${reparer}</section>${pourquoiVue('D’où viennent ces chiffres', etapesF)}`;
+    + `<section class="vu-bloc vu-bloc-mes"><h4 class="vu-titre">Courant et chute</h4><div class="fi-mesures">${intens}${chute}</div>${/* (v85) le geste « Passer en … » est déjà en tête, dans « À régler » : ici, l'information seule */ reparer.replace(/<button type="button" class="btn papier fi-reparer"[\s\S]*?<\/button>/, '')}</section>${pourquoiVue('D’où viennent ces chiffres', etapesF)}`;
   /* MODIFIER (v85, le lecteur : « ce qui vient de mon fichier, plus aucune saisie : une seule source ») — DANS VOTRE FICHIER :
      le type et la gauge, la longueur, ses deux bouts, la route, chacun avec d'où il vient ; une proposition justifiée de
      VOLTA (« Tout régler » quand son disjoncteur est la cause, la gauge qui porte son courant, celle qui se loge) se prend
@@ -2185,6 +2225,9 @@ function retourAutomatique(b, c) { const cle = b.dataset.auto, k = cle.indexOf('
   if (genre === 'raccords') { const ks = v.split(';').filter(x => x && app.contrat.raccords.has(x)); if (!ks.length) return; histPush('raccord automatique'); ks.forEach(x => app.contrat.raccords.delete(x)); apresEdition(); return; }
   if (genre === 'conso') { if (!app.contrat.charges || !app.contrat.charges.has(v)) return; histPush('consommation de ' + v + ' effacée'); app.contrat.charges.delete(v); apresEdition(); return; }
   if (genre === 'arr') { FI.liste = ''; choisirDesignation(v, '', 'choix automatique de ' + v, 'Choix automatique rétabli.'); return; }
+  // (v85) le module d'une barrette en modules (« mod:667VT2|52 ») : rendu à VOLTA, les autres modules gardent leur choix
+  if (genre === 'mod') { const i = v.lastIndexOf('|'), n = v.slice(0, i), num = v.slice(i + 1), avant = app.contrat.designations.get(n) || '', apres = moduleAutomatique(avant, num); if (apres === avant) return;
+    FI.liste = ''; histPush('module ' + num + ' de ' + n + ' : choix de VOLTA'); designer(n, apres); apresEdition(); return; }
   if (genre === 'sexe') { histPush('sexe automatique de ' + v); app.contrat.sexes.delete(v); apresEdition(); return; }
   if (genre === 'nature') { histPush('nature de ' + v); designer(CLE_NATURE(v), ''); apresEdition(); return; }
   if (genre === 'sertir') { const { rep, borne } = deCleSertir(v); FI.liste = ''; histPush('contact à sertir automatique'); app.contrat.designations.delete(v);
@@ -2305,6 +2348,9 @@ function lierChoix(box, c) { const nom = c.type === 'bloc' ? c.nom : '';
   // (v85, Modifier : Manuel) un possible pris : la liste se replie, la ligne dit le choix, le mot offre « Défaire »
   const defaireMot = m => dire(m, false, { geste: 'Défaire', faire: defaire });
   box.querySelectorAll('.cand[data-cle], .cand-l[data-cle]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') === 'true') return; FI.liste = ''; NIVEAU.sommOuvert = ''; choisirDesignation(b.dataset.cle, b.dataset.ref, 'choix de ' + b.dataset.cle, b.dataset.ref + ' retenu à la main.'); });
+  // (v85) une barrette en modules : un module de la norme retenu pour UN de ses modules (08-modules, `choisirModuleDeBarrette` :
+  // l'historique, le mot et son « Défaire »)
+  box.querySelectorAll('[data-mod-num]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') === 'true') return; FI.liste = ''; NIVEAU.sommOuvert = ''; choisirModuleDeBarrette(b.dataset.modNom, b.dataset.modNum, b.dataset.ref); });
   box.querySelectorAll('[data-garder]').forEach(b => b.onclick = () => choisirDesignation(nom, b.dataset.garder, 'l’installation pour ' + nom, b.dataset.garder + ' retenu, comme votre fichier.'));
   box.querySelectorAll('[data-sexe]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') === 'true') return; const k = b.dataset.sexe, m = b.dataset.v === 'M', prise = typeof coupureEnModules === 'function' && coupureEnModules(k);
     NIVEAU.sommOuvert = ''; histPush('sexe des contacts de ' + k); app.contrat.sexes.set(k, b.dataset.v); apresEdition();

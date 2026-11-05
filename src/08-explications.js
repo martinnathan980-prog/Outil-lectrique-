@@ -92,9 +92,12 @@ const EXPLICATIONS = {
       `La méthode NASA TM-102179 ; un état après le permanent trouve le disjoncteur chaud (son temps ÷ ${exN(+H.prechauffage)}, feuille MS3320N).`); },
 
   module: c => { const P = c && c.plan ? c.plan : null, libres = P && P.contacts != null && P.utilises != null ? P.contacts - P.utilises : null;
-    const phrase = P && P.reference ? `${P.reference} : ${P.main ? 'retenu à la main' : 'le plus petit module qui loge tous vos câbles'}.` : 'Le plus petit module de jonction qui loge tous les câbles de la barrette.';
-    return exE('Le module de barrette', phrase, [['Contacts pris', P && P.utilises != null ? exN(P.utilises) : null, ''], ['Libres', libres != null ? exN(libres) : null, 'ok'], ['Modules', P && P.modules && P.modules.length > 1 ? exN(P.modules.length) : null, 'att']],
-      ['Les bornes reliées prennent des contacts reliés du module', 'Chaque câble prend un contact dont la taille admet sa gauge', 'Entre ceux qui logent tout : le moins de contacts perdus, puis le plus léger', 'Un clic sur le module montre tous les assemblages de la norme'],
+    // (v85) une barrette, c'est plusieurs modules sur un rail : la phrase dit chacun, comme le fichier les numérote (51, 52…)
+    const mods = P && P.modules ? P.modules : [], plusieurs = mods.length > 1;
+    const phrase = plusieurs ? `${mods.length} modules sur un rail : ${mods.map(M => (M.numero ? M.numero + ' ' : '') + (M.reference || '?')).join(', ')}.`
+      : P && P.reference ? `${P.reference} : ${P.main ? 'retenu à la main' : 'le plus petit module qui loge tous vos câbles'}.` : 'Le plus petit module de jonction qui loge tous les câbles de la barrette.';
+    return exE(plusieurs ? 'Les modules de la barrette' : 'Le module de barrette', phrase, [['Contacts pris', P && P.utilises != null ? exN(P.utilises) : null, ''], ['Libres', libres != null ? exN(libres) : null, 'ok'], ['Modules', P && P.modules && P.modules.length > 1 ? exN(P.modules.length) : null, 'att']],
+      ['Les bornes reliées prennent des contacts reliés du module', 'Chaque câble prend un contact dont la taille admet sa gauge', 'Entre ceux qui logent tout : le moins de contacts perdus, puis le plus léger', plusieurs ? 'Chaque module garde le numéro et les lettres de votre fichier ; VOLTA ne choisit que sa référence' : 'Un clic sur le module montre tous les assemblages de la norme'],
       'ASNE 0599 et NSA937901 (les faces et les groupes) ; les gauges par taille : catalogue Air LB (recherche R1).'); },
 
   arrangement: c => { const P = c && c.plan ? c.plan : null, F = (c && c.fautifs) || [], aucun = !!P && !P.reference;
@@ -108,7 +111,7 @@ const EXPLICATIONS = {
       'Les faces des normes EN 2997-002, EN 3645-002, EN 3646, EN 4165-002, ASNE 0059.'); },
 
   prise: c => { const P = c && c.plan ? c.plan : null;
-    const phrase = P && P.reference ? `${P.reference}${P.main ? ', retenue à la main' : ''} : ${exN(P.utilises)} contact${P.utilises > 1 ? 's' : ''} pris sur ${exN(P.contacts)}.` : 'Deux moitiés : la fiche (mobile) et l’embase (fixe).';
+    const phrase = P && P.reference ? `${P.reference}${P.main ? ', retenue à la main' : ''} : ${exN(P.utilises)} contact${P.utilises > 1 ? 's' : ''} pris sur ${exN(P.contacts)}.` : 'Deux moitiés : la partie mobile et la partie fixe.';
     return exE('La prise de coupure', phrase, [['Pris', P && P.utilises != null ? exN(P.utilises) : null, ''], ['Libres', P && P.contacts != null && P.utilises != null ? exN(P.contacts - P.utilises) : null, 'ok']],
       ['La partie mobile reçoit ce qui arrive, la partie fixe ce qui repart', 'Un câble par contact, de chaque côté', 'L’arrangement se choisit comme pour un connecteur', 'Partie mobile femelle par défaut : le bouton l’inverse'],
       'Les normes EN 4165, EN 2997, EN 3646 ; votre codification (A/B, P/S) pour le sexe.'); },

@@ -152,6 +152,13 @@ function propositionsNonEcrites() { const V = verite(), out = [];
       faire: ecrivable ? () => avecOrigineVolta(() => deciderCalibre(r)) : null }); });
   // les barrettes : le module que VOLTA retient à la place de celui du retest
   reperesDe(V).filter(r => !VT_A_POSER.test(r) && barretteEnModules(r)).sort(triNaturel).forEach(r => { try { const b = besoinsDeBarrette(r, V), Q = planDeBarrette(r).plan;
+      // (v85) une barrette « module + contact » (677VT2:51B) : chaque module écrit SA référence dans SES cases seulement
+      // (`casesDuModule`), jamais « B201 + B202 » partout
+      if (Q.lettres) { (Q.modules || []).forEach(M => { if (!M.fichier || !M.reference || cleNorme(M.fichier) === cleNorme(M.reference)) return;
+          const ecritures = () => casesDuModule(r, verite(), M.numero).map(([l, c]) => [l, c, M.reference]);
+          out.push({ genre: 'module', repere: r + ' · module ' + M.numero, retest: M.fichier, retenu: M.reference, cables: [], geste: 'Écrire ' + M.reference, suite: '', ecritures,
+            faire: () => avecOrigineVolta(() => changerLiaisons(ecritures(), r + ', module ' + M.numero + ' : ' + M.reference + ' écrit dans l’installation')) }); });
+        return; }
       if (!b.pn || !Q.reference || cleNorme(b.pn) === cleNorme(Q.reference) || !moduleDeReference(app.norme, b.pn)) return;
       const ecritures = () => { const xs = []; verite().forEach(l => { if (l.de === r && l.pnDe) xs.push([l, 'pnDe', Q.reference]); if (l.vers === r && l.pnVers) xs.push([l, 'pnVers', Q.reference]); }); return xs; };
       out.push({ genre: 'module', repere: r, retest: b.pn, retenu: Q.reference, cables: [], geste: 'Écrire ' + Q.reference, suite: '', ecritures,

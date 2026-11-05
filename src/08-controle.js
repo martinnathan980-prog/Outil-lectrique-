@@ -72,7 +72,7 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
     // (v84, la vitesse) les bouts de chaque repère, rangés une fois : chaque équipement relisait toutes les liaisons (1,3 s → quelques ms sur 3 000 liaisons)
     const boutsDe = new Map(); V.forEach(l => { if (!liaisonComplete(l)) return; [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(x => (boutsDe.get(x[0]) || boutsDe.set(x[0], []).get(x[0])).push([x, l])); });
     reperes.forEach(r => { if (estDisjoncteur(r)) return;
-      if (barretteEnModules(r)) planDeBarrette(r).plan.fils.forEach(x => x.f && poser(r, 'module ' + (x.module + 1), x.f.l));
+      if (barretteEnModules(r)) planDeBarrette(r).plan.fils.forEach(x => x.f && poser(r, 'module ' + (x.numero || x.module + 1), x.f.l));
       // (v84, les mots du lecteur) la prise : « partie mobile », « partie fixe » — jamais fiche / embase
       else if (coupureEnModules(r)) planDeCoupure(r).plan.fils.forEach(x => x.f && poser(r, x.f.amont ? 'côté partie mobile' : 'côté partie fixe', x.f.l));
       else if (!estBornier(r) && !estCoupure(r)) (boutsDe.get(r) || []).forEach(([[, b, pn], l]) => { const c = connecteurDeBorne(b, pn); poser(r, c && c.lettre ? 'connecteur ' + c.nom : 'connecteur', l); }); });
@@ -118,7 +118,9 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
      · des liaisons sans folio quand le fichier en a plusieurs : elles ne se dessinent sur aucun.
    Rend [{ nom, texte, plus }] ; `plus.cables` : les liaisons dont il parle (la fiche du câble les montre). */
 const formeDuRepere = r => String(r || '').toUpperCase().replace(/\s+/g, '');
-const formeDeLaBorne = b => String(b || '').toUpperCase().replace(/\s+/g, '').replace(/(\d+)[.,]0+$/, '$1').replace(/\d+/g, d => String(+d));
+// (v85) sur une barrette, une borne « module + contact » garde sa casse : 51a et 51A sont deux contacts (l'ASNE 0599 en a 36)
+const formeDeLaBorne = (b, r) => { const t = String(b || '').replace(/\s+/g, ''), casse = !!(r && estBarrette(r) && /^\d+[A-Za-z]\w*$/.test(t));
+  return (casse ? t : t.toUpperCase()).replace(/(\d+)[.,]0+$/, '$1').replace(/\d+/g, d => String(+d)); };
 function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete), dire = (nom, texte, plus) => out.push({ nom, texte, plus: { genre: 'fichier', ...(plus || {}) } });
   const potentiel = r => estMasse(r) || estRail(r) || VT_A_POSER.test(r);
   // les lignes identiques : les deux bouts (dans un sens ou dans l'autre), le type et le numéro du câble
@@ -134,7 +136,7 @@ function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete),
   L.forEach(l => [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
     const f = formeDuRepere(r), e = parForme.get(f) || parForme.set(f, new Map()).get(f); e.set(r, (e.get(r) || 0) + 1);
     if (potentiel(r)) return; const x = bornes.get(r) || bornes.set(r, { formes: new Map(), sans: [], avec: 0, pns: new Map() }).get(r);
-    if (!b) { x.sans.push(l); return; } x.avec++; const fb = formeDeLaBorne(b), y = x.formes.get(fb) || x.formes.set(fb, new Map()).get(fb); y.set(b, (y.get(b) || 0) + 1);
+    if (!b) { x.sans.push(l); return; } x.avec++; const fb = formeDeLaBorne(b, r), y = x.formes.get(fb) || x.formes.set(fb, new Map()).get(fb); y.set(b, (y.get(b) || 0) + 1);
     // le part number de chaque connecteur à lettre (A12 : le connecteur A)
     const c = pn ? connecteurDeBorne(b, pn) : null; if (c && c.lettre) { const m = x.pns.get(c.nom) || x.pns.set(c.nom, new Map()).get(c.nom); (m.get(pn) || m.set(pn, []).get(pn)).push(l); } }));
   parForme.forEach(e => { if (e.size < 2) return; const xs = [...e].sort((a, b) => b[1] - a[1] || triNaturel(a[0], b[0])), [r] = xs[0];

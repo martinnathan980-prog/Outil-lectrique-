@@ -852,7 +852,7 @@ const COLONNES_PROBLEMES = [
 // problèmes se lisent toujours sur tout le plan — ils sont peu nombreux, et chaque puce dit combien sont sur ce folio
 const PROBLEMES = { colonnes: COLONNES_PROBLEMES, portee: false, lignes: problemes, surFolio: p => app.plan === '*' || !p.plans.length || p.plans.includes(app.plan), exact: (p, f) => p.x.nom === f, cherche: 'Chercher : repère, mot…',
   choisie: p => !!app.cible && app.cible.type === 'bloc' && app.cible.nom === p.x.nom, etat: p => p.x.niveau,
-  puces: () => [['niveau:ko', 'Problèmes', p => p.x.niveau === 'ko', '', 'niveau'], ['niveau:att', 'À voir', p => p.x.niveau !== 'ko', '', 'niveau']],
+  puces: () => [['niveau:ko', 'À régler', p => p.x.niveau === 'ko', '', 'niveau'], ['niveau:att', 'À voir', p => p.x.niveau !== 'ko', '', 'niveau']],
   choisir: voirLePoint, survol: p => { if (p.x.nom) survolRepere(p.x.nom); },
   ordre: L => { const rg = p => (p.x.niveau === 'ko' ? 0 : 1000) + (typeof rangDuGenre === 'function' ? rangDuGenre(p.x.genre) : 0); return L.map((p, i) => [p, i]).sort((a, z) => rg(a[0]) - rg(z[0]) || a[1] - z[1]).map(x => x[0]); },
   aller: p => { const x = p.x; if (x.tableau != null) { montrerLiaisons(x.tableau); return; } allerAuControle(x);
@@ -1123,7 +1123,7 @@ function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.je
     ordre.forEach(i => { const nv = G[i] ? (G[i].niveau === 'ko' ? 'ko' : 'att') : 'att'; parNiveau.set(nv, (parNiveau.get(nv) || 0) + par.get(i).length); });
     let niveau = null;
     ordre.forEach(i => { const g = G[i], rs = par.get(i), nv = g ? (g.niveau === 'ko' ? 'ko' : 'att') : 'att';
-      if (nv !== niveau && parNiveau.size > 1) { niveau = nv; const t = nv === 'ko' ? 'Problèmes' : 'À voir', c = parNiveau.get(nv);
+      if (nv !== niveau && parNiveau.size > 1) { niveau = nv; const t = nv === 'ko' ? 'À régler' : 'À voir', c = parNiveau.get(nv);
         morceaux.push({ h: H_GROUPE, f: () => `<tr class="rc-niveau ${nv}"><td colspan="${n}"><span class="rc-niveau-l"><i aria-hidden="true"></i>${t}<b class="rc-n">${c}</b></span></td></tr>` }); }
       if (g) morceaux.push({ h: H_GROUPE + 8, f: () => { const ge = gesteDuGenre(g), noms = [...g.noms], va = ge && /^Voir /.test(ge.mot);
         return `<tr class="rc-groupe rc-genre ${g.niveau}"><td colspan="${n}"><span class="rc-groupe-l"><b class="rc-genre-n">${g.n}</b><b class="rc-genre-mot">${esc(motDuGenre(g.genre, g.n))}</b>`

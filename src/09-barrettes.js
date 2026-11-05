@@ -1756,13 +1756,19 @@ const nombreFr = x => String(Math.round(x * 100) / 100).replace('.', ',').replac
 const nomDuSexe = s => s === 'M' ? 'mâle' : s === 'F' ? 'femelle' : '';
 /* La NOMENCLATURE des contacts d'un plan : chaque contact (et son accessoire) avec son nombre, le plus courant d'abord. */
 function nomenclatureDe(fils) { const m = new Map();
-  fils.forEach(x => { if (!x.sertir) return; const k = x.sertir.reference + '\u0001' + (x.sertir.accessoire || '');
-    (m.get(k) || m.set(k, { reference: x.sertir.reference, accessoire: x.sertir.accessoire || '', statut: x.sertir.statut || '', confiance: x.sertir.confiance || '', outillage: x.sertir.outillage || null, n: 0 }).get(k)).n++; });
+  // (v85) le contact écrit sur la liaison (`ecrit` : contactDe / contactVers) passe devant celui de la table
+  fils.forEach(x => { const st = x.ecrit ? { reference: x.ecrit, accessoire: '', statut: '', confiance: '', outillage: null } : x.sertir; if (!st) return; const k = st.reference + '\u0001' + (st.accessoire || '');
+    (m.get(k) || m.set(k, { reference: st.reference, accessoire: st.accessoire || '', statut: st.statut || '', confiance: st.confiance || '', outillage: st.outillage || null, n: 0 }).get(k)).n++; });
   return [...m.values()].sort((a, b) => b.n - a.n || triBornes(a.reference, b.reference)); }
 /* LE CONTACT À SERTIR d'un fil, tel qu'un plan le pose (`sertir`) : la référence et l'accessoire de la ligne Contacts, son
    statut (« à confirmer » pour une référence que la recherche R1 n'a pas pu vérifier), le fût lu dans la référence (le
    courant en dépend), l'outillage (pince, positionneur, insertion) quand la table le connaît. */
 const sertirDe = (norme, st) => st ? { reference: st.reference, accessoire: st.accessoire, statut: st.statut || '', confiance: st.confiance || '', fut: (futDeContact(st.reference) || {}).fut != null ? futDeContact(st.reference).fut : null, outillage: outillageDuContact(norme, st.reference), note: st.note || '', source: st.source || st.origine || '' } : null;
+/* (v85) LE CONTACT ÉCRIT SUR LA LIAISON à ce bout d'un câble (le récapitulatif l'écrit dans `contactDe` / `contactVers`) :
+   celui que l'ingénieur a choisi à la main, qui passe devant celui de la table — pour une barrette, une prise, un connecteur.
+   Le bout se reconnaît à `amont` (le câble arrive : son « vers » ; un pontage, chaque bout le sien). '' sinon. Les plans le
+   portent à côté du contact de la table (`ecrit` près de `sertir`) : l'interface en fait un choix, Automatique | Manuel. */
+const contactEcritDuFil = f => f && f.l ? String((f.amont ? f.l.contactVers : f.l.contactDe) || '').trim() : '';
 /* Les entrées de bible d'une norme de modules : une par variante — ses groupes sont les « bornes » qu'elle offre. */
 function bibleDesModules(norme) {
   return normeDesModules(norme).modules.map(m => { const ts = [...new Set(m.contacts.map(c => c.taille))].map(t => tailleDe(norme, m.famille, t)).filter(Boolean);
@@ -1851,7 +1857,7 @@ function remplirModules(besoins, norme, choix) { if (bornesLettrees(besoins)) re
   // chaque fil, son contact à sertir quand la table Contacts connaît la famille (NSA937901, E0599 : les broches EN 3155-016, recherche R1)
   const fils = modules.flatMap((M, k) => M.places.flatMap(pl => pl.fils.map(([f, c]) => { const st = f.jauge == null ? null : contactDuFil(N, M.module.famille, c.taille, '', f.type, f.jauge);
     return { f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel, borne: f.borneBarrette, taille: c.taille, sexe: st ? st.sexe : '',
-      jaugeOk: f.jauge == null ? null : contactAccepte(N, M.module.famille, c.taille, f.jauge), sertir: sertirDe(N, st) }; })));
+      jaugeOk: f.jauge == null ? null : contactAccepte(N, M.module.famille, c.taille, f.jauge), sertir: sertirDe(N, st), ecrit: contactEcritDuFil(f) }; })));
   const contacts = modules.reduce((n, M) => n + M.module.contacts.length, 0);
   const parRef = new Map(); modules.forEach(M => parRef.set(M.reference, (parRef.get(M.reference) || 0) + 1));
   const reference = [...parRef].map(([r, n]) => (n > 1 ? n + ' × ' : '') + r).join(' + ');
@@ -1964,7 +1970,10 @@ function jugerModule(N, m, xs, potDe) { const defauts = [], zones = new Map(), p
   zones.forEach((ps, g) => { if (ps.size > 1) { const ls = xs.filter(x => { const c = m.contacts.find(y => y.lettre === x.lettre); return c && c.groupe === g; });
     defauts.push({ genre: 'court', bornes: ls.map(x => x.borne), texte: `${listeEt(ls.map(x => x.lettre))} ne sont pas reliés, mais le ${V} les met dans une même zone` }); } });
   const perte = [...zones.keys()].reduce((s, g) => { const G = m.groupes.find(y => y.k === g); return s + (G ? G.contacts.length : 0); }, 0) - pris;
-  return { defauts, libres: m.contacts.length - pris, perte, pris }; }
+  // (v85) les groupes de câbles de ce module, et combien il en loge sans défaut (« 2 / 3 groupes ») : ce que montre le choix à la main
+  const groupes = new Set(xs.filter(x => x.fils.length).map(x => potDe(x.borne))), mauvais = new Set();
+  defauts.forEach(d => (d.bornes || []).forEach(b => mauvais.add(potDe(b))));
+  return { defauts, libres: m.contacts.length - pris, perte, pris, groupes: groupes.size, loge: [...groupes].filter(p => !mauvais.has(p)).length }; }
 /* le rang d'un module qui convient : l'usage normal d'abord, puis le moins de contacts libres dans les zones prises (des
    zones à la taille des groupes : trois câbles reliés vont sur une zone de trois, pas sur une de huit), le moins de
    contacts perdus, le plus léger */
@@ -2004,7 +2013,7 @@ function remplirModulesDuFichier(besoins, norme, choix) { const N = normeDesModu
       const p = X.potentiel(y.borne), pl = parZone.get(c.groupe) || parZone.set(c.groupe, { potentiel: p, groupe: m.groupes.find(g => g.k === c.groupe), fils: [], perte: 0 }).get(c.groupe);
       y.fils.forEach(f => { pl.fils.push([f, c]); const st = f.jauge == null ? null : contactDuFil(N, m.famille, c.taille, '', f.type, f.jauge);
         fils.push({ f, contact: c, module: k, numero: num, groupe: pl.groupe, potentiel: p, borne: y.borne, taille: c.taille, sexe: st ? st.sexe : '',
-          jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, c.taille, f.jauge), sertir: sertirDe(N, st) }); });
+          jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, c.taille, f.jauge), sertir: sertirDe(N, st), ecrit: contactEcritDuFil(f) }); });
       if (y.fils.length > 1) verdicts.push({ niveau: 'attention', texte: `contact ${y.borne} : ${y.fils.length} câbles — un contact reçoit un câble`, bornes: [y.borne] }); });
     const places = [...parZone.values()].filter(pl => pl.fils.length).map(pl => ({ ...pl, perte: pl.groupe ? pl.groupe.contacts.length - pl.fils.length : 0 })).sort((a, b) => a.groupe.k - b.groupe.k);
     const nomme = !main && !V.module && !!F.module && F.module === m && !x.J.defauts.length;
@@ -2025,18 +2034,18 @@ function remplirModulesDuFichier(besoins, norme, choix) { const N = normeDesModu
 /* LES MODULES POSSIBLES pour le module `numero` d'une barrette en modules — ce que l'interface montre pour le choisir à la
    main : chaque module de la norme de la barrette, s'il convient (et sinon pourquoi), ce qu'il laisse libre ; celui qui est
    retenu, celui que VOLTA prendrait seul (`auto`), celui du fichier. Ceux qui conviennent d'abord, du mieux taillé au moins
-   bien ; puis les autres, du plus proche au plus loin. Rend null pour un numéro que la barrette n'a pas.
-   Rend { numero, famille, nomFamille, retenu, auto, fichier, main, candidats: [{ m, reference, variante, convient, raisons,
-   libres, perte, usage, jamaisSeul, retenu, auto, fichier, mieux }] }. */
+   bien ; puis les autres, du plus proche (qui loge le plus de groupes) au plus loin. Rend null pour un numéro que la barrette
+   n'a pas. Rend { numero, famille, nomFamille, retenu, auto, fichier, main, candidats: [{ m, reference, variante, convient,
+   raisons, libres, perte, loge, groupes (« loge 2 / 3 groupes »), usage, jamaisSeul, retenu, auto, fichier, mieux }] }. */
 function modulesPossibles(besoins, norme, numero, choix) { if (!bornesLettrees(besoins)) return null;
   const N = normeDesModules(norme), num = String(numero), X = contexteDuFichier(besoins, N), xs = X.modules.get(num); if (!xs) return null;
   const Q = remplirModulesDuFichier(besoins, N, choix), M = Q.modules.find(y => y.numero === num), A = remplirModulesDuFichier(besoins, N, moduleAutomatique(choix, num)).modules.find(y => y.numero === num);
   const F = X.fichier.get(num), famille = Q.famille;
   const cs = N.modules.filter(m => m.emploi === 'barrette' && m.contacts.length && m.famille === famille).map(m => { const J = jugerModule(N, m, xs, X.potDe);
-    return { m, reference: m.reference, variante: m.variante, convient: !J.defauts.length, raisons: J.defauts.map(d => d.texte), libres: J.libres, perte: J.perte, usage: m.usage, jamaisSeul: !m.auto,
+    return { m, reference: m.reference, variante: m.variante, convient: !J.defauts.length, raisons: J.defauts.map(d => d.texte), libres: J.libres, perte: J.perte, loge: J.loge, groupes: J.groupes, usage: m.usage, jamaisSeul: !m.auto,
       retenu: !!M && M.module === m, auto: !!A && A.module === m, fichier: !!F.module && F.module === m, rang: rangDuModule(m, J), n: J.defauts.length }; });
   const ok = cs.filter(c => c.convient && !c.jamaisSeul).sort((a, b) => compareRangs(a.rang, b.rang)), rares = cs.filter(c => c.convient && c.jamaisSeul).sort((a, b) => compareRangs(a.rang, b.rang));
-  const ko = cs.filter(c => !c.convient).sort((a, b) => a.n - b.n || a.libres - b.libres);
+  const ko = cs.filter(c => !c.convient).sort((a, b) => b.loge - a.loge || a.n - b.n || a.libres - b.libres);
   if (ok[0]) ok[0].mieux = true;
   return { numero: num, famille, nomFamille: nomDeFamille(N, famille), retenu: M ? M.reference : '', auto: A ? A.reference : '', fichier: F.pn, main: !!(M && M.main),
            candidats: [...ok, ...rares, ...ko].map(({ rang, n, ...c }) => c) }; }
@@ -2096,7 +2105,7 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
     mieux.r.pl.forEach(x => x.p.fils.forEach(f => { const sx = sexeFil(f), st = contactDuFil(N, m.famille, x.c.taille, sx, f.type, f.jauge), sertir = sertirDe(N, st);
       const joint = filContreJoint(N, m.famille, x.c.taille, sertir ? sertir.fut : null, f.type, st ? st.accessoire : '');
       fils.push({ f, contact: x.c, module: 0, groupe: m.groupes[x.c.groupe], potentiel: { bornes: [x.p.borne], fils: x.p.fils }, borne: x.p.borne, taille: x.c.taille, sexe: sx,
-        jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge, sx, f.type), sertir, joint }); }));
+        jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge, sx, f.type), sertir, joint, ecrit: contactEcritDuFil(f) }); }));
     // le fil contre le joint arrière (table Joint arrière) : trop gros, il n'entre pas ; trop fin sans manchon d'étanchéité, l'eau passe
     fils.forEach(x => { const j = x.joint; if (!j || !j.verdict || j.verdict === 'dans' || (j.verdict === 'sous' && j.manchon)) return; const J = j.joint, plage = (J.dmin != null ? nombreFr(J.dmin) : '?') + '–' + (J.dmax != null ? nombreFr(J.dmax) : '?') + ' mm';
       verdicts.push({ niveau: 'attention', texte: `borne ${x.potentiel.bornes[0]} : ${cableDit(x.f)} (Ø ${nombreFr(j.d)} mm) ${j.verdict === 'dessus' ? 'plus gros que le joint arrière du contact ' + x.contact.lettre + ' n’admet (' + plage + ') : il n’entre pas' : 'sous la plage du joint arrière du contact ' + x.contact.lettre + ' (' + plage + ') et sans manchon d’étanchéité : l’eau passe'}${J.confiance && J.confiance !== 'vérifié' ? ' (plage ' + J.confiance + ')' : ''}`, bornes: x.potentiel.bornes }); });

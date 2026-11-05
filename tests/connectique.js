@@ -17,7 +17,7 @@ vm.createContext(bac);
 vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { normeEmbarquee, bibleDeLOutil, contratExemple, liaison, besoinsDeBarrette, barretteInfos, remplirModules, '
   + 'placerDansGroupe, moduleDeReference, contactAccepte, potentielsDeBarrette, variantesQuiLogent, connecteursEnModules, coupureEnModule, remplirContacts, arrangementsQuiLogent, '
   + 'sexeDuPn, habillage, remplirSelonNorme, physiqueDeBarrette, autreSexe, railsDeBarrette, connecteursDe, connecteurParBorne, moduleDeConnecteur, famillesDeModules, reperesDe, estBornier, estMasse, '
-  + 'moduleEtContact, bornesLettrees, choixDesModules, retenirModule, moduleAutomatique, modulesPossibles, lireBorne, casesDuModule };', bac);
+  + 'moduleEtContact, bornesLettrees, choixDesModules, retenirModule, moduleAutomatique, modulesPossibles, lireBorne, casesDuModule, nomenclatureDe };', bac);
 const X = bac.X, NE = X.normeEmbarquee(), BO = X.bibleDeLOutil(), L = X.contratExemple();
 /* (v85) l'exemple écrit ses barrettes comme les fichiers du lecteur (« 667VT2 51 » + « A ») ; les règles d'une barrette
    NUMÉROTÉE (1, 2, 3… : une barrette à poser, un fichier d'une autre forme) se vérifient sur l'ancienne écriture de ses
@@ -222,8 +222,11 @@ const MP = X.modulesPossibles(X.besoinsDeBarrette('667VT2', L), NE, '52', '');
 ok('les modules possibles pour le 52 de 667VT2 : le B202 d’abord (le mieux taillé, celui de VOLTA, retenu), puis ceux qui conviennent, puis les autres et pourquoi — le B201 du fichier : « A, B et C sont reliés… »', MP.retenu === 'E0599-1B202Z' && MP.auto === 'E0599-1B202Z' && MP.fichier === 'E0599-1B201Z' && MP.candidats[0].reference === 'E0599-1B202Z' && MP.candidats[0].mieux && MP.candidats[0].convient
   && MP.candidats.every(c => c.m.famille === 'E0599') && (c => c && !c.convient && c.fichier && /A, B et C sont reliés/.test(c.raisons[0]))(MP.candidats.find(c => c.reference === 'E0599-1B201Z')) && X.modulesPossibles(X.besoinsDeBarrette('667VT2', L), NE, '99', '') === null,
   MP.candidats.slice(0, 5).map(c => c.variante + (c.convient ? '' : '✗')).join(' '));
+ok('chaque possible dit ce qu’il loge : le B202, « 1 / 1 groupe » ; le B201 du fichier, « 0 / 1 »', (c => c.loge === 1 && c.groupes === 1)(MP.candidats[0]) && (c => c.loge === 0 && c.groupes === 1)(MP.candidats.find(c => c.reference === 'E0599-1B201Z')));
 const C52 = X.casesDuModule('667VT2', L, '52');
 ok('les cases du fichier du module 52 de 667VT2 (où l’installation corrigée écrit son B202) : les PN de ses seules bornes (sept bouts, pontages compris), au folio 5 — le module 51 garde les siens', C52.length === 7 && C52.every(([l, ch]) => l.plan === '5' && /^52/.test(ch === 'pnDe' ? l.borneDe : l.borneVers)), C52.map(([l, ch]) => (ch === 'pnDe' ? l.borneDe : l.borneVers) + '·' + ch).join(' '));
+const LE = L.map(l => l.cable === 'W-550' ? X.liaison({ ...l, contactVers: 'EN3155-019F2018' }) : l), QE = X.barretteInfos('667VT2', LE, BO).plan, xE = QE.fils.find(x => x.f.l && x.f.l.cable === 'W-550');
+ok('le contact écrit sur la liaison (contactVers, le récapitulatif) se lit au bon bout : 52A porte EN3155-019F2018 à côté de celui de la table ; la LPA du plan le compte', xE.ecrit === 'EN3155-019F2018' && xE.sertir.reference === 'EN3155-016M2018' && QE.fils.filter(x => x.ecrit).length === 1 && X.nomenclatureDe(QE.fils).some(n => n.reference === 'EN3155-019F2018' && n.n === 1), xE.borne + ' · ' + xE.ecrit);
 // le rail, une fois par barrette : tous ses modules
 const BP3 = P.barretteParente('668VT3'), BP4 = P.barretteParente('670VT4');
 ok('668VT3 : sa propre barrette, un rail de trois modules (001751 103 00, 42 mm) ; 670VT4 : le profilé NSA937901RB2000 pour ses deux modules', BP3.freres.join() === '668VT3' && BP3.porteur === '668VT3' && BP3.rails.length === 1 && BP3.rails[0].reference === '001751 103 00' && BP3.rails[0].longueur === 42 && BP4.rails[0].reference === 'NSA937901RB2000' && BP4.rails[0].n === 2,

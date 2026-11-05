@@ -230,7 +230,7 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
     else if (titre.length > 48) { const m = /^(.+?) \(([^()]+)\)$/.exec(titre); if (m) { titre = m[1]; detail = majuscule(m[2]) + (detail ? ' · ' + detail.replace(/^\S/, c => c.toLowerCase()) : ''); } }
     const va = ongletDeSection(o.type, p.section), bulle = escA([qui ? qui[1] + ' : ' + qui[2] : titre, k > 0 ? majuscule(t.slice(k + 3)) : '', p.bulle || ''].filter(Boolean).join('\n'));
     const cible = `data-onglet-va="${escA(va)}"${p.viser ? ` data-viser="${escA(p.viser)}"` : ''}${p.connecteur ? ` data-connecteur="${escA(p.connecteur)}"` : ''}`, etat = p.niveau === 'ko' ? 'ko' : 'att';
-    if (!x.regler) return `<div class="nc-tache fi-pb-l ${etat} info"><span class="nc-rond" aria-hidden="true"></span><button type="button" class="nc-t" ${cible} data-bulle="${bulle}"><b class="fi-pb-t">${insecable(esc(titre))}</b>${qui ? ` <small>${insecable(esc(qui[2]))}</small>` : ''}</button></div>`;
+    if (!x.regler) return `<div class="nc-tache fi-pb-l ${etat} info"><span class="nc-rond" aria-hidden="true"></span><button type="button" class="nc-t" ${cible} data-bulle="${bulle}"><b class="fi-pb-t">${insecable(esc(titre))}</b>${qui ? ` <small>${insecable(esc(majuscule(qui[2])))}</small>` : ''}</button></div>`;
     // sans geste qui règle : ce qu'il faut faire, en mots (ceux du récapitulatif) — et le geste qui mène à la cause, s'il y en a un
     const que = !x.agir && typeof remede === 'function' ? (remede({ texte: p.texte }) || [])[0] : '', mene = !x.agir ? gesteQuiMene(p) : null;
     const geste = x.html || (x.g ? bouton(x.g) : mene ? bouton(mene, 'papier dense') : '');
