@@ -29525,9 +29525,11 @@ function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComple
   if (plan !== '*') { const par = new Map(); for (const l of L0) { const xs = par.get(l.plan); if (xs) xs.push(l); else par.set(l.plan, [l]); }
     L = par.get(plan) || []; const P = plans(), i = P.indexOf(plan); for (let j = 0; j < i; j++) { const xs = par.get(P[j]); if (xs) depart += nDedoublements(xs); } }
   const g = folios.get(plan), sig = depart + '|' + signature(L);
-  if (g && g.sig === sig && g.L.length === L.length && g.L.every((l, i) => l === L[i])) return g.sortie;
+  // (v86) les lettres d'une barrette ajoutée suivent la norme en cours (une norme chargée en change le module) : la norme
+  // est de la clé — `app.norme` est un objet neuf à chaque changement (08-normes)
+  if (g && g.sig === sig && g.norme === app.norme && g.L.length === L.length && g.L.every((l, i) => l === L[i])) return g.sortie;
   if (!app.contrat.provisoires) app.contrat.provisoires = new Map();
-  const sortie = avecBarrettesAPoser(L, depart, app.contrat.provisoires); folios.set(plan, { L, sig, sortie }); return sortie; }
+  const sortie = avecBarrettesAPoser(L, depart, app.contrat.provisoires, app.norme || null); folios.set(plan, { L, sig, sortie, norme: app.norme }); return sortie; }
 const liaisonsDuPlan = () => liaisonsDe(app.plan);
 /* Le placement d'un folio se garde tant que ses liaisons ne changent pas : le
    concours d'un folio chargé prend des secondes, revenir sur un folio déjà
@@ -29879,8 +29881,8 @@ const enSecondes = ms => { const s = ms / 1000; return s < 15 ? Math.max(1, Math
 function avancement(a) { const est = dureeEstimee(a);
   if (!a.debut) return { p: 0, reste: est, mot: 'environ ' + enSecondes(est), file: !!placement.encours && placement.encours.cle !== a.cle };
   const ecoule = performance.now() - a.debut, p = Math.min(0.97, Math.max(a.p || 0, ecoule / est)), reste = est - ecoule;
-  // l'estimation dépassée (un ordinateur occupé ailleurs) : on ne promet plus rien — « presque fini » deux secondes, puis « en calcul »
-  const depasse = reste < -2000;
+  // l'estimation dépassée (un ordinateur occupé ailleurs) : on ne promet plus rien — passé d'une demi-seconde, « encore en calcul »
+  const depasse = reste < -500;
   return { p, reste, depasse, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : depasse ? 'encore en calcul' : 'presque fini' }; }
 /* L'ESQUISSE NE SE MONTRE QUE SI ELLE SERT (v86, l'audit G3 : au folio 3, elle paraissait 66 ms, puis tout bougeait). Le
    dessin définitif à moins de trois secondes, elle passerait sous les yeux pour laisser aussitôt la place : l'attente reste,
