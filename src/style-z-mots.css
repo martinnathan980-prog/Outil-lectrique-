@@ -1,0 +1,60 @@
+/* ═══ v86 — LES MOTS (l'agent « mots ») : l'Historique, ce que dit un anneau, le courant d'un câble sans type ═════════════
+   Le lecteur (v86) : « 2 câbles · 80 % : on ne comprend pas ce que veut dire 80 % » ; « l'historique : ce qui a changé, ce
+   qui n'a pas changé, d'où ça vient ». Chaque chiffre dit de quoi il parle ; chaque changement dit avant → après, d'où
+   venait l'avant, qui a mis l'après, quand, et se défait d'un geste. Les jetons du thème seulement : clair et sombre suivent. */
+
+/* ─── 1. LE TABLEAU DES CÂBLES : sous « Courant » et « Chute en ligne », de quoi l'anneau est la part ─── */
+.nv-cables .nv-tri-m{display:inline-flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+.nv-grand table.nv-cables :is(.nv-th-i,.nv-th-u) .nv-tri-m{align-items:center}
+.nv-cables .nv-th-s{font:500 var(--f-11)/1.15 var(--sans);letter-spacing:0;text-transform:none;opacity:.78;white-space:nowrap}
+.nv-grand .nv-cables thead th.a-sous .nv-tri{height:auto;min-height:34px;padding-top:7px;padding-bottom:7px}
+.nv-grand .nv-cables thead tr:has(th.a-sous) th{height:46px}
+/* sans type (ou hors norme) : le courant se lit, la part de l'admis non — une mention calme, pas un anneau vide */
+.nv-grand table.nv-cables .nv-mes-t small.nv-mes-inc{color:var(--t-3);font-style:italic}
+.fi-mes-v .fi-mes-inc{margin-left:8px;font:italic 500 var(--f-12)/1.2 var(--sans);color:var(--t-3)}
+
+/* ─── 2. L'HISTORIQUE : une carte par changement — quoi, quand ; avant → après, chacun avec d'où il vient ; Défaire ─── */
+.nv-panneau .hi{display:flex;flex-direction:column;gap:14px;margin:0}
+.hi-intro{margin:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+.hi-intro b{font-weight:600;color:var(--t-1)}
+.hi-intro b.id{font-family:var(--mono);font-size:.96em}
+.hi-l{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.hi-i{--qui:var(--t-3);position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"t q" "v d" "p p";align-items:center;gap:10px 20px;
+  padding:14px 16px 14px 22px;border:1px solid var(--s-line);border-radius:12px;background:var(--s-surface);transition:border-color var(--rapide,.15s),box-shadow var(--rapide,.15s)}
+.hi-i:hover{border-color:var(--s-line-2);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+/* qui l'a fait, d'un trait au bord : le cuivre pour vous, le cuivre adouci pour une proposition acceptée, le gris pour VOLTA */
+.hi-i::before{content:"";position:absolute;left:-1px;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--qui)}
+.hi-i.vous{--qui:var(--nv-cuivre)}
+.hi-i.prop{--qui:color-mix(in srgb,var(--nv-cuivre) 55%,var(--t-3))}
+.hi-i.volta{--qui:color-mix(in srgb,var(--t-3) 70%,transparent)}
+.hi-t{grid-area:t;min-width:0;font:400 var(--f-13)/1.35 var(--sans);color:var(--t-2)}
+.hi-t b{font-weight:600;color:var(--t-1)}
+.hi-q{grid-area:q;justify-self:end;font:500 var(--f-12)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-3);white-space:nowrap}
+/* avant → après : trois colonnes fixes, toutes les flèches à la même place d'une carte à l'autre */
+.hi-v{grid-area:v;display:grid;grid-template-columns:minmax(0,190px) 22px minmax(0,1fr);align-items:start;column-gap:12px;min-width:0}
+.hi-av,.hi-ap{display:flex;flex-direction:column;gap:4px;min-width:0}
+.hi-av s,.hi-ap b{font:600 var(--f-15)/1.25 var(--sans);overflow-wrap:anywhere}
+.hi-av s{font-weight:500;color:var(--t-3);text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,var(--t-3) 70%,transparent)}
+.hi-ap b{color:var(--t-1)}
+.hi-v :is(s,b).id{font-family:var(--mono);font-size:var(--f-14);letter-spacing:0}
+.hi-av small,.hi-ap small{font:500 var(--f-11)/1.25 var(--sans);color:var(--t-3)}
+.hi-i.vous .hi-ap small,.hi-i.prop .hi-ap small{color:var(--nv-cuivre)}
+.hi-f{display:flex;justify-content:center;padding-top:3px;color:var(--nv-cuivre)}
+.hi-f svg.ico{width:16px;height:16px}
+.hi-d{grid-area:d;justify-self:end;align-self:center;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--s-line-2);border-radius:9px;background:none;
+  color:var(--t-2);font:600 var(--f-12) var(--sans);cursor:pointer;transition:color var(--rapide,.15s),border-color var(--rapide,.15s),background var(--rapide,.15s)}
+.hi-d:hover{color:var(--t-1);border-color:var(--nv-cuivre);background:color-mix(in srgb,var(--nv-cuivre) 9%,transparent)}
+.hi-d:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
+.hi-d svg.ico{width:14px;height:14px;transition:transform var(--rapide,.15s)}
+.hi-d:hover svg.ico{transform:translateX(-2px)}
+.hi-p{grid-area:p;margin:0;padding-top:10px;border-top:1px dashed var(--s-line);font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+@media (prefers-reduced-motion:reduce){ .hi-d svg.ico{transition:none} .hi-d:hover svg.ico{transform:none} }
+/* étroit (la fiche à côté du récapitulatif, le téléphone) : avant et après l'un sous l'autre, la flèche tournée */
+@container corps (max-width:560px){
+  .hi-i{grid-template-areas:"t t" "q q" "v v" "p p" "d d";padding-left:18px}
+  .hi-q{justify-self:start}
+  .hi-v{grid-template-columns:22px minmax(0,1fr);row-gap:6px}
+  .hi-av{grid-column:1 / -1}
+  .hi-f{transform:rotate(90deg);padding-top:0}
+  .hi-d{justify-self:start}
+}

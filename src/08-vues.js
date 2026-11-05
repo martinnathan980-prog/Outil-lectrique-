@@ -389,8 +389,11 @@ function silhouetteVue(type, o) { o = o || {}; const L = s => s.replace(/<(path|
   else if (type === 'masse') {
     forme = '<path d="M54 14H28"/><path d="M28 5V23M23 8.5V19.5M18 12V16"/>';
     courant = 'M54 14H28'; }
-  else { const deux = (o.connecteurs || 1) > 1, bx = deux ? 22 : 11, bout = deux ? 68 : 61;
-    forme = `<rect x="${bx}" y="4" width="28" height="20" rx="2"/><rect x="${bx + 28}" y="8" width="6" height="12" rx="1"/><path d="M${bx + 34} 11H${bout}M${bx + 34} 17H${bout}"/>`
-      + (deux ? '<rect x="16" y="8" width="6" height="12" rx="1"/><path d="M16 11H4M16 17H4"/>' : '');
-    courant = deux ? 'M4 11H16M56 11H68' : `M${bout} 11H${bx + 34}`; }
+  else if ((o.connecteurs || 1) > 1) {
+    // deux connecteurs ou plus : rangés l'un sous l'autre sur le flanc, comme le dessin de sa fiche (A, puis X)
+    forme = '<rect x="11" y="4" width="28" height="20" rx="2"/><rect x="39" y="5" width="6" height="7.5" rx="1"/><rect x="39" y="15.5" width="6" height="7.5" rx="1"/><path d="M45 8.75H61M45 19.25H61"/>';
+    courant = 'M61 8.75H45M61 19.25H45'; }
+  else {
+    forme = '<rect x="11" y="4" width="28" height="20" rx="2"/><rect x="39" y="8" width="6" height="12" rx="1"/><path d="M45 11H61M45 17H61"/>';
+    courant = 'M61 11H45'; }
   return `<svg class="silhouette sl-${type === 'fil' || type === 'masse' || type === 'prise' || type === 'barrette' || type === 'disjoncteur' ? type : 'equipement'}" viewBox="0 0 72 28" aria-hidden="true" focusable="false"><g class="sl-trait">${L(forme)}</g><path class="sl-courant" pathLength="1" d="${courant}"/></svg>`; }

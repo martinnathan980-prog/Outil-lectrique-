@@ -24,8 +24,7 @@
 svg.silhouette{display:block;width:100%;height:100%;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
 svg.silhouette .sl-trait>*{stroke-dasharray:1 1;stroke-dashoffset:0}
 /* l'éclat de courant : un trait court, plus clair, qui court le long du chemin du courant — invisible au repos */
-svg.silhouette .sl-courant{stroke:color-mix(in srgb,var(--nv-cuivre) 62%,#ffd2a6);stroke-width:2.4;stroke-dasharray:.24 1.3;stroke-dashoffset:.24;
-  filter:drop-shadow(0 0 2px color-mix(in srgb,var(--nv-cuivre) 75%,transparent))}
+svg.silhouette .sl-courant{stroke:color-mix(in srgb,var(--nv-cuivre) 55%,#ffb060);stroke-width:2.4;stroke-dasharray:.24 1.3;stroke-dashoffset:.24}
 @keyframes sl-courant{from{stroke-dashoffset:.24}to{stroke-dashoffset:-1}}
 
 /* ─── LA CARTE : le sceau dans la barre ─── */
@@ -60,9 +59,9 @@ body #inspecteur .fi.nv-c>.fi-nav::before{display:none}
 :is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre.ident .nc-v .id{font:500 var(--f-20)/1 var(--mono)}
 
 /* ─── LA CARTE : la lumière qui suit la souris, la trame du folio ─── */
-:is(#inspecteur,.carte-double) .fi.nv-c{--carte-lueur:color-mix(in srgb,var(--nv-cuivre) 7%,transparent);--carte-trame:color-mix(in srgb,var(--t-1) 12%,transparent)}
+:is(#inspecteur,.carte-double) .fi.nv-c{--carte-lueur:color-mix(in srgb,var(--nv-cuivre) 8%,transparent);--carte-trame:color-mix(in srgb,var(--t-1) 15%,transparent)}
 :is(#inspecteur,.carte-double) .fi.nv-c>.nc-lumiere{position:absolute;inset:0;z-index:0;overflow:hidden;border-radius:inherit;pointer-events:none;--lx:50%;--ly:-12px;
-  background:radial-gradient(250px circle at var(--lx) var(--ly),var(--carte-lueur),transparent 72%);
+  background:radial-gradient(230px circle at var(--lx) var(--ly),var(--carte-lueur),transparent 72%);
   transition:--lx .8s cubic-bezier(.2,.8,.2,1),--ly .8s cubic-bezier(.2,.8,.2,1)}
 :is(#inspecteur,.carte-double) .fi.nv-c>.nc-lumiere>i{position:absolute;inset:0;background:radial-gradient(circle,var(--carte-trame) .8px,transparent 1.2px) 6px 6px/12px 12px;
   -webkit-mask:radial-gradient(150px circle at var(--lx) var(--ly),#000,rgba(0,0,0,.5) 45%,transparent);mask:radial-gradient(150px circle at var(--lx) var(--ly),#000,rgba(0,0,0,.5) 45%,transparent)}
@@ -83,9 +82,11 @@ body #inspecteur .fi.nv-c>.fi-nav::before{display:none}
 
 /* ─── LA NUIT : le cuivre s'allume un peu, la trame se voit à peine ─── */
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double) .fi.nv-c{--carte-lueur:color-mix(in srgb,var(--nv-cuivre) 13%,transparent);--carte-trame:color-mix(in srgb,var(--t-1) 10%,transparent)}
-  :root:not([data-theme="light"]) :is(#inspecteur,.carte-double) :is(.nc-sceau,.nc-sil) svg.silhouette{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--nv-cuivre) 32%,transparent))} }
+  :root:not([data-theme="light"]) :is(#inspecteur,.carte-double) :is(.nc-sceau,.nc-sil) svg.silhouette{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--nv-cuivre) 32%,transparent))}
+  :root:not([data-theme="light"]) svg.silhouette .sl-courant{stroke:color-mix(in srgb,var(--nv-cuivre) 50%,#fff);filter:drop-shadow(0 0 2px var(--nv-cuivre))} }
 :root[data-theme="dark"] :is(#inspecteur,.carte-double) .fi.nv-c{--carte-lueur:color-mix(in srgb,var(--nv-cuivre) 13%,transparent);--carte-trame:color-mix(in srgb,var(--t-1) 10%,transparent)}
 :root[data-theme="dark"] :is(#inspecteur,.carte-double) :is(.nc-sceau,.nc-sil) svg.silhouette{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--nv-cuivre) 32%,transparent))}
+:root[data-theme="dark"] svg.silhouette .sl-courant{stroke:color-mix(in srgb,var(--nv-cuivre) 50%,#fff);filter:drop-shadow(0 0 2px var(--nv-cuivre))}
 
 @media (prefers-reduced-motion:reduce){
   :is(#inspecteur,.carte-double) .fi.nv-c>.nc-lumiere{transition:none}

@@ -880,7 +880,8 @@ function blocSvg(c, designation, choisi, couleurBout, info, k, ailleurs) {
        vers l'extérieur — et le repère se lit dessous. */
     // p.dir dit par quel flanc le fil ARRIVE (-1 : par la gauche) ; le symbole grandit vers l'autre flanc.
     const M = symboleDePastille(c), ly = M.y - c.y, d = M.d, xs = M.xs - c.x, x0 = d > 0 ? 0 : c.w;   // le fil entre par un flanc, le symbole est tout de suite là
-    s += `<line class="earth"${traitDe(d > 0 ? aGauche(M.y) : aDroite(M.y))} x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
+    // (v86) le bout de fil jusqu'aux barres est du fil : son épaisseur (0,95), pas celle des barres (1,1) — un ressaut se voyait au flanc
+    s += `<line class="lead"${traitDe(d > 0 ? aGauche(M.y) : aDroite(M.y))} x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
     [[6, 0], [4, 3.2], [2, 6.4]].forEach(([l, dx]) => { const x = xs + d * dx; s += `<line class="earth" x1="${f1(x)}" y1="${f1(ly - l)}" x2="${f1(x)}" y2="${f1(ly + l)}"/>`; });
     // le repère, petit, sous les barres — ou là où la place est libre
     s += repereDe(c);
@@ -951,8 +952,9 @@ function blocSvg(c, designation, choisi, couleurBout, info, k, ailleurs) {
     const cx = c.w / 2, ys = [...rl, ...rr].map(p => p.y - c.y);
     const yh = ys.length ? Math.min(...ys) : c.h / 2, yb = ys.length ? Math.max(...ys) : c.h / 2, y0 = yb + 7;
     s += `<line class="earth" x1="${f1(cx)}" y1="${f1(yh)}" x2="${f1(cx)}" y2="${f1(y0)}"/>`;
-    rl.forEach(p => { const ly = p.y - c.y; s += `<line class="earth"${indicesDuBout(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(cx)}" y2="${f1(ly)}"/>`; });
-    rr.forEach(p => { const ly = p.y - c.y; s += `<line class="earth"${indicesDuBout(aDroite(p.y))} x1="${f1(cx)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
+    // (v86) chaque amenée est le bout de son fil (sa couleur, son épaisseur), jusqu'au collecteur
+    rl.forEach(p => { const ly = p.y - c.y; s += `<line class="lead"${traitDe(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(cx)}" y2="${f1(ly)}"/>`; });
+    rr.forEach(p => { const ly = p.y - c.y; s += `<line class="lead"${traitDe(aDroite(p.y))} x1="${f1(cx)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     if (ys.length > 1) ys.forEach(ly => { s += `<circle class="jn" cx="${f1(cx)}" cy="${f1(ly)}" r="1.5"/>`; });
     [[7, 0], [4.5, 3.2], [2, 6.4]].forEach(([l, dy]) => { s += `<line class="earth" x1="${f1(cx - l)}" y1="${f1(y0 + dy)}" x2="${f1(cx + l)}" y2="${f1(y0 + dy)}"/>`; });
     s += `<text class="rep" x="${f1(cx)}" y="${f1(y0 + 17)}" text-anchor="middle">${esc(clip(c.name, 10))}</text>`;

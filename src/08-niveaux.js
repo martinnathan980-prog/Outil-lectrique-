@@ -115,7 +115,7 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   return `<span class="nc-sceau" aria-hidden="true">${sil}</span><div class="nc-tete"><span class="nc-titre${nom.length > 9 ? ' long' : ''}">${titre}</span></div>${meta}`; }
 // ce que la silhouette dessine de CET objet : les modules d'une barrette, les connecteurs d'un équipement
 function silhouetteDe(o) { const nom = (o.tete || {}).nom || '';
-  try { if (o.type === 'barrette') { const n = typeof modulesDeLaBarrette === 'function' ? modulesDeLaBarrette(nom).length : 0; return { modules: n || 3 }; }
+  try { if (o.type === 'barrette') { const n = typeof planDeBarrette === 'function' ? ((planDeBarrette(nom).plan || {}).modules || []).length : 0; return { modules: n || 3 }; }
     if (o.type === 'equipement' && typeof connecteursDe === 'function') return { connecteurs: connecteursDe(nom, verite()).filter(c => c.nom).length || 1 }; } catch (_) { }
   return {}; }
 // la désignation (un texte libre, gardé avec le contrat) : dans l'onglet « Modifier » du grand
@@ -370,7 +370,7 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
    première tâche à la place du point : la décision d'un disjoncteur), taire, avant (le vrai repère d'une barrette à
    poser), fin (les listes de saisie) } */
 function composerFiche(o) { const probs = o.probs || []; NIVEAU.typeRendu = o.type; FI.gestesPb = [];
-  const modifs = modificationsDeLaFiche(o.ecrits || [], o.proposes || []);
+  const modifs = modificationsDeLaFiche(o.ecrits || [], o.proposes || [], o);
   if (!ficheEnGrand()) {
     // LA CARTE — le premier regard : ce que c'est et son nom, la pièce dessinée (un clic ouvre tout), ce qui cloche, trois
     // chiffres, « Tout voir » ; rien d'autre (le lecteur : « épuré, classe »)
@@ -388,7 +388,8 @@ function composerFiche(o) { const probs = o.probs || []; NIVEAU.typeRendu = o.ty
   const des = designationFiche(o), mod = base.find(x => x.cle === 'reglages');
   if (des) { if (mod) mod.contenu = des + (mod.contenu || ''); else if (ess) ess.contenu = (ess.contenu || '') + des; }
   // (l'historique : un onglet quand il y en a un ; sinon rien — un onglet « aucune » n'apprend rien)
-  const onglets = base.concat(modifs ? [{ cle: 'modifs', statut: { t: modifs.n > 1 ? modifs.n + ' changements' : '1 changement' }, contenu: modifs.html }] : []).slice().sort((x, y) => rangOnglet(x) - rangOnglet(y));
+  // (v86) son statut : combien de changements ; sa bulle : par qui (« 3 changements (dont 1 par VOLTA) »)
+  const onglets = base.concat(modifs ? [{ cle: 'modifs', statut: { t: modifs.n > 1 ? modifs.n + ' changements' : '1 changement', bulle: majuscule(modifs.mots) + ' depuis votre fichier' }, contenu: modifs.html }] : []).slice().sort((x, y) => rangOnglet(x) - rangOnglet(y));
   const corps = `<div class="nv-tete nv-poignee">${barreNav({ milieu: enteteFiche(o, true), epure: true })}</div>${o.avant && o.type !== 'fil' ? `<div class="nv-avant">${o.avant}</div>` : ''}`
     + ongletsHtml(o.type, onglets) + (o.fin || '');
   return `<div class="nv-grand nv-seul" data-nv-type="${escA(o.type)}"><div class="nv-corps">${corps}</div></div>`; }

@@ -376,7 +376,7 @@ function sectionDisjoncteur(nom, d, o, probs) { d = d || disjonctionDe(nom); o =
      son repère `data-part="courbe"` : « Comment VOLTA a choisi » y mène. */
   const graphe = `<figure class="dj-graphe ilot-clair">${grapheSvg(d, vueDeLaCourbe(), largeurDuGraphe(nom))}<div class="dj-tip" hidden></div></figure>`;
   const sous = `<span class="dj-pc-sous">et courbe de déclenchement${cal ? ' du ' + esc(amperes(cal)) : ''}${aide('courbe', contexteAide('courbe', d))}</span>${confianceDeLaCourbe(d)}`;
-  const profil = part('profil', 'Profil de charge', `<div class="dj-pc"><div class="dj-pc-g">${tableauProfil(d, plus)}${ajouts}${conclusionCalibre(d, 'dj-concl-pc')}</div><div class="dj-pc-d" data-part="courbe">${graphe}</div></div>`, sous, 'profil');
+  const profil = part('profil', 'Profil de charge', `<div class="dj-pc"><div class="dj-pc-g">${tableauProfil(d, plus)}${ajouts}${conclusionCalibre(d, 'dj-concl-pc')}</div><div class="dj-pc-d" data-part="courbe" data-sig="${escA(sigDuProfil(d))}">${graphe}</div></div>`, sous, 'profil');
   const courbe = '';
   // pliée, la ligne dit le calibre en grand, son mot quand il ne passe pas, sa gamme ; et, tant que la proposition de
   // l'outil n'est pas écrite (l'ergonome v73 : « est-il à 10 ou à 15 ? »), le calibre du RETEST en grand et « → 15 A proposé »
@@ -707,7 +707,7 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
   // le calibre de votre fichier, quand VOLTA en retient un autre : sa conclusion, une ligne dessous
   const mF = fic ? motsDuCalibre(d, fic) : null, ligneF = mF ? `<p class="dj-concl-fic ${mF.cle === 'passe' ? 'ok' : 'ko'}">${marqueVerdict(mF.cle)}<span><b>Votre fichier porte un ${esc(amperes(fic))}</b> : il ${mF.cle === 'passe' ? 'ne disjoncte pas' : 'disjoncte'}. ${insecable(esc(mF.detail))}</span></p>` : '';
   // (v81) le retenu est celui du fichier et il ne disjoncte pas, mais un plus petit suffirait : VOLTA le garde, et le dit
-  const mini = (gamme.find(g => g.valide && g.catalogue !== false) || {}).calibre, deFichier = d.pn && cal && Math.abs(d.pn - cal) < 1e-9 && d.origine !== 'main';
+  const mini = (gamme.find(g => g.valide && g.catalogue !== false) || {}).calibre, deFichier = d.pn && cal && Math.abs(d.pn - cal) < 1e-9 && d.origine !== 'main' && !pnDeVolta(nom);
   const note = deFichier && mini && mini < cal - 1e-9 ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(mini))} — un clic sur lui, dans l’onglet Calibre, le retient.</p>` : '';
   const leg = `<p class="dj-fx-leg"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="zone"></i><span class="dj-fx-leg-z">où le ${esc(A)} disjoncte</span></span>${fic ? '<span><i class="fic"></i>celui de votre fichier</span>' : ''}</p>`;
   return `<div class="dj-ca" data-disj="${escA(nom)}" data-max="${f1(max)}" data-cal="${calZ}">${conclusionCalibre(d, 'dj-concl-g')}${ligneF}`
@@ -819,7 +819,12 @@ const ecrireLaLigne = el => { if (el && !mouvementReduit()) el.animate([{ opacit
 // colonne Origine du retest corrigé — le domaine C, 08-export, `avecOrigineVolta`)
 const parVolta = faire => typeof avecOrigineVolta === 'function' ? avecOrigineVolta(faire) : faire();
 // la saisie du profil en cours (v82) : le disjoncteur dont la saisie a déjà pris son entrée d'historique, et le souffle
-const PROFIL_VIF = { nom: '', minuteur: 0, image: 0 };
+const PROFIL_VIF = { nom: '', minuteur: 0, image: 0, refait: false };
+/* L'EMPREINTE de ce que la section du profil montre (le calibre, d'où il vient, le mot de chaque calibre, chaque point et son
+   sort) : refaite en place, la fiche la porte-t-elle ? Sinon (la fiche refaite autour du champ sous les doigts n'a pas pu
+   descendre jusqu'à lui : une carte de décision apparue, un état de plus), elle se refait entière et le curseur revient à
+   sa place dans sa case (`lierDisjonction`, `rafraichir`). */
+const sigDuProfil = d => [d.calibre || '', d.origine || '', (d.gamme || []).map(g => g.valide ? 1 : 0).join(''), (d.points || []).map(p => p.k + ':' + p.i + ':' + p.t + (p.ok === false ? 'x' : '')).join(',')].join('|');
 function lierDisjonction(nom, conteneur) {
   const racine = conteneur || (($('ba-equip') && $('ba-equip').querySelector(`.fi-dj[data-disj="${CSS.escape(nom)}"]`)) ? $('ba-equip') : document);
   const parts = () => [...racine.querySelectorAll(`.fi-dj[data-disj="${CSS.escape(nom)}"]`)];
@@ -835,7 +840,15 @@ function lierDisjonction(nom, conteneur) {
     if (!(c.calibre > 0)) c.calibre = null; return c; };
   // refaire en place : la fiche se recalcule, et ce qui ne porte pas le champ sous les doigts se remplace (08-fiche,
   // `rafraichirFicheEnPlace`) ; elle se relie ensuite d'elle-même — ce lien-ci passe la main
-  const rafraichir = () => { E.d = disjonctionDe(nom); if (!rafraichirFicheEnPlace()) relier(); };
+  // (v86) la fiche refaite en place qui n'a pas pu suivre (son empreinte n'est pas celle du nouveau verdict) se refait entière, et
+  // le curseur revient dans sa case, à sa place
+  const rafraichir = () => { E.d = disjonctionDe(nom); const a = document.activeElement, champ = a && a.tagName === 'INPUT' && a.dataset && a.dataset.dj ? { dj: a.dataset.dj, q: a.dataset.q, s: a.selectionStart, e: a.selectionEnd } : null;
+    if (!rafraichirFicheEnPlace()) { relier(); return; }
+    const pr = racine.querySelector(`.fi-dj[data-disj="${CSS.escape(nom)}"] .dj-pc-d`); if (!pr || pr.dataset.sig === sigDuProfil(E.d)) return;
+    // (le champ quitté par le rendu ne s'écrit pas une seconde fois : `PROFIL_VIF.refait` tient ses gestes à l'écart)
+    clearTimeout(PROFIL_VIF.minuteur); PROFIL_VIF.refait = true; try { rendreFiche(); } finally { PROFIL_VIF.refait = false; }
+    if (!champ) return; const el = $('ba-equip') && $('ba-equip').querySelector(`.fi-dj[data-disj="${CSS.escape(nom)}"] [data-dj="${CSS.escape(champ.dj)}"][data-q="${CSS.escape(champ.q)}"]`);
+    if (el) { try { el.focus({ preventScroll: true }); el.setSelectionRange(champ.s, champ.e); } catch (_) { } } };
   // après une écriture : si la fiche ne s'est pas refaite (le focus dans un champ, ou une fiche qui ne suit pas), en place
   const apres = (avant, garder) => { if (avant && avant.isConnected) rafraichir(garder); };
   const dansUnChamp = () => { const a = document.activeElement; return !!(a && a.tagName === 'INPUT' && parts().some(p => p.contains(a))); };
@@ -896,11 +909,12 @@ function lierDisjonction(nom, conteneur) {
     suivreVif(dd); };
   // la ligne où le clavier écrit ; une ligne et son point, allumés ou éteints (la bulle du point : celle de son focus)
   const ligneAuClavier = () => { const a = document.activeElement, r = a && a.closest ? a.closest('.dj-etat') : null; return r && parts().some(p => p.contains(r)) ? r : null; };
-  const allumer = (row, oui) => { const fig = Q('.dj-graphe'), g = fig && row && row.dataset.pt ? fig.querySelector(`.dj-pt[data-k="${CSS.escape(row.dataset.pt)}"]`) : null;
+  // (la bulle du point au survol d'une ligne seulement : sous les doigts qui écrivent, le point s'allume sans rien cacher de la courbe)
+  const allumer = (row, oui, bulle) => { const fig = Q('.dj-graphe'), g = fig && row && row.dataset.pt ? fig.querySelector(`.dj-pt[data-k="${CSS.escape(row.dataset.pt)}"]`) : null;
     if (fig) fig.querySelectorAll('.dj-pt.lie').forEach(x => { if (x !== g || !oui) x.classList.remove('lie'); });
     QA('.dj-etat.lie').forEach(r => r.classList.remove('lie'));
     if (!g) { if (fig && !oui) { const tip = fig.querySelector('.dj-tip'), vise = fig.querySelector('.dj-vise'); if (tip) tip.hidden = true; if (vise) vise.hidden = true; } return; }
-    g.classList.toggle('lie', !!oui); if (oui && g.onfocus) g.onfocus(); else if (!oui && g.onblur) g.onblur(); };
+    g.classList.toggle('lie', !!oui); if (oui && bulle && g.onfocus) g.onfocus(); else if (g.onblur) g.onblur(); };
 
   const relier = () => {
     // un calibre retenu d'un clic — un cran du cadran, une puce de « À la main » : TOUS, même ceux qui ne passent pas ;
@@ -934,7 +948,7 @@ function lierDisjonction(nom, conteneur) {
     // calibres) ; le contrat s'écrit un souffle après la dernière
     QA('.dj-etats input').forEach(el => {
       el.oninput = () => { cancelAnimationFrame(PROFIL_VIF.image); PROFIL_VIF.image = requestAnimationFrame(profilVif); clearTimeout(PROFIL_VIF.minuteur); PROFIL_VIF.minuteur = setTimeout(vif, 360); };
-      el.onchange = () => { clearTimeout(PROFIL_VIF.minuteur); if (PROFIL_VIF.nom === nom) { const avant = parts()[0]; poserCharge(nom, lire()); apresEdition(); apres(avant, dansUnChamp()); PROFIL_VIF.nom = ''; } else ecrire('profil de charge de ' + nom, lire()); }; });
+      el.onchange = () => { if (PROFIL_VIF.refait) return; clearTimeout(PROFIL_VIF.minuteur); if (PROFIL_VIF.nom === nom) { const avant = parts()[0]; poserCharge(nom, lire()); apresEdition(); apres(avant, dansUnChamp()); PROFIL_VIF.nom = ''; } else ecrire('profil de charge de ' + nom, lire()); }; });
     // « + État » : un état de plus — ou, quand le démarrage, la transition ou le permanent ont été supprimés, une petite
     // liste (08-fiche, `[data-changer]`) qui les rend ; × supprime un état, quel qu'il soit
     const ajouter = k => { const c = lire(); if (k && k !== 'plus') c[k] = { i: null, t: null }; else c.plus.push({ nom: 'État ' + (c.plus.length + 3), i: null, t: null }); FI.liste = ''; ecrire((k && k !== 'plus' ? NOMS_PHASES[k] + ' rendu' : 'un état de plus') + ' sur ' + nom, c); };
@@ -944,7 +958,7 @@ function lierDisjonction(nom, conteneur) {
     // une ligne du profil et son point sur la courbe s'allument ensemble : la survoler (ou y écrire) montre la bulle du point
     // (`allumer`) ; survoler un point allume sa ligne (`lierGraphe`)
     QA('.dj-etat').forEach(row => { row._allumer = allumer; if (row._lie) return; row._lie = true;
-      row.addEventListener('pointerenter', () => row._allumer(row, true));
+      row.addEventListener('pointerenter', () => row._allumer(row, true, true));
       row.addEventListener('pointerleave', () => { const f = ligneAuClavier(); row._allumer(f || row, !!f); });
       row.addEventListener('focusin', () => row._allumer(row, true));
       row.addEventListener('focusout', e => { if (!row.contains(e.relatedTarget)) row._allumer(row, false); }); });

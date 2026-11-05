@@ -15,6 +15,8 @@
    Ce module ne fait que la géométrie et le mouvement ; ce qu'elle montre est la fiche (08-fiche) ou l'index (08-interface).
    Les classes du corps : `insp-flotte` (ouverte, flottante), `insp-epingle` (ouverte, en volet), `carte-tenue` (on la
    déplace), `carte-quai` (portée au bord : elle s'épinglera). Le mouvement réduit coupe les élans, pas les gestes.
+   (v86) Deux signes de vie : le SCEAU — la silhouette de l'objet dans sa barre — se trace quand elle s'ouvre
+   (`eveillerSceau`) ; une LUMIÈRE de cuivre suit la souris sous la carte et révèle la trame du folio (`lierLumiere`).
    =========================================================================== */
 'use strict';
 
@@ -30,7 +32,9 @@ const CARTE_LMIN = 340, CARTE_HMIN = 220;
 // (v78, le lecteur : « chaque tuile, je prends les angles et je tire, en largeur, en hauteur, comme je veux ») : tirée, sa largeur est la sienne
 const CARTE_L = () => CARTE.taille && CARTE.taille.l > 0 ? CARTE.taille.l : window.innerWidth >= 1800 ? 420 : 384;
 // au plus : au-delà elle défile — une carte, pas un pan d'écran
-const carteH = () => 760;
+// (v86, la charte : « la synthèse tient sans défiler ») : au plus la hauteur de l'écran sous la barre du haut — à 900, la carte
+// d'une barrette à poser (son vrai repère, la pièce, deux points à régler, trois chiffres) défilait de 30 px sous un plafond de 760
+const carteH = () => Math.max(760, window.innerHeight - 72);
 const CARTE_AIR = 44;           // l'air entre le bloc et la carte : le fil y passe
 const CARTE_COURBE = 'cubic-bezier(.2,.8,.2,1)';
 /* Flottante, sauf épinglée, au téléphone (le tiroir) — et le RÉCAPITULATIF ouvert : on y travaille en tableaux, la fiche

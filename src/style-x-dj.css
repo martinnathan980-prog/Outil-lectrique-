@@ -162,13 +162,13 @@
 /* la barre : le cuivre (le démarrage plus clair), et LE COURANT QUI S'ÉCOULE — un reflet qui court, à sa vitesse (--flux) */
 .dj-fx-barre{position:absolute;left:0;top:0;bottom:0;min-width:12px;border-radius:6px;overflow:hidden;background:var(--nv-cuivre);transition:width .32s var(--courbe)}
 .dj-fx-l.pointe .dj-fx-barre{background:color-mix(in srgb,var(--nv-cuivre) 58%,var(--s-surface))}
-.dj-fx-barre::after{content:"";position:absolute;top:0;bottom:0;left:-22px;right:0;
-  background:repeating-linear-gradient(90deg,rgba(255,255,255,0) 0,rgba(255,255,255,0) 7px,rgba(255,255,255,.42) 12px,rgba(255,255,255,0) 17px,rgba(255,255,255,0) 22px);
+.dj-fx-barre::after{content:"";position:absolute;top:0;bottom:0;left:-30px;right:0;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,0) 0,rgba(255,255,255,.05) 8px,rgba(255,255,255,.3) 15px,rgba(255,255,255,.05) 22px,rgba(255,255,255,0) 30px);
   animation:dj-flux var(--flux,1s) linear infinite;will-change:transform}
-@keyframes dj-flux{to{transform:translateX(22px)}}
+@keyframes dj-flux{to{transform:translateX(30px)}}
 /* LA ZONE OÙ LE CALIBRE DISJONCTE, pour la durée de cette barre : du seuil au bout, un rouge léger, par-dessus la barre (la
    part de la barre qui y entre rougit) ; elle glisse quand on survole un autre calibre */
-.dj-fx-zone{position:absolute;top:-3px;bottom:-3px;right:0;z-index:1;border-radius:0 7px 7px 0;background:color-mix(in srgb,var(--ko) 15%,transparent);box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ko) 75%,transparent);
+.dj-fx-zone{position:absolute;top:-3px;bottom:-3px;right:0;z-index:1;border-radius:0 7px 7px 0;background:linear-gradient(90deg,color-mix(in srgb,var(--ko) 16%,transparent),color-mix(in srgb,var(--ko) 7%,transparent) 90px);box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ko) 75%,transparent);
   transition:left .34s var(--courbe);pointer-events:none}
 /* sa valeur, au-dessus du bout de la barre */
 .dj-fx-val{position:absolute;bottom:calc(100% + 5px);transform:translateX(-100%);font:600 var(--f-13)/1 var(--sans);letter-spacing:-.005em;color:var(--t-1);white-space:nowrap;font-variant-numeric:tabular-nums;transition:left .32s var(--courbe)}
@@ -186,8 +186,7 @@
 .dj-fx-cal.tu>b,.dj-fx-cal.tu>em{visibility:hidden}
 .dj-fx-cal.ret>b{background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1.5px var(--nv-cuivre);color:var(--t-1)}
 .dj-fx-cal.ret>em{color:var(--nv-cuivre)}
-.dj-fx-cal.fic:not(.ret)>b{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--t-2) 55%,transparent);outline:none;background-image:none}
-.dj-fx-cal.fic:not(.ret)>b{border:1.5px dashed color-mix(in srgb,var(--t-2) 65%,transparent);box-shadow:none;padding:0 5px}
+.dj-fx-cal.fic:not(.ret)>b{border:1.5px dashed color-mix(in srgb,var(--t-2) 65%,transparent);padding:0 5px}
 /* survolé (ou parcouru au clavier) : il se lève, ses zones s'affichent */
 .dj-fx-cal:is(:hover,:focus-visible,.vu)>b{background:color-mix(in srgb,var(--t-1) 8%,transparent);color:var(--t-1)}
 .dj-fx-cal.tu:is(:hover,:focus-visible,.vu)>b{visibility:visible}
@@ -198,7 +197,7 @@
 .dj-fx-leg>span{display:inline-flex;align-items:center;gap:7px}
 .dj-fx-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .dj-fx-leg i.ko{background:var(--ko)}
-.dj-fx-leg i.zone{width:16px;height:10px;border-radius:0 4px 4px 0;background:color-mix(in srgb,var(--ko) 15%,transparent);box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ko) 75%,transparent)}
+.dj-fx-leg i.zone{width:16px;height:10px;border-radius:0 4px 4px 0;background:color-mix(in srgb,var(--ko) 14%,transparent);box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ko) 75%,transparent)}
 .dj-fx-leg i.fic{width:16px;height:10px;border-radius:4px;background:none;border:1.5px dashed color-mix(in srgb,var(--t-2) 65%,transparent);box-sizing:border-box}
 .dj-ca>.vu-fichier{margin:0}
 /* à l'ouverture de la fiche, les barres se remplissent */
@@ -211,11 +210,15 @@
 .dj-pc{display:flex;flex-direction:column;gap:16px;min-width:0}
 .dj-pc-g{display:flex;flex-direction:column;gap:14px;min-width:0}
 .dj-pc-d{min-width:0;border-radius:var(--r-2)}
-.dj-pc-sous{display:inline-flex;align-items:baseline;gap:6px;font:400 var(--f-13) var(--sans);letter-spacing:0;color:var(--t-3)}
+.dj-pc-sous{display:inline-flex;align-items:center;gap:6px;font:400 var(--f-13) var(--sans);letter-spacing:0;color:var(--t-3)}
+/* le titre et sa précision se suivent (« Profil de charge · et courbe de déclenchement du 10 A ») ; d'où vient la courbe, à droite */
+.nv-grand .nv-panneau>.dj-profil>.fs-st{align-items:center}
+.nv-grand .nv-panneau>.dj-profil>.fs-st>span:first-child{flex:0 0 auto}
+.nv-grand .nv-panneau>.dj-profil>.fs-st>.dj-pc-sous+*{margin-left:auto}
 @container dj-pc (min-width:700px){
   .dj-pc{display:grid;grid-template-columns:312px minmax(0,1fr);gap:20px;align-items:start}
   /* le tableau, serré dans sa colonne : l'état plus large, les deux chiffres, la croix */
-  .nv-grand .nv-panneau .dj-pc .dj-etats>:is(.dj-entete,.dj-etat){grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr) 34px;padding-left:16px}
+  .nv-grand .nv-panneau .dj-pc .dj-etats>:is(.dj-entete,.dj-etat){grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) 30px;column-gap:6px;padding-left:16px}
   .nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span{letter-spacing:.04em}
   .nv-grand .nv-panneau .dj-pc .dj-etat :is(.dj-champ,.dj-inf){width:min(100%,82px)}
   .nv-grand .nv-panneau .dj-pc .dj-etats .dj-plus{padding:0 16px}
