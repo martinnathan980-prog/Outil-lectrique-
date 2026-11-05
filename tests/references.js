@@ -59,26 +59,29 @@ const H1 = [...E.map(l => X.liaison({ ...l, de: decale(l.de), vers: decale(l.ver
   X.liaison({ de: '302CB1', borneDe: '3', pnDe: 'MS3320-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160' }),
   X.liaison({ de: '305XX9', borneDe: '2', pnDe: 'ZZZ', vers: '901G', borneVers: '', cable: 'W-098', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160' })];
 const H2 = E.slice(0, 60).map(l => X.liaison({ ...l, fwd: F(l.plan, 'B'), harness: 'H-2', appareil: 'H175', retest: '2023-01-01' }));
-const H3 = E.filter(l => l.plan === '2').map(l => { const m = x => x === '667VT21' ? '677VT2' : x, b = (x, bo) => x === '667VT21' ? '5' + bo + 'B' : bo;
+// (v85) la barrette 667VT2 de l'exemple (ses modules 51 au folio 2, 52 au folio 5), chez H-3 la 677VT2, ses modules renumérotés 53 et 54 : bornes déplacées
+const H3 = E.filter(l => l.plan === '2' || (l.plan === '5' && (l.de === '667VT2' || l.vers === '667VT2'))).map(l => { const m = x => x === '667VT2' ? '677VT2' : x, b = (x, bo) => x === '667VT2' ? String(bo).replace(/^5(\d)/, (t, d) => '5' + (+d + 2)) : bo;
   return X.liaison({ ...l, de: m(l.de), borneDe: b(l.de, l.borneDe), vers: m(l.vers), borneVers: b(l.vers, l.borneVers), fwd: F(2, 'C'), harness: 'H-3', appareil: 'H160', retest: '2025-03-12' }); });
 const RB = [...H1, ...H2, ...H3], IR = X.indexerReferences(RB);
 ok('trois harness, dix dessins (six de H-1, trois de H-2, un de H-3)', IR.harnais.size === 3 && IR.dessins.size === 10 && IR.harnais.get('H-1').dessins.length === 6 && IR.harnais.get('H-2').dessins.length === 3 && IR.harnais.get('H-3').dessins.length === 1, IR.dessins.size + ' dessins');
-ok('H-1 garde ses 67 équipements, son appareil et sa date (comme avant)', IR.harnais.get('H-1').equipements.size === 67 && IR.harnais.get('H-1').appareil === 'H160' && IR.harnais.get('H-1').retest === '2024-07-08');
+// (v85) 63 équipements : les huit repères de module des barrettes de l'exemple sont devenus quatre barrettes
+ok('H-1 garde ses 63 équipements, son appareil et sa date (comme avant)', IR.harnais.get('H-1').equipements.size === 63 && IR.harnais.get('H-1').appareil === 'H160' && IR.harnais.get('H-1').retest === '2024-07-08');
 const D1 = X.dessinDe(IR, 'H-1', F(1, 'A'));
 ok('le dessin MEE256A7815001A de H-1 : 6 équipements (le 305XX9 en plus), 10 fils, une masse 901G sur 4 fils', D1 && D1.equipements.size === 6 && D1.fils === 10 && D1.pontages === 0 && D1.masses.get('901G') === 4 && D1.appareil === 'H160', D1 && JSON.stringify([D1.equipements.size, D1.fils, [...D1.masses]]));
 const e302 = D1.equipements.get('302CB1');
 ok('302CB1 dans ce dessin : disjoncteur, part number MS3320-10, 4 lignes, voisins 301BT1, 303RL1, 595SW1, 305XX9', e302.nature === 'disjoncteur' && e302.pns.join() === 'MS3320-10' && e302.lignes.length === 4 && [...e302.voisins.keys()].sort().join() === '301BT1,303RL1,305XX9,595SW1', JSON.stringify([...e302.voisins]));
 const D3 = X.dessinDe(IR, 'H-1', F(3, 'A'));
-ok('le dessin 3 de H-1 compte ses pontages (5 de 868VT31, 3 de 869VT32, 2 de 597TB1) à part des fils', D3.pontages === 10 && D3.fils === D3.liaisons.length - 10 && D3.equipements.get('868VT31').pontages === 5, D3.pontages + ' pontages');
+// (v85) un pontage par lien entre deux contacts d'une même zone : 11 sur les trois modules de 868VT3 (chaque câble a son contact)
+ok('le dessin 3 de H-1 compte ses pontages (11 de 868VT3, 2 de 597TB1) à part des fils', D3.pontages === 13 && D3.fils === D3.liaisons.length - 13 && D3.equipements.get('868VT3').pontages === 11, D3.pontages + ' pontages');
 const R3 = X.resumeDessin(D3);
-ok('son résumé : 20 équipements dont 2 barrettes et 2 prises, 3 relais, 3 vannes…, 4 masses', R3.equipements === 20 && R3.barrettes === 2 && R3.coupures === 2 && R3.masses === 4 && R3.natures.find(x => x[0] === 'relais')[1] === 3 && R3.natures.find(x => x[0] === 'vanne')[1] === 3, JSON.stringify(R3.natures));
+ok('son résumé : 19 équipements dont une barrette (trois modules) et 2 prises, 3 relais, 3 vannes…, 4 masses', R3.equipements === 19 && R3.barrettes === 1 && R3.coupures === 2 && R3.masses === 4 && R3.natures.find(x => x[0] === 'relais')[1] === 3 && R3.natures.find(x => x[0] === 'vanne')[1] === 3, JSON.stringify(R3.natures));
 ok('l’équipement 300XC1 de H-2 est surtout sur le dessin 3 (dessinPrincipal)', X.dessinPrincipal(IR.harnais.get('H-2').equipements.get('300XC1')) === F(3, 'B'));
 ok('l’index par part number et par code mène aux mêmes équipements', IR.parPn.get('MS3320-10').length === 2 && IR.parCode.get('CB').length === 2 && IR.parCode.get('RL').length > 10);
 
 console.log('\n4. RECONNAÎTRE, COMME AVANT, AVEC LE DESSIN EN PLUS');
 const L = E, CR = X.candidatsDeReference(IR, L, '102CB1', 3);
 ok('102CB1 : H-2/102CB1 (même part number, 100 %) puis H-1/302CB1 (75 % : une ligne de plus chez lui), chacun avec son dessin', CR.length === 2 && CR[0].harness === 'H-2' && CR[0].taux === 1 && CR[0].fwd === F(1, 'B') && CR[1].repere === '302CB1' && Math.abs(CR[1].taux - 0.75) < 1e-9 && CR[1].fwd === F(1, 'A') && CR[1].par === 'pn', JSON.stringify(CR.map(c => [c.harness, c.repere, c.taux, c.fwd])));
-ok('667VT21 (barrette) se reconnaît en 677VT2 de H-3 par son code, bornes déplacées : taux libre élevé', (() => { const c = X.candidatsDeReference(IR, L, '667VT21', 5).find(x => x.harness === 'H-3'); return c && c.repere === '677VT2' && c.libre >= 0.9 && c.fwd === F(2, 'C'); })());
+ok('667VT2 (barrette) se reconnaît en 677VT2 de H-3 par son code, bornes déplacées : taux libre élevé', (() => { const c = X.candidatsDeReference(IR, L, '667VT2', 5).find(x => x.harness === 'H-3'); return c && c.repere === '677VT2' && c.libre >= 0.9 && c.fwd === F(2, 'C'); })());
 // à ressemblance égale, le même repère passe devant (H-2/101BT1 avant H-1/301BT1, tous deux à 100 %), puis le même appareil
 const CB = X.candidatsDeReference(IR, L, '101BT1', 3);
 ok('101BT1 : H-2/101BT1 (le même repère) passe devant H-1/301BT1 à ressemblance égale (100 % toutes deux, même part number)', CB.length === 2 && CB[0].harness === 'H-2' && CB[0].repere === '101BT1' && CB[1].repere === '301BT1' && CB[0].taux === 1 && CB[1].taux === 1, JSON.stringify(CB.map(c => [c.harness, c.repere, c.taux])));
@@ -92,9 +95,9 @@ ok('la flotte de 102CB1 : deux machines, chacune avec son dessin', X.flotteDe(IR
 
 console.log('\n5. LA CORRESPONDANCE D’UN BLOC : REPÈRE, PART NUMBER, VOISINS, CODE, NOUVEAU');
 const CD = X.comparerDessin(L, D3, '500XC1', '300XC1');
-ok('le dessin 3 de H-1 (repères décalés) se correspond entièrement aux nôtres : 20 sur 20, aucun nouveau, aucun proposé par le seul code', CD.chezNous === 20 && CD.manquent.length === 0 && CD.proposes.length === 0, JSON.stringify(CD.equipements.filter(e => e.sur !== 'pn' && e.sur !== 'cible').map(e => [e.repere, e.vers, e.sur])));
+ok('le dessin 3 de H-1 (repères décalés) se correspond entièrement aux nôtres : 19 sur 19, aucun nouveau, aucun proposé par le seul code', CD.chezNous === 19 && CD.manquent.length === 0 && CD.proposes.length === 0, JSON.stringify(CD.equipements.filter(e => e.sur !== 'pn' && e.sur !== 'cible').map(e => [e.repere, e.vers, e.sur])));
 ok('les neuf relais de même part number ne se mélangent pas : 581RL1 → 381RL1, 582RL2 → 382RL2, 583RL3 → 383RL3 (par les voisins, l’ordre départage) ; les prises 609VC2A → 409VC2A, 610VC2B → 410VC2B', ['581RL1', '582RL2', '583RL3', '609VC2A', '610VC2B'].every(r => CD.correspondance.get(r).vers === r.replace(/^(\d)/, d => String(+d - 2))) && CD.correspondance.get('581RL1').sur === 'pn', JSON.stringify(['581RL1', '582RL2', '583RL3', '609VC2A', '610VC2B'].map(r => CD.correspondance.get(r))));
-ok('tous ses fils sont identiques chez nous : 67 lignes jugées, 0 qui diffère, 0 qui manque — taux 100 % ; en plus chez nous, les 2 fils de 395SW1 sur le folio 1', CD.compte.identique === D3.liaisons.length && CD.compte.differe === 0 && CD.compte.manque === 0 && CD.compte.enplus === 2 && CD.taux === 1, JSON.stringify(CD.compte));
+ok('tous ses fils sont identiques chez nous : 69 lignes jugées, 0 qui diffère, 0 qui manque — taux 100 % ; en plus chez nous, les 2 fils de 395SW1 sur le folio 1', CD.compte.identique === D3.liaisons.length && CD.compte.differe === 0 && CD.compte.manque === 0 && CD.compte.enplus === 2 && CD.taux === 1, JSON.stringify(CD.compte));
 const C1 = X.comparerDessin(L, D1, '302CB1', '102CB1');
 ok('le dessin 1 : 6 équipements, 5 chez nous, il manque 305XX9 (équipement XX) ; 8 fils pareils, 2 manquent, 3 en plus (395SW1 sur le folio 3)', C1.nEquipements === 6 && C1.chezNous === 5 && C1.manquent.length === 1 && C1.manquent[0].repere === '305XX9' && C1.compte.identique === 8 && C1.compte.manque === 2 && C1.compte.enplus === 3 && Math.abs(C1.taux - 0.8) < 1e-9, JSON.stringify(C1.compte));
 const q302 = C1.equipements.find(e => e.repere === '302CB1');
@@ -143,7 +146,7 @@ t0 = Date.now(); const CDG = X.comparerDessin(L, X.dessinDe(IG, 'HX-7', 'FWD-7-3
 t0 = Date.now(); const QG = X.chercherReferences(IG, 'HX-12'); const tQ = Date.now() - t0;
 ok(GROS.length + ' liaisons, 250 harness, 1500 dessins indexés en moins d’une seconde et demie', IG.harnais.size === 250 && IG.dessins.size === 1500 && tIndex < 1500, tIndex + ' ms');
 ok('reconnaître 102CB1 parmi 250 machines : les trois meilleurs en moins de 100 ms', CG.length === 3 && tCand < 100, tCand + ' ms');
-ok('comparer un dessin entier (67 fils, 20 équipements) en moins de 100 ms ; chercher en moins de 100 ms', CDG.nEquipements === 20 && tCmp < 100 && QG.harnais.some(h => h.harness === 'HX-12') && tQ < 100, tCmp + ' ms / ' + tQ + ' ms');
+ok('comparer un dessin entier (69 fils, 19 équipements) en moins de 100 ms ; chercher en moins de 100 ms', CDG.nEquipements === 19 && tCmp < 100 && QG.harnais.some(h => h.harness === 'HX-12') && tQ < 100, tCmp + ' ms / ' + tQ + ' ms');
 
 console.log('\n8. LES REPÈRES PROVISOIRES (01) : UN NOM QUI TIENT QUAND UNE BARRETTE EST POSÉE');
 // les barrettes à poser de l'exemple : VT1 sur 102CB1:2 (folio 1), VT2 sur 340AB1:4 (folio 2), VT3 sur 600XC4:A11 (folio 6) — `depart` = celles des folios d'avant

@@ -232,8 +232,10 @@ function barretteInfos(repere, liaisons, bible, norme, retenue) { const B = bibl
   const raisons = !plan.potentiels ? ['aucun câble à loger'] : [`${plan.potentiels} potentiel${s(plan.potentiels)} à loger`, ...(besoins.jaugeFine != null ? [besoins.jaugeFine === besoins.jaugeGrosse ? `câbles de gauge ${besoins.jaugeFine}` : `câbles de gauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`] : []),
     plan.modules.length ? `${plan.modules.length} module${s(plan.modules.length)} ${nom}, ${plan.contacts - plan.utilises} contact${s(plan.contacts - plan.utilises)} libre${s(plan.contacts - plan.utilises)}` : 'aucun module ' + nom + ' ne convient',
     ...(plan.nomme ? ['celui de votre fichier : il loge tous les groupes'] : []), ...plan.verdicts.map(v => v.texte)];
+  // (v85) une barrette en modules : changée quand un de ses modules n'est pas celui que le fichier nomme
+  const changee = plan.lettres ? plan.modules.some(M => M.fichier && cleNorme(M.fichier) !== cleNorme(M.reference)) : !!(besoins.pn && plan.reference && plan.reference !== besoins.pn);
   return { ...besoins, choix, nature: 'jonction', raisons, candidats: candidats.slice(0, 6), enPlus: Math.max(0, candidats.length - 6), deja: B.find(e => e.reference === besoins.pn) || null, plan,
-           reference: plan.reference || besoins.pn || '', changee: !!(besoins.pn && plan.reference && plan.reference !== besoins.pn) }; }
+           reference: plan.reference || besoins.pn || '', changee }; }
 const coupureInfos  = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirCoupure);
 
 /* ---- les connecteurs d'un équipement ------------------------------------- */
@@ -289,7 +291,9 @@ function suiviDuContrat(liaisons, bible, contrat, retenue) {
   reperesDe(liaisons).forEach(r => {
     if (estBarrette(r) || estCoupure(r)) {
       const I = estBarrette(r) ? barretteInfos(r, liaisons, bible, undefined, main(r)) : coupureInfos(r, liaisons, bible);
-      lignes.push({ contrat, repere: r, nature: estBarrette(r) ? (I.blindes ? 'barrette de blindage' : 'barrette') : 'prise de coupure',
+      // (v85) une barrette « de blindage » : ses câbles sont surtout blindés — une barrette qui distribue et reprend aussi un
+      // blindage sur un de ses modules reste une barrette
+      lignes.push({ contrat, repere: r, nature: estBarrette(r) ? (I.blindes && 2 * I.blindes >= I.fils ? 'barrette de blindage' : 'barrette') : 'prise de coupure',
                     reference: I.plan ? I.reference : main(r) || I.reference, fichier: I.pn, bornes: I.bornes.slice().sort(triBornes), nBornes: I.nBornes, shunts: I.shunts,
                     jauge: I.jaugeFine == null ? '' : (I.jaugeFine === I.jaugeGrosse ? String(I.jaugeFine) : I.jaugeFine + '-' + I.jaugeGrosse), ...champs(filsDe(r)) });
     } else if (!estMasse(r)) {
@@ -1869,10 +1873,173 @@ function railsDeBarrette(norme, plans) { const N = normeDesModules(norme), parFa
       role: a.role || '', equivalent: a.equivalent || '', source: a.origine || a.note || '', ligne: a }; }).filter(Boolean); }
 /* Les variantes qui logent la barrette d'un seul module, de la mieux à la moins bien taillée — les candidates de la
    carte ; d'une norme, ou des deux. */
-function variantesQuiLogent(besoins, norme, famille) { const N = normeDesModules(norme), pots = potentielsDeBarrette(besoins).sort((a, b) => b.fils.length - a.fils.length);
+function variantesQuiLogent(besoins, norme, famille) { const N = normeDesModules(norme);
+  // (v85) une barrette en modules : les variantes qui conviennent à CHACUN de ses modules (une variante retenue pour toute la barrette)
+  if (bornesLettrees(besoins)) { const X = contexteDuFichier(besoins, N);
+    return N.modules.filter(m => m.auto && m.emploi === 'barrette' && m.contacts.length && (!famille || m.famille === famille)).map(m => ({ m, J: [...X.modules.values()].map(xs => jugerModule(N, m, xs, X.potDe)) }))
+      .filter(x => x.J.every(J => !J.defauts.length)).map(x => ({ m: x.m, rang: rangDuModule(x.m, { libres: x.J.reduce((s, J) => s + J.libres, 0), perte: x.J.reduce((s, J) => s + J.perte, 0) }) }))
+      .sort((a, b) => compareRangs(a.rang, b.rang)).map(x => x.m); }
+  const pots = potentielsDeBarrette(besoins).sort((a, b) => b.fils.length - a.fils.length);
   return N.modules.filter(m => m.auto && m.emploi === 'barrette' && (!famille || m.famille === famille)).map(m => ({ m, pl: placerDansModule(N, m, pots) }))
     .filter(x => x.pl.length === pots.length).map(x => ({ m: x.m, score: scoreModule(x.m, x.pl) }))
     .sort((a, b) => meilleurScore(a.score, b.score) ? -1 : meilleurScore(b.score, a.score) ? 1 : 0).map(x => x.m); }
+
+/* ---- (v85) LA BARRETTE COMME LE FICHIER L'ÉCRIT : un repère, des modules, des bornes « module + contact » ----------
+   Le lecteur : « une barrette, c'est plusieurs modules ; le module, ce sont des lettres ». Dans ses fichiers, une borne de
+   barrette s'écrit « 677VT2 51 » + « B » : la barrette 677VT2, son MODULE 51, le CONTACT B de ce module — VOLTA lit
+   677VT2:51B (01, `boutLu`). Le retest est la source dure : VOLTA ne change ni le module ni la lettre. Il VÉRIFIE, module
+   par module, que c'est possible — chaque lettre existe dans le module, son contact admet la gauge de son câble, les
+   câbles reliés (un pontage du fichier, ou la zone du module que le fichier nomme) sont dans une même zone, deux
+   potentiels jamais dans la même (ce serait un court-circuit) — et ne CHOISIT que la RÉFÉRENCE de chaque module : celle
+   du fichier quand elle convient ; sinon la plus petite qui convient (l'usage normal d'abord, le moins de contacts perdus,
+   le moins de contacts libres dans les zones prises, la plus légère) ; une référence retenue à la main passe devant
+   (`retenirModule`). Une barrette, une norme : tous ses modules tiennent sur le même rail. Un pontage d'un module à un
+   autre est un vrai câble : il prend un contact à chaque bout. */
+const MODULE_ET_CONTACT = /^(\d+)(?:-(\w+)|([A-Za-z]\w*))$/;
+// « 51B » → { module: '51', contact: 'B' } ; « 51-3 » → { module: '51', contact: '3' } ; une autre borne → null
+function moduleEtContact(borne) { const m = MODULE_ET_CONTACT.exec(String(borne == null ? '' : borne).trim()); return m ? { module: m[1], contact: m[2] || m[3] } : null; }
+// une barrette « en modules » : CHACUNE de ses bornes dit son module et son contact (une barrette à poser, 1, 2, 3…, non)
+const bornesLettrees = besoins => !!(besoins && besoins.bornes && besoins.bornes.length && besoins.bornes.every(b => moduleEtContact(b)));
+/* LE CHOIX À LA MAIN d'une barrette, tel que le contrat le garde (la désignation de son repère) : une norme ou une
+   variante pour toute la barrette (« NSA937901 », « E0599-1B207Z »), et la référence retenue pour un module
+   (« 51=E0599-1B202Z »), séparés par « ; ». Tous ceux qui lisent la désignation d'une barrette (la fiche, le
+   récapitulatif, la LPA, le contrôle) lisent donc le même choix. Rend { global, parModule: Map(numéro → référence) }. */
+function choixDesModules(texte) { const parModule = new Map(); let global = '';
+  String(texte == null ? '' : texte).split(';').map(t => t.trim()).filter(Boolean).forEach(t => { const m = /^(\d+)\s*=\s*(.*)$/.exec(t); if (m) { if (m[2].trim()) parModule.set(m[1], m[2].trim()); } else global = t; });
+  return { global, parModule }; }
+const texteDesChoix = (global, parModule) => [global || '', ...[...parModule].sort((a, b) => triBornes(a[0], b[0])).map(([n, r]) => n + '=' + r)].filter(Boolean).join(' ; ');
+/* RETENIR À LA MAIN la référence d'un module (`reference` vide : revenir à l'automatique, le choix de VOLTA) : rend la
+   nouvelle désignation de la barrette, à garder au contrat (08-modules, `choisirModuleDeBarrette`). */
+function retenirModule(texte, numero, reference) { const C = choixDesModules(texte), r = String(reference == null ? '' : reference).trim();
+  if (r) C.parModule.set(String(numero), r); else C.parModule.delete(String(numero)); return texteDesChoix(C.global, C.parModule); }
+const moduleAutomatique = (texte, numero) => retenirModule(texte, numero, '');
+/* LES CASES DU FICHIER D'UN MODULE : le part number (PN1 ou PN2) de chaque liaison qui touche une borne du module `numero`
+   de la barrette — là, et là seulement, que l'installation corrigée écrit la référence retenue pour ce module (le module
+   voisin garde la sienne). Rend [[liaison, 'pnDe' | 'pnVers']]. */
+function casesDuModule(repere, liaisons, numero) { const n = String(numero), du = b => { const x = moduleEtContact(b); return !!x && x.module === n; }, out = [];
+  liaisonsTouchant(repere, liaisons).forEach(l => { if (l.de === repere && du(l.borneDe)) out.push([l, 'pnDe']); if (l.vers === repere && du(l.borneVers)) out.push([l, 'pnVers']); });
+  return out; }
+// « A, B et C »
+const listeEt = xs => xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' et ' + xs[xs.length - 1];
+/* LE CONTEXTE d'une barrette en modules, qui ne dépend d'aucun choix : ses modules (numéro → bornes, chacune sa lettre et
+   ses câbles), le module que le fichier nomme pour chacun (son part number), et ses POTENTIELS — les bornes reliées par
+   un pontage du fichier, ou par une zone du module que le fichier nomme (dans ses fichiers, c'est la zone qui relie : un
+   câble sur B et un sur E d'un module où B et E se touchent sont reliés). Un pontage d'un module à un autre est un câble :
+   il entre dans les câbles de ses deux bornes. */
+function contexteDuFichier(besoins, N) { const modules = new Map(), pnDe = besoins.pnDeBorne || new Map();
+  besoins.bornes.map(b => ({ b, x: moduleEtContact(b) })).filter(y => y.x).sort((u, v) => triBornes(u.x.module, v.x.module) || triContacts(u.x.contact, v.x.contact)).forEach(({ b, x }) => {
+    (modules.get(x.module) || modules.set(x.module, []).get(x.module)).push({ borne: b, lettre: x.contact, fils: (besoins.parBorne.get(b) || []).map(f => ({ ...f, borneBarrette: b, jauge: jaugeDuType(f.type) })) }); });
+  // les pontages d'un module à un autre : un câble, à chaque bout (ses deux contacts sont sertis et jugés)
+  (besoins.liaisonsPonts || []).forEach(l => { const a = moduleEtContact(l.borneDe), b = moduleEtContact(l.borneVers); if (!a || !b || a.module === b.module) return;
+    [[l.borneDe, l.borneVers, a], [l.borneVers, l.borneDe, b]].forEach(([ici, la, x]) => { const y = (modules.get(x.module) || []).find(z => z.borne === ici);
+      if (y) y.fils.push({ cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: besoins.repere, borne: la, amont: ici === l.borneVers, l, pont: true, borneBarrette: ici, jauge: jaugeDuType(l.type) }); }); });
+  // le module que le fichier nomme, pour chaque numéro : le part number le plus porté par ses bornes
+  const fichier = new Map();
+  modules.forEach((xs, num) => { const n = new Map(); xs.forEach(x => { const p = pnDe.get(x.borne); if (p) n.set(p, (n.get(p) || 0) + 1); });
+    const pn = [...n].sort((a, b) => b[1] - a[1]).map(e => e[0])[0] || '', m = pn ? moduleDeReference(N, pn) : null;
+    fichier.set(num, { pn, module: m && m.emploi === 'barrette' ? m : null }); });
+  // les potentiels : les pontages, puis les zones du module que le fichier nomme
+  const chef = new Map(besoins.bornes.map(b => [b, b])), trouver = b => { while (chef.get(b) !== b) b = chef.get(b); return b; };
+  const unir = (a, b) => { if (!chef.has(a)) chef.set(a, a); if (!chef.has(b)) chef.set(b, b); const ra = trouver(a), rb = trouver(b); if (ra !== rb) chef.set(rb, ra); };
+  besoins.ponts.forEach(([a, b]) => unir(a, b));
+  modules.forEach((xs, num) => { const m = fichier.get(num).module; if (!m) return; const parZone = new Map();
+    xs.forEach(x => { const c = m.contacts.find(y => y.lettre === x.lettre); if (!c) return; if (parZone.has(c.groupe)) unir(parZone.get(c.groupe), x.borne); else parZone.set(c.groupe, x.borne); }); });
+  const potentiels = new Map();
+  [...chef.keys()].sort(triBornesDeModule).forEach(b => { const r = trouver(b); (potentiels.get(r) || potentiels.set(r, { bornes: [], fils: [] }).get(r)).bornes.push(b); });
+  modules.forEach(xs => xs.forEach(x => { const p = potentiels.get(trouver(x.borne)); if (p) p.fils.push(...x.fils); }));
+  return { modules, fichier, potDe: b => trouver(b), potentiel: b => potentiels.get(trouver(b)) || null, potentiels: [...potentiels.values()].filter(p => p.fils.length) }; }
+/* CE QU'UN MODULE `m` VAUT pour un module du fichier (`xs` : ses bornes, chacune sa lettre et ses câbles) : ses DÉFAUTS
+   — une lettre qu'il n'a pas, un contact qui n'admet pas la gauge de son câble, des câbles reliés hors d'une même zone,
+   deux potentiels dans une même zone —, aucun s'il convient ; les contacts qu'il laisse libres, et ceux qui restent libres
+   dans les zones prises (`perte`). */
+function jugerModule(N, m, xs, potDe) { const defauts = [], zones = new Map(), places = new Map(), lettresDe = new Map(), V = m.variante;
+  let pris = 0;
+  xs.forEach(x => { const c = m.contacts.find(y => y.lettre === x.lettre);
+    if (!c) { defauts.push({ genre: 'lettre', lettre: x.lettre, bornes: [x.borne], texte: `pas de contact ${x.lettre} dans le ${V}` }); return; }
+    pris++;
+    x.fils.forEach(f => { if (f.jauge != null && !contactAccepte(N, m.famille, c.taille, f.jauge)) defauts.push({ genre: 'gauge', bornes: [x.borne], texte: `${f.type || 'câble'} sur ${x.lettre} : le contact (taille ${c.taille}) du ${V} n’admet pas cette gauge` }); });
+    const p = potDe(x.borne); (zones.get(c.groupe) || zones.set(c.groupe, new Set()).get(c.groupe)).add(p); (places.get(p) || places.set(p, new Set()).get(p)).add(c.groupe);
+    (lettresDe.get(p) || lettresDe.set(p, []).get(p)).push(x.lettre); });
+  places.forEach((gs, p) => { if (gs.size > 1) defauts.push({ genre: 'separe', bornes: xs.filter(x => potDe(x.borne) === p).map(x => x.borne), texte: `${listeEt(lettresDe.get(p))} sont reliés, mais pas dans une même zone du ${V}` }); });
+  zones.forEach((ps, g) => { if (ps.size > 1) { const ls = xs.filter(x => { const c = m.contacts.find(y => y.lettre === x.lettre); return c && c.groupe === g; });
+    defauts.push({ genre: 'court', bornes: ls.map(x => x.borne), texte: `${listeEt(ls.map(x => x.lettre))} ne sont pas reliés, mais le ${V} les met dans une même zone` }); } });
+  const perte = [...zones.keys()].reduce((s, g) => { const G = m.groupes.find(y => y.k === g); return s + (G ? G.contacts.length : 0); }, 0) - pris;
+  return { defauts, libres: m.contacts.length - pris, perte, pris }; }
+/* le rang d'un module qui convient : l'usage normal d'abord, puis le moins de contacts libres dans les zones prises (des
+   zones à la taille des groupes : trois câbles reliés vont sur une zone de trois, pas sur une de huit), le moins de
+   contacts perdus, le plus léger */
+const rangDuModule = (m, J) => [m.usage === 'normal' ? 0 : 1, J.perte, J.libres, m.poids != null ? m.poids : 1e3];
+// l'ordre des contacts d'un module : les capitales, puis les minuscules (l'ASNE 0599 range ainsi sa face : A…X, puis a…s)
+const triContacts = (a, b) => (/^[a-z]/.test(a) ? 1 : 0) - (/^[a-z]/.test(b) ? 1 : 0) || triBornes(a, b);
+// l'ordre des bornes d'une barrette en modules : par module (51, 52…), puis par contact ; une autre borne, l'ordre naturel
+function triBornesDeModule(a, b) { const x = moduleEtContact(a), y = moduleEtContact(b); return x && y ? triBornes(x.module, y.module) || triContacts(x.contact, y.contact) : triBornes(a, b); }
+const compareRangs = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; };
+/* LE REMPLISSAGE D'UNE BARRETTE EN MODULES : pour chaque module du fichier, sa référence et chaque câble sur SON contact.
+   `choix` : la désignation de la barrette (`choixDesModules`). Rend le même plan que `remplirModules` (modules, fils,
+   verdicts, référence…), chaque module avec son `numero`, la référence que le fichier nommait (`fichier`), s'il est gardé
+   (`nomme`), choisi à la main (`main`), ses défauts, et pourquoi celui du fichier est écarté (`ecart`). */
+function remplirModulesDuFichier(besoins, norme, choix) { const N = normeDesModules(norme), C = choixDesModules(choix), X = contexteDuFichier(besoins, N);
+  const V = viseeDesModules(N, C.global, besoins.pn), nums = [...X.modules.keys()].sort(triBornes);
+  const juger = (m, num) => jugerModule(N, m, X.modules.get(num), X.potDe);
+  const tous = N.modules.filter(m => m.emploi === 'barrette' && m.contacts.length);
+  // le meilleur module d'une norme pour un numéro : celui du fichier s'il convient, sinon le plus petit qui convient, sinon le plus proche
+  const meilleur = (num, F) => { const mf = X.fichier.get(num).module;
+    if (mf && mf.famille === F) { const J = juger(mf, num); if (!J.defauts.length) return { m: mf, J }; }
+    const cs = tous.filter(m => m.auto && m.famille === F).map(m => ({ m, J: juger(m, num) })), ok = cs.filter(x => !x.J.defauts.length);
+    if (ok.length) return ok.sort((a, b) => compareRangs(rangDuModule(a.m, a.J), rangDuModule(b.m, b.J)))[0];
+    if (mf && mf.famille === F) return { m: mf, J: juger(mf, num) };
+    return cs.sort((a, b) => a.J.defauts.length - b.J.defauts.length || a.J.libres - b.J.libres)[0] || null; };
+  // la norme : celle retenue à la main, sinon celle des modules que le fichier nomme, sinon celle qui convient au plus de modules
+  const nommees = [...new Set(nums.map(n => X.fichier.get(n).module).filter(Boolean).map(m => m.famille))];
+  const familles = V.famille ? [V.famille] : nommees.length === 1 ? nommees : famillesDeModules(N);
+  const essais = familles.map(F => ({ F, R: nums.map(n => meilleur(n, F)) })).map(e => ({ ...e, ok: e.R.filter(x => x && !x.J.defauts.length).length, du: nums.filter((n, i) => e.R[i] && X.fichier.get(n).module === e.R[i].m).length, libres: e.R.reduce((s, x) => s + (x ? x.J.libres : 0), 0) }));
+  const E = essais.sort((a, b) => b.ok - a.ok || b.du - a.du || a.libres - b.libres)[0] || { F: '', R: [] }, famille = E.F;
+  const modules = [], fils = [], verdicts = [], restants = [];
+  nums.forEach((num, i) => { const xs = X.modules.get(num), F = X.fichier.get(num), main = C.parModule.get(num), mm = main ? moduleDeReference(N, main) : null;
+    let x = mm && mm.emploi === 'barrette' ? { m: mm, J: juger(mm, num) } : V.module ? { m: V.module, J: juger(V.module, num) } : E.R[i];
+    if (!x) { restants.push(...xs.filter(y => y.fils.length).map(y => ({ bornes: [y.borne], fils: y.fils }))); return; }
+    const m = x.m, k = modules.length, parZone = new Map();
+    xs.forEach(y => { const c = m.contacts.find(z => z.lettre === y.lettre);
+      if (!c) { if (y.fils.length) restants.push({ bornes: [y.borne], fils: y.fils }); return; }
+      const p = X.potentiel(y.borne), pl = parZone.get(c.groupe) || parZone.set(c.groupe, { potentiel: p, groupe: m.groupes.find(g => g.k === c.groupe), fils: [], perte: 0 }).get(c.groupe);
+      y.fils.forEach(f => { pl.fils.push([f, c]); const st = f.jauge == null ? null : contactDuFil(N, m.famille, c.taille, '', f.type, f.jauge);
+        fils.push({ f, contact: c, module: k, numero: num, groupe: pl.groupe, potentiel: p, borne: y.borne, taille: c.taille, sexe: st ? st.sexe : '',
+          jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, c.taille, f.jauge), sertir: sertirDe(N, st) }); });
+      if (y.fils.length > 1) verdicts.push({ niveau: 'attention', texte: `contact ${y.borne} : ${y.fils.length} câbles — un contact reçoit un câble`, bornes: [y.borne] }); });
+    const places = [...parZone.values()].filter(pl => pl.fils.length).map(pl => ({ ...pl, perte: pl.groupe ? pl.groupe.contacts.length - pl.fils.length : 0 })).sort((a, b) => a.groupe.k - b.groupe.k);
+    const nomme = !main && !V.module && !!F.module && F.module === m && !x.J.defauts.length;
+    // celui du fichier, écarté : son premier défaut dit pourquoi
+    const ecart = F.module && F.module !== m ? (() => { const J = juger(F.module, num); return { module: F.module, reference: F.pn, convient: !J.defauts.length, raison: J.defauts.length ? J.defauts[0].texte : 'il convient aussi', defauts: J.defauts }; })()
+      : F.pn && !F.module ? { module: null, reference: F.pn, convient: false, raison: 'référence inconnue de la norme', defauts: [] } : null;
+    // (une gauge refusée se lit sur son câble, `jaugeOk` : la fiche et le contrôle la disent déjà — pas deux fois)
+    // une lettre qu'aucun module de la norme ne porte se dit telle (« aucun module ASNE 0599 n'a de contact Z »), pas contre le plus proche
+    const nulle = d => d.genre === 'lettre' && !mm && !V.module && !tous.some(y => y.famille === m.famille && y.contacts.some(c => c.lettre === d.lettre));
+    x.J.defauts.filter(d => d.genre !== 'gauge').forEach(d => verdicts.push({ niveau: 'ko', texte: `module ${num} : ` + (nulle(d) ? `aucun module ${nomDeFamille(N, m.famille)} n’a de contact ${d.lettre}` : d.texte), bornes: d.bornes }));
+    modules.push({ module: m, reference: m.reference, numero: num, places, fichier: F.pn, nomme, main: !!(mm || V.module), defauts: x.J.defauts, libres: x.J.libres, ecart }); });
+  const contacts = modules.reduce((n, M) => n + M.module.contacts.length, 0), utilises = new Set(fils.map(x => x.numero + '|' + x.contact.lettre)).size;
+  const parRef = new Map(); modules.forEach(M => parRef.set(M.reference, (parRef.get(M.reference) || 0) + 1));
+  const reference = [...parRef].map(([r, n]) => (n > 1 ? n + ' × ' : '') + r).join(' + ');
+  return { modules, fils, verdicts, potentiels: X.potentiels.length, places: X.potentiels.length - new Set(restants.map(r => X.potDe(r.bornes[0]))).size, restants, contacts, utilises, reference,
+           famille: famille || (modules[0] ? modules[0].module.famille : ''), variante: V.module ? V.module.variante : '', main: V.main || modules.some(M => M.main), nomme: modules.length > 0 && modules.every(M => M.nomme) && !restants.length,
+           choix: choix || '', lettres: true }; }
+/* LES MODULES POSSIBLES pour le module `numero` d'une barrette en modules — ce que l'interface montre pour le choisir à la
+   main : chaque module de la norme de la barrette, s'il convient (et sinon pourquoi), ce qu'il laisse libre ; celui qui est
+   retenu, celui que VOLTA prendrait seul (`auto`), celui du fichier. Ceux qui conviennent d'abord, du mieux taillé au moins
+   bien ; puis les autres, du plus proche au plus loin. Rend null pour un numéro que la barrette n'a pas.
+   Rend { numero, famille, nomFamille, retenu, auto, fichier, main, candidats: [{ m, reference, variante, convient, raisons,
+   libres, perte, usage, jamaisSeul, retenu, auto, fichier, mieux }] }. */
+function modulesPossibles(besoins, norme, numero, choix) { if (!bornesLettrees(besoins)) return null;
+  const N = normeDesModules(norme), num = String(numero), X = contexteDuFichier(besoins, N), xs = X.modules.get(num); if (!xs) return null;
+  const Q = remplirModulesDuFichier(besoins, N, choix), M = Q.modules.find(y => y.numero === num), A = remplirModulesDuFichier(besoins, N, moduleAutomatique(choix, num)).modules.find(y => y.numero === num);
+  const F = X.fichier.get(num), famille = Q.famille;
+  const cs = N.modules.filter(m => m.emploi === 'barrette' && m.contacts.length && m.famille === famille).map(m => { const J = jugerModule(N, m, xs, X.potDe);
+    return { m, reference: m.reference, variante: m.variante, convient: !J.defauts.length, raisons: J.defauts.map(d => d.texte), libres: J.libres, perte: J.perte, usage: m.usage, jamaisSeul: !m.auto,
+      retenu: !!M && M.module === m, auto: !!A && A.module === m, fichier: !!F.module && F.module === m, rang: rangDuModule(m, J), n: J.defauts.length }; });
+  const ok = cs.filter(c => c.convient && !c.jamaisSeul).sort((a, b) => compareRangs(a.rang, b.rang)), rares = cs.filter(c => c.convient && c.jamaisSeul).sort((a, b) => compareRangs(a.rang, b.rang));
+  const ko = cs.filter(c => !c.convient).sort((a, b) => a.n - b.n || a.libres - b.libres);
+  if (ok[0]) ok[0].mieux = true;
+  return { numero: num, famille, nomFamille: nomDeFamille(N, famille), retenu: M ? M.reference : '', auto: A ? A.reference : '', fichier: F.pn, main: !!(M && M.main),
+           candidats: [...ok, ...rares, ...ko].map(({ rang, n, ...c }) => c) }; }
 
 /* ---- les modules de connecteur (EN 4165, EN 2997) ------------------------
    EN 2997 : un connecteur circulaire porte un seul insert, lu comme un module de même façon.

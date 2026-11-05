@@ -23,7 +23,7 @@
    =========================================================================== */
 'use strict';
 
-const NIVEAU = { grand: false, onglet: {}, tri: { col: '', sens: 1 }, filtre: '' };
+const NIVEAU = { grand: false, onglet: { objet: '', vus: new Map() }, tri: { col: '', sens: 1 }, filtre: '', pbsOuvert: '' };
 const recapOuvert = () => !!(typeof app !== 'undefined' && app.base && app.base.ouvert);
 // la fiche entière : le grand demandé, ou le récapitulatif ouvert (la fiche y est le volet de droite)
 const ficheEnGrand = () => !!NIVEAU.grand || recapOuvert();
@@ -40,8 +40,16 @@ const ONGLET_DE_SECTION = { disjoncteur: 'calibre', connecteur: 'essentiel', con
 const ongletDeSection = (type, cle) => !cle ? '' : (type === 'fil' && cle === 'fils') ? 'essentiel' : ONGLET_DE_SECTION[cle] || cle;
 const titreOnglet = s => s.titre || TITRES_ONGLETS[s.cle] || (typeof SECTIONS !== 'undefined' && SECTIONS[s.cle]) || s.cle;
 const rangOnglet = s => { const k = ORDRE_ONGLETS.indexOf(s.cle); return k < 0 ? 50 : k; };
-// l'onglet ouvert : celui qu'on a choisi pour ce genre de fiche (il suit d'un objet à l'autre), sinon l'essentiel
-function ongletActif(type, xs) { const k = NIVEAU.onglet[type]; if (k && xs.some(s => s.cle === k)) return k; return (xs.find(s => s.cle === 'essentiel') || xs[0] || {}).cle || ''; }
+/* L'ONGLET OUVERT (v85, le lecteur : « quand je vais sur la fiche détaillée d'un autre objet, je reste sur l'onglet de
+   l'ancien — Modifier — : à chaque fois je dois revenir sur L'essentiel ») : une fiche ouverte sur un AUTRE objet que la
+   précédente commence à L'essentiel. L'onglet ne se garde que pour le même objet (on ferme, on rouvre), au retour par ‹ ›
+   (on retrouve la fiche comme on l'a laissée), ou quand un geste le demande (un point qui mène à Câbles, « Comment VOLTA a
+   choisi » qui mène à Calibre : `ouvrirGrand(onglet)`, `activerOnglet`). `NIVEAU.onglet` : { objet (le dernier montré en
+   grand), vus (objet → son onglet) }. */
+const ongletRetenu = (ici, k) => { const O = NIVEAU.onglet; O.objet = ici; if (!ici) return; O.vus.delete(ici); O.vus.set(ici, k); if (O.vus.size > 60) O.vus.delete(O.vus.keys().next().value); };
+function ongletActif(type, xs) { const ici = cleObjet(), O = NIVEAU.onglet, retour = typeof NAV !== 'undefined' && NAV.mode === 'histoire';
+  const garde = ici && (ici === O.objet || retour) ? O.vus.get(ici) : '', k = garde && xs.some(s => s.cle === garde) ? garde : (xs.find(s => s.cle === 'essentiel') || xs[0] || {}).cle || '';
+  ongletRetenu(ici, k); return k; }
 function ongletsHtml(type, xs) { if (!xs.length) return '';
   const actif = ongletActif(type, xs);
   const tabs = xs.map(s => { const st = s.statut || {};
@@ -71,7 +79,9 @@ const GENRES_COURTS = { barrette: 'Barrette', prise: 'Prise' };
 const GENRES_FICHE = { equipement: 'Équipement', disjoncteur: 'Disjoncteur', barrette: 'Barrette de jonction', prise: 'Prise de coupure', masse: 'Masse', fil: 'Câble' };
 function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   // (v78, le lecteur : « le genre et la référence, même taille, même police — un tiret au milieu ; pas d'écarts de gras »)
-  const rep = t.champ ? `<input class="nc-rep-in" id="${t.champ}" value="${escA(nom)}" size="${Math.max(3, nom.length)}" style="width:calc(${Math.max(3, nom.length) + 1}ch + 14px)" aria-label="${escA(t.aide || 'Repère — écrire pour renommer partout')}" data-bulle="${escA(t.aide || 'Un clic pour le renommer : chaque câble suit')}" spellcheck="false" autocomplete="off">`
+  // (v85) le repère vient du fichier : il ne se renomme pas ici (charte) — seule une barrette AJOUTÉE par VOLTA reçoit son vrai
+  // repère (son champ porte une aide qui le dit)
+  const rep = t.champ && t.aide ? `<input class="nc-rep-in" id="${t.champ}" value="${escA(nom)}" size="${Math.max(3, nom.length)}" style="width:calc(${Math.max(3, nom.length) + 1}ch + 14px)" aria-label="${escA(t.aide || 'Repère — écrire pour renommer partout')}" data-bulle="${escA(t.aide || 'Un clic pour le renommer : chaque câble suit')}" spellcheck="false" autocomplete="off">`
     : `<span class="nc-rep-t">${esc(nom)}</span>`;
   const ms = (o.meta || []).filter(Boolean), ref = ms.length === 1 && /class="id"/.test(ms[0]);
   // (v84) une référence se lit en puce, à la chasse fixe ; une phrase (« ajoutée par VOLTA sur 102CB1:2 », « route PUISSANCE »)
@@ -125,8 +135,8 @@ const designationFiche = o => { const t = o.tete || {}; if (!t.designation || !D
    etat ; choix : vers (la section des possibles), manuel, auto (la clé du retour : « arr:… », « sexe:… »), motAuto (ce que dit
    le retour) ; fichier : proposition ({ phrase (html), cout, bouton (html) }) }] */
 const SORTES_REG = {
-  fichier: { titre: 'Dans votre fichier', phrase: 'VOLTA le lit tel quel. Pour le changer, changez votre fichier : tout reste au même endroit.', ico: '<path d="M7 3.5h6.5L18 8v12.5H7z"/><path d="M13.5 3.5V8H18M10 12.5h5M10 16h5"/>' },
-  choix: { titre: 'Choix de VOLTA', phrase: 'VOLTA choisit et dit pourquoi. En Manuel, vous prenez le vôtre parmi les possibles.', ico: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>' },
+  fichier: { titre: 'Dans votre fichier', phrase: 'VOLTA le lit tel quel ; pour le changer, changez votre fichier.', ico: '<path d="M7 3.5h6.5L18 8v12.5H7z"/><path d="M13.5 3.5V8H18M10 12.5h5M10 16h5"/>' },
+  choix: { titre: 'Choix de VOLTA', phrase: 'VOLTA choisit et dit pourquoi ; en Manuel, vous prenez le vôtre.', ico: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>' },
   info: { titre: 'Information', phrase: 'Calculé par VOLTA : cela se lit, cela ne se règle pas.', ico: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.9v.1"/>' } };
 // la fiche montrée, pour la section ouverte : une autre fiche ne rouvre pas le réglage de la précédente
 const cleDuReglage = () => { const c = typeof app !== 'undefined' && app.cible; return !c ? '' : c.type === 'fil' ? 'fil|' + (typeof cleFil === 'function' ? cleFil(c.l) : '') : 'bloc|' + (c.nom || ''); };
@@ -140,35 +150,116 @@ function selecteurAM(x) { const man = !!x.manuel, quoi = String(x.titre || '').t
 // une proposition de VOLTA sur une valeur du fichier : ce qu'elle change, ce qu'elle coûte, son geste
 const propositionReg = p => !p || !p.bouton ? '' : `<li class="nv-prop"><span class="nv-prop-k">Proposition de VOLTA</span><span class="nv-prop-t"><span>${p.phrase}${p.cout ? ` <span class="fi-cout">${esc(p.cout)}</span>` : ''}</span><small>Elle ira dans l’Excel corrigé, votre nouveau fichier.</small></span><span class="nv-prop-b">${p.bouton}</span></li>`;
 const ligneReg = x => { const s = x.sorte || 'info';
-  return `<li class="nv-somm-i ${s}${x.etat ? ' ' + x.etat : ''}"${x.vers ? ` data-somm-l="${escA(x.vers)}"` : ''}><span class="nv-somm-k">${esc(x.titre)}</span>`
+  // (deux piles côte à côte : ce que c'est et pourquoi ; la valeur et sa source — une valeur sur deux lignes n'écarte plus
+  // le pourquoi de son titre)
+  return `<li class="nv-somm-i ${s}${x.etat ? ' ' + x.etat : ''}"${x.vers ? ` data-somm-l="${escA(x.vers)}"` : ''}><span class="nv-somm-g"><span class="nv-somm-k">${esc(x.titre)}</span>${x.pourquoi ? `<span class="nv-somm-p">${x.pourquoi}</span>` : ''}</span>`
     + `<span class="nv-somm-v"><b>${x.valeur}${x.avant ? `<small class="nv-somm-av">au lieu de ${x.avant}</small>` : ''}</b>${pastilleSource(x.source, x.motSource)}</span>`
-    + `<span class="nv-somm-p">${x.pourquoi || ''}</span>${s === 'choix' && x.vers ? selecteurAM(x) : ''}</li>` + propositionReg(x.proposition); };
-function sommaireReglages(xs) { const ys = (xs || []).filter(Boolean); if (!ys.length) return '';
+    + `${s === 'choix' && x.vers ? selecteurAM(x) : ''}</li>` + propositionReg(x.proposition); };
+// `o.tete` : ce qui s'ajoute au bout de la tête d'une carte, par sorte (les connecteurs A · B d'un équipement, sur les choix)
+function sommaireReglages(xs, o) { const ys = (xs || []).filter(Boolean), T = (o && o.tete) || {}; if (!ys.length) return '';
   return ['fichier', 'choix', 'info'].map(s => { const g = ys.filter(x => (x.sorte || 'info') === s), S = SORTES_REG[s]; if (!g.length) return '';
-    return `<section class="nv-somm nv-mod ${s}" aria-label="${escA(S.titre)}"><header class="nv-mod-t"><span class="nv-mod-i" aria-hidden="true"><svg viewBox="0 0 24 24">${S.ico}</svg></span><h4>${esc(S.titre)}</h4><p>${esc(S.phrase)}</p></header>`
+    return `<section class="nv-somm nv-mod ${s}" aria-label="${escA(S.titre)}"><header class="nv-mod-t"><span class="nv-mod-i" aria-hidden="true"><svg viewBox="0 0 24 24">${S.ico}</svg></span><h4>${esc(S.titre)}</h4><p>${esc(S.phrase)}</p>${T[s] ? `<span class="nv-mod-x">${T[s]}</span>` : ''}</header>`
       + `<ol class="nv-somm-l">${g.map(ligneReg).join('')}</ol></section>`; }).join(''); }
+// L'ONGLET MODIFIER d'une fiche : son statut dit où l'on en est (une proposition de VOLTA à prendre, des choix faits à la
+// main, ou tout automatique), puis les trois cartes, puis les sections qui s'ouvrent sous leur ligne ; `o.avant` : ce qui
+// passe devant (le connecteur réglé, quand l'équipement en a plusieurs)
+function ongletReglages(xs, sections, o) { o = o || {}; const ys = (xs || []).filter(Boolean); if (!ys.length) return null;
+  const props = ys.filter(x => x.proposition && x.proposition.bouton).length, main = ys.filter(x => x.sorte === 'choix' && x.manuel).length, choix = ys.some(x => x.sorte === 'choix' && x.vers);
+  const t = props ? pluriel(props, 'proposition') : main ? main + ' choix à la main' : choix ? 'tout automatique' : 'votre fichier';
+  return { cle: 'reglages', statut: { t, etat: props ? 'att' : '', bulle: props ? 'VOLTA propose de corriger une valeur de votre fichier : elle irait dans l’Excel corrigé' : main ? 'Des choix de VOLTA sont pris à la main' : choix ? 'VOLTA fait tous les choix ; chacun peut passer en Manuel' : 'Tout vient de votre fichier' },
+    contenu: (o.avant || '') + sommaireReglages(ys, o) + (sections || '') }; }
 
-/* ---- À FAIRE : chaque point devient une tâche — ce qui cloche, puis (après « — ») ce que ça veut dire ; le geste qui
-   répare au bout de la première ; un clic sur une tâche mène à l'onglet qui la démontre. Rien à reprendre : rien. ---- */
+/* ---- À RÉGLER, À VOIR (v85, le lecteur : « 1 à voir… on ne voit pas assez que c'est une action, un problème qu'il faut
+   résoudre ; il faut plus mettre en évidence le côté action, et le côté information ») : chaque point est l'un ou l'autre,
+   et la section les range comme l'onglet Problèmes du récapitulatif, sous deux intercalaires.
+   · À RÉGLER — un problème (rouge), ou un point que VOLTA sait régler d'un clic (ambre) : la ligne se lève (un voile de
+     son état, le signe d'alerte), dit QUI (le câble, la borne) puis ce qui cloche en chiffres, et porte son GESTE en cuivre
+     (« Passer en DR16 », « Lui donner son repère ») ; sans geste, ce qu'il faut faire, en mots (ceux du récapitulatif).
+   · À VOIR — un point qui n'appelle pas de geste : une ligne calme, un point ambre, une phrase ; il informe. Dans le grand,
+     ils se replient sous leur intercalaire quand il y a des gestes à faire ; dans la carte, un pied dit ce qui reste.
+   Un clic sur une ligne mène à l'onglet qui la démontre. Rien à reprendre : rien. ---- */
 const gestePrincipal = p => { const gs = (p && p.gestes || []).filter(x => x && x.mot && typeof x.faire === 'function'); return gs.find(x => x.principal) || gs[0] || null; };
+// un geste qui RÈGLE (« Voir 102CB1 » mène ailleurs : il ne règle rien)
+const gesteQuiRegle = p => { const gs = (p && p.gestes || []).filter(x => x && x.mot && typeof x.faire === 'function' && !/^Voir\b/.test(x.mot)); return gs.find(x => x.principal) || gs[0] || null; };
+const gesteQuiMene = p => (p && p.gestes || []).find(x => x && x.mot && typeof x.faire === 'function' && /^Voir\b/.test(x.mot)) || null;
+// le câble dont parle un point : celui qu'il vise, sinon celui que nomme sa phrase (« DR20 vers 103RL1:A1 : … »), vu de la fiche
+function cableDuPoint(p, o) { if (p.cable) return p.cable;
+  const v = p.viser ? liaisonDeCle(p.viser) : null; if (v) return sourceDe(v) || v;
+  if (o.type === 'fil') { const c = app.cible; return c && c.type === 'fil' && c.l && c.l.origine !== null ? sourceDe(c.l) || c.l : null; }
+  const m = /^(\S+ vers \S+) : /.exec(String(p.texte || '')), nom = o.tete && o.tete.nom; if (!m || !nom) return null;
+  try { if (o.type === 'disjoncteur') { const f = (disjonctionDe(nom).fils || []).find(y => y.l && cableEtType(y) === m[1]); if (f) return sourceDe(f.l) || f.l; } } catch (_) { }
+  try { const f = filsDuRepere(nom).find(y => cableDit({ type: y.l.type, vers: y.vers, borneVers: y.borneVers }) === m[1]); if (f) return f.l; } catch (_) { }
+  return null; }
+/* LE GESTE QUE VOLTA SAIT FAIRE pour un point qui n'en porte pas : un câble trop fin pour son courant (ou que son calibre
+   ne protège pas) passe au plus fin qui convient (`plusFinQuiTient` — la même proposition que sa fiche) ; deux câbles sur
+   une borne, que VOLTA relie par une barrette à poser : la barrette reçoit son repère (le geste du contrôle). Rend
+   { mot, aide, faire, cle } ou null — `cle` : deux points qui demandent le même geste n'en montrent qu'un. */
+function gesteDuPoint(p, o) { const t = String(p.texte || '');
+  const vt = /une barrette \((\S+?)\)/.exec(t);
+  if (vt && VT_A_POSER.test(vt[1])) { const x = ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).find(y => y.genre === 'aposer' && y.nom === vt[1]), g = x && typeof gestesDuPoint === 'function' ? gestesDuPoint(x).find(y => !/^Voir\b/.test(y.mot)) : null;
+    return g ? { ...g, aide: String(g.aide || '').replace(/^Elle prend/, vt[1] + ', que VOLTA a ajoutée pour les relier, prend'), cle: 'vt|' + vt[1] } : null; }
+  if (/contact/i.test(t) || !/(> \S+ A admis|admis en continu|pas protégé|maximum de l’AC)/.test(t)) return null;
+  const l = cableDuPoint(p, o); if (!l || !l.type || typeof plusFinQuiTient !== 'function') return null;
+  let f = null; try { f = plusFinQuiTient(l); } catch (_) { f = null; } if (!f || !f.type || f.type === l.type) return null;
+  const cout = typeof coutDuType === 'function' ? coutDuType(l, f.type) : '', type = f.type;
+  return { mot: 'Passer en ' + type, cle: 'type|' + cleFil(l) + '|' + type, aide: majuscule(f.pourquoi) + ' : ' + type + (cout ? ' (' + cout + ')' : '') + ' — Ctrl+Z le rend',
+    faire: () => { const avant = cableDit(l); if (parVolta(() => changerLiaison(l, 'type', type, 'type de ' + avant + ' : ' + type))) { dire(majuscule(avant) + ' passe en ' + type + ' (Ctrl+Z le rend).'); if (typeof pulser === 'function') pulser({ type: 'liaisons', ls: [l] }); } } }; }
+// l'objet montré, en une clé (« bloc|102CB1 », « fil#… ») : l'onglet ouvert et les points dépliés ne se gardent que pour lui
+const cleObjet = () => { const c = typeof app !== 'undefined' && app.cible; if (!c) return ''; try { return cleDEntree(entreeDeCible(c)); } catch (_) { return c.type === 'fil' ? 'fil' : 'bloc|' + (c.nom || ''); } };
 function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
   if (!probs.length) return '';
+  // (le geste que la fiche donne au premier point — « Passer en DR16 » d'un câble — ne se répète pas sur un autre point)
+  const grand = ficheEnGrand(), vus = new Set(), motFiche = o.geste ? String(o.geste).replace(/<[^>]*>/g, '').trim() : '';
   const tri = probs.filter(p => p.niveau === 'ko').concat(probs.filter(p => p.niveau !== 'ko')), p0 = tri.find(p => !(o.taire && o.taire.test(p.texte))) || tri[0];
-  const ordre = [p0, ...tri.filter(p => p !== p0)], montres = ordre.slice(0, max);
-  const ligne = (p, i) => { let t = majuscule(motDuProbleme(p.texte)); if (i === 0 && o.phrase) t = o.phrase;
-    const k = t.indexOf(' — '), titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(t.slice(k + 3)) : gloseDuProbleme(p.texte);
-    let geste = '';
-    if (i === 0 && o.geste) geste = o.geste;
-    else { const g = gestePrincipal(p); if (g) { const n = FI.gestesPb.push([g]) - 1; geste = `<button type="button" class="btn ${p.niveau === 'ko' ? 'cuivre' : 'papier'} dense" data-geste-pb="${n}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; } }
-    const va = ongletDeSection(o.type, p.section);
-    return `<div class="nc-tache fi-pb-l ${p.niveau === 'ko' ? 'ko' : 'att'}"><span class="nc-rond" aria-hidden="true">${ico('alerte')}</span>`
-      + `<button type="button" class="nc-t" data-onglet-va="${escA(va)}"${p.viser ? ` data-viser="${escA(p.viser)}"` : ''}${p.connecteur ? ` data-connecteur="${escA(p.connecteur)}"` : ''} data-bulle="${escA(titre + (detail ? '\n' + detail : '') + (p.bulle ? '\n' + p.bulle : ''))}"><b class="fi-pb-t">${insecable(esc(titre))}</b>${detail ? `<small>${insecable(esc(detail))}</small>` : ''}</button>${geste ? `<span class="nc-geste">${geste}</span>` : ''}</div>`; };
-  const reste = ordre.length - montres.length, nko = probs.filter(p => p.niveau === 'ko').length, natt = probs.length - nko;
-  // (v82, le lecteur : « les avertissements, quand il y en a plusieurs, prennent beaucoup de place les uns à la suite des
-  // autres ; en un coup d'œil, on n'a pas le truc ») : UNE section — son compte en tête, une ligne par point (le titre ; le
-  // détail au survol), le geste au bout de la première ; les autres se déplient
-  const tete = `<div class="nc-pbs-tete"><span class="nc-pbs-n">${nko ? `<b class="ko">${esc(pluriel(nko, 'problème'))}</b>` : ''}${nko && natt ? '<i>·</i>' : ''}${natt ? `<b class="att">${esc(natt + '\u00a0à voir')}</b>` : ''}</span></div>`;
-  return `<div class="nc-taches nc-pbs ${nko ? 'ko' : 'att'}">${tete}${montres.map(ligne).join('')}${reste > 0 ? `<button type="button" class="nc-autres" data-onglet-va="" data-voir-tout="1">${esc(reste > 1 ? 'et ' + reste + ' autres points' : 'et 1 autre point')}${ico('droite')}</button><div class="nc-taches nc-reste" hidden>${ordre.slice(max).map((p, i) => ligne(p, i + max)).join('')}</div>` : ''}</div>`; }
+  // chaque point : son geste (celui de la fiche pour le premier, le sien, celui que VOLTA sait faire), et s'il est à régler
+  const pts = [p0, ...tri.filter(p => p !== p0)].map((p, i) => { const x = { p, phrase: i === 0 && o.phrase ? o.phrase : '' };
+    if (i === 0 && o.geste) x.html = o.geste;
+    else { const g = gesteQuiRegle(p) || gesteDuPoint(p, o); if (g && !(g.cle && vus.has(g.cle)) && g.mot !== motFiche) { if (g.cle) vus.add(g.cle); x.g = g; } }
+    x.agir = !!(x.html || x.g); x.regler = p.niveau === 'ko' || x.agir; return x; });
+  // l'ordre : ce qui se règle d'un clic, puis les autres problèmes, puis ce qui se règle en ambre, puis l'information
+  const rang = x => (x.p.niveau === 'ko' ? 0 : 2) + (x.agir ? 0 : 1), premier = pts[0] && (o.phrase || o.geste) ? pts[0] : null;
+  const ordre = (premier ? [premier] : []).concat(pts.filter(x => x !== premier).map((x, k) => [x, k]).sort((a, b) => rang(a[0]) - rang(b[0]) || a[1] - b[1]).map(a => a[0]));
+  const R = ordre.filter(x => x.regler), V = ordre.filter(x => !x.regler), nko = R.filter(x => x.p.niveau === 'ko').length;
+  const bouton = (g, cls) => { const n = FI.gestesPb.push([g]) - 1; return `<button type="button" class="btn ${cls || 'cuivre dense nc-agir'}" data-geste-pb="${n}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; };
+  const ligne = x => { const p = x.p, t = x.phrase || majuscule(motDuProbleme(p.texte));
+    const k = t.indexOf(' — '); let titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(t.slice(k + 3)) : gloseDuProbleme(p.texte);
+    // QUI d'abord (« DR20 vers 103RL1:A1 »), puis ce qui cloche : le câble en titre, la phrase dessous
+    const qui = /^(\S+ vers \S+) : (.+)$/.exec(titre); if (qui) { titre = qui[1]; detail = majuscule(qui[2]) + (detail ? ' · ' + detail.replace(/^\S/, c => c.toLowerCase()) : ''); }
+    // une phrase longue qui finit sur sa parenthèse (« … admis en continu (11,5 A × 0,6 : faisceau de 8 câbles à 60 %) ») : la
+    // parenthèse passe dessous, le titre se lit d'un trait
+    else if (titre.length > 48) { const m = /^(.+?) \(([^()]+)\)$/.exec(titre); if (m) { titre = m[1]; detail = majuscule(m[2]) + (detail ? ' · ' + detail.replace(/^\S/, c => c.toLowerCase()) : ''); } }
+    const va = ongletDeSection(o.type, p.section), bulle = escA([qui ? qui[1] + ' : ' + qui[2] : titre, k > 0 ? majuscule(t.slice(k + 3)) : '', p.bulle || ''].filter(Boolean).join('\n'));
+    const cible = `data-onglet-va="${escA(va)}"${p.viser ? ` data-viser="${escA(p.viser)}"` : ''}${p.connecteur ? ` data-connecteur="${escA(p.connecteur)}"` : ''}`, etat = p.niveau === 'ko' ? 'ko' : 'att';
+    if (!x.regler) return `<div class="nc-tache fi-pb-l ${etat} info"><span class="nc-rond" aria-hidden="true"></span><button type="button" class="nc-t" ${cible} data-bulle="${bulle}"><b class="fi-pb-t">${insecable(esc(titre))}</b>${qui ? ` <small>${insecable(esc(qui[2]))}</small>` : ''}</button></div>`;
+    // sans geste qui règle : ce qu'il faut faire, en mots (ceux du récapitulatif) — et le geste qui mène à la cause, s'il y en a un
+    const que = !x.agir && typeof remede === 'function' ? (remede({ texte: p.texte }) || [])[0] : '', mene = !x.agir ? gesteQuiMene(p) : null;
+    const geste = x.html || (x.g ? bouton(x.g) : mene ? bouton(mene, 'papier dense') : '');
+    // (le titre est le bouton qui mène à l'onglet ; la phrase dessous y mène aussi, à la souris — le geste, à droite, sur la
+    // ligne du titre : il ne pousse pas la ligne d'un étage)
+    return `<div class="nc-tache fi-pb-l ${etat} agir${x.agir ? ' a-geste' : ''}${titre.length > 30 ? ' long' : ''}"><span class="nc-rond" aria-hidden="true">${ico('alerte')}</span>`
+      + `<button type="button" class="nc-t" ${cible} data-bulle="${bulle}"><b class="fi-pb-t">${insecable(esc(titre))}</b></button>${geste ? `<span class="nc-geste">${geste}</span>` : ''}`
+      + `${detail ? `<small class="nc-d" ${cible}>${insecable(esc(detail))}</small>` : ''}${que && que !== 'Voir sa fiche' ? `<em class="nc-que">${insecable(esc(que))}</em>` : ''}</div>`; };
+  const inter = (cls, mot, n, b) => b ? `<button type="button" class="nc-pbs-g ${cls}${b.cls ? ' ' + b.cls : ''}" ${b.attrs}><i aria-hidden="true"></i><span>${esc(mot)}</span><b>${n}</b>${ico('droite')}</button>`
+    : `<div class="nc-pbs-g ${cls}"><i aria-hidden="true"></i><span>${esc(mot)}</span><b>${n}</b></div>`;
+  const deplie = !!NIVEAU.pbsOuvert && NIVEAU.pbsOuvert === cleObjet();
+  const nVoir = n => (n + '\u00a0à voir');
+  let corps = '';
+  if (!grand) {
+    // LA CARTE : deux lignes au plus — ce qu'il faut régler d'abord — ; un pied dit ce qui reste et mène au grand
+    const groupe = R.length ? R : V, montres = groupe.slice(0, max), resteR = R.length ? R.length - montres.length : 0, resteV = R.length ? V.length : V.length - montres.length;
+    const pied = [resteR ? (resteR > 1 ? resteR + ' autres à régler' : '1 autre à régler') : '', resteV ? (R.length ? nVoir(resteV) : resteV > 1 ? resteV + ' autres à voir' : '1 autre à voir') : ''].filter(Boolean).join(' · ');
+    corps = (R.length ? inter(nko ? 'ko' : 'att', 'À régler', R.length) : inter('voir', 'À voir', V.length)) + montres.map(ligne).join('')
+      + (pied ? `<button type="button" class="nc-autres" data-onglet-va="" data-voir-tout="1"><span>${esc('et ' + pied)}</span>${ico('droite')}</button>` : '');
+  } else {
+    // LE GRAND : tout ce qui est à régler (au-delà de six, ça se déplie) ; l'information sous son intercalaire, repliée quand
+    // il y a des gestes à faire, et dépliée sinon
+    const vusR = R.slice(0, 6), plusR = R.slice(6);
+    if (R.length) corps += inter(nko ? 'ko' : 'att', 'À régler', R.length) + vusR.map(ligne).join('')
+      + (plusR.length ? `<button type="button" class="nc-autres${deplie ? ' ouvert' : ''}" data-onglet-va="" data-voir-tout="1" aria-expanded="${deplie}"><span>${esc(plusR.length > 1 ? 'et ' + plusR.length + ' autres à régler' : 'et 1 autre à régler')}</span>${ico('droite')}</button><div class="nc-reste"${deplie ? '' : ' hidden'}>${plusR.map(ligne).join('')}</div>` : '');
+    if (V.length && R.length) corps += inter('voir', 'À voir', V.length, { cls: deplie ? 'ouvert' : '', attrs: `data-onglet-va="" data-voir-tout="1" aria-expanded="${deplie}" data-bulle="${escA(deplie ? 'Replier' : 'Ce qui informe : rien à faire d’un clic')}"` }) + `<div class="nc-reste"${deplie ? '' : ' hidden'}>${V.map(ligne).join('')}</div>`;
+    else if (V.length) corps += inter('voir', 'À voir', V.length) + V.map(ligne).join('');
+  }
+  return `<div class="nc-taches nc-pbs ${nko ? 'ko' : 'att'}${R.length ? ' a-regler' : ''}">${corps}</div>`; }
 
 /* ---- LES CHIFFRES (la carte) : trois, centrés — ce que c'est au-dessus, la valeur dessous ; rien d'autre (le détail est
    dans le grand). Un clic mène à l'onglet qui l'explique ; une valeur qui s'écrit s'écrit sur place. ---- */
@@ -234,7 +325,8 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     const type = `<span class="nv-cab-id">${r.puce || ''}<b class="id nv-cab-type">${esc(r.type || 'sans type')}</b></span>`;
     const iH = `<span class="nv-mes${anI ? '' : ' seul'}">${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : ''}</span></span>`;
     const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
-    const uH = `<span class="nv-mes${anU ? '' : ' seul'}">${anneauOuPlace(ru, anU)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
+    // (v85) sans chemin de disjoncteur, la chute du câble seul — contre la chute admise de toute la ligne : la bulle le dit
+    const uH = `<span class="nv-mes${anU ? '' : ' seul'}"${r.chute.seul && r.chute.u != null && r.chute.max != null ? ` data-bulle="${escA('Sur ce câble seul : ' + volts(r.chute.u) + ', ' + Math.round(r.chute.u / r.chute.max * 100) + ' % des ' + volts(r.chute.max) + ' que la ligne entière peut perdre — aucun disjoncteur en amont n’en donne le chemin')}"` : ''}>${anneauOuPlace(ru, anU)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : '—'}</b>${r.chute.max != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
     // (v81) une longueur supposée s'écrit « ≈ 5 m » en gris, comme au récapitulatif — la cellule reste centrée sous son titre
     // (v85, le lecteur : « ce qui vient de mon fichier, plus aucune saisie ») : la longueur se lit, elle se change dans le fichier
     const lgH = `<span class="nv-cab-lg${L == null ? ' supp' : ''}" data-bulle="${escA(L == null ? 'Votre fichier ne donne pas sa longueur : VOLTA suppose ' + nombre(H.longueur) + ' m (Hypothèses) — à écrire dans votre fichier' : 'Celle de votre fichier')}">${L == null ? '<i class="nv-env">≈</i>' : ''}<b>${L != null ? esc(nombre(arrondi(L, 2))) : esc(nombre(H.longueur))}</b><small>m</small></span>`;
@@ -280,7 +372,7 @@ function composerFiche(o) { const probs = o.probs || []; NIVEAU.typeRendu = o.ty
 /* « Tout voir » (ou un double-clic, ou une case de la carte) : la carte devient le grand — elle glisse jusqu'à sa place
    (08-carte, `epinglerCarte`), le plan se recadre à gauche, l'objet en vue ; `onglet` : celui qui s'ouvre. Réduire
    (Échap, le bouton) : le grand redevient la carte, près de son bloc. */
-function ouvrirGrand(onglet, but) { if (onglet) { const t = typeDeLaFicheMontree(); if (t) NIVEAU.onglet[t] = ongletDeSection(t, onglet); }
+function ouvrirGrand(onglet, but) { if (onglet) { const t = typeDeLaFicheMontree(); if (t) ongletRetenu(cleObjet(), ongletDeSection(t, onglet)); }
   if (NIVEAU.grand) { if (onglet) activerOnglet(onglet, true); if (but && but.viser) viserDansLaFiche(but.viser); return; }
   const avait = clavierDansLaFiche();
   NIVEAU.grand = true; if (typeof epinglerCarte === 'function') epinglerCarte(true); else rendreFiche();
@@ -298,7 +390,7 @@ const typeDeLaFicheMontree = () => { const g = document.querySelector('#ba-equip
 // un onglet devient le montré (sans refaire la fiche) : son panneau paraît, en haut ; `allumer` le fait briller un instant
 function activerOnglet(cle, allumer) { const box = $('ba-equip'), g = box && box.querySelector('.nv-grand'); if (!g) return null;
   cle = ongletDeSection(g.dataset.nvType, cle); const tab = g.querySelector(`.nv-onglet[data-onglet="${CSS.escape(cle)}"]`); if (!tab) return null;
-  NIVEAU.onglet[g.dataset.nvType] = cle;
+  ongletRetenu(cleObjet(), cle);
   g.querySelectorAll('.nv-onglet').forEach(t => { const on = t === tab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
   let p = null; g.querySelectorAll('.nv-panneau').forEach(x => { const on = x.dataset.section === cle; x.hidden = !on; if (on) p = x; });
   const sc = $('nv-panneaux'); if (sc) sc.scrollTop = 0;
@@ -335,9 +427,13 @@ function lierSommaire(box) { const somm = box.querySelector('.nv-panneau[data-se
     retourAutomatique({ dataset: { auto: cle } }, app.cible); if (mot) dire(mot, false, { geste: 'Défaire', faire: defaire }); }; });
   // une ligne d'information qui a son détail (les contacts d'une barrette, où mène une lettre de sa face) : il se déplie
   // sous elle quand un lien y mène (`aller`, plus bas)
-  NIVEAU.devoiler = el => { const sec = el && el.closest && el.closest('.nv-reg'); if (!sec || !pan.contains(sec) || sec.closest('.nv-somm-x')) return;
-    const li = [...pan.querySelectorAll('.nv-somm-i[data-somm-l]')].find(x => { try { return x.dataset.sommL && sec.matches(x.dataset.sommL); } catch (_) { return false; } }); if (!li) return;
-    fermer(); const b = li.querySelector('.nv-somm-b'); NIVEAU.sommOuvert = li.dataset.sommL; NIVEAU.sommCle = cleDuReglage(); deplier(li, sec, b, true); };
+  // (une section dont les possibles ne se calculent qu'ouverte — un module de la barrette mène à « Le module » — : la fiche
+  // se refait, la section ouverte et remplie ; rend ce qu'il faut viser)
+  NIVEAU.devoiler = el => { const sec = el && el.closest && el.closest('.nv-reg'); if (!sec || !pan.contains(sec) || sec.closest('.nv-somm-x')) return el;
+    const li = [...pan.querySelectorAll('.nv-somm-i[data-somm-l]')].find(x => { try { return x.dataset.sommL && sec.matches(x.dataset.sommL); } catch (_) { return false; } }); if (!li) return el;
+    const sel = li.dataset.sommL; NIVEAU.sommOuvert = sel; NIVEAU.sommCle = cleDuReglage();
+    if (sec.dataset.paresseux) { if (!rafraichirFicheEnPlace()) rendreFiche(); const p2 = document.querySelector('#ba-equip .nv-panneau[data-section="reglages"]'); return (p2 && p2.querySelector(sel)) || el; }
+    fermer(); deplier(li, sec, li.querySelector('.nv-somm-b'), true); return el; };
   const garde = NIVEAU.sommOuvert && NIVEAU.sommCle === cleDuReglage() && [...pan.querySelectorAll('.nv-somm-b')].find(b => b.dataset.somm === NIVEAU.sommOuvert); if (garde) ouvrir(garde, true); }
 function lierNiveaux(box, c) { lierSommaire(box);
   box.querySelectorAll('[data-lpa]').forEach(b => b.onclick = e => { e.stopPropagation(); if (typeof exporterNomenclatureExcel === 'function') exporterNomenclatureExcel(); });
@@ -349,9 +445,14 @@ function lierNiveaux(box, c) { lierSommaire(box);
     if (ficheEnGrand()) ouvrirLa(); else { ouvrirGrand('reglages'); setTimeout(ouvrirLa, 120); } });
   // « Tout voir », une case de la carte, « et 2 autres points », une ligne des modifications : le grand, sur l'onglet
   box.querySelectorAll('[data-onglet-va]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const k = b.dataset.ongletVa || '';
-    if (b.dataset.voirTout && ficheEnGrand()) { const r = b.parentElement.querySelector('.nc-reste'); if (r) { r.hidden = !r.hidden; b.classList.toggle('ouvert', !r.hidden); } return; }
+    // (v85) un intercalaire (« À voir 5 », « et 2 autres à régler ») déplie ce qu'il replie, juste sous lui ; la fiche refaite
+    // le garde déplié, pour cet objet seulement
+    if (b.dataset.voirTout && ficheEnGrand()) { const s = b.nextElementSibling, r = s && s.classList.contains('nc-reste') ? s : b.parentElement.querySelector('.nc-reste'); if (!r) return;
+      r.hidden = !r.hidden; b.classList.toggle('ouvert', !r.hidden); b.setAttribute('aria-expanded', String(!r.hidden)); NIVEAU.pbsOuvert = r.hidden ? '' : cleObjet(); if (typeof cacherBulle === 'function') cacherBulle(); return; }
     if (ficheEnGrand()) { if (k) activerOnglet(k, true); if (b.dataset.viser) viserDansLaFiche(b.dataset.viser); return; }
-    ouvrirGrand(k, b.dataset.viser ? { viser: b.dataset.viser } : null); if (b.dataset.voirTout) { const r = $('ba-equip').querySelector('.nc-reste'); if (r) r.hidden = false; } });
+    // le pied de la carte (« et 2 autres à régler · 5 à voir ») : le grand, tout déplié
+    if (b.dataset.voirTout) NIVEAU.pbsOuvert = cleObjet();
+    ouvrirGrand(k, b.dataset.viser ? { viser: b.dataset.viser } : null); });
   const tv = $('fi-tout-voir'); if (tv) tv.onclick = e => { e.stopPropagation(); ouvrirGrand(''); };
   // (v84) un bout dessiné (le chemin d'un câble) se prend au clavier comme à la souris : Entrée ou Espace l'ouvre
   box.querySelectorAll('svg [data-bout][role="button"]').forEach(g => g.onkeydown = e => { if (e.key !== 'Enter' && e.key !== ' ') return; e.preventDefault(); g.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
@@ -396,8 +497,8 @@ function lierNiveaux(box, c) { lierSommaire(box);
   // (v83) délégué une fois sur la fiche : un panneau rendu plus tard (l'onglet ouvert ensuite) mène aussi où il dit
   if (!box.dataset.vaLie) { box.dataset.vaLie = '1';
     const aller = (li, e) => { const t = e.target.closest('details, summary, button, a, input'); if (t && t !== li && li.contains(t)) return; e.preventDefault(); e.stopPropagation();
-      const p = li.dataset.vaOnglet ? activerOnglet(li.dataset.vaOnglet, false) : li.closest('.nv-panneau'), cible = p && li.dataset.vaVers ? p.querySelector(li.dataset.vaVers) : null;
-      if (!cible) return; if (typeof NIVEAU.devoiler === 'function') NIVEAU.devoiler(cible);
+      const p = li.dataset.vaOnglet ? activerOnglet(li.dataset.vaOnglet, false) : li.closest('.nv-panneau'), cible0 = p && li.dataset.vaVers ? p.querySelector(li.dataset.vaVers) : null;
+      if (!cible0) return; const cible = (typeof NIVEAU.devoiler === 'function' && NIVEAU.devoiler(cible0)) || cible0;
       try { cible.scrollIntoView({ block: 'center', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { cible.scrollIntoView(); }
       cible.classList.remove('vu-allume'); void cible.offsetWidth; cible.classList.add('vu-allume'); setTimeout(() => cible.classList.remove('vu-allume'), 1600); };
     box.addEventListener('click', e => { const li = e.target.closest && e.target.closest('[data-va-onglet]'); if (li && box.contains(li)) aller(li, e); });

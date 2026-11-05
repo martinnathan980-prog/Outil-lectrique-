@@ -223,6 +223,7 @@ function remplacerDessin() { const pl = $('planche'); clearTimeout(remplacerDess
    ne la confond avec le dessin. */
 function copieDesCables(sc) { const g = document.createElementNS(NS_SVG, 'g');
   g.setAttribute('class', 'range-part ' + (sc.getAttribute('class') || '')); g.setAttribute('aria-hidden', 'true'); g.setAttribute('transform', sc.getAttribute('transform') || '');
+  if (sc.getAttribute('style')) g.setAttribute('style', sc.getAttribute('style'));   // l'échelle de la vue (`--s`) : ses écritures gardent leur taille d'écran
   sc.querySelectorAll(':scope > :is(.cab,text.filnum,rect.halo,.jn,.vt)').forEach(e => { const k = e.cloneNode(true); k.removeAttribute('data-i'); k.querySelectorAll('[data-i],[id]').forEach(x => { x.removeAttribute('data-i'); x.removeAttribute('id'); }); g.appendChild(k); });
   return g; }
 /* LE DESSIN SE RANGE. Pour chaque bloc présent dans les deux dessins (par son repère ; plusieurs du même nom — trois
@@ -449,10 +450,48 @@ function montrerAttente() { const a = app.contrat.liaisons.length && !app.dessin
         // le contrôle du contrat arrive après la lecture : le geste des problèmes en dit le compte dès qu'il est là
         const b = el.querySelector('[data-at="problemes"]'), mot = libelleProblemes(); if (b && b.textContent !== mot) b.textContent = mot; }
       const barre = el.querySelector('.at-barre span'); if (barre) barre.style.transform = `scaleX(${v.p.toFixed(3)})`; el.hidden = false; } }
-  const vifs = new Set(); if (a) vifs.add(app.plan); if (placement.encours && placement.attentes.has(placement.encours.cle)) vifs.add(placement.attentes.get(placement.encours.cle).plan);
-  const prets = foliosPrets(), pas = prets && prets.n < prets.N ? prets.pas : null;
-  $('fo-strip').querySelectorAll('.chip').forEach(c => { c.classList.toggle('attend', vifs.has(c.dataset.plan)); c.classList.toggle('a-venir', !!pas && pas.has(c.dataset.plan) && !vifs.has(c.dataset.plan)); });
+  // la puce de chaque folio dit où il en est (`peindreEtatsDesFolios`, appelée par la bande)
   montrerBande(); remonterHorloge(); }
+/* L'ÉTAT DE CHAQUE FOLIO (v85, le lecteur : « je ne sais jamais quand c'est terminé, quand je peux vraiment aller
+   dessus »). Chaque puce de la barre du bas le dit, sobrement (style-z-plan.css) : EN ATTENTE (son chiffre pâle sur une
+   piste vide : le moteur ne l'a pas encore dessiné), DESSIN EN COURS (la piste se remplit au cuivre, de ce que le moteur
+   rapporte et du temps qu'il met d'habitude), PRÊT (rien : on peut y aller), EN COURS D'AFFINAGE (un point de cuivre
+   immobile : il se lit, VOLTA cherche encore mieux et le remplacera sans bouger la feuille). Le survol le dit en mots
+   (« Folio 3 : prêt », « Folio 5 : dessin en cours, encore environ 4 s »). Quand tout est prêt et affiné, plus rien ne
+   bouge. Sans travail de fond (sous pilote, sans Worker), les puces se taisent : un folio s'y dessine quand on l'ouvre. */
+/* les clés de placement des folios (et leur taille), relues au plus une fois par seconde. Un folio déjà lu prend sa clé dans
+   les mémoires de `liaisonsDe` et `cleDuPlan`, que le placement tient à jour à chaque folio qu'il pompe : refaire
+   `liaisonsDe` pour chacun coûtait 55 ms par lecture sur un plan de 90 folios (le fichier « geant »). */
+function clesDesFolios() { const t = performance.now(), P = plans(), m = clesDesFolios.m;
+  if (m && t - m.t < 1000 && m.P.length === P.length && m.P.every((p, i) => p === P[i])) return m.r;
+  const r = new Map(P.map(p => { const g = folios.get(p), k = clesDesPlans.get(p);
+    if (g && k && k.L === g.sortie) return [p, { cle: k.cle, n: g.sortie.length }];
+    const L = liaisonsDe(p); return [p, { cle: L.length ? cleDuPlan(p) : '', n: L.length }]; }));
+  clesDesFolios.m = { t, P, r }; return r; }
+const travailDeFond = () => (placement.ailleurs && placement.worker !== false) || (affinage.actif && affinage.worker !== false);
+function etatDuFolio(p, K) { const f = (K || clesDesFolios()).get(p); if (!f || !f.cle) return null; const k = f.cle;
+  if (placement.ailleurs && placement.worker !== false && app.plan !== '*' && !app.nFolios && f.n > SEUIL_ICI) {
+    const a = placement.attentes.get(k);
+    if (a && placement.encours && placement.encours.cle === k) { const v = avancement(a); return { etat: 'dessin', p: v.p, mot: v.mot, esquisse: !!a.esquisse }; }
+    if (a || !(placement.prets.has(k) || placements.has(k) || affinage.profonds.has(k) || app.retouches.has(k))) return { etat: 'attente' }; }
+  if (affinage.actif && affinage.encours && affinage.encours.cle === k) { const e = affinage.etat; return { etat: 'affinage', p: e && e.n ? e.k / e.n : 0 }; }
+  return { etat: 'pret' }; }
+// l'état en mots : la bulle de la puce (« Folio 5 : dessin en cours, encore environ 4 s ») ; `court` : sans les secondes (le nom de la puce)
+function motDuFolio(p, court) { const nom = 'Folio ' + p, e = travailDeFond() ? etatDuFolio(p) : null; if (!e) return nom;
+  if (e.etat === 'dessin') return nom + ' : dessin en cours' + (court ? '' : ', ' + e.mot) + (e.esquisse && app.plan === p && !court ? ' (l’esquisse se lit déjà)' : '');
+  if (e.etat === 'attente') { const enc = placement.encours && placement.attentes.get(placement.encours.cle);
+    return nom + ' : en attente' + (court || !enc || enc.plan === p ? '' : ', après le folio ' + enc.plan); }
+  if (e.etat === 'affinage') return nom + ' : prêt' + (court ? ', VOLTA l’affine' : ' — VOLTA affine encore son dessin');
+  return nom + ' : prêt'; }
+function peindreEtatsDesFolios() { const strip = $('fo-strip'); if (!strip) return; const fond = travailDeFond(), K = fond ? clesDesFolios() : null;
+  strip.querySelectorAll('.chip').forEach(c => { const e = fond ? etatDuFolio(c.dataset.plan, K) : null, etat = e ? e.etat : 'pret';
+    ['attente', 'dessin', 'affinage'].forEach(x => { const on = etat === x; if (c.classList.contains('fo-' + x) !== on) c.classList.toggle('fo-' + x, on); });
+    // la piste : ce que le dessin a fait ; pleine quand il est prêt (elle se remplit, puis s'efface)
+    const p = etat === 'dessin' ? Math.max(0.04, e.p).toFixed(3) : etat === 'attente' ? '0' : '1';
+    if (c.style.getPropertyValue('--fo-p') !== p) c.style.setProperty('--fo-p', p);
+    const nom = fond ? motDuFolio(c.dataset.plan, true) : 'Folio ' + c.dataset.plan; if (c.getAttribute('aria-label') !== nom) c.setAttribute('aria-label', nom); });
+  // la bulle de la puce survolée suit (l'horloge tourne quatre fois par seconde pendant un dessin)
+  const b = $('folios') && $('folios').querySelector('.fo-bulle.on'); if (b && b.dataset.plan) { const t = typo(motDuFolio(b.dataset.plan)); if (b.textContent !== t) b.textContent = t; } }
 // l'horloge de l'attente : quatre fois par seconde tant qu'un folio se calcule ou s'esquisse, rien sinon
 function remonterHorloge() { const utile = placement.ailleurs && (!!placement.encours || placement.attentes.size > 0);
   if (utile && !placement.horloge) placement.horloge = setInterval(() => { montrerAttente(); }, 250);
@@ -468,7 +507,7 @@ function foliosPrets() { const t = performance.now(), m = foliosPrets.m; if (m &
   foliosPrets.m = { t, r }; return r; }
 /* LA PETITE BANDE du milieu, en bas (#affinage) : ce qui travaille pour nous, une chose à la fois — le dessin définitif du
    folio affiché (l'esquisse est là), les folios qui se préparent (« 7 / 20 folios prêts »), puis le dessin qui s'affine. */
-function montrerBande() { const el = $('affinage'); if (!el) return; const txt = $('af-txt'); let barre = el.querySelector('.af-barre');
+function montrerBande() { peindreEtatsDesFolios(); const el = $('affinage'); if (!el) return; const txt = $('af-txt'); let barre = el.querySelector('.af-barre');
   const poser = (mot, p, ailleurs, bulle) => { el.hidden = false; el.classList.toggle('ailleurs', !!ailleurs); el.setAttribute('aria-live', p == null ? 'polite' : 'off'); if (txt.textContent !== mot) txt.textContent = mot;
     if (p == null) { if (barre) barre.hidden = true; } else { if (!barre) { barre = document.createElement('span'); barre.className = 'af-barre'; barre.setAttribute('aria-hidden', 'true'); barre.appendChild(document.createElement('span')); el.appendChild(barre); }
       barre.hidden = false; barre.firstChild.style.transform = `scaleX(${Math.max(0.02, p).toFixed(3)})`; }
@@ -777,18 +816,20 @@ const cadre = () => $('planche').getBoundingClientRect();
    petite écriture du dessin, 9 px) ; 1 et 2 vont à 100 et 200 %, les pas tombent sur les mêmes crans. */
 const S100 = 11 / FS_FIL;
 const zoomEnPourcent = s => Math.round(s / S100 * 100);
-/* LE ZOOM SÉMANTIQUE : sous 7 px d'écran, une écriture ne se lit plus, elle fait de la poussière — le numéro d'un câble,
-   d'une borne, d'une pastille, la lettre d'un connecteur, un petit repère se TAISENT (leur trait reste, le fil du câble
-   se referme sous son numéro) ; le dessin cadré se lit comme une carte : les blocs, leurs repères, les routes. Ce qu'on
-   survole ou qu'on a choisi parle toujours (`.hl`), en grand (la loupe, plus bas). Le zoom les rend en 140 ms. */
-const SEUIL_TAIRE = 7;
+/* LE ZOOM DE LECTURE (v85, il remplace le zoom sémantique : sous 7 px d'écran, les bornes, les pastilles, les lettres des
+   connecteurs se taisaient — le lecteur : « au folio 6, les bornes n'apparaissent pas, sauf si je zoome beaucoup ou si je
+   survole ; de base, rien ne doit être caché »). L'échelle de la vue se dit à la scène (`--s`) : quand on s'éloigne, les
+   numéros de borne et les petits repères grandissent dans leur place (style-z-plan.css) ; au cadrage, tout se lit. Bien
+   plus loin que la feuille entière (SEUIL_POUSSIERE), une écriture ferait moins de 3 px : elles se taisent (`.tait`), ce
+   qu'on survole ou qu'on a choisi parle toujours (`.hl`). */
+const SEUIL_POUSSIERE = 0.31;
 function appliquerVue() {
   const sc = $('scene'); if (sc) { sc.setAttribute('transform', `translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})`);
     // LOIN : un trait de câble ferait moins d'un pixel d'écran — les traits s'épaississent (06), les routes gardent leur couleur
     const loin = app.vue.s * 0.95 < 0.9; if (sc.classList.contains('loin') !== loin) sc.classList.toggle('loin', loin);
-    // trois paliers, par la taille des écritures (en unités du dessin) : 5,6 (une borne de connecteur, une pastille, un
-    // petit repère), 6,4 (un numéro de câble, la lettre d'un connecteur, une désignation), 7,5 (une borne d'équipement)
-    [['tait-1', 5.6], ['tait', FS_FIL], ['tait-3', 7.5]].forEach(([k, fs]) => { const t = fs * app.vue.s < SEUIL_TAIRE; if (sc.classList.contains(k) !== t) sc.classList.toggle(k, t); });
+    const tait = app.vue.s < SEUIL_POUSSIERE; if (sc.classList.contains('tait') !== tait) sc.classList.toggle('tait', tait);
+    // l'échelle, à deux millièmes près : chaque pas ne refait pas le style de toutes les écritures pour rien
+    const s3 = app.vue.s.toFixed(3); if (sc.style.getPropertyValue('--s') !== s3) sc.style.setProperty('--s', s3);
     if (LOUPE.s !== app.vue.s) poserLoupe(); }
   // la table glisse d'un rien sous la feuille (08-table), le fil de la carte suit son bloc (08-carte)
   parallaxeTable(); dessinerLien();
@@ -1821,7 +1862,8 @@ function synchroniserFolios() { const P = plans(), strip = $('fo-strip'), sel = 
   $('fo-lbl').textContent = i < 0 ? (P.length > 1 ? 'tout' : '1 / 1') : (i + 1) + ' / ' + P.length;
   // une seule feuille : les flèches n'ont nulle part où aller
   const seul = P.length < 2; $('fo-prev').disabled = seul || i === 0; $('fo-next').disabled = seul || (i >= 0 && i >= P.length - 1);
-  const on = strip.querySelector('.chip.on'); if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (_) { } } }
+  const on = strip.querySelector('.chip.on'); if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (_) { } }
+  peindreEtatsDesFolios(); }   // des puces refaites reprennent leur état tout de suite
 /* LA PASTILLE GLISSE (v73, le designer) : la pièce claire du folio courant va d'une puce à l'autre en 220 ms
    (`--courbe-glisse`) au lieu de sauter. Une pastille de la matière de la puce courante (lue sur elle) passe sous les
    puces ; les mots changent d'encre en chemin (sombre sur la pastille, clair sur le verre). Le mouvement réduit coupe. */
@@ -3104,7 +3146,8 @@ function lierPanneau() {
   let tempo = 0; const cacher = () => { clearTimeout(tempo); if (bulle.classList.contains('on') && typeof bulleEteinte === 'function') bulleEteinte(); bulle.classList.remove('on'); };
   strip.addEventListener('pointerover', e => { const c = e.target.closest('.chip'); if (!c || e.pointerType === 'touch') return; clearTimeout(tempo);
     const vite = bulle.classList.contains('on') || (typeof bulleChaude === 'function' && bulleChaude());
-    tempo = setTimeout(() => { const r = c.getBoundingClientRect(), f = $('folios').getBoundingClientRect(); bulle.textContent = c.dataset.nom;
+    // (v85) la bulle dit où en est le folio (`motDuFolio`), et suit tant qu'elle est ouverte (`peindreEtatsDesFolios`)
+    tempo = setTimeout(() => { const r = c.getBoundingClientRect(), f = $('folios').getBoundingClientRect(); bulle.dataset.plan = c.dataset.plan; bulle.textContent = typo(motDuFolio(c.dataset.plan));
       bulle.style.left = Math.max(4, Math.min(r.left + r.width / 2 - f.left, f.width - 4)) + 'px'; bulle.classList.add('on'); }, vite ? 0 : (typeof delaiBulle === 'function' ? delaiBulle() : 400)); });
   strip.addEventListener('pointerleave', cacher); strip.addEventListener('pointerdown', cacher); strip.addEventListener('scroll', cacher, { passive: true });
   // la bande des folios défile à la molette (elle n'a pas de barre), la liste déroulante y va d'un choix

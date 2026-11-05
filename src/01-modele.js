@@ -274,17 +274,26 @@ function contratExemple() {
     '101BT1': 'MS3470L14-5P', '102CB1': 'MS3320-10', '103RL1': 'E0836IS35-22SA', '104LP1': 'E0644D9S',
     '210SP1': '*704A46220028', '340AB1': 'EN2997Y1A08P', '340AB2': 'EN2997Y1A08P', '115CD': 'ABS0864-12', '118CD': 'ABS0864-12',
     '409GH2': 'NSA937802-05', '512VN': 'E0644G9S', '601RC': 'E0836IS35-22SA', '733LE': 'E0644D9S', '845VG': 'E0656A01N1S0',
-    '667VT21': 'E0599-1B201Z', '408VC1A': 'EN3646A6083AAN',
+    '408VC1A': 'EN3646A6083AAN',
     '300XC1': 'EN4165-2M', '351PM1': 'EN2997Y1A12P', '352PM2': 'EN2997Y1A12P', '361VL1': 'ABS0864-08', '362VL2': 'ABS0864-08', '363VL3': 'ABS0864-08',
     '371CP1': 'E0644B9S', '372CP2': 'E0644B9S', '381RL1': 'E0836IS35-22SA', '382RL2': 'E0836IS35-22SA', '383RL3': 'E0836IS35-22SA',
     '391LP1': 'E0644D9S', '392LP2': 'E0644D9S', '395SW1': 'NSA937802-03', '396SW2': 'NSA937802-03', '397TB1': 'NSA936501-08',
-    '668VT31': 'E0599-1A101Z', '669VT32': 'E0599-1B204Z', '409VC2A': 'EN3646A6083AAN', '410VC2B': 'EN3646A6083AAN',
+    '409VC2A': 'EN3646A6083AAN', '410VC2B': 'EN3646A6083AAN',
     '400XC2': 'EN4165-2M', '421ST1': 'EN2997Y1A10P', '422ST2': 'EN2997Y1A10P', '423ST3': 'EN2997Y1A10P', '431PR1': 'EN2997Y1A08P',
-    '441VN1': 'ABS0864-08', '442VN2': 'ABS0864-08', '670VT41': 'NSA937901M20-06', '671VT42': 'NSA937901M20-04',
+    '441VN1': 'ABS0864-08', '442VN2': 'ABS0864-08',
     '500XC3': 'EN4165-2M', '510RL1': 'E0836IS35-22SA', '511RL2': 'E0836IS35-22SA', '520LP1': 'E0644D9S', '530PM3': 'EN2997Y1A12P', '531PM4': 'EN2997Y1A12P',
     '540VL5': 'ABS0864-08', '550SW3': 'NSA937802-03', '560HT1': 'E0644B9S', '411VC3A': 'EN3646A61208FN', '412VC3B': 'EN3646A61208FN',
-    '600XC4': 'EN4165-2M', '601XC5': 'EN4165-2M', '672VT51': 'E0599-1A101Z', '673VT52': 'E0599-1A101Z', '674VT22': 'E0599-1B201Z', '610LP3': 'E0644D9S', '611LP4': 'E0644D9S', '620SW4': 'NSA937802-03',
-    '630RL5': 'E0836IS35-22SA', '631RL6': 'E0836IS35-22SA' };
+    '600XC4': 'EN4165-2M', '601XC5': 'EN4165-2M', '610LP3': 'E0644D9S', '611LP4': 'E0644D9S', '620SW4': 'NSA937802-03',
+    '630RL5': 'E0836IS35-22SA', '631RL6': 'E0836IS35-22SA',
+    /* (v85) LES BARRETTES, COMME DANS VOS FICHIERS : un repère par barrette, plusieurs modules sur un rail ; un bout s'écrit
+       « 667VT2 51 » (la barrette, son module) et « A » (le contact du module) — VOLTA lit 667VT2:51A —, avec le part number
+       du MODULE. Deux le sont à dessein d'une façon que VOLTA conteste, pour qu'on le voie faire : 667VT2 52 (le B201
+       sépare A, B et C, que le fichier relie : le B202 les réunit) et 672VT5 51 (l'A101, des paires, quand le fichier relie
+       quatre contacts : l'A102). */
+    '667VT2 51': 'E0599-1B201Z', '667VT2 52': 'E0599-1B201Z',
+    '668VT3 51': 'E0599-1B207Z', '668VT3 52': 'E0599-1B207Z', '668VT3 53': 'E0599-1B204Z',
+    '670VT4 51': 'NSA937901M20-06', '670VT4 52': 'NSA937901M20-04',
+    '672VT5 51': 'E0599-1A101Z', '672VT5 52': 'E0599-1B202Z' };
   const L = [];
   /* des routes PROVISOIRES, tirées du type de fil, pour que la légende des routes se voie sur l'exemple : les vraies
      routes viendront du fichier (colonne « route » ou « cheminement ») */
@@ -301,11 +310,13 @@ function contratExemple() {
   li('1', '103RL1', 'X2', '901G',   '',    'W-017', 'DR24');
   li('1', '101BT1', '2',  '901G',   '',    'W-018', 'DR16');
   // ---- plan 2 : moyen — un calculateur qui distribue par une barrette, une prise de coupure, deux masses
-  li('2', '210SP1', 'B12', '667VT21', '1',  'W-101', 'DR24');
-  li('2', '667VT21', '1', '667VT21', '2',   'W-102', 'DR24');
-  li('2', '667VT21', '2', '115CD',  '3',    'W-103', 'DR24');
-  li('2', '667VT21', '3', '118CD',  '3',    'W-104', 'DR24');
-  li('2', '667VT21', '4', '409GH2', '7',    'W-105', 'DR24');
+  //      (v85) le module 51 de la barrette 667VT2 (son module 52 est au folio 5) : A et D reliés (le pontage, et la zone
+  //      A-D du B201), B et C chacun seul dans sa zone
+  li('2', '210SP1', 'B12', '667VT2 51', 'A', 'W-101', 'DR24');
+  li('2', '667VT2 51', 'A', '667VT2 51', 'D', 'W-102', 'DR24');
+  li('2', '667VT2 51', 'D', '115CD',  '3',  'W-103', 'DR24');
+  li('2', '667VT2 51', 'B', '118CD',  '3',  'W-104', 'DR24');
+  li('2', '667VT2 51', 'C', '409GH2', '7',  'W-105', 'DR24');
   li('2', '340AB1', '4',  '512VN',  '1',    'W-110', 'DR22');
   li('2', '340AB1', '4',  '512VN',  '2',    'W-111', 'DR22');
   li('2', '340AB1', '1',  '210SP1', 'A3',   'W-120', 'DR24');
@@ -321,26 +332,31 @@ function contratExemple() {
   li('2', '340AB1', '20', '904G',   '',     'W-141', 'DR20');
   li('2', '115CD',  '20', '907G',   '',     'W-142', 'DR20');
   li('2', '118CD',  '20', '907G',   '',     'W-143', 'DR20');
-  // ---- plan 3 : très chargé — un calculateur à trois connecteurs, deux barrettes (une de
-  //      distribution à shunts, une de reprise de blindage), deux prises de coupure, trois
+  // ---- plan 3 : très chargé — un calculateur à trois connecteurs, une barrette de trois modules (deux de
+  //      distribution, un de reprise de blindage), deux prises de coupure, trois
   //      relais, deux pompes, trois vannes, deux capteurs blindés, lampes, interrupteurs, masses
-  li('3', '300XC1', 'B1',  '668VT31', '1',  'W-301', 'DR20');
-  li('3', '668VT31', '1',  '668VT31', '2',  'W-302', 'DR20');
-  li('3', '668VT31', '2',  '668VT31', '3',  'W-303', 'DR20');
-  li('3', '668VT31', '2',  '351PM1',  '1',  'W-304', 'DR20');
-  li('3', '668VT31', '3',  '352PM2',  '1',  'W-305', 'DR20');
-  li('3', '668VT31', '4',  '361VL1',  '1',  'W-306', 'DR22');
-  li('3', '668VT31', '5',  '668VT31', '6',  'W-307', 'DR22');
-  li('3', '668VT31', '5',  '362VL2',  '1',  'W-308', 'DR22');
-  li('3', '668VT31', '6',  '363VL3',  '1',  'W-309', 'DR22');
-  li('3', '300XC1', 'B2',  '668VT31', '4',  'W-310', 'DR22');
-  li('3', '300XC1', 'B3',  '668VT31', '5',  'W-311', 'DR22');
-  li('3', '668VT31', '8',  '381RL1',  '1',  'W-312', 'DR22');
-  li('3', '668VT31', '9',  '382RL2',  '1',  'W-313', 'DR22');
-  li('3', '668VT31', '10', '383RL3',  '1',  'W-314', 'DR22');
-  li('3', '668VT31', '8',  '668VT31', '9',  'W-315', 'DR22');
-  li('3', '668VT31', '9',  '668VT31', '10', 'W-316', 'DR22');
-  li('3', '300XC1', 'B4',  '668VT31', '8',  'W-317', 'DR22');
+  //      (v85) la barrette 668VT3 et ses TROIS modules : 51 (les pompes N-P-R, la vanne S-T), 52 (les relais A-D-G-K, les
+  //      vannes N-P-R), 53 (la reprise de blindage, A à D) — chaque câble sur son contact, les reliés dans une même zone
+  li('3', '300XC1', 'B1',  '668VT3 51', 'N', 'W-301', 'DR20');
+  li('3', '668VT3 51', 'N', '668VT3 51', 'P', 'W-302', 'DR20');
+  li('3', '668VT3 51', 'P', '668VT3 51', 'R', 'W-303', 'DR20');
+  li('3', '668VT3 51', 'P', '351PM1',  '1',  'W-304', 'DR20');
+  li('3', '668VT3 51', 'R', '352PM2',  '1',  'W-305', 'DR20');
+  li('3', '668VT3 51', 'T', '361VL1',  '1',  'W-306', 'DR22');
+  li('3', '668VT3 51', 'S', '668VT3 51', 'T', 'W-318', 'DR22');
+  li('3', '668VT3 52', 'N', '668VT3 52', 'P', 'W-307', 'DR22');
+  li('3', '668VT3 52', 'P', '362VL2',  '1',  'W-308', 'DR22');
+  li('3', '668VT3 52', 'R', '363VL3',  '1',  'W-309', 'DR22');
+  li('3', '668VT3 52', 'P', '668VT3 52', 'R', 'W-319', 'DR22');
+  li('3', '300XC1', 'B2',  '668VT3 51', 'S', 'W-310', 'DR22');
+  li('3', '300XC1', 'B3',  '668VT3 52', 'N', 'W-311', 'DR22');
+  li('3', '668VT3 52', 'D', '381RL1',  '1',  'W-312', 'DR22');
+  li('3', '668VT3 52', 'G', '382RL2',  '1',  'W-313', 'DR22');
+  li('3', '668VT3 52', 'K', '383RL3',  '1',  'W-314', 'DR22');
+  li('3', '668VT3 52', 'A', '668VT3 52', 'D', 'W-315', 'DR22');
+  li('3', '668VT3 52', 'D', '668VT3 52', 'G', 'W-316', 'DR22');
+  li('3', '668VT3 52', 'G', '668VT3 52', 'K', 'W-329', 'DR22');
+  li('3', '300XC1', 'B4',  '668VT3 52', 'A', 'W-317', 'DR22');
   li('3', '300XC1', 'A1',  '381RL1',  '3',  'W-320', 'DR24');
   li('3', '300XC1', 'A2',  '382RL2',  '3',  'W-321', 'DR24');
   li('3', '300XC1', 'A3',  '383RL3',  '3',  'W-322', 'DR24');
@@ -360,13 +376,13 @@ function contratExemple() {
   li('3', '300XC1', 'C5',  '410VC2B', '2',  'W-337', 'MLB24');
   li('3', '410VC2B', '1',  '372CP2',  '1',  'W-338', 'MLB24');
   li('3', '410VC2B', '2',  '372CP2',  '2',  'W-339', 'MLB24');
-  li('3', '371CP1', '4',   '669VT32', '1',  'W-340', 'MLB24');
-  li('3', '372CP2', '3',   '669VT32', '2',  'W-341', 'MLB24');
-  li('3', '300XC1', 'C6',  '669VT32', '3',  'W-342', 'MLB24');
-  li('3', '669VT32', '1',  '669VT32', '2',  'W-343', 'DR24');
-  li('3', '669VT32', '2',  '669VT32', '3',  'W-344', 'DR24');
-  li('3', '669VT32', '4',  '905G',    '',   'W-345', 'DR22');
-  li('3', '669VT32', '3',  '669VT32', '4',  'W-346', 'DR24');
+  li('3', '371CP1', '4',   '668VT3 53', 'A', 'W-340', 'MLB24');
+  li('3', '372CP2', '3',   '668VT3 53', 'B', 'W-341', 'MLB24');
+  li('3', '300XC1', 'C6',  '668VT3 53', 'C', 'W-342', 'MLB24');
+  li('3', '668VT3 53', 'A', '668VT3 53', 'B', 'W-343', 'DR24');
+  li('3', '668VT3 53', 'B', '668VT3 53', 'C', 'W-344', 'DR24');
+  li('3', '668VT3 53', 'D', '905G',    '',   'W-345', 'DR22');
+  li('3', '668VT3 53', 'C', '668VT3 53', 'D', 'W-346', 'DR24');
   li('3', '351PM1', '2',   '906G',    '',   'W-350', 'DR20');
   li('3', '352PM2', '2',   '906G',    '',   'W-351', 'DR20');
   li('3', '361VL1', '2',   '908G',    '',   'W-352', 'DR22');
@@ -391,21 +407,22 @@ function contratExemple() {
   li('3', '363VL3', '3',   '300XC1',  'A11', 'W-379', 'DR24');
   li('3', '391LP1', '3',   '395SW1',  '4',  'W-380', 'DR24');
   li('3', '396SW2', '3',   '392LP2',  '3',  'W-381', 'DR24');
-  // ---- plan 4 : moyen — un calculateur qui distribue par une barrette à deux paquets de shunts, trois sondes
-  //      blindées dont les blindages se reprennent sur une seconde barrette, un pressostat, deux vannes ; un
-  //      morceau de barrette seul (la borne 7, alimentée d'un autre folio) ; des masses partout
-  li('4', '400XC2', 'B1',  '670VT41', '1',  'W-401', 'DR20');
-  li('4', '670VT41', '1',  '670VT41', '2',  'W-402', 'DR20');
-  li('4', '670VT41', '2',  '670VT41', '3',  'W-403', 'DR20');
-  li('4', '670VT41', '3',  '670VT41', '4',  'W-404', 'DR20');
-  li('4', '670VT41', '2',  '421ST1',  '1',  'W-405', 'DR22');
-  li('4', '670VT41', '3',  '422ST2',  '1',  'W-406', 'DR22');
-  li('4', '670VT41', '4',  '423ST3',  '1',  'W-407', 'DR22');
-  li('4', '400XC2', 'B2',  '670VT41', '5',  'W-408', 'DR20');
-  li('4', '670VT41', '5',  '670VT41', '6',  'W-409', 'DR20');
-  li('4', '670VT41', '5',  '431PR1',  '1',  'W-410', 'DR22');
-  li('4', '670VT41', '6',  '441VN1',  '1',  'W-411', 'DR22');
-  li('4', '670VT41', '7',  '442VN2',  '1',  'W-412', 'DR22');
+  // ---- plan 4 : moyen — un calculateur qui distribue par une barrette NSA937901 de deux modules : le module 51 à deux
+  //      paquets (A-B-F-G, D-E-J) et un contact seul (C, alimenté d'un autre folio), le module 52 où se reprennent les
+  //      blindages des trois sondes ; un pressostat, deux vannes ; des masses partout
+  li('4', '400XC2', 'B1',  '670VT4 51', 'A', 'W-401', 'DR20');
+  li('4', '670VT4 51', 'A', '670VT4 51', 'B', 'W-402', 'DR20');
+  li('4', '670VT4 51', 'B', '670VT4 51', 'F', 'W-403', 'DR20');
+  li('4', '670VT4 51', 'F', '670VT4 51', 'G', 'W-404', 'DR20');
+  li('4', '670VT4 51', 'B', '421ST1',  '1',  'W-405', 'DR22');
+  li('4', '670VT4 51', 'F', '422ST2',  '1',  'W-406', 'DR22');
+  li('4', '670VT4 51', 'G', '423ST3',  '1',  'W-407', 'DR22');
+  li('4', '400XC2', 'B2',  '670VT4 51', 'D', 'W-408', 'DR20');
+  li('4', '670VT4 51', 'D', '670VT4 51', 'E', 'W-409', 'DR20');
+  li('4', '670VT4 51', 'E', '431PR1',  '1',  'W-410', 'DR22');
+  li('4', '670VT4 51', 'J', '441VN1',  '1',  'W-411', 'DR22');
+  li('4', '670VT4 51', 'E', '670VT4 51', 'J', 'W-413', 'DR20');
+  li('4', '670VT4 51', 'C', '442VN2',  '1',  'W-412', 'DR22');
   li('4', '421ST1', '2',   '400XC2',  'A1', 'W-420', 'MLB24');
   li('4', '422ST2', '2',   '400XC2',  'A2', 'W-421', 'MLB24');
   li('4', '423ST3', '2',   '400XC2',  'A3', 'W-422', 'MLB24');
@@ -413,13 +430,13 @@ function contratExemple() {
   li('4', '441VN1', '2',   '400XC2',  'A5', 'W-424', 'DR24');
   li('4', '441VN1', '3',   '400XC2',  'A6', 'W-425', 'DR24');
   li('4', '442VN2', '2',   '400XC2',  'A7', 'W-426', 'DR24');
-  li('4', '421ST1', '3',   '671VT42', '1',  'W-430', 'MLB24');
-  li('4', '422ST2', '3',   '671VT42', '2',  'W-431', 'MLB24');
-  li('4', '423ST3', '3',   '671VT42', '3',  'W-432', 'MLB24');
-  li('4', '671VT42', '1',  '671VT42', '2',  'W-433', 'DR24');
-  li('4', '671VT42', '2',  '671VT42', '3',  'W-434', 'DR24');
-  li('4', '671VT42', '3',  '671VT42', '4',  'W-435', 'DR24');
-  li('4', '671VT42', '4',  '400XC2',  'A10', 'W-436', 'DR24');
+  li('4', '421ST1', '3',   '670VT4 52', 'A', 'W-430', 'MLB24');
+  li('4', '422ST2', '3',   '670VT4 52', 'B', 'W-431', 'MLB24');
+  li('4', '423ST3', '3',   '670VT4 52', 'F', 'W-432', 'MLB24');
+  li('4', '670VT4 52', 'A', '670VT4 52', 'B', 'W-433', 'DR24');
+  li('4', '670VT4 52', 'B', '670VT4 52', 'F', 'W-434', 'DR24');
+  li('4', '670VT4 52', 'F', '670VT4 52', 'G', 'W-435', 'DR24');
+  li('4', '670VT4 52', 'G', '400XC2',  'A10', 'W-436', 'DR24');
   li('4', '421ST1', '4',   '910G',    '',   'W-440', 'DR22');
   li('4', '422ST2', '4',   '910G',    '',   'W-441', 'DR22');
   li('4', '423ST3', '4',   '910G',    '',   'W-442', 'DR22');
@@ -468,39 +485,51 @@ function contratExemple() {
   li('5', '540VL5', '3',   '913G',    '',   'W-546', 'DR22');
   li('5', '550SW3', '3',   '913G',    '',   'W-547', 'DR22');
   li('5', '560HT1', '2',   '913G',    '',   'W-548', 'DR22');
-  // le module 2 de la barrette VT2 (le module 1, 667VT21, est au folio 2) : le 28 V de B7 réparti vers la vanne et le
-  // réchauffeur — une barrette dont les modules sont posés sur deux folios
-  li('5', '500XC3', 'B7',  '674VT22', '1',  'W-550', 'DR22');
-  li('5', '674VT22', '1',  '674VT22', '2',  'W-551', 'DR22');
-  li('5', '674VT22', '1',  '540VL5',  '5',  'W-552', 'DR22');
-  li('5', '674VT22', '2',  '560HT1',  '3',  'W-553', 'DR22');
+  // le module 52 de la barrette 667VT2 (son module 51 est au folio 2) : le 28 V de B7 réparti vers la vanne et le
+  // réchauffeur — une barrette dont les modules sont posés sur deux folios ; A, B et C reliés, que le B201 du fichier sépare
+  li('5', '500XC3', 'B7',  '667VT2 52', 'A', 'W-550', 'DR22');
+  li('5', '667VT2 52', 'A', '667VT2 52', 'B', 'W-551', 'DR22');
+  li('5', '667VT2 52', 'B', '540VL5',  '5',  'W-552', 'DR22');
+  li('5', '667VT2 52', 'C', '560HT1',  '3',  'W-553', 'DR22');
+  li('5', '667VT2 52', 'B', '667VT2 52', 'C', 'W-554', 'DR22');
   // ---- plan 6 : moyen — deux équipements de dix bornes qui se parlent à travers une barrette : huit fils qui la
-  //      traversent, un paquet ponté en bus, trois piquages par shunt vers des lampes et un interrupteur (un module de
-  //      barrette n'a qu'un contact par côté : un piquage, c'est un shunt), deux fils directs, une borne qui alimente
-  //      deux relais (un piquage sur l'équipement), des masses
-  li('6', '600XC4', 'A1',  '672VT51', '1',  'W-601', 'DR22');
-  li('6', '672VT51', '1',  '601XC5',  'B1', 'W-611', 'DR22');
-  li('6', '600XC4', 'A2',  '672VT51', '2',  'W-602', 'DR22');
-  li('6', '672VT51', '2',  '601XC5',  'B2', 'W-612', 'DR22');
-  li('6', '672VT51', '1',  '672VT51', '2',  'W-620', 'DR22');
-  li('6', '600XC4', 'A3',  '672VT51', '3',  'W-603', 'DR22');
-  li('6', '672VT51', '3',  '601XC5',  'B3', 'W-613', 'DR22');
-  li('6', '672VT51', '3',  '672VT51', '4',  'W-621', 'DR22');
-  li('6', '672VT51', '4',  '610LP3',  '1',  'W-622', 'DR24');
-  li('6', '600XC4', 'A4',  '672VT51', '5',  'W-604', 'DR22');
-  li('6', '672VT51', '5',  '601XC5',  'B4', 'W-614', 'DR22');
-  li('6', '600XC4', 'A5',  '672VT51', '6',  'W-605', 'DR22');
-  li('6', '672VT51', '6',  '601XC5',  'B5', 'W-615', 'DR22');
-  li('6', '672VT51', '6',  '672VT51', '7',  'W-623', 'DR22');
-  li('6', '672VT51', '7',  '611LP4',  '1',  'W-624', 'DR24');
-  li('6', '600XC4', 'A6',  '672VT51', '8',  'W-606', 'DR22');
-  li('6', '672VT51', '8',  '601XC5',  'B6', 'W-616', 'DR22');
-  li('6', '600XC4', 'A7',  '672VT51', '9',  'W-607', 'DR22');
-  li('6', '672VT51', '9',  '601XC5',  'B7', 'W-617', 'DR22');
-  li('6', '672VT51', '9',  '672VT51', '10', 'W-625', 'DR22');
-  li('6', '672VT51', '10', '620SW4',  '1',  'W-626', 'DR24');
-  li('6', '600XC4', 'A8',  '672VT51', '11', 'W-608', 'DR22');
-  li('6', '672VT51', '11', '601XC5',  'B8', 'W-618', 'DR22');
+  //      traversent, un paquet ponté en bus, trois piquages vers des lampes et un interrupteur (un contact par câble :
+  //      un piquage prend le contact d'à côté, dans la même zone), deux fils directs, une borne qui alimente deux relais
+  //      (un piquage sur l'équipement), des masses
+  //      (v85) le module 51 de la barrette 672VT5 : chaque câble sur son contact — celui qui arrive et celui qui repart
+  //      n'ont jamais le même (le lecteur : « des bornes en double, 5, 5, 8, 8 : normalement pas possible »), reliés par
+  //      la zone qui les porte
+  li('6', '600XC4', 'A1',  '672VT5 51', 'A', 'W-601', 'DR22');
+  li('6', '672VT5 51', 'A', '672VT5 51', 'B', 'W-660', 'DR22');
+  li('6', '672VT5 51', 'B', '601XC5',  'B1', 'W-611', 'DR22');
+  li('6', '600XC4', 'A2',  '672VT5 51', 'C', 'W-602', 'DR22');
+  li('6', '672VT5 51', 'C', '672VT5 51', 'D', 'W-661', 'DR22');
+  li('6', '672VT5 51', 'D', '601XC5',  'B2', 'W-612', 'DR22');
+  li('6', '672VT5 51', 'B', '672VT5 51', 'C', 'W-620', 'DR22');
+  li('6', '600XC4', 'A3',  '672VT5 51', 'E', 'W-603', 'DR22');
+  li('6', '672VT5 51', 'E', '672VT5 51', 'F', 'W-662', 'DR22');
+  li('6', '672VT5 51', 'F', '601XC5',  'B3', 'W-613', 'DR22');
+  li('6', '672VT5 51', 'F', '672VT5 51', 'G', 'W-621', 'DR22');
+  li('6', '672VT5 51', 'G', '610LP3',  '1',  'W-622', 'DR24');
+  li('6', '600XC4', 'A4',  '672VT5 51', 'J', 'W-604', 'DR22');
+  li('6', '672VT5 51', 'J', '672VT5 51', 'K', 'W-663', 'DR22');
+  li('6', '672VT5 51', 'K', '601XC5',  'B4', 'W-614', 'DR22');
+  li('6', '600XC4', 'A5',  '672VT5 51', 'N', 'W-605', 'DR22');
+  li('6', '672VT5 51', 'N', '672VT5 51', 'P', 'W-664', 'DR22');
+  li('6', '672VT5 51', 'P', '601XC5',  'B5', 'W-615', 'DR22');
+  li('6', '672VT5 51', 'P', '672VT5 51', 'R', 'W-623', 'DR22');
+  li('6', '672VT5 51', 'R', '611LP4',  '1',  'W-624', 'DR24');
+  li('6', '600XC4', 'A6',  '672VT5 51', 'T', 'W-606', 'DR22');
+  li('6', '672VT5 51', 'T', '672VT5 51', 'U', 'W-665', 'DR22');
+  li('6', '672VT5 51', 'U', '601XC5',  'B6', 'W-616', 'DR22');
+  li('6', '600XC4', 'A7',  '672VT5 51', 'a', 'W-607', 'DR22');
+  li('6', '672VT5 51', 'a', '672VT5 51', 'b', 'W-666', 'DR22');
+  li('6', '672VT5 51', 'b', '601XC5',  'B7', 'W-617', 'DR22');
+  li('6', '672VT5 51', 'b', '672VT5 51', 'c', 'W-625', 'DR22');
+  li('6', '672VT5 51', 'c', '620SW4',  '1',  'W-626', 'DR24');
+  li('6', '600XC4', 'A8',  '672VT5 51', 'e', 'W-608', 'DR22');
+  li('6', '672VT5 51', 'e', '672VT5 51', 'f', 'W-667', 'DR22');
+  li('6', '672VT5 51', 'f', '601XC5',  'B8', 'W-618', 'DR22');
   li('6', '600XC4', 'A9',  '601XC5',  'B9', 'W-627', 'DR24');
   li('6', '600XC4', 'A10', '601XC5',  'B10', 'W-628', 'DR24');
   li('6', '600XC4', 'A11', '630RL5',  '1',  'W-630', 'DR24');
@@ -514,10 +543,11 @@ function contratExemple() {
   li('6', '631RL6', '3',   '914G',    '',   'W-644', 'DR24');
   li('6', '600XC4', 'A15', '915G',    '',   'W-645', 'DR22');
   li('6', '601XC5', 'B15', '915G',    '',   'W-646', 'DR22');
-  // le module 2 de la barrette VT5 : la commande A12 reprise par les deux relais
-  li('6', '600XC4', 'A12', '673VT52', '1',  'W-650', 'DR24');
-  li('6', '673VT52', '1',  '673VT52', '2',  'W-651', 'DR24');
-  li('6', '673VT52', '1',  '630RL5',  '4',  'W-652', 'DR24');
-  li('6', '673VT52', '2',  '631RL6',  '4',  'W-653', 'DR24');
+  // le module 52 de la barrette 672VT5 : la commande A12 reprise par les deux relais (A, B, C dans la zone A-B-C du B202)
+  li('6', '600XC4', 'A12', '672VT5 52', 'A', 'W-650', 'DR24');
+  li('6', '672VT5 52', 'A', '672VT5 52', 'B', 'W-668', 'DR24');
+  li('6', '672VT5 52', 'B', '630RL5',  '4',  'W-652', 'DR24');
+  li('6', '672VT5 52', 'C', '631RL6',  '4',  'W-653', 'DR24');
+  li('6', '672VT5 52', 'B', '672VT5 52', 'C', 'W-651', 'DR24');
   return L;
 }

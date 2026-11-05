@@ -92,6 +92,13 @@ function faceZone(g, tous, P, rho, R, p) { const cle = c => (+c.r || 0) + ':' + 
    `bus` (une barrette) : [{ contacts, couleur }], les groupes de contacts reliés — chacun sa plage. ---- */
 function faceVue(contacts, etatDe, o) { o = o || {}; const n = (contacts || []).length;
   if (!n) return `<svg class="vu-face vu-vide" viewBox="0 0 120 84" width="${o.w || 120}" role="img" aria-label="Aucun arrangement"><rect class="vu-corps" x="4" y="4" width="112" height="76" rx="10"/><text x="60" y="40">aucun</text><text x="60" y="53">arrangement</text></svg>`;
+  const F = faceDessin(contacts, etatDe, o);
+  // (v84) `echelle` : la face agrandie d'un même facteur, quel que soit le module — deux modules montrent des contacts de
+  // même taille (un module de dix contacts n'est plus deux fois plus gros qu'un de dix-huit)
+  return `<svg class="vu-face${o.mini ? ' mini' : ''}${F.zones ? ' a-zones' : ''}" viewBox="0 0 ${F.W.toFixed(0)} ${F.H.toFixed(0)}" width="${o.w || Math.round(F.W * (o.echelle || 1))}" role="img" aria-label="${escA(o.titre || 'La face')}">${F.svg}</svg>`; }
+/* (v85) LE DESSIN d'une face, sans son cadre <svg> : le corps, les plages des groupes, les contacts — dans un repère de
+   (0, 0) à (W, H). La face seule (`faceVue`) et la barrette entière (`barretteVue`) le posent. */
+function faceDessin(contacts, etatDe, o) {
   const xs = contacts.map(c => +c.c || 0), ys = contacts.map(c => +c.r || 0), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
   // (les lettres s'écrivent DANS les contacts : au-dessus, elles chevauchaient le rang d'avant)
   // (v83) une barrette : chaque plage déborde de ses contacts (`rho`), et deux plages voisines gardent entre elles un
@@ -110,9 +117,50 @@ function faceVue(contacts, etatDe, o) { o = o || {}; const n = (contacts || []).
   const cle = c => (+c.r || 0) + ':' + (+c.c || 0), sienDe = new Map(); grp.forEach((g, k) => g.contacts.forEach(c => sienDe.set(cle(c), k)));
   const zones = grp.map((g, k) => `<g class="vu-zone-g"><path class="vu-zone${g.couleur ? '' : ' libre'}" d="${faceZone(g, contacts, P, rho, R, p)}"${g.couleur ? ` style="--zc:${escA(g.couleur)}"` : ''}/>${contacts.filter(c => sienDe.get(cle(c)) === k).map(ct).join('')}</g>`).join('');
   const cts = contacts.filter(c => !sienDe.has(cle(c))).map(ct).join('');
-  // (v84) `echelle` : la face agrandie d'un même facteur, quel que soit le module — deux modules montrent des contacts de
-  // même taille (un module de dix contacts n'est plus deux fois plus gros qu'un de dix-huit)
-  return `<svg class="vu-face${o.mini ? ' mini' : ''}${grp.length ? ' a-zones' : ''}" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${o.w || Math.round(W * (o.echelle || 1))}" role="img" aria-label="${escA(o.titre || 'La face')}">${corps}${zones}${cts}</svg>`; }
+  return { svg: (o.sansCorps ? '' : corps) + zones + cts, corps, W, H, zones: grp.length > 0 }; }
+/* ---- (v85) LA BARRETTE ENTIÈRE, comme la vraie pièce (le lecteur : « une barrette, c'est plusieurs modules ; qu'elle me
+   sorte les autres modules, bien alignés les uns après les autres, comme sur une barrette ») : le RAIL, et dessus tous les
+   modules côte à côte, chacun debout — sa face, ses lettres, ses zones (les groupes) —, son numéro au-dessus (51, 52…),
+   sa référence dessous. Tous les modules ont la même hauteur, comme sur le rail : le pas de chacun suit son nombre de
+   rangées (un module de neuf rangées de #22 est plus serré qu'un de six rangées de #20). Une face plus large que haute
+   (NSA937901 de dix contacts) se dresse d'un quart de tour, comme elle se monte sur le rail. Le module montré est cerné
+   de cuivre ; un clic sur un module mène où il se choisit (ou à sa fiche, s'il en a une) ; une lettre, à son contact.
+   mods : [{ titre, sous, contacts, etat(ct), couleur(ct), bus: [{ contacts, couleur }], va(ct), ici, lien: { onglet, vers },
+   frere, bulle, ko }] ; o : { mini, titre } ---- */
+function barretteVue(mods, o) { o = o || {}; const mini = !!o.mini, xs = (mods || []).filter(M => M && M.contacts && M.contacts.length); if (!xs.length) return '';
+  // debout : une face plus large que haute tourne d'un quart de tour (dans le sens des aiguilles) ; ses groupes la suivent
+  const debout = M => { const cs = M.contacts, w = Math.max(...cs.map(c => +c.c || 0)) - Math.min(...cs.map(c => +c.c || 0)), h = Math.max(...cs.map(c => +c.r || 0)) - Math.min(...cs.map(c => +c.r || 0));
+    if (w <= h) return M; const yMax = Math.max(...cs.map(c => +c.r || 0)), tourne = new Map(cs.map(c => [c, { ...c, r: +c.c || 0, c: yMax - (+c.r || 0) }]));
+    const t = c => tourne.get(c) || c, base = new Map(cs.map(c => [tourne.get(c), c]));
+    return { ...M, contacts: cs.map(t), bus: (M.bus || []).map(g => ({ ...g, contacts: g.contacts.map(t) })), etat: c => M.etat(base.get(c) || c), couleur: M.couleur ? c => M.couleur(base.get(c) || c) : null, va: M.va ? c => M.va(base.get(c) || c) : null }; };
+  const ds = xs.map(debout), rangs = M => Math.max(1, Math.max(...M.contacts.map(c => +c.r || 0)) - Math.min(...M.contacts.map(c => +c.r || 0)));
+  // la hauteur commune : celle du module le plus serré, au pas qui laisse lire ses lettres
+  // (la marge d'une face est celle que `faceDessin` lui donne : 20 autour des plages en grand, 18 sinon)
+  const marge = M => !mini && M.bus && M.bus.some(g => g && g.contacts && g.contacts.length) ? 20 : 18, pMin = mini ? 17 : 26;
+  const Ht = Math.max(mini ? 120 : 230, ...ds.map(M => rangs(M) * pMin + 2 * marge(M)));
+  const ecart = mini ? 9 : 18, bord = mini ? 12 : 22, hautT = mini ? 15 : 24, basT = mini ? 15 : 30, yC = hautT;
+  let x = bord; const poses = ds.map(M => { const p = (Ht - 2 * marge(M)) / rangs(M), R = Math.max(mini ? 4 : 6, Math.min(p * 0.36, (p - (mini ? 6 : 10)) / 2, mini ? 7.5 : 12));
+    const F = faceDessin(M.contacts, M.etat, { lettres: true, mini, pas: p, r: R, bus: M.bus, couleur: M.couleur, va: M.va }), X0 = x; x += F.W + ecart; return { M, F, x: X0 }; });
+  const W = x - ecart + bord, H = hautT + Ht + basT, yR = yC + Ht / 2, hR = Math.round(Ht * 0.2);
+  // le rail : la bande qui court sous les modules, ses deux butées aux bouts
+  // (un métal neutre, lisible de jour comme de nuit : l'encre du texte, très diluée dans le papier de la fiche)
+  const metal = 'fill:color-mix(in srgb,var(--t-1) 9%,var(--s-surface));stroke:color-mix(in srgb,var(--t-1) 24%,var(--s-surface))';
+  const rail = `<rect x="2" y="${(yR - hR / 2).toFixed(1)}" width="${(W - 4).toFixed(1)}" height="${hR}" rx="3" style="${metal};stroke-width:1"/>`
+    + `<path d="M6 ${(yR - hR / 2 + 3).toFixed(1)}H${(W - 6).toFixed(1)}M6 ${(yR + hR / 2 - 3).toFixed(1)}H${(W - 6).toFixed(1)}" style="fill:none;stroke:color-mix(in srgb,var(--t-1) 14%,var(--s-surface));stroke-width:1"/>`
+    + [3, W - (mini ? 9 : 13)].map(bx => `<rect x="${bx.toFixed(1)}" y="${(yR - hR / 2 - (mini ? 5 : 8)).toFixed(1)}" width="${mini ? 6 : 10}" height="${hR + (mini ? 10 : 16)}" rx="2" style="${metal};stroke-width:1.2"/>`).join('');
+  // (le style en ligne : la règle des faces, « svg.vu-face text », écrirait ces titres en 9 px gris)
+  const t = (police, couleur) => `style="font:${police};fill:${couleur};text-anchor:middle;pointer-events:none"`;
+  const corps = poses.map(({ M, F, x: X }) => { const cx = X + F.W / 2, lien = M.lien || null, frere = M.frere || '';
+    const act = lien ? ` data-va-onglet="${escA(lien.onglet)}" data-va-vers="${escA(lien.vers)}"` : frere ? ` data-frere="${escA(frere)}"` : '';
+    const role = act ? ` role="button" tabindex="0" aria-label="${escA(M.bulle || ('Le module ' + M.titre))}"${M.bulle ? ` data-bulle="${escA(M.bulle)}"` : ''}` : '';
+    return `<g class="vu-bar-m${M.ici ? ' ici' : ''}${M.ko ? ' ko' : ''}${act ? ' vu-ct-g va' : ''}" data-module="${escA(M.titre)}"${act}${role}>`
+      + (M.ici ? `<rect x="${(X - (mini ? 3 : 5)).toFixed(1)}" y="${(yC - (mini ? 3 : 5)).toFixed(1)}" width="${(F.W + (mini ? 6 : 10)).toFixed(1)}" height="${(F.H + (mini ? 6 : 10)).toFixed(1)}" rx="${mini ? 9 : 14}" style="fill:none;stroke:var(--nv-cuivre);stroke-width:${mini ? 1.6 : 2.2}"/>` : '')
+      + `<g transform="translate(${X.toFixed(1)} ${yC})">${F.corps}</g>`
+      + `<text x="${cx.toFixed(1)}" y="${(yC - (mini ? 5 : 9)).toFixed(1)}" ${t(mini ? '700 10px var(--mono)' : '700 13px var(--mono)', M.ici ? 'var(--nv-cuivre)' : M.ko ? 'var(--ko)' : 'var(--t-1)')}>${esc(M.titre)}</text>`
+      + (M.sous ? `<text x="${cx.toFixed(1)}" y="${(yC + Ht + (mini ? 12 : 19)).toFixed(1)}" ${t(mini ? '600 9px var(--mono)' : '600 11px var(--mono)', M.ko ? 'var(--ko)' : 'var(--t-2)')}>${esc(M.sous)}</text>` : '') + '</g>'; }).join('');
+  // les contacts par-dessus, chacun dans le repère de son module (une lettre mène à son contact)
+  const faces = poses.map(({ F, x: X }) => `<g transform="translate(${X.toFixed(1)} ${yC})">${F.svg.slice(F.corps.length)}</g>`).join('');
+  return `<svg class="vu-face vu-barrette${mini ? ' mini' : ''} a-zones" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${Math.round(W * (mini ? 1 : 1.18))}" role="img" aria-label="${escA(o.titre || 'La barrette et ses modules')}">${rail}${corps}${faces}</svg>`; }
 const legendeFaceVue = (avecKo) => `<p class="vu-legende"><span><i class="pris"></i>pris</span><span><i></i>libre</span>${avecKo ? '<span><i class="ko"></i>refusé</span>' : ''}</p>`;
 
 /* ---- CE QU'IL TIRE, CE QU'IL TIENT (un disjoncteur) : le démarrage et le permanent en barres, sur l'échelle des

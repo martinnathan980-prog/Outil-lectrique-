@@ -77,7 +77,7 @@ function ecrireConso(nom, q, valeur) { const x = valeur === '' || valeur == null
   histPush('consommation de ' + nom); if (!app.contrat.charges) app.contrat.charges = new Map();
   if (phaseEcrite(c) || (c.dem && c.dem.t)) app.contrat.charges.set(nom, c); else app.contrat.charges.delete(nom);
   apresEdition(); const djs = disjoncteursDe(nom);
-  dire('Consommation de ' + nom + ' écrite' + (djs.length ? ' — ' + djs.map(d => d + ' en ' + (calibreDe(d) ? amperes(calibreDe(d)) : '—')).join(', ') : '') + '.'); return true; }
+  dire('Consommation de ' + nom + ' écrite' + (djs.length ? ' — ' + djs.map(d => d + ' en ' + (calibreDe(d) ? amperes(calibreDe(d)) : '—')).join(', ') : '') + ' (Ctrl+Z le rend).'); return true; }
 /* Le part number d'un repère : celui que ses liaisons portent. */
 function pnDuRepere(nom) { for (const l of verite()) { if (l.de === nom && l.pnDe) return l.pnDe; if (l.vers === nom && l.pnVers) return l.pnVers; } return ''; }
 /* Les fils d'un disjoncteur : ceux qui le touchent, des deux côtés (la borne, l'autre bout, `amont`), puis tout ce qu'il

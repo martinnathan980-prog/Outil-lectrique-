@@ -16,8 +16,13 @@ const bac = { console };
 vm.createContext(bac);
 vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { normeEmbarquee, bibleDeLOutil, contratExemple, liaison, besoinsDeBarrette, barretteInfos, remplirModules, '
   + 'placerDansGroupe, moduleDeReference, contactAccepte, potentielsDeBarrette, variantesQuiLogent, connecteursEnModules, coupureEnModule, remplirContacts, arrangementsQuiLogent, '
-  + 'sexeDuPn, habillage, remplirSelonNorme, physiqueDeBarrette, autreSexe, railsDeBarrette, connecteursDe, connecteurParBorne, moduleDeConnecteur, famillesDeModules, reperesDe, estBornier, estMasse };', bac);
+  + 'sexeDuPn, habillage, remplirSelonNorme, physiqueDeBarrette, autreSexe, railsDeBarrette, connecteursDe, connecteurParBorne, moduleDeConnecteur, famillesDeModules, reperesDe, estBornier, estMasse, '
+  + 'moduleEtContact, bornesLettrees, choixDesModules, retenirModule, moduleAutomatique, modulesPossibles, lireBorne, casesDuModule };', bac);
 const X = bac.X, NE = X.normeEmbarquee(), BO = X.bibleDeLOutil(), L = X.contratExemple();
+/* (v85) l'exemple écrit ses barrettes comme les fichiers du lecteur (« 667VT2 51 » + « A ») ; les règles d'une barrette
+   NUMÉROTÉE (1, 2, 3… : une barrette à poser, un fichier d'une autre forme) se vérifient sur l'ancienne écriture de ses
+   barrettes, le même câblage (tests/ancienne-ecriture.js) : LA. La barrette en modules a son paragraphe (§ 13). */
+const { ancienne, NOUVELLES } = require('./ancienne-ecriture.js'), LA = ancienne(X, L);
 let total = 0, echecs = 0;
 const ok = (nom, cond, mesure) => { total++; if (!cond) echecs++; console.log('  ' + (cond ? 'OK    ' : 'ÉCHEC ') + nom + (mesure ? '   — ' + mesure : '')); };
 // une liaison d'essai : un équipement (numéroté pour rester un équipement) vers une borne de la barrette
@@ -26,7 +31,7 @@ const vers = (r, bornes, types, pn) => bornes.map((b, k) => li(String(100 + k) +
 const sansFaute = Q => Q.fils.every(x => x.jaugeOk !== false) && new Set(Q.fils.map(x => x.module + '|' + x.contact.lettre)).size === Q.fils.length;
 
 console.log('\n1. LES GROUPES D’UNE BARRETTE : MÊME BORNE, BORNES PONTÉES');
-const b668 = X.besoinsDeBarrette('668VT31', L), P668 = X.potentielsDeBarrette(b668);
+const b668 = X.besoinsDeBarrette('668VT31', LA), P668 = X.potentielsDeBarrette(b668);
 ok('668VT31 : quatre groupes — 1-2-3 (pontées), 4, 5-6, 8-9-10 ; un shunt n’est pas un câble', P668.map(p => p.bornes.join('-')).sort().join(' ') === '1-2-3 4 5-6 8-9-10' && P668.reduce((n, p) => n + p.fils.length, 0) === 12,
   P668.map(p => p.bornes.join('-') + ':' + p.fils.length).join(' '));
 ok('une borne sans câble (seulement des shunts) ne fait pas de groupe', X.potentielsDeBarrette(X.besoinsDeBarrette('700VT1', [li('700VT1', '1', '700VT1', '2', 'DR22')])).length === 0);
@@ -45,13 +50,13 @@ const Q08 = X.barretteInfos('720VT1', vers('720VT1', [1, 1, 1], ['DR20', 'DR20',
 ok('une barrette retenue en M12-08 (20, 20, 22 sur une borne) : posée sans un mot de refus', Q08.places === 1 && !Q08.verdicts.length && sansFaute(Q08), Q08.fils.map(x => x.f.type + '→' + x.contact.lettre).join(' '));
 
 console.log('\n3. LE MODULE : CELUI DU FICHIER QUAND IL LOGE TOUT, SINON LE PLUS PETIT QUI LOGE');
-const I667 = X.barretteInfos('667VT21', L, BO), I669 = X.barretteInfos('669VT32', L, BO), I668 = X.barretteInfos('668VT31', L, BO), I674 = X.barretteInfos('674VT22', L, BO);
+const I667 = X.barretteInfos('667VT21', LA, BO), I669 = X.barretteInfos('669VT32', LA, BO), I668 = X.barretteInfos('668VT31', LA, BO), I674 = X.barretteInfos('674VT22', LA, BO);
 ok('667VT21 : le fichier dit E0599-1B201Z, qui loge ses trois groupes — VOLTA le garde (il prenait le B209, ni plus petit ni plus léger)', I667.reference === 'E0599-1B201Z' && I667.plan.nomme && !I667.changee && sansFaute(I667.plan) && I667.raisons.some(r => /celui de votre fichier/.test(r)), I667.reference + ' — ' + I667.raisons.join(' · '));
 ok('669VT32 : le B204 du fichier loge ses quatre câbles d’un groupe : gardé', I669.reference === 'E0599-1B204Z' && I669.plan.nomme && sansFaute(I669.plan), I669.reference);
 ok('668VT31 : l’A101 du fichier (paires de #22) ne loge ni les DR20 ni un groupe de quatre — VOLTA prend le B207, et le dit changé', I668.reference === 'E0599-1B207Z' && !I668.plan.nomme && I668.changee, I668.reference);
 ok('674VT22 : le B201 du fichier (paires) ne loge pas trois câbles d’un groupe — le B207', I674.reference === 'E0599-1B207Z' && !I674.plan.nomme, I674.reference);
-ok('choisi à la main, un autre module passe devant celui du fichier', X.barretteInfos('667VT21', L, BO, undefined, 'E0599-1B209Z').reference === 'E0599-1B209Z' && X.barretteInfos('667VT21', L, BO, undefined, 'NSA937901').plan.modules.every(M => M.module.famille === 'NSA937901'));
-ok('VT21 / VT22, VT31 / VT32, VT41 / VT42 : chaque module de l’exemple loge tout, sans un refus', ['667VT21', '674VT22', '668VT31', '669VT32', '670VT41', '671VT42'].every(r => { const Q = X.barretteInfos(r, L, BO).plan; return Q.places === Q.potentiels && !Q.verdicts.length && sansFaute(Q) && Q.modules.length === 1; }));
+ok('choisi à la main, un autre module passe devant celui du fichier', X.barretteInfos('667VT21', LA, BO, undefined, 'E0599-1B209Z').reference === 'E0599-1B209Z' && X.barretteInfos('667VT21', LA, BO, undefined, 'NSA937901').plan.modules.every(M => M.module.famille === 'NSA937901'));
+ok('VT21 / VT22, VT31 / VT32, VT41 / VT42 : chaque module de l’exemple loge tout, sans un refus', ['667VT21', '674VT22', '668VT31', '669VT32', '670VT41', '671VT42'].every(r => { const Q = X.barretteInfos(r, LA, BO).plan; return Q.places === Q.potentiels && !Q.verdicts.length && sansFaute(Q) && Q.modules.length === 1; }));
 
 console.log('\n4. UNE BARRETTE, UNE NORME : JAMAIS L’ASNE 0599 ET LA NSA937901 MÊLÉES (DEUX RAILS)');
 const paires = X.barretteInfos('730VT1', vers('730VT1', Array.from({ length: 40 }, (_, k) => (k >> 1) + 1), ['DR20', 'DR22', 'DR22']), BO);
@@ -74,7 +79,7 @@ ok('une référence inconnue au fichier : les deux normes concourent, le module 
 
 console.log('\n6. LA STABILITÉ ET LA VITESSE');
 const empreinte = I => JSON.stringify([I.reference, I.plan.fils.map(x => x.module + x.contact.lettre + ':' + x.f.type)]);
-ok('le même fichier donne toujours le même choix (barrettes de l’exemple, deux fois)', ['667VT21', '668VT31', '670VT41', '672VT51'].every(r => empreinte(X.barretteInfos(r, L, BO)) === empreinte(X.barretteInfos(r, L, BO))) && empreinte(meles) === empreinte(X.barretteInfos('731VT1', vers('731VT1', Array.from({ length: 40 }, (_, k) => (k >> 2) + 1), ['DR24', 'DR22', 'DR20', 'DR18']), BO)));
+ok('le même fichier donne toujours le même choix (barrettes de l’exemple, deux fois)', ['667VT21', '668VT31', '670VT41', '672VT51'].every(r => empreinte(X.barretteInfos(r, LA, BO)) === empreinte(X.barretteInfos(r, LA, BO))) && [...NOUVELLES].every(r => empreinte(X.barretteInfos(r, L, BO)) === empreinte(X.barretteInfos(r, L, BO))) && empreinte(meles) === empreinte(X.barretteInfos('731VT1', vers('731VT1', Array.from({ length: 40 }, (_, k) => (k >> 2) + 1), ['DR24', 'DR22', 'DR20', 'DR18']), BO)));
 // le meilleur de trois essais : la machine partagée (d'autres batteries tournent) ne doit pas faire mentir la mesure
 const temps = f => Math.min(...[0, 1, 2].map(() => { const t = Date.now(); f(); return Date.now() - t; }));
 const t40 = Math.max(temps(() => X.barretteInfos('732VT1', vers('732VT1', Array.from({ length: 40 }, (_, k) => k + 1), ['DR22']), BO)),
@@ -115,18 +120,21 @@ ok('les cavités libres : un obturateur chacune (12-20, onze contacts pris : un)
 /* Les deux fonctions de la page (08-modules) : chargées sur le même moteur, avec ce que la page leur donne — le contrat
    (`verite`), la norme et la bible de l'atelier (`app`), et la règle des repères frères de la fiche (`rangDuParent`, 08-fiche :
    668VT31 = la barrette VT3, module 1), recopiée ici. */
-const LP = [...L], pn = { pnDe: 'EN4165-2M', pnVers: 'EN4165-2M' };
+// (v85) les deux écritures des barrettes côte à côte : les repères frères d'autrefois (668VT31…) et les barrettes en modules (668VT3…)
+const LP = [...LA, ...L.filter(l => NOUVELLES.has(l.de) || NOUVELLES.has(l.vers))], pn = { pnDe: 'EN4165-2M', pnVers: 'EN4165-2M' };
 LP.push(X.liaison({ de: '800XC9', borneDe: 'A1', vers: '801RL9', borneVers: '1', type: 'DR20', ...pn, pnVers: '' }));
 LP.push(X.liaison({ de: '800XC9', borneDe: 'A2', vers: '800XC9', borneVers: 'A3', type: 'DR22', ...pn, contactVers: 'EN3155-019F2022' }));
 LP.push(X.liaison({ de: '800XC9', borneDe: 'A1', vers: '800XC9', borneVers: 'A4', type: 'DR20', ...pn }));
-vm.runInContext(fs.readFileSync(path.join(SRC, '08-modules.js'), 'utf8') + '\nthis.P = { sertirDuFil, contactMain, barretteParente };', Object.assign(bac, {}));
-vm.runInContext('var app, verite, liaisonsDeRepere, estRenvoi, rangDuParent;', bac);
+vm.runInContext(fs.readFileSync(path.join(SRC, '08-modules.js'), 'utf8') + '\nthis.P = { sertirDuFil, contactMain, barretteParente, modulesDeLaBarrette, modulesPossiblesDe, choisirModuleDeBarrette, moduleDeBarretteAutomatique };', Object.assign(bac, {}));
+vm.runInContext('var app, verite, liaisonsDeRepere, estRenvoi, rangDuParent, histPush, designer, apresEdition;', bac);
+const HIST = [];
 Object.assign(bac, { app: { norme: NE, bible: BO, contrat: { designations: new Map(), sexes: new Map() } }, verite: () => LP, liaisonsDeRepere: r => LP.filter(l => l.de === r || l.vers === r), estRenvoi: () => false,
+  histPush: q => HIST.push(q), designer: (n, d) => { if (d) bac.app.contrat.designations.set(n, d); else bac.app.contrat.designations.delete(n); }, apresEdition: () => {},
   rangDuParent: nom => { const m = /^(\d+)([A-Z]{2,3}\d+)([0-9A-Z])$/.exec(String(nom || '')); return m ? { parent: m[2], rang: m[3] } : null; } });
 const P = bac.P;
 
 console.log('\n10. LE RAIL : UN PAR BARRETTE, PAS UN PAR MODULE');
-const rail = r => X.railsDeBarrette(NE, r.map(n => X.barretteInfos(n, L, BO).plan));
+const rail = r => X.railsDeBarrette(NE, r.map(n => X.barretteInfos(n, LP, BO).plan));
 const R3 = rail(['668VT31', '669VT32']), R2 = rail(['667VT21']), R4 = rail(['670VT41', '671VT42']), Rm = rail(['667VT21', '670VT41']);
 ok('VT3 (668VT31 + 669VT32) : un seul rail de deux modules, 001751 102 00, 28 mm (le pas de 14 mm), quantité 1', R3.length === 1 && R3[0].reference === '001751 102 00' && R3[0].n === 2 && R3[0].longueur === 28 && R3[0].quantite === 1 && R3[0].sous === '2 modules · 28 mm', JSON.stringify(R3.map(r => [r.reference, r.sous])));
 ok('un module seul : 001751 101 00, 18 mm (la note du catalogue : 18 mm pour un seul)', R2.length === 1 && R2[0].reference === '001751 101 00' && R2[0].longueur === 18);
@@ -170,6 +178,62 @@ ok('une liaison ajoutée à la liste : vue aussitôt', X.connecteursDe('1999XC9'
 G[G.length - 1] = X.liaison({ de: '1999XC9', borneDe: 'C2', vers: '1998RL9', borneVers: '1', type: 'DR22', pnDe: 'EN4165-2M' });
 ok('une liaison remplacée dans la liste : vue aussitôt', X.connecteursDe('1999XC9', G).map(c => c.nom + ':' + c.bornes).join() === 'C:C2');
 ok('les modules d’une norme se trouvent par leur désignation, écrite autrement, comme avant (index des modules)', X.moduleDeReference(NE, 'NSA937901 20-04').variante === '20-04' && X.moduleDeConnecteur(NE, 'EN4165-002-08W16').variante === '08W16' && X.moduleDeConnecteur(NE, 'EN4165-2M') === null && X.famillesDeModules(NE, 'connecteur').join() === 'ASNE0059,EN2997,EN3645,EN3646,EN4165');
+
+console.log('\n13. (v85) LA BARRETTE COMME LE FICHIER L’ÉCRIT : UN REPÈRE, DES MODULES, « MODULE + CONTACT »');
+// une liaison d'essai vers « repère module » + « lettre », comme le fichier l'écrit (01, `boutLu`)
+const lm = (de, bDe, vers, bVers, type, o) => X.liaison({ de, borneDe: bDe, vers, borneVers: bVers, type, cable: '', ...(o || {}) });
+const QI = r => X.barretteInfos(r, L, BO), lettreGardee = Q => Q.fils.every(x => { const y = X.moduleEtContact(x.borne); return y && y.module === x.numero && y.contact === x.contact.lettre; });
+const w101 = L.find(l => l.cable === 'W-101');
+ok('« 667VT2 51 » + « A » se lit 667VT2:51A, le fichier gardé tel qu’il l’écrit ; 51-3 : module 51, contact 3 ; une barrette à poser (1, 2, 3…) n’est pas en modules',
+  w101.vers === '667VT2' && w101.borneVers === '51A' && w101.ecrit.vers === '667VT2 51' && w101.ecrit.borneVers === 'A' && X.lireBorne('667VT2', '51-3').contact === '3' && X.bornesLettrees(X.besoinsDeBarrette('667VT2', L)) && !X.bornesLettrees(X.besoinsDeBarrette('VT1', [lm('102CB1', '2', 'VT1', '1', 'DR20')])),
+  w101.vers + ':' + w101.borneVers);
+const I2 = QI('667VT2'), M51 = I2.plan.modules[0], M52 = I2.plan.modules[1];
+ok('667VT2, deux modules sur deux folios : le 51 garde le B201 du fichier ; le 52 prend le B202 — le B201 sépare A, B et C, que le fichier relie — et le dit',
+  M51.numero === '51' && M51.reference === 'E0599-1B201Z' && M51.nomme && M52.numero === '52' && M52.reference === 'E0599-1B202Z' && !M52.nomme && M52.fichier === 'E0599-1B201Z' && /^A, B et C sont reliés, mais pas dans une même zone du B201$/.test(M52.ecart.raison) && I2.changee && !I2.plan.verdicts.length,
+  I2.plan.modules.map(M => M.numero + ' ' + M.reference + (M.ecart ? ' (' + M.ecart.raison + ')' : '')).join(' · '));
+const I3 = QI('668VT3');
+ok('668VT3, trois modules : 51 et 52 en B207, 53 (la reprise de blindage) en B204, tous ceux du fichier ; seize câbles, chacun sur sa lettre', I3.plan.modules.map(M => M.numero + ':' + M.module.variante).join() === '51:B207,52:B207,53:B204' && I3.plan.modules.every(M => M.nomme) && I3.plan.utilises === 16 && lettreGardee(I3.plan) && !I3.changee, I3.reference);
+const I4 = QI('670VT4'), I5 = QI('672VT5');
+ok('670VT4 en NSA937901 (20-06 et 20-04) : gardés ; 672VT5 : l’A101 du fichier (des paires) ne réunit pas A, B, C et D — l’A102 ; son module 52 garde le B202', I4.plan.famille === 'NSA937901' && I4.plan.modules.every(M => M.nomme)
+  && I5.plan.modules[0].reference === 'E0599-1A102Z' && /^A, B, C et D sont reliés/.test(I5.plan.modules[0].ecart.raison) && I5.plan.modules[1].nomme && I5.plan.modules[1].reference === 'E0599-1B202Z', I4.reference + ' · ' + I5.reference);
+ok('les minuscules de l’ASNE 0599 sont d’autres contacts : 51a et 51A, deux câbles, deux contacts', (Q => Q.fils.some(x => x.borne === '51a' && x.contact.lettre === 'a') && Q.fils.some(x => x.borne === '51A' && x.contact.lettre === 'A'))(I5.plan));
+ok('VOLTA ne change jamais un module ni une lettre : dans les quatre barrettes de l’exemple, chaque câble est sur le contact que sa borne écrit', [I2, I3, I4, I5].every(I => lettreGardee(I.plan) && I.plan.places === I.plan.potentiels));
+// les zones : ce que le fichier relie (un pontage, ou la zone du module qu'il nomme) va dans une même zone ; le reste jamais
+const sansP = X.barretteInfos('740VT1', [lm('100AA1', '1', '740VT1 51', 'A', 'DR22'), lm('101AA1', '1', '740VT1 51', 'B', 'DR22')], BO).plan;
+const ponte = X.barretteInfos('741VT1', [lm('100AA1', '1', '741VT1 51', 'A', 'DR22'), lm('101AA1', '1', '741VT1 51', 'B', 'DR22'), lm('741VT1 51', 'A', '741VT1 51', 'B', 'DR22')], BO).plan;
+const zoneA = (Q, a, b) => { const m = Q.modules[0].module, g = l => m.contacts.find(c => c.lettre === l).groupe; return g(a) === g(b); };
+ok('A et B, ni pontés ni reliés par le fichier : un module où ils sont dans deux zones (jamais un court-circuit) ; pontés : un module où une zone les réunit', !zoneA(sansP, 'A', 'B') && sansP.potentiels === 2 && !sansP.verdicts.length && zoneA(ponte, 'A', 'B') && ponte.potentiels === 1 && !ponte.verdicts.length, sansP.reference + ' · ' + ponte.reference);
+const parZone = X.barretteInfos('742VT1', [lm('100AA1', '1', '742VT1 51', 'A', 'DR22', { pnVers: 'E0599-1B201Z' }), lm('101AA1', '1', '742VT1 51', 'D', 'DR22', { pnVers: 'E0599-1B201Z' })], BO).plan;
+ok('la zone du module que le fichier nomme relie aussi : A et D d’un B201 (sans pontage) sont un même groupe — le B201 est gardé', parZone.potentiels === 1 && parZone.modules[0].nomme && parZone.reference === 'E0599-1B201Z', parZone.reference);
+const sansZ = X.barretteInfos('743VT1', [lm('100AA1', '1', '743VT1 51', 'Z', 'DR22')], BO).plan;
+ok('une lettre qu’aucun module n’a (Z) : le câble ne se pose pas, et c’est dit', sansZ.restants.length === 1 && /module 51 : aucun module (ASNE 0599|NSA937901|NSA 937901) n’a de contact Z/.test(sansZ.verdicts.map(v => v.texte).join()), sansZ.verdicts.map(v => v.texte).join(' | '));
+const gros16 = X.barretteInfos('744VT1', [lm('100AA1', '1', '744VT1 51', 'A', 'DR16'), lm('101AA1', '1', '744VT1 51', 'C', 'DR16')], BO, undefined, 'E0599').plan;
+ok('deux DR16 sur A et C, séparés : un module #16 où A et C sont dans deux zones (le C302), aucun refus', gros16.modules[0].module.contacts.every(c => c.taille === '16') && !zoneA(gros16, 'A', 'C') && gros16.fils.every(x => x.jaugeOk === true), gros16.reference);
+const pontM = X.barretteInfos('745VT1', [lm('100AA1', '1', '745VT1 51', 'A', 'DR22'), lm('745VT1 51', 'A', '745VT1 51', 'D', 'DR22'), lm('745VT1 51', 'D', '745VT1 52', 'A', 'DR22'), lm('745VT1 52', 'A', '745VT1 52', 'B', 'DR22'), lm('745VT1 52', 'B', '101AA1', '1', 'DR22')], BO).plan;
+ok('un pontage d’un module à l’autre (51D → 52A) est un câble : un contact serti à chaque bout, sa gauge jugée ; le potentiel court sur les deux modules', pontM.potentiels === 1 && pontM.modules.length === 2 && pontM.fils.filter(x => x.f.pont).map(x => x.borne).sort().join() === '51D,52A' && pontM.fils.filter(x => x.f.pont).every(x => x.sertir && x.jaugeOk === true) && !pontM.verdicts.length, pontM.fils.map(x => x.borne + (x.f.pont ? '(pont)' : '')).join(' '));
+ok('une barrette, une norme : sans part number, tous ses modules de la même', new Set(pontM.modules.map(M => M.module.famille)).size === 1 && new Set(sansP.modules.concat(ponte.modules).map(M => M.module.famille)).size === 1);
+// le choix à la main, module par module : gardé dans la désignation de la barrette
+ok('le choix se garde dans la désignation : « NSA937901 ; 51=E0599-1A102Z » — retenir le 52, puis le rendre à VOLTA', (C => C.global === 'NSA937901' && C.parModule.get('51') === 'E0599-1A102Z')(X.choixDesModules('NSA937901 ; 51=E0599-1A102Z'))
+  && X.retenirModule('', '52', 'E0599-1B204Z') === '52=E0599-1B204Z' && X.retenirModule('NSA937901 ; 52=E0599-1B204Z', '51', 'X') === 'NSA937901 ; 51=X ; 52=E0599-1B204Z' && X.moduleAutomatique('52=E0599-1B204Z', '52') === '');
+const Imain = X.barretteInfos('667VT2', L, BO, undefined, '52=E0599-1B204Z').plan, Ik = X.barretteInfos('667VT2', L, BO, undefined, '52=E0599-1B201Z').plan;
+ok('retenu à la main, un module passe devant (le B204 pour le 52, le 51 reste celui du fichier) ; un module qui ne convient pas reste retenu, et son défaut se dit', Imain.modules[1].reference === 'E0599-1B204Z' && Imain.modules[1].main && Imain.modules[0].nomme && !Imain.verdicts.length
+  && Ik.modules[1].main && Ik.verdicts.some(v => v.niveau === 'ko' && /^module 52 : A, B et C sont reliés/.test(v.texte)), Ik.verdicts.map(v => v.texte).join(' | '));
+const MP = X.modulesPossibles(X.besoinsDeBarrette('667VT2', L), NE, '52', '');
+ok('les modules possibles pour le 52 de 667VT2 : le B202 d’abord (le mieux taillé, celui de VOLTA, retenu), puis ceux qui conviennent, puis les autres et pourquoi — le B201 du fichier : « A, B et C sont reliés… »', MP.retenu === 'E0599-1B202Z' && MP.auto === 'E0599-1B202Z' && MP.fichier === 'E0599-1B201Z' && MP.candidats[0].reference === 'E0599-1B202Z' && MP.candidats[0].mieux && MP.candidats[0].convient
+  && MP.candidats.every(c => c.m.famille === 'E0599') && (c => c && !c.convient && c.fichier && /A, B et C sont reliés/.test(c.raisons[0]))(MP.candidats.find(c => c.reference === 'E0599-1B201Z')) && X.modulesPossibles(X.besoinsDeBarrette('667VT2', L), NE, '99', '') === null,
+  MP.candidats.slice(0, 5).map(c => c.variante + (c.convient ? '' : '✗')).join(' '));
+const C52 = X.casesDuModule('667VT2', L, '52');
+ok('les cases du fichier du module 52 de 667VT2 (où l’installation corrigée écrit son B202) : les PN de ses seules bornes (sept bouts, pontages compris), au folio 5 — le module 51 garde les siens', C52.length === 7 && C52.every(([l, ch]) => l.plan === '5' && /^52/.test(ch === 'pnDe' ? l.borneDe : l.borneVers)), C52.map(([l, ch]) => (ch === 'pnDe' ? l.borneDe : l.borneVers) + '·' + ch).join(' '));
+// le rail, une fois par barrette : tous ses modules
+const BP3 = P.barretteParente('668VT3'), BP4 = P.barretteParente('670VT4');
+ok('668VT3 : sa propre barrette, un rail de trois modules (001751 103 00, 42 mm) ; 670VT4 : le profilé NSA937901RB2000 pour ses deux modules', BP3.freres.join() === '668VT3' && BP3.porteur === '668VT3' && BP3.rails.length === 1 && BP3.rails[0].reference === '001751 103 00' && BP3.rails[0].longueur === 42 && BP4.rails[0].reference === 'NSA937901RB2000' && BP4.rails[0].n === 2,
+  BP3.rails.map(r => r.reference + ' (' + r.sous + ')').join());
+// les fonctions de la page (08-modules) : ce que l'onglet Modifier appelle
+const MD = P.modulesDeLaBarrette('667VT2');
+ok('modulesDeLaBarrette : 51 (celui du fichier) et 52 (le B202, celui du fichier écarté : pourquoi) ; une barrette d’autrefois (668VT31) : aucun', MD.length === 2 && MD[0].nomme && MD[1].ecart && MD[1].ecart.reference === 'E0599-1B201Z' && MD[1].variante === 'B202' && P.modulesDeLaBarrette('668VT31').length === 0);
+const DES = bac.app.contrat.designations, fait = P.choisirModuleDeBarrette('667VT2', '52', 'E0599-1B204Z'), d1 = DES.get('667VT2'), pris = P.modulesDeLaBarrette('667VT2')[1];
+P.moduleDeBarretteAutomatique('667VT2', '52');
+ok('choisirModuleDeBarrette retient le module (une entrée d’historique), moduleDeBarretteAutomatique le rend à VOLTA', fait && d1 === '52=E0599-1B204Z' && pris.main && pris.reference === 'E0599-1B204Z' && !DES.has('667VT2') && HIST.length === 2 && P.modulesPossiblesDe('667VT2', '52').retenu === 'E0599-1B202Z', HIST.join(' · '));
 
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);

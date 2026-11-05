@@ -23,18 +23,10 @@
    flèches. */
 #planche[data-prise="bloc"] #svg *{cursor:pointer}
 
-/* LE ZOOM SÉMANTIQUE (08 `appliquerVue`, trois paliers : `.tait-1`, `.tait`, `.tait-3`) : sous 7 px d'écran, les petites
-   écritures se taisent — le numéro d'un câble et son fond de papier (le câble se referme dessous), la borne, la pastille,
-   la lettre d'un connecteur, un petit repère, une désignation. Le dessin cadré se lit comme une carte : les blocs, leurs
-   repères, les routes. Ce qui est allumé (`.hl`) et le bloc choisi parlent toujours. Elles reviennent en 140 ms. Une
-   classe sur la scène, jamais un recalcul : la copie qui s'efface (`.range-part`, le dessin qui se range) la porte aussi. */
+/* LE ZOOM DE LECTURE (v85 : il remplace le zoom sémantique, qui taisait sous 7 px d'écran les bornes, les pastilles, les
+   lettres des connecteurs — le lecteur : « au folio 6, les bornes n'apparaissent pas, sauf si je zoome beaucoup ou si je
+   survole ; de base, rien ne doit être caché ») : style-z-plan.css. */
 #planche svg text,#planche svg .halo{transition:opacity var(--d-rapide) var(--courbe)}
-/* (v78, le lecteur : « le numéro des barrettes n'apparaît que quand je mets la souris dessus ») : le repère d'une barrette,
-   d'une prise de coupure, d'une masse (`.rep-petit`) parle toujours, comme celui d'un équipement */
-#planche .tait-1 :is(.bpnum,.prnum,.barnum,.connpin):not(.hl),
-#planche .tait :is(text.filnum,rect.halo,.connnom,.xref,.cb-ret,.bsname,.des,.dr-ou):not(.hl),
-#planche .tait-3 :is(.pinlbl,.dr-f,.rname):not(.hl){opacity:0}
-#planche :is(.tait-1,.tait,.tait-3) :is(.comp,.vt).hl :is(.bpnum,.prnum,.barnum,.connpin,.rep-petit,.connnom,.xref,.cb-ret,.bsname,.des,.pinlbl,.dr-f,.dr-ou,.rname){opacity:1}
 
 /* LE REPÈRE DESSINÉ PLUSIEURS FOIS (08 `peindreChoix`) : ses autres occurrences, des crochets en pointillé */
 #svg .selbox.selbox-autre{stroke-width:1.4;stroke-dasharray:3 2.6}

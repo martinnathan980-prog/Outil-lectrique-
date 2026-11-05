@@ -1,0 +1,47 @@
+/* ===========================================================================
+   LE PLAN (v85) — les numéros de borne qui se lisent au cadrage, l'état de chaque folio dans la barre du bas.
+   =========================================================================== */
+
+/* LE ZOOM DE LECTURE (08 `appliquerVue` pose `--s`, l'échelle de la vue, sur la scène). Rien ne se tait au cadrage : les
+   numéros de borne (équipement, pièce de connecteur, pastille de barrette, contact de prise), la lettre d'un connecteur, le
+   folio d'un renvoi, les petits repères GRANDISSENT quand on s'éloigne, pour garder 9 px d'écran — jusqu'à ce que leur place
+   le permette : le pas des bornes, la pièce, le corps (06 : la limite de chaque famille, et `--km` sur celui dont la place
+   est plus courte). À 100 % et au-delà, chacun a sa taille du dessin ; l'export, toujours. Chacun grandit depuis là où il
+   tient : son milieu, son bord contre le corps, son pied contre son amenée. La pastille grandit avec son numéro (le même
+   calcul, la même limite) ; haute de deux rangées, elle ne grandit en hauteur que de ce que grandit une pastille d'une
+   rangée (`--kv`). */
+#planche svg{--cible:9}
+#planche svg :is(.pinlbl,.connpin,.connnom,.bpnum,.bpast,.prnum,.dr-f,.rep-petit){transform-box:fill-box;transform-origin:center;transform:scale(var(--k,1))}
+#planche svg .pinlbl{--k:clamp(1, calc(var(--cible) / (7.5 * var(--s, 9))), min(1.3, var(--km, 9)))}
+#planche svg .connpin{--k:clamp(1, calc(var(--cible) / (6.2 * var(--s, 9))), min(1.5, var(--km, 9)))}
+#planche svg .connnom{--k:clamp(1, calc(var(--cible) / (6.5 * var(--s, 9))), 1.3);transform-origin:center bottom}
+#planche svg :is(.bpnum,.bpast){--k:clamp(1, calc(var(--cible) / (6.2 * var(--s, 9))), min(1.35, var(--km, 9)))}
+#planche svg .bpast{transform:scale(var(--k,1), calc(1 + (var(--k,1) - 1) * var(--kv, 1)))}
+#planche svg .prnum{--k:clamp(1, calc(var(--cible) / (6.2 * var(--s, 9))), min(1.45, var(--km, 9)))}
+#planche svg .dr-f{--k:clamp(1, calc(var(--cible) / (7.5 * var(--s, 9))), min(1.3, var(--km, 9)))}
+#planche svg .rep-petit{--k:clamp(1, calc(var(--cible) / (5.6 * var(--s, 9))), 1.25)}
+#planche svg :is(.pinlbl,.dr-f,.rep-petit)[text-anchor="start"]{transform-origin:left center}
+#planche svg :is(.pinlbl,.dr-f,.rep-petit)[text-anchor="end"]{transform-origin:right center}
+#planche svg .pinlbl.sur[text-anchor="start"]{transform-origin:left bottom}
+#planche svg .pinlbl.sur[text-anchor="end"]{transform-origin:right bottom}
+#planche svg .pinlbl.sous[text-anchor="start"]{transform-origin:left top}
+#planche svg .pinlbl.sous[text-anchor="end"]{transform-origin:right top}
+/* Bien plus loin que la feuille entière (`.tait`, sous un tiers de l'échelle 1), une écriture ferait moins de 3 px : de la
+   poussière. Elles se taisent ; les traits, les pastilles, les repères restent. Ce qui est allumé (`.hl`) parle toujours. */
+#planche .tait :is(text.filnum,rect.halo,.pinlbl,.connpin,.connnom,.bpnum,.prnum,.dr-f,.dr-ou,.rname,.des,.xref,.cb-ret,.bsname):not(.hl){opacity:0}
+#planche .tait :is(.comp,.vt).hl :is(.pinlbl,.connpin,.connnom,.bpnum,.prnum,.dr-f,.dr-ou,.rname,.des,.xref,.cb-ret,.bsname){opacity:1}
+
+/* L'ÉTAT DE CHAQUE FOLIO, dans sa puce (08 `peindreEtatsDesFolios`) : une PISTE fine sous le chiffre. En attente, la piste
+   est vide et le chiffre pâle ; pendant le dessin, elle se remplit au cuivre (`--fo-p`, ce que le moteur rapporte) ; prêt,
+   elle finit de se remplir puis s'efface ; en cours d'affinage, un point de cuivre immobile sous le chiffre. Rien ne
+   clignote : quand tout est prêt et affiné, la barre est nue. Sur la puce du folio courant (claire), le cuivre profond. */
+.chip{--fo-fil:var(--glace);--fo-piste:var(--voile-3)}
+.chip.on{--fo-fil:#a9581f;--fo-piste:rgba(60,40,20,.16)}
+.chip::after{content:'';position:absolute;left:9px;right:9px;bottom:4px;height:2px;border-radius:1px;pointer-events:none;
+  background:linear-gradient(var(--fo-fil),var(--fo-fil)) no-repeat 0 0/calc(var(--fo-p, 1) * 100%) 100%,var(--fo-piste);
+  opacity:0;transition:opacity .45s var(--courbe) .3s,background-size .3s linear}
+.chip:is(.fo-attente,.fo-dessin)::after{opacity:1;transition:opacity var(--d-rapide) var(--courbe),background-size .3s linear}
+.chip.fo-attente:not(.on){color:color-mix(in srgb,var(--t-3) 62%,transparent)}
+.chip.fo-attente:not(.on):hover{color:var(--t-1)}
+.chip.fo-affinage::after{left:50%;right:auto;width:4px;height:4px;margin-left:-2px;bottom:3px;border-radius:50%;background:var(--fo-fil);opacity:.9;transition:opacity var(--d-rapide) var(--courbe)}
+@media (prefers-reduced-motion:reduce){ .chip::after,.chip:is(.fo-attente,.fo-dessin)::after{transition:none} }

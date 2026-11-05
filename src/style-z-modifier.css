@@ -1,0 +1,108 @@
+/* ═══ v85 — MODIFIER EN TROIS SORTES (l'agent « modifier ») ═══════════════════════════════════════════════════════════
+   Le lecteur : « distinguer clairement ce qui vient de mon fichier (plus aucune saisie : une seule source), les choix de
+   VOLTA (un Automatique / Manuel bien visible), et l'information (ça se lit) ». Trois cartes qui se séparent d'un coup
+   d'œil, sans crier : chacune son signe, son titre, sa phrase.
+     · Dans votre fichier : le papier — un signe de feuille, les valeurs à l'encre, aucune case ; la proposition de VOLTA
+       (« Passer en DR20 ») sur un aplat cuivre, son geste à droite ;
+     · Choix de VOLTA : le cuivre — son signe, et le sélecteur Automatique | Manuel au bout de chaque ligne ;
+     · Information : un cran en retrait (le fond creusé), plus discrète, sans geste.
+   Les jetons des fiches (--s-*, --t-*, --nv-cuivre*) portent le jour et la nuit. */
+
+/* ─── la carte et sa tête ─── */
+.nv-grand .nv-panneau>.nv-somm.nv-mod{padding:16px 20px 4px;border-radius:16px}
+/* la tête sur une ligne : le signe, le titre, sa phrase à côté (elle passe dessous si la place manque) */
+.nv-somm.nv-mod>.nv-mod-t{display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;row-gap:2px;margin:0 0 4px;padding-left:42px;position:relative;min-height:30px}
+.nv-mod-i{position:absolute;left:0;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.nv-mod-i svg{width:16px;height:16px;fill:none;stroke:var(--t-2);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.nv-mod-t h4{margin:0;font:600 var(--f-15)/1.25 var(--sans);letter-spacing:0;text-transform:none;color:var(--t-1)}
+.nv-mod-t p{flex:1 1 260px;margin:0;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.nv-mod-x{display:inline-flex;align-items:center;gap:8px;margin-left:auto}
+.nv-mod-ct{font:500 var(--f-12) var(--sans);color:var(--t-3)}
+.nv-somm.nv-mod .nv-somm-l{margin:4px 0 0}
+/* choix de VOLTA : le cuivre dans le signe et un filet de lumière en haut de la carte */
+.nv-somm.nv-mod.choix{box-shadow:inset 0 2px 0 var(--nv-cuivre-ligne),0 0 0 1px var(--s-line),0 1px 2px rgba(0,0,0,.05)}
+.nv-somm.nv-mod.choix .nv-mod-i{background:var(--nv-cuivre-soft);box-shadow:inset 0 0 0 1px var(--nv-cuivre-ligne)}
+.nv-somm.nv-mod.choix .nv-mod-i svg{stroke:var(--nv-cuivre)}
+/* information : en retrait — le fond creusé, sans ombre portée */
+.nv-grand .nv-panneau>.nv-somm.nv-mod.info{background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.nv-somm.nv-mod.info .nv-mod-i{background:var(--s-surface)}
+.nv-somm.nv-mod.info .nv-mod-i svg{stroke:var(--t-3)}
+
+/* ─── une ligne : ce que c'est et pourquoi | la valeur et sa source | le geste (choix seulement) — deux piles côte à côte,
+   la colonne du geste gardée partout pour que les valeurs s'alignent d'une carte à l'autre ─── */
+.nv-somm.nv-mod .nv-somm-i,.nv-somm.nv-mod .nv-somm-i.ouvert{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 228px;grid-template-rows:auto;column-gap:24px;align-items:start;padding:11px 0}
+.nv-somm.nv-mod .nv-somm-i.ouvert{margin:0 -20px;padding:11px 20px}
+.nv-somm.nv-mod .nv-somm-g{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+.nv-somm.nv-mod .nv-somm-g>.nv-somm-k,.nv-somm.nv-mod .nv-somm-g>.nv-somm-p{grid-column:auto;grid-row:auto}
+.nv-somm.nv-mod .nv-somm-g>.nv-somm-p{font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.nv-somm.nv-mod .nv-somm-i>.nv-somm-v{grid-column:2;grid-row:1;justify-self:stretch;align-self:start;display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
+.nv-somm.nv-mod .nv-somm-v>b,.nv-somm.nv-mod .nv-somm-v>.vu-src{grid-column:auto;grid-row:auto;margin:0}
+.nv-somm.nv-mod .nv-somm-v>b{overflow-wrap:anywhere}
+.nv-somm.nv-mod .nv-somm-v>b small{font:500 var(--f-12) var(--sans);color:var(--t-3)}
+.nv-somm.nv-mod .nv-somm-v>b .fi-route{display:inline-block;width:14px;height:3px;margin:0 7px 3px 0;border-radius:2px;background:var(--c);vertical-align:middle}
+.nv-somm.nv-mod .nv-somm-p .fi-lien{padding:0;border:0;background:none;color:var(--nv-cuivre);font:inherit;font-weight:600;cursor:pointer}
+.nv-somm.nv-mod .nv-somm-p .fi-lien:hover{text-decoration:underline;text-underline-offset:2px}
+.nv-somm.nv-mod .nv-somm-p .id{font:500 var(--f-12) var(--mono)}
+.nv-insec{white-space:nowrap}
+.nv-somm.nv-mod.info .nv-somm-k{font-weight:500;color:var(--t-2)}
+.nv-somm.nv-mod.info .nv-somm-v>b{font-weight:500}
+.nv-somm.nv-mod .nv-somm-i.att .nv-somm-v>b{color:var(--warn)}
+.nv-somm.nv-mod .nv-somm-i.ko .nv-somm-v>b{color:var(--ko)}
+
+/* ─── AUTOMATIQUE | MANUEL : deux segments fixes, celui qui vaut pressé (blanc, filet cuivre) ─── */
+.nv-am{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:3px;border-radius:11px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.nv-somm.nv-mod .nv-somm-i>.nv-am{grid-column:3;grid-row:1;align-self:center;justify-self:end;width:228px}
+.nv-am-b{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;height:30px;padding:0 8px;border:0;border-radius:8px;background:none;
+  color:var(--t-2);font:500 var(--f-13)/1 var(--sans);letter-spacing:0;white-space:nowrap;cursor:pointer;transition:background var(--rapide,.15s),color var(--rapide,.15s),box-shadow var(--rapide,.15s)}
+.nv-am-b:hover{color:var(--t-1);background:var(--s-hover)}
+.nv-am-b[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.14),inset 0 0 0 1px var(--nv-cuivre-ligne)}
+.nv-am-b[aria-pressed="true"]::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--nv-cuivre)}
+.nv-am-b:focus-visible{outline:none;box-shadow:var(--anneau)}
+/* Manuel ouvert (les possibles sous la ligne) : le segment s'allume au cuivre, même quand VOLTA choisit encore */
+.nv-am-b[data-am="manuel"][aria-expanded="true"]{color:var(--nv-cuivre);box-shadow:inset 0 0 0 1px var(--nv-cuivre)}
+.nv-am-b[data-am="manuel"][aria-expanded="true"][aria-pressed="true"]{background:var(--s-surface)}
+.nv-am-b[data-am="manuel"]::after{content:"";width:7px;height:7px;margin-left:1px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(45deg);opacity:.7;transition:transform .25s}
+.nv-am-b[data-am="manuel"][aria-expanded="true"]::after{transform:translateY(1px) rotate(225deg)}
+/* la ligne ouverte : le liseré cuivre la relie à ses possibles */
+.nv-somm.nv-mod .nv-somm-i.ouvert .nv-somm-b{min-width:0}
+.nv-somm.nv-mod .nv-somm-x{margin:0 -20px;padding:4px 20px 10px}
+.nv-somm.nv-mod .nv-somm-x .nv-reg-t{margin:0 0 8px}
+.nv-somm.nv-mod .nv-somm-x .nv-reg-t p{max-width:none}
+
+/* ─── la PROPOSITION de VOLTA, sous la valeur de votre fichier qu'elle changerait ─── */
+.nv-prop{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:20px;row-gap:4px;align-items:center;margin:0 0 12px;padding:12px 14px 12px 16px;border-radius:12px;
+  background:var(--nv-cuivre-soft);box-shadow:inset 3px 0 0 var(--nv-cuivre),inset 0 0 0 1px var(--nv-cuivre-ligne)}
+.nv-prop-k{grid-column:1/-1;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--nv-cuivre)}
+.nv-prop-t{display:flex;flex-direction:column;gap:3px;min-width:0;font:400 var(--f-13)/1.45 var(--sans);color:var(--t-1)}
+.nv-prop-t b{font-weight:600}
+.nv-prop-t b.id{font:600 var(--f-13) var(--mono)}
+.nv-prop-t small{font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.nv-prop-b{display:flex;gap:8px;justify-self:end}
+.nv-prop-b .btn{white-space:nowrap}
+.nv-prop .fi-cout{color:var(--t-2)}
+
+/* ─── les possibles, sur place (Manuel) : à plat dans la ligne ouverte, sans la boîte d'une liste flottante ─── */
+.nv-somm-x .fi-choix.fi-choix-place{margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;max-height:none}
+.nv-somm-x .fi-choix-place .fi-choix-corps{max-height:none;overflow:visible;padding:0}
+.nv-somm-x .fi-choix-place .fi-choix-pied{margin-top:8px;padding:0;border:0;background:none}
+.nv-somm-x .cand.de-volta{position:relative}
+.nv-somm-x .cand.de-volta::after{content:"choix de VOLTA";position:absolute;top:6px;right:8px;padding:1px 6px;border-radius:6px;background:var(--nv-cuivre-soft);color:var(--nv-cuivre);font:600 var(--f-11)/1.4 var(--sans)}
+.nv-somm-x .fi-options-place{margin:10px 0 2px}
+.nv-somm-x .fi-hab+.fi-hab{margin-top:14px;padding-top:14px;border-top:1px solid var(--s-line)}
+.nv-reg-sexe{display:flex;margin:0 0 6px}
+.nv-somm-x .fi-gal-n{margin:0 0 10px}
+
+/* ─── le calibre d'un disjoncteur : le même sélecteur, au bout de son titre ─── */
+.nv-grand .vu-bloc>.vu-titre.nv-am-t{display:flex;align-items:center;flex-wrap:wrap;row-gap:8px}
+.vu-titre.nv-am-t>.nv-am{margin-left:auto;letter-spacing:0;text-transform:none}
+.vu-titre.nv-am-t>.nv-am .nv-am-b{height:28px;font-size:var(--f-12)}
+.vu-cals.a-prendre .vu-cal{animation:cal-a-prendre .9s ease-out}
+@keyframes cal-a-prendre{0%{box-shadow:0 0 0 0 var(--nv-cuivre-ligne)}40%{box-shadow:0 0 0 4px var(--nv-cuivre-ligne)}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion: reduce){ .vu-cals.a-prendre .vu-cal{animation:none} }
+
+/* ─── étroit (le grand au téléphone, une fenêtre serrée) : la valeur sous le titre, le geste à droite ─── */
+@container corps (max-width:700px){
+  .nv-somm.nv-mod .nv-somm-i,.nv-somm.nv-mod .nv-somm-i.ouvert{grid-template-columns:minmax(0,1fr);row-gap:8px}
+  .nv-somm.nv-mod .nv-somm-g{grid-column:1;grid-row:1} .nv-somm.nv-mod .nv-somm-v,.nv-somm.nv-mod:is(.fichier,.info) .nv-somm-v{grid-column:1;grid-row:2}
+  .nv-somm.nv-mod .nv-somm-i>.nv-am{grid-column:1;grid-row:3;justify-self:start}
+  .nv-prop{grid-template-columns:minmax(0,1fr)} .nv-prop-b{justify-self:start} }

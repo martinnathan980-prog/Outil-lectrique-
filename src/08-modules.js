@@ -29,9 +29,32 @@
    =========================================================================== */
 'use strict';
 
-/* Le plan d'une barrette du contrat : ses besoins, et ses modules — la variante, ou la norme, retenue à la main. */
+/* Le plan d'une barrette du contrat : ses besoins, et ses modules — la variante, ou la norme, retenue à la main ; d'une
+   barrette en modules (« 667VT2 51 » + « A »), la référence retenue pour chacun (09, `choixDesModules`). */
 function planDeBarrette(nom) { const besoins = besoinsDeBarrette(nom, liaisonsDeRepere(nom)), d = app.contrat.designations.get(nom) || '';
   const plan = remplirModules(besoins, app.norme, d); return { besoins, plan, main: plan.variante }; }
+/* (v85, le lecteur : « comment je change le module ? je vois sa référence, je n'arrive pas à la changer ; comment je passe
+   d'automatique à manuel ? ») LE MODULE D'UNE BARRETTE, MODULE PAR MODULE — ce que l'onglet Modifier appelle :
+     · `modulesDeLaBarrette(nom)` : ses modules, dans l'ordre du rail — { numero, reference, variante, famille, fichier (la
+       référence que votre fichier écrit), nomme (celui du fichier, gardé), main (choisi ici), ecart ({ reference, raison } :
+       pourquoi celui du fichier est écarté), defauts, libres } ; [] pour une barrette dont les bornes ne disent pas leur
+       module (une barrette à poser : 1, 2, 3…) ;
+     · `modulesPossiblesDe(nom, numero)` : les modules de la norme pour ce module-là (09, `modulesPossibles`) — ceux qui
+       conviennent d'abord (`mieux` : celui que VOLTA prendrait), puis les autres et pourquoi ;
+     · `choisirModuleDeBarrette(nom, numero, reference)` : le retient à la main (une entrée d'historique, Ctrl+Z le rend) ;
+     · `moduleDeBarretteAutomatique(nom, numero)` : revient au choix de VOLTA.
+   Le choix se garde dans la désignation de la barrette (« 52=E0599-1B204Z ») : la fiche, le récapitulatif, la LPA et le
+   contrôle le lisent tous. */
+function modulesDeLaBarrette(nom) { if (!barretteEnModules(nom)) return []; const Q = planDeBarrette(nom).plan; if (!Q.lettres) return [];
+  return Q.modules.map(M => ({ numero: M.numero, reference: M.reference, variante: M.module.variante, famille: M.module.famille, fichier: M.fichier || '', nomme: !!M.nomme, main: !!M.main,
+    ecart: M.ecart ? { reference: M.ecart.reference, raison: M.ecart.raison } : null, defauts: (M.defauts || []).map(d => d.texte), libres: M.libres })); }
+const modulesPossiblesDe = (nom, numero) => barretteEnModules(nom) ? modulesPossibles(besoinsDeBarrette(nom, liaisonsDeRepere(nom)), app.norme, numero, app.contrat.designations.get(nom) || '') : null;
+function choisirModuleDeBarrette(nom, numero, reference) { const avant = app.contrat.designations.get(nom) || '', apres = retenirModule(avant, numero, reference); if (apres === avant) return false;
+  histPush('module ' + numero + ' de ' + nom); designer(nom, apres); apresEdition();
+  // (la charte v84 : après un geste annulable, le message propose « Défaire »)
+  if (typeof dire === 'function') dire(reference ? `Module ${numero} de ${nom} : ${reference}, choisi ici.` : `Module ${numero} de ${nom} : VOLTA le choisit de nouveau.`, false, typeof defaire === 'function' ? { geste: 'Défaire', faire: defaire } : undefined);
+  return true; }
+const moduleDeBarretteAutomatique = (nom, numero) => choisirModuleDeBarrette(nom, numero, '');
 const barretteEnModules = nom => estBarrette(nom) && !estCoupure(nom) && (app.bible || []).some(e => e.module);
 const classeFamille = f => 'f-' + String(f || '').toLowerCase();
 
