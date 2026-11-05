@@ -344,7 +344,7 @@ function analyser(nom, texte) {
 // ===========================================================================
 //  CE QUI ÉCRIT DANS SEE : la provenance des objets
 //  Un membre d'objet (« x.Membre », « x.Membre = v ») est jugé selon ce qu'est x :
-//    · 'excel'     un objet d'Excel ou de VBA (classeur, feuille, plage, Application, Err, flux ADODB) :
+//    · 'excel'     un objet d'Excel ou de VBA (classeur, feuille, plage, Application, Err, flux ADODB, MSXML 6) :
 //                  tout membre est permis (écrire dans le classeur n'écrit pas dans SEE) ;
 //    · 'conteneur' une Collection VBA ou un dictionnaire : Add, Count, Item, Exists, Keys, Items, Remove,
 //                  CompareMode ; ses éléments (Item, x(i), For Each) sont des objets SEE ;
@@ -463,7 +463,7 @@ function analyseEcritures(analyses) {
     if (RACINES_EXCEL.has(k)) g = 'excel';
     else if (k === 'createobject') {
       g = /CreateObject\(\s*"Scripting\.Dictionary"\s*\)/i.test(brut || '') ? 'conteneur' :
-        /CreateObject\(\s*"ADODB\.Stream"\s*\)/i.test(brut || '') ? 'excel' : 'see';
+        /CreateObject\(\s*"(ADODB\.Stream|MSXML2\.(DOMDocument|XMLSchemaCache)\.6\.0)"\s*\)/i.test(brut || '') ? 'excel' : 'see';
       fonction = true;
     }
     else if (k === 'getobject' || k === 'callbyname') { g = k === 'getobject' && /GetObject\(\s*"winmgmts:/i.test(brut || '') ? 'excel' : 'see'; fonction = true; }

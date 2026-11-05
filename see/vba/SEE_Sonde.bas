@@ -1823,35 +1823,9 @@ Public Sub LireFormatWD()
     l = 1
     EcrireLigne ws, l, Array("Quoi", "Fichier ou contexte", "Détail", "Suite")
     ws.Rows(1).Font.Bold = True
-    Set dossiers = New Collection
-    Set xsd = New Collection
-    Set xmls = New Collection
-    For Each r In Array("C:\Program Files (x86)\IGE+XAO", "C:\Program Files\IGE+XAO")
-        If Len(Dir$(CStr(r), vbDirectory)) > 0 Then dossiers.Add CStr(r)
-    Next r
-    i = 1
-    Do While i <= dossiers.Count And i <= 6000
-        d = dossiers.Item(i)
-        f = Dir$(d & "\*", vbDirectory Or vbHidden Or vbSystem)
-        Do While Len(f) > 0
-            If f <> "." And f <> ".." Then
-                a = 0
-                a = GetAttr(d & "\" & f)
-                If (a And vbDirectory) = vbDirectory Then
-                    dossiers.Add d & "\" & f
-                ElseIf LCase$(Right$(f, 4)) = ".xsd" Then
-                    xsd.Add d & "\" & f
-                ElseIf LCase$(Right$(f, 4)) = ".xml" And InStr(1, d, "Electrical Expert", vbTextCompare) > 0 Then
-                    n = LCase$(f)
-                    If InStr(n, "wd") > 0 Or InStr(n, "wir") > 0 Or InStr(n, "harness") > 0 Or InStr(n, "schemat") > 0 Or InStr(n, "cabl") > 0 Then xmls.Add d & "\" & f
-                End If
-            End If
-            f = Dir$()
-        Loop
-        i = i + 1
-    Loop
+    i = ParcourirIGE(xsd, xmls)
     l = l + 1
-    EcrireLigne ws, l, Array("dossiers parcourus", CStr(i - 1), xsd.Count & " schéma(s) XSD, " & xmls.Count & " XML (WD, wire, harness, cabl)", "")
+    EcrireLigne ws, l, Array("dossiers parcourus", CStr(i), xsd.Count & " schéma(s) XSD, " & xmls.Count & " XML (WD, wire, harness, cabl)", "")
     ' retenus : d'abord les schémas de SEE Electrical Expert (son dossier Param\XSD), puis les noms qui parlent de fils ;
     ' décrits en premier (le haut de la feuille), puis les XML, puis la liste de tous les schémas
     Set retenus = New Collection
@@ -1890,6 +1864,181 @@ Public Sub LireFormatWD()
         "Clique sur OK, puis prends en photo TOUTE la feuille Format_WD, en descendant.", vbOKOnly + vbInformation, "Pilote SEE"
 End Sub
 
+' Les schémas XSD et les XML de fils (WD, wire, harness, schemat, cabl dans le
+' nom, sous SEE Electrical Expert) des dossiers IGE+XAO. Rend le nombre de
+' dossiers parcourus (au plus 6000).
+Private Function ParcourirIGE(ByRef xsd As Collection, ByRef xmls As Collection) As Long
+    Dim r As Variant, dossiers As Collection, d As String, f As String, i As Long, a As Long, n As String
+    On Error Resume Next
+    Set dossiers = New Collection
+    Set xsd = New Collection
+    Set xmls = New Collection
+    For Each r In Array("C:\Program Files (x86)\IGE+XAO", "C:\Program Files\IGE+XAO")
+        If Len(Dir$(CStr(r), vbDirectory)) > 0 Then dossiers.Add CStr(r)
+    Next r
+    i = 1
+    Do While i <= dossiers.Count And i <= 6000
+        d = dossiers.Item(i)
+        f = Dir$(d & "\*", vbDirectory Or vbHidden Or vbSystem)
+        Do While Len(f) > 0
+            If f <> "." And f <> ".." Then
+                a = 0
+                a = GetAttr(d & "\" & f)
+                If (a And vbDirectory) = vbDirectory Then
+                    dossiers.Add d & "\" & f
+                ElseIf LCase$(Right$(f, 4)) = ".xsd" Then
+                    xsd.Add d & "\" & f
+                ElseIf LCase$(Right$(f, 4)) = ".xml" And InStr(1, d, "Electrical Expert", vbTextCompare) > 0 Then
+                    n = LCase$(f)
+                    If InStr(n, "wd") > 0 Or InStr(n, "wir") > 0 Or InStr(n, "harness") > 0 Or InStr(n, "schemat") > 0 Or InStr(n, "cabl") > 0 Then xmls.Add d & "\" & f
+                End If
+            End If
+            f = Dir$()
+        Loop
+        i = i + 1
+    Loop
+    ParcourirIGE = i - 1
+End Function
+
+' ============================================================================
+'  EssaiWD (Alt+F8) : une petite liste de fils XML (2 connecteurs, 4 broches,
+'  2 fils), écrite à côté du classeur (Essai-WD.xml), puis VÉRIFIÉE par
+'  Windows (MSXML 6) contre le schéma de SEE (« IGE-XAO Wiring Diagram
+'  *.xsd », son dossier Param\XSD). Feuille Essai_WD : le verdict et chaque
+'  erreur ; les règles des types (motifs, longueurs, valeurs permises) ; les
+'  XML de fils de l'installation (un exemple à imiter). Sans SEE.
+' ============================================================================
+Public Sub EssaiWD()
+    Dim ws As Object, l As Long, xsd As Collection, xmls As Collection, cheminXsd As String, p As Variant, t As String, n As String
+    Dim attrs As Object, enfants As Object, ordre As Collection, entete As String, espace As String, cheminXml As String, version As String
+    Dim erreurs As Collection, e As Variant, ok As Boolean, k As Variant, ecrit As Boolean, nbXml As Long
+    On Error Resume Next
+    Set ws = FeuilleCreee("Essai_WD", True)
+    l = 1
+    EcrireLigne ws, l, Array("Quoi", "Nom", "Détail")
+    ws.Rows(1).Font.Bold = True
+    ParcourirIGE xsd, xmls
+    ' le schéma du Wiring Diagram de SEE Electrical Expert : la version la plus haute (le nom le plus grand)
+    For Each p In xsd
+        n = Mid$(CStr(p), InStrRev(CStr(p), "\") + 1)
+        If InStr(1, n, "Wiring Diagram", vbTextCompare) > 0 And InStr(1, CStr(p), "Electrical Expert", vbTextCompare) > 0 Then
+            If Len(cheminXsd) = 0 Then
+                cheminXsd = CStr(p)
+            ElseIf StrComp(n, Mid$(cheminXsd, InStrRev(cheminXsd, "\") + 1), vbTextCompare) > 0 Then
+                cheminXsd = CStr(p)
+            End If
+        End If
+    Next p
+    If Len(cheminXsd) = 0 Then
+        l = l + 1
+        EcrireLigne ws, l, Array("VERDICT", "schéma", "INTROUVABLE : aucun « Wiring Diagram *.xsd » sous SEE Electrical Expert (" & xsd.Count & " XSD en tout)")
+        MontrerFeuille ws
+        Dialogue "EssaiWD : le schéma de SEE est introuvable. Prends en photo la feuille Essai_WD.", vbOKOnly + vbExclamation, "Pilote SEE"
+        Exit Sub
+    End If
+    n = Mid$(cheminXsd, InStrRev(cheminXsd, "\") + 1)
+    version = Mid$(n, InStr(1, n, "Diagram", vbTextCompare) + 7)
+    If InStrRev(LCase$(version), ".xsd") > 0 Then version = Left$(version, InStrRev(LCase$(version), ".xsd") - 1)
+    version = Trim$(version)
+    t = TexteDeFichier(cheminXsd)
+    Set attrs = NouveauDico()
+    Set enfants = NouveauDico()
+    Set ordre = New Collection
+    AnalyserXSD t, attrs, enfants, ordre, entete
+    espace = AttrXml(entete, "targetNamespace")
+    cheminXml = ThisWorkbook.Path & "\Essai-WD.xml"
+    ecrit = EcrireFichierTexte(cheminXml, XmlEssaiWD(version, espace))
+    Set erreurs = New Collection
+    If ecrit Then ok = ValiderXmlParXsd(cheminXml, cheminXsd, espace, erreurs)
+    l = l + 1
+    EcrireLigne ws, l, Array("VERDICT", "Essai-WD.xml", IIf(Not ecrit, "PAS ÉCRIT (dossier du classeur en lecture seule ?)", _
+        IIf(ok, "VALIDE : il suit le schéma de SEE ; prochaine étape, l'import dans SEE", "REFUSÉ : " & erreurs.Count & " erreur(s), ci-dessous")))
+    ws.Rows(l).Font.Bold = True
+    For Each e In erreurs
+        l = l + 1
+        EcrireLigne ws, l, Array("erreur", "", MasquerChemins(CStr(e)))
+    Next e
+    l = l + 1
+    EcrireLigne ws, l, Array("schéma", n, "version " & version & " ; espace de noms : " & IIf(Len(espace) > 0, espace, "aucun") & " ; " & MasquerChemins(Left$(entete, 600)))
+    ' les règles des types que l'essai emploie
+    For Each k In Array("tEDB_InstanceID", "tXSDVersion", "tLengthUnit", "tTag", "tExtendedTag", "tWireType", "tGauge", "tNonNegativeDouble", _
+            "tClass", "tSegregation", "tSolutionNumber", "tVersionNb", "tColor", "tWHType", "tConnectType", "tPinType")
+        If attrs.Exists("simpleType " & CStr(k)) Or enfants.Exists("simpleType " & CStr(k)) Then
+            l = l + 1
+            EcrireLigne ws, l, Array("type", CStr(k), Left$(ListeDe(enfants, "simpleType " & CStr(k)) & " ; " & ListeDe(attrs, "simpleType " & CStr(k)), 1500))
+        End If
+    Next k
+    For Each k In Array("élément IGE-XAO_WIRE_HARNESS", "complexType cWireHarness", "complexType cWiresList", "complexType cConnectiveDevicesList")
+        l = l + 1
+        EcrireLigne ws, l, Array("contenu", CStr(k), Left$(ListeDe(enfants, CStr(k)), 1500))
+    Next k
+    ' les XML de fils de l'installation : leur balise racine (un WD à imiter ?)
+    For Each p In xmls
+        nbXml = nbXml + 1
+        If nbXml > 40 Then Exit For
+        l = l + 1
+        EcrireLigne ws, l, Array("XML", Mid$(CStr(p), InStrRev(CStr(p), "\") + 1), FileLen(CStr(p)) & " o ; racine " & RacineXml(CStr(p)) & " ; " & _
+            MasquerChemins(Mid$(CStr(p), InStr(1, CStr(p), "SEE_Soft", vbTextCompare))))
+    Next p
+    ws.Columns("A:B").AutoFit
+    ws.Columns("C").ColumnWidth = 110
+    ws.Columns("C").WrapText = True
+    MontrerFeuille ws
+    Dialogue "EssaiWD : " & IIf(ok, "VALIDE.", "REFUSÉ (" & erreurs.Count & " erreur(s)).") & vbCrLf & vbCrLf & _
+        "Clique sur OK, puis prends en photo la feuille Essai_WD, du haut jusqu'aux lignes « XML » comprises.", vbOKOnly + vbInformation, "Pilote SEE"
+End Sub
+
+' La petite liste de fils de l'essai : un faisceau ESSAI_PILOTE, deux
+' connecteurs (P1 : broches 1 et 2 ; J1 : broches A et B), deux fils (W1 :
+' P1-1 vers J1-A ; W2 : P1-2 vers J1-B).
+Private Function XmlEssaiWD(ByVal version As String, ByVal espace As String) As String
+    Dim s As String
+    s = "<?xml version='1.0' encoding='UTF-8'?>" & vbCrLf
+    s = s & "<IGE-XAO_WIRE_HARNESS{NS} EDB_InstanceID='1' XSDversion='{V}' LengthUnit='millimeter'>" & vbCrLf
+    s = s & "  <WireHarness Tag='ESSAI_PILOTE' WiresNumber='2'>" & vbCrLf
+    s = s & "    <ConnectiveDevicesList>" & vbCrLf
+    s = s & "      <ConnectiveDevice Tag='P1' Type='Connector' ConnectivityType='Plug'>" & vbCrLf
+    s = s & "        <Pin Tag='1'/>" & vbCrLf & "        <Pin Tag='2'/>" & vbCrLf
+    s = s & "      </ConnectiveDevice>" & vbCrLf
+    s = s & "      <ConnectiveDevice Tag='J1' Type='Connector' ConnectivityType='Receptacle'>" & vbCrLf
+    s = s & "        <Pin Tag='A'/>" & vbCrLf & "        <Pin Tag='B'/>" & vbCrLf
+    s = s & "      </ConnectiveDevice>" & vbCrLf
+    s = s & "    </ConnectiveDevicesList>" & vbCrLf
+    s = s & "    <WiresList>" & vbCrLf
+    s = s & "      <Wire Tag='W1' Wire_Type='WIRE' Gauge='22' Length='1000' Length_Status='Manual' Type='Normal' Class='A' Segregation='1'/>" & vbCrLf
+    s = s & "      <Wire Tag='W2' Wire_Type='WIRE' Gauge='22' Length='1000' Length_Status='Manual' Type='Normal' Class='A' Segregation='1'/>" & vbCrLf
+    s = s & "    </WiresList>" & vbCrLf
+    s = s & "    <WiresExtremitiesList>" & vbCrLf
+    s = s & "      <WireExtremity ID='W1-1' WireTag='W1' Pin='1' PinParent='P1'/>" & vbCrLf
+    s = s & "      <WireExtremity ID='W1-2' WireTag='W1' Pin='A' PinParent='J1'/>" & vbCrLf
+    s = s & "      <WireExtremity ID='W2-1' WireTag='W2' Pin='2' PinParent='P1'/>" & vbCrLf
+    s = s & "      <WireExtremity ID='W2-2' WireTag='W2' Pin='B' PinParent='J1'/>" & vbCrLf
+    s = s & "    </WiresExtremitiesList>" & vbCrLf
+    s = s & "  </WireHarness>" & vbCrLf
+    s = s & "</IGE-XAO_WIRE_HARNESS>" & vbCrLf
+    s = Replace(s, "'", """")
+    s = Replace(s, "{V}", version)
+    XmlEssaiWD = Replace(s, "{NS}", IIf(Len(espace) > 0, " xmlns=""" & espace & """", ""))
+End Function
+
+' La balise racine d'un XML (son premier élément), courte.
+Private Function RacineXml(ByVal f As String) As String
+    Dim t As String, p As Long, q As Long
+    t = Left$(TexteDeFichier(f), 4000)
+    p = InStr(1, t, "<")
+    Do While p > 0
+        If Mid$(t, p + 1, 1) <> "?" And Mid$(t, p + 1, 1) <> "!" Then Exit Do
+        p = InStr(p + 1, t, "<")
+    Loop
+    If p = 0 Then
+        RacineXml = "(aucune)"
+        Exit Function
+    End If
+    q = InStr(p, t, ">")
+    If q = 0 Then q = p + 120
+    RacineXml = Left$(Replace(Replace(Mid$(t, p, q - p + 1), vbCr, " "), vbLf, " "), 160)
+End Function
+
 ' Un fichier texte entier (les octets tels quels : les noms de XML sont en ASCII).
 Private Function TexteDeFichier(ByVal f As String) As String
     Dim h As Integer, b As String
@@ -1913,13 +2062,31 @@ End Function
 ' attributs (« * » : use="required") et ses enfants (éléments, références,
 ' type étendu, groupes d'attributs). Une ligne par contexte dans ws.
 Private Sub DecrireXSD(ByVal t As String, ByVal ws As Object, ByRef l As Long)
-    Dim pos As Long, fin As Long, tag As String, loc As String, pile As Collection, ctx As String, nomA As String, ferme As Boolean
-    Dim attrs As Object, enfants As Object, ordre As Collection, k As Variant, j As Long, typ As String
-    On Error Resume Next
-    Set pile = New Collection
+    Dim attrs As Object, enfants As Object, ordre As Collection, k As Variant, entete As String
     Set attrs = NouveauDico()
     Set enfants = NouveauDico()
     Set ordre = New Collection
+    AnalyserXSD t, attrs, enfants, ordre, entete
+    For Each k In ordre
+        If Len(ListeDe(attrs, CStr(k))) > 0 Or Len(ListeDe(enfants, CStr(k))) > 0 Then
+            l = l + 1
+            EcrireLigne ws, l, Array("", CStr(k), Left$("attributs : " & ListeDe(attrs, CStr(k)), 2000), Left$("enfants : " & ListeDe(enfants, CStr(k)), 2000))
+            If l > 1500 Then Exit For
+        End If
+    Next k
+End Sub
+
+' L'analyse d'un schéma XSD : attrs et enfants (contexte -> liste), ordre (les
+' contextes dans l'ordre du fichier ; dictionnaires et collection créés par
+' l'appelant) ; les attributs (« * » obligatoire, fixe,
+' défaut), les règles des types (motif, longueurs, bornes, valeurs permises) ;
+' entete : la balise schema et ses include / import.
+Private Sub AnalyserXSD(ByVal t As String, ByVal attrs As Object, ByVal enfants As Object, ByVal ordre As Collection, ByRef entete As String)
+    Dim pos As Long, fin As Long, tag As String, loc As String, pile As Collection, ctx As String, nomA As String, ferme As Boolean
+    Dim j As Long, typ As String
+    On Error Resume Next
+    Set pile = New Collection
+    entete = ""
     pos = InStr(1, t, "<")
     Do While pos > 0
         fin = InStr(pos, t, ">")
@@ -1966,7 +2133,9 @@ Private Sub DecrireXSD(ByVal t As String, ByVal ws As Object, ByRef l As Long)
                 Case "attribute"
                     If Len(AttrXml(tag, "name")) > 0 Then
                         AjouterA attrs, ordre, ctx, AttrXml(tag, "name") & IIf(AttrXml(tag, "use") = "required", "*", "") & _
-                            IIf(Len(AttrXml(tag, "type")) > 0, "(" & AttrXml(tag, "type") & ")", "")
+                            IIf(Len(AttrXml(tag, "type")) > 0, "(" & AttrXml(tag, "type") & ")", "") & _
+                            IIf(Len(AttrXml(tag, "fixed")) > 0, " fixe " & AttrXml(tag, "fixed"), "") & _
+                            IIf(Len(AttrXml(tag, "default")) > 0, " défaut " & AttrXml(tag, "default"), "")
                     ElseIf Len(AttrXml(tag, "ref")) > 0 Then
                         AjouterA attrs, ordre, ctx, "ref " & AttrXml(tag, "ref")
                     End If
@@ -1974,18 +2143,18 @@ Private Sub DecrireXSD(ByVal t As String, ByVal ws As Object, ByRef l As Long)
                     If Len(AttrXml(tag, "base")) > 0 Then AjouterA enfants, ordre, ctx, loc & " de " & AttrXml(tag, "base")
                 Case "enumeration"
                     AjouterA attrs, ordre, ctx, "=" & AttrXml(tag, "value")
+                Case "pattern", "minLength", "maxLength", "length", "minInclusive", "maxInclusive", "minExclusive", "maxExclusive", _
+                        "totalDigits", "fractionDigits"
+                    AjouterA attrs, ordre, ctx, loc & " " & AttrXml(tag, "value")
+                Case "schema"
+                    entete = entete & Left$(tag, 400)
+                Case "include", "import", "redefine"
+                    entete = entete & " | " & Left$(tag, 300)
             End Select
             If Not ferme Then pile.Add nomA
         End If
         pos = InStr(fin, t, "<")
     Loop
-    For Each k In ordre
-        If Len(ListeDe(attrs, CStr(k))) > 0 Or Len(ListeDe(enfants, CStr(k))) > 0 Then
-            l = l + 1
-            EcrireLigne ws, l, Array("", CStr(k), Left$("attributs : " & ListeDe(attrs, CStr(k)), 2000), Left$("enfants : " & ListeDe(enfants, CStr(k)), 2000))
-            If l > 1500 Then Exit For
-        End If
-    Next k
 End Sub
 
 ' Ajoute un texte à la liste d'un contexte (un dictionnaire de listes), le contexte noté dans l'ordre.

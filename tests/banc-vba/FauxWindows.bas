@@ -246,6 +246,12 @@ Public Function ChoisirFichier(ByVal filtre As String, ByVal titre As String, By
     If gWinFichier = "=" Then ChoisirFichier = depart Else ChoisirFichier = gWinFichier
 End Function
 
+Public Function ValiderXmlParXsd(ByVal cheminXml As String, ByVal cheminXsd As String, ByVal espace As String, ByRef erreurs As Collection) As Boolean
+    TraceWin "ValiderXml|" & cheminXml
+    Set erreurs = New Collection
+    ValiderXmlParXsd = True
+End Function
+
 Public Function ConfirmerOK(ByVal message As String, ByVal titre As String) As Boolean
     TraceWin "Question|" & titre
     Journal "Dialogue", titre, "", Replace(message, vbCrLf, " / ") & " -> " & IIf(gWinConfirme, "OK", "Annuler")

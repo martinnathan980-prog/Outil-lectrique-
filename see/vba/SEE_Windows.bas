@@ -318,6 +318,44 @@ Echec:
     ChoisirFichier = ""
 End Function
 
+' Un XML vérifié par Windows (MSXML 6) contre un schéma XSD, en lecture
+' seule : Vrai s'il est valide ; sinon erreurs reçoit chaque erreur (ligne,
+' raison, chemin XPath ; au plus 40). espace : l'espace de noms cible du
+' schéma ("" s'il n'en a pas).
+Public Function ValiderXmlParXsd(ByVal cheminXml As String, ByVal cheminXsd As String, ByVal espace As String, ByRef erreurs As Collection) As Boolean
+    Dim cache As Object, doc As Object, sch As Object, e As Object, n As Long
+    Set erreurs = New Collection
+    On Error GoTo Echec
+    Set sch = CreateObject("MSXML2.DOMDocument.6.0")
+    sch.async = False
+    sch.resolveExternals = True
+    If Not sch.Load(cheminXsd) Then
+        erreurs.Add "le schéma ne se lit pas : " & Trim$(Replace(sch.parseError.reason, vbCrLf, " "))
+        Exit Function
+    End If
+    Set cache = CreateObject("MSXML2.XMLSchemaCache.6.0")
+    cache.Add espace, sch
+    Set doc = CreateObject("MSXML2.DOMDocument.6.0")
+    doc.async = False
+    doc.validateOnParse = True
+    doc.setProperty "MultipleErrorMessages", True
+    Set doc.schemas = cache
+    If doc.Load(cheminXml) Then
+        ValiderXmlParXsd = True
+        Exit Function
+    End If
+    On Error Resume Next
+    For Each e In doc.parseError.allErrors
+        n = n + 1
+        erreurs.Add "ligne " & e.Line & " : " & Trim$(Replace(e.reason, vbCrLf, " ")) & IIf(Len(e.errorXPath) > 0, " [" & e.errorXPath & "]", "")
+        If n >= 40 Then Exit For
+    Next e
+    If erreurs.Count = 0 Then erreurs.Add "ligne " & doc.parseError.Line & " : " & Trim$(Replace(doc.parseError.reason, vbCrLf, " "))
+    Exit Function
+Echec:
+    erreurs.Add "MSXML : " & Err.Number & " " & Err.Description
+End Function
+
 ' Une question OK / Annuler, ANNULER par défaut : Vrai seulement sur OK.
 ' Sous gSansDialogue, la boîte est dite au journal et la réponse est OK
 ' (Dialogue, SEE_Commun).
