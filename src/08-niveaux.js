@@ -64,7 +64,7 @@ const ongletDeLaSection = s => ({ cle: s.cle === 'fils' ? 'cables' : s.cle === '
 // les onglets que toutes les fiches partagent : les câbles (la section d'hier, son statut en mots), la fabrication
 /* (v86, le lecteur : « 2 câbles · 80 % : on ne comprend pas ce que veut dire 80 % ; si je me pose la question, c'est que ce
    n'est pas bon ») : le statut se lit sans réfléchir et tient dans l'onglet le plus étroit (132 px, à côté du récapitulatif)
-   — « chargés à 80 % » (le plus chargé porte 80 % du courant qu'il admet), « 2 à régler », « 1 à voir » (les mots des
+   — « 2 câbles » quand tout passe (le pourcentage est dans le tableau), « 2 à régler », « 1 à voir » (les mots des
    problèmes de la fiche ; « en défaut » se lisait comme un court-circuit) ; sans type, pas de pourcentage. La bulle nomme
    le câble et dit les ampères, ou ce qui cloche, câble par câble. `sF` : la section des câbles (08-fiche, `sectionFils`). */
 const statutCables = sF => { if (sF.vide) return { t: 'aucun', etat: '' };
@@ -74,7 +74,9 @@ const statutCables = sF => { if (sF.vide) return { t: 'aucun', etat: '' };
   const sans = sF.nsans ? (sF.nsans > 1 ? sF.nsans + ' câbles sans type' : '1 câble sans type') + ' : ce qu’' + (sF.nsans > 1 ? 'ils admettent' : 'il admet') + ' est inconnu' : '';
   if (pc == null) return { t: n > 1 && sF.nsans === n ? n + ' sans type' : sF.nsans ? 'sans type' : pluriel(n, 'câble'), etat: '', bulle: sans };
   const qui = n > 1 ? 'Le plus chargé de ses ' + n + ' câbles' + (p && p.nom ? ', ' + p.nom + ',' : '') : 'Son câble' + (p && p.nom ? ', ' + p.nom + ',' : '');
-  return { t: (n > 1 ? 'chargés à ' : 'chargé à ') + pc + ' %', etat: '',
+  // (intégration v86) tout passe : le compte seul, comme « 1 connecteur » à côté ; le pourcentage reste dans le tableau, sous
+  // son titre « % de l'admis », et la bulle le dit en ampères — un statut d'onglet ne demande jamais « 80 % de quoi ? »
+  return { t: pluriel(n, 'câble'), etat: '',
     bulle: qui + (p && p.i != null && p.admis != null ? ' porte ' + nombreA(p.i) + ' A ; il en admet ' + nombreA(p.admis) + ' : il est chargé à ' + pc + ' %.' : ' porte ' + pc + ' % du courant qu’il admet.') + (sans ? '\n' + majuscule(sans) + '.' : '') }; };
 const ongletCables = sF => !sF ? null : { cle: 'cables', statut: statutCables(sF), contenu: sF.contenu, vide: sF.vide };
 function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
