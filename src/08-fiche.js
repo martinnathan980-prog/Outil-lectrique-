@@ -1964,7 +1964,7 @@ function ficheMasse(nom) { const fils = filsDuRepere(nom), probs = problemesDesF
 function ficheBornierAncien(nom) { const V = verite(), b = besoinsDeBarrette(nom, V);
   const P = remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme);
   return composerFiche({ type: estCoupure(nom) ? 'prise' : 'barrette', tete: { type: estCoupure(nom) ? 'prise' : 'barrette', genre: estCoupure(nom) ? 'Prise de coupure' : 'Barrette', designation: nom, nom, champ: 'eq-rep' }, probs: [],
-    sections: [{ cle: 'connecteur', titre: 'Référence', resume: 'la bible des barrettes', contenu: `<div class="equip">${cartePhysique(nom, P, b)}</div>`, ouvert: true }], ok: 'Lue dans la bible des barrettes.', pied: { tableau: nom, menu: MENU_BLOC } }); }
+    sections: [{ cle: 'connecteur', titre: 'Référence', resume: 'la bible', contenu: `<div class="equip">${cartePhysique(nom, P, b)}</div>`, ouvert: true }], ok: 'Lue dans la bible : barrettes, connecteurs, prises.', pied: { tableau: nom, menu: MENU_BLOC } }); }
 
 /* ---- UN CÂBLE ------------------------------------------------------------------------------------------------------- */
 /* LA FICHE D'UN CÂBLE, pour celui qui le pose : en tête son numéro et sa ligne d'identité ; les problèmes, puis ses
@@ -1986,7 +1986,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   // sur le plan, un bout peut passer par une barrette à poser : le chemin le dit
   const p = neuf ? null : liaisonsDuPlan().find(y => y.origine && y.aPoser && sourceDe(y) === l);
   const via = cote => { if (!(p && VT_A_POSER.test(p[cote]))) return ''; let lettre = ''; try { const y = planDeBarrette(p[cote]).plan.fils.find(z => z.f.l === p); if (y) lettre = y.contact.lettre; } catch (_) { }
-    return p[cote] + ' · ' + (lettre ? lettre + ' (borne ' + (cote === 'de' ? p.borneDe : p.borneVers) + ')' : 'borne ' + (cote === 'de' ? p.borneDe : p.borneVers)); };
+    // (v86) une borne « module + lettre » (51J, ainsi que VOLTA nomme celles de sa barrette) dit déjà son contact : un seul nom
+    const bv = cote === 'de' ? p.borneDe : p.borneVers; return p[cote] + ' · ' + (/^\d+[A-Za-z]/.test(String(bv)) ? bv : lettre ? lettre + ' (borne ' + bv + ')' : 'borne ' + bv); };
   const fautes = neuf ? [] : ['de', 'vers'].map(k => coupableAuBout(l, l[k])).filter(Boolean);
   const probs = [];
   if (!l.type) probs.push({ niveau: 'att', texte: 'type de câble inconnu : la gauge ne se vérifie pas', section: '' });

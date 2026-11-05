@@ -263,7 +263,7 @@ function phraseDuBilan(x) { const L = x.cables || [], l = L[0], un = L.length ==
   if (x.types) return `Type de câble inconnu : ${x.types.join(', ')}${un ? ' (' + boutsDits(l) + ')' : ' (' + pluriel(L.length, 'câble') + ')'} — ${un ? 'sa' : 'leur'} gauge ne se vérifie pas`;
   if (x.longueurs) return (un ? `Longueur illisible : « ${l.longueurBrute} » (${boutsDits(l)})` : `${L.length} longueurs illisibles : ${[...new Set(L.map(y => '« ' + y.longueurBrute + ' »'))].slice(0, 3).join(', ')}`) + ` — VOLTA prend ${nombre(H.longueur)} m, l’hypothèse`;
   if (x.incompletes) return un ? `Liaison incomplète : ${boutsDits(l)} — gardée, ni dessinée ni vérifiée` : `${L.length} liaisons incomplètes, à un bout vide — gardées, ni dessinées ni vérifiées`;
-  const t = String(x.texte || ''), k = t.indexOf(' — '); return (x.nom ? x.nom + ' : ' : '') + (k > 0 ? t.slice(0, k) : majuscule(t)); }
+  const t = String(x.texte || ''), k = t.indexOf(' — '), s = k > 0 ? t.slice(0, k) : t; return x.nom ? x.nom + ' : ' + s : majuscule(s); }
 /* LE BILAN, dans la carte « Votre installation » : le plan ouvert (pas l'exemple) ; rien quand il n'y a rien à dire. Chaque
    ligne mène à ce qu'elle désigne (`FICHIERS.bilan` : ce que chaque bouton fait, le temps du rendu). */
 function bilanHtml() { FICHIERS.bilan = []; const V = verite(); if (!V.length || app.nom === NOM_EXEMPLE) return '';

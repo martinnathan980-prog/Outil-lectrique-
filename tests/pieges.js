@@ -5,9 +5,11 @@
 
    Le vrai fichier du lecteur ne quitte jamais son PC : on fabrique ici, depuis
    l'exemple de Volta (rien d'un vrai programme), des installations ABÎMÉES
-   comme le sont les vraies — cases vides, doublons, caractères bizarres,
-   nombres mal écrits, références inconnues, boucles, en-têtes décalés, un
-   classeur à plusieurs feuilles, un plan géant — et on lance sur chacune
+   comme le sont les vraies — cases vides, doublons, les écritures d'un vrai
+   fichier (une ligne recopiée, un repère en minuscules : v86, vérifiées à
+   part), caractères bizarres, nombres mal écrits, références inconnues,
+   boucles, en-têtes décalés, un classeur à plusieurs feuilles, un plan
+   géant — et on lance sur chacune
    l'AUTOTEST de Volta (08-autotest : chaque folio, chaque fiche et ses
    sections, chaque liste « Changer », chaque onglet, chaque document, chaque
    export). Chaque erreur, chaque fiche vide, chaque export manqué fait échouer

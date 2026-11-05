@@ -1054,7 +1054,8 @@ function allumerCircuit(nom, branche) { const sc = $('scene'), D = app.dessin; i
     vts.forEach((v, nomVT) => { const p = sc.querySelector(`path.cab[data-vt="${CSS.escape(nomVT)}"]`), b = sc.querySelector(`g.vt[data-vt="${CSS.escape(nomVT)}"] .barre`); if (!p) return;
       let versLaBarrette = true; try { const a = p.getPointAtLength(0), xb = b ? +b.getAttribute('x1') : NaN; versLaBarrette = !(Math.abs(a.x - xb) < 0.8); } catch (_) { }
       trait(p.getAttribute('d'), v.amont !== versLaBarrette, 'vt:' + nomVT); });
-    sc.appendChild(g); fluxAuZoom(sc);
+    // sous les blocs et les pastilles des barrettes (le courant passe sous « 51J », il ne l'efface pas), sur les câbles
+    sc.insertBefore(g, sc.querySelector(':scope > .vt, :scope > .comp')); fluxAuZoom(sc);
     // la barre des folios : un point de cuivre sur ceux où le circuit continue
     const ailleurs = new Set([...C.cables.keys()].map(l => String(l.plan || '')).filter(p => p && p !== String(app.plan))), strip = $('fo-strip');
     if (strip) strip.querySelectorAll('.chip').forEach(c => c.classList.toggle('ci-suite', ailleurs.has(String(c.dataset.plan)))); }

@@ -28162,7 +28162,7 @@ function ficheMasse(nom) { const fils = filsDuRepere(nom), probs = problemesDesF
 function ficheBornierAncien(nom) { const V = verite(), b = besoinsDeBarrette(nom, V);
   const P = remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme);
   return composerFiche({ type: estCoupure(nom) ? 'prise' : 'barrette', tete: { type: estCoupure(nom) ? 'prise' : 'barrette', genre: estCoupure(nom) ? 'Prise de coupure' : 'Barrette', designation: nom, nom, champ: 'eq-rep' }, probs: [],
-    sections: [{ cle: 'connecteur', titre: 'Référence', resume: 'la bible des barrettes', contenu: `<div class="equip">${cartePhysique(nom, P, b)}</div>`, ouvert: true }], ok: 'Lue dans la bible des barrettes.', pied: { tableau: nom, menu: MENU_BLOC } }); }
+    sections: [{ cle: 'connecteur', titre: 'Référence', resume: 'la bible', contenu: `<div class="equip">${cartePhysique(nom, P, b)}</div>`, ouvert: true }], ok: 'Lue dans la bible : barrettes, connecteurs, prises.', pied: { tableau: nom, menu: MENU_BLOC } }); }
 
 /* ---- UN CÂBLE ------------------------------------------------------------------------------------------------------- */
 /* LA FICHE D'UN CÂBLE, pour celui qui le pose : en tête son numéro et sa ligne d'identité ; les problèmes, puis ses
@@ -28184,7 +28184,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   // sur le plan, un bout peut passer par une barrette à poser : le chemin le dit
   const p = neuf ? null : liaisonsDuPlan().find(y => y.origine && y.aPoser && sourceDe(y) === l);
   const via = cote => { if (!(p && VT_A_POSER.test(p[cote]))) return ''; let lettre = ''; try { const y = planDeBarrette(p[cote]).plan.fils.find(z => z.f.l === p); if (y) lettre = y.contact.lettre; } catch (_) { }
-    return p[cote] + ' · ' + (lettre ? lettre + ' (borne ' + (cote === 'de' ? p.borneDe : p.borneVers) + ')' : 'borne ' + (cote === 'de' ? p.borneDe : p.borneVers)); };
+    // (v86) une borne « module + lettre » (51J, ainsi que VOLTA nomme celles de sa barrette) dit déjà son contact : un seul nom
+    const bv = cote === 'de' ? p.borneDe : p.borneVers; return p[cote] + ' · ' + (/^\d+[A-Za-z]/.test(String(bv)) ? bv : lettre ? lettre + ' (borne ' + bv + ')' : 'borne ' + bv); };
   const fautes = neuf ? [] : ['de', 'vers'].map(k => coupableAuBout(l, l[k])).filter(Boolean);
   const probs = [];
   if (!l.type) probs.push({ niveau: 'att', texte: 'type de câble inconnu : la gauge ne se vérifie pas', section: '' });
@@ -29096,7 +29097,7 @@ function phraseDuBilan(x) { const L = x.cables || [], l = L[0], un = L.length ==
   if (x.types) return `Type de câble inconnu : ${x.types.join(', ')}${un ? ' (' + boutsDits(l) + ')' : ' (' + pluriel(L.length, 'câble') + ')'} — ${un ? 'sa' : 'leur'} gauge ne se vérifie pas`;
   if (x.longueurs) return (un ? `Longueur illisible : « ${l.longueurBrute} » (${boutsDits(l)})` : `${L.length} longueurs illisibles : ${[...new Set(L.map(y => '« ' + y.longueurBrute + ' »'))].slice(0, 3).join(', ')}`) + ` — VOLTA prend ${nombre(H.longueur)} m, l’hypothèse`;
   if (x.incompletes) return un ? `Liaison incomplète : ${boutsDits(l)} — gardée, ni dessinée ni vérifiée` : `${L.length} liaisons incomplètes, à un bout vide — gardées, ni dessinées ni vérifiées`;
-  const t = String(x.texte || ''), k = t.indexOf(' — '); return (x.nom ? x.nom + ' : ' : '') + (k > 0 ? t.slice(0, k) : majuscule(t)); }
+  const t = String(x.texte || ''), k = t.indexOf(' — '), s = k > 0 ? t.slice(0, k) : t; return x.nom ? x.nom + ' : ' + s : majuscule(s); }
 /* LE BILAN, dans la carte « Votre installation » : le plan ouvert (pas l'exemple) ; rien quand il n'y a rien à dire. Chaque
    ligne mène à ce qu'elle désigne (`FICHIERS.bilan` : ce que chaque bouton fait, le temps du rendu). */
 function bilanHtml() { FICHIERS.bilan = []; const V = verite(); if (!V.length || app.nom === NOM_EXEMPLE) return '';
@@ -30489,7 +30490,8 @@ function allumerCircuit(nom, branche) { const sc = $('scene'), D = app.dessin; i
     vts.forEach((v, nomVT) => { const p = sc.querySelector(`path.cab[data-vt="${CSS.escape(nomVT)}"]`), b = sc.querySelector(`g.vt[data-vt="${CSS.escape(nomVT)}"] .barre`); if (!p) return;
       let versLaBarrette = true; try { const a = p.getPointAtLength(0), xb = b ? +b.getAttribute('x1') : NaN; versLaBarrette = !(Math.abs(a.x - xb) < 0.8); } catch (_) { }
       trait(p.getAttribute('d'), v.amont !== versLaBarrette, 'vt:' + nomVT); });
-    sc.appendChild(g); fluxAuZoom(sc);
+    // sous les blocs et les pastilles des barrettes (le courant passe sous « 51J », il ne l'efface pas), sur les câbles
+    sc.insertBefore(g, sc.querySelector(':scope > .vt, :scope > .comp')); fluxAuZoom(sc);
     // la barre des folios : un point de cuivre sur ceux où le circuit continue
     const ailleurs = new Set([...C.cables.keys()].map(l => String(l.plan || '')).filter(p => p && p !== String(app.plan))), strip = $('fo-strip');
     if (strip) strip.querySelectorAll('.chip').forEach(c => c.classList.toggle('ci-suite', ailleurs.has(String(c.dataset.plan)))); }
