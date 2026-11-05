@@ -1916,6 +1916,7 @@ Public Sub EssaiWD()
     Dim attrs As Object, enfants As Object, ordre As Collection, entete As String, espace As String, cheminXml As String, version As String
     Dim erreurs As Collection, e As Variant, ok As Boolean, k As Variant, ecrit As Boolean, dossier As String, nomDossier As String
     Dim bilan As String, premier As Boolean, i As Long, j As Long, nbFils As Boolean, classe As Boolean, nomXml As String, trouves As Collection
+    Dim permis As String, requis As String
     On Error Resume Next
     Set ws = FeuilleCreee("Essai_WD", True)
     l = 1
@@ -1990,6 +1991,44 @@ Public Sub EssaiWD()
             premier = False
         End If
     Next p
+    ' les essais « plus », pour la plus haute version : des équipements (avec et sans classe), leurs connecteurs, une paire
+    ' en ligne, un connecteur seul, un bornier, une masse, une épissure ; puis la même liste avec un WireDiagram
+    p = schemas.Item(1)
+    n = Mid$(CStr(p), InStrRev(CStr(p), "\") + 1)
+    version = Mid$(n, InStr(1, n, "Diagram", vbTextCompare) + 7)
+    If InStrRev(LCase$(version), ".xsd") > 0 Then version = Left$(version, InStrRev(LCase$(version), ".xsd") - 1)
+    version = Trim$(version)
+    Set attrs = NouveauDico()
+    Set enfants = NouveauDico()
+    Set ordre = New Collection
+    AnalyserXSD TexteDeFichier(CStr(p)), attrs, enfants, ordre, entete
+    espace = AttrXml(entete, "targetNamespace")
+    permis = PermisWD(attrs, enfants)
+    requis = AttributsRequis(attrs, enfants, "complexType cWireDiagram")
+    l = l + 1
+    EcrireLigne ws, l, Array("permis " & version, "attributs écrits", Replace(Mid$(permis, 2), "|", ", ") & " ; WireDiagram exige : " & Replace(Mid$(requis, 2), "|", ", "))
+    For j = 0 To 1
+        nomXml = IIf(j = 0, "Essai-WD-plus-", "Essai-WD-plus-diagramme-") & version & ".xml"
+        If j = 1 And (InStr(1, permis, "|WireDiagram|") = 0 Or Not DiagrammePossible(requis)) Then
+            l = l + 1
+            EcrireLigne ws, l, Array("VERDICT", nomXml, "PAS ÉCRIT : le schéma n'a pas de WireDiagram, ou il exige " & Replace(Mid$(requis, 2), "|", ", "))
+        Else
+            cheminXml = dossier & "\" & nomXml
+            ecrit = EcrireFichierTexte(cheminXml, XmlEssaiWDPlus(version, espace, permis, j = 1))
+            Set erreurs = New Collection
+            ok = False
+            If ecrit Then ok = ValiderXmlParXsd(cheminXml, CStr(p), espace, erreurs)
+            l = l + 1
+            EcrireLigne ws, l, Array("VERDICT", nomXml, IIf(Not ecrit, "PAS ÉCRIT (dossier « " & nomDossier & " » en lecture seule ?)", _
+                IIf(ok, "VALIDE (schéma " & n & ")", "REFUSÉ : " & erreurs.Count & " erreur(s), ci-dessous")))
+            ws.Rows(l).Font.Bold = True
+            For Each e In erreurs
+                l = l + 1
+                EcrireLigne ws, l, Array("erreur", nomXml, MasquerChemins(CStr(e)))
+            Next e
+            bilan = bilan & ", " & IIf(j = 0, "plus ", "plus-diagramme ") & IIf(ok, "VALIDE", "REFUSÉ")
+        End If
+    Next j
     l = l + 1
     EcrireLigne ws, l, Array("dossier", nomDossier, "les fichiers Essai-WD-*.xml y sont (" & schemas.Count & " schéma(s) Wiring Diagram trouvé(s))")
     ws.Columns("A:B").AutoFit
@@ -1999,6 +2038,154 @@ Public Sub EssaiWD()
     Dialogue "EssaiWD : " & bilan & "." & vbCrLf & vbCrLf & "Les fichiers sont dans le dossier « " & nomDossier & " »." & vbCrLf & vbCrLf & _
         "Clique sur OK, puis prends en photo la feuille Essai_WD (le haut).", vbOKOnly + vbInformation, "Pilote SEE"
 End Sub
+
+' Les attributs que le schéma permet pour l'essai « plus », en une chaîne
+' « |Class|ParentTag|... | » : ceux d'un ConnectiveDevice (élément local, ou
+' type cConnectiveDevice), ParentTag d'une extrémité (ExtParentTag), Class
+' d'un fil (WireClass), WiresNumber du faisceau, le WireDiagram (sous la
+' racine) et ses Tag, Solution et Version.
+Private Function PermisWD(ByVal attrs As Object, ByVal enfants As Object) As String
+    Dim s As String, a As Variant, ctx As String
+    s = "|"
+    ctx = "élément ConnectiveDevice"
+    If Len(ListeDe(attrs, ctx)) = 0 And Len(ListeDe(enfants, ctx)) = 0 Then ctx = "complexType cConnectiveDevice"
+    For Each a In Array("Class", "ParentTag", "MatingTag", "SymbolFamily", "SymbolName", "Description")
+        If AttributPermis(attrs, enfants, ctx, CStr(a)) Then s = s & CStr(a) & "|"
+    Next a
+    If AttributPermis(attrs, enfants, "complexType cWireExtremity", "ParentTag") Then s = s & "ExtParentTag|"
+    If AttributPermis(attrs, enfants, "complexType cWire", "Class") Then s = s & "WireClass|"
+    If AttributPermis(attrs, enfants, "complexType cWireHarness", "WiresNumber") Then s = s & "WiresNumber|"
+    If InStr(1, ListeDe(enfants, "élément IGE-XAO_WIRE_HARNESS"), "WireDiagram") > 0 Then s = s & "WireDiagram|"
+    For Each a In Array("Tag", "Solution", "Version")
+        If AttributPermis(attrs, enfants, "complexType cWireDiagram", CStr(a)) Then s = s & "WD" & CStr(a) & "|"
+    Next a
+    PermisWD = s
+End Function
+
+' Les attributs obligatoires (« * ») d'un contexte, ses groupes d'attributs et
+' le type qu'il étend compris : « |Tag|Solution| ».
+Private Function AttributsRequis(ByVal attrs As Object, ByVal enfants As Object, ByVal ctx As String) As String
+    Dim aVoir As Collection, c As String, a As Variant, s As String, r As String, tours As Long, i As Long
+    Set aVoir = New Collection
+    aVoir.Add ctx
+    Do While aVoir.Count > 0 And tours < 20
+        tours = tours + 1
+        c = aVoir.Item(1)
+        aVoir.Remove 1
+        For Each a In Split(ListeDe(attrs, c), ", ")
+            s = CStr(a)
+            i = InStr(s, "*")
+            If i > 1 And Left$(s, 1) <> "=" Then
+                If InStr(Left$(s, i - 1), " ") = 0 And InStr(Left$(s, i - 1), "(") = 0 Then r = r & "|" & Left$(s, i - 1)
+            End If
+        Next a
+        For Each a In Split(ListeDe(enfants, c), ", ")
+            s = CStr(a)
+            If Left$(s, 15) = "attributeGroup " Then
+                aVoir.Add s
+            ElseIf Left$(s, 13) = "extension de " Then
+                aVoir.Add "complexType " & Mid$(s, 14)
+            End If
+        Next a
+    Loop
+    AttributsRequis = r & "|"
+End Function
+
+' Vrai si l'essai sait remplir chaque attribut obligatoire du WireDiagram
+' (Tag, Solution, Version).
+Private Function DiagrammePossible(ByVal requis As String) As Boolean
+    Dim a As Variant
+    DiagrammePossible = True
+    For Each a In Split(requis, "|")
+        If Len(CStr(a)) > 0 Then
+            If CStr(a) <> "Tag" And CStr(a) <> "Solution" And CStr(a) <> "Version" Then DiagrammePossible = False
+        End If
+    Next a
+End Function
+
+' Un attribut écrit seulement si le schéma le permet (cle dans permis).
+Private Function AttrPermis(ByVal permis As String, ByVal cle As String, ByVal nom As String, ByVal valeur As String) As String
+    If InStr(1, permis, "|" & cle & "|") > 0 Then AttrPermis = " " & nom & "=""" & valeur & """"
+End Function
+
+' Un ConnectiveDevice de l'essai « plus » ; broches : « 1;2 » (vide : aucune).
+Private Function DevWD(ByVal tag As String, ByVal typ As String, ByVal classe As String, ByVal parent As String, ByVal connectivite As String, _
+        ByVal mating As String, ByVal desc As String, ByVal famille As String, ByVal symbole As String, ByVal broches As String, ByVal permis As String) As String
+    Dim s As String, b As Variant
+    s = "      <ConnectiveDevice Tag=""" & tag & """ Type=""" & typ & """"
+    If Len(connectivite) > 0 Then s = s & " ConnectivityType=""" & connectivite & """"
+    If Len(mating) > 0 Then s = s & AttrPermis(permis, "MatingTag", "MatingTag", mating)
+    If Len(parent) > 0 Then s = s & AttrPermis(permis, "ParentTag", "ParentTag", parent)
+    If Len(classe) > 0 Then s = s & AttrPermis(permis, "Class", "Class", classe)
+    If Len(famille) > 0 Then s = s & AttrPermis(permis, "SymbolFamily", "SymbolFamily", famille)
+    If Len(symbole) > 0 Then s = s & AttrPermis(permis, "SymbolName", "SymbolName", symbole)
+    If Len(desc) > 0 Then s = s & AttrPermis(permis, "Description", "Description", desc)
+    If Len(broches) = 0 Then
+        DevWD = s & "/>" & vbCrLf
+        Exit Function
+    End If
+    s = s & ">" & vbCrLf
+    For Each b In Split(broches, ";")
+        s = s & "        <Pin Tag=""" & CStr(b) & """/>" & vbCrLf
+    Next b
+    DevWD = s & "      </ConnectiveDevice>" & vbCrLf
+End Function
+
+' Une extrémité de fil de l'essai « plus » ; appareil : l'équipement du
+' connecteur (ParentTag), s'il en a un et si le schéma le permet.
+Private Function BoutWD(ByVal fil As String, ByVal rang As String, ByVal broche As String, ByVal connecteur As String, ByVal appareil As String, _
+        ByVal permis As String) As String
+    Dim s As String
+    s = "      <WireExtremity ID=""" & fil & "-" & rang & """ WireTag=""" & fil & """ Pin=""" & broche & """ PinParent=""" & connecteur & """"
+    If Len(appareil) > 0 Then s = s & AttrPermis(permis, "ExtParentTag", "ParentTag", appareil)
+    BoutWD = s & "/>" & vbCrLf
+End Function
+
+' L'essai « plus » : le faisceau ESSAI_PLUS. EQ1 (équipement, classe AC,
+' symbole 000 / 0001 : la boîte noire vue dans SEE) et son connecteur EQ1-A ;
+' EQ2 et EQ2-A, sans classe ; la paire en ligne P2 / J2 (MatingTag) ; P3, seul
+' ; le bornier TB1, la masse GB1, l'épissure SP1 ; six fils entre eux.
+' diagramme : un WireDiagram WD_ESSAI avant le faisceau.
+Private Function XmlEssaiWDPlus(ByVal version As String, ByVal espace As String, ByVal permis As String, ByVal diagramme As Boolean) As String
+    Dim s As String, w As Variant
+    s = "<?xml version=""1.0"" encoding=""UTF-8""?>" & vbCrLf
+    s = s & "<IGE-XAO_WIRE_HARNESS" & IIf(Len(espace) > 0, " xmlns=""" & espace & """", "") & " EDB_InstanceID=""1"" XSDversion=""" & version & _
+        """ LengthUnit=""millimeter"">" & vbCrLf
+    If diagramme Then
+        s = s & "  <WireDiagram" & AttrPermis(permis, "WDTag", "Tag", "WD_ESSAI") & AttrPermis(permis, "WDSolution", "Solution", "1") & _
+            AttrPermis(permis, "WDVersion", "Version", "1") & "/>" & vbCrLf
+    End If
+    s = s & "  <WireHarness Tag=""ESSAI_PLUS""" & AttrPermis(permis, "WiresNumber", "WiresNumber", "6") & ">" & vbCrLf
+    s = s & "    <ConnectiveDevicesList>" & vbCrLf
+    s = s & DevWD("EQ1", "Equipment", "AC", "", "", "", "EQUIPEMENT 1 AVEC CLASSE", "000", "0001", "", permis)
+    s = s & DevWD("EQ1-A", "Connector", "AC", "EQ1", "Receptacle", "", "", "", "", "1;2", permis)
+    s = s & DevWD("EQ2", "Equipment", "", "", "", "", "EQUIPEMENT 2 SANS CLASSE", "", "", "", permis)
+    s = s & DevWD("EQ2-A", "Connector", "", "EQ2", "Receptacle", "", "", "", "", "1;2", permis)
+    s = s & DevWD("P2", "Connector", "AC", "", "Plug", "J2", "", "", "", "1;2", permis)
+    s = s & DevWD("J2", "Connector", "AC", "", "Receptacle", "P2", "", "", "", "1;2", permis)
+    s = s & DevWD("P3", "Connector", "AC", "", "Plug", "", "", "", "", "1;2", permis)
+    s = s & DevWD("TB1", "TB", "AC", "", "", "", "", "", "", "1;2", permis)
+    s = s & DevWD("GB1", "GB", "AC", "", "", "", "", "", "", "1", permis)
+    s = s & DevWD("SP1", "Splice", "AC", "", "", "", "", "", "", "1", permis)
+    s = s & "    </ConnectiveDevicesList>" & vbCrLf
+    s = s & "    <WiresList>" & vbCrLf
+    For Each w In Array("W11", "W12", "W13", "W14", "W15", "W16")
+        s = s & "      <Wire Tag=""" & CStr(w) & """ Wire_Type=""WIRE"" Gauge=""22"" Length=""1000"" Length_Status=""Manual"" Type=""Normal"" Segregation=""1""" & _
+            AttrPermis(permis, "WireClass", "Class", "A") & "/>" & vbCrLf
+    Next w
+    s = s & "    </WiresList>" & vbCrLf
+    s = s & "    <WiresExtremitiesList>" & vbCrLf
+    s = s & BoutWD("W11", "1", "1", "EQ1-A", "EQ1", permis) & BoutWD("W11", "2", "1", "P2", "", permis)
+    s = s & BoutWD("W12", "1", "2", "EQ1-A", "EQ1", permis) & BoutWD("W12", "2", "1", "TB1", "", permis)
+    s = s & BoutWD("W13", "1", "1", "J2", "", permis) & BoutWD("W13", "2", "1", "EQ2-A", "EQ2", permis)
+    s = s & BoutWD("W14", "1", "2", "J2", "", permis) & BoutWD("W14", "2", "1", "GB1", "", permis)
+    s = s & BoutWD("W15", "1", "1", "P3", "", permis) & BoutWD("W15", "2", "1", "SP1", "", permis)
+    s = s & BoutWD("W16", "1", "2", "TB1", "", permis) & BoutWD("W16", "2", "2", "EQ2-A", "EQ2", permis)
+    s = s & "    </WiresExtremitiesList>" & vbCrLf
+    s = s & "  </WireHarness>" & vbCrLf
+    s = s & "</IGE-XAO_WIRE_HARNESS>" & vbCrLf
+    XmlEssaiWDPlus = s
+End Function
 
 ' Vrai si le schéma permet l'attribut nom dans le contexte ctx : ses
 ' attributs, ceux des groupes d'attributs qu'il cite et ceux du type qu'il
