@@ -118,6 +118,20 @@ s'écrit ici, le jour même.
   geste annulable, le message propose « Défaire ». La nomenclature s'appelle **LPA** partout.
 - **Les routes** se distinguent par des teintes froides de catégorie, jamais rouge, ambre, vert ni fuchsia ; sur le plan, un
   bloc qui a un problème porte un bord rouge ou ambre (à l'écran seulement, jamais à l'export).
+- **Modifier, trois sortes bien séparées** (v85) : **ce qui vient de votre fichier** (type, gauge, longueur, route, part
+  number, calibre écrit) se lit sans saisie — « à changer dans votre fichier », une seule source ; seules les **propositions
+  justifiées de VOLTA** (« Tout régler », « Passer en DR16 ») restent à un clic et vont dans l'Excel corrigé, qui devient le
+  nouveau fichier ; **les choix de VOLTA** (module, raccord, contacts, arrangement) se règlent ici, en **Automatique / Manuel**
+  bien visible ; **l'information** (calculs) se lit, sans geste.
+- **Une barrette, c'est plusieurs modules** (v85) : sa fiche la dessine entière, les modules alignés sur leur rail comme la
+  vraie pièce, chacun avec ses lettres ; une borne de barrette se dit comme dans ses fichiers, **module + lettre** (51B).
+- **Sur le plan, rien n'est caché** : les bornes des équipements et des barrettes se lisent sans zoomer ni survoler, et une
+  borne n'apparaît qu'une fois.
+- **Une fiche qui s'ouvre sur un autre objet commence à L'essentiel** (pas sur l'onglet de l'objet d'avant).
+- **Le dessin des folios montre où il en est** : chaque folio dit s'il est prêt.
+- **Ce qui demande une action se voit d'abord** : un problème à régler a l'air d'une action (son geste en évidence) ; un point
+  d'information reste calme.
+- **Dans un tableau, une mesure a toujours son anneau** quand elle a une valeur : jamais l'un avec, l'autre sans.
 
 ## La méthode
 
