@@ -353,7 +353,7 @@ function problemesDuCable(l) { if (!l) return []; const s = l.origine ? (typeof 
     out.push({ niveau: x.niveau, texte: majuscule(sansLeCable(x.texte, s)), section: 'fils', genre: x.genre, repere: x.nom || '', gestes: gestesDuPoint(x), point: x }); });
   const cb = disjoncteurDuCable(s), c = cb ? causeDuDisjoncteur(cb) : null;
   if (c) out.push({ niveau: 'att', texte: c.mot, bulle: c.bulle, section: 'fils', genre: 'calibre', repere: cb, cause: c,
-    gestes: [{ mot: motToutRegler(c), aide: 'Le calibre que VOLTA retient s’écrit dans l’installation, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(cb), principal: true },
+    gestes: [{ mot: motToutRegler(c), aide: 'Le calibre que VOLTA retient part dans l’Excel corrigé, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(cb), principal: true },
       { mot: 'Voir ' + cb, aide: 'Sa fiche : la courbe, le profil, la décision', faire: () => allerAuControle({ nom: cb, texte: '', section: 'disjoncteur', plan: plansDuRepere(cb).sort(triNaturel)[0] || '' }) }] });
   return out.sort((a, b) => (a.niveau === 'ko' ? 0 : 1) - (b.niveau === 'ko' ? 0 : 1)); }
 /* LES GESTES D'UN POINT (v73, l'ingénieur, n° 8 : « Ce qu'il faut faire » donne le geste concret, jamais un conseil faux) :
@@ -362,7 +362,7 @@ function problemesDuCable(l) { if (!l) return []; const s = l.origine ? (typeof 
 function gestesDuPoint(x) { if (!x) return []; const out = [];
   if (x.genre === 'pn' && x.nom) (x.pns || []).forEach((pn, i) => out.push({ mot: 'Unifier sur ' + pn, aide: `Toutes les liaisons de ${x.nom} prennent ${pn} — Ctrl+Z le défait`, faire: () => unifierPartNumber(x.nom, pn), principal: i === 0 }));
   const c = x.nom && estDisjoncteur(x.nom) && x.genre !== 'pn' ? causeDuDisjoncteur(x.nom) : null;
-  if (c) out.push({ mot: motToutRegler(c), aide: 'Le calibre que VOLTA retient s’écrit dans l’installation, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(x.nom), principal: !out.length });
+  if (c) out.push({ mot: motToutRegler(c), aide: 'Le calibre que VOLTA retient part dans l’Excel corrigé, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(x.nom), principal: !out.length });
   if (x.genre === 'aposer' && x.nom) out.push({ mot: 'Lui donner son repère', aide: 'Elle prend le repère que VOLTA propose (la suite de la barrette la plus proche) — Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes([x.nom]), principal: !out.length });
   if (x.tableau == null && x.nom) out.push({ mot: 'Voir ' + x.nom, aide: 'Sa fiche, sur son folio, à la section qui le démontre', faire: () => allerAuControle(x), principal: !out.length });
   else if (x.tableau != null) out.push({ mot: 'Voir les liaisons', aide: 'L’onglet Liaisons du récapitulatif, sur ce qu’il faut reprendre', faire: () => allerAuControle(x), principal: !out.length });
@@ -394,7 +394,7 @@ function gesteDuGenre(g) { const xs = g.lignes.flatMap(l => l.xs);
   if (g.genre === 'profil') return { mot: 'Écrire les profils', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux sans profil de charge, la colonne Permanent à écrire', faire: () => ouvrirOngletFiltre('disjoncteurs', ['sansprofil'], ['profil']) };
   if (g.genre === 'pn' && g.lignes.length === 1) { const G = gestesDuPoint(g.lignes[0].xs[0])[0]; if (G) return { mot: G.mot, aide: G.aide, faire: G.faire }; }
   if (g.genre === 'calibre' || g.genre === 'protection' || g.genre === 'pn') return { mot: 'Voir les disjoncteurs', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux qui ont quelque chose à reprendre', faire: () => ouvrirOngletFiltre('disjoncteurs', ['probleme']) };
-  if (g.genre === 'chute') return xs.every(x => /hypothèse/.test(x.texte)) ? { mot: 'Écrire les longueurs', aide: 'Ces chutes se calculent sur des longueurs supposées : l’onglet Liaisons, les câbles sans longueur dans l’installation', faire: () => ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout') }
+  if (g.genre === 'chute') return xs.every(x => /hypothèse/.test(x.texte)) ? { mot: 'Écrire les longueurs', aide: 'Ces chutes se calculent sur des longueurs supposées : l’onglet Liaisons, les câbles sans longueur dans votre fichier', faire: () => ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout') }
     : { mot: 'Voir les câbles', aide: 'L’onglet Liaisons du récapitulatif : les liaisons à reprendre', faire: () => ouvrirOngletFiltre('liaisons', ['probleme'], null, 'tout') };
   return null; }
 // un onglet du récapitulatif, ses puces pressées (et rien d'autre), des colonnes en plus, la portée

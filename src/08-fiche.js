@@ -622,7 +622,7 @@ function protectionDuCable(l, x) { const out = { probs: [], cause: null, calEcri
   // la charge et la chute du câble sont déjà ses lignes)
   const garde = p => !!p && (!!p.cause || /^(protection|contact|calibre|cause)$/.test(p.genre || '') || /protég|contact taille|calibre|retest|installation/.test(p.texte || ''));
   let causeDeC = false;
-  if (Array.isArray(deC)) deC.filter(garde).forEach(p => { if (p.cause || /retest|de l’installation/.test(p.texte || '')) causeDeC = true; out.probs.push({ niveau: p.niveau === 'ko' ? 'ko' : 'att', texte: p.texte, section: p.section || 'fils' }); });
+  if (Array.isArray(deC)) deC.filter(garde).forEach(p => { if (p.cause || /retest|de l’installation|de votre fichier/.test(p.texte || '')) causeDeC = true; out.probs.push({ niveau: p.niveau === 'ko' ? 'ko' : 'att', texte: p.texte, section: p.section || 'fils' }); });
   // (jugé sous le calibre ÉCRIT : tant que l'outil propose un autre calibre sans qu'il soit écrit, celui du retest — jamais le 15 A fantôme)
   else { const nonEcrit = typeof propositionNonEcrite === 'function' && propositionNonEcrite(d) && d.pn > 0, cal = nonEcrit ? d.pn : d.calibre, du = nonEcrit ? ' de l’installation' : '';
     let f = (d.fils || []).find(y => y.l === l || (y.cable && l.cable && y.cable === l.cable && y.type === l.type));
@@ -640,7 +640,7 @@ function protectionDuCable(l, x) { const out = { probs: [], cause: null, calEcri
     if (k === 'declenche' || k === 'juste') { out.calEcrit = d.pn;
       const xs = typeof filsDuMeilleur === 'function' && d.calibre === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [], ce = xs.find(p => p.f.l === l);
       out.cause = { cb, d, k, xs, ce };
-      if (!causeDeC) out.probs.push({ niveau: 'ko', texte: `${cb} : le ${amperes(d.pn)} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')} — il protège ce câble ; VOLTA propose ${amperes(d.calibre)}${ce ? ', ce qui demande ' + ce.x.propose + ' ici' : ''}`, section: 'fils', viser: undefined }); } }
+      if (!causeDeC) out.probs.push({ niveau: 'ko', texte: `${cb} : le ${amperes(d.pn)} de votre fichier ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')} — il protège ce câble ; VOLTA propose ${amperes(d.calibre)}${ce ? ', ce qui demande ' + ce.x.propose + ' ici' : ''}`, section: 'fils', viser: undefined }); } }
   return out; }
 /* La chaîne de cause, en tête de la fiche du câble (le technicien, n° 1) : ce que fait le disjoncteur, ce que VOLTA propose
    et ce que ça demande ; « Tout régler » (le même geste que la carte de décision du disjoncteur, `deciderCalibre`),
@@ -655,7 +655,7 @@ function coutDuType(l, type) { const N = app.norme, a = l && l.type ? cableDuTyp
 function causeDuCable(l, prot, fin) { const c = prot && prot.cause; if (!c) return '';
   const { cb, d, k, xs, ce } = c, types = [...new Set(xs.map(p => p.x.propose))], nom = 'ce câble';
   const tout = `Tout régler : ${cb} en ${amperes(d.calibre)}${xs.length ? ' et ' + (xs.length > 1 ? xs.length + ' câbles' : '1 câble') + (types.length === 1 ? ' en ' + types[0] : ' grossis') : ''}`;
-  const phrase = `<b class="id">${esc(cb)}</b> : le ${esc(amperes(d.pn))} de l’installation ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}, et il protège ${esc(nom)}. VOLTA propose <b>${esc(amperes(d.calibre))}</b>${ce ? `, ce qui demande <b class="id">${esc(ce.x.propose)}</b> ici${(m => m ? ` <span class="fi-cout">(${esc(m)})</span>` : '')(coutDuType(l, ce.x.propose))}` : ''}.`;
+  const phrase = `<b class="id">${esc(cb)}</b> : le ${esc(amperes(d.pn))} de votre fichier ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}, et il protège ${esc(nom)}. VOLTA propose <b>${esc(amperes(d.calibre))}</b>${ce ? `, ce qui demande <b class="id">${esc(ce.x.propose)}</b> ici${(m => m ? ` <span class="fi-cout">(${esc(m)})</span>` : '')(coutDuType(l, ce.x.propose))}` : ''}.`;
   const seul = fin ? `<button type="button" class="btn papier fi-reparer" data-reparer="${escA(cleFil(l))}" data-type="${escA(fin.type)}" data-bulle="${escA(majuscule(fin.pourquoi) + ' : ' + fin.type + (coutDuType(l, fin.type) ? ' (' + coutDuType(l, fin.type) + ')' : '') + ' — ' + cb + ' garde son ' + amperes(d.pn) + ' ; « Défaire » le rend')}">Seulement ${esc(nom)} : ${esc(fin.type)}</button>` : '';
   return `<section class="fi-cause ko" aria-label="${escA('La cause : ' + cb)}"><p class="fi-cause-p">${insecable(phrase)}</p><div class="fi-cause-gestes">`
     + `<button type="button" class="btn cuivre" data-tout-regler="${escA(cb)}" data-bulle="${escA('Écrit dans l’installation : ' + ((d.meilleur || {}).pn && d.meilleur.calibre === d.calibre ? d.meilleur.pn : amperes(d.calibre)) + (xs.length ? ', et ' + xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + ' — une seule entrée d’historique, Ctrl+Z défait le tout')}">${esc(tout)}</button>${seul}`

@@ -1932,9 +1932,9 @@ function distanceFrappe(a, b, max) { if (Math.abs(a.length - b.length) > max) re
    par son type et ses deux bouts) : « W-101 », le numéro de son Excel, trouve le câble, montré « DR24 · 210SP1:B12 →
    667VT2:51A », et la ligne dit d'où vient la trouvaille (« n° W-101 de votre fichier ») — sans elle, « w10 » donnerait dix
    lignes qu'on ne saurait départager. `nom` garde le numéro : c'est par lui qu'`aller` retrouve le câble sur son folio. */
-const boutsDuCable = l => bornePlusRepere(l.de, l.borneDe) + ' → ' + bornePlusRepere(l.vers, l.borneVers);
+const boutsTrouves = l => bornePlusRepere(l.de, l.borneDe) + ' → ' + bornePlusRepere(l.vers, l.borneVers);
 const candidatCable = (l, r, propose) => SANS_NUMERO_DE_CABLE
-  ? { type: 'fil', nom: l.cable, aff: (l.type ? l.type + ' · ' : '') + boutsDuCable(l), des: 'n° ' + l.cable + ' de votre fichier', r, propose }
+  ? { type: 'fil', nom: l.cable, aff: (l.type ? l.type + ' · ' : '') + boutsTrouves(l), des: 'n° ' + l.cable + ' de votre fichier', r, propose }
   : { type: 'fil', nom: l.cable, des: l.de + ' → ' + l.vers, r, propose };
 /* (v86, l'audit G4) LE CALIBRE : « calibre », « calibres » (trois lettres au moins : « cal »), « calibre 10 », « 7,5 A » —
    les disjoncteurs, chacun avec son calibre (« 102CB1 · calibre 10 A ») ; un nombre ne garde que ceux de ce calibre.

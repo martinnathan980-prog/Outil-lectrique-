@@ -184,9 +184,9 @@ const valT = (f, t, opt) => val(f, t == null || t === '' ? '' : esc(t), opt);
 /* CE QUI VIENT DU FICHIER SE LIT (v86 — la charte v85 : « une seule source ») : pas l'air d'un champ, pas de saisie ; la case
    garde sa place dans le parcours du clavier (les flèches), et un double-clic, Entrée ou F2 disent dans une bulle qu'elle se
    change dans le fichier (`signalerFichier`). `titre` : sa bulle de survol, quand elle explique quelque chose. */
-const lu = (f, html, opt) => { opt = opt || {}; const vide = html == null || html === '';
+const luFichier = (f, html, opt) => { opt = opt || {}; const vide = html == null || html === '';
   return `<span class="rc-v rc-lu${opt.cls ? ' ' + opt.cls : ''}${vide ? ' rc-vide' : ''}" data-f="${escA(f)}" tabindex="-1"${opt.titre ? ` data-bulle="${escA(opt.titre)}"` : ''}>${vide ? '' : html}</span>`; };
-const luT = (f, t, opt) => lu(f, t == null || t === '' ? '' : esc(t), opt);
+const luFichierT = (f, t, opt) => luFichier(f, t == null || t === '' ? '' : esc(t), opt);
 // le nom de ce qu'une case du fichier porte, pour la bulle qui dit où le changer
 const MOTS_DU_FICHIER = { de: 'Ce repère', vers: 'Ce repère', rep: 'Ce repère', borneDe: 'Cette borne', borneVers: 'Cette borne', type: 'Ce type de câble', longueur: 'Cette longueur',
   route: 'Cette route', pnDe: 'Ce part number', pnVers: 'Ce part number', 'pn:': 'Ce part number', plan: 'Ce folio', harness: 'Ce harness', fwd: 'Ce dessin', descriptionDe: 'Cette description',
@@ -243,7 +243,7 @@ const premierFolio = l => (modeFolioMemo() === 'auto' ? (foliosParSourceMemo().g
 // un bout : le repère et sa borne, en chasse fixe ; une masse, un renvoi le disent en un mot ; le repère du bloc choisi
 // sur le plan se surligne (`ici`)
 const bout = (l, c) => { const de = c === 'de', r = l[c], b = l[de ? 'borneDe' : 'borneVers'], nat = estMasse(r) ? 'masse' : estRenvoi(r) ? 'renvoi' : '', ici = !!r && !!app.cible && app.cible.type === 'bloc' && app.cible.nom === r;
-  return `<span class="rc-bout${ici ? ' ici' : ''}">${luT(c, r, { cls: 'rc-r' })}<i class="rc-sep${b ? '' : ' rc-vide'}">:</i>${luT(de ? 'borneDe' : 'borneVers', b, { cls: 'rc-b' })}${nat ? `<small class="rc-nat">${nat}</small>` : ''}</span>`; };
+  return `<span class="rc-bout${ici ? ' ici' : ''}">${luFichierT(c, r, { cls: 'rc-r' })}<i class="rc-sep${b ? '' : ' rc-vide'}">:</i>${luFichierT(de ? 'borneDe' : 'borneVers', b, { cls: 'rc-b' })}${nat ? `<small class="rc-nat">${nat}</small>` : ''}</span>`; };
 // une valeur du fichier qu'une proposition de VOLTA a changée (« Passer en DR16 ») : « ↺ » rend celle de votre fichier
 const rendu = (l, f) => origineChamp(l, f) === 'main' && l.avant && l.avant[f] ? rond(f, 'celle de votre fichier (' + l.avant[f] + ')') : '';
 /* LE CONTACT D'UN BOUT, UN CHOIX DE VOLTA (la table des contacts, à la taille et au sexe de la cavité, à la gauge du câble) :
@@ -260,11 +260,11 @@ const motEtatFil = r => { const n = r.F().etat.niveau; return n ? MOTS_ETAT[n] :
 const celluleCable = r => { const l = r.l, g = r.F().jauge, c = routes().get(l.route || '') || '', dit = typeDitJauge(l.type, g);
   const bulle = (l.route ? 'Route ' + l.route : 'Sans route') + (g != null ? ' · gauge ' + g + ' AWG' : ' · gauge inconnue');
   return `<span class="rc-cable${c ? '' : ' sans-route'}${g == null ? ' sans-jauge' : ''}"${c ? ` style="--c:${c}"` : ''} data-bulle="${escA(bulle)}"><i class="rc-fleche" aria-hidden="true"></i>`
-    + `<span class="rc-cable-type${l.type || (g != null && !dit) ? '' : ' vide'}">${luT('type', l.type, { cls: 'rc-type' })}${g != null && !dit ? `<i class="rc-jauge">${g}</i>` : ''}${rendu(l, 'type')}</span></span>`; };
+    + `<span class="rc-cable-type${l.type || (g != null && !dit) ? '' : ' vide'}">${luFichierT('type', l.type, { cls: 'rc-type' })}${g != null && !dit ? `<i class="rc-jauge">${g}</i>` : ''}${rendu(l, 'type')}</span></span>`; };
 // la longueur : celle de votre fichier ; sans elle, « ≈ » et l'hypothèse de la simulation, que la bulle dit où écrire
 const celluleLongueur = r => { const l = r.l, o = l.longueur > 0 ? origineChamp(l, 'longueur') : 'hyp';
   const bulle = o === 'hyp' ? 'Votre fichier ne donne pas sa longueur : VOLTA suppose ' + metres(H_().longueur) + ' m (Hypothèses) — à écrire dans votre fichier' : '';
-  return `<span class="rc-mesure${o === 'hyp' ? ' rc-suppose' : ''}">${chiffre(lu('longueur', metres(r.F().L), { cls: 'rc-n', titre: bulle }), 'm')}`
+  return `<span class="rc-mesure${o === 'hyp' ? ' rc-suppose' : ''}">${chiffre(luFichier('longueur', metres(r.F().L), { cls: 'rc-n', titre: bulle }), 'm')}`
     // « supposée » une fois : dans l'en-tête quand toutes les longueurs montrées le sont (la note de sa colonne), sinon sur
     // chaque ligne qui l'est — l'exception se voit, la règle ne se répète pas
     + `${o === 'hyp' ? (RECAP.notes.longueur ? '' : orig('hyp', bulle, 'supposée')) : o === 'main' ? rond('longueur', l.avant && l.avant.longueur > 0 ? 'celle de votre fichier (' + metres(l.avant.longueur) + ' m)' : 'l’hypothèse (' + metres(H_().longueur) + ' m)') : ''}</span>`; };
@@ -325,7 +325,7 @@ const COLONNES_LIAISONS = [
   // en plus, au choix — (v84) l'intensité et la chute d'office dès que la feuille est large, les contacts à sertir sur une
   // très large (`large`, `colonnesVues`)
   { k: 'jauge', t: 'Gauge', cls: 'rc-c-n', option: true, g: 'Le câble', html: r => chiffre(pastilleJauge(r.F().jauge)), tri: r => r.F().jauge == null ? 99 : r.F().jauge, texte: r => r.F().jauge != null ? r.F().jauge + ' AWG' : '' },
-  { k: 'route', t: 'Route', option: true, g: 'Le câble', html: r => `<span class="rc-route">${traitRoute(routes().get(r.l.route || ''))}${luT('route', r.l.route)}${rendu(r.l, 'route')}</span>`, tri: r => r.l.route, texte: r => r.l.route },
+  { k: 'route', t: 'Route', option: true, g: 'Le câble', html: r => `<span class="rc-route">${traitRoute(routes().get(r.l.route || ''))}${luFichierT('route', r.l.route)}${rendu(r.l, 'route')}</span>`, tri: r => r.l.route, texte: r => r.l.route },
   // (v86, B7) l'intensité et la chute au même instant (`instantsDuFil`) — à l'écran, au tri et dans le CSV
   { k: 'intensite', t: 'Intensité', option: true, large: 1, g: 'Le câble', cls: 'rc-c-int', html: celluleIntensite,
     tri: r => { const s = instantsDuFil(r.F()).le; return s.admis ? s.i / s.admis : s.i != null ? s.i / 1000 : -1; },
@@ -337,15 +337,15 @@ const COLONNES_LIAISONS = [
     vide: r => { const s = instantsDuFil(r.F()).le; return s.u == null || !isFinite(s.u); } },
   { k: 'contactDe', t: 'Contact de', option: true, large: 2, g: 'Les deux bouts', cls: 'rc-c-ct', html: r => contactH(r.l, r.F(), 'de'), tri: r => (r.F().de || {}).ref || '', texte: r => (r.F().de || {}).ref || '', vide: r => !(r.F().de && r.F().de.ref) },
   { k: 'contactVers', t: 'Contact vers', option: true, large: 2, g: 'Les deux bouts', cls: 'rc-c-ct', html: r => contactH(r.l, r.F(), 'vers'), tri: r => (r.F().vers || {}).ref || '', texte: r => (r.F().vers || {}).ref || '', vide: r => !(r.F().vers && r.F().vers.ref) },
-  { k: 'pnDe', t: 'Part number de', option: true, g: 'Les deux bouts', html: r => estMasse(r.l.de) || estRenvoi(r.l.de) ? rien : luT('pnDe', r.l.pnDe, { cls: 'rc-pn' }) + rendu(r.l, 'pnDe'), tri: r => r.l.pnDe || '', texte: r => r.l.pnDe || '' },
-  { k: 'pnVers', t: 'Part number vers', option: true, g: 'Les deux bouts', html: r => estMasse(r.l.vers) || estRenvoi(r.l.vers) ? rien : luT('pnVers', r.l.pnVers, { cls: 'rc-pn' }) + rendu(r.l, 'pnVers'), tri: r => r.l.pnVers || '', texte: r => r.l.pnVers || '' },
+  { k: 'pnDe', t: 'Part number de', option: true, g: 'Les deux bouts', html: r => estMasse(r.l.de) || estRenvoi(r.l.de) ? rien : luFichierT('pnDe', r.l.pnDe, { cls: 'rc-pn' }) + rendu(r.l, 'pnDe'), tri: r => r.l.pnDe || '', texte: r => r.l.pnDe || '' },
+  { k: 'pnVers', t: 'Part number vers', option: true, g: 'Les deux bouts', html: r => estMasse(r.l.vers) || estRenvoi(r.l.vers) ? rien : luFichierT('pnVers', r.l.pnVers, { cls: 'rc-pn' }) + rendu(r.l, 'pnVers'), tri: r => r.l.pnVers || '', texte: r => r.l.pnVers || '' },
   { k: 'plan', t: 'Folio', cls: 'rc-c-folio', option: true, g: 'Le dossier', si: () => modeFolio() !== 'aucun', html: r => modeFolioMemo() === 'auto'
-      ? `<span data-bulle="Découpé par VOLTA : le folio se lit, il ne s’écrit pas">${(foliosParSourceMemo().get(cleDe(r.l)) || []).map(p => `<button class="rc-f" data-plan="${escA(p)}">${esc(p)}</button>`).join('')}</span>` : luT('plan', r.l.plan),
+      ? `<span data-bulle="Découpé par VOLTA : le folio se lit, il ne s’écrit pas">${(foliosParSourceMemo().get(cleDe(r.l)) || []).map(p => `<button class="rc-f" data-plan="${escA(p)}">${esc(p)}</button>`).join('')}</span>` : luFichierT('plan', r.l.plan),
     tri: r => premierFolio(r.l), texte: r => modeFolioMemo() === 'auto' ? (foliosParSourceMemo().get(cleDe(r.l)) || []).join(' ') : r.l.plan },
-  { k: 'harness', t: 'Harness', option: true, g: 'Le dossier', html: r => luT('harness', r.l.harness, { cls: 'rc-pn' }), tri: r => r.l.harness || '', texte: r => r.l.harness || '' },
-  { k: 'fwd', t: 'FWD', option: true, g: 'Le dossier', html: r => luT('fwd', r.l.fwd, { cls: 'rc-pn' }), tri: r => r.l.fwd || '', texte: r => r.l.fwd || '' },
-  { k: 'descriptionDe', t: 'Description 1', option: true, g: 'Les deux bouts', html: r => luT('descriptionDe', r.l.descriptionDe, { cls: 'rc-texte' }), tri: r => r.l.descriptionDe || '', texte: r => r.l.descriptionDe || '' },
-  { k: 'descriptionVers', t: 'Description 2', option: true, g: 'Les deux bouts', html: r => luT('descriptionVers', r.l.descriptionVers, { cls: 'rc-texte' }), tri: r => r.l.descriptionVers || '', texte: r => r.l.descriptionVers || '' },
+  { k: 'harness', t: 'Harness', option: true, g: 'Le dossier', html: r => luFichierT('harness', r.l.harness, { cls: 'rc-pn' }), tri: r => r.l.harness || '', texte: r => r.l.harness || '' },
+  { k: 'fwd', t: 'FWD', option: true, g: 'Le dossier', html: r => luFichierT('fwd', r.l.fwd, { cls: 'rc-pn' }), tri: r => r.l.fwd || '', texte: r => r.l.fwd || '' },
+  { k: 'descriptionDe', t: 'Description 1', option: true, g: 'Les deux bouts', html: r => luFichierT('descriptionDe', r.l.descriptionDe, { cls: 'rc-texte' }), tri: r => r.l.descriptionDe || '', texte: r => r.l.descriptionDe || '' },
+  { k: 'descriptionVers', t: 'Description 2', option: true, g: 'Les deux bouts', html: r => luFichierT('descriptionVers', r.l.descriptionVers, { cls: 'rc-texte' }), tri: r => r.l.descriptionVers || '', texte: r => r.l.descriptionVers || '' },
   { k: 'resistance', t: 'Résistance', cls: 'rc-c-n', option: true, g: 'Le câble', html: r => r.F().R == null ? rien : chiffre(`<b class="rc-n">${fmt(r.F().R * 1000, 0)}</b>`, 'mΩ'), tri: r => r.F().R ?? -1, texte: r => r.F().R == null ? '' : fmt(r.F().R * 1000, 0) + ' mΩ' },
   { k: 'masse', t: 'Masse', cls: 'rc-c-n', option: true, g: 'Le câble', html: r => r.F().masse == null ? rien : chiffre(`<b class="rc-n">${fmt(r.F().masse, 1)}</b>`, 'g'), tri: r => r.F().masse ?? -1, texte: r => r.F().masse == null ? '' : fmt(r.F().masse, 1) + ' g' }];
 const ligneLiaison = (l, i) => { const r = { l, i, k: String(i) }; let F = null; r.F = () => F || (F = infoFil(l)); return r; };
@@ -446,8 +446,8 @@ const etatRepere = nom => { const e = etatDuNom(nom);
    barrette que VOLTA a ajoutée est provisoire : « ajoutée » le dit, et « Lui donner son repère » — le même geste que la fiche
    et l'onglet Problèmes (08-controle, `poserLesBarrettes`) — lui donne celui que VOLTA propose. */
 const COL_REPERE = { k: 'rep', t: 'Repère', cls: 'rc-c-rep', html: r => r.aPoser
-    ? `<span class="rc-aposer">${luT('rep', r.nom, { cls: 'rc-r aposer', titre: 'Barrette ajoutée par VOLTA (plusieurs câbles sur une borne) : son repère est provisoire' })}<small class="rc-ajout" data-bulle="${escA(majuscule(r.sous) + ' : plusieurs câbles sur une borne')}">ajoutée</small><button type="button" class="btn cuivre dense rc-poser" data-poser="1" data-bulle="${escA('Elle prend ' + prochainRepereVT(r) + ', le repère que VOLTA propose (la suite de la barrette la plus proche) — « Défaire » rend le provisoire')}">Lui donner son repère</button></span>`
-    : luT('rep', r.nom, { cls: 'rc-r' }),
+    ? `<span class="rc-aposer">${luFichierT('rep', r.nom, { cls: 'rc-r aposer', titre: 'Barrette ajoutée par VOLTA (plusieurs câbles sur une borne) : son repère est provisoire' })}<small class="rc-ajout" data-bulle="${escA(majuscule(r.sous) + ' : plusieurs câbles sur une borne')}">ajoutée</small><button type="button" class="btn cuivre dense rc-poser" data-poser="1" data-bulle="${escA('Elle prend ' + prochainRepereVT(r) + ', le repère que VOLTA propose (la suite de la barrette la plus proche) — « Défaire » rend le provisoire')}">Lui donner son repère</button></span>`
+    : luFichierT('rep', r.nom, { cls: 'rc-r' }),
   tri: r => r.nom, texte: r => r.nom + (r.aPoser ? ' (repère provisoire)' : '') };
 // (« État », comme dans Liaisons, Câbles, Raccords : la case dit « 3 problèmes », « 1 à voir » ; tout va bien, elle se tait)
 const COL_PROBLEMES = { k: 'etat', t: 'État', cls: 'rc-c-etat', html: r => { const e = etatRepere(r.nom); return etatHtml(e.niveau, e.mot, e.bulle); },
@@ -464,14 +464,14 @@ const equipements = () => memo('eqpts', () => reperes().filter(r => r.genre === 
 const COLONNES_EQUIPEMENTS = [COL_REPERE,
   // (v86) la nature se lit dans le code du repère (le fichier) ; une nature dite à la main avant la v86 garde « manuel » et ↺
   { k: 'nature', t: 'Type', cls: 'rc-c-nature', html: r => { const d = natureDite(r.nom), q = lireRepere(r.nom), code = q && (q.codeLu || q.code);
-      return `<span class="rc-nature">${luT('nature', majuscule(natureDe(r.nom)), { titre: d ? 'Dit à la main ; le code du repère dit « ' + natureAuto(r.nom) + ' »' : 'Lu dans le code du repère' + (code ? ' (' + code + ')' : '') })}${d ? orig('main', 'Dit à la main avant la v86 : la nature se lit dans le code du repère, ↺ la rend') + rond('nature', 'celle que dit le code (' + natureAuto(r.nom) + ')') : ''}</span>`; },
+      return `<span class="rc-nature">${luFichierT('nature', majuscule(natureDe(r.nom)), { titre: d ? 'Dit à la main ; le code du repère dit « ' + natureAuto(r.nom) + ' »' : 'Lu dans le code du repère' + (code ? ' (' + code + ')' : '') })}${d ? orig('main', 'Dit à la main avant la v86 : la nature se lit dans le code du repère, ↺ la rend') + rond('nature', 'celle que dit le code (' + natureAuto(r.nom) + ')') : ''}</span>`; },
     tri: r => natureDe(r.nom), texte: r => majuscule(natureDe(r.nom)) },
   { k: 'norme', t: 'Norme', cls: 'rc-c-norme', si: () => memo('eq-normes', () => reperes().some(r => r.genre === 'eqpt' && normesDuRepere(r.nom).length)), html: r => { const N = normesDuRepere(r.nom); return N.length ? `<span class="rc-norme" data-bulle="${escA(N.flatMap(n => n.cs).join('\n'))}">${N.map(n => esc(n.norme)).join('<i class="rc-pt">·</i>')}</span>` : rien; },
     tri: r => normesDuRepere(r.nom).map(n => n.norme).join(' '), texte: r => normesDuRepere(r.nom).map(n => n.norme).join(' · '), vide: r => !normesDuRepere(r.nom).length },
   COL_PROBLEMES,
   // (v86 : plus de « Désignation » à écrire — un nom en clair doublerait le fichier, la charte l'exclut)
   { k: 'pn', t: 'Part number', option: true, g: 'Ce qu’il est', html: r => { const I = baseRepere(r.nom);
-      return `<span class="rc-pns">${I.pns.map(c => `<span class="rc-pnl">${I.pns.length > 1 ? `<i class="rc-cn">${esc(c.nom)}</i>` : ''}${luT('pn:' + c.nom, c.pn, { cls: 'rc-pn' })}</span>`).join('')}</span>`; },
+      return `<span class="rc-pns">${I.pns.map(c => `<span class="rc-pnl">${I.pns.length > 1 ? `<i class="rc-cn">${esc(c.nom)}</i>` : ''}${luFichierT('pn:' + c.nom, c.pn, { cls: 'rc-pn' })}</span>`).join('')}</span>`; },
     tri: r => baseRepere(r.nom).pns.map(c => c.pn).join(' '), texte: r => baseRepere(r.nom).pns.map(c => c.pn).filter(Boolean).join(' ') },
   { k: 'connecteurs', t: 'Connecteurs', option: true, large: 1, g: 'Ce qu’il est', html: r => { const I = infoRepere(r); return I.connecteurs.length ? `<span class="rc-cnx">${I.connecteurs.map(c => `<i class="${c.ko ? 'ko' : ''}" data-bulle="${escA((c.pn || 'sans part number') + (c.ref ? ' · ' + c.ref : '') + ' · ' + pluriel(c.bornes.length, 'borne') + (c.ko ? ' — aucun arrangement ne convient' : ''))}">${esc(c.nom)}</i>`).join('')}</span>` : rien; },
     tri: r => infoRepere(r).connecteurs.length, texte: r => infoRepere(r).connecteurs.map(c => c.nom).join(' '), vide: r => !infoRepere(r).connecteurs.length },
@@ -481,50 +481,14 @@ const COLONNES_EQUIPEMENTS = [COL_REPERE,
   COL_FOLIO,
   { k: 'deja', t: 'Déjà fait', cls: 'rc-c-n', option: true, si: () => !!indexReferences(), html: r => { const c = dejaFait(r.nom); return c ? `<span class="rc-deja" data-bulle="${escA(c.repere + ' de ' + c.harness)}"><b class="rc-n">${Math.round(c.taux * 100)}</b><i>%</i></span>` : rien; },
     tri: r => { const c = dejaFait(r.nom); return c ? c.taux : -1; }, texte: r => { const c = dejaFait(r.nom); return c ? Math.round(c.taux * 100) + ' %' : ''; } }];
-const EQUIPEMENTS = { ...ONGLET_REPERES,
-  ajout: 'Équipement', aide: 'Un équipement de plus, en tête : écrivez son repère, puis ses câbles dans Liaisons', cherche: 'Chercher : repère, type…',
-  colonnes: COLONNES_EQUIPEMENTS,
-  // un équipement qu'on vient d'ajouter reste là, quel que soit son code
-  lignes: () => { const n = app.base.neufs; return n.length ? reperes().filter(r => r.genre === 'eqpt' || (!r.aPoser && n.includes(r.nom))) : equipements(); },
-  puces: () => [PUCE_A_REPRENDRE],
-  ajouter: () => { app.base.nouveau = true; rendreBase(true); editerCase('+', 'rep'); },
-  editeur: (r, f) => editeurRepere(r, f),
-  ecrire: (r, f, v) => ecrireRepere(r, f, v),
-  rendre: (r, f) => f === 'nature' ? ecrireRepere(r, 'nature', '') : false };
-function editeurRepere(r, f) {
-  if (f === 'rep') return { valeur: r.nouveau ? '' : r.nom, ph: r.nouveau ? 'repère du nouvel équipement, par exemple 105RL2' : 'repère', aide: r.aPoser ? 'le vrai repère : la barrette entre au contrat' : '' };
-  if (f === 'nature') { if (!natureModifiable(r)) return null; const auto = natureAuto(r.nom), d = natureDite(r.nom);
-    const opts = [['', 'Automatique · ' + auto], ...Object.entries(CODES).filter(([, c]) => c.forme === 'equipement').sort((a, b) => a[1].nom.localeCompare(b[1].nom, 'fr')).map(([k, c]) => [k, majuscule(c.nom) + ' (' + k + ')']), ['EQ', 'Équipement, sans type']];
-    return { valeur: d, options: opts }; }
-  if (f === 'des') return r.aPoser ? null : { valeur: app.contrat.designations.get(r.nom) || '', ph: 'désignation' };
-  if (/^pn:/.test(f)) { const c = baseRepere(r.nom).pns.find(x => 'pn:' + x.nom === f); return c ? { valeur: c.pn || '', liste: 'pns', aide: c.bornes ? 'connecteur ' + c.nom + ' : toutes ses liaisons suivent' : 'toutes ses liaisons suivent' } : null; }
-  return null; }
-function ecrireRepere(r, f, v) { const nom = r.nom;
-  if (f === 'rep') { if (r.nouveau) { app.base.nouveau = false; if (!v) return false; return creerEquipement(v); }
-    if (!v || v === nom) return false; return renommerRepere(nom, v, r); }
-  if (f === 'nature') { if (v === natureDite(nom)) return false; histPush('type de ' + nom); designer(CLE_NATURE(nom), v); apresEdition();
-    const g = genreDuRepere(nom), ailleurs = g === 'cb' ? ' — il passe dans l’onglet Disjoncteurs' : '';
-    dire(v ? nom + ' : ' + natureDe(nom) + ', dit à la main' + ailleurs + '.' : nom + ' : le type du code revient (' + natureAuto(nom) + ').'); return true; }
-  if (f === 'des') { if (v === (app.contrat.designations.get(nom) || '')) return false; histPush('désignation de ' + nom); designer(nom, v); apresEdition(); return true; }
-  if (/^pn:/.test(f)) { const c = baseRepere(r.nom).pns.find(x => 'pn:' + x.nom === f); return c ? changerPartNumber(nom, c.bornes, v) : false; }
-  return false; }
-/* Renommer un repère d'ici (comme la fiche) : chaque câble suit, ses choix aussi ; une barrette à poser entre au contrat. */
-function renommerRepere(nom, nr, r) { const b = app.base;
-  if (r && r.aPoser) { if (r.plan && r.plan !== app.plan && plans().includes(r.plan)) allerAuPlan(r.plan); const ok = poserBarrette(nom, nr); if (ok) RECAP.renomme = [r.k, nr]; return ok; }
-  if (verite().some(l => l.de === nr || l.vers === nr)) { dire(nr + ' existe déjà au contrat : choisissez un autre repère.', true); return false; }
-  histPush('renommage de ' + nom); renommer(nom, nr);
-  const D = app.contrat.designations, n = D.get(CLE_NATURE(nom)); if (n) { D.delete(CLE_NATURE(nom)); D.set(CLE_NATURE(nr), n); }
-  if (app.cible && app.cible.type === 'bloc' && app.cible.nom === nom) { app.cible = { type: 'bloc', nom: nr }; app.choisi = nr; }
-  if (b.filtre === nom) b.filtre = nr; RECAP.renomme = [r ? r.k : nom, nr]; b.neufs = b.neufs.map(x => x === nom ? nr : x);
-  apresEdition(); return true; }
-function creerEquipement(nom) { if (verite().some(l => l.de === nom || l.vers === nom)) { dire(nom + ' existe déjà au contrat.', true); return false; }
-  histPush('ajout de ' + nom); verite().push(liaison({ de: nom, plan: (modeFolio() === 'fichier' && app.plan !== '*') ? app.plan : '' }));
-  app.base.neufs.unshift(nom); app.cible = { type: 'bloc', nom }; app.base.focus = { k: nom, f: 'nature' }; apresEdition();
-  dire(nom + ' : ses câbles s’écrivent dans l’onglet Liaisons (une ligne l’attend, « vers » à écrire).'); return true; }
-/* Le part number d'un connecteur (ou de tout le repère) : toutes ses liaisons le prennent, en une action (Ctrl+Z). */
-function changerPartNumber(nom, bornes, pn) { const xs = [];
-  verite().forEach(l => { if (l.de === nom && (!bornes || bornes.includes(l.borneDe)) && (l.pnDe || '') !== pn) xs.push([l, 'pnDe']); if (l.vers === nom && (!bornes || bornes.includes(l.borneVers)) && (l.pnVers || '') !== pn) xs.push([l, 'pnVers']); });
-  return changerLiaisons(xs.map(([l, k]) => [l, k, pn]), 'part number de ' + nom); }   // plusieurs liaisons, un seul Ctrl+Z (08-sections)
+/* (v86, une seule source) TOUT CE QUE CET ONGLET MONTRE VIENT DU FICHIER — le repère, sa nature (le code du repère), ses part
+   numbers : rien ne s'y écrit, un équipement ne s'y ajoute ni ne s'y renomme (c'est changer le fichier). Une nature dite à
+   la main avant la v86 se rend d'un ↺. */
+const EQUIPEMENTS = { ...ONGLET_REPERES, cherche: 'Chercher : repère, type…',
+  colonnes: COLONNES_EQUIPEMENTS, lignes: equipements, puces: () => [PUCE_A_REPRENDRE],
+  editeur: () => null, ecrire: () => false,
+  rendre: (r, f) => { const nom = r.nom; if (f !== 'nature' || !natureDite(nom)) return false; histPush('nature de ' + nom); designer(CLE_NATURE(nom), ''); apresEdition();
+    dire(nom + ' : la nature que dit son code revient (' + natureAuto(nom) + ').', false, typeof defaire === 'function' ? { geste: 'Défaire', faire: defaire } : undefined); return true; } };
 /* Choisir un repère depuis une ligne : son folio, son bloc, sa fiche — sans toucher au filtre de l'onglet. */
 function choisirRepere(nom, plan) { const P = plans();
   if (plan && plan !== app.plan && P.includes(plan)) allerAuPlan(plan);

@@ -162,6 +162,10 @@ const cableEtType = l => cableDit(l);
      · un fil À CRÉER de la borne de l'équipement à la borne 1 de la barrette (sans numéro, de la jauge du plus gros) ;
      · chaque fil du contrat part d'une borne à lui, 2, 3… ;
      · les bornes de la barrette sont reliées (des shunts : un même potentiel).
+   (v86, l'audit B2 : « un même contact, deux noms — 1, 2, 3 sur le plan, H, J, K sur la fiche ») VOLTA la crée, VOLTA nomme
+   ses bornes : chacune prend le nom de son contact sur la face, comme vos fichiers nomment ceux d'une
+   barrette — le module et la lettre, « 51H » (09, `lettresDeBarretteAPoser`). Les numéros ne restent que si aucun module
+   ne la loge. Le câble à créer se reconnaît à sa marque, `aCreer` (`estRaccordAPoser`).
    Repère provisoire VT1, VT2…, unique dans le contrat : la numérotation suit l'ordre des folios (`depart` = le nombre de
    barrettes à poser des folios d'avant). Avec une MÉMOIRE (`provisoires` du contrat : clé repère␁borne → numéro), un
    nom TIENT : une borne dédoublée garde son numéro tant que le contrat vit, et poser VT1 au contrat ne fait pas
