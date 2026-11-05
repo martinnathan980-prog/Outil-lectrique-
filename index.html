@@ -123,7 +123,7 @@
   --sh-bulle:0 0 0 1px rgba(0,0,0,.2),0 14px 32px -10px rgba(0,0,0,.6);
   --voile:rgba(26,20,14,.24);                            /* derrière un calque plein écran */
   --voile-fort:rgba(26,20,14,.44);                       /* derrière une fenêtre (le dessin d'un contrat fait) */
-  --route-a:#2c62b0; --route-b:#0e7a7c;                  /* deux routes du dessin (la vignette d'un plan) : les deux premières teintes de 06 `TEINTES_ROUTES` */
+  --route-a:#265ac1; --route-b:#168382;                  /* deux routes du dessin (la vignette d'un plan) : les deux premières teintes de 06 `TEINTES_ROUTES` */
   --route-voile:transparent;                             /* posé sur une couleur de route hors du papier : l'éclaircit en sombre */
   /* les anciens jetons des barres : les palets */
   --p-fond:var(--palet); --p-fond-2:var(--palet-2); --p-ligne:rgba(255,236,216,.10); --p-hover:rgba(255,240,225,.07);
@@ -242,7 +242,7 @@
   --s-surface:#ffffff; --s-sunken:#f5f6f8; --s-hover:#eff1f5; --s-line:#dfe3ea; --s-line-2:#d2d6df; --s-flottant:#ffffff;
   --t-1:#1b1f27; --t-2:#454b57; --t-3:#5f6672; --t-inverse:#ffffff;
   --accent:#1b1f27; --accent-2:#000000; --accent-soft:#eaedf2; --accent-line:#c3c9d4; --on-accent:#ffffff;
-  --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent; --anneau:0 0 0 3px rgba(27,31,39,.09);
+  --route-a:#265ac1; --route-b:#168382; --route-voile:transparent; --anneau:0 0 0 3px rgba(27,31,39,.09);
   --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#454b57; --info-soft:#eff1f5;
   color-scheme:light; color:var(--t-1) }
 
@@ -8703,7 +8703,7 @@ body:not(.biblio) #table .ta-courant::after{background:color-mix(in srgb,var(--g
     --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#4f5051; --info-soft:rgba(25,27,28,.05);
     --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;
     --voile:rgba(16,18,20,.24); --voile-fort:rgba(16,18,20,.44);
-    --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent;
+    --route-a:#265ac1; --route-b:#168382; --route-voile:transparent;
     --sh-1:0 1px 2px rgba(16,18,19,.06); --sh-2:0 0 0 1px rgba(25,27,28,.10),0 20px 44px -16px rgba(16,18,19,.30),0 4px 10px -4px rgba(16,18,19,.10);
     --sh-panneau:0 0 0 1px rgba(25,27,28,.10),0 24px 56px -18px rgba(16,18,19,.38),0 6px 16px -8px rgba(16,18,19,.18);
     --anneau:0 0 0 3px rgba(169,88,31,.18);
@@ -8741,7 +8741,7 @@ body:not(.biblio) #table .ta-courant::after{background:color-mix(in srgb,var(--g
   --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#4f5051; --info-soft:rgba(25,27,28,.05);
   --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;
   --voile:rgba(16,18,20,.24); --voile-fort:rgba(16,18,20,.44);
-  --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent;
+  --route-a:#265ac1; --route-b:#168382; --route-voile:transparent;
   --sh-1:0 1px 2px rgba(16,18,19,.06); --sh-2:0 0 0 1px rgba(25,27,28,.10),0 20px 44px -16px rgba(16,18,19,.30),0 4px 10px -4px rgba(16,18,19,.10);
   --sh-panneau:0 0 0 1px rgba(25,27,28,.10),0 24px 56px -18px rgba(16,18,19,.38),0 6px 16px -8px rgba(16,18,19,.18);
   --anneau:0 0 0 3px rgba(169,88,31,.18);
@@ -10033,7 +10033,7 @@ svg.vu-arbre .vu-an .vu-an-t{font:700 9.5px var(--sans);font-variant-numeric:tab
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '38db6184702e';
+const VERSION_MOTEUR = '39eb9618cb83';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -18200,12 +18200,12 @@ function cheminsDepuis(liaisons, repere) { const out = cheminsBruts(liaisons, re
   const lignes = new Set(out.filter(c => c.amont && c.depart).map(c => c.depart));
   if (lignes.size && out.some(c => !lignes.has(c.depart))) out.forEach(c => { if (lignes.has(c.depart)) c.amont = true; });
   return out; }
-function cheminsBruts(liaisons, repere) { const out = [], tous = (liaisons || []).filter(l => l && l.de && l.vers);
-  // l'index, une passe : chaque repère et ses liaisons — les shunts d'une barrette (d'elle à elle-même) compris : ils font son
-  // potentiel (avant v86, chaque pas relisait tout le contrat)
-  const parRep = new Map(), mettre = (r, l) => { const xs = parRep.get(r); if (!xs) parRep.set(r, [l]); else if (xs[xs.length - 1] !== l) xs.push(l); };
-  tous.forEach(l => { mettre(l.de, l); mettre(l.vers, l); });
-  const du = r => parRep.get(r) || [], txt = b => String(b == null ? '' : b), bouts = l => [[l.de, l.borneDe], [l.vers, l.borneVers]];
+function cheminsBruts(liaisons, repere) { const out = [], L = liaisons || [];
+  // les liaisons d'un repère, lues une fois par appel et seulement pour les repères où passe le chemin — les shunts d'une
+  // barrette (d'elle à elle-même) compris : ils font son potentiel. (Un index du contrat entier, refait à chaque appel, coûtait
+  // plus que tout le reste sur un plan de 3 000 liaisons : le contrôle appelle ceci une vingtaine de fois par disjoncteur.)
+  const parRep = new Map(), du = r => { let xs = parRep.get(r); if (!xs) parRep.set(r, xs = L.filter(l => l && l.de && l.vers && (l.de === r || l.vers === r))); return xs; };
+  const txt = b => String(b == null ? '' : b), bouts = l => [[l.de, l.borneDe], [l.vers, l.borneVers]];
   // les câbles d'un repère qui partent d'une de ses bornes (`bs` : un Set, null : n'importe laquelle), et un câble orienté depuis ce bout
   const partant = (r, bs) => du(r).filter(l => l.de !== l.vers && bouts(l).some(([x, b]) => x === r && (!bs || bs.has(txt(b)))));
   const depuis = (l, r, bs) => { const [a, z] = bouts(l); return a[0] === r && (!bs || bs.has(txt(a[1]))) ? [a, z] : [z, a]; };

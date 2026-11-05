@@ -93,7 +93,7 @@
   --sh-bulle:0 0 0 1px rgba(0,0,0,.2),0 14px 32px -10px rgba(0,0,0,.6);
   --voile:rgba(26,20,14,.24);                            /* derrière un calque plein écran */
   --voile-fort:rgba(26,20,14,.44);                       /* derrière une fenêtre (le dessin d'un contrat fait) */
-  --route-a:#2c62b0; --route-b:#0e7a7c;                  /* deux routes du dessin (la vignette d'un plan) : les deux premières teintes de 06 `TEINTES_ROUTES` */
+  --route-a:#265ac1; --route-b:#168382;                  /* deux routes du dessin (la vignette d'un plan) : les deux premières teintes de 06 `TEINTES_ROUTES` */
   --route-voile:transparent;                             /* posé sur une couleur de route hors du papier : l'éclaircit en sombre */
   /* les anciens jetons des barres : les palets */
   --p-fond:var(--palet); --p-fond-2:var(--palet-2); --p-ligne:rgba(255,236,216,.10); --p-hover:rgba(255,240,225,.07);
@@ -212,7 +212,7 @@
   --s-surface:#ffffff; --s-sunken:#f5f6f8; --s-hover:#eff1f5; --s-line:#dfe3ea; --s-line-2:#d2d6df; --s-flottant:#ffffff;
   --t-1:#1b1f27; --t-2:#454b57; --t-3:#5f6672; --t-inverse:#ffffff;
   --accent:#1b1f27; --accent-2:#000000; --accent-soft:#eaedf2; --accent-line:#c3c9d4; --on-accent:#ffffff;
-  --route-a:#2c62b0; --route-b:#0e7a7c; --route-voile:transparent; --anneau:0 0 0 3px rgba(27,31,39,.09);
+  --route-a:#265ac1; --route-b:#168382; --route-voile:transparent; --anneau:0 0 0 3px rgba(27,31,39,.09);
   --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#454b57; --info-soft:#eff1f5;
   color-scheme:light; color:var(--t-1) }
 
