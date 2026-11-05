@@ -106,7 +106,9 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
      discret ; le REPÈRE, le seul grand ; la référence dessous, une seule pastille au trait. Deux graisses (500, 600), l'encre
      et un gris, aucun fond (style-z-carte). Dans la carte, la silhouette est le SCEAU de la barre (à la place de la poignée :
      la barre se tient toujours) ; dans le grand, elle ouvre la ligne. */
-  const genre = GENRES_FICHE[o.type] || 'Élément';
+  // un équipement dit sa NATURE quand son code la donne (103RL1 : « Relais », 395SW1 : « Interrupteur ») ; sinon « Équipement »
+  const nature = o.type === 'equipement' && nom && typeof natureDe === 'function' ? natureDe(nom) : '';
+  const genre = nature && nature !== 'équipement' ? majuscule(nature) : GENRES_FICHE[o.type] || 'Élément';
   const titre = `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-rep">${rep}</span>`;
   const sil = silhouetteVue(o.type, silhouetteDe(o));
   // (v83) en grand, « module 2 de VT2 » se lit dans la première section (la barrette et tous ses modules) : pas deux fois
@@ -321,7 +323,8 @@ function listeDuGenre(c, etatIci) { const { genre, xs } = objetsDuGenre(c), q = 
 const COLONNES_TABLE_CABLES = [['type', 'Câble'], ['vers', 'Vers'], ['i', 'Courant'], ['u', 'Chute en ligne'], ['lg', 'Longueur'], ['ct', 'Contact à sertir']];
 /* (v86, le lecteur : « 80 %, on ne comprend pas ») : l'anneau dit une part — le titre de sa colonne dit de quoi, en petit
    sous le mot, et sa bulle explique d'où vient l'admis */
-const SOUS_COLONNES_CABLES = { i: '% de ce qu’il admet', u: '% de la chute admise' };
+// (court : la colonne de la chute ne fait que 83 px à 1440 quand le contact à sertir a la sienne ; la bulle dit le reste)
+const SOUS_COLONNES_CABLES = { i: '% de l’admis', u: '% de l’admis' };
 const BULLES_COLONNES_CABLES = {
   i: 'Le courant qu’il porte, sur celui qu’il admet (EN 2853, déclassé selon son faisceau, l’altitude et l’ambiante). L’anneau en montre la part : au-delà de 100 %, il est trop fin.',
   u: 'La tension perdue depuis son disjoncteur jusqu’au bout du chemin, sur la chute admise pour ce réseau. L’anneau en montre la part : au-delà de 100 %, la ligne perd trop.' };

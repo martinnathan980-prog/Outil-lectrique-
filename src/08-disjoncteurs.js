@@ -23,11 +23,18 @@
        (`carteDecision`) : « Passer en 15 A et grossir les 3 câbles » (un
        geste, une entrée d'historique : `deciderCalibre`), « Garder le
        10 A… » (ce qu'il faudrait pour qu'il passe) ;
-     · LA COURBE, sur papier (son dessin : 08-courbe-dj, `grapheSvg`) — les
-       quatre températures, toujours, sans bascule ;
-     · LE PROFIL DE CHARGE : un petit tableau — démarrage, transition,
-       permanent, puis les états ajoutés —, les unités dans l'en-tête, chaque
-       valeur modifiable, chaque état supprimable (×), « + État ».
+     · (v86) LE PROFIL DE CHARGE ET SA COURBE, une seule section : le petit
+       tableau — démarrage, transition, permanent, puis les états ajoutés —,
+       les unités dans l'en-tête, chaque valeur modifiable, chaque état
+       supprimable (×), « + État » ; sous lui, la conclusion ; à côté (ou
+       dessous, quand la carte est étroite), la courbe sur papier (son dessin :
+       08-courbe-dj, `grapheSvg`, les quatre températures). Chaque touche
+       rejuge le profil : les points glissent sur la courbe, la conclusion et
+       les calibres suivent ; glisser un point remplit ses cases.
+     · (v86) COURANT APPELÉ ET CALIBRES, sur l'essentiel (`courantAppele`) : la
+       conclusion en grand (`motsDuCalibre` — « 10 A : il ne disjoncte pas. »),
+       le courant qui s'écoule dans une barre par point du profil, la zone où
+       le calibre disjoncte pour cette durée, les calibres en ampères.
    Ses câbles (l'intensité au pire contre ce qu'ils admettent, la chute en
    ligne jusqu'au bout de leur chemin) vont dans la section commune « Câbles »
    (`lignesFilsDisjoncteur`). Le moteur (09 bis, 09 quater) juge ; ici on lit,
@@ -702,7 +709,7 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
     const voisin = kept.find(k => Math.abs(k.x - x) < (k.w + w) / 2 + 6); if (!voisin) kept.push({ c: g.calibre, x, w }); else if (imp && voisin.c !== cal && voisin.c !== fic) { kept.splice(kept.indexOf(voisin), 1, { c: g.calibre, x, w }); } });
   const cals = gamme.map(g => { const c = g.calibre, k = cleDuVerdict(g), m = motsDuCalibre(d, c) || { titre: amperes(c), detail: '', cle: k }, ret = c === cal, f = c === fic, montre = kept.some(x => x.c === c);
     const seuils = pts.map(p => { const s = seuilDe(c, p); return s != null ? f1(s) : ''; }).join(' '), oks = pts.map(p => { const q = point(c, p); return q && q.ok === false ? '0' : '1'; }).join('');
-    return `<span class="dj-fx-cal ${k === 'passe' ? 'oui' : 'non'}${ret ? ' ret' : ''}${f ? ' fic' : ''}${montre ? '' : ' tu'}" style="left:${pc(c).toFixed(2)}%" tabindex="0" role="button" data-cal="${c}" data-seuils="${seuils}" data-oks="${oks}" data-cle="${escA(m.cle)}" data-titre="${escA(m.titre)}" data-detail="${escA(m.detail)}"`
+    return `<span class="dj-fx-cal ${k === 'passe' ? 'oui' : 'non'}${ret ? ' ret' : ''}${f ? ' fic' : ''}${montre ? '' : ' tu'}" style="left:${pc(c).toFixed(2)}%" tabindex="0" role="listitem" data-cal="${c}" data-seuils="${seuils}" data-oks="${oks}" data-cle="${escA(m.cle)}" data-titre="${escA(m.titre)}" data-detail="${escA(m.detail)}"`
       // (pas de bulle : le survol écrit déjà sa conclusion en tête, pas deux fois la même chose)
       + ` aria-label="${escA(m.titre + (ret ? ' Retenu.' : f ? ' Celui de votre fichier.' : '') + ' ' + m.detail)}">`
       + `<i></i><b>${esc(nombre(c))}<small>A</small></b>${ret ? '<em>retenu</em>' : f ? '<em>votre fichier</em>' : ''}</span>`; }).join('');
@@ -713,7 +720,7 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
   const note = deFichier && mini && mini < cal - 1e-9 ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(mini))} — un clic sur lui, dans l’onglet Calibre, le retient.</p>` : '';
   const leg = `<p class="dj-fx-leg"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="zone"></i><span class="dj-fx-leg-z">où le ${esc(A)} disjoncte</span></span></p>`;
   return `<div class="dj-ca" data-disj="${escA(nom)}" data-max="${f1(max)}" data-cal="${calZ}">${conclusionCalibre(d, 'dj-concl-g')}${ligneF}`
-    + `<div class="dj-flux" role="group" aria-label="${escA('Ce qu’il tire, sur l’échelle de ses calibres')}">${lignes}<div class="dj-fx-echelle"><span></span><span class="dj-fx-cals">${cals}</span></div></div>${leg}${note}</div>`; }
+    + `<div class="dj-flux" role="group" aria-label="${escA('Ce qu’il tire, sur l’échelle de ses calibres')}">${lignes}<div class="dj-fx-echelle"><span></span><span class="dj-fx-cals" role="list" aria-label="Les calibres de la gamme : survolez-en un pour voir où il disjoncte">${cals}</span></div></div>${leg}${note}</div>`; }
 // survoler (ou parcourir au clavier) un calibre de l'échelle : ses zones glissent sur les barres, sa conclusion s'écrit ; la
 // souris partie, le retenu revient
 function lierCourantAppele(ca) { const max = +ca.dataset.max || 1, lignes = [...ca.querySelectorAll('.dj-fx-l')], concl = ca.querySelector('.dj-concl-g'), legZ = ca.querySelector('.dj-fx-leg-z');
@@ -902,7 +909,9 @@ function lierDisjonction(nom, conteneur) {
     const parI = new Map((dd.points || []).map(p => [p.i, p]));
     QA('.dj-etat').forEach(row => { const inp = row.querySelector('[data-q="i"]'), i = inp ? nombreLu(inp.value) : null, p = i > 0 ? parI.get(i) : null, ko = !!p && p.ok === false, v = row.querySelector('.dj-verdict');
       row.classList.toggle('ko', ko); if (p) row.dataset.pt = p.k; else delete row.dataset.pt;
-      if (v) { v.classList.toggle('ko', ko); v.textContent = ko ? 'disjoncte' : ''; if (!ko) delete v.dataset.bulle; } });
+      if (v) { v.classList.toggle('ko', ko); v.textContent = ko ? 'disjoncte' : ''; if (!ko) delete v.dataset.bulle; }
+      // la durée en minutes, sous sa case, suit aussi (« 2 min »)
+      const ti = row.querySelector('[data-q="t"]'), lab = ti && ti.closest('.dj-champ'), t = ti ? nombreLu(ti.value) : null; if (lab) { if (t >= 60 && isFinite(t)) lab.dataset.min = secondes(t); else delete lab.dataset.min; } });
     const f = ligneAuClavier(); if (f) allumer(f, true); };
   const profilVif = () => { const profil = lire(); let dd; try { dd = { ...E.d, ...verdictDisjonction(app.norme, E.d.courbe, E.d.calibre, profil, E.d.contexte), profil }; } catch (_) { return; }
     courbeVive(dd); suivreVif(dd); };

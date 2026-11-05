@@ -268,16 +268,8 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
 :root[data-theme="dark"] #inspecteur .nc-taches.nc-pbs .nc-geste .btn.cuivre:hover{background:var(--v-cuivre-vif,color-mix(in srgb,var(--nv-cuivre) 85%,#fff))}
 :root[data-theme="dark"] #inspecteur .nc-taches.nc-pbs .nc-tache.info .nc-rond{box-shadow:var(--n-point-att,none)}
 
-/* ─── 10 bis. LES OMBRES SUR LE LIN (v85, l'agent « jour ») : la carte et le grand posés sur une table de lin chaud — leur
-   ombre tire sur le brun, plus sur le bleu (rgba(0,6,18)) ; même forme, autre teinte. Le jour seulement. ─── */
-@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]) :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
-  --sh-carte:0 0 0 1px rgba(28,22,12,.10),0 30px 72px -20px rgba(48,34,18,.55),0 10px 26px -12px rgba(48,34,18,.32);
-  --sh-carte-tenue:0 0 0 1px rgba(28,22,12,.14),0 46px 100px -20px rgba(48,34,18,.62),0 16px 34px -12px rgba(48,34,18,.38);
-  --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 28px 64px -18px rgba(48,34,18,.52),0 6px 18px -8px rgba(48,34,18,.30) } }
-:root[data-theme="light"] :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
-  --sh-carte:0 0 0 1px rgba(28,22,12,.10),0 30px 72px -20px rgba(48,34,18,.55),0 10px 26px -12px rgba(48,34,18,.32);
-  --sh-carte-tenue:0 0 0 1px rgba(28,22,12,.14),0 46px 100px -20px rgba(48,34,18,.62),0 16px 34px -12px rgba(48,34,18,.38);
-  --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 28px 64px -18px rgba(48,34,18,.52),0 6px 18px -8px rgba(48,34,18,.30)}
+/* (10 bis, les ombres brunes posées sur le lin, est parti avec le lin : l'ombre du jour, neutre, est dans
+   style-z-couleur.css.) */
 
 /* ─── 11. L'HISTORIQUE : une ligne par changement, le geste qui annule toujours visible ─── */
 .nv-modifs-l .fi-ec-note{margin:0 0 12px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}

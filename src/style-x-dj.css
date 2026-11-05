@@ -136,7 +136,8 @@
 .dj-concl.ok .dj-concl-t svg.dj-marque{background:var(--ok-soft);color:var(--ok)}
 .dj-concl.ko .dj-concl-t svg.dj-marque{background:var(--ko-soft);color:var(--ko)}
 .dj-concl.ko .dj-concl-t span{color:var(--ko)}
-.dj-concl-d{padding-left:32px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty;cursor:help}
+.dj-concl-d{padding-left:32px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty}
+.dj-concl-d[data-bulle]{cursor:help}
 /* en grand, sur l'essentiel : LA phrase qu'on lit d'abord */
 .dj-concl-g .dj-concl-t{gap:12px;font-size:var(--f-20);letter-spacing:-.018em}
 .dj-concl-g .dj-concl-t svg.dj-marque{width:28px;height:28px;padding:6px}
@@ -192,13 +193,12 @@
 .dj-fx-cal.tu:is(:hover,:focus-visible,.vu)>b{visibility:visible}
 .dj-fx-cal:focus-visible>b{box-shadow:0 0 0 2px var(--nv-cuivre)}
 .dj-fx-cal.ret:is(:hover,:focus-visible)>b{background:var(--nv-cuivre-soft)}
-/* la légende : deux mots, la zone, le fichier */
+/* la légende : deux mots, et la zone (le calibre de votre fichier se dit sous son chiffre) */
 .dj-fx-leg{display:flex;flex-wrap:wrap;gap:6px 18px;margin:-6px 0 0;font:400 var(--f-12)/1.3 var(--sans);color:var(--t-3)}
 .dj-fx-leg>span{display:inline-flex;align-items:center;gap:7px}
 .dj-fx-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .dj-fx-leg i.ko{background:var(--ko)}
 .dj-fx-leg i.zone{width:16px;height:10px;border-radius:0 4px 4px 0;background:color-mix(in srgb,var(--ko) 14%,transparent);box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ko) 75%,transparent)}
-.dj-fx-leg i.fic{width:16px;height:10px;border-radius:4px;background:none;border:1.5px dashed color-mix(in srgb,var(--t-2) 65%,transparent);box-sizing:border-box}
 .dj-ca>.vu-fichier{margin:0}
 /* à l'ouverture de la fiche, les barres se remplissent */
 .fi.fondu .dj-fx-barre{animation:dj-fx-entre .7s var(--courbe) both}
@@ -218,8 +218,10 @@
 @container dj-pc (min-width:700px){
   .dj-pc{display:grid;grid-template-columns:312px minmax(0,1fr);gap:20px;align-items:start}
   /* le tableau, serré dans sa colonne : l'état plus large, les deux chiffres, la croix */
-  .nv-grand .nv-panneau .dj-pc .dj-etats>:is(.dj-entete,.dj-etat){grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) 30px;column-gap:6px;padding-left:16px}
+  .nv-grand .nv-panneau .dj-pc .dj-etats>:is(.dj-entete,.dj-etat){grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr) 30px;column-gap:6px;padding-left:16px}
   .nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span{letter-spacing:.04em}
+  /* l'unité sans parenthèses (« COURANT A ») : le titre tient au-dessus de sa colonne */
+  .nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span i::before,.nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span i::after{content:none}
   .nv-grand .nv-panneau .dj-pc .dj-etat :is(.dj-champ,.dj-inf){width:min(100%,82px)}
   .nv-grand .nv-panneau .dj-pc .dj-etats .dj-plus{padding:0 16px}
   .nv-grand .nv-panneau .dj-pc .dj-etat .dj-x{width:28px;height:28px}

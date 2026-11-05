@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LA COULEUR DE LA TABLE — ce qui se pose sur elle en prend la neutralité (v86, « quelle est la meilleure couleur de
    fond ? »). La table du jour est l'ALUMINIUM, un gris neutre (style-z-cadre.css § 2) ; la nuit reste le graphite chaud.
-   Ici : l'ombre de la carte, du grand et des feuilles posées sur la table, le jour. Elle tirait sur le brun (pour le lin,
-   style-z-fiche.css § 10 bis) ; sur un gris neutre, une ombre brune salit le pied de la carte : même forme, encre neutre.
-   Ce fichier se charge AVANT style-z-fiche.css (l'ordre des noms) : ses sélecteurs portent un `html` de plus pour avoir
-   le dernier mot sans dépendre de l'ordre.
+   Ici : l'ombre de la carte, du grand et des feuilles posées sur la table, le jour. Elle tirait sur le brun pour le lin
+   (l'ancien § 10 bis de style-z-fiche.css, retiré) ; sur un gris neutre, une ombre brune salit le pied de la carte : même
+   forme, encre neutre. Ses sélecteurs portent un `html` de plus pour avoir le dernier mot sans dépendre de l'ordre des
+   fichiers.
    ═══════════════════════════════════════════════════════════════════════ */
 @media (prefers-color-scheme: light){ html:root:not([data-theme="dark"]) :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
   --sh-carte:0 0 0 1px rgba(25,27,28,.10),0 30px 72px -20px rgba(16,18,19,.50),0 10px 26px -12px rgba(16,18,19,.28);

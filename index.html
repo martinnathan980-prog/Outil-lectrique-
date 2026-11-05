@@ -7737,7 +7737,8 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 .dj-concl.ok .dj-concl-t svg.dj-marque{background:var(--ok-soft);color:var(--ok)}
 .dj-concl.ko .dj-concl-t svg.dj-marque{background:var(--ko-soft);color:var(--ko)}
 .dj-concl.ko .dj-concl-t span{color:var(--ko)}
-.dj-concl-d{padding-left:32px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty;cursor:help}
+.dj-concl-d{padding-left:32px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2);text-wrap:pretty}
+.dj-concl-d[data-bulle]{cursor:help}
 /* en grand, sur l'essentiel : LA phrase qu'on lit d'abord */
 .dj-concl-g .dj-concl-t{gap:12px;font-size:var(--f-20);letter-spacing:-.018em}
 .dj-concl-g .dj-concl-t svg.dj-marque{width:28px;height:28px;padding:6px}
@@ -7793,13 +7794,12 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 .dj-fx-cal.tu:is(:hover,:focus-visible,.vu)>b{visibility:visible}
 .dj-fx-cal:focus-visible>b{box-shadow:0 0 0 2px var(--nv-cuivre)}
 .dj-fx-cal.ret:is(:hover,:focus-visible)>b{background:var(--nv-cuivre-soft)}
-/* la légende : deux mots, la zone, le fichier */
+/* la légende : deux mots, et la zone (le calibre de votre fichier se dit sous son chiffre) */
 .dj-fx-leg{display:flex;flex-wrap:wrap;gap:6px 18px;margin:-6px 0 0;font:400 var(--f-12)/1.3 var(--sans);color:var(--t-3)}
 .dj-fx-leg>span{display:inline-flex;align-items:center;gap:7px}
 .dj-fx-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .dj-fx-leg i.ko{background:var(--ko)}
 .dj-fx-leg i.zone{width:16px;height:10px;border-radius:0 4px 4px 0;background:color-mix(in srgb,var(--ko) 14%,transparent);box-shadow:inset 2px 0 0 color-mix(in srgb,var(--ko) 75%,transparent)}
-.dj-fx-leg i.fic{width:16px;height:10px;border-radius:4px;background:none;border:1.5px dashed color-mix(in srgb,var(--t-2) 65%,transparent);box-sizing:border-box}
 .dj-ca>.vu-fichier{margin:0}
 /* à l'ouverture de la fiche, les barres se remplissent */
 .fi.fondu .dj-fx-barre{animation:dj-fx-entre .7s var(--courbe) both}
@@ -7819,8 +7819,10 @@ body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
 @container dj-pc (min-width:700px){
   .dj-pc{display:grid;grid-template-columns:312px minmax(0,1fr);gap:20px;align-items:start}
   /* le tableau, serré dans sa colonne : l'état plus large, les deux chiffres, la croix */
-  .nv-grand .nv-panneau .dj-pc .dj-etats>:is(.dj-entete,.dj-etat){grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) 30px;column-gap:6px;padding-left:16px}
+  .nv-grand .nv-panneau .dj-pc .dj-etats>:is(.dj-entete,.dj-etat){grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1fr) 30px;column-gap:6px;padding-left:16px}
   .nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span{letter-spacing:.04em}
+  /* l'unité sans parenthèses (« COURANT A ») : le titre tient au-dessus de sa colonne */
+  .nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span i::before,.nv-grand .nv-panneau .dj-pc .dj-etats>.dj-entete span i::after{content:none}
   .nv-grand .nv-panneau .dj-pc .dj-etat :is(.dj-champ,.dj-inf){width:min(100%,82px)}
   .nv-grand .nv-panneau .dj-pc .dj-etats .dj-plus{padding:0 16px}
   .nv-grand .nv-panneau .dj-pc .dj-etat .dj-x{width:28px;height:28px}
@@ -8813,10 +8815,10 @@ body #inspecteur .fi.nv-c>.fi-nav::before{display:none}
 /* ═══════════════════════════════════════════════════════════════════════════
    LA COULEUR DE LA TABLE — ce qui se pose sur elle en prend la neutralité (v86, « quelle est la meilleure couleur de
    fond ? »). La table du jour est l'ALUMINIUM, un gris neutre (style-z-cadre.css § 2) ; la nuit reste le graphite chaud.
-   Ici : l'ombre de la carte, du grand et des feuilles posées sur la table, le jour. Elle tirait sur le brun (pour le lin,
-   style-z-fiche.css § 10 bis) ; sur un gris neutre, une ombre brune salit le pied de la carte : même forme, encre neutre.
-   Ce fichier se charge AVANT style-z-fiche.css (l'ordre des noms) : ses sélecteurs portent un `html` de plus pour avoir
-   le dernier mot sans dépendre de l'ordre.
+   Ici : l'ombre de la carte, du grand et des feuilles posées sur la table, le jour. Elle tirait sur le brun pour le lin
+   (l'ancien § 10 bis de style-z-fiche.css, retiré) ; sur un gris neutre, une ombre brune salit le pied de la carte : même
+   forme, encre neutre. Ses sélecteurs portent un `html` de plus pour avoir le dernier mot sans dépendre de l'ordre des
+   fichiers.
    ═══════════════════════════════════════════════════════════════════════ */
 @media (prefers-color-scheme: light){ html:root:not([data-theme="dark"]) :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
   --sh-carte:0 0 0 1px rgba(25,27,28,.10),0 30px 72px -20px rgba(16,18,19,.50),0 10px 26px -12px rgba(16,18,19,.28);
@@ -9179,16 +9181,8 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
 :root[data-theme="dark"] #inspecteur .nc-taches.nc-pbs .nc-geste .btn.cuivre:hover{background:var(--v-cuivre-vif,color-mix(in srgb,var(--nv-cuivre) 85%,#fff))}
 :root[data-theme="dark"] #inspecteur .nc-taches.nc-pbs .nc-tache.info .nc-rond{box-shadow:var(--n-point-att,none)}
 
-/* ─── 10 bis. LES OMBRES SUR LE LIN (v85, l'agent « jour ») : la carte et le grand posés sur une table de lin chaud — leur
-   ombre tire sur le brun, plus sur le bleu (rgba(0,6,18)) ; même forme, autre teinte. Le jour seulement. ─── */
-@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]) :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
-  --sh-carte:0 0 0 1px rgba(28,22,12,.10),0 30px 72px -20px rgba(48,34,18,.55),0 10px 26px -12px rgba(48,34,18,.32);
-  --sh-carte-tenue:0 0 0 1px rgba(28,22,12,.14),0 46px 100px -20px rgba(48,34,18,.62),0 16px 34px -12px rgba(48,34,18,.38);
-  --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 28px 64px -18px rgba(48,34,18,.52),0 6px 18px -8px rgba(48,34,18,.30) } }
-:root[data-theme="light"] :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
-  --sh-carte:0 0 0 1px rgba(28,22,12,.10),0 30px 72px -20px rgba(48,34,18,.55),0 10px 26px -12px rgba(48,34,18,.32);
-  --sh-carte-tenue:0 0 0 1px rgba(28,22,12,.14),0 46px 100px -20px rgba(48,34,18,.62),0 16px 34px -12px rgba(48,34,18,.38);
-  --sh-panneau:0 0 0 1px rgba(28,22,12,.10),0 28px 64px -18px rgba(48,34,18,.52),0 6px 18px -8px rgba(48,34,18,.30)}
+/* (10 bis, les ombres brunes posées sur le lin, est parti avec le lin : l'ombre du jour, neutre, est dans
+   style-z-couleur.css.) */
 
 /* ─── 11. L'HISTORIQUE : une ligne par changement, le geste qui annule toujours visible ─── */
 .nv-modifs-l .fi-ec-note{margin:0 0 12px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
@@ -23796,11 +23790,18 @@ function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg 
        (`carteDecision`) : « Passer en 15 A et grossir les 3 câbles » (un
        geste, une entrée d'historique : `deciderCalibre`), « Garder le
        10 A… » (ce qu'il faudrait pour qu'il passe) ;
-     · LA COURBE, sur papier (son dessin : 08-courbe-dj, `grapheSvg`) — les
-       quatre températures, toujours, sans bascule ;
-     · LE PROFIL DE CHARGE : un petit tableau — démarrage, transition,
-       permanent, puis les états ajoutés —, les unités dans l'en-tête, chaque
-       valeur modifiable, chaque état supprimable (×), « + État ».
+     · (v86) LE PROFIL DE CHARGE ET SA COURBE, une seule section : le petit
+       tableau — démarrage, transition, permanent, puis les états ajoutés —,
+       les unités dans l'en-tête, chaque valeur modifiable, chaque état
+       supprimable (×), « + État » ; sous lui, la conclusion ; à côté (ou
+       dessous, quand la carte est étroite), la courbe sur papier (son dessin :
+       08-courbe-dj, `grapheSvg`, les quatre températures). Chaque touche
+       rejuge le profil : les points glissent sur la courbe, la conclusion et
+       les calibres suivent ; glisser un point remplit ses cases.
+     · (v86) COURANT APPELÉ ET CALIBRES, sur l'essentiel (`courantAppele`) : la
+       conclusion en grand (`motsDuCalibre` — « 10 A : il ne disjoncte pas. »),
+       le courant qui s'écoule dans une barre par point du profil, la zone où
+       le calibre disjoncte pour cette durée, les calibres en ampères.
    Ses câbles (l'intensité au pire contre ce qu'ils admettent, la chute en
    ligne jusqu'au bout de leur chemin) vont dans la section commune « Câbles »
    (`lignesFilsDisjoncteur`). Le moteur (09 bis, 09 quater) juge ; ici on lit,
@@ -24474,7 +24475,7 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
     const voisin = kept.find(k => Math.abs(k.x - x) < (k.w + w) / 2 + 6); if (!voisin) kept.push({ c: g.calibre, x, w }); else if (imp && voisin.c !== cal && voisin.c !== fic) { kept.splice(kept.indexOf(voisin), 1, { c: g.calibre, x, w }); } });
   const cals = gamme.map(g => { const c = g.calibre, k = cleDuVerdict(g), m = motsDuCalibre(d, c) || { titre: amperes(c), detail: '', cle: k }, ret = c === cal, f = c === fic, montre = kept.some(x => x.c === c);
     const seuils = pts.map(p => { const s = seuilDe(c, p); return s != null ? f1(s) : ''; }).join(' '), oks = pts.map(p => { const q = point(c, p); return q && q.ok === false ? '0' : '1'; }).join('');
-    return `<span class="dj-fx-cal ${k === 'passe' ? 'oui' : 'non'}${ret ? ' ret' : ''}${f ? ' fic' : ''}${montre ? '' : ' tu'}" style="left:${pc(c).toFixed(2)}%" tabindex="0" role="button" data-cal="${c}" data-seuils="${seuils}" data-oks="${oks}" data-cle="${escA(m.cle)}" data-titre="${escA(m.titre)}" data-detail="${escA(m.detail)}"`
+    return `<span class="dj-fx-cal ${k === 'passe' ? 'oui' : 'non'}${ret ? ' ret' : ''}${f ? ' fic' : ''}${montre ? '' : ' tu'}" style="left:${pc(c).toFixed(2)}%" tabindex="0" role="listitem" data-cal="${c}" data-seuils="${seuils}" data-oks="${oks}" data-cle="${escA(m.cle)}" data-titre="${escA(m.titre)}" data-detail="${escA(m.detail)}"`
       // (pas de bulle : le survol écrit déjà sa conclusion en tête, pas deux fois la même chose)
       + ` aria-label="${escA(m.titre + (ret ? ' Retenu.' : f ? ' Celui de votre fichier.' : '') + ' ' + m.detail)}">`
       + `<i></i><b>${esc(nombre(c))}<small>A</small></b>${ret ? '<em>retenu</em>' : f ? '<em>votre fichier</em>' : ''}</span>`; }).join('');
@@ -24485,7 +24486,7 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
   const note = deFichier && mini && mini < cal - 1e-9 ? `<p class="vu-fichier"><b>${esc(amperes(cal))} est celui de votre fichier</b> : il ne disjoncte pas, VOLTA le garde. Le plus petit qui ne disjoncte pas est le ${esc(amperes(mini))} — un clic sur lui, dans l’onglet Calibre, le retient.</p>` : '';
   const leg = `<p class="dj-fx-leg"><span><i class="ok"></i>ne disjoncte pas</span><span><i class="ko"></i>disjoncte</span><span><i class="zone"></i><span class="dj-fx-leg-z">où le ${esc(A)} disjoncte</span></span></p>`;
   return `<div class="dj-ca" data-disj="${escA(nom)}" data-max="${f1(max)}" data-cal="${calZ}">${conclusionCalibre(d, 'dj-concl-g')}${ligneF}`
-    + `<div class="dj-flux" role="group" aria-label="${escA('Ce qu’il tire, sur l’échelle de ses calibres')}">${lignes}<div class="dj-fx-echelle"><span></span><span class="dj-fx-cals">${cals}</span></div></div>${leg}${note}</div>`; }
+    + `<div class="dj-flux" role="group" aria-label="${escA('Ce qu’il tire, sur l’échelle de ses calibres')}">${lignes}<div class="dj-fx-echelle"><span></span><span class="dj-fx-cals" role="list" aria-label="Les calibres de la gamme : survolez-en un pour voir où il disjoncte">${cals}</span></div></div>${leg}${note}</div>`; }
 // survoler (ou parcourir au clavier) un calibre de l'échelle : ses zones glissent sur les barres, sa conclusion s'écrit ; la
 // souris partie, le retenu revient
 function lierCourantAppele(ca) { const max = +ca.dataset.max || 1, lignes = [...ca.querySelectorAll('.dj-fx-l')], concl = ca.querySelector('.dj-concl-g'), legZ = ca.querySelector('.dj-fx-leg-z');
@@ -24674,7 +24675,9 @@ function lierDisjonction(nom, conteneur) {
     const parI = new Map((dd.points || []).map(p => [p.i, p]));
     QA('.dj-etat').forEach(row => { const inp = row.querySelector('[data-q="i"]'), i = inp ? nombreLu(inp.value) : null, p = i > 0 ? parI.get(i) : null, ko = !!p && p.ok === false, v = row.querySelector('.dj-verdict');
       row.classList.toggle('ko', ko); if (p) row.dataset.pt = p.k; else delete row.dataset.pt;
-      if (v) { v.classList.toggle('ko', ko); v.textContent = ko ? 'disjoncte' : ''; if (!ko) delete v.dataset.bulle; } });
+      if (v) { v.classList.toggle('ko', ko); v.textContent = ko ? 'disjoncte' : ''; if (!ko) delete v.dataset.bulle; }
+      // la durée en minutes, sous sa case, suit aussi (« 2 min »)
+      const ti = row.querySelector('[data-q="t"]'), lab = ti && ti.closest('.dj-champ'), t = ti ? nombreLu(ti.value) : null; if (lab) { if (t >= 60 && isFinite(t)) lab.dataset.min = secondes(t); else delete lab.dataset.min; } });
     const f = ligneAuClavier(); if (f) allumer(f, true); };
   const profilVif = () => { const profil = lire(); let dd; try { dd = { ...E.d, ...verdictDisjonction(app.norme, E.d.courbe, E.d.calibre, profil, E.d.contexte), profil }; } catch (_) { return; }
     courbeVive(dd); suivreVif(dd); };
@@ -25664,12 +25667,15 @@ function choixALaMain(nom, type) { const xs = [], C = app.contrat, N = app.norme
       ajoute({ cle: 'c|' + nom + '|' + profilSansCalibre(ch), quoi: 'Ce qu’il consomme', avant: 'pas écrite', depuis: 'calcul', apres: [perm ? amperes(perm) + ' en permanence' : '', dem ? amperes(dem.i) + ' au démarrage' + (dem.t ? ' pendant ' + secondes(dem.t) : '') : ''].filter(Boolean).join(', ') || 'écrite',
         auto: 'conso:' + nom, pourquoi: dj.length ? 'Avant, VOLTA comptait pour ses câbles le courant total de ' + dj.join(', ') + ' ; sa consommation fait maintenant leur courant et le profil de ' + (dj.length > 1 ? 'ces disjoncteurs' : 'son disjoncteur') + '.' : '' }); } }
   if (type === 'prise') { const Q = essai(() => planDeCoupure(nom).plan), sx = sexeChoisi(nom);
-    if (Q && (Q.main || Q.visee)) ajoute({ cle: 'd|' + nom + '|' + C.designations.get(nom), quoi: 'Arrangement', avant: essai(() => coupureEnModule(nom, V, N, '', sx).plan.reference) || 'le sien', apres: Q.reference || (Q.modules && Q.modules[0] ? Q.modules[0].reference : ''), mono: true, auto: 'arr:' + nom });
-    if (sx) ajoute({ cle: 's|' + nom + '|' + sx, quoi: 'Sexe des contacts', avant: motSexe(essai(() => coupureEnModule(nom, V, N, C.designations.get(nom) || '', '').plan.sexe), true), apres: motSexe(sx, true), auto: 'sexe:' + nom }); }
+    const Qa = Q && (Q.main || Q.visee) ? essai(() => coupureEnModule(nom, V, N, '', sx).plan) : null;
+    if (Q && (Q.main || Q.visee)) ajoute({ cle: 'd|' + nom + '|' + C.designations.get(nom), quoi: 'Arrangement', avant: (Qa && Qa.reference) || 'le sien', depuis: Qa && Qa.nomme ? 'fichier' : 'volta', apres: Q.reference || (Q.modules && Q.modules[0] ? Q.modules[0].reference : ''), mono: true, auto: 'arr:' + nom });
+    // (la valeur de VOLTA qui venait de votre fichier — la référence nomme l'arrangement, dit le sexe — : « votre fichier »)
+    const Qs = sx ? essai(() => coupureEnModule(nom, V, N, C.designations.get(nom) || '', '').plan) : null;
+    if (sx) ajoute({ cle: 's|' + nom + '|' + sx, quoi: 'Sexe des contacts', avant: motSexe(Qs && Qs.sexe, true), depuis: Qs && Qs.sexeSource === 'part number' ? 'fichier' : 'volta', apres: motSexe(sx, true), auto: 'sexe:' + nom }); }
   if (type === 'barrette') (essai(() => modulesDeLaBarrette(nom)) || []).forEach(M => {
     const fich = M.fichier && cleNorme(M.fichier) !== cleNorme(M.reference);
     if (M.main) { const p = essai(() => modulesPossiblesDe(nom, M.numero)), auto = p && p.auto ? p.auto : '';
-      ajoute({ cle: 'm|' + nom + '|' + M.numero + '|' + M.reference, quoi: 'Module ' + M.numero, avant: auto || 'celui de VOLTA', apres: M.reference, mono: true, auto: 'mod:' + nom + '|' + M.numero, pourquoi: fich && auto && cleNorme(M.fichier) !== cleNorme(auto) ? 'Votre fichier écrit ' + M.fichier + '.' : '' }); }
+      ajoute({ cle: 'm|' + nom + '|' + M.numero + '|' + M.reference, quoi: 'Module ' + M.numero, avant: auto || 'celui de VOLTA', depuis: auto && M.fichier && cleNorme(auto) === cleNorme(M.fichier) ? 'fichier' : 'volta', apres: M.reference, mono: true, auto: 'mod:' + nom + '|' + M.numero, pourquoi: fich && auto && cleNorme(M.fichier) !== cleNorme(auto) ? 'Votre fichier écrit ' + M.fichier + '.' : '' }); }
     else if (fich) xs.push({ cle: '', quoi: 'Module ' + M.numero, avant: M.fichier, depuis: 'fichier', apres: M.reference, qui: 'volta', mono: true, pourquoi: M.ecart && M.ecart.raison ? 'Celui de votre fichier ne convient pas : ' + M.ecart.raison + '.' : 'VOLTA retient un autre module que celui de votre fichier.',
       faire: () => choisirModuleDeBarrette(nom, M.numero, M.fichier), aide: 'Reprendre celui de votre fichier (' + M.fichier + '), à la main — VOLTA dit pourquoi il l’écartait', dit: 'Module ' + M.numero + ' de ' + nom + ' : ' + M.fichier + ', celui de votre fichier, pris à la main.' }); });
   // le raccord (un équipement : par connecteur ; une prise : par partie)
@@ -25680,7 +25686,7 @@ function choixALaMain(nom, type) { const xs = [], C = app.contrat, N = app.norme
   // le calibre retenu à la main (un disjoncteur) : ce que VOLTA prendrait, ce que vous avez pris
   if (type === 'disjoncteur') { const ch = typeof chargeEcrite === 'function' ? chargeEcrite(nom) : null, d = ch && ch.calibre > 0 ? essai(() => disjonctionDe(nom)) : null;
     if (d) xs.push({ cle: 'cal|' + nom + '|' + ch.calibre, quoi: 'Calibre', avant: d.passe > 0 ? amperes(d.passe) : 'celui de VOLTA', depuis: 'volta', apres: amperes(ch.calibre), qui: 'vous', calibre: true,
-      faire: () => rendreCalibre(nom), aide: 'Rendre le calibre à VOLTA' + (d.passe > 0 ? ' : ' + amperes(d.passe) + ', le plus petit qui ne disjoncte pas' : ''), pourquoi: d.passe > 0 ? 'VOLTA prendrait ' + amperes(d.passe) + ', le plus petit qui ne disjoncte pas ; sa référence suit le calibre retenu.' : '' }); }
+      faire: () => rendreCalibre(nom), aide: 'Rendre le calibre à VOLTA' + (d.passe > 0 ? ' : ' + amperes(d.passe) + ', le plus petit qui ne disjoncte pas' : ''), pourquoi: d.passe > 0 ? 'Le plus petit qui ne disjoncte pas est ' + amperes(d.passe) + '.' : '' }); }
   return xs; }
 // une valeur du fichier réécrite (`changementsEcrits`), en ligne d'historique
 function ligneDuFichier(x, o) { const [l, c] = x.rendre[0] || [], rep = c === 'pnDe' || c === 'contactDe' ? l.de : l.vers, pn = /^pn/.test(c), ct = /^contact/.test(c), nul = v => v == null || v === '' || v === 'rien';
@@ -25705,8 +25711,8 @@ function ligneDuFichier(x, o) { const [l, c] = x.rendre[0] || [], rep = c === 'p
 function journalDeLaFiche(o) { const nom = o.tete && o.tete.nom, xs = [];
   const choix = o.type !== 'fil' && nom && !/^Nouveau/.test(nom) ? (() => { try { return choixALaMain(nom, o.type); } catch (_) { return []; } })() : [];
   // un calibre retenu à la main réécrit la référence du disjoncteur : une seule ligne, celle du calibre
-  const calMain = choix.some(x => x.calibre);
-  (o.ecrits || []).forEach(x => { if (calMain && x.objet === nom && /^pn/.test((x.rendre[0] || [])[1] || '')) return; xs.push(ligneDuFichier(x, o)); });
+  const calMain = choix.find(x => x.calibre);
+  (o.ecrits || []).forEach(x => { if (calMain && x.objet === nom && /^pn/.test((x.rendre[0] || [])[1] || '')) { calMain.excel = true; calMain.pourquoi = 'Le plus petit qui ne disjoncte pas est ' + calMain.avant + '. Sa référence devient ' + x.apres + ' (votre fichier : ' + x.avant + ') dans l’Excel corrigé.'; return; } xs.push(ligneDuFichier(x, o)); });
   choix.forEach(x => { x.t = x.t != null ? x.t : heureDuChangement(x.cle); if (x.auto && !x.faire) { const cle = x.auto; x.faire = () => retourAutomatique({ dataset: { auto: cle } }, app.cible); }
     if (!x.aide) x.aide = 'Rendre le choix à VOLTA' + (x.avant && !/^(celui|le sien|pas écrite|sans option)/.test(x.avant) ? ' : ' + x.avant : '');
     if (!x.dit) x.dit = majuscule(x.quoi) + (x.de ? ' ' + x.de : '') + (x.depuis === 'fichier' ? ' : celui de votre fichier revient.' : x.auto && /^conso:/.test(x.auto) ? ' : effacée, VOLTA compte sans.' : ' : VOLTA choisit de nouveau.'); xs.push(x); });
@@ -25719,14 +25725,15 @@ function modificationsDeLaFiche(ecrits, proposes, o) { o = o || {}; noterHeures(
   const xs = journalDeLaFiche({ ...o, ecrits: ecrits || [], proposes: proposes || [] }); FI.journal = xs; FI.ecarts = []; if (!xs.length) return null;
   // (ce qui part dans l'Excel corrigé : une valeur de votre fichier réécrite — pas un choix de VOLTA, qui reste avec le plan)
   const nom = o.tete && o.tete.nom, n = xs.length, nv = xs.filter(x => x.qui !== 'vous').length, excel = xs.some(x => x.excel);
-  const val = (v, mono, b) => `<${b ? 'b' : 's'}${mono ? ' class="id"' : ''}>${esc(v)}</${b ? 'b' : 's'}>`;
+  // (le nombre et son unité ne se séparent pas : « 200 ms », jamais « 200 » puis « ms » à la ligne)
+  const val = (v, mono, b) => `<${b ? 'b' : 's'}${mono ? ' class="id"' : ''}>${insecable(esc(v))}</${b ? 'b' : 's'}>`;
   const ligne = (x, i) => `<li class="hi-i ${x.qui}">`
     + `<div class="hi-t"><b>${esc(x.quoi)}</b>${x.de ? ` <span>${esc(x.de)}</span>` : ''}</div>`
     + (x.t ? `<time class="hi-q" datetime="${new Date(x.t).toISOString()}">${esc(quandDit(x.t))}</time>` : '')
     + `<div class="hi-v"><span class="hi-av">${val(x.avant, x.mono && !/^(celui|le sien|pas écrite|sans option|vide|≈)/.test(x.avant))}<small>${esc(MOTS_DEPUIS[x.depuis] || '')}</small></span><span class="hi-f" aria-hidden="true">${ico('fleche')}</span>`
     + `<span class="hi-ap">${val(x.apres, x.mono, true)}<small>${esc(MOTS_QUI[x.qui] || '')}</small></span></div>`
     + (x.faire ? `<button type="button" class="hi-d" data-hi="${i}" data-bulle="${escA(x.aide)}">${ico('retour')}<span>Défaire</span></button>` : '')
-    + (x.pourquoi ? `<p class="hi-p">${esc(x.pourquoi)}</p>` : '') + '</li>';
+    + (x.pourquoi ? `<p class="hi-p">${insecable(esc(x.pourquoi))}</p>` : '') + '</li>';
   const sur = o.type === 'fil' ? 'ce câble' : nom || 'cet objet';
   const html = `<div class="hi" id="fi-ecarts"><p class="hi-intro">Ce qui a changé sur <b${o.type === 'fil' ? '' : ' class="id"'}>${esc(sur)}</b> depuis votre fichier, le plus récent en haut.${excel ? ' Ce qui touche votre fichier part dans l’Excel corrigé.' : ''}</p><ol class="hi-l">${xs.map(ligne).join('')}</ol></div>`;
   return { n, mots: pluriel(n, 'changement') + (nv ? (nv === n ? (n > 1 ? ', tous par VOLTA' : ', par VOLTA') : ' (dont ' + nv + ' par VOLTA)') : ''), html }; }
@@ -31882,7 +31889,9 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
      discret ; le REPÈRE, le seul grand ; la référence dessous, une seule pastille au trait. Deux graisses (500, 600), l'encre
      et un gris, aucun fond (style-z-carte). Dans la carte, la silhouette est le SCEAU de la barre (à la place de la poignée :
      la barre se tient toujours) ; dans le grand, elle ouvre la ligne. */
-  const genre = GENRES_FICHE[o.type] || 'Élément';
+  // un équipement dit sa NATURE quand son code la donne (103RL1 : « Relais », 395SW1 : « Interrupteur ») ; sinon « Équipement »
+  const nature = o.type === 'equipement' && nom && typeof natureDe === 'function' ? natureDe(nom) : '';
+  const genre = nature && nature !== 'équipement' ? majuscule(nature) : GENRES_FICHE[o.type] || 'Élément';
   const titre = `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-rep">${rep}</span>`;
   const sil = silhouetteVue(o.type, silhouetteDe(o));
   // (v83) en grand, « module 2 de VT2 » se lit dans la première section (la barrette et tous ses modules) : pas deux fois
@@ -32097,7 +32106,8 @@ function listeDuGenre(c, etatIci) { const { genre, xs } = objetsDuGenre(c), q = 
 const COLONNES_TABLE_CABLES = [['type', 'Câble'], ['vers', 'Vers'], ['i', 'Courant'], ['u', 'Chute en ligne'], ['lg', 'Longueur'], ['ct', 'Contact à sertir']];
 /* (v86, le lecteur : « 80 %, on ne comprend pas ») : l'anneau dit une part — le titre de sa colonne dit de quoi, en petit
    sous le mot, et sa bulle explique d'où vient l'admis */
-const SOUS_COLONNES_CABLES = { i: '% de ce qu’il admet', u: '% de la chute admise' };
+// (court : la colonne de la chute ne fait que 83 px à 1440 quand le contact à sertir a la sienne ; la bulle dit le reste)
+const SOUS_COLONNES_CABLES = { i: '% de l’admis', u: '% de l’admis' };
 const BULLES_COLONNES_CABLES = {
   i: 'Le courant qu’il porte, sur celui qu’il admet (EN 2853, déclassé selon son faisceau, l’altitude et l’ambiante). L’anneau en montre la part : au-delà de 100 %, il est trop fin.',
   u: 'La tension perdue depuis son disjoncteur jusqu’au bout du chemin, sur la chute admise pour ce réseau. L’anneau en montre la part : au-delà de 100 %, la ligne perd trop.' };
