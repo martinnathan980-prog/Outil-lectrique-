@@ -229,7 +229,8 @@ function clavierAuDoc() { if (typeof prendreLeClavierDuDoc === 'function') { pre
 /* Le passage d'un document à l'autre — les normes, la bible (et les contrats déjà faits) : deux ONGLETS d'un même document
    (DESIGN §4 : ce qui change de page est un onglet souligné ; le segment est pour les modes d'une même vue) ; ← → passent
    de l'un à l'autre. */
-const nmNav = actif => `<div class="onglets nm-nav" role="tablist" aria-label="Normes et bible">${[['normes', 'Normes'], ['bible', 'Bible des barrettes']].map(([k, t]) => `<button type="button" class="onglet" role="tab" data-nm-vue="${k}" aria-selected="${actif === k}" tabindex="${actif === k ? 0 : -1}"${actif === k ? ' data-clavier' : ''}>${t}</button>`).join('')}</div>`;
+// (v86, F4) l'onglet de la bible dit tout ce qu'elle porte : les modules de barrette, mais aussi ceux des connecteurs et des prises
+const nmNav = actif => `<div class="onglets nm-nav" role="tablist" aria-label="Normes et bible">${[['normes', 'Normes'], ['bible', 'La bible : barrettes, connecteurs, prises']].map(([k, t]) => `<button type="button" class="onglet" role="tab" data-nm-vue="${k}" aria-selected="${actif === k}" tabindex="${actif === k ? 0 : -1}"${actif === k ? ' data-clavier' : ''}>${t}</button>`).join('')}</div>`;
 /* LE MENU « ··· » d'un document : les gestes secondaires, rangés derrière un bouton (la page des normes, le pied de la
    bible) ; `gestes` : [id, le mot, ce qu'il fait en petit, des attributs] — null pose un filet, le reste (faux) se tait.
    Une ligne garde l'identifiant du bouton qu'elle remplace : ses gestes ne changent pas. */

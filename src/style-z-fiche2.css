@@ -1,0 +1,40 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA FICHE, v86 — deuxième vague (« fiche2 ») : 08-niveaux (`tachesFiche`, `motsDuProbleme`, `tableCables`),
+   08-fiche (`chiffreCables`).
+   · RIEN DE COUPÉ EN HAUTEUR. La description d'un point « À régler » se lit en entier dans la carte : elle est courte (ce
+     qu'il porte, pendant combien de temps, ce qu'il admet), le grand dit le reste — plus de « … » au bout de deux lignes.
+     Les grands chiffres de la carte ne rognent plus le bas de leur boîte (la virgule de « 9,31 ») : seul le côté coupe.
+   · UNE MESURE DE LECTURE. À 1920, une phrase courait sur 1000 px : elle s'arrête à 60 ch, environ 80 lettres d'Inter.
+   · LE COMPTE DES CÂBLES (la carte) : le nombre reste à l'encre — c'est un compte, pas un compte de problèmes — et ce qui
+     cloche se lit à côté, dans sa couleur : « 4 · 1 à régler ».
+   · L'ANNEAU D'UN TABLEAU : son pourcentage se lit (11 px, le « % » à 8 px) ; sa piste prend un voile de son état, l'état
+     se lit sur tout le tour (un compteur : la part pleine, le reste du même ton, plus clair).
+   Les couleurs : les jetons seulement (--ko, --warn, --ok, --t-1, --t-3). Chargée après style-z-fiche et style-z-carte.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── LA CARTE : la description d'un point se lit en entier ─── */
+#inspecteur .fi.nv-c .nc-taches.nc-pbs .nc-tache.agir .nc-d,
+#inspecteur .fi.nv-c .nc-taches.nc-pbs .nc-tache.agir:is(:hover,:focus-within) .nc-d{display:block;-webkit-line-clamp:unset;line-clamp:none;overflow:visible}
+
+/* ─── LA CARTE : les grands chiffres — le côté coupe (l'ellipse d'un repère trop long), jamais le bas des lettres ─── */
+:is(#inspecteur,.carte-double) .nc-chiffre:not(.edit) .nc-v{overflow:clip visible}
+
+/* ─── LA CARTE : « 4 · 1 à régler » — le compte à l'encre, l'état dans sa couleur ─── */
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre .nc-v small.nc-etat{margin-left:6px;font-weight:500;letter-spacing:0;white-space:nowrap}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre .nc-v small.nc-etat.ko{color:var(--ko)}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-chiffre .nc-v small.nc-etat.att{color:var(--warn)}
+
+/* ─── LE GRAND : une mesure de lecture, environ 80 lettres (60 ch d'Inter) — à 1920, plus de lignes de 1000 px ───
+   (une phrase qui porte un filet garde son filet entier : la marge de droite fait la mesure ; une phrase en retrait, le
+   retrait en plus) */
+#inspecteur .nv-grand :is(.nc-tache .nc-d,.nc-tache .nc-que,.fi-mes-d,.vu-pq-t,.vu-pq-dc>p){max-width:60ch}
+#inspecteur .nv-grand .dj-concl-d{box-sizing:content-box;max-width:60ch}
+#inspecteur .nv-grand .hi-p{padding-right:max(0px,calc(100% - 60ch))}
+
+/* ─── LE TABLEAU DES CÂBLES : l'anneau lisible, sa piste du ton de son état ─── */
+.nv-cables svg.vu-anneau{color:var(--ok)}
+.nv-cables svg.vu-anneau.att{color:var(--warn)}
+.nv-cables svg.vu-anneau.ko{color:var(--ko)}
+.nv-cables svg.vu-anneau .vu-an-f{stroke:color-mix(in srgb,currentColor 18%,transparent)}
+.nv-cables svg.vu-anneau .vu-an-t{font:600 11px var(--sans);font-variant-numeric:tabular-nums;letter-spacing:-.02em;fill:var(--t-1);transform:translateY(.8px)}
+.nv-cables svg.vu-anneau .vu-an-t .vu-an-pc{font-size:8px;font-weight:500;letter-spacing:0;fill:var(--t-3)}

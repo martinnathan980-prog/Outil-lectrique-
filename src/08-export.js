@@ -51,6 +51,11 @@ function colonnesDuClasseur(V) { const tete = [['Install', 'install'], ['ECP', '
 // une liaison qu'on rend : ses deux bouts, ou ce qu'une ligne incomplète du fichier portait (un bout, un câble) — elle était au fichier
 const aRendre = l => !!l && !!(l.de || l.vers || l.cable);
 /* Les modifications d'une liaison : [colonne, champ, avant, après] pour chaque champ que `l.avant` garde et qui a changé. */
+/* (v86, l'audit B3) LES LIGNES EN DOUBLE RETIRÉES (08-controle, « Retirer la ligne en double », une proposition de VOLTA) : la
+   ligne gardée en porte le compte (`avant.copies`) ; l'Excel corrigé ne les écrit plus, et le dit — la colonne « Modifié par
+   VOLTA », la feuille Modifications, le relevé. */
+const copiesRetirees = l => l && l.avant && l.avant.copies > 0 ? l.avant.copies : 0;
+const motCopies = n => n > 1 ? n + ' lignes en double retirées' : 'ligne en double retirée';
 function modificationsDe(l) { if (!l.avant) return [];
   return COLONNES_RETEST.filter(([, ch]) => ch in l.avant && (l.avant[ch] == null ? null : l.avant[ch]) !== (l[ch] == null ? null : l[ch]))
     .map(([col, ch]) => [col, ch, l.avant[ch], l[ch]]); }
@@ -79,10 +84,10 @@ function origineDeCase(l, ch, ouvert) { const v = l.avant && l.avant[ORIGINE_VOL
    colonne « Modifié par VOLTA » qui les nomme), la feuille « Modifications » (avec son Origine) et, pour le plan ouvert
    (`o.volta`), la feuille cachée « VOLTA ». `o.ouvert` : ce sont les liaisons du plan sur la table (l'origine se lit
    aussi par ses disjoncteurs) ; la conversion en lot (08-bibliotheque) appelle sans. */
-function classeurRetestCorrige(V, nom, o) { o = o || {}; V = (V || []).filter(aRendre); const mods = V.map(modificationsDe), n = mods.filter(m => m.length).length;
+function classeurRetestCorrige(V, nom, o) { o = o || {}; V = (V || []).filter(aRendre); const mods = V.map(modificationsDe), copies = V.map(copiesRetirees), n = mods.filter((m, i) => m.length || copies[i]).length;
   const K = colonnesDuClasseur(V), quand = new Date().toLocaleDateString('fr-FR'), entetes = [...K.tete.map(c => c[0]), ...COLONNES_RETEST.map(c => c[0]), ...K.autres, 'Modifié par VOLTA'];
   const lignes = [[`Installation corrigée par VOLTA — ${nom || 'plan'}`], [`Le ${quand} · ${plurielLie(V.length, 'liaison')} · ${plurielLie(n, 'liaison')} modifiée${n > 1 ? 's' : ''} : chaque case changée porte en commentaire ce qu'elle disait avant`], [], entetes,
-    ...V.map((l, i) => [...K.tete.map(([, ch]) => l[ch] || ''), ...COLONNES_RETEST.map(([, ch]) => valeurRetest(l, ch)), ...K.autres.map(k => (l.autres && l.autres[k]) || ''), mods[i].map(m => m[0]).join(', ')])];
+    ...V.map((l, i) => [...K.tete.map(([, ch]) => l[ch] || ''), ...COLONNES_RETEST.map(([, ch]) => valeurRetest(l, ch)), ...K.autres.map(k => (l.autres && l.autres[k]) || ''), [...mods[i].map(m => m[0]), ...(copies[i] ? [motCopies(copies[i])] : [])].join(', ')])];
   const ws = XLSX.utils.aoa_to_sheet(lignes), origine = (l, ch) => origineDeCase(l, ch, !!o.ouvert);
   // le commentaire de chaque case changée : ce que portait le fichier, et d'où vient le changement
   V.forEach((l, i) => mods[i].forEach(([col, ch, av]) => { const c = K.tete.length + COLONNES_RETEST.findIndex(x => x[1] === ch), ref = XLSX.utils.encode_cell({ r: 4 + i, c });
@@ -90,6 +95,7 @@ function classeurRetestCorrige(V, nom, o) { o = o || {}; V = (V || []).filter(aR
   ws['!cols'] = entetes.map(h => ({ wch: Math.max(10, Math.min(28, h.length + 3)) })); ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 3, c: 0 }, e: { r: 3 + V.length, c: entetes.length - 1 } }) };
   const M = [['Harness', 'Cable Tag', 'Device1', 'Pin1', 'Device2', 'Pin2', 'Colonne', 'Avant', 'Après', 'Origine']];
   V.forEach((l, i) => mods[i].forEach(([col, ch, av, ap]) => M.push([l.harness || '', l.cable || '', ...['de', 'borneDe', 'vers', 'borneVers'].map(k => valeurRetest(l, k)), col, motAvant(ch, av), motAvant(ch, ap), ORIGINES_MOTS[origine(l, ch)]])));
+  V.forEach((l, i) => { if (copies[i]) M.push([l.harness || '', l.cable || '', ...['de', 'borneDe', 'vers', 'borneVers'].map(k => valeurRetest(l, k)), 'Ligne entière', (copies[i] + 1) + ' lignes identiques', '1 ligne', ORIGINES_MOTS.volta]); });
   const wm = XLSX.utils.aoa_to_sheet(M.length > 1 ? M : [...M, ['', '', '', '', '', '', 'aucune modification', '', '', '']]); wm['!cols'] = M[0].map((h, j) => ({ wch: j < 6 ? 12 : j === 9 ? 30 : 22 }));
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Installation'); XLSX.utils.book_append_sheet(wb, wm, 'Modifications');
   if (o.volta) { XLSX.utils.book_append_sheet(wb, feuilleVolta(o.volta), FEUILLE_VOLTA); wb.Workbook = { Sheets: [{ Hidden: 0 }, { Hidden: 0 }, { Hidden: 1 }] }; }
@@ -130,10 +136,15 @@ function changementsDuRetest() { const V = verite().filter(liaisonComplete), par
       let calibres = ''; if (pn && estDisjoncteur(objet)) { const a = familleDuPn(av, app.norme), b = familleDuPn(ap, app.norme); if (a && b && a.calibre > 0 && b.calibre > 0) calibres = nombre(a.calibre) + ' → ' + nombre(b.calibre) + ' A'; }
       const e = par.get(k) || par.set(k, { objet, mono: true, colonne: MOTS_COLONNES[ch] || col, calibres, colonnes: new Set(), champ: ch, avant: motAvant(ch, av), apres: motAvant(ch, ap), origine, n: 0, liaisons: [] }).get(k);
       e.colonnes.add(col); e.n++; e.liaisons.push(l); }); });
+  // (v86) une ligne en double retirée : toute la ligne quitte l'Excel, une proposition de VOLTA ; le câble se dit par ses bouts
+  V.forEach(l => { const c = copiesRetirees(l); if (!c) return; if (!modificationsDe(l).length) liaisons++;
+    const objet = l.de + (l.borneDe ? ':' + l.borneDe : '') + ' → ' + l.vers + (l.borneVers ? ':' + l.borneVers : '');
+    par.set('copies\u0001' + par.size + '\u0001' + objet, { objet, mono: true, colonne: 'ligne en double', calibres: '', colonnes: new Set(['toutes']), champ: 'copies', avant: (c + 1) + ' lignes', apres: '1 ligne', origine: 'volta', n: 1, liaisons: [l],
+      bulle: (c > 1 ? c + ' copies identiques de cette ligne quittent' : 'Sa copie identique quitte') + ' l’Excel corrigé — « Retirer la ligne en double »' }); });
   const ecrits = [...par.values()].map(e => ({ ...e, colonnes: [...e.colonnes] })).sort((a, b) => triNaturel(a.objet, b.objet) || a.colonne.localeCompare(b.colonne));
   let problemes = { ko: 0, att: 0, mot: '' }; try { problemes = compteProblemes(); } catch (_) { }
   return { liaisons, cases, ecrits, proposes: propositionsNonEcrites(), problemes }; }
-const nombreDeChangements = () => { let n = 0; verite().forEach(l => { if (liaisonComplete(l) && modificationsDe(l).length) n++; }); return n; };
+const nombreDeChangements = () => { let n = 0; verite().forEach(l => { if (liaisonComplete(l) && (modificationsDe(l).length || copiesRetirees(l))) n++; }); return n; };
 const motChangements = n => n > 1 ? n + ' changements' : n === 1 ? '1 changement' : 'aucun changement';
 /* LES CHOIX DE VOLTA PAS ENCORE ÉCRITS : un disjoncteur dont l'outil retient un autre calibre que celui de son part number
    (le meilleur qui passe), une barrette dont il retient un autre module que celui du retest. Chacun : ce que dit le retest,
@@ -185,7 +196,7 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
   k++;   // « Ce qui part » vient juste après le ticket
   const enr = RELEVE.enregistre && RELEVE.enregistre.cle === RELEVE.cle ? `<p class="rv-fait" role="status">${ico('coche')}<span>Enregistré à ${esc(RELEVE.enregistre.heure)} dans vos Téléchargements · <span class="id">${esc(RELEVE.enregistre.nom)}</span></span></p>` : '';
   // ce qui part
-  const ligne = e => `<li class="rv-l" data-bulle="${escA((e.n > 1 ? pluriel(e.n, 'liaison') + ' · ' : '') + 'colonne' + (e.colonnes.length > 1 ? 's ' : ' ') + e.colonnes.join(', ') + ' de l’Excel')}"><span class="rv-objet id">${esc(e.objet)}</span><span class="rv-col">${esc(e.colonne)}${e.calibres ? ` · <b>${esc(e.calibres)}</b>` : ''}${e.n > 1 ? `<small> · ${e.n} liaisons</small>` : ''}</span>`
+  const ligne = e => `<li class="rv-l" data-bulle="${escA(e.bulle || (e.n > 1 ? pluriel(e.n, 'liaison') + ' · ' : '') + 'colonne' + (e.colonnes.length > 1 ? 's ' : ' ') + e.colonnes.join(', ') + ' de l’Excel')}"><span class="rv-objet id">${esc(e.objet)}</span><span class="rv-col">${esc(e.colonne)}${e.calibres ? ` · <b>${esc(e.calibres)}</b>` : ''}${e.n > 1 ? `<small> · ${e.n} liaisons</small>` : ''}</span>`
     + `<span class="rv-av"><s class="id">${esc(e.avant)}</s>${ico('fleche')}<b class="id">${esc(e.apres)}</b></span><span class="rv-orig ${e.origine}">${e.origine === 'volta' ? ico('etoile') + 'VOLTA' : 'à la main'}</span></li>`;
   const part = C.ecrits.length ? `<ul class="rv-liste">${C.ecrits.map(ligne).join('')}</ul>` : '<p class="rv-vide">Rien n’a changé : l’Excel sera votre installation telle que VOLTA l’a lue.</p>';
   // ce que VOLTA a choisi sans l'écrire

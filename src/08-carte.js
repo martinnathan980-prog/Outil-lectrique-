@@ -83,14 +83,22 @@ const rectDuMonde = (x, y, w, h, v) => { const r = cadre(), V = v || app.vue, s 
    sous le doigt) ; sinon le milieu du câble ; sinon le bouton des repères (l'index). */
 function origineDeLaCible() { const c = app.cible, d = app.dessin, recent = CARTE.appui && Date.now() - CARTE.appui.t < 900;
   if (c && c.type === 'bloc' && d && d.compDe.get(c.nom)) return { type: 'bloc', nom: c.nom };
+  // (v86, l'audit G2) une barrette ajoutée par VOLTA (VT1, VT2…) n'est pas un bloc du dessin : sa carte se pose à côté de toute
+  // sa ligne de bornes — elle se posait près du seul point cliqué, et couvrait la barrette qu'elle décrivait
+  if (c && c.type === 'bloc' && d && boiteDuVT(c.nom)) return { type: 'vt', nom: c.nom };
   if (c && recent && d) { const w = versMonde(CARTE.appui.x, CARTE.appui.y); return { type: 'point', x: w.x, y: w.y }; }
   if (c && c.type === 'fil' && d) { const w = c.f || filDe(c.l); if (w && w.pts && w.pts.length) { const a = w.pts[0], b = w.pts[1] || a; return { type: 'point', x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; } }
   if (!c && app.insp.index) return { type: 'ecran', rect: $('btnIndex').getBoundingClientRect() };
   return null; }
+// la boîte d'une barrette à poser, dans le dessin : sa ligne de bornes, de la première à la dernière (celle que vise le plan,
+// 08-interface `boiteDeLaCible`)
+function boiteDuVT(nom) { const vt = typeof barretteAPoser === 'function' ? barretteAPoser(nom) : null; if (!vt) return null; const bs = bornesDePiquage(vt); if (!bs.length) return null;
+  return { x: vt.x - 20, y: bs[0].y - 12, w: 40, h: bs[bs.length - 1].y - bs[0].y + 24 }; }
 function rectDeLOrigine(o, v) { o = o || CARTE.origine; if (!o) return null;
   if (o.type === 'ecran') return o.rect;
   if (!app.dessin) return null;
   if (o.type === 'bloc') { const k = app.dessin.compDe.get(o.nom); return k ? rectDuMonde(k.x, k.y, k.w, k.h, v) : null; }
+  if (o.type === 'vt') { const k = boiteDuVT(o.nom); return k ? rectDuMonde(k.x, k.y, k.w, k.h, v) : null; }
   const r = rectDuMonde(o.x, o.y, 0, 0, v); return { left: r.left - 7, top: r.top - 7, width: 14, height: 14 }; }
 
 
@@ -105,7 +113,7 @@ function zoneDeLaCarte() { const j = jetonPx('--jeu') || 10; return { L: (jetonP
    d'autre (les blocs, les câbles), un peu ; la feuille blanche, un rien (« à 1920, elle se pose sur le plan alors que
    300 px de table restent libres » : la table d'abord). D'un câble cliqué : le point du clic, interdit ; son tracé, lourd
    près du clic. Des rectangles d'écran { left, top, right, bottom, poids } ; `v` : la vue où le plan va (s'il glisse). */
-const POIDS_CARTE = { depart: 40, cable: 8, voisin: 5, bloc: 1.2, autre: .6, feuille: .2 };
+const POIDS_CARTE = { depart: 40, cable: 8, voisin: 5, bloc: 1.2, autre: .6, feuille: .2 }, POIDS_OBJET = 1e6;
 const feuilleALEcran = v => { const d = app.dessin; if (!d || !d.bbox) return null; const V = v || app.vue, r = cadre(), b = d.bbox;
   return { left: r.left + V.tx + b.x * V.s, top: r.top + V.ty + b.y * V.s, right: r.left + V.tx + (b.x + b.w) * V.s, bottom: r.top + V.ty + (b.y + b.h) * V.s }; };
 function zonesAProteger(v) { const o = CARTE.origine, d = app.dessin, out = [], P = POIDS_CARTE;
@@ -114,7 +122,7 @@ function zonesAProteger(v) { const o = CARTE.origine, d = app.dessin, out = [], 
   if (!o || !d || o.type === 'ecran') return out;
   const V = v || app.vue, r = cadre(), X = x => r.left + V.tx + x * V.s, Y = y => r.top + V.ty + y * V.s;
   const F = feuilleALEcran(V); if (F) out.push({ ...F, poids: P.feuille });
-  const nom = o.type === 'bloc' ? o.nom : null, L0 = liaisonsDuPlan(), cable = app.cible && app.cible.type === 'fil' ? (app.cible.f || filDe(app.cible.l)) : null;
+  const nom = o.type === 'bloc' || o.type === 'vt' ? o.nom : null, L0 = liaisonsDuPlan(), cable = app.cible && app.cible.type === 'fil' ? (app.cible.f || filDe(app.cible.l)) : null;
   // ses voisins : les repères à l'autre bout de ses câbles
   const voisins = new Set(); if (nom) L0.forEach(l => { if (l.de === nom && l.vers !== nom) voisins.add(l.vers); else if (l.vers === nom && l.de !== nom) voisins.add(l.de); });
   d.comps.forEach(k => { if (k.name === nom) return; const pres = voisins.has(k.name); if (k.kind === 'tag' && !pres) return;
@@ -123,14 +131,16 @@ function zonesAProteger(v) { const o = CARTE.origine, d = app.dessin, out = [], 
     for (let i = 0; i < f.pts.length - 1; i++) { const a = f.pts[i], b = f.pts[i + 1]; out.push({ left: Math.min(X(a.x), X(b.x)) - 3, right: Math.max(X(a.x), X(b.x)) + 3, top: Math.min(Y(a.y), Y(b.y)) - 3, bottom: Math.max(Y(a.y), Y(b.y)) + 3, poids: P.autre }); } });
   const seg = (a, b, poids, marge) => out.push({ left: Math.min(X(a.x), X(b.x)) - marge, right: Math.max(X(a.x), X(b.x)) + marge, top: Math.min(Y(a.y), Y(b.y)) - marge, bottom: Math.max(Y(a.y), Y(b.y)) + marge, poids });
   const L = liaisonsDuPlan();
-  if (o.type === 'bloc') { const k = d.compDe.get(o.nom); if (!k) return out;
-    out.push({ left: X(k.x) - 8, right: X(k.x + k.w) + 8, top: Y(k.y) - 8, bottom: Y(k.y + k.h) + 8, poids: Infinity });
+  // (v86) l'objet lui-même : un poids fini mais écrasant — si toutes les places le touchent (un bloc grand comme l'écran), la
+  // moins couvrante l'emporte ; avec Infinity, toutes valaient Infinity et le tri ne départageait plus rien
+  if (o.type === 'bloc' || o.type === 'vt') { const k = o.type === 'vt' ? boiteDuVT(o.nom) : d.compDe.get(o.nom); if (!k) return out;
+    out.push({ left: X(k.x) - 8, right: X(k.x + k.w) + 8, top: Y(k.y) - 8, bottom: Y(k.y + k.h) + 8, poids: POIDS_OBJET });
     const pres = p => p.x >= k.x - 24 && p.x <= k.x + k.w + 24 && p.y >= k.y - 24 && p.y <= k.y + k.h + 24;
     d.fils.forEach(f => { const l = L[f.i]; if (!l || (l.de !== o.nom && l.vers !== o.nom) || !f.pts || f.pts.length < 2) return;
       const n = f.pts.length, pts = pres(f.pts[0]) || !pres(f.pts[n - 1]) ? f.pts : [...f.pts].reverse();
       let i = 1; seg(pts[0], pts[1], P.depart, 10); if (n > 2 && Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) * V.s < 28) { seg(pts[1], pts[2], P.depart, 10); i = 2; }
       for (; i < n - 1; i++) seg(pts[i], pts[i + 1], P.cable, 6); }); }
-  else { const p = { left: X(o.x) - 10, right: X(o.x) + 10, top: Y(o.y) - 10, bottom: Y(o.y) + 10, poids: Infinity }; out.push(p);
+  else { const p = { left: X(o.x) - 10, right: X(o.x) + 10, top: Y(o.y) - 10, bottom: Y(o.y) + 10, poids: POIDS_OBJET }; out.push(p);
     const c = app.cible, w = c && c.type === 'fil' ? (c.f || filDe(c.l)) : null;
     if (w && w.pts) for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1], m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
       seg(a, b, Math.hypot(X(m.x) - X(o.x), Y(m.y) - Y(o.y)) < 220 ? 40 : 3, 8); } }
@@ -174,9 +184,11 @@ function placerPres(b, W, H, v, diag) { const Z = zoneDeLaCarte(), e = CARTE_AIR
   const yA = cl(b.top - 14, Z.T, Z.B - H);
   return Z.R - (b.left + b.width) >= b.left - Z.L ? { x: cl(droite, Z.L, Z.R - W), y: yA } : { x: cl(gauche, Z.L, Z.R - W), y: yA }; }
 /* la poser : sa place et sa hauteur au plus (--carte-x, --carte-y, --carte-hmax, style.css) ; `h` : plus courte que l'écran
-   ne le permet (posée au-dessus de son bloc) ; jamais tout à fait hors de l'écran */
-function poserCarte(x, y, h) { const el = $('inspecteur'), s = el.style, Z = zoneDeLaCarte();
-  x = Math.max(Z.L - 40, Math.min(Z.R - 120, x)); y = Math.max(Z.T - 2, Math.min(Z.B - 56, y));
+   ne le permet (posée au-dessus de son bloc) ; jamais tout à fait hors de l'écran.
+   (v86, l'audit F8) ENTIÈRE ET À DROITE DU RAIL, même tirée à la main : elle passait sous le rail (x = 26, le rail finit à 54)
+   et sortait aux trois quarts par la droite. Le quai du bord droit (le grand) se juge à la main, pas à la carte : il reste. */
+function poserCarte(x, y, h) { const el = $('inspecteur'), s = el.style, Z = zoneDeLaCarte(), W = CARTE_L();
+  x = Math.max(Z.L, Math.min(Z.R - W, x)); y = Math.max(Z.T - 2, Math.min(Z.B - 56, y));
   // (v82, la relecture : « la carte reste à sa place et se plafonne : “Tout voir” caché, elle défile ») : la carte qui ne tient
   // pas sous sa place remonte — sa hauteur entière, d'abord ; le plafond seulement si l'écran entier est trop court
   if (!CARTE.grande) { s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - Z.T)) + 'px'); const besoin = el.offsetHeight || 0;

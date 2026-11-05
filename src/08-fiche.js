@@ -383,6 +383,8 @@ function signaturesDuPlan() { const S = new Set(), C = (app && app.contrat) || {
   (C.raccords ? [...C.raccords] : []).forEach(([k, v]) => S.add('r|' + k + '|' + JSON.stringify(v)));
   (C.sexes ? [...C.sexes] : []).forEach(([k, v]) => S.add('s|' + k + '|' + v));
   (C.charges ? [...C.charges] : []).forEach(([k, v]) => { S.add('c|' + k + '|' + profilSansCalibre(v)); if (v && v.calibre > 0) S.add('cal|' + k + '|' + v.calibre); });
+  // (v86) une barrette ajoutée par VOLTA qui a reçu son repère ; le dessin retouché d'un folio (08-journal, l'historique du plan)
+  try { barrettesPosees().forEach(p => S.add('p|' + p.vt + '|' + p.nom)); retouchesDuPlan().forEach(d => S.add(signatureDuDessin(d))); } catch (_) { }
   return S; }
 function sauverHeures(id) { try { const t = JSON.parse(localStorage.getItem(CLE_QUAND) || '{}') || {}; delete t[id]; t[id] = Object.fromEntries([...QUAND.m].filter(([, v]) => v));
   const ks = Object.keys(t); ks.slice(0, Math.max(0, ks.length - 12)).forEach(k => delete t[k]); localStorage.setItem(CLE_QUAND, JSON.stringify(t)); } catch (_) { } }
@@ -459,34 +461,50 @@ function ligneDuFichier(x, o) { const [l, c] = x.rendre[0] || [], rep = c === 'p
     pourquoi: dj && marque ? (calF > 0 ? 'Le ' + amperes(calF) + ' de votre fichier n’est pas le plus petit calibre qui ne disjoncte pas : VOLTA écrit celui-là.' : 'VOLTA écrit le plus petit calibre qui ne disjoncte pas.') : '',
     excel: !ct, dit: c === 'type' && !nul(x.avant) ? (o.type === 'fil' ? 'Le câble' : 'Le câble vers ' + autre[0] + (autre[1] ? ':' + autre[1] : '')) + ' revient en ' + avant + ', comme dans votre fichier.'
       : majuscule(quoi) + (de ? ' ' + de : '') + ' : ' + avant + ' revient, ' + (depuis === 'table' ? 'celui de la table' : depuis === 'hyp' ? 'supposée' : 'comme dans votre fichier') + '.' }; }
+/* Les choix de VOLTA pris à la main sur un objet, en lignes d'historique : l'heure, le retour à VOLTA, l'aide, le mot. La
+   fiche et l'historique du plan entier (08-journal) les lisent : les mêmes lignes, les mêmes mots. */
+function choixEnLignes(nom, type) { let choix = []; try { choix = choixALaMain(nom, type); } catch (_) { choix = []; }
+  choix.forEach(x => { x.t = x.t != null ? x.t : heureDuChangement(x.cle); if (x.auto && !x.faire) { const cle = x.auto; x.faire = () => retourAutomatique({ dataset: { auto: cle } }, { type: 'bloc', nom }); }
+    if (!x.aide) x.aide = 'Rendre le choix à VOLTA' + (x.avant && !/^(celui|le sien|pas écrite|sans option)/.test(x.avant) ? ' : ' + x.avant : '');
+    if (!x.dit) x.dit = majuscule(x.quoi) + (x.de ? ' ' + x.de : '') + (x.depuis === 'fichier' ? ' : celui de votre fichier revient.' : x.auto && /^conso:/.test(x.auto) ? ' : effacée, VOLTA compte sans.' : ' : VOLTA choisit de nouveau.'); });
+  return choix; }
+// QUI, en mots : un choix de VOLTA pris en Manuel le dit (la fiche et l'historique du plan, les mêmes mots)
+const motQui = x => x.qui === 'vous' && x.auto ? 'en Manuel, par vous' : MOTS_QUI[x.qui] || '';
 function journalDeLaFiche(o) { const nom = o.tete && o.tete.nom, xs = [];
-  const choix = o.type !== 'fil' && nom && !/^Nouveau/.test(nom) ? (() => { try { return choixALaMain(nom, o.type); } catch (_) { return []; } })() : [];
+  const choix = o.type !== 'fil' && nom && !/^Nouveau/.test(nom) ? choixEnLignes(nom, o.type) : [];
   // un calibre retenu à la main réécrit la référence du disjoncteur : une seule ligne, celle du calibre
   const calMain = choix.find(x => x.calibre);
   (o.ecrits || []).forEach(x => { if (calMain && x.objet === nom && /^pn/.test((x.rendre[0] || [])[1] || '')) { calMain.excel = true; calMain.pourquoi = 'Le plus petit qui ne disjoncte pas est ' + calMain.avant + '. Sa référence devient ' + x.apres + ' (votre fichier : ' + x.avant + ') dans l’Excel corrigé.'; return; } xs.push(ligneDuFichier(x, o)); });
-  choix.forEach(x => { x.t = x.t != null ? x.t : heureDuChangement(x.cle); if (x.auto && !x.faire) { const cle = x.auto; x.faire = () => retourAutomatique({ dataset: { auto: cle } }, app.cible); }
-    if (!x.aide) x.aide = 'Rendre le choix à VOLTA' + (x.avant && !/^(celui|le sien|pas écrite|sans option)/.test(x.avant) ? ' : ' + x.avant : '');
-    if (!x.dit) x.dit = majuscule(x.quoi) + (x.de ? ' ' + x.de : '') + (x.depuis === 'fichier' ? ' : celui de votre fichier revient.' : x.auto && /^conso:/.test(x.auto) ? ' : effacée, VOLTA compte sans.' : ' : VOLTA choisit de nouveau.'); xs.push(x); });
+  xs.push(...choix);
   // ce que VOLTA ajoute de lui-même (une barrette posée sur une borne qui en reçoit deux)
   (o.proposes || []).filter(x => x.champ !== 'module').forEach(x => xs.push({ cle: '', t: 0, quoi: majuscule(x.champ), de: x.objet ? 'sur ' + x.objet : '', avant: x.avant, depuis: 'fichier', apres: x.apres, qui: 'volta', mono: true,
     pourquoi: x.champ === 'barrette' ? 'VOLTA la pose pour relier les câbles qui arrivent sur une même borne : votre fichier en met plusieurs sur une seule.' : '' }));
+  // (v86, la charte : « ce que VOLTA ajoute est marqué comme ajouté et se retrouve dans l'Historique ») une barrette ajoutée
+  // par VOLTA qui a reçu son repère le garde : VT2 → 667VT3, et « Défaire » la rend provisoire (08-journal)
+  const posee = nom && o.type === 'barrette' && typeof barrettesPosees === 'function' ? barrettesPosees().find(p => p.nom === nom) : null;
+  if (posee) { const k = 'p|' + posee.vt + '|' + posee.nom;
+    xs.push({ cle: k, t: heureDuChangement(k), quoi: 'Repère donné', de: 'à la barrette ajoutée par VOLTA sur ' + posee.sur, avant: posee.vt, depuisMot: 'repère provisoire', apres: posee.nom, qui: 'vous', mono: true, excel: true,
+      pourquoi: 'Elle est dans votre installation, avec un câble à créer et ' + pluriel(posee.shunts.length, 'shunt') + ' : ' + pluriel(1 + posee.shunts.length, 'ligne') + ' de plus dans l’Excel corrigé.',
+      faire: () => deposerBarrette(posee), aide: 'Elle redevient ' + posee.vt + ' : les câbles reviennent sur ' + posee.sur + ', le câble à créer et les shunts sortent de votre installation', dit: posee.nom + ' redevient ' + posee.vt + ' : les câbles reviennent sur ' + posee.sur + '.' }); }
   // le plus récent en haut ; sans heure connue, après, dans l'ordre de la fiche
   return xs.map((x, i) => [x, i]).sort((a, b) => (b[0].t || 0) - (a[0].t || 0) || a[1] - b[1]).map(a => a[0]); }
 function modificationsDeLaFiche(ecrits, proposes, o) { o = o || {}; noterHeures();
   const xs = journalDeLaFiche({ ...o, ecrits: ecrits || [], proposes: proposes || [] }); FI.journal = xs; FI.ecarts = []; if (!xs.length) return null;
   // (ce qui part dans l'Excel corrigé : une valeur de votre fichier réécrite — pas un choix de VOLTA, qui reste avec le plan)
-  const nom = o.tete && o.tete.nom, n = xs.length, nv = xs.filter(x => x.qui !== 'vous').length, excel = xs.some(x => x.excel);
+  const nom = o.tete && o.tete.nom, n = xs.length, nv = xs.filter(x => x.qui === 'volta' || x.qui === 'prop').length, excel = xs.some(x => x.excel);
   // (le nombre et son unité ne se séparent pas : « 200 ms », jamais « 200 » puis « ms » à la ligne)
   const val = (v, mono, b) => `<${b ? 'b' : 's'}${mono ? ' class="id"' : ''}>${insecable(esc(v))}</${b ? 'b' : 's'}>`;
-  const ligne = (x, i) => `<li class="hi-i ${x.qui}">`
+  const ligne = (x, i) => `<li class="hi-i ${x.qui}${x.qui === 'vous' && x.auto ? ' manuel' : ''}">`
     + `<div class="hi-t"><b>${esc(x.quoi)}</b>${x.de ? ` <span>${esc(x.de)}</span>` : ''}</div>`
     + (x.t ? `<time class="hi-q" datetime="${new Date(x.t).toISOString()}">${esc(quandDit(x.t))}</time>` : '')
-    + `<div class="hi-v"><span class="hi-av">${val(x.avant, x.mono && !/^(celui|le sien|pas écrite|sans option|vide|≈)/.test(x.avant))}<small>${esc(MOTS_DEPUIS[x.depuis] || '')}</small></span><span class="hi-f" aria-hidden="true">${ico('fleche')}</span>`
-    + `<span class="hi-ap">${val(x.apres, x.mono, true)}<small>${esc(MOTS_QUI[x.qui] || '')}</small></span></div>`
+    + `<div class="hi-v"><span class="hi-av">${val(x.avant, x.mono && !/^(celui|le sien|pas écrite|sans option|vide|≈)/.test(x.avant))}<small>${esc(x.depuisMot || MOTS_DEPUIS[x.depuis] || '')}</small></span><span class="hi-f" aria-hidden="true">${ico('fleche')}</span>`
+    + `<span class="hi-ap">${val(x.apres, x.mono, true)}<small>${esc(motQui(x))}</small></span></div>`
     + (x.faire ? `<button type="button" class="hi-d" data-hi="${i}" data-bulle="${escA(x.aide)}">${ico('retour')}<span>Défaire</span></button>` : '')
     + (x.pourquoi ? `<p class="hi-p">${insecable(esc(x.pourquoi))}</p>` : '') + '</li>';
   const sur = o.type === 'fil' ? 'ce câble' : nom || 'cet objet';
-  const html = `<div class="hi" id="fi-ecarts"><p class="hi-intro">Ce qui a changé sur <b${o.type === 'fil' ? '' : ' class="id"'}>${esc(sur)}</b> depuis votre fichier, le plus récent en haut.${excel ? ' Ce qui touche votre fichier part dans l’Excel corrigé.' : ''}</p><ol class="hi-l">${xs.map(ligne).join('')}</ol></div>`;
+  // (v86) sous la liste, l'historique du plan entier (08-journal) : les mêmes cartes, pour tous les objets
+  const html = `<div class="hi" id="fi-ecarts"><p class="hi-intro">Ce qui a changé sur <b${o.type === 'fil' ? '' : ' class="id"'}>${esc(sur)}</b> depuis votre fichier, le plus récent en haut.${excel ? ' Ce qui touche votre fichier part dans l’Excel corrigé.' : ''}</p><ol class="hi-l">${xs.map(ligne).join('')}</ol>`
+    + (typeof ficheJournal === 'function' ? `<button type="button" class="fi-lien hi-plan" data-journal data-bulle="Tout ce qui a changé dans ce plan, objet par objet, avec « Défaire » sur chaque ligne">L’historique de tout le plan<kbd>H</kbd></button>` : '') + '</div>';
   return { n, mots: pluriel(n, 'changement') + (nv ? (nv === n ? (n > 1 ? ', tous par VOLTA' : ', par VOLTA') : ' (dont ' + nv + ' par VOLTA)') : ''), html }; }
 
 /* ---- LES CHAMPS : une valeur, son retour au calcul ---------------------------------------------------------------- */
@@ -664,7 +682,7 @@ function causeDuCable(l, prot, fin) { const c = prot && prot.cause; if (!c) retu
 // les câbles d'un repère, chacun une fois (pas les shunts) : { l, borne, vers, borneVers, amont }
 const filsDuRepere = nom => liaisonsDeRepere(nom).filter(l => (l.de === nom || l.vers === nom) && l.de !== l.vers).map(l => ({ l: sourceDe(l) || l, borne: l.de === nom ? l.borneDe : l.borneVers, vers: l.de === nom ? l.vers : l.de, borneVers: l.de === nom ? l.borneVers : l.borneDe, amont: l.vers === nom }));
 // les barrettes à poser sur les bornes d'un repère : borne → VTn
-const barrettesSur = nom => { const m = new Map(); liaisonsDuPlan().forEach(l => { if (l.origine === null && l.de === nom && l.vers === l.aPoser && l.borneVers === '1') m.set(String(l.borneDe), l.aPoser); }); return m; };
+const barrettesSur = nom => { const m = new Map(); liaisonsDuPlan().forEach(l => { if (l.origine === null && l.de === nom && l.vers === l.aPoser && estRaccordAPoser(l)) m.set(String(l.borneDe), l.aPoser); }); return m; };
 
 /* ---- LE CONTACT À SERTIR, choisi à la main --------------------------------------------------------------------- */
 /* Le contact qu'on sertit au bout d'un câble se lit dans la table Contacts de la norme (09, `contactDuFil`) ; on peut en
@@ -1499,8 +1517,9 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const { besoins: b, plan: Q, main } = planDeBarrette(nom), M0 = Q.modules[0], N = app.norme;
   const refuses = Q.fils.filter(x => x.jaugeOk === false);
   const probs = [...Q.verdicts.filter(v => v.niveau === 'ko').map(v => ({ niveau: 'ko', texte: v.texte, section: 'connecteur' })), ...refuses.map(x => ({ niveau: 'ko', texte: `${x.f.l && x.f.l.origine === null ? 'câble à créer' : cableDit(x.f)} : gauge refusée par le contact ${x.contact.lettre}`, section: 'connecteur', viser: cleFil(x.f.l) }))];
-  const raccord = aPoser ? L.find(l => l.aPoser === nom && l.origine === null && l.vers === nom && l.borneVers === '1') : null, sur = raccord ? raccord.de + ':' + raccord.borneDe : '';
-  if (aPoser) probs.push({ niveau: 'att', texte: 'repère provisoire : lui donner son vrai repère la pose au contrat', section: '' });
+  const raccord = aPoser ? L.find(l => l.aPoser === nom && l.origine === null && l.vers === nom && estRaccordAPoser(l)) : null, sur = raccord ? raccord.de + ':' + raccord.borneDe : '';
+  // (v86, l'audit F13) une barrette ajoutée n'a plus, en plus de son bandeau, un point « À voir » qui redit la même chose
+  // sans geste : le bandeau « Lui donner son repère » est son seul appel
   ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte) && !/^ajoutée par VOLTA sur/.test(x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur' }));
   const libres = Q.contacts - Q.utilises, famNom = M0 ? nomDeFamille(N, M0.module.famille) || M0.module.famille : Q.famille ? nomDeFamille(N, Q.famille) || Q.famille : '';
   /* le MODULE : sa référence en puce, qui ouvre la galerie (plusieurs modules : chacun sa référence) ; l'écart avec le
@@ -1538,7 +1557,12 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const nf = xsC.filter(x => x.f).length, sansTable = M0 && !Q.fils.some(x => x.sertir);
   const contacts = nf ? tableContacts(xsC, { premiere: 'Contact' }) + (Q.fils.some(x => x.sertir) ? legendeConfiance() : '') + (sansTable ? `<p class="fi-note">La table des contacts de la ${esc(famNom)} manque : <button type="button" class="fi-lien" data-action="normes">l’envoyer</button>.</p>` : '') : '<p class="fi-note">Aucun câble.</p>';
   const fils = filsDuRepere(nom); probs.push(...problemesDesFils(fils));
-  const poser = aPoser ? `<div class="fi-poser"><span>Son vrai repère</span>${saisie('id="vt-repere"', repereLibre(raccord ? raccord.de : '', 'VT'), { mono: true, label: 'Le vrai repère de la barrette', court: true })}<button type="button" class="btn cuivre" id="vt-poser">Retenir</button></div>` : '';
+  /* (v86, l'audit G2 : « Retenir » ici, « Lui donner son repère » dans À régler, « Poser » dans le récapitulatif) UN verbe,
+     « Lui donner son repère », et UN repère proposé, le même partout : la suite de la barrette du contrat la plus proche
+     (`prochainRepereVT`, celui du récapitulatif et de « À reprendre »). Il s'écrit autrement, si vous le voulez. */
+  const propose = aPoser ? (typeof prochainRepereVT === 'function' && sur ? prochainRepereVT({ sous: 'ajoutée par VOLTA sur ' + sur }) : repereLibre(raccord ? raccord.de : '', 'VT')) : '';
+  const poser = aPoser ? `<div class="fi-poser"><span class="fi-poser-t">VOLTA propose</span><span class="fi-poser-g">${saisie('id="vt-repere"', propose, { mono: true, label: 'Le repère à lui donner — VOLTA propose ' + propose + ', il s’écrit autrement si vous le voulez', court: true })}`
+    + `<button type="button" class="btn cuivre" id="vt-poser" data-bulle="${escA('Elle prend ce repère et entre dans votre installation, avec son câble à créer et ses shunts — « Défaire » la rend provisoire')}">Lui donner son repère</button></span></div>` : '';
   const sections = [{ cle: 'connecteur', titre: 'Module', resume: aPoser && !M0 ? 'se choisit quand la barrette a son vrai repère' : Q.reference ? ident(Q.reference) : '<span class="fi-ko-t">aucun module</span>',
       badge: badgeProblemes(probs, 'connecteur'), contenu: tete + (faces ? `<div class="fi-faces">${faces}</div>` : '') + groupeSection('Contacts', contacts, { compte: nf || null }) },
     sectionFilsDuRepere(fils, probs), aPoser ? null : sectionDejaFait(nom)];
@@ -1648,12 +1672,12 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   // (v85) la vignette de la carte : la barrette entière, en petit — ses modules sur le rail, chacun sa variante
   const vignette = M0 ? `<span class="vu-faces">${barreV(true)}</span>` : '';
   // (v85) plusieurs modules : leurs références se lisent sous chacun, dans la vignette — l'en-tête ne les répète pas
-  return composerFiche({ type: 'barrette', tete: { nom, champ: 'eq-rep', designation: aPoser ? '' : nom, aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '' },
+  return composerFiche({ type: 'barrette', tete: { nom, champ: 'eq-rep', designation: aPoser ? '' : nom, aide: '' },
     meta: [aPoser ? esc('ajoutée par VOLTA' + (sur ? ' sur ' + sur : '')) : Q.reference && !(Q.lettres && plusieurs) ? ident(Q.reference) : '', freresDe(nom, 'barrette').length > 1 ? esc('module ' + rangDuParent(nom).rang + ' de ' + rangDuParent(nom).parent) : ''],
     // (v84, la charte : « ce que VOLTA ajoute est marqué comme ajouté et se retrouve dans l'Historique ») : la barrette à poser
     // y a sa ligne — sur 102CB1:2, aucune barrette → VT1, par VOLTA
     probs, onglets, sections, avant: poser, ecrits: aPoser ? [] : ecritsDuRepere(nom), proposes: aPoser ? (sur ? [{ sujet: '', champ: 'barrette', colonne: '', objet: sur, avant: 'aucune', apres: nom, geste: 'VOLTA' }] : []) : proposes, chiffres, vignette, identite: id, ok: 'Son module loge tous ses câbles, chacun dans un contact qui admet sa gauge.',
-    pied: aPoser ? { voir: raccord && raccord.de, menu: [['fi-renommer', 'Lui donner son vrai repère']] } : { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
+    pied: aPoser ? { voir: raccord && raccord.de } : { tableau: nom, fil: nom, menu: MENU_BLOC } }); }
 /* (v85) MODIFIER, D'UNE BARRETTE EN MODULES (« 667VT2 51 » + « A ») — module par module, puisque le fichier dit le module
    et la lettre de chaque câble et que VOLTA ne choisit que la référence de chaque module :
      · DANS VOTRE FICHIER : le module que votre fichier écrit, quand VOLTA en retient un autre, et pourquoi ;
@@ -2375,7 +2399,8 @@ function retourAutomatique(b, c) { const cle = b.dataset.auto, k = cle.indexOf('
 function renommerDepuisFiche(nom, nr) { nr = String(nr || '').trim(); if (!nr || nr === nom) return false;
   if (VT_A_POSER.test(nom)) { const xs = pileInsp().pile.filter(e => e.type === 'bloc' && e.nom === nom), box = $('ba-equip'), avant = box.dataset.cle;
     xs.forEach(e => { e.nom = nr; e.ancien = nom; }); if (avant === 'bloc|' + nom) box.dataset.cle = 'bloc|' + nr;
-    const ok = poserBarrette(nom, nr); if (!ok) { xs.forEach(e => { e.nom = nom; delete e.ancien; }); box.dataset.cle = avant; } return ok; }
+    // (v86, l'audit G2) le message dit le repère donné — « VT2 devient 667VT3 » — et offre « Défaire » (08-journal)
+    const ok = typeof donnerSonRepere === 'function' ? !!donnerSonRepere(nom, app.plan, nr) : poserBarrette(nom, nr); if (!ok) { xs.forEach(e => { e.nom = nom; delete e.ancien; }); box.dataset.cle = avant; } return ok; }
   if (verite().some(l => l.de === nr || l.vers === nr)) { dire(nr + ' existe déjà dans votre fichier : choisissez un autre repère.', true); return false; }
   histPush('renommage de ' + nom); renommer(nom, nr); pileInsp().pile.forEach(e => { if (e.type === 'bloc' && e.nom === nom) { e.nom = nr; e.ancien = nom; } });
   // les choix faits sur la fiche suivent le repère : l'arrangement d'un connecteur (« repère|A »), l'emplacement, le contact à sertir d'une borne
@@ -2449,6 +2474,8 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
   // (v86) « Défaire » d'une ligne de l'Historique : la valeur d'avant revient ; le message le dit et offre de défaire ce retour
   box.querySelectorAll('[data-hi]').forEach(b => b.onclick = e => { e.stopPropagation(); const x = (FI.journal || [])[+b.dataset.hi]; if (!x || typeof x.faire !== 'function') return;
     const avant = app.hist.length; x.faire(); if (app.hist.length !== avant || app.hist.length >= 40) dire(x.dit, false, { geste: 'Défaire', faire: defaire }); });
+  // (v86) « L'historique de tout le plan » (08-journal)
+  box.querySelectorAll('[data-journal]').forEach(b => b.onclick = e => { e.stopPropagation(); if (typeof ficheJournal === 'function') ficheJournal(); });
   // les gestes d'un point de la barre des problèmes (le domaine C, `gestesDuPoint`)
   box.querySelectorAll('[data-geste-pb]').forEach(b => b.onclick = e => { e.stopPropagation(); const [k, i] = b.dataset.gestePb.split(':').map(Number), g = ((FI.gestesPb || [])[k] || [])[i]; if (!g) return;
     const avant = app.cible; g.faire(); if (app.cible === avant && !$('inspecteur').hidden && !rafraichirFicheEnPlace()) rendreFiche(); });
@@ -2464,6 +2491,8 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
   // le repère, dans l'en-tête ; le type et la désignation, à côté
   const rep = $('eq-rep'); if (rep) ecouter(rep, 'change', () => { if (!renommerDepuisFiche(nom, rep.value)) rep.value = nom; else { const r = $('fi-crayon'); if (r) r.focus(); } });
   const vtp = $('vt-poser'); if (vtp) vtp.onclick = () => { const v = $('vt-repere'); renommerDepuisFiche(nom, v ? v.value : ''); };
+  // (v86) Entrée dans le repère proposé : le même geste que le bouton
+  const vtr = $('vt-repere'); if (vtr && vtp) ecouter(vtr, 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); vtp.click(); } });
   const des = $('eq-des'); if (des) ecouter(des, 'change', () => { const v = des.value.trim(); if (v === (app.contrat.designations.get(nom) || '')) return; histPush('désignation de ' + nom); designer(nom, v); apresEdition(); });
   if ($('fi-renommer')) $('fi-renommer').onclick = () => { if (rep) { rep.focus(); rep.select(); } };
   if ($('fi-designer')) $('fi-designer').onclick = () => { const d = $('eq-des'); if (d) { d.focus(); d.select(); } };

@@ -1973,11 +1973,13 @@ function jugerModule(N, m, xs, potDe) { const defauts = [], zones = new Map(), p
   // (v85) les groupes de câbles de ce module, et combien il en loge sans défaut (« 2 / 3 groupes ») : ce que montre le choix à la main
   const groupes = new Set(xs.filter(x => x.fils.length).map(x => potDe(x.borne))), mauvais = new Set();
   defauts.forEach(d => (d.bornes || []).forEach(b => mauvais.add(potDe(b))));
-  return { defauts, libres: m.contacts.length - pris, perte, pris, groupes: groupes.size, loge: [...groupes].filter(p => !mauvais.has(p)).length }; }
+  return { defauts, libres: m.contacts.length - pris, perte, pris, groupes: groupes.size, loge: [...groupes].filter(p => !mauvais.has(p)).length, vides: m.groupes.length - zones.size }; }
 /* le rang d'un module qui convient : l'usage normal d'abord, puis le moins de contacts libres dans les zones prises (des
    zones à la taille des groupes : trois câbles reliés vont sur une zone de trois, pas sur une de huit), le moins de
-   contacts perdus, le plus léger */
-const rangDuModule = (m, J) => [m.usage === 'normal' ? 0 : 1, J.perte, J.libres, m.poids != null ? m.poids : 1e3];
+   contacts perdus, le plus léger ; (v86) à égalité, le moins de zones vides — le départage du remplissage d'une barrette
+   numérotée (`scoreModule`) : une barrette à poser, nommée par ses lettres (« 51H »), garde le module que VOLTA lui avait
+   choisi (le NSA937901M20-11 de VT1, pas le M20-09 que l'ordre de la norme mettait devant) */
+const rangDuModule = (m, J) => [m.usage === 'normal' ? 0 : 1, J.perte, J.libres, m.poids != null ? m.poids : 1e3, J.vides || 0];
 // l'ordre des contacts d'un module : les capitales, puis les minuscules (l'ASNE 0599 range ainsi sa face : A…X, puis a…s)
 const triContacts = (a, b) => (/^[a-z]/.test(a) ? 1 : 0) - (/^[a-z]/.test(b) ? 1 : 0) || triBornes(a, b);
 // l'ordre des bornes d'une barrette en modules : par module (51, 52…), puis par contact ; une autre borne, l'ordre naturel

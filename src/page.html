@@ -105,7 +105,7 @@
               <!-- « Lire un schéma Visio… » se pose ici, après le PDF (08-visio, `entreeDuMenu`) -->
             </div>
             <div class="menu-bloc" role="group" aria-label="Ce qui juge">
-              <button role="menuitem" data-act="bible" data-aide="Les références que VOLTA choisit pour chaque barrette, prise et connecteur. On peut importer la vôtre."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/></svg><span class="menu-l">Bible des barrettes</span></button>
+              <button role="menuitem" class="menu-2l" data-act="bible" data-aide="Les références que VOLTA choisit pour chaque barrette, connecteur et prise. On peut importer la vôtre."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/></svg><span class="menu-l">La bible<small>barrettes, connecteurs, prises</small></span></button>
               <button role="menuitem" data-act="normes" data-aide="Les tables qui jugent chaque câble : câbles, contacts, raccords, disjoncteurs, chute. On y cherche, on corrige une ligne."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h9M4 20h6"/><path d="m15 18 2 2 4-4"/></svg><span class="menu-l">Normes</span></button>
               <button role="menuitem" data-act="hypotheses" data-aide="Ce que l’installation ne dit pas : 5 m par câble sans longueur, 2 A sans disjoncteur, 28 V… Les changer refait les calculs."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="menu-l">Hypothèses</span></button>
               <button role="menuitem" data-act="cartouche" data-aide="Le titre, le dessinateur, la date et l’indice, écrits en bas à droite de chaque folio."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M10 14h11M10 14v6M15.5 14v6"/></svg><span class="menu-l">Cartouche…</span></button>
@@ -181,11 +181,11 @@
       <span class="rd-mot" aria-hidden="true">Ajouter une liaison</span>
       <span class="bulle" aria-hidden="true"><span class="bulle-l">Ajouter une liaison</span><span class="bulle-detail">Une ligne de plus au plan, à écrire dans le récapitulatif : ses deux bouts, son câble.</span></span>
     </button>
-    <!-- le symbole de la barrette (trois contacts reliés), celui de sa fiche : la bible des barrettes -->
-    <button class="rd bascule" id="btnBible" aria-pressed="false" aria-label="Bible des barrettes">
+    <!-- le symbole de la barrette (trois contacts reliés), celui de sa fiche : la bible — barrettes, connecteurs, prises (v86, F4) -->
+    <button class="rd bascule" id="btnBible" aria-pressed="false" aria-label="La bible : barrettes, connecteurs, prises">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="8" width="19" height="8" rx="2"/><circle cx="7" cy="12" r="1.45"/><circle cx="12" cy="12" r="1.45"/><circle cx="17" cy="12" r="1.45"/><path d="M8.45 12h2.1M13.45 12h2.1"/></svg>
       <span class="rd-mot" aria-hidden="true">Bible</span>
-      <span class="bulle" aria-hidden="true"><span class="bulle-l">Bible des barrettes</span><span class="bulle-detail">Les barrettes, prises et connecteurs que VOLTA sait choisir, et leurs références.</span></span>
+      <span class="bulle" aria-hidden="true"><span class="bulle-l">La bible</span><span class="bulle-detail">Les barrettes, connecteurs et prises que VOLTA sait choisir, et leurs références.</span></span>
     </button>
   </nav>
 

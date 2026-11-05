@@ -687,9 +687,14 @@ const motHors = (d, c) => { const cs = ((d.famille && d.famille.calibres) || [])
    votre fichier porte un calibre plus gros qu'il ne faut (il ne disjoncte pas, le plus petit suffit), ou un calibre retenu à
    la main par une version d'avant — VOLTA propose le plus petit qui ne disjoncte pas. Un calibre du fichier qui disjoncte, lui,
    a sa carte de décision (« Passer en 15 A ») ou est déjà réécrit par VOLTA (la règle v74). Rend { cal, main, m, fils } ou null. */
-function propositionDuCalibre(nom, d) { const passe = d.passe, cal = d.calibre; if (!(passe > 0) || d.sansProfil || d.sansCourbe || Math.abs(passe - (cal || 0)) < 1e-9) return null;
+function propositionDuCalibre(nom, d) { const passe = d.passe, cal = d.calibre; if (!(passe > 0) || d.sansProfil || d.sansCourbe) return null;
+  // retenu à la main : « Automatique » rend celui de votre fichier s'il ne disjoncte pas (la règle v74), sinon le plus petit qui
+  // ne disjoncte pas — le geste dit lequel
+  if (d.origine === 'main') { const o = origineDuCalibre(nom, d), fichier = o.calRetest || d.pn, gF = fichier > 0 ? (d.gamme || []).find(g => Math.abs(g.calibre - fichier) < 1e-9) : null;
+    const auto = gF && cleDuVerdict(gF) === 'passe' && !(passe > fichier) ? fichier : passe, mA = motsDuCalibre(d, auto);
+    return Math.abs(auto - (cal || 0)) < 1e-9 || !mA || mA.cle !== 'passe' ? null : { cal: auto, main: true, fichier: auto === fichier, m: mA, fils: [] }; }
+  if (Math.abs(passe - (cal || 0)) < 1e-9) return null;
   const m = motsDuCalibre(d, passe); if (!m || m.cle !== 'passe') return null;
-  if (d.origine === 'main') return { cal: passe, main: true, m, fils: [] };
   if (!(cal > passe)) return null;
   const fils = passe === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
   return { cal: passe, main: false, m, fils }; }
@@ -709,8 +714,8 @@ function blocDuCalibre(nom, d, o, avecDecision) { const xs = listeDesCalibres(d)
   const legende = o.calRetest || propose ? `<p class="vu-legende"><span><i class="act"></i>actuel : celui de votre fichier</span></p>` : '';
   // la proposition de VOLTA : son geste, et pourquoi en une phrase
   const p = avecDecision ? null : propositionDuCalibre(nom, d), nf = p ? p.fils.length : 0;
-  const prop = !p ? '' : `<div class="dj-prop"><button type="button" class="btn cuivre dense" data-dj-prop="${escA(nom)}" data-bulle="${escA(p.main ? 'Rend le calibre au calcul de VOLTA' : 'Écrit dans l’Excel corrigé : ' + (pnAvecCalibre(pnDuRepere(nom), d.famille, p.cal) || amperes(p.cal)) + (nf ? ', et ' + pluriel2(nf, 'câble') + ' grossi' + (nf > 1 ? 's' : '') : '') + ' — « Défaire » la reprend')}">Retenir le ${esc(amperes(p.cal))}${nf ? ' et grossir ' + (nf > 1 ? 'les ' + nf + ' câbles' : 'le câble') : ''}</button>`
-    + `<p><b>${p.main ? 'Le calcul de VOLTA' : 'Le plus petit qui ne disjoncte pas'}</b> — ${insecable(esc(p.m.bulle))}${p.main ? '' : ' <span>Il ira dans l’Excel corrigé.</span>'}</p></div>`;
+  const prop = !p ? '' : `<div class="dj-prop"><button type="button" class="btn cuivre dense" data-dj-prop="${escA(nom)}" data-bulle="${escA(p.main ? (p.fichier ? 'Reprend le calibre de votre fichier' : 'Rend le calibre au calcul de VOLTA') + ' — « Défaire » le reprend' : 'Écrit dans l’Excel corrigé : ' + (pnAvecCalibre(pnDuRepere(nom), d.famille, p.cal) || amperes(p.cal)) + (nf ? ', et ' + pluriel2(nf, 'câble') + ' grossi' + (nf > 1 ? 's' : '') : '') + ' — « Défaire » la reprend')}">Retenir le ${esc(amperes(p.cal))}${nf ? ' et grossir ' + (nf > 1 ? 'les ' + nf + ' câbles' : 'le câble') : ''}</button>`
+    + `<p><b>${p.main ? (p.fichier ? 'Celui de votre fichier' : 'Le calcul de VOLTA') : 'Le plus petit qui ne disjoncte pas'}</b> — ${insecable(esc(p.m.bulle))}${p.main ? '' : ' <span>Il ira dans l’Excel corrigé.</span>'}</p></div>`;
   const deFichier = d.pn > 0 && cal > 0 && Math.abs(d.pn - cal) < 1e-9 && !pnDeVolta(nom);
   const sous = d.sansProfil ? 'sans profil de charge, VOLTA ne le juge pas' : !(cal > 0) ? 'aucun calibre ne convient'
     : d.origine === 'main' ? (deFichier && !pnChangeIci(nom) ? 'celui de votre fichier, gardé' : 'retenu à la main')
@@ -749,7 +754,7 @@ function ecrireConclusion(el, m, titre) { if (!el || !m) return; el.classList.to
    avant elle ne disjoncte pas. Au pied, les calibres de la gamme en ampères, chacun son point (vert : il ne disjoncte pas ;
    rouge : il disjoncte), le retenu dans sa pastille de cuivre, celui de votre fichier en pointillé. Survoler un calibre (ou
    le parcourir au clavier) montre SES zones et SA conclusion ; la souris partie, le retenu revient. */
-const FLUX = { periode: 22, base: 10, parA: 3.4, max: 96 };   // le motif du flux (px), sa vitesse : 10 px/s + 3,4 px/s par ampère, au plus 96
+const FLUX_COURANT = { periode: 30, base: 10, parA: 3.4, max: 96 };   // le motif du flux (px), sa vitesse : 10 px/s + 3,4 px/s par ampère, au plus 96
 const nomDuPoint = p => p.k === 'perm' ? 'Permanent' : p.k === 'dem' ? 'Démarrage' : p.k === 'trans' ? 'Transition' : majuscule(String(p.nom || 'état'));
 function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
   // (un état plus faible que le permanent dure « toujours » sur l'escalier : le permanent, plus fort, dit déjà tout — pas de barre)
@@ -763,13 +768,13 @@ function courantAppele(nom, d, o) { o = o || origineDuCalibre(nom, d);
   const liste = listeDesCalibres(d), max = Math.max(...liste.map(x => x.calibre), ...pts.map(p => p.i)) * 1.08, pc = v => Math.max(0, Math.min(100, v / max * 100)), f1 = v => (Math.round(v * 100) / 100).toString();
   const seuilDe = (c, p) => { const q = point(c, p); return q && isFinite(q.seuil) ? q.seuil : null; };
   const calZ = cal > 0 ? cal : gamme[gamme.length - 1].calibre, A = amperes(calZ);
-  const lignes = pts.map(p => { const s = seuilDe(calZ, p), q = point(calZ, p), ko = !!q && q.ok === false, perm = p.t === Infinity, v = Math.min(FLUX.max, FLUX.base + FLUX.parA * p.i), dedans = pc(p.i) > 80;
+  const lignes = pts.map(p => { const s = seuilDe(calZ, p), q = point(calZ, p), ko = !!q && q.ok === false, perm = p.t === Infinity, v = Math.min(FLUX_COURANT.max, FLUX_COURANT.base + FLUX_COURANT.parA * p.i), dedans = pc(p.i) > 80;
     const S = s != null ? (typeof deuxA === 'function' ? deuxA(p.i, s)[1] : amperes(s)) : '';
     const bulle = `${nomDuPoint(p)} : ${amperes(p.i)}${perm ? ' en permanence' : ' pendant ' + secondes(p.t)}.` + (S ? `\n${perm ? 'En permanence' : 'Sur cette durée'}, le ${A} ${ko ? 'disjoncte dès' : 'ne disjoncte qu’au-delà de'} ${S} : la zone rouge commence là.` : '');
     return `<div class="dj-fx-l ${perm ? 'perm' : 'pointe'}${ko ? ' ko' : ''}" data-k="${escA(p.k)}" data-bulle="${escA(bulle)}">`
       + `<span class="dj-fx-nom"><b>${esc(nomDuPoint(p))}</b><small>${perm ? ico('infini') : esc(secondes(p.t))}</small></span>`
       + `<span class="dj-fx-piste"><i class="dj-fx-zone" style="left:${s != null ? pc(s).toFixed(2) : 100}%"></i>`
-      + `<i class="dj-fx-barre" style="width:${pc(p.i).toFixed(2)}%;--flux:${(FLUX.periode / v).toFixed(2)}s"></i>`
+      + `<i class="dj-fx-barre" style="width:${pc(p.i).toFixed(2)}%;--flux:${(FLUX_COURANT.periode / v).toFixed(2)}s"></i>`
       + `<b class="dj-fx-val${dedans ? ' dedans' : ''}" style="left:${pc(p.i).toFixed(2)}%">${esc(amperes(p.i))}</b></span></div>`; }).join('');
   // l'échelle : chaque calibre à sa place ; deux chiffres trop proches, le plus petit se tait (son point reste, sa bulle le dit)
   const piste = Math.max(240, largeurVue() - 150), kept = []; liste.forEach(g => { const x = pc(g.calibre) / 100 * piste, w = 14 + String(nombre(g.calibre) + ' A').length * 7, imp = g.calibre === cal || g.calibre === fic;
@@ -806,12 +811,12 @@ function lierCourantAppele(ca) { const max = +ca.dataset.max || 1, lignes = [...
 /* LA LARGEUR DE LA COURBE, quand elle se dessine : celle qu'elle a déjà à l'écran (une saisie, un rendu de la même fiche) ;
    sinon celle qu'elle aura — le panneau de l'onglet, moins le tableau du profil quand ils sont côte à côte (`.dj-pc`, à
    partir de 700 px de carte : style-x-dj.css). Le graphique se redessine de toute façon à sa vraie largeur (`lierGraphe`). */
-const PC = { cote: 700, large: 900, table: 312, tableL: 360, ecart: 20 };
+const PROFIL_COURBE = { cote: 700, large: 900, table: 312, tableL: 360, ecart: 20 };
 function largeurDuGraphe(nom) { const box = typeof $ === 'function' ? $('ba-equip') : null, vu = box && box.querySelector(`.fi-dj[data-disj="${CSS.escape(nom)}"] .dj-graphe`);
   if (vu && vu.clientWidth > 200) return Math.round(vu.clientWidth);
   if (!(box && box.clientWidth > 200)) return 392;
   const carte = Math.min(1000, box.clientWidth - (typeof grandLarge === 'function' && grandLarge() ? 264 : 0) - 84);
-  return carte >= PC.cote ? Math.max(300, carte - (carte >= PC.large ? PC.tableL : PC.table) - PC.ecart) : Math.max(300, Math.min(760, carte)); }
+  return carte >= PROFIL_COURBE.cote ? Math.max(300, carte - (carte >= PROFIL_COURBE.large ? PROFIL_COURBE.tableL : PROFIL_COURBE.table) - PROFIL_COURBE.ecart) : Math.max(300, Math.min(760, carte)); }
 
 /* ---- ses câbles, pour la section commune « Câbles » (08-fiche, `listeCables`) ------------ */
 /* La chute en ligne depuis le disjoncteur, chemin par chemin : au courant permanent du profil (sinon le calibre, sinon
@@ -932,7 +937,8 @@ function lierDisjonction(nom, conteneur) {
   const apres = (avant, garder) => { if (avant && avant.isConnected) rafraichir(garder); };
   const dansUnChamp = () => { const a = document.activeElement; return !!(a && a.tagName === 'INPUT' && parts().some(p => p.contains(a))); };
   const ecrire = (quoi, c) => setTimeout(() => { const avant = parts()[0]; histPush(quoi); poserCharge(nom, c); apresEdition(); apres(avant, dansUnChamp()); }, 0);
-  const geste = f => (...a) => { const avant = parts()[0]; f(...a); apres(avant, false); };
+  // (v86) refaite après le geste entier, toujours : un geste de VOLTA pose ses marques « proposition acceptée » à la fin
+  const geste = f => (...a) => { f(...a); const a0 = document.activeElement; if (a0 && a0.blur && a0.tagName === 'BUTTON') a0.blur(); rafraichir(); };
   const retenir = geste(cal => retenirCalibre(nom, cal)), rendre = geste(() => rendreCalibre(nom)), changerFils = geste(() => parVolta(() => changerFilsDuMeilleur(nom))), decider = geste(() => parVolta(() => deciderCalibre(nom)));
   // le profil, ouvert et sous les yeux, la main dans son permanent
   const voirProfil = () => { const p = Q('[data-part="profil"]'), det = p && p.closest('details.fs'); if (det) { det.open = true; try { p.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { p.scrollIntoView(); } const i = det.querySelector('[data-dj="perm"][data-q="i"]'); if (i) setTimeout(() => i.focus({ preventScroll: true }), 250); } };
@@ -1048,10 +1054,11 @@ function lierDisjonction(nom, conteneur) {
     /* (v86, l'intégrateur, G8) LE SEUL GESTE QUI ÉCRIT UN CALIBRE : la proposition justifiée de VOLTA (« Retenir le 7,5 A ») —
        elle part dans l'Excel corrigé (le part number du calibre, marqué « proposition de VOLTA acceptée »), son message
        propose « Défaire » ; un calibre retenu à la main par une version d'avant revient au calcul de VOLTA */
-    racine.querySelectorAll(`[data-dj-prop="${CSS.escape(nom)}"]`).forEach(b => { b.onclick = () => { const p = propositionDuCalibre(nom, E.d); if (!p) return; const avant = parts()[0];
-      if (p.main) { rendreCalibre(nom); const d2 = disjonctionDe(nom); dire(nom + ' : ' + (d2.calibre ? amperes(d2.calibre) + ', ' : '') + 'le calcul de VOLTA.', false, { geste: 'Défaire', faire: () => defaire() }); }
+    // (la fiche se refait APRÈS le geste entier : les marques « proposition de VOLTA » se posent quand l'écriture est finie)
+    racine.querySelectorAll(`[data-dj-prop="${CSS.escape(nom)}"]`).forEach(b => { b.onclick = () => { const p = propositionDuCalibre(nom, E.d); if (!p) return;
+      if (p.main) { rendreCalibre(nom); const d2 = disjonctionDe(nom); dire(nom + ' : ' + (d2.calibre ? amperes(d2.calibre) + ', ' : '') + (p.fichier ? 'celui de votre fichier.' : 'le calcul de VOLTA.'), false, { geste: 'Défaire', faire: () => defaire() }); }
       else parVolta(() => deciderCalibre(nom, p.cal));
-      b.blur(); apres(avant, false); }; });
+      b.blur(); rafraichir(); }; });
     lierGraphe();
     /* LE VOYAGE : le calibre au centre a changé depuis le dernier rendu de CETTE fiche (un clic, Entrée, « Automatique »,
        Ctrl+Z) — l'index part d'où il était, longe l'arc jusqu'au nouveau, le chiffre roule, la ligne du verdict s'écrit.

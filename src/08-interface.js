@@ -722,12 +722,12 @@ function calculer() {
   return app.dessin;
 }
 /* Les BARRETTES À POSER du folio (01) : le routage les a posées au ras de leur borne (05, les `barrettes` du dessin) ;
-   chacune reçoit ici son repère provisoire (VT1, VT2…) et, pour chaque borne, le numéro que le folio lui donne — la
-   borne 1 pour le fil à créer, la borne du contrat pour chaque fil : la fiche et le plan disent la même chose. */
+   chacune reçoit ici son repère provisoire (VT1, VT2…) et, pour chaque borne, le nom que le folio lui donne — celle du
+   câble à créer, celle du contrat pour chaque fil, nommées comme sa face (« 51H », 01) : la fiche et le plan disent la même chose. */
 function nommerBarrettesAPoser(barrettes, L) { const noms = new Map();
-  L.forEach(l => { if (VT_A_POSER.test(l.vers) && l.borneVers === '1' && !VT_A_POSER.test(l.de)) noms.set(l.de + '\u0001' + l.borneDe, l.vers); });
-  (barrettes || []).forEach(b => { const nom = noms.get(b.propre + '\u0001' + b.etiquette); if (!nom) { delete b.nomVT; return; } b.nomVT = nom;
-    b.bornes = (b.bornes || []).map(p => { const l = p.li != null ? L[p.li] : null; return { ...p, n: !l ? 1 : l.de === nom ? +l.borneDe : l.vers === nom ? +l.borneVers : null }; }); }); }
+  L.forEach(l => { if (estRaccordAPoser(l)) noms.set(l.de + '\u0001' + l.borneDe, l); });
+  (barrettes || []).forEach(b => { const r = noms.get(b.propre + '\u0001' + b.etiquette), nom = r && r.vers; if (!nom) { delete b.nomVT; return; } b.nomVT = nom;
+    b.bornes = (b.bornes || []).map(p => { const l = p.li != null ? L[p.li] : null; return { ...p, n: !l ? r.borneVers : l.de === nom ? l.borneDe : l.vers === nom ? l.borneVers : null }; }); }); }
 // la barrette à poser d'un repère, sur le dessin ; ses fils
 const barretteAPoser = nom => ((app.dessin && app.dessin.barrettes) || []).find(b => b.nomVT === nom) || null;
 const filsDeBarretteAPoser = nom => { const L = liaisonsDuPlan(); return ((app.dessin && app.dessin.fils) || []).filter(w => { const l = L[w.i]; return l && l.de !== l.vers && (l.de === nom || l.vers === nom); }); };
@@ -1520,7 +1520,7 @@ function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => 
       + l_((c ? `<i class="pl-b-route" style="background:${c}"></i>` : '') + esc(s.route || 'sans route') + (lg > 0 ? ' · ' + String(Math.round(lg * 100) / 100).replace('.', ',') + ' m' : '')); }
   if (q.genre === 'renvoi') { const t = q.c.name.replace(RENVOI, ''), l = q.f && L[q.f.i], bout = l ? (l.de === q.c.name ? l.borneDe : l.borneVers) : '';
     return T('Vers le folio ' + t) + (l ? l_(id(autreBoutDuRenvoi(bout)) + (l.type ? ' · ' + id(l.type) : '')) : '') + l_('Clic : y aller, l’autre moitié allumée'); }
-  if (q.genre === 'vt') { const ws = filsDeBarretteAPoser(q.b.nomVT), r = liaisonsDuPlan().find(l => l.vers === q.b.nomVT && l.borneVers === '1' && !VT_A_POSER.test(l.de));
+  if (q.genre === 'vt') { const ws = filsDeBarretteAPoser(q.b.nomVT), r = liaisonsDuPlan().find(l => l.vers === q.b.nomVT && estRaccordAPoser(l));
     return T(q.b.nomVT) + l_('barrette ajoutée par VOLTA' + (r ? ' sur ' + id(bornePlusRepere(r.de, r.borneDe)) : '')) + l_(pluriel(ws.length, 'câble')); }
   const c = q.c, nom = c.name;
   if (q.genre === 'borne') { const ws = filsDeLaBorne(c, q.y);
@@ -1575,7 +1575,7 @@ function choisirBarretteAPoser(b) { app.choisi = b.nomVT; app.cible = { type: 'b
   peindre(); ouvrirInspecteur(); allumerFils(filsDeBarretteAPoser(b.nomVT)); }
 /* Ce que le tableau filtre pour un bloc : son repère ; pour une barrette à poser, qui n'est pas au contrat, l'équipement
    qu'elle dédouble (ses fils y sont). */
-const filtreDuBloc = nom => { if (!VT_A_POSER.test(nom)) return nom; const r = liaisonsDuPlan().find(l => l.origine === null && l.vers === nom && l.borneVers === '1'); return r ? r.de : ''; };
+const filtreDuBloc = nom => { if (!VT_A_POSER.test(nom)) return nom; const r = liaisonsDuPlan().find(l => l.origine === null && l.vers === nom && estRaccordAPoser(l)); return r ? r.de : ''; };
 /* Choisir un bloc : sa fiche dans l'inspecteur ; le tableau, s'il est ouvert, se filtre sur lui. */
 function choisirBloc(c) { app.choisi = c.name; app.cible = { type: 'bloc', nom: c.name }; app.choisiK = app.dessin ? app.dessin.comps.indexOf(c) : -1;
   if (app.base.ouvert) { app.base.filtre = filtreDuBloc(c.name); app.base.filtreAuto = true; app.base.defiler = true; rendreBase(); }
@@ -1655,7 +1655,7 @@ const reperesDuContrat = () => memoContrat('reperes', () => { const V = verite()
     if (!sous && genre === 'eqpt') sous = [...new Set(connecteursDe(nom, siens).map(c => c.pn).filter(Boolean))].slice(0, 2).join(' · ');
     if (!sous) sous = pluriel(siens.length, 'câble');
     out.push({ nom, genre, plans: [...new Set((duPlan.get(nom) || []).map(l => l.plan).filter(Boolean))].sort(triNaturel), sous }); });
-  (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1')
+  (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && estRaccordAPoser(l))
     out.push({ nom: l.aPoser, genre: 'barrette', plan: p, plans: p === '*' ? [] : [p], sous: 'ajoutée par VOLTA sur ' + l.de + ':' + l.borneDe }); }));
   return out.sort((a, b) => triNaturel(a.nom, b.nom) || triNaturel(a.plan || '', b.plan || '')); });
 // les folios d'un repère, en toutes lettres : « folio 2 », « folios 1 · 3 », « 5 folios »
@@ -1961,9 +1961,12 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };
   if (cal && !natures.includes('CB')) natures.push('CB');
+  // aucun disjoncteur de ce calibre (« 7,5 A » quand ils sont tous en 10 A) : tous, chacun avec le sien, et la ligne le dit
+  const calDe = n => typeof calibreAuFolio === 'function' ? calibreAuFolio(n) : null;
+  if (cal && cal.amp != null && ![...info.keys()].some(n => estDisjoncteur(n) && Math.abs((calDe(n) || 0) - cal.amp) < 1e-6)) { cal.aucun = cal.amp; cal.amp = null; }
   info.forEach((x, n) => { const des = D.get(n) || ''; let r = rang(n), dit = des || [...x.descs][0] || '';
     // le calibre cherché : chaque disjoncteur dit le sien, en tête ; « calibre 10 » ne garde que ceux de 10 A
-    if (cal && estDisjoncteur(n)) { const c = typeof calibreAuFolio === 'function' ? calibreAuFolio(n) : null;
+    if (cal && estDisjoncteur(n)) { const c = calDe(n);
       if (cal.amp != null && !(c > 0 && Math.abs(c - cal.amp) < 1e-6)) return;
       rep.push({ type: 'repere', nom: n, des: (c > 0 ? 'calibre ' + amperesCb(c) : 'disjoncteur') + (des && des !== 'disjoncteur' ? ' · ' + des : ''), n: x.n, r: 0.5 }); return; }
     if (r === 2 && natures.includes(codeDe(n))) { r = 1.5; dit = CODES[codeDe(n)].nom + (estDisjoncteur(n) && typeof calibreAuFolio === 'function' && calibreAuFolio(n) ? ' · ' + amperesCb(calibreAuFolio(n)) : '') + (dit ? ' · ' + dit : ''); }
@@ -1974,7 +1977,7 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   rep.sort((a, b) => a.r - b.r || b.n - a.n || triNaturel(a.nom, b.nom));
   // la nature entière : « tous les disjoncteurs », dans le récapitulatif
   const nat = natures.map(code => { const k = rep.filter(r => codeDe(r.nom) === code).length; if (!k) return null; const nom = CODES[code].nom, onglet = ONGLET_DE_NATURE[code] || 'equipements';
-    return { type: 'nature', nom: k > 1 ? nom.replace(/^(\S+?)([sxz]?)(?=\s|$)/, (t, a, b) => a + (b || 's')) : nom, code, onglet, filtre: onglet === 'equipements' ? nom : '', des: cal && code === 'CB' ? 'leurs calibres, dans le récapitulatif' : 'tous, dans le récapitulatif', n: k, sansCable: true }; }).filter(Boolean).slice(0, 2);
+    return { type: 'nature', nom: k > 1 ? nom.replace(/^(\S+?)([sxz]?)(?=\s|$)/, (t, a, b) => a + (b || 's')) : nom, code, onglet, filtre: onglet === 'equipements' ? nom : '', des: cal && code === 'CB' ? (cal.aucun != null ? 'aucun de ' + amperesCb(cal.aucun) + ' — leurs calibres, dans le récapitulatif' : 'leurs calibres, dans le récapitulatif') : 'tous, dans le récapitulatif', n: k, sansCable: true }; }).filter(Boolean).slice(0, 2);
   // les câbles par leur numéro (celui du fichier, même s'il ne s'écrit plus : `candidatCable`) ; un type de câble (deux
   // lettres au moins) : la ligne « tous les DR12 », puis quelques-uns
   const fils = [], vus = new Set(), types = new Map();
@@ -2115,7 +2118,7 @@ function construirePalette() { if (PALETTE.el) return PALETTE.el;
   const el = document.createElement('div'); el.id = 'palette'; el.className = 'palette'; el.hidden = true;
   el.innerHTML = `<div class="pa-boite menu-verre" role="dialog" aria-modal="true" aria-label="Palette : une action, un repère, un câble">`
     + `<div class="pa-tete"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>`
-    + `<input id="pa-q" type="text" role="combobox" aria-expanded="true" aria-controls="pa-liste" aria-autocomplete="list" placeholder="Un repère, une borne, un type de câble, une action… (102CB1, DR12, pdf, hypothèses)" aria-label="Chercher une action, un repère ou un câble" autocomplete="off" spellcheck="false">`
+    + `<input id="pa-q" type="text" role="combobox" aria-expanded="true" aria-controls="pa-liste" aria-autocomplete="list" placeholder="Un repère, un câble, une action… (102CB1, DR12, pdf)" aria-label="Chercher une action, un repère ou un câble" autocomplete="off" spellcheck="false">`
     + `<kbd class="pa-echap" aria-hidden="true">Échap</kbd></div><div class="pa-liste" id="pa-liste" role="listbox" aria-label="Ce que la palette trouve"></div>`
     + `<div class="pa-pied" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> choisir</span><span><kbd>Entrée</kbd> faire</span><span><kbd>Ctrl</kbd><kbd>K</kbd> ou <kbd>Échap</kbd> fermer</span></div></div>`;
   document.body.appendChild(el); PALETTE.el = el;

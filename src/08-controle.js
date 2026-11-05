@@ -85,7 +85,7 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   reperes.filter(estDisjoncteur).forEach(r => { try { controleProtection(r, contacts, V, N, H).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte, { cables: x.cables || [], ...(x.genre ? { genre: x.genre } : {}), ...(x.section ? { section: x.section } : {}) })); } catch (_) { } });
   // les barrettes à poser, folio par folio
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => {
-    if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1') att(l.aPoser, `ajoutée par VOLTA sur ${l.de}:${l.borneDe} (plusieurs câbles sur une borne) — repère provisoire`, { plan: p }); }));
+    if (l.origine === null && l.vers === l.aPoser && estRaccordAPoser(l)) att(l.aPoser, `ajoutée par VOLTA sur ${l.de}:${l.borneDe} (plusieurs câbles sur une borne) — repère provisoire`, { plan: p }); }));
   // les types de fil que la base des câbles ne connaît pas (une faute de frappe, un câble à ajouter)
   if (cablesDe(N).length) { const inc = [...new Set(V.filter(l => liaisonComplete(l) && l.de !== l.vers && l.type && !cableDuType(N, l.type)).map(l => l.type))].sort(triNaturel);
     // (v86, le bilan d'ouverture) ses câbles : leur fiche le dit, et un seul type mène au récapitulatif filtré sur lui
@@ -155,7 +155,7 @@ function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete),
     // la façon que VOLTA lit (02 : en capitales sans espace si le fichier l'écrit ainsi, sinon la plus fréquente) ; les autres
     const cible = un ? [...lus][0] : xs.slice().sort((a, b) => (b[0] === f) - (a[0] === f) || b[1].n - a[1].n || triNaturel(a[0], b[0]))[0][0], autres = xs.filter(([w]) => w !== cible);
     dire(cible, `s’écrit aussi ${autres.map(([w, x]) => '« ' + w + ' » (' + pluriel(x.cables.size, 'ligne') + ')').join(', ')} dans votre fichier : ${un ? 'VOLTA le lit ' + cible + ', un seul équipement' : 'pour VOLTA, ' + (lus.size > 2 ? lus.size : 'deux') + ' équipements différents'} — à écrire pareil partout`,
-      { genre: 'casse', cables: [...new Set(autres.flatMap(([, x]) => [...x.cables]))], casse: { forme: f, cible } }, 'ko'); });
+      { genre: 'casse', cables: [...new Set(autres.flatMap(([, x]) => [...x.cables]))], casse: { forme: f, cible, autres: autres.map(([w]) => w) } }, 'ko'); });
   L.forEach(l => [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
     if (potentiel(r)) return; const x = bornes.get(r) || bornes.set(r, { formes: new Map(), sans: [], avec: 0, pns: new Map() }).get(r);
     if (!b) { x.sans.push(l); return; } x.avec++; const fb = formeDeLaBorne(b, r), y = x.formes.get(fb) || x.formes.set(fb, new Map()).get(fb); y.set(b, (y.get(b) || 0) + 1);
@@ -364,6 +364,11 @@ function gestesDuPoint(x) { if (!x) return []; const out = [];
   const c = x.nom && estDisjoncteur(x.nom) && x.genre !== 'pn' ? causeDuDisjoncteur(x.nom) : null;
   if (c) out.push({ mot: motToutRegler(c), aide: 'Le calibre que VOLTA retient part dans l’Excel corrigé, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(x.nom), principal: !out.length });
   if (x.genre === 'aposer' && x.nom) out.push({ mot: 'Lui donner son repère', aide: 'Elle prend le repère que VOLTA propose (la suite de la barrette la plus proche) — Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes([x.nom]), principal: !out.length });
+  // (v86, l'audit B3) une ligne en double, un repère écrit de deux façons : la proposition de VOLTA, qui part dans l'Excel corrigé
+  if (x.genre === 'doublon' && x.doublon) out.push(x.doublon.identiques
+    ? { mot: x.doublon.copies > 1 ? 'Retirer les ' + x.doublon.copies + ' lignes en double' : 'Retirer la ligne en double', aide: 'La copie quitte le plan et l’Excel corrigé — une proposition de VOLTA ; Défaire la remet', faire: () => retirerLignesEnDouble([x]), principal: !out.length }
+    : { mot: 'Voir les lignes', aide: 'Les lignes de ce câble, dans l’onglet Liaisons du récapitulatif : gardez la bonne dans votre fichier', faire: () => montrerLiaisons(((x.cables || [])[0] || {}).cable || x.nom), principal: !out.length });
+  if (x.genre === 'casse' && x.casse) out.push({ mot: 'Écrire ' + x.casse.cible + ' partout', aide: `${(x.casse.autres || []).map(w => '« ' + w + ' »').join(', ')} devient ${x.casse.cible} dans l’Excel corrigé — une proposition de VOLTA ; Défaire le rend`, faire: () => ecrireLesReperes([x]), principal: !out.length });
   if (x.tableau == null && x.nom) out.push({ mot: 'Voir ' + x.nom, aide: 'Sa fiche, sur son folio, à la section qui le démontre', faire: () => allerAuControle(x), principal: !out.length });
   else if (x.tableau != null) out.push({ mot: 'Voir les liaisons', aide: 'L’onglet Liaisons du récapitulatif, sur ce qu’il faut reprendre', faire: () => allerAuControle(x), principal: !out.length });
   return out; }
@@ -393,6 +398,11 @@ function gesteDuGenre(g) { const xs = g.lignes.flatMap(l => l.xs);
   if (g.genre === 'aposer') return { mot: g.lignes.length > 1 ? 'Leur donner leur repère' : 'Lui donner son repère', aide: 'Chacune prend le repère que VOLTA propose (la suite de la barrette la plus proche) ; « Rétablir » ou Ctrl+Z rend le repère provisoire', faire: () => poserLesBarrettes(g.lignes.map(l => l.nom)) };
   if (g.genre === 'profil') return { mot: 'Écrire les profils', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux sans profil de charge, la colonne Permanent à écrire', faire: () => ouvrirOngletFiltre('disjoncteurs', ['sansprofil'], ['profil']) };
   if (g.genre === 'pn' && g.lignes.length === 1) { const G = gestesDuPoint(g.lignes[0].xs[0])[0]; if (G) return { mot: G.mot, aide: G.aide, faire: G.faire }; }
+  // (v86) toutes les lignes en double d'un coup (celles pareilles en tout), tous les repères écrits de deux façons : un seul Défaire
+  if (g.genre === 'doublon') { const ps = xs.filter(x => x.doublon && x.doublon.identiques), n = ps.reduce((s, x) => s + x.doublon.copies, 0);
+    return n ? { mot: n > 1 ? 'Retirer les ' + n + ' lignes en double' : 'Retirer la ligne en double', aide: 'Chaque copie pareille en tout quitte le plan et l’Excel corrigé — une proposition de VOLTA ; Défaire les remet', faire: () => retirerLignesEnDouble(ps) } : null; }
+  if (g.genre === 'casse') { const ps = xs.filter(x => x.casse); if (!ps.length) return null;
+    return { mot: ps.length > 1 ? 'Les écrire pareil partout' : 'Écrire ' + ps[0].casse.cible + ' partout', aide: 'Chaque repère s’écrit comme VOLTA le lit, dans l’Excel corrigé — une proposition de VOLTA ; Défaire le rend', faire: () => ecrireLesReperes(ps) }; }
   if (g.genre === 'calibre' || g.genre === 'protection' || g.genre === 'pn') return { mot: 'Voir les disjoncteurs', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux qui ont quelque chose à reprendre', faire: () => ouvrirOngletFiltre('disjoncteurs', ['probleme']) };
   if (g.genre === 'chute') return xs.every(x => /hypothèse/.test(x.texte)) ? { mot: 'Écrire les longueurs', aide: 'Ces chutes se calculent sur des longueurs supposées : l’onglet Liaisons, les câbles sans longueur dans votre fichier', faire: () => ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout') }
     : { mot: 'Voir les câbles', aide: 'L’onglet Liaisons du récapitulatif : les liaisons à reprendre', faire: () => ouvrirOngletFiltre('liaisons', ['probleme'], null, 'tout') };
@@ -411,6 +421,43 @@ function poserLesBarrettes(noms) { const vus = new Set(); let n = 0;
   if (!n) { app.hist.pop(); synchroniserHistorique(); } else { if (app.hist.length) app.hist[app.hist.length - 1].quoi = 'pose de ' + pluriel(n, 'barrette'); apresEdition(); }
   if (n) direRetablir(n > 1 ? n + ' barrettes posées au contrat, chacune sous le repère proposé.' : 'La barrette est posée au contrat sous le repère proposé.');
   else dire('Aucune barrette n’a pu être posée.', true); return n; }
+/* (v86, l'audit B3) LES GESTES DES ÉCRITURES DU FICHIER — des propositions de VOLTA, qui partent dans l'Excel corrigé (rien
+   d'autre ne réécrit le fichier : jusque-là, VOLTA dessine juste et rend le fichier tel qu'il l'a lu) ; chacun une entrée
+   d'historique, que « Défaire » rend.
+   RETIRER LA LIGNE EN DOUBLE : chaque copie pareille en tout quitte le plan ; la première ligne reste et garde le compte des
+   copies retirées (`avant.copies` : le relevé et la feuille Modifications le disent, 08-export). */
+function retirerLignesEnDouble(points) { const cles = new Set((points || []).filter(x => x && x.doublon && x.doublon.identiques).map(x => x.doublon.cle)); if (!cles.size) return 0;
+  const V = verite(), garde = new Map(), retirees = [];
+  V.forEach(l => { if (!liaisonComplete(l)) return; const k = cleDeDoublon(l); if (!cles.has(k)) return; if (garde.has(k)) retirees.push(l); else garde.set(k, l); });
+  if (!retirees.length) return 0;
+  histPush(retirees.length > 1 ? 'retrait de ' + retirees.length + ' lignes en double' : 'retrait d’une ligne en double');
+  const n = new Map(); retirees.forEach(l => { const k = cleDeDoublon(l); n.set(k, (n.get(k) || 0) + 1); });
+  garde.forEach((l, k) => { if (n.get(k)) l.avant = { ...(l.avant || {}), copies: ((l.avant && l.avant.copies) || 0) + n.get(k) }; });
+  const hors = new Set(retirees); for (let i = V.length - 1; i >= 0; i--) if (hors.has(V[i])) V.splice(i, 1);
+  apresEdition();
+  const l0 = [...garde.values()][0], ou = l => l.de + (l.borneDe ? ':' + l.borneDe : '') + ' → ' + l.vers + (l.borneVers ? ':' + l.borneVers : '');
+  dire(retirees.length > 1 ? `VOLTA retire ${retirees.length} lignes en double : chaque câble reste une fois, et elles quittent l’Excel corrigé.` : `VOLTA retire la ligne en double (${ou(l0)}) : le câble reste une fois, et la copie quitte l’Excel corrigé.`, false, { geste: 'Défaire', faire: defaire });
+  return retirees.length; }
+/* ÉCRIRE 103RL1 PARTOUT : chaque bout que le fichier écrivait autrement (« 103rl1 ») s'écrit comme VOLTA le lit ; la case
+   garde ce qu'elle portait (`avant` : la feuille Modifications dit « 103rl1 → 103RL1 », proposition de VOLTA acceptée), et
+   l'écriture du fichier gardée sur la liaison (`ecrit`, 01) suit — « 667vt2 51 » devient « 667VT2 51 » —, ou s'efface quand
+   elle dit la même chose que VOLTA. */
+function ecrireLesReperes(points) { const cibles = new Map((points || []).filter(x => x && x.casse).map(x => [x.casse.forme, x.casse.cible])); if (!cibles.size) return 0;
+  const faits = [];
+  verite().forEach(l => [['de', 'borneDe'], ['vers', 'borneVers']].forEach(([a, b]) => { const r = l[a]; if (!r) return;
+    const e = ecritDuBout(l, a), w = e ? boutLu(e[0], e[1])[0] : r, c = cibles.get(formeEcrite(w)); if (c && w !== c) faits.push([l, a, b, w, c, !!e]); }));
+  if (!faits.length) return 0;
+  const noms = [...new Set(faits.map(f => f[4]))];
+  histPush('écriture de ' + noms.join(', ') + ' partout');
+  faits.forEach(([l, a, b, w, c, garde]) => { const ec = { ...(l.ecrit || {}) };
+    if (garde && ec[a] != null) { const t = String(ec[a]); ec[a] = t.startsWith(w) ? c + t.slice(w.length) : c;
+      if (ec[a] === c && String(ec[b] == null ? '' : ec[b]) === String(l[b] == null ? '' : l[b])) { delete ec[a]; delete ec[b]; } }
+    if (Object.keys(ec).length) l.ecrit = ec; else delete l.ecrit;
+    l.avant = { ...(l.avant || {}), ...(l.avant && a in l.avant ? {} : { [a]: w }), [ORIGINE_VOLTA + a]: c };
+    l[a] = c; });
+  apresEdition();
+  dire(`VOLTA écrit ${noms.join(', ')} partout : ${pluriel(faits.length, 'case')} ${faits.length > 1 ? 'changent' : 'change'} dans l’Excel corrigé.`, false, { geste: 'Défaire', faire: defaire });
+  return faits.length; }
 
 /* La liste « à reprendre », en tête de l'index : les problèmes, puis les points à voir, par genre. */
 function listeControleHtml() { const xs = CONTROLE.items; if (!xs.length) return '';
@@ -464,6 +511,9 @@ function ouvrirProblemes() { CONTROLE.ouvert = true; const ix = !$('inspecteur')
   if (ix && !app.cible) rendreIndex($('ba-equip')); else if (ix) retourIndex(); else basculerIndex(); }
 // une ligne : son folio, son bloc et sa fiche — ou l'onglet Liaisons du récapitulatif, trié sur ce qu'il faut reprendre
 function allerAuControle(x) {
+  // (v86, le bilan d'ouverture) un point du tableau qui ne parle que d'un câble mène à sa fiche ; des longueurs illisibles, aux câbles à longueur supposée
+  if (x.tableau != null && x.cables && x.cables.length === 1 && liaisonComplete(x.cables[0]) && typeof montrerFil === 'function') { montrerFil(x.cables[0]); return; }
+  if (x.tableau != null && x.longueurs) { ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout'); return; }
   if (x.tableau != null) { app.base.filtreAuto = false; changerOnglet('liaisons', true); app.base.filtre = x.tableau; app.base.portee = 'tout';
     app.base.tri = x.texte.includes('sans type') ? { k: 'jauge', sens: -1 } : { k: 'de', sens: 1 }; if (app.base.ouvert) rendreBase(true); else ouvrirBase(); return; }
   if (x.plan && x.plan !== app.plan && plans().includes(x.plan)) allerAuPlan(x.plan);

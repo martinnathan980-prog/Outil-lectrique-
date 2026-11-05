@@ -70,7 +70,8 @@
    matériel qu'on pose ; les normes, la référence, tout en bas. Chaque onglet a son icône (le point rouge se pose dessus :
    les mots s'alignent tous), son compte, un seul nombre. */
 const GROUPES_ONGLETS = [['controle', '', ['problemes']], ['cablage', 'Câblage', ['liaisons', 'cables']], ['materiel', 'Matériel', ['equipements', 'disjoncteurs', 'barrettes', 'prises', 'raccords']], ['reference', 'Référence', ['normes']]];
-const ONGLETS = [['problemes', 'Problèmes'], ['liaisons', 'Liaisons'], ['cables', 'Câbles'], ['equipements', 'Équipements'], ['disjoncteurs', 'Disjoncteurs'], ['barrettes', 'Barrettes'], ['prises', 'Prises'],
+// (v86, G6 : « Câbles 7 » juste sous « Liaisons 223 » comptait des TYPES — le nom de l'onglet dit ce qu'il compte)
+const ONGLETS = [['problemes', 'Problèmes'], ['liaisons', 'Liaisons'], ['cables', 'Types de câble'], ['equipements', 'Équipements'], ['disjoncteurs', 'Disjoncteurs'], ['barrettes', 'Barrettes'], ['prises', 'Prises'],
   ['raccords', 'Raccords'], ['normes', 'Normes']];
 const ICONES_ONGLETS = {
   problemes: '<path d="M12 4 21 19.5H3z"/><path d="M12 10v4.2M12 16.8v.2"/>',
@@ -411,7 +412,7 @@ const reperes = () => memo('reperes', () => { const V = verite(), par = new Map(
   // les folios d'un repère : ceux du contrat tel qu'il se dessine (découpé par l'outil, ce sont les siens), comme `plansDuRepere`
   app.contrat.liaisons.forEach(l => [l.de, l.vers].forEach(r => { if (!r) return; const s = par.get(r) || par.set(r, new Set()).get(r); if (l.plan) s.add(l.plan); }));
   const out = reperesDe(V).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).map(nom => ({ nom, k: nom, genre: genreDuRepere(nom), plans: [...(par.get(nom) || [])].sort(triNaturel) }));
-  (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1')
+  (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && estRaccordAPoser(l))
     out.push({ nom: l.aPoser, k: l.aPoser + '@' + p, genre: 'barrette', plan: p === '*' ? '' : p, plans: p === '*' ? [] : [p], aPoser: true, sous: 'ajoutée par VOLTA sur ' + l.de + ':' + l.borneDe }); }));
   return out.sort((a, b) => triNaturel(a.nom, b.nom) || triNaturel(a.plan || '', b.plan || '')); });
 /* Ce qu'un repère porte sans plan : ses connecteurs (lettre, part number, bornes), ses câbles, ses besoins. */
@@ -437,7 +438,6 @@ const normesDuRepere = nom => memo('normes|' + nom, () => { const m = new Map();
   return [...m].map(([norme, cs]) => ({ norme, cs })); });
 const dejaFait = nom => memo('deja|' + nom, () => { const I = indexReferences(); if (!I) return null; try { const c = candidatsDeReference(I, verite(), nom, 1)[0]; return c ? c : null; } catch (_) { return null; } });
 const natureAuto = nom => { const q = lireRepere(nom), c = q && (q.codeLu || q.code); return q && q.num && CODES[c] ? CODES[c].nom : 'équipement'; };
-const natureModifiable = r => !r.aPoser && (r.genre === 'eqpt' || r.genre === 'cb');
 // l'état d'un repère : ses points du contrôle, comptés (les problèmes d'abord) ; chacun dans la bulle
 const etatRepere = nom => { const e = etatDuNom(nom);
   return { niveau: e.niveau || 'ok', mot: e.ko.length ? pluriel(e.ko.length, 'problème') : e.att.length ? e.att.length + INSECABLE + 'à voir' : 'ok', bulle: [...e.ko, ...e.att].map(majuscule).join('\n') }; };
@@ -500,7 +500,9 @@ function survolRepere(nom) { if (app.dessin && app.dessin.compDe.has(nom)) allum
 const disjoncteurs = () => memo('disj', () => reperes().filter(r => r.genre === 'cb'));
 function infoDisj(nom) { return memo('dj|' + nom, () => { const d = disjonctionDe(nom), H = H_(), V = verite();
   const I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : d.calibre > 0 ? d.calibre : H.courant, courts = d.points.filter(p => p.t !== Infinity && p.i > 0);
-  let pire = null; try { chutesDepuis(app.norme, V, nom, I, H, courts).forEach(c => { if (!pire || c.dU > pire.dU) pire = c; }); } catch (_) { }
+  // (v86) la pire chute de ses lignes, à l'instant le plus dur — le permanent ou une pointe, contre ce qui est admis à cet instant
+  let pire = null; try { chutesDepuis(app.norme, V, nom, I, H, courts).forEach(c => [{ dU: c.dU, admis: c.admis, pointe: null }, ...(c.pointes || []).map(p => ({ dU: p.dU, admis: p.admis, pointe: p }))].forEach(k => {
+    if (k.dU == null) return; const q = k.admis ? k.dU / k.admis : k.dU / 100; if (!pire || q > pire.q) pire = { ...c, dU: k.dU, admis: k.admis, pointe: k.pointe, trop: k.admis != null && k.dU > k.admis + 1e-9, q }; })); } catch (_) { }
   const ok = d.fils.filter(f => f.verdict !== 'fil' && f.verdict !== 'calibre' && f.protege !== false).length;
   const pointe = d.points.find(p => p.t !== Infinity) || null, perm = etatsDuProfil(d.profil).find(e => e.k === 'perm');
   const o = origineDuCalibre(nom, d);
@@ -525,9 +527,16 @@ function verdictDuCalibre(d) { if (!d.calibre) return { n: '', mot: '' };
    barré ») ; la colonne se dit « Installation » (v74), la clé `retest` reste. */
 const calibreDuRetest = r => { const D = infoDisj(r.nom), o = origineDuCalibre(r.nom, D.d); return o.calRetest || D.d.pn || null; };
 const COLONNES_DISJ = [COL_REPERE,
+  /* (v86 — l'intégrateur : « le calibre écrit vient du fichier : plus de Manuel libre ») LE CALIBRE RETENU SE LIT : le plus
+     petit qui ne disjoncte pas, sa bulle dit pourquoi en ampères ; seule la proposition justifiée de VOLTA garde son geste,
+     « Passer en 7,5 A » (le même que la fiche : `deciderCalibre`), qui l'écrit dans l'Excel corrigé. Un calibre retenu à la
+     main avant la v86 garde « manuel » et ↺. */
   { k: 'calibre', t: 'Calibre', cls: 'rc-c-mesure', html: r => { const D = infoDisj(r.nom), d = D.d, main = D.origine === 'main', propose = typeof propositionNonEcrite === 'function' && propositionNonEcrite(d);
-      return `<span class="rc-mesure">${chiffre(val('calibre', d.calibre ? fmt(d.calibre, 2) : '', { cls: 'rc-n rc-fort rc-gamme-v', ph: '—', titre: (main ? 'Choisi à la main' : propose ? 'Proposé par VOLTA, pas encore écrit dans l’installation' : 'Choisi automatiquement') + ' — un clic, Entrée ou un double-clic : toute la gamme' }), d.calibre ? 'A' : '')}`
-        + `${main ? orig('main') + rond('calibre', D.rendu) : propose ? '<i class="rc-o rc-propose" data-bulle="VOLTA le retient ; l’installation garde le sien tant que « Passer en … » (la fiche) ou le relevé de l’installation corrigée ne l’écrit pas">proposé</i>' : ''}</span>`; },
+      const v = verdictDuCalibre(d), dec = propose && typeof decisionEnMots === 'function' ? (() => { try { return decisionEnMots(r.nom, d); } catch (_) { return null; } })() : null;
+      const bulle = [main ? 'Retenu à la main avant la v86 : ↺ rend le calcul de VOLTA' : propose ? 'Proposé par VOLTA : votre fichier garde le sien tant que vous ne l’acceptez pas' : 'Le plus petit qui ne disjoncte pas', v.bulle || ''].filter(Boolean).join('\n');
+      return `<span class="rc-mesure"${d.calibre ? ` data-bulle="${escA(bulle)}"` : ''}>${chiffre(`<b class="rc-n rc-fort">${d.calibre ? fmt(d.calibre, 2) : ''}</b>`, d.calibre ? 'A' : '')}`
+        + `${main ? orig('main', 'Retenu à la main avant la v86 : ↺ rend le calcul de VOLTA') + rond('calibre', D.rendu) : propose ? '<i class="rc-o rc-propose" data-bulle="VOLTA le retient ; votre fichier garde le sien tant que vous n’acceptez pas la proposition — elle part alors dans l’Excel corrigé">proposé</i>' : ''}`
+        + `${dec ? `<button type="button" class="btn cuivre dense rc-decider" data-decider="1" data-bulle="${escA('Écrit dans l’Excel corrigé : ' + amperes(d.calibre) + ', et les câbles qu’il demande — « Défaire » rend le tout')}">${esc('Passer en ' + amperes(d.calibre))}</button>` : ''}</span>`; },
     tri: r => infoDisj(r.nom).d.calibre || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibre ? amperes(d.calibre) : ''; } },
   { k: 'retest', t: 'Votre fichier', cls: 'rc-c-mesure', html: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; if (!c) return rien; const autre = d.calibre && c !== d.calibre;
       return `<span class="rc-mesure rc-retest${autre ? ' autre' : ''}" data-bulle="${escA('Votre fichier porte ' + (pnDuRepere(r.nom) || 'son part number') + (autre ? ', un ' + amperes(c) + ' : VOLTA retient le ' + amperes(d.calibre) + ' (la fiche dit pourquoi, en ampères)' : ''))}">${autre ? chiffre(`<s class="rc-n">${fmt(c, 2)}</s>`, 'A') : chiffre(`<b class="rc-n">${fmt(c, 2)}</b>`, 'A')}</span>`; },
@@ -536,33 +545,31 @@ const COLONNES_DISJ = [COL_REPERE,
   { k: 'verdict', t: 'Verdict', cls: 'rc-c-etat', html: r => { const v = verdictDuCalibre(infoDisj(r.nom).d); return etatHtml(v.n, v.mot, v.bulle); }, tri: r => rangEtat(verdictDuCalibre(infoDisj(r.nom).d).n), texte: r => verdictDuCalibre(infoDisj(r.nom).d).mot },
   COL_PROBLEMES,
   { k: 'ideal', t: 'Meilleur', cls: 'rc-c-mesure', option: true, html: r => { const d = infoDisj(r.nom).d; if (!d.calibreIdeal) return rien; const pq = d.meilleur && d.meilleur.pourquoi;
-      return `<span class="rc-mesure"${pq ? ` data-bulle="${escA(majuscule(pq))}"` : ''}>${chiffre(`<i class="rc-etoile" aria-label="le meilleur">${ico('etoile')}</i><b class="rc-n">${fmt(d.calibreIdeal, 2)}</b>`, 'A')}${d.calibre !== d.calibreIdeal ? `<button type="button" class="rc-lien" data-retenir="${d.calibreIdeal}" data-bulle="${escA('Retenir ' + amperes(d.calibreIdeal))}">Retenir</button>` : ''}</span>`; },
+      return `<span class="rc-mesure"${pq ? ` data-bulle="${escA(majuscule(pq))}"` : ''}>${chiffre(`<i class="rc-etoile" aria-label="le meilleur">${ico('etoile')}</i><b class="rc-n">${fmt(d.calibreIdeal, 2)}</b>`, 'A')}${d.calibre !== d.calibreIdeal ? `<button type="button" class="rc-lien" data-retenir="${d.calibreIdeal}" data-bulle="${escA('Retenir le ' + amperes(d.calibreIdeal) + ' que VOLTA justifie : il part dans l’Excel corrigé — « Défaire » le rend')}">Retenir</button>` : ''}</span>`; },
     tri: r => infoDisj(r.nom).d.calibreIdeal || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibreIdeal ? amperes(d.calibreIdeal) : ''; } },
-  { k: 'pn', t: 'Part number', option: true, html: r => valT('pn:', infoDisj(r.nom).pn, { cls: 'rc-pn', ph: 'part number', titre: 'Double-clic : toutes ses liaisons le prennent' }), tri: r => infoDisj(r.nom).pn, texte: r => infoDisj(r.nom).pn },
+  { k: 'pn', t: 'Part number', option: true, html: r => luFichierT('pn:', infoDisj(r.nom).pn, { cls: 'rc-pn' }), tri: r => infoDisj(r.nom).pn, texte: r => infoDisj(r.nom).pn },
   { k: 'profil', t: 'Permanent', cls: 'rc-c-mesure', w: 72, option: true, large: 1, html: r => { const D = infoDisj(r.nom);
       return `<span class="rc-mesure">${chiffre(val('perm', D.perm != null ? fmt(D.perm, 2) : '', { cls: 'rc-n', ph: 'A', titre: 'Le courant permanent du profil de charge — double-clic pour l’écrire' }), D.perm != null ? 'A' : '')}${D.pointe ? `<small class="rc-pointe">pointe ${esc(amperes(D.pointe.i))} · ${esc(secondes(D.pointe.t))}</small>` : ''}</span>`; },
     tri: r => infoDisj(r.nom).perm ?? -1, texte: r => { const D = infoDisj(r.nom); return (D.perm != null ? amperes(D.perm) : '') + (D.pointe ? ' pointe ' + amperes(D.pointe.i) + ' ' + secondes(D.pointe.t) : ''); } },
   { k: 'cables', t: 'Câbles protégés', cls: 'rc-c-n', option: true, large: 1, html: r => { const D = infoDisj(r.nom); return D.n ? fraction(D.ok, D.n, D.ok < D.n ? 'ko' : '') : rien; },
     tri: r => { const D = infoDisj(r.nom); return D.n ? D.ok / D.n : -1; }, texte: r => { const D = infoDisj(r.nom); return D.ok + ' / ' + D.n; }, vide: r => !infoDisj(r.nom).n },
+  // la pire chute de ses lignes, dessinée comme celle d'une liaison (l'anneau, « sur 2 V », « pointe ») — F1, F2
   { k: 'chute', t: 'Pire chute', cls: 'rc-c-mesure', option: true, large: 2, vide: r => !infoDisj(r.nom).pire, html: r => { const p = infoDisj(r.nom).pire; if (!p) return rien;
-      return `<span class="rc-mesure" data-bulle="${escA(majuscule(p.mots || '') + (p.admis != null ? ' · ' + volts(p.admis) + ' admis' : '') + (p.reel ? '' : ' · sur des longueurs d’hypothèse'))}">${chiffre(`<b class="rc-n">${fmt(p.dU, 2)}</b>`, 'V', p.trop ? (p.reel ? 'ko' : 'att') : '')}${p.admis != null ? `<span class="rc-adm">/ ${fmt(p.admis, 2)}</span>` : ''}${p.reel ? '' : orig('hyp', 'Sur des longueurs supposées par la simulation', 'supposée')}</span>`; },
-    tri: r => (infoDisj(r.nom).pire || { dU: -1 }).dU, texte: r => { const p = infoDisj(r.nom).pire; return p ? fmt(p.dU, 2) + ' V' : ''; } },
+      const niv = p.trop ? (p.reel ? 'ko' : 'att') : '', s = p.pointe;
+      const bulle = majuscule(p.mots || '') + (s ? ', en pointe (' + (s.nom || 'pointe') + ', ' + amperes(s.i) + ' pendant ' + secondes(s.t) + ')' : ', au permanent') + ' : ' + volts(p.dU) + (p.admis != null ? ' sur ' + volts(p.admis) + ' admis' + (s && s.intermittent ? ' en intermittent' : '') + ' (' + pourcentDe(p.q) + ')' : '') + (p.reel ? '.' : ', sur des longueurs supposées.');
+      return `<span class="rc-mesure rc-chute" data-bulle="${escA(bulle)}">${anneau(p.admis ? p.q : null, niv)}${chiffre(`<b class="rc-n">${voltsN(p.dU)}</b>`, 'V', niv)}<span class="rc-adm">${p.admis != null ? 'sur ' + voltsN(p.admis) + INSECABLE + 'V' : ''}</span>${motInstant(s ? 'pointe' : '')}</span>`; },
+    tri: r => (infoDisj(r.nom).pire || { q: -1 }).q, texte: r => { const p = infoDisj(r.nom).pire; return p ? voltsN(p.dU) + ' V' + (p.admis != null ? ' sur ' + voltsN(p.admis) + ' V' : '') + (p.pointe ? ' (pointe)' : '') : ''; } },
   { k: 'courbe', t: 'Courbe', option: true, large: 2, html: r => { const d = infoDisj(r.nom).d; return `<span class="rc-mot">${esc(d.famille ? d.famille.famille : d.courbe || 'par défaut')}</span>`; }, tri: r => { const d = infoDisj(r.nom).d; return d.famille ? d.famille.famille : d.courbe || ''; }, texte: r => { const d = infoDisj(r.nom).d; return d.famille ? d.famille.famille : d.courbe || ''; } },
   COL_FOLIO];
 const DISJONCTEURS = { ...ONGLET_REPERES, colonnes: COLONNES_DISJ, lignes: disjoncteurs, cherche: 'Chercher : repère, calibre…',
   choisir: r => choisirRepere(r.nom),
   puces: () => [PUCE_A_REPRENDRE, ['sansprofil', 'Sans profil', r => !!infoDisj(r.nom).d.sansProfil, '', '', 'Le profil de charge est à renseigner']],
-  editeur: (r, f) => { const D = infoDisj(r.nom), d = D.d;
-    if (f === 'rep') return { valeur: r.nom };
-    if (f === 'pn:') return { valeur: D.pn, liste: 'pns', aide: 'toutes ses liaisons suivent' };
-    // TOUTE la gamme, dans le composant de la fiche (`choixDuCalibre`, 08-disjoncteurs) : la liste qui tombe de la case
-    if (f === 'calibre') return d.sansCourbe || !(d.gamme || []).length ? null : { gamme: true };
+  // ce qui s'écrit ici : le PROFIL DE CHARGE (ce qu'il alimente consomme — une donnée que VOLTA demande, pas une case du
+  // fichier) ; le repère et le part number viennent du fichier, le calibre est le calcul de VOLTA
+  editeur: (r, f) => { const D = infoDisj(r.nom);
     if (f === 'perm') return { valeur: D.perm != null ? fmt(D.perm, 2) : '', ph: 'A', aide: 'le courant permanent, en ampères' };
     return null; },
   ecrire: (r, f, v) => { const nom = r.nom;
-    if (f === 'rep') return v && v !== nom ? renommerRepere(nom, v, r) : false;
-    if (f === 'pn:') return changerPartNumber(nom, null, v);
-    if (f === 'calibre') { const D = infoDisj(nom); if (v) return +v !== D.d.calibre && retenirCalibre(nom, nombreLu(v)); if (D.origine !== 'main') return false; rendreCalibre(nom); return true; }
     if (f === 'perm') { const x = v ? nombreLu(v) : null; if (v && x == null) { dire('Écrivez un courant en ampères (3,5).', true); return false; } return ecrireCharge(nom, c => { c.perm = { ...(c.perm || {}), i: x }; }, 'profil de charge de ' + nom); }
     return false; },
   rendre: (r, f) => { if (f !== 'calibre') return false; rendreCalibre(r.nom); return true; } };
@@ -635,10 +642,10 @@ function prochainRepereVT(r) { const pris = new Set(reperesDe(verite())), sur = 
   let k = Math.max(0, ...vts.filter(q => q.num === num).map(q => +q.suffixe)) + 1; while (pris.has(num + 'VT' + k)) k++; return num + 'VT' + k; }
 const COLONNES_BARRETTES = [COL_REPERE,
   { k: 'norme', t: 'Norme', cls: 'rc-c-norme', html: r => { const Q = infoBarrette(r).Q; if (!Q) return rien; const n = Q.famille ? nomDeFamille(app.norme, Q.famille) : '';
-      return r.aPoser ? `<span class="rc-norme">${esc(n)}</span>` : valT('norme', n, { cls: 'rc-norme', ph: '—', titre: 'Double-clic pour en choisir une autre' }); },
+      return r.aPoser ? `<span class="rc-norme">${esc(n)}</span>` : valT('norme', n, { cls: 'rc-norme', ph: '—', titre: 'Un choix de VOLTA — double-clic : Automatique, ou une autre norme' }); },
     tri: r => (infoBarrette(r).Q || {}).famille || '', texte: r => { const Q = infoBarrette(r).Q; return Q && Q.famille ? nomDeFamille(app.norme, Q.famille) : ''; } },
   { k: 'module', t: 'Module', cls: 'rc-c-id', html: r => { const B = infoBarrette(r); if (!B.Q) return rien;
-      return r.aPoser ? `<span class="rc-id">${esc(B.Q.reference || '')}</span>` : valT('module', B.Q.reference || '', { cls: 'rc-id', ph: 'aucun module', titre: (B.main ? 'Choisi à la main' : 'Choisi automatiquement : le plus petit module de la norme qui loge ces potentiels') + ' — double-clic pour en choisir un autre' }) + (B.main ? orig('main') + rond('module', 'le choix automatique') : ''); },
+      return r.aPoser ? `<span class="rc-id">${esc(B.Q.reference || '')}</span>` : valT('module', B.Q.reference || '', { cls: 'rc-id', ph: 'aucun module', titre: (B.main ? 'Manuel' : 'Automatique : le plus petit module de la norme qui loge ces potentiels') + ' — double-clic : Automatique, ou un autre module' }) + (B.main ? orig('main') + rond('module', 'le choix automatique') : ''); },
     tri: r => (infoBarrette(r).Q || {}).reference || '', texte: r => (infoBarrette(r).Q || {}).reference || '' },
   { k: 'libres', t: 'Contacts libres', cls: 'rc-c-n', html: r => { const Q = infoBarrette(r).Q; return Q && Q.modules.length ? fraction(Q.contacts - Q.utilises, Q.contacts) : rien; },
     tri: r => { const Q = infoBarrette(r).Q; return Q ? Q.contacts - Q.utilises : -1; }, texte: r => { const Q = infoBarrette(r).Q; return Q ? (Q.contacts - Q.utilises) + ' / ' + Q.contacts : ''; } },
@@ -648,15 +655,15 @@ const COLONNES_BARRETTES = [COL_REPERE,
   COL_FOLIO];
 const BARRETTES = { ...ONGLET_REPERES, colonnes: COLONNES_BARRETTES, lignes: barrettes, cherche: 'Chercher : repère, module…',
   puces: () => [PUCE_A_REPRENDRE, ['aposer', 'Repère provisoire', r => r.aPoser, '', '', 'Les barrettes que VOLTA a ajoutées (plusieurs câbles sur une borne), au repère provisoire']],
+  // ses choix de VOLTA : la norme et le module (Automatique, ou Manuel) ; son repère vient du fichier — provisoire, celui
+  // d'une barrette ajoutée se donne d'un geste (« Lui donner son repère »)
   editeur: (r, f) => { const B = infoBarrette(r);
-    if (f === 'rep') return { valeur: r.aPoser ? prochainRepereVT(r) : r.nom, toujours: r.aPoser, aide: r.aPoser ? 'le vrai repère de la barrette (Ctrl+Z rend le repère provisoire)' : '' };
     if (r.aPoser || !B.Q) return null;
     if (f === 'module') { const b = planDuRepere(r.nom).barrette.besoins, vs = (B.Q.famille ? [B.Q.famille] : famillesDeModules(app.norme)).flatMap(fa => variantesQuiLogent(b, app.norme, fa).slice(0, 12));
       return { valeur: B.main ? B.Q.reference : '', options: [['', 'Automatique'], ...vs.map(m => [m.reference, m.variante + ' · ' + m.reference])] }; }
     if (f === 'norme') return { valeur: '', options: [['', 'Automatique'], ...famillesDeModules(app.norme).map(fa => [fa, nomDeFamille(app.norme, fa)])] };
     return null; },
-  ecrire: (r, f, v) => { if (f === 'rep') return v && v !== r.nom ? renommerRepere(r.nom, v, r) : false;
-    if (f === 'module' || f === 'norme') { histPush((f === 'module' ? 'module de ' : 'norme de ') + r.nom); designer(r.nom, v); apresEdition(); return true; } return false; },
+  ecrire: (r, f, v) => { if (f === 'module' || f === 'norme') { histPush((f === 'module' ? 'module de ' : 'norme de ') + r.nom); designer(r.nom, v); apresEdition(); return true; } return false; },
   rendre: (r, f) => { if (f !== 'module') return false; histPush('choix automatique'); designer(r.nom, ''); apresEdition(); return true; } };
 
 /* ---- PRISES : la norme, l'arrangement, les contacts pris ------------------------- */
@@ -667,14 +674,14 @@ function infoPrise(nom) { return memo('pr|' + nom, () => { const P = planDuReper
   return { P, Q, M, pris: P.points.length, total: M ? M.module.contacts.length : null, fiche: hab('fiche', am), embase: hab('embase', av) }; }); }
 const motRaccord = h => !h ? '' : h.raccord === 'aucun' ? 'sans raccord' : (h.designation || h.raccord);
 const COLONNES_PRISES = [COL_REPERE,
-  { k: 'norme', t: 'Norme', cls: 'rc-c-norme', html: r => { const I = infoPrise(r.nom); return I ? valT('norme', I.Q.famille ? nomDeFamille(app.norme, I.Q.famille) : '', { cls: 'rc-norme', ph: '—', titre: 'Double-clic pour en choisir une autre' }) : rien; },
+  { k: 'norme', t: 'Norme', cls: 'rc-c-norme', html: r => { const I = infoPrise(r.nom); return I ? valT('norme', I.Q.famille ? nomDeFamille(app.norme, I.Q.famille) : '', { cls: 'rc-norme', ph: '—', titre: 'Un choix de VOLTA — double-clic : Automatique, ou une autre norme' }) : rien; },
     tri: r => (infoPrise(r.nom) || { Q: {} }).Q.famille || '', texte: r => { const I = infoPrise(r.nom); return I && I.Q.famille ? nomDeFamille(app.norme, I.Q.famille) : ''; } },
-  { k: 'arrangement', t: 'Arrangement', cls: 'rc-c-id', html: r => { const I = infoPrise(r.nom); return I ? valT('arrangement', I.Q.reference, { cls: 'rc-id', ph: 'aucun arrangement', titre: (I.Q.main ? 'Choisi à la main' : 'Choisi automatiquement : le plus petit de la norme qui loge ces contacts') + ' — double-clic pour en choisir un autre' }) + (I.Q.main ? orig('main') + rond('arrangement', 'le choix automatique') : '') : rien; },
+  { k: 'arrangement', t: 'Arrangement', cls: 'rc-c-id', html: r => { const I = infoPrise(r.nom); return I ? valT('arrangement', I.Q.reference, { cls: 'rc-id', ph: 'aucun arrangement', titre: (I.Q.main ? 'Manuel' : 'Automatique : le plus petit de la norme qui loge ces contacts') + ' — double-clic : Automatique, ou un autre arrangement' }) + (I.Q.main ? orig('main') + rond('arrangement', 'le choix automatique') : '') : rien; },
     tri: r => (infoPrise(r.nom) || { Q: {} }).Q.reference || '', texte: r => (infoPrise(r.nom) || { Q: {} }).Q.reference || '' },
   { k: 'contacts', t: 'Contacts', cls: 'rc-c-n', html: r => { const I = infoPrise(r.nom); return I ? fraction(I.pris, I.total == null ? '?' : I.total) : rien; }, tri: r => (infoPrise(r.nom) || { pris: -1 }).pris, texte: r => { const I = infoPrise(r.nom); return I ? I.pris + ' / ' + (I.total ?? '?') : ''; } },
   COL_PROBLEMES,
-  // (v74, l'ingénieur v73 : « le part number complet de la prise, le récapitulatif ne l'a pas ») : au choix, et il s'écrit
-  { k: 'pn', t: 'Part number', option: true, large: 1, html: r => valT('pn:', baseRepere(r.nom).b.pn || '', { cls: 'rc-pn', ph: 'part number', titre: 'Double-clic : toutes ses liaisons le prennent' }), tri: r => baseRepere(r.nom).b.pn || '', texte: r => baseRepere(r.nom).b.pn || '', vide: r => !baseRepere(r.nom).b.pn },
+  // (v74, l'ingénieur v73 : « le part number complet de la prise, le récapitulatif ne l'a pas ») : au choix ; il se lit (v86)
+  { k: 'pn', t: 'Part number', option: true, large: 1, html: r => luFichierT('pn:', baseRepere(r.nom).b.pn || '', { cls: 'rc-pn' }), tri: r => baseRepere(r.nom).b.pn || '', texte: r => baseRepere(r.nom).b.pn || '', vide: r => !baseRepere(r.nom).b.pn },
   // (la charte : « partie mobile », « partie fixe » — jamais « fiche / embase » dans les mots du lecteur ; les clés restent)
   { k: 'sexe', t: 'Sexe mobile · fixe', option: true, large: 2, html: r => { const I = infoPrise(r.nom); if (!I) return rien; const s = I.Q.sexe || sexeChoisi(r.nom); return I.Q.tableContacts ? valT('sexe', s === 'M' ? 'mâle · femelle' : s === 'F' ? 'femelle · mâle' : '', { ph: 'à choisir', titre: 'Le sexe des contacts de la partie mobile, puis de la partie fixe — double-clic pour le changer' }) : rien; },
     tri: r => (infoPrise(r.nom) || { Q: {} }).Q.sexe || '', texte: r => (infoPrise(r.nom) || { Q: {} }).Q.sexe || '', vide: r => { const I = infoPrise(r.nom); return !(I && I.Q.tableContacts); } },
@@ -684,14 +691,14 @@ const COLONNES_PRISES = [COL_REPERE,
 const PRISES = { ...ONGLET_REPERES, colonnes: COLONNES_PRISES, lignes: prises, cherche: 'Chercher : repère, norme…',
   choisir: r => choisirRepere(r.nom),
   puces: () => [PUCE_A_REPRENDRE],
-  editeur: (r, f) => { const I = infoPrise(r.nom); if (f === 'rep') return { valeur: r.nom }; if (f === 'pn:') return { valeur: baseRepere(r.nom).b.pn || '', liste: 'pns', aide: 'toutes ses liaisons suivent' }; if (!I) return null;
+  // ses choix de VOLTA : la norme, l'arrangement, le sexe des contacts (Automatique, ou Manuel) ; le repère et le part number
+  // viennent du fichier
+  editeur: (r, f) => { const I = infoPrise(r.nom); if (!I) return null;
     if (f === 'arrangement') return { valeur: I.Q.main ? I.Q.reference : '', options: [['', 'Automatique'], ...arrangementsQuiLogent(I.P.points, app.norme, I.Q.visee || I.Q.famille).slice(0, 12).map(m => [m.reference, m.variante + ' · ' + m.reference])] };
     if (f === 'norme') return { valeur: '', options: [['', 'Automatique'], ...famillesDeModules(app.norme, 'connecteur').map(fa => [fa, nomDeFamille(app.norme, fa)])] };
     if (f === 'sexe') return I.Q.tableContacts ? { valeur: sexeChoisi(r.nom), options: [['', 'Automatique'], ['F', 'Partie mobile femelle · partie fixe mâle'], ['M', 'Partie mobile mâle · partie fixe femelle']] } : null;
     return null; },
-  ecrire: (r, f, v) => { if (f === 'rep') return v && v !== r.nom ? renommerRepere(r.nom, v, r) : false;
-    if (f === 'pn:') return changerPartNumber(r.nom, null, v);
-    if (f === 'arrangement' || f === 'norme') { histPush((f === 'norme' ? 'norme de ' : 'arrangement de ') + r.nom); designer(r.nom, v); apresEdition(); return true; }
+  ecrire: (r, f, v) => { if (f === 'arrangement' || f === 'norme') { histPush((f === 'norme' ? 'norme de ' : 'arrangement de ') + r.nom); designer(r.nom, v); apresEdition(); return true; }
     if (f === 'sexe') { if (v === sexeChoisi(r.nom)) return false; histPush('sexe des contacts de ' + r.nom); if (v) app.contrat.sexes.set(r.nom, v); else app.contrat.sexes.delete(r.nom); apresEdition(); return true; }
     return false; },
   rendre: (r, f) => { if (f !== 'arrangement') return false; histPush('choix automatique'); designer(r.nom, ''); apresEdition(); return true; } };
@@ -722,7 +729,7 @@ function totalCables(L, C) { const n = L.reduce((s, c) => s + c.n, 0), Lt = L.re
   return `<tr class="rc-total">${C.slice(0, j).map(c => `<td class="${c.cls || ''}">${cellule(c)}</td>`).join('')}<td class="rc-total-d" colspan="${C.length - j + 1}">${detail}</td></tr>`; }
 const motCable = c => !c.type ? 'sans type' : etatCable(c) ? 'inconnu' : 'ok';
 const COLONNES_CABLES = [
-  { k: 'type', t: 'Type', cls: 'rc-c-id', html: c => valT('type', c.type, { cls: 'rc-type', ph: 'sans type', titre: 'Double-clic : tous les câbles de ce type prennent le nouveau' }), tri: c => c.type, texte: c => c.type || 'sans type' },
+  { k: 'type', t: 'Type', cls: 'rc-c-id', html: c => c.type ? luFichierT('type', c.type, { cls: 'rc-type' }) : '<span class="rc-mot doux">sans type</span>', tri: c => c.type, texte: c => c.type || 'sans type' },
   { k: 'jauge', t: 'Gauge', cls: 'rc-c-n', option: true, html: c => chiffre(pastilleJauge(c.jauge)), tri: c => c.jauge ?? 99, texte: c => c.jauge != null ? c.jauge + ' AWG' : '' },
   // (le lecteur : « le type est hyper à gauche, le nombre hyper à droite… ça se travaille, les tableaux ») : des colonnes à
   // leur juste largeur, serrées sur le type ; chaque nombre aligné à droite dans une place fixe, centrée sous son titre
@@ -749,9 +756,8 @@ const CABLES = { colonnes: COLONNES_CABLES, lignes: cables, etat: etatCable, cho
   voirFils: c => montrerLiaisons(c.type), total: totalCables,
   // survoler un type allume, sur le folio affiché, chacun de ses câbles
   survol: c => { const D = app.dessin; if (!D) return; const L = liaisonsDuPlan(); allumerFils(D.fils.filter(w => !w.shunt && L[w.i] && (L[w.i].type || '') === c.type)); },
-  editeur: (c, f) => f === 'type' ? { valeur: c.type, liste: 'types', aide: 'tous les câbles de ce type le prennent' } : null,
-  ecrire: (c, f, v) => { if (f !== 'type' || v === c.type) return false; const xs = verite().filter(l => liaisonComplete(l) && l.de !== l.vers && (l.type || '') === c.type).map(l => [l, 'type']);
-    return changerLiaisons(xs.map(([l, k]) => [l, k, v]), 'type ' + (c.type || 'vide') + ' → ' + (v || 'vide')); } };
+  // (v86) un type de câble vient du fichier : il se lit, il ne se renomme pas d'ici pour tous ses câbles
+  editeur: () => null, ecrire: () => false };
 /* L'onglet Liaisons, filtré sur ce qu'on cherche (un type, un contact). */
 function montrerLiaisons(q) { const b = app.base; b.filtreAuto = false; changerOnglet('liaisons', true); b.filtre = q || ''; b.portee = 'tout'; memoriserBase(); if (b.ouvert) rendreBase(true); else ouvrirBase(); }
 
@@ -962,7 +968,7 @@ const groupesParFolio = () => app.base.onglet === 'liaisons' && avecPortee() && 
 function compteOnglet(k) { const items = CONTROLE.items || [];
   const etatNoms = rs => niveauDe(rs.flatMap(r => itemsParNom().get(r.nom) || []));
   try { switch (k) {
-    case 'liaisons': { const V = verite(), C = itemsParCable(); return { n: String(V.length), etat: V.some(l => (C.get(l.cable) || []).some(x => x.niveau === 'ko')) ? 'ko' : items.some(x => x.tableau != null) || V.some(l => C.has(l.cable)) ? 'att' : '' }; }
+    case 'liaisons': { const V = verite().filter(l => !liaisonVide(l)), C = itemsParCable(); return { n: String(V.length), etat: V.some(l => (C.get(l.cable) || []).some(x => x.niveau === 'ko')) ? 'ko' : items.some(x => x.tableau != null) || V.some(l => C.has(l.cable)) ? 'att' : '' }; }
     case 'equipements': { const R = equipements(); return { n: String(R.length), etat: etatNoms(R) }; }
     case 'disjoncteurs': { const R = disjoncteurs(); return { n: String(R.length), etat: etatNoms(R) }; }
     case 'barrettes': { const R = barrettes(), a = R.filter(r => r.aPoser).length; return { n: String(R.length), etat: etatNoms(R), titre: a ? pluriel(R.length - a, 'barrette') + ' du contrat, ' + a + ' ajoutée' + (a > 1 ? 's' : '') + ' par VOLTA' : '' }; }
@@ -995,9 +1001,10 @@ function defiler() { const b = app.base; if (!b.defiler) return; b.defiler = fal
    « 201 liaisons · 67 repères · 6 folios » doublait le rail et se coupait, la fiche épinglée) ; ils restent dans sa bulle. */
 function rendreTete(O) { const b = app.base, n = app.contrat.liaisons.length, P = plans(), cx = $('ba-contexte');
   cx.textContent = n ? app.nom || 'Sans nom' : '';
-  if (n) cx.dataset.bulle = [plurielLie(verite().length, 'liaison'), plurielLie(reperes().length, 'repère'), P.length > 1 ? plurielLie(P.length, 'folio') : ''].filter(Boolean).join(' · '); else delete cx.dataset.bulle;
+  if (n) cx.dataset.bulle = [plurielLie(verite().filter(l => !liaisonVide(l)).length, 'liaison'), plurielLie(reperes().length, 'repère'), P.length > 1 ? plurielLie(P.length, 'folio') : ''].filter(Boolean).join(' · '); else delete cx.dataset.bulle;
   $('ba-taille').querySelectorAll('[data-taille]').forEach(x => x.setAttribute('aria-pressed', String(b.ouvert && x.dataset.taille === b.taille)));
-  $('ba-ajouter').hidden = !O.ajout; if (O.ajout) { $('ba-ajouter-t').textContent = O.ajout; $('ba-ajouter').dataset.bulle = O.aide || ''; }
+  // (v86) plus d'ajout d'ici : une liaison ou un équipement de plus, c'est changer le fichier
+  $('ba-ajouter').hidden = true;
   rendreExport(O); }
 /* Un onglet du rail : son mot, son compte (à droite, aligné sur les autres), le point rouge d'un problème — l'ambre « à
    voir » se lit dans l'onglet Problèmes, pas en semis de points sur le rail (v74 : « rien qui clignote », l'œil va au rouge).
@@ -1083,12 +1090,9 @@ function basculerPuce(k) { const b = app.base, on = new Set(b.puces[b.onglet] ||
 function bordDe(el) { if (!el) return; const plus = el.scrollWidth > el.clientWidth + 1;
   el.classList.toggle('deborde', plus && el.scrollLeft + el.clientWidth < el.scrollWidth - 2); el.classList.toggle('deborde-g', plus && el.scrollLeft > 2); }
 function bordDesPuces() { bordDe($('ba-puces')); }
-/* Ce que l'onglet montre : en tête ce qu'on vient d'ajouter (une liaison, un équipement) et la ligne d'un équipement à
-   nommer ; puis les lignes de la portée, de la recherche et des puces, triées. */
-function lignesMontrees(O) { const b = app.base, tous = O.lignes(), tete = [];
-  if (b.onglet === 'liaisons') { b.neuves = b.neuves.filter(l => verite().includes(l)); b.neuves.forEach(l => { const r = tous.find(x => x.l === l); if (r) tete.push(r); }); }
-  if (b.onglet === 'equipements') { b.neufs.forEach(nm => { const r = tous.find(x => x.nom === nm); if (r) tete.push(r); }); if (b.nouveau) tete.unshift({ k: '+', nom: '', genre: 'eqpt', plans: [], sous: '', nouveau: true }); }
-  const cles = new Set(tete.map(r => r.k)); return { tete, tous, L: lignesDe(O).filter(r => !cles.has(r.k)) }; }
+/* Ce que l'onglet montre : les lignes de la portée, de la recherche et des puces, triées. (v86 : plus de ligne neuve en tête
+   — rien ne s'ajoute ici ; `tete` reste vide.) */
+function lignesMontrees(O) { const tous = O.lignes(); return { tete: [], tous, L: lignesDe(O) }; }
 /* La table : l'en-tête (trier au clic), les lignes — d'abord celles qu'on vient d'ajouter —, un intercalaire par folio
    quand « Tout » se lit sans tri ni recherche, un par GENRE dans l'onglet Problèmes (08-controle : son compte, « Voir le
    premier », le geste qui le traite). La dernière colonne (`rc-suppr` : la croix d'une liaison) prend la place qui

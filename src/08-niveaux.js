@@ -241,10 +241,11 @@ const palierEnMots = p => p === 'en continu' ? 'en continu' : p ? p.replace(/^po
 function motsDuProbleme(reste, suite, type) { const r = String(reste || ''), fin = s => majuscule(s.replace(/\s+$/, '')) + (/[.!?…]$/.test(s) ? '' : '.'); let m;
   // le courant contre ce que le câble admet
   if ((m = /^(.+?) ([\d,]+ A)(?: pendant ([\d,]+ (?:ms|s|min|h)))? > ([\d,]+ A) admis(?: (en continu|pour [\d,]+ (?:s|min)))?(?: \(([\d,]+ A) × ([\d,]+)(?: : ([^)]+))?\))?$/.exec(r))) {
-    const [, nom, i, t, a, palier, seul, k, pq] = m, court = fin(`${i}${t ? ' pendant ' + t : ''}${nom ? ' (' + nom.toLowerCase() + ')' : ''} : plus que les ${a} qu’il admet${palier ? ' ' + palier : ''}`);
+    // (la carte : le courant, la durée, l'admis — deux lignes ; le grand nomme l'état du profil et dit d'où vient l'admis)
+    const [, nom, i, t, a, palier, seul, k, pq] = m, quoi = `${i}${t ? ' pendant ' + t : ''}`, sur = ` : plus que les ${a} qu’il admet${palier ? ' ' + palier : ''}`;
     const d = seul && k ? ` Seul à l’air libre, ${type ? 'un ' + type : 'ce câble'} admet ${seul}${palier ? ' ' + palierEnMots(palier) : ''}${pq ? ' ; ' + conditionsEnMots(pq) + ',' : ' ; ici,'} il n’en admet que ${a} (× ${k}).` : '';
     const cont = palier === 'en continu' && t ? ' Au-delà d’une minute, c’est ce qu’il admet en continu qui compte.' : '';
-    return { court, long: court + d + cont }; }
+    return { court: fin(quoi + sur), long: fin(quoi + (nom ? ' (' + nom.toLowerCase() + ')' : '') + sur) + d + cont }; }
   // le permanent contre le contact
   if ((m = /^le permanent \(([\d,]+ A)\) dépasse le contact taille (\S+) (?:supposé \(([\d,]+ A)\)|\(([\d,]+ A), ([^)]+)\))$/i.exec(r))) {
     const court = m[3] ? fin(`Il porte ${m[1]} en permanence, plus que les ${m[3]} du contact taille ${m[2]} que VOLTA suppose`) : fin(`Il porte ${m[1]} en permanence, plus que les ${m[4]} de son contact taille ${m[2]} (${m[5]})`);
@@ -403,7 +404,9 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
   // (v84) une colonne homogène : si une ligne y porte un anneau, celles qui n'en ont pas gardent sa place (la valeur reste
   // alignée sous les autres) ; si aucune n'en porte, la valeur seule, centrée sous son titre
   const fini = v => v != null && isFinite(v), anI = xs.some(x => fini(x.r.charge.r)), anU = xs.some(x => fini(x.r.chute.u != null && x.r.chute.max ? x.r.chute.u / x.r.chute.max : null));
-  const anneauOuPlace = (v, a) => !a ? '' : anneauVue(v, { r: 16, ep: 3.2, texte: true });
+  // (v86, l'audit F2 : « les 39 % des anneaux, illisibles ») : un anneau un peu plus grand, le trait plus fin — son pourcentage
+  // s'écrit à 11 px (style-z-fiche2)
+  const anneauOuPlace = (v, a) => !a ? '' : anneauVue(v, { r: 18, ep: 3, texte: true });
   const lignes = xs.slice().sort(cmp).map(({ r, ct, L }) => {
     // (v78, le lecteur : « équipement et borne, mal présentés ; l'intensité, la chute : juste un rapport ») : une nomenclature —
     // le câble, où il va et sur quelle borne, la charge et la chute en anneaux (la part de l'admis), la longueur

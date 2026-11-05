@@ -143,6 +143,9 @@ function liaison(o) {
   // ce que le fichier portait là où on l'a corrigé (`changerLiaison`, `poserChamp`) : un plan rouvert le garde, et le
   // retest corrigé (08-export) commente encore ses cases changées
   if (o.avant && typeof o.avant === 'object') l.avant = { ...o.avant };
+  // (v86) le câble que VOLTA crée pour une barrette (`aCreer`, plus bas) le reste une fois la barrette posée au contrat :
+  // ses bornes ne disent plus « 1 » (« 51H »), sa marque le dit — ce que VOLTA ajoute se retrouve (08-journal)
+  if (o.aCreer === true) l.aCreer = true;
   return l;
 }
 /* Une liaison sans équipement à un bout n'en est pas une : c'est une ligne
@@ -355,8 +358,9 @@ function contratExemple() {
   li('2', '340AB1', '4',  '512VN',  '2',    'W-111', 'DR22');
   li('2', '340AB1', '1',  '210SP1', 'A3',   'W-120', 'DR24');
   li('2', '340AB2', '1',  '210SP1', 'A4',   'W-121', 'DR24');
-  li('2', '115CD',  '8',  '408VC1A', '1',   'W-130', 'MLB24');
-  li('2', '408VC1A', '1', '601RC',  '2',    'W-131', 'MLB24');
+  //      (v86) une prise de coupure se dit par les lettres de sa face (A, B, C…), comme sa fiche la dessine
+  li('2', '115CD',  '8',  '408VC1A', 'A',   'W-130', 'MLB24');
+  li('2', '408VC1A', 'A', '601RC',  '2',    'W-131', 'MLB24');
   li('2', '601RC',  '5',  '733LE',  '1',    'W-132', 'BN24');
   li('2', '733LE',  '4',  '409GH2', '2',    'W-133', 'BN24');
   li('2', '118CD',  '8',  '512VN',  '5',    'W-134', 'DR22');
@@ -400,16 +404,16 @@ function contratExemple() {
   li('3', '396SW2', '2',   '300XC1',  'A4', 'W-326', 'DR24');
   li('3', '395SW1', '1',   '300XC1',  'A5', 'W-327', 'DR24');
   li('3', '395SW1', '3',   '300XC1',  'A6', 'W-328', 'DR24');
-  li('3', '300XC1', 'C1',  '409VC2A', '1',  'W-330', 'MLB24');
-  li('3', '300XC1', 'C2',  '409VC2A', '2',  'W-331', 'MLB24');
-  li('3', '300XC1', 'C3',  '409VC2A', '3',  'W-332', 'MLB24');
-  li('3', '409VC2A', '1',  '371CP1',  '1',  'W-333', 'MLB24');
-  li('3', '409VC2A', '2',  '371CP1',  '2',  'W-334', 'MLB24');
-  li('3', '409VC2A', '3',  '371CP1',  '3',  'W-335', 'MLB24');
-  li('3', '300XC1', 'C4',  '410VC2B', '1',  'W-336', 'MLB24');
-  li('3', '300XC1', 'C5',  '410VC2B', '2',  'W-337', 'MLB24');
-  li('3', '410VC2B', '1',  '372CP2',  '1',  'W-338', 'MLB24');
-  li('3', '410VC2B', '2',  '372CP2',  '2',  'W-339', 'MLB24');
+  li('3', '300XC1', 'C1',  '409VC2A', 'A',  'W-330', 'MLB24');
+  li('3', '300XC1', 'C2',  '409VC2A', 'B',  'W-331', 'MLB24');
+  li('3', '300XC1', 'C3',  '409VC2A', 'C',  'W-332', 'MLB24');
+  li('3', '409VC2A', 'A',  '371CP1',  '1',  'W-333', 'MLB24');
+  li('3', '409VC2A', 'B',  '371CP1',  '2',  'W-334', 'MLB24');
+  li('3', '409VC2A', 'C',  '371CP1',  '3',  'W-335', 'MLB24');
+  li('3', '300XC1', 'C4',  '410VC2B', 'A',  'W-336', 'MLB24');
+  li('3', '300XC1', 'C5',  '410VC2B', 'B',  'W-337', 'MLB24');
+  li('3', '410VC2B', 'A',  '372CP2',  '1',  'W-338', 'MLB24');
+  li('3', '410VC2B', 'B',  '372CP2',  '2',  'W-339', 'MLB24');
   li('3', '371CP1', '4',   '668VT3 53', 'A', 'W-340', 'MLB24');
   li('3', '372CP2', '3',   '668VT3 53', 'B', 'W-341', 'MLB24');
   li('3', '300XC1', 'C6',  '668VT3 53', 'C', 'W-342', 'MLB24');
