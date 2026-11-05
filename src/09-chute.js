@@ -99,12 +99,20 @@ function cheminsDepuis(liaisons, repere) { const out = cheminsBruts(liaisons, re
   const lignes = new Set(out.filter(c => c.amont && c.depart).map(c => c.depart));
   if (lignes.size && out.some(c => !lignes.has(c.depart))) out.forEach(c => { if (lignes.has(c.depart)) c.amont = true; });
   return out; }
-function cheminsBruts(liaisons, repere) { const out = [], L = liaisons || [];
-  // les liaisons d'un repère, lues une fois par appel et seulement pour les repères où passe le chemin — les shunts d'une
-  // barrette (d'elle à elle-même) compris : ils font son potentiel. (Un index du contrat entier, refait à chaque appel, coûtait
-  // plus que tout le reste sur un plan de 3 000 liaisons : le contrôle appelle ceci une vingtaine de fois par disjoncteur.)
-  const parRep = new Map(), du = r => { let xs = parRep.get(r); if (!xs) parRep.set(r, xs = L.filter(l => l && l.de && l.vers && (l.de === r || l.vers === r))); return xs; };
-  const txt = b => String(b == null ? '' : b), bouts = l => [[l.de, l.borneDe], [l.vers, l.borneVers]];
+/* L'INDEX des liaisons par repère (les shunts d'une barrette — d'elle à elle-même — compris : ils font son potentiel), gardé
+   d'un appel à l'autre pour les mêmes liaisons : le contrôle demande les chemins d'un disjoncteur une vingtaine de fois, et
+   refaire l'index d'un plan de 3 000 liaisons à chaque fois coûtait plus que tout le reste. Il se vérifie à chaque appel, en
+   une passe qui ne crée rien — les mêmes liaisons, aux mêmes rangs, avec les mêmes repères — : une liaison ajoutée, retirée,
+   remplacée ou renommée le refait (les bornes se lisent sur la liaison même, elles n'y entrent pas). */
+const INDEX_DES_CHEMINS = new WeakMap();
+function indexDesChemins(L) { const c = INDEX_DES_CHEMINS.get(L);
+  if (c && c.n === L.length) { let ok = true; for (let i = 0; ok && i < L.length; i++) { const l = L[i]; ok = l === c.refs[i] && (!l || (l.de === c.de[i] && l.vers === c.vers[i])); } if (ok) return c.parRep; }
+  const parRep = new Map(), mettre = (r, l) => { const xs = parRep.get(r); if (!xs) parRep.set(r, [l]); else if (xs[xs.length - 1] !== l) xs.push(l); };
+  L.forEach(l => { if (l && l.de && l.vers) { mettre(l.de, l); mettre(l.vers, l); } });
+  INDEX_DES_CHEMINS.set(L, { n: L.length, refs: L.slice(), de: L.map(l => l && l.de), vers: L.map(l => l && l.vers), parRep });
+  return parRep; }
+function cheminsBruts(liaisons, repere) { const out = [], parRep = indexDesChemins(Array.isArray(liaisons) ? liaisons : [...(liaisons || [])]);
+  const du = r => parRep.get(r) || [], txt = b => String(b == null ? '' : b), bouts = l => [[l.de, l.borneDe], [l.vers, l.borneVers]];
   // les câbles d'un repère qui partent d'une de ses bornes (`bs` : un Set, null : n'importe laquelle), et un câble orienté depuis ce bout
   const partant = (r, bs) => du(r).filter(l => l.de !== l.vers && bouts(l).some(([x, b]) => x === r && (!bs || bs.has(txt(b)))));
   const depuis = (l, r, bs) => { const [a, z] = bouts(l); return a[0] === r && (!bs || bs.has(txt(a[1]))) ? [a, z] : [z, a]; };
