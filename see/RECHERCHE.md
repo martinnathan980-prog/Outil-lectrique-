@@ -531,3 +531,33 @@ seconde vérification.
 - `nordflux` <https://nordflux.de/en/guides/pad-is-almost-free-what-the-windows-license-gets-you>
 - `pywinauto` <https://pywinauto.readthedocs.io/en/latest/getting_started.html>
 - `mitre` <https://attack.mitre.org/techniques/T1059/010/>
+
+### Faits du bureau, 5 novembre 2026 (diagnostic du bouton 3, v5.3 à v5.5)
+
+- SEE caché (SeeAutomation V4R3, connecté par Login) ouvre, lit et écrit
+  par les méthodes du projet : Group.CreateSubGroup crée un sous-groupe,
+  qui reste dans la base du projet sans Save. DeleteSubGroup répond
+  0x80100104.
+- **Aucune création d'objet.** SeeAutomation.CreateObject rend 0x80100000
+  pour tous les types, quel que soit le paramètre du milieu (projet,
+  groupe, environnement, Nothing, un modèle du même type).
+  Group.AddSheet(rien) répond « Invalid parameter(s) ».
+- ImportWireList répond 0x80100004 « Project document is not active in
+  SEE ». C'est sans doute la même cause : SEE caché n'a pas de document
+  actif. Le dessin passe par SEE visible.
+- ExecuteADGGenerationFile : « Could not checkout license for ADG
+  Generation » : pas de licence ADG. ExecuteSLFFile existe (0x8010011E sur
+  un fichier absent), mais aucun .slf n'est sur le poste.
+- ExtractData(4) écrit une base Access (« Standard Jet DB ») ; les autres
+  types répondent 0x80004005. ImportData répond 0x80004005 pour tous les
+  types (fichier absent).
+- Familles de l'album : 117 lues, mais GetShapesCollection rend toujours 0
+  forme, et Environment.GetShape(famille, nom) rend Nothing.
+- Installé : SeeBatchMode.dll, le greffon SEEXmlSheetGeneratorPlugin 4.80
+  (sans licence), 48 schémas XSD (Equipment Definition, Access Control,
+  convertisseurs PLM). Pas de Generative View.
+- Dans SEE visible : macros d'environnement (« My Macros » :
+  X_CableTagsCorrection, SplitLabel_V4), éditeur VBA grisé ; menus maison
+  « CableTagsDisplay » et « MAJ pour CGMv4 ».
+- Prochain essai : l'import DXF d'un folio dans SEE visible
+  (see/FORMAT-DXF.md, « L'essai au bureau »).
