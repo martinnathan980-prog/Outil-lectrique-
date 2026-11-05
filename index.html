@@ -9183,7 +9183,7 @@ svg.vu-chemin{display:block;width:100%;max-width:760px;height:auto;overflow:visi
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '4262c12642d6';
+const VERSION_MOTEUR = 'f3ff17840148';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -14855,21 +14855,23 @@ function liaisonsTouchant(repere, liaisons) { const L = liaisons || []; if (L.le
     INDEX_LIAISONS.set(L, x); }
   return x.par.get(repere) || []; }
 function besoinsDeBarrette(repere, liaisons) {
-  const bornes = new Set(), jauges = [], pns = new Map(), ponts = [], parBorne = new Map(); let blindes = 0, shunts = 0, fils = 0;
+  const bornes = new Set(), jauges = [], pns = new Map(), ponts = [], liaisonsPonts = [], parBorne = new Map(), pnDeBorne = new Map(); let blindes = 0, shunts = 0, fils = 0;
   // AMONT : le fil arrive sur la barrette (elle est son « vers ») ; AVAL : il en repart. `l` : la liaison elle-même, pour la retrouver.
   const arrivee = (b, l, autre, borneAutre) => { if (!b) return; (parBorne.get(b) || parBorne.set(b, []).get(b)).push({ cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: autre, borne: borneAutre, amont: l.vers === repere, l }); };
   liaisonsTouchant(repere, liaisons).forEach(l => { const ici = [];
     if (l.de === repere) ici.push([l.borneDe, l.pnDe]);
     if (l.vers === repere) ici.push([l.borneVers, l.pnVers]);
     if (!ici.length) return;
-    if (l.de === repere && l.vers === repere) { shunts++; ponts.push([l.borneDe, l.borneVers]); }
+    if (l.de === repere && l.vers === repere) { shunts++; ponts.push([l.borneDe, l.borneVers]); liaisonsPonts.push(l); }
     else { fils++; const g = jaugeDuType(l.type); if (g != null) jauges.push(g); if (blindeDuType(l.type)) blindes++;
       if (l.de === repere) arrivee(l.borneDe, l, l.vers, l.borneVers); else arrivee(l.borneVers, l, l.de, l.borneDe); }
-    ici.forEach(([b, pn]) => { if (b) bornes.add(b); if (pn) pns.set(pn, (pns.get(pn) || 0) + 1); }); });
-  const numeros = [...bornes].map(b => parseInt(b, 10)).filter(x => !isNaN(x));
+    // (v85) le part number de chaque borne : sur une barrette en modules (« 677VT2 51 » + « B »), celui de SON module
+    ici.forEach(([b, pn]) => { if (b) bornes.add(b); if (pn) { pns.set(pn, (pns.get(pn) || 0) + 1); if (b && !pnDeBorne.has(b)) pnDeBorne.set(b, pn); } }); });
+  // (v85) une borne « module + contact » (51B) ne compte pas pour un numéro de borne : 51B n'est pas la 51e borne
+  const numeros = [...bornes].filter(b => /^\d+$/.test(String(b))).map(b => parseInt(b, 10));
   const pn = [...pns.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])[0] || '';
   return { repere, bornes: [...bornes], nBornes: bornes.size, borneMax: numeros.length ? Math.max(...numeros) : bornes.size,
-           fils, shunts, ponts, parBorne, jaugeFine: jauges.length ? Math.max(...jauges) : null, jaugeGrosse: jauges.length ? Math.min(...jauges) : null,
+           fils, shunts, ponts, liaisonsPonts, parBorne, pnDeBorne, jaugeFine: jauges.length ? Math.max(...jauges) : null, jaugeGrosse: jauges.length ? Math.min(...jauges) : null,
            blindes, pn };
 }
 /* Les PAQUETS d'une barrette : les bornes réunies par des shunts forment un
@@ -24923,8 +24925,9 @@ const sexeDeLaFiche = (cle, sexe) => pucesSexe(cle, sexe === 'M' ? 'M' : 'F', [[
    part de l'admis, l'intensité puis la chute, le plus chargé nommé à droite. Le contact au bout se change dans la fiche
    du câble (un clic sur « › »). rows : [{ l, k, num, neuf, puce, type, charge: { r, mot, i, admis, supp }, chute: { mot,
    u, max, regle, supp }, etat, pourquoi, bulle }] */
-const datalistCables = () => `<datalist id="fi-cables">${cablesDe(app.norme).slice(0, 400).map(c => `<option value="${escA(c.cable)}">${escA([c.nature, c.diametre != null ? 'Ø ' + nombre(c.diametre) + ' mm' : ''].filter(Boolean).join(' · '))}</option>`).join('')}</datalist>`
-  + `<datalist id="fi-familles">${[...famillesCables().keys()].sort(triNaturel).map(f => `<option value="${escA(f)}"></option>`).join('')}</datalist>`;
+/* (v85, le lecteur : « ce qui vient de mon fichier, plus aucune saisie dans VOLTA ») : le type, la gauge et la longueur d'un
+   câble ne s'écrivent plus dans la fiche — ni dans ses tableaux, ni dans sa carte : ils se changent dans le fichier ; seules
+   les propositions justifiées de VOLTA (« Passer en DR20 ») les changent, d'un clic. */
 /* LES FAMILLES de la base des câbles et les gauges de chacune (DR : 26 … 6), gardées tant que la norme ne change pas. */
 const FAMILLES_CABLES = { N: null, m: null };
 function famillesCables() { if (FAMILLES_CABLES.N === app.norme && FAMILLES_CABLES.m) return FAMILLES_CABLES.m; const m = new Map();
@@ -24980,13 +24983,14 @@ function listeCables(rows, o) { o = o || {}; if (ficheEnGrand()) return tableCab
   const maxs = [...new Set(rows.map(r => r.chute.max).filter(m => m != null))], seuil = maxs.length === 1 ? maxs[0] : null, regles = [...new Set(rows.map(r => r.chute.regle).filter(Boolean))];
   const qI = aide('intensite'), qU = aide('chute', seuil != null ? { admis: seuil, regle: regles.length === 1 ? regles[0] : '' } : null);
   const li = rows.slice().sort((a, b) => rang(a) - rang(b) || triNaturel(a.num, b.num)).map((r, n) => {
-    const ed = r.l && r.l.origine !== null && r.k && r.k[0] !== 'p' ? editionsDuCable(r) : null;
+    // (v85) le type et la longueur viennent du fichier : ils se lisent, ils se changent dans le fichier
+    const H = app.simu || HYPOTHESES, L = r.l && r.l.longueur > 0 ? r.l.longueur : null;
     /* LA LIGNE D'UN CÂBLE, sur deux étages (v77, le lecteur : « la chute en ligne et la longueur, trop serré, pas assez
        intuitif ») : en haut, le câble — son type d'abord (son numéro s'il en a un) — et son intensité ; dessous, en clair,
        sa chute en ligne contre l'admis et sa longueur (« supposée » quand l'installation ne la porte pas). */
-    const num = '', typeLu = ed ? ed.type : `<span class="cb-type id">${esc(r.type || '—')}</span>`;
+    const num = '', typeLu = `<span class="cb-type id">${esc(r.type || '—')}</span>`;
     const nomC = nomCourtDuCable(r), ouvrir = r.k ? `<button type="button" class="cb-ouvrir" data-ouvrir-cable="${escA(r.k)}" aria-label="${escA('Ouvrir la fiche du câble ' + nomC)}" data-bulle="${escA('Ouvrir la fiche de ' + nomC)}">${ico('droite')}</button>` : '<span></span>';
-    const lg = ed ? ed.lon : '', supp = r.l && !(r.l.longueur > 0);
+    const lg = r.l && r.l.origine !== null ? `<b class="cb-lg">${esc(nombre(L != null ? arrondi(L, 2) : H.longueur))}</b>` : '', supp = r.l && !(r.l.longueur > 0);
     return `<li class="fi-ia fi-cab cb-carte${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle)}"` : ''} style="--n:${n}">`
       // sans numéro, trois lignes « DR12 » se ressemblent : l'autre bout, en petit, les distingue
       + `<span class="cb-puce">${r.puce || ''}</span><span class="cb-id">${num}${typeLu}${!num && r.bout && r.bout.rep ? `<small class="cb-vers id">vers ${esc(r.bout.rep + (r.bout.borne ? ':' + r.bout.borne : ''))}</small>` : ''}</span>${celluleI(r.charge)}${ouvrir}`
@@ -24994,7 +24998,7 @@ function listeCables(rows, o) { o = o || {}; if (ficheEnGrand()) return tableCab
       + (lg ? `<span class="cb-sous-c"><span class="cb-sous-k">Longueur</span>${lg}<span class="cb-sous-a">m${supp ? ' · supposée' : ''}</span></span>` : '') + '</span>'
       + (r.pourquoi ? `<span class="cb-pourquoi">${insecable(esc(r.pourquoi))}</span>` : '') + '</li>'; }).join('');
   const entete = `<li class="cb-entete"><span></span><span>Câble</span><span>Intensité${qI}</span><span></span></li>`;
-  return (rows.length > 12 ? bandeDesCables(rows) : '') + `<ul class="fi-cables cb-liste${o.cls ? ' ' + o.cls : ''}">${entete}${li}</ul>${datalistCables()}`; }
+  return (rows.length > 12 ? bandeDesCables(rows) : '') + `<ul class="fi-cables cb-liste${o.cls ? ' ' + o.cls : ''}">${entete}${li}</ul>`; }
 /* La ligne d'un câble d'un repère : son intensité contre ce qu'il admet (au pire du permanent et de la pointe), sa chute
    en ligne depuis le disjoncteur en amont (sinon sur le câble seul), pourquoi il est à voir, et la bulle qui dit d'où
    viennent les chiffres. `f.coupable` : ce que le plan d'un connecteur en dit (aucun arrangement ne le loge). */

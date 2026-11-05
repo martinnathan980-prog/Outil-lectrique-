@@ -126,21 +126,23 @@ function liaisonsTouchant(repere, liaisons) { const L = liaisons || []; if (L.le
     INDEX_LIAISONS.set(L, x); }
   return x.par.get(repere) || []; }
 function besoinsDeBarrette(repere, liaisons) {
-  const bornes = new Set(), jauges = [], pns = new Map(), ponts = [], parBorne = new Map(); let blindes = 0, shunts = 0, fils = 0;
+  const bornes = new Set(), jauges = [], pns = new Map(), ponts = [], liaisonsPonts = [], parBorne = new Map(), pnDeBorne = new Map(); let blindes = 0, shunts = 0, fils = 0;
   // AMONT : le fil arrive sur la barrette (elle est son « vers ») ; AVAL : il en repart. `l` : la liaison elle-même, pour la retrouver.
   const arrivee = (b, l, autre, borneAutre) => { if (!b) return; (parBorne.get(b) || parBorne.set(b, []).get(b)).push({ cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: autre, borne: borneAutre, amont: l.vers === repere, l }); };
   liaisonsTouchant(repere, liaisons).forEach(l => { const ici = [];
     if (l.de === repere) ici.push([l.borneDe, l.pnDe]);
     if (l.vers === repere) ici.push([l.borneVers, l.pnVers]);
     if (!ici.length) return;
-    if (l.de === repere && l.vers === repere) { shunts++; ponts.push([l.borneDe, l.borneVers]); }
+    if (l.de === repere && l.vers === repere) { shunts++; ponts.push([l.borneDe, l.borneVers]); liaisonsPonts.push(l); }
     else { fils++; const g = jaugeDuType(l.type); if (g != null) jauges.push(g); if (blindeDuType(l.type)) blindes++;
       if (l.de === repere) arrivee(l.borneDe, l, l.vers, l.borneVers); else arrivee(l.borneVers, l, l.de, l.borneDe); }
-    ici.forEach(([b, pn]) => { if (b) bornes.add(b); if (pn) pns.set(pn, (pns.get(pn) || 0) + 1); }); });
-  const numeros = [...bornes].map(b => parseInt(b, 10)).filter(x => !isNaN(x));
+    // (v85) le part number de chaque borne : sur une barrette en modules (« 677VT2 51 » + « B »), celui de SON module
+    ici.forEach(([b, pn]) => { if (b) bornes.add(b); if (pn) { pns.set(pn, (pns.get(pn) || 0) + 1); if (b && !pnDeBorne.has(b)) pnDeBorne.set(b, pn); } }); });
+  // (v85) une borne « module + contact » (51B) ne compte pas pour un numéro de borne : 51B n'est pas la 51e borne
+  const numeros = [...bornes].filter(b => /^\d+$/.test(String(b))).map(b => parseInt(b, 10));
   const pn = [...pns.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])[0] || '';
   return { repere, bornes: [...bornes], nBornes: bornes.size, borneMax: numeros.length ? Math.max(...numeros) : bornes.size,
-           fils, shunts, ponts, parBorne, jaugeFine: jauges.length ? Math.max(...jauges) : null, jaugeGrosse: jauges.length ? Math.min(...jauges) : null,
+           fils, shunts, ponts, liaisonsPonts, parBorne, pnDeBorne, jaugeFine: jauges.length ? Math.max(...jauges) : null, jaugeGrosse: jauges.length ? Math.min(...jauges) : null,
            blindes, pn };
 }
 /* Les PAQUETS d'une barrette : les bornes réunies par des shunts forment un
@@ -1825,7 +1827,10 @@ function modulesPour(N, cands, potentiels) { let restants = potentiels; const mo
    que s'il le justifie (667VT21 : le B201 du fichier loge ses trois groupes ; VOLTA prenait le B209, ni plus petit ni
    plus léger) ; `nomme` le dit. Et UNE BARRETTE, UNE NORME : sans norme visée, les modules ne mêlent jamais l'ASNE 0599
    et la NSA937901 (deux rails, deux gammes de contacts) — la norme qui loge le plus, en moins de modules, l'emporte. */
-function remplirModules(besoins, norme, choix) { const N = normeDesModules(norme), V = viseeDesModules(N, choix, besoins.pn);
+function remplirModules(besoins, norme, choix) { if (bornesLettrees(besoins)) return remplirModulesDuFichier(besoins, norme, choix);
+  // (v85) une désignation peut porter la référence d'un module (« 51=… ») : elle ne vaut que pour une barrette en modules
+  choix = choixDesModules(choix).global;
+  const N = normeDesModules(norme), V = viseeDesModules(N, choix, besoins.pn);
   const pots = potentielsDeBarrette(besoins).sort((a, b) => b.fils.length - a.fils.length || triBornes(a.bornes[0], b.bornes[0]));
   const nPot = pots.length, fichier = V.main ? null : moduleDeReference(N, besoins.pn), pf = fichier && fichier.emploi === 'barrette' && nPot ? placerDansModule(N, fichier, pots) : [];
   const auto = f => N.modules.filter(m => m.auto && m.emploi === 'barrette' && (!f || m.famille === f));

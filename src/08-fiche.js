@@ -711,8 +711,9 @@ const sexeDeLaFiche = (cle, sexe) => pucesSexe(cle, sexe === 'M' ? 'M' : 'F', [[
    part de l'admis, l'intensité puis la chute, le plus chargé nommé à droite. Le contact au bout se change dans la fiche
    du câble (un clic sur « › »). rows : [{ l, k, num, neuf, puce, type, charge: { r, mot, i, admis, supp }, chute: { mot,
    u, max, regle, supp }, etat, pourquoi, bulle }] */
-const datalistCables = () => `<datalist id="fi-cables">${cablesDe(app.norme).slice(0, 400).map(c => `<option value="${escA(c.cable)}">${escA([c.nature, c.diametre != null ? 'Ø ' + nombre(c.diametre) + ' mm' : ''].filter(Boolean).join(' · '))}</option>`).join('')}</datalist>`
-  + `<datalist id="fi-familles">${[...famillesCables().keys()].sort(triNaturel).map(f => `<option value="${escA(f)}"></option>`).join('')}</datalist>`;
+/* (v85, le lecteur : « ce qui vient de mon fichier, plus aucune saisie dans VOLTA ») : le type, la gauge et la longueur d'un
+   câble ne s'écrivent plus dans la fiche — ni dans ses tableaux, ni dans sa carte : ils se changent dans le fichier ; seules
+   les propositions justifiées de VOLTA (« Passer en DR20 ») les changent, d'un clic. */
 /* LES FAMILLES de la base des câbles et les gauges de chacune (DR : 26 … 6), gardées tant que la norme ne change pas. */
 const FAMILLES_CABLES = { N: null, m: null };
 function famillesCables() { if (FAMILLES_CABLES.N === app.norme && FAMILLES_CABLES.m) return FAMILLES_CABLES.m; const m = new Map();
@@ -724,15 +725,6 @@ function partiesDuType(t) { const s = String(t == null ? '' : t).trim().toUpperC
   return m ? { famille: m[1], jauge: m[2] ? +m[2] : null } : { famille: s, jauge: null }; }
 // le type que font une famille et une gauge (« DR » + 22 → « DR22 »)
 const typeDe = (famille, jauge) => String(famille || '').trim().toUpperCase() + (jauge != null && jauge !== '' ? String(jauge) : '');
-/* LE TYPE ET LA GAUGE d'un câble, deux champs côte à côte : la famille s'écrit (la base la propose), la gauge se choisit
-   dans celles de la famille (une gauge hors de la base reste dans la liste, et la base le signale ailleurs). `attrs` :
-   ce qui relie les champs à la liaison (`data-cable="clé"` d'une ligne, `data-edit` de la fiche du câble). */
-function editeurType(attrs, type, o) { o = o || {}; const p = partiesDuType(type), js = [...(famillesCables().get(p.famille) || [])];
-  if (p.jauge != null && !js.includes(p.jauge)) js.push(p.jauge); js.sort((a, b) => b - a);
-  const fam = saisie(`${attrs('famille')}`, p.famille, { mono: true, ph: 'type', liste: 'fi-familles', label: 'Type de câble (sa famille : DR, MLB…)' + (o.num ? ' — ' + o.num : ''), cls: 'cb-fam' });
-  const jauge = js.length ? `<span class="cb-sel"><select class="cb-jg" ${attrs('jauge')} aria-label="${escA('Gauge en AWG' + (o.num ? ' — ' + o.num : ''))}">${p.jauge == null ? '<option value="" selected>—</option>' : ''}${js.map(j => `<option value="${j}"${j === p.jauge ? ' selected' : ''}>${j}</option>`).join('')}</select>${ico('bas')}</span>`
-    : saisie(`${attrs('jauge')}`, p.jauge != null ? String(p.jauge) : '', { court: true, ph: '—', mode: 'numeric', label: 'Gauge en AWG', cls: 'cb-jg' });
-  return { fam, jauge, p }; }
 // la couleur d'une mesure contre son admis : ambre au-delà de 80 %, rouge au-delà de 100 %
 const classeMesure = r => r == null || !isFinite(r) ? '' : r > 1 + 1e-9 ? 'ko' : r > 0.8 ? 'att' : 'ok';
 const nombreA = i => nombre(arrondi(i, i < 10 ? 2 : 1));
@@ -768,13 +760,14 @@ function listeCables(rows, o) { o = o || {}; if (ficheEnGrand()) return tableCab
   const maxs = [...new Set(rows.map(r => r.chute.max).filter(m => m != null))], seuil = maxs.length === 1 ? maxs[0] : null, regles = [...new Set(rows.map(r => r.chute.regle).filter(Boolean))];
   const qI = aide('intensite'), qU = aide('chute', seuil != null ? { admis: seuil, regle: regles.length === 1 ? regles[0] : '' } : null);
   const li = rows.slice().sort((a, b) => rang(a) - rang(b) || triNaturel(a.num, b.num)).map((r, n) => {
-    const ed = r.l && r.l.origine !== null && r.k && r.k[0] !== 'p' ? editionsDuCable(r) : null;
+    // (v85) le type et la longueur viennent du fichier : ils se lisent, ils se changent dans le fichier
+    const H = app.simu || HYPOTHESES, L = r.l && r.l.longueur > 0 ? r.l.longueur : null;
     /* LA LIGNE D'UN CÂBLE, sur deux étages (v77, le lecteur : « la chute en ligne et la longueur, trop serré, pas assez
        intuitif ») : en haut, le câble — son type d'abord (son numéro s'il en a un) — et son intensité ; dessous, en clair,
        sa chute en ligne contre l'admis et sa longueur (« supposée » quand l'installation ne la porte pas). */
-    const num = '', typeLu = ed ? ed.type : `<span class="cb-type id">${esc(r.type || '—')}</span>`;
+    const num = '', typeLu = `<span class="cb-type id">${esc(r.type || '—')}</span>`;
     const nomC = nomCourtDuCable(r), ouvrir = r.k ? `<button type="button" class="cb-ouvrir" data-ouvrir-cable="${escA(r.k)}" aria-label="${escA('Ouvrir la fiche du câble ' + nomC)}" data-bulle="${escA('Ouvrir la fiche de ' + nomC)}">${ico('droite')}</button>` : '<span></span>';
-    const lg = ed ? ed.lon : '', supp = r.l && !(r.l.longueur > 0);
+    const lg = r.l && r.l.origine !== null ? `<b class="cb-lg">${esc(nombre(L != null ? arrondi(L, 2) : H.longueur))}</b>` : '', supp = r.l && !(r.l.longueur > 0);
     return `<li class="fi-ia fi-cab cb-carte${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle)}"` : ''} style="--n:${n}">`
       // sans numéro, trois lignes « DR12 » se ressemblent : l'autre bout, en petit, les distingue
       + `<span class="cb-puce">${r.puce || ''}</span><span class="cb-id">${num}${typeLu}${!num && r.bout && r.bout.rep ? `<small class="cb-vers id">vers ${esc(r.bout.rep + (r.bout.borne ? ':' + r.bout.borne : ''))}</small>` : ''}</span>${celluleI(r.charge)}${ouvrir}`
@@ -782,7 +775,7 @@ function listeCables(rows, o) { o = o || {}; if (ficheEnGrand()) return tableCab
       + (lg ? `<span class="cb-sous-c"><span class="cb-sous-k">Longueur</span>${lg}<span class="cb-sous-a">m${supp ? ' · supposée' : ''}</span></span>` : '') + '</span>'
       + (r.pourquoi ? `<span class="cb-pourquoi">${insecable(esc(r.pourquoi))}</span>` : '') + '</li>'; }).join('');
   const entete = `<li class="cb-entete"><span></span><span>Câble</span><span>Intensité${qI}</span><span></span></li>`;
-  return (rows.length > 12 ? bandeDesCables(rows) : '') + `<ul class="fi-cables cb-liste${o.cls ? ' ' + o.cls : ''}">${entete}${li}</ul>${datalistCables()}`; }
+  return (rows.length > 12 ? bandeDesCables(rows) : '') + `<ul class="fi-cables cb-liste${o.cls ? ' ' + o.cls : ''}">${entete}${li}</ul>`; }
 /* La ligne d'un câble d'un repère : son intensité contre ce qu'il admet (au pire du permanent et de la pointe), sa chute
    en ligne depuis le disjoncteur en amont (sinon sur le câble seul), pourquoi il est à voir, et la bulle qui dit d'où
    viennent les chiffres. `f.coupable` : ce que le plan d'un connecteur en dit (aucun arrangement ne le loge). */
