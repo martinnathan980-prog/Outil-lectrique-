@@ -280,6 +280,9 @@ Public Sub EssaiWD()
     espace = AttrXml(entete, "targetNamespace")
     permis = PermisWD(attrs, enfants)
     ' le bornier et la masse : TerminalBlock et GroundBlock (3.10), TB et GB si le schéma ne connaît qu'eux (2.18)
+    ' (une valeur sûre d'abord : sous On Error Resume Next, un appel qui échoue laisse la variable telle quelle)
+    typeBornier = "TerminalBlock"
+    typeMasse = "GroundBlock"
     typeBornier = TypeDuSchemaWD(attrs, "TerminalBlock", "TB")
     typeMasse = TypeDuSchemaWD(attrs, "GroundBlock", "GB")
     l = l + 1
@@ -287,6 +290,8 @@ Public Sub EssaiWD()
     nbEssais = 10
     For j = 1 To nbEssais
         nomXml = "Essai-WD-T" & Format$(j, "00") & "-" & NomEssaiWD(j) & ".xml"
+        ' (vidé d'abord : un essai qui échoue ne doit jamais écrire, sous son nom, le XML de l'essai précédent)
+        x = ""
         x = XmlEssaiWDTest(j, version, espace, permis, attrs, typeBornier, typeMasse)
         l = l + 1
         If Len(x) = 0 Then
