@@ -1902,96 +1902,138 @@ End Function
 
 ' ============================================================================
 '  EssaiWD (Alt+F8) : une petite liste de fils XML (2 connecteurs, 4 broches,
-'  2 fils), écrite à côté du classeur (Essai-WD.xml), puis VÉRIFIÉE par
-'  Windows (MSXML 6) contre le schéma de SEE (« IGE-XAO Wiring Diagram
-'  *.xsd », son dossier Param\XSD). Feuille Essai_WD : le verdict et chaque
-'  erreur ; les règles des types (motifs, longueurs, valeurs permises) ; les
-'  XML de fils de l'installation (un exemple à imiter). Sans SEE.
+'  2 fils), pour CHAQUE schéma « IGE-XAO Wiring Diagram *.xsd » de SEE
+'  Electrical Expert (2.18, 3.10...) : Essai-WD-<version>.xml, écrit dans le
+'  dossier du projet d'essai (réglage Projet : celui que la fenêtre « Wire
+'  List » de SEE ouvre), sinon à côté du classeur, puis VÉRIFIÉ par Windows
+'  (MSXML 6) contre son schéma. Un attribut n'est écrit que si le schéma le
+'  permet (WiresNumber, Class : la 2.18 les exige, la 3.10 les refuse).
+'  Feuille Essai_WD : un verdict par version, chaque erreur, les règles des
+'  types de la plus haute version. Sans SEE.
 ' ============================================================================
 Public Sub EssaiWD()
-    Dim ws As Object, l As Long, xsd As Collection, xmls As Collection, cheminXsd As String, p As Variant, t As String, n As String
+    Dim ws As Object, l As Long, xsd As Collection, xmls As Collection, schemas As Collection, p As Variant, t As String, n As String
     Dim attrs As Object, enfants As Object, ordre As Collection, entete As String, espace As String, cheminXml As String, version As String
-    Dim erreurs As Collection, e As Variant, ok As Boolean, k As Variant, ecrit As Boolean, nbXml As Long
+    Dim erreurs As Collection, e As Variant, ok As Boolean, k As Variant, ecrit As Boolean, dossier As String, nomDossier As String
+    Dim bilan As String, premier As Boolean, i As Long, j As Long, nbFils As Boolean, classe As Boolean, nomXml As String, trouves As Collection
     On Error Resume Next
     Set ws = FeuilleCreee("Essai_WD", True)
     l = 1
     EcrireLigne ws, l, Array("Quoi", "Nom", "Détail")
     ws.Rows(1).Font.Bold = True
     ParcourirIGE xsd, xmls
-    ' le schéma du Wiring Diagram de SEE Electrical Expert : la version la plus haute (le nom le plus grand)
+    ' les schémas du Wiring Diagram de SEE Electrical Expert, de la plus haute version à la plus basse (au plus 4)
+    Set trouves = New Collection
     For Each p In xsd
         n = Mid$(CStr(p), InStrRev(CStr(p), "\") + 1)
-        If InStr(1, n, "Wiring Diagram", vbTextCompare) > 0 And InStr(1, CStr(p), "Electrical Expert", vbTextCompare) > 0 Then
-            If Len(cheminXsd) = 0 Then
-                cheminXsd = CStr(p)
-            ElseIf StrComp(n, Mid$(cheminXsd, InStrRev(cheminXsd, "\") + 1), vbTextCompare) > 0 Then
-                cheminXsd = CStr(p)
-            End If
-        End If
+        If InStr(1, n, "Wiring Diagram", vbTextCompare) > 0 And InStr(1, CStr(p), "Electrical Expert", vbTextCompare) > 0 Then trouves.Add CStr(p)
     Next p
-    If Len(cheminXsd) = 0 Then
+    Set schemas = New Collection
+    Do While trouves.Count > 0 And schemas.Count < 4
+        j = 1
+        For i = 2 To trouves.Count
+            If StrComp(Mid$(trouves.Item(i), InStrRev(trouves.Item(i), "\") + 1), Mid$(trouves.Item(j), InStrRev(trouves.Item(j), "\") + 1), vbTextCompare) > 0 Then j = i
+        Next i
+        schemas.Add trouves.Item(j)
+        trouves.Remove j
+    Loop
+    If schemas.Count = 0 Then
         l = l + 1
         EcrireLigne ws, l, Array("VERDICT", "schéma", "INTROUVABLE : aucun « Wiring Diagram *.xsd » sous SEE Electrical Expert (" & xsd.Count & " XSD en tout)")
         MontrerFeuille ws
         Dialogue "EssaiWD : le schéma de SEE est introuvable. Prends en photo la feuille Essai_WD.", vbOKOnly + vbExclamation, "Pilote SEE"
         Exit Sub
     End If
-    n = Mid$(cheminXsd, InStrRev(cheminXsd, "\") + 1)
-    version = Mid$(n, InStr(1, n, "Diagram", vbTextCompare) + 7)
-    If InStrRev(LCase$(version), ".xsd") > 0 Then version = Left$(version, InStrRev(LCase$(version), ".xsd") - 1)
-    version = Trim$(version)
-    t = TexteDeFichier(cheminXsd)
-    Set attrs = NouveauDico()
-    Set enfants = NouveauDico()
-    Set ordre = New Collection
-    AnalyserXSD t, attrs, enfants, ordre, entete
-    espace = AttrXml(entete, "targetNamespace")
-    cheminXml = ThisWorkbook.Path & "\Essai-WD.xml"
-    ecrit = EcrireFichierTexte(cheminXml, XmlEssaiWD(version, espace))
-    Set erreurs = New Collection
-    If ecrit Then ok = ValiderXmlParXsd(cheminXml, cheminXsd, espace, erreurs)
-    l = l + 1
-    EcrireLigne ws, l, Array("VERDICT", "Essai-WD.xml", IIf(Not ecrit, "PAS ÉCRIT (dossier du classeur en lecture seule ?)", _
-        IIf(ok, "VALIDE : il suit le schéma de SEE ; prochaine étape, l'import dans SEE", "REFUSÉ : " & erreurs.Count & " erreur(s), ci-dessous")))
-    ws.Rows(l).Font.Bold = True
-    For Each e In erreurs
+    ' le dossier : celui du projet d'essai (la fenêtre « Wire List » de SEE s'y ouvre), sinon celui du classeur
+    dossier = Reglage("Projet", "")
+    If InStrRev(dossier, "\") > 0 Then dossier = Left$(dossier, InStrRev(dossier, "\") - 1) Else dossier = ""
+    If Len(dossier) = 0 Or Len(Dir$(dossier, vbDirectory)) = 0 Then dossier = ThisWorkbook.Path
+    nomDossier = Mid$(dossier, InStrRev(dossier, "\") + 1)
+    premier = True
+    For Each p In schemas
+        n = Mid$(CStr(p), InStrRev(CStr(p), "\") + 1)
+        version = Mid$(n, InStr(1, n, "Diagram", vbTextCompare) + 7)
+        If InStrRev(LCase$(version), ".xsd") > 0 Then version = Left$(version, InStrRev(LCase$(version), ".xsd") - 1)
+        version = Trim$(version)
+        t = TexteDeFichier(CStr(p))
+        Set attrs = NouveauDico()
+        Set enfants = NouveauDico()
+        Set ordre = New Collection
+        AnalyserXSD t, attrs, enfants, ordre, entete
+        espace = AttrXml(entete, "targetNamespace")
+        nbFils = AttributPermis(attrs, enfants, "complexType cWireHarness", "WiresNumber")
+        classe = AttributPermis(attrs, enfants, "complexType cWire", "Class")
+        nomXml = "Essai-WD-" & version & ".xml"
+        cheminXml = dossier & "\" & nomXml
+        ecrit = EcrireFichierTexte(cheminXml, XmlEssaiWD(version, espace, nbFils, classe))
+        Set erreurs = New Collection
+        ok = False
+        If ecrit Then ok = ValiderXmlParXsd(cheminXml, CStr(p), espace, erreurs)
         l = l + 1
-        EcrireLigne ws, l, Array("erreur", "", MasquerChemins(CStr(e)))
-    Next e
-    l = l + 1
-    EcrireLigne ws, l, Array("schéma", n, "version " & version & " ; espace de noms : " & IIf(Len(espace) > 0, espace, "aucun") & " ; " & MasquerChemins(Left$(entete, 600)))
-    ' les règles des types que l'essai emploie
-    For Each k In Array("tEDB_InstanceID", "tXSDVersion", "tLengthUnit", "tTag", "tExtendedTag", "tWireType", "tGauge", "tNonNegativeDouble", _
-            "tClass", "tSegregation", "tSolutionNumber", "tVersionNb", "tColor", "tWHType", "tConnectType", "tPinType")
-        If attrs.Exists("simpleType " & CStr(k)) Or enfants.Exists("simpleType " & CStr(k)) Then
+        EcrireLigne ws, l, Array("VERDICT", nomXml, IIf(Not ecrit, "PAS ÉCRIT (dossier « " & nomDossier & " » en lecture seule ?)", _
+            IIf(ok, "VALIDE (schéma " & n & ")", "REFUSÉ : " & erreurs.Count & " erreur(s), ci-dessous")) & _
+            " ; WiresNumber " & IIf(nbFils, "écrit", "absent du schéma") & ", Class " & IIf(classe, "écrit", "absent du schéma"))
+        ws.Rows(l).Font.Bold = True
+        For Each e In erreurs
             l = l + 1
-            EcrireLigne ws, l, Array("type", CStr(k), Left$(ListeDe(enfants, "simpleType " & CStr(k)) & " ; " & ListeDe(attrs, "simpleType " & CStr(k)), 1500))
+            EcrireLigne ws, l, Array("erreur", version, MasquerChemins(CStr(e)))
+        Next e
+        bilan = bilan & IIf(Len(bilan) > 0, ", ", "") & version & IIf(ok, " VALIDE", " REFUSÉ")
+        If premier Then
+            ' les règles des types de la plus haute version
+            For Each k In Array("tEDB_InstanceID", "tXSDVersion", "tLengthUnit", "tTag", "tExtendedTag", "tWireType", "tGauge", "tSegregation", "tColor")
+                If attrs.Exists("simpleType " & CStr(k)) Or enfants.Exists("simpleType " & CStr(k)) Then
+                    l = l + 1
+                    EcrireLigne ws, l, Array("type " & version, CStr(k), Left$(ListeDe(enfants, "simpleType " & CStr(k)) & " ; " & ListeDe(attrs, "simpleType " & CStr(k)), 1500))
+                End If
+            Next k
+            premier = False
         End If
-    Next k
-    For Each k In Array("élément IGE-XAO_WIRE_HARNESS", "complexType cWireHarness", "complexType cWiresList", "complexType cConnectiveDevicesList")
-        l = l + 1
-        EcrireLigne ws, l, Array("contenu", CStr(k), Left$(ListeDe(enfants, CStr(k)), 1500))
-    Next k
-    ' les XML de fils de l'installation : leur balise racine (un WD à imiter ?)
-    For Each p In xmls
-        nbXml = nbXml + 1
-        If nbXml > 40 Then Exit For
-        l = l + 1
-        EcrireLigne ws, l, Array("XML", Mid$(CStr(p), InStrRev(CStr(p), "\") + 1), FileLen(CStr(p)) & " o ; racine " & RacineXml(CStr(p)) & " ; " & _
-            MasquerChemins(Mid$(CStr(p), InStr(1, CStr(p), "SEE_Soft", vbTextCompare))))
     Next p
+    l = l + 1
+    EcrireLigne ws, l, Array("dossier", nomDossier, "les fichiers Essai-WD-*.xml y sont (" & schemas.Count & " schéma(s) Wiring Diagram trouvé(s))")
     ws.Columns("A:B").AutoFit
     ws.Columns("C").ColumnWidth = 110
     ws.Columns("C").WrapText = True
     MontrerFeuille ws
-    Dialogue "EssaiWD : " & IIf(ok, "VALIDE.", "REFUSÉ (" & erreurs.Count & " erreur(s)).") & vbCrLf & vbCrLf & _
-        "Clique sur OK, puis prends en photo la feuille Essai_WD, du haut jusqu'aux lignes « XML » comprises.", vbOKOnly + vbInformation, "Pilote SEE"
+    Dialogue "EssaiWD : " & bilan & "." & vbCrLf & vbCrLf & "Les fichiers sont dans le dossier « " & nomDossier & " »." & vbCrLf & vbCrLf & _
+        "Clique sur OK, puis prends en photo la feuille Essai_WD (le haut).", vbOKOnly + vbInformation, "Pilote SEE"
 End Sub
+
+' Vrai si le schéma permet l'attribut nom dans le contexte ctx : ses
+' attributs, ceux des groupes d'attributs qu'il cite et ceux du type qu'il
+' étend (une liste de contextes à voir, au plus 20 : pas de récursion).
+Private Function AttributPermis(ByVal attrs As Object, ByVal enfants As Object, ByVal ctx As String, ByVal nom As String) As Boolean
+    Dim aVoir As Collection, c As String, a As Variant, s As String, tours As Long
+    Set aVoir = New Collection
+    aVoir.Add ctx
+    Do While aVoir.Count > 0 And tours < 20
+        tours = tours + 1
+        c = aVoir.Item(1)
+        aVoir.Remove 1
+        For Each a In Split(ListeDe(attrs, c), ", ")
+            s = CStr(a)
+            If s = nom Or s = nom & "*" Or Left$(s, Len(nom) + 1) = nom & "(" Or Left$(s, Len(nom) + 2) = nom & "*(" Or Left$(s, Len(nom) + 1) = nom & " " Then
+                AttributPermis = True
+                Exit Function
+            End If
+        Next a
+        For Each a In Split(ListeDe(enfants, c), ", ")
+            s = CStr(a)
+            If Left$(s, 15) = "attributeGroup " Then
+                aVoir.Add s
+            ElseIf Left$(s, 13) = "extension de " Then
+                aVoir.Add "complexType " & Mid$(s, 14)
+            End If
+        Next a
+    Loop
+End Function
 
 ' La petite liste de fils de l'essai : un faisceau ESSAI_PILOTE, deux
 ' connecteurs (P1 : broches 1 et 2 ; J1 : broches A et B), deux fils (W1 :
-' P1-1 vers J1-A ; W2 : P1-2 vers J1-B).
-Private Function XmlEssaiWD(ByVal version As String, ByVal espace As String) As String
+' P1-1 vers J1-A ; W2 : P1-2 vers J1-B). WiresNumber et Class seulement si le
+' schéma les permet.
+Private Function XmlEssaiWD(ByVal version As String, ByVal espace As String, ByVal avecNbFils As Boolean, ByVal avecClasse As Boolean) As String
     Dim s As String
     s = "<?xml version='1.0' encoding='UTF-8'?>" & vbCrLf
     s = s & "<IGE-XAO_WIRE_HARNESS{NS} EDB_InstanceID='1' XSDversion='{V}' LengthUnit='millimeter'>" & vbCrLf
@@ -2016,6 +2058,8 @@ Private Function XmlEssaiWD(ByVal version As String, ByVal espace As String) As 
     s = s & "    </WiresExtremitiesList>" & vbCrLf
     s = s & "  </WireHarness>" & vbCrLf
     s = s & "</IGE-XAO_WIRE_HARNESS>" & vbCrLf
+    If Not avecNbFils Then s = Replace(s, " WiresNumber='2'", "")
+    If Not avecClasse Then s = Replace(s, " Class='A'", "")
     s = Replace(s, "'", """")
     s = Replace(s, "{V}", version)
     XmlEssaiWD = Replace(s, "{NS}", IIf(Len(espace) > 0, " xmlns=""" & espace & """", ""))
