@@ -21942,7 +21942,13 @@ async function ouvrirPlan(id, apres) { const p = BIB.plans.get(id); if (!p) retu
   // La reprise en attente de la même lecture (`VOLTA.attente`) est la même : elle ne se dit pas deux fois.
   if (o.neuf) { const v = o.volta && typeof reprendreVolta === 'function' ? o.volta : null; if (v && typeof VOLTA !== 'undefined') VOLTA.attente = null;
     chargerContrat(o.liaisons, 'ouverture de ' + p.nom, p.nom, { planId: id }); app.hist = []; synchroniserHistorique();
-    if (v) { const dit = reprendreVolta(v, []); if (dit) dire(dit.msg, false, dit.geste ? { geste: dit.geste, faire: dit.faire } : null); }
+    const dit = v ? reprendreVolta(v, []) : null; if (dit) dire(dit.msg, false, dit.geste ? { geste: dit.geste, faire: dit.faire } : null);
+    // (v86) un fichier déposé sur la bibliothèque, ouvert la première fois, dit ce que VOLTA a lu et ce qui demande l'attention,
+    // comme un fichier ouvert sur la table ; le bilan reste dans « Vos fichiers » (08-fichiers, `bilanHtml`)
+    else if (typeof bilanDuPlan === 'function' && typeof motDuBilan === 'function') { try { const B = bilanDuPlan(), n = verite().length;
+      if (typeof contratRecu === 'function') contratRecu(p.nom, 'retest');
+      const msg = 'VOLTA a lu ' + pluriel(n, 'liaison') + (plans().length > 1 ? ' sur ' + plans().length + ' folios' : '') + motDuBilan(B, 0, []) + '.';
+      if (B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg); } catch (_) { } }
     if (apres) aller(apres); return; }
   poserEtat({ ...o, planId: id }); app.hist = []; app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false; $('q').value = '';
   fermerFiche(); fermerMenu(); montrerLePlan(); redessiner(); retrouverVue(); heureSauve(o.t); sauver(); if (apres) aller(apres); }
@@ -29527,7 +29533,8 @@ const signature = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.bor
    (v84, le parcours : un plan de 90 folios recomptait chaque folio d'avant à chaque folio demandé — 3 135 liaisons, 4 s
    gelées pour changer de folio, 6 s à l'ouverture.) Les liaisons se rangent par folio en un seul passage. */
 const DEDOUBLES = new Map();
-function nDedoublements(L) { const k = L.map(l => l.de + '\u0001' + l.borneDe + '\u0001' + l.vers + '\u0001' + l.borneVers).join('\u0002'); let n = DEDOUBLES.get(k);
+// (la clé lit aussi le type, le numéro et le harness : une ligne en double, qui ne pose pas de barrette, se reconnaît à eux — 01 `cleDeDoublon`)
+function nDedoublements(L) { const k = L.map(l => l.de + '\u0001' + l.borneDe + '\u0001' + l.vers + '\u0001' + l.borneVers + '\u0001' + (l.type || '') + '\u0001' + (l.cable || '') + '\u0001' + (l.harness || '')).join('\u0002'); let n = DEDOUBLES.get(k);
   if (n == null) { n = dedoublements(L).length; if (DEDOUBLES.size > 600) DEDOUBLES.clear(); DEDOUBLES.set(k, n); } return n; }
 function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComplete); let L = L0, depart = 0;
   if (plan !== '*') { const par = new Map(); for (const l of L0) { const xs = par.get(l.plan); if (xs) xs.push(l); else par.set(l.plan, [l]); }

@@ -218,5 +218,17 @@ console.log('\n10. LE CIRCUIT D’UN DISJONCTEUR, TEL QUE LE PLAN L’ÉCLAIRE')
   ok('les repères parcourus : la source, le disjoncteur, le relais et l’interrupteur traversés, les charges, les masses — douze câbles, aucun autre ; les traversées : 103RL1 (relais), 395SW1 (interrupteur)', ['101BT1', '102CB1', '103RL1', '104LP1', '395SW1', '300XC1', '391LP1', '901G', '909G'].every(x => K.reperes.includes(x)) && K.cables.size === 12 && K.traverses.map(t => t.repere + ' ' + t.quoi).join() === '103RL1 relais,395SW1 interrupteur', K.cables.size + ' câbles');
   ok('chaque câble dit les chemins où il est : W-015 en porte quatre (la bobine, deux entrées, la lampe 391LP1), W-013 un seul, son retour W-016 le même ; la source, aucun (elle est de tous)', c('W-015')[1].chemins.length === 4 && c('W-013')[1].chemins.length === 1 && c('W-016')[1].chemins.join() === c('W-013')[1].chemins.join() && !c('W-011')[1].chemins.length); }
 
+console.log('\n11. L’INDEX DES CHEMINS, GARDÉ D’UN APPEL À L’AUTRE, SE REFAIT QUAND LE CONTRAT CHANGE');
+{ const li = (de, bDe, vers, bVers, cable) => ev('liaison')({ de, borneDe: bDe, vers, borneVers: bVers, cable, type: 'DR22' });
+  bac.X = [li('1CB1', '2', '5LP1', '1', 'W-x1'), li('5LP1', '2', '9G', '', 'W-x2'), li('1CB1', '2', '6RL1', 'A1', 'W-x3'), li('6RL1', 'A2', '7LP1', '1', 'W-x4')];
+  const vu = () => ev('cheminsDepuis(X, "1CB1")').map(c => c.bout[0] + ':' + c.bout[1]).sort().join(' '), neuf = () => ev('cheminsDepuis([...X], "1CB1")').map(c => c.bout[0] + ':' + c.bout[1]).sort().join(' ');
+  const a = vu(), b = vu();
+  ev('X.push(liaison({ de: "1CB1", borneDe: "3", vers: "8LP1", borneVers: "1", cable: "W-x5", type: "DR22" }))'); const c = vu();
+  ev('X[3].vers = "7LP9"'); const d = vu();
+  ev('X.splice(0, 1)'); const e = vu();
+  ev('X[1] = liaison({ ...X[1], vers: "6LP4", borneVers: "1" })'); const f = vu();
+  ok('les mêmes liaisons : le même résultat d’un appel à l’autre (5LP1 et 7LP1, par le contact de 6RL1)', a === b && a === '5LP1:1 7LP1:1', a);
+  ok('une liaison ajoutée, une autre renommée sur place, une retirée, une remplacée : chaque fois le chemin suit, comme sur un contrat neuf', c === '5LP1:1 7LP1:1 8LP1:1' && d === '5LP1:1 7LP9:1 8LP1:1' && e === '7LP9:1 8LP1:1' && f === '6LP4:1 8LP1:1' && f === neuf(), [c, d, e, f].join(' | ')); }
+
 console.log(`\n  ${total - echecs} / ${total} contrôles passés  —  ${echecs ? echecs + ' ÉCHEC(S)' : 'tout est vert'}`);
 process.exit(echecs ? 1 : 0);

@@ -82,7 +82,8 @@ const signature = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.bor
    (v84, le parcours : un plan de 90 folios recomptait chaque folio d'avant à chaque folio demandé — 3 135 liaisons, 4 s
    gelées pour changer de folio, 6 s à l'ouverture.) Les liaisons se rangent par folio en un seul passage. */
 const DEDOUBLES = new Map();
-function nDedoublements(L) { const k = L.map(l => l.de + '\u0001' + l.borneDe + '\u0001' + l.vers + '\u0001' + l.borneVers).join('\u0002'); let n = DEDOUBLES.get(k);
+// (la clé lit aussi le type, le numéro et le harness : une ligne en double, qui ne pose pas de barrette, se reconnaît à eux — 01 `cleDeDoublon`)
+function nDedoublements(L) { const k = L.map(l => l.de + '\u0001' + l.borneDe + '\u0001' + l.vers + '\u0001' + l.borneVers + '\u0001' + (l.type || '') + '\u0001' + (l.cable || '') + '\u0001' + (l.harness || '')).join('\u0002'); let n = DEDOUBLES.get(k);
   if (n == null) { n = dedoublements(L).length; if (DEDOUBLES.size > 600) DEDOUBLES.clear(); DEDOUBLES.set(k, n); } return n; }
 function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComplete); let L = L0, depart = 0;
   if (plan !== '*') { const par = new Map(); for (const l of L0) { const xs = par.get(l.plan); if (xs) xs.push(l); else par.set(l.plan, [l]); }

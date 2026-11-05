@@ -279,7 +279,13 @@ async function ouvrirPlan(id, apres) { const p = BIB.plans.get(id); if (!p) retu
   // La reprise en attente de la même lecture (`VOLTA.attente`) est la même : elle ne se dit pas deux fois.
   if (o.neuf) { const v = o.volta && typeof reprendreVolta === 'function' ? o.volta : null; if (v && typeof VOLTA !== 'undefined') VOLTA.attente = null;
     chargerContrat(o.liaisons, 'ouverture de ' + p.nom, p.nom, { planId: id }); app.hist = []; synchroniserHistorique();
-    if (v) { const dit = reprendreVolta(v, []); if (dit) dire(dit.msg, false, dit.geste ? { geste: dit.geste, faire: dit.faire } : null); }
+    const dit = v ? reprendreVolta(v, []) : null; if (dit) dire(dit.msg, false, dit.geste ? { geste: dit.geste, faire: dit.faire } : null);
+    // (v86) un fichier déposé sur la bibliothèque, ouvert la première fois, dit ce que VOLTA a lu et ce qui demande l'attention,
+    // comme un fichier ouvert sur la table ; le bilan reste dans « Vos fichiers » (08-fichiers, `bilanHtml`)
+    else if (typeof bilanDuPlan === 'function' && typeof motDuBilan === 'function') { try { const B = bilanDuPlan(), n = verite().length;
+      if (typeof contratRecu === 'function') contratRecu(p.nom, 'retest');
+      const msg = 'VOLTA a lu ' + pluriel(n, 'liaison') + (plans().length > 1 ? ' sur ' + plans().length + ' folios' : '') + motDuBilan(B, 0, []) + '.';
+      if (B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg); } catch (_) { } }
     if (apres) aller(apres); return; }
   poserEtat({ ...o, planId: id }); app.hist = []; app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false; $('q').value = '';
   fermerFiche(); fermerMenu(); montrerLePlan(); redessiner(); retrouverVue(); heureSauve(o.t); sauver(); if (apres) aller(apres); }
