@@ -4,9 +4,9 @@
 //    Numero d'une borne d'équipement du folio 1 (les fils qui la citent aussi), le PN d'un équipement du folio 4,
 //    celui d'une pièce de connecteur du folio 2, le Harness du folio 2 (& < > " ' é) ;
 //  - les noms de fichier : folio 2 « 2/B:"x" » (caractères interdits), folio 4 sans Nom ni Harness, folio 5 nommé
-//    comme le folio 1 (un nom déjà pris, et un harness en double dans WD-TOUT), folio 6 nommé « tout » ;
+//    comme le folio 1 (un nom déjà pris ; dans WD-TOUT, leur harness « 1 » les réunit), folio 6 nommé « tout » ;
 //  - les natures : un morceau de masse du folio 1 devient un RENVOI (ses bouts de fil sautés), la masse 905G du
-//    folio 3 un COLLECTEUR (GB), la barrette VT2 du folio 2 un RAIL (TB) ;
+//    folio 3 un COLLECTEUR (GroundBlock), la barrette VT2 du folio 2 un RAIL (TerminalBlock) ;
 //  - les longueurs maximales : un équipement du folio 3 au repère de 300 caractères (son Tag coupé, ses connecteurs
 //    rendus uniques), un Type de fil de 60 caractères et une Jauge de 16 (folio 2) ;
 //  - les fils : un numéro en double (folio 1), une longueur connue (folio 3, 1,234 m), un fil dont aucun bout n'a de

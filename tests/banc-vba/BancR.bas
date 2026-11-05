@@ -1347,6 +1347,7 @@ End Function
 Private Function BilanWD(ByVal travail As String) As String
     Dim ws As Object, i As Long, j As Long, a As String, k As String, nF As Long, nV As Long, nR As Long, nN As Long
     Dim nP As Long, nE As Long, nEc As Long, fin As Boolean, montre As String, haut As String, fichiers As String
+    Dim nS As Long, plusLongue As Long
     BilanWD = "validations " & CompterWin("Windows|ValiderXml") & " (schéma 3.10 : " & CompterWinAvec("Windows|ValiderXml|", "Wiring Diagram 3.10.xsd") & _
         ") ; choisir " & CompterWin("Windows|ChoisirFichier") & " ; traces SEE " & Compter("") & " ; boîtes " & BoitesWD() & " ; "
     If Not FeuilleExiste("Export_WD") Then
@@ -1360,8 +1361,10 @@ Private Function BilanWD(ByVal travail As String) As String
         If a = "PAS ÉCRIT TEL QUEL" Then
             fin = True
         ElseIf fin Then
-            If Len(a) = 0 And Len(CStr(ws.Cells(i, 2).Value)) = 0 Then Exit For
+            ' un écart : sa première ligne a son folio (colonne B) ; ses lignes suivantes, la suite du texte (colonne C)
+            If Len(a) = 0 And Len(CStr(ws.Cells(i, 2).Value)) = 0 And Len(CStr(ws.Cells(i, 3).Value)) = 0 Then Exit For
             If Len(CStr(ws.Cells(i, 2).Value)) > 0 Then nEc = nEc + 1
+            If Len(CStr(ws.Cells(i, 3).Value)) > plusLongue Then plusLongue = Len(CStr(ws.Cells(i, 3).Value))
         ElseIf Left(a, 3) = "WD-" Then
             nF = nF + 1
             fichiers = fichiers & IIf(Len(fichiers) > 0, ",", "") & a
@@ -1369,8 +1372,10 @@ Private Function BilanWD(ByVal travail As String) As String
             If Left(k, 6) = "REFUSÉ" Then nR = nR + 1
             If k = "NON VÉRIFIÉ" Then nN = nN + 1
             If k = "PAS ÉCRIT" Then nP = nP + 1
-        ElseIf Trim(a) = "erreur" Then
-            nE = nE + 1
+        ElseIf Trim(a) = "erreur" Or Trim(a) = "(suite)" Then
+            If Trim(a) = "erreur" Then nE = nE + 1
+            If Trim(a) = "(suite)" Then nS = nS + 1
+            If Len(CStr(ws.Cells(i, 2).Value)) > plusLongue Then plusLongue = Len(CStr(ws.Cells(i, 2).Value))
         End If
     Next i
     montre = "non"
@@ -1383,7 +1388,8 @@ Private Function BilanWD(ByVal travail As String) As String
         haut = haut & IIf(i > 1, " § ", "") & CStr(ws.Cells(i, 1).Value) & "/" & CStr(ws.Cells(i, 2).Value)
     Next i
     BilanWD = BilanWD & "fichiers " & nF & " ; VALIDE " & nV & " ; REFUSÉ " & nR & " ; NON VÉRIFIÉ " & nN & " ; PAS ÉCRIT " & nP & _
-        " ; erreurs montrées " & nE & " ; écarts " & nEc & " ; chemin entier montré " & montre & " ; noms = " & SansSeparateurs(fichiers) & _
+        " ; erreurs montrées " & nE & " ; écarts " & nEc & " ; lignes « (suite) » " & nS & " ; plus longue ligne d'erreur ou d'écart " & plusLongue & _
+        " ; chemin entier montré " & montre & " ; noms = " & SansSeparateurs(fichiers) & _
         " ; haut = " & SansSeparateurs(haut) & " ; boîte = " & BoiteWD()
 End Function
 
@@ -1405,14 +1411,16 @@ Private Function VerdictsEssaiWD() As String
 End Function
 
 ' ExporterWD : le paquet d'exemple ; Annuler la fenêtre « Ouvrir » ; la variante (v_wd.js : échappement, noms de
-' fichier, natures, longueurs) ; un refus de Windows (le fichier du folio 1 : la boîte envoie au suivant) ; le schéma
-' introuvable (le dossier IGE+XAO du banc renommé le temps du passage) ; un paquet illisible. Chaque passage a son
-' paquet (une copie de l'exemple pour le refus et le schéma introuvable), donc son dossier WD-… : relecture.py les relit
-' tous. Puis EssaiWD, déplacé dans SEE_WD avec les outils du schéma : un fichier d'essai par schéma trouvé, dans le
-' dossier du projet d'essai (essai : un .seeprj, réglage Projet). travail : le dossier de travail (aucun chemin entier
-' ne doit paraître dans Export_WD) ; ige : le dossier IGE+XAO du banc.
+' fichier, natures, longueurs) ; un paquet d'un seul harness (unHarness, v_wd_h.js : WD-TOUT réunit ses folios) ; un
+' refus de Windows (le fichier du folio 1 : la boîte envoie au suivant) ; le même paquet sur le Bureau d'un utilisateur
+' (bureau : …/Users/utilisateur-banc/Bureau, son nom ne doit paraître nulle part) ; le schéma introuvable (le dossier
+' IGE+XAO du banc renommé le temps du passage) ; un paquet illisible. Chaque passage a son paquet (une copie de l'exemple pour le
+' refus et le schéma introuvable), donc son dossier WD-… : relecture.py les relit tous. Puis EssaiWD, déplacé dans
+' SEE_WD avec les outils du schéma : un fichier d'essai par schéma trouvé, puis les essais « plus », dans le dossier du
+' projet d'essai (essai : un .seeprj, réglage Projet). travail : le dossier de travail (aucun chemin entier ne doit
+' paraître dans Export_WD) ; ige : le dossier IGE+XAO du banc.
 Public Function BancExporterWD(ByVal chemin As String, ByVal variante As String, ByVal refus As String, ByVal sans As String, _
-        ByVal ige As String, ByVal travail As String, ByVal essai As String) As String
+        ByVal ige As String, ByVal travail As String, ByVal essai As String, ByVal unHarness As String, ByVal bureau As String) As String
     Dim r As String
     On Error GoTo E
     PreparerWD
@@ -1429,10 +1437,21 @@ Public Function BancExporterWD(ByVal chemin As String, ByVal variante As String,
     ExporterWD
     r = r & " | variante : " & BilanWD(travail)
     PreparerWD
+    gWinFichier = unHarness
+    ExporterWD
+    r = r & " | un harness : " & BilanWD(travail)
+    PreparerWD
     gWinFichier = refus
     gWinXmlRefuse = "WD-1.xml"
     ExporterWD
     r = r & " | refus : " & BilanWD(travail)
+    ' le paquet sous …/Users/utilisateur-banc/Bureau, et un refus : ni le journal (colonne Objet comprise) ni Export_WD
+    ' ne nomment l'utilisateur (MasquerChemins)
+    PreparerWD
+    gWinFichier = bureau
+    gWinXmlRefuse = "WD-1.xml"
+    ExporterWD
+    r = r & " | utilisateur : journal qui le nomme " & JournalContient("utilisateur-banc") & " ; " & BilanWD(travail)
     Name ige As ige & "_cache"
     PreparerWD
     gWinFichier = sans

@@ -464,7 +464,9 @@ Public Sub Contexte(ByVal etape As String, Optional ByVal objet As String = "")
     gObjet = objet
 End Sub
 
-' Une ligne de journal, toujours écrite.
+' Une ligne de journal, toujours écrite ; aucun chemin entier dans l'objet,
+' l'appel, le résultat ni l'erreur (MasquerChemins) : on photographie le
+' journal, et une photo sort du bureau.
 Public Sub Journal(ByVal etape As String, ByVal objet As String, ByVal appel As String, _
         ByVal resultat As String, Optional ByVal numErr As Long = 0, Optional ByVal descErr As String = "")
     Dim ws As Object
@@ -486,7 +488,7 @@ Public Sub Journal(ByVal etape As String, ByVal objet As String, ByVal appel As 
     End If
     ws.Cells(mLigneJournal, 1).Value = "'" & Format$(Now, "yyyy-mm-dd hh:mm:ss")
     ws.Cells(mLigneJournal, 2).Value = "'" & Left$(etape, 250)
-    ws.Cells(mLigneJournal, 3).Value = "'" & Left$(objet, 250)
+    ws.Cells(mLigneJournal, 3).Value = "'" & Left$(MasquerChemins(objet), 250)
     ws.Cells(mLigneJournal, 4).Value = "'" & Left$(MasquerChemins(appel), 1000)
     ws.Cells(mLigneJournal, 5).Value = "'" & Left$(MasquerChemins(resultat), 1000)
     If numErr <> 0 Then

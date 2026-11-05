@@ -77,7 +77,7 @@ Deux colonnes, `Cle` et `Valeur`.
 | `Repere` | le repère (`601RC`, `668VT31`, `904G`, `VT1`…) |
 | `Nature` | `EQUIPEMENT`, `BARRETTE`, `BARRETTE_A_POSER`, `PRISE`, `MASSE`, `RAIL`, `COLLECTEUR`, `RENVOI` |
 | `Code` | le code du repère (`RC`, `CB`, `VT`, `VC`, `G`…), celui de l'Atelier (`CODES`) |
-| `PN` | le part number de l'équipement s'il est unique, sinon vide (ceux des connecteurs sont dans `Connecteurs`) |
+| `PN` | le part number que portent les liaisons du repère, s'il est unique, sinon vide ; dans le retest, c'est celui d'un **connecteur** (`pnDe` / `pnVers`), pas celui de l'équipement : pour un équipement, il est aussi sur sa pièce de connecteur (`Connecteurs`), et ExporterWD ne le répète pas sur l'équipement (`see/FORMAT-WD.md`) |
 | `Description` | la désignation (Description1/2 du retest, ou celle saisie dans l'Atelier) |
 | `X`, `Y`, `L`, `H` | le **corps** du bloc : rectangle, coin haut gauche, largeur, hauteur (mm). Pour un équipement, le corps sans les pièces de connecteur ; pour une barrette, la colonne pointillée ; pour une masse, le symbole |
 | `RepereX`, `RepereY` | où l'Atelier écrit le repère (le point d'ancrage du texte, centré) |

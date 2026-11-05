@@ -26,7 +26,7 @@ Public gWinProcessusAuChoix As Long   ' >= 0 : le technicien ouvre SEE pendant l
 Public gWinBloqueDeclare As Boolean   ' Windows arrête la macro au premier appel d'une fonction déclarée (règle de Defender) : End
 Public gPanneClasseur As Boolean      ' InitialiserClasseur lève 1004 une fois (sous Excel : feuille Reglages protégée ; banc.py)
 Public gPanneReleve As Long           ' le relevé des formes (DecrireFormes) lève 999 au début de la famille n (banc.py) ; 0 : jamais
-Public gWinXmlRefuse As String        ' ValiderXmlParXsd refuse (six erreurs) un XML dont le chemin contient ce texte ; "" : aucun
+Public gWinXmlRefuse As String        ' ValiderXmlParXsd refuse (six erreurs, la 1re longue comme un vrai message de MSXML) un XML dont le chemin contient ce texte ; "" : aucun
 
 Public Sub InitWindows()
     Set gWinTrace = New Collection
@@ -256,7 +256,11 @@ Public Function ValiderXmlParXsd(ByVal cheminXml As String, ByVal cheminXsd As S
     Set erreurs = New Collection
     If Len(gWinXmlRefuse) > 0 Then
         If InStr(1, cheminXml, gWinXmlRefuse) > 0 Then
-            For i = 1 To 6
+            ' la 1re : le message que Windows a écrit au bureau le 5 novembre (366 caractères : Export_WD le coupe pour la photo)
+            erreurs.Add "ligne 27 : « TB » viole la contrainte enumeration de « Connector TerminalBlock GroundBlock Splice Equipment Shell " & _
+                "ShellModule TerminalTrack ProductionBreak JunctionBox Current Transformer Pressure Seal Busbar ». Échec de l'analyse " & _
+                "de l'attribut « Type » avec la valeur « TB ». [/IGE-XAO_WIRE_HARNESS/WireHarness[1]/ConnectiveDevicesList[1]/ConnectiveDevice[8]/@Type]"
+            For i = 2 To 6
                 erreurs.Add "ligne " & (i + 2) & " : refus simulé n° " & i & " (banc) [/IGE-XAO_WIRE_HARNESS/WireHarness[1]]"
             Next i
             Exit Function

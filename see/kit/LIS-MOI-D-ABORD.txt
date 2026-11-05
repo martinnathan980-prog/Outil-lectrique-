@@ -7,30 +7,77 @@ Tout se fait dans un projet d'essai VIDE, jamais dans un vrai projet.
 Tu ne m'envoies que des PHOTOS de l'écran (ton téléphone, c'est très bien).
 
 
-CE QUI EST ACQUIS (tes photos du 2 et du 3 novembre)
-----------------------------------------------------
+CE QUI EST ACQUIS (tes photos du 2, du 3 et du 5 novembre)
+----------------------------------------------------------
+- Le 5 novembre : SEE refuse de créer quoi que ce soit quand Excel le
+  lui demande, même avec le bouton 3. Les boutons ne dessineront donc
+  pas tes plans : on arrête cette voie.
+- Le 5 novembre aussi : SEE sait IMPORTER une liste de fils. Le fichier
+  d'essai d'Excel est passé (« Import of wire list to project is
+  successful »). C'est la voie de cette fois.
+- Avant, Windows vérifie chaque fichier avec le même schéma que SEE :
+  un fichier que Windows REFUSE, SEE le refuse aussi (« XML file is not
+  correct »). Excel écrit maintenant les borniers et les masses avec
+  les noms que ton SEE attend.
 - Le 3 novembre : Excel a ouvert ton environnement « ATA-PD », lu tes
-  117 familles de symboles, et refermé SEE proprement. Mais SEE a
-  refusé de créer le folio : sans doute parce que personne ne s'était
-  connecté (la fenêtre bleue « SEE ACCESS CONTROL »). Cette fois,
-  Excel te demande de quoi le connecter.
+  117 familles de symboles, et refermé SEE proprement.
 - Le projet s'ouvre tout seul : SEE fermé, le bouton 3 a ouvert ton
   projet d'essai sans que tu touches à SEE. Bravo, c'était le plus dur.
 - Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3. Les boutons
   1 et 2 ne peuvent pas rejoindre ta fenêtre SEE : sur ce poste, c'est
   le BOUTON 3 qui compte.
-- Cette fois, Excel dessine le folio d'essai d'une autre manière, puis
-  relève la liste de tes symboles (les familles de ton album), sans
-  rien y changer.
 
 
-CETTE FOIS : SEULEMENT LE BOUTON 3 (10 minutes)
------------------------------------------------
+CETTE FOIS : LA LISTE DE FILS (ExporterWD, 15 minutes)
+------------------------------------------------------
+Excel écrit, pour chaque plan du paquet, une liste de fils que SEE sait
+importer. Il ne touche pas à SEE. Il te faut le paquet que l'Atelier a
+écrit (menu « Exporter pour SEE »), dans un dossier à toi (le Bureau).
 1. Ferme Excel s'il est ouvert. Sors le NOUVEAU kit du zip, comme la
    dernière fois (l'étape A, plus bas). Si Windows demande de remplacer
    les fichiers : clique sur « Remplacer les fichiers dans la
-   destination ». Puis ouvre le Pilote-SEE.xlsm du dossier « Kit-SEE ».
-   Pas besoin des boutons 1 et 2.
+   destination ». Puis ouvre le Pilote-SEE.xlsm du dossier « Kit-SEE » :
+   un ancien Pilote-SEE.xlsm n'a pas ExporterWD.
+   (Barres jaunes en haut d'Excel : l'étape C, points 3 et 4.)
+2. Dans Excel, appuie ensemble sur Alt + F8.
+3. Dans la liste, clique sur « ExporterWD », puis sur « Exécuter ».
+4. Une fenêtre « Choisis le paquet SEE de l'Atelier » s'ouvre : clique
+   sur ton paquet (un fichier .xlsx), puis sur « Ouvrir ».
+5. Attends le message (quelques secondes ; une minute ou plus pour
+   beaucoup de plans), puis clique sur OK.
+6. Prends une photo du haut de la feuille « Export_WD » : la partie
+   jaune et les premières lignes du tableau. S'il y a des lignes
+   « erreur », prends-les aussi, avec leurs lignes « (suite) ».
+7. Ouvre SEE, puis ton projet d'essai (son nom commence par TEST_…).
+   Jamais un vrai projet.
+8. Dans SEE : menu File, puis Import, puis Wire List. Va dans le
+   dossier « WD-… » qui est à côté de ton paquet (son nom est sur la
+   photo), clique sur le fichier que dit le message (par exemple
+   WD-1.xml), puis sur « Open ». N'importe jamais un fichier marqué
+   REFUSÉ dans la feuille Export_WD.
+9. Prends en photo le message de SEE.
+10. Dans SEE : menu Insert, puis From Wiring list. Une fenêtre
+   « Component Insertion » s'ouvre : prends-la en photo (ses onglets
+   Equipment, Connective Equipment, Cables). Si tu ne sais pas quoi y
+   choisir : clique sur Cancel.
+11. Si SEE a dit « successful » au point 9 : importe de la même façon
+   le fichier suivant de la feuille Export_WD (par exemple WD-2.xml),
+   prends en photo le message de SEE, puis refais le point 10. Je
+   verrai si SEE garde les composants du premier fichier, ou s'il les
+   remplace. N'importe pas d'autre fichier pour l'instant.
+12. Envoie-moi les photos (l'étape F).
+
+
+POUR MÉMOIRE : TOUTES LES ÉTAPES DU DÉBUT
+=========================================
+Elles ont servi les fois d'avant. Cette fois, ne les suis que si le
+paragraphe « CETTE FOIS » t'y envoie.
+
+
+LE BOUTON 3 PAS À PAS (seulement si je te le demande)
+-----------------------------------------------------
+1. Ouvre le Pilote-SEE.xlsm du dossier « Kit-SEE ». Pas besoin des
+   boutons 1 et 2.
    (Barres jaunes en haut d'Excel : l'étape C, points 3 et 4.)
 2. Dans SEE : menu File, puis Exit. Si SEE demande d'enregistrer :
    clique sur Oui. SEE se ferme. Ne le rouvre pas toi-même : Excel
@@ -76,41 +123,6 @@ CETTE FOIS : SEULEMENT LE BOUTON 3 (10 minutes)
    Si le message dit « SEE tourne encore, caché » : fais d'abord
    « SI SEE TOURNE CACHÉ », plus bas, avant de rouvrir SEE.
 9. Envoie-moi les photos (l'étape F).
-
-
-LISTE DE FILS POUR SEE : ExporterWD (10 minutes)
-------------------------------------------------
-Excel écrit, pour chaque plan du paquet, une liste de fils que SEE sait
-importer. Il ne touche pas à SEE. Il te faut le paquet que l'Atelier a
-écrit (menu « Exporter pour SEE »), dans un dossier à toi (le Bureau).
-1. Dans Excel (Pilote-SEE.xlsm), appuie ensemble sur Alt + F8.
-2. Dans la liste, clique sur « ExporterWD », puis sur « Exécuter ».
-3. Une fenêtre « Choisis le paquet SEE de l'Atelier » s'ouvre : clique
-   sur ton paquet (un fichier .xlsx), puis sur « Ouvrir ».
-4. Attends le message (quelques secondes ; une minute ou plus pour
-   beaucoup de plans), puis clique sur OK.
-5. Prends une photo du haut de la feuille « Export_WD » : la partie
-   jaune et les premières lignes du tableau. S'il y a des lignes
-   « erreur », prends-les aussi.
-6. Ouvre SEE, puis ton projet d'essai (son nom commence par TEST_…).
-   Jamais un vrai projet.
-7. Dans SEE : menu File, puis Import, puis Wire List. Va dans le
-   dossier « WD-… » qui est à côté de ton paquet (son nom est sur la
-   photo), clique sur le fichier que dit le message (par exemple
-   WD-1.xml), puis sur « Open ». N'importe jamais un fichier marqué
-   REFUSÉ dans la feuille Export_WD.
-8. Prends en photo le message de SEE.
-9. Dans SEE : menu Insert, puis From Wiring list. Une fenêtre
-   « Component Insertion » s'ouvre : prends-la en photo (ses onglets
-   Equipment, Connective Equipment, Cables). Si tu ne sais pas quoi y
-   choisir : clique sur Cancel.
-10. Envoie-moi les photos (l'étape F).
-
-
-POUR MÉMOIRE : TOUTES LES ÉTAPES DU DÉBUT
-=========================================
-Elles ont servi les fois d'avant. Cette fois, ne les suis que si le
-paragraphe « CETTE FOIS » t'y envoie.
 
 
 ÉTAPE A : SORTIR LE KIT DU ZIP (2 minutes)
@@ -304,9 +316,9 @@ LES PHOTOS À PRENDRE
   le haut de la feuille Sonde_Folio si le message le demande (leurs
   onglets sont en bas d'Excel), puis, si le message le demande, l'écran
   de SEE avec le folio « ESSAI_PILOTE » (ouvert par toi).
-- Après ExporterWD : le haut de la feuille Export_WD, puis, dans SEE, le
-  message de l'import (File > Import > Wire List) et la fenêtre
-  « Component Insertion ».
+- Après ExporterWD (cette fois) : le haut de la feuille Export_WD, puis,
+  dans SEE, le message de chaque import (File > Import > Wire List) et
+  la fenêtre « Component Insertion » après chacun.
 - Tout message d'erreur ou de refus, tel quel, même un message de
   Windows (par exemple « Sécurité Windows »).
 Si une photo coupe le texte : prends la première photo, fais descendre

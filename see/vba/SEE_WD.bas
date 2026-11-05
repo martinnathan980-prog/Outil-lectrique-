@@ -15,8 +15,9 @@ Attribute VB_Name = "SEE_WD"
 '    ExporterWD    LA LISTE DE FILS DU PAQUET (Alt+F8) : le paquet de
 '                  l'Atelier choisi dans la fenêtre « Ouvrir », un fichier
 '                  « WD-<nom du folio>.xml » par folio et « WD-TOUT.xml » (un
-'                  WireHarness par folio), dans le dossier « WD-<nom du
-'                  paquet> », à côté du paquet ; chacun vérifié par Windows ;
+'                  WireHarness par harness : les folios d'un même harness y
+'                  sont réunis), dans le dossier « WD-<nom du paquet> », à
+'                  côté du paquet ; chacun vérifié par Windows ;
 '                  la feuille Export_WD, puis une boîte courte
 '    EssaiWD       une petite liste de fils (deux connecteurs, deux fils)
 '                  pour chaque schéma « Wiring Diagram » trouvé, puis les
@@ -38,6 +39,7 @@ Private Const FEUILLE_EXPORT As String = "Export_WD"
 Private Const VERSION_DEFAUT As String = "3.10"     ' sans schéma trouvé : la version importée au bureau
 Private Const ERREURS_MONTREES As Long = 5          ' erreurs de Windows montrées sous un fichier refusé
 Private Const LIGNE_TABLEAU As Long = 8             ' Export_WD : l'en-tête du tableau des fichiers (au-dessus : la photo)
+Private Const LARGEUR_PHOTO As Long = 100           ' Export_WD : une erreur, un écart, en morceaux de 100 caractères au plus (lisibles sur une photo)
 Private Const DECLARATION_XML As String = "<?xml version=""1.0"" encoding=""UTF-8""?>"
 Private Const FIN_XML As String = "</IGE-XAO_WIRE_HARNESS>"
 ' Les attributs de la liste de fils d'essai que SEE a importée au bureau (EssaiWD, schéma 3.10 ; valide aussi en 3.07
@@ -50,6 +52,8 @@ Private mAttrs As Object              ' contexte -> ses attributs (AnalyserXSD)
 Private mEnfants As Object            ' contexte -> ses enfants
 Private mContextes As Object          ' nom d'élément -> son contexte (« complexType cWire », « élément ConnectiveDevice »)
 Private mRegles As Object             ' « élément.attribut » -> -1 (pas écrit) ou sa longueur maximale (0 : pas de limite dite)
+Private mTypeBornier As String        ' le Type d'une barrette, d'un rail : TerminalBlock (3.10), TB si le schéma ne connaît que lui (2.18)
+Private mTypeMasse As String          ' le Type d'une masse, d'un collecteur : GroundBlock (3.10), GB (2.18)
 
 ' --- l'export en cours
 Private mEcarts As Collection         ' ce qui ne s'écrit pas tel quel : Array(folio, quoi, détail)
@@ -59,7 +63,7 @@ Private mEcarts As Collection         ' ce qui ne s'écrit pas tel quel : Array(f
 Private mDev As Collection            ' les clés des appareils, dans l'ordre
 Private mDevTag As Object             ' clé -> son Tag (coupé, unique dans le folio)
 Private mTagPris As Object            ' Tag -> Vrai
-Private mDevType As Object            ' clé -> Type : Equipment, Connector, TB, GB
+Private mDevType As Object            ' clé -> Type : Equipment, Connector, mTypeBornier, mTypeMasse
 Private mDevPN As Object              ' clé -> PartNumber
 Private mDevLibelle As Object         ' clé -> Description
 Private mDevParent As Object          ' clé -> clé de son équipement (ParentTag d'un connecteur)
@@ -73,7 +77,8 @@ Private mRepereDe As Object           ' Bloc -> Repere
 Private mAppareilDuBout As Object     ' Bloc|Borne|Côté (la clé que citent les fils) -> clé de l'appareil ("" : aucun)
 Private mBlocsSignales As Object      ' les blocs absents de la feuille Blocs, déjà dits
 Private mFilPris As Object            ' Tag de fil -> Vrai
-Private mNbEquipements As Long        ' les comptes du folio (ou de WD-TOUT)
+Private mNbBlindes As Long            ' les fils blindés du folio (écrits Normal : FilWD)
+Private mNbEquipements As Long        ' les comptes d'un fichier (XmlHarnaisWD)
 Private mNbConnecteurs As Long
 Private mNbBarrettes As Long
 Private mNbMasses As Long
@@ -749,16 +754,17 @@ End Function
 '  2. le schéma « IGE-XAO Wiring Diagram 3.xx » le plus haut trouvé sous
 '     IGE+XAO ; aucun : la version 3.10, sans vérification ;
 '  3. un fichier par folio, « WD-<nom du folio>.xml », et « WD-TOUT.xml » (un
-'     WireHarness par folio), dans le dossier « WD-<nom du paquet> », à côté
-'     du paquet ; un attribut n'est écrit que si le schéma le permet (ceux de
-'     l'essai importé au bureau le sont toujours), sa valeur coupée à la
-'     longueur maximale de son type, puis échappée (EchapperXml) ;
+'     WireHarness par harness, les folios d'un même harness réunis), dans le
+'     dossier « WD-<nom du paquet> », à côté du paquet ; un attribut n'est
+'     écrit que si le schéma le permet (ceux de l'essai importé au bureau le
+'     sont toujours), sa valeur coupée à la longueur maximale de son type,
+'     puis échappée (EchapperXml) ;
 '  4. chaque fichier vérifié par Windows contre ce schéma (MSXML 6) ;
 '  5. la feuille Export_WD : en haut, la photo (combien de fichiers valides,
 '     le dossier par son nom, quoi faire ensuite) ; une ligne par fichier (ses
 '     comptes, son verdict, ses premières erreurs) ; à la fin, ce qui n'a pas
 '     pu s'écrire tel quel (bout de fil sans borne connue, renvoi, Tag coupé
-'     ou rendu unique...). Puis une boîte courte.
+'     ou rendu unique, fils blindés écrits Normal...). Puis une boîte courte.
 '  Ni SEE ni connexion : rien n'est lu ni écrit dans SEE.
 ' ============================================================================
 Public Sub ExporterWD()
@@ -787,26 +793,29 @@ Plantage:
 End Sub
 
 ' L'export d'un paquet déjà lu (ChargerPaquet) : le schéma, le dossier, un
-' fichier par folio puis WD-TOUT, chacun vérifié ; la feuille Export_WD ; la
-' boîte de fin.
+' fichier par folio puis WD-TOUT (un WireHarness par harness : les folios d'un
+' même harness y sont réunis), chacun vérifié ; la feuille Export_WD ; la boîte
+' de fin.
 Private Sub ExporterPaquetWD(ByVal chemin As String)
     Dim cheminXsd As String, version As String, espace As String, nomXsd As String, nomPaquet As String, nomDossier As String
     Dim dossierWD As String, lignesFolios As Object, i As Long, num As Long, nbMax As Long, f As Long, ws As Object, l As Long
-    Dim noms As Object, tagsTout As Object, harnais As Collection, entete As String, interieur As String, tagH As String
-    Dim tagT As String, libelleH As String, nomF As String, verdict As String, detail As String, renomme As Boolean
-    Dim v As Variant, x As String, nbFichiers As Long, nbValides As Long, nbRefuses As Long, nbNonVerifies As Long
+    Dim noms As Object, entete As String, tagH As String, libelleH As String, nomF As String, verdict As String, detail As String
+    Dim v As Variant, m As Variant, x As String, nbFichiers As Long, nbValides As Long, nbRefuses As Long, nbNonVerifies As Long
     Dim nbPasEcrits As Long, nbAnciens As Long, premier As String, essai As String, suite1 As String, suite2 As String
-    Dim msg As String, totaux(1 To 7) As Long
+    Dim msg As String, types As String, fils As Collection, bouts As Collection, h As Object, debut As Boolean, hk As String
+    Dim tout As Object, toutCle As Object, toutTags As Collection, toutLibelle As Object, toutFolio As Object, toutNb As Object
+    Dim lignesTout As Collection
     Set mEcarts = New Collection
     Application.ScreenUpdating = False
     ' 1. le schéma
     LireSchemaWD cheminXsd, version, espace
+    types = "bornier " & mTypeBornier & ", masse " & mTypeMasse
     If Len(cheminXsd) > 0 Then
         nomXsd = Mid$(cheminXsd, InStrRev(cheminXsd, "\") + 1)
-        Journal "ExporterWD", nomXsd, "", "schéma retenu : version " & version & " (le plus haut des « Wiring Diagram 3.xx » sous IGE+XAO)"
+        Journal "ExporterWD", nomXsd, "", "schéma retenu : version " & version & " (le plus haut des « Wiring Diagram 3.xx » sous IGE+XAO) ; " & types
     Else
         Journal "ExporterWD", "schéma", "", "aucun « IGE-XAO Wiring Diagram 3.xx.xsd » sous IGE+XAO : version " & version & _
-            ", les attributs de l'essai du bureau seulement, fichiers non vérifiés"
+            ", les attributs de l'essai du bureau seulement, fichiers non vérifiés ; " & types
     End If
     ' 2. le dossier « WD-<nom du paquet> », à côté du paquet
     nomPaquet = Mid$(chemin, InStrRev(chemin, "\") + 1)
@@ -841,61 +850,86 @@ Private Sub ExporterPaquetWD(ByVal chemin As String)
     entete = EnteteXmlWD(version, espace)
     Set noms = NouveauDico()
     noms.Add "TOUT", True
-    Set tagsTout = NouveauDico()
-    Set harnais = New Collection
+    Set tout = NouveauDicoExact()            ' WD-TOUT : ses harness (NouveauHarnaisWD), chacun sous sa clé
+    Set toutCle = NouveauDicoExact()         ' Tag du harness -> sa clé dans tout (« 1| », « 2| »...)
+    Set toutTags = New Collection            ' les Tag des harness, dans l'ordre des folios
+    Set toutLibelle = NouveauDicoExact()     ' Tag du harness -> sa Description (le premier Titre non vide)
+    Set toutFolio = NouveauDicoExact()       ' Tag du harness -> son premier folio
+    Set toutNb = NouveauDicoExact()          ' Tag du harness -> son nombre de folios
     For f = 1 To nbMax
         If lignesFolios.Exists(CStr(f)) Then
             i = lignesFolios.Item(CStr(f))
             Application.StatusBar = "ExporterWD : folio " & f & " / " & nbMax
-            interieur = ConstruireFolioWD(f)
+            ConstruireFolioWD f, fils, bouts
             ' le harness : celui du folio s'il est connu, sinon le nom du folio
             tagH = PaquetTexte("Folios", i, "Harness")
             If Len(tagH) = 0 Then tagH = PaquetTexte("Folios", i, "Nom")
             If Len(tagH) = 0 Then tagH = "F" & f
             tagH = Couper(tagH, LongueurMaxi("WireHarness", "Tag", 128))
             libelleH = PaquetTexte("Folios", i, "Titre")
+            ' le fichier du folio
+            Set h = NouveauDicoExact()
+            NouveauHarnaisWD h, ""
+            VerserWD h, "", f, fils, bouts, False
+            If bouts.Count = 1 Then EcartWD f, "le seul bout de fil écrit du folio", "sauté de son fichier : la liste des bouts de fil (WiresExtremitiesList) en demande au moins deux"
             nomF = "WD-" & NomUniqueWD(f, NomFichierWD(PaquetTexte("Folios", i, "Nom"), "F" & f), noms) & ".xml"
-            verdict = EcrireEtVerifierWD(dossierWD & "\" & nomF, entete & HarnaisWD(tagH, libelleH, interieur) & FIN_XML & vbCrLf, _
+            RemettreComptesWD
+            verdict = EcrireEtVerifierWD(dossierWD & "\" & nomF, entete & XmlHarnaisWD(h, "", tagH, libelleH) & FIN_XML & vbCrLf, _
                 cheminXsd, espace, detail)
             CompterVerdictWD verdict, nbFichiers, nbValides, nbRefuses, nbNonVerifies, nbPasEcrits
             If Len(premier) = 0 And (verdict = "VALIDE" Or verdict = "NON VÉRIFIÉ") Then premier = nomF
             l = LigneFichierWD(ws, l, nomF, CStr(f), tagH, verdict, detail)
-            totaux(1) = totaux(1) + mNbEquipements
-            totaux(2) = totaux(2) + mNbConnecteurs
-            totaux(3) = totaux(3) + mNbBarrettes
-            totaux(4) = totaux(4) + mNbMasses
-            totaux(5) = totaux(5) + mNbBroches
-            totaux(6) = totaux(6) + mNbFils
-            totaux(7) = totaux(7) + mNbBouts
-            ' WD-TOUT : un WireHarness par folio, chacun son Tag
-            tagT = TagUnique(tagH, LongueurMaxi("WireHarness", "Tag", 128), tagsTout, "", renomme)
-            If renomme Then EcartWD f, "WD-TOUT.xml", "le harness « " & CourtWD(tagH) & " » y est déjà : celui de ce folio s'y appelle « " & CourtWD(tagT) & " »"
-            harnais.Add HarnaisWD(tagT, libelleH, interieur)
+            ' WD-TOUT : un WireHarness par harness, le même Tag que dans le fichier du folio ; les folios d'un même harness
+            ' y sont réunis (VerserWD)
+            If Not toutCle.Exists(tagH) Then
+                toutTags.Add tagH
+                toutCle.Add tagH, toutTags.Count & "|"
+                NouveauHarnaisWD tout, CStr(toutCle.Item(tagH))
+                toutLibelle.Add tagH, libelleH
+                toutFolio.Add tagH, f
+                toutNb.Add tagH, 1
+            Else
+                toutNb.Item(tagH) = CLng(toutNb.Item(tagH)) + 1
+                If Len(CStr(toutLibelle.Item(tagH))) = 0 Then
+                    toutLibelle.Item(tagH) = libelleH
+                End If
+            End If
+            VerserWD tout, CStr(toutCle.Item(tagH)), f, fils, bouts, True
             DoEvents
         End If
     Next f
     Application.StatusBar = "ExporterWD : WD-TOUT.xml"
-    mNbEquipements = totaux(1)
-    mNbConnecteurs = totaux(2)
-    mNbBarrettes = totaux(3)
-    mNbMasses = totaux(4)
-    mNbBroches = totaux(5)
-    mNbFils = totaux(6)
-    mNbBouts = totaux(7)
-    verdict = EcrireEtVerifierWD(dossierWD & "\WD-TOUT.xml", entete & Joindre(harnais) & FIN_XML & vbCrLf, cheminXsd, espace, detail)
+    RemettreComptesWD
+    Set lignesTout = New Collection
+    For Each v In toutTags
+        hk = CStr(toutCle.Item(CStr(v)))
+        ' (un harness d'un seul folio : son fichier l'a déjà dit)
+        If NbBoutsWD(tout, hk) = 1 And CLng(toutNb.Item(CStr(v))) > 1 Then EcartWD CLng(toutFolio.Item(CStr(v))), _
+            "WD-TOUT.xml, harness « " & CourtWD(CStr(v)) & " »", "son seul bout de fil est sauté : la liste des bouts de fil (WiresExtremitiesList) en demande au moins deux"
+        lignesTout.Add XmlHarnaisWD(tout, hk, CStr(v), CStr(toutLibelle.Item(CStr(v))))
+    Next v
+    verdict = EcrireEtVerifierWD(dossierWD & "\WD-TOUT.xml", entete & Joindre(lignesTout) & FIN_XML & vbCrLf, cheminXsd, espace, detail)
     CompterVerdictWD verdict, nbFichiers, nbValides, nbRefuses, nbNonVerifies, nbPasEcrits
-    l = LigneFichierWD(ws, l, "WD-TOUT.xml", "tous", "(un par folio)", verdict, detail)
-    ' ce qui ne s'est pas écrit tel quel
+    l = LigneFichierWD(ws, l, "WD-TOUT.xml", "tous", toutTags.Count & " harness", verdict, detail)
+    ' ce qui ne s'est pas écrit tel quel : « quoi : détail », en morceaux qui se lisent sur une photo
     l = l + 2
-    EcrireLigne ws, l, Array("PAS ÉCRIT TEL QUEL", "Folio", "Quoi", "Détail")
+    EcrireLigne ws, l, Array("PAS ÉCRIT TEL QUEL", "Folio", "Quoi : détail")
     ws.Rows(l).Font.Bold = True
     If mEcarts.Count = 0 Then
         l = l + 1
         EcrireLigne ws, l, Array("rien", "", "tout le paquet est écrit")
     End If
     For Each v In mEcarts
-        l = l + 1
-        EcrireLigne ws, l, Array("", v(0), MasquerChemins(CStr(v(1))), MasquerChemins(CStr(v(2))))
+        debut = True
+        For Each m In MorceauxWD(MasquerChemins(CStr(v(1)) & " : " & CStr(v(2))), LARGEUR_PHOTO)
+            l = l + 1
+            If debut Then
+                EcrireLigne ws, l, Array("", v(0), CStr(m))
+            Else
+                EcrireLigne ws, l, Array("", "", CStr(m))
+            End If
+            debut = False
+        Next m
     Next v
     ' d'autres fichiers WD-*.xml dans le dossier, d'un export d'avant : à ne pas importer
     x = Dir$(dossierWD & "\WD-*.xml")
@@ -919,9 +953,9 @@ Private Sub ExporterPaquetWD(ByVal chemin As String)
     LigneHautWD ws, 2, "Dossier", "« " & nomDossier & " », à côté du paquet « " & Mid$(chemin, InStrRev(chemin, "\") + 1) & " »" & _
         IIf(nbAnciens > 0, " ; " & nbAnciens & " autre(s) fichier(s) WD-*.xml y restent d'avant : ne les importe pas", "")
     If Len(cheminXsd) > 0 Then
-        LigneHautWD ws, 3, "Schéma", nomXsd & " : version " & version & ", chaque fichier vérifié par Windows"
+        LigneHautWD ws, 3, "Schéma", nomXsd & " : version " & version & ", chaque fichier vérifié par Windows ; " & types
     Else
-        LigneHautWD ws, 3, "Schéma", "introuvable : version " & version & ", seulement les attributs de l'essai du bureau, fichiers NON VÉRIFIÉS"
+        LigneHautWD ws, 3, "Schéma", "introuvable : version " & version & ", seulement les attributs de l'essai du bureau, fichiers NON VÉRIFIÉS ; " & types
     End If
     If mEcarts.Count = 0 Then
         LigneHautWD ws, 4, "Pas écrit tel quel", "rien"
@@ -957,13 +991,18 @@ End Sub
 
 ' Le schéma « IGE-XAO Wiring Diagram 3.xx » le plus haut trouvé sous IGE+XAO :
 ' son chemin, sa version (« 3.10 »), son espace de noms ; ses attributs et ses
-' enfants (mAttrs, mEnfants, mSchemaLu). Aucun : "" et la version 3.10.
+' enfants (mAttrs, mEnfants, mSchemaLu) ; le Type d'un bornier et d'une masse
+' (mTypeBornier, mTypeMasse : TerminalBlock et GroundBlock, ceux de la 3.10 du
+' bureau ; TB et GB si le schéma ne connaît qu'eux). Aucun : "", la version 3.10
+' et ses types.
 Private Sub LireSchemaWD(ByRef cheminXsd As String, ByRef version As String, ByRef espace As String)
     Dim xsd As Collection, xmls As Collection, entete As String, ordre As Collection
     cheminXsd = ""
     version = VERSION_DEFAUT
     espace = ""
     mSchemaLu = False
+    mTypeBornier = "TerminalBlock"
+    mTypeMasse = "GroundBlock"
     Set mAttrs = NouveauDico()
     Set mEnfants = NouveauDico()
     Set mContextes = NouveauDico()
@@ -975,6 +1014,8 @@ Private Sub LireSchemaWD(ByRef cheminXsd As String, ByRef version As String, ByR
     Set ordre = New Collection
     AnalyserXSD TexteDeFichier(cheminXsd), mAttrs, mEnfants, ordre, entete
     espace = AttrXml(entete, "targetNamespace")
+    mTypeBornier = TypeDuSchemaWD(mAttrs, "TerminalBlock", "TB")
+    mTypeMasse = TypeDuSchemaWD(mAttrs, "GroundBlock", "GB")
     mSchemaLu = True
 End Sub
 
@@ -1022,14 +1063,13 @@ Private Function VersionDuSchema(ByVal chemin As String) As String
     VersionDuSchema = Trim$(v)
 End Function
 
-' Le contenu du WireHarness d'un folio, sans sa balise : les appareils et
-' leurs broches, les fils, leurs bouts. Chaque liste n'est écrite que si elle
-' a ce que le schéma demande (un appareil, un fil, deux bouts). Remplit les
-' comptes du folio (mNb...) ; ce qui ne s'écrit pas tel quel va dans mEcarts.
-Private Function ConstruireFolioWD(ByVal folio As Long) As String
+' Un folio construit : ses appareils et leurs broches (mDev...), ses fils et
+' leurs bouts (fils, bouts : des Array(Tag du fil ou ID du bout, ligne XML)) ;
+' ce qui ne s'écrit pas tel quel va dans mEcarts. VerserWD le verse ensuite
+' dans le harness de son fichier, et dans celui de WD-TOUT.
+Private Sub ConstruireFolioWD(ByVal folio As Long, ByRef fils As Collection, ByRef bouts As Collection)
     Dim l As Variant, k As Variant, b As String, nat As String, rep As String, pn As String, libelle As String, lettre As String
     Dim pieces As Object, c As Collection, cleDev As String, borne As String, con As String, cle As String
-    Dim lignesDev As Collection, fils As Collection, bouts As Collection, s As String
     Set mDev = New Collection
     Set mDevTag = NouveauDicoExact()
     Set mTagPris = NouveauDicoExact()
@@ -1047,13 +1087,7 @@ Private Function ConstruireFolioWD(ByVal folio As Long) As String
     Set mAppareilDuBout = NouveauDicoExact()
     Set mBlocsSignales = NouveauDicoExact()
     Set mFilPris = NouveauDicoExact()
-    mNbEquipements = 0
-    mNbConnecteurs = 0
-    mNbBarrettes = 0
-    mNbMasses = 0
-    mNbBroches = 0
-    mNbFils = 0
-    mNbBouts = 0
+    mNbBlindes = 0
     ' les pièces de connecteur de chaque bloc (feuille Connecteurs)
     Set pieces = NouveauDicoExact()
     For Each l In PaquetLignesDuFolio("Connecteurs", folio)
@@ -1105,9 +1139,9 @@ Private Function ConstruireFolioWD(ByVal folio As Long) As String
                 PNSiVide "P|" & rep & "|FICHE", pn
                 PNSiVide "P|" & rep & "|EMBASE", pn
             Case "BARRETTE", "BARRETTE_A_POSER", "RAIL"
-                AppareilWD folio, "B|" & rep, rep, "TB", pn, libelle, "", "", ""
+                AppareilWD folio, "B|" & rep, rep, mTypeBornier, pn, libelle, "", "", ""
             Case "MASSE", "COLLECTEUR"
-                AppareilWD folio, "B|" & rep, rep, "GB", pn, libelle, "", "", ""
+                AppareilWD folio, "B|" & rep, rep, mTypeMasse, pn, libelle, "", "", ""
             Case "RENVOI"
                 EcartWD folio, "bloc " & b & " (renvoi « " & rep & " »)", "pas écrit : un renvoi n'est pas un appareil ; les bouts de fil qui y arrivent sont sautés"
             Case Else
@@ -1133,29 +1167,10 @@ Private Function ConstruireFolioWD(ByVal folio As Long) As String
     For Each l In PaquetLignesDuFolio("Fils", folio)
         FilWD folio, CLng(l), fils, bouts
     Next l
-    If bouts.Count = 1 Then
-        EcartWD folio, "le seul bout de fil écrit du folio", "sauté : la liste des bouts de fil (WiresExtremitiesList) en demande au moins deux"
-        Set bouts = New Collection
+    If mNbBlindes > 0 Then
+        EcartWD folio, mNbBlindes & IIf(mNbBlindes > 1, " fils blindés", " fil blindé"), "écrits Normal : leur blindage n'est pas dans la liste de fils"
     End If
-    ' le contenu
-    Set lignesDev = New Collection
-    For Each k In mDev
-        lignesDev.Add AppareilXml(CStr(k))
-        Select Case CStr(mDevType.Item(CStr(k)))
-            Case "Equipment": mNbEquipements = mNbEquipements + 1
-            Case "Connector": mNbConnecteurs = mNbConnecteurs + 1
-            Case "TB": mNbBarrettes = mNbBarrettes + 1
-            Case "GB": mNbMasses = mNbMasses + 1
-        End Select
-    Next k
-    mNbFils = fils.Count
-    mNbBouts = bouts.Count
-    s = ""
-    If lignesDev.Count > 0 Then s = s & "    <ConnectiveDevicesList>" & vbCrLf & Joindre(lignesDev) & "    </ConnectiveDevicesList>" & vbCrLf
-    If fils.Count > 0 Then s = s & "    <WiresList>" & vbCrLf & Joindre(fils) & "    </WiresList>" & vbCrLf
-    If bouts.Count > 0 Then s = s & "    <WiresExtremitiesList>" & vbCrLf & Joindre(bouts) & "    </WiresExtremitiesList>" & vbCrLf
-    ConstruireFolioWD = s
-End Function
+End Sub
 
 ' Un appareil du folio, créé une fois (cle : voir mDev) : un repère posé en
 ' plusieurs morceaux reste un seul appareil, qui garde le premier PN et la
@@ -1231,31 +1246,47 @@ End Function
 
 ' La broche d'une borne sous son appareil, une seule fois. Son Tag : le Numero
 ' de la borne (ce qui s'écrit dans la pièce : « 12 » pour « A12 »), sinon son
-' étiquette, sinon « 1 » (une masse) ; coupé à la longueur maximale de son
-' type, et unique dans l'appareil (un numéro déjà pris : l'étiquette, puis
-' « ~2 »...).
+' étiquette, sinon « 1 » ; coupé à la longueur maximale de son type, et unique
+' dans l'appareil (un numéro déjà pris : l'étiquette, puis « ~2 »...). Une
+' masse ou un collecteur n'a qu'un point : chaque borne va sur sa première
+' broche. Un Tag autre que celui voulu est dit (EcartWD), comme une borne de
+' masse qui a son propre nom et va sur une broche d'un autre nom.
 Private Sub BrocheWD(ByVal folio As Long, ByVal cleDev As String, ByVal borne As String, ByVal numero As String)
-    Dim brut As String, t As String, maxi As Long, renomme As Boolean, c As Collection
+    Dim brut As String, voulu As String, t As String, maxi As Long, renomme As Boolean, c As Collection, ou As String
     If mBroche.Exists(cleDev & "|" & borne) Then Exit Sub
+    Set c = mDevBroches.Item(cleDev)
+    ou = "borne « " & CourtWD(borne) & " » de « " & CourtWD(CStr(mDevTag.Item(cleDev))) & " »"
     maxi = LongueurMaxi("Pin", "Tag", 128)
-    brut = numero
-    If Len(brut) = 0 Then brut = borne
-    If Len(brut) = 0 Then brut = "1"
+    voulu = numero
+    If Len(voulu) = 0 Then voulu = borne
+    ' une masse, un collecteur : un seul point, tous ses fils sur sa première broche
+    If CStr(mDevType.Item(cleDev)) = mTypeMasse And c.Count > 0 Then
+        t = CStr(c.Item(1))
+        mBroche.Add cleDev & "|" & borne, t
+        If Len(voulu) > 0 And Couper(voulu, maxi) <> t Then
+            EcartWD folio, ou, "sur la broche « " & CourtWD(t) & " » : une masse n'a qu'un point, tous ses fils y arrivent"
+        End If
+        Exit Sub
+    End If
+    If Len(voulu) = 0 Then voulu = "1"
+    brut = voulu
     If mBrochePrise.Exists(cleDev & "|" & Couper(brut, maxi)) And Len(borne) > 0 Then brut = borne
     t = TagUnique(brut, maxi, mBrochePrise, cleDev & "|", renomme)
-    If t <> numero And Len(numero) > 0 Then
-        EcartWD folio, "borne « " & CourtWD(borne) & " » de « " & CourtWD(CStr(mDevTag.Item(cleDev))) & " »", "broche écrite « " & CourtWD(t) & _
-            " » (le numéro « " & CourtWD(numero) & " » est déjà celui d'une autre borne de l'appareil, ou trop long)"
+    If t <> voulu Then
+        EcartWD folio, ou, "broche écrite « " & CourtWD(t) & " » (« " & CourtWD(voulu) & _
+            " » est déjà celui d'une autre borne de l'appareil, ou trop long)"
     End If
     mBroche.Add cleDev & "|" & borne, t
-    Set c = mDevBroches.Item(cleDev)
     c.Add t
-    mNbBroches = mNbBroches + 1
 End Sub
 
-' Un fil du folio : sa ligne Wire et ses bouts (WireExtremity). Un bout sans
-' borne connue est sauté ; un fil sans aucun bout n'est pas écrit. Un fil sans
-' numéro (à créer) reçoit un Tag stable, « F<folio>-<rang> ».
+' Un fil du folio : sa ligne Wire et ses bouts (WireExtremity), chacun avec
+' sa clé (Array(Tag ou ID, ligne)). Un bout sans borne connue est sauté ; un
+' fil sans aucun bout n'est pas écrit. Un fil sans numéro (à créer) reçoit un
+' Tag stable, « F<folio>-<rang> ». Un fil blindé est écrit Normal, comme le
+' fil de l'essai accepté au bureau (Shield, dans la liste de fils, serait la
+' tresse d'un câble, pas un fil sous blindage) : il est compté (mNbBlindes) ;
+' un pontage de barrette (Shunt = O) est un fil Shunt.
 Private Sub FilWD(ByVal folio As Long, ByVal l As Long, ByVal fils As Collection, ByVal bouts As Collection)
     Dim numero As String, ordre As Long, tag As String, devDe As String, pinDe As String, devVers As String, pinVers As String
     Dim okDe As Boolean, okVers As Boolean, x As Double, longueur As String, statut As String, genre As String, route As String
@@ -1282,16 +1313,19 @@ Private Sub FilWD(ByVal folio As Long, ByVal l As Long, ByVal fils As Collection
         End If
     End If
     genre = "Normal"
-    If UCase$(PaquetTexte("Fils", l, "Blinde")) = "O" Then genre = "Shield"
-    If UCase$(PaquetTexte("Fils", l, "Shunt")) = "O" Then genre = "Shunt"
+    If UCase$(PaquetTexte("Fils", l, "Shunt")) = "O" Then
+        genre = "Shunt"
+    ElseIf UCase$(PaquetTexte("Fils", l, "Blinde")) = "O" Then
+        mNbBlindes = mNbBlindes + 1
+    End If
     route = PaquetTexte("Fils", l, "Route")
     If Len(route) = 0 Then route = "1"
-    fils.Add "      <Wire" & AttrWD("Wire", "Tag", tag, 128, True) & AttrWD("Wire", "Wire_Type", PaquetTexte("Fils", l, "Type"), 50, True) & _
+    fils.Add Array(tag, "      <Wire" & AttrWD("Wire", "Tag", tag, 128, True) & AttrWD("Wire", "Wire_Type", PaquetTexte("Fils", l, "Type"), 50, True) & _
         AttrWD("Wire", "Gauge", PaquetTexte("Fils", l, "Jauge"), 10, True) & AttrWD("Wire", "Length", longueur, 0, True) & _
         AttrWD("Wire", "Length_Status", statut, 0, True) & AttrWD("Wire", "Type", genre, 0, True) & _
-        AttrWD("Wire", "Segregation", route, 255, True) & "/>" & vbCrLf
-    If okDe Then bouts.Add BoutXml(tag, 1, pinDe, devDe)
-    If okVers Then bouts.Add BoutXml(tag, 2, pinVers, devVers)
+        AttrWD("Wire", "Segregation", route, 255, True) & "/>" & vbCrLf)
+    If okDe Then bouts.Add Array(IdBoutWD(tag, 1), BoutXml(tag, 1, pinDe, devDe))
+    If okVers Then bouts.Add Array(IdBoutWD(tag, 2), BoutXml(tag, 2, pinVers, devVers))
 End Sub
 
 ' Le bout De ou Vers d'un fil : le Tag de l'appareil et celui de la broche de
@@ -1343,46 +1377,203 @@ Private Function NomDuFilWD(ByVal numero As String, ByVal ordre As Long) As Stri
     End If
 End Function
 
-' Une ligne ConnectiveDevice, et ses broches.
-Private Function AppareilXml(ByVal cle As String) As String
-    Dim s As String, autre As String, c As Collection, t As Variant
-    s = "      <ConnectiveDevice" & AttrWD("ConnectiveDevice", "Tag", CStr(mDevTag.Item(cle)), 255, True) & _
-        AttrWD("ConnectiveDevice", "Type", CStr(mDevType.Item(cle)), 0, True) & _
-        AttrWD("ConnectiveDevice", "ConnectivityType", CStr(mDevPrise.Item(cle)), 0, False)
-    autre = CStr(mDevAccouple.Item(cle))
-    If mDevTag.Exists(autre) Then s = s & AttrWD("ConnectiveDevice", "MatingTag", CStr(mDevTag.Item(autre)), 255, False)
-    autre = CStr(mDevParent.Item(cle))
-    If mDevTag.Exists(autre) Then s = s & AttrWD("ConnectiveDevice", "ParentTag", CStr(mDevTag.Item(autre)), 255, False)
-    s = s & AttrWD("ConnectiveDevice", "PartNumber", CStr(mDevPN.Item(cle)), 0, False) & _
-        AttrWD("ConnectiveDevice", "Description", CStr(mDevLibelle.Item(cle)), 0, False)
-    Set c = mDevBroches.Item(cle)
+' Une ligne ConnectiveDevice (l'appareil de Tag t du harness hk de h), et ses
+' broches, qui s'ajoutent à mNbBroches ; sansPN : son PartNumber n'est pas
+' écrit.
+Private Function AppareilXml(ByVal h As Object, ByVal hk As String, ByVal t As String, ByVal sansPN As Boolean) As String
+    Dim s As String, c As Collection, b As Variant
+    s = "      <ConnectiveDevice" & AttrWD("ConnectiveDevice", "Tag", t, 255, True) & _
+        AttrWD("ConnectiveDevice", "Type", CStr(h.Item(hk & "A|" & t)), 0, True) & _
+        AttrWD("ConnectiveDevice", "ConnectivityType", CStr(h.Item(hk & "P|" & t)), 0, False) & _
+        AttrWD("ConnectiveDevice", "MatingTag", CStr(h.Item(hk & "M|" & t)), 255, False) & _
+        AttrWD("ConnectiveDevice", "ParentTag", CStr(h.Item(hk & "R|" & t)), 255, False)
+    If Not sansPN Then s = s & AttrWD("ConnectiveDevice", "PartNumber", CStr(h.Item(hk & "N|" & t)), 0, False)
+    s = s & AttrWD("ConnectiveDevice", "Description", CStr(h.Item(hk & "L|" & t)), 0, False)
+    Set c = h.Item(hk & "B|" & t)
+    mNbBroches = mNbBroches + c.Count
     If c.Count = 0 Then
         AppareilXml = s & "/>" & vbCrLf
         Exit Function
     End If
     s = s & ">" & vbCrLf
-    For Each t In c
-        s = s & "        <Pin" & AttrWD("Pin", "Tag", CStr(t), 128, True) & "/>" & vbCrLf
-    Next t
+    For Each b In c
+        s = s & "        <Pin" & AttrWD("Pin", "Tag", CStr(b), 128, True) & "/>" & vbCrLf
+    Next b
     AppareilXml = s & "      </ConnectiveDevice>" & vbCrLf
+End Function
+
+' L'ID d'un bout de fil : le Tag du fil (coupé pour que l'ID tienne dans son
+' type) suivi de -1 (le départ) ou -2 (l'arrivée).
+Private Function IdBoutWD(ByVal tag As String, ByVal n As Long) As String
+    IdBoutWD = Couper(tag, LongueurMaxi("WireExtremity", "ID", 128) - 2) & "-" & n
 End Function
 
 ' Une ligne WireExtremity : n = 1 (le départ) ou 2 (l'arrivée).
 Private Function BoutXml(ByVal tag As String, ByVal n As Long, ByVal pin As String, ByVal dev As String) As String
-    BoutXml = "      <WireExtremity" & AttrWD("WireExtremity", "ID", Couper(tag, LongueurMaxi("WireExtremity", "ID", 128) - 2) & "-" & n, 128, True) & _
+    BoutXml = "      <WireExtremity" & AttrWD("WireExtremity", "ID", IdBoutWD(tag, n), 128, True) & _
         AttrWD("WireExtremity", "WireTag", tag, 128, True) & AttrWD("WireExtremity", "Pin", pin, 128, True) & _
         AttrWD("WireExtremity", "PinParent", dev, 255, True) & "/>" & vbCrLf
 End Function
 
-' Le WireHarness d'un folio autour de son contenu.
-Private Function HarnaisWD(ByVal tag As String, ByVal libelle As String, ByVal interieur As String) As String
-    Dim s As String
-    s = "  <WireHarness" & AttrWD("WireHarness", "Tag", tag, 128, True) & AttrWD("WireHarness", "Description", libelle, 0, False)
-    If Len(interieur) = 0 Then
-        HarnaisWD = s & "/>" & vbCrLf
-    Else
-        HarnaisWD = s & ">" & vbCrLf & interieur & "  </WireHarness>" & vbCrLf
+' Un harness à écrire, vide, dans un dictionnaire h (NouveauDicoExact) : ses
+' clés commencent par hk ("" : le harness d'un fichier de folio ; « 1| »,
+' « 2| »... : un harness de WD-TOUT, tous dans un même dictionnaire). VerserWD
+' le remplit folio après folio, XmlHarnaisWD l'écrit. hk & « devs », « fils »,
+' « bouts » : les Tag des appareils, les lignes Wire, les lignes WireExtremity,
+' dans l'ordre (des Collection) ; puis, par appareil de Tag t : hk & « A| » & t
+' (son Type), « P| » (ConnectivityType), « M| » (MatingTag), « R| »
+' (ParentTag), « N| » (PartNumber), « L| » (Description), « B| » (la
+' Collection de ses broches), « BP| » & t & « | » & broche (une broche prise) ;
+' par fil et par bout : « F| » & Tag, « E| » & ID (sa ligne) ; « OA| »,
+' « OF| », « OE| » : le folio qui a versé l'appareil, le fil, le bout.
+Private Sub NouveauHarnaisWD(ByVal h As Object, ByVal hk As String)
+    h.Add hk & "devs", New Collection
+    h.Add hk & "fils", New Collection
+    h.Add hk & "bouts", New Collection
+End Sub
+
+' Verse le folio construit (ConstruireFolioWD : mDev..., fils, bouts) dans le
+' harness hk de h (NouveauHarnaisWD) : un appareil par Tag, ses broches
+' réunies dans l'ordre ; un fil par Tag ; un bout de fil par ID. Ce qui est
+' déjà dans le harness y reste ; un attribut encore vide s'y remplit. dire :
+' Vrai pour WD-TOUT, où deux folios d'un même harness peuvent écrire
+' autrement un même Tag (un appareil d'un autre Type, un fil ou un bout
+' autrement écrit) : EcartWD le dit, le premier reste.
+Private Sub VerserWD(ByVal h As Object, ByVal hk As String, ByVal folio As Long, ByVal fils As Collection, ByVal bouts As Collection, _
+        ByVal dire As Boolean)
+    Dim k As Variant, b As Variant, t As String, g As String, devs As Collection, c As Collection, d As Collection
+    Set devs = h.Item(hk & "devs")
+    For Each k In mDev
+        t = CStr(mDevTag.Item(CStr(k)))
+        g = CStr(mDevType.Item(CStr(k)))
+        If Not h.Exists(hk & "A|" & t) Then
+            devs.Add t
+            h.Add hk & "A|" & t, g
+            h.Add hk & "B|" & t, New Collection
+            h.Add hk & "OA|" & t, folio
+        ElseIf dire And CStr(h.Item(hk & "A|" & t)) <> g Then
+            EcartWD folio, "appareil « " & CourtWD(t) & " » dans WD-TOUT.xml", "déjà écrit en " & CStr(h.Item(hk & "A|" & t)) & " au folio " & _
+                CStr(h.Item(hk & "OA|" & t)) & " : il le reste ; ses broches de ce folio (où il est " & g & ") s'y ajoutent"
+        End If
+        RemplirWD h, hk & "P|" & t, CStr(mDevPrise.Item(CStr(k)))
+        RemplirWD h, hk & "M|" & t, TagDeCleWD(CStr(mDevAccouple.Item(CStr(k))))
+        RemplirWD h, hk & "R|" & t, TagDeCleWD(CStr(mDevParent.Item(CStr(k))))
+        RemplirWD h, hk & "N|" & t, CStr(mDevPN.Item(CStr(k)))
+        RemplirWD h, hk & "L|" & t, CStr(mDevLibelle.Item(CStr(k)))
+        Set c = h.Item(hk & "B|" & t)
+        Set d = mDevBroches.Item(CStr(k))
+        For Each b In d
+            If Not h.Exists(hk & "BP|" & t & "|" & CStr(b)) Then
+                h.Add hk & "BP|" & t & "|" & CStr(b), True
+                c.Add CStr(b)
+            End If
+        Next b
+    Next k
+    VerserLignesWD h, hk, "fils", "F|", folio, fils, dire, "fil"
+    VerserLignesWD h, hk, "bouts", "E|", folio, bouts, dire, "bout de fil"
+End Sub
+
+' Des lignes (Array(clé, ligne XML) : un fil par Tag, un bout par ID) versées
+' dans la liste hk & liste de h : une clé déjà versée garde sa première ligne ;
+' si dire et que celle d'un autre folio diffère, EcartWD le dit.
+Private Sub VerserLignesWD(ByVal h As Object, ByVal hk As String, ByVal liste As String, ByVal prefixe As String, ByVal folio As Long, _
+        ByVal lignes As Collection, ByVal dire As Boolean, ByVal quoi As String)
+    Dim v As Variant, c As Collection, cle As String
+    Set c = h.Item(hk & liste)
+    For Each v In lignes
+        cle = hk & prefixe & CStr(v(0))
+        If Not h.Exists(cle) Then
+            h.Add cle, CStr(v(1))
+            h.Add hk & "O" & prefixe & CStr(v(0)), folio
+            c.Add CStr(v(1))
+        ElseIf dire And CStr(h.Item(cle)) <> CStr(v(1)) Then
+            EcartWD folio, quoi & " « " & CourtWD(CStr(v(0))) & " » dans WD-TOUT.xml", "déjà écrit autrement au folio " & _
+                CStr(h.Item(hk & "O" & prefixe & CStr(v(0)))) & " : WD-TOUT garde celui-là, pas celui de ce folio"
+        End If
+    Next v
+End Sub
+
+' Une valeur d'un harness (sa clé), posée si elle n'en a pas encore de non vide.
+Private Sub RemplirWD(ByVal h As Object, ByVal cle As String, ByVal valeur As String)
+    If Not h.Exists(cle) Then
+        h.Add cle, valeur
+    ElseIf Len(CStr(h.Item(cle))) = 0 And Len(valeur) > 0 Then
+        h.Item(cle) = valeur
     End If
+End Sub
+
+' Le Tag d'un appareil du folio d'après sa clé ("" : pas d'appareil).
+Private Function TagDeCleWD(ByVal cle As String) As String
+    If Len(cle) = 0 Then Exit Function
+    If mDevTag.Exists(cle) Then TagDeCleWD = CStr(mDevTag.Item(cle))
+End Function
+
+' Le nombre de bouts de fil versés dans le harness hk de h.
+Private Function NbBoutsWD(ByVal h As Object, ByVal hk As String) As Long
+    Dim c As Collection
+    Set c = h.Item(hk & "bouts")
+    NbBoutsWD = c.Count
+End Function
+
+' Les comptes d'un fichier à zéro (XmlHarnaisWD y ajoute ceux de chaque harness qu'il écrit).
+Private Sub RemettreComptesWD()
+    mNbEquipements = 0
+    mNbConnecteurs = 0
+    mNbBarrettes = 0
+    mNbMasses = 0
+    mNbBroches = 0
+    mNbFils = 0
+    mNbBouts = 0
+End Sub
+
+' Le WireHarness du harness hk de h (VerserWD) : ses appareils et leurs
+' broches, ses fils, leurs bouts ; chaque liste seulement si elle a ce que le
+' schéma demande (un appareil, un fil, deux bouts). Un équipement n'a de
+' PartNumber que si aucun de ses connecteurs n'en a un : le PN de son bloc est
+' celui que portent ses liaisons, celui d'un connecteur (see/FORMAT-PAQUET.md).
+' Ses comptes s'ajoutent à mNb... (RemettreComptesWD).
+Private Function XmlHarnaisWD(ByVal h As Object, ByVal hk As String, ByVal tag As String, ByVal libelle As String) As String
+    Dim s As String, k As Variant, t As String, g As String, devs As Collection, avecPN As Object, lignes As Collection
+    Dim fils As Collection, bouts As Collection
+    Set devs = h.Item(hk & "devs")
+    Set fils = h.Item(hk & "fils")
+    Set bouts = h.Item(hk & "bouts")
+    ' les équipements dont un connecteur (un appareil dont il est le ParentTag) porte un PN
+    Set avecPN = NouveauDicoExact()
+    For Each k In devs
+        t = CStr(h.Item(hk & "R|" & CStr(k)))
+        If Len(t) > 0 And Len(CStr(h.Item(hk & "N|" & CStr(k)))) > 0 Then
+            If Not avecPN.Exists(t) Then avecPN.Add t, True
+        End If
+    Next k
+    Set lignes = New Collection
+    For Each k In devs
+        g = CStr(h.Item(hk & "A|" & CStr(k)))
+        lignes.Add AppareilXml(h, hk, CStr(k), g = "Equipment" And avecPN.Exists(CStr(k)))
+        If g = "Equipment" Then
+            mNbEquipements = mNbEquipements + 1
+        ElseIf g = "Connector" Then
+            mNbConnecteurs = mNbConnecteurs + 1
+        ElseIf g = mTypeBornier Then
+            mNbBarrettes = mNbBarrettes + 1
+        ElseIf g = mTypeMasse Then
+            mNbMasses = mNbMasses + 1
+        End If
+    Next k
+    mNbFils = mNbFils + fils.Count
+    s = "  <WireHarness" & AttrWD("WireHarness", "Tag", tag, 128, True) & AttrWD("WireHarness", "Description", libelle, 0, False)
+    If lignes.Count = 0 And fils.Count = 0 And bouts.Count < 2 Then
+        XmlHarnaisWD = s & "/>" & vbCrLf
+        Exit Function
+    End If
+    s = s & ">" & vbCrLf
+    If lignes.Count > 0 Then s = s & "    <ConnectiveDevicesList>" & vbCrLf & Joindre(lignes) & "    </ConnectiveDevicesList>" & vbCrLf
+    If fils.Count > 0 Then s = s & "    <WiresList>" & vbCrLf & Joindre(fils) & "    </WiresList>" & vbCrLf
+    If bouts.Count > 1 Then
+        s = s & "    <WiresExtremitiesList>" & vbCrLf & Joindre(bouts) & "    </WiresExtremitiesList>" & vbCrLf
+        mNbBouts = mNbBouts + bouts.Count
+    End If
+    XmlHarnaisWD = s & "  </WireHarness>" & vbCrLf
 End Function
 
 ' Le début d'un fichier : la déclaration XML et la racine (son espace de noms s'il y en a un).
@@ -1684,21 +1875,51 @@ Private Sub CompterVerdictWD(ByVal verdict As String, ByRef nbFichiers As Long, 
     If verdict = "PAS ÉCRIT" Then nbPasEcrits = nbPasEcrits + 1
 End Sub
 
-' Une ligne de fichier dans Export_WD (les comptes du folio, ou de WD-TOUT :
-' mNb...), et dessous ses premières erreurs ; rend la dernière ligne écrite.
+' Une ligne de fichier dans Export_WD (ses comptes : mNb...), et dessous ses
+' premières erreurs, chacune en morceaux qui se lisent sur une photo (la
+' première ligne « erreur », les suivantes « (suite) ») ; rend la dernière
+' ligne écrite.
 Private Function LigneFichierWD(ByVal ws As Object, ByVal l As Long, ByVal nomF As String, ByVal folio As String, ByVal tag As String, _
         ByVal verdict As String, ByVal detail As String) As Long
-    Dim e As Variant
+    Dim e As Variant, m As Variant, debut As Boolean
     l = l + 1
     EcrireLigne ws, l, Array(nomF, folio, tag, mNbEquipements, mNbConnecteurs, mNbBarrettes, mNbMasses, mNbBroches, mNbFils, mNbBouts, verdict)
     If verdict <> "VALIDE" Then ws.Cells(l, 11).Font.Bold = True
     If Len(detail) > 0 Then
         For Each e In Split(detail, vbLf)
-            l = l + 1
-            EcrireLigne ws, l, Array("   erreur", CStr(e))
+            debut = True
+            For Each m In MorceauxWD(CStr(e), LARGEUR_PHOTO)
+                l = l + 1
+                If debut Then
+                    EcrireLigne ws, l, Array("   erreur", CStr(m))
+                Else
+                    EcrireLigne ws, l, Array("   (suite)", CStr(m))
+                End If
+                debut = False
+            Next m
         Next e
     End If
     LigneFichierWD = l
+End Function
+
+' Un texte coupé aux espaces en morceaux d'au plus n caractères (un mot plus
+' long est coupé) : une ligne d'Export_WD se lit alors en entier sur une photo.
+Private Function MorceauxWD(ByVal s As String, ByVal n As Long) As Collection
+    Dim c As Collection, p As Long
+    Set c = New Collection
+    s = Trim$(s)
+    Do While Len(s) > n
+        p = InStrRev(Left$(s, n + 1), " ")
+        If p > 1 Then
+            c.Add Left$(s, p - 1)
+            s = LTrim$(Mid$(s, p + 1))
+        Else
+            c.Add Left$(s, n)
+            s = Mid$(s, n + 1)
+        End If
+    Loop
+    c.Add s
+    Set MorceauxWD = c
 End Function
 
 ' Une ligne du haut de Export_WD (la photo) : la rubrique en gras, le texte.

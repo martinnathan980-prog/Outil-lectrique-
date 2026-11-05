@@ -13,9 +13,14 @@
     d'attributs agWireHarness (Tag obligatoire ; pas de WiresNumber, que Windows a refusé), cWiresList, les types
     simples tEDB_InstanceID, tXSDVersion, tLengthUnit, tTag, tExtendedTag, tWireType, tGauge, tNonNegativeDouble,
     tClass, tSegregation, tSolutionNumber, tVersionNb, tColor, tWHType, tConnectType, tPinType ; cWire sans Class
-    (refusé par Windows en 3.10).
-  - VU EN 2.18, SUPPOSÉ INCHANGÉ EN 3.10 : ConnectiveDevice (élément au type déclaré sur place) et ses attributs,
-    Shunt, cPin, les attributs de cWire (moins Class), cWireExtremity, WiresExtremitiesList (deux bouts au moins).
+    (refusé par Windows en 3.10) ; l'énumération de ConnectiveDevice/@Type (Windows a refusé TB et GB dans
+    Essai-WD-plus, photo d'Essai_WD de 16 h 51, en citant : Connector TerminalBlock GroundBlock Splice Equipment
+    Shell ShellModule TerminalTrack ProductionBreak JunctionBox Current Transformer Pressure Seal Busbar) ; les
+    attributs Class, ParentTag, MatingTag, SymbolFamily, SymbolName, Description de ConnectiveDevice, ParentTag de
+    cWireExtremity, et Tag, Solution, Version obligatoires sur cWireDiagram (même photo).
+  - VU EN 2.18, SUPPOSÉ INCHANGÉ EN 3.10 : ConnectiveDevice (élément au type déclaré sur place) et ses autres
+    attributs, Shunt, cPin, les attributs de cWire (moins Class), cWireExtremity, WiresExtremitiesList (deux bouts
+    au moins).
   - SUPPOSÉ : le reste des attributs de agWireHarness (Description, PartNumber, Segregation, Type, Solution,
     VersionNb : ceux de cWireHarness en 2.18), les longueurs de tDescription et tPartNumber (255), les types non
     photographiés (chaînes libres), et l'ordre des attributs (sans effet en XML).
@@ -54,7 +59,7 @@
     <xs:sequence>
       <xs:element name="UserAttribute" type="cUserAttribute" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
-    <xs:attribute name="Tag" type="tTag"/>
+    <xs:attribute name="Tag" type="tTag" use="required"/>
     <xs:attribute name="Solution" type="tSolutionNumber" use="required"/>
     <xs:attribute name="Version" type="tVersionNb" use="required"/>
     <xs:attribute name="Format" type="xs:string"/>
@@ -139,18 +144,21 @@
           <xs:attribute name="Type" use="required">
             <xs:simpleType>
               <xs:restriction base="xs:string">
+                <!-- vue en 3.10 (le message de Windows sépare les valeurs par des espaces : « Current Transformer » et
+                     « Pressure Seal » sont lues comme en 2.18, d'un seul tenant) -->
                 <xs:enumeration value="Connector"/>
-                <xs:enumeration value="TB"/>
-                <xs:enumeration value="GB"/>
+                <xs:enumeration value="TerminalBlock"/>
+                <xs:enumeration value="GroundBlock"/>
                 <xs:enumeration value="Splice"/>
                 <xs:enumeration value="Equipment"/>
                 <xs:enumeration value="Shell"/>
-                <xs:enumeration value="Shell Module"/>
-                <xs:enumeration value="Terminal Track"/>
+                <xs:enumeration value="ShellModule"/>
+                <xs:enumeration value="TerminalTrack"/>
                 <xs:enumeration value="ProductionBreak"/>
                 <xs:enumeration value="JunctionBox"/>
                 <xs:enumeration value="Current Transformer"/>
                 <xs:enumeration value="Pressure Seal"/>
+                <xs:enumeration value="Busbar"/>
               </xs:restriction>
             </xs:simpleType>
           </xs:attribute>

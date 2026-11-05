@@ -72,7 +72,7 @@
    Windows déclarée, essayé en dernier, après un bloc PROVISOIRE ; le
    paramètre de sortie de SeeAutomation (V4) : un Variant, puis une variable
    Object si SEE refuse le type ; aucun chemin entier dans le bloc ni le
-   journal (MasquerChemins). Et la v4 (les photos du 2 novembre 2026) : le
+   journal, colonne Objet comprise (MasquerChemins). Et la v4 (les photos du 2 novembre 2026) : le
    CreateObject de SeeAutomation d'abord sous la forme (type, projet, objet en
    sortie), le projet ouvert gardé pour lui, chaque forme essayée jusqu'à la
    première qui rend un objet ; CloseProject(le projet), après Save et le
@@ -86,7 +86,8 @@
    SEE_WD) ; chaque valeur d'attribut XML passe par EchapperXml (seul
    AttributXml écrit nom="…") ; chaque fichier écrit est vérifié par Windows
    (ValiderXmlParXsd) ; aucun chemin entier dans Export_WD ; le schéma retenu
-   est le plus haut des 3.xx.
+   est le plus haut des 3.xx ; le Type d'un bornier et d'une masse vient du
+   schéma lu (TerminalBlock et GroundBlock, ceux de la 3.10 du bureau).
    Puis le contrôleur s'éprouve lui-même : des fautes sont injectées une à
    une dans une copie des modules (mutations), chacune doit être attrapée
    par le contrôle attendu ; et une écriture dans le classeur (feuille,
@@ -113,6 +114,7 @@ const WD_ECHAPPE = 'SEE_WD : chaque valeur d\'attribut XML passe par EchapperXml
 const WD_VERIFIE = 'SEE_WD : chaque fichier de liste de fils écrit est vérifié par Windows (EcrireEtVerifierWD et EssaiWD, seuls à écrire un XML, appellent ValiderXmlParXsd)';
 const WD_CHEMIN = 'SEE_WD : aucun chemin entier dans Export_WD ni Essai_WD (le haut, les erreurs de Windows, ce qui n\'est pas écrit tel quel : MasquerChemins)';
 const WD_VERSION = 'SEE_WD : ExporterWD retient le schéma « Wiring Diagram » le plus haut (SchemasWD) dont la version commence par « 3. » (SchemaRetenuWD)';
+const WD_TYPES = 'SEE_WD : le Type d\'un bornier et d\'une masse vient du schéma lu (TerminalBlock et GroundBlock, ceux de la 3.10 du bureau ; TB et GB seulement si le schéma ne connaît qu\'eux : TypeDuSchemaWD), jamais écrit en dur';
 
 // --- Windows-1252 : les 32 caractères de 0x80 à 0x9F (undefined = octet interdit)
 const CP1252_80 = [0x20AC, undefined, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, undefined, 0x017D, undefined,
@@ -986,7 +988,8 @@ function controler(entrees) {
       /ElseIf Not mJoint And mAppAbsente Then\n[\s\S]*?Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3[\s\S]*?bouton3[\s\S]*?ElseIf Not mJoint Then/.test(cf)
         && cf.indexOf('ElseIf Not mJoint And mAppAbsente Then') < cf.indexOf('ElseIf Not mJoint Then'), 'ConsigneFinale');
     ok('le bloc à photographier et le journal ne montrent pas le chemin entier (MasquerChemins)',
-      /MasquerChemins\(texte\)/.test(texteBrut(procDe('SEE_Commun', 'LigneResultat'))) && /MasquerChemins\(appel\)/.test(texteBrut(procDe('SEE_Commun', 'Journal'))),
+      /MasquerChemins\(texte\)/.test(texteBrut(procDe('SEE_Commun', 'LigneResultat'))) && /MasquerChemins\(appel\)/.test(texteBrut(procDe('SEE_Commun', 'Journal')))
+        && /Left\$\(MasquerChemins\(objet\), 250\)/.test(texteBrut(procDe('SEE_Commun', 'Journal'))),
       'LigneResultat ou Journal');
   }
   // --- créer ou rejoindre un objet par GetObject / CreateObject : seulement dans SEE_Windows (sauf les deux objets de
@@ -1118,13 +1121,21 @@ function controler(entrees) {
       && /ElseIf ValiderXmlParXsd\(chemin, cheminXsd, espace, erreurs\) Then\n\s*EcrireEtVerifierWD = "VALIDE"/.test(texteBrut(procDe('SEE_WD', 'EcrireEtVerifierWD')))
       && /ok = ValiderXmlParXsd\(cheminXml, CStr\(p\), espace, erreurs\)/.test(texteBrut(procDe('SEE_WD', 'EssaiWD'))), ecrivent.join(', '));
     ok(WD_CHEMIN, /Array\(rubrique, MasquerChemins\(texte\)\)/.test(texteBrut(procDe('SEE_WD', 'LigneHautWD')))
-      && /MasquerChemins\(CStr\(v\(1\)\)\), MasquerChemins\(CStr\(v\(2\)\)\)/.test(texteBrut(procDe('SEE_WD', 'ExporterPaquetWD')))
+      && /MorceauxWD\(MasquerChemins\(CStr\(v\(1\)\) & " : " & CStr\(v\(2\)\)\), LARGEUR_PHOTO\)/.test(texteBrut(procDe('SEE_WD', 'ExporterPaquetWD')))
       && /MasquerChemins\(CStr\(e\)\)/.test(texteBrut(procDe('SEE_WD', 'EcrireEtVerifierWD')))
       && /Array\("erreur", version, MasquerChemins\(CStr\(e\)\)\)/.test(texteBrut(procDe('SEE_WD', 'EssaiWD'))), 'LigneHautWD, ExporterPaquetWD, EcrireEtVerifierWD ou EssaiWD');
     ok(WD_VERSION, /If Left\$\(VersionDuSchema\(CStr\(p\)\), 2\) = "3\." Then/.test(texteBrut(procDe('SEE_WD', 'SchemaRetenuWD')))
       && /cheminXsd = SchemaRetenuWD\(SchemasWD\(xsd\)\)/.test(texteBrut(procDe('SEE_WD', 'LireSchemaWD')))
       && /If Val\(VersionDuSchema\(CStr\(trouves\.Item\(i\)\)\)\) > Val\(VersionDuSchema\(CStr\(trouves\.Item\(j\)\)\)\) Then j = i/.test(texteBrut(procDe('SEE_WD', 'SchemasWD'))),
       'SchemaRetenuWD, LireSchemaWD ou SchemasWD');
+    // EX1 (bureau, 5 novembre) : la 3.10 refuse TB et GB ; le Type vient du schéma lu, TerminalBlock et GroundBlock par défaut
+    const enDur = codeDe('SEE_WD').filter(x => x.p !== 'XmlEssaiWDPlus' && /"(TB|GB)"/.test(x.code) && !/TypeDuSchemaWD\((m?attrs|mAttrs), "(TerminalBlock|GroundBlock)", "(TB|GB)"\)/i.test(x.code)).map(x => `${x.p}:${x.n}`);
+    const lsw = texteBrut(procDe('SEE_WD', 'LireSchemaWD')), cfw = texteBrut(procDe('SEE_WD', 'ConstruireFolioWD'));
+    ok(WD_TYPES, !enDur.length && /mTypeBornier = "TerminalBlock"\n\s*mTypeMasse = "GroundBlock"/.test(lsw)
+      && /mTypeBornier = TypeDuSchemaWD\(mAttrs, "TerminalBlock", "TB"\)\n\s*mTypeMasse = TypeDuSchemaWD\(mAttrs, "GroundBlock", "GB"\)/.test(lsw)
+      && /AppareilWD folio, "B\|" & rep, rep, mTypeBornier,/.test(cfw) && /AppareilWD folio, "B\|" & rep, rep, mTypeMasse,/.test(cfw)
+      && /If ValeurDuSchema\(attrs, ancien\) And Not ValeurDuSchema\(attrs, nouveau\) Then TypeDuSchemaWD = ancien/.test(texteBrut(procDe('SEE_WD', 'TypeDuSchemaWD'))),
+      enDur.join(' ; ') || 'LireSchemaWD, ConstruireFolioWD ou TypeDuSchemaWD');
   }
   return { res, analyses };
 }
@@ -1359,9 +1370,15 @@ if (Object.keys(entrees).length === MODULES.length && Object.keys(analyses).leng
     ['les erreurs de Windows montrées avec leur chemin (Essai_WD)', WD_CHEMIN, remplacer('SEE_WD', /Array\("erreur", version, MasquerChemins\(CStr\(e\)\)\)/, 'Array("erreur", version, CStr(e))')],
     ['les erreurs de Windows montrées avec leur chemin (Export_WD)', WD_CHEMIN, remplacer('SEE_WD', /(ERREURS_MONTREES Then detail = detail & IIf\(Len\(detail\) > 0, vbLf, ""\) & )MasquerChemins\(CStr\(e\)\)/, '$1CStr(e)')],
     ['ExporterWD qui retient une version 2.xx', WD_VERSION, remplacer('SEE_WD', /, 2\) = "3\." Then/, ', 2) = "2." Then')],
+    ['le bornier écrit TB en dur (la 3.10 le refuse)', WD_TYPES, remplacer('SEE_WD', /(AppareilWD folio, "B\|" & rep, rep, )mTypeBornier,/, '$1"TB",')],
+    ['la masse GB par défaut, sans schéma', WD_TYPES, remplacer('SEE_WD', /mTypeMasse = "GroundBlock"/, 'mTypeMasse = "GB"')],
+    ['TB retenu dès que le schéma le nomme, même s\'il nomme TerminalBlock', WD_TYPES, remplacer('SEE_WD', / And Not ValeurDuSchema\(attrs, nouveau\) Then TypeDuSchemaWD = ancien/, ' Then TypeDuSchemaWD = ancien')],
+    ['ce qui n\'est pas écrit tel quel montré avec son chemin (Export_WD)', WD_CHEMIN, remplacer('SEE_WD', /MorceauxWD\(MasquerChemins\(CStr\(v\(1\)\) & " : " & CStr\(v\(2\)\)\), LARGEUR_PHOTO\)/, 'MorceauxWD(CStr(v(1)) & " : " & CStr(v(2)), LARGEUR_PHOTO)')],
     ['les schémas rangés du plus bas au plus haut', WD_VERSION, remplacer('SEE_WD', /\)\) > Val\(VersionDuSchema\(CStr\(trouves\.Item\(j\)\)\)\) Then j = i/, ')) < Val(VersionDuSchema(CStr(trouves.Item(j)))) Then j = i')],
     ['le bloc à photographier qui montre le chemin entier (SU3)', 'le bloc à photographier et le journal ne montrent pas le chemin entier (MasquerChemins)',
       remplacer('SEE_Commun', /EcrireLigne ws, l, Array\(rubrique, MasquerChemins\(texte\)\)/, 'EcrireLigne ws, l, Array(rubrique, texte)')],
+    ['le journal qui montre le chemin entier dans la colonne Objet (le paquet, le dossier WD-…)', 'le bloc à photographier et le journal ne montrent pas le chemin entier (MasquerChemins)',
+      remplacer('SEE_Commun', /Left\$\(MasquerChemins\(objet\), 250\)/, 'Left$(objet, 250)')],
   ];
   let attrapees = 0;
   for (const [nom, attendu, mut] of mutations) {

@@ -127,8 +127,9 @@ node tests/vba.js              LES MACROS DU PILOTE SEE (see/vba/*.bas), sans Ex
                                filtrés, le bouton 1 qui envoie droit au bouton 3 sans Application au registre ; la liste de
                                fils (SEE_WD) : ExporterWD, EssaiWD et LireFormatWD ne touchent pas SEE, chaque valeur
                                d'attribut passe par EchapperXml, chaque fichier est vérifié par Windows, aucun chemin entier
-                               dans Export_WD, le schéma retenu est le plus haut des 3.xx ; et le
-                               contrôleur lui-même, éprouvé par cent vingt-deux fautes injectées, sans crier au loup
+                               dans Export_WD ni dans la colonne Objet du journal, le schéma retenu est le plus haut des
+                               3.xx, le Type d'un bornier et d'une masse vient du schéma lu (TerminalBlock, GroundBlock) ;
+                               et le contrôleur lui-même, éprouvé par cent vingt-sept fautes injectées, sans crier au loup
                                sur une écriture dans le classeur
 tests/banc-vba/lancer.sh       LES MÊMES MACROS EXÉCUTÉES, dans LibreOffice (Basic en mode VBASupport) face à un FAUX SEE qui imite
                                l'API COM et trace chaque appel, et un FAUX SEE_Windows (ce que Windows répond : la table des

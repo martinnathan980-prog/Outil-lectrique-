@@ -47,6 +47,7 @@ console.log(JSON.stringify(XLSX.utils.sheet_to_json(wb.Sheets.Blocs,{defval:null
 # dossier WD-…) ; les dossiers WD-… d'un passage précédent effacés.
 RECONSTITUTION = os.path.join(ICI, 'wd-3.10-reconstitution.xsd')
 ESSAI_WD = os.path.join(TRAVAIL, 'robot-wd')
+UN_HARNESS = os.path.join(TRAVAIL, 'paquet-wd-h1.xlsx')     # la variante v_wd_h.js (lancer.sh) : un seul harness
 def wd_preparer():
     xsd = os.path.join(IGE, 'SEE Electrical Expert V4R3', '4.8', 'SEE_Soft', 'PARAM', 'XSD')
     for d in [IGE, IGE + '_cache'] + glob.glob(os.path.join(TRAVAIL, 'WD-paquet-*')):
@@ -62,12 +63,18 @@ def wd_preparer():
     for nom in ('refus', 'sans'):
         copies.append(os.path.join(TRAVAIL, f'paquet-wd-{nom}.xlsx'))
         shutil.copy(PAQUET, copies[-1])
+    # le paquet sur le Bureau d'un utilisateur de Windows (…\Users\<nom>\Bureau) : son nom ne doit paraître nulle part
+    shutil.rmtree(os.path.join(TRAVAIL, 'Users'), ignore_errors=True)
+    bureau = os.path.join(TRAVAIL, 'Users', 'utilisateur-banc', 'Bureau')
+    os.makedirs(bureau)
+    shutil.copy(PAQUET, os.path.join(bureau, 'paquet-wd-bureau.xlsx'))
     # EssaiWD écrit ses fichiers dans le dossier du projet d'essai (réglage Projet) : un dossier à lui
     shutil.rmtree(ESSAI_WD, ignore_errors=True)
     os.makedirs(ESSAI_WD)
-    return (PAQUET, VARIANTE, copies[0], copies[1], IGE, TRAVAIL, os.path.join(ESSAI_WD, 'TEST_WD.seeprj'))
+    return (PAQUET, VARIANTE, copies[0], copies[1], IGE, TRAVAIL, os.path.join(ESSAI_WD, 'TEST_WD.seeprj'), UN_HARNESS,
+            os.path.join(bureau, 'paquet-wd-bureau.xlsx'))
 def verifier_wd():
-    r = subprocess.run(['python3', f'{ICI}/verifier_wd.py', TRAVAIL, PAQUET, VARIANTE, RECONSTITUTION], capture_output=True, text=True)
+    r = subprocess.run(['python3', f'{ICI}/verifier_wd.py', TRAVAIL, PAQUET, VARIANTE, RECONSTITUTION, UN_HARNESS], capture_output=True, text=True)
     s = r.stdout.strip().replace('\n', ' || ')
     if r.returncode: s += ' || verifier_wd en échec : ' + (r.stderr.strip().split('\n') or [''])[-1]
     return s
@@ -110,8 +117,9 @@ SCEN = [
     ('arret Windows', lambda d: (sans_texte(d, 'BancR.BancArret'), lancer(d, 'BancR.ApresArret', ())), None),
     # InitialiserClasseur qui lève une erreur : gSansDialogue reprend sa valeur
     ('panne classeur', lambda d: lancer(d, 'BancR.BancPanneClasseur', ()), None),
-    # ExporterWD : le paquet en listes de fils XML (une par folio, et WD-TOUT), sur l'exemple et sur la variante
-    # v_wd.js ; puis chaque fichier relu par verifier_wd.py (xmllint contre la reconstitution du schéma 3.10, et le paquet)
+    # ExporterWD : le paquet en listes de fils XML (une par folio, et WD-TOUT), sur l'exemple, sur la variante v_wd.js
+    # et sur v_wd_h.js (un seul harness) ; puis chaque fichier relu par verifier_wd.py (xmllint contre la reconstitution
+    # du schéma 3.10, et le paquet)
     ('exporter WD', lambda d: lancer(d, 'BancR.BancExporterWD', wd_preparer()), lambda: verifier_wd()),
 ]
 if __name__ == "__main__":

@@ -1,22 +1,25 @@
-# python3 verifier_wd.py <travail> <paquet.xlsx> <variante.xlsx> <schéma.xsd> : les listes de fils XML qu'ExporterWD a
-# écrites (scénario « exporter WD » du banc), vérifiées par xmllint contre la reconstitution du schéma 3.10, et relues
-# contre le paquet. Ce qui est attendu est CALCULÉ ici depuis le paquet, avec les règles de see/FORMAT-WD.md (écrites
-# à part du VBA) : les noms des fichiers ; chaque WireHarness (Tag, Description) ; chaque appareil (Tag, Type,
-# ConnectivityType, MatingTag, ParentTag, PartNumber, Description) et ses broches ; chaque fil (Tag, Wire_Type, Gauge,
-# Length, Length_Status, Type, Segregation) ; ses bouts (ID, WireTag, Pin, PinParent) ; WD-TOUT, un WireHarness par
-# folio. Et, sans rien calculer : chaque fichier valide pour xmllint, en ASCII, sans WiresNumber ni Class, chaque bout
-# de fil sur une broche de son appareil, aucun Tag en double.
-# Une ligne par dossier : WD-paquet-exemple (l'exemple), WD-paquet-wd (la variante v_wd.js), WD-paquet-wd-refus (une
-# copie de l'exemple, que le faux Windows refuse en partie : les fichiers sont les mêmes), WD-paquet-wd-sans (le
-# schéma introuvable : seulement les attributs de l'essai du bureau). Code de sortie 0, sauf si ce programme ne peut
-# pas tourner.
+# python3 verifier_wd.py <travail> <paquet.xlsx> <variante.xlsx> <schéma.xsd> <un-harness.xlsx> : les listes de fils XML
+# qu'ExporterWD a écrites (scénario « exporter WD » du banc), vérifiées par xmllint contre la reconstitution du schéma
+# 3.10, et relues contre le paquet. Ce qui est attendu est CALCULÉ ici depuis le paquet, avec les règles de
+# see/FORMAT-WD.md (écrites à part du VBA) : les noms des fichiers ; chaque WireHarness (Tag, Description) ; chaque
+# appareil (Tag, Type : TerminalBlock et GroundBlock pour un bornier et une masse, ConnectivityType, MatingTag,
+# ParentTag, PartNumber : pas sur un équipement dont un connecteur en a un, Description) et ses broches (une masse :
+# une seule) ; chaque fil (Tag, Wire_Type, Gauge, Length, Length_Status, Type : un fil blindé est Normal, Segregation) ;
+# ses bouts (ID, WireTag, Pin, PinParent) ; WD-TOUT, un WireHarness par harness, les folios d'un même harness réunis.
+# Et, sans rien calculer : chaque fichier valide pour xmllint, en ASCII, sans WiresNumber ni Class, chaque bout de fil
+# sur une broche de son appareil, aucun Tag en double.
+# Une ligne par dossier : WD-paquet-exemple (l'exemple), WD-paquet-wd (la variante v_wd.js), WD-paquet-wd-h1 (la
+# variante v_wd_h.js : un seul harness), WD-paquet-wd-refus (une copie de l'exemple, que le faux Windows refuse en
+# partie : les fichiers sont les mêmes), WD-paquet-wd-sans (le schéma introuvable : seulement les attributs de l'essai
+# du bureau). Code de sortie 0, sauf si ce programme ne peut pas tourner.
 import sys, os, json, subprocess
 sys.dont_write_bytecode = True   # pas de __pycache__ dans le dépôt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from chemins import XLSX
 from lxml import etree
 
-TRAVAIL, PAQUET, VARIANTE, XSD = sys.argv[1:5]
+TRAVAIL, PAQUET, VARIANTE, XSD, UN_HARNESS = sys.argv[1:6]
+BORNIER, MASSE = 'TerminalBlock', 'GroundBlock'      # le Type d'un bornier et d'une masse en 3.10 (vu au bureau)
 # les attributs de l'essai importé au bureau (ATTRIBUTS_SURS de SEE_WD) : seuls écrits sans schéma
 SURS = {'IGE-XAO_WIRE_HARNESS': {'EDB_InstanceID', 'XSDversion', 'LengthUnit'}, 'WireHarness': {'Tag'},
         'ConnectiveDevice': {'Tag', 'Type', 'ConnectivityType'}, 'Pin': {'Tag'},
@@ -66,7 +69,8 @@ def nom_fichier(nom, defaut):
     return r or defaut
 
 def harnais(P, f):
-    """Le contenu attendu du WireHarness du folio f : (appareils [(attributs, broches)], fils, bouts, écarts)."""
+    """Le folio f construit (ConstruireFolioWD) : (appareils [dict(tag, type, prise, accouple, parent, pn, desc, pins)],
+    fils [(Tag, attributs)], bouts [(ID, attributs)]), dans l'ordre où ils s'écrivent."""
     devs, tags_pris, nature, repere, pieces = {}, set(), {}, {}, {}
     for c in P.get('Connecteurs', []):
         if c['Folio'] == f: pieces.setdefault(texte(c['Bloc']), []).append(c)
@@ -95,9 +99,9 @@ def harnais(P, f):
                 if lettre in ('FICHE', 'EMBASE'): pn_si_vide(f'P|{rep}|{lettre}', texte(c['PN']))
             pn_si_vide(f'P|{rep}|FICHE', pn); pn_si_vide(f'P|{rep}|EMBASE', pn)
         elif nat in ('BARRETTE', 'BARRETTE_A_POSER', 'RAIL'):
-            appareil('B|' + rep, rep, 'TB', pn, desc)
+            appareil('B|' + rep, rep, BORNIER, pn, desc)
         elif nat in ('MASSE', 'COLLECTEUR'):
-            appareil('B|' + rep, rep, 'GB', pn, desc)
+            appareil('B|' + rep, rep, MASSE, pn, desc)
     broche, pins_pris, du_bout = {}, set(), {}
     def appareil_de(bl, con):
         if bl not in nature: return ''
@@ -116,6 +120,9 @@ def harnais(P, f):
         if cle in du_bout: continue
         dev = du_bout[cle] = appareil_de(bl, con)
         if dev and f'{dev}|{borne}' not in broche:
+            if devs[dev]['type'] == MASSE and devs[dev]['pins']:     # une masse : un seul point, tous ses fils dessus
+                broche[f'{dev}|{borne}'] = devs[dev]['pins'][0]
+                continue
             brut = texte(r['Numero']) or borne or '1'
             if f'{dev}|{couper(brut, MAXI["pin"])}' in pins_pris and borne: brut = borne
             t = unique(brut, MAXI['pin'], pins_pris, dev + '|')
@@ -133,39 +140,75 @@ def harnais(P, f):
         longueur, statut = '0', 'Estimation'
         if isinstance(r.get('Longueur'), (int, float)) and r['Longueur'] > 0:
             longueur, statut = texte(r['Longueur'] * 1000), 'Manual'
-        genre = 'Shunt' if texte(r['Shunt']).upper() == 'O' else ('Shield' if texte(r['Blinde']).upper() == 'O' else 'Normal')
-        fils.append({'Tag': tag, 'Wire_Type': couper(texte(r['Type']), MAXI['type']), 'Gauge': couper(texte(r['Jauge']), MAXI['jauge']), 'Length': longueur,
-                     'Length_Status': statut, 'Type': genre, 'Segregation': couper(texte(r['Route']) or '1', MAXI['seg'])})
+        genre = 'Shunt' if texte(r['Shunt']).upper() == 'O' else 'Normal'      # un fil blindé : Normal (FORMAT-WD)
+        fils.append((tag, {'Tag': tag, 'Wire_Type': couper(texte(r['Type']), MAXI['type']), 'Gauge': couper(texte(r['Jauge']), MAXI['jauge']),
+                           'Length': longueur, 'Length_Status': statut, 'Type': genre, 'Segregation': couper(texte(r['Route']) or '1', MAXI['seg'])}))
         for n, b in ((1, de), (2, vers)):
-            if b: bouts.append({'ID': couper(tag, MAXI['fil'] - 2) + f'-{n}', 'WireTag': tag, 'Pin': b[1], 'PinParent': b[0]})
-    if len(bouts) == 1: bouts = []
+            if b:
+                i = couper(tag, MAXI['fil'] - 2) + f'-{n}'
+                bouts.append((i, {'ID': i, 'WireTag': tag, 'Pin': b[1], 'PinParent': b[0]}))
     appareils = []
     for d in devs.values():
-        a = {'Tag': d['tag'], 'Type': d['type']}
-        if d['prise']: a['ConnectivityType'] = d['prise']
-        if d['accouple'] in devs: a['MatingTag'] = devs[d['accouple']]['tag']
-        if d['parent'] in devs: a['ParentTag'] = devs[d['parent']]['tag']
-        if d['pn']: a['PartNumber'] = couper(d['pn'], MAXI['pn'])
-        if d['desc']: a['Description'] = couper(d['desc'], MAXI['desc'])
-        appareils.append((a, d['pins']))
+        appareils.append(dict(d, accouple=devs[d['accouple']]['tag'] if d['accouple'] in devs else '',
+                              parent=devs[d['parent']]['tag'] if d['parent'] in devs else '', pins=list(d['pins'])))
     return appareils, fils, bouts
 
+def nouveau():
+    return {'devs': {}, 'fils': {}, 'bouts': {}}
+
+def verser(h, appareils, fils, bouts):
+    """VerserWD : un appareil par Tag (le premier garde son Type ; un attribut encore vide se remplit ; les broches
+    réunies, dans l'ordre), un fil par Tag, un bout par ID ; ce qui est déjà versé reste."""
+    for a in appareils:
+        d = h['devs'].get(a['tag'])
+        if d is None:
+            h['devs'][a['tag']] = dict(a, pins=list(a['pins']))
+            continue
+        for k in ('prise', 'accouple', 'parent', 'pn', 'desc'):
+            if not d[k] and a[k]: d[k] = a[k]
+        d['pins'] += [p for p in a['pins'] if p not in d['pins']]
+    for k, w in fils: h['fils'].setdefault(k, w)
+    for k, e in bouts: h['bouts'].setdefault(k, e)
+
+def ecrit(h, tag, titre):
+    """XmlHarnaisWD : (attributs du WireHarness, appareils [(attributs, broches)], fils, bouts) ; un équipement n'a de
+    PartNumber que si aucun de ses connecteurs n'en a un ; moins de deux bouts : aucun."""
+    avec_pn = {d['parent'] for d in h['devs'].values() if d['parent'] and d['pn']}
+    appareils = []
+    for d in h['devs'].values():
+        a = {'Tag': d['tag'], 'Type': d['type']}
+        if d['prise']: a['ConnectivityType'] = d['prise']
+        if d['accouple']: a['MatingTag'] = d['accouple']
+        if d['parent']: a['ParentTag'] = d['parent']
+        if d['pn'] and not (d['type'] == 'Equipment' and d['tag'] in avec_pn): a['PartNumber'] = couper(d['pn'], MAXI['pn'])
+        if d['desc']: a['Description'] = couper(d['desc'], MAXI['desc'])
+        appareils.append((a, d['pins']))
+    bouts = list(h['bouts'].values())
+    hd = {'Tag': tag}
+    if titre: hd['Description'] = couper(titre, MAXI['desc'])
+    return hd, appareils, list(h['fils'].values()), bouts if len(bouts) >= 2 else []
+
 def attendu(P, schema):
-    """Les fichiers attendus : {nom: [(attributs du WireHarness, appareils, fils, bouts)]}, dans l'ordre des folios."""
-    fichiers, noms, tags_tout, tout = {}, {'tout'}, set(), []
+    """Les fichiers attendus : {nom: [(attributs du WireHarness, appareils, fils, bouts)]} ; WD-TOUT : un WireHarness par
+    harness, dans l'ordre des folios, les folios d'un même harness réunis (verser)."""
+    fichiers, noms, tout, ordre = {}, {'tout'}, {}, []
     for fo in sorted(P['Folios'], key=lambda r: r['Folio']):
         f = fo['Folio']
         appareils, fils, bouts = harnais(P, f)
-        tag = couper(texte(fo['Harness']) or texte(fo['Nom']) or f'F{f}', MAXI['harnais'])
-        h = {'Tag': tag}
-        if texte(fo['Titre']): h['Description'] = couper(texte(fo['Titre']), MAXI['desc'])
-        nom = nom_fichier(texte(fo['Nom']), f'F{f}')
-        base = nom
+        tag, titre = couper(texte(fo['Harness']) or texte(fo['Nom']) or f'F{f}', MAXI['harnais']), texte(fo['Titre'])
+        h = nouveau()
+        verser(h, appareils, fils, bouts)
+        base = nom_fichier(texte(fo['Nom']), f'F{f}')
         while base.lower() in noms: base += f'-F{f}'
         noms.add(base.lower())
-        fichiers['WD-' + base + '.xml'] = [(h, appareils, fils, bouts)]
-        tout.append((dict(h, Tag=unique(tag, MAXI['harnais'], tags_tout, '', casse=False)), appareils, fils, bouts))
-    fichiers['WD-TOUT.xml'] = tout
+        fichiers['WD-' + base + '.xml'] = [ecrit(h, tag, titre)]
+        if tag not in tout:
+            tout[tag] = [nouveau(), titre]
+            ordre.append(tag)
+        elif not tout[tag][1]:
+            tout[tag][1] = titre
+        verser(tout[tag][0], appareils, fils, bouts)
+    fichiers['WD-TOUT.xml'] = [ecrit(tout[t][0], t, tout[t][1]) for t in ordre]
     if not schema:      # sans schéma : seulement les attributs de l'essai du bureau
         filtre = lambda e, a: {k: v for k, v in a.items() if k in SURS[e]}
         fichiers = {n: [(filtre('WireHarness', h), [(filtre('ConnectiveDevice', a), p) for a, p in ap], fi, bo) for h, ap, fi, bo in hs] for n, hs in fichiers.items()}
@@ -193,7 +236,8 @@ def verifier(dossier, P, schema):
         return f'{dossier} : ABSENT'
     att = attendu(P, schema)
     presents = sorted(n for n in os.listdir(chemin) if n.endswith('.xml'))
-    valides = ascii_ = interdits = sans_broche = doublons = hors_essai = 0
+    valides = ascii_ = interdits = sans_broche = doublons = hors_essai = shield = pn_equipement = 0
+    harnais_tout = -1
     nb = {k: [0, 0] for k in ('appareils', 'broches', 'fils', 'bouts')}
     ecarts, aech = [], [0, 0]
     for n in presents:
@@ -208,8 +252,12 @@ def verifier(dossier, P, schema):
             if not schema and e.tag in SURS: hors_essai += sum(1 for a in e.attrib if a not in SURS[e.tag])
         if (racine.get('EDB_InstanceID'), racine.get('XSDversion'), racine.get('LengthUnit')) != ('1', '3.10', 'millimeter'):
             ecarts.append(f'{n} : racine {dict(racine.attrib)}')
+        if n == 'WD-TOUT.xml': harnais_tout = len(hs)
         for h, ap, fi, bo in hs:
             broches = {a['Tag']: p for a, p in ap}
+            shield += sum(1 for w in fi if w.get('Type') == 'Shield')
+            pn_equipement += sum(1 for a, p in ap if a.get('Type') == 'Equipment' and a.get('PartNumber')
+                                 and any(b.get('ParentTag') == a['Tag'] and b.get('PartNumber') for b, q in ap))
             sans_broche += sum(1 for e in bo if e.get('Pin') not in broches.get(e.get('PinParent'), []))
             doublons += (len(ap) - len(broches)) + sum(len(p) - len(set(p)) for p in broches.values())
             doublons += (len(fi) - len({w.get('Tag') for w in fi})) + (len(bo) - len({e.get('ID') for e in bo}))
@@ -236,7 +284,8 @@ def verifier(dossier, P, schema):
     manquants = [n for n in att if n not in presents]
     ecarts += [f'{n} : manquant' for n in manquants]
     s = (f'{dossier} : fichiers {len(presents)} / attendus {len(att)} ; xmllint valides {valides}/{len(presents)} ; ASCII {ascii_}/{len(presents)} ; '
-         f'WiresNumber ou Class {interdits} ; bouts sans broche {sans_broche} ; Tag en double {doublons} ; '
+         f'WiresNumber ou Class {interdits} ; bouts sans broche {sans_broche} ; Tag en double {doublons} ; WD-TOUT : {harnais_tout} WireHarness ; '
+         f'fils Shield {shield} ; PartNumber d\'un équipement dont un connecteur en a un {pn_equipement} ; '
          + ' ; '.join(f'{k} {u}/{v}' for k, (u, v) in nb.items()) + f' ; valeurs à échapper relues {aech[0]}/{aech[1]}')
     if not schema: s += f' ; attributs hors essai {hors_essai}'
     s += f' ; écarts au calcul {len(ecarts)}' + (' [' + ' / '.join(ecarts[:3]) + ']' if ecarts else '')
@@ -259,7 +308,8 @@ def essai():
             f'WiresNumber ou Class {interdits} ; essais plus de la 3.10 valides pour xmllint {sum(1 for n in plus if valide(n))}/{len(plus)} ; '
             f'bornier et masse {"/".join(types) or "aucun"}')
 
-P, V = lire(PAQUET), lire(VARIANTE)
-for dossier, paquet, schema in (('WD-paquet-exemple', P, True), ('WD-paquet-wd', V, True), ('WD-paquet-wd-refus', P, True), ('WD-paquet-wd-sans', P, False)):
+P, V, H = lire(PAQUET), lire(VARIANTE), lire(UN_HARNESS)
+for dossier, paquet, schema in (('WD-paquet-exemple', P, True), ('WD-paquet-wd', V, True), ('WD-paquet-wd-h1', H, True), ('WD-paquet-wd-refus', P, True),
+                                ('WD-paquet-wd-sans', P, False)):
     print(verifier(dossier, paquet, schema))
 print(essai())

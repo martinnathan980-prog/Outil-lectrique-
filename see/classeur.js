@@ -357,7 +357,7 @@ const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships
    comportement par défaut documenté d'Office ; pas observé ici, faute d'Excel.) */
 const LIGNES = [
   [2, 1, 'Pilote SEE', 36],
-  [3, 2, 'Avec ton projet d\'essai (même vide), jamais avec un vrai projet.', 21],
+  [3, 2, 'Cette fois : Alt+F8, puis ExporterWD (mode d\'emploi, « CETTE FOIS »), avec ton projet d\'essai, jamais un vrai projet.', 21],
   [4, 2, 'Sur ce poste, saute les étapes 1 et 2 : ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 (orange, plus bas).', 21],
   [5, 3, 'ÉTAPE 1.  Dans SEE Electrical Expert, ouvre ton projet d\'essai (même vide).', 27],
   [6, 3, 'Puis clique sur le bouton vert 1, attends le message, clique sur OK et prends la photo de la partie jaune.', 27],

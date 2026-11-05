@@ -661,37 +661,55 @@ def wd(dossier, motif):
 
 def exporter_wd():
     """INTENTION (ExporterWD, la liste de fils XML que SEE importe : see/FORMAT-WD.md). Le banc lance ExporterWD sur le
-    paquet d'exemple, Annuler, la variante v_wd.js (échappement, noms de fichier, natures, longueurs), un refus du faux
+    paquet d'exemple, Annuler, la variante v_wd.js (échappement, noms de fichier, natures, longueurs), la variante
+    v_wd_h.js (un seul harness, une masse à une broche, des Tag qui diffèrent d'un folio à l'autre), un refus du faux
     Windows (le fichier du folio 1), le schéma introuvable, un paquet illisible ; puis verifier_wd.py relit chaque
-    fichier : xmllint contre la reconstitution du schéma 3.10, et ce que le paquet demande, calculé à part du VBA.
-    Les comptes de l'exemple sont RELEVÉS (le paquet d'exemple du 5 novembre 2026)."""
+    fichier : xmllint contre la reconstitution du schéma 3.10 (l'énumération des types photographiée au bureau :
+    TerminalBlock, GroundBlock), et ce que le paquet demande, calculé à part du VBA. Les comptes de l'exemple sont
+    RELEVÉS (le paquet d'exemple du 5 novembre 2026)."""
     compte = r'fichiers (\d+) ; VALIDE (\d+) ; REFUSÉ (\d+) ; NON VÉRIFIÉ (\d+) ; PAS ÉCRIT (\d+) ; erreurs montrées (\d+) ; écarts (\d+)'
     c = [egal('export : 7 vérifications par Windows, toutes contre le schéma 3.10 (le plus haut des 3.xx : ni la 4.00, ni la 3.07, ni la 2.18)',
               nombres(r'validations (\d+) \(schéma 3\.10 : (\d+)\)', 'export'), (7, 7)),
          egal('export : une fenêtre « Ouvrir », rien demandé au faux SEE (traces 0), une boîte', nombres(r'choisir (\d+) ; traces SEE (\d+) ; boîtes (\d+)', 'export'), (1, 0, 1)),
-         egal('export : 7 fichiers, 7 VALIDE, 0 REFUSÉ, 0 NON VÉRIFIÉ, 0 PAS ÉCRIT, aucune erreur montrée, rien de pas écrit tel quel', nombres(compte, 'export'), (7, 7, 0, 0, 0, 0, 0)),
+         egal('export : 7 fichiers, 7 VALIDE, 0 REFUSÉ, 0 NON VÉRIFIÉ, 0 PAS ÉCRIT, aucune erreur montrée ; 3 éléments pas écrits tel quel (les fils blindés des '
+              'folios 2, 3 et 4, écrits Normal)', nombres(compte, 'export'), (7, 7, 0, 0, 0, 0, 3)),
          egal('export : un fichier par folio (WD-<nom du folio>.xml), puis WD-TOUT.xml', dans('export', r'noms = ([^;]*?) ;'),
               'WD-1.xml,WD-2.xml,WD-3.xml,WD-4.xml,WD-5.xml,WD-6.xml,WD-TOUT.xml'),
          egal('export : aucun chemin entier dans Export_WD (le dossier par son nom)', dans('export', r'chemin entier montré (\w+)'), 'non'),
          ('export : le haut de Export_WD (la photo) : 7 VALIDE(S), le dossier « WD-paquet-exemple », le schéma 3.10, puis dans SEE sur TEST_… : File > Import > Wire List, WD-1.xml, Insert > From Wiring list',
           dans('export', r'haut = (.*?) ; boîte ='), lambda s: bool(s) and all(x in s for x in ('7 VALIDE(S)', '« WD-paquet-exemple »', 'IGE-XAO Wiring Diagram 3.10.xsd',
+              'bornier TerminalBlock, masse GroundBlock',
               "ton projet d'essai TEST_...", 'File > Import > Wire List', 'choisis WD-1.xml', 'Insert > From Wiring list'))),
          ('export : la boîte, courte : les fichiers valides, le dossier, « importe d\'abord WD-1.xml dans ton projet d\'essai TEST_… » par File > Import > Wire List, puis la photo de Export_WD',
           dans('export', r'boîte = (.*)$'), lambda s: bool(s) and all(x in s for x in ('7 VALIDE(S)', 'Dossier « WD-paquet-exemple »',
               "Importe d'abord WD-1.xml dans ton projet d'essai TEST_...", 'File > Import > Wire List', 'la feuille Export_WD'))),
          egal('annuler (la fenêtre « Ouvrir ») : rien vérifié, aucune boîte, le journal le dit', nombres(r'choisir (\d+) ; validations (\d+) ; boîtes (\d+) ; dit au journal (\d+)', 'annuler'), (1, 0, 0, 1)),
-         egal('variante : 7 fichiers VALIDE ; 16 éléments pas écrits tel quel (un renvoi et son bout, un numéro en double, une borne de prise sans côté et son bout, '
-              '4 Tag trop longs, deux noms de fichier pris, un harness en double dans WD-TOUT, un bloc absent de Blocs, un fil sans borne et ses deux bouts)',
-              nombres(compte, 'variante'), (7, 7, 0, 0, 0, 0, 16)),
+         egal('variante : 7 fichiers VALIDE ; 18 éléments pas écrits tel quel (un renvoi et son bout, un numéro en double, une borne de prise sans côté et son bout, '
+              '4 Tag trop longs, deux noms de fichier pris, un bloc absent de Blocs, un fil sans borne et ses deux bouts, les fils blindés de trois folios ; '
+              'le folio 5, nommé comme le folio 1, rejoint son harness dans WD-TOUT sans rien de renommé)',
+              nombres(compte, 'variante'), (7, 7, 0, 0, 0, 0, 18)),
          egal('variante : les noms de fichier nettoyés (2/B:"x"), le folio sans nom (F4), un nom déjà pris (-F5), « tout » (WD-TOUT est pris : -F6)',
               dans('variante', r'noms = ([^;]*?) ;'), 'WD-1.xml,WD-2_B__x_.xml,WD-3.xml,WD-F4.xml,WD-1-F5.xml,WD-tout-F6.xml,WD-TOUT.xml'),
          egal('variante : aucun chemin entier dans Export_WD', dans('variante', r'chemin entier montré (\w+)'), 'non'),
-         egal('refus (le faux Windows refuse WD-1.xml, six erreurs) : 6 VALIDE, 1 REFUSÉ, 5 erreurs montrées', nombres(compte, 'refus'), (7, 6, 1, 0, 0, 5, 0)),
+         egal('un harness (v_wd_h.js) : 7 fichiers VALIDE ; 7 éléments pas écrits tel quel (les fils blindés de trois folios ; dans WD-TOUT, 667VT21 d\'un autre '
+              'Type au folio 4, W-101 et ses deux bouts autrement écrits) ; la masse 901G, une broche, rien de renommé', nombres(compte, 'un harness'), (7, 7, 0, 0, 0, 0, 7)),
+         egal('un harness : un fichier par folio, puis WD-TOUT.xml', dans('un harness', r'noms = ([^;]*?) ;'),
+              'WD-1.xml,WD-2.xml,WD-3.xml,WD-4.xml,WD-5.xml,WD-6.xml,WD-TOUT.xml'),
+         egal('refus (le faux Windows refuse WD-1.xml, six erreurs) : 6 VALIDE, 1 REFUSÉ, 5 erreurs montrées', nombres(compte, 'refus'), (7, 6, 1, 0, 0, 5, 3)),
+         ('refus : le long message de Windows (366 caractères, celui du bureau) en morceaux de 100 caractères au plus (« erreur », puis « (suite) »)',
+          nombres(r'lignes « \(suite\) » (\d+) ; plus longue ligne d\'erreur ou d\'écart (\d+)', 'refus'), lambda v: bool(v) and v[0] >= 3 and 0 < v[1] <= 100),
+         ('export, variante, un harness : chaque ligne d\'écart de 100 caractères au plus (« quoi : détail » en morceaux, lisibles sur une photo)',
+          lambda t: [nombres(r'plus longue ligne d\'erreur ou d\'écart (\d+)', p)(t) for p in ('export', 'variante', 'un harness')],
+          lambda v: all(x is not None and 0 < x <= 100 for x in v)),
+         ('utilisateur (le paquet sous …/Users/utilisateur-banc/Bureau, un refus) : ni le journal, colonne Objet comprise, ni Export_WD ne nomment l\'utilisateur',
+          lambda t: (nombres(r'journal qui le nomme (\d+)', 'utilisateur')(t), dans('utilisateur', r'chemin entier montré (\w+)')(t),
+                     nombres(compte, 'utilisateur')(t)), lambda v: v[0] == 0 and v[1] == 'non' and v[2] == (7, 6, 1, 0, 0, 5, 3)),
          ('refus : la boîte le dit, envoie au premier fichier valide (WD-2.xml) et dit de ne jamais importer un fichier REFUSÉ',
           dans('refus', r'boîte = (.*)$'), lambda s: bool(s) and all(x in s for x in ('1 REFUSÉ(S)', "Importe d'abord WD-2.xml", "N'importe jamais un fichier REFUSÉ"))),
-         egal('sans schéma : aucune vérification ; 7 fichiers NON VÉRIFIÉ', nombres(r'validations (\d+) \(.*?' + compte, 'sans schéma'), (0, 7, 0, 0, 7, 0, 0, 0)),
+         egal('sans schéma : aucune vérification ; 7 fichiers NON VÉRIFIÉ', nombres(r'validations (\d+) \(.*?' + compte, 'sans schéma'), (0, 7, 0, 0, 7, 0, 0, 3)),
          ('sans schéma : le haut le dit (introuvable, version 3.10, attributs de l\'essai du bureau), la boîte aussi (si SEE refuse, la photo)',
-          lambda t: partie(t, 'sans schéma'), lambda s: 'Schéma/introuvable : version 3.10, seulement les attributs de l\'essai du bureau' in s and "Windows n'a pas pu vérifier" in s),
+          lambda t: partie(t, 'sans schéma'), lambda s: 'Schéma/introuvable : version 3.10, seulement les attributs de l\'essai du bureau' in s
+              and 'bornier TerminalBlock, masse GroundBlock' in s and "Windows n'a pas pu vérifier" in s),
          ('paquet illisible : une boîte, aucune vérification', lambda t: partie(t, 'illisible'), lambda s: 'boîtes 1 ; validations 0' in s and "Le paquet n'a pas pu être lu" in s),
          egal('EssaiWD (déplacé dans SEE_WD) : un fichier d\'essai par schéma trouvé (4.00, 3.10, 3.07, 2.18), puis les essais « plus » et « plus-diagramme » '
               'pour la 3.10 (le plus haut des 3.xx), chacun vérifié', nombres(r'essai : validations (\d+) ; verdicts (\d+)', 'essai'), (6, 6)),
@@ -704,17 +722,21 @@ def exporter_wd():
               ('6', 'valide', '0')),
          egal('EssaiWD : les deux essais « plus » de la 3.10 valides pour xmllint (reconstitution) ; le bornier et la masse aux types que le schéma nomme',
               lambda t: (lambda m: m.groups() if m else None)(re.search(r'essais plus de la 3\.10 valides pour xmllint (\d+)/(\d+) ; bornier et masse (\S+)', t)),
-              ('2', '2', 'GB/TB')),
+              ('2', '2', 'GroundBlock/TerminalBlock')),
          egal('EchapperXml : & < > " \' échappés, é et € en références numériques, la tabulation en espace (« ; » lu « ~ »)',
               dans('échappement', r'échappement : (.*)$'), 'A&amp~B&lt~C&gt~&quot~D&quot~&apos~E&apos~ &#233~&#8364~ !')]
-    for d in ('WD-paquet-exemple', 'WD-paquet-wd', 'WD-paquet-wd-refus', 'WD-paquet-wd-sans'):
+    for d, harnais in (('WD-paquet-exemple', 6), ('WD-paquet-wd', 5), ('WD-paquet-wd-h1', 1), ('WD-paquet-wd-refus', 6), ('WD-paquet-wd-sans', 6)):
         c += [egal(f'{d} : les 7 fichiers attendus ; xmllint (reconstitution du schéma 3.10) 7/7 ; en ASCII 7/7',
                    wd(d, r'fichiers (\d+) / attendus (\d+) ; xmllint valides (\d+)/(\d+) ; ASCII (\d+)/(\d+)'), (7, 7, 7, 7, 7, 7)),
               egal(f'{d} : ni WiresNumber ni Class ; chaque bout de fil sur une broche de son appareil ; aucun Tag en double',
                    wd(d, r'WiresNumber ou Class (\d+) ; bouts sans broche (\d+) ; Tag en double (\d+)'), (0, 0, 0)),
-              egal(f'{d} : écrit = calculé depuis le paquet (harness, appareils et broches, fils, bouts, WD-TOUT)', wd(d, r'écarts au calcul (\d+)'), (0,))]
+              egal(f'{d} : écrit = calculé depuis le paquet (harness, appareils et broches, fils, bouts, WD-TOUT)', wd(d, r'écarts au calcul (\d+)'), (0,)),
+              egal(f'{d} : WD-TOUT, un WireHarness par harness ({harnais}) ; aucun fil Shield ; aucun PartNumber sur un équipement dont un connecteur en a un',
+                   wd(d, r'WD-TOUT : (\d+) WireHarness ; fils Shield (\d+) ; PartNumber d\'un équipement dont un connecteur en a un (\d+)'), (harnais, 0, 0))]
     c += [egal('WD-paquet-exemple : 146 appareils (54 équipements, 70 connecteurs, 9 barrettes, 13 masses), 323 broches, 210 fils, 420 bouts (RELEVÉ, = calculés)',
                wd('WD-paquet-exemple', r'appareils (\d+)/(\d+) ; broches (\d+)/(\d+) ; fils (\d+)/(\d+) ; bouts (\d+)/(\d+)'), (146, 146, 323, 323, 210, 210, 420, 420)),
+          egal('WD-paquet-wd-h1 : les mêmes comptes que l\'exemple (la masse 901G, une broche « 1 » pour ses trois morceaux)',
+               wd('WD-paquet-wd-h1', r'appareils (\d+)/(\d+) ; broches (\d+)/(\d+) ; fils (\d+)/(\d+) ; bouts (\d+)/(\d+)'), (146, 146, 323, 323, 210, 210, 420, 420)),
           ('WD-paquet-wd : les valeurs à échapper (& < > " \' é : titre, description, route, broche, PN, harness) relues à l\'identique',
            wd('WD-paquet-wd', r'valeurs à échapper relues (\d+)/(\d+)'), lambda v: bool(v) and v[0] == v[1] and v[1] > 58),
           egal('WD-paquet-wd-sans : seulement les attributs de l\'essai du bureau', wd('WD-paquet-wd-sans', r'attributs hors essai (\d+)'), (0,))]
