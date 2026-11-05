@@ -1916,7 +1916,7 @@ Public Sub EssaiWD()
     Dim attrs As Object, enfants As Object, ordre As Collection, entete As String, espace As String, cheminXml As String, version As String
     Dim erreurs As Collection, e As Variant, ok As Boolean, k As Variant, ecrit As Boolean, dossier As String, nomDossier As String
     Dim bilan As String, premier As Boolean, i As Long, j As Long, nbFils As Boolean, classe As Boolean, nomXml As String, trouves As Collection
-    Dim permis As String, requis As String
+    Dim permis As String, requis As String, typeTB As String, typeGB As String
     On Error Resume Next
     Set ws = FeuilleCreee("Essai_WD", True)
     l = 1
@@ -2001,9 +2001,13 @@ Public Sub EssaiWD()
     Set attrs = NouveauDico()
     Set enfants = NouveauDico()
     Set ordre = New Collection
-    AnalyserXSD TexteDeFichier(CStr(p)), attrs, enfants, ordre, entete
+    t = TexteDeFichier(CStr(p))
+    AnalyserXSD t, attrs, enfants, ordre, entete
     espace = AttrXml(entete, "targetNamespace")
     permis = PermisWD(attrs, enfants)
+    ' les noms des types de ConnectiveDevice : 3.10 dit TerminalBlock et GroundBlock, 2.18 disait TB et GB
+    typeTB = IIf(InStr(1, t, "value=""TerminalBlock""") > 0, "TerminalBlock", "TB")
+    typeGB = IIf(InStr(1, t, "value=""GroundBlock""") > 0, "GroundBlock", "GB")
     requis = AttributsRequis(attrs, enfants, "complexType cWireDiagram")
     l = l + 1
     EcrireLigne ws, l, Array("permis " & version, "attributs écrits", Replace(Mid$(permis, 2), "|", ", ") & " ; WireDiagram exige : " & Replace(Mid$(requis, 2), "|", ", "))
@@ -2014,7 +2018,7 @@ Public Sub EssaiWD()
             EcrireLigne ws, l, Array("VERDICT", nomXml, "PAS ÉCRIT : le schéma n'a pas de WireDiagram, ou il exige " & Replace(Mid$(requis, 2), "|", ", "))
         Else
             cheminXml = dossier & "\" & nomXml
-            ecrit = EcrireFichierTexte(cheminXml, XmlEssaiWDPlus(version, espace, permis, j = 1))
+            ecrit = EcrireFichierTexte(cheminXml, XmlEssaiWDPlus(version, espace, permis, j = 1, typeTB, typeGB))
             Set erreurs = New Collection
             ok = False
             If ecrit Then ok = ValiderXmlParXsd(cheminXml, CStr(p), espace, erreurs)
@@ -2144,9 +2148,11 @@ End Function
 ' L'essai « plus » : le faisceau ESSAI_PLUS. EQ1 (équipement, classe AC,
 ' symbole 000 / 0001 : la boîte noire vue dans SEE) et son connecteur EQ1-A ;
 ' EQ2 et EQ2-A, sans classe ; la paire en ligne P2 / J2 (MatingTag) ; P3, seul
-' ; le bornier TB1, la masse GB1, l'épissure SP1 ; six fils entre eux.
+' ; le bornier TB1, la masse GB1 (types TerminalBlock et GroundBlock en 3.x,
+' TB et GB en 2.18), l'épissure SP1 ; six fils entre eux.
 ' diagramme : un WireDiagram WD_ESSAI avant le faisceau.
-Private Function XmlEssaiWDPlus(ByVal version As String, ByVal espace As String, ByVal permis As String, ByVal diagramme As Boolean) As String
+Private Function XmlEssaiWDPlus(ByVal version As String, ByVal espace As String, ByVal permis As String, ByVal diagramme As Boolean, _
+        ByVal typeTB As String, ByVal typeGB As String) As String
     Dim s As String, w As Variant
     s = "<?xml version=""1.0"" encoding=""UTF-8""?>" & vbCrLf
     s = s & "<IGE-XAO_WIRE_HARNESS" & IIf(Len(espace) > 0, " xmlns=""" & espace & """", "") & " EDB_InstanceID=""1"" XSDversion=""" & version & _
@@ -2164,8 +2170,8 @@ Private Function XmlEssaiWDPlus(ByVal version As String, ByVal espace As String,
     s = s & DevWD("P2", "Connector", "AC", "", "Plug", "J2", "", "", "", "1;2", permis)
     s = s & DevWD("J2", "Connector", "AC", "", "Receptacle", "P2", "", "", "", "1;2", permis)
     s = s & DevWD("P3", "Connector", "AC", "", "Plug", "", "", "", "", "1;2", permis)
-    s = s & DevWD("TB1", "TB", "AC", "", "", "", "", "", "", "1;2", permis)
-    s = s & DevWD("GB1", "GB", "AC", "", "", "", "", "", "", "1", permis)
+    s = s & DevWD("TB1", typeTB, "AC", "", "", "", "", "", "", "1;2", permis)
+    s = s & DevWD("GB1", typeGB, "AC", "", "", "", "", "", "", "1", permis)
     s = s & DevWD("SP1", "Splice", "AC", "", "", "", "", "", "", "1", permis)
     s = s & "    </ConnectiveDevicesList>" & vbCrLf
     s = s & "    <WiresList>" & vbCrLf
