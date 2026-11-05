@@ -132,7 +132,7 @@ function sequencesUtf8(buf) {
 // --- les fonctions, objets et constantes de VBA / Excel que le code peut nommer sans les définir
 const BUILTINS = new Set(`abs array asc chr choose cbool cbyte ccur cdate cdbl cdec cint clng clnglng clngptr csng cstr cvar
   callbyname createobject curdir strptr date dateadd datediff day doevents environ eof err error exp filelen fix format freefile
-  filecopy dir chdir chdrive timeserial timevalue vbdirectory vbhidden vbsystem vbnormal vbreadonly getattr mkdir
+  filecopy dir chdir chdrive timeserial timevalue vbdirectory vbhidden vbsystem vbnormal vbreadonly getattr mkdir lof
   getobject hex hour iif instr instrrev int isarray isdate isempty iserror ismissing isnull isnumeric isobject join lbound lcase left len
   log ltrim mid minute month msgbox now oct rgb right rnd round rtrim second sgn sin space split sqr str strcomp
   string tan time timer trim typename ubound ucase val vartype weekday year replace inputbox filter strreverse

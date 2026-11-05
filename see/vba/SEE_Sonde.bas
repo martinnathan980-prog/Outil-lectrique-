@@ -1807,6 +1807,251 @@ End Function
 '  feuille Sonde_XML, en morceaux de 30 000 caractères (une cellule chacun,
 '  dans l'ordre) : le classeur garde tout.
 ' ============================================================================
+' ============================================================================
+'  LireFormatWD (Alt+F8) : le format de la liste de fils XML (WD) que SEE
+'  importe par Fichier > Import > Wire List. SEE la valide avec un schéma XSD
+'  livré dans ..\See_Soft\Param\XSD\. Lecture du disque seulement, sans SEE.
+'  Feuille Format_WD : les schémas et les XML trouvés sous IGE+XAO, puis, pour
+'  chaque schéma retenu (WD, Wire, Harness, Cabl dans le nom), une ligne par
+'  élément ou type : ses attributs (* = obligatoire) et ses enfants.
+' ============================================================================
+Public Sub LireFormatWD()
+    Dim ws As Object, l As Long, r As Variant, dossiers As Collection, d As String, f As String, i As Long, a As Long
+    Dim xsd As Collection, xmls As Collection, p As Variant, nb As Long, retenus As Collection, n As String
+    On Error Resume Next
+    Set ws = FeuilleCreee("Format_WD", True)
+    l = 1
+    EcrireLigne ws, l, Array("Quoi", "Fichier ou contexte", "Détail", "Suite")
+    ws.Rows(1).Font.Bold = True
+    Set dossiers = New Collection
+    Set xsd = New Collection
+    Set xmls = New Collection
+    For Each r In Array("C:\Program Files (x86)\IGE+XAO", "C:\Program Files\IGE+XAO")
+        If Len(Dir$(CStr(r), vbDirectory)) > 0 Then dossiers.Add CStr(r)
+    Next r
+    i = 1
+    Do While i <= dossiers.Count And i <= 6000
+        d = dossiers.Item(i)
+        f = Dir$(d & "\*", vbDirectory Or vbHidden Or vbSystem)
+        Do While Len(f) > 0
+            If f <> "." And f <> ".." Then
+                a = 0
+                a = GetAttr(d & "\" & f)
+                If (a And vbDirectory) = vbDirectory Then
+                    dossiers.Add d & "\" & f
+                ElseIf LCase$(Right$(f, 4)) = ".xsd" Then
+                    xsd.Add d & "\" & f
+                ElseIf LCase$(Right$(f, 4)) = ".xml" And InStr(1, d, "Electrical Expert", vbTextCompare) > 0 Then
+                    n = LCase$(f)
+                    If InStr(n, "wd") > 0 Or InStr(n, "wir") > 0 Or InStr(n, "harness") > 0 Or InStr(n, "schemat") > 0 Or InStr(n, "cabl") > 0 Then xmls.Add d & "\" & f
+                End If
+            End If
+            f = Dir$()
+        Loop
+        i = i + 1
+    Loop
+    l = l + 1
+    EcrireLigne ws, l, Array("dossiers parcourus", CStr(i - 1), xsd.Count & " schéma(s) XSD, " & xmls.Count & " XML (WD, wire, harness, cabl)", "")
+    ' retenus : d'abord les schémas de SEE Electrical Expert (son dossier Param\XSD), puis les noms qui parlent de fils ;
+    ' décrits en premier (le haut de la feuille), puis les XML, puis la liste de tous les schémas
+    Set retenus = New Collection
+    For Each p In xsd
+        If InStr(1, CStr(p), "Electrical Expert", vbTextCompare) > 0 And retenus.Count < 8 Then retenus.Add CStr(p)
+    Next p
+    For Each p In xsd
+        n = LCase$(Mid$(CStr(p), InStrRev(CStr(p), "\") + 1))
+        If InStr(1, CStr(p), "Electrical Expert", vbTextCompare) = 0 And (InStr(n, "wd") > 0 Or InStr(n, "wir") > 0 Or InStr(n, "cabl") > 0) Then
+            If retenus.Count < 8 Then retenus.Add CStr(p)
+        End If
+    Next p
+    For Each p In retenus
+        l = l + 1
+        EcrireLigne ws, l, Array("SCHÉMA", Mid$(CStr(p), InStrRev(CStr(p), "\") + 1), "une ligne par élément ou type : attributs (* obligatoire) ; enfants", _
+            Left$(CStr(p), InStrRev(CStr(p), "\") - 1))
+        ws.Rows(l).Font.Bold = True
+        DecrireXSD TexteDeFichier(CStr(p)), ws, l
+        If l > 1500 Then Exit For
+    Next p
+    For Each p In xmls
+        l = l + 1
+        EcrireLigne ws, l, Array("XML", Mid$(CStr(p), InStrRev(CStr(p), "\") + 1), FileLen(CStr(p)) & " o", DebutDeFichier(CStr(p), 300))
+    Next p
+    For Each p In xsd
+        l = l + 1
+        EcrireLigne ws, l, Array("XSD", Mid$(CStr(p), InStrRev(CStr(p), "\") + 1), FileLen(CStr(p)) & " o", Left$(CStr(p), InStrRev(CStr(p), "\") - 1))
+    Next p
+    ws.Columns("A:B").AutoFit
+    ws.Columns("C").ColumnWidth = 90
+    ws.Columns("C").WrapText = True
+    ws.Columns("D").ColumnWidth = 60
+    ws.Columns("D").WrapText = True
+    MontrerFeuille ws
+    Dialogue "Format_WD : " & xsd.Count & " schéma(s), " & retenus.Count & " décrit(s), " & xmls.Count & " XML." & vbCrLf & vbCrLf & _
+        "Clique sur OK, puis prends en photo TOUTE la feuille Format_WD, en descendant.", vbOKOnly + vbInformation, "Pilote SEE"
+End Sub
+
+' Un fichier texte entier (les octets tels quels : les noms de XML sont en ASCII).
+Private Function TexteDeFichier(ByVal f As String) As String
+    Dim h As Integer, b As String
+    On Error Resume Next
+    h = FreeFile
+    Open f For Binary Access Read As #h
+    b = String$(LOF(h), " ")
+    Get #h, 1, b
+    Close #h
+    TexteDeFichier = b
+End Function
+
+' Le début d'un fichier, sur une ligne.
+Private Function DebutDeFichier(ByVal f As String, ByVal n As Long) As String
+    Dim t As String
+    t = Left$(TexteDeFichier(f), n)
+    DebutDeFichier = Replace(Replace(Replace(Replace(t, vbCr, " "), vbLf, " "), vbTab, " "), Chr$(0), "")
+End Function
+
+' Un schéma XSD lu balise par balise : pour chaque élément ou type nommé, ses
+' attributs (« * » : use="required") et ses enfants (éléments, références,
+' type étendu, groupes d'attributs). Une ligne par contexte dans ws.
+Private Sub DecrireXSD(ByVal t As String, ByVal ws As Object, ByRef l As Long)
+    Dim pos As Long, fin As Long, tag As String, loc As String, pile As Collection, ctx As String, nomA As String, ferme As Boolean
+    Dim attrs As Object, enfants As Object, ordre As Collection, k As Variant, j As Long, typ As String
+    On Error Resume Next
+    Set pile = New Collection
+    Set attrs = NouveauDico()
+    Set enfants = NouveauDico()
+    Set ordre = New Collection
+    pos = InStr(1, t, "<")
+    Do While pos > 0
+        fin = InStr(pos, t, ">")
+        If fin = 0 Then Exit Do
+        tag = Mid$(t, pos, fin - pos + 1)
+        If Left$(tag, 2) = "</" Then
+            If pile.Count > 0 Then pile.Remove pile.Count
+        ElseIf Left$(tag, 2) <> "<?" And Left$(tag, 2) <> "<!" Then
+            ferme = (Right$(tag, 2) = "/>")
+            loc = NomBalise(tag)
+            ' le contexte courant : le plus proche nommé dans la pile
+            ctx = ""
+            For j = pile.Count To 1 Step -1
+                If Len(pile.Item(j)) > 0 Then
+                    ctx = pile.Item(j)
+                    Exit For
+                End If
+            Next j
+            nomA = ""
+            Select Case loc
+                Case "element"
+                    nomA = AttrXml(tag, "name")
+                    typ = AttrXml(tag, "type")
+                    If Len(nomA) > 0 Then
+                        AjouterA enfants, ordre, IIf(Len(ctx) > 0, ctx, "(racine)"), nomA & IIf(Len(typ) > 0, ":" & typ, "") & Occurrences(tag)
+                        nomA = "élément " & nomA
+                        If Not enfants.Exists(nomA) Then
+                            enfants.Add nomA, ""
+                            ordre.Add nomA
+                        End If
+                    ElseIf Len(AttrXml(tag, "ref")) > 0 Then
+                        AjouterA enfants, ordre, ctx, "ref " & AttrXml(tag, "ref") & Occurrences(tag)
+                    End If
+                Case "complexType", "simpleType", "group", "attributeGroup"
+                    If Len(AttrXml(tag, "name")) > 0 Then
+                        nomA = loc & " " & AttrXml(tag, "name")
+                        If Not enfants.Exists(nomA) Then
+                            enfants.Add nomA, ""
+                            ordre.Add nomA
+                        End If
+                    ElseIf Len(AttrXml(tag, "ref")) > 0 Then
+                        AjouterA enfants, ordre, ctx, loc & " " & AttrXml(tag, "ref")
+                    End If
+                Case "attribute"
+                    If Len(AttrXml(tag, "name")) > 0 Then
+                        AjouterA attrs, ordre, ctx, AttrXml(tag, "name") & IIf(AttrXml(tag, "use") = "required", "*", "") & _
+                            IIf(Len(AttrXml(tag, "type")) > 0, "(" & AttrXml(tag, "type") & ")", "")
+                    ElseIf Len(AttrXml(tag, "ref")) > 0 Then
+                        AjouterA attrs, ordre, ctx, "ref " & AttrXml(tag, "ref")
+                    End If
+                Case "extension", "restriction"
+                    If Len(AttrXml(tag, "base")) > 0 Then AjouterA enfants, ordre, ctx, loc & " de " & AttrXml(tag, "base")
+                Case "enumeration"
+                    AjouterA attrs, ordre, ctx, "=" & AttrXml(tag, "value")
+            End Select
+            If Not ferme Then pile.Add nomA
+        End If
+        pos = InStr(fin, t, "<")
+    Loop
+    For Each k In ordre
+        If Len(ListeDe(attrs, CStr(k))) > 0 Or Len(ListeDe(enfants, CStr(k))) > 0 Then
+            l = l + 1
+            EcrireLigne ws, l, Array("", CStr(k), Left$("attributs : " & ListeDe(attrs, CStr(k)), 2000), Left$("enfants : " & ListeDe(enfants, CStr(k)), 2000))
+            If l > 1500 Then Exit For
+        End If
+    Next k
+End Sub
+
+' Ajoute un texte à la liste d'un contexte (un dictionnaire de listes), le contexte noté dans l'ordre.
+Private Sub AjouterA(ByVal dico As Object, ByVal ordre As Collection, ByVal ctx As String, ByVal texte As String)
+    Dim deja As Boolean, k As Variant
+    If Len(ctx) = 0 Then ctx = "(racine)"
+    If Not dico.Exists(ctx) Then
+        dico.Add ctx, texte
+    ElseIf Len(dico.Item(ctx)) = 0 Then
+        dico.Item(ctx) = texte
+    Else
+        dico.Item(ctx) = dico.Item(ctx) & ", " & texte
+    End If
+    deja = False
+    For Each k In ordre
+        If CStr(k) = ctx Then
+            deja = True
+            Exit For
+        End If
+    Next k
+    If Not deja Then ordre.Add ctx
+End Sub
+
+' La liste d'un contexte dans un dictionnaire de listes ("" s'il n'y en a pas).
+Private Function ListeDe(ByVal dico As Object, ByVal k As String) As String
+    If dico.Exists(k) Then ListeDe = CStr(dico.Item(k))
+End Function
+
+' Le nom local d'une balise : « <xs:element name=... » -> « element ».
+Private Function NomBalise(ByVal tag As String) As String
+    Dim s As String, i As Long
+    s = Mid$(tag, 2)
+    For i = 1 To Len(s)
+        If InStr(" />" & vbTab & vbCr & vbLf, Mid$(s, i, 1)) > 0 Then Exit For
+    Next i
+    s = Left$(s, i - 1)
+    If InStr(s, ":") > 0 Then s = Mid$(s, InStr(s, ":") + 1)
+    NomBalise = s
+End Function
+
+' La valeur d'un attribut d'une balise XML (guillemets doubles ou simples).
+Private Function AttrXml(ByVal tag As String, ByVal nom As String) As String
+    Dim p As Long, q As String, f As Long
+    p = InStr(1, tag, " " & nom & "=")
+    If p = 0 Then p = InStr(1, tag, vbTab & nom & "=")
+    If p = 0 Then p = InStr(1, tag, vbLf & nom & "=")
+    If p = 0 Then Exit Function
+    p = p + Len(nom) + 2
+    q = Mid$(tag, p, 1)
+    If q <> """" And q <> "'" Then Exit Function
+    f = InStr(p + 1, tag, q)
+    If f > p Then AttrXml = Mid$(tag, p + 1, f - p - 1)
+End Function
+
+' minOccurs / maxOccurs d'un élément, en clair : « [0..n] ».
+Private Function Occurrences(ByVal tag As String) As String
+    Dim mi As String, ma As String
+    mi = AttrXml(tag, "minOccurs")
+    ma = AttrXml(tag, "maxOccurs")
+    If Len(mi) = 0 And Len(ma) = 0 Then Exit Function
+    If Len(mi) = 0 Then mi = "1"
+    If Len(ma) = 0 Then ma = "1"
+    If ma = "unbounded" Then ma = "n"
+    Occurrences = "[" & mi & ".." & ma & "]"
+End Function
+
 Public Sub SondeMethodes()
     Dim env As Object, types As Variant, noms As Variant, i As Long, v As Variant, texte As String
     Dim fichier As String, ok As Boolean, dossier As String, wsX As Object, ligneX As Long, avant As Long, ouX As String
