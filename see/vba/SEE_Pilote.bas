@@ -351,7 +351,7 @@ Public Sub EssaiSansFenetre()
     ' 5 bis. le projet protégé ? l'environnement attaché au projet (OpenEnvironmentForProject), avant de créer
     PreparerProjet3 prj, chemin
     ' 5 ter. le diagnostic complet, niveau par niveau (feuille Diagnostic)
-    DiagnosticComplet prj
+    DiagnosticComplet prj, chemin
     ' 6. le dessin
     DessinerSansFenetre prj, nomFolio
     ' 7. l'enregistrement
@@ -686,7 +686,7 @@ End Sub
 '  sous-groupes d'essai sont supprimés si SEE le permet. Aucune erreur n'en
 '  sort.
 ' ============================================================================
-Private Sub DiagnosticComplet(ByVal prj As Object)
+Private Sub DiagnosticComplet(ByVal prj As Object, ByVal chemin As String)
     Dim g As Object, c As Object, sg As Object, x As Object, env As Object, envOuvert As Boolean, fam As Object, tb As Object, pt As Object
     Dim sh As Object, s As String, numErr As Long, descErr As String, forme As String, refus As String, v As Variant, nb As Long
     Dim nomDiag As String, rien As Object, nouveau As Object, sh01 As Object, i As Long
@@ -906,6 +906,9 @@ Suivant:
     End If
     ' --- 6. ce qui est installé (lecture du disque)
     DiagInstalle
+    DiagChercher
+    ' --- 7. les voies par FICHIER (méthodes du projet qui prennent un chemin, sans CreateObject)
+    DiagVoiesFichier prj, chemin
     ' l'environnement ouvert ici est refermé ici
     If envOuvert Then
         Err.Clear
@@ -1029,6 +1032,138 @@ Private Sub DiagInstalle()
         End If
     Next p
 End Sub
+
+' 6 bis. Les fichiers utiles autour de SEE (lecture du disque) : schémas
+' XSD, fichiers SLF, macros, générateurs (ADG, mode batch, Generative View),
+' sous les dossiers IGE+XAO. Au plus 4000 dossiers, 6 chemins par motif.
+Private Sub DiagChercher()
+    Dim dossiers As Collection, d As String, f As String, i As Long, m As Variant, motifs As Variant, cle As String
+    Dim nb As Object, ex As Object, r As Variant, a As Long
+    On Error Resume Next
+    motifs = Array(".xsd", ".slf", "slf.mdb", "auto_mac", ".mvb", ".bas", "batchmode", "xmlsheetgenerator", "generativeview", "adg", "macro")
+    Set nb = NouveauDico()
+    Set ex = NouveauDico()
+    Set dossiers = New Collection
+    For Each r In Array("C:\Program Files (x86)\IGE+XAO", "C:\Program Files\IGE+XAO", "C:\IGE+XAO", "C:\ProgramData\IGE+XAO")
+        If Len(Dir$(CStr(r), vbDirectory)) > 0 Then dossiers.Add CStr(r)
+    Next r
+    If dossiers.Count = 0 Then
+        DiagLigne "6 Installé", "dossiers IGE+XAO", "absents", "ni Program Files, ni C:\IGE+XAO, ni ProgramData"
+        Exit Sub
+    End If
+    i = 1
+    Do While i <= dossiers.Count And i <= 4000
+        d = dossiers.Item(i)
+        f = Dir$(d & "\*", vbDirectory Or vbHidden Or vbSystem)
+        Do While Len(f) > 0
+            If f <> "." And f <> ".." Then
+                a = 0
+                a = GetAttr(d & "\" & f)
+                If (a And vbDirectory) = vbDirectory Then
+                    dossiers.Add d & "\" & f
+                Else
+                    For Each m In motifs
+                        If InStr(1, LCase$(f), CStr(m)) > 0 Then
+                            cle = CStr(m)
+                            nb(cle) = nb(cle) + 1
+                            If nb(cle) <= 6 Then ex(cle) = ex(cle) & IIf(Len(ex(cle)) > 0, " | ", "") & d & "\" & f
+                        End If
+                    Next m
+                End If
+            End If
+            f = Dir$()
+        Loop
+        i = i + 1
+    Loop
+    DiagLigne "6 Installé", "dossiers IGE+XAO parcourus", "OK", (i - 1) & " dossier(s) à partir de " & dossiers.Item(1)
+    For Each m In motifs
+        cle = CStr(m)
+        DiagLigne "6 Installé", "fichiers « " & cle & " »", IIf(nb(cle) > 0, nb(cle) & " trouvé(s)", "aucun"), ex(cle)
+    Next m
+End Sub
+
+' 7. Les voies par FICHIER : ce que SEE sait écrire (ExtractData, dans un
+' dossier Extractions_... à côté du projet d'essai) et ce qu'il accepte en
+' entrée, éprouvé avec un fichier ABSENT (le message dit le type géré, le
+' fichier ou la licence) : ImportData, ImportWireList,
+' ExecuteADGGenerationFile, ExecuteSLFFile. Rien n'est importé.
+Private Sub DiagVoiesFichier(ByVal prj As Object, ByVal chemin As String)
+    Dim dossier As String, sortie As String, t As Long, f As String, v As Variant, lg As String, vx As Variant, absent As String, s As String, n As Long
+    On Error Resume Next
+    dossier = Left$(chemin, InStrRev(chemin, "\"))
+    sortie = dossier & "Extractions_" & Format$(Now, "yyyymmdd_hhnnss")
+    MkDir sortie
+    DiagLigne "7 Fichiers", "dossier des extractions", IIf(Len(Dir$(sortie, vbDirectory)) > 0, "OK", "PAS créé"), Mid$(sortie, Len(dossier) + 1) & " (à côté du projet)"
+    For t = 1 To 12
+        f = sortie & "\type" & t & ".xml"
+        v = Empty
+        Err.Clear
+        v = prj.ExtractData(t, f)
+        DiagNote "7 Fichiers", "ExtractData(" & t & ") : SEE écrit-il un fichier ?", Err.Number, Err.Description, "rendu : " & DiagValeur(v) & " ; " & DiagFichier(f)
+    Next t
+    s = ""
+    n = 0
+    f = Dir$(sortie & "\*")
+    Do While Len(f) > 0 And n < 30
+        n = n + 1
+        s = s & IIf(n > 1, ", ", "") & f & " (" & FileLen(sortie & "\" & f) & " o)"
+        f = Dir$()
+    Loop
+    DiagLigne "7 Fichiers", "fichiers écrits dans le dossier des extractions", n & " fichier(s)", s
+    absent = sortie & "\absent.xml"
+    For t = 1 To 12
+        v = Empty
+        Err.Clear
+        v = prj.ImportData(t, absent)
+        DiagNote "7 Fichiers", "ImportData(" & t & ", fichier absent)", Err.Number, Err.Description, "rendu : " & DiagValeur(v)
+    Next t
+    vx = absent
+    Err.Clear
+    prj.ImportWireList vx, False, False
+    DiagNote "7 Fichiers", "ImportWireList(fichier absent)", Err.Number, Err.Description, ""
+    lg = ""
+    Err.Clear
+    prj.ExecuteADGGenerationFile absent, lg
+    DiagNote "7 Fichiers", "ExecuteADGGenerationFile(fichier absent)", Err.Number, Err.Description, "journal : " & Left$(lg, 200)
+    v = Empty
+    Err.Clear
+    v = prj.ExecuteSLFFile(sortie & "\absent.ini")
+    DiagNote "7 Fichiers", "ExecuteSLFFile(fichier absent)", Err.Number, Err.Description, "rendu : " & DiagValeur(v)
+    v = Empty
+    Err.Clear
+    v = prj.GetWDXMLFullPath()
+    DiagNote "7 Fichiers", "GetWDXMLFullPath (la liste de câblage XML du projet)", Err.Number, Err.Description, DiagValeur(v)
+End Sub
+
+' Une valeur rendue par SEE, en clair et courte.
+Private Function DiagValeur(ByVal v As Variant) As String
+    On Error Resume Next
+    If IsObject(v) Then
+        DiagValeur = "objet " & TypeName(v)
+    ElseIf IsEmpty(v) Then
+        DiagValeur = "rien"
+    Else
+        DiagValeur = Left$(CStr(v), 120)
+    End If
+End Function
+
+' Un fichier écrit par SEE : sa taille et son début (les balises disent le format).
+Private Function DiagFichier(ByVal f As String) As String
+    Dim h As Integer, b As String, n As Long
+    On Error Resume Next
+    If Len(Dir$(f)) = 0 Then
+        DiagFichier = "pas de fichier"
+        Exit Function
+    End If
+    n = FileLen(f)
+    h = FreeFile
+    Open f For Binary Access Read As #h
+    b = String$(IIf(n < 240, n, 240), " ")
+    Get #h, 1, b
+    Close #h
+    b = Replace(Replace(Replace(b, vbCr, " "), vbLf, " "), Chr$(0), "")
+    DiagFichier = "FICHIER " & n & " o : " & b
+End Function
 
 ' 5 bis. Avant de créer : le projet est-il protégé (IsProjectProtected, en
 ' lecture) ? Puis l'environnement ATTACHÉ au projet, OpenEnvironmentForProject
