@@ -3182,9 +3182,6 @@ function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.
    de la LPA : son CSV en sort avec les références de la LPA (08-nomenclature, `exporterSuiviLPA`), le nom du fichier
    ne change pas ; l'ancien relevé (09, `suiviDuContrat`) reste au moteur. */
 function exporterSuivi() { exporterSuiviLPA(); }
-function exporterSuiviAncien() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || ''); if (!L.length) return;
-  telecharger(new Blob(['\ufeff' + csvDuSuivi(L)], { type: 'text/csv;charset=utf-8' }), nomContrat() + '-suivi.csv');
-}
 function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); dire('Folio enregistré : ' + nomAscii(nomFolio() + '.svg')); }
 function exporterPNG() { const S = svgDuFolio(); if (!S) return;
   const k = Math.max(1, Math.min(3, 12e6 / Math.max(1, S.w * S.h))); const img = new Image();

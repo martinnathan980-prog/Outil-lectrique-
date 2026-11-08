@@ -2245,6 +2245,31 @@ body.biblio #toast:not(.on){transform:translateX(-50%) translateY(8px) scale(.98
 .vr-be-corps p{margin:10px 0 0;font:400 var(--f-13)/1.68 var(--sans);color:var(--t-2);max-width:100ch;text-wrap:pretty}
 .vr-be-corps b{color:var(--t-1);font-weight:600}
 .vr-be-corps .btn.lien{vertical-align:baseline}
+/* LE CHEMIN, au trait (chapitre 1, passe 87 : un schéma sobre à la place du cuisinier) : quatre étapes sur le papier, le
+   cuivre seul accent — le numéro, les flèches, et l'étape qu'on regarde (survolée, dans le schéma ou dans la liste, ou ouverte) */
+.vr-svg .vr-flux-e{cursor:pointer}
+.vr-svg .vr-flux-cadre{fill:#fff;stroke:#d2d2d7;stroke-width:1.2;transition:stroke var(--d-rapide) var(--courbe)}
+.vr-svg .vr-flux-n{fill:#fff;stroke:#a9581f;stroke-width:1.3}
+.vr-svg .vr-flux-nt{font-size:12px;font-weight:600;fill:#a9581f}
+.vr-svg .vr-flux-ico{fill:none;stroke:#1d1d1f;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:stroke var(--d-rapide) var(--courbe)}
+.vr-svg .vr-flux-ico *{vector-effect:non-scaling-stroke}
+.vr-svg .vr-flux-e.on .vr-flux-cadre,.vr-svg .vr-flux-e.on .vr-flux-ico{stroke:#a9581f}
+/* ses étapes, 1, 2, 3, 4 : une ligne chacune — le numéro au cuivre, le nom, la phrase — qui se déplie */
+.vr-etapes{list-style:none;margin:0;padding:0;border-top:1px solid var(--s-line)}
+.vr-etapes>li{border-bottom:1px solid var(--s-line)}
+.vr-etape>summary{display:flex;align-items:flex-start;gap:14px;padding:12px 10px 12px 6px;border-radius:var(--r-1);list-style:none;cursor:pointer;transition:background var(--d-rapide) var(--courbe)}
+.vr-etape>summary::-webkit-details-marker{display:none}
+.vr-etape>summary:hover,.vr-etape.on>summary{background:var(--s-hover)}
+.vr-etape-n{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;box-shadow:inset 0 0 0 1.3px var(--nv-cuivre);color:var(--nv-cuivre);font:600 var(--f-12)/1 var(--sans)}
+.vr-etape-t{flex:1;min-width:0;padding-top:2px;font:400 var(--f-14)/1.55 var(--sans);color:var(--t-2);text-wrap:pretty}
+.vr-etape-t b{color:var(--t-1);font-weight:600}
+.vr-etape>summary::after{content:"";flex:none;width:6px;height:6px;margin:8px 4px 0;border-right:1.6px solid var(--t-3);border-bottom:1.6px solid var(--t-3);transform:rotate(45deg);transition:transform var(--d-rapide) var(--courbe)}
+.vr-etape[open]>summary::after{transform:translateY(3px) rotate(-135deg)}
+.vr-etape-plus{padding:2px 34px 16px 44px;animation:entre var(--d-moyen) var(--courbe-entree) both;--entre-y:-4px}
+.vr-etape-plus p{margin:0 0 8px;font:400 var(--f-14)/1.62 var(--sans);color:var(--t-2);max-width:74ch;text-wrap:pretty}
+.vr-etape-plus p:last-child{margin-bottom:0}
+.vr-etape-plus b{color:var(--t-1);font-weight:600}
+.vr-etape-plus .btn.lien{vertical-align:baseline}
 /* l'encart « sur ce PC » : ce que la base gardée change, et le lien vers ses lignes */
 .vr-encart{margin:14px 0 0!important;padding:12px 14px;border-radius:var(--r-2);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);color:var(--t-1)!important}
 /* à l'étroit : le sommaire passe au-dessus, en puces ; les points sur une colonne */
@@ -2258,7 +2283,7 @@ body.biblio #toast:not(.on){transform:translateX(-50%) translateY(8px) scale(.98
 body.fiche-ouverte:has(#fiche[data-mode="comprendre"]) #folios{visibility:hidden}
 body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-souffle{animation-play-state:paused}
 body:has(#fiche[data-mode="comprendre"]:not([hidden])) #table .ta-lueur{display:none}
-@media (prefers-reduced-motion:reduce){ .vr-ch.vise .vr-num,.vr-be-corps{animation:none} }
+@media (prefers-reduced-motion:reduce){ .vr-ch.vise .vr-num,.vr-be-corps,.vr-etape-plus{animation:none} }
 /* LE LIEN DU « ? » : au pied de la bulle (08-sections), la page qui dit comment Volta réfléchit */
 /* le lien « Comprendre → » dans la ligne du titre de la bulle : à droite, sans grandir la ligne (20 px ; le bouton en fait
    28, ses marges négatives le rentrent) ; un titre long le fait passer dessous, toujours à droite */
@@ -10035,8 +10060,8 @@ svg.vu-face text.pris{fill:#fff}
             </div>
             <div class="menu-bloc" role="group" aria-label="Tout le plan" data-groupe="contrat">
               <button role="menuitem" data-act="dossierpdf" data-aide="Tous les folios en A3 avec leur cartouche, une page de garde (ce qui reste à reprendre), la LPA : un PDF vectoriel que VOLTA sait relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l4 4v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M16 3v4h4M4 7v13a1 1 0 0 0 1 1h11M10.5 11h6M10.5 14.5h6"/></svg><span class="menu-l">Dossier PDF, tous les folios</span></button>
-              <button role="menuitem" data-act="suivi" data-aide="Une ligne par pièce posée — barrette, prise, connecteur — avec sa référence, ses contacts et ses câbles, en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg><span class="menu-l">Suivi de fabrication (CSV)</span></button>
-              <button role="menuitem" data-act="nomenclaturecsv" data-aide="La LPA du plan entier — contacts, modules, connecteurs, câbles —, en CSV, sans l’ouvrir."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">LPA en CSV</span></button>
+              <button role="menuitem" data-act="suivi" data-aide="La LPA et son Suivi de fabrication (qui pose quoi et où), en un classeur : une feuille chacun, les mêmes références."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg><span class="menu-l">LPA et Suivi, en Excel</span></button>
+              <button role="menuitem" data-act="nomenclaturecsv" data-aide="La LPA du plan entier — contacts, obturateurs, modules, connecteurs, câbles —, en CSV, sans l’ouvrir."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">LPA en CSV</span></button>
             </div>
           </div>
           <!-- PLUS : sans fichier (coller, l'exemple), ce qui juge (la bible, les normes, les hypothèses), le cartouche. Plus
@@ -33742,10 +33767,6 @@ function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.
    de la LPA : son CSV en sort avec les références de la LPA (08-nomenclature, `exporterSuiviLPA`), le nom du fichier
    ne change pas ; l'ancien relevé (09, `suiviDuContrat`) reste au moteur. */
 function exporterSuivi() { exporterSuiviLPA(); }
-function exporterSuiviAncien() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || ''); if (!L.length) return;
-  telecharger(new Blob(['\ufeff' + csvDuSuivi(L)], { type: 'text/csv;charset=utf-8' }), nomContrat() + '-suivi.csv');
-  // (v86, l'audit F3) chaque enregistrement dit le nom du fichier : VOLTA ne sait pas où le navigateur le range
-  dire('Suivi enregistré : ' + nomContrat() + '-suivi.csv — ' + pluriel(L.length, 'ligne') + '.'); }
 function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); dire('Folio enregistré : ' + nomAscii(nomFolio() + '.svg')); }
 function exporterPNG() { const S = svgDuFolio(); if (!S) return;
   const k = Math.max(1, Math.min(3, 12e6 / Math.max(1, S.w * S.h))); const img = new Image();
