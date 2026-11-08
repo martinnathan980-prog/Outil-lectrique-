@@ -87,6 +87,9 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
 - 8 novembre 2026, passe 1 : les disjoncteurs se jugent à **125 °C** (gardé) ; **une seule ambiante** pour tout le plan
   (gardée) ; dans une prise, **la lettre répond toujours à la même lettre** (G face à G : VOLTA signale tout écart) ; un
   connecteur fourni : **l'arrangement se lit dans sa référence**, sinon « déduit des bornes, à vérifier ».
+- 8 novembre 2026, passe 1 : « Comment VOLTA réfléchit » devient **un schéma sobre** (plus de cuisinier) ; la pastille
+  « VOLTA peaufine encore… » **se tait** ; Alt+← ramène **la fiche d'avant, d'où qu'elle vienne** ; le **Suivi de
+  fabrication entre dans la LPA** (un onglet).
 
 ## La mesure de la lecture des documents (passe 1, documents inventés, `node tests/lecture-documents.js`)
 
@@ -99,6 +102,11 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
 
 Les causes, dans l'ordre : les barrettes (module + lettre), les renvois entre folios, des symboles lus comme des fils, les
 boîtes en tirets, les masses en râteau, les cartouches en anglais, les tableaux et les phrases, les scans.
+
+**La forme de ses vrais schémas** (le lecteur, 8 novembre 2026) : des numéros de fil **parfois** ; un renvoi s'écrit **folio
+et zone** (« F5/C3 ») ; une barrette se dessine en **pastilles sur un pointillé** ; le folio **recommence à 1 à chaque plan** ;
+les relais et les disjoncteurs ont **leur symbole dessiné dans la boîte** ; des masses **à trois barres** ; des boîtes
+**pleines** ; des cartouches **en français** ; des scans **de toute qualité**. Les documents inventés se refont à cette forme.
 
 ## Journal des passes
 
