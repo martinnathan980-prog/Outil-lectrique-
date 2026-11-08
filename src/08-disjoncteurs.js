@@ -953,7 +953,7 @@ function jugementDuFil(f, cal) { const r = [];
   if (f.verdict === 'fil') r.push(`trop fin pour ${f.pire.nom}`);
   // (v87, Q3) la protection en une phrase : la plus sévère des deux règles, et laquelle décide
   const pm = protectionEnMots(f, cal);
-  if (pm) r.push('pas protégé : ' + pm);
+  if (pm) r.push('pas protégé — ' + pm);
   else if (f.protege === false && f.pireLaisse && f.verdict !== 'fil') { const x = f.pireLaisse; r.push(`pas protégé : le ${amperes(cal)} laisse passer ${amperes1(x.courant)} ${pourPalier(x.palier)}, ${f.jugeSur === 'dommage' ? 'il s’abîme au-delà de' : 'il n’admet que'} ${amperes1(x.admise)}`); }
   // (v87, S7) le contact : quand c'est la gauge qui le borne et que le câble a déjà son point, la gauge plus forte règle les deux — rien
   // de plus ; sinon, la taille qui suffit, ou « la gauge limite »

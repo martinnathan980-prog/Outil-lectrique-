@@ -59,10 +59,12 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
         const pns = partNumbersDuRepere(r, V); if (pns.length > 1) ko(r, `porte deux part numbers : ${pns.map(p => p.pn + ' (' + p.cables.join(', ') + ')').join(' ; ')}`, { genre: 'pn', pns: pns.map(p => p.pn) }); }
       if (barretteEnModules(r)) { const Q = planDeBarrette(r).plan, n = Q.fils.filter(x => x.jaugeOk === false).length; noter(r, Q.fils);
         Q.verdicts.filter(v => v.niveau === 'ko').forEach(v => ko(r, v.texte)); if (n) ko(r, pluriel(n, 'câble') + ' refusé' + (n > 1 ? 's' : '') + ' par son contact'); }
+      // (passe 87) un écart de lettres entre les deux parties d'une prise (09, `faceDesParties`) porte son genre et son câble
       else if (coupureEnModules(r)) { const Q = planDeCoupure(r).plan; noter(r, Q.fils);
-        Q.verdicts.forEach(v => { if (v.niveau === 'ko') ko(r, v.texte); else if (v.niveau === 'attention') att(r, v.texte); }); }
-      // une cavité : ses problèmes, et ses remarques — sauf les deux fils sur un contact, que la barrette à poser dit déjà
-      else if (!estBornier(r)) cavitesDe(r).forEach(c => { noter(r, c.plan.fils); c.plan.verdicts.forEach(v => { if (v.niveau === 'ko') ko(r, c.nom + ' · ' + v.texte); else if (v.niveau === 'attention' && !/^contact \S+ : \d+ câbles/.test(v.texte)) att(r, c.nom + ' · ' + v.texte); }); });
+        Q.verdicts.forEach(v => { if (v.niveau === 'ko') ko(r, v.texte); else if (v.niveau === 'attention') att(r, v.texte, { ...(v.genre ? { genre: v.genre } : {}), ...(v.cables ? { cables: v.cables } : {}) }); }); }
+      // une cavité : ses problèmes, et ses remarques — sauf les deux fils sur un contact, que la barrette à poser dit déjà ;
+      // (passe 87) la référence d'un connecteur fourni qui nomme un arrangement sans toutes ses bornes : une écriture du fichier à vérifier
+      else if (!estBornier(r)) cavitesDe(r).forEach(c => { noter(r, c.plan.fils); c.plan.verdicts.forEach(v => { if (v.niveau === 'ko') ko(r, c.nom + ' · ' + v.texte); else if (v.niveau === 'attention' && !/^contact \S+ : \d+ câbles/.test(v.texte)) att(r, c.nom + ' · ' + v.texte, v.genre ? { genre: v.genre } : undefined); }); });
     } catch (_) { } });
   /* LA SÉGRÉGATION (le lecteur, v74) : la route d'un câble (colonne H : 1MO, 2HO…) — impair à gauche de l'hélicoptère, pair
      à droite. Mélanger gauche et droite sur un même connecteur, un même module de barrette ou un même côté d'une prise de
@@ -424,8 +426,8 @@ function gesteDuGenre(g) { const xs = g.lignes.flatMap(l => l.xs);
   if (g.genre === 'casse') { const ps = xs.filter(x => x.casse); if (!ps.length) return null;
     return { mot: ps.length > 1 ? 'Les écrire pareil partout' : 'Écrire ' + ps[0].casse.cible + ' partout', aide: 'Chaque repère s’écrit comme VOLTA le lit, dans l’Excel corrigé — une proposition de VOLTA ; Défaire le rend', faire: () => ecrireLesReperes(ps) }; }
   if (g.genre === 'calibre' || g.genre === 'protection' || g.genre === 'pn') return { mot: 'Voir les disjoncteurs', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux qui ont quelque chose à reprendre', faire: () => ouvrirOngletFiltre('disjoncteurs', ['probleme']) };
-  // (v87) une consommation à écrire : la première, dans sa fiche — chaque ligne garde la sienne
-  if (g.genre === 'consommation') { const x = xs.find(y => y.aEcrire); return x && typeof gesteDeConsommation === 'function' ? { ...gesteDeConsommation(x.aEcrire), mot: xs.length > 1 ? 'Écrire la première' : 'Écrire la consommation de ' + x.aEcrire } : null; }
+  // (v87) une consommation à écrire : son geste quand elle est seule — à plusieurs, chaque ligne garde le sien (rien ne les écrit d'un coup)
+  if (g.genre === 'consommation') { const x = xs.length === 1 ? xs[0] : null; return x && x.aEcrire && typeof gesteDeConsommation === 'function' ? gesteDeConsommation(x.aEcrire) : null; }
   // (v86) la longueur vient du fichier : le geste mène aux câbles sans longueur, il n'écrit rien dans VOLTA
   if (g.genre === 'chute') return xs.every(x => /hypothèse/.test(x.texte)) ? { mot: 'Voir les câbles sans longueur', aide: 'Ces chutes se calculent sur des longueurs supposées : l’onglet Liaisons, les câbles sans longueur dans votre fichier', faire: () => ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout') }
     : { mot: 'Voir les câbles', aide: 'L’onglet Liaisons du récapitulatif : les liaisons à reprendre', faire: () => ouvrirOngletFiltre('liaisons', ['probleme'], null, 'tout') };

@@ -228,7 +228,7 @@ const echelleDuBloc = (b, r) => Math.min(0.5, Math.max(0.16, b.width / r.width, 
 /* NAÎTRE (v73, le moment signature n° 1 : « la carte se déplie du bloc ») : la carte ENTIÈRE part du CENTRE du bloc, à une
    échelle uniforme, et se déplie jusqu'à sa place en 340 ms (la courbe d'entrée) ; son contenu est LÀ dès la première
    image (une vignette lisible, pas une dalle blanche qui couvre les voisins) ; l'opacité monte dans le premier quart ;
-   l'ombre grandit avec elle ; les coins du bloc se serrent (160 ms) ; le fil se trace à 200 ms, en 220 ms. */
+   l'ombre grandit avec elle ; les coins du bloc se serrent (160 ms) ; le fil se trace à 200 ms, point après point, en 300 ms. */
 function naitreCarte(el, de) { if (mouvementReduit()) { dessinerLien(); lacherLeSurvol(); return; }
   const r = el.getBoundingClientRect(), box = $('ba-equip');
   // pas de fondu d'entrée de la fiche pendant qu'elle naît : la vignette se lit tout de suite
@@ -298,8 +298,14 @@ function lierLumiere(el) { const suivre = () => { LUMIERE.rq = 0; poserLumiere(e
   el.addEventListener('pointerleave', () => { LUMIERE.pos = null; if (!LUMIERE.rq) LUMIERE.rq = requestAnimationFrame(suivre); }); }
 
 /* ---- LE FIL : du bloc à la carte, une courbe fine (#carte-lien, page.html) ---------------------------------------- */
+/* (passe 87, le lecteur, planche P2 : « un pointillé discret, fin, sans lueur, qui ne se lit plus comme un câble ») : des
+   points ronds (style-z-beaute). Quand il se trace, un VOILE — un masque : le même chemin, en trait plein, qui avance —
+   découvre les points du bloc vers la carte : ils se posent l'un après l'autre, sans passer par un trait plein ; le point du
+   bout s'allume quand le voile y arrive. */
 const auBord = (r, x, y) => ({ x: Math.max(r.left, Math.min(r.left + r.width, x)), y: Math.max(r.top, Math.min(r.top + r.height, y)) });
-// `posee` : la boîte où la carte se pose (pendant qu'elle naît, le fil se trace déjà vers elle — à 200 ms, en 220 ms)
+function voileDuLien(s) { if (!s.querySelector('#cl-voile')) s.insertAdjacentHTML('afterbegin', '<defs><mask id="cl-voile" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%"><path fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"/></mask></defs>');
+  return s.querySelector('#cl-voile path'); }
+// `posee` : la boîte où la carte se pose (pendant qu'elle naît, le fil se trace déjà vers elle — à 200 ms, en 300 ms)
 function dessinerLien(trace, posee) { const s = $('carte-lien'), el = $('inspecteur'); if (!s) return;
   const b = carteFlottante() && !el.hidden && (posee || !el.classList.contains('carte-nait')) && CARTE.origine && CARTE.origine.type !== 'ecran' ? rectDeLOrigine() : null;
   if (!b) { s.classList.remove('on'); return; }
@@ -308,10 +314,16 @@ function dessinerLien(trace, posee) { const s = $('carte-lien'), el = $('inspect
   const pc = auBord({ left: c.left, top: c.top + 20, width: c.width, height: Math.max(0, c.height - 40) }, centre.x, centre.y), pb = auBord(b, pc.x, pc.y);
   const dx = pc.x - pb.x, dy = pc.y - pb.y;
   if (Math.hypot(dx, dy) < 8 || (centre.x > c.left && centre.x < c.right && centre.y > c.top && centre.y < c.bottom)) { s.classList.remove('on'); return; }
-  const t = s.querySelector('.cl-trait'); t.setAttribute('d', Math.abs(dx) >= Math.abs(dy) ? `M${pb.x},${pb.y} C${pb.x + dx / 2},${pb.y} ${pc.x - dx / 2},${pc.y} ${pc.x},${pc.y}` : `M${pb.x},${pb.y} C${pb.x},${pb.y + dy / 2} ${pc.x},${pc.y - dy / 2} ${pc.x},${pc.y}`);
+  const t = s.querySelector('.cl-trait'), d = Math.abs(dx) >= Math.abs(dy) ? `M${pb.x},${pb.y} C${pb.x + dx / 2},${pb.y} ${pc.x - dx / 2},${pc.y} ${pc.x},${pc.y}` : `M${pb.x},${pb.y} C${pb.x},${pb.y + dy / 2} ${pc.x},${pc.y - dy / 2} ${pc.x},${pc.y}`;
+  t.setAttribute('d', d); if (t.hasAttribute('mask')) voileDuLien(s).setAttribute('d', d);   // (le voile suit le fil qui bouge pendant qu'il se trace)
   const p = (k, q) => { const n = s.querySelector(k); n.setAttribute('cx', q.x); n.setAttribute('cy', q.y); }; p('.cl-bloc', pb); p('.cl-carte', pc);
   s.classList.add('on');
-  if (trace && !mouvementReduit()) { const n = t.getTotalLength(); t.animate([{ strokeDasharray: `${n} ${n}`, strokeDashoffset: n }, { strokeDasharray: `${n} ${n}`, strokeDashoffset: 0 }], { duration: 220, easing: CARTE_COURBE }); } }
+  if (trace && !mouvementReduit()) { const n = t.getTotalLength(), v = voileDuLien(s); v.setAttribute('d', d); t.setAttribute('mask', 'url(#cl-voile)');
+    // (un tracé qui en remplace un autre : la fin de l'ancien ne lève pas le voile du nouveau)
+    if (CARTE.voile) CARTE.voile.cancel();
+    const a = CARTE.voile = v.animate([{ strokeDasharray: `${n} ${n}`, strokeDashoffset: n }, { strokeDasharray: `${n} ${n}`, strokeDashoffset: 0 }], { duration: 300, easing: CARTE_COURBE });
+    a.onfinish = a.oncancel = () => { if (CARTE.voile !== a) return; CARTE.voile = null; t.removeAttribute('mask'); };
+    s.querySelector('.cl-carte').animate([{ opacity: 0 }, { opacity: 0, offset: 0.7 }, { opacity: 1 }], { duration: 300 }); } }
 function suivreLienPendant(ms) { const t0 = performance.now(); const pas = t => { dessinerLien(); if (t - t0 < ms) requestAnimationFrame(pas); }; requestAnimationFrame(pas); }
 
 /* ---- L'ÉPINGLE ------------------------------------------------------------------------------------------------------ */

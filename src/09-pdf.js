@@ -85,11 +85,13 @@ const SCHEMA_PDF = (() => {
     const echelle = () => Math.sqrt(Math.abs(ctm[0] * ctm[3] - ctm[1] * ctm[2])) || 1;
     // le chemin courant survit d'un constructPath à l'autre : pdf.js coupe parfois un chemin en deux (« m » puis « l »)
     let cur = null, u = null, depart = null;
+    // (passe 87) chaque segment sait s'il vient d'une courbe (`courbes[i]` : de pts[i-1] à pts[i]) : un arc fait de cordes
+    // seulement (l'arc d'un disjoncteur) reste un symbole, quelle que soit la longueur de ses cordes
     function construire(ops, c) { let k = 0;
-      const nouveau = p => { cur = { pts: [p], ferme: false, courbe: false }; chemin.push(cur); };
-      const vers = (x, y) => { const p = app(ctm, x, y); if (!cur) nouveau(p); else cur.pts.push(p); u = [x, y]; };
+      const nouveau = p => { cur = { pts: [p], ferme: false, courbe: false, courbes: [false] }; chemin.push(cur); };
+      const vers = (x, y) => { const p = app(ctm, x, y); if (!cur) nouveau(p); else { cur.pts.push(p); cur.courbes.push(false); } u = [x, y]; };
       const bezier = (x1, y1, x2, y2, x3, y3) => { if (!u) { vers(x3, y3); return; } const [x0, y0] = u; if (!cur) nouveau(app(ctm, x0, y0)); cur.courbe = true;
-        for (let s = 1; s <= 8; s++) { const t = s / 8, m = 1 - t; cur.pts.push(app(ctm, m * m * m * x0 + 3 * m * m * t * x1 + 3 * m * t * t * x2 + t * t * t * x3, m * m * m * y0 + 3 * m * m * t * y1 + 3 * m * t * t * y2 + t * t * t * y3)); } u = [x3, y3]; };
+        for (let s = 1; s <= 8; s++) { const t = s / 8, m = 1 - t; cur.pts.push(app(ctm, m * m * m * x0 + 3 * m * m * t * x1 + 3 * m * t * t * x2 + t * t * t * x3, m * m * m * y0 + 3 * m * m * t * y1 + 3 * m * t * t * y2 + t * t * t * y3)); cur.courbes.push(true); } u = [x3, y3]; };
       for (const o of ops) {
         if (o === O.moveTo) { u = [c[k], c[k + 1]]; depart = u; nouveau(app(ctm, c[k], c[k + 1])); k += 2; }
         else if (o === O.lineTo) { vers(c[k], c[k + 1]); k += 2; }
@@ -144,10 +146,10 @@ const SCHEMA_PDF = (() => {
       const mot = (s, o, w) => { const c = [o[0] + u[0] * w / 2 + n[0] * h * 0.35, o[1] + u[1] * w / 2 + n[1] * h * 0.35];
         const coins = [o, [o[0] + u[0] * w, o[1] + u[1] * w], [o[0] + u[0] * w + n[0] * h * 0.75, o[1] + u[1] * w + n[1] * h * 0.75], [o[0] + n[0] * h * 0.75, o[1] + n[1] * h * 0.75]];
         return { s, o, u, n, w, h, angle: Math.round(Math.atan2(u[1], u[0]) * 180 / Math.PI), c, B: boiteDe(coins) }; };
-      out.push(mot(s, o, w));
-      // une ligne de plusieurs mots : chacun, à sa place estimée (la police est supposée à chasse égale)
+      const entier = mot(s, o, w); out.push(entier);
+      // une ligne de plusieurs mots : chacun, à sa place estimée (la police est supposée à chasse égale) ; il sait sa ligne entière
       const parts = s.split(/\s+/); if (parts.length > 1 && parts.length < 8) { let k = 0; const par = w / s.length;
-        for (const p of parts) { const i = s.indexOf(p, k); out.push({ ...mot(p, [o[0] + u[0] * par * i, o[1] + u[1] * par * i], par * p.length), partie: true }); k = i + p.length; } } }
+        for (const p of parts) { const i = s.indexOf(p, k); out.push({ ...mot(p, [o[0] + u[0] * par * i, o[1] + u[1] * par * i], par * p.length), partie: true, ligne: entier }); k = i + p.length; } } }
     return out; }
   // ce qu'un mot est
   const RE_BORNE = /^(?:[A-Z]{1,2}[-.]?)?\d{1,3}[A-Z]?$|^[A-Z]{1,2}$|^[A-Z]{1,2}\d{1,2}[A-Z]$/;
@@ -157,9 +159,14 @@ const SCHEMA_PDF = (() => {
   const FLECHES = '→|->|>|▷|►|⇨|⇒|›|»|←|<-|◁|◄|⇦|⇐|‹|«', RE_FLECHE = new RegExp('^\\s*(' + FLECHES + ')'), RE_RETOUR = /^\s*(←|<-|◁|◄|⇦|⇐|‹|«)/;
   const RE_RENVOI = new RegExp('^(?:' + FLECHES + ')?\\s*(?:F(?:OLIO|°|\\.)?\\s*)?(\\d{1,3})\\s*(?:[\\/.]\\s*([A-Z]?\\d{0,2}[A-Z]?))?$', 'i');
   const RE_FIL = /^W[-_]?\d{1,5}[A-Z]?$/i;
+  // un numéro de plan (« SC-4520-320 ») : des groupes de lettres et de chiffres liés par des tirets, au moins quatre chiffres
+  const RE_PLAN = /^(?=(?:[^\d]*\d){4})[A-Z0-9]{1,6}(?:-[A-Z0-9]{1,8}){1,4}$/;
   // un repère n'a pas d'espace (« 10 A », le calibre écrit près d'un disjoncteur, n'en est pas un)
+  // (passe 87) ni un code d'une seule lettre, sauf la masse (901G) : « 51A » est le contact A du module 51 d'une barrette — la
+  // convention de VOLTA, 667VT2:51B —, « 10A » le calibre d'un disjoncteur écrit sans espace
   function estRepere(s) { if (!s || s.length < 3 || s.length > 14 || /\s/.test(s)) return false; if (VT_A_POSER.test(s)) return true;
     const q = lireRepere(s); if (!q || !q.num) return false; if (q.code.length > 4) return false;
+    if (q.code.length === 1 && !(CODES[q.code] && CODES[q.code].forme === 'masse')) return false;
     return q.num.length >= 2 || !!CODES[q.code]; }
   const estBorne = s => !!s && s.length <= 4 && RE_BORNE.test(s.toUpperCase()) && !estRepere(s);
   const estType = s => RE_TYPE.test(s);
@@ -174,11 +181,16 @@ const SCHEMA_PDF = (() => {
   function rondeur(pts) { const B = boiteDe(pts), c = [(B.x0 + B.x1) / 2, (B.y0 + B.y1) / 2], rs = pts.map(p => dist(p, c)), r = rs.reduce((a, b) => a + b, 0) / rs.length;
     const ec = Math.sqrt(rs.reduce((a, x) => a + (x - r) * (x - r), 0) / rs.length); return { c, r, ecart: r ? ec / r : 1, w: B.x1 - B.x0, h: B.y1 - B.y0 }; }
   function trier(formes, u) {
-    const traits = [], cadres = [], ronds = [], points = [], pieces = [], fleches = [], arcs = [];
+    const traits = [], cadres = [], ronds = [], points = [], pieces = [], fleches = [], arcs = [], gelules = [];
     for (const F of formes) for (const sp of F.sp) { const pts = sp.pts; if (pts.length < 2) continue;
       const B = boiteDe(pts), w = B.x1 - B.x0, h = B.y1 - B.y0, ferme = sp.ferme || (pts.length > 3 && dist(pts[0], pts[pts.length - 1]) < 0.05 * u);
       if (F.plein && !clair(F.cf)) {
         if (ferme && sp.courbe && Math.max(w, h) < 1.8 * u) { const R = rondeur(pts); if (R.ecart < 0.12 && Math.abs(w - h) < 0.25 * Math.max(w, h)) { points.push({ c: R.c, r: R.r }); continue; } }
+        // (passe 87) un TIRET à bouts ronds, peint plein (un pointillé que le PDF dessine morceau par morceau) : un morceau de pointillé
+        if (ferme && sp.courbe && Math.min(w, h) < 0.45 * u && Math.max(w, h) < 3 * u && Math.max(w, h) > 1.2 * Math.min(w, h)) { const e = Math.min(w, h), cy = (B.y0 + B.y1) / 2, cx = (B.x0 + B.x1) / 2;
+          const [a, b] = w >= h ? [[B.x0 + e / 2, cy], [B.x1 - e / 2, cy]] : [[cx, B.y0 + e / 2], [cx, B.y1 - e / 2]]; pieces.push({ a, b, L: Math.max(dist(a, b), 1e-3), e }); continue; }
+        // (passe 87) une GÉLULE pleine (un rectangle aux bouts ronds, plus large que haut) : la pastille d'une barrette où « 51A » est écrit
+        if (ferme && sp.courbe && Math.max(w, h) < 4 * u && Math.min(w, h) < 1.6 * u && Math.max(w, h) > 1.25 * Math.min(w, h)) { gelules.push({ c: [(B.x0 + B.x1) / 2, (B.y0 + B.y1) / 2], B, r: Math.min(w, h) / 2 }); continue; }
         if (ferme && !sp.courbe && (pts.length === 4 || (pts.length === 5 && dist(pts[0], pts[4]) < 0.05 * u))) { const q = pts.slice(0, 4), l1 = dist(q[0], q[1]), l2 = dist(q[1], q[2]);
           const [L, e] = l1 >= l2 ? [l1, l2] : [l2, l1]; if (e < 0.6 * u && L > 1.8 * e) { const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
             const [a, b] = l1 >= l2 ? [mid(q[0], q[3]), mid(q[1], q[2])] : [mid(q[0], q[1]), mid(q[2], q[3])]; pieces.push({ a, b, L, e }); continue; } }
@@ -189,13 +201,13 @@ const SCHEMA_PDF = (() => {
         if (sp.courbe) { arcs.push(pts); continue; } }
       // un chemin ouvert : ses segments droits sont des traits ; une courbe seule est un symbole (l'arc d'un disjoncteur) ;
       // une courbe ENTRE deux segments droits d'un même chemin, un coude arrondi : ses cordes restent des traits
-      if (sp.courbe && pts.length > 2) { let droits = 0; for (let i = 1; i < pts.length; i++) if (dist(pts[i - 1], pts[i]) > 0.6 * u) droits++; if (!droits) { arcs.push(pts); continue; } }
+      if (sp.courbe && pts.length > 2) { let droits = 0; for (let i = 1; i < pts.length; i++) if (!(sp.courbes && sp.courbes[i]) && dist(pts[i - 1], pts[i]) > 0.6 * u) droits++; if (!droits) { arcs.push(pts); continue; } }
       // les cordes minuscules d'une courbe (le pont d'un croisement) se regroupent : aucun morceau ne se perd sous la tolérance
       const q = [pts[0]]; for (let i = 1; i < pts.length; i++) if (dist(q[q.length - 1], pts[i]) > 0.15 * u || i === pts.length - 1) q.push(pts[i]);
       // un sommet au milieu d'un chemin (un coude, le haut d'un pont) n'est pas un bout libre : il ne fait pas de T
       for (let i = 1; i < q.length; i++) if (dist(q[i - 1], q[i]) > 1e-3) traits.push({ a: q[i - 1], b: q[i], lw: F.lw, tiret: !!(F.tirets && F.tirets.some(x => x > 0)), libreA: i === 1 && !ferme, libreB: i === q.length - 1 && !ferme });
       if (ferme && dist(pts[0], pts[pts.length - 1]) > 1e-3) traits.push({ a: pts[pts.length - 1], b: pts[0], lw: F.lw, tiret: !!F.tirets }); }
-    return { traits, cadres, ronds, points, pieces, fleches, arcs }; }
+    return { traits, cadres, ronds, points, pieces, fleches, arcs, gelules }; }
 
   /* Un cadre dessiné en quatre traits (certains logiciels le font) : quatre segments horizontaux et verticaux qui se
      referment. Ils sortent des traits et deviennent un cadre. */
@@ -243,6 +255,83 @@ const SCHEMA_PDF = (() => {
         out.push({ attache: s.c, dir: [-n[0] * sens, -n[1] * sens], barres: [s.i, b2.q.i, b3.q.i], B: boiteDe([traits[s.i].a, traits[s.i].b, traits[b3.q.i].a, traits[b3.q.i].b]) });
         [s.i, b2.q.i, b3.q.i].forEach(k => pris.add(k)); break; } }
     return { masses: out, restants: traits.filter((_, i) => !pris.has(i)) }; }
+
+  /* (passe 87) LES SYMBOLES DANS LES BOÎTES ne sont pas des fils (le lecteur, 8 novembre 2026 : « les relais et les disjoncteurs
+     ont leur symbole dessiné dans la boîte ») : la bobine et la lame d'un relais, le bilame ou l'arc d'un disjoncteur, la croix
+     d'un voyant — des traits qui vont du bord de la boîte au symbole, ou qui flottent dedans. Une boîte d'équipement : un cadre
+     qui n'est ni la feuille, ni le cartouche, ni une grande zone (plus de deux repères dedans), et qu'un repère nomme (écrit
+     dedans, ou contre son bord) ; un trait dont les deux bouts sont dans la boîte (son bord compris) et le milieu franchement
+     dedans en fait partie. Le fil, lui, arrive de dehors : un de ses bouts est hors de la boîte. */
+  function sansSymboles(traits, boites, u) {
+    const G = grille(4 * u), tol = 0.3 * u, gardes = [], symboles = []; boites.forEach(k => G.ajouter(k, k.x0, k.y0, k.x1, k.y1));
+    traits.forEach(t => { const m = [(t.a[0] + t.b[0]) / 2, (t.a[1] + t.b[1]) / 2];
+      const k = G.chercher(m[0], m[1], m[0], m[1]).find(k => auBord(m, k) < -tol && dedans(t.a, k, tol) && dedans(t.b, k, tol));
+      if (k) { symboles.push({ a: t.a, b: t.b, boite: k }); k.symbole = true; } else gardes.push(t); });
+    return { gardes, symboles }; }
+
+  /* (passe 87) LES BARRETTES : des PASTILLES SUR UN POINTILLÉ (le lecteur : « une barrette se dessine en pastilles sur un
+     pointillé ») — une pastille par contact : pleine, creuse, ou une gélule ; dedans, la lettre du contact, ou le module et la
+     lettre (« 51A ») ; quand elle ne dit que la lettre, le numéro du module est écrit au-dessus de sa colonne (ou à côté) ; le
+     repère de la barrette au-dessus ou au-dessous (un code VT d'abord) ; le POINTILLÉ relie les contacts d'un même groupe (une
+     même plage de métal : ils sont au même potentiel). Un contact se dit comme dans les fichiers du lecteur et dans VOLTA :
+     module + lettre, 667VT2:51B. Rend les pastilles { c, r, B (une gélule), mot, borne, repere, conf, raisons } et les groupes
+     (les pastilles d'un même pointillé, dans l'ordre où il les relie). */
+  const ETIQUETTE_PASTILLE = s => { let m = /^(\d{1,3})([A-Z]{1,2})$/.exec(s); if (m) return { module: m[1], lettre: m[2] }; if (/^[A-Z]{1,2}$/.test(s)) return { lettre: s }; if (/^\d{1,3}$/.test(s)) return { numero: s }; return null; };
+  function barrettesDe(o) { const { points, ronds, gelules, PT, GM, u } = o;
+    const dansForme = (m, f) => f.B ? dedans(m.c, f.B, 0.1 * u) : dist(m.c, f.c) < f.r * 1.15 + 0.1 * u;
+    const motDans = (f, permis) => { const R = (f.B ? Math.max(f.B.x1 - f.B.x0, f.B.y1 - f.B.y0) / 2 : f.r) + u;
+      return GM.chercher(f.c[0] - R, f.c[1] - R, f.c[0] + R, f.c[1] + R).filter(m => !m.partie && dansForme(m, f)).map(m => ({ m, e: ETIQUETTE_PASTILLE(m.s.toUpperCase()) })).filter(x => x.e && permis(x.e))
+        .sort((a, b) => dist(a.m.c, f.c) - dist(b.m.c, f.c))[0] || null; };
+    // 1. les candidates : un disque plein ou une gélule où un nom de contact est écrit ; un rond creux où une lettre (ou « 51A ») est écrite
+    const cands = [];
+    points.forEach(d => { const x = motDans(d, () => true); if (x) cands.push({ forme: 'disque', c: d.c, r: d.r, mot: x.m, e: x.e, src: d }); });
+    gelules.forEach(g => { const x = motDans(g, () => true); if (x) cands.push({ forme: 'gélule', c: g.c, r: g.r, B: g.B, mot: x.m, e: x.e, src: g }); });
+    ronds.forEach(r => { const x = motDans(r, e => !e.numero); if (x) cands.push({ forme: 'rond', c: r.c, r: r.r, mot: x.m, e: x.e, src: r }); });
+    // 2. les colonnes : les pastilles d'une même verticale, de haut en bas ; leurs grappes (une barrette), leurs modules
+    const cols = []; cands.slice().sort((a, b) => a.c[0] - b.c[0]).forEach(p => { const c = cols.find(c => Math.abs(c.x - p.c[0]) < 0.6 * u); if (c) c.ps.push(p); else cols.push({ x: p.c[0], ps: [p] }); });
+    const grappes = [];
+    cols.forEach(c => { c.ps.sort((a, b) => a.c[1] - b.c[1]); const ecarts = c.ps.slice(1).map((p, k) => p.c[1] - c.ps[k].c[1]), pas = Math.min(...ecarts.filter(e => e > 0.5 * u), 3 * u);
+      let g = null, M = null; c.ps.forEach((p, k) => { const e = k ? ecarts[k - 1] : Infinity;
+        if (e > 3.2 * pas) { g = { x: c.x, pas, modules: [], ps: [] }; grappes.push(g); M = null; }
+        if (!M || e > 1.5 * pas) { M = { ps: [] }; g.modules.push(M); }
+        M.ps.push(p); g.ps.push(p); p.module = M; p.grappe = g; }); });
+    // 3. le pointillé : les pastilles qu'un même pointillé traverse, ou qu'il relie bout à bout, sont d'un même groupe
+    const U = unions(cands.length); cands.forEach((p, i) => { p.i = i; });
+    const surLigne = [];
+    PT.forEach(t => { const L = dist(t.a, t.b); if (L < 1e-6) return; const v = [(t.b[0] - t.a[0]) / L, (t.b[1] - t.a[1]) / L];
+      const sur = cands.filter(p => { const w = [p.c[0] - t.a[0], p.c[1] - t.a[1]], s = w[0] * v[0] + w[1] * v[1], d = Math.abs(w[0] * v[1] - w[1] * v[0]), r = p.B ? Math.min(p.B.x1 - p.B.x0, p.B.y1 - p.B.y0) / 2 : p.r;
+        return d < r * 0.6 + 0.2 * u && s > -(r + 0.45 * u) && s < L + r + 0.45 * u; }).map(p => ({ p, s: (p.c[0] - t.a[0]) * v[0] + (p.c[1] - t.a[1]) * v[1] }));
+      if (!sur.length) return; sur.forEach(x => { x.p.surPointille = true; }); for (let k = 1; k < sur.length; k++) U.u(sur[0].p.i, sur[k].p.i); surLigne.push({ t, sur }); });
+    // un rond creux seul, ni dans une colonne ni sur un pointillé, n'est pas une pastille (la bobine ronde d'un relais, un moteur « M »)
+    const garde = p => p.forme !== 'rond' || p.surPointille || p.grappe.ps.filter(q => q.forme === 'rond').length >= 2;
+    const pastilles = cands.filter(garde);
+    // 4. le numéro du module (une pastille qui ne dit que sa lettre) : un nombre écrit au-dessus de sa colonne, ou à côté
+    const pris = new Set();
+    grappes.forEach(g => g.modules.forEach(M => { if (!M.ps.some(p => p.e.lettre && !p.e.module)) return; const f = M.ps[0], pas = g.pas;
+      const c = GM.chercher(g.x - 3.5 * u, f.c[1] - 2.8 * pas, g.x + 3.5 * u, f.c[1] - 0.2 * pas).filter(m => !m.partie && /^\d{1,3}$/.test(m.s) && !pris.has(m) && m.c[1] < f.c[1] - 0.2 * pas && m.c[1] > f.c[1] - 2.8 * pas && Math.abs(m.c[0] - g.x) < 3.5 * u)
+        .sort((a, b) => dist(a.c, [g.x, f.c[1] - pas]) - dist(b.c, [g.x, f.c[1] - pas]));
+      if (c[0]) { M.num = c[0]; pris.add(c[0]); } }));
+    // 5. le repère de chaque grappe : au-dessus de sa première pastille ou au-dessous de sa dernière, un code VT d'abord
+    const etiquettes = new Set(cands.map(p => p.mot));
+    grappes.forEach(g => { const h = g.ps[0].c[1], b = g.ps[g.ps.length - 1].c[1], pas = Math.min(g.pas, 1.6 * u), R = 4.5 * u;
+      const c = GM.chercher(g.x - R, h - 3.5 * pas - R, g.x + R, b + 3.5 * pas + R).filter(m => !m.partie && !etiquettes.has(m) && estRepere(m.s) && Math.abs(m.c[0] - g.x) < R)
+        .map(m => { const dy = m.c[1] < h ? h - m.c[1] : m.c[1] > b ? m.c[1] - b : 0, vt = /VT/i.test((lireRepere(m.s) || {}).code || '') || VT_A_POSER.test(m.s); return { m, d: Math.hypot(m.c[0] - g.x, dy), vt }; })
+        .filter(o => o.d < 3.5 * pas + R).sort((a, b) => (b.vt - a.vt) || a.d - b.d);
+      g.repere = c[0] ? c[0].m : null; g.vt = !!(c[0] && c[0].vt); });
+    // 6. chaque pastille : son nom de contact (module + lettre), son repère, sa confiance
+    pastilles.forEach(p => { const g = p.grappe, M = p.module, e = p.e;
+      let borne = '', dit = '', conf = 0.97;
+      if (e.module) { borne = e.module + e.lettre; dit = 'contact ' + borne + ' écrit dans sa pastille'; }
+      else if (e.lettre && M.num) { borne = M.num.s + e.lettre; dit = 'contact ' + e.lettre + ' du module ' + M.num.s + ' (le numéro écrit au-dessus de sa colonne)'; conf = 0.96; }
+      else if (e.lettre) { borne = e.lettre; dit = 'contact ' + e.lettre + ', sans numéro de module lisible'; conf = 0.55; }
+      else { borne = e.numero; dit = 'borne ' + e.numero + ' écrite dans sa pastille'; conf = 0.96; }
+      const rep = g.repere; p.borne = borne; p.repere = rep; p.moduleMot = M.num || null;
+      p.conf = conf * (rep ? (g.vt ? 1 : 0.8) : 0.4);
+      p.raisons = [dit, rep ? (g.vt ? 'barrette ' : 'repère le plus proche de la barrette : ') + rep.s : 'aucun repère pour cette barrette']; });
+    // 7. les groupes : les pastilles d'un même pointillé, dans l'ordre où il les relie
+    const groupes = new Map(); surLigne.forEach(({ sur }) => { const ps = sur.filter(x => garde(x.p)); if (ps.length < 2) return; const r = U.f(ps[0].p.i);
+      const G = groupes.get(r) || groupes.set(r, { ps: new Map() }).get(r); ps.forEach(x => { if (!G.ps.has(x.p)) G.ps.set(x.p, x.s); }); });
+    return { pastilles, groupes: [...groupes.values()].map(G => [...G.ps.keys()].sort((a, b) => a.c[1] - b.c[1] || a.c[0] - b.c[0])), mots: new Set([...pastilles.map(p => p.mot), ...pris]) }; }
 
   /* ---- LE CARTOUCHE, LE CADRE DE LA FEUILLE ---------------------------------------------------------------------- */
   const ETIQUETTES = [['titre', 'TITRE|TITLE|DÉSIGNATION|DESIGNATION|INTITULÉ'], ['numero', 'N°|NO\\.?|NUMÉRO|NUMERO|DOCUMENT|DOC\\.?|DRAWING|DWG\\.?|PLAN N°|N° DE PLAN|DESSIN N°|RÉFÉRENCE|REFERENCE|RÉF\\.?|REF\\.?'],
@@ -304,7 +393,7 @@ const SCHEMA_PDF = (() => {
 
   /* ---- 5. LES BOUTS : à quoi chaque bout de trait arrive --------------------------------------------------------- */
   function resolveur(ctx) {
-    const { mots, cadres, ronds, numerotes, masses: M, u, pointilles: PT } = ctx;
+    const { mots, cadres, ronds, pastilles, masses: M, u } = ctx;
     const GM = grille(3 * u); mots.forEach(m => GM.ajouter(m, m.B.x0, m.B.y0, m.B.x1, m.B.y1));
     const motsPres = (p, r) => GM.chercher(p[0] - r, p[1] - r, p[0] + r, p[1] + r);
     const GC = grille(4 * u); cadres.forEach(k => GC.ajouter(k, k.x0, k.y0, k.x1, k.y1));
@@ -344,6 +433,14 @@ const SCHEMA_PDF = (() => {
       return best && bd < rayon ? { m: best, d: Math.max(0, auBord(p, best.B)) } : null; }
     const repereLePlusProche = (p, r) => { const c = motsPres(p, r).filter(m => estRepere(m.s)).map(m => ({ m, d: auBord(p, m.B) })).sort((a, b) => a.d - b.d); return c[0] && c[0].d < r ? c[0] : null; };
     const renvoiPres = (p, d) => { const c = motsPres(p, 3 * u).filter(m => renvoiDe(m.s)).map(m => ({ m, d: auBord(p, m.B) })).filter(o => o.d < 2.2 * u).sort((a, b) => a.d - b.d); return c[0] || null; };
+    /* (passe 87) Le renvoi d'un dossier de plusieurs plans (le folio recommence à 1 à chaque plan) : vers un autre plan, son numéro
+       est écrit devant (« SC-4520-320 F12/B4 ») — dans la même ligne, ou juste à gauche. Le nom du signal, au-dessus. */
+    const planDuRenvoi = m => { if (m.ligne) { const t = m.ligne.s.split(/\s+/), i = t.indexOf(m.s); if (i > 0 && RE_PLAN.test(t[i - 1])) return t[i - 1]; }
+      const g = motsPres(m.c, 8 * u).filter(w => !w.partie && w !== m && w !== m.ligne && Math.abs(w.o[1] - m.o[1]) < 0.35 * m.h && w.B.x1 <= m.B.x0 + 0.2 * u && m.B.x0 - w.B.x1 < 1.6 * m.h && RE_PLAN.test(w.s)).sort((a, b) => b.B.x1 - a.B.x1)[0];
+      return g ? g.s : ''; };
+    const signalDuRenvoi = m => { const B = m.ligne ? m.ligne.B : m.B, c = motsPres([(B.x0 + B.x1) / 2, B.y0], 3 * u).filter(w => !w.partie && w !== m && w !== m.ligne && w.c[1] < B.y0 && B.y0 - w.c[1] < 2.2 * u && w.B.x1 > B.x0 - 2 * u && w.B.x0 < B.x1 + 2 * u && !renvoiDe(w.s) && !estBorne(w.s) && !estType(w.s))
+        .sort((a, b) => (B.y0 - a.c[1]) - (B.y0 - b.c[1]))[0]; return c ? c.s.replace(/\s+/g, ' ').trim() : ''; };
+    const leRenvoi = m => ({ ...renvoiDe(m.s), texte: m.ligne && planDuRenvoi(m) ? m.ligne.s : m.s, plan: planDuRenvoi(m), signal: signalDuRenvoi(m) });
 
     /* Un bout { p, d (le sens où le trait arrive) } → { repere, borne, pn, genre, conf, raisons, mots (les textes lus,
        pour les surligner) } ou null. */
@@ -353,21 +450,21 @@ const SCHEMA_PDF = (() => {
       for (const g of M) if (dist(g.attache, p) < 0.5 * u) { const nom = repereLePlusProche(g.attache, 4 * u) || null;
         const pref = nom && /G$/i.test((lireRepere(nom.m.s) || {}).code || '') ? 0.97 : nom ? 0.85 : 0.5; if (nom) vus.push(nom.m);
         return { genre: 'masse', repere: nom ? nom.m.s : 'MASSE', borne: '', pn: '', conf: pref, raisons: [nom ? 'masse ' + nom.m.s : 'masse sans repère écrit'], mots: vus, B: g.B }; }
-      // une borne de barrette : un point numéroté
-      for (const n of numerotes) if (dist(n.c, p) < n.r + 0.3 * u) { vus.push(n.mot); if (n.repere) vus.push(n.repere);
-        return { genre: 'pastille', repere: n.repere ? n.repere.s : '', borne: n.mot.s, pn: '', conf: n.repere ? 0.96 : 0.6, raisons: [n.repere ? 'borne ' + n.mot.s + ' de ' + n.repere.s + ', sur sa barrette' : 'borne de barrette sans repère'], mots: vus }; }
+      // une pastille de barrette : son contact (module + lettre), le repère de sa barrette
+      for (const n of pastilles) if (n.B ? auBord(p, n.B) < 0.35 * u : dist(n.c, p) < n.r + 0.3 * u) { vus.push(n.mot); if (n.repere) vus.push(n.repere); if (n.moduleMot) vus.push(n.moduleMot);
+        return { genre: 'pastille', repere: n.repere ? n.repere.s : '', borne: n.borne, pn: '', conf: n.conf, raisons: n.raisons.slice(), mots: vus }; }
       // un rond : la borne d'un disjoncteur
       for (const r of ronds) if (dist(r.c, p) < r.r + 0.25 * u) { const b = borneDe(r.c, null, null, 2.6 * u), rep = repereLePlusProche(r.c, 7 * u);
         if (b) vus.push(b.m); if (rep) vus.push(rep.m);
         return { genre: 'rond', repere: rep ? rep.m.s : '', borne: b ? b.m.s : '', pn: '', conf: (b ? 0.95 : 0.6) * (rep ? (rep.d < 4 * u ? 1 : 0.85) : 0.4), raisons: [b ? 'borne ronde ' + b.m.s + ', son numéro à ' + dixieme(mm(b.d)) + ' mm' : 'borne ronde sans numéro', rep ? 'repère ' + rep.m.s + ' à côté' : 'aucun repère autour'], mots: vus }; }
       // un renvoi vers un autre folio
-      const rv = renvoiPres(p, d); if (rv && !cadres.some(k => !grand(k) && auBord(p, k) < 0.3 * u && !k.mots.includes(rv.m))) { vus.push(rv.m); const r = renvoiDe(rv.m.s);
-        return { genre: 'renvoi', renvoi: { ...r, texte: rv.m.s }, repere: '', borne: '', conf: 0.9, raisons: ['renvoi ' + rv.m.s], mots: vus }; }
+      const rv = renvoiPres(p, d); if (rv && !cadres.some(k => !grand(k) && auBord(p, k) < 0.3 * u && !k.mots.includes(rv.m))) { vus.push(rv.m); const r = leRenvoi(rv.m);
+        return { genre: 'renvoi', renvoi: r, repere: '', borne: '', conf: 0.9, raisons: ['renvoi ' + r.texte], mots: vus }; }
       // un cadre touché : le plus petit dont le bord passe au bout
       const touches = GC.chercher(p[0] - 0.4 * u, p[1] - 0.4 * u, p[0] + 0.4 * u, p[1] + 0.4 * u).filter(k => !grand(k) && Math.abs(auBord(p, k)) < 0.35 * u).sort((a, b) => a.aire - b.aire);
       if (touches.length) { const k = touches[0], A = assemblage(k);
         // un renvoi dans une pastille (le jeton « ▷F3 » d'un folio découpé)
-        const rvk = k.mots.find(m => renvoiDe(m.s)); if (rvk && !repereDuCadre(k)) { vus.push(rvk); return { genre: 'renvoi', renvoi: { ...renvoiDe(rvk.s), texte: rvk.s }, repere: '', borne: '', conf: 0.9, raisons: ['renvoi ' + rvk.s], mots: vus }; }
+        const rvk = k.mots.find(m => renvoiDe(m.s)); if (rvk && !repereDuCadre(k)) { vus.push(rvk); const r = leRenvoi(rvk); return { genre: 'renvoi', renvoi: r, repere: '', borne: '', conf: 0.9, raisons: ['renvoi ' + r.texte], mots: vus }; }
         let rep = repereDuCadre(k), comment = 'repère du cadre';
         if (!rep) { const v = A.map(repereDuCadre).find(Boolean); if (v) { rep = v; comment = 'repère du cadre voisin'; } }
         if (!rep) { const v = repereQuiNomme(A); if (v) { rep = v; comment = 'repère écrit contre le cadre'; } }
@@ -436,27 +533,27 @@ const SCHEMA_PDF = (() => {
     const motsLus = mots.filter(m => !horsJeu(m.c));
     traits = traits.filter(t => !(horsJeu(t.a) && horsJeu(t.b)) && dist(t.a, t.b) > 0.04 * u);
     const { masses: M, restants } = masses(traits, u); traits = restants;
-    // les points : numérotés (une borne de barrette : un numéro écrit dedans) ou de jonction
     const GM = grille(3 * u); motsLus.forEach(m => GM.ajouter(m, m.B.x0, m.B.y0, m.B.x1, m.B.y1));
-    const numerotes = [], jonctions = [];
-    T.points.filter(d => !horsJeu(d.c)).forEach(d => { const m = GM.chercher(d.c[0] - d.r, d.c[1] - d.r, d.c[0] + d.r, d.c[1] + d.r).find(m => !m.partie && estBorne(m.s) && dist(m.c, d.c) < d.r * 1.1 + 0.1 * u);
-      if (m) numerotes.push({ ...d, mot: m }); else jonctions.push(d); });
-    // les barrettes : les points numérotés sur un même pointillé, nommés par le repère écrit contre lui
-    const barrettes = [];
-    PT.forEach(t => { const sur = numerotes.filter(n => proj(n.c, t.a, t.b).d < n.r + 0.2 * u); if (!sur.length) return;
-      const autour = GM.chercher(Math.min(t.a[0], t.b[0]) - 4 * u, Math.min(t.a[1], t.b[1]) - 4 * u, Math.max(t.a[0], t.b[0]) + 4 * u, Math.max(t.a[1], t.b[1]) + 4 * u)
-        .filter(m => estRepere(m.s)).map(m => ({ m, d: proj(m.c, t.a, t.b).d })).sort((a, b) => a.d - b.d);
-      const nom = autour[0] && autour[0].d < 3.5 * u ? autour[0].m : null; sur.forEach(n => { if (!n.repere || (nom && proj(n.c, t.a, t.b).d < 0.5 * u)) n.repere = nom; n.barrette = t; }); barrettes.push({ t, sur, nom }); });
-    numerotes.forEach(n => { if (n.repere) return; const c = GM.chercher(n.c[0] - 5 * u, n.c[1] - 5 * u, n.c[0] + 5 * u, n.c[1] + 5 * u).filter(m => estRepere(m.s)).sort((a, b) => dist(a.c, n.c) - dist(b.c, n.c)); n.repere = c[0] || null; });
-    // le graphe ; les ronds et les points numérotés sont des bornes, pas des jonctions
+    // (passe 87) les symboles dessinés dans les boîtes (la bobine et la lame d'un relais, le bilame d'un disjoncteur) ne sont pas
+    // des fils : une boîte qu'un repère nomme, dedans ou contre son bord
+    T.cadres.forEach(k => { k.mots = GM.chercher(k.x0, k.y0, k.x1, k.y1).filter(m => dedans(m.c, k)); k.reperes = k.mots.filter(m => estRepere(m.s)); });
+    const nommee = k => { if (k.cadre || k.cartouche || k.reperes.length > 2 || (k.x1 - k.x0) * (k.y1 - k.y0) > 0.3 * page.w * page.h) return false; if (k.reperes.length) return true;
+      return GM.chercher(k.x0 - 2.5 * u, k.y0 - 2.5 * u, k.x1 + 2.5 * u, k.y1 + 2.5 * u).some(m => !m.partie && estRepere(m.s) && auBord(m.c, k) < 2.2 * u && auBord(m.c, k) > -0.2 * u); };
+    const SB = sansSymboles(traits, T.cadres.filter(nommee), u); traits = SB.gardes;
+    // les barrettes : des pastilles sur un pointillé (le contact : module + lettre) ; les autres disques pleins sont des jonctions,
+    // les autres ronds creux, des bornes rondes (un disjoncteur)
+    const BR = barrettesDe({ points: T.points.filter(d => !horsJeu(d.c)), ronds: T.ronds.filter(r => !horsJeu(r.c)), gelules: T.gelules.filter(g => !horsJeu(g.c)), PT, GM, u });
+    const sources = new Set(BR.pastilles.map(p => p.src)), jonctions = T.points.filter(d => !horsJeu(d.c) && !sources.has(d));
+    // le graphe ; les ronds et les pastilles sont des bornes, pas des jonctions
     const G = graphe(traits, jonctions, u, jeu);
-    const resoudre = resolveur({ mots: motsLus, cadres: T.cadres, ronds: T.ronds.filter(r => !horsJeu(r.c)), numerotes, masses: M, u, pointilles: PT });
+    const resoudre = resolveur({ mots: motsLus.filter(m => !BR.mots.has(m)), cadres: T.cadres, ronds: T.ronds.filter(r => !horsJeu(r.c) && !sources.has(r)), pastilles: BR.pastilles, masses: M, u, pointilles: PT });
     // les bouts : un nœud où finit un segment, qui n'a qu'une arête — ou qui touche une borne (un cadre, un rond, un point numéroté, une masse)
     const bouts = [], orphelins = [];
     G.noeuds.forEach((n, k) => { if (!n.bouts.length || n.point) return; if (horsJeu(n.p)) return;
       const e = n.aretes[0], autre = e ? G.noeuds[e.a === k ? e.b : e.a].p : null, d = autre ? (() => { const v = [n.p[0] - autre[0], n.p[1] - autre[1]], L = Math.hypot(...v) || 1; return [v[0] / L, v[1] / L]; })() : null;
       const r = resoudre(n.p, d);
-      if (r && (r.repere || r.renvoi)) { if (n.deg > 1 && r.genre === 'texte') return; bouts.push({ n: k, p: n.p, ...r }); }
+      // (passe 87) un renvoi, comme un texte, ne se lit qu'au BOUT d'un fil : un coude qui passe près d'un drapeau n'y arrive pas
+      if (r && (r.repere || r.renvoi)) { if (n.deg > 1 && (r.genre === 'texte' || r.genre === 'renvoi')) return; bouts.push({ n: k, p: n.p, ...r }); }
       else if (n.deg === 1) orphelins.push({ n: k, p: n.p, raison: r ? 'bout sans repère (' + (r.borne ? 'borne ' + r.borne : r.genre) + ')' : 'trait qui n’arrive nulle part' }); });
     // les réseaux : les composantes connexes
     const U = unions(G.noeuds.length); G.aretes.forEach(e => U.u(e.a, e.b));
@@ -478,9 +575,10 @@ const SCHEMA_PDF = (() => {
       const vus = new Map(); B = B.filter(b => { if (b.genre === 'renvoi') return true; const k = b.repere + '\u0001' + b.borne; if (vus.has(k)) return false; vus.set(k, b); return true; });
       const multi = B.length > 2, enT = false;
       arbre(B, G.noeuds).forEach(q => { const x = B[q.i], y = B[q.j];
-        if (x.genre === 'renvoi' || y.genre === 'renvoi') { renvois.push({ x, y, d: q.d, trajet: q.trajet.map(pointAretes) }); return; }
-        if (x.repere === y.repere && x.borne === y.borne) return;
         const info = q.trajet.map(e => surTrait.get(e)).filter(Boolean), type = (info.find(o => o.type) || {}).type || '', fil = (info.find(o => o.fil) || {}).fil || '';
+        // une moitié de câble finie par un renvoi : son type et son numéro de fil servent à l'apparier (08 : `assembler`)
+        if (x.genre === 'renvoi' || y.genre === 'renvoi') { renvois.push({ x, y, d: q.d, trajet: q.trajet.map(pointAretes), type, fil, mots: info.flatMap(o => o.mots || []) }); return; }
+        if (x.repere === y.repere && x.borne === y.borne) return;
         const jT = q.trajet.some(e => G.noeuds[e.a].sortes.has(1) && !G.noeuds[e.a].point || G.noeuds[e.b].sortes.has(1) && !G.noeuds[e.b].point);
         const conf = Math.min(x.conf, y.conf) * (multi ? 0.95 : 1) * (jT ? 0.92 : 1);
         // dans le sens de lecture : de gauche à droite, puis de haut en bas
@@ -488,11 +586,12 @@ const SCHEMA_PDF = (() => {
         const raisons = [multi ? 'réseau à ' + B.length + ' bouts : relié de proche en proche' : 'trait suivi de bout en bout', ...(jT ? ['jonction en T sans point'] : []), ...g.raisons.map(r => 'de : ' + r), ...d.raisons.map(r => 'vers : ' + r)];
         liaisons.push({ de: g.repere, borneDe: g.borne, pnDe: g.pn || '', vers: d.repere, borneVers: d.borne, pnVers: d.pn || '', type, cable: fil, conf: Math.round(conf * 100) / 100, raisons,
           trajet: q.trajet.map(pointAretes), bouts: [g.p, d.p], mots: [...g.mots, ...d.mots, ...info.flatMap(o => o.mots || [])].map(m => m.B) }); }); });
-    // les shunts d'une barrette : ses bornes sur un même pointillé sont au même potentiel, de proche en proche (dans l'ordre des numéros)
-    barrettes.forEach(b => { if (!b.nom) return; const nums = [...new Set(b.sur.map(n => n.mot.s))].sort((x, y) => (parseFloat(x) - parseFloat(y)) || x.localeCompare(y)); const ou = s => b.sur.find(n => n.mot.s === s);
-      for (let i = 1; i < nums.length; i++) { const A = ou(nums[i - 1]), Bn = ou(nums[i]);
-        liaisons.push({ de: b.nom.s, borneDe: nums[i - 1], pnDe: '', vers: b.nom.s, borneVers: nums[i], pnVers: '', type: '', cable: '', conf: 0.9, raisons: ['shunt : bornes ' + nums[i - 1] + ' et ' + nums[i] + ' sur le même pointillé de ' + b.nom.s],
-          trajet: [[A.c, Bn.c]], bouts: [A.c, Bn.c], mots: [A.mot.B, Bn.mot.B, b.nom.B] }); } });
+    // les pontages d'une barrette : ses contacts sur un même pointillé sont au même potentiel, de proche en proche (dans l'ordre
+    // où le pointillé les relie)
+    BR.groupes.forEach(ps => { for (let i = 1; i < ps.length; i++) { const A = ps[i - 1], Bn = ps[i]; if (!A.repere || A.repere !== Bn.repere || A.borne === Bn.borne) continue;
+      liaisons.push({ de: A.repere.s, borneDe: A.borne, pnDe: '', vers: Bn.repere.s, borneVers: Bn.borne, pnVers: '', type: '', cable: '', conf: Math.round(Math.min(A.conf, Bn.conf) * 0.97 * 100) / 100,
+        raisons: ['pontage : contacts ' + A.borne + ' et ' + Bn.borne + ' sur le même pointillé de ' + A.repere.s + ' (une même plage de métal)', 'de : ' + A.raisons[0], 'vers : ' + Bn.raisons[0]],
+        trajet: [[A.c, Bn.c]], bouts: [A.c, Bn.c], mots: [A.mot.B, Bn.mot.B, A.repere.B, ...(A.moduleMot ? [A.moduleMot.B] : [])] }); } });
     // une barrette à poser (VT1, la convention de VOLTA) : ses bornes 2, 3… reviennent sur la borne que la 1 dédouble
     replierBarrettesAPoser(liaisons);
     // lu sur un scan : les textes viennent de l'OCR, les traits de l'image — une confiance plus basse, toujours à relire
@@ -501,17 +600,22 @@ const SCHEMA_PDF = (() => {
     const pris = new Set(liaisons.flatMap(l => l.mots)); bouts.forEach(b => b.mots.forEach(m => pris.add(m.B)));
     const bornesSeules = [];
     T.cadres.forEach(k => { if (k.cadre || k.cartouche || (k.reperes || []).length > 2) return; (k.mots || []).forEach(m => { if (m.partie || !estBorne(m.s) || pris.has(m.B) || horsJeu(m.c)) return;
-      if (Math.min(m.c[0] - k.x0, k.x1 - m.c[0], m.c[1] - k.y0, k.y1 - m.c[1]) < 1.5 * u && !numerotes.some(n => n.mot === m)) { const A = cadreRepere(k, T.cadres); bornesSeules.push({ p: m.c, B: m.B, texte: m.s, repere: A }); } }); });
+      if (Math.min(m.c[0] - k.x0, k.x1 - m.c[0], m.c[1] - k.y0, k.y1 - m.c[1]) < 1.5 * u && !BR.mots.has(m)) { const A = cadreRepere(k, T.cadres); bornesSeules.push({ p: m.c, B: m.B, texte: m.s, repere: A }); } }); });
     return { page, u, mots: motsLus, tousMots: mots, liaisons, renvois, orphelins: orph, bornesSeules, champs: C.champs, zoneCartouche: C.zone,
-      debug: { traits: traits.length, cadres: T.cadres.length, ronds: T.ronds.length, points: T.points.length, pointilles: PT.length, masses: M.length, bouts: bouts.length, enT: G.nT, aretes: G.aretes.length } }; }
+      debug: { traits: traits.length, cadres: T.cadres.length, ronds: T.ronds.length, points: T.points.length, pointilles: PT.length, masses: M.length, bouts: bouts.length, enT: G.nT, aretes: G.aretes.length, symboles: SB.symboles.length, pastilles: BR.pastilles.length, gelules: T.gelules.length },
+      voir: P.voir ? { pastilles: BR.pastilles.map(p => ({ c: p.c, f: p.forme, s: p.mot.s, b: p.borne, r: p.repere && p.repere.s, k: p.conf })), groupes: BR.groupes.map(g => ({ c: g[0].c, b: g.map(p => p.borne).join(' ') })), pointilles: PT.map(t => ({ a: t.a, b: t.b })), symboles: SB.symboles.map(t => ({ a: t.a, b: t.b })) } : undefined }; }
   // le repère d'un cadre ou de son voisin collé (pour dire à qui est une borne sans trait)
   function cadreRepere(k, cadres) { const r = (k.reperes || [])[0] || (k.mots || []).find(m => m.devine); if (r) return r.s; const v = cadres.find(j => j !== k && !j.cadre && (j.reperes || []).length === 1 && k.x0 <= j.x1 + 1 && j.x0 <= k.x1 + 1 && k.y0 <= j.y1 + 1 && j.y0 <= k.y1 + 1); return v ? v.reperes[0].s : ''; }
 
   /* Une barrette à poser (VTn : le nom que VOLTA donne à une borne d'équipement qui reçoit plusieurs fils) : le fil de
      la borne 1 vient de la borne dédoublée ; chaque fil des bornes 2, 3… en part en vérité. On le replie comme le
      moteur (01, `sansBarrettesAPoser`) : la liaison de la 1 et les shunts disparaissent, les autres retrouvent la borne. */
-  function replierBarrettesAPoser(L) { const source = new Map();
-    L.forEach(l => { [[l.de, l.borneDe, l.vers, l.borneVers, l.pnVers], [l.vers, l.borneVers, l.de, l.borneDe, l.pnDe]].forEach(([r, b, o, ob, opn]) => { if (VT_A_POSER.test(r) && b === '1' && !VT_A_POSER.test(o) && o) source.set(r, [o, ob, opn, l]); }); });
+  function replierBarrettesAPoser(L) { const source = new Map(), premier = new Map();
+    // (passe 87) le contact qui reçoit la borne dédoublée : « 1 » (l'écriture d'avant), sinon le premier de sa face — VOLTA nomme les
+    // contacts d'une barrette ajoutée comme sa face (« 51H », 09-barrettes `lettresDeBarretteAPoser`) : la borne 1 prend la première lettre
+    L.forEach(l => [[l.de, l.borneDe], [l.vers, l.borneVers]].forEach(([r, b]) => { if (!VT_A_POSER.test(r) || !b) return; const p = premier.get(r);
+      if (p == null || b === '1' || (p !== '1' && String(b).localeCompare(p, 'fr', { numeric: true }) < 0)) premier.set(r, b); }));
+    L.forEach(l => { [[l.de, l.borneDe, l.vers, l.borneVers, l.pnVers], [l.vers, l.borneVers, l.de, l.borneDe, l.pnDe]].forEach(([r, b, o, ob, opn]) => { if (VT_A_POSER.test(r) && b === premier.get(r) && !VT_A_POSER.test(o) && o) source.set(r, [o, ob, opn, l]); }); });
     if (!source.size) return L;
     for (let i = L.length - 1; i >= 0; i--) { const l = L[i], a = source.get(l.de), b = source.get(l.vers);
       if ((a && a[3] === l) || (b && b[3] === l) || (a && b)) { L.splice(i, 1); continue; }
@@ -530,22 +634,45 @@ const SCHEMA_PDF = (() => {
     const harness = ((lues.find(r => r.champs && r.champs.harness) || {}).champs || {}).harness || '';
     // le folio : celui du cartouche, sinon le rang de la page ; le dessin (FWD) : le numéro du document et le folio — une page,
     // un folio de VOLTA
-    lues.forEach((r, i) => { const f = (r.champs && r.champs.folioNum) || String(i + 1); r.folio = f;
-      r.plan = numero ? numero + (lues.length > 1 ? ' F' + f : '') : f; });
+    // (passe 87) chaque page : son plan (le numéro de son cartouche : un dossier de plusieurs plans, où le folio recommence à 1 à
+    // chaque plan — le lecteur, 8 novembre 2026), son folio
+    lues.forEach((r, i) => { const f = (r.champs && r.champs.folioNum) || String(i + 1); r.folio = f; r.numeroPlan = (r.champs && r.champs.numero) || numero;
+      r.plan = r.numeroPlan ? r.numeroPlan + (lues.length > 1 ? ' F' + f : '') : f; });
     const tout = [];
     lues.forEach((r, i) => r.liaisons.forEach(l => { tout.push({ ...l, page: i, folio: r.folio, plan: r.plan, fwd: r.plan, harness }); }));
-    // les renvois : un bout « vers le folio 3 » sur le folio 1 répond à un bout « vers le folio 1 » (ou « du folio 1 ») sur le folio 3 ;
-    // plusieurs candidats : dans l'ordre de lecture (de haut en bas), la zone quand elle est écrite
-    const R = []; lues.forEach((r, i) => r.renvois.forEach(q => { const [rv, autre] = q.x.genre === 'renvoi' ? [q.x, q.y] : [q.y, q.x]; if (autre.genre === 'renvoi') return; R.push({ i, rv: rv.renvoi, bout: autre, q, p: rv.p }); }));
-    const pageDuFolio = f => lues.findIndex(r => r.folio === String(f));
+    /* Les RENVOIS (passe 87). Un renvoi dit le folio et la zone de l'autre bout (« F5/C3 ») ; vers un autre plan, le numéro de ce
+       plan devant (« SC-4520-320 F5/C3 »). Deux moitiés se répondent quand chacune vise la page de l'autre — le folio qu'elle nomme,
+       DANS LE BON PLAN. Entre plusieurs vis-à-vis possibles : la zone écrite de chaque côté doit être celle où se trouve l'autre
+       (les deux se vérifient), puis le NUMÉRO DE FIL, quand il est écrit des deux côtés (le même : c'est le même câble), le nom du
+       signal ; à égalité, l'ordre de lecture. La confiance le dit : les zones qui se répondent ou le même numéro de fil, sûre ;
+       une zone seule, ou un appariement dans l'ordre de lecture, à voir. */
+    const R = []; lues.forEach((r, i) => r.renvois.forEach(q => { const [rv, autre] = q.x.genre === 'renvoi' ? [q.x, q.y] : [q.y, q.x]; if (autre.genre === 'renvoi') return;
+      R.push({ i, rv: rv.renvoi, bout: autre, q, p: rv.p, fil: q.fil || '', type: q.type || '' }); }));
+    R.sort((a, b) => a.i - b.i || a.p[1] - b.p[1] || a.p[0] - b.p[0]); R.forEach((a, k) => { a.k = k; });
+    const planDe = i => lues[i].numeroPlan || '', pages = new Map(); lues.forEach((r, i) => { const c = planDe(i) + '\u0001' + r.folio; (pages.get(c) || pages.set(c, []).get(c)).push(i); });
+    R.forEach(a => { let js = pages.get((a.rv.plan || planDe(a.i)) + '\u0001' + String(a.rv.folio)) || [];
+      if (!js.length && !a.rv.plan) js = lues.map((r, j) => (r.folio === String(a.rv.folio) ? j : -1)).filter(j => j >= 0);   // un plan sans numéro lisible
+      a.visees = new Set(js.filter(j => j !== a.i)); });
+    const parPage = new Map(); R.forEach(a => { (parPage.get(a.i) || parPage.set(a.i, []).get(a.i)).push(a); });
+    const paires = [];
+    R.forEach(a => a.visees.forEach(j => (parPage.get(j) || []).forEach(b => { if (b.k <= a.k || !b.visees.has(a.i)) return;
+      const za = a.rv.zone ? (zoneDe(lues[b.i], b.p) === a.rv.zone.toUpperCase() ? 1 : -1) : 0, zb = b.rv.zone ? (zoneDe(lues[a.i], a.p) === b.rv.zone.toUpperCase() ? 1 : -1) : 0;
+      const nf = a.fil && b.fil ? (a.fil.toUpperCase() === b.fil.toUpperCase() ? 1 : -1) : 0, sg = a.rv.signal && b.rv.signal && a.rv.signal === b.rv.signal ? 1 : 0;
+      paires.push({ a, b, za, zb, nf, sg, s: (za > 0 ? 2 : za < 0 ? -3 : 0) + (zb > 0 ? 2 : zb < 0 ? -3 : 0) + (nf > 0 ? 4 : nf < 0 ? -6 : 0) + sg }); })));
+    paires.sort((p, q) => q.s - p.s || p.a.k - q.a.k || p.b.k - q.b.k);
     const pris = new Set();
-    R.sort((a, b) => a.i - b.i || a.p[1] - b.p[1] || a.p[0] - b.p[0]).forEach(a => { if (pris.has(a)) return; const j = pageDuFolio(a.rv.folio); if (j < 0 || j === a.i) return;
-      const c = R.filter(b => !pris.has(b) && b !== a && b.i === j && String(b.rv.folio) === lues[a.i].folio);
-      if (!c.length) return; const b = c.find(x => a.rv.zone && x.rv.zone && zoneDe(lues[j], x.p) === a.rv.zone.toUpperCase()) || c[0]; pris.add(a); pris.add(b);
+    paires.forEach(P => { const { a, b } = P; if (pris.has(a) || pris.has(b)) return;
+      // un autre vis-à-vis aussi bon, encore libre, pour l'un ou pour l'autre : l'appariement n'est qu'un choix
+      const rivaux = paires.some(Q => Q !== P && Q.s >= P.s && ((Q.a === a || Q.b === a) && !pris.has(Q.a === a ? Q.b : Q.a) || (Q.a === b || Q.b === b) && !pris.has(Q.a === b ? Q.b : Q.a)));
+      pris.add(a); pris.add(b);
       const [g, d] = [a.bout, b.bout]; if (g.repere === d.repere && g.borne === d.borne) return;
-      tout.push({ de: g.repere, borneDe: g.borne, pnDe: g.pn || '', vers: d.repere, borneVers: d.borne, pnVers: d.pn || '', type: '', cable: '', conf: Math.round(Math.min(g.conf, d.conf) * 0.88 * 100) / 100,
-        raisons: ['renvoi : folio ' + lues[a.i].folio + ' → folio ' + lues[j].folio + ' (' + a.rv.texte + ')', ...g.raisons.map(r => 'de : ' + r), ...d.raisons.map(r => 'vers : ' + r)],
-        trajet: a.q.trajet, bouts: [g.p, a.p], mots: g.mots.map(m => m.B), page: a.i, pageVers: j, trajetVers: b.q.trajet, boutsVers: [b.p, d.p], folio: lues[a.i].folio, plan: lues[a.i].plan, fwd: lues[a.i].plan, harness }); });
+      const confirme = P.nf > 0 || (P.za > 0 && P.zb > 0), contre = P.za < 0 || P.zb < 0 || P.nf < 0, demi = !confirme && (P.za > 0 || P.zb > 0);
+      const k = contre ? 0.5 : confirme ? 0.97 : demi ? (rivaux ? 0.8 : 0.9) : (rivaux ? 0.6 : 0.85);
+      const dit = [...(P.za > 0 && P.zb > 0 ? ['les zones se répondent : ' + a.rv.zone.toUpperCase() + ' et ' + b.rv.zone.toUpperCase()] : P.za > 0 || P.zb > 0 ? ['une seule zone se vérifie'] : []),
+        ...(P.nf > 0 ? ['le même numéro de fil des deux côtés : ' + a.fil] : []), ...(contre ? ['une zone ou un numéro de fil ne répond pas'] : []), ...(rivaux && !confirme ? ['plusieurs vis-à-vis possibles : apparié dans l’ordre de lecture'] : [])];
+      tout.push({ de: g.repere, borneDe: g.borne, pnDe: g.pn || '', vers: d.repere, borneVers: d.borne, pnVers: d.pn || '', type: a.type || b.type || '', cable: a.fil || b.fil || '', conf: Math.round(Math.min(g.conf, d.conf) * k * 100) / 100,
+        raisons: ['renvoi : ' + (planDe(a.i) !== planDe(b.i) ? lues[a.i].plan + ' → ' + lues[b.i].plan : 'folio ' + lues[a.i].folio + ' → folio ' + lues[b.i].folio) + ' (' + a.rv.texte + ')', ...dit, ...g.raisons.map(r => 'de : ' + r), ...d.raisons.map(r => 'vers : ' + r)],
+        trajet: a.q.trajet, bouts: [g.p, a.p], mots: g.mots.map(m => m.B), page: a.i, pageVers: b.i, trajetVers: b.q.trajet, boutsVers: [b.p, d.p], folio: lues[a.i].folio, plan: lues[a.i].plan, fwd: lues[a.i].plan, harness }); });
     return { pages: lues, liaisons: tout, scannees: lues.filter(r => r.scanne).length, numero, indice, harness }; }
   // la zone d'un point sur une feuille à repères de zone (les chiffres en haut, les lettres à gauche) : « C4 »
   function zoneDe(r, p) { const M = r.tousMots || r.mots || []; const col = M.filter(m => /^\d{1,2}$/.test(m.s) && m.c[1] < r.page.h * 0.06), lig = M.filter(m => /^[A-Z]$/.test(m.s) && m.c[0] < r.page.w * 0.04);

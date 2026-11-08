@@ -11,8 +11,13 @@
      · des points de connexion sans nom, le numéro de broche écrit à côté dans
        un texte ; d'autres nommés par la broche (« A1 ») ; un connecteur lettré
        dont les points disent « 12 » et la lettre « A » est un texte ;
-     · une barrette dont les points disent « 51A », une autre seulement « A »
-       (le module « 51 » écrit au-dessus) ;
+     · un disjoncteur : une boîte, son symbole dedans (des lignes, pas des
+       fils), ses points « 1 » et « 2 » ;
+     · une barrette en pastilles sur un pointillé (la plage de métal commune,
+       une ligne en tirets dans le groupe), dont les points disent « 51A » ;
+       une autre dont les points disent seulement « A » (le module « 51 »
+       écrit au-dessus) ;
+     · le numéro de fil écrit sur le connecteur, là où le folio l'écrit ;
      · des renvois de page qui portent un lien vers la page d'en face et leurs
        données OPC (leur identifiant, celui de leur vis-à-vis), le texte « F3/B2 » ;
      · quelques traits dessinés à l'outil Ligne, NON collés : posés pile sur le
@@ -21,7 +26,7 @@
    La vérité est celle du document A (les mêmes fils, les mêmes bornes).
    =========================================================================== */
 'use strict';
-const { decouper } = require('./schema');
+const { decouper, STYLES, BARRETTE } = require('./schema');
 
 const NS = 'http://schemas.microsoft.com/office/visio/2012/main', NSR = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', REL = 'http://schemas.microsoft.com/visio/2010/relationships/';
 const XML = '<?xml version=\'1.0\' encoding=\'utf-8\' ?>\r\n';
@@ -80,16 +85,31 @@ function pageVisio(scene, k, o) {
       rows.push(o2.nom ? `<Row N='${x(o2.nom)}'>${C('X', lx)}${C('Y', ly)}${C('DirX', dir)}${C('DirY', 0)}${C('Type', 0)}${invite}</Row>` : `<Row IX='${n}'>${C('X', lx)}${C('Y', ly)}${C('DirX', dir)}${C('DirY', 0)}${C('Type', 0)}${invite}</Row>`);
       pts.set(cle, { id: gid, cell: o2.nom ? `Connections.${o2.nom}` : `Connections.X${n + 1}`, ix: n, p: [xmm, ymm], nom: o2.nom }); };
     const tEnfant = (s, xmm, ymm, pt, o2 = {}) => { const [lx, ly] = loc(xmm, ymm), w = Math.max(I(0.62 * pt * 0.3528 * String(s).length + 0.6), I(2)), h = I(pt * 0.3528 * 1.4), cxx = o2.ancre === 'start' ? lx + w / 2 : o2.ancre === 'end' ? lx - w / 2 : lx;
-      enfants.push(`<Shape ID='${id++}' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${xform(cxx, ly + h * 0.32, w, h)}${C('LinePattern', 0)}${C('FillPattern', 0)}${marges()}${car(pt, o2.gras)}${para(o2.ancre === 'start' ? 0 : o2.ancre === 'end' ? 2 : 1)}<Text>${x(s)}</Text></Shape>`); };
+      const coul = o2.blanc ? car(pt, o2.gras).replace("V='#000000'", "V='#FFFFFF'") : car(pt, o2.gras);
+      enfants.push(`<Shape ID='${id++}' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${xform(cxx, ly + h * 0.32, w, h)}${C('LinePattern', 0)}${C('FillPattern', 0)}${marges()}${coul}${para(o2.ancre === 'start' ? 0 : o2.ancre === 'end' ? 2 : 1)}<Text>${x(s)}</Text></Shape>`); };
+    const ligneEnfant = (pts, tirets) => { const B = [Math.min(...pts.map(p => p[0])), Math.min(...pts.map(p => p[1])), Math.max(...pts.map(p => p[0])), Math.max(...pts.map(p => p[1]))], wmm = Math.max(B[2] - B[0], 0.01), hmm = Math.max(B[3] - B[1], 0.01);
+      const [lx, ly] = loc(B[0] + wmm / 2, B[1] + hmm / 2), L = p => [I(p[0] - B[0]), I(B[3] - p[1])];
+      enfants.push(`<Shape ID='${id++}' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${xform(lx, ly, I(wmm), I(hmm))}${C('LineWeight', 0.3 / 25.4)}${C('LinePattern', tirets ? 2 : 1)}${geo(0, pts.map(L))}</Shape>`); };
+    const pastilleEnfant = (xmm, ymm, rmm) => { const [lx, ly] = loc(xmm, ymm); enfants.push(`<Shape ID='${id++}' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${xform(lx, ly, I(2 * rmm), I(2 * rmm))}${C('FillForegnd', '#000000')}${C('FillPattern', 1)}${geoCercle(0, I(rmm), I(rmm), I(rmm), true)}</Shape>`); };
     const rectEnfant = (xmm, ymm, wmm, hmm) => { const [lx, ly] = loc(xmm + wmm / 2, ymm + hmm / 2); enfants.push(`<Shape ID='${id++}' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${xform(lx, ly, I(wmm), I(hmm))}${C('LineWeight', 0.3 / 25.4)}${C('FillPattern', 0)}${geo(0, [[0, 0], [I(wmm), 0], [I(wmm), I(hmm)], [0, I(hmm)], [0, 0]])}</Shape>`); return id - 1; };
-    if (genre === 'disjoncteur') { // une instance du maître : ses deux points nommés « 1 » et « 2 »
-      maitres.add(1); F.push(`<Shape ID='${gid}' NameU='Disjoncteur.${gid}' Type='Shape' Master='1'>${xform(PX(e.x + 5), PY(e.y + 2.5), I(10), I(5))}${C('TxtPinX', I(5))}${C('TxtPinY', I(9.5))}${C('TxtWidth', I(16))}${C('TxtHeight', I(4))}${car(8, true)}<Section N='Property'><Row N='Calibre'>${C('Value', e.calibre || '', null, 'STR')}${C('Label', 'Calibre', null, 'STR')}</Row><Row N='Reference'>${C('Value', e.pn || '', null, 'STR')}${C('Label', 'Référence', null, 'STR')}</Row></Section><Text>${x(e.rep)}</Text></Shape>`);
-      pts.set('1:G', { id: gid, cell: 'Connections.X1', ix: 0, p: [e.x, e.y + 2.5] }); pts.set('2:D', { id: gid, cell: 'Connections.X2', ix: 1, p: [e.x + 10, e.y + 2.5] });
-      F.push(texte(e.calibre || '', e.x + 5, e.y + 8.9, 5.6)); continue; }
-    if (genre === 'barrette') { const lettresSeules = !(e.visio && e.visio.prompt === 'module');
-      e.modules.forEach(M => { if (M.yTete != null) { rectEnfant(e.x, M.yTete, e.w, 5); tEnfant(M.num, e.x + e.w / 2, M.yTete + 3.4, 5.6); }
-        [...M.lettres].forEach(l => { const b = e.broches.find(q => q.nom === M.num + l); rectEnfant(e.x, b.y - 2.5, e.w, 5); tEnfant(lettresSeules ? l : M.num + l, e.x + e.w / 2, b.y + 0.8, 5.8);
-          ['G', 'D'].forEach(cote => point(M.num + l + ':' + cote, cote === 'G' ? e.x : e.x + e.w, b.y, cote === 'G' ? -1 : 1, { prompt: lettresSeules ? l : M.num + l })); }); }); }
+    if (genre === 'disjoncteur') { // un groupe : sa boîte, son symbole dedans (des lignes, pas des fils), ses deux points « 1 » et « 2 »
+      const y = e.y + e.dy, c1 = e.x + 5.5, c2 = e.x + e.w - 5.5, r = 1.1;
+      rectEnfant(e.x, e.y, e.w, e.h); ligneEnfant([[e.x, y], [c1 - r, y]]); ligneEnfant([[c2 + r, y], [e.x + e.w, y]]);
+      [c1, c2].forEach(c => { const [lx, ly] = loc(c, y); enfants.push(`<Shape ID='${id++}' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${xform(lx, ly, I(2 * r), I(2 * r))}${C('LineWeight', 0.3 / 25.4)}${geoCercle(0, I(r), I(r), I(r))}</Shape>`); });
+      { const [lx, ly] = loc((c1 + c2) / 2, y - 2); enfants.push(`<Shape ID='${id++}' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${xform(lx, ly, I(c2 - c1), I(2))}${C('LineWeight', 0.3 / 25.4)}<Section N='Geometry' IX='0'>${C('NoFill', 1)}${C('NoLine', 0)}${C('NoShow', 0)}<Row T='MoveTo' IX='1'>${C('X', 0)}${C('Y', I(0.9))}</Row><Row T='ArcTo' IX='2'>${C('X', I(c2 - c1))}${C('Y', I(0.9))}${C('A', I(1.4))}</Row></Section></Shape>`); }
+      tEnfant('1', e.x + 1.3, y - 0.8, 6.2, { ancre: 'start' }); tEnfant('2', e.x + e.w - 1.3, y - 0.8, 6.2, { ancre: 'end' });
+      point('1:G', e.x, y, -1, { prompt: '1' }); point('2:D', e.x + e.w, y, 1, { prompt: '2' });
+      F.push(`<Shape ID='${gid}' NameU='Disjoncteur.${gid}' Name='${x(e.rep)}' Type='Group' LineStyle='3' FillStyle='3' TextStyle='3'>${xform(gx + W / 2, gy + H / 2, W, H)}${C('TxtPinX', I(1.4) + I(9))}${C('TxtPinY', H - I(2.6))}${C('TxtWidth', I(18))}${C('TxtHeight', I(4))}${C('LinePattern', 0)}${C('FillPattern', 0)}${marges()}${car(7.4, true)}${para(0)}`
+        + `<Section N='Property'><Row N='Calibre'>${C('Value', e.calibre || '', null, 'STR')}${C('Label', 'Calibre', null, 'STR')}</Row><Row N='Reference'>${C('Value', e.pn || '', null, 'STR')}${C('Label', 'Référence', null, 'STR')}</Row></Section>`
+        + `<Section N='Connection'>${rows.join('')}</Section><Text>${x(e.rep)}</Text><Shapes>${enfants.join('')}</Shapes></Shape>`);
+      F.push(texte(e.calibre || '', e.x + e.w / 2, e.y + e.h + 3.2, 5.6)); continue; }
+    if (genre === 'barrette') { const lettresSeules = !(e.visio && e.visio.prompt === 'module'), cx = e.x + e.w / 2, portee = BARRETTE[STYLES[scene.style].barrette].portee;
+      // le pointillé de chaque groupe d'abord (la plage de métal commune), puis les pastilles posées dessus
+      (scene.peignes || []).filter(P => P.rep === e.rep).forEach(P => { const ys = P.lettres.map(l => e.broches.find(q => q.nom === P.module + l).y); ligneEnfant([[cx, ys[0]], [cx, ys[ys.length - 1]]], true); });
+      e.modules.forEach(M => { if (M.yTete != null) tEnfant(M.num, cx, M.yTete + 3.6, 5.6, { gras: true });
+        [...M.lettres].forEach(l => { const b = e.broches.find(q => q.nom === M.num + l); pastilleEnfant(cx, b.y, 1.5); tEnfant(l, cx, b.y + 0.72, 5.6, { gras: true, blanc: true });
+          // le point de connexion : au bord de la pastille, là où le fil arrive
+          ['G', 'D'].forEach(cote => point(M.num + l + ':' + cote, cote === 'G' ? e.x + portee : e.x + e.w - portee, b.y, cote === 'G' ? -1 : 1, { prompt: lettresSeules ? l : M.num + l })); }); }); }
     else if (genre === 'prise') { rectEnfant(e.x, e.y, 7.5, e.h); rectEnfant(e.x + 7.5, e.y, e.w - 7.5, e.h);
       [...e.lettres].forEach(l => { const b = e.broches.find(q => q.nom === l); tEnfant(l, e.x + 3.75, b.y + 0.8, 6); tEnfant(l, e.x + 10, b.y + 0.8, 6);
         ['G', 'D'].forEach(cote => point(l + ':' + cote, cote === 'G' ? e.x : e.x + e.w, b.y, cote === 'G' ? -1 : 1, { prompt: l })); }); }
@@ -139,7 +159,7 @@ function pageVisio(scene, k, o) {
     // la cellule d'un point : « Connections.X3 » (le 3e, sans nom) ou « Connections.A1.X » (nommé)
     const cellX = f => f.nom ? f.cell + '.X' : f.cell, cellY = f => f.nom ? f.cell + '.Y' : f.cell.replace(/\.X(\d+)$/, '.Y$1');
     const formule = f => f ? `PAR(PNT(Sheet.${f.id}!${cellX(f)},Sheet.${f.id}!${cellY(f)}))` : null;
-    const typeTxt = t.type && o.etiquette(t, n) ? t.type : '';
+    const typeTxt = [o.numeroEcrit(t) ? t.numero : '', t.type && o.etiquette(t, n) ? t.type : ''].filter(Boolean).join(' ');
     if (!main) maitres.add(5);
     F.push(`<Shape ID='${cid}' NameU='${main ? 'Line' : 'Dynamic connector'}.${cid}' Type='Shape'${main ? " LineStyle='3' FillStyle='3' TextStyle='3'" : " Master='5'"}>`
       + `${C('PinX', (B[0] + E[0]) / 2, 'GUARD((BeginX+EndX)/2)')}${C('PinY', (B[1] + E[1]) / 2, 'GUARD((BeginY+EndY)/2)')}${C('Width', Wd, 'GUARD(EndX-BeginX)')}${C('Height', Hd, 'GUARD(EndY-BeginY)')}${C('LocPinX', Wd / 2, 'GUARD(Width*0.5)')}${C('LocPinY', Hd / 2, 'GUARD(Height*0.5)')}${C('Angle', 0)}${C('FlipX', 0)}${C('FlipY', 0)}`
@@ -151,10 +171,7 @@ function pageVisio(scene, k, o) {
       if (finB) CO.push(`<Connect FromSheet='${cid}' FromCell='EndX' FromPart='12' ToSheet='${finB.id}' ToCell='${cellX(finB)}' ToPart='${finB.ix != null ? 100 + finB.ix : 100}'/>`); }
     // un T : un point de jonction posé sur le fil qui tient la broche
     if (t.tA) liens.pts.set(b.join(','), b); if (t.tB) liens.pts.set(e2.join(','), e2); });
-  // les peignes des barrettes : des traits (l'outil Ligne), et un point de jonction sur chaque T
-  scene.traits.filter(t => t.peigne).forEach(t => { const P = t.pts.map(p => [PX(p[0]), PY(p[1])]), B = P[0], E = P[P.length - 1], cid = id++;
-    F.push(`<Shape ID='${cid}' NameU='Line.${cid}' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${C('PinX', (B[0] + E[0]) / 2)}${C('PinY', (B[1] + E[1]) / 2)}${C('Width', E[0] - B[0])}${C('Height', E[1] - B[1])}${C('LocPinX', (E[0] - B[0]) / 2)}${C('LocPinY', (E[1] - B[1]) / 2)}${C('BeginX', B[0])}${C('BeginY', B[1])}${C('EndX', E[0])}${C('EndY', E[1])}${C('LineWeight', 0.28 / 25.4)}`
-      + `<Section N='Geometry' IX='0'>${C('NoFill', 1)}${C('NoLine', 0)}${C('NoShow', 0)}` + P.map((p, k) => `<Row T='${k ? 'LineTo' : 'MoveTo'}' IX='${k + 1}'>${C('X', p[0] - B[0])}${C('Y', p[1] - B[1])}</Row>`).join('') + `</Section></Shape>`); });
+  // un point de jonction sur chaque T
   (scene.jonctions || []).forEach(p => liens.pts.set(p.join(','), p));
   liens.pts.forEach(p => { maitres.add(4); F.push(`<Shape ID='${id++}' NameU='Point de jonction.${id - 1}' Type='Shape' Master='4'>${xform(PX(p[0]), PY(p[1]), I(1.3), I(1.3))}</Shape>`); });
   // les notes et les types de câble posés à côté d'un trait à la main
@@ -199,6 +216,8 @@ function documentVisio(composes, titre) {
     cleNum: cle => cles.get(cle), premier: r => premiers.get(r.cle) === i,
     // un trait sur sept à la main (ni maître, ni colle) ; le type écrit sur trois fils sur quatre
     main: (t, n) => n % 7 === 3, etiquette: (t, n) => n % 4 !== 1,
+    // le numéro de fil : là où le folio du PDF l'écrit (la même vérité)
+    numeroEcrit: t => !!t.numero && c.scene.textes.some(z => z.net === t.net && z.numero),
     txtX: (t, B) => { const s = t.pts.slice(1).map((p, k) => [t.pts[k], p]).filter(([a, b]) => Math.abs(a[1] - b[1]) < 1e-6).sort((p, q) => Math.abs(q[0][0] - q[1][0]) - Math.abs(p[0][0] - p[1][0]))[0]; return s ? I((s[0][0] + s[1][0]) / 2) - B[0] : 0; },
     txtY: (t, B) => { const s = t.pts.slice(1).map((p, k) => [t.pts[k], p]).filter(([a, b]) => Math.abs(a[1] - b[1]) < 1e-6).sort((p, q) => Math.abs(q[0][0] - q[1][0]) - Math.abs(p[0][0] - p[1][0]))[0]; return s ? PY(s[0][1]) - B[1] : 0; } }));
   return paquetVisio(pages, titre); }

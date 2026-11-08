@@ -437,14 +437,16 @@ function pagesNomenclaturePdf(nom) { let N; try { N = nomenclatureDuContrat(); }
   const sections = [
     { titre: 'Contacts à sertir', compte: motPdf(somme(N.contacts), 'pièce', 'pièces'), colonnes: [['Contact', 0.28, { mono: true }], ['Qté', 0.07, { centre: true }], ['Où', 0.65, { gris: true }]],
       lignes: N.contacts.map(x => [x.reference + (x.accessoire ? ' avec ' + x.accessoire : '') + (x.confiance === 'à confirmer' ? ' (à confirmer)' : ''), x.n, ou(x.ou)]) },
-    { titre: 'Obturateurs des contacts libres', compte: motPdf(somme(N.obturateurs || []), 'pièce', 'pièces'), colonnes: [['Obturateur', 0.3, { mono: true }], ['Pour', 0.2], ['Qté', 0.07, { centre: true }], ['Où', 0.43, { gris: true }]],
-      lignes: (N.obturateurs || []).map(x => [x.reference + (x.note ? ' (' + x.note + ')' : ''), x.pour || '', x.n, ou(x.ou)]) },
+    // (comme à l'écran) « selon la zone », quand tous l'ont, se dit une fois dans le compte, pas à chaque ligne
+    ...(O => { const zone = O.length > 0 && O.every(x => /selon la zone/.test(x.note || '')), reste = x => zone ? String(x.note || '').replace(/(,\s*)?selon la zone/, '').trim() : x.note || '';
+      return [{ titre: 'Obturateurs des contacts libres', compte: motPdf(somme(O), 'pièce', 'pièces') + (zone ? ' · un par alvéole vide, selon la zone' : ''), colonnes: [['Obturateur', 0.3, { mono: true }], ['Pour', 0.2], ['Qté', 0.07, { centre: true }], ['Où', 0.43, { gris: true }]],
+        lignes: O.map(x => [x.reference + (reste(x) ? ' (' + reste(x) + ')' : ''), x.pour || '', x.n, ou(x.ou)]) }]; })(N.obturateurs || []),
     { titre: 'Modules de jonction', compte: motPdf(somme(N.modules), 'pièce', 'pièces'), colonnes: [['Module', 0.2, { mono: true }], ['Norme', 0.16], ['Qté', 0.07, { centre: true }], ['Barrettes', 0.57, { gris: true }]],
       lignes: N.modules.map(x => [x.reference, x.famille || '', x.n, ou(x.ou)]) },
     { titre: 'Rails des barrettes', compte: motPdf(somme(N.rails || []), 'pièce', 'pièces'), colonnes: [['Rail', 0.2, { mono: true }], ['Norme', 0.16], ['Qté', 0.07, { centre: true }], ['Barrettes', 0.57, { gris: true }]],
       lignes: (N.rails || []).map(x => [x.reference + (x.note ? ' (' + x.note + ')' : ''), x.famille || '', x.n, ou(x.ou)]) },
-    { titre: 'Connecteurs d’accouplement', compte: motPdf(somme(N.accouplements || []), 'pièce', 'pièces') + ((n => n ? ' · ' + n + ' sans référence' : '')(somme((N.accouplements || []).filter(x => !x.reference)))), colonnes: [['Connecteur', 0.24, { mono: true }], ['Face à (fourni avec l’équipement)', 0.26, { mono: true, gris: true }], ['Qté', 0.07, { centre: true }], ['Où', 0.43, { gris: true }]],
-      lignes: (N.accouplements || []).map(x => [x.reference || 'inconnu (' + (x.note || 'manque dans la bible') + ')', x.face || '', x.n, ou(x.ou)]) },
+    { titre: 'Connecteurs d’accouplement', compte: motPdf(somme(N.accouplements || []), 'pièce', 'pièces') + ((n => n ? ' · ' + n + ' sans référence : la bible ne dit pas leur partie mobile' : '')(somme((N.accouplements || []).filter(x => !x.reference)))), colonnes: [['Connecteur', 0.24, { mono: true }], ['Face à (fourni avec l’équipement)', 0.26, { mono: true, gris: true }], ['Qté', 0.07, { centre: true }], ['Où', 0.43, { gris: true }]],
+      lignes: (N.accouplements || []).map(x => [x.reference || 'inconnu', x.face || '', x.n, ou(x.ou)]) },
     { titre: 'Prises de coupure', compte: motPdf(somme(N.connecteurs), 'pièce', 'pièces'), colonnes: [['Référence', 0.3, { mono: true }], ['Qté', 0.07, { centre: true }], ['Repères', 0.63, { gris: true }]],
       lignes: N.connecteurs.map(x => [x.reference, x.n, ou(x.ou)]) },
     { titre: 'Disjoncteurs', compte: motPdf((N.disjoncteurs || []).length, 'pièce', 'pièces'), colonnes: [['Repère', 0.12, { mono: true }], ['Part number à commander', 0.22, { mono: true }], ['Calibre', 0.1, { centre: true }], ['Votre fichier', 0.2, { mono: true, gris: true }], ['État', 0.36]],

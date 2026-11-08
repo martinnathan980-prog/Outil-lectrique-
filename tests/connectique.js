@@ -6,7 +6,10 @@
    plus petit qui loge, jamais deux normes), chaque câble dans un contact qui
    admet sa gauge (un vrai appariement, pas un premier venu), le sexe des
    contacts lu dans un part number, le plus petit arrangement d'un connecteur,
-   la cheminée comptée, les cas limites, la stabilité et la vitesse.
+   la cheminée comptée, les cas limites, la stabilité et la vitesse. (passe 87)
+   Les deux parties d'une prise se font face lettre à lettre ; l'arrangement
+   d'un connecteur fourni se lit dans sa référence, sinon il se déduit des
+   bornes, à vérifier.
    ========================================================================= */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const SRC = path.join(__dirname, '..', 'src'), NORMES = path.join(__dirname, '..', 'normes');
@@ -18,7 +21,7 @@ vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + co
   + 'placerDansGroupe, moduleDeReference, contactAccepte, potentielsDeBarrette, variantesQuiLogent, connecteursEnModules, coupureEnModule, remplirContacts, arrangementsQuiLogent, '
   + 'sexeDuPn, habillage, remplirSelonNorme, physiqueDeBarrette, autreSexe, railsDeBarrette, connecteursDe, connecteurParBorne, moduleDeConnecteur, famillesDeModules, reperesDe, estBornier, estMasse, '
   + 'moduleEtContact, bornesLettrees, choixDesModules, retenirModule, moduleAutomatique, modulesPossibles, lireBorne, casesDuModule, nomenclatureDe, '
-  + 'avecBarrettesAPoser, sansBarrettesAPoser, estRaccordAPoser, lettresDeBarretteAPoser, dedoublements, nouveauContrat, numeroDeBorne };', bac);
+  + 'avecBarrettesAPoser, sansBarrettesAPoser, estRaccordAPoser, lettresDeBarretteAPoser, dedoublements, nouveauContrat, numeroDeBorne, partieDePrise, faceDesParties };', bac);
 const X = bac.X, NE = X.normeEmbarquee(), BO = X.bibleDeLOutil(), L = X.contratExemple();
 /* (v85) l'exemple écrit ses barrettes comme les fichiers du lecteur (« 667VT2 51 » + « A ») ; les règles d'une barrette
    NUMÉROTÉE (1, 2, 3… : une barrette à poser, un fichier d'une autre forme) se vérifient sur l'ancienne écriture de ses
@@ -272,10 +275,81 @@ const pose = V1.map(l => X.liaison({ ...l, de: l.de === 'VT1' ? '102VT9' : l.de,
 ok('posée au contrat sous 102VT9, elle garde ses lettres (102VT9:51H) et le câble créé sa marque : une barrette en modules, que VOLTA vérifie sans rien changer',
   cree && bout(cree) === '102CB1:2→102VT9:51H' && !X.estRaccordAPoser(cree) && X.bornesLettrees(X.besoinsDeBarrette('102VT9', pose))
   && (Q => Q.fils.map(x => x.borne + '=' + x.contact.lettre).sort().join() === '51H=H,51J=J,51K=K' && !Q.verdicts.length)(X.remplirModules(X.besoinsDeBarrette('102VT9', pose), NE, '')));
-// les prises de l'exemple : leurs bornes sont les lettres de leur face
-ok('les prises de l’exemple s’écrivent comme leur face : 408VC1A A ; 409VC2A A, B, C ; 410VC2B A, B ; 411VC3A A…H ; 412VC3B A…G — chaque borne sur sa lettre, rien à redire',
-  [['408VC1A', 'A'], ['409VC2A', 'ABC'], ['410VC2B', 'AB'], ['411VC3A', 'ABCDEFGH'], ['412VC3B', 'ABCDEFG']].every(([r, ls]) => { const c = X.coupureEnModule(r, L, NE);
+// les prises de l'exemple : leurs bornes sont les lettres de leur face — (passe 87) 412VC3B prend G et H, les lettres de
+// 411VC3A qui lui font face, et laisse F libre
+ok('les prises de l’exemple s’écrivent comme leur face : 408VC1A A ; 409VC2A A, B, C ; 410VC2B A, B ; 411VC3A A…H ; 412VC3B A…E, G, H — chaque borne sur sa lettre, rien à redire',
+  [['408VC1A', 'A'], ['409VC2A', 'ABC'], ['410VC2B', 'AB'], ['411VC3A', 'ABCDEFGH'], ['412VC3B', 'ABCDEGH']].every(([r, ls]) => { const c = X.coupureEnModule(r, L, NE);
     return X.besoinsDeBarrette(r, L).bornes.slice().sort().join('') === ls && c.plan.fils.every(x => x.contact.lettre === x.borne) && !c.plan.verdicts.length; }));
+
+console.log('\n15. (passe 87) LA PRISE : LA LETTRE DE LA PARTIE MOBILE RÉPOND À LA MÊME LETTRE DE LA PARTIE FIXE');
+/* Le lecteur a tranché : G face à G. 411VC3A et 412VC3B sont les deux parties de la prise VC3 (le code et son ordre, la lettre
+   de fin) : une liaison de l'une à l'autre garde sa lettre ; un écart se dit, à voir, une fois — sur la partie mobile, celle
+   d'où partent les liaisons vers l'autre —, avec son câble. Et un contact ne reçoit qu'un câble de chaque partie. */
+const face = L.filter(l => [l.de, l.vers].sort().join() === '411VC3A,412VC3B');
+ok('l’exemple, corrigé : les six liaisons de 411VC3A à 412VC3B gardent leur lettre (A, B, C, D, G, H) — aucun écart, sur aucune des deux parties',
+  X.partieDePrise('411VC3A').prise === 'VC3' && X.partieDePrise('412VC3B').partie === 'B' && !X.partieDePrise('667VT2') && !X.partieDePrise('408VC1')
+  && face.length === 6 && face.every(l => l.borneDe === l.borneVers) && face.map(l => l.borneDe).sort().join('') === 'ABCDGH'
+  && !X.faceDesParties('411VC3A', L).length && !X.faceDesParties('412VC3B', L).length && ['411VC3A', '412VC3B'].every(r => !X.coupureEnModule(r, L, NE).plan.verdicts.length),
+  face.map(l => l.de + ':' + l.borneDe + '→' + l.vers + ':' + l.borneVers).join(' '));
+// l'exemple d'avant la passe 87 : W-521 croisait G → E, W-524 F → H (et le câble de 540VL5 passait par 412VC3B:G)
+const avant87 = { 'W-521': ['borneVers', 'E'], 'W-522': ['borneDe', 'E'], 'W-523': ['borneVers', 'F'], 'W-524': ['borneDe', 'F'], 'W-526': ['borneVers', 'G'], 'W-527': ['borneDe', 'G'] };
+const LV = L.map(l => avant87[l.cable] ? X.liaison({ ...l, [avant87[l.cable][0]]: avant87[l.cable][1] }) : l);
+const F3A = X.coupureEnModule('411VC3A', LV, NE).plan.verdicts.filter(v => v.face), F3B = X.coupureEnModule('412VC3B', LV, NE).plan.verdicts.filter(v => v.face);
+ok('l’exemple d’avant : deux écarts, à voir, dits sur la partie mobile seule (411VC3A, d’où partent cinq des six liaisons) — « 411VC3A:G (partie mobile) va sur 412VC3B:E (partie fixe) : la lettre G devrait répondre à G », et H face à F, chacun avec son câble',
+  F3A.length === 2 && !F3B.length && X.faceDesParties('412VC3B', LV).length === 2 && F3A.every(v => v.niveau === 'attention' && v.genre === 'contact' && v.porteur === '411VC3A' && v.cables.length === 1)
+  && F3A.map(v => v.texte).sort().join(' | ') === '411VC3A:G (partie mobile) va sur 412VC3B:E (partie fixe) : la lettre G devrait répondre à G | 411VC3A:H (partie mobile) va sur 412VC3B:F (partie fixe) : la lettre H devrait répondre à H'
+  && F3A.find(v => / la lettre G /.test(v.texte)).cables[0].cable === 'W-521' && F3A.find(v => / la lettre H /.test(v.texte)).cables[0].cable === 'W-524', F3A.map(v => v.texte).join(' | '));
+// un câble qui arrive, un câble qui repart : la traversée d'une prise, un câble de chaque partie — rien à dire (412VC3B:G d'avant) ;
+// deux câbles sur un même contact d'une même partie : dit, la partie nommée, les câbles nommés
+const P5 = { plan: '5', pnDe: 'ABS0864-08', pnVers: 'EN3646A61208FN' };
+const deuxM = [...L, X.liaison({ ...P5, de: '540VL5', borneDe: '6', vers: '412VC3B', borneVers: 'E', cable: 'W-599', type: 'DR22' })], DM = X.coupureEnModule('412VC3B', deuxM, NE).plan.verdicts.filter(v => /^contact E : /.test(v.texte));
+const deuxF = [...L, X.liaison({ ...P5, de: '412VC3B', borneDe: 'E', vers: '540VL5', borneVers: '6', cable: 'W-599', type: 'DR22', pnDe: 'EN3646A61208FN', pnVers: 'ABS0864-08' })], DF = X.coupureEnModule('412VC3B', deuxF, NE).plan.verdicts.filter(v => /^contact E : /.test(v.texte));
+ok('deux câbles sur un même contact d’une partie : « contact E : 2 câbles côté partie mobile (DR22 vers 540VL5:4, DR22 vers 540VL5:6) — un contact ne reçoit qu’un câble de chaque partie », de même côté partie fixe ; une traversée (un câble de chaque partie) ne dit rien',
+  DM.length === 1 && DM[0].niveau === 'attention' && DM[0].texte === 'contact E : 2 câbles côté partie mobile (DR22 vers 540VL5:4, DR22 vers 540VL5:6) — un contact ne reçoit qu’un câble de chaque partie'
+  && DF.length === 1 && /^contact E : 2 câbles côté partie fixe \(DR22 vers 560HT1:1, DR22 vers 540VL5:6\)/.test(DF[0].texte)
+  && !X.coupureEnModule('412VC3B', LV, NE).plan.verdicts.some(v => /câbles côté/.test(v.texte)) && !X.coupureEnModule('412VC3B', L, NE).plan.verdicts.some(v => /câbles côté/.test(v.texte)), [DM[0] && DM[0].texte, DF[0] && DF[0].texte].join(' | '));
+// deux prises différentes (VC2 et VC3) : une liaison de l'une à l'autre change de lettre librement ; les parties de VC2, sans liaison entre elles : rien
+const LX = [...L, X.liaison({ de: '409VC2A', borneDe: 'C', vers: '411VC3A', borneVers: 'E', cable: 'W-598', type: 'DR22', plan: '3' })];
+ok('deux prises différentes (409VC2A → 411VC3A : VC2, VC3) ne se font pas face ; les deux parties de VC2, sans liaison entre elles, non plus', !X.faceDesParties('409VC2A', LX).length && !X.faceDesParties('411VC3A', LX).length && !X.faceDesParties('409VC2A', L).length && !X.faceDesParties('410VC2B', L).length);
+// une partie écrite en numéros (un autre fichier), l'autre en lettres : le 7 est la G ; l'orientation suit les liaisons, à égalité la partie A
+const LN87 = L.map(l => ({ ...l, borneDe: l.de === '411VC3A' ? String('ABCDEFGH'.indexOf(l.borneDe) + 1) : l.borneDe, borneVers: l.vers === '411VC3A' ? String('ABCDEFGH'.indexOf(l.borneVers) + 1) : l.borneVers }));
+const LNV = LN87.map(l => l.cable === 'W-521' ? { ...l, borneVers: 'E' } : l), FN = X.faceDesParties('411VC3A', LNV);
+const sens = [X.liaison({ de: '512VC7B', borneDe: 'A', vers: '511VC7A', borneVers: 'B', cable: 'W-1', type: 'DR22' }), X.liaison({ de: '512VC7B', borneDe: 'C', vers: '511VC7A', borneVers: 'C', cable: 'W-2', type: 'DR22' })];
+const egal = [X.liaison({ de: '511VC7A', borneDe: 'A', vers: '512VC7B', borneVers: 'B', cable: 'W-1', type: 'DR22' }), X.liaison({ de: '512VC7B', borneDe: 'C', vers: '511VC7A', borneVers: 'D', cable: 'W-2', type: 'DR22' })];
+ok('411VC3A en numéros face à 412VC3B en lettres : le 7 répond à la G, sans écart ; un écart le dit dans l’écriture de chaque partie (« le contact 7 devrait répondre à G ») ; les liaisons écrites de B vers A font de B la partie mobile ; à égalité, la partie A',
+  !X.faceDesParties('411VC3A', LN87).length && FN.length === 1 && FN[0].texte === '411VC3A:7 (partie mobile) va sur 412VC3B:E (partie fixe) : le contact 7 devrait répondre à G'
+  && X.faceDesParties('511VC7A', sens).map(v => v.texte).join() === '512VC7B:A (partie mobile) va sur 511VC7A:B (partie fixe) : la lettre A devrait répondre à A'
+  && X.faceDesParties('512VC7B', egal).map(v => v.porteur + ' ' + v.texte).join(' | ') === '511VC7A 511VC7A:A (partie mobile) va sur 512VC7B:B (partie fixe) : la lettre A devrait répondre à A | 511VC7A 511VC7A:D (partie mobile) va sur 512VC7B:C (partie fixe) : la lettre D devrait répondre à D',
+  [FN[0] && FN[0].texte, ...X.faceDesParties('512VC7B', egal).map(v => v.texte)].join(' | '));
+
+console.log('\n16. (passe 87) UN CONNECTEUR FOURNI : L’ARRANGEMENT SE LIT DANS SA RÉFÉRENCE, SINON IL SE DÉDUIT DES BORNES — À VÉRIFIER');
+/* Le lecteur a tranché : le connecteur d'un équipement vient de son fournisseur ; son arrangement n'est pas un choix de VOLTA.
+   Une référence qui le dit, selon la codification de sa norme (EN 2997 : la classe, le type, le BOÎTIER et l'ARRANGEMENT — EN2997
+   Y 0 16 24 A N), l'impose ; sinon VOLTA le déduit des bornes, « à vérifier ». Une référence qui nomme un arrangement sans toutes
+   les bornes du fichier : à voir, une phrase. */
+const pnDe340 = pn => L.map(l => l.de === '340AB1' ? X.liaison({ ...l, pnDe: pn }) : l.vers === '340AB1' ? X.liaison({ ...l, pnVers: pn }) : l);
+// (les deux câbles de sa borne 4 se disent, comme avant : la barrette à poser les relie — rien d'autre)
+const Q340 = X.connecteursEnModules('340AB1', L, NE)[0].plan, Q1624 = X.connecteursEnModules('340AB1', pnDe340('EN2997Y01624AN'), NE)[0].plan, seul4 = Q => Q.verdicts.map(v => v.texte).join() === 'contact 4 : 2 câbles — un contact reçoit un câble';
+ok('340AB1 : EN2997Y1A08P ne suit pas la codification (après la classe Y et le type 1, « A08P » n’est ni un boîtier ni un arrangement) — le 16-24, déduit des bornes, à vérifier, sans un mot de plus',
+  Q340.reference === 'EN2997-002-16-24' && Q340.deduit && !Q340.nomme && seul4(Q340), Q340.reference + (Q340.deduit ? ' (déduit)' : '') + ' · ' + Q340.verdicts.map(v => v.texte).join(' | '));
+ok('la même borne, une référence qui suit la codification (EN2997Y01624AN : boîtier 16, arrangement 24) : le 16-24 lu dans la référence — nommé, pas déduit, rien à redire',
+  Q1624.reference === 'EN2997-002-16-24' && Q1624.nomme && !Q1624.deduit && seul4(Q1624), Q1624.verdicts.map(v => v.texte).join(' | '));
+const Q0803 = X.connecteursEnModules('340AB1', pnDe340('EN2997Y00803AN'), NE)[0].plan, v0803 = Q0803.verdicts[0] || {};
+ok('une référence qui nomme un arrangement sans toutes les bornes (EN2997Y00803AN, le 08-03, pour 1, 4 et 20) : il reste celui de la référence, et une seule phrase, à voir — « votre référence EN2997Y00803AN nomme l’arrangement 08-03, qui n’a pas les contacts 4 et 20 — la référence ou les bornes de votre fichier sont à vérifier »',
+  Q0803.reference === 'EN2997-002-08-03' && Q0803.nomme && !Q0803.deduit && Q0803.verdicts.length === 1 && v0803.niveau === 'attention' && v0803.genre === 'fichier' && v0803.bornes.join() === '4,20' && v0803.manque.join() === '4,20'
+  && v0803.texte === 'votre référence EN2997Y00803AN nomme l’arrangement 08-03, qui n’a pas les contacts 4 et 20 — la référence ou les bornes de votre fichier sont à vérifier' && Q0803.places === 1, v0803.texte);
+const QS = X.connecteursEnModules('340AB1', pnDe340('EN2997Y00803AN').filter(l => !(l.de === '340AB1' && l.borneDe === '4')), NE)[0].plan;
+ok('un seul contact qui manque se dit au singulier (« qui n’a pas de contact 20 »)', QS.verdicts.length === 1 && /, qui n’a pas de contact 20 — /.test(QS.verdicts[0].texte), QS.verdicts.map(v => v.texte).join(' | '));
+// retenu à la main, ou une prise de coupure (nous la choisissons) : chaque borne sans contact reste un problème
+const Qm = X.connecteursEnModules('340AB1', L, NE, k => k === '340AB1|A' ? 'EN2997-002-08-03' : '')[0].plan;
+const LPP = L.map(l => l.de === '412VC3B' ? X.liaison({ ...l, pnDe: 'EN3646A6083AAN' }) : l.vers === '412VC3B' ? X.liaison({ ...l, pnVers: 'EN3646A6083AAN' }) : l), QP = X.coupureEnModule('412VC3B', LPP, NE).plan;
+ok('un arrangement retenu à la main qui n’a pas toutes les bornes, une prise dont la référence nomme un arrangement trop petit : chaque borne sans contact reste un problème — la règle du fournisseur ne vaut que pour la référence d’un connecteur d’équipement',
+  Qm.main && !Qm.deduit && Qm.verdicts.filter(v => v.niveau === 'ko' && /n'a pas de contact/.test(v.texte)).length === 2 && !Qm.verdicts.some(v => v.genre === 'fichier')
+  && QP.nomme && !QP.deduit && QP.verdicts.filter(v => v.niveau === 'ko' && /n'a pas de contact/.test(v.texte)).length === 4 && !QP.verdicts.some(v => v.genre === 'fichier'), QP.verdicts.map(v => v.texte).join(' | '));
+// les connecteurs de l'exemple : aucune référence ne nomme son arrangement (EN2997Y1A…P, EN4165-2M) — tous déduits, inchangés
+const ded = ['340AB2', '351PM1', '421ST1', '431PR1', '530PM3', '600XC4', '300XC1'].map(r => X.connecteursEnModules(r, L, NE)[0].plan);
+ok('les connecteurs de l’exemple : aucune référence ne nomme son arrangement — 340AB2 08-03, 351PM1 14-07, 421ST1 08-06, 431PR1 08-03, 530PM3 08-03, 600XC4 20-22, 300XC1 A 12-20, tous déduits des bornes, comme avant',
+  ded.every(Q => Q.deduit && !Q.nomme && !Q.verdicts.some(v => v.genre === 'fichier')) && ded.map(Q => Q.reference.replace(/^.*-002-/, '')).join() === '08-03,14-07,08-06,08-03,08-03,20-22,12-20', ded.map(Q => Q.reference).join(' '));
 
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);

@@ -15,13 +15,26 @@
        définitif ensuite (quinze au plus), le concours partagé avec des aides ;
      · LA TABLE VIVANTE, SOBRE : quand on est là, ses nappes dérivent sans
        brûler un cœur (le processeur de tout le navigateur) ; sans la main, elle
-       s'endort (90 s, avancées ici) et ne brûle plus rien.
+       s'endort (90 s, avancées ici) et ne brûle plus rien ;
+     · (passe 87) LE GROS FICHIER — l'exemple quinze fois, 3 345 liaisons sur
+       90 folios, comme le piège « geant » (tests/pieges.js) — ouvert en vrai,
+       le calcul de fond actif : pendant que les folios se dessinent au loin,
+       la page ne fige jamais plus de 300 ms ; dans la recherche, aucune lettre
+       ne la fige plus de 50 ms, et la liste trouve ce qu'on a tapé.
    Rend 1 au premier échec.
    =========================================================================== */
 const { chromium } = require('playwright');
-const fs = require('fs'), os = require('os');
+const fs = require('fs'), os = require('os'), path = require('path'), vm = require('vm');
 const P = require('./pilote');
 const FICHIER = P.fichierDemande();
+// le plan géant des fichiers piégés : l'exemple quinze fois, la zone décalée d'un millier, chaque copie ses folios (tests/pieges.js)
+function geantCsv() { const bac = { console }; vm.createContext(bac);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'src', '01-modele.js'), 'utf8') + '\nthis.E = contratExemple();', bac);
+  const EX = [...bac.E].map(l => ({ ...l })), L = [];
+  for (let k = 0; k < 15; k++) EX.forEach(l => { const z = r => String(r).replace(/^(\d+)/, m => String(+m + 1000 * (k + 1))); L.push({ ...l, de: z(l.de), vers: z(l.vers), cable: l.cable ? l.cable + '-' + k : '', plan: String(k * 6 + (+l.plan || 1)) }); });
+  const ENT = ['Install', 'ECP', 'Harness', 'Device1', 'Pin1', 'PN1', 'Description1', 'Cable T/G', 'Cable Tag', 'Route', 'Device2', 'Pin2', 'PN2', 'Description2', 'FWD', 'Cable length (mm)', 'Appareil'];
+  const c = v => { v = String(v == null ? '' : v); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  return [ENT.join(';'), ...L.map(l => ['Essai', '12345', 'H-ESSAI-01', l.de, l.borneDe, l.pnDe, l.descDe || '', l.type, l.cable, l.route, l.vers, l.borneVers, l.pnVers, l.descVers || '', l.plan, l.lg == null ? '5000' : l.lg, 'APP-1'].map(c).join(';'))].join('\n'); }
 const CHARGE = () => os.loadavg()[0] / Math.max(1, os.cpus().length);
 const marge = () => Math.max(1, CHARGE() * 1.5);   // une machine chargée étire tout : le seuil avec elle
 // le processeur de tout le navigateur lancé par ce processus (ses descendants, dans /proc), en ms
@@ -89,6 +102,26 @@ function lectureDAvantDansLaPage() {
   ok(vit.avance && vit.minuterie && dort, 'la table dérive quand on est là, et s’endort au repos (plus rien ne tourne)', JSON.stringify(vit));
   ok(cpuEveillee < 25 * marge(), 'éveillée, la table dérive sans brûler un cœur (le navigateur entier)', Math.round(cpuEveillee) + ' % d’un cœur');
   ok(cpu < 15 * marge(), 'au repos, la table ne brûle plus un cœur (le navigateur entier)', Math.round(cpu) + ' % d’un cœur (100 % avant)');
+  /* — (passe 87, le regard, S11) LE GROS FICHIER, ouvert en vrai, le calcul de fond actif. La pastille relisait les 90 folios
+     deux fois par seconde (la page figée 50 à 200 ms à chaque fois, des blocages de 1,3 à 2,4 s) ; chaque lettre tapée dans
+     la recherche refaisait tout le contrat et les gestes du contrôle (0,6 à 0,8 s par lettre, 2,3 s pour la première). Les
+     tâches longues se lisent dans la page (PerformanceObserver « longtask »). */
+  const geant = await ctx.newPage(); geant.setDefaultTimeout(600000); geant.on('pageerror', e => erreurs.push(e.message));
+  await geant.addInitScript(() => { window.__longues = []; try { new PerformanceObserver(l => l.getEntries().forEach(e => window.__longues.push([e.startTime, e.duration]))).observe({ type: 'longtask', buffered: true }); } catch (_) { } });
+  await geant.goto(FICHIER); await geant.waitForFunction(() => typeof atelier !== 'undefined' && typeof BIB !== 'undefined' && BIB.pret, null, { polling: 50 });
+  const ouv = await geant.evaluate(async t => { const a = performance.now(); await ouvrirFichier(new File([t], 'geant.csv', { type: 'text/csv' })); return { fin: performance.now(), ms: performance.now() - a, n: verite().length, folios: plans().length }; }, geantCsv());
+  await geant.waitForTimeout(15000);
+  const fond = await geant.evaluate(fin => { const xs = window.__longues.filter(x => x[0] >= fin).map(x => Math.round(x[1])); return { n: xs.length, pire: Math.max(0, ...xs), prets: etatPlacement().prets, ailleurs: placement.ailleurs }; }, ouv.fin);
+  ok(ouv.n === 3345 && ouv.folios === 90 && fond.ailleurs, 'le gros fichier s’ouvre, son calcul de fond au loin', `${ouv.n} liaisons, ${ouv.folios} folios, lu et dessiné en ${Math.round(ouv.ms)} ms`);
+  ok(fond.pire < 300 * marge(), 'pendant que ses folios se dessinent, la page ne fige jamais plus de 300 ms', `15 s : ${fond.n} tâche(s) de plus de 50 ms, la plus longue ${fond.pire} ms ; ${fond.prets} folios prêts`);
+  await geant.mouse.click(1300, 300); await geant.waitForTimeout(300);
+  const t1 = await geant.evaluate(() => performance.now()); await geant.keyboard.press('/');
+  for (const c of '8103RL1') { await geant.keyboard.type(c); await geant.waitForTimeout(80); }
+  const trouve = await geant.waitForFunction(() => { const l = document.getElementById('pa-liste'); return l && /8103RL1/.test(l.innerText) ? performance.now() : null; }, null, { timeout: 30000, polling: 'raf' }).then(h => h.jsonValue(), () => null);
+  const frappe = await geant.evaluate(t1 => window.__longues.filter(x => x[0] >= t1).map(x => Math.round(x[1])), t1);
+  ok(!!trouve, 'la recherche trouve 8103RL1 parmi les 3 345 liaisons', trouve ? Math.round(trouve - t1) + ' ms depuis « / » (sept lettres à 80 ms)' : 'pas trouvé');
+  ok(Math.max(0, ...frappe) < 50 * marge(), 'aucune lettre ne fige la page plus de 50 ms (elle attend la fin de la frappe, l’index est prêt)', frappe.length ? 'tâches de plus de 50 ms : ' + frappe.join(', ') + ' ms' : 'aucune tâche de plus de 50 ms');
+  await geant.close();
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

@@ -535,13 +535,17 @@ function motDuFolio(p, court, K) { const nom = 'Folio ' + p, e = travailDeFond()
     return nom + ' : en attente' + (court || !enc || enc.plan === p ? '' : ', après le folio ' + enc.plan); }
   return nom + ' : prêt'; }
 function peindreEtatsDesFolios() { const strip = $('fo-strip'); if (!strip) return; const fond = travailDeFond(), K = fond ? clesDesFolios() : null;
-  strip.querySelectorAll('.chip').forEach(c => { const e = fond ? etatDuFolio(c.dataset.plan, K) : null, etat = e ? e.etat : 'pret';
-    ['attente', 'dessin', 'affinage'].forEach(x => {   // (passe 87) 'affinage' ne se pose plus : il s'efface s'il était là
-      const on = etat === x; if (c.classList.contains('fo-' + x) !== on) c.classList.toggle('fo-' + x, on); });
+  /* (passe 87) une puce ne se repeint que si son état change : la barre se relit quatre fois par seconde pendant un dessin, et
+     relire le DOM de ses 90 puces (leurs classes, leur piste, leur nom) coûtait plus que tout le reste. La classe `fo-affinage`
+     ne se pose plus (un folio que VOLTA peaufine est prêt) : elle s'efface si elle était là. */
+  strip.querySelectorAll('.chip').forEach(c => { const plan = c.dataset.plan, e = fond ? etatDuFolio(plan, K) : null, etat = e ? e.etat : 'pret';
     // la piste : ce que le dessin a fait ; pleine quand il est prêt (elle se remplit, puis s'efface)
-    const p = etat === 'dessin' ? Math.max(0.04, e.p).toFixed(3) : etat === 'attente' ? '0' : '1';
+    const p = etat === 'dessin' ? Math.max(0.04, e.p).toFixed(3) : etat === 'attente' ? '0' : '1', nom = fond ? motDuFolio(plan, true, K) : 'Folio ' + plan, peint = etat + '|' + p + '|' + nom;
+    if (c.__etatPeint === peint) return;
+    c.__etatPeint = peint;
+    ['attente', 'dessin', 'affinage'].forEach(x => { const on = etat === x; if (c.classList.contains('fo-' + x) !== on) c.classList.toggle('fo-' + x, on); });
     if (c.style.getPropertyValue('--fo-p') !== p) c.style.setProperty('--fo-p', p);
-    const nom = fond ? motDuFolio(c.dataset.plan, true, K) : 'Folio ' + c.dataset.plan; if (c.getAttribute('aria-label') !== nom) c.setAttribute('aria-label', nom); });
+    if (c.getAttribute('aria-label') !== nom) c.setAttribute('aria-label', nom); });
   // la bulle de la puce survolée suit (l'horloge tourne quatre fois par seconde pendant un dessin)
   const b = $('folios') && $('folios').querySelector('.fo-bulle.on'); if (b && b.dataset.plan) { const t = typo(motDuFolio(b.dataset.plan, false, K)); if (b.textContent !== t) b.textContent = t; } }
 // l'horloge de l'attente : quatre fois par seconde tant qu'un folio se calcule ou s'esquisse, rien sinon
@@ -2060,7 +2064,7 @@ function aller(cible) { const P = plans(); const nom = cible.nom;
   if (cible.type === 'type') { montrerLiaisons(nom); return; }
   if (cible.type === 'nature') { montrerNature(cible); return; }
   // (v86) une barrette ajoutée par VOLTA (VT1…), ou l'une de ses bornes : son folio, puis sa fiche (elle n'est pas un bloc du dessin)
-  if (cible.type !== 'fil' && VT_A_POSER.test(String(nom || ''))) { const p = (P.length ? P : ['*']).find(x => liaisonsDe(x).some(l => l.aPoser === nom));
+  if (cible.type !== 'fil' && VT_A_POSER.test(String(nom || ''))) { const p = avecLesFolios(() => (P.length ? P : ['*']).find(x => liaisonsDe(x).some(l => l.aPoser === nom)));
     if (P.length > 1 && app.plan !== '*' && p && p !== app.plan) allerAuPlan(p);
     if (!app.dessin && attenteCourante()) { reporterCible(cible); return; } if (typeof montrerBloc === 'function') montrerBloc(nom); return; }
   const ou = cible.type === 'fil' ? plansDuFil(nom) : plansDuRepere(nom);
@@ -2155,8 +2159,18 @@ function indexDeRecherche() { return memoContrat('recherche', () => { const L = 
     const k = r + '\u0001' + b; if (!vuesSeules.has(k) && estBarrette(r)) { vuesSeules.add(k); const lb = String(b).toLowerCase(); (bornesSeules.get(lb) || bornesSeules.set(lb, []).get(lb)).push({ r, b, l, c, autre, bAutre }); } }));
   // les câbles, chacun par sa première liaison ; les types, chacun avec son nombre de câbles (sans les pontages)
   const cables = [], vus = new Set(), types = new Map();
-  L.forEach(l => { const c = l.cable; if (c && !vus.has(c)) { vus.add(c); cables.push(l); } if (l.type && l.de !== l.vers) types.set(l.type, (types.get(l.type) || 0) + 1); });
-  return { L, info, noms, parPlat, bornesDe, bornesSeules, cables, types, calibres: null }; }); }
+  L.forEach(l => { const c = l.cable; if (c && !vus.has(c)) { vus.add(c); cables.push({ l, c, ...aPlatEtSansZeros(c) }); } if (l.type && l.de !== l.vers) types.set(l.type, (types.get(l.type) || 0) + 1); });
+  // chaque repère, ses descriptions et ses part numbers, mis à plat une fois (et sans leurs zéros) : une lettre ne fait plus que comparer
+  const reps = noms.map(n => { const x = info.get(n); return { n, x, ...aPlatEtSansZeros(n), descs: [...x.descs].map(t => ({ t, ...aPlatEtSansZeros(t) })), pns: [...x.pns].map(t => ({ t, ...aPlatEtSansZeros(t) })) }; });
+  return { L, info, noms, reps, parPlat, bornesDe, bornesSeules, cables, types, calibres: null }; }); }
+const aPlatEtSansZeros = t => { const a = aPlat(t); return { a, z: sansZeros(a) }; };
+// le rang d'un texte déjà mis à plat (`a`, et sans ses zéros : `z`) pour ce qu'on cherche — le même que `rangAPlat`
+const rangDejaAPlat = (a, z, Q, Qz) => !a || !Q ? 2 : a.startsWith(Q) || z === Qz || (Q === Qz && z.startsWith(Qz)) ? 0 : a.includes(Q) ? 1 : 2;
+// le calibre d'un disjoncteur, tel que la recherche le dit (« 102CB1 · calibre 10 A ») : il relit tout le disjoncteur (2 à 4 ms,
+// dix fois plus sur une machine occupée) — lu une fois tant que le contrat (l'index), le contrôle et les hypothèses restent les mêmes
+function calibreDeRecherche(X, n) { if (typeof calibreAuFolio !== 'function') return null; const items = typeof CONTROLE !== 'undefined' ? CONTROLE.items : null, simu = JSON.stringify(app.simu || {});
+  if (!X.calibres || X.calibres.items !== items || X.calibres.simu !== simu) X.calibres = { items, simu, m: new Map() };
+  const M = X.calibres.m; if (!M.has(n)) M.set(n, calibreAuFolio(n)); return M.get(n); }
 // les `k` premiers d'une liste selon `cmp`, comme un tri stable les rangerait — sans trier le reste
 function premiersSelon(xs, k, cmp) { const out = [];
   for (const x of xs) { if (out.length >= k && cmp(x, out[out.length - 1]) >= 0) continue; let i = out.length; while (i > 0 && cmp(x, out[i - 1]) < 0) i--; out.splice(i, 0, x); if (out.length > k) out.pop(); }
@@ -2182,19 +2196,17 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };
   if (cal && !natures.includes('CB')) natures.push('CB');
-  // le calibre d'un disjoncteur relit tout le disjoncteur (2 à 4 ms) : lu une fois tant que le contrat, le contrôle et les hypothèses restent les mêmes
-  const calDe = n => { if (typeof calibreAuFolio !== 'function') return null; const items = typeof CONTROLE !== 'undefined' ? CONTROLE.items : null, simu = JSON.stringify(app.simu || {});
-    if (!X.calibres || X.calibres.items !== items || X.calibres.simu !== simu) X.calibres = { items, simu, m: new Map() };
-    const M = X.calibres.m; if (!M.has(n)) M.set(n, calibreAuFolio(n)); return M.get(n); };
+  const calDe = n => calibreDeRecherche(X, n);
   // aucun disjoncteur de ce calibre (« 7,5 A » quand ils sont tous en 10 A) : tous, chacun avec le sien, et la ligne le dit
   if (cal && cal.amp != null && !X.noms.some(n => estDisjoncteur(n) && Math.abs((calDe(n) || 0) - cal.amp) < 1e-6)) { cal.aucun = cal.amp; cal.amp = null; }
-  info.forEach((x, n) => { const des = D.get(n) || ''; let r = rang(n), dit = des || [...x.descs][0] || '';
+  X.reps.forEach(({ n, x, a, z, descs, pns }) => { const des = D.get(n) || ''; let r = rangDejaAPlat(a, z, Q, Qz), dit = des || (descs.length ? descs[0].t : '') || '';
     // le calibre cherché : chaque disjoncteur dit le sien, en tête ; « calibre 10 » ne garde que ceux de 10 A
     if (cal && estDisjoncteur(n)) { const c = calDe(n);
       if (cal.amp != null && !(c > 0 && Math.abs(c - cal.amp) < 1e-6)) return;
       rep.push({ type: 'repere', nom: n, des: (c > 0 ? 'calibre ' + amperesCb(c) : 'disjoncteur') + (des && des !== 'disjoncteur' ? ' · ' + des : ''), n: x.n, r: 0.5 }); return; }
     if (r === 2 && natures.includes(codeDe(n))) { r = 1.5; dit = CODES[codeDe(n)].nom + (estDisjoncteur(n) && calDe(n) ? ' · ' + amperesCb(calDe(n)) : '') + (dit ? ' · ' + dit : ''); }
-    if (r === 2) { const d = contient(des) ? des : [...x.descs].find(contient), pn = d ? null : [...x.pns].find(contient); if (!d && !pn) return; dit = d || pn; r = d ? 2 : 3; }
+    if (r === 2) { const dedans = o => rangDejaAPlat(o.a, o.z, Q, Qz) < 2, d = contient(des) ? des : (descs.find(dedans) || {}).t, pn = d ? null : (pns.find(dedans) || {}).t;
+      if (!d && !pn) return; dit = d || pn; r = d ? 2 : 3; }
     // ni désignation ni description : sa nature (« disjoncteur · 15 A »), plutôt qu'une ligne vide
     if (!dit) dit = natureDe(n) + (estDisjoncteur(n) && calDe(n) ? ' · ' + amperesCb(calDe(n)) : '');
     rep.push({ type: 'repere', nom: n, des: dit, n: x.n, r }); });
@@ -2206,7 +2218,7 @@ function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if 
   // (« w12 » = W-012) passe devant les repères qui ne font que le contenir ; un type de câble (deux lettres au moins) : la
   // ligne « tous les DR12 », puis quelques-uns
   const exacts = [], autres = [];
-  X.cables.forEach(l => { const c = l.cable, r = rang(c); if (r < 2) (sansZerosDe(aPlat(c)) === Qz ? exacts : autres).push({ l, nom: c, r }); });
+  X.cables.forEach(({ l, c, a, z }) => { const r = rangDejaAPlat(a, z, Q, Qz); if (r < 2) (z === Qz ? exacts : autres).push({ l, nom: c, r }); });
   const parCable = (a, b) => a.r - b.r || triNaturel(a.nom, b.nom), fil = f => candidatCable(f.l, f.r);
   const types = Q.length >= 2 ? [...X.types].filter(([t]) => contient(t)) : [];
   const ty = types.sort((a, b) => rang(a[0]) - rang(b[0]) || b[1] - a[1]).slice(0, 2).map(([t, n]) => ({ type: 'type', nom: t, des: 'tous les câbles de ce type, dans le récapitulatif', n }));
@@ -2337,14 +2349,21 @@ function gestesDeLaPalette() { if (typeof gestesDuPoint !== 'function' || !CONTR
   if (!avancerGestes(paletteOuverte() ? 15 : Infinity)) preparerLaRecherche();
   return GESTES_PALETTE.out.slice().sort((a, b) => (a.niveau === 'ko' ? 0 : 1) - (b.niveau === 'ko' ? 0 : 1)); }
 /* (passe 87) LA RECHERCHE SE PRÉPARE QUAND LA PAGE EST LIBRE, après chaque changement (`synchroniser`) : l'index du contrat,
-   puis les gestes du contrôle, par tranches de 8 ms — la première lettre tapée trouve tout prêt. Si la palette est ouverte
-   quand les gestes s'achèvent, elle se complète, la ligne choisie gardée. */
-const PREPARATION = { t: 0 };
-function preparerLaRecherche() { if (PREPARATION.t) return;
-  const tranche = () => { PREPARATION.t = 0; if (!app.contrat.liaisons.length || typeof gestesDuPoint !== 'function') return; const avant = gestesPrets(); let fini = true;
-    try { fini = avancerGestes(8); } catch (_) { }
-    if (!fini) PREPARATION.t = setTimeout(tranche, 0); else if (!avant && paletteOuverte()) rendrePalette(true); };
-  PREPARATION.t = setTimeout(() => { PREPARATION.t = 0; if (!app.contrat.liaisons.length) return; try { indexDeRecherche(); } catch (_) { } PREPARATION.t = setTimeout(tranche, 0); }, 40); }
+   le calibre de chaque disjoncteur (la recherche le dit), puis les gestes du contrôle, par tranches de 8 ms — la première
+   lettre tapée trouve tout prêt. Si la palette est ouverte quand les gestes s'achèvent, elle se complète, la ligne choisie
+   gardée. Un changement pendant la préparation la relance quand elle finit (`encore`). */
+const PREPARATION = { t: 0, encore: false };
+function preparerLaRecherche() { if (PREPARATION.t) { PREPARATION.encore = true; return; } PREPARATION.encore = false;
+  let X = null, k = 0;
+  const tranche = () => { PREPARATION.t = 0; if (!app.contrat.liaisons.length || typeof gestesDuPoint !== 'function') return; const fin = performance.now() + 8;
+    try { if (!X) X = indexDeRecherche(); while (k < X.noms.length && performance.now() < fin) { const n = X.noms[k++]; if (estDisjoncteur(n)) calibreDeRecherche(X, n); } } catch (_) { k = Infinity; }
+    if (X && k < X.noms.length) { PREPARATION.t = setTimeout(tranche, 0); return; }
+    const avant = gestesPrets(); let fini = true;
+    try { fini = avancerGestes(Math.max(1, fin - performance.now())); } catch (_) { }
+    if (!fini) { PREPARATION.t = setTimeout(tranche, 0); return; }
+    if (!avant && paletteOuverte()) rendrePalette(true);
+    if (PREPARATION.encore) preparerLaRecherche(); };
+  PREPARATION.t = setTimeout(tranche, 40); }
 // le rang d'une action pour ce qu'on tape (chaque mot doit y répondre) : son mot d'abord, puis ses mots d'atelier, sa ligne
 function rangAction(a, termes) { let r = 0; const motsDuMot = aPlatMots(a.mot), mots = aPlatMots(a.mots + ' ' + a.ou + ' ' + (a.act || '')), des = aPlat(a.des);
   for (const t of termes) { if (motsDuMot.some(w => w.startsWith(t))) continue; if (aPlat(a.mot).includes(t)) { r += 1; continue; }

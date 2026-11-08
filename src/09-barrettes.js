@@ -2120,6 +2120,8 @@ function poserPoints(norme, mod, points, sexeFil) { const pl = [], manque = [], 
    coupure dont le part number n'en dit rien), toutes les normes de connecteurs concourent. `sexe` : le sexe des
    contacts qu'on sertit — F (douilles) par défaut : face à une embase d'équipement à broches, et côté fiche d'une
    prise de coupure, dont l'embase prend l'autre sexe. Chaque fil rend son contact à sertir (`sertir`, table Contacts).
+   `fourni` (passe 87) : le connecteur d'un équipement, livré par son fournisseur — l'arrangement que sa référence nomme
+   s'impose (un contact qui manque est à voir) ; sinon VOLTA le déduit des bornes, à vérifier (`deduit`).
    Rend un plan de la même forme que celui des barrettes (un module). */
 function remplirContacts(points, norme, opts) { opts = opts || {}; const N = normeDesModules(norme), s = k => k > 1 ? 's' : '';
   /* le sexe des contacts qu'on sertit, côté partie mobile : celui qu'on a choisi ; sinon celui que le part number écrit —
@@ -2146,14 +2148,24 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
     // le fil contre le joint arrière (table Joint arrière) : trop gros, il n'entre pas ; trop fin sans manchon d'étanchéité, l'eau passe
     fils.forEach(x => { const j = x.joint; if (!j || !j.verdict || j.verdict === 'dans' || (j.verdict === 'sous' && j.manchon)) return; const J = j.joint, plage = (J.dmin != null ? nombreFr(J.dmin) : '?') + '–' + (J.dmax != null ? nombreFr(J.dmax) : '?') + ' mm';
       verdicts.push({ niveau: 'attention', texte: `borne ${x.potentiel.bornes[0]} : ${cableDit(x.f)} (Ø ${nombreFr(j.d)} mm) ${j.verdict === 'dessus' ? 'plus gros que le joint arrière du contact ' + x.contact.lettre + ' n’admet (' + plage + ') : il n’entre pas' : 'sous la plage du joint arrière du contact ' + x.contact.lettre + ' (' + plage + ') et sans manchon d’étanchéité : l’eau passe'}${J.confiance && J.confiance !== 'vérifié' ? ' (plage ' + J.confiance + ')' : ''}`, bornes: x.potentiel.bornes }); });
-    mieux.r.manque.forEach(p => verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : l'arrangement ${m.variante} n'a pas de contact ${p.num}`, bornes: [p.borne] }));
+    /* (passe 87, le lecteur) UN CONNECTEUR FOURNI AVEC L'ÉQUIPEMENT (`opts.fourni`) dont la référence nomme l'arrangement : c'est
+       celui-là que le fournisseur livre, même s'il n'a pas toutes les bornes du fichier. La référence et les bornes se
+       contredisent et VOLTA ne sait pas laquelle croire : une seule phrase, à voir, qui nomme les contacts qui manquent. Ailleurs
+       (un arrangement retenu à la main, une prise de coupure, que nous choisissons), chaque borne sans contact reste un problème. */
+    if (opts.fourni && nomme && mieux.r.manque.length) { const ns = mieux.r.manque.map(p => p.num);
+      verdicts.push({ niveau: 'attention', genre: 'fichier', texte: `votre référence ${opts.pn} nomme l’arrangement ${m.variante}, qui n’a pas ${ns.length > 1 ? 'les contacts ' + listeEt(ns) : 'de contact ' + ns[0]} — la référence ou les bornes de votre fichier sont à vérifier`, bornes: mieux.r.manque.map(p => p.borne), manque: ns }); }
+    else mieux.r.manque.forEach(p => verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : l'arrangement ${m.variante} n'a pas de contact ${p.num}`, bornes: [p.borne] }));
     // une borne qui n'a pas le nom de son contact (seule la casse ne compte pas) : le rapprochement se dit, dans le bon sens
     const ecarts = mieux.r.pl.filter(x => String(x.c.lettre).toUpperCase() !== String(x.p.num).toUpperCase()), versNumeros = ecarts.some(x => /^\d+$/.test(x.c.lettre));
     if (ecarts.length) verdicts.push({ niveau: 'info', texte: `${versNumeros ? 'contacts numérotés : chaque borne lettrée prend le contact de même rang' : 'contacts lettrés : chaque borne numérotée prend la lettre de même rang'} (${ecarts.slice(0, 4).map(x => x.p.num + ' → ' + x.c.lettre).join(', ')}${ecarts.length > 4 ? '…' : ''})`, bornes: [] });
     mieux.r.refus.forEach(({ p, c, ko }) => { const table = contactsDeTaille(N, m.famille, c.taille).length;
       verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : ${ko.map(f => cableDit(f)).join(', ')} — ` + (table ? `aucun contact ${nomDuSexe(sexeFil(ko[0]))} de taille ${c.taille} (${nomDeFamille(N, m.famille)}) pour ce câble` : `gauge refusée par le contact ${c.lettre} (taille ${c.taille})`), bornes: [p.borne] }); });
-    mieux.r.pl.forEach(({ p, c }) => { const cotes = opts.prise ? [p.fils.filter(f => f.amont), p.fils.filter(f => !f.amont)] : [p.fils];
-      if (cotes.some(x => x.length > 1)) verdicts.push({ niveau: 'attention', texte: `contact ${c.lettre} : ${p.fils.length} câbles${opts.prise ? ', plus d’un d’un même côté' : ''} — un contact reçoit un câble${opts.prise ? ' de chaque côté' : ''}`, bornes: [p.borne] }); });
+    mieux.r.pl.forEach(({ p, c }) => { if (!opts.prise) { if (p.fils.length > 1) verdicts.push({ niveau: 'attention', texte: `contact ${c.lettre} : ${p.fils.length} câbles — un contact reçoit un câble`, bornes: [p.borne] }); return; }
+      /* (passe 87, le lecteur : « deux câbles sur un même contact d'une partie ») une prise reçoit un câble par contact de chaque
+         partie — la partie mobile (ce qui arrive), la partie fixe (ce qui repart) : chaque partie qui en reçoit plus d'un se dit,
+         ses câbles nommés */
+      [[true, 'partie mobile'], [false, 'partie fixe']].forEach(([am, partie]) => { const fs = p.fils.filter(f => !!f.amont === am); if (fs.length < 2) return;
+        verdicts.push({ niveau: 'attention', texte: `contact ${c.lettre} : ${fs.length} câbles côté ${partie} (${fs.map(f => (f.type || 'câble') + ' vers ' + f.vers + (f.borne ? ':' + f.borne : '')).join(', ')}) — un contact ne reçoit qu’un câble de chaque partie`, bornes: [p.borne] }); }); });
     // les contacts shuntés d'un module retenu à la main relient des bornes qui ne le sont peut-être pas
     if (m.groupes.some(g => g.contacts.length > 1)) verdicts.push({ niveau: 'attention', texte: `l'arrangement ${m.variante} relie des contacts entre eux (module shunté) : à n'employer que si le contrat le veut`, bornes: [] }); }
   else if (points.length) {
@@ -2170,6 +2182,8 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
   return { modules, fils, verdicts, potentiels: points.length, places: points.length - restants.length, restants, contacts: mieux ? mieux.m.contacts.length : 0,
            utilises: new Set(fils.map(x => x.contact.lettre)).size, reference: mieux ? mieux.m.reference : '', famille: famille || (mieux ? mieux.m.famille : ''), visee,
            variante: main ? main.variante : '', main: !!main, nomme: !!nomme, choix: opts.choix || '', sexe: sexe0, sexeSource, prise: !!opts.prise,
+           // (passe 87) un connecteur fourni dont la référence ne dit pas l'arrangement : VOLTA le DÉDUIT des bornes — à vérifier
+           deduit: !!(opts.fourni && mieux && !main && !visee && !nomme),
            nomenclature: nomenclatureDe(fils), tableContacts: !!(mieux && contactsDeTaille(N, mieux.m.famille, mieux.m.contacts[0].taille).length) }; }
 /* LE SEXE DES CONTACTS LU DANS LE PART NUMBER (la codification des connecteurs de l'onglet Raccord du lecteur) : la lettre
    qui suit l'arrangement — A mâle, B femelle pour l'EN 2997 (EN2997 RS 0 18 14 A N), l'EN 3645 (EN3645 F 0 G N 16 A N)
@@ -2203,7 +2217,7 @@ function arrangementsQuiLogent(points, norme, famille, sexeFil) { const N = norm
    désignation donnée à la main à « repère|lettre » ; `sexes(nom)` : le sexe des contacts choisi pour cette clé. */
 function connecteursEnModules(repere, liaisons, norme, retenue, sexes) { const T = liaisonsTouchant(repere, liaisons), b = avecPonts(besoinsDeBarrette(repere, T), repere, T), main = retenue || (() => ''), sx = sexes || (() => '');
   return connecteursDe(repere, T).filter(c => familleDeReference(norme, c.pn, 'connecteur') || moduleDeConnecteur(norme, c.pn))
-    .map(c => { const points = pointsDe(b, c.bornes); return { ...c, points, plan: remplirContacts(points, norme, { choix: main(repere + '|' + c.nom), pn: c.pn, sexe: sx(repere + '|' + c.nom) }) }; }); }
+    .map(c => { const points = pointsDe(b, c.bornes); return { ...c, points, plan: remplirContacts(points, norme, { choix: main(repere + '|' + c.nom), pn: c.pn, sexe: sx(repere + '|' + c.nom), fourni: true }) }; }); }
 /* LE PONT D'UN CONNECTEUR D'ÉQUIPEMENT (v84) : une liaison d'une borne à une autre du même équipement (A1 → A2) n'est pas un
    shunt de barrette — c'est un câble court, serti aux deux bouts dans la partie mobile. Chacun de ses bouts entre dans les
    câbles de sa borne (`pont` le marque ; `borne`, l'autre bout) : son contact se sertit, sa gauge se juge, une borne qui
@@ -2216,9 +2230,34 @@ function avecPonts(b, repere, liaisons) { const ponts = new Map(), mettre = (bo,
   if (!ponts.size) return b; const parBorne = new Map(b.parBorne);
   ponts.forEach((fs, bo) => parBorne.set(bo, [...(parBorne.get(bo) || []), ...fs]));
   return { ...b, parBorne }; }
-/* La prise de coupure en module : ses contacts, un fil de chaque côté (fiche et embase). `sexe` : celui de la fiche. */
-function coupureEnModule(repere, liaisons, norme, choix, sexe) { const b = besoinsDeBarrette(repere, liaisons), points = pointsDe(b, b.bornes);
-  return { besoins: b, points, plan: remplirContacts(points, norme, { choix, pn: b.pn, prise: true, sexe }) }; }
+/* (passe 87, le lecteur : « dans une prise, la lettre de la partie mobile répond toujours à la même lettre de la partie fixe »)
+   LES DEUX PARTIES D'UNE MÊME PRISE — 411VC3A et 412VC3B : la prise VC3, ses parties A et B (01, le code et son ordre ; la
+   lettre de fin) — se font face lettre à lettre : G face à G. Une liaison du fichier d'une partie à l'autre qui change de
+   lettre (411VC3A:G → 412VC3B:E) est un écart, à voir : VOLTA ne le corrige pas, c'est au fichier de changer. La partie
+   mobile est celle d'où partent les liaisons vers l'autre (ce qui arrive à la prise y arrive d'abord ; à égalité, la partie
+   A) ; sa lettre est celle que l'autre devrait porter. Rend les écarts vus de `repere` : [{ niveau, genre, texte, bornes,
+   cables, porteur (la partie mobile, qui le dit), face }]. */
+const partieDePrise = r => { const s = String(r == null ? '' : r).trim(), m = /^(\d+)([A-Z]{2,3}\d+)([A-Z])$/.exec(s); return m && estCoupure(s) ? { prise: m[2], partie: m[3] } : null; };
+// le rang d'un contact sur la face : une lettre (A = 1, sans I, O ni Q), ou un numéro — « 7 » et « G » sont le même contact
+const rangSurLaFace = b => /^\d+$/.test(String(b)) ? +b : rangDeLettre(b);
+function faceDesParties(repere, liaisons) { const p = partieDePrise(repere); if (!p) return [];
+  const autre = l => l.de === repere ? l.vers : l.de, soeur = r => { const q = partieDePrise(r); return !!q && q.prise === p.prise && q.partie !== p.partie; };
+  const xs = liaisonsTouchant(repere, liaisons).filter(l => l.de !== l.vers && (l.de === repere || l.vers === repere) && soeur(autre(l)) && l.borneDe && l.borneVers), out = [];
+  [...new Set(xs.map(autre))].forEach(o => { const ys = xs.filter(l => autre(l) === o), sortent = ys.filter(l => l.de === repere).length, entrent = ys.length - sortent;
+    const mobile = sortent !== entrent ? (sortent > entrent ? repere : o) : (p.partie < partieDePrise(o).partie ? repere : o);
+    ys.forEach(l => { const ici = l.de === repere ? l.borneDe : l.borneVers, la = l.de === repere ? l.borneVers : l.borneDe, r1 = rangSurLaFace(ici);
+      if (ici === la || (r1 && r1 === rangSurLaFace(la))) return;
+      const [rm, bm, rf, bf] = mobile === repere ? [repere, ici, o, la] : [o, la, repere, ici], num = b => /^\d+$/.test(String(b));
+      // ce que la partie fixe devrait porter, dans SON écriture (une partie écrite en numéros, l'autre en lettres : le 7 est la G)
+      const attendu = num(bf) === num(bm) ? bm : num(bf) ? String(rangDeLettre(bm) || bm) : LETTRES_DE_FACE[+bm - 1] || bm;
+      out.push({ niveau: 'attention', genre: 'contact', texte: `${rm}:${bm} (partie mobile) va sur ${rf}:${bf} (partie fixe) : ${num(bm) ? 'le contact ' + bm : 'la lettre ' + bm} devrait répondre ${num(attendu) ? 'au ' + attendu : 'à ' + attendu}`,
+        bornes: [ici], cables: [l], porteur: rm, face: true }); }); });
+  return out; }
+/* La prise de coupure en module : ses contacts, un fil de chaque côté (fiche et embase). `sexe` : celui de la fiche. (passe 87)
+   L'écart de lettres entre ses deux parties se dit une fois, sur la partie mobile (`faceDesParties`). */
+function coupureEnModule(repere, liaisons, norme, choix, sexe) { const b = besoinsDeBarrette(repere, liaisons), points = pointsDe(b, b.bornes), plan = remplirContacts(points, norme, { choix, pn: b.pn, prise: true, sexe });
+  faceDesParties(repere, liaisons).filter(v => v.porteur === repere).forEach(v => plan.verdicts.push(v));
+  return { besoins: b, points, plan }; }
 
 /* ---- v74, lot F (les fiches) : AJOUT — LES ARRANGEMENTS RECOMMANDÉS d'une prise de coupure (ou d'un connecteur) --------
    Le lecteur (oct. 2026) : « Changer la référence marche mais pas fluide : je veux des RECOMMANDATIONS, les mêmes types,

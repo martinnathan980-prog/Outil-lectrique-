@@ -4,14 +4,18 @@
    ---------------------------------------------------------------------------
    Écrit dans tests/documents/ :
      a-schema-vectoriel.pdf   A  le schéma de huit folios, texte sélectionnable
-     b-schema-scanne.pdf      B  le même, scanné (des images, aucun texte)
+     b-schema-scanne.pdf      B  le même, scanné (des images, aucun texte) : trois folios
+                                 nets (noir et blanc), trois gris, deux photocopies
      c-schema.vsdx            C  le même, dessiné dans Visio
      d-gros-document.pdf      D  le dossier de 300 pages
-     e-gros-document-scanne.pdf  trente pages du dossier, scannées
+     e-gros-document-scanne.pdf  trente pages du dossier, scannées (gris, net,
+                                 photocopie, tour à tour)
    et, pour chacun, sa VÉRITÉ au format du retest (*-verite.csv : les seize
    colonnes de src/02-lecture.js, plus « Dessin »), et documents.json (ce que la
    mesure, tests/lecture-documents.js, doit savoir de chaque document : ses
-   pages, leur nature, leur style).
+   pages, leur nature, leur style ; pour un scan, la qualité, l'angle et le
+   décalage de chaque page). Les documents d'avant (une autre forme) restent
+   dans tests/documents/v0/ : `node tests/lecture-documents.js --dossier=v0`.
    =========================================================================== */
 'use strict';
 const fs = require('fs'), path = require('path');
@@ -36,8 +40,8 @@ const ko = n => (n / 1024 / 1024 >= 1 ? (n / 1024 / 1024).toFixed(1).replace('.'
   if (voulus.includes('a')) { await imprimerPdf(b, pagesA, path.join(ICI, 'a-schema-vectoriel.pdf')); const n = ecrire('a-verite.csv', csvDeVerite(A.verite));
     manifeste.documents.A = { nom: 'Schéma PDF vectoriel (8 folios)', fichier: 'a-schema-vectoriel.pdf', verite: 'a-verite.csv', sorte: 'pdf', pages: infoPagesA };
     console.log(`A  a-schema-vectoriel.pdf  ${ko(fs.statSync(path.join(ICI, 'a-schema-vectoriel.pdf')).size)} · ${A.verite.length} liaisons · vérité ${ko(n)}`); }
-  if (voulus.includes('b')) { const s = await scanner(b, pagesA, path.join(ICI, 'b-schema-scanne.pdf'), { ppp: 150 }); ecrire('b-verite.csv', csvDeVerite(A.verite));
-    manifeste.documents.B = { nom: 'Le même, scanné', fichier: 'b-schema-scanne.pdf', verite: 'b-verite.csv', sorte: 'pdf', scan: true, pages: infoPagesA };
+  if (voulus.includes('b')) { const s = await scanner(b, pagesA, path.join(ICI, 'b-schema-scanne.pdf'), { qualite: i => i < 3 ? 'net' : i < 6 ? 'gris' : 'photocopie' }); ecrire('b-verite.csv', csvDeVerite(A.verite));
+    manifeste.documents.B = { nom: 'Le même, scanné (net, gris, photocopie)', fichier: 'b-schema-scanne.pdf', verite: 'b-verite.csv', sorte: 'pdf', scan: true, pages: infoPagesA, poses: s.poses };
     console.log(`B  b-schema-scanne.pdf  ${ko(s.octets)} · ${s.pages} pages d'images`); }
   if (voulus.includes('c')) { const f = documentVisio(A.composes, DOCUMENT_A.titre), zip = Buffer.from(zipSync(Object.fromEntries(Object.entries(f).map(([k, v]) => [k, strToU8(v)])), { level: 6 }));
     const n = ecrire('c-schema.vsdx', zip); ecrire('c-verite.csv', csvDeVerite(A.verite));
@@ -51,13 +55,14 @@ const ko = n => (n / 1024 / 1024 >= 1 ? (n / 1024 / 1024).toFixed(1).replace('.'
       console.log(`D  d-gros-document.pdf  ${ko(fs.statSync(path.join(ICI, 'd-gros-document.pdf')).size)} · imprimé en ${Math.round((Date.now() - t1) / 1000)} s · vérité ${ko(n)}`); }
     if (voulus.includes('e')) { // trente pages : la garde, le sommaire, les notes, les symboles, huit folios de chaque chapitre, un tableau, l'index
       const choix = [1, 2, 5, 7, ...[0, 1, 2].flatMap(c => Array.from({ length: 8 }, (_, k) => D.debuts[c] + k)), 292, 297];
-      const s = await scanner(b, choix.map(p => D.pages[p - 1]), path.join(ICI, 'e-gros-document-scanne.pdf'), { ppp: 110, qualite: 0.62, bruit: 20 });
+      const s = await scanner(b, choix.map(p => D.pages[p - 1]), path.join(ICI, 'e-gros-document-scanne.pdf'), { qualite: i => ['gris', 'net', 'photocopie'][i % 3] });
       const dans = new Set(choix), rang = new Map(choix.map((p, i) => [p, i + 1]));
       const V = D.verite.filter(l => dans.has(l.page) && (!l.pageVers || dans.has(l.pageVers))).map(l => ({ ...l, page: rang.get(l.page), pageVers: l.pageVers ? rang.get(l.pageVers) : null }));
       ecrire('e-verite.csv', csvDeVerite(V));
-      manifeste.documents.E = { nom: 'Gros document, trente pages scannées', fichier: 'e-gros-document-scanne.pdf', verite: 'e-verite.csv', sorte: 'pdf', scan: true, pagesSource: choix, pages: choix.map(p => infoPages[p - 1]) };
+      manifeste.documents.E = { nom: 'Gros document, trente pages scannées', fichier: 'e-gros-document-scanne.pdf', verite: 'e-verite.csv', sorte: 'pdf', scan: true, pagesSource: choix, pages: choix.map(p => infoPages[p - 1]), poses: s.poses };
       console.log(`E  e-gros-document-scanne.pdf  ${ko(s.octets)} · ${s.pages} pages · ${V.length} liaisons entières dans l'extrait`); } }
   await b.close();
-  manifeste.fabrique = new Date().toISOString().slice(0, 10); ecrire('documents.json', JSON.stringify(manifeste));
+  // la forme : celle des vrais schémas du lecteur (8 novembre 2026) ; les documents d'avant, sans ce mot, sont dans v0/
+  manifeste.forme = 'v1'; manifeste.fabrique = new Date().toISOString().slice(0, 10); ecrire('documents.json', JSON.stringify(manifeste));
   console.log(`fait en ${Math.round((Date.now() - t0) / 1000)} s`);
 })().catch(e => { console.error('ÉCHEC', e); process.exit(1); });

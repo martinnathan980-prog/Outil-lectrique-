@@ -111,12 +111,27 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
   // un équipement dit sa NATURE quand son code la donne (103RL1 : « Relais », 395SW1 : « Interrupteur ») ; sinon « Équipement »
   const nature = o.type === 'equipement' && nom && typeof natureDe === 'function' ? natureDe(nom) : '';
   const genre = nature && nature !== 'équipement' ? majuscule(nature) : GENRES_FICHE[o.type] || 'Élément';
-  const titre = `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-rep">${rep}</span>`;
+  /* (passe 87, le lecteur, planche P5) LE TITRE D'UN CÂBLE DIT SES DEUX BOUTS — « DR20 · 102CB1:2 → 103RL1:A1 · par VT1 » :
+     un câble se dit par son type et ses deux bouts (charte), et trois fiches DR20 ouvertes l'une après l'autre se distinguent
+     enfin. Le type et les bouts à l'encre (600), les liants en gris (500), sans fond ; chaque bout ouvre sa fiche (le geste du
+     chemin, `data-bout`, 08-fiche) ; une borne en minuscule (51e) se souligne d'un trait fin. Il passe à la ligne entre ses
+     morceaux, jamais au milieu d'un repère (les espaces insécables, style-z-beaute) : jamais coupé. Le câble est celui que
+     la fiche montre (`app.cible`, 08-fiche `rendreFiche`). */
+  const cab = o.type === 'fil' && typeof app !== 'undefined' && app.cible && app.cible.type === 'fil' && app.cible.l && app.cible.l.de ? app.cible.l : null;
+  const titreCable = (() => { if (!cab) return '';
+    const min = s => String(s).split(/([a-z]+)/).map((x, i) => i % 2 ? `<u class="nc-min">${esc(x)}</u>` : esc(x)).join(''), nb = ' ';
+    const bout = (k, r, b) => `<button type="button" class="nc-bout" data-bout="${k}" data-bulle="${escA('Ouvrir ' + r + (b ? ', borne ' + b : ''))}">${esc(r)}${b ? ':' + min(b) : ''}</button>`;
+    // sur le plan, un bout peut passer par une barrette à poser (VT1) : comme le chemin de la fiche (08-fiche, `ficheFil`)
+    let par = []; try { const p = cab.origine === null ? null : liaisonsDuPlan().find(y => y.origine && y.aPoser && sourceDe(y) === cab); if (p) par = ['de', 'vers'].map(k => String(p[k] || '')).filter(r => VT_A_POSER.test(r)); } catch (_) { par = []; }
+    return `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-rep nc-rep-cable"><span class="nc-rep-t">${esc(nom)}</span>${nb}<span class="nc-lie">·</span> ${bout('de', cab.de, cab.borneDe)}${nb}<span class="nc-lie">→</span>${nb}<wbr>${bout('vers', cab.vers, cab.borneVers)}`
+      // (la carte, étroite, pose « par VT1 » sous les deux bouts, sans son point : style-z-beaute)
+      + (par.length ? `<span class="nc-lie nc-par"><span class="nc-par-pt">${nb}·</span> par${nb}${esc(par.join(', '))}</span>` : '') + '</span>'; })();
+  const titre = titreCable || `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-rep">${rep}</span>`;
   const sil = silhouetteVue(o.type, silhouetteDe(o));
   // (v83) en grand, « module 2 de VT2 » se lit dans la première section (la barrette et tous ses modules) : pas deux fois
   const msG = ms.filter(m => !/^(module|partie) \S+ de /.test(m));
-  if (grand) return `<div class="nc-tete fine"><span class="nc-sil" aria-hidden="true">${sil}</span><span class="nc-titre">${titre}</span>${msG.length ? `<span class="nc-meta fi-identite">${msG.map(metaV).join('')}</span>` : ''}</div>`;
-  return `<span class="nc-sceau" aria-hidden="true">${sil}</span><div class="nc-tete"><span class="nc-titre${nom.length > 9 ? ' long' : ''}">${titre}</span></div>${meta}`; }
+  if (grand) return `<div class="nc-tete fine"><span class="nc-sil" aria-hidden="true">${sil}</span><span class="nc-titre${titreCable ? ' cable' : ''}">${titre}</span>${msG.length ? `<span class="nc-meta fi-identite">${msG.map(metaV).join('')}</span>` : ''}</div>`;
+  return `<span class="nc-sceau" aria-hidden="true">${sil}</span><div class="nc-tete"><span class="nc-titre${titreCable ? ' cable' : nom.length > 9 ? ' long' : ''}">${titre}</span></div>${meta}`; }
 // ce que la silhouette dessine de CET objet : les modules d'une barrette, les connecteurs d'un équipement
 function silhouetteDe(o) { const nom = (o.tete || {}).nom || '';
   try { if (o.type === 'barrette') { const n = typeof planDeBarrette === 'function' ? ((planDeBarrette(nom).plan || {}).modules || []).length : 0; return { modules: n || 3 }; }
@@ -387,7 +402,7 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
     const que = !u.agir && u.ko && typeof remede === 'function' ? (remede({ texte: (u.xs.find(x => x.p.niveau === 'ko') || x0).p.texte }) || [])[0] : '';
     const geste = u.html || (u.g ? bouton(u.g) : u.mene ? bouton(u.mene, 'papier dense') : ''), bulleCarte = !grand && tout ? ` data-bulle="${escA(tout)}"` : '';
     const corps = enMots ? `<span class="nc-regles" ${cible}${titre ? '' : bulleCarte}>${raisons.filter(r => r.mot).map(r => `<span class="${r.niveau}">${esc(r.mot)}</span>`).join('')}</span>`
-      : `<span class="nc-raisons" ${cible}${titre ? '' : bulleCarte}>${(grand ? raisons : raisons.slice(0, 1)).map(r => `<span class="nc-r ${r.niveau}"${grand && r.long !== r.court ? ` data-bulle="${escA(r.long)}"` : ''}><i aria-hidden="true"></i><span>${insecable(esc(r.court))}</span></span>`).join('')}</span>`;
+      : `<span class="nc-raisons${raisons.length === 1 ? ' seule' : ''}" ${cible}${titre ? '' : bulleCarte}>${(grand ? raisons : raisons.slice(0, 1)).map(r => `<span class="nc-r ${r.niveau}"${grand && r.long !== r.court ? ` data-bulle="${escA(r.long)}"` : ''}><i aria-hidden="true"></i><span>${insecable(esc(r.court))}</span></span>`).join('')}</span>`;
     return `<div class="nc-tache fi-pb-l nc-ligne ${etat} ${u.regler ? 'agir' : 'info'}${u.agir ? ' a-geste' : ''}${titre ? '' : ' sans-titre'}"><span class="nc-rond" aria-hidden="true">${ico('alerte')}</span>`
       + (titre ? `<button type="button" class="nc-t" ${cible}${bulleCarte}><b class="fi-pb-t">${insecable(esc(titre))}</b></button>` : '')
       + (geste ? `<span class="nc-geste">${geste}</span>` : '') + corps + (que && que !== 'Voir sa fiche' ? `<em class="nc-que">${insecable(esc(que))}</em>` : '') + '</div>'; };
@@ -441,7 +456,7 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
     // (passe 87, variante A) en pied, « Tout régler » : les câbles qu'un type règle passent d'un geste, ce que ça coûte écrit
     const aPasser = R.filter(u => u.g && /^type\|/.test(u.g.cle || '')).map(u => { const m = /^type\|(.*)\|([^|]+)$/.exec(u.g.cle), l = (m && typeof liaisonDeCle === 'function' && liaisonDeCle(m[1])) || u.l; return l && m ? { l, type: m[2] } : null; }).filter(Boolean);
     const tout = !fil && aPasser.length > 1 ? toutReglerLesCables(aPasser) : null;
-    const piedTout = tout ? `<div class="nc-tout"><span class="nc-tout-t">${insecable(esc(majuscule(tout.phrase)))}</span><span class="nc-geste">${bouton(tout, 'cuivre dense nc-agir')}</span></div>` : '';
+    const piedTout = tout ? `<div class="nc-regler-tout"><span class="nc-regler-tout-t">${insecable(esc(majuscule(tout.phrase)))}</span><span class="nc-geste">${bouton(tout, 'cuivre dense nc-agir')}</span></div>` : '';
     if (R.length) corps += inter(nko ? 'ko' : 'att', 'À régler', R.length) + vusR.map(ligne).join('')
       + (plusR.length ? `<button type="button" class="nc-autres${deplie ? ' ouvert' : ''}" data-onglet-va="" data-voir-tout="1" aria-expanded="${deplie}"><span>${esc(plusR.length > 1 ? 'et ' + plusR.length + ' autres à régler' : 'et 1 autre à régler')}</span>${ico('droite')}</button><div class="nc-reste"${deplie ? '' : ' hidden'}>${plusR.map(ligne).join('')}</div>` : '') + piedTout;
     if (V.length && R.length) corps += inter('voir', 'À voir', V.length, { cls: deplie ? 'ouvert' : '', attrs: `data-onglet-va="" data-voir-tout="1" aria-expanded="${deplie}" data-bulle="${escA(deplie ? 'Replier' : 'Ce qui informe : rien à faire d’un clic')}"` }) + `<div class="nc-reste"${deplie ? '' : ' hidden'}>${V.map(ligne).join('')}</div>`;

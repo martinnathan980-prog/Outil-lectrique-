@@ -501,14 +501,17 @@ function contratExemple() {
   li('5', '411VC3A', 'E',  '540VL5',  '1',  'W-514', 'DR22');
   li('5', '500XC3', 'B2',  '411VC3A', 'F',  'W-515', 'DR22');
   li('5', '411VC3A', 'F',  '540VL5',  '2',  'W-516', 'DR22');
+  //      (passe 87, le lecteur : « la lettre de la partie mobile répond toujours à la même lettre de la partie fixe ») 411VC3A et
+  //      412VC3B sont les deux parties de la prise VC3 : un câble qui passe de l'une à l'autre garde sa lettre — G sur G, H sur H
+  //      (l'exemple croisait G → E et F → H)
   li('5', '510RL1', '2',   '411VC3A', 'G',  'W-520', 'DR22');
-  li('5', '411VC3A', 'G',  '412VC3B', 'E',  'W-521', 'DR22');
-  li('5', '412VC3B', 'E',  '550SW3',  '1',  'W-522', 'DR22');
-  li('5', '550SW3', '2',   '412VC3B', 'F',  'W-523', 'DR24');
-  li('5', '412VC3B', 'F',  '411VC3A', 'H',  'W-524', 'DR24');
+  li('5', '411VC3A', 'G',  '412VC3B', 'G',  'W-521', 'DR22');
+  li('5', '412VC3B', 'G',  '550SW3',  '1',  'W-522', 'DR22');
+  li('5', '550SW3', '2',   '412VC3B', 'H',  'W-523', 'DR24');
+  li('5', '412VC3B', 'H',  '411VC3A', 'H',  'W-524', 'DR24');
   li('5', '411VC3A', 'H',  '500XC3',  'B3', 'W-525', 'DR24');
-  li('5', '540VL5', '4',   '412VC3B', 'G',  'W-526', 'DR22');
-  li('5', '412VC3B', 'G',  '560HT1',  '1',  'W-527', 'DR22');
+  li('5', '540VL5', '4',   '412VC3B', 'E',  'W-526', 'DR22');
+  li('5', '412VC3B', 'E',  '560HT1',  '1',  'W-527', 'DR22');
   li('5', '500XC3', 'B4',  '510RL1',  '1',  'W-530', 'DR24');
   li('5', '500XC3', 'B5',  '511RL2',  '1',  'W-531', 'DR24');
   li('5', '500XC3', 'B6',  '511RL2',  '4',  'W-532', 'DR22');

@@ -414,7 +414,8 @@ function choixALaMain(nom, type) { const xs = [], C = app.contrat, N = app.norme
     const cav = essai(() => cavitesDe(nom)) || [], conns = essai(() => connecteursDe(nom, V)) || [];
     cav.forEach(k => { const Q = k.plan, M = Q && Q.modules && Q.modules[0]; if (!Q || !Q.main || !M) return; const c = conns.find(x => x.nom === k.nom) || {};
       const auto = essai(() => remplirContacts(k.points, N, { pn: c.pn, sexe: sexeChoisi(nom + '|' + k.nom) }).reference);
-      ajoute({ cle: 'd|' + nom + '|' + k.nom + '|' + C.designations.get(nom + '|' + k.nom), quoi: 'Arrangement', de: 'du connecteur ' + k.nom, avant: auto || 'le sien', apres: M.reference, mono: true, auto: 'arr:' + nom + '|' + k.nom }); });
+      // (passe 87) un connecteur fourni : l'arrangement d'avant venait de votre référence, ou VOLTA le déduisait des bornes
+      ajoute({ cle: 'd|' + nom + '|' + k.nom + '|' + C.designations.get(nom + '|' + k.nom), quoi: 'Arrangement', de: 'du connecteur ' + k.nom, avant: auto || 'le sien', depuis: c.pn && moduleDeConnecteur(N, c.pn) ? 'fichier' : 'hyp', apres: M.reference, mono: true, auto: 'arr:' + nom + '|' + k.nom }); });
     [...(C.sexes || [])].filter(([k]) => k.startsWith(nom + '|')).forEach(([k, v]) => ajoute({ cle: 's|' + k + '|' + v, quoi: 'Sexe', de: 'du connecteur ' + k.slice(nom.length + 1), avant: 'celui de VOLTA', apres: motSexe(v), auto: 'sexe:' + k }));
     const ch = typeof chargeEcrite === 'function' ? chargeEcrite(nom) : null;
     if (ch && phaseEcrite(ch)) { const perm = ch.perm && ch.perm.i > 0 ? ch.perm.i : null, dem = ch.dem && ch.dem.i > 0 ? ch.dem : null, dj = essai(() => disjoncteursDe(nom)) || [];
@@ -1189,9 +1190,14 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
       ...C.slice(0, 4).map(x => ({ sorte: 'fichier', titre: 'Le connecteur ' + x.nom, valeur: x.pn ? ident(x.pn) : 'sans référence', source: 'fichier', etat: x.pn ? '' : 'att',
         pourquoi: x.pn ? 'Fourni avec l’équipement' + (colsDe(x) ? ' (colonne ' + colsDe(x) + ').' : '.') : 'Absente de votre fichier : à y écrire.' })),
       C.length > 4 ? { sorte: 'fichier', titre: 'Ses autres connecteurs', valeur: esc(pluriel(C.length - 4, 'connecteur')), source: 'fichier', pourquoi: 'Leurs références se lisent dans L’essentiel.' } : null,
-      Qc ? { sorte: 'choix', titre: 'L’arrangement' + deC, valeur: M ? ident(M.reference) : 'aucun ne loge', etat: M ? (Qc.main && Qc.verdicts.some(v => v.niveau === 'ko') ? 'ko' : '') : 'ko', source: Qc.main ? 'main' : Qc.nomme ? 'fichier' : 'calcul', motSource: Qc.nomme && !Qc.main ? 'votre référence' : '',
-        pourquoi: Qc.main ? 'Choisi ici, à la main.' : Qc.nomme ? 'Votre référence le nomme.' : M ? `Le plus petit qui loge ${c.bornes.length > 1 ? 'ces ' + c.bornes.length + ' bornes' : 'cette borne'}.` : 'Aucun ne loge ces bornes : les problèmes disent pourquoi.',
-        manuel: !!Qc.main, auto: 'arr:' + nom + '|' + c.nom, vers: regArr, motAuto: 'L’arrangement' + deC + ' revient au choix de VOLTA' + (Qc.main && autoArr ? ' : ' + autoArr : '') + '.' } : null,
+      /* (passe 87, le lecteur) un connecteur FOURNI avec l'équipement : son arrangement n'est pas un choix de VOLTA — lu dans votre
+         référence quand elle le nomme (il se change dans votre fichier ; à voir s'il n'a pas toutes vos bornes), sinon déduit des
+         bornes, à vérifier (Manuel prend celui que vous savez monté) */
+      Qc && Qc.nomme && !Qc.main ? { sorte: 'fichier', titre: 'L’arrangement' + deC, valeur: M ? ident(M.reference) : 'aucun', etat: Qc.verdicts.some(v => v.genre === 'fichier') ? 'att' : '', source: 'fichier', motSource: 'votre référence',
+        pourquoi: Qc.verdicts.some(v => v.genre === 'fichier') ? 'Votre référence le nomme, mais il n’a pas toutes vos bornes : à vérifier dans votre fichier.' : 'Votre référence le nomme : il se change dans votre fichier.' }
+      : Qc ? { sorte: 'choix', titre: 'L’arrangement' + deC, valeur: M ? ident(M.reference) : 'aucun ne loge', etat: M ? (Qc.main && Qc.verdicts.some(v => v.niveau === 'ko') ? 'ko' : '') : 'ko', source: Qc.main ? 'main' : Qc.deduit ? 'hypothese' : 'calcul', motSource: Qc.deduit ? 'déduit, à vérifier' : '',
+        pourquoi: Qc.main ? 'Choisi ici, à la main.' : M ? `Déduit des bornes, à vérifier : votre référence ne le dit pas ; le plus petit qui loge ${c.bornes.length > 1 ? 'ces ' + c.bornes.length + ' bornes' : 'cette borne'}.` : 'Aucun ne loge ces bornes : les problèmes disent pourquoi.',
+        manuel: !!Qc.main, auto: 'arr:' + nom + '|' + c.nom, vers: regArr, motAuto: 'L’arrangement' + deC + ' revient à ' + (c.pn && moduleDeConnecteur(app.norme, c.pn) ? 'celui de votre référence' : 'celui que VOLTA déduit des bornes') + (Qc.main && autoArr ? ' : ' + autoArr : '') + '.' } : null,
       c && M ? { sorte: 'choix', titre: 'Ses contacts à sertir', valeur: refsCt.length ? refsCt.slice(0, 2).map(r => ident(r)).join(' · ') + (refsCt.length > 2 ? ' …' : '') : esc(pluriel(filsC.length, 'contact')), source: ksMain.length ? 'main' : 'tables',
         pourquoi: ksMain.length ? `${majuscule(pluriel(ksMain.length, 'borne'))} choisie${ksMain.length > 1 ? 's' : ''} ici ; les autres, la table.` : 'Un par câble, lu dans la table de la norme.',
         manuel: ksMain.length > 0, auto: 'sertirs:' + ksMain.join(';'), vers: regCt, motAuto: 'Les contacts à sertir reviennent à ceux de la table.' } : null,
@@ -1206,7 +1212,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
         pourquoi: ecrit ? (alP ? 'Elle fait le courant de ses câbles et le profil de ' + esc(alP.nom) + '.' : 'Elle fait le courant de ses câbles.') : alP ? 'Sans elle, le courant de ses câbles est inconnu : écrivez-la.' : 'Sans disjoncteur en amont, VOLTA suppose ' + esc(nombre((app.simu || HYPOTHESES).courant)) + ' A.',
         manuel: ecrit, auto: 'conso:' + nom, vers: regConso, motAuto: 'Consommation de ' + nom + ' effacée : VOLTA compte sans.' } : null];
     const sections = ids.length ? `<div class="fi-panneau" data-panneau="${escA(sel)}">`
-      + (Qc ? regCarte('L’arrangement', Qc.main ? 'Choisi ici. Un autre se prend d’un clic ; « Automatique » rend celui de VOLTA.' : 'Ceux de la norme qui logent ces bornes, puis les autres : un clic en retient un, à la place de celui de VOLTA.', reglageOuvert(regArr) ? listeArrangements(nom + '|' + c.nom, k, Qc, M, autoArr, true) : '', { reg: 'l-arrangement', paresseux: true }) : '')
+      + (Qc ? regCarte('L’arrangement', Qc.main ? 'Choisi ici. Un autre se prend d’un clic ; « Automatique » rend ' + (c.pn && moduleDeConnecteur(app.norme, c.pn) ? 'celui de votre référence.' : 'celui que VOLTA déduit des bornes.') : 'Ceux de la norme qui logent ces bornes, puis les autres : un clic retient celui que vous savez monté, à la place de celui que VOLTA déduit.', reglageOuvert(regArr) ? listeArrangements(nom + '|' + c.nom, k, Qc, M, autoArr, true) : '', { reg: 'l-arrangement', paresseux: true }) : '')
       + (c && M && P0 ? regCarte('Ses contacts à sertir', 'Un clic sur un contact montre ceux de sa taille : un autre se retient d’un clic.', P0.contacts, { reg: 'les-contacts-a-sertir' }) : '')
       + (hR ? regCarte('Le raccord', 'Ce que nous posons autour du connecteur. Une option changée ici passe le raccord en Manuel.', raccordHtml({ cle: nom + '|' + c.nom, fils: filsC, pn: c.pn, ref: M ? M.reference : '', plan: M ? k.plan : null, options: true }), { reg: 'le-raccord' }) : '') + '</div>' : '';
     const consoS = sConso ? regCarte('Ce qu’il consomme', 'Le courant qu’il tire, phase par phase : écrit ici, il passe en Manuel.', sConso.contenu, { reg: 'ce-qu-il-consomme' }) : '';
@@ -1255,7 +1261,9 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const etapesC = !c ? [] : [
     c.pn ? { html: `Référence <b class="id">${esc(c.pn)}</b>.`, source: 'fichier', mot: 'votre fichier', bulle: colsC ? 'Colonne ' + colsC + ' de votre fichier' : '' } : { html: 'Votre fichier ne donne pas de référence pour ce connecteur.', source: 'fichier', etat: 'att' },
     nomF ? { html: `Norme <b>${esc(nomF)}</b> : la référence la désigne.`, source: 'norme' } : null,
-    M ? { html: `Arrangement <b class="id">${esc(M.reference)}</b> : ${esc(Q.main ? 'choisi ici, à la main' : Q.nomme ? 'la référence le nomme' : 'le plus petit qui loge ces ' + pluriel(c.bornes.length, 'borne') + ' avec leurs gauges')}.`, source: Q.main ? 'main' : Q.nomme ? 'fichier' : 'calcul' }
+    // (passe 87, le lecteur) un connecteur fourni : l'arrangement est lu dans sa référence, sinon déduit des bornes — à vérifier
+    M ? (v => ({ html: `Arrangement <b class="id">${esc(M.reference)}</b> : ${esc(Q.main ? 'choisi ici, à la main' : Q.nomme ? 'votre référence le nomme' + (v ? ', mais il n’a pas ' + (v.manque.length > 1 ? 'les contacts ' + listeEt(v.manque) : 'de contact ' + v.manque[0]) : '') : 'déduit des bornes, à vérifier — votre référence ne le dit pas ; le plus petit qui loge ' + (c.bornes.length > 1 ? 'ces ' + pluriel(c.bornes.length, 'borne') + ' avec leurs gauges' : 'cette borne avec sa gauge'))}.`,
+      source: Q.main ? 'main' : Q.nomme ? 'fichier' : 'hypothese', mot: Q.main ? '' : Q.nomme ? 'votre référence' : 'à vérifier', etat: v ? 'att' : '' }))(!Q.main && Q.verdicts.find(x => x.genre === 'fichier' && x.manque))
       : Q ? { html: `Aucun arrangement ${esc(nomF)} ne loge ${esc([...new Set(fautifsC.map(x => x.borne))].join(', ') || 'ces bornes')}${fautifsC[0] ? ` : <b class="id">${esc(fautifsC[0].f.type || '?')}</b> ${esc(fautifsC[0].mot)}${fautifsC[0].contact ? ' pour un contact taille ' + esc(fautifsC[0].contact.taille) : ''}` : ''}.${fautifsC[0] && fautifsC[0].propose ? ` En <b class="id">${esc(fautifsC[0].propose.type)}</b>, il s’y loge et porte encore son courant.` : ''}`, source: 'calcul', etat: 'ko' } : null,
     refsCt.length ? { html: `Contacts à sertir : <b class="id">${esc(refsCt.join(', '))}</b>, lus dans la table des contacts (taille, sexe, gauge).`, source: 'tables' } : null];
   // (v78, le lecteur : « les connecteurs des équipements sont fournis par le fournisseur ; à nous le raccord, les tyraps ») :
@@ -1354,8 +1362,11 @@ function autresArrangements(cle, points, fam, vs, retenu, sansTitre) { const N =
 function listeArrangements(cle, k, Q, M, autoRef, enPlace) { if (!enPlace && FI.liste !== 'arr|' + cle) return '';
   const N = app.norme, fam = Q.famille || (M ? M.module.famille : ''), n = k.points.length, retenu = Q.main && M ? M.reference : '';
   const vs = arrangementsQuiLogent(k.points, N, fam), A = autresArrangements(cle, k.points, fam, vs, retenu);
-  const auto = `<button type="button" class="cand cand-auto" data-auto="${escA('arr:' + cle)}" aria-pressed="${!Q.main}" data-bulle="Le choix de VOLTA : celui que la référence nomme, sinon le plus petit qui loge ces bornes"><i class="cand-etoile">${ico('etoile')}</i><b>Automatique</b><span>${esc(autoRef || 'aucun ne loge ces bornes')}</span></button>`;
-  const cands = enPlace ? vs.map(m => candidat(cle, m, retenu).replace('class="cand"', `class="cand${m.reference === autoRef ? ' de-volta' : ''}"`)).join('') : auto + vs.filter(m => m.reference !== autoRef || Q.main).map(m => candidat(cle, m, retenu)).join('');
+  // (passe 87, le lecteur) le connecteur est fourni avec l'équipement : l'automatique n'est pas un choix de VOLTA — celui que votre
+  // référence nomme, sinon celui que VOLTA déduit des bornes, à vérifier ; parmi les possibles, il le dit en mots
+  const motAuto = k.pn && moduleDeConnecteur(N, k.pn) ? 'Celui de votre référence' : 'Déduit des bornes, à vérifier';
+  const auto = `<button type="button" class="cand cand-auto" data-auto="${escA('arr:' + cle)}" aria-pressed="${!Q.main}" data-bulle="Celui que votre référence nomme, sinon celui que VOLTA déduit des bornes — à vérifier"><i class="cand-etoile">${ico('etoile')}</i><b>Automatique</b><span>${esc(autoRef || 'aucun ne loge ces bornes')}</span></button>`;
+  const cands = enPlace ? vs.map(m => { const h = candidat(cle, m, retenu); return m.reference === autoRef ? h.replace('<span>', '<span>' + esc(motAuto) + ' · ') : h; }).join('') : auto + vs.filter(m => m.reference !== autoRef || Q.main).map(m => candidat(cle, m, retenu)).join('');
   const corps = (enPlace ? '' : voletT('Arrangement')) + `<div class="fi-cands">${cands}</div>`
     + (vs.length ? '' : `<p class="fi-note">Aucun arrangement ${esc(nomDeFamille(N, fam) || fam || '')} ne loge ces ${pluriel(n, 'borne')}.</p>`) + A.html;
   const pied = M ? `<button type="button" class="fi-lien" data-bible="${escA(M.reference)}">${ico('livre')}voir dans la bible</button>` : '';
@@ -1365,7 +1376,8 @@ function listeArrangements(cle, k, Q, M, autoRef, enPlace) { if (!enPlace && FI.
 function corpsConnecteur(nom, c, k, b, vt, enParts) { const cle = nom + '|' + c.nom, Q = k && k.plan, M = Q && Q.modules[0];
   let arr = '', face = '', fautifs = [];
   if (M) { const autoRef = Q.main ? remplirContacts(k.points, app.norme, { pn: c.pn, sexe: sexeChoisi(cle) }).reference : M.reference, par = new Map(Q.fils.map(x => [x.contact.lettre, x]));
-    const pourquoi = Q.main ? 'Choisi ici' : Q.nomme ? 'La référence le nomme' : `Le plus petit qui a ces ${pluriel(Q.potentiels, 'contact')} et accepte ${typesDe(Q.fils.map(x => x.f)) || 'ces câbles'}`, montree = FI.face[cle] !== false && FI.liste !== 'recit|' + cle;   // (la carte de la référence ouverte montre déjà le schéma)
+    // (passe 87, le lecteur) un connecteur fourni : lu dans votre référence, sinon déduit des bornes — à vérifier
+    const pourquoi = Q.main ? 'Choisi ici' : Q.nomme ? 'Votre référence le nomme' : `Déduit des bornes, à vérifier : votre référence ne le dit pas ; le plus petit qui a ces ${pluriel(Q.potentiels, 'contact')} et accepte ${typesDe(Q.fils.map(x => x.f)) || 'ces câbles'}`, montree = FI.face[cle] !== false && FI.liste !== 'recit|' + cle;   // (la carte de la référence ouverte montre déjà le schéma)
     const liste = listeArrangements(cle, k, Q, M, autoRef), force = Q.main && Q.verdicts.some(v => v.niveau === 'ko');
     arr = ligneChamp('Arrangement', `<button type="button" class="fi-norme-puce${Q.main ? ' main' : ''}${force ? ' ko' : ''}" data-face="${escA(cle)}" aria-pressed="${montree}" data-bulle="${escA(pourquoi + (force ? ' : il ne loge pas tout (les problèmes le disent)' : '') + (montree ? ' — un clic replie la face' : ' — un clic montre la face'))}">${esc(M.reference)}${ico('voir')}</button>${aide('arrangement', { plan: Q })}`,
       { changer: boutonChanger('arr|' + cle, 'Choisir un autre arrangement — toute la norme'), liste });
@@ -1378,7 +1390,7 @@ function corpsConnecteur(nom, c, k, b, vt, enParts) { const cle = nom + '|' + c.
     arr = ligneChamp('Arrangement', `<b class="fi-ko-t" data-bulle="${escA(majuscule(phrase))}">${fautifs.length ? 'Aucun ne loge ' + esc([...new Set(fautifs.map(x => x.borne))].join(', ')) : 'Aucun ne loge ces bornes'}</b>${aide('arrangement', { plan: Q, fautifs, famille: fam })}`,
       // « Changer » ne disparaît jamais (v73, l'ingénieur : « 300XC1 B n'a plus de bouton Changer ») : toute la norme, pour forcer
       { changer: boutonChanger('arr|' + cle, 'Choisir un arrangement quand même — toute la norme'), liste: listeArrangements(cle, k, Q, null, ''),
-        sous: (dit ? `<span class="fi-fautifs">${dit}</span>` + fautifs.map(boutonReparer).join('') : '') + (Q.main ? '<button type="button" class="fi-lien" data-auto="' + escA('arr:' + cle) + '">revenir au choix de VOLTA</button>' : '') }); }
+        sous: (dit ? `<span class="fi-fautifs">${dit}</span>` + fautifs.map(boutonReparer).join('') : '') + (Q.main ? '<button type="button" class="fi-lien" data-auto="' + escA('arr:' + cle) + '">revenir à l’automatique</button>' : '') }); }
   // hors des normes chargées : on ne dit rien de ce qu'on ne sait pas — la référence seule
   // les contacts : une ligne par câble posé, borne par borne
   const sertirs = new Map(Q ? Q.fils.map(x => [x.f.l, x]) : []), fautes = new Map(fautifs.map(x => [x.f.l, x.mot]));
@@ -1641,7 +1653,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
      669VT32 : chacun son plan). Le module montré est cerné de cuivre : celui de la fiche parmi ses frères ; d'une barrette
      posée sur plusieurs folios, ceux du folio ouvert. Un module mène où il se choisit (l'onglet Modifier), un frère à sa
      fiche ; une lettre (« dans le grand ») à son contact. */
-  const couleurDe = i => i ? `var(--vu-g${(i - 1) % 6 + 1})` : '';
+  const couleurDe = i => i ? `var(--vu-g${(i - 1) % 8 + 1})` : '';
   const folioDe = x => (x.f.l && x.f.l.plan) || x.f.plan || '', foliosDe = (P, k) => new Set(P.fils.filter(x => x.module === k).map(folioDe));
   const ailleurs = Q.lettres && app.plan && app.plan !== '*' && Q.modules.some((M, k) => !foliosDe(Q, k).has(app.plan));
   const modsV = mini => { let nAutre = nG; const regMod = '[data-reg="le-module"]';
@@ -1693,7 +1705,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
      équipement — chaque groupe de contacts reliés est une pièce, ses câbles à la couleur du groupe (la même que sur la
      face), où ils vont et sur quelle borne ; puis LE MODULE, sa face en grand, la légende seule, sans phrase qui la répète */
   let gi = 0;
-  const consG = Q.modules.flatMap((M, k) => M.places.map(pl => { const i = coulG.get(k + '|' + pl.groupe.k) || ++gi, coul = `var(--vu-g${(i - 1) % 6 + 1})`;
+  const consG = Q.modules.flatMap((M, k) => M.places.map(pl => { const i = coulG.get(k + '|' + pl.groupe.k) || ++gi, coul = `var(--vu-g${(i - 1) % 8 + 1})`;
     return { nom: String(i), ref: '', lignes: pl.fils.map(([f, c]) => ({ borne: etiquette(k, c), type: f.type, couleur: coul, vers: f.vers, borneVers: estMasse(f.vers) ? '' : f.borne, masse: estMasse(f.vers), ko: '', k: f.l ? cleFil(f.l) : '' })) }; }))
     .concat((Q.restants || []).map(p => ({ nom: '?', ref: 'ne loge pas', lignes: p.fils.map(f => ({ borne: '?', type: f.type, couleur: 'var(--ko)', vers: f.vers, borneVers: estMasse(f.vers) ? '' : f.borne, masse: estMasse(f.vers), ko: 'ne se loge pas', k: f.l ? cleFil(f.l) : '' })) })));
   const broB = consG.length ? brochageVue(nom, 'Barrette', consG) : '';

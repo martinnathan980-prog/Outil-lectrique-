@@ -1,6 +1,6 @@
 /* ===========================================================================
    CE QUE VOLTA LIT DÉJÀ DES DOCUMENTS D'ENTRÉE — la mesure, sans navigateur (Node seul, une dizaine de secondes)
-       node tests/lecture-documents.js [A,B,C,D,E] [--json=chemin] [--exemples=3]
+       node tests/lecture-documents.js [A,B,C,D,E] [--json=chemin] [--exemples=3] [--dossier=v0]
    ---------------------------------------------------------------------------
    Les documents inventés (tests/documents/, fabriqués par
    tests/documents/fabriquer/tout.js) passent dans les lecteurs ACTUELS de
@@ -20,17 +20,26 @@
        (90 % et plus, la pastille verte de la relecture), a-t-il raison ?
      · le cartouche (n° de plan, folio, indice), les pages dites scannées ;
      · le temps passé ;
+     · les NUMÉROS DE FIL écrits (une partie des folios) : combien VOLTA en lit
+       sur les liaisons justes ;
      · pour un scan, sa BORNE HAUTE (B*, E* : une simulation, dite comme telle) —
        ce que le moteur lirait si un OCR rendait parfaitement les mots et les
-       traits de la page scannée, tournée et décalée comme elle l'est.
+       traits de la page scannée, tournée et décalée comme elle l'est (chaque
+       page dit sa pose dans documents.json).
+   Les documents ont la forme des vrais schémas du lecteur (boîtes pleines,
+   symboles dans les boîtes, barrettes en pastilles sur un pointillé, masses à
+   trois barres, renvois « F5/C3 », numéros de fil parfois, cartouches en
+   français, scans de toute qualité) ; ceux d'avant, d'une autre forme, restent
+   dans tests/documents/v0/ (`--dossier=v0`), pour comparer.
    Puis un tableau, et un rapport en mots, par document et par sorte d'erreur.
    Cette mesure ne juge pas : elle dit où VOLTA en est (aucun seuil, toujours
    « vert ») ; elle sert à voir le progrès d'une passe à l'autre.
    ========================================================================= */
 'use strict';
 const fs = require('fs'), path = require('path'), vm = require('vm');
-const DEPOT = path.join(__dirname, '..'), DOCS = path.join(__dirname, 'documents');
-const args = process.argv.slice(2), choix = ((args.find(a => /^[A-Ea-e](,[A-Ea-e])*$/.test(a)) || 'A,B,C,D,E').toUpperCase()).split(',');
+const args = process.argv.slice(2), DOSSIER = (args.find(a => a.startsWith('--dossier=')) || '').slice(10);
+const DEPOT = path.join(__dirname, '..'), DOCS = path.join(__dirname, 'documents', DOSSIER);
+const choix = ((args.find(a => /^[A-Ea-e](,[A-Ea-e])*$/.test(a)) || 'A,B,C,D,E').toUpperCase()).split(',');
 const SORTIE_JSON = (args.find(a => a.startsWith('--json=')) || '').slice(7), NB_EX = +((args.find(a => a.startsWith('--exemples=')) || '').slice(11) || 3);
 const pct = (a, b) => b ? Math.round(100 * a / b) + ' %' : '—';
 const sec = ms => (ms / 1000).toFixed(1).replace('.', ',') + ' s';
@@ -53,16 +62,17 @@ async function lirePdf(fichier) {
   for (let i = 1; i <= doc.numPages; i++) { const t1 = Date.now(), pg = await doc.getPage(i), vp = pg.getViewport({ scale: 1 }), [tc, ol] = await Promise.all([pg.getTextContent(), pg.getOperatorList()]);
     lues.push(X.SCHEMA_PDF.lirePage({ largeur: vp.width, hauteur: vp.height, vt: vp.transform, items: tc.items, fn: ol.fnArray, args: ol.argsArray, OPS: pdfjs.OPS })); pg.cleanup(); tPages.push(Date.now() - t1); }
   const L = X.SCHEMA_PDF.assembler(lues), n = doc.numPages; await doc.destroy();
-  return { n, ms: Date.now() - t0, tPages, liaisons: L.liaisons.map(l => ({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, type: l.type || '', conf: l.conf, raisons: l.raisons || [], page: l.page + 1, pageVers: l.pageVers != null ? l.pageVers + 1 : null })),
+  return { n, ms: Date.now() - t0, tPages, liaisons: L.liaisons.map(l => ({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, type: l.type || '', cable: l.cable || '', conf: l.conf, raisons: l.raisons || [], page: l.page + 1, pageVers: l.pageVers != null ? l.pageVers + 1 : null })),
     pages: L.pages.map(p => ({ scanne: !!p.scanne, champs: p.champs || {}, orphelins: (p.orphelins || []).length, folio: p.folio })) }; }
 /* LA BORNE HAUTE D'UN SCAN (une simulation, dite comme telle) : si un OCR et une vectorisation rendaient PARFAITEMENT les mots
    et les traits d'une page scannée, que lirait le moteur de VOLTA ? On prend ceux du PDF vectoriel d'origine, on les tourne et
    on les décale comme le scanner l'a fait pour chaque page (tests/documents/fabriquer/imprimer.js, `scanner`), et on les donne
    à `lirePage` par l'entrée prévue pour un futur module d'OCR (`{ mots, formes, scan: true }`). */
-async function simulerOcr(fichierVectoriel, pagesSource, ppp) {
+async function simulerOcr(fichierVectoriel, pagesSource, ppp, poses) {
   const t0 = Date.now(), doc = await pdfjs.getDocument({ data: new Uint8Array(fs.readFileSync(fichierVectoriel)), isEvalSupported: false, verbosity: 0, disableFontFace: true }).promise, lues = [];
   for (let i = 0; i < pagesSource.length; i++) { const pg = await doc.getPage(pagesSource[i]), vp = pg.getViewport({ scale: 1 }), [tc, ol] = await Promise.all([pg.getTextContent(), pg.getOperatorList()]);
-    const k = (i * 7919 + 13) % 1000 / 1000, a = (k - 0.45) * 1.6 * Math.PI / 180, dx = (k - 0.5) * 18 * 72 / ppp, dy = ((k * 3.7) % 1 - 0.5) * 14 * 72 / ppp, cx = vp.width / 2, cy = vp.height / 2, c = Math.cos(a), s = Math.sin(a);
+    // la pose de la page scannée : celle que le scanner a notée (documents.json), sinon celle des documents d'avant
+    const k = (i * 7919 + 13) % 1000 / 1000, P = poses && poses[i], a = (P ? P.angle : (k - 0.45) * 1.6) * Math.PI / 180, dx = P ? P.dx : (k - 0.5) * 18 * 72 / ppp, dy = P ? P.dy : ((k * 3.7) % 1 - 0.5) * 14 * 72 / ppp, cx = vp.width / 2, cy = vp.height / 2, c = Math.cos(a), s = Math.sin(a);
     const R = p => [cx + dx + c * (p[0] - cx) - s * (p[1] - cy), cy + dy + s * (p[0] - cx) + c * (p[1] - cy)], Rv = v => [c * v[0] - s * v[1], s * v[0] + c * v[1]];
     const boite = B => { const q = [[B.x0, B.y0], [B.x1, B.y0], [B.x1, B.y1], [B.x0, B.y1]].map(R); return { x0: Math.min(...q.map(p => p[0])), y0: Math.min(...q.map(p => p[1])), x1: Math.max(...q.map(p => p[0])), y1: Math.max(...q.map(p => p[1])) }; };
     const mots = X.SCHEMA_PDF.motsDesTextes(tc.items, vp.transform).map(m => ({ ...m, o: R(m.o), c: R(m.c), u: Rv(m.u), n: Rv(m.n), B: boite(m.B), angle: m.angle + Math.round(a * 180 / Math.PI) }));
@@ -70,11 +80,11 @@ async function simulerOcr(fichierVectoriel, pagesSource, ppp) {
     formes.forEach(F => F.sp.forEach(sp => { sp.pts = sp.pts.map(R); }));
     lues.push(X.SCHEMA_PDF.lirePage({ largeur: vp.width, hauteur: vp.height, mots, formes, scan: true })); pg.cleanup(); }
   const L = X.SCHEMA_PDF.assembler(lues); await doc.destroy();
-  return { n: pagesSource.length, ms: Date.now() - t0, tPages: [], liaisons: L.liaisons.map(l => ({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, type: l.type || '', conf: l.conf, raisons: l.raisons || [], page: l.page + 1, pageVers: l.pageVers != null ? l.pageVers + 1 : null })),
+  return { n: pagesSource.length, ms: Date.now() - t0, tPages: [], liaisons: L.liaisons.map(l => ({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, type: l.type || '', cable: l.cable || '', conf: l.conf, raisons: l.raisons || [], page: l.page + 1, pageVers: l.pageVers != null ? l.pageVers + 1 : null })),
     pages: L.pages.map(p => ({ scanne: false, champs: p.champs || {}, orphelins: (p.orphelins || []).length, folio: p.folio })) }; }
 function lireVsdx(fichier) {
   const t0 = Date.now(), z = unzipSync(new Uint8Array(fs.readFileSync(fichier)), { filter: f => /\.(xml|rels)$/i.test(f.name) }), L = X.SCHEMA_VISIO.lireVsdx(z);
-  return { n: L.pages.length, ms: Date.now() - t0, tPages: [], liaisons: L.liaisons.map(l => ({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, type: l.type || '', conf: l.conf, raisons: l.raisons || [], page: l.page + 1, pageVers: l.pageVers != null ? l.pageVers + 1 : null, colle: !!l.colle })),
+  return { n: L.pages.length, ms: Date.now() - t0, tPages: [], liaisons: L.liaisons.map(l => ({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, type: l.type || '', cable: l.cable || '', conf: l.conf, raisons: l.raisons || [], page: l.page + 1, pageVers: l.pageVers != null ? l.pageVers + 1 : null, colle: !!l.colle })),
     pages: L.pages.map(p => ({ scanne: false, champs: p.champs || {}, orphelins: (p.orphelins || []).length, folio: p.folio })) }; }
 
 /* ---- la vérité : le CSV au format du retest, relu par VOLTA ----------------------------------------------------- */
@@ -85,7 +95,7 @@ function lireVerite(D) {
   const pageDe = fwd => { const m = /^(\S+) F(\d+)$/.exec(fwd || ''), q = /p\.(\d+)$/.exec(fwd || '');
     if (m) { const i = D.pages.findIndex(p => p.numero === m[1] && String(p.folio) === m[2]); return i >= 0 ? i + 1 : null; }
     if (q) { const src = +q[1]; if (D.pagesSource) { const i = D.pagesSource.indexOf(src); return i >= 0 ? i + 1 : null; } return src; } return null; };
-  return { harnais: r.harnais, liaisons: r.liaisons.map(l => ({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, type: l.type || '', fwd: l.fwd || '', dessin: String((l.autres || {}).Dessin || '').split(/\s*;\s*/).filter(Boolean), page: pageDe(l.fwd) })) }; }
+  return { harnais: r.harnais, liaisons: r.liaisons.map(l => ({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, type: l.type || '', cable: l.cable || '', fwd: l.fwd || '', dessin: String((l.autres || {}).Dessin || '').split(/\s*;\s*/).filter(Boolean), page: pageDe(l.fwd) })) }; }
 
 /* ---- comparer ------------------------------------------------------------------------------------------------------ */
 const bout = (r, b) => String(r || '').toUpperCase() + ':' + String(b || '').toUpperCase();
@@ -138,12 +148,16 @@ function comparer(V, L, D) {
   const vus = new Set(L.flatMap(l => [bout(l.de, l.borneDe), bout(l.vers, l.borneVers)]));
   const NATURE_CODE = { CB: 'disjoncteur', RL: 'relais', CT: 'relais', VT: 'barrette', VC: 'prise de coupure', G: 'masse', LP: 'voyant', SW: 'interrupteur', PB: 'interrupteur', DI: 'diode', TB: 'bornier', CP: 'calculateur à connecteurs lettrés' };
   const style = v => ((v.dessin.find(t => /^style /.test(t)) || '').slice(6));
-  const precision = (n, v) => n === 'masse' && style(v) === 'B' ? 'masse dessinée en râteau' : n === 'relais' && style(v) === 'C' ? 'relais dessiné en tirets' : n === 'boîte' && style(v) === 'C' ? 'boîte dessinée en tirets' : n === 'barrette' && style(v) === 'B' ? 'barrette aux cases « 51A »' : n;
+  // (les documents d'avant avaient leurs pièges de forme : la masse en râteau, les boîtes en tirets, les cases « 51A »)
+  const v1 = D.forme === 'v1', precision = (n, v) => v1 ? n : n === 'masse' && style(v) === 'B' ? 'masse dessinée en râteau' : n === 'relais' && style(v) === 'C' ? 'relais dessiné en tirets' : n === 'boîte' && style(v) === 'C' ? 'boîte dessinée en tirets' : n === 'barrette' && style(v) === 'B' ? 'barrette aux cases « 51A »' : n;
+  const premierPlan = (D.pages.find(p => p.sorte === 'schéma') || {}).numero, planDe = v => (D.pages[(v.page || 1) - 1] || {}).numero;
   V.forEach((v, i) => { if (etatV[i]) return; let t;
     if (D.scan) t = 'page scannée'; else if (v.dessin.includes('tableau')) t = 'liaison donnée en tableau'; else if (v.dessin.includes('texte')) t = 'liaison écrite dans une phrase';
     else { const nonVus = [[v.de, v.borneDe], [v.vers, v.borneVers]].filter(([r, b]) => !vus.has(bout(r, b))).map(([r]) => NATURE_CODE[codeDe(r)] || 'boîte');
       // un renvoi qui ne s'apparie pas ne donne aucune liaison : ses deux bouts restent « jamais lus » — c'est le renvoi qui manque
-      t = v.dessin.includes('renvoi') && !(style(v) === 'B' && nonVus.includes('masse')) ? 'renvoi ' + (style(v) === 'C' ? '« 245-C3 » (la page du dossier) : non compris' : style(v) === 'B' ? '« F°12 — B4 » : pris pour le folio 12 du premier chapitre' : v.dessin.filter(x => /^style/.test(x)).length > 1 ? 'vers un autre chapitre (son numéro de plan)' : 'non apparié')
+      const autrePlan = v.dessin.filter(x => /^style/.test(x)).length > 1;
+      t = v.dessin.includes('renvoi') && (v1 || !(style(v) === 'B' && nonVus.includes('masse'))) ? 'renvoi ' + (v1 ? (autrePlan ? 'vers un autre plan (« SC-… F12/B4 »)' : planDe(v) !== premierPlan ? '« F12/B4 » d’un plan qui n’est pas le premier (le folio y recommence à 1)' : '« F5/C3 » non apparié')
+          : style(v) === 'C' ? '« 245-C3 » (la page du dossier) : non compris' : style(v) === 'B' ? '« F°12 — B4 » : pris pour le folio 12 du premier chapitre' : autrePlan ? 'vers un autre chapitre (son numéro de plan)' : 'non apparié')
         : nonVus.length ? 'bout jamais lu : ' + precision(nonVus.sort((a, b) => (a === 'masse' ? -1 : 0) - (b === 'masse' ? -1 : 0))[0], v) : 'deux bouts lus ailleurs, jamais ensemble'; }
     etatV[i] = { sorte: 'manquee', cause: t }; });
   return { etatV, etatL }; }
@@ -151,7 +165,7 @@ function comparer(V, L, D) {
 /* ---- mesurer un document ------------------------------------------------------------------------------------------- */
 async function mesurer(lettre, D, simulation) {
   const fichier = path.join(DOCS, D.fichier); if (!fs.existsSync(fichier)) throw new Error(fichier + ' manque : lancez tests/documents/fabriquer/tout.js');
-  const V = lireVerite(D), R = simulation ? await simulerOcr(path.join(DOCS, simulation.source), simulation.pages, simulation.ppp) : D.sorte === 'vsdx' ? lireVsdx(fichier) : await lirePdf(fichier);
+  const V = lireVerite(D), R = simulation ? await simulerOcr(path.join(DOCS, simulation.source), simulation.pages, simulation.ppp, simulation.poses) : D.sorte === 'vsdx' ? lireVsdx(fichier) : await lirePdf(fichier);
   if (simulation) D = { ...D, scan: false };
   const L = R.liaisons.map(l => { const n = X.liaison({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers }); return { ...l, de: n.de, borneDe: n.borneDe, vers: n.vers, borneVers: n.borneVers }; });
   const { etatV, etatL } = comparer(V.liaisons, L, D);
@@ -178,6 +192,10 @@ async function mesurer(lettre, D, simulation) {
   R.pages.forEach((p, i) => { const q = D.pages[i]; if (!q || q.sorte !== 'schéma') return; cart.folios++; const c = p.champs || {};
     if (c.numero === q.numero) cart.numero++; if (String(c.folioNum) === String(q.folio)) cart.folio++; if (c.indice === q.indice) cart.indice++; });
   const scannees = R.pages.filter(p => p.scanne).length, orphelins = R.pages.reduce((k, p) => k + p.orphelins, 0);
+  // les numéros de fil écrits (une partie des folios) : lus sur les liaisons justes ?
+  const numeros = { ecrits: 0, justes: 0, lus: 0, faux: 0 }; V.liaisons.forEach((v, i) => { if (!v.cable) return; numeros.ecrits++; const e = etatV[i]; if (e.sorte !== 'juste') return; numeros.justes++;
+    const c = String(L[e.j].cable || '').toUpperCase(); if (c === String(v.cable).toUpperCase()) numeros.lus++; else if (c) numeros.faux++; });
+  const qualites = (D.poses || []).reduce((o, p) => { o[p.qualite] = (o[p.qualite] || 0) + 1; return o; }, {});
   // les causes, et des exemples
   const causes = new Map(), ajouter = (k, ex) => { const o = causes.get(k) || { n: 0, ex: [] }; o.n++; if (o.ex.length < NB_EX) o.ex.push(ex); causes.set(k, o); };
   V.liaisons.forEach((v, i) => { const e = etatV[i];
@@ -203,7 +221,7 @@ async function mesurer(lettre, D, simulation) {
   const tuiles = D.scan ? D.pages.reduce((k, p) => k + (p.taille === 'A3' || p.sorte === 'schéma' ? 12 : 4), 0) : 0;
   const ia = { douteuses: douteuses.length, orphelins, pagesDoute: pagesDoute.size, appels: pagesDoute.size + pagesTableau + pagesTexte + 3 + tuiles, tuiles, pagesTableau, pagesTexte };
   return { lettre, nom: D.nom, fichier: D.fichier, sorte: D.sorte, scan: !!D.scan, pages: R.n, verite: V.liaisons.length, trouvees: L.length, justes, bornes, bouts, manquees, trop, tranches, parEtiquette: [...parEtiquette], parPage: [...parPage], cart, scannees, orphelins, ms: R.ms, tPages: R.tPages,
-    causes: [...causes].sort((a, b) => b[1].n - a[1].n), ia, collees: L.filter(l => l.colle).length, surFaux: [...surFaux].sort((a, b) => b[1] - a[1]) }; }
+    causes: [...causes].sort((a, b) => b[1].n - a[1].n), ia, collees: L.filter(l => l.colle).length, surFaux: [...surFaux].sort((a, b) => b[1] - a[1]), numeros, qualites }; }
 
 /* ---- le rapport ------------------------------------------------------------------------------------------------------ */
 function tableau(res) {
@@ -216,11 +234,13 @@ function rapport(r) {
   const o = [], sur = r.tranches[0], revoir = r.tranches[1];
   o.push(`\n${r.lettre} — ${r.nom} (${r.fichier}, ${r.pages} pages, lu en ${sec(r.ms)}${r.tPages.length ? ', ' + Math.round(r.ms / r.pages) + ' ms par page' : ''})`);
   if (r.simulation) o.push('  SIMULATION — ce n’est pas ce que VOLTA lit aujourd’hui : les mots et les traits exacts du PDF vectoriel, tournés et décalés comme chaque page scannée, donnés au moteur par son entrée « scan » (celle qu’un module d’OCR emprunterait). La borne haute d’un OCR parfait.');
-  if (r.scan) { o.push(`  VOLTA dit ${r.scannees} page${r.scannees > 1 ? 's' : ''} sur ${r.pages} « scannée${r.scannees > 1 ? 's' : ''} » : il le voit bien, mais il n’a pas d’OCR — aucune liaison lue, les ${r.verite} sont à relier à la main.`); }
+  if (r.scan) { const q = Object.entries(r.qualites || {}).map(([k, n]) => n + ' ' + (k === 'net' ? 'nette' + (n > 1 ? 's' : '') : k === 'gris' ? 'grise' + (n > 1 ? 's' : '') : 'photocopie' + (n > 1 ? 's' : ''))).join(', ');
+    o.push(`  VOLTA dit ${r.scannees} page${r.scannees > 1 ? 's' : ''} sur ${r.pages} « scannée${r.scannees > 1 ? 's' : ''} »${q ? ' (' + q + ')' : ''} : il le voit bien, mais il n’a pas d’OCR — aucune liaison lue, les ${r.verite} sont à relier à la main.`); }
   else {
     o.push(`  ${r.justes} liaisons justes sur ${r.verite} (${pct(r.justes, r.verite)}), ${r.trouvees} trouvées : ${r.bornes} aux deux bons équipements mais une borne fausse, ${r.bouts} avec un bout au mauvais endroit, ${r.trop} en trop ; ${r.manquees} manquées.`);
     o.push(`  Quand VOLTA dit « sûr » (90 % et plus), il a raison ${sur.justes} fois sur ${sur.n} (${pct(sur.justes, sur.n)}) ; « à revoir » : ${revoir.justes} justes sur ${revoir.n}.` + (r.sorte === 'vsdx' ? ` ${r.collees} liaisons lues comme « collées aux deux bouts ».` : ''));
     if (r.surFaux.length) o.push('  Sûr, mais faux : ' + r.surFaux.slice(0, 4).map(([k, n]) => `${n} × ${k}`).join(' · ') + '.');
+    if (r.numeros && r.numeros.ecrits) o.push(`  Numéros de fil : ${r.numeros.ecrits} liaisons en portent un ; sur les ${r.numeros.justes} lues justes, VOLTA en lit ${r.numeros.lus}${r.numeros.faux ? ' (' + r.numeros.faux + ' faux)' : ''}.`);
     if (r.cart.folios) o.push(`  Cartouche : le n° de plan lu sur ${r.cart.numero} folios sur ${r.cart.folios}, le folio sur ${r.cart.folio}, l’indice sur ${r.cart.indice}.`);
     const tri = r.parEtiquette.slice().sort((a, b) => b[1].justes / b[1].n - a[1].justes / a[1].n || b[1].n - a[1].n);
     const bien = tri.filter(([, x]) => x.n >= 3 && x.justes / x.n >= 0.85).map(([t, x]) => `${t} ${x.justes}/${x.n}`), mal = tri.filter(([, x]) => x.n >= 3 && x.justes / x.n < 0.6).map(([t, x]) => `${t} ${x.justes}/${x.n}`);
@@ -232,11 +252,11 @@ function rapport(r) {
 
 (async () => {
   const M = JSON.parse(fs.readFileSync(path.join(DOCS, 'documents.json'), 'utf8')), res = [];
-  logBrut(`\n  CE QUE VOLTA LIT DES DOCUMENTS INVENTÉS — tests/documents (fabriqués le ${M.fabrique})\n`);
-  for (const lettre of choix) { const D = M.documents[lettre]; if (!D) { logBrut('  — ' + lettre + ' : pas dans documents.json'); continue; } res.push(await mesurer(lettre, D));
+  logBrut(`\n  CE QUE VOLTA LIT DES DOCUMENTS INVENTÉS — tests/documents${DOSSIER ? '/' + DOSSIER + ' (les documents d’avant)' : ''} (fabriqués le ${M.fabrique})\n`);
+  for (const lettre of choix) { const D = M.documents[lettre]; if (!D) { logBrut('  — ' + lettre + ' : pas dans documents.json'); continue; } D.forme = D.forme || M.forme || ''; res.push(await mesurer(lettre, D));
     // un scan : sa borne haute, si un OCR lisait parfaitement ses mots et ses traits (une simulation)
     if (D.scan) { const source = lettre === 'B' ? M.documents.A : M.documents.D; if (!source) continue;
-      const pages = D.pagesSource || D.pages.map((_, i) => i + 1), r = await mesurer(lettre + '*', D, { source: source.fichier, pages, ppp: lettre === 'B' ? 150 : 110 });
+      const pages = D.pagesSource || D.pages.map((_, i) => i + 1), r = await mesurer(lettre + '*', D, { source: source.fichier, pages, ppp: lettre === 'B' ? 150 : 110, poses: D.poses });
       r.nom = 'si un OCR lisait parfaitement ' + lettre; r.simulation = true; res.push(r); } }
   logBrut(tableau(res)); res.forEach(r => logBrut(rapport(r)));
   const tot = res.filter(r => !r.scan && !r.simulation).reduce((a, r) => ({ v: a.v + r.verite, j: a.j + r.justes }), { v: 0, j: 0 });

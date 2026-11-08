@@ -273,7 +273,7 @@ function traverseeDessin(nom, lettres, cote, o) { if (!lettres.length) return ''
   return `<svg class="vu-bro vu-trav${petit ? ' petit' : ''}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escA('Ce qui traverse ' + nom)}">${out}</svg>`; }
 
 /* ---- LES POTENTIELS d'une barrette : la couleur du potentiel, ses contacts, ses câbles (type → où il va) ---- */
-function potentielsVue(groupes) { return `<div class="vu-pots">${groupes.map((g, i) => `<div class="vu-pot${g.ko ? ' ko' : ''}" style="--c:${g.ko ? 'var(--vu-ko)' : `var(--vu-g${(i % 6) + 1})`}" data-ct="${escA(g.lettres[0] || '')}"><i aria-hidden="true"></i><b class="id">${esc(g.lettres.join(' '))}</b>`
+function potentielsVue(groupes) { return `<div class="vu-pots">${groupes.map((g, i) => `<div class="vu-pot${g.ko ? ' ko' : ''}" style="--c:${g.ko ? 'var(--vu-ko)' : `var(--vu-g${(i % 8) + 1})`}" data-ct="${escA(g.lettres[0] || '')}"><i aria-hidden="true"></i><b class="id">${esc(g.lettres.join(' '))}</b>`
   + `<span>${g.fils.length ? g.fils.map(f => `<em class="id"${f.k ? ` data-i="${f.k}"` : ''}>${esc(f.type || '—')} ${f.amont ? '←' : '→'} ${esc(f.vers)}</em>`).join('') : '<em class="libre">libre</em>'}</span></div>`).join('')}</div>`; }
 
 /* ---- LES BROCHES d'un connecteur : contact, où il va, le câble, le contact à sertir — une ligne chacune ---- */

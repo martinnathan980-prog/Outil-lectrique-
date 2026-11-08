@@ -1,0 +1,63 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   BEAUTÉ (passe 87) — trois choix du lecteur, sur les planches du regard neuf.
+   · P3 LES TEINTES DES GROUPES D'UNE BARRETTE : des teintes FROIDES, comme les routes — jamais le cuivre (l'accent), jamais
+     l'ambre, le rouge ou le vert (l'état), jamais le fuchsia. Huit teintes (08-fiche, `couleurDe` et `consG` : le neuvième
+     groupe reprend la première), dans un ordre où deux groupes qui se suivent — voisins sur la face, l'un sous l'autre dans
+     « Ce qu'elle relie » — ne se ressemblent jamais : PÉTROLE, VIOLET, ACIER, PRUNE, ARDOISE, MARINE, IRIS, AUBERGINE.
+     Le jour, chacune porte une lettre blanche (5:1 au moins) ; la nuit, plus claire, une lettre sombre (5:1 au moins).
+     Mesurées en OKLab (×100) : deux voisines s'écartent de 11 à 21 le jour, de 10 à 20 la nuit ; les quatre premières, celles
+     de presque toutes les barrettes, s'écartent de 8 au moins des trois premières routes (bleu, sarcelle, encre indigo),
+     celles d'un contrat ordinaire. Plus de huit couleurs froides ne se distinguent pas à coup sûr ; au-delà, le numéro du
+     groupe et sa plage sur la face prennent le relais.
+     Elles servent partout où les groupes se voient : la face des modules (les plages, les contacts pris), « Ce qu'elle
+     relie », la vignette de la carte ; le plan ne teinte pas les groupes.
+   · P2 LE FIL ENTRE UN BLOC ET SA CARTE : un pointillé discret, fin, sans lueur — un guide qui ne se lit plus comme un câble
+     du folio (ni le trait plein d'un câble, ni les tirets d'une barrette à poser) ; il se pose du bloc vers la carte
+     (08-carte, `dessinerLien`).
+   · P5 LE TITRE DE LA FICHE D'UN CÂBLE : son type et ses deux bouts (08-niveaux, `enteteFiche`), dans la langue de l'en-tête
+     (deux graisses, l'encre et un gris, sans fond) ; il passe à la ligne entre ses morceaux, jamais au milieu d'un repère,
+     et n'est jamais coupé.
+   Chargée après style-niveaux (les jetons d'hier) : mêmes sélecteurs, la règle d'ici passe devant.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── P3 · LES HUIT TEINTES DES GROUPES ─── */
+#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet{
+  --vu-g1:#0b697b; --vu-g2:#63459f; --vu-g3:#2d74aa; --vu-g4:#795578;
+  --vu-g5:#607085; --vu-g6:#154470; --vu-g7:#6264b5; --vu-g8:#51365b }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
+  --vu-g1:#71e1f4; --vu-g2:#b799ff; --vu-g3:#6fafde; --vu-g4:#be9abe;
+  --vu-g5:#bcc4d5; --vu-g6:#6f96bf; --vu-g7:#aab1f7; --vu-g8:#a484b2 } }
+:root[data-theme="dark"] :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
+  --vu-g1:#71e1f4; --vu-g2:#b799ff; --vu-g3:#6fafde; --vu-g4:#be9abe;
+  --vu-g5:#bcc4d5; --vu-g6:#6f96bf; --vu-g7:#aab1f7; --vu-g8:#a484b2 }
+/* la légende de la barrette : ses contacts pris portent la teinte de leur groupe — la légende dit la FORME (plein : pris ;
+   vide : libre), à l'encre ; la face d'un connecteur garde son cuivre (style-z-phrases) */
+.vu-bloc-barrette .vu-legende i.pris{background:var(--t-1);box-shadow:none}
+
+/* ─── P5 · LE TITRE D'UN CÂBLE : « DR20 · 102CB1:2 → 103RL1:A1 · par VT1 » ─── */
+/* le type et les bouts à l'encre (600), les liants en gris (500) ; un bout ne se coupe jamais (insécable), le titre passe à
+   la ligne entre ses morceaux, en lignes équilibrées ; rien ne déborde, rien ne se cache */
+:is(#inspecteur,.carte-double) .nc-titre.cable .nc-rep.nc-rep-cable{display:block;min-width:0;max-width:100%;margin:0;color:var(--t-1);overflow-wrap:anywhere;white-space:normal}
+:is(#inspecteur,.carte-double) .fi .nc-titre.cable .nc-rep.nc-rep-cable .nc-rep-t{display:inline;min-width:0;height:auto;margin:0;padding:0;border:0;font:inherit;letter-spacing:inherit;color:inherit;white-space:nowrap;overflow:visible}
+:is(#inspecteur,.carte-double) .nc-titre.cable .nc-lie{font-weight:500;color:var(--t-2)}
+/* un bout : un repère qu'on ouvre d'un clic (sa fiche) — au survol, le cuivre ; la bulle dit lequel */
+:is(#inspecteur,.carte-double) .nc-titre.cable .nc-bout{display:inline-block;margin:0;padding:0;border:0;border-radius:4px;background:none;font:inherit;letter-spacing:inherit;color:inherit;white-space:nowrap;cursor:pointer;transition:color var(--rapide,.15s)}
+:is(#inspecteur,.carte-double) .nc-titre.cable .nc-bout:hover{color:var(--nv-cuivre)}
+:is(#inspecteur,.carte-double) .nc-titre.cable .nc-bout:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
+/* une borne en minuscule (51e) : soulignée d'un trait fin, comme sur le plan et sur la face */
+:is(#inspecteur,.carte-double) .nc-titre.cable u.nc-min{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+/* la carte : centré, un cran sous le repère d'un objet (il porte trois noms au lieu d'un) */
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-tete .nc-titre.cable .nc-rep.nc-rep-cable{display:block;margin-top:1px;text-align:center;text-wrap:balance;font:600 var(--f-20)/1.32 var(--sans);letter-spacing:-.012em}
+/* « par VT1 » : la carte le pose sous les deux bouts, sans son point — les deux bouts restent sur une même ligne */
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-titre.cable .nc-par{display:block}
+:is(#inspecteur,.carte-double) .fi.nv-c .nc-titre.cable .nc-par-pt{display:none}
+/* le titre porte les deux bouts : le chemin en pastilles, dessous, les redisait (« pas deux fois la même chose ») */
+:is(#inspecteur,.carte-double) .fi.nv-c .nc:has(.nc-rep-cable)>.nv-trajet{display:none}
+/* le grand : sur la ligne fine, à la taille du repère d'un objet */
+#inspecteur .nv-grand .nc-tete.fine .nc-titre.cable{flex:0 1 auto;min-width:0}
+#inspecteur .nv-grand .nc-tete.fine .nc-titre.cable .nc-rep.nc-rep-cable{text-align:left;text-wrap:pretty;font:600 var(--f-20)/1.3 var(--sans);letter-spacing:-.012em}
+
+/* ─── P2 · LE FIL DE LA CARTE : des points ronds, fins, espacés ; ni trait plein ni lueur ─── */
+#carte-lien .cl-trait{stroke:var(--lien);stroke-width:1.7px;stroke-linecap:round;stroke-dasharray:0 5;stroke-opacity:.8;filter:none}
+#carte-lien .cl-bloc{r:2.3px;fill:var(--lien);stroke:none}
+#carte-lien .cl-carte{r:2.3px;fill:var(--lien);stroke:none;fill-opacity:.8}

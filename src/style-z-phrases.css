@@ -35,12 +35,12 @@
 #inspecteur .nc-ligne .nc-regles>span.ko::before{background:var(--ko)}
 #inspecteur .nv-grand .nc-taches.nc-pbs .nc-tache.nc-ligne .nc-geste .btn{min-width:172px;justify-content:center}
 /* « TOUT RÉGLER », en pied de ce qui est à régler : ce qui change et ce que ça coûte, le geste aligné sous les autres */
-#inspecteur .nc-taches.nc-pbs .nc-tout{display:grid;grid-template-columns:22px minmax(0,1fr) auto;grid-template-areas:". t g";column-gap:14px;align-items:center;margin:0;padding:11px 16px;border-top:1px solid var(--s-line);background:color-mix(in srgb,var(--nv-cuivre) 6%,transparent)}
-#inspecteur .nc-taches.nc-pbs .nc-tout-t{grid-area:t;min-width:0;font:500 var(--f-13)/1.4 var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums;text-wrap:pretty}
-#inspecteur .nc-taches.nc-pbs .nc-tout .nc-geste{grid-area:g;justify-self:end;padding:0 0 0 12px}
-#inspecteur .nv-grand .nc-taches.nc-pbs .nc-tout .nc-geste .btn{min-width:172px;justify-content:center}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #inspecteur .nc-taches.nc-pbs .nc-tout{background:color-mix(in srgb,var(--nv-cuivre) 10%,transparent)} }
-:root[data-theme="dark"] #inspecteur .nc-taches.nc-pbs .nc-tout{background:color-mix(in srgb,var(--nv-cuivre) 10%,transparent)}
+#inspecteur .nc-taches.nc-pbs .nc-regler-tout{display:grid;grid-template-columns:22px minmax(0,1fr) auto;grid-template-areas:". t g";column-gap:14px;align-items:center;margin:0;padding:11px 16px;border-top:1px solid var(--s-line);background:color-mix(in srgb,var(--nv-cuivre) 6%,transparent)}
+#inspecteur .nc-taches.nc-pbs .nc-regler-tout-t{grid-area:t;min-width:0;font:500 var(--f-13)/1.4 var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums;text-wrap:pretty}
+#inspecteur .nc-taches.nc-pbs .nc-regler-tout .nc-geste{grid-area:g;justify-self:end;padding:0 0 0 12px}
+#inspecteur .nv-grand .nc-taches.nc-pbs .nc-regler-tout .nc-geste .btn{min-width:172px;height:30px;padding:0 14px;font-size:var(--f-13);justify-content:center}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) #inspecteur .nc-taches.nc-pbs .nc-regler-tout{background:color-mix(in srgb,var(--nv-cuivre) 10%,transparent)} }
+:root[data-theme="dark"] #inspecteur .nc-taches.nc-pbs .nc-regler-tout{background:color-mix(in srgb,var(--nv-cuivre) 10%,transparent)}
 
 /* ─── LA BANDE « À VOIR » À SON AMBRE : la section des problèmes porte un liseré rouge à gauche ; son intercalaire « À voir »
    et ses lignes portent le leur, ambre, par-dessus (il couvre aussi le filet du haut de chaque ligne : rien de rouge ne
@@ -85,3 +85,14 @@ svg.vu-face text.pris{fill:#fff}
    dessus : seules les lignes posées directement l'avaient (style-v79), celles du repli débordaient de 20 px, leur geste
    collé au bord ─── */
 #inspecteur .nc-taches.nc-pbs .nc-reste > .nc-tache{box-sizing:border-box;width:auto;max-width:100%}
+/* (le pied d'un genre — « 3 repères · f. 1 · 2 · 6 », puis ses gestes — ne se coupe plus en « 3 repè… » : faute de place, les
+   gestes passent dessous, alignés à droite) */
+.ix-controle .co-genre-pied{flex-wrap:wrap;row-gap:2px}
+.ix-controle .co-genre-pied>small{flex:1 0 auto;max-width:100%}
+.ix-controle .co-genre-pied>.co-gestes{margin-left:auto}
+/* la fiche d'un câble (sa ligne n'a pas de titre : la fiche le dit) : une seule raison se lit comme le titre d'une ligne, sans
+   puce ; dans la carte, le geste passe sous les raisons (la colonne de texte garde sa largeur) */
+#inspecteur .nc-ligne.sans-titre .nc-raisons.seule .nc-r{grid-template-columns:minmax(0,1fr);font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+#inspecteur .nc-ligne.sans-titre .nc-raisons.seule .nc-r>i{display:none}
+#inspecteur .fi.nv-c .nc-taches.nc-pbs .nc-tache.nc-ligne.sans-titre{grid-template-areas:"r d d" ". g g" ". q q"}
+#inspecteur .fi.nv-c .nc-taches.nc-pbs .nc-tache.nc-ligne.sans-titre .nc-geste{justify-self:start;padding:6px 0 0}
