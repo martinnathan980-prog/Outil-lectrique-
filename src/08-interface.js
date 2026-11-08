@@ -187,12 +187,11 @@ function affinerTout() { if (!affinage.actif) return;
 // le placement au loin a-t-il encore du travail ? (un folio attendu, en cours, ou un folio du contrat pas encore placé)
 const placementEnCours = () => placement.ailleurs && placement.worker !== false && (placement.attentes.size > 0 || !!placement.encours || !!prochainAuLoin());
 function pomper() { while (affinage.file.length && affinage.finis.has(affinage.file[0].cle)) affinage.file.shift(); lancerLAvance();
-  if (!affinage.encours && !affinage.file.length) affinage.lot = null;
   if (affinage.encours || !affinage.file.length || placementEnCours()) { montrerBande(); return; }
   const w = travailleur(); if (!w) return;
+  // (passe 87) l'affinage se fait EN SILENCE (le lecteur : « ce travail interne ne me concerne pas ») : la bande ne compte plus
+  // les folios que VOLTA peaufine, elle se tait (`montrerBande`)
   affinage.encours = affinage.file.shift(); affinage.etat = { k: 0, n: TOURS_PROFONDS };
-  // (v86) le LOT : les folios que VOLTA peaufine d'affilée, pour que la bande dise où il en est sur tous (`montrerBande`)
-  const lot = affinage.lot || (affinage.lot = { total: 0, faits: 0 }); lot.total = Math.max(lot.total, lot.faits + 1 + affinage.file.length);
   w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerBande(); }
 /* (v84, le parcours) le placement d'avance ne partait qu'au premier gros folio OUVERT : sur l'exemple (son folio 1 est
    petit), les autres attendaient qu'on les ouvre — « Dessin du folio 3 · environ 5 s » au premier problème — et l'affinage,
@@ -220,7 +219,7 @@ function recevoirAffinage(e) { const d = e.data, j = affinage.encours; if (!j ||
   if (d.P && !d.fini) { affinage.profonds.set(d.cle, d.P); if (cleCourante() === d.cle) { affinage.vu = Date.now(); remplacerDessin(); } }
   if (d.erreur) affinage.erreur = d.erreur;
   if (d.fini || d.erreur) { affinage.finis.add(d.cle); if (d.P) { affinage.profonds.set(d.cle, d.P); garderAffine(d.cle, d.P); }
-    if (affinage.lot) affinage.lot.faits++; affinage.encours = null; pomper(); }
+    affinage.encours = null; pomper(); }
   montrerBande(); }
 // le dessin se remplace, la vue reste où elle est
 function rafraichirDessin() { calculer(); peindre(); synchroniser(); rallumer(); }
@@ -534,11 +533,11 @@ function motDuFolio(p, court, K) { const nom = 'Folio ' + p, e = travailDeFond()
   if (e.etat === 'dessin') return nom + ' : dessin en cours' + (court ? '' : ', ' + e.mot) + (e.esquisse && app.plan === p && !court ? ' (l’esquisse se lit déjà)' : '');
   if (e.etat === 'attente') { const enc = placement.encours && placement.attentes.get(placement.encours.cle);
     return nom + ' : en attente' + (court || !enc || enc.plan === p ? '' : ', après le folio ' + enc.plan); }
-  if (e.etat === 'affinage') return nom + ' : prêt' + (court ? ', VOLTA le peaufine' : ' — VOLTA peaufine encore son dessin');
   return nom + ' : prêt'; }
 function peindreEtatsDesFolios() { const strip = $('fo-strip'); if (!strip) return; const fond = travailDeFond(), K = fond ? clesDesFolios() : null;
   strip.querySelectorAll('.chip').forEach(c => { const e = fond ? etatDuFolio(c.dataset.plan, K) : null, etat = e ? e.etat : 'pret';
-    ['attente', 'dessin', 'affinage'].forEach(x => { const on = etat === x; if (c.classList.contains('fo-' + x) !== on) c.classList.toggle('fo-' + x, on); });
+    ['attente', 'dessin', 'affinage'].forEach(x => {   // (passe 87) 'affinage' ne se pose plus : il s'efface s'il était là
+      const on = etat === x; if (c.classList.contains('fo-' + x) !== on) c.classList.toggle('fo-' + x, on); });
     // la piste : ce que le dessin a fait ; pleine quand il est prêt (elle se remplit, puis s'efface)
     const p = etat === 'dessin' ? Math.max(0.04, e.p).toFixed(3) : etat === 'attente' ? '0' : '1';
     if (c.style.getPropertyValue('--fo-p') !== p) c.style.setProperty('--fo-p', p);
@@ -558,8 +557,10 @@ function foliosPrets() { const t = performance.now(), m = foliosPrets.m; if (m &
       if (!(placement.prets.has(k) || placements.has(k) || affinage.profonds.has(k) || app.retouches.has(k))) pas.add(p); }));
     r = { n: P.length - pas.size, N: P.length, pas }; }
   foliosPrets.m = { t, r }; return r; }
-/* LA PETITE BANDE du milieu, en bas (#affinage) : ce qui travaille pour nous, une chose à la fois — le dessin définitif du
-   folio affiché (l'esquisse est là), les folios qui se préparent (« 7 / 20 folios prêts »), puis le dessin qui s'affine. */
+/* LA PETITE BANDE du milieu, en bas (#affinage) : ce qui n'est pas encore prêt, une chose à la fois — le dessin définitif du
+   folio affiché (l'esquisse est là), les folios qui se préparent (« 7 / 20 folios prêts »). (passe 87, le lecteur : « ce
+   travail interne ne me concerne pas ») Dès que les folios sont prêts, elle se tait : VOLTA peaufine encore leurs dessins en
+   arrière-plan, sans le dire — elle restait plus de deux minutes là sans que rien ne bouge. */
 function montrerBande() { peindreEtatsDesFolios(); const el = $('affinage'); if (!el) return; const txt = $('af-txt'); let barre = el.querySelector('.af-barre');
   const poser = (mot, p, ailleurs, bulle) => { el.hidden = false; el.classList.toggle('ailleurs', !!ailleurs); el.setAttribute('aria-live', p == null ? 'polite' : 'off'); if (txt.textContent !== mot) txt.textContent = mot;
     if (p == null) { if (barre) barre.hidden = true; } else { if (!barre) { barre = document.createElement('span'); barre.className = 'af-barre'; barre.setAttribute('aria-hidden', 'true'); barre.appendChild(document.createElement('span')); el.appendChild(barre); }
@@ -573,14 +574,7 @@ function montrerBande() { peindreEtatsDesFolios(); const el = $('affinage'); if 
       'le folio se lit déjà ; le dessin définitif prendra sa place en glissant, la feuille immobile, et ses blocs se déplaceront dès qu’il sera posé'); return; }
   const prets = foliosPrets();
   if (prets && prets.n < prets.N && (placement.encours || placement.attentes.size)) { poser(prets.n + ' / ' + prets.N + ' folios prêts', prets.n / prets.N, true, 'les autres folios se dessinent en arrière-plan, l’un après l’autre'); return; }
-  const j = affinage.encours, e = affinage.etat;
-  if (affinage.actif && j) { const ici = j.cle === cleCourante(), reste = affinage.file.length;
-    /* (v86, l'audit G3 : « 0 / 48 · 5 en attente », 48 de quoi ?) des mots : combien de folios VOLTA peaufine encore, celui-ci
-       compris ; la barre, où il en est sur tout le lot (les folios finis, et les tours du folio en cours) */
-    const n = 1 + reste, lot = affinage.lot || { total: n, faits: 0 }, p = (lot.faits + (e && e.n ? e.k / e.n : 0)) / Math.max(1, lot.total, lot.faits + n);
-    poser(n > 1 ? 'VOLTA peaufine encore ' + n + ' folios' : ici ? 'VOLTA peaufine encore ce folio' : 'VOLTA peaufine encore un folio', p, !ici,
-      'chaque meilleur dessin trouvé remplace l’actuel sans bouger la feuille, et se garde dans ce navigateur'); return; }
-  el.hidden = true; }
+  el.hidden = true; if (txt.textContent) txt.textContent = ''; el.removeAttribute('aria-label'); }
 const montrerAffinage = montrerBande;
 // le concours gardé : une entrée par version du moteur et folio ; les concours d'un moteur passé s'effacent, une fois par session
 function garderConcours(cle, P) { ouvrirIDB().then(db => { db.transaction(IDB_CONCOURS, 'readwrite').objectStore(IDB_CONCOURS).put({ P, t: Date.now() }, VERSION_MOTEUR + '|' + cle); }).catch(() => { }); }
@@ -2289,7 +2283,7 @@ const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde',
   png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge calibres preferes', normes: 'tables sources', bible: 'barrettes connecteurs prises modules references',
   nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
   bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
-  raccourcis: 'clavier touches aide', suivi: 'csv barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft',
+  raccourcis: 'clavier touches aide', suivi: 'lpa excel classeur suivi fabrication barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft',
   // (v86) l'historique du plan entier (08-journal)
   historique: 'historique journal changements modifications defaire annuler qui quand avant apres change',
   // l'IA interne du lecteur : son réglage et le test de la connexion (08-ia)
@@ -3184,12 +3178,13 @@ function telecharger(blob, nom) { const a = document.createElement('a'); a.href 
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
 function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, null, calibresDuFolio) : null; }
 /* Le suivi : tout ce que le contrat pose (barrettes, prises, connecteurs),
-   en CSV, pour le garder d'un contrat à l'autre. */
-function exporterSuivi() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || '');
-  if (!L.length) { dire('Rien à suivre : ni barrette, ni prise, ni connecteur dans ce contrat.'); return; }
+   en CSV, pour le garder d'un contrat à l'autre. (passe 87, le lecteur : « le Suivi entre dans la LPA ») C'est un onglet
+   de la LPA : son CSV en sort avec les références de la LPA (08-nomenclature, `exporterSuiviLPA`), le nom du fichier
+   ne change pas ; l'ancien relevé (09, `suiviDuContrat`) reste au moteur. */
+function exporterSuivi() { exporterSuiviLPA(); }
+function exporterSuiviAncien() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || ''); if (!L.length) return;
   telecharger(new Blob(['\ufeff' + csvDuSuivi(L)], { type: 'text/csv;charset=utf-8' }), nomContrat() + '-suivi.csv');
-  // (v86, l'audit F3) chaque enregistrement dit le nom du fichier : VOLTA ne sait pas où le navigateur le range
-  dire('Suivi enregistré : ' + nomContrat() + '-suivi.csv — ' + pluriel(L.length, 'ligne') + '.'); }
+}
 function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); dire('Folio enregistré : ' + nomAscii(nomFolio() + '.svg')); }
 function exporterPNG() { const S = svgDuFolio(); if (!S) return;
   const k = Math.max(1, Math.min(3, 12e6 / Math.max(1, S.w * S.h))); const img = new Image();
@@ -3483,7 +3478,7 @@ function lierPanneau() {
   // plan le remet sur la table quand la bibliothèque le cache (08-bibliotheque, `surLePlan`).
   lierMenu({ bibliotheque: () => montrerBibliotheque(), ouvrir: choisirFichier, fichiers: () => ficheFichiers(),
     recapitulatif: surLePlan(basculerBase), nomenclature: surLePlan(ficheNomenclature), dejafait: surLePlan(ficheDejaFaitContrat),
-    svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), dossierpdf: surLePlan(exporterDossierPdf), retestcorrige: surLePlan(exporterRetestCorrige), suivi: surLePlan(exporterSuivi),
+    svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), dossierpdf: surLePlan(exporterDossierPdf), retestcorrige: surLePlan(exporterRetestCorrige), suivi: surLePlan(() => exporterNomenclatureExcel()),
     nomenclaturecsv: surLePlan(() => { if (!verite().length) { dire('Aucun plan ouvert : rien à compter.'); return; } exporterNomenclature(); }),
     coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: surLePlan(ficheCartouche), raccourcis: montrerRaccourcis });
   o('btnUndo', defaire); o('btnRedo', refaireEtDire);

@@ -80,3 +80,8 @@ svg.vu-face text.pris{fill:#fff}
 /* ─── LE PANNEAU REPÈRES (R), rangé pareil : « À voir » calme ; chaque point, QUI à la chasse fixe, puis sa phrase ─── */
 .ix-controle .ix-groupe.voir,.ix-controle .ix-groupe.voir b{color:var(--t-2)}
 .ix-item.co-item small .ix-sujet{font:500 var(--f-11)/1.45 var(--mono);letter-spacing:-.01em;color:var(--t-1);white-space:nowrap}
+
+/* ─── ce qui se déplie (« et 2 autres à régler », les points à voir) garde la largeur de la section, comme les lignes du
+   dessus : seules les lignes posées directement l'avaient (style-v79), celles du repli débordaient de 20 px, leur geste
+   collé au bord ─── */
+#inspecteur .nc-taches.nc-pbs .nc-reste > .nc-tache{box-sizing:border-box;width:auto;max-width:100%}

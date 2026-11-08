@@ -9906,6 +9906,11 @@ svg.vu-face text.pris{fill:#fff}
 .ix-controle .ix-groupe.voir,.ix-controle .ix-groupe.voir b{color:var(--t-2)}
 .ix-item.co-item small .ix-sujet{font:500 var(--f-11)/1.45 var(--mono);letter-spacing:-.01em;color:var(--t-1);white-space:nowrap}
 
+/* ─── ce qui se déplie (« et 2 autres à régler », les points à voir) garde la largeur de la section, comme les lignes du
+   dessus : seules les lignes posées directement l'avaient (style-v79), celles du repli débordaient de 20 px, leur geste
+   collé au bord ─── */
+#inspecteur .nc-taches.nc-pbs .nc-reste > .nc-tache{box-sizing:border-box;width:auto;max-width:100%}
+
 /* ───────── style-z-plan.css ───────── */
 /* ===========================================================================
    LE PLAN (v85, v86) — un dessin fixe à tout zoom, l'état de chaque folio dans la barre du bas.
@@ -23679,8 +23684,8 @@ function lierCarte() { const el = $('inspecteur');
    ---------------------------------------------------------------------------
    Le lecteur (octobre 2026) : « je ne comprends plus la base ; explique-moi comme à un enfant de quatre ans » — et
    « même le BE doit comprendre comment c'est fait, et pourquoi ». Une page, six images, en français simple :
-     1. le CUISINIER : votre fichier est la commande, la base SEE le catalogue, la physique les recettes — VOLTA cuisine,
-        il n'invente pas une pièce qui manque au catalogue ; et la base « unique » (ce que seul VOLTA a, l'option) ;
+     1. le CHEMIN (passe 87 : un schéma sobre à la place du cuisinier) : votre fichier → le catalogue (normes, bible) →
+        les règles → ce qui sort ; quatre étapes qui se déplient ; VOLTA n'invente pas une pièce qui manque au catalogue ;
      2. la CHAÎNE D'UN CONNECTEUR : référence → famille → face → taille → câble → contact ;
      3. la CHAÎNE D'UN DISJONCTEUR : consommation → profil → courbe → calibre → câbles → chute ;
      4. les ROUTES : impair à gauche, pair à droite, le branchement en chaîne, la prise de coupure qui change de route ;
@@ -23695,7 +23700,7 @@ function lierCarte() { const el = $('inspecteur');
    =========================================================================== */
 
 const CHAPITRES_COMPRENDRE = [
-  ['cuisinier', 'VOLTA est un cuisinier'], ['connecteur', 'La chaîne d’un connecteur'], ['disjoncteur', 'La chaîne d’un disjoncteur'],
+  ['cuisinier', 'De votre fichier à ce qui sort'], ['connecteur', 'La chaîne d’un connecteur'], ['disjoncteur', 'La chaîne d’un disjoncteur'],
   ['routes', 'Les routes : gauche, droite'], ['manque', 'Ce que veut dire « manque »'], ['verifier', 'Comment vérifier']];
 
 /* ---- les dessins : sur papier, l'encre et quatre couleurs (les seules couleurs littérales de l'outil sont celles des
@@ -23722,23 +23727,25 @@ function cpChaine(xs, y, w, h, gap) { return xs.map((m, i) => { const x = 8 + i 
   return cpMaillon(x, y, w, h, m[0], m[1], m[2], m[3]) + (i < xs.length - 1 ? cpFleche(x + w + 3, y + h / 2, x + w + gap - 3, y + h / 2) : ''); }).join(''); }
 const cpSvg = (vb, titre, corps) => `<svg class="vr-svg" viewBox="${vb}" role="img" aria-label="${escA(titre)}"><title>${esc(titre)}</title>${corps}</svg>`;
 
-/* 1. LE CUISINIER : trois ingrédients à gauche, le cuisinier au milieu, le plat à droite. */
-function cpSchemaCuisinier() { const carte = (y, c, cd, titre, sous, ex) => `<rect x="8" y="${y}" width="290" height="78" rx="12" fill="${CP.fond}" stroke="${CP.filet}"/><rect x="8" y="${y}" width="6" height="78" rx="3" fill="${c}"/>`
-    + `<circle cx="42" cy="${y + 39}" r="17" fill="${cd}"/>` + cpT(42, y + 44, titre[0], { cls: 'vr-ico', couleur: c })
-    + cpT(70, y + 26, titre[1], { cls: 'vr-titre', ancre: 'start' }) + cpT(70, y + 45, sous, { cls: 'vr-sous', ancre: 'start', couleur: c }) + cpT(70, y + 63, ex, { cls: 'vr-petit', ancre: 'start' });
-  const plat = ['les folios dessinés', 'une fiche par objet', 'la LPA à commander', 'l’Excel corrigé'];
-  return cpSvg('0 0 880 300', 'VOLTA est un cuisinier : la commande, le catalogue et les recettes entrent ; les folios, les fiches et la LPA sortent',
-    carte(10, CP.cuivre, CP.cuivreDoux, ['1', 'La commande'], 'votre fichier', 'relier 102CB1 à 103RL1, en DR20')
-    + carte(111, CP.cuivre, CP.cuivreDoux, ['2', 'Le catalogue'], 'la base SEE gardée', 'sinon les tables de VOLTA')
-    + carte(212, CP.cuivre, CP.cuivreDoux, ['3', 'Les recettes'], 'la physique, les normes', 'ce qu’un câble supporte, quand disjoncter')
-    + cpFleche(302, 49, 376, 128, CP.cuivre) + cpFleche(302, 150, 368, 150, CP.cuivre) + cpFleche(302, 251, 376, 172, CP.cuivre)
-    + `<circle cx="440" cy="150" r="70" fill="${CP.cuivreDoux}" stroke="${CP.cuivre}" stroke-width="1.8"/>`
-    + `<path d="M412 126c-10 0-16-8-13-16 3-9 14-11 20-5 3-10 15-13 22-6 7-7 19-4 22 6 6-6 17-4 20 5 3 8-3 16-13 16v12h-58z" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.5" stroke-linejoin="round"/>`
-    + cpT(440, 166, 'VOLTA', { cls: 'vr-titre' }) + cpT(440, 184, 'le cuisinier', { cls: 'vr-sous' })
-    + cpFleche(514, 150, 582, 150, CP.encre)
-    + `<rect x="586" y="44" width="286" height="212" rx="14" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.3"/>` + cpT(606, 76, 'Le plat', { cls: 'vr-titre', ancre: 'start' })
-    + plat.map((p, i) => `<circle cx="612" cy="${104 + i * 26}" r="3.5" fill="${CP.cuivre}"/>` + cpT(626, 109 + i * 26, p, { cls: 'vr-ligne', ancre: 'start' })).join('')
-    + `<rect x="602" y="208" width="254" height="30" rx="15" fill="${CP.rougeDoux}" stroke="${CP.rouge}" stroke-dasharray="4 3"/>` + cpT(729, 227, 'une pièce absente : « manque »', { cls: 'vr-petit', couleur: CP.rouge })); }
+/* 1. LE CHEMIN (passe 87, le lecteur : « un schéma sobre », à la place du cuisinier à toque) : quatre étapes au trait, de
+   gauche à droite — votre fichier, le catalogue, les règles, ce qui sort —, chacune son numéro, son icône (celle du menu :
+   le fichier, la bible, la courbe, le dossier) et ce qu'elle tient ; les flèches au cuivre, le seul accent. Une étape
+   survolée — dans le schéma ou dans la liste dessous — s'allume des deux côtés ; un clic ouvre son explication
+   (`lierComprendre`). */
+const ETAPES_CHEMIN = [
+  { titre: 'Votre fichier', sous: 'qui va où, avec quel câble', ico: '<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/>' },
+  { titre: 'Le catalogue', sous: 'normes, bible', ico: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/>' },
+  { titre: 'Les règles', sous: 'calibre, câbles, connectique', ico: '<path d="M4 3v17h17"/><path d="M8 4.5c.4 6.6 3 10.6 12 13"/>' },
+  { titre: 'Ce qui sort', sous: 'folios, LPA, Excel corrigé', ico: '<path d="M8 3h8l4 4v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M16 3v4h4M4 7v13a1 1 0 0 0 1 1h11M10.5 11h6M10.5 14.5h6"/>' }];
+function cpSchemaChemin() { const W = 184, G = 48, Y = 10, H = 136, K = 1.75;
+  const etape = (e, i) => { const x = i * (W + G), cx = x + W / 2;
+    return `<g class="vr-flux-e" data-etape="${i + 1}"><rect class="vr-flux-cadre" x="${x + 0.6}" y="${Y}" width="${W - 1.2}" height="${H}" rx="14"/>`
+      + `<circle class="vr-flux-n" cx="${x + 22}" cy="${Y + 22}" r="11"/>` + cpT(x + 22, Y + 26.2, String(i + 1), { cls: 'vr-flux-nt' })
+      + `<g class="vr-flux-ico" transform="translate(${f1(cx - 12 * K)} ${Y + 24}) scale(${K})">${e.ico}</g>`
+      + cpT(cx, Y + 94, e.titre, { cls: 'vr-titre' }) + cpT(cx, Y + 114, e.sous, { cls: 'vr-petit' }) + '</g>'; };
+  const fleches = [0, 1, 2].map(i => { const x = i * (W + G) + W; return cpFleche(x + 8, Y + H / 2, x + G - 8, Y + H / 2, CP.cuivre); }).join('');
+  return cpSvg(`0 0 880 ${Y * 2 + H}`, 'De votre fichier à ce qui sort, en quatre étapes : votre fichier ; le catalogue (les normes, la bible) ; les règles (le calibre, les câbles, la connectique) ; ce qui sort (les folios, la LPA, l’Excel corrigé)',
+    ETAPES_CHEMIN.map(etape).join('') + fleches); }
 /* 2. LA CHAÎNE D'UN CONNECTEUR : 340AB1 du plan de démonstration. */
 function cpSchemaConnecteur() { const xs = [
     ['Référence', 'EN2997Y1A08P', ['lue dans', 'votre fichier'], { mono: 1 }], ['Famille', 'EN 2997', ['le début de', 'la référence']], ['Face', '16-24', ['la plus petite qui', 'loge tous les câbles']],
@@ -23806,11 +23813,18 @@ function cpSchemaVerifier() { const ligne = (y, k, v, d, forme) => `<g>${cpT(46,
     + etape(60, 1, 'Ouvrez la fiche du connecteur') + etape(110, 2, ['Dépliez « D’où vient', 'chaque pièce »']) + etape(160, 3, 'Survolez le point : la source') + cpT(664, 222, 'Rien ne se juge sans que vous puissiez remonter à sa table.', { cls: 'vr-petit', ancre: 'middle' })); }
 
 /* ---- la page --------------------------------------------------------------------------------------------------------- */
-// un chapitre : son numéro, son titre, la phrase de l'enfant, le schéma, les points, la règle exacte (repliée)
+// un chapitre : son numéro, son titre, la phrase de l'enfant, le schéma, les points (ou, pour le chemin, ses étapes : du
+// HTML tout fait), la règle exacte (repliée)
 const cpChapitre = (id, n, titre, une, schema, points, be) => `<section class="vr-ch entre-v" id="vr-${id}" data-chapitre="${id}" style="--k:${n}" aria-labelledby="vr-t-${id}">`
   + `<header class="vr-ch-tete"><span class="vr-num" aria-hidden="true">${n}</span><h3 id="vr-t-${id}">${esc(titre)}</h3></header><p class="vr-une">${une}</p>`
-  + `<figure class="vr-schema">${schema}</figure><ul class="vr-points">${points.map(p => `<li>${p}</li>`).join('')}</ul>`
+  + `<figure class="vr-schema">${schema}</figure>${Array.isArray(points) ? `<ul class="vr-points">${points.map(p => `<li>${p}</li>`).join('')}</ul>` : points}`
   + `<details class="vr-be"><summary>Pour le bureau d’études : la règle exacte</summary><div class="vr-be-corps">${be}</div></details></section>`;
+/* LES ÉTAPES DU CHEMIN, 1, 2, 3, 4 (la charte : « une phrase simple par étape ; qui veut plus déplie l'étape et trouve tout,
+   expliqué pour tout le monde ») : une ligne chacune — son numéro au cuivre, son nom, sa phrase ; dépliée, le reste.
+   `xs` : [nom, phrase, ce qu'on trouve en dépliant (HTML)]. */
+const cpEtapes = xs => `<ol class="vr-etapes">${xs.map(([nom, phrase, plus], i) => `<li><details class="vr-etape" data-etape="${i + 1}"><summary><span class="vr-etape-n" aria-hidden="true">${i + 1}</span><span class="vr-etape-t"><b>${esc(nom)}</b> ${phrase}</span></summary><div class="vr-etape-plus">${plus}</div></details></li>`).join('')}</ol>`;
+// un lien vers un autre chapitre de la page
+const cpLienCh = (ch, mot) => `<button type="button" class="btn lien dense vr-aller" data-vr-aller="ch:${ch}">${esc(mot)}</button>`;
 const cpLien = (geste, mot, bulle) => `<button type="button" class="btn lien dense vr-aller" data-vr-aller="${geste}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}>${esc(mot)}</button>`;
 // ce que la base SEE gardée sur ce PC change à la page : le compte de ce que seul VOLTA a, l'option — rien sans base
 function cpBase() { const I = typeof BASE_SEE !== 'undefined' && BASE_SEE.base; if (!I || typeof seulVoltaSEE !== 'function') return '';
@@ -23820,11 +23834,22 @@ function cpBase() { const I = typeof BASE_SEE !== 'undefined' && BASE_SEE.base; 
 function comprendreHtml() {
   const sommaire = `<nav class="vr-sommaire" aria-label="Les chapitres"><ol>${CHAPITRES_COMPRENDRE.map(([id, t], i) => `<li><button type="button" data-vr-ch="${id}"${i ? '' : ' data-clavier'}><span>${i + 1}</span>${esc(t)}</button></li>`).join('')}</ol></nav>`;
   const ch = [
-    cpChapitre('cuisinier', 1, 'VOLTA est un cuisinier', 'Votre fichier est <b>la commande</b>, la <span class="vr-def" tabindex="0" data-bulle="La base des pièces de votre logiciel de schéma, déposée et gardée sur ce PC : les contacts, les câbles, les faces que vous utilisez déjà">base SEE</span> est <b>le catalogue</b>, la physique est <b>les recettes</b>. VOLTA lit la commande, prend les pièces dans le catalogue, suit les recettes — et sert le plat. Il n’invente jamais une pièce : si elle n’est pas au catalogue, il écrit « manque ».', cpSchemaCuisinier(),
-      ['<b>La commande</b> dit ce qu’on veut : relier telle borne à telle autre, avec tel câble, sur tel folio. VOLTA ne la change jamais sans vous : ce qu’il propose s’écrit seulement d’un geste.',
-        '<b>Le catalogue</b> dit ce qui existe : les contacts à sertir, les câbles, les faces des connecteurs. Si votre base SEE est gardée sur ce PC, c’est elle ; sinon, les tables de VOLTA (vos photos des tables de SEE, recoupées sur des sources publiques).',
-        '<b>Les recettes</b> disent ce qui est admis : ce qu’un câble supporte, quand un disjoncteur disjoncte, la chute de tension admise (2 V, votre règle). Elles ne viennent jamais du catalogue : la base SEE n’a ni courbes ni intensités.',
-        '<b>Un seul catalogue ?</b> Quand la base SEE est là, elle passe devant. Quelques lignes ne sont que chez VOLTA : la Cohérence les liste, une par une, avec leur raison. Vous décidez : une case, « Ne prendre les pièces que dans la base SEE gardée », est prête, décochée.'],
+    // (passe 87) l'identifiant reste « cuisinier » : les liens des autres pages (Normes, Base SEE, le « ? » des fiches) l'appellent ainsi
+    cpChapitre('cuisinier', 1, 'De votre fichier à ce qui sort', 'Quatre étapes, toujours les mêmes : VOLTA lit <b>votre fichier</b>, prend les pièces dans <b>le catalogue</b>, applique <b>les règles</b>, puis rend <b>ce qui sort</b>. Il n’invente jamais une pièce : si elle n’est pas au catalogue, il écrit « manque ».', cpSchemaChemin(),
+      cpEtapes([
+        ['Votre fichier', 'dit ce qu’on veut : relier telle borne à telle autre, avec tel câble, sur tel folio.',
+          '<p>C’est la source : les repères, les bornes, qui va où — VOLTA ne les change jamais sans vous. Pour changer un nom, on change son fichier : tout au même endroit.</p>'
+          + '<p>Ce que VOLTA propose (un calibre, une gauge plus forte) s’écrit seulement d’un geste, dans l’Excel corrigé. Ce que votre fichier ne dit pas (une longueur, l’ambiante), VOLTA le suppose et l’écrit « hypothèse » : ⋮ › Plus › Hypothèses le change.</p>'],
+        ['Le catalogue', 'dit ce qui existe : les contacts à sertir, les câbles, les faces des connecteurs, les modules de barrette.',
+          '<p>C’est votre <span class="vr-def" tabindex="0" data-bulle="La base des pièces de votre logiciel de schéma, déposée et gardée sur ce PC : les contacts, les câbles, les faces que vous utilisez déjà">base SEE</span>, si elle est gardée sur ce PC ; sinon, les tables de VOLTA (vos photos des tables de SEE, recoupées sur des sources publiques). Les <b>Normes</b> montrent chaque table, d’où elle vient et qui la lit ; la <b>Bible</b>, chaque module et chaque arrangement, avec son origine.</p>'
+          + '<p><b>Un seul catalogue ?</b> Quand la base SEE est là, elle passe devant. Quelques lignes ne sont que chez VOLTA : la Cohérence les liste, une par une, avec leur raison. Vous décidez : une case, « Ne prendre les pièces que dans la base SEE gardée », est prête, décochée.</p>'
+          + `<p>${cpLien('normes', 'Ouvrir les Normes')} ${cpLien('bible', 'Ouvrir la Bible')}</p>`],
+        ['Les règles', 'disent ce qui est admis : le calibre qui ne disjoncte pas, ce qu’un câble supporte, le contact qui reçoit sa gauge, la chute de tension.',
+          '<p>Elles viennent des normes — l’EN 2853 pour les câbles, l’AC 43.13-1B, les courbes des disjoncteurs — et de votre règle (2 V de chute en ligne) ; jamais du catalogue : la base SEE n’a ni courbes ni intensités.</p>'
+          + `<p>Un disjoncteur est valide ou pas valide, sans réserve : VOLTA retient le plus petit calibre qui ne disjoncte pas, puis vérifie qu’il protège chacun de ses câbles. Les deux chapitres suivants les suivent maillon par maillon : ${cpLienCh('connecteur', 'la chaîne d’un connecteur')}, ${cpLienCh('disjoncteur', 'celle d’un disjoncteur')}.</p>`],
+        ['Ce qui sort', ': les folios dessinés, une fiche par objet, la LPA à commander, l’Excel corrigé.',
+          '<p>Rien n’est inventé : une pièce absente du catalogue laisse sa case vide, et la fiche écrit « manque », avec la table et la clé cherchées.</p>'
+          + '<p>L’Excel corrigé ne porte que ce que vous avez demandé — vos gestes, et les propositions de VOLTA que vous avez retenues —, chaque case changée dit ce qu’elle portait ; rouvert, il devient votre fichier. Le dossier PDF et l’Excel corrigé gardent les hypothèses avec lesquelles tout a été jugé.</p>']]),
       `<p>L’ordre des tables, du plus fort au plus faible : <b>ce que vous corrigez à la main</b> sur la page Normes, puis <b>la base SEE gardée</b>, puis <b>les tables de VOLTA</b> (l’embarquée et vos imports). Une exception, votre règle du 20 octobre 2026 : quand la base contredit une ligne que deux sources indépendantes ont vérifiée, la source gagne, et la valeur de la base est montrée barrée, « à corriger dans SEE ». Un chiffre de la base impossible pour sa gauge (une masse sous celle du cuivre seul) ne passe jamais. Ce que la base laisse vide, VOLTA le garde.</p>`
       + `<p>« Seulement dans VOLTA » : une ligne de contact (famille, sexe, taille, type et gauge du câble) que la base n’a pas. Deux raisons : la base ne l’a plus (sa règle a changé de version), ou VOLTA l’a ajoutée de ses sources (une taille que vos photos n’avaient pas). Avec la case cochée, ces lignes ne servent plus pour les familles que la base connaît ; une famille que la base ignore garde celles de VOLTA.</p>`
       + cpBase()),
@@ -23857,7 +23882,7 @@ function comprendreHtml() {
         'La <b>base SEE</b>, onglet Cohérence : la base vérifiée ligne par ligne, et ce que seul VOLTA a.'],
       `<p>Les sources de chaque ligne sont dans les colonnes Source et Statut des tables (normes/*.csv, lisibles sur la page Normes) : « vérifié (deux sources : … ) », « à confirmer (une source : …) », « à confirmer (non public : …) » ; vide, c’est votre donnée. Le dossier PDF porte une page « Hypothèses et sources » ; l’Excel corrigé, une feuille « VOLTA » (cachée) avec les hypothèses et les choix faits à la main. ${cpLien('normes', 'Ouvrir les Normes')} ${cpLien('bible', 'Ouvrir la Bible')}</p>`)];
   return `<div class="vr">${nmTitre('Aide', 'Comment VOLTA réfléchit')}`
-    + `<div class="vr-page">${sommaire}<div class="vr-texte"><p class="vr-chapeau">VOLTA ne devine rien. Il lit votre fichier, prend les pièces dans un catalogue, applique des règles de physique, et vous montre d’où vient chaque chose. Six images pour tout comprendre.</p>${ch.join('')}</div></div></div>`; }
+    + `<div class="vr-page">${sommaire}<div class="vr-texte"><p class="vr-chapeau">VOLTA ne devine rien : il vous montre d’où vient chaque chose. Six images pour tout comprendre, du plus simple au plus précis.</p>${ch.join('')}</div></div></div>`; }
 /* Ouvrir la page (sur un chapitre). Elle prend la page entière : on la lit comme un livre, le plan attend derrière. */
 function ficheComprendre(chapitre) { const deja = !!(app.fiche && app.fiche.mode === 'comprendre');
   ouvrirFiche({ mode: 'comprendre', largeur: 'page' }, comprendreHtml(), '');
@@ -23879,7 +23904,17 @@ function marquerChapitre(force) { const c = $('fiche-corps'); if (!c) return; co
 function lierComprendre() { const c = $('fiche-corps'); if (!c) return;
   c.querySelectorAll('[data-vr-ch]').forEach(b => b.onclick = () => allerAuChapitre(b.dataset.vrCh, true));
   c.querySelectorAll('[data-vr-aller]').forEach(b => b.onclick = () => { const g = b.dataset.vrAller;
-    if (g === 'normes') ficheNormes(); else if (g === 'bible') ficheBible(); else if (g === 'seul-volta' && typeof montrerSeulVoltaSEE === 'function') montrerSeulVoltaSEE(); });
+    if (g === 'normes') ficheNormes(); else if (g === 'bible') ficheBible(); else if (g === 'seul-volta' && typeof montrerSeulVoltaSEE === 'function') montrerSeulVoltaSEE(); else if (/^ch:/.test(g)) allerAuChapitre(g.slice(3), true); });
+  // (passe 87) le chemin du chapitre 1 : une étape survolée — dans le schéma ou dans la liste —, ou ouverte, s'allume des deux
+  // côtés ; un clic sur une étape du schéma ouvre (ou referme) son explication
+  const etapes = [...c.querySelectorAll('.vr-etape')], stations = [...c.querySelectorAll('.vr-flux-e')]; let survol = 0;
+  const allumer = () => { stations.forEach(s => { const n = +s.dataset.etape, d = etapes[n - 1]; s.classList.toggle('on', survol === n || !!(d && d.open)); });
+    etapes.forEach((d, i) => d.classList.toggle('on', survol === i + 1)); };
+  const suivre = (el, n) => { el.addEventListener('pointerenter', () => { survol = n; allumer(); }); el.addEventListener('pointerleave', () => { if (survol === n) survol = 0; allumer(); }); };
+  etapes.forEach((d, i) => { suivre(d, i + 1); d.addEventListener('toggle', allumer); });
+  stations.forEach(s => { const n = +s.dataset.etape; suivre(s, n);
+    s.addEventListener('click', () => { const d = etapes[n - 1]; if (!d) return; d.open = !d.open; const sm = d.querySelector('summary'); if (sm) try { sm.focus({ preventScroll: true }); } catch (_) { }
+      if (d.open) d.scrollIntoView({ block: 'nearest', behavior: typeof mouvementReduit === 'function' && mouvementReduit() ? 'auto' : 'smooth' }); }); });
   if (!c.dataset.vrLie) { c.dataset.vrLie = '1'; let t = 0; c.addEventListener('scroll', () => { if (!(app.fiche && app.fiche.mode === 'comprendre')) return; cancelAnimationFrame(t); t = requestAnimationFrame(() => marquerChapitre()); }, { passive: true }); } }
 
 /* ---- la page se trouve : le menu (⋮ › Plus, la ligne est dans page.html) et chaque « ? » ------------------------------ */
@@ -30712,12 +30747,11 @@ function affinerTout() { if (!affinage.actif) return;
 // le placement au loin a-t-il encore du travail ? (un folio attendu, en cours, ou un folio du contrat pas encore placé)
 const placementEnCours = () => placement.ailleurs && placement.worker !== false && (placement.attentes.size > 0 || !!placement.encours || !!prochainAuLoin());
 function pomper() { while (affinage.file.length && affinage.finis.has(affinage.file[0].cle)) affinage.file.shift(); lancerLAvance();
-  if (!affinage.encours && !affinage.file.length) affinage.lot = null;
   if (affinage.encours || !affinage.file.length || placementEnCours()) { montrerBande(); return; }
   const w = travailleur(); if (!w) return;
+  // (passe 87) l'affinage se fait EN SILENCE (le lecteur : « ce travail interne ne me concerne pas ») : la bande ne compte plus
+  // les folios que VOLTA peaufine, elle se tait (`montrerBande`)
   affinage.encours = affinage.file.shift(); affinage.etat = { k: 0, n: TOURS_PROFONDS };
-  // (v86) le LOT : les folios que VOLTA peaufine d'affilée, pour que la bande dise où il en est sur tous (`montrerBande`)
-  const lot = affinage.lot || (affinage.lot = { total: 0, faits: 0 }); lot.total = Math.max(lot.total, lot.faits + 1 + affinage.file.length);
   w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerBande(); }
 /* (v84, le parcours) le placement d'avance ne partait qu'au premier gros folio OUVERT : sur l'exemple (son folio 1 est
    petit), les autres attendaient qu'on les ouvre — « Dessin du folio 3 · environ 5 s » au premier problème — et l'affinage,
@@ -30745,7 +30779,7 @@ function recevoirAffinage(e) { const d = e.data, j = affinage.encours; if (!j ||
   if (d.P && !d.fini) { affinage.profonds.set(d.cle, d.P); if (cleCourante() === d.cle) { affinage.vu = Date.now(); remplacerDessin(); } }
   if (d.erreur) affinage.erreur = d.erreur;
   if (d.fini || d.erreur) { affinage.finis.add(d.cle); if (d.P) { affinage.profonds.set(d.cle, d.P); garderAffine(d.cle, d.P); }
-    if (affinage.lot) affinage.lot.faits++; affinage.encours = null; pomper(); }
+    affinage.encours = null; pomper(); }
   montrerBande(); }
 // le dessin se remplace, la vue reste où elle est
 function rafraichirDessin() { calculer(); peindre(); synchroniser(); rallumer(); }
@@ -31032,9 +31066,9 @@ function montrerAttente() { const a = app.contrat.liaisons.length && !app.dessin
 /* L'ÉTAT DE CHAQUE FOLIO (v85, le lecteur : « je ne sais jamais quand c'est terminé, quand je peux vraiment aller
    dessus »). Chaque puce de la barre du bas le dit, sobrement (style-z-plan.css) : EN ATTENTE (son chiffre pâle sur une
    piste vide : le moteur ne l'a pas encore dessiné), DESSIN EN COURS (la piste se remplit au cuivre, de ce que le moteur
-   rapporte et du temps qu'il met d'habitude), PRÊT (rien : on peut y aller), EN COURS D'AFFINAGE (un point de cuivre
-   immobile : il se lit, VOLTA cherche encore mieux et le remplacera sans bouger la feuille). Le survol le dit en mots
-   (« Folio 3 : prêt », « Folio 5 : dessin en cours, encore environ 4 s »). Quand tout est prêt et affiné, plus rien ne
+   rapporte et du temps qu'il met d'habitude), PRÊT (rien : on peut y aller). Un folio que VOLTA peaufine encore est PRÊT
+   (passe 87, le lecteur : « ce travail interne ne me concerne pas » — le point de cuivre qui le disait s'est tu). Le survol
+   le dit en mots (« Folio 3 : prêt », « Folio 5 : dessin en cours, encore environ 4 s »). Quand tout est prêt, plus rien ne
    bouge. Sans travail de fond (sous pilote, sans Worker), les puces se taisent : un folio s'y dessine quand on l'ouvre. */
 /* les clés de placement des folios (et leur taille), relues au plus une fois par seconde. Un folio déjà lu prend sa clé dans
    les mémoires de `liaisonsDe` et `cleDuPlan`, que le placement tient à jour à chaque folio qu'il pompe : refaire
@@ -31052,7 +31086,6 @@ function etatDuFolio(p, K) { const f = (K || clesDesFolios()).get(p); if (!f || 
     const a = placement.attentes.get(k);
     if (a && placement.encours && placement.encours.cle === k) { const v = avancement(a); return { etat: 'dessin', p: v.p, mot: v.mot, esquisse: !!a.esquisse }; }
     if (a || !(placement.prets.has(k) || placements.has(k) || affinage.profonds.has(k) || app.retouches.has(k))) return { etat: 'attente' }; }
-  if (affinage.actif && affinage.encours && affinage.encours.cle === k) { const e = affinage.etat; return { etat: 'affinage', p: e && e.n ? e.k / e.n : 0 }; }
   return { etat: 'pret' }; }
 // l'état en mots : la bulle de la puce (« Folio 5 : dessin en cours, encore environ 4 s ») ; `court` : sans les secondes (le nom de la puce)
 // (passe 87) `K` : les clés des folios, lues une fois pour toute la barre (`peindreEtatsDesFolios`) — chaque puce les relisait
@@ -31060,11 +31093,11 @@ function motDuFolio(p, court, K) { const nom = 'Folio ' + p, e = travailDeFond()
   if (e.etat === 'dessin') return nom + ' : dessin en cours' + (court ? '' : ', ' + e.mot) + (e.esquisse && app.plan === p && !court ? ' (l’esquisse se lit déjà)' : '');
   if (e.etat === 'attente') { const enc = placement.encours && placement.attentes.get(placement.encours.cle);
     return nom + ' : en attente' + (court || !enc || enc.plan === p ? '' : ', après le folio ' + enc.plan); }
-  if (e.etat === 'affinage') return nom + ' : prêt' + (court ? ', VOLTA le peaufine' : ' — VOLTA peaufine encore son dessin');
   return nom + ' : prêt'; }
 function peindreEtatsDesFolios() { const strip = $('fo-strip'); if (!strip) return; const fond = travailDeFond(), K = fond ? clesDesFolios() : null;
   strip.querySelectorAll('.chip').forEach(c => { const e = fond ? etatDuFolio(c.dataset.plan, K) : null, etat = e ? e.etat : 'pret';
-    ['attente', 'dessin', 'affinage'].forEach(x => { const on = etat === x; if (c.classList.contains('fo-' + x) !== on) c.classList.toggle('fo-' + x, on); });
+    ['attente', 'dessin', 'affinage'].forEach(x => {   // (passe 87) 'affinage' ne se pose plus : il s'efface s'il était là
+      const on = etat === x; if (c.classList.contains('fo-' + x) !== on) c.classList.toggle('fo-' + x, on); });
     // la piste : ce que le dessin a fait ; pleine quand il est prêt (elle se remplit, puis s'efface)
     const p = etat === 'dessin' ? Math.max(0.04, e.p).toFixed(3) : etat === 'attente' ? '0' : '1';
     if (c.style.getPropertyValue('--fo-p') !== p) c.style.setProperty('--fo-p', p);
@@ -31084,8 +31117,10 @@ function foliosPrets() { const t = performance.now(), m = foliosPrets.m; if (m &
       if (!(placement.prets.has(k) || placements.has(k) || affinage.profonds.has(k) || app.retouches.has(k))) pas.add(p); }));
     r = { n: P.length - pas.size, N: P.length, pas }; }
   foliosPrets.m = { t, r }; return r; }
-/* LA PETITE BANDE du milieu, en bas (#affinage) : ce qui travaille pour nous, une chose à la fois — le dessin définitif du
-   folio affiché (l'esquisse est là), les folios qui se préparent (« 7 / 20 folios prêts »), puis le dessin qui s'affine. */
+/* LA PETITE BANDE du milieu, en bas (#affinage) : ce qui n'est pas encore prêt, une chose à la fois — le dessin définitif du
+   folio affiché (l'esquisse est là), les folios qui se préparent (« 7 / 20 folios prêts »). (passe 87, le lecteur : « ce
+   travail interne ne me concerne pas ») Dès que les folios sont prêts, elle se tait : VOLTA peaufine encore leurs dessins en
+   arrière-plan, sans le dire — elle restait plus de deux minutes là sans que rien ne bouge. */
 function montrerBande() { peindreEtatsDesFolios(); const el = $('affinage'); if (!el) return; const txt = $('af-txt'); let barre = el.querySelector('.af-barre');
   const poser = (mot, p, ailleurs, bulle) => { el.hidden = false; el.classList.toggle('ailleurs', !!ailleurs); el.setAttribute('aria-live', p == null ? 'polite' : 'off'); if (txt.textContent !== mot) txt.textContent = mot;
     if (p == null) { if (barre) barre.hidden = true; } else { if (!barre) { barre = document.createElement('span'); barre.className = 'af-barre'; barre.setAttribute('aria-hidden', 'true'); barre.appendChild(document.createElement('span')); el.appendChild(barre); }
@@ -31099,14 +31134,7 @@ function montrerBande() { peindreEtatsDesFolios(); const el = $('affinage'); if 
       'le folio se lit déjà ; le dessin définitif prendra sa place en glissant, la feuille immobile, et ses blocs se déplaceront dès qu’il sera posé'); return; }
   const prets = foliosPrets();
   if (prets && prets.n < prets.N && (placement.encours || placement.attentes.size)) { poser(prets.n + ' / ' + prets.N + ' folios prêts', prets.n / prets.N, true, 'les autres folios se dessinent en arrière-plan, l’un après l’autre'); return; }
-  const j = affinage.encours, e = affinage.etat;
-  if (affinage.actif && j) { const ici = j.cle === cleCourante(), reste = affinage.file.length;
-    /* (v86, l'audit G3 : « 0 / 48 · 5 en attente », 48 de quoi ?) des mots : combien de folios VOLTA peaufine encore, celui-ci
-       compris ; la barre, où il en est sur tout le lot (les folios finis, et les tours du folio en cours) */
-    const n = 1 + reste, lot = affinage.lot || { total: n, faits: 0 }, p = (lot.faits + (e && e.n ? e.k / e.n : 0)) / Math.max(1, lot.total, lot.faits + n);
-    poser(n > 1 ? 'VOLTA peaufine encore ' + n + ' folios' : ici ? 'VOLTA peaufine encore ce folio' : 'VOLTA peaufine encore un folio', p, !ici,
-      'chaque meilleur dessin trouvé remplace l’actuel sans bouger la feuille, et se garde dans ce navigateur'); return; }
-  el.hidden = true; }
+  el.hidden = true; if (txt.textContent) txt.textContent = ''; el.removeAttribute('aria-label'); }
 const montrerAffinage = montrerBande;
 // le concours gardé : une entrée par version du moteur et folio ; les concours d'un moteur passé s'effacent, une fois par session
 function garderConcours(cle, P) { ouvrirIDB().then(db => { db.transaction(IDB_CONCOURS, 'readwrite').objectStore(IDB_CONCOURS).put({ P, t: Date.now() }, VERSION_MOTEUR + '|' + cle); }).catch(() => { }); }
@@ -32815,7 +32843,7 @@ const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde',
   png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge calibres preferes', normes: 'tables sources', bible: 'barrettes connecteurs prises modules references',
   nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
   bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
-  raccourcis: 'clavier touches aide', suivi: 'csv barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft',
+  raccourcis: 'clavier touches aide', suivi: 'lpa excel classeur suivi fabrication barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft',
   // (v86) l'historique du plan entier (08-journal)
   historique: 'historique journal changements modifications defaire annuler qui quand avant apres change',
   // l'IA interne du lecteur : son réglage et le test de la connexion (08-ia)
@@ -33710,9 +33738,11 @@ function telecharger(blob, nom) { const a = document.createElement('a'); a.href 
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
 function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, null, calibresDuFolio) : null; }
 /* Le suivi : tout ce que le contrat pose (barrettes, prises, connecteurs),
-   en CSV, pour le garder d'un contrat à l'autre. */
-function exporterSuivi() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || '');
-  if (!L.length) { dire('Rien à suivre : ni barrette, ni prise, ni connecteur dans ce contrat.'); return; }
+   en CSV, pour le garder d'un contrat à l'autre. (passe 87, le lecteur : « le Suivi entre dans la LPA ») C'est un onglet
+   de la LPA : son CSV en sort avec les références de la LPA (08-nomenclature, `exporterSuiviLPA`), le nom du fichier
+   ne change pas ; l'ancien relevé (09, `suiviDuContrat`) reste au moteur. */
+function exporterSuivi() { exporterSuiviLPA(); }
+function exporterSuiviAncien() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || ''); if (!L.length) return;
   telecharger(new Blob(['\ufeff' + csvDuSuivi(L)], { type: 'text/csv;charset=utf-8' }), nomContrat() + '-suivi.csv');
   // (v86, l'audit F3) chaque enregistrement dit le nom du fichier : VOLTA ne sait pas où le navigateur le range
   dire('Suivi enregistré : ' + nomContrat() + '-suivi.csv — ' + pluriel(L.length, 'ligne') + '.'); }
@@ -34009,7 +34039,7 @@ function lierPanneau() {
   // plan le remet sur la table quand la bibliothèque le cache (08-bibliotheque, `surLePlan`).
   lierMenu({ bibliotheque: () => montrerBibliotheque(), ouvrir: choisirFichier, fichiers: () => ficheFichiers(),
     recapitulatif: surLePlan(basculerBase), nomenclature: surLePlan(ficheNomenclature), dejafait: surLePlan(ficheDejaFaitContrat),
-    svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), dossierpdf: surLePlan(exporterDossierPdf), retestcorrige: surLePlan(exporterRetestCorrige), suivi: surLePlan(exporterSuivi),
+    svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), dossierpdf: surLePlan(exporterDossierPdf), retestcorrige: surLePlan(exporterRetestCorrige), suivi: surLePlan(() => exporterNomenclatureExcel()),
     nomenclaturecsv: surLePlan(() => { if (!verite().length) { dire('Aucun plan ouvert : rien à compter.'); return; } exporterNomenclature(); }),
     coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: surLePlan(ficheCartouche), raccourcis: montrerRaccourcis });
   o('btnUndo', defaire); o('btnRedo', refaireEtDire);
@@ -34921,10 +34951,10 @@ const cleObjet = () => { const c = typeof app !== 'undefined' && app.cible; if (
    (08-recap, `rangsDesPoints`). */
 const REGLES_DES_CABLES = ['protection', 'courant', 'contact', 'chute', 'autre'];
 // la règle dont parle un point (la phrase du contrôle, ou celle de la fiche d'un câble)
-const regleDuPoint = t => { t = String(t || ''); return /chute en ligne/i.test(t) ? 'chute' : /contact taille|dépasse le contact|aucun contact/i.test(t) ? 'contact'
-  : /> [\d,]+ A admis|plus que ce que le câble admet/i.test(t) ? 'courant' : /pas protégé|< calibre|table 11-3|maximum de l’AC|laisse passer/i.test(t) ? 'protection' : 'autre'; };
+const regleDuPoint = t => { t = String(t || ''); return /chute en ligne|la ligne perd/i.test(t) ? 'chute' : /contact taille|dépasse le contact|aucun contact|son contact/i.test(t) ? 'contact'
+  : /> [\d,]+ A admis|plus que ce que le câble admet|plus que les [\d,]+ A qu/i.test(t) ? 'courant' : /pas protégé|ne le protège|< calibre|du calibre|table 11-3|maximum de l’AC|laisse passer/i.test(t) ? 'protection' : 'autre'; };
 // son mot dans la carte ; un point qui n'a pas de mot court se dit par sa phrase
-const motDeLaRegle = (r, t) => r !== 'autre' ? r : /courant de commande inconnu/i.test(t) ? 'courant inconnu' : /type de câble inconnu|sans type/i.test(t) ? 'type inconnu'
+const motDeLaRegle = (r, t) => r !== 'autre' ? r : /courant de commande inconnu|consommation .*à écrire/i.test(t) ? 'consommation à écrire' : /type de câble inconnu|sans type/i.test(t) ? 'type inconnu'
   : /sans résistance/i.test(t) ? 'résistance inconnue' : /en double|même ligne/i.test(t) ? 'ligne en double' : '';
 /* le câble dont parle un point, pour le ranger sur sa ligne : celui que le contrôle lui attache — le dernier du chemin pour une
    chute en ligne, celui que sa phrase nomme —, sinon celui que sa phrase nomme, vu de la fiche (`cableDuPoint`) ; la liaison
@@ -34961,23 +34991,26 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
   const grand = ficheEnGrand(), vus = new Set(), motFiche = o.geste ? String(o.geste).replace(/<[^>]*>/g, '').trim() : '';
   const tri = probs.filter(p => p.niveau === 'ko').concat(probs.filter(p => p.niveau !== 'ko')), p0 = tri.find(p => !(o.taire && o.taire.test(p.texte))) || tri[0];
   // chaque point : son geste (celui de la fiche pour le premier, le sien, celui que VOLTA sait faire), et s'il est à régler
+  // (la fiche d'un câble donne son geste — « Passer en DR16 », « Tout régler » — à la ligne de ses raisons, pas à son premier
+  // point : un point qui a le sien, « Écrire la consommation de 104LP1 », le garde sur sa ligne)
+  const fil = o.type === 'fil', typeIci = fil ? ((app.cible && app.cible.l) || {}).type || '' : '', U = [], parCle = new Map();
   const pts = [p0, ...tri.filter(p => p !== p0)].map((p, i) => { const x = { p, phrase: i === 0 && o.phrase ? o.phrase : '' };
-    if (i === 0 && o.geste) x.html = o.geste;
+    if (i === 0 && o.geste && !fil) x.html = o.geste;
     else { const g = gesteQuiRegle(p) || gesteDuPoint(p, o); if (g && !(g.cle && vus.has(g.cle)) && g.mot !== motFiche) { if (g.cle) vus.add(g.cle); x.g = g; } }
     x.agir = !!(x.html || x.g); x.regler = p.niveau === 'ko' || x.agir; return x; });
   // (passe 87, variante A) LES LIGNES : un câble, une ligne (tous ses points) ; un autre point, la sienne — la phrase de décision
   // du premier point (un disjoncteur) aussi. Une ligne prend le geste du premier de ses points qui en a un ; elle est à régler
   // si elle a un problème ou un geste. Dans la fiche d'un câble, ses raisons font une ligne (un point qui a un autre geste que
-  // le type — une ligne en double — garde la sienne).
-  const fil = o.type === 'fil', typeIci = fil ? ((app.cible && app.cible.l) || {}).type || '' : '', U = [], parCle = new Map();
+  // le type garde la sienne).
   pts.forEach((x, i) => { const l = fil || x.phrase ? null : cableDeLaLigne(x.p, o);
     const k = x.phrase ? 'p|' + i : fil ? (x.g && !/^type\|/.test(x.g.cle || '') ? 'p|' + i : 'fil') : l ? 'c|' + cleDeLiaison(l) : 'p|' + i;
     let u = parCle.get(k); if (!u) { u = { k, l, cable: k === 'fil' || k[0] === 'c', xs: [] }; parCle.set(k, u); U.push(u); } u.xs.push(x); });
+  if (fil && o.geste) { const uf = parCle.get('fil') || U[0]; if (uf) { const g0 = uf.xs.find(x => x.g && /^type\|/.test(x.g.cle || '')); uf.xs.forEach(x => { if (x === g0) x.g = null; }); uf.xs[0].html = o.geste; uf.xs[0].agir = true; } }
   U.forEach(u => { const a = u.xs.find(x => x.agir); u.html = a ? a.html : ''; u.g = a ? a.g : null; u.agir = !!a; u.ko = u.xs.some(x => x.p.niveau === 'ko'); u.regler = u.ko || u.agir;
     // (sans geste qui règle, un problème garde celui qui mène à sa cause — « Voir 102CB1 » ; un point à voir reste calme)
     u.mene = u.agir || !u.ko ? null : u.xs.map(x => gesteQuiMene(x.p, o.tete && o.tete.nom)).find(Boolean) || null; });
   // l'ordre : ce qui se règle d'un clic, puis les autres problèmes, puis ce qui se règle en ambre, puis l'information
-  const rang = u => (u.ko ? 0 : 2) + (u.agir ? 0 : 1), premier = pts[0] && (o.phrase || o.geste) ? U.find(u => u.xs.includes(pts[0])) : null;
+  const rang = u => (u.ko ? 0 : 2) + (u.agir ? 0 : 1), premier = fil && o.geste ? parCle.get('fil') || U[0] : pts[0] && (o.phrase || o.geste) ? U.find(u => u.xs.includes(pts[0])) : null;
   const ordre = (premier ? [premier] : []).concat(U.filter(u => u !== premier).map((u, k) => [u, k]).sort((a, b) => rang(a[0]) - rang(b[0]) || a[1] - b[1]).map(a => a[0]));
   const R = ordre.filter(u => u.regler), V = ordre.filter(u => !u.regler), nko = R.filter(u => u.ko).length;
   // (l'onglet Câbles du grand compte ses câbles comme cette liste : `composerFiche`)
@@ -35398,9 +35431,10 @@ function compteur() { const m = new Map();
    · ce qu'on monte autour (`piecesFabrication` : raccord ou cheminée, tyrap, bourrage, obturateurs des alvéoles libres).
    `c` : le connecteur (`connecteursDe`) ; `b` : les besoins du repère ; `k` : sa cavité (`cavitesDe`), son plan de
    contacts. Rend le groupe de l'onglet : { titre, ref, sous, lignes }. */
+const ACCOUPLEMENT_LPA = 'connecteur d’accouplement';
 function piecesDuConnecteur(nom, c, b, k) { const Q = k && k.plan, M = Q && Q.modules[0], fils = c.bornes.flatMap(bo => b.parBorne.get(bo) || []).filter(f => f.l);
   let mobile = ''; try { mobile = (connecteursInfos(nom, verite(), app.bible).find(x => x.nom === c.nom) || {}).mobile || ''; } catch (_) { mobile = ''; }
-  const accouplement = { q: 1, ref: mobile, role: 'connecteur d’accouplement', statut: mobile ? '' : c.pn ? 'manque dans la bible' : 'manque : sans référence dans votre fichier', piece: 'accouplement', face: c.pn || '' };
+  const accouplement = { q: 1, ref: mobile, role: ACCOUPLEMENT_LPA, statut: mobile ? '' : c.pn ? 'manque dans la bible' : 'manque : sans référence dans votre fichier', piece: 'accouplement', face: c.pn || '' };
   // le câble qui entre dans l'alvéole : le plus gros (la gauge lue au bout du type, comme 01), le premier à égalité
   const gauge = t => { const m = /(\d{1,2})\s*$/.exec(String(t || '')); return m ? +m[1] : 99; }, alveoles = new Map();
   (Q ? Q.fils : []).forEach(y => { if (!y.contact) return; const a = y.module + '|' + y.contact.lettre, e = alveoles.get(a); if (!e || gauge(y.f.type) < gauge(e.f.type)) alveoles.set(a, y); });
@@ -35439,7 +35473,7 @@ function disjoncteursDeLaNomenclature(V) { return reperesDe(V || verite()).filte
 function nombreDeReperes(folio, L) { if (!L && typeof reperesDuContrat === 'function') { const R = reperesDuContrat(); return folio == null ? R.length : R.filter(r => (r.plans || []).includes(folio)).length; }
   return reperesDe(L || verite()).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).length; }
 /* La LPA : relue depuis le contrat, les normes et les choix (références, sexes, raccords) — la somme des onglets Pièces. */
-function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESES, contacts = compteur(), obturateurs = compteur(), modules = compteur(), rails = compteur(), connecteurs = compteur(), accouplements = compteur(), habits = compteur(), cables = compteur(), faces = new Map();
+function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESES, contacts = compteur(), obturateurs = compteur(), modules = compteur(), rails = compteur(), connecteurs = compteur(), accouplements = compteur(), habits = compteur(), cables = compteur(), faces = new Map(), suivi = [];
   // les habillages se refont ici : la mémoire des fiches (`HABILLAGES`, 08-fiche) peut dater d'avant le dernier geste
   if (typeof HABILLAGES !== 'undefined') HABILLAGES.clear();
   // le contact écrit à la main à un bout (le récapitulatif ou la fiche : `contactMain`) passe devant celui du plan ;
@@ -35459,25 +35493,34 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
     else habits.plus(p.role + '|' + p.ref, { quoi: p.role, reference: p.ref, note: p.statut || '' }, ou, p.q); };
   // une barrette, comme l'onglet Pièces de sa fiche : ses modules, ses contacts, les obturateurs de ses contacts libres
   const barrette = (Q, ou, contactsDe) => { Q.modules.forEach(M => modules.plus(M.reference, { reference: M.reference, famille: nomDeFamille(app.norme, M.module.famille) }, ou)); contactsDe(Q.fils, ou); obturateursDeLaBarrette(Q).forEach(p => ranger(p, ou)); };
+  /* (passe 87, le lecteur) LE SUIVI DE FABRICATION, dans la même passe — un seul document : une ligne par pièce posée, ce
+     qu'on pose (la référence même que la LPA commande : l'accouplement d'un connecteur, les modules d'une barrette, la prise),
+     où (le repère, ses bornes, ses folios, ses routes), ce qu'elle reçoit (ses câbles, sans numéro : la charte) */
+  const poser = (repere, nature, reference, fichier, bornes, fils, o) => { const fs = (fils || []).filter(f => f && f.l);
+    suivi.push({ repere, nature, reference: reference || '', fichier: fichier || '', bornes: [...new Set((bornes || []).map(String))].sort(triNaturel), cables: fs.length,
+      routes: [...new Set(fs.map(f => f.route).filter(Boolean))].sort(triNaturel), plans: [...new Set(fs.map(f => f.l.plan || f.plan).filter(Boolean))].sort(triNaturel), shunts: 0, note: '', ...(o || {}) }); };
   reperesDe(V).forEach(r => { if (estMasse(r) || estRenvoi(r) || estRail(r) || estDisjoncteur(r)) return;
     try {
-      if (barretteEnModules(r)) { barrette(planDeBarrette(r).plan, r, sertir);
+      if (barretteEnModules(r)) { const P = planDeBarrette(r); barrette(P.plan, r, sertir);
+        poser(r, 'barrette', P.plan.modules.map(M => M.reference).join(' + '), P.besoins.pn, P.besoins.bornes, [...P.besoins.parBorne.values()].flat(), { shunts: P.besoins.shunts || 0 });
         // le rail : un par barrette parente (VT3 = 668VT31 + 669VT32), compté à son module 1 (`barretteParente`, 08-modules)
         const BP = barretteParente(r); if (BP.porteur === r) BP.rails.forEach(R => rails.plus(R.reference, { reference: R.reference, famille: nomDeFamille(app.norme, R.famille), note: R.coupe ? 'à couper à la longueur des modules' : R.longueur != null ? nombre(R.longueur) + ' mm' : '' }, BP.parent)); }
       else if (coupureEnModules(r)) { const { besoins: b, plan: Q } = planDeCoupure(r); if (!Q.modules[0]) return;
-        connecteurs.plus(Q.reference, { reference: Q.reference, nature: 'prise de coupure' }, r);
+        connecteurs.plus(Q.reference, { reference: Q.reference, nature: 'prise de coupure' }, r); poser(r, 'prise de coupure', Q.reference, b.pn, b.bornes, [...b.parBorne.values()].flat());
         // de chaque côté, comme l'onglet Pièces de sa fiche : les contacts, puis ce qu'on monte autour (les obturateurs compris)
         [['fiche', 'Partie mobile', Q.fils.filter(x => x.f.amont), ' partie mobile'], ['embase', 'Partie fixe', Q.fils.filter(x => !x.f.amont), ' partie fixe']].forEach(([k, t, xs, cote]) => { if (!xs.length) return; sertir(xs, r + cote);
           let P = []; try { P = piecesFabrication(habillageDe({ cle: r + '|' + k, titre: t, fils: xs.map(x => x.f), pn: b.pn, ref: Q.reference, plan: Q })); } catch (_) { P = []; }
           P.forEach(p => ranger(p, r + cote)); }); }
       else if (!estBornier(r)) { const b = besoinsDeBarrette(r, V), cav = new Map(cavitesDe(r).map(c => [c.nom, c]));
         // le connecteur de l'équipement vient avec lui (il se cite en face de son accouplement) ; à nous, ce que dit l'onglet Pièces
-        connecteursDe(r, V).filter(c => c.nom).forEach(c => { const k = cav.get(c.nom), ou = r + ' ' + c.nom;
-          piecesDuConnecteur(r, c, b, k).lignes.forEach(p => p.role === 'contact à sertir' ? unContact(p, ou, p.q) : ranger(p, ou)); }); }
+        connecteursDe(r, V).filter(c => c.nom).forEach(c => { const k = cav.get(c.nom), ou = r + ' ' + c.nom, g = piecesDuConnecteur(r, c, b, k), ac = g.lignes.find(p => p.piece === 'accouplement') || {};
+          g.lignes.forEach(p => p.role === 'contact à sertir' ? unContact(p, ou, p.q) : ranger(p, ou));
+          poser(ou, ACCOUPLEMENT_LPA, ac.ref, c.pn, c.bornes, c.bornes.flatMap(bo => b.parBorne.get(bo) || []), { note: ac.ref ? '' : ac.statut || '' }); }); }
     } catch (_) { } });
   // les barrettes que VOLTA ajoute : ce que dit leur fiche — le module, un contact par câble (celui de la table), les obturateurs
-  let ajoutees = 0; barrettesAjoutees().filter(x => barretteEnModules(x.nom)).forEach(x => { try { const Q = remplirModules(besoinsDeBarrette(x.nom, liaisonsDe(x.plan)), app.norme, app.contrat.designations.get(x.nom) || '');
-    if (!Q.modules[0]) return; ajoutees++; barrette(Q, x.nom + ' (ajoutée par VOLTA)', (xs, ou) => nomenclatureDe(xs.map(y => ({ ...y, ecrit: '' }))).forEach(y => unContact(y, ou, y.n))); } catch (_) { } });
+  let ajoutees = 0; barrettesAjoutees().filter(x => barretteEnModules(x.nom)).forEach(x => { try { const bV = besoinsDeBarrette(x.nom, liaisonsDe(x.plan)), Q = remplirModules(bV, app.norme, app.contrat.designations.get(x.nom) || '');
+    if (!Q.modules[0]) return; ajoutees++; barrette(Q, x.nom + ' (ajoutée par VOLTA)', (xs, ou) => nomenclatureDe(xs.map(y => ({ ...y, ecrit: '' }))).forEach(y => unContact(y, ou, y.n)));
+    poser(x.nom + ' (ajoutée par VOLTA)', 'barrette ajoutée par VOLTA, sur ' + x.sur, Q.modules.map(M => M.reference).join(' + '), '', bV.bornes, [...bV.parBorne.values()].flat(), { shunts: bV.shunts || 0 }); } catch (_) { } });
   // les câbles : un fil compte un, la longueur se cumule à part (celle de votre fichier, sinon l'hypothèse)
   const longueurs = new Map(), reelles = new Map(); V.forEach(l => { if (!liaisonComplete(l) || l.de === l.vers || !l.type) return; const L = l.longueur > 0 ? l.longueur : H.longueur;
     cables.plus(l.type, { reference: l.type, cable: cableDuType(app.norme, l.type) }, null, 1);
@@ -35486,6 +35529,7 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
   // les accouplements : les connus d'abord ; un même accouplement en face de plusieurs connecteurs fournis les dit tous
   const acc = accouplements.lignes().map(x => ({ ...x, face: [...(faces.get(x.reference || 'inconnu|' + x.face) || [])].sort(triNaturel).join(', ') })).sort((a, b) => (a.reference ? 0 : 1) - (b.reference ? 0 : 1));
   return { contacts: contacts.lignes(), obturateurs: obturateurs.lignes(), modules: modules.lignes(), rails: rails.lignes(), connecteurs: connecteurs.lignes(), accouplements: acc, disjoncteurs: disjoncteursDeLaNomenclature(V), habits: habits.lignes(), cables: lc,
+           suivi: suivi.sort((a, b) => triNaturel(a.repere, b.repere)),
            ajoutees, fils: V.filter(l => liaisonComplete(l) && l.de !== l.vers).length, longueur: lc.reduce((s, c) => s + c.longueur, 0), masse: lc.reduce((s, c) => s + (c.masse || 0), 0), hypothese: H.longueur }; }
 
 /* ---- le document ---------------------------------------------------------------
@@ -35497,7 +35541,11 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
    se cite en face de son accouplement, pour mémoire : sans quantité à lui. */
 const NOMEN_SECTIONS = [['contacts', 'Contacts à sertir'], ['obturateurs', 'Obturateurs des contacts libres'], ['modules', 'Modules de jonction'], ['rails', 'Rails des barrettes'], ['accouplements', 'Connecteurs d’accouplement'], ['connecteurs', 'Prises de coupure'], ['disjoncteurs', 'Disjoncteurs'], ['habits', 'Autour des connecteurs'], ['cables', 'Câbles']];
 const titreNomen = cle => (NOMEN_SECTIONS.find(s => s[0] === cle) || [, cle])[1];
-function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => xs.reduce((s, x) => s + x.n, 0);
+/* (passe 87, le lecteur : « le Suivi de fabrication entre dans la LPA ») UN SEUL DOCUMENT, DEUX ONGLETS — « Pièces », ce qu'il
+   faut commander ; « Suivi », qui pose quoi et où, avec les mêmes références (celles de la même passe). La barre est celle des
+   documents (Normes et bible) : deux onglets de même largeur, ← → passent de l'un à l'autre. `vue` : 'pieces' ou 'suivi'. */
+const ONGLETS_LPA = [['pieces', 'Pièces'], ['suivi', 'Suivi']];
+function ficheNomenclature(vue) { vue = vue === 'suivi' ? 'suivi' : 'pieces'; const N = nomenclatureDuContrat(), somme = xs => xs.reduce((s, x) => s + x.n, 0);
   // où va une pièce : les quatre premiers repères, puis « +11 » ; un repère et la lettre de son connecteur ne se séparent
   // pas en fin de ligne, ni « +11 » du dernier. « +11 » est un bouton (v74, l'ingénieur v73 : « impossible de voir la liste
   // complète sans exporter ») : un clic déplie la ligne EN PLACE, « moins » la replie
@@ -35535,7 +35583,7 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
   const avertir = ne ? `<div class="no-volta" role="note"><p><b>Comptée selon les choix de VOLTA</b>, dont ${ne > 1 ? ne + ' pas encore écrits' : '1 pas encore écrit'} dans votre Excel : ${nonEcrits.map(quoiNonEcrit).join(' · ')}.</p>`
     + `<button type="button" class="btn papier dense" id="no-releve" data-bulle="Le relevé de ce qui part dans l’Excel corrigé : ces choix s’y écrivent d’un geste">Relire ce qui part</button></div>` : '';
   // (passe 87) d'où vient chaque chiffre : la somme des onglets Pièces des fiches — les barrettes que VOLTA ajoute comprises
-  const corps = tete('Liste de pré-approvisionnement', 'LPA', true) + `<p class="note no-intro">Tout ce qu’il faut commander pour monter le plan entier${nF > 1 ? ', ses ' + nF + ' folios' : ''} : la somme des onglets Pièces de ses fiches${nA ? ', ' + (nA > 1 ? 'les ' + nA + ' barrettes que VOLTA ajoute comprises' : 'la barrette que VOLTA ajoute comprise') : ''}. Un câble sans longueur dans votre fichier compte ${esc(nombre(N.hypothese))} m (les hypothèses).</p>` + avertir + resume
+  const piecesHtml = () => `<p class="note no-intro">Tout ce qu’il faut commander pour monter le plan entier${nF > 1 ? ', ses ' + nF + ' folios' : ''} : la somme des onglets Pièces de ses fiches${nA ? ', ' + (nA > 1 ? 'les ' + nA + ' barrettes que VOLTA ajoute comprises' : 'la barrette que VOLTA ajoute comprise') : ''}. Un câble sans longueur dans votre fichier compte ${esc(nombre(N.hypothese))} m (les hypothèses).</p>` + avertir + resume
     // (v84) le fourreau sous son contact, pas dans une colonne de tirets (la charte : « pas de colonne pleine de tirets »)
     + table(titreNomen('contacts'), refs(N.contacts, 'référence'), ['Contact', 'Qté', 'Où'], N.contacts.map(x => [td('ref', esc(x.reference) + (x.accessoire ? `<span class="no-arr">avec ${esc(x.accessoire)}</span>` : '') + (x.confiance === 'à confirmer' ? note('à confirmer') : '')), td('d', x.n), td('sans', ou(x.ou))]))
     // (passe 87) les obturateurs que demandent les fiches (une alvéole vide, un obturateur) : la taille de contact qu'ils
@@ -35560,11 +35608,32 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
     + table(titreNomen('cables'), plurielLie(N.cables.length, 'type') + ' · ' + nombre(Math.round(N.longueur)) + ' m' + (N.masse > 0 ? ' · ' + nombre(Math.round(N.masse / 100) / 10) + INSECABLE + 'kg' : ''), ['Type', 'Qté', 'Longueur', 'Masse', 'Base'], N.cables.map(x => [td('ref', esc(x.reference)), td('d', x.n),
       td('d', `${x.reelles < x.n ? `<i class="no-hyp" data-bulle="${escA(pluriel(x.n - x.reelles, 'câble') + ' sans longueur dans votre fichier : l’hypothèse de la simulation')}">≈</i>` : ''}${esc((Math.round(x.longueur * 10) / 10).toFixed(1).replace('.', ','))} m`),
       td('d', x.masse != null ? esc(nombre(Math.round(x.masse))) + ' g' : rien, x.masse == null), td('sans', x.cable ? esc([x.cable.nature, x.cable.diametre != null ? 'Ø ' + nombre(x.cable.diametre) : '', x.cable.section != null ? nombre(x.cable.section) + ' mm²' : ''].filter(Boolean).join(' · ')) : '<span class="no-ko">inconnu de la base</span>')]));
-  // le pied : le classeur Excel, plein (on commande avec) ; le CSV et le suivi au trait, côte à côte (v74, l'ergonome v73 :
-  // « le suivi, en lien à droite du pied, se perd »)
-  const pied = '<button class="btn papier" id="no-suivi" data-bulle="Une ligne par pièce posée — barrette, prise, connecteur — avec sa référence, ses contacts et ses câbles, en CSV">Suivi de fabrication</button><span class="espace"></span><button class="btn papier" id="no-csv" data-bulle="La même liste, en CSV : une ligne par article">LPA en CSV</button><button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : une ligne par article, sa section, sa quantité, où il va">LPA en Excel</button>';
+  /* LE SUIVI : une table par genre de pièce — le repère, ce qu'on y pose (la référence que l'onglet Pièces commande), ses
+     bornes, ses câbles, ses folios et ses routes. Un accouplement inconnu reste « inconnu », comme dans les Pièces. */
+  const suiviHtml = () => { const S = N.suivi, nb = xs => xs.length;
+    const ici = x => esc(x.repere.replace(/ \(ajoutée par VOLTA\)$/, '')) + (/\(ajoutée par VOLTA\)$/.test(x.repere) ? dessous(x.nature.replace(/^barrette /, '')) : '');
+    const ou2 = x => esc(x.plans.join(' · ') || '—') + dessous(x.routes.join(' · '));
+    const autre = x => x.fichier && cleNorme(x.fichier) !== cleNorme(x.reference) ? dessous('votre fichier : ' + x.fichier) : '';
+    const conn = S.filter(x => x.nature === ACCOUPLEMENT_LPA), bar = S.filter(x => /^barrette/.test(x.nature)), pri = S.filter(x => x.nature === 'prise de coupure'), inc = conn.filter(x => !x.reference).length;
+    return `<p class="note no-intro">Ce qu’on pose, et où : une ligne par pièce, avec la référence que commande l’onglet Pièces${nA ? ' — les barrettes que VOLTA ajoute comprises' : ''}.</p>`
+      + table(titreNomen('accouplements'), plurielLie(nb(conn), 'connecteur') + (inc ? ' · ' + inc + ' sans référence' : ''), ['Repère', 'On pose', 'Bornes', 'Câbles', 'Folios'],
+        conn.map(x => [td('ref', ici(x)), td('ref', (x.reference ? esc(x.reference) : `<i class="no-note-l" data-bulle="${escA(x.note || 'manque dans la bible')}">inconnu</i>`) + (x.fichier ? dessous('face à ' + x.fichier) : '')), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]),
+        'Chacun sur le connecteur de son équipement, fourni avec lui.')
+      + table('Barrettes', plurielLie(nb(bar), 'barrette'), ['Repère', 'On pose', 'Bornes', 'Câbles', 'Folios'],
+        bar.map(x => [td('ref', ici(x)), td('ref', x.reference.split(' + ').map(esc).join('<br>') + autre(x)), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]))
+      + table(titreNomen('connecteurs'), plurielLie(nb(pri), 'prise'), ['Repère', 'On pose', 'Contacts', 'Câbles', 'Folios'],
+        pri.map(x => [td('ref', ici(x)), td('ref', esc(x.reference) + autre(x)), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))])); };
+  const nav = `<div class="onglets nm-nav" role="tablist" aria-label="La LPA">${ONGLETS_LPA.map(([k, t]) => `<button type="button" class="onglet" role="tab" data-no-vue="${k}" aria-selected="${vue === k}" tabindex="${vue === k ? 0 : -1}"${vue === k ? ' data-clavier' : ''}>${t}</button>`).join('')}</div>`;
+  const corps = nmTitre('Liste de pré-approvisionnement', 'LPA', nav) + (vue === 'suivi' ? suiviHtml() : piecesHtml());
+  // le pied : le classeur Excel, plein (on commande avec : la LPA et son Suivi, une feuille chacun) ; le CSV de l'onglet ouvert au trait
+  const pied = '<span class="espace"></span>' + (vue === 'suivi' ? '<button class="btn papier" id="no-csv" data-bulle="Le Suivi en CSV : une ligne par pièce posée, sa référence, où elle va">Suivi en CSV</button>'
+    : '<button class="btn papier" id="no-csv" data-bulle="La même liste, en CSV : une ligne par article">LPA en CSV</button>')
+    + '<button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : la LPA (une ligne par article, sa quantité, où il va) et le Suivi (une ligne par pièce posée), une feuille chacun">LPA en Excel</button>';
   ouvrirFiche({ mode: 'nomenclature', large: true }, corps, pied);
-  $('no-xlsx').onclick = () => exporterNomenclatureExcel(N); $('no-csv').onclick = () => exporterNomenclature(N); $('no-suivi').onclick = exporterSuivi;
+  $('no-xlsx').onclick = () => exporterNomenclatureExcel(N); $('no-csv').onclick = () => vue === 'suivi' ? exporterSuiviLPA(N) : exporterNomenclature(N);
+  // les deux onglets : un clic, ou ← → (le clavier suit l'onglet choisi)
+  document.querySelectorAll('#fiche [data-no-vue]').forEach(b => { b.onclick = () => { if (b.dataset.noVue !== vue) ficheNomenclature(b.dataset.noVue); };
+    b.onkeydown = e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); e.stopPropagation(); ficheNomenclature(vue === 'suivi' ? 'pieces' : 'suivi'); }; });
   const rel = $('no-releve'); if (rel) rel.onclick = () => { if (typeof exporterRetestCorrige === 'function') exporterRetestCorrige(); };
   // « +11 » déplie ses repères en place ; « moins » les replie (le clavier reste sur le bouton)
   const fc = $('fiche-corps'); if (fc && !fc.dataset.noPlus) { fc.dataset.noPlus = '1'; fc.addEventListener('click', e => { const b = e.target.closest('.no-plus'); if (!b) return;
@@ -35594,19 +35663,30 @@ const propositionsDeLaLPA = () => { try { return typeof propositionsNonEcrites =
 // (v86, l'audit F3) le message d'un enregistrement dit le nom du fichier — et, s'il le faut, que la LPA suit des choix pas encore écrits
 const motLPA = (ext, n) => { const ne = propositionsDeLaLPA().length; return 'LPA enregistrée : ' + nomAscii(nomDeNomenclature(ext)) + ' — ' + pluriel(n, 'ligne') + (ne ? ', selon les choix de VOLTA (' + (ne > 1 ? ne + ' pas encore écrits' : '1 pas encore écrit') + ' dans votre Excel)' : '') + '.'; };
 /* Le CSV : une ligne par article, avec sa section, pour tableur. */
-function exporterNomenclature(N) { N = N || nomenclatureDuContrat(); const cell = v => { const t = typeof v === 'number' ? nombre(v) : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
-  const L = [ENTETES_NOMEN.join(';'), ...lignesNomenclature(N).map(l => l.map(cell).join(';'))];
+function exporterNomenclature(N) { N = N || nomenclatureDuContrat();
+  const L = [ENTETES_NOMEN.join(';'), ...lignesNomenclature(N).map(l => l.map(celluleCsvLPA).join(';'))];
   telecharger(new Blob(['﻿' + L.join('\n')], { type: 'text/csv;charset=utf-8' }), nomDeNomenclature('csv'));
   dire(motLPA('csv', L.length - 1)); }
-/* Le classeur Excel (SheetJS, embarqué dans la page) : la même table, l'en-tête filtrable, les colonnes à leur largeur,
-   les quantités en nombres (un tableur les somme). */
-function exporterNomenclatureExcel(N) { N = N || nomenclatureDuContrat(); const L = lignesNomenclature(N);
-  const ws = XLSX.utils.aoa_to_sheet([ENTETES_NOMEN, ...L]);
-  ws['!cols'] = ENTETES_NOMEN.map((h, j) => ({ wch: Math.min(60, Math.max(h.length + 2, ...L.map(l => String(l[j] == null ? '' : l[j]).length + 1))) }));
-  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: L.length, c: ENTETES_NOMEN.length - 1 } }) };
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'LPA');
+/* (passe 87) LE SUIVI, une ligne par pièce posée — pour son CSV et pour sa feuille du classeur : le contrat (on rassemble
+   les suivis d'un contrat à l'autre), le repère, ce qu'on y pose et sa référence (celle que la LPA commande), celle de
+   votre fichier, les bornes, les câbles (combien : ils n'ont plus de numéro), les routes, les folios. */
+const ENTETES_SUIVI = ['Contrat', 'Repère', 'Nature', 'Référence posée', 'Votre fichier', 'Bornes utilisées', 'Bornes', 'Shunts', 'Câbles', 'Routes', 'Folios'];
+function lignesSuivi(N) { const contrat = (app.nom || 'contrat').replace(/\.[^.]+$/, '');
+  return (N.suivi || []).map(x => [contrat, x.repere, x.nature + (x.note ? ' — inconnu : ' + x.note : ''), x.reference, x.fichier, x.bornes.length, x.bornes.join(' '), x.shunts || 0, x.cables, x.routes.join(' '), x.plans.join(' ')]); }
+const celluleCsvLPA = v => { const t = typeof v === 'number' ? nombre(v) : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+function exporterSuiviLPA(N) { N = N || nomenclatureDuContrat(); const L = lignesSuivi(N), nom = (typeof nomContrat === 'function' ? nomContrat() : 'contrat') + '-suivi.csv';
+  if (!L.length) { dire('Rien à suivre : ni barrette, ni prise, ni connecteur dans ce contrat.'); return; }
+  telecharger(new Blob(['﻿' + [ENTETES_SUIVI.join(';'), ...L.map(l => l.map(celluleCsvLPA).join(';'))].join('\n')], { type: 'text/csv;charset=utf-8' }), nom);
+  dire('Suivi enregistré : ' + nom + ' — ' + pluriel(L.length, 'ligne') + ', les références de la LPA.'); }
+/* Le classeur Excel (SheetJS, embarqué dans la page) : la LPA et son Suivi, une feuille chacun — l'en-tête filtrable, les
+   colonnes à leur largeur, les quantités en nombres (un tableur les somme). */
+function feuilleLPA(entetes, L) { const ws = XLSX.utils.aoa_to_sheet([entetes, ...L]);
+  ws['!cols'] = entetes.map((h, j) => ({ wch: Math.min(60, Math.max(h.length + 2, ...L.map(l => String(l[j] == null ? '' : l[j]).length + 1))) }));
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: L.length, c: entetes.length - 1 } }) }; return ws; }
+function exporterNomenclatureExcel(N) { N = N || nomenclatureDuContrat(); const L = lignesNomenclature(N), S = lignesSuivi(N);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, feuilleLPA(ENTETES_NOMEN, L), 'LPA'); if (S.length) XLSX.utils.book_append_sheet(wb, feuilleLPA(ENTETES_SUIVI, S), 'Suivi');
   telecharger(new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nomDeNomenclature('xlsx'));
-  dire(motLPA('xlsx', L.length)); }
+  dire(motLPA('xlsx', L.length) + (S.length ? ' Le Suivi : ' + pluriel(S.length, 'ligne') + ', sa feuille.' : '')); }
 
 /* ───────── 08-normes.js ───────── */
 /* ===========================================================================

@@ -40,9 +40,10 @@ function compteur() { const m = new Map();
    · ce qu'on monte autour (`piecesFabrication` : raccord ou cheminée, tyrap, bourrage, obturateurs des alvéoles libres).
    `c` : le connecteur (`connecteursDe`) ; `b` : les besoins du repère ; `k` : sa cavité (`cavitesDe`), son plan de
    contacts. Rend le groupe de l'onglet : { titre, ref, sous, lignes }. */
+const ACCOUPLEMENT_LPA = 'connecteur d’accouplement';
 function piecesDuConnecteur(nom, c, b, k) { const Q = k && k.plan, M = Q && Q.modules[0], fils = c.bornes.flatMap(bo => b.parBorne.get(bo) || []).filter(f => f.l);
   let mobile = ''; try { mobile = (connecteursInfos(nom, verite(), app.bible).find(x => x.nom === c.nom) || {}).mobile || ''; } catch (_) { mobile = ''; }
-  const accouplement = { q: 1, ref: mobile, role: 'connecteur d’accouplement', statut: mobile ? '' : c.pn ? 'manque dans la bible' : 'manque : sans référence dans votre fichier', piece: 'accouplement', face: c.pn || '' };
+  const accouplement = { q: 1, ref: mobile, role: ACCOUPLEMENT_LPA, statut: mobile ? '' : c.pn ? 'manque dans la bible' : 'manque : sans référence dans votre fichier', piece: 'accouplement', face: c.pn || '' };
   // le câble qui entre dans l'alvéole : le plus gros (la gauge lue au bout du type, comme 01), le premier à égalité
   const gauge = t => { const m = /(\d{1,2})\s*$/.exec(String(t || '')); return m ? +m[1] : 99; }, alveoles = new Map();
   (Q ? Q.fils : []).forEach(y => { if (!y.contact) return; const a = y.module + '|' + y.contact.lettre, e = alveoles.get(a); if (!e || gauge(y.f.type) < gauge(e.f.type)) alveoles.set(a, y); });
@@ -81,7 +82,7 @@ function disjoncteursDeLaNomenclature(V) { return reperesDe(V || verite()).filte
 function nombreDeReperes(folio, L) { if (!L && typeof reperesDuContrat === 'function') { const R = reperesDuContrat(); return folio == null ? R.length : R.filter(r => (r.plans || []).includes(folio)).length; }
   return reperesDe(L || verite()).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).length; }
 /* La LPA : relue depuis le contrat, les normes et les choix (références, sexes, raccords) — la somme des onglets Pièces. */
-function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESES, contacts = compteur(), obturateurs = compteur(), modules = compteur(), rails = compteur(), connecteurs = compteur(), accouplements = compteur(), habits = compteur(), cables = compteur(), faces = new Map();
+function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESES, contacts = compteur(), obturateurs = compteur(), modules = compteur(), rails = compteur(), connecteurs = compteur(), accouplements = compteur(), habits = compteur(), cables = compteur(), faces = new Map(), suivi = [];
   // les habillages se refont ici : la mémoire des fiches (`HABILLAGES`, 08-fiche) peut dater d'avant le dernier geste
   if (typeof HABILLAGES !== 'undefined') HABILLAGES.clear();
   // le contact écrit à la main à un bout (le récapitulatif ou la fiche : `contactMain`) passe devant celui du plan ;
@@ -101,25 +102,34 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
     else habits.plus(p.role + '|' + p.ref, { quoi: p.role, reference: p.ref, note: p.statut || '' }, ou, p.q); };
   // une barrette, comme l'onglet Pièces de sa fiche : ses modules, ses contacts, les obturateurs de ses contacts libres
   const barrette = (Q, ou, contactsDe) => { Q.modules.forEach(M => modules.plus(M.reference, { reference: M.reference, famille: nomDeFamille(app.norme, M.module.famille) }, ou)); contactsDe(Q.fils, ou); obturateursDeLaBarrette(Q).forEach(p => ranger(p, ou)); };
+  /* (passe 87, le lecteur) LE SUIVI DE FABRICATION, dans la même passe — un seul document : une ligne par pièce posée, ce
+     qu'on pose (la référence même que la LPA commande : l'accouplement d'un connecteur, les modules d'une barrette, la prise),
+     où (le repère, ses bornes, ses folios, ses routes), ce qu'elle reçoit (ses câbles, sans numéro : la charte) */
+  const poser = (repere, nature, reference, fichier, bornes, fils, o) => { const fs = (fils || []).filter(f => f && f.l);
+    suivi.push({ repere, nature, reference: reference || '', fichier: fichier || '', bornes: [...new Set((bornes || []).map(String))].sort(triNaturel), cables: fs.length,
+      routes: [...new Set(fs.map(f => f.route).filter(Boolean))].sort(triNaturel), plans: [...new Set(fs.map(f => f.l.plan || f.plan).filter(Boolean))].sort(triNaturel), shunts: 0, note: '', ...(o || {}) }); };
   reperesDe(V).forEach(r => { if (estMasse(r) || estRenvoi(r) || estRail(r) || estDisjoncteur(r)) return;
     try {
-      if (barretteEnModules(r)) { barrette(planDeBarrette(r).plan, r, sertir);
+      if (barretteEnModules(r)) { const P = planDeBarrette(r); barrette(P.plan, r, sertir);
+        poser(r, 'barrette', P.plan.modules.map(M => M.reference).join(' + '), P.besoins.pn, P.besoins.bornes, [...P.besoins.parBorne.values()].flat(), { shunts: P.besoins.shunts || 0 });
         // le rail : un par barrette parente (VT3 = 668VT31 + 669VT32), compté à son module 1 (`barretteParente`, 08-modules)
         const BP = barretteParente(r); if (BP.porteur === r) BP.rails.forEach(R => rails.plus(R.reference, { reference: R.reference, famille: nomDeFamille(app.norme, R.famille), note: R.coupe ? 'à couper à la longueur des modules' : R.longueur != null ? nombre(R.longueur) + ' mm' : '' }, BP.parent)); }
       else if (coupureEnModules(r)) { const { besoins: b, plan: Q } = planDeCoupure(r); if (!Q.modules[0]) return;
-        connecteurs.plus(Q.reference, { reference: Q.reference, nature: 'prise de coupure' }, r);
+        connecteurs.plus(Q.reference, { reference: Q.reference, nature: 'prise de coupure' }, r); poser(r, 'prise de coupure', Q.reference, b.pn, b.bornes, [...b.parBorne.values()].flat());
         // de chaque côté, comme l'onglet Pièces de sa fiche : les contacts, puis ce qu'on monte autour (les obturateurs compris)
         [['fiche', 'Partie mobile', Q.fils.filter(x => x.f.amont), ' partie mobile'], ['embase', 'Partie fixe', Q.fils.filter(x => !x.f.amont), ' partie fixe']].forEach(([k, t, xs, cote]) => { if (!xs.length) return; sertir(xs, r + cote);
           let P = []; try { P = piecesFabrication(habillageDe({ cle: r + '|' + k, titre: t, fils: xs.map(x => x.f), pn: b.pn, ref: Q.reference, plan: Q })); } catch (_) { P = []; }
           P.forEach(p => ranger(p, r + cote)); }); }
       else if (!estBornier(r)) { const b = besoinsDeBarrette(r, V), cav = new Map(cavitesDe(r).map(c => [c.nom, c]));
         // le connecteur de l'équipement vient avec lui (il se cite en face de son accouplement) ; à nous, ce que dit l'onglet Pièces
-        connecteursDe(r, V).filter(c => c.nom).forEach(c => { const k = cav.get(c.nom), ou = r + ' ' + c.nom;
-          piecesDuConnecteur(r, c, b, k).lignes.forEach(p => p.role === 'contact à sertir' ? unContact(p, ou, p.q) : ranger(p, ou)); }); }
+        connecteursDe(r, V).filter(c => c.nom).forEach(c => { const k = cav.get(c.nom), ou = r + ' ' + c.nom, g = piecesDuConnecteur(r, c, b, k), ac = g.lignes.find(p => p.piece === 'accouplement') || {};
+          g.lignes.forEach(p => p.role === 'contact à sertir' ? unContact(p, ou, p.q) : ranger(p, ou));
+          poser(ou, ACCOUPLEMENT_LPA, ac.ref, c.pn, c.bornes, c.bornes.flatMap(bo => b.parBorne.get(bo) || []), { note: ac.ref ? '' : ac.statut || '' }); }); }
     } catch (_) { } });
   // les barrettes que VOLTA ajoute : ce que dit leur fiche — le module, un contact par câble (celui de la table), les obturateurs
-  let ajoutees = 0; barrettesAjoutees().filter(x => barretteEnModules(x.nom)).forEach(x => { try { const Q = remplirModules(besoinsDeBarrette(x.nom, liaisonsDe(x.plan)), app.norme, app.contrat.designations.get(x.nom) || '');
-    if (!Q.modules[0]) return; ajoutees++; barrette(Q, x.nom + ' (ajoutée par VOLTA)', (xs, ou) => nomenclatureDe(xs.map(y => ({ ...y, ecrit: '' }))).forEach(y => unContact(y, ou, y.n))); } catch (_) { } });
+  let ajoutees = 0; barrettesAjoutees().filter(x => barretteEnModules(x.nom)).forEach(x => { try { const bV = besoinsDeBarrette(x.nom, liaisonsDe(x.plan)), Q = remplirModules(bV, app.norme, app.contrat.designations.get(x.nom) || '');
+    if (!Q.modules[0]) return; ajoutees++; barrette(Q, x.nom + ' (ajoutée par VOLTA)', (xs, ou) => nomenclatureDe(xs.map(y => ({ ...y, ecrit: '' }))).forEach(y => unContact(y, ou, y.n)));
+    poser(x.nom + ' (ajoutée par VOLTA)', 'barrette ajoutée par VOLTA, sur ' + x.sur, Q.modules.map(M => M.reference).join(' + '), '', bV.bornes, [...bV.parBorne.values()].flat(), { shunts: bV.shunts || 0 }); } catch (_) { } });
   // les câbles : un fil compte un, la longueur se cumule à part (celle de votre fichier, sinon l'hypothèse)
   const longueurs = new Map(), reelles = new Map(); V.forEach(l => { if (!liaisonComplete(l) || l.de === l.vers || !l.type) return; const L = l.longueur > 0 ? l.longueur : H.longueur;
     cables.plus(l.type, { reference: l.type, cable: cableDuType(app.norme, l.type) }, null, 1);
@@ -128,6 +138,7 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
   // les accouplements : les connus d'abord ; un même accouplement en face de plusieurs connecteurs fournis les dit tous
   const acc = accouplements.lignes().map(x => ({ ...x, face: [...(faces.get(x.reference || 'inconnu|' + x.face) || [])].sort(triNaturel).join(', ') })).sort((a, b) => (a.reference ? 0 : 1) - (b.reference ? 0 : 1));
   return { contacts: contacts.lignes(), obturateurs: obturateurs.lignes(), modules: modules.lignes(), rails: rails.lignes(), connecteurs: connecteurs.lignes(), accouplements: acc, disjoncteurs: disjoncteursDeLaNomenclature(V), habits: habits.lignes(), cables: lc,
+           suivi: suivi.sort((a, b) => triNaturel(a.repere, b.repere)),
            ajoutees, fils: V.filter(l => liaisonComplete(l) && l.de !== l.vers).length, longueur: lc.reduce((s, c) => s + c.longueur, 0), masse: lc.reduce((s, c) => s + (c.masse || 0), 0), hypothese: H.longueur }; }
 
 /* ---- le document ---------------------------------------------------------------
@@ -139,7 +150,11 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
    se cite en face de son accouplement, pour mémoire : sans quantité à lui. */
 const NOMEN_SECTIONS = [['contacts', 'Contacts à sertir'], ['obturateurs', 'Obturateurs des contacts libres'], ['modules', 'Modules de jonction'], ['rails', 'Rails des barrettes'], ['accouplements', 'Connecteurs d’accouplement'], ['connecteurs', 'Prises de coupure'], ['disjoncteurs', 'Disjoncteurs'], ['habits', 'Autour des connecteurs'], ['cables', 'Câbles']];
 const titreNomen = cle => (NOMEN_SECTIONS.find(s => s[0] === cle) || [, cle])[1];
-function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => xs.reduce((s, x) => s + x.n, 0);
+/* (passe 87, le lecteur : « le Suivi de fabrication entre dans la LPA ») UN SEUL DOCUMENT, DEUX ONGLETS — « Pièces », ce qu'il
+   faut commander ; « Suivi », qui pose quoi et où, avec les mêmes références (celles de la même passe). La barre est celle des
+   documents (Normes et bible) : deux onglets de même largeur, ← → passent de l'un à l'autre. `vue` : 'pieces' ou 'suivi'. */
+const ONGLETS_LPA = [['pieces', 'Pièces'], ['suivi', 'Suivi']];
+function ficheNomenclature(vue) { vue = vue === 'suivi' ? 'suivi' : 'pieces'; const N = nomenclatureDuContrat(), somme = xs => xs.reduce((s, x) => s + x.n, 0);
   // où va une pièce : les quatre premiers repères, puis « +11 » ; un repère et la lettre de son connecteur ne se séparent
   // pas en fin de ligne, ni « +11 » du dernier. « +11 » est un bouton (v74, l'ingénieur v73 : « impossible de voir la liste
   // complète sans exporter ») : un clic déplie la ligne EN PLACE, « moins » la replie
@@ -177,7 +192,7 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
   const avertir = ne ? `<div class="no-volta" role="note"><p><b>Comptée selon les choix de VOLTA</b>, dont ${ne > 1 ? ne + ' pas encore écrits' : '1 pas encore écrit'} dans votre Excel : ${nonEcrits.map(quoiNonEcrit).join(' · ')}.</p>`
     + `<button type="button" class="btn papier dense" id="no-releve" data-bulle="Le relevé de ce qui part dans l’Excel corrigé : ces choix s’y écrivent d’un geste">Relire ce qui part</button></div>` : '';
   // (passe 87) d'où vient chaque chiffre : la somme des onglets Pièces des fiches — les barrettes que VOLTA ajoute comprises
-  const corps = tete('Liste de pré-approvisionnement', 'LPA', true) + `<p class="note no-intro">Tout ce qu’il faut commander pour monter le plan entier${nF > 1 ? ', ses ' + nF + ' folios' : ''} : la somme des onglets Pièces de ses fiches${nA ? ', ' + (nA > 1 ? 'les ' + nA + ' barrettes que VOLTA ajoute comprises' : 'la barrette que VOLTA ajoute comprise') : ''}. Un câble sans longueur dans votre fichier compte ${esc(nombre(N.hypothese))} m (les hypothèses).</p>` + avertir + resume
+  const piecesHtml = () => `<p class="note no-intro">Tout ce qu’il faut commander pour monter le plan entier${nF > 1 ? ', ses ' + nF + ' folios' : ''} : la somme des onglets Pièces de ses fiches${nA ? ', ' + (nA > 1 ? 'les ' + nA + ' barrettes que VOLTA ajoute comprises' : 'la barrette que VOLTA ajoute comprise') : ''}. Un câble sans longueur dans votre fichier compte ${esc(nombre(N.hypothese))} m (les hypothèses).</p>` + avertir + resume
     // (v84) le fourreau sous son contact, pas dans une colonne de tirets (la charte : « pas de colonne pleine de tirets »)
     + table(titreNomen('contacts'), refs(N.contacts, 'référence'), ['Contact', 'Qté', 'Où'], N.contacts.map(x => [td('ref', esc(x.reference) + (x.accessoire ? `<span class="no-arr">avec ${esc(x.accessoire)}</span>` : '') + (x.confiance === 'à confirmer' ? note('à confirmer') : '')), td('d', x.n), td('sans', ou(x.ou))]))
     // (passe 87) les obturateurs que demandent les fiches (une alvéole vide, un obturateur) : la taille de contact qu'ils
@@ -202,11 +217,32 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
     + table(titreNomen('cables'), plurielLie(N.cables.length, 'type') + ' · ' + nombre(Math.round(N.longueur)) + ' m' + (N.masse > 0 ? ' · ' + nombre(Math.round(N.masse / 100) / 10) + INSECABLE + 'kg' : ''), ['Type', 'Qté', 'Longueur', 'Masse', 'Base'], N.cables.map(x => [td('ref', esc(x.reference)), td('d', x.n),
       td('d', `${x.reelles < x.n ? `<i class="no-hyp" data-bulle="${escA(pluriel(x.n - x.reelles, 'câble') + ' sans longueur dans votre fichier : l’hypothèse de la simulation')}">≈</i>` : ''}${esc((Math.round(x.longueur * 10) / 10).toFixed(1).replace('.', ','))} m`),
       td('d', x.masse != null ? esc(nombre(Math.round(x.masse))) + ' g' : rien, x.masse == null), td('sans', x.cable ? esc([x.cable.nature, x.cable.diametre != null ? 'Ø ' + nombre(x.cable.diametre) : '', x.cable.section != null ? nombre(x.cable.section) + ' mm²' : ''].filter(Boolean).join(' · ')) : '<span class="no-ko">inconnu de la base</span>')]));
-  // le pied : le classeur Excel, plein (on commande avec) ; le CSV et le suivi au trait, côte à côte (v74, l'ergonome v73 :
-  // « le suivi, en lien à droite du pied, se perd »)
-  const pied = '<button class="btn papier" id="no-suivi" data-bulle="Une ligne par pièce posée — barrette, prise, connecteur — avec sa référence, ses contacts et ses câbles, en CSV">Suivi de fabrication</button><span class="espace"></span><button class="btn papier" id="no-csv" data-bulle="La même liste, en CSV : une ligne par article">LPA en CSV</button><button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : une ligne par article, sa section, sa quantité, où il va">LPA en Excel</button>';
+  /* LE SUIVI : une table par genre de pièce — le repère, ce qu'on y pose (la référence que l'onglet Pièces commande), ses
+     bornes, ses câbles, ses folios et ses routes. Un accouplement inconnu reste « inconnu », comme dans les Pièces. */
+  const suiviHtml = () => { const S = N.suivi, nb = xs => xs.length;
+    const ici = x => esc(x.repere.replace(/ \(ajoutée par VOLTA\)$/, '')) + (/\(ajoutée par VOLTA\)$/.test(x.repere) ? dessous(x.nature.replace(/^barrette /, '')) : '');
+    const ou2 = x => esc(x.plans.join(' · ') || '—') + dessous(x.routes.join(' · '));
+    const autre = x => x.fichier && cleNorme(x.fichier) !== cleNorme(x.reference) ? dessous('votre fichier : ' + x.fichier) : '';
+    const conn = S.filter(x => x.nature === ACCOUPLEMENT_LPA), bar = S.filter(x => /^barrette/.test(x.nature)), pri = S.filter(x => x.nature === 'prise de coupure'), inc = conn.filter(x => !x.reference).length;
+    return `<p class="note no-intro">Ce qu’on pose, et où : une ligne par pièce, avec la référence que commande l’onglet Pièces${nA ? ' — les barrettes que VOLTA ajoute comprises' : ''}.</p>`
+      + table(titreNomen('accouplements'), plurielLie(nb(conn), 'connecteur') + (inc ? ' · ' + inc + ' sans référence' : ''), ['Repère', 'On pose', 'Bornes', 'Câbles', 'Folios'],
+        conn.map(x => [td('ref', ici(x)), td('ref', (x.reference ? esc(x.reference) : `<i class="no-note-l" data-bulle="${escA(x.note || 'manque dans la bible')}">inconnu</i>`) + (x.fichier ? dessous('face à ' + x.fichier) : '')), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]),
+        'Chacun sur le connecteur de son équipement, fourni avec lui.')
+      + table('Barrettes', plurielLie(nb(bar), 'barrette'), ['Repère', 'On pose', 'Bornes', 'Câbles', 'Folios'],
+        bar.map(x => [td('ref', ici(x)), td('ref', x.reference.split(' + ').map(esc).join('<br>') + autre(x)), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]))
+      + table(titreNomen('connecteurs'), plurielLie(nb(pri), 'prise'), ['Repère', 'On pose', 'Contacts', 'Câbles', 'Folios'],
+        pri.map(x => [td('ref', ici(x)), td('ref', esc(x.reference) + autre(x)), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))])); };
+  const nav = `<div class="onglets nm-nav" role="tablist" aria-label="La LPA">${ONGLETS_LPA.map(([k, t]) => `<button type="button" class="onglet" role="tab" data-no-vue="${k}" aria-selected="${vue === k}" tabindex="${vue === k ? 0 : -1}"${vue === k ? ' data-clavier' : ''}>${t}</button>`).join('')}</div>`;
+  const corps = nmTitre('Liste de pré-approvisionnement', 'LPA', nav) + (vue === 'suivi' ? suiviHtml() : piecesHtml());
+  // le pied : le classeur Excel, plein (on commande avec : la LPA et son Suivi, une feuille chacun) ; le CSV de l'onglet ouvert au trait
+  const pied = '<span class="espace"></span>' + (vue === 'suivi' ? '<button class="btn papier" id="no-csv" data-bulle="Le Suivi en CSV : une ligne par pièce posée, sa référence, où elle va">Suivi en CSV</button>'
+    : '<button class="btn papier" id="no-csv" data-bulle="La même liste, en CSV : une ligne par article">LPA en CSV</button>')
+    + '<button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : la LPA (une ligne par article, sa quantité, où il va) et le Suivi (une ligne par pièce posée), une feuille chacun">LPA en Excel</button>';
   ouvrirFiche({ mode: 'nomenclature', large: true }, corps, pied);
-  $('no-xlsx').onclick = () => exporterNomenclatureExcel(N); $('no-csv').onclick = () => exporterNomenclature(N); $('no-suivi').onclick = exporterSuivi;
+  $('no-xlsx').onclick = () => exporterNomenclatureExcel(N); $('no-csv').onclick = () => vue === 'suivi' ? exporterSuiviLPA(N) : exporterNomenclature(N);
+  // les deux onglets : un clic, ou ← → (le clavier suit l'onglet choisi)
+  document.querySelectorAll('#fiche [data-no-vue]').forEach(b => { b.onclick = () => { if (b.dataset.noVue !== vue) ficheNomenclature(b.dataset.noVue); };
+    b.onkeydown = e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); e.stopPropagation(); ficheNomenclature(vue === 'suivi' ? 'pieces' : 'suivi'); }; });
   const rel = $('no-releve'); if (rel) rel.onclick = () => { if (typeof exporterRetestCorrige === 'function') exporterRetestCorrige(); };
   // « +11 » déplie ses repères en place ; « moins » les replie (le clavier reste sur le bouton)
   const fc = $('fiche-corps'); if (fc && !fc.dataset.noPlus) { fc.dataset.noPlus = '1'; fc.addEventListener('click', e => { const b = e.target.closest('.no-plus'); if (!b) return;
@@ -236,16 +272,27 @@ const propositionsDeLaLPA = () => { try { return typeof propositionsNonEcrites =
 // (v86, l'audit F3) le message d'un enregistrement dit le nom du fichier — et, s'il le faut, que la LPA suit des choix pas encore écrits
 const motLPA = (ext, n) => { const ne = propositionsDeLaLPA().length; return 'LPA enregistrée : ' + nomAscii(nomDeNomenclature(ext)) + ' — ' + pluriel(n, 'ligne') + (ne ? ', selon les choix de VOLTA (' + (ne > 1 ? ne + ' pas encore écrits' : '1 pas encore écrit') + ' dans votre Excel)' : '') + '.'; };
 /* Le CSV : une ligne par article, avec sa section, pour tableur. */
-function exporterNomenclature(N) { N = N || nomenclatureDuContrat(); const cell = v => { const t = typeof v === 'number' ? nombre(v) : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
-  const L = [ENTETES_NOMEN.join(';'), ...lignesNomenclature(N).map(l => l.map(cell).join(';'))];
+function exporterNomenclature(N) { N = N || nomenclatureDuContrat();
+  const L = [ENTETES_NOMEN.join(';'), ...lignesNomenclature(N).map(l => l.map(celluleCsvLPA).join(';'))];
   telecharger(new Blob(['﻿' + L.join('\n')], { type: 'text/csv;charset=utf-8' }), nomDeNomenclature('csv'));
   dire(motLPA('csv', L.length - 1)); }
-/* Le classeur Excel (SheetJS, embarqué dans la page) : la même table, l'en-tête filtrable, les colonnes à leur largeur,
-   les quantités en nombres (un tableur les somme). */
-function exporterNomenclatureExcel(N) { N = N || nomenclatureDuContrat(); const L = lignesNomenclature(N);
-  const ws = XLSX.utils.aoa_to_sheet([ENTETES_NOMEN, ...L]);
-  ws['!cols'] = ENTETES_NOMEN.map((h, j) => ({ wch: Math.min(60, Math.max(h.length + 2, ...L.map(l => String(l[j] == null ? '' : l[j]).length + 1))) }));
-  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: L.length, c: ENTETES_NOMEN.length - 1 } }) };
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'LPA');
+/* (passe 87) LE SUIVI, une ligne par pièce posée — pour son CSV et pour sa feuille du classeur : le contrat (on rassemble
+   les suivis d'un contrat à l'autre), le repère, ce qu'on y pose et sa référence (celle que la LPA commande), celle de
+   votre fichier, les bornes, les câbles (combien : ils n'ont plus de numéro), les routes, les folios. */
+const ENTETES_SUIVI = ['Contrat', 'Repère', 'Nature', 'Référence posée', 'Votre fichier', 'Bornes utilisées', 'Bornes', 'Shunts', 'Câbles', 'Routes', 'Folios'];
+function lignesSuivi(N) { const contrat = (app.nom || 'contrat').replace(/\.[^.]+$/, '');
+  return (N.suivi || []).map(x => [contrat, x.repere, x.nature + (x.note ? ' — inconnu : ' + x.note : ''), x.reference, x.fichier, x.bornes.length, x.bornes.join(' '), x.shunts || 0, x.cables, x.routes.join(' '), x.plans.join(' ')]); }
+const celluleCsvLPA = v => { const t = typeof v === 'number' ? nombre(v) : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+function exporterSuiviLPA(N) { N = N || nomenclatureDuContrat(); const L = lignesSuivi(N), nom = (typeof nomContrat === 'function' ? nomContrat() : 'contrat') + '-suivi.csv';
+  if (!L.length) { dire('Rien à suivre : ni barrette, ni prise, ni connecteur dans ce contrat.'); return; }
+  telecharger(new Blob(['﻿' + [ENTETES_SUIVI.join(';'), ...L.map(l => l.map(celluleCsvLPA).join(';'))].join('\n')], { type: 'text/csv;charset=utf-8' }), nom);
+  dire('Suivi enregistré : ' + nom + ' — ' + pluriel(L.length, 'ligne') + ', les références de la LPA.'); }
+/* Le classeur Excel (SheetJS, embarqué dans la page) : la LPA et son Suivi, une feuille chacun — l'en-tête filtrable, les
+   colonnes à leur largeur, les quantités en nombres (un tableur les somme). */
+function feuilleLPA(entetes, L) { const ws = XLSX.utils.aoa_to_sheet([entetes, ...L]);
+  ws['!cols'] = entetes.map((h, j) => ({ wch: Math.min(60, Math.max(h.length + 2, ...L.map(l => String(l[j] == null ? '' : l[j]).length + 1))) }));
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: L.length, c: entetes.length - 1 } }) }; return ws; }
+function exporterNomenclatureExcel(N) { N = N || nomenclatureDuContrat(); const L = lignesNomenclature(N), S = lignesSuivi(N);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, feuilleLPA(ENTETES_NOMEN, L), 'LPA'); if (S.length) XLSX.utils.book_append_sheet(wb, feuilleLPA(ENTETES_SUIVI, S), 'Suivi');
   telecharger(new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nomDeNomenclature('xlsx'));
-  dire(motLPA('xlsx', L.length)); }
+  dire(motLPA('xlsx', L.length) + (S.length ? ' Le Suivi : ' + pluriel(S.length, 'ligne') + ', sa feuille.' : '')); }

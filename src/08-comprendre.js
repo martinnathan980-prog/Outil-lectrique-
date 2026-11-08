@@ -3,8 +3,8 @@
    ---------------------------------------------------------------------------
    Le lecteur (octobre 2026) : « je ne comprends plus la base ; explique-moi comme à un enfant de quatre ans » — et
    « même le BE doit comprendre comment c'est fait, et pourquoi ». Une page, six images, en français simple :
-     1. le CUISINIER : votre fichier est la commande, la base SEE le catalogue, la physique les recettes — VOLTA cuisine,
-        il n'invente pas une pièce qui manque au catalogue ; et la base « unique » (ce que seul VOLTA a, l'option) ;
+     1. le CHEMIN (passe 87 : un schéma sobre à la place du cuisinier) : votre fichier → le catalogue (normes, bible) →
+        les règles → ce qui sort ; quatre étapes qui se déplient ; VOLTA n'invente pas une pièce qui manque au catalogue ;
      2. la CHAÎNE D'UN CONNECTEUR : référence → famille → face → taille → câble → contact ;
      3. la CHAÎNE D'UN DISJONCTEUR : consommation → profil → courbe → calibre → câbles → chute ;
      4. les ROUTES : impair à gauche, pair à droite, le branchement en chaîne, la prise de coupure qui change de route ;
@@ -20,7 +20,7 @@
 'use strict';
 
 const CHAPITRES_COMPRENDRE = [
-  ['cuisinier', 'VOLTA est un cuisinier'], ['connecteur', 'La chaîne d’un connecteur'], ['disjoncteur', 'La chaîne d’un disjoncteur'],
+  ['cuisinier', 'De votre fichier à ce qui sort'], ['connecteur', 'La chaîne d’un connecteur'], ['disjoncteur', 'La chaîne d’un disjoncteur'],
   ['routes', 'Les routes : gauche, droite'], ['manque', 'Ce que veut dire « manque »'], ['verifier', 'Comment vérifier']];
 
 /* ---- les dessins : sur papier, l'encre et quatre couleurs (les seules couleurs littérales de l'outil sont celles des
@@ -47,23 +47,25 @@ function cpChaine(xs, y, w, h, gap) { return xs.map((m, i) => { const x = 8 + i 
   return cpMaillon(x, y, w, h, m[0], m[1], m[2], m[3]) + (i < xs.length - 1 ? cpFleche(x + w + 3, y + h / 2, x + w + gap - 3, y + h / 2) : ''); }).join(''); }
 const cpSvg = (vb, titre, corps) => `<svg class="vr-svg" viewBox="${vb}" role="img" aria-label="${escA(titre)}"><title>${esc(titre)}</title>${corps}</svg>`;
 
-/* 1. LE CUISINIER : trois ingrédients à gauche, le cuisinier au milieu, le plat à droite. */
-function cpSchemaCuisinier() { const carte = (y, c, cd, titre, sous, ex) => `<rect x="8" y="${y}" width="290" height="78" rx="12" fill="${CP.fond}" stroke="${CP.filet}"/><rect x="8" y="${y}" width="6" height="78" rx="3" fill="${c}"/>`
-    + `<circle cx="42" cy="${y + 39}" r="17" fill="${cd}"/>` + cpT(42, y + 44, titre[0], { cls: 'vr-ico', couleur: c })
-    + cpT(70, y + 26, titre[1], { cls: 'vr-titre', ancre: 'start' }) + cpT(70, y + 45, sous, { cls: 'vr-sous', ancre: 'start', couleur: c }) + cpT(70, y + 63, ex, { cls: 'vr-petit', ancre: 'start' });
-  const plat = ['les folios dessinés', 'une fiche par objet', 'la LPA à commander', 'l’Excel corrigé'];
-  return cpSvg('0 0 880 300', 'VOLTA est un cuisinier : la commande, le catalogue et les recettes entrent ; les folios, les fiches et la LPA sortent',
-    carte(10, CP.cuivre, CP.cuivreDoux, ['1', 'La commande'], 'votre fichier', 'relier 102CB1 à 103RL1, en DR20')
-    + carte(111, CP.cuivre, CP.cuivreDoux, ['2', 'Le catalogue'], 'la base SEE gardée', 'sinon les tables de VOLTA')
-    + carte(212, CP.cuivre, CP.cuivreDoux, ['3', 'Les recettes'], 'la physique, les normes', 'ce qu’un câble supporte, quand disjoncter')
-    + cpFleche(302, 49, 376, 128, CP.cuivre) + cpFleche(302, 150, 368, 150, CP.cuivre) + cpFleche(302, 251, 376, 172, CP.cuivre)
-    + `<circle cx="440" cy="150" r="70" fill="${CP.cuivreDoux}" stroke="${CP.cuivre}" stroke-width="1.8"/>`
-    + `<path d="M412 126c-10 0-16-8-13-16 3-9 14-11 20-5 3-10 15-13 22-6 7-7 19-4 22 6 6-6 17-4 20 5 3 8-3 16-13 16v12h-58z" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.5" stroke-linejoin="round"/>`
-    + cpT(440, 166, 'VOLTA', { cls: 'vr-titre' }) + cpT(440, 184, 'le cuisinier', { cls: 'vr-sous' })
-    + cpFleche(514, 150, 582, 150, CP.encre)
-    + `<rect x="586" y="44" width="286" height="212" rx="14" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.3"/>` + cpT(606, 76, 'Le plat', { cls: 'vr-titre', ancre: 'start' })
-    + plat.map((p, i) => `<circle cx="612" cy="${104 + i * 26}" r="3.5" fill="${CP.cuivre}"/>` + cpT(626, 109 + i * 26, p, { cls: 'vr-ligne', ancre: 'start' })).join('')
-    + `<rect x="602" y="208" width="254" height="30" rx="15" fill="${CP.rougeDoux}" stroke="${CP.rouge}" stroke-dasharray="4 3"/>` + cpT(729, 227, 'une pièce absente : « manque »', { cls: 'vr-petit', couleur: CP.rouge })); }
+/* 1. LE CHEMIN (passe 87, le lecteur : « un schéma sobre », à la place du cuisinier à toque) : quatre étapes au trait, de
+   gauche à droite — votre fichier, le catalogue, les règles, ce qui sort —, chacune son numéro, son icône (celle du menu :
+   le fichier, la bible, la courbe, le dossier) et ce qu'elle tient ; les flèches au cuivre, le seul accent. Une étape
+   survolée — dans le schéma ou dans la liste dessous — s'allume des deux côtés ; un clic ouvre son explication
+   (`lierComprendre`). */
+const ETAPES_CHEMIN = [
+  { titre: 'Votre fichier', sous: 'qui va où, avec quel câble', ico: '<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/>' },
+  { titre: 'Le catalogue', sous: 'normes, bible', ico: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/>' },
+  { titre: 'Les règles', sous: 'calibre, câbles, connectique', ico: '<path d="M4 3v17h17"/><path d="M8 4.5c.4 6.6 3 10.6 12 13"/>' },
+  { titre: 'Ce qui sort', sous: 'folios, LPA, Excel corrigé', ico: '<path d="M8 3h8l4 4v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M16 3v4h4M4 7v13a1 1 0 0 0 1 1h11M10.5 11h6M10.5 14.5h6"/>' }];
+function cpSchemaChemin() { const W = 184, G = 48, Y = 10, H = 136, K = 1.75;
+  const etape = (e, i) => { const x = i * (W + G), cx = x + W / 2;
+    return `<g class="vr-flux-e" data-etape="${i + 1}"><rect class="vr-flux-cadre" x="${x + 0.6}" y="${Y}" width="${W - 1.2}" height="${H}" rx="14"/>`
+      + `<circle class="vr-flux-n" cx="${x + 22}" cy="${Y + 22}" r="11"/>` + cpT(x + 22, Y + 26.2, String(i + 1), { cls: 'vr-flux-nt' })
+      + `<g class="vr-flux-ico" transform="translate(${f1(cx - 12 * K)} ${Y + 24}) scale(${K})">${e.ico}</g>`
+      + cpT(cx, Y + 94, e.titre, { cls: 'vr-titre' }) + cpT(cx, Y + 114, e.sous, { cls: 'vr-petit' }) + '</g>'; };
+  const fleches = [0, 1, 2].map(i => { const x = i * (W + G) + W; return cpFleche(x + 8, Y + H / 2, x + G - 8, Y + H / 2, CP.cuivre); }).join('');
+  return cpSvg(`0 0 880 ${Y * 2 + H}`, 'De votre fichier à ce qui sort, en quatre étapes : votre fichier ; le catalogue (les normes, la bible) ; les règles (le calibre, les câbles, la connectique) ; ce qui sort (les folios, la LPA, l’Excel corrigé)',
+    ETAPES_CHEMIN.map(etape).join('') + fleches); }
 /* 2. LA CHAÎNE D'UN CONNECTEUR : 340AB1 du plan de démonstration. */
 function cpSchemaConnecteur() { const xs = [
     ['Référence', 'EN2997Y1A08P', ['lue dans', 'votre fichier'], { mono: 1 }], ['Famille', 'EN 2997', ['le début de', 'la référence']], ['Face', '16-24', ['la plus petite qui', 'loge tous les câbles']],
@@ -131,11 +133,18 @@ function cpSchemaVerifier() { const ligne = (y, k, v, d, forme) => `<g>${cpT(46,
     + etape(60, 1, 'Ouvrez la fiche du connecteur') + etape(110, 2, ['Dépliez « D’où vient', 'chaque pièce »']) + etape(160, 3, 'Survolez le point : la source') + cpT(664, 222, 'Rien ne se juge sans que vous puissiez remonter à sa table.', { cls: 'vr-petit', ancre: 'middle' })); }
 
 /* ---- la page --------------------------------------------------------------------------------------------------------- */
-// un chapitre : son numéro, son titre, la phrase de l'enfant, le schéma, les points, la règle exacte (repliée)
+// un chapitre : son numéro, son titre, la phrase de l'enfant, le schéma, les points (ou, pour le chemin, ses étapes : du
+// HTML tout fait), la règle exacte (repliée)
 const cpChapitre = (id, n, titre, une, schema, points, be) => `<section class="vr-ch entre-v" id="vr-${id}" data-chapitre="${id}" style="--k:${n}" aria-labelledby="vr-t-${id}">`
   + `<header class="vr-ch-tete"><span class="vr-num" aria-hidden="true">${n}</span><h3 id="vr-t-${id}">${esc(titre)}</h3></header><p class="vr-une">${une}</p>`
-  + `<figure class="vr-schema">${schema}</figure><ul class="vr-points">${points.map(p => `<li>${p}</li>`).join('')}</ul>`
+  + `<figure class="vr-schema">${schema}</figure>${Array.isArray(points) ? `<ul class="vr-points">${points.map(p => `<li>${p}</li>`).join('')}</ul>` : points}`
   + `<details class="vr-be"><summary>Pour le bureau d’études : la règle exacte</summary><div class="vr-be-corps">${be}</div></details></section>`;
+/* LES ÉTAPES DU CHEMIN, 1, 2, 3, 4 (la charte : « une phrase simple par étape ; qui veut plus déplie l'étape et trouve tout,
+   expliqué pour tout le monde ») : une ligne chacune — son numéro au cuivre, son nom, sa phrase ; dépliée, le reste.
+   `xs` : [nom, phrase, ce qu'on trouve en dépliant (HTML)]. */
+const cpEtapes = xs => `<ol class="vr-etapes">${xs.map(([nom, phrase, plus], i) => `<li><details class="vr-etape" data-etape="${i + 1}"><summary><span class="vr-etape-n" aria-hidden="true">${i + 1}</span><span class="vr-etape-t"><b>${esc(nom)}</b> ${phrase}</span></summary><div class="vr-etape-plus">${plus}</div></details></li>`).join('')}</ol>`;
+// un lien vers un autre chapitre de la page
+const cpLienCh = (ch, mot) => `<button type="button" class="btn lien dense vr-aller" data-vr-aller="ch:${ch}">${esc(mot)}</button>`;
 const cpLien = (geste, mot, bulle) => `<button type="button" class="btn lien dense vr-aller" data-vr-aller="${geste}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}>${esc(mot)}</button>`;
 // ce que la base SEE gardée sur ce PC change à la page : le compte de ce que seul VOLTA a, l'option — rien sans base
 function cpBase() { const I = typeof BASE_SEE !== 'undefined' && BASE_SEE.base; if (!I || typeof seulVoltaSEE !== 'function') return '';
@@ -145,11 +154,22 @@ function cpBase() { const I = typeof BASE_SEE !== 'undefined' && BASE_SEE.base; 
 function comprendreHtml() {
   const sommaire = `<nav class="vr-sommaire" aria-label="Les chapitres"><ol>${CHAPITRES_COMPRENDRE.map(([id, t], i) => `<li><button type="button" data-vr-ch="${id}"${i ? '' : ' data-clavier'}><span>${i + 1}</span>${esc(t)}</button></li>`).join('')}</ol></nav>`;
   const ch = [
-    cpChapitre('cuisinier', 1, 'VOLTA est un cuisinier', 'Votre fichier est <b>la commande</b>, la <span class="vr-def" tabindex="0" data-bulle="La base des pièces de votre logiciel de schéma, déposée et gardée sur ce PC : les contacts, les câbles, les faces que vous utilisez déjà">base SEE</span> est <b>le catalogue</b>, la physique est <b>les recettes</b>. VOLTA lit la commande, prend les pièces dans le catalogue, suit les recettes — et sert le plat. Il n’invente jamais une pièce : si elle n’est pas au catalogue, il écrit « manque ».', cpSchemaCuisinier(),
-      ['<b>La commande</b> dit ce qu’on veut : relier telle borne à telle autre, avec tel câble, sur tel folio. VOLTA ne la change jamais sans vous : ce qu’il propose s’écrit seulement d’un geste.',
-        '<b>Le catalogue</b> dit ce qui existe : les contacts à sertir, les câbles, les faces des connecteurs. Si votre base SEE est gardée sur ce PC, c’est elle ; sinon, les tables de VOLTA (vos photos des tables de SEE, recoupées sur des sources publiques).',
-        '<b>Les recettes</b> disent ce qui est admis : ce qu’un câble supporte, quand un disjoncteur disjoncte, la chute de tension admise (2 V, votre règle). Elles ne viennent jamais du catalogue : la base SEE n’a ni courbes ni intensités.',
-        '<b>Un seul catalogue ?</b> Quand la base SEE est là, elle passe devant. Quelques lignes ne sont que chez VOLTA : la Cohérence les liste, une par une, avec leur raison. Vous décidez : une case, « Ne prendre les pièces que dans la base SEE gardée », est prête, décochée.'],
+    // (passe 87) l'identifiant reste « cuisinier » : les liens des autres pages (Normes, Base SEE, le « ? » des fiches) l'appellent ainsi
+    cpChapitre('cuisinier', 1, 'De votre fichier à ce qui sort', 'Quatre étapes, toujours les mêmes : VOLTA lit <b>votre fichier</b>, prend les pièces dans <b>le catalogue</b>, applique <b>les règles</b>, puis rend <b>ce qui sort</b>. Il n’invente jamais une pièce : si elle n’est pas au catalogue, il écrit « manque ».', cpSchemaChemin(),
+      cpEtapes([
+        ['Votre fichier', 'dit ce qu’on veut : relier telle borne à telle autre, avec tel câble, sur tel folio.',
+          '<p>C’est la source : les repères, les bornes, qui va où — VOLTA ne les change jamais sans vous. Pour changer un nom, on change son fichier : tout au même endroit.</p>'
+          + '<p>Ce que VOLTA propose (un calibre, une gauge plus forte) s’écrit seulement d’un geste, dans l’Excel corrigé. Ce que votre fichier ne dit pas (une longueur, l’ambiante), VOLTA le suppose et l’écrit « hypothèse » : ⋮ › Plus › Hypothèses le change.</p>'],
+        ['Le catalogue', 'dit ce qui existe : les contacts à sertir, les câbles, les faces des connecteurs, les modules de barrette.',
+          '<p>C’est votre <span class="vr-def" tabindex="0" data-bulle="La base des pièces de votre logiciel de schéma, déposée et gardée sur ce PC : les contacts, les câbles, les faces que vous utilisez déjà">base SEE</span>, si elle est gardée sur ce PC ; sinon, les tables de VOLTA (vos photos des tables de SEE, recoupées sur des sources publiques). Les <b>Normes</b> montrent chaque table, d’où elle vient et qui la lit ; la <b>Bible</b>, chaque module et chaque arrangement, avec son origine.</p>'
+          + '<p><b>Un seul catalogue ?</b> Quand la base SEE est là, elle passe devant. Quelques lignes ne sont que chez VOLTA : la Cohérence les liste, une par une, avec leur raison. Vous décidez : une case, « Ne prendre les pièces que dans la base SEE gardée », est prête, décochée.</p>'
+          + `<p>${cpLien('normes', 'Ouvrir les Normes')} ${cpLien('bible', 'Ouvrir la Bible')}</p>`],
+        ['Les règles', 'disent ce qui est admis : le calibre qui ne disjoncte pas, ce qu’un câble supporte, le contact qui reçoit sa gauge, la chute de tension.',
+          '<p>Elles viennent des normes — l’EN 2853 pour les câbles, l’AC 43.13-1B, les courbes des disjoncteurs — et de votre règle (2 V de chute en ligne) ; jamais du catalogue : la base SEE n’a ni courbes ni intensités.</p>'
+          + `<p>Un disjoncteur est valide ou pas valide, sans réserve : VOLTA retient le plus petit calibre qui ne disjoncte pas, puis vérifie qu’il protège chacun de ses câbles. Les deux chapitres suivants les suivent maillon par maillon : ${cpLienCh('connecteur', 'la chaîne d’un connecteur')}, ${cpLienCh('disjoncteur', 'celle d’un disjoncteur')}.</p>`],
+        ['Ce qui sort', ': les folios dessinés, une fiche par objet, la LPA à commander, l’Excel corrigé.',
+          '<p>Rien n’est inventé : une pièce absente du catalogue laisse sa case vide, et la fiche écrit « manque », avec la table et la clé cherchées.</p>'
+          + '<p>L’Excel corrigé ne porte que ce que vous avez demandé — vos gestes, et les propositions de VOLTA que vous avez retenues —, chaque case changée dit ce qu’elle portait ; rouvert, il devient votre fichier. Le dossier PDF et l’Excel corrigé gardent les hypothèses avec lesquelles tout a été jugé.</p>']]),
       `<p>L’ordre des tables, du plus fort au plus faible : <b>ce que vous corrigez à la main</b> sur la page Normes, puis <b>la base SEE gardée</b>, puis <b>les tables de VOLTA</b> (l’embarquée et vos imports). Une exception, votre règle du 20 octobre 2026 : quand la base contredit une ligne que deux sources indépendantes ont vérifiée, la source gagne, et la valeur de la base est montrée barrée, « à corriger dans SEE ». Un chiffre de la base impossible pour sa gauge (une masse sous celle du cuivre seul) ne passe jamais. Ce que la base laisse vide, VOLTA le garde.</p>`
       + `<p>« Seulement dans VOLTA » : une ligne de contact (famille, sexe, taille, type et gauge du câble) que la base n’a pas. Deux raisons : la base ne l’a plus (sa règle a changé de version), ou VOLTA l’a ajoutée de ses sources (une taille que vos photos n’avaient pas). Avec la case cochée, ces lignes ne servent plus pour les familles que la base connaît ; une famille que la base ignore garde celles de VOLTA.</p>`
       + cpBase()),
@@ -182,7 +202,7 @@ function comprendreHtml() {
         'La <b>base SEE</b>, onglet Cohérence : la base vérifiée ligne par ligne, et ce que seul VOLTA a.'],
       `<p>Les sources de chaque ligne sont dans les colonnes Source et Statut des tables (normes/*.csv, lisibles sur la page Normes) : « vérifié (deux sources : … ) », « à confirmer (une source : …) », « à confirmer (non public : …) » ; vide, c’est votre donnée. Le dossier PDF porte une page « Hypothèses et sources » ; l’Excel corrigé, une feuille « VOLTA » (cachée) avec les hypothèses et les choix faits à la main. ${cpLien('normes', 'Ouvrir les Normes')} ${cpLien('bible', 'Ouvrir la Bible')}</p>`)];
   return `<div class="vr">${nmTitre('Aide', 'Comment VOLTA réfléchit')}`
-    + `<div class="vr-page">${sommaire}<div class="vr-texte"><p class="vr-chapeau">VOLTA ne devine rien. Il lit votre fichier, prend les pièces dans un catalogue, applique des règles de physique, et vous montre d’où vient chaque chose. Six images pour tout comprendre.</p>${ch.join('')}</div></div></div>`; }
+    + `<div class="vr-page">${sommaire}<div class="vr-texte"><p class="vr-chapeau">VOLTA ne devine rien : il vous montre d’où vient chaque chose. Six images pour tout comprendre, du plus simple au plus précis.</p>${ch.join('')}</div></div></div>`; }
 /* Ouvrir la page (sur un chapitre). Elle prend la page entière : on la lit comme un livre, le plan attend derrière. */
 function ficheComprendre(chapitre) { const deja = !!(app.fiche && app.fiche.mode === 'comprendre');
   ouvrirFiche({ mode: 'comprendre', largeur: 'page' }, comprendreHtml(), '');
@@ -204,7 +224,17 @@ function marquerChapitre(force) { const c = $('fiche-corps'); if (!c) return; co
 function lierComprendre() { const c = $('fiche-corps'); if (!c) return;
   c.querySelectorAll('[data-vr-ch]').forEach(b => b.onclick = () => allerAuChapitre(b.dataset.vrCh, true));
   c.querySelectorAll('[data-vr-aller]').forEach(b => b.onclick = () => { const g = b.dataset.vrAller;
-    if (g === 'normes') ficheNormes(); else if (g === 'bible') ficheBible(); else if (g === 'seul-volta' && typeof montrerSeulVoltaSEE === 'function') montrerSeulVoltaSEE(); });
+    if (g === 'normes') ficheNormes(); else if (g === 'bible') ficheBible(); else if (g === 'seul-volta' && typeof montrerSeulVoltaSEE === 'function') montrerSeulVoltaSEE(); else if (/^ch:/.test(g)) allerAuChapitre(g.slice(3), true); });
+  // (passe 87) le chemin du chapitre 1 : une étape survolée — dans le schéma ou dans la liste —, ou ouverte, s'allume des deux
+  // côtés ; un clic sur une étape du schéma ouvre (ou referme) son explication
+  const etapes = [...c.querySelectorAll('.vr-etape')], stations = [...c.querySelectorAll('.vr-flux-e')]; let survol = 0;
+  const allumer = () => { stations.forEach(s => { const n = +s.dataset.etape, d = etapes[n - 1]; s.classList.toggle('on', survol === n || !!(d && d.open)); });
+    etapes.forEach((d, i) => d.classList.toggle('on', survol === i + 1)); };
+  const suivre = (el, n) => { el.addEventListener('pointerenter', () => { survol = n; allumer(); }); el.addEventListener('pointerleave', () => { if (survol === n) survol = 0; allumer(); }); };
+  etapes.forEach((d, i) => { suivre(d, i + 1); d.addEventListener('toggle', allumer); });
+  stations.forEach(s => { const n = +s.dataset.etape; suivre(s, n);
+    s.addEventListener('click', () => { const d = etapes[n - 1]; if (!d) return; d.open = !d.open; const sm = d.querySelector('summary'); if (sm) try { sm.focus({ preventScroll: true }); } catch (_) { }
+      if (d.open) d.scrollIntoView({ block: 'nearest', behavior: typeof mouvementReduit === 'function' && mouvementReduit() ? 'auto' : 'smooth' }); }); });
   if (!c.dataset.vrLie) { c.dataset.vrLie = '1'; let t = 0; c.addEventListener('scroll', () => { if (!(app.fiche && app.fiche.mode === 'comprendre')) return; cancelAnimationFrame(t); t = requestAnimationFrame(() => marquerChapitre()); }, { passive: true }); } }
 
 /* ---- la page se trouve : le menu (⋮ › Plus, la ligne est dans page.html) et chaque « ? » ------------------------------ */

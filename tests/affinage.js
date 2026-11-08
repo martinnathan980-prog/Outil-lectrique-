@@ -49,9 +49,10 @@ const FICHIER = P.fichierDemande();
   ok(pendant.attentes.includes('3') && !pendant.affine, 'pendant que le folio 3 se place au loin, l’affinage attend', JSON.stringify(pendant));
   const ensuite = await page.waitForFunction(() => { const p = etatPlacement(), a = atelier.etatAffinage(); return !p.encours && !p.attentes.length && a.encours ? { prets: p.prets, affine: a.encours } : null; }, null, { timeout: 600000 }).then(h => h.jsonValue(), () => null);
   ok(!!ensuite, 'les folios placés, l’affinage part', JSON.stringify(ensuite));
-  const mot = await page.evaluate(() => $('af-txt').textContent);
-  // (v86, l'audit G3 : « 0 / 48 · 5 en attente », 48 de quoi ?) des mots, sans compte de tours
-  ok(/^VOLTA\speaufine\sencore\s(\d+\sfolios|ce\sfolio|un\sfolio)$/.test(mot) && !/affinage|moteur|\/|attente/.test(mot), 'la bande le dit en mots : « VOLTA peaufine encore 5 folios »', mot);
+  const bande = await page.evaluate(() => ({ cachee: $('affinage').hidden, mot: $('af-txt').textContent }));
+  // (passe 87, le lecteur : « ce travail interne ne me concerne pas ») la bande disait « VOLTA peaufine encore 5 folios » plus
+  // de deux minutes sans que rien ne bouge : les folios prêts, elle se tait pendant que VOLTA peaufine
+  ok(bande.cachee && !bande.mot, 'les folios prêts, la bande se tait pendant que VOLTA peaufine (le lecteur : ce travail interne ne le concerne pas)', JSON.stringify(bande));
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

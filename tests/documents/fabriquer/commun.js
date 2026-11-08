@@ -48,10 +48,13 @@ function toile(o = {}) { const out = [], W = o.largeur || 420, H = o.hauteur || 
 
 /* ---- la feuille : le cadre, les repères de zone, le cartouche --------------------------------------------------
    Une feuille A3 paysage. Les zones : huit colonnes chiffrées en haut, six rangées lettrées à gauche (ce que VOLTA lit
-   pour situer un renvoi, 09-pdf `zoneDe`). Trois cartouches, trois logiciels :
-     'fr'    en bas à droite, étiquettes françaises (TITRE, N° DE PLAN, FOLIO, INDICE, FAISCEAU, DESSINÉ, DATE, ÉCHELLE) ;
-     'en'    en bas à droite, étiquettes anglaises (TITLE, DWG NO., SHEET, REV, HARNESS…) ;
-     'bande' une bande pleine largeur en bas, étiquettes françaises, le folio écrit « 12/90 ». */
+   pour situer un renvoi, 09-pdf `zoneDe`). Trois cartouches, trois logiciels, tous EN FRANÇAIS (le lecteur, 8 novembre
+   2026 : « des cartouches en français ») :
+     'fr'    en bas à droite (TITRE, N° DE PLAN, FOLIO « 3 / 8 », INDICE, FAISCEAU, DESSINÉ, DATE, ÉCHELLE) ;
+     'fr2'   en bas à droite, d'autres mots et un autre ordre (PLAN N°, IND., F° « 12/92 » ; DÉSIGNATION ; FAISCEAU,
+             DESSINÉ, LE) ;
+     'bande' une bande pleine largeur en bas, le folio écrit « 12/90 ».
+   (Le cartouche anglais — DWG NO., SHEET, REV — était celui des documents d'avant : tests/documents/v0/.) */
 const CADRE = { x0: 15, y0: 12, x1: 410, y1: 287 }, NC = 8, NL = 6;
 function zoneDe(x, y) { const c = Math.max(0, Math.min(NC - 1, Math.floor((x - CADRE.x0) / ((CADRE.x1 - CADRE.x0) / NC)))), l = Math.max(0, Math.min(NL - 1, Math.floor((y - CADRE.y0) / ((CADRE.y1 - CADRE.y0) / NL))));
   return 'ABCDEF'[l] + (c + 1); }
@@ -65,10 +68,10 @@ function feuille(T, cart, sorte = 'fr') { const { x0, y0, x1, y1 } = CADRE; T.re
     cellule(x0 + w * 0.61, y, w * 0.07, h, 'INDICE', cart.indice); cellule(x0 + w * 0.68, y, w * 0.14, h, 'FAISCEAU', cart.faisceau); cellule(x0 + w * 0.82, y, w * 0.18, h, 'DATE', cart.date);
     return { zoneLibre: { x0: x0 + 4, y0: y0 + 4, x1: x1 - 4, y1: y - 4 }, cartouche: { x0, y0: y, x1, y1 }, champs }; }
   const cw = 175, ch = 34, cx = x1 - cw, cy = y1 - ch, r1 = 12, r2 = 12, r3 = ch - r1 - r2;
-  if (sorte === 'en') {
-    cellule(cx, cy, cw, r1, 'TITLE', cart.titre); cellule(cx, cy + r1, 75, r2, 'DWG NO.', cart.numero); cellule(cx + 75, cy + r1, 40, r2, 'SHEET', cart.folio + ' OF ' + cart.folios, true);
-    cellule(cx + 115, cy + r1, 20, r2, 'REV', cart.indice); cellule(cx + 135, cy + r1, 40, r2, 'HARNESS', cart.faisceau);
-    cellule(cx, cy + r1 + r2, 60, r3, 'DRAWN', cart.auteur); cellule(cx + 60, cy + r1 + r2, 55, r3, 'DATE', cart.date); cellule(cx + 115, cy + r1 + r2, 60, r3, 'SCALE', 'NONE');
+  if (sorte === 'fr2') {
+    cellule(cx, cy, 80, r1, 'PLAN N°', cart.numero); cellule(cx + 80, cy, 25, r1, 'IND.', cart.indice); cellule(cx + 105, cy, 70, r1, 'F°', cart.folio + '/' + cart.folios, true);
+    cellule(cx, cy + r1, cw, r2, 'DÉSIGNATION', cart.titre);
+    cellule(cx, cy + r1 + r2, 60, r3, 'FAISCEAU', cart.faisceau); cellule(cx + 60, cy + r1 + r2, 60, r3, 'DESSINÉ', cart.auteur); cellule(cx + 120, cy + r1 + r2, 55, r3, 'LE', cart.date);
   } else {
     cellule(cx, cy, cw, r1, 'TITRE', cart.titre); cellule(cx, cy + r1, 75, r2, 'N° DE PLAN', cart.numero); cellule(cx + 75, cy + r1, 40, r2, 'FOLIO', cart.folio + ' / ' + cart.folios, true);
     cellule(cx + 115, cy + r1, 20, r2, 'INDICE', cart.indice); cellule(cx + 135, cy + r1, 40, r2, 'FAISCEAU', cart.faisceau);

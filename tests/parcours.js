@@ -622,7 +622,8 @@ function baseEssaiDansLaPage() {
     // l'affinage en arrière-plan : l'écran répond pendant que le Worker travaille
     await p2.evaluate(() => atelier.affinage(true)); await p2.waitForTimeout(3000);
     const A = await p2.evaluate(() => ({ ...atelier.etatAffinage(), visible: !$('affinage').hidden, texte: $('af-txt').textContent }));
-    ok(A.worker === 'oui' && A.visible && /affin/.test(A.texte), 'l’affinage tourne en Worker, le point respire dans la barre du bas', A.texte);
+    // (passe 87, le lecteur : « ce travail interne ne me concerne pas ») l'affinage tourne en silence : la bande se tait
+    ok(A.worker === 'oui' && !A.visible, 'l’affinage tourne en Worker, en silence : la bande se tait (le lecteur : ce travail interne ne le concerne pas)', A.texte);
     t0 = Date.now(); await p2.click('#zin'); await p2.waitForTimeout(50); const tz = Date.now() - t0; mesure('un zoom pendant l’affinage (l’écran répond ?)', tz, 300);
     await capture(p2, 'E-5-gros-affinage');
     ok(!p2.erreurs.length, 'aucune erreur console sur le gros installation', p2.erreurs.slice(0, 3).join(' | '));
