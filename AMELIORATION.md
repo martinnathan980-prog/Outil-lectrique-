@@ -55,16 +55,21 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
 
 ## Questions en attente
 
-- **Des bornes vides sur un relais** : une borne sans câble dans le fichier, ou une borne câblée mais pas reliée à
-  l'intérieur ? Par défaut, VOLTA suit les câbles du fichier et suppose reliées les bornes d'un même pôle.
-- **Le grand chantier** : la façon d'atteindre l'IA interne, l'exception au « 100 % hors ligne », les documents qui
-  arrivent le plus souvent, leur forme (texte ou images), le tableau de sortie — posées le 8 novembre.
+- **La vérification liaison par liaison** : la forme de l'écran — des planches de variantes à lui montrer.
+- **Ce que l'IA interne sait faire** : lire une image (les scans), la taille de ce qu'elle accepte — VOLTA le mesurera seul
+  avec « Tester la connexion », sur le poste du lecteur.
 
 ## Réponses du lecteur
 
 - 8 novembre 2026 : chute admise **2 V** (gardée) ; repère d'une barrette ajoutée : **la suite de la barrette voisine**
-  (667VT3) ; interrupteur à bornes chiffrées : **toutes ses bornes reliées** — mais certaines bornes sont parfois vides
-  (des relais aux bornes vides).
+  (667VT3) ; interrupteur à bornes chiffrées : **toutes ses bornes reliées** ; un relais « aux bornes vides », ce sont des
+  bornes **sans câble** (rien à changer : le courant ne va que là où il y a un câble).
+- 8 novembre 2026, le grand chantier : VOLTA appelle **l'IA interne automatiquement** quand il bloque (exception à la
+  charte, la seule) ; API **de type OpenAI** ; les documents qui arrivent : **schéma PDF, gros document, Visio** ; PDF
+  **texte et scans** ; le gros document est surtout fait de **schémas dessinés** ; Visio en **.vsdx** ; sortie : **le format
+  du retest** ; VOLTA **invente des documents d'exemple** et le lecteur corrige ce qui ne ressemble pas ; lecture longue
+  **en journée, en fond** ; navigateur **Chrome** ; le lecteur veut **vérifier tout, liaison par liaison**, avant les
+  folios et le retest.
 
 ## Journal des passes
 

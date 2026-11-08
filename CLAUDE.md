@@ -18,7 +18,10 @@ s'écrit ici, le jour même.
 
 ## Contraintes absolues
 
-- **100 % hors ligne**, aucun appel réseau, polices embarquées seulement (Inter, JetBrains Mono, IBM Plex symboles).
+- **100 % hors ligne**, aucun appel réseau, polices embarquées seulement (Inter, JetBrains Mono, IBM Plex symboles) —
+  **une seule exception, l'IA interne du lecteur** (v86, son choix : « automatiquement ») : VOLTA l'appelle de lui-même
+  quand il ne comprend pas un document d'entrée (API de type OpenAI ; son adresse, son modèle et sa clé, entrés par le
+  lecteur, restent dans son navigateur, jamais dans le dépôt). Aucun autre appel, jamais.
 - **Confidentialité** : ses vrais fichiers ne quittent jamais son poste, ne sont jamais dans le dépôt ni dans une
   recherche. Jamais de nom de client, de programme, d'appareil, de personne dans le dépôt ; jamais « SEE » ni ces noms
   dans une recherche web. On travaille sur le contrat d'exemple et les fichiers piégés.
