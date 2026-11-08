@@ -2421,13 +2421,13 @@ function fermerPalette(rendre) { const el = PALETTE.el; if (!el || el.hidden) re
 const ICONE_OBJET = { repere: '<rect x="5" y="6" width="14" height="12" rx="1.5"/><path d="M2.5 10h2.5M2.5 14h2.5M19 10h2.5M19 14h2.5"/>', fil: '<path d="M3 16c4 0 4-8 9-8s5 8 9 8"/>', borne: '<circle cx="12" cy="12" r="3.2"/><path d="M3 12h5.8M15.2 12H21"/>',
   type: '<path d="M4 7h16M4 12h16M4 17h10"/>', nature: '<path d="M4 6h16v4H4zM4 14h16v4H4z"/>', action: '<path d="m13 3-7 10h5l-1 8 7-10h-5z"/>', geste: '<path d="M4.5 12h13M13 6.5l5.5 5.5-5.5 5.5"/>', folio: '<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/>',
   comprendre: '<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.6a2.4 2.4 0 1 1 3.3 2.2c-.6.3-1 .8-1 1.5v.6M12 16.6v.3"/>' };
-/* (passe 87, la vitesse) LA LISTE ATTEND LA FIN DE LA FRAPPE QUAND ELLE COÛTE. Une liste qui se refait en un éclair (moins de
-   12 ms : l'exemple, la plupart des plans) suit chaque lettre ; plus lourde (un très gros plan, une machine occupée), elle
-   attend que la frappe s'arrête 120 ms — la page ne fige plus sous les doigts. Entrée, les flèches et Tab la refont d'abord
-   (`rendrePaletteEnAttente`) : ils agissent sur ce qu'on a tapé. */
+/* (passe 87, la vitesse) LA LISTE ATTEND LA FIN DE LA FRAPPE QUAND ELLE COÛTE. Sur un plan ordinaire, elle suit chaque lettre
+   (elle se refait en quelques millisecondes) ; sur un gros plan (mille liaisons et plus) dont la liste a coûté plus de 12 ms,
+   elle attend que la frappe s'arrête 120 ms — la page ne fige plus sous les doigts. Entrée, les flèches et Tab la refont
+   d'abord (`rendrePaletteEnAttente`) : ils agissent sur ce qu'on a tapé. */
 const ATTENTE_FRAPPE = 120;
 function rendrePaletteBientot() { const enAttente = !!PALETTE.frappe; clearTimeout(PALETTE.frappe); PALETTE.frappe = 0;
-  if (!enAttente && !(PALETTE.cout > 12)) { rendrePalette(); return; }
+  if (!enAttente && !(PALETTE.cout > 12 && verite().length >= 1000)) { rendrePalette(); return; }
   PALETTE.frappe = setTimeout(() => { PALETTE.frappe = 0; rendrePalette(); }, ATTENTE_FRAPPE); }
 function rendrePaletteEnAttente() { if (!PALETTE.frappe) return; clearTimeout(PALETTE.frappe); PALETTE.frappe = 0; rendrePalette(); }
 // une ligne de la palette, reconnue d'un rendu à l'autre (la liste qui se complète garde la ligne choisie)

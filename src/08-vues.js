@@ -302,8 +302,12 @@ function brochageVue(nom, sous, cons, o) { const xs = (cons || []).filter(c => c
     + `<text class="bro-nom" x="${(8 + xC) / 2}" y="${(yB0 + yB1) / 2 - (sous ? 4 : -4)}">${esc(nom)}</text>`
     + (sous ? `<text class="bro-sous" x="${(8 + xC) / 2}" y="${(yB0 + yB1) / 2 + 14}">${esc(sous)}</text>` : '');
   blocs.forEach(({ c, y0, h }) => {
+    /* (passe 87, planche P3) un groupe de barrette : son numéro prend la teinte du groupe — celle de ses câbles et de sa plage
+       sur la face —, plus le cuivre (l'accent) ; un groupe qui ne se loge pas, le rouge de ses câbles. Un connecteur
+       d'équipement (des câbles aux couleurs de leurs routes) garde sa lettre cuivre. */
+    const c0 = c.lignes[0].couleur || '', teinte = /^var\(--(vu-g\d|ko)\)$/.test(c0) && c.lignes.every(l => l.couleur === c0) ? c0 : '';
     out += `<path class="bro-piece" d="M${xC} ${y0 + .5}H${xC + wC - 7}a7 7 0 0 1 7 7V${y0 + h - 7.5}a7 7 0 0 1 -7 7H${xC}Z"/>`
-      + `<text class="bro-lettre" x="${xC + wC / 2}" y="${y0 - 7}">${esc(c.nom)}</text>`
+      + `<text class="bro-lettre" x="${xC + wC / 2}" y="${y0 - 7}"${teinte ? ` style="fill:${teinte}"` : ''}>${esc(c.nom)}</text>`
       + (c.ref && !petit ? `<text class="bro-ref" x="${xC + wC + 8}" y="${y0 - 7}">${esc(c.ref)}</text>` : '');
     c.lignes.forEach((l, i) => { const yy = y0 + i * PAS + PAS / 2, xm = (x0 + x1) / 2;
       out += `<g class="bro-l fi-ia${l.ko ? ' ko' : ''}"${l.k ? ` data-i="${escA(l.k)}"` : ''}><rect class="bro-zone" x="${xC}" y="${yy - PAS / 2}" width="${W - xC}" height="${PAS}" rx="6"/>`

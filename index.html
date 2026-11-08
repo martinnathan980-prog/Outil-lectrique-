@@ -10374,7 +10374,7 @@ svg.vu-face text.pris{fill:#fff}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '77c743d94611';
+const VERSION_MOTEUR = '8c6d96d4b8f7';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -19691,6 +19691,8 @@ const SCHEMA_PDF = (() => {
             const [a, b] = l1 >= l2 ? [mid(q[0], q[3]), mid(q[1], q[2])] : [mid(q[0], q[1]), mid(q[2], q[3])]; pieces.push({ a, b, L, e }); continue; } }
         if (ferme && pts.length === 3 || (ferme && pts.length === 4 && dist(pts[0], pts[3]) < 0.05 * u)) { if (Math.max(w, h) < 2 * u) { fleches.push({ pts: pts.slice(0, 3), B }); continue; } } }
       if (!F.trait || clair(F.ct)) continue;
+      // (passe 87) un petit triangle fermé, seulement tracé (le contour d'une flèche de renvoi, peint à part de son plein) : une flèche
+      if (ferme && !sp.courbe && (pts.length === 3 || (pts.length === 4 && dist(pts[0], pts[3]) < 0.05 * u)) && Math.max(w, h) < 2 * u) { fleches.push({ pts: pts.slice(0, 3), B }); continue; }
       if (ferme) { if (sp.courbe) { const R = rondeur(pts); if (R.ecart < 0.1 && Math.max(w, h) < 2.2 * u) { ronds.push({ c: R.c, r: R.r }); continue; } }
         if (w > 0.5 * u && h > 0.5 * u && aire(pts) > 0.8 * w * h) { cadres.push({ x0: B.x0, y0: B.y0, x1: B.x1, y1: B.y1, lw: F.lw, arrondi: sp.courbe }); continue; }
         if (sp.courbe) { arcs.push(pts); continue; } }
@@ -20048,7 +20050,7 @@ const SCHEMA_PDF = (() => {
       const e = n.aretes[0], autre = e ? G.noeuds[e.a === k ? e.b : e.a].p : null, d = autre ? (() => { const v = [n.p[0] - autre[0], n.p[1] - autre[1]], L = Math.hypot(...v) || 1; return [v[0] / L, v[1] / L]; })() : null;
       const r = resoudre(n.p, d);
       // (passe 87) un renvoi, comme un texte, ne se lit qu'au BOUT d'un fil : un coude qui passe près d'un drapeau n'y arrive pas
-      if (r && (r.repere || r.renvoi)) { if (n.deg > 1 && r.genre === 'texte') return; bouts.push({ n: k, p: n.p, ...r }); }
+      if (r && (r.repere || r.renvoi)) { if (n.deg > 1 && (r.genre === 'texte' || r.genre === 'renvoi')) return; bouts.push({ n: k, p: n.p, ...r }); }
       else if (n.deg === 1) orphelins.push({ n: k, p: n.p, raison: r ? 'bout sans repère (' + (r.borne ? 'borne ' + r.borne : r.genre) + ')' : 'trait qui n’arrive nulle part' }); });
     // les réseaux : les composantes connexes
     const U = unions(G.noeuds.length); G.aretes.forEach(e => U.u(e.a, e.b));
@@ -33285,13 +33287,13 @@ function fermerPalette(rendre) { const el = PALETTE.el; if (!el || el.hidden) re
 const ICONE_OBJET = { repere: '<rect x="5" y="6" width="14" height="12" rx="1.5"/><path d="M2.5 10h2.5M2.5 14h2.5M19 10h2.5M19 14h2.5"/>', fil: '<path d="M3 16c4 0 4-8 9-8s5 8 9 8"/>', borne: '<circle cx="12" cy="12" r="3.2"/><path d="M3 12h5.8M15.2 12H21"/>',
   type: '<path d="M4 7h16M4 12h16M4 17h10"/>', nature: '<path d="M4 6h16v4H4zM4 14h16v4H4z"/>', action: '<path d="m13 3-7 10h5l-1 8 7-10h-5z"/>', geste: '<path d="M4.5 12h13M13 6.5l5.5 5.5-5.5 5.5"/>', folio: '<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/>',
   comprendre: '<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.6a2.4 2.4 0 1 1 3.3 2.2c-.6.3-1 .8-1 1.5v.6M12 16.6v.3"/>' };
-/* (passe 87, la vitesse) LA LISTE ATTEND LA FIN DE LA FRAPPE QUAND ELLE COÛTE. Une liste qui se refait en un éclair (moins de
-   12 ms : l'exemple, la plupart des plans) suit chaque lettre ; plus lourde (un très gros plan, une machine occupée), elle
-   attend que la frappe s'arrête 120 ms — la page ne fige plus sous les doigts. Entrée, les flèches et Tab la refont d'abord
-   (`rendrePaletteEnAttente`) : ils agissent sur ce qu'on a tapé. */
+/* (passe 87, la vitesse) LA LISTE ATTEND LA FIN DE LA FRAPPE QUAND ELLE COÛTE. Sur un plan ordinaire, elle suit chaque lettre
+   (elle se refait en quelques millisecondes) ; sur un gros plan (mille liaisons et plus) dont la liste a coûté plus de 12 ms,
+   elle attend que la frappe s'arrête 120 ms — la page ne fige plus sous les doigts. Entrée, les flèches et Tab la refont
+   d'abord (`rendrePaletteEnAttente`) : ils agissent sur ce qu'on a tapé. */
 const ATTENTE_FRAPPE = 120;
 function rendrePaletteBientot() { const enAttente = !!PALETTE.frappe; clearTimeout(PALETTE.frappe); PALETTE.frappe = 0;
-  if (!enAttente && !(PALETTE.cout > 12)) { rendrePalette(); return; }
+  if (!enAttente && !(PALETTE.cout > 12 && verite().length >= 1000)) { rendrePalette(); return; }
   PALETTE.frappe = setTimeout(() => { PALETTE.frappe = 0; rendrePalette(); }, ATTENTE_FRAPPE); }
 function rendrePaletteEnAttente() { if (!PALETTE.frappe) return; clearTimeout(PALETTE.frappe); PALETTE.frappe = 0; rendrePalette(); }
 // une ligne de la palette, reconnue d'un rendu à l'autre (la liste qui se complète garde la ligne choisie)
@@ -42305,8 +42307,12 @@ function brochageVue(nom, sous, cons, o) { const xs = (cons || []).filter(c => c
     + `<text class="bro-nom" x="${(8 + xC) / 2}" y="${(yB0 + yB1) / 2 - (sous ? 4 : -4)}">${esc(nom)}</text>`
     + (sous ? `<text class="bro-sous" x="${(8 + xC) / 2}" y="${(yB0 + yB1) / 2 + 14}">${esc(sous)}</text>` : '');
   blocs.forEach(({ c, y0, h }) => {
+    /* (passe 87, planche P3) un groupe de barrette : son numéro prend la teinte du groupe — celle de ses câbles et de sa plage
+       sur la face —, plus le cuivre (l'accent) ; un groupe qui ne se loge pas, le rouge de ses câbles. Un connecteur
+       d'équipement (des câbles aux couleurs de leurs routes) garde sa lettre cuivre. */
+    const c0 = c.lignes[0].couleur || '', teinte = /^var\(--(vu-g\d|ko)\)$/.test(c0) && c.lignes.every(l => l.couleur === c0) ? c0 : '';
     out += `<path class="bro-piece" d="M${xC} ${y0 + .5}H${xC + wC - 7}a7 7 0 0 1 7 7V${y0 + h - 7.5}a7 7 0 0 1 -7 7H${xC}Z"/>`
-      + `<text class="bro-lettre" x="${xC + wC / 2}" y="${y0 - 7}">${esc(c.nom)}</text>`
+      + `<text class="bro-lettre" x="${xC + wC / 2}" y="${y0 - 7}"${teinte ? ` style="fill:${teinte}"` : ''}>${esc(c.nom)}</text>`
       + (c.ref && !petit ? `<text class="bro-ref" x="${xC + wC + 8}" y="${y0 - 7}">${esc(c.ref)}</text>` : '');
     c.lignes.forEach((l, i) => { const yy = y0 + i * PAS + PAS / 2, xm = (x0 + x1) / 2;
       out += `<g class="bro-l fi-ia${l.ko ? ' ko' : ''}"${l.k ? ` data-i="${escA(l.k)}"` : ''}><rect class="bro-zone" x="${xC}" y="${yy - PAS / 2}" width="${W - xC}" height="${PAS}" rx="6"/>`

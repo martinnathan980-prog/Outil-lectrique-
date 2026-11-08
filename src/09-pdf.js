@@ -196,6 +196,8 @@ const SCHEMA_PDF = (() => {
             const [a, b] = l1 >= l2 ? [mid(q[0], q[3]), mid(q[1], q[2])] : [mid(q[0], q[1]), mid(q[2], q[3])]; pieces.push({ a, b, L, e }); continue; } }
         if (ferme && pts.length === 3 || (ferme && pts.length === 4 && dist(pts[0], pts[3]) < 0.05 * u)) { if (Math.max(w, h) < 2 * u) { fleches.push({ pts: pts.slice(0, 3), B }); continue; } } }
       if (!F.trait || clair(F.ct)) continue;
+      // (passe 87) un petit triangle fermé, seulement tracé (le contour d'une flèche de renvoi, peint à part de son plein) : une flèche
+      if (ferme && !sp.courbe && (pts.length === 3 || (pts.length === 4 && dist(pts[0], pts[3]) < 0.05 * u)) && Math.max(w, h) < 2 * u) { fleches.push({ pts: pts.slice(0, 3), B }); continue; }
       if (ferme) { if (sp.courbe) { const R = rondeur(pts); if (R.ecart < 0.1 && Math.max(w, h) < 2.2 * u) { ronds.push({ c: R.c, r: R.r }); continue; } }
         if (w > 0.5 * u && h > 0.5 * u && aire(pts) > 0.8 * w * h) { cadres.push({ x0: B.x0, y0: B.y0, x1: B.x1, y1: B.y1, lw: F.lw, arrondi: sp.courbe }); continue; }
         if (sp.courbe) { arcs.push(pts); continue; } }
