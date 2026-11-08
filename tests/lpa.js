@@ -68,8 +68,19 @@ const ACC = 'connecteur d’accouplement', FOURNI = 'fourni avec l’équipement
     const etanche = { fiche: gE ? gE.lignes.filter(l => /^obturateur/.test(l.role)).map(l => l.statut) : null, lpa: NE.obturateurs.filter(x => x.ou.includes('340AB1 A')).map(x => x.note) };
     if (avant) app.contrat.raccords.set('340AB1|A', avant); else app.contrat.raccords.delete('340AB1|A'); if (NIVEAU.grand) reduireFiche();
     etanche.rendu = JSON.stringify(nomenclatureDuContrat().obturateurs) === JSON.stringify(N.obturateurs);
+    // (le lecteur) LE SUIVI ENTRE DANS LA LPA : son onglet, la feuille du classeur (l'entrée du menu Exporter la fabrique), son CSV
+    ficheNomenclature('suivi'); await pause(200);
+    const tabs = [...document.querySelectorAll('#fiche [data-no-vue]')].map(b => ({ t: b.textContent, on: b.getAttribute('aria-selected') === 'true', w: Math.round(b.getBoundingClientRect().width) }));
+    const ong = { tabs, sections: [...document.querySelectorAll('#fiche .no-st')].map(h => h.firstChild.textContent), lignes: document.querySelectorAll('#fiche .no-table tbody tr').length, csv: ($('no-csv') || {}).textContent };
+    fermerFiche(true);
+    const pris = [], tl = window.telecharger; window.telecharger = (b, n) => { pris.push({ b, n }); }; try { telecharger = window.telecharger; } catch (_) { }
+    try { await MENU.actions.suivi(); exporterSuivi(); } catch (e) { pris.push({ erreur: e.message }); }
+    window.telecharger = tl; try { telecharger = tl; } catch (_) { }
+    const xl = pris.find(x => x.n && /\.xlsx$/.test(x.n)), cs = pris.find(x => x.n && /suivi\.csv$/.test(x.n));
+    let classeur = null; if (xl) { const wb = XLSX.read(new Uint8Array(await xl.b.arrayBuffer()), { type: 'array' }); classeur = { feuilles: wb.SheetNames, suivi: wb.Sheets.Suivi ? XLSX.utils.sheet_to_json(wb.Sheets.Suivi, { header: 1 }) : [] }; }
+    const csvSuivi = cs ? { nom: cs.n, lignes: (await cs.b.text()).replace(/^﻿/, '').trim().split('\n') } : null;
     const net = v => JSON.parse(JSON.stringify(v, (k, x) => k === 'cable' && x && typeof x === 'object' ? { masse: x.masse } : k === 'outillage' || k === 'verdict' ? undefined : x));
-    return { fiches, cables, N: net(N), lignes, pdf, suivi, etanche }; });
+    return { fiches, cables, N: net(N), lignes, pdf, suivi, etanche, ong, classeur, csvSuivi, pris: pris.map(x => x.n || x.erreur) }; });
 
   const F = R.fiches, N = R.N;
   titre('1. CHAQUE OBJET DE L’EXEMPLE A SON ONGLET PIÈCES');
@@ -133,7 +144,24 @@ const ACC = 'connecteur d’accouplement', FOURNI = 'fourni avec l’équipement
   const E = R.etanche;
   ok('dit étanche (340AB1 A), ses obturateurs sont dus : plus de « selon la zone », sur la fiche comme dans la LPA — puis tout revient', !!E.fiche && E.fiche.length > 0 && E.fiche.every(s => !/selon la zone/.test(s)) && E.lpa.length > 0 && E.lpa.every(s => !/selon la zone/.test(s)) && E.rendu, JSON.stringify({ fiche: E.fiche, lpa: E.lpa }));
 
-  titre('6. LES CÂBLES : LA LIGNE « LE CÂBLE » DE CHAQUE FICHE');
+  titre('6. LE SUIVI DE FABRICATION ENTRE DANS LA LPA : UN ONGLET, UNE FEUILLE, LES MÊMES RÉFÉRENCES');
+  const O = R.ong;
+  ok('la LPA a deux onglets de même largeur, « Pièces » et « Suivi » ; le Suivi se range par pièce (connecteurs d’accouplement, barrettes, prises de coupure)', O.tabs.map(t => t.t).join('|') === 'Pièces|Suivi' && O.tabs[1].on && Math.abs(O.tabs[0].w - O.tabs[1].w) <= 1 && O.sections.join('|') === 'Connecteurs d’accouplement|Barrettes|Prises de coupure' && O.lignes === N.suivi.length && O.csv === 'Suivi en CSV',
+    O.tabs.map(t => t.t + ' ' + t.w + ' px').join(' · ') + ' · ' + O.lignes + ' lignes');
+  const refDe = (liste, rep) => (liste.find(x => x.ou.includes(rep)) || {}).reference;
+  const suiviFaux = N.suivi.filter(x => { if (x.nature === ACC) return (refDe(N.accouplements, x.repere) || '') !== x.reference;
+    if (/^barrette/.test(x.nature)) return !x.reference || !x.reference.split(' + ').every(m => N.modules.some(y => y.reference === m && y.ou.includes(x.repere)));
+    if (x.nature === 'prise de coupure') return refDe(N.connecteurs, x.repere) !== x.reference; return true; }).map(x => x.repere + ' : ' + x.reference);
+  const nG = n => N.suivi.filter(x => n.test(x.nature)).length;
+  ok('chaque ligne du Suivi dit la référence que commande l’onglet Pièces (l’accouplement, les modules, la prise) — barrettes ajoutées par VOLTA comprises', !suiviFaux.length && nG(/^connecteur/) === 58 && nG(/^barrette$/) === 4 && nG(/^barrette ajoutée/) === 3 && nG(/^prise/) === 5,
+    suiviFaux.slice(0, 4).join(' · ') || N.suivi.length + ' lignes : ' + nG(/^connecteur/) + ' connecteurs, ' + nG(/^barrette$/) + ' barrettes, ' + nG(/^barrette ajoutée/) + ' ajoutées, ' + nG(/^prise/) + ' prises');
+  const C6 = R.classeur;
+  ok('l’entrée du menu Exporter fabrique le classeur de la LPA : deux feuilles, « LPA » et « Suivi », une ligne par pièce posée, sans numéro de câble', !!C6 && C6.feuilles.join('|') === 'LPA|Suivi' && C6.suivi.length === N.suivi.length + 1 && C6.suivi[0].join('|') === 'Contrat|Repère|Nature|Référence posée|Votre fichier|Bornes utilisées|Bornes|Shunts|Câbles|Routes|Folios',
+    C6 ? C6.feuilles.join(' · ') + ' · ' + (C6.suivi.length - 1) + ' lignes de Suivi' : 'aucun classeur : ' + R.pris.join(', '));
+  ok('le Suivi en CSV sort encore (son onglet, l’ancien nom de fichier), avec les mêmes lignes', !!R.csvSuivi && /suivi\.csv$/.test(R.csvSuivi.nom) && R.csvSuivi.lignes.length === N.suivi.length + 1 && /^Contrat;Repère;Nature;Référence posée/.test(R.csvSuivi.lignes[0]),
+    R.csvSuivi ? R.csvSuivi.nom + ' · ' + (R.csvSuivi.lignes.length - 1) + ' lignes' : 'aucun CSV');
+
+  titre('7. LES CÂBLES : LA LIGNE « LE CÂBLE » DE CHAQUE FICHE');
   const C = new Map(); R.cables.filter(Boolean).forEach(l => { const m = /^([\d\s,.]+) m/.exec(l.role), e = C.get(l.ref) || C.set(l.ref, { n: 0, m: 0 }).get(l.ref); e.n += l.q; e.m += m ? +m[1].replace(/\s/g, '').replace(',', '.') : NaN; });
   const ecC = N.cables.filter(x => { const e = C.get(x.reference); return !e || e.n !== x.n || Math.abs(e.m - x.longueur) > 0.05 * x.n; }).map(x => x.reference + ' : fiches ' + (C.get(x.reference) ? C.get(x.reference).n + ' · ' + C.get(x.reference).m.toFixed(1) + ' m' : '0') + ', LPA ' + x.n + ' · ' + x.longueur.toFixed(1) + ' m');
   ok('chaque type : autant de câbles et la même longueur dans les fiches et dans la LPA', !ecC.length && C.size === N.cables.length, ecC.join(' · ') || N.cables.map(x => x.n + ' ' + x.reference).join(' · '));

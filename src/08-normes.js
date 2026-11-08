@@ -291,7 +291,7 @@ function normesHtml() { const N = normeActive(), E = normeEmbarqueeLue(), total 
     + menuDoc('nm-plus', 'Autres façons d’entrer une norme', [['nm-coller', 'Coller des lignes', 'copiées d’un Excel, ou d’une liste de SEE'],
       ['nm-see', 'Lire la base SEE', 'l’Excel des vues EED_… : VOLTA dit ce qu’il en prend, rien ne sort', ' data-bulle="L’Excel de la base SEE (EED_View…, EED_OBJ_…, EED_LNK_…) : VOLTA dit ce qu’il en prend, et le garde sur ce PC si vous le voulez — rien ne sort"'],
       null, ['nm-guide', 'Ajouter une norme, les gabarits', 'ce que chaque table attend, un gabarit par table', ` aria-expanded="${NORMES.guide}"`],
-      null, ['nm-comprendre', 'Comment VOLTA réfléchit', 'le catalogue, les recettes, d’où vient chaque pièce', ' data-comprendre="cuisinier"']])
+      null, ['nm-comprendre', 'Comment VOLTA réfléchit', 'du fichier aux folios, d’où vient chaque pièce', ' data-comprendre="cuisinier"']])
     + `<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden></div></div>`
     // la base SEE gardée : la case de la base unique (08-see-import), préparée, décochée d'office (v74)
     + (seeGardee && typeof caseSeuleBaseSEE === 'function' ? `<div class="nm-unique">${caseSeuleBaseSEE('nm-seule')}</div>` : '');

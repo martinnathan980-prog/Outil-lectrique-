@@ -201,14 +201,15 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
   await ev(() => ficheHypotheses()); await attendre(400);
   const H = await ev(() => ({ chapeau: document.querySelector('#fiche .fiche-tete + .note').textContent, lignes: document.querySelectorAll('#fiche .hy-ligne').length, q: [...document.querySelectorAll('#fiche .hy-ligne')].every(l => { const q = l.querySelector('.hy-q'); return q && q.dataset.bulle && q.dataset.bulle.length > 20; }), courtes: [...document.querySelectorAll('#fiche .hy-sert')].every(p => p.textContent.length < 90) }));
   ok('les Hypothèses disent que leurs réglages sont écrits dans chaque export ; chaque réglage, une phrase et son « ? » (le paragraphe entier)', /Ces réglages sont écrits dans chaque export/.test(H.chapeau) && H.lignes > 10 && H.q && H.courtes, JSON.stringify({ ...H, chapeau: H.chapeau.slice(0, 80) }));
-  // la nomenclature (v74) : « +11 » déplie ses repères en place, « moins » les replie ; le suivi au trait, à côté du CSV
+  // la nomenclature (v74) : « +11 » déplie ses repères en place, « moins » les replie ; (passe 87) le Suivi entre dans la LPA :
+  // deux onglets, Pièces et Suivi ; le CSV au trait, l'Excel plein
   await ev(() => ficheNomenclature()); await attendre(500);
-  const NO0 = await ev(() => { const b = document.querySelector('#fiche .no-plus'); return b ? { n: b.textContent, cache: b.parentElement.querySelector('.no-reste').hidden, suivi: $('no-suivi').previousElementSibling && $('no-suivi').previousElementSibling.id, papier: $('no-suivi').classList.contains('papier') } : null; });
+  const NO0 = await ev(() => { const b = document.querySelector('#fiche .no-plus'); return b ? { n: b.textContent, cache: b.parentElement.querySelector('.no-reste').hidden, onglets: [...document.querySelectorAll('#fiche [data-no-vue]')].map(x => x.textContent).join('|'), papier: $('no-csv').classList.contains('papier') && $('no-xlsx').classList.contains('cuivre') } : null; });
   if (NO0) { await page.click('#fiche .no-plus'); await attendre(250); }
   const NO1 = NO0 ? await ev(() => { const b = document.querySelector('#fiche .no-plus'); return { n: b.textContent, vu: !b.parentElement.querySelector('.no-reste').hidden, ouvert: b.getAttribute('aria-expanded') }; }) : null;
   if (NO0) { await page.click('#fiche .no-plus'); await attendre(250); }
   const NO2 = NO0 ? await ev(() => { const b = document.querySelector('#fiche .no-plus'); return { n: b.textContent, cache: b.parentElement.querySelector('.no-reste').hidden }; }) : null;
-  ok('la nomenclature : « +N » déplie ses repères en place (« moins » les replie) ; « Le suivi » au trait, à côté d’« Exporter CSV »', !!NO0 && NO0.cache && /^\+\d+$/.test(NO0.n) && NO0.suivi === 'no-csv' && NO0.papier && NO1.vu && NO1.n === 'moins' && NO1.ouvert === 'true' && NO2.cache && NO2.n === NO0.n, JSON.stringify({ NO0, NO1, NO2 }));
+  ok('la LPA : « +N » déplie ses repères en place (« moins » les replie) ; deux onglets, Pièces et Suivi ; le CSV au trait, l’Excel plein', !!NO0 && NO0.cache && /^\+\d+$/.test(NO0.n) && NO0.onglets === 'Pièces|Suivi' && NO0.papier && NO1.vu && NO1.n === 'moins' && NO1.ouvert === 'true' && NO2.cache && NO2.n === NO0.n, JSON.stringify({ NO0, NO1, NO2 }));
   await ev(() => fermerFiche(true)); await attendre(300);
 
   /* ---- 6. le schéma Visio ---- */
