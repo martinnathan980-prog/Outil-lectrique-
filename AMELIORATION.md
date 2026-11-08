@@ -84,6 +84,21 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
 - 8 novembre 2026, passe 1 : le connecteur **d'accouplement** (côté harness) se **commande** ; les **obturateurs**
   comptés dans la LPA ; deux câbles sur une borne : **toujours une barrette** ; un folio presque vide : **un dessin plus
   grand** sur la feuille (à faire).
+- 8 novembre 2026, passe 1 : les disjoncteurs se jugent à **125 °C** (gardé) ; **une seule ambiante** pour tout le plan
+  (gardée) ; dans une prise, **la lettre répond toujours à la même lettre** (G face à G : VOLTA signale tout écart) ; un
+  connecteur fourni : **l'arrangement se lit dans sa référence**, sinon « déduit des bornes, à vérifier ».
+
+## La mesure de la lecture des documents (passe 1, documents inventés, `node tests/lecture-documents.js`)
+
+| Document | Justes | Quand VOLTA dit « sûr », il a raison |
+|---|---|---|
+| A, schéma PDF vectoriel (8 folios) | 65 / 104 (63 %) | 69 % |
+| C, le même en Visio | 71 / 104 (68 %) | 71 % |
+| D, dossier de 300 pages | 1 701 / 3 752 (45 %) | 69 % |
+| B et E, scans | 0 (pas d'OCR) | — |
+
+Les causes, dans l'ordre : les barrettes (module + lettre), les renvois entre folios, des symboles lus comme des fils, les
+boîtes en tirets, les masses en râteau, les cartouches en anglais, les tableaux et les phrases, les scans.
 
 ## Journal des passes
 
