@@ -102,10 +102,10 @@ const pct = x => (100 * x).toFixed(1).replace('.', ',') + ' %';
     return { n: doc.numPages, w: Math.round(vp.width), h: Math.round(vp.height), garde: net(await txt(1)), hypotheses: net(await txt(2)), folio, fin: net(await txt(doc.numPages)), toast: net($('toast').textContent) }; }, brut.toString('base64'));
   const polices = [...new Set((latin.match(/\/BaseFont \/[\w-]+/g) || []).map(x => x.slice(11)))].sort().join(',');
   ok('Excel → PDF : ⋮ › Exporter › « Le dossier en PDF » écrit un vrai PDF — la page de garde, un A3 paysage par folio avec son cartouche, la nomenclature à la fin',
-    /-dossier\.pdf$/.test(telD.suggestedFilename()) && latin.startsWith('%PDF-') && Dd.n >= 8 && Dd.w === 1191 && Dd.h === 842 && /FOLIO/.test(Dd.folio) && /3 \/ 6/.test(Dd.folio) && /Nomenclature|Modifications de l’installation/.test(Dd.fin) && /dossier est enregistré/.test(Dd.toast),   // (v74 : les écritures de Volta, en dernière page)
+    /-dossier\.pdf$/.test(telD.suggestedFilename()) && latin.startsWith('%PDF-') && Dd.n >= 8 && Dd.w === 1191 && Dd.h === 842 && /FOLIO/.test(Dd.folio) && /3 \/ 6/.test(Dd.folio) && /LPA —|Nomenclature|Modifications de (l’installation|votre fichier)/.test(Dd.fin) && /dossier est enregistré/.test(Dd.toast),   // (v74 : les écritures de Volta, en dernière page)
     `${telD.suggestedFilename()} · ${Dd.n} pages · ${Dd.w}×${Dd.h} pt · ${Math.round(brut.length / 1024)} Ko · folio : ${Dd.folio.replace(/\s+/g, ' ').match(/FOLIO.{0,12}/) || '?'} · fin : ${Dd.fin.slice(0, 40)} · ${Dd.toast.slice(0, 70)}`);
   ok('le texte est du vrai texte, en Helvetica et Courier (aucune police embarquée), accents compris : la garde dit le plan, ses liaisons, ce qui reste à reprendre',
-    polices === 'Courier,Courier-Bold,Helvetica,Helvetica-Bold' && !/FontFile/.test(latin) && /WinAnsiEncoding/.test(latin) && /Contrat d’exemple/.test(Dd.garde) && /DOSSIER DE CÂBLAGE/.test(Dd.garde) && /\b201\b/.test(Dd.garde) && /Ce qui reste à reprendre/.test(Dd.garde) && /300XC1/.test(Dd.folio),
+    polices === 'Courier,Courier-Bold,Helvetica,Helvetica-Bold' && !/FontFile/.test(latin) && /WinAnsiEncoding/.test(latin) && /Contrat d’exemple/.test(Dd.garde) && /DOSSIER DE CÂBLAGE/.test(Dd.garde) && new RegExp('\\b' + V.reduce((k, v) => k + v.verite.length, 0) + ' liaisons').test(Dd.garde) && /Ce qui reste à reprendre/.test(Dd.garde) && /300XC1/.test(Dd.folio),
     polices + ' · garde : ' + Dd.garde.replace(/\s+/g, ' ').slice(0, 90));
   // l'aller-retour : chaque liaison de l'exemple, sur son folio (la borne comme le folio la dessine, A1 pour un connecteur déduit)
   { const VV = new Map(), TT = new Map(); V.forEach(v => v.verite.forEach(l => { const k = v.f + '§' + cle(l.de, (v.etiq[l.de] || {})[l.borneDe] || l.borneDe, l.vers, (v.etiq[l.vers] || {})[l.borneVers] || l.borneVers); VV.set(k, (VV.get(k) || 0) + 1); }));
@@ -134,7 +134,7 @@ const pct = x => (100 * x).toFixed(1).replace('.', ',') + ' %';
   const O = await p.evaluate(() => ({ vu: !$('pdf').hidden, menu: $('menu').hidden, n: PDF.L.length, toile: $('pdf-canvas').width > 200, vig: document.querySelectorAll('#pdf-vignettes .pdf-vig').length,
     feuille: (() => { const r = $('pdf-feuille').getBoundingClientRect(), d = $('pdf-relecture').getBoundingClientRect(), g = $('pdf-vignettes').getBoundingClientRect(); return r.width > 300 && r.left >= g.right - 1 && r.right <= d.left + 1; })(),
     lignes: document.querySelectorAll('#pdf-tab tbody tr[data-i]').length, pied: [...document.querySelectorAll('#pdf-relecture .fiche-pied .btn')].map(x => x.textContent).join(' | ') }));
-  ok('le menu (Plus › « Lire un PDF de schéma… ») ouvre la visionneuse : la page sur papier entre les vignettes et la relecture, une ligne par liaison', O.vu && O.menu && O.toile && O.feuille && O.vig === 1 && O.n === banc[2].R.liaisons.length && O.lignes === O.n && /Ouvrir comme plan/.test(O.pied) && /Excel d’installation/.test(O.pied), JSON.stringify(O));
+  ok('le menu (Plus › « Lire un PDF de schéma… ») ouvre la visionneuse : la page sur papier entre les vignettes et la relecture, une ligne par liaison', O.vu && O.menu && O.toile && O.feuille && O.vig === 1 && O.n === banc[2].R.liaisons.length && O.lignes === O.n && /Ouvrir comme plan/.test(O.pied) && /retest Excel/.test(O.pied), JSON.stringify(O));
   if (IMG) await p.screenshot({ path: path.join(IMG, 'pdf-volta3.png') });
   // la molette zoome autour du pointeur, la main déplace
   const z0 = await p.evaluate(() => ({ ...PDF.vue })); const sc = await p.evaluate(() => { const r = $('pdf-feuille').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
@@ -143,9 +143,12 @@ const pct = x => (100 * x).toFixed(1).replace('.', ',') + ' %';
   ok('la molette zoome autour du pointeur, la main déplace la page', z1.s > z0.s * 1.5 && Math.abs(z2.tx - z1.tx + 120) < 2 && Math.abs(z2.ty - z1.ty + 60) < 2, `×${(z1.s / z0.s).toFixed(2)} · déplacée de ${Math.round(z2.tx - z1.tx)}, ${Math.round(z2.ty - z1.ty)}`);
   await p.keyboard.press('0'); await p.waitForTimeout(200);
   // la recherche surligne
-  await p.fill('#pdf-q', '668VT31'); await p.waitForTimeout(800);
+  // (passe 87) la barrette du folio 3 s'appelle 668VT3 (ses contacts : module + lettre, 51N…) ; son repère est écrit près de chacun de
+  // ses groupes de pastilles : autant de résultats que le folio l'écrit
+  const nVT = (V[2].svg.match(/>[^<]*668VT3[^<]*</g) || []).length;
+  await p.fill('#pdf-q', '668VT3'); await p.waitForTimeout(800);
   const S = await p.evaluate(() => ({ hits: PDF.hits.length, calque: document.querySelectorAll('#pdf-calque .pdf-hit').length, compte: $('pdf-q-n').textContent }));
-  ok('la recherche trouve « 668VT31 » et le surligne sur la page', S.hits === 4 && S.calque === 4 && /^1\s\/\s4$/.test(S.compte), JSON.stringify(S));
+  ok('la recherche trouve « 668VT3 » (la barrette, près de chacun de ses groupes de pastilles) et le surligne sur la page', nVT >= 2 && S.hits === nVT && S.calque === nVT && new RegExp('^1\\s\\/\\s' + nVT + '$').test(S.compte), JSON.stringify({ ...S, attendu: nVT }));
   await p.fill('#pdf-q', ''); await p.waitForTimeout(400);
   // une ligne de la relecture surligne sa liaison (le trajet, les deux bouts, les textes lus) et dit ses raisons
   const iL = await p.evaluate(() => PDF.L.findIndex(l => l.de === '300XC1' || l.vers === '300XC1'));
@@ -169,7 +172,7 @@ const pct = x => (100 * x).toFixed(1).replace('.', ',') + ' %';
   const X = await p.evaluate(async b64 => { const r = await lireFichier(new File([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], 'retest.xlsx'));
     const k = l => [l.de, l.borneDe, l.vers, l.borneVers, l.type || '', l.plan || ''].join('|'), a = r.liaisons.map(k).sort(), b = liaisonsDuPdf().map(l => k(liaison(l))).sort();
     return { format: r.format, n: r.liaisons.length, attendu: b.length, memes: JSON.stringify(a) === JSON.stringify(b), nom: '' }; }, fs.readFileSync(fx).toString('base64'));
-  ok('« Enregistrer en Excel d’installation » : un classeur aux seize colonnes que Volta relit comme une installation — les mêmes liaisons, borne à borne', X.format === 'retest' && X.memes && X.n === X.attendu && dl.suggestedFilename() === 'volta-3-retest.xlsx', JSON.stringify(X) + ' ' + dl.suggestedFilename());
+  ok('« Enregistrer en retest Excel » : un classeur aux seize colonnes que VOLTA relit comme un retest — les mêmes liaisons, borne à borne', X.format === 'retest' && X.memes && X.n === X.attendu && dl.suggestedFilename() === 'volta-3-retest.xlsx', JSON.stringify(X) + ' ' + dl.suggestedFilename());
   // « Ouvrir comme plan » : un plan neuf, autant de liaisons, la visionneuse se range
   const nPdf = await p.evaluate(() => liaisonsDuPdf().length);
   await p.click('#pdf-relecture [data-pdf="plan"]'); await p.waitForTimeout(800);

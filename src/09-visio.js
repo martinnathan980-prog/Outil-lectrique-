@@ -473,11 +473,13 @@ const SCHEMA_VISIO = (() => {
     /* (passe 87) Les PONTAGES d'une barrette : dans son groupe, un pointillé (une ligne en tirets) relie les pastilles d'un même groupe
        de contacts — une même plage de métal (le lecteur : « des pastilles sur un pointillé »). Les points de connexion qu'il traverse,
        de proche en proche, sont au même potentiel. */
-    infos.filter(i => !i.parent && i.groupe).forEach(G => { const R = repereDe(G); if (!R || !(/VT/i.test((lireRepere(R.repere) || {}).code || '') || VT_A_POSER.test(R.repere))) return;
+    // (un bloc écrit par VOLTA porte ses pontages en câbles collés : rien à ajouter ; une paire déjà reliée ne se double pas)
+    const dejaRelie = new Set(liaisons.map(l => [l.de + ':' + l.borneDe, l.vers + ':' + l.borneVers].sort().join('|')));
+    infos.filter(i => !i.parent && i.groupe && !i.user.get('voltaBloc')).forEach(G => { const R = repereDe(G); if (!R || !(/VT/i.test((lireRepere(R.repere) || {}).code || '') || VT_A_POSER.test(R.repere))) return;
       descendants(G).filter(x => x.style && x.style.tirets && x.chemins.length === 1 && !x.chemins[0].ferme && x.chemins[0].pts.length === 2).forEach(L => { const [a, b] = L.chemins[0].pts, y0 = Math.min(a[1], b[1]) - TOL, y1 = Math.max(a[1], b[1]) + TOL, xm = (a[0] + b[0]) / 2;
         const bornes = new Map(); [G, ...descendants(G)].forEach(x => x.points.forEach(r => { if (r.p[1] < y0 || r.p[1] > y1 || Math.abs(r.p[0] - xm) > 4 * u) return; const bo = borneDe(x, r, r.p, R).borne; if (bo && !bornes.has(bo)) bornes.set(bo, r); }));
         const tri = [...bornes].sort((x, y) => x[1].p[1] - y[1].p[1]);
-        for (let k = 1; k < tri.length; k++) { const [b1, r1] = tri[k - 1], [b2, r2] = tri[k];
+        for (let k = 1; k < tri.length; k++) { const [b1, r1] = tri[k - 1], [b2, r2] = tri[k], cle = [R.repere + ':' + b1, R.repere + ':' + b2].sort().join('|'); if (dejaRelie.has(cle)) continue; dejaRelie.add(cle);
           liaisons.push({ de: R.repere, borneDe: b1, pnDe: pnDe(R), vers: R.repere, borneVers: b2, pnVers: pnDe(R), type: '', cable: '', route: '', conf: 0.95, raisons: ['pontage : contacts ' + b1 + ' et ' + b2 + ' sur le même pointillé de ' + R.repere + ' (une même plage de métal)'],
             trajet: [[r1.p, r2.p]], bouts: [r1.p, r2.p], mots: [R.mot && (R.mot.B || boiteTexte(R.mot))].filter(Boolean), colle: false }); } }); });
     if (X.replierBarrettesAPoser) X.replierBarrettesAPoser(liaisons);

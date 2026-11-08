@@ -447,10 +447,11 @@ const SCHEMA_PDF = (() => {
     function borneDe(p, d, dans, rayon, sauf) { const cands = motsPres(p, rayon).filter(m => !m.partie && estBorne(m.s) && !(sauf && sauf.has(m)) && (!dans || dans.some(k => dedans(m.c, k, 0.05 * u))));
       // la mesure : la distance du bout à la BOÎTE du texte (un « 12 » ou un « R1 » écrit contre le fil compte comme un « 1 »),
       // plus son écart de côté (le numéro de la borne voisine est sur la ligne d'à côté)
-      let best = null, bd = Infinity;
+      // (passe 87) et l'écart avec le second : un numéro seul à cet endroit se lit sûr, deux presque aussi proches laissent un doute
+      let best = null, bd = Infinity, second = Infinity;
       for (const m of cands) { const v = [m.c[0] - p[0], m.c[1] - p[1]], lat = d ? Math.abs(v[0] * d[1] - v[1] * d[0]) : 0, s = Math.max(0, auBord(p, m.B)) + 0.35 * lat;
-        if (s < bd) { bd = s; best = m; } }
-      return best && bd < rayon ? { m: best, d: Math.max(0, auBord(p, best.B)) } : null; }
+        if (s < bd) { second = bd; bd = s; best = m; } else if (s < second) second = s; }
+      return best && bd < rayon ? { m: best, d: Math.max(0, auBord(p, best.B)), seul: second > Math.max(1.8 * bd, bd + 0.9 * u) } : null; }
     const repereLePlusProche = (p, r) => { const c = motsPres(p, r).filter(m => estRepere(m.s)).map(m => ({ m, d: auBord(p, m.B) })).sort((a, b) => a.d - b.d); return c[0] && c[0].d < r ? c[0] : null; };
     const renvoiPres = (p, d) => { const c = motsPres(p, 3 * u).filter(m => renvoiDe(m.s)).map(m => ({ m, d: auBord(p, m.B) })).filter(o => o.d < 2.2 * u).sort((a, b) => a.d - b.d); return c[0] || null; };
     /* (passe 87) Le renvoi d'un dossier de plusieurs plans (le folio recommence à 1 à chaque plan) : vers un autre plan, son numéro
@@ -503,7 +504,7 @@ const SCHEMA_PDF = (() => {
         if (!b && codeRep === 'VC' && A.length > 1) { const c = A.filter(q => q !== k).flatMap(q => q.mots || []).filter(m => !m.partie && !sauf.has(m) && /^[A-Z]{1,2}$/.test(m.s) && Math.abs(m.c[1] - p[1]) < 0.6 * u)
             .sort((x, y) => Math.abs(x.c[0] - p[0]) - Math.abs(y.c[0] - p[0]))[0];
           if (c) { b = { m: c, d: Math.max(0, auBord(p, c.B)) }; dit = 'la lettre de la même rangée, dans l’autre partie de la prise (une lettre répond à la même lettre)'; conf = 0.95; } }
-        if (!b) { b = borneDe(p, d, null, 1.6 * u, sauf); if (b && b.d < 0.6 * u) { dit = 'borne écrite au bout du trait'; conf = 0.95; } else { dit = 'borne devinée : le texte le plus proche'; conf = 0.85; } }
+        if (!b) { b = borneDe(p, d, null, 1.6 * u, sauf); if (b && (b.d < 0.6 * u || (b.seul && b.d < 1.2 * u))) { dit = b.d < 0.6 * u ? 'borne écrite au bout du trait' : 'borne écrite contre le bout du trait, la seule à cet endroit'; conf = 0.95; } else { dit = 'borne devinée : le texte le plus proche'; conf = 0.85; } }
         const lettre = b ? lettreDe(k, A) : '', borne = b ? (lettre && !b.m.s.toUpperCase().startsWith(lettre) ? lettre + b.m.s : b.m.s) : '';
         if (b) vus.push(b.m); if (rep) vus.push(rep);
         return { genre: 'cadre', repere: rep ? rep.s : '', borne, pn: rep ? pnDe(A, rep) : '', conf: (b ? conf : 0.55) * (rep ? confR : 0.3), cadre: k, A,

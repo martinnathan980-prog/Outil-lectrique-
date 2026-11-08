@@ -10374,7 +10374,7 @@ svg.vu-face text.pris{fill:#fff}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = 'e40130c44ed0';
+const VERSION_MOTEUR = 'e76597cd8328';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -19943,10 +19943,11 @@ const SCHEMA_PDF = (() => {
     function borneDe(p, d, dans, rayon, sauf) { const cands = motsPres(p, rayon).filter(m => !m.partie && estBorne(m.s) && !(sauf && sauf.has(m)) && (!dans || dans.some(k => dedans(m.c, k, 0.05 * u))));
       // la mesure : la distance du bout à la BOÎTE du texte (un « 12 » ou un « R1 » écrit contre le fil compte comme un « 1 »),
       // plus son écart de côté (le numéro de la borne voisine est sur la ligne d'à côté)
-      let best = null, bd = Infinity;
+      // (passe 87) et l'écart avec le second : un numéro seul à cet endroit se lit sûr, deux presque aussi proches laissent un doute
+      let best = null, bd = Infinity, second = Infinity;
       for (const m of cands) { const v = [m.c[0] - p[0], m.c[1] - p[1]], lat = d ? Math.abs(v[0] * d[1] - v[1] * d[0]) : 0, s = Math.max(0, auBord(p, m.B)) + 0.35 * lat;
-        if (s < bd) { bd = s; best = m; } }
-      return best && bd < rayon ? { m: best, d: Math.max(0, auBord(p, best.B)) } : null; }
+        if (s < bd) { second = bd; bd = s; best = m; } else if (s < second) second = s; }
+      return best && bd < rayon ? { m: best, d: Math.max(0, auBord(p, best.B)), seul: second > Math.max(1.8 * bd, bd + 0.9 * u) } : null; }
     const repereLePlusProche = (p, r) => { const c = motsPres(p, r).filter(m => estRepere(m.s)).map(m => ({ m, d: auBord(p, m.B) })).sort((a, b) => a.d - b.d); return c[0] && c[0].d < r ? c[0] : null; };
     const renvoiPres = (p, d) => { const c = motsPres(p, 3 * u).filter(m => renvoiDe(m.s)).map(m => ({ m, d: auBord(p, m.B) })).filter(o => o.d < 2.2 * u).sort((a, b) => a.d - b.d); return c[0] || null; };
     /* (passe 87) Le renvoi d'un dossier de plusieurs plans (le folio recommence à 1 à chaque plan) : vers un autre plan, son numéro
@@ -19999,7 +20000,7 @@ const SCHEMA_PDF = (() => {
         if (!b && codeRep === 'VC' && A.length > 1) { const c = A.filter(q => q !== k).flatMap(q => q.mots || []).filter(m => !m.partie && !sauf.has(m) && /^[A-Z]{1,2}$/.test(m.s) && Math.abs(m.c[1] - p[1]) < 0.6 * u)
             .sort((x, y) => Math.abs(x.c[0] - p[0]) - Math.abs(y.c[0] - p[0]))[0];
           if (c) { b = { m: c, d: Math.max(0, auBord(p, c.B)) }; dit = 'la lettre de la même rangée, dans l’autre partie de la prise (une lettre répond à la même lettre)'; conf = 0.95; } }
-        if (!b) { b = borneDe(p, d, null, 1.6 * u, sauf); if (b && b.d < 0.6 * u) { dit = 'borne écrite au bout du trait'; conf = 0.95; } else { dit = 'borne devinée : le texte le plus proche'; conf = 0.85; } }
+        if (!b) { b = borneDe(p, d, null, 1.6 * u, sauf); if (b && (b.d < 0.6 * u || (b.seul && b.d < 1.2 * u))) { dit = b.d < 0.6 * u ? 'borne écrite au bout du trait' : 'borne écrite contre le bout du trait, la seule à cet endroit'; conf = 0.95; } else { dit = 'borne devinée : le texte le plus proche'; conf = 0.85; } }
         const lettre = b ? lettreDe(k, A) : '', borne = b ? (lettre && !b.m.s.toUpperCase().startsWith(lettre) ? lettre + b.m.s : b.m.s) : '';
         if (b) vus.push(b.m); if (rep) vus.push(rep);
         return { genre: 'cadre', repere: rep ? rep.s : '', borne, pn: rep ? pnDe(A, rep) : '', conf: (b ? conf : 0.55) * (rep ? confR : 0.3), cadre: k, A,
@@ -21756,11 +21757,13 @@ const SCHEMA_VISIO = (() => {
     /* (passe 87) Les PONTAGES d'une barrette : dans son groupe, un pointillé (une ligne en tirets) relie les pastilles d'un même groupe
        de contacts — une même plage de métal (le lecteur : « des pastilles sur un pointillé »). Les points de connexion qu'il traverse,
        de proche en proche, sont au même potentiel. */
-    infos.filter(i => !i.parent && i.groupe).forEach(G => { const R = repereDe(G); if (!R || !(/VT/i.test((lireRepere(R.repere) || {}).code || '') || VT_A_POSER.test(R.repere))) return;
+    // (un bloc écrit par VOLTA porte ses pontages en câbles collés : rien à ajouter ; une paire déjà reliée ne se double pas)
+    const dejaRelie = new Set(liaisons.map(l => [l.de + ':' + l.borneDe, l.vers + ':' + l.borneVers].sort().join('|')));
+    infos.filter(i => !i.parent && i.groupe && !i.user.get('voltaBloc')).forEach(G => { const R = repereDe(G); if (!R || !(/VT/i.test((lireRepere(R.repere) || {}).code || '') || VT_A_POSER.test(R.repere))) return;
       descendants(G).filter(x => x.style && x.style.tirets && x.chemins.length === 1 && !x.chemins[0].ferme && x.chemins[0].pts.length === 2).forEach(L => { const [a, b] = L.chemins[0].pts, y0 = Math.min(a[1], b[1]) - TOL, y1 = Math.max(a[1], b[1]) + TOL, xm = (a[0] + b[0]) / 2;
         const bornes = new Map(); [G, ...descendants(G)].forEach(x => x.points.forEach(r => { if (r.p[1] < y0 || r.p[1] > y1 || Math.abs(r.p[0] - xm) > 4 * u) return; const bo = borneDe(x, r, r.p, R).borne; if (bo && !bornes.has(bo)) bornes.set(bo, r); }));
         const tri = [...bornes].sort((x, y) => x[1].p[1] - y[1].p[1]);
-        for (let k = 1; k < tri.length; k++) { const [b1, r1] = tri[k - 1], [b2, r2] = tri[k];
+        for (let k = 1; k < tri.length; k++) { const [b1, r1] = tri[k - 1], [b2, r2] = tri[k], cle = [R.repere + ':' + b1, R.repere + ':' + b2].sort().join('|'); if (dejaRelie.has(cle)) continue; dejaRelie.add(cle);
           liaisons.push({ de: R.repere, borneDe: b1, pnDe: pnDe(R), vers: R.repere, borneVers: b2, pnVers: pnDe(R), type: '', cable: '', route: '', conf: 0.95, raisons: ['pontage : contacts ' + b1 + ' et ' + b2 + ' sur le même pointillé de ' + R.repere + ' (une même plage de métal)'],
             trajet: [[r1.p, r2.p]], bouts: [r1.p, r2.p], mots: [R.mot && (R.mot.B || boiteTexte(R.mot))].filter(Boolean), colle: false }); } }); });
     if (X.replierBarrettesAPoser) X.replierBarrettesAPoser(liaisons);
@@ -28183,7 +28186,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
       Qc && Qc.nomme && !Qc.main ? { sorte: 'fichier', titre: 'L’arrangement' + deC, valeur: M ? ident(M.reference) : 'aucun', etat: Qc.verdicts.some(v => v.genre === 'fichier') ? 'att' : '', source: 'fichier', motSource: 'votre référence',
         pourquoi: Qc.verdicts.some(v => v.genre === 'fichier') ? 'Votre référence le nomme, mais il n’a pas toutes vos bornes : à vérifier dans votre fichier.' : 'Votre référence le nomme : il se change dans votre fichier.' }
       : Qc ? { sorte: 'choix', titre: 'L’arrangement' + deC, valeur: M ? ident(M.reference) : 'aucun ne loge', etat: M ? (Qc.main && Qc.verdicts.some(v => v.niveau === 'ko') ? 'ko' : '') : 'ko', source: Qc.main ? 'main' : Qc.deduit ? 'hypothese' : 'calcul', motSource: Qc.deduit ? 'déduit, à vérifier' : '',
-        pourquoi: Qc.main ? 'Choisi ici, à la main.' : M ? `Déduit des bornes, à vérifier : votre référence ne le dit pas ; le plus petit qui loge ${c.bornes.length > 1 ? 'ces ' + c.bornes.length + ' bornes' : 'cette borne'}.` : 'Aucun ne loge ces bornes : les problèmes disent pourquoi.',
+        pourquoi: Qc.main ? 'Choisi ici, à la main.' : M ? `Votre référence ne le dit pas : le plus petit qui loge ${c.bornes.length > 1 ? 'ces ' + c.bornes.length + ' bornes' : 'cette borne'}.` : 'Aucun ne loge ces bornes : les problèmes disent pourquoi.',
         manuel: !!Qc.main, auto: 'arr:' + nom + '|' + c.nom, vers: regArr, motAuto: 'L’arrangement' + deC + ' revient à ' + (c.pn && moduleDeConnecteur(app.norme, c.pn) ? 'celui de votre référence' : 'celui que VOLTA déduit des bornes') + (Qc.main && autoArr ? ' : ' + autoArr : '') + '.' } : null,
       c && M ? { sorte: 'choix', titre: 'Ses contacts à sertir', valeur: refsCt.length ? refsCt.slice(0, 2).map(r => ident(r)).join(' · ') + (refsCt.length > 2 ? ' …' : '') : esc(pluriel(filsC.length, 'contact')), source: ksMain.length ? 'main' : 'tables',
         pourquoi: ksMain.length ? `${majuscule(pluriel(ksMain.length, 'borne'))} choisie${ksMain.length > 1 ? 's' : ''} ici ; les autres, la table.` : 'Un par câble, lu dans la table de la norme.',
@@ -28249,7 +28252,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
     c.pn ? { html: `Référence <b class="id">${esc(c.pn)}</b>.`, source: 'fichier', mot: 'votre fichier', bulle: colsC ? 'Colonne ' + colsC + ' de votre fichier' : '' } : { html: 'Votre fichier ne donne pas de référence pour ce connecteur.', source: 'fichier', etat: 'att' },
     nomF ? { html: `Norme <b>${esc(nomF)}</b> : la référence la désigne.`, source: 'norme' } : null,
     // (passe 87, le lecteur) un connecteur fourni : l'arrangement est lu dans sa référence, sinon déduit des bornes — à vérifier
-    M ? (v => ({ html: `Arrangement <b class="id">${esc(M.reference)}</b> : ${esc(Q.main ? 'choisi ici, à la main' : Q.nomme ? 'votre référence le nomme' + (v ? ', mais il n’a pas ' + (v.manque.length > 1 ? 'les contacts ' + listeEt(v.manque) : 'de contact ' + v.manque[0]) : '') : 'déduit des bornes, à vérifier — votre référence ne le dit pas ; le plus petit qui loge ' + (c.bornes.length > 1 ? 'ces ' + pluriel(c.bornes.length, 'borne') + ' avec leurs gauges' : 'cette borne avec sa gauge'))}.`,
+    M ? (v => ({ html: `Arrangement <b class="id">${esc(M.reference)}</b> : ${esc(Q.main ? 'choisi ici, à la main' : Q.nomme ? 'votre référence le nomme' + (v ? ', mais il n’a pas ' + (v.manque.length > 1 ? 'les contacts ' + listeEt(v.manque) : 'de contact ' + v.manque[0]) : '') : 'déduit des bornes, votre référence ne le dit pas — le plus petit qui ' + (c.bornes.length > 1 ? 'loge ces ' + pluriel(c.bornes.length, 'borne') + ' avec leurs gauges' : 'loge cette borne avec sa gauge'))}.`,
       source: Q.main ? 'main' : Q.nomme ? 'fichier' : 'hypothese', mot: Q.main ? '' : Q.nomme ? 'votre référence' : 'à vérifier', etat: v ? 'att' : '' }))(!Q.main && Q.verdicts.find(x => x.genre === 'fichier' && x.manque))
       : Q ? { html: `Aucun arrangement ${esc(nomF)} ne loge ${esc([...new Set(fautifsC.map(x => x.borne))].join(', ') || 'ces bornes')}${fautifsC[0] ? ` : <b class="id">${esc(fautifsC[0].f.type || '?')}</b> ${esc(fautifsC[0].mot)}${fautifsC[0].contact ? ' pour un contact taille ' + esc(fautifsC[0].contact.taille) : ''}` : ''}.${fautifsC[0] && fautifsC[0].propose ? ` En <b class="id">${esc(fautifsC[0].propose.type)}</b>, il s’y loge et porte encore son courant.` : ''}`, source: 'calcul', etat: 'ko' } : null,
     refsCt.length ? { html: `Contacts à sertir : <b class="id">${esc(refsCt.join(', '))}</b>, lus dans la table des contacts (taille, sexe, gauge).`, source: 'tables' } : null];
@@ -35573,10 +35576,11 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     // (v78, le lecteur : « équipement et borne, mal présentés ; l'intensité, la chute : juste un rapport ») : une nomenclature —
     // le câble, où il va et sur quelle borne, la charge et la chute en anneaux (la part de l'admis), la longueur
     const type = `<span class="nv-cab-id">${r.puce || ''}<b class="id nv-cab-type">${esc(r.type || 'sans type')}</b></span>`;
-    // (v87, S3) le courant et la chute d'une ligne sont pris au même instant (08-recap, `instantsDuFil`) : quand c'est la pointe, le
-    // mot le dit sous le courant, comme le récapitulatif — la chute à côté est celle de cet instant
-    const enPointe = !!(r.charge.pointe && r.charge.i != null), motPointe = enPointe ? ', en pointe' : '';
-    const iH = `<span class="nv-mes${anI ? '' : ' seul'}"${enPointe ? ` data-bulle="${escA('En pointe : le courant et la chute de la ligne sont pris au même instant, le plus dur pour ce câble.')}"` : ''}>${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A${motPointe}</small>` : r.charge.i != null && r.charge.r == null ? `<small class="nv-mes-inc" data-bulle="${escA(r.type ? r.type + ' n’est pas dans l’EN 2853 : ce qu’il admet ne se lit pas' : 'Votre fichier ne donne pas son type : ce qu’il admet ne se lit pas')}">admis inconnu</small>` : ''}</span></span>`;
+    // (v87, S3) le courant et la chute d'une ligne sont pris au même instant (08-recap, `instantsDuFil`) : quand c'est la pointe, la
+    // bulle du courant le dit — la cellule n'a pas la place d'un mot de plus à 1440 (« sur 6,9 A, en poin… ») ; la chute à côté est
+    // celle de cet instant
+    const enPointe = !!(r.charge.pointe && r.charge.i != null);
+    const iH = `<span class="nv-mes${anI ? '' : ' seul'}"${enPointe ? ` data-bulle="${escA('En pointe : le courant et la chute de la ligne sont pris au même instant, le plus dur pour ce câble.')}"` : ''}>${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : r.charge.i != null && r.charge.r == null ? `<small class="nv-mes-inc" data-bulle="${escA(r.type ? r.type + ' n’est pas dans l’EN 2853 : ce qu’il admet ne se lit pas' : 'Votre fichier ne donne pas son type : ce qu’il admet ne se lit pas')}">admis inconnu</small>` : ''}</span></span>`;
     const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
     // (v85) sans chemin de disjoncteur, la chute du câble seul — contre la chute admise de toute la ligne : la bulle le dit
     const uH = `<span class="nv-mes${anU ? '' : ' seul'}"${r.chute.seul && r.chute.u != null && r.chute.max != null ? ` data-bulle="${escA('Sur ce câble seul : ' + volts(r.chute.u) + ', ' + Math.round(r.chute.u / r.chute.max * 100) + ' % des ' + volts(r.chute.max) + ' que la ligne entière peut perdre — aucun disjoncteur en amont n’en donne le chemin')}"` : ''}>${anneauOuPlace(ru, anU)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : esc(r.chute.mot || '—')}</b>${r.chute.max != null && r.chute.u != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;

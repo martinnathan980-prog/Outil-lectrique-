@@ -4,11 +4,11 @@
        NODE_PATH=/opt/node22/lib/node_modules node tests/visio.js [--images=dossier]
 
    Le BANC D'ESSAI, hors ligne (un contexte sans réseau) :
-     · L'ALLER-RETOUR : l'exemple embarqué (6 folios, 209 liaisons) part en
+     · L'ALLER-RETOUR : l'exemple embarqué (6 folios, toutes ses liaisons) part en
        .vsdx par le menu (⋮ › Exporter › « Les folios en Visio »), le paquet est
        contrôlé (ses parties, ses types, ses relations ; chaque partie Visio
        contre le schéma de MS-VSDX, si xmllint est là ; lu par libvisio, si ses
-       outils sont là), puis Volta le relit : les mêmes 209 liaisons, borne à
+       outils sont là), puis Volta le relit : les mêmes liaisons, borne à
        borne, avec leur câble, leur type et leur folio ;
      · QUATRE AUTRES MAINS (tests/visio/fabrique.js), « comme Visio les écrit » :
        des maîtres et leurs groupes, des colles indexées, des connecteurs posés
@@ -71,6 +71,8 @@ const a = c => spawnSync('sh', ['-c', 'command -v ' + c]).status === 0;
 
   // ---- 2. L'ALLER-RETOUR : les six folios de l'exemple en .vsdx, par le menu, puis relus
   await p.evaluate(() => atelier.exemple()); await p.waitForTimeout(500);
+  // (passe 87) le nombre de liaisons de l'exemple, tel qu'il est aujourd'hui (il était de 209 ; les barrettes ajoutées l'ont changé)
+  const NEX = await p.evaluate(() => contratExemple().length);
   await p.click('#btnMenu'); await p.click('#menu [data-sous="exporter"]');
   const t0 = Date.now(), [dl] = await Promise.all([p.waitForEvent('download', { timeout: 900000 }), p.click('#menu [data-act="vsdx"]')]);
   const fx = path.join(TMP, 'exemple.vsdx'); await dl.saveAs(fx); const tEcrit = Date.now() - t0, octets = fs.readFileSync(fx);
@@ -81,8 +83,9 @@ const a = c => spawnSync('sh', ['-c', 'command -v ' + c]).status === 0;
     && pages.length === 6 && pages.every(n => ct.includes(`PartName="/${n}" ContentType="application/vnd.ms-visio.page+xml"`) && prels.includes(`Target="${n.slice(12)}"`))
     && /visio\/2010\/relationships\/document" Target="visio\/document.xml"/.test(rels) && /relationships\/pages" Target="pages\/pages.xml"/.test(drels) && ct.includes('application/vnd.ms-visio.drawing.main+xml');
   ok('« Les folios en Visio » : un paquet OPC complet — les types de chaque partie, les relations du paquet au document, du document aux pages, une page par folio', paquetOk && dl.suggestedFilename() === 'Contrat-d-exemple.vsdx', `${noms.length} parties · ${pages.length} pages · ${Math.round(octets.length / 1024)} Ko · écrit en ${Math.round(tEcrit / 1000)} s · ${dl.suggestedFilename()}`);
-  const p3 = texte('visio/pages/page3.xml'), nConn = (p3.match(/<Connect /g) || []).length, nGlu = (p3.match(/F="PAR\(PNT\(Sheet\.\d+!Connections\.\w+\.X/g) || []).length;
-  ok('chaque câble est un connecteur collé aux deux bornes (un Connect et une formule à chaque bout), chaque bloc un groupe et ses bornes en points de connexion nommés', nConn === 2 * 66 && nGlu === 4 * 66 && /<Row N="B\d+" T="Connection">/.test(p3) && /N="Prompt" V="B5" U="STR"/.test(p3) && /Type="Group"/.test(p3), `folio 3 : ${nConn} Connects, ${nGlu} formules de colle`);
+  // (passe 87) autant de câbles que le folio 3 en dessine aujourd'hui (chacun marqué « voltaCable ») : deux Connects et quatre formules chacun
+  const p3 = texte('visio/pages/page3.xml'), nConn = (p3.match(/<Connect /g) || []).length, nGlu = (p3.match(/F="PAR\(PNT\(Sheet\.\d+!Connections\.\w+\.X/g) || []).length, nCab = (p3.match(/<Row N="voltaCable"/g) || []).length;
+  ok('chaque câble est un connecteur collé aux deux bornes (un Connect et une formule à chaque bout), chaque bloc un groupe et ses bornes en points de connexion nommés', nCab > 0 && nConn === 2 * nCab && nGlu === 4 * nCab && /<Row N="B\d+" T="Connection">/.test(p3) && /N="Prompt" V="B5" U="STR"/.test(p3) && /Type="Group"/.test(p3), `folio 3 : ${nConn} Connects, ${nGlu} formules de colle`);
   // le schéma de MS-VSDX (annexe A), si xmllint est là : chaque partie Visio s'y conforme
   if (a('xmllint')) { const dir = path.join(TMP, 'xsd'); const fautes = [];
     noms.filter(n => /^visio\/.*\.xml$/.test(n)).forEach(n => { const f = path.join(dir, n); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, texte(n).replace(/ xml:space="preserve"/, ''));
@@ -91,11 +94,11 @@ const a = c => spawnSync('sh', ['-c', 'command -v ' + c]).status === 0;
   else console.log('  —    xmllint absent : le schéma de MS-VSDX n’est pas vérifié');
   if (a('vsd2text')) { const r = spawnSync('vsd2text', [fx], { encoding: 'utf8' }); ok('libvisio (le lecteur Visio de LibreOffice) ouvre le fichier et en lit les textes', r.status === 0 && /300XC1/.test(r.stdout) && /W-012 DR20/.test(r.stdout), (r.stdout || '').split('\n').length + ' lignes de texte'); }
   else console.log('  —    libvisio absent : la lecture par un autre logiciel n’est pas vérifiée');
-  // relu par Volta : les mêmes 209 liaisons, borne à borne, câble, type et folio compris
+  // relu par Volta : les mêmes liaisons, borne à borne, câble, type et folio compris
   const RR = await lire(octets, 'exemple.vsdx'), V0 = await p.evaluate(() => contratExemple().map(l => ({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, cable: l.cable, type: l.type, plan: l.plan })));
   const CR = comparer(V0, RR.liaisons, l => cle(l.de, l.borneDe, l.vers, l.borneVers) + ' #' + l.plan + ' ' + l.cable + ' ' + l.type);
   console.log(`       aller-retour  6 folios  vérité ${CR.v}  relues ${CR.t}  justes ${CR.j}` + (CR.manque.length ? '\n         manquent : ' + CR.manque.slice(0, 8).join(' ; ') : '') + (CR.trop.length ? '\n         en trop : ' + CR.trop.slice(0, 8).join(' ; ') : ''));
-  ok('l’aller-retour : l’exemple (6 folios, 209 liaisons) → .vsdx → relu = les mêmes 209 liaisons, borne à borne, câble, type et folio', CR.j === 209 && CR.t === 209 && RR.liaisons.every(l => l.colle && l.conf >= 0.99), `${CR.j}/${CR.v} · ${RR.liaisons.filter(l => l.colle).length} collées`);
+  ok('l’aller-retour : l’exemple (6 folios, ' + NEX + ' liaisons) → .vsdx → relu = les mêmes liaisons, borne à borne, câble, type et folio', CR.j === NEX && CR.t === NEX && RR.liaisons.every(l => l.colle && l.conf >= 0.99), `${CR.j}/${CR.v} · ${RR.liaisons.filter(l => l.colle).length} collées`);
 
   // ---- 3. LA RELECTURE, à la vraie souris
   await p.click('#btnMenu'); await p.click('#menu [data-sous="plus"]');
@@ -104,7 +107,7 @@ const a = c => spawnSync('sh', ['-c', 'command -v ' + c]).status === 0;
   const O = await p.evaluate(() => ({ vu: !$('visio').hidden, menu: $('menu').hidden, n: VISIO.L.length, vig: document.querySelectorAll('#visio-vignettes .pdf-vig').length, svg: !!document.querySelector('#visio-dessin svg path'),
     feuille: (() => { const r = $('visio-feuille').getBoundingClientRect(), d = $('visio-relecture').getBoundingClientRect(), g = $('visio-vignettes').getBoundingClientRect(); return r.width > 300 && r.left >= g.right - 1 && r.right <= d.left + 1; })(),
     lignes: document.querySelectorAll('#visio-tab tbody tr[data-i]').length, pied: [...document.querySelectorAll('#visio-relecture .fiche-pied .btn')].map(x => x.textContent).join(' | '), cart: ($('visio-relecture').querySelector('.pdf-cart') || {}).textContent || '' }));
-  ok('Plus › « Lire un schéma Visio… » : la page rendue sur papier entre les vignettes et la relecture, une ligne par liaison, le cartouche lu', O.vu && O.menu && O.svg && O.feuille && O.vig === 6 && O.n === 209 && O.lignes === 209 && /Ouvrir comme plan/.test(O.pied) && /Excel d’installation/.test(O.pied) && /folio 1 \/ 6/.test(O.cart), JSON.stringify(O).slice(0, 220));
+  ok('Plus › « Lire un schéma Visio… » : la page rendue sur papier entre les vignettes et la relecture, une ligne par liaison, le cartouche lu', O.vu && O.menu && O.svg && O.feuille && O.vig === 6 && O.n === NEX && O.lignes === NEX && /Ouvrir comme plan/.test(O.pied) && /retest Excel/.test(O.pied) && /folio 1 \/ 6/.test(O.cart), JSON.stringify(O).slice(0, 220));
   if (IMG) await p.screenshot({ path: path.join(IMG, 'visio-exemple.png') });
   const sc = await p.evaluate(() => { const r = $('visio-feuille').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }), z0 = await p.evaluate(() => ({ ...VISIO.vue }));
   await p.mouse.move(sc.x, sc.y); await p.mouse.wheel(0, -400); await p.waitForTimeout(300); const z1 = await p.evaluate(() => ({ ...VISIO.vue }));
@@ -137,10 +140,10 @@ const a = c => spawnSync('sh', ['-c', 'command -v ' + c]).status === 0;
   const X = await p.evaluate(async b64 => { const r = await lireFichier(new File([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], 'retest.xlsx'));
     const k = l => [l.de, l.borneDe, l.vers, l.borneVers, l.type || '', l.cable || '', l.plan || ''].join('|'), a = r.liaisons.map(k).sort(), b = liaisonsDuVisio().map(l => k(liaison(l))).sort();
     return { format: r.format, n: r.liaisons.length, attendu: b.length, memes: JSON.stringify(a) === JSON.stringify(b) }; }, fs.readFileSync(fxl).toString('base64'));
-  ok('« Enregistrer en Excel d’installation » : un classeur aux seize colonnes que Volta relit comme une installation — les mêmes liaisons', X.format === 'retest' && X.memes && X.n === 209 && dx.suggestedFilename() === 'exemple-retest.xlsx', JSON.stringify(X) + ' ' + dx.suggestedFilename());
+  ok('« Enregistrer en retest Excel » : un classeur aux seize colonnes que VOLTA relit comme un retest — les mêmes liaisons', X.format === 'retest' && X.memes && X.n === NEX && dx.suggestedFilename() === 'exemple-retest.xlsx', JSON.stringify(X) + ' ' + dx.suggestedFilename());
   await p.click('#visio-relecture [data-visio="plan"]'); await p.waitForTimeout(1200);
   const P = await p.evaluate(() => ({ n: verite().length, nom: app.nom, cache: $('visio').hidden, folios: plans().join(), bib: bibliothequeOuverte() }));
-  ok('« Ouvrir comme plan » : un plan neuf, ses six folios, toutes les liaisons relues ; la relecture se range', P.n === 209 && P.cache && P.folios === '1,2,3,4,5,6' && !P.bib && P.nom === 'exemple', JSON.stringify(P));
+  ok('« Ouvrir comme plan » : un plan neuf, ses six folios, toutes les liaisons relues ; la relecture se range', P.n === NEX && P.cache && P.folios === '1,2,3,4,5,6' && !P.bib && P.nom === 'exemple', JSON.stringify(P));
   if (IMG) await p.screenshot({ path: path.join(IMG, 'visio-plan.png') });
   // un style d'une autre main : ses renvois sur deux pages ; Échap ferme
   await p.evaluate(async b64 => { await ouvrirFichier(new File([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], 'gabarit.vsdx')); }, zip(S[0].fichiers).toString('base64'));
@@ -152,7 +155,7 @@ const a = c => spawnSync('sh', ['-c', 'command -v ' + c]).status === 0;
   if (IMG) for (const t of ['light', 'dark']) { await p.evaluate(t => { document.documentElement.dataset.theme = t; }, t); await p.waitForTimeout(200); await p.screenshot({ path: path.join(IMG, 'visio-gabarit-' + t + '.png') }); }
   await p.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
   await p.keyboard.press('Escape'); await p.waitForTimeout(250);
-  ok('Échap ferme la relecture ; le plan reste', await p.evaluate(() => $('visio').hidden && !VISIO.ouvert && verite().length === 209));
+  ok('Échap ferme la relecture ; le plan reste', await p.evaluate(n => $('visio').hidden && !VISIO.ouvert && verite().length === n, NEX));
   // un .vsdx glissé sur la bibliothèque : la relecture, pas un plan raté
   await p.evaluate(() => montrerBibliotheque('racine')); await p.waitForTimeout(300); const nA = await p.evaluate(() => BIB.ajouts.length);
   await p.evaluate(async b64 => { const dt = new DataTransfer(); dt.items.add(new File([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], 'glisse.vsdx'));
