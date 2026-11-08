@@ -43,7 +43,9 @@ s'écrit ici, le jour même.
 - **Les câbles n'ont plus de numéro** (les W-xxx sont faits plus tard, dans un autre logiciel). Un câble se dit par son
   type (DR12) et ses deux bouts. La donnée du fichier reste intacte à l'export.
 - **Les connecteurs des équipements sont fournis par le fournisseur.** Nous choisissons : barrettes, prises de coupure,
-  relais, raccords, tyraps, contacts à sertir.
+  relais, raccords, tyraps, contacts à sertir — et **nous commandons le connecteur d'accouplement**, côté harness (celui
+  qui s'accouple au connecteur de l'équipement : la LPA le commande, comme les obturateurs des alvéoles vides).
+- **Deux câbles sur une même borne d'équipement : toujours une barrette** (8 novembre 2026).
 - Un fichier peut donner un **calibre** ; VOLTA peut le contester s'il le justifie (« actuel : celui de votre fichier »).
 - **Le courant d'un câble** (v84, revu le 8 novembre 2026) : celui de ce qu'il alimente en aval quand la consommation est
   écrite ; **sinon il est inconnu** — VOLTA demande la consommation (« Écrire la consommation de 104LP1 ») et n'invente ni

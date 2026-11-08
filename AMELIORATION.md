@@ -78,6 +78,12 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
   branche sans consommation écrite a un courant **inconnu**, la **protection toujours jugée** ; « à régler », c'est **ce
   qui a un geste**, partout ; la protection selon **la plus sévère** de l'AC 43.13-1B (table 11-3) et de l'EN 2853
   déclassée, dite.
+- 8 novembre 2026, passe 1 (les planches du regard neuf) : P1, **une ligne par câble** dans les problèmes d'une fiche (ses
+  raisons en puces, un geste, un « Tout régler » chiffré) ; P2, le fil entre un bloc et sa carte en **pointillé discret** ;
+  P3, les groupes d'une barrette en **teintes froides** ; P5, le titre d'une fiche de câble **avec ses deux bouts**.
+- 8 novembre 2026, passe 1 : le connecteur **d'accouplement** (côté harness) se **commande** ; les **obturateurs**
+  comptés dans la LPA ; deux câbles sur une borne : **toujours une barrette** ; un folio presque vide : **un dessin plus
+  grand** sur la feuille (à faire).
 
 ## Journal des passes
 
