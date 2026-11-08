@@ -362,8 +362,8 @@ const SCHEMA_VISIO = (() => {
         if (lab) { const t = lab.texte.split('\n')[0].trim(); return { borne: t, comment: t === r.prompt ? 'borne : le nom du point de connexion, écrit à côté' : 'borne écrite à côté du point de connexion (son nom était « ' + (r.prompt || r.nom) + ' »)', conf: 1, mot: lab }; }
         // un bloc de VOLTA : le nom exact de la borne est dans « Prompt » (vide : une masse, une borne sans numéro)
         if (top.user.get('voltaBloc') || S.user.get('voltaBloc')) return { borne: r.prompt, comment: r.prompt ? 'borne : le nom du point de connexion' : 'point de connexion sans numéro de borne', conf: 1 };
-        if (r.prompt) return { borne: r.prompt, comment: 'borne : le nom du point de connexion', conf: 1 };
-        if (r.nom && !/^(Row|Connections?|Pt|Point|Conn|Cp)_?\d*$/i.test(r.nom)) return { borne: r.nom, comment: 'borne : le nom du point de connexion', conf: 0.99 }; }
+        if (r.prompt) return completer({ borne: r.prompt, comment: 'borne : le nom du point de connexion', conf: 1 }, S, r, R);
+        if (r.nom && !/^(Row|Connections?|Pt|Point|Conn|Cp)_?\d*$/i.test(r.nom)) return completer({ borne: r.nom, comment: 'borne : le nom du point de connexion', conf: 0.99 }, S, r, R); }
       const q = r ? r.p : p, top = (R && R.i && (R.i.racine || R.i)) || S.racine || S, rayon = Math.max(2.8 * u, 10);
       const c = GT.chercher(q[0] - rayon, q[1] - rayon, q[0] + rayon, q[1] + rayon).filter(t => { const s = t.texte; if (!s || s.length > 6 || /\s/.test(s) || (R && s === R.repere) || estRepere(s) || estType(s) || RE_FIL.test(s)) return false;
           return (estBorneTxt(s) || /^[A-Z0-9][A-Z0-9\-+]{0,4}$/i.test(s)) && (t.racine === top || libre(t)); })
@@ -376,6 +376,19 @@ const SCHEMA_VISIO = (() => {
       if (R && (typeof estMasse === 'function' && estMasse(R.repere))) return { borne: '', comment: 'masse : pas de numéro de borne', conf: 0.98 };
       if (n <= 1) return { borne: '', comment: 'un seul point de connexion : pas de numéro de borne', conf: 0.95 };
       return { borne: '', comment: 'aucun numéro de borne près du point', conf: 0.6 }; }
+    /* (passe 87) Un point de connexion qui ne dit qu'une partie du nom de sa borne — comme sur un PDF : la LETTRE d'un contact de
+       barrette (le numéro du module est écrit au-dessus de sa colonne : 51A, la convention de VOLTA, 667VT2:51B), le NUMÉRO d'une
+       broche de connecteur (la lettre du connecteur est écrite au-dessus de sa pièce : A20). Les textes et les pièces du groupe le
+       disent ; sinon la borne reste telle que le point la nomme. */
+    const descendants = g => { const out = []; const voir = x => x.enfants.forEach(y => { out.push(y); voir(y); }); voir(g); return out; };
+    function completer(b, S, r, R) { const top = (R && R.i && (R.i.racine || R.i)) || S.racine || S, D = descendants(top), q = r.p;
+      if (/^[A-Z]{1,2}$/.test(b.borne) && R && (/VT/i.test((lireRepere(R.repere) || {}).code || '') || VT_A_POSER.test(R.repere))) {
+        const n = D.filter(t => t.bloc && /^\d{1,3}$/.test(t.texte) && t.bloc.c[1] < q[1] - 0.2 * u && q[1] - t.bloc.c[1] < 60 * u && Math.abs(t.bloc.c[0] - q[0]) < 4 * u).sort((x, y) => (q[1] - x.bloc.c[1]) - (q[1] - y.bloc.c[1]))[0];
+        if (n) return { ...b, borne: n.texte + b.borne, comment: 'contact ' + b.borne + ' du module ' + n.texte + ' (écrit au-dessus de sa colonne)', conf: Math.min(b.conf, 0.97), module: n }; }
+      if (/^\d{1,3}$/.test(b.borne)) { const piece = D.find(x => !x.texte && x.chemins.some(c => c.ferme && c.pts.length >= 4 && c.pts.length <= 6) && Math.abs(auBord(q, x.boite)) < TOL && (x.boite.x1 - x.boite.x0) < (top.boite.x1 - top.boite.x0) * 0.6);
+        const l = piece && D.filter(t => t.bloc && /^[A-Z]{1,2}$/.test(t.texte) && t.bloc.c[1] < piece.boite.y0 + 0.1 * u && piece.boite.y0 - t.bloc.c[1] < 2 * u && t.bloc.c[0] > piece.boite.x0 - 0.3 * u && t.bloc.c[0] < piece.boite.x1 + 0.3 * u)[0];
+        if (l) return { ...b, borne: l.texte + b.borne, comment: b.comment + ' ; la lettre du connecteur, ' + l.texte + ', écrite au-dessus de sa pièce', conf: Math.min(b.conf, 0.97) }; }
+      return b; }
     // un TERMINAL : une borne d'équipement
     function terminal(S, r, p, comment, conf) { const R = repereDe(S), b = borneDe(S, r, p, R), mots = [R && R.mot, b.mot].filter(Boolean).map(t => t.B || boiteTexte(t)).filter(Boolean);
       return { genre: 'borne', repere: R ? R.repere : '', borne: b.borne, pn: pnDe(R), conf: conf * (R ? R.conf : 0.3) * b.conf, p: r ? r.p : p, forme: S, point: r,
@@ -447,15 +460,26 @@ const SCHEMA_VISIO = (() => {
       for (const q of paires) { if (U3.f(q.i) === U3.f(q.j)) continue; U3.u(q.i, q.j); const x = B[q.i], y = B[q.j];
         const chemin = []; let n = y.n; while (n !== x.n) { const e = T[q.i].prec.get(n); if (!e) break; chemin.push(e); n = e.ra === n ? e.rb : e.ra; }
         const trajet = chemin.flatMap(morceau), ws = [...new Set(chemin.map(e => e.w))];
-        if (x.genre === 'renvoi' || y.genre === 'renvoi') { renvoisPage.push({ x, y, trajet }); continue; }
-        if (x.repere === y.repere && x.borne === y.borne && x.n === y.n) continue;
         const cable = (ws.find(w => w.info.cable) || { info: {} }).info.cable || '', type = (ws.find(w => w.info.type) || { info: {} }).info.type || '', route = (ws.find(w => w.info.route) || { info: {} }).info.route || '';
+        // une moitié de câble finie par un renvoi : son numéro et son type passent à la liaison recousue (`assembler`)
+        if (x.genre === 'renvoi' || y.genre === 'renvoi') { renvoisPage.push({ x, y, trajet, cable, type, route }); continue; }
+        if (x.repere === y.repere && x.borne === y.borne && x.n === y.n) continue;
         const enT = chemin.some(e => e.t), colle = ws.length === 1 && x.raisons[0].startsWith('câble collé') && y.raisons[0].startsWith('câble collé');
         const conf = Math.min(x.conf, y.conf) * (multi ? 0.97 : 1) * (enT ? 0.95 : 1);
         const [g, d] = (x.p[0] < y.p[0] - 0.5 * u || (Math.abs(x.p[0] - y.p[0]) <= 0.5 * u && x.p[1] <= y.p[1])) ? [x, y] : [y, x];
         liaisons.push({ de: g.repere, borneDe: g.borne, pnDe: g.pn || '', vers: d.repere, borneVers: d.borne, pnVers: d.pn || '', type, cable, route, conf: Math.round(conf * 100) / 100,
           raisons: [colle ? 'câble collé aux deux bouts' : multi ? 'réseau à ' + B.length + ' bouts : relié de proche en proche' : 'câble suivi de bout en bout', ...(enT ? ['jonction en T sur un autre câble'] : []), ...(cable || type ? ['câble ' + [cable, type].filter(Boolean).join(' · ')] : []), ...g.raisons.map(r => 'de : ' + r), ...d.raisons.map(r => 'vers : ' + r)],
           trajet, bouts: [g.p, d.p], mots: [...g.mots, ...d.mots, ...ws.filter(w => w.i.bloc).map(w => boiteTexte(w.i))], colle }); } });
+    /* (passe 87) Les PONTAGES d'une barrette : dans son groupe, un pointillé (une ligne en tirets) relie les pastilles d'un même groupe
+       de contacts — une même plage de métal (le lecteur : « des pastilles sur un pointillé »). Les points de connexion qu'il traverse,
+       de proche en proche, sont au même potentiel. */
+    infos.filter(i => !i.parent && i.groupe).forEach(G => { const R = repereDe(G); if (!R || !(/VT/i.test((lireRepere(R.repere) || {}).code || '') || VT_A_POSER.test(R.repere))) return;
+      descendants(G).filter(x => x.style && x.style.tirets && x.chemins.length === 1 && !x.chemins[0].ferme && x.chemins[0].pts.length === 2).forEach(L => { const [a, b] = L.chemins[0].pts, y0 = Math.min(a[1], b[1]) - TOL, y1 = Math.max(a[1], b[1]) + TOL, xm = (a[0] + b[0]) / 2;
+        const bornes = new Map(); [G, ...descendants(G)].forEach(x => x.points.forEach(r => { if (r.p[1] < y0 || r.p[1] > y1 || Math.abs(r.p[0] - xm) > 4 * u) return; const bo = borneDe(x, r, r.p, R).borne; if (bo && !bornes.has(bo)) bornes.set(bo, r); }));
+        const tri = [...bornes].sort((x, y) => x[1].p[1] - y[1].p[1]);
+        for (let k = 1; k < tri.length; k++) { const [b1, r1] = tri[k - 1], [b2, r2] = tri[k];
+          liaisons.push({ de: R.repere, borneDe: b1, pnDe: pnDe(R), vers: R.repere, borneVers: b2, pnVers: pnDe(R), type: '', cable: '', route: '', conf: 0.95, raisons: ['pontage : contacts ' + b1 + ' et ' + b2 + ' sur le même pointillé de ' + R.repere + ' (une même plage de métal)'],
+            trajet: [[r1.p, r2.p]], bouts: [r1.p, r2.p], mots: [R.mot && (R.mot.B || boiteTexte(R.mot))].filter(Boolean), colle: false }); } }); });
     if (X.replierBarrettesAPoser) X.replierBarrettesAPoser(liaisons);
     // les bornes que rien ne prend : un point de connexion d'un équipement nommé sans câble (seulement s'il porte un nom)
     const pris = new Set(); noeuds.forEach(N => { if (N.bout && N.bout.point) pris.add(N.bout.point); });
@@ -502,15 +526,22 @@ const SCHEMA_VISIO = (() => {
     const R = []; lues.forEach((r, i) => r.renvois.forEach(q => { const [rv, autre] = q.x.genre === 'renvoi' ? [q.x, q.y] : [q.y, q.x]; if (autre.genre === 'renvoi') return; R.push({ i, o: rv.renvoi, bout: autre, q, p: rv.p, cle: cleRenvoi(rv.renvoi) }); }));
     const pageDe = s => { if (!s) return -1; const t = String(s).split('/')[0].trim().toLowerCase(); return lues.findIndex(r => r.nom.toLowerCase() === t || String(r.folio) === t || String(r.plan).toLowerCase() === t); };
     const vise = a => { for (const L of a.o.liens) { const j = pageDe(L.sous); if (j >= 0) return j; } const t = a.o.texte; const rv = E().renvoiDe ? E().renvoiDe(t) : null; if (rv) { const j = lues.findIndex(r => r.folio === String(rv.folio)); if (j >= 0) return j; } return pageDe(t); };
+    // (passe 87) ce que Visio écrit du vis-à-vis : son identifiant (OPCDShapeID) est l'identifiant (OPCShapeID) de l'autre ; et la zone
+    // écrite (« F3/B2 ») est celle où l'autre se trouve
+    const opcVers = o => (o.user.get('OPCDShapeID') || '').replace(/[{}]/g, ''), zoneEcrite = a => { const rv = E().renvoiDe ? E().renvoiDe(a.o.texte || '') : null; return rv && rv.zone ? rv.zone.toUpperCase() : ''; };
+    const zoneIci = (i, p) => E().zoneDe ? E().zoneDe(lues[i], p) : '';
+    const repond = (a, x) => (a.cle && opcVers(x.o) === a.cle) || (x.cle && opcVers(a.o) === x.cle);
+    const zonesOk = (a, x) => { const za = zoneEcrite(a), zx = zoneEcrite(x); return (za ? zoneIci(x.i, x.p) === za : true) && (zx ? zoneIci(a.i, a.p) === zx : true) && !!(za || zx); };
     const fait = new Set();
     R.sort((a, b) => a.i - b.i || a.p[1] - b.p[1] || a.p[0] - b.p[0]).forEach(a => { if (fait.has(a)) return;
       const c = R.filter(b => !fait.has(b) && b !== a && b.i !== a.i);
       // d'abord ce que Visio écrit du vis-à-vis (ses données OPC), puis la page que chacun vise, puis le même texte (un nom de signal)
-      const ja = vise(a), b = c.find(x => a.cle && x.cle === a.cle && (ja < 0 || x.i === ja)) || c.find(x => ja >= 0 && x.i === ja && (vise(x) === a.i || vise(x) < 0) && (!a.o.texte || !x.o.texte || x.o.texte === a.o.texte || vise(x) === a.i))
+      const ja = vise(a), b = c.find(x => repond(a, x)) || c.find(x => a.cle && x.cle === a.cle && (ja < 0 || x.i === ja))
+        || c.find(x => ja >= 0 && x.i === ja && vise(x) === a.i && zonesOk(a, x)) || c.find(x => ja >= 0 && x.i === ja && (vise(x) === a.i || vise(x) < 0) && (!a.o.texte || !x.o.texte || x.o.texte === a.o.texte || vise(x) === a.i))
         || c.find(x => a.o.texte && x.o.texte === a.o.texte && (ja < 0 || x.i === ja)) || null;
       if (!b) return; fait.add(a); fait.add(b);
       const [g, d] = [a.bout, b.bout]; if (g.repere === d.repere && g.borne === d.borne) return;
-      tout.push({ de: g.repere, borneDe: g.borne, pnDe: g.pn || '', vers: d.repere, borneVers: d.borne, pnVers: d.pn || '', type: '', cable: '', conf: Math.round(Math.min(g.conf, d.conf) * 0.95 * 100) / 100,
+      tout.push({ de: g.repere, borneDe: g.borne, pnDe: g.pn || '', vers: d.repere, borneVers: d.borne, pnVers: d.pn || '', type: a.q.type || b.q.type || '', cable: a.q.cable || b.q.cable || '', route: a.q.route || b.q.route || '', conf: Math.round(Math.min(g.conf, d.conf) * 0.95 * 100) / 100,
         raisons: ['renvoi : page ' + lues[a.i].nom + ' → page ' + lues[b.i].nom + (a.o.texte ? ' (' + a.o.texte.replace(/\s+/g, ' ') + ')' : ''), ...g.raisons.map(r => 'de : ' + r), ...d.raisons.map(r => 'vers : ' + r)],
         trajet: a.q.trajet, bouts: [g.p, a.p], mots: g.mots, page: a.i, pageVers: b.i, trajetVers: b.q.trajet, boutsVers: [b.p, d.p], folio: lues[a.i].folio, plan: lues[a.i].plan, fwd: lues[a.i].plan, harness }); });
     return { pages: lues, liaisons: tout, scannees: 0, numero: distincts.size === 1 ? [...distincts][0] : '', indice, harness, titre, nPages: lues.length }; }

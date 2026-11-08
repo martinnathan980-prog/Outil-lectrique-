@@ -4,11 +4,11 @@
      l'ambre, le rouge ou le vert (l'état), jamais le fuchsia. Huit teintes (08-fiche, `couleurDe` et `consG` : le neuvième
      groupe reprend la première), dans un ordre où deux groupes qui se suivent — voisins sur la face, l'un sous l'autre dans
      « Ce qu'elle relie » — ne se ressemblent jamais : PÉTROLE, VIOLET, ACIER, PRUNE, ARDOISE, MARINE, IRIS, AUBERGINE.
-     Le jour, chacune porte une lettre blanche (5:1 au moins) ; la nuit, plus claire, une lettre sombre (5:1 au moins).
-     Mesurées en OKLab (×100) : deux voisines s'écartent de 11 à 21 le jour, de 10 à 20 la nuit ; les quatre premières, celles
-     de presque toutes les barrettes, s'écartent de 8 au moins des trois premières routes (bleu, sarcelle, encre indigo),
-     celles d'un contrat ordinaire. Plus de huit couleurs froides ne se distinguent pas à coup sûr ; au-delà, le numéro du
-     groupe et sa plage sur la face prennent le relais.
+     Le jour, chacune porte une lettre blanche (4,6:1 au moins) ; la nuit, plus claire, une lettre sombre (5,1:1 au moins).
+     Mesurées en OKLab (×100) : deux voisines s'écartent de 12 à 19 le jour, de 11 à 21 la nuit (deux quelconques, de 7 au
+     moins) ; les quatre premières, celles de presque toutes les barrettes, restent à 7 au moins des trois premières routes
+     (bleu, sarcelle, encre indigo), celles d'un contrat ordinaire. Plus de huit couleurs froides ne se distinguent pas à coup
+     sûr, ni des routes toutes : au-delà, le numéro du groupe et sa plage sur la face prennent le relais.
      Elles servent partout où les groupes se voient : la face des modules (les plages, les contacts pris), « Ce qu'elle
      relie », la vignette de la carte ; le plan ne teinte pas les groupes.
    · P2 LE FIL ENTRE UN BLOC ET SA CARTE : un pointillé discret, fin, sans lueur — un guide qui ne se lit plus comme un câble
@@ -22,14 +22,14 @@
 
 /* ─── P3 · LES HUIT TEINTES DES GROUPES ─── */
 #inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet{
-  --vu-g1:#0b697b; --vu-g2:#63459f; --vu-g3:#2d74aa; --vu-g4:#795578;
-  --vu-g5:#607085; --vu-g6:#154470; --vu-g7:#6264b5; --vu-g8:#51365b }
+  --vu-g1:#09697b; --vu-g2:#63459f; --vu-g3:#2d74aa; --vu-g4:#764870;
+  --vu-g5:#687686; --vu-g6:#154470; --vu-g7:#6264b5; --vu-g8:#51365b }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
-  --vu-g1:#71e1f4; --vu-g2:#b799ff; --vu-g3:#6fafde; --vu-g4:#be9abe;
-  --vu-g5:#bcc4d5; --vu-g6:#6f96bf; --vu-g7:#aab1f7; --vu-g8:#a484b2 } }
+  --vu-g1:#78cdda; --vu-g2:#b799ff; --vu-g3:#67a6e6; --vu-g4:#be9abe;
+  --vu-g5:#c3cee2; --vu-g6:#6b92bf; --vu-g7:#b3b6fd; --vu-g8:#a484b3 } }
 :root[data-theme="dark"] :is(#inspecteur,.carte-double,#base,#fiche,#raccourcis,#carnet){
-  --vu-g1:#71e1f4; --vu-g2:#b799ff; --vu-g3:#6fafde; --vu-g4:#be9abe;
-  --vu-g5:#bcc4d5; --vu-g6:#6f96bf; --vu-g7:#aab1f7; --vu-g8:#a484b2 }
+  --vu-g1:#78cdda; --vu-g2:#b799ff; --vu-g3:#67a6e6; --vu-g4:#be9abe;
+  --vu-g5:#c3cee2; --vu-g6:#6b92bf; --vu-g7:#b3b6fd; --vu-g8:#a484b3 }
 /* la légende de la barrette : ses contacts pris portent la teinte de leur groupe — la légende dit la FORME (plein : pris ;
    vide : libre), à l'encre ; la face d'un connecteur garde son cuivre (style-z-phrases) */
 .vu-bloc-barrette .vu-legende i.pris{background:var(--t-1);box-shadow:none}

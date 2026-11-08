@@ -275,10 +275,10 @@ const pose = V1.map(l => X.liaison({ ...l, de: l.de === 'VT1' ? '102VT9' : l.de,
 ok('posée au contrat sous 102VT9, elle garde ses lettres (102VT9:51H) et le câble créé sa marque : une barrette en modules, que VOLTA vérifie sans rien changer',
   cree && bout(cree) === '102CB1:2→102VT9:51H' && !X.estRaccordAPoser(cree) && X.bornesLettrees(X.besoinsDeBarrette('102VT9', pose))
   && (Q => Q.fils.map(x => x.borne + '=' + x.contact.lettre).sort().join() === '51H=H,51J=J,51K=K' && !Q.verdicts.length)(X.remplirModules(X.besoinsDeBarrette('102VT9', pose), NE, '')));
-// les prises de l'exemple : leurs bornes sont les lettres de leur face — (passe 87) 412VC3B prend G et H, les lettres de
-// 411VC3A qui lui font face, et laisse F libre
-ok('les prises de l’exemple s’écrivent comme leur face : 408VC1A A ; 409VC2A A, B, C ; 410VC2B A, B ; 411VC3A A…H ; 412VC3B A…E, G, H — chaque borne sur sa lettre, rien à redire',
-  [['408VC1A', 'A'], ['409VC2A', 'ABC'], ['410VC2B', 'AB'], ['411VC3A', 'ABCDEFGH'], ['412VC3B', 'ABCDEGH']].every(([r, ls]) => { const c = X.coupureEnModule(r, L, NE);
+// les prises de l'exemple : leurs bornes sont les lettres de leur face — (passe 87) 412VC3B garde A…G, ses câbles vers 411VC3A
+// sur les lettres qui leur font face
+ok('les prises de l’exemple s’écrivent comme leur face : 408VC1A A ; 409VC2A A, B, C ; 410VC2B A, B ; 411VC3A A…H ; 412VC3B A…G — chaque borne sur sa lettre, rien à redire',
+  [['408VC1A', 'A'], ['409VC2A', 'ABC'], ['410VC2B', 'AB'], ['411VC3A', 'ABCDEFGH'], ['412VC3B', 'ABCDEFG']].every(([r, ls]) => { const c = X.coupureEnModule(r, L, NE);
     return X.besoinsDeBarrette(r, L).bornes.slice().sort().join('') === ls && c.plan.fils.every(x => x.contact.lettre === x.borne) && !c.plan.verdicts.length; }));
 
 console.log('\n15. (passe 87) LA PRISE : LA LETTRE DE LA PARTIE MOBILE RÉPOND À LA MÊME LETTRE DE LA PARTIE FIXE');
@@ -286,14 +286,15 @@ console.log('\n15. (passe 87) LA PRISE : LA LETTRE DE LA PARTIE MOBILE RÉPOND �
    de fin) : une liaison de l'une à l'autre garde sa lettre ; un écart se dit, à voir, une fois — sur la partie mobile, celle
    d'où partent les liaisons vers l'autre —, avec son câble. Et un contact ne reçoit qu'un câble de chaque partie. */
 const face = L.filter(l => [l.de, l.vers].sort().join() === '411VC3A,412VC3B');
-ok('l’exemple, corrigé : les six liaisons de 411VC3A à 412VC3B gardent leur lettre (A, B, C, D, G, H) — aucun écart, sur aucune des deux parties',
+ok('l’exemple, corrigé : les six liaisons de 411VC3A à 412VC3B gardent leur lettre (A, B, C, D, E, G) — aucun écart, sur aucune des deux parties',
   X.partieDePrise('411VC3A').prise === 'VC3' && X.partieDePrise('412VC3B').partie === 'B' && !X.partieDePrise('667VT2') && !X.partieDePrise('408VC1')
-  && face.length === 6 && face.every(l => l.borneDe === l.borneVers) && face.map(l => l.borneDe).sort().join('') === 'ABCDGH'
+  && face.length === 6 && face.every(l => l.borneDe === l.borneVers) && face.map(l => l.borneDe).sort().join('') === 'ABCDEG'
   && !X.faceDesParties('411VC3A', L).length && !X.faceDesParties('412VC3B', L).length && ['411VC3A', '412VC3B'].every(r => !X.coupureEnModule(r, L, NE).plan.verdicts.length),
   face.map(l => l.de + ':' + l.borneDe + '→' + l.vers + ':' + l.borneVers).join(' '));
 // l'exemple d'avant la passe 87 : W-521 croisait G → E, W-524 F → H (et le câble de 540VL5 passait par 412VC3B:G)
-const avant87 = { 'W-521': ['borneVers', 'E'], 'W-522': ['borneDe', 'E'], 'W-523': ['borneVers', 'F'], 'W-524': ['borneDe', 'F'], 'W-526': ['borneVers', 'G'], 'W-527': ['borneDe', 'G'] };
-const LV = L.map(l => avant87[l.cable] ? X.liaison({ ...l, [avant87[l.cable][0]]: avant87[l.cable][1] }) : l);
+const avant87 = { 'W-513': { borneVers: 'E' }, 'W-514': { borneDe: 'E' }, 'W-521': { borneVers: 'E' }, 'W-522': { borneDe: 'E' }, 'W-523': { borneVers: 'F' }, 'W-524': { borneDe: 'F', borneVers: 'H' }, 'W-525': { borneDe: 'H' },
+  'W-526': { borneVers: 'G' }, 'W-527': { borneDe: 'G' } };
+const LV = L.map(l => avant87[l.cable] ? X.liaison({ ...l, ...avant87[l.cable] }) : l);
 const F3A = X.coupureEnModule('411VC3A', LV, NE).plan.verdicts.filter(v => v.face), F3B = X.coupureEnModule('412VC3B', LV, NE).plan.verdicts.filter(v => v.face);
 ok('l’exemple d’avant : deux écarts, à voir, dits sur la partie mobile seule (411VC3A, d’où partent cinq des six liaisons) — « 411VC3A:G (partie mobile) va sur 412VC3B:E (partie fixe) : la lettre G devrait répondre à G », et H face à F, chacun avec son câble',
   F3A.length === 2 && !F3B.length && X.faceDesParties('412VC3B', LV).length === 2 && F3A.every(v => v.niveau === 'attention' && v.genre === 'contact' && v.porteur === '411VC3A' && v.cables.length === 1)
@@ -302,11 +303,11 @@ ok('l’exemple d’avant : deux écarts, à voir, dits sur la partie mobile seu
 // un câble qui arrive, un câble qui repart : la traversée d'une prise, un câble de chaque partie — rien à dire (412VC3B:G d'avant) ;
 // deux câbles sur un même contact d'une même partie : dit, la partie nommée, les câbles nommés
 const P5 = { plan: '5', pnDe: 'ABS0864-08', pnVers: 'EN3646A61208FN' };
-const deuxM = [...L, X.liaison({ ...P5, de: '540VL5', borneDe: '6', vers: '412VC3B', borneVers: 'E', cable: 'W-599', type: 'DR22' })], DM = X.coupureEnModule('412VC3B', deuxM, NE).plan.verdicts.filter(v => /^contact E : /.test(v.texte));
-const deuxF = [...L, X.liaison({ ...P5, de: '412VC3B', borneDe: 'E', vers: '540VL5', borneVers: '6', cable: 'W-599', type: 'DR22', pnDe: 'EN3646A61208FN', pnVers: 'ABS0864-08' })], DF = X.coupureEnModule('412VC3B', deuxF, NE).plan.verdicts.filter(v => /^contact E : /.test(v.texte));
-ok('deux câbles sur un même contact d’une partie : « contact E : 2 câbles côté partie mobile (DR22 vers 540VL5:4, DR22 vers 540VL5:6) — un contact ne reçoit qu’un câble de chaque partie », de même côté partie fixe ; une traversée (un câble de chaque partie) ne dit rien',
-  DM.length === 1 && DM[0].niveau === 'attention' && DM[0].texte === 'contact E : 2 câbles côté partie mobile (DR22 vers 540VL5:4, DR22 vers 540VL5:6) — un contact ne reçoit qu’un câble de chaque partie'
-  && DF.length === 1 && /^contact E : 2 câbles côté partie fixe \(DR22 vers 560HT1:1, DR22 vers 540VL5:6\)/.test(DF[0].texte)
+const deuxM = [...L, X.liaison({ ...P5, de: '540VL5', borneDe: '6', vers: '412VC3B', borneVers: 'F', cable: 'W-599', type: 'DR22' })], DM = X.coupureEnModule('412VC3B', deuxM, NE).plan.verdicts.filter(v => /^contact F : /.test(v.texte));
+const deuxF = [...L, X.liaison({ ...P5, de: '412VC3B', borneDe: 'F', vers: '540VL5', borneVers: '6', cable: 'W-599', type: 'DR22', pnDe: 'EN3646A61208FN', pnVers: 'ABS0864-08' })], DF = X.coupureEnModule('412VC3B', deuxF, NE).plan.verdicts.filter(v => /^contact F : /.test(v.texte));
+ok('deux câbles sur un même contact d’une partie : « contact F : 2 câbles côté partie mobile (DR22 vers 540VL5:4, DR22 vers 540VL5:6) — un contact ne reçoit qu’un câble de chaque partie », de même côté partie fixe ; une traversée (un câble de chaque partie) ne dit rien',
+  DM.length === 1 && DM[0].niveau === 'attention' && DM[0].texte === 'contact F : 2 câbles côté partie mobile (DR22 vers 540VL5:4, DR22 vers 540VL5:6) — un contact ne reçoit qu’un câble de chaque partie'
+  && DF.length === 1 && /^contact F : 2 câbles côté partie fixe \(DR22 vers 560HT1:1, DR22 vers 540VL5:6\)/.test(DF[0].texte)
   && !X.coupureEnModule('412VC3B', LV, NE).plan.verdicts.some(v => /câbles côté/.test(v.texte)) && !X.coupureEnModule('412VC3B', L, NE).plan.verdicts.some(v => /câbles côté/.test(v.texte)), [DM[0] && DM[0].texte, DF[0] && DF[0].texte].join(' | '));
 // deux prises différentes (VC2 et VC3) : une liaison de l'une à l'autre change de lettre librement ; les parties de VC2, sans liaison entre elles : rien
 const LX = [...L, X.liaison({ de: '409VC2A', borneDe: 'C', vers: '411VC3A', borneVers: 'E', cable: 'W-598', type: 'DR22', plan: '3' })];
