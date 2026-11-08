@@ -239,7 +239,8 @@ console.log('\n9. LA TRAVERSÉE : CE QUI CONDUIT, CE QUI CONSOMME');
   const K = ev('cheminsDepuis(K, "1CB1")');
   ok('un contact supposé fermé ne fait pas un court-circuit : l’interrupteur 7SW1, relié à la masse par sa borne 3, ne mène pas à la masse ; un chemin qui revient sur son disjoncteur (W-k2) est une boucle : il ne compte pas — reste la lampe 8LP1', K.length >= 1 && K.every(c => c.bout[0] === '8LP1'), K.map(c => c.bout[0]).join());
   bac.R = [li('1CB1', '2', '5RL1', 'A1', 'W-r1', 'DR20'), li('5RL1', 'A2', '6LP1', '1', 'W-r2', 'DR20'), li('1CB1', '3', '8CT1', 'A1', 'W-r3', 'DR20'), li('8CT1', 'A2', '7LP2', '1', 'W-r4', 'DR20'), li('1CB1', '4', '9SW1', '1', 'W-r5', 'DR20'), li('9SW1', '2', '8LP3', '1', 'W-r6', 'DR20')];
-  const CR = ev('chutesDepuis(app.norme, R, "1CB1", 5, { chuteDisjoncteur: false }, [], null, () => null)'), u = b => CR.find(c => c.bout[0] === b);
+  // (v87) chaque lampe écrite à 5 A : sans consommation, aucune chute ne se calculerait (le lecteur, Q1)
+  const CR = ev('chutesDepuis(app.norme, R, "1CB1", 5, { chuteDisjoncteur: false }, [], null, r => /LP/.test(r) ? { perm: { i: 5 } } : null)'), u = b => CR.find(c => c.bout[0] === b);
   ok('la chute d’un composant traversé : le relais 0,2 V, le contacteur 0,12 V (l’Excel du lecteur, « Du max ») — de mêmes câbles, à 5 A : les trois chemins ne diffèrent que de là ; l’interrupteur n’est dans aucune table : pas compté, et dit', pres(u('6LP1').dU - u('8LP3').dU, 0.2, 1e-9) && pres(u('7LP2').dU - u('8LP3').dU, 0.12, 1e-9) && u('8LP3').inconnus.length === 1 && !u('6LP1').inconnus.length, [u('6LP1').dU, u('7LP2').dU, u('8LP3').dU].map(x => x.toFixed(3)).join(' / ')); }
 
 console.log('\n10. LE CIRCUIT D’UN DISJONCTEUR, TEL QUE LE PLAN L’ÉCLAIRE');
@@ -262,5 +263,66 @@ console.log('\n11. L’INDEX DES CHEMINS, GARDÉ D’UN APPEL À L’AUTRE, SE R
   ok('les mêmes liaisons : le même résultat d’un appel à l’autre (5LP1 et 7LP1, par le contact de 6RL1)', a === b && a === '5LP1:1 7LP1:1', a);
   ok('une liaison ajoutée, une autre renommée sur place, une retirée, une remplacée : chaque fois le chemin suit, comme sur un contrat neuf', c === '5LP1:1 7LP1:1 8LP1:1' && d === '5LP1:1 7LP9:1 8LP1:1' && e === '7LP9:1 8LP1:1' && f === '6LP4:1 8LP1:1' && f === neuf(), [c, d, e, f].join(' | ')); }
 
+console.log('\n12. LE CÂBLE DE MASSE PORTE LE COURANT DE SA CHARGE (S1)');
+{ /* le folio 1 à la main : le retour de la lampe 104LP1 (W-016, DR22 vers 901G), celui de la bobine de 103RL1 (W-017, DR24 depuis
+     X2), celui de la batterie 101BT1 (W-018, DR16 depuis sa borne 2) ; et au folio 3, celui de 391LP1 (W-355). Avant, les trois
+     du folio 1 étaient à « 2 A supposés » (aucun disjoncteur en amont) */
+  ev('CONSOS = new Map()'); const R0 = ev('retoursDepuis(contratExemple(), "102CB1")'), r0 = c => { const e = [...R0].find(([l]) => l.cable === c); return e ? e[1] : null; };
+  ok('les retours de 102CB1 : W-016 ferme 104LP1, W-017 la bobine de 103RL1 (depuis X2, sa borne de bobine), W-355 la lampe 391LP1 ; W-018 est le retour de la source 101BT1 — quatre câbles, aucun autre (pas W-360 : le calculateur 300XC1 n’est qu’une entrée)', R0.size === 4 && r0('W-016').retour === 'charge' && r0('W-016').de.join() === '104LP1' && r0('W-017').de.join() === '103RL1' && r0('W-355').de.join() === '391LP1' && r0('W-018').retour === 'source' && r0('W-018').de.join() === '101BT1' && !r0('W-360'), [...R0].map(([l, R]) => l.cable + ':' + R.retour).join(' '));
+  ok('sans consommation écrite, le retour a le même courant que son aller — inconnu : W-016 comme W-013 (ce qui manque : 104LP1), W-017 comme W-014 (de commande : la bobine de 103RL1)', r0('W-016').inconnu && !r0('W-016').commande && r0('W-016').manque.join() === '104LP1' && r0('W-017').inconnu && r0('W-017').commande && r0('W-017').sans.map(x => x.repere + '/' + x.nature).join() === '103RL1/bobine');
+  ev('CONSOS = new Map([["104LP1", { perm: { i: 4.9 }, dem: { i: 9.2, t: 125 } }], ["103RL1", { perm: { i: 0.15 } }], ["391LP1", { perm: { i: 0.05 } }]])');
+  const R1 = ev('retoursDepuis(contratExemple(), "102CB1")'), r1 = c => [...R1].find(([l]) => l.cable === c)[1], B1 = ev('branchesDepuis(contratExemple(), "102CB1")'), b1 = c => [...B1].find(([l]) => l.cable === c)[1];
+  ok('consommations écrites : le retour porte exactement son aller — W-016 = W-013 (4,9 A, 9,2 A pendant 125 s), W-017 = W-014 (0,15 A), W-355 = W-380 (0,05 A)', r1('W-016').ecrite && r1('W-016').perm === b1('W-013').perm && r1('W-016').pointe === b1('W-013').pointe && r1('W-016').points[0].t === 125 && pres(r1('W-017').perm, b1('W-014').perm) && pres(r1('W-355').perm, b1('W-380').perm), `W-016 ${r1('W-016').perm} / ${r1('W-016').pointe} A · W-017 ${r1('W-017').perm} A · W-355 ${r1('W-355').perm} A`);
+  // la fiche (08-fiche, `intensiteCalculee`) : le retour lu comme la page le lit (la carte des alimentations : `brancher`)
+  ev('ALIMS = new Map(); CHUTES_DJ = new Map(); brancher(contratExemple(), "102CB1", chargesExemple().get("102CB1"), 10)');
+  const fx = c => ev('intensiteCalculee([...ALIMS.keys()].find(l => l.cable === "' + c + '"))'), x16 = fx('W-016'), x13 = fx('W-013'), x18 = fx('W-018'), x11 = fx('W-011');
+  const T22 = i => 95 + 40 * Math.pow(i / 5.1, 2), T16 = i => 95 + 40 * Math.pow(i / 11.7, 2);
+  ok('la fiche de W-016 (DR22, le retour de 104LP1) : 4,9 A sur 5,1 A admis en continu, et 9,2 A pendant 2,1 min — plus que les 5,1 A : le même problème que son aller W-013 (avant : « 2 A supposés »)', x16.retour && x16.retour.quoi === 'charge' && x16.retour.de.join() === '104LP1' && x16.source === 'branche' && x16.I === x13.I && x16.I === 4.9 && pres(x16.continu, 5.1) && x16.trop.length === 1 && x16.trop[0].i === 9.2 && x13.trop.length === 1, `${x16.I} A sur ${x16.continu.toFixed(2)} A · pointe ${x16.trop[0].i} A`);
+  ok('la fiche de W-018 (DR16, le retour de la batterie) : les 5 A et 9,31 A pendant 2,1 min de 102CB1 — le même courant que son aller W-011 — sur 11,7 A admis : il les porte ; côté source, pas sous la protection de 102CB1', x18.retour && x18.retour.quoi === 'source' && x18.al.amont && x18.I === 5 && x18.I === x11.I && x18.pointe.i === 9.31 && pres(x18.continu, 11.7) && !x18.trop.length, `${x18.I} A, ${x18.pointe.i} A en pointe, sur ${x18.continu.toFixed(1)} A`);
+  const d18 = ev('chuteDuFil([...ALIMS.keys()].find(l => l.cable === "W-018"))'), u18 = 0.0145 * kT(T16(5)) * 5 * 5;
+  ok('sa chute, sur lui seul (le retour ne fait pas partie de la chute en ligne de l’aller) : 14,5 mΩ/m × 1,323 (102,3 °C) × 5 m × 5 A = 0,480 V', !d18.total && pres(d18.dU, u18) && pres(T16(5), 102.3, 0.05), d18.dU.toFixed(4) + ' V');
+  ev('CONSOS = new Map(); ALIMS = new Map(); CHUTES_DJ = new Map(); brancher(contratExemple(), "102CB1", chargesExemple().get("102CB1"), 10)');
+  const y16 = fx('W-016'), y17 = fx('W-017'), d16 = ev('chuteDuFil([...ALIMS.keys()].find(l => l.cable === "W-016"))');
+  ok('sans consommation écrite : W-016 et W-017 ont un courant inconnu, comme leur aller — ni « 2 A supposés », ni le courant de 102CB1 — et aucune chute', y16.I === null && y16.source === 'inconnu' && y16.retour && y17.I === null && y17.source === 'commande' && d16.dU === null && motsDe(y16) === 'écrivez la consommation de 104LP1' && motsDe(y17) === 'écrivez la consommation de la bobine de 103RL1', motsDe(y16) + ' · ' + motsDe(y17));
+  // deux disjoncteurs qui ramènent leur charge par le même câble de masse (une barrette de masse) : la somme de leurs parts
+  const li = (de, bDe, vers, bVers, cable, type) => ev('liaison')({ de, borneDe: bDe, vers, borneVers: bVers, cable, type });
+  bac.G = [li('1CB1', '2', '5LP1', '1', 'W-g1', 'DR22'), li('2CB2', '2', '6LP2', '1', 'W-g2', 'DR22'), li('5LP1', '2', '70VT1', '1', 'W-g3', 'DR22'), li('6LP2', '2', '70VT1', '2', 'W-g4', 'DR22'), li('70VT1', '1', '70VT1', '2', 'W-gs', 'DR22'), li('70VT1', '1', '9G', '', 'W-g5', 'DR20')];
+  ev('CONSOS = new Map([["5LP1", { perm: { i: 2 }, dem: { i: 4, t: 3 } }], ["6LP2", { perm: { i: 1.5 } }]])');
+  const RA = ev('retoursDepuis(G, "1CB1")'), RB = ev('retoursDepuis(G, "2CB2")'), w5 = r => [...r].find(([l]) => l.cable === 'W-g5');
+  bac.PARTS = { retour: { quoi: 'charge', parts: [{ cb: '1CB1', R: w5(RA)[1] }, { cb: '2CB2', R: w5(RB)[1] }] } };
+  ev('INFOS = new Map([["1CB1", { nom: "1CB1", calibre: 5, perm: 2, pointe: null, points: [], ecrit: false, manque: [] }], ["2CB2", { nom: "2CB2", calibre: 5, perm: 1.5, pointe: null, points: [], ecrit: false, manque: [] }]])');
+  const S = ev('alimentationDuRetour(PARTS)');
+  ok('un câble de masse partagé par deux disjoncteurs (une barrette de masse) : la somme de leurs parts — 2 + 1,5 = 3,5 A, et 4 + 1,5 = 5,5 A pendant 3 s ; une part inconnue la rendrait inconnue', w5(RA) && w5(RB) && S.branche.ecrite && pres(S.branche.perm, 3.5) && pres(S.branche.pointe, 5.5) && S.retour.cbs.join() === '1CB1,2CB2' && S.retour.de.join() === '5LP1,6LP2', `${S.branche.perm} A, ${S.branche.pointe} A en pointe`);
+  ev('CONSOS = new Map(); ALIMS = new Map(); CHUTES_DJ = new Map(); INFOS = new Map()'); }
+
+console.log('\n13. LA FICHE DIT LA CHUTE AU MÊME INSTANT QUE LE COURANT (S3)');
+{ /* avant : la ligne de W-012 dans « Ses câbles » montrait 9,31 A sur 6,9 A (la pointe) à côté de 3,71 V (le permanent) ; le
+     récapitulatif, 9,31 A et 7,92 V. Une seule paire, celle du récapitulatif (`instantsDuFil`) */
+  ev('CONSOS = new Map([["104LP1", { perm: { i: 5 }, dem: { i: 9.31, t: 125 } }]]); ALIMS = new Map(); CHUTES_DJ = new Map(); brancher(contratExemple(), "102CB1", chargesExemple().get("102CB1"), 10)');
+  bac.W12s = ev('[...ALIMS.keys()].find(l => l.cable === "W-012")');
+  const r = ev('ligneDeFil({ l: W12s, vers: W12s.vers, borneVers: W12s.borneVers })'), I = ev('instantsDuFil({ x: intensiteCalculee(W12s), c: chuteDuFil(W12s), l: W12s })');
+  const T931 = 95 + 40 * Math.pow(9.31 / 6.9, 2), T22 = i => 95 + 40 * Math.pow(i / 5.1, 2), u = 0.2 + 0.0332 * kT(T931) * 5 * 9.31 + 0.2 + 0.060 * kT(T22(9.31)) * 5 * 9.31;
+  ok('W-012 : le moment le plus dur est la pointe (9,31 A sur 6,9 A, 7,922 V sur 2 V) — le récapitulatif montre cette paire', I.le.pointe && I.le.i === 9.31 && pres(I.le.admis, 6.9) && pres(I.le.u, u), `${I.le.i} A · ${I.le.u.toFixed(3)} V`);
+  ok('la ligne de la fiche (« Ses câbles », `ligneDeFil`) montre la MÊME paire : 9,31 A et 7,922 V, la pointe dite — plus 9,31 A à côté de 3,712 V', r.charge.i === 9.31 && pres(r.charge.admis, 6.9) && pres(r.chute.u, u) && r.charge.pointe && r.chute.pointe && pres(r.chute.max, 2), `${r.charge.i} A · ${r.chute.u.toFixed(3)} V`);
+  // la règle ne se perd pas d'un écran à l'autre : la carte et la section « Courant et chute » de la fiche, le tableau des câbles d'un disjoncteur prennent la paire là
+  const corps = (X, debut) => { const i = X.findIndex(l => l.startsWith(debut)); let j = i + 1; while (j < X.length && /^\s/.test(X[j])) j++; return i < 0 ? '' : X.slice(i, j).join('\n'); };
+  ok('… et la fiche du câble (`ficheFil` : la section « Courant et chute », la carte, Modifier) et le tableau des câbles d’un disjoncteur (`lignesFilsDisjoncteur`) prennent leur paire chez `instantsDuFil`', /instantsDuFil\(\{ x, c: ch, l \}\)/.test(corps(FICHE, 'function ficheFil(')) && /uI != null \? `<b>\$\{esc\(volts\(uI\)\)\}/.test(corps(FICHE, 'function ficheFil(')) && /instantsDuFil\(/.test(corps(DJ, 'function lignesFilsDisjoncteur(')));
+  ev('CONSOS = new Map(); ALIMS = new Map(); CHUTES_DJ = new Map()'); }
+
+console.log('\n14. LA PROTECTION EN UNE PHRASE (Q3) ; LE CONTACT QUE LA GAUGE BORNE (S7)');
+{ const f = (type, jauge, continu, calibreMax) => ({ type, jauge, continu, calibreMax });
+  // l'EN 2853 en faisceau (× 0,6) contre l'AC 43.13-1B, table 11-3 : DR20 6,9 A contre 7,5 A — DR22 5,1 A contre 5 A — DR24 3,9 A, absent de la table
+  const p20 = ev('protectionEnMots')(f('DR20', 20, 6.9, 7.5), 10, {}), p22 = ev('protectionEnMots')(f('DR22', 22, 5.1, 5), 10, {}), p24 = ev('protectionEnMots')(f('DR24', 24, 3.9, null), 10, {});
+  ok('sous un 10 A, la plus sévère des deux règles décide, et la phrase la nomme : DR20 — l’EN 2853 en faisceau (6,9 A, plus sévère que les 7,5 A de la table 11-3) ; DR22 — la table 11-3 (5 A, plus sévère que les 5,1 A de l’EN 2853) ; DR24 — l’EN 2853 (la table ne le connaît pas)',
+    p20 === 'l’EN 2853 en faisceau : 6,9 A admis en continu, moins que les 10 A du calibre' && p22 === 'le maximum de l’AC 43.13-1B (table 11-3) pour un 22 AWG : 5 A, moins que les 10 A du calibre' && p24 === 'l’EN 2853 en faisceau : 3,9 A admis en continu, moins que les 10 A du calibre', p22);
+  ok('protégé par les deux (un DR16, 11,7 A et 20 A, sous un 10 A) : rien à dire ; elle ne dépend d’aucun courant', ev('protectionEnMots')(f('DR16', 16, 11.7, 20), 10, {}) === '');
+  ok('à 70 °C autour, l’EN 2853 dit aussi l’ambiante : « l’EN 2853 en faisceau, à 70 °C »', /^l’EN 2853 en faisceau, à 70 °C : /.test(ev('protectionEnMots')(f('DR20', 20, 8.8, 7.5), 10, { ...ev('HYPOTHESES'), ambiante: 70 }) || ev('protectionEnMots')(f('DR20', 20, 8.8, 9), 10, { ...ev('HYPOTHESES'), ambiante: 70 })));
+  // le contact : un 24 AWG porte 3 A dans tout contact, un 20 AWG 7,5 A, un 22 AWG 5 A (table Courant des contacts) — c'est la gauge qui limite
+  const g24 = ev('contactsDeLaGauge(24, 5)'), g20 = ev('contactsDeLaGauge(20, 10)'), g22 = ev('contactsDeLaGauge(22, 10)'), g18 = ev('contactsDeLaGauge(18, 10)');
+  ok('5 A dans un 24 AWG, 10 A dans un 20 AWG ou un 22 AWG : aucune taille de contact n’y suffit (3 A, 7,5 A, 5 A au mieux) — « un contact plus gros » ne réglait rien, la gauge plus forte règle aussi le contact', g24.parLaGauge && g24.max.intensite === 3 && !g24.suffit && g20.parLaGauge && g20.max.intensite === 7.5 && g22.parLaGauge && g22.max.intensite === 5, `${g24.max.intensite} / ${g20.max.intensite} / ${g22.max.intensite} A`);
+  ok('10 A dans un 18 AWG : la taille 20 n’en porte que 7,5 A, la taille 16 en porte 10 — VOLTA nomme la taille qui suffit', g18 && !g18.parLaGauge && g18.suffit && g18.suffit.taille === '16' && g18.suffit.intensite === 10, g18 && g18.suffit && g18.suffit.taille + ' : ' + g18.suffit.intensite + ' A'); }
+
+// (une fonction de la fiche, lue telle quelle : ce qu'un courant inconnu demande d'écrire)
+function motsDe(x) { bac.X0 = x; return ev('motDeCommande(X0)'); }
 console.log(`\n  ${total - echecs} / ${total} contrôles passés  —  ${echecs ? echecs + ' ÉCHEC(S)' : 'tout est vert'}`);
 process.exit(echecs ? 1 : 0);

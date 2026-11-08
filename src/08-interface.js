@@ -507,9 +507,9 @@ function montrerAttente() { const a = app.contrat.liaisons.length && !app.dessin
 /* L'ÉTAT DE CHAQUE FOLIO (v85, le lecteur : « je ne sais jamais quand c'est terminé, quand je peux vraiment aller
    dessus »). Chaque puce de la barre du bas le dit, sobrement (style-z-plan.css) : EN ATTENTE (son chiffre pâle sur une
    piste vide : le moteur ne l'a pas encore dessiné), DESSIN EN COURS (la piste se remplit au cuivre, de ce que le moteur
-   rapporte et du temps qu'il met d'habitude), PRÊT (rien : on peut y aller), EN COURS D'AFFINAGE (un point de cuivre
-   immobile : il se lit, VOLTA cherche encore mieux et le remplacera sans bouger la feuille). Le survol le dit en mots
-   (« Folio 3 : prêt », « Folio 5 : dessin en cours, encore environ 4 s »). Quand tout est prêt et affiné, plus rien ne
+   rapporte et du temps qu'il met d'habitude), PRÊT (rien : on peut y aller). Un folio que VOLTA peaufine encore est PRÊT
+   (passe 87, le lecteur : « ce travail interne ne me concerne pas » — le point de cuivre qui le disait s'est tu). Le survol
+   le dit en mots (« Folio 3 : prêt », « Folio 5 : dessin en cours, encore environ 4 s »). Quand tout est prêt, plus rien ne
    bouge. Sans travail de fond (sous pilote, sans Worker), les puces se taisent : un folio s'y dessine quand on l'ouvre. */
 /* les clés de placement des folios (et leur taille), relues au plus une fois par seconde. Un folio déjà lu prend sa clé dans
    les mémoires de `liaisonsDe` et `cleDuPlan`, que le placement tient à jour à chaque folio qu'il pompe : refaire
@@ -527,7 +527,6 @@ function etatDuFolio(p, K) { const f = (K || clesDesFolios()).get(p); if (!f || 
     const a = placement.attentes.get(k);
     if (a && placement.encours && placement.encours.cle === k) { const v = avancement(a); return { etat: 'dessin', p: v.p, mot: v.mot, esquisse: !!a.esquisse }; }
     if (a || !(placement.prets.has(k) || placements.has(k) || affinage.profonds.has(k) || app.retouches.has(k))) return { etat: 'attente' }; }
-  if (affinage.actif && affinage.encours && affinage.encours.cle === k) { const e = affinage.etat; return { etat: 'affinage', p: e && e.n ? e.k / e.n : 0 }; }
   return { etat: 'pret' }; }
 // l'état en mots : la bulle de la puce (« Folio 5 : dessin en cours, encore environ 4 s ») ; `court` : sans les secondes (le nom de la puce)
 // (passe 87) `K` : les clés des folios, lues une fois pour toute la barre (`peindreEtatsDesFolios`) — chaque puce les relisait
