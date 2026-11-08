@@ -8,6 +8,9 @@ s'écrit ici, le jour même.
 
 - **VOLTA** : outil de câblage électrique aéronautique, hors ligne, un seul fichier HTML. Un retest Excel entre ; des
   folios dessinés, des fiches qui expliquent, un récapitulatif, des exports sortent.
+- **Le grand chantier** (v86) : VOLTA lira aussi un schéma PDF, un Visio, ou un document de centaines de pages (pin à pin
+  en tableau, en texte ou en schéma), avec l'aide de l'IA interne du lecteur quand il ne comprend pas, et rendra les folios
+  et un tableau pin à pin complet (AMELIORATION.md).
 - **Le lecteur** : ingénieur câblage, français. On le **tutoie** dans la conversation ; l'interface **vouvoie**. Il connaît
   le câblage, pas forcément le code : on lui parle simplement.
 - Il juge à l'œil, sur ordinateur (1440 et 1920 px, clair et sombre). Il cherche **la perfection** : « classe, épuré,
@@ -157,8 +160,13 @@ s'écrit ici, le jour même.
 
 - **Regarder chaque écran soi-même avant de livrer** (clair et sombre, 1440 et 1920), lancer `tests/ecran/oeil.js` : le
   lecteur ne doit jamais avoir à signaler un alignement, une largeur, un texte coupé.
-- **Poser les questions** quand un retour est ambigu (court, avec une proposition par défaut) ; pour un choix visuel ouvert,
-  montrer deux ou trois variantes. Ne pas rester dans son coin.
+- **Poser des questions, tout le temps, et faire à deux** (v86, le lecteur : « le secret, c'est poser des questions… si tu
+  vas de ton côté, on va faire plein de trucs qui servent à rien ; si on fait à deux, on fera l'outil parfait ») : sur les
+  fonctions, la beauté, l'expérience, les documents — chacune courte, avec sa proposition par défaut ; des **planches**
+  (avant / variantes) pour tout ce qui se voit. Ne jamais rester dans son coin.
+- **Rien n'est acquis** (v86) : chaque passe peut tout remettre en cause, et tout reprendre de zéro si c'est mieux.
+- **L'amélioration continue** : une passe complète tous les 3 jours (AMELIORATION.md) — un regard neuf qui regarde tout ;
+  le sûr se corrige seul, le goût et les fonctions se décident à deux.
 - Carte blanche : proposer, dire non quand une demande va contre l'expérience (avec mieux à la place).
 - **Répondre court** dans la conversation (v82, le lecteur : « trop à lire ») : les points importants seulement, ce
   qu'il doit savoir ; le détail seulement s'il le demande.

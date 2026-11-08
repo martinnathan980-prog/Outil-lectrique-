@@ -2,45 +2,37 @@
 
 Décidée par le lecteur le 8 novembre 2026 : « une amélioration continue du site, de l'outil, avec plein d'agents
 différents… la beauté (les couleurs, la forme, le texte, les graphiques) et de l'autre côté les fonctions, les calculs,
-les outils… en posant beaucoup de questions, car c'est ça la clé du succès ». Ce fichier dit comment chaque passe se fait ;
-il se lit avec CLAUDE.md (la charte), qui a toujours le dernier mot.
+les outils ». Et, le même jour : « le secret, c'est poser des questions… pas une, deux, trois questions, mais tout le
+temps des questions… si on fait à deux, on fera l'outil parfait ». Ce fichier dit comment chaque passe se fait ; il se lit
+avec CLAUDE.md (la charte), qui a toujours le dernier mot.
 
 ## Ses choix
 
-- **Rythme** : tous les 3 jours, vers 3 h (heure de Paris), une passe complète.
-- **Autonomie** : VOLTA corrige seul ce qui est **sûr** — un bug, un calcul faux, un texte coupé, un écart à la charte,
-  une incohérence entre deux écrans, une batterie rouge. Ce qui touche au **goût** (couleurs, formes, mise en page, un mot
-  qui change le sens) et toute **fonction** à ajouter, à retirer ou à fusionner : préparé avec des variantes, appliqué
-  seulement sur son oui.
-- **Livraison** : seulement s'il y a du neuf — le fichier HTML et un compte rendu de cinq lignes au plus, avec au plus
-  trois questions, chacune avec sa proposition par défaut. Une passe sans rien d'utile ne dit rien : elle s'écrit seulement
-  au journal ci-dessous.
-- **Sans réponse**, une question reste en attente : sa proposition n'est pas appliquée.
-
-## Le thème qui tourne
-
-1. **La beauté** : couleurs, lumière, formes, hiérarchie, clair et sombre, 1440 et 1920.
-2. **Les mots** : chaque phrase, chaque bulle, chaque chiffre expliqué ; le vocabulaire de la charte.
-3. **Les calculs** : disjoncteurs, courants, chutes, contacts, barrettes, LPA — contre les normes et le bon sens d'un
-   ingénieur câblage.
-4. **Les fonctions et les parcours** : ce qui manque, ce qui ne sert à rien, les doublons, les gestes qui surprennent.
-5. **La robustesse** : fichiers abîmés, gros fichiers, vitesse, exports, clavier.
-
-Chaque passe fait aussi le tour complet du site, comme le lecteur, quel que soit son thème.
+- **Rythme** : une passe complète tous les 3 jours, vers 3 h (heure de Paris) ; la première le 8 novembre 2026.
+- **Un regard neuf qui regarde TOUT** : un agent qui ne connaît pas les passes d'avant, et qui regarde à chaque fois la
+  beauté, les calculs, l'ergonomie, l'usage, l'expérience — pas un thème par passe.
+- **Il corrige seul ce qui est sûr** : un bug, un calcul faux, un texte faux ou coupé, un écart à la charte, une incohérence.
+- **Le reste se fait À DEUX** : le goût (graphisme, couleurs, formes, mise en page), l'expérience, les fonctions à ajouter,
+  à retirer ou à fusionner. VOLTA présente des **planches** (avant / variantes) et pose **des questions, autant qu'il
+  faut**, chacune avec sa proposition par défaut ; rien de cela ne s'applique sans le oui du lecteur.
+- **Rien n'est acquis** : une passe peut tout remettre en cause, et tout reprendre de zéro si c'est mieux — la beauté, le
+  calcul, l'expérience, le site entier.
+- **Livraison** : seulement s'il y a du neuf — le fichier HTML, un compte rendu court, les planches et les questions. Une
+  passe sans rien d'utile ne dit rien : elle s'écrit seulement au journal ci-dessous.
 
 ## Une passe
 
-0. Lire CLAUDE.md, puis ce fichier : le thème suivant, les questions en attente, les réponses du lecteur.
+0. Lire CLAUDE.md, puis ce fichier : les questions en attente, les réponses du lecteur depuis la passe d'avant.
 1. Se mettre à jour sur la branche de travail.
-2. **Le regard neuf** : un agent sans mémoire des passes d'avant utilise VOLTA de bout en bout, sur le thème de la passe
-   et sur tout le reste. Comme l'audit de la v86 : Chromium, clair et sombre, 1440 et 1920, le parcours du lecteur, un
-   fichier piégé. Il ne modifie rien et rend un rapport classé (bloquant, gênant, finition, ce qui manque) avec ses captures.
+2. **Le regard neuf** : un agent sans mémoire des passes d'avant (il lit la charte, rien d'autre) utilise VOLTA de bout en
+   bout et regarde tout. Chromium, clair et sombre, 1440 et 1920, le parcours du lecteur, un fichier abîmé, un gros
+   fichier ; il recalcule lui-même des valeurs contre les normes. Il ne modifie rien. Il rend un rapport : le sûr à
+   corriger, le goût et les fonctions avec leurs variantes et leurs planches, des questions, des idées.
 3. **Trier** :
    - le **sûr** part à des agents qui corrigent, chacun sur ses fichiers, sans chevauchement. Sur un fichier partagé,
      l'outil Edit seulement ; aucune commande git ; un nom déclaré au niveau d'un module est d'abord cherché dans `src/` ;
-   - le **goût** et les **fonctions** deviennent des propositions avec leurs variantes (une planche), écrites plus bas dans
-     les questions en attente ;
-   - les propositions que le lecteur a acceptées depuis la passe d'avant s'appliquent.
+   - le **goût** et les **fonctions** deviennent des planches et des questions au lecteur, écrites aussi plus bas ;
+   - ce que le lecteur a accepté depuis la passe d'avant s'applique.
 4. **Tout vérifier** avec la skill `livrer-volta` : construire, charger, fumée, œil, moteur, bornes fixes, fichiers piégés,
    captures relues.
 5. **Livrer** s'il y a du neuf, sous la version suivante. Écrire la passe au journal, commiter, pousser la branche de
@@ -48,20 +40,34 @@ Chaque passe fait aussi le tour complet du site, comme le lecteur, quel que soit
 
 **Limites** :
 - une passe de la taille de la v86 au plus ;
-- les choix tranchés de la charte ne bougent pas sans son oui ;
-- confidentialité : jamais « SEE » ni un nom de client, de programme, d'appareil ou de personne dans une recherche ;
+- confidentialité : jamais « SEE » ni un nom de client, de programme, d'appareil ou de personne dans une recherche ou dans
+  le dépôt — l'IA interne du lecteur s'y dit « l'IA interne », son nom et son adresse restent dans son navigateur ;
 - si les batteries restent rouges après deux essais, rien ne se livre, et le compte rendu dit pourquoi.
+
+## Le grand chantier : lire tous les documents d'entrée (8 novembre 2026)
+
+Le lecteur : « la donnée d'entrée sera plusieurs choses : un schéma PDF qu'il faudra lire et comprendre pour faire les
+liaisons entre tous les fils ; pareil en Visio ; ou un document de centaines de pages avec les infos pin à pin, en
+tableau, en texte ou en schéma ». VOLTA reconnaît ce qu'on lui donne, cherche l'information lui-même, et quand il ne
+comprend pas, il appelle **l'IA interne** du lecteur (un modèle ouvert de la famille Gemma, moins puissant : autant de
+requêtes qu'il faut, une nuit s'il le faut). En sortie : le schéma électrique (les folios) et **un tableau pin à pin** avec
+toutes les données — pas forcément de rapport. Carte blanche, et des questions à chaque étape.
 
 ## Questions en attente
 
-- **Chute admise** : VOLTA admet 2 V ; l'AC 43.13-1B dit 1 V en continu et 2 V en intermittent sous 28 V. Par défaut,
-  garder 2 V.
-- **Repère d'une barrette ajoutée** : la suite de la barrette voisine (667VT3), ou un repère tiré de la zone de
-  l'équipement (340VT1). Par défaut, 667VT3.
-- **Interrupteur à bornes chiffrées** : toutes ses bornes supposées reliées, par prudence. Par défaut, garder.
+- **Des bornes vides sur un relais** : une borne sans câble dans le fichier, ou une borne câblée mais pas reliée à
+  l'intérieur ? Par défaut, VOLTA suit les câbles du fichier et suppose reliées les bornes d'un même pôle.
+- **Le grand chantier** : la façon d'atteindre l'IA interne, l'exception au « 100 % hors ligne », les documents qui
+  arrivent le plus souvent, leur forme (texte ou images), le tableau de sortie — posées le 8 novembre.
+
+## Réponses du lecteur
+
+- 8 novembre 2026 : chute admise **2 V** (gardée) ; repère d'une barrette ajoutée : **la suite de la barrette voisine**
+  (667VT3) ; interrupteur à bornes chiffrées : **toutes ses bornes reliées** — mais certaines bornes sont parfois vides
+  (des relais aux bornes vides).
 
 ## Journal des passes
 
 - **8 novembre 2026 — v86** (passe manuelle, quatorze agents) : l'aluminium, les bornes fixes, la carte et les genres,
   le disjoncteur vivant, un contact un nom, le courant à travers les relais, une seule source, l'historique du plan.
-  Prochain thème : **1. La beauté**.
+- **8 novembre 2026 — passe 1** : en cours.
