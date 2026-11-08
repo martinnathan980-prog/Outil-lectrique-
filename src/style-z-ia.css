@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'IA INTERNE (08-ia) — le réglage, son diagnostic, les lectures en fond.
+   Le document parle la langue des Hypothèses et de « Vos fichiers » : la coquille commune (`.fiche-tete`, `.fiche-pied`),
+   des cartes titrées (`.hy-groupe` et sa barre de cuivre, `.hy-titre`), les jetons de la fiche (--s-*, --t-*, --ok,
+   --warn, --ko, --nv-cuivre) : blanc pierre le jour, graphite la nuit, sans une couleur à lui. Le vert, l'ambre et le
+   rouge ne disent que l'état d'une étape ; le cuivre, ce qui avance (l'étape en cours, la barre d'une lecture).
+   ═══════════════════════════════════════════════════════════════════════ */
+#fiche .ia-bloc[hidden]{display:none!important}
+#fiche .ia-bloc .hy-titre small{margin-left:10px;font:400 var(--f-12)/1.3 var(--sans);letter-spacing:0;color:var(--t-2)}
+
+/* ─── L'INTERRUPTEUR : une ligne, son mot à gauche, l'interrupteur à droite (celui des Hypothèses) ─── */
+.ia-inter{display:flex;align-items:center;gap:16px;margin:0 0 14px;padding:2px 0 14px;border-bottom:1px solid var(--s-line);cursor:pointer}
+.ia-inter-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ia-inter-t b{font:500 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.ia-inter-t small{font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.ia-inter input{flex:none;position:relative;width:36px;height:22px;margin:0;border-radius:999px;background:var(--s-line-2);cursor:pointer;-webkit-appearance:none;appearance:none;transition:background var(--moyen)}
+.ia-inter input::before{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,.3),0 0 0 .5px rgba(0,0,0,.06);transition:transform var(--moyen),background var(--moyen)}
+.ia-inter input:checked{background:var(--accent)}
+.ia-inter input:checked::before{transform:translateX(14px);background:var(--on-accent)}
+.ia-inter:hover input:not(:checked){background:color-mix(in srgb,var(--t-1) 22%,var(--s-line-2))}
+.ia-inter input:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
+
+/* ─── LES TROIS CHAMPS : le nom à gauche, la saisie à droite, une aide courte dessous ─── */
+.ia-champs{display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px 12px;align-items:center}
+.ia-lib{font:500 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.ia-saisie{position:relative;display:block;min-width:0}
+.ia-saisie input{box-sizing:border-box;width:100%;height:var(--h-champ);margin:0;padding:0 12px;border:1px solid var(--filet-champ,var(--s-line-2));border-radius:var(--r-btn);
+  background:var(--s-surface);color:var(--t-1);font:500 var(--f-13) var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
+.ia-saisie input::placeholder{font:400 var(--f-13) var(--sans);color:var(--t-3)}
+.ia-saisie input:hover{border-color:color-mix(in srgb,var(--t-1) 60%,var(--s-surface))}
+.ia-saisie input:focus{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
+.ia-cle input{padding-right:42px}
+.ia-cle input[type="password"]{letter-spacing:.12em}
+.ia-cle input[type="password"]::placeholder{letter-spacing:0}
+.ia-oeil{position:absolute;top:3px;right:3px;display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:var(--r-1);background:none;color:var(--t-2);cursor:pointer;transition:background var(--rapide),color var(--rapide)}
+.ia-oeil:hover,.ia-oeil[aria-pressed="true"]{background:var(--s-hover);color:var(--t-1)}
+.ia-oeil:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:-2px}
+.ia-oeil svg.ico{width:17px;height:17px}
+.ia-aide{grid-column:2;margin:-6px 0 2px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2);transition:color var(--moyen)}
+.ia-aide.dit{color:var(--nv-cuivre)}
+/* coupée : les champs restent à portée (on peut préparer), en retrait */
+.ia-bloc.coupee .ia-champs{opacity:.62}
+
+/* ─── TESTER : le bouton plein ; pendant le test, il tourne et dit « Arrêter le test » ─── */
+.ia-actions{display:flex;align-items:center;gap:14px;margin-top:18px}
+#ia-tester{min-width:178px}
+#ia-tester .ia-tourne{display:none}
+#ia-tester.teste .ia-tourne{display:inline-block;width:13px;height:13px;border-width:1.6px}
+.ia-tourne{display:inline-block;width:14px;height:14px;box-sizing:border-box;border-radius:50%;border:1.8px solid color-mix(in srgb,currentColor 22%,transparent);border-top-color:currentColor;animation:ia-tourne .8s linear infinite}
+@keyframes ia-tourne{to{transform:rotate(360deg)}}
+
+/* ─── LE DIAGNOSTIC : une étape par ligne — son point d'état, ce qu'elle dit, sa valeur à droite ; la première qui échoue
+   porte ce qu'il faut faire, posé comme une action (son geste en évidence) ─── */
+.ia-etapes{margin:0;padding:0;list-style:none}
+.ia-e{display:grid;grid-template-columns:22px minmax(0,1fr) auto;column-gap:12px;align-items:center;min-height:24px;padding:11px 0;border-top:1px solid var(--s-line)}
+.ia-e:first-child{padding-top:4px;border-top:0}
+.ia-e:last-child{padding-bottom:2px}
+.ia-e.vif{animation:ia-monte var(--d-moyen) var(--courbe) both}
+@keyframes ia-monte{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.ia-pt{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;color:var(--t-2);box-shadow:inset 0 0 0 1.5px var(--s-line-2)}
+.ia-pt svg.ico{width:14px;height:14px;stroke-width:2}
+.ia-e.ok .ia-pt{color:var(--ok);background:var(--ok-soft);box-shadow:none}
+.ia-e.ko .ia-pt{color:var(--ko);background:var(--ko-soft);box-shadow:none}
+.ia-e.att .ia-pt{color:var(--warn);background:var(--warn-soft);box-shadow:none}
+.ia-e.info .ia-pt{color:var(--t-2);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.ia-e.encours .ia-pt{color:var(--nv-cuivre);box-shadow:none}
+.ia-e.ok.frais .ia-pt svg path{stroke-dasharray:20;stroke-dashoffset:20;animation:ia-trace .32s var(--courbe) .05s forwards}
+@keyframes ia-trace{to{stroke-dashoffset:0}}
+.ia-e-t{min-width:0;font:500 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.ia-e-t[data-bulle]{cursor:help;text-decoration:underline dotted color-mix(in srgb,var(--t-3) 55%,transparent);text-underline-offset:3px}
+.ia-e-t[data-bulle]:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px;border-radius:3px}
+.ia-e.ko .ia-e-t{color:var(--ko);font-weight:600}
+.ia-e.encours .ia-e-t{color:var(--t-2)}
+.ia-e-v{display:inline-flex;align-items:center;gap:8px;justify-self:end;max-width:260px;min-width:0;font:400 var(--f-12)/1.4 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-2);text-align:right}
+.ia-e-v>span{min-width:0;overflow-wrap:anywhere}
+.ia-mono{font:500 var(--f-12)/1.4 var(--mono);color:var(--t-1)}
+/* le chiffre montré à l'IA : une vignette de papier, toujours blanche (c'est l'image envoyée) */
+.ia-vu{flex:none;width:22px;height:22px;border-radius:5px;background:#ffffff;box-shadow:0 0 0 1px var(--s-line-2);image-rendering:auto}
+.ia-fl{flex:none;margin:0 -2px;color:var(--t-3)}
+/* ce qu'il faut faire : sous la ligne, aligné sur son texte */
+.ia-faire{grid-column:2/4;display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-top:8px;min-width:0}
+.ia-faire p{margin:0;max-width:62ch;font:400 var(--f-13)/1.55 var(--sans);color:var(--t-2);text-wrap:pretty}
+.ia-e.ko .ia-faire{padding:12px 14px;border-radius:var(--r-2);background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
+.ia-e.ko .ia-faire p{color:var(--t-1)}
+.ia-e.att .ia-faire{padding:12px 14px;border-radius:var(--r-2);background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
+.ia-e.att .ia-faire p{color:var(--t-1)}
+.ia-e.info .ia-faire{margin-top:4px}
+.ia-gestes{display:flex;flex-wrap:wrap;gap:8px}
+.ia-gestes .btn{background:var(--s-surface)}
+.ia-choix{display:flex;flex-wrap:wrap;gap:6px}
+.ia-puce{height:var(--h-puce);padding:0 12px;border:1px solid var(--s-line-2);border-radius:999px;background:var(--s-surface);color:var(--t-1);font:500 var(--f-12)/1 var(--mono);cursor:pointer;
+  transition:background var(--rapide),border-color var(--rapide),transform var(--rapide)}
+.ia-puce:hover{border-color:var(--t-1);background:var(--s-hover)}
+.ia-puce:active{transform:scale(var(--presse))}
+.ia-puce:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
+.ia-suite{margin:12px 0 0 34px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-3)}
+/* un diagnostic d'avant un changement de réglage : il reste lisible, en retrait */
+.ia-diag.perime .ia-etapes,.ia-diag.perime .ia-suite{opacity:.55}
+.ia-diag.perime .hy-titre small{color:var(--warn)}
+
+/* ─── LES LECTURES EN FOND : chacune son titre, son compte, sa barre de cuivre qui avance, son temps restant ─── */
+.ia-file-mot{margin:0 0 12px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+.ia-file-mot.att{padding:10px 12px;border-radius:var(--r-2);background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn);color:var(--t-1)}
+.ia-lot{padding:12px 0;border-top:1px solid var(--s-line)}
+.ia-lot:first-of-type{border-top:0;padding-top:2px}
+.ia-lot-t{display:flex;align-items:baseline;gap:12px}
+.ia-lot-t>b{flex:1;min-width:0;font:500 var(--f-13)/1.4 var(--sans);color:var(--t-1);overflow-wrap:anywhere}
+.ia-lot-n{flex:none;font:400 var(--f-12)/1.4 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-2)}
+.ia-lot-n b{font-weight:600;color:var(--t-1)}
+.ia-barre{position:relative;height:6px;margin:8px 0 7px;overflow:hidden;border-radius:3px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.ia-barre i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--nv-cuivre);transition:width var(--lent)}
+.ia-lot.vif .ia-barre i{background:linear-gradient(90deg,var(--nv-cuivre) 0 40%,color-mix(in srgb,var(--nv-cuivre) 62%,#ffffff) 50%,var(--nv-cuivre) 60% 100%) 0 0/240% 100%;animation:ia-coule 2.4s linear infinite}
+@keyframes ia-coule{from{background-position:120% 0}to{background-position:-120% 0}}
+.ia-lot-c{display:flex;align-items:center;gap:12px;min-height:22px;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.ia-lot-c>span:first-child{flex:1;min-width:0}
+.ia-lot-ko{color:var(--ko);font-weight:500}
+.ia-file-gestes{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--s-line)}
+.ia-file-gestes .espace{flex:1}
+.ia-par{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:var(--r-btn);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.ia-par-mot{margin-left:-2px;font:400 var(--f-12)/1 var(--sans);color:var(--t-2)}
+.ia-par button{min-width:30px;height:26px;padding:0 8px;border:0;border-radius:8px;background:none;color:var(--t-2);font:600 var(--f-12)/1 var(--sans);font-variant-numeric:tabular-nums;cursor:pointer;transition:background var(--rapide),color var(--rapide)}
+.ia-par button:hover{color:var(--t-1)}
+.ia-par button[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:0 0 0 1px var(--s-line-2),0 1px 2px rgba(0,0,0,.06)}
+.ia-par button:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:1px}
+
+/* ─── LE PIED : l'état en un mot (le point des Hypothèses) — vert prête, ambre à régler, rouge à revoir, gris coupée,
+   cuivre pendant un test ─── */
+#fiche .ia-etat.e-att::before{background:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
+#fiche .ia-etat.e-ko::before{background:var(--ko);box-shadow:0 0 0 3px var(--ko-soft)}
+#fiche .ia-etat.e-coupee::before{background:var(--t-3);box-shadow:0 0 0 3px var(--s-sunken)}
+#fiche .ia-etat.e-test::before{background:var(--nv-cuivre);box-shadow:0 0 0 3px var(--nv-cuivre-soft);animation:ia-pouls 1.4s var(--courbe) infinite}
+@keyframes ia-pouls{50%{box-shadow:0 0 0 5px var(--nv-cuivre-soft)}}
+#fiche .fiche-pied #ia-oublier{color:var(--t-2)}
+#fiche .fiche-pied #ia-oublier:hover:not(:disabled){color:var(--ko);background:var(--ko-soft);text-decoration-color:transparent}
+
+@media (prefers-reduced-motion: reduce){
+  .ia-e.vif,.ia-lot.vif .ia-barre i,#fiche .ia-etat.e-test::before{animation:none}
+  .ia-e.ok.frais .ia-pt svg path{animation:none;stroke-dashoffset:0}
+  .ia-tourne{animation-duration:2.4s} }

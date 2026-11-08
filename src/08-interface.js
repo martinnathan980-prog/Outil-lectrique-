@@ -2219,7 +2219,9 @@ const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde',
   bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
   raccourcis: 'clavier touches aide', suivi: 'csv barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft',
   // (v86) l'historique du plan entier (08-journal)
-  historique: 'historique journal changements modifications defaire annuler qui quand avant apres change' };
+  historique: 'historique journal changements modifications defaire annuler qui quand avant apres change',
+  // l'IA interne du lecteur : son réglage et le test de la connexion (08-ia)
+  ia: 'ia intelligence artificielle interne connexion tester cle api adresse modele serveur reseau lire documents scans images' };
 const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);

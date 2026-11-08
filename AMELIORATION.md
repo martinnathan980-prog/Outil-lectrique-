@@ -55,7 +55,6 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
 
 ## Questions en attente
 
-- **La vérification liaison par liaison** : la forme de l'écran — des planches de variantes à lui montrer.
 - **Ce que l'IA interne sait faire** : lire une image (les scans), la taille de ce qu'elle accepte — VOLTA le mesurera seul
   avec « Tester la connexion », sur le poste du lecteur.
 
@@ -70,6 +69,11 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
   du retest** ; VOLTA **invente des documents d'exemple** et le lecteur corrige ce qui ne ressemble pas ; lecture longue
   **en journée, en fond** ; navigateur **Chrome** ; le lecteur veut **vérifier tout, liaison par liaison**, avant les
   folios et le retest.
+- 8 novembre 2026, la vérification liaison par liaison (planches A, B, C) : **B, une à une** (les deux bouts en grand, la
+  suivante qui arrive ; le surligneur de A sur la carte du folio, l'ordre connecteur par connecteur de C en option) ; une
+  liaison douteuse se **choisit tout de suite** (1, 2, C ; Espace pour plus tard ; Entrée seule ne la passe pas) ; l'ordre
+  **de la page** ; « **Ce qui reste noir** » (les traits lus dans aucune liaison) **obligatoire** avant les folios et le
+  retest.
 
 ## Journal des passes
 
