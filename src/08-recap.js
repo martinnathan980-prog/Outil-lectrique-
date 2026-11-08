@@ -125,7 +125,10 @@ function itemsParCable() { if (!RECAP.parCable) { const C = new Set(verite().map
   return RECAP.parCable; }
 function itemsParNom() { if (!RECAP.parNom) { const m = new Map(); (CONTROLE.items || []).forEach(x => { if (x.nom) (m.get(x.nom) || m.set(x.nom, []).get(x.nom)).push(x); }); RECAP.parNom = m; } return RECAP.parNom; }
 const niveauDe = xs => xs.some(x => x.niveau === 'ko') ? 'ko' : xs.length ? 'att' : '';
-const etatDuNom = nom => { const xs = itemsParNom().get(nom) || []; return { niveau: niveauDe(xs), ko: xs.filter(x => x.niveau === 'ko').map(x => x.texte), att: xs.filter(x => x.niveau !== 'ko').map(x => x.texte) }; };
+// (passe 87, S4) l'état d'un repère : les LIGNES de sa fiche (un câble, une ligne ; la barrette ajoutée sur l'une de ses bornes),
+// à régler (un problème ou un geste) ou à voir (`lignesDeLObjet`) ; ses points disent le niveau
+const etatDuNom = nom => { const U = typeof lignesDeLObjet === 'function' ? lignesDeLObjet(nom) : [], xs = U.length ? U.flatMap(u => u.xs) : itemsParNom().get(nom) || [];
+  return { niveau: niveauDe(xs), ko: xs.filter(x => x.niveau === 'ko').map(x => x.texte), att: xs.filter(x => x.niveau !== 'ko').map(x => x.texte), regler: U.filter(u => u.regler), voir: U.filter(u => !u.regler) }; };
 
 /* Les liaisons de chaque repère, rangées en un passage : le moteur lit un repère dans les liaisons qu'on lui donne (ses
    besoins, ses connecteurs, son plan ne regardent que les siennes) — lui donner les siennes seulement, c'est le même
@@ -174,7 +177,8 @@ function etatDuFil(l, F) { const ko = new Set(), att = new Set(), x = F.x, c = F
   const trop = l.de !== l.vers && liaisonComplete(l) && x.trop.length > 0, chute = c.trop || c.pointe ? (c.reel ? 'ko' : 'att') : '';
   const niveau = ko.size || trop || chute === 'ko' ? 'ko' : att.size || chute ? 'att' : l.de === l.vers ? '' : 'ok';
   const cmp = (a, b) => a > b + 1e-9 ? '>' : 'sur', supp = c.reel ? '' : ' (longueurs supposées)';
-  const chiffres = [x.I == null ? `Intensité : inconnue — une branche de commande${x.al ? ', sous ' + x.al.nom : ''}` : x.fn ? `Intensité : ${amperes(x.I)} ${cmp(x.I, x.continu)} ${amperes1(x.continu)} admis en continu${x.al ? ', sous ' + x.al.nom : ' (supposé)'}` : '',
+  // (v87, le lecteur, Q1) un courant inconnu dit ce qu'il faut écrire — jamais le courant total du disjoncteur
+  const chiffres = [x.I == null ? `Intensité : inconnue${typeof motDeCommande === 'function' && motDeCommande(x) ? ' — ' + motDeCommande(x) : ''}${x.al ? ', sous ' + x.al.nom : ''}` : x.fn ? `Intensité : ${amperes(x.I)} ${cmp(x.I, x.continu)} ${amperes1(x.continu)} admis en continu${x.al ? ', sous ' + x.al.nom : ' (supposé)'}` : '',
     x.fn && x.pointe && x.pointe.admis ? `En pointe : ${amperes(x.pointe.i)} pendant ${secondes(x.pointe.t)} ${cmp(x.pointe.i, x.pointe.admis)} ${amperes1(x.pointe.admis)} admis` : '',
     c.total ? `Chute en ligne : ${volts(c.total.dU)} ${c.max != null ? cmp(c.total.dU, c.max) + ' ' + volts(c.max) + ' admis' : ''}${supp}` : c.dU != null ? `Chute sur ce câble : ${volts(c.dU)}` : '',
     c.pointe ? `Chute en pointe : ${volts(c.pointe.dU)} > ${volts(c.pointe.admis)} admis${supp}` : ''].filter(Boolean);
@@ -304,11 +308,12 @@ const motInstant = (mot, bulle) => `<span class="rc-int-mot">${mot ? `<i class="
 const celluleIntensite = r => { const F = r.F(), x = F.x, I = instantsDuFil(F), s = I.le;
   /* (v86, comme la fiche) une BRANCHE DE COMMANDE dont rien n'est écrit (la bobine d'un relais, l'entrée d'un calculateur) : son
      courant est INCONNU — jamais le courant total du disjoncteur ; « inconnu », et la bulle dit ce qu'il faut écrire */
-  if (x.I == null && x.source === 'commande') { const quoi = typeof motDeCommande === 'function' ? motDeCommande(x) : '';
-    return `<span class="rc-int" data-bulle="${escA('Courant de commande inconnu, sous ' + (x.al ? x.al.nom : 'son disjoncteur') + (quoi ? ' : ' + quoi : '') + '. Rien ne le juge, rien ne le grossit tant qu’il n’est pas écrit.')}">${anneau(null)}${chiffre('')}<span class="rc-adm rc-inconnu">inconnu</span>${motInstant('commande')}</span>`; }
+  // (v87, le lecteur, Q1) toute branche dont une consommation manque, son retour aussi (S1) : « inconnu », et ce qu'il faut écrire
+  if (x.I == null && x.al) { const quoi = typeof motDeCommande === 'function' ? motDeCommande(x) : '', cmd = x.source === 'commande';
+    return `<span class="rc-int" data-bulle="${escA((cmd ? 'Courant de commande inconnu' : 'Courant inconnu') + (x.retour ? ' — le retour de ' + listeEt(x.retour.de) + ', comme son aller' : '') + ', sous ' + (x.al ? x.al.nom : 'son disjoncteur') + (quoi ? ' : ' + quoi : '') + '. Rien ne le juge, rien ne le grossit tant qu’il n’est pas écrit.')}">${anneau(null)}${chiffre('')}<span class="rc-adm rc-inconnu">inconnu</span>${motInstant(cmd ? 'commande' : '')}</span>`; }
   if (s.i == null || !isFinite(s.i)) return rien;
   const q = s.admis ? s.i / s.admis : null, trop = q != null && q > 1 + 1e-9;
-  const quoi = x.al ? (x.source === 'branche' ? 'ce qu’alimente ce câble' : 'le profil de ' + x.al.nom) : 'l’hypothèse de la simulation';
+  const quoi = x.al ? (x.source === 'branche' ? (x.retour ? 'ce que ce câble ramène' : 'ce qu’alimente ce câble') : x.partiel ? 'ce qui est écrit en aval de ' + x.al.nom + ' (au moins)' : 'le profil de ' + x.al.nom) : 'l’hypothèse de la simulation';
   const autre = I.autre && I.autre.admis ? `\n${majuscule(instantDit(I.autre))} : ${amperes(I.autre.i)} sur ${amperes1(I.autre.admis)} admis` + (I.autre.i > I.autre.admis + 1e-9 ? ' — il ne les porte pas.' : '.') : '';
   const bulle = s.admis ? `${majuscule(instantDit(s))} : ${amperes(s.i)}, selon ${quoi} ; ${s.pointe ? 'sur cette durée, ' : ''}le ${F.l.type || 'câble'} admet ${amperes1(s.admis)} (${pourcentDe(q)})${trop ? ' : il ne les porte pas.' : '.'}${autre}`
     : `${majuscule(instantDit(s))} : ${amperes(s.i)}, selon ${quoi}.\n${F.l.type ? F.l.type + ' n’est pas dans l’EN 2853' : 'Votre fichier ne donne pas son type'} : ce qu’il admet ne se lit pas.`;
@@ -341,8 +346,8 @@ const COLONNES_LIAISONS = [
   // (v86, B7) l'intensité et la chute au même instant (`instantsDuFil`) — à l'écran, au tri et dans le CSV
   { k: 'intensite', t: 'Intensité', option: true, large: 1, g: 'Le câble', cls: 'rc-c-int', html: celluleIntensite,
     tri: r => { const s = instantsDuFil(r.F()).le; return s.admis ? s.i / s.admis : s.i != null ? s.i / 1000 : -1; },
-    texte: r => { const s = instantsDuFil(r.F()).le; return s.i == null ? (r.F().x.source === 'commande' ? 'inconnu (commande)' : '') : ampere(s.i) + ' A' + (s.admis ? ' sur ' + ampere(s.admis) + ' A' : '') + (s.pointe ? ' (pointe)' : r.F().x.al ? '' : ' (supposé)'); },
-    vide: r => { const s = instantsDuFil(r.F()).le; return (s.i == null || !isFinite(s.i)) && r.F().x.source !== 'commande'; } },
+    texte: r => { const s = instantsDuFil(r.F()).le; return s.i == null ? (r.F().x.I == null && r.F().x.al ? (r.F().x.source === 'commande' ? 'inconnu (commande)' : 'inconnu') : '') : ampere(s.i) + ' A' + (s.admis ? ' sur ' + ampere(s.admis) + ' A' : '') + (s.pointe ? ' (pointe)' : r.F().x.al ? '' : ' (supposé)'); },
+    vide: r => { const s = instantsDuFil(r.F()).le; return (s.i == null || !isFinite(s.i)) && !(r.F().x.I == null && r.F().x.al); } },
   { k: 'chute', t: 'Chute', option: true, large: 1, g: 'Le câble', cls: 'rc-c-mesure', html: celluleChute,
     // la règle de la colonne, dite une fois dans son en-tête : la chute de chaque ligne est prise à l'instant de son intensité
     note: () => colonnesVues(LIAISONS).some(c => c.k === 'intensite') ? ['au même instant', 'La chute de chaque ligne est prise au même instant que son intensité : la pointe du profil quand c’est elle qui pèse le plus (« pointe »), sinon le permanent. La bulle de chaque valeur donne l’autre instant.'] : null,
@@ -453,7 +458,7 @@ const dejaFait = nom => memo('deja|' + nom, () => { const I = indexReferences();
 const natureAuto = nom => { const q = lireRepere(nom), c = q && (q.codeLu || q.code); return q && q.num && CODES[c] ? CODES[c].nom : 'équipement'; };
 // l'état d'un repère : ses points du contrôle, comptés (les problèmes d'abord) ; chacun dans la bulle
 const etatRepere = nom => { const e = etatDuNom(nom);
-  return { niveau: e.niveau || 'ok', mot: e.ko.length ? pluriel(e.ko.length, 'problème') : e.att.length ? e.att.length + INSECABLE + 'à voir' : 'ok', bulle: [...e.ko, ...e.att].map(majuscule).join('\n') }; };
+  return { niveau: e.niveau || 'ok', mot: e.regler.length ? e.regler.length + INSECABLE + 'à régler' : e.voir.length ? e.voir.length + INSECABLE + 'à voir' : 'ok', bulle: [...e.regler, ...e.voir].map(motDeLaLigne).join('\n') }; };
 /* Les colonnes que les onglets de repères partagent : le repère (en tête), ses problèmes (au bout), son folio (en plus). */
 /* LE REPÈRE se lit (le retest est la source : un repère se change dans le fichier, « tout au même endroit ») ; celui d'une
    barrette que VOLTA a ajoutée est provisoire : « ajoutée » le dit, et « Lui donner son repère » — le même geste que la fiche
@@ -464,7 +469,7 @@ const COL_REPERE = { k: 'rep', t: 'Repère', cls: 'rc-c-rep', html: r => r.aPose
   tri: r => r.nom, texte: r => r.nom + (r.aPoser ? ' (repère provisoire)' : '') };
 // (« État », comme dans Liaisons, Câbles, Raccords : la case dit « 3 problèmes », « 1 à voir » ; tout va bien, elle se tait)
 const COL_PROBLEMES = { k: 'etat', t: 'État', cls: 'rc-c-etat', html: r => { const e = etatRepere(r.nom); return etatHtml(e.niveau, e.mot, e.bulle); },
-  tri: r => { const e = etatDuNom(r.nom); return e.ko.length ? -100 * e.ko.length - e.att.length : -e.att.length; }, texte: r => etatRepere(r.nom).mot, vide: r => !etatDuNom(r.nom).niveau };
+  tri: r => { const e = etatDuNom(r.nom); return -(e.niveau === 'ko' ? 10000 : 0) - 100 * e.regler.length - e.voir.length; }, texte: r => etatRepere(r.nom).mot, vide: r => !etatDuNom(r.nom).niveau };
 const COL_FOLIO = { k: 'folio', t: 'Folio', cls: 'rc-c-folio', option: true, large: 2, html: r => r.plans.length ? `<span class="rc-folios">${esc(listeFolios(r.plans))}</span>` : rien, tri: r => r.plans[0] || '', texte: r => r.plans.join(' '), vide: r => !r.plans.length };
 const surFolioRepere = r => app.plan === '*' || (r.plan ? r.plan === app.plan : r.plans.includes(app.plan));
 const choisieRepere = r => !!app.cible && app.cible.type === 'bloc' && app.cible.nom === r.nom;
@@ -805,10 +810,15 @@ function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.
   if (/chute en ligne|chute en pointe/.test(t)) return [/hypothèse|supposé/.test(t) ? 'Écrire les longueurs mesurées dans votre fichier' : 'Une gauge plus forte, ou un chemin plus court', 'chute'];
   if (/maximum de l’AC|table 11-3/.test(t)) return ['Un calibre plus petit, ou un câble plus gros (AC 43.13-1B, table 11-3)', 'fils'];
   // un CONTACT que le calibre ne protège pas (« Contact taille 20 (7,5 A) < calibre 10 A — pas protégé ») : c'est le contact
+  // (v87, S7) la taille de contact qui suffit, quand il y en a une ; sinon c'est la gauge qui limite (un 24 AWG porte 3 A dans tout
+  // contact) : une gauge plus forte règle aussi le contact — jamais « un contact plus gros » qui ne changerait rien
+  { const m = /un contact taille (\S+) suffit/.exec(t); if (m) return ['Un contact taille ' + m[1] + ' : sa fiche › Choix de VOLTA › Manuel', 'contacts']; }
+  if (/la gauge limite/.test(t)) return ['Une gauge plus forte : elle règle aussi le contact — sa fiche propose la plus fine qui convient', 'fils'];
+  if (/^consommation de .+ à écrire/i.test(t)) return ['L’écrire dans sa fiche : Modifier › Ce qu’il consomme', 'profil'];
   if (/contact taille[^—]*— pas protégé/i.test(t)) return ['Un contact plus gros : sa fiche › Choix de VOLTA › Manuel', 'contacts'];
   // (plus « ou un calibre plus petit » : sous un profil qui déclenche déjà le calibre, c'est faux — l'ingénieur v73)
   if (/admis|pas protégé/.test(t)) return ['Un câble plus gros : sa fiche propose le plus fin qui convient', 'fils'];
-  if (/contact taille|dépasse le contact/.test(t)) return ['Un contact plus gros (sa fiche › Choix de VOLTA › Manuel), ou moins de courant', 'contacts'];
+  if (/contact taille|dépasse le contact/.test(t)) return ['Un contact plus gros : sa fiche › Choix de VOLTA › Manuel', 'contacts'];
   if (/refusé|aucun contact|jauge|gauge/.test(t)) return ['Un autre type de câble dans votre fichier, ou un autre arrangement (sa fiche › Choix de VOLTA › Manuel)', 'contacts'];
   if (/aucun arrangement|aucun module|ne loge/.test(t)) return ['Un autre arrangement : sa fiche › Choix de VOLTA › Manuel — ou une gauge plus fine dans votre fichier', 'connecteur'];
   if (/branchement en chaîne/.test(t)) return ['Séparer gauche et droite, si le câblage le permet', 'connecteur'];
@@ -862,13 +872,75 @@ const phraseDuPoint = p => { const M = motsDuPb(p), sujet = M.sujet ? `<span cla
    régler… », « Unifier sur… », « Lui donner son repère » : 08-controle, `gestesDuPoint`), sinon celui que VOLTA sait faire
    pour un câble trop fin ou mal protégé (« Passer en DR16 » : 08-niveaux, `gesteDuPoint`). « Voir 102CB1 » ne règle rien :
    la ligne y mène. `cle` : deux lignes qui portent la même clé demandent le même geste (elles se regroupent). */
-const reparateurs = p => memo('repare|' + RECAP.itemsN + '|' + p.k, () => { const x = p.x, G = gestesDuPb(p);
-  const regle = G.filter(g => g && g.mot && typeof g.faire === 'function' && !/^Voir\b/.test(g.mot)).map(g => ({ ...g, cle: g.cle || (x.nom || '') + '|' + g.mot }));
-  if (regle.length || typeof gesteDuPoint !== 'function') return regle;
-  try { const c = cableDuPb(x);
-    const g = gesteDuPoint({ texte: x.texte, cable: c, gestes: G }, { type: x.nom && estDisjoncteur(x.nom) ? 'disjoncteur' : 'equipement', tete: { nom: x.nom || '' } });
-    return g ? [{ ...g, principal: true }] : []; } catch (_) { return []; } });
+/* (passe 87, S4) un point À VOIR ne montre pas de geste (la fiche non plus : « à régler, c'est ce qui a un geste ») ; un point
+   À RÉGLER montre le sien, sinon celui de sa ligne — le câble qui passe en DR16 règle aussi son contact (`rangDuPoint`). */
+const reparateurs = p => memo('repare|' + RECAP.itemsN + '|' + p.k, () => { const x = p.x, r = rangDuPoint(x); if (!r.regler) return [];
+  const G = gestesDuPb(p), regle = G.filter(g => g && g.mot && typeof g.faire === 'function' && !/^Voir\b/.test(g.mot)).map(g => ({ ...g, cle: g.cle || (x.nom || '') + '|' + g.mot }));
+  if (regle.length) return regle;
+  return r.geste ? [{ ...r.geste, cle: r.geste.cle || (x.nom || '') + '|' + r.geste.mot, principal: true }] : []; });
 const signatureGestes = p => { const G = reparateurs(p); return G.length ? G.map(g => g.cle).join('\u0001') : '\u0002' + p.que; };
+/* ---- (passe 87, S4 — le lecteur : « À régler, c'est ce qui a un geste ») LE RANG DE CHAQUE POINT, LA RÈGLE DE LA FICHE ----
+   La fiche range ses points par ligne (08-niveaux, `tachesFiche`, variante A) : un câble, une ligne — tous ses points — ; un
+   autre point, la sienne. Une ligne est À RÉGLER quand elle a un problème (rouge) ou un geste (« Passer en DR16 », « Lui
+   donner son repère », « Unifier sur… »), À VOIR sinon ; chaque point prend le rang de sa ligne. Le récapitulatif (Problèmes,
+   Disjoncteurs et les autres onglets de repères), le panneau Repères (R), la garde du dossier PDF et la pastille du rail
+   (08-controle, `compteProblemes`) lisent ce rang : un objet a le même nombre partout. Aucun chiffre en dur : le rang suit le
+   contrôle. Rend Map(point → { regler, geste, ligne }) — `geste` : ce qui règle le point (le sien, sinon celui de sa ligne). */
+const RANGS = { items: null, carte: null, lignes: null, parObjet: null, genres: null, genresDe: null };
+const objetDuPoint = x => ({ type: x.nom && estDisjoncteur(x.nom) ? 'disjoncteur' : 'equipement', tete: { nom: x.nom || '' } });
+// le geste qui règle un point, dans l'ordre de la fiche : celui du contrôle (08-controle, `gestesDuPoint` ; « Voir 102CB1 » ne
+// règle rien), sinon celui que VOLTA sait faire (08-niveaux, `gesteDuPoint` : « Passer en DR16 », « Lui donner son repère »)
+function gesteQuiRegleLePoint(x) { let G = []; try { G = typeof gestesDuPoint === 'function' ? gestesDuPoint(x) || [] : []; } catch (_) { G = []; }
+  const regle = G.filter(g => g && g.mot && typeof g.faire === 'function' && !/^Voir\b/.test(g.mot)); if (regle.length) return regle.find(g => g.principal) || regle[0];
+  if (typeof gesteDuPoint !== 'function') return null;
+  try { return gesteDuPoint({ texte: x.texte, cable: cableDuPb(x), gestes: G }, objetDuPoint(x)) || null; } catch (_) { return null; } }
+function rangsDesPoints(items) { const xs = items || (typeof CONTROLE !== 'undefined' && CONTROLE.items) || [];
+  if (RANGS.items === xs && RANGS.carte) return RANGS.carte;
+  const carte = new Map(), lignes = new Map();
+  xs.forEach((x, i) => { const g = gesteQuiRegleLePoint(x); let l = null;
+    try { l = typeof cableDeLaLigne === 'function' ? cableDeLaLigne({ texte: x.texte, cable: cableDuPb(x), point: x }, objetDuPoint(x)) : null; } catch (_) { l = null; }
+    const k = (x.nom || '') + '\u0001' + (l ? 'c|' + cleDeLiaison(l) : 'p|' + i), u = lignes.get(k) || lignes.set(k, { k, nom: x.nom || '', l, xs: [], ko: false, geste: null }).get(k);
+    u.xs.push(x); if (x.niveau === 'ko') u.ko = true; if (g && !u.geste) u.geste = g; carte.set(x, { ligne: u, geste: g }); });
+  lignes.forEach(u => { u.regler = u.ko || !!u.geste; });
+  carte.forEach(r => { r.regler = r.ligne.regler; if (!r.geste && r.regler) r.geste = r.ligne.geste; });
+  RANGS.items = xs; RANGS.carte = carte; RANGS.lignes = [...lignes.values()]; RANGS.parObjet = null; RANGS.genres = null; return carte; }
+const rangDuPoint = x => rangsDesPoints().get(x) || { regler: !!x && x.niveau === 'ko', geste: null, ligne: null };
+// le compte, sur tout le plan : les points à régler, à voir — et combien sont des problèmes (rouges)
+const motARegler = (r, v) => !r && !v ? 'Rien à reprendre' : [r ? r + ' à régler' : '', v ? v + ' à voir' : ''].filter(Boolean).join(' · ');
+function compteARegler(items) { const xs = items || (typeof CONTROLE !== 'undefined' && CONTROLE.items) || [], R = rangsDesPoints(xs); let regler = 0, ko = 0;
+  xs.forEach(x => { if ((R.get(x) || {}).regler) regler++; if (x.niveau === 'ko') ko++; });
+  return { regler, voir: xs.length - regler, ko, mot: motARegler(regler, xs.length - regler) }; }
+/* LES LIGNES D'UN OBJET, comme sa fiche les montre : les siennes, et la barrette que VOLTA ajoute sur l'une de ses bornes
+   (« Deux câbles arrivent sur la borne 2 — Lui donner son repère » : 08-fiche, `problemesEquipement`) — l'onglet de son genre
+   dit « 5 à régler » quand sa fiche en montre cinq. */
+function lignesDeLObjet(nom) { rangsDesPoints();
+  if (!RANGS.parObjet) { const m = new Map(), mettre = (k, u) => (m.get(k) || m.set(k, []).get(k)).push(u);
+    RANGS.lignes.forEach(u => { if (u.nom) mettre(u.nom, u);
+      const s = u.xs.length === 1 && u.xs[0].genre === 'aposer' ? /^ajoutée par VOLTA sur (\S+?):/.exec(String(u.xs[0].texte || '')) : null;
+      if (s && s[1] !== u.nom && typeof genreDe === 'function' && genreDe(s[1]) === 'eqpt') mettre(s[1], u); });
+    RANGS.parObjet = m; }
+  return RANGS.parObjet.get(nom) || []; }
+// une ligne en mots, pour une bulle : un câble, ses deux bouts et ses règles (« 102CB1:2 → 395SW1:1 · DR24 : protection, contact ») ;
+// un autre point, sa phrase
+const motDeLaLigne = u => { const l = u.l, bout = (r, b) => r + (b != null && b !== '' ? ':' + b : '');
+  if (!l) return majuscule(typeof motDuProbleme === 'function' ? motDuProbleme(u.xs[0].texte) : u.xs[0].texte);
+  const regles = [...new Set(u.xs.map(x => typeof regleDuPoint === 'function' ? regleDuPoint(x.texte) : '').map((r, i) => typeof motDeLaRegle === 'function' ? motDeLaRegle(r, u.xs[i] ? u.xs[i].texte : '') : '').filter(Boolean))];
+  return `${bout(l.de, l.borneDe)} → ${bout(l.vers, l.borneVers)} · ${l.type || 'câble'}${regles.length ? ' : ' + regles.join(', ') : ''}`; };
+/* LES GENRES, RANGÉS : comme `genresDuControle` (08-controle), mais selon le rang — À RÉGLER d'abord (les genres où il y a un
+   problème, puis les autres), puis À VOIR ; chaque genre, ses lignes par repère, rangées par nom. L'onglet Problèmes, le
+   panneau Repères et la garde du dossier PDF les montrent. Rend [{ cle, regler, niveau, genre, lignes, n, noms }] ; une ligne :
+   { cle, niveau, genre, nom, xs, plan, k, cleControle (celle de `lignesDuControle` : P y reprend) }. */
+function genresARegler(items) { const xs = items || (typeof CONTROLE !== 'undefined' && CONTROLE.items) || [], R = rangsDesPoints(xs);
+  if (RANGS.genres && RANGS.genresDe === xs) return RANGS.genres;
+  const G = new Map(), L = new Map();
+  xs.forEach((x, k) => { const r = R.get(x) || {}, genre = x.genre || 'autre', cg = (r.regler ? 'regler' : 'voir') + '|' + genre;
+    const g = G.get(cg) || G.set(cg, { cle: cg, regler: !!r.regler, niveau: 'att', genre, lignes: [], n: 0, noms: new Set() }).get(cg), cl = cg + '|' + (x.nom || '\u0001' + x.texte);
+    let l = L.get(cl); if (!l) { l = { cle: cl, niveau: 'att', genre, nom: x.nom || '', xs: [], plan: x.plan || '', k, cleControle: x.niveau + '|' + genre + '|' + (x.nom || '\u0001' + x.texte) }; L.set(cl, l); g.lignes.push(l); }
+    l.xs.push(x); g.n++; if (x.nom) g.noms.add(x.nom); if (x.niveau === 'ko') { g.niveau = 'ko'; l.niveau = 'ko'; } });
+  const poids = g => g.regler ? (g.niveau === 'ko' ? 0 : 1) : 2;
+  const out = [...G.values()].sort((a, b) => poids(a) - poids(b) || rangDuGenre(a.genre) - rangDuGenre(b.genre));
+  out.forEach(g => g.lignes.sort((a, b) => triNaturel(a.nom || '~', b.nom || '~')));
+  RANGS.genres = out; RANGS.genresDe = xs; return out; }
 /* Voir un point depuis sa ligne : sa fiche, sur son folio, ouverte à la section qui le démontre — sans filtrer l'onglet sur
    lui (la liste reste sous les yeux ; « Voir 102CB1 » la réduisait à 102CB1). */
 function voirLePoint(p) { const x = p.x; if (!x.nom || x.tableau != null || VT_A_POSER.test(x.nom)) { allerAuControle(x); return; }
@@ -880,7 +952,8 @@ function voirLePoint(p) { const x = p.x; if (!x.nom || x.tableau != null || VT_A
 const COLONNES_PROBLEMES = [
   // rangé par genre, l'intercalaire dit déjà le niveau (son compte, à sa couleur) : la colonne ne se pose pas — elle ne
   // répéterait qu'un point par ligne ; triée, cherchée ou filtrée, chaque ligne le dit en mots
-  { k: 'niveau', t: 'Niveau', cls: 'rc-c-etat', html: p => { const n = p.x.niveau === 'ko' ? 'ko' : 'att'; return RECAP.parGenre ? pointSeul(n, MOTS_ETAT[n]) : etatHtml(n); }, tri: p => p.x.niveau === 'ko' ? 0 : 1, texte: p => p.x.niveau === 'ko' ? 'problème' : 'à voir',
+  // (passe 87, S4) le rang de la fiche : à régler (un problème ou un geste), puis à voir — le point garde la couleur de son état
+  { k: 'niveau', t: 'Niveau', cls: 'rc-c-etat', html: p => { const n = p.x.niveau === 'ko' ? 'ko' : 'att'; return RECAP.parGenre ? pointSeul(n, MOTS_ETAT[n]) : etatHtml(n); }, tri: p => rangDuPoint(p.x).regler ? (p.x.niveau === 'ko' ? 0 : 1) : 2, texte: p => rangDuPoint(p.x).regler ? 'à régler' : 'à voir',
     vide: () => groupesParGenre() },
   // (un bloc choisi sur le plan filtre l'onglet sur lui : la colonne ne répéterait que son nom, déjà dans la recherche) ; le
   // même objet qu'à la ligne du dessus s'écrit à l'encre troisième : l'œil voit où un autre commence
@@ -900,9 +973,9 @@ const COLONNES_PROBLEMES = [
 // problèmes se lisent toujours sur tout le plan — ils sont peu nombreux, et chaque puce dit combien sont sur ce folio
 const PROBLEMES = { colonnes: COLONNES_PROBLEMES, portee: false, lignes: problemes, surFolio: p => app.plan === '*' || !p.plans.length || p.plans.includes(app.plan), exact: (p, f) => p.x.nom === f, cherche: 'Chercher : repère, mot…',
   choisie: p => !!app.cible && app.cible.type === 'bloc' && app.cible.nom === p.x.nom, etat: p => p.x.niveau,
-  puces: () => [['niveau:ko', 'À régler', p => p.x.niveau === 'ko', '', 'niveau'], ['niveau:att', 'À voir', p => p.x.niveau !== 'ko', '', 'niveau']],
+  puces: () => [['niveau:ko', 'À régler', p => rangDuPoint(p.x).regler, '', 'niveau'], ['niveau:att', 'À voir', p => !rangDuPoint(p.x).regler, '', 'niveau']],
   choisir: voirLePoint, survol: p => { if (p.x.nom) survolRepere(p.x.nom); },
-  ordre: L => { const rg = p => (p.x.niveau === 'ko' ? 0 : 1000) + (typeof rangDuGenre === 'function' ? rangDuGenre(p.x.genre) : 0); return L.map((p, i) => [p, i]).sort((a, z) => rg(a[0]) - rg(z[0]) || a[1] - z[1]).map(x => x[0]); },
+  ordre: L => { const rg = p => (rangDuPoint(p.x).regler ? (p.x.niveau === 'ko' ? 0 : 500) : 1000) + (typeof rangDuGenre === 'function' ? rangDuGenre(p.x.genre) : 0); return L.map((p, i) => [p, i]).sort((a, z) => rg(a[0]) - rg(z[0]) || a[1] - z[1]).map(x => x[0]); },
   aller: p => { const x = p.x; if (x.tableau != null) { montrerLiaisons(x.tableau); return; } allerAuControle(x);
     if (p.sec) setTimeout(() => { if (typeof ouvrirSection === 'function') ouvrirSection($('ba-equip'), p.sec); }, 0); } };
 
@@ -994,8 +1067,9 @@ function compteOnglet(k) { const items = CONTROLE.items || [];
     case 'cables': { const C = cables(); return { n: String(C.length), etat: C.some(etatCable) ? 'att' : '' }; }
     case 'raccords': return { n: String(raccords().length), etat: '' };
     // le compte des problèmes : la source unique (08-controle, `compteProblemes`) — les rouges · ce qui est à voir
-    case 'problemes': { const C = typeof compteProblemes === 'function' ? compteProblemes() : { ko: items.filter(x => x.niveau === 'ko').length, att: items.filter(x => x.niveau !== 'ko').length }, ko = C.ko, att = C.att;
-      return { n: String(ko + att), ko, att, etat: ko ? 'ko' : att ? 'att' : '', titre: C.mot || pluriel(ko, 'problème') + ' · ' + att + ' à voir' }; }
+    // (passe 87, S4) à régler · à voir, la règle de la fiche (`compteARegler`, que lit aussi la pastille du rail)
+    case 'problemes': { const C = compteARegler(items);
+      return { n: String(C.regler + C.voir), ko: C.regler, att: C.voir, rouge: C.ko > 0, etat: C.ko ? 'ko' : C.regler || C.voir ? 'att' : '', titre: C.mot }; }
     case 'normes': return { n: String(NORMES_ONGLET.lignes().length), etat: '' };
   } } catch (_) { } return { n: '', etat: '' }; }
 
@@ -1030,7 +1104,8 @@ function rendreTete(O) { const b = app.base, n = app.contrat.liaisons.length, P 
 function rendreOnglets() { const b = app.base, mots = new Map(ONGLETS);
   const ongletHtml = k => { const c = compteOnglet(k), on = k === b.onglet, ko = c.etat === 'ko';
     // les problèmes : deux pastilles, le rouge (à reprendre) et l'ambre (à voir) ; les autres : un nombre
-    const compte = k === 'problemes' && c.ko != null ? (c.ko || c.att ? `<span class="rc-ns">${c.ko ? `<b class="rc-n ko" aria-label="${escA(pluriel(c.ko, 'problème'))}">${c.ko}</b>` : ''}${c.att ? `<b class="rc-n att" aria-label="${escA(c.att + ' à voir')}">${c.att}</b>` : ''}</span>` : '<small>0</small>') : c.n ? `<small>${esc(c.n)}</small>` : '';
+    // (passe 87) la première, ce qui est à régler — rouge s'il y a un problème, ambre plein sinon ; la seconde, ce qui est à voir
+    const compte = k === 'problemes' && c.ko != null ? (c.ko || c.att ? `<span class="rc-ns">${c.ko ? `<b class="rc-n ${c.rouge === false ? 'att regler' : 'ko'}" aria-label="${escA(c.ko + ' à régler')}">${c.ko}</b>` : ''}${c.att ? `<b class="rc-n att" aria-label="${escA(c.att + ' à voir')}">${c.att}</b>` : ''}</span>` : '<small>0</small>') : c.n ? `<small>${esc(c.n)}</small>` : '';
     return `<button role="tab" class="rc-onglet" data-onglet="${k}" aria-selected="${on}" tabindex="${on ? 0 : -1}"${c.titre ? ` data-bulle="${escA(c.titre)}"` : ''}><i class="rc-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24">${ICONES_ONGLETS[k] || ''}</svg>${ko && k !== 'problemes' ? '<i class="rc-carre ko" aria-label="un problème"></i>' : ''}</i><span>${esc(mots.get(k))}</span>${compte}</button>`; };
   $('ba-onglets').innerHTML = GROUPES_ONGLETS.map(([g, t, ks]) => `<div class="rc-onglets-g" role="presentation" data-groupe="${g}">${t ? `<span class="rc-onglets-t" aria-hidden="true">${esc(t)}</span>` : ''}${ks.map(ongletHtml).join('')}</div>`).join('');
   // l'onglet choisi reste en vue quand le rail défile (une moitié basse) ou la bande (la feuille étroite)
@@ -1160,17 +1235,19 @@ function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.je
       return `<tr class="rc-groupe${p === app.plan ? ' ici' : ''}"><td colspan="${n}"><span class="rc-groupe-l"><button class="rc-f" data-plan="${escA(p)}" data-bulle="${escA(p ? 'Aller au folio ' + p : 'Les liaisons sans folio')}">${p ? 'Folio ' + esc(p) : 'Sans folio'}</button><span class="rc-groupe-n">${plurielLie(rs.length, 'liaison')}</span>`
         + `${ko ? etatHtml('ko', plurielLie(ko, 'problème')) : ''}${att ? etatHtml('att', att + INSECABLE + 'à voir') : ''}</span></td></tr>`; } });
       rs.forEach(ligne); }); }
-  else if (parGenre) { const rang = new Map(); genresDuControle().forEach((g, i) => g.lignes.forEach(l => l.xs.forEach(x => rang.set(x, i))));
-    const G = genresDuControle(), par = new Map(); L.forEach(r => { const i = rang.has(r.x) ? rang.get(r.x) : G.length; (par.get(i) || par.set(i, []).get(i)).push(r); });
-    /* (v84) DU PLUS GRAVE AU MOINS GRAVE, et ça se voit : un intercalaire de niveau (« Problèmes · 4 », puis « À voir · 7 »,
-       à leur couleur) avant ses genres ; chaque genre dit son compte, son mot, ses repères, et le geste qui le traite d'un
-       coup quand il existe — plus de « Voir le premier » : chaque ligne y mène. */
-    const ordre = [...par.keys()].sort((a, c) => a - c), parNiveau = new Map();
-    ordre.forEach(i => { const nv = G[i] ? (G[i].niveau === 'ko' ? 'ko' : 'att') : 'att'; parNiveau.set(nv, (parNiveau.get(nv) || 0) + par.get(i).length); });
+  else if (parGenre) { const G = genresARegler(), rang = new Map(); G.forEach((g, i) => g.lignes.forEach(l => l.xs.forEach(x => rang.set(x, i))));
+    const par = new Map(); L.forEach(r => { const i = rang.has(r.x) ? rang.get(r.x) : G.length; (par.get(i) || par.set(i, []).get(i)).push(r); });
+    /* (v84) DU PLUS GRAVE AU MOINS GRAVE, et ça se voit : un intercalaire (« À régler · 5 », puis « À voir · 7 ») avant ses
+       genres ; chaque genre dit son compte, son mot, ses repères, et le geste qui le traite d'un coup quand il existe — plus de
+       « Voir le premier » : chaque ligne y mène. (passe 87, S4) Rangés comme la fiche (`genresARegler`) : « À régler » au rouge
+       s'il y a un problème, à l'ambre sinon ; « À voir », calme. */
+    const ordre = [...par.keys()].sort((a, c) => a - c), parNiveau = new Map(), rougeR = G.some(g => g.regler && g.niveau === 'ko');
+    const niv = i => G[i] && G[i].regler ? 'regler' : 'voir';
+    ordre.forEach(i => parNiveau.set(niv(i), (parNiveau.get(niv(i)) || 0) + par.get(i).length));
     let niveau = null;
-    ordre.forEach(i => { const g = G[i], rs = par.get(i), nv = g ? (g.niveau === 'ko' ? 'ko' : 'att') : 'att';
-      if (nv !== niveau && parNiveau.size > 1) { niveau = nv; const t = nv === 'ko' ? 'À régler' : 'À voir', c = parNiveau.get(nv);
-        morceaux.push({ h: H_GROUPE, f: () => `<tr class="rc-niveau ${nv}"><td colspan="${n}"><span class="rc-niveau-l"><i aria-hidden="true"></i>${t}<b class="rc-n">${c}</b></span></td></tr>` }); }
+    ordre.forEach(i => { const g = G[i], rs = par.get(i), nv = niv(i);
+      if (nv !== niveau && parNiveau.size > 1) { niveau = nv; const t = nv === 'regler' ? 'À régler' : 'À voir', c = parNiveau.get(nv), cls = nv === 'regler' ? (rougeR ? 'ko' : 'att') : 'voir';
+        morceaux.push({ h: H_GROUPE, f: () => `<tr class="rc-niveau ${cls}"><td colspan="${n}"><span class="rc-niveau-l"><i aria-hidden="true"></i>${t}<b class="rc-n">${c}</b></span></td></tr>` }); }
       if (g) morceaux.push({ h: H_GROUPE + 8, f: () => { const ge = gesteDuGenre(g), noms = [...g.noms], va = ge && /^Voir /.test(ge.mot);
         return `<tr class="rc-groupe rc-genre ${g.niveau}"><td colspan="${n}"><span class="rc-groupe-l"><b class="rc-genre-n">${g.n}</b><b class="rc-genre-mot">${esc(motDuGenre(g.genre, g.n))}</b>`
           + (noms.length === 1 && g.n > 1 ? `<span class="rc-groupe-n">${esc(noms[0])}</span>` : noms.length && noms.length !== g.n && noms.length !== 1 ? `<span class="rc-groupe-n">${esc(plurielLie(noms.length, 'repère'))}</span>` : '')
@@ -1185,7 +1262,7 @@ function rendreTable(O, C) { const b = app.base, tri = b.tri, jeton = ++RECAP.je
      (v84) L'objet qui se répète d'une ligne à la suivante s'écrit plus doux. Les lignes se posent après : le calcul est prêt. */
   RECAP.parGenre = !!parGenre; RECAP.groupes = new Map(); RECAP.memes = new Set();
   if (O === PROBLEMES) { let tete = null, avant = null, nom = null; const virtuel = morceaux.length > VIRTUEL_DES;
-    morceaux.forEach(m => { if (m.k == null) { tete = null; avant = null; nom = null; return; } const r = RECAP.vues.get(m.k), s = r ? (r.x.niveau === 'ko' ? 'ko' : 'att') + '\u0001' + signatureGestes(r) : '', x = r && r.x.nom;
+    morceaux.forEach(m => { if (m.k == null) { tete = null; avant = null; nom = null; return; } const r = RECAP.vues.get(m.k), s = r ? (rangDuPoint(r.x).regler ? 'regler' : 'voir') + '\u0001' + signatureGestes(r) : '', x = r && r.x.nom;
       if (!virtuel) { if (s && s === avant && tete) { RECAP.groupes.get(tete).n++; RECAP.groupes.set(m.k, { suite: true, tete }); } else { tete = m.k; RECAP.groupes.set(m.k, { n: 1 }); } }
       if (x && x === nom) RECAP.memes.add(m.k); avant = s; nom = x; }); }
   // un onglet vide le dit sous ses en-têtes, au milieu de la feuille (hors de la table : sa dernière colonne prend tout)
@@ -1541,7 +1618,8 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
     if (b.edition) { if (e.target.closest('.edite') || Date.now() - RECAP.edite < 500) return; finirEdition('ok', null); }
     const f = e.target.closest('button[data-plan]'); if (f) { allerAuPlan(f.dataset.plan); return; }
     const pr = e.target.closest('[data-premier]'); if (pr) { allerAuGenre(pr.dataset.premier); return; }
-    const ge = e.target.closest('[data-geste]'); if (ge) { faireLeGeste(ge.dataset.geste); return; }
+    // (passe 87) le geste d'un genre rangé comme la fiche (`genresARegler`), sinon celui du contrôle
+    const ge = e.target.closest('[data-geste]'); if (ge) { const g = genresARegler().find(y => y.cle === ge.dataset.geste), G = g && typeof gesteDuGenre === 'function' ? gesteDuGenre(g) : null; if (G) G.faire(); else faireLeGeste(ge.dataset.geste); return; }
     if (!r) return;
     const au = e.target.closest('button[data-auto]'); if (au) { if (O.rendre) O.rendre(r, au.dataset.auto); return; }
     if (e.target.closest('[data-aller]')) { if (O.aller) O.aller(r); return; }

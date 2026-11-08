@@ -85,8 +85,9 @@ const DEDOUBLES = new Map();
 // (la clé lit aussi le type, le numéro et le harness : une ligne en double, qui ne pose pas de barrette, se reconnaît à eux — 01 `cleDeDoublon`)
 function nDedoublements(L) { const k = L.map(l => l.de + '\u0001' + l.borneDe + '\u0001' + l.vers + '\u0001' + l.borneVers + '\u0001' + (l.type || '') + '\u0001' + (l.cable || '') + '\u0001' + (l.harness || '')).join('\u0002'); let n = DEDOUBLES.get(k);
   if (n == null) { n = dedoublements(L).length; if (DEDOUBLES.size > 600) DEDOUBLES.clear(); DEDOUBLES.set(k, n); } return n; }
-function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComplete); let L = L0, depart = 0;
-  if (plan !== '*') { const par = new Map(); for (const l of L0) { const xs = par.get(l.plan); if (xs) xs.push(l); else par.set(l.plan, [l]); }
+function liaisonsDe(plan) { const R = RANGEMENT, L0 = R ? R.L0 : app.contrat.liaisons.filter(liaisonComplete); let L = L0, depart = 0;
+  if (plan !== '*' && R) { L = R.par.get(plan) || []; depart = R.departs.get(plan) || 0; }
+  else if (plan !== '*') { const par = new Map(); for (const l of L0) { const xs = par.get(l.plan); if (xs) xs.push(l); else par.set(l.plan, [l]); }
     L = par.get(plan) || []; const P = plans(), i = P.indexOf(plan); for (let j = 0; j < i; j++) { const xs = par.get(P[j]); if (xs) depart += nDedoublements(xs); } }
   const g = folios.get(plan), sig = depart + '|' + signature(L);
   // (v86) les lettres d'une barrette ajoutée suivent la norme en cours (une norme chargée en change le module) : la norme
@@ -94,7 +95,24 @@ function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComple
   if (g && g.sig === sig && g.norme === app.norme && g.L.length === L.length && g.L.every((l, i) => l === L[i])) return g.sortie;
   if (!app.contrat.provisoires) app.contrat.provisoires = new Map();
   const sortie = avecBarrettesAPoser(L, depart, app.contrat.provisoires, app.norme || null); folios.set(plan, { L, sig, sortie, norme: app.norme }); return sortie; }
+/* (passe 87, la vitesse) LES FOLIOS RANGÉS UNE FOIS POUR TOUTE UNE BOUCLE. Chaque `liaisonsDe(p)` relit le contrat entier
+   (les liaisons triées par folio, la liste des folios, les barrettes à poser des folios d'avant) : une boucle sur les 90
+   folios d'un gros plan le relisait 90 fois — 33 ms, 200 quand les Workers du placement prennent les cœurs —, et la pastille
+   « 28 / 90 folios prêts » refaisait cette boucle deux fois par seconde : la page figée 50 à 200 ms à chaque fois. Le temps
+   de `f` — une LECTURE, qui ne change rien au contrat —, `avecLesFolios` range le contrat une fois, et chaque `liaisonsDe(p)`
+   y prend son folio et son départ : le même calcul, dans le même ordre, le même tableau rendu. */
+let RANGEMENT = null;
+function rangementDesFolios() { const L0 = app.contrat.liaisons.filter(liaisonComplete), par = new Map(), departs = new Map();
+  for (const l of L0) { const xs = par.get(l.plan); if (xs) xs.push(l); else par.set(l.plan, [l]); }
+  let d = 0; for (const p of plans()) { departs.set(p, d); const xs = par.get(p); if (xs) d += nDedoublements(xs); }
+  return { L0, par, departs }; }
+function avecLesFolios(f) { if (RANGEMENT) return f(); RANGEMENT = rangementDesFolios(); try { return f(); } finally { RANGEMENT = null; } }
 const liaisonsDuPlan = () => liaisonsDe(app.plan);
+/* LES CÂBLES D'UN FOLIO, comptés comme son cartouche (passe 87, le regard : « Dessin du folio 3 / 6 · 69 câbles », son
+   cartouche en dit 56) : ce que le dessin trace — sans les shunts d'une barrette (ses deux bouts sur le même repère) ni le
+   câble à créer d'une barrette ajoutée par VOLTA (01, `estRaccordAPoser` : le dessin le replie sur sa borne). L'attente
+   d'un folio et la recherche (« Folio 3 · 56 câbles ») le disent ; la somme des folios est le compte de la LPA. */
+const nombreDeCables = L => L.reduce((n, l) => n + (String(l.de) !== String(l.vers) && !estRaccordAPoser(l) ? 1 : 0), 0);
 /* Le placement d'un folio se garde tant que ses liaisons ne changent pas : le
    concours d'un folio chargé prend des secondes, revenir sur un folio déjà
    vu est instantané. La CLÉ : ce que le placement lit de chaque liaison — ses
@@ -163,7 +181,7 @@ const affinage = { actif: !(typeof navigator !== 'undefined' && navigator.webdri
 const cleCourante = () => { const L = liaisonsDuPlan(); return L.length ? clePlacement(L) : null; };
 // tous les folios du contrat dans la file, le folio affiché d'abord ; ceux qui ne sont plus au contrat en sortent
 function affinerTout() { if (!affinage.actif) return;
-  const P = plans(), parPlan = app.plan === '*' || !P.length ? [liaisonsDe('*')] : [liaisonsDuPlan(), ...P.filter(p => p !== app.plan).map(liaisonsDe)];
+  const P = plans(), parPlan = avecLesFolios(() => app.plan === '*' || !P.length ? [liaisonsDe('*')] : [liaisonsDuPlan(), ...P.filter(p => p !== app.plan).map(p => liaisonsDe(p))]);
   const travaux = parPlan.filter(L => L.length).map(L => ({ cle: clePlacement(L), L: L.map(({ origine, ...l }) => l) })).filter(t => !affinage.finis.has(t.cle) && !(affinage.encours && affinage.encours.cle === t.cle));
   affinage.file = travaux.filter((t, i) => travaux.findIndex(u => u.cle === t.cle) === i); pomper(); }
 // le placement au loin a-t-il encore du travail ? (un folio attendu, en cours, ou un folio du contrat pas encore placé)
@@ -363,7 +381,7 @@ function arreterPlacement() { const w = placement.worker; placement.worker = nul
 /* La file : le folio affiché d'abord — s'il attend pendant qu'un autre se calcule, l'autre cède (il reprendra) — ; puis
    les folios demandés ; puis, d'avance, les autres folios du contrat, un à la fois. Ce qui ne correspond plus à un folio
    du contrat (une liaison corrigée, un autre fichier) sort de la file. Quand il n'y a plus rien, l'affinage peut partir. */
-function pomperPlacement() { if (!placement.ailleurs || placement.worker === false) return;
+function pomperPlacement() { if (!placement.ailleurs || placement.worker === false) return; avecLesFolios(() => {
   const vivant = cle => { const a = placement.attentes.get(cle); return !!a && plans().includes(a.plan) && clePlacement(liaisonsDe(a.plan)) === cle; };
   placement.file = placement.file.filter(vivant);
   [...placement.attentes.keys()].forEach(cle => { if (!vivant(cle) && !(placement.encours && placement.encours.cle === cle)) placement.attentes.delete(cle); });
@@ -375,12 +393,12 @@ function pomperPlacement() { if (!placement.ailleurs || placement.worker === fal
   if (!cle) { const p = prochainAuLoin(); if (p) demanderPlacement(p.cle, p.L, p.plan); else pomper(); montrerAttente(); return; }
   const w = travailleurPlacement(); if (!w) { placerIci(); return; }
   const a = placement.attentes.get(cle); a.debut = performance.now(); a.p = 0;
-  placement.encours = { cle, t: a.debut }; w.postMessage({ cle, liaisons: a.L }); montrerAttente(); }
+  placement.encours = { cle, t: a.debut }; w.postMessage({ cle, liaisons: a.L }); montrerAttente(); }); }
 // le prochain folio du contrat à placer d'avance : après le folio affiché, dans l'ordre, un folio gros et jamais vu
-function prochainAuLoin() { if (app.plan === '*' || app.nFolios) return null; const P = plans(), i = Math.max(0, P.indexOf(app.plan));
+function prochainAuLoin() { if (app.plan === '*' || app.nFolios) return null; return avecLesFolios(() => { const P = plans(), i = Math.max(0, P.indexOf(app.plan));
   for (let k = 1; k < P.length; k++) { const p = P[(i + k) % P.length], L = liaisonsDe(p); if (L.length <= SEUIL_ICI) continue; const cle = cleDuPlan(p);
     if (placement.prets.has(cle) || app.retouches.has(cle) || affinage.profonds.has(cle) || placements.has(cle) || placement.attentes.has(cle)) continue; return { cle, L, plan: p }; }
-  return null; }
+  return null; }); }
 // la clé d'un folio, gardée tant que ses liaisons sont les mêmes (le même tableau : `liaisonsDe`)
 const clesDesPlans = new Map();
 function cleDuPlan(p) { const L = liaisonsDe(p), m = clesDesPlans.get(p); if (m && m.L === L) return m.cle; const cle = L.length ? clePlacement(L) : ''; clesDesPlans.set(p, { L, cle }); return cle; }
@@ -476,7 +494,7 @@ function montrerAttente() { const a = app.contrat.liaisons.length && !app.dessin
     el.addEventListener('click', e => { const b = e.target.closest('[data-at]'); if (!b) return; if (b.dataset.at === 'problemes') basculerIndex(); else ouvrirBase(); }); }
   if (el) { if (!a) { el.hidden = true; el.dataset.cle = ''; }
     else { const m = marges(), v = avancement(a); Object.assign(el.style, { left: m.gauche + 'px', right: m.droite + 'px', top: m.haut + 'px', bottom: m.bas + 'px' });
-      const detail = pluriel(a.L.length, 'câble') + ' · ' + (v.file ? 'son tour vient · ' : '') + v.mot;
+      const detail = pluriel(nombreDeCables(a.L), 'câble') + ' · ' + (v.file ? 'son tour vient · ' : '') + v.mot;
       if (el.dataset.cle !== a.cle) { el.dataset.cle = a.cle;
         el.innerHTML = `<i aria-hidden="true"></i><b role="status">Dessin du folio ${esc(folioEtRang(a.plan))}</b><small class="at-detail">${esc(detail)}</small>`
           + `<span class="at-barre" aria-hidden="true"><span></span></span>${gestesDeLAttente()}`; }
@@ -498,9 +516,10 @@ function montrerAttente() { const a = app.contrat.liaisons.length && !app.dessin
    `liaisonsDe` pour chacun coûtait 55 ms par lecture sur un plan de 90 folios (le fichier « geant »). */
 function clesDesFolios() { const t = performance.now(), P = plans(), m = clesDesFolios.m;
   if (m && t - m.t < 1000 && m.P.length === P.length && m.P.every((p, i) => p === P[i])) return m.r;
-  const r = new Map(P.map(p => { const g = folios.get(p), k = clesDesPlans.get(p);
-    if (g && k && k.L === g.sortie) return [p, { cle: k.cle, n: g.sortie.length }];
-    const L = liaisonsDe(p); return [p, { cle: L.length ? cleDuPlan(p) : '', n: L.length }]; }));
+  // (passe 87) les folios pas encore lus se lisent ensemble, le contrat rangé une fois (`avecLesFolios`)
+  const r = new Map(), aLire = [];
+  P.forEach(p => { const g = folios.get(p), k = clesDesPlans.get(p); if (g && k && k.L === g.sortie) r.set(p, { cle: k.cle, n: g.sortie.length }); else { r.set(p, null); aLire.push(p); } });
+  if (aLire.length) avecLesFolios(() => aLire.forEach(p => { const L = liaisonsDe(p); r.set(p, { cle: L.length ? cleDuPlan(p) : '', n: L.length }); }));
   clesDesFolios.m = { t, P, r }; return r; }
 const travailDeFond = () => (placement.ailleurs && placement.worker !== false) || (affinage.actif && affinage.worker !== false);
 function etatDuFolio(p, K) { const f = (K || clesDesFolios()).get(p); if (!f || !f.cle) return null; const k = f.cle;
@@ -511,7 +530,8 @@ function etatDuFolio(p, K) { const f = (K || clesDesFolios()).get(p); if (!f || 
   if (affinage.actif && affinage.encours && affinage.encours.cle === k) { const e = affinage.etat; return { etat: 'affinage', p: e && e.n ? e.k / e.n : 0 }; }
   return { etat: 'pret' }; }
 // l'état en mots : la bulle de la puce (« Folio 5 : dessin en cours, encore environ 4 s ») ; `court` : sans les secondes (le nom de la puce)
-function motDuFolio(p, court) { const nom = 'Folio ' + p, e = travailDeFond() ? etatDuFolio(p) : null; if (!e) return nom;
+// (passe 87) `K` : les clés des folios, lues une fois pour toute la barre (`peindreEtatsDesFolios`) — chaque puce les relisait
+function motDuFolio(p, court, K) { const nom = 'Folio ' + p, e = travailDeFond() ? etatDuFolio(p, K) : null; if (!e) return nom;
   if (e.etat === 'dessin') return nom + ' : dessin en cours' + (court ? '' : ', ' + e.mot) + (e.esquisse && app.plan === p && !court ? ' (l’esquisse se lit déjà)' : '');
   if (e.etat === 'attente') { const enc = placement.encours && placement.attentes.get(placement.encours.cle);
     return nom + ' : en attente' + (court || !enc || enc.plan === p ? '' : ', après le folio ' + enc.plan); }
@@ -523,9 +543,9 @@ function peindreEtatsDesFolios() { const strip = $('fo-strip'); if (!strip) retu
     // la piste : ce que le dessin a fait ; pleine quand il est prêt (elle se remplit, puis s'efface)
     const p = etat === 'dessin' ? Math.max(0.04, e.p).toFixed(3) : etat === 'attente' ? '0' : '1';
     if (c.style.getPropertyValue('--fo-p') !== p) c.style.setProperty('--fo-p', p);
-    const nom = fond ? motDuFolio(c.dataset.plan, true) : 'Folio ' + c.dataset.plan; if (c.getAttribute('aria-label') !== nom) c.setAttribute('aria-label', nom); });
+    const nom = fond ? motDuFolio(c.dataset.plan, true, K) : 'Folio ' + c.dataset.plan; if (c.getAttribute('aria-label') !== nom) c.setAttribute('aria-label', nom); });
   // la bulle de la puce survolée suit (l'horloge tourne quatre fois par seconde pendant un dessin)
-  const b = $('folios') && $('folios').querySelector('.fo-bulle.on'); if (b && b.dataset.plan) { const t = typo(motDuFolio(b.dataset.plan)); if (b.textContent !== t) b.textContent = t; } }
+  const b = $('folios') && $('folios').querySelector('.fo-bulle.on'); if (b && b.dataset.plan) { const t = typo(motDuFolio(b.dataset.plan, false, K)); if (b.textContent !== t) b.textContent = t; } }
 // l'horloge de l'attente : quatre fois par seconde tant qu'un folio se calcule ou s'esquisse, rien sinon
 function remonterHorloge() { const utile = placement.ailleurs && (!!placement.encours || placement.attentes.size > 0);
   if (utile && !placement.horloge) placement.horloge = setInterval(() => { verifierEsquisse(); montrerAttente(); }, 250);
@@ -535,8 +555,8 @@ function remonterHorloge() { const utile = placement.ailleurs && (!!placement.en
 function foliosPrets() { const t = performance.now(), m = foliosPrets.m; if (m && t - m.t < 500) return m.r;
   const P = plans(); let r = null;
   if (P.length > 1 && app.plan !== '*' && !app.nFolios && placement.ailleurs) { const pas = new Set();
-    P.forEach(p => { const L = liaisonsDe(p); if (L.length <= SEUIL_ICI) return; const k = cleDuPlan(p);
-      if (!(placement.prets.has(k) || placements.has(k) || affinage.profonds.has(k) || app.retouches.has(k))) pas.add(p); });
+    avecLesFolios(() => P.forEach(p => { const L = liaisonsDe(p); if (L.length <= SEUIL_ICI) return; const k = cleDuPlan(p);
+      if (!(placement.prets.has(k) || placements.has(k) || affinage.profonds.has(k) || app.retouches.has(k))) pas.add(p); }));
     r = { n: P.length - pas.size, N: P.length, pas }; }
   foliosPrets.m = { t, r }; return r; }
 /* LA PETITE BANDE du milieu, en bas (#affinage) : ce qui travaille pour nous, une chose à la fois — le dessin définitif du
@@ -1792,14 +1812,38 @@ function rendreIndex(box) { const etats = new Map();
     + (cables.length ? `<div class="ix-groupe"><span>Câbles</span><b>${cables.length > 12 ? '12 / ' + cables.length : cables.length}</b></div><ul class="ix-liste">` + cables.slice(0, 12).map(l => { const p = plansDuFil(l.cable);
       return `<li><button class="ix-item ix-cable" data-cable="${escA(l.cable)}"><span class="ix-etat ok" aria-hidden="true"></span><span class="min0"><b>${marque(l.cable)}</b><small>${marque(l.type || 'sans type')} · ${esc(l.de)} → ${esc(l.vers)}</small></span>`
         + (p.length ? `<span class="ix-folio">${esc(foliosDeLIndex(p))}</span>` : '') + '</button></li>'; }).join('') + '</ul>' : '');
-  const meme = box.dataset.cle === 'index', haut = box.scrollTop, nko = (CONTROLE.items || []).filter(x => x.niveau === 'ko').length, natt = (CONTROLE.items || []).length - nko;
+  const meme = box.dataset.cle === 'index', haut = box.scrollTop;
+  /* (passe 87, S4 — le lecteur : « À régler, c'est ce qui a un geste ») CE QUI RESTE À REPRENDRE, RANGÉ COMME LA FICHE : à
+     régler (un problème, ou un point qui a son geste : « Lui donner son repère », « Passer en DR16 »), puis à voir — les mêmes
+     nombres que le récapitulatif, la garde du dossier et la pastille (08-recap, `compteARegler`, `genresARegler`). (S6) Chaque
+     point dit les mêmes mots que la fiche et le récapitulatif : qui, vu de son objet (« 2 → 103RL1:A1 · DR20 »), puis ce qui
+     cloche en clair (08-recap, `motsDuPb` ; 08-niveaux, `motsDuProbleme`) ; la bulle dit d'où vient l'admis. */
+  const C = typeof compteARegler === 'function' ? compteARegler() : { regler: (CONTROLE.items || []).filter(x => x.niveau === 'ko').length, ko: 0, voir: 0 }; if (C.voir == null) C.voir = (CONTROLE.items || []).length - C.regler;
+  const listeARegler = () => { if (typeof genresARegler !== 'function') return listeControleHtml(); const XS = CONTROLE.items || []; if (!XS.length) return '';
+    try { if (typeof assurerModele === 'function') assurerModele(); } catch (_) { }
+    const mots = x => { const k = XS.indexOf(x); try { if (typeof motsDuPb === 'function' && k >= 0) return motsDuPb({ x, k: 'p' + k }); } catch (_) { } const t = majuscule(motDuProbleme(x.texte)); return { sujet: '', court: t, long: t }; };
+    const G = genresARegler(), nL = G.reduce((s, g) => s + g.lignes.length, 0), ouvert = g => CONTROLE.genres.has(g.cle) ? CONTROLE.genres.get(g.cle) : nL <= COURTE;
+    const ligne = l => { const x = l.xs[0], M = l.xs.map(mots), dit = m => (m.sujet ? m.sujet + ' : ' : '') + m.court;
+      return `<li><button class="ix-item co-item" data-k="${l.k}" data-ligne="${escA(l.cleControle)}"${l.xs.length > 3 ? ` data-bulle="${escA(M.map(dit).join('\n'))}"` : ''}>`
+        + `<span class="co-code ${x.nom ? genreDe(x.nom) : 'tab'}" aria-hidden="true">${x.nom ? esc(codeDe(x.nom)) : ico('tableau')}</span>`
+        + `<span class="min0"><b>${esc(x.nom || 'Tableau')}${l.xs.length > 1 ? ` <em>${l.xs.length} points</em>` : ''}</b>${M.slice(0, 3).map(m => `<small${m.long !== m.court ? ` data-bulle="${escA(m.long)}"` : ''}>${m.sujet ? `<span class="ix-sujet">${esc(m.sujet)}</span> ` : ''}${insecable(esc(m.court))}</small>`).join('')}${l.xs.length > 3 ? `<small class="co-plus">et ${l.xs.length - 3} de plus</small>` : ''}</span>`
+        + (l.plan && l.plan !== '*' ? `<span class="ix-folio">f. ${esc(l.plan)}</span>` : '') + '</button></li>'; };
+    const genre = g => { const G2 = gesteDuGenre(g), noms = [...g.noms], dit = noms.length === 1 ? noms[0] : noms.length ? plurielLie(noms.length, 'repère') : 'le tableau', o = ouvert(g), folios = [...new Set(g.lignes.map(l => l.plan).filter(p => p && p !== '*'))];
+      return `<div class="co-genre ${g.niveau}" data-genre="${escA(g.cle)}"${o ? ' data-ouvert="1"' : ''}><button type="button" class="co-genre-bascule" aria-expanded="${o}" data-genre-bascule="${escA(g.cle)}">${ico('bas', 'co-chevron')}<b class="co-n">${g.n}</b><span class="co-genre-l">${esc(motDuGenre(g.genre, g.n))}</span></button>`
+        + `<div class="co-genre-pied"><small>${esc(dit)}${folios.length ? ' · ' + esc(folios.length > 3 ? folios.length + ' folios' : 'f. ' + folios.join(' · ')) : ''}</small>`
+        + `<span class="co-gestes"><button type="button" class="co-voir" data-premier="${escA(g.cle)}" data-bulle="Sa fiche, sur son folio ; P passe au point suivant">${g.lignes.length > 1 ? 'Voir le premier' : 'Voir'}</button>${G2 ? `<button type="button" class="co-geste" data-geste="${escA(g.cle)}" data-bulle="${escA(G2.aide)}">${esc(G2.mot)}</button>` : ''}</span></div>`
+        + (o ? `<ul class="ix-liste co-liste">${g.lignes.map(ligne).join('')}</ul>` : '') + '</div>'; };
+    const R = G.filter(g => g.regler), V = G.filter(g => !g.regler), n = gs => gs.reduce((s, g) => s + g.n, 0);
+    return (R.length ? `<div class="ix-groupe ${R.some(g => g.niveau === 'ko') ? 'ko' : 'att'}"><span>À régler</span><b>${n(R)}</b></div><div class="co-genres">${R.map(genre).join('')}</div>` : '')
+      + (V.length ? `<div class="ix-groupe voir"><span>À voir</span><b>${n(V)}</b></div><div class="co-genres">${V.map(genre).join('')}</div>` : '')
+      + `<p class="co-astuce"><kbd>P</kbd> le point suivant · <kbd>Maj</kbd> <kbd>P</kbd> le précédent</p>`; };
   box.className = 'fi ix'; box.dataset.cle = 'index';
   // la fiche qu'on y a laissée : ‹ la rouvre (Alt+←), à la même place
   const I = typeof pileInsp === 'function' ? pileInsp() : null, laissee = I && I.pile[I.pos];
   box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" data-bulle="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" data-bulle="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span>${boutonTaille()}${boutonEpingle()}<button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer · Échap">${ico('fermer')}</button></header>`
     // (v86, une seule source : un équipement s'ajoute dans le fichier — plus de « + » ni de champ ici)
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Filtrer la liste : un repère, une référence" aria-label="Filtrer la liste des repères" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? `<span class="ix-att"> · ${natt} à voir</span>` : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
+    + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${C.ko ? 'ko' : C.regler || C.voir ? 'att' : 'ok'}"><i aria-hidden="true">${C.ko ? '✕' : C.regler || C.voir ? '!' : '✓'}</i>${C.regler ? C.regler + ' à régler' + (C.voir ? `<span class="ix-att"> · ${C.voir} à voir</span>` : '') : C.voir ? C.voir + ' à voir' : 'rien à reprendre'}</span>${(C.regler || C.voir) ? ico('bas', 'fi-chevron') : ''}</summary>${listeARegler()}</details>`)
     + (groupes || `<div class="ix-vide"><span class="ix-vide-ico" aria-hidden="true">${ico('loupe')}</span><p>Aucun repère ni câble ne contient « ${esc(app.insp.filtre.trim())} ».</p><button class="btn papier" id="ix-effacer">Effacer la recherche</button></div>`);
   // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
   box.scrollTop = meme ? haut : 0; survolQuiSuit(box); if (typeof lierBulles === 'function') lierBulles(box);
@@ -1825,6 +1869,11 @@ function rendreIndex(box) { const etats = new Map();
   ['ix-vider', 'ix-effacer'].forEach(id => { const b = $(id); if (b) b.onclick = effacer; });
   const det = box.querySelector('.ix-controle'); if (det) det.addEventListener('toggle', () => { CONTROLE.ouvert = det.open; });
   if (det) lierListeControle(det, () => rendreIndex(box));
+  // (passe 87) « Voir le premier » et le geste d'un genre suivent son rang (08-recap, `genresARegler`) ; P reprend à sa ligne
+  if (det && typeof genresARegler === 'function') { const genreDe_ = k => genresARegler().find(y => y.cle === k);
+    det.querySelectorAll('[data-premier]').forEach(b => b.onclick = e => { e.stopPropagation(); const g = genreDe_(b.dataset.premier), l = g && g.lignes[0]; if (!l) return;
+      const L = lignesDuControle(), i = L.findIndex(y => y.cle === l.cleControle); if (i >= 0) allerALaLigne(i, L); else allerAuControle(l.xs[0]); });
+    det.querySelectorAll('[data-geste]').forEach(b => b.onclick = e => { e.stopPropagation(); const g = genreDe_(b.dataset.geste), G = g && gesteDuGenre(g); if (G) G.faire(); }); }
   box.querySelectorAll('.ix-item.co-item').forEach(b => b.onclick = () => { const L = lignesDuControle(), i = L.findIndex(l => l.cle === b.dataset.ligne); if (i >= 0) CONTROLE.pas = { cle: L[i].cle, rang: i }; allerAuControle(CONTROLE.items[+b.dataset.k]); });
   box.querySelectorAll('.ix-item[data-nom]').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan));
   box.querySelectorAll('.ix-item[data-cable]').forEach(b => b.onclick = () => aller({ type: 'fil', nom: b.dataset.cable })); }
@@ -2052,10 +2101,12 @@ const A_PLAT = new Map();   // chaque frappe relit tout le contrat : un texte se
 const aPlat = s => { s = String(s == null ? '' : s); let a = A_PLAT.get(s); if (a != null) return a;
   a = s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s\-_.\/·:'’]+/g, ''); if (A_PLAT.size > 60000) A_PLAT.clear(); A_PLAT.set(s, a); return a; };
 const sansZeros = s => s.replace(/\d+/g, d => d.replace(/^0+(?=\d)/, ''));
+// (passe 87) un texte à plat perd ses zéros une fois : la recherche le relit à chaque lettre
+const SANS_ZEROS = new Map(), sansZerosDe = a => { let z = SANS_ZEROS.get(a); if (z == null) { z = sansZeros(a); if (SANS_ZEROS.size > 60000) SANS_ZEROS.clear(); SANS_ZEROS.set(a, z); } return z; };
 /* le rang d'un texte pour ce qu'on cherche (déjà à plat : `Q`, et sans ses zéros : `Qz`) — 0 commence par, 1 contient,
    2 rien. Sans ses zéros, il faut l'égalité (« w12 » = W-012) ; le début ne compte que si l'on n'a pas tapé de zéro soi-même
    (« w12 » trouve aussi W-120, « w012 » non). */
-function rangAPlat(t, Q, Qz) { const a = aPlat(t); if (!a || !Q) return 2; if (a.startsWith(Q)) return 0; const z = sansZeros(a);
+function rangAPlat(t, Q, Qz) { const a = aPlat(t); if (!a || !Q) return 2; if (a.startsWith(Q)) return 0; const z = sansZerosDe(a);
   if (z === Qz || (Q === Qz && z.startsWith(Qz))) return 0; return a.includes(Q) ? 1 : 2; }
 // les natures que ce qu'on tape nomme (« disj », « relais », « barrettes » — trois lettres au moins) : leurs codes de repère
 function naturesDe(Q) { if (Q.length < 3) return []; const out = [];
@@ -2086,70 +2137,92 @@ function calibreCherche(q) { const t = String(q || '').trim().toLowerCase().norm
   const mot = m[1] && m[1].length >= 3 && 'calibres'.startsWith(m[1]);
   if (!(mot || (!m[1] && m[2] && m[3]))) return null;
   return { amp: m[2] ? parseFloat(m[2].replace(',', '.')) : null }; }
-function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if (!Q) return [];
-  const L = verite(), D = app.contrat.designations, info = new Map(), cal = calibreCherche(q);
+/* (passe 87, la vitesse) L'INDEX DE LA RECHERCHE. `candidats` relisait le contrat entier à chaque lettre — les repères (leurs
+   part numbers, leurs descriptions, leur nombre de câbles), les barrettes ajoutées par VOLTA sur chacun des folios, les bornes
+   de chaque repère, les câbles, les types — : sur un plan de 3 345 liaisons, 40 à 90 ms par lettre (et la palette entière,
+   0,7 s). Tout cela se range une fois, tant que le contrat ne change pas (`memoContrat`, la mémoire du contrat) ; une lettre ne
+   lit plus que l'index, et ne trie que les quelques lignes qu'elle montre (`premiersSelon`). Elle trouve exactement ce qu'elle
+   trouvait, dans le même ordre. */
+const ficheDeRecherche = (info, n) => info.get(n) || info.set(n, { n: 0, pns: new Set(), descs: new Set() }).get(n);
+function indexDeRecherche() { return memoContrat('recherche', () => { const L = verite(), info = new Map();
   L.forEach(l => [[l.de, l.pnDe, l.descriptionDe], [l.vers, l.pnVers, l.descriptionVers]].forEach(([n, pn, d]) => { if (!n || estRenvoi(n)) return;
-    const x = info.get(n) || info.set(n, { n: 0, pns: new Set(), descs: new Set() }).get(n); x.n++; if (pn) x.pns.add(String(pn)); if (d) x.descs.add(String(d).trim()); }));
+    const x = ficheDeRecherche(info, n); x.n++; if (pn) x.pns.add(String(pn)); if (d) x.descs.add(String(d).trim()); }));
   // (v86) les barrettes ajoutées par VOLTA (VT1…) ne vivent que sur leur folio : elles se trouvent aussi, et leurs bornes par le
   // nom de leur face (« VT2:51H »)
-  const LV = (plans().length ? plans() : ['*']).flatMap(p => liaisonsDe(p).filter(l => l.aPoser && (VT_A_POSER.test(l.de) || VT_A_POSER.test(l.vers))));
-  LV.forEach(l => [l.de, l.vers].forEach(n => { if (!VT_A_POSER.test(n)) return; const x = info.get(n) || info.set(n, { n: 0, pns: new Set(), descs: new Set() }).get(n);
+  const LV = avecLesFolios(() => (plans().length ? plans() : ['*']).flatMap(p => liaisonsDe(p).filter(l => l.aPoser && (VT_A_POSER.test(l.de) || VT_A_POSER.test(l.vers)))));
+  LV.forEach(l => [l.de, l.vers].forEach(n => { if (!VT_A_POSER.test(n)) return; const x = ficheDeRecherche(info, n);
     if (l.de !== l.vers) x.n++; if (estRaccordAPoser(l)) x.descs.add('barrette ajoutée par VOLTA sur ' + l.de + ':' + l.borneDe); }));
+  // un repère par son nom à plat (le premier venu, si deux s'écrivent pareil à plat)
+  const noms = [...info.keys()], parPlat = new Map(); noms.forEach(n => { const p = aPlat(n); if (!parPlat.has(p)) parPlat.set(p, n); });
+  /* les bornes, chacune décrite par la première liaison qui la touche — son câble vers un autre repère avant un pontage de la
+     même barrette — : celles de chaque repère, et celles des barrettes par leur nom seul (« 51B », « 51e ») */
+  const LB = [...L, ...LV].filter(l => l.de !== l.vers).concat([...L, ...LV].filter(l => l.de === l.vers)), bornesDe = new Map(), bornesSeules = new Map(), vuesSeules = new Set();
+  LB.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => { if (!r || !b) return;
+    const s = bornesDe.get(r) || bornesDe.set(r, { vues: new Set(), xs: [] }).get(r); if (!s.vues.has(b)) { s.vues.add(b); s.xs.push({ b, l, c, autre, bAutre }); }
+    const k = r + '\u0001' + b; if (!vuesSeules.has(k) && estBarrette(r)) { vuesSeules.add(k); const lb = String(b).toLowerCase(); (bornesSeules.get(lb) || bornesSeules.set(lb, []).get(lb)).push({ r, b, l, c, autre, bAutre }); } }));
+  // les câbles, chacun par sa première liaison ; les types, chacun avec son nombre de câbles (sans les pontages)
+  const cables = [], vus = new Set(), types = new Map();
+  L.forEach(l => { const c = l.cable; if (c && !vus.has(c)) { vus.add(c); cables.push(l); } if (l.type && l.de !== l.vers) types.set(l.type, (types.get(l.type) || 0) + 1); });
+  return { L, info, noms, parPlat, bornesDe, bornesSeules, cables, types, calibres: null }; }); }
+// les `k` premiers d'une liste selon `cmp`, comme un tri stable les rangerait — sans trier le reste
+function premiersSelon(xs, k, cmp) { const out = [];
+  for (const x of xs) { if (out.length >= k && cmp(x, out[out.length - 1]) >= 0) continue; let i = out.length; while (i > 0 && cmp(x, out[i - 1]) < 0) i--; out.splice(i, 0, x); if (out.length > k) out.pop(); }
+  return out; }
+function candidats(q) { q = q.trim(); const Q = aPlat(q), Qz = sansZeros(Q); if (!Q) return [];
+  const X = indexDeRecherche(), L = X.L, info = X.info, D = app.contrat.designations, cal = calibreCherche(q);
   const rang = n => rangAPlat(n, Q, Qz), contient = t => rangAPlat(t, Q, Qz) < 2;
   // une borne : « 300XC1:B5 », « 300XC1 B5 », « 300xc1b5 » — le repère exact, la borne qui commence par ce qu'on tape
   const bornes = [], m = /^(\S+?)\s*[:\s]\s*(\S*)$/.exec(q);
   let rep0 = null, bq = '';
-  if (m) { rep0 = [...info.keys()].find(n => aPlat(n) === aPlat(m[1])); bq = aPlat(m[2]); }
-  if (!rep0 && Q.length > 3) { const r = [...info.keys()].filter(n => Q.startsWith(aPlat(n)) && Q.length > aPlat(n).length).sort((a, b) => aPlat(b).length - aPlat(a).length)[0]; if (r) { rep0 = r; bq = Q.slice(aPlat(r).length); } }
+  if (m) { rep0 = X.parPlat.get(aPlat(m[1])); bq = aPlat(m[2]); }
+  // le plus long repère qui commence ce qu'on tape (« 300xc1b5 »)
+  if (!rep0 && Q.length > 3) for (let k = Q.length - 1; k >= 0; k--) { const r = X.parPlat.get(Q.slice(0, k)); if (r) { rep0 = r; bq = Q.slice(k); break; } }
   const desBorne = (l, autre, bAutre) => (SANS_NUMERO_DE_CABLE || !l.cable ? (l.type || 'câble') : l.cable + (l.type ? ' · ' + l.type : '')) + ' → ' + autre + (bAutre ? ':' + bAutre : '');
-  // une borne se décrit par son câble vers un autre repère avant un pontage de la même barrette (`vues` garde le premier)
-  const LB = [...L, ...LV].filter(l => l.de !== l.vers).concat([...L, ...LV].filter(l => l.de === l.vers));
-  if (rep0) { const vues = new Set(); LB.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
-      if (r !== rep0 || !b || vues.has(b) || !aPlat(b).startsWith(bq)) return; vues.add(b);
-      bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: desBorne(l, autre, bAutre) }); }));
+  if (rep0) { const s = X.bornesDe.get(rep0);
+    (s ? s.xs : []).forEach(({ b, l, c, autre, bAutre }) => { if (aPlat(b).startsWith(bq)) bornes.push({ type: 'borne', nom: rep0, borne: String(b), l, cote: c, des: desBorne(l, autre, bAutre) }); });
     bornes.sort((a, b) => triNaturel(a.borne, b.borne)); }
   /* (v86, l'audit G4 et B2) UNE BORNE SEULE, telle que vos fichiers l'écrivent — « 51B » (le module 51, le contact B), « 51e » — :
      chaque barrette qui la porte, celle qui l'écrit à la même casse d'abord (« 51e » montre 51e avant 51E, deux contacts) */
-  if (!rep0 && /^\d+(-\w+|[A-Za-z]\w?)$/.test(q)) { const vues = new Set();
-    LB.forEach(l => [['de', l.de, l.borneDe, l.vers, l.borneVers], ['vers', l.vers, l.borneVers, l.de, l.borneDe]].forEach(([c, r, b, autre, bAutre]) => {
-      if (!r || !b || !estBarrette(r) || String(b).toLowerCase() !== q.toLowerCase() || vues.has(r + '\u0001' + b)) return; vues.add(r + '\u0001' + b);
-      bornes.push({ type: 'borne', nom: r, borne: String(b), l, cote: c, casse: String(b) === q, des: desBorne(l, autre, bAutre) + (/[a-z]/.test(String(b)) ? ' · minuscule' : '') }); }));
+  if (!rep0 && /^\d+(-\w+|[A-Za-z]\w?)$/.test(q)) {
+    (X.bornesSeules.get(q.toLowerCase()) || []).forEach(({ r, b, l, c, autre, bAutre }) => bornes.push({ type: 'borne', nom: r, borne: String(b), l, cote: c, casse: String(b) === q, des: desBorne(l, autre, bAutre) + (/[a-z]/.test(String(b)) ? ' · minuscule' : '') }));
     bornes.sort((a, b) => (b.casse - a.casse) || triNaturel(a.nom, b.nom)); }
   // les repères : par le nom, la désignation, la description du retest, le part number (dit à côté de ce qui l'a trouvé) ; par la nature
   const rep = [], natures = naturesDe(Q), codeDe = n => { const r = lireRepere(n); return r && r.num ? r.code : ''; };
   if (cal && !natures.includes('CB')) natures.push('CB');
+  // le calibre d'un disjoncteur relit tout le disjoncteur (2 à 4 ms) : lu une fois tant que le contrat, le contrôle et les hypothèses restent les mêmes
+  const calDe = n => { if (typeof calibreAuFolio !== 'function') return null; const items = typeof CONTROLE !== 'undefined' ? CONTROLE.items : null, simu = JSON.stringify(app.simu || {});
+    if (!X.calibres || X.calibres.items !== items || X.calibres.simu !== simu) X.calibres = { items, simu, m: new Map() };
+    const M = X.calibres.m; if (!M.has(n)) M.set(n, calibreAuFolio(n)); return M.get(n); };
   // aucun disjoncteur de ce calibre (« 7,5 A » quand ils sont tous en 10 A) : tous, chacun avec le sien, et la ligne le dit
-  const calDe = n => typeof calibreAuFolio === 'function' ? calibreAuFolio(n) : null;
-  if (cal && cal.amp != null && ![...info.keys()].some(n => estDisjoncteur(n) && Math.abs((calDe(n) || 0) - cal.amp) < 1e-6)) { cal.aucun = cal.amp; cal.amp = null; }
+  if (cal && cal.amp != null && !X.noms.some(n => estDisjoncteur(n) && Math.abs((calDe(n) || 0) - cal.amp) < 1e-6)) { cal.aucun = cal.amp; cal.amp = null; }
   info.forEach((x, n) => { const des = D.get(n) || ''; let r = rang(n), dit = des || [...x.descs][0] || '';
     // le calibre cherché : chaque disjoncteur dit le sien, en tête ; « calibre 10 » ne garde que ceux de 10 A
     if (cal && estDisjoncteur(n)) { const c = calDe(n);
       if (cal.amp != null && !(c > 0 && Math.abs(c - cal.amp) < 1e-6)) return;
       rep.push({ type: 'repere', nom: n, des: (c > 0 ? 'calibre ' + amperesCb(c) : 'disjoncteur') + (des && des !== 'disjoncteur' ? ' · ' + des : ''), n: x.n, r: 0.5 }); return; }
-    if (r === 2 && natures.includes(codeDe(n))) { r = 1.5; dit = CODES[codeDe(n)].nom + (estDisjoncteur(n) && typeof calibreAuFolio === 'function' && calibreAuFolio(n) ? ' · ' + amperesCb(calibreAuFolio(n)) : '') + (dit ? ' · ' + dit : ''); }
+    if (r === 2 && natures.includes(codeDe(n))) { r = 1.5; dit = CODES[codeDe(n)].nom + (estDisjoncteur(n) && calDe(n) ? ' · ' + amperesCb(calDe(n)) : '') + (dit ? ' · ' + dit : ''); }
     if (r === 2) { const d = contient(des) ? des : [...x.descs].find(contient), pn = d ? null : [...x.pns].find(contient); if (!d && !pn) return; dit = d || pn; r = d ? 2 : 3; }
     // ni désignation ni description : sa nature (« disjoncteur · 15 A »), plutôt qu'une ligne vide
-    if (!dit) dit = natureDe(n) + (estDisjoncteur(n) && typeof calibreAuFolio === 'function' && calibreAuFolio(n) ? ' · ' + amperesCb(calibreAuFolio(n)) : '');
+    if (!dit) dit = natureDe(n) + (estDisjoncteur(n) && calDe(n) ? ' · ' + amperesCb(calDe(n)) : '');
     rep.push({ type: 'repere', nom: n, des: dit, n: x.n, r }); });
-  rep.sort((a, b) => a.r - b.r || b.n - a.n || triNaturel(a.nom, b.nom));
+  const repVus = premiersSelon(rep, bornes.length ? 2 : 7, (a, b) => a.r - b.r || b.n - a.n || triNaturel(a.nom, b.nom));
   // la nature entière : « tous les disjoncteurs », dans le récapitulatif
   const nat = natures.map(code => { const k = rep.filter(r => codeDe(r.nom) === code).length; if (!k) return null; const nom = CODES[code].nom, onglet = ONGLET_DE_NATURE[code] || 'equipements';
     return { type: 'nature', nom: k > 1 ? nom.replace(/^(\S+?)([sxz]?)(?=\s|$)/, (t, a, b) => a + (b || 's')) : nom, code, onglet, filtre: onglet === 'equipements' ? nom : '', des: cal && code === 'CB' ? (cal.aucun != null ? 'aucun de ' + amperesCb(cal.aucun) + ' — leurs calibres, dans le récapitulatif' : 'leurs calibres, dans le récapitulatif') : 'tous, dans le récapitulatif', n: k, sansCable: true }; }).filter(Boolean).slice(0, 2);
-  // les câbles par leur numéro (celui du fichier, même s'il ne s'écrit plus : `candidatCable`) ; un type de câble (deux
-  // lettres au moins) : la ligne « tous les DR12 », puis quelques-uns
-  const fils = [], vus = new Set(), types = new Map();
-  L.forEach(l => { const c = l.cable; if (c && !vus.has(c) && contient(c)) { vus.add(c); fils.push(candidatCable(l, rang(c))); }
-    if (Q.length >= 2 && l.type && contient(l.type) && l.de !== l.vers) types.set(l.type, (types.get(l.type) || 0) + 1); });
-  fils.sort((a, b) => a.r - b.r || triNaturel(a.nom, b.nom));
-  const ty = [...types].sort((a, b) => rang(a[0]) - rang(b[0]) || b[1] - a[1]).slice(0, 2).map(([t, n]) => ({ type: 'type', nom: t, des: 'tous les câbles de ce type, dans le récapitulatif', n }));
-  // un câble trouvé EXACTEMENT (« w12 » = W-012) passe devant les repères qui ne font que le contenir
-  const exact = fils.filter(f => sansZeros(aPlat(f.nom)) === Qz), autres = fils.filter(f => !exact.includes(f));
-  const out = [...bornes.slice(0, 6), ...exact.slice(0, 2), ...nat, ...rep.slice(0, bornes.length ? 2 : 7), ...ty, ...autres.slice(0, 5)].slice(0, 12);
+  // les câbles par leur numéro (celui du fichier, même s'il ne s'écrit plus : `candidatCable`) — un câble trouvé EXACTEMENT
+  // (« w12 » = W-012) passe devant les repères qui ne font que le contenir ; un type de câble (deux lettres au moins) : la
+  // ligne « tous les DR12 », puis quelques-uns
+  const exacts = [], autres = [];
+  X.cables.forEach(l => { const c = l.cable, r = rang(c); if (r < 2) (sansZerosDe(aPlat(c)) === Qz ? exacts : autres).push({ l, nom: c, r }); });
+  const parCable = (a, b) => a.r - b.r || triNaturel(a.nom, b.nom), fil = f => candidatCable(f.l, f.r);
+  const types = Q.length >= 2 ? [...X.types].filter(([t]) => contient(t)) : [];
+  const ty = types.sort((a, b) => rang(a[0]) - rang(b[0]) || b[1] - a[1]).slice(0, 2).map(([t, n]) => ({ type: 'type', nom: t, des: 'tous les câbles de ce type, dans le récapitulatif', n }));
+  const out = [...bornes.slice(0, 6), ...premiersSelon(exacts, 2, parCable).map(fil), ...nat, ...repVus, ...ty, ...premiersSelon(autres, 5, parCable).map(fil)].slice(0, 12);
   return out.length ? out : proposition(Q, info, L); }
 /* « Vouliez-vous dire… » : le repère, le câble ou le type le plus proche par les fautes de frappe — une faute pour un mot
    court, deux au-delà de six signes. */
 function proposition(Q, info, L) { const Qz = sansZeros(Q), max = Qz.length <= 3 ? 0 : Qz.length <= 6 ? 1 : 2; if (!max) return [];
-  let best = null; const essayer = (t, quoi) => { const d = distanceFrappe(sansZeros(aPlat(t)), Qz, best ? Math.min(max, best.d) : max); if (d <= max && (!best || d < best.d)) best = { d, t, quoi }; };
+  let best = null; const essayer = (t, quoi) => { const d = distanceFrappe(sansZerosDe(aPlat(t)), Qz, best ? Math.min(max, best.d) : max); if (d <= max && (!best || d < best.d)) best = { d, t, quoi }; };
   info.forEach((x, n) => essayer(n, 'repere')); const vus = new Set(), types = new Set();
   for (const l of L) { if (l.cable && !vus.has(l.cable)) { vus.add(l.cable); essayer(l.cable, 'fil'); } if (l.type) types.add(l.type); if (best && best.d === 1 && vus.size > 5000) break; }
   types.forEach(t => essayer(t, 'type'));
@@ -2211,7 +2284,7 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
    « À reprendre » : les gestes concrets du contrôle (« Tout régler : 102CB1 en 15 A… », 08-controle `gestesDuPoint`). Un
    verre de nuit au centre, qui tombe en 200 ms ; chaque action dit sa touche : la palette l'enseigne en passant. ↑ ↓,
    Entrée, Échap (le clavier revient d'où il venait), Ctrl+K encore. Ctrl+K l'ouvre depuis la touche globale (A2). */
-const PALETTE = { el: null, sel: 0, lignes: [], avant: null };
+const PALETTE = { el: null, sel: 0, lignes: [], avant: null, actions: null, frappe: 0, cout: 0 };   // (passe 87) actions : celles de l'ouverture ; frappe : la liste en attente ; cout : ce que la dernière a coûté (ms)
 // ce qu'on tape aussi pour trouver une action (ses mots d'atelier, sans accent)
 const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx installation corrigee retest modifications envoyer livrable', svg: 'image vectorielle dessin',
   png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge calibres preferes', normes: 'tables sources', bible: 'barrettes connecteurs prises modules references',
@@ -2240,7 +2313,7 @@ function actionsDeLaPalette() { const xs = [], vu = new Set();
     en('dessin', 'Voir le dessin, au plus près', '0', () => { VUE.cadrage = 'dessin'; ajuster(true); }, { mots: 'cadrer ajuster zoom', ico: I('zfit') });
     en('cent', 'Zoomer à 100 %', '1', () => zoomerA(1), { mots: 'zoom lire taille reelle', ico: I('zin') }); en('deuxcents', 'Zoomer à 200 %', '2', () => zoomerA(2), { mots: 'zoom loupe', ico: I('zin') });
     if (P.length > 1) { en('folio+', 'Folio suivant', '→', () => allerAuFolio(1), { mots: 'folio page suivant', ico: I('fo-next') }); en('folio-', 'Folio précédent', '←', () => allerAuFolio(-1), { mots: 'folio page precedent', ico: I('fo-prev') });
-      P.forEach((p, i) => en('folio:' + p, 'Folio ' + p, '', () => allerAuPlan(p), { des: pluriel(liaisonsDe(p).length, 'câble'), mots: 'folio f' + (i + 1) + ' page ' + (i + 1) })); }
+      P.forEach((p, i) => en('folio:' + p, 'Folio ' + p, '', () => allerAuPlan(p), { des: pluriel(nombreDeCables(liaisonsDe(p)), 'câble'), mots: 'folio f' + (i + 1) + ' page ' + (i + 1) })); }
     const cle = cleCourante(); if (cle && app.retouches.has(cle)) en('auto', 'Revenir au dessin automatique', '', revenirAutomatique, { mots: 'retouche moteur annuler dessin' }); }
   if (app.hist && app.hist.length) en('defaire', 'Défaire : ' + app.hist[app.hist.length - 1].quoi, 'Ctrl+Z', defaire, { mots: 'annuler defaire retour', ico: I('btnUndo') });
   const aRefaire = typeof pileRefaire === 'function' ? pileRefaire() : [];
@@ -2252,19 +2325,44 @@ function actionsDeLaPalette() { const xs = [], vu = new Set();
   if (comprendre) Object.assign(comprendre, { act: 'comprendre', mots: (comprendre.mots + ' ' + motsComprendre).trim(), ico: comprendre.ico || ICONE_OBJET.comprendre });
   else if (typeof ficheComprendre === 'function') en('comprendre', 'Comment VOLTA réfléchit', '', () => ficheComprendre(), { des: 'ce que VOLTA lit, d’où viennent ses pièces, comment il choisit', mots: motsComprendre, ico: ICONE_OBJET.comprendre });
   return xs; }
-// les gestes concrets du contrôle : un par point, le principal (« Tout régler… », « Unifier sur… », « La poser »)
-function gestesDeLaPalette() { if (typeof gestesDuPoint !== 'function' || !CONTROLE || !CONTROLE.items) return []; const out = [], vus = new Set();
-  CONTROLE.items.forEach(x => { let gs = []; try { gs = gestesDuPoint(x) || []; } catch (_) { } const g = gs.find(y => y.principal) || null; if (!g || vus.has(g.mot)) return; vus.add(g.mot);
-    out.push({ act: 'geste', mot: g.mot, des: x.nom ? x.nom + (x.texte ? ' — ' + x.texte : '') : (x.texte || ''), touche: '', ico: '', mots: aPlat(x.nom || '') + ' regler corriger probleme', faire: g.faire, niveau: x.niveau }); });
-  return out.sort((a, b) => (a.niveau === 'ko' ? 0 : 1) - (b.niveau === 'ko' ? 0 : 1)); }
+/* les gestes concrets du contrôle : un par point, le principal (« Tout régler… », « Unifier sur… », « La poser »).
+   (passe 87, la vitesse) ILS SE GARDENT : ils ne dépendent que du contrôle, et chacun relit son disjoncteur — les refaire à
+   chaque lettre figeait la page 0,7 s sur un plan de 3 345 liaisons (360 points), 70 ms sur l'exemple. Ils se font une fois
+   par contrôle, par tranches : quand la page est libre, après chaque changement (`preparerLaRecherche`) ; sinon, la palette
+   ouverte en fait 15 ms, prend ce qui est prêt, et se complète dès que le reste arrive. Hors de la palette, tout, d'un coup. */
+const GESTES_PALETTE = { items: null, k: 0, vus: null, out: [] };
+const itemsDuControle = () => (typeof CONTROLE !== 'undefined' && CONTROLE.items) || [];
+function avancerGestes(ms) { const G = GESTES_PALETTE, items = itemsDuControle(), fin = performance.now() + ms;
+  if (G.items !== items) Object.assign(G, { items, k: 0, vus: new Set(), out: [] });
+  while (G.k < items.length && performance.now() < fin) { const x = items[G.k++]; let gs = []; try { gs = gestesDuPoint(x) || []; } catch (_) { }
+    const g = gs.find(y => y.principal) || null; if (!g || G.vus.has(g.mot)) continue; G.vus.add(g.mot);
+    G.out.push({ act: 'geste', mot: g.mot, des: x.nom ? x.nom + (x.texte ? ' — ' + x.texte : '') : (x.texte || ''), touche: '', ico: '', mots: aPlat(x.nom || '') + ' regler corriger probleme', faire: g.faire, niveau: x.niveau }); }
+  return G.k >= items.length; }
+const gestesPrets = () => GESTES_PALETTE.items === itemsDuControle() && GESTES_PALETTE.k >= GESTES_PALETTE.items.length;
+function gestesDeLaPalette() { if (typeof gestesDuPoint !== 'function' || !CONTROLE || !CONTROLE.items) return [];
+  if (typeof controleAJour === 'function') controleAJour();   // le contrôle à jour (les actions le relisaient avant : `compteProblemes`)
+  if (!avancerGestes(paletteOuverte() ? 15 : Infinity)) preparerLaRecherche();
+  return GESTES_PALETTE.out.slice().sort((a, b) => (a.niveau === 'ko' ? 0 : 1) - (b.niveau === 'ko' ? 0 : 1)); }
+/* (passe 87) LA RECHERCHE SE PRÉPARE QUAND LA PAGE EST LIBRE, après chaque changement (`synchroniser`) : l'index du contrat,
+   puis les gestes du contrôle, par tranches de 8 ms — la première lettre tapée trouve tout prêt. Si la palette est ouverte
+   quand les gestes s'achèvent, elle se complète, la ligne choisie gardée. */
+const PREPARATION = { t: 0 };
+function preparerLaRecherche() { if (PREPARATION.t) return;
+  const tranche = () => { PREPARATION.t = 0; if (!app.contrat.liaisons.length || typeof gestesDuPoint !== 'function') return; const avant = gestesPrets(); let fini = true;
+    try { fini = avancerGestes(8); } catch (_) { }
+    if (!fini) PREPARATION.t = setTimeout(tranche, 0); else if (!avant && paletteOuverte()) rendrePalette(true); };
+  PREPARATION.t = setTimeout(() => { PREPARATION.t = 0; if (!app.contrat.liaisons.length) return; try { indexDeRecherche(); } catch (_) { } PREPARATION.t = setTimeout(tranche, 0); }, 40); }
 // le rang d'une action pour ce qu'on tape (chaque mot doit y répondre) : son mot d'abord, puis ses mots d'atelier, sa ligne
 function rangAction(a, termes) { let r = 0; const motsDuMot = aPlatMots(a.mot), mots = aPlatMots(a.mots + ' ' + a.ou + ' ' + (a.act || '')), des = aPlat(a.des);
   for (const t of termes) { if (motsDuMot.some(w => w.startsWith(t))) continue; if (aPlat(a.mot).includes(t)) { r += 1; continue; }
     if (mots.some(w => w.startsWith(t))) { r += 2; continue; } if (t.length >= 3 && des.includes(t)) { r += 3; continue; } return null; }
   return r; }
 const aPlatMots = s => String(s || '').split(/[\s'’,·()›:—-]+/).map(aPlat).filter(Boolean);
+// (passe 87) les actions ne changent pas pendant qu'on tape : lues une fois par ouverture de la palette (les 90 folios d'un gros
+// plan comptés en un passage, `avecLesFolios`) ; hors de la palette, lues à chaque fois
+const actionsDeLaSeance = () => !paletteOuverte() ? avecLesFolios(actionsDeLaPalette) : PALETTE.actions || (PALETTE.actions = avecLesFolios(actionsDeLaPalette));
 function lignesDeLaPalette(q) { const termes = aPlatMots(q), out = [];
-  const A = actionsDeLaPalette(), G = gestesDeLaPalette(), groupe = (titre, xs) => { if (xs.length) out.push({ titre }, ...xs); };
+  const A = actionsDeLaSeance(), G = gestesDeLaPalette(), groupe = (titre, xs) => { if (xs.length) out.push({ titre }, ...xs); };
   if (!termes.length) { groupe('Actions', ACTIONS_D_ABORD.map(k => A.find(a => a.act === k)).filter(Boolean));
     groupe('À reprendre', G.slice(0, 4)); return out; }
   const choix = xs => xs.map(a => ({ a, r: rangAction(a, termes) })).filter(x => x.r != null).sort((x, y) => x.r - y.r).map(x => x.a);   // à rang égal, l'ordre du menu
@@ -2283,8 +2381,9 @@ function construirePalette() { if (PALETTE.el) return PALETTE.el;
     + `<div class="pa-pied" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> choisir</span><span><kbd>Entrée</kbd> faire</span><span><kbd>Ctrl</kbd><kbd>K</kbd> ou <kbd>Échap</kbd> fermer</span></div></div>`;
   document.body.appendChild(el); PALETTE.el = el;
   const q = el.querySelector('#pa-q'), liste = el.querySelector('#pa-liste');
-  q.addEventListener('input', () => { PALETTE.sel = 0; rendrePalette(); });
-  q.addEventListener('keydown', e => { const n = PALETTE.lignes.length;
+  q.addEventListener('input', () => { PALETTE.sel = 0; rendrePaletteBientot(); });
+  // Entrée, les flèches, Tab agissent sur ce qu'on a tapé : la liste en attente se refait d'abord
+  q.addEventListener('keydown', e => { if (/^(Arrow(Down|Up)|Enter|Tab|Home|End)$/.test(e.key)) rendrePaletteEnAttente(); const n = PALETTE.lignes.length;
     const pas = d => { if (!n) return; PALETTE.sel = (PALETTE.sel + d + n) % n; marquerPalette(true); };
     if (e.key === 'ArrowDown') { e.preventDefault(); pas(1); } else if (e.key === 'ArrowUp') { e.preventDefault(); pas(-1); }
     else if (e.key === 'Home' && n && !q.value) { e.preventDefault(); PALETTE.sel = 0; marquerPalette(true); } else if (e.key === 'End' && n && !q.value) { e.preventDefault(); PALETTE.sel = n - 1; marquerPalette(true); }
@@ -2300,16 +2399,32 @@ function construirePalette() { if (PALETTE.el) return PALETTE.el;
   return el; }
 function ouvrirPalette(seme) { const el = construirePalette(); if (rechercheOuverte()) fermerRecherche(); if (typeof fermerMenu === 'function') fermerMenu();
   PALETTE.avant = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+  clearTimeout(PALETTE.frappe); PALETTE.frappe = 0; PALETTE.actions = null;
   el.hidden = false; document.body.classList.add('palette-ouverte'); synchroniserRail(); const q = el.querySelector('#pa-q'); q.value = typeof seme === 'string' ? seme : ''; PALETTE.sel = 0; rendrePalette();
   if (!mouvementReduit()) el.querySelector('.pa-boite').animate([{ opacity: 0, transform: 'translateY(-6px) scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.32,.72,0,1)' });
   try { q.focus({ preventScroll: true }); } catch (_) { q.focus(); } }
-function fermerPalette(rendre) { const el = PALETTE.el; if (!el || el.hidden) return; el.hidden = true; document.body.classList.remove('palette-ouverte'); synchroniserRail();
+function fermerPalette(rendre) { const el = PALETTE.el; if (!el || el.hidden) return; clearTimeout(PALETTE.frappe); PALETTE.frappe = 0; PALETTE.actions = null;
+  el.hidden = true; document.body.classList.remove('palette-ouverte'); synchroniserRail();
   const a = PALETTE.avant; PALETTE.avant = null; if (rendre !== false && a && a.isConnected && a.focus) try { a.focus({ preventScroll: true }); } catch (_) { } else if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
 const ICONE_OBJET = { repere: '<rect x="5" y="6" width="14" height="12" rx="1.5"/><path d="M2.5 10h2.5M2.5 14h2.5M19 10h2.5M19 14h2.5"/>', fil: '<path d="M3 16c4 0 4-8 9-8s5 8 9 8"/>', borne: '<circle cx="12" cy="12" r="3.2"/><path d="M3 12h5.8M15.2 12H21"/>',
   type: '<path d="M4 7h16M4 12h16M4 17h10"/>', nature: '<path d="M4 6h16v4H4zM4 14h16v4H4z"/>', action: '<path d="m13 3-7 10h5l-1 8 7-10h-5z"/>', geste: '<path d="M4.5 12h13M13 6.5l5.5 5.5-5.5 5.5"/>', folio: '<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/>',
   comprendre: '<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.6a2.4 2.4 0 1 1 3.3 2.2c-.6.3-1 .8-1 1.5v.6M12 16.6v.3"/>' };
-function rendrePalette() { const el = PALETTE.el; if (!el) return; const q = el.querySelector('#pa-q').value, liste = el.querySelector('#pa-liste');
-  const L = lignesDeLaPalette(q); PALETTE.lignes = L.filter(x => !x.titre); PALETTE.sel = Math.min(PALETTE.sel, Math.max(0, PALETTE.lignes.length - 1));
+/* (passe 87, la vitesse) LA LISTE ATTEND LA FIN DE LA FRAPPE QUAND ELLE COÛTE. Une liste qui se refait en un éclair (moins de
+   12 ms : l'exemple, la plupart des plans) suit chaque lettre ; plus lourde (un très gros plan, une machine occupée), elle
+   attend que la frappe s'arrête 120 ms — la page ne fige plus sous les doigts. Entrée, les flèches et Tab la refont d'abord
+   (`rendrePaletteEnAttente`) : ils agissent sur ce qu'on a tapé. */
+const ATTENTE_FRAPPE = 120;
+function rendrePaletteBientot() { const enAttente = !!PALETTE.frappe; clearTimeout(PALETTE.frappe); PALETTE.frappe = 0;
+  if (!enAttente && !(PALETTE.cout > 12)) { rendrePalette(); return; }
+  PALETTE.frappe = setTimeout(() => { PALETTE.frappe = 0; rendrePalette(); }, ATTENTE_FRAPPE); }
+function rendrePaletteEnAttente() { if (!PALETTE.frappe) return; clearTimeout(PALETTE.frappe); PALETTE.frappe = 0; rendrePalette(); }
+// une ligne de la palette, reconnue d'un rendu à l'autre (la liste qui se complète garde la ligne choisie)
+const cleDeLignePalette = x => !x ? '' : x.objet ? 'o' + x.objet.type + '\u0001' + x.objet.nom + '\u0001' + (x.objet.borne || '') : 'a' + x.act + '\u0001' + x.mot;
+function rendrePalette(garder) { const el = PALETTE.el; if (!el) return; const t0 = performance.now(), q = el.querySelector('#pa-q').value, liste = el.querySelector('#pa-liste');
+  const choisie = garder ? cleDeLignePalette(PALETTE.lignes[PALETTE.sel]) : '';
+  const L = lignesDeLaPalette(q); PALETTE.lignes = L.filter(x => !x.titre);
+  if (choisie) { const k = PALETTE.lignes.findIndex(x => cleDeLignePalette(x) === choisie); if (k >= 0) PALETTE.sel = k; }
+  PALETTE.sel = Math.min(PALETTE.sel, Math.max(0, PALETTE.lignes.length - 1));
   let i = 0;
   liste.innerHTML = L.length ? L.map(x => { if (x.titre) return `<div class="pa-groupe" role="presentation">${esc(x.titre)}</div>`; const k = i++;
       if (x.objet) { const c = x.objet; return `<div class="pa-l" role="option" id="pa-o-${k}" data-i="${k}" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONE_OBJET[c.type] || ICONE_OBJET.repere}</svg>`
@@ -2320,7 +2435,7 @@ function rendrePalette() { const el = PALETTE.el; if (!el) return; const q = el.
         + `<span class="pa-mot">${a.ou ? `<i class="pa-ou">${esc(a.ou)} ›</i> ` : ''}${esc(a.mot)}${a.des ? `<small${a.des.length > 70 ? ` data-bulle="${escA(a.des)}"` : ''}>${esc(a.des)}</small>` : ''}</span>`
         + (a.touche ? `<span class="pa-touche">${a.touche.split('+').map(t => `<kbd>${esc(t)}</kbd>`).join('')}</span>` : '') + '</div>'; }).join('')
     : `<div class="pa-rien">Rien pour « ${esc(q.trim())} » — une action (« pdf », « hypo », « exporter »), un repère, un câble, un type, une nature.</div>`;
-  marquerPalette(true); }
+  marquerPalette(true); PALETTE.cout = performance.now() - t0; }
 function marquerPalette(defiler) { const el = PALETTE.el; if (!el) return; const q = el.querySelector('#pa-q');
   el.querySelectorAll('.pa-l').forEach(b => { const on = +b.dataset.i === PALETTE.sel; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); if (on && defiler) b.scrollIntoView({ block: 'nearest' }); });
   q.setAttribute('aria-activedescendant', PALETTE.lignes.length ? 'pa-o-' + PALETTE.sel : ''); }
@@ -2494,8 +2609,8 @@ const ligneHypotheseHtml = (c, H) => { const reglee = c.k && c.k in HYPOTHESES &
 function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }), N = app.norme || normeVide(), cs = hypothesesDe(N, H, { fiche: true });
   const reglees = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k])).length, defaut = !reglees;
   // le chapeau dit où vont ces réglages (l'ingénieur v73 : « si j'envoie le dossier, on ne peut pas refaire le calcul ») : ils
-  // partent avec chaque export — la page « Hypothèses et sources » du dossier PDF, la feuille « VOLTA » de l'installation corrigée
-  const corps = tete('Réglages', 'Hypothèses') + '<p class="note">Ce que votre fichier ne dit pas, VOLTA le suppose ; chaque fiche qui s’en sert le dit. <b>Ces réglages sont écrits dans chaque export</b> (le dossier PDF, l’installation corrigée). Le détail de chacun se lit au survol de sa phrase.</p>'
+  // partent avec chaque export — la page « Hypothèses et sources » du dossier PDF, la feuille « VOLTA » de l'Excel corrigé
+  const corps = tete('Réglages', 'Hypothèses') + '<p class="note">Ce que votre fichier ne dit pas, VOLTA le suppose ; chaque fiche qui s’en sert le dit. <b>Ces réglages sont écrits dans chaque export</b> (le dossier PDF, l’Excel corrigé). Le détail de chacun se lit au survol de sa phrase.</p>'
     + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><h3 class="hy-titre">${esc(t)}</h3>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
   const pied = `<span class="hy-etat${defaut ? '' : ' regle'}">${defaut ? 'Les valeurs de VOLTA' : `<b>${pluriel(reglees, 'hypothèse')}</b> réglée${reglees > 1 ? 's' : ''} ici`}</span><span class="espace"></span>`
     + `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de VOLTA</button>`;
@@ -3131,9 +3246,9 @@ function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDe
     b.querySelector('.bulle').textContent = 'L’Excel corrigé : ' + mod + '. Un relevé montre ce qui part, puis l’Excel s’enregistre';
     // elle paraît : elle tombe d'un rien, une fois
     if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }
-  const m = $('mn-retest'); if (m) m.textContent = n ? motChangements(n) : 'telle que votre fichier, rien de changé';
+  const m = $('mn-retest'); if (m) m.textContent = n ? motChangements(n) : 'tel que votre fichier, rien de changé';
   const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'Excel corrigé · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
-function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); peindreEtats(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); peindreEtats(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); preparerLaRecherche(); }
 /* LE RAIL SE DÉPLIE (le technicien : « la liste à puces avec une pastille, je la prends pour des notifications ; le ⊸+ pour un
    curseur de réglage ») : au survol prolongé — 250 ms, une main qui passe ne l'ouvre pas —, il montre le mot et la touche
    de chaque outil (style.css, `#rail.deplie`). Il se replie dès qu'on clique (et ne se rouvre pas sous la main restée là :

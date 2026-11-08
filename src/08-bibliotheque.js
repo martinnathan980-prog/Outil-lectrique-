@@ -597,7 +597,9 @@ const HERO_FILS = [
   ['M776 224H900', 'DR22', 838, 218, '412VC3B 540VL5', 'DR22 · de la prise de coupure 412VC3B à 540VL5, borne 1'], ['M186 164H232V194', '', 0, 0, '102CB1 28V', 'La barre 28 V CC arrive sur 102CB1, borne 2'],
   ['M670 78H726V100', '', 0, 0, '381RL1', '381RL1, borne 2, va à la masse'], ['M670 158H726V180', '', 0, 0, '382RL2', '382RL2, borne 2, va à la masse'], ['M1020 232H1070V252', '', 0, 0, '540VL5', '540VL5, borne 2, va à la masse']];
 /* Chaque pièce dit ce qu'elle est ; la survoler allume les câbles qui la touchent (le courant qu'elle laisse passer). */
-const HERO_PIECES = { '102CB1': '102CB1 · disjoncteur de 15 A : il protège tout ce qui suit', '668VT31': '668VT31 · barrette de jonction : un câble entre, trois repartent',
+// (passe 87, le regard : « un 15 A sur du DR20 et du DR22, VOLTA lui-même le refuserait ») : 5 A, qui protège le DR20 et le
+// DR22 — l'AC 43.13-1B (table 11-3 : 7,5 A en 20 AWG, 5 A en 22 AWG) comme l'EN 2853 déclassée par le faisceau (6,9 A et 5,1 A)
+const HERO_PIECES = { '102CB1': '102CB1 · disjoncteur de 5 A : il protège tout ce qui suit', '668VT31': '668VT31 · barrette de jonction : un câble entre, trois repartent',
   '381RL1': '381RL1 · relais', '382RL2': '382RL2 · relais', '412VC3B': '412VC3B · prise de coupure : partie mobile et partie fixe', '540VL5': '540VL5 · vanne', '28V': 'La barre 28 V CC : l’alimentation du disjoncteur' };
 const HERO_COURANTS = ['M186 110H335V70H560', 'M186 110H335V150H560', 'M186 110H335V224H900'];
 /* (v79, un relecteur : « une planche technique plutôt qu'un site vitrine ») : le schéma posé sous la règle d'un folio ;
@@ -614,7 +616,7 @@ function heroSchema() { const deja = BIB.intro === 'faite';
     + `<path class="hs-regle" d="M0 14.5H1200"/>` + [...Array(8)].map((_, k) => `<text class="hs-col" x="${24 + 72 + k * 144}" y="9">${k + 1}</text>${k < 7 ? `<path class="hs-regle" d="M${24 + (k + 1) * 144} 14.5v6"/>` : ''}`).join('');
   return `<div class="bi-vitrine bi-hero"><svg viewBox="0 -4 1200 316" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${marge}`
     + fils
-    + bloc(90, 92, 96, 90, '102CB1', '15 A', 'hs-dj') + `<g class="hs-piece hs-vt" data-rep="668VT31"><rect class="hs-barre" x="330" y="52" width="10" height="190" rx="3"/><rect class="hs-prise-p" x="318" y="52" width="34" height="226"/><text class="hs-rep" x="335" y="268">668VT31</text></g>`
+    + bloc(90, 92, 96, 90, '102CB1', '5 A', 'hs-dj') + `<g class="hs-piece hs-vt" data-rep="668VT31"><rect class="hs-barre" x="330" y="52" width="10" height="190" rx="3"/><rect class="hs-prise-p" x="318" y="52" width="34" height="226"/><text class="hs-rep" x="335" y="268">668VT31</text></g>`
     + bloc(560, 52, 110, 50, '381RL1', 'relais') + bloc(560, 132, 110, 50, '382RL2', 'relais')
     + `<g class="hs-piece hs-vc" data-rep="412VC3B"><rect class="hs-barre" x="758" y="196" width="7" height="58" rx="2"/><rect class="hs-barre" x="769" y="196" width="7" height="58" rx="2"/><rect class="hs-prise-p" x="744" y="190" width="46" height="94"/><text class="hs-rep" x="767" y="276">412VC3B</text></g>`
     + bloc(900, 204, 120, 50, '540VL5', 'vanne')
@@ -891,7 +893,7 @@ function lotHtml() { const L = BIB.lot; if (!L) return ''; const n = L.ids.size,
   if (E) return `<div class="bi-lot en-cours" role="status" aria-live="polite"><div class="bi-lot-barre" role="progressbar" aria-valuemin="0" aria-valuemax="${E.n}" aria-valuenow="${E.k}"><i style="width:${partDuLot(E)}%"></i></div>`
     + `<span class="bi-lot-n">Conversion : <b>${E.k}${INSECABLE}/${INSECABLE}${E.n}</b></span><span class="bi-lot-nom id">${esc(E.nom)}</span><small class="bi-lot-mot">${esc(E.mot || '')}</small><span class="espace"></span><button class="bi-lien-lot" data-bi="lot-arreter">Arrêter</button></div>`;
   return `<div class="bi-lot" role="region" aria-label="Convertir en lot"><span class="bi-lot-n"><b>${n}</b>${INSECABLE}${n > 1 ? 'contrats choisis' : 'contrat choisi'}</span>`
-    + `<label class="bi-lot-o"><input type="checkbox" data-lot-o="excel"${L.excel ? ' checked' : ''}><span>Installation corrigée <small>Excel</small></span></label>`
+    + `<label class="bi-lot-o"><input type="checkbox" data-lot-o="excel"${L.excel ? ' checked' : ''}><span>Excel corrigé</span></label>`
     + `<label class="bi-lot-o${pdf ? '' : ' eteint'}"><input type="checkbox" data-lot-o="pdf"${L.pdf && pdf ? ' checked' : ''}${pdf ? '' : ' disabled'}><span>Dossier PDF <small>${pdf ? 'tous les folios' : 'pas encore là'}</small></span></label>`
     + `<span class="bi-lot-seg" role="group" aria-label="Ce qui sort"><button data-bi="lot-zip" data-zip="1" aria-pressed="${L.zip}">Un zip</button><button data-bi="lot-zip" data-zip="0" aria-pressed="${!L.zip}">Un par contrat</button></span>`
     + `<span class="espace"></span><button class="bi-lien-lot" data-bi="lot-annuler">Annuler</button><button class="bi-btn" data-bi="lot-convertir"${n && (L.excel || (L.pdf && pdf)) ? '' : ' disabled'}>${icoBi('depot')}<span>Convertir${n ? ' ' + (n > 1 ? milliers(n) + ' contrats' : 'le contrat') : ''}</span></button></div>`; }

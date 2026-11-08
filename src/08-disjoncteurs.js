@@ -257,18 +257,74 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
   // chiffres comparés que l'arrondi n'inverse pas (`enOrdre`) — les mêmes phrases que les câbles au-delà des passages (08-controle)
   const Hd = { ...HYPOTHESES, ...((d.contexte && d.contexte.hyp) || {}) }, enClair = (f, t) => typeof motDeclasse === 'function' ? motDeclasse(app.norme, Hd, f, t) : motFacteur(t === Infinity ? f.facteur : f.facteurCourt);
   const deux = (a, b) => typeof enOrdre === 'function' ? enOrdre(a, b).map(x => nombre(x) + ' A') : [amperes(a), amperes(b)];
-  /* (v86, l'audit B1) LA BRANCHE DE COMMANDE dont rien n'est écrit (09 quater, `inconnu` : elle ne mène qu'à des bobines, à des
-     entrées de calculateur) : son courant est inconnu — jamais le courant total du disjoncteur, jamais un câble à grossir —, un
-     point à voir qui dit quoi écrire : la consommation de la bobine (une entrée de calculateur seule ne demande rien : quelques
-     milliampères). Puis les câbles DIRECTS ; ceux au-delà d'un passage (une prise, une barrette, un contact traversé), le
-     contrôle les dit avec leur « (par … ) » (08-controle, `controleProtection`) : une seule phrase par fait. */
-  d.fils.forEach(f => { const bob = f.inconnu && f.branche ? (f.branche.sans || []).filter(x => x.nature === 'bobine').map(x => x.repere) : [];
-    if (bob.length) out.push({ niveau: 'att', l: f.l, texte: `${cableEtType(f)} : courant de commande inconnu : écrivez la consommation de la bobine de ${listeEt(bob)}` }); });
+  /* (v87, le lecteur, Q1 ; S5) LES CONSOMMATIONS À ÉCRIRE, EN TÊTE : chaque charge, chaque bobine dont la consommation manque —
+     sans elle, le courant de ses câbles (l'aller, le retour) est inconnu, et VOLTA ne leur en prête aucun (avant : le courant
+     total du disjoncteur, ou rien pour une bobine). Un point par repère, à voir, avec son geste « Écrire la consommation de
+     104LP1 » (sa fiche, Modifier › Ce qu'il consomme) et ses câbles ; un genre à lui, « consommations à écrire » (08-controle) :
+     ce n'est pas un calibre à revoir. Une entrée de calculateur ne demande rien (quelques milliampères). */
+  const aEcrire = new Map(), noter = (r, l, bobine) => { const x = aEcrire.get(r) || aEcrire.set(r, { cables: new Set(), bobine: false }).get(r); if (l) x.cables.add(l); if (bobine) x.bobine = true; };
+  const bobines = b => new Set(((b && b.sans) || []).filter(y => y.nature === 'bobine').map(y => y.repere));
+  d.fils.forEach(f => { const b = f.branche; if (f.inconnu && b) { const bo = bobines(b); (b.manque || []).forEach(r => noter(r, f.l, bo.has(r))); } });
+  retoursDuDisjoncteur(nom).forEach(({ l, R }) => { if (R.inconnu) { const bo = bobines(R); (R.manque || []).forEach(r => noter(r, l, bo.has(r))); } });
+  const consos = [...aEcrire].sort((a, b) => triNaturel(a[0], b[0])).map(([r, x]) => ({ niveau: 'att', genre: 'consommation', aEcrire: r, cables: [...x.cables], gestes: [gesteDeConsommation(r)],
+    texte: `consommation ${x.bobine ? 'de la bobine de ' : 'de '}${r} à écrire — le courant de ${pluriel(x.cables.size, 'câble')} en dépend` }));
+  /* Puis les câbles DIRECTS ; ceux au-delà d'un passage (une prise, une barrette, un contact traversé), le contrôle les dit avec
+     leur « (par … ) » (08-controle, `controleProtection`) : une seule phrase par fait. (v87, le lecteur, Q3) LA PROTECTION en une
+     phrase : la plus sévère de l'EN 2853 déclassée et de la table 11-3, et laquelle décide (`protectionEnMots`). */
   d.fils.forEach(f => { const nomF = cableEtType(f); if (f.direct === false) return;
     if (f.verdict === 'fil') { const [i, a] = deux(f.pire.i, f.pire.admise); out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${i}${f.pire.t === Infinity ? '' : ' pendant ' + secondes(f.pire.t)} > ${a} admis ${pourPalier(f.pire.palier)}${enClair(f, f.pire.t)}` }); }
-    else if (f.verdict === 'calibre') { const [a, c] = deux(f.continu, d.calibre); out.push({ niveau: 'att', texte: `${nomF} : ${a} admis en continu${enClair(f, Infinity)} < calibre ${c} — pas protégé en surcharge` }); }
-    else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(d.calibre)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuFil(f, x)}` }); } });
-  return out; }
+    const pm = protectionEnMots(f, d.calibre, Hd);
+    if (pm) out.push({ niveau: 'att', genre: 'protection', texte: `${nomF} : ${pm}` });
+    else if (f.protege === false && f.verdict !== 'fil') { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(d.calibre)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuFil(f, x)}` }); } });
+  /* (v87, S1) CE QUE PORTENT SES RETOURS ET SON CÔTÉ SOURCE, quand leur courant est connu : un câble de masse, le câble de la
+     batterie et son retour ne sont pas sous sa protection, mais leur courant se juge comme celui des autres — « il porte plus
+     que ce qu'il admet » — ; un courant inconnu ne se juge pas */
+  cablesPortesPar(nom).forEach(l => { let x = null; try { x = intensiteCalculee(l); } catch (_) { x = null; } if (!x || !x.fn || !x.trop.length) return;
+    const p = x.trop.slice().sort((a, b) => b.i / x.admise(b.t) - a.i / x.admise(a.t))[0], [i, a] = deux(p.i, x.admise(p.t)), f = { type: l.type };
+    out.push({ niveau: 'ko', l, texte: `${cableDit(l)} : ${p.nom} ${i}${p.t === Infinity ? '' : ' pendant ' + secondes(p.t)} > ${a} admis ${pourPalier(palierDe(p.t))}${enClair(f, p.t)}` }); });
+  return consos.concat(out); }
+/* (v87, S1) les câbles dont un disjoncteur donne le courant sans les protéger : ses retours (le câble de masse de chaque charge,
+   le retour de la source) et son côté source — chacun une fois, sous le disjoncteur que la carte lui donne (08-fiche,
+   `carteDesAlimentations`). `retoursDuDisjoncteur` : ses retours, avec leur branche (09 quater, `retoursDepuis`). */
+const retoursDuDisjoncteur = nom => { if (typeof carteDesAlimentations !== 'function') return []; const out = [];
+  try { carteDesAlimentations().forEach((a, l) => { const p = a.retour && a.retour.parts.find(q => q.cb === nom); if (p) out.push({ l, R: p.R }); }); } catch (_) { } return out; };
+const cablesPortesPar = nom => { if (typeof carteDesAlimentations !== 'function') return []; const out = [];
+  try { carteDesAlimentations().forEach((a, l) => { if (a.cb === nom && (a.amont || a.retour)) out.push(l); }); } catch (_) { } return out; };
+/* (v87, le lecteur, Q1) « ÉCRIRE LA CONSOMMATION DE 104LP1 » : sa fiche, en grand, sur Modifier › Ce qu'il consomme, ouvert. */
+function allerALaConsommation(nom) { if (!nom) return;
+  if (typeof NIVEAU !== 'undefined') { NIVEAU.sommOuvert = '[data-reg="ce-qu-il-consomme"]'; NIVEAU.sommCle = 'bloc|' + nom; }
+  if (typeof ongletRetenu === 'function') ongletRetenu('bloc|' + nom, 'reglages');
+  if (typeof allerAuControle === 'function') allerAuControle({ nom, texte: '', section: '', plan: typeof plansDuRepere === 'function' ? plansDuRepere(nom).sort(triNaturel)[0] || '' : '' });
+  if (typeof ouvrirGrand === 'function') ouvrirGrand('reglages'); }
+const gesteDeConsommation = r => ({ mot: 'Écrire la consommation de ' + r, cle: 'conso|' + r, principal: true, faire: () => allerALaConsommation(r),
+  aide: 'Sa fiche, Modifier › Ce qu’il consomme : écrite, elle fait le courant de ses câbles et leur chute' });
+/* (v87, le lecteur, Q3 : « un câble est protégé par son disjoncteur selon la plus sévère des deux règles ») LA PROTECTION D'UN
+   CÂBLE PAR LE CALIBRE, en une phrase : l'EN 2853 déclassée par les Hypothèses (ce qu'il admet en continu : le faisceau,
+   l'ambiante, le conducteur, l'altitude) et l'AC 43.13-1B (table 11-3 : le plus fort calibre de sa gauge) ; la plus sévère —
+   la plus petite limite — décide, et la phrase la nomme : « l’EN 2853 en faisceau : 6,9 A admis en continu, moins que les
+   10 A du calibre ». '' quand les deux le protègent. Ne dépend d'aucun courant : elle se juge aussi sur une branche dont la
+   consommation n'est pas écrite. */
+function protectionEnMots(f, cal, H) { if (!(cal > 0) || !f) return '';
+  const en = f.continu != null ? f.continu : null, table = f.calibreMax != null ? f.calibreMax : null;
+  const koEN = en != null && cal > en + 1e-9, koT = table != null && cal > table + 1e-9; if (!koEN && !koT) return '';
+  const parTable = koT && (!koEN || table < en - 1e-9), [a, c] = typeof enOrdre === 'function' ? enOrdre(parTable ? table : en, cal).map(x => nombre(x) + ' A') : [amperes(parTable ? table : en), amperes(cal)];
+  if (parTable) return `le maximum de l’AC 43.13-1B (table 11-3) pour un ${f.jauge != null ? f.jauge : jaugeDuType(f.type)} AWG : ${a}, moins que les ${c} du calibre`;
+  return `l’EN 2853${conditionsDeLaNorme(f.type, H)} : ${a} admis en continu, moins que les ${c} du calibre`; }
+// ce qui déclasse l'EN 2853, en peu de mots : « en faisceau », « à 70 °C », « en aluminium cuivré », « à 10 000 ft »
+function conditionsDeLaNorme(type, H) { let m = ''; try { m = typeof motDuDeclassement === 'function' ? motDuDeclassement(app.norme, type, H || app.simu || HYPOTHESES, Infinity) || '' : ''; } catch (_) { m = ''; }
+  const k = m.indexOf(' : '); if (k < 0) return '';
+  const xs = m.slice(k + 3).split(', ').map(c => /^faisceau /.test(c) ? 'en faisceau' : /^ambiante /.test(c) ? c.replace(/^ambiante /, 'à ') : /^conducteur /.test(c) ? c.replace(/^conducteur /, 'en ') : / ft$/.test(c) ? 'à ' + c : c);
+  return xs.length ? ' ' + xs.join(', ') : ''; }
+/* (v87, S7 — « un contact plus gros » ne réglait rien) CE QU'UN CONTACT PEUT PORTER AVEC CETTE GAUGE : chaque taille de la table
+   Courant des contacts qui prend ce fil, bornée par son fût (09, `intensiteDeContact`) — la meilleure (`max`), la plus petite
+   qui porte `besoin` (`suffit`) ; aucune (`parLaGauge`) : c'est la GAUGE qui limite (un 24 AWG porte 3 A dans tout contact), et
+   la gauge plus forte qui règle le câble règle aussi son contact. null sans gauge ni ligne. */
+function contactsDeLaGauge(jauge, besoin) { if (jauge == null) return null; let C = [];
+  try { C = (normeDesModules(app.norme).courantsContacts || []).filter(c => c.jauge === +jauge && c.intensite != null); } catch (_) { C = []; }
+  const xs = [...new Set(C.map(c => c.taille))].map(t => { const ic = intensiteDeContact(app.norme, t, jauge); return ic ? { taille: t, intensite: ic.intensite } : null; }).filter(Boolean)
+    .sort((a, b) => a.intensite - b.intensite || (parseInt(b.taille, 10) || 0) - (parseInt(a.taille, 10) || 0));
+  if (!xs.length) return null; const max = xs[xs.length - 1];
+  return { max, suffit: xs.find(x => x.intensite >= besoin - 1e-9) || null, parLaGauge: max.intensite < besoin - 1e-9 }; }
 
 /* ---- les gestes sur le contrat ------------------------------------------------------ */
 /* Poser un champ d'une liaison en gardant ce que le fichier portait (`l.avant`, comme `changerLiaison`, 08-sections) — sans
@@ -655,6 +711,13 @@ function tableauProfil(d, plus) { const P = d.profil, E = etatsDuProfil(P), parI
   return `<div class="dj-etats" role="table" aria-label="Profil de charge"><div class="dj-entete" role="row"><span role="columnheader">État</span><span role="columnheader">Courant <i>A</i></span><span role="columnheader">Durée <i>s</i></span><span aria-hidden="true"></span></div>`
     + ordre.map(ligne).join('') + (plus ? `<div class="dj-ajout" role="row">${plus}</div>` : '') + '</div>'; }
 
+/* (passe 87, le regard : « Au démarrage, il tire 9,31 A pendant 2,1 min » — le démarrage ne dure que 5 s) : la durée d'un
+   point compte chaque état au moins aussi fort que lui (09 bis, `pointsDuProfil`) ; la conclusion les nomme tous, et eux
+   seuls — « au démarrage et en transition » pour les 2,1 min de 102CB1, « au démarrage » pour un démarrage seul. */
+function quandDesEtats(d, q) { let xs = []; try { xs = phasesDuProfil(d.profil).filter(p => p.t !== Infinity && p.i >= q.i - 1e-9); } catch (_) { xs = []; }
+  if (!xs.length) return quandDuPoint(q);
+  const mots = xs.map(p => p.k === 'dem' ? 'au démarrage' : p.k === 'trans' ? 'en transition' : 'en ' + p.nom);
+  return mots.length > 1 ? mots.slice(0, -1).join(', ') + ' et ' + mots[mots.length - 1] : mots[0]; }
 /* ---- LA CONCLUSION D'UN CALIBRE (v86, le lecteur : « une conclusion plus simple, que tout le monde comprenne — 10 A, ne
    disjoncte pas ») ------------------------------------------------------------------------------------------------------
    En une phrase courte et grande, le verdict (« 10 A : il ne disjoncte pas. ») ; dessous, en une phrase, le point qui
@@ -669,7 +732,7 @@ function motsDuCalibre(d, cal) { if (!d || !(cal > 0) || d.sansProfil || d.sansC
   const ok = g.valide === true, q = g.pire, titre = `${amperes(cal)} : il ${ok ? 'ne disjoncte pas' : 'disjoncte'}.`;
   if (!q) return { cal, cle: ok ? 'passe' : 'declenche', titre, detail: '', courbe: '', pire: null };
   const perm = q.t === Infinity, S0 = isFinite(q.seuil) ? q.seuil : null, [I, S] = S0 != null ? (typeof deuxA === 'function' ? deuxA(q.i, S0) : [amperes(q.i), amperes(S0)]) : [amperes(q.i), ''];
-  const quand = perm ? 'En permanence' : majuscule(quandDuPoint(q)), tire = `${quand}, il tire ${!perm && q.duree < q.t - 1e-9 ? 'au moins ' : ''}${I}${perm ? '' : ' pendant ' + secondes(q.t)}`;
+  const quand = perm ? 'En permanence' : majuscule(quandDesEtats(d, q)), tire = `${quand}, il tire ${!perm && q.duree < q.t - 1e-9 ? 'au moins ' : ''}${I}${perm ? '' : ' pendant ' + secondes(q.t)}`;
   const detail = !S ? `${tire} ; à ce courant, ce calibre ne disjoncte jamais.`
     : q.parLaSomme ? `${tire}. Chaque état passe seul, mais enchaînés, ils le chauffent jusqu’à disjoncter.`
     : `${tire} ; ce calibre ${q.ok === false ? 'disjoncte dès' : 'ne disjoncte qu’au-delà de'} ${S}${perm ? '' : ' sur cette durée'}.`;
@@ -838,9 +901,11 @@ function largeurDuGraphe(nom) { const box = typeof $ === 'function' ? $('ba-equi
   return carte >= PROFIL_COURBE.cote ? Math.max(300, carte - (carte >= PROFIL_COURBE.large ? PROFIL_COURBE.tableL : PROFIL_COURBE.table) - PROFIL_COURBE.ecart) : Math.max(300, Math.min(760, carte)); }
 
 /* ---- ses câbles, pour la section commune « Câbles » (08-fiche, `listeCables`) ------------ */
-/* La chute en ligne depuis le disjoncteur, chemin par chemin : au courant permanent du profil (sinon le calibre, sinon
-   l'hypothèse), à travers les prises de coupure et les barrettes, la part du disjoncteur comprise. */
-function chutesDe(nom, d) { const H = app.simu || HYPOTHESES, perm = d.profil && d.profil.perm && nombreLu(d.profil.perm.i) > 0 ? nombreLu(d.profil.perm.i) : null, I = perm || (d.calibre > 0 ? d.calibre : H.courant);
+/* La chute en ligne depuis le disjoncteur, chemin par chemin : chaque câble à son courant connu (sa branche écrite, le tronc au
+   permanent du profil), à travers les prises de coupure et les barrettes, la part du disjoncteur comprise. (v87, le lecteur, Q1)
+   Plus de calibre ni d'hypothèse à la place d'un profil : un chemin dont un câble n'a pas de courant connu n'a pas de chute
+   (09 quater, `chutesDepuis`) ; `I`, le permanent du profil, 0 sans lui. */
+function chutesDe(nom, d) { const H = app.simu || HYPOTHESES, perm = d.profil && d.profil.perm && nombreLu(d.profil.perm.i) > 0 ? nombreLu(d.profil.perm.i) : null, I = perm || 0;
   const courts = (d.points || []).filter(p => p.t !== Infinity && p.i > 0);
   const cs = chutesDepuis(app.norme, verite(), nom, I, H, courts, { famille: d.famille, calibre: d.calibre });
   return { H, I, perm, cs: cs.slice().sort((a, b) => (b.dU || 0) - (a.dU || 0)) }; }
@@ -851,19 +916,26 @@ function chutesDe(nom, d) { const H = app.simu || HYPOTHESES, perm = d.profil &&
    « pas protégé en surcharge » est à voir : la ligne le dit). */
 function lignesFilsDisjoncteur(nom, d) { d = d || disjonctionDe(nom); const cal = d.calibre, mV = u => nombre(Math.round(u * 1000) / 1000) + ' V';
   return d.fils.map(f => { const j = jugementDuFil(f, cal), c = f.l ? chuteEnLigne(f.l, nom) : null, pointe = pireChuteEnPointe(c), etatU = etatDeChute(c, pointe), motSupp = c && !c.reel ? ', longueurs supposées' : '';
+    /* (v87, S3 — « 9,31 A sur 6,9 A et 3,71 V : la pointe à côté de la chute du permanent ») LE MÊME INSTANT que la fiche du câble et
+       le récapitulatif (08-recap, `instantsDuFil`) : le courant et la chute au moment le plus dur pour ce câble */
+    let s = null; if (f.l && !f.inconnu && typeof instantsDuFil === 'function' && typeof intensiteDuFil === 'function') { try { const x = intensiteDuFil(f.l); if (x.I != null) s = instantsDuFil({ x, c: chuteDuFil(f.l, x), l: f.l }).le; } catch (_) { s = null; } }
     const etat = j.etat === 'ko' || etatU === 'ko' ? 'ko' : j.etat === 'att' || etatU === 'att' ? 'att' : '';
     const pourquoi = [j.dit, c && c.trop ? `chute en ligne ${volts(c.dU)} > ${volts(c.admis)}${motSupp}` : pointe ? `chute en pointe ${volts(pointe.dU)} > ${volts(pointe.admis)}${motSupp}` : ''].filter(Boolean).join(' · ');
-    // (v86, l'audit B1) une branche de commande dont rien n'est écrit : « inconnu » dans le tableau, la raison dans la bulle — jamais un tiret
+    // (v86, v87) un courant inconnu : « inconnu » dans le tableau, ce qu'il faut écrire dans la bulle — jamais un tiret, jamais le courant du disjoncteur
     const sansC = f.inconnu && f.branche ? f.branche.sans || [] : [], bobC = sansC.filter(x => x.nature === 'bobine').map(x => x.repere), entC = sansC.filter(x => x.nature === 'entree').map(x => x.repere);
-    const motC = !f.inconnu ? '' : bobC.length ? `Courant de commande inconnu : écrivez la consommation de la bobine de ${listeEt(bobC)}. La chute en ligne en dépend.` : `Une entrée de ${listeEt(entC)} : quelques milliampères — VOLTA ne lui prête pas le courant de ${nom}, et sa chute ne se calcule pas.`;
+    const quoiC = f.inconnu && f.branche ? [...(f.branche.manque || []).filter(r => !bobC.includes(r)).map(r => 'de ' + r), ...bobC.map(r => 'de la bobine de ' + r)] : [];
+    const motC = !f.inconnu ? '' : quoiC.length ? `${f.commande ? 'Courant de commande inconnu' : 'Courant inconnu'} : écrivez la consommation ${listeEt(quoiC)}. La chute en ligne en dépend.` : `Une entrée de ${listeEt(entC)} : quelques milliampères — VOLTA ne lui prête pas le courant de ${nom}, et sa chute ne se calcule pas.`;
     const bulle = [`${f.type || 'câble'} · ${f.amont ? '← ' : '→ '}${f.autre}${f.via ? ' (par ' + f.via + ')' : ''}`, motC, j.dit ? majuscule(j.dit) : '', j.contact || '',
       j.charge ? `au pire ${amperes(j.charge.i)} sur ${amperes1(j.charge.admise)} admis ${j.charge.quand}` : '',
       c && c.dU != null ? `chute en ligne vers ${c.bout[0]}${c.bout[1] ? ':' + c.bout[1] : ''} : ${volts(c.dU)}${c.pct != null ? ' (' + nombre(Math.round(c.pct * 10) / 10) + ' %)' : ''}${c.admis != null ? ', ' + volts(c.admis) + ' admis' : ''}${c.reel ? '' : ' — longueurs supposées'}${c.disjoncteur && c.disjoncteur.dU != null ? ', dont ' + mV(c.disjoncteur.dU) + ' dans le disjoncteur' : ''}` : '',
-      pointe ? `en pointe : ${volts(pointe.dU)} à ${amperes(pointe.i)} > ${volts(pointe.admis)} admis${pointe.intermittent ? ' en intermittent' : ''}` : ''].filter(Boolean).join('\n');
+      pointe ? `en pointe : ${volts(pointe.dU)} à ${amperes(pointe.i)} > ${volts(pointe.admis)} admis${pointe.intermittent ? ' en intermittent' : ''}` : '',
+      s && s.pointe ? `le courant et la chute du tableau : en pointe (${s.nom}, ${secondes(s.t)}), au même instant` : ''].filter(Boolean).join('\n');
     const [rep, ...b] = String(f.autre || '').split(':');
     return { l: f.l, k: f.l ? cleFil(f.l) : '', num: f.type || '—', puce: puceFil(f), jauge: jaugeDuType(f.type), type: f.type, bout: rep ? { rep, borne: b.join(':') } : null,
-      charge: j.charge ? { r: j.charge.r, mot: `${nombreA(j.charge.i)} / ${nombreA(j.charge.admise)} A`, i: j.charge.i, admis: j.charge.admise } : { r: null, mot: f.inconnu ? 'inconnu' : '—' },
-      chute: { mot: c && c.dU != null ? volts(c.dU) : f.inconnu ? 'inconnue' : '—', u: c && c.dU != null ? c.dU : null, max: c && c.admis != null ? c.admis : null, regle: c ? c.regle || '' : '', supp: !!(c && !c.reel) }, etat, pourquoi, bulle,
+      charge: s && s.admis ? { r: s.i / s.admis, mot: `${nombreA(s.i)} / ${nombreA(s.admis)} A`, i: s.i, admis: s.admis, pointe: !!s.pointe }
+        : j.charge ? { r: j.charge.r, mot: `${nombreA(j.charge.i)} / ${nombreA(j.charge.admise)} A`, i: j.charge.i, admis: j.charge.admise } : { r: null, mot: f.inconnu ? 'inconnu' : '—' },
+      chute: s && s.u != null ? { mot: volts(s.u), u: s.u, max: s.umax != null ? s.umax : null, regle: c ? c.regle || '' : '', supp: !!(c && !c.reel), pointe: !!s.pointe }
+        : { mot: c && c.dU != null ? volts(c.dU) : f.inconnu ? 'inconnue' : '—', u: c && c.dU != null ? c.dU : null, max: c && c.admis != null ? c.admis : null, regle: c ? c.regle || '' : '', supp: !!(c && !c.reel) }, etat, pourquoi, bulle,
       inconnu: !!f.inconnu, commande: !!f.commande, via: f.via || '' }; }); }
 /* Le jugement d'un câble, en mots : son état (ko : la charge le dépasse ou dépasse son contact ; att : pas protégé, sous le
    calibre, hors de la table 11-3, contact sous le calibre ; ok), la charge au pire (le courant d'une phase contre ce qu'il
@@ -872,18 +944,23 @@ function jugementDuFil(f, cal) { const r = [];
   if (f.verdict === 'inconnu') return { etat: 'att', charge: null, dit: f.refuse ? 'conducteur ' + f.conducteur + ' : pas de résistance dans la base' : 'câble inconnu de la norme' };
   const ph = (f.phases || []).slice().sort((a, b) => b.i / b.admise - a.i / a.admise)[0];
   const charge = ph ? { i: ph.i, admise: ph.admise, r: ph.i / ph.admise, quand: ph.t === Infinity ? 'en permanence' : 'pendant ' + secondes(ph.t) } : null;
-  // (v86) une branche de commande dont rien n'est écrit : son courant ne se juge pas (09 quater, `inconnu`) — à voir quand une
-  // bobine attend sa consommation ; une entrée de calculateur seule se dit, calmement (rien à écrire)
-  const bobine = f.inconnu && f.branche && (f.branche.sans || []).some(x => x.nature === 'bobine'), calme = f.inconnu && !bobine ? ['une entrée de commande : quelques milliampères'] : [];
-  if (bobine) r.push('courant de commande inconnu');
+  // (v86, v87) un courant inconnu ne se juge pas (09 quater, `inconnu`) — à voir quand une consommation attend d'être écrite ; une
+  // entrée de calculateur seule se dit, calmement (rien à écrire)
+  const aEcrire = f.inconnu && f.branche && (f.branche.manque || []).length > 0, calme = f.inconnu && !aEcrire ? ['une entrée de commande : quelques milliampères'] : [];
+  if (aEcrire) r.push(f.commande ? 'courant de commande inconnu' : 'courant inconnu');
   // le contact que le plan ne nomme pas est SUPPOSÉ (09 bis : le plus petit qui admet la gauge, par prudence) : la ligne le dit, la bulle dit pourquoi
   const supp = f.contact && !f.contact.parLePlan ? ' supposé' : '';
   if (f.verdict === 'fil') r.push(`trop fin pour ${f.pire.nom}`);
-  if (f.contactDepasse) r.push(`son contact ${f.contact.taille}${supp} ne porte que ${amperes(f.contact.intensite)}`);
-  if (f.verdict === 'calibre') r.push(`admet ${amperes1(f.continu)} en continu, moins que le ${amperes(cal)} : pas protégé en surcharge`);
+  // (v87, Q3) la protection en une phrase : la plus sévère des deux règles, et laquelle décide
+  const pm = protectionEnMots(f, cal);
+  if (pm) r.push('pas protégé : ' + pm);
   else if (f.protege === false && f.pireLaisse && f.verdict !== 'fil') { const x = f.pireLaisse; r.push(`pas protégé : le ${amperes(cal)} laisse passer ${amperes1(x.courant)} ${pourPalier(x.palier)}, ${f.jugeSur === 'dommage' ? 'il s’abîme au-delà de' : 'il n’admet que'} ${amperes1(x.admise)}`); }
-  if (f.horsTable) r.push(`la table 11-3 le limite à un ${amperes(f.calibreMax)}`);
-  if (f.contactSurcharge && !f.contactDepasse) r.push(`contact ${f.contact.taille}${supp} : ${amperes(f.contact.intensite)}, sous le calibre`);
+  // (v87, S7) le contact : quand c'est la gauge qui le borne et que le câble a déjà son point, la gauge plus forte règle les deux — rien
+  // de plus ; sinon, la taille qui suffit, ou « la gauge limite »
+  const G = f.contactDepasse || f.contactSurcharge ? contactsDeLaGauge(f.jauge != null ? f.jauge : jaugeDuType(f.type), f.contactDepasse ? f.permanent : cal) : null;
+  const fondu = !!(G && G.parLaGauge && (f.contactDepasse ? f.verdict === 'fil' : !!pm)), remedeC = !G ? '' : G.parLaGauge ? ` — la gauge limite (${amperes(G.max.intensite)} dans tout contact)` : G.suffit && G.suffit.taille !== String(f.contact.taille) ? ` — un contact taille ${G.suffit.taille} suffit` : '';
+  if (f.contactDepasse && !fondu) r.push(`son contact ${f.contact.taille}${supp} ne porte que ${amperes(f.contact.intensite)}${remedeC}`);
+  if (f.contactSurcharge && !f.contactDepasse && !fondu) r.push(`contact ${f.contact.taille}${supp} : ${amperes(f.contact.intensite)}, sous le calibre${remedeC}`);
   const etat = f.verdict === 'fil' || f.contactDepasse ? 'ko' : r.length ? 'att' : 'ok';
   const contact = supp && (f.contactDepasse || f.contactSurcharge) ? `Le plan ne dit pas quel contact est serti au bout de ce câble : VOLTA prend le plus petit qui admet un ${f.jauge != null ? f.jauge : jaugeDuType(f.type)} AWG (taille ${f.contact.taille}, ${amperes(f.contact.intensite)}), par prudence.` : '';
   return { etat, charge, dit: r.concat(calme).join(' · '), contact }; }

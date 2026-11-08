@@ -53,7 +53,8 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   const reperes = [...new Set(V.flatMap(l => [l.de, l.vers]).filter(Boolean))].sort(triNaturel).filter(r => !estMasse(r) && !estRenvoi(r));
   reperes.forEach(r => {
     try {
-      if (estDisjoncteur(r)) { const d = disjonctionDe(r); controleDisjonction(r).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte, { cables: x.l ? [x.l] : cablesDuTexte(d, x.texte) }));
+      // (v87, S5) le genre d'un point du disjoncteur, quand il le dit (« consommations à écrire »), et ses câbles
+      if (estDisjoncteur(r)) { const d = disjonctionDe(r); controleDisjonction(r).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte, { cables: x.cables || (x.l ? [x.l] : cablesDuTexte(d, x.texte)), ...(x.genre ? { genre: x.genre } : {}), ...(x.aEcrire ? { aEcrire: x.aEcrire } : {}) }));
         // v73 — deux part numbers sur un même disjoncteur (l'ingénieur : « une faute que je ne veux pas envoyer à la fabrication »)
         const pns = partNumbersDuRepere(r, V); if (pns.length > 1) ko(r, `porte deux part numbers : ${pns.map(p => p.pn + ' (' + p.cables.join(', ') + ')').join(' ; ')}`, { genre: 'pn', pns: pns.map(p => p.pn) }); }
       if (barretteEnModules(r)) { const Q = planDeBarrette(r).plan, n = Q.fils.filter(x => x.jaugeOk === false).length; noter(r, Q.fils);
@@ -183,7 +184,8 @@ function controleDeStructure(V) { const out = [], L = V.filter(liaisonComplete),
    chaque point se range dans un genre, que l'index et le récapitulatif montrent groupé, avec son compte et le geste qui
    le traite. L'ordre de GENRES_CONTROLE est celui de la lecture : ce qui casse d'abord. */
 // (v86) une ligne en double, un repère écrit de deux façons d'abord : des fautes du fichier qui faussent le dessin et les comptes, réglées d'un geste
-const GENRES_CONTROLE = [['doublon', 'lignes en double', 'ligne en double'], ['casse', 'repères écrits de deux façons', 'repère écrit de deux façons'],
+// (v87, S5 et le lecteur, Q1) « consommations à écrire » : un genre à lui — une consommation qui manque n'est pas un calibre à revoir
+const GENRES_CONTROLE = [['doublon', 'lignes en double', 'ligne en double'], ['casse', 'repères écrits de deux façons', 'repère écrit de deux façons'], ['consommation', 'consommations à écrire', 'consommation à écrire'],
   ['arrangement', 'connecteurs qu’aucun arrangement ne loge', 'connecteur qu’aucun arrangement ne loge'], ['contact', 'contacts à revoir', 'contact à revoir'],
   ['calibre', 'calibres à revoir', 'calibre à revoir'], ['pn', 'disjoncteurs à deux part numbers', 'disjoncteur à deux part numbers'], ['protection', 'câbles mal protégés par leur disjoncteur', 'câble mal protégé par son disjoncteur'],
   ['chute', 'chutes de tension trop fortes', 'chute de tension trop forte'], ['profil', 'disjoncteurs sans profil de charge', 'disjoncteur sans profil de charge'],
@@ -235,15 +237,25 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
      — la courbe par défaut jugeait jusqu'ici les câbles au-delà des passages), et le profil de SA BRANCHE quand la
      consommation de ce qu'il alimente est écrite (09 quater, `filsDepuis` : `points`), sinon celui du disjoncteur */
   const Hd = { ...HYPOTHESES, ...(d.contexte && d.contexte.hyp ? d.contexte.hyp : H) }, ctx = contexteDeProtection(N, Hd, null, pointsDuProfil(d.profil));
-  fils.map(f => protegerFil(N, cal, f, Hd, f.points ? { ...ctx, pts: f.points } : ctx)).forEach(f => { const nomF = nomDuCableDit(f) + (f.direct ? '' : ' (par ' + f.via + ')'), cables = f.l ? [f.l] : [];
+  /* (v87, le lecteur, Q3) LA PROTECTION D'UN CÂBLE en une phrase : la plus sévère de l'EN 2853 déclassée et de la table 11-3 de
+     l'AC 43.13-1B, et laquelle décide (08-disjoncteurs, `protectionEnMots`) — les câbles directs, la fiche du disjoncteur les dit
+     (`controleDisjonction`), ceux au-delà d'un passage, ici. Elle ne dépend d'aucun courant : une branche dont la consommation
+     n'est pas écrite reste jugée. (v87, S7) LE CONTACT : quand c'est la GAUGE qui le borne (aucune taille n'admet plus avec elle)
+     et que le câble a déjà son point, la gauge plus forte règle les deux — un seul point, celui du câble ; sinon la phrase dit la
+     taille qui suffit, ou que la gauge limite (le remède : 08-recap, `remede`). */
+  const protection = (f, cal) => typeof protectionEnMots === 'function' ? protectionEnMots(f, cal, Hd) : '';
+  fils.map(f => protegerFil(N, cal, f, Hd, f.points ? { ...ctx, pts: f.points } : ctx)).forEach(f => { const nomF = nomDuCableDit(f) + (f.direct ? '' : ' (par ' + f.via + ')'), cables = f.l ? [f.l] : [], pm = protection(f, cal);
     if (!f.direct) {
       if (f.verdict === 'fil') { const [i, a] = chiffresEnOrdre(f.pire.i, f.pire.admise, 'A'); out.push({ niveau: 'ko', cables, texte: `${nomF} : ${f.pire.nom} ${i}${f.pire.t === Infinity ? '' : ' pendant ' + secondes(f.pire.t)} > ${a} admis ${pourPalier(f.pire.palier)}${motDeclasse(N, H, f, f.pire.t)}` }); }
-      else if (f.verdict === 'calibre') { const [a, c] = chiffresEnOrdre(f.continu, cal, 'A'); out.push({ niveau: 'att', cables, texte: `${nomF} : ${a} admis en continu${motDeclasse(N, H, f, Infinity)} < calibre ${c} — pas protégé en surcharge` }); }
-      else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', cables, texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(cal)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuCable(f, x)}` }); } }
+      if (pm) out.push({ niveau: 'att', cables, genre: 'protection', texte: `${nomF} : ${pm}` });
+      else if (f.protege === false && f.verdict !== 'fil') { const x = f.pireLaisse; out.push({ niveau: 'att', cables, texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(cal)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuCable(f, x)}` }); } }
     if (f.refuse) out.push({ niveau: 'att', cables, texte: `${nomF} : conducteur ${f.conducteur} sans résistance dans la base, son intensité admissible est inconnue` });
-    if (f.horsTable) out.push({ niveau: 'att', cables, texte: `${nomF} : calibre ${amperes(cal)} > ${amperes(f.calibreMax)}, le maximum de l’AC 43.13-1B (table 11-3) pour du ${f.jauge} AWG` });
-    if (f.contactDepasse) { const [p, c] = chiffresEnOrdre(f.permanent, f.contact.intensite, 'A'); out.push({ niveau: contactSur(f) ? 'ko' : 'att', cables, texte: `${nomF} : le permanent (${p}) dépasse le contact taille ${f.contact.taille} ${f.contact.parLePlan ? '(' + c + ', ' + f.contactRepere + ')' : 'supposé (' + c + ')'}` }); }
-    else if (f.contactSurcharge) out.push({ niveau: 'att', cables, texte: `${nomF} : contact ${motContact(f)} < calibre ${amperes(cal)} — pas protégé en surcharge` }); });
+    const G = (f.contactDepasse || f.contactSurcharge) && typeof contactsDeLaGauge === 'function' ? contactsDeLaGauge(f.jauge != null ? f.jauge : jaugeDuType(f.type), f.contactDepasse ? f.permanent : cal) : null;
+    const fondu = !!(G && G.parLaGauge && (f.contactDepasse ? f.verdict === 'fil' : !!pm));
+    const remedeC = !G ? '' : G.parLaGauge ? `la gauge limite : avec un ${G.jauge || f.jauge || jaugeDuType(f.type)} AWG, aucun contact n’admet plus de ${amperes(G.max.intensite)}` : G.suffit && G.suffit.taille !== String(f.contact.taille) ? `un contact taille ${G.suffit.taille} suffit (${amperes(G.suffit.intensite)})` : '';
+    if (fondu) { /* fondu dans le point du câble : la gauge plus forte règle aussi le contact */ }
+    else if (f.contactDepasse) { const [p, c] = chiffresEnOrdre(f.permanent, f.contact.intensite, 'A'); out.push({ niveau: contactSur(f) ? 'ko' : 'att', cables, genre: 'contact', texte: `${nomF} : le permanent (${p}) dépasse le contact taille ${f.contact.taille} ${f.contact.parLePlan ? '(' + c + ', ' + f.contactRepere + ')' : 'supposé (' + c + ')'}${remedeC ? ' — ' + remedeC : ''}` }); }
+    else if (f.contactSurcharge) out.push({ niveau: 'att', cables, genre: 'contact', texte: `${nomF} : contact ${motContact(f)} < calibre ${amperes(cal)} — pas protégé en surcharge${remedeC ? ' ; ' + remedeC : ''}` }); });
   /* LA CHUTE EN LIGNE — UNE SEULE (v73, l'ingénieur : « 2,28 V sur la fiche du câble, 2,33 V dans les problèmes et le PDF ;
      même mot, même câble, deux valeurs ») : celle que les fiches montrent (`chutesDuDisjoncteur`, 08-fiche — la chute
      propre du CALIBRE RETENU comprise ; le contrôle prenait celle du part number), et sa pire pointe comme elles
@@ -295,15 +307,18 @@ function rendreControle() { if (typeof reprendreVoltaEnAttente === 'function') r
    « problème » = rouge seulement, « à voir » = ambre, séparés par « · », sur TOUT le plan ; le folio en second. La
    pastille du rail, l'index, P, le récapitulatif, la bibliothèque et le dossier PDF lisent ceci, et rien d'autre.
    `folio` : un folio (par défaut celui qu'on regarde). Rend { ko, att, mot, parFolio: Map(folio → { ko, att }), folio }. */
-const motProblemes = (ko, att) => !ko && !att ? 'Rien à reprendre' : [ko ? pluriel(ko, 'problème') : '', att ? (att > 1 ? att + ' à voir' : '1 point à voir') : ''].filter(Boolean).join(' · ');
+// (passe 87, S4 — le lecteur : « À régler, c'est ce qui a un geste ») `ko` compte ce qui est À RÉGLER (un problème ou un geste),
+// `att` ce qui est À VOIR : la règle de la fiche (08-recap, `compteARegler`), que le panneau, P, la bibliothèque et l'export lisent
+const motProblemes = (ko, att) => typeof motARegler === 'function' ? motARegler(ko, att) : !ko && !att ? 'Rien à reprendre' : [ko ? pluriel(ko, 'problème') : '', att ? (att > 1 ? att + ' à voir' : '1 point à voir') : ''].filter(Boolean).join(' · ');
 const COMPTE = { items: null, parFolio: null };
-function compteProblemes(folio) { const xs = controleAJour(), ko = xs.filter(x => x.niveau === 'ko').length, att = xs.length - ko;
+function compteProblemes(folio) { const xs = controleAJour(), A = typeof compteARegler === 'function' ? compteARegler(xs) : null, ko = A ? A.regler : xs.filter(x => x.niveau === 'ko').length, att = xs.length - ko;
+  const aRegler = x => typeof rangDuPoint === 'function' ? rangDuPoint(x).regler : x.niveau === 'ko';
   // un point compte sur chaque folio où son repère paraît (une barrette à poser : le sien) ; un point du tableau, sur le plan
   // seul — compté une fois par contrôle
   if (COMPTE.items !== xs || COMPTE.liaisons !== app.contrat.liaisons) { const parFolio = new Map(), folios = new Map(); COMPTE.liaisons = app.contrat.liaisons;
     app.contrat.liaisons.forEach(l => [l.de, l.vers].forEach(r => { if (r && l.plan) (folios.get(r) || folios.set(r, new Set()).get(r)).add(l.plan); }));
     const foliosDu = x => !x.nom ? [] : VT_A_POSER.test(x.nom) ? (x.plan && x.plan !== '*' ? [x.plan] : []) : [...(folios.get(x.nom) || [])];
-    xs.forEach(x => foliosDu(x).forEach(f => { const e = parFolio.get(f) || parFolio.set(f, { ko: 0, att: 0 }).get(f); e[x.niveau === 'ko' ? 'ko' : 'att']++; }));
+    xs.forEach(x => foliosDu(x).forEach(f => { const e = parFolio.get(f) || parFolio.set(f, { ko: 0, att: 0 }).get(f); e[aRegler(x) ? 'ko' : 'att']++; }));
     COMPTE.items = xs; COMPTE.parFolio = parFolio; }
   const parFolio = COMPTE.parFolio;
   const f = folio == null ? app.plan : folio, ici = f && f !== '*' && plans().length > 1 ? parFolio.get(f) || { ko: 0, att: 0 } : null;
@@ -367,6 +382,8 @@ function gestesDuPoint(x) { if (!x) return []; const out = [];
   const c = x.nom && estDisjoncteur(x.nom) && x.genre !== 'pn' ? causeDuDisjoncteur(x.nom) : null;
   if (c) out.push({ mot: motToutRegler(c), aide: 'Le calibre que VOLTA retient part dans l’Excel corrigé, et les câbles qu’il demande grossissent — une seule entrée d’historique, Ctrl+Z défait le tout', faire: () => toutRegler(x.nom), principal: !out.length });
   if (x.genre === 'aposer' && x.nom) out.push({ mot: 'Lui donner son repère', aide: 'Elle prend le repère que VOLTA propose (la suite de la barrette la plus proche) — « Défaire » rend le repère provisoire', faire: () => poserLesBarrettes([x.nom]), principal: !out.length });
+  // (v87, le lecteur, Q1) une consommation à écrire : « Écrire la consommation de 104LP1 » — sa fiche, Modifier › Ce qu'il consomme
+  if (x.genre === 'consommation' && x.aEcrire && typeof gesteDeConsommation === 'function') out.unshift({ ...gesteDeConsommation(x.aEcrire), principal: true });
   // (v86, l'audit B3) une ligne en double, un repère écrit de deux façons : la proposition de VOLTA, qui part dans l'Excel corrigé
   if (x.genre === 'doublon' && x.doublon) out.push(x.doublon.identiques
     ? { mot: x.doublon.copies > 1 ? 'Retirer les ' + x.doublon.copies + ' lignes en double' : 'Retirer la ligne en double', aide: 'La copie quitte le plan et l’Excel corrigé — une proposition de VOLTA ; Défaire la remet', faire: () => retirerLignesEnDouble([x]), principal: !out.length }
@@ -407,6 +424,8 @@ function gesteDuGenre(g) { const xs = g.lignes.flatMap(l => l.xs);
   if (g.genre === 'casse') { const ps = xs.filter(x => x.casse); if (!ps.length) return null;
     return { mot: ps.length > 1 ? 'Les écrire pareil partout' : 'Écrire ' + ps[0].casse.cible + ' partout', aide: 'Chaque repère s’écrit comme VOLTA le lit, dans l’Excel corrigé — une proposition de VOLTA ; Défaire le rend', faire: () => ecrireLesReperes(ps) }; }
   if (g.genre === 'calibre' || g.genre === 'protection' || g.genre === 'pn') return { mot: 'Voir les disjoncteurs', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux qui ont quelque chose à reprendre', faire: () => ouvrirOngletFiltre('disjoncteurs', ['probleme']) };
+  // (v87) une consommation à écrire : la première, dans sa fiche — chaque ligne garde la sienne
+  if (g.genre === 'consommation') { const x = xs.find(y => y.aEcrire); return x && typeof gesteDeConsommation === 'function' ? { ...gesteDeConsommation(x.aEcrire), mot: xs.length > 1 ? 'Écrire la première' : 'Écrire la consommation de ' + x.aEcrire } : null; }
   // (v86) la longueur vient du fichier : le geste mène aux câbles sans longueur, il n'écrit rien dans VOLTA
   if (g.genre === 'chute') return xs.every(x => /hypothèse/.test(x.texte)) ? { mot: 'Voir les câbles sans longueur', aide: 'Ces chutes se calculent sur des longueurs supposées : l’onglet Liaisons, les câbles sans longueur dans votre fichier', faire: () => ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout') }
     : { mot: 'Voir les câbles', aide: 'L’onglet Liaisons du récapitulatif : les liaisons à reprendre', faire: () => ouvrirOngletFiltre('liaisons', ['probleme'], null, 'tout') };

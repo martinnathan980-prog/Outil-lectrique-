@@ -375,7 +375,14 @@ function fabricationVue(groupes) { const gs = (groupes || []).filter(g => g && g
   return `<div class="vu-fab" data-pieces="${n}">${gs.map(g => `<section class="vu-fab-g"><h4><span>${esc(g.titre)}</span>${g.ref ? `<span class="id">${esc(g.ref)}</span>` : ''}${g.sous ? `<small>${esc(g.sous)}</small>` : ''}</h4>`
     + g.lignes.map(l => `<div class="vu-fab-l"><span class="vu-q">${l.q}<small>×</small></span><span class="vu-r"><b class="id">${esc(l.ref || '—')}</b><small>${esc(l.role || '')}</small></span>${l.statut ? `<span class="vu-st${/confirmer|manque/.test(l.statut) ? ' att' : ''}">${esc(l.statut)}</span>` : '<span></span>'}</div>`).join('') + '</section>').join('')}</div>`; }
 const compterParReference = (refs, role) => { const m = new Map(); refs.filter(Boolean).forEach(r => m.set(r, (m.get(r) || 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]).map(([ref, q]) => ({ q, ref, role })); };
-const piecesFabrication = h => { try { return piecesHabillage(h).map(p => ({ q: p.quantite || 1, ref: p.reference || '', role: ({ cheminee: 'cheminée, à la place du raccord', tyrap: 'collier', raccord: 'raccord', bande: 'collier de blindage (band-it)', manchon: 'manchon', gaine: 'gaine', obturateur: 'obturateur des contacts libres' })[p.role] || p.libelle || p.role || '', statut: p.statut || '' })).filter(p => p.ref); } catch (_) { return []; } };
+/* (passe 87) Ce qu'on monte autour d'un connecteur : l'onglet Pièces de sa fiche ET la LPA du plan (08-nomenclature) lisent
+   cette liste — une seule source. Un nom par pièce, le même partout : « tyrap » (vos mots), l'obturateur avec sa taille de
+   contact, comme celui d'une barrette ; une alvéole vide, un obturateur, « selon la zone » tant que le connecteur n'est pas
+   dit étanche (étanche, il le faut) ; `piece` garde le rôle du moteur (la LPA range les obturateurs à part). */
+const piecesFabrication = h => { try { const zone = h && h.choix && h.choix.etanche ? '' : 'selon la zone';
+  return piecesHabillage(h).map(p => { const obt = p.role === 'obturateur', t = obt ? (/contact (\S+)$/.exec(p.libelle || '') || [])[1] : '', lib = p.libelle ? p.libelle[0].toLowerCase() + p.libelle.slice(1) : '';
+    return { q: p.quantite || 1, ref: p.reference || '', role: obt ? 'obturateur, contact libre' + (t ? ' taille ' + t : '') : ({ cheminee: 'cheminée, à la place du raccord', tyrap: 'tyrap', raccord: 'raccord', bande: 'collier de blindage (band-it)', manchon: 'manchon', gaine: 'gaine' })[p.role] || lib || p.role || '',
+      statut: obt ? [p.statut, zone].filter(Boolean).join(', ') : p.statut || '', piece: p.role || '' }; }).filter(p => p.ref); } catch (_) { return []; } };
 
 /* ---- (v86) LA SILHOUETTE D'UN OBJET — la signature de sa fiche (le sceau de la carte, la tête du grand). Le lecteur : « je
    ne sais pas différencier les équipements des disjoncteurs, des barrettes, proprement : quelque chose d'innovant ». Chaque

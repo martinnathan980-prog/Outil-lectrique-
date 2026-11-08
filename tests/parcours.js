@@ -449,11 +449,12 @@ function baseEssaiDansLaPage() {
     // un EN 4165 (300XC1) n'a pas de raccord : la reprise de blindage se choisit sur un EN 2997 (351PM1, folio 3)
     await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="connecteur"]').open = true; const b = document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
     await page.click('#ba-equip [data-hab="300XC1|A"] [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
-    ok(await page.evaluate(() => !nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /300XC1 A/.test(h.ou.join(' '))) && app.contrat.raccords.get('300XC1|A').blindage === 'GND'), 'une reprise de blindage sur le corps d’un EN 4165 : le choix se garde, mais aucun band-it n’entre à la nomenclature (un EN 4165 n’a pas de raccord)');
+    // (passe 87) la LPA nomme la pièce comme l'onglet Pièces : « collier de blindage (band-it) »
+    ok(await page.evaluate(() => !nomenclatureDuContrat().habits.some(h => /band-it/.test(h.quoi) && /300XC1 A/.test(h.ou.join(' '))) && app.contrat.raccords.get('300XC1|A').blindage === 'GND'), 'une reprise de blindage sur le corps d’un EN 4165 : le choix se garde, mais aucun band-it n’entre à la nomenclature (un EN 4165 n’a pas de raccord)');
     await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '351PM1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
     await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="connecteur"]').open = true; const b = document.querySelector('#ba-equip [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
     await page.click('#ba-equip [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
-    ok(await page.evaluate(() => nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /351PM1/.test(h.ou.join(' ')))), 'une reprise de blindage sur le corps d’un EN 2997 (351PM1) : un band-it entre à la nomenclature');
+    ok(await page.evaluate(() => nomenclatureDuContrat().habits.some(h => /band-it/.test(h.quoi) && /351PM1/.test(h.ou.join(' ')))), 'une reprise de blindage sur le corps d’un EN 2997 (351PM1) : un band-it entre à la nomenclature');
     await capture(page, 'C-4-300XC1-choix');
     await page.keyboard.press('Escape'); for (let k = 0; k < 3; k++) { await page.keyboard.press('Control+z'); await page.waitForTimeout(400); } await page.waitForTimeout(300);
     ok(await page.evaluate(n => JSON.stringify(nomenclatureDuContrat().contacts) === n && !app.contrat.raccords.get('300XC1|A') && !app.contrat.raccords.get('351PM1|A'), N0), 'trois Ctrl+Z : la nomenclature d’avant');

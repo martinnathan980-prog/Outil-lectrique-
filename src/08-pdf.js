@@ -117,7 +117,9 @@ async function rendrePagePdf() { if (!PDF.doc || !PDF.ouvert) return; const n = 
       const vieux = $('pdf-canvas'); cv.id = 'pdf-canvas'; cv.className = 'pdf-canvas'; cv.setAttribute('aria-hidden', 'true'); vieux.replaceWith(cv); PDF.rendu = { tache: null, s: k, t: PDF.rendu.t, page: n, cible: '', promesse: null }; }
     catch (e) { if (!/cancel/i.test(String(e && e.name || e))) PDF.erreur = String(e && e.message || e); } })()); }
 function allerPagePdf(n, garder) { n = Math.max(1, Math.min(PDF.n, n)); if (n === PDF.page && garder) return; PDF.page = n; PDF.rendu.page = 0;
-  fermerSaisie(); if (!garder || PDF.vue.cadre) cadrerPdf(); else poserFeuille(); rendrePagePdf(); peindreCalque(); synchroniserPagePdf(); }
+  fermerSaisie(); if (!garder || PDF.vue.cadre) cadrerPdf(); else poserFeuille(); rendrePagePdf(); peindreCalque(); synchroniserPagePdf();
+  // (passe 87) la relecture suit la page : son cartouche, « Cette page », le bandeau d'une page scannée (« Relier à la main »)
+  if (PDF.lecture) rendreRelecture(); }
 function synchroniserPagePdf() { const l = $('pdf-num'); if (l) l.textContent = PDF.page + ' / ' + PDF.n;
   $('pdf-prec').disabled = PDF.page <= 1; $('pdf-suiv').disabled = PDF.page >= PDF.n;
   document.querySelectorAll('#pdf-vignettes .pdf-vig').forEach(v => { const on = +v.dataset.page === PDF.page; v.classList.toggle('on', on); v.setAttribute('aria-current', on ? 'page' : 'false'); if (on) v.scrollIntoView({ block: 'nearest' }); }); }
@@ -183,6 +185,14 @@ function hitSuivant(pas) { if (!PDF.hits.length) return; PDF.hit = (PDF.hit + pa
 // (v84) la colonne du type dit « Câble » : un câble se dit par son type (la charte)
 const COLS_PDF = [['de', 'De'], ['borneDe', 'Borne'], ['vers', 'Vers'], ['borneVers', 'Borne'], ['type', 'Câble'], ['folio', 'Folio']];
 const pourcentPdf = c => Math.round(c * 100) + '\u00a0%';
+/* (passe 87, la relecture : « Confiance 80 % », un pourcentage qui demande « de quoi ? », que la charte refuse) : la colonne
+   dit l'état en mots — sûre, à voir, douteuse, à la main — ; le chiffre, ce qu'il mesure et ce qu'il change, dans la bulle. */
+const MOTS_CONF_PDF = { ok: 'sûre', att: 'à voir', ko: 'douteuse' };
+const motConfPdf = l => l.main.size ? 'à la main' : MOTS_CONF_PDF[etatConf(l.conf)];
+function bulleConfPdf(l) { if (l.main.size) return l.assiste ? 'Reliée à la main : VOLTA la prend telle que vous l’avez saisie.' : 'Corrigée à la main : VOLTA la prend telle que vous l’avez écrite.';
+  const p = pourcentPdf(l.conf), e = etatConf(l.conf);
+  return e === 'ok' ? `VOLTA est sûr à ${p} de cette lecture : elle part telle quelle.`
+    : `VOLTA n’est sûr qu’à ${p} de cette lecture (sûre dès 90 %) : ${e === 'ko' ? 'vérifiez-la' : 'jetez-y un œil'} sur la page — un clic la montre, un double-clic corrige une case.`; }
 function lignesVues() { return PDF.L.map((l, i) => [l, i]).filter(([l]) => PDF.filtre === 'tout' || (PDF.filtre === 'revoir' ? !l.main.size && l.conf < 0.9 : PDF.filtre === 'page' ? (l.page === PDF.page - 1 || l.pageVers === PDF.page - 1) : true)); }
 function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; const L = PDF.lecture, n = PDF.L.length, revoir = PDF.L.filter(l => !l.main.size && l.conf < 0.9).length;
   const scan = L && L.scannees, tout = L && L.scannees === PDF.n;
@@ -192,8 +202,10 @@ function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; c
   const tete = `<div class="fiche-tete"><div class="min0"><div class="sur">PDF de schéma</div><h2 class="titre">${esc(PDF.nom)}</h2></div><button class="rond fermer" id="pdf-fermer" aria-label="Fermer le PDF (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button></div>`;
   const champs = L && L.pages[PDF.page - 1] && L.pages[PDF.page - 1].champs || {}, cart = [champs.numero || (L && L.numero), champs.folio ? 'folio ' + champs.folio : '', champs.indice || (L && L.indice) ? 'indice ' + (champs.indice || L.indice) : ''].filter(Boolean);
   let haut = `<p class="pdf-etat" id="pdf-etat" role="status">${etat}</p>` + (cart.length ? `<p class="pdf-cart">Cartouche : <span class="id">${cart.map(esc).join('</span>' + POINT + '<span class="id">')}</span></p>` : ''), corps = '';
-  const lisible = tout && L.pages.every(r => r.texte), vectorise = tout && L.pages.every(r => r.vectorise);
-  if (tout) haut += `<div class="pdf-scan"><p><b>${vectorise ? 'Texte dessiné en traits' : 'Page scannée'}</b>${lisible ? ', son texte se lit (le scanner l’a reconnu) : VOLTA propose le repère et la borne écrits là où vous cliquez' : vectorise ? ' : ce PDF n’a pas de texte à lire, ses lettres sont des dessins' : ' : aucun texte à lire'}. Reliez les bornes à la main — un clic sur une borne, un clic sur l’autre ; Entrée valide.</p>${PDF.assiste ? '' : '<button class="btn papier" data-pdf="assiste">Relier à la main</button>'}</div>`;
+  // (passe 87, la relecture : dans un PDF qui mêle des pages en vecteur et une page scannée, la page scannée ne disait rien
+  // et n'offrait pas « Relier à la main ») : le bandeau suit la PAGE affichée — scannée, ou son texte dessiné en traits
+  const ici = L && L.pages[PDF.page - 1], aRelier = !!(ici && ici.scanne), lisible = aRelier && ici.texte, vectorise = aRelier && ici.vectorise;
+  if (aRelier) haut += `<div class="pdf-scan"><p><b>${vectorise ? 'Texte dessiné en traits' : 'Page scannée'}</b>${lisible ? ', son texte se lit (le scanner l’a reconnu) : VOLTA propose le repère et la borne écrits là où vous cliquez' : vectorise ? ' : cette page n’a pas de texte à lire, ses lettres sont des dessins' : ' : aucun texte à lire'}. Reliez les bornes à la main — un clic sur une borne, un clic sur l’autre ; Entrée valide.</p>${PDF.assiste ? '' : '<button class="btn papier" data-pdf="assiste">Relier à la main</button>'}</div>`;
   if (n || (L && !tout)) {
     haut += `<div class="pdf-filtres segment" role="group" aria-label="Lignes montrées">${[['tout', 'Toutes', n], ['revoir', 'À revoir', revoir], ['page', 'Cette page', PDF.L.filter(l => l.page === PDF.page - 1 || l.pageVers === PDF.page - 1).length]].map(([k, t, c]) => `<button data-filtre="${k}" aria-pressed="${PDF.filtre === k}">${t}<i>${c}</i></button>`).join('')}</div>`;
     const V = lignesVues();
@@ -202,7 +214,7 @@ function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; c
         // la case tronquée garde son texte entier au survol (le folio : le dessin, FWD) ; « double-clic pour corriger » se dit dans la ligne dépliée
         return `<tr data-i="${i}" class="${sel ? 'choisie' : ''}"${sel ? ' aria-selected="true"' : ''}>${COLS_PDF.map(([k]) => { const plein = [k === 'folio' ? l.plan || l[k] : l[k], k === 'de' ? l.pnDe : k === 'vers' ? l.pnVers : ''].filter(Boolean).join(' · ');
             return `<td class="pdf-c${l.main.has(k) ? ' main' : ''}${/^borne/.test(k) ? ' b' : ''}" data-k="${k}"${plein ? ` title="${escA(plein)}"` : ''}>${esc(l[k] || '')}${k === 'de' && l.pnDe ? `<small>${esc(l.pnDe)}</small>` : k === 'vers' && l.pnVers ? `<small>${esc(l.pnVers)}</small>` : ''}</td>`; }).join('')}`
-          + `<td class="pdf-conf e-${e}"><i aria-hidden="true"></i>${l.main.size ? "main" : pourcentPdf(c)}</td></tr>`
+          + `<td class="pdf-conf e-${e}" data-bulle="${escA(bulleConfPdf(l))}"><i aria-hidden="true"></i>${motConfPdf(l)}</td></tr>`
           + (sel ? `<tr class="pdf-raisons"><td colspan="${COLS_PDF.length + 1}"><p class="pdf-detail">${esc(lies([l.type ? 'câble ' + l.type : 'câble sans type', 'folio ' + (l.folio || '—')]))}</p><ul>${(l.raisons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul><div class="pdf-geste"><span class="pdf-astuce">Double-clic sur une case pour la corriger.</span><button class="btn lien" data-pdf="suppr" data-i="${i}">Supprimer cette liaison</button></div></td></tr>` : ''); }).join('')
       + `</tbody></table>` + (V.length ? '' : `<p class="pdf-vide">${PDF.filtre === 'revoir' ? 'Rien à revoir : chaque liaison est lue avec assurance.' : PDF.filtre === 'page' ? 'Aucune liaison lue sur cette page.' : 'Aucune liaison lue.'}</p>`);
     // les bouts orphelins, les bornes sans trait : à part
@@ -211,7 +223,7 @@ function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; c
       + O.map((o, k) => `<li><button data-orph="o${k}"><span class="pdf-o-p">p. ${o.page + 1}</span>${esc(o.raison)}</button></li>`).join('')
       + S.map((o, k) => `<li><button data-orph="s${k}"><span class="pdf-o-p">p. ${o.page + 1}</span>borne sans trait : <span class="id">${esc((o.repere ? o.repere + ' : ' : '') + o.texte)}</span></button></li>`).join('') + '</ul></details>';
   }
-  const pied = `<button class="btn cuivre" data-pdf="plan"${n ? '' : ' disabled'}>Ouvrir comme plan</button><button class="btn papier" data-pdf="excel"${n ? '' : ' disabled'}>Enregistrer en Excel d’installation</button>`;
+  const pied = `<button class="btn cuivre" data-pdf="plan"${n ? '' : ' disabled'}>Ouvrir comme plan</button><button class="btn papier" data-pdf="excel"${n ? '' : ' disabled'}>Enregistrer en retest Excel</button>`;
   const y = $('pdf-corps') ? $('pdf-corps').scrollTop : 0;
   // au téléphone, la relecture est le tiroir du bas : sa poignée le replie, le déplie (le CSS ne la montre que là)
   const poignee = `<button class="pdf-poignee" data-pdf="replier" type="button" aria-expanded="${!PDF.replie}" aria-label="${PDF.replie ? 'Déplier' : 'Replier'} la relecture"><i aria-hidden="true"></i></button>`;
@@ -289,7 +301,7 @@ function classeurDuPdf() { const L = liaisonsDuPdf(), lignes = [EN16_PDF, ...L.m
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignes), 'Installation'); return { wb, n: L.length }; }
 function enregistrerPdfEnExcel() { const { wb, n } = classeurDuPdf(); if (!n) return; const nom = PDF.nom.replace(/\.pdf$/i, '') + '-retest.xlsx';
   telecharger(new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nom);
-  dire(pluriel(n, 'liaison') + ' enregistrée' + (n > 1 ? 's' : '') + ' en Excel d’installation (' + nom + ').'); }
+  dire(pluriel(n, 'liaison') + ' enregistrée' + (n > 1 ? 's' : '') + ' en retest Excel (' + nom + ').'); }
 
 /* ---- la pièce : construite une fois, ses gestes ------------------------------------------------------------------ */
 const ICO_PDF = { prec: '<path d="m15 5-7 7 7 7"/>', suiv: '<path d="m9 5 7 7-7 7"/>', moins: '<path d="M6 12h12"/>', plus: '<path d="M12 6v12M6 12h12"/>', cadre: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
@@ -331,8 +343,8 @@ function lierPdf() { const sc = $('pdf-scene'), o = (id, fn) => { $(id).onclick 
     if (g && !g.bouge && e.type === 'pointerup') { const f = $('pdf-feuille').getBoundingClientRect(); if (e.clientX < f.left || e.clientX > f.right || e.clientY < f.top || e.clientY > f.bottom) return;
       if (PDF.assiste) clicAssiste(e); else liaisonSousLeClic(e); } };
   sc.addEventListener('pointerup', lacher); sc.addEventListener('pointercancel', lacher);
-  // la relecture
-  const rel = $('pdf-relecture');
+  // la relecture (la bulle de VOLTA dit, au survol, ce que veut dire l'état d'une lecture : « sûre », « à voir »…)
+  const rel = $('pdf-relecture'); if (typeof lierBulles === 'function') lierBulles(rel);
   rel.addEventListener('click', e => { const t = e.target;
     if (t.closest('#pdf-fermer')) { fermerPdf(); return; }
     // un autre filtre : une autre liste, lue d'en haut — ou là où est la liaison choisie, si elle y est

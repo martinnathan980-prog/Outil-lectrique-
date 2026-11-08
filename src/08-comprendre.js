@@ -3,7 +3,7 @@
    ---------------------------------------------------------------------------
    Le lecteur (octobre 2026) : « je ne comprends plus la base ; explique-moi comme à un enfant de quatre ans » — et
    « même le BE doit comprendre comment c'est fait, et pourquoi ». Une page, six images, en français simple :
-     1. le CUISINIER : l'installation est la commande, la base SEE le catalogue, la physique les recettes — VOLTA cuisine,
+     1. le CUISINIER : votre fichier est la commande, la base SEE le catalogue, la physique les recettes — VOLTA cuisine,
         il n'invente pas une pièce qui manque au catalogue ; et la base « unique » (ce que seul VOLTA a, l'option) ;
      2. la CHAÎNE D'UN CONNECTEUR : référence → famille → face → taille → câble → contact ;
      3. la CHAÎNE D'UN DISJONCTEUR : consommation → profil → courbe → calibre → câbles → chute ;
@@ -11,8 +11,8 @@
      5. ce que veut dire « MANQUE » (et vérifié, à confirmer, hypothèse) ;
      6. COMMENT VÉRIFIER : « D'où vient chaque pièce », les points de couleur, la Bible, les Normes, la Cohérence.
    Chaque chapitre : une phrase, un schéma (SVG en ligne, sur le papier comme tous les dessins de l'outil — aucun fichier
-   à côté), trois ou quatre points, et, replié, « Pour le bureau d'études : la règle exacte ». Les exemples sont ceux de
-   l'installation livrée (340AB1, 102CB1), relevés sur les tables de l'outil.
+   à côté), trois ou quatre points, et, replié, « Pour le bureau d'études : la règle exacte ». Les exemples sont ceux du
+   plan de démonstration (340AB1, 102CB1), relevés sur les tables de l'outil.
    `ficheComprendre(chapitre)` ouvre la page (sur un chapitre : 'cuisinier', 'connecteur', 'disjoncteur', 'routes',
    'manque', 'verifier'). Elle s'ouvre du menu (⋮ › Plus), de chaque « ? » (un lien au pied de sa bulle) et des pages
    Normes, Bible et Base SEE. Le style : style-comprendre.css.
@@ -53,7 +53,7 @@ function cpSchemaCuisinier() { const carte = (y, c, cd, titre, sous, ex) => `<re
     + cpT(70, y + 26, titre[1], { cls: 'vr-titre', ancre: 'start' }) + cpT(70, y + 45, sous, { cls: 'vr-sous', ancre: 'start', couleur: c }) + cpT(70, y + 63, ex, { cls: 'vr-petit', ancre: 'start' });
   const plat = ['les folios dessinés', 'une fiche par objet', 'la LPA à commander', 'l’Excel corrigé'];
   return cpSvg('0 0 880 300', 'VOLTA est un cuisinier : la commande, le catalogue et les recettes entrent ; les folios, les fiches et la LPA sortent',
-    carte(10, CP.cuivre, CP.cuivreDoux, ['1', 'La commande'], 'votre fichier d’installation', 'relier 102CB1 à 103RL1, en DR20')
+    carte(10, CP.cuivre, CP.cuivreDoux, ['1', 'La commande'], 'votre fichier', 'relier 102CB1 à 103RL1, en DR20')
     + carte(111, CP.cuivre, CP.cuivreDoux, ['2', 'Le catalogue'], 'la base SEE gardée', 'sinon les tables de VOLTA')
     + carte(212, CP.cuivre, CP.cuivreDoux, ['3', 'Les recettes'], 'la physique, les normes', 'ce qu’un câble supporte, quand disjoncter')
     + cpFleche(302, 49, 376, 128, CP.cuivre) + cpFleche(302, 150, 368, 150, CP.cuivre) + cpFleche(302, 251, 376, 172, CP.cuivre)
@@ -64,18 +64,18 @@ function cpSchemaCuisinier() { const carte = (y, c, cd, titre, sous, ex) => `<re
     + `<rect x="586" y="44" width="286" height="212" rx="14" fill="${CP.fond}" stroke="${CP.encre}" stroke-width="1.3"/>` + cpT(606, 76, 'Le plat', { cls: 'vr-titre', ancre: 'start' })
     + plat.map((p, i) => `<circle cx="612" cy="${104 + i * 26}" r="3.5" fill="${CP.cuivre}"/>` + cpT(626, 109 + i * 26, p, { cls: 'vr-ligne', ancre: 'start' })).join('')
     + `<rect x="602" y="208" width="254" height="30" rx="15" fill="${CP.rougeDoux}" stroke="${CP.rouge}" stroke-dasharray="4 3"/>` + cpT(729, 227, 'une pièce absente : « manque »', { cls: 'vr-petit', couleur: CP.rouge })); }
-/* 2. LA CHAÎNE D'UN CONNECTEUR : 340AB1 de l'installation livrée. */
+/* 2. LA CHAÎNE D'UN CONNECTEUR : 340AB1 du plan de démonstration. */
 function cpSchemaConnecteur() { const xs = [
-    ['Référence', 'EN2997Y1A08P', ['dans votre fichier', 'd’installation'], { mono: 1 }], ['Famille', 'EN 2997', ['le début de', 'la référence']], ['Face', '16-24', ['la plus petite qui', 'loge tous les câbles']],
+    ['Référence', 'EN2997Y1A08P', ['lue dans', 'votre fichier'], { mono: 1 }], ['Famille', 'EN 2997', ['le début de', 'la référence']], ['Face', '16-24', ['la plus petite qui', 'loge tous les câbles']],
     ['Cavité', 'taille 20', ['lue sur la face,', 'à la borne 1']], ['Câble', ['DR24', '24 AWG'], ['la base', 'des câbles'], { mono: 1 }], ['Contact', 'EN3155-019F2020', ['taille + sexe', '+ gauge'], { mono: 1, etat: 'ok' }]];
   return cpSvg('0 0 880 150', 'La chaîne d’un connecteur : référence, famille, face, cavité, câble, contact', cpChaine(xs, 14, 126, 120, 24)); }
-/* 3. LA CHAÎNE D'UN DISJONCTEUR, et sa courbe : 102CB1 de l'installation livrée. */
+/* 3. LA CHAÎNE D'UN DISJONCTEUR, et sa courbe : 102CB1 du plan de démonstration. */
 function cpSchemaDisjoncteur() { const xs = [
-    ['Consommation', ['5 A', '9,31 A au départ'], ['ce que tirent', 'les équipements']], ['Profil', ['9,31 A · 2 min', '5 A ensuite'], ['démarrage, transition,', 'permanent']],
+    ['Consommation', ['5 A', '9,31 A au départ'], ['ce que tirent', 'les équipements']], ['Profil', ['9,31 A · 2,1 min', '5 A ensuite'], ['démarrage, transition,', 'permanent']],
     ['Courbe', 'MS3320', ['à 125 °C : la plus', 'rapide à disjoncter']], ['Calibre', ['7,5 A disjoncte', '10 A retenu'], ['le plus petit qui ne', 'disjoncte pas'], { etat: 'ok' }],
-    ['Câbles', ['ses trois câbles', 'en DR12'], ['assez gros pour', 'que le 10 A les protège']], ['Chute', '≤ 2 V', ['jusqu’au bout,', 'pointes comprises']]];
+    ['Câbles', ['chaque câble', 'assez gros'], ['pour que le 10 A', 'le protège']], ['Chute', '≤ 2 V', ['jusqu’au bout,', 'pointes comprises']]];
   // LA COURBE, en schéma : sa forme à 125 °C (la plus rapide — presque droite près du calibre), en échelles logarithmiques ;
-  // le temps que met le disjoncteur à couper selon le courant. Le 10 A frôle le point de 102CB1 (9,31 A pendant 2 min) :
+  // le temps que met le disjoncteur à couper selon le courant. Le 10 A frôle le point de 102CB1 (9,31 A pendant 2,1 min) :
   // il passe, sans la marge ; le 15 A est loin à droite. Le profil en escalier, comme dans votre Excel.
   const X0 = 120, Y0 = 192, W = 430, H = 150, IMIN = 4, IMAX = 60, TMIN = 0.5, TMAX = 7200;
   const lx = i => X0 + Math.log(i / IMIN) / Math.log(IMAX / IMIN) * W, ly = t => Y0 + H - Math.log(t / TMIN) / Math.log(TMAX / TMIN) * H;
@@ -88,11 +88,11 @@ function cpSchemaDisjoncteur() { const xs = [
   const P = { x: lx(9.31), y: ly(125) }, Q = { x: lx(5), y: Y0 + 4 };
   const profil = `<path d="M${f1(Q.x)} ${f1(Q.y)}V${f1(P.y)}H${f1(P.x)}" fill="none" stroke="${CP.violet}" stroke-width="1.8" stroke-dasharray="4 3"/>`
     + `<circle cx="${f1(P.x)}" cy="${f1(P.y)}" r="5.5" fill="${CP.violet}"/><circle cx="${f1(Q.x)}" cy="${f1(Q.y + 2)}" r="4" fill="${CP.violet}"/>`
-    + cpT(P.x - 10, P.y + 20, '9,31 A · 2 min', { cls: 'vr-petit', ancre: 'end', couleur: CP.violet }) + cpT(Q.x + 9, Q.y + 16, '5 A · toujours', { cls: 'vr-petit', ancre: 'start', couleur: CP.violet });
+    + cpT(P.x + 12, P.y + 4, '9,31 A · 2,1 min', { cls: 'vr-petit', ancre: 'start', couleur: CP.violet }) + cpT(Q.x + 9, Q.y + 16, '5 A · toujours', { cls: 'vr-petit', ancre: 'start', couleur: CP.violet });
   const leg = (y, c, d, t) => `<line x1="586" y1="${y}" x2="612" y2="${y}" stroke="${c}" stroke-width="2.4"${d ? ' stroke-dasharray="6 4"' : ''}/>` + cpT(622, y + 4, t, { cls: 'vr-ligne', ancre: 'start' });
-  return cpSvg('0 0 880 384', 'La chaîne d’un disjoncteur : consommation, profil, courbe, calibre, câbles, chute ; et, en schéma, la courbe du 10 A et du 15 A face au profil de 102CB1',
+  return cpSvg('0 0 880 384', 'La chaîne d’un disjoncteur : consommation, profil, courbe, calibre, câbles, chute ; et, en schéma, la courbe du 7,5 A et du 10 A face au profil de 102CB1',
     cpChaine(xs, 14, 126, 128, 24) + axes + `<path d="${courbe(7.5)}" fill="none" stroke="${CP.rouge}" stroke-width="2.4" stroke-dasharray="6 4"/><path d="${courbe(10)}" fill="none" stroke="${CP.vert}" stroke-width="2.4"/>` + profil
-    + leg(214, CP.violet, true, 'le profil de 102CB1') + leg(244, CP.rouge, true, '7,5 A : le profil passe à droite : il disjoncte') + leg(274, CP.vert, false, '10 A : le profil reste à gauche : il ne disjoncte pas')
+    + leg(214, CP.violet, true, 'le profil de 102CB1') + leg(244, CP.rouge, true, '7,5 A : il disjoncte') + leg(274, CP.vert, false, '10 A : il ne disjoncte pas')
     + cpT(586, 310, ['À gauche de sa courbe, un calibre ne disjoncte pas ;', 'à droite, il disjoncte. VOLTA prend le plus petit', 'calibre qui laisse tout le profil à gauche.', '(schéma : la forme des courbes à 125 °C)'], { cls: 'vr-petit', ancre: 'start', pas: 15 })); }
 /* 4. LES ROUTES : l'appareil vu de dessus, ses deux côtés ; un connecteur qui mélange ; une prise qui change de route. */
 function cpSchemaRoutes() { const cable = (x1, y1, x2, y2, c, t, ty) => `<path d="M${x1} ${y1}H${x2}" stroke="${c}" stroke-width="3" fill="none"/>` + (t ? cpT((x1 + x2) / 2, ty || y1 - 7, t, { cls: 'vr-petit mono', couleur: c }) : '');
@@ -154,12 +154,12 @@ function comprendreHtml() {
       + `<p>« Seulement dans VOLTA » : une ligne de contact (famille, sexe, taille, type et gauge du câble) que la base n’a pas. Deux raisons : la base ne l’a plus (sa règle a changé de version), ou VOLTA l’a ajoutée de ses sources (une taille que vos photos n’avaient pas). Avec la case cochée, ces lignes ne servent plus pour les familles que la base connaît ; une famille que la base ignore garde celles de VOLTA.</p>`
       + cpBase()),
     cpChapitre('connecteur', 2, 'La chaîne d’un connecteur', 'Pour savoir quel contact sertir au bout d’un câble, VOLTA suit une chaîne, maillon par maillon : <b>la référence</b> donne <b>la famille</b>, la famille donne <b>la face</b>, la face donne <b>la taille de la cavité</b>, et la taille, avec <b>la gauge du câble</b>, donne <b>le contact</b>.', cpSchemaConnecteur(),
-      ['L’exemple est 340AB1 dans l’installation livrée : EN2997Y1A08P est un EN 2997 ; sa face 16-24 loge ses câbles ; la borne 1 est une cavité de taille 20 ; le câble DR24 fait 24 AWG ; la douille qui va avec est EN3155-019F2020.',
+      ['L’exemple est 340AB1, dans le plan de démonstration : EN2997Y1A08P est un EN 2997 ; sa face 16-24 loge ses câbles ; la borne 1 est une cavité de taille 20 ; le câble DR24 fait 24 AWG ; la douille qui va avec est EN3155-019F2020.',
         'Chaque maillon vient de <b>sa</b> table, et d’elle seule. Un contact ne se devine pas : il se lit dans la table des contacts, à la taille, au sexe et à la gauge.',
         'Si un maillon manque — une famille inconnue, aucune face qui loge les câbles —, la chaîne s’arrête là, et la fiche le dit : c’est pourquoi un contact reste vide.'],
       `<p><b>Famille</b> : la famille la plus longue dont le nom commence la référence (table des connecteurs ; la base SEE gardée en plus). <b>Face</b> : celle que la référence nomme, sinon la plus petite de la famille qui a toutes les bornes et dont chaque cavité admet la gauge de son câble ; « Changer » sur la fiche en prend une autre. <b>Cavité</b> : la borne numérotée va sur son numéro, une borne lettrée sur sa lettre (ou la lettre de même rang). <b>Contact</b> : la ligne la plus précise gagne — le type de câble exact avant « tout câble », la gauge exacte avant « toute gauge » ; le sexe est celui du contact qu’on sertit (des douilles face à une embase d’équipement ; « Changer » l’inverse). Autour du connecteur, le toron (√ de la somme des Ø², × le facteur TE), le raccord (votre table CHOIX), le manchon et le collier suivent la même règle : une table, une ligne, sinon « manque ».</p>`),
     cpChapitre('disjoncteur', 3, 'La chaîne d’un disjoncteur', 'Un disjoncteur doit <b>laisser passer</b> ce que les équipements consomment, et <b>disjoncter avant</b> que les câbles chauffent trop. VOLTA part de la <b>consommation</b>, en fait un <b>profil</b>, le pose sur la <b>courbe</b> de la famille, choisit le <b>calibre</b>, vérifie les <b>câbles</b>, puis la <b>chute</b> de tension.', cpSchemaDisjoncteur(),
-      ['L’exemple est 102CB1 : il démarre à 9,31 A pendant 2 minutes, puis tire 5 A. Sur 2 minutes, un 7,5 A disjoncte dès 7,2 A : il disjoncte. Un 10 A ne disjoncte qu’au-delà de 9,66 A : il ne disjoncte pas — VOLTA retient le 10 A, et vérifie que ce calibre protège chacun de ses câbles.',
+      ['L’exemple est 102CB1 : au démarrage et en transition, il tire 9,31 A pendant 2,1 min, puis 5 A en permanence. Sur 2,1 min, un 7,5 A disjoncte dès 7,24 A : il disjoncte. Un 10 A ne disjoncte qu’au-delà de 9,66 A : il ne disjoncte pas — VOLTA retient le 10 A, et vérifie que ce calibre protège chacun de ses câbles.',
         'La courbe dit combien de temps le disjoncteur met à disjoncter, selon le courant. Un point du profil à gauche de la courbe ne le fait pas disjoncter.',
         'Un câble doit supporter le courant, et être protégé par le calibre : si le calibre monte, le câble grossit — jamais l’inverse.',
         'La chute se compte du disjoncteur jusqu’au bout du câble, contacts et disjoncteur compris : 2 V au plus, pointes comprises (votre règle).'],
@@ -180,7 +180,7 @@ function comprendreHtml() {
         'Le <b>« ? »</b> à côté d’une valeur choisie dit comment VOLTA l’a choisie, en une phrase, ses chiffres, ses étapes et ses sources.',
         'La <b>Bible</b> montre chaque module et chaque arrangement en grand, avec son origine. Les <b>Normes</b> montrent chaque table : d’où elle vient, qui la lit, comment une ligne se choisit.',
         'La <b>base SEE</b>, onglet Cohérence : la base vérifiée ligne par ligne, et ce que seul VOLTA a.'],
-      `<p>Les sources de chaque ligne sont dans les colonnes Source et Statut des tables (normes/*.csv, lisibles sur la page Normes) : « vérifié (deux sources : … ) », « à confirmer (une source : …) », « à confirmer (non public : …) » ; vide, c’est votre donnée. Le dossier PDF porte une page « Hypothèses et sources » ; l’installation corrigée, une feuille « VOLTA » (cachée) avec les hypothèses et les choix faits à la main. ${cpLien('normes', 'Ouvrir les Normes')} ${cpLien('bible', 'Ouvrir la Bible')}</p>`)];
+      `<p>Les sources de chaque ligne sont dans les colonnes Source et Statut des tables (normes/*.csv, lisibles sur la page Normes) : « vérifié (deux sources : … ) », « à confirmer (une source : …) », « à confirmer (non public : …) » ; vide, c’est votre donnée. Le dossier PDF porte une page « Hypothèses et sources » ; l’Excel corrigé, une feuille « VOLTA » (cachée) avec les hypothèses et les choix faits à la main. ${cpLien('normes', 'Ouvrir les Normes')} ${cpLien('bible', 'Ouvrir la Bible')}</p>`)];
   return `<div class="vr">${nmTitre('Aide', 'Comment VOLTA réfléchit')}`
     + `<div class="vr-page">${sommaire}<div class="vr-texte"><p class="vr-chapeau">VOLTA ne devine rien. Il lit votre fichier, prend les pièces dans un catalogue, applique des règles de physique, et vous montre d’où vient chaque chose. Six images pour tout comprendre.</p>${ch.join('')}</div></div></div>`; }
 /* Ouvrir la page (sur un chapitre). Elle prend la page entière : on la lit comme un livre, le plan attend derrière. */

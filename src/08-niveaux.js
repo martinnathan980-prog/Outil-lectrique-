@@ -256,22 +256,24 @@ function motsDuProbleme(reste, suite, type) { const r = String(reste || ''), fin
     return { court: fin(quoi + sur), long: fin(quoi + (nom ? ' (' + nom.toLowerCase() + ')' : '') + sur) + d + cont }; }
   // ce qu'il admet en continu, sous le calibre : une surcharge entre les deux le chauffe sans que le disjoncteur disjoncte
   if ((m = /^([\d,]+ A) admis en continu(?: \(([\d,]+ A) × ([\d,]+)(?: : ([^)]+))?\))? < calibre ([\d,]+ A)$/i.exec(r))) {
-    const court = fin(`Il admet ${m[1]} en continu, moins que le calibre de ${m[5]} : il n’est pas protégé en surcharge`);
+    // (passe 87, variante A : des puces courtes, la conclusion d'abord — « le 10 A ne le protège pas », puis le chiffre qui décide)
+    const court = fin(`Le ${m[5]} ne le protège pas en surcharge : il n’admet que ${m[1]} en continu`);
     const d = m[2] && m[3] ? ` Ces ${m[1]} : ${m[2]} pour ${type ? 'un ' + type : 'ce câble'} seul à l’air libre, × ${m[3]} ${m[4] ? conditionsEnMots(m[4]) : 'ici'}.` : '';
     return { court, long: court + ' Entre les deux, il chauffe sans que le disjoncteur disjoncte.' + d, mange: true }; }
   // le permanent contre le contact
   if ((m = /^le permanent \(([\d,]+ A)\) dépasse le contact taille (\S+) (?:supposé \(([\d,]+ A)\)|\(([\d,]+ A), ([^)]+)\))$/i.exec(r))) {
-    const court = m[3] ? fin(`Il porte ${m[1]} en permanence, plus que les ${m[3]} du contact taille ${m[2]} que VOLTA suppose`) : fin(`Il porte ${m[1]} en permanence, plus que les ${m[4]} de son contact taille ${m[2]} (${m[5]})`);
+    const court = m[3] ? fin(`${m[1]} en permanence : plus que les ${m[3]} de son contact taille ${m[2]} supposé`) : fin(`${m[1]} en permanence : plus que les ${m[4]} de son contact taille ${m[2]} (${m[5]})`);
     // (supposé : pourquoi celui-là, sans redire sa taille ni son courant)
     const j = type && typeof jaugeDuType === 'function' ? jaugeDuType(type) : null;
     return { court, long: court + (m[3] ? ` Le plan ne dit pas quel contact est serti au bout de ce ${type || 'câble'} : VOLTA prend le plus petit qui admet ${j != null ? 'un ' + j + ' AWG' : 'sa gauge'}, par prudence.` : ''), sansGlose: true }; }
   // le calibre au-delà de la table 11-3
   if ((m = /^calibre ([\d,]+ A) > ([\d,]+ A), le maximum de l’AC 43\.13-1B \(table 11-3\) pour du (\S+) AWG$/i.exec(r))) {
-    const court = fin(`Le ${m[1]} dépasse ${m[2]}, le plus fort calibre que l’AC 43.13-1B (table 11-3) permet sur un ${m[3]} AWG`); return { court, long: court }; }
+    const court = fin(`Le ${m[1]} dépasse les ${m[2]} que l’AC 43.13-1B (table 11-3) permet au plus sur un ${m[3]} AWG`); return { court, long: court }; }
   // le contact plus faible que le calibre
   if ((m = /^contact taille (\S+) (?:supposé \(([\d,]+ A)\)|\(([\d,]+ A), ([^)]+)\)) < calibre ([\d,]+ A)$/i.exec(r))) {
-    const qui = m[2] ? `Le contact taille ${m[1]} que VOLTA suppose admet ${m[2]}` : `Son contact taille ${m[1]} (${m[4]}) admet ${m[3]}`;
-    const court = fin(`${qui}, moins que le calibre de ${m[5]}${/protégé/.test(suite || '') ? ' : il n’est pas protégé en surcharge' : ''}`); return { court, long: court, mange: /protégé/.test(suite || '') }; }
+    const taille = m[2] ? `la taille ${m[1]} supposée n’admet que ${m[2]}` : `sa taille ${m[1]} (${m[4]}) n’admet que ${m[3]}`, protege = /protégé/.test(suite || '');
+    const court = fin(protege ? `Le ${m[5]} ne protège pas son contact en surcharge : ${taille}` : `Son contact taille ${m[1]} ${m[2] ? 'supposé' : '(' + m[4] + ')'} n’admet que ${m[2] || m[3]}, moins que le ${m[5]}`);
+    return { court, long: court, mange: protege }; }
   // la chute en ligne, au permanent, puis en pointe
   if ((m = /^chute en ligne de ([\d,]+ V)(?: à ([\d,]+ A))?, plus que les ([\d,]+ V) admis( sous [\d,]+ V)?( \(longueurs d’hypothèse\))?$/i.exec(r))) {
     const court = fin(`La ligne perd ${m[1]}${m[2] ? ' sous ' + m[2] : ''}, plus que les ${m[3]} admis${m[4] || ''}${m[5] ? ' — sur des longueurs supposées' : ''}`); return { court, long: court }; }
@@ -279,7 +281,8 @@ function motsDuProbleme(reste, suite, type) { const r = String(reste || ''), fin
     const court = fin(`En pointe (${m[2]}), la ligne perd ${m[1]}, plus que les ${m[3]} admis${m[4] || ''}${m[5] ? ' — sur des longueurs supposées' : ''}`); return { court, long: court }; }
   // (une phrase que VOLTA ne sait pas dire autrement : telle quelle, sa suite après deux points — « Courant de commande inconnu :
   // écrivez la consommation de la bobine de 103RL1. »)
-  const tel = fin(majuscule(r) + (suite ? ' : ' + suite.replace(/^\S/, c => c.toLowerCase()) : '')); return { court: tel, long: tel, mange: !!suite }; }
+  // (passe 87 : « VOLTA », « VT1 » gardent leurs capitales — seule une première lettre suivie de minuscules se minusculise)
+  const tel = fin(majuscule(r) + (suite ? ' : ' + suite.replace(/^[A-ZÀ-Ý](?=[a-zà-ÿ])/, c => c.toLowerCase()) : '')); return { court: tel, long: tel, mange: !!suite }; }
 /* LE GESTE QUE VOLTA SAIT FAIRE pour un point qui n'en porte pas : un câble trop fin pour son courant (ou que son calibre
    ne protège pas) passe au plus fin qui convient (`plusFinQuiTient` — la même proposition que sa fiche) ; deux câbles sur
    une borne, que VOLTA relie par une barrette à poser : la barrette reçoit son repère (le geste du contrôle). Rend
@@ -296,6 +299,50 @@ function gesteDuPoint(p, o) { const t = String(p.texte || '');
     faire: () => { const avant = cableDit(l); if (parVolta(() => changerLiaison(l, 'type', type, 'type de ' + avant + ' : ' + type))) { dire(majuscule(avant) + ' passe en ' + type + '.', false, typeof defaire === 'function' ? { geste: 'Défaire', faire: defaire } : undefined); if (typeof pulser === 'function') pulser({ type: 'liaisons', ls: [l] }); } } }; }
 // l'objet montré, en une clé (« bloc|102CB1 », « fil#… ») : l'onglet ouvert et les points dépliés ne se gardent que pour lui
 const cleObjet = () => { const c = typeof app !== 'undefined' && app.cible; if (!c) return ''; try { return cleDEntree(entreeDeCible(c)); } catch (_) { return c.type === 'fil' ? 'fil' : 'bloc|' + (c.nom || ''); } };
+/* (passe 87 — le lecteur a choisi la variante A de la planche P1) UNE LIGNE PAR CÂBLE. Un câble qui a plusieurs raisons (son
+   courant, sa protection, son contact, la chute de sa ligne) revenait deux ou trois fois, une ligne par règle, avec le même
+   « Passer en DR16 ». Il paraît une fois : QUI, vu d'ici (« 2 → 103RL1:A1 · DR20 »), ses raisons en puces dessous, une par
+   règle, dans les mots du contrôle (`motsDuProbleme` : les mêmes que le récapitulatif, le panneau Repères et le dossier) ;
+   UN geste. La carte dit les règles en mots (« protection · courant · contact »), sa bulle les phrases. Ce qui n'est pas un
+   câble (une barrette à poser, un connecteur) garde sa ligne. À RÉGLER : la ligne a un problème ou un geste (la règle de la
+   fiche, que le lecteur aime) ; le récapitulatif, le panneau Repères et la garde du dossier PDF rangent et comptent pareil
+   (08-recap, `rangsDesPoints`). */
+const REGLES_DES_CABLES = ['protection', 'courant', 'contact', 'chute', 'autre'];
+// la règle dont parle un point (la phrase du contrôle, ou celle de la fiche d'un câble)
+const regleDuPoint = t => { t = String(t || ''); return /chute en ligne/i.test(t) ? 'chute' : /contact taille|dépasse le contact|aucun contact/i.test(t) ? 'contact'
+  : /> [\d,]+ A admis|plus que ce que le câble admet/i.test(t) ? 'courant' : /pas protégé|< calibre|table 11-3|maximum de l’AC|laisse passer/i.test(t) ? 'protection' : 'autre'; };
+// son mot dans la carte ; un point qui n'a pas de mot court se dit par sa phrase
+const motDeLaRegle = (r, t) => r !== 'autre' ? r : /courant de commande inconnu/i.test(t) ? 'courant inconnu' : /type de câble inconnu|sans type/i.test(t) ? 'type inconnu'
+  : /sans résistance/i.test(t) ? 'résistance inconnue' : /en double|même ligne/i.test(t) ? 'ligne en double' : '';
+/* le câble dont parle un point, pour le ranger sur sa ligne : celui que le contrôle lui attache — le dernier du chemin pour une
+   chute en ligne, celui que sa phrase nomme —, sinon celui que sa phrase nomme, vu de la fiche (`cableDuPoint`) ; la liaison
+   vivante (un Défaire rend des copies de même contenu). La fiche et le récapitulatif rangent ainsi les mêmes points ensemble. */
+function cableDeLaLigne(p, o) { const x = p.point || p, cs = (x.cables || []).filter(c => c && typeof c === 'object');
+  let l = cs.length ? cs[cs.length - 1] : null; if (!l) { try { l = cableDuPoint(p, o); } catch (_) { l = null; } } if (!l) return null;
+  const V = verite(); if (!V.includes(l) && typeof memeLiaison === 'function') l = V.find(y => memeLiaison(y, l)) || l;
+  return (typeof sourceDe === 'function' && sourceDe(l)) || l; }
+const finPhrase = s => String(s || '').replace(/\s+$/, '') + (/[.!?…]$/.test(String(s || '').trim()) ? '' : '.');
+/* la raison d'un point sur la ligne de son câble : ce qui cloche, en mots (`motsDuProbleme`), sans le câble que la ligne dit
+   déjà ; `long` (la bulle) dit tout — d'où vient l'admis, pourquoi VOLTA suppose un contact, son disjoncteur. Une phrase que
+   VOLTA ne sait pas dire autrement reste telle quelle, sa suite derrière un tiret. Rend { regle, court, long }. */
+function raisonDuPoint(p, o, type) { const t = majuscule(motDuProbleme(p.texte)), k = t.indexOf(' — '), suite = k > 0 ? t.slice(k + 3) : '', titre = k > 0 ? t.slice(0, k) : t;
+  const qui = /^(\S+ vers \S+(?: \(par [^)]+\))?) : (.+)$/.exec(titre), reste = qui ? qui[2] : titre, regle = regleDuPoint(reste), brut = majuscule(reste).replace(/[.!?…]\s*$/, '');
+  const M = motsDuProbleme(reste, suite, (qui && qui[1].split(' ')[0]) || type || ''), bulle = p.bulle ? '\n' + p.bulle : '';
+  if (M.court.startsWith(brut)) { const c = finPhrase(brut + (suite ? ' — ' + suite : '')); return { regle, court: c, long: c + bulle }; }
+  const sous = /^sous (\S+)$/i.exec(suite), plus = M.mange || !suite ? '' : sous ? ` Son disjoncteur : ${sous[1]}.` : ' ' + finPhrase(majuscule(suite)), glose = k > 0 || M.sansGlose ? '' : gloseDuProbleme(p.texte);
+  return { regle, court: M.court, long: M.long + plus + (glose ? ' ' + glose : '') + bulle }; }
+/* TOUT RÉGLER, d'un geste (la variante A, son pied) : chaque câble passe au type qui le règle — une seule entrée d'historique,
+   que « Défaire » reprend — ; la phrase dit ce que ça coûte (le cuivre en plus, sur quelles longueurs). `cs` : [{ l, type }]. */
+function toutReglerLesCables(cs) { const N = app.norme, H = app.simu || HYPOTHESES, par = new Map(); cs.forEach(c => par.set(c.type, (par.get(c.type) || 0) + 1));
+  const quoi = [...par].sort((a, b) => b[1] - a[1]).map(([t, n], i) => (i ? n + ' en ' : n > 1 ? n + ' câbles passent en ' : '1 câble passe en ') + t).join(', ');
+  let g = 0, L = 0, Ls = 0, connu = true;
+  cs.forEach(c => { const a = c.l.type ? cableDuType(N, c.l.type) : null, b = cableDuType(N, c.type), lu = c.l.longueur > 0, lg = lu ? c.l.longueur : (H.longueur || 0);
+    if (!a || !b || a.masse == null || b.masse == null || !lg) { connu = false; return; } g += (b.masse - a.masse) * lg; L += lg; if (!lu) Ls += lg; });
+  const cout = connu && Math.abs(g) >= 0.5 ? `${g > 0 ? '+' : '−'}${nombre(Math.round(Math.abs(g)))} g sur ${nombre(arrondi(L, 2))} m${Ls >= L - 1e-9 ? ' supposés' : Ls > 0 ? ', dont ' + nombre(arrondi(Ls, 2)) + ' m supposés' : ''}` : '';
+  const phrase = quoi + (cout ? ' : ' + cout : '');
+  return { mot: 'Tout régler', phrase, aide: majuscule(phrase) + ' — une seule entrée d’historique, « Défaire » les rend tous',
+    faire: () => { const xs = cs.filter(c => c.l && c.l.type !== c.type); if (!xs.length) return;
+      if (parVolta(() => changerLiaisons(xs.map(c => [c.l, 'type', c.type]), quoi))) { dire(majuscule(phrase) + '.', false, typeof defaire === 'function' ? { geste: 'Défaire', faire: defaire } : undefined); if (typeof pulser === 'function') pulser({ type: 'liaisons', ls: xs.map(c => c.l) }); } } }; }
 function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
   if (!probs.length) return '';
   // (le geste que la fiche donne au premier point — « Passer en DR16 » d'un câble — ne se répète pas sur un autre point)
@@ -306,12 +353,43 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
     if (i === 0 && o.geste) x.html = o.geste;
     else { const g = gesteQuiRegle(p) || gesteDuPoint(p, o); if (g && !(g.cle && vus.has(g.cle)) && g.mot !== motFiche) { if (g.cle) vus.add(g.cle); x.g = g; } }
     x.agir = !!(x.html || x.g); x.regler = p.niveau === 'ko' || x.agir; return x; });
+  // (passe 87, variante A) LES LIGNES : un câble, une ligne (tous ses points) ; un autre point, la sienne — la phrase de décision
+  // du premier point (un disjoncteur) aussi. Une ligne prend le geste du premier de ses points qui en a un ; elle est à régler
+  // si elle a un problème ou un geste. Dans la fiche d'un câble, ses raisons font une ligne (un point qui a un autre geste que
+  // le type — une ligne en double — garde la sienne).
+  const fil = o.type === 'fil', typeIci = fil ? ((app.cible && app.cible.l) || {}).type || '' : '', U = [], parCle = new Map();
+  pts.forEach((x, i) => { const l = fil || x.phrase ? null : cableDeLaLigne(x.p, o);
+    const k = x.phrase ? 'p|' + i : fil ? (x.g && !/^type\|/.test(x.g.cle || '') ? 'p|' + i : 'fil') : l ? 'c|' + cleDeLiaison(l) : 'p|' + i;
+    let u = parCle.get(k); if (!u) { u = { k, l, cable: k === 'fil' || k[0] === 'c', xs: [] }; parCle.set(k, u); U.push(u); } u.xs.push(x); });
+  U.forEach(u => { const a = u.xs.find(x => x.agir); u.html = a ? a.html : ''; u.g = a ? a.g : null; u.agir = !!a; u.ko = u.xs.some(x => x.p.niveau === 'ko'); u.regler = u.ko || u.agir;
+    // (sans geste qui règle, un problème garde celui qui mène à sa cause — « Voir 102CB1 » ; un point à voir reste calme)
+    u.mene = u.agir || !u.ko ? null : u.xs.map(x => gesteQuiMene(x.p, o.tete && o.tete.nom)).find(Boolean) || null; });
   // l'ordre : ce qui se règle d'un clic, puis les autres problèmes, puis ce qui se règle en ambre, puis l'information
-  const rang = x => (x.p.niveau === 'ko' ? 0 : 2) + (x.agir ? 0 : 1), premier = pts[0] && (o.phrase || o.geste) ? pts[0] : null;
-  const ordre = (premier ? [premier] : []).concat(pts.filter(x => x !== premier).map((x, k) => [x, k]).sort((a, b) => rang(a[0]) - rang(b[0]) || a[1] - b[1]).map(a => a[0]));
-  const R = ordre.filter(x => x.regler), V = ordre.filter(x => !x.regler), nko = R.filter(x => x.p.niveau === 'ko').length;
+  const rang = u => (u.ko ? 0 : 2) + (u.agir ? 0 : 1), premier = pts[0] && (o.phrase || o.geste) ? U.find(u => u.xs.includes(pts[0])) : null;
+  const ordre = (premier ? [premier] : []).concat(U.filter(u => u !== premier).map((u, k) => [u, k]).sort((a, b) => rang(a[0]) - rang(b[0]) || a[1] - b[1]).map(a => a[0]));
+  const R = ordre.filter(u => u.regler), V = ordre.filter(u => !u.regler), nko = R.filter(u => u.ko).length;
+  // (l'onglet Câbles du grand compte ses câbles comme cette liste : `composerFiche`)
+  const deCable = u => u.cable && !!u.l; o.lignesPbs = { cR: R.filter(deCable).length, cV: V.filter(deCable).length, cKo: R.some(u => deCable(u) && u.ko) };
   const bouton = (g, cls) => { const n = FI.gestesPb.push([g]) - 1; return `<button type="button" class="btn ${cls || 'cuivre dense nc-agir'}" data-geste-pb="${n}:0"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}>${esc(g.mot)}</button>`; };
-  const ligne = x => { const p = x.p, t = x.phrase || majuscule(motDuProbleme(p.texte));
+  /* UNE LIGNE DE CÂBLE : QUI vu d'ici, son geste à droite ; ses raisons dessous, une par règle (protection, courant, contact,
+     chute) — dans la carte, les règles en mots (la bulle dit les phrases) ; dans le grand, les phrases (la bulle de chacune dit
+     d'où vient l'admis). La fiche d'un câble ne redit pas son nom. */
+  const ligneCable = u => { const x0 = u.xs[0], p0 = x0.p, etat = u.ko ? 'ko' : 'att', type = u.l ? u.l.type || '' : typeIci, par = new Map();
+    u.xs.forEach((x, i) => { const r = raisonDuPoint(x.p, o, type), k = r.regle === 'autre' ? 'autre|' + i : r.regle, niveau = x.p.niveau === 'ko' ? 'ko' : 'att', e = par.get(k);
+      if (!e) par.set(k, { ...r, niveau, mot: motDeLaRegle(r.regle, x.p.texte) }); else { if (!e.court.includes(r.court)) { e.court += ' ' + r.court; e.long += '\n' + r.long; } if (niveau === 'ko') e.niveau = 'ko'; } });
+    const raisons = [...par.values()].sort((a, b) => REGLES_DES_CABLES.indexOf(a.regle) - REGLES_DES_CABLES.indexOf(b.regle)), tout = raisons.map(r => r.long).join('\n');
+    const titre = fil || !u.l ? '' : quiVuDIci(`${type || 'câble'} vers ${u.l.vers}${u.l.borneVers ? ':' + u.l.borneVers : ''}`, { cable: u.l }, o).titre;
+    const va = ongletDeSection(o.type, p0.section), vise = u.l && typeof cleFil === 'function' ? cleFil(u.l) : p0.viser || '', cible = `data-onglet-va="${escA(va)}"${vise ? ` data-viser="${escA(vise)}"` : ''}`;
+    const enMots = !grand && raisons.length > 1 && raisons.some(r => r.mot);
+    const que = !u.agir && u.ko && typeof remede === 'function' ? (remede({ texte: (u.xs.find(x => x.p.niveau === 'ko') || x0).p.texte }) || [])[0] : '';
+    const geste = u.html || (u.g ? bouton(u.g) : u.mene ? bouton(u.mene, 'papier dense') : ''), bulleCarte = !grand && tout ? ` data-bulle="${escA(tout)}"` : '';
+    const corps = enMots ? `<span class="nc-regles" ${cible}${titre ? '' : bulleCarte}>${raisons.filter(r => r.mot).map(r => `<span class="${r.niveau}">${esc(r.mot)}</span>`).join('')}</span>`
+      : `<span class="nc-raisons" ${cible}${titre ? '' : bulleCarte}>${(grand ? raisons : raisons.slice(0, 1)).map(r => `<span class="nc-r ${r.niveau}"${grand && r.long !== r.court ? ` data-bulle="${escA(r.long)}"` : ''}><i aria-hidden="true"></i><span>${insecable(esc(r.court))}</span></span>`).join('')}</span>`;
+    return `<div class="nc-tache fi-pb-l nc-ligne ${etat} ${u.regler ? 'agir' : 'info'}${u.agir ? ' a-geste' : ''}${titre ? '' : ' sans-titre'}"><span class="nc-rond" aria-hidden="true">${ico('alerte')}</span>`
+      + (titre ? `<button type="button" class="nc-t" ${cible}${bulleCarte}><b class="fi-pb-t">${insecable(esc(titre))}</b></button>` : '')
+      + (geste ? `<span class="nc-geste">${geste}</span>` : '') + corps + (que && que !== 'Voir sa fiche' ? `<em class="nc-que">${insecable(esc(que))}</em>` : '') + '</div>'; };
+  const ligne = u => u.cable ? ligneCable(u) : lignePoint(u.xs[0]);
+  const lignePoint = x => { const p = x.p, t = x.phrase || majuscule(motDuProbleme(p.texte));
     const k = t.indexOf(' — '), suite = k > 0 ? t.slice(k + 3) : ''; let titre = k > 0 ? t.slice(0, k) : t, detail = k > 0 ? majuscule(suite) : gloseDuProbleme(p.texte), tout = '', ar = null;
     // QUI d'abord, VU D'ICI (« A1 ← 102CB1:2 · DR20 »), puis ce qui cloche, EN MOTS : la carte dit l'essentiel en deux lignes au
     // plus, le grand dit tout (d'où vient l'admis, pourquoi VOLTA suppose un contact) ; la bulle de la carte dit ce que le grand dit
@@ -357,8 +435,12 @@ function tachesFiche(o, probs, max) { if (!FI.gestesPb) FI.gestesPb = [];
     // LE GRAND : tout ce qui est à régler (au-delà de six, ça se déplie) ; l'information sous son intercalaire, repliée quand
     // il y a des gestes à faire, et dépliée sinon
     const vusR = R.slice(0, 6), plusR = R.slice(6);
+    // (passe 87, variante A) en pied, « Tout régler » : les câbles qu'un type règle passent d'un geste, ce que ça coûte écrit
+    const aPasser = R.filter(u => u.g && /^type\|/.test(u.g.cle || '')).map(u => { const m = /^type\|(.*)\|([^|]+)$/.exec(u.g.cle), l = (m && typeof liaisonDeCle === 'function' && liaisonDeCle(m[1])) || u.l; return l && m ? { l, type: m[2] } : null; }).filter(Boolean);
+    const tout = !fil && aPasser.length > 1 ? toutReglerLesCables(aPasser) : null;
+    const piedTout = tout ? `<div class="nc-tout"><span class="nc-tout-t">${insecable(esc(majuscule(tout.phrase)))}</span><span class="nc-geste">${bouton(tout, 'cuivre dense nc-agir')}</span></div>` : '';
     if (R.length) corps += inter(nko ? 'ko' : 'att', 'À régler', R.length) + vusR.map(ligne).join('')
-      + (plusR.length ? `<button type="button" class="nc-autres${deplie ? ' ouvert' : ''}" data-onglet-va="" data-voir-tout="1" aria-expanded="${deplie}"><span>${esc(plusR.length > 1 ? 'et ' + plusR.length + ' autres à régler' : 'et 1 autre à régler')}</span>${ico('droite')}</button><div class="nc-reste"${deplie ? '' : ' hidden'}>${plusR.map(ligne).join('')}</div>` : '');
+      + (plusR.length ? `<button type="button" class="nc-autres${deplie ? ' ouvert' : ''}" data-onglet-va="" data-voir-tout="1" aria-expanded="${deplie}"><span>${esc(plusR.length > 1 ? 'et ' + plusR.length + ' autres à régler' : 'et 1 autre à régler')}</span>${ico('droite')}</button><div class="nc-reste"${deplie ? '' : ' hidden'}>${plusR.map(ligne).join('')}</div>` : '') + piedTout;
     if (V.length && R.length) corps += inter('voir', 'À voir', V.length, { cls: deplie ? 'ouvert' : '', attrs: `data-onglet-va="" data-voir-tout="1" aria-expanded="${deplie}" data-bulle="${escA(deplie ? 'Replier' : 'Ce qui informe : rien à faire d’un clic')}"` }) + `<div class="nc-reste"${deplie ? '' : ' hidden'}>${V.map(ligne).join('')}</div>`;
     else if (V.length) corps += inter('voir', 'À voir', V.length) + V.map(ligne).join('');
   }
@@ -425,7 +507,10 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
   const tete = COLONNES_TABLE_CABLES.map(([k, t]) => { const s = T.col === k ? (T.sens > 0 ? 'ascending' : 'descending') : 'none';
     const tri = 'Un clic trie par ' + t.toLowerCase() + (s === 'none' ? '' : ', un second renverse'), sous = SOUS_COLONNES_CABLES[k];
     return `<th scope="col" aria-sort="${s}" class="nv-th-${k}${sous ? ' a-sous' : ''}"><button type="button" class="nv-tri" data-tri="${k}" data-bulle="${escA(BULLES_COLONNES_CABLES[k] ? BULLES_COLONNES_CABLES[k] + '\n' + tri + '.' : majuscule(tri))}"><span class="nv-tri-m">${esc(t)}${sous ? `<small class="nv-th-s">${esc(sous)}</small>` : ''}</span><span class="nv-tri-f" aria-hidden="true">${s === 'ascending' ? '↑' : s === 'descending' ? '↓' : '↕'}</span></button></th>`; }).join('');
-  const avecCt = xs.some(x => x.ct && x.ct.st && x.ct.st.reference);
+  // (passe 87, S12 — « pas de colonne pleine de tirets ») la colonne du contact à sertir ne se pose que si elle sert à la moitié
+  // des câbles au moins (la règle des colonnes du récapitulatif, `colonnesUtiles`) : un disjoncteur, vissé, n'en a pas — ses
+  // câbles le disent dans leur fiche et dans Pièces
+  const nCt = xs.filter(x => x.ct && x.ct.st && x.ct.st.reference).length, avecCt = nCt > 0 && nCt * 2 >= xs.length;
   // (v84) une colonne homogène : si une ligne y porte un anneau, celles qui n'en ont pas gardent sa place (la valeur reste
   // alignée sous les autres) ; si aucune n'en porte, la valeur seule, centrée sous son titre
   const fini = v => v != null && isFinite(v), anI = xs.some(x => fini(x.r.charge.r)), anU = xs.some(x => fini(x.r.chute.u != null && x.r.chute.max ? x.r.chute.u / x.r.chute.max : null));
@@ -475,6 +560,9 @@ function composerFiche(o) { const probs = o.probs || []; NIVEAU.typeRendu = o.ty
   const base = (o.onglets ? o.onglets.filter(Boolean) : (o.sections || []).filter(Boolean).map(ongletDeLaSection)).map(x => ({ ...x }));
   const ess = base.find(x => x.cle === 'essentiel') || base[0], afaire = tachesFiche(o, probs, 3);
   if (ess && afaire) ess.contenu = `<div class="nv-afaire">${afaire}</div>` + (ess.contenu || '');
+  // (passe 87) l'onglet Câbles dit le même compte que L'essentiel : ses câbles à régler (un problème ou un geste), sinon à voir
+  const cab = base.find(x => x.cle === 'cables' || x.cle === 'fils'), Lc = afaire ? o.lignesPbs : null;
+  if (cab && Lc && (Lc.cR || Lc.cV)) cab.statut = { ...(cab.statut || {}), t: Lc.cR ? Lc.cR + ' à régler' : Lc.cV + ' à voir', etat: Lc.cR && Lc.cKo ? 'ko' : 'att', bulle: Lc.cR ? pluriel(Lc.cR, 'câble') + ' à régler' + (Lc.cV ? ', ' + Lc.cV + ' à voir' : '') : pluriel(Lc.cV, 'câble') + ' à voir' };
   const des = designationFiche(o), mod = base.find(x => x.cle === 'reglages');
   if (des) { if (mod) mod.contenu = des + (mod.contenu || ''); else if (ess) ess.contenu = (ess.contenu || '') + des; }
   // (l'historique : un onglet quand il y en a un ; sinon rien — un onglet « aucune » n'apprend rien)

@@ -86,7 +86,7 @@ function origineDeCase(l, ch, ouvert) { const v = l.avant && l.avant[ORIGINE_VOL
    aussi par ses disjoncteurs) ; la conversion en lot (08-bibliotheque) appelle sans. */
 function classeurRetestCorrige(V, nom, o) { o = o || {}; V = (V || []).filter(aRendre); const mods = V.map(modificationsDe), copies = V.map(copiesRetirees), n = mods.filter((m, i) => m.length || copies[i]).length;
   const K = colonnesDuClasseur(V), quand = new Date().toLocaleDateString('fr-FR'), entetes = [...K.tete.map(c => c[0]), ...COLONNES_RETEST.map(c => c[0]), ...K.autres, 'Modifié par VOLTA'];
-  const lignes = [[`Installation corrigée par VOLTA — ${nom || 'plan'}`], [`Le ${quand} · ${plurielLie(V.length, 'liaison')} · ${plurielLie(n, 'liaison')} modifiée${n > 1 ? 's' : ''} : chaque case changée porte en commentaire ce qu'elle disait avant`], [], entetes,
+  const lignes = [[`Excel corrigé par VOLTA — ${nom || 'plan'}`], [`Le ${quand} · ${plurielLie(V.length, 'liaison')} · ${plurielLie(n, 'liaison')} modifiée${n > 1 ? 's' : ''} : chaque case changée porte en commentaire ce qu'elle disait avant`], [], entetes,
     ...V.map((l, i) => [...K.tete.map(([, ch]) => l[ch] || ''), ...COLONNES_RETEST.map(([, ch]) => valeurRetest(l, ch)), ...K.autres.map(k => (l.autres && l.autres[k]) || ''), [...mods[i].map(m => m[0]), ...(copies[i] ? [motCopies(copies[i])] : [])].join(', ')])];
   const ws = XLSX.utils.aoa_to_sheet(lignes), origine = (l, ch) => origineDeCase(l, ch, !!o.ouvert);
   // le commentaire de chaque case changée : ce que portait le fichier, et d'où vient le changement
@@ -327,4 +327,4 @@ function reprendreVolta(v, journaux) { const C = app.contrat, repris = [];
   const morceaux = [repris.length ? majuscule(repris.join(' et ')) + ' repris de la feuille « VOLTA »' : '', (journaux || []).length ? `la feuille ${journaux.map(j => '« ' + j + ' »').join(', ')} est le journal de VOLTA : laissée de côté` : '',
     differe.length ? `ce fichier a été jugé avec d’autres hypothèses (${differe.length})` : ''].filter(Boolean);
   if (!morceaux.length) return null;
-  return { msg: 'Installation corrigée par VOLTA · ' + morceaux.join(' ; ') + '.', geste, faire }; }
+  return { msg: 'Excel corrigé par VOLTA · ' + morceaux.join(' ; ') + '.', geste, faire }; }
