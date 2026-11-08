@@ -7,9 +7,14 @@
        phrase (« la broche 2 de 861HT1 est reliée à la masse 961G… ») ;
      · une page de symboles (des dessins qui ne sont pas du câblage) ;
      · TROIS CHAPITRES de schémas, trois « logiciels » (schema.js : A, B, C),
-       chacun son numéro de plan et ses folios numérotés à partir de 1 ; des
-       renvois d'un folio à l'autre (« F12/B4 », « F°12 — B4 », « 245-C3 » : la
-       page du gros document), et quelques-uns vers un autre chapitre ;
+       chacun son numéro de plan et ses folios numérotés à partir de 1 (le
+       lecteur : « le folio recommence à 1 à chaque plan »), tous dans la forme
+       de ses vrais schémas — boîtes pleines, symboles dans les boîtes,
+       barrettes en pastilles sur un pointillé, masses à trois barres,
+       cartouches en français ; des renvois d'un folio à l'autre qui disent le
+       folio et la zone (« F12/B4 ») et, vers un autre chapitre, son numéro de
+       plan devant (« SC-4520-320 F12/B4 ») ; des numéros de fil sur une partie
+       des folios (la moitié du chapitre 1, tout le chapitre 2, aucun au 3) ;
      · des TABLEAUX de liaisons (un faisceau décrit seulement en tableau) ;
      · un index des équipements, une dernière page.
    Les folios sont générés au hasard (une graine : tout se rejoue), puis
@@ -23,7 +28,7 @@ const { preparer, composerFolio, construireDocument, deviceDe } = require('./doc
 const DOC = { numero: 'MC-4520-000', titre: 'DOSSIER DE CÂBLAGE — SYSTÈMES CARBURANT, COMMANDES ET CAPTEURS', indice: 'D', auteur: 'BE CÂBLAGE', date: '02/10/2026' };
 const CHAPITRES = [
   { style: 'A', numero: 'SC-4520-310', titre: 'DISTRIBUTION PRIMAIRE ET PROTECTIONS', titreCourt: 'DISTRIBUTION PRIMAIRE', folios: 100, plage: [100, 399], masses: [910, 939], faisceau: 'FX-4520-31', indice: 'C', graine: 310 },
-  { style: 'B', numero: 'SC-4520-320', titre: 'CONTROLS AND INDICATION', titreCourt: 'CONTROLS', folios: 92, plage: [400, 699], masses: [940, 969], faisceau: 'FX-4520-32', indice: 'B', graine: 320 },
+  { style: 'B', numero: 'SC-4520-320', titre: 'COMMANDES ET SIGNALISATION', titreCourt: 'COMMANDES', folios: 92, plage: [400, 699], masses: [940, 969], faisceau: 'FX-4520-32', indice: 'B', graine: 320 },
   { style: 'C', numero: 'SC-4520-330', titre: 'POMPES, VANNES ET CAPTEURS', titreCourt: 'POMPES ET CAPTEURS', folios: 88, plage: [700, 839], masses: [970, 999], faisceau: 'FX-4520-33', indice: 'B', graine: 330 }];
 
 /* ---- le vocabulaire --------------------------------------------------------------------------------------------- */
@@ -73,7 +78,9 @@ function genererChapitre(ch, cat, pris, debutN) {
     // un second fil sur une broche déjà prise (un T près d'elle), parfois
     if (rnd() < 0.3) { const boites = eqs.filter(e => cat[e[0]].genre === 'boite' && e[1] < nCol - 1); const loc = fils.filter(w => w[3] === nF && w[4] == null && boites.some(b => w[0].startsWith(b[0] + ':')));
       if (loc.length) { const w = choisir(rnd, loc), [rep] = w[0].split(':'), c = cat[rep] && slots.get(rep).col; const cible = eqs.filter(e => e[1] === c + 1).map(e => e[0]); const b = cible.length && choisir(rnd, cible), pb = b && prendre(b, 'G'); if (pb) fils.push([w[0], b + ':' + pb, w[2], nF]); } }
-    folios.push({ n: nF, folioCartouche: k, numero: ch.numero, folios: ch.folios, style: st, titre: sujet + ' ' + k, titreCourt: ch.titreCourt, indice: ch.indice, faisceau: ch.faisceau, eqs, slots });
+    // les numéros de fil : la moitié des folios du chapitre 1, tout le chapitre 2, aucun au chapitre 3
+    const numeros = st === 'B' || (st === 'A' && rnd() < 0.5);
+    folios.push({ n: nF, folioCartouche: k, numero: ch.numero, folios: ch.folios, style: st, titre: sujet + ' ' + k, titreCourt: ch.titreCourt, indice: ch.indice, faisceau: ch.faisceau, eqs, slots, numeros });
   }
   // les renvois : des bouts restés libres, d'un folio à un folio un peu plus loin dans le chapitre
   folios.forEach((f, i) => { const n = entier(rnd, 1, 3);
@@ -121,7 +128,7 @@ function pagesDeTexte(ctx) {
     ...CHAPITRES.map((c, i) => [String(6 + i), `Chapitre ${i + 1} — ${c.titre} (${c.numero})`, ctx.debuts[i] - 1]), ['9', 'Liste des liaisons complémentaires — faisceau FX-4520-34', 291], ['10', 'Index des équipements principaux', 297]];
   const ligneS = ([n, t, p]) => `<div style="display:flex;gap:2mm;margin:2.2mm 0"><span style="width:10mm">${n}.</span><span>${esc(t)}</span><span style="flex:1;border-bottom:0.3mm dotted #111;transform:translateY(-1.2mm)"></span><span>${p}</span></div>`;
   P(`<h1 style="font-family:'Liberation Sans',sans-serif;font-size:16pt">SOMMAIRE</h1>${sommaire.map(ligneS).join('')}<h2 style="font-family:'Liberation Sans',sans-serif;font-size:12pt;margin-top:10mm">Folios par chapitre</h2>${CHAPITRES.map((c, i) => ligneS(['', `${c.numero} — folios 1 à ${c.folios}`, ctx.debuts[i] + ' à ' + (ctx.debuts[i] + c.folios - 1)])).join('')}`, 'SOMMAIRE');
-  P(`<h1 style="font-family:'Liberation Sans',sans-serif;font-size:16pt">SOMMAIRE (SUITE)</h1><p>Les folios de chaque chapitre portent le numéro de plan de leur chapitre et sont numérotés à partir de 1. Un renvoi désigne le folio de destination et la zone (rangée et colonne du cadre) : dans le chapitre 1 « F12/B4 », dans le chapitre 2 « F°12 — B4 », dans le chapitre 3 la page du présent dossier suivie de la zone, « 245-C3 ».</p><p>Les liaisons du faisceau complémentaire FX-4520-34 ne sont pas dessinées : elles sont données en tableau, pages 291 à 296.</p>`, 'SOMMAIRE');
+  P(`<h1 style="font-family:'Liberation Sans',sans-serif;font-size:16pt">SOMMAIRE (SUITE)</h1><p>Les folios de chaque chapitre portent le numéro de plan de leur chapitre et sont numérotés à partir de 1. Un renvoi désigne le folio de destination et la zone (rangée et colonne du cadre) : « F12/B4 ». Vers un autre chapitre, le numéro de plan précède : « SC-4520-320 F12/B4 ».</p><p>Les numéros de fil, quand ils sont portés, sont les mêmes des deux côtés d’un renvoi.</p><p>Les liaisons du faisceau complémentaire FX-4520-34 ne sont pas dessinées : elles sont données en tableau, pages 291 à 296.</p>`, 'SOMMAIRE');
   // 4. les révisions
   P(`<h1 style="font-family:'Liberation Sans',sans-serif;font-size:16pt">LISTE DES RÉVISIONS</h1>${tableau(['Indice', 'Date', 'Objet', 'Pages'], [['A', '12/01/2026', 'Création', 'Toutes'], ['B', '30/03/2026', 'Ajout des capteurs de pression, chapitre 3', '203 à 290'], ['C', '22/06/2026', 'Modification des protections, chapitre 1', '9 à 108'], ['D', DOC.date, 'Faisceau complémentaire FX-4520-34 ; index', '291 à 299']], { taille: '10pt' })}`, 'RÉVISIONS');
   // 5-6. les notes générales (trois liaisons écrites en clair)
@@ -133,14 +140,15 @@ function pagesDeTexte(ctx) {
   P(`<h1 style="font-family:'Liberation Sans',sans-serif;font-size:16pt">NOTES GÉNÉRALES (SUITE)</h1><p><b>NOTE 8 —</b> Les relais sont représentés au repos. Les contacts A1 sont communs, A2 repos, A3 travail ; la bobine est entre X1 et X2.</p><p><b>NOTE 9 —</b> Les disjoncteurs sont alimentés par leur borne 1.</p><p><b>NOTE 10 —</b> Abréviations : ALIM alimentation, CDE commande, DISJ. disjoncteur, INTER interrupteur.</p>`, 'NOTES GÉNÉRALES');
   // 7. les symboles (des dessins qui ne sont pas du câblage)
   const T = toile({ largeur: 210, hauteur: 297, police: 'Liberation Sans' }); T.texte(16, 26, 'SYMBOLES ET CONVENTIONS', { taille: 5.6, gras: true });
-  const rangs = [['DISJONCTEUR (BORNE 1 : ALIMENTATION)', y => { T.cercle(30, y, 1.25); T.cercle(37.5, y, 1.25); T.chemin(`M30 ${y - 1.25} Q33.75 ${y - 6} 37.5 ${y - 1.25}`); T.ligne(20, y, 28.75, y); T.ligne(38.75, y, 48, y); T.texte(33.75, y - 6.6, 'XXXCB1', { taille: 2.6, gras: true, ancre: 'middle' }); T.texte(30, y + 4, '1', { ancre: 'middle' }); T.texte(37.5, y + 4, '2', { ancre: 'middle' }); }],
+  const rangs = [['DISJONCTEUR : SON SYMBOLE DANS LA BOÎTE (BORNE 1 : ALIMENTATION)', y => { T.rect(26, y - 5, 16, 9, 0.35); T.cercle(30.5, y, 1.1); T.cercle(37.5, y, 1.1); T.chemin(`M30.5 ${y - 1.1} Q34 ${y - 4.4} 37.5 ${y - 1.1}`); T.ligne(26, y, 29.4, y); T.ligne(38.6, y, 42, y); T.ligne(20, y, 26, y); T.ligne(42, y, 48, y); T.texte(26, y - 6.6, 'XXXCB1', { taille: 2.6, gras: true }); T.texte(24.5, y - 1, '1', { ancre: 'end' }); T.texte(43.5, y - 1, '2'); }],
+    ['RELAIS : BOBINE X1-X2, CONTACT A1 COMMUN, A2 REPOS, A3 TRAVAIL', y => { const x0 = 24, w = 20; T.rect(x0, y - 9, w, 18, 0.35); T.rect(x0 + 5, y - 3, 2.6, 6, 0.3); T.poly([[x0, y - 5], [x0 + 6.3, y - 5], [x0 + 6.3, y - 3]]); T.poly([[x0, y + 5], [x0 + 6.3, y + 5], [x0 + 6.3, y + 3]]); T.poly([[x0 + w, y - 5], [x0 + w - 5, y - 5]]); T.poly([[x0 + w, y], [x0 + w - 8, y]]); T.poly([[x0 + w, y + 5], [x0 + w - 8, y + 5]]); T.ligne(x0 + w - 5, y - 5, x0 + w - 8, y); ['X1', 'X2'].forEach((t, i) => T.texte(x0 + 1, y - 5.8 + 10 * i, t, { taille: 1.8 })); ['A1', 'A2', 'A3'].forEach((t, i) => T.texte(x0 + w - 1, y - 5.8 + 5 * i, t, { taille: 1.8, ancre: 'end' })); }],
     ['MASSE (REPÈRE À CÔTÉ DU SYMBOLE)', y => { T.ligne(34, y - 8, 34, y); T.ligne(32, y, 36, y); T.ligne(32.7, y + 1, 35.3, y + 1); T.ligne(33.4, y + 2, 34.6, y + 2); T.texte(37, y + 2, '9XXG', { taille: 2.2 }); }],
     ['RENVOI : FOLIO ET ZONE DE DESTINATION', y => { T.ligne(20, y, 30, y); T.polygone([[30, y - 2.5], [41, y - 2.5], [44, y], [41, y + 2.5], [30, y + 2.5]]); T.texte(31.4, y + 0.8, 'F12/B4'); }],
     ['JONCTION (POINT) ET CROISEMENT (SANS POINT)', y => { T.ligne(20, y, 48, y); T.ligne(28, y, 28, y + 8); T.point(28, y); T.ligne(40, y - 5, 40, y + 5); }],
     ['CÂBLE BLINDÉ', y => { T.ligne(20, y, 48, y); T.ellipse(34, y, 1.4, 2.6); T.texte(26, y - 1, 'MLB24', { taille: 1.9 }); }],
-    ['BARRETTE : REPÈRE, MODULE, CONTACTS', y => { T.texte(34, y - 7, 'XXXVT1', { taille: 2.6, gras: true, ancre: 'middle' }); T.rect(30, y - 5, 8, 5, 0.3); T.texte(34, y - 1.6, '51', { ancre: 'middle', taille: 2 }); ['A', 'B', 'C'].forEach((l, i) => { T.rect(30, y + i * 5, 8, 5, 0.3); T.texte(34, y + i * 5 + 3.3, l, { ancre: 'middle' }); }); }],
+    ['BARRETTE : PASTILLES SUR UN POINTILLÉ (UN MÊME GROUPE), MODULE ET LETTRE : 51A', y => { T.texte(34, y - 9, 'XXXVT1', { taille: 2.6, gras: true, ancre: 'middle' }); T.texte(34, y - 4.4, '51', { ancre: 'middle', taille: 2, gras: true }); T.ligne(34, y - 1, 34, y + 9, 0.4, ' stroke-dasharray="1 0.8"'); ['A', 'B', 'C'].forEach((l, i) => { T.point(34, y - 1 + i * 5, 1.5); T.texte(34, y - 0.28 + i * 5, l, { ancre: 'middle', taille: 2, couleur: '#fff', gras: true }); }); T.ligne(20, y - 1, 32.5, y - 1); T.ligne(35.5, y + 4, 48, y + 4); }],
     ['PRISE DE COUPURE (PARTIE MOBILE, PARTIE FIXE)', y => { T.rect(28, y - 5, 7.5, 12.5, 0.35); T.rect(35.5, y - 5, 5, 12.5, 0.35); T.texte(31.75, y + 0.8, 'A', { ancre: 'middle' }); T.texte(38, y + 0.8, 'A', { ancre: 'middle' }); T.texte(34.25, y - 7, 'XXXVC1A', { taille: 2.6, gras: true, ancre: 'middle' }); }]];
-  rangs.forEach(([t, dessin], i) => { const y = 52 + i * 31; dessin(y); T.texte(62, y + 1, t, { taille: 3 }); T.ligne(16, y + 15, 194, y + 15, 0.15); });
+  rangs.forEach(([t, dessin], i) => { const y = 50 + i * 28.5; dessin(y); T.texte(56, y + 1, t, { taille: 2.6 }); T.ligne(16, y + 13.5, 194, y + 13.5, 0.15); });
   T.rect(10, 10, 190, 277, 0.4); T.texte(105, 282, `${DOC.numero} — INDICE ${DOC.indice} — PAGE 7 / 300`, { taille: 2.4, ancre: 'middle' });
   pages.push({ svg: T.svg(), taille: 'A4', sorte: 'symboles' }); }
 
@@ -176,11 +184,12 @@ function documentD(o = {}) {
   for (let k = 0; k < 6; k++) { const a = choisir(rnd, chap[k % 2].folios), b = choisir(rnd, chap[k % 2 + 1].folios), la = libresDe(a), lb = libresDe(b); if (!la.length || !lb.length) continue;
     const x = [la[0], lb[0], 'DR22', a.n, b.n, 'LIAISON INTER-CHAPITRES']; tous.fils.push(x); }
   tous.fils.forEach((w, k) => { w.id = 'd' + (k + 1); });
+  // un numéro de fil par fil, à la façon du logiciel de son chapitre (le même des deux côtés d'un renvoi)
+  const styleDuFolio = new Map(tous.folios.map(f => [f.n, f.style]));
   const D = { ...DOC, faisceau: 'FX-4520-31', style: 'A', catalogue: cat, folios: tous.folios, fils: tous.fils, prefixe: 'd',
-    texteRenvoi: ({ folio, zone, numero, page, ici }) => { const autre = numero !== ici.numero;
-      if (ici.style === 'A') return (autre ? numero + ' ' : '') + 'F' + folio + '/' + zone;
-      if (ici.style === 'B') return (autre ? numero + ' ' : '') + 'F°' + folio + ' — ' + zone;
-      return page + '-' + zone; } };
+    numeroFil: (k, x) => { const st = styleDuFolio.get(x[3]); return st === 'B' ? 'W-' + (5001 + k) : 'W' + (2001 + k); },
+    // un renvoi dit le folio et la zone de l'autre bout ; vers un autre chapitre, son numéro de plan devant
+    texteRenvoi: ({ folio, zone, numero, ici }) => (numero !== ici.numero ? numero + ' ' : '') + 'F' + folio + '/' + zone };
   reparer(D, journal);
   const r = construireDocument(D);
   // les pages, dans l'ordre

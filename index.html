@@ -2253,7 +2253,7 @@ body.biblio #toast:not(.on){transform:translateX(-50%) translateY(8px) scale(.98
 .vr-svg .vr-flux-nt{font-size:12px;font-weight:600;fill:#a9581f}
 .vr-svg .vr-flux-ico{fill:none;stroke:#1d1d1f;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:stroke var(--d-rapide) var(--courbe)}
 .vr-svg .vr-flux-ico *{vector-effect:non-scaling-stroke}
-.vr-svg .vr-flux-e.on .vr-flux-cadre,.vr-svg .vr-flux-e.on .vr-flux-ico{stroke:#a9581f}
+.vr-svg .vr-flux-e.on .vr-flux-cadre,.vr-svg .vr-flux-e.on .vr-flux-ico,.vr-svg .vr-flux-e.ouverte .vr-flux-cadre{stroke:#a9581f}
 /* ses étapes, 1, 2, 3, 4 : une ligne chacune — le numéro au cuivre, le nom, la phrase — qui se déplie */
 .vr-etapes{list-style:none;margin:0;padding:0;border-top:1px solid var(--s-line)}
 .vr-etapes>li{border-bottom:1px solid var(--s-line)}
@@ -5824,6 +5824,13 @@ b.rc-n{font-weight:500}
 /* (v77) l'icône prend sa place : le rail s'élargit d'autant (« Équipements » et « Problèmes » entiers, avec leurs comptes) */
 .recap{--rc-rail:212px}
 #base.serre{--rc-rail:196px}
+/* (passe 87, le regard : sur un plan de 3 345 liaisons, « Problè… » avec 45 et 315) LA PLACE DE DEUX COMPTES À TROIS CHIFFRES
+   est réservée : « Problèmes » reste entier, choisi (en gras) ou non, la fiche à côté ou non — les pastilles du rail se serrent
+   d'un pixel, le rail prend le reste (mesuré : 218 px, 208 serré, avec « 888 » et « 888 »). */
+.rc-onglet .rc-ns{gap:3px;padding-left:6px}
+.rc-onglet .rc-n{padding:0 5px}
+.recap{--rc-rail:220px}
+#base.serre{--rc-rail:210px}
 
 
 /* ─── (v78c) LE RÉCAPITULATIF, PAPIER COMME LES FICHES — le lecteur : « un tableau bleu sur bleu, c'est dommage ; à gauche
@@ -23869,9 +23876,10 @@ function comprendreHtml() {
           '<p>C’est votre <span class="vr-def" tabindex="0" data-bulle="La base des pièces de votre logiciel de schéma, déposée et gardée sur ce PC : les contacts, les câbles, les faces que vous utilisez déjà">base SEE</span>, si elle est gardée sur ce PC ; sinon, les tables de VOLTA (vos photos des tables de SEE, recoupées sur des sources publiques). Les <b>Normes</b> montrent chaque table, d’où elle vient et qui la lit ; la <b>Bible</b>, chaque module et chaque arrangement, avec son origine.</p>'
           + '<p><b>Un seul catalogue ?</b> Quand la base SEE est là, elle passe devant. Quelques lignes ne sont que chez VOLTA : la Cohérence les liste, une par une, avec leur raison. Vous décidez : une case, « Ne prendre les pièces que dans la base SEE gardée », est prête, décochée.</p>'
           + `<p>${cpLien('normes', 'Ouvrir les Normes')} ${cpLien('bible', 'Ouvrir la Bible')}</p>`],
-        ['Les règles', 'disent ce qui est admis : le calibre qui ne disjoncte pas, ce qu’un câble supporte, le contact qui reçoit sa gauge, la chute de tension.',
-          '<p>Elles viennent des normes — l’EN 2853 pour les câbles, l’AC 43.13-1B, les courbes des disjoncteurs — et de votre règle (2 V de chute en ligne) ; jamais du catalogue : la base SEE n’a ni courbes ni intensités.</p>'
-          + `<p>Un disjoncteur est valide ou pas valide, sans réserve : VOLTA retient le plus petit calibre qui ne disjoncte pas, puis vérifie qu’il protège chacun de ses câbles. Les deux chapitres suivants les suivent maillon par maillon : ${cpLienCh('connecteur', 'la chaîne d’un connecteur')}, ${cpLienCh('disjoncteur', 'celle d’un disjoncteur')}.</p>`],
+        ['Les règles', 'disent ce qui est admis : le calibre qui ne disjoncte pas, ce qu’un câble supporte, la chute de tension.',
+          '<p>Elles viennent des normes — l’EN 2853 pour les câbles, l’AC 43.13-1B, les courbes des disjoncteurs, l’AS39029 pour le courant des contacts — et de votre règle (2 V de chute en ligne) ; jamais du catalogue : la base SEE n’a ni courbes ni intensités.</p>'
+          + '<p>Un disjoncteur est valide ou pas valide, sans réserve : VOLTA retient le plus petit calibre qui ne disjoncte pas, puis vérifie qu’il protège chacun de ses câbles. Chaque câble reçoit le contact à sertir qui prend sa gauge. Les chapitres 2 et 3 suivent ces règles, maillon par maillon.</p>'
+          + `<p>${cpLienCh('connecteur', 'La chaîne d’un connecteur')} ${cpLienCh('disjoncteur', 'La chaîne d’un disjoncteur')}</p>`],
         ['Ce qui sort', ': les folios dessinés, une fiche par objet, la LPA à commander, l’Excel corrigé.',
           '<p>Rien n’est inventé : une pièce absente du catalogue laisse sa case vide, et la fiche écrit « manque », avec la table et la clé cherchées.</p>'
           + '<p>L’Excel corrigé ne porte que ce que vous avez demandé — vos gestes, et les propositions de VOLTA que vous avez retenues —, chaque case changée dit ce qu’elle portait ; rouvert, il devient votre fichier. Le dossier PDF et l’Excel corrigé gardent les hypothèses avec lesquelles tout a été jugé.</p>']]),
@@ -23933,12 +23941,12 @@ function lierComprendre() { const c = $('fiche-corps'); if (!c) return;
   // (passe 87) le chemin du chapitre 1 : une étape survolée — dans le schéma ou dans la liste —, ou ouverte, s'allume des deux
   // côtés ; un clic sur une étape du schéma ouvre (ou referme) son explication
   const etapes = [...c.querySelectorAll('.vr-etape')], stations = [...c.querySelectorAll('.vr-flux-e')]; let survol = 0;
-  const allumer = () => { stations.forEach(s => { const n = +s.dataset.etape, d = etapes[n - 1]; s.classList.toggle('on', survol === n || !!(d && d.open)); });
+  const allumer = () => { stations.forEach(s => { const n = +s.dataset.etape, d = etapes[n - 1]; s.classList.toggle('on', survol === n); s.classList.toggle('ouverte', !!(d && d.open)); });
     etapes.forEach((d, i) => d.classList.toggle('on', survol === i + 1)); };
   const suivre = (el, n) => { el.addEventListener('pointerenter', () => { survol = n; allumer(); }); el.addEventListener('pointerleave', () => { if (survol === n) survol = 0; allumer(); }); };
   etapes.forEach((d, i) => { suivre(d, i + 1); d.addEventListener('toggle', allumer); });
   stations.forEach(s => { const n = +s.dataset.etape; suivre(s, n);
-    s.addEventListener('click', () => { const d = etapes[n - 1]; if (!d) return; d.open = !d.open; const sm = d.querySelector('summary'); if (sm) try { sm.focus({ preventScroll: true }); } catch (_) { }
+    s.addEventListener('click', () => { const d = etapes[n - 1]; if (!d) return; d.open = !d.open;
       if (d.open) d.scrollIntoView({ block: 'nearest', behavior: typeof mouvementReduit === 'function' && mouvementReduit() ? 'auto' : 'smooth' }); }); });
   if (!c.dataset.vrLie) { c.dataset.vrLie = '1'; let t = 0; c.addEventListener('scroll', () => { if (!(app.fiche && app.fiche.mode === 'comprendre')) return; cancelAnimationFrame(t); t = requestAnimationFrame(() => marquerChapitre()); }, { passive: true }); } }
 
@@ -28851,9 +28859,9 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
     // qu'il faut écrire ; il porte le profil écrit de son disjoncteur (le tronc) — (S1) le câble de retour le dit d'abord
     x.retour ? { html: `${esc(x.retour.quoi === 'source' ? 'Le retour de ' + (deR || 'la source') + ' : il ferme le circuit de la source, le même courant que son aller.' : 'Le retour de ' + (deR || 'sa charge') + ' : le courant qui y entre en ressort par lui — le même que ' + (x.retour.de.length > 1 ? 'leur' : 'son') + ' aller.')}`, source: 'calcul' } : null,
     x.al && x.al.amont && cmdF ? { html: `Côté source de <b class="id">${esc(x.al.nom)}</b> : son courant est inconnu — ${esc(motDeCommande(x))}. VOLTA ne lui prête aucun courant.`, source: 'calcul', etat: 'att' }
-      : x.al && x.al.amont ? { html: `Il nourrit <b class="id">${esc(x.al.nom)}</b> : il porte ${x.partiel ? 'au moins ' : ''}<b>${esc(amperes(x.I))}</b>${x.partiel ? esc(', la somme de ce qui est écrit en aval — ' + motDeCommande(x)) : x.al.ecrit ? esc(', son profil écrit') : esc(', la somme de ce qu’il alimente')}, mais ${esc(x.al.nom)} ne le protège pas.`, source: 'calcul', etat: x.partiel ? 'att' : '' }
+      : x.al && x.al.amont ? { html: `${x.retour ? 'Il ramène ce que la source débite vers' : 'Il nourrit'} <b class="id">${esc(x.al.nom)}</b> : il porte ${x.partiel ? 'au moins ' : ''}<b>${esc(amperes(x.I))}</b>${x.partiel ? esc(', la somme de ce qui est écrit en aval — ' + motDeCommande(x)) : x.al.ecrit ? esc(', son profil écrit') : esc(', la somme de ce qu’il alimente')}, mais ${esc(x.al.nom)} ne le protège pas.`, source: 'calcul', etat: x.partiel ? 'att' : '' }
       // (v86, v87) un courant inconnu — une branche dont une consommation n'est pas écrite —, jamais le total : ce qu'il faut écrire
-      : x.al && cmdF ? { html: `${x.source === 'commande' ? 'Il ne mène qu’à de la commande' : 'Il alimente ' + (x.aval && x.aval.bouts.length ? x.aval.bouts.map(r => `<b class="id">${esc(r)}</b>`).join(', ') : 'une branche')}, sous <b class="id">${esc(x.al.nom)}</b> : son courant est inconnu — ${esc(motDeCommande(x))}. VOLTA ne lui prête pas le courant total du disjoncteur.`, source: 'calcul', etat: /^écrivez/.test(motDeCommande(x)) ? 'att' : '' }
+      : x.al && cmdF ? { html: `${x.retour ? 'Il ramène ' + (x.retour.de.length ? x.retour.de.map(r => `<b class="id">${esc(r)}</b>`).join(', ') : 'sa charge') : x.source === 'commande' ? 'Il ne mène qu’à de la commande' : 'Il alimente ' + (x.aval && x.aval.bouts.length ? x.aval.bouts.map(r => `<b class="id">${esc(r)}</b>`).join(', ') : 'une branche')}, sous <b class="id">${esc(x.al.nom)}</b> : son courant est inconnu — ${esc(motDeCommande(x))}. VOLTA ne lui prête pas le courant total du disjoncteur.`, source: 'calcul', etat: /^écrivez/.test(motDeCommande(x)) ? 'att' : '' }
       : x.al && x.source === 'branche' && x.aval ? { html: `${x.retour ? 'Il ramène' : 'Il alimente'} ${x.aval.bouts.map(r => `<b class="id">${esc(r)}</b>`).join(', ')} : <b>${esc(amperes(x.I))}</b> en continu, ${x.aval.bouts.length > 1 ? 'leurs consommations écrites' : 'sa consommation écrite'}${(x.aval.sans || []).length ? esc(' — sans ' + listeEt(x.aval.sans.map(y => (y.nature === 'bobine' ? 'la bobine de ' : 'l’entrée de ') + y.repere)) + ', que VOLTA ne connaît pas') : ''}.`, source: 'calcul' }
       : x.al ? { html: `Il alimente tout ce que dessert <b class="id">${esc(x.al.nom)}</b>${calS ? ' (' + esc(amperes(calS)) + ')' : ''} : son profil écrit, <b>${esc(amperes(x.I))}</b> en continu.`, source: 'calcul' }
       : { html: `Aucun disjoncteur en amont : VOLTA suppose <b>${esc(nombre(H.courant))} A</b>.`, source: 'hypothese', etat: 'att' },
@@ -35187,7 +35195,10 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     // (v78, le lecteur : « équipement et borne, mal présentés ; l'intensité, la chute : juste un rapport ») : une nomenclature —
     // le câble, où il va et sur quelle borne, la charge et la chute en anneaux (la part de l'admis), la longueur
     const type = `<span class="nv-cab-id">${r.puce || ''}<b class="id nv-cab-type">${esc(r.type || 'sans type')}</b></span>`;
-    const iH = `<span class="nv-mes${anI ? '' : ' seul'}">${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A</small>` : r.charge.i != null && r.charge.r == null ? `<small class="nv-mes-inc" data-bulle="${escA(r.type ? r.type + ' n’est pas dans l’EN 2853 : ce qu’il admet ne se lit pas' : 'Votre fichier ne donne pas son type : ce qu’il admet ne se lit pas')}">admis inconnu</small>` : ''}</span></span>`;
+    // (v87, S3) le courant et la chute d'une ligne sont pris au même instant (08-recap, `instantsDuFil`) : quand c'est la pointe, le
+    // mot le dit sous le courant, comme le récapitulatif — la chute à côté est celle de cet instant
+    const enPointe = !!(r.charge.pointe && r.charge.i != null), motPointe = enPointe ? ', en pointe' : '';
+    const iH = `<span class="nv-mes${anI ? '' : ' seul'}"${enPointe ? ` data-bulle="${escA('En pointe : le courant et la chute de la ligne sont pris au même instant, le plus dur pour ce câble.')}"` : ''}>${anneauOuPlace(r.charge.r, anI)}<span class="nv-mes-t"><b>${r.charge.i != null ? esc(nombreA(r.charge.i)) + ' A' : esc(r.charge.mot || '—')}</b>${r.charge.admis != null ? `<small>sur ${esc(nombreA(r.charge.admis))} A${motPointe}</small>` : r.charge.i != null && r.charge.r == null ? `<small class="nv-mes-inc" data-bulle="${escA(r.type ? r.type + ' n’est pas dans l’EN 2853 : ce qu’il admet ne se lit pas' : 'Votre fichier ne donne pas son type : ce qu’il admet ne se lit pas')}">admis inconnu</small>` : ''}</span></span>`;
     const ru = r.chute.u != null && r.chute.max ? r.chute.u / r.chute.max : null;
     // (v85) sans chemin de disjoncteur, la chute du câble seul — contre la chute admise de toute la ligne : la bulle le dit
     const uH = `<span class="nv-mes${anU ? '' : ' seul'}"${r.chute.seul && r.chute.u != null && r.chute.max != null ? ` data-bulle="${escA('Sur ce câble seul : ' + volts(r.chute.u) + ', ' + Math.round(r.chute.u / r.chute.max * 100) + ' % des ' + volts(r.chute.max) + ' que la ligne entière peut perdre — aucun disjoncteur en amont n’en donne le chemin')}"` : ''}>${anneauOuPlace(ru, anU)}<span class="nv-mes-t"><b>${r.chute.u != null ? esc(volts(r.chute.u)) : esc(r.chute.mot || '—')}</b>${r.chute.max != null && r.chute.u != null ? `<small>sur ${esc(volts(r.chute.max))}</small>` : ''}</span></span>`;
@@ -35590,7 +35601,9 @@ function ficheNomenclature(vue) { vue = vue === 'suivi' ? 'suivi' : 'pieces'; co
   // une référence qui en offre une autre (« TE 006-0893-20 (200 °C) / 097-0140-20 (260 °C) ») : la seconde dessous ; un mot
   // d'atelier sous une référence (« 28 mm », « à couper… ») en écriture courante — la colonne garde sa largeur
   const refDouble = r => { const [a, ...b] = String(r).split(' / '); return esc(a) + (b.length ? `<span class="no-arr">ou ${esc(b.join(' / '))}</span>` : ''); };
-  const dessous = t => t ? `<br><span class="no-ou">${esc(t)}</span>` : '';
+  const dessous = t => t ? `<span class="no-ou" style="display:block;white-space:normal">${esc(t)}</span>` : '';
+  // (une référence ne se coupe jamais : « face à », « votre fichier : » passent à la ligne, la référence reste entière)
+  const dessousRef = (mot, r) => `<span class="no-ou" style="display:block;white-space:normal">${esc(mot)} <span style="white-space:nowrap">${esc(r)}</span></span>`;
   const refs = (xs, mot) => plurielLie(xs.length, mot) + ' · ' + plurielLie(somme(xs), 'pièce');
   // l'état d'un disjoncteur : le verdict à sa couleur (la table unique, 09 bis), « pas écrit dans votre fichier » en ambre dessous
   const etatDj = x => x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>${x.retest ? note('pas écrit dans votre fichier') : ''}` : `<span class="no-rien">${esc(x.etat || '—')}</span>`;
@@ -35632,16 +35645,17 @@ function ficheNomenclature(vue) { vue = vue === 'suivi' ? 'suivi' : 'pieces'; co
   /* LE SUIVI : une table par genre de pièce — le repère, ce qu'on y pose (la référence que l'onglet Pièces commande), ses
      bornes, ses câbles, ses folios et ses routes. Un accouplement inconnu reste « inconnu », comme dans les Pièces. */
   const suiviHtml = () => { const S = N.suivi, nb = xs => xs.length;
-    const ici = x => esc(x.repere.replace(/ \(ajoutée par VOLTA\)$/, '')) + (/\(ajoutée par VOLTA\)$/.test(x.repere) ? dessous(x.nature.replace(/^barrette /, '')) : '');
+    const ici = x => esc(x.repere.replace(/ \(ajoutée par VOLTA\)$/, '')) + (/\(ajoutée par VOLTA\)$/.test(x.repere) ? dessous(x.nature.replace(/^barrette ajoutée par VOLTA, /, 'ajoutée ')) : '');
     const ou2 = x => esc(x.plans.join(' · ') || '—') + dessous(x.routes.join(' · '));
-    const autre = x => x.fichier && cleNorme(x.fichier) !== cleNorme(x.reference) ? dessous('votre fichier : ' + x.fichier) : '';
+    const autre = x => x.fichier && cleNorme(x.fichier) !== cleNorme(x.reference) ? dessousRef('votre fichier :', x.fichier) : '';
     const conn = S.filter(x => x.nature === ACCOUPLEMENT_LPA), bar = S.filter(x => /^barrette/.test(x.nature)), pri = S.filter(x => x.nature === 'prise de coupure'), inc = conn.filter(x => !x.reference).length;
     return `<p class="note no-intro">Ce qu’on pose, et où : une ligne par pièce, avec la référence que commande l’onglet Pièces${nA ? ' — les barrettes que VOLTA ajoute comprises' : ''}.</p>`
       + table(titreNomen('accouplements'), plurielLie(nb(conn), 'connecteur') + (inc ? ' · ' + inc + ' sans référence' : ''), ['Repère', 'On pose', 'Bornes', 'Câbles', 'Folios'],
-        conn.map(x => [td('ref', ici(x)), td('ref', (x.reference ? esc(x.reference) : `<i class="no-note-l" data-bulle="${escA(x.note || 'manque dans la bible')}">inconnu</i>`) + (x.fichier ? dessous('face à ' + x.fichier) : '')), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]),
+        conn.map(x => [td('ref', ici(x)), td('ref', (x.reference ? esc(x.reference) : `<i class="no-note-l" data-bulle="${escA(x.note || 'manque dans la bible')}">inconnu</i>`) + (x.fichier ? dessousRef('face à', x.fichier) : '')), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]),
         'Chacun sur le connecteur de son équipement, fourni avec lui.')
       + table('Barrettes', plurielLie(nb(bar), 'barrette'), ['Repère', 'On pose', 'Bornes', 'Câbles', 'Folios'],
-        bar.map(x => [td('ref', ici(x)), td('ref', x.reference.split(' + ').map(esc).join('<br>') + autre(x)), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]))
+        bar.map(x => [td('ref', ici(x)), td('ref', x.reference.split(' + ').map(esc).join('<br>') + autre(x)), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]),
+        bar.some(x => /^barrette ajoutée/.test(x.nature)) ? 'Celles que VOLTA ajoute (deux câbles sur une borne) gardent leur repère provisoire jusqu’à ce que vous leur donniez le leur.' : '')
       + table(titreNomen('connecteurs'), plurielLie(nb(pri), 'prise'), ['Repère', 'On pose', 'Contacts', 'Câbles', 'Folios'],
         pri.map(x => [td('ref', ici(x)), td('ref', esc(x.reference) + autre(x)), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))])); };
   const nav = `<div class="onglets nm-nav" role="tablist" aria-label="La LPA">${ONGLETS_LPA.map(([k, t]) => `<button type="button" class="onglet" role="tab" data-no-vue="${k}" aria-selected="${vue === k}" tabindex="${vue === k ? 0 : -1}"${vue === k ? ' data-clavier' : ''}>${t}</button>`).join('')}</div>`;

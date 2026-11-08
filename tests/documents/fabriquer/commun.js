@@ -85,7 +85,8 @@ function feuille(T, cart, sorte = 'fr') { const { x0, y0, x1, y1 } = CADRE; T.re
 const EN_TETES = ['Harness', 'Device1', 'Pin1', 'PN1', 'Description1', 'Cable TG', 'Cable Tag', 'Route', 'Device2', 'Pin2', 'PN2', 'Description2', 'FWD', 'Cable length (mm)', 'Appareil', 'Date retest', 'Dessin'];
 const champCsv = v => { const s = String(v == null ? '' : v); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 function csvDeVerite(L) {
-  const lignes = [EN_TETES, ...L.map(l => [l.harness || '', l.de, l.borneDe, l.pnDe || '', l.descDe || '', l.type || '', '', '', l.vers, l.borneVers, l.pnVers || '', l.descVers || '', l.fwd || '', '', '', '', (l.dessin || []).join(' ; ')])];
+  // (« Cable Tag » : le numéro de fil, quand le folio l'écrit — le lecteur : « des numéros de fil, parfois »)
+  const lignes = [EN_TETES, ...L.map(l => [l.harness || '', l.de, l.borneDe, l.pnDe || '', l.descDe || '', l.type || '', l.cable || '', '', l.vers, l.borneVers, l.pnVers || '', l.descVers || '', l.fwd || '', '', '', '', (l.dessin || []).join(' ; ')])];
   return '﻿' + lignes.map(r => r.map(champCsv).join(';')).join('\r\n') + '\r\n'; }
 
 /* ---- la vérité d'un réseau dessiné : l'arbre couvrant le plus court entre ses bouts, le long des traits ----------

@@ -16,7 +16,9 @@
    habille les connecteurs (raccords, cheminées, tyraps, bourrages), les
    câbles (nombre et longueur). Le connecteur que la fiche dit « fourni avec
    l'équipement » ne se commande pas : la LPA le cite en face de son
-   accouplement, pour mémoire — CSV, Excel et dossier PDF compris.
+   accouplement, pour mémoire — CSV, Excel et dossier PDF compris. Le Suivi de
+   fabrication est un onglet de la LPA (et une feuille de son classeur) : une
+   ligne par pièce posée, avec les références mêmes de la LPA.
    Il tourne avec la batterie moteur (les onglets Pièces sont des objets de la
    page : Chromium, par Playwright, sans fenêtre).
    ========================================================================= */

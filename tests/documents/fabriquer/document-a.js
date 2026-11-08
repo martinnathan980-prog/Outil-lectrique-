@@ -7,7 +7,9 @@
    une barrette à deux modules, un calculateur à deux connecteurs lettrés, le
    dégivrage, un bornier, une interface. Des renvois d'un folio à l'autre
    (« F3/B2 », le folio et la zone de l'autre bout), des types de câble écrits,
-   des T avec un point, des croisements sans point, des masses.
+   des T avec un point, des croisements sans point, des masses à trois barres ;
+   les numéros de fil écrits sur les folios 2 à 5 seulement (« W1024 » : le
+   lecteur, « des numéros de fil, parfois »).
    Rien de ce qui est écrit ici n'existe : repères, références, titres.
    =========================================================================== */
 'use strict';
@@ -59,10 +61,10 @@ const CATALOGUE = {
 const FOLIOS = [
   { n: 1, titre: 'SOURCES ET DISTRIBUTION', eqs: [['101BT1', 0], ['111GN1', 0], ['105CT1', 1], ['106SW1', 1], ['131VT1', 2], ['121CB1', 3], ['122CB1', 3], ['123CB1', 3], ['124CB1', 3]],
     notes: ['1. LONGUEURS DES CÂBLES DE PUISSANCE AU PLAN DE FAISCEAU.', '2. MASSES 901G ET 902G SUR LA MÊME PLAQUE DE MASSE.'] },
-  { n: 2, titre: 'COMMANDES ET VOYANTS', eqs: [['211SW1', 0], ['212PB1', 0], ['241DI1', 1], ['242DI2', 1], ['215LP1', 2], ['216LP2', 2], ['217LP3', 2]] },
-  { n: 3, titre: 'POMPES CARBURANT', eqs: [['203RL1', 0], ['204RL2', 0], ['408VC1A', 1], ['351PM1', 2], ['352PM2', 2]], notes: ['1. PRISE 408VC1A : PARTIE FIXE CÔTÉ POMPES.'] },
-  { n: 4, titre: 'CAPTEURS', eqs: [['230SP1', 0], ['231SP2', 0], ['667VT2', 1], ['421ST1', 2], ['431PR1', 2]], notes: ['1. CÂBLES BLINDÉS : REPRISE DE BLINDAGE AU CALCULATEUR.'] },
-  { n: 5, titre: 'CALCULATEUR CARBURANT', eqs: [['250CP1', 0], ['252RL3', 1], ['261LP4', 2], ['262XC1', 2]] },
+  { n: 2, numeros: true, titre: 'COMMANDES ET VOYANTS', eqs: [['211SW1', 0], ['212PB1', 0], ['241DI1', 1], ['242DI2', 1], ['215LP1', 2], ['216LP2', 2], ['217LP3', 2]] },
+  { n: 3, numeros: true, titre: 'POMPES CARBURANT', eqs: [['203RL1', 0], ['204RL2', 0], ['408VC1A', 1], ['351PM1', 2], ['352PM2', 2]], notes: ['1. PRISE 408VC1A : PARTIE FIXE CÔTÉ POMPES.'] },
+  { n: 4, numeros: true, titre: 'CAPTEURS', eqs: [['230SP1', 0], ['231SP2', 0], ['667VT2', 1], ['421ST1', 2], ['431PR1', 2]], notes: ['1. CÂBLES BLINDÉS : REPRISE DE BLINDAGE AU CALCULATEUR.'] },
+  { n: 5, numeros: true, titre: 'CALCULATEUR CARBURANT', eqs: [['250CP1', 0], ['252RL3', 1], ['261LP4', 2], ['262XC1', 2]] },
   { n: 6, titre: 'DÉGIVRAGE', eqs: [['601RL1', 0], ['605SW2', 0], ['409VC2A', 1], ['560HT1', 2], ['561HT2', 2]] },
   { n: 7, titre: 'PROTECTION DES COMMANDES', eqs: [['711CB5', 0], ['712CB6', 0], ['397TB1', 1], ['720VT3', 2]] },
   { n: 8, titre: 'INTERFACE ET SECOURS', eqs: [['801XC2', 0], ['802RL4', 1], ['810CP2', 2]] }];
@@ -108,6 +110,7 @@ const FILS = [
 
 const DOCUMENT_A = { numero: 'SC-4520-201', titre: 'DISTRIBUTION 28 V CC — CARBURANT ET DÉGIVRAGE', titreCourt: 'DISTRIBUTION 28 V CC', indice: 'C', faisceau: 'FX-4520-21', auteur: 'BE CÂBLAGE', date: '14/09/2026',
   style: 'A', catalogue: CATALOGUE, folios: FOLIOS, fils: FILS, prefixe: 'a',
+  numeroFil: k => 'W' + (1001 + k),
   texteRenvoi: ({ folio, zone }) => 'F' + folio + '/' + zone };
 
 module.exports = { DOCUMENT_A };

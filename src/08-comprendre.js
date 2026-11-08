@@ -164,9 +164,10 @@ function comprendreHtml() {
           '<p>C’est votre <span class="vr-def" tabindex="0" data-bulle="La base des pièces de votre logiciel de schéma, déposée et gardée sur ce PC : les contacts, les câbles, les faces que vous utilisez déjà">base SEE</span>, si elle est gardée sur ce PC ; sinon, les tables de VOLTA (vos photos des tables de SEE, recoupées sur des sources publiques). Les <b>Normes</b> montrent chaque table, d’où elle vient et qui la lit ; la <b>Bible</b>, chaque module et chaque arrangement, avec son origine.</p>'
           + '<p><b>Un seul catalogue ?</b> Quand la base SEE est là, elle passe devant. Quelques lignes ne sont que chez VOLTA : la Cohérence les liste, une par une, avec leur raison. Vous décidez : une case, « Ne prendre les pièces que dans la base SEE gardée », est prête, décochée.</p>'
           + `<p>${cpLien('normes', 'Ouvrir les Normes')} ${cpLien('bible', 'Ouvrir la Bible')}</p>`],
-        ['Les règles', 'disent ce qui est admis : le calibre qui ne disjoncte pas, ce qu’un câble supporte, le contact qui reçoit sa gauge, la chute de tension.',
-          '<p>Elles viennent des normes — l’EN 2853 pour les câbles, l’AC 43.13-1B, les courbes des disjoncteurs — et de votre règle (2 V de chute en ligne) ; jamais du catalogue : la base SEE n’a ni courbes ni intensités.</p>'
-          + `<p>Un disjoncteur est valide ou pas valide, sans réserve : VOLTA retient le plus petit calibre qui ne disjoncte pas, puis vérifie qu’il protège chacun de ses câbles. Les deux chapitres suivants les suivent maillon par maillon : ${cpLienCh('connecteur', 'la chaîne d’un connecteur')}, ${cpLienCh('disjoncteur', 'celle d’un disjoncteur')}.</p>`],
+        ['Les règles', 'disent ce qui est admis : le calibre qui ne disjoncte pas, ce qu’un câble supporte, la chute de tension.',
+          '<p>Elles viennent des normes — l’EN 2853 pour les câbles, l’AC 43.13-1B, les courbes des disjoncteurs, l’AS39029 pour le courant des contacts — et de votre règle (2 V de chute en ligne) ; jamais du catalogue : la base SEE n’a ni courbes ni intensités.</p>'
+          + '<p>Un disjoncteur est valide ou pas valide, sans réserve : VOLTA retient le plus petit calibre qui ne disjoncte pas, puis vérifie qu’il protège chacun de ses câbles. Chaque câble reçoit le contact à sertir qui prend sa gauge. Les chapitres 2 et 3 suivent ces règles, maillon par maillon.</p>'
+          + `<p>${cpLienCh('connecteur', 'La chaîne d’un connecteur')} ${cpLienCh('disjoncteur', 'La chaîne d’un disjoncteur')}</p>`],
         ['Ce qui sort', ': les folios dessinés, une fiche par objet, la LPA à commander, l’Excel corrigé.',
           '<p>Rien n’est inventé : une pièce absente du catalogue laisse sa case vide, et la fiche écrit « manque », avec la table et la clé cherchées.</p>'
           + '<p>L’Excel corrigé ne porte que ce que vous avez demandé — vos gestes, et les propositions de VOLTA que vous avez retenues —, chaque case changée dit ce qu’elle portait ; rouvert, il devient votre fichier. Le dossier PDF et l’Excel corrigé gardent les hypothèses avec lesquelles tout a été jugé.</p>']]),
@@ -228,12 +229,12 @@ function lierComprendre() { const c = $('fiche-corps'); if (!c) return;
   // (passe 87) le chemin du chapitre 1 : une étape survolée — dans le schéma ou dans la liste —, ou ouverte, s'allume des deux
   // côtés ; un clic sur une étape du schéma ouvre (ou referme) son explication
   const etapes = [...c.querySelectorAll('.vr-etape')], stations = [...c.querySelectorAll('.vr-flux-e')]; let survol = 0;
-  const allumer = () => { stations.forEach(s => { const n = +s.dataset.etape, d = etapes[n - 1]; s.classList.toggle('on', survol === n || !!(d && d.open)); });
+  const allumer = () => { stations.forEach(s => { const n = +s.dataset.etape, d = etapes[n - 1]; s.classList.toggle('on', survol === n); s.classList.toggle('ouverte', !!(d && d.open)); });
     etapes.forEach((d, i) => d.classList.toggle('on', survol === i + 1)); };
   const suivre = (el, n) => { el.addEventListener('pointerenter', () => { survol = n; allumer(); }); el.addEventListener('pointerleave', () => { if (survol === n) survol = 0; allumer(); }); };
   etapes.forEach((d, i) => { suivre(d, i + 1); d.addEventListener('toggle', allumer); });
   stations.forEach(s => { const n = +s.dataset.etape; suivre(s, n);
-    s.addEventListener('click', () => { const d = etapes[n - 1]; if (!d) return; d.open = !d.open; const sm = d.querySelector('summary'); if (sm) try { sm.focus({ preventScroll: true }); } catch (_) { }
+    s.addEventListener('click', () => { const d = etapes[n - 1]; if (!d) return; d.open = !d.open;
       if (d.open) d.scrollIntoView({ block: 'nearest', behavior: typeof mouvementReduit === 'function' && mouvementReduit() ? 'auto' : 'smooth' }); }); });
   if (!c.dataset.vrLie) { c.dataset.vrLie = '1'; let t = 0; c.addEventListener('scroll', () => { if (!(app.fiche && app.fiche.mode === 'comprendre')) return; cancelAnimationFrame(t); t = requestAnimationFrame(() => marquerChapitre()); }, { passive: true }); } }
 

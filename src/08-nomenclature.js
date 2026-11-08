@@ -178,7 +178,9 @@ function ficheNomenclature(vue) { vue = vue === 'suivi' ? 'suivi' : 'pieces'; co
   // une référence qui en offre une autre (« TE 006-0893-20 (200 °C) / 097-0140-20 (260 °C) ») : la seconde dessous ; un mot
   // d'atelier sous une référence (« 28 mm », « à couper… ») en écriture courante — la colonne garde sa largeur
   const refDouble = r => { const [a, ...b] = String(r).split(' / '); return esc(a) + (b.length ? `<span class="no-arr">ou ${esc(b.join(' / '))}</span>` : ''); };
-  const dessous = t => t ? `<br><span class="no-ou">${esc(t)}</span>` : '';
+  const dessous = t => t ? `<span class="no-ou" style="display:block;white-space:normal">${esc(t)}</span>` : '';
+  // (une référence ne se coupe jamais : « face à », « votre fichier : » passent à la ligne, la référence reste entière)
+  const dessousRef = (mot, r) => `<span class="no-ou" style="display:block;white-space:normal">${esc(mot)} <span style="white-space:nowrap">${esc(r)}</span></span>`;
   const refs = (xs, mot) => plurielLie(xs.length, mot) + ' · ' + plurielLie(somme(xs), 'pièce');
   // l'état d'un disjoncteur : le verdict à sa couleur (la table unique, 09 bis), « pas écrit dans votre fichier » en ambre dessous
   const etatDj = x => x.verdict ? `<span class="no-etat ${x.verdict.etat}" data-bulle="${escA(x.verdict.bulle)}">${esc(x.verdict.mot)}</span>${x.retest ? note('pas écrit dans votre fichier') : ''}` : `<span class="no-rien">${esc(x.etat || '—')}</span>`;
@@ -220,16 +222,17 @@ function ficheNomenclature(vue) { vue = vue === 'suivi' ? 'suivi' : 'pieces'; co
   /* LE SUIVI : une table par genre de pièce — le repère, ce qu'on y pose (la référence que l'onglet Pièces commande), ses
      bornes, ses câbles, ses folios et ses routes. Un accouplement inconnu reste « inconnu », comme dans les Pièces. */
   const suiviHtml = () => { const S = N.suivi, nb = xs => xs.length;
-    const ici = x => esc(x.repere.replace(/ \(ajoutée par VOLTA\)$/, '')) + (/\(ajoutée par VOLTA\)$/.test(x.repere) ? dessous(x.nature.replace(/^barrette /, '')) : '');
+    const ici = x => esc(x.repere.replace(/ \(ajoutée par VOLTA\)$/, '')) + (/\(ajoutée par VOLTA\)$/.test(x.repere) ? dessous(x.nature.replace(/^barrette ajoutée par VOLTA, /, 'ajoutée ')) : '');
     const ou2 = x => esc(x.plans.join(' · ') || '—') + dessous(x.routes.join(' · '));
-    const autre = x => x.fichier && cleNorme(x.fichier) !== cleNorme(x.reference) ? dessous('votre fichier : ' + x.fichier) : '';
+    const autre = x => x.fichier && cleNorme(x.fichier) !== cleNorme(x.reference) ? dessousRef('votre fichier :', x.fichier) : '';
     const conn = S.filter(x => x.nature === ACCOUPLEMENT_LPA), bar = S.filter(x => /^barrette/.test(x.nature)), pri = S.filter(x => x.nature === 'prise de coupure'), inc = conn.filter(x => !x.reference).length;
     return `<p class="note no-intro">Ce qu’on pose, et où : une ligne par pièce, avec la référence que commande l’onglet Pièces${nA ? ' — les barrettes que VOLTA ajoute comprises' : ''}.</p>`
       + table(titreNomen('accouplements'), plurielLie(nb(conn), 'connecteur') + (inc ? ' · ' + inc + ' sans référence' : ''), ['Repère', 'On pose', 'Bornes', 'Câbles', 'Folios'],
-        conn.map(x => [td('ref', ici(x)), td('ref', (x.reference ? esc(x.reference) : `<i class="no-note-l" data-bulle="${escA(x.note || 'manque dans la bible')}">inconnu</i>`) + (x.fichier ? dessous('face à ' + x.fichier) : '')), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]),
+        conn.map(x => [td('ref', ici(x)), td('ref', (x.reference ? esc(x.reference) : `<i class="no-note-l" data-bulle="${escA(x.note || 'manque dans la bible')}">inconnu</i>`) + (x.fichier ? dessousRef('face à', x.fichier) : '')), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]),
         'Chacun sur le connecteur de son équipement, fourni avec lui.')
       + table('Barrettes', plurielLie(nb(bar), 'barrette'), ['Repère', 'On pose', 'Bornes', 'Câbles', 'Folios'],
-        bar.map(x => [td('ref', ici(x)), td('ref', x.reference.split(' + ').map(esc).join('<br>') + autre(x)), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]))
+        bar.map(x => [td('ref', ici(x)), td('ref', x.reference.split(' + ').map(esc).join('<br>') + autre(x)), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))]),
+        bar.some(x => /^barrette ajoutée/.test(x.nature)) ? 'Celles que VOLTA ajoute (deux câbles sur une borne) gardent leur repère provisoire jusqu’à ce que vous leur donniez le leur.' : '')
       + table(titreNomen('connecteurs'), plurielLie(nb(pri), 'prise'), ['Repère', 'On pose', 'Contacts', 'Câbles', 'Folios'],
         pri.map(x => [td('ref', ici(x)), td('ref', esc(x.reference) + autre(x)), td('d', x.bornes.length), td('d', x.cables), td('sans', ou2(x))])); };
   const nav = `<div class="onglets nm-nav" role="tablist" aria-label="La LPA">${ONGLETS_LPA.map(([k, t]) => `<button type="button" class="onglet" role="tab" data-no-vue="${k}" aria-selected="${vue === k}" tabindex="${vue === k ? 0 : -1}"${vue === k ? ' data-clavier' : ''}>${t}</button>`).join('')}</div>`;

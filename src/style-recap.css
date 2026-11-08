@@ -497,6 +497,13 @@ b.rc-n{font-weight:500}
 /* (v77) l'icône prend sa place : le rail s'élargit d'autant (« Équipements » et « Problèmes » entiers, avec leurs comptes) */
 .recap{--rc-rail:212px}
 #base.serre{--rc-rail:196px}
+/* (passe 87, le regard : sur un plan de 3 345 liaisons, « Problè… » avec 45 et 315) LA PLACE DE DEUX COMPTES À TROIS CHIFFRES
+   est réservée : « Problèmes » reste entier, choisi (en gras) ou non, la fiche à côté ou non — les pastilles du rail se serrent
+   d'un pixel, le rail prend le reste (mesuré : 218 px, 208 serré, avec « 888 » et « 888 »). */
+.rc-onglet .rc-ns{gap:3px;padding-left:6px}
+.rc-onglet .rc-n{padding:0 5px}
+.recap{--rc-rail:220px}
+#base.serre{--rc-rail:210px}
 
 
 /* ─── (v78c) LE RÉCAPITULATIF, PAPIER COMME LES FICHES — le lecteur : « un tableau bleu sur bleu, c'est dommage ; à gauche
