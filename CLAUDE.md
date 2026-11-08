@@ -45,9 +45,15 @@ s'écrit ici, le jour même.
 - **Les connecteurs des équipements sont fournis par le fournisseur.** Nous choisissons : barrettes, prises de coupure,
   relais, raccords, tyraps, contacts à sertir.
 - Un fichier peut donner un **calibre** ; VOLTA peut le contester s'il le justifie (« actuel : celui de votre fichier »).
-- **Le courant d'un câble** (v84) : celui de ce qu'il alimente en aval quand la consommation est écrite ; sinon le courant
-  total de son disjoncteur, et la fiche le dit. Un câble côté source (vers une batterie, une génératrice, un TR) n'est pas
+- **Le courant d'un câble** (v84, revu le 8 novembre 2026) : celui de ce qu'il alimente en aval quand la consommation est
+  écrite ; **sinon il est inconnu** — VOLTA demande la consommation (« Écrire la consommation de 104LP1 ») et n'invente ni
+  courant ni chute. La **protection se juge toujours** (elle ne dépend d'aucun courant) : selon **la plus sévère** de l'AC
+  43.13-1B (table 11-3) et de l'EN 2853 déclassée par les Hypothèses, et la phrase dit laquelle décide. **Un câble de
+  masse porte le courant de sa charge.** Un câble côté source (vers une batterie, une génératrice, un TR) n'est pas
   protégé par le disjoncteur qu'il nourrit.
+- **« À régler », c'est ce qui a un geste** (8 novembre 2026), partout : la fiche, le récapitulatif, le panneau Repères,
+  le dossier PDF comptent pareil.
+- Ses fichiers réels font **de 500 à 2 000 liaisons** : VOLTA doit y rester fluide.
 - **Un disjoncteur, c'est mathématique : valide ou pas valide, point** (v80, le lecteur insiste : « je te l'ai dit plein
   de fois »). La courbe a une zone où il ne disjoncte pas et une zone où il disjoncte ; chaque point du profil tombe
   d'un côté ou de l'autre. **Aucune réserve, aucune marge, aucun « 10 % », aucun « trop juste »**. Le calibre retenu est

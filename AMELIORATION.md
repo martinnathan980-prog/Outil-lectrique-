@@ -74,6 +74,10 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
   liaison douteuse se **choisit tout de suite** (1, 2, C ; Espace pour plus tard ; Entrée seule ne la passe pas) ; l'ordre
   **de la page** ; « **Ce qui reste noir** » (les traits lus dans aucune liaison) **obligatoire** avant les folios et le
   retest.
+- 8 novembre 2026, passe 1 (les questions du regard neuf) : ses plus gros fichiers font **500 à 2 000 liaisons** ; une
+  branche sans consommation écrite a un courant **inconnu**, la **protection toujours jugée** ; « à régler », c'est **ce
+  qui a un geste**, partout ; la protection selon **la plus sévère** de l'AC 43.13-1B (table 11-3) et de l'EN 2853
+  déclassée, dite.
 
 ## Journal des passes
 
