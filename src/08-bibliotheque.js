@@ -357,8 +357,8 @@ async function plansDuFichier(f) { const nom = f.name || 'le fichier', L = await
   if (!trouverEnteteRetest(L.brutes)) { if (await rangerAilleurs(L, nom, f)) return { plans: [] };
     const D = devinerTableau(L.pleines), lu = D.entete && D.devine ? lireAvecCarte(L.pleines, D.map, D.debut) : null;
     if (lu && lu.liaisons.length) return { plans: [{ nom, liaisons: lu.liaisons }], devine: texteBrut(comprisHtml(D)) };
-    return { erreur: nom + ' n’a pas les en-têtes de l’installation : VOLTA a besoin au moins de Device1, Pin1, Device2 et Pin2.', lu: L }; }
-  const r = lireTexte(L.texte); if (!r.liaisons.length) return { erreur: nom + ' : les en-têtes de l’installation sont là, mais aucune liaison dessous.' };
+    return { erreur: nom + ' n’a pas les en-têtes d’un retest : VOLTA a besoin au moins de Device1, Pin1, Device2 et Pin2.', lu: L }; }
+  const r = lireTexte(L.texte); if (!r.liaisons.length) return { erreur: nom + ' : les en-têtes du retest sont là, mais aucune liaison dessous.' };
   // la feuille « VOLTA » d'une installation corrigée (02-lecture) suit le plan qu'elle devient : elle se reprend à son ouverture
   const volta = r.volta || null, toutes = r.toutes || r.liaisons;   // (v84) les lignes incomplètes restent au plan, comme à l'ouverture
   if (r.harnais.length > 1) return { plans: r.harnais.map(h => ({ nom: h, liaisons: toutes.filter(l => l.harness === h), volta })) };
@@ -695,7 +695,7 @@ function carteInstallHtml(i) { const P = plansDeInstall(i.id), vu = vueLe(i), pi
   // l'Exemple : sa carte OUVRE son plan, d'un clic (audit v72, parcours P2-2 : une page pour une ligne, c'était un clic de trop)
   const geste = i.demo ? 'data-bi="exemple"' : `data-bi="install" data-id="${escA(i.id)}"`;
   // ce qu'il reste à faire dans ses plans (le compte gardé de chacun) : on voit d'un coup d'œil où il y a du travail
-  const aReprendre = P.reduce((s, p) => s + (p.problemes ? p.problemes.ko : 0), 0), pb = aReprendre ? plurielLie(aReprendre, 'problème') : '';
+  const aReprendre = P.reduce((s, p) => s + (p.problemes ? p.problemes.ko : 0), 0), pb = aReprendre ? aReprendre + INSECABLE + 'à régler' : '';
   const etat = pb && !i.demo ? `<span class="bi-carte-etat ko">${esc(pb)}</span>` : '';
   const feuilles = (pile >= 3 ? '<i class="bi-f bi-f3" aria-hidden="true"></i>' : '') + (pile >= 2 ? '<i class="bi-f bi-f2" aria-hidden="true"></i>' : '');
   const plus = `<button class="bi-plus" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === i.id)}">${icoBi('points')}<span class="bulle" aria-hidden="true">${i.demo ? 'Retirer l’exemple' : aUnEcp(i) ? 'Nom et ECP, supprimer' : 'Renommer, supprimer'}</span></button>`;
@@ -779,7 +779,7 @@ const sousPlan = p => { if (p.source === 'base') return lies([p.appareil, p.rete
 // ce qu'il reste à faire, d'après le dernier contrôle gardé
 // (v86, l'audit F11) des problèmes ET des points à voir : les deux se disent — les points à voir dessous, calmes (ils informent)
 const problemesHtml = p => { const x = p.problemes; if (!x) return '<span class="bi-pb bi-pb-rien">pas encore contrôlé</span>';
-  if (x.ko) return `<span class="bi-pb-c"><span class="bi-pb ko">${esc(plurielLie(x.ko, 'problème'))}</span>${x.att ? `<small>et ${x.att}${INSECABLE}à voir</small>` : ''}</span>`;
+  if (x.ko) return `<span class="bi-pb-c"><span class="bi-pb ko">${esc(x.ko + INSECABLE + 'à régler')}</span>${x.att ? `<small>et ${x.att}${INSECABLE}à voir</small>` : ''}</span>`;
   return x.att ? `<span class="bi-pb att">${x.att}${INSECABLE}à voir</span>` : '<span class="bi-pb ok">rien à reprendre</span>'; };
 function lignePlanHtml(p, avecInstall) { const i = BIB.installs.get(p.install), table = p.id === app.planId && planSurLaTable(), neuf = BIB.nouveaux.has(p.id), lot = !!BIB.lot, choisi = lot && BIB.lot.ids.has(p.id);
   const edite = BIB.edition && BIB.edition.quoi === 'plan' && BIB.edition.id === p.id, confirme = BIB.confirme && BIB.confirme.quoi === 'plan' && BIB.confirme.id === p.id;

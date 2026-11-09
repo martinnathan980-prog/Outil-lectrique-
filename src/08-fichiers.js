@@ -167,7 +167,7 @@ const feuillesHtml = lu => lu && lu.ignorees && lu.ignorees.length ? lu.ignorees
    sans les en-têtes, les lignes qui ne nomment ni équipement ni câble (leur n° de ligne Excel, quand le fichier n'a qu'une
    feuille), et les liaisons incomplètes — gardées au plan, mais ni dessinées ni vérifiées. Rend l'avis, ou null. */
 function avisDeLecture(r, ig) { const liste = [], nl = (r.laissees || []).length, ni = r.incompletes || 0;
-  if (ig && ig.length) liste.push('les feuilles ' + ig.join(', ') + ' : pas les en-têtes d’une installation');
+  if (ig && ig.length) liste.push('les feuilles ' + ig.join(', ') + ' : pas les en-têtes d’un retest');
   if (nl) liste.push(pluriel(nl, 'ligne') + ' sans équipement ni câble' + ((r.entetes || 1) === 1 ? ' (ligne' + (nl > 1 ? 's ' : ' ') + r.laissees.slice(0, 8).join(', ') + (nl > 8 ? '…' : '') + ')' : '') + ' : rien à y lire');
   if (ni) liste.push(pluriel(ni, 'liaison') + ' à un bout vide : gardée' + (ni > 1 ? 's' : '') + ' au plan, ni dessinée' + (ni > 1 ? 's' : '') + ' ni vérifiée' + (ni > 1 ? 's' : '') + ' — le récapitulatif les montre');
   return liste.length ? { texte: 'Ce que VOLTA a laissé de côté en lisant le fichier :', liste } : null; }
@@ -196,7 +196,7 @@ async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichie
   try {
     if (!trouverEnteteRetest(L.brutes)) { if (!(await rangerAilleurs(L, nom, fichier))) proposerRattrapage(nom, L); return; }
     const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), avis = avisDeLecture(r, ig);
-    if (!r.liaisons.length) { echecImport('retest', { texte: `${guillemets(esc(nom))} : les en-têtes de l’installation sont là (ligne ${r.entete}), mais aucune liaison dessous. Chaque ligne doit nommer au moins <span class="id">Device1</span> et <span class="id">Device2</span>.`, liste: avis ? avis.liste : [] },
+    if (!r.liaisons.length) { echecImport('retest', { texte: `${guillemets(esc(nom))} : les en-têtes du retest sont là (ligne ${r.entete}), mais aucune liaison dessous. Chaque ligne doit nommer au moins <span class="id">Device1</span> et <span class="id">Device2</span>.`, liste: avis ? avis.liste : [] },
       guillemets(nom) + ' : les en-têtes sont là, mais aucune liaison dessous.'); return; }
     if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, nom); baseRecue(nom, avis, rangerLesContrats(app.references.base, nom));
       ficheHarnais(r, nom); signaler(pluriel(r.harnais.length, 'harness') + ' dans ' + guillemets(nom) + ' : gardés comme contrats déjà faits — lequel ouvrir sur la table ?', 'base'); return; }
@@ -221,7 +221,7 @@ function poserLaLecture(r, nom, ig, noms, plus, L) { const avis = avisDeLecture(
      d'un retest corrigé (« Modifications ») n'en est pas une : la lecture le reconnaît et le dit (02, domaine C) ; « Voir »
      ouvre le bilan, dans « Vos fichiers » */
   const msg = 'VOLTA a lu ' + pluriel(n, 'liaison') + (plans().length > 1 ? ' sur ' + plans().length + ' folios' : '') + motDuBilan(B, nl, noms)
-    + (noms.length === 1 ? ' · la feuille ' + guillemets(noms[0]) + ' est laissée de côté (pas les en-têtes d’une installation)' : noms.length > 1 ? ' · ' + noms.length + ' feuilles laissées de côté : ' + noms.slice(0, 3).map(guillemets).join(', ') + (noms.length > 3 ? '…' : '') : '') + (plus || '') + '.';
+    + (noms.length === 1 ? ' · la feuille ' + guillemets(noms[0]) + ' est laissée de côté (pas les en-têtes d’un retest)' : noms.length > 1 ? ' · ' + noms.length + ' feuilles laissées de côté : ' + noms.slice(0, 3).map(guillemets).join(', ') + (noms.length > 3 ? '…' : '') : '') + (plus || '') + '.';
   if (avis || B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg);
   proposerDejaFait(); }
 /* ---- LE BILAN D'OUVERTURE (v86, l'audit M6 : « un résumé que l'on peut cliquer ») ------------------------------------
@@ -290,7 +290,7 @@ function bilanHtml() { FICHIERS.bilan = []; const V = verite(); if (!V.length ||
   const lignesAtt = vus.map(ligne).join('') + (reste ? `<li><button type="button" class="fi-pb-l att" data-vf="bilan-reste"><i aria-hidden="true"></i><span class="fi-pb-t">et ${reste > 1 ? reste + ' autres points' : 'un autre point'} à voir, dans la liste « à reprendre »</span><span class="fi-pb-s">R</span></button></li>` : '');
   const n = R ? R.n : V.length, nk = B.ko.length, na = B.att.length;
   const tete = `<p><b>VOLTA a lu ${esc(pluriel(n, 'liaison'))}</b>${nk || na ? ' et relève ' + [nk ? pluriel(nk, 'point') + ' à régler' : '', na ? (nk ? na + ' à voir' : pluriel(na, 'point') + ' à voir') : ''].filter(Boolean).join(', ') : ' : rien à reprendre dans l’écriture du fichier'}${regles ? ` — ${regles > 1 ? regles + ' réglés' : '1 réglé'} depuis l’ouverture` : ''}.</p>`;
-  const cote = [nl ? (nl > 1 ? 'les lignes ' : 'la ligne ') + (R.laissees || []).join(', ') + (nl > (R.laissees || []).length ? '…' : '') + ' (ni équipement ni câble)' : '', ...ig.map(f => 'la feuille ' + guillemets(esc(f)) + ' (pas les en-têtes d’une installation)')].filter(Boolean);
+  const cote = [nl ? (nl > 1 ? 'les lignes ' : 'la ligne ') + (R.laissees || []).join(', ') + (nl > (R.laissees || []).length ? '…' : '') + ' (ni équipement ni câble)' : '', ...ig.map(f => 'la feuille ' + guillemets(esc(f)) + ' (pas les en-têtes d’un retest)')].filter(Boolean);
   return `<div class="vf-une vf-bilan">${tete}${xs.length ? `<ul class="fi-pbs">${lignesKo}${lignesAtt}</ul>` : ''}${cote.length ? `<p class="vf-note">Laissé de côté : ${cote.join(', ')}.</p>` : ''}</div>`; }
 /* Une base reçue (un dépôt sur sa carte, ou un fichier de plusieurs harness) : la carte le dira, avec ses comptes et ce
    qu'elle a rangé dans la bibliothèque (`rangee`). */
@@ -317,10 +317,10 @@ function lireAvecCarte(pleines, map, debut) { const g = (row, i) => i != null &&
 function comprisHtml(D) { const parCol = new Map(); ROLES.forEach(([k, mot]) => { const i = D.map[k]; if (i != null && i !== '') parCol.set(+i, mot); });
   return [...parCol].sort((a, b) => a[0] - b[0]).map(([i, mot]) => `<span class="id">${esc(D.entete ? D.entete[i] || 'colonne ' + (i + 1) : 'colonne ' + (i + 1))}</span>\u00a0→ ${mot}`).join(', '); }
 function proposerRattrapage(nom, L) { const D = devinerTableau(L.pleines), lu = lireAvecCarte(L.pleines, D.map, D.debut);
-  if (!lu.liaisons.length) { echecImport('retest', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-retest', 'Télécharger un modèle']] },
-    nom + ' : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — vérifiez la ligne d’en-têtes.'); return; }
+  if (!lu.liaisons.length) { echecImport('retest', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes d’un retest dans les 30 premières lignes. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-retest', 'Télécharger un modèle']] },
+    nom + ' : VOLTA ne trouve pas les en-têtes d’un retest dans les 30 premières lignes — vérifiez la ligne d’en-têtes.'); return; }
   effacerErreur('retest'); FICHIERS.attente = { nom, pleines: L.pleines, ...D }; FICHIERS.corriger = false;
-  ficheFichiers('retest'); signaler(nom + ' n’a pas les en-têtes de l’installation : voici ce que VOLTA en a compris — vérifiez, rien n’est chargé avant « Charger ».', 'retest'); }
+  ficheFichiers('retest'); signaler(nom + ' n’a pas les en-têtes d’un retest : voici ce que VOLTA en a compris — vérifiez, rien n’est chargé avant « Charger ».', 'retest'); }
 function chargerRattrapage() { const A = FICHIERS.attente; if (!A) return; const lu = lireAvecCarte(A.pleines, A.map, A.debut); if (!lu.liaisons.length) return;
   chargerContrat(lu.liaisons, 'ouverture de ' + A.nom, A.nom, { nouveau: true }); contratRecu(A.nom, 'colonnes devinées');
   dire(pluriel(lu.liaisons.length, 'liaison') + ' chargée' + (lu.liaisons.length > 1 ? 's' : '') + ' de ' + guillemets(A.nom) + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.'); }
@@ -329,7 +329,7 @@ function apercuLiaisonsHtml(L, max) { const cols = [['de', 'De'], ['borneDe', 'B
   return `<div class="vf-apercu"><table><thead><tr>${cols.map(([k, t]) => `<th${k === 'de' || k === 'vers' ? ' class="req"' : ''}>${t}</th>`).join('')}</tr></thead><tbody>${L.slice(0, max || 3).map(l => `<tr>${cols.map(([k]) => `<td${k === 'de' || k === 'vers' ? ' class="req"' : ''}>${esc(l[k] == null ? '' : l[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
     + (L.length > (max || 3) ? `<p class="vf-note">… et ${pluriel(L.length - (max || 3), 'autre liaison')}.</p>` : ''); }
 function attenteHtml() { const A = FICHIERS.attente; if (!A) return ''; const lu = lireAvecCarte(A.pleines, A.map, A.debut);
-  const dit = A.entete && A.devine ? `${esc(A.nom)} n’a pas les en-têtes de l’installation. VOLTA a compris : ${comprisHtml(A)}. Vérifiez l’aperçu, ou corrigez une colonne.` : `${esc(A.nom)} n’a pas d’en-têtes que VOLTA reconnaisse : il l’a lu dans l’ordre du collage — ${comprisHtml(A)}. Vérifiez l’aperçu, ou corrigez une colonne.`;
+  const dit = A.entete && A.devine ? `${esc(A.nom)} n’a pas les en-têtes d’un retest. VOLTA a compris : ${comprisHtml(A)}. Vérifiez l’aperçu, ou corrigez une colonne.` : `${esc(A.nom)} n’a pas d’en-têtes que VOLTA reconnaisse : il l’a lu dans l’ordre du collage — ${comprisHtml(A)}. Vérifiez l’aperçu, ou corrigez une colonne.`;
   const choix = FICHIERS.corriger ? `<div class="vf-carte-cols" role="group" aria-label="Le rôle de chaque colonne">${Array.from({ length: A.n }, (_, i) => { const role = ROLES.find(([k]) => A.map[k] !== '' && A.map[k] != null && +A.map[k] === i), ex = cellules(A.pleines[A.debut] || '')[i] || '';
       return `<label class="vf-col"><span class="vf-col-nom">${esc(A.entete ? A.entete[i] || 'colonne ' + (i + 1) : 'colonne ' + (i + 1))}</span><span class="vf-col-ex id">${esc(ex) || '—'}</span><select data-colonne="${i}" aria-label="${escA('Lire la colonne ' + (i + 1) + ' comme')}"><option value="">ignorer</option>${ROLES.map(([k, mot, en]) => `<option value="${k}"${role && role[0] === k ? ' selected' : ''}>${mot} (${en})</option>`).join('')}</select></label>`; }).join('')}</div>` : '';
   return `<div class="vf-boite vf-attente"><p>${dit}</p>${lu.liaisons.length ? apercuLiaisonsHtml(lu.liaisons, 3) : '<p class="vf-note">Avec ces colonnes, aucune ligne ne nomme ses deux bouts.</p>'}${lu.rejets.length ? `<p class="vf-note">${pluriel(lu.rejets.length, 'ligne')} sans ses deux bouts, laissée${lu.rejets.length > 1 ? 's' : ''} de côté.</p>` : ''}${choix}`
@@ -358,7 +358,7 @@ function lireCollage(texte) { const brutes = lignesDuTexte(texte), pleines = bru
   const rt = trouverEnteteRetest(brutes);
   // les lignes sous les en-têtes qui ne donnent pas de liaison entière : un bout vide, ou rien (02, `incompletes`, `laissees`)
   if (rt) { const r = lireTexte(texte), n = (r.incompletes || 0) + (r.laissees || []).length;
-    return { liaisons: r.liaisons, rejets: Array.from({ length: n }), comment: 'reconnues à leurs en-têtes (l’installation, ligne ' + r.entete + ')' }; }
+    return { liaisons: r.liaisons, rejets: Array.from({ length: n }), comment: 'reconnues à leurs en-têtes (ligne ' + r.entete + ')' }; }
   const D = devinerTableau(pleines), lu = lireAvecCarte(pleines, D.map, D.debut);
   return { ...lu, comment: D.entete && D.devine ? 'colonnes devinées à leurs en-têtes : ' + comprisHtml(D) : 'lues dans l’ordre ci-dessus' }; }
 /* Le plan sur la table reçoit les lignes (« Ajouter au plan ») ou les prend à la place des siennes (« Remplacer le plan » :
@@ -381,7 +381,7 @@ function ficheColler() { const ouvert = verite().length > 0 && !bibliothequeOuve
   const txt = $('co-txt'); let lu = { liaisons: [], rejets: [] }, t = 0;
   const voir = () => { lu = lireCollage(txt.value); const n = lu.liaisons.length, vide = !txt.value.trim(), box = $('co-apercu');
     box.innerHTML = vide ? '' : n ? `<h3 class="co-etiquette">Ce que VOLTA comprend</h3><p class="co-dit"><i class="co-point" aria-hidden="true"></i><span><b>${pluriel(n, 'liaison')}</b>, ${lu.comment}${lu.rejets.length ? ` · <span class="co-rejet">${pluriel(lu.rejets.length, 'ligne')} sans ses deux bouts, laissée${lu.rejets.length > 1 ? 's' : ''} de côté</span>` : ''}.</span></p>${apercuLiaisonsHtml(lu.liaisons, 4)}`
-      : `<div class="vf-boite vf-erreur"><p>Aucune liaison reconnue : chaque ligne doit nommer ses deux équipements, dans l’ordre ci-dessus (ou sous les en-têtes de l’installation). Vérifiez le séparateur.</p></div>`;
+      : `<div class="vf-boite vf-erreur"><p>Aucune liaison reconnue : chaque ligne doit nommer ses deux équipements, dans l’ordre ci-dessus (ou sous les en-têtes d’un retest). Vérifiez le séparateur.</p></div>`;
     $('co-champ').classList.toggle('erreur', !vide && !n); txt.setAttribute('aria-invalid', String(!vide && !n));
     ['co-ajouter', 'co-remplacer'].forEach(id => { const b = $(id); if (b) b.disabled = !n; });
     if ($('co-ajouter')) $('co-ajouter').textContent = n ? 'Ajouter ' + pluriel(n, 'liaison') + ' au plan' : 'Ajouter au plan'; };
@@ -525,8 +525,8 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
       liens: [['pdf', 'Un schéma en PDF ? Le lire…'], ...(V.length ? [] : [['exemple', 'Pas de fichier sous la main ? Ouvrir l’exemple']])],
       // (v86) le bilan d'ouverture : ce que VOLTA a lu et relevé, chaque point vers ce qu'il désigne (il reprend « ce qui est laissé de côté »)
       boites: attenteHtml() + erreurHtml('retest') + (devant ? bilan : ''),
-      attend: { format: 'Les en-têtes sont reconnus par leur nom ; les autres colonnes de l’installation (Harness, PN, Route, FWD, longueur…) sont lues si elles sont là.',
-        apercu: apercuHtml(MODELE_RETEST, { label: 'Trois lignes d’exemple de l’installation', colonnes: colonnes(MODELE_RETEST, ['Device1', 'Pin1', 'Cable TG', 'Cable Tag', 'Device2', 'Pin2', 'FWD']) }),
+      attend: { format: 'Les en-têtes sont reconnus par leur nom ; les autres colonnes du retest (Harness, PN, Route, FWD, longueur…) sont lues si elles sont là.',
+        apercu: apercuHtml(MODELE_RETEST, { label: 'Trois lignes d’exemple d’un retest', colonnes: colonnes(MODELE_RETEST, ['Device1', 'Pin1', 'Cable TG', 'Cable Tag', 'Device2', 'Pin2', 'FWD']) }),
         ensuite: 'Ensuite, les folios se dessinent et chaque câble est jugé. Plusieurs harness : on vous demande lequel ouvrir.',
         gestes: [['modele-retest', 'Modèle (CSV)'], ['coller', 'Coller des lignes…']] } },
     { cle: 'base', titre: 'Contrats déjà faits', depot: 'base', grande: true, action: ['base', app.references ? 'Remplacer…' : 'Déposer la base…'], zone: ['base', 'la base'],

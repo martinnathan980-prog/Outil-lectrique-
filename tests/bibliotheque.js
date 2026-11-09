@@ -109,7 +109,7 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
     ko: (document.querySelector('#bibliotheque .bi-ajout.ko') || {}).textContent || '', deviner: !!document.querySelector('#bibliotheque .bi-ajout.ko [data-bi="deviner"]'), toast: $('toast').textContent, ouvert: verite().length }));
   ok(A1.plans.length === 3 && A1.plans.some(p => /^antenne-vhf\.csv:\d+$/.test(p)) && A1.plans.some(p => /^H-ANT-2:/.test(p)) && A1.plans.some(p => /^H-ANT-3:/.test(p)) && A1.lignes === 3 && A1.neufs === 3,
     'trois plans : l’installation, et un par harness du fichier qui en a deux — chacun sa ligne, marquée « nouveau »', A1.plans.join(' · '));
-  ok(/compta\.csv n’a pas les en-têtes de l’installation/.test(A1.ko) && A1.deviner && /3 plans ajoutés à «\s?Antenne VHF\s?»/.test(A1.toast) && !A1.ouvert, 'la compta le dit dans sa ligne (et propose de deviner ses colonnes) ; le mot qui passe compte les plans ajoutés ; rien ne s’ouvre tout seul', A1.toast);
+  ok(/compta\.csv n’a pas les en-têtes d’un retest/.test(A1.ko) && A1.deviner && /3 plans ajoutés à «\s?Antenne VHF\s?»/.test(A1.toast) && !A1.ouvert, 'la compta le dit dans sa ligne (et propose de deviner ses colonnes) ; le mot qui passe compte les plans ajoutés ; rien ne s’ouvre tout seul', A1.toast);
   // le mot qui passe, sur la bibliothèque : en bas (l'ergonome v73 : en haut, il se posait sur le titre)
   ok(await page.evaluate(() => { const t = $('toast').getBoundingClientRect(), h = document.querySelector('#bibliotheque .bi-titre').getBoundingClientRect(); return t.top > innerHeight / 2 && (t.bottom < h.top || t.top > h.bottom); }), 'sur la bibliothèque, le mot qui passe se pose en bas : jamais sur le titre');
   await capture('ajout-de-plans');

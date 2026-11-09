@@ -119,7 +119,7 @@ const FICHIER = P.fichierDemande();
   await ouvrir('1', false);
   const g0 = await page.evaluate(() => ({ colX: app.dessin.geom.colX.slice(), colW: app.dessin.geom.colW.slice() }));
   // hors de toute colonne : 395SW1, loin à droite, dans la place libre au-delà du dessin (une goulotte et demie après la dernière colonne)
-  const s0 = await bloc('395SW1'), pas1 = await pas();
+  const s0 = await bloc('395SW1'); let pas1 = await pas();
   const voulu = await page.evaluate(() => { const g = app.dessin.geom, c = app.dessin.comps.find(k => k.name === '395SW1'), n = g.colX.length - 1; return g.colX[n] + g.colW[n] + 60 - c.x; });
   const sel = await glisser('395SW1', voulu * s0.s, 0, { pendant: () => ({ us: getComputedStyle($('planche')).userSelect, calque: !!document.getElementById('rt-calque') }) });
   const s1 = await bloc('395SW1'), dxMonde = s1.cx - s0.cx;
@@ -138,6 +138,8 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(() => !String(window.getSelection())), 'aucun texte sélectionné après le glisser');
   ok(/395SW1 déplacé/.test(await mot()), 'le mot dit que le bloc a bougé', await mot());
   // un petit pas de côté, dans un dessin serré : 101BT1 de deux carreaux à droite ; la colonne d'à côté s'écarte
+  // (passe 87) la feuille d'un petit folio suit son dessin (06, `pageDe`) : le carreau se relit après chaque geste
+  pas1 = await pas();
   const t0 = await bloc('101BT1'), l0 = await bloc('104LP1');
   await glisser('101BT1', 2 * pas1 * t0.s, 0);
   const t1 = await bloc('101BT1'), l1 = await bloc('104LP1');
@@ -158,13 +160,13 @@ const FICHIER = P.fichierDemande();
   ok(Math.abs(libre - 37 / a0.s) <= 0.6 && Math.abs(libre / pas1 - Math.round(libre / pas1)) > 0.05, 'Alt : il suit la souris, sans carreau', libre.toFixed(2) + ' pour ' + (37 / a0.s).toFixed(2));
   // les flèches : un bloc choisi se pousse d'un carreau, de cinq avec Maj ; Ctrl+Z défait la série
   await page.evaluate(() => $('toast').classList.remove('on'));
-  const f0 = await bloc('104LP1'); await page.mouse.click(f0.x, f0.y); await page.waitForTimeout(250);
+  const f0 = await bloc('104LP1'); await page.mouse.click(f0.x, f0.y); await page.waitForTimeout(250); pas1 = await pas();
   ok(await page.evaluate(() => app.choisi === '104LP1'), '104LP1 choisi');
   const planAvant = await page.evaluate(() => app.plan);
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(150);
   const f1 = await bloc('104LP1');
   ok(Math.abs(f1.cx - f0.cx - pas1) < 0.5 && await page.evaluate(p => app.plan === p, planAvant), 'flèche droite : un carreau à droite (le folio ne change pas)', (f1.cx - f0.cx).toFixed(1));
-  await page.keyboard.press('Shift+ArrowDown'); await page.waitForTimeout(150);
+  pas1 = await pas(); await page.keyboard.press('Shift+ArrowDown'); await page.waitForTimeout(150);
   const f2 = await bloc('104LP1');
   ok(Math.abs(f2.cy - f1.cy - 5 * pas1) < 0.5, 'Maj+flèche bas : cinq carreaux plus bas', (f2.cy - f1.cy).toFixed(1));
   const p4 = await propre(); ok(p4.ok, 'toujours propre', JSON.stringify(p4));

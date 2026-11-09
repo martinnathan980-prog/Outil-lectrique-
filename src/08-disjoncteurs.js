@@ -487,7 +487,13 @@ const nombreCourt = x => esc(nombre(Math.round(x * 100) / 100));
 function chargeDuProfil(d) { const pts = d.points || [], perm = (pts.find(p => p.t === Infinity) || {}).i, pointes = pts.filter(p => p.t !== Infinity && p.i > 0).sort((a, b) => b.i - a.i);
   return { perm: perm > 0 ? perm : null, pointe: pointes.length ? pointes[0].i : null, pointeP: pointes[0] || null }; }
 // « au démarrage » (le technicien v73 : « en pointe » et « démarrage et transition », deux mots pour la même chose) ; un état ajouté, par son nom
-const quandDuPoint = p => !p ? '' : p.k === 'dem' || p.k === 'trans' ? 'au démarrage' : 'en ' + String(p.nom || 'pointe').replace(/ et .*$/, '');
+// (passe 87, le regard : le démarrage ne dure que 5 s) un état fondu « Démarrage et transition » se dit « au démarrage et en
+// transition » ; un démarrage seul « au démarrage » ; une transition seule « en transition »
+const quandDuPoint = p => { if (!p) return ''; const n = String(p.nom || '').toLowerCase();
+  if (/démarrage/.test(n) && /transition/.test(n)) return 'au démarrage et en transition';
+  if (p.k === 'dem' || /^démarrage/.test(n)) return 'au démarrage';
+  if (p.k === 'trans' || /^transition/.test(n)) return 'en transition';
+  return 'en ' + String(p.nom || 'pointe').replace(/ et .*$/, ''); };
 
 /* ---- CE QU'UN CALIBRE FERAIT (le cadran, « À la main », la bulle de chaque cran, la ligne du verdict) ---------------- */
 /* LA GAMME ENTIÈRE de la famille (l'ingénieur v73 : « le catalogue MS3320 a 13 calibres, le cadran n'en montre que 7 —
@@ -611,7 +617,7 @@ function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, b
   const famille = (d.famille && (d.famille.famille || d.famille.nom)) || d.courbe || '';
   const heros = `<div class="dj-heros ${v.etat || 'neutre'}${propose ? ' propose' : ''}"><div class="dj-cadran">${cadranCalibre(d, items, propose)}${boutonsDuCadran(items)}`
     + `<div class="dj-h-centre"><b class="dj-h-cal"><span class="dj-h-n">${cal ? nombreCourt(cal) : '—'}</span>${cal ? '<span class="dj-h-u">A</span>' : ''}</b>${etatC ? `<small class="dj-h-etat">${esc(etatC)}</small>` : ''}</div></div>`
-    + `<div class="dj-h-cote">${ch.perm || ch.pointe ? `<div class="dj-stats">${stat(ch.perm, 'perm', 'permanent')}${stat(ch.pointe, 'pointe', (quandDuPoint(ch.pointeP) || 'en pointe').replace(/^(au|en) /, ''))}</div>` : ''}`
+    + `<div class="dj-h-cote">${ch.perm || ch.pointe ? `<div class="dj-stats">${stat(ch.perm, 'perm', 'permanent')}${stat(ch.pointe, 'pointe', (quandDuPoint(ch.pointeP) || 'en pointe').replace(/^(au|en) /, '').replace(/ et .*$/, ''))}</div>` : ''}`
     + `<div class="dj-h-pied">${famille ? `<span>Gamme ${esc(famille)}</span>` : ''}${aide('calibre', { verdict: d, calibre: cal || null, origine: o.origine === 'main' ? 'main' : d.origine, meilleur: best || null })}</div></div></div>`;
   // la clé du cadran (v77, le lecteur : « trop de couleurs pour la légende ; soit c'est rouge, soit c'est vert ») : deux mots,
   // « passe » et « ne passe pas » ; le calibre de votre fichier, quand il en porte un autre (son anneau)

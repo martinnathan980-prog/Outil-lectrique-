@@ -119,11 +119,11 @@ function enteteFiche(o, grand) { const t = o.tete || {}, nom = t.nom || '';
      la fiche montre (`app.cible`, 08-fiche `rendreFiche`). */
   const cab = o.type === 'fil' && typeof app !== 'undefined' && app.cible && app.cible.type === 'fil' && app.cible.l && app.cible.l.de ? app.cible.l : null;
   const titreCable = (() => { if (!cab) return '';
-    const min = s => String(s).split(/([a-z]+)/).map((x, i) => i % 2 ? `<u class="nc-min">${esc(x)}</u>` : esc(x)).join(''), nb = ' ';
+    const min = s => String(s).split(/([a-z]+)/).map((x, i) => i % 2 ? `<u class="nc-min">${esc(x)}</u>` : esc(x)).join(''), nb = String.fromCharCode(160);
     const bout = (k, r, b) => `<button type="button" class="nc-bout" data-bout="${k}" data-bulle="${escA('Ouvrir ' + r + (b ? ', borne ' + b : ''))}">${esc(r)}${b ? ':' + min(b) : ''}</button>`;
     // sur le plan, un bout peut passer par une barrette à poser (VT1) : comme le chemin de la fiche (08-fiche, `ficheFil`)
     let par = []; try { const p = cab.origine === null ? null : liaisonsDuPlan().find(y => y.origine && y.aPoser && sourceDe(y) === cab); if (p) par = ['de', 'vers'].map(k => String(p[k] || '')).filter(r => VT_A_POSER.test(r)); } catch (_) { par = []; }
-    return `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-rep nc-rep-cable"><span class="nc-rep-t">${esc(nom)}</span>${nb}<span class="nc-lie">·</span> ${bout('de', cab.de, cab.borneDe)}${nb}<span class="nc-lie">→</span>${nb}<wbr>${bout('vers', cab.vers, cab.borneVers)}`
+    return `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-rep nc-rep-cable"><span class="nc-rep-t">${esc(nom)}</span>${nb}<span class="nc-lie">·</span> <span class="nc-bouts">${bout('de', cab.de, cab.borneDe)} <span class="nc-vers"><span class="nc-lie">→</span>${nb}${bout('vers', cab.vers, cab.borneVers)}</span></span>`
       // (la carte, étroite, pose « par VT1 » sous les deux bouts, sans son point : style-z-beaute)
       + (par.length ? `<span class="nc-lie nc-par"><span class="nc-par-pt">${nb}·</span> par${nb}${esc(par.join(', '))}</span>` : '') + '</span>'; })();
   const titre = titreCable || `<span class="nc-genre-mot">${esc(genre)}</span><span class="nc-rep">${rep}</span>`;

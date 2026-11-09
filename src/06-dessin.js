@@ -166,18 +166,40 @@ function styleDessin() {
    bande du cartouche). Le dessin garde ses coordonnées : c'est la feuille
    qui prend l'échelle `k` (unités du dessin par unité de feuille) — un
    folio chargé la remplit, un petit folio s'y dessine plus gros, jamais plus
-   de 1 / K_PAGE_MIN fois (sinon ses textes seraient trois fois ceux du
-   folio chargé). */
-const PAGE_W = 1680, PAGE_H = 1188, PAGE_CADRE = 16, PAGE_MARGE = 44, PAGE_CARTOUCHE = 92, K_PAGE_MIN = 0.55;
+   de 1 / K_PAGE_MIN fois.
+   (passe 87, le lecteur : « un folio presque vide se dessine plus grand sur sa feuille ») UN PETIT FOLIO REMPLIT SA FEUILLE
+   comme un folio chargé : le dessin entier grandit — blocs, textes, bornes, traits, tout ensemble, rien ne se déplace dans
+   le dessin — jusqu'à toucher les bords de la zone utile, en largeur ou en hauteur. Le folio 1 de l'exemple (8 câbles)
+   passe de k 0,55 à 0,395 : au cadrage, ses bornes passent de 8 à 11 px (1440), et l'A3 imprimé a le même dessin. Le
+   plafond : un numéro de borne (7,5) fait au plus 5 mm de corps sur l'A3 (k 0,36 : 3,7 mm de capitale, la plus grande
+   écriture courante d'un plan) — au-delà, un folio de deux blocs serait une affiche. Un folio dense ne change pas : sa
+   zone utile est déjà pleine. L'écran, l'impression, le SVG, le PNG et le dossier PDF passent tous par ici. */
+const PAGE_W = 1680, PAGE_H = 1188, PAGE_CADRE = 16, PAGE_MARGE = 44, PAGE_CARTOUCHE = 92, K_PAGE_MIN = 0.36;
+/* Ce qu'un bloc dessine vraiment, en largeur : la réglette d'un flanc où n'arrive aucun fil reste vide — le corps d'un
+   équipement s'arrête à sa paroi (les écritures d'un disjoncteur y entrent d'au plus CONN_W - 1) ; une barrette ou une
+   prise n'a d'amenées que du côté de ses fils (`dir`, 0 : des deux côtés). Rend ce qu'il faut ôter à gauche et à droite
+   de sa boîte. Un dessin qui remplit sa feuille se centre là-dessus : le folio 1 laissait 10 à gauche et 20 à droite (la
+   réglette vide de 104LP1), l'œil le voit quand le dessin touche les bords. */
+const flancsVides = c => { const r = c.rangs || {}, lw = c.lw || 0, rw = c.rw || 0;
+  if (c.kind === 'strip') { const S = r.S || []; if (!S.length) return [0, 0];
+    return [S.some(p => (p.dir || 0) <= 0) ? 0 : lw, S.some(p => (p.dir || 0) >= 0) ? 0 : rw]; }
+  if (c.kind !== 'equip' || c.rail || estDrapeau(c)) return [0, 0];
+  const ecrit = estDisjoncteur(c.name) ? CONN_W - 1 : 0;
+  return [(r.L || []).length ? 0 : Math.max(0, lw - ecrit), (r.R || []).length ? 0 : Math.max(0, rw - ecrit)]; };
 function pageDe(comps, fils) {
-  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-  const voir = (x, y) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); };
-  comps.forEach(c => { voir(c.x, c.y - 16); voir(c.x + c.w, c.y + c.h + 12); });      // la lettre au-dessus, le repère dessous
-  (fils || []).forEach(w => (w.pts || []).forEach(q => voir(q.x, q.y)));
-  if (!isFinite(x0)) { x0 = 0; x1 = 400; y0 = 0; y1 = 280; }
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+  const voir = (x, y) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }, vu = (a, b) => { v0 = Math.min(v0, a); v1 = Math.max(v1, b); };
+  comps.forEach(c => { voir(c.x, c.y - 16); voir(c.x + c.w, c.y + c.h + 12);      // la lettre au-dessus, le repère dessous
+    const [g, d] = flancsVides(c); vu(c.x + g, c.x + c.w - d); });
+  (fils || []).forEach(w => (w.pts || []).forEach(q => { voir(q.x, q.y); vu(q.x, q.x); }));
+  if (!isFinite(x0)) { x0 = 0; x1 = 400; y0 = 0; y1 = 280; v0 = x0; v1 = x1; }
   const uw = PAGE_W - 2 * (PAGE_CADRE + PAGE_MARGE), uh = PAGE_H - 2 * (PAGE_CADRE + PAGE_MARGE) - PAGE_CARTOUCHE;
-  const k = Math.max(K_PAGE_MIN, (x1 - x0) / uw, (y1 - y0) / uh);
-  const ux = (x0 + x1) / 2 - uw * k / 2, uy = (y0 + y1) / 2 - uh * k / 2;
+  /* le centre sur ce qui se dessine ; l'échelle sur les boîtes, plus l'écart de leurs réglettes vides (gauche et droite) :
+     les boîtes restent dans la zone utile — la retouche s'y arrête, un bloc y passe encore la dernière colonne d'un geste —
+     et les deux marges du dessin sont égales. Un folio aux deux bouts pareils garde son échelle au millième. */
+  const vg = v0 - x0, vd = x1 - v1;
+  const k = Math.max(K_PAGE_MIN, (x1 - x0 + Math.abs(vg - vd)) / uw, (y1 - y0) / uh);
+  const ux = (v0 + v1) / 2 - uw * k / 2, uy = (y0 + y1) / 2 - uh * k / 2;
   return { x: ux - (PAGE_CADRE + PAGE_MARGE) * k, y: uy - (PAGE_CADRE + PAGE_MARGE) * k, w: PAGE_W * k, h: PAGE_H * k, k };
 }
 // la feuille porte sa classe : l'interface la tient immobile quand le folio change (seul le dessin glisse, 08 `glisserFolio`)

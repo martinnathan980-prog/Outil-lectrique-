@@ -22,5 +22,6 @@
 .chip:is(.fo-attente,.fo-dessin)::after{opacity:1;transition:opacity var(--d-rapide) var(--courbe),background-size .3s linear}
 .chip.fo-attente:not(.on){color:color-mix(in srgb,var(--t-3) 62%,transparent)}
 .chip.fo-attente:not(.on):hover{color:var(--t-1)}
-.chip.fo-affinage::after{left:50%;right:auto;width:4px;height:4px;margin-left:-2px;bottom:3px;border-radius:50%;background:var(--fo-fil);opacity:.9;transition:opacity var(--d-rapide) var(--courbe)}
+/* (passe 87) le point « peaufine » (.chip.fo-affinage) est parti avec la pastille : le lecteur, « ce travail interne ne le
+   concerne pas » */
 @media (prefers-reduced-motion:reduce){ .chip::after,.chip:is(.fo-attente,.fo-dessin)::after{transition:none} }

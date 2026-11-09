@@ -374,7 +374,8 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(() => pluriel(2, 'harness') === '2 harness' && pluriel(2, 'fil') === '2 fils' && pluriel(1, 'harness') === '1 harness'), '« 2 harness », « 2 fils »');
   const nomTelecharge = async act => { const [d] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.evaluate(act)]); return d.suggestedFilename(); };
   const noms = [await nomTelecharge('exporterSuivi()'), await nomTelecharge('exporterNomenclature()'), await nomTelecharge('exporterSVG()')];
-  ok(noms[0] === 'Contrat-d-exemple-suivi.csv' && noms[1] === 'Contrat-d-exemple-nomenclature.csv' && /^Contrat-d-exemple-folio-1\.svg$/.test(noms[2]), 'les fichiers enregistrés ont un nom ASCII', noms.join(' · '));
+  // (v84 : la nomenclature s'appelle la LPA ; passe 87 : le Suivi sort de son onglet de la LPA, sous son ancien nom)
+  ok(noms[0] === 'Contrat-d-exemple-suivi.csv' && noms[1] === 'Contrat-d-exemple-LPA.csv' && /^Contrat-d-exemple-folio-1\.svg$/.test(noms[2]), 'les fichiers enregistrés ont un nom ASCII', noms.join(' · '));
   // un fichier à plusieurs harness : une fiche demande lequel ouvrir (tous restent des contrats déjà faits)
   await page.evaluate(() => { const L = contratExemple().map(l => liaison({ ...l, harness: +l.plan <= 3 ? 'H-A' : 'H-B', appareil: 'H160' })); ficheHarnais({ liaisons: L, harnais: ['H-A', 'H-B'] }, 'base.xlsx'); }); await page.waitForTimeout(400);
   ok(await page.evaluate(() => app.fiche && app.fiche.mode === 'harnais' && document.querySelectorAll('#choix-harness .ch-harness[data-harness]').length === 2 && !!$('ch-aucun')), 'un fichier à deux harness : la fiche demande lequel ouvrir, ou aucun');
@@ -431,7 +432,7 @@ const FICHIER = P.fichierDemande();
   const nEx = await page.evaluate(() => verite().length);
   await depot('#fichier', 'compta.csv', 'Date;Montant;Libellé\n03/10/2026;1250,00;Fournitures\n05/10/2026;318,40;Câbles\n');
   const E1 = await page.evaluate(() => ({ toast: $('toast').textContent, erreur: $('toast').classList.contains('erreur'), voir: !!document.querySelector('#toast .toast-voir'), n: verite().length, nom: app.nom }));
-  ok(E1.erreur && E1.voir && /en-têtes de l’installation/.test(E1.toast) && E1.n === nEx && E1.nom === 'Contrat d’exemple', 'un fichier qui n’est pas une installation : le mot qui passe le signale, avec « Voir » ; le contrat ouvert ne bouge pas', E1.toast);
+  ok(E1.erreur && E1.voir && /en-têtes d’un retest/.test(E1.toast) && E1.n === nEx && E1.nom === 'Contrat d’exemple', 'un fichier qui n’est pas une installation : le mot qui passe le signale, avec « Voir » ; le contrat ouvert ne bouge pas', E1.toast);
   await page.click('#toast .toast-voir'); await page.waitForTimeout(400);
   ok(await page.evaluate(() => { const c = $('vf-retest'), e = c && c.querySelector('.vf-erreur'); return app.fiche.mode === 'fichiers' && c.classList.contains('e-ko') && !!e && /J’ai lu/.test(e.textContent) && /Date/.test(e.textContent) && /Montant/.test(e.textContent) && /Device1, Pin1, Device2, Pin2/.test(e.textContent) && !!e.querySelector('[data-vf="modele-retest"]'); }),
     '« Voir » : l’erreur est écrite dans la carte de l’installation, et y reste — ce que l’outil a lu (Date · Montant · Libellé), ce qu’il lui faut, un modèle');

@@ -295,10 +295,10 @@ ok('l’exemple, corrigé : les six liaisons de 411VC3A à 412VC3B gardent leur 
 const avant87 = { 'W-513': { borneVers: 'E' }, 'W-514': { borneDe: 'E' }, 'W-521': { borneVers: 'E' }, 'W-522': { borneDe: 'E' }, 'W-523': { borneVers: 'F' }, 'W-524': { borneDe: 'F', borneVers: 'H' }, 'W-525': { borneDe: 'H' },
   'W-526': { borneVers: 'G' }, 'W-527': { borneDe: 'G' } };
 const LV = L.map(l => avant87[l.cable] ? X.liaison({ ...l, ...avant87[l.cable] }) : l);
-const F3A = X.coupureEnModule('411VC3A', LV, NE).plan.verdicts.filter(v => v.face), F3B = X.coupureEnModule('412VC3B', LV, NE).plan.verdicts.filter(v => v.face);
-ok('l’exemple d’avant : deux écarts, à voir, dits sur la partie mobile seule (411VC3A, d’où partent cinq des six liaisons) — « 411VC3A:G (partie mobile) va sur 412VC3B:E (partie fixe) : la lettre G devrait répondre à G », et H face à F, chacun avec son câble',
+const F3A = X.coupureEnModule('411VC3A', LV, NE).plan.verdicts.filter(v => v.face), F3B = X.coupureEnModule('412VC3B', LV, NE).plan.verdicts.filter(v => v.face), AC = ' — à corriger dans votre fichier';
+ok('l’exemple d’avant : deux écarts, à voir, dits sur la partie mobile seule (411VC3A, d’où partent cinq des six liaisons) — « 411VC3A:G (partie mobile) va sur 412VC3B:E (partie fixe) : la lettre G devrait répondre à G — à corriger dans votre fichier », et H face à F, chacun avec son câble',
   F3A.length === 2 && !F3B.length && X.faceDesParties('412VC3B', LV).length === 2 && F3A.every(v => v.niveau === 'attention' && v.genre === 'contact' && v.porteur === '411VC3A' && v.cables.length === 1)
-  && F3A.map(v => v.texte).sort().join(' | ') === '411VC3A:G (partie mobile) va sur 412VC3B:E (partie fixe) : la lettre G devrait répondre à G | 411VC3A:H (partie mobile) va sur 412VC3B:F (partie fixe) : la lettre H devrait répondre à H'
+  && F3A.map(v => v.texte).sort().join(' | ') === '411VC3A:G (partie mobile) va sur 412VC3B:E (partie fixe) : la lettre G devrait répondre à G' + AC + ' | 411VC3A:H (partie mobile) va sur 412VC3B:F (partie fixe) : la lettre H devrait répondre à H' + AC
   && F3A.find(v => / la lettre G /.test(v.texte)).cables[0].cable === 'W-521' && F3A.find(v => / la lettre H /.test(v.texte)).cables[0].cable === 'W-524', F3A.map(v => v.texte).join(' | '));
 // un câble qui arrive, un câble qui repart : la traversée d'une prise, un câble de chaque partie — rien à dire (412VC3B:G d'avant) ;
 // deux câbles sur un même contact d'une même partie : dit, la partie nommée, les câbles nommés
@@ -318,9 +318,9 @@ const LNV = LN87.map(l => l.cable === 'W-521' ? { ...l, borneVers: 'E' } : l), F
 const sens = [X.liaison({ de: '512VC7B', borneDe: 'A', vers: '511VC7A', borneVers: 'B', cable: 'W-1', type: 'DR22' }), X.liaison({ de: '512VC7B', borneDe: 'C', vers: '511VC7A', borneVers: 'C', cable: 'W-2', type: 'DR22' })];
 const egal = [X.liaison({ de: '511VC7A', borneDe: 'A', vers: '512VC7B', borneVers: 'B', cable: 'W-1', type: 'DR22' }), X.liaison({ de: '512VC7B', borneDe: 'C', vers: '511VC7A', borneVers: 'D', cable: 'W-2', type: 'DR22' })];
 ok('411VC3A en numéros face à 412VC3B en lettres : le 7 répond à la G, sans écart ; un écart le dit dans l’écriture de chaque partie (« le contact 7 devrait répondre à G ») ; les liaisons écrites de B vers A font de B la partie mobile ; à égalité, la partie A',
-  !X.faceDesParties('411VC3A', LN87).length && FN.length === 1 && FN[0].texte === '411VC3A:7 (partie mobile) va sur 412VC3B:E (partie fixe) : le contact 7 devrait répondre à G'
-  && X.faceDesParties('511VC7A', sens).map(v => v.texte).join() === '512VC7B:A (partie mobile) va sur 511VC7A:B (partie fixe) : la lettre A devrait répondre à A'
-  && X.faceDesParties('512VC7B', egal).map(v => v.porteur + ' ' + v.texte).join(' | ') === '511VC7A 511VC7A:A (partie mobile) va sur 512VC7B:B (partie fixe) : la lettre A devrait répondre à A | 511VC7A 511VC7A:D (partie mobile) va sur 512VC7B:C (partie fixe) : la lettre D devrait répondre à D',
+  !X.faceDesParties('411VC3A', LN87).length && FN.length === 1 && FN[0].texte === '411VC3A:7 (partie mobile) va sur 412VC3B:E (partie fixe) : le contact 7 devrait répondre à G' + AC
+  && X.faceDesParties('511VC7A', sens).map(v => v.texte).join() === '512VC7B:A (partie mobile) va sur 511VC7A:B (partie fixe) : la lettre A devrait répondre à A' + AC
+  && X.faceDesParties('512VC7B', egal).map(v => v.porteur + ' ' + v.texte).join(' | ') === '511VC7A 511VC7A:A (partie mobile) va sur 512VC7B:B (partie fixe) : la lettre A devrait répondre à A' + AC + ' | 511VC7A 511VC7A:D (partie mobile) va sur 512VC7B:C (partie fixe) : la lettre D devrait répondre à D' + AC,
   [FN[0] && FN[0].texte, ...X.faceDesParties('512VC7B', egal).map(v => v.texte)].join(' | '));
 
 console.log('\n16. (passe 87) UN CONNECTEUR FOURNI : L’ARRANGEMENT SE LIT DANS SA RÉFÉRENCE, SINON IL SE DÉDUIT DES BORNES — À VÉRIFIER');

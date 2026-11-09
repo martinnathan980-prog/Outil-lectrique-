@@ -7,8 +7,8 @@
    longueur, le type de câble, les contacts, tout — là je cherche où c'est ». La fiche v4, la même pour tous, de haut
    en bas :
      · LA BARRE, collée en haut : ‹ › (Alt+← / Alt+→) dans l'historique de l'inspecteur, ×. Quand l'en-tête passe sous
-       elle, le repère s'y écrit en petit. Ouvrir une fiche DEPUIS une fiche EMPILE ; un clic sur le plan ou dans
-       l'index remplace le haut de la pile ; revenir rouvre la fiche aux mêmes sections, au même défilement ;
+       elle, le repère s'y écrit en petit. Toute fiche qui s'ouvre S'EMPILE, d'où qu'elle vienne (passe 87 : une vraie
+       histoire, comme dans un navigateur) ; revenir rouvre la fiche aux mêmes sections, au même défilement ;
      · L'EN-TÊTE : le symbole du type ; le type (« Batterie » — lu dans le code du repère, une liste le change) et la
        désignation, en petit ; le repère en grand (un champ : un clic, ou F2, le renomme partout). Plus de tuiles —
        sauf pour un câble, où elles servent (son type et sa longueur s'y écrivent) ;
@@ -188,18 +188,26 @@ const nombreEcrit = t => { let s = String(t == null ? '' : t).trim().replace(/[\
 
 /* ---- LA NAVIGATION : la pile de l'inspecteur ------------------------------------------------------------------- */
 /* `app.insp.pile` : les fiches vues, 30 au plus, et `app.insp.pos` celle qu'on regarde. Une entrée : { type: 'bloc' |
-   'fil' | 'ref', nom | l | c, connecteur, sections (ouvertes ou non), haut (le défilement) }. NAV.mode dit comment
-   l'ouverture en cours touche la pile : 'empiler' (depuis la fiche), 'histoire' (‹ ›, Ctrl+Z), sinon on remplace le
-   haut (le plan, l'index). NAV.but : ce que la fiche doit montrer en s'ouvrant (un connecteur, une section, une ligne). */
+   'fil' | 'ref' | 'index', nom | l | c, connecteur, sections (ouvertes ou non), haut (le défilement) }.
+   (passe 87, le lecteur : « Alt+← ramène la fiche d'avant, d'où qu'elle vienne, comme le bouton Précédent d'un
+   navigateur ») UNE VRAIE HISTOIRE : toute fiche qui s'ouvre s'empile après celle qu'on regarde — un clic sur le plan, la
+   recherche, un lien dans une fiche, l'index, le récapitulatif, P — et ce qui était « après » s'oublie, comme dans un
+   navigateur. La liste des repères y prend sa place quand une fiche s'ouvre depuis elle ({ type: 'index' } : ‹ y ramène, à
+   la même hauteur). NAV.mode dit comment l'ouverture en cours touche la pile : 'histoire' (‹ ›, Ctrl+Z, le retour d'un
+   renvoi) ne l'écrit pas ; tout le reste empile ('empiler' : depuis la fiche). NAV.but : ce que la fiche doit montrer en
+   s'ouvrant (un connecteur, une section, une ligne). NAV.montree : l'entrée que la fiche montre — sa place s'y garde quand
+   on la quitte, même si le même repère revient plus loin dans la pile. */
 const PILE_MAX = 30;
-const NAV = { mode: null, but: null };
+const NAV = { mode: null, but: null, montree: null };
 const pileInsp = () => { const I = app.insp; if (!I.pile) { I.pile = []; I.pos = -1; } return I; };
 const IDS_FILS = new WeakMap(); let idFil = 0;
 const idDeLiaison = l => IDS_FILS.get(l) || (IDS_FILS.set(l, ++idFil), idFil);
 const entreeDeCible = c => c.type === 'fil' ? { type: 'fil', l: c.l } : c.type === 'ref' ? { type: 'ref', c: { ...c } } : { type: 'bloc', nom: c.nom };
-const memeEntree = (a, b) => !!a && !!b && a.type === b.type && (a.type === 'fil' ? a.l === b.l : a.type === 'ref' ? a.c.nom === b.c.nom && a.c.harness === b.c.harness && a.c.repere === b.c.repere : a.nom === b.nom);
-const cleDEntree = e => e.type === 'fil' ? 'fil#' + idDeLiaison(e.l) : e.type === 'ref' ? 'ref|' + e.c.nom + '|' + e.c.harness + '|' + e.c.repere : 'bloc|' + e.nom;
-const nomDEntree = e => e.type === 'fil' ? (e.l.origine === null ? 'nouveau câble' : cableDit(e.l)) : e.type === 'ref' ? 'Déjà fait · ' + e.c.harness : e.nom;
+const memeEntree = (a, b) => !!a && !!b && a.type === b.type && (a.type === 'index' || (a.type === 'fil' ? a.l === b.l : a.type === 'ref' ? a.c.nom === b.c.nom && a.c.harness === b.c.harness && a.c.repere === b.c.repere : a.nom === b.nom));
+// le même câble sous une autre copie (une édition, Ctrl+Z recopient les liaisons) : la même entrée, pas une de plus
+const memeObjet = (a, b) => memeEntree(a, b) || (!!a && !!b && a.type === 'fil' && b.type === 'fil' && !!a.l && !!b.l && cleDe(a.l) === cleDe(b.l));
+const cleDEntree = e => e.type === 'index' ? 'index' : e.type === 'fil' ? 'fil#' + idDeLiaison(e.l) : e.type === 'ref' ? 'ref|' + e.c.nom + '|' + e.c.harness + '|' + e.c.repere : 'bloc|' + e.nom;
+const nomDEntree = e => e.type === 'index' ? 'la liste des repères' : e.type === 'fil' ? (e.l.origine === null ? 'nouveau câble' : cableDit(e.l)) : e.type === 'ref' ? 'Déjà fait · ' + e.c.harness : e.nom;
 // la fiche montrée garde sa place (ses sections ouvertes, son défilement, son connecteur) avant qu'une autre la remplace
 function memoriserEntree(e, box) { e.haut = box.scrollTop; const p = $('nv-panneaux'); e.panneau = p ? p.scrollTop : null; e.sections = {}; box.querySelectorAll('details.fs').forEach(d => { e.sections[d.dataset.section] = d.open; });
   if (e.type === 'bloc' && FI.connecteur[e.nom] != null) e.connecteur = FI.connecteur[e.nom]; }
@@ -210,6 +218,7 @@ const repereVivant = nom => verite().some(l => l.de === nom || l.vers === nom) |
    s'il est hors champ (R5). */
 function rouvrir(e, mode, but) { NAV.mode = mode; NAV.but = but ? { ...but, e } : null;
   try {
+    if (e.type === 'index') { rouvrirIndex(e); return true; }
     if (e.type === 'ref') { app.cible = { ...e.c }; if (app.choisi) { app.choisi = null; peindre(); } ouvrirInspecteur(); return true; }
     if (e.type === 'fil') { const l = liaisonVivante(e.l); if (!l) { dire('Ce câble n’est plus au contrat.'); return false; } e.l = l; montrerFil(l); return true; }
     if (!repereVivant(e.nom)) { dire('« ' + e.nom + ' » n’est plus au contrat.'); return false; }
@@ -226,12 +235,30 @@ function montrerFil(l) { let w = filDe(l);
   if (!w && l.origine !== null) { const ou = foliosDe(l); if (app.plan !== '*' && ou.length && !ou.includes(app.plan)) { allerAuPlan(ou[0]); w = filDe(l); } }
   if (w) { choisirFil(w); const xs = w.pts.map(p => p.x), ys = w.pts.map(p => p.y), x0 = Math.min(...xs), y0 = Math.min(...ys); montrerSiCache({ x: x0, y: y0, w: Math.max(...xs) - x0, h: Math.max(...ys) - y0 }); return; }
   if (app.choisi) { app.choisi = null; peindre(); } app.cible = { type: 'fil', l }; ouvrirInspecteur(); }
-/* ‹ et › : la fiche d'avant, celle d'après. Depuis la première fiche venue de l'index, ‹ ramène à l'index ; depuis
-   l'index, ‹ rouvre la fiche qu'on y a laissée. */
-function naviguer(pas) { const I = pileInsp();
-  if (!app.cible) { const e = I.pile[I.pos]; if (pas < 0 && e) rouvrir(e, 'histoire'); return; }
-  const j = I.pos + pas; if (j < 0) { if (app.insp.index) deselectionner(); return; } if (j >= I.pile.length) return;
+/* ‹ et › (Alt+← et Alt+→) : la fiche d'avant, celle d'après, d'où qu'elle vienne. Quand l'inspecteur montre l'entrée où
+   l'on est (une fiche, ou la liste des repères où l'on est revenu), on recule ou on avance d'un pas. Quand il ne la montre
+   pas (l'inspecteur fermé, l'index ouvert d'un R), ‹ rouvre la dernière fiche vue, à la même place. */
+const entreeMontree = () => { const I = pileInsp(), e = I.pile[I.pos]; if (!e || $('inspecteur').hidden) return false;
+  return e.type === 'index' ? !app.cible && $('ba-equip').dataset.cle === 'index' : !!app.cible; };
+function naviguer(pas) { const I = pileInsp(), e = I.pile[I.pos];
+  if (!entreeMontree()) { if (pas < 0 && e) rouvrir(e, 'histoire'); return; }
+  const j = I.pos + pas; if (j < 0) { if (app.insp.index && app.cible) deselectionner(); return; } if (j >= I.pile.length) return;
+  if (e.type === 'index') e.haut = $('ba-equip').scrollTop;   // la liste qu'on quitte garde sa hauteur
   I.pos = j; if (!rouvrir(I.pile[j], 'histoire')) { I.pile.splice(j, 1); I.pos = Math.min(Math.max(0, j - (pas < 0 ? 0 : 1)), I.pile.length - 1); rendreFiche(); } }
+/* La liste des repères, une page de l'histoire : elle revient comme on l'a laissée (son filtre, sa hauteur) ; la fiche
+   qu'elle remplace rend le clavier à sa ligne (`deselectionner`). */
+function rouvrirIndex(e) { app.insp.index = true;
+  if (app.cible && !$('inspecteur').hidden) deselectionner();
+  else { if (app.cible) { app.cible = null; if (app.choisi) { app.choisi = null; peindre(); } eteindre(); } ouvrirInspecteur(); }
+  const box = $('ba-equip'); if (e && e.haut && box.dataset.cle === 'index') box.scrollTop = e.haut; }
+// ce que ‹ rouvre depuis la liste des repères (08-interface, `rendreIndex`) : l'entrée d'avant elle si l'on y est revenu,
+// sinon la dernière fiche vue
+const ficheLaissee = () => { const I = pileInsp(), e = I.pile[I.pos]; return e && e.type === 'index' ? I.pile[I.pos - 1] || null : e || null; };
+/* Le retour d'un renvoi (Alt+←, 08-interface `revenirDuRenvoi`) ramène le folio d'avant : l'histoire recule d'un pas avec
+   lui — le câble que le renvoi avait ouvert passe « après » — et la fiche ouverte avant le renvoi revient. */
+function reculerFiche(cable, rouvrirAvant) { const I = pileInsp(), e = I.pile[I.pos];
+  if (!e || e.type !== 'fil' || !e.l || (cable && e.l.cable !== cable) || I.pos <= 0) return;
+  I.pos--; if (rouvrirAvant) rouvrir(I.pile[I.pos], 'histoire'); }
 /* Depuis la fiche : ouvrir un autre objet en EMPILANT (‹ y ramènera). */
 const allerA = (e, but) => rouvrir(e, 'empiler', but);
 const allerAuBloc = (nom, but) => allerA({ type: 'bloc', nom }, but);
@@ -486,8 +513,8 @@ function journalDeLaFiche(o) { const nom = o.tete && o.tete.nom, xs = [];
   const posee = nom && o.type === 'barrette' && typeof barrettesPosees === 'function' ? barrettesPosees().find(p => p.nom === nom) : null;
   if (posee) { const k = 'p|' + posee.vt + '|' + posee.nom;
     xs.push({ cle: k, t: heureDuChangement(k), quoi: 'Repère donné', de: 'à la barrette ajoutée par VOLTA sur ' + posee.sur, avant: posee.vt, depuisMot: 'repère provisoire', apres: posee.nom, qui: 'vous', mono: true, excel: true,
-      pourquoi: 'Elle est dans votre installation, avec un câble à créer et ' + pluriel(posee.shunts.length, 'shunt') + ' : ' + pluriel(1 + posee.shunts.length, 'ligne') + ' de plus dans l’Excel corrigé.',
-      faire: () => deposerBarrette(posee), aide: 'Elle redevient ' + posee.vt + ' : les câbles reviennent sur ' + posee.sur + ', le câble à créer et les shunts sortent de votre installation', dit: posee.nom + ' redevient ' + posee.vt + ' : les câbles reviennent sur ' + posee.sur + '.' }); }
+      pourquoi: 'Elle est posée, avec un câble à créer et ' + pluriel(posee.shunts.length, 'shunt') + ' : ' + pluriel(1 + posee.shunts.length, 'ligne') + ' de plus dans l’Excel corrigé.',
+      faire: () => deposerBarrette(posee), aide: 'Elle redevient ' + posee.vt + ' : les câbles reviennent sur ' + posee.sur + ', le câble à créer et les shunts sortent de l’Excel corrigé', dit: posee.nom + ' redevient ' + posee.vt + ' : les câbles reviennent sur ' + posee.sur + '.' }); }
   // le plus récent en haut ; sans heure connue, après, dans l'ordre de la fiche
   return xs.map((x, i) => [x, i]).sort((a, b) => (b[0].t || 0) - (a[0].t || 0) || a[1] - b[1]).map(a => a[0]); }
 function modificationsDeLaFiche(ecrits, proposes, o) { o = o || {}; noterHeures();
@@ -716,7 +743,7 @@ function causeDuCable(l, prot, fin) { const c = prot && prot.cause; if (!c) retu
   const phrase = `<b class="id">${esc(cb)}</b> : le ${esc(amperes(d.pn))} de votre fichier ${k === 'declenche' ? motDuVerdict('declenche') : motDuVerdict('juste')}, et il protège ${esc(nom)}. VOLTA propose <b>${esc(amperes(d.calibre))}</b>${ce ? `, ce qui demande <b class="id">${esc(ce.x.propose)}</b> ici${(m => m ? ` <span class="fi-cout">(${esc(m)})</span>` : '')(coutDuType(l, ce.x.propose))}` : ''}.`;
   const seul = fin ? `<button type="button" class="btn papier fi-reparer" data-reparer="${escA(cleFil(l))}" data-type="${escA(fin.type)}" data-bulle="${escA(majuscule(fin.pourquoi) + ' : ' + fin.type + (coutDuType(l, fin.type) ? ' (' + coutDuType(l, fin.type) + ')' : '') + ' — ' + cb + ' garde son ' + amperes(d.pn) + ' ; « Défaire » le rend')}">Seulement ${esc(nom)} : ${esc(fin.type)}</button>` : '';
   return `<section class="fi-cause ko" aria-label="${escA('La cause : ' + cb)}"><p class="fi-cause-p">${insecable(phrase)}</p><div class="fi-cause-gestes">`
-    + `<button type="button" class="btn cuivre" data-tout-regler="${escA(cb)}" data-bulle="${escA('Écrit dans l’installation : ' + ((d.meilleur || {}).pn && d.meilleur.calibre === d.calibre ? d.meilleur.pn : amperes(d.calibre)) + (xs.length ? ', et ' + xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + ' — une seule entrée d’historique, Ctrl+Z défait le tout')}">${esc(tout)}</button>${seul}`
+    + `<button type="button" class="btn cuivre" data-tout-regler="${escA(cb)}" data-bulle="${escA('Écrit dans l’Excel corrigé : ' + ((d.meilleur || {}).pn && d.meilleur.calibre === d.calibre ? d.meilleur.pn : amperes(d.calibre)) + (xs.length ? ', et ' + xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + ' — une seule entrée d’historique, Ctrl+Z défait le tout')}">${esc(tout)}</button>${seul}`
     + `<button type="button" class="btn lien dense" data-choisir-bloc="${escA(cb)}">Voir ${esc(cb)}</button></div></section>`; }
 
 // les câbles d'un repère, chacun une fois (pas les shunts) : { l, borne, vers, borneVers, amont }
@@ -1358,7 +1385,7 @@ function autresArrangements(cle, points, fam, vs, retenu, sansTitre) { const N =
   const nomF = fam ? nomDeFamille(N, fam) || fam : 'des normes de connecteurs';
   return { n: autres.length, html: sansTitre ? (autres.length ? `<div class="cand-ls">${autres.map(x => ligneCandidat(cle, x)).join('')}</div>` : '') : autresCandidats(cle, `Les ${autres.length} autres arrangements ${nomF}, du plus proche au plus loin`, autres) }; }
 // (v85) `enPlace` : les possibles de l'arrangement en Manuel, dans Modifier — d'office, sans « Automatique » (le sélecteur
-// de la ligne le porte), celui de VOLTA marqué parmi les autres
+// de la ligne le porte), l'automatique marqué parmi les autres (passe 87 : en mots — celui de la référence, ou déduit des bornes)
 function listeArrangements(cle, k, Q, M, autoRef, enPlace) { if (!enPlace && FI.liste !== 'arr|' + cle) return '';
   const N = app.norme, fam = Q.famille || (M ? M.module.famille : ''), n = k.points.length, retenu = Q.main && M ? M.reference : '';
   const vs = arrangementsQuiLogent(k.points, N, fam), A = autresArrangements(cle, k.points, fam, vs, retenu);
@@ -1461,7 +1488,7 @@ function famillesVoisines(pn, retenue) { const N = app.norme, r = cleNorme(pn), 
     .sort((a, b) => b.k - a.k || (b.nature === 'connecteur') - (a.nature === 'connecteur') || b.modules - a.modules || triNaturel(a.nom, b.nom)); }
 function origineDeLaReference(nom, bornes) { const xs = nom ? liaisonsDuConnecteur(nom, bornes) : [], cols = [...new Set(xs.map(([, ch]) => ch === 'pnDe' ? 'PN1' : 'PN2'))].sort();
   const ecrite = xs.find(([l, ch]) => l.avant && ch in l.avant && l.avant[ch] !== l[ch]);
-  return ecrite ? `écrite ici — votre fichier portait ${avantDe(ecrite[0], ecrite[1])}` : xs.length ? `lue dans votre fichier : colonne ${cols.join(' et ')}, sur ${pluriel(xs.length, 'liaison')}` : 'lue dans le fichier d’installation'; }
+  return ecrite ? `écrite ici — votre fichier portait ${avantDe(ecrite[0], ecrite[1])}` : xs.length ? `lue dans votre fichier : colonne ${cols.join(' et ')}, sur ${pluriel(xs.length, 'liaison')}` : 'lue dans votre fichier'; }
 /* (v77, le lecteur : « pourquoi c'est cette norme… pas évident… plus simple » ; « que je comprenne d'où elle vient, de
    quelle base de données, que je clique dessus, je vois son schéma ») : plus de récit en cinq pas — une carte d'identité.
    D'où elle vient (votre fichier, ou écrite ici), sa norme et LA BASE qui la donne (les tables de VOLTA, ou la base SEE
@@ -1532,7 +1559,7 @@ function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origin
   // (v78) la carte de décision ouvre l'onglet Calibre ; le bandeau dit son titre et porte son geste
   if (decision && sections[0] && sections[0].contenu != null) sections[0] = { ...sections[0], contenu: decision + sections[0].contenu };
   const v = verdictDuRetenu(d), ch = chargeDuProfil(d), propose = propositionNonEcrite(d), cal = d.calibre, fam = (d.famille && (d.famille.famille || d.famille.nom)) || '';
-  const quand = majuscule(String(quandDuPoint(ch.pointeP) || 'en pointe').replace(/^(au|en) /, ''));
+  const quand = majuscule(String(quandDuPoint(ch.pointeP) || 'en pointe').replace(/^(au|en) /, '').replace(/ et .*$/, ''));
   // (v78, le lecteur : « calibre au-dessus, 15 A dessous ; permanent ; démarrage — pendant 2,1 min, on s'en fout ») : trois chiffres nets
   const chiffres = [{ k: 'Calibre', v: cal ? valeurU(nombreCourt(cal), 'A') : '—', etat: v.etat === 'ko' ? 'ko' : '', onglet: 'calibre' },
     ch.perm ? { k: 'Permanent', v: valeurU(nombreCourt(ch.perm), 'A'), onglet: 'calibre' } : null,
@@ -1631,7 +1658,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
      (`prochainRepereVT`, celui du récapitulatif et de « À reprendre »). Il s'écrit autrement, si vous le voulez. */
   const propose = aPoser ? (typeof prochainRepereVT === 'function' && sur ? prochainRepereVT({ sous: 'ajoutée par VOLTA sur ' + sur }) : repereLibre(raccord ? raccord.de : '', 'VT')) : '';
   const poser = aPoser ? `<div class="fi-poser"><span class="fi-poser-t">VOLTA propose</span><span class="fi-poser-g">${saisie('id="vt-repere"', propose, { mono: true, label: 'Le repère à lui donner — VOLTA propose ' + propose + ', il s’écrit autrement si vous le voulez', court: true })}`
-    + `<button type="button" class="btn cuivre" id="vt-poser" data-bulle="${escA('Elle prend ce repère et entre dans votre installation, avec son câble à créer et ses shunts — « Défaire » la rend provisoire')}">Lui donner son repère</button></span></div>` : '';
+    + `<button type="button" class="btn cuivre" id="vt-poser" data-bulle="${escA('Elle prend ce repère et entre dans l’Excel corrigé, avec son câble à créer et ses shunts — « Défaire » la rend provisoire')}">Lui donner son repère</button></span></div>` : '';
   const sections = [{ cle: 'connecteur', titre: 'Module', resume: aPoser && !M0 ? 'se choisit quand la barrette a son vrai repère' : Q.reference ? ident(Q.reference) : '<span class="fi-ko-t">aucun module</span>',
       badge: badgeProblemes(probs, 'connecteur'), contenu: tete + (faces ? `<div class="fi-faces">${faces}</div>` : '') + groupeSection('Contacts', contacts, { compte: nf || null }) },
     sectionFilsDuRepere(fils, probs), aPoser ? null : sectionDejaFait(nom)];
@@ -2346,17 +2373,25 @@ function recaler(box, ancres) { for (const x of ancres) { let el = null;
    sections ouvertes, et le bouton pressé garde le focus ; une autre fiche entre en fondu — ou, si l'on y revient (‹ ›),
    à la place qu'on y avait. */
 function rendreFiche() { const box = $('ba-equip'), c = app.cible; if ($('inspecteur').hidden) return; viderCalculs(); cacherBulle(); fermerAide();
-  const I = pileInsp(), montree = I.pile.find(x => cleDEntree(x) === box.dataset.cle);
+  // la fiche qu'on quitte garde sa place dans SON entrée (le même repère peut revenir plus loin dans l'histoire)
+  const I = pileInsp(), vue = NAV.montree, montree = vue && I.pile.includes(vue) && cleDEntree(vue) === box.dataset.cle ? vue : I.pile.find(x => cleDEntree(x) === box.dataset.cle);
   if (montree) memoriserEntree(montree, box);
   if (!c) { FI.liste = ''; delete box.dataset.type; if (typeof rendreIndex === 'function') rendreIndex(box); else { box.innerHTML = ''; box.dataset.cle = ''; } return; }
-  // la pile : empiler (depuis la fiche), revenir (‹ ›), sinon remplacer le haut (le plan, l'index)
+  /* (passe 87) LA PILE EST UNE HISTOIRE : toute fiche qui s'ouvre s'empile après celle qu'on regarde, d'où qu'elle vienne
+     (ce qui était après s'oublie) ; ouverte depuis la liste des repères, la liste y entre d'abord (‹ y ramènera) ; ‹ ›,
+     Ctrl+Z et le retour d'un renvoi ne l'écrivent pas. */
   const e = entreeDeCible(c), cur = I.pile[I.pos] || null; let restaurer = null;
   if (!memeEntree(cur, e)) {
     if (NAV.mode === 'histoire') { /* un rendu intermédiaire (le folio change) : la pile ne bouge pas */ }
-    else { if (NAV.mode === 'empiler' && cur) { I.pile.splice(I.pos + 1); I.pile.push(e); } else I.pile.splice(Math.max(0, I.pos), I.pile.length, e);
+    else if (memeObjet(cur, e)) cur.l = e.l;   // le même câble, recopié : son entrée suit la copie
+    else { const depuisIndex = app.insp.index && box.dataset.cle === 'index';
+      I.pile.splice(I.pos + 1);
+      if (depuisIndex) { if (cur && cur.type === 'index') cur.haut = box.scrollTop; else I.pile.push({ type: 'index', haut: box.scrollTop }); }
+      I.pile.push(e);
       if (I.pile.length > PILE_MAX) I.pile.splice(0, I.pile.length - PILE_MAX); I.pos = I.pile.length - 1; } }
   else if (NAV.mode === 'histoire') restaurer = cur;
   const entree = I.pile[I.pos] && memeEntree(I.pile[I.pos], e) ? I.pile[I.pos] : null, but = NAV.but && memeEntree(NAV.but.e, e) ? NAV.but : null;
+  NAV.montree = entree;
   const cle = entree ? cleDEntree(entree) : cleDEntree(e), meme = box.dataset.cle === cle;
   if (!meme) { FI.liste = ''; FI.choisi = ''; }
   if (c.type === 'bloc' && restaurer && restaurer.connecteur != null) FI.connecteur[c.nom] = restaurer.connecteur;
@@ -2694,15 +2729,21 @@ function copierLaFiche(box, nom) { const t = el => el ? el.textContent.replace(/
 
 /* ---- LE CLAVIER DE L'INSPECTEUR ------------------------------------------------------------------------------------ */
 // Alt+← / Alt+→ : la fiche d'avant, d'après ; F2 : renommer ; Ctrl+Z (ou le bouton Annuler) défait sans fermer la fiche
-document.addEventListener('keydown', e => { const insp = $('inspecteur'); if (!insp || insp.hidden) return;
+// (passe 87) l'inspecteur fermé, sur le plan et rien d'autre d'ouvert : Alt+← rouvre la dernière fiche vue — et ne fait
+// jamais le « précédent » du navigateur, qui quitterait VOLTA
+const planLibre = () => !!app.dessin && !document.body.classList.contains('biblio') && $('fiche').hidden && !document.body.classList.contains('palette-ouverte') && !rechercheOuverte() && !raccourcisOuverts();
+document.addEventListener('keydown', e => { const insp = $('inspecteur'); if (!insp) return;
   const champ = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
-  if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !champ) { e.preventDefault(); naviguer(e.key === 'ArrowLeft' ? -1 : 1); return; }
+  if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !champ) {
+    if (insp.hidden && !(e.key === 'ArrowLeft' && planLibre())) return;
+    e.preventDefault(); naviguer(e.key === 'ArrowLeft' ? -1 : 1); return; }
+  if (insp.hidden) return;
   if (e.key === 'F2' && !champ && app.cible) { const r = $('eq-rep') || $('fil-num'); if (r) { e.preventDefault(); r.focus(); r.select(); } return; }
   if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'z' && !champ) garderLaFiche(); });
 document.addEventListener('click', e => { if (e.target && e.target.closest && e.target.closest('#btnUndo')) garderLaFiche(); }, true);
 /* Annuler rend le contrat d'avant et ferme la fiche (08, `annuler`) : on la rouvre sur le même objet s'il existe encore,
    à la même place. */
-function garderLaFiche() { const I = pileInsp(), e = I.pile[I.pos], insp = $('inspecteur'); if (!e || !app.cible || insp.hidden || e.type === 'ref') return;
+function garderLaFiche() { const I = pileInsp(), e = I.pile[I.pos], insp = $('inspecteur'); if (!e || !app.cible || insp.hidden || e.type === 'ref' || e.type === 'index') return;
   const k = e.type === 'fil' ? verite().indexOf(e.l) : -1, box = $('ba-equip'); if (box.dataset.cle === cleDEntree(e)) memoriserEntree(e, box);
   setTimeout(() => { if (app.cible || $('inspecteur').hidden) return;
     if (e.type === 'fil') { const l = k >= 0 ? verite()[k] : null; if (!l) return; e.l = l; }

@@ -180,7 +180,7 @@ function chargeVue(d, o, W, mini) { const ch = chargeDuProfil(d), cal = d.calibr
   const max = Math.max(...gamme.map(g => g.calibre), ch.pointe || 0, ch.perm || 0) * 1.08, L = 12, X = a => L + (W - 2 * L) * a / max;
   const bh = mini ? 10 : 14, y1 = mini ? 36 : 50, y2 = y1 + (mini ? 28 : 44), H = mini ? 106 : 160, yt = H - 13;
   const cRet = o && o.calRetest && o.calRetest !== cal ? o.calRetest : null, pointe = ch.pointe || ch.perm, dur = ch.pointeP && ch.pointeP.t !== Infinity ? secondes(ch.pointeP.t) : '';
-  const quand = majuscule(String(quandDuPoint(ch.pointeP) || 'en pointe').replace(/^(au|en) /, ''));
+  const quand = majuscule(String(quandDuPoint(ch.pointeP) || 'en pointe').replace(/^(au|en) /, '').replace(/ et .*$/, ''));
   const barre = (y, v, cls) => `<rect class="vu-rail" x="${X(0)}" y="${y}" width="${(X(max) - X(0)).toFixed(1)}" height="${bh}" rx="${bh / 2}"/><rect class="${cls}" x="${X(0)}" y="${y}" width="${Math.max(bh, X(v) - X(0)).toFixed(1)}" height="${bh}" rx="${bh / 2}"/>`;
   const ticks = gamme.map(g => { const k = cleDuVerdict(g); return `<circle class="vu-tick ${k === 'passe' ? 'oui' : 'non'}" cx="${X(g.calibre).toFixed(1)}" cy="${yt - 11}" r="3"/><text class="vu-t-pied" x="${X(g.calibre).toFixed(1)}" y="${yt + 2}">${esc(nombre(g.calibre))}</text>`; }).join('');
   const mots = mini ? `<text class="vu-t" x="${X(0)}" y="${y1 - 5}">${esc(quand)} <tspan class="vu-t-fort">${esc(amperes(pointe))}</tspan></text>${ch.perm ? `<text class="vu-t" x="${X(0)}" y="${y2 - 5}">Permanent <tspan class="vu-t-fort">${esc(amperes(ch.perm))}</tspan></text>` : ''}`

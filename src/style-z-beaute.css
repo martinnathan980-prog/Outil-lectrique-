@@ -40,6 +40,11 @@
 :is(#inspecteur,.carte-double) .nc-titre.cable .nc-rep.nc-rep-cable{display:block;min-width:0;max-width:100%;margin:0;color:var(--t-1);overflow-wrap:anywhere;white-space:normal}
 :is(#inspecteur,.carte-double) .fi .nc-titre.cable .nc-rep.nc-rep-cable .nc-rep-t{display:inline;min-width:0;height:auto;margin:0;padding:0;border:0;font:inherit;letter-spacing:inherit;color:inherit;white-space:nowrap;overflow:visible}
 :is(#inspecteur,.carte-double) .nc-titre.cable .nc-lie{font-weight:500;color:var(--t-2)}
+/* les deux bouts, ensemble : d'un seul tenant pour la ligne (le titre passe à la ligne avant eux, après le type) ; trop
+   étroit, ils se rangent l'un sous l'autre, « → 103RL1:A1 » dessous — jamais coupés, jamais au milieu d'un repère */
+:is(#inspecteur,.carte-double) .nc-titre.cable .nc-bouts{display:inline-flex;flex-wrap:wrap;justify-content:center;column-gap:.28em;max-width:100%;vertical-align:baseline}
+:is(#inspecteur,.carte-double) .nc-titre.cable .nc-vers{white-space:nowrap}
+#inspecteur .nv-grand .nc-titre.cable .nc-bouts{justify-content:flex-start}
 /* un bout : un repère qu'on ouvre d'un clic (sa fiche) — au survol, le cuivre ; la bulle dit lequel */
 :is(#inspecteur,.carte-double) .nc-titre.cable .nc-bout{display:inline-block;margin:0;padding:0;border:0;border-radius:4px;background:none;font:inherit;letter-spacing:inherit;color:inherit;white-space:nowrap;cursor:pointer;transition:color var(--rapide,.15s)}
 :is(#inspecteur,.carte-double) .nc-titre.cable .nc-bout:hover{color:var(--nv-cuivre)}
@@ -59,5 +64,5 @@
 
 /* ─── P2 · LE FIL DE LA CARTE : des points ronds, fins, espacés ; ni trait plein ni lueur ─── */
 #carte-lien .cl-trait{stroke:var(--lien);stroke-width:1.7px;stroke-linecap:round;stroke-dasharray:0 5;stroke-opacity:.8;filter:none}
-#carte-lien .cl-bloc{r:2.3px;fill:var(--lien);stroke:none}
+#carte-lien .cl-bloc{r:2.3px;fill:var(--lien);stroke:none;fill-opacity:.85}
 #carte-lien .cl-carte{r:2.3px;fill:var(--lien);stroke:none;fill-opacity:.8}

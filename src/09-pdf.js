@@ -2,9 +2,18 @@
    09 — LIRE UN PDF DE SCHÉMA : des traits et des textes, les liaisons
    ---------------------------------------------------------------------------
    Le lecteur : « grâce à un PDF, tu arrives à créer le retest toi-même : tu
-   analyses, tu trouves le nom des documents, le nom des bornes, tout ». Ses
-   schémas n'ont PAS de numéro de fil : une liaison se lit au dessin seul —
-   le trait qui part d'une borne et celui où il arrive.
+   analyses, tu trouves le nom des documents, le nom des bornes, tout ». Une
+   liaison se lit au dessin — le trait qui part d'une borne et celui où il
+   arrive. LA FORME DE SES VRAIS SCHÉMAS (8 novembre 2026) : des numéros de
+   fil PARFOIS (ils relient les deux moitiés d'un renvoi et confirment une
+   liaison) ; un renvoi dit le FOLIO ET LA ZONE de l'autre bout (« F5/C3 »),
+   le folio recommence à 1 à chaque plan d'un dossier (vers un autre plan,
+   son numéro devant) ; une barrette se dessine en PASTILLES SUR UN
+   POINTILLÉ (le contact : module + lettre, 667VT2:51B) ; les relais et les
+   disjoncteurs ont leur SYMBOLE DESSINÉ DANS LA BOÎTE (ce ne sont pas des
+   fils) ; des masses à trois barres, des boîtes pleines, des cartouches en
+   français. Quand VOLTA dit « sûr » (90 % et plus), il doit avoir raison :
+   ce dont il doute passe « à voir » (tests/lecture-documents.js le mesure).
 
    Ce module ne voit ni la page ni pdf.js : il reçoit, page par page, ce que
    pdf.js en donne (08-pdf) — les TEXTES (getTextContent : la chaîne, sa
@@ -23,10 +32,12 @@
      3. le tri des formes : les TRAITS (les conducteurs : des segments droits),
         les CADRES (un rectangle fermé, même dessiné en quatre traits), les RONDS
         (une borne ronde de disjoncteur), les POINTS (un disque plein : une
-        jonction, ou une borne de barrette quand un numéro y est écrit), les
-        POINTILLÉS (une barrette : ses bornes au même potentiel), les MASSES (trois
-        barres qui décroissent), le cadre de la feuille et le cartouche (ce qui est
-        dehors ou dedans ne se lit pas comme du câblage) ;
+        jonction), les PASTILLES d'une barrette (un disque, un rond creux ou une
+        gélule où son contact est écrit), les POINTILLÉS (les contacts d'un même
+        groupe de barrette, au même potentiel), les MASSES (trois barres qui
+        décroissent), les SYMBOLES dessinés dans une boîte d'équipement (pas des
+        fils), le cadre de la feuille et le cartouche (ce qui est dehors ou dedans
+        ne se lit pas comme du câblage) ;
      4. le graphe : deux bouts qui se touchent (à une tolérance près, à l'échelle
         des textes de la page), un bout qui tombe sur un trait (un T), un point de
         jonction posé sur des traits les relient ; un CROISEMENT SANS POINT ne relie
@@ -38,8 +49,10 @@
      6. les liaisons d'un réseau : deux bouts, une liaison ; trois ou plus, celles
         que le dessin trace DE PROCHE EN PROCHE (l'arbre couvrant le plus court
         entre les bouts, mesuré le long des traits), pas toutes les paires ;
-     7. le document : une page est un folio (son cartouche le dit) ; deux renvois
-        qui se répondent d'un folio à l'autre relient leurs réseaux.
+     7. le document : une page est un folio d'un plan (son cartouche le dit) ;
+        deux renvois qui se répondent d'un folio à l'autre — dans le bon plan,
+        leurs zones vérifiées des deux côtés, leur numéro de fil quand il est
+        écrit — relient leurs réseaux.
    Les seuils sont des multiples du MODULE de la page (`u` : la hauteur médiane
    des textes courts) : le même réglage vaut pour un A3 ou un A4, un export ou un
    tirage réduit.
@@ -435,8 +448,11 @@ const SCHEMA_PDF = (() => {
       const c = motsPres([(B.x0 + B.x1) / 2, (B.y0 + B.y1) / 2], Math.max(B.x1 - B.x0, B.y1 - B.y0) / 2 + 3 * u).filter(m => estRepere(m.s) && auBord(m.c, B) < 2.2 * u && auBord(m.c, B) > -0.2 * u && !cadres.some(k => !grand(k) && dedans(m.c, k) && !A.includes(k)))
         .sort((a, b) => auBord(a.c, B) - auBord(b.c, B)); return c[0] || null; }
     // la lettre d'une pièce de connecteur : une ou deux lettres posées juste au-dessus d'elle (le mot, ou rien)
-    function lettreDeMot(k, A) { if (A.length < 2 || repereDuCadre(k)) return null;
-      const c = motsPres([(k.x0 + k.x1) / 2, k.y0], 1.6 * u).filter(m => /^[A-Z]{1,2}$/.test(m.s) && m.c[1] < k.y0 + 0.1 * u && k.y0 - m.c[1] < 1.6 * u && m.c[0] > k.x0 - 0.3 * u && m.c[0] < k.x1 + 0.3 * u);
+    // (passe 87) une lettre qui a sa propre case (une case voisine, de la taille de la pièce : une barrette en cases) est une borne, pas
+    // la lettre d'un connecteur
+    function lettreDeMot(k, A) { if (A.length < 2 || repereDuCadre(k)) return null; const aireK = (k.x1 - k.x0) * (k.y1 - k.y0);
+      const c = motsPres([(k.x0 + k.x1) / 2, k.y0], 1.6 * u).filter(m => /^[A-Z]{1,2}$/.test(m.s) && m.c[1] < k.y0 + 0.1 * u && k.y0 - m.c[1] < 1.6 * u && m.c[0] > k.x0 - 0.3 * u && m.c[0] < k.x1 + 0.3 * u
+        && !A.some(q => q !== k && (q.x1 - q.x0) * (q.y1 - q.y0) < 4 * aireK && dedans(m.c, q)));
       return c.length ? c.sort((a, b) => (k.y0 - a.c[1]) - (k.y0 - b.c[1]))[0] : null; }
     const lettreDe = (k, A) => { const m = lettreDeMot(k, A); return m ? m.s : ''; };
     // la référence (part number) écrite dans l'assemblage, ou juste autour
@@ -453,7 +469,9 @@ const SCHEMA_PDF = (() => {
         if (s < bd) { second = bd; bd = s; best = m; } else if (s < second) second = s; }
       return best && bd < rayon ? { m: best, d: Math.max(0, auBord(p, best.B)), seul: second > Math.max(1.8 * bd, bd + 0.9 * u) } : null; }
     const repereLePlusProche = (p, r) => { const c = motsPres(p, r).filter(m => estRepere(m.s)).map(m => ({ m, d: auBord(p, m.B) })).sort((a, b) => a.d - b.d); return c[0] && c[0].d < r ? c[0] : null; };
-    const renvoiPres = (p, d) => { const c = motsPres(p, 3 * u).filter(m => renvoiDe(m.s)).map(m => ({ m, d: auBord(p, m.B) })).filter(o => o.d < 2.2 * u).sort((a, b) => a.d - b.d); return c[0] || null; };
+    // (passe 87) un renvoi vers un autre plan, écrit d'un seul tenant (« SC-4520-330 F6/E1 ») : le plan, puis le folio et la zone
+    const renvoiPlan = s => { const t = String(s).trim().split(/\s+/); return t.length === 2 && RE_PLAN.test(t[0]) && renvoiDe(t[1]) ? { ...renvoiDe(t[1]), plan: t[0] } : null; };
+    const renvoiPres = (p, d) => { const c = motsPres(p, 3 * u).filter(m => renvoiDe(m.s) || renvoiPlan(m.s)).map(m => ({ m, d: auBord(p, m.B) })).filter(o => o.d < 2.2 * u).sort((a, b) => a.d - b.d); return c[0] || null; };
     /* (passe 87) Le renvoi d'un dossier de plusieurs plans (le folio recommence à 1 à chaque plan) : vers un autre plan, son numéro
        est écrit devant (« SC-4520-320 F12/B4 ») — dans la même ligne, ou juste à gauche. Le nom du signal, au-dessus. */
     const planDuRenvoi = m => { if (m.ligne) { const t = m.ligne.s.split(/\s+/), i = t.indexOf(m.s); if (i > 0 && RE_PLAN.test(t[i - 1])) return t[i - 1]; }
@@ -461,7 +479,8 @@ const SCHEMA_PDF = (() => {
       return g ? g.s : ''; };
     const signalDuRenvoi = m => { const B = m.ligne ? m.ligne.B : m.B, c = motsPres([(B.x0 + B.x1) / 2, B.y0], 3 * u).filter(w => !w.partie && w !== m && w !== m.ligne && w.c[1] < B.y0 && B.y0 - w.c[1] < 2.2 * u && w.B.x1 > B.x0 - 2 * u && w.B.x0 < B.x1 + 2 * u && !renvoiDe(w.s) && !estBorne(w.s) && !estType(w.s))
         .sort((a, b) => (B.y0 - a.c[1]) - (B.y0 - b.c[1]))[0]; return c ? c.s.replace(/\s+/g, ' ').trim() : ''; };
-    const leRenvoi = m => ({ ...renvoiDe(m.s), texte: m.ligne && planDuRenvoi(m) ? m.ligne.s : m.s, plan: planDuRenvoi(m), signal: signalDuRenvoi(m) });
+    const leRenvoi = m => { const rp = renvoiPlan(m.s); if (rp) return { ...rp, texte: m.s, signal: signalDuRenvoi(m) }; const plan = planDuRenvoi(m);
+      return { ...renvoiDe(m.s), texte: m.ligne && plan ? m.ligne.s : plan ? plan + ' ' + m.s : m.s, plan, signal: signalDuRenvoi(m) }; };
 
     /* Un bout { p, d (le sens où le trait arrive) } → { repere, borne, pn, genre, conf, raisons, mots (les textes lus,
        pour les surligner) } ou null. */
@@ -505,7 +524,13 @@ const SCHEMA_PDF = (() => {
             .sort((x, y) => Math.abs(x.c[0] - p[0]) - Math.abs(y.c[0] - p[0]))[0];
           if (c) { b = { m: c, d: Math.max(0, auBord(p, c.B)) }; dit = 'la lettre de la même rangée, dans l’autre partie de la prise (une lettre répond à la même lettre)'; conf = 0.95; } }
         if (!b) { b = borneDe(p, d, null, 1.6 * u, sauf); if (b && (b.d < 0.6 * u || (b.seul && b.d < 1.2 * u))) { dit = b.d < 0.6 * u ? 'borne écrite au bout du trait' : 'borne écrite contre le bout du trait, la seule à cet endroit'; conf = 0.95; } else { dit = 'borne devinée : le texte le plus proche'; conf = 0.85; } }
-        const lettre = b ? lettreDe(k, A) : '', borne = b ? (lettre && !b.m.s.toUpperCase().startsWith(lettre) ? lettre + b.m.s : b.m.s) : '';
+        const lettre = b ? lettreDe(k, A) : ''; let borne = b ? (lettre && !b.m.s.toUpperCase().startsWith(lettre) ? lettre + b.m.s : b.m.s) : '';
+        // (passe 87) le contact d'une barrette se dit module + lettre (667VT2:51B) : une barrette en cases porte son module en tête de
+        // colonne — VOLTA le compose ; un contact qui reste incomplet (une lettre seule, un module seul) se lit, mais à voir
+        if (b && codeRep === 'VT' && !VT_A_POSER.test(rep.s) && /^[A-Z]{1,2}$/.test(borne)) { const tete = A.filter(q => q !== k && q.y1 <= k.y0 + 0.3 * u && Math.min(q.x1, k.x1) - Math.max(q.x0, k.x0) > 0.5 * (k.x1 - k.x0))
+            .map(q => ({ q, n: (q.mots || []).find(m => !m.partie && /^\d{1,3}$/.test(m.s)) })).filter(o => o.n).sort((x, y) => y.q.y1 - x.q.y1)[0];
+          if (tete) { borne = tete.n.s + borne; dit += ' (module ' + tete.n.s + ', écrit en tête de sa colonne)'; vus.push(tete.n); } }
+        if (b && codeRep === 'VT' && !VT_A_POSER.test(rep.s) && !/^\d{1,3}[A-Z]{1,2}$/.test(borne)) { conf *= 0.6; dit += ' — un contact de barrette incomplet (il se dit module + lettre)'; }
         if (b) vus.push(b.m); if (rep) vus.push(rep);
         return { genre: 'cadre', repere: rep ? rep.s : '', borne, pn: rep ? pnDe(A, rep) : '', conf: (b ? conf : 0.55) * (rep ? confR : 0.3), cadre: k, A,
           raisons: [b ? dit + (lettre ? ' (connecteur ' + lettre + ')' : '') + ', à ' + dixieme(mm(b.d)) + ' mm' : 'aucun numéro de borne près du bout', rep ? comment + ' : ' + rep.s : 'aucun repère pour ce cadre'], mots: vus }; }
@@ -560,8 +585,16 @@ const SCHEMA_PDF = (() => {
     const sansTexte = !mots.filter(m => !m.partie).length;
     if (!P.scan && ((couvre && (sansTexte || tracee < 15)) || (sansTexte && tracee > 0))) return { scanne: true, vectorise: !couvre, texte: mots.length > 0, page, u: Math.min(page.w, page.h) / 120, mots: [], tousMots: [], liaisons: [], renvois: [], orphelins: [], bornesSeules: [], champs: {}, debug: {} };
     // le module : la hauteur médiane des textes courts (les bornes) ; à défaut, des textes
-    const courts = mots.filter(m => !m.partie && m.s.length <= 3).map(m => m.h);
-    const u = med(courts.length >= 5 ? courts : mots.map(m => m.h)) || Math.min(page.w, page.h) / 120;
+    const courtsDe = ms => ms.filter(m => !m.partie && m.s.length <= 3).map(m => m.h);
+    const courts = courtsDe(mots);
+    let u = med(courts.length >= 5 ? courts : mots.map(m => m.h)) || Math.min(page.w, page.h) / 120;
+    /* (passe 87) LE MODULE SE MESURE DANS LE CADRE, hors du cartouche : un folio presque vide de VOLTA dessine plus grand que les
+       repères de zone et le cartouche de sa feuille (06, `pageDe`) — ces textes, plus nombreux que ses bornes, tiraient le
+       module vers le bas, et les seuils devenaient trop serrés pour le dessin (ses masses, sa barrette ajoutée : perdues). Une
+       première lecture trouve le cadre ; si les textes courts du dedans sont nettement plus grands, ils donnent le module. */
+    { const T0 = trier(formes, u), aire = k => (k.x1 - k.x0) * (k.y1 - k.y0), f0 = T0.cadres.filter(k => aire(k) > 0.55 * page.w * page.h).sort((a, b) => aire(a) - aire(b))[0] || null;
+      if (f0) { const C0 = cartouche(mots, T0.cadres, u, page), c1 = courtsDe(mots.filter(m => dedans(m.c, f0) && !(C0.zone && dedans(m.c, C0.zone))));
+        if (c1.length >= 5) { const u1 = med(c1); if (u1 > 1.2 * u) u = u1; } } }
     const T = trier(formes, u);
     // un scan : ses traits sortent de l'image, à l'épaisseur d'un trait près — les bouts se cherchent plus loin
     const jeu = P.scan ? 2.5 : 1;
@@ -622,10 +655,14 @@ const SCHEMA_PDF = (() => {
         if (x.genre === 'renvoi' || y.genre === 'renvoi') { renvois.push({ x, y, d: q.d, trajet: q.trajet.map(pointAretes), type, fil, mots: info.flatMap(o => o.mots || []) }); return; }
         if (x.repere === y.repere && x.borne === y.borne) return;
         const jT = q.trajet.some(e => G.noeuds[e.a].sortes.has(1) && !G.noeuds[e.a].point || G.noeuds[e.b].sortes.has(1) && !G.noeuds[e.b].point);
-        const conf = Math.min(x.conf, y.conf) * (multi ? 0.95 : 1) * (jT ? 0.92 : 1);
+        // (passe 87) les numéros de fil écrits sur le trajet : un seul, il le confirme ; deux différents, le trajet traverse une épissure
+        // (deux câbles) — à voir
+        const nums = [...new Set(info.map(o => o.fil).filter(Boolean).map(f => f.toUpperCase()))];
+        const conf = Math.min(x.conf, y.conf) * (multi ? 0.95 : 1) * (jT ? 0.92 : 1) * (nums.length > 1 ? 0.7 : 1);
         // dans le sens de lecture : de gauche à droite, puis de haut en bas
         const [g, d] = (x.p[0] < y.p[0] - 0.5 * u || (Math.abs(x.p[0] - y.p[0]) <= 0.5 * u && x.p[1] <= y.p[1])) ? [x, y] : [y, x];
-        const raisons = [multi ? 'réseau à ' + B.length + ' bouts : relié de proche en proche' : 'trait suivi de bout en bout', ...(jT ? ['jonction en T sans point'] : []), ...g.raisons.map(r => 'de : ' + r), ...d.raisons.map(r => 'vers : ' + r)];
+        const raisons = [multi ? 'réseau à ' + B.length + ' bouts : relié de proche en proche' : 'trait suivi de bout en bout', ...(jT ? ['jonction en T sans point'] : []),
+          ...(nums.length === 1 ? ['numéro de fil ' + fil + ' écrit sur le trait'] : nums.length > 1 ? ['deux numéros de fil sur le trajet (' + nums.join(', ') + ') : peut-être deux câbles, par une épissure'] : []), ...g.raisons.map(r => 'de : ' + r), ...d.raisons.map(r => 'vers : ' + r)];
         liaisons.push({ de: g.repere, borneDe: g.borne, pnDe: g.pn || '', vers: d.repere, borneVers: d.borne, pnVers: d.pn || '', type, cable: fil, conf: Math.round(conf * 100) / 100, raisons,
           trajet: q.trajet.map(pointAretes), bouts: [g.p, d.p], mots: [...g.mots, ...d.mots, ...info.flatMap(o => o.mots || [])].map(m => m.B) }); }); });
     // les pontages d'une barrette : ses contacts sur un même pointillé sont au même potentiel, de proche en proche (dans l'ordre

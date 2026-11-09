@@ -528,9 +528,11 @@ function problemeSuivant(pas) { const X = pointsDansLOrdre(); if (!X.length) { d
   if (i < 0) i = P ? Math.min(P.rang, X.length) - (pas > 0 ? 1 : 0) : (pas > 0 ? -1 : X.length);
   const j = i + pas; allerAuPoint((j % X.length + X.length) % X.length, X, j >= X.length || j < 0); }
 function allerAuPoint(i, X, tour) { const x = X[i]; if (!x) return; CONTROLE.pas = { cle: clePoint(x), rang: i };
-  const nko = X.filter(y => y.niveau === 'ko').length, rang = x.niveau === 'ko' ? i + 1 : i - nko + 1, total = x.niveau === 'ko' ? nko : X.length - nko;
+  // (passe 87) P compte comme partout : « à régler », c'est ce qui a un geste (08-recap, `rangDuPoint`)
+  const regle = y => typeof rangDuPoint === 'function' ? !!rangDuPoint(y).regler : y.niveau === 'ko', ici = regle(x);
+  const meme = X.filter(y => regle(y) === ici), rang = meme.indexOf(x) + 1, total = meme.length;
   allerAuControle(x);
-  dire(`${tour ? 'De nouveau au début · ' : ''}${x.niveau === 'ko' ? 'Problème' : 'À voir'} ${rang} / ${total} · ${majuscule(motDuGenre(x.genre, 1))}${x.nom ? ' · ' + x.nom : ''} — P : le suivant`); }
+  dire(`${tour ? 'De nouveau au début · ' : ''}${ici ? 'À régler' : 'À voir'} ${rang} / ${total} · ${majuscule(motDuGenre(x.genre, 1))}${x.nom ? ' · ' + x.nom : ''} — P : le suivant`); }
 // (l'index et le récapitulatif mènent encore à une LIGNE : son premier point)
 function allerALaLigne(i, L) { const l = L[i]; if (!l) return; const X = pointsDansLOrdre(); allerAuPoint(Math.max(0, X.indexOf(l.xs[0])), X); }
 // le bouton des repères, son compte : l'index ouvert sur les problèmes (« à reprendre » déplié)

@@ -208,6 +208,8 @@ const FICHIER = P.fichierDemande();
 
   console.log('\nne jamais perdre l’ingénieur : la pile, la barre, le plan qui ne bouge pas');
   await bloc('3', '300XC1'); await page.waitForTimeout(400); await page.click('#ba-equip .ct-bulles [data-connecteur="A"]'); await page.waitForTimeout(300);
+  // (passe 87) la pile est une histoire : les fiches ouvertes plus haut y sont encore ; on compte à partir de 300XC1
+  const p0 = await page.evaluate(() => app.insp.pos);
   await page.evaluate(() => { $('ba-equip').scrollTop = 320; $('ba-equip').dispatchEvent(new Event('scroll')); }); await page.waitForTimeout(250);
   // (le repère y entre en fondu : on attend la fin du fondu plutôt qu'un temps fixe — avant v72 aussi, 250 ms ne suffisaient pas toujours)
   await page.waitForFunction(() => { const n = document.querySelector('#ba-equip .fi-nav-nom'); return !!n && getComputedStyle(n).opacity === '1'; }, null, { timeout: 3000 }).catch(() => {}); const v0 = await vue();
@@ -215,7 +217,7 @@ const FICHIER = P.fichierDemande();
   await page.evaluate(() => { const li = document.querySelector('#ba-equip [data-panneau="A"] .fi-contacts .fi-fil[data-i]'); li.scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(100);
   const haut0 = await page.evaluate(() => $('ba-equip').scrollTop);
   await page.click('#ba-equip [data-panneau="A"] .fi-contacts .fi-fil[data-i] .fi-ct'); await page.waitForTimeout(600);
-  ok(await page.evaluate(() => app.cible.type === 'fil' && app.cible.l.cable === 'W-320' && app.insp.pile.length === 2 && app.insp.pos === 1), 'un clic sur une ligne de contact ouvre la fiche de son câble, et l’empile');
+  ok(await page.evaluate(p0 => app.cible.type === 'fil' && app.cible.l.cable === 'W-320' && app.insp.pile.length === p0 + 2 && app.insp.pos === p0 + 1, p0), 'un clic sur une ligne de contact ouvre la fiche de son câble, et l’empile');
   ok(await q('#fi-prec:not(:disabled)') === 1 && /300XC1/.test(await page.evaluate(() => $('fi-prec').getAttribute('aria-label'))) && /300XC1/.test(await page.evaluate(() => $('fi-prec').dataset.bulle)) && !(await page.evaluate(() => $('fi-prec').title)), '‹ s’allume : « Revenir à 300XC1 » (dans sa bulle, plus dans un title)', await page.evaluate(() => $('fi-prec').dataset.bulle));
   // le chemin du câble : chaque bout, son contact en puce ; un clic l'ouvre
   ok(await page.evaluate(() => { const o = document.querySelector('#ba-equip ol.fi-chemin'); return !!o && o.querySelectorAll('li.fi-etape.fi-bout').length === 2 && !!o.querySelector('[data-bout="de"]') && !!o.querySelector('[data-bout="vers"]') && !!o.querySelector('.fi-bout-puce'); }), 'la fiche de W-320 : son CHEMIN, un bout par ligne sur le trait de sa route, le contact de chaque bout en puce');
@@ -224,20 +226,24 @@ const FICHIER = P.fichierDemande();
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   ok(await vue() === v0, 'W-320 était en vue : le plan n’a pas bougé');
   await page.keyboard.press('Alt+ArrowLeft'); await page.waitForTimeout(600);
-  ok(await page.evaluate(h => app.cible.type === 'bloc' && app.cible.nom === '300XC1' && Math.abs($('ba-equip').scrollTop - h) < 2 && document.querySelector('#ba-equip .ct-bulles [aria-pressed="true"]').dataset.connecteur === 'A' && app.insp.pos === 0, haut0), 'Alt+← revient à 300XC1, au même défilement, sur le même connecteur');
+  ok(await page.evaluate(h => app.cible.type === 'bloc' && app.cible.nom === '300XC1' && Math.abs($('ba-equip').scrollTop - h.h) < 2 && document.querySelector('#ba-equip .ct-bulles [aria-pressed="true"]').dataset.connecteur === 'A' && app.insp.pos === h.p0, { h: haut0, p0 }), 'Alt+← revient à 300XC1, au même défilement, sur le même connecteur');
   await page.keyboard.press('Alt+ArrowRight'); await page.waitForTimeout(600);
   ok(await page.evaluate(() => app.cible.type === 'fil' && app.cible.l.cable === 'W-320'), 'Alt+→ repart vers W-320');
   ok(await sections() === 'trajet+ fils+', 'la fiche d’un câble : de → vers, l’intensité et la chute (plus d’Identité : les tuiles la portent)', await sections());
   await page.click('#ba-equip [data-bout="vers"]'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.cible.nom === '381RL1' && document.querySelector('#ba-equip details[data-section="connecteur"]').open && !!document.querySelector('#ba-equip details[data-section="connecteur"] .fi-fil.vise') && /W-320/.test(document.querySelector('#ba-equip .fi-fil.vise.arrivee').dataset.bulle) && app.insp.pile.length === 3),
+  ok(await page.evaluate(p0 => app.cible.nom === '381RL1' && document.querySelector('#ba-equip details[data-section="connecteur"]').open && !!document.querySelector('#ba-equip details[data-section="connecteur"] .fi-fil.vise') && /W-320/.test(document.querySelector('#ba-equip .fi-fil.vise.arrivee').dataset.bulle) && app.insp.pile.length === p0 + 3, p0),
     'la carte « Vers » ouvre 381RL1, son connecteur ouvert, la ligne de W-320 allumée — empilé');
   await page.click('#fi-prec'); await page.waitForTimeout(500);
   ok(await page.evaluate(() => app.cible.type === 'fil' && app.cible.l.cable === 'W-320'), '‹ ramène à W-320');
   await page.click('#ba-equip [data-bout="de"]'); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => app.cible.nom === '300XC1' && app.insp.pile.length === 3 && app.insp.pos === 2), 'la carte « De » ouvre 300XC1 (et empile)');
-  // le plan : un clic dessus REMPLACE le haut de la pile
+  ok(await page.evaluate(p0 => app.cible.nom === '300XC1' && app.insp.pile.length === p0 + 3 && app.insp.pos === p0 + 2, p0), 'la carte « De » ouvre 300XC1 (et empile)');
+  // (passe 87, le lecteur : « Alt+← ramène la fiche d'avant, d'où qu'elle vienne ») le plan : un clic dessus EMPILE aussi
   await page.evaluate(() => choisirBloc(app.dessin.comps.find(k => k.name === '351PM1' && k.kind !== 'tag'))); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => app.insp.pile.length === 3 && app.insp.pile[2].nom === '351PM1'), 'un clic sur le plan remplace le haut de la pile');
+  ok(await page.evaluate(p0 => app.insp.pile.length === p0 + 4 && app.insp.pile[p0 + 3].nom === '351PM1' && app.insp.pos === p0 + 3, p0), 'un clic sur le plan empile aussi : une vraie histoire');
+  await page.keyboard.press('Alt+ArrowLeft'); await page.waitForTimeout(500);
+  ok(await page.evaluate(() => app.cible && app.cible.nom === '300XC1'), 'Alt+← après un clic sur le plan : la fiche d’avant (300XC1)');
+  await page.keyboard.press('Alt+ArrowRight'); await page.waitForTimeout(500);
+  ok(await page.evaluate(() => app.cible && app.cible.nom === '351PM1'), 'Alt+→ la refait (351PM1)');
   // survoler une ligne allume son câble sur le plan
   await page.locator('#ba-equip ' + sec('fils') + ' .fi-ia[data-i] .cb-i').first().hover(); await page.waitForTimeout(400);
   ok(await page.evaluate(() => !!document.querySelector('#scene.focus .cab.hl') && !!document.querySelector('#ba-equip .fi-ia.vise')), 'survoler une ligne allume son câble sur le plan');

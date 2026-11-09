@@ -115,7 +115,9 @@ const FICHIER = P.fichierDemande();
   const s1 = await page.evaluate(() => ({ s: app.vue.s, c: VUE.cadrage, z: $('zlbl').textContent }));
   await page.evaluate(() => $('zfit').click()); await posee();
   const s2 = await page.evaluate(() => ({ s: app.vue.s, c: VUE.cadrage, z: $('zlbl').textContent }));
-  ok(s1.c === 'dessin' && s1.s > s0 * 1.5 && s2.c === 'feuille' && Math.abs(s2.s - s0) < s0 * 0.02, '« Ajuster » alterne : la feuille, puis le dessin au plus près (folio 1 : ' + s1.z + '), puis la feuille', JSON.stringify({ s0, s1, s2 }));
+  // (passe 87) le folio 1 remplit sa feuille (06, `pageDe`) : la feuille entière est déjà à 88 % en 1440 ; le dessin au plus près
+  // ne recule jamais derrière elle
+  ok(s1.c === 'dessin' && s1.s >= s0 - 1e-9 && s2.c === 'feuille' && Math.abs(s2.s - s0) < s0 * 0.02, '« Ajuster » alterne : la feuille, puis le dessin au plus près (folio 1 : ' + s1.z + '), puis la feuille', JSON.stringify({ s0, s1, s2 }));
   const prog = await page.evaluate(() => { ajuster(true); return VUE.cadrage; }); await page.waitForTimeout(400);
   ok(prog === 'feuille', 'un recadrage de l’outil (ajuster) ne bascule rien');
   await page.mouse.move(700, 450); await page.keyboard.press('0'); await posee();

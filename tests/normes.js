@@ -254,8 +254,9 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   { const [d] = await Promise.all([page.waitForEvent('download'), page.click('#fiche #no-xlsx')]); const f = path.join(SCRATCH, 'nomenclature.xlsx'); await d.saveAs(f);
     const wb = XLSX.read(fs.readFileSync(f)), ws = wb.Sheets[wb.SheetNames[0]], L = XLSX.utils.sheet_to_json(ws, { header: 1 });
     const c = await telechargement(() => page.click('#fiche #no-csv')), nCsv = c.texte.trim().split('\n').length - 1;
-    okp(wb.SheetNames[0] === 'Nomenclature' && L[0].join('|') === 'Section|Référence|Détail|Quantité|Unité|Où' && L.length - 1 === nCsv && L.slice(1).every(l => typeof l[3] === 'number') && L.some(l => l[0] === 'Câbles' && /câbles?$/.test(l[2])) && !!ws['!autofilter'],
-      'la nomenclature s’enregistre aussi en Excel (SheetJS, embarqué) : la même table que le CSV, les quantités en nombres, l’en-tête filtrable', L.length - 1 + ' lignes · CSV ' + nCsv); }
+    // (v84 : la feuille s'appelle « LPA » ; passe 87 : le Suivi de fabrication y a sa feuille, à côté)
+    okp(wb.SheetNames.join('|') === 'LPA|Suivi' && L[0].join('|') === 'Section|Référence|Détail|Quantité|Unité|Où' && L.length - 1 === nCsv && L.slice(1).every(l => typeof l[3] === 'number') && L.some(l => l[0] === 'Câbles' && /câbles?$/.test(l[2])) && !!ws['!autofilter'],
+      'la LPA s’enregistre aussi en Excel (SheetJS, embarqué) : la même table que le CSV, les quantités en nombres, l’en-tête filtrable ; le Suivi dans sa feuille', wb.SheetNames.join(' · ') + ' · ' + (L.length - 1) + ' lignes · CSV ' + nCsv); }
   await page.evaluate(() => fermerFiche(true)); await page.waitForTimeout(200);
 
   console.log('\nla Bible en grille, l’origine en puce, le dessin grand et carré (v74)');
@@ -282,7 +283,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   const Cp = await page.evaluate(() => { const c = $('fiche-corps'), sources = [...c.querySelectorAll('[src], [href], image, use')].map(x => x.getAttribute('src') || x.getAttribute('href') || x.getAttribute('xlink:href') || '');
     return { mode: app.fiche && app.fiche.mode, ch: [...c.querySelectorAll('.vr-ch')].map(s => s.dataset.chapitre).join(','), svgs: c.querySelectorAll('.vr-ch .vr-schema svg.vr-svg').length, titres: c.querySelectorAll('svg.vr-svg > title').length, be: c.querySelectorAll('.vr-ch details.vr-be').length,
       sommaire: c.querySelectorAll('.vr-sommaire [data-vr-ch]').length, externe: sources.filter(s => /^(https?:|\/\/|data:)/.test(s)).length + c.querySelectorAll('img, iframe, object, embed').length,
-      manquent: ['commande', 'catalogue', 'recettes', 'Référence', 'Famille', 'Face', 'Contact', 'Consommation', 'Profil', 'Courbe', 'Calibre', 'Câbles', 'Chute', 'impair', 'branchement en chaîne', 'change de route', 'manque', 'D’où vient chaque pièce', 'bureau d’études'].filter(m => !c.textContent.includes(m)),
+      manquent: ['commande', 'catalogue', 'Référence', 'Famille', 'Face', 'Contact', 'Consommation', 'Profil', 'Courbe', 'Calibre', 'Câbles', 'Chute', 'impair', 'branchement en chaîne', 'change de route', 'manque', 'D’où vient chaque pièce', 'bureau d’études'].filter(m => !c.textContent.includes(m)),
       clavier: $('fiche').contains(document.activeElement) }; });
   okp(Cp.mode === 'comprendre' && Cp.ch === 'cuisinier,connecteur,disjoncteur,routes,manque,verifier' && Cp.svgs === 6 && Cp.titres === 6 && Cp.be === 6 && Cp.sommaire === 6 && !Cp.externe && !Cp.manquent.length && Cp.clavier,
     'la page : six chapitres (le cuisinier, la chaîne d’un connecteur, d’un disjoncteur, les routes, « manque », vérifier), un schéma SVG en ligne chacun (avec son titre), aucun fichier externe, la règle exacte repliée pour le bureau d’études ; le clavier y entre', JSON.stringify(Cp));

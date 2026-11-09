@@ -483,7 +483,7 @@ function folioEtRang(plan) { const P = plans(), i = P.indexOf(plan) + 1; if (!i)
 // ce qu'on peut faire pendant ce temps : les problèmes du contrat (l'index « à reprendre »), le récapitulatif — comptés
 // comme partout (« 5 problèmes · 9 à voir », `compteProblemes`, 08-controle)
 function libelleProblemes() { const c = compteProblemes();
-  return c.ko ? 'Les ' + c.mot : c.att ? (c.att > 1 ? 'Les ' + c.att + ' points à voir' : 'Le point à voir') : 'Les repères'; }
+  return c.ko ? (c.ko > 1 ? 'Les ' + c.ko + ' à régler' : 'Le point à régler') : c.att ? (c.att > 1 ? 'Les ' + c.att + ' points à voir' : 'Le point à voir') : 'Les repères'; }
 const gestesDeLAttente = () => `<span class="at-gestes">Pendant ce temps : <button type="button" data-at="problemes">${libelleProblemes()}</button><button type="button" data-at="recap">Le récapitulatif</button></span>`;
 /* L'attente, visible : au milieu de la place libre du plan, le folio, ses câbles, la durée, une barre ; et ce qu'on peut
    faire pendant. Dans la barre du bas, la puce du folio qui se calcule respire ; les folios pas encore prêts sont pâles.
@@ -638,7 +638,9 @@ function retoucheVide(P, auto) { const C = consignesDe(P);
    en sortir de la taille du bloc — le dessin grandit, la feuille se recale dessus ; plus loin, il se perdrait. */
 function bornesDeLaFeuille(lo, hi, haut, bas) { const bb = (app.dessin && app.dessin.bbox) || null, k = (bb && bb.k) || 1;
   if (!bb) return { x0: -Infinity, x1: Infinity, y0: -Infinity, y1: Infinity };
-  const m = (PAGE_CADRE + PAGE_MARGE) * k, lx = hi - lo, ly = bas - haut;
+  // (passe 87) et d'une goulotte et demie de plus en largeur : un bloc passe la dernière colonne et en devient une, d'un geste,
+  // même quand le dessin remplit sa feuille (un petit folio grandit jusqu'à ses bords, 06 `pageDe`)
+  const m = (PAGE_CADRE + PAGE_MARGE) * k, lx = hi - lo + 1.5 * GOULOTTE_MIN, ly = bas - haut;
   return { x0: Math.min(0, bb.x + m - lx - lo), x1: Math.max(0, bb.x + bb.w - m + lx - hi), y0: Math.min(0, bb.y + m - ly - haut), y1: Math.max(0, bb.y + bb.h - (m + PAGE_CARTOUCHE * k) + ly - bas) }; }
 function preparerPrise(P, c) { const pose = preparerPose(P, c), k = (app.dessin && app.dessin.bbox && app.dessin.bbox.k) || 1, [flo, fhi] = pose.etendue;
   return { P, c, pose, pas: PAS_PAPIER * k, bornes: bornesDeLaFeuille(flo, fhi, c.y, c.y + c.h), aimants: aimantsDuBloc(P, c, pose) }; }
@@ -949,7 +951,10 @@ function bornesZoom(P) { const d = app.dessin; if (!d) return { min: ZMIN, max: 
   return { min: Math.max(ZMIN, feuille / 2), max: Math.max(feuille, Math.min(ZMAX, 4 * S100)) }; }
 function cadrageDe(quoi) { const d = app.dessin, P = placeDuPlan(), Z = bornesZoom(P), dessin = quoi === 'dessin';
   const b = dessin ? boiteDuDessin(d) : d.bbox, marge = dessin ? 24 : 0;
-  const s = Math.max(Z.min, Math.min(dessin ? Math.min(Z.max, DESSIN_MAX) : Z.max, Math.min(P.W / (b.w + 2 * marge), P.H / (b.h + 2 * marge))));
+  let s = Math.max(Z.min, Math.min(dessin ? Math.min(Z.max, DESSIN_MAX) : Z.max, Math.min(P.W / (b.w + 2 * marge), P.H / (b.h + 2 * marge))));
+  // (passe 87) un petit folio remplit sa feuille (06, `pageDe`) : sur un grand écran, la feuille entière passe 100 % (le
+  // folio 1 : 109 % en 1920) — « le dessin, au plus près » ne recule jamais derrière elle
+  if (dessin) s = Math.max(s, cadrageDe('feuille').s);
   return { s, tx: P.X - (b.x + b.w / 2) * s, ty: P.Y - (b.y + b.h / 2) * s }; }
 const memeVue = (a, b) => Math.abs(a.s - b.s) <= 0.015 * b.s && Math.abs(a.tx - b.tx) < 6 && Math.abs(a.ty - b.ty) < 6;
 function ajuster(doux) {
@@ -1671,10 +1676,10 @@ function cliquer(w) { const c = blocSous(w);
    centrée, lisible (l'audit v72 : le clic menait au folio à la page entière, rien de choisi, et il fallait chercher la
    demi-liaison d'en face parmi d'autres boîtes) ; Alt+← revient d'où l'on vient, à la même vue. */
 function suivreRenvoi(c, w) { const t = c.name.replace(RENVOI, ''); if (!plans().includes(t)) return;
-  const f = filDuRenvoi(c, w.y, w.x), l = f && liaisonsDuPlan()[f.i], de = app.plan, vue = { ...(anim && vueVisee ? vueVisee : app.vue) }, main = VUE.main;
+  const f = filDuRenvoi(c, w.y, w.x), l = f && liaisonsDuPlan()[f.i], de = app.plan, vue = { ...(anim && vueVisee ? vueVisee : app.vue) }, main = VUE.main, fiche = !!app.cible;
   allerAuPlan(t); if (app.plan !== t) return;
   const g = l ? autreMoitie(l, de) : null, cable = (g && g.cable) || (l && l.cable) || '';
-  VUE.retours.push({ plan: de, vue, main, vers: t, cable }); if (VUE.retours.length > 20) VUE.retours.shift();
+  VUE.retours.push({ plan: de, vue, main, vers: t, cable, fiche }); if (VUE.retours.length > 20) VUE.retours.shift();
   const retour = ' · Alt+← revient au folio ' + de + '.';
   if (g) { choisirFil(g); viserFil(g); dire('Folio ' + t + ' : ' + (cable ? cable + ', ' : '') + 'l’autre moitié du câble' + retour); return; }
   if (!app.dessin && cable) { aller({ type: 'fil', nom: cable }); dire('Folio ' + t + retour); return; }   // le folio se dessine encore : le câble attend
@@ -1694,7 +1699,10 @@ function autreMoitie(l, de) { const D = app.dessin, L = liaisonsDuPlan(); if (!D
 function revenirDuRenvoi() { const r = VUE.retours[VUE.retours.length - 1]; if (!r || app.plan !== r.vers || !plans().includes(r.plan)) return false;
   const c = app.cible; if (c && !(c.type === 'fil' && r.cable && c.l && c.l.cable === r.cable)) return false;
   VUE.retours.pop(); if (c) deselectionner(); allerAuPlan(r.plan); if (app.plan !== r.plan) return true;
-  animerVue(r.vue, false); VUE.main = r.main; dire('Retour au folio ' + r.plan + '.'); return true; }
+  animerVue(r.vue, false); VUE.main = r.main;
+  // (passe 87) l'histoire des fiches recule avec le folio : la fiche ouverte avant le renvoi revient (08-fiche, `reculerFiche`)
+  if (typeof reculerFiche === 'function') reculerFiche(r.cable, !!(c && r.fiche));
+  dire('Retour au folio ' + r.plan + '.'); return true; }
 // une barrette à poser sous le pointeur : sur sa ligne, de sa première à sa dernière borne
 function barretteAPoserSous(w) { const tol = 5 / Math.max(0.4, app.vue.s) + 3;
   return ((app.dessin && app.dessin.barrettes) || []).find(b => { if (!b.nomVT) return false; const bs = bornesDePiquage(b); return Math.abs(w.x - b.x) <= tol && w.y >= bs[0].y - tol && w.y <= bs[bs.length - 1].y + tol; }) || null; }
@@ -1836,7 +1844,8 @@ function rendreIndex(box) { const etats = new Map();
       + `<p class="co-astuce"><kbd>P</kbd> le point suivant · <kbd>Maj</kbd> <kbd>P</kbd> le précédent</p>`; };
   box.className = 'fi ix'; box.dataset.cle = 'index';
   // la fiche qu'on y a laissée : ‹ la rouvre (Alt+←), à la même place
-  const I = typeof pileInsp === 'function' ? pileInsp() : null, laissee = I && I.pile[I.pos];
+  // (passe 87) revenue à la liste par l'histoire, ‹ rouvre la fiche d'avant elle (08-fiche, `ficheLaissee`)
+  const laissee = typeof ficheLaissee === 'function' ? ficheLaissee() : null;
   box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" data-bulle="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" data-bulle="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span>${boutonTaille()}${boutonEpingle()}<button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer · Échap">${ico('fermer')}</button></header>`
     // (v86, une seule source : un équipement s'ajoute dans le fichier — plus de « + » ni de champ ici)
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Filtrer la liste : un repère, une référence" aria-label="Filtrer la liste des repères" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`

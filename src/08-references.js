@@ -166,9 +166,9 @@ function arreterLecture() { const L = BASE.lecture; if (!L) return; try { L.w.te
 /* La lecture finie : ce qui ne va pas se dit dans la carte de la base (comme un petit fichier) ; sinon la base est posée,
    gardée, rangée dans la bibliothèque — et la carte de lecture dit ce qu'il y a, et en combien de temps. */
 async function finDeLecture(L, fin) { BASE.lecture = null; const R = fin.lecture, B = { meta: fin.meta, morceaux: L.morceaux }, nom = L.nom, ms = Math.round(performance.now() - L.t0);
-  const liste = R.ignorees.length ? ['Feuilles ignorées (pas les en-têtes de l’installation) : ' + R.ignorees.map(n => guillemets(esc(n))).join(', ')] : [];
-  if (!R.entete) { montrerLecture(); echecImport('base', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(R.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] }, nom + ' : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
-  if (!R.n) { montrerLecture(); echecImport('base', { texte: `« ${esc(nom)} » : les en-têtes de l’installation sont là (ligne ${R.entete}), mais aucune liaison dessous.`, liste }); return; }
+  const liste = R.ignorees.length ? ['Feuilles ignorées (pas les en-têtes d’un retest) : ' + R.ignorees.map(n => guillemets(esc(n))).join(', ')] : [];
+  if (!R.entete) { montrerLecture(); echecImport('base', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes d’un retest dans les 30 premières lignes — la base a les mêmes colonnes qu’un retest, avec <span class="id">Harness</span>. ${ceQueJaiLu(R.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] }, nom + ' : VOLTA ne trouve pas les en-têtes d’un retest dans les 30 premières lignes.'); return; }
+  if (!R.n) { montrerLecture(); echecImport('base', { texte: `« ${esc(nom)} » : les en-têtes du retest sont là (ligne ${R.entete}), mais aucune liaison dessous.`, liste }); return; }
   const C = B.meta.contrats, sans = !C.some(c => c.h !== '—');
   // un seul contrat, ouvert comme un retest : il devient un plan, sans passer par la base — (v84) lu par le Worker EXACTEMENT
   // comme un petit fichier (`fin.plan`, 09 `lireLaBase`) : colonnes inconnues, liaisons incomplètes, feuille « VOLTA » comprises
@@ -184,7 +184,7 @@ async function finDeLecture(L, fin) { BASE.lecture = null; const R = fin.lecture
   // la base posée, puis rangée, puis dite : trois temps, la page respire entre eux
   poserBase(B); await respirer(); const G = rangerLesContrats(B, nom); await respirer();
   BASE.fini = { nom, n: R.n, contrats: C.length, installs: B.meta.installs.length, ms, rangee: G, t: Date.now() }; finirCarteLecture();
-  baseRecue(nom, R.ignorees.length ? { texte: 'Feuilles ignorées (pas les en-têtes de l’installation) :', liste: R.ignorees.map(n => guillemets(esc(n))) } : null, G);
+  baseRecue(nom, R.ignorees.length ? { texte: 'Feuilles ignorées (pas les en-têtes d’un retest) :', liste: R.ignorees.map(n => guillemets(esc(n))) } : null, G);
   montrerLecture();
   dire(lies([nombreLie(R.n, 'liaison'), nombreLie(C.length, 'contrat'), B.meta.installs.length ? nombreLie(B.meta.installs.length, 'installation') : '']) + ` — lus en ${secondesLues(ms)}, gardés sur ce PC.`); }
 const secondesLues = ms => ms < 1000 ? ms + ' ms' : nombre(Math.round(ms / 100) / 10) + ' s';
@@ -239,17 +239,17 @@ async function importerReferences(fichier) { if (!fichier) return; const nom = f
   if ((fichier.size || 0) > SEUIL_AILLEURS && typeof Worker !== 'undefined' && lireLaBaseAilleurs(fichier, 'base')) return;
   dire('Lecture de « ' + nom + ' »…'); const L = await lireLeFichier(fichier); FICHIERS.base = null;
   if (L.erreur) { echecImport('base', L.erreur); return; }
-  try { const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), liste = ig.length ? ['Feuilles ignorées (pas les en-têtes de l’installation) : ' + ig.join(', ')] : [];
-    if (r.format !== 'retest') { echecImport('base', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes — la base a les mêmes colonnes que l’installation, avec <span class="id">Harness</span>. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] },
-      nom + ' : VOLTA ne trouve pas les en-têtes de l’installation dans les 30 premières lignes.'); return; }
-    if (!r.liaisons.length) { echecImport('base', { texte: `«\u00a0${esc(nom)}\u00a0» : les en-têtes de l’installation sont là (ligne ${r.entete}), mais aucune liaison dessous.`, liste }); return; }
+  try { const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), liste = ig.length ? ['Feuilles ignorées (pas les en-têtes d’un retest) : ' + ig.join(', ')] : [];
+    if (r.format !== 'retest') { echecImport('base', { texte: `${esc(nom)} : VOLTA ne trouve pas les en-têtes d’un retest dans les 30 premières lignes — la base a les mêmes colonnes qu’un retest, avec <span class="id">Harness</span>. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] },
+      nom + ' : VOLTA ne trouve pas les en-têtes d’un retest dans les 30 premières lignes.'); return; }
+    if (!r.liaisons.length) { echecImport('base', { texte: `«\u00a0${esc(nom)}\u00a0» : les en-têtes du retest sont là (ligne ${r.entete}), mais aucune liaison dessous.`, liste }); return; }
     if (!r.harnais.length) { const e = trouverEnteteRetest(L.brutes), sans = !e || e.col.harness == null, G = rangerLaBase(r.liaisons, nom);
       // sans harness, pas de comparaison ; ses installations, si elle les dit, entrent quand même dans la bibliothèque (un plan par dessin)
       echecImport('base', { texte: `${esc(nom)} : ${sans ? 'aucune colonne <span class="id">Harness</span>' : 'la colonne <span class="id">Harness</span> est vide'}. Sans elle, je ne sais pas séparer les machines. Ajoutez-la, ou ouvrez ce fichier comme un plan.${G ? ` Ses ${esc(lies([plurielLie(G.installs, 'installation'), plurielLie(G.plans, 'plan')]))} sont rangés dans la bibliothèque.` : ''}`, liste },
         nom + ' : aucune colonne Harness — sans elle, je ne sais pas séparer les machines.');
       FICHIERS.base = { nom, liaisons: r.liaisons }; rendreFichiers(); return; }
     adopterReferences(r.liaisons, nom); const B = app.references.base, G = rangerLesContrats(B, nom);
-    baseRecue(nom, ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes de l’installation) :', liste: ig } : null, G);
+    baseRecue(nom, ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes d’un retest) :', liste: ig } : null, G);
     // déposée depuis la bibliothèque, qui montre déjà les installations créées : « Vos fichiers » ne s'ouvre pas par-dessus
     if (!(typeof bibliothequeOuverte === 'function' && bibliothequeOuverte())) ficheFichiers('base');
     dire(lies([plurielLie(B.meta.harnais, 'harness'), plurielLie(B.meta.dessins, 'dessin'), plurielLie(B.meta.n, 'liaison')]) + ' gardés dans ce navigateur : les fiches disent ce qui a déjà été fait' + (G ? ', et la bibliothèque range ' + plurielLie(G.installs, 'installation') + '.' : '.'));
@@ -520,12 +520,12 @@ function comparaisonAuContrat(h) { const I = indexReferences(), H = I && I.harna
 // le plus proche se propose, une fois le retest ouvert (et dessiné) : « Déjà fait à 85 % : … — Comparer »
 function proposerDejaFait() { const jeton = BASE.jeton, nom = app.nom; setTimeout(() => { if (jeton !== BASE.jeton || app.nom !== nom || !indexReferences() || bibliothequeOuverte()) return;
   const c = contratsLesPlusProches()[0]; if (!c || c.taux < 0.2) return;
-  direAvecGeste(`Déjà fait à ${Math.round(c.taux * 100)}${INSECABLE}% : ${c.harness}${c.appareil ? ' (' + c.appareil + (c.retest ? ', installation du ' + c.retest : '') + ')' : ''}.`, 'Comparer', () => { REF.choisi = c.harness; ficheDejaFaitContrat(); }); }, 1200); }
+  direAvecGeste(`Déjà fait à ${Math.round(c.taux * 100)}${INSECABLE}% : ${c.harness}${c.appareil ? ' (' + c.appareil + (c.retest ? ', retest du ' + c.retest : '') + ')' : ''}.`, 'Comparer', () => { REF.choisi = c.harness; ficheDejaFaitContrat(); }); }, 1200); }
 function ficheDejaFaitContrat() { const R = app.references, I = indexReferences(), V = verite(), K = BASE.construction;
   let corps = tete('Contrats déjà faits', 'Comparer au déjà-fait'), pied = '';
   // (v79) sans base : à quoi ça sert, ce qu'il faut, le geste — plus une phrase seule sur une page vide
   if (!R) corps += `<section class="cc-vide"><h3 class="cc-vide-t">Retrouver ce qu’on a déjà fait</h3><p>Déposez une fois le grand fichier de vos contrats déjà faits : VOLTA y cherche, pour le plan ouvert, les contrats les plus proches — les mêmes repères, les mêmes part numbers — et montre ce qui diffère, ligne à ligne.</p>`
-    + `<ul class="cc-vide-l"><li><b>Un seul Excel</b>, une ligne par liaison, aux colonnes de l’installation</li><li><b>Harness</b> rempli : il dit à quel contrat chaque ligne appartient</li><li>Il reste <b>sur ce PC</b> : rien ne sort</li></ul>`
+    + `<ul class="cc-vide-l"><li><b>Un seul Excel</b>, une ligne par liaison, aux colonnes d’un retest</li><li><b>Harness</b> rempli : il dit à quel contrat chaque ligne appartient</li><li>Il reste <b>sur ce PC</b> : rien ne sort</li></ul>`
     + `<button type="button" class="btn cuivre" id="cc-deposer">Déposer la base des contrats…</button></section>`;
   else if (!V.length) corps += '<p class="note">Aucun plan ouvert : ouvrez une installation, puis comparez-le au déjà-fait.</p>';
   else if (!I) corps += `<p class="note">La base s’indexe${K && K.total ? ' (' + Math.round(100 * K.fait / K.total) + ' %)' : ''} : la comparaison sera prête dans un instant.</p>`;
@@ -564,7 +564,7 @@ function lierDejaFaitContrat() { const c = $('fiche-corps');
 
 /* ---- LA BIBLE : la base par harness et par dessin, une recherche ---------------------------------------------- */
 function ficheReferences() { const R = app.references, I = indexReferences(), M = R && R.base ? R.base.meta : null, K = BASE.construction;
-  const etat = !R || !M ? '<div class="bible-etat"><span><b>Aucun contrat déjà fait</b> : la base se dépose dans ⋮ → Vos fichiers → Contrats déjà faits (un Excel aux colonnes de l’installation, Harness rempli) ; elle se garde dans ce navigateur, rien ne part sur le réseau.</span></div>'
+  const etat = !R || !M ? '<div class="bible-etat"><span><b>Aucun contrat déjà fait</b> : la base se dépose dans ⋮ → Vos fichiers → Contrats déjà faits (un Excel aux colonnes d’un retest, Harness rempli) ; elle se garde dans ce navigateur, rien ne part sur le réseau.</span></div>'
     : `<div class="bible-etat"><span><b>${esc(R.nom || 'Contrats déjà faits')}</b>${SEP_POINT}${plurielLie(M.harnais, 'harness')}${SEP_POINT}${plurielLie(M.dessins, 'dessin')}${SEP_POINT}${plurielLie(M.n, 'liaison')}${SEP_POINT}gardés dans ce navigateur${I ? '' : `${SEP_POINT}« Déjà fait » s’indexe${K && K.total ? ' (' + Math.round(100 * K.fait / K.total) + INSECABLE + '%)' : ''}`}</span></div>`;
   return `<h3 class="sous-titre">Les contrats déjà faits</h3>${etat}` + (I ? `<div id="rf-base">${rfBaseHtml()}</div>` : '')
     + '<p class="note">Pour un équipement du contrat, sa fiche dit les trois machines les plus proches (même part number, sinon même code), le taux de lignes communes, et le dessin (FWD) où il apparaît ; la comparaison — l’équipement, son voisinage, le dessin entier — montre ce qu’elles ont en plus, ce qui diffère, et reprend ce qu’on coche ; « Dessin » ouvre le FWD dessiné par VOLTA. « La solution du PH n’est pas forcément la bonne » : ce qui est repris passe les mêmes contrôles que le reste.</p>'; }

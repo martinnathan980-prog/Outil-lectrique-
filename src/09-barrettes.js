@@ -2250,7 +2250,7 @@ function faceDesParties(repere, liaisons) { const p = partieDePrise(repere); if 
       const [rm, bm, rf, bf] = mobile === repere ? [repere, ici, o, la] : [o, la, repere, ici], num = b => /^\d+$/.test(String(b));
       // ce que la partie fixe devrait porter, dans SON écriture (une partie écrite en numéros, l'autre en lettres : le 7 est la G)
       const attendu = num(bf) === num(bm) ? bm : num(bf) ? String(rangDeLettre(bm) || bm) : LETTRES_DE_FACE[+bm - 1] || bm;
-      out.push({ niveau: 'attention', genre: 'contact', texte: `${rm}:${bm} (partie mobile) va sur ${rf}:${bf} (partie fixe) : ${num(bm) ? 'le contact ' + bm : 'la lettre ' + bm} devrait répondre ${num(attendu) ? 'au ' + attendu : 'à ' + attendu}`,
+      out.push({ niveau: 'attention', genre: 'contact', texte: `${rm}:${bm} (partie mobile) va sur ${rf}:${bf} (partie fixe) : ${num(bm) ? 'le contact ' + bm : 'la lettre ' + bm} devrait répondre ${num(attendu) ? 'au ' + attendu : 'à ' + attendu} — à corriger dans votre fichier`,
         bornes: [ici], cables: [l], porteur: rm, face: true }); }); });
   return out; }
 /* La prise de coupure en module : ses contacts, un fil de chaque côté (fiche et embase). `sexe` : celui de la fiche. (passe 87)
