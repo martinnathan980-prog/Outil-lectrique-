@@ -12,7 +12,8 @@ cd <racine du dépôt>
 export NODE_PATH=$(npm root -g)
 ```
 
-1. **Construire** : `node construire.js` puis `node construire.js --verif` (« index.html à jour »).
+1. **Construire** : d'abord le numéro de la version qu'on livre dans `src/08-bilan.js` (`BILAN.version` : le bilan anonyme le
+   dit au lecteur) ; puis `node construire.js` et `node construire.js --verif` (« index.html à jour »).
 2. **Charger** : `node tests/ecran/charge.js` → « chargée — aucune erreur ».
 3. **La fumée** : `node tests/ecran/fumee.js` → « tout tient » (chaque bloc, chaque onglet, des fils, aucune fiche vide).
 4. **L'œil** : `node tests/ecran/oeil.js clair 1440` puis `sombre 1920` → aucun onglet inégal, aucun texte coupé, aucun

@@ -116,6 +116,38 @@ et zone** (« F5/C3 ») ; une barrette se dessine en **pastilles sur un pointill
 les relais et les disjoncteurs ont **leur symbole dessiné dans la boîte** ; des masses **à trois barres** ; des boîtes
 **pleines** ; des cartouches **en français** ; des scans **de toute qualité**. Les documents inventés se refont à cette forme.
 
+## L'état des lieux du 9 novembre 2026 (demandé par le lecteur, après la v87 : tout le site regardé, clair et sombre)
+
+**Très bien, à garder** : la fiche (carte puis grand), le disjoncteur vivant, l'Historique avant / après avec « Défaire »,
+« Ce qui part dans l'Excel », la recherche, la bible aux faces dessinées, le mode sombre, l'accueil ; l'ouverture en 0,8 s,
+3 345 liaisons et 90 folios lus en 1,4 s sans figer.
+
+**Ce qui ne va vraiment pas** (à décider à deux, dans cet ordre) :
+1. VOLTA invente encore un courant : un câble sans disjoncteur en amont vaut « 2 A supposé » (Hypothèses), et sur cette
+   base « Passer en DR18 » se propose pour un DR12 (300XC1:B5) — une gauge plus fine sur un courant inventé, contre la
+   règle du 8 novembre (« inconnu »). Proposé : plus d'hypothèse de courant ; jamais de gauge plus fine sans courant connu.
+2. Les données : 999 lignes des normes sur 3 981 sont « à confirmer », 53 accouplements inconnus — la LPA ne se commande
+   pas les yeux fermés. Proposé : ses catalogues importés sur son poste ; chaque résultat dit s'il repose sur du confirmé.
+3. Le grand chantier n'est pas encore utilisable sur ses vrais documents (scans, tableaux, écran de vérification B), et il
+   est caché : l'accueil dit « votre Excel », le PDF et le Visio sont dans ⋮ › Plus.
+4. Aucune sauvegarde d'ensemble : plans, base, normes importées vivent dans le navigateur. Proposé : « Tout sauvegarder /
+   tout restaurer », un fichier.
+5. Les batteries de l'interface sont rouges depuis plusieurs versions : les écrans changent sans filet.
+
+**L'expérience, à améliorer** : trop de mots pour une même chose (installation, plan, contrat, harness, fichier, base,
+bible) ; le menu « Plus », quatorze lignes en vrac ; pas de fil conducteur après l'ouverture (proposé : un mode « Revue »,
+un point à la fois, Entrée accepte, jusqu'à « prêt à exporter ») ; les folios pas encore à la forme de ses schémas (symbole
+dans la boîte d'un relais, masse à trois barres, renvoi « F5/C3 ») ; les tableaux en pleine page tassés à gauche ; sur un
+folio dense zoomé, le type du câble ne se lit plus (proposé : un survol) ; « Ce qu'il consomme » en Automatique / Manuel ;
+le dessin en haut de la feuille ; VOLTA ne montre pas sa version ; du jargon interne dans les notes des normes
+(« recherche R3 ») ; un folio dense met 4 s à paraître ; le repos à mesurer sur son poste.
+
+**Les idées pour demain** : comparer deux indices d'un fichier (les évolutions, sur le folio) ; le plan vivant (ouvrir un
+disjoncteur, fermer un relais, « si ce câble casse ») ; la fiche d'atelier par connecteur (face, brochage, contacts, outil) ;
+le bilan électrique par disjoncteur ; la vue d'ensemble d'une installation ; la planche à clous ; apprendre du déjà-fait ;
+« Demander à VOLTA » avec l'IA interne ; un mode atelier ; les étiquettes. À ne pas faire : la 3D, le travail en ligne à
+plusieurs, modifier le câblage dans VOLTA (le retest reste la source).
+
 ## Journal des passes
 
 - **8 novembre 2026 — v86** (passe manuelle, quatorze agents) : l'aluminium, les bornes fixes, la carte et les genres,

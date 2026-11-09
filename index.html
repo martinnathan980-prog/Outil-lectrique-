@@ -23447,7 +23447,7 @@ function noterExportDuPlan(nom) { const p = BIB.plans.get(app.planId); if (!p ||
      dans les notes tapées à la main.
    =========================================================================== */
 
-const BILAN = { version: 'v84', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v88', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -26944,7 +26944,7 @@ function releveHtml(arrive) { const C = changementsDuRetest(), P = C.problemes, 
   const chiffre = (v, mot, cls, bulle) => `<div class="rv-chiffre${cls ? ' ' + cls : ''}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}><b>${v}</b><span>${mot}</span></div>`;
   const ticket = `<div class="rv-ticket${entre()}" role="group" aria-label="En bref">${chiffre(n, n > 1 ? 'liaisons modifiées' : n === 1 ? 'liaison modifiée' : 'aucune modification', '', pluriel(C.cases, 'case') + ' de l’Excel ' + (C.cases > 1 ? 'changent' : 'change'))}`
     + chiffre(np, np > 1 ? 'choix de VOLTA à écrire' : np === 1 ? 'choix de VOLTA à écrire' : 'tout est écrit', np ? 'att' : '', np ? 'VOLTA les retient, mais ils ne partent que si vous les écrivez' : 'Chaque choix de VOLTA est dans l’Excel corrigé')
-    + chiffre(P.ko ? P.ko : P.att, P.ko ? (P.ko > 1 ? 'problèmes' : 'problème') + (P.att ? ` · ${P.att} à voir` : '') : P.att ? (P.att > 1 ? 'points à voir' : 'point à voir') : 'rien à reprendre', P.ko ? 'ko' : P.att ? 'att-doux' : 'ok', P.mot) + '</div>';
+    + chiffre(P.ko ? P.ko : P.att, P.ko ? 'à régler' + (P.att ? ` · ${P.att} à voir` : '') : P.att ? (P.att > 1 ? 'points à voir' : 'point à voir') : 'rien à reprendre', P.ko ? 'ko' : P.att ? 'att-doux' : 'ok', P.mot) + '</div>';
   k++;   // « Ce qui part » vient juste après le ticket
   // (v86, l'audit F3) VOLTA ne sait pas où le navigateur range le fichier : il dit son nom, pas « dans vos Téléchargements »
   const enr = RELEVE.enregistre && RELEVE.enregistre.cle === RELEVE.cle ? `<p class="rv-fait" role="status">${ico('coche')}<span>Enregistré à ${esc(RELEVE.enregistre.heure)} · <span class="id">${esc(RELEVE.enregistre.nom)}</span></span></p>` : '';
