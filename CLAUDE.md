@@ -44,7 +44,8 @@ s'écrit ici, le jour même.
   type (DR12) et ses deux bouts. La donnée du fichier reste intacte à l'export.
 - **Les connecteurs des équipements sont fournis par le fournisseur.** Nous choisissons : barrettes, prises de coupure,
   relais, raccords, tyraps, contacts à sertir — et **nous commandons le connecteur d'accouplement**, côté harness (celui
-  qui s'accouple au connecteur de l'équipement : la LPA le commande, comme les obturateurs des alvéoles vides).
+  qui s'accouple au connecteur de l'équipement : la LPA le commande, comme les obturateurs des alvéoles vides). Inconnu, VOLTA le
+  **déduit** du connecteur fourni (même série, même arrangement, l'autre sexe) et le marque « à vérifier » (9 novembre 2026).
 - **Deux câbles sur une même borne d'équipement : toujours une barrette** (8 novembre 2026).
 - Un fichier peut donner un **calibre** ; VOLTA peut le contester s'il le justifie (« actuel : celui de votre fichier »).
 - **Le courant d'un câble** (v84, revu le 8 novembre 2026) : celui de ce qu'il alimente en aval quand la consommation est
@@ -64,6 +65,8 @@ s'écrit ici, le jour même.
 - **Le courant traverse un relais ou un interrupteur** (v86) : le contact est supposé fermé (le pire cas) et la fiche le dit
   (« à travers 103RL1, contact supposé fermé ») ; une bobine consomme, elle ne traverse pas. Une branche de commande sans
   consommation écrite dit « courant inconnu » et demande la consommation : jamais « Passer en DR16 » sur un fil de commande.
+  Un fil de commande mal protégé **reste « à voir »**, sans geste : la phrase dit les deux voies (un calibre plus petit ou une
+  gauge plus forte, dans votre fichier) (9 novembre 2026).
 - **Le calibre écrit vient du fichier** (v86) : pas de « Manuel » sur le calibre ; seule la proposition justifiée de VOLTA
   (« Retenir le 7,5 A ») écrit, dans l'Excel corrigé.
 

@@ -90,6 +90,10 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
 - 8 novembre 2026, passe 1 : « Comment VOLTA réfléchit » devient **un schéma sobre** (plus de cuisinier) ; la pastille
   « VOLTA peaufine encore… » **se tait** ; Alt+← ramène **la fiche d'avant, d'où qu'elle vienne** ; le **Suivi de
   fabrication entre dans la LPA** (un onglet).
+- 9 novembre 2026, à la livraison de la v87 : un **connecteur d'accouplement inconnu se déduit** du connecteur fourni
+  (même série, même arrangement, l'autre sexe), marqué « à vérifier » (**à faire**, passe 2) ; un fil de commande mal
+  protégé **reste « à voir »** (sans geste, la phrase dit les deux voies) ; les groupes d'une barrette gardent **huit
+  teintes** ; la page inventée ressemble « **à peu près** » à ses schémas — ce qui diffère est demandé.
 
 ## La mesure de la lecture des documents (passe 1, documents inventés, `node tests/lecture-documents.js`)
 
