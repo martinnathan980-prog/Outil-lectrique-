@@ -83,7 +83,7 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
   P3, les groupes d'une barrette en **teintes froides** ; P5, le titre d'une fiche de câble **avec ses deux bouts**.
 - 8 novembre 2026, passe 1 : le connecteur **d'accouplement** (côté harness) se **commande** ; les **obturateurs**
   comptés dans la LPA ; deux câbles sur une borne : **toujours une barrette** ; un folio presque vide : **un dessin plus
-  grand** sur la feuille (à faire).
+  grand** sur la feuille (fait en v87 : tout grandit, à l'écran comme à l'impression).
 - 8 novembre 2026, passe 1 : les disjoncteurs se jugent à **125 °C** (gardé) ; **une seule ambiante** pour tout le plan
   (gardée) ; dans une prise, **la lettre répond toujours à la même lettre** (G face à G : VOLTA signale tout écart) ; un
   connecteur fourni : **l'arrangement se lit dans sa référence**, sinon « déduit des bornes, à vérifier ».
