@@ -808,6 +808,10 @@ function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.
   if (/suffirait|touche la courbe|l’idéal est|\bjuste\b/.test(t)) return [ideal ? 'Retenir le ' + ideal[1] + ' que VOLTA propose' : 'Retenir le calibre que VOLTA propose', 'calibre'];
   if (/sélectivité/.test(t)) return ['Un amont au moins double de l’aval : l’un des deux calibres, dans votre fichier', 'calibre'];
   if (/chute en ligne|chute en pointe/.test(t)) return [/hypothèse|supposé/.test(t) ? 'Écrire les longueurs mesurées dans votre fichier' : 'Une gauge plus forte, ou un chemin plus court', 'chute'];
+  // (passe 87) un câble mal protégé que VOLTA ne sait pas régler d'un geste (un fil de commande : jamais « Passer en DR16 ») : la
+  // phrase ne promet pas une proposition que la fiche ne fait pas — les deux vraies voies, toutes deux dans votre fichier
+  if (/admis|pas protégé|maximum de l’AC|table 11-3/.test(t) && !/contact taille|la gauge limite/i.test(t) && typeof rangDuPoint === 'function' && !rangDuPoint(x).regler)
+    return ['À décider dans votre fichier : un calibre plus petit, ou une gauge plus forte', 'fils'];
   if (/maximum de l’AC|table 11-3/.test(t)) return ['Un calibre plus petit, ou un câble plus gros (AC 43.13-1B, table 11-3)', 'fils'];
   // un CONTACT que le calibre ne protège pas (« Contact taille 20 (7,5 A) < calibre 10 A — pas protégé ») : c'est le contact
   // (v87, S7) la taille de contact qui suffit, quand il y en a une ; sinon c'est la gauge qui limite (un 24 AWG porte 3 A dans tout

@@ -93,9 +93,8 @@ const ACC = 'connecteur d’accouplement', FOURNI = 'fourni avec l’équipement
 
   /* LA SOMME DES FICHES, rangée comme la LPA : une clé par section et par référence, avec les repères où elle va */
   const S = new Map(), L = new Map(), mettre = (M, sec, cle, q, ou) => { const k = sec + '¦' + cle, e = M.get(k) || M.set(k, { q: 0, ou: new Set() }).get(k); e.q += q; (ou || []).forEach(o => e.ou.add(o)); };
-  const section = l => l.role === 'contact à sertir' ? 'contacts' : l.role === ACC ? 'accouplements' : /^obturateur/.test(l.role) ? 'obturateurs' : l.role === 'module de jonction' ? 'modules' : /^rail\b/.test(l.role) ? 'rails' : 'habits';
+  const section = l => l.role === 'prise de coupure' ? 'connecteurs' : l.role === 'contact à sertir' ? 'contacts' : l.role === ACC ? 'accouplements' : /^obturateur/.test(l.role) ? 'obturateurs' : l.role === 'module de jonction' ? 'modules' : /^rail\b/.test(l.role) ? 'rails' : 'habits';
   F.forEach(f => (f.groupes || []).forEach((g, i) => {
-    if (f.prise && i === 0 && g.ref) mettre(S, 'connecteurs', g.ref, 1, [f.nom]);
     g.lignes.forEach(l => { const s = section(l); mettre(S, s, s === 'habits' ? l.role + '|' + l.ref : s === 'accouplements' ? l.ref || 'inconnu|' + g.ref : l.ref, l.q, s === 'rails' ? [] : [f.nom]); }); }));
   const poser = (sec, cle, x) => mettre(L, sec, cle, x.n, sec === 'rails' ? [] : x.ou.map(o => o.split(' ')[0]));
   N.contacts.forEach(x => poser('contacts', x.reference + (x.accessoire ? ' + ' + x.accessoire : ''), x));

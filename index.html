@@ -29041,7 +29041,9 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     koP ? { html: 'Un contact refuse la gauge de son câble : il faut un câble plus fin, ou un autre arrangement.', source: 'tables', etat: 'ko' } : null];
   const fabP = M ? [['fiche', 'Partie mobile', 'ce qui arrive', amont], ['embase', 'Partie fixe', 'ce qui repart', aval]].filter(([, , , xs]) => xs.length).map(([k, t, so, xs], i) => { let pieces = [];
       try { pieces = piecesFabrication(habillageDe({ cle: nom + '|' + k, titre: t, fils: xs.map(x => x.f), pn: b.pn, ref: Q.reference, plan: Q })); } catch (_) { pieces = []; }
-      return { titre: t, ref: i === 0 ? M.reference : '', sous: so, lignes: [...refsDe(xs), ...pieces] }; }) : [];
+      // (passe 87) la prise elle-même se commande (la LPA du plan la compte, `piecesDuPlan`) : sa ligne, en tête — avant, l'onglet
+      // Pièces d'une prise comptait tout sauf elle
+      return { titre: t, ref: i === 0 ? M.reference : '', sous: so, lignes: [...(i === 0 ? [{ q: 1, ref: Q.reference, role: 'prise de coupure', piece: 'prise' }] : []), ...refsDe(xs), ...pieces] }; }) : [];
   // (v81) ce qui la traverse, dessiné : la fiche et l'embase accolées, ce qui arrive à gauche, ce qui repart à droite ; puis
   // la face, en grand, sa légende seule (plus de « 1 contact pris sur 3 » : on le voit)
   const essP = freresVue(nom, 'coupure') + (M ? `<section class="vu-bloc vu-bloc-bro"><h4 class="vu-titre">Ce qui la traverse <span>${esc(pluriel(lettresP.length, 'contact'))}</span></h4>${traverseeDessin(nom, lettresP, coteP)}</section>`
@@ -38696,6 +38698,10 @@ function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.
   if (/suffirait|touche la courbe|l’idéal est|\bjuste\b/.test(t)) return [ideal ? 'Retenir le ' + ideal[1] + ' que VOLTA propose' : 'Retenir le calibre que VOLTA propose', 'calibre'];
   if (/sélectivité/.test(t)) return ['Un amont au moins double de l’aval : l’un des deux calibres, dans votre fichier', 'calibre'];
   if (/chute en ligne|chute en pointe/.test(t)) return [/hypothèse|supposé/.test(t) ? 'Écrire les longueurs mesurées dans votre fichier' : 'Une gauge plus forte, ou un chemin plus court', 'chute'];
+  // (passe 87) un câble mal protégé que VOLTA ne sait pas régler d'un geste (un fil de commande : jamais « Passer en DR16 ») : la
+  // phrase ne promet pas une proposition que la fiche ne fait pas — les deux vraies voies, toutes deux dans votre fichier
+  if (/admis|pas protégé|maximum de l’AC|table 11-3/.test(t) && !/contact taille|la gauge limite/i.test(t) && typeof rangDuPoint === 'function' && !rangDuPoint(x).regler)
+    return ['À décider dans votre fichier : un calibre plus petit, ou une gauge plus forte', 'fils'];
   if (/maximum de l’AC|table 11-3/.test(t)) return ['Un calibre plus petit, ou un câble plus gros (AC 43.13-1B, table 11-3)', 'fils'];
   // un CONTACT que le calibre ne protège pas (« Contact taille 20 (7,5 A) < calibre 10 A — pas protégé ») : c'est le contact
   // (v87, S7) la taille de contact qui suffit, quand il y en a une ; sinon c'est la gauge qui limite (un 24 AWG porte 3 A dans tout

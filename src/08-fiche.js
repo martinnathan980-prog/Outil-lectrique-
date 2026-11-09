@@ -1977,7 +1977,9 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     koP ? { html: 'Un contact refuse la gauge de son câble : il faut un câble plus fin, ou un autre arrangement.', source: 'tables', etat: 'ko' } : null];
   const fabP = M ? [['fiche', 'Partie mobile', 'ce qui arrive', amont], ['embase', 'Partie fixe', 'ce qui repart', aval]].filter(([, , , xs]) => xs.length).map(([k, t, so, xs], i) => { let pieces = [];
       try { pieces = piecesFabrication(habillageDe({ cle: nom + '|' + k, titre: t, fils: xs.map(x => x.f), pn: b.pn, ref: Q.reference, plan: Q })); } catch (_) { pieces = []; }
-      return { titre: t, ref: i === 0 ? M.reference : '', sous: so, lignes: [...refsDe(xs), ...pieces] }; }) : [];
+      // (passe 87) la prise elle-même se commande (la LPA du plan la compte, `piecesDuPlan`) : sa ligne, en tête — avant, l'onglet
+      // Pièces d'une prise comptait tout sauf elle
+      return { titre: t, ref: i === 0 ? M.reference : '', sous: so, lignes: [...(i === 0 ? [{ q: 1, ref: Q.reference, role: 'prise de coupure', piece: 'prise' }] : []), ...refsDe(xs), ...pieces] }; }) : [];
   // (v81) ce qui la traverse, dessiné : la fiche et l'embase accolées, ce qui arrive à gauche, ce qui repart à droite ; puis
   // la face, en grand, sa légende seule (plus de « 1 contact pris sur 3 » : on le voit)
   const essP = freresVue(nom, 'coupure') + (M ? `<section class="vu-bloc vu-bloc-bro"><h4 class="vu-titre">Ce qui la traverse <span>${esc(pluriel(lettresP.length, 'contact'))}</span></h4>${traverseeDessin(nom, lettresP, coteP)}</section>`

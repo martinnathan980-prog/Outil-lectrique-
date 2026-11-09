@@ -93,15 +93,19 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
 
 ## La mesure de la lecture des documents (passe 1, documents inventés, `node tests/lecture-documents.js`)
 
-| Document | Justes | Quand VOLTA dit « sûr », il a raison |
-|---|---|---|
-| A, schéma PDF vectoriel (8 folios) | 65 / 104 (63 %) | 69 % |
-| C, le même en Visio | 71 / 104 (68 %) | 71 % |
-| D, dossier de 300 pages | 1 701 / 3 752 (45 %) | 69 % |
-| B et E, scans | 0 (pas d'OCR) | — |
+| Document | Au début de la passe 1 | À la fin de la passe 1 (v87) | Quand VOLTA dit « sûr », il a raison |
+|---|---|---|---|
+| A, schéma PDF vectoriel (8 folios) | 65 / 104 (63 %) | **104 / 104 (100 %)** | 100 % (102 sur 102) |
+| C, le même en Visio | 71 / 104 (68 %) | **104 / 104 (100 %)** | 100 % (87 sur 87) |
+| D, dossier de 300 pages | 1 701 / 3 752 (45 %) | **3 520 / 3 733 (94 %)** | 100 % (3 327 sur 3 327) |
+| B et E, scans | 0 (pas d'OCR) | 0 (pas d'OCR) | — |
 
-Les causes, dans l'ordre : les barrettes (module + lettre), les renvois entre folios, des symboles lus comme des fils, les
-boîtes en tirets, les masses en râteau, les cartouches en anglais, les tableaux et les phrases, les scans.
+En tout, hors scans : **3 728 liaisons justes sur 3 941 (95 %)**, et jamais une fausse dite « sûre ». Ce qui manque dans D :
+les **tableaux** (210 liaisons sur 6 pages), les **phrases** des notes (3), un renvoi vers un autre plan (1). Les scans
+attendent l'OCR ou l'IA interne (simulée, une page qui doute lui est confiée : B 100 %, E 84 %).
+
+Les causes du début, dans l'ordre (réglées en passe 1) : les barrettes (module + lettre), les renvois entre folios, des
+symboles lus comme des fils, les boîtes en tirets, les masses en râteau, les cartouches en anglais.
 
 **La forme de ses vrais schémas** (le lecteur, 8 novembre 2026) : des numéros de fil **parfois** ; un renvoi s'écrit **folio
 et zone** (« F5/C3 ») ; une barrette se dessine en **pastilles sur un pointillé** ; le folio **recommence à 1 à chaque plan** ;
@@ -112,4 +116,9 @@ les relais et les disjoncteurs ont **leur symbole dessiné dans la boîte** ; de
 
 - **8 novembre 2026 — v86** (passe manuelle, quatorze agents) : l'aluminium, les bornes fixes, la carte et les genres,
   le disjoncteur vivant, un contact un nom, le courant à travers les relais, une seule source, l'historique du plan.
-- **8 novembre 2026 — passe 1** : en cours.
+- **8-9 novembre 2026 — passe 1 → v87** (le premier regard neuf, dix agents) : les mots du lecteur partout (« à régler »,
+  « votre fichier », « l'Excel corrigé », plus de cuisinier) ; le courant inconnu sans consommation et la protection
+  toujours jugée ; une ligne par câble dans les problèmes ; la LPA = la somme des fiches (accouplements, obturateurs,
+  prises, Suivi) ; les teintes froides des groupes, le pointillé de la carte, le câble dit par ses deux bouts ; l'IA
+  interne (réglage, test, file d'attente) ; la lecture des documents de 63 / 68 / 45 % à 100 / 100 / 94 %. Reste : les
+  scans (OCR ou IA), les tableaux des PDF, l'écran de vérification B, les batteries de l'interface à valider.
