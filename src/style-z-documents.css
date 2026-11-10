@@ -77,3 +77,7 @@
    gauche, neutre — plus de vert (style-ref.css dit de même la barre, la légende et le dessin) ─── */
 #fiche .cc-manque{background:linear-gradient(var(--t-1) 0 60%,transparent 0) left top/2px 6px repeat-y,color-mix(in srgb,var(--t-1) 4%,transparent)}
 #fiche .cc-manque .cc-e{color:var(--t-1)}
+
+/* (v89) en largeur de téléphone, le corps d'un document n'a plus que 16 px de marge (style.css) : la tête du document, qui
+   sortait de 20 px de chaque côté pour toucher les bords, débordait de 4 px (la page glissait de côté) */
+@media (max-width:700px){ #fiche .fiche-tete{margin-left:-16px;margin-right:-16px} }

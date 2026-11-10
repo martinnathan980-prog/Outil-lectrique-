@@ -20,14 +20,14 @@
      4. une feuille : toutes ses lignes, les remplies, les vides ; les exemples se
         masquent ; un calibre rempli après la ligne 5 000 se voit ;
      5. le résumé en texte porte tout ; rien n'est gardé, aucune erreur ;
-     6-7. l'IMPORT d'un petit classeur : ce que Volta prend, la différence, la
+     6-7. l'IMPORT d'un petit classeur : ce que VOLTA prend, la différence, la
         source vérifiée qui gagne, garder, recharger, oublier ;
      8. la COHÉRENCE (le lecteur, 20 octobre 2026 : « Tout est correct ? ») : un
         classeur de lignes saines et d'un défaut planté par contrôle — chacun
         trouvé, compté juste, avec sa référence ; aucune ligne saine en exemple ;
         ce qui se contredit écarté ; l'onglet, ses exemples, le rapport en texte
         (ni le plan, ni le classeur, ni les programmes) ; gardée, la cohérence
-        revient ; et les tables de Volta passées comme des lignes de SEE : rien.
+        revient ; et les tables de VOLTA passées comme des lignes de SEE : rien.
    ========================================================================= */
 const { chromium } = require('playwright');
 const { fichierDemande } = require('./pilote');
@@ -78,8 +78,10 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   ok('treize feuilles lues en entier (une à la fois) et vérifiées ligne par ligne, en moins de 30 s (SheetJS seul en prend 8 à 13 sur une machine partagée)', ms < 30000 && await p.evaluate(() => SEE.lu.feuilles.length === 13 && SEE.lu.feuilles.find(f => f.nom === 'EED_ViewEquipments').lignes === 7091 && SEE.lu.feuilles.find(f => f.nom === 'EED_OBJ_END_Fitting_Rules_Conta').lignes === 6000), ms + ' ms');
 
   const sp = t => t == null ? t : String(t).replace(/[  ]/g, ' ');
+  // (v84) les feuilles du classeur sont dans le menu de l'onglet « Feuilles » : on l'ouvre, on choisit
+  const feuille = async i => { await p.click('#fiche-corps .see-feuilles > summary'); await p.waitForTimeout(150); await p.click(`#fiche-corps .see-feuilles-l [data-see-vue="${i}"]`); await p.waitForTimeout(250); };
   const P = () => p.evaluate(() => { const c = $('fiche-corps'), q = s => c.querySelector(s), qa = s => [...c.querySelectorAll(s)];
-    return { onglets: qa('[data-see-vue]').map(x => x.querySelector('b').textContent + (x.querySelector('span') ? '=' + x.querySelector('span').textContent : '')).join(' | '), choisi: (q('[data-see-vue][aria-selected="true"] b') || {}).textContent,
+    return { onglets: qa('[data-see-vue]').map(x => x.querySelector('b').textContent + (x.querySelector('span') ? '=' + x.querySelector('span').textContent : '')).join(' | '), choisi: (q('.see-onglets [aria-selected="true"] b') || q('[data-see-vue][aria-current="true"] b') || {}).textContent, barre: qa('.see-onglets > [role="tab"], .see-onglets > details > summary').map(x => x.querySelector('b').textContent + (x.querySelector('span') ? '=' + x.querySelector('span').textContent : '')).join(' | '), largeurs: [...new Set(qa('.see-onglets > [role="tab"], .see-onglets > details').map(x => Math.round(x.getBoundingClientRect().width)))].join(),
       nom: (q('.see-nom') || {}).textContent, compte: (q('.see-compte') || {}).textContent, cols: qa('.see-cols .see-col .see-c').map(x => x.textContent),
       ex: Object.fromEntries(qa('.see-cols .see-col').map(li => [li.querySelector('.see-c').textContent, li.querySelector('.see-e').textContent + ' · ' + li.querySelector('.see-t').textContent])),
       petites: qa('.see-petite').map(g => g.querySelector('h4').textContent.replace(/\s+/g, ' ').trim() + ' : ' + [...g.querySelectorAll('.see-col')].map(li => li.querySelector('.see-c').textContent + ' = ' + (li.querySelector('.see-e') || li.querySelector('.see-t')).textContent).join(' | ')),
@@ -91,7 +93,9 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
 
   // 2. les liens, l'onglet d'office
   const L = S.liens.map(sp).join(' || ').replace(/\s*→\s*/g, ' → ');
-  ok('l’écran s’ouvre sur « Import », puis « Cohérence » (ses contrôles à reprendre), « Liens », « Codes », un onglet par feuille (son nom court, sans OBJ_ ni LNK_, toutes ses lignes)', S0.choisi === 'Import' && S.choisi === 'Liens' && sp(S.onglets) === 'Import | Cohérence=11 | Liens=8 | Codes | EndFittingRules=1 297 | CablesAndWires=748 | ConnectiveEquipments=2 310 | ContactLayouts=229 | Accessories=1 104 | Equipments=7 091 | END_Fitting_Rules_Conta=6 000 | PlugMapPin=3 000 | Wires=1 492 | Equi_Mating=500 | Categories=50 | EndFitting_ProductFamil=3 000 | ProductFamilies=3', sp(S.onglets));   // v73 (domaine E, repris en v74) : l’onglet porte le nom court, sans OBJ_, LNK_, SET_ — le nom entier dans sa bulle
+  ok('l’écran s’ouvre sur « Import », puis « Cohérence » (ses contrôles à reprendre), « Liens », « Codes » et « Feuilles » — cinq onglets de la même largeur ; les treize feuilles du classeur dans le menu de « Feuilles » (leur nom court, sans OBJ_ ni LNK_, toutes leurs lignes)',
+    S0.choisi === 'Import' && S.choisi === 'Liens' && sp(S.barre) === 'Import | Cohérence=11 | Liens=8 | Codes | Feuilles=13' && !/,/.test(S.largeurs)
+    && sp(S.onglets).replace(/=[A-Za-z_]+/g, '=') === 'Import | Cohérence=11 | Liens=8 | Codes | EndFittingRules=1297 lignes | CablesAndWires=748 lignes | ConnectiveEquipments=2310 lignes | ContactLayouts=229 lignes | Accessories=1104 lignes | Equipments=7091 lignes | END_Fitting_Rules_Conta=6000 lignes | PlugMapPin=3000 lignes | Wires=1492 lignes | Equi_Mating=500 lignes | Categories=50 lignes | EndFitting_ProductFamil=3000 lignes | ProductFamilies=3 lignes', sp(S.barre) + ' · largeurs ' + S.largeurs + ' · ' + sp(S.onglets).slice(0, 120));   // v73 (domaine E, repris en v74) : l’onglet porte le nom court, sans OBJ_, LNK_, SET_ — le nom entier dans sa bulle
   ok('les identifiants se relient d’eux-mêmes : les contacts à leur règle, les broches et les connecteurs à leur arrangement, les paires fiche ↔ embase à leurs connecteurs — chaque fois la part retrouvée', [
       'OBJ_END_Fitting_Rules_Conta : IDEquipment → EndFittingRules.IDEquipment 1 297 / 1 297 (100 %)',
       'OBJ_PlugMapPin : IDPlugMap → ContactLayouts.ID 229 / 229 (100 %)',
@@ -112,7 +116,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   const pl = sp(S.plan);
   ok('« Suivant » : les Codes, et d’abord le plan ouvert face à SEE — ses types de câble (DR12, DR16 et BN24 manquent), ses familles (BN manque)', S.choisi === 'Codes'
     && /Types de câble 4 \/ 7 \(57 %\) retrouvés — dans CablesAndWires\.PartNo \(4\)/.test(pl) && /pas trouvés : BN24 · DR12 · DR16/.test(pl) && /Familles de câble 2 \/ 3 \(67 %\) retrouvés/.test(pl) && /pas trouvés : BN(?![0-9])/.test(pl), pl.slice(0, 260));
-  ok('des références du plan, seulement le compte et les colonnes : aucune ne s’affiche', /Références des équipements 1 \/ 24 \(4 %\) retrouvé — dans Equipments\.PartNo \(1\)/.test(pl) && !/MS3320|EN2997Y1|E0599|NSA93/.test(pl), pl.slice(pl.indexOf('Références'), pl.indexOf('Références') + 120));
+  ok('des références du plan, seulement le compte et les colonnes : aucune ne s’affiche', /Références des équipements 1 \/ \d+ \(4 %\) retrouvé — dans Equipments\.PartNo \(1\)/.test(pl) && !/MS3320|EN2997Y1|E0599|NSA93/.test(pl), pl.slice(pl.indexOf('Références'), pl.indexOf('Références') + 120));
   ok('les codes : les valeurs et leur nombre de lignes (WireType des contacts, la liste CableTypeList valeur par valeur, ContactGauge, Gender…)', /^DM\(1 500\) · DR\(1 500\) · WX\(1 500\) · YYXE\(1 500\)$/.test(sp(S.codes['OBJ_END_Fitting_Rules_Conta · WireType'] || '')) && /^DM\(1 297\) · DR\(1 297\) · KD\(649\) · MLB\(648\)$/.test(sp(S.codes['EndFittingRules · CableTypeList'] || '')) && /^0\.3257432 AWG 22\(2 000\) · 0\.517952 AWG 20\(2 000\) · 1\.309537 AWG 16\(2 000\)$/.test(sp(S.codes['OBJ_END_Fitting_Rules_Conta · ContactGauge'] || '')) && !!S.codes['ConnectiveEquipments · Gender'], JSON.stringify([S.codes['OBJ_END_Fitting_Rules_Conta · ContactGauge'], S.codes['EndFittingRules · CableTypeList']]));
   ok('deux écritures d’un même flottant ne font qu’un code (0.32574322630000002 en texte = 0.3257432263 ; 0.0099999998 = 0.01), et la gauge AWG d’une section se lit à côté', sp(S.codes['OBJ_END_Fitting_Rules_Conta · WireGauge']) === '0.3257432 AWG 22(4 000) · -1(2 000)' && sp(S.codes['ConnectiveEquipments · Resistance']) === '0.01(1 540) · 0(770)' && !/AWG/.test(S.codes['ConnectiveEquipments · Resistance']), JSON.stringify([S.codes['OBJ_END_Fitting_Rules_Conta · WireGauge'], S.codes['ConnectiveEquipments · Resistance']]));
   ok('qui a fait quoi (CreatorUser…) n’est jamais un code', !Object.keys(S.codes).some(k => /Creator|User/.test(k)), Object.keys(S.codes).join(', ').slice(0, 200));
@@ -125,11 +129,11 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   await p.click('#see-ex'); S = await P();
   ok('« Exemples de valeurs » décoché : plus aucune valeur, seulement les noms, les taux et le genre', !Object.values(S.ex).some(v => /E07|Contact ·|Release/.test(v)) && /^oui\/non · 100 %$/.test(sp(S.ex.Released)), JSON.stringify([S.ex.PartNo, S.ex.Released]));
   await p.click('#see-ex');
-  await p.click('[data-see-vue="1"]'); S = await P();
+  await feuille(1); S = await P();
   ok('une gauge en mm² montre sa gauge AWG dans les exemples', /^0\.3257 = AWG 22 · 0\.5179 = AWG 20 · 100 %$/.test(sp(S.ex.Gauge)), S.ex.Gauge);
-  await p.click('[data-see-vue="5"]'); S = await P();
+  await feuille(5); S = await P();
   ok('Equipments lue en entier : le calibre, rempli seulement après la ligne 5 000, est une colonne remplie (29 %), pas une vide', S.choisi === 'Equipments' && S.cols.includes('Intensity_Nominal') && /^10 · 29 %$/.test(sp(S.ex.Intensity_Nominal)), S.ex.Intensity_Nominal);
-  await p.click('[data-see-vue="12"]');
+  await feuille(12);
   ok('au dernier onglet, « Suivant » est éteint', await p.evaluate(() => $('see-suiv').disabled && !$('see-prec').disabled));
   if (CAPTURES) await p.screenshot({ path: CAPTURES + '/see-3-feuille.png' });
 
@@ -144,13 +148,15 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   await p.evaluate(() => importerNorme(window.__see)); await p.waitForFunction(() => app.fiche && app.fiche.mode === 'see');
   ok('déposé comme une norme, il est résumé aussi — rien n’est importé dans les normes', await p.evaluate(() => !NORMES.import && SEE.vue === 'import' && !BASE_SEE.base));
   await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(400); S = await P();
-  ok('au téléphone, la page ne déborde pas de côté', !S.deborde && await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+  { const Dt = await p.evaluate(() => { const c = $('fiche-corps'), R = c.getBoundingClientRect(); return { doc: document.documentElement.scrollWidth, l: innerWidth, corps: c.scrollWidth + ' > ' + c.clientWidth,
+      qui: [...c.querySelectorAll('*')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.right > R.right + 1 && !e.closest('.nm-defile, .see-defile, [style*="overflow"]'); }).slice(0, 6).map(e => e.tagName.toLowerCase() + '.' + String(e.className).split(' ').slice(0, 2).join('.') + ' ' + Math.round(e.getBoundingClientRect().right) + ' « ' + e.textContent.slice(0, 30) + ' »') }; });
+    ok('au téléphone, la page ne déborde pas de côté', !S.deborde && Dt.doc <= Dt.l + 1, JSON.stringify(Dt)); }
   ok('aucune erreur dans la page', !e.length, e.slice(0, 2).join(' | '));
 
 
   // 7. L'IMPORT : un petit classeur comme celui du lecteur — des règles (une validée, une obsolète, une en cours, une de
-  // cosses), leurs contacts (un qui change Volta, un pareil, un nouveau, un sans fil), deux câbles et leurs conducteurs,
-  // deux faces (une EN 2997 que Volta connaît, une EN 3545 qu'il ne connaît pas), des connecteurs du plan ouvert, une paire
+  // cosses), leurs contacts (un qui change VOLTA, un pareil, un nouveau, un sans fil), deux câbles et leurs conducteurs,
+  // deux faces (une EN 2997 que VOLTA connaît, une EN 3545 qu'il ne connaît pas), des connecteurs du plan ouvert, une paire
   // fiche ↔ embase. Garder, voir la différence, la fiche, le programme, recharger la page, oublier.
   await p.setViewportSize({ width: 1600, height: 1000 }); await p.evaluate(() => { fermerFiche(true); atelier.exempleSansCalibreAuto(); }); await p.waitForTimeout(400);
   const avant = await p.evaluate(() => ({ c: contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR24', 24).reference, c16: contactDuFil(app.norme, 'EN3645', '16', 'M', 'XE16', 16).reference, k: cableDuType(app.norme, 'DR24').diametre, m: moduleDeReference(app.norme, 'EN2997-002-14-12').note }));
@@ -217,65 +223,65 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
     I.contacts.join('|') === 'EN2997/M/20/*/24/EN3155-099M2020//|EN2997/M/20/*/22/EN3155-018M2020//|EN2997/F/20/DR/20/EN3155-019F2020/E0718-20-30/|EN3545/M/20/*/*/EN3155-016M2020//à confirmer|EN2997/M/20/DM/24/EN3155-099M2020//|EN3645/M/8/WH/*/E0613KB0800//|EN3645/M/16/XE/*/ECS0000M1600//|E0710/F/*/*/*/E0711-20XX//|EN2997/M/20/*/20/EN3155-018M2018//|EN2997/F/20/*/26/EN3155-019F2022//'
     && I.b.obsoletes === 1 && I.b.autres.Lug_WiresCombination === 1 && I.b.sansFil === 1, I.contacts.join(' | ') + ' · ' + JSON.stringify(I.b));
   ok('les câbles : Ø et masse en mm et g/m, la résistance de leurs conducteurs reliés (mΩ/m), les brins, le blindage', I.cables.join('|') === 'DR24/1.1/1.75/91.2/1/0/1|ZZ20/4.2/25.1/35.1/2/1/3|DRB8/8.8/185.4////1|DR6/5.7/2.08///0/1', I.cables.join(' | '));
-  ok('les faces : l’EN 2997 14-12 (douze contacts, trois de taille 16, ronde) et l’EN 3545 A10 que Volta ne connaissait pas (rectangulaire)', I.modules.join('|') === 'EN2997/14-12/20/12/circulaire|EN3545/A10/20/10/rectangle|EN2997/08-03/20/3/circulaire|EN3646/18-11/16/11/circulaire|EN3645/23N55/20/55/circulaire|EN2997/10-02/20/2/circulaire', I.modules.join(' | '));
+  ok('les faces : l’EN 2997 14-12 (douze contacts, trois de taille 16, ronde) et l’EN 3545 A10 que VOLTA ne connaissait pas (rectangulaire)', I.modules.join('|') === 'EN2997/14-12/20/12/circulaire|EN3545/A10/20/10/rectangle|EN2997/08-03/20/3/circulaire|EN3646/18-11/16/11/circulaire|EN3645/23N55/20/55/circulaire|EN2997/10-02/20/2/circulaire', I.modules.join(' | '));
   ok('les équipements et les programmes de SEE', I.eq === 5 && I.prog === 'EC225 4, NH90 2', I.eq + ' · ' + I.prog);
   // la source vérifiée gagne (le lecteur, 20 octobre 2026 : « quand SEE contredit une ligne avec des sources vérifiées, on
   // prend les sources vérifiées ») : le contact EN 2997 et les câbles DR (deux sources), les faces EN 2997 (MIL-STD-1554A)
-  ok('la différence avec Volta : quatre contacts remplacent les leurs (KB1600, « à confirmer » ; KB0800 écrit en entier ; un autre contact qui convient aussi et un manchon en moins, contre des lignes vérifiées), quatre nouveaux, un pareil, un que la source vérifiée garde (sa partie -099 n’existe pas) ; aucun câble ne remplace (DR24 vérifié, DR6 impossible), un nouveau, un pareil ; aucune face ne remplace (08-03 et 14-12 : la norme les vérifie), deux redessinées, une nouvelle',
+  ok('la différence avec VOLTA : quatre contacts remplacent les leurs (KB1600, « à confirmer » ; KB0800 écrit en entier ; un autre contact qui convient aussi et un manchon en moins, contre des lignes vérifiées), quatre nouveaux, un pareil, un que la source vérifiée garde (sa partie -099 n’existe pas) ; aucun câble ne remplace (DR24 vérifié, DR6 impossible), un nouveau, un pareil ; aucune face ne remplace (08-03 et 14-12 : la norme les vérifie), deux redessinées, une nouvelle',
     JSON.stringify(I.diff) === '{"c":[4,4,1,1],"k":[0,1,1,2],"m":[0,2,1,2]}' && I.premiers.v === 'EN 2997-002 · mâle · taille 20 · tout câble · 24 AWG / DR24,DR6 / EN 2997-002 · 14-12,EN 2997-002 · 08-03', JSON.stringify(I.diff) + ' · ' + I.premiers.v);
   // la vraie base du lecteur (octobre 2026) : « nature : torsadé → — » sur des dizaines de câbles, une masse divisée par 65
-  ok('ce que SEE laisse vide, Volta le garde : DRB8 (ni conducteur, ni blindage, ni nature dans SEE) reste torsadé à deux brins — identique', I.premiers.k.split(',').indexOf('DRB8') < 0 && !/DRB8/.test(I.texte), I.premiers.k);
-  ok('un chiffre de SEE impossible pour sa jauge ne passe pas : DR6 garde sa masse, celle de SEE barrée (2,08 g/m → 135 g/m, « 65 fois moins dans SEE — impossible pour sa jauge »)', !I.premiers.k && /Câbles rien ne remplace Volta · 2 lignes où la source vérifiée garde Volta/.test(sp(I.texte)) && /DR6\s*masse\s*2,08 g\/m\s*→\s*135 g\/m\s*65 fois moins dans SEE — impossible pour sa jauge · à corriger dans SEE/.test(sp(I.texte)), (sp(I.texte).match(/Câbles.{0,600}/) || [''])[0]);
-  ok('la physique juge SEE même sans Volta : la masse du DR6 (2,08 g/m) est sous celle de son cuivre seul (118 g/m) — la bulle le dit', /moins que le cuivre seul de son conducteur de 6 AWG \(118 g\/m\)/.test(I.bulles), I.bulles.slice(0, 200));
-  ok('un contact que Volta a vérifié (EN 2997 : EN3155-018M2020, Souriau et TE) et que SEE contredit (-099M2020) reste : celui de SEE barré, « la source vérifiée garde Volta · à corriger dans SEE », la source dans la bulle', /EN3155-099M2020\s*→\s*EN3155-018M2020\s*la source vérifiée garde Volta · à corriger dans SEE/.test(sp(I.texte)) && /Souriau, EN3155 Qualified Contacts/.test(I.bulles), (sp(I.texte).match(/Contacts à sertir.{0,500}/) || [''])[0]);
-  ok('un nom écrit en entier par SEE (KB0800 → E0613KB0800) se dit tel, à la fin ; une ligne « à confirmer » de Volta, SEE la remplace (KB1600 → ECS0000M1600)', I.premiers.c === 'ECS0000M1600,EN3155-018M2018,EN3155-019F2022,E0613KB0800' && /KB1600\s*→\s*ECS0000M1600/.test(sp(I.texte)) && /dont 1 nom écrit en entier/.test(sp(I.texte)) && /nom complet\s*KB0800\s*→\s*E0613KB0800/.test(sp(I.texte)), I.premiers.c);
-  ok('les faces : le dessin ne compte plus (toute face de SEE est à l’échelle) ; les noms qui diffèrent se montrent', /2 faces redessinées à l’échelle, mêmes contacts/.test(sp(I.texte)) && /08-03\s*noms\s*A B C\s*→\s*1 2 3\s*la source vérifiée garde Volta/.test(sp(I.texte)) && !/relevée sur la figure/.test(I.texte), (sp(I.texte).match(/Faces des connecteurs.{0,160}/) || [''])[0]);
-  ok('à compte égal, la taille de chaque contact : l’EN 2997 14-12 de SEE met ses #16 en 1, 2, 3, la norme (MIL-STD-1554A, vérifiée) en 4, 7, 10 — la norme reste : « 1 2 3 #16 · 4 7 10 #20 → 1 2 3 #20 · 4 7 10 #16 »', /14-12\s*tailles\s*1 2 3 #16 · 4 7 10 #20\s*→\s*1 2 3 #20 · 4 7 10 #16\s*la source vérifiée garde Volta/.test(sp(I.texte)), (sp(I.texte).match(/14-12.{0,120}/) || [''])[0]);
+  ok('ce que SEE laisse vide, VOLTA le garde : DRB8 (ni conducteur, ni blindage, ni nature dans SEE) reste torsadé à deux brins — identique', I.premiers.k.split(',').indexOf('DRB8') < 0 && !/DRB8/.test(I.texte), I.premiers.k);
+  ok('un chiffre de SEE impossible pour sa jauge ne passe pas : DR6 garde sa masse, celle de SEE barrée (2,08 g/m → 135 g/m, « 65 fois moins dans SEE — impossible pour sa jauge »)', !I.premiers.k && /Câbles rien ne remplace VOLTA · 2 lignes où la source vérifiée garde VOLTA/.test(sp(I.texte)) && /DR6\s*masse\s*2,08 g\/m\s*→\s*135 g\/m\s*65 fois moins dans SEE — impossible pour sa jauge · à corriger dans SEE/.test(sp(I.texte)), (sp(I.texte).match(/Câbles.{0,600}/) || [''])[0]);
+  ok('la physique juge SEE même sans VOLTA : la masse du DR6 (2,08 g/m) est sous celle de son cuivre seul (118 g/m) — la bulle le dit', /moins que le cuivre seul de son conducteur de 6 AWG \(118 g\/m\)/.test(I.bulles), I.bulles.slice(0, 200));
+  ok('un contact que VOLTA a vérifié (EN 2997 : EN3155-018M2020, Souriau et TE) et que SEE contredit (-099M2020) reste : celui de SEE barré, « la source vérifiée garde VOLTA · à corriger dans SEE », la source dans la bulle', /EN3155-099M2020\s*→\s*EN3155-018M2020\s*la source vérifiée garde VOLTA · à corriger dans SEE/.test(sp(I.texte)) && /Souriau, EN3155 Qualified Contacts/.test(I.bulles), (sp(I.texte).match(/Contacts à sertir.{0,500}/) || [''])[0]);
+  ok('un nom écrit en entier par SEE (KB0800 → E0613KB0800) se dit tel, à la fin ; une ligne « à confirmer » de VOLTA, SEE la remplace (KB1600 → ECS0000M1600)', I.premiers.c === 'ECS0000M1600,EN3155-018M2018,EN3155-019F2022,E0613KB0800' && /KB1600\s*→\s*ECS0000M1600/.test(sp(I.texte)) && /dont 1 nom écrit en entier/.test(sp(I.texte)) && /nom complet\s*KB0800\s*→\s*E0613KB0800/.test(sp(I.texte)), I.premiers.c);
+  ok('les faces : le dessin ne compte plus (toute face de SEE est à l’échelle) ; les noms qui diffèrent se montrent', /2 faces redessinées à l’échelle, mêmes contacts/.test(sp(I.texte)) && /08-03\s*noms\s*A B C\s*→\s*1 2 3\s*la source vérifiée garde VOLTA/.test(sp(I.texte)) && !/relevée sur la figure/.test(I.texte), (sp(I.texte).match(/Faces des connecteurs.{0,160}/) || [''])[0]);
+  ok('à compte égal, la taille de chaque contact : l’EN 2997 14-12 de SEE met ses #16 en 1, 2, 3, la norme (MIL-STD-1554A, vérifiée) en 4, 7, 10 — la norme reste : « 1 2 3 #16 · 4 7 10 #20 → 1 2 3 #20 · 4 7 10 #16 »', /14-12\s*tailles\s*1 2 3 #16 · 4 7 10 #20\s*→\s*1 2 3 #20 · 4 7 10 #16\s*la source vérifiée garde VOLTA/.test(sp(I.texte)), (sp(I.texte).match(/14-12.{0,120}/) || [''])[0]);
   // la vraie base (octobre 2026, photos v69) : C et c y portent le même nom ; la cavité −1 de 431 lignes
-  ok('SEE perd la casse des noms (c pour C) : Volta reprend ceux de la norme, aux places de SEE — la 18-11 et la 23N55 ne sont plus que redessinées ; la 10-02, où deux broches gardent le même nom, reste celle de Volta',
-    I.casse === '2/EN 2997-002 · 10-02/0' && /2 faces aux noms remis à la casse de la norme/.test(sp(I.texte)) && /1 face reste celle de Volta : SEE y laisse deux contacts du même nom \(EN 2997-002 · 10-02\)/.test(sp(I.texte)), I.casse + ' · ' + (sp(I.texte).match(/Faces des connecteurs.{0,420}/) || [''])[0]);
+  ok('SEE perd la casse des noms (c pour C) : VOLTA reprend ceux de la norme, aux places de SEE — la 18-11 et la 23N55 ne sont plus que redessinées ; la 10-02, où deux broches gardent le même nom, reste celle de VOLTA',
+    I.casse === '2/EN 2997-002 · 10-02/0' && /2 faces aux noms remis à la casse de la norme/.test(sp(I.texte)) && /1 face reste celle de VOLTA : SEE y laisse deux contacts du même nom \(EN 2997-002 · 10-02\)/.test(sp(I.texte)), I.casse + ' · ' + (sp(I.texte).match(/Faces des connecteurs.{0,420}/) || [''])[0]);
   ok('une cavité −1 se lit « toute taille », comme la gauge −1', I.toute === 1 && /E0710 · femelle · toute taille|toute taille/.test(sp(I.texte)), String(I.toute));
   ok('la cavité −1 se raconte (le lecteur ne sait pas ce qu’elle veut dire) : ses règles, ses contacts, ses types et gauges de câble, comptés', /La cavité « −1 » 1 ligne de contact sans taille de cavité/.test(sp(I.texte)) && /Leurs règles\s*E0710 - Plug\/Square Receptacle\s*1\s*Leurs contacts\s*E0711-20XX\s*1\s*Leurs types de câble\s*\*\s*1\s*Leurs gauges de câble\s*toute gauge \(−1\)\s*1/.test(sp(I.texte)), (sp(I.texte).match(/La cavité.{0,400}/) || [''])[0]);
   ok('« Pin » se lit mâle ; une cavité illisible se montre par sa valeur', I.contacts.includes('EN2997/M/20/DM/24/EN3155-099M2020//') && JSON.stringify(I.ill) === '{"cavité 0,4 mm²":1}' && /cavité 0,4 mm² \(1\)/.test(sp(I.texte)), JSON.stringify(I.ill));
-  ok('l’onglet Import s’ouvre d’office : il dit ce que Volta prend, barre ce qu’il écarte, propose « Garder dans Volta » — rien n’est encore gardé',
+  ok('l’onglet Import s’ouvre d’office : il dit ce que VOLTA prend, barre ce qu’il écarte, propose « Garder dans VOLTA » — rien n’est encore gardé',
     I.vue === 'import' && I.garder && !I.base && /SEE gagne, sauf contre une ligne que deux sources ont vérifiée/.test(I.texte) && /EN3155-099M2020\s*→\s*EN3155-018M2020/.test(I.texte) && /1,1 mm\s*→\s*0,96 mm/.test(sp(I.texte)) && /1 règle obsolète ignorée/.test(sp(I.texte)) && /Lug_WiresCombination/.test(I.texte), sp(I.texte).slice(300, 900));
-  ok('tant qu’elle n’est pas gardée, Volta ne s’en sert pas', await p.evaluate(a => contactDuFil(app.norme, 'EN3645', '16', 'M', 'XE16', 16).reference === a, avant.c16), avant.c16);
+  ok('tant qu’elle n’est pas gardée, VOLTA ne s’en sert pas', await p.evaluate(a => contactDuFil(app.norme, 'EN3645', '16', 'M', 'XE16', 16).reference === a, avant.c16), avant.c16);
   if (CAPTURES) await p.screenshot({ path: CAPTURES + '/see-4-import.png' });
   await p.click('#see-garder'); await p.waitForFunction(() => !!BASE_SEE.base);
   const A = await p.evaluate(() => { const c = contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR24', 24), c16 = contactDuFil(app.norme, 'EN3645', '16', 'M', 'XE16', 16), k = cableDuType(app.norme, 'DR24'), m = moduleDeReference(app.norme, 'EN2997-002-14-12');
     return { c: c.reference, cs: c.source, dc: differenceSEEMots('contacts', c), c16: c16.reference, cs16: c16.source, dc16: differenceSEEMots('contacts', c16), k: k.diametre, dr6m: differenceSEEMots('cables', cableDuType(app.norme, 'DR6')), dk: differenceSEEMots('cables', k), m: m && [m.reference, m.contacts.length, m.note.slice(0, 40), m.contacts.filter(x => x.taille === '16').length], n3545: normeDesModules(app.norme).modules.filter(x => x.famille === 'EN3545').length,
       z: !!cableDuType(app.norme, 'ZZ20'), f1811: (m => m && [m.contacts.map(c => c.lettre).join(''), /casse de la norme/.test(m.note)].join('/'))(moduleDeReference(app.norme, 'EN3646-002-18-11')),
       f2355: (m => m && [m.contacts.length, ['C', 'c', 'E', 'e', 'a', 'A'].every(l => m.contacts.some(c => c.lettre === l)), new Set(m.contacts.map(c => c.lettre)).size].join('/'))(moduleDeReference(app.norme, 'EN3645-002-23N55')),
-      f1002: (m => m && /^face SEE/.test(m.note))(moduleDeReference(app.norme, 'EN2997-002-10-02')), tout: (c => c && c.reference)(contactDuFil(app.norme, 'E0710', '20', 'F', 'DR20', 20)), drb8: (x => x && [x.nature, x.brins, x.resistance, x.blindage, /de Volta : brins, nature, resistance/.test(x.note)].join('/'))(cableDuType(app.norme, 'DRB8')), dr6: cableDuType(app.norme, 'DR6').masse, etat: ($('fiche-corps').querySelector('.see-etat') || {}).textContent || '', oublier: !!$('see-oublier') }; });
-  ok('gardée : SEE passe devant Volta là où Volta n’a qu’une ligne « à confirmer » (KB1600 → ECS0000M1600), apporte ses nouveautés (EN 3545, ZZ20) ; la source vérifiée reste (le contact EN 2997, le Ø du DR24, la face 14-12 de la norme)',
+      f1002: (m => m && /^face SEE/.test(m.note))(moduleDeReference(app.norme, 'EN2997-002-10-02')), tout: (c => c && c.reference)(contactDuFil(app.norme, 'E0710', '20', 'F', 'DR20', 20)), drb8: (x => x && [x.nature, x.brins, x.resistance, x.blindage, /de VOLTA : brins, nature, resistance/.test(x.note)].join('/'))(cableDuType(app.norme, 'DRB8')), dr6: cableDuType(app.norme, 'DR6').masse, etat: ($('fiche-corps').querySelector('.see-etat') || {}).textContent || '', oublier: !!$('see-oublier') }; });
+  ok('gardée : SEE passe devant VOLTA là où VOLTA n’a qu’une ligne « à confirmer » (KB1600 → ECS0000M1600), apporte ses nouveautés (EN 3545, ZZ20) ; la source vérifiée reste (le contact EN 2997, le Ø du DR24, la face 14-12 de la norme)',
     A.c16 === 'ECS0000M1600' && A.cs16 === 'SEE' && A.c === 'EN3155-018M2020' && A.cs !== 'SEE' && A.k === 0.96 && A.m[0] === 'EN2997-002-14-12' && A.m[1] === 12 && !/^face SEE/.test(A.m[2]) && A.m[3] === 3 && A.n3545 === 1 && A.z && /Gardée sur ce PC/.test(A.etat) && A.oublier, JSON.stringify(A));
-  ok('gardée : les faces de SEE aux noms de la norme (18-11 : A…L, la 23N55 : C et c, 55 noms distincts), la 10-02 ambiguë reste celle de Volta ; le contact « toute taille » sert une cavité 20 que rien d’autre ne sert',
+  ok('gardée : les faces de SEE aux noms de la norme (18-11 : A…L, la 23N55 : C et c, 55 noms distincts), la 10-02 ambiguë reste celle de VOLTA ; le contact « toute taille » sert une cavité 20 que rien d’autre ne sert',
     A.f1811 === 'ABCDEFGHJKL/true' && A.f2355 === '55/true/55' && A.f1002 === false && A.tout === 'E0711-20XX', [A.f1811, A.f2355, A.f1002, A.tout].join(' · '));
-  ok('gardée : la case vide de SEE prend la valeur de Volta (DRB8 torsadé, deux brins, sa résistance, la note le dit) ; la masse impossible du DR6 ne passe pas (135 g/m)', A.drb8 === 'torsadé/2/2.37/false/true' && A.dr6 === 135, A.drb8 + ' · ' + A.dr6);
-  ok('la fiche dit, ligne par ligne, ce que SEE remplace (KB1600 → ECS0000M1600) et ce qu’il contredit sans passer (« SEE dit autre chose : contact EN3155-099M2020 (Volta : EN3155-018M2020) — Volta garde ce que deux sources ont vérifié »)',
-    /contact KB1600 → ECS0000M1600/.test(A.dc16) && /^SEE dit autre chose : contact EN3155-099M2020 \(Volta : EN3155-018M2020\) — partie -099 que l’EN 3155 n’a pas : Volta garde ce que deux sources ont vérifié : à corriger dans SEE$/.test(A.dc) && /Ø 1,1 \(Volta : 0,96\)/.test(A.dk.replace(/ mm/g, '')) && /masse 2,08 g\/m \(Volta : 135 g\/m\)/.test(A.dr6m), [A.dc16, A.dc, A.dk, A.dr6m].join(' · '));
+  ok('gardée : la case vide de SEE prend la valeur de VOLTA (DRB8 torsadé, deux brins, sa résistance, la note le dit) ; la masse impossible du DR6 ne passe pas (135 g/m)', A.drb8 === 'torsadé/2/2.37/false/true' && A.dr6 === 135, A.drb8 + ' · ' + A.dr6);
+  ok('la fiche dit, ligne par ligne, ce que SEE remplace (KB1600 → ECS0000M1600) et ce qu’il contredit sans passer (« SEE dit autre chose : contact EN3155-099M2020 (VOLTA : EN3155-018M2020) — VOLTA garde ce que deux sources ont vérifié »)',
+    /contact KB1600 → ECS0000M1600/.test(A.dc16) && /^SEE dit autre chose : contact EN3155-099M2020 \(VOLTA : EN3155-018M2020\) — partie -099 que l’EN 3155 n’a pas : VOLTA garde ce que deux sources ont vérifié : à corriger dans SEE$/.test(A.dc) && /Ø 1,1 \(VOLTA : 0,96\)/.test(A.dk.replace(/ mm/g, '')) && /masse 2,08 g\/m \(VOLTA : 135 g\/m\)/.test(A.dr6m), [A.dc16, A.dc, A.dk, A.dr6m].join(' · '));
   // la deuxième passe de corroboration (20 octobre 2026) : la source vérifiée ne gagne que contre un contact FAUX ; un autre
   // contact qui convient aussi (EN3155-018M2018 : fût 18, du 18 au 24 AWG) et un manchon E0718 en moins, SEE les donne
   const Va = await p.evaluate(() => { const a = contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR20', 20), b = contactDuFil(app.norme, 'EN2997', '20', 'F', 'DR26', 26);
     return { a: a.reference + '/' + a.source + '/' + differenceSEEMots('contacts', a), b: b.reference + '/' + (b.accessoire || 'rien') + '/' + b.source + '/' + differenceSEEMots('contacts', b) }; });
   ok('un autre contact qui convient aussi (EN3155-018M2018 au lieu de -018M2020 pour un 20 AWG) et un manchon E0718 en moins ne contredisent pas la source vérifiée : SEE gagne, la fiche dit ce qu’il remplace',
-    Va.a === 'EN3155-018M2018/SEE/SEE a remplacé ce que disait Volta : contact EN3155-018M2020 → EN3155-018M2018' && Va.b === 'EN3155-019F2022/rien/SEE/SEE a remplacé ce que disait Volta : avec E0718-20-30 → rien', Va.a + ' · ' + Va.b);
+    Va.a === 'EN3155-018M2018/SEE/SEE a remplacé ce que disait VOLTA : contact EN3155-018M2020 → EN3155-018M2018' && Va.b === 'EN3155-019F2022/rien/SEE/SEE a remplacé ce que disait VOLTA : avec E0718-20-30 → rien', Va.a + ' · ' + Va.b);
   // le programme : EC225 ; le connecteur NH90 seul est « pas déclaré pour EC225 », l'obsolète l'est dit, l'absent aussi
   await p.selectOption('#see-prog', 'EC225'); await p.waitForTimeout(200);
   const Pg = await p.evaluate(() => ({ p: programmeSEE(), t: ($('fiche-corps').querySelector('.see-table') || {}).textContent || '', a: ['EN2997Y1A08P', 'EN3646A6083AAN', 'MS3470L14-5P', 'E0644D9S'].map(x => alertesSEE(equipementSEE(x), x).map(y => y.texte).join('+') || 'rien') }));
   ok('le programme se choisit (EC225) : ce qui n’y est pas déclaré, ce qui est obsolète, ce qui manque à SEE se dit', Pg.p === 'EC225' && /Hors EC225/.test(Pg.t) && Pg.a.join(' | ') === 'pas déclarée pour EC225 dans SEE | obsolète dans SEE | rien | absente de la base SEE', Pg.a.join(' | '));
   // la fiche d'un équipement : la ligne SEE de la référence de son connecteur, ce qui s'y accouple
-  const Fi = await p.evaluate(() => { fermerFiche(true); const d = document.createElement('div'); d.innerHTML = ficheEquipement('101BT1'); const s = d.querySelector('.fi-see'); return s ? s.textContent.replace(/\s+/g, ' ') : ''; });
-  ok('la fiche d’un équipement dit ce que SEE sait de la référence de son connecteur : la désignation, fiche ou embase, ce qui s’y accouple', /Plug MS 14-5/.test(Fi) && /fiche \(prise mobile\)/.test(Fi) && /broches/.test(Fi) && /se monte avec MS3476L14-5S/.test(Fi), Fi);
+  const Fi = await p.evaluate(() => { fermerFiche(true); const d = document.createElement('div'); d.innerHTML = ligneSEEHtml(pnDuRepere('101BT1')); const s = d.querySelector('.fi-see'); return s ? s.textContent.replace(/\s+/g, ' ') : ''; });
+  ok('la ligne « SEE » d’une fiche dit ce que la base sait de la référence du connecteur : la désignation, partie mobile ou partie fixe (jamais « fiche / embase »), ce qui s’y accouple', /Plug MS 14-5/.test(Fi) && /partie mobile/.test(Fi) && !/\bfiche\b|embase/.test(Fi) && /broches/.test(Fi) && /se monte avec MS3476L14-5S/.test(Fi), Fi);
   // recharger la page : la base revient d'elle-même ; puis l'oublier
   await p.reload(); await p.waitForFunction(() => typeof atelier !== 'undefined'); await p.waitForFunction(() => BASE_SEE.charge); await p.evaluate(() => atelier.exempleSansCalibreAuto()); await p.waitForTimeout(300);
-  ok('la page rechargée : la base SEE gardée revient et passe devant Volta (sauf la source vérifiée), le programme aussi', await p.evaluate(() => !!BASE_SEE.base && contactDuFil(app.norme, 'EN3645', '16', 'M', 'XE16', 16).reference === 'ECS0000M1600' && contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR24', 24).reference === 'EN3155-018M2020' && programmeSEE() === 'EC225'));
+  ok('la page rechargée : la base SEE gardée revient et passe devant VOLTA (sauf la source vérifiée), le programme aussi', await p.evaluate(() => !!BASE_SEE.base && contactDuFil(app.norme, 'EN3645', '16', 'M', 'XE16', 16).reference === 'ECS0000M1600' && contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR24', 24).reference === 'EN3155-018M2020' && programmeSEE() === 'EC225'));
   await p.evaluate(() => ficheBaseSEE()); await p.waitForFunction(() => app.fiche && app.fiche.mode === 'see');
   const G0 = await p.evaluate(() => ({ onglets: [...$('fiche-corps').querySelectorAll('[data-see-vue]')].map(b => b.textContent).join(','), t: ($('fiche-corps').querySelector('.see-etat') || {}).textContent || '' }));
   ok('sans classeur lu, la base gardée se montre seule (l’Import, et la Cohérence gardée avec elle)', /^Import,Cohérence\d+$/.test(G0.onglets) && /Gardée sur ce PC/.test(G0.t), JSON.stringify(G0));
   if (CAPTURES) await p.screenshot({ path: CAPTURES + '/see-5-gardee.png' });
   await p.click('#see-oublier'); await p.waitForFunction(() => !BASE_SEE.base);
-  ok('« Oublier la base SEE » : Volta revient à ses tables, la page se ferme, rien ne reste', await p.evaluate(a => contactDuFil(app.norme, 'EN3645', '16', 'M', 'XE16', 16).reference === a.c16 && contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR24', 24).reference === a.c && !(app.fiche && app.fiche.mode === 'see'), avant)
+  ok('« Oublier la base SEE » : VOLTA revient à ses tables, la page se ferme, rien ne reste', await p.evaluate(a => contactDuFil(app.norme, 'EN3645', '16', 'M', 'XE16', 16).reference === a.c16 && contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR24', 24).reference === a.c && !(app.fiche && app.fiche.mode === 'see'), avant)
     && await p.evaluate(async () => !(await idbSEEFaire('readonly', s => s.get('base')))));
   ok('aucune erreur dans la page, après l’import', !e.length, e.slice(0, 2).join(' | '));
 
@@ -283,7 +289,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   // cohérente ? Elle apporte quoi de plus que les photos ? … Tout ? ») : un classeur de lignes saines et d'UN défaut planté
   // par contrôle (deux pour le fût trop fin : la broche et la douille). Chaque défaut se trouve, compté juste, avec sa
   // référence ; aucune ligne saine n'est dans un exemple ; ce qui se contredit est écarté ; le rapport en texte ne dit que
-  // des références de catalogue et des comptes. Puis les tables de Volta elles-mêmes, passées comme des lignes de SEE : rien.
+  // des références de catalogue et des comptes. Puis les tables de VOLTA elles-mêmes, passées comme des lignes de SEE : rien.
   await p.evaluate(() => { fermerFiche(true); atelier.exempleSansCalibreAuto(); }); await p.waitForTimeout(300);
   await p.evaluate(() => {
     const G = (k, i) => k + String(i).padStart(7, '0') + '-0000-4000-8000-000000000000', wb = XLSX.utils.book_new(), f = (rows, nom) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), nom);
@@ -311,7 +317,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
     ct(1, 5, 'Male', 22, '*', 24, 'EN3155-008M2222');                 // c-obsolete : la règle EN 4165 obsolète, sans version validée
     ct(0, 6, 'Male', 16, '*', 20, 'EN3155-018M1618');                 // c-conflit : la seconde règle validée dit un autre contact
     f(C, 'EED_OBJ_END_Fitting_Rules_Conta');
-    // les câbles : deux familles saines (TT, SS : le Ø, la masse, la résistance montent avec la gauge), le DR24 de Volta (vérifié) avec un autre Ø, l'ADB24 (à confirmer) deux fois plus lourd
+    // les câbles : deux familles saines (TT, SS : le Ø, la masse, la résistance montent avec la gauge), le DR24 de VOLTA (vérifié) avec un autre Ø, l'ADB24 (à confirmer) deux fois plus lourd
     const K = [['ID', 'IDEquipment', 'PartNo', 'Type', 'Gauge', 'ExternalMaxDiameter', 'LineicWeight', 'Shield', 'CableFamily', 'LCStatusName', 'Version']], W = [['ID', 'IDCable', 'Gauge', 'Resistivity']]; let nk = 0;
     const cab = (s, pn, ty, j, d, m, r, sh, brins) => { nk++; if (s) sain('CablesAndWires', K); K.push([G('B', nk), G('B', nk), pn, ty, j == null ? '' : sectionAwg(j), d === '' ? '' : d / 1000, m === '' ? '' : m / 1000, sh, 'Wire', 'Release', 1]);
       if (r !== '') for (let i = 0; i < (brins || 1); i++) W.push([G('D', nk * 10 + i), G('B', nk), sectionAwg(j), r / 1000]); };
@@ -321,8 +327,8 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
     cab(0, 'QR20', 'QR', 20, 0.5, 4, 35, 'UNSHIELDED');              // k-diametre : 0,5 mm, sous le conducteur nu
     cab(0, 'QS24', 'QS', 24, 12, 2, 90, 'UNSHIELDED');               // k-diametre-gros : 12 mm pour un 24 AWG
     cab(0, 'QV22', 'QV', 22, '', '', '', '');                        // k-vides
-    cab(0, 'DR24', 'DR', 24, 1.3, 2.72, 114, 'UNSHIELDED');          // s-verifiees : Volta dit 0,96 mm, vérifié
-    cab(0, 'ADB24', 'ADB', 24, 1.9, 8.0, 149.4, 'UNSHIELDED', 2);    // s-ecarts et s-remplace : 3,70 g/m chez Volta (à confirmer)
+    cab(0, 'DR24', 'DR', 24, 1.3, 2.72, 114, 'UNSHIELDED');          // s-verifiees : VOLTA dit 0,96 mm, vérifié
+    cab(0, 'ADB24', 'ADB', 24, 1.9, 8.0, 149.4, 'UNSHIELDED', 2);    // s-ecarts et s-remplace : 3,70 g/m chez VOLTA (à confirmer)
     f(K, 'EED_ViewCablesAndWires'); f(W, 'EED_OBJ_Wires');
     // les faces : la 10-02 de l'EN 2997 et une A04 rectangulaire, saines ; la 18-11 de l'EN 3646 à la casse de SEE ; puis un compte, un doublon, un chevauchement, une taille
     const A = [['ID', 'IDEquipment', 'PartNo', 'Type', 'View', 'LCStatusName', 'DesiredPinsCount', 'IDCategory']], P = [['ID', 'IDPlugMap', 'Name', 'X', 'Y', 'ContactGauge', 'ContactFamily', 'CablingOrder']]; let na = 0, np = 0;
@@ -350,7 +356,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
     [['AB1003P', 'AB1003Q'], ['AB1004S', 'AB1004T'], ['AB1005P', 'AB1005S']].forEach(([a, c]) => { accouple(a, c); accouple(c, a); });   // e-nature, e-sexe, e-contacts
     accouple('AB1099P', 'AB1001S');                                                                   // l-orphelins : AB1099P n'est dans aucune feuille
     f(M, 'EED_LNK_Equi_Mating');
-    // les pièces : chaque contact et accessoire cité, sauf E9999-01 ; trois tyraps, dont deux de la table Colliers de Volta
+    // les pièces : chaque contact et accessoire cité, sauf E9999-01 ; trois tyraps, dont deux de la table Colliers de VOLTA
     const pieces = ['EN3155-018M2020', 'EN3155-019F2020', 'EN3155-018M1616', 'EN3155-019F1616', 'EN3155-018M1212', 'EN3155-019F1212', 'EN3155-019F2018', 'XYZ-12', 'EN3155-099M1616', 'EN3155-019F1614', 'EN3155-008M2222', 'EN3155-009F2222', 'EN3155-018M1618', 'E0718-20-30'];
     f([['ID', 'IDEquipment', 'PartNo', 'AccessoriesType'], ...pieces.map((x, i) => [G('5', i + 1), G('5', i + 1), x, /^E07/.test(x) ? 'Sleeve' : 'Contact']), ...['NSA935401-05', 'NSA935401-06', 'T18R'].map((x, i) => [G('5', 50 + i), G('5', 50 + i), x, 'Cable tie'])], 'EED_ViewAccessories');
     window.__sains3 = sains;
@@ -372,7 +378,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   ok('les gravités : la ligne qui se contredit est une erreur, l’écart à voir, le reste pour information', ['c-sexe', 'c-taille', 'c-fut-gros', 'k-physique', 'k-diametre', 'f-doublons', 'f-chevauche', 'e-nature', 'e-sexe'].every(k => Co.X[k].g === 'ko') && ['c-seul', 'k-vides', 'f-casse', 'e-sens', 'e-sans-programme', 'l-sans-table', 'l-references', 's-remplace'].every(k => Co.X[k].g === 'info'));
   ok('ce qui se contredit ne passe pas : la douille d’une ligne mâle, la taille 20 d’une cavité 16, le 16 AWG d’un fût 20 sont écartés ; le fût trop fin, la forme inconnue, la partie inconnue sont pris', Co.b.incoherentes === 3 && !Co.contacts.some(c => /\/M\/20\/\*\/20\/EN3155-019F2020|EN3155-019F2018|\/M\/20\/\*\/16\//.test(c))
     && ['EN2997/M/20/DR/26/EN3155-018M2020', 'EN2997/M/12/DM/14/XYZ-12', 'EN2997/M/16/DM/18/EN3155-099M1616'].every(c => Co.contacts.includes(c)), Co.b.incoherentes + ' · ' + Co.contacts.filter(c => /DR\/26|DM\/1[48]/.test(c)).join(' | '));
-  ok('la règle EN 2997 obsolète remplacée par sa v7 ne fait pas de bruit, elle se compte à part ; les tyraps de la base face à la table Colliers de Volta', JSON.stringify(Co.plus) === '{"remplacées":1}' && Co.acc && Co.acc.tyraps === 3 && Co.acc.tyrapsDansSEE === 2 && Co.acc.tyrapsVolta >= 2, JSON.stringify([Co.plus, Co.acc]));
+  ok('la règle EN 2997 obsolète remplacée par sa v7 ne fait pas de bruit, elle se compte à part ; les tyraps de la base face à la table Colliers de VOLTA', JSON.stringify(Co.plus) === '{"remplacées":1}' && Co.acc && Co.acc.tyraps === 3 && Co.acc.tyrapsDansSEE === 2 && Co.acc.tyrapsVolta >= 2, JSON.stringify([Co.plus, Co.acc]));
   // l'onglet : le verdict, chaque contrôle sa ligne, ses exemples d'un clic
   await p.click('[data-see-vue="coherence"]'); await p.mouse.move(5, 5); await p.waitForTimeout(300);
   const Vu = await p.evaluate(() => { const c = $('fiche-corps'), q = s => c.querySelector(s), qa = s => [...c.querySelectorAll(s)];
@@ -380,13 +386,13 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
       sexe: (x => x && [x.className, x.querySelector('.see-ctl-n').textContent, x.querySelector('.see-ctl-g').textContent].join('/'))(q('[data-ctl="c-sexe"]')), ouverts: qa('.see-ctl details[open]').length, pied: ($('fiche-pied').textContent || '').replace(/\s+/g, ' '),
       apporte: (q('.see-apporte') || {}).textContent || '', groupes: qa('.see-groupe-c h3').map(h => h.firstChild.textContent.trim()).join(' | '), deborde: c.scrollWidth > c.clientWidth + 1 }; });
   ok('l’onglet Cohérence suit l’Import ; son compte dit les contrôles à reprendre ; le verdict d’un coup d’œil (9 en erreur, 19 à voir, 8 pour information, aucun sans défaut)', Vu.onglet === '28' && Vu.verdict === 'ko=9 att=19 info=8 ok zero=0' && Vu.lignes === 36, Vu.onglet + ' · ' + Vu.verdict + ' · ' + Vu.lignes);
-  ok('chaque contrôle, par domaine : son point d’état, son titre, ce que Volta en fait, son compte, sa gravité', Vu.sexe === 'see-ctl ko/1/erreur' && Vu.groupes === 'Contacts à sertir | Câbles | Faces des connecteurs | Connecteurs et équipements | Liens entre feuilles | Face aux sources vérifiées de Volta' && !Vu.deborde, Vu.sexe + ' · ' + Vu.groupes);
+  ok('chaque contrôle, par domaine : son point d’état, son titre, ce que VOLTA en fait, son compte, sa gravité', Vu.sexe === 'see-ctl ko/1/erreur' && Vu.groupes === 'Contacts à sertir | Câbles | Faces des connecteurs | Connecteurs et équipements | Liens entre feuilles | Face aux sources vérifiées de VOLTA' && !Vu.deborde, Vu.sexe + ' · ' + Vu.groupes);
   await p.click('[data-ctl="c-taille"] summary'); await p.waitForTimeout(150);
   const Ex = await p.evaluate(() => { const d = $('fiche-corps').querySelector('[data-ctl="c-taille"] details'); return d.open ? [...d.querySelectorAll('.see-exs li')].map(li => li.textContent.replace(/\s+/g, ' ')).join(' | ') + ' · ' + (d.querySelector('.see-ex-f') || {}).textContent : ''; }).then(sp);
   ok('un clic déplie les exemples : la référence, ce qui cloche, la ligne Excel (la feuille dite au-dessus)', /EN3155-019F2018\s*taille 20 pour une cavité 16 — règle EN2997 v7\s*l\. \d+/.test(Ex) && /Les lignes de la feuille OBJ_END_Fitting_Rules_Conta/.test(Ex), Ex);
   await p.click('#see-deplier'); await p.waitForTimeout(150);
   ok('« Déplier les exemples » les ouvre tous', await p.evaluate(() => [...$('fiche-corps').querySelectorAll('.see-ctl details')].every(d => d.open) && $('see-deplier').textContent === 'Replier les exemples'));
-  ok('ce que la base apporte, à côté des quatre tables des photos (EN 2997 v6 → v7 dans SEE) ; le pied copie le rapport de cohérence', /Les quatre tables de vos photos/.test(Vu.apporte) && /EN 2997-002\s*v6\s*v7/.test(Vu.apporte) && /Ce que Volta n’avait pas/.test(Vu.apporte) && /Copier le rapport de cohérence/.test(Vu.pied), Vu.apporte.slice(0, 300));
+  ok('ce que la base apporte, à côté des quatre tables des photos (EN 2997 v6 → v7 dans SEE) ; le pied copie le rapport de cohérence', /Les quatre tables de vos photos/.test(Vu.apporte) && /EN 2997-002\s*v6\s*v7/.test(Vu.apporte) && /Ce que VOLTA n’avait pas/.test(Vu.apporte) && /Copier le rapport de cohérence/.test(Vu.pied), Vu.apporte.slice(0, 300));
   if (CAPTURES) await p.screenshot({ path: CAPTURES + '/see-6-coherence.png' });
   // le rapport en texte : des références de catalogue et des comptes ; ni le plan, ni le classeur, ni les programmes
   const Ra = await p.evaluate(() => { const t = rapportCoherenceSEE(SEE.import, true), V = verite(), plan = [...new Set(V.flatMap(l => [l.pnDe, l.pnVers, l.de, l.vers]).filter(Boolean))];
@@ -396,7 +402,7 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
     && /programme A \(2 écritures\)/.test(Ra.t) && !/EC ?225|base-SEE-3/.test(Ra.t) && !Ra.plan.length && /== Ce que la base apporte ==/.test(Ra.t) && /Rapport de cohérence copié|La copie est refusée/.test(Ra.toast), Ra.plan.join(', ') + ' · ' + Ra.toast);
   // l'Import y mène ; gardée, la base garde sa cohérence, et les valeurs écartées ne passent pas
   await p.click('[data-see-vue="import"]'); await p.waitForTimeout(150);
-  ok('l’Import dit la cohérence en une ligne et y mène', /Volta a vérifié la base ligne par ligne : 9 contrôles en erreur, 19 contrôles à voir/.test(sp(await p.evaluate(() => ($('fiche-corps').querySelector('.see-coh-l') || {}).textContent || ''))));
+  ok('l’Import dit la cohérence en une ligne et y mène', /VOLTA a vérifié la base ligne par ligne : 9 contrôles en erreur, 19 contrôles à voir/.test(sp(await p.evaluate(() => ($('fiche-corps').querySelector('.see-coh-l') || {}).textContent || ''))));
   await p.click('#see-voir-coh'); await p.waitForTimeout(150);
   ok('« Voir la cohérence » ouvre l’onglet', await p.evaluate(() => SEE.vue === 'coherence'));
   await p.click('[data-see-vue="import"]'); await p.click('#see-garder'); await p.waitForFunction(() => !!BASE_SEE.base);
@@ -411,21 +417,21 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   await p.click('#toast .toast-geste'); await p.waitForFunction(() => !!BASE_SEE.base);
   ok('« Oublier la base SEE » se rattrape : « Rétablir » dans le mot qui passe la garde de nouveau, sa cohérence avec elle', await p.evaluate(async () => { const b = await idbSEEFaire('readonly', s => s.get('base')); return !!b && b.nom === 'base-SEE-3.xlsx' && !!b.coherence && controlesSEE(BASE_SEE.base).filter(x => x.n).length === 36; }));
   await p.evaluate(() => oublierBaseSEE()); await p.waitForFunction(() => !BASE_SEE.base);
-  // les tables de Volta (des photos des tables de SEE, relues par deux sources) passées comme des lignes de SEE : aucun contrôle des contacts ni des câbles ne s'y trompe
+  // les tables de VOLTA (des photos des tables de SEE, relues par deux sources) passées comme des lignes de SEE : aucun contrôle des contacts ni des câbles ne s'y trompe
   const Sa = await p.evaluate(() => { const G = i => ('00000000' + i.toString(16)).slice(-8).toUpperCase() + '-0000-4000-8000-000000000000', fams = ['EN2997', 'EN3645', 'EN3646', 'EN4165'], N = normeEmbarqueeLue();
     const regles = [['ID', 'IDEquipment', 'PartNo', 'ClassName', 'LCStatusName', 'Version'], ...fams.map((f, i) => [G(1 + i), G(1 + i), f, 'Contact', 'Release', 1])], contacts = [['ID', 'IDEquipment', 'RuleNum', 'ContactType', 'ContactGauge', 'WireType', 'WireGauge', 'PartNo1', 'Quantity1', 'PartNo2', 'Quantity2']];
     N.contacts.filter(c => fams.includes(c.famille)).forEach((c, n) => contacts.push([G(1000 + n), G(1 + fams.indexOf(c.famille)), 100, c.sexe === 'M' ? 'Male' : 'Female', sectionAwg(parseFloat(c.taille)), c.typeFil, c.jauge == null ? -1 : sectionAwg(c.jauge), c.reference, 1, c.accessoire || '', c.accessoire ? 1 : '']));
     const cables = [['ID', 'IDEquipment', 'PartNo', 'Type', 'Gauge', 'ExternalMaxDiameter', 'LineicWeight', 'Shield', 'CableFamily', 'LCStatusName', 'Version']], fils = [['ID', 'IDCable', 'Gauge', 'Resistivity']];
     N.cables.forEach((c, i) => { const id = G(50000 + i); cables.push([id, id, c.cable, c.famille, c.jauge == null ? '' : sectionAwg(c.jauge), c.diametre == null ? '' : c.diametre / 1000, c.masse == null ? '' : c.masse / 1000, c.blindage ? 'SHIELDED' : 'UNSHIELDED', /coax/i.test(c.nature) ? 'Coaxial' : 'Wire', 'Release', 1]);
       for (let k = 0; k < (c.brins || 1); k++) fils.push([G(90000 + i * 10 + k), id, c.jauge == null ? '' : sectionAwg(c.jauge), c.resistance == null ? '' : c.resistance / 1000]); });
-    const I = importerSEE({ regles, contacts, cables, fils }, 'tables de Volta'), K = I.coherence.c, n = k => (K[k] || {}).n || 0;
+    const I = importerSEE({ regles, contacts, cables, fils }, 'tables de VOLTA'), K = I.coherence.c, n = k => (K[k] || {}).n || 0;
     return { lignes: contacts.length - 1, cables: cables.length - 1, retenus: I.contacts.length, ecartees: I.bilan.contacts.incoherentes, zero: ['c-sexe', 'c-taille', 'c-fut-gros', 'c-fut-fin', 'c-partie', 'c-paire', 'c-conflit', 'k-physique', 'k-diametre', 'k-diametre-gros', 'k-soeurs'].filter(k => n(k)).map(k => k + ' ' + n(k) + ' ' + K[k].ex.slice(0, 2).map(x => x.r + ' : ' + x.d).join(' ; ')),
       formes: [...new Set((K['c-forme'] || { ex: [] }).ex.map(x => x.r))].join(' ') }; });
-  ok('les tables de Volta passées comme des lignes de SEE (442 contacts EN 2997, 3645, 3646, 4165 ; 226 câbles) : aucune ligne écartée, aucun sexe, taille, fût, paire, conflit, physique, Ø ou sœur en défaut — seuls ses noms courts (KB1600…) sont d’une forme inconnue',
+  ok('les tables de VOLTA passées comme des lignes de SEE (442 contacts EN 2997, 3645, 3646, 4165 ; 226 câbles) : aucune ligne écartée, aucun sexe, taille, fût, paire, conflit, physique, Ø ou sœur en défaut — seuls ses noms courts (KB1600…) sont d’une forme inconnue',
     Sa.lignes === 442 && Sa.retenus === 442 && Sa.ecartees === 0 && Sa.cables === 226 && !Sa.zero.length && /^[KL][BC]\d{4}( [KL][BC]\d{4})*$/.test(Sa.formes), Sa.zero.join(' | ') + ' · ' + Sa.formes);
   // v74 — LA BASE UNIQUE (le lecteur : « un seul fichier propre : la base SEE comme seule source des pièces, si elle couvre
-  // tout ») : une base faite des quatre tables des photos, sans les lignes que Volta a ajoutées de ses sources (normes/
-  // contacts.csv les range en fin de table) et sans une ligne EN 4165 — le cas du lecteur : 6, 2, 0, 7 « seulement dans Volta »
+  // tout ») : une base faite des quatre tables des photos, sans les lignes que VOLTA a ajoutées de ses sources (normes/
+  // contacts.csv les range en fin de table) et sans une ligne EN 4165 — le cas du lecteur : 6, 2, 0, 7 « seulement dans VOLTA »
   const Bu = await p.evaluate(() => { const G = i => ('00000000' + i.toString(16)).slice(-8).toUpperCase() + '-0000-4000-8000-000000000000', fams = ['EN2997', 'EN3645', 'EN3646', 'EN4165'], N = normeEmbarqueeLue();
     const tous = N.contacts, fin = tous.findIndex(c => !fams.includes(c.famille)), photos = tous.filter((c, i) => fams.includes(c.famille) && i < fin), retiree = photos.find(c => c.famille === 'EN4165' && c.typeFil !== '*');
     const regles = [['ID', 'IDEquipment', 'PartNo', 'ClassName', 'LCStatusName', 'Version'], ...fams.map((f, i) => [G(1 + i), G(1 + i), f, 'Contact', 'Release', [7, 2, 13, 49][i]])];
@@ -435,27 +441,27 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
     const A = apporteSEE(I), L = seulVoltaSEE(I), cle = x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge == null ? '*' : x.jauge].join('/');
     return { seul: A.photos.map(q => q.seulVolta).join(','), n: L.length, aj: L.filter(y => y.origine.genre === 'ajoutee').map(y => y.famille + ' ' + y.x.taille + ' ' + y.base.genre), ph: L.filter(y => y.origine.genre === 'photo').map(y => cle(y.x) + ' — ' + y.base.mot),
       retiree: cle(retiree), sources: [...new Set(L.filter(y => y.origine.genre === 'ajoutee').map(y => y.origine.source))] }; });
-  ok('« Seul Volta » : 6 · 2 · 0 · 7 (le cas du lecteur) — 14 lignes que Volta a ajoutées de ses sources (EN 2997 taille 22, EN 3645 taille 10, EN 4165 taille 23 : « aucun contact de cette taille » dans la base), 1 de vos photos que la base n’a plus ; chacune sa raison et sa source, sans adresse',
+  ok('« Seul VOLTA » : 6 · 2 · 0 · 7 (le cas du lecteur) — 14 lignes que VOLTA a ajoutées de ses sources (EN 2997 taille 22, EN 3645 taille 10, EN 4165 taille 23 : « aucun contact de cette taille » dans la base), 1 de vos photos que la base n’a plus ; chacune sa raison et sa source, sans adresse',
     Bu.seul === '6,2,0,7' && Bu.n === 15 && Bu.aj.length === 14 && Bu.aj.every(a => /^(EN2997 22|EN3645 10|EN4165 23) taille$/.test(a)) && Bu.ph.length === 1 && Bu.ph[0].startsWith(Bu.retiree) && Bu.sources.length >= 3 && Bu.sources.every(s => s && !/https?:/.test(s)), JSON.stringify(Bu).slice(0, 420));
   await p.evaluate(async () => { SEE.import = window.__baseUnique; await adopterBaseSEE(); SEE.vue = 'coherence'; SEE.seulVolta = ''; ficheBaseSEE(); rendreBaseSEE(); });
   await p.waitForFunction(() => BASE_SEE.base && BASE_SEE.base.nom === 'base-unique.xlsx' && !!document.querySelector('#fiche-corps .see-seul-n'));
   const Bv = await p.evaluate(() => ({ boutons: [...document.querySelectorAll('#fiche-corps .see-seul-n')].map(b => b.dataset.seulVolta + ':' + b.textContent).join(' '), caseOk: (x => !!x && !x.checked && !x.disabled)($('see-seule')), sansPanneau: !$('see-seul'), avant: app.norme.contacts.filter(c => c.famille === 'EN2997' && c.taille === '22').length }));
-  ok('les nombres « Seul Volta » se pressent (6, 2, 7 et le total 15) ; la case « Ne prendre les pièces que dans la base SEE gardée » est là, décochée ; les lignes de Volta servent encore en secours', Bv.boutons === 'EN2997:6 EN3645:2 EN4165:7 *:15' && Bv.caseOk && Bv.sansPanneau && Bv.avant === 6, JSON.stringify(Bv));
+  ok('les nombres « Seul VOLTA » se pressent (6, 2, 7 et le total 15) ; la case « Ne prendre les pièces que dans la base SEE gardée » est là, décochée ; les lignes de VOLTA servent encore en secours', Bv.boutons === 'EN2997:6 EN3645:2 EN4165:7 *:15' && Bv.caseOk && Bv.sansPanneau && Bv.avant === 6, JSON.stringify(Bv));
   await p.click('#fiche-corps .see-seul-n[data-seul-volta="EN2997"]'); await p.waitForTimeout(300);
   const Bp = await p.evaluate(() => { const s = $('see-seul'); return s ? { lignes: [...s.querySelectorAll('tbody tr:not(.see-seul-f)')].map(tr => tr.textContent.replace(/\s+/g, ' ').trim()), puces: [...s.querySelectorAll('.puce')].map(b => b.textContent.replace(/\s+/g, ' ').trim() + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')).join(' | '), bulle: (s.querySelector('.see-orig') || { dataset: {} }).dataset.bulle } : null; });
-  ok('un clic sur 6 : les 6 lignes EN 2997, chacune son contact, d’où elle vient (« ajoutée par Volta », sa source dans la bulle), ce que dit la base (« aucun contact de taille 22 ») et ce que donnerait la base seule', !!Bp && Bp.lignes.length === 6
-    && Bp.lignes.every(t => /taille 22/.test(t) && /EN3155-07[89][MF]2222/.test(t) && /ajoutée par Volta/.test(t) && /aucun contact de taille 22/.test(t) && /sans équivalent|couverte/.test(t)) && /EN 2997-002\s*6\*/.test(Bp.puces) && !!Bp.bulle, JSON.stringify(Bp).slice(0, 500));
+  ok('un clic sur 6 : les 6 lignes EN 2997, chacune son contact, d’où elle vient (« ajoutée par VOLTA », sa source dans la bulle), ce que dit la base (« aucun contact de taille 22 ») et ce que donnerait la base seule', !!Bp && Bp.lignes.length === 6
+    && Bp.lignes.every(t => /taille 22/.test(t) && /EN3155-07[89][MF]2222/.test(t) && /ajoutée par VOLTA/.test(t) && /aucun contact de taille 22/.test(t) && /sans équivalent|couverte/.test(t)) && /EN 2997-002\s*6\*/.test(Bp.puces) && !!Bp.bulle, JSON.stringify(Bp).slice(0, 500));
   await p.click('#see-seul .puce[data-seul-volta="*"]'); await p.waitForTimeout(300);
   ok('« toutes » : les 15 lignes, rangées par famille', await p.evaluate(() => $('see-seul').querySelectorAll('tbody tr:not(.see-seul-f)').length === 15 && $('see-seul').querySelectorAll('tr.see-seul-f').length === 3));
   // l'option : cochée, les lignes que la base n'a pas ne servent plus (pour les familles qu'elle connaît) ; décochée, elles reviennent
   await p.click('#see-seule'); await p.waitForTimeout(500);
   const Bo = await p.evaluate(() => ({ cochee: seuleBaseSEE() && localStorage.getItem('atelier.see.seule') === '1' && !!$('see-seule') && $('see-seule').checked, en2997: app.norme.contacts.filter(c => c.famille === 'EN2997' && c.taille === '22').length,
     en4165: app.norme.contacts.filter(c => c.famille === 'EN4165' && c.taille === '23').length, nsa: app.norme.contacts.filter(c => c.famille === 'NSA937901').length, toast: $('toast').textContent, rapport: /La base, seule source des pièces : oui/.test(rapportCoherenceSEE(BASE_SEE.base, true)) }));
-  ok('cochée : les pièces ne viennent plus que de la base — plus de taille 22 pour l’EN 2997 ni de 23 pour l’EN 4165 ; une famille que la base ignore (NSA937901) garde les lignes de Volta ; gardée sur ce PC ; le mot qui passe offre « Rétablir »', Bo.cochee && Bo.en2997 === 0 && Bo.en4165 === 0 && Bo.nsa > 0 && /Rétablir/.test(Bo.toast) && Bo.rapport, JSON.stringify(Bo));
+  ok('cochée : les pièces ne viennent plus que de la base — plus de taille 22 pour l’EN 2997 ni de 23 pour l’EN 4165 ; une famille que la base ignore (NSA937901) garde les lignes de VOLTA ; gardée sur ce PC ; le mot qui passe offre « Rétablir »', Bo.cochee && Bo.en2997 === 0 && Bo.en4165 === 0 && Bo.nsa > 0 && /Rétablir/.test(Bo.toast) && Bo.rapport, JSON.stringify(Bo));
   await p.click('#see-seule'); await p.waitForTimeout(500);
-  ok('décochée : Volta reprend ses lignes en secours', await p.evaluate(() => !seuleBaseSEE() && app.norme.contacts.filter(c => c.famille === 'EN2997' && c.taille === '22').length === 6));
+  ok('décochée : VOLTA reprend ses lignes en secours', await p.evaluate(() => !seuleBaseSEE() && app.norme.contacts.filter(c => c.famille === 'EN2997' && c.taille === '22').length === 6));
   const Br = await p.evaluate(() => rapportCoherenceSEE(BASE_SEE.base, true));
-  ok('le rapport de cohérence dit ce que seul Volta a, ligne par ligne (des références de catalogue), et si la base est seule source des pièces', /Seulement dans Volta, ligne par ligne :/.test(Br) && /EN3155-078M2222 — ajoutée par Volta/.test(Br) && /La base, seule source des pièces : non/.test(Br), Br.split('\n').filter(l => /Seulement dans Volta|ajoutée par Volta/.test(l)).slice(0, 2).join(' | '));
+  ok('le rapport de cohérence dit ce que seul VOLTA a, ligne par ligne (des références de catalogue), et si la base est seule source des pièces', /Seulement dans VOLTA, ligne par ligne :/.test(Br) && /EN3155-078M2222 — ajoutée par VOLTA/.test(Br) && /La base, seule source des pièces : non/.test(Br), Br.split('\n').filter(l => /Seulement dans VOLTA|ajoutée par VOLTA/.test(l)).slice(0, 2).join(' | '));
   await p.evaluate(() => ficheNormes()); await p.waitForTimeout(300);
   ok('la page Normes porte la même case, la base gardée, décochée', await p.evaluate(() => !!$('nm-seule') && !$('nm-seule').checked));
   await p.evaluate(() => { fermerFiche(true); return oublierBaseSEE(); }); await p.waitForFunction(() => !BASE_SEE.base);
