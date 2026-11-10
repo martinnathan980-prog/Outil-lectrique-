@@ -223,7 +223,10 @@ function poserLaLecture(r, nom, ig, noms, plus, L) { const avis = avisDeLecture(
      ouvre le bilan, dans « Vos fichiers » */
   const msg = 'VOLTA a lu ' + pluriel(n, 'liaison') + (plans().length > 1 ? ' sur ' + plans().length + ' folios' : '') + motDuBilan(B, nl, noms)
     + (noms.length === 1 ? ' · la feuille ' + guillemets(noms[0]) + ' est laissée de côté (pas les en-têtes d’un retest)' : noms.length > 1 ? ' · ' + noms.length + ' feuilles laissées de côté : ' + noms.slice(0, 3).map(guillemets).join(', ') + (noms.length > 3 ? '…' : '') : '') + (plus || '') + '.';
-  if (avis || B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg);
+  // (v88) le fil conducteur : des points à régler — le message propose la revue ; ce qui est laissé de côté garde « Voir »
+  const aRegler = typeof compteARegler === 'function' ? compteARegler().regler : 0;
+  if (aRegler && !avis && typeof commencerLaRevue === 'function') dire(/à régler/.test(msg) ? msg : msg.replace(/\.$/, '') + ' · ' + aRegler + ' à régler.', false, { geste: 'Commencer la revue', faire: () => commencerLaRevue() });
+  else if (avis || B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg);
   proposerDejaFait(); }
 /* ---- LE BILAN D'OUVERTURE (v86, l'audit M6 : « un résumé que l'on peut cliquer ») ------------------------------------
    À l'ouverture d'un fichier, le mot qui passe dit ce que VOLTA a lu et ce qui demande l'attention ; « Voir » ouvre la carte

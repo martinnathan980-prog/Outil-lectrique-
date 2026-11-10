@@ -240,7 +240,8 @@ async function chargerBibliotheque() { const [I, P] = await Promise.all([toutLir
 /* ---- aller de la bibliothèque au plan, et retour ------------------------------------------------------------------- */
 /* Montrer la bibliothèque — la racine, ou une installation (`id`). Le plan reste sur la table, dessous : ce qu'on y a fait est
    gardé, ce qui y était ouvert (la fiche, le tableau, la recherche) se ferme. */
-function montrerBibliotheque(vue, id) { const venait = BIB.vue === 'plan';
+function montrerBibliotheque(vue, id) { if (typeof quitterLaRevue === 'function') quitterLaRevue();   // (v88) la revue est celle d'un plan
+  const venait = BIB.vue === 'plan';
   // la table du plan s'efface sous le graphite de la bibliothèque en fondu (08-table, `fonduTable`) : pas de saut de matière
   if (venait) { sauverMaintenant(); quitterLePlan(); if (typeof fonduTable === 'function') fonduTable(); }
   if (vue === 'install' && !BIB.installs.has(id)) vue = 'racine';
@@ -286,7 +287,9 @@ async function ouvrirPlan(id, apres) { const p = BIB.plans.get(id); if (!p) retu
     else if (typeof bilanDuPlan === 'function' && typeof motDuBilan === 'function') { try { const B = bilanDuPlan(), n = verite().length;
       if (typeof contratRecu === 'function') contratRecu(p.nom, 'retest');
       const msg = 'VOLTA a lu ' + pluriel(n, 'liaison') + (plans().length > 1 ? ' sur ' + plans().length + ' folios' : '') + motDuBilan(B, 0, []) + '.';
-      if (B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg); } catch (_) { } }
+      const aRegler = typeof compteARegler === 'function' ? compteARegler().regler : 0;
+      if (aRegler && typeof commencerLaRevue === 'function') dire(/à régler/.test(msg) ? msg : msg.replace(/\.$/, '') + ' · ' + aRegler + ' à régler.', false, { geste: 'Commencer la revue', faire: () => commencerLaRevue() });
+      else if (B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg); } catch (_) { } }
     if (apres) aller(apres); return; }
   poserEtat({ ...o, planId: id }); app.hist = []; app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false; $('q').value = '';
   fermerFiche(); fermerMenu(); montrerLePlan(); redessiner(); retrouverVue(); heureSauve(o.t); sauver(); if (apres) aller(apres); }

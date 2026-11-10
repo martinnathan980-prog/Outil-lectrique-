@@ -1849,7 +1849,7 @@ function rendreIndex(box) { const etats = new Map();
   box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" data-bulle="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" data-bulle="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span>${boutonTaille()}${boutonEpingle()}<button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer · Échap">${ico('fermer')}</button></header>`
     // (v86, une seule source : un équipement s'ajoute dans le fichier — plus de « + » ni de champ ici)
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Filtrer la liste : un repère, une référence" aria-label="Filtrer la liste des repères" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${C.ko ? 'ko' : C.regler || C.voir ? 'att' : 'ok'}"><i aria-hidden="true">${C.ko ? '✕' : C.regler || C.voir ? '!' : '✓'}</i>${C.regler ? C.regler + ' à régler' + (C.voir ? `<span class="ix-att"> · ${C.voir} à voir</span>` : '') : C.voir ? C.voir + ' à voir' : 'rien à reprendre'}</span>${(C.regler || C.voir) ? ico('bas', 'fi-chevron') : ''}</summary>${listeARegler()}</details>`)
+    + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${C.ko ? 'ko' : C.regler || C.voir ? 'att' : 'ok'}"><i aria-hidden="true">${C.ko ? '✕' : C.regler || C.voir ? '!' : '✓'}</i>${C.regler ? C.regler + ' à régler' + (C.voir ? `<span class="ix-att"> · ${C.voir} à voir</span>` : '') : C.voir ? C.voir + ' à voir' : 'rien à reprendre'}</span>${(C.regler || C.voir) ? ico('bas', 'fi-chevron') : ''}</summary>${listeARegler()}</details>${(C.regler || C.voir) && typeof commencerLaRevue === 'function' ? `<button type="button" class="btn cuivre ix-revue" id="ix-revue" data-bulle="Les points ${C.regler ? 'à régler' : 'à voir'}, un par un : chacun ouvre sa fiche, Entrée fait son geste, P passe au suivant">${C.regler ? 'Commencer la revue' : 'Voir les points un par un'}<kbd>V</kbd></button>` : ''}`)
     + (groupes || `<div class="ix-vide"><span class="ix-vide-ico" aria-hidden="true">${ico('loupe')}</span><p>Aucun repère ni câble ne contient « ${esc(app.insp.filtre.trim())} ».</p><button class="btn papier" id="ix-effacer">Effacer la recherche</button></div>`);
   // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
   box.scrollTop = meme ? haut : 0; survolQuiSuit(box); if (typeof lierBulles === 'function') lierBulles(box);
@@ -1874,6 +1874,7 @@ function rendreIndex(box) { const etats = new Map();
   const effacer = () => { app.insp.filtre = ''; rendreIndex(box); const q2 = $('ix-q'); if (q2) q2.focus(); };
   ['ix-vider', 'ix-effacer'].forEach(id => { const b = $(id); if (b) b.onclick = effacer; });
   const det = box.querySelector('.ix-controle'); if (det) det.addEventListener('toggle', () => { CONTROLE.ouvert = det.open; });
+  { const rv = box.querySelector('#ix-revue'); if (rv) rv.onclick = () => commencerLaRevue(); }
   if (det) lierListeControle(det, () => rendreIndex(box));
   // (passe 87) « Voir le premier » et le geste d'un genre suivent son rang (08-recap, `genresARegler`) ; P reprend à sa ligne
   if (det && typeof genresARegler === 'function') { const genreDe_ = k => genresARegler().find(y => y.cle === k);
@@ -2311,7 +2312,7 @@ const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde',
   ia: 'ia intelligence artificielle interne connexion tester cle api adresse modele serveur reseau lire documents scans images',
   // (v88) la sauvegarde d'ensemble (08-sauvegarde) ; « Ouvrir un fichier… » prend aussi un PDF, un Visio
   sauvegarde: 'sauvegarder sauvegarde restaurer restauration copie tout garder fichier volta backup poste navigateur', pdf: 'pdf schema scan lire', comprendre: 'aide comprendre expliquer calcul' };
-const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
+const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'revue', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);
     const l = b.querySelector('.menu-l'), mot = (l ? [...l.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('') : b.textContent).trim();
@@ -2323,6 +2324,7 @@ function actionsDeLaPalette() { const xs = [], vu = new Set();
   const en = (act, mot, touche, faire, o) => xs.push({ act, mot, touche, faire, des: '', ou: '', ico: '', mots: '', ...(o || {}) });
   if (plan) {
     en('index', 'Repères et problèmes', 'R', basculerIndex, { mots: 'index liste reperes problemes', des: typeof compteProblemes === 'function' ? compteProblemes().mot : '', ico: I('btnIndex') });
+    if (typeof commencerLaRevue === 'function') en('revue', typeof REVUE !== 'undefined' && REVUE.on ? 'Quitter la revue' : 'La revue : les points à régler, un par un', 'V', () => MENU.actions.revue(), { mots: 'revue regler points problemes guide parcours fil conducteur un par un commencer', ico: ICONE_OBJET.geste });
     if (typeof problemeSuivant === 'function') en('suivant', 'Le problème suivant', 'P', () => problemeSuivant(1), { mots: 'erreur defaut probleme suivant reprendre', ico: ICONE_OBJET.geste });
     en('page', 'Le récapitulatif en page', 'Maj+B', () => ouvrirBase('page'), { mots: 'tableau page entiere recap', ico: I('btnBase') });
     en('feuille', 'Voir la feuille entière', '0', () => { VUE.cadrage = 'feuille'; ajuster(true); }, { mots: 'cadrer ajuster cartouche page', ico: I('zfit') });
@@ -3153,7 +3155,8 @@ function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) r
    `o.nouveau` un plan neuf de l'installation ouverte (un fichier ouvert) ; sans rien, le plan sur la table (le collage qui le
    remplace) — ou un plan neuf s'il n'y en a pas. La bibliothèque s'efface : le contrat est sur la table. */
 function contratNeuf() { const d = app.contrat.cartouche, c = nouveauContrat(); c.cartouche.auteur = d.auteur; c.cartouche.echelle = d.echelle; return c; }
-function chargerContrat(liaisons, quoi, nom, o) { sauverMaintenant(); histPush(quoi || 'chargement d’un plan'); app.contrat = contratNeuf();
+function chargerContrat(liaisons, quoi, nom, o) { if (typeof quitterLaRevue === 'function') quitterLaRevue();   // (v88) un autre plan : la revue du précédent s'arrête
+  sauverMaintenant(); histPush(quoi || 'chargement d’un plan'); app.contrat = contratNeuf();
   app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.choisi = null; app.cible = null; app.actif = null; app.nom = nom || app.nom;
   if (typeof planPour === 'function') app.planId = planPour(o || {}, app.nom, app.contrat.liaisons);
   app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false;
@@ -3387,6 +3390,7 @@ function entreeDuMenu(o) { if (!MENU) MENU = { actions: {} }; const D = id => do
    (aria-modal : Tab tourne dans la feuille). Une touche qui ne vaut qu'à un endroit le dit sous sa ligne. */
 const RACCOURCIS = [
   ['Se repérer', [['Chercher un repère, une borne, une action', ['/'], ['Ctrl', 'K']], ['Les repères et les problèmes', ['R']],
+    ['La revue : les points à régler, un par un|Entrée fait le geste, P passe au suivant', ['V']],
     ['Le problème suivant, le précédent|les problèmes, puis ce qui est à voir', ['P'], ['Maj', 'P']],
     ['Folio précédent, suivant', ['←'], ['→']], ['Toute la feuille, puis le dessin', ['0']], ['Zoomer, dézoomer', ['+'], ['−']], ['À 100 %, à 200 %', ['1'], ['2']],
     ['Déplacer la vue|en glissant, ou avec le bouton du milieu', ['Espace']]]],
@@ -3561,6 +3565,7 @@ function lierPanneau() {
     // P : un pas par POINT, les problèmes puis ce qui est à voir (08-controle) — les nombres de la pastille
     if (e.key === 'p' || e.key === 'P') { e.preventDefault(); problemeSuivant(e.key === 'P' ? -1 : 1); return; }
     if (e.key === '/') { e.preventDefault(); ouvrirRecherche(); }
+    else if (e.key === 'v' && typeof commencerLaRevue === 'function') { e.preventDefault(); MENU.actions.revue(); }   // (v88) la revue : les points à régler, un par un
     else if (e.key === 'b') basculerBase();
     else if (e.key === 'r') { e.preventDefault(); basculerIndex(); }   // sinon le « r » s'écrit dans le champ de l'index qui vient de prendre le focus
     else if (e.key === 'n') { if (app.fiche && app.fiche.mode === 'nomenclature') fermerFiche(true); else if (verite().length) ficheNomenclature(); }

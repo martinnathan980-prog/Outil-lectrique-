@@ -295,7 +295,9 @@ function allerALaConsommation(nom) { if (!nom) return;
   if (typeof NIVEAU !== 'undefined') { NIVEAU.sommOuvert = '[data-reg="ce-qu-il-consomme"]'; NIVEAU.sommCle = 'bloc|' + nom; }
   if (typeof ongletRetenu === 'function') ongletRetenu('bloc|' + nom, 'reglages');
   if (typeof allerAuControle === 'function') allerAuControle({ nom, texte: '', section: '', plan: typeof plansDuRepere === 'function' ? plansDuRepere(nom).sort(triNaturel)[0] || '' : '' });
-  if (typeof ouvrirGrand === 'function') ouvrirGrand('reglages'); }
+  if (typeof ouvrirGrand === 'function') ouvrirGrand('reglages');
+  // (v88, la revue) le curseur dans « Permanent » : on vient pour l'écrire — plus un clic de plus pour trouver le champ
+  setTimeout(() => { const s = document.querySelector('#inspecteur [data-reg="ce-qu-il-consomme"]'), c = s && s.querySelector('input.fc-in'); if (c && c.offsetParent) { c.focus(); if (c.select) c.select(); } }, 260); }
 const gesteDeConsommation = r => ({ mot: 'Écrire la consommation de ' + r, cle: 'conso|' + r, principal: true, faire: () => allerALaConsommation(r),
   aide: 'Sa fiche, Modifier › Ce qu’il consomme : écrite, elle fait le courant de ses câbles et leur chute' });
 /* (v87, le lecteur, Q3 : « un câble est protégé par son disjoncteur selon la plus sévère des deux règles ») LA PROTECTION D'UN

@@ -8,7 +8,7 @@
    ========================================================================= */
 const { spawnSync } = require('child_process'), path = require('path');
 // (passe 87) `lpa` : la LPA est la somme des onglets Pièces — elle ouvre les fiches de l'exemple dans Chromium, sans fenêtre
-const MOTEUR = ['barrettes', 'references', 'format-retest', 'cables-maths', 'connectique', 'disjoncteur-maths', 'lpa', 'sauvegarde'];
+const MOTEUR = ['barrettes', 'references', 'format-retest', 'cables-maths', 'connectique', 'disjoncteur-maths', 'lpa', 'sauvegarde', 'revue'];
 const NAVIGATEUR = ['disjoncteur', 'interface', 'chrome', 'documents', 'bibliotheque', 'controle', 'fiche', 'fwd', 'memoire', 'retouche', 'dessin', 'affinage', 'couverture', 'normes', 'see', 'placement', 'vitesse', 'parcours', 'pdf', 'visio', 'bilan', 'ux'];
 const args = process.argv.slice(2), fs = require('fs');
 const voulues = !args.length ? [...MOTEUR, ...NAVIGATEUR] : args.flatMap(a => a === 'moteur' ? MOTEUR : a === 'navigateur' ? NAVIGATEUR : [a]);

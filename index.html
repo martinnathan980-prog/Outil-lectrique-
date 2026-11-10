@@ -10060,6 +10060,58 @@ svg.vu-face text.pris{fill:#fff}
    concerne pas » */
 @media (prefers-reduced-motion:reduce){ .chip::after,.chip:is(.fo-attente,.fo-dessin)::after{transition:none} }
 
+/* ───────── style-z-revue.css ───────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA REVUE (08-revue, v88) — le fil conducteur : les points à régler, un par un.
+   Une bande fine SOUS la barre du haut, sur toute la largeur, le temps de la revue. Le jeton --entete grandit de sa
+   hauteur (:root.en-revue) : le plan, le rail, les fiches et les documents commencent dessous — rien ne la recouvre,
+   elle ne recouvre rien. La barre du haut, elle, garde sa hauteur.
+   Sa langue : le cadre (--entete-fond, ses filets), un seul accent — le cuivre du mot « Revue », du geste et du trait
+   d'avancement ; le vert ne dit qu'un point réglé.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root{--revue-h:44px}
+:root.en-revue{--entete:96px}
+:root.en-revue #entete{height:calc(var(--entete) - var(--revue-h) + var(--sur-h))}
+@media (max-width:720px){ :root.en-revue{--entete:84px} }
+.revue{position:fixed;z-index:35;left:0;right:0;top:calc(var(--entete) - var(--revue-h) + var(--sur-h));height:var(--revue-h);box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;gap:18px;padding:0 max(var(--jeu),var(--sur-d)) 0 max(var(--jeu),var(--sur-g));
+  background:var(--entete-fond);border-top:1px solid var(--voile-2);box-shadow:var(--entete-ombre);color:var(--t-1);animation:rvu-entre .24s var(--courbe)}
+.revue[hidden]{display:none}
+/* où l'on en est : « REVUE 3 / 11 » */
+.rvu-avance{flex:none;display:inline-flex;align-items:baseline;gap:4px;font:500 var(--f-12)/1 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
+.rvu-mode{margin-right:8px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--chrome-cuivre)}
+.rvu-avance b{font:600 var(--f-13)/1 var(--mono);color:var(--t-1)}
+.rvu-avance i{font-style:normal;color:var(--t-3)}
+/* le point : son repère, ce qui cloche, sa suite — la suite s'efface en entier quand la place manque (jamais coupée) */
+.rvu-point{flex:0 1 auto;min-width:0;max-width:820px;height:22px;display:flex;flex-wrap:wrap;align-items:center;column-gap:10px;row-gap:22px;overflow:hidden}
+.rvu-ou{flex:none;height:22px;box-sizing:border-box;display:inline-flex;align-items:center;padding:0 7px;border-radius:6px;background:var(--voile-1);box-shadow:inset 0 0 0 1px var(--voile-2);font:600 var(--f-12)/1 var(--mono);color:var(--t-1)}
+.rvu-mot{flex:none;font:600 var(--f-13)/22px var(--sans);color:var(--t-1);white-space:nowrap}
+.rvu-suite{flex:none;font:400 var(--f-13)/22px var(--sans);color:var(--t-2);white-space:nowrap}
+.rvu-coche{flex:none;width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:var(--ok);color:#fff}
+.rvu-coche svg{width:12px;height:12px;stroke-width:2.6}
+.rvu-regle .rvu-mot{color:var(--ok)}
+/* les gestes : celui qui règle (cuivre, Entrée), passer (P), quitter */
+.rvu-gestes{flex:none;display:flex;align-items:center;gap:8px}
+.rvu-env{display:inline-flex}
+.rvu-b{height:28px;padding:0 10px;border-radius:var(--r-btn);border:1px solid var(--s-line-2);background:transparent;color:var(--t-1);font:500 var(--f-12)/1 var(--sans);
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
+.rvu-b:hover{background:var(--voile-2);border-color:color-mix(in srgb,var(--t-1) 30%,var(--s-line-2))}
+.rvu-b:focus-visible,.rvu-x:focus-visible{outline:2px solid var(--chrome-cuivre);outline-offset:2px}
+.rvu-principal{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 1px 2px rgba(0,0,0,.2)}
+.rvu-principal:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.rvu-k{padding:2px 5px;border-radius:4px;font:500 10px/1 var(--mono);background:color-mix(in srgb,currentColor 16%,transparent)}
+.rvu-x{width:28px;height:28px;padding:0;border:0;background:transparent;border-radius:var(--r-btn);color:var(--t-3);display:grid;place-items:center;cursor:pointer}
+.rvu-x:hover{background:var(--voile-2);color:var(--t-1)}
+.rvu-x svg{width:15px;height:15px}
+/* l'avancement : un trait de cuivre au bas de la bande */
+.rvu-barre{position:absolute;left:0;right:0;bottom:0;height:2px;pointer-events:none}
+.rvu-barre i{display:block;height:100%;background:var(--chrome-cuivre);border-radius:0 1px 1px 0;transition:width .4s var(--courbe)}
+@keyframes rvu-entre{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+/* « Commencer la revue », dans le panneau Repères, sous le bandeau de ce qui est à régler */
+.ix-revue{width:100%;margin:10px 0 2px;justify-content:center;gap:10px}
+.ix-revue kbd{padding:2px 5px;border-radius:4px;font:500 10px/1 var(--mono);background:color-mix(in srgb,currentColor 16%,transparent)}
+@media (prefers-reduced-motion:reduce){ .revue{animation:none} .rvu-barre i{transition:none} }
+
 /* ───────── style-z-sauvegarde.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
    LA SAUVEGARDE D'ENSEMBLE (08-sauvegarde, v88) — ⋮ › Réglages › Sauvegarde.
@@ -10130,6 +10182,9 @@ svg.vu-face text.pris{fill:#fff}
       <button type="button" class="rc-x" id="rc-x" aria-label="Fermer la recherche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       <div id="q-liste" class="q-liste" role="listbox" hidden></div>
     </div>
+    <!-- (v88) LA REVUE (08-revue) : le fil conducteur — les points à régler, un par un. Une bande fine sous la barre du haut,
+         sur toute la largeur, le temps de la revue : le point en une phrase, son geste, « Passer », la progression. -->
+    <div class="revue" id="revue" hidden role="region" aria-label="La revue des points à régler" aria-live="polite"></div>
 
     <div class="en-actions">
       <!-- LE RETEST CORRIGÉ, le vrai livrable : dès que le plan porte un changement, une pilule de verre le dit (« 3 changements
@@ -22653,7 +22708,8 @@ async function chargerBibliotheque() { const [I, P] = await Promise.all([toutLir
 /* ---- aller de la bibliothèque au plan, et retour ------------------------------------------------------------------- */
 /* Montrer la bibliothèque — la racine, ou une installation (`id`). Le plan reste sur la table, dessous : ce qu'on y a fait est
    gardé, ce qui y était ouvert (la fiche, le tableau, la recherche) se ferme. */
-function montrerBibliotheque(vue, id) { const venait = BIB.vue === 'plan';
+function montrerBibliotheque(vue, id) { if (typeof quitterLaRevue === 'function') quitterLaRevue();   // (v88) la revue est celle d'un plan
+  const venait = BIB.vue === 'plan';
   // la table du plan s'efface sous le graphite de la bibliothèque en fondu (08-table, `fonduTable`) : pas de saut de matière
   if (venait) { sauverMaintenant(); quitterLePlan(); if (typeof fonduTable === 'function') fonduTable(); }
   if (vue === 'install' && !BIB.installs.has(id)) vue = 'racine';
@@ -22699,7 +22755,9 @@ async function ouvrirPlan(id, apres) { const p = BIB.plans.get(id); if (!p) retu
     else if (typeof bilanDuPlan === 'function' && typeof motDuBilan === 'function') { try { const B = bilanDuPlan(), n = verite().length;
       if (typeof contratRecu === 'function') contratRecu(p.nom, 'retest');
       const msg = 'VOLTA a lu ' + pluriel(n, 'liaison') + (plans().length > 1 ? ' sur ' + plans().length + ' folios' : '') + motDuBilan(B, 0, []) + '.';
-      if (B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg); } catch (_) { } }
+      const aRegler = typeof compteARegler === 'function' ? compteARegler().regler : 0;
+      if (aRegler && typeof commencerLaRevue === 'function') dire(/à régler/.test(msg) ? msg : msg.replace(/\.$/, '') + ' · ' + aRegler + ' à régler.', false, { geste: 'Commencer la revue', faire: () => commencerLaRevue() });
+      else if (B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg); } catch (_) { } }
     if (apres) aller(apres); return; }
   poserEtat({ ...o, planId: id }); app.hist = []; app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false; $('q').value = '';
   fermerFiche(); fermerMenu(); montrerLePlan(); redessiner(); retrouverVue(); heureSauve(o.t); sauver(); if (apres) aller(apres); }
@@ -24616,7 +24674,7 @@ const GENRES_CONTROLE = [['doublon', 'lignes en double', 'ligne en double'], ['c
   ['arrangement', 'connecteurs qu’aucun arrangement ne loge', 'connecteur qu’aucun arrangement ne loge'], ['contact', 'contacts à revoir', 'contact à revoir'],
   ['calibre', 'calibres à revoir', 'calibre à revoir'], ['pn', 'disjoncteurs à deux part numbers', 'disjoncteur à deux part numbers'], ['protection', 'câbles mal protégés par leur disjoncteur', 'câble mal protégé par son disjoncteur'],
   ['chute', 'chutes de tension trop fortes', 'chute de tension trop forte'], ['profil', 'disjoncteurs sans profil de charge', 'disjoncteur sans profil de charge'],
-  ['segregation', 'mélanges gauche / droite', 'mélange gauche / droite'], ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['fichier', 'écritures du fichier à vérifier', 'écriture du fichier à vérifier'], ['retest', 'points de l’installation', 'point de l’installation'], ['autre', 'autres points', 'autre point']];
+  ['segregation', 'mélanges gauche / droite', 'mélange gauche / droite'], ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['fichier', 'écritures du fichier à vérifier', 'écriture du fichier à vérifier'], ['retest', 'points de votre fichier', 'point de votre fichier'], ['autre', 'autres points', 'autre point']];
 // le genre en mots, au nombre qu'il compte : « 2 chutes de tension trop fortes », « 1 barrette à poser »
 const motDuGenre = (g, n) => { const G = GENRES_CONTROLE.find(x => x[0] === g) || GENRES_CONTROLE[GENRES_CONTROLE.length - 1]; return n > 1 ? G[1] : G[2]; };
 const rangDuGenre = g => { const i = GENRES_CONTROLE.findIndex(x => x[0] === g); return i < 0 ? GENRES_CONTROLE.length : i; };
@@ -24723,7 +24781,9 @@ function controleAJour() { const V = verite();
 function rendreControle() { if (typeof reprendreVoltaEnAttente === 'function') reprendreVoltaEnAttente();
   const xs = controleAJour(), C = compteProblemes(), b = $('btnIndex');
   // le relevé du retest corrigé, ouvert, suit le plan (08-export) ; (v84) le bord rouge / ambre des blocs suit le contrôle
-  if (typeof suivreLeReleve === 'function') suivreLeReleve(); if (typeof peindreEtats === 'function') peindreEtats(); if (!b) return;
+  if (typeof suivreLeReleve === 'function') suivreLeReleve(); if (typeof peindreEtats === 'function') peindreEtats();
+  if (typeof suivreLaRevue === 'function') suivreLaRevue();   // (v88) la revue suit le contrôle : un point réglé s'en va, elle passe au suivant
+  if (!b) return;
   // la pastille : les problèmes ROUGES du plan ; sans rouge, ce qui est à voir, en ambre (le technicien, n° 5 : une règle)
   let p = b.querySelector('.rd-point'); if (!p) { p = document.createElement('i'); p.className = 'rd-point'; b.appendChild(p); }
   p.hidden = !xs.length; p.className = 'rd-point ' + (C.ko ? 'ko' : 'att'); p.textContent = String(C.ko || C.att);
@@ -24947,7 +25007,8 @@ function allerAuGenre(cle) { const L = lignesDuControle(), i = L.findIndex(l => 
    ligne) reprend à son premier point. */
 const clePoint = x => x.niveau + '|' + (x.nom || '') + '|' + x.texte;
 const pointsDansLOrdre = () => lignesDuControle().flatMap(l => l.xs);
-function problemeSuivant(pas) { const X = pointsDansLOrdre(); if (!X.length) { dire('Rien à reprendre : le contrôle ne relève rien.'); return; }
+function problemeSuivant(pas) { if (typeof REVUE !== 'undefined' && REVUE.on) { allerDansLaRevue(pas); return; }   // (v88) pendant la revue, P passe au point suivant de la revue
+  const X = pointsDansLOrdre(); if (!X.length) { dire('Rien à reprendre : le contrôle ne relève rien.'); return; }
   const P = CONTROLE.pas; let i = P ? X.findIndex(x => clePoint(x) === P.cle) : -1;
   if (i < 0 && P) { const l = lignesDuControle().find(y => y.cle === P.cle); if (l) i = X.indexOf(l.xs[0]); }
   if (i < 0) i = P ? Math.min(P.rang, X.length) - (pas > 0 ? 1 : 0) : (pas > 0 ? -1 : X.length);
@@ -25683,7 +25744,9 @@ function allerALaConsommation(nom) { if (!nom) return;
   if (typeof NIVEAU !== 'undefined') { NIVEAU.sommOuvert = '[data-reg="ce-qu-il-consomme"]'; NIVEAU.sommCle = 'bloc|' + nom; }
   if (typeof ongletRetenu === 'function') ongletRetenu('bloc|' + nom, 'reglages');
   if (typeof allerAuControle === 'function') allerAuControle({ nom, texte: '', section: '', plan: typeof plansDuRepere === 'function' ? plansDuRepere(nom).sort(triNaturel)[0] || '' : '' });
-  if (typeof ouvrirGrand === 'function') ouvrirGrand('reglages'); }
+  if (typeof ouvrirGrand === 'function') ouvrirGrand('reglages');
+  // (v88, la revue) le curseur dans « Permanent » : on vient pour l'écrire — plus un clic de plus pour trouver le champ
+  setTimeout(() => { const s = document.querySelector('#inspecteur [data-reg="ce-qu-il-consomme"]'), c = s && s.querySelector('input.fc-in'); if (c && c.offsetParent) { c.focus(); if (c.select) c.select(); } }, 260); }
 const gesteDeConsommation = r => ({ mot: 'Écrire la consommation de ' + r, cle: 'conso|' + r, principal: true, faire: () => allerALaConsommation(r),
   aide: 'Sa fiche, Modifier › Ce qu’il consomme : écrite, elle fait le courant de ses câbles et leur chute' });
 /* (v87, le lecteur, Q3 : « un câble est protégé par son disjoncteur selon la plus sévère des deux règles ») LA PROTECTION D'UN
@@ -30102,7 +30165,10 @@ function poserLaLecture(r, nom, ig, noms, plus, L) { const avis = avisDeLecture(
      ouvre le bilan, dans « Vos fichiers » */
   const msg = 'VOLTA a lu ' + pluriel(n, 'liaison') + (plans().length > 1 ? ' sur ' + plans().length + ' folios' : '') + motDuBilan(B, nl, noms)
     + (noms.length === 1 ? ' · la feuille ' + guillemets(noms[0]) + ' est laissée de côté (pas les en-têtes d’un retest)' : noms.length > 1 ? ' · ' + noms.length + ' feuilles laissées de côté : ' + noms.slice(0, 3).map(guillemets).join(', ') + (noms.length > 3 ? '…' : '') : '') + (plus || '') + '.';
-  if (avis || B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg);
+  // (v88) le fil conducteur : des points à régler — le message propose la revue ; ce qui est laissé de côté garde « Voir »
+  const aRegler = typeof compteARegler === 'function' ? compteARegler().regler : 0;
+  if (aRegler && !avis && typeof commencerLaRevue === 'function') dire(/à régler/.test(msg) ? msg : msg.replace(/\.$/, '') + ' · ' + aRegler + ' à régler.', false, { geste: 'Commencer la revue', faire: () => commencerLaRevue() });
+  else if (avis || B.ko.length || B.att.length) signaler(msg, 'retest'); else dire(msg);
   proposerDejaFait(); }
 /* ---- LE BILAN D'OUVERTURE (v86, l'audit M6 : « un résumé que l'on peut cliquer ») ------------------------------------
    À l'ouverture d'un fichier, le mot qui passe dit ce que VOLTA a lu et ce qui demande l'attention ; « Voir » ouvre la carte
@@ -32968,7 +33034,7 @@ function rendreIndex(box) { const etats = new Map();
   box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" data-bulle="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" data-bulle="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span>${boutonTaille()}${boutonEpingle()}<button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer · Échap">${ico('fermer')}</button></header>`
     // (v86, une seule source : un équipement s'ajoute dans le fichier — plus de « + » ni de champ ici)
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Filtrer la liste : un repère, une référence" aria-label="Filtrer la liste des repères" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${C.ko ? 'ko' : C.regler || C.voir ? 'att' : 'ok'}"><i aria-hidden="true">${C.ko ? '✕' : C.regler || C.voir ? '!' : '✓'}</i>${C.regler ? C.regler + ' à régler' + (C.voir ? `<span class="ix-att"> · ${C.voir} à voir</span>` : '') : C.voir ? C.voir + ' à voir' : 'rien à reprendre'}</span>${(C.regler || C.voir) ? ico('bas', 'fi-chevron') : ''}</summary>${listeARegler()}</details>`)
+    + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${C.ko ? 'ko' : C.regler || C.voir ? 'att' : 'ok'}"><i aria-hidden="true">${C.ko ? '✕' : C.regler || C.voir ? '!' : '✓'}</i>${C.regler ? C.regler + ' à régler' + (C.voir ? `<span class="ix-att"> · ${C.voir} à voir</span>` : '') : C.voir ? C.voir + ' à voir' : 'rien à reprendre'}</span>${(C.regler || C.voir) ? ico('bas', 'fi-chevron') : ''}</summary>${listeARegler()}</details>${(C.regler || C.voir) && typeof commencerLaRevue === 'function' ? `<button type="button" class="btn cuivre ix-revue" id="ix-revue" data-bulle="Les points ${C.regler ? 'à régler' : 'à voir'}, un par un : chacun ouvre sa fiche, Entrée fait son geste, P passe au suivant">${C.regler ? 'Commencer la revue' : 'Voir les points un par un'}<kbd>V</kbd></button>` : ''}`)
     + (groupes || `<div class="ix-vide"><span class="ix-vide-ico" aria-hidden="true">${ico('loupe')}</span><p>Aucun repère ni câble ne contient « ${esc(app.insp.filtre.trim())} ».</p><button class="btn papier" id="ix-effacer">Effacer la recherche</button></div>`);
   // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
   box.scrollTop = meme ? haut : 0; survolQuiSuit(box); if (typeof lierBulles === 'function') lierBulles(box);
@@ -32993,6 +33059,7 @@ function rendreIndex(box) { const etats = new Map();
   const effacer = () => { app.insp.filtre = ''; rendreIndex(box); const q2 = $('ix-q'); if (q2) q2.focus(); };
   ['ix-vider', 'ix-effacer'].forEach(id => { const b = $(id); if (b) b.onclick = effacer; });
   const det = box.querySelector('.ix-controle'); if (det) det.addEventListener('toggle', () => { CONTROLE.ouvert = det.open; });
+  { const rv = box.querySelector('#ix-revue'); if (rv) rv.onclick = () => commencerLaRevue(); }
   if (det) lierListeControle(det, () => rendreIndex(box));
   // (passe 87) « Voir le premier » et le geste d'un genre suivent son rang (08-recap, `genresARegler`) ; P reprend à sa ligne
   if (det && typeof genresARegler === 'function') { const genreDe_ = k => genresARegler().find(y => y.cle === k);
@@ -33430,7 +33497,7 @@ const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde',
   ia: 'ia intelligence artificielle interne connexion tester cle api adresse modele serveur reseau lire documents scans images',
   // (v88) la sauvegarde d'ensemble (08-sauvegarde) ; « Ouvrir un fichier… » prend aussi un PDF, un Visio
   sauvegarde: 'sauvegarder sauvegarde restaurer restauration copie tout garder fichier volta backup poste navigateur', pdf: 'pdf schema scan lire', comprendre: 'aide comprendre expliquer calcul' };
-const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
+const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'revue', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);
     const l = b.querySelector('.menu-l'), mot = (l ? [...l.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('') : b.textContent).trim();
@@ -33442,6 +33509,7 @@ function actionsDeLaPalette() { const xs = [], vu = new Set();
   const en = (act, mot, touche, faire, o) => xs.push({ act, mot, touche, faire, des: '', ou: '', ico: '', mots: '', ...(o || {}) });
   if (plan) {
     en('index', 'Repères et problèmes', 'R', basculerIndex, { mots: 'index liste reperes problemes', des: typeof compteProblemes === 'function' ? compteProblemes().mot : '', ico: I('btnIndex') });
+    if (typeof commencerLaRevue === 'function') en('revue', typeof REVUE !== 'undefined' && REVUE.on ? 'Quitter la revue' : 'La revue : les points à régler, un par un', 'V', () => MENU.actions.revue(), { mots: 'revue regler points problemes guide parcours fil conducteur un par un commencer', ico: ICONE_OBJET.geste });
     if (typeof problemeSuivant === 'function') en('suivant', 'Le problème suivant', 'P', () => problemeSuivant(1), { mots: 'erreur defaut probleme suivant reprendre', ico: ICONE_OBJET.geste });
     en('page', 'Le récapitulatif en page', 'Maj+B', () => ouvrirBase('page'), { mots: 'tableau page entiere recap', ico: I('btnBase') });
     en('feuille', 'Voir la feuille entière', '0', () => { VUE.cadrage = 'feuille'; ajuster(true); }, { mots: 'cadrer ajuster cartouche page', ico: I('zfit') });
@@ -34272,7 +34340,8 @@ function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) r
    `o.nouveau` un plan neuf de l'installation ouverte (un fichier ouvert) ; sans rien, le plan sur la table (le collage qui le
    remplace) — ou un plan neuf s'il n'y en a pas. La bibliothèque s'efface : le contrat est sur la table. */
 function contratNeuf() { const d = app.contrat.cartouche, c = nouveauContrat(); c.cartouche.auteur = d.auteur; c.cartouche.echelle = d.echelle; return c; }
-function chargerContrat(liaisons, quoi, nom, o) { sauverMaintenant(); histPush(quoi || 'chargement d’un plan'); app.contrat = contratNeuf();
+function chargerContrat(liaisons, quoi, nom, o) { if (typeof quitterLaRevue === 'function') quitterLaRevue();   // (v88) un autre plan : la revue du précédent s'arrête
+  sauverMaintenant(); histPush(quoi || 'chargement d’un plan'); app.contrat = contratNeuf();
   app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.choisi = null; app.cible = null; app.actif = null; app.nom = nom || app.nom;
   if (typeof planPour === 'function') app.planId = planPour(o || {}, app.nom, app.contrat.liaisons);
   app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false;
@@ -34506,6 +34575,7 @@ function entreeDuMenu(o) { if (!MENU) MENU = { actions: {} }; const D = id => do
    (aria-modal : Tab tourne dans la feuille). Une touche qui ne vaut qu'à un endroit le dit sous sa ligne. */
 const RACCOURCIS = [
   ['Se repérer', [['Chercher un repère, une borne, une action', ['/'], ['Ctrl', 'K']], ['Les repères et les problèmes', ['R']],
+    ['La revue : les points à régler, un par un|Entrée fait le geste, P passe au suivant', ['V']],
     ['Le problème suivant, le précédent|les problèmes, puis ce qui est à voir', ['P'], ['Maj', 'P']],
     ['Folio précédent, suivant', ['←'], ['→']], ['Toute la feuille, puis le dessin', ['0']], ['Zoomer, dézoomer', ['+'], ['−']], ['À 100 %, à 200 %', ['1'], ['2']],
     ['Déplacer la vue|en glissant, ou avec le bouton du milieu', ['Espace']]]],
@@ -34680,6 +34750,7 @@ function lierPanneau() {
     // P : un pas par POINT, les problèmes puis ce qui est à voir (08-controle) — les nombres de la pastille
     if (e.key === 'p' || e.key === 'P') { e.preventDefault(); problemeSuivant(e.key === 'P' ? -1 : 1); return; }
     if (e.key === '/') { e.preventDefault(); ouvrirRecherche(); }
+    else if (e.key === 'v' && typeof commencerLaRevue === 'function') { e.preventDefault(); MENU.actions.revue(); }   // (v88) la revue : les points à régler, un par un
     else if (e.key === 'b') basculerBase();
     else if (e.key === 'r') { e.preventDefault(); basculerIndex(); }   // sinon le « r » s'écrit dans le champ de l'index qui vient de prendre le focus
     else if (e.key === 'n') { if (app.fiche && app.fiche.mode === 'nomenclature') fermerFiche(true); else if (verite().length) ficheNomenclature(); }
@@ -40241,6 +40312,132 @@ function lierReferencesUneFois() { if (REF.lie || typeof document === 'undefined
     if (e.key === '0' || e.key === 'f') ajusterFwd(); else if (e.key === '+' || e.key === '=') zoomerFwd(1.25); else if (e.key === '-') zoomerFwd(1 / 1.25);
     e.stopPropagation(); }, true); }
 lierReferencesUneFois();
+
+/* ───────── 08-revue.js ───────── */
+
+/* ===========================================================================
+   08 — LA REVUE (v88) : le fil conducteur.
+
+   Le lecteur, à l'état des lieux du 9 novembre 2026 : « Pas de fil conducteur : il faut le faire. » Après l'ouverture,
+   VOLTA disait « 11 à régler » et laissait chercher. La Revue les fait passer UN PAR UN, comme une boîte de réception
+   qu'on vide :
+
+       REVUE  3 / 11   102CB1 · Consommation de 104LP1 à écrire      [ Écrire la consommation de 104LP1 ⏎ ]  [ Passer P ]  ×
+
+   · Elle se tient dans une bande fine, sous la barre du haut, sur toute la largeur : le point s'y lit en entier, et rien
+     ne la recouvre (le plan, le rail et les fiches commencent dessous : le jeton --entete grandit de sa hauteur).
+   · Chaque point ouvre sa fiche au bon endroit (08-controle, `allerAuControle`) ; son geste est celui de la fiche et du
+     récapitulatif (08-recap, `rangDuPoint`) : Entrée le fait. Un point réglé s'en va seul : la Revue passe au suivant.
+   · P passe au suivant sans régler (Maj+P revient) ; Échap, fiche fermée, quitte.
+   · D'abord ce qui est À RÉGLER (ce qui a un geste, ou un problème) ; puis, si l'on veut, ce qui est À VOIR.
+   · À la fin : ce qui a été réglé, ce qui a été passé, et « Relire ce qui part » — l'Excel corrigé (08-export).
+
+   Proposée, jamais imposée : le message d'ouverture d'un fichier, le panneau Repères, la recherche (« revue »), la touche V.
+   =========================================================================== */
+const REVUE = { on: false, phase: 'regler', cle: '', debut: new Set(), passes: new Set(), fin: false, saut: 0, clavier: 0, geste: 0, lie: false };
+const estARegler = x => typeof rangDuPoint === 'function' ? !!rangDuPoint(x).regler : x.niveau === 'ko';
+/* La clé d'un point pour la Revue : son genre, son repère, sa phrase SANS ses nombres — « le courant de 3 câbles en
+   dépend » devient « de 2 câbles » quand on en règle un : c'est le même point, pas un point réglé. Un nombre seul, pas les
+   chiffres d'un repère ni d'une borne (104LP1, 300XC1:A5 restent : deux points qui ne diffèrent que par là sont deux points). */
+const cleDeRevue = x => (x.genre || '') + '|' + (x.nom || '') + '|' + String(x.texte || '').replace(/(^|[\s(])\d+(?:[.,]\d+)?(?=[\s),;.]|$)/g, '$1#');
+const listeDeLaRevue = () => { let X = []; try { X = pointsDansLOrdre(); } catch (_) { X = []; } return X.filter(x => estARegler(x) === (REVUE.phase !== 'voir')); };
+const pointDeLaRevue = () => listeDeLaRevue().find(x => cleDeRevue(x) === REVUE.cle) || null;
+// ce qui a été réglé depuis le début : les points du départ qui n'y sont plus
+const reglesDeLaRevue = () => { const ici = new Set(listeDeLaRevue().map(cleDeRevue)); return [...REVUE.debut].filter(k => !ici.has(k)).length; };
+/* Un point, en une phrase : ce qui cloche (les mots de la fiche), puis sa suite — « Consommation de 104LP1 à écrire », « le
+   courant de 3 câbles en dépend ». Un câble se dit d'abord (« DR20 vers 103RL1:A1 »), sa raison ensuite. `long` : tout. */
+function motsDeLaRevue(x) { const t = majuscule(typeof motDuProbleme === 'function' ? motDuProbleme(x.texte) : x.texte).replace(/[.]\s*$/, ''), k = t.indexOf(' — ');
+  const tete = k > 0 ? t.slice(0, k) : t, queue = k > 0 ? t.slice(k + 3) : '', cable = /^(\S+ vers \S+(?: \(par [^)]+\))?) : (.+)$/.exec(tete);
+  return cable ? { titre: cable[1], suite: cable[2] + (queue ? ' — ' + queue : ''), long: t } : { titre: tete, suite: queue, long: t }; }
+// son geste : celui qui le règle (le même que sa fiche) ; sans geste, ce qu'il faut faire, en mots
+function gesteDeLaRevue(x) { let g = null; try { g = typeof rangDuPoint === 'function' ? rangDuPoint(x).geste : null; } catch (_) { g = null; }
+  return g && g.mot && typeof g.faire === 'function' ? g : null; }
+
+function commencerLaRevue(phase) { if (!verite().length) { dire('Aucun plan ouvert : ouvrez un fichier, puis commencez la revue.'); return; }
+  REVUE.phase = phase === 'voir' ? 'voir' : 'regler'; const L = listeDeLaRevue();
+  if (!L.length && REVUE.phase === 'regler') { REVUE.phase = 'voir'; const V = listeDeLaRevue(); REVUE.phase = 'regler';
+    if (!V.length) { dire('Rien à reprendre : le contrôle ne relève rien. Le plan est prêt à exporter.', false, { geste: 'Relire ce qui part', faire: () => relireCeQuiPart() }); return; } }
+  REVUE.on = true; REVUE.fin = !L.length; REVUE.debut = new Set(L.map(cleDeRevue)); REVUE.passes = new Set(); REVUE.cle = L.length ? cleDeRevue(L[0]) : '';
+  poserLaBandeDeRevue(true); lierLaRevue(); if (L.length) montrerLePointDeLaRevue(); else rendreLaRevue(); }
+function quitterLaRevue() { if (!REVUE.on) return; REVUE.on = false; clearTimeout(REVUE.saut); const el = $('revue'); if (el) { el.hidden = true; el.innerHTML = ''; } poserLaBandeDeRevue(false); }
+// la bande prend sa place sous la barre du haut : tout ce qui commence dessous (le plan, le rail, les fiches) descend d'autant
+function poserLaBandeDeRevue(oui) { const R = document.documentElement; if (R.classList.contains('en-revue') === !!oui) return; R.classList.toggle('en-revue', !!oui);
+  try { if (typeof ajuster === 'function') ajuster(true); if (typeof dessinerLien === 'function') dessinerLien(); } catch (_) { } }
+const relireCeQuiPart = () => { quitterLaRevue(); if (MENU && MENU.actions && MENU.actions.retestcorrige) MENU.actions.retestcorrige(); };
+// le point courant : sa fiche, au bon endroit ; P repartira de lui
+function montrerLePointDeLaRevue() { const x = pointDeLaRevue(); rendreLaRevue(); if (!x) return;
+  try { const X = pointsDansLOrdre(); CONTROLE.pas = { cle: clePoint(x), rang: X.indexOf(x) }; allerAuControle(x); } catch (_) { }
+  clavierALaRevue(); }
+/* LE CLAVIER REVIENT À LA BANDE : la fiche qui s'ouvre prend le clavier — Entrée y presserait un de ses boutons. Le geste de
+   la revue le reprend (son contour le montre) : Entrée le fait, pour de bon ; sans geste, « Passer ». */
+function clavierALaRevue() { clearTimeout(REVUE.clavier); REVUE.clavier = setTimeout(() => { const el = $('revue'); if (!REVUE.on || !el || el.hidden) return;
+  const c = document.activeElement; if (c && (c.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(c.tagName))) return;   // on écrit : on n'y touche pas
+  const b = el.querySelector('.rvu-principal') || el.querySelector('[data-revue="passer"]'); if (b) b.focus({ preventScroll: true }); }, 140); }
+// le premier point pas encore passé, à partir d'une place ; rien : la fin
+function prochainDeLaRevue(depuis) { const L = listeDeLaRevue(); for (let i = Math.max(0, depuis); i < L.length; i++) if (!REVUE.passes.has(cleDeRevue(L[i]))) return L[i]; return null; }
+/* P : passer au suivant (le point reste à régler, il est « passé ») ; Maj+P : revenir au précédent. */
+function allerDansLaRevue(pas) { if (!REVUE.on) return; const L = listeDeLaRevue(), i = L.findIndex(x => cleDeRevue(x) === REVUE.cle);
+  if (REVUE.fin) { if (pas < 0 && L.length) { REVUE.fin = false; const x = L[L.length - 1]; REVUE.passes.delete(cleDeRevue(x)); REVUE.cle = cleDeRevue(x); montrerLePointDeLaRevue(); } return; }
+  if (pas > 0) { if (i >= 0) REVUE.passes.add(REVUE.cle); const x = prochainDeLaRevue(i + 1); if (x) { REVUE.cle = cleDeRevue(x); montrerLePointDeLaRevue(); } else { REVUE.fin = true; rendreLaRevue(); } }
+  else if (i > 0) { const x = L[i - 1]; REVUE.passes.delete(cleDeRevue(x)); REVUE.cle = cleDeRevue(x); montrerLePointDeLaRevue(); } }
+// reprendre ce qu'on a passé ; continuer par ce qui est à voir
+function reprendreLesPasses() { REVUE.passes = new Set(); REVUE.fin = false; const x = prochainDeLaRevue(0); if (x) { REVUE.cle = cleDeRevue(x); montrerLePointDeLaRevue(); } else { REVUE.fin = true; rendreLaRevue(); } }
+// (le clavier quitte la bande : un geste qui ouvre une saisie — « Écrire la consommation… » — le prend pour son champ)
+function faireLeGesteDeLaRevue() { const x = pointDeLaRevue(), g = x && gesteDeLaRevue(x); if (!g) return false;
+  REVUE.geste = Date.now(); clearTimeout(REVUE.clavier); const el = $('revue'), c = document.activeElement; if (el && c && el.contains(c)) c.blur();
+  try { g.faire(); } catch (_) { } return true; }
+/* LE CONTRÔLE A CHANGÉ (08-controle, `rendreControle` : un geste, une saisie, un « Défaire ») : le point courant n'y est
+   plus — il est réglé. La barre le dit un instant (« Réglé »), puis la Revue passe au suivant ; il n'en reste plus : la fin. */
+function suivreLaRevue() { if (!REVUE.on) return; const L = listeDeLaRevue(), ici = L.some(x => cleDeRevue(x) === REVUE.cle);
+  if (ici || REVUE.fin) { rendreLaRevue(); return; }
+  // sa place d'avant : le premier point pas encore vu, dans l'ordre du contrôle
+  const x = prochainDeLaRevue(0); rendreLaRevue({ regle: true }); clearTimeout(REVUE.saut);
+  REVUE.saut = setTimeout(() => { if (!REVUE.on) return; const y = x && listeDeLaRevue().some(z => cleDeRevue(z) === cleDeRevue(x)) ? x : prochainDeLaRevue(0);
+    if (y) { REVUE.cle = cleDeRevue(y); montrerLePointDeLaRevue(); } else { REVUE.fin = true; rendreLaRevue(); clavierALaRevue(); } }, 900); }
+
+/* ---- la barre ------------------------------------------------------------------------------------------------------ */
+const toucheRevue = t => `<kbd class="rvu-k" aria-hidden="true">${t}</kbd>`;
+function rendreLaRevue(o) { const el = $('revue'); if (!el) return; if (!REVUE.on) { el.hidden = true; return; } o = o || {};
+  const L = listeDeLaRevue(), n = REVUE.debut.size, faits = reglesDeLaRevue(), passes = [...REVUE.passes].filter(k => L.some(x => cleDeRevue(x) === k)).length, voir = REVUE.phase === 'voir';
+  const x = REVUE.fin ? null : pointDeLaRevue(), rang = Math.min(n, faits + passes + (x ? 1 : 0)), part = n ? Math.min(1, (faits + passes) / n) : 1;
+  const croix = `<button type="button" class="rvu-x" data-revue="quitter" aria-label="Quitter la revue" data-bulle="Quitter la revue (Échap, fiche fermée)">${ico('fermer')}</button>`;
+  const barre = `<i class="rvu-barre" aria-hidden="true"><i style="width:${(part * 100).toFixed(1)}%"></i></i>`;
+  let corps;
+  if (o.regle) corps = `<span class="rvu-avance"><span class="rvu-mode">Revue</span></span><span class="rvu-point rvu-regle"><span class="rvu-coche" aria-hidden="true">${ico('coche')}</span><span class="rvu-mot">Réglé</span></span><span class="rvu-gestes">${croix}</span>`;
+  else if (!x) { // la fin : ce qui a été fait, ce qui reste, et la suite
+    let nVoir = 0; if (!voir) { REVUE.phase = 'voir'; nVoir = listeDeLaRevue().length; REVUE.phase = 'regler'; }
+    const bilan = voir ? (n ? pluriel(n, 'point') + ' vu' + (n > 1 ? 's' : '') : 'Rien à voir')
+      : [faits ? faits + ' réglé' + (faits > 1 ? 's' : '') : '', passes ? passes + ' passé' + (passes > 1 ? 's' : '') : ''].filter(Boolean).join(' · ') || 'Rien à régler';
+    const suite = [passes && !voir ? `<button type="button" class="rvu-b" data-revue="reprendre">Reprendre ${passes > 1 ? 'les ' + passes + ' passés' : 'le point passé'}</button>` : '',
+      !voir && nVoir ? `<button type="button" class="rvu-b" data-revue="voir">Voir ${nVoir > 1 ? 'les ' + nVoir + ' points à voir' : 'le point à voir'}</button>` : '',
+      `<span class="rvu-env" data-bulle="Ce qui part dans l’Excel corrigé, relu avant d’enregistrer"><button type="button" class="rvu-b rvu-principal" data-revue="relire">Relire ce qui part ${toucheRevue('⏎')}</button></span>`].join('');
+    corps = `<span class="rvu-avance"><span class="rvu-mode">Revue</span></span><span class="rvu-point rvu-fin"><span class="rvu-coche" aria-hidden="true">${ico('coche')}</span><span class="rvu-mot">${esc(passes && !voir ? 'Revue faite' : voir ? 'Revue faite' : 'Tout est réglé')}</span><span class="rvu-suite">${esc(bilan)}</span></span><span class="rvu-gestes">${suite}${croix}</span>`; }
+  else { const M = motsDeLaRevue(x), g = gesteDeLaRevue(x); let que = ''; if (!g) { try { que = typeof remede === 'function' ? (remede(x) || [])[0] || '' : ''; } catch (_) { que = ''; } }
+    const bulle = [M.long, !g && que ? que : ''].filter(Boolean).join('\n');
+    corps = `<span class="rvu-avance" data-bulle="${escA((voir ? 'À voir' : 'À régler') + ' : le point ' + rang + ' sur ' + n + (faits ? ' — ' + faits + ' déjà réglé' + (faits > 1 ? 's' : '') : ''))}"><span class="rvu-mode">${voir ? 'À voir' : 'Revue'}</span><b>${rang}</b><i>/</i><span>${n}</span></span>`
+      + `<span class="rvu-point" data-bulle="${escA(bulle)}">${x.nom ? `<span class="rvu-ou id">${esc(x.nom)}</span>` : ''}<span class="rvu-mot">${esc(M.titre)}</span>${M.suite ? `<span class="rvu-suite">${esc(majuscule(M.suite))}</span>` : !g && que ? `<span class="rvu-suite">${esc(que)}</span>` : ''}</span>`
+      // (la bulle d'un geste est portée par son enveloppe : elle parle au survol, pas chaque fois que le clavier revient sur lui)
+      + `<span class="rvu-gestes">${g ? `<span class="rvu-env"${g.aide ? ` data-bulle="${escA(g.aide)}"` : ''}><button type="button" class="rvu-b rvu-principal" data-revue="geste">${esc(g.mot)} ${toucheRevue('⏎')}</button></span>` : ''}`
+      + `<span class="rvu-env" data-bulle="${escA(voir ? 'Le point suivant (Maj+P : le précédent)' : 'Le suivant, sans régler celui-ci — il reste à régler (Maj+P : le précédent)')}"><button type="button" class="rvu-b" data-revue="passer">${voir ? 'Suivant' : 'Passer'} ${toucheRevue('P')}</button></span>${croix}</span>`; }
+  // la bande refaite garde le clavier qu'elle avait (un point réglé, la fin : le geste suivant le prend)
+  const avait = el.contains(document.activeElement) && Date.now() - (REVUE.geste || 0) > 1500;
+  el.innerHTML = corps + barre; el.hidden = false; el.classList.toggle('rvu-en-fin', !x && !o.regle); if (typeof lierBulles === 'function') lierBulles(el);
+  if (avait) { const b = el.querySelector('.rvu-principal') || el.querySelector('[data-revue="passer"]') || el.querySelector('.rvu-x'); if (b) b.focus({ preventScroll: true }); } }
+function lierLaRevue() { if (REVUE.lie) return; REVUE.lie = true; const el = $('revue'); if (!el) return;
+  el.addEventListener('click', e => { const b = e.target.closest('[data-revue]'); if (!b) return; const k = b.dataset.revue;
+    if (k === 'geste') faireLeGesteDeLaRevue(); else if (k === 'passer') allerDansLaRevue(1); else if (k === 'quitter') quitterLaRevue();
+    else if (k === 'reprendre') reprendreLesPasses(); else if (k === 'voir') commencerLaRevue('voir'); else if (k === 'relire') relireCeQuiPart(); });
+  /* le clavier, AVANT les touches du plan : Entrée fait le geste (ou « Relire ce qui part », à la fin) quand le clavier n'est
+     sur rien d'autre ; Échap quitte la revue quand plus rien n'est ouvert (une fiche, le menu, la recherche se ferment d'abord) */
+  document.addEventListener('keydown', e => { if (!REVUE.on || e.ctrlKey || e.metaKey || e.altKey) return; const c = e.target;
+    const champ = c && (c.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(c.tagName));
+    if (e.key === 'Enter' && !champ) { const ailleurs = c && c.closest && c.closest('button, a, summary, [role="button"], [role="menuitem"], [role="tab"], [tabindex]:not(body)') && !c.closest('#revue');
+      if (ailleurs || !$('menu').hidden || document.body.classList.contains('cherche')) return;
+      if (REVUE.fin) { e.preventDefault(); e.stopPropagation(); relireCeQuiPart(); } else if (faireLeGesteDeLaRevue()) { e.preventDefault(); e.stopPropagation(); } }
+    else if (e.key === 'Escape' && !champ) { const ouvert = !$('menu').hidden || document.body.classList.contains('cherche') || !$('fiche').hidden || !$('inspecteur').hidden || (app.base && app.base.ouvert);
+      if (!ouvert) { e.preventDefault(); e.stopPropagation(); quitterLaRevue(); } } }, true); }
+// la touche V, la recherche (« revue »), le panneau Repères et le message d'ouverture y mènent
+MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.revue = () => (REVUE.on ? quitterLaRevue() : commencerLaRevue());
 
 /* ───────── 08-sauvegarde.js ───────── */
 

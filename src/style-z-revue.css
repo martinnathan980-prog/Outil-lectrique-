@@ -1,0 +1,50 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA REVUE (08-revue, v88) — le fil conducteur : les points à régler, un par un.
+   Une bande fine SOUS la barre du haut, sur toute la largeur, le temps de la revue. Le jeton --entete grandit de sa
+   hauteur (:root.en-revue) : le plan, le rail, les fiches et les documents commencent dessous — rien ne la recouvre,
+   elle ne recouvre rien. La barre du haut, elle, garde sa hauteur.
+   Sa langue : le cadre (--entete-fond, ses filets), un seul accent — le cuivre du mot « Revue », du geste et du trait
+   d'avancement ; le vert ne dit qu'un point réglé.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root{--revue-h:44px}
+:root.en-revue{--entete:96px}
+:root.en-revue #entete{height:calc(var(--entete) - var(--revue-h) + var(--sur-h))}
+@media (max-width:720px){ :root.en-revue{--entete:84px} }
+.revue{position:fixed;z-index:35;left:0;right:0;top:calc(var(--entete) - var(--revue-h) + var(--sur-h));height:var(--revue-h);box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;gap:18px;padding:0 max(var(--jeu),var(--sur-d)) 0 max(var(--jeu),var(--sur-g));
+  background:var(--entete-fond);border-top:1px solid var(--voile-2);box-shadow:var(--entete-ombre);color:var(--t-1);animation:rvu-entre .24s var(--courbe)}
+.revue[hidden]{display:none}
+/* où l'on en est : « REVUE 3 / 11 » */
+.rvu-avance{flex:none;display:inline-flex;align-items:baseline;gap:4px;font:500 var(--f-12)/1 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
+.rvu-mode{margin-right:8px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--chrome-cuivre)}
+.rvu-avance b{font:600 var(--f-13)/1 var(--mono);color:var(--t-1)}
+.rvu-avance i{font-style:normal;color:var(--t-3)}
+/* le point : son repère, ce qui cloche, sa suite — la suite s'efface en entier quand la place manque (jamais coupée) */
+.rvu-point{flex:0 1 auto;min-width:0;max-width:820px;height:22px;display:flex;flex-wrap:wrap;align-items:center;column-gap:10px;row-gap:22px;overflow:hidden}
+.rvu-ou{flex:none;height:22px;box-sizing:border-box;display:inline-flex;align-items:center;padding:0 7px;border-radius:6px;background:var(--voile-1);box-shadow:inset 0 0 0 1px var(--voile-2);font:600 var(--f-12)/1 var(--mono);color:var(--t-1)}
+.rvu-mot{flex:none;font:600 var(--f-13)/22px var(--sans);color:var(--t-1);white-space:nowrap}
+.rvu-suite{flex:none;font:400 var(--f-13)/22px var(--sans);color:var(--t-2);white-space:nowrap}
+.rvu-coche{flex:none;width:18px;height:18px;display:grid;place-items:center;border-radius:50%;background:var(--ok);color:#fff}
+.rvu-coche svg{width:12px;height:12px;stroke-width:2.6}
+.rvu-regle .rvu-mot{color:var(--ok)}
+/* les gestes : celui qui règle (cuivre, Entrée), passer (P), quitter */
+.rvu-gestes{flex:none;display:flex;align-items:center;gap:8px}
+.rvu-env{display:inline-flex}
+.rvu-b{height:28px;padding:0 10px;border-radius:var(--r-btn);border:1px solid var(--s-line-2);background:transparent;color:var(--t-1);font:500 var(--f-12)/1 var(--sans);
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
+.rvu-b:hover{background:var(--voile-2);border-color:color-mix(in srgb,var(--t-1) 30%,var(--s-line-2))}
+.rvu-b:focus-visible,.rvu-x:focus-visible{outline:2px solid var(--chrome-cuivre);outline-offset:2px}
+.rvu-principal{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 1px 2px rgba(0,0,0,.2)}
+.rvu-principal:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.rvu-k{padding:2px 5px;border-radius:4px;font:500 10px/1 var(--mono);background:color-mix(in srgb,currentColor 16%,transparent)}
+.rvu-x{width:28px;height:28px;padding:0;border:0;background:transparent;border-radius:var(--r-btn);color:var(--t-3);display:grid;place-items:center;cursor:pointer}
+.rvu-x:hover{background:var(--voile-2);color:var(--t-1)}
+.rvu-x svg{width:15px;height:15px}
+/* l'avancement : un trait de cuivre au bas de la bande */
+.rvu-barre{position:absolute;left:0;right:0;bottom:0;height:2px;pointer-events:none}
+.rvu-barre i{display:block;height:100%;background:var(--chrome-cuivre);border-radius:0 1px 1px 0;transition:width .4s var(--courbe)}
+@keyframes rvu-entre{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+/* « Commencer la revue », dans le panneau Repères, sous le bandeau de ce qui est à régler */
+.ix-revue{width:100%;margin:10px 0 2px;justify-content:center;gap:10px}
+.ix-revue kbd{padding:2px 5px;border-radius:4px;font:500 10px/1 var(--mono);background:color-mix(in srgb,currentColor 16%,transparent)}
+@media (prefers-reduced-motion:reduce){ .revue{animation:none} .rvu-barre i{transition:none} }

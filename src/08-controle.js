@@ -191,7 +191,7 @@ const GENRES_CONTROLE = [['doublon', 'lignes en double', 'ligne en double'], ['c
   ['arrangement', 'connecteurs qu’aucun arrangement ne loge', 'connecteur qu’aucun arrangement ne loge'], ['contact', 'contacts à revoir', 'contact à revoir'],
   ['calibre', 'calibres à revoir', 'calibre à revoir'], ['pn', 'disjoncteurs à deux part numbers', 'disjoncteur à deux part numbers'], ['protection', 'câbles mal protégés par leur disjoncteur', 'câble mal protégé par son disjoncteur'],
   ['chute', 'chutes de tension trop fortes', 'chute de tension trop forte'], ['profil', 'disjoncteurs sans profil de charge', 'disjoncteur sans profil de charge'],
-  ['segregation', 'mélanges gauche / droite', 'mélange gauche / droite'], ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['fichier', 'écritures du fichier à vérifier', 'écriture du fichier à vérifier'], ['retest', 'points de l’installation', 'point de l’installation'], ['autre', 'autres points', 'autre point']];
+  ['segregation', 'mélanges gauche / droite', 'mélange gauche / droite'], ['aposer', 'barrettes au repère provisoire', 'barrette au repère provisoire'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['fichier', 'écritures du fichier à vérifier', 'écriture du fichier à vérifier'], ['retest', 'points de votre fichier', 'point de votre fichier'], ['autre', 'autres points', 'autre point']];
 // le genre en mots, au nombre qu'il compte : « 2 chutes de tension trop fortes », « 1 barrette à poser »
 const motDuGenre = (g, n) => { const G = GENRES_CONTROLE.find(x => x[0] === g) || GENRES_CONTROLE[GENRES_CONTROLE.length - 1]; return n > 1 ? G[1] : G[2]; };
 const rangDuGenre = g => { const i = GENRES_CONTROLE.findIndex(x => x[0] === g); return i < 0 ? GENRES_CONTROLE.length : i; };
@@ -298,7 +298,9 @@ function controleAJour() { const V = verite();
 function rendreControle() { if (typeof reprendreVoltaEnAttente === 'function') reprendreVoltaEnAttente();
   const xs = controleAJour(), C = compteProblemes(), b = $('btnIndex');
   // le relevé du retest corrigé, ouvert, suit le plan (08-export) ; (v84) le bord rouge / ambre des blocs suit le contrôle
-  if (typeof suivreLeReleve === 'function') suivreLeReleve(); if (typeof peindreEtats === 'function') peindreEtats(); if (!b) return;
+  if (typeof suivreLeReleve === 'function') suivreLeReleve(); if (typeof peindreEtats === 'function') peindreEtats();
+  if (typeof suivreLaRevue === 'function') suivreLaRevue();   // (v88) la revue suit le contrôle : un point réglé s'en va, elle passe au suivant
+  if (!b) return;
   // la pastille : les problèmes ROUGES du plan ; sans rouge, ce qui est à voir, en ambre (le technicien, n° 5 : une règle)
   let p = b.querySelector('.rd-point'); if (!p) { p = document.createElement('i'); p.className = 'rd-point'; b.appendChild(p); }
   p.hidden = !xs.length; p.className = 'rd-point ' + (C.ko ? 'ko' : 'att'); p.textContent = String(C.ko || C.att);
@@ -522,7 +524,8 @@ function allerAuGenre(cle) { const L = lignesDuControle(), i = L.findIndex(l => 
    ligne) reprend à son premier point. */
 const clePoint = x => x.niveau + '|' + (x.nom || '') + '|' + x.texte;
 const pointsDansLOrdre = () => lignesDuControle().flatMap(l => l.xs);
-function problemeSuivant(pas) { const X = pointsDansLOrdre(); if (!X.length) { dire('Rien à reprendre : le contrôle ne relève rien.'); return; }
+function problemeSuivant(pas) { if (typeof REVUE !== 'undefined' && REVUE.on) { allerDansLaRevue(pas); return; }   // (v88) pendant la revue, P passe au point suivant de la revue
+  const X = pointsDansLOrdre(); if (!X.length) { dire('Rien à reprendre : le contrôle ne relève rien.'); return; }
   const P = CONTROLE.pas; let i = P ? X.findIndex(x => clePoint(x) === P.cle) : -1;
   if (i < 0 && P) { const l = lignesDuControle().find(y => y.cle === P.cle); if (l) i = X.indexOf(l.xs[0]); }
   if (i < 0) i = P ? Math.min(P.rang, X.length) - (pas > 0 ? 1 : 0) : (pas > 0 ? -1 : X.length);
