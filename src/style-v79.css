@@ -418,7 +418,7 @@ body:is(.insp-flotte,.insp-epingle) #inspecteur .ix-tete::before{display:none}
 #fiche .vf-carte .vf-tete,#fiche .vf-carte:not(.vf-grande) .vf-tete{grid-template-columns:minmax(0,1fr) auto}
 #fiche .vf-cartes>.vf-carte{--vf-retrait:0px}
 /* la bible : les références s'alignent à gauche (on les lit comme une liste), leur en-tête aussi */
-#fiche .bible th.c-ref{text-align:left}
+#fiche .bible th.c-ref,#fiche .bible td.ref{text-align:left}   /* (v89) la valeur aussi : elle restait centrée sous un titre à gauche */
 #fiche .bible td.ref .ref-btn{margin:0;justify-content:flex-start;text-align:left}
 
 /* ═══ v81 — LA FICHE (le lecteur : « la tête plus sexy ; en sombre, beaucoup de noir ; les attentions, on peut faire mieux ;

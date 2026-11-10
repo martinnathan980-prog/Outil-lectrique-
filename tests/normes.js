@@ -114,7 +114,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
     return !!t && /Disjoncteurs/.test(dom.textContent) && /s’abîmer/.test(FICHES_TABLES.dommages.sert) && /prorata I \/ In/.test(FICHES_TABLES.chutesDisjoncteurs.sert) && !/la compter dans la chute en ligne quand/.test(FICHES_TABLES.chutesDisjoncteurs.manque || '')
       && /GARANTISSENT/.test(FICHES_TABLES.calibrations.sert) && !/personne encore/.test(FICHES_TABLES.calibrations.lue); }),
     'la table Dommage des fils a sa vue sous Disjoncteurs et sa fiche (ce qu’un fil supporte avant de s’abîmer) ; la Calibration dit que le permanent reste sous ce qu’elle garantit, la Chute disjoncteur qu’elle compte dans la chute en ligne au prorata I / In');
-  okp(/32 tables/.test(await texte('.nm-etat')) && /rien d’importé/.test(await texte('.nm-etat')), 'l’état : trente-deux tables, rien d’importé ni de modifié', await texte('.nm-etat'));
+  okp(/32 tables/.test(await texte('.nm-etat')) && /à confirmer/.test(await texte('.nm-etat')) && /vous n’en avez changé aucune/.test(await texte('.nm-etat')), 'l’état : trente-deux tables, ce qui reste à confirmer, rien de changé (« les normes livrées avec VOLTA ; vous n’en avez changé aucune »)', await texte('.nm-etat'));
   okp(await page.evaluate(() => { const f = document.getElementById('fiche'); return f.offsetWidth > 800 && !f.hidden; }), 'la page est plus large que la bible (les tables ont jusqu’à seize colonnes)', await page.evaluate(() => document.getElementById('fiche').offsetWidth + ' px'));
   await page.click('#fiche .nm-table[data-vue="contacts"] .nm-t-tete'); await page.waitForTimeout(400);
   okp(await q('.nm-table[data-vue="contacts"] .nm-doc dt') === 6 && /juge la gauge/.test(await texte('.nm-table[data-vue="contacts"] .nm-doc')) && /Changer/.test(await texte('.nm-table[data-vue="contacts"] .nm-doc')), 'la table dépliée dit d’où elle vient (la source entière), ce qu’elle sert, qui la lit, comment une ligne se choisit (automatique, et « Changer »), ce qui manque (les points à relire de R1)');
@@ -237,9 +237,10 @@ function excelEssai() { const wb = XLSX.utils.book_new();
     return !/(^|[^\p{L}])(fils?|jauges?)(?![\p{L}])/u.test(s) && !/\b(ta table|ta fiche|si tu |réimporte-la|dis quelle|choisis la|vérifie, puis|Il te demande)/.test(t); }),
     'les mots : « câble » et « gauge » dans ce que disent les domaines et les tables, et la page vouvoie');
   await page.click('#fiche #nm-plus summary'); await page.waitForTimeout(400);
-  okp(await page.evaluate(() => { const m = document.querySelector('#nm-plus .doc-menu-l'), c = getComputedStyle(m).backgroundColor.match(/[\d.]+/g).map(Number), lum = (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255, b = document.querySelector('.fi-bulle');
-    return lum < 0.3 && (c[3] == null || c[3] > 0.9) && parseFloat(getComputedStyle(m).borderTopLeftRadius) === 14 && (!b || b.hidden); }),
-    'le « ··· » d’un document tombe dans le verre dense des menus (sur la feuille blanche aussi), coin 14 ; ouvert, la bulle de son bouton se tait');
+  { const Mn = await page.evaluate(() => { const m = document.querySelector('#nm-plus .doc-menu-l'), c = getComputedStyle(m).backgroundColor.match(/[\d.]+/g).map(Number), lum = (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255, b = document.querySelector('.fi-bulle');
+      return { lum: +lum.toFixed(2), alpha: c[3] == null ? 1 : c[3], coin: parseFloat(getComputedStyle(m).borderTopLeftRadius), bulle: b ? (b.hidden ? 'cachée' : 'montrée : ' + b.textContent.slice(0, 60)) : 'aucune', biblio: document.body.classList.contains('biblio') }; });
+    okp((Mn.biblio ? Mn.lum < 0.3 : Mn.lum > 0.9) && Mn.alpha > 0.9 && Mn.coin >= 12 && Mn.coin <= 14 && !/^montrée/.test(Mn.bulle),
+      'le « ··· » d’un document tombe dans le verre des menus, opaque, coin arrondi : dense sur la bibliothèque (le graphite), clair sur un plan le jour (v84 : le cadre suit le thème) ; ouvert, la bulle de son bouton se tait', JSON.stringify(Mn)); }
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   await page.click('#fiche [data-nm-vue="bible"]'); await page.waitForTimeout(500);
   okp(await page.evaluate(() => { const p = [...document.querySelectorAll('#fiche .bible-filtres .puce')], on = p.find(b => b.getAttribute('aria-pressed') === 'true'), c = on && getComputedStyle(on).backgroundColor.match(/[\d.]+/g).map(Number);
@@ -266,19 +267,19 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   const Bi = await page.evaluate(() => { const t = document.querySelector('#fiche table.bible'), th = [...t.querySelectorAll('thead th')], r = t.querySelector('tbody tr:not(.bz-ligne)'), td = [...r.children];
     const centre = el => getComputedStyle(el).textAlign === 'center', carre = document.querySelector('#fiche .bi-carre'), cr = carre && carre.getBoundingClientRect(), svg = carre && carre.querySelector('svg.mj'), vb = svg && svg.getAttribute('viewBox').split(/\s+/).map(Number);
     const noir = el => !el || getComputedStyle(el).fill === 'rgb(0, 0, 0)', puces = [...t.querySelectorAll('tbody td.c-origine .bi-or')], dt = [...document.querySelectorAll('#fiche .bi-faits dt')];
-    return { cols: t.querySelectorAll('colgroup col').length === td.length, centres: th.filter(x => !x.classList.contains('c-note')).every(centre) && td.filter(x => !x.classList.contains('c-note')).every(centre), origine: th.some(x => x.textContent.trim() === 'Origine'),
+    return { cols: t.querySelectorAll('colgroup col').length === td.length, centres: th.filter(x => !x.matches('.c-note, .c-ref')).every(centre) && td.filter(x => !x.matches('.c-note, .ref')).every(centre) && getComputedStyle(t.querySelector('thead th.c-ref')).textAlign === 'left' && getComputedStyle(r.querySelector('td.ref')).textAlign === 'left', origine: th.some(x => x.textContent.trim() === 'Origine'),
       puces: puces.length, verifiees: puces.filter(b => b.classList.contains('v')).length, aConfirmer: puces.filter(b => b.classList.contains('c')).length, bulles: puces.every(b => (b.dataset.bulle || '').length > 8),
       carre: cr ? [Math.round(cr.width), Math.round(cr.height)] : null, vbCarre: !!vb && vb[2] === vb[3], faceNoire: noir(carre && carre.querySelector('.mj-corps')), pictoNoir: noir(t.querySelector('.picto.mj-picto .p-corps')),
       zoomOrigine: ((document.querySelector('#fiche .bi-zoom .bi-puces .bi-or') || {}).textContent || '').trim(), faits: dt.map(x => x.textContent).join(','), dtDroite: dt.length > 5 && dt.every(x => getComputedStyle(x).textAlign === 'right'), zoom: document.querySelector('#fiche .bi-zoom').textContent }; });
-  okp(Bi.cols && Bi.centres && Bi.origine, 'la grille : une colonne par valeur (colgroup), chaque valeur au milieu de sa colonne, en-tête compris (la note seule à gauche) ; une colonne « Origine »', JSON.stringify({ cols: Bi.cols, centres: Bi.centres, origine: Bi.origine }));
+  okp(Bi.cols && Bi.centres && Bi.origine, 'la grille : une colonne par valeur (colgroup), chaque valeur au milieu de sa colonne, en-tête compris ; les références et la note à gauche (on les lit comme une liste), leur titre aussi ; une colonne « Origine »', JSON.stringify({ cols: Bi.cols, centres: Bi.centres, origine: Bi.origine }));
   okp(Bi.puces > 250 && Bi.verifiees > 100 && Bi.aConfirmer > 30 && Bi.bulles, 'l’origine de chaque référence en une puce (vérifiée · à confirmer · exemple), sa source dans la bulle', `${Bi.puces} puces · ${Bi.verifiees} vérifiées · ${Bi.aConfirmer} à confirmer`);
   okp(!!Bi.carre && Bi.carre[0] >= 250 && Math.abs(Bi.carre[0] - Bi.carre[1]) <= 2 && Bi.vbCarre && !Bi.faceNoire && !Bi.pictoNoir, 'la référence en grand : le dessin dans un carré de papier de 250 px au moins (un repère carré) ; la face et les vignettes dessinées, plus d’aplat noir', JSON.stringify([Bi.carre, Bi.faceNoire, Bi.pictoNoir]));
   okp(/à confirmer|vérifiée/.test(Bi.zoomOrigine) && /Arrangement/.test(Bi.faits) && /Désignation/.test(Bi.faits) && Bi.dtDroite && !/mars 2021/.test(Bi.zoom), 'en grand, l’origine dite simplement (une puce, sa source dans la bulle) ; les faits sur deux colonnes alignées sur un axe — plus de « norme · mars 2021 »', Bi.zoomOrigine + ' · ' + Bi.faits);
   await page.evaluate(() => fermerFiche(true)); await page.waitForTimeout(200);
 
-  console.log('\n« Comment Volta réfléchit » (v74)');
-  await page.click('#btnMenu'); await page.click('#menu [data-sous="plus"]'); await page.waitForTimeout(300);
-  okp(await page.evaluate(() => { const b = document.querySelector('#menu [data-act="comprendre"]'); return !!b && /Comment Volta réfléchit/.test(b.textContent) && !!b.dataset.aide; }), 'le menu ⋮ › Plus a sa ligne « Comment Volta réfléchit », et sa bulle');
+  console.log('\n« Comment VOLTA réfléchit » (v74 ; v88 : dans ⋮ › Aide)');
+  await page.click('#btnMenu'); await page.click('#menu [data-sous="aide"]'); await page.waitForTimeout(300);
+  okp(await page.evaluate(() => { const b = document.querySelector('#mp-aide [data-act="comprendre"]'); return !!b && /Comment VOLTA réfléchit/.test(b.textContent) && !!b.dataset.aide; }), 'le menu ⋮ › Aide a sa ligne « Comment VOLTA réfléchit », et sa bulle');
   await page.click('#menu [data-act="comprendre"]'); await page.waitForTimeout(600);
   const Cp = await page.evaluate(() => { const c = $('fiche-corps'), sources = [...c.querySelectorAll('[src], [href], image, use')].map(x => x.getAttribute('src') || x.getAttribute('href') || x.getAttribute('xlink:href') || '');
     return { mode: app.fiche && app.fiche.mode, ch: [...c.querySelectorAll('.vr-ch')].map(s => s.dataset.chapitre).join(','), svgs: c.querySelectorAll('.vr-ch .vr-schema svg.vr-svg').length, titres: c.querySelectorAll('svg.vr-svg > title').length, be: c.querySelectorAll('.vr-ch details.vr-be').length,
@@ -286,15 +287,16 @@ function excelEssai() { const wb = XLSX.utils.book_new();
       manquent: ['commande', 'catalogue', 'Référence', 'Famille', 'Face', 'Contact', 'Consommation', 'Profil', 'Courbe', 'Calibre', 'Câbles', 'Chute', 'impair', 'branchement en chaîne', 'change de route', 'manque', 'D’où vient chaque pièce', 'bureau d’études'].filter(m => !c.textContent.includes(m)),
       clavier: $('fiche').contains(document.activeElement) }; });
   okp(Cp.mode === 'comprendre' && Cp.ch === 'cuisinier,connecteur,disjoncteur,routes,manque,verifier' && Cp.svgs === 6 && Cp.titres === 6 && Cp.be === 6 && Cp.sommaire === 6 && !Cp.externe && !Cp.manquent.length && Cp.clavier,
-    'la page : six chapitres (le cuisinier, la chaîne d’un connecteur, d’un disjoncteur, les routes, « manque », vérifier), un schéma SVG en ligne chacun (avec son titre), aucun fichier externe, la règle exacte repliée pour le bureau d’études ; le clavier y entre', JSON.stringify(Cp));
+    'la page : six chapitres (du fichier aux folios, la chaîne d’un connecteur, d’un disjoncteur, les routes, « manque », vérifier), un schéma SVG en ligne chacun (avec son titre), aucun fichier externe, la règle exacte repliée pour le bureau d’études ; le clavier y entre', JSON.stringify(Cp));
   await page.click('#fiche [data-vr-ch="routes"]'); await page.waitForTimeout(400);
   okp(await page.evaluate(() => { const s = document.querySelector('#vr-routes'), c = $('fiche-corps'), r = s.getBoundingClientRect().top - c.getBoundingClientRect().top; return r >= 0 && r < 220 && document.querySelector('#fiche [data-vr-ch="routes"]').classList.contains('on'); }), 'le sommaire mène au chapitre, et le marque');
-  // depuis un « ? » : la bulle du calibre mène à la chaîne d'un disjoncteur
+  // depuis un « ? » : la bulle de la courbe (la fiche du disjoncteur, en grand) mène à la chaîne d'un disjoncteur
   await page.evaluate(() => { fermerFiche(true); allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(800);
-  await page.click('#inspecteur .fi-q[data-q="calibre"]'); await page.waitForTimeout(350);
+  await page.click('#fi-tout-voir'); await page.waitForTimeout(700); await page.click('#nv-o-calibre'); await page.waitForTimeout(400);
+  await page.click('#inspecteur .fi-q[data-q="courbe"]'); await page.waitForTimeout(350);
   const Qc = await page.evaluate(() => { const b = document.querySelector('#fi-q-bulle [data-comprendre]'), t = document.querySelector('#fi-q-bulle .q-tete');
     return b ? b.dataset.comprendre + ' · ' + b.textContent + ' · ' + (b.dataset.bulle || '') + ' · tête ' + (t && t.contains(b) ? Math.round(t.getBoundingClientRect().height) : 'non') : ''; });
-  okp(/^disjoncteur · Comprendre → · Comment Volta réfléchit — [Ll]a chaîne d.un disjoncteur · tête (1\d|2[0-4])$/.test(Qc), 'la bulle d’un « ? » a son lien « Comprendre → » (« Comment Volta réfléchit », dans sa bulle) dans la ligne du titre, sans la grandir (la bulle garde sa place) — celle du calibre mène à la chaîne d’un disjoncteur', Qc);
+  okp(/^disjoncteur · Comprendre → · Comment VOLTA réfléchit — [Ll]a chaîne d.un disjoncteur · tête (1\d|2[0-9])$/.test(Qc), 'la bulle d’un « ? » a son lien « Comprendre → » (« Comment VOLTA réfléchit », dans sa bulle) dans la ligne du titre, sans la grandir (la bulle garde sa place) — celle de la courbe (onglet Calibre) mène à la chaîne d’un disjoncteur', Qc);
   await page.click('#fi-q-bulle [data-comprendre]'); await page.waitForTimeout(600);
   okp(await page.evaluate(() => { const s = document.querySelector('#vr-disjoncteur'), c = $('fiche-corps'), r = s ? s.getBoundingClientRect().top - c.getBoundingClientRect().top : -1; return !!app.fiche && app.fiche.mode === 'comprendre' && r >= 0 && r < 220 && $('fi-q-bulle').hidden; }), 'un clic : la page s’ouvre sur ce chapitre, la bulle se ferme');
   await page.evaluate(() => fermerFiche(true)); await page.waitForTimeout(200);
