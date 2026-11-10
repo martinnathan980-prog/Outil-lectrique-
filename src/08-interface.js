@@ -866,6 +866,7 @@ function peindreChoix() { const sc = $('scene'); if (!sc || !app.dessin) return;
 function peindreEtats() { const sc = $('scene'); if (!sc) return; const niv = new Map();
   ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).forEach(x => { if (x.nom && niv.get(String(x.nom)) !== 'ko') niv.set(String(x.nom), x.niveau === 'ko' ? 'ko' : 'att'); });
   sc.querySelectorAll('.comp[data-name]').forEach(g => { const e = niv.get(g.dataset.name) || ''; g.classList.toggle('etat-ko', e === 'ko'); g.classList.toggle('etat-att', e === 'att'); });
+  if (typeof peindreMarquesIndice === 'function' && typeof MARQUES_INDICE !== 'undefined' && (MARQUES_INDICE.fils.size || document.getElementById('indice-marques'))) peindreMarquesIndice();   // (v95) les évolutions du nouvel indice
   if (typeof peindreVivant === 'function' && typeof VIVANT !== 'undefined' && VIVANT.actif) peindreVivant(); }   // (v92) le plan vivant se repeint avec le folio
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 

@@ -217,3 +217,18 @@ plusieurs, modifier le câblage dans VOLTA (le retest reste la source).
   poste ; « nos folios à nous » (planches) ; le classeur de données ; la passe complète des tests, puis `main`.
 - **À voir avec le lecteur** : plan vivant — partir « tout fermé » (le pire cas) ou « relais au repos » ? ; fiche d'atelier —
   faut-il l'outil de sertissage sur la feuille ? ; bilan — un export Excel ?
+
+### 10 novembre 2026 — v94 et v95, « on continue avec tes recommandations »
+
+- **v94** : sous chaque contact à sertir, son outillage (pince, positionneur, insertion, extraction — table des outillages),
+  à l'écran et sur la fiche d'atelier ; le bilan électrique s'enregistre en Excel ; le plan vivant ferme la fiche ouverte
+  en entrant (elle couvrait les câbles) — couper un câble d'un clic est vérifié. Le plan vivant reste « tout fermé ».
+- **v95** : le connecteur d'accouplement que la bible ne donne pas est DÉDUIT du connecteur fourni (charte du 9 novembre) —
+  seulement pour les familles dont VOLTA lit la codification (EN 2997, EN 3645, EN 3646, E0053 → E0052) : l'embase devient
+  la prise mobile, l'autre sexe, « déduit de …, à vérifier » ; les autres restent « manque dans la bible ». Les évolutions
+  d'un nouvel indice se voient SUR LE FOLIO : halo cuivre sur chaque câble ajouté, changé ou rebranché, et un bandeau qui
+  nomme les folios concernés (« Effacer les marques »).
+- **Vérifié seulement** : les sondes de chaque geste sur l'exemple ; la déduction sur neuf part numbers d'essai (l'exemple
+  n'en porte aucun de ces familles : à voir sur un vrai fichier).
+- **Reste** : lire les vrais documents (essai du lecteur) ; « nos folios à nous » (planches) ; le classeur de données ; la
+  passe complète des tests, puis `main`.

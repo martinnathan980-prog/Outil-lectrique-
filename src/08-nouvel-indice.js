@@ -78,11 +78,29 @@ function passerALIndice() { const X = INDICES.recu; if (!X || !X.D || !X.commun)
   D.memes.forEach(([a, b]) => { const retourne = a.de !== b.de || a.borneDe !== b.borneDe;
     if (a.contactDe) b[retourne ? 'contactVers' : 'contactDe'] = a.contactDe; if (a.contactVers) b[retourne ? 'contactDe' : 'contactVers'] = a.contactVers; });
   const L = X.liaisons.map(liaison), decoupe = !!app.nFolios, plan = app.plan;
+  // (v95) les évolutions SE VOIENT SUR LE FOLIO : ce qui est ajouté, changé ou rebranché reste marqué jusqu'à ce qu'on l'efface
+  const rang = new Map(X.liaisons.map((l, i) => [l, i])), marquer = l => { const i = rang.get(l); if (i != null && L[i]) MARQUES_INDICE.fils.add(L[i]); };
+  MARQUES_INDICE.fils = new Set(); D.ajoutees.forEach(marquer); D.changees.forEach(c => marquer(c.apres)); D.rebranchees.forEach(c => marquer(c.apres));
   app.source = null; app.nFolios = 0; app.contrat.liaisons = L; if (decoupe) { app.source = L; refaireFolios(); }
   const P = plans(); app.plan = P.includes(plan) ? plan : P.length > 1 ? P[0] : '*';
   app.nom = X.nom; app.choisi = null; app.cible = null; app.actif = null; app.base.filtre = ''; app.base.tri = null;
   INDICES.recu = null; fermerFiche(); redessiner(); ajuster(); sauver();
   const mot = motDeLaComparaison(D);
-  dire('VOLTA est passé au nouvel indice : ' + mot.charAt(0).toLowerCase() + mot.slice(1) + '. Votre travail est gardé.', false, { geste: 'Défaire', faire: () => { annuler(); } }); }
+  dire('VOLTA est passé au nouvel indice : ' + mot.charAt(0).toLowerCase() + mot.slice(1) + '. Votre travail est gardé.', false, { geste: 'Défaire', faire: () => { effacerMarquesIndice(); annuler(); } }); }
+
+/* LES MARQUES SUR LE PLAN : après le passage, chaque câble ajouté, changé ou rebranché porte un halo cuivre, et un bandeau
+   dit sur quels folios il y en a (un clic y mène). « Effacer les marques » les retire ; elles ne sont pas enregistrées. */
+const MARQUES_INDICE = { fils: new Set() };
+function foliosMarques() { const M = MARQUES_INDICE.fils, P = plans(), vus = new Set(); if (!M.size) return [];
+  app.contrat.liaisons.forEach(l => { const s = sourceDe(l); if (s && M.has(s)) vus.add(P.length > 1 ? l.plan : '*'); }); return [...vus].sort((a, b) => P.indexOf(a) - P.indexOf(b)); }
+function effacerMarquesIndice() { MARQUES_INDICE.fils = new Set(); peindreMarquesIndice(); }
+function peindreMarquesIndice() { const sc = $('scene'); if (sc) sc.querySelectorAll('.in-neuf').forEach(e => e.classList.remove('in-neuf'));
+  const M = MARQUES_INDICE.fils, F = M.size ? foliosMarques() : []; let el = document.getElementById('indice-marques');
+  if (!F.length) { if (M.size) MARQUES_INDICE.fils = new Set(); if (el) el.remove(); return; }   // défait : plus rien à marquer
+  if (sc && app.dessin) { const L = liaisonsDuPlan(); sc.querySelectorAll('.cab[data-i]').forEach(e => { if (e.dataset.i.split(' ').some(i => { const l = L[+i], s = l && sourceDe(l); return s && M.has(s); })) e.classList.add('in-neuf'); }); }
+  if (!el) { el = document.createElement('div'); el.id = 'indice-marques'; el.setAttribute('role', 'status'); $('app').appendChild(el); }
+  const P = plans(), puces = P.length > 1 ? F.map(f => `<button type="button" class="in-folio${f === app.plan ? ' ici' : ''}" data-in-folio="${escA(f)}">${P.indexOf(f) + 1}</button>`).join('') : '';
+  el.innerHTML = `<i class="in-pt" aria-hidden="true"></i><div class="in-mdit"><small>Nouvel indice</small><b>${esc(pluriel(M.size, 'liaison'))} ${M.size > 1 ? 'ajoutées ou changées, marquées' : 'ajoutée ou changée, marquée'} sur le plan</b></div>${puces ? `<span class="in-folios"><small>folios</small>${puces}</span>` : ''}<button type="button" class="btn lien" data-in-effacer>Effacer les marques</button>`; }
+document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('#indice-marques button'); if (!t) return; if (t.dataset.inFolio != null) allerAuPlan(t.dataset.inFolio); else effacerMarquesIndice(); });
 
 MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.indice = surLePlan(() => ficheIndices());

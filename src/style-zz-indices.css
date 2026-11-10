@@ -30,3 +30,16 @@
 .in-eq{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin:0 0 6px}
 .in-eq b{font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1)}
 .in-eq.moins b{color:var(--t-3);text-decoration:line-through;text-decoration-thickness:1px}
+/* (v95) les évolutions sur le folio : un halo cuivre sur chaque câble ajouté, changé ou rebranché ; le bandeau, en bas */
+#scene .cab.in-neuf{filter:drop-shadow(0 0 1.5px var(--nv-cuivre,#b8733a)) drop-shadow(0 0 3px var(--nv-cuivre,#b8733a)) drop-shadow(0 0 6px var(--nv-cuivre,#b8733a))}
+#indice-marques{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:29;display:flex;align-items:center;gap:14px;max-width:min(760px,calc(100vw - 420px));padding:9px 12px 9px 16px;border-radius:14px;border:1px solid var(--s-line-2);background:var(--s-flottant,var(--s-surface));box-shadow:var(--sh-2,0 8px 28px rgba(0,0,0,.18));color:var(--t-1)}
+#indice-marques .in-pt{flex:none;width:9px;height:9px;border-radius:50%;background:var(--nv-cuivre,#b8733a);box-shadow:0 0 0 4px color-mix(in srgb,var(--nv-cuivre,#b8733a) 22%,transparent)}
+#indice-marques .in-mdit{display:flex;flex-direction:column;gap:1px;min-width:0}
+#indice-marques .in-mdit small,#indice-marques .in-folios small{font:600 var(--f-11,11px)/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--nv-cuivre,#b8733a)}
+#indice-marques .in-folios small{color:var(--t-2);letter-spacing:.02em;text-transform:none;font-weight:500}
+#indice-marques .in-mdit b{font:600 var(--f-13)/1.35 var(--sans)}
+#indice-marques .in-folios{display:inline-flex;align-items:center;gap:6px}
+#indice-marques .in-folio{all:unset;cursor:pointer;min-width:24px;height:24px;border-radius:7px;border:1px solid var(--s-line-2);text-align:center;font:600 var(--f-12)/24px var(--mono);color:var(--t-1)}
+#indice-marques .in-folio:hover,#indice-marques .in-folio.ici{border-color:var(--nv-cuivre,#b8733a)}
+#indice-marques .in-folio.ici{background:color-mix(in srgb,var(--nv-cuivre,#b8733a) 14%,transparent)}
+#indice-marques .in-folio:focus-visible{outline:2px solid var(--nv-cuivre,#b8733a);outline-offset:2px}

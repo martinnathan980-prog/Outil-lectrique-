@@ -43,7 +43,10 @@ function compteur() { const m = new Map();
 const ACCOUPLEMENT_LPA = 'connecteur d’accouplement';
 function piecesDuConnecteur(nom, c, b, k) { const Q = k && k.plan, M = Q && Q.modules[0], fils = c.bornes.flatMap(bo => b.parBorne.get(bo) || []).filter(f => f.l);
   let mobile = ''; try { mobile = (connecteursInfos(nom, verite(), app.bible).find(x => x.nom === c.nom) || {}).mobile || ''; } catch (_) { mobile = ''; }
-  const accouplement = { q: 1, ref: mobile, role: ACCOUPLEMENT_LPA, statut: mobile ? '' : c.pn ? 'manque dans la bible' : 'manque : sans référence dans votre fichier', piece: 'accouplement', face: c.pn || '' };
+  // (v95, la charte du 9 novembre 2026) la bible ne le donne pas : VOLTA le DÉDUIT du connecteur fourni (même série, même
+  // arrangement, l'autre sexe — 09, `accouplementDeduit`) quand son part number se lit, et le marque « à vérifier »
+  let deduit = false; if (!mobile && c.pn && typeof accouplementDeduit === 'function') { let d = ''; try { d = accouplementDeduit(c.pn); } catch (_) { d = ''; } if (d) { mobile = d; deduit = true; } }
+  const accouplement = { q: 1, ref: mobile, role: ACCOUPLEMENT_LPA, statut: deduit ? 'déduit de ' + c.pn + ', à vérifier' : mobile ? '' : c.pn ? 'manque dans la bible' : 'manque : sans référence dans votre fichier', piece: 'accouplement', face: c.pn || '' };
   // le câble qui entre dans l'alvéole : le plus gros (la gauge lue au bout du type, comme 01), le premier à égalité
   const gauge = t => { const m = /(\d{1,2})\s*$/.exec(String(t || '')); return m ? +m[1] : 99; }, alveoles = new Map();
   (Q ? Q.fils : []).forEach(y => { if (!y.contact) return; const a = y.module + '|' + y.contact.lettre, e = alveoles.get(a); if (!e || gauge(y.f.type) < gauge(e.f.type)) alveoles.set(a, y); });
@@ -124,7 +127,7 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
         // le connecteur de l'équipement vient avec lui (il se cite en face de son accouplement) ; à nous, ce que dit l'onglet Pièces
         connecteursDe(r, V).filter(c => c.nom).forEach(c => { const k = cav.get(c.nom), ou = r + ' ' + c.nom, g = piecesDuConnecteur(r, c, b, k), ac = g.lignes.find(p => p.piece === 'accouplement') || {};
           g.lignes.forEach(p => p.role === 'contact à sertir' ? unContact(p, ou, p.q) : ranger(p, ou));
-          poser(ou, ACCOUPLEMENT_LPA, ac.ref, c.pn, c.bornes, c.bornes.flatMap(bo => b.parBorne.get(bo) || []), { note: ac.ref ? '' : ac.statut || '' }); }); }
+          poser(ou, ACCOUPLEMENT_LPA, ac.ref, c.pn, c.bornes, c.bornes.flatMap(bo => b.parBorne.get(bo) || []), { note: ac.ref && !/déduit/.test(ac.statut || '') ? '' : ac.statut || '' }); }); }
     } catch (_) { } });
   // les barrettes que VOLTA ajoute : ce que dit leur fiche — le module, un contact par câble (celui de la table), les obturateurs
   let ajoutees = 0; barrettesAjoutees().filter(x => barretteEnModules(x.nom)).forEach(x => { try { const bV = besoinsDeBarrette(x.nom, liaisonsDe(x.plan)), Q = remplirModules(bV, app.norme, app.contrat.designations.get(x.nom) || '');
@@ -263,7 +266,7 @@ function lignesNomenclature(N) { const L = [];
   (N.obturateurs || []).forEach(x => L.push(['Obturateurs', x.reference, [x.pour, x.note].filter(Boolean).join(' — '), x.n, 'pièce', x.ou.join(', ')]));
   N.modules.forEach(x => L.push(['Modules', x.reference, x.famille || '', x.n, 'pièce', x.ou.join(', ')]));
   (N.rails || []).forEach(x => L.push(['Rails', x.reference, [x.famille, x.note].filter(Boolean).join(' — '), x.n, 'pièce', x.ou.join(', ')]));
-  (N.accouplements || []).forEach(x => L.push(['Accouplements', x.reference || '', x.reference ? 'face à ' + x.face + ', fourni avec l’équipement' : (x.face ? 'accouplement de ' + x.face + ' inconnu' : 'accouplement inconnu') + ' : ' + (x.note || 'manque dans la bible'), x.n, 'pièce', x.ou.join(', ')]));
+  (N.accouplements || []).forEach(x => L.push(['Accouplements', x.reference || '', x.reference ? 'face à ' + x.face + ', fourni avec l’équipement' + (x.note ? ' — ' + x.note : '') : (x.face ? 'accouplement de ' + x.face + ' inconnu' : 'accouplement inconnu') + ' : ' + (x.note || 'manque dans la bible'), x.n, 'pièce', x.ou.join(', ')]));
   N.connecteurs.forEach(x => L.push(['Prises', x.reference, x.nature || '', x.n, 'pièce', x.ou.join(', ')]));
   (N.disjoncteurs || []).forEach(x => L.push(['Disjoncteurs', x.reference, [x.calibre ? 'calibre ' + nombre(x.calibre) + ' A' : '', x.retest ? 'votre fichier : ' + x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat, x.construit ? 'part number construit, à vérifier au catalogue' : ''].filter(Boolean).join(' — '), 1, 'pièce', x.repere]));
   N.habits.forEach(x => L.push(['Habillage', x.reference, x.quoi + (x.note ? ' — ' + x.note : ''), x.n, 'pièce', x.ou.join(', ')]));

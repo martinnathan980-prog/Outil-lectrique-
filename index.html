@@ -10327,6 +10327,19 @@ button.vu-cal:focus-visible,.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible
 .in-eq{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin:0 0 6px}
 .in-eq b{font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1)}
 .in-eq.moins b{color:var(--t-3);text-decoration:line-through;text-decoration-thickness:1px}
+/* (v95) les évolutions sur le folio : un halo cuivre sur chaque câble ajouté, changé ou rebranché ; le bandeau, en bas */
+#scene .cab.in-neuf{filter:drop-shadow(0 0 1.5px var(--nv-cuivre,#b8733a)) drop-shadow(0 0 3px var(--nv-cuivre,#b8733a)) drop-shadow(0 0 6px var(--nv-cuivre,#b8733a))}
+#indice-marques{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:29;display:flex;align-items:center;gap:14px;max-width:min(760px,calc(100vw - 420px));padding:9px 12px 9px 16px;border-radius:14px;border:1px solid var(--s-line-2);background:var(--s-flottant,var(--s-surface));box-shadow:var(--sh-2,0 8px 28px rgba(0,0,0,.18));color:var(--t-1)}
+#indice-marques .in-pt{flex:none;width:9px;height:9px;border-radius:50%;background:var(--nv-cuivre,#b8733a);box-shadow:0 0 0 4px color-mix(in srgb,var(--nv-cuivre,#b8733a) 22%,transparent)}
+#indice-marques .in-mdit{display:flex;flex-direction:column;gap:1px;min-width:0}
+#indice-marques .in-mdit small,#indice-marques .in-folios small{font:600 var(--f-11,11px)/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--nv-cuivre,#b8733a)}
+#indice-marques .in-folios small{color:var(--t-2);letter-spacing:.02em;text-transform:none;font-weight:500}
+#indice-marques .in-mdit b{font:600 var(--f-13)/1.35 var(--sans)}
+#indice-marques .in-folios{display:inline-flex;align-items:center;gap:6px}
+#indice-marques .in-folio{all:unset;cursor:pointer;min-width:24px;height:24px;border-radius:7px;border:1px solid var(--s-line-2);text-align:center;font:600 var(--f-12)/24px var(--mono);color:var(--t-1)}
+#indice-marques .in-folio:hover,#indice-marques .in-folio.ici{border-color:var(--nv-cuivre,#b8733a)}
+#indice-marques .in-folio.ici{background:color-mix(in srgb,var(--nv-cuivre,#b8733a) 14%,transparent)}
+#indice-marques .in-folio:focus-visible{outline:2px solid var(--nv-cuivre,#b8733a);outline-offset:2px}
 
 /* ───────── style-zz-sources.css ───────── */
 /* ── LE BILAN ÉLECTRIQUE (08-sources, v91) : les disjoncteurs rangés sous leur source ; quatre colonnes, les chiffres centrés
@@ -10726,7 +10739,7 @@ button.vu-cal:focus-visible,.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '96f06c72cd1a';
+const VERSION_MOTEUR = 'a95071b76117';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -18765,6 +18778,17 @@ function sexeDuPn(pn) { const r = cleNorme(pn); if (!r) return null;
   for (const [re, sx] of CODES_SEXE) { const m = re.exec(r); if (!m) continue; const t = m[1], partie = /^E005/.test(r) ? (t === '3' ? 'embase' : 'fiche') : t === '0' ? 'embase' : t === '6' ? 'fiche' : '';
     return { sexe: sx[m[2]], partie }; }
   return null; }
+/* LE CONNECTEUR D'ACCOUPLEMENT DÉDUIT (9 novembre 2026, le lecteur : inconnu, VOLTA le déduit du connecteur fourni — même
+   série, même arrangement, l'autre sexe — et le marque « à vérifier ») : seulement quand la codification le permet sans
+   deviner — une EMBASE dont le part number se lit (`CODES_SEXE`) : le chiffre du type passe à 6 (la prise mobile), la
+   lettre du sexe à l'autre ; une E0053 devient l'E0052. Tout le reste est gardé, écrit comme le fichier l'écrivait (ses
+   espaces, ses tirets). Rien quand la référence ne se lit pas ou n'est pas une embase : VOLTA ne devine pas. */
+function accouplementDeduit(pn) { const brut = String(pn == null ? '' : pn), r = cleNorme(brut); if (!r) return '';
+  for (const [re, sx] of CODES_SEXE) { const m = new RegExp(re.source, 'd').exec(r); if (!m) continue;
+    const E = /^E005/.test(r), autre = Object.keys(sx).find(k => k !== m[2]); if (!autre || m[1] !== (E ? '3' : '0')) return '';
+    const c = r.split(''); c[m.indices[1][0]] = E ? '2' : '6'; c[m.indices[2][0]] = autre; const r2 = c.join('');
+    let k = 0, out = ''; for (const ch of brut) out += /[A-Za-z0-9]/.test(ch) && k < r2.length ? r2[k++] : ch; return k === r2.length ? out : r2; }
+  return ''; }
 /* « LE PLUS PETIT QUI LOGE » (v84) : dans une norme de connecteurs circulaires, le plus petit BOÎTIER d'abord — 351PM1 A,
    quatre câbles dont un DR16 en borne 3, prenait l'EN 2997 22-39 (boîtier 22, 39 contacts, 35 obturateurs) pour éviter
    le manchon d'étanchéité du DR24 sur un contact 16, quand le 14-07 les loge ; à boîtier égal (et pour un module EN 4165,
@@ -23887,7 +23911,7 @@ function noterExportDuPlan(nom) { const p = BIB.plans.get(app.planId); if (!p ||
      dans les notes tapées à la main.
    =========================================================================== */
 
-const BILAN = { version: 'v94', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v95', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -32410,6 +32434,7 @@ function peindreChoix() { const sc = $('scene'); if (!sc || !app.dessin) return;
 function peindreEtats() { const sc = $('scene'); if (!sc) return; const niv = new Map();
   ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).forEach(x => { if (x.nom && niv.get(String(x.nom)) !== 'ko') niv.set(String(x.nom), x.niveau === 'ko' ? 'ko' : 'att'); });
   sc.querySelectorAll('.comp[data-name]').forEach(g => { const e = niv.get(g.dataset.name) || ''; g.classList.toggle('etat-ko', e === 'ko'); g.classList.toggle('etat-att', e === 'att'); });
+  if (typeof peindreMarquesIndice === 'function' && typeof MARQUES_INDICE !== 'undefined' && (MARQUES_INDICE.fils.size || document.getElementById('indice-marques'))) peindreMarquesIndice();   // (v95) les évolutions du nouvel indice
   if (typeof peindreVivant === 'function' && typeof VIVANT !== 'undefined' && VIVANT.actif) peindreVivant(); }   // (v92) le plan vivant se repeint avec le folio
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 
@@ -36475,7 +36500,10 @@ function compteur() { const m = new Map();
 const ACCOUPLEMENT_LPA = 'connecteur d’accouplement';
 function piecesDuConnecteur(nom, c, b, k) { const Q = k && k.plan, M = Q && Q.modules[0], fils = c.bornes.flatMap(bo => b.parBorne.get(bo) || []).filter(f => f.l);
   let mobile = ''; try { mobile = (connecteursInfos(nom, verite(), app.bible).find(x => x.nom === c.nom) || {}).mobile || ''; } catch (_) { mobile = ''; }
-  const accouplement = { q: 1, ref: mobile, role: ACCOUPLEMENT_LPA, statut: mobile ? '' : c.pn ? 'manque dans la bible' : 'manque : sans référence dans votre fichier', piece: 'accouplement', face: c.pn || '' };
+  // (v95, la charte du 9 novembre 2026) la bible ne le donne pas : VOLTA le DÉDUIT du connecteur fourni (même série, même
+  // arrangement, l'autre sexe — 09, `accouplementDeduit`) quand son part number se lit, et le marque « à vérifier »
+  let deduit = false; if (!mobile && c.pn && typeof accouplementDeduit === 'function') { let d = ''; try { d = accouplementDeduit(c.pn); } catch (_) { d = ''; } if (d) { mobile = d; deduit = true; } }
+  const accouplement = { q: 1, ref: mobile, role: ACCOUPLEMENT_LPA, statut: deduit ? 'déduit de ' + c.pn + ', à vérifier' : mobile ? '' : c.pn ? 'manque dans la bible' : 'manque : sans référence dans votre fichier', piece: 'accouplement', face: c.pn || '' };
   // le câble qui entre dans l'alvéole : le plus gros (la gauge lue au bout du type, comme 01), le premier à égalité
   const gauge = t => { const m = /(\d{1,2})\s*$/.exec(String(t || '')); return m ? +m[1] : 99; }, alveoles = new Map();
   (Q ? Q.fils : []).forEach(y => { if (!y.contact) return; const a = y.module + '|' + y.contact.lettre, e = alveoles.get(a); if (!e || gauge(y.f.type) < gauge(e.f.type)) alveoles.set(a, y); });
@@ -36556,7 +36584,7 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
         // le connecteur de l'équipement vient avec lui (il se cite en face de son accouplement) ; à nous, ce que dit l'onglet Pièces
         connecteursDe(r, V).filter(c => c.nom).forEach(c => { const k = cav.get(c.nom), ou = r + ' ' + c.nom, g = piecesDuConnecteur(r, c, b, k), ac = g.lignes.find(p => p.piece === 'accouplement') || {};
           g.lignes.forEach(p => p.role === 'contact à sertir' ? unContact(p, ou, p.q) : ranger(p, ou));
-          poser(ou, ACCOUPLEMENT_LPA, ac.ref, c.pn, c.bornes, c.bornes.flatMap(bo => b.parBorne.get(bo) || []), { note: ac.ref ? '' : ac.statut || '' }); }); }
+          poser(ou, ACCOUPLEMENT_LPA, ac.ref, c.pn, c.bornes, c.bornes.flatMap(bo => b.parBorne.get(bo) || []), { note: ac.ref && !/déduit/.test(ac.statut || '') ? '' : ac.statut || '' }); }); }
     } catch (_) { } });
   // les barrettes que VOLTA ajoute : ce que dit leur fiche — le module, un contact par câble (celui de la table), les obturateurs
   let ajoutees = 0; barrettesAjoutees().filter(x => barretteEnModules(x.nom)).forEach(x => { try { const bV = besoinsDeBarrette(x.nom, liaisonsDe(x.plan)), Q = remplirModules(bV, app.norme, app.contrat.designations.get(x.nom) || '');
@@ -36695,7 +36723,7 @@ function lignesNomenclature(N) { const L = [];
   (N.obturateurs || []).forEach(x => L.push(['Obturateurs', x.reference, [x.pour, x.note].filter(Boolean).join(' — '), x.n, 'pièce', x.ou.join(', ')]));
   N.modules.forEach(x => L.push(['Modules', x.reference, x.famille || '', x.n, 'pièce', x.ou.join(', ')]));
   (N.rails || []).forEach(x => L.push(['Rails', x.reference, [x.famille, x.note].filter(Boolean).join(' — '), x.n, 'pièce', x.ou.join(', ')]));
-  (N.accouplements || []).forEach(x => L.push(['Accouplements', x.reference || '', x.reference ? 'face à ' + x.face + ', fourni avec l’équipement' : (x.face ? 'accouplement de ' + x.face + ' inconnu' : 'accouplement inconnu') + ' : ' + (x.note || 'manque dans la bible'), x.n, 'pièce', x.ou.join(', ')]));
+  (N.accouplements || []).forEach(x => L.push(['Accouplements', x.reference || '', x.reference ? 'face à ' + x.face + ', fourni avec l’équipement' + (x.note ? ' — ' + x.note : '') : (x.face ? 'accouplement de ' + x.face + ' inconnu' : 'accouplement inconnu') + ' : ' + (x.note || 'manque dans la bible'), x.n, 'pièce', x.ou.join(', ')]));
   N.connecteurs.forEach(x => L.push(['Prises', x.reference, x.nature || '', x.n, 'pièce', x.ou.join(', ')]));
   (N.disjoncteurs || []).forEach(x => L.push(['Disjoncteurs', x.reference, [x.calibre ? 'calibre ' + nombre(x.calibre) + ' A' : '', x.retest ? 'votre fichier : ' + x.pnRetest + ' (' + nombre(x.retest) + ' A)' : '', x.etat, x.construit ? 'part number construit, à vérifier au catalogue' : ''].filter(Boolean).join(' — '), 1, 'pièce', x.repere]));
   N.habits.forEach(x => L.push(['Habillage', x.reference, x.quoi + (x.note ? ' — ' + x.note : ''), x.n, 'pièce', x.ou.join(', ')]));
@@ -37511,12 +37539,30 @@ function passerALIndice() { const X = INDICES.recu; if (!X || !X.D || !X.commun)
   D.memes.forEach(([a, b]) => { const retourne = a.de !== b.de || a.borneDe !== b.borneDe;
     if (a.contactDe) b[retourne ? 'contactVers' : 'contactDe'] = a.contactDe; if (a.contactVers) b[retourne ? 'contactDe' : 'contactVers'] = a.contactVers; });
   const L = X.liaisons.map(liaison), decoupe = !!app.nFolios, plan = app.plan;
+  // (v95) les évolutions SE VOIENT SUR LE FOLIO : ce qui est ajouté, changé ou rebranché reste marqué jusqu'à ce qu'on l'efface
+  const rang = new Map(X.liaisons.map((l, i) => [l, i])), marquer = l => { const i = rang.get(l); if (i != null && L[i]) MARQUES_INDICE.fils.add(L[i]); };
+  MARQUES_INDICE.fils = new Set(); D.ajoutees.forEach(marquer); D.changees.forEach(c => marquer(c.apres)); D.rebranchees.forEach(c => marquer(c.apres));
   app.source = null; app.nFolios = 0; app.contrat.liaisons = L; if (decoupe) { app.source = L; refaireFolios(); }
   const P = plans(); app.plan = P.includes(plan) ? plan : P.length > 1 ? P[0] : '*';
   app.nom = X.nom; app.choisi = null; app.cible = null; app.actif = null; app.base.filtre = ''; app.base.tri = null;
   INDICES.recu = null; fermerFiche(); redessiner(); ajuster(); sauver();
   const mot = motDeLaComparaison(D);
-  dire('VOLTA est passé au nouvel indice : ' + mot.charAt(0).toLowerCase() + mot.slice(1) + '. Votre travail est gardé.', false, { geste: 'Défaire', faire: () => { annuler(); } }); }
+  dire('VOLTA est passé au nouvel indice : ' + mot.charAt(0).toLowerCase() + mot.slice(1) + '. Votre travail est gardé.', false, { geste: 'Défaire', faire: () => { effacerMarquesIndice(); annuler(); } }); }
+
+/* LES MARQUES SUR LE PLAN : après le passage, chaque câble ajouté, changé ou rebranché porte un halo cuivre, et un bandeau
+   dit sur quels folios il y en a (un clic y mène). « Effacer les marques » les retire ; elles ne sont pas enregistrées. */
+const MARQUES_INDICE = { fils: new Set() };
+function foliosMarques() { const M = MARQUES_INDICE.fils, P = plans(), vus = new Set(); if (!M.size) return [];
+  app.contrat.liaisons.forEach(l => { const s = sourceDe(l); if (s && M.has(s)) vus.add(P.length > 1 ? l.plan : '*'); }); return [...vus].sort((a, b) => P.indexOf(a) - P.indexOf(b)); }
+function effacerMarquesIndice() { MARQUES_INDICE.fils = new Set(); peindreMarquesIndice(); }
+function peindreMarquesIndice() { const sc = $('scene'); if (sc) sc.querySelectorAll('.in-neuf').forEach(e => e.classList.remove('in-neuf'));
+  const M = MARQUES_INDICE.fils, F = M.size ? foliosMarques() : []; let el = document.getElementById('indice-marques');
+  if (!F.length) { if (M.size) MARQUES_INDICE.fils = new Set(); if (el) el.remove(); return; }   // défait : plus rien à marquer
+  if (sc && app.dessin) { const L = liaisonsDuPlan(); sc.querySelectorAll('.cab[data-i]').forEach(e => { if (e.dataset.i.split(' ').some(i => { const l = L[+i], s = l && sourceDe(l); return s && M.has(s); })) e.classList.add('in-neuf'); }); }
+  if (!el) { el = document.createElement('div'); el.id = 'indice-marques'; el.setAttribute('role', 'status'); $('app').appendChild(el); }
+  const P = plans(), puces = P.length > 1 ? F.map(f => `<button type="button" class="in-folio${f === app.plan ? ' ici' : ''}" data-in-folio="${escA(f)}">${P.indexOf(f) + 1}</button>`).join('') : '';
+  el.innerHTML = `<i class="in-pt" aria-hidden="true"></i><div class="in-mdit"><small>Nouvel indice</small><b>${esc(pluriel(M.size, 'liaison'))} ${M.size > 1 ? 'ajoutées ou changées, marquées' : 'ajoutée ou changée, marquée'} sur le plan</b></div>${puces ? `<span class="in-folios"><small>folios</small>${puces}</span>` : ''}<button type="button" class="btn lien" data-in-effacer>Effacer les marques</button>`; }
+document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('#indice-marques button'); if (!t) return; if (t.dataset.inFolio != null) allerAuPlan(t.dataset.inFolio); else effacerMarquesIndice(); });
 
 MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.indice = surLePlan(() => ficheIndices());
 
@@ -43725,7 +43771,7 @@ function fabricationVue(groupes) { const gs = (groupes || []).filter(g => g && g
     const xs = o ? [o.pince && 'pince ' + o.pince, o.positionneur && 'positionneur ' + o.positionneur, o.insertion && 'insertion ' + o.insertion, o.extraction && 'extraction ' + o.extraction].filter(Boolean) : [];
     return xs.length ? `<small class="vu-outil">${esc('Outillage : ' + xs.join(' · '))}</small>` : ''; };
   return `<div class="vu-fab" data-pieces="${n}">${gs.map(g => `<section class="vu-fab-g"><h4><span>${esc(g.titre)}</span>${g.ref ? `<span class="id">${esc(g.ref)}</span>` : ''}${g.sous ? `<small>${esc(g.sous)}</small>` : ''}</h4>`
-    + g.lignes.map(l => `<div class="vu-fab-l"><span class="vu-q">${l.q}<small>×</small></span><span class="vu-r"><b class="id">${esc(l.ref || '—')}</b><small>${esc(l.role || '')}</small>${outil(l)}</span>${l.statut ? `<span class="vu-st${/confirmer|manque/.test(l.statut) ? ' att' : ''}">${esc(l.statut)}</span>` : '<span></span>'}</div>`).join('') + '</section>').join('')}</div>`; }
+    + g.lignes.map(l => `<div class="vu-fab-l"><span class="vu-q">${l.q}<small>×</small></span><span class="vu-r"><b class="id">${esc(l.ref || '—')}</b><small>${esc(l.role || '')}</small>${outil(l)}</span>${l.statut ? `<span class="vu-st${/confirmer|manque|vérifier/.test(l.statut) ? ' att' : ''}">${esc(l.statut)}</span>` : '<span></span>'}</div>`).join('') + '</section>').join('')}</div>`; }
 const compterParReference = (refs, role) => { const m = new Map(); refs.filter(Boolean).forEach(r => m.set(r, (m.get(r) || 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]).map(([ref, q]) => ({ q, ref, role })); };
 /* (passe 87) Ce qu'on monte autour d'un connecteur : l'onglet Pièces de sa fiche ET la LPA du plan (08-nomenclature) lisent
    cette liste — une seule source. Un nom par pièce, le même partout : « tyrap » (vos mots), l'obturateur avec sa taille de

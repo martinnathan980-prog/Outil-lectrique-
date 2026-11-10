@@ -2201,6 +2201,17 @@ function sexeDuPn(pn) { const r = cleNorme(pn); if (!r) return null;
   for (const [re, sx] of CODES_SEXE) { const m = re.exec(r); if (!m) continue; const t = m[1], partie = /^E005/.test(r) ? (t === '3' ? 'embase' : 'fiche') : t === '0' ? 'embase' : t === '6' ? 'fiche' : '';
     return { sexe: sx[m[2]], partie }; }
   return null; }
+/* LE CONNECTEUR D'ACCOUPLEMENT DÉDUIT (9 novembre 2026, le lecteur : inconnu, VOLTA le déduit du connecteur fourni — même
+   série, même arrangement, l'autre sexe — et le marque « à vérifier ») : seulement quand la codification le permet sans
+   deviner — une EMBASE dont le part number se lit (`CODES_SEXE`) : le chiffre du type passe à 6 (la prise mobile), la
+   lettre du sexe à l'autre ; une E0053 devient l'E0052. Tout le reste est gardé, écrit comme le fichier l'écrivait (ses
+   espaces, ses tirets). Rien quand la référence ne se lit pas ou n'est pas une embase : VOLTA ne devine pas. */
+function accouplementDeduit(pn) { const brut = String(pn == null ? '' : pn), r = cleNorme(brut); if (!r) return '';
+  for (const [re, sx] of CODES_SEXE) { const m = new RegExp(re.source, 'd').exec(r); if (!m) continue;
+    const E = /^E005/.test(r), autre = Object.keys(sx).find(k => k !== m[2]); if (!autre || m[1] !== (E ? '3' : '0')) return '';
+    const c = r.split(''); c[m.indices[1][0]] = E ? '2' : '6'; c[m.indices[2][0]] = autre; const r2 = c.join('');
+    let k = 0, out = ''; for (const ch of brut) out += /[A-Za-z0-9]/.test(ch) && k < r2.length ? r2[k++] : ch; return k === r2.length ? out : r2; }
+  return ''; }
 /* « LE PLUS PETIT QUI LOGE » (v84) : dans une norme de connecteurs circulaires, le plus petit BOÎTIER d'abord — 351PM1 A,
    quatre câbles dont un DR16 en borne 3, prenait l'EN 2997 22-39 (boîtier 22, 39 contacts, 35 obturateurs) pour éviter
    le manchon d'étanchéité du DR24 sur un contact 16, quand le 14-07 les loge ; à boîtier égal (et pour un module EN 4165,
