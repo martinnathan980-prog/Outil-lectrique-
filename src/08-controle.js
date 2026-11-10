@@ -523,7 +523,10 @@ function allerAuGenre(cle) { const L = lignesDuControle(), i = L.findIndex(l => 
    fait disparaître : on repart de celui qui a pris sa place) ; une ligne de l'index choisie (`CONTROLE.pas.cle` d'une
    ligne) reprend à son premier point. */
 const clePoint = x => x.niveau + '|' + (x.nom || '') + '|' + x.texte;
-const pointsDansLOrdre = () => lignesDuControle().flatMap(l => l.xs);
+// (v89) ce qui est à régler d'abord, puis ce qui est à voir : une ligne du contrôle peut porter les deux (sept câbles mal
+// protégés, quatre avec un geste), et P annonçait « À régler 7 / 11 », « À voir 1 / 3 », puis « À régler 8 / 11 »
+const pointsDansLOrdre = () => { const X = lignesDuControle().flatMap(l => l.xs), r = x => typeof rangDuPoint === 'function' ? (rangDuPoint(x).regler ? 0 : 1) : (x.niveau === 'ko' ? 0 : 1);
+  return X.map((x, i) => [x, i]).sort((a, b) => r(a[0]) - r(b[0]) || a[1] - b[1]).map(a => a[0]); };
 function problemeSuivant(pas) { if (typeof REVUE !== 'undefined' && REVUE.on) { allerDansLaRevue(pas); return; }   // (v88) pendant la revue, P passe au point suivant de la revue
   const X = pointsDansLOrdre(); if (!X.length) { dire('Rien à reprendre : le contrôle ne relève rien.'); return; }
   const P = CONTROLE.pas; let i = P ? X.findIndex(x => clePoint(x) === P.cle) : -1;

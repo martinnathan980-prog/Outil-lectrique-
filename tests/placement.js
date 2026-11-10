@@ -77,7 +77,7 @@ const cadreDansLaPage = nom => { const d = app.dessin, c = d && d.comps.find(k =
   // — sous pilote, sans réveil : synchrone, comme toutes les autres batteries l'attendent
   const dort = await page.evaluate(() => etatPlacement().ailleurs === false);
   ok(dort, 'endormi sous pilote automatique : le placement reste dans la page');
-  const gros = await page.evaluate(() => { const P = plans().map(p => ({ p, n: liaisonsDe(p).length })).sort((a, b) => b.n - a.n); return { folio: P[0].p, n: P[0].n, petit: P[P.length - 1].p, nPetit: P[P.length - 1].n, seuil: SEUIL_ICI }; });
+  const gros = await page.evaluate(() => { const P = plans().map(p => ({ p, n: liaisonsDe(p).length })).sort((a, b) => b.n - a.n); return { folio: P[0].p, n: P[0].n, cables: nombreDeCables(liaisonsDe(P[0].p)), petit: P[P.length - 1].p, nPetit: P[P.length - 1].n, seuil: SEUIL_ICI }; });
   const sync = await page.evaluate(p => { const t0 = performance.now(); allerAuPlan(p); return { ms: Math.round(performance.now() - t0), dessin: !!app.dessin, empreinte: empreinteDansLaPage() }; }, gros.folio);
   ok(sync.dessin && sync.ms > 300, `sans réveil, le folio ${gros.folio} (${gros.n} liaisons) se place dans la page, synchrone`, sync.ms + ' ms, la main rendue après le dessin');
   const reference = sync.empreinte;
@@ -90,8 +90,8 @@ const cadreDansLaPage = nom => { const d = app.dessin, c = d && d.comps.find(k =
   ok(e0.ailleurs && e0.worker === 'pas encore', 'réveillé', JSON.stringify(e0));
   const loin = await page.evaluate(p => { const t0 = performance.now(); allerAuPlan(p); return { ms: Math.round(performance.now() - t0), ...attenteDansLaPage() }; }, gros.folio);
   ok(loin.ms < 300 * MARGE() && !loin.dessin, `réveillé, allerAuPlan('${gros.folio}') rend la main tout de suite`, loin.ms + ' ms (contre ' + sync.ms + ' ms dans la page)');
-  ok(loin.visible && new RegExp('Dessin du folio ' + gros.folio).test(loin.texte) && new RegExp(gros.n + ' câbles').test(loin.texte) && /environ \d+ (s|min)/.test(loin.texte) && !/\bfils?\b|moteur|quelques secondes|écran reste libre/.test(loin.texte), 'l’attente se voit au milieu de la table : « Dessin du folio… », ses câbles, une durée — ni « fils », ni « moteur », ni « quelques secondes »', loin.texte);
-  ok(loin.barre && /problème|points à voir|repères/.test(loin.gestes) && /récapitulatif/.test(loin.gestes), 'une barre, et ce qu’on peut faire pendant : les problèmes, le récapitulatif', loin.gestes);
+  ok(loin.visible && new RegExp('Dessin du folio ' + gros.folio).test(loin.texte) && new RegExp('\\b' + gros.cables + ' câbles').test(loin.texte) && /environ \d+ (s|min)/.test(loin.texte) && !/\bfils?\b|moteur|quelques secondes|écran reste libre/.test(loin.texte), 'l’attente se voit au milieu de la table : « Dessin du folio… », ses câbles (un câble blindé à deux conducteurs compte une fois), une durée — ni « fils », ni « moteur », ni « quelques secondes »', loin.texte);
+  ok(loin.barre && /à régler|points? à voir|repères/.test(loin.gestes) && /récapitulatif/.test(loin.gestes), 'une barre, et ce qu’on peut faire pendant : ce qui est à régler, le récapitulatif', loin.gestes);
   ok(loin.puce, 'la puce du folio dit qu’il se dessine (en attente ou dessin en cours) dans la barre du bas');
   ok(loin.etat.worker === 'oui' && loin.etat.attentes.includes(gros.folio), 'le moteur tourne en Worker, le folio est en attente', JSON.stringify(loin.etat));
   if (process.env.CAPTURES) await page.screenshot({ path: process.env.CAPTURES + '/placement-attente.png' }).catch(() => { });

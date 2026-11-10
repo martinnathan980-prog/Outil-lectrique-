@@ -101,8 +101,8 @@ const a = c => spawnSync('sh', ['-c', 'command -v ' + c]).status === 0;
   ok('l’aller-retour : l’exemple (6 folios, ' + NEX + ' liaisons) → .vsdx → relu = les mêmes liaisons, borne à borne, câble, type et folio', CR.j === NEX && CR.t === NEX && RR.liaisons.every(l => l.colle && l.conf >= 0.99), `${CR.j}/${CR.v} · ${RR.liaisons.filter(l => l.colle).length} collées`);
 
   // ---- 3. LA RELECTURE, à la vraie souris
-  await p.click('#btnMenu'); await p.click('#menu [data-sous="plus"]');
-  const [choix] = await Promise.all([p.waitForEvent('filechooser'), p.click('#menu [data-act="visio"]')]);
+  await p.click('#btnMenu');   // (v88) « Ouvrir un fichier… » : Excel, PDF ou Visio — un .vsdx va à sa relecture
+  const [choix] = await Promise.all([p.waitForEvent('filechooser'), p.click('#menu [data-act="ouvrir"]')]);
   await choix.setFiles(fx); await p.waitForFunction(() => VISIO.ouvert && VISIO.lu); await p.waitForTimeout(500);
   const O = await p.evaluate(() => ({ vu: !$('visio').hidden, menu: $('menu').hidden, n: VISIO.L.length, vig: document.querySelectorAll('#visio-vignettes .pdf-vig').length, svg: !!document.querySelector('#visio-dessin svg path'),
     feuille: (() => { const r = $('visio-feuille').getBoundingClientRect(), d = $('visio-relecture').getBoundingClientRect(), g = $('visio-vignettes').getBoundingClientRect(); return r.width > 300 && r.left >= g.right - 1 && r.right <= d.left + 1; })(),

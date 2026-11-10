@@ -70,14 +70,14 @@ const FICHIER = P.fichierDemande();
     await page.mouse.up(); if (opts.alt) await page.keyboard.up('Alt'); await page.waitForTimeout(300); return pendant; };
   const sain = async () => { const m = await page.evaluate(P.mesurerDansLaPage); return !m.filsDansBloc && !m.chevauches && !m.superposees && !m.rompus; };
   // le routage PROPRE d'un dessin retouché : aucun fil dans un bloc, le sien compris (hors de ses bornes), aucun segment partagé,
-  // aucun fil rompu, aucun numéro qui ne s'écrit plus, aucun croisement évitable
+  // aucun fil rompu, aucun croisement évitable
   const propre = () => page.evaluate(() => { const d = app.dessin, fils = d.fils.filter(w => !w.shunt), a = auditer(d); let traverse = 0;
     fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const p = w.pts[i], q = w.pts[i + 1], h = Math.abs(p.y - q.y) < 0.01;
       const xa = Math.min(p.x, q.x), xb = Math.max(p.x, q.x), ya = Math.min(p.y, q.y), yb = Math.max(p.y, q.y);
       d.comps.forEach(c => { if (c.kind === 'tag') return; if (h ? (p.y > c.y + 1 && p.y < c.y + c.h - 1 && xa < c.x + c.w - 2 && xb > c.x + 2) : (p.x > c.x + 1 && p.x < c.x + c.w - 1 && ya < c.y + c.h - 2 && yb > c.y + 2)) traverse++; }); } });
-    const r = { traverse, chevauches: a.blocsChevauches, partages: compterPartages(d.fils), rompus: filsRompus(d.fils, d.barrettes), muets: compterMuets({ fils: d.fils, barrettes: d.barrettes }, d.comps), evitables: a.evitables,
+    const r = { traverse, chevauches: a.blocsChevauches, partages: compterPartages(d.fils), rompus: filsRompus(d.fils, d.barrettes), evitables: a.evitables,
       orthogonal: fils.every(w => w.pts.every((p, i) => !i || Math.abs(p.x - w.pts[i - 1].x) < 0.01 || Math.abs(p.y - w.pts[i - 1].y) < 0.01)) };
-    r.ok = !r.traverse && !r.chevauches && !r.partages && !r.rompus && !r.muets && !r.evitables && r.orthogonal; return r; });
+    r.ok = !r.traverse && !r.chevauches && !r.partages && !r.rompus && !r.evitables && r.orthogonal; return r; });   // (v84 : un câble n'a plus de numéro sur le plan — plus de numéro « muet » à compter)
   const colles = () => page.evaluate(P.blocsCollesDansLaPage);
   const auto = () => page.evaluate(() => !$('btnAuto').hidden);
   const mot = () => page.evaluate(() => $('toast').classList.contains('on') ? $('toast').textContent : '');
@@ -133,7 +133,7 @@ const FICHIER = P.fichierDemande();
     return dehors && g.colX.length === g0.colX.length + 1 && c.col === g.colX.length - 1 && c.x >= g.colX[c.col] - 0.5 && c.x + c.w <= g.colX[c.col] + g.colW[c.col] + 0.5; }, ['395SW1', g0]),
     'posé hors de toute colonne, il devient une colonne à lui (les colonnes se relisent)');
   const p1 = await propre();
-  ok(p1.ok, 'le routage reste propre : orthogonal, aucun fil dans un bloc (le sien compris), ni partagé, ni rompu, ni muet, aucun croisement évitable', JSON.stringify(p1));
+  ok(p1.ok, 'le routage reste propre : orthogonal, aucun fil dans un bloc (le sien compris), ni partagé, ni rompu, aucun croisement évitable', JSON.stringify(p1));
   ok(sel.us === 'none' && sel.calque, 'pendant l\'appui, la planche ne sélectionne rien et le fantôme montre la place visée', JSON.stringify(sel));
   ok(await page.evaluate(() => !String(window.getSelection())), 'aucun texte sélectionné après le glisser');
   ok(/395SW1 déplacé/.test(await mot()), 'le mot dit que le bloc a bougé', await mot());
@@ -283,7 +283,7 @@ const FICHIER = P.fichierDemande();
   ok(sf.prise === 'fil-v' && sf.allume && sf.curseur === 'ew-resize', 'au survol, un tronçon vertical s’allume, le curseur dit qu’il glisse de côté', JSON.stringify(sf));
   const pf = await ecran(w0.x, w0.y);
   await glisserDe(pf, PISTE_ * pf.s, 0);
-  ok((await verticales(w0.li)).some(x => Math.abs(x - w0.x - PISTE_) < 0.6) && new RegExp(w0.cable + ' glisse de 1 piste à droite').test(await mot()), w0.cable + ' : sa verticale glisse d’une piste, et le mot le dit', JSON.stringify(await verticales(w0.li)) + ' · ' + await mot());
+  ok((await verticales(w0.li)).some(x => Math.abs(x - w0.x - PISTE_) < 0.6) && /^Le câble glisse de 1 piste à droite/.test(await mot()), w0.cable + ' : sa verticale glisse d’une piste, et le mot le dit (« Le câble glisse… » : un câble n’a plus de numéro à l’écran)', JSON.stringify(await verticales(w0.li)) + ' · ' + await mot());
   const pfo = await propre(); ok(pfo.ok, 'le routage reste propre', JSON.stringify(pfo));
   const pf2 = await ecran(w0.x + PISTE_, w0.y); await survoler(pf2);
   await page.mouse.dblclick(pf2.x, pf2.y); await page.waitForTimeout(400);
@@ -309,7 +309,7 @@ const FICHIER = P.fichierDemande();
   const ph = await ecran(h0.x, h0.y);
   await glisserDe(ph, 0, 4 * PAS_ * ph.s);
   const hs = await horizontales(h0.li);
-  ok(hs.some(y => Math.abs(y - h0.y - 4 * PAS_) < 0.6) && new RegExp(h0.cable + '\\s: son couloir descend').test(await mot()), h0.cable + ' : son couloir descend de quatre demi-pas, et le mot le dit', JSON.stringify(hs) + ' · ' + await mot());
+  ok(hs.some(y => Math.abs(y - h0.y - 4 * PAS_) < 0.6) && /^Le câble\s: son couloir descend/.test(await mot()), h0.cable + ' : son couloir descend de quatre demi-pas, et le mot le dit', JSON.stringify(hs) + ' · ' + await mot());
   const pho = await propre(); ok(pho.ok, 'le routage reste propre', JSON.stringify(pho));
   if (h0.sur != null) { const avant = JSON.stringify(await horizontales(h0.li)), ph2 = await ecran(h0.x, h0.y + 4 * PAS_);
     const rougeH = await glisserDe(ph2, 0, (h0.sur - h0.y - 4 * PAS_) * ph2.s, () => { const g = document.getElementById('rt-calque'); return !!g && g.dataset.pris === '1' && !!g.querySelector('.rt-fantome.pris'); });

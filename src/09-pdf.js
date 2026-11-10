@@ -636,7 +636,12 @@ const SCHEMA_PDF = (() => {
     G.aretes.forEach(e => { const R = reseaux.get(U.f(e.a)); if (R) R.longueur += e.L; });
     // les orphelins comptent dans un réseau qui a des bouts, ou dans un long trait seul
     const longueurs = new Map(); G.aretes.forEach(e => { const r = U.f(e.a); longueurs.set(r, (longueurs.get(r) || 0) + e.L); });
-    const orph = orphelins.filter(o => reseaux.has(U.f(o.n)) || (longueurs.get(U.f(o.n)) || 0) > 6 * u).map(o => ({ p: o.p, raison: o.raison }));
+    // (v89) le dessin propre à un symbole n'a pas de bout orphelin : un réseau qui ne joint que les bornes d'UN MÊME repère, ou
+    // un petit dessin (moins de trois hauteurs de lettre) posé contre son repère écrit, sans toucher une seule borne — le bouton
+    // en T d'un disjoncteur. VOLTA relisait son dossier et trouvait deux « traits qui n'arrivent nulle part » sur 102CB1. Un bout
+    // de câble parti d'une borne, ou un long trait, reste un orphelin.
+    const symbole = R => !!R.bouts[0].repere && (R.bouts.length >= 2 ? R.bouts.every(b => b.repere === R.bouts[0].repere) : R.bouts[0].genre === 'texte' && R.longueur < 3 * u);
+    const orph = orphelins.filter(o => { const R = reseaux.get(U.f(o.n)); return R ? !symbole(R) : (longueurs.get(U.f(o.n)) || 0) > 6 * u; }).map(o => ({ p: o.p, raison: o.raison }));
     // les mots posés sur un trait : un type de câble (DR20), un numéro de fil (W-012)
     const GS = grille(3 * u); G.aretes.forEach(e => { const a = G.noeuds[e.a].p, b = G.noeuds[e.b].p; GS.ajouter(e, Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[0], b[0]), Math.max(a[1], b[1])); });
     const surTrait = new Map();   // arête -> { type, fil }

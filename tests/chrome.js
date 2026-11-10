@@ -46,13 +46,13 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
     // la bulle de ↶ : ce qu'il déferait, écrit quand elle paraît
     await survoler(page, '#btnUndo'); await page.waitForFunction(() => $('btnUndo').classList.contains('bulle-on'), null, { timeout: 5000 }).catch(() => {});
     const b = await page.evaluate(() => ({ on: $('btnUndo').classList.contains('bulle-on'), t: $('btnUndo').querySelector('.bulle').innerText }));
-    ok('la bulle de ↶ dit ce qu’il déferait (« Défaire : W-012 en DR12 »)', b.on && /W-012 en DR12/.test(b.t), JSON.stringify(b));
+    ok('la bulle de ↶ dit ce qu’il déferait, le câble par son type et ses deux bouts (« Défaire : DR20 102CB1:2 → 103RL1:A1 en DR12 »)', b.on && /DR20 102CB1:2 → 103RL1:A1 en DR12/.test(b.t), JSON.stringify(b));
     await page.mouse.move(700, 600); await page.keyboard.press('Control+z'); await page.waitForTimeout(250);
     const d = { type: await W012(page), mot: await mot(page), r: await page.evaluate(() => $('btnRedo').disabled), geste: await page.evaluate(() => ($('toast').querySelector('.toast-geste') || {}).textContent) };
-    ok('Ctrl+Z défait ; le mot dit l’état d’arrivée (« Défait : W-012 revient en DR20 ») et offre « Refaire » ; ↷ s’allume', d.type === 'DR20' && /^Défait\s:\sW-012 revient en DR20\./.test(d.mot) && d.geste === 'Refaire' && d.r === false, JSON.stringify(d));
+    ok('Ctrl+Z défait ; le mot dit l’état d’arrivée (« Défait : DR12 102CB1:2 → 103RL1:A1 revient en DR20 ») et offre « Refaire » ; ↷ s’allume', d.type === 'DR20' && /^Défait\s:\sDR12 102CB1:2 → 103RL1:A1 revient en DR20\./.test(d.mot) && d.geste === 'Refaire' && d.r === false, JSON.stringify(d));
     await page.keyboard.press('Control+y'); await page.waitForTimeout(250);
     const y = { type: await W012(page), mot: await mot(page) };
-    ok('Ctrl+Y refait (« Refait : W-012 passe en DR12 »)', y.type === 'DR12' && /^Refait\s:\sW-012 passe en DR12\./.test(y.mot), JSON.stringify(y));
+    ok('Ctrl+Y refait (« Refait : DR20 102CB1:2 → 103RL1:A1 passe en DR12 »)', y.type === 'DR12' && /^Refait\s:\sDR20 102CB1:2 → 103RL1:A1 passe en DR12\./.test(y.mot), JSON.stringify(y));
     await page.keyboard.press('Control+z'); await page.waitForTimeout(150);
     const n0 = await page.evaluate(() => app.hist.length);
     await page.keyboard.press('Control+Shift+z'); await page.waitForTimeout(250);
@@ -71,10 +71,10 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
     // le grand geste du disjoncteur : défait d'un coup, dit en une phrase (le disjoncteur d'abord, puis ses câbles)
     await page.evaluate(() => { deciderCalibre('102CB1'); }); await page.waitForTimeout(150); await page.keyboard.press('Control+z'); await page.waitForTimeout(250);
     const dj = await mot(page);
-    ok('défaire « Passer en 15 A et grossir les câbles » : « 102CB1 revient à 10 A (MS3320-10) · W-…, W-… reviennent en … »', /^Défait\s:\s102CB1 revient à 10\sA \(MS3320-10\) · W-0\d\d.* reviennent en /.test(dj), dj);
+    ok('défaire le grand geste du disjoncteur, d’un coup et en une phrase : ses câbles reviennent (« DR16 102CB1:2 → 103RL1:A1, … reviennent en DR20, … ») — le calibre, lui, ne bouge pas : le 10 A ne disjoncte pas', /^Défait\s:\sDR16 102CB1:2 → 103RL1:A1, .* reviennent en DR20, /.test(dj) && !/revient à \d+\sA/.test(dj), dj);
     await page.evaluate(() => retenirCalibre('102CB1', 20)); await page.waitForTimeout(150); await page.keyboard.press('Control+z'); await page.waitForTimeout(250);
     const cal = await mot(page);
-    ok('défaire un calibre retenu à la main : « 102CB1 revient au calibre automatique, 15 A » (plus « Annulé : … automatique »)', /^Défait\s:\s102CB1 revient au calibre automatique, 15\sA\./.test(cal), cal);
+    ok('défaire un calibre retenu à la main : « 102CB1 revient au calibre automatique, 10 A » — le plus petit qui ne disjoncte pas (plus « Annulé : … automatique »)', /^Défait\s:\s102CB1 revient au calibre automatique, 10\sA\./.test(cal), cal);
     // un plan qu'on ouvre : un historique neuf, une pile à refaire neuve
     await page.keyboard.press('Control+y'); await page.waitForTimeout(150); await page.keyboard.press('Control+z'); await page.waitForTimeout(150);
     await page.evaluate(() => { app.hist = []; synchroniserHistorique(); }); const vide = await page.evaluate(() => ({ r: $('btnRedo').disabled, u: $('btnUndo').disabled }));
@@ -90,7 +90,7 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
     const D = await page.evaluate(() => { const r = $('rail'), mots = [...r.querySelectorAll('.rd-mot')].map(m => ({ t: m.textContent, vu: m.checkVisibility({ opacityProperty: true, visibilityProperty: true }) && m.getBoundingClientRect().right <= r.getBoundingClientRect().right + 1 }));
       return { deplie: r.classList.contains('deplie'), l: Math.round(r.getBoundingClientRect().width), mots: mots.filter(m => m.vu).map(m => m.t), touches: [...r.querySelectorAll('.rd-touche')].map(k => k.textContent).join(' '), bulle: $('btnBase').classList.contains('bulle-on') && $('btnBase').querySelector('.bulle-detail').checkVisibility(), haut: Math.round(r.getBoundingClientRect().top) }; });
     ok('le rail, à un jeu sous la barre du haut (62 px), 44 px plié', D.haut === 62 && l0 === 44, JSON.stringify({ haut: D.haut, l0 }));
-    ok('à 120 ms de survol, rien ; à 570 ms, déplié en 176 px : chaque outil avec son mot et sa touche, la bulle dit ce qu’il fait', !tot && D.deplie && D.l === 176 && D.mots.length === 7 && D.mots.includes('Ajouter une liaison') && D.mots.includes('Refaire') && /B R \/ Ctrl Z Ctrl Y/.test(D.touches) && D.bulle, JSON.stringify(D));
+    ok('à 120 ms de survol, rien ; à 570 ms, déplié en 176 px : chaque outil avec son mot et sa touche, la bulle dit ce qu’il fait', !tot && D.deplie && D.l === 176 && D.mots.join() === 'Récapitulatif,Repères,Rechercher,Défaire,Refaire,Bible' && /B R \/ Ctrl Z Ctrl Y/.test(D.touches) && D.bulle, JSON.stringify(D));
     await page.mouse.down(); await page.mouse.up(); await page.waitForTimeout(300);
     const C = await page.evaluate(() => ({ deplie: $('rail').classList.contains('deplie'), recap: app.base.ouvert }));
     await page.waitForTimeout(500); const C2 = await page.evaluate(() => $('rail').classList.contains('deplie'));
@@ -101,7 +101,7 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
     await page.keyboard.press('Shift'); await page.evaluate(() => $('btnIndex').focus()); await page.waitForTimeout(80);
     const K = await page.evaluate(() => ({ deplie: $('rail').classList.contains('deplie'), bulle: $('btnIndex').classList.contains('bulle-on'), t: $('btnIndex').querySelector('.bulle').innerText.replace(/\s+/g, ' ') }));
     await page.evaluate(() => $('btnIndex').blur());
-    ok('au clavier, le rail reste plié ; la bulle paraît tout de suite : le nom, la touche et l’état (« Repères et problèmes R · 5 problèmes · 9 à voir »)', !K.deplie && K.bulle && /Repères et problèmes R \d+\sproblèmes · \d+\sà voir/.test(K.t), JSON.stringify(K));
+    ok('au clavier, le rail reste plié ; la bulle paraît tout de suite : le nom, la touche et l’état (« Repères et problèmes R · 11 à régler · 3 à voir »)', !K.deplie && K.bulle && /Repères et problèmes R \d+\sà régler · \d+\sà voir/.test(K.t), JSON.stringify(K));
     // les nouvelles icônes : une liaison (deux bornes reliées, un plus), la bible (le symbole de la barrette)
     const I = await page.evaluate(() => ({ liaison: $('btnLiaison').querySelectorAll('svg circle').length, bible: !!$('btnBible').querySelector('svg rect') && $('btnBible').querySelectorAll('svg circle').length }));
     ok('les icônes : « Ajouter une liaison » deux bornes reliées et un plus, « Bible » la barrette (trois contacts)', I.liaison === 2 && I.bible === 3, JSON.stringify(I));
@@ -113,17 +113,17 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
 
   /* ---- 3. les comptes ---- */
   { const page = await ouvrir();
-    const P = await page.evaluate(() => { const xs = CONTROLE.items, ko = xs.filter(x => x.niveau === 'ko').length, p = $('btnIndex').querySelector('.rd-point');
-      return { ko, att: xs.length - ko, txt: p.textContent, cls: p.className, label: $('btnIndex').getAttribute('aria-label'), detail: $('bulle-index-detail').textContent }; });
-    ok('la pastille = les problèmes rouges du plan ; son nom et sa bulle disent « N problèmes · M à voir »', P.txt === String(P.ko) && /\bko\b/.test(P.cls) && new RegExp(P.ko + '\\sproblèmes · ' + P.att + '\\sà voir').test(P.label) && new RegExp('^Repères et problèmes · ' + P.ko + '\\sproblèmes · ' + P.att + '\\sà voir$').test(P.detail), JSON.stringify(P));
+    const P = await page.evaluate(() => { const c = compteARegler(), ko = c.regler, p = $('btnIndex').querySelector('.rd-point');
+      return { ko, att: c.voir, txt: p.textContent, cls: p.className, label: $('btnIndex').getAttribute('aria-label'), detail: $('bulle-index-detail').textContent }; });
+    ok('la pastille = ce qui est à régler (ce qui a un geste) ; son nom et sa bulle disent « N à régler · M à voir »', P.txt === String(P.ko) && /\bko\b/.test(P.cls) && new RegExp(P.ko + '\\sà régler · ' + P.att + '\\sà voir').test(P.label) && new RegExp('^Repères et problèmes · ' + P.ko + '\\sà régler · ' + P.att + '\\sà voir$').test(P.detail), JSON.stringify(P));
     const ko = P.ko, mots = [];
     await page.evaluate(() => { CONTROLE.pas = null; });
     for (let i = 0; i < ko + 1; i++) { await page.keyboard.press('p'); await page.waitForTimeout(350); mots.push(await page.evaluate(() => $('toast').textContent)); }
-    ok('P parcourt d’abord les problèmes (« Problème 1 / N » … « N / N »), puis ce qui est à voir (« À voir 1 / M »)', mots[0].startsWith('Problème 1 / ' + ko + ' ·') && mots[ko - 1].startsWith('Problème ' + ko + ' / ' + ko + ' ·') && mots[ko].startsWith('À voir 1 / ' + P.att + ' ·'), mots.join(' | '));
+    ok('P parcourt d’abord ce qui est à régler (« À régler 1 / N » … « N / N »), puis ce qui est à voir (« À voir 1 / M »)', mots[0].startsWith('À régler 1 / ' + ko + ' ·') && mots[ko - 1].startsWith('À régler ' + ko + ' / ' + ko + ' ·') && mots[ko].startsWith('À voir 1 / ' + P.att + ' ·'), mots.join(' | '));
     await page.keyboard.press('Shift+P'); await page.waitForTimeout(350);
-    ok('Maj+P revient au dernier problème', (await page.evaluate(() => $('toast').textContent)).startsWith('Problème ' + ko + ' / ' + ko));
+    ok('Maj+P revient au dernier point à régler', (await page.evaluate(() => $('toast').textContent)).startsWith('À régler ' + ko + ' / ' + ko));
     const att = await page.evaluate(() => libelleProblemes());
-    ok('l’attente d’un folio les compte de même (« Les 5 problèmes · 9 à voir »)', new RegExp('^Les ' + ko + '\\sproblèmes · ' + P.att + '\\sà voir$').test(att), att);
+    ok('l’attente d’un folio les compte de même (« Les 11 à régler »)', new RegExp('^Les ' + ko + '\\sà régler$').test(att), att);
     await page.close(); }
 
   /* ---- 4. le retest corrigé ---- */
@@ -131,17 +131,17 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
     const p0 = await page.evaluate(() => $('btnRetest').hidden);
     await changer(page); await page.waitForTimeout(200);
     const p1 = await page.evaluate(() => ({ vu: !$('btnRetest').hidden, t: $('btnRetest').innerText.replace(/\s+/g, ' ').trim(), ent: $('btnRetest').classList.contains('entre-v') }));
-    ok('la pilule de l’installation corrigée paraît au premier changement (« 1 changement · Exporter l’Excel corrigé »), absente avant', p0 && p1.vu && /1\schangement/.test(p1.t) && /Excel corrigé/.test(p1.t) && p1.ent, JSON.stringify({ p0, ...p1 }));
+    ok('la pilule de l’Excel corrigé paraît au premier changement (son compte, « Exporter l’Excel corrigé »), absente avant', p0 && p1.vu && /^1\sExporter l’Excel corrigé$/.test(p1.t) && p1.ent, JSON.stringify({ p0, ...p1 }));
     await page.click('#btnMenu'); await page.click('#menu [data-sous="exporter"]'); await page.waitForTimeout(300);
     const M = await page.evaluate(() => { const p = $('mp-exporter'), b = [...p.querySelectorAll('button[role="menuitem"]:not([data-retour])')], g = b[0].closest('.menu-bloc');
       return { premier: b[0].dataset.act, compte: $('mn-retest').textContent, seul: g.querySelectorAll('button').length === 1, filet: getComputedStyle(g.nextElementSibling).borderTopStyle, focus: document.activeElement.dataset.act, sous: $('mn-exporter').textContent }; });
-    ok('⋮ › Exporter : l’installation corrigée en PREMIÈRE ligne, son compte dessous (« 1 liaison modifiée »), seul dans son groupe, un filet avant le dessin', M.premier === 'retestcorrige' && /^1\sliaison modifiée$/.test(M.compte) && M.seul && M.filet === 'solid' && M.focus === 'retestcorrige', JSON.stringify(M));
-    ok('la ligne Exporter du menu le dit en petit (« installation corrigée · 1 changement »)', /installation corrigée · 1\schangement/.test(M.sous), M.sous);
+    ok('⋮ › Exporter : l’Excel corrigé en PREMIÈRE ligne, son compte dessous (« 1 changement »), seul dans son groupe, un filet avant le dessin', M.premier === 'retestcorrige' && /^1\schangement$/.test(M.compte) && M.seul && M.filet === 'solid' && M.focus === 'retestcorrige', JSON.stringify(M));
+    ok('la ligne Exporter du menu le dit en petit (« Excel corrigé · 1 changement »)', /Excel corrigé · 1\schangement/.test(M.sous), M.sous);
     await page.keyboard.press('Escape'); await page.keyboard.press('Escape'); await page.waitForTimeout(150);
     let sorti = false; page.once('download', () => { sorti = true; });
     await page.click('#btnRetest'); await page.waitForTimeout(1500);
     const rel = await page.evaluate(() => !!document.querySelector('#releve, .releve, [data-releve]') || !!(app.fiche && /installation|releve/i.test(app.fiche.mode || '')));
-    ok('un clic sur la pilule sort l’installation corrigée (ou ouvre son relevé)', sorti || rel, JSON.stringify({ sorti, rel }));
+    ok('un clic sur la pilule sort l’Excel corrigé (ou ouvre son relevé)', sorti || rel, JSON.stringify({ sorti, rel }));
     await page.evaluate(() => { const l = verite().find(x => x.cable === 'W-012'); rendreChamp(l, 'type'); }); await page.waitForTimeout(200);
     ok('plus aucun changement : la pilule s’en va', await page.evaluate(() => $('btnRetest').hidden));
     await page.close(); }
@@ -178,7 +178,7 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
     await page.waitForTimeout(400); const F2 = await page.evaluate(() => !document.querySelector('.menu-part'));
     ok('il se ferme tout de suite ; son double (sans identifiants, inerte) s’efface en 120 ms, puis s’en va', F.cache && F.double && F.sansId && F.inerte && F.d === 120 && F2, JSON.stringify({ ...F, F2 }));
     const S = await page.evaluate(() => { dire('Un mot.'); const t = $('toast'), on = getComputedStyle(t).transitionDuration; t.classList.remove('on'); const off = getComputedStyle(t).transitionDuration; return { on, off }; });
-    ok('le mot qui passe entre en 340 ms et sort en 200 ms', /^0\.34s/.test(S.on) && /^0\.2s/.test(S.off), JSON.stringify(S));
+    ok('le mot qui passe entre en 400 ms et sort en 200 ms', /^0\.4s/.test(S.on) && /^0\.2s/.test(S.off), JSON.stringify(S));
     const D = await page.evaluate(() => [dureeDuMot('Un mot court.'), dureeDuMot('L’installation corrigée est enregistré : 201 liaisons, 1 liaison modifiée (1 case commentée, la feuille Modifications les liste).'), dureeDuMot('x', true)]);
     ok('un mot long reste plus longtemps (2,8 s une ligne, jusqu’à 6 s ; 8 s avec un geste)', D[0] === 2800 && D[1] > 5000 && D[1] <= 6000 && D[2] === 8000, D.join(' · '));
     await survoler(page, '#btnBase'); await page.mouse.down(); await page.waitForTimeout(150);

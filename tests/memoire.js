@@ -44,7 +44,7 @@ const FICHIER = fichierDemande();
   ok('repris sur le plan seul, tableau fermé', !r.base && !r.biblio);
   await p2.waitForFunction(() => app.references && app.references.pret, null, { timeout: 60000 }).catch(() => { });
   const bm = await p2.evaluate(() => app.references ? { nom: app.references.nom, n: app.references.n, h: app.references.base.meta.contrats.map(c => c.h).join(), deja: !!indexReferences() } : null);
-  ok('la base des plans déjà faits revient aussi', !!bm && bm.nom === 'base-memoire.xlsx' && bm.n === 209 && bm.h === 'H-MEMOIRE' && bm.deja, JSON.stringify(bm));
+  ok('la base des plans déjà faits revient aussi', !!bm && bm.nom === 'base-memoire.xlsx' && bm.n === 223 && bm.h === 'H-MEMOIRE' && bm.deja, JSON.stringify(bm));
 
   const u = await p2.evaluate(() => { const n0 = app.contrat.liaisons.length; histPush('suppression d’essai'); app.contrat.liaisons.splice(0, 3); redessiner();
     const n1 = app.contrat.liaisons.length; const q = annuler(); return { n0, n1, n2: app.contrat.liaisons.length, q }; });

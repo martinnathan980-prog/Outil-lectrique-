@@ -127,14 +127,14 @@ const pct = x => (100 * x).toFixed(1).replace('.', ',') + ' %';
   // ---- 3. la visionneuse, à la vraie souris
   const ouvrir = async (f, nom) => { await p.evaluate(async ([b64, nom]) => { await ouvrirPdf(new File([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], nom, { type: 'application/pdf' })); }, [fs.readFileSync(f).toString('base64'), nom || path.basename(f)]);
     await p.waitForFunction(() => PDF.lecture || PDF.erreur); await p.waitForTimeout(400); };
-  // par le menu : Plus › « Lire un PDF de schéma… » ouvre le sélecteur de fichier
-  await p.evaluate(() => atelier.exemple()); await p.click('#btnMenu'); await p.click('#menu [data-sous="plus"]');
-  const [choix] = await Promise.all([p.waitForEvent('filechooser'), p.click('#menu [data-act="pdf"]')]);
+  // par le menu : « Ouvrir un fichier… » (Excel, PDF ou Visio — v88 : plus de « Plus ») ouvre le sélecteur de fichier ; un PDF va à sa visionneuse
+  await p.evaluate(() => atelier.exemple()); await p.click('#btnMenu');
+  const [choix] = await Promise.all([p.waitForEvent('filechooser'), p.click('#menu [data-act="ouvrir"]')]);
   await choix.setFiles(banc[2].fichier); await p.waitForFunction(() => PDF.lecture || PDF.erreur); await p.waitForTimeout(500);
   const O = await p.evaluate(() => ({ vu: !$('pdf').hidden, menu: $('menu').hidden, n: PDF.L.length, toile: $('pdf-canvas').width > 200, vig: document.querySelectorAll('#pdf-vignettes .pdf-vig').length,
     feuille: (() => { const r = $('pdf-feuille').getBoundingClientRect(), d = $('pdf-relecture').getBoundingClientRect(), g = $('pdf-vignettes').getBoundingClientRect(); return r.width > 300 && r.left >= g.right - 1 && r.right <= d.left + 1; })(),
     lignes: document.querySelectorAll('#pdf-tab tbody tr[data-i]').length, pied: [...document.querySelectorAll('#pdf-relecture .fiche-pied .btn')].map(x => x.textContent).join(' | ') }));
-  ok('le menu (Plus › « Lire un PDF de schéma… ») ouvre la visionneuse : la page sur papier entre les vignettes et la relecture, une ligne par liaison', O.vu && O.menu && O.toile && O.feuille && O.vig === 1 && O.n === banc[2].R.liaisons.length && O.lignes === O.n && /Ouvrir comme plan/.test(O.pied) && /retest Excel/.test(O.pied), JSON.stringify(O));
+  ok('le menu (« Ouvrir un fichier… », un PDF choisi) ouvre la visionneuse : la page sur papier entre les vignettes et la relecture, une ligne par liaison', O.vu && O.menu && O.toile && O.feuille && O.vig === 1 && O.n === banc[2].R.liaisons.length && O.lignes === O.n && /Ouvrir comme plan/.test(O.pied) && /retest Excel/.test(O.pied), JSON.stringify(O));
   if (IMG) await p.screenshot({ path: path.join(IMG, 'pdf-volta3.png') });
   // la molette zoome autour du pointeur, la main déplace
   const z0 = await p.evaluate(() => ({ ...PDF.vue })); const sc = await p.evaluate(() => { const r = $('pdf-feuille').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });

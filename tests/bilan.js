@@ -9,7 +9,7 @@
         texte copié — y compris une erreur de page qui en nomme un, et une note du carnet qui en nomme un ;
      3. le carnet : C l'ouvre (l'écran où l'on est, sans nom), Entrée garde la note, Échap ferme sans rien fermer d'autre
         et rend le clavier ; la note survit au rechargement ; elle s'efface depuis le bilan ;
-     4. le menu ⋮ › Plus porte « Carnet de séance » et « Bilan anonyme » ; la feuille des raccourcis dit C ;
+     4. le menu ⋮ › Aide porte « Carnet de séance » et « Bilan anonyme » ; la feuille des raccourcis dit C ;
      5. stockage refusé : le carnet le dit, l'outil continue.
    ========================================================================= */
 const { chromium } = require('playwright');
@@ -36,7 +36,7 @@ const FICHIER = fichierDemande();
   ok('le bilan dit le format (installation, en-têtes ligne 1)', /format : installation \(en-têtes ligne 1\)/.test(B.t));
   ok('… les colonnes reconnues, chacune avec ce que Volta y lit', /colonnes reconnues \(11\)/.test(B.t) && /Device1 → équipement 1/.test(B.t) && /Cable TG → type de câble/.test(B.t));
   ok('… et la colonne qu’il ne connaît pas', /colonnes non reconnues \(1\) : « Remarque client »/.test(B.t));
-  ok('… les liaisons, les folios, les contacts, le contrôle', /209 liaisons · 6 folios/.test(B.t) && /bouts à sertir/.test(B.t) && /LE CONTRÔLE\n- \d+ problème/.test(B.t));
+  ok('… les liaisons, les folios, les contacts, le contrôle', /223 liaisons · 6 folios/.test(B.t) && /bouts à sertir/.test(B.t) && /LE CONTRÔLE\n- \d+ problème/.test(B.t));
   ok('une référence inconnue se dit par sa forme (A, 9)', /formes : [A9*\-]+ ×\d/.test(B.t));
   ok('ANONYMAT : aucun nom du plan dans le texte copié', B.fuites.length === 0, B.noms + ' noms vérifiés' + (B.fuites.length ? ' — FUITES : ' + B.fuites.slice(0, 5).join(', ') : ''));
   ok('l’erreur de page est gardée, son repère masqué', /boom-essai sur ‹repère›/.test(B.t));
@@ -78,15 +78,15 @@ const FICHIER = fichierDemande();
   // le document : le texte tel qu'il partira, la note, l'effacer
   await p.evaluate(() => MENU.actions.bilan()); await p.waitForTimeout(600);
   const D = await p.evaluate(() => ({ mode: app.fiche && app.fiche.mode, pre: !!$('bl-texte'), notes: document.querySelectorAll('.bl-notes li').length, copier: $('bl-copier') && $('bl-copier').textContent }));
-  ok('⋮ › Plus › Bilan anonyme : le texte, le carnet, « Copier »', D.mode === 'bilan' && D.pre && D.notes === 1 && /Copier le bilan et le carnet/.test(D.copier || ''), JSON.stringify(D));
+  ok('⋮ › Aide › Bilan anonyme : le texte, le carnet, « Copier »', D.mode === 'bilan' && D.pre && D.notes === 1 && /Copier le bilan et le carnet/.test(D.copier || ''), JSON.stringify(D));
   await p.click('.bl-n-x'); await p.waitForTimeout(400);
   ok('la poubelle efface la note', await p.evaluate(() => lireCarnet().length === 0 && !document.querySelector('.bl-notes')));
 
   // 4. le menu et la feuille des raccourcis
-  const M = await p.evaluate(() => ({ plus: [...document.querySelectorAll('#mp-plus [data-act]')].map(b => b.dataset.act), carnetC: (document.querySelector('#mp-plus [data-act="carnet"] .raccourci') || {}).textContent }));
-  ok('⋮ › Plus porte « Carnet de séance » (C), « Autotest du plan » et « Bilan anonyme »', M.plus.includes('carnet') && M.plus.includes('autotest') && M.plus.includes('bilan') && M.carnetC === 'C', M.plus.join(','));
+  const M = await p.evaluate(() => ({ plus: [...document.querySelectorAll('#mp-aide [data-act]')].map(b => b.dataset.act), carnetC: (document.querySelector('#mp-aide [data-act="carnet"] .raccourci') || {}).textContent, version: ($('menu-version') || {}).textContent || '' }));
+  ok('⋮ › Aide porte « Carnet de séance » (C), « Autotest du plan » et « Bilan anonyme »', M.plus.includes('carnet') && M.plus.includes('autotest') && M.plus.includes('bilan') && M.carnetC === 'C', M.plus.join(','));
   await p.evaluate(() => { fermerFiche(true); montrerRaccourcis(); }); await p.waitForTimeout(300);
-  ok('la feuille des raccourcis dit C', await p.evaluate(() => /carnet de séance/i.test($('raccourcis').textContent)));
+  ok('la feuille des raccourcis dit C (« Noter une hésitation »)', await p.evaluate(() => /Noter une hésitation/.test($('raccourcis').textContent) && [...$('raccourcis').querySelectorAll('kbd')].some(k => k.textContent === 'C')));
 
   // 5. stockage refusé
   const p3 = await (await b.newContext({ viewport: { width: 1200, height: 800 } })).newPage(); p3.on('pageerror', x => e.push(x.message));
