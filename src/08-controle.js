@@ -279,7 +279,10 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
    porté au moins porté. Un disjoncteur n'en a qu'un ; deux, c'est une faute (« Unifier sur… »). */
 function partNumbersDuRepere(nom, V) { const m = new Map();
   (V || verite()).forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] !== nom || !l[ch]) return; const pn = String(l[ch]).trim(); if (!pn) return;
-    const e = m.get(pn) || m.set(pn, { pn, cables: [], liaisons: [] }).get(pn); e.liaisons.push([l, ch]); const c = cableDit(l); if (!e.cables.includes(c)) e.cables.push(c); }));
+    const e = m.get(pn) || m.set(pn, { pn, cables: [], liaisons: [] }).get(pn); e.liaisons.push([l, ch]);
+    // (v89) le câble se dit depuis CE repère, vers son autre bout : « DR24 vers 395SW1:1 » (il disait « vers 102CB1:2 », le repère lui-même, quand le câble y arrivait)
+    const ab = b === 'de' ? [l.vers, l.borneVers] : [l.de, l.borneDe], c = (String(l.type || '').trim() || 'câble') + (ab[0] ? ' vers ' + ab[0] + (ab[1] ? ':' + ab[1] : '') : '');
+    if (!e.cables.includes(c)) e.cables.push(c); }));
   return [...m.values()].sort((a, b) => b.liaisons.length - a.liaisons.length || triNaturel(a.pn, b.pn)); }
 /* UNIFIER un repère sur un part number : chaque liaison qui en porte un autre prend celui-ci (le fichier gardé dans
    `avant`) ; une entrée d'historique, Ctrl+Z la défait. */

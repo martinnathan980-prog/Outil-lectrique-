@@ -10441,7 +10441,7 @@ svg.vu-face text.pris{fill:#fff}
       <!-- LE TABLEAU EN CSV (v73 : le technicien prenait « Exporter » pour l'installation corrigée, l'ingénieur confondait son
            « Tout » avec celui de la portée) : un menu qui dit ce qu'il sort — ce qui est montré, tout l'onglet — et, sous un
            filet, l'installation corrigée, l'Excel à renvoyer (08-recap, `rendreExport`) -->
-      <details class="doc-menu rc-export" id="ba-csv-menu"><summary class="btn papier" id="ba-csv" aria-label="Tableau en CSV" data-bulle="Le tableau de cet onglet, en CSV — pas l’Excel corrigé : elle est au bas de ce menu, et dans ⋮ › Exporter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 10h17M3.5 14.5h17M9.5 10v9"/></svg><span class="rc-csv-mot">Tableau en CSV</span><svg class="ico rc-csv-v" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="doc-menu-l" role="menu" id="ba-csv-l"></div></details>
+      <details class="doc-menu rc-export" id="ba-csv-menu"><summary class="btn papier" id="ba-csv" aria-label="Tableau en CSV" data-bulle="Le tableau de cet onglet, en CSV — pas l’Excel corrigé : il est au bas de ce menu, et dans ⋮ › Exporter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 10h17M3.5 14.5h17M9.5 10v9"/></svg><span class="rc-csv-mot">Tableau en CSV</span><svg class="ico rc-csv-v" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="doc-menu-l" role="menu" id="ba-csv-l"></div></details>
       <!-- la croix : le lecteur cherchait comment fermer — « Plan » le faisait, mais ne se lisait pas comme une sortie -->
       <button class="rond fermer" id="ba-x" aria-label="Fermer le récapitulatif (B ou Échap)" data-bulle="Fermer le récapitulatif (B)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </header>
@@ -10489,7 +10489,7 @@ svg.vu-face text.pris{fill:#fff}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '6354fb6f7a02';
+const VERSION_MOTEUR = 'c95f2247370c';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -15967,7 +15967,7 @@ function polesDuDisjoncteur(bs) {
 }
 /* LE DISJONCTEUR, en coordonnées du bloc ; null s'il ne tient pas (le bloc garde alors la boîte). `info` : ce que
    l'interface en sait — { calibre (en A, le retenu), retest (en A : celui du part number écrit dans l'installation, quand
-   il en diffère — « (installation 10 A) » s'écrit sous « 15 A », 08-export `calibresAuFolio`), tableau (« 121VU B05 », quand la nomenclature du
+   il en diffère — « (fichier 10 A) » s’écrit sous « 15 A », 08-export `calibresAuFolio`), tableau (« 121VU B05 », quand la nomenclature du
    lecteur viendra) } ;
    `aGauche(y)`, `aDroite(y)` : la couleur du fil qui arrive à cette hauteur (absolue), comme pour un équipement. */
 function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
@@ -16055,13 +16055,14 @@ function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
      inachevé (le technicien v73) */
   const ligneDes = (t, W, n) => { t = String(t); const fs = Math.max(5.6, Math.min(6.8, W / Math.max(1, Math.min(n, t.length)) / (CAR + 0.4 / 6.8)));
     return { cls: 'des', t: tient(t, fs, 0.4 * fs / 6.8, W, n), fs, ls: 0.4 * fs / 6.8 }; };
-  /* le calibre de l'installation, quand le part number écrit en dit un autre (l'ingénieur v73, n° 6 : « 15 A » et, dessous,
-     « (installation 10 A) » — v74 : le lecteur lit « installation », plus « retest ») : il se resserre jusqu'à 5,4 (9 px
-     d'écran à 100 %), perd ses parenthèses, passe sur deux lignes (« installation », « 10 A » : le mot entier tient où tient
-     le repère) ; si rien de cela ne trouve de place, il s'abrège (« install. 10 A ») ; sinon il se tait — le symbole du
+  /* le calibre du fichier, quand le part number écrit en dit un autre (l'ingénieur v73, n° 6 : « 15 A » et, dessous,
+     « (fichier 10 A) ») : il se resserre jusqu'à 5,4 (9 px d'écran à 100 %), perd ses parenthèses, passe sur deux lignes
+     (« fichier », « 10 A » : le mot entier tient où tient le repère) ; si rien de cela ne trouve de place, il s'abrège
+     (« fich. 10 A ») ; sinon il se tait — le symbole du
      disjoncteur passe avant. `niveau` : 0 le mot entier, 1 l'abrégé, 2 rien. */
   const ligneRet = (W, niveau) => { const a = amperesCb(retest), fsDe = t => Math.min(6, (W / t.length - 0.3) / CAR);
-    for (const f of niveau === 0 ? [['(installation ' + a + ')'], ['installation ' + a], ['installation', a]] : niveau === 1 ? [['install. ' + a]] : []) { const fs = Math.min(...f.map(fsDe));
+    // (v89) « fichier », plus « installation » : ce mot ne nomme plus que le classement de la bibliothèque (la charte, v86)
+    for (const f of niveau === 0 ? [['(fichier ' + a + ')'], ['fichier ' + a], ['fichier', a]] : niveau === 1 ? [['fich. ' + a]] : []) { const fs = Math.min(...f.map(fsDe));
       if (fs >= 5.4) return f.map(t => ({ cls: 'cb-ret', t, fs: Math.floor(fs * 10) / 10, ls: 0.3 })); } return []; };
   let niveau = calibre && retest ? 0 : 2;
   const lignes = W => { const L = [{ cls: 'rep-big', t: nom, fs: Math.max(7, Math.min(10.5, (W / nom.length - 1.15) / CAR)), ls: 1.15 }];
@@ -17848,9 +17849,9 @@ function remplirSelonNorme(P, norme) {
      · `chuteTri` : 4 V (défaut) — « 4 V en triphasé », contre la chute composée (entre deux phases).
        Des maxima : une pointe n'a pas droit au double. Vide (null) : la table Réseau de la norme (AC 43.13-1B table 11-6 :
        1 V sous 28 V, 4 V sous 115 V, 7 V entre phases, le double en intermittent). */
-/* (v88) `courant` ne sert plus qu'à la calculette `simulerBornier` (les batteries) : l'application ne prête plus aucun courant à un
-   câble (le lecteur : « l'outil dit la vérité, pas inventé ») — ni le panneau Hypothèses, ni les fiches, ni les exports ne le lisent. */
-const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], fils: 8, charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125,
+/* (v88, v89) plus aucun courant supposé, même en réserve : l'application ne prête aucun courant à un câble (le lecteur : « l'outil
+   dit la vérité, pas inventé »). La calculette `simulerBornier` (les batteries) reçoit le sien de qui l'appelle. */
+const HYPOTHESES = { longueur: 5, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], fils: 8, charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125,
   chuteConducteur: 'estimee', chuteDisjoncteur: true, frequence: 400, marge: 0, margeTemps: 100, prechauffage: 1.6, calibresPreferes: [1, 3, 5, 7.5, 10, 15, 20, 25], chuteMono: 2, chuteTri: 4, calibreAuto: true };
 const RETOURS = { structure: 'par la structure : seul l’aller compte', fil: 'par un câble : l’aller et le retour comptent' };
 const MODES_CONDUCTEUR = { estimee: 'estimée sous le courant (AC 43.13-1B § 11-66 d(6))', fixe: 'fixe : l’hypothèse « conducteur » (20 °C, comme l’Excel)' };
@@ -24771,7 +24772,10 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
    porté au moins porté. Un disjoncteur n'en a qu'un ; deux, c'est une faute (« Unifier sur… »). */
 function partNumbersDuRepere(nom, V) { const m = new Map();
   (V || verite()).forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] !== nom || !l[ch]) return; const pn = String(l[ch]).trim(); if (!pn) return;
-    const e = m.get(pn) || m.set(pn, { pn, cables: [], liaisons: [] }).get(pn); e.liaisons.push([l, ch]); const c = cableDit(l); if (!e.cables.includes(c)) e.cables.push(c); }));
+    const e = m.get(pn) || m.set(pn, { pn, cables: [], liaisons: [] }).get(pn); e.liaisons.push([l, ch]);
+    // (v89) le câble se dit depuis CE repère, vers son autre bout : « DR24 vers 395SW1:1 » (il disait « vers 102CB1:2 », le repère lui-même, quand le câble y arrivait)
+    const ab = b === 'de' ? [l.vers, l.borneVers] : [l.de, l.borneDe], c = (String(l.type || '').trim() || 'câble') + (ab[0] ? ' vers ' + ab[0] + (ab[1] ? ':' + ab[1] : '') : '');
+    if (!e.cables.includes(c)) e.cables.push(c); }));
   return [...m.values()].sort((a, b) => b.liaisons.length - a.liaisons.length || triNaturel(a.pn, b.pn)); }
 /* UNIFIER un repère sur un part number : chaque liaison qui en porte un autre prend celui-ci (le fichier gardé dans
    `avant`) ; une entrée d'historique, Ctrl+Z la défait. */
@@ -32025,7 +32029,7 @@ function designationDe(n) { const d = app.contrat.designations.get(n);
    fluidité v72 : 290 ms par clic, dont la moitié à refaire le SVG). */
 let peint = { dessin: null, sig: '' };
 /* Le calibre qu'un disjoncteur écrit au folio : le retenu, et celui de l'installation quand le part number écrit en dit un
-   autre (08-export, `calibresAuFolio` : « 15 A » et « (installation 10 A) » dessous — l'écran, l'impression, le SVG,
+   autre (08-export, `calibresAuFolio` : « 15 A » et « (fichier 10 A) » dessous — l'écran, l'impression, le SVG,
    le PNG et le dossier PDF disent la même chose). */
 const calibresDuFolio = n => typeof calibresAuFolio === 'function' ? calibresAuFolio(n) : { calibre: calibreAuFolio(n), retest: null };
 function peindre() {

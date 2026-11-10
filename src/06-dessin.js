@@ -758,7 +758,7 @@ function polesDuDisjoncteur(bs) {
 }
 /* LE DISJONCTEUR, en coordonnées du bloc ; null s'il ne tient pas (le bloc garde alors la boîte). `info` : ce que
    l'interface en sait — { calibre (en A, le retenu), retest (en A : celui du part number écrit dans l'installation, quand
-   il en diffère — « (installation 10 A) » s'écrit sous « 15 A », 08-export `calibresAuFolio`), tableau (« 121VU B05 », quand la nomenclature du
+   il en diffère — « (fichier 10 A) » s’écrit sous « 15 A », 08-export `calibresAuFolio`), tableau (« 121VU B05 », quand la nomenclature du
    lecteur viendra) } ;
    `aGauche(y)`, `aDroite(y)` : la couleur du fil qui arrive à cette hauteur (absolue), comme pour un équipement. */
 function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
@@ -846,13 +846,14 @@ function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
      inachevé (le technicien v73) */
   const ligneDes = (t, W, n) => { t = String(t); const fs = Math.max(5.6, Math.min(6.8, W / Math.max(1, Math.min(n, t.length)) / (CAR + 0.4 / 6.8)));
     return { cls: 'des', t: tient(t, fs, 0.4 * fs / 6.8, W, n), fs, ls: 0.4 * fs / 6.8 }; };
-  /* le calibre de l'installation, quand le part number écrit en dit un autre (l'ingénieur v73, n° 6 : « 15 A » et, dessous,
-     « (installation 10 A) » — v74 : le lecteur lit « installation », plus « retest ») : il se resserre jusqu'à 5,4 (9 px
-     d'écran à 100 %), perd ses parenthèses, passe sur deux lignes (« installation », « 10 A » : le mot entier tient où tient
-     le repère) ; si rien de cela ne trouve de place, il s'abrège (« install. 10 A ») ; sinon il se tait — le symbole du
+  /* le calibre du fichier, quand le part number écrit en dit un autre (l'ingénieur v73, n° 6 : « 15 A » et, dessous,
+     « (fichier 10 A) ») : il se resserre jusqu'à 5,4 (9 px d'écran à 100 %), perd ses parenthèses, passe sur deux lignes
+     (« fichier », « 10 A » : le mot entier tient où tient le repère) ; si rien de cela ne trouve de place, il s'abrège
+     (« fich. 10 A ») ; sinon il se tait — le symbole du
      disjoncteur passe avant. `niveau` : 0 le mot entier, 1 l'abrégé, 2 rien. */
   const ligneRet = (W, niveau) => { const a = amperesCb(retest), fsDe = t => Math.min(6, (W / t.length - 0.3) / CAR);
-    for (const f of niveau === 0 ? [['(installation ' + a + ')'], ['installation ' + a], ['installation', a]] : niveau === 1 ? [['install. ' + a]] : []) { const fs = Math.min(...f.map(fsDe));
+    // (v89) « fichier », plus « installation » : ce mot ne nomme plus que le classement de la bibliothèque (la charte, v86)
+    for (const f of niveau === 0 ? [['(fichier ' + a + ')'], ['fichier ' + a], ['fichier', a]] : niveau === 1 ? [['fich. ' + a]] : []) { const fs = Math.min(...f.map(fsDe));
       if (fs >= 5.4) return f.map(t => ({ cls: 'cb-ret', t, fs: Math.floor(fs * 10) / 10, ls: 0.3 })); } return []; };
   let niveau = calibre && retest ? 0 : 2;
   const lignes = W => { const L = [{ cls: 'rep-big', t: nom, fs: Math.max(7, Math.min(10.5, (W / nom.length - 1.15) / CAR)), ls: 1.15 }];

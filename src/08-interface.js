@@ -828,7 +828,7 @@ function designationDe(n) { const d = app.contrat.designations.get(n);
    fluidité v72 : 290 ms par clic, dont la moitié à refaire le SVG). */
 let peint = { dessin: null, sig: '' };
 /* Le calibre qu'un disjoncteur écrit au folio : le retenu, et celui de l'installation quand le part number écrit en dit un
-   autre (08-export, `calibresAuFolio` : « 15 A » et « (installation 10 A) » dessous — l'écran, l'impression, le SVG,
+   autre (08-export, `calibresAuFolio` : « 15 A » et « (fichier 10 A) » dessous — l'écran, l'impression, le SVG,
    le PNG et le dossier PDF disent la même chose). */
 const calibresDuFolio = n => typeof calibresAuFolio === 'function' ? calibresAuFolio(n) : { calibre: calibreAuFolio(n), retest: null };
 function peindre() {

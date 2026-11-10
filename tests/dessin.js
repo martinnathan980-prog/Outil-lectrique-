@@ -61,7 +61,7 @@ const FICHIER = P.fichierDemande();
   await charger(); await page.evaluate(() => atelier.exemple()); await page.waitForFunction(() => !!app.dessin);
   // v73 (le technicien : « à l'ouverture, le folio n'est qu'une poussière de traits ») : le plan s'ouvre cadré sur le DESSIN
   await page.waitForFunction(() => !anim); await page.waitForTimeout(80);
-  const ouverture = await page.evaluate(() => ({ cadrage: VUE.cadrage, dessin: memeVue(app.vue, cadrageDe('dessin')), z: $('zlbl').textContent }));
+  const ouverture = await page.evaluate(() => ({ cadrage: VUE.cadrage, dessin: memeVue(app.vue, cadrageDe('dessin')), feuille: memeVue(app.vue, cadrageDe('feuille')), z: $('zlbl').textContent.replace(/[\u00a0\u202f]/g, ' ') }));
   const folio = async p => { await page.evaluate(p => { deselectionner(); allerAuPlan(p); }, p); await page.waitForFunction(p => app.plan === p && !!app.dessin, p); await page.waitForTimeout(300); };
   const feuille = () => page.evaluate(() => { VUE.cadrage = 'feuille'; ajuster(); });
   // le centre d'un bloc à l'écran (son haut, pour un bloc très haut)
@@ -70,7 +70,7 @@ const FICHIER = P.fichierDemande();
   const ecranDuPoint = (x, y) => page.evaluate(([x, y]) => { const r = $('planche').getBoundingClientRect(); return { x: r.left + app.vue.tx + x * app.vue.s, y: r.top + app.vue.ty + y * app.vue.s }; }, [x, y]);
   // la vue posée à `pct` % de la feuille, le point (x, y) du dessin au centre de la planche
   const zoomSur = (pct, x, y) => page.evaluate(([pct, x, y]) => { const r = cadre(), s = pct / 100 / app.dessin.bbox.k; app.vue = { s, tx: r.width / 2 - x * s, ty: r.height / 2 - y * s }; appliquerVue(); }, [pct, x, y]);
-  const zoom = () => page.evaluate(() => $('zlbl').textContent);
+  const zoom = () => page.evaluate(() => $('zlbl').textContent.replace(/[\u00a0\u202f]/g, ' '));
   // la vue posée : l'animation du cadrage (260 ms, bien plus sur une machine chargée) est finie
   const posee = async () => { await page.waitForFunction(() => !anim); await page.waitForTimeout(60); };
   const opacite = (sel, n) => page.evaluate(([sel, n]) => { const e = document.querySelectorAll(sel)[n || 0]; if (!e) return null; let o = 1; for (let x = e; x && x.id !== 'svg'; x = x.parentElement) o *= +getComputedStyle(x).opacity; return +o.toFixed(3); }, [sel, n]);
@@ -90,7 +90,7 @@ const FICHIER = P.fichierDemande();
   const nums = await page.evaluate(() => { const op = e => { let o = 1; for (let x = e; x && x.id !== 'svg'; x = x.parentElement) o *= +getComputedStyle(x).opacity; return o; };
     const t = [...document.querySelectorAll('#scene text.filnum')], eteints = t.filter(e => !e.classList.contains('hl')).map(op), allumes = t.filter(e => e.classList.contains('hl'));
     return { n: t.length, maxEteint: +Math.max(...eteints).toFixed(2), allumes: allumes.length, gras: allumes.every(e => +getComputedStyle(e).fontWeight >= 700), relies: t.every(e => e.dataset.i != null) }; });
-  ok(nums.maxEteint < 0.3 && nums.allumes >= 2 && nums.gras && nums.relies, 'les numéros des câbles éteints reculent (moins de 0,3), ceux du bloc choisi s’allument, en gras ; chacun est relié à son câble', JSON.stringify(nums));
+  ok(nums.n === 0, 'un câble n’a plus de numéro sur le plan (v84) : aucun ne s’écrit, bloc choisi ou non', JSON.stringify(nums));
   // W-012 : de 102CB1 à 103RL1, par la barrette à poser VT1
   await folio('1'); await page.evaluate(() => choisirFil(app.dessin.fils.find(w => w.cable === 'W-012'))); await page.waitForTimeout(300);
   await zoomSur(200, 300, 235); await page.waitForTimeout(150);
@@ -112,9 +112,9 @@ const FICHIER = P.fichierDemande();
   await page.evaluate(() => deselectionner()); await feuille(); await page.waitForTimeout(300);
   const s0 = await page.evaluate(() => app.vue.s);
   await page.evaluate(() => $('zfit').click()); await posee();
-  const s1 = await page.evaluate(() => ({ s: app.vue.s, c: VUE.cadrage, z: $('zlbl').textContent }));
+  const s1 = await page.evaluate(() => ({ s: app.vue.s, c: VUE.cadrage, z: $('zlbl').textContent.replace(/[\u00a0\u202f]/g, ' ') }));
   await page.evaluate(() => $('zfit').click()); await posee();
-  const s2 = await page.evaluate(() => ({ s: app.vue.s, c: VUE.cadrage, z: $('zlbl').textContent }));
+  const s2 = await page.evaluate(() => ({ s: app.vue.s, c: VUE.cadrage, z: $('zlbl').textContent.replace(/[\u00a0\u202f]/g, ' ') }));
   // (passe 87) le folio 1 remplit sa feuille (06, `pageDe`) : la feuille entière est déjà à 88 % en 1440 ; le dessin au plus près
   // ne recule jamais derrière elle
   ok(s1.c === 'dessin' && s1.s >= s0 - 1e-9 && s2.c === 'feuille' && Math.abs(s2.s - s0) < s0 * 0.02, '« Ajuster » alterne : la feuille, puis le dessin au plus près (folio 1 : ' + s1.z + '), puis la feuille', JSON.stringify({ s0, s1, s2 }));
@@ -128,7 +128,7 @@ const FICHIER = P.fichierDemande();
   ok(crans.join() === '70 %,75 %,100 %,150 %,100 %', 'les pas du zoom tombent sur des crans', crans.join(' → '));
   await page.mouse.move(700, 450); await page.keyboard.press('2'); const z2 = await zoom(); await page.keyboard.press('1'); const z1 = await zoom();
   ok(z2 === '200 %' && z1 === '100 %', 'la touche 2 : 200 %, la touche 1 : 100 %', z2 + ' · ' + z1);
-  const bornes = await page.evaluate(() => { ajuster(); const f = app.vue.s; zoomer(0.001); const bas = app.vue.s / f; zoomer(1e5); const haut = $('zlbl').textContent; ajuster(); return { bas: +bas.toFixed(2), haut }; });
+  const bornes = await page.evaluate(() => { ajuster(); const f = app.vue.s; zoomer(0.001); const bas = app.vue.s / f; zoomer(1e5); const haut = $('zlbl').textContent.replace(/[\u00a0\u202f]/g, ' '); ajuster(); return { bas: +bas.toFixed(2), haut }; });
   ok(bornes.bas >= 0.49 && parseInt(bornes.haut) <= 600 && parseInt(bornes.haut) >= 400, 'le zoom va de la moitié de la feuille entière à 400 % (600 % au plus)', JSON.stringify(bornes));
   ok(await page.evaluate(() => $('scene').classList.contains('loin')), 'à la page entière (un trait sous le pixel), le folio est « loin » : ses traits s’épaississent');
   await zoomSur(200, 640, 300); ok(!(await page.evaluate(() => $('scene').classList.contains('loin'))), 'à 200 %, il ne l’est plus');
@@ -136,13 +136,13 @@ const FICHIER = P.fichierDemande();
   await page.mouse.move(700, 450); await page.keyboard.press('2');
   const v3 = await page.evaluate(() => ({ s: app.vue.s, cx: (cadre().width / 2 - app.vue.tx) / app.vue.s, main: VUE.main }));
   await folio('4'); await folio('3');
-  const v3b = await page.evaluate(() => ({ s: app.vue.s, z: $('zlbl').textContent }));
+  const v3b = await page.evaluate(() => ({ s: app.vue.s, z: $('zlbl').textContent.replace(/[\u00a0\u202f]/g, ' ') }));
   ok(v3.main && Math.abs(v3b.s - v3.s) < 0.001 && v3b.z === '200 %', 'chaque folio garde sa vue : le folio 3 quitté à 200 % s’y retrouve', JSON.stringify({ avant: v3, apres: v3b }));
   await page.evaluate(() => aller({ type: 'repere', nom: '352PM2' })); await posee();
   await folio('4'); await folio('3');
   // (v73 : le pourcentage se lit par rapport à l'écriture, plus à la feuille — la feuille cadrée du folio 3 n'est plus « 59 % » :
   // on vérifie le cadrage lui-même)
-  const recadre = await page.evaluate(() => ({ feuille: memeVue(app.vue, cadrageDe('feuille')), z: $('zlbl').textContent }));
+  const recadre = await page.evaluate(() => ({ feuille: memeVue(app.vue, cadrageDe('feuille')), z: $('zlbl').textContent.replace(/[\u00a0\u202f]/g, ' ') }));
   ok(recadre.feuille, 'une vue posée par l’outil (aller voir 352PM2) ne se garde pas : le folio revient cadré (la feuille)', JSON.stringify(recadre));
   await page.mouse.move(700, 450); await page.keyboard.press('2'); await folio('4'); await folio('3');
   await page.waitForTimeout(1200);
@@ -151,12 +151,12 @@ const FICHIER = P.fichierDemande();
   // le lendemain : la page quittée garde la vue ; rouvert sur le folio 3, `retrouverVue` la rend (relire et la bibliothèque
   // l'appelleront : demande au domaine du parcours), et l'aller-retour entre folios aussi
   await charger(); await page.evaluate(() => atelier.reprendre()); await page.waitForFunction(() => !!app.dessin);
-  const lendemain = await page.evaluate(() => { const plan = app.plan, rendue = retrouverVue(); return { plan, rendue, z: $('zlbl').textContent }; });
+  const lendemain = await page.evaluate(() => { const plan = app.plan, rendue = retrouverVue(); return { plan, rendue, z: $('zlbl').textContent.replace(/[\u00a0\u202f]/g, ' ') }; });
   await page.evaluate(() => { allerAuPlan('4'); allerAuPlan('3'); }); await page.waitForTimeout(300);
   ok(lendemain.plan === '3' && lendemain.rendue && lendemain.z === '200 %' && await zoom() === '200 %', 'après un rechargement, on rouvre au folio 3, à sa vue (200 %)', JSON.stringify(lendemain));
   // la recherche : 412VC3B (folio 5) arrive lisible
   await page.evaluate(() => { allerAuPlan('1'); VUE.cadrage = 'feuille'; ajuster(); aller({ type: 'repere', nom: '412VC3B' }); }); await page.waitForTimeout(300); await posee();
-  const rech = await page.evaluate(() => { const c = app.dessin.comps.find(k => k.name === '412VC3B' && k.kind !== 'tag'), r = cadre(), m = marges(); return { plan: app.plan, px: +(FS_FIL * app.vue.s).toFixed(1), tient: c.h * app.vue.s <= r.height - m.haut - m.bas, z: $('zlbl').textContent }; });
+  const rech = await page.evaluate(() => { const c = app.dessin.comps.find(k => k.name === '412VC3B' && k.kind !== 'tag'), r = cadre(), m = marges(); return { plan: app.plan, px: +(FS_FIL * app.vue.s).toFixed(1), tient: c.h * app.vue.s <= r.height - m.haut - m.bas, z: $('zlbl').textContent.replace(/[\u00a0\u202f]/g, ' ') }; });
   ok(rech.plan === '5' && rech.px >= 9.9, 'la recherche de 412VC3B arrive lisible : un numéro de câble à ' + rech.px + ' px (' + rech.z + ')', JSON.stringify(rech));
   await page.evaluate(() => { deselectionner(); fermerInspecteur(); allerAuPlan('3'); const c = app.dessin.comps.find(k => k.name === '300XC1' && k.kind !== 'tag'); VUE.cadrage = 'feuille'; ajuster(); choisirBloc(c); viser('300XC1'); }); await page.waitForTimeout(300); await posee();
   const haut = await page.evaluate(() => { const c = app.dessin.comps.find(k => k.name === '300XC1' && k.kind !== 'tag'), r = cadre(), m = marges(), y0 = app.vue.ty + c.y * app.vue.s, y1 = y0 + c.h * app.vue.s; return { y0, y1, haut: m.haut, bas: r.height - m.bas }; });
@@ -229,7 +229,7 @@ const FICHIER = P.fichierDemande();
   const w334 = await page.evaluate(() => { const w = app.dessin.fils.find(w => w.cable === 'W-334'), a = w.pts[0], b = w.pts[1]; return { x: (a.x + b.x) / 2, y: a.y }; });
   const ew = await ecranDuPoint(w334.x, w334.y); await page.mouse.move(ew.x - 20, ew.y - 20); await page.mouse.move(ew.x, ew.y, { steps: 2 }); await page.waitForTimeout(800);
   const bulleF = await page.evaluate(() => { const b = $('pl-bulle'); return b && !b.hidden ? b.textContent : ''; });
-  ok(/W-334/.test(bulleF) && /→/.test(bulleF) && /BLINDÉ/.test(bulleF), 'la souris posée sur un câble : son numéro, de → vers, sa route', bulleF);
+  ok(/MLB24/.test(bulleF) && /409VC2A:B → 371CP1:2/.test(bulleF) && /BLINDÉ/.test(bulleF) && !/W-334/.test(bulleF), 'la souris posée sur un câble : son type, de → vers, sa route — plus de numéro (un câble se dit par son type et ses deux bouts)', bulleF);
   const e3c = await ecranDe('300XC1'); await page.mouse.move(e3c.x, e3c.y + 60); await page.mouse.move(e3c.x, e3c.y + 80, { steps: 2 }); await page.waitForTimeout(800);
   const bulleB = await page.evaluate(() => { const b = $('pl-bulle'); return b && !b.hidden ? b.textContent : ''; });
   ok(/300XC1/.test(bulleB) && /\d+ câbles sur ce folio/.test(bulleB), 'sur un bloc : son repère, ses câbles sur ce folio', bulleB);
@@ -255,35 +255,31 @@ const FICHIER = P.fichierDemande();
   const prise = await page.evaluate(() => { const g = [...document.querySelectorAll('#scene .comp')].find(x => x.dataset.name === '412VC3B'), s = g.querySelector('.selbox').getBBox(), c = app.dessin.comps.find(k => k.name === '412VC3B' && k.kind !== 'tag'); return { large: Math.round(s.width), bloc: c.w }; });
   ok(prise.large < prise.bloc / 2, 'les crochets d’une prise entourent sa réglette, pas ses amenées', JSON.stringify(prise));
   // v73 (le technicien, le domaine B) : un repère dessiné plusieurs fois — crochets pleins sur l'occurrence cliquée, pointillés ailleurs
-  const vt31 = await page.evaluate(() => { deselectionner(); allerAuPlan('3'); const cs = app.dessin.comps.filter(k => k.name === '668VT31'), c = cs[cs.length - 1]; choisirBloc(c);
+  const vt31 = await page.evaluate(() => { deselectionner(); allerAuPlan('3'); const cs = app.dessin.comps.filter(k => k.name === '668VT3'), c = cs[cs.length - 1]; choisirBloc(c);
     return { n: cs.length, k: app.dessin.comps.indexOf(c), pleins: [...document.querySelectorAll('#scene .comp .selbox:not(.selbox-autre)')].map(e => +e.closest('.comp').dataset.k), autres: document.querySelectorAll('#scene .selbox-autre').length }; });
-  ok(vt31.n > 1 && vt31.pleins.length === 1 && vt31.pleins[0] === vt31.k && vt31.autres === vt31.n - 1, '668VT31, dessinée en ' + vt31.n + ' morceaux : des crochets pleins sur le morceau cliqué, en pointillé sur les autres', JSON.stringify(vt31));
+  ok(vt31.n > 1 && vt31.pleins.length === 1 && vt31.pleins[0] === vt31.k && vt31.autres === vt31.n - 1, '668VT3, dessinée en ' + vt31.n + ' morceaux : des crochets pleins sur le morceau cliqué, en pointillé sur les autres', JSON.stringify(vt31));
   await page.evaluate(() => deselectionner());
 
   /* ---- LE FOLIO SE LIT (v73 : l'ergonome, le technicien, le designer) ---- */
   console.log('\nLE FOLIO SE LIT');
-  ok(ouverture.cadrage === 'dessin' && ouverture.dessin, 'le plan s’ouvre cadré sur le dessin, pas sur la feuille', JSON.stringify(ouverture));
+  ok(ouverture.cadrage === 'feuille' && ouverture.feuille, 'le plan s’ouvre cadré sur sa feuille (v84 : le folio blanc, entier, posé sur la table — comme le bouton de cadrage)', JSON.stringify(ouverture));
   await page.evaluate(() => deselectionner()); await folio('3'); await page.mouse.move(700, 450);
   await page.evaluate(() => zoomerA(1)); await page.waitForTimeout(300);
   const cent = await page.evaluate(() => { const par = {}; document.querySelectorAll('#scene text').forEach(t => { const k = (t.getAttribute('class') || 'texte').split(' ')[0], m = t.getScreenCTM(); if (!m) return;
       (par[k] = par[k] || []).push(parseFloat(getComputedStyle(t).fontSize) * Math.hypot(m.a, m.b)); });
     const med = xs => xs.sort((a, b) => a - b)[Math.floor(xs.length / 2)], petits = Object.entries(par).map(([k, xs]) => [k, +med(xs).toFixed(1)]).filter(([, v]) => v < 8.995);
-    return { z: $('zlbl').textContent, filnum: +med(par.filnum).toFixed(1), petits, tait: $('scene').classList.contains('tait') }; });
-  ok(cent.z === '100 %' && Math.abs(cent.filnum - 11) < 0.3 && !cent.petits.length && !cent.tait, 'à 100 %, un numéro de câble fait 11 px, et aucune écriture du folio 3 ne fait moins de 9 px', JSON.stringify(cent));
+    return { z: $('zlbl').textContent.replace(/[\u00a0\u202f]/g, ' '), filnum: (par.filnum || []).length, petits, tait: $('scene').classList.contains('tait') }; });
+  ok(cent.z === '100 %' && !cent.filnum && !cent.petits.length && !cent.tait, 'à 100 %, aucune écriture du folio 3 ne fait moins de 9 px (les numéros de borne compris)', JSON.stringify(cent));
   await page.mouse.move(700, 20); await feuille(); await page.waitForTimeout(200);   // la souris hors du plan : rien d'allumé
   // les écritures se taisent en 140 ms (bien plus sur une machine chargée) : on les lit posées
-  await page.waitForFunction(() => { const t = document.querySelector('#scene text.filnum'); return !!t && +getComputedStyle(t).opacity < 0.02; }, null, { timeout: 8000 }).catch(() => {});
-  const carte = await page.evaluate(() => { const op = e => +getComputedStyle(e).opacity, t = document.querySelector('#scene text.filnum'), h = document.querySelector('#scene rect.halo'), r = document.querySelector('#scene .comp text.rep-big');
-    return { classes: $('scene').getAttribute('class'), num: op(t), halo: op(h), repere: op(r), px: +(FS_FIL * app.vue.s).toFixed(1) }; });
-  ok(/\btait\b/.test(carte.classes) && carte.num < 0.02 && carte.halo < 0.02 && carte.repere === 1, 'la feuille entière se lit comme une carte : sous 7 px, les numéros se taisent (le câble se referme), les repères restent', JSON.stringify(carte));
-  await page.evaluate(() => choisirFil(app.dessin.fils.find(w => w.cable === 'W-334')));   // la loupe paraît (140 ms), le numéro s'allume : on les lit posés
-  await page.waitForFunction(() => { const l = document.querySelector('#scene .loupe'), t = [...document.querySelectorAll('#scene text.filnum')].find(x => x.textContent === 'W-334');
-    return !!l && !l.getAnimations({ subtree: true }).some(a => a.playState === 'running') && !!t && +getComputedStyle(t).opacity > 0.98; }, null, { timeout: 8000 }).catch(() => {});
-  const lu334 = await page.evaluate(() => { const t = document.querySelector('#scene .loupe text.lp-n'), m = t && t.getScreenCTM();
-    return { mot: t && t.textContent, px: t ? +(parseFloat(getComputedStyle(t).fontSize) * Math.hypot(m.a, m.b)).toFixed(1) : 0, natif: +getComputedStyle([...document.querySelectorAll('#scene text.filnum')].find(x => x.textContent === 'W-334')).opacity }; });
-  ok(lu334.mot === 'W-334' && Math.abs(lu334.px - 11) < 0.3 && lu334.natif === 1, 'le câble choisi parle : son numéro se lève à 11 px (la loupe), le sien reste allumé dessous', JSON.stringify(lu334));
-  const sansLoupe = await page.evaluate(() => { deselectionner(); const a = !document.querySelector('#scene .loupe'); choisirFil(app.dessin.fils.find(w => w.cable === 'W-334')); zoomerA(1); const b = !document.querySelector('#scene .loupe'); deselectionner(); return { eteint: a, cent: b }; });
-  ok(sansLoupe.eteint && sansLoupe.cent, 'la loupe s’en va avec le choix, et à 100 % (le numéro se lit seul)', JSON.stringify(sansLoupe));
+  await page.waitForTimeout(400);
+  const carte = await page.evaluate(() => { const op = e => { let o = 1; for (let x = e; x && x.id !== 'svg'; x = x.parentElement) o *= +getComputedStyle(x).opacity; return o; }, T = [...document.querySelectorAll('#scene text')];
+    return { classes: $('scene').getAttribute('class') || '', textes: T.length, caches: T.filter(t => op(t) < 0.5 || getComputedStyle(t).display === 'none' || getComputedStyle(t).visibility === 'hidden').length, bornes: document.querySelectorAll('#scene text.connpin').length, reperes: document.querySelectorAll('#scene text.rep-big').length }; });
+  ok(!/\btait\b/.test(carte.classes) && carte.textes > 100 && carte.caches === 0 && carte.bornes > 50 && carte.reperes > 10, 'sur le plan, rien n’est caché (v86) : la feuille entière garde ses repères et ses bornes, fines comme sur le papier — on zoome pour lire', JSON.stringify(carte));
+  await page.evaluate(() => choisirFil(app.dessin.fils.find(w => w.cable === 'W-334'))); await page.waitForTimeout(500);
+  const lu334 = await page.evaluate(() => ({ trait: document.querySelectorAll('#scene path.cab.hl').length, blocs: document.querySelectorAll('#scene g.comp.hl').length, loupe: !!document.querySelector('#scene .loupe'), numero: document.querySelectorAll('#scene text.filnum').length, cible: app.cible && app.cible.type, carte: !$('inspecteur').hidden }));
+  ok(lu334.trait >= 1 && lu334.blocs === 2 && !lu334.loupe && !lu334.numero && lu334.cible === 'fil' && lu334.carte, 'le câble choisi s’allume avec ses deux bouts, sa carte s’ouvre — ni loupe ni numéro (le câble se dit dans sa carte : son type, ses deux bouts)', JSON.stringify(lu334));
+  await page.evaluate(() => { deselectionner(); fermerInspecteur(); });
   // le calibre de l'installation sous le calibre retenu (le domaine C, D-1 : le folio dit ce que le dossier PDF dit). v74 : la règle
   // du calibre a déjà écrit MS3320-15 dans l'installation — le folio n'écrit qu'« 15 A » ; l'écart se juge plus bas, sur l'exemple
   // sans la règle (« (installation 10 A) »)
@@ -309,11 +305,11 @@ const FICHIER = P.fichierDemande();
   await page.evaluate(() => { deselectionner(); fermerInspecteur(); });
   // cadré sur son dessin, la carte épinglée en volet : le dessin se recadre à côté (rien de lui sous le volet)
   await page.evaluate(() => { VUE.cadrage = 'dessin'; ajuster(true); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(600);
-  await page.click('#fi-epingle'); await page.waitForTimeout(500); await posee();
-  const epi = await page.evaluate(() => { const b = boiteDuDessin(app.dessin), r = $('planche').getBoundingClientRect(), s = app.vue.s, q = $('inspecteur').getBoundingClientRect();
-    return { epingle: document.body.classList.contains('insp-epingle'), cadrage: VUE.cadrage, droite: Math.round(r.left + app.vue.tx + (b.x + b.w) * s), volet: Math.round(q.left) }; });
-  await page.click('#fi-epingle'); await page.waitForTimeout(500); await posee(); await page.evaluate(() => { deselectionner(); fermerInspecteur(); });
-  ok(epi.epingle && epi.cadrage === 'dessin' && epi.droite <= epi.volet + 2, 'cadré sur son dessin, la carte épinglée en volet : le dessin se recadre à côté', JSON.stringify(epi));
+  await page.click('#fi-tout-voir'); await page.waitForTimeout(700); await posee();
+  const epi = await page.evaluate(() => { const r = $('planche').getBoundingClientRect(), s = app.vue.s, q = $('inspecteur').getBoundingClientRect(), c = app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag');
+    return { grand: document.body.classList.contains('insp-grand'), cadrage: VUE.cadrage, cible: Math.round(r.left + app.vue.tx + (c.x + c.w) * s), fenetre: Math.round(q.left) }; });
+  await page.keyboard.press('Escape'); await page.waitForTimeout(400); await posee(); await page.evaluate(() => { deselectionner(); fermerInspecteur(); });
+  ok(epi.grand && epi.cadrage === 'dessin' && epi.cible <= epi.fenetre, '« Tout voir » : la fiche s’ouvre en grand à droite, l’objet choisi reste visible sur le plan, à côté', JSON.stringify(epi));
 
   /* ---- LA RECHERCHE PARDONNE, LA PALETTE, L'INDEX AU CLAVIER (v73) ---- */
   console.log('\nLA RECHERCHE');
@@ -327,10 +323,11 @@ const FICHIER = P.fichierDemande();
   await page.evaluate(() => { deselectionner(); fermerInspecteur(); }); await page.mouse.move(700, 450);
   // v74 : les lignes de la liste ne prennent pas Tab (↓ les choisit depuis le champ) — Tab quitte la recherche, jamais vers une ligne cachée
   await page.keyboard.press('/'); await page.keyboard.type('W-01'); await page.waitForTimeout(200); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(80);
-  const qa = await page.evaluate(() => ({ actif: document.activeElement.id, choisie: $('q').getAttribute('aria-activedescendant') }));
+  const qa = await page.evaluate(() => ({ actif: document.activeElement.id, choisie: document.activeElement.getAttribute('aria-activedescendant'), allumee: (document.querySelector('#palette .pa-l.on') || {}).id }));
   await page.keyboard.press('Tab'); await page.waitForTimeout(300);
-  const qt = await page.evaluate(() => ({ dansLaListe: !!document.activeElement.closest('#q-liste'), liste: !$('q-liste').hidden }));
-  ok(qa.actif === 'q' && qa.choisie === 'q-opt-1' && !qt.dansLaListe && !qt.liste, 'la recherche au clavier : ↓ choisit une ligne sans quitter le champ, Tab quitte la recherche (la liste se ferme)', JSON.stringify([qa, qt]));
+  const qt = await page.evaluate(() => ({ actif: document.activeElement.id, dansLaPalette: !!document.activeElement.closest('#palette'), ouverte: paletteOuverte() }));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  ok(qa.actif === 'pa-q' && qa.choisie === 'pa-o-1' && qa.allumee === 'pa-o-1' && qt.dansLaPalette && qt.ouverte && await page.evaluate(() => !paletteOuverte()), 'la recherche au clavier (« / » ouvre la palette : repères et actions) : ↓ choisit une ligne sans quitter le champ, Tab n’en sort pas, Échap la ferme', JSON.stringify([qa, qt]));
   await page.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }); await page.mouse.move(700, 450);
   await page.keyboard.press('Control+k'); await page.waitForTimeout(250);
   const pal0 = await page.evaluate(() => ({ ouverte: paletteOuverte(), clavier: document.activeElement && document.activeElement.id, actions: [...document.querySelectorAll('#palette .pa-l')].length }));
@@ -341,7 +338,7 @@ const FICHIER = P.fichierDemande();
   await page.keyboard.press('Control+a'); await page.keyboard.type('102'); await page.waitForTimeout(150);
   const objets = await page.evaluate(() => [...document.querySelectorAll('#palette .pa-groupe')].map(g => g.textContent).join(' · ') + ' | ' + [...document.querySelectorAll('#palette .pa-l')].slice(0, 2).map(l => l.textContent).join(' / '));
   ok(pal0.ouverte && pal0.clavier === 'pa-q' && pal0.actions >= 6, 'Ctrl+K : la palette, le clavier dans son champ, les actions d’abord', JSON.stringify(pal0));
-  ok(/dossier en PDF/.test(pdf || '') && /Hypothèses/.test(hypo || '') && /Sur le plan/.test(objets) && /102CB1/.test(objets), 'elle cherche les actions (« pdf », « hypo ») ET les objets (« 102 »)', [pdf, hypo, objets].join(' || '));
+  ok(/Dossier PDF/.test(pdf || '') && /Hypothèses/.test(hypo || '') && /Sur le plan/.test(objets) && /102CB1/.test(objets), 'elle cherche les actions (« pdf », « hypo ») ET les objets (« 102 »)', [pdf, hypo, objets].join(' || '));
   await page.keyboard.press('Escape'); await page.waitForTimeout(150);
   ok(await page.evaluate(() => !paletteOuverte()), 'Échap la ferme');
   await page.keyboard.press('Control+k'); await page.keyboard.type('hypo'); await page.waitForTimeout(150); await page.keyboard.press('Enter'); await page.waitForTimeout(500);
@@ -360,19 +357,20 @@ const FICHIER = P.fichierDemande();
     if (!vraie) window.ficheComprendre = () => { window.__comprise++; };
     return { vraie, sans }; });
   await page.mouse.move(700, 450); await page.keyboard.press('Control+k'); await page.waitForTimeout(200);
-  const compVide = await page.evaluate(() => [...document.querySelectorAll('#palette .pa-l')].some(l => /Comment Volta réfléchit/.test(l.textContent)));
+  const compVide = await page.evaluate(() => actionsDeLaPalette().some(a => a.act === 'comprendre'));
   await page.keyboard.type('comment'); await page.waitForTimeout(150);
   const compMot = await page.evaluate(() => { const l = document.querySelector('#palette .pa-l.on'); return l && l.textContent; });
   if (!comp.vraie) { await page.keyboard.press('Enter'); await page.waitForTimeout(200); } else { await page.keyboard.press('Escape'); }
   const compFait = await page.evaluate(v => { const n = window.__comprise; if (!v) delete window.ficheComprendre; return { n, ferme: !paletteOuverte() }; }, comp.vraie);
-  ok((comp.vraie || comp.sans) && compVide && /Comment Volta réfléchit/.test(compMot || '') && (comp.vraie || compFait.n === 1) && compFait.ferme,
-    'la palette offre « Comment Volta réfléchit » (parmi ses premières actions, et à « comment ») et l’ouvre — absente tant que la page n’existe pas', JSON.stringify({ comp, compVide, compMot, compFait }));
+  ok((comp.vraie || comp.sans) && compVide && /Comment VOLTA réfléchit/.test(compMot || '') && (comp.vraie || compFait.n === 1) && compFait.ferme,
+    'la palette offre « Comment VOLTA réfléchit » (parmi ses actions, et en tête à « comment ») et l’ouvre', JSON.stringify({ comp, compVide, compMot, compFait }));
   if (comp.vraie) await page.evaluate(() => { if (typeof fermerFiche === 'function') fermerFiche(true); });
   // l'exemple sans la règle du calibre (le 10 A de l'installation gardé, 15 A proposé) : « (installation 10 A) » sous « 15 A »
   await page.evaluate(() => atelier.exempleSansCalibreAuto()); await page.waitForFunction(() => !!app.dessin); await folio('1');
   const ret10 = await lireRet();
-  ok(ret10.c.retest === 10 && /^\(?install(ation|\.) 10 A\)?$/.test(ret10.ecrit || '') && ret10.svg === ret10.ecrit && !ret10.retest,
-    'le folio écrit le calibre retenu (' + ret10.cal + ') et, s’il diffère, celui de l’installation dessous — « installation », jamais « retest » — à l’écran comme à l’export', JSON.stringify(ret10));
+  await page.evaluate(() => { retenirCalibre('102CB1', 20); allerAuPlan('1'); }); await page.waitForTimeout(400); const ret20 = await lireRet(); await page.evaluate(() => annuler()); await page.waitForTimeout(300);
+  ok(ret10.cal === '10 A' && !ret10.ecrit && !ret10.retest && ret20.cal === '20 A' && !ret20.ecrit && !/installation|retest/i.test(JSON.stringify([ret10.svg, ret20.svg])),
+    'le folio écrit le calibre du fichier (' + ret10.cal + ') ; un autre retenu (' + ret20.cal + ') s’écrit seul, son part number le suit — ni « installation » ni « retest », à l’écran comme à l’export', JSON.stringify([ret10, ret20]));
 
   /* ---- L'EXPORT ---- */
   const exp = await page.evaluate(() => { const S = svgDuFolio(); return { grille: /url\(#gfine\)/.test(S.txt.replace(/<pattern[\s\S]*?<\/pattern>/, '')), cables: /câbles?</.test(S.txt) }; });

@@ -38,7 +38,7 @@ function disjoncteursDansLaPage() {
   const S = []; D.fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1]; S.push({ n: w.cable, x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y), h: Math.abs(a.y - b.y) < 0.6 }); } });
   (D.barrettes || []).forEach(b => { S.push({ n: 'piquage', x0: b.x, x1: b.x, y0: b.y1 + 3, y1: b.y2 - 3, h: false }); });
   const r = { cbs: 0, formes: 0, repli: [], geometrie: [], chev: [], barres: [], calibres: [] };
-  for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) { const a = T[i], b = T[j]; if ((a.cb || b.cb) && a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) r.chev.push(a.txt + ' × ' + b.txt); }
+  for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) { const a = T[i], b = T[j]; if ((a.cb || b.cb) && a.x1 > b.x0 + 1.5 && a.x0 < b.x1 - 1.5 && a.y1 > b.y0 + 1.5 && a.y0 < b.y1 - 1.5) r.chev.push(a.txt + ' × ' + b.txt); }   // (v89) 1,5 unité de jeu : l'interligne, pas l'encre
   T.forEach(t => { if (t.cb) S.forEach(s => { const dedans = s.h ? (s.y0 > t.y0 + 0.4 && s.y0 < t.y1 - 0.4 && s.x1 > t.x0 + 0.4 && s.x0 < t.x1 - 0.4) : (s.x0 > t.x0 + 0.4 && s.x0 < t.x1 - 0.4 && s.y1 > t.y0 + 0.4 && s.y0 < t.y1 - 0.4); if (dedans) r.barres.push(s.n + ' barre ' + t.txt); }); });
   D.comps.filter(c => c.kind === 'equip' && estDisjoncteur(c.name)).forEach(c => { r.cbs++;
     const g = document.querySelector(`#scene .comp[data-name="${c.name}"]`), sur = c.name + ' L[' + (c.rangs.L || []).map(p => p.etiq + '@' + (p.y - c.y)) + '] R[' + (c.rangs.R || []).map(p => p.etiq + '@' + (p.y - c.y)) + ']';
@@ -123,7 +123,7 @@ function titre(t) { console.log('\n' + t); }
     const vert = []; W.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1]; if (Math.abs(a.x - b.x) < 0.6 && Math.abs(a.y - b.y) > 1) vert.push({ n: w.cable, x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); } });
     let barres = 0; boites.forEach((b, i) => { if (vert.some(v => v.n !== el[i].textContent && v.x > b.x0 && v.x < b.x1 && v.y1 > b.y0 && v.y0 < b.y1)) barres++; });
     return { avecNom, poses: el.length, chevauche, barres }; });
-  ok('les numéros de fil sont écrits sur le dessin', nums.poses >= nums.avecNom * 0.9, nums.poses + ' / ' + nums.avecNom + ' fils étiquetés');
+  ok('un câble n’a plus de numéro sur le plan (v84 : les W-xxx se font plus tard, dans un autre logiciel) : aucun ne s’écrit', nums.poses === 0 && nums.avecNom > 0, nums.poses + ' numéro écrit pour ' + nums.avecNom + ' câbles');
   ok('aucune étiquette n’en chevauche une autre', nums.chevauche === 0, nums.chevauche + ' chevauchement(s)');
   ok('aucune étiquette n’est barrée par un fil', nums.barres === 0, nums.barres + ' barrée(s)');
 
@@ -135,6 +135,9 @@ function titre(t) { console.log('\n' + t); }
   const oeil = await page.evaluate(() => {
     chargerContrat(contratExemple(), 'exemple', 'Plan d’exemple');
     const out = { folios: [], muets: 0, fils: 0, chev: [], barres: [], nus: [] };
+    // (v89) une boîte de texte porte son interligne (la place d'un jambage qu'un repère en capitales n'a pas) : deux boîtes qui se
+    // frôlent de moins de 1,5 unité ne se touchent pas à l'encre (« 102CB1 » au-dessus de « 10 A » : 4 unités de blanc)
+    const JEU = 1.5;
     for (const plan of plansDe(app.contrat.liaisons)) { allerAuPlan(plan); const D = app.dessin;
       const T = []; document.querySelectorAll('#scene text').forEach(t => { const cls = t.getAttribute('class') || '';
         if (!/^(filnum|rep|rep-strip|rep-petit|barnum|connnom|connpin|pinlbl|rep-big|des|rname|prnum|cb-cal)$/.test(cls)) return;
@@ -145,7 +148,7 @@ function titre(t) { console.log('\n' + t); }
         T.push({ txt: t.textContent, cls, x0: bb.x + dx, y0: bb.y + dy, x1: bb.x + dx + bb.width, y1: bb.y + dy + bb.height }); });
       const S = []; D.fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1]; S.push({ n: w.cable, x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y), h: Math.abs(a.y - b.y) < 0.6 }); } });
       (D.barrettes || []).forEach(b => { S.push({ n: 'piquage', x0: b.x, x1: b.x, y0: b.y1 + 3, y1: b.y2 - 3, h: false }); });
-      for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) { const a = T[i], b = T[j]; if (a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) out.chev.push(plan + ' : ' + a.txt + ' × ' + b.txt); }
+      for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) { const a = T[i], b = T[j]; if (a.x1 > b.x0 + JEU && a.x0 < b.x1 - JEU && a.y1 > b.y0 + JEU && a.y0 < b.y1 - JEU) out.chev.push(plan + ' : ' + a.txt + ' × ' + b.txt); }
       // un numéro de fil s'écrit DANS son fil, centré sur son axe (le fil passe derrière lui, à l'horizontale comme debout) :
       // un segment de ce fil n'est pas une barre
       T.forEach(t => S.forEach(s => { if (t.cls === 'filnum' && s.n === t.txt) return;
@@ -158,7 +161,7 @@ function titre(t) { console.log('\n' + t); }
     return out; });
   ok('aucun texte n’en chevauche un autre (repères, numéros, lettres)', oeil.chev.length === 0, oeil.chev.length ? oeil.chev.slice(0, 4).join(' | ') : oeil.folios.join(', '));
   ok('aucun repère ni numéro n’est barré par un fil', oeil.barres.length === 0, oeil.barres.length ? oeil.barres.slice(0, 4).join(' | ') : 'aucun');
-  ok('chaque fil porte son numéro', oeil.muets === 0, oeil.muets ? oeil.nus.slice(0, 4).join(' | ') : oeil.fils + ' fils, tous numérotés');
+  ok('aucun numéro de câble sur les six folios de l’exemple', oeil.muets === oeil.fils && oeil.fils > 100, oeil.fils - oeil.muets + ' numéro(s) écrit(s) pour ' + oeil.fils + ' câbles');
 
   /* LE DISJONCTEUR a sa forme, pas une boîte d'équipement (le lecteur : « les disjoncteurs ont leur propre forme ») : sur
      le folio 1 de l'exemple (102CB1, ses deux fils à droite, le calibre lu dans le part number MS3320-10) et sur les
@@ -207,56 +210,61 @@ function titre(t) { console.log('\n' + t); }
   ok('les espaces parasites ne dédoublent plus un repère', pieges.espaces === 2, pieges.espaces + ' bloc(s) pour 2 repères');
   ok('le SVG exporté est un XML valide', pieges.svgOk && pieges.svgXml && !pieges.svgCtrl, pieges.svgOk ? (pieges.svgFils + ' fils · caractère de contrôle : ' + (pieges.svgCtrl ? 'OUI' : 'aucun')) : 'pas de SVG produit');
 
-  /* ---- 8. LA VÉRITÉ (v73, domaine C) : un seul compte, une seule chute, les problèmes du câble et leur cause, deux part
-     numbers, trois mots de verdict, le disjoncteur rangé à part dans la nomenclature, le dossier qui dit ses hypothèses */
-  titre('8. LA VÉRITÉ : UN COMPTE, UNE CHUTE, LE CÂBLE ET SA CAUSE');
+  /* ---- 8. LA VÉRITÉ (v73, domaine C ; reprise à la v89 sur les règles d'aujourd'hui) : un seul compte — « à régler », c'est
+     ce qui a un geste, partout pareil (la pastille, P, le dossier PDF) ; un courant connu ou INCONNU, jamais supposé (le
+     lecteur : « l'outil dit la vérité, pas inventé ») ; deux part numbers ; les mots du verdict (« disjoncte / ne disjoncte
+     pas », jamais « tient ») ; le disjoncteur rangé à part dans la LPA ; le dossier qui dit ses hypothèses */
+  titre('8. LA VÉRITÉ : UN COMPTE, UN COURANT CONNU OU INCONNU, LES MOTS DU VERDICT');
   const V8 = await page.evaluate(async () => { const r = {}; atelier.exempleSansCalibreAuto(); await new Promise(f => setTimeout(f, 600)); rendreControle();
-    const C = compteProblemes(), xs = CONTROLE.items, p = document.querySelector('#btnIndex .rd-point');
-    r.compte = { ko: C.ko, att: C.att, mot: C.mot, items: xs.length, nko: xs.filter(x => x.niveau === 'ko').length, pastille: p ? p.textContent : '', aria: document.getElementById('btnIndex').getAttribute('aria-label') };
+    const C = compteProblemes(), A = compteARegler(), xs = CONTROLE.items, p = document.querySelector('#btnIndex .rd-point');
+    r.compte = { ko: C.ko, att: C.att, mot: C.mot, regler: A.regler, voir: A.voir, items: xs.length, pastille: p ? p.textContent : '', aria: document.getElementById('btnIndex').getAttribute('aria-label') };
     CONTROLE.pas = null; problemeSuivant(1); r.p1 = document.getElementById('toast').textContent;
-    // P va jusqu'au premier « à voir » : son rang dit « À voir 1 / att »
-    for (let i = 1; i < C.ko; i++) problemeSuivant(1); problemeSuivant(1); r.p2 = document.getElementById('toast').textContent;
-    // la chute de W-012 : la fiche du câble, la ligne de la fiche du disjoncteur, le contrôle (l'onglet Problèmes et le PDF le lisent)
-    const l = verite().find(x => x.cable === 'W-012'), ch = chuteDuFil(l), pointe = ch.pointe ? volts(ch.pointe.dU) : '';
-    const ligneDj = lignesFilsDisjoncteur('102CB1').find(x => x.l === l), item = xs.find(x => x.nom === '102CB1' && /chute en ligne vers 103RL1:A1/.test(x.texte));
-    r.chute = { fiche: pointe, dj: ligneDj ? (ligneDj.bulle.match(/en pointe : ([\d,]+ V)/) || [])[1] : '', controle: item ? (item.texte.match(/en pointe : ([\d,]+ V)/) || [])[1] : '' };
-    const o = await pdfDuPlan(app.contrat.liaisons, app.nom, { ouvert: true }); let s = ''; for (let i = 0; i < o.length; i += 8192) s += String.fromCharCode.apply(null, o.subarray(i, i + 8192));
+    // P parcourt tout ce qui est à régler, PUIS ce qui est à voir : son rang dit « À voir 1 / att »
+    for (let i = 1; i < C.ko; i++) problemeSuivant(1); r.pDernier = document.getElementById('toast').textContent; problemeSuivant(1); r.p2 = document.getElementById('toast').textContent;
+    // le courant : W-011 (la source du 102CB1, dont le profil est écrit) est connu ; W-012 (vers 103RL1, dont la consommation
+    // n'est pas écrite) est INCONNU — et sa chute aussi ; sa protection, elle, se juge toujours
+    const l11 = verite().find(x => x.cable === 'W-011'), l12 = verite().find(x => x.cable === 'W-012'), I11 = intensiteDuFil(l11), I12 = intensiteDuFil(l12), c11 = chuteDuFil(l11), c12 = chuteDuFil(l12);
+    r.connu = { I: I11.I, source: I11.source, inconnu: I11.inconnu, dU: c11.dU }; r.inconnu = { I: I12.I, source: I12.source, inconnu: I12.inconnu, dU: c12.dU };
+    r.w012 = problemesDuCable(l12).map(x => x.niveau + ' ' + x.texte); r.hyp = 'courant' in HYPOTHESES;
+    const ligne = lignesFilsDisjoncteur('102CB1').find(x => x.l === l12); r.ligne = ligne ? { inconnu: ligne.inconnu, bulle: ligne.bulle } : null;
+    const o = await pdfDuPlan(app.contrat.liaisons, app.nom, { ouvert: true });
     const doc = await pdfjsPret().getDocument({ data: o, isEvalSupported: false }).promise, txt = async i => (await (await doc.getPage(i)).getTextContent()).items.map(x => x.str).join(' ').replace(/\s+/g, ' ');
-    const garde = await txt(1), page2 = await txt(2); r.pdf = { chute: (garde.match(/103RL1:A1 en pointe : ([\d,]+ V)/) || [])[1] || '', reperes: (garde.match(/(\d+) repères/) || [])[1], hyp: /Hypothèses et sources/.test(page2) && /Les profils de charge/.test(page2) && /102CB1/.test(page2), coupes: 0 };
+    const garde = await txt(1), page2 = await txt(2); r.pdf = { regler: (garde.match(/(\d+) à régler/) || [])[1], voir: (garde.match(/(\d+) à voir/) || [])[1], reperes: (garde.match(/(\d+) repères/) || [])[1],
+      hyp: /Hypothèses et sources/.test(page2) && /Les profils de charge/.test(page2) && /102CB1/.test(page2), courant: /Courant\s+\d/.test(page2), coupes: 0 };
     for (const i of [1, 2, doc.numPages - 1, doc.numPages]) if (/…/.test(await txt(i))) r.pdf.coupes++;
     r.reperes = reperesDuContrat().length;
-    // les problèmes du câble : après « Passer en DR12 » seul, la CAUSE (le 10 A du retest) reste, avec « Tout régler »
-    r.w012 = problemesDuCable(l).map(x => x.niveau + ' ' + x.texte);
-    changerLiaison(l, 'type', 'DR12', 'W-012 en DR12'); rendreControle();
-    const P2 = problemesDuCable(verite().find(x => x.cable === 'W-012')), cause = P2.find(x => x.cause);
-    r.cause = cause ? { niveau: cause.niveau, texte: cause.texte, geste: (cause.gestes.find(g => g.principal) || {}).mot } : null;
-    r.w015 = problemesDuCable(verite().find(x => x.cable === 'W-015')).filter(x => !x.cause).map(x => x.niveau).join(',');
-    // tout régler : la cause s'en va, le geste écrit le part number marqué « proposition de Volta »
-    cause.gestes.find(g => g.principal).faire(); rendreControle();
-    r.apres = { cause: problemesDuCable(verite().find(x => x.cable === 'W-012')).some(x => x.cause), pn: pnDuRepere('102CB1'), origine: changementsDuRetest().ecrits.filter(e => e.objet === '102CB1').map(e => e.origine).join() };
-    // deux part numbers sur 102CB1 : un problème, « Unifier sur… »
-    const l11 = verite().find(x => x.cable === 'W-011'), champ = l11.de === '102CB1' ? 'pnDe' : 'pnVers'; changerLiaison(l11, champ, '4120-F-10A', 'un autre part number'); rendreControle();
+    // deux part numbers sur 102CB1 : un problème, à régler, « Unifier sur… » — chaque câble dit depuis 102CB1, vers son autre bout
+    const champ = l11.de === '102CB1' ? 'pnDe' : 'pnVers'; changerLiaison(l11, champ, '4120-F-10A', 'un autre part number'); rendreControle();
     const pn = CONTROLE.items.find(x => x.genre === 'pn'), g = pn ? gestesDuPoint(pn) : [];
-    r.pn = { niveau: pn && pn.niveau, texte: pn && pn.texte, gestes: g.map(x => x.mot).join(' | ') };
-    if (g[0]) g[0].faire(); rendreControle(); r.pnApres = CONTROLE.items.some(x => x.genre === 'pn');
+    r.pn = { niveau: pn && pn.niveau, texte: pn && pn.texte, gestes: g.map(x => x.mot).join(' | '), regler: pn ? !!rangDuPoint(pn).regler : false };
+    if (g[0]) g[0].faire(); rendreControle(); r.pnApres = CONTROLE.items.some(x => x.genre === 'pn'); r.pnFinal = pnDuRepere('102CB1');
     return r; });
-  ok('UN compte : la pastille = les problèmes rouges du plan, « P » dit « Problème 1 / ko » puis « À voir 1 / att »', V8.compte.ko === V8.compte.nko && V8.compte.ko + V8.compte.att === V8.compte.items && V8.compte.pastille === String(V8.compte.ko) && V8.compte.aria.includes(V8.compte.mot) && new RegExp('Problème 1 / ' + V8.compte.ko).test(V8.p1) && new RegExp('À voir 1 / ' + V8.compte.att).test(V8.p2), `${V8.compte.mot} · pastille ${V8.compte.pastille} · ${V8.p1.slice(0, 40)} · ${V8.p2.slice(0, 40)}`);
-  ok('UNE chute : la fiche du câble, la fiche du disjoncteur, le contrôle (onglet Problèmes) et le PDF portent le même nombre', !!V8.chute.fiche && V8.chute.fiche === V8.chute.dj && V8.chute.dj === V8.chute.controle && V8.chute.controle === V8.pdf.chute, `fiche ${V8.chute.fiche} · disjoncteur ${V8.chute.dj} · contrôle ${V8.chute.controle} · PDF ${V8.pdf.chute}`);
-  ok('le dossier PDF : un seul compte de repères (celui du menu), la page « Hypothèses et sources » après la garde, aucun « … »', +V8.pdf.reperes === V8.reperes && V8.pdf.hyp && V8.pdf.coupes === 0, `${V8.pdf.reperes} repères (menu ${V8.reperes}) · hypothèses ${V8.pdf.hyp} · pages coupées ${V8.pdf.coupes}`);
-  ok('la fiche du câble a SES problèmes (W-012 : la charge, la protection, la chute)', V8.w012.some(t => /^ko Démarrage/.test(t)) && V8.w012.some(t => /Chute en ligne/.test(t)), V8.w012.slice(0, 3).join(' | '));
-  ok('« Passer en DR12 » seul : W-012 garde la CAUSE en ambre (le 10 A de l’installation), avec « Tout régler »', !!V8.cause && V8.cause.niveau === 'att' && /102CB1 : le 10 A de l’installation/.test(V8.cause.texte) && /^Tout régler : 102CB1 en 15 A/.test(V8.cause.geste || '') && /ko/.test(V8.w015), V8.cause ? V8.cause.texte + ' · ' + V8.cause.geste : 'aucune cause');
-  ok('« Tout régler » écrit le 15 A — une proposition de Volta (l’origine) — et la cause s’en va', !V8.apres.cause && V8.apres.pn === 'MS3320-15' && /volta/.test(V8.apres.origine), JSON.stringify(V8.apres));
-  ok('deux part numbers sur 102CB1 : un problème, « Unifier sur… » qui le règle', V8.pn.niveau === 'ko' && /deux part numbers/.test(V8.pn.texte || '') && /^Unifier sur /.test(V8.pn.gestes) && !V8.pnApres, (V8.pn.texte || '') + ' · ' + V8.pn.gestes);
+  ok('UN compte : « à régler », c’est ce qui a un geste — la pastille, son nom, « P » (« À régler 1 / N » … « N / N », puis « À voir 1 / M ») comptent pareil',
+    V8.compte.ko === V8.compte.regler && V8.compte.att === V8.compte.voir && V8.compte.ko + V8.compte.att === V8.compte.items && V8.compte.pastille === String(V8.compte.ko) && V8.compte.aria.includes(V8.compte.mot)
+    && new RegExp('^À régler 1 / ' + V8.compte.ko + ' ·').test(V8.p1) && new RegExp('^À régler ' + V8.compte.ko + ' / ' + V8.compte.ko + ' ·').test(V8.pDernier) && new RegExp('^À voir 1 / ' + V8.compte.att + ' ·').test(V8.p2),
+    `${V8.compte.mot} · pastille ${V8.compte.pastille} · ${V8.p1.slice(0, 40)} · ${V8.pDernier.slice(0, 24)} · ${V8.p2.slice(0, 30)}`);
+  ok('le dossier PDF compte pareil (« N à régler », « M à voir »), un seul compte de repères (celui du menu), la page « Hypothèses et sources » après la garde, aucun « … »',
+    +V8.pdf.regler === V8.compte.ko && +V8.pdf.voir === V8.compte.att && +V8.pdf.reperes === V8.reperes && V8.pdf.hyp && V8.pdf.coupes === 0, `${V8.pdf.regler} à régler · ${V8.pdf.voir} à voir · ${V8.pdf.reperes} repères (menu ${V8.reperes}) · hypothèses ${V8.pdf.hyp} · pages coupées ${V8.pdf.coupes}`);
+  ok('un courant CONNU : W-011 porte le permanent écrit au profil de 102CB1 (5 A), sa chute se calcule', V8.connu.I === 5 && V8.connu.source === 'profil' && !V8.connu.inconnu && V8.connu.dU > 0.3 && V8.connu.dU < 0.7, JSON.stringify(V8.connu));
+  ok('un courant INCONNU : W-012 (la consommation de 104LP1 n’est pas écrite) n’a ni courant ni chute — VOLTA n’invente rien ; plus de « courant » dans les Hypothèses, ni dans le dossier',
+    V8.inconnu.I == null && V8.inconnu.inconnu === true && V8.inconnu.dU == null && !V8.hyp && !V8.pdf.courant && !!V8.ligne && V8.ligne.inconnu && /Courant inconnu : écrivez la consommation de 104LP1/.test(V8.ligne.bulle), JSON.stringify(V8.inconnu) + ' · ' + (V8.ligne ? V8.ligne.bulle.replace(/\s+/g, ' ').slice(0, 90) : 'pas de ligne'));
+  ok('la fiche du câble a SES points : la consommation à écrire (le courant en dépend) et la protection, qui se juge toujours (6,9 A admis en continu sous un 10 A)',
+    V8.w012.some(t => /^att Consommation de 104LP1 à écrire/.test(t)) && V8.w012.some(t => /6,9 A admis en continu, moins que les 10 A du calibre/.test(t)) && !V8.w012.some(t => /\b2 A\b|supposé/.test(t)), V8.w012.join(' | ').slice(0, 260));
+  ok('deux part numbers sur 102CB1 : un problème à régler, chaque câble dit vers son autre bout, « Unifier sur… » qui le règle',
+    V8.pn.niveau === 'ko' && V8.pn.regler && /deux part numbers/.test(V8.pn.texte || '') && /4120-F-10A \(DR16 vers 101BT1:1\)/.test(V8.pn.texte || '') && !/vers 102CB1/.test(V8.pn.texte || '') && /^Unifier sur MS3320-10 \| Unifier sur 4120-F-10A/.test(V8.pn.gestes) && !V8.pnApres && V8.pnFinal === 'MS3320-10', (V8.pn.texte || '') + ' · ' + V8.pn.gestes);
   const V9 = await page.evaluate(async () => { const r = {}; atelier.exempleSansCalibreAuto(); await new Promise(f => setTimeout(f, 400));
     const d = disjonctionDe('102CB1'), mot = c => { const g = d.gamme.find(x => x.calibre === c); return (verdictDeCalibre(g) || {}).mot; };
-    r.mots = [5, 10, 15].map(mot); r.pourquoi = (pourquoiDuCalibre(app.norme, d, 5) || {}).phrase || '';
+    r.calibre = d.calibre; r.mots = d.gamme.map(g => g.calibre + ' ' + mot(g.calibre)); r.pourquoi = [5, 10].map(c => (pourquoiDuCalibre(app.norme, d, c) || {}).phrase || '');
     const E = explication('calibre', { verdict: d, calibre: d.calibre, origine: d.origine, meilleur: d.passe }); r.gamme = (E.etapes || []).join(' ');
     const N = nomenclatureDuContrat(); r.nomen = { connecteur: N.connecteurs.some(x => /^MS3320/.test(x.reference)), dj: N.disjoncteurs.map(x => [x.repere, x.reference, x.calibre, x.retest, x.etat].join(' ')) };
     ficheNomenclature(); await new Promise(f => setTimeout(f, 300)); r.fourreau = [...document.querySelectorAll('#fiche th')].some(th => th.textContent === 'Fourreau'); r.titres = [...document.querySelectorAll('#fiche .no-st')].map(h => h.firstChild.textContent).join(','); fermerFiche();
     return r; });
-  ok('les mots du verdict (la table unique, v77) : 5 A déclenche, 10 A touche la courbe, 15 A passe ; le pourquoi chiffré', V9.mots.join() === 'déclenche,touche la courbe,passe' && /^5 A — déclenche : démarrage et transition, 9,31 A pendant 2,1 min/.test(V9.pourquoi), V9.mots.join(' · ') + ' · ' + V9.pourquoi);
-  ok('le « ? » du calibre lit la gamme de la famille (MS3320 s’arrête à 20 A : pas de 25 A)', /gamme 2TC|gamme MS3320/i.test(V9.gamme) && !/25 A/.test(V9.gamme), V9.gamme.slice(0, 160));
-  ok('la nomenclature : un groupe « Disjoncteurs » (MS3320-15 à commander, installation 10 A), plus de disjoncteur en connecteur, plus de colonne vide', !V9.nomen.connecteur && V9.nomen.dj.length === 1 && /^102CB1 MS3320-15 15 10 /.test(V9.nomen.dj[0]) && !V9.fourreau && /Disjoncteurs/.test(V9.titres), V9.nomen.dj.join(' | ') + ' · ' + V9.titres);
+  ok('un disjoncteur, c’est mathématique : chaque calibre de la gamme « disjoncte » ou « ne disjoncte pas », point — le retenu est le plus petit qui ne disjoncte pas (10 A) ; jamais « tient », « passe », « touche », ni réserve',
+    V9.mots.join() === '1 disjoncte,3 disjoncte,5 disjoncte,7.5 disjoncte,10 ne disjoncte pas,15 ne disjoncte pas,20 ne disjoncte pas' && V9.calibre === 10 && !/tient|\bpasse\b|touche|réserve|trop juste|10\s%/.test(V9.mots.join(' ') + V9.pourquoi.join(' ')), V9.mots.join(' · '));
+  ok('le pourquoi, en ampères : ce qu’il tire, pendant combien de temps, le seuil où ce calibre disjoncte sur cette durée (« 9,31 A pendant 2,1 min ; … il ne disjoncte qu’au-delà de 9,66 A »)',
+    /^5 A — disjoncte : le permanent, 5 A ; il disjoncte dès [\d,]+ A/.test(V9.pourquoi[0]) && /^10 A — ne disjoncte pas : démarrage et transition, 9,31 A pendant 2,1 min ; sur cette durée, il ne disjoncte qu’au-delà de [\d,]+ A/.test(V9.pourquoi[1]), V9.pourquoi.join(' | '));
+  ok('le « ? » du calibre lit la gamme de la famille (MS3320 s’arrête à 20 A : pas de 25 A) et dit « aucune marge »', /gamme 2TC|gamme MS3320/i.test(V9.gamme) && !/25 A/.test(V9.gamme) && /aucune marge/.test(V9.gamme), V9.gamme.slice(0, 160));
+  ok('la LPA : un groupe « Disjoncteurs » (102CB1, MS3320-10, 10 A, « ne disjoncte pas »), plus de disjoncteur en connecteur, plus de colonne vide', !V9.nomen.connecteur && V9.nomen.dj.length === 1 && /^102CB1 MS3320-10 10 .*ne disjoncte pas$/.test(V9.nomen.dj[0]) && !V9.fourreau && /Disjoncteurs/.test(V9.titres), V9.nomen.dj.join(' | ') + ' · ' + V9.titres);
 
   titre('BILAN');
   ok('aucune erreur console', erreurs.length === 0, erreurs.length ? erreurs.slice(0, 3).join(' | ') : 'aucune');
