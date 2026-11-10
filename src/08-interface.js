@@ -2312,7 +2312,8 @@ const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde',
   ia: 'ia intelligence artificielle interne connexion tester cle api adresse modele serveur reseau lire documents scans images',
   // (v88) la sauvegarde d'ensemble (08-sauvegarde) ; « Ouvrir un fichier… » prend aussi un PDF, un Visio
   sauvegarde: 'sauvegarder sauvegarde restaurer restauration copie tout garder fichier volta backup poste navigateur', pdf: 'pdf schema scan lire', comprendre: 'aide comprendre expliquer calcul',
-  indice: 'indice nouvel suivant revision comparer difference change ajoute retire rebranche version fichier' };
+  indice: 'indice nouvel suivant revision comparer difference change ajoute retire rebranche version fichier',
+  bilanelec: 'bilan electrique courant ampere consommation source batterie disjoncteur charge alimente' };
 const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'revue', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);

@@ -10158,6 +10158,32 @@ svg.vu-face text.pris{fill:#fff}
 /* le mot sous la ligne du menu : ambre quand la sauvegarde est ancienne ou jamais faite */
 #mn-sauvegarde.att{color:var(--warn)}
 
+/* ───────── style-zz-atelier.css ───────── */
+/* ── LA FICHE D'ATELIER (08-papier-atelier, v91) : la fiche d'un objet, imprimée — L'essentiel puis Pièces, sur une A4 ── */
+.at-tete{display:none}
+.nv-atelier-b{margin-left:auto}
+.nv-atelier-b + .nv-lpa-b{margin-left:8px}
+@media print{
+  body.atelier{background:#fff!important}
+  body.atelier #printroot{display:none!important}
+  body.atelier #app{display:block!important;position:static!important;height:auto!important;overflow:visible!important}
+  body.atelier #app > :not(#inspecteur){display:none!important}
+  body.atelier #inspecteur{position:static!important;display:block!important;width:auto!important;height:auto!important;max-width:none!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;transform:none!important;background:#fff!important;overflow:visible!important}
+  body.atelier #inspecteur *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.atelier #inspecteur :is(.nv-onglets,#in-fermer,.carte-bords,[data-lpa],[data-atelier],.vu-pq,.nv-tete::before){display:none!important}
+  body.atelier #inspecteur :is(#ba-equip,.nv-grand,.nv-corps,#nv-panneaux){display:block!important;position:static!important;height:auto!important;max-height:none!important;overflow:visible!important;background:#fff!important}
+  body.atelier #inspecteur .nv-panneau{display:none!important}
+  body.atelier #inspecteur :is(#nv-p-essentiel,#nv-p-fabrication){display:block!important;position:static!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:0!important;background:#fff!important}
+  body.atelier #inspecteur .nv-tete{background:#fff!important;padding-left:0!important;padding-right:0!important;border-bottom:1px solid #d9d7d2}
+  body.atelier #inspecteur :is(.vu-bloc,.nv-afaire){margin:12px 0 0!important;box-shadow:none!important;break-inside:avoid}
+  body.atelier #inspecteur #nv-p-fabrication .vu-bloc{break-inside:auto}
+  body.atelier #inspecteur #nv-p-fabrication .vu-bloc > :not(h4){break-inside:avoid}
+  body.atelier .at-tete{display:flex;align-items:baseline;gap:14px;padding:0 0 8px;margin:0 0 10px;border-bottom:1.5px solid #1b1b1d;font:400 10pt/1.3 var(--sans);color:#47474c}
+  body.atelier .at-tete b{font:700 12pt/1.2 var(--sans);color:#1b1b1d}
+  body.atelier .at-tete i{margin-left:auto;font:700 9pt/1 var(--sans);font-style:normal;letter-spacing:.14em;color:#1b1b1d}
+}
+@media print{body.atelier #inspecteur .nv-poignee::before,body.atelier #inspecteur .nv-poignee::after{display:none!important}}
+
 /* ───────── style-zz-ergonome.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
    LES CORRECTIONS DE L'ERGONOME (10 novembre 2026) — ce que la batterie « ux » (tests/ux.js) mesure : un texte à 4,5:1, une
@@ -10265,6 +10291,38 @@ button.vu-cal:focus-visible,.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible
 .in-eq b{font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1)}
 .in-eq.moins b{color:var(--t-3);text-decoration:line-through;text-decoration-thickness:1px}
 
+/* ───────── style-zz-sources.css ───────── */
+/* ── LE BILAN ÉLECTRIQUE (08-sources, v91) : les disjoncteurs rangés sous leur source ; quatre colonnes, les chiffres centrés
+   sous leur titre ; une consommation qui manque se voit (ambre) et mène à l'équipement ── */
+.be-titre{display:flex;align-items:baseline;gap:10px}
+.be-nat{font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.be-sans{font:600 var(--f-15,15px)/1.3 var(--sans);color:var(--t-2)}
+.be-total{margin-left:auto;display:inline-flex;align-items:baseline;gap:6px;font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.be-total b{font:600 var(--f-15,15px)/1.2 var(--mono);color:var(--t-1)}
+.be-rep{all:unset;cursor:pointer;font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1);border-radius:4px}
+.be-rep:hover{color:var(--nv-cuivre)}
+.be-rep:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
+.be-rep.titre{font:600 var(--f-16,16px)/1.3 var(--mono)}
+.be-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.be-table th,.be-table td{padding:9px 6px;text-align:center;vertical-align:top;border-bottom:1px solid var(--s-line-2)}
+.be-table thead th{padding:6px;font:500 var(--f-11,11px)/1.3 var(--sans);letter-spacing:.02em;color:var(--t-2);border-bottom:1px solid var(--s-line-2)}
+.be-table th:nth-child(1){width:92px}.be-table th:nth-child(2){width:64px}.be-table th:nth-child(3){width:124px}
+.be-table tbody th{font-weight:400}
+.be-table .be-g{text-align:left;padding-left:14px}
+.be-cal{font:500 var(--f-13)/1.3 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
+.be-tire b{display:block;font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
+.be-tire small{display:block;font:400 var(--f-11,11px)/1.35 var(--sans);color:var(--t-2)}
+.be-inconnu{font:500 var(--f-12)/1.3 var(--sans);color:var(--t-3)}
+.be-al{display:table-cell}
+.be-note{display:block;margin-bottom:4px;font:400 var(--f-11,11px)/1.3 var(--sans);color:var(--t-2)}
+.be-ch{display:inline-flex;align-items:baseline;gap:6px;margin:0 14px 3px 0;white-space:nowrap}
+.be-ch i{font:400 var(--f-12)/1.3 var(--mono);font-style:normal;color:var(--t-2);font-variant-numeric:tabular-nums}
+.be-ch.manque i{font-family:var(--sans);color:var(--pastille-att,#b26a00);font-weight:500}
+.be-manque{margin:0 0 6px}
+.be-liste{display:flex;flex-wrap:wrap;gap:6px 8px;margin:8px 0}
+.be-rep.puce{padding:3px 9px;border:1px solid var(--s-line-2);border-radius:999px;font-size:var(--f-12)}
+.be-rep.puce:hover{border-color:var(--nv-cuivre)}
+
 </style>
 </head>
 <body>
@@ -10339,6 +10397,7 @@ button.vu-cal:focus-visible,.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible
             <div class="menu-bloc" role="group" aria-label="Lire et sortir">
               <button role="menuitem" data-act="recapitulatif" data-aide="Tout le plan en tableaux : liaisons, équipements, disjoncteurs, câbles, raccords, problèmes… On y corrige comme sur la fiche."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg><span class="menu-l">Récapitulatif</span><span class="raccourci">B</span></button>
               <button role="menuitem" data-act="nomenclature" data-aide="La LPA : ce qu’il faut commander, compté sur tout le plan — contacts, modules, connecteurs, câbles. S’enregistre en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">LPA</span><span class="raccourci">N</span></button>
+              <button role="menuitem" data-act="bilanelec" data-aide="Ce que porte chaque disjoncteur, source par source : son calibre, ce qu’il tire, ce qu’il alimente. Une consommation non écrite reste inconnue."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg><span class="menu-l">Bilan électrique</span></button>
               <!-- (v86) l'historique du plan entier (08-journal) : son compte, dessous, se relit quand le menu s'ouvre -->
               <button role="menuitem" data-act="historique" class="menu-2l" data-aide="Tout ce qui a changé dans ce plan, par vous ou par VOLTA : avant, après, d’où venait la valeur, quand — et « Défaire » sur chaque ligne."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4.5V8h3.5"/><path d="M12 8v4.2l2.8 1.8"/></svg><span class="menu-l">Historique<small id="mn-historique">ce qui a changé, et Défaire</small></span><span class="raccourci">H</span></button>
               <button role="menuitem" data-act="dejafait" data-aide="Les plans de la base les plus proches du plan ouvert : ce qui est pareil, ce qui diffère, dessin par dessin."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M6 9h2M6 13h2M16 9h2M16 13h2"/></svg><span class="menu-l">Comparer au déjà-fait</span></button>
@@ -23766,7 +23825,7 @@ function noterExportDuPlan(nom) { const p = BIB.plans.get(app.planId); if (!p ||
      dans les notes tapées à la main.
    =========================================================================== */
 
-const BILAN = { version: 'v90', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v91', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -33735,7 +33794,8 @@ const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde',
   ia: 'ia intelligence artificielle interne connexion tester cle api adresse modele serveur reseau lire documents scans images',
   // (v88) la sauvegarde d'ensemble (08-sauvegarde) ; « Ouvrir un fichier… » prend aussi un PDF, un Visio
   sauvegarde: 'sauvegarder sauvegarde restaurer restauration copie tout garder fichier volta backup poste navigateur', pdf: 'pdf schema scan lire', comprendre: 'aide comprendre expliquer calcul',
-  indice: 'indice nouvel suivant revision comparer difference change ajoute retire rebranche version fichier' };
+  indice: 'indice nouvel suivant revision comparer difference change ajoute retire rebranche version fichier',
+  bilanelec: 'bilan electrique courant ampere consommation source batterie disjoncteur charge alimente' };
 const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'revue', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);
@@ -35612,7 +35672,7 @@ const ongletCables = sF => !sF ? null : { cle: 'cables', statut: statutCables(sF
 function ongletFabrication(groupes, titre) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length); if (!gs.length) return null;
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
   return { cle: 'fabrication', statut: { t: n + '\u00a0à commander' }, contenu: `<section class="vu-bloc"><h4 class="vu-titre nv-lpa-t">${esc(titre || 'Ce qu’il faut pour la monter')} <span>${esc(pluriel(n, 'pièce'))}</span>
-    ${/* (v83) la LPA du plan entier, d'un clic : la même que la nomenclature, en Excel */ ''}<button type="button" class="nv-lpa-b" data-lpa data-bulle="Ce qu’il faut commander pour tout le plan, compté : contacts, modules, connecteurs, câbles"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v7.5M4.8 7 8 10.2 11.2 7M3 12.5h10"/></svg>LPA du plan · Excel</button></h4>${fabricationVue(gs)}</section>` }; }
+    ${/* (v83) la LPA du plan entier, d'un clic : la même que la nomenclature, en Excel */ ''}<button type="button" class="nv-lpa-b nv-atelier-b" data-atelier data-bulle="Une feuille à imprimer pour l’atelier : le brochage, la face et les pièces de cet objet"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6V2.5h7V6M4.5 11.5h-2v-5h11v5h-2M4.5 9.5h7v4h-7z"/></svg>Fiche d’atelier</button><button type="button" class="nv-lpa-b" data-lpa data-bulle="Ce qu’il faut commander pour tout le plan, compté : contacts, modules, connecteurs, câbles"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v7.5M4.8 7 8 10.2 11.2 7M3 12.5h10"/></svg>LPA du plan · Excel</button></h4>${fabricationVue(gs)}</section>` }; }
 
 /* ---- L'EN-TÊTE (v78, le lecteur : « le disjoncteur doit être centré, en gros : on doit direct comprendre ce que c'est ;
    et proprement à côté, son nom ; en dessous, sa référence, sa gamme — le folio, on s'en fout ; plus de pastille d'état »)
@@ -37395,6 +37455,27 @@ function passerALIndice() { const X = INDICES.recu; if (!X || !X.D || !X.commun)
   dire('VOLTA est passé au nouvel indice : ' + mot.charAt(0).toLowerCase() + mot.slice(1) + '. Votre travail est gardé.', false, { geste: 'Défaire', faire: () => { annuler(); } }); }
 
 MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.indice = surLePlan(() => ficheIndices());
+
+/* ───────── 08-papier-atelier.js ───────── */
+/* ===========================================================================
+   08 — LA FICHE D'ATELIER (v91) : une feuille à imprimer pour qui monte la pièce.
+
+   Le lecteur : « La fiche atelier, c'est brillant. » Dans l'onglet Pièces d'un objet (équipement, barrette, prise), le
+   bouton « Fiche d'atelier » imprime CE QUE LA FICHE MONTRE DÉJÀ — L'essentiel (le brochage dessiné, la face, ce qui
+   reste à régler) puis Pièces (ce qu'il faut pour le monter, connecteur par connecteur) — sur une feuille A4, en clair
+   quel que soit le thème, avec en tête le plan, son indice et la date. Rien n'est recalculé ni réécrit : la feuille dit
+   exactement ce que dit l'écran (une seule source).
+   =========================================================================== */
+function preparerFicheAtelier() { const I = $('inspecteur'); if (!I || I.hidden) return null;
+  const R = document.documentElement, theme = R.dataset.theme, c = app.contrat.cartouche || {};
+  const tete = document.createElement('div'); tete.className = 'at-tete';
+  tete.innerHTML = `<b>Fiche d’atelier</b><span>${esc(nomAffichePlan())}</span>${c.indice ? `<span>indice ${esc(c.indice)}</span>` : ''}<span>${esc(new Date().toLocaleDateString('fr-FR'))}</span><i>VOLTA</i>`;
+  I.prepend(tete); const page = document.createElement('style'); page.textContent = '@page{size:A4 portrait;margin:12mm}'; document.head.appendChild(page);
+  document.body.classList.add('atelier'); R.dataset.theme = 'light';
+  return () => { document.body.classList.remove('atelier'); tete.remove(); page.remove(); if (theme) R.dataset.theme = theme; else delete R.dataset.theme; }; }
+function imprimerFicheAtelier() { const fin = preparerFicheAtelier(); if (!fin) return;
+  const apres = () => { window.removeEventListener('afterprint', apres); fin(); }; window.addEventListener('afterprint', apres); window.print(); }
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-atelier]'); if (!b) return; e.stopPropagation(); imprimerFicheAtelier(); }, true);
 
 /* ───────── 08-pdf-dossier.js ───────── */
 /* ===========================================================================
@@ -42482,6 +42563,63 @@ function rapportCoherenceSEE(I, copie) { const K = I && I.coherence; if (!K) ret
     Object.keys(A.formes).length ? 'Références de contact par famille : ' + Object.entries(A.formes).sort((a, b) => b[1] - a[1]).map(([f, n]) => f + ' ' + n).join(', ') : '',
     A.accessoires ? `Accessoires : ${m(A.accessoires.lignes)}${A.accessoires.types.length ? ' (' + A.accessoires.types.map(([v, n]) => v + ' ' + n).join(', ') + ')' : ''} ; tyraps : ${A.accessoires.tyraps}${A.accessoires.tyrapsVolta ? ` ; des ${A.accessoires.tyrapsVolta} tyraps de VOLTA, ${A.accessoires.tyrapsDansSEE} y sont` : ''}` : '');
   return out.filter(x => x !== '').join('\n').replace(/\n(== )/g, '\n\n$1') + '\n'; }
+
+/* ───────── 08-sources.js ───────── */
+/* ===========================================================================
+   08 — LE BILAN ÉLECTRIQUE (v91) : ce que porte chaque disjoncteur, source par source.
+
+   Le lecteur : « Bilan électrique, pareil, génial. » Un document (⋮ › Bilan électrique) qui range les disjoncteurs du plan
+   sous la source qui les nourrit (une batterie, une génératrice, un TR — 09-chute, `estSource`) et dit, pour chacun : son
+   calibre retenu, ce qu'il tire (en permanence, au démarrage), ce qu'il alimente — chaque équipement avec sa consommation
+   écrite, ou « à écrire ».
+
+   VOLTA DIT LA VÉRITÉ : un courant ne vient que d'une consommation écrite (sur l'équipement) ou d'un profil écrit (sur le
+   disjoncteur). Une consommation qui manque n'est pas comptée pour zéro : le disjoncteur dit ce qui est connu (« 5 A
+   connus ») et nomme ce qui reste à écrire ; le total d'une source aussi. Un clic sur un repère y mène.
+   =========================================================================== */
+const ficheBilanElecOuverte = () => !!(app.fiche && app.fiche.mode === 'bilanelec' && $('fiche') && !$('fiche').hidden);
+const BILAN_ELEC = { lie: false };
+
+function bilanElectrique() { const V = verite(), val = (c, k) => c && c[k] && nombreLu(c[k].i) > 0 ? nombreLu(c[k].i) : 0, r3 = x => Math.round(x * 1000) / 1000;
+  const lignes = reperesDe(V).filter(estDisjoncteur).sort(triNaturel).map(cb => { let chs = []; try { chs = cheminsDepuis(V, cb); } catch (_) { chs = []; }
+    const source = [...new Set(chs.filter(ch => ch.amont).map(ch => ch.bout[0]).filter(r => r && estSource(r)))].sort(triNaturel)[0] || '';
+    const charges = consommateursDe(cb).map(r => { const c = consoDe(r), dem = val(c, 'dem'); return { repere: r, ecrite: !!c, perm: c ? val(c, 'perm') : null, pointe: c ? (dem || val(c, 'perm')) : null }; });
+    const ecrit = chargeEcrite(cb), surLui = phaseEcrite(ecrit), manque = charges.filter(x => !x.ecrite).map(x => x.repere);
+    let perm = null, pointe = null, connu = false;
+    if (surLui) { const pts = pointsDuProfil(ecrit), p = pts.find(x => x.t === Infinity); perm = p ? p.i : 0; pointe = pts.length ? Math.max(...pts.map(x => x.i)) : perm; connu = true; }
+    else if (charges.some(x => x.ecrite)) { perm = r3(charges.reduce((s, x) => s + (x.perm || 0), 0)); pointe = r3(charges.reduce((s, x) => s + (x.pointe || 0), 0)); connu = !manque.length; }
+    let cal = null; try { const d = disjonctionDe(cb); cal = d && d.calibre > 0 ? d.calibre : null; } catch (_) { cal = null; }
+    return { cb, source, calibre: cal, surLui, charges, manque, perm, pointe, connu }; });
+  const groupes = new Map(); lignes.forEach(x => (groupes.get(x.source) || groupes.set(x.source, []).get(x.source)).push(x));
+  const sources = [...groupes].sort(([a], [b]) => !a ? 1 : !b ? -1 : triNaturel(a, b)).map(([source, xs]) => ({ source, lignes: xs,
+    perm: r3(xs.reduce((s, x) => s + (x.perm || 0), 0)), connu: xs.every(x => x.connu), aucun: xs.every(x => x.perm == null), manque: [...new Set(xs.flatMap(x => x.manque))], sansRien: xs.filter(x => x.perm == null && !x.manque.length).length }));
+  return { sources, n: lignes.length, perm: r3(lignes.reduce((s, x) => s + (x.perm || 0), 0)), manque: [...new Set(lignes.flatMap(x => x.manque))], connu: lignes.length > 0 && lignes.every(x => x.connu) }; }
+
+const repBilanHtml = (r, classe) => `<button type="button" class="be-rep${classe ? ' ' + classe : ''}" data-be="${escA(r)}">${esc(r)}</button>`;
+function tireBilanHtml(x) { if (x.perm == null) return '<span class="be-inconnu">inconnu</span>';
+  const dem = x.pointe > x.perm + 1e-9 ? `<small>${esc(amperes(x.pointe))} au démarrage</small>` : '';
+  return `<b>${esc(amperes(x.perm))}</b><small>${x.connu ? 'en permanence' : 'connus, en permanence'}</small>${dem}`; }
+function alimenteBilanHtml(x) { const tete = x.surLui ? '<small class="be-note">Profil écrit sur le disjoncteur</small>' : '';
+  return tete + x.charges.map(c => `<span class="be-ch${c.ecrite ? '' : ' manque'}">${repBilanHtml(c.repere)}<i>${c.ecrite ? esc(amperes(c.perm)) + (c.pointe > c.perm + 1e-9 ? ' · ' + esc(amperes(c.pointe)) : '') : 'à écrire'}</i></span>`).join(''); }
+function sourceBilanHtml(S, k) { const titre = S.source ? `${repBilanHtml(S.source, 'titre')}<span class="be-nat">${esc(majuscule(natureDe(S.source)))}</span>` : '<span class="be-sans">Source non lue dans votre fichier</span>';
+  const total = S.aucun ? '' : `<span class="be-total"><b>${esc(amperes(S.perm))}</b>${S.connu ? 'en permanence' : 'connus, en permanence'}</span>`;
+  return `<section class="hy-groupe be-bloc" aria-labelledby="be-t-${k}"><h3 class="hy-titre be-titre" id="be-t-${k}">${titre}${total}</h3>`
+    + '<table class="be-table"><thead><tr><th scope="col">Disjoncteur</th><th scope="col">Calibre</th><th scope="col">Ce qu’il tire</th><th scope="col" class="be-g">Ce qu’il alimente</th></tr></thead><tbody>'
+    + S.lignes.map(x => `<tr><th scope="row">${repBilanHtml(x.cb)}</th><td class="be-cal">${x.calibre ? esc(amperes(x.calibre)) : ''}</td><td class="be-tire">${tireBilanHtml(x)}</td><td class="be-g be-al">${alimenteBilanHtml(x)}</td></tr>`).join('')
+    + '</tbody></table></section>'; }
+function corpsBilanElec() { const B = bilanElectrique();
+  const chapeau = '<p class="note sv-chapeau">Ce que porte chaque disjoncteur, d’après les consommations écrites. Ce qui n’est pas écrit reste inconnu : VOLTA ne suppose aucun courant.</p>';
+  if (!B.n) return tete('Ce plan', 'Bilan électrique') + '<p class="note sv-chapeau">Ce plan ne porte pas de disjoncteur : il n’y a pas de bilan à faire.</p>';
+  const manque = B.manque.length ? `<div class="sv-recu be-manque"><p class="sv-recu-t"><b>${esc(pluriel(B.manque.length, 'consommation'))} à écrire</b></p><p class="be-liste">${B.manque.map(r => repBilanHtml(r, 'puce')).join('')}</p><p class="sv-recu-a">Un clic ouvre l’équipement : « Ce qu’il consomme » s’écrit dans Modifier. Le bilan se complète de lui-même.</p></div>` : '';
+  return tete('Ce plan', 'Bilan électrique') + chapeau + manque + B.sources.map(sourceBilanHtml).join(''); }
+const piedBilanElec = () => { const B = bilanElectrique(); if (!B.n) return '';
+  return `<span class="hy-etat ${B.connu ? 'ok' : 'regle att'}">${esc(pluriel(B.n, 'disjoncteur'))} · ${esc(amperes(B.perm))} ${B.connu ? 'en permanence' : 'connus, en permanence'}${B.manque.length ? ' · ' + esc(pluriel(B.manque.length, 'consommation')) + ' à écrire' : ''}</span>`; };
+function ficheBilanElec() { const deja = ficheBilanElecOuverte(), y = deja ? $('fiche-corps').scrollTop : 0;
+  ouvrirFiche({ mode: 'bilanelec', large: true }, corpsBilanElec(), piedBilanElec()); lierBilanElec(); if (deja) $('fiche-corps').scrollTop = y; }
+function lierBilanElec() { if (BILAN_ELEC.lie) return; BILAN_ELEC.lie = true;
+  $('fiche-corps').addEventListener('click', e => { if (!ficheBilanElecOuverte()) return; const b = e.target.closest('button[data-be]'); if (!b) return; aller({ nom: b.dataset.be }); }); }
+
+MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.bilanelec = surLePlan(() => ficheBilanElec());
 
 /* ───────── 08-survol.js ───────── */
 /* ===========================================================================

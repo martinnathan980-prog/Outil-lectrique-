@@ -1,0 +1,24 @@
+/* ── LA FICHE D'ATELIER (08-papier-atelier, v91) : la fiche d'un objet, imprimée — L'essentiel puis Pièces, sur une A4 ── */
+.at-tete{display:none}
+.nv-atelier-b{margin-left:auto}
+.nv-atelier-b + .nv-lpa-b{margin-left:8px}
+@media print{
+  body.atelier{background:#fff!important}
+  body.atelier #printroot{display:none!important}
+  body.atelier #app{display:block!important;position:static!important;height:auto!important;overflow:visible!important}
+  body.atelier #app > :not(#inspecteur){display:none!important}
+  body.atelier #inspecteur{position:static!important;display:block!important;width:auto!important;height:auto!important;max-width:none!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;transform:none!important;background:#fff!important;overflow:visible!important}
+  body.atelier #inspecteur *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.atelier #inspecteur :is(.nv-onglets,#in-fermer,.carte-bords,[data-lpa],[data-atelier],.vu-pq,.nv-tete::before){display:none!important}
+  body.atelier #inspecteur :is(#ba-equip,.nv-grand,.nv-corps,#nv-panneaux){display:block!important;position:static!important;height:auto!important;max-height:none!important;overflow:visible!important;background:#fff!important}
+  body.atelier #inspecteur .nv-panneau{display:none!important}
+  body.atelier #inspecteur :is(#nv-p-essentiel,#nv-p-fabrication){display:block!important;position:static!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:0!important;background:#fff!important}
+  body.atelier #inspecteur .nv-tete{background:#fff!important;padding-left:0!important;padding-right:0!important;border-bottom:1px solid #d9d7d2}
+  body.atelier #inspecteur :is(.vu-bloc,.nv-afaire){margin:12px 0 0!important;box-shadow:none!important;break-inside:avoid}
+  body.atelier #inspecteur #nv-p-fabrication .vu-bloc{break-inside:auto}
+  body.atelier #inspecteur #nv-p-fabrication .vu-bloc > :not(h4){break-inside:avoid}
+  body.atelier .at-tete{display:flex;align-items:baseline;gap:14px;padding:0 0 8px;margin:0 0 10px;border-bottom:1.5px solid #1b1b1d;font:400 10pt/1.3 var(--sans);color:#47474c}
+  body.atelier .at-tete b{font:700 12pt/1.2 var(--sans);color:#1b1b1d}
+  body.atelier .at-tete i{margin-left:auto;font:700 9pt/1 var(--sans);font-style:normal;letter-spacing:.14em;color:#1b1b1d}
+}
+@media print{body.atelier #inspecteur .nv-poignee::before,body.atelier #inspecteur .nv-poignee::after{display:none!important}}

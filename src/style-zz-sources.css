@@ -1,0 +1,30 @@
+/* ── LE BILAN ÉLECTRIQUE (08-sources, v91) : les disjoncteurs rangés sous leur source ; quatre colonnes, les chiffres centrés
+   sous leur titre ; une consommation qui manque se voit (ambre) et mène à l'équipement ── */
+.be-titre{display:flex;align-items:baseline;gap:10px}
+.be-nat{font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.be-sans{font:600 var(--f-15,15px)/1.3 var(--sans);color:var(--t-2)}
+.be-total{margin-left:auto;display:inline-flex;align-items:baseline;gap:6px;font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.be-total b{font:600 var(--f-15,15px)/1.2 var(--mono);color:var(--t-1)}
+.be-rep{all:unset;cursor:pointer;font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1);border-radius:4px}
+.be-rep:hover{color:var(--nv-cuivre)}
+.be-rep:focus-visible{outline:2px solid var(--nv-cuivre);outline-offset:2px}
+.be-rep.titre{font:600 var(--f-16,16px)/1.3 var(--mono)}
+.be-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.be-table th,.be-table td{padding:9px 6px;text-align:center;vertical-align:top;border-bottom:1px solid var(--s-line-2)}
+.be-table thead th{padding:6px;font:500 var(--f-11,11px)/1.3 var(--sans);letter-spacing:.02em;color:var(--t-2);border-bottom:1px solid var(--s-line-2)}
+.be-table th:nth-child(1){width:92px}.be-table th:nth-child(2){width:64px}.be-table th:nth-child(3){width:124px}
+.be-table tbody th{font-weight:400}
+.be-table .be-g{text-align:left;padding-left:14px}
+.be-cal{font:500 var(--f-13)/1.3 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
+.be-tire b{display:block;font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
+.be-tire small{display:block;font:400 var(--f-11,11px)/1.35 var(--sans);color:var(--t-2)}
+.be-inconnu{font:500 var(--f-12)/1.3 var(--sans);color:var(--t-3)}
+.be-al{display:table-cell}
+.be-note{display:block;margin-bottom:4px;font:400 var(--f-11,11px)/1.3 var(--sans);color:var(--t-2)}
+.be-ch{display:inline-flex;align-items:baseline;gap:6px;margin:0 14px 3px 0;white-space:nowrap}
+.be-ch i{font:400 var(--f-12)/1.3 var(--mono);font-style:normal;color:var(--t-2);font-variant-numeric:tabular-nums}
+.be-ch.manque i{font-family:var(--sans);color:var(--pastille-att,#b26a00);font-weight:500}
+.be-manque{margin:0 0 6px}
+.be-liste{display:flex;flex-wrap:wrap;gap:6px 8px;margin:8px 0}
+.be-rep.puce{padding:3px 9px;border:1px solid var(--s-line-2);border-radius:999px;font-size:var(--f-12)}
+.be-rep.puce:hover{border-color:var(--nv-cuivre)}
