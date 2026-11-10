@@ -161,7 +161,7 @@ console.log('\n7. LA FICHE D’UN CÂBLE (08-fiche) : UNE SEULE VÉRITÉ');
   ok('sans profil ni consommation : aucun courant prêté — ni le calibre de 102CB1 (avant v87 : 10 A « au pire »), ni pour le câble de la batterie — ; aucune chute', z.source === 'inconnu' && z.I === null && !cz.total && cz.dU === null && z11.I === null && z11.source === 'inconnu', `${z.source} · W-011 ${z11.source}`);
   ev('ALIMS = new Map(); CHUTES_DJ = new Map()');
   const h = ev('intensiteCalculee(W12f)');
-  ok('sans disjoncteur en amont, l’hypothèse (2 A), dite telle', h.source === 'hypothese' && h.I === 2 && !h.al);
+  ok('(v88, le lecteur : « l’outil dit la vérité, pas inventé ») sans disjoncteur en amont, plus d’hypothèse : le courant est inconnu, aucun point de charge, rien de « trop fin »', h.source === 'sans' && h.I == null && h.inconnu === true && !h.al && h.pts.length === 0 && h.trop.length === 0, JSON.stringify({ source: h.source, I: h.I }));
   ev('app.simu = { ...HYPOTHESES, ambiante: 70 }; CONSOS = new Map([["104LP1", { dem: { i: 20, t: 2 }, perm: { i: 5 } }]]); ALIMS = new Map(); CHUTES_DJ = new Map(); brancher(contratExemple(), "102CB1", { dem: { i: 20, t: 2 }, perm: { i: 5 } }, 10)');
   const a = ev('intensiteCalculee([...ALIMS.keys()].find(l => l.cable === "W-012"))');
   ok('à 70 °C, la pointe de 2 s se compare au palier 2 s déclassé du faisceau seul (39 × 0,6 = 23,4 A), le continu à 6,9 × 1,275 — comme la protection (avant v84 : 29,8 A pour 2 s)', pres(a.pointe.admis, 23.4) && pres(a.continu, 6.9 * Math.sqrt(65 / 40)), `${a.pointe.admis.toFixed(2)} A pour 2 s · ${a.continu.toFixed(2)} A en continu`);

@@ -460,8 +460,8 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
   E.normes = err('normes') ? { niveau: 'ko', dit: 'le dernier fichier n’a pas été lu comme une norme' }
     : { niveau: 'ok', dit: lies([mod ? lies([pluriel(mod, 'table') + ' modifiée' + (mod > 1 ? 's' : '') + ' dans ce navigateur', app.normeNom, pluriel(lignes, 'ligne')]) : lies(['embarquées', pluriel(TABLES_NORME.length, 'table'), 'rien de modifié']),
         typeof BASE_SEE !== 'undefined' && BASE_SEE.base ? 'base SEE gardée ' + quand(BASE_SEE.base.quand) : ''].filter(Boolean)) };
-  const H = app.simu || HYPOTHESES, d = ['longueur', 'courant', 'tension', 'ambiante'].some(k => H[k] !== HYPOTHESES[k]);
-  E.hypotheses = { niveau: 'ok', dit: lies([nombre(H.longueur) + ' m par câble sans longueur', nombre(H.courant) + ' A sans disjoncteur', nombre(H.tension) + ' V', nombre(H.ambiante) + ' °C', d ? 'réglées ici' : 'les valeurs de VOLTA']) };
+  const H = app.simu || HYPOTHESES, d = ['longueur', 'tension', 'ambiante'].some(k => H[k] !== HYPOTHESES[k]);
+  E.hypotheses = { niveau: 'ok', dit: lies([nombre(H.longueur) + ' m par câble sans longueur', nombre(H.tension) + ' V', nombre(H.ambiante) + ' °C', d ? 'réglées ici' : 'les valeurs de VOLTA']) };
   return E; }
 /* Une carte. `o` : { cle, titre, une (html : ce qu'elle attend, en une ligne), action: [vf, libelle], zone: [vf, mot] (la zone
    de dépôt, tant que l'entrée est vide), liens: [[vf, libelle]], boites (html), attend: { sous, format, apercu, ensuite,

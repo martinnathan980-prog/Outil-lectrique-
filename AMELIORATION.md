@@ -94,6 +94,12 @@ toutes les données — pas forcément de rapport. Carte blanche, et des questio
   (même série, même arrangement, l'autre sexe), marqué « à vérifier » (**à faire**, passe 2) ; un fil de commande mal
   protégé **reste « à voir »** (sans geste, la phrase dit les deux voies) ; les groupes d'une barrette gardent **huit
   teintes** ; la page inventée ressemble « **à peu près** » à ses schémas — ce qui diffère est demandé.
+- 10 novembre 2026, après l'état des lieux — **carte blanche sur tout** : le courant supposé disparaît (« l'outil dit la
+  vérité, pas inventé ») ; les données sont provisoires jusqu'à son classeur ; la lecture des vrais documents, la sauvegarde
+  d'ensemble, les batteries de l'interface, le fil conducteur, le menu : **à faire** ; les mots : **Installation › Plan ›
+  Folio** ; les scans : **par l'IA interne** ; les folios : **les nôtres**, les plus propres et les plus vrais (on ne copie
+  pas ses schémas, il y en a de toutes les formes) ; les idées pour demain : toutes retenues, **« comparer deux indices »
+  en premier**, puis le plan vivant, la fiche d'atelier, le bilan électrique, la vue d'ensemble.
 
 ## La mesure de la lecture des documents (passe 1, documents inventés, `node tests/lecture-documents.js`)
 

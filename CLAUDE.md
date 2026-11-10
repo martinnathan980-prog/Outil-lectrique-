@@ -34,6 +34,12 @@ s'écrit ici, le jour même.
 
 ## Les vérités du métier (ne pas les réinventer)
 
+- **VOLTA dit la vérité, il n'invente rien** (10 novembre 2026, le lecteur : « VOLTA invente encore un courant, ça c'est pas
+  possible. L'outil dit la vérité, pas inventé ») : plus aucune hypothèse de courant — un câble dont on ne connaît pas la
+  consommation a un courant **inconnu**, avec ou sans disjoncteur en amont, et sa chute aussi ; **jamais une gauge plus
+  fine proposée sans courant connu**. Ce qui est supposé (une longueur) se dit supposé ; ce qui n'est pas su se dit inconnu.
+- **Les données livrées avec VOLTA sont provisoires** (10 novembre 2026) : le lecteur apportera son classeur de données ;
+  d'ici là, « à confirmer » reste écrit là où c'est le cas.
 - **Le retest est la source dure.** Repères, numéros de borne, qui va où : VOLTA ne les change jamais. Pour changer un
   nom, le lecteur change son fichier de base — **tout au même endroit**. Donc : **pas de champ « nom en clair »** ni
   d'autre saisie qui doublerait le fichier.
@@ -82,6 +88,8 @@ s'écrit ici, le jour même.
 - Un problème se dit simplement, avec ce qu'il faut faire.
 - **« Votre fichier »** pour ce qui vient du lecteur ; **« l'Excel corrigé »** pour ce que VOLTA renvoie (v86) ;
   « installation » ne nomme plus que le classement de la bibliothèque (et la colonne Install de ses fichiers).
+- **Installation › Plan › Folio** (10 novembre 2026, son choix) : trois mots, du plus grand au plus petit. « Contrat »
+  disparaît de l'interface (un plan) ; « harness » ne nomme plus que la colonne de ses fichiers.
 - **Un contact a un seul nom partout** (v86) : sur le plan, dans la fiche, le récapitulatif, la recherche, l'Excel corrigé —
   celui que porte la pièce (la lettre de la face, module + lettre pour une barrette, même ajoutée par VOLTA) ; une minuscule
   (51e) se souligne d'un trait fin.
@@ -128,6 +136,12 @@ s'écrit ici, le jour même.
   gestes de modification se voient d'un coup d'œil (v82).
 - **Une barrette ou une prise montre tous ses modules** (1, 2, 3… sous le nom du parent), même ceux posés sur d'autres
   folios ; une lettre de la face mène à son contact ; les liaisons d'un groupe se dessinent nettes, jamais floues (v82).
+- **Nos folios à nous** (10 novembre 2026) : ses schémas ont « plein de manières différentes », on n'en copie aucune —
+  « faisons nos schémas à nous, le plus propre et le plus vérité possible ».
+- **Un fil conducteur** (10 novembre 2026) : après l'ouverture, VOLTA guide — la **Revue**, un point à la fois, jusqu'à
+  « prêt à exporter » ; proposée, jamais imposée. Le menu se range (plus de « Plus » fourre-tout).
+- **Le travail du lecteur se sauvegarde d'un geste** (10 novembre 2026) : « Tout sauvegarder / tout restaurer », un fichier —
+  sans les réglages de l'IA interne (jamais dans un export).
 - **Le dessin d'un objet reprend la forme du plan** (la prise : grand rectangle et petit rectangle, comme sur le folio).
 - « Pièces », c'est la **LPA** (liste de pré-approvisionnement) dans le jargon du lecteur.
 - **Le mode sombre doit être beau et vivant**, pas seulement moins noir : de la couleur, de la lumière, des surfaces qui se

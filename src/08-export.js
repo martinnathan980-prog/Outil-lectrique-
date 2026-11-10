@@ -118,7 +118,7 @@ function feuilleVolta(v) { const L = [['VOLTA — ce que les colonnes de votre f
     ['Sorte', 'Clé', 'Valeur', 'Donnée']];
   L.push(['format', FORMAT_VOLTA, v.nom || '', JSON.stringify({ quand: v.quand })]);
   (v.charges || []).forEach(([k, p]) => L.push(['charge', k, motProfil(p), JSON.stringify(p)]));
-  Object.entries(v.hypotheses || {}).forEach(([k, x]) => { if (x == null || typeof x === 'function') return; L.push(['hypothese', k, Array.isArray(x) ? x.join(' · ') : typeof x === 'object' ? '' : String(x), JSON.stringify(x)]); });
+  Object.entries(v.hypotheses || {}).forEach(([k, x]) => { if (x == null || typeof x === 'function' || k === 'courant' /* (v88) plus d'hypothèse de courant */) return; L.push(['hypothese', k, Array.isArray(x) ? x.join(' · ') : typeof x === 'object' ? '' : String(x), JSON.stringify(x)]); });
   (v.contacts || []).forEach(c => L.push(['contact', c.cle, [c.contactDe, c.contactVers].filter(Boolean).join(' · '), JSON.stringify({ contactDe: c.contactDe, contactVers: c.contactVers })]));
   [['designation', v.designations], ['sexe', v.sexes], ['raccord', v.raccords]].forEach(([s, xs]) => (xs || []).forEach(([k, x]) => L.push([s, k, typeof x === 'object' ? '' : String(x), JSON.stringify(x)])));
   const ws = XLSX.utils.aoa_to_sheet(L); ws['!cols'] = [{ wch: 12 }, { wch: 24 }, { wch: 48 }, { wch: 60 }]; return ws; }

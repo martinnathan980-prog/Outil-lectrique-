@@ -311,15 +311,18 @@ const celluleIntensite = r => { const F = r.F(), x = F.x, I = instantsDuFil(F), 
   // (v87, le lecteur, Q1) toute branche dont une consommation manque, son retour aussi (S1) : « inconnu », et ce qu'il faut écrire
   if (x.I == null && x.al) { const quoi = typeof motDeCommande === 'function' ? motDeCommande(x) : '', cmd = x.source === 'commande';
     return `<span class="rc-int" data-bulle="${escA((cmd ? 'Courant de commande inconnu' : 'Courant inconnu') + (x.retour ? ' — le retour de ' + listeEt(x.retour.de) + ', comme son aller' : '') + ', sous ' + (x.al ? x.al.nom : 'son disjoncteur') + (quoi ? ' : ' + quoi : '') + '. Rien ne le juge, rien ne le grossit tant qu’il n’est pas écrit.')}">${anneau(null)}${chiffre('')}<span class="rc-adm rc-inconnu">inconnu</span>${motInstant(cmd ? 'commande' : '')}</span>`; }
+  // (v88, le lecteur : « l'outil dit la vérité, pas inventé ») sans disjoncteur en amont, plus de courant supposé : « inconnu »,
+  // comme les autres — la colonne ne se pose que si une ligne au moins a un courant ou un geste (`vide`)
+  if (x.I == null && !x.al) return `<span class="rc-int" data-bulle="${escA('Courant inconnu : votre fichier ne lui donne aucun disjoncteur en amont. VOLTA ne lui prête aucun courant.')}">${anneau(null)}${chiffre('')}<span class="rc-adm rc-inconnu">inconnu</span>${motInstant('')}</span>`;
   if (s.i == null || !isFinite(s.i)) return rien;
   const q = s.admis ? s.i / s.admis : null, trop = q != null && q > 1 + 1e-9;
-  const quoi = x.al ? (x.source === 'branche' ? (x.retour ? 'ce que ce câble ramène' : 'ce qu’alimente ce câble') : x.partiel ? 'ce qui est écrit en aval de ' + x.al.nom + ' (au moins)' : 'le profil de ' + x.al.nom) : 'l’hypothèse de la simulation';
+  const quoi = x.al ? (x.source === 'branche' ? (x.retour ? 'ce que ce câble ramène' : 'ce qu’alimente ce câble') : x.partiel ? 'ce qui est écrit en aval de ' + x.al.nom + ' (au moins)' : 'le profil de ' + x.al.nom) : 'ce qui est écrit';
   const autre = I.autre && I.autre.admis ? `\n${majuscule(instantDit(I.autre))} : ${amperes(I.autre.i)} sur ${amperes1(I.autre.admis)} admis` + (I.autre.i > I.autre.admis + 1e-9 ? ' — il ne les porte pas.' : '.') : '';
   const bulle = s.admis ? `${majuscule(instantDit(s))} : ${amperes(s.i)}, selon ${quoi} ; ${s.pointe ? 'sur cette durée, ' : ''}le ${F.l.type || 'câble'} admet ${amperes1(s.admis)} (${pourcentDe(q)})${trop ? ' : il ne les porte pas.' : '.'}${autre}`
     : `${majuscule(instantDit(s))} : ${amperes(s.i)}, selon ${quoi}.\n${F.l.type ? F.l.type + ' n’est pas dans l’EN 2853' : 'Votre fichier ne donne pas son type'} : ce qu’il admet ne se lit pas.`;
-  const mot = s.pointe ? motInstant('pointe', 'Les deux colonnes disent la pointe du profil : ' + s.nom + ', ' + amperes(s.i) + ' pendant ' + secondes(s.t) + '.') : x.al ? motInstant('') : motInstant('supposé', 'Aucun disjoncteur en amont : le courant supposé par la simulation (menu ⋮ → Hypothèses)');
-  const mene = x.al ? 'Double-clic : le profil de ' + x.al.nom : 'Double-clic : les hypothèses';
-  return `<span class="rc-int" data-bulle="${escA(bulle + '\n' + mene + '.')}">${anneau(q, trop ? 'ko' : '')}${chiffre(val('intensite', ampere(s.i), { cls: 'rc-n rc-calc', aria: mene }), 'A', trop ? 'ko' : '')}<span class="rc-adm">${s.admis ? 'sur ' + ampere(s.admis) + INSECABLE + 'A' : 'admis inconnu'}</span>${mot}</span>`; };
+  const mot = s.pointe ? motInstant('pointe', 'Les deux colonnes disent la pointe du profil : ' + s.nom + ', ' + amperes(s.i) + ' pendant ' + secondes(s.t) + '.') : motInstant('');
+  const mene = x.al ? 'Double-clic : le profil de ' + x.al.nom : '';
+  return `<span class="rc-int" data-bulle="${escA(bulle + (mene ? '\n' + mene + '.' : ''))}">${anneau(q, trop ? 'ko' : '')}${chiffre(val('intensite', ampere(s.i), { cls: 'rc-n rc-calc', aria: mene }), 'A', trop ? 'ko' : '')}<span class="rc-adm">${s.admis ? 'sur ' + ampere(s.admis) + INSECABLE + 'A' : 'admis inconnu'}</span>${mot}</span>`; };
 /* LA CHUTE, au même instant : la tension perdue depuis le disjoncteur jusqu'au bout du chemin le plus long qui passe par lui,
    sur ce qui est admis (sans disjoncteur en amont : sur lui seul) ; en défaut, la teinte du problème — rouge sur des longueurs
    de votre fichier, ambre (à voir) sur des longueurs supposées. */
@@ -346,7 +349,7 @@ const COLONNES_LIAISONS = [
   // (v86, B7) l'intensité et la chute au même instant (`instantsDuFil`) — à l'écran, au tri et dans le CSV
   { k: 'intensite', t: 'Intensité', option: true, large: 1, g: 'Le câble', cls: 'rc-c-int', html: celluleIntensite,
     tri: r => { const s = instantsDuFil(r.F()).le; return s.admis ? s.i / s.admis : s.i != null ? s.i / 1000 : -1; },
-    texte: r => { const s = instantsDuFil(r.F()).le; return s.i == null ? (r.F().x.I == null && r.F().x.al ? (r.F().x.source === 'commande' ? 'inconnu (commande)' : 'inconnu') : '') : ampere(s.i) + ' A' + (s.admis ? ' sur ' + ampere(s.admis) + ' A' : '') + (s.pointe ? ' (pointe)' : r.F().x.al ? '' : ' (supposé)'); },
+    texte: r => { const s = instantsDuFil(r.F()).le; return s.i == null ? (r.F().x.I == null ? (r.F().x.source === 'commande' ? 'inconnu (commande)' : 'inconnu') : '') : ampere(s.i) + ' A' + (s.admis ? ' sur ' + ampere(s.admis) + ' A' : '') + (s.pointe ? ' (pointe)' : ''); },
     vide: r => { const s = instantsDuFil(r.F()).le; return (s.i == null || !isFinite(s.i)) && !(r.F().x.I == null && r.F().x.al); } },
   { k: 'chute', t: 'Chute', option: true, large: 1, g: 'Le câble', cls: 'rc-c-mesure', html: celluleChute,
     // la règle de la colonne, dite une fois dans son en-tête : la chute de chaque ligne est prise à l'instant de son intensité
@@ -517,7 +520,7 @@ function survolRepere(nom) { if (app.dessin && app.dessin.compDe.has(nom)) allum
 /* ---- DISJONCTEURS : le calibre retenu, son verdict, le meilleur ----------------- */
 const disjoncteurs = () => memo('disj', () => reperes().filter(r => r.genre === 'cb'));
 function infoDisj(nom) { return memo('dj|' + nom, () => { const d = disjonctionDe(nom), H = H_(), V = verite();
-  const I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : d.calibre > 0 ? d.calibre : H.courant, courts = d.points.filter(p => p.t !== Infinity && p.i > 0);
+  const I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : 0, courts = d.points.filter(p => p.t !== Infinity && p.i > 0);
   // (v86) la pire chute de ses lignes, à l'instant le plus dur — le permanent ou une pointe, contre ce qui est admis à cet instant
   let pire = null; try { chutesDepuis(app.norme, V, nom, I, H, courts).forEach(c => [{ dU: c.dU, admis: c.admis, pointe: null }, ...(c.pointes || []).map(p => ({ dU: p.dU, admis: p.admis, pointe: p }))].forEach(k => {
     if (k.dU == null) return; const q = k.admis ? k.dU / k.admis : k.dU / 100; if (!pire || q > pire.q) pire = { ...c, dU: k.dU, admis: k.admis, pointe: k.pointe, trop: k.admis != null && k.dU > k.admis + 1e-9, q }; })); } catch (_) { }

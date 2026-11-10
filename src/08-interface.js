@@ -2513,7 +2513,7 @@ function cartePhysique(nom, P, b) { const coupure = estCoupure(nom), I = (coupur
     + dessinPhysique(nom, P, largeurCarte(), { forme: coupure ? 'coupure' : 'reglette' })
     + `<div class="legende"><span class="l-fleche"></span>ce qui arrive (amont) au-dessus, ce qui repart (aval) en dessous · <span class="l-trou occ"></span>trou occupé · <span class="l-trou"></span>trou libre`
     + (coupure ? '' : ' · <span class="l-peigne"></span>paquet ponté') + ' · <span class="l-libre"></span>libre</div>' + verdictsNorme(P, coupure)
-    + carteSimulation(nom, P, simulerBornier(P, app.norme, app.simu)) + choixReference(nom, I, R); }
+    + choixReference(nom, I, R); }
 /* Ce que la norme sait de cette famille, en une ligne — ou qu'elle n'en sait rien. */
 function ligneNorme(P) { const F = P.famille;
   if (!F) return `<div class="bar-norme sans">aucune norme ne connaît ${P.entree && P.entree.famille ? 'la famille <b>' + esc(P.entree.famille) + '</b>' : 'cette référence'} — un trou par côté, rien n’est jugé</div>`;
@@ -2554,7 +2554,7 @@ function hypothesesDe(N, H, ctx) { ctx = ctx || {}; const regime = REGIMES[H.reg
   const TABLEAU = 'L’ambiante du tableau de disjoncteurs : seules les courbes de disjonction qui l’encadrent jugent';
   return [
     nb('si-L', 'longueur', 'longueur', 'm', '0.5', 'fil', 'La longueur d’un câble que l’installation ne mesure pas : la chute sur ce câble, et la chute en ligne depuis le disjoncteur, se calculent dessus.'),
-    nb('si-I', 'courant', 'courant', 'A', '0.5', 'fil', 'Le courant d’un câble qu’aucun disjoncteur n’alimente, et celui de la simulation d’une barrette ou d’une prise.'),
+    // (v88, le lecteur : « l'outil dit la vérité, pas inventé ») plus d'hypothèse de courant : sans consommation connue, il est inconnu
     nb('si-U', 'tension', 'tension', 'V', '1', 'fil', 'La tension du réseau : le pourcentage de chute, et la ligne de la table Réseau quand la chute admise de la règle du lecteur est vidée.'),
     N.fils.some(f => f.tr != null) ? nb('si-T', 'ambiante', 'ambiante', '°C', '5', 'temperature', 'L’ambiante autour des câbles : l’EN 2853 déclasse ce qu’un câble admet (note 2), et sa tenue en température se juge dessus (+ 40 °C au conducteur).') : null,
     // (v86, l'audit G7 : « Conducteur 20 °C » laissait croire que la chute se calcule à 20 °C ; par défaut, VOLTA estime la
@@ -2603,7 +2603,7 @@ function champHypotheseHtml(c, H) {
 const GROUPES_HYPOTHESES = [['fil', 'Le câble'], ['temperature', 'La température'], ['chute', 'La chute en ligne'], ['reseau', 'Le réseau'], ['declassement', 'Le déclassement'], ['tableau', 'Les disjoncteurs']];
 /* CE QUE FAIT CHAQUE RÉGLAGE, EN UNE PHRASE (l'ergonome v73 : « 232 mots à lire : chaque réglage porte un paragraphe ») ; le
    paragraphe entier — la règle, la source, la valeur par défaut — se lit dans le « ? » de sa ligne. */
-const COURT_HYPOTHESES = { longueur: 'La longueur d’un câble que votre fichier ne donne pas.', courant: 'Le courant d’un câble qu’aucun disjoncteur n’alimente.', tension: 'La tension du réseau.',
+const COURT_HYPOTHESES = { longueur: 'La longueur d’un câble que votre fichier ne donne pas.', tension: 'La tension du réseau.',
   ambiante: 'L’air autour des câbles : ce qu’un câble admet en dépend.', tconducteur: 'La température des câbles quand la chute se calcule à température fixe ; par défaut, VOLTA l’estime sous leur courant.', retour: 'Par où le courant revient : la structure, ou un câble.',
   regime: 'Continu, monophasé ou triphasé.', cosphi: 'Le facteur de puissance, en alternatif.', reactance: 'La réactance d’un gros câble, en alternatif.', charge: 'La part de ce que le faisceau admet qui y circule vraiment.',
   altitude: 'L’altitude de vol.', tableauMin: 'L’ambiante la plus basse du tableau de disjoncteurs.', tableauMax: 'L’ambiante la plus haute du tableau de disjoncteurs.',
@@ -2644,25 +2644,6 @@ function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }
 /* Une hypothèse a changé : gardée, le contrôle se refait (sa clé l'oublie), la fiche ouverte dans l'inspecteur aussi. */
 // le calibre du folio suit les hypothèses (`peindre` ne repeint que si un calibre a changé)
 function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); peindre(); rafraichirCarte(); }
-function carteSimulation(nom, P, S) { const H = S.hyp, V = verite(), N = app.norme || normeVide();
-  let s = `<div class="simu"><div class="simu-tete"><span class="sur">Simulation</span><span class="simu-note">hypothèses, pas des mesures : votre fichier ne porte ni longueur ni courant</span></div>
-    <div class="hyp">${hypothesesDe(N, H, { fils: S.fils }).map(c => champHypotheseHtml(c, H)).join('')}</div>`;
-  if (S.sansNorme) return s + `<p class="simu-vide">Aucune norme ne connaît cette famille ni ces câbles : rien n’est calculé. Importez une norme depuis la bible.</p></div>`;
-  if (!S.lignes.length) return s + `<p class="simu-vide">Aucun câble dans un trou : rien à simuler.</p></div>`;
-  const ligne = x => { const i = V.indexOf(x.l), dest = x.vers + (x.borneVers ? ':' + x.borneVers : '');
-    return `<tr class="fil sim-${x.verdict}" data-i="${i}" data-fils="${i}" data-borne="${escA(x.borne)}" tabindex="0" role="button" aria-label="${escA('Voir le câble ' + x.cable + ' sur le plan')}"><td class="c">${esc(x.borne)}<span class="sens">${x.sens === 'amont' ? '↓ ' + (P.cotes.amont === 'fiche' ? 'fiche' : 'amont') : '↑ ' + (P.cotes.aval === 'embase' ? 'embase' : 'aval')}</span>${x.surcharge ? '<span class="ko">surcharge</span>' : ''}</td>`
-      + `<td class="m"><b>${esc(x.cable)}</b><span class="dest">${esc(dest)}</span></td><td class="m${x.jaugeOk === false ? ' ko' : ''}">${esc(x.type || '—')}${x.jaugeOk === false ? '<span class="ko">hors plage</span>' : x.approx ? '<span class="att">gauge seule</span>' : ''}${x.tenue && !x.tenue.ok ? `<span class="att" title="${escA('Câble ' + nombre(x.tenue.tmax) + ' °C : ' + nombre(x.tenue.conducteurA) + ' °C au conducteur (ambiante ' + nombre(x.tenue.ambiante) + ' + 40 °C de l’EN 2853)')}">${esc(nombre(x.tenue.conducteurA))} °C &gt; ${esc(nombre(x.tenue.tmax))} °C</span>` : ''}</td>`
-      + `<td class="d">${x.iFil == null ? '—' : dec(x.iFil, 1)} / ${x.iContact == null ? '—' : dec(x.iContact, 1)}</td><td class="d">${x.dU == null ? '—' : dec(x.dU, 2) + ' V<span class="sep"> · </span><span class="pct">' + dec(x.pct, 1) + ' %</span>'}</td><td><span class="verdict v-${x.verdict}">${MOTS_VERDICT[x.verdict]}</span>${x.xEstime != null ? `<span class="sim-x" title="Une estimation : un câble seul à ${POSE_HAUTEUR} mm de la structure, à ${FREQUENCE_BORD} Hz — à saisir dans X, jamais prise d’office">X ≈ ${esc(nombre(Math.round(x.xEstime * 100) / 100))} mΩ/m ?</span>` : ''}</td></tr>`; };
-  const bilan = Object.entries(S.compte).map(([v, n]) => `<span class="verdict v-${v}">${n} ${MOTS_VERDICT[v]}</span>`).join(' ');
-  const ex = S.lignes.find(x => x.dU != null);
-  const calcul = !ex ? '' : (() => { const admis = S.chute && S.chute.chuteMax != null ? ` — admis : ${nombre(S.chute.chuteMax)} V` : '', fin = `<b>${dec(ex.dU, 3)} V</b>, soit ${dec(ex.pct, 2)} % de ${nombre(H.tension)} V${admis}</div>`;
-    const rho = `${nombre(arrondi(ex.rho, 1))} Ω/km à ${nombre(Math.round(ex.T != null ? ex.T : H.tconducteur))} °C${ex.rhoSource === 'câble' ? ' — le câble ' + esc(ex.cab.cable) + ' de la base' : ex.rhoSource === 'jauge' ? ' — la jauge seule, EN 2853' : ''}${ex.kTemperature && Math.abs(ex.kTemperature - 1) > 1e-6 ? ' (× ' + nombre(Math.round(ex.kTemperature * 1000) / 1000) + ' depuis 20 °C)' : ''}`;
-    if (ex.regime === 'continu') return `<div class="calcul"><b>${esc(ex.cable)}</b> : (${rho} × ${nombre(H.longueur)} m + ${nombre(S.rContact * 1000)} mΩ) × ${nombre(H.courant)} A = ${fin}`;
-    return `<div class="calcul"><b>${esc(ex.cable)}</b> : R = ${rho} × ${nombre(H.longueur)} m + ${nombre(S.rContact * 1000)} mΩ = ${dec(ex.R, 3)} Ω ; ΔU${ex.regime === 'tri' ? ' composée' : ''} = ${ex.regime === 'tri' ? '√3 × ' : ''}${nombre(H.courant)} A × (${dec(ex.R, 3)} × ${nombre(ex.cosphi)} + ${dec(ex.X, 3)} × ${dec(Math.sqrt(1 - ex.cosphi * ex.cosphi), 2)}) = ${fin}`; })();
-  s += `<div class="simu-defile"><table class="simu-tab"><thead><tr><th>contact</th><th>câble</th><th>type</th><th title="Intensité admissible du câble (déclassée) / du contact">I câble / contact (A)</th><th title="Chute de tension sur la longueur d’hypothèse">ΔU</th><th>verdict</th></tr></thead><tbody>${S.lignes.map(ligne).join('')}</tbody></table></div>
-    <div class="bilan">${bilan}</div>
-    <div class="formule">${formuleChute(S.regime)} — ρ la résistance du câble à ${nombre(H.tconducteur)} °C (la base des câbles, sinon l’EN 2853), L la longueur${S.regime !== 'continu' ? ' simple du câble, I le courant par phase, X la réactance (négligée sous ' + GROS_CABLE + ' mm² de cuivre, à saisir au-delà)' : ''}, R<sub>contact</sub> celle du contact (${S.rContact ? nombre(Math.round(S.rContact * 10000) / 10) + ' mΩ' + (S.famille && S.famille.resistance != null ? '' : S.famille && S.famille.nature !== 'coupure' ? ', deux par potentiel' : ', par la taille du contact') : 'inconnue'}), I le courant. I câble = intensité du câble × ${nombre(Math.round(S.facteur * 100) / 100)} (${S.declassement && S.declassement.length ? S.declassement.map(d => d.condition + (d.point && d.point.fils != null ? ' : ' + S.fils + ' câbles, le point ' + d.point.fils + ' à ' + nombre(d.point.charge) + ' %' : '')).join(' · ') : 'sans déclassement'})${S.iContact != null ? ' ; contact ' + nombre(S.iContact) + ' A' : ''}.${S.regime === 'tri' && S.chute ? ' La chute composée se compare ' + (S.chute.regle === 'lecteur' ? 'aux ' + nombre(S.chute.chuteMax) + ' V de la règle du lecteur.' : 'à la ligne ' + nombre(S.chute.tension) + ' V du réseau.') : ''} Les ponts ne sont pas des câbles dans un trou : ils ne sont pas simulés.</div>${calcul}</div>`;
-  return s; }
 /* Un module au-delà de ce que la référence retenue compte : la borne existe
    dans le contrat, pas sur le matériel. */
 const horsReference = (P, m) => !!(P.entree && P.entree.bornes != null && /^\d+$/.test(m.borne) && +m.borne > P.entree.bornes);
@@ -2722,7 +2703,7 @@ function lierHypotheses(box, refaireFiche) { const H = app.simu, el = id => box.
   [['si-Tmin', 'tableauMin'], ['si-Tmax', 'tableauMax']].forEach(([id, k]) => { const e = el(id); if (!e) return;
     e.addEventListener('change', () => { const v = parseFloat(String(e.value).replace(',', '.')); if (isNaN(v)) { e.value = H[k]; return; } if (v === H[k]) return; H[k] = v;
       if (H.tableauMin > H.tableauMax) { if (k === 'tableauMin') H.tableauMax = v; else H.tableauMin = v; } refaire(id); }); });
-  [['si-L', 'longueur'], ['si-I', 'courant'], ['si-U', 'tension'], ['si-T', 'ambiante'], ['si-Tc', 'tconducteur'], ['si-X', 'reactance'], ['si-P', 'charge'], ['si-A', 'altitude']].forEach(([id, k]) => { const e = el(id); if (!e) return;
+  [['si-L', 'longueur'], ['si-U', 'tension'], ['si-T', 'ambiante'], ['si-Tc', 'tconducteur'], ['si-X', 'reactance'], ['si-P', 'charge'], ['si-A', 'altitude']].forEach(([id, k]) => { const e = el(id); if (!e) return;
     e.addEventListener('change', () => { const v = parseFloat(String(e.value).replace(',', '.')); if (isNaN(v) || v < 0) { e.value = H[k]; return; } if (v === H[k]) return; H[k] = v; refaire(id); }); });
   // les hypothèses R2 : la fréquence (> 0), les marges (la marge de temps : 1 à 100 %), le préchauffage (1 au moins), la chute
   // du disjoncteur (une case), les calibres préférés (une liste libre : « 1 3 5 7,5 10 », vide pour tout le catalogue)

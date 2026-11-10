@@ -529,6 +529,9 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
   // des câbles au moins (la règle des colonnes du récapitulatif, `colonnesUtiles`) : un disjoncteur, vissé, n'en a pas — ses
   // câbles le disent dans leur fiche et dans Pièces
   const nCt = xs.filter(x => x.ct && x.ct.st && x.ct.st.reference).length, avecCt = nCt > 0 && nCt * 2 >= xs.length;
+  // (v88) plus de courant supposé : quand aucune chute ne se calcule (aucun courant connu), sa colonne ne se pose pas — vingt
+  // « inconnue » l'une sous l'autre ne disent rien de plus que la note de tête
+  const avecU = xs.some(x => x.r.chute.u != null);
   // (v84) une colonne homogène : si une ligne y porte un anneau, celles qui n'en ont pas gardent sa place (la valeur reste
   // alignée sous les autres) ; si aucune n'en porte, la valeur seule, centrée sous son titre
   const fini = v => v != null && isFinite(v), anI = xs.some(x => fini(x.r.charge.r)), anU = xs.some(x => fini(x.r.chute.u != null && x.r.chute.max ? x.r.chute.u / x.r.chute.max : null));
@@ -554,8 +557,9 @@ function tableCables(rows, o) { o = o || {}; const T = NIVEAU.tri, H = app.simu 
     return `<tr class="fi-ia nv-cab${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}" tabindex="0"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle + (r.pourquoi ? '\n' + r.pourquoi : ''))}"` : ''}>`
       + `<td class="nv-td-type">${type}</td>`
       + `<td class="nv-td-vers"><span class="nv-vers"><b class="id">${esc(r.bout && r.bout.rep ? r.bout.rep : '—')}</b>${r.bout && r.bout.borne ? `<span class="nv-borne">borne ${esc(r.bout.borne)}</span>` : ''}</span></td>`
-      + `<td class="nv-td-i">${iH}</td><td class="nv-td-u">${uH}</td><td class="nv-td-lg">${lgH}</td>${avecCt ? `<td class="nv-td-ct">${ctH}</td>` : ''}</tr>`; }).join('');
-  const tete2 = avecCt ? tete : tete.replace(/<th scope="col"[^>]*class="nv-th-ct"[\s\S]*?<\/th>/, '');
+      + `<td class="nv-td-i">${iH}</td>${avecU ? `<td class="nv-td-u">${uH}</td>` : ''}<td class="nv-td-lg">${lgH}</td>${avecCt ? `<td class="nv-td-ct">${ctH}</td>` : ''}</tr>`; }).join('');
+  const sansCol = (t, k) => t.replace(new RegExp('<th scope="col"[^>]*class="nv-th-' + k + '[ "][\\s\\S]*?<\\/th>'), '');
+  const tete2 = [avecCt ? '' : 'ct', avecU ? '' : 'u'].filter(Boolean).reduce(sansCol, tete);
   // (v84) le titre et le compte ; qu'une ligne s'ouvre, son survol le montre (la ligne s'éclaire, une flèche paraît au bout)
   return `<div class="nv-table-c"><table class="nv-cables${o.cls ? ' ' + o.cls : ''}"><caption class="nv-cap"><b>${esc(o.titre || 'Ses câbles')}</b><span>${esc(String(rows.length))}</span></caption><thead><tr>${tete2}</tr></thead><tbody>${lignes}</tbody></table></div>`; }
 

@@ -261,8 +261,8 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
   /* LA CHUTE EN LIGNE — UNE SEULE (v73, l'ingénieur : « 2,28 V sur la fiche du câble, 2,33 V dans les problèmes et le PDF ;
      même mot, même câble, deux valeurs ») : celle que les fiches montrent (`chutesDuDisjoncteur`, 08-fiche — la chute
      propre du CALIBRE RETENU comprise ; le contrôle prenait celle du part number), et sa pire pointe comme elles
-     (`pireChuteEnPointe`). Au permanent du profil (sinon le calibre, sinon l'hypothèse), et à chaque état court. */
-  const C = typeof chutesDuDisjoncteur === 'function' ? chutesDuDisjoncteur(nom) : null, I = C && C.I > 0 ? C.I : d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : cal > 0 ? cal : H.courant;
+     (`pireChuteEnPointe`). Au permanent du profil (v88 : sans profil, aucune chute ne se calcule — ni le calibre, ni une hypothèse), et à chaque état court. */
+  const C = typeof chutesDuDisjoncteur === 'function' ? chutesDuDisjoncteur(nom) : null, I = C && C.I > 0 ? C.I : d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : 0;   // (v88) jamais le calibre ni une hypothèse : sans profil, aucune chute ne se calcule
   const cs = C && C.cs ? C.cs : chutesDepuis(N, V, nom, I, H, d.points.filter(p => p.t !== Infinity && p.i > 0), { famille: d.famille, calibre: cal });
   const pire = c => typeof pireChuteEnPointe === 'function' ? pireChuteEnPointe(c) : (c.pointes || []).find(x => x.trop);
   /* (v84, l'agent « recap » : un problème commence par son câble) la phrase dit le câble qui arrive au bout du chemin
