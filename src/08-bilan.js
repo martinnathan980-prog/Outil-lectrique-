@@ -12,7 +12,7 @@
    =========================================================================== */
 'use strict';
 
-const BILAN = { version: 'v88', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v89', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */

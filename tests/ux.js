@@ -151,6 +151,10 @@ function socle() {
     const els = elements(), D ={ cibles: [], noms: [], coupes: [], cachees: [] }, textes = [], icones = [], champs = [], info = { mots: 0, cibles: 0, petites32: [] };
     const cibles = [];
     for (const e of els) { const s = getComputedStyle(e);
+      /* (10 novembre 2026) DEUX EXEMPTIONS, celles de la norme (WCAG 1.4.3) : ce qui est FIGÉ derrière une feuille modale (`inert` :
+         un composant inactif — on ne peut ni le lire au lecteur d'écran, ni y aller, ni le cliquer) ; et l'IMAGE DÉCORATIVE marquée
+         comme telle (`data-decor` sur un dessin `aria-hidden` : le schéma vivant de l'accueil, sa règle qui s'efface exprès). */
+      if (e.closest('[inert]') || e.closest('svg[aria-hidden="true"][data-decor]')) continue;
       // 1. les textes : chaque nœud texte visible, son encre, ses rectangles rognés à ce qui se voit
       for (const n of e.childNodes) { if (n.nodeType !== 3 || !n.data.trim()) continue;
         if (s.visibility !== 'visible' || /^(OPTION|TITLE|TEXTAREA)$/.test(e.tagName)) continue;
@@ -256,7 +260,7 @@ function socle() {
       ps: pseudo(b) + '§' + pseudo(a), par: p ? [p.boxShadow, p.outlineStyle, p.outlineWidth, p.borderTopColor].join('|') : '', gpar: g ? [g.boxShadow, g.outlineStyle, g.borderTopColor].join('|') : '' }; };
   // un élément du SVG (un point d'une courbe) ne porte ni contour ni ombre : son anneau est le trait de ses enfants
   const enfants = e => [...e.querySelectorAll('*')].slice(0, 12).map(x => { const t = getComputedStyle(x); return [t.stroke, t.strokeWidth, t.fill, t.opacity, t.outlineStyle, t.boxShadow].join('|'); }).join('§');
-  const recouvert = (e, z) => { const pts = [[(z.x0 + z.x1) / 2, (z.y0 + z.y1) / 2], [z.x0 + 2, z.y0 + 2], [z.x1 - 2, z.y1 - 2]]; return !pts.some(([x, y]) => appartient(e, document.elementFromPoint(x, y))); };
+  const recouvert = (e, z) => { const pts = [[(z.x0 + z.x1) / 2, (z.y0 + z.y1) / 2], [z.x0 + 2, z.y0 + 2], [z.x1 - 2, z.y1 - 2]]; return !pts.every(([x, y]) => appartient(e, document.elementFromPoint(x, y))); };   /* (10 novembre 2026) recouvert, même EN PARTIE (un point de la courbe à demi sous la bulle d'un « ? ») : son anneau se lirait contre ce qui le couvre — et cette bulle se ferme dès que le clavier le prend ; il se juge sur l'écran où rien ne le couvre */
   function focus() { const D = [], anneaux = []; let indetermines = 0, essayes = 0;
     const els = elements().filter(e => e.tabIndex >= 0 && !eteint(e) && !e.closest('[aria-hidden="true"], [inert]') && visible(e));
     const avant0 = document.activeElement;
@@ -317,7 +321,7 @@ const calme = page => page.waitForFunction(() => !document.getAnimations().some(
 async function remettre(page) {
   await page.evaluate(() => { const f = (fn, ...a) => { try { if (typeof window[fn] === 'function') window[fn](...a); } catch (_) { } };
     try { if (typeof FI !== 'undefined' && FI.liste) FI.liste = ''; } catch (_) { }
-    f('fermerRaccourcis'); f('fermerMenu'); f('fermerAide'); f('fermerRecherche'); if (typeof app !== 'undefined') { if (app.fiche) f('fermerFiche'); f('deselectionner'); f('fermerInspecteur'); f('fermerBase'); }
+    f('fermerRaccourcis'); f('fermerCarnet'); f('fermerPalette'); f('fermerMenu'); f('fermerAide'); f('fermerRecherche'); if (typeof app !== 'undefined') { if (app.fiche) f('fermerFiche'); f('deselectionner'); f('fermerInspecteur'); f('fermerBase'); }
     const l = document.getElementById('fi-menu-liste'); if (l) l.hidden = true; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); });
   await page.mouse.move(3, 3); await calme(page); }
 // le plan sur la table, un folio, cadré
@@ -333,7 +337,7 @@ async function cliquerCable(page, cable, f) { await folio(page, f);
   const p = await page.evaluate(cable => { const w = app.dessin.fils.find(w => w.cable === cable), r = $('planche').getBoundingClientRect();
     let best = null; w.pts.slice(1).forEach((b, i) => { const a = w.pts[i], L = Math.abs(b.x - a.x) + Math.abs(b.y - a.y); if (!best || L > best.L) best = { L, x: r.left + app.vue.tx + (a.x * .4 + b.x * .6) * app.vue.s, y: r.top + app.vue.ty + (a.y * .4 + b.y * .6) * app.vue.s }; }); return best; }, cable);
   await page.mouse.click(p.x, p.y); await page.waitForTimeout(350); await calme(page);
-  if (!await page.evaluate(c => !$('inspecteur').hidden && $('inspecteur').textContent.includes(c), cable)) { await page.evaluate(c => montrerFil(verite().find(l => l.cable === c)), cable); await page.waitForTimeout(350); await calme(page); } }
+  if (!await page.evaluate(() => !$('inspecteur').hidden && /^fil#/.test(($('ba-equip') || { dataset: {} }).dataset.cle || ''))) {   /* (un câble n'a plus de numéro à l'écran : sa fiche se reconnaît à sa clé) */ await page.evaluate(c => montrerFil(verite().find(l => l.cable === c)), cable); await page.waitForTimeout(350); await calme(page); } }
 async function clic(page, sel) { const el = await page.$(sel); if (!el) throw new Error('introuvable : ' + sel); await el.click(); await page.waitForTimeout(260); await calme(page); }
 async function touche(page, k) { await page.keyboard.press(k); await page.waitForTimeout(300); await calme(page); }
 async function parLeMenu(page, ...sels) { await clic(page, '#btnMenu'); for (const s of sels) await clic(page, '#menu ' + s); await page.waitForTimeout(250); await calme(page); }
@@ -345,7 +349,7 @@ const ECRANS = [
   { nom: 'plan', aller: async page => { await page.evaluate(() => atelier.exemple()); await page.waitForTimeout(1200); await folio(page, '1'); },
     // DESIGN.md : les dessins « exacts, lisibles à 100 % ». À « 1 » (100 %), sur le folio le plus chargé, chaque sorte d'écriture
     // du folio (un numéro de câble, une borne, un repère) fait au moins 9 px à l'écran — la taille d'une lettre qu'on lit sans plisser
-    lecture: async page => { await folio(page, '3'); await page.keyboard.press('1'); await page.waitForTimeout(500); await calme(page);
+    lecture: async page => { await folio(page, '3'); await page.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }); await page.mouse.move(720, 450); await page.keyboard.press('1'); await page.waitForTimeout(500); await calme(page);   /* (le clavier au plan, comme après un clic dessus : un bouton qui garde le clavier garde aussi les chiffres) */
       const D = await page.evaluate(() => { const par = {}, zoom = $('zlbl').textContent.trim();
         document.querySelectorAll('#svg text').forEach(t => { const k = (t.getAttribute('class') || t.parentNode.getAttribute('class') || 'texte').split(' ')[0], m = t.getScreenCTM(); if (!m) return;
           (par[k] = par[k] || { px: [], ex: t.textContent }).px.push(parseFloat(getComputedStyle(t).fontSize) * Math.hypot(m.a, m.b)); });
@@ -353,24 +357,21 @@ const ECRANS = [
           .filter(x => x.med < 8.995).map(x => ({ sel: '#svg text.' + x.k, pire: x.med, detail: 'à ' + x.zoom + ', ' + x.n + ' écriture' + (x.n > 1 ? 's' : '') + ' de ' + x.med.toFixed(1).replace('.', ',') + ' px à l’écran (9 px au moins)', txt: x.ex.slice(0, 20) })); });
       await page.keyboard.press('0'); await folio(page, '1'); return D; } },
   { nom: 'fiche-disjoncteur', aller: (page, n) => cliquerBloc(page, '102CB1', '1', n), echap: { ouvert: carteOuverte } },
-  { nom: 'fiche-calibre-a-la-main', aller: async (page, n) => { await cliquerBloc(page, '102CB1', '1', n); await clic(page, '#inspecteur .dj-main'); },
-    echap: { ouvert: 'FI.liste === "dj|102CB1"', reste: carteOuverte, retour: '#inspecteur .dj-main', mot: 'la gamme « À la main »' },
-    // le lecteur : « je peux sélectionner que ceux au-dessus, pas en dessous ; je dois tout pouvoir sélectionner » — chaque calibre
-    // que le cadran écrit se choisit : son cran se clique, ou « À la main » le propose (même s'il ne passe pas : on voit pourquoi)
-    choix: page => page.evaluate(() => { const crans = [...document.querySelectorAll('#inspecteur .dj-arc-n')], D = [];
-      const choisis = new Set([...document.querySelectorAll('#inspecteur .dj-chip[data-cal], #inspecteur [data-cal]')].filter(b => b.checkVisibility()).map(b => +b.dataset.cal));
-      const lus = crans.map(t => ({ t, v: parseFloat(t.textContent.replace(',', '.')) }));
-      const cliquables = lus.filter(({ t }) => { const r = t.getBoundingClientRect(), h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return h && (h.closest('button, [role=button], [data-cal]') || getComputedStyle(h).cursor === 'pointer'); }).length;
-      const manquent = lus.filter(({ v }) => !choisis.has(v)).map(({ v }) => String(v).replace('.', ','));
-      if (!cliquables) D.push({ sel: '#inspecteur svg.dj-arc text.dj-arc-n', detail: `le cadran écrit ${lus.length} calibres, aucun cran ne se clique` });
-      if (manquent.length) D.push({ sel: '#inspecteur .dj-chips', detail: `« À la main » ne propose pas ${manquent.join(', ')} A (${lus.length - manquent.length} calibres sur ${lus.length}) : un calibre plus petit ne se choisit pas, on ne voit pas pourquoi il ne passe pas` });
+  /* (10 novembre 2026) LA FICHE EN GRAND, l'onglet Calibre. La charte (v86) : « le calibre écrit vient du fichier ; pas de Manuel sur
+     le calibre ; seule la proposition justifiée de VOLTA écrit ». L'ancienne règle (« chaque calibre du cadran se choisit, ou "À la
+     main" le propose ») jugeait l'inverse : celle-ci tient la décision du lecteur — aucun calibre de la gamme ne s'offre au clic. */
+  { nom: 'fiche-calibre', aller: async (page, n) => { await cliquerBloc(page, '102CB1', '1', n); await clic(page, '#fi-tout-voir'); await clic(page, '#nv-o-calibre'); },
+    echap: { ouvert: 'document.body.classList.contains("insp-grand")', mot: 'la fiche en grand (Échap revient à la carte, ou la ferme)' },
+    choix: page => page.evaluate(() => { const cs = [...document.querySelectorAll('#nv-p-calibre .vu-cal')], D = [];
+      const cliquables = cs.filter(c => c.matches('button, [role=button], a') || getComputedStyle(c).cursor === 'pointer');   /* (au clavier, un calibre montre sa bulle : il se lit, il ne se choisit pas) */
+      if (!cs.length) D.push({ sel: '#nv-p-calibre .vu-cals', detail: 'la gamme des calibres ne se lit pas dans l’onglet Calibre' });
+      if (cliquables.length) D.push({ sel: '#nv-p-calibre .vu-cal', detail: cliquables.length + ' calibre(s) de la gamme s’offrent au clic : le calibre écrit vient du fichier, il ne se choisit pas à la main' });
+      if (document.querySelector('#ba-equip .dj-main, #ba-equip #dj-retenir') || /À la main|\bManuel\b/.test(document.getElementById('nv-p-calibre').innerText)) D.push({ sel: '#nv-p-calibre', detail: 'un « À la main » ou un « Manuel » sur le calibre' });
       return D; }) },
-  { nom: 'fiche-aide', aller: async (page, n) => { await cliquerBloc(page, '102CB1', '1', n); await clic(page, '#inspecteur .fi-q'); },
-    echap: { ouvert: '!!document.querySelector("#fi-q-bulle") && !$("fi-q-bulle").hidden', reste: carteOuverte, retour: '#inspecteur .fi-q', mot: 'la bulle du « ? »' } },
-  { nom: 'fiche-plus', aller: async (page, n) => { await cliquerBloc(page, '102CB1', '1', n); await clic(page, '#fi-menu'); },
-    echap: { ouvert: '!$("fi-menu-liste").hidden', reste: carteOuverte, retour: '#fi-menu', mot: 'le « ⋯ » du pied' } },
+  { nom: 'fiche-aide', aller: async (page, n) => { await cliquerBloc(page, '102CB1', '1', n); await clic(page, '#fi-tout-voir'); await clic(page, '#nv-o-calibre'); await clic(page, '#ba-equip .fi-q'); },
+    echap: { ouvert: '!!document.querySelector("#fi-q-bulle") && !$("fi-q-bulle").hidden', reste: carteOuverte, retour: '#ba-equip .fi-q', mot: 'la bulle du « ? »' } },
   { nom: 'fiche-connecteur', aller: (page, n) => cliquerBloc(page, '300XC1', '3', n), echap: { ouvert: carteOuverte } },
-  { nom: 'fiche-barrette', aller: (page, n) => cliquerBloc(page, '668VT31', '3', n), echap: { ouvert: carteOuverte } },
+  { nom: 'fiche-barrette', aller: (page, n) => cliquerBloc(page, '667VT2', '2', n), echap: { ouvert: carteOuverte } },
   { nom: 'fiche-prise', aller: (page, n) => cliquerBloc(page, '412VC3B', '5', n), echap: { ouvert: carteOuverte } },
   { nom: 'fiche-cable', aller: page => cliquerCable(page, 'W-012', '1'), echap: { ouvert: carteOuverte } },
   { nom: 'fiche-masse', aller: (page, n) => cliquerBloc(page, '901G', '1', n), echap: { ouvert: carteOuverte } },
@@ -379,18 +380,22 @@ const ECRANS = [
     aller: async page => { await folio(page, '1'); await touche(page, 'b'); await clic(page, `#base [data-onglet="${k}"]`); } })),
   { nom: 'recap-page', aller: async page => { await folio(page, '1'); await touche(page, 'Shift+B'); }, echap: { ouvert: '!$("base").hidden' } },
   { nom: 'index', aller: async page => { await folio(page, '1'); await touche(page, 'r'); }, echap: { ouvert: '!$("inspecteur").hidden && app.insp.index', mot: 'l’index (le clavier dans sa recherche)' } },
-  { nom: 'recherche', aller: async page => { await folio(page, '1'); await touche(page, '/'); await page.keyboard.type('W-01', { delay: 30 }); await page.waitForTimeout(400); },
-    echap: { ouvert: 'rechercheOuverte()', mot: 'la recherche' } },
+  { nom: 'recherche', aller: async page => { await folio(page, '1'); await touche(page, '/'); await page.keyboard.type('103', { delay: 30 }); await page.waitForTimeout(400); },
+    echap: { ouvert: 'document.body.classList.contains("palette-ouverte")', mot: 'la recherche' }, modale: true },
   { nom: 'menu', aller: async page => { await folio(page, '1'); await clic(page, '#btnMenu'); }, echap: { ouvert: '!$("menu").hidden', retour: '#btnMenu' } },
   { nom: 'menu-exporter', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="exporter"]'); },
     echap: { ouvert: '!$("menu").hidden && $("mp-principal").hidden', reste: '!$("menu").hidden', retour: '#menu [data-sous="exporter"]', mot: 'le sous-menu Exporter (il revient au menu)' } },
-  { nom: 'menu-plus', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="plus"]'); },
-    echap: { ouvert: '!$("menu").hidden && $("mp-principal").hidden', reste: '!$("menu").hidden', retour: '#menu [data-sous="plus"]', mot: 'le sous-menu Plus (il revient au menu)' } },
+  { nom: 'menu-reglages', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="reglages"]'); },
+    echap: { ouvert: '!$("menu").hidden && $("mp-principal").hidden', reste: '!$("menu").hidden', retour: '#menu [data-sous="reglages"]', mot: 'le sous-menu Réglages (il revient au menu)' } },
+  { nom: 'menu-aide', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="aide"]'); },
+    echap: { ouvert: '!$("menu").hidden && $("mp-principal").hidden', reste: '!$("menu").hidden', retour: '#menu [data-sous="aide"]', mot: 'le sous-menu Aide (il revient au menu)' } },
   { nom: 'raccourcis', aller: async page => { await folio(page, '1'); await touche(page, '?'); }, echap: { ouvert: 'raccourcisOuverts()', mot: 'la feuille des raccourcis' }, modale: true },
   { nom: 'vos-fichiers', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-act="fichiers"]'); }, echap: { ouvert: docOuvert, retour: '#btnMenu', mot: 'Vos fichiers' }, document: true },
-  { nom: 'normes', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="plus"]', '[data-act="normes"]'); }, echap: { ouvert: docOuvert, retour: '#btnMenu', mot: 'les Normes' }, document: true },
-  { nom: 'bible', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="plus"]', '[data-act="bible"]'); }, echap: { ouvert: docOuvert, retour: '#btnMenu', mot: 'la Bible' }, document: true },
-  { nom: 'hypotheses', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="plus"]', '[data-act="hypotheses"]'); }, echap: { ouvert: docOuvert, retour: '#btnMenu', mot: 'les Hypothèses' }, document: true },
+  { nom: 'normes', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="reglages"]', '[data-act="normes"]'); }, echap: { ouvert: docOuvert, retour: '#btnMenu', mot: 'les Normes' }, document: true },
+  { nom: 'bible', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="reglages"]', '[data-act="normes"]'); await clic(page, '#fiche .onglet[data-nm-vue="bible"]'); }, echap: { ouvert: docOuvert, retour: '#btnMenu', mot: 'la Bible' }, document: true },
+  { nom: 'hypotheses', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="reglages"]', '[data-act="hypotheses"]'); }, echap: { ouvert: docOuvert, retour: '#btnMenu', mot: 'les Hypothèses' }, document: true },
+  { nom: 'lpa', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-act="nomenclature"]'); }, echap: { ouvert: docOuvert, retour: '#btnMenu', mot: 'la LPA' }, document: true },
+  { nom: 'sauvegarde', aller: async page => { await folio(page, '1'); await parLeMenu(page, '[data-sous="reglages"]', '[data-act="sauvegarde"]'); }, echap: { ouvert: docOuvert, retour: '#btnMenu', mot: 'la Sauvegarde' }, document: true },
   { nom: 'bibliotheque', aller: async page => { await folio(page, '1'); await clic(page, '#en-biblio'); }, echap: { ouvert: '!$("bibliotheque").hidden', mot: 'la bibliothèque (Échap reprend le plan)' } },
   { nom: 'installation', aller: async page => { await folio(page, '1'); await clic(page, '#en-install'); },
     echap: { ouvert: 'BIB.vue === "install" && !$("bibliotheque").hidden', mot: 'une installation (Échap remonte)' } },
@@ -405,7 +410,7 @@ const CATEGORIES = [
   ['cachees', 'aucun élément interactif caché sous un autre au point de clic'],
   ['focus', 'le focus se voit partout (contour ou ombre ≥ 3:1) ; Tab ne va jamais sur l’invisible ni hors d’une feuille modale'],
   ['lecture', 'à 100 %, chaque écriture du folio fait au moins 9 px à l’écran'],
-  ['choix', 'ce qui se lit comme un choix se choisit (chaque calibre du cadran : son cran, ou « À la main »)'],
+  ['choix', 'le calibre écrit vient du fichier : la gamme se lit, aucun calibre ne s’y choisit à la main (ni « À la main », ni « Manuel »)'],
   ['echap', 'Échap ferme ce qui s’ouvre, sans fermer ce qui est dessous, et rend le clavier à ce qui l’avait ouvert'],
   ['erreurs', 'aucune erreur de page']];
 

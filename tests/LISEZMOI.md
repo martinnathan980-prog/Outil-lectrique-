@@ -1,5 +1,12 @@
 # Contrôle de l'outil
 
+> **10 novembre 2026 — les vingt-deux batteries du navigateur sont au vert** (`node tests/toutes.js navigateur`), et doivent le
+> rester : la charte ne pousse sur `main` que quand tout est vert. Cinq ont été réécrites pour l'écran d'aujourd'hui —
+> `disjoncteur.js` (sa partie écran), `documents.js`, `fiche.js`, `couverture.js` (plus aucun courant prêté à un câble : le
+> tronc d'un profil écrit, une branche à la consommation écrite, sinon inconnu) et les parcours de `ux.js` — ; les autres ont
+> pris les mots et les gestes d'aujourd'hui. Les descriptions ci-dessous datent, par endroits, d'écrans plus anciens (le
+> cadran, « À la main », le menu « Plus », les numéros de câble) : **l'en-tête de chaque batterie fait foi**.
+
 ## Lancer
 
 ```

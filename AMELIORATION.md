@@ -172,3 +172,18 @@ plusieurs, modifier le câblage dans VOLTA (le retest reste la source).
   sombre, 1440 et 1920), moteur 9 / 9, pièges 11 / 11, IA 53 / 53. Reste : les batteries de l'interface (elles parlent
   encore de l'ancien menu et des anciens mots), « Ce qu'il consomme » en champ simple, les tableaux pleine page ; puis
   **comparer deux indices** (v89), les scans par l'IA interne, l'écran de vérification B.
+
+- **10 novembre 2026 — v89, les batteries au vert** (le lecteur : « les tests automatiques sont rouges depuis plusieurs
+  versions, faut corriger »). Les vingt-deux batteries du navigateur repassent, réécrites là où elles jugeaient un écran
+  disparu (le cadran, « À la main », le menu « Plus », les numéros de câble, la marge de 10 %, le courant prêté à chaque
+  câble) : `disjoncteur`, `documents`, `fiche`, `couverture`, `ux` d'après la charte ; les autres mises aux mots et aux
+  gestes d'aujourd'hui. **Ce qu'elles ont fait corriger dans VOLTA** : P qui passait d'abord par ce qui est « à voir » ;
+  des symboles de disjoncteur pris pour des câbles orphelins dans un PDF ; un message d'erreur effacé trop tôt ; une saisie
+  de profil sans son « Défaire » (après un calibre qui change) ; la bulle « celui de votre fichier » sur un calibre que
+  VOLTA venait d'écrire, et le part number de VOLTA nommé « votre fichier » ; « Raccourcis » et « Noter une hésitation » qui
+  ne rendaient pas le clavier ; **un tiers de cœur brûlé au repos** (le filet cuivre de la barre du haut : 31 % → 9 %) ; le
+  panneau Repères posé sur les folios 2 à 6 ; la palette et les raccourcis qui laissaient le clavier filer derrière eux ;
+  « A · B · C » rogné sur la carte d'un équipement ; des encres, des bords de champ et des anneaux de clavier sous les
+  seuils (une feuille : `style-zz-ergonome.css`) ; deux raccourcis d'un cadran qui n'existe plus. Reste : comparer deux
+  indices, les scans par l'IA interne, l'écran de vérification B, le connecteur d'accouplement déduit « à vérifier »,
+  « Ce qu'il consomme » en champ simple.

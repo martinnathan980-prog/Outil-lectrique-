@@ -1,0 +1,71 @@
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   LES CORRECTIONS DE L'ERGONOME (10 novembre 2026) — ce que la batterie « ux » (tests/ux.js) mesure : un texte à 4,5:1, une
+   icône ou le bord d'un champ à 3:1, une cible de 24 px, un anneau de focus à 3:1. Une seule feuille, la dernière : chaque
+   règle dit ce qu'elle corrige. Rien ne change de forme ni de place : seulement des encres un peu plus franches, des bords
+   de champ qui se voient, des anneaux de clavier qui se voient.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+:root{--ko-texte:#b3211a;--ok-texte:#17662f;--champ-bord:#808287;--cadre-bord:#5f6062;--anneau-clavier:#6f370c;--filet-champ:#7d8189}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){--ko-texte:#ffa79c;--ok-texte:var(--ok);--champ-bord:#8a857f;--cadre-bord:#8a857f;--anneau-clavier:#f0b47a;--filet-champ:#7282a0} }
+:root[data-theme="dark"]{--ko-texte:#ffa79c;--ok-texte:var(--ok);--champ-bord:#8a857f;--cadre-bord:#8a857f;--anneau-clavier:#f0b47a;--filet-champ:#7282a0}
+.ilot-clair{--ko-texte:#b3211a;--ok-texte:#17662f;--champ-bord:#808287;--anneau-clavier:#6f370c}
+
+/* ── LA GAMME DES CALIBRES (la frise de la carte, la gamme de l'onglet Calibre) : le chiffre et son unité à 4,5:1 sur leur
+   pastille teintée — l'unité « A » était éclaircie (2,7:1), le rouge et le vert un rien trop clairs sur leur fond ── */
+:is(#inspecteur,#base,#fiche) .vu-c:not(.non):not(.hors) b,.nv-grand .nv-panneau .vu-cals>.vu-cal.oui>b{color:var(--ok-texte)}
+:is(#inspecteur,#base,#fiche) .vu-c.non b,.nv-grand .nv-panneau .vu-cals>.vu-cal.non>b{color:var(--ko-texte)}
+.dj-frise .vu-c.hors b,.nv-grand .nv-panneau .vu-cals>.vu-cal.hors>b{color:var(--t-3)}
+.dj-frise .vu-c b small,.nv-grand .nv-panneau .vu-cals>.vu-cal>b small,.nv-grand .nv-panneau .vu-cals>.vu-cal.hors>b small{opacity:1;color:inherit}
+/* ── LE PROFIL DE CHARGE : l'unité d'un titre de colonne, la croix qui supprime un état, et les champs — un champ se
+   reconnaît à son bord (3:1), pas seulement quand on le survole ── */
+.nv-grand .nv-panneau .dj-etats>.dj-entete span i,.dj-entete span i{opacity:1;color:var(--t-2)}
+.nv-grand .nv-panneau .dj-etat .dj-x,.dj-x{opacity:.9;color:var(--t-3)}
+.dj-etats .dj-champ,.nv-grand .nv-panneau .dj-etat .dj-champ{border:1px solid var(--champ-bord);box-shadow:none}
+.dj-etats .dj-champ:hover,.nv-grand .nv-panneau .dj-etat .dj-champ:hover{border:1px solid var(--t-2);box-shadow:none}
+.dj-etats .dj-champ:focus-within,.nv-grand .nv-panneau .dj-etat .dj-champ:focus-within{border:1px solid var(--anneau-clavier);box-shadow:0 0 0 2px var(--anneau-clavier);background:var(--s-surface)}
+/* ── LES CHAMPS DE RECHERCHE : celui de la barre du haut, celui de la palette, ceux des documents — leur bord à 3:1 sur ce
+   qui les entoure, et un anneau quand le clavier y est ── */
+.recherche{border-color:var(--cadre-bord)}
+.recherche:hover{border-color:var(--t-1)}
+.recherche:focus-within{outline:2px solid var(--anneau-clavier);outline-offset:2px}
+.recherche .raccourci{color:var(--t-2)}
+.pa-tete input{height:36px;padding:0 10px;border:1px solid var(--cadre-bord);border-radius:9px}
+.pa-tete input:focus-visible{border-color:var(--anneau-clavier);outline:1px solid var(--anneau-clavier);outline-offset:0}
+#fiche .nm .filtre{border-color:var(--champ-bord)}
+/* ── LES ANNEAUX DU CLAVIER : le cuivre clair ne faisait que 2:1 sur les bandes grises ; un cuivre profond le jour, un cuivre
+   lumineux la nuit — toujours 3:1 ; sur un bouton cuivre, l'anneau se détache du bouton (un jour entre les deux) ── */
+.nv-onglet:focus-visible,.nv-grand .nv-onglet:focus-visible{outline:2px solid var(--anneau-clavier);outline-offset:-3px}
+button.vu-cal:focus-visible,.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible{outline:2px solid var(--anneau-clavier);outline-offset:2px;box-shadow:none}
+#base #ba-tab .btn.cuivre:focus-visible,.dj-prop>.btn.cuivre:focus-visible,#inspecteur .nc-taches.nc-pbs .nc-geste .btn.cuivre:focus-visible,#inspecteur#inspecteur .btn:focus-visible{outline:2px solid var(--anneau-clavier);outline-offset:2px;box-shadow:none}
+/* ── LES CIBLES : 24 px au moins — le titre d'un point à régler sur la carte, une valeur du récapitulatif, le titre d'une
+   section qui se replie, la phrase d'une hypothèse (son détail au survol) ── */
+#inspecteur .nc-taches.nc-pbs .nc-tache .nc-t{min-height:24px;justify-content:center}
+#inspecteur .nc-taches.nc-pbs .nc-tache.nc-ligne .nc-t{padding:3px 0}
+#base .rc-int .rc-chiffre .rc-v{min-height:24px;display:inline-flex;align-items:center}
+.nv-grand .nv-panneau .vu-bloc>h4.vu-titre{min-height:24px}
+#fiche .hy-sert .hy-q{display:inline-block;padding:5px 0;margin:-5px 0}
+/* ── LES ÉTATS EN ROUGE, LA NUIT : « À régler » et son compte sur la carte, l'état du panneau Repères (4,2:1 → 4,8:1) ; la
+   lettre d'un connecteur en défaut, blanche sur un rouge clair (2,2:1), prend l'encre inverse ── */
+#inspecteur .nc-pbs-g.ko{color:var(--ko-texte)}
+.fi-etat.ko{color:var(--ko-texte)}
+.vu-con.ko .vu-con-l{color:var(--t-inverse)}
+/* ── L'ACCUEIL : les touches du bouton « Ouvrir » (4,4:1 → pleine encre) ── */
+.bi-touches-k{opacity:1}
+/* ── LE RÉCAPITULATIF AU CLAVIER : une ligne atteinte par Tab ne reste pas sous l'en-tête collé du tableau ── */
+#base #ba-corps{scroll-padding-top:48px}
+#base #ba-corps:has(tr.rc-total){scroll-padding-bottom:52px}   /* (la ligne des totaux, collée en bas : elle couvrait la dernière ligne atteinte au clavier) */
+#ba-tbody :is(button,a,[tabindex]){scroll-margin-top:48px;scroll-margin-bottom:52px}
+/* ── LA CARTE D'UN ÉQUIPEMENT : « A · B · C » débordait de trois pixels — le A et le C rognés ; les points se resserrent ── */
+.nc-chiffre.ident .nc-v{word-spacing:-.22em}
+/* ── LA NUIT, ENCORE : le sur-titre d'un document (« Réglages », « Références », 11 px) en cuivre plus clair (4,0:1 → 4,9:1) ── */
+:root{--sur-titre:var(--nv-cuivre)}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){--sur-titre:#ffb57e} }
+:root[data-theme="dark"]{--sur-titre:#ffb57e}
+#fiche .fiche-tete .sur,.rk-tete .sur{color:var(--sur-titre)}
+/* ── LA COURBE (toujours sur son papier blanc, le jour comme la nuit) : l'anneau d'un point pris au clavier en cuivre profond
+   (le cuivre clair de la nuit n'y faisait que 1,6:1) ; les graduations et les titres d'axe un ton plus foncés (ils restent
+   lisibles sous l'ombre d'une bulle) ── */
+#inspecteur .dj-graphe svg .dj-pt[tabindex]:focus-visible,.dj-graphe .dj-pt:focus-visible{outline:2px solid #6f370c;outline-offset:3px}
+.dj-graphe .dj-grad,.dj-graphe .dj-axe{fill:#47474c}
+/* ── UN CHAMP SE RECONNAÎT À SON BORD, pas seulement quand on le survole : les champs d'une fiche (ce qu'un équipement consomme,
+   le repère d'une barrette ajoutée) avaient un bord transparent au repos — on ne voyait pas qu'on pouvait y écrire ── */
+.fc-in:not(:focus){border-color:var(--champ-bord)}

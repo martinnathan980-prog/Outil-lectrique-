@@ -10158,6 +10158,79 @@ svg.vu-face text.pris{fill:#fff}
 /* le mot sous la ligne du menu : ambre quand la sauvegarde est ancienne ou jamais faite */
 #mn-sauvegarde.att{color:var(--warn)}
 
+/* ───────── style-zz-ergonome.css ───────── */
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   LES CORRECTIONS DE L'ERGONOME (10 novembre 2026) — ce que la batterie « ux » (tests/ux.js) mesure : un texte à 4,5:1, une
+   icône ou le bord d'un champ à 3:1, une cible de 24 px, un anneau de focus à 3:1. Une seule feuille, la dernière : chaque
+   règle dit ce qu'elle corrige. Rien ne change de forme ni de place : seulement des encres un peu plus franches, des bords
+   de champ qui se voient, des anneaux de clavier qui se voient.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+:root{--ko-texte:#b3211a;--ok-texte:#17662f;--champ-bord:#808287;--cadre-bord:#5f6062;--anneau-clavier:#6f370c;--filet-champ:#7d8189}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){--ko-texte:#ffa79c;--ok-texte:var(--ok);--champ-bord:#8a857f;--cadre-bord:#8a857f;--anneau-clavier:#f0b47a;--filet-champ:#7282a0} }
+:root[data-theme="dark"]{--ko-texte:#ffa79c;--ok-texte:var(--ok);--champ-bord:#8a857f;--cadre-bord:#8a857f;--anneau-clavier:#f0b47a;--filet-champ:#7282a0}
+.ilot-clair{--ko-texte:#b3211a;--ok-texte:#17662f;--champ-bord:#808287;--anneau-clavier:#6f370c}
+
+/* ── LA GAMME DES CALIBRES (la frise de la carte, la gamme de l'onglet Calibre) : le chiffre et son unité à 4,5:1 sur leur
+   pastille teintée — l'unité « A » était éclaircie (2,7:1), le rouge et le vert un rien trop clairs sur leur fond ── */
+:is(#inspecteur,#base,#fiche) .vu-c:not(.non):not(.hors) b,.nv-grand .nv-panneau .vu-cals>.vu-cal.oui>b{color:var(--ok-texte)}
+:is(#inspecteur,#base,#fiche) .vu-c.non b,.nv-grand .nv-panneau .vu-cals>.vu-cal.non>b{color:var(--ko-texte)}
+.dj-frise .vu-c.hors b,.nv-grand .nv-panneau .vu-cals>.vu-cal.hors>b{color:var(--t-3)}
+.dj-frise .vu-c b small,.nv-grand .nv-panneau .vu-cals>.vu-cal>b small,.nv-grand .nv-panneau .vu-cals>.vu-cal.hors>b small{opacity:1;color:inherit}
+/* ── LE PROFIL DE CHARGE : l'unité d'un titre de colonne, la croix qui supprime un état, et les champs — un champ se
+   reconnaît à son bord (3:1), pas seulement quand on le survole ── */
+.nv-grand .nv-panneau .dj-etats>.dj-entete span i,.dj-entete span i{opacity:1;color:var(--t-2)}
+.nv-grand .nv-panneau .dj-etat .dj-x,.dj-x{opacity:.9;color:var(--t-3)}
+.dj-etats .dj-champ,.nv-grand .nv-panneau .dj-etat .dj-champ{border:1px solid var(--champ-bord);box-shadow:none}
+.dj-etats .dj-champ:hover,.nv-grand .nv-panneau .dj-etat .dj-champ:hover{border:1px solid var(--t-2);box-shadow:none}
+.dj-etats .dj-champ:focus-within,.nv-grand .nv-panneau .dj-etat .dj-champ:focus-within{border:1px solid var(--anneau-clavier);box-shadow:0 0 0 2px var(--anneau-clavier);background:var(--s-surface)}
+/* ── LES CHAMPS DE RECHERCHE : celui de la barre du haut, celui de la palette, ceux des documents — leur bord à 3:1 sur ce
+   qui les entoure, et un anneau quand le clavier y est ── */
+.recherche{border-color:var(--cadre-bord)}
+.recherche:hover{border-color:var(--t-1)}
+.recherche:focus-within{outline:2px solid var(--anneau-clavier);outline-offset:2px}
+.recherche .raccourci{color:var(--t-2)}
+.pa-tete input{height:36px;padding:0 10px;border:1px solid var(--cadre-bord);border-radius:9px}
+.pa-tete input:focus-visible{border-color:var(--anneau-clavier);outline:1px solid var(--anneau-clavier);outline-offset:0}
+#fiche .nm .filtre{border-color:var(--champ-bord)}
+/* ── LES ANNEAUX DU CLAVIER : le cuivre clair ne faisait que 2:1 sur les bandes grises ; un cuivre profond le jour, un cuivre
+   lumineux la nuit — toujours 3:1 ; sur un bouton cuivre, l'anneau se détache du bouton (un jour entre les deux) ── */
+.nv-onglet:focus-visible,.nv-grand .nv-onglet:focus-visible{outline:2px solid var(--anneau-clavier);outline-offset:-3px}
+button.vu-cal:focus-visible,.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible{outline:2px solid var(--anneau-clavier);outline-offset:2px;box-shadow:none}
+#base #ba-tab .btn.cuivre:focus-visible,.dj-prop>.btn.cuivre:focus-visible,#inspecteur .nc-taches.nc-pbs .nc-geste .btn.cuivre:focus-visible,#inspecteur#inspecteur .btn:focus-visible{outline:2px solid var(--anneau-clavier);outline-offset:2px;box-shadow:none}
+/* ── LES CIBLES : 24 px au moins — le titre d'un point à régler sur la carte, une valeur du récapitulatif, le titre d'une
+   section qui se replie, la phrase d'une hypothèse (son détail au survol) ── */
+#inspecteur .nc-taches.nc-pbs .nc-tache .nc-t{min-height:24px;justify-content:center}
+#inspecteur .nc-taches.nc-pbs .nc-tache.nc-ligne .nc-t{padding:3px 0}
+#base .rc-int .rc-chiffre .rc-v{min-height:24px;display:inline-flex;align-items:center}
+.nv-grand .nv-panneau .vu-bloc>h4.vu-titre{min-height:24px}
+#fiche .hy-sert .hy-q{display:inline-block;padding:5px 0;margin:-5px 0}
+/* ── LES ÉTATS EN ROUGE, LA NUIT : « À régler » et son compte sur la carte, l'état du panneau Repères (4,2:1 → 4,8:1) ; la
+   lettre d'un connecteur en défaut, blanche sur un rouge clair (2,2:1), prend l'encre inverse ── */
+#inspecteur .nc-pbs-g.ko{color:var(--ko-texte)}
+.fi-etat.ko{color:var(--ko-texte)}
+.vu-con.ko .vu-con-l{color:var(--t-inverse)}
+/* ── L'ACCUEIL : les touches du bouton « Ouvrir » (4,4:1 → pleine encre) ── */
+.bi-touches-k{opacity:1}
+/* ── LE RÉCAPITULATIF AU CLAVIER : une ligne atteinte par Tab ne reste pas sous l'en-tête collé du tableau ── */
+#base #ba-corps{scroll-padding-top:48px}
+#base #ba-corps:has(tr.rc-total){scroll-padding-bottom:52px}   /* (la ligne des totaux, collée en bas : elle couvrait la dernière ligne atteinte au clavier) */
+#ba-tbody :is(button,a,[tabindex]){scroll-margin-top:48px;scroll-margin-bottom:52px}
+/* ── LA CARTE D'UN ÉQUIPEMENT : « A · B · C » débordait de trois pixels — le A et le C rognés ; les points se resserrent ── */
+.nc-chiffre.ident .nc-v{word-spacing:-.22em}
+/* ── LA NUIT, ENCORE : le sur-titre d'un document (« Réglages », « Références », 11 px) en cuivre plus clair (4,0:1 → 4,9:1) ── */
+:root{--sur-titre:var(--nv-cuivre)}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){--sur-titre:#ffb57e} }
+:root[data-theme="dark"]{--sur-titre:#ffb57e}
+#fiche .fiche-tete .sur,.rk-tete .sur{color:var(--sur-titre)}
+/* ── LA COURBE (toujours sur son papier blanc, le jour comme la nuit) : l'anneau d'un point pris au clavier en cuivre profond
+   (le cuivre clair de la nuit n'y faisait que 1,6:1) ; les graduations et les titres d'axe un ton plus foncés (ils restent
+   lisibles sous l'ombre d'une bulle) ── */
+#inspecteur .dj-graphe svg .dj-pt[tabindex]:focus-visible,.dj-graphe .dj-pt:focus-visible{outline:2px solid #6f370c;outline-offset:3px}
+.dj-graphe .dj-grad,.dj-graphe .dj-axe{fill:#47474c}
+/* ── UN CHAMP SE RECONNAÎT À SON BORD, pas seulement quand on le survole : les champs d'une fiche (ce qu'un équipement consomme,
+   le repère d'une barrette ajoutée) avaient un bord transparent au repos — on ne voyait pas qu'on pouvait y écrire ── */
+.fc-in:not(:focus){border-color:var(--champ-bord)}
+
 </style>
 </head>
 <body>
@@ -23107,7 +23180,7 @@ function heroSchema() { const deja = BIB.intro === 'faite';
   // qui s'efface sur les côtés, et c'est un schéma infini ») : la règle des colonnes seule, en dégradé vers les bords
   const marge = `<defs><linearGradient id="hs-regle" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#eceff5" stop-opacity="0"/><stop offset=".22" stop-color="#eceff5" stop-opacity=".22"/><stop offset=".78" stop-color="#eceff5" stop-opacity=".22"/><stop offset="1" stop-color="#eceff5" stop-opacity="0"/></linearGradient></defs>`
     + `<path class="hs-regle" d="M0 14.5H1200"/>` + [...Array(8)].map((_, k) => `<text class="hs-col" x="${24 + 72 + k * 144}" y="9">${k + 1}</text>${k < 7 ? `<path class="hs-regle" d="M${24 + (k + 1) * 144} 14.5v6"/>` : ''}`).join('');
-  return `<div class="bi-vitrine bi-hero"><svg viewBox="0 -4 1200 316" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${marge}`
+  return `<div class="bi-vitrine bi-hero"><svg viewBox="0 -4 1200 316" preserveAspectRatio="xMidYMid meet" aria-hidden="true" data-decor="1">${marge}`
     + fils
     + bloc(90, 92, 96, 90, '102CB1', '5 A', 'hs-dj') + `<g class="hs-piece hs-vt" data-rep="668VT31"><rect class="hs-barre" x="330" y="52" width="10" height="190" rx="3"/><rect class="hs-prise-p" x="318" y="52" width="34" height="226"/><text class="hs-rep" x="335" y="268">668VT31</text></g>`
     + bloc(560, 52, 110, 50, '381RL1', 'relais') + bloc(560, 132, 110, 50, '382RL2', 'relais')
@@ -23578,7 +23651,7 @@ function noterExportDuPlan(nom) { const p = BIB.plans.get(app.planId); if (!p ||
      dans les notes tapées à la main.
    =========================================================================== */
 
-const BILAN = { version: 'v88', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v89', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -23924,10 +23997,14 @@ function placerPres(b, W, H, v, diag) { const Z = zoneDeLaCarte(), e = CARTE_AIR
   // (au-dessus de la barre du bas, elle s'arrête à son filet : elle y grandira sans jamais la couvrir — v73, la galerie d'une
   // barrette ouverte posait la carte sur les folios)
   const pieds = zones.filter(z => z.pied);
+  /* (10 novembre 2026, la batterie « ux ») UNE CARTE PLUS HAUTE QUE LA PLACE AU-DESSUS DE LA BARRE DU BAS (le panneau Repères, sa
+     longue liste) refusait toute place raccourcie — et finissait posée SUR les folios, qu'on ne pouvait plus cliquer. Elle se
+     contente de la hauteur au-dessus de la barre : sa liste défile. */
+  const hautDuPied = pieds.length ? Math.min(...pieds.map(z => z.top)) : Z.B, hMin = Math.min(HMIN, Math.max(240, hautDuPied - Z.T));
   const essai = (x, y, dispo, rang, ou) => { x = cl(x, Z.L, Z.R - W); let bas = Z.B; for (const z of pieds) if (x < z.right && x + W > z.left && z.top >= y) bas = Math.min(bas, z.top);
     // (trop bas pour sa hauteur au-dessus de la barre : elle remonte d'autant — entière, sans couvrir les folios)
     if (bas < Z.B && bas - y < H) y = Math.max(Z.T, bas - H); dispo = Math.min(dispo, Z.B - y, bas - y);
-    const h = Math.min(dispo, H); if (y < Z.T || h < HMIN) return;
+    const h = Math.min(dispo, H); if (y < Z.T || h < hMin) return;
     const perte = (H - h) * W * C.hauteur, loin = Math.hypot(x + W / 2 - (b.left + b.width / 2), y + h / 2 - (b.top + b.height / 2)) * C.distance;
     let cache = 0; for (const z of zones) { const dx = Math.min(x + W, z.right) - Math.max(x, z.left), dy = Math.min(y + h, z.bottom) - Math.max(y, z.top); if (dx > 0 && dy > 0) cache += z.poids * dx * dy; }
     places.push({ x, y, h: dispo, cout: rang * C.rang + perte + loin + cache, ou, perte: Math.round(perte), loin: Math.round(loin), cache: Math.round(cache) }); };
@@ -23954,14 +24031,18 @@ function poserCarte(x, y, h) { const el = $('inspecteur'), s = el.style, Z = zon
   x = Math.max(Z.L, Math.min(Z.R - W, x)); y = Math.max(Z.T - 2, Math.min(Z.B - 56, y));
   // (v82, la relecture : « la carte reste à sa place et se plafonne : “Tout voir” caché, elle défile ») : la carte qui ne tient
   // pas sous sa place remonte — sa hauteur entière, d'abord ; le plafond seulement si l'écran entier est trop court
-  if (!CARTE.grande) { s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - Z.T)) + 'px'); const besoin = el.offsetHeight || 0;
-    if (besoin && y + besoin > Z.B) y = Math.max(Z.T, Z.B - besoin); }
+  /* (10 novembre 2026, la batterie « ux ») ELLE NE SE POSE JAMAIS SUR LA BARRE DU BAS (les folios, le zoom) : le panneau Repères,
+     plus haut que la place, couvrait les folios 2 à 6 — on ne pouvait plus les cliquer. Sa place finit au-dessus de la barre
+     qu'elle surplombe ; plus haute que cette place, elle défile. */
+  const basLibre = y0 => { let bas = Z.B; for (const z of zonesAProteger()) if (z.pied && x < z.right && x + W > z.left && z.top >= y0 + 200) bas = Math.min(bas, z.top); return bas; };
+  if (!CARTE.grande) { s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - Z.T)) + 'px'); const besoin = el.offsetHeight || 0, bas = basLibre(y);
+    if (besoin && y + besoin > bas) y = Math.max(Z.T, bas - besoin); }
   s.setProperty('--carte-x', Math.round(x) + 'px'); s.setProperty('--carte-y', Math.round(y) + 'px'); s.setProperty('--carte-l', CARTE_L() + 'px');
   // (tirée à une taille, elle la garde : la place trouvée près du bloc ne la raccourcit pas)
   // (v82, le lecteur : « la synthèse doit s'adapter : tantôt il faut défiler, tantôt la fenêtre est trop grande et rien
   // dessous ») : la carte prend TOUJOURS la hauteur de ce qu'elle dit, au plus la place sous elle — tirée à une largeur,
   // elle la garde ; sa hauteur, jamais
-  s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - y)) + 'px');
+  s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), (CARTE.grande ? Z.B : basLibre(y)) - y)) + 'px');
   $('inspecteur').classList.remove('taillee'); s.removeProperty('--carte-h'); void h; }
 const poserA = p => poserCarte(p.x, p.y, p.h);
 
@@ -28460,16 +28541,17 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
       hR ? { sorte: 'choix', titre: 'Le raccord' + deC, valeur: pieces.length ? pieces.slice(0, 2).map(x => ident(x.reference)).join(' · ') : 'rien à poser', source: racM ? 'main' : 'calcul',
         pourquoi: racM ? 'Ses options sont choisies ici.' : hR.faisceau && hR.faisceau.diametre != null ? `Pour un toron de Ø ${esc(nombre(Math.round(hR.faisceau.diametre * 10) / 10))} mm, sans option.` : 'Calculé d’après ses câbles.',
         manuel: racM, auto: 'raccords:' + nom + '|' + c.nom, vers: regRac, motAuto: 'Le raccord' + deC + ' revient au calcul de VOLTA.' } : null,
-      sConso ? { sorte: 'choix', titre: 'Ce qu’il consomme', valeur: ecrit ? esc([perm ? amperes(perm) + ' en permanence' : '', dem ? amperes(dem.i) + ' au démarrage' + (dem.t ? ' pendant ' + secondes(dem.t) : '') : ''].filter(Boolean).join(', ')) || 'écrite' : 'pas écrite', source: ecrit ? 'main' : 'calcul', motSource: ecrit ? 'écrite ici' : '',
+      sConso ? { sorte: 'choix', titre: 'Ce qu’il consomme', valeur: ecrit ? esc([perm ? amperes(perm) + ' en permanence' : '', dem ? amperes(dem.i) + ' au démarrage' + (dem.t ? ' pendant ' + secondes(dem.t) : '') : ''].filter(Boolean).join(', ')) || 'écrite' : 'pas écrite', source: ecrit ? 'main' : '', motSource: ecrit ? 'écrite ici' : '', saisie: true,
         // (v86) sans disjoncteur en amont, VOLTA ne compte pas « le courant de son disjoncteur » : il suppose celui des Hypothèses
         // (v87, le lecteur, Q1) sans elle, le courant de ses câbles est inconnu — plus le courant total de son disjoncteur
-        pourquoi: ecrit ? (alP ? 'Elle fait le courant de ses câbles et le profil de ' + esc(alP.nom) + '.' : 'Elle fait le courant de ses câbles.') : alP ? 'Sans elle, le courant de ses câbles est inconnu : écrivez-la.' : 'Sans disjoncteur en amont, VOLTA suppose ' + esc(nombre((app.simu || HYPOTHESES).courant)) + ' A.',
-        manuel: ecrit, auto: 'conso:' + nom, vers: regConso, motAuto: 'Consommation de ' + nom + ' effacée : VOLTA compte sans.' } : null];
+        // (10 novembre 2026) « Sans disjoncteur en amont, VOLTA suppose — A » : le courant supposé n'existe plus — sans elle, le courant est inconnu, avec ou sans disjoncteur
+        pourquoi: ecrit ? (alP ? 'Elle fait le courant de ses câbles et le profil de ' + esc(alP.nom) + '.' : 'Elle fait le courant de ses câbles.') : 'Votre fichier ne la donne pas. Sans elle, le courant de ses câbles est inconnu : écrivez-la ici.',
+        manuel: ecrit, auto: 'conso:' + nom, vers: regConso, motAuto: 'Consommation de ' + nom + ' effacée : le courant de ses câbles redevient inconnu.' } : null];
     const sections = ids.length ? `<div class="fi-panneau" data-panneau="${escA(sel)}">`
       + (Qc ? regCarte('L’arrangement', Qc.main ? 'Choisi ici. Un autre se prend d’un clic ; « Automatique » rend ' + (c.pn && moduleDeConnecteur(app.norme, c.pn) ? 'celui de votre référence.' : 'celui que VOLTA déduit des bornes.') : 'Ceux de la norme qui logent ces bornes, puis les autres : un clic retient celui que vous savez monté, à la place de celui que VOLTA déduit.', reglageOuvert(regArr) ? listeArrangements(nom + '|' + c.nom, k, Qc, M, autoArr, true) : '', { reg: 'l-arrangement', paresseux: true }) : '')
       + (c && M && P0 ? regCarte('Ses contacts à sertir', 'Un clic sur un contact montre ceux de sa taille : un autre se retient d’un clic.', P0.contacts, { reg: 'les-contacts-a-sertir' }) : '')
       + (hR ? regCarte('Le raccord', 'Ce que nous posons autour du connecteur. Une option changée ici passe le raccord en Manuel.', raccordHtml({ cle: nom + '|' + c.nom, fils: filsC, pn: c.pn, ref: M ? M.reference : '', plan: M ? k.plan : null, options: true }), { reg: 'le-raccord' }) : '') + '</div>' : '';
-    const consoS = sConso ? regCarte('Ce qu’il consomme', 'Le courant qu’il tire, phase par phase : écrit ici, il passe en Manuel.', sConso.contenu, { reg: 'ce-qu-il-consomme' }) : '';
+    const consoS = sConso ? regCarte('Ce qu’il consomme', 'Le courant qu’il tire : en permanence, et au démarrage s’il en tire plus. Il fait le courant de ses câbles.', sConso.contenu, { reg: 'ce-qu-il-consomme' }) : '';
     // plusieurs connecteurs : les bulles A · B, au bout de la tête des choix (ils règlent le connecteur montré)
     return ongletReglages(xs, sections + consoS, { tete: { choix: ids.length > 1 ? `<span class="nv-mod-ct">Connecteur</span>${bulles}` : '' } }); };
   // le résumé de la ligne « Connecteur » : sa référence (une, sinon combien), puis les bulles
@@ -33648,14 +33730,19 @@ function construirePalette() { if (PALETTE.el) return PALETTE.el;
   liste.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) faireDeLaPalette(+b.dataset.i); });
   el.addEventListener('pointerdown', e => { if (!e.target.closest('.pa-boite')) { e.preventDefault(); fermerPalette(); } });
   return el; }
-function ouvrirPalette(seme) { const el = construirePalette(); if (rechercheOuverte()) fermerRecherche(); if (typeof fermerMenu === 'function') fermerMenu();
+/* (10 novembre 2026, la batterie « ux ») LE FOND SE FIGE DERRIÈRE UNE FEUILLE MODALE (la palette, les raccourcis) : derrière le voile,
+   la barre du haut, le rail, les folios restaient au clavier (Tab y allait, sous la feuille) et au lecteur d'écran. `inert` les
+   met hors d'atteinte tant que la feuille est là ; compté, pour deux feuilles l'une sur l'autre. */
+const FOND_FIGE = { n: 0 };
+function figerLeFond(oui) { const fond = $('app'); if (!fond) return; FOND_FIGE.n = Math.max(0, FOND_FIGE.n + (oui ? 1 : -1)); if (FOND_FIGE.n) fond.setAttribute('inert', ''); else fond.removeAttribute('inert'); }
+function ouvrirPalette(seme) { const el = construirePalette(); if (rechercheOuverte()) fermerRecherche(); if (typeof fermerMenu === 'function') fermerMenu(); if (el.hidden) figerLeFond(true);
   PALETTE.avant = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
   clearTimeout(PALETTE.frappe); PALETTE.frappe = 0; PALETTE.actions = null;
   el.hidden = false; document.body.classList.add('palette-ouverte'); synchroniserRail(); const q = el.querySelector('#pa-q'); q.value = typeof seme === 'string' ? seme : ''; PALETTE.sel = 0; rendrePalette();
   if (!mouvementReduit()) el.querySelector('.pa-boite').animate([{ opacity: 0, transform: 'translateY(-6px) scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.32,.72,0,1)' });
   try { q.focus({ preventScroll: true }); } catch (_) { q.focus(); } }
 function fermerPalette(rendre) { const el = PALETTE.el; if (!el || el.hidden) return; clearTimeout(PALETTE.frappe); PALETTE.frappe = 0; PALETTE.actions = null;
-  el.hidden = true; document.body.classList.remove('palette-ouverte'); synchroniserRail();
+  el.hidden = true; document.body.classList.remove('palette-ouverte'); figerLeFond(false); synchroniserRail();
   const a = PALETTE.avant; PALETTE.avant = null; if (rendre !== false && a && a.isConnected && a.focus) try { a.focus({ preventScroll: true }); } catch (_) { } else if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
 const ICONE_OBJET = { repere: '<rect x="5" y="6" width="14" height="12" rx="1.5"/><path d="M2.5 10h2.5M2.5 14h2.5M19 10h2.5M19 14h2.5"/>', fil: '<path d="M3 16c4 0 4-8 9-8s5 8 9 8"/>', borne: '<circle cx="12" cy="12" r="3.2"/><path d="M3 12h5.8M15.2 12H21"/>',
   type: '<path d="M4 7h16M4 12h16M4 17h10"/>', nature: '<path d="M4 6h16v4H4zM4 14h16v4H4z"/>', action: '<path d="m13 3-7 10h5l-1 8 7-10h-5z"/>', geste: '<path d="M4.5 12h13M13 6.5l5.5 5.5-5.5 5.5"/>', folio: '<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/>',
@@ -34625,7 +34712,7 @@ const RACCOURCIS = [
   // (v86, une seule source : ce qui vient du fichier ne se corrige ni ne se renomme dans VOLTA — seuls les choix de VOLTA se règlent)
   ['Lire en tableaux', [['Le récapitulatif, en moitié', ['B']], ['Le récapitulatif, en page', ['Maj', 'B']], ['La LPA, ce qu’il faut commander', ['N']], ['Régler un choix de VOLTA|un contact, un module, un arrangement', ['Entrée']], ['D’une case à l’autre', ['←'], ['→']]]],
   ['Dans une fiche', [['La fiche d’avant, d’après|et revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']],
-    ['Le calibre d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre, ou l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche', ['Échap']]]],
+    ['Fermer la fiche', ['Échap']]]],   // (10 novembre 2026 : les deux touches « du cadran » retirées — le cadran n'existe plus, le calibre écrit vient du fichier)
   ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['L’historique du plan|chaque changement, et « Défaire »', ['H']], ['Pousser le bloc choisi|d’un carreau ; de cinq avec Maj', ['↑'], ['↓']]]],
   ['Ouvrir, sortir', [['Ouvrir un fichier', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert', ['Échap']], ['Cette feuille', ['?']]]],
   ['Améliorer VOLTA', [['Noter une hésitation|l’écran où vous êtes s’écrit avec elle', ['C']]]]];
@@ -34646,12 +34733,12 @@ function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
     document.addEventListener('keydown', e => { if (e.key !== 'Tab' || !raccourcisOuverts()) return; const xs = [...el.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.offsetParent); if (!xs.length) return;
       const i = xs.indexOf(document.activeElement), j = i < 0 ? (e.shiftKey ? xs.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + xs.length) % xs.length; e.preventDefault(); e.stopPropagation(); xs[j].focus(); }, true); }
   // (10 novembre 2026) ouverte par le menu, elle rend le clavier au ⋮ en se fermant — comme tous les documents (l'entrée du menu, cachée, ne peut plus le recevoir)
-  RACCOURCIS.avant = (a => a && a.closest && a.closest('#menu') ? $('btnMenu') : a)(document.activeElement); el.hidden = false;
+  RACCOURCIS.avant = (a => a && a.closest && a.closest('#menu') ? $('btnMenu') : a)(document.activeElement); if (el.hidden) figerLeFond(true); el.hidden = false;
   // elle se pose comme tout ce qui paraît (la règle d'entrée commune, style.css) — le voile, lui, est déjà là
   const f = el.querySelector('.rk-feuille'); f.classList.remove('entre-v'); void f.offsetWidth; f.classList.add('entre-v');
   // le clavier sur la feuille (Tab mène à la croix), sans l'anneau d'un bouton pressé
   f.tabIndex = -1; try { f.focus({ preventScroll: true }); } catch (_) { f.focus(); } }
-function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a !== document.body && a.focus && a.isConnected && a.getClientRects().length) try { rendreLeClavier(a); } catch (_) { } }
+function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; figerLeFond(false); const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a !== document.body && a.focus && a.isConnected && a.getClientRects().length) try { rendreLeClavier(a); } catch (_) { } }
 function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
 /* ---- TAB NE SE PERD JAMAIS (v86, l'audit F7 : « le clavier sort de la fiche ; le focus finit sur body, sans anneau — sur
@@ -35509,6 +35596,12 @@ function selecteurAM(x) { const man = !!x.manuel, quoi = String(x.titre || '').t
   return `<span class="nv-am${man ? ' manuel' : ''}" role="group" aria-label="${escA('Qui choisit ' + quoi)}">`
     + `<button type="button" class="nv-am-b" data-am="auto"${x.auto ? ` data-am-cle="${escA(x.auto)}"` : ''}${x.motAuto ? ` data-am-mot="${escA(x.motAuto)}"` : ''} aria-pressed="${!man}" data-bulle="${escA(man ? 'Rendre le choix à VOLTA' : 'VOLTA choisit — c’est le cas')}">Automatique</button>`
     + `<button type="button" class="nv-am-b nv-somm-b" data-am="manuel" data-somm="${escA(x.vers)}" aria-pressed="${man}" aria-expanded="false" data-bulle="${escA(man ? 'Retenu à la main — un clic montre les possibles' : 'Voir les possibles et en prendre un')}">Manuel</button></span>`; }
+/* (10 novembre 2026) CE QUI S'ÉCRIT ICI (la consommation d'un équipement : votre fichier ne la porte pas, VOLTA la demande) n'est
+   pas un choix « Automatique / Manuel » : « pas écrite — Automatique » ne voulait rien dire. Un seul geste, « L'écrire » ; écrite,
+   « Modifier » et « Effacer ». Les mêmes boutons que le sélecteur (ils ouvrent la section sous la ligne, ils effacent). */
+const boutonSaisie = x => `<span class="nv-am nv-saisie${x.manuel ? ' manuel' : ''}" role="group" aria-label="${escA(x.titre)}">`
+  + (x.manuel ? `<button type="button" class="nv-am-b" data-am="auto"${x.auto ? ` data-am-cle="${escA(x.auto)}"` : ''}${x.motAuto ? ` data-am-mot="${escA(x.motAuto)}"` : ''} aria-pressed="false" data-bulle="Efface ce qui est écrit ici — « Défaire » le reprend">Effacer</button>` : '')
+  + `<button type="button" class="nv-am-b nv-somm-b" data-am="manuel" data-somm="${escA(x.vers)}" aria-pressed="${!!x.manuel}" aria-expanded="false" data-bulle="${escA(x.manuel ? 'Voir et changer ce qui est écrit' : 'L’écrire : ce qu’il tire en permanence, et au démarrage')}">${x.manuel ? 'Modifier' : 'L’écrire'}</button></span>`;
 // une proposition de VOLTA sur une valeur du fichier : ce qu'elle change, ce qu'elle coûte, son geste
 const propositionReg = p => !p || !p.bouton ? '' : `<li class="nv-prop"><span class="nv-prop-k">Proposition de VOLTA</span><span class="nv-prop-t"><span>${p.phrase}${p.cout ? ` <span class="fi-cout">${esc(p.cout)}</span>` : ''}</span><small>Elle ira dans l’Excel corrigé, votre nouveau fichier.</small></span><span class="nv-prop-b">${p.bouton}</span></li>`;
 const ligneReg = x => { const s = x.sorte || 'info';
@@ -35516,7 +35609,7 @@ const ligneReg = x => { const s = x.sorte || 'info';
   // le pourquoi de son titre)
   return `<li class="nv-somm-i ${s}${x.etat ? ' ' + x.etat : ''}"${x.vers ? ` data-somm-l="${escA(x.vers)}"` : ''}><span class="nv-somm-g"><span class="nv-somm-k">${esc(x.titre)}</span>${x.pourquoi ? `<span class="nv-somm-p">${x.pourquoi}</span>` : ''}</span>`
     + `<span class="nv-somm-v"><b>${x.valeur}${x.avant ? `<small class="nv-somm-av">au lieu de ${x.avant}</small>` : ''}</b>${pastilleSource(x.source, x.motSource)}</span>`
-    + `${s === 'choix' && x.vers ? selecteurAM(x) : ''}</li>` + propositionReg(x.proposition); };
+    + `${s === 'choix' && x.vers ? (x.saisie ? boutonSaisie(x) : selecteurAM(x)) : ''}</li>` + propositionReg(x.proposition); };
 // `o.tete` : ce qui s'ajoute au bout de la tête d'une carte, par sorte (les connecteurs A · B d'un équipement, sur les choix)
 function sommaireReglages(xs, o) { const ys = (xs || []).filter(Boolean), T = (o && o.tete) || {}; if (!ys.length) return '';
   return ['fichier', 'choix', 'info'].map(s => { const g = ys.filter(x => (x.sorte || 'info') === s), S = SORTES_REG[s]; if (!g.length) return '';

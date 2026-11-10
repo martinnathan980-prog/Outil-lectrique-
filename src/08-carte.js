@@ -161,10 +161,14 @@ function placerPres(b, W, H, v, diag) { const Z = zoneDeLaCarte(), e = CARTE_AIR
   // (au-dessus de la barre du bas, elle s'arrête à son filet : elle y grandira sans jamais la couvrir — v73, la galerie d'une
   // barrette ouverte posait la carte sur les folios)
   const pieds = zones.filter(z => z.pied);
+  /* (10 novembre 2026, la batterie « ux ») UNE CARTE PLUS HAUTE QUE LA PLACE AU-DESSUS DE LA BARRE DU BAS (le panneau Repères, sa
+     longue liste) refusait toute place raccourcie — et finissait posée SUR les folios, qu'on ne pouvait plus cliquer. Elle se
+     contente de la hauteur au-dessus de la barre : sa liste défile. */
+  const hautDuPied = pieds.length ? Math.min(...pieds.map(z => z.top)) : Z.B, hMin = Math.min(HMIN, Math.max(240, hautDuPied - Z.T));
   const essai = (x, y, dispo, rang, ou) => { x = cl(x, Z.L, Z.R - W); let bas = Z.B; for (const z of pieds) if (x < z.right && x + W > z.left && z.top >= y) bas = Math.min(bas, z.top);
     // (trop bas pour sa hauteur au-dessus de la barre : elle remonte d'autant — entière, sans couvrir les folios)
     if (bas < Z.B && bas - y < H) y = Math.max(Z.T, bas - H); dispo = Math.min(dispo, Z.B - y, bas - y);
-    const h = Math.min(dispo, H); if (y < Z.T || h < HMIN) return;
+    const h = Math.min(dispo, H); if (y < Z.T || h < hMin) return;
     const perte = (H - h) * W * C.hauteur, loin = Math.hypot(x + W / 2 - (b.left + b.width / 2), y + h / 2 - (b.top + b.height / 2)) * C.distance;
     let cache = 0; for (const z of zones) { const dx = Math.min(x + W, z.right) - Math.max(x, z.left), dy = Math.min(y + h, z.bottom) - Math.max(y, z.top); if (dx > 0 && dy > 0) cache += z.poids * dx * dy; }
     places.push({ x, y, h: dispo, cout: rang * C.rang + perte + loin + cache, ou, perte: Math.round(perte), loin: Math.round(loin), cache: Math.round(cache) }); };
@@ -191,14 +195,18 @@ function poserCarte(x, y, h) { const el = $('inspecteur'), s = el.style, Z = zon
   x = Math.max(Z.L, Math.min(Z.R - W, x)); y = Math.max(Z.T - 2, Math.min(Z.B - 56, y));
   // (v82, la relecture : « la carte reste à sa place et se plafonne : “Tout voir” caché, elle défile ») : la carte qui ne tient
   // pas sous sa place remonte — sa hauteur entière, d'abord ; le plafond seulement si l'écran entier est trop court
-  if (!CARTE.grande) { s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - Z.T)) + 'px'); const besoin = el.offsetHeight || 0;
-    if (besoin && y + besoin > Z.B) y = Math.max(Z.T, Z.B - besoin); }
+  /* (10 novembre 2026, la batterie « ux ») ELLE NE SE POSE JAMAIS SUR LA BARRE DU BAS (les folios, le zoom) : le panneau Repères,
+     plus haut que la place, couvrait les folios 2 à 6 — on ne pouvait plus les cliquer. Sa place finit au-dessus de la barre
+     qu'elle surplombe ; plus haute que cette place, elle défile. */
+  const basLibre = y0 => { let bas = Z.B; for (const z of zonesAProteger()) if (z.pied && x < z.right && x + W > z.left && z.top >= y0 + 200) bas = Math.min(bas, z.top); return bas; };
+  if (!CARTE.grande) { s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - Z.T)) + 'px'); const besoin = el.offsetHeight || 0, bas = basLibre(y);
+    if (besoin && y + besoin > bas) y = Math.max(Z.T, bas - besoin); }
   s.setProperty('--carte-x', Math.round(x) + 'px'); s.setProperty('--carte-y', Math.round(y) + 'px'); s.setProperty('--carte-l', CARTE_L() + 'px');
   // (tirée à une taille, elle la garde : la place trouvée près du bloc ne la raccourcit pas)
   // (v82, le lecteur : « la synthèse doit s'adapter : tantôt il faut défiler, tantôt la fenêtre est trop grande et rien
   // dessous ») : la carte prend TOUJOURS la hauteur de ce qu'elle dit, au plus la place sous elle — tirée à une largeur,
   // elle la garde ; sa hauteur, jamais
-  s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), Z.B - y)) + 'px');
+  s.setProperty('--carte-hmax', Math.round(Math.min(carteH(), (CARTE.grande ? Z.B : basLibre(y)) - y)) + 'px');
   $('inspecteur').classList.remove('taillee'); s.removeProperty('--carte-h'); void h; }
 const poserA = p => poserCarte(p.x, p.y, p.h);
 

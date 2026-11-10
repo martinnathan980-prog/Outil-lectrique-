@@ -2422,14 +2422,19 @@ function construirePalette() { if (PALETTE.el) return PALETTE.el;
   liste.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) faireDeLaPalette(+b.dataset.i); });
   el.addEventListener('pointerdown', e => { if (!e.target.closest('.pa-boite')) { e.preventDefault(); fermerPalette(); } });
   return el; }
-function ouvrirPalette(seme) { const el = construirePalette(); if (rechercheOuverte()) fermerRecherche(); if (typeof fermerMenu === 'function') fermerMenu();
+/* (10 novembre 2026, la batterie « ux ») LE FOND SE FIGE DERRIÈRE UNE FEUILLE MODALE (la palette, les raccourcis) : derrière le voile,
+   la barre du haut, le rail, les folios restaient au clavier (Tab y allait, sous la feuille) et au lecteur d'écran. `inert` les
+   met hors d'atteinte tant que la feuille est là ; compté, pour deux feuilles l'une sur l'autre. */
+const FOND_FIGE = { n: 0 };
+function figerLeFond(oui) { const fond = $('app'); if (!fond) return; FOND_FIGE.n = Math.max(0, FOND_FIGE.n + (oui ? 1 : -1)); if (FOND_FIGE.n) fond.setAttribute('inert', ''); else fond.removeAttribute('inert'); }
+function ouvrirPalette(seme) { const el = construirePalette(); if (rechercheOuverte()) fermerRecherche(); if (typeof fermerMenu === 'function') fermerMenu(); if (el.hidden) figerLeFond(true);
   PALETTE.avant = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
   clearTimeout(PALETTE.frappe); PALETTE.frappe = 0; PALETTE.actions = null;
   el.hidden = false; document.body.classList.add('palette-ouverte'); synchroniserRail(); const q = el.querySelector('#pa-q'); q.value = typeof seme === 'string' ? seme : ''; PALETTE.sel = 0; rendrePalette();
   if (!mouvementReduit()) el.querySelector('.pa-boite').animate([{ opacity: 0, transform: 'translateY(-6px) scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.32,.72,0,1)' });
   try { q.focus({ preventScroll: true }); } catch (_) { q.focus(); } }
 function fermerPalette(rendre) { const el = PALETTE.el; if (!el || el.hidden) return; clearTimeout(PALETTE.frappe); PALETTE.frappe = 0; PALETTE.actions = null;
-  el.hidden = true; document.body.classList.remove('palette-ouverte'); synchroniserRail();
+  el.hidden = true; document.body.classList.remove('palette-ouverte'); figerLeFond(false); synchroniserRail();
   const a = PALETTE.avant; PALETTE.avant = null; if (rendre !== false && a && a.isConnected && a.focus) try { a.focus({ preventScroll: true }); } catch (_) { } else if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
 const ICONE_OBJET = { repere: '<rect x="5" y="6" width="14" height="12" rx="1.5"/><path d="M2.5 10h2.5M2.5 14h2.5M19 10h2.5M19 14h2.5"/>', fil: '<path d="M3 16c4 0 4-8 9-8s5 8 9 8"/>', borne: '<circle cx="12" cy="12" r="3.2"/><path d="M3 12h5.8M15.2 12H21"/>',
   type: '<path d="M4 7h16M4 12h16M4 17h10"/>', nature: '<path d="M4 6h16v4H4zM4 14h16v4H4z"/>', action: '<path d="m13 3-7 10h5l-1 8 7-10h-5z"/>', geste: '<path d="M4.5 12h13M13 6.5l5.5 5.5-5.5 5.5"/>', folio: '<path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/>',
@@ -3399,7 +3404,7 @@ const RACCOURCIS = [
   // (v86, une seule source : ce qui vient du fichier ne se corrige ni ne se renomme dans VOLTA — seuls les choix de VOLTA se règlent)
   ['Lire en tableaux', [['Le récapitulatif, en moitié', ['B']], ['Le récapitulatif, en page', ['Maj', 'B']], ['La LPA, ce qu’il faut commander', ['N']], ['Régler un choix de VOLTA|un contact, un module, un arrangement', ['Entrée']], ['D’une case à l’autre', ['←'], ['→']]]],
   ['Dans une fiche', [['La fiche d’avant, d’après|et revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']],
-    ['Le calibre d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre, ou l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche', ['Échap']]]],
+    ['Fermer la fiche', ['Échap']]]],   // (10 novembre 2026 : les deux touches « du cadran » retirées — le cadran n'existe plus, le calibre écrit vient du fichier)
   ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['L’historique du plan|chaque changement, et « Défaire »', ['H']], ['Pousser le bloc choisi|d’un carreau ; de cinq avec Maj', ['↑'], ['↓']]]],
   ['Ouvrir, sortir', [['Ouvrir un fichier', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert', ['Échap']], ['Cette feuille', ['?']]]],
   ['Améliorer VOLTA', [['Noter une hésitation|l’écran où vous êtes s’écrit avec elle', ['C']]]]];
@@ -3420,12 +3425,12 @@ function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
     document.addEventListener('keydown', e => { if (e.key !== 'Tab' || !raccourcisOuverts()) return; const xs = [...el.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.offsetParent); if (!xs.length) return;
       const i = xs.indexOf(document.activeElement), j = i < 0 ? (e.shiftKey ? xs.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + xs.length) % xs.length; e.preventDefault(); e.stopPropagation(); xs[j].focus(); }, true); }
   // (10 novembre 2026) ouverte par le menu, elle rend le clavier au ⋮ en se fermant — comme tous les documents (l'entrée du menu, cachée, ne peut plus le recevoir)
-  RACCOURCIS.avant = (a => a && a.closest && a.closest('#menu') ? $('btnMenu') : a)(document.activeElement); el.hidden = false;
+  RACCOURCIS.avant = (a => a && a.closest && a.closest('#menu') ? $('btnMenu') : a)(document.activeElement); if (el.hidden) figerLeFond(true); el.hidden = false;
   // elle se pose comme tout ce qui paraît (la règle d'entrée commune, style.css) — le voile, lui, est déjà là
   const f = el.querySelector('.rk-feuille'); f.classList.remove('entre-v'); void f.offsetWidth; f.classList.add('entre-v');
   // le clavier sur la feuille (Tab mène à la croix), sans l'anneau d'un bouton pressé
   f.tabIndex = -1; try { f.focus({ preventScroll: true }); } catch (_) { f.focus(); } }
-function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a !== document.body && a.focus && a.isConnected && a.getClientRects().length) try { rendreLeClavier(a); } catch (_) { } }
+function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; figerLeFond(false); const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a !== document.body && a.focus && a.isConnected && a.getClientRects().length) try { rendreLeClavier(a); } catch (_) { } }
 function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
 /* ---- TAB NE SE PERD JAMAIS (v86, l'audit F7 : « le clavier sort de la fiche ; le focus finit sur body, sans anneau — sur

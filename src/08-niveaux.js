@@ -182,6 +182,12 @@ function selecteurAM(x) { const man = !!x.manuel, quoi = String(x.titre || '').t
   return `<span class="nv-am${man ? ' manuel' : ''}" role="group" aria-label="${escA('Qui choisit ' + quoi)}">`
     + `<button type="button" class="nv-am-b" data-am="auto"${x.auto ? ` data-am-cle="${escA(x.auto)}"` : ''}${x.motAuto ? ` data-am-mot="${escA(x.motAuto)}"` : ''} aria-pressed="${!man}" data-bulle="${escA(man ? 'Rendre le choix à VOLTA' : 'VOLTA choisit — c’est le cas')}">Automatique</button>`
     + `<button type="button" class="nv-am-b nv-somm-b" data-am="manuel" data-somm="${escA(x.vers)}" aria-pressed="${man}" aria-expanded="false" data-bulle="${escA(man ? 'Retenu à la main — un clic montre les possibles' : 'Voir les possibles et en prendre un')}">Manuel</button></span>`; }
+/* (10 novembre 2026) CE QUI S'ÉCRIT ICI (la consommation d'un équipement : votre fichier ne la porte pas, VOLTA la demande) n'est
+   pas un choix « Automatique / Manuel » : « pas écrite — Automatique » ne voulait rien dire. Un seul geste, « L'écrire » ; écrite,
+   « Modifier » et « Effacer ». Les mêmes boutons que le sélecteur (ils ouvrent la section sous la ligne, ils effacent). */
+const boutonSaisie = x => `<span class="nv-am nv-saisie${x.manuel ? ' manuel' : ''}" role="group" aria-label="${escA(x.titre)}">`
+  + (x.manuel ? `<button type="button" class="nv-am-b" data-am="auto"${x.auto ? ` data-am-cle="${escA(x.auto)}"` : ''}${x.motAuto ? ` data-am-mot="${escA(x.motAuto)}"` : ''} aria-pressed="false" data-bulle="Efface ce qui est écrit ici — « Défaire » le reprend">Effacer</button>` : '')
+  + `<button type="button" class="nv-am-b nv-somm-b" data-am="manuel" data-somm="${escA(x.vers)}" aria-pressed="${!!x.manuel}" aria-expanded="false" data-bulle="${escA(x.manuel ? 'Voir et changer ce qui est écrit' : 'L’écrire : ce qu’il tire en permanence, et au démarrage')}">${x.manuel ? 'Modifier' : 'L’écrire'}</button></span>`;
 // une proposition de VOLTA sur une valeur du fichier : ce qu'elle change, ce qu'elle coûte, son geste
 const propositionReg = p => !p || !p.bouton ? '' : `<li class="nv-prop"><span class="nv-prop-k">Proposition de VOLTA</span><span class="nv-prop-t"><span>${p.phrase}${p.cout ? ` <span class="fi-cout">${esc(p.cout)}</span>` : ''}</span><small>Elle ira dans l’Excel corrigé, votre nouveau fichier.</small></span><span class="nv-prop-b">${p.bouton}</span></li>`;
 const ligneReg = x => { const s = x.sorte || 'info';
@@ -189,7 +195,7 @@ const ligneReg = x => { const s = x.sorte || 'info';
   // le pourquoi de son titre)
   return `<li class="nv-somm-i ${s}${x.etat ? ' ' + x.etat : ''}"${x.vers ? ` data-somm-l="${escA(x.vers)}"` : ''}><span class="nv-somm-g"><span class="nv-somm-k">${esc(x.titre)}</span>${x.pourquoi ? `<span class="nv-somm-p">${x.pourquoi}</span>` : ''}</span>`
     + `<span class="nv-somm-v"><b>${x.valeur}${x.avant ? `<small class="nv-somm-av">au lieu de ${x.avant}</small>` : ''}</b>${pastilleSource(x.source, x.motSource)}</span>`
-    + `${s === 'choix' && x.vers ? selecteurAM(x) : ''}</li>` + propositionReg(x.proposition); };
+    + `${s === 'choix' && x.vers ? (x.saisie ? boutonSaisie(x) : selecteurAM(x)) : ''}</li>` + propositionReg(x.proposition); };
 // `o.tete` : ce qui s'ajoute au bout de la tête d'une carte, par sorte (les connecteurs A · B d'un équipement, sur les choix)
 function sommaireReglages(xs, o) { const ys = (xs || []).filter(Boolean), T = (o && o.tete) || {}; if (!ys.length) return '';
   return ['fichier', 'choix', 'info'].map(s => { const g = ys.filter(x => (x.sorte || 'info') === s), S = SORTES_REG[s]; if (!g.length) return '';

@@ -620,7 +620,7 @@ function heroSchema() { const deja = BIB.intro === 'faite';
   // qui s'efface sur les côtés, et c'est un schéma infini ») : la règle des colonnes seule, en dégradé vers les bords
   const marge = `<defs><linearGradient id="hs-regle" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#eceff5" stop-opacity="0"/><stop offset=".22" stop-color="#eceff5" stop-opacity=".22"/><stop offset=".78" stop-color="#eceff5" stop-opacity=".22"/><stop offset="1" stop-color="#eceff5" stop-opacity="0"/></linearGradient></defs>`
     + `<path class="hs-regle" d="M0 14.5H1200"/>` + [...Array(8)].map((_, k) => `<text class="hs-col" x="${24 + 72 + k * 144}" y="9">${k + 1}</text>${k < 7 ? `<path class="hs-regle" d="M${24 + (k + 1) * 144} 14.5v6"/>` : ''}`).join('');
-  return `<div class="bi-vitrine bi-hero"><svg viewBox="0 -4 1200 316" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${marge}`
+  return `<div class="bi-vitrine bi-hero"><svg viewBox="0 -4 1200 316" preserveAspectRatio="xMidYMid meet" aria-hidden="true" data-decor="1">${marge}`
     + fils
     + bloc(90, 92, 96, 90, '102CB1', '5 A', 'hs-dj') + `<g class="hs-piece hs-vt" data-rep="668VT31"><rect class="hs-barre" x="330" y="52" width="10" height="190" rx="3"/><rect class="hs-prise-p" x="318" y="52" width="34" height="226"/><text class="hs-rep" x="335" y="268">668VT31</text></g>`
     + bloc(560, 52, 110, 50, '381RL1', 'relais') + bloc(560, 132, 110, 50, '382RL2', 'relais')
