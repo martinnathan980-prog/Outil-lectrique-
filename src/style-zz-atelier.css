@@ -22,3 +22,5 @@
   body.atelier .at-tete i{margin-left:auto;font:700 9pt/1 var(--sans);font-style:normal;letter-spacing:.14em;color:#1b1b1d}
 }
 @media print{body.atelier #inspecteur .nv-poignee::before,body.atelier #inspecteur .nv-poignee::after{display:none!important}}
+/* (v94) l'outillage d'un contact à sertir, sous son rôle */
+.vu-r .vu-outil{display:block;margin-top:2px;color:var(--t-1)}

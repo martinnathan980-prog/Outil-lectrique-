@@ -46,10 +46,20 @@ function corpsBilanElec() { const B = bilanElectrique();
   const manque = B.manque.length ? `<div class="sv-recu be-manque"><p class="sv-recu-t"><b>${esc(pluriel(B.manque.length, 'consommation'))} à écrire</b></p><p class="be-liste">${B.manque.map(r => repBilanHtml(r, 'puce')).join('')}</p><p class="sv-recu-a">Un clic ouvre l’équipement : « Ce qu’il consomme » s’écrit dans Modifier. Le bilan se complète de lui-même.</p></div>` : '';
   return tete('Ce plan', 'Bilan électrique') + chapeau + manque + B.sources.map(sourceBilanHtml).join(''); }
 const piedBilanElec = () => { const B = bilanElectrique(); if (!B.n) return '';
-  return `<span class="hy-etat ${B.connu ? 'ok' : 'regle att'}">${esc(pluriel(B.n, 'disjoncteur'))} · ${esc(amperes(B.perm))} ${B.connu ? 'en permanence' : 'connus, en permanence'}${B.manque.length ? ' · ' + esc(pluriel(B.manque.length, 'consommation')) + ' à écrire' : ''}</span>`; };
+  return '<button type="button" class="btn papier dense" id="be-excel">Enregistrer en Excel</button>' + `<span class="hy-etat ${B.connu ? 'ok' : 'regle att'}">${esc(pluriel(B.n, 'disjoncteur'))} · ${esc(amperes(B.perm))} ${B.connu ? 'en permanence' : 'connus, en permanence'}${B.manque.length ? ' · ' + esc(pluriel(B.manque.length, 'consommation')) + ' à écrire' : ''}</span>`; };
 function ficheBilanElec() { const deja = ficheBilanElecOuverte(), y = deja ? $('fiche-corps').scrollTop : 0;
   ouvrirFiche({ mode: 'bilanelec', large: true }, corpsBilanElec(), piedBilanElec()); lierBilanElec(); if (deja) $('fiche-corps').scrollTop = y; }
 function lierBilanElec() { if (BILAN_ELEC.lie) return; BILAN_ELEC.lie = true;
   $('fiche-corps').addEventListener('click', e => { if (!ficheBilanElecOuverte()) return; const b = e.target.closest('button[data-be]'); if (!b) return; aller({ nom: b.dataset.be }); }); }
+
+/* Le bilan en Excel : une ligne par équipement alimenté, son disjoncteur et sa source répétés — un tableau qui se filtre. */
+function exporterBilanElec() { const B = bilanElectrique(); if (!B.n || typeof XLSX === 'undefined') return; const A = x => x == null ? '' : Math.round(x * 100) / 100;
+  const L = [['Source', 'Disjoncteur', 'Calibre (A)', 'En permanence (A)', 'Au démarrage (A)', 'Courant connu', 'Profil écrit sur le disjoncteur', 'Équipement alimenté', 'Sa consommation en permanence (A)', 'Sa consommation au démarrage (A)']];
+  B.sources.forEach(S => S.lignes.forEach(x => { const tete = [S.source, x.cb, A(x.calibre), A(x.perm), x.perm == null ? '' : A(x.pointe), x.perm == null ? 'inconnu' : x.connu ? 'oui' : 'en partie', x.surLui ? 'oui' : ''];
+    if (!x.charges.length) L.push([...tete, '', '', '']); x.charges.forEach(c => L.push([...tete, c.repere, c.ecrite ? A(c.perm) : 'à écrire', c.ecrite ? A(c.pointe) : ''])); }));
+  const ws = XLSX.utils.aoa_to_sheet(L); ws['!cols'] = [12, 14, 11, 17, 17, 14, 28, 20, 30, 30].map(wch => ({ wch })); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Bilan électrique');
+  const nom = nomAffichePlan() + '-bilan-electrique.xlsx';
+  telecharger(new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nom); dire('Bilan électrique enregistré : ' + nom + '.'); }
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#be-excel') && ficheBilanElecOuverte()) exporterBilanElec(); });
 
 MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.bilanelec = surLePlan(() => ficheBilanElec());

@@ -28,3 +28,4 @@
 .be-liste{display:flex;flex-wrap:wrap;gap:6px 8px;margin:8px 0}
 .be-rep.puce{padding:3px 9px;border:1px solid var(--s-line-2);border-radius:999px;font-size:var(--f-12)}
 .be-rep.puce:hover{border-color:var(--nv-cuivre)}
+.be-manque .sv-recu-t b{font-family:var(--sans)}

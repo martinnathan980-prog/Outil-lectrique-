@@ -61,7 +61,10 @@ function lierVivant() { if (VIVANT.lie) return; VIVANT.lie = true; const stage =
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#vivant [data-vv]'); if (!b) return; if (b.dataset.vv === 'quitter') quitterVivant(); else { VIVANT.ouverts.clear(); VIVANT.coupes.clear(); peindreVivant(); } });
   document.addEventListener('keydown', e => { if (!VIVANT.actif || e.key !== 'Escape' || e.defaultPrevented) return; if (!$('fiche').hidden || !$('inspecteur').hidden || (typeof menuOuvert === 'function' && menuOuvert())) return; quitterVivant(); }); }
 function entrerVivant() { lierVivant(); if (VIVANT.actif) return; VIVANT.actif = true; VIVANT.ouverts.clear(); VIVANT.coupes.clear();
-  if (typeof fermerFiche === 'function') fermerFiche(); if (app.choisi || app.cible) { app.choisi = null; app.cible = null; if (typeof eteindre === 'function') eteindre(); peindre(); } else peindreVivant(); }
+  // la place est faite : le document, la fiche d'un objet, le panneau Repères se ferment (ils couvriraient les câbles)
+  if (typeof NIVEAU !== 'undefined' && NIVEAU.grand && typeof reduireFiche === 'function') reduireFiche();
+  if (typeof fermerFiche === 'function') fermerFiche(); if (typeof deselectionner === 'function') deselectionner(); if (typeof fermerInspecteur === 'function') fermerInspecteur();
+  if (typeof eteindre === 'function') eteindre(); peindreVivant(); }
 function quitterVivant() { if (!VIVANT.actif) return; VIVANT.actif = false; VIVANT.ouverts.clear(); VIVANT.coupes.clear(); VIVANT.E = null; peindreVivant(); rendreBandeauVivant(); }
 
 MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.vivant = surLePlan(() => (VIVANT.actif ? quitterVivant() : entrerVivant()));

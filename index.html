@@ -10183,6 +10183,8 @@ svg.vu-face text.pris{fill:#fff}
   body.atelier .at-tete i{margin-left:auto;font:700 9pt/1 var(--sans);font-style:normal;letter-spacing:.14em;color:#1b1b1d}
 }
 @media print{body.atelier #inspecteur .nv-poignee::before,body.atelier #inspecteur .nv-poignee::after{display:none!important}}
+/* (v94) l'outillage d'un contact à sertir, sous son rôle */
+.vu-r .vu-outil{display:block;margin-top:2px;color:var(--t-1)}
 
 /* ───────── style-zz-ensemble.css ───────── */
 /* ── LA VUE D'ENSEMBLE D'UNE INSTALLATION (08-vue-ensemble, v93) : une feuille au-dessus de la liste des plans — les chiffres,
@@ -10357,6 +10359,7 @@ button.vu-cal:focus-visible,.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible
 .be-liste{display:flex;flex-wrap:wrap;gap:6px 8px;margin:8px 0}
 .be-rep.puce{padding:3px 9px;border:1px solid var(--s-line-2);border-radius:999px;font-size:var(--f-12)}
 .be-rep.puce:hover{border-color:var(--nv-cuivre)}
+.be-manque .sv-recu-t b{font-family:var(--sans)}
 
 /* ───────── style-zz-vivant.css ───────── */
 /* ── LE PLAN VIVANT (08-vivant, v92) : ce qui est sous tension garde sa couleur, le reste s'efface ; ce qui n'est plus
@@ -23884,7 +23887,7 @@ function noterExportDuPlan(nom) { const p = BIB.plans.get(app.planId); if (!p ||
      dans les notes tapées à la main.
    =========================================================================== */
 
-const BILAN = { version: 'v93', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v94', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -42674,11 +42677,21 @@ function corpsBilanElec() { const B = bilanElectrique();
   const manque = B.manque.length ? `<div class="sv-recu be-manque"><p class="sv-recu-t"><b>${esc(pluriel(B.manque.length, 'consommation'))} à écrire</b></p><p class="be-liste">${B.manque.map(r => repBilanHtml(r, 'puce')).join('')}</p><p class="sv-recu-a">Un clic ouvre l’équipement : « Ce qu’il consomme » s’écrit dans Modifier. Le bilan se complète de lui-même.</p></div>` : '';
   return tete('Ce plan', 'Bilan électrique') + chapeau + manque + B.sources.map(sourceBilanHtml).join(''); }
 const piedBilanElec = () => { const B = bilanElectrique(); if (!B.n) return '';
-  return `<span class="hy-etat ${B.connu ? 'ok' : 'regle att'}">${esc(pluriel(B.n, 'disjoncteur'))} · ${esc(amperes(B.perm))} ${B.connu ? 'en permanence' : 'connus, en permanence'}${B.manque.length ? ' · ' + esc(pluriel(B.manque.length, 'consommation')) + ' à écrire' : ''}</span>`; };
+  return '<button type="button" class="btn papier dense" id="be-excel">Enregistrer en Excel</button>' + `<span class="hy-etat ${B.connu ? 'ok' : 'regle att'}">${esc(pluriel(B.n, 'disjoncteur'))} · ${esc(amperes(B.perm))} ${B.connu ? 'en permanence' : 'connus, en permanence'}${B.manque.length ? ' · ' + esc(pluriel(B.manque.length, 'consommation')) + ' à écrire' : ''}</span>`; };
 function ficheBilanElec() { const deja = ficheBilanElecOuverte(), y = deja ? $('fiche-corps').scrollTop : 0;
   ouvrirFiche({ mode: 'bilanelec', large: true }, corpsBilanElec(), piedBilanElec()); lierBilanElec(); if (deja) $('fiche-corps').scrollTop = y; }
 function lierBilanElec() { if (BILAN_ELEC.lie) return; BILAN_ELEC.lie = true;
   $('fiche-corps').addEventListener('click', e => { if (!ficheBilanElecOuverte()) return; const b = e.target.closest('button[data-be]'); if (!b) return; aller({ nom: b.dataset.be }); }); }
+
+/* Le bilan en Excel : une ligne par équipement alimenté, son disjoncteur et sa source répétés — un tableau qui se filtre. */
+function exporterBilanElec() { const B = bilanElectrique(); if (!B.n || typeof XLSX === 'undefined') return; const A = x => x == null ? '' : Math.round(x * 100) / 100;
+  const L = [['Source', 'Disjoncteur', 'Calibre (A)', 'En permanence (A)', 'Au démarrage (A)', 'Courant connu', 'Profil écrit sur le disjoncteur', 'Équipement alimenté', 'Sa consommation en permanence (A)', 'Sa consommation au démarrage (A)']];
+  B.sources.forEach(S => S.lignes.forEach(x => { const tete = [S.source, x.cb, A(x.calibre), A(x.perm), x.perm == null ? '' : A(x.pointe), x.perm == null ? 'inconnu' : x.connu ? 'oui' : 'en partie', x.surLui ? 'oui' : ''];
+    if (!x.charges.length) L.push([...tete, '', '', '']); x.charges.forEach(c => L.push([...tete, c.repere, c.ecrite ? A(c.perm) : 'à écrire', c.ecrite ? A(c.pointe) : ''])); }));
+  const ws = XLSX.utils.aoa_to_sheet(L); ws['!cols'] = [12, 14, 11, 17, 17, 14, 28, 20, 30, 30].map(wch => ({ wch })); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Bilan électrique');
+  const nom = nomAffichePlan() + '-bilan-electrique.xlsx';
+  telecharger(new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), nom); dire('Bilan électrique enregistré : ' + nom + '.'); }
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#be-excel') && ficheBilanElecOuverte()) exporterBilanElec(); });
 
 MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.bilanelec = surLePlan(() => ficheBilanElec());
 
@@ -43264,7 +43277,10 @@ function lierVivant() { if (VIVANT.lie) return; VIVANT.lie = true; const stage =
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#vivant [data-vv]'); if (!b) return; if (b.dataset.vv === 'quitter') quitterVivant(); else { VIVANT.ouverts.clear(); VIVANT.coupes.clear(); peindreVivant(); } });
   document.addEventListener('keydown', e => { if (!VIVANT.actif || e.key !== 'Escape' || e.defaultPrevented) return; if (!$('fiche').hidden || !$('inspecteur').hidden || (typeof menuOuvert === 'function' && menuOuvert())) return; quitterVivant(); }); }
 function entrerVivant() { lierVivant(); if (VIVANT.actif) return; VIVANT.actif = true; VIVANT.ouverts.clear(); VIVANT.coupes.clear();
-  if (typeof fermerFiche === 'function') fermerFiche(); if (app.choisi || app.cible) { app.choisi = null; app.cible = null; if (typeof eteindre === 'function') eteindre(); peindre(); } else peindreVivant(); }
+  // la place est faite : le document, la fiche d'un objet, le panneau Repères se ferment (ils couvriraient les câbles)
+  if (typeof NIVEAU !== 'undefined' && NIVEAU.grand && typeof reduireFiche === 'function') reduireFiche();
+  if (typeof fermerFiche === 'function') fermerFiche(); if (typeof deselectionner === 'function') deselectionner(); if (typeof fermerInspecteur === 'function') fermerInspecteur();
+  if (typeof eteindre === 'function') eteindre(); peindreVivant(); }
 function quitterVivant() { if (!VIVANT.actif) return; VIVANT.actif = false; VIVANT.ouverts.clear(); VIVANT.coupes.clear(); VIVANT.E = null; peindreVivant(); rendreBandeauVivant(); }
 
 MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.vivant = surLePlan(() => (VIVANT.actif ? quitterVivant() : entrerVivant()));
@@ -43703,8 +43719,13 @@ const nombreEnMots = n => ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'si
 function fabricationVue(groupes) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length);
   if (!gs.length) return '<p class="vu-note">Rien à monter : la référence de la pièce n’est pas encore connue.</p>';
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
+  // (v94) l'outillage d'un contact à sertir, quand la table des outillages le donne : la pince, son positionneur, l'insertion,
+  // l'extraction — sous le contact, à l'écran comme sur la fiche d'atelier
+  const outil = l => { if (!/contact à sertir/.test(l.role || '') || !l.ref) return ''; let o = null; try { o = typeof outillageDuContact === 'function' && typeof app !== 'undefined' ? outillageDuContact(app.norme, l.ref) : null; } catch (_) { o = null; }
+    const xs = o ? [o.pince && 'pince ' + o.pince, o.positionneur && 'positionneur ' + o.positionneur, o.insertion && 'insertion ' + o.insertion, o.extraction && 'extraction ' + o.extraction].filter(Boolean) : [];
+    return xs.length ? `<small class="vu-outil">${esc('Outillage : ' + xs.join(' · '))}</small>` : ''; };
   return `<div class="vu-fab" data-pieces="${n}">${gs.map(g => `<section class="vu-fab-g"><h4><span>${esc(g.titre)}</span>${g.ref ? `<span class="id">${esc(g.ref)}</span>` : ''}${g.sous ? `<small>${esc(g.sous)}</small>` : ''}</h4>`
-    + g.lignes.map(l => `<div class="vu-fab-l"><span class="vu-q">${l.q}<small>×</small></span><span class="vu-r"><b class="id">${esc(l.ref || '—')}</b><small>${esc(l.role || '')}</small></span>${l.statut ? `<span class="vu-st${/confirmer|manque/.test(l.statut) ? ' att' : ''}">${esc(l.statut)}</span>` : '<span></span>'}</div>`).join('') + '</section>').join('')}</div>`; }
+    + g.lignes.map(l => `<div class="vu-fab-l"><span class="vu-q">${l.q}<small>×</small></span><span class="vu-r"><b class="id">${esc(l.ref || '—')}</b><small>${esc(l.role || '')}</small>${outil(l)}</span>${l.statut ? `<span class="vu-st${/confirmer|manque/.test(l.statut) ? ' att' : ''}">${esc(l.statut)}</span>` : '<span></span>'}</div>`).join('') + '</section>').join('')}</div>`; }
 const compterParReference = (refs, role) => { const m = new Map(); refs.filter(Boolean).forEach(r => m.set(r, (m.get(r) || 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]).map(([ref, q]) => ({ q, ref, role })); };
 /* (passe 87) Ce qu'on monte autour d'un connecteur : l'onglet Pièces de sa fiche ET la LPA du plan (08-nomenclature) lisent
    cette liste — une seule source. Un nom par pièce, le même partout : « tyrap » (vos mots), l'obturateur avec sa taille de

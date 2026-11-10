@@ -376,8 +376,13 @@ const nombreEnMots = n => ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'si
 function fabricationVue(groupes) { const gs = (groupes || []).filter(g => g && g.lignes && g.lignes.length);
   if (!gs.length) return '<p class="vu-note">Rien à monter : la référence de la pièce n’est pas encore connue.</p>';
   const n = gs.reduce((s, g) => s + g.lignes.reduce((t, l) => t + (l.q || 0), 0), 0);
+  // (v94) l'outillage d'un contact à sertir, quand la table des outillages le donne : la pince, son positionneur, l'insertion,
+  // l'extraction — sous le contact, à l'écran comme sur la fiche d'atelier
+  const outil = l => { if (!/contact à sertir/.test(l.role || '') || !l.ref) return ''; let o = null; try { o = typeof outillageDuContact === 'function' && typeof app !== 'undefined' ? outillageDuContact(app.norme, l.ref) : null; } catch (_) { o = null; }
+    const xs = o ? [o.pince && 'pince ' + o.pince, o.positionneur && 'positionneur ' + o.positionneur, o.insertion && 'insertion ' + o.insertion, o.extraction && 'extraction ' + o.extraction].filter(Boolean) : [];
+    return xs.length ? `<small class="vu-outil">${esc('Outillage : ' + xs.join(' · '))}</small>` : ''; };
   return `<div class="vu-fab" data-pieces="${n}">${gs.map(g => `<section class="vu-fab-g"><h4><span>${esc(g.titre)}</span>${g.ref ? `<span class="id">${esc(g.ref)}</span>` : ''}${g.sous ? `<small>${esc(g.sous)}</small>` : ''}</h4>`
-    + g.lignes.map(l => `<div class="vu-fab-l"><span class="vu-q">${l.q}<small>×</small></span><span class="vu-r"><b class="id">${esc(l.ref || '—')}</b><small>${esc(l.role || '')}</small></span>${l.statut ? `<span class="vu-st${/confirmer|manque/.test(l.statut) ? ' att' : ''}">${esc(l.statut)}</span>` : '<span></span>'}</div>`).join('') + '</section>').join('')}</div>`; }
+    + g.lignes.map(l => `<div class="vu-fab-l"><span class="vu-q">${l.q}<small>×</small></span><span class="vu-r"><b class="id">${esc(l.ref || '—')}</b><small>${esc(l.role || '')}</small>${outil(l)}</span>${l.statut ? `<span class="vu-st${/confirmer|manque/.test(l.statut) ? ' att' : ''}">${esc(l.statut)}</span>` : '<span></span>'}</div>`).join('') + '</section>').join('')}</div>`; }
 const compterParReference = (refs, role) => { const m = new Map(); refs.filter(Boolean).forEach(r => m.set(r, (m.get(r) || 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]).map(([ref, q]) => ({ q, ref, role })); };
 /* (passe 87) Ce qu'on monte autour d'un connecteur : l'onglet Pièces de sa fiche ET la LPA du plan (08-nomenclature) lisent
    cette liste — une seule source. Un nom par pièce, le même partout : « tyrap » (vos mots), l'obturateur avec sa taille de
