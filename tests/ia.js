@@ -84,12 +84,12 @@ function examinerDansLaPage(sel) { const racine = document.querySelector(sel), o
   await ev(() => atelier.exemple()); await attendre(1500); await ev(() => { IA.attenteBase = 60; });
 
   /* ---- 1. le réglage ---- */
-  await page.click('#btnMenu'); await attendre(200); await page.click('#menu [data-sous="plus"]'); await attendre(300);
-  const M = await ev(() => { const b = document.querySelector('#mp-plus [data-act="ia"]'), p = b && b.previousElementSibling, l = b && b.querySelector('.menu-l');
-    return b ? { mot: l.childNodes[0].textContent.trim(), sous: l.querySelector('small').textContent, apres: p && p.dataset.act, visible: !!b.offsetParent, aide: b.dataset.aide } : null; });
-  ok('⋮ › Plus porte « IA interne », juste après les lectures PDF et Visio ; dessous, son état (« à régler ») ; sa bulle dit à quoi elle sert',
-    M && M.mot === 'IA interne' && M.apres === 'visio' && M.sous === 'à régler' && M.visible && /ne comprend pas seul/.test(M.aide), JSON.stringify(M));
-  await page.click('#mp-plus [data-act="ia"]'); await attendre(450);
+  await page.click('#btnMenu'); await attendre(200); await page.click('#menu [data-sous="reglages"]'); await attendre(300);
+  const M = await ev(() => { const b = document.querySelector('#mp-reglages [data-act="ia"]'), g = b && b.closest('.menu-bloc'), s = b && b.nextElementSibling, l = b && b.querySelector('.menu-l');
+    return b ? { mot: l.childNodes[0].textContent.trim(), sous: l.querySelector('small').textContent, groupe: g && g.getAttribute('aria-label'), avant: s && s.dataset.act, visible: !!b.offsetParent, aide: b.dataset.aide } : null; });
+  ok('(v88) ⋮ › Réglages porte « IA interne », dans « Vos données », avant la Sauvegarde ; dessous, son état (« à régler ») ; sa bulle dit à quoi elle sert',
+    M && M.mot === 'IA interne' && M.groupe === 'Vos données' && M.avant === 'sauvegarde' && M.sous === 'à régler' && M.visible && /ne comprend pas seul/.test(M.aide), JSON.stringify(M));
+  await page.click('#mp-reglages [data-act="ia"]'); await attendre(450);
   const D = await ev(() => ({ mode: $('fiche').dataset.mode, sur: document.querySelector('#fiche .fiche-tete .sur').textContent, titre: document.querySelector('#fiche .fiche-tete .titre').textContent,
     champs: ['ia-adresse', 'ia-modele', 'ia-cle'].map(id => !!$(id) && $(id).value === ''), type: $('ia-cle').type, inter: $('ia-actif').checked, chapeau: document.querySelector('.ia-chapeau').textContent,
     carte: !!document.querySelector('#fiche-corps > .hy-groupe#ia-connexion'), clavier: document.activeElement === document.querySelector('#fiche .fiche-tete .titre'), pied: $('ia-etat').textContent }));
@@ -309,8 +309,8 @@ function examinerDansLaPage(sel) { const racine = document.querySelector(sel), o
     await attendre(2600); await p2.evaluate(() => { $('fiche-corps').scrollTop = 9999; }); await attendre(200);
     oeil.push(...(await p2.evaluate(examinerDansLaPage, '#fiche')).map(x => ou + ' lecture — ' + x));
     await p2.evaluate(() => arreterIA()); await attendre(300); oeil.push(...(await p2.evaluate(examinerDansLaPage, '#fiche')).map(x => ou + ' lecture arrêtée — ' + x));
-    await p2.evaluate(() => { fermerFiche(); document.getElementById('btnMenu').click(); }); await attendre(250); await p2.evaluate(() => montrerPanneau('plus')); await attendre(300);
-    oeil.push(...(await p2.evaluate(examinerDansLaPage, '#mp-plus')).map(x => ou + ' menu Plus — ' + x));
+    await p2.evaluate(() => { fermerFiche(); document.getElementById('btnMenu').click(); }); await attendre(250); await p2.evaluate(() => montrerPanneau('reglages')); await attendre(300);
+    oeil.push(...(await p2.evaluate(examinerDansLaPage, '#mp-reglages')).map(x => ou + ' menu Réglages — ' + x));
     await c2.close(); }
   ok('L’ŒIL du réglage (vide, prête, refusée, aveugle, une lecture, arrêtée) et du menu, clair et sombre, 1440 et 1920 : rien de coupé, rien qui chevauche, rien qui sort', !oeil.length, oeil.slice(0, 12).join(' ; '));
 

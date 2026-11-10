@@ -2544,7 +2544,7 @@ const dec = (x, n) => x == null ? '—' : x.toFixed(n).replace('.', ',');
    `hypothesesDe` : la liste des champs, dans l'ordre, chacun avec ce qu'il sert et quelle règle le lit — une seule
    définition pour le bandeau d'une carte (`carteSimulation`) et la fiche (`ficheHypotheses`). `ctx.fils` : le faisceau
    simulé (le facteur de déclassement en dépend ; sans lui, le faisceau de référence de la table). `ctx.fiche` : la fiche
-   entière — avec ce qui ne vaut que pour la chute en ligne et le choix du calibre d'un disjoncteur (recherche R2) ;
+   entière — avec ce qui ne vaut que pour la chute en ligne et le choix du calibre d'un disjoncteur ;
    chacun dit ce qu'il change et d'où vient sa valeur par défaut. */
 function hypothesesDe(N, H, ctx) { ctx = ctx || {}; const regime = REGIMES[H.regime] ? H.regime : 'continu';
   const nb = (id, k, lib, unite, pas, groupe, sert, o) => ({ genre: 'nombre', id, k, lib, unite, pas, groupe, sert, min: o && o.negatif ? null : 0, titre: (o && o.titre) || '', vide: (o && o.vide) || '' });

@@ -505,7 +505,7 @@ function jaugeQuiSuit(norme, cal, f, H, ctx) { const fam = typeDuFil(f.type), j0
 
 // les paliers de l'EN 2853 : ce qu'un fil admet pendant 2 s, 10 s, 1 min, et en continu
 const PALIERS_EN2853 = [[2, '2 s'], [10, '10 s'], [60, '1 min'], [Infinity, 'continu']];
-/* LA COURBE DE DOMMAGE d'un fil cuivre (table Dommage des fils, recherche R2) : la ligne de sa jauge dont la tenue est la
+/* LA COURBE DE DOMMAGE d'un fil cuivre (table Dommage des fils) : la ligne de sa jauge dont la tenue est la
    plus haute sans dépasser la T max de la famille du câble (DR 260 °C, coaxiaux 200, BN 150) ; en t secondes, le plus
    grand de √(I²t / t) — l'adiabatique depuis 135 °C (CEI 60949) — et du continu — l'EN 2853 déclassée (faisceau,
    altitude) portée à la tenue, × √((T tenue − ambiante)/40) (AC 43.13-1B § 11-67 b-c ; MIL-W-5088L § 6.7 : un fil se

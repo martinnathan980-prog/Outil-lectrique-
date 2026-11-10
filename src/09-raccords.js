@@ -11,7 +11,7 @@
      · le TORON : les câbles du connecteur (la base des câbles), la section
        cumulée, le diamètre équivalent √(Σ Ø²), multiplié par le facteur de
        TE/Polamco selon le nombre de câbles (1 ; 1,415 pour 2 ; 1,242 pour 3 ;
-       1,205 ; 1,208 ; 1,225 ; 1,15 dès 7 — table Toron, recherche R3) ; ou,
+       1,205 ; 1,208 ; 1,225 ; 1,15 dès 7 — table Toron) ; ou,
        en hypothèse « comme l'Excel », plus 10 % (HYPOTHESES.toron) ;
      · la TAILLE du boîtier, lue dans le part number quand la table des
        filetages connaît la famille (EN 3645 : 09 à 25 ; EN 2997 et EN 3646 :
@@ -82,7 +82,7 @@ const SANS_RACCORD_EN_BOITE = { EN3645: 'dans une boîte, un EN 3645 s’utilise
 /* Les familles SANS RACCORD, et pourquoi : rien ne se calcule pour elles — ni raccord, ni band-it, ni manchon, ni gaine,
    ni tyrap. Aucune aujourd'hui : l'EN 3645 en était (« il s'utilise sans raccord », lu dans le tutoriel) jusqu'à ce que la
    table CHOIX de l'onglet Raccord du lecteur lui donne ses quatre raccords (octobre 2026) ; l'EN 4165 n'en est plus :
-   sa CHEMINÉE est son raccord (recherche R3 : c'est le mot de la norme). */
+   sa CHEMINÉE est son raccord (c'est le mot de la norme). */
 const SANS_RACCORD = {};
 const sansRaccord = famille => Object.prototype.hasOwnProperty.call(SANS_RACCORD, famille || '');
 /* La classe EN 3660 d'un raccord sans classe lue dans le connecteur, et le code de longueur de chambre par défaut (A =

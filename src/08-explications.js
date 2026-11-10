@@ -98,7 +98,7 @@ const EXPLICATIONS = {
       : P && P.reference ? `${P.reference} : ${P.main ? 'retenu à la main' : 'le plus petit module qui loge tous vos câbles'}.` : 'Le plus petit module de jonction qui loge tous les câbles de la barrette.';
     return exE(plusieurs ? 'Les modules de la barrette' : 'Le module de barrette', phrase, [['Contacts pris', P && P.utilises != null ? exN(P.utilises) : null, ''], ['Libres', libres != null ? exN(libres) : null, 'ok'], ['Modules', P && P.modules && P.modules.length > 1 ? exN(P.modules.length) : null, 'att']],
       ['Les bornes reliées prennent des contacts reliés du module', 'Chaque câble prend un contact dont la taille admet sa gauge', 'Entre ceux qui logent tout : le moins de contacts perdus, puis le plus léger', plusieurs ? 'Chaque module garde le numéro et les lettres de votre fichier ; VOLTA ne choisit que sa référence' : 'Un clic sur le module montre tous les assemblages de la norme'],
-      'ASNE 0599 et NSA937901 (les faces et les groupes) ; les gauges par taille : catalogue Air LB (recherche R1).'); },
+      'ASNE 0599 et NSA937901 (les faces et les groupes) ; les gauges par taille : catalogue Air LB.'); },
 
   arrangement: c => { const P = c && c.plan ? c.plan : null, F = (c && c.fautifs) || [], aucun = !!P && !P.reference;
     // aucun arrangement ne loge : la borne fautive et ce qui cloche, plus de « Contacts 0 · Pris 0 » (l'audit v72)
@@ -121,13 +121,13 @@ const EXPLICATIONS = {
     const phrase = ref ? `${ref} : ${mot}${taille ? ' taille ' + taille : ''}${type ? ' pour un ' + type : ''}.` : 'Le contact à sertir au bout de chaque câble.';
     return exE('Le contact à sertir', phrase, [['Sexe', sexe === 'F' ? 'femelle' : sexe === 'M' ? 'mâle' : null, ''], ['Taille', taille || null, ''], ['Avec', s.accessoire || null, ''], ['Statut', /confirm/i.test(statut) ? 'à confirmer' : null, 'att']],
       ['La table Contacts : la norme, la taille, le sexe, le type et la gauge du câble', 'La ligne la plus précise gagne', 'Le sexe se lit dans la référence (A mâle, B femelle ; P, S pour l’E0053)', 'Un câble plus fin que le joint arrière prend un manchon E0718'],
-      'Vos tables SEE, relues par la recherche R1 ; 59 références non publiques restent « à confirmer ».'); },
+      'Vos tables SEE, relues ; 59 références non publiques restent « à confirmer ».'); },
 
   gauge: c => { const j = c && c.jauge != null ? c.jauge : c && c.type ? jaugeDuType(c.type) : null, taille = c && c.taille ? c.taille : '';
     const phrase = j != null ? `${c.type ? c.type + ' : ' : ''}gauge ${exN(j)}${taille ? `, ${c.ok === false ? 'refusée' : 'admise'} par un contact taille ${taille}` : ''}.` : 'La gauge (AWG) du câble, contre la taille du contact.';
     return exE('La gauge acceptée', phrase, [['Gauge', j != null ? exN(j) + ' AWG' : null, ''], ['Contact', taille ? 'taille ' + taille : null, ''], ['Verdict', c && c.ok === false ? 'refusée' : c && c.ok ? 'admise' : null, c && c.ok === false ? 'ko' : 'ok']],
       ['La gauge se lit en queue du type : DR20 → 20', 'Admise quand la table Contacts a une ligne pour cette taille et ce câble', 'Le diamètre doit aussi entrer dans le joint arrière'],
-      'La table Contacts (SEE) ; les plages des contacts EN 3155 ; Souriau, Amphenol, TE (recherche R1).'); },
+      'La table Contacts (SEE) ; les plages des contacts EN 3155 ; Souriau, Amphenol, TE.'); },
 
   raccord: c => { const h = exHabillage(c), types = { durci: 'un raccord blindé (durci)', 'pour manchon': 'un raccord pour manchon', 'serre-câble': 'un raccord à serre-câble', tyrap: 'un raccord à collier (tyrap)' };
     const e = h.entree, mt = h.classe && h.classe.matiere;
@@ -161,7 +161,7 @@ const EXPLICATIONS = {
   cheminee: c => { const h = exHabillage(c), n = c && exPositif(c.modules) ? c.modules : null;
     return exE('La cheminée', `${n ? exN(n) + ' cheminée' + (n > 1 ? 's' : '') + ' EN 4165-015' : 'Une cheminée EN 4165-015'} : une par module câblé.`, [['Toron', exPositif(h.toron) ? exMm(h.toron) : null, ''], ['Passage', exPositif(h.toron) ? 'à confirmer' : null, 'att']],
       ['Un EN 4165 n’a pas de raccord EN 3660 : une cheminée par module', 'Le toron y est tenu par un tyrap, ou par un manchon s’il faut l’étanchéité', 'Son Ø intérieur n’est pas public : le passage du toron reste à confirmer'],
-      'EN 4165-015, -016 (double ovale), -017 (obturateur) — recherche R3.'); },
+      'EN 4165-015, -016 (double ovale), -017 (obturateur).'); },
 
   intensite: c => { const H = exHypotheses(c), f = c && c.fil && typeof c.fil === 'object' ? c.fil : null;
     const type = (c && c.type) || (f && f.type) || '', admis = c && exPositif(c.admis) ? c.admis : f && exPositif(f.continu) ? f.continu : null, base = c && exPositif(c.base) ? c.base : f && f.fil && exPositif(f.fil.intensite) ? f.fil.intensite : null;

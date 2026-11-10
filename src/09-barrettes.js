@@ -569,7 +569,7 @@ const COLONNES_NORME = {
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
     ['origine',     ['source', 'sources', 'origine']],
     ['statut',      ['statut', 'status', 'confiance']]],
-  // la courbe de DOMMAGE d'un fil (normes/dommage-fils.csv, recherche R2) : ce qu'il supporte en défaut avant de s'abîmer
+  // la courbe de DOMMAGE d'un fil (normes/dommage-fils.csv) : ce qu'il supporte en défaut avant de s'abîmer
   dommages: [
     ['conducteur',  ['conducteur', 'metal', 'ame']],
     ['jauge',       ['filawg', 'jauge', 'awg', 'gauge']],
@@ -912,7 +912,7 @@ function disjoncteurFamilleNorme(o) { const nom = String(o.famille || '').trim()
   return { famille: cleNorme(nom), nom, norme: String(o.norme || '').trim(), poles: NUMERO(o.poles) || 1, calibres, plage, tension: String(o.tension || '').trim(), compense: /^(oui|yes|o|y|1|true)/i.test(String(o.compense || '').trim()), tmin: NUMERO(o.tmin), tmax: NUMERO(o.tmax), masse: NUMERO(o.masse), courbe: cleNorme(o.courbe), motifs, note: String(o.note || '').trim(), ...origineStatut(o) }; }
 function protectionNorme(o) { const jauge = NUMERO(o.jauge), disjoncteurMax = NUMERO(o.disjoncteurMax); if (jauge == null || disjoncteurMax == null) return null;
   return { jauge, disjoncteurMax, fusibleMax: NUMERO(o.fusibleMax), tailleContact: String(o.tailleContact || '').trim().toUpperCase(), iContact: NUMERO(o.iContact), note: String(o.note || '').trim(), ...origineStatut(o) }; }
-/* Une ligne DOMMAGE (normes/dommage-fils.csv, recherche R2) : pour un conducteur (cuivre) et une jauge, la tenue du câble
+/* Une ligne DOMMAGE (normes/dommage-fils.csv) : pour un conducteur (cuivre) et une jauge, la tenue du câble
    (T tenue : 260 °C pour un DR, 200, 150), l'I²t admis de la température de service (T avant défaut, 135 °C) jusqu'à
    cette tenue — l'adiabatique de la CEI 60949 —, ce qu'il en reste à 2 s et 10 s, et le facteur du continu (informatif :
    le moteur le refait à l'ambiante de l'hypothèse). C'est contre elle que se juge la PROTECTION d'un fil. */
@@ -1021,7 +1021,7 @@ async function lireNormeFichier(fichier) { return lireNorme(await texteDeNormeFi
 /* LA CLÉ DE FUSION d'une ligne : ce qui fait qu'une ligne en remplace une autre (une famille, un type + une jauge, une
    condition et son point, une tension, une variante de module, un contact par ses cinq critères…). */
 const CLE_FUSION = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => [x.condition, x.fils, x.charge, x.altitude].join('/'), reseau: x => String(x.tension),
-  // un contact par ses cinq critères (norme, sexe, taille, type de fil, jauge) : une ligne corrigée qui change le contact REMPLACE l'ancienne (recherche R1)
+  // un contact par ses cinq critères (norme, sexe, taille, type de fil, jauge) : une ligne corrigée qui change le contact REMPLACE l'ancienne
   tailles: x => x.famille + '/' + x.taille, modules: x => x.famille + '/' + x.variante, contacts: x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge].join('/'),
   disjoncteurs: x => [x.famille, x.courbe, x.multiple, x.temps].join('/'), cables: x => x.cable, gaines: x => x.famille + '/' + x.reference, colliers: x => x.reference,
   filetages: x => x.famille + '/' + x.taille, entrees: x => x.systeme + '/' + x.code, raccords: x => [x.famille, x.taille, x.type, x.orientation].join('/'), manchons: x => x.designation, classes: x => x.famille + '/' + x.classe, calibrations: x => x.famille + '/' + x.temperature, disjoncteursFamilles: x => x.famille, protections: x => String(x.jauge),
@@ -1314,7 +1314,7 @@ function resistanceAtelier(norme, jauge) { if (jauge == null) return null; const
    12 → 23, 10 → 33, 8 → 46), sinon la table Protection (AC 43.13-1B, par la taille de contact qu'elle nomme). Rend
    { intensite, taille, source } ou null. La taille d'un fil dont on ne connaît pas le contact : `tailleDeJauge`.
    La JAUGE du fil serti (et le FÛT du contact, quand on le connaît : `fut`, lu dans sa référence EN 3155) borne encore
-   le courant — un 26 AWG sur un contact 20 porte 2 A, pas 7,5 (table Courant des contacts, recherche R1). */
+   le courant — un 26 AWG sur un contact 20 porte 2 A, pas 7,5 (table Courant des contacts). */
 function intensiteDeContact(norme, taille, jauge, emploi, fut) { const t = tailleCle(taille); if (!t) return null; const N = normeDesModules(norme), num = x => NUMERO(String(x).replace(/[A-Z]+$/, ''));
   // la taille exacte (22D vaut 22) dans la table des contacts (l'emploi d'abord), sinon dans la table Protection, sinon la taille la plus proche de la table des contacts
   const e = emploi || 'connecteur', R0 = (N.resistancesContacts || []).filter(x => x.taille && x.intensite != null), R = R0.filter(x => x.emploi === e).concat(R0.filter(x => !x.emploi)).concat(R0.filter(x => x.emploi && x.emploi !== e));
@@ -1860,7 +1860,7 @@ function remplirModules(besoins, norme, choix) { if (bornesLettrees(besoins)) re
   const s = k => k > 1 ? 's' : '', verdicts = [], ou = V.module ? 'de ' + V.module.variante : famille ? 'de la norme ' + nomDeFamille(N, famille) : 'des deux normes';
   restants.forEach(p => { const js = [...new Set(p.fils.map(f => f.jauge).filter(j => j != null))];
     verdicts.push({ niveau: 'ko', texte: `borne${s(p.bornes.length)} ${p.bornes.join('-')} : ${p.fils.length} câble${s(p.fils.length)}${js.length ? ' de gauge ' + js.join(', ') : ''} — aucun groupe ${ou} ne les reçoit`, bornes: p.bornes }); });
-  // chaque fil, son contact à sertir quand la table Contacts connaît la famille (NSA937901, E0599 : les broches EN 3155-016, recherche R1)
+  // chaque fil, son contact à sertir quand la table Contacts connaît la famille (NSA937901, E0599 : les broches EN 3155-016)
   const fils = modules.flatMap((M, k) => M.places.flatMap(pl => pl.fils.map(([f, c]) => { const st = f.jauge == null ? null : contactDuFil(N, M.module.famille, c.taille, '', f.type, f.jauge);
     return { f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel, borne: f.borneBarrette, taille: c.taille, sexe: st ? st.sexe : '',
       jaugeOk: f.jauge == null ? null : contactAccepte(N, M.module.famille, c.taille, f.jauge), sertir: sertirDe(N, st), ecrit: contactEcritDuFil(f) }; })));
