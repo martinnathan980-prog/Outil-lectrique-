@@ -1,0 +1,32 @@
+/* ── NOUVEL INDICE (08-nouvel-indice, v90) : ce qui a changé entre deux indices du même fichier. Le bilan en une phrase,
+   puis une section par sorte ; chaque liaison sur une ligne — ses deux bouts, le câble porté par la flèche, ce qui change ── */
+.in-bilan .in-phrase{margin:8px 0 6px;font:600 var(--f-16,16px)/1.35 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+.in-bloc .in-n{margin-left:10px;font:500 var(--f-12)/1 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
+.in-dit{margin:0 0 8px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.in-liste{list-style:none;margin:0;padding:0;border-top:1px solid var(--s-line-2)}
+.in-l{display:grid;grid-template-columns:minmax(0,1fr) 60px;align-items:center;gap:6px 14px;min-height:40px;padding:8px 2px;border-bottom:1px solid var(--s-line-2)}
+.in-c{display:grid;grid-template-columns:1fr 92px 1fr;align-items:center;gap:10px;min-width:0}
+.in-b{display:inline-flex;align-items:baseline;gap:6px;min-width:0;font:500 var(--f-13)/1.3 var(--mono);color:var(--t-1)}
+.in-b b{font-weight:600;overflow-wrap:anywhere}
+.in-b i{font-style:normal;color:var(--t-2)}
+.in-c .in-b:first-child{justify-content:flex-end}
+.in-f{position:relative;display:flex;justify-content:center;padding-bottom:7px}
+.in-f em{font:600 var(--f-11,11px)/1 var(--mono);font-style:normal;color:var(--t-2)}
+.in-f::before{content:"";position:absolute;left:0;right:5px;bottom:2px;height:1.5px;background:var(--t-3)}
+.in-f::after{content:"";position:absolute;right:0;bottom:-1px;border-left:6px solid var(--t-3);border-top:3.75px solid transparent;border-bottom:3.75px solid transparent}
+.in-d{grid-column:1 / -1;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 22px;min-width:0;padding:0 60px 2px 0}
+.in-ch{display:inline-flex;align-items:baseline;gap:7px;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.in-ch small,.in-eq small{font:500 var(--f-11,11px)/1.3 var(--sans);color:var(--t-2)}
+.in-ch s{color:var(--t-3);text-decoration-thickness:1px}
+.in-ch b{font-weight:600;font-family:var(--mono)}
+.in-ch s{font-family:var(--mono)}
+.in-vers{align-self:center;width:12px;height:1.5px;background:var(--nv-cuivre);position:relative}
+.in-vers::after{content:"";position:absolute;right:-1px;top:-2.75px;border-left:5px solid var(--nv-cuivre);border-top:3.5px solid transparent;border-bottom:3.5px solid transparent}
+.in-fo{justify-self:end;font:400 var(--f-12)/1 var(--sans);color:var(--t-2);white-space:nowrap}
+.in-retirees .in-b,.in-retirees .in-f em{color:var(--t-3)}
+.in-retirees .in-b b{text-decoration:line-through;text-decoration-thickness:1px}
+.in-ajoutees .in-l{box-shadow:inset 3px 0 0 var(--nv-cuivre);padding-left:10px}
+.in-suite{margin:8px 0 0;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.in-eq{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin:0 0 6px}
+.in-eq b{font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1)}
+.in-eq.moins b{color:var(--t-3);text-decoration:line-through;text-decoration-thickness:1px}

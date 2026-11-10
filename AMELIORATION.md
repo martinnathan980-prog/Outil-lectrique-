@@ -187,3 +187,16 @@ plusieurs, modifier le câblage dans VOLTA (le retest reste la source).
   seuils (une feuille : `style-zz-ergonome.css`) ; deux raccourcis d'un cadran qui n'existe plus. Reste : comparer deux
   indices, les scans par l'IA interne, l'écran de vérification B, le connecteur d'accouplement déduit « à vérifier »,
   « Ce qu'il consomme » en champ simple.
+
+### 10 novembre 2026 — v90, « Nouvel indice de ce plan » (comparer deux indices)
+
+- Le lecteur : « chaque crédit doit être ultra efficient » — plus de batteries longues en cours de route (charte) ; la passe
+  automatique est en pause.
+- **Fait** : ⋮ › « Nouvel indice de ce plan… ». On donne l'indice suivant du fichier ; VOLTA dit ce qui a changé (ajoutées,
+  retirées, changées, rebranchées, équipements nouveaux ou disparus), puis « Passer à cet indice » remplace les liaisons en
+  gardant le travail (retouches, choix, consommations, cartouche) ; « Défaire » revient. Moteur : `09-indices.js`,
+  batterie `tests/indices.js` (10 contrôles). Écran : `08-nouvel-indice.js`, `style-zz-indices.css`.
+- **Vérifié seulement** : la batterie du moteur, et l'écran regardé en clair et en sombre à 1440 sur l'exemple.
+- **À faire à la toute fin** : les 22 batteries navigateur, l'œil sur tous les écrans, puis `main`.
+- **À voir avec le lecteur** : montrer aussi les changements sur le plan (les liaisons ajoutées allumées) ; un fichier à
+  plusieurs harness prend celui du plan ; une barrette posée par VOLTA absente du nouveau fichier est reproposée.
