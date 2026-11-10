@@ -101,12 +101,14 @@ function texteDuBilan() { const masque = masqueDuPlan(), V = verite(), N = app.n
     let sansProfil = 0, sansCalibre = 0; cbs.forEach(nom => { const d = disjonctionDe(nom); if (d.sansProfil) sansProfil++; if (!(d.calibre > 0)) sansCalibre++; });
     const reecrits = cbs.filter(nom => typeof pnDeVolta === 'function' && pnDeVolta(nom)).length, grossis = V.filter(l => l.avant && ('volta:type' in l.avant)).length;
     return [`${pl(cbs.length, 'disjoncteur')} : ${cbs.length - sansProfil} avec un profil de charge, ${sansProfil} sans${sansCalibre ? ', ' + sansCalibre + ' sans calibre trouvé' : ''}`,
-      `calibres réécrits par VOLTA (ils touchaient la courbe) : ${reecrits} · câbles grossis par VOLTA : ${grossis}`,
+      `calibres réécrits par VOLTA (ils disjonctaient) : ${reecrits} · câbles grossis par VOLTA : ${grossis}`,
       `règle du calibre automatique : ${(app.simu || HYPOTHESES).calibreAuto === false ? 'coupée' : 'active'}`]; });
 
   section('LE CONTRÔLE', () => { const it = controleDuContrat(), ko = it.filter(x => x.niveau === 'ko').length, att = it.length - ko, g = new Map();
     it.forEach(x => { const k = (x.genre || 'autre') + '|' + x.niveau; g.set(k, (g.get(k) || 0) + 1); });
-    return [`${pl(ko, 'problème')}, ${att} à voir`, ...[...g].sort((a, b) => b[1] - a[1]).map(([k, n]) => { const [genre, niv] = k.split('|'); return motDuGenre(genre, n) + ' : ' + n + (niv === 'ko' ? ' (problème)' : ' (à voir)'); })]; });
+    // (v89) le compte de partout : « à régler », c'est ce qui a un geste (08-recap, `compteARegler`) — le bilan disait « 1 problème, 13 à voir »
+    const A = typeof compteARegler === 'function' ? compteARegler(it) : null;
+    return [A ? A.mot + ' (' + pl(ko, 'problème') + ' en rouge)' : `${pl(ko, 'problème')}, ${att} à voir`, ...[...g].sort((a, b) => b[1] - a[1]).map(([k, n]) => { const [genre, niv] = k.split('|'); return motDuGenre(genre, n) + ' : ' + n + (niv === 'ko' ? ' (problème)' : ' (à voir)'); })]; });
 
   section('LA BASE SEE', () => { const B = typeof BASE_SEE !== 'undefined' ? BASE_SEE.base : null; if (!B) return ['pas de base SEE gardée sur ce PC'];
     const tables = Object.entries(B).filter(([, v]) => Array.isArray(v) && v.length).map(([k, v]) => k + ' ' + v.length);

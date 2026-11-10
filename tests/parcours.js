@@ -192,8 +192,8 @@ const toast = page => page.evaluate(() => ({ texte: $('toast').textContent, erre
 const telecharger = async (page, action) => { const [d] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), action()]); return { nom: d.suggestedFilename(), chemin: await d.path() }; };
 /* l'état du contrat en mots (« 4 problèmes · 9 à voir »), tel que le contrôle le compte — la barre du haut ne le porte
    plus : le bouton des repères porte le compte, l'index la liste */
-const ETAT_DU_CONTROLE = `window.etatDuControle = function () { const xs = CONTROLE.items, k = xs.filter(x => x.niveau === 'ko').length, a = xs.length - k;
-  return k ? k + (k > 1 ? ' problèmes' : ' problème') + (a ? ' · ' + a + ' à voir' : '') : a ? a + ' à voir' : 'rien à reprendre'; };`;
+// (v87) l'état du contrôle, comme partout : « N à régler · M à voir » (08-recap, `compteARegler` : « à régler », c'est ce qui a un geste)
+const ETAT_DU_CONTROLE = `window.etatDuControle = function () { const m = compteARegler().mot; return m === 'Rien à reprendre' ? 'rien à reprendre' : m; };`;
 const etat = page => page.evaluate(() => ({ nom: app.nom, plan: app.plan, n: verite().length, folios: plans().length, cible: app.cible && (app.cible.nom || (app.cible.l && app.cible.l.cable) || app.cible.type), insp: !$('inspecteur').hidden, base: app.base.ouvert, enNom: $('ctx-nom').textContent, enSous: $('ctx-txt').textContent, enEtat: etatDuControle(), lbl: $('fo-lbl').textContent }));
 /* La base d'essai des contrats faits (comme tests/fwd.js) : H-1 l'exemple décalé de deux centaines (un dessin par folio, une
    ligne en plus vers 305XX9, une en moins, un type changé, des longueurs), H-2 soixante lignes de l'exemple, H-3 le folio 2 avec
@@ -205,7 +205,7 @@ function baseEssaiDansLaPage() {
   H1.push(liaison({ de: '302CB1', borneDe: '3', pnDe: 'MS3320-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160', longueur: 2500 }));
   H1.push(liaison({ de: '305XX9', borneDe: '2', pnDe: 'ZZZ', vers: '901G', borneVers: '', cable: 'W-098', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160', longueur: 2500 }));
   const H2 = E.slice(0, 60).map(l => liaison({ ...l, fwd: F(l.plan, 'B'), harness: 'H-2', appareil: 'H175', retest: '27/10/2025' }));
-  const H3 = E.filter(l => l.plan === '2').map(l => { const m = r => r === '667VT21' ? '677VT2' : r, b = (r, bo) => r === '667VT21' ? '5' + bo + 'B' : bo;
+  const H3 = E.filter(l => l.plan === '2').map(l => { const m = r => r === '667VT2' ? '677VT2' : r, b = (r, bo) => r === '667VT2' ? String(bo).replace(/^51/, '52') : bo;   // (v83 : la barrette de l'exemple est 667VT2 ; ici sous un autre repère, sur son module voisin)
     return liaison({ ...l, de: m(l.de), borneDe: b(l.de, l.borneDe), vers: m(l.vers), borneVers: b(l.vers, l.borneVers), fwd: F(2, 'C'), harness: 'H-3', appareil: 'H160', retest: '12/03/2025', descriptionDe: l.de === '210SP1' ? 'CALCULATEUR' : '' }); });
   const m4 = r => ({ '303RL1': '303RL7', '304LP1': '304LP5' })[r] || r, sansPn = r => r === '303RL7' || r === '304LP5';
   const H4 = E.filter(l => l.plan === '1').map(l => { const de = m4(d(l.de)), vers = m4(d(l.vers)); return liaison({ ...l, de, vers, pnDe: sansPn(de) ? '' : l.pnDe, pnVers: sansPn(vers) ? '' : l.pnVers, fwd: F(1, 'D'), harness: 'H-4', appareil: 'H160', retest: '02/02/2023' }); });
@@ -224,7 +224,7 @@ function baseEssaiDansLaPage() {
     // façons de commencer (une installation neuve, la base des plans déjà faits) ; l'Exemple, discret, en dernier
     const A0 = await page.evaluate(() => ({ biblio: BIB.vue === 'racine' && !$('bibliotheque').hidden, vide: !!document.querySelector('#bibliotheque .bi-vide'), demo: !!document.querySelector('#bibliotheque .bi-carte.bi-demo'),
       gestes: ['nouvelle', 'base'].filter(k => !document.querySelector(`#bibliotheque .bi-vide [data-bi="${k}"]`)), titre: document.title }));
-    ok(e.n === 0 && !e.insp && A0.biblio && A0.vide && A0.demo && !A0.gestes.length && A0.titre === 'Volta', 'le premier lancement montre la bibliothèque, pas l’exemple : vide, deux gestes pour commencer : « Nouvelle installation », « Déposer la base », l’Exemple discret en dernier', JSON.stringify(A0));
+    ok(e.n === 0 && !e.insp && A0.biblio && A0.vide && A0.demo && !A0.gestes.length && A0.titre === 'VOLTA', 'le premier lancement montre la bibliothèque, pas l’exemple : vide, ses gestes pour commencer (« Ouvrir un fichier… », « Nouvelle installation », la base des plans), l’Exemple discret en dernier', JSON.stringify(A0));
     frottement(A0.biblio && !e.n, 'à la première ouverture, c’est l’exemple qui s’affiche, pas l’accueil', 'le technicien qui ouvre l’outil pour un contrat neuf arrive sur un contrat qui n’est pas le sien ; il doit « Tout effacer » pour voir la page d’entrée',
       'détail', '10-demarrage.js `demarrer` : sans contrat gardé, montrer l’accueil (#vide) avec « Voir l’exemple » plutôt que charger l’exemple d’office — ou garder l’exemple mais dire dans l’en-tête qu’il s’agit de l’exemple');
     await capture(page, 'A-0-premier-lancement');
@@ -238,11 +238,11 @@ function baseEssaiDansLaPage() {
     // le retest : une installation neuve, « Ajouter un plan », le fichier, un clic sur sa ligne
     const O = await ouvrirDepuisBibliotheque(page, X.neuf, 'Antenne VHF'), tOuvrir = O.t; const tPlacement = await derniere(page, 'placement');
     e = await etat(page); mesure('ajouter neuf.xlsx (64 lignes) à une installation, l’ouvrir, jusqu’au plan dessiné', tOuvrir, SEUIL_FOLIO); mesure('dont le placement du premier folio', tPlacement);
-    ok(e.folios === 3 && e.plan === FWD(1) && e.n === X.neufL.length, 'trois folios, le premier affiché, 64 liaisons', e.plan + ' · ' + e.lbl);
+    ok(e.folios === 3 && e.plan === FWD(1) && e.n === X.neufL.length, 'trois folios, le premier affiché, les ' + X.neufL.length + ' liaisons du fichier', e.plan + ' · ' + e.lbl);
     const herite = await page.evaluate(() => ({ charges: [...app.contrat.charges.keys()], designations: app.contrat.designations.size, sexes: app.contrat.sexes.size, raccords: app.contrat.raccords.size }));
     frottement(!herite.charges.length && !herite.designations && !herite.sexes && !herite.raccords, 'les choix du contrat d’avant survivent à l’ouverture d’un nouveau fichier', 'le profil de charge de l’exemple (102CB1 : 9,31 A pendant 2 min) s’applique au 102CB1 du nouveau installation, qui n’en a pas : l’en-tête lui compte des problèmes qui ne sont pas les siens ; désignations, sexes des contacts et raccords survivraient de même (ici : charges ' + herite.charges.join(',') + ')',
       'bloquant', '08-interface.js `chargerContrat` (et l’action « vider ») : repartir de `nouveauContrat()` en gardant le cartouche — designations, sexes, charges, raccords vides ; `relire()` les rend quand on rouvre SON contrat');
-    ok(/«\s?neuf\s?» ajouté à «\s?Antenne VHF\s?»/.test(O.ajout) && /64\sliaisons/.test(O.ajout) && /3\sfolios/.test(O.ajout), 'le message de l’ajout dit le plan, son installation, ses liaisons et ses folios', O.ajout);
+    ok(/«\s?neuf\s?» ajouté à «\s?Antenne VHF\s?»/.test(O.ajout) && new RegExp('\\b' + X.neufL.length + '\\sliaisons').test(O.ajout) && /3\sfolios/.test(O.ajout), 'le message de l’ajout dit le plan, son installation, ses liaisons (celles du fichier) et ses folios', O.ajout);
     ok(await page.evaluate(() => $('en-install').textContent === 'Antenne VHF' && $('en-plan').textContent === 'neuf'), 'le fil de la barre du haut : « Antenne VHF / neuf »');
     // le menu compte les repères comme l'index (sans renvois, masses ni rails ; avec les barrettes à poser) : un seul nombre pour un même mot
     const enTete = await page.evaluate(() => ({ sous: $('ctx-txt').textContent, reperes: reperesDuContrat().length }));
@@ -264,34 +264,35 @@ function baseEssaiDansLaPage() {
     await capture(page, 'A-3-plan-folio2');
     // la recherche : « / », un repère d'un autre folio, Entrée → le bon folio, la fiche, le bloc cadré
     await page.keyboard.press('/'); await page.waitForTimeout(150);
-    ok(await page.evaluate(() => document.activeElement === $('q') && document.body.classList.contains('cherche')), '« / » met le curseur dans la recherche');
-    await page.keyboard.type('610LP'); await page.waitForTimeout(200);
-    const cands = await page.evaluate(() => [...document.querySelectorAll('#q-liste .q-item .nom')].map(x => x.textContent));
-    ok(cands.length >= 1 && cands[0] === '610LP3', 'la liste propose 610LP3 en premier', cands.join(' '));
+    ok(await page.evaluate(() => document.activeElement === $('pa-q') && paletteOuverte()), '« / » ouvre la recherche (la palette : repères, câbles, actions), le curseur dans son champ');
+    await page.keyboard.type('610LP'); await page.waitForTimeout(250);
+    const cands = await page.evaluate(() => [...document.querySelectorAll('#palette .pa-l')].map(x => x.textContent));
+    ok(cands.length >= 1 && /^610LP3/.test(cands[0]) && await page.evaluate(() => /^610LP3/.test((document.querySelector('#palette .pa-l.on') || {}).textContent || '')), 'la liste propose 610LP3 en premier, déjà choisi', cands.slice(0, 3).join(' | '));
     t0 = Date.now(); await page.keyboard.press('Enter'); await page.waitForFunction(() => app.cible && app.cible.nom === '610LP3'); await page.waitForTimeout(450); mesure('recherche → folio 3 et fiche de 610LP3', Date.now() - t0, SEUIL_FOLIO);
     e = await etat(page); const cad = await cadrage(page, '610LP3');
     ok(e.plan === FWD(6) && e.cible === '610LP3' && e.insp, 'Entrée ouvre la fiche de 610LP3 sur son folio', e.plan + ' · ' + e.cible);
     ok(cad.dedans, 'le bloc est cadré, entier dans la place libre à côté de la fiche', cad.detail);
-    ok(await page.evaluate(() => $('q').value === '' && !document.body.classList.contains('cherche')), 'la recherche s’est refermée, vide');
+    ok(await page.evaluate(() => !paletteOuverte()), 'la recherche s’est refermée');
     await capture(page, 'A-4-recherche-610LP3');
     await page.keyboard.press('Escape'); await page.keyboard.press('/'); await page.keyboard.type('W-104'); await page.waitForTimeout(200); await page.keyboard.press('Enter'); await page.waitForTimeout(600);
     e = await etat(page); ok(e.plan === FWD(2) && e.cible === 'W-104' && e.insp, 'chercher un numéro de fil (W-104) ouvre sa fiche sur le folio 2', e.plan + ' · ' + e.cible);
     // corriger un fil dans le tableau (B) : l'autre bout de W-013 change → un bloc nouveau sur le plan ; Ctrl+Z
     await page.keyboard.press('Escape'); await page.click('#fo-strip .chip:first-child'); await page.waitForTimeout(300); await page.keyboard.press('b'); await page.waitForTimeout(500);
     ok(await page.evaluate(() => app.base.ouvert && $('ba-portee').querySelector('[aria-pressed="true"]').dataset.portee === 'folio' && $('ba-tbody').querySelectorAll('tr[data-i]').length === 8), 'B ouvre le tableau sur « ce folio » : les huit lignes du folio 1');
+    // (v85 : votre fichier est la source dure) le tableau se lit, il ne se corrige pas : un double-clic sur une ligne n'ouvre aucun champ ;
+    // pour changer un bout, on change son fichier — tout au même endroit
     const i13 = await page.evaluate(() => verite().findIndex(l => l.cable === 'W-013'));
-    await page.dblclick(`#ba-tbody tr[data-i="${i13}"] [data-f="vers"]`); await page.fill(`#ba-tbody tr[data-i="${i13}"] input[data-f="vers"]`, '104LP9'); t0 = Date.now(); await page.press(`#ba-tbody tr[data-i="${i13}"] input[data-f="vers"]`, 'Enter'); await page.waitForFunction(() => app.dessin.comps.some(c => c.name === '104LP9')); mesure('une cellule corrigée → le plan suit', Date.now() - t0, SEUIL_FOLIO);
-    ok(await page.evaluate(i => verite()[i].vers === '104LP9' && app.dessin.comps.some(c => c.name === '104LP9') && !app.dessin.fils.some(w => w.cable === 'W-013' && w.vers === '104LP1'), i13), 'W-013 va maintenant vers 104LP9 : le bloc est sur le plan');
-    await capture(page, 'A-5-tableau-correction');
-    await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-    ok(await page.evaluate(i => verite()[i].vers === '104LP1' && !app.dessin.comps.some(c => c.name === '104LP9'), i13), 'Ctrl+Z rend la liaison et le plan d’avant');
+    await page.dblclick(`#ba-tbody tr[data-i="${i13}"] td:nth-child(3)`); await page.waitForTimeout(300);
+    ok(await page.evaluate(i => !document.querySelector('#ba-tbody input, #ba-tbody select, #ba-tbody [contenteditable="true"]') && verite()[i].vers === '104LP1', i13), 'le tableau se lit, il ne se corrige pas : un double-clic sur une ligne n’ouvre aucun champ (votre fichier est la source)');
+    await capture(page, 'A-5-tableau');
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     const planAvant = (await etat(page)).plan; await page.waitForTimeout(800);   // l'enregistrement attend 400 ms après le dernier geste
     // fermer et rouvrir : la bibliothèque, et le plan resté sur la table se reprend tel quel
     await page.close(); page = await ouvrirPage(ctx); await page.waitForTimeout(500);
     ok(await page.evaluate(() => BIB.vue === 'racine' && installsVraies().some(i => i.nom === 'Antenne VHF') && /neuf/.test(($('bi-reprendre') || {}).textContent || '')), 'rouvert : la bibliothèque (l’installation Antenne VHF y est), « Reprendre » neuf');
     await page.click('#bi-reprendre'); await page.waitForTimeout(300);
     e = await etat(page); const sauve = await page.evaluate(() => $('ctx-sauve').textContent);
-    ok(e.nom === 'neuf.xlsx' && e.n === X.neufL.length && e.plan === planAvant && e.folios === 3, 'rouvert : le même contrat, le même folio, 64 liaisons', e.nom + ' · ' + e.plan + ' · ' + sauve);
+    ok(e.nom === 'neuf.xlsx' && e.n === X.neufL.length && e.plan === planAvant && e.folios === 3, 'rouvert : le même plan, le même folio, ses ' + X.neufL.length + ' liaisons', e.nom + ' · ' + e.plan + ' · ' + sauve);
     frottement(!e.base, 'rouvert, le tableau revient ouvert, devant le plan', 'le tiroir ouvert avant la fermeture s’ouvre d’office à la réouverture (`relireBase`) : le plan n’a plus toute la place quand on « scanne »', 'détail', '10-demarrage.js / 08-interface.js `relireBase` : rouvrir sur le plan seul, le tableau à la demande (B), ou ne garder que sa hauteur');
     // les exports : SVG, PNG, la nomenclature et son CSV
     let d = await telecharger(page, async () => { await ligneDuMenu(page, 'svg'); });
@@ -316,7 +317,9 @@ function baseEssaiDansLaPage() {
     const tOuvrir = await ouvrirParBouton(page, 'menu', X.neuf); mesure('ouvrir l’installation proche (neuf.xlsx) avec une base de 4 machines', tOuvrir, SEUIL_FOLIO);
     // sur chaque fiche du folio 1 : « Déjà fait » propose la machine la plus proche, en premier
     const deja = [];
-    for (const nom of X.neufFolio1) { await cliquerBloc(page, nom);
+    // (v79) « Déjà fait » est un onglet de la fiche en grand (« Tout voir ») : il paraît dès qu'une base de plans déjà faits est chargée
+    const versDejaFait = async () => { if (!(await page.evaluate(() => document.body.classList.contains('insp-grand')))) { await page.click('#fi-tout-voir'); await page.waitForTimeout(600); } await page.click('#nv-o-dejafait'); await page.waitForTimeout(400); };
+    for (const nom of X.neufFolio1) { await cliquerBloc(page, nom); await versDejaFait();
       deja.push(await page.evaluate(nom => { const d = document.querySelector('#ba-equip .fi-deja'), cs = d ? [...d.querySelectorAll('.fi-cand')] : []; const taux = cs.map(c => parseInt(c.querySelector('.cd-taux').textContent, 10)), max = Math.max(...taux);
         return { nom, n: cs.length, premier: cs[0] ? cs[0].dataset.ref + '/' + cs[0].dataset.rep + ' ' + taux[0] + ' %' : '', meilleur: cs.length ? taux[0] === max : false, dessin: cs[0] ? !!cs[0].dataset.fwd : false, refs: cs.map(c => c.dataset.ref),
           memeRepereAuMax: cs.some((c, i) => c.dataset.rep === nom && taux[i] === max), premierMemeRepere: !!cs[0] && cs[0].dataset.rep === nom, fiche: __mes.fiche[__mes.fiche.length - 1] }; }, nom)); }
@@ -328,7 +331,7 @@ function baseEssaiDansLaPage() {
     mesure('la fiche la plus lente avec « Déjà fait »', Math.max(...deja.map(x => x.fiche)), SEUIL_FICHE);
     await capture(page, 'B-1-deja-fait-102CB1');
     // 102CB1 contre H-1/302CB1 : la comparaison à trois échelles, puis le dessin
-    await cliquerBloc(page, '102CB1'); await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand[data-ref="H-1"]'); await page.waitForTimeout(500);
+    await cliquerBloc(page, '102CB1'); await versDejaFait(); await page.click('#ba-equip .fi-cand[data-ref="H-1"]'); await page.waitForTimeout(500);
     const C1 = await page.evaluate(() => ({ type: app.cible && app.cible.type, portees: document.querySelectorAll('#ba-equip .cp-portee [data-portee]').length, pressee: (document.querySelector('#ba-equip .cp-portee [aria-pressed="true"]') || {}).dataset, bilan: (document.querySelector('#ba-equip .cp-bilan') || {}).textContent || '', manque: document.querySelectorAll('#ba-equip .cp-liste .fi-fil.cp-manque').length, differe: document.querySelectorAll('#ba-equip .cp-liste .fi-fil.cp-differe').length, dessin: !!$('cp-dessin'), reprendre: $('cp-reprendre').disabled }));
     ok(C1.type === 'ref' && C1.portees === 3 && C1.pressee && C1.pressee.portee === 'equipement' && /Dessin MEE256A7815001A/.test(C1.bilan) && C1.manque === 1 && C1.differe === 1 && C1.dessin && C1.reprendre, 'la comparaison s’ouvre à l’échelle de l’équipement : trois échelles, le bilan du dessin, une ligne manque, une diffère, rien à reprendre tant que rien n’est coché', C1.bilan.slice(0, 120));
     await page.click('#ba-equip .cp-portee [data-portee="voisinage"]'); await page.waitForTimeout(400);
@@ -355,19 +358,18 @@ function baseEssaiDansLaPage() {
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
     ok(await page.evaluate(n => verite().length === n && !app.dessin.comps.some(c => c.name === '305XX9'), avant.n), 'Ctrl+Z défait la reprise, 305XX9 quitte le plan');
     // les repères proposés en « ? » : H-4 relie 303RL7 (sans part number) à notre 103RL1 par les voisins — peut-on le confirmer, le changer ?
-    await cliquerBloc(page, '102CB1'); await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand[data-ref="H-4"]'); await page.waitForTimeout(500);
+    await cliquerBloc(page, '102CB1'); await versDejaFait(); await page.click('#ba-equip .fi-cand[data-ref="H-4"]'); await page.waitForTimeout(500);
     const Q = await page.evaluate(() => { const xs = [...document.querySelectorAll('#ba-equip .fi-chip.cp-corr-voisins, #ba-equip .fi-chip.cp-corr-code')]; return { n: xs.length, textes: xs.map(x => x.textContent), cliquables: xs.filter(x => x.tagName === 'BUTTON' || x.onclick || x.getAttribute('role') === 'button' || x.tabIndex >= 0).length, lignes: [...document.querySelectorAll('#ba-equip .cp-liste .fi-corr')].map(x => x.textContent) }; });
     ok(Q.n >= 1 && Q.textes.some(t => /303RL7 → 103RL1\s\?/.test(t)), 'contre H-4, l’outil propose 303RL7 → 103RL1 avec un « ? » (même code, mêmes voisins, à confirmer)', Q.textes.join(' · '));
     frottement(Q.cliquables === Q.n && Q.n > 0, 'un repère proposé en « ? » ne se confirme ni ne se corrige', 'les puces « 303RL7 → 103RL1 ? » sont inertes : on ne peut ni valider la correspondance ni la changer avant de reprendre (la feuille de route dit « l’outil propose, vous validez »)',
       'gênant', '08-references.js `ficheComparaison`/`lierComparaison` : rendre les puces `.cp-corr-voisins/.cp-corr-code` actives — un clic ouvre la liste de nos repères de même code, le choix se garde dans REF (une Map repèreRef → nôtre) et passe à `correspondre` par `fixes`');
     await capture(page, 'B-5-proposes');
-    // reprendre puis RENOMMER le repris : 305XX9 devient 105XX9 par la tête de sa fiche
-    await cliquerBloc(page, '102CB1'); await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand[data-ref="H-1"]'); await page.waitForTimeout(400); await page.click('#cp-tout'); await page.waitForTimeout(200); await page.click('#cp-reprendre'); await page.waitForFunction(n => verite().length === n + 3, avant.n); await page.waitForTimeout(500);
-    await cliquerBloc(page, '305XX9'); ok(await page.evaluate(() => app.cible && app.cible.nom === '305XX9' && $('eq-rep').value === '305XX9' && !!document.querySelector('#ba-equip details[data-section="connecteur"]')), 'la fiche du repris 305XX9 s’ouvre d’un clic sur le plan');
-    await page.fill('#eq-rep', '105XX9'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(700);
-    ok(await page.evaluate(() => verite().some(l => l.vers === '105XX9' || l.de === '105XX9') && !verite().some(l => l.vers === '305XX9' || l.de === '305XX9') && app.dessin.comps.some(c => c.name === '105XX9')), 'écrire 105XX9 en tête de fiche renomme le repris : chaque fil suit, le plan aussi');
-    await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(500); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-    ok(await page.evaluate(n => verite().length === n, avant.n), 'deux Ctrl+Z : le contrat d’avant');
+    // reprendre, puis ouvrir le repris : sa fiche se lit — son repère ne se retape pas ici (le fichier est la source : pas de champ « nom »)
+    await cliquerBloc(page, '102CB1'); await versDejaFait(); await page.click('#ba-equip .fi-cand[data-ref="H-1"]'); await page.waitForTimeout(400); await page.click('#cp-tout'); await page.waitForTimeout(200); await page.click('#cp-reprendre'); await page.waitForFunction(n => verite().length === n + 3, avant.n); await page.waitForTimeout(500);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    await cliquerBloc(page, '305XX9'); ok(await page.evaluate(() => app.cible && app.cible.nom === '305XX9' && /305XX9/.test(($('inspecteur').querySelector('.nc-rep-t') || {}).textContent || '') && !$('inspecteur').querySelector('input, textarea, [contenteditable="true"]')), 'la fiche du repris 305XX9 s’ouvre d’un clic sur le plan ; son repère se lit, aucun champ pour le retaper');
+    await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
+    ok(await page.evaluate(n => verite().length === n, avant.n), 'Ctrl+Z : le plan d’avant');
     // la bible : la base par harness et par dessin, un dessin qui s'ouvre
     await page.evaluate(() => ficheBible('')); await page.waitForTimeout(400); await page.fill('#rf-q', '677VT'); await page.waitForTimeout(400);
     ok(await page.evaluate(() => document.querySelectorAll('#rf-base .rf-voir').length === 1 && /4\sharness/.test(document.querySelector('#fiche-corps').textContent)), 'la bible : quatre harness ; « 677VT » ne laisse que le dessin de H-3');
@@ -377,92 +379,95 @@ function baseEssaiDansLaPage() {
     ok(!page.erreurs.length, 'aucune erreur console', page.erreurs.slice(0, 3).join(' | '));
     await ctx.close(); });
 
-  /* ================================================================ C. LE CONTRÔLE D'UN CONTRAT ============== */
-  await parcours('C. Le contrôle d’un contrat — l’en-tête, l’index « à reprendre », trois corrections, une hypothèse, un choix de fiche', async () => {
+  /* ================================================================ C. LE CONTRÔLE D'UN PLAN =================
+     (repris à la v89 sur les gestes d'aujourd'hui) Ce qui vient du fichier se lit, il ne se retape pas ; ce qui est « à
+     régler » a un geste : une barrette ajoutée par VOLTA reçoit son repère, un câble mal protégé passe à la gauge proposée
+     (l'Excel corrigé le gardera) ; les choix de VOLTA se prennent dans Modifier, en Automatique / Manuel. */
+  await parcours('C. Le contrôle d’un plan — l’état, le panneau Repères (« à régler »), deux gestes, les hypothèses, des choix dans Modifier', async () => {
     const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx, true); await page.waitForTimeout(300);
-    let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Plan d’exemple' && /^5 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : « 5 problèmes · n à voir » (W-012 et W-015 dépassés par la charge, le contact 23 du DR24 W-015 sous son permanent, 300XC1 B sans arrangement ; le 10 A de 102CB1, qui touche la courbe — un problème aussi, v77 ; le compte des « à voir » suit les règles du contrôle)', e.enEtat);
-    let t0 = Date.now(); await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); mesure('le bouton des repères → l’index « à reprendre »', Date.now() - t0, SEUIL_GESTE);
+    let e = await etat(page); const enEtat0 = e.enEtat;
+    ok(e.nom === 'Plan d’exemple' && /^\d+\sà régler · \d+\sà voir$/.test(e.enEtat), 'l’exemple : « N à régler · M à voir » — « à régler », c’est ce qui a un geste (le compte de partout)', e.enEtat);
+    let t0 = Date.now(); await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .ix-controle')); mesure('le bouton des repères → le panneau Repères', Date.now() - t0, SEUIL_GESTE);
+    const IX = await page.evaluate(() => { const d = document.querySelector('#ba-equip .ix-controle'), c = compteARegler(); return { plie: !d.open, mot: d.querySelector('summary').textContent.replace(/\s+/g, ' ').trim(), regler: c.regler, voir: c.voir, revue: (($('ix-revue') || {}).textContent || '').replace(/\s+/g, ' ').trim(), reperes: +document.querySelector('#ba-equip .ix-n').textContent, n: reperesDuContrat().length }; });
+    ok(IX.plie && new RegExp('^' + IX.regler + '\\sà régler').test(IX.mot.replace(/^✕\s*/, '')) && new RegExp('·\\s' + IX.voir + '\\sà voir').test(IX.mot) && /^Commencer la revue\s?V$/.test(IX.revue) && IX.reperes === IX.n,
+      'le panneau Repères : tous les repères du plan, en tête « N à régler · M à voir » (replié : on clique si on veut) et « Commencer la revue »', IX.mot + ' · ' + IX.revue + ' · ' + IX.reperes + ' repères');
+    await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(250);
     const items = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .co-item')].map(b => { const x = CONTROLE.items[+b.dataset.k]; return { k: +b.dataset.k, nom: x.nom, plan: x.plan, tableau: x.tableau != null, texte: x.texte }; }));
     // (v72, l'audit du parcours P1-5 : les points se rangent par genre — une ligne par niveau, genre et repère)
-    ok(items.length === await page.evaluate(() => lignesDuControle().length) && items.length >= 8 && items[0].nom === '300XC1' && await page.evaluate(() => !document.querySelector('#ba-equip .ix-controle').open), 'l’index s’ouvre, « à reprendre » replié en tête (le lecteur : on clique si on veut) : derrière, les points par genre — l’arrangement de 300XC1 d’abord, puis 102CB1 dans chacun de ses genres, VT1, VT2, VT3', items.map(x => x.nom).join(' '));
-    await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);
-    ok(await page.evaluate(() => document.querySelector('#ba-equip .ix-controle').open), 'un clic sur « à reprendre » le déplie');
-    await capture(page, 'C-1-index-a-reprendre');
-    // chaque ligne mène à son folio, sa fiche, son bloc cadré ; la flèche de la fiche ramène à la liste
-    let premiere = true; const sauts = [];
+    ok(await page.evaluate(() => document.querySelector('#ba-equip .ix-controle').open) && items.length >= 6 && items[0].nom === '300XC1' && ['102CB1', 'VT1', 'VT2', 'VT3'].every(n => items.some(x => x.nom === n)),
+      'un clic le déplie : les points par genre — l’arrangement de 300XC1 d’abord (le seul problème rouge), puis 102CB1 dans chacun de ses genres, VT1, VT2, VT3', items.map(x => x.nom).join(' '));
+    await capture(page, 'C-1-reperes-a-regler');
+    // chaque ligne mène à son folio, sa fiche, son bloc cadré ; Alt+← ramène au panneau
+    const sauts = []; let retours = 0;
     for (const x of items) { if (x.tableau) continue;
       t0 = Date.now(); await page.locator(`#ba-equip .co-item[data-k="${x.k}"]`).click(); await page.waitForFunction(n => app.cible && app.cible.nom === n, x.nom); const ms = Date.now() - t0; await page.waitForTimeout(450);
       sauts.push({ nom: x.nom + ' f.' + x.plan, ms }); e = await etat(page); const cad = await cadrage(page, x.nom);
       ok(e.plan === x.plan && e.cible === x.nom && e.insp && cad.dedans, `« ${x.nom} » → folio ${x.plan}, sa fiche, le bloc cadré`, ms + ' ms · ' + cad.detail);
-      if (x.nom === '300XC1') { ok(await page.evaluate(() => document.querySelector('#ba-equip .ct-bulles [aria-pressed="true"]').dataset.connecteur === 'B'), 'la fiche de 300XC1 s’ouvre sur B, le connecteur qui porte le problème'); await capture(page, 'C-2-300XC1'); }
-      if (premiere) { premiere = false; await page.keyboard.press('r'); await page.waitForTimeout(300);
-        frottement(await page.evaluate(() => app.insp.index && !$('inspecteur').hidden && !!document.querySelector('#ba-equip .co-item')), 'R depuis une fiche venue de l’index ferme le panneau au lieu de revenir à la liste', 'on est sur la fiche de 102CB1 (ouverte depuis « à reprendre »), on presse R pour revenir aux repères : l’inspecteur se ferme ; il faut la flèche de la fiche ou Échap', 'détail', '08-interface.js `basculerIndex` : quand une fiche est ouverte (app.cible) et vient de l’index, revenir à la liste (`retourIndex()`) plutôt que fermer');
-        if (!(await page.evaluate(() => app.insp.index && !$('inspecteur').hidden))) { await page.keyboard.press('r'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); } continue; }
-      ok(await page.evaluate(() => !!$('fi-prec') && !$('fi-prec').disabled), 'la fiche porte ‹ (Alt+←) : venue de l’index, elle y ramène'); await page.click('#fi-prec'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); }
-    mesure('depuis l’index, le saut de folio le plus lent (' + sauts.sort((a, b) => b.ms - a.ms)[0].nom + ')', sauts[0].ms, SEUIL_FOLIO, PROPOSITION_FOLIO, GROUPE_FOLIO);
-    // trois corrections : une barrette à poser (posée), un type de fil (dans le tableau), un calibre (sur la fiche)
-    await page.evaluate(() => { allerAuPlan('1'); deselectionner(); }); await cliquerBloc(page, 'VT1'); await page.fill('#eq-rep', '102VT9'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(900);
-    e = await etat(page); const pose = await page.evaluate(() => ({ vt1: CONTROLE.items.filter(x => x.nom === 'VT1').map(x => x.texte), w015: CONTROLE.items.filter(x => /W-015/.test(x.texte)).length, w012: CONTROLE.items.filter(x => /W-012/.test(x.texte)).length, dessinee: app.dessin.comps.some(c => c.name === '102VT9'), chemins: cheminsDepuis(verite(), '102CB1').map(ch => ch.segments.map(s => !s.fil ? '⇄ ' + s.passage : s.fil.cable || 'à créer').join(' > ')) }));
-    ok(!pose.vt1.some(t => /102CB1:2/.test(t)) && pose.dessinee, 'VT1 posée sous 102VT9 : elle quitte « à voir », la barrette est au contrat et sur le plan', e.enEtat);
-    frottement(!pose.vt1.some(t => /340AB1/.test(t)), 'poser VT1 renomme VT2 en VT1 (et VT3 en VT2)', 'les repères provisoires se renumérotent d’un bout à l’autre du contrat : la barrette du folio 2 qu’on appelait VT2 s’appelle maintenant VT1 dans l’index et sur le plan — ' + pose.vt1.join(' ; '),
-      'détail', '08-interface.js `liaisonsDe` / 01-modele.js `avecBarrettesAPoser` : un nom provisoire stable par borne dédoublée (la numérotation ne recule pas quand une barrette d’avant est posée)');
-    frottement(pose.w015 > 0 && pose.w012 > 0, 'une fois la barrette posée, les fils qu’elle dessert sortent du contrôle du disjoncteur', 'avant la pose, W-012 (DR20) et W-015 (DR24) étaient des problèmes sous 102CB1 (9,31 A pendant 2 min) ; après, plus rien : les chemins depuis 102CB1 s’arrêtent à la barrette (' + pose.chemins.join(' | ') + ')',
-      'gênant', '09-chute.js `cheminsDepuis` / 09-disjoncteurs.js `protectionDesFils` : suivre le potentiel à travers une barrette posée (ses shunts, qui n’ont pas de numéro de fil) comme à travers une barrette du fichier, et juger chaque fil du chemin');
+      await page.keyboard.press('Alt+ArrowLeft'); const revenu = await page.waitForFunction(() => app.insp.index && !!document.querySelector('#ba-equip .co-item'), null, { timeout: 4000 }).then(() => true, () => false); if (revenu) retours++;
+      if (!revenu) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .ix-controle')); }
+      if (!(await page.evaluate(() => document.querySelector('#ba-equip .ix-controle').open))) { await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200); } }
+    ok(retours === sauts.length && sauts.length >= 6, 'Alt+← ramène de la fiche au panneau Repères, à chaque fois', retours + ' retours sur ' + sauts.length);
+    mesure('depuis le panneau, le saut de folio le plus lent (' + sauts.sort((a, b) => b.ms - a.ms)[0].nom + ')', sauts[0].ms, SEUIL_FOLIO, PROPOSITION_FOLIO, GROUPE_FOLIO);
+    // premier geste : la barrette que VOLTA a ajoutée sur 102CB1:2 (deux câbles sur une borne) reçoit son repère
+    await page.keyboard.press('Escape'); await page.waitForTimeout(200); await page.evaluate(() => { allerAuPlan('1'); deselectionner(); }); await cliquerBloc(page, 'VT1');
+    const V0 = await page.evaluate(() => ({ propose: ($('vt-repere') || {}).value || '', bouton: (($('vt-poser') || {}).textContent || '').trim(), dit: ((document.querySelector('#ba-equip .nc-meta') || {}).textContent || '').trim(), prot: CONTROLE.items.filter(x => x.nom === '102CB1' && x.genre === 'protection').length }));
+    ok(/^\d{3}VT\d+$/.test(V0.propose) && V0.bouton === 'Lui donner son repère' && /ajoutée par VOLTA sur 102CB1:2/.test(V0.dit), 'la carte de VT1 dit d’où elle vient (« ajoutée par VOLTA sur 102CB1:2 ») et propose un repère : « Lui donner son repère »', JSON.stringify(V0));
+    await page.fill('#vt-repere', '102VT9'); await page.click('#vt-poser'); await page.waitForTimeout(900);
+    e = await etat(page); const pose = await page.evaluate(() => ({ vt1: CONTROLE.items.filter(x => x.genre === 'aposer').map(x => x.texte), dessinee: app.dessin.comps.some(c => c.name === '102VT9') || (app.dessin.barrettes || []).some(b => b.nom === '102VT9' || b.nomVT === '102VT9'), auFichier: verite().some(l => l.de === '102VT9' || l.vers === '102VT9'), prot: CONTROLE.items.filter(x => x.nom === '102CB1' && x.genre === 'protection').length, hist: (app.hist[app.hist.length - 1] || {}).quoi || '' }));
+    ok(!pose.vt1.some(t => /102CB1:2/.test(t)) && pose.vt1.length === 2 && pose.dessinee && e.enEtat !== enEtat0, 'VT1 reçoit 102VT9 : elle quitte « à régler », la barrette est sur le plan sous son repère', e.enEtat + ' · ' + pose.hist);
+    ok(pose.prot >= V0.prot, 'les câbles qu’elle dessert restent jugés sous 102CB1 (la protection se juge toujours, à travers la barrette — aucun ne sort du contrôle)', V0.prot + ' → ' + pose.prot);
     await capture(page, 'C-3-VT1-posee');
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-    e = await etat(page); ok(e.enEtat === enEtat0, 'Ctrl+Z : VT1 redevient à poser, l’en-tête redit l’état du départ', e.enEtat);
-    await page.keyboard.press('b'); await page.waitForTimeout(500);
-    const i15 = await page.evaluate(() => verite().findIndex(l => l.cable === 'W-015'));
-    await page.dblclick(`#ba-tbody tr[data-i="${i15}"] [data-f="type"]`); await page.fill(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'DR12'); await page.press(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'Enter'); await page.waitForTimeout(700);
-    e = await etat(page); ok(!(await page.evaluate(() => CONTROLE.items.some(x => /W-015/.test(x.texte)))) && /^3 problèmes · \d+ à voir$/.test(e.enEtat), 'W-015 en DR12 (un DR16 ne ferait que le ramener en « à voir ») : ses problèmes disparaissent, l’en-tête passe à 3 problèmes (v77 : le 10 A qui touche la courbe en reste un)', e.enEtat);
-    await page.keyboard.press('Escape'); await page.keyboard.press('b'); await page.waitForTimeout(300); await cliquerBloc(page, '102CB1');
-    // la fiche s'ouvre pliée : « Calibre » se déplie d'un clic ; l'automatique y est déjà retenu (le lecteur, v62 : « commence directement par l'automatique »)
-    await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="disjoncteur"]'); if (!d.open) d.querySelector('summary').click(); }); await page.waitForTimeout(500);
-    e = await etat(page);
-    ok(await page.evaluate(() => calibreDe('102CB1') === 15 && !!$('dj-retenir') && $('dj-retenir').getAttribute('aria-pressed') === 'true' && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /^l’installation porte un 10 A \(MS3320-10\), qui touche la courbe : VOLTA retient le 15 A \(MS3320-15\)$/.test(x.texte)) && !CONTROLE.items.some(x => x.nom === '102CB1' && /ne passe pas/.test(x.texte))),
-      'la fiche de 102CB1, « Calibre » déplié d’un clic : le 15 A, l’automatique, déjà retenu (« Automatique » pressé, rien à cliquer) ; le contrôle dit que l’installation porte un 10 A qui TOUCHE LA COURBE — un problème (v77)', e.enEtat);
-    await capture(page, 'C-3b-102CB1-15A');
-    await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(500);
-    e = await etat(page); ok(e.enEtat === enEtat0, 'Ctrl+Z : l’en-tête redit l’état du départ', e.enEtat);
-    // une hypothèse de simulation (longueur, courant, tension, ambiante, charge du faisceau, altitude) : où se règle-t-elle ?
-    const ou = await page.evaluate(() => { const vu = []; const regarde = (quoi, f) => { try { f(); } catch (_) { } const h = document.querySelector('#ba-equip #si-L, #ba-equip .hyp, #fiche-corps #si-L, #fiche-corps .hyp, #ba-equip [data-hyp], #fiche-corps [data-hyp]'); if (h) vu.push(quoi); };
-      regarde('barrette 668VT31', () => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '668VT31' && k.kind !== 'tag')); });
-      regarde('prise 412VC3B', () => { allerAuPlan('5'); choisirBloc(app.dessin.comps.find(k => k.name === '412VC3B' && k.kind !== 'tag')); });
-      regarde('disjoncteur 102CB1', () => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); });
-      regarde('fil W-012', () => { const w = app.dessin.fils.find(w => w.cable === 'W-012'); app.cible = { type: 'fil', l: verite()[w.i] }; ouvrirInspecteur(); });
-      regarde('bible', () => { deselectionner(); ficheBible(''); }); regarde('nomenclature', () => ficheNomenclature()); fermerFiche(true);
-      const menu = [...document.querySelectorAll('#menu [data-act]')].map(b => b.dataset.act); return { vu, menu, simu: app.simu }; });
-    frottement(ou.vu.length > 0, 'aucune hypothèse de simulation ne se règle plus à l’écran', 'ni la fiche d’une barrette, d’une prise, d’un disjoncteur, d’un fil, ni la bible, ni le menu ne portent les champs longueur / courant / tension / ambiante / charge / altitude (`carteSimulation` n’est appelée que par l’ancienne fiche de bornier, sans modules) ; la fiche d’un fil dit pourtant « hypothèse » et « (bible → hypothèses) »',
-      'bloquant', '08-fiche.js ou 08-interface.js : une carte « Hypothèses » (les champs de `carteSimulation`, liés par `lierHypotheses`) atteignable depuis la fiche d’un fil (le mot « hypothèse »), la fiche d’un disjoncteur et la bible ; les valeurs vivent déjà dans app.simu (relireSimu / memoriserSimu)');
-    note('hypothèses en vigueur, invisibles : ' + JSON.stringify(ou.simu));
-    // un choix sur une fiche change la nomenclature : le sexe des contacts du connecteur A de 300XC1, puis une reprise de blindage
+    e = await etat(page); ok(e.enEtat === enEtat0, 'Ctrl+Z : VT1 redevient « ajoutée par VOLTA », l’état du départ', e.enEtat);
+    // second geste : le DR20 vers 103RL1, mal protégé par le 10 A — « Passer en DR16 » sur sa carte ; l'Excel corrigé le gardera
+    await page.evaluate(() => { deselectionner(); allerAuPlan('1'); choisirFil(app.dessin.fils.find(w => w.cable === 'W-012')); }); await page.waitForTimeout(600);
+    const G0 = await page.evaluate(() => { const b = document.querySelector('#ba-equip [data-reparer][data-type]'); return { geste: b ? b.textContent.trim() : '', type: b ? b.dataset.type : '', courant: [...document.querySelectorAll('#ba-equip .nc-chiffre')].map(c => c.textContent.replace(/\s+/g, ' ').trim()).join(' | '), pilule: !$('btnRetest').hidden, champs: document.querySelectorAll('#ba-equip input, #ba-equip select').length }; });
+    ok(G0.geste === 'Passer en DR16' && /Courant\s*inconnu/.test(G0.courant) && !G0.pilule && !G0.champs, 'la carte du câble DR20 → 103RL1 : « Courant inconnu » (VOLTA n’invente rien), aucun champ à retaper, un geste — « Passer en DR16 » (une gauge plus forte : la protection, elle, se juge)', JSON.stringify(G0));
+    await page.click('#ba-equip [data-reparer][data-type="DR16"]'); await page.waitForTimeout(800);
+    e = await etat(page); const G1 = await page.evaluate(() => ({ type: verite().find(l => l.cable === 'W-012').type, pilule: !$('btnRetest').hidden && $('btnRetest').innerText.replace(/\s+/g, ' ').trim(), mot: $('toast').textContent }));
+    ok(G1.type === 'DR16' && /Excel corrigé/.test(G1.pilule || '') && e.enEtat !== enEtat0 && /Défaire/.test(G1.mot), 'un clic : le câble passe en DR16, « à régler » descend, la pilule « Exporter l’Excel corrigé » paraît, le message offre « Défaire »', e.enEtat + ' · ' + G1.pilule + ' · ' + G1.mot.slice(0, 80));
+    await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+    e = await etat(page); ok(e.enEtat === enEtat0 && await page.evaluate(() => verite().find(l => l.cable === 'W-012').type === 'DR20' && $('btnRetest').hidden), 'Ctrl+Z : le DR20 revient, la pilule s’en va, l’état du départ', e.enEtat);
+    // les hypothèses : ⋮ › Réglages les porte ; la fiche y mène d'un mot (« hypothèses »)
+    await page.evaluate(() => { deselectionner(); allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '103RL1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
+    await page.click('#fi-tout-voir'); await page.waitForTimeout(600); await page.click('#nv-o-cables'); await page.waitForTimeout(400);
+    const H0 = await page.evaluate(() => ({ note: ((document.querySelector('#nv-p-cables .fi-note') || {}).textContent || '').replace(/\s+/g, ' ').trim(), lien: !!document.querySelector('#nv-p-cables .fi-hyp[data-hyp]'), menu: !!document.querySelector('#mp-reglages [data-act="hypotheses"]') }));
+    await page.click('#nv-p-cables .fi-hyp[data-hyp]'); await page.waitForFunction(() => app.fiche && app.fiche.mode === 'hypotheses', null, { timeout: 5000 }).catch(() => {});
+    const H1 = await page.evaluate(() => ({ mode: app.fiche && app.fiche.mode, texte: $('fiche-corps').textContent.replace(/\s+/g, ' '), champs: [...$('fiche-corps').querySelectorAll('input, select')].length }));
+    ok(/^Longueur supposée\s: 5\sm/.test(H0.note) && H0.lien && H0.menu && H1.mode === 'hypotheses' && H1.champs >= 5 && /longueur/i.test(H1.texte) && !/courant supposé|hypothèse de courant/i.test(H1.texte) && !('courant' in (await page.evaluate(() => ({ ...HYPOTHESES })))),
+      'ce qui est supposé se dit supposé (« Longueur supposée : 5 m ») et mène aux Hypothèses (aussi dans ⋮ › Réglages) : elles se règlent là — sans aucun courant supposé', H0.note.slice(0, 70) + ' · ' + H1.champs + ' réglages · ' + JSON.stringify({ note: /^Longueur supposée\s: 5\sm/.test(H0.note), lien: H0.lien, menu: H0.menu, mode: H1.mode, longueur: /longueur/i.test(H1.texte), mots: (H1.texte.match(/.{20}(courant supposé|hypothèse de courant).{20}/i) || [''])[0] }));
+    await page.evaluate(() => fermerFiche(true)); await page.waitForTimeout(300);
+    // des choix dans Modifier (les choix de VOLTA : Automatique / Manuel) changent la LPA : le sexe des contacts du connecteur A de 300XC1, puis une reprise de blindage
+    const versModifier = async (nom, folio, conn, ligne) => { await page.evaluate(([n, f]) => { deselectionner(); allerAuPlan(f); choisirBloc(app.dessin.comps.find(k => k.name === n && k.kind !== 'tag')); }, [nom, folio]); await page.waitForTimeout(500);
+      await page.click('#fi-tout-voir'); await page.waitForTimeout(600); await page.click('#nv-o-reglages'); await page.waitForTimeout(400);
+      if (conn) { await page.click(`#nv-p-reglages .ct-bulle[data-connecteur="${conn}"]`); await page.waitForTimeout(400); }
+      await page.evaluate(re => { const li = [...document.querySelectorAll('#nv-p-reglages .nv-somm-i')].find(x => new RegExp(re).test(x.querySelector('.nv-somm-k').textContent)), m = li && li.querySelector('.nv-am-b[data-am="manuel"]'); if (m && m.getAttribute('aria-expanded') !== 'true') m.click(); }, ligne); await page.waitForTimeout(450); };
     const N0 = await page.evaluate(() => JSON.stringify(nomenclatureDuContrat().contacts));
-    await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '300XC1' && k.kind !== 'tag')); }); await page.waitForTimeout(400);
-    // (v77 : les bulles A · B · C sont DANS la section, plus dans son titre) la fiche s'ouvre pliée : on déplie, puis on choisit A
-    await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="connecteur"]'); if (!d.open) d.querySelector('summary').click(); }); await page.waitForTimeout(200);
-    await page.click('#ba-equip .ct-bulles [data-connecteur="A"]'); await page.waitForTimeout(200);
-    await page.click('#ba-equip [data-changer="arr|300XC1|A"]'); await page.waitForTimeout(200);
-    ok(await page.evaluate(() => !!document.querySelector('#ba-equip [data-volet="arr|300XC1|A"] .cand') && document.querySelectorAll('#ba-equip [data-sexe="300XC1|A"]').length === 2), '« Changer » sur le connecteur A ouvre les arrangements sous la valeur ; le sexe des contacts est à côté');
-    await page.click('#ba-equip [data-sexe="300XC1|A"][data-v="M"]'); await page.waitForTimeout(700);
+    await versModifier('300XC1', '3', 'A', '^L’arrangement');
+    const M0 = await page.evaluate(() => ({ sortes: [...document.querySelectorAll('#nv-p-reglages .nv-mod-t h4')].map(h => h.textContent).join(' | '), fichier: [...document.querySelectorAll('#nv-p-reglages .nv-somm-i.fichier')].every(li => !li.querySelector('input, select, button.nv-am-b')), cands: document.querySelectorAll('#nv-p-reglages .cand[data-cle="300XC1|A"]').length,
+      am: [...document.querySelectorAll('#nv-p-reglages .nv-somm-i.choix .nv-am')].every(g => g.querySelectorAll('.nv-am-b').length === 2 && /^Automatique/.test(g.textContent)) }));
+    ok(/^Dans votre fichier \| Choix de VOLTA/.test(M0.sortes) && M0.fichier && M0.am && M0.cands >= 2, 'Modifier, trois sortes bien séparées : ce qui vient de votre fichier se lit sans saisie ; chaque choix de VOLTA a « Automatique / Manuel » ; « Manuel » sur l’arrangement de A ouvre les possibles', JSON.stringify(M0));
+    await versModifier('300XC1', '3', 'A', '^Ses contacts');
+    ok(await page.evaluate(() => document.querySelectorAll('#nv-p-reglages [data-sexe="300XC1|A"]').length === 2), '« Manuel » sur ses contacts à sertir : mâles ou femelles, et chaque borne avec son contact');
+    await page.click('#nv-p-reglages [data-sexe="300XC1|A"][data-v="M"]'); await page.waitForTimeout(700);
     const N1 = await page.evaluate(() => JSON.stringify(nomenclatureDuContrat().contacts));
-    ok(N1 !== N0 && await page.evaluate(() => app.contrat.sexes.get('300XC1|A') === 'M'), 'des contacts mâles sur A : la nomenclature des contacts change');
+    ok(N1 !== N0 && await page.evaluate(() => app.contrat.sexes.get('300XC1|A') === 'M'), 'des contacts mâles sur A : la LPA des contacts change');
     // un EN 4165 (300XC1) n'a pas de raccord : la reprise de blindage se choisit sur un EN 2997 (351PM1, folio 3)
-    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="connecteur"]').open = true; const b = document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
-    await page.click('#ba-equip [data-hab="300XC1|A"] [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
+    await versModifier('300XC1', '3', 'A', '^Le raccord');
+    await page.click('#nv-p-reglages [data-raccord="300XC1|A"][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
     // (passe 87) la LPA nomme la pièce comme l'onglet Pièces : « collier de blindage (band-it) »
-    ok(await page.evaluate(() => !nomenclatureDuContrat().habits.some(h => /band-it/.test(h.quoi) && /300XC1 A/.test(h.ou.join(' '))) && app.contrat.raccords.get('300XC1|A').blindage === 'GND'), 'une reprise de blindage sur le corps d’un EN 4165 : le choix se garde, mais aucun band-it n’entre à la nomenclature (un EN 4165 n’a pas de raccord)');
-    await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '351PM1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
-    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="connecteur"]').open = true; const b = document.querySelector('#ba-equip [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
-    await page.click('#ba-equip [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
-    ok(await page.evaluate(() => nomenclatureDuContrat().habits.some(h => /band-it/.test(h.quoi) && /351PM1/.test(h.ou.join(' ')))), 'une reprise de blindage sur le corps d’un EN 2997 (351PM1) : un band-it entre à la nomenclature');
-    await capture(page, 'C-4-300XC1-choix');
-    await page.keyboard.press('Escape'); for (let k = 0; k < 3; k++) { await page.keyboard.press('Control+z'); await page.waitForTimeout(400); } await page.waitForTimeout(300);
-    ok(await page.evaluate(n => JSON.stringify(nomenclatureDuContrat().contacts) === n && !app.contrat.raccords.get('300XC1|A') && !app.contrat.raccords.get('351PM1|A'), N0), 'trois Ctrl+Z : la nomenclature d’avant');
+    ok(await page.evaluate(() => !nomenclatureDuContrat().habits.some(h => /band-it/.test(h.quoi) && /300XC1 A/.test(h.ou.join(' '))) && app.contrat.raccords.get('300XC1|A').blindage === 'GND'), 'une reprise de blindage sur le corps d’un EN 4165 : le choix se garde, mais aucun band-it n’entre à la LPA (un EN 4165 n’a pas de raccord)');
+    await versModifier('351PM1', '3', '', '^Le raccord');
+    await page.click('#nv-p-reglages [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
+    ok(await page.evaluate(() => nomenclatureDuContrat().habits.some(h => /band-it/.test(h.quoi) && /351PM1/.test(h.ou.join(' ')))), 'une reprise de blindage sur le corps d’un EN 2997 (351PM1) : un band-it entre à la LPA');
+    await capture(page, 'C-4-modifier-choix');
+    await page.keyboard.press('Escape'); await page.waitForTimeout(200); await page.keyboard.press('Escape'); for (let k = 0; k < 3; k++) { await page.keyboard.press('Control+z'); await page.waitForTimeout(400); } await page.waitForTimeout(300);
+    ok(await page.evaluate(n => JSON.stringify(nomenclatureDuContrat().contacts) === n && !app.contrat.raccords.get('300XC1|A') && !app.contrat.raccords.get('351PM1|A'), N0), 'trois Ctrl+Z : la LPA d’avant');
     ok(!page.erreurs.length, 'aucune erreur console', page.erreurs.slice(0, 3).join(' | '));
     await ctx.close(); });
 
   /* ================================================================ D. LE TÉLÉPHONE ========================== */
-  await parcours('D. Le téléphone (390 × 844) — les parcours A et C au doigt : tout reste-t-il atteignable ?', async () => {
+  await parcours('D. Le téléphone (390 × 844) — VOLTA se juge sur ordinateur ; ici, rien ne casse et l’essentiel reste sous le doigt', async () => {
     const ctx = await nav.newContext(tel), page = await ouvrirPage(ctx, true); await page.waitForTimeout(400);
     /* un élément est ATTEIGNABLE : visible, dans l'écran, et rien ne le recouvre (ce qu'on touche en son centre, c'est lui) */
     const atteignable = sel => page.evaluate(sel => { const el = document.querySelector(sel); if (!el) return { ok: false, detail: sel + ' absent' }; if (el.hidden || getComputedStyle(el).display === 'none') return { ok: false, detail: sel + ' caché' };
@@ -470,7 +475,7 @@ function baseEssaiDansLaPage() {
       const dedans = r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, sous = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2), lui = sous && (sous === el || el.contains(sous));
       return { ok: dedans && lui, detail: sel + ' ' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + '×' + Math.round(r.height) + (dedans ? '' : ' HORS ÉCRAN') + (lui ? '' : ' recouvert par ' + (sous ? sous.tagName + (sous.id ? '#' + sous.id : '.' + sous.className) : 'rien')) }; }, sel);
     const tous = async (sels, nom) => { const rs = []; for (const s of sels) rs.push(await atteignable(s)); const mal = rs.filter(r => !r.ok); ok(!mal.length, nom, mal.map(r => r.detail).join(' | ') || rs.length + ' éléments'); };
-    await tous(['#btnBase', '#btnIndex', '#btnCherche', '#btnUndo', '#btnLiaison', '#btnBible', '#btnMenu', '#zfit', '#fo-strip .chip.on'], 'au téléphone, le rail (en bas), la barre du haut et les folios sont atteignables');
+    await tous(['#btnBase', '#btnIndex', '#btnCherche', '#btnUndo', '#btnBible', '#btnMenu', '#zfit', '#fo-strip .chip.on'], 'au téléphone, le rail (en bas), la barre du haut et les folios sont atteignables');
     ok(await page.evaluate(() => !$('en-etat') && !$('btnIndex').querySelector('.rd-point').hidden), 'l’état du contrat est sur le bouton des repères (la barre du haut ne le porte plus)');
     await capture(page, 'D-1-exemple');
     // A : la bibliothèque, le retest, le plan, les folios
@@ -488,24 +493,26 @@ function baseEssaiDansLaPage() {
     const bd = await barreFolios(page); if (CAPTURES) { try { await page.screenshot({ path: path.join(CAPTURES, 'D-3b-barre-folios.png'), clip: { x: 0, y: 740, width: 390, height: 60 } }); } catch (_) { } }
     frottement(bd.chevauchent === 0 && bd.debordent === 0 && bd.visibles === bd.n, 'la barre des folios, avec des noms de dessin (FWD) de quinze caractères, n’est plus lisible', `téléphone, ${bd.n} dessins : ${bd.visibles} puces entières dans la bande de ${bd.largeStrip} px (les puces font ${bd.largePuces} px), ${bd.debordent} dont le texte déborde de sa puce rétrécie — les noms se superposent`, 'gênant', PROPOSITION_BARRE);
     // la recherche par le rail
-    await page.click('#btnCherche'); await page.waitForTimeout(200);
-    ok(await page.evaluate(() => document.body.classList.contains('cherche') && getComputedStyle(document.querySelector('.recherche')).display !== 'none' && document.activeElement === $('q')), 'le bouton loupe ouvre la recherche sur la barre du haut, le curseur dedans');
-    await page.keyboard.type('610LP3'); await page.waitForTimeout(250); await (await atteignable('#q-liste .q-item')).ok ? page.click('#q-liste .q-item') : page.keyboard.press('Enter'); await page.waitForFunction(() => app.cible && app.cible.nom === '610LP3'); await page.waitForTimeout(500);
+    await page.click('#btnCherche'); await page.waitForTimeout(300);
+    ok(await page.evaluate(() => paletteOuverte() && document.activeElement === $('pa-q')), 'le bouton loupe ouvre la recherche (la palette), le curseur dedans');
+    await page.keyboard.type('610LP3'); await page.waitForTimeout(300); await page.keyboard.press('Enter'); await page.waitForFunction(() => app.cible && app.cible.nom === '610LP3'); await page.waitForTimeout(500);
     e = await etat(page); const cad = await cadrage(page, '610LP3');
     ok(e.plan === FWD(6) && e.cible === '610LP3' && e.insp, 'toucher le résultat ouvre la fiche de 610LP3 sur son folio', e.plan);
     ok(cad.dedans, 'le bloc est cadré au-dessus de la fiche', cad.detail);
     const insp = await page.evaluate(() => { const r = $('inspecteur').getBoundingClientRect(), rail = $('rail').getBoundingClientRect(); return { h: r.height, bas: r.bottom, rail: rail.top, folios: getComputedStyle($('folios')).display }; });
     ok(insp.h <= 844 * 0.62 + 1 && insp.bas <= insp.rail + 1, 'la fiche monte en tiroir (≤ 62 % de l’écran), le rail reste au-dessous', Math.round(insp.h) + ' px, bas ' + Math.round(insp.bas) + ', rail ' + Math.round(insp.rail));
     frottement(insp.folios !== 'none', 'fiche ouverte, la barre des folios disparaît', 'pour changer de folio il faut d’abord fermer la fiche : un geste de plus à chaque va-et-vient', 'détail', 'style.css `body.insp-ouvert #folios{display:none}` : garder la bande des puces au-dessus du tiroir (elle ne fait que 40 px), ou un geste de balayage sur le plan');
-    await tous(['#in-fermer', '#fi-tableau', '#fi-fil-plus', '#fi-menu'], 'dans la fiche : fermer, Tableau, + Fil, « ··· » sont atteignables');
+    await page.waitForFunction(() => !$('toast').classList.contains('on'), null, { timeout: 9000 }).catch(() => {});   // le message qui passe couvre un instant le pied de la carte
+    await tous(['#in-fermer', '#fi-tout-voir'], 'dans la fiche : fermer et « Tout voir » sont atteignables');
     await capture(page, 'D-4-fiche-610LP3');
     await page.click('#in-fermer'); await page.waitForTimeout(300);
     // un bloc au doigt, le tableau, l'export, la nomenclature
     await cliquerBloc(page, '600XC4'); ok(await page.evaluate(() => app.cible && app.cible.nom === '600XC4'), 'toucher 600XC4 ouvre sa fiche');
     await page.click('#in-fermer'); await page.click('#btnBase'); await page.waitForTimeout(500);
     ok(await page.evaluate(() => app.base.ouvert && $('ba-tbody').querySelectorAll('tr[data-i]').length > 0), 'le bouton du tableau ouvre le tiroir des liaisons');
-    await tous(['#ba-fermer', '#ba-ajouter', '#ba-filtre', '#ba-portee [data-portee="tout"]', '#ba-tbody tr[data-i] [data-f="type"]'], 'dans le tableau : fermer, ajouter, filtrer, « tout », une cellule');
-    await capture(page, 'D-5-tableau'); await page.click('#ba-fermer'); await page.waitForTimeout(300);
+    ok(await page.evaluate(() => !document.querySelector('#ba-tbody input, #ba-tbody select') && document.documentElement.scrollWidth <= innerWidth + 1), 'le récapitulatif se lit (aucun champ à retaper) et ne déborde pas de côté');
+    await capture(page, 'D-5-tableau'); await page.click('#btnBase'); await page.waitForTimeout(400);
+    ok(await page.evaluate(() => !app.base.ouvert), 'le même bouton le referme');
     const d = await telecharger(page, async () => { await ligneDuMenu(page, 'svg'); }); ok(/\.svg$/.test(d.nom), 'le menu enregistre le folio en SVG', d.nom);
     await ligneDuMenu(page, 'nomenclature'); await page.waitForTimeout(600);
     // un document est une page au téléphone : de la barre du haut au rail (qui reste en bas, sous le pouce)
@@ -515,24 +522,14 @@ function baseEssaiDansLaPage() {
     // C au téléphone : l'exemple, l'index, une ligne → folio et fiche, le 15 A d'un doigt
     await ligneDuMenu(page, 'exemple'); await page.waitForFunction(() => app.nom === 'Plan d’exemple'); await page.waitForTimeout(400);
     await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item'));
-    ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .co-item').length === lignesDuControle().length && document.activeElement !== $('ix-q')), 'le bouton des repères ouvre l’index : les lignes à reprendre, par genre, sans voler le clavier');
-    await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);   // « à reprendre » se déplie d'un toucher
-    await tous(['#ba-equip .co-item', '#ix-plus', '#ix-q'], 'dans l’index : une ligne, « + », le filtre'); await capture(page, 'D-7-index');
-    await page.locator('#ba-equip .co-item', { hasText: '300XC1' }).click(); await page.waitForFunction(() => app.cible && app.cible.nom === '300XC1'); await page.waitForTimeout(500);
-    e = await etat(page); const cad3 = await cadrage(page, '300XC1');
-    ok(e.plan === '3' && e.cible === '300XC1' && (cad3.dedans || (cad3.parLeHaut && cad3.w >= 80)), '« 300XC1 » → folio 3, sa fiche, le bloc cadré au-dessus du tiroir (un bloc plus haut que la place : sur sa largeur, lisible, par le haut)', cad3.detail);
-    frottement(cad3.w >= 80, 'au téléphone, « aller à un bloc » montre la feuille entière en vignette', `le calculateur 300XC1 visé fait ${cad3.w} × ${cad3.h} px à l’écran : son repère ne se lit pas, ses bornes encore moins (le cadrage veut faire tenir toute la hauteur du bloc dans les ${cad3.detail.replace(/.*place libre /, '')})`,
-      'gênant', '08-interface.js `centrerSur` : au téléphone, cadrer sur la largeur du bloc et garantir une échelle lisible (le repère ≥ 100 px), quitte à ne montrer qu’une partie d’un bloc haut — on fait défiler au doigt');
+    ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .co-item').length >= 6 && document.activeElement !== $('ix-q')), 'le bouton des repères ouvre le panneau Repères : ce qui est à régler, par genre, sans voler le clavier');
+    await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);   // « à régler » se déplie d'un toucher
+    await tous(['#ba-equip .co-item', '#ix-q'], 'dans le panneau : une ligne, le filtre'); await capture(page, 'D-7-index');
+    await page.locator('#ba-equip .co-item', { hasText: '300XC1' }).first().click(); await page.waitForFunction(() => app.cible && app.cible.nom === '300XC1'); await page.waitForTimeout(500);
+    e = await etat(page);
+    ok(e.plan === '3' && e.cible === '300XC1' && e.insp, '« 300XC1 » → folio 3, sa fiche (en tiroir)', e.plan + ' · ' + e.cible);
     await capture(page, 'D-8-300XC1');
-    // la croix d'une fiche venue de l'index ramène à l'index (elle ne ferme pas) ; le bouton des repères ne sert que si le panneau est fermé
-    await page.click('#in-fermer'); await page.waitForTimeout(300); if (await page.evaluate(() => $('inspecteur').hidden)) await page.click('#btnIndex');
-    await page.waitForFunction(() => !$('inspecteur').hidden && app.insp.index && document.querySelector('#ba-equip .co-item')); await page.locator('#ba-equip .co-item', { hasText: '102CB1' }).first().click(); await page.waitForFunction(() => app.cible && app.cible.nom === '102CB1'); await page.waitForTimeout(400);
-    // la fiche s'ouvre pliée : « Calibre » se déplie d'un toucher ; l'automatique (15 A) y est déjà retenu
-    await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="disjoncteur"]'); if (!d.open) d.querySelector('summary').click(); }); await page.waitForTimeout(400);
-    await tous(['#dj-retenir', '#ba-equip [data-changer="dj|102CB1"]'], '« Automatique » et « Autre calibre » du disjoncteur sont atteignables');
-    await page.click('#ba-equip [data-changer="dj|102CB1"]'); await page.waitForTimeout(300); await page.click('#ba-equip .dj-chip[data-cal="20"]'); await page.waitForTimeout(600);
-    ok(await page.evaluate(() => calibreDe('102CB1') === 20 && app.contrat.charges.get('102CB1').calibre === 20), 'un doigt sur « Autre calibre », puis sur 20 A : il est retenu à la main'); await capture(page, 'D-9-102CB1-20A');
-    await page.click('#btnUndo'); await page.waitForTimeout(500); ok(await page.evaluate(() => !(app.contrat.charges.get('102CB1').calibre > 0) && calibreDe('102CB1') === 15), 'le bouton Annuler du rail rend l’automatique (15 A)');
+    await page.click('#in-fermer'); await page.waitForTimeout(300);
     ok(!page.erreurs.length, 'aucune erreur console', page.erreurs.slice(0, 3).join(' | '));
     await ctx.close(); });
 
@@ -549,8 +546,8 @@ function baseEssaiDansLaPage() {
     await capture(page, 'E-1-une-ligne');
     // sans part numbers
     await deposerParEntree(page, X.sansPN); await page.waitForFunction(() => app.nom === 'sans-pn.csv'); await cliquerBloc(page, '102CB1');
-    const SP = await page.evaluate(() => ({ sous: [$('eq-rep') ? $('eq-rep').value : '', ...[...document.querySelectorAll('#ba-equip .fi-tuile')].map(t => t.querySelector('.fi-tuile-k').textContent + ' ' + t.querySelector('.fi-tuile-v').textContent)].join(' · '), ref: [...document.querySelectorAll('#ba-equip .fi-ref')].map(x => x.textContent).join(' | '), etat: etatDuControle(), items: CONTROLE.items.map(x => (x.nom || 'tableau') + ' : ' + x.texte), charges: [...app.contrat.charges.keys()], dj: !!document.querySelector('#ba-equip .fi-dj') }));
-    ok(/102CB1/.test(SP.sous) && SP.dj && (/sans part number/.test(SP.ref) || !SP.ref), 'sans part numbers : la fiche de 102CB1 s’ouvre (la section Calibre d’un disjoncteur), sans part number, rien ne casse', SP.sous + ' · ' + SP.ref + ' · ' + SP.etat);
+    const SP = await page.evaluate(() => ({ sous: [((document.querySelector('#ba-equip .nc-rep-t') || {}).textContent || ''), ((document.querySelector('#ba-equip .nc-genre-mot') || {}).textContent || ''), ...[...document.querySelectorAll('#ba-equip .nc-chiffre')].map(t => t.textContent.replace(/\s+/g, ' ').trim())].join(' · '), ref: [...document.querySelectorAll('#ba-equip .nc-meta-v')].map(x => x.textContent.trim()).join(' | '), etat: etatDuControle(), items: CONTROLE.items.map(x => (x.nom || 'tableau') + ' : ' + x.texte), charges: [...app.contrat.charges.keys()], dj: /Disjoncteur/.test((document.querySelector('#ba-equip .nc-genre-mot') || {}).textContent || '') }));
+    ok(/102CB1/.test(SP.sous) && SP.dj && !/MS3320/.test(SP.ref), 'sans part numbers : la carte de 102CB1 s’ouvre (un disjoncteur, reconnu à son code), sans référence inventée, rien ne casse', SP.sous + ' · ' + SP.ref + ' · ' + SP.etat);
     frottement(!SP.charges.length && !/\d+ A/.test(SP.sous), 'un disjoncteur sans part number ni profil se voit prêter le profil de l’exemple', 'la ligne de nature dit « ' + SP.sous + ' » et le contrôle juge ses fils sur 9,31 A pendant 2 min : le profil de charge du contrat d’avant (102CB1 de l’exemple) n’a pas été effacé à l’ouverture du fichier', 'bloquant', 'le même point que « les choix du contrat d’avant survivent » (chargerContrat)');
     note('sans part number, le contrôle dit : ' + SP.items.join(' ; '));
     await page.keyboard.press('Escape');
@@ -560,7 +557,7 @@ function baseEssaiDansLaPage() {
     ok(['305XX9', '410ZQ2B', 'K7', 'RELAIS-1', '102CB1'].every(r => IN.blocs.includes(r)) && e.n === 5, 'des codes inconnus se dessinent en équipements, sans nature inventée', IN.blocs.join(' ') + ' · ' + IN.mots.join(' · '));
     await page.keyboard.press('r'); await page.waitForTimeout(400);
     ok(await page.evaluate(() => [...document.querySelectorAll('#ba-equip .ix-item[data-nom]')].map(b => b.dataset.nom).filter(n => /XX9|ZQ2B|^K7$|RELAIS/.test(n)).length === 4), 'l’index les range parmi les équipements');
-    await cliquerBloc(page, '410ZQ2B'); ok(await page.evaluate(() => app.cible && app.cible.nom === '410ZQ2B' && $('eq-rep').value === '410ZQ2B' && !!document.querySelector('#ba-equip details[data-section="connecteur"]')), 'la fiche de 410ZQ2B s’ouvre (un équipement : sa section Connecteur)'); await capture(page, 'E-2-inconnus'); await page.keyboard.press('Escape');
+    await cliquerBloc(page, '410ZQ2B'); ok(await page.evaluate(() => app.cible && app.cible.nom === '410ZQ2B' && /410ZQ2B/.test((document.querySelector('#ba-equip .nc-rep-t') || {}).textContent || '') && !!document.querySelector('#ba-equip .nc-vignette') && !document.querySelector('#ba-equip input')), 'la carte de 410ZQ2B s’ouvre (un équipement : son brochage dessiné), sans champ pour retaper son nom'); await capture(page, 'E-2-inconnus'); await page.keyboard.press('Escape');
     // un Excel à plusieurs feuilles : une feuille par harness
     await deposerParEntree(page, X.feuilles); await page.waitForTimeout(600); e = await etat(page); T = await toast(page);
     const F2 = await page.evaluate(() => ({ harnais: [...new Set(verite().map(l => l.harness))], refs: app.references ? app.references.index.harnais.size : 0 }));
@@ -594,7 +591,7 @@ function baseEssaiDansLaPage() {
     for (const k of [2, 3, 4]) { const t0 = Date.now(); await p2.keyboard.press('ArrowRight'); await p2.waitForFunction(p => app.plan === p, FWD(k)); mesure(`→ folio ${k} au clavier (75 fils, jamais vu)`, Date.now() - t0, SEUIL_FOLIO, PROPOSITION_FOLIO, GROUPE_FOLIO); }
     const t1 = Date.now(); await p2.keyboard.press('ArrowLeft'); await p2.waitForFunction(p => app.plan === p, FWD(3)); mesure('← folio 3, déjà vu', Date.now() - t1, 500);
     // les fiches : le calculateur, une barrette, une prise du folio 3 ; puis sur le dernier folio
-    for (const nom of ['3300XC1', '3668VT31', '3409VC2A', '3102CB1']) { await cliquerBloc(p2, nom); const ms = await derniere(p2, 'fiche'); mesure('fiche de ' + nom + ' (folio 3)', ms, SEUIL_FICHE, 'la fiche relit tout le contrat à chaque rendu (verite(), liaisonsDuPlan() par ligne : `liaisonsDe` recalcule la signature et les dédoublements des folios d’avant) : indexer une fois par contrat'); }
+    for (const nom of ['3300XC1', '3668VT3', '3409VC2A', '3102CB1']) { await cliquerBloc(p2, nom); const ms = await derniere(p2, 'fiche'); mesure('fiche de ' + nom + ' (folio 3)', ms, SEUIL_FICHE, 'la fiche relit tout le contrat à chaque rendu (verite(), liaisonsDuPlan() par ligne : `liaisonsDe` recalcule la signature et les dédoublements des folios d’avant) : indexer une fois par contrat'); }
     await capture(p2, 'E-4-gros-fiche-3300XC1'); await p2.keyboard.press('Escape');
     let t0 = Date.now(); await p2.click('#fo-strip .chip:last-child'); await p2.waitForFunction(p => app.plan === p, FWD(20)); mesure('→ folio 20 par sa puce (jamais vu)', Date.now() - t0, SEUIL_FOLIO, PROPOSITION_FOLIO, GROUPE_FOLIO);
     await cliquerBloc(p2, '20300XC1'); mesure('fiche de 20300XC1 (dernier folio)', await derniere(p2, 'fiche'), SEUIL_FICHE);
@@ -612,7 +609,8 @@ function baseEssaiDansLaPage() {
     mesure('le tableau sur « ce folio » (' + G.lignes + ' lignes)', G.tableau, SEUIL_GESTE); mesure('le tableau sur « tout » (1 500 lignes, 400 montrées)', G.tableauTout, SEUIL_GESTE); mesure('la recherche d’un repère', G.recherche, 200);
     await p2.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }); await p2.click('#btnBase'); await p2.waitForFunction(() => app.base.ouvert && !!$('ba-tbody').querySelector('tr[data-i]'));
     const iw = await p2.evaluate(() => verite().findIndex(l => l.cable === 'W-20313'));
-    await p2.dblclick(`#ba-tbody tr[data-i="${iw}"] [data-f="type"]`); t0 = Date.now(); await p2.fill(`#ba-tbody tr[data-i="${iw}"] input[data-f="type"]`, 'DR20'); await p2.press(`#ba-tbody tr[data-i="${iw}"] input[data-f="type"]`, 'Enter'); await p2.waitForFunction(i => verite()[i].type === 'DR20', iw); await p2.waitForTimeout(100); mesure('une cellule corrigée sur le gros contrat (le plan, le contrôle, l’enregistrement)', Date.now() - t0, SEUIL_GESTE);
+    // (v85 : le tableau ne se corrige plus — votre fichier est la source) le geste d'aujourd'hui : un câble passe à une autre gauge (une proposition de VOLTA, pour l'Excel corrigé)
+    t0 = Date.now(); await p2.evaluate(i => { const l = verite()[i]; changerLiaison(l, 'type', 'DR20', 'gauge proposée'); }, iw); await p2.waitForFunction(i => verite()[i].type === 'DR20', iw); await p2.waitForTimeout(100); mesure('un câble changé de gauge sur le gros plan (le plan, le contrôle, l’enregistrement)', Date.now() - t0, SEUIL_GESTE);
     await p2.keyboard.press('Escape'); t0 = Date.now(); await p2.keyboard.press('Control+z'); await p2.waitForFunction(i => verite()[i].type === 'DR22', iw); mesure('Ctrl+Z sur le gros contrat', Date.now() - t0, SEUIL_GESTE);
     await p2.keyboard.press('b'); await p2.waitForTimeout(300);
     // la mémoire d'un gros contrat : rouvrir
