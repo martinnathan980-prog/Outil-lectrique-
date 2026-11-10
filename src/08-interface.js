@@ -865,7 +865,8 @@ function peindreChoix() { const sc = $('scene'); if (!sc || !app.dessin) return;
    à chaque rendu (`peindre`) et à chaque contrôle (`synchroniser` : une correction, un Ctrl+Z, une hypothèse). */
 function peindreEtats() { const sc = $('scene'); if (!sc) return; const niv = new Map();
   ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).forEach(x => { if (x.nom && niv.get(String(x.nom)) !== 'ko') niv.set(String(x.nom), x.niveau === 'ko' ? 'ko' : 'att'); });
-  sc.querySelectorAll('.comp[data-name]').forEach(g => { const e = niv.get(g.dataset.name) || ''; g.classList.toggle('etat-ko', e === 'ko'); g.classList.toggle('etat-att', e === 'att'); }); }
+  sc.querySelectorAll('.comp[data-name]').forEach(g => { const e = niv.get(g.dataset.name) || ''; g.classList.toggle('etat-ko', e === 'ko'); g.classList.toggle('etat-att', e === 'att'); });
+  if (typeof peindreVivant === 'function' && typeof VIVANT !== 'undefined' && VIVANT.actif) peindreVivant(); }   // (v92) le plan vivant se repeint avec le folio
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 
 /* ---- la vue : zoom, cadrage, l'ombre sous la feuille ------------------- */
@@ -1664,7 +1665,7 @@ function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => 
   const d = c.kind === 'tag' ? '' : designationDe(nom), cc = estDisjoncteur(nom) && c.kind === 'equip' ? calibresDuFolio(nom) : null, cal = cc && cc.calibre;
   return T(nom) + ((genre || d || cal) ? l_(esc([genre, cal ? amperesCb(cal) + (cc.retest ? ' (votre fichier ' + amperesCb(cc.retest) + ')' : '') : '', d].filter(Boolean).join(' · '))) : '')
     + l_(pluriel(n, 'câble') + ' sur ce folio' + (ail.length ? ' · aussi sur f. ' + ail.join(' · ') : ''))
-    + (estRenvoi(nom) || c.rail ? '' : l_('Clic : sa fiche · glisser : le déplacer')); }
+    + (estRenvoi(nom) || c.rail ? '' : l_(typeof gesteVivant === 'function' && gesteVivant(nom) || 'Clic : sa fiche · glisser : le déplacer')); }
 let appuiDuPlan = null;   // le dernier appui simple sur la planche (l'instant, l'endroit, le bloc) : un double-clic peut finir ailleurs
 /* Un clic sur la planche : un bloc, un renvoi, un fil, ou le vide. Rend 'renvoi' quand il a mené au folio d'en face. */
 function cliquer(w) { const c = blocSous(w);
@@ -2313,7 +2314,8 @@ const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde',
   // (v88) la sauvegarde d'ensemble (08-sauvegarde) ; « Ouvrir un fichier… » prend aussi un PDF, un Visio
   sauvegarde: 'sauvegarder sauvegarde restaurer restauration copie tout garder fichier volta backup poste navigateur', pdf: 'pdf schema scan lire', comprendre: 'aide comprendre expliquer calcul',
   indice: 'indice nouvel suivant revision comparer difference change ajoute retire rebranche version fichier',
-  bilanelec: 'bilan electrique courant ampere consommation source batterie disjoncteur charge alimente' };
+  bilanelec: 'bilan electrique courant ampere consommation source batterie disjoncteur charge alimente',
+  vivant: 'plan vivant sous tension ouvrir disjoncteur fermer relais interrupteur couper cable casse alimente prive simulation' };
 const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'revue', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);

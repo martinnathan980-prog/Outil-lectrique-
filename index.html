@@ -10323,6 +10323,28 @@ button.vu-cal:focus-visible,.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible
 .be-rep.puce{padding:3px 9px;border:1px solid var(--s-line-2);border-radius:999px;font-size:var(--f-12)}
 .be-rep.puce:hover{border-color:var(--nv-cuivre)}
 
+/* ───────── style-zz-vivant.css ───────── */
+/* ── LE PLAN VIVANT (08-vivant, v92) : ce qui est sous tension garde sa couleur, le reste s'efface ; ce qui n'est plus
+   alimenté se dit en rouge (un état), en tirets ; ce qu'on peut ouvrir montre la main ── */
+#scene.vivant .cab,#scene.vivant .lead[data-i]{opacity:.22;transition:opacity .18s}
+#scene.vivant :is(.cab,.lead).vv-vif{opacity:1}
+#scene.vivant :is(.cab,.lead).vv-mort{opacity:1;stroke:var(--danger,#c8402f)!important;stroke-dasharray:5 4}
+#scene.vivant .cab.vv-coupe{stroke-dasharray:1.5 5;stroke-linecap:round}
+#scene.vivant .cab:is(.vv-vif,.vv-mort){cursor:pointer}
+#scene.vivant .comp.vv-ouvrable{cursor:pointer}
+#scene.vivant .comp.vv-ouvert .body{stroke:var(--danger,#c8402f)!important;stroke-dasharray:4 3}
+#scene.vivant .comp.vv-ouvert :is(.rep-big,text){fill:var(--danger,#c8402f)}
+#scene.vivant .comp.vv-prive{opacity:.4}
+#vivant{position:absolute;left:50%;top:64px;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:14px;max-width:min(760px,calc(100vw - 420px));padding:10px 12px 10px 16px;border-radius:14px;border:1px solid var(--s-line-2);background:var(--s-flottant,var(--s-surface));box-shadow:var(--sh-2,0 8px 28px rgba(0,0,0,.18));color:var(--t-1)}
+#vivant .vv-pt{flex:none;width:9px;height:9px;border-radius:50%;background:var(--nv-cuivre,#b8733a);box-shadow:0 0 0 4px color-mix(in srgb,var(--nv-cuivre,#b8733a) 22%,transparent);animation:vv-bat 2.4s ease-in-out infinite}
+@keyframes vv-bat{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--nv-cuivre,#b8733a) 0%,transparent)}}
+#vivant .vv-dit{display:flex;flex-direction:column;gap:1px;min-width:0}
+#vivant .vv-dit small{font:600 var(--f-11,11px)/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--nv-cuivre,#b8733a)}
+#vivant .vv-dit b{font:600 var(--f-13)/1.35 var(--sans)}
+#vivant .vv-dit span{font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+#vivant .btn{flex:none}
+@media (prefers-reduced-motion:reduce){#vivant .vv-pt{animation:none}}
+
 </style>
 </head>
 <body>
@@ -10398,6 +10420,7 @@ button.vu-cal:focus-visible,.nv-grand .nv-panneau .vu-cals>.vu-cal:focus-visible
               <button role="menuitem" data-act="recapitulatif" data-aide="Tout le plan en tableaux : liaisons, équipements, disjoncteurs, câbles, raccords, problèmes… On y corrige comme sur la fiche."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg><span class="menu-l">Récapitulatif</span><span class="raccourci">B</span></button>
               <button role="menuitem" data-act="nomenclature" data-aide="La LPA : ce qu’il faut commander, compté sur tout le plan — contacts, modules, connecteurs, câbles. S’enregistre en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">LPA</span><span class="raccourci">N</span></button>
               <button role="menuitem" data-act="bilanelec" data-aide="Ce que porte chaque disjoncteur, source par source : son calibre, ce qu’il tire, ce qu’il alimente. Une consommation non écrite reste inconnue."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg><span class="menu-l">Bilan électrique</span></button>
+              <button role="menuitem" data-act="vivant" data-aide="Le plan sous tension : ouvrez un disjoncteur, un relais, un interrupteur, coupez un câble — VOLTA montre et dit ce qui n’est plus alimenté. Rien n’est écrit dans le plan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2.5-6 4 12 2.5-6h5"/></svg><span class="menu-l">Plan vivant</span></button>
               <!-- (v86) l'historique du plan entier (08-journal) : son compte, dessous, se relit quand le menu s'ouvre -->
               <button role="menuitem" data-act="historique" class="menu-2l" data-aide="Tout ce qui a changé dans ce plan, par vous ou par VOLTA : avant, après, d’où venait la valeur, quand — et « Défaire » sur chaque ligne."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4 4.5V8h3.5"/><path d="M12 8v4.2l2.8 1.8"/></svg><span class="menu-l">Historique<small id="mn-historique">ce qui a changé, et Défaire</small></span><span class="raccourci">H</span></button>
               <button role="menuitem" data-act="dejafait" data-aide="Les plans de la base les plus proches du plan ouvert : ce qui est pareil, ce qui diffère, dessin par dessin."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M6 9h2M6 13h2M16 9h2M16 13h2"/></svg><span class="menu-l">Comparer au déjà-fait</span></button>
@@ -23825,7 +23848,7 @@ function noterExportDuPlan(nom) { const p = BIB.plans.get(app.planId); if (!p ||
      dans les notes tapées à la main.
    =========================================================================== */
 
-const BILAN = { version: 'v91', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v92', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -32347,7 +32370,8 @@ function peindreChoix() { const sc = $('scene'); if (!sc || !app.dessin) return;
    à chaque rendu (`peindre`) et à chaque contrôle (`synchroniser` : une correction, un Ctrl+Z, une hypothèse). */
 function peindreEtats() { const sc = $('scene'); if (!sc) return; const niv = new Map();
   ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).forEach(x => { if (x.nom && niv.get(String(x.nom)) !== 'ko') niv.set(String(x.nom), x.niveau === 'ko' ? 'ko' : 'att'); });
-  sc.querySelectorAll('.comp[data-name]').forEach(g => { const e = niv.get(g.dataset.name) || ''; g.classList.toggle('etat-ko', e === 'ko'); g.classList.toggle('etat-att', e === 'att'); }); }
+  sc.querySelectorAll('.comp[data-name]').forEach(g => { const e = niv.get(g.dataset.name) || ''; g.classList.toggle('etat-ko', e === 'ko'); g.classList.toggle('etat-att', e === 'att'); });
+  if (typeof peindreVivant === 'function' && typeof VIVANT !== 'undefined' && VIVANT.actif) peindreVivant(); }   // (v92) le plan vivant se repeint avec le folio
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 
 /* ---- la vue : zoom, cadrage, l'ombre sous la feuille ------------------- */
@@ -33146,7 +33170,7 @@ function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => 
   const d = c.kind === 'tag' ? '' : designationDe(nom), cc = estDisjoncteur(nom) && c.kind === 'equip' ? calibresDuFolio(nom) : null, cal = cc && cc.calibre;
   return T(nom) + ((genre || d || cal) ? l_(esc([genre, cal ? amperesCb(cal) + (cc.retest ? ' (votre fichier ' + amperesCb(cc.retest) + ')' : '') : '', d].filter(Boolean).join(' · '))) : '')
     + l_(pluriel(n, 'câble') + ' sur ce folio' + (ail.length ? ' · aussi sur f. ' + ail.join(' · ') : ''))
-    + (estRenvoi(nom) || c.rail ? '' : l_('Clic : sa fiche · glisser : le déplacer')); }
+    + (estRenvoi(nom) || c.rail ? '' : l_(typeof gesteVivant === 'function' && gesteVivant(nom) || 'Clic : sa fiche · glisser : le déplacer')); }
 let appuiDuPlan = null;   // le dernier appui simple sur la planche (l'instant, l'endroit, le bloc) : un double-clic peut finir ailleurs
 /* Un clic sur la planche : un bloc, un renvoi, un fil, ou le vide. Rend 'renvoi' quand il a mené au folio d'en face. */
 function cliquer(w) { const c = blocSous(w);
@@ -33795,7 +33819,8 @@ const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde',
   // (v88) la sauvegarde d'ensemble (08-sauvegarde) ; « Ouvrir un fichier… » prend aussi un PDF, un Visio
   sauvegarde: 'sauvegarder sauvegarde restaurer restauration copie tout garder fichier volta backup poste navigateur', pdf: 'pdf schema scan lire', comprendre: 'aide comprendre expliquer calcul',
   indice: 'indice nouvel suivant revision comparer difference change ajoute retire rebranche version fichier',
-  bilanelec: 'bilan electrique courant ampere consommation source batterie disjoncteur charge alimente' };
+  bilanelec: 'bilan electrique courant ampere consommation source batterie disjoncteur charge alimente',
+  vivant: 'plan vivant sous tension ouvrir disjoncteur fermer relais interrupteur couper cable casse alimente prive simulation' };
 const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'revue', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);
@@ -43138,6 +43163,75 @@ function lierEntreesVisio() {
   window.addEventListener('drop', e => { const fs = e.dataTransfer && e.dataTransfer.files ? [...e.dataTransfer.files] : [], f = fs.find(x => estVisio(x) || estVisioAncien(x)); if (!f) return;
     e.preventDefault(); e.stopImmediatePropagation(); window.dispatchEvent(new Event('drop')); ouvrirVisio(f); }, true); }
 if (typeof document !== 'undefined') lierEntreesVisio();
+
+/* ───────── 08-vivant.js ───────── */
+/* ===========================================================================
+   08 — LE PLAN VIVANT (v92) : ouvrir un disjoncteur, un relais, couper un câble — et voir ce qui n'est plus alimenté.
+
+   Le lecteur : « Le plan vivant, c'est brillant. » ⋮ › Plan vivant met le plan SOUS TENSION : depuis chaque source (une
+   batterie, une génératrice, un TR — 09-chute, `estSource`), le courant suit les câbles, passe les disjoncteurs, traverse
+   les relais et les interrupteurs (`cheminsDepuis`) jusqu'aux équipements. Au départ TOUT EST FERMÉ — le pire cas, celui
+   des calculs. Un clic sur un disjoncteur, un relais ou un interrupteur l'OUVRE ; un clic sur un câble le COUPE (« si ce
+   câble casse ») ; un second clic referme. Ce qui était alimenté et ne l'est plus se voit (le câble en tirets rouges,
+   l'équipement éteint) et se dit dans le bandeau, sur tout le plan — pas seulement le folio affiché.
+
+   VOLTA n'invente rien : il ne sait pas quel contact est au repos, il ne devine pas un état ; c'est le lecteur qui ouvre.
+   Rien n'est écrit dans le plan : le mode se quitte (Échap, « Quitter ») et tout revient.
+   =========================================================================== */
+const VIVANT = { actif: false, ouverts: new Set(), coupes: new Set(), E: null, lie: false };
+const CLASSES_VIVANT = ['vv-vif', 'vv-mort', 'vv-coupe', 'vv-ouvrable', 'vv-ouvert', 'vv-prive'];
+
+/* L'état du plan : deux passes sur les mêmes chemins — tout fermé (ce qui est alimenté d'ordinaire), puis avec ce que le
+   lecteur a ouvert ou coupé. Un chemin s'arrête au premier câble coupé, au premier passage ouvert. */
+function etatVivant() { const V = verite(), sources = reperesDe(V).filter(estSource), ouvrables = new Set();
+  const passe = (ouverts, coupes) => { const fils = new Set(), bouts = new Set(), vus = new Set();
+    const depuis = rep => { if (vus.has(rep)) return; vus.add(rep); let chs = []; try { chs = cheminsDepuis(V, rep).filter(ch => !ch.amont); } catch (_) { chs = []; }
+      chs.forEach(ch => { for (const s of ch.segments) { if (s.fil) { if (coupes.has(s.fil)) return; fils.add(s.fil); } else if (s.passage) { ouvrables.add(s.passage); if (ouverts.has(s.passage)) return; } }
+        const r = ch.bout[0]; if (!r) return; if (estDisjoncteur(r)) { ouvrables.add(r); if (!ouverts.has(r)) depuis(r); } else if (!estMasse(r)) bouts.add(r); }); };
+    sources.forEach(depuis); return { fils, bouts }; };
+  const normal = passe(new Set(), new Set()), vif = passe(VIVANT.ouverts, VIVANT.coupes);
+  return { sources, ouvrables, normal, vif, prives: [...normal.bouts].filter(r => !vif.bouts.has(r)).sort(triNaturel) }; }
+
+function peindreVivant() { const sc = $('scene'); if (sc) { sc.classList.toggle('vivant', VIVANT.actif); sc.querySelectorAll('.' + CLASSES_VIVANT.join(',.')).forEach(e => e.classList.remove(...CLASSES_VIVANT)); }
+  if (!VIVANT.actif) return; const E = VIVANT.E = etatVivant(); rendreBandeauVivant();
+  if (!sc || !app.dessin) return; const L = liaisonsDuPlan(), src = i => { const l = L[i]; return l ? (sourceDe(l) || null) : null; };
+  // ce que VOLTA ajoute (le câble d'une barrette à poser, ses shunts) n'est pas dans le fichier : il suit sa barrette
+  const vtVif = new Set(), vtNormal = new Set(); L.forEach(l => { const s = sourceDe(l); if (!s) return; [l.de, l.vers].forEach(r => { if (!VT_A_POSER.test(r || '')) return; if (E.vif.fils.has(s)) vtVif.add(r); if (E.normal.fils.has(s)) vtNormal.add(r); }); });
+  sc.querySelectorAll('[data-i]').forEach(e => { const is = e.dataset.i.split(' ').map(Number), ls = is.map(src).filter(Boolean), ajoutes = is.map(i => L[i]).filter(l => l && !sourceDe(l));
+    const vif = ls.some(l => E.vif.fils.has(l)) || ajoutes.some(l => vtVif.has(l.de) || vtVif.has(l.vers)), normal = ls.some(l => E.normal.fils.has(l)) || ajoutes.some(l => vtNormal.has(l.de) || vtNormal.has(l.vers));
+    if (ls.some(l => VIVANT.coupes.has(l))) e.classList.add('vv-coupe'); if (vif) e.classList.add('vv-vif'); else if (normal) e.classList.add('vv-mort'); });
+  const prives = new Set(E.prives);
+  sc.querySelectorAll('.comp[data-name]').forEach(g => { const n = g.dataset.name; if (E.ouvrables.has(n)) g.classList.add('vv-ouvrable'); if (VIVANT.ouverts.has(n)) g.classList.add('vv-ouvert'); if (prives.has(n)) g.classList.add('vv-prive'); }); }
+
+/* Le bandeau : ce qui est ouvert, ce qui est coupé, et ce que cela prive de courant — sur tout le plan. */
+function rendreBandeauVivant() { let el = document.getElementById('vivant'); if (!VIVANT.actif) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('div'); el.id = 'vivant'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); $('app').appendChild(el); }
+  const E = VIVANT.E || etatVivant(), nO = VIVANT.ouverts.size, nC = VIVANT.coupes.size, liste = xs => xs.slice(0, 8).join(', ') + (xs.length > 8 ? ' et ' + pluriel(xs.length - 8, 'autre') : '');
+  let dit;
+  if (!E.sources.length) dit = '<b>Ce plan ne porte pas de source</b><span>Sans batterie, génératrice ni TR dans votre fichier, rien n’est à mettre sous tension.</span>';
+  else if (!nO && !nC) dit = `<b>Tout est fermé : ${esc(pluriel(E.normal.bouts.size, 'équipement'))} sous tension</b><span>Cliquez un disjoncteur, un relais, un interrupteur ou un câble pour l’ouvrir.</span>`;
+  else { const quoi = [nO ? [...VIVANT.ouverts].sort(triNaturel).join(', ') + (nO > 1 ? ' ouverts' : ' ouvert') : '', nC ? pluriel(nC, 'câble') + (nC > 1 ? ' coupés' : ' coupé') : ''].filter(Boolean).join(' · ');
+    dit = `<b>${esc(quoi)}</b><span>${E.prives.length ? esc(pluriel(E.prives.length, 'équipement')) + (E.prives.length > 1 ? ' privés' : ' privé') + ' de courant : ' + esc(liste(E.prives)) : 'Aucun équipement n’est privé de courant : un autre chemin les alimente.'}</span>`; }
+  el.innerHTML = `<i class="vv-pt" aria-hidden="true"></i><div class="vv-dit"><small>Plan vivant</small>${dit}</div>${nO || nC ? '<button type="button" class="btn papier dense" data-vv="refermer">Tout refermer</button>' : ''}<button type="button" class="btn lien" data-vv="quitter">Quitter</button>`; }
+
+/* Ce qu'un clic vise : un disjoncteur, un relais, un interrupteur que le courant passe ; un câble qu'il emprunte. */
+function cibleVivante(t) { const E = VIVANT.E; if (!E || !t || !t.closest) return null;
+  const w = t.closest('[data-i]'); if (w && !w.classList.contains('lead')) { const L = liaisonsDuPlan(), ls = w.dataset.i.split(' ').map(i => { const l = L[+i]; return l ? sourceDe(l) : null; }).filter(l => l && (E.normal.fils.has(l) || VIVANT.coupes.has(l))); if (ls.length) return { fil: ls[0] }; }
+  const g = t.closest('.comp[data-name]'); if (g && E.ouvrables.has(g.dataset.name)) return { nom: g.dataset.name };
+  return null; }
+// ce que dit le survol d'un bloc pendant le plan vivant : le clic l'ouvre ou le referme (08-interface, 08-survol)
+const gesteVivant = nom => !VIVANT.actif || !VIVANT.E || !VIVANT.E.ouvrables.has(nom) ? '' : VIVANT.ouverts.has(nom) ? 'Clic : le refermer' : 'Clic : l’ouvrir';
+function basculerVivant(c) { const S = c.fil ? VIVANT.coupes : VIVANT.ouverts, k = c.fil || c.nom; if (S.has(k)) S.delete(k); else S.add(k); peindreVivant(); }
+function lierVivant() { if (VIVANT.lie) return; VIVANT.lie = true; const stage = $('planche'); let depart = null;
+  stage.addEventListener('pointerdown', e => { if (!VIVANT.actif) return; const c = cibleVivante(e.target); depart = c ? { x: e.clientX, y: e.clientY, c } : null; if (c) e.stopPropagation(); }, true);
+  stage.addEventListener('pointerup', e => { if (!VIVANT.actif || !depart) return; const d = depart; depart = null; e.stopPropagation(); if (Math.hypot(e.clientX - d.x, e.clientY - d.y) <= 5) basculerVivant(d.c); }, true);
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#vivant [data-vv]'); if (!b) return; if (b.dataset.vv === 'quitter') quitterVivant(); else { VIVANT.ouverts.clear(); VIVANT.coupes.clear(); peindreVivant(); } });
+  document.addEventListener('keydown', e => { if (!VIVANT.actif || e.key !== 'Escape' || e.defaultPrevented) return; if (!$('fiche').hidden || !$('inspecteur').hidden || (typeof menuOuvert === 'function' && menuOuvert())) return; quitterVivant(); }); }
+function entrerVivant() { lierVivant(); if (VIVANT.actif) return; VIVANT.actif = true; VIVANT.ouverts.clear(); VIVANT.coupes.clear();
+  if (typeof fermerFiche === 'function') fermerFiche(); if (app.choisi || app.cible) { app.choisi = null; app.cible = null; if (typeof eteindre === 'function') eteindre(); peindre(); } else peindreVivant(); }
+function quitterVivant() { if (!VIVANT.actif) return; VIVANT.actif = false; VIVANT.ouverts.clear(); VIVANT.coupes.clear(); VIVANT.E = null; peindreVivant(); rendreBandeauVivant(); }
+
+MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.vivant = surLePlan(() => (VIVANT.actif ? quitterVivant() : entrerVivant()));
 
 /* ───────── 08-vues.js ───────── */
 /* ===========================================================================
