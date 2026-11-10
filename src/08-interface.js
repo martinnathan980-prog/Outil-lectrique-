@@ -2557,7 +2557,7 @@ function hypothesesDe(N, H, ctx) { ctx = ctx || {}; const regime = REGIMES[H.reg
   const faisceau = N.declassements.some(d => d.fils != null) && H.conditions.includes('faisceau'), altitude = N.declassements.some(d => d.altitude != null) && H.conditions.includes('altitude');
   const TABLEAU = 'L’ambiante du tableau de disjoncteurs : seules les courbes de disjonction qui l’encadrent jugent';
   return [
-    nb('si-L', 'longueur', 'longueur', 'm', '0.5', 'fil', 'La longueur d’un câble que l’installation ne mesure pas : la chute sur ce câble, et la chute en ligne depuis le disjoncteur, se calculent dessus.'),
+    nb('si-L', 'longueur', 'longueur', 'm', '0.5', 'fil', 'La longueur d’un câble que votre fichier ne donne pas : la chute sur ce câble, et la chute en ligne depuis le disjoncteur, se calculent dessus.'),
     // (v88, le lecteur : « l'outil dit la vérité, pas inventé ») plus d'hypothèse de courant : sans consommation connue, il est inconnu
     nb('si-U', 'tension', 'tension', 'V', '1', 'fil', 'La tension du réseau : le pourcentage de chute, et la ligne de la table Réseau quand la chute admise de la règle du lecteur est vidée.'),
     N.fils.some(f => f.tr != null) ? nb('si-T', 'ambiante', 'ambiante', '°C', '5', 'temperature', 'L’ambiante autour des câbles : l’EN 2853 déclasse ce qu’un câble admet (note 2), et sa tenue en température se juge dessus (+ 40 °C au conducteur).') : null,

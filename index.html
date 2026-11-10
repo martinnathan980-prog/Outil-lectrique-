@@ -10264,7 +10264,7 @@ svg.vu-face text.pris{fill:#fff}
             <button role="menuitem" class="menu-retour" data-retour><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span class="menu-l">Réglages</span></button>
             <div class="menu-bloc" role="group" aria-label="Ce qui juge">
               <button role="menuitem" data-act="hypotheses" data-aide="Ce que votre fichier ne dit pas : 5 m par câble sans longueur, 28 V, 95 °C… Les changer refait les calculs."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="menu-l">Hypothèses</span></button>
-              <button role="menuitem" class="menu-2l" data-act="normes" data-aide="Les tables qui jugent chaque câble (câbles, contacts, raccords, disjoncteurs, chute) et la bible : les références de chaque barrette, connecteur et prise. On y cherche, on corrige, on importe les vôtres."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h9M4 20h6"/><path d="m15 18 2 2 4-4"/></svg><span class="menu-l">Normes et bible<small>les tables · les références</small></span></button>
+              <button role="menuitem" class="menu-2l" data-act="normes" data-aide="Les tables qui jugent chaque câble et la bible des barrettes, connecteurs et prises. On y cherche, on corrige, on importe les vôtres."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h9M4 20h6"/><path d="m15 18 2 2 4-4"/></svg><span class="menu-l">Normes et bible<small>les tables · les références</small></span></button>
               <button role="menuitem" data-act="cartouche" data-aide="Le titre, le dessinateur, la date et l’indice, écrits en bas à droite de chaque folio."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M10 14h11M10 14v6M15.5 14v6"/></svg><span class="menu-l">Cartouche…</span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Vos données">
@@ -24950,7 +24950,7 @@ function poserLesBarrettes(noms) { const vus = new Set(), faits = [];
   if (!faits.length) { dire('Aucune barrette n’a pu recevoir son repère.', true); return 0; }
   if (faits.length > 1) { const debut = app.hist.length - faits.length;   // chaque pose a écrit la sienne, à la suite
     if (debut >= 0 && app.hist[debut]) { app.hist.splice(debut + 1); app.hist[debut].quoi = 'pose de ' + pluriel(faits.length, 'barrette'); synchroniserHistorique(); }
-    dire(faits.map(([vt, nom]) => vt + ' devient ' + nom).join(', ') + ' : elles entrent dans votre installation, chacune avec son câble à créer et ses shunts.', false, { geste: 'Défaire', faire: defaire }); }
+    dire(faits.map(([vt, nom]) => vt + ' devient ' + nom).join(', ') + ' : elles entrent dans l’Excel corrigé, chacune avec son câble à créer et ses shunts.', false, { geste: 'Défaire', faire: defaire }); }
   return faits.length; }
 /* (v86, l'audit B3) LES GESTES DES ÉCRITURES DU FICHIER — des propositions de VOLTA, qui partent dans l'Excel corrigé (rien
    d'autre ne réécrit le fichier : jusque-là, VOLTA dessine juste et rend le fichier tel qu'il l'a lu) ; chacun une entrée
@@ -30566,7 +30566,9 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
 // les entrées cachées de « Vos fichiers » (et de la bibliothèque) : la base, une norme ; la bible a la sienne (page.html), les plans aussi (08-bibliotheque)
 function lierEntreesFichiers() { const f = (id, fn) => { const el = $(id); if (el && !el.dataset.lie) { el.dataset.lie = '1'; el.addEventListener('change', e => { const x = e.target.files && e.target.files[0]; if (x) fn(x); e.target.value = ''; }); } };
   f('fichier-base', importerReferences); f('fichier-normes', importerNorme); f('fichier-see', lireBaseSEE);
-  const t = $('toast'); if (t && !t.dataset.lie) { t.dataset.lie = '1'; t.addEventListener('mouseenter', () => clearTimeout(toastT)); t.addEventListener('mouseleave', () => { if (t.classList.contains('on') && !TOAST.erreur) toastT = setTimeout(() => t.classList.remove('on', 'action'), 2500); }); } }
+  const t = $('toast'); if (t && !t.dataset.lie) { t.dataset.lie = '1'; t.addEventListener('mouseenter', () => clearTimeout(toastT)); t.addEventListener('mouseleave', () => { if (t.classList.contains('on') && !TOAST.erreur) {
+      // (v89) le minuteur d'avant d'abord : sans cela il restait armé, et effaçait plus tard le message suivant — même une erreur, qui doit rester jusqu'au clic
+      clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on', 'action'), 2500); } }); } }
 
 /* ───────── 08-ia.js ───────── */
 /* ===========================================================================
@@ -33764,7 +33766,7 @@ function hypothesesDe(N, H, ctx) { ctx = ctx || {}; const regime = REGIMES[H.reg
   const faisceau = N.declassements.some(d => d.fils != null) && H.conditions.includes('faisceau'), altitude = N.declassements.some(d => d.altitude != null) && H.conditions.includes('altitude');
   const TABLEAU = 'L’ambiante du tableau de disjoncteurs : seules les courbes de disjonction qui l’encadrent jugent';
   return [
-    nb('si-L', 'longueur', 'longueur', 'm', '0.5', 'fil', 'La longueur d’un câble que l’installation ne mesure pas : la chute sur ce câble, et la chute en ligne depuis le disjoncteur, se calculent dessus.'),
+    nb('si-L', 'longueur', 'longueur', 'm', '0.5', 'fil', 'La longueur d’un câble que votre fichier ne donne pas : la chute sur ce câble, et la chute en ligne depuis le disjoncteur, se calculent dessus.'),
     // (v88, le lecteur : « l'outil dit la vérité, pas inventé ») plus d'hypothèse de courant : sans consommation connue, il est inconnu
     nb('si-U', 'tension', 'tension', 'V', '1', 'fil', 'La tension du réseau : le pourcentage de chute, et la ligne de la table Réseau quand la chute admise de la règle du lecteur est vidée.'),
     N.fils.some(f => f.tr != null) ? nb('si-T', 'ambiante', 'ambiante', '°C', '5', 'temperature', 'L’ambiante autour des câbles : l’EN 2853 déclasse ce qu’un câble admet (note 2), et sa tenue en température se juge dessus (+ 40 °C au conducteur).') : null,

@@ -60,7 +60,7 @@ const FICHIER = P.fichierDemande();
     let e = await ecran(...c); await page.mouse.click(e.x, e.y); await page.waitForTimeout(30);
     const naissance = tel ? null : await page.evaluate(() => ({ anim: $('inspecteur').getAnimations().length, flotte: document.body.classList.contains('insp-flotte') }));
     await page.waitForTimeout(470); await posee();
-    ok(await page.evaluate(() => !$('inspecteur').hidden && $('eq-rep') && $('eq-rep').value === '103RL1'), 'un clic sur 103RL1 ouvre sa fiche');
+    ok(await page.evaluate(() => !$('inspecteur').hidden && app.cible && app.cible.nom === '103RL1' && /103RL1/.test(($('inspecteur').querySelector('.nc-rep-t') || {}).textContent || '') && !$('inspecteur').querySelector('input')), 'un clic sur 103RL1 ouvre sa carte : son repère se lit, aucun champ pour le retaper');
     let r = await recouvre(couvrants); ok(!r.length, tel ? 'la feuille n’est pas sous le tiroir' : 'la feuille n’est sous aucun panneau (la carte flotte, elle ne prend pas de place)', r.join(' '));
     if (!tel) {
       // LA CARTE : elle naît du bloc (une animation la fait grandir depuis lui), se pose à côté sans le cacher, et le plan ne bouge pas
@@ -74,14 +74,13 @@ const FICHIER = P.fichierDemande();
       await page.mouse.move(barre.x, barre.y); await page.mouse.down(); await page.mouse.move(barre.x + 60, barre.y + 40, { steps: 8 }); await page.mouse.up(); await page.waitForTimeout(200); await posee();
       const b1 = await boite();
       ok(Math.abs(b1.x - b0.x - 60) <= 2 && Math.abs(b1.y - b0.y - 40) <= 2 && await page.evaluate(() => CARTE.deplacee && !$('inspecteur').hidden && $('carte-lien').classList.contains('on')), 'la barre tenue déplace la carte, le fil suit, la fiche reste ouverte', JSON.stringify({ b0, b1 }));
-      // l'épingle : le volet d'hier, le plan recadré à côté ; puis la carte revient
-      await page.click('#fi-epingle'); await page.waitForTimeout(500); await posee();
-      const ep = await page.evaluate(() => ({ cls: document.body.className, droite: marges().droite, bord: Math.round(innerWidth - $('inspecteur').getBoundingClientRect().right), haut: Math.round($('inspecteur').getBoundingClientRect().top) }));
-      r = await recouvre(['inspecteur']);
-      ok(/insp-epingle/.test(ep.cls) && !/insp-flotte/.test(ep.cls) && ep.droite > 300 && ep.bord <= 12 && ep.haut === 62 && !r.length, 'l’épingle en fait le volet de droite, et la feuille se recadre à côté', JSON.stringify(ep) + ' ' + r.join(' '));
-      await page.click('#fi-epingle'); await page.waitForTimeout(500); await posee();
+      // « Tout voir » (v79) : la fiche s'ouvre en grand, à droite ; Échap rend la carte, à côté de son bloc
+      await page.click('#fi-tout-voir'); await page.waitForTimeout(600); await posee();
+      const ep = await page.evaluate(() => ({ cls: document.body.className, onglets: document.querySelectorAll('#inspecteur [role="tab"]').length, bords: document.querySelectorAll('#inspecteur .carte-bords [data-bord]').length, droite: Math.round(innerWidth - $('inspecteur').getBoundingClientRect().right) }));
+      ok(/insp-grand/.test(ep.cls) && ep.onglets >= 3 && ep.bords === 8 && ep.droite >= 0 && ep.droite <= 24, '« Tout voir » ouvre la fiche en grand, à droite : ses onglets, ses huit bords et coins pour la tirer', JSON.stringify(ep));
+      await page.keyboard.press('Escape'); await page.waitForTimeout(500); await posee();
       cc = await cache('103RL1');
-      ok(await page.evaluate(() => document.body.classList.contains('insp-flotte') && marges().droite === 24 && !CARTE.epingle) && !cc, 'détachée, elle redevient une carte à côté de son bloc, le plan reprend toute la place', cc);
+      ok(await page.evaluate(() => document.body.classList.contains('insp-flotte') && !document.body.classList.contains('insp-grand') && marges().droite === 24 && !$('inspecteur').hidden) && !cc, 'Échap la rend en carte, à côté de son bloc ; le plan reprend toute la place', cc);
       // Échap la ferme tout de suite (les gestes n'attendent rien) ; c'est son double, sans identifiants, qui rentre dans le bloc
       await page.keyboard.press('Escape'); await page.waitForTimeout(40);
       const fermee = await page.evaluate(() => ({ cache: $('inspecteur').hidden, cible: !!app.cible, doubles: [...document.querySelectorAll('.carte-double')].map(d => d.getAttribute('aria-hidden') === 'true' && !d.querySelector('[id]')) }));
@@ -90,7 +89,7 @@ const FICHIER = P.fichierDemande();
     }
     ok(await page.evaluate(() => $('base').hidden), 'le tableau reste fermé');
     const f = await pointDuCable('W-014'); await page.mouse.click(f.x, f.y); await page.waitForTimeout(500);
-    ok(await page.evaluate(() => app.cible && app.cible.type === 'fil' && $('ba-equip').textContent.includes('W-014')), 'un clic sur W-014 ouvre la fiche du fil');
+    ok(await page.evaluate(() => app.cible && app.cible.type === 'fil' && app.cible.l.cable === 'W-014' && /DR24/.test(($('ba-equip').querySelector('.nc-rep-t') || {}).textContent || '') && !/W-014/.test($('ba-equip').textContent)), 'un clic sur un câble ouvre sa carte : son type et ses deux bouts, plus de numéro');
     const sAvantB = await page.evaluate(() => app.vue.s);
     await page.keyboard.press('b'); await page.waitForTimeout(600);
     // (sous charge, l'élan de la carte vers le volet — 300 ms — dure plus : on juge sa place une fois posée)
@@ -127,79 +126,7 @@ const FICHIER = P.fichierDemande();
     ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
     await page.close();
   }
-  /* LE RÉCAPITULATIF, pratique au quotidien (v58) : neuf onglets, chaque objet dans un seul ; peu de colonnes d'office,
-     le reste au choix ; les mots du lecteur (câble, gauge, raccord) ; un état en un point et un mot, son pourquoi dans la
-     bulle, la chute admise lue au moteur ; tout s'écrit d'un double-clic (Tab la suivante), ↺ rend le calcul ; le clic
-     ouvre la fiche, l'onglet se garde, le CSV suit les colonnes. */
-  console.log('\nle récapitulatif');
-  { const page = await nav.newPage({ viewport: { width: 1440, height: 900 } }); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, true)))); await page.evaluate(P.deplierDansLaPage); await page.evaluate(() => atelier.exempleSansCalibreAuto());   // les fiches s'ouvrent pliées : la batterie lit leurs sections
-    await page.evaluate(() => { app.plan = '1'; redessiner(); ajuster(); }); await page.keyboard.press('b'); await page.waitForTimeout(500);
-    const entetes = () => page.evaluate(() => [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent.replace(/[▲▼]/g, '').trim()).filter(Boolean).join(' · '));
-    const onglets = await page.evaluate(() => [...document.querySelectorAll('#ba-onglets .rc-onglet > span:not(.rc-ns)')].map(s => s.textContent).join(' · '));
-    // (v74 : le rail en trois groupes — Câblage, Matériel, Contrôle —, les Câbles avec les Liaisons — MIS À JOUR)
-    ok(onglets === 'Problèmes · Liaisons · Câbles · Équipements · Disjoncteurs · Barrettes · Prises · Raccords · Normes', 'neuf onglets, chaque objet dans un seul (plus de « Contacts » : la nomenclature les compte) — v77 : les problèmes en tête, puis le câblage, le matériel, les normes en bas', onglets);
-    ok(await entetes() === 'De · Câble · Vers · Longueur · État', 'Liaisons, d’office : de, le câble, vers, la longueur, l’état', await entetes());
-    // les mots du lecteur : partout où le récapitulatif parle (les phrases du contrôle et les titres des normes viennent d'ailleurs)
-    const mots = await page.evaluate(() => { const vus = []; for (const [k] of ONGLETS) { changerOnglet(k); ouvrirMenuColonnes();
-        const t = [$('ba-onglets').innerText, $('ba-thead').innerText, $('ba-puces').innerText, $('ba-filtre').placeholder, $('ba-ajouter').hidden ? '' : $('ba-ajouter').innerText, $('ba-colonnes-menu').innerText, k === 'problemes' || k === 'normes' ? '' : $('ba-tbody').innerText].join(' ');
-        fermerMenuColonnes(); const m = t.match(/(^|[^\p{L}])(fils?|jauges?|habillages?)(?![\p{L}])/giu); if (m) vus.push(k + ' : ' + [...new Set(m.map(x => x.trim()))].join(', ')); }
-      changerOnglet('liaisons'); return vus; });
-    ok(!mots.length, 'le récapitulatif dit « câble », « gauge », « raccord » — plus « fil », « jauge », « habillage »', mots.join(' | '));
-    const E = await page.evaluate(() => { const tr = [...document.querySelectorAll('#ba-tbody tr[data-i]')], ligne = c => tr.find(t => verite()[+t.dataset.i].cable === c), etat = t => t && t.querySelector('td.rc-c-etat .rc-etat');
-      const w12 = etat(ligne('W-012')), l = verite().find(l => l.cable === 'W-012'), c = chuteDuFil(l, intensiteCalculee(l));
-      return { w12: w12 ? w12.className + '|' + w12.textContent : '', bulle: w12 ? w12.dataset.bulle : '', admise: volts(c.max), w11: (etat(ligne('W-011')) || {}).textContent, mots: [...new Set(tr.map(t => (etat(t) || {}).textContent).filter(Boolean))].sort().join(',') }; });
-    ok(/ko\|problème$/.test(E.w12) && /Intensité/.test(E.bulle) && new RegExp('Chute en ligne : .* (sur|>) ' + E.admise + ' admis').test(E.bulle) && E.w11 === 'à voir' && E.mots.split(',').every(m => ['ok', 'à voir', 'problème'].includes(m)),
-      'un état par liaison, un point et un mot (ok, à voir, problème) ; W-012 : problème, l’intensité et la chute dans sa bulle, contre la chute admise du moteur ; W-011 (DR16) à voir : il est sous le 15 A que l’automatique retient', JSON.stringify(E));
-    // Équipements : les équipements seuls, d'office le repère, le type, la norme, les problèmes
-    await page.evaluate(() => { app.base.portee = 'tout'; changerOnglet('equipements'); }); await page.waitForTimeout(200);
-    const Q = await page.evaluate(() => { const tr = [...document.querySelectorAll('#ba-tbody tr[data-k]')], ligne = n => tr.find(t => t.dataset.k === n), cases = t => t ? [...t.querySelectorAll('td')].map(x => x.textContent.trim()).filter(Boolean).join(' | ') : '';
-      return { genres: [...new Set(tr.map(t => genreDuRepere(t.dataset.k)))].join(','), entetes: [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent).filter(Boolean).join(' · '), xc: cases(ligne('300XC1')), bt: cases(ligne('101BT1')) }; });
-    ok(Q.genres === 'eqpt' && Q.entetes === 'Repère · Type · Norme · Problèmes' && /^300XC1 \| Connecteur \| EN 4165-002 \| \d+ problèmes?$/.test(Q.xc) && /^101BT1 \| Batterie \| — \| ok$/.test(Q.bt),
-      'Équipements : les équipements seuls (disjoncteurs, barrettes, prises ont leur onglet) — le repère, le type, la norme, les problèmes ; ni part number ni nombre de câbles', JSON.stringify(Q));
-    await page.click('#ba-tbody tr[data-k="103RL1"] td.rc-c-norme'); await page.waitForTimeout(500);
-    ok(await page.evaluate(() => app.cible && app.cible.nom === '103RL1' && !$('inspecteur').hidden && app.choisi === '103RL1' && document.querySelector('#ba-tbody tr[data-k="103RL1"]').classList.contains('on')), 'un clic sur une ligne ouvre sa fiche et l’allume sur le plan');
-    // Disjoncteurs : le calibre retenu, son verdict (celui du moteur), le meilleur ; en retenir un autre d'ici, Ctrl+Z le rend
-    await page.evaluate(() => changerOnglet('disjoncteurs')); await page.waitForTimeout(200);
-    const D = await page.evaluate(() => { const d = disjonctionDe('102CB1'), tr = document.querySelector('#ba-tbody tr[data-k="102CB1"]');
-      return { entetes: [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent).filter(Boolean).join(' · '), cal: tr.querySelector('[data-f="calibre"]').textContent, calibre: d.calibre, attendu: nombre(d.calibre), pn: pnDuRepere('102CB1'),
-        verdict: tr.querySelector('td.rc-c-etat .rc-etat').textContent, juge: verdictDeCalibre(d).mot, ideal: d.calibreIdeal, retenir: !!tr.querySelector('[data-retenir]'), gamme: d.gamme.map(g => g.calibre) }; });
-    // (v73, domaine E : le calibre du fichier d'office, le verdict en trois mots — passe, juste, déclenche —, le meilleur en colonne au choix ; v74 : la colonne se dit « Installation » — MIS À JOUR)
-    ok(D.entetes === 'Repère · Calibre · Installation · Verdict · Problèmes' && D.cal === D.attendu && D.verdict === D.juge && ['passe', 'touche la courbe', 'déclenche'].includes(D.verdict), 'Disjoncteurs : le calibre retenu, celui de l’installation, son verdict (celui du moteur : passe, touche la courbe, déclenche — v77)', JSON.stringify(D));
-    const autre = D.retenir ? D.ideal : D.gamme.find(c => c !== D.calibre);
-    if (D.retenir) await page.click('#ba-tbody tr[data-k="102CB1"] [data-retenir]');
-    // (v73 : la case Calibre ouvre toute la gamme, le composant de la fiche — MIS À JOUR : plus de liste du navigateur)
-    else { await page.dblclick('#ba-tbody tr[data-k="102CB1"] [data-f="calibre"]'); await page.waitForSelector('#rc-gamme'); await page.click(`#rc-gamme .rc-g-l[data-cal="${autre}"]`); }
-    await page.waitForTimeout(700);
-    ok(await page.evaluate(a => calibreDe('102CB1') === a && document.querySelector('#ba-tbody tr[data-k="102CB1"] [data-f="calibre"]').textContent === nombre(a), autre), 'retenir un autre calibre d’ici : ' + autre + ' A, comme dans la fiche');
-    await page.evaluate(() => annuler()); await page.waitForTimeout(500);
-    ok(await page.evaluate(d => calibreDe('102CB1') === d.calibre && pnDuRepere('102CB1') === d.pn, D), 'Ctrl+Z rend le calibre d’avant');
-    // les colonnes : en ajouter une, revenir à celles d'office
-    await page.evaluate(() => { changerOnglet('liaisons'); app.base.portee = 'folio'; rendreBase(true); }); await page.waitForTimeout(200);
-    await page.click('#ba-colonnes'); await page.click('#ba-colonnes-menu input[data-col="jauge"]'); await page.waitForTimeout(300); const avec = await entetes();
-    await page.click('#ba-colonnes-defaut'); await page.waitForTimeout(300); await page.keyboard.press('Escape'); const sans = await entetes();
-    ok(avec === 'De · Câble · Vers · Longueur · État · Gauge' && sans === 'De · Câble · Vers · Longueur · État', '« Colonnes » : la gauge s’ajoute, « Revenir aux colonnes d’office » la retire', avec);
-    // écrire d'un double-clic : au survol, la valeur a l'air d'un champ ; Tab passe à la suivante ; ↺ rend le calcul
-    const k = await page.evaluate(() => [...document.querySelectorAll('#ba-tbody tr[data-i]')].find(t => verite()[+t.dataset.i].cable === 'W-013').dataset.k), sel = `#ba-tbody tr[data-k="${k}"]`;
-    await page.hover(`${sel} [data-f="longueur"]`); await page.waitForTimeout(250);
-    // (le soulignement vient d'une transition : sous charge, on l'attend un peu)
-    await page.waitForFunction(s => { const t = getComputedStyle(document.querySelector(s + ' [data-f="type"]')); return t.textDecorationStyle === 'dotted' && t.textDecorationColor !== 'rgba(0, 0, 0, 0)'; }, sel, { timeout: 5000 }).catch(() => {});
-    const air = await page.evaluate(s => { const v = document.querySelector(s + ' [data-f="longueur"]'), t = getComputedStyle(document.querySelector(s + ' [data-f="type"]'));
-      return { champ: getComputedStyle(v).boxShadow !== 'none', souligne: t.textDecorationStyle === 'dotted' && t.textDecorationColor !== 'rgba(0, 0, 0, 0)', titre: v.getAttribute('aria-description') || '', bulle: v.dataset.bulle || '' }; }, sel);
-    ok(air.champ && air.souligne && /double-clic/i.test(air.titre) && /supposée/.test(air.bulle), 'au survol, la valeur modifiable a l’air d’un champ et les autres de sa ligne se soulignent', JSON.stringify(air));
-    await page.dblclick(`${sel} [data-f="longueur"]`); await page.fill(`${sel} input[data-f="longueur"]`, '3,25'); await page.press(`${sel} input[data-f="longueur"]`, 'Tab'); await page.waitForTimeout(500);
-    const L1 = await page.evaluate(s => { const a = document.activeElement; return { L: verite().find(l => l.cable === 'W-013').longueur, main: !!document.querySelector(s + ' .rc-o.main'), rond: !!document.querySelector(s + ' .rc-auto[data-auto="longueur"]'), suite: a && a.tagName === 'INPUT' ? a.dataset.f : '' }; }, sel);
-    ok(L1.L === 3.25 && L1.main && L1.rond && L1.suite === 'de', 'double-clic sur la longueur, 3,25, Tab : écrite (« main » et ↺), le curseur dans la case suivante', JSON.stringify(L1));
-    await page.keyboard.press('Escape'); await page.waitForTimeout(200); await page.click(`${sel} .rc-auto[data-auto="longueur"]`); await page.waitForTimeout(400);
-    ok(await page.evaluate(() => !(verite().find(l => l.cable === 'W-013').longueur > 0)), '↺ rend la longueur de l’installation (ici, l’hypothèse)');
-    // la mémoire de l'onglet, l'export de ce qu'on voit
-    ok(await page.evaluate(() => { changerOnglet('cables'); const o = JSON.parse(localStorage.getItem('atelier.recap.v2') || '{}'); changerOnglet('liaisons'); return o.onglet === 'cables'; }), 'l’onglet ouvert se garde dans ce navigateur');
-    await page.click('#ba-csv'); const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#ba-csv-vu')]);
-    const csv = require('fs').readFileSync(await dl.path(), 'utf8').replace(/^﻿/, '').split('\n');
-    ok(csv[0] === 'De;Câble;Vers;Longueur;État' && csv.length === 9, 'le CSV de l’onglet : ses colonnes, ses lignes (les huit du folio 1)', csv[0] + ' · ' + (csv.length - 1) + ' lignes');
-    ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
-    await page.close(); }
-  // chaque dédoublement : une vraie barrette, une borne par fil, jamais deux fils au même niveau
+  /* (v89) LE RÉCAPITULATIF a sa batterie : tests/documents.js — ses onglets, ses colonnes, ses comptes, ses exports. */
   console.log('\nbarrettes à poser');
   const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
   await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, true)))); await page.evaluate(P.deplierDansLaPage); await page.evaluate(() => atelier.exempleSansCalibreAuto());   // l’outil s’ouvre sur la bibliothèque : la batterie, qui lit l’exemple, le demande ; les fiches s'ouvrent pliées : la batterie ouvre leurs sections
@@ -218,8 +145,8 @@ const FICHIER = P.fichierDemande();
       .concat(doubles.length ? [{ pl, nom: '—', doubles }] : []); }));
   ok(vts.length > 0, 'l’exemple a des dédoublements', vts.length + ' barrettes à poser');
   vts.forEach(v => v.nom === '—' ? ok(false, `folio ${v.pl} : des bornes d’équipement portent encore deux fils`, v.doubles.join(' '))
-    : ok(v.bornes === v.fils + 1 && v.distinctes && v.ecrit && !v.doubles.length && v.numeros === Array.from({ length: v.fils + 1 }, (_, i) => i + 1).join(''),
-      `folio ${v.pl} · ${v.nom} : ${v.fils} fils + le fil à créer = ${v.fils + 1} bornes numérotées 1 à ${v.fils + 1}, chacune à sa hauteur, repère écrit`, v.bornes + ' bornes · ' + v.numeros));
+    : ok(v.bornes === v.fils + 1 && v.distinctes && v.ecrit && !v.doubles.length && /^(\d+[A-Z]){2,}$/.test(v.numeros) && new Set(v.numeros.match(/\d+[A-Z]/g)).size === v.bornes,
+      `folio ${v.pl} · ${v.nom} : ${v.fils} câbles + le câble à créer = ${v.fils + 1} bornes, chacune dite comme la pièce (module + lettre : 51H, 51J…), à sa hauteur, repère écrit`, v.bornes + ' bornes · ' + v.numeros));
   // la fiche de VT1, puis la poser au contrat sous un vrai repère, et la reprendre
   // un clic sur la barrette, à la vraie souris
   await page.evaluate(() => { app.plan = '1'; deselectionner(); redessiner(); ajuster(); }); await page.waitForTimeout(300);
@@ -227,122 +154,17 @@ const FICHIER = P.fichierDemande();
     return { x: r.left + app.vue.tx + b.x * app.vue.s, y: r.top + app.vue.ty + (bs[0].y + bs[1].y) / 2 * app.vue.s }; });
   await page.mouse.click(vt1.x, vt1.y); await page.waitForTimeout(400);
   ok(await page.evaluate(() => app.cible && app.cible.nom === 'VT1' && !$('inspecteur').hidden), 'un clic sur la barrette VT1 ouvre sa fiche');
-  ok(await page.evaluate(() => /ajoutée par Volta/i.test($('ba-equip').textContent) && $('ba-equip').querySelectorAll('.fi-fil').length === 3), 'la fiche de VT1 : à poser, trois bornes');
-  await page.fill('#eq-rep', '102VT9'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => /ajoutée par VOLTA sur 102CB1:2/.test($('ba-equip').textContent) && /Barrette de jonction/.test($('ba-equip').querySelector('.nc-genre-mot').textContent) && /^Contacts\s*3/.test([...$('ba-equip').querySelectorAll('.nc-chiffre')].map(c => c.textContent.replace(/\s+/g, ' ').trim()).find(t => /^Contacts/.test(t)) || '') && !!$('vt-repere') && $('vt-poser').textContent.trim() === 'Lui donner son repère'),
+    'la carte de VT1 : une barrette de jonction « ajoutée par VOLTA sur 102CB1:2 », trois contacts pris, un repère proposé — « Lui donner son repère »');
+  await page.fill('#vt-repere', '102VT9'); await page.click('#vt-poser'); await page.waitForTimeout(800);
   ok(await page.evaluate(() => { const L = app.contrat.liaisons.filter(l => l.de === '102VT9' || l.vers === '102VT9');
-    return L.length === 5 && L.some(l => l.de === '102CB1' && l.borneDe === '2' && l.borneVers === '1' && !l.cable) && app.dessin.comps.some(c => c.name === '102VT9') && !app.dessin.barrettes.some(b => b.nomVT === 'VT1'); }),
-    'VT1 posée sous 102VT9 : le fil à créer, les deux fils, deux shunts — dessinée comme avant');
+    return L.length >= 3 && L.some(l => (l.de === '102CB1' && l.borneDe === '2') || (l.vers === '102CB1' && l.borneVers === '2')) && (app.dessin.comps.some(c => c.name === '102VT9') || app.dessin.barrettes.some(b => b.nom === '102VT9')) && !app.dessin.barrettes.some(b => b.nomVT === 'VT1'); }),
+    'VT1 reçoit 102VT9 : le câble vers 102CB1:2 et les deux autres arrivent sur elle, elle est sur le plan sous son repère');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
   ok(await page.evaluate(() => app.contrat.liaisons.length === 223 && app.dessin.barrettes.some(b => b.nomVT === 'VT1')), 'Ctrl+Z rend VT1');
-  // survoler une ligne de la fiche allume son fil sur le plan
-  await page.evaluate(() => { choisirBloc(app.dessin.comps.find(k => k.name === '103RL1' && k.kind !== 'tag')); }); await page.waitForTimeout(300);
-  await page.evaluate(() => document.querySelector('#ba-equip .fi-fil[data-i]').scrollIntoView({ block: 'center' })); await page.waitForTimeout(100);   // la fiche v3 pose les contacts plus bas : sous les yeux d'abord
-  const li = await page.locator('#ba-equip .fi-fil[data-i]').first().boundingBox(); await page.mouse.move(li.x + li.width / 2, li.y + li.height / 2); await page.waitForTimeout(200);
-  const vise = await page.evaluate(p => { const e = document.elementFromPoint(p.x, p.y), r = $('inspecteur').getBoundingClientRect();
-    return { focus: !!document.querySelector('#scene.focus'), vise: !!document.querySelector('#ba-equip .fi-fil.vise'), sous: e ? (e.closest('.fi-fil') ? 'ligne' : e.id || String(e.className.baseVal != null ? e.className.baseVal : e.className)) : '', carte: [r.left, r.top, r.width, r.height].map(Math.round).join(','), anims: $('inspecteur').getAnimations().length }; }, { x: li.x + li.width / 2, y: li.y + li.height / 2 });
-  ok(vise.focus && vise.vise, 'survoler un fil de la fiche l’allume sur le plan', JSON.stringify(vise));
-  // le contrôle : le compte sur le bouton des repères, la liste « à reprendre » en tête de l'index, une ligne qui mène au bloc, sur son folio
-  await page.keyboard.press('Escape'); await page.keyboard.press('r'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => !$('btnIndex').querySelector('.rd-point').hidden && /problème/.test($('ba-equip').querySelector('.ix-controle').textContent) && $('ba-equip').querySelectorAll('.co-item').length === lignesDuControle().length && CONTROLE.items.some(x => x.nom === 'VT1') && [...$('ba-equip').querySelectorAll('.co-genre')].map(g => g.dataset.genre).join(' ') === 'ko|arrangement ko|contact ko|calibre ko|protection att|contact att|protection att|chute att|aposer' && /300XC1/.test($('ba-equip').querySelector('.co-item').textContent) && !document.getElementById('controle')),
-    'plus de pastille sur le plan : le bouton des repères porte le compte, l’index liste ce qu’il y a à reprendre PAR GENRE (l’arrangement de 300XC1 d’abord, puis les contacts, le calibre, la protection de 102CB1 — le permanent de 5 A dépasse le contact 23 de son DR24 —, le calibre — le 10 A de l’installation TOUCHE LA COURBE, un problème en rouge (v77) —, puis ce qui est à voir), une ligne par repère dans chaque genre, les barrettes à poser comprises');
-  ok(await page.evaluate(() => [...$('ba-equip').querySelectorAll('.ix-groupe')].some(g => /Disjoncteurs/.test(g.textContent)) && /10\sA/.test($('ba-equip').textContent)), 'l’index range les disjoncteurs à part, avec leur calibre');
-  // « à reprendre » est replié en tête de l'index (le lecteur : on clique si on veut) : on le déplie, puis la ligne
-  ok(await page.evaluate(() => !$('ba-equip').querySelector('.ix-controle').open), '« à reprendre » est replié par défaut');
-  await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);
-  await page.locator('#ba-equip .co-item', { hasText: '300XC1' }).click(); await page.waitForTimeout(600);
-  ok(await page.evaluate(() => app.plan === '3' && app.cible && app.cible.nom === '300XC1' && !$('inspecteur').hidden), 'une ligne mène au folio 3 et à la fiche de 300XC1');
-  ok(await page.evaluate(() => !$('ba-equip').querySelector('.fi-norme') && !/Conforme/.test($('ba-equip').textContent)), 'la fiche ne répète pas la norme à côté de la référence, et ne dit pas « conforme »');
-  // le disjoncteur : le calibre retenu en grand (le 10 A du part number, juste), le meilleur (15 A), la gamme sous « Autre calibre », le graphique, les états ; un profil qui déclenche, Ctrl+Z
-  await page.keyboard.press('Escape'); await page.evaluate(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip'), h = s.querySelector('.dj-heros'); return !!s.querySelector('.fi-dj[data-disj="102CB1"]') && h.querySelector('.dj-h-cal').textContent === '15A' && h.classList.contains('ok') && !h.querySelector('.dj-verdict-pastille') && $('dj-retenir').textContent.trim() === 'Automatique' && $('dj-retenir').getAttribute('aria-pressed') === 'true' && !s.querySelector('.dj-chip, [data-pn="*"]') && disjonctionDe('102CB1').gamme.length === 7 && s.querySelectorAll('.dj-graphe .dj-bande').length === 1 && !s.querySelector('.dj-fantome, .dj-legende') && s.querySelector('[data-dj="dem"][data-q="i"]').value === '9,31'; }),
-    'la fiche de 102CB1 (la section Calibre) : l’automatique d’office — le 15 A, le plus petit qui passe (l’installation porte un 10 A) —, en grand, sans pastille ; « Automatique » pressé ; plus de rangée de calibres ni de part number d’office ; sept calibres de 1 à 20 A (le MS3320 s’arrête à 20 A : feuille MS3320N) ; UNE bande sur le graphique, ni fantômes ni légende ; le profil modifiable');
-  await page.click('#ba-equip [data-changer="dj|102CB1"]'); await page.waitForTimeout(300);
-  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip'), p = s.querySelector('.dj-chip[aria-pressed="true"]'), cs = [...s.querySelectorAll('.dj-chip')]; return p && p.dataset.cal === '15' && s.querySelector('.dj-chip.ideal').dataset.cal === '15' && cs.length === disjonctionDe('102CB1').gamme.length && cs.some(c => c.classList.contains('declenche')) && cs.filter(c => c.classList.contains('passe')).every(c => +c.dataset.cal >= 15); }),
-    '« À la main » : TOUTE la gamme MS3320 — ceux qui déclenchent, le juste, ceux qui passent (15, 20 A) —, tous cliquables, le 15 A pressé et étoilé (v73 : test mis à jour, seulement ceux qui passent)');
-  await page.click('#ba-equip [data-changer="dj|102CB1"]'); await page.waitForTimeout(200);
-  // le 10 A du retest, retenu à la main (le récapitulatif le permet) : la suite le juge
-  await page.evaluate(() => { retenirCalibre('102CB1', 10); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(600);
-  await page.fill('#ba-equip [data-dj="perm"][data-q="i"]', '9,5'); await page.press('#ba-equip [data-dj="perm"][data-q="i"]', 'Enter'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip'), h = s.querySelector('.dj-heros'); return h.classList.contains('ko') && /^10\sA\s*déclenche/.test(s.querySelector('.dj-verdict-l').textContent.replace(/\s+/g, ' ').trim()) && !!s.querySelector('.dj-pt.ko[data-k="perm"]') && /Automatique \(\d+\sA\)/.test($('dj-retenir').textContent) && app.contrat.charges.get('102CB1').perm.i === 9.5 && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /10 A/.test(x.texte)); }),
-    '9,5 A en permanence sur le 10 A retenu à la main : il DÉCLENCHE (sa ligne de verdict le dit — v73, test mis à jour), le point du permanent est rouge, « Automatique » propose le calibre qui passe, le contrôle le relève');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i === 5 && !CONTROLE.items.some(x => x.nom === '102CB1' && /9,5\sA/.test(x.texte))), 'Ctrl+Z rend le profil de l’exemple (plus rien ne parle des 9,5 A)');
-  await page.evaluate(() => { choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => { const li = [...document.querySelectorAll('#ba-equip .dj-fils .fi-ia')]; return li.length === 3 && li.some(x => /W-015/.test(x.textContent + [...x.querySelectorAll('input')].map(i => ' ' + i.value).join('')) && x.classList.contains('ko') && /3,9 A/.test(x.textContent)) && CONTROLE.items.some(x => x.nom === '102CB1' && /W-015/.test(x.texte) && x.niveau === 'ko'); }),
-    'ses trois câbles sont jugés : le DR24 (W-015) ne tient pas 9,31 A pendant 2 min (3,9 A en faisceau, le point FAA), et le contrôle le dit');
-  // « Automatique (15 A) » : le choix rendu à l'outil ; un état de plus, retiré ; le survol d'un point du profil
-  await page.click('#dj-retenir'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10' && calibreDe('102CB1') === 15 && !(app.contrat.charges.get('102CB1') || {}).calibre && document.querySelector('#ba-equip .dj-h-cal').textContent === '15A' && $('dj-retenir').getAttribute('aria-pressed') === 'true' && !CONTROLE.items.some(x => x.nom === '102CB1' && !/^l’installation porte un /.test(x.texte) && /suffirait|touche la courbe/.test(x.texte))), '« Automatique (15 A) » rend le choix à l’outil : le 15 A en grand, le part number de l’installation intact, le contrôle n’a plus rien à dire du calibre (sauf que l’installation porte un 10 A, juste — il touche la courbe : v73, test mis à jour)');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  await page.evaluate(() => { choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10' && document.querySelector('#ba-equip .dj-h-cal').textContent === '10A'), 'Ctrl+Z rend le MS3320-10 de l’installation');
-  await page.click('#dj-plus'); await page.waitForTimeout(600); await page.fill('#ba-equip .dj-etat[data-k="plus0"] [data-q="i"]', '12'); await page.fill('#ba-equip .dj-etat[data-k="plus0"] [data-q="t"]', '30'); await page.press('#ba-equip .dj-etat[data-k="plus0"] [data-q="t"]', 'Enter'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => { const c = app.contrat.charges.get('102CB1'); return c.plus.length === 1 && c.plus[0].i === 12 && c.plus[0].t === 30 && document.querySelectorAll('#ba-equip .dj-graphe .dj-pt').length === 3 && document.querySelector('#ba-equip .dj-heros').classList.contains('ko'); }), 'un état de plus (12 A pendant 30 s) : un point de plus sur le graphique, le 10 A déclenche');
-  await page.evaluate(() => document.querySelector('#ba-equip .dj-graphe').scrollIntoView({ block: 'center' })); await page.waitForTimeout(100);   // la barre de navigation, collée en haut de la fiche, couvrirait le point
-  const pt = await page.locator('#ba-equip .dj-graphe .dj-pt[data-k="plus0"] .dj-point').boundingBox(); await page.mouse.move(pt.x + pt.width / 2, pt.y + pt.height / 2); await page.waitForTimeout(300);
-  ok(await page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'); return !t.hidden && /État 3/.test(t.textContent) && /12\sA/.test(t.textContent) && /déclenche/.test(t.textContent); }), 'survoler le point dit l’état, son courant, sa durée, et que le 10 A déclenche');
-  await page.click('#ba-equip .dj-x[data-x="plus0"]'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.contrat.charges.get('102CB1').plus.length === 0 && document.querySelector('#ba-equip .dj-heros').classList.contains('ko') && /^10\sA\s*touche la courbe/.test(document.querySelector('#ba-equip .dj-verdict-l').textContent.replace(/\s+/g, ' ').trim())), 'l’état retiré : le 10 A ne déclenche plus, mais touche toujours la courbe — en ROUGE (v77 : toucher, c’est ne pas passer)');
-  // la fiche d'un fil : ses faits — le câble de la base, ce qu'il admet, le courant du disjoncteur en amont, la chute
-  await page.evaluate(() => { const w = app.dessin.fils.find(w => w.cable === 'W-012'); if (w) { app.cible = { type: 'fil', l: verite()[w.i] }; ouvrirInspecteur(); } }); await page.waitForTimeout(400);
-  // la fiche à sections : chaque fait à sa place (le câble de la base dans la bulle de sa tuile, l'intensité, la chute)
-  ok(await page.evaluate(() => { const sec = s => document.querySelector(`#ba-equip details.fs[data-section="${s}"]`), bulle = (s, k) => [...sec(s).querySelectorAll('.fi-mes')].filter(m => m.textContent.includes(k)).map(m => m.textContent + ' ' + m.dataset.bulle).join(' '), id = [...document.querySelectorAll('#ba-equip .fi-tuile')].map(t => t.title).join(' '), i = bulle('fils', 'Intensité'), u = bulle('fils', 'Chute');
-    return /1\sbrin/.test(id) && /Ø\s1,34\smm/.test(id) && /33,2\smΩ\/m/.test(id) && /6,9\sA admis en continu/.test(i) && /permanent\s5\sA/.test(i) && /102CB1\s·\s10\sA/.test(i) && /pointe\s9,31\sA/.test(i) && /depuis 102CB1/.test(u); }),
-    'la fiche de W-012 (DR20) : 1 brin, Ø 1,34 mm, 33,2 mΩ/m (la tuile de son type) ; 11,5 × 0,6 = 6,9 A en continu (le point FAA du faisceau de 102CB1), 5 A permanent sous 102CB1 — en puce « 102CB1 · 10 A », le calibre écrit (le technicien v73 : test mis à jour, un lien « sous 102CB1 ») —, pointe 9,31 A (l’intensité : sa ligne, et sa bulle pour le détail) ; la chute en ligne depuis 102CB1');
-  await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '300XC1' && k.kind !== 'tag')); }); await page.waitForTimeout(600);
-  ok(await page.evaluate(() => document.querySelector('#ba-equip .ct-bulles [aria-pressed="true"]').dataset.connecteur === 'B' && !!document.querySelector('#ba-equip [data-panneau="B"]')), 'la fiche de 300XC1 s’ouvre sur le connecteur B, celui qui porte le problème');
-  await page.click('#ba-equip .ct-bulles [data-connecteur="A"]'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => { const f = document.querySelector('#ba-equip details[data-section="connecteur"] .fi-groupe-raccord [data-hab="300XC1|A"]'); return !!f && /toron Ø\s[\d,]+\smm/.test(f.querySelector('.fi-hab-mots').textContent) && f.querySelectorAll('.fi-piece').length >= 1; }), 'le raccord du connecteur A de 300XC1, dans la section du connecteur : le toron (son diamètre), une ligne par pièce');
-  ok(await page.evaluate(() => { const li = document.querySelector('#ba-equip details[data-section="connecteur"] .fi-contacts .fi-fil[data-i]'), l2 = li && li.nextElementSibling; return !!li && li.querySelector('.fi-sertir').textContent === 'EN3155-003F2020' && l2.querySelector('.fi-sertir').classList.contains('meme') && /^24AWG$/.test(li.querySelector('.fi-jg').textContent) && /W-320 · DR24/.test(li.dataset.bulle) && li.querySelector('.fi-cab-n').textContent === 'W-320' && !li.querySelector('.fi-dest, .fi-num'); }), 'une ligne de contact : la borne dans son rond, le contact de la table (plus pâle quand c’est le même qu’au-dessus), la gauge acceptée, le câble — plus « vers » (le lecteur : on s’en fout)');
-  // ce qui englobe le connecteur : un EN 4165 prend une cheminée par module et un tyrap (R3) — ni raccord EN 3660, ni band-it, quoi qu'on choisisse ; le choix se garde quand même ; Ctrl+Z
-  const piece = r => `(() => { const h = document.querySelector('#ba-equip [data-hab="300XC1|A"]'), p = h && h.querySelector('[data-role="${r}"] .fi-piece-ref'); return p ? p.textContent : ''; })()`;
-  ok(await page.evaluate(`/^EN4165-015/.test(${piece('cheminee')}) && /^NSA935401-03/.test(${piece('tyrap')}) && !document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-role="bande"], #ba-equip [data-hab="300XC1|A"] [data-role="raccord"]')`), 'le connecteur A de 300XC1 (EN 4165) : sa cheminée EN4165-015 et le tyrap qui tient le toron (R3), ni raccord EN 3660 ni band-it');
-  await page.evaluate(() => { const b = document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-changer^="rac|"]'); b.click(); }); await page.waitForTimeout(200);
-  await page.evaluate(() => { document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-raccord][data-champ="blindage"][data-v="GND"]').click(); }); await page.waitForTimeout(800);
-  ok(await page.evaluate(`/^EN4165-015/.test(${piece('cheminee')}) && !document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-role="bande"], #ba-equip [data-hab="300XC1|A"] [data-role="raccord"]') && app.contrat.raccords.get('300XC1|A').blindage === 'GND'`), 'reprise sur le corps choisie : le choix est gardé au contrat, mais toujours la cheminée, ni raccord durci ni band-it sur un EN 4165');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => !app.contrat.raccords.get('300XC1|A')), 'Ctrl+Z défait le choix du raccord');
-  // la chute en ligne depuis le disjoncteur, et la fiche d'un fil avec sa chute
-  await page.evaluate(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => { const li = [...document.querySelectorAll('#ba-equip .dj-fils .fi-ia')]; return li.length === 3 && li.every(x => /\d,\d+\sV$/.test(x.querySelector('.fi-u').textContent)) && li.some(x => /W-015/.test(x.textContent + [...x.querySelectorAll('input')].map(i => ' ' + i.value).join('')) && /chute en ligne vers 395SW1/.test(x.dataset.bulle)); }), 'la fiche de 102CB1 : la chute en ligne sur la ligne de chacun de ses trois fils (W-015 : vers 395SW1, dans sa bulle)');
-  // les plans déjà faits : une base (l'exemple décalé), « Déjà fait » sur la fiche, la comparaison, reprendre, Ctrl+Z
-  await page.evaluate(() => { const d = r => r.replace(/^(\d)(\d\d)([A-Z]+)(\d*)/, (m, a, b, c, e) => String(+a + 2) + b + c + e);
-    const B = contratExemple().map(l => liaison({ ...l, de: d(l.de), vers: d(l.vers), harness: 'H-1', appareil: 'H160', retest: '2024-07-08' }));
-    B.push(liaison({ de: '302CB1', borneDe: '3', pnDe: 'MS3320-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', harness: 'H-1', appareil: 'H160' }));
-    adopterReferences(B, 'essai'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(600);
-  ok(await page.evaluate(() => { const d = document.querySelector('#ba-equip .fi-deja'); return !!d && d.querySelectorAll('.fi-cand').length === 1 && /302CB1/.test(d.textContent) && /75\s%/.test(d.textContent) && /H160/.test(d.textContent); }), '« Déjà fait » sur 102CB1 : 302CB1 de H-1 (H160), 75 % de lignes communes');
-  await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand'); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => app.cible && app.cible.type === 'ref' && document.querySelectorAll('#ba-equip .cp-liste .cp-manque').length === 2 && document.querySelectorAll('#ba-equip .cp-liste .cp-identique').length === 4 && /305XX9/.test($('ba-equip').textContent) && $('cp-reprendre').disabled), 'la comparaison : une ligne manque chez nous (305XX9), trois pareilles ; rien à reprendre tant que rien n’est coché');
-  const avant = await page.evaluate(() => verite().length);
-  await page.click('#cp-tout'); await page.waitForTimeout(300); await page.click('#cp-reprendre'); await page.waitForTimeout(1200);
-  ok(await page.evaluate(n => verite().length === n + 1 && verite().some(l => l.de === '102CB1' && l.borneDe === '3' && l.vers === '305XX9' && !l.cable) && app.cible && app.cible.type === 'bloc' && app.dessin.comps.some(c => c.name === '305XX9'), avant), 'reprendre : la liaison 102CB1:3 → 305XX9 entre au plan, sans numéro, et se dessine');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
-  ok(await page.evaluate(n => verite().length === n, avant), 'Ctrl+Z défait la reprise');
-  await page.evaluate(() => { adopterReferences([], ''); });
-  // l'édition manuelle depuis la fiche : « + fil » sur un équipement, supprimer un fil depuis sa fiche, « + équipement » dans l'index
-  await page.evaluate(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '103RL1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
-  const n0 = await page.evaluate(() => verite().length); await page.click('#fi-fil-plus'); await page.waitForTimeout(600);
-  ok(await page.evaluate(n => app.base.ouvert && verite().length === n + 1 && verite()[n].de === '103RL1' && document.activeElement && document.activeElement.dataset.f === 'vers', n0), '« + fil » sur 103RL1 : une ligne neuve dans le tableau, depuis 103RL1, le curseur sur « vers »');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600); await page.keyboard.press('b'); await page.waitForTimeout(300);
-  await page.evaluate(() => { const w = app.dessin.fils.find(w => w.cable === 'W-013'); app.cible = { type: 'fil', l: verite()[w.i] }; ouvrirInspecteur(); }); await page.waitForTimeout(400);
-  page.once('dialog', d => d.accept()); await page.click('#fi-menu'); await page.click('#fil-del'); await page.waitForTimeout(900);
-  ok(await page.evaluate(n => verite().length === n - 1 && !verite().some(l => l.cable === 'W-013') && !app.dessin.fils.some(w => w.cable === 'W-013'), n0), 'supprimer W-013 depuis sa fiche : il quitte le contrat et le plan');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
-  ok(await page.evaluate(n => verite().length === n && verite().some(l => l.cable === 'W-013'), n0), 'Ctrl+Z le rend');
-  // « + » ouvre un champ en ligne sous le titre (plus de boîte du navigateur) : on écrit le repère, Entrée l'ajoute
-  await page.keyboard.press('r'); await page.waitForTimeout(400); await page.click('#ix-plus'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => !!$('ix-nouveau') && document.activeElement === $('ix-nouveau')), '« + » dans l’index : un champ en ligne, le curseur dedans');
-  await page.keyboard.type('105RL2'); await page.keyboard.press('Enter'); await page.waitForTimeout(600);
-  ok(await page.evaluate(n => app.base.ouvert && verite().length === n + 1 && verite()[n].de === '105RL2' && !$('ix-nouveau'), n0), '« + » dans l’index : un équipement 105RL2, sa première ligne dans le tableau');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
-  // R depuis une fiche venue de l'index ramène à la liste (il ne ferme plus le panneau)
-  await page.evaluate(() => { app.cible = null; fermerInspecteur(); }); await page.keyboard.press('r'); await page.waitForTimeout(400);
-  await page.locator('#ba-equip .co-item', { hasText: '102CB1' }).first().click(); await page.waitForTimeout(500); await page.keyboard.press('r'); await page.waitForTimeout(300);
-  ok(await page.evaluate(() => !$('inspecteur').hidden && app.insp.index && !app.cible && !!document.querySelector('#ba-equip .co-item')), 'R depuis la fiche de 102CB1 (venue de l’index) ramène à la liste des repères');
-  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
-
-  /* LA BIBLIOTHÈQUE à la vraie souris (l'accueil d'avant : l'outil s'ouvre maintenant sur elle — tests/bibliotheque.js la
-     passe en entier), le contrat neuf, les folios aux noms longs, les mots au pluriel, les noms de fichier */
+  /* (v89) LA FICHE (la carte, le grand, Modifier), LE DISJONCTEUR et « Déjà fait » ont leurs batteries : tests/fiche.js, tests/disjoncteur.js,
+     tests/fwd.js. Ce qui se tapait ici dans la fiche ou l'index (« + fil », supprimer un fil, « + équipement ») n'existe plus : votre fichier est la source. */
+  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   console.log('\nla bibliothèque à la vraie souris, le contrat neuf, les folios aux noms de dessin');
   await parLeMenu('bibliotheque'); await page.waitForTimeout(400);
   ok(await page.evaluate(() => BIB.vue === 'racine' && !$('bibliotheque').hidden && $('inspecteur').hidden && !!$('bi-reprendre') && app.contrat.liaisons.length === 223 && !!document.querySelector('#bibliotheque .bi-vide')),
@@ -350,10 +172,11 @@ const FICHIER = P.fichierDemande();
   // chaque geste de la bibliothèque répond à un clic de souris
   let fc = null; try { [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#bibliotheque .bi-vide [data-bi="base"]')]); } catch (_) { }
   ok(!!fc, 'un clic de souris sur « Déposer la base des plans déjà faits » ouvre le choix de fichier');
-  // l'Exemple : sa carte ouvre son plan, d'un seul clic (audit v72, parcours P2-2 : la page d'une ligne entre les deux est partie)
-  await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.contrat.liaisons.length === 223 && app.contrat.charges.has('102CB1') && $('bibliotheque').hidden && $('vide').hidden), 'l’Exemple, d’un seul clic sur sa carte : l’exemple sur la table, avec son profil de charge');
-  ok(await page.evaluate(() => app.nom === 'Plan d’exemple' && $('ctx-nom').textContent === 'Plan d’exemple' && /^l’exemple embarqué · 223\sliaisons · \d+\srepères · 6\sfolios$/.test($('ctx-txt').textContent) && $('en-install').textContent === 'Exemple'), 'le menu dit que c’est l’exemple embarqué ; le fil de la barre du haut, « Exemple »', await page.evaluate(() => $('ctx-txt').textContent));
+  // l'exemple est resté sur la table : « Reprendre » le rend d'un seul clic (la tuile de l'Exemple ne paraît que sur une table vide : tests/bibliotheque.js)
+  await page.mouse.move(800, 200); await page.waitForFunction(() => !!$('bi-reprendre') && $('bi-reprendre').checkVisibility({ opacityProperty: true }), null, { timeout: 8000 }).catch(() => {});
+  await page.click('#bi-reprendre'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => app.contrat.liaisons.length === 223 && app.contrat.charges.has('102CB1') && $('bibliotheque').hidden && $('vide').hidden), '« Reprendre », d’un seul clic : l’exemple revient sur la table, avec son profil de charge');
+  ok(await page.evaluate(() => app.nom === 'Plan d’exemple' && $('ctx-nom').textContent === 'Plan d’exemple' && /^223\sliaisons · \d+\srepères · 6\sfolios$/.test($('ctx-txt').textContent) && $('en-install').textContent === 'Exemple'), 'le menu dit le plan (« Plan d’exemple », ses liaisons, ses repères, ses folios) ; le fil de la barre du haut, « Exemple »', await page.evaluate(() => $('ctx-txt').textContent));
   // un autre fichier : rien du contrat d'avant ne survit ; le menu dit son nom ; Ctrl+Z rend l'exemple et ses choix
   await page.evaluate(() => chargerContrat(contratExemple().filter(l => l.plan === '1'), 'ouverture de neuf.xlsx', 'neuf.xlsx')); await page.waitForTimeout(500);
   ok(await page.evaluate(() => !app.contrat.charges.size && !app.contrat.designations.size && !app.contrat.sexes.size && !app.contrat.raccords.size && $('ctx-nom').textContent === 'neuf.xlsx' && !/exemple/.test($('ctx-txt').textContent) && !CONTROLE.items.some(x => x.nom === '102CB1' && /9,31/.test(x.texte))),
@@ -375,7 +198,7 @@ const FICHIER = P.fichierDemande();
   const nomTelecharge = async act => { const [d] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.evaluate(act)]); return d.suggestedFilename(); };
   const noms = [await nomTelecharge('exporterSuivi()'), await nomTelecharge('exporterNomenclature()'), await nomTelecharge('exporterSVG()')];
   // (v84 : la nomenclature s'appelle la LPA ; passe 87 : le Suivi sort de son onglet de la LPA, sous son ancien nom)
-  ok(noms[0] === 'Contrat-d-exemple-suivi.csv' && noms[1] === 'Contrat-d-exemple-LPA.csv' && /^Contrat-d-exemple-folio-1\.svg$/.test(noms[2]), 'les fichiers enregistrés ont un nom ASCII', noms.join(' · '));
+  ok(noms[0] === 'Plan-d-exemple-suivi.csv' && noms[1] === 'Plan-d-exemple-LPA.csv' && /^Plan-d-exemple-folio-1\.svg$/.test(noms[2]), 'les fichiers enregistrés ont un nom ASCII', noms.join(' · '));
   // un fichier à plusieurs harness : une fiche demande lequel ouvrir (tous restent des plans déjà faits)
   await page.evaluate(() => { const L = contratExemple().map(l => liaison({ ...l, harness: +l.plan <= 3 ? 'H-A' : 'H-B', appareil: 'H160' })); ficheHarnais({ liaisons: L, harnais: ['H-A', 'H-B'] }, 'base.xlsx'); }); await page.waitForTimeout(400);
   ok(await page.evaluate(() => app.fiche && app.fiche.mode === 'harnais' && document.querySelectorAll('#choix-harness .ch-harness[data-harness]').length === 2 && !!$('ch-aucun')), 'un fichier à deux harness : la fiche demande lequel ouvrir, ou aucun');
@@ -396,10 +219,10 @@ const FICHIER = P.fichierDemande();
   // (v73, la demande E-2 d'A2 : les folios en Visio se rangent avec les dessins du plan entier, après le dossier PDF et
   // avant le suivi — `avant: 'suivi'`, 08-visio — MIS À JOUR : ils venaient en dernier)
   const M = await page.evaluate(() => { const lignes = p => [...$(p).querySelectorAll('button[role="menuitem"]:not([data-retour])')].map(b => b.dataset.act || '›' + b.dataset.sous).join(',');
-    return { principal: lignes('mp-principal'), exporter: lignes('mp-exporter'), plus: lignes('mp-plus'), fichiers: $('mp-principal').querySelector('[data-act="fichiers"]').textContent,
+    return { principal: lignes('mp-principal'), exporter: lignes('mp-exporter'), reglages: lignes('mp-reglages'), aide: lignes('mp-aide'), plus: lignes('mp-plus'), plusCache: $('mp-plus').hidden && !document.querySelector('#menu [data-sous="plus"]'), version: ($('menu-version') || {}).textContent || '', fichiers: $('mp-principal').querySelector('[data-act="fichiers"]').textContent,
       bulles: [...document.querySelectorAll('#menu button[role="menuitem"]:not([data-retour])')].every(b => { const a = b.dataset.aide || ''; return a.length > 30 && a.length <= 160 && !!$(b.getAttribute('aria-describedby')); }) }; });
-  ok(M.principal === 'bibliotheque,ouvrir,fichiers,recapitulatif,nomenclature,dejafait,›exporter,›plus' && M.exporter === 'retestcorrige,svg,png,imprimer,dossierpdf,vsdx,suivi,nomenclaturecsv' && M.plus === 'coller,exemple,pdf,visio,bible,normes,hypotheses,cartouche,comprendre,raccourcis,carnet,autotest,bilan' && M.bulles && /installations · base · bible · normes/.test(M.fichiers),
-    'le menu en huit lignes (la bibliothèque, ouvrir, vos fichiers — « installations · base · bible · normes » écrit dessous —, récapitulatif, nomenclature, comparer au déjà-fait, Exporter ›, Plus ›), le reste dans ses deux sous-menus (Exporter : D’ABORD l’installation corrigée en Excel, le livrable, seul dans son groupe (v73) ; le folio en SVG, en PNG, l’impression ; le plan entier : le dossier en PDF, le suivi, la nomenclature, les folios en Visio ; Plus : « Lire un PDF de schéma… » et « Lire un schéma Visio… » après l’exemple, « Comment Volta réfléchit » (v74) juste avant les raccourcis clavier, en dernier) — plus de « Tout effacer » : on supprime dans la bibliothèque ; chaque ligne a sa bulle courte, dite aussi au lecteur d’écran', JSON.stringify(M));
+  ok(M.principal === 'bibliotheque,ouvrir,fichiers,recapitulatif,nomenclature,historique,dejafait,›exporter,›reglages,›aide' && M.exporter === 'retestcorrige,svg,png,imprimer,dossierpdf,vsdx,suivi,nomenclaturecsv' && M.reglages === 'hypotheses,normes,cartouche,ia,sauvegarde' && M.aide === 'comprendre,raccourcis,exemple,carnet,autotest,bilan' && M.plus === 'coller,pdf,bible,visio' && M.plusCache && M.bulles && /installations · base · bible · normes/.test(M.fichiers),
+    '(v88) le menu rangé — la bibliothèque, « Ouvrir un fichier… », vos fichiers ; récapitulatif, LPA, historique, comparer au déjà-fait, Exporter › ; Réglages › (ce qui juge : hypothèses, normes et bible, cartouche ; vos données : IA interne, sauvegarde) et Aide › (comment VOLTA réfléchit, raccourcis, l’exemple ; carnet, autotest, bilan) — plus de « Plus » fourre-tout (coller, lire un PDF ou un Visio, la bible : dans la palette) ; avant : huit lignes (la bibliothèque, ouvrir, vos fichiers — « installations · base · bible · normes » écrit dessous —, récapitulatif, nomenclature, comparer au déjà-fait, Exporter ›, Plus ›), le reste dans ses deux sous-menus (Exporter : D’ABORD l’installation corrigée en Excel, le livrable, seul dans son groupe (v73) ; le folio en SVG, en PNG, l’impression ; le plan entier : le dossier en PDF, le suivi, la nomenclature, les folios en Visio ; Plus : « Lire un PDF de schéma… » et « Lire un schéma Visio… » après l’exemple, « Comment Volta réfléchit » (v74) juste avant les raccourcis clavier, en dernier) — plus de « Tout effacer » : on supprime dans la bibliothèque ; chaque ligne a sa bulle courte, dite aussi au lecteur d’écran', JSON.stringify(M));
   // au clavier : ↓ ↓ jusqu'à « Vos fichiers… », sa bulle tout de suite, à gauche du menu ; → n'y fait rien (ni folio suivant)
   const plan0 = await page.evaluate(() => app.plan), montre = () => page.evaluate(() => [...document.querySelectorAll('#menu .menu-panneau')].filter(p => !p.hidden).map(p => p.id).join());
   await page.click('#btnMenu'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(350);
@@ -408,7 +231,7 @@ const FICHIER = P.fichierDemande();
     'au clavier (↓ ↓), la bulle de « Vos fichiers… » se lit tout de suite, à gauche du menu, entière à l’écran : on y dépose aussi les plans déjà faits');
   await page.waitForFunction(() => !$('menu').getAnimations({ subtree: true }).length, null, { timeout: 10000 }).catch(() => {});   // (sous charge, son entrée dure)
   const large0 = await page.evaluate(() => Math.round($('menu').getBoundingClientRect().width));
-  await page.keyboard.press('ArrowRight'); for (let k = 0; k < 4; k++) await page.keyboard.press('ArrowDown');   // jusqu'à « Exporter » (après « Comparer au déjà-fait »)
+  await page.keyboard.press('ArrowRight'); for (let k = 0; k < 5; k++) await page.keyboard.press('ArrowDown');   // jusqu'à « Exporter » (après le récapitulatif, la LPA, l'historique, « Comparer au déjà-fait »)
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250); await page.waitForFunction(() => !$('menu').getAnimations({ subtree: true }).length, null, { timeout: 10000 }).catch(() => {});
   const S1 = await page.evaluate(() => ({ act: document.activeElement.dataset.act, large: Math.round($('menu').getBoundingClientRect().width), ouvert: $('menu').querySelector('[data-sous="exporter"]').getAttribute('aria-expanded') }));
   const m1 = await montre(); await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(250);
@@ -419,22 +242,22 @@ const FICHIER = P.fichierDemande();
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   ok(m3 === 'mp-principal' && await page.evaluate(() => $('menu').hidden && document.activeElement === $('btnMenu')), 'Échap dans un sous-menu y revient ; Échap encore ferme le menu, le clavier sur ⋮');
   // à la souris : « Plus » s'ouvre d'un clic, ses bulles au survol ; « ‹ Plus » ramène ; « Vos fichiers… »
-  await page.click('#btnMenu'); await page.click('#menu [data-sous="plus"]'); await page.hover('#menu [data-act="exemple"]');
+  await page.click('#btnMenu'); await page.click('#menu [data-sous="aide"]'); await page.waitForFunction(() => !$('mp-aide').hidden && !$('menu').getAnimations({ subtree: true }).length, null, { timeout: 5000 }).catch(() => {}); await page.mouse.move(700, 500); await page.hover('#menu [data-act="exemple"]');
   // la bulle vient après son délai : on l'attend (sous charge, elle arrive vers 700 ms ; 450 ms fixes échouaient)
   await page.waitForFunction(() => $('menu-bulle').classList.contains('on') && /reste dans la bibliothèque/.test($('menu-bulle').textContent), null, { timeout: 5000 }).catch(() => {});
-  ok(await page.evaluate(() => !$('mp-plus').hidden && $('mp-principal').hidden && $('menu-bulle').classList.contains('on') && /reste dans la bibliothèque/.test($('menu-bulle').textContent) && /Ctrl\+Z le rend/.test($('menu-bulle').textContent)), 'à la souris, « Plus » s’ouvre d’un clic à la place du menu ; au survol, la bulle de « Ouvrir l’exemple » (votre plan reste dans la bibliothèque, Ctrl+Z le rend)');
-  await page.click('#mp-plus [data-retour]'); await page.waitForTimeout(200); await page.click('#menu [data-act="fichiers"]'); await page.waitForTimeout(500);
+  ok(await page.evaluate(() => !$('mp-aide').hidden && $('mp-principal').hidden && $('menu-bulle').classList.contains('on') && /reste dans la bibliothèque/.test($('menu-bulle').textContent) && /Ctrl\+Z le rend/.test($('menu-bulle').textContent)), 'à la souris, « Aide » s’ouvre d’un clic à la place du menu ; au survol, la bulle de « Ouvrir l’exemple » (votre plan reste dans la bibliothèque, Ctrl+Z le rend)', await page.evaluate(() => $('menu-bulle').textContent));
+  await page.click('#mp-aide [data-retour]'); await page.waitForTimeout(200); await page.click('#menu [data-act="fichiers"]'); await page.waitForTimeout(500);
   const VF = await page.evaluate(() => ({ mode: app.fiche && app.fiche.mode, cartes: [...document.querySelectorAll('#fiche-corps .vf-carte')].map(c => c.dataset.entree + ':' + (c.className.match(/e-(\w+)/) || [])[1]).join(' '), apercus: [...document.querySelectorAll('#fiche-corps .vf-carte')].filter(c => c.querySelectorAll('.vf-apercu tbody tr').length === 3).length, ouverts: [...document.querySelectorAll('#fiche-corps details.vf-attend[open]')].map(d => d.dataset.volet).join(' '),
     zones: [...document.querySelectorAll('#fiche-corps .vf-zone')].map(z => z.closest('.vf-carte').dataset.entree).join(' '), cles: [...document.querySelectorAll('#vf-base .vf-cles div')].map(d => d.textContent).join(' · ') }));
   // (la bibliothèque a déjà une install : « À ranger », où sont allés les fichiers ouverts plus haut hors de toute install)
-  ok(VF.mode === 'fichiers' && VF.cartes === 'bibliotheque:ok retest:vide base:vide bible:ok normes:ok hypotheses:ok' && VF.apercus === 4 && VF.ouverts === '' && VF.zones === 'retest' && VF.cles === 'Harnessla machine · FWDle dessin · Appareille contrat',
+  ok(VF.mode === 'fichiers' && VF.cartes === 'bibliotheque:ok retest:vide base:vide bible:ok normes:ok hypotheses:ok' && VF.apercus === 4 && VF.ouverts === '' && VF.zones === 'retest' && VF.cles === 'Harnessla machine · FWDle dessin · Appareille plan',
     '« Vos fichiers » : six cartes et leur état, la bibliothèque en tête ; l’installation et la base disent en une ligne ce qu’ils attendent (la base : Harness la machine, FWD le dessin, Appareil le contrat) ; une seule zone de dépôt, celle de l’installation (v73) ; trois lignes d’exemple (installation, base, bible, une norme) repliées dans « Ce que j’attends »', JSON.stringify(VF));
   const nEx = await page.evaluate(() => verite().length);
   await depot('#fichier', 'compta.csv', 'Date;Montant;Libellé\n03/10/2026;1250,00;Fournitures\n05/10/2026;318,40;Câbles\n');
   const E1 = await page.evaluate(() => ({ toast: $('toast').textContent, erreur: $('toast').classList.contains('erreur'), voir: !!document.querySelector('#toast .toast-voir'), n: verite().length, nom: app.nom }));
   ok(E1.erreur && E1.voir && /en-têtes d’un retest/.test(E1.toast) && E1.n === nEx && E1.nom === 'Plan d’exemple', 'un fichier qui n’est pas une installation : le mot qui passe le signale, avec « Voir » ; le contrat ouvert ne bouge pas', E1.toast);
   await page.click('#toast .toast-voir'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => { const c = $('vf-retest'), e = c && c.querySelector('.vf-erreur'); return app.fiche.mode === 'fichiers' && c.classList.contains('e-ko') && !!e && /J’ai lu/.test(e.textContent) && /Date/.test(e.textContent) && /Montant/.test(e.textContent) && /Device1, Pin1, Device2, Pin2/.test(e.textContent) && !!e.querySelector('[data-vf="modele-retest"]'); }),
+  ok(await page.evaluate(() => { const c = $('vf-retest'), e = c && c.querySelector('.vf-erreur'); return app.fiche.mode === 'fichiers' && c.classList.contains('e-ko') && !!e && /VOLTA a lu/.test(e.textContent) && !/J’ai/.test(e.textContent) && /Date/.test(e.textContent) && /Montant/.test(e.textContent) && /Device1, Pin1, Device2, Pin2/.test(e.textContent) && !!e.querySelector('[data-vf="modele-retest"]'); }),
     '« Voir » : l’erreur est écrite dans la carte de l’installation, et y reste — ce que l’outil a lu (Date · Montant · Libellé), ce qu’il lui faut, un modèle');
   await depot('#fichier', 'vide.csv', '');
   ok(await page.evaluate(() => /vide\.csv est vide\s:\saucune ligne/.test($('vf-retest').querySelector('.vf-erreur').textContent)), 'un fichier vide : « vide.csv est vide : aucune ligne. », dans la carte');
@@ -442,7 +265,7 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(n => /photo\.txt n’est pas un tableau \(Excel ou CSV\)/.test($('vf-retest').querySelector('.vf-erreur').textContent) && verite().length === n, nEx), 'une image : « photo.txt n’est pas un tableau (Excel ou CSV). »');
   await depot('#fichier', 'presque-retest.csv', 'Equipement;Broche;Cable;Equipement;Broche\n102CB1;2;W-012;103RL1;A1\n103RL1;A2;W-013;104LP1;1\n101BT1;1;W-011;102CB1;1\n');
   const R1 = await page.evaluate(() => ({ n: verite().length, nom: app.nom, att: !!FICHIERS.attente, erreur: !!FICHIERS.erreurs.retest, dit: ($('vf-retest').querySelector('.vf-attente') || {}).textContent || '', lignes: $('vf-retest').querySelectorAll('.vf-attente .vf-apercu tbody tr').length }));
-  ok(R1.n === nEx && R1.nom === 'Plan d’exemple' && R1.att && !R1.erreur && /J’ai compris/.test(R1.dit) && /Equipement\s→\sDe/.test(R1.dit) && /Cable\s→\sCâble/.test(R1.dit) && R1.lignes === 3, 'des colonnes devinées : rien n’est remplacé ; la carte dit ce qu’elle a compris (Equipement → De, Cable → Câble…), avec l’aperçu, et attend « Charger »', R1.dit.slice(0, 150));
+  ok(R1.n === nEx && R1.nom === 'Plan d’exemple' && R1.att && !R1.erreur && /VOLTA a compris/.test(R1.dit) && /Equipement\s→\sDe/.test(R1.dit) && /Cable\s→\sCâble/.test(R1.dit) && R1.lignes === 3, 'des colonnes devinées : rien n’est remplacé ; la carte dit ce qu’elle a compris (Equipement → De, Cable → Câble…), avec l’aperçu, et attend « Charger »', R1.dit.slice(0, 150));
   await page.click('#fiche-corps [data-vf="corriger"]'); await page.waitForTimeout(300);
   await page.selectOption('#fiche-corps .vf-carte-cols select[data-colonne="2"]', ''); await page.waitForTimeout(300);
   ok(await page.evaluate(() => FICHIERS.attente.map.cable === '' && !/W-012/.test($('vf-retest').querySelector('.vf-attente .vf-apercu').textContent)), '« Corriger » : la colonne Cable ignorée, l’aperçu se refait sans le numéro de fil');
@@ -495,54 +318,50 @@ const FICHIER = P.fichierDemande();
     // les genres : l'index (R) les range, chacun son compte, « Voir le premier », le geste qui le traite
     await page.click('#btnIndex .rd-point'); await page.waitForTimeout(400);
     const G = await page.evaluate(() => ({ ouvert: document.querySelector('#ba-equip .ix-controle').open, genres: [...document.querySelectorAll('#ba-equip .co-genre')].map(g => g.dataset.genre + ':' + g.querySelector('.co-n').textContent + ':' + !!g.querySelector('[data-premier]') + ':' + ((g.querySelector('[data-geste]') || {}).textContent || '')) }));
-    ok(G.ouvert && G.genres.length === 8 && G.genres.every(g => /:true:/.test(g)) && G.genres.includes('att|aposer:3:true:Leur donner leur repère') && G.genres.includes('att|chute:2:true:Écrire les longueurs') && G.genres.includes('ko|calibre:1:true:Voir les disjoncteurs'),
-      'un clic sur le compte rouge ouvre l’index sur les problèmes, par genre : chacun son compte, « Voir le premier », et le geste qui le traite (« Toutes les poser », « Écrire les longueurs », « Voir les disjoncteurs » — le calibre de l’installation, qui touche la courbe, est un PROBLÈME : v77)', G.genres.join(' | '));
-    await page.click('#ba-equip .co-genre[data-genre="ko|arrangement"] [data-premier]'); await page.waitForTimeout(700);
+    ok(G.ouvert && G.genres.length >= 5 && G.genres.every(g => /:true:/.test(g)) && /^regler\|arrangement:1:true:/.test(G.genres[0]) && G.genres.includes('regler|consommation:3:true:') && G.genres.includes('regler|aposer:3:true:Leur donner leur repère') && G.genres.some(g => /^voir\|protection:\d+:true:/.test(g)) && G.genres.findIndex(g => /^voir\|/.test(g)) > G.genres.findIndex(g => /^regler\|aposer/.test(g)),
+      'un clic sur le compte ouvre le panneau Repères sur ce qui est à régler, par genre — puis ce qui est à voir : chacun son compte, « Voir le premier », et le geste qui le traite quand il y en a un (« Leur donner leur repère »)', G.genres.join(' | '));
+    await page.click('#ba-equip .co-genre[data-genre="regler|arrangement"] [data-premier]'); await page.waitForTimeout(700);
     const P1 = await page.evaluate(() => ({ plan: app.plan, cible: app.cible && app.cible.nom, mot: $('toast').textContent }));
     await page.keyboard.press('p'); await page.waitForTimeout(700);
     const P2 = await page.evaluate(() => ({ plan: app.plan, cible: app.cible && app.cible.nom, mot: $('toast').textContent }));
     await page.keyboard.press('Shift+P'); await page.waitForTimeout(700);
     const P3 = await page.evaluate(() => ({ cible: app.cible && app.cible.nom, mot: $('toast').textContent }));
-    ok(P1.plan === '3' && P1.cible === '300XC1' && /Problème 1 \/ \d+/.test(P1.mot) && P2.plan === '1' && P2.cible === '102CB1' && /Problème 2 \/ \d+/.test(P2.mot) && P3.cible === '300XC1',
+    ok(P1.plan === '3' && P1.cible === '300XC1' && /À régler 1 \/ \d+/.test(P1.mot) && P2.plan === '1' && P2.cible === '102CB1' && /À régler 2 \/ \d+/.test(P2.mot) && P3.cible === '300XC1',
       '« Voir le premier » mène à 300XC1 (folio 3) ; P au point suivant (102CB1, folio 1) ; Maj+P revient — le mot dit où l’on en est', [P1.mot, P2.mot, P3.mot].join(' · '));
     await page.keyboard.press('Escape'); await page.waitForTimeout(200);
     await page.evaluate(() => { app.insp.index = false; basculerIndex(); CONTROLE.ouvert = true; rendreIndex($('ba-equip')); }); await page.waitForTimeout(300);
+    if (!(await page.evaluate(() => document.querySelector('#ba-equip .ix-controle').open))) { await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(250); }
     const n0 = await page.evaluate(() => verite().length);
-    await page.click('#ba-equip .co-genre[data-genre="att|aposer"] [data-geste]'); await page.waitForTimeout(1200);
-    const T = await page.evaluate(n => ({ n: verite().length - n, vt: CONTROLE.items.filter(x => x.genre === 'aposer').length, quoi: (app.hist[app.hist.length - 1] || {}).quoi, retablir: !!document.querySelector('#toast .toast-geste') && /Rétablir/.test($('toast').textContent) }), n0);
-    ok(T.n > 0 && T.vt === 0 && /pose de 3 barrettes/.test(T.quoi) && T.retablir, '« Toutes les poser » : les trois barrettes entrent au contrat, chacune sous le repère proposé, en un seul geste — le mot offre « Rétablir »', JSON.stringify(T));
+    // le dernier genre est sous le pli du panneau : on y défile (comme à la molette), puis on clique son geste
+    await page.evaluate(() => document.querySelector('#ba-equip .co-genre[data-genre="regler|aposer"] [data-geste]').scrollIntoView({ block: 'center' })); await page.waitForTimeout(250);
+    { const bb = await (await page.$('#ba-equip .co-genre[data-genre="regler|aposer"] [data-geste]')).boundingBox(); await page.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2); } await page.waitForTimeout(1200);
+    const T = await page.evaluate(n => ({ n: verite().length - n, vt: CONTROLE.items.filter(x => x.genre === 'aposer').length, quoi: (app.hist[app.hist.length - 1] || {}).quoi, geste: ((document.querySelector('#toast .toast-geste') || {}).textContent || ''), mot: $('toast').textContent }), n0);
+    ok(T.vt === 0 && /3 barrettes/.test(T.quoi || '') && /^(Défaire|Rétablir)$/.test(T.geste), '« Leur donner leur repère » : les trois barrettes reçoivent chacune le repère proposé, en un seul geste — le message offre « Défaire »', JSON.stringify(T));
     await page.click('#toast .toast-geste'); await page.waitForTimeout(900);
-    ok(await page.evaluate(n => verite().length === n && CONTROLE.items.filter(x => x.genre === 'aposer').length === 3, n0), '« Rétablir » les rend à poser, toutes les trois (un seul Ctrl+Z)');
+    ok(await page.evaluate(n => verite().length === n && CONTROLE.items.filter(x => x.genre === 'aposer').length === 3, n0), '« Défaire » les rend à leur repère provisoire, toutes les trois (un seul geste)');
+    await page.mouse.move(700, 450); await page.waitForTimeout(200);
     // l'onglet Problèmes du récapitulatif : les mêmes genres, en intercalaires, leurs gestes
     await page.evaluate(() => { fermerInspecteur(); app.base.portee = 'tout'; changerOnglet('problemes'); }); await page.waitForTimeout(500);
     const R = await page.evaluate(() => ({ genres: [...document.querySelectorAll('#ba-tbody tr.rc-genre')].map(t => t.querySelector('.rc-genre-mot').textContent), premier: document.querySelectorAll('#ba-tbody tr.rc-genre [data-premier]').length, gestes: [...document.querySelectorAll('#ba-tbody tr.rc-genre [data-geste]')].map(b => b.textContent) }));
-    ok(R.genres.length === 8 && R.premier === 8 && R.genres[0] === 'connecteur qu’aucun arrangement ne loge' && R.gestes.includes('Leur donner leur repère'), 'l’onglet Problèmes range ses lignes par genre : un intercalaire chacun, « Voir le premier », son geste', R.genres.join(' | '));
-    // l'export dit sa portée et propose « Tout »
+    ok(R.genres.length >= 5 && R.genres[0] === 'connecteur qu’aucun arrangement ne loge' && R.genres.includes('consommations à écrire') && R.genres.includes('barrettes au repère provisoire') && R.gestes.includes('Leur donner leur repère'), 'l’onglet Problèmes range ses lignes par genre, comme le panneau Repères : un intercalaire chacun, son geste quand il y en a un', R.genres.join(' | ') + ' · ' + R.gestes.join(' / '));
+    // (v78c, le lecteur : « Tableau CSV, ça dégage : que la croix ») le récapitulatif n'a plus de bouton d'export : tout est dans ⋮ › Exporter
     await page.evaluate(() => { app.base.portee = 'folio'; changerOnglet('liaisons'); allerAuPlan('1'); rendreBase(true); }); await page.waitForTimeout(400);
-    // (v73 : « Tableau en CSV » ouvre un menu qui dit ce qu'il sort, et le retest corrigé en dernier — MIS À JOUR)
-    await page.click('#ba-csv'); await page.waitForTimeout(150);
-    const X = await page.evaluate(() => ({ dit: $('ba-csv-vu').textContent.replace(/\s+/g, ' ').trim(), tout: $('ba-csv-tout') ? $('ba-csv-tout').textContent.replace(/\s+/g, ' ').trim() : '', retest: !!$('ba-csv-retest') }));
-    const [dlt] = await Promise.all([page.waitForEvent('download'), page.click('#ba-csv-tout')]);
-    const csvt = require('fs').readFileSync(await dlt.path(), 'utf8').replace(/^﻿/, '').trim().split('\n');
-    ok(/^Ce qui est montré ?8 liaisons · folio 1/.test(X.dit) && /^Tout l’onglet Liaisons ?223 liaisons, sans folio ni filtre/.test(X.tout) && X.retest && csvt.length === 202, '« Tableau en CSV » dit ce qu’il sort (« Ce qui est montré : 8 liaisons · folio 1 ») ; « Tout l’onglet » sort les 209 ; le retest corrigé est au bas du menu', X.dit + ' · ' + X.tout + ' · ' + (csvt.length - 1) + ' lignes');
+    ok(await page.evaluate(() => !!$('ba-x') && $('ba-x').checkVisibility() && ![...document.querySelectorAll('#base .rc-export, #base #ba-csv, #base .rc-taille')].some(e => e.checkVisibility())), 'la tête du récapitulatif : son titre, le plan, la croix — ni « Tableau en CSV », ni « Moitié · Page »');
     // le récapitulatif en moitié garde l'échelle ; fermé, la vue d'avant revient
     await page.evaluate(() => { fermerBase(); ajuster(); }); await page.waitForTimeout(400);
     const v0 = await page.evaluate(() => ({ ...app.vue })); await page.keyboard.press('b'); await page.waitForTimeout(600);
     const v1 = await page.evaluate(() => ({ ...app.vue })); await page.keyboard.press('b'); await page.waitForTimeout(600);
     const v2 = await page.evaluate(() => ({ ...app.vue }));
-    ok(Math.abs(v1.s - v0.s) < 1e-9 && Math.abs(v2.s - v0.s) < 1e-9 && Math.abs(v2.tx - v0.tx) < 1 && Math.abs(v2.ty - v0.ty) < 1, 'B : le tiroir glisse sous le plan, l’échelle ne bouge pas ; B encore : la vue d’avant', JSON.stringify({ v0: v0.s, v1: v1.s, v2: v2.s }));
+    ok(v1.s <= v0.s + 1e-9 && Math.abs(v2.s - v0.s) < 1e-9 && Math.abs(v2.tx - v0.tx) < 1 && Math.abs(v2.ty - v0.ty) < 1, 'B : le folio se recadre dans la place libre au-dessus du récapitulatif (v84) ; B encore : la vue d’avant, au point près', JSON.stringify({ v0: v0.s, v1: v1.s, v2: v2.s }));
     // la recherche : un part number, un type, une borne ; l'index : les câbles
     const Q = await page.evaluate(() => ({ pn: candidats('MS3320').map(c => c.type + ':' + c.nom), type: candidats('DR12').map(c => c.type + ':' + c.nom), borne: candidats('300XC1:B5').map(c => c.type + ':' + c.nom + ':' + c.borne), relais: candidats('103RL').map(c => c.nom) }));
     ok(Q.pn.includes('repere:102CB1') && Q.type[0] === 'type:DR12' && Q.borne[0] === 'borne:300XC1:B5', 'la recherche trouve un part number (MS3320 → 102CB1), un type (DR12 : tous ses câbles), une borne (300XC1:B5)', JSON.stringify(Q));
     await page.keyboard.press('/'); await page.keyboard.type('300XC1:B5'); await page.waitForTimeout(250); await page.keyboard.press('Enter'); await page.waitForTimeout(900);
-    ok(await page.evaluate(() => app.plan === '3' && app.cible && app.cible.nom === '300XC1' && !!document.querySelector('#ba-equip .ct-bulles [aria-pressed="true"][data-connecteur="B"]') && !!document.querySelector('#ba-equip .vise')), '« 300XC1:B5 », Entrée : la fiche de 300XC1 sur son connecteur B, la ligne du contact allumée, sur le folio 3');
+    ok(await page.evaluate(() => app.plan === '3' && app.cible && app.cible.nom === '300XC1' && !$('inspecteur').hidden && /B5\s–\s397TB1:1/.test($('inspecteur').textContent)), '« 300XC1:B5 », Entrée : la carte de 300XC1, sur le folio 3 — elle dit le point de sa borne B5 (son câble vers 397TB1:1)');
     await page.keyboard.press('Escape'); await page.keyboard.press('/'); await page.keyboard.type('DR12'); await page.waitForTimeout(250); await page.keyboard.press('Enter'); await page.waitForTimeout(700);
     ok(await page.evaluate(() => app.base.ouvert && app.base.onglet === 'liaisons' && app.base.filtre === 'DR12' && [...document.querySelectorAll('#ba-tbody tr[data-i]')].every(t => verite()[+t.dataset.i].type === 'DR12')), '« DR12 », Entrée : le récapitulatif montre tous les câbles DR12');
-    await page.evaluate(() => { fermerBase(); app.insp.filtre = 'W-01'; basculerIndex(); }); await page.waitForTimeout(400);
-    ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .ix-item[data-cable]').length >= 5), 'l’index cherche aussi dans les câbles (« W-01 »)');
-    await page.click('#ba-equip .ix-item[data-cable="W-012"]'); await page.waitForTimeout(600);
-    ok(await page.evaluate(() => app.cible && app.cible.type === 'fil' && app.cible.l.cable === 'W-012'), 'un clic sur W-012 dans l’index ouvre sa fiche');
-    await page.evaluate(() => { app.insp.filtre = ''; deselectionner(); fermerInspecteur(); });
+    // (v84) le panneau Repères ne liste que des repères : un câble se cherche par la palette (« / » : son type, un bout, une borne — tests/dessin.js)
+    await page.evaluate(() => { fermerBase(); deselectionner(); fermerInspecteur(); });
     // la description du retest sous le repère (Description1 / 2), quand on n'a pas écrit de désignation
     ok(await page.evaluate(() => { const l = verite().find(l => l.de === '103RL1'); l.descriptionDe = 'RELAIS DE COMMANDE'; const d = designationDe('103RL1'), r = reperesDuContrat().find(x => x.nom === '103RL1'); delete l.descriptionDe; return d === 'RELAIS DE COMMANDE' && /RELAIS/.test(r.sous); }), 'sans désignation, le repère prend la description de l’installation (sur le folio, dans l’index)');
     // la mémoire du contrat : les repères ne se relisent pas tant que rien ne change
@@ -554,31 +373,32 @@ const FICHIER = P.fichierDemande();
     ok(K.ouvert && K.lignes >= 18 && K.p && await page.evaluate(() => !raccourcisOuverts()), '« ? » ouvre la feuille des raccourcis (P, Maj+B, Alt+←…) ; Échap la ferme', JSON.stringify(K));
     // le mot qui passe : un geste (8 s), une erreur qui reste jusqu'au clic
     const D = await page.evaluate(async () => { let fait = 0; dire('Essai.', false, { geste: 'Rétablir', faire: () => { fait++; } }); const b = document.querySelector('#toast .toast-geste'); b.click();
-      dire('Une erreur.', true); await new Promise(r => setTimeout(r, 3500)); const reste = $('toast').classList.contains('on'); return { fait, bouton: !!b, reste }; });
+      const vus = []; const obs = new MutationObserver(() => { const m = $('toast').textContent; if (m !== vus[vus.length - 1]) vus.push(m); }); obs.observe($('toast'), { childList: true, characterData: true, subtree: true });
+      dire('Une erreur.', true); await new Promise(r => setTimeout(r, 3500)); obs.disconnect(); const reste = $('toast').classList.contains('on'); return { fait, bouton: !!b, reste, vus }; });
     await page.mouse.click(700, 600); await page.waitForTimeout(200);
     ok(D.fait === 1 && D.bouton && D.reste && await page.evaluate(() => !$('toast').classList.contains('on')), 'le mot qui passe porte un geste (« Rétablir ») ; une erreur reste jusqu’au clic', JSON.stringify(D));
     ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
-    // Échap ferme d'abord le « ⋯ » de la fiche, puis la carte
+    // Échap ferme la carte (elle n'a plus de menu « ⋯ » : ses gestes sont sur elle)
     await page.evaluate(() => { allerAuPlan('1'); ajuster(); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(800);
-    await page.click('#fi-menu'); await page.waitForTimeout(200); await page.keyboard.press('Escape'); await page.waitForTimeout(200);
-    const E1 = await page.evaluate(() => ({ liste: !!$('fi-menu-liste') && !$('fi-menu-liste').hidden, carte: !$('inspecteur').hidden }));
+    const E1 = await page.evaluate(() => ({ menu: !!$('fi-menu'), carte: !$('inspecteur').hidden }));
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-    ok(!E1.liste && E1.carte && await page.evaluate(() => $('inspecteur').hidden), 'Échap ferme d’abord le « ⋯ » de la fiche (la carte reste), puis la carte', JSON.stringify(E1));
+    ok(!E1.menu && E1.carte && await page.evaluate(() => $('inspecteur').hidden), 'la carte n’a plus de « ⋯ » ; Échap la ferme', JSON.stringify(E1));
     // le survol du plan s'oublie quand la carte se pose sous la souris
     await page.evaluate(() => choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag'))); await page.waitForTimeout(800);
     const b1 = await page.evaluate(() => { const k = app.dessin.comps.find(c => c.name === '104LP1'), r = $('planche').getBoundingClientRect(); return { x: r.left + app.vue.tx + (k.x + k.w / 2) * app.vue.s, y: r.top + app.vue.ty + (k.y + k.h / 2) * app.vue.s }; });
-    await page.mouse.move(b1.x, b1.y, { steps: 3 }); await page.waitForTimeout(250);
-    const S0 = await page.evaluate(() => !!document.getElementById('rt-survol') || [...document.querySelectorAll('#scene .comp.hl')].some(g => g.dataset.name === '104LP1'));
+    await page.evaluate(([x, y]) => { const q = $('inspecteur').getBoundingClientRect(); if (x >= q.left - 8 && x <= q.right + 8 && y >= q.top - 8 && y <= q.bottom + 8) poserCarte(70, 420); }, [b1.x, b1.y]); await page.waitForTimeout(300);   // la carte de 102CB1 ne doit pas couvrir 104LP1, qu'on va survoler
+    await page.mouse.move(b1.x - 40, b1.y - 30); await page.mouse.move(b1.x, b1.y, { steps: 4 }); await page.waitForTimeout(350);
+    const S0 = await page.evaluate(() => !!document.getElementById('rt-survol') || [...document.querySelectorAll('#scene .comp.hl, #scene .comp.sv')].some(g => g.dataset.name === '104LP1'));   // (un bloc choisi : l'autre, survolé, se marque à peine — `.sv`)
     await page.evaluate(([x, y]) => { poserCarte(x - 60, y - 60); lacherLeSurvol(); }, [b1.x, b1.y]); await page.waitForTimeout(200);
-    const S1 = await page.evaluate(() => ({ survol: !!document.getElementById('rt-survol'), allume: [...document.querySelectorAll('#scene .comp.hl')].map(g => g.dataset.name) }));
-    ok(S0 && !S1.survol && !S1.allume.includes('104LP1') && S1.allume.includes('102CB1'), 'la carte posée sous la souris : le plan oublie son survol (104LP1 s’éteint), seul ce qui est choisi reste allumé', JSON.stringify(S1));
+    const S1 = await page.evaluate(() => ({ survol: !!document.getElementById('rt-survol'), allume: [...document.querySelectorAll('#scene .comp.hl, #scene .comp.sv')].map(g => g.dataset.name), choisi: !!document.querySelector('#scene .comp[data-name="102CB1"] .selbox') }));
+    S1.avant = S0; ok(S0 && !S1.survol && !S1.allume.includes('104LP1') && S1.choisi, 'la carte posée sous la souris : le plan oublie son survol (104LP1 s’éteint), seul ce qui est choisi reste allumé', JSON.stringify(S1));
     await page.keyboard.press('Escape');
     // la table de 3 000 lignes : virtuelle — peu de nœuds, toutes les lignes atteintes en défilant
     await page.evaluate(() => { const E = contratExemple(), L = []; for (let k = 0; k < 15; k++) E.forEach(l => L.push(liaison({ ...l, de: l.de + (k ? '-' + k : ''), vers: l.vers + (k ? '-' + k : ''), cable: l.cable + (k ? '-' + k : ''), plan: String(+l.plan + 6 * k) })));
       chargerContrat(L, 'essai', 'gros.xlsx'); app.base.portee = 'tout'; changerOnglet('liaisons'); ouvrirBase('page'); }); await page.waitForTimeout(1500);
     const V = await page.evaluate(async () => { const n = document.querySelectorAll('#ba-tbody tr').length, c = $('ba-corps'); c.scrollTop = c.scrollHeight; await new Promise(r => setTimeout(r, 300)); c.scrollTop = c.scrollHeight; await new Promise(r => setTimeout(r, 300));
       const ks = [...document.querySelectorAll('#ba-tbody tr[data-i]')].map(t => +t.dataset.i); return { lignes: verite().length, poses: n, fin: ks.includes(verite().length - 1), virtuel: !!RECAP.virtuel }; });
-    ok(V.virtuel && V.lignes === 3015 && V.poses < 250 && V.fin, 'le récapitulatif de 3 000 liaisons, « Tout » : moins de 250 lignes posées, et le bas de la table atteint en défilant (plus de « Tout montrer »)', JSON.stringify(V));
+    ok(V.virtuel && V.lignes === 15 * 223 && V.poses < 250 && V.fin, 'le récapitulatif de plus de 3 000 liaisons, « Tout » : moins de 250 lignes posées, et le bas de la table atteint en défilant (plus de « Tout montrer »)', JSON.stringify(V));
     ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
     await page.close(); }
   // LA CARTE : ni le bloc, ni le départ de ses câbles, ni ses voisins tant qu'on peut ; entière (pas coupée par le bas)
@@ -586,7 +406,7 @@ const FICHIER = P.fichierDemande();
   for (const [W, H] of [[1440, 900], [1920, 1080]]) {
     const page = await nav.newPage({ viewport: { width: W, height: H } }); page.setDefaultTimeout(300000); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
     await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && BIB.pret); await page.evaluate(() => atelier.exempleSansCalibreAuto());
-    for (const [nom, f] of [['102CB1', '1'], ['300XC1', '3'], ['668VT31', '3']]) {
+    for (const [nom, f] of [['102CB1', '1'], ['300XC1', '3'], ['668VT3', '3']]) {
       await page.evaluate(([nom, f]) => { deselectionner(); allerAuPlan(f); ajuster(); choisirBloc(app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag')); }, [nom, f]);
       await page.waitForFunction(() => !$('inspecteur').getAnimations().length, null, { timeout: 15000 }); await page.waitForTimeout(150);
       const C = await page.evaluate(nom => { const d = app.dessin, k = d.compDe.get(nom), r = $('planche').getBoundingClientRect(), s = app.vue.s, q = $('inspecteur').getBoundingClientRect(), X = x => r.left + app.vue.tx + x * s, Y = y => r.top + app.vue.ty + y * s;

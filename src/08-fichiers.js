@@ -602,4 +602,6 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
 // les entrées cachées de « Vos fichiers » (et de la bibliothèque) : la base, une norme ; la bible a la sienne (page.html), les plans aussi (08-bibliotheque)
 function lierEntreesFichiers() { const f = (id, fn) => { const el = $(id); if (el && !el.dataset.lie) { el.dataset.lie = '1'; el.addEventListener('change', e => { const x = e.target.files && e.target.files[0]; if (x) fn(x); e.target.value = ''; }); } };
   f('fichier-base', importerReferences); f('fichier-normes', importerNorme); f('fichier-see', lireBaseSEE);
-  const t = $('toast'); if (t && !t.dataset.lie) { t.dataset.lie = '1'; t.addEventListener('mouseenter', () => clearTimeout(toastT)); t.addEventListener('mouseleave', () => { if (t.classList.contains('on') && !TOAST.erreur) toastT = setTimeout(() => t.classList.remove('on', 'action'), 2500); }); } }
+  const t = $('toast'); if (t && !t.dataset.lie) { t.dataset.lie = '1'; t.addEventListener('mouseenter', () => clearTimeout(toastT)); t.addEventListener('mouseleave', () => { if (t.classList.contains('on') && !TOAST.erreur) {
+      // (v89) le minuteur d'avant d'abord : sans cela il restait armé, et effaçait plus tard le message suivant — même une erreur, qui doit rester jusqu'au clic
+      clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on', 'action'), 2500); } }); } }

@@ -451,7 +451,7 @@ function poserLesBarrettes(noms) { const vus = new Set(), faits = [];
   if (!faits.length) { dire('Aucune barrette n’a pu recevoir son repère.', true); return 0; }
   if (faits.length > 1) { const debut = app.hist.length - faits.length;   // chaque pose a écrit la sienne, à la suite
     if (debut >= 0 && app.hist[debut]) { app.hist.splice(debut + 1); app.hist[debut].quoi = 'pose de ' + pluriel(faits.length, 'barrette'); synchroniserHistorique(); }
-    dire(faits.map(([vt, nom]) => vt + ' devient ' + nom).join(', ') + ' : elles entrent dans votre installation, chacune avec son câble à créer et ses shunts.', false, { geste: 'Défaire', faire: defaire }); }
+    dire(faits.map(([vt, nom]) => vt + ' devient ' + nom).join(', ') + ' : elles entrent dans l’Excel corrigé, chacune avec son câble à créer et ses shunts.', false, { geste: 'Défaire', faire: defaire }); }
   return faits.length; }
 /* (v86, l'audit B3) LES GESTES DES ÉCRITURES DU FICHIER — des propositions de VOLTA, qui partent dans l'Excel corrigé (rien
    d'autre ne réécrit le fichier : jusque-là, VOLTA dessine juste et rend le fichier tel qu'il l'a lu) ; chacun une entrée
