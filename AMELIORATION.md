@@ -245,3 +245,25 @@ plusieurs, modifier le câblage dans VOLTA (le retest reste la source).
   le rangement des 52 feuilles de style est une dette réelle, à faire après son retour, batteries vertes.
 - **À son retour, d'abord** : un CAS DE RÉFÉRENCE — un petit plan réel dont il connaît les réponses à la main (calibre,
   chute, gauge) — rejoué par VOLTA puis gardé en batterie ; pas de nouvelle fonction avant.
+
+### L'ESSAI GUIDÉ AVEC LE LECTEUR (à faire dès qu'il est devant son ordinateur — il dit « go »)
+
+Le lecteur (10 novembre 2026) : « Tu me fais une batterie de test en temps réel avec moi et je le fais ; on valide, on
+valide pas, on gère. » Une étape à la fois ; il répond « ok » ou « pas ok » avec ce qu'il voit, **en mots, sans nom de
+client, de programme ni d'appareil, et sans envoyer ses fichiers** ; on corrige avant de passer à la suite.
+
+État honnête au départ (v96) : le retest Excel → folios, fiches, récapitulatif, exports : en place, vus par lui. PDF dessiné
+et Visio : lus, mais seulement sur des documents inventés (100 %, 100 %, 94 %). Scans et tableaux des PDF : pas lus.
+IA interne : le réglage et « Tester la connexion » existent ; **VOLTA ne l'appelle encore pour rien** (`demanderIA` n'a
+aucun appelant). Les fonctions v90 à v95 : testées sur l'exemple seulement.
+
+1. Ouvrir `Volta-v96.html` : la page s'ouvre, sans message d'erreur.
+2. Ouvrir un vrai retest (le plus petit) : « VOLTA a lu N liaisons » — N est-il le bon ? Les folios se dessinent-ils ?
+3. LE CAS DE RÉFÉRENCE : un disjoncteur et deux câbles qu'il connaît par cœur — calibre, gauge, chute : pareil qu'à la main ?
+   (Ses réponses deviennent une batterie.)
+4. La Revue jusqu'à « prêt à exporter », puis l'Excel corrigé rouvert dans Excel.
+5. Réglages › IA interne : adresse, modèle, clé, puis « Tester la connexion » — ce que dit CHAQUE ligne (le navigateur,
+   la clé, le modèle, les images, la taille). C'est ce qu'il faut pour brancher les scans.
+6. Un vrai PDF de schéma (dessiné, pas scanné), puis un Visio : combien de liaisons lues, combien de justes ?
+7. Nouvel indice (un vrai indice B), bilan électrique, plan vivant, fiche d'atelier (l'imprimer), vue d'ensemble.
+8. « Tout sauvegarder », et un gros fichier (1 000 liaisons et plus) : VOLTA reste-t-il fluide ?
