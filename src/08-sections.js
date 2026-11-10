@@ -61,7 +61,7 @@ function retenirSection(type, cle, ouvert) { memoireDeLaFiche()[type + '|' + cle
 
 /* Une section : { cle, titre?, resume?, badge?: { t, etat: 'ko'|'att'|'ok'|'' }, contenu, vide?, action?, ouvert? }.
    `resume`, `contenu` et `action` sont du HTML déjà échappé ; `vide` est la raison (texte) quand la donnée manque, et
-   `action` ce qu'on peut y faire (un bouton `.fs-action` : « charger les contrats déjà faits »), posé au bout du résumé.
+   `action` ce qu'on peut y faire (un bouton `.fs-action` : « charger les plans déjà faits »), posé au bout du résumé.
    Une section vide qui a quand même un contenu (où envoyer la donnée, ce qu'on peut saisir) s'ouvre ; sans contenu, non. */
 function ficheSection(type, s) { const titre = s.titre || SECTIONS[s.cle] || s.cle, ouvrable = !s.vide || !!s.contenu;
   const ouvert = ouvrable && (s.ouvert != null ? s.ouvert : !s.vide && sectionOuverte(type, s.cle));

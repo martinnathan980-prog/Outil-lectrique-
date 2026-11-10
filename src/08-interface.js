@@ -2302,7 +2302,7 @@ const PALETTE = { el: null, sel: 0, lignes: [], avant: null, actions: null, frap
 // ce qu'on tape aussi pour trouver une action (ses mots d'atelier, sans accent)
 const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx installation corrigee retest modifications envoyer livrable', svg: 'image vectorielle dessin',
   png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge calibres preferes', normes: 'tables sources', bible: 'barrettes connecteurs prises modules references',
-  nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
+  nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests plans contrats deposer',
   bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel pdf visio vsdx schema', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
   raccourcis: 'clavier touches aide', suivi: 'lpa excel classeur suivi fabrication barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft',
   // (v86) l'historique du plan entier (08-journal)
@@ -2952,13 +2952,13 @@ function sourceDe(l) { if (l && l.origine !== undefined) return l.origine ? sour
 const liaisonsDeRepere = nom => VT_A_POSER.test(nom) ? liaisonsDuPlan() : verite();
 // le rang d'un fil dans le contrat (dans la vérité), qu'on le tienne du contrat ou d'un folio ; -1 pour un fil que l'outil ajoute
 const rangDe = l => { const s = sourceDe(l); return s ? verite().indexOf(s) : -1; };
-/* POSER une barrette à poser au contrat, sous son vrai repère : chaque fil du dédoublement part d'une borne à lui, un
+/* POSER une barrette à poser au plan, sous son vrai repère : chaque fil du dédoublement part d'une borne à lui, un
    fil à créer (sans numéro) relie la borne de l'équipement à la borne 1, des shunts relient les bornes — ce que le folio
    montrait devient le contrat. Ctrl+Z le défait. */
 /* `serie` (« Toutes les poser », 08-controle) : `{ plan }` le folio de la barrette ; ni historique, ni dessin, ni mot — la
    série fait les siens, une fois. */
 function poserBarrette(vt, nom, serie) { const L = (serie ? liaisonsDe(serie.plan || app.plan) : liaisonsDuPlan()).filter(l => l.aPoser === vt), V = verite(); if (!L.length) return false;
-  if (V.some(l => l.de === nom || l.vers === nom)) { if (!serie) dire(nom + ' existe déjà au contrat : choisissez un autre repère.', true); return false; }
+  if (V.some(l => l.de === nom || l.vers === nom)) { if (!serie) dire(nom + ' existe déjà au plan : choisissez un autre repère.', true); return false; }
   if (!serie) histPush('pose de ' + nom + ' (' + vt + ')'); const plan = modeFolio() === 'fichier' ? L[0].plan || '' : '';
   L.forEach(l => {
     if (l.origine) { const s = sourceDe(l); if (!s) return;
@@ -2966,7 +2966,7 @@ function poserBarrette(vt, nom, serie) { const L = (serie ? liaisonsDe(serie.pla
     V.push(liaison({ ...l, de: l.de === vt ? nom : l.de, vers: l.vers === vt ? nom : l.vers, plan })); });
   const n = L.filter(l => l.de === vt && l.vers === vt).length; if (serie) { if (app.nFolios) refaireFolios(); return true; }
   app.choisi = nom; app.cible = { type: 'bloc', nom }; apresEdition();
-  direRetablir(`${vt} posée au contrat sous ${nom} : un câble à créer, ${pluriel(n, 'shunt')}.`); return true; }
+  direRetablir(`${vt} posée au plan sous ${nom} : un câble à créer, ${pluriel(n, 'shunt')}.`); return true; }
 function renommer(ancien, nouveau) { verite().forEach(l => { if (l.de === ancien) l.de = nouveau; if (l.vers === ancien) l.vers = nouveau; });
   const d = app.contrat.designations.get(ancien); app.contrat.designations.delete(ancien); if (d) app.contrat.designations.set(nouveau, d);
   // le sexe des contacts et le profil de charge suivent le repère
@@ -3153,7 +3153,7 @@ function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) r
    `o.nouveau` un plan neuf de l'installation ouverte (un fichier ouvert) ; sans rien, le plan sur la table (le collage qui le
    remplace) — ou un plan neuf s'il n'y en a pas. La bibliothèque s'efface : le contrat est sur la table. */
 function contratNeuf() { const d = app.contrat.cartouche, c = nouveauContrat(); c.cartouche.auteur = d.auteur; c.cartouche.echelle = d.echelle; return c; }
-function chargerContrat(liaisons, quoi, nom, o) { sauverMaintenant(); histPush(quoi || 'chargement d’un contrat'); app.contrat = contratNeuf();
+function chargerContrat(liaisons, quoi, nom, o) { sauverMaintenant(); histPush(quoi || 'chargement d’un plan'); app.contrat = contratNeuf();
   app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.choisi = null; app.cible = null; app.actif = null; app.nom = nom || app.nom;
   if (typeof planPour === 'function') app.planId = planPour(o || {}, app.nom, app.contrat.liaisons);
   app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false;
@@ -3165,7 +3165,7 @@ function chargerContrat(liaisons, quoi, nom, o) { sauverMaintenant(); histPush(q
    deviner — et l'erreur dite dans « Vos fichiers »), ficheHarnais (plusieurs harness : lequel ouvrir ?) vivent dans
    08-fichiers.js. */
 /* Le dépôt : toute la fenêtre est la cible ; la bibliothèque ou une carte de « Vos fichiers » qui porte data-depot dit
-   ce qu'on y dépose (des retests qui deviennent des plans — plusieurs à la fois —, la base des contrats déjà faits, la
+   ce qu'on y dépose (des retests qui deviennent des plans — plusieurs à la fois —, la base des plans déjà faits, la
    bible, une norme) — ailleurs, un retest (ou ce que le fichier se révèle être). La cible survolée s'allume. */
 function lierDepot() { let n = 0, vise = null;
   const cible = e => e.target && e.target.closest ? e.target.closest('[data-depot]') : null;
@@ -3206,11 +3206,12 @@ function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin,
   $('printroot').innerHTML = `<style>@page{size:A3 landscape;margin:8mm}</style>` + S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
 /* ---- ce que le menu et le rail affichent ------------------------------ */
-const NOM_EXEMPLE = 'Contrat d’exemple';
+const NOM_EXEMPLE = 'Plan d’exemple', NOM_EXEMPLE_AVANT = 'Contrat d’exemple';   // (v88) Installation › Plan › Folio : « contrat » a quitté l'interface
+const nomEstExemple = n => n === NOM_EXEMPLE || n === NOM_EXEMPLE_AVANT;
 /* L'en-tête du menu dit QUEL contrat est ouvert : le titre du cartouche si on en a écrit un, sinon le nom du fichier ;
    et que c'est l'exemple embarqué quand c'est lui (il ne s'ouvre qu'à la demande ; le fil de la barre du haut dit
    « Exemple »). La barre du haut et la bibliothèque suivent (08-bibliotheque). */
-function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : (app.planId ? 'Plan vide' : 'Aucun plan ouvert'), exemple = n && app.nom === NOM_EXEMPLE;
+function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : (app.planId ? 'Plan vide' : 'Aucun plan ouvert'), exemple = n && nomEstExemple(app.nom);
   // les nombres liés à leur mot (l'audit des pages : « 67 / repères » coupé au bout de la ligne du menu)
   const sous = n ? plurielLie(n, 'liaison') + ' · ' + plurielLie(reperesDuContrat().length, 'repère') + (P.length > 1 ? ' · ' + plurielLie(P.length, 'folio') : '') : '';
   $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous; $('ctx-nom').title = nom;
@@ -3220,7 +3221,7 @@ function synchroniserContexte() { const n = app.contrat.liaisons.length, P = pla
   const df = document.querySelector('#menu [data-act="dejafait"]'); if (df) { const sans = !app.references;
     if (!df.dataset.aideBase) df.dataset.aideBase = df.dataset.aide || '';
     if (sans) df.setAttribute('aria-disabled', 'true');
-    const t = 'Aucune base des contrats déjà faits pour l’instant : déposez-la dans Vos fichiers, puis comparez le plan aux contrats les plus proches.', aide = sans ? (typeof typo === 'function' ? typo(t) : t) : df.dataset.aideBase;
+    const t = 'Aucune base des plans déjà faits pour l’instant : déposez-la dans Vos fichiers, puis comparez le plan aux plans les plus proches.', aide = sans ? (typeof typo === 'function' ? typo(t) : t) : df.dataset.aideBase;
     if (df.dataset.aide !== aide) { df.dataset.aide = aide; const s = $(df.getAttribute('aria-describedby') || ''); if (s) s.textContent = aide; } } }
 /* Défaire ↶ et refaire ↷ restent à leur place, éteints quand leur pile est vide. Leur bulle dit ce qu'ils feraient
    (« W-012 en DR12 ») : elle s'écrit quand elle paraît (l'événement `bulle`, 08-menu), pas à chaque geste — comparer deux
@@ -3484,7 +3485,7 @@ function lierPanneau() {
   // le fichier — le bouton du rail se range (page.html le porte encore)
   { const bl = $('btnLiaison'); if (bl) { bl.hidden = true; bl.setAttribute('aria-hidden', 'true'); } } o('btnBible', basculerBible);
   // le menu (page.html) : la bibliothèque (l'entrée principale), ouvrir un retest (il devient un plan de l'installation ouverte),
-  // vos fichiers (la base des contrats déjà faits y a sa carte), le récapitulatif, la nomenclature ; Exporter (SVG, PNG,
+  // vos fichiers (la base des plans déjà faits y a sa carte), le récapitulatif, la nomenclature ; Exporter (SVG, PNG,
   // imprimer, le suivi) ; Plus (coller, l'exemple, la bible, les normes, les hypothèses, le cartouche). Ce qui porte sur le
   // plan le remet sur la table quand la bibliothèque le cache (08-bibliotheque, `surLePlan`).
   lierMenu({ bibliotheque: () => montrerBibliotheque(), ouvrir: choisirFichier, fichiers: () => ficheFichiers(),

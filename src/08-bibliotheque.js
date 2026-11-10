@@ -30,7 +30,7 @@
    dit) ; deux gestes (« Ouvrir une installation… », sa pierre claire cernée d'un
    liseré de cuivre qui tourne, Ctrl O ; « Nouvelle installation » au verre) ;
    dessous, deux tuiles de la même largeur : « Reprendre » (ou l'Exemple) et la
-   base des contrats déjà faits. La mise en scène se joue une fois par séance
+   base des plans déjà faits. La mise en scène se joue une fois par séance
    (style-z-accueil.css) ; la barre du haut s'efface : la marque flotte.
    LA BIBLIOTHÈQUE PLEINE : la tête (le titre, la recherche, le geste),
    « Reprendre » en verre, « Installations » et son filet, les cartes en grille —
@@ -195,6 +195,7 @@ function assurerExemple(demande) { const pref = preferencesBiblio();
   if (pref.exempleRetire) { delete pref.exempleRetire; garderPreferences(pref); }
   if (!BIB.installs.has(ID_EXEMPLE)) creerInstall('Exemple', { id: ID_EXEMPLE, demo: true });
   let p = BIB.plans.get(ID_EXEMPLE);
+  if (p && p.nom === NOM_EXEMPLE_AVANT) { p.nom = NOM_EXEMPLE; garderPlan(p); }   // (v88) gardé depuis une version d'avant : son nouveau nom
   if (!p) { p = { id: ID_EXEMPLE, install: ID_EXEMPLE, nom: NOM_EXEMPLE, source: 'exemple', cree: Date.now(), vu: 0, modifie: 0, ...resumeDe({ liaisons: contratExemple() }) }; BIB.plans.set(p.id, p); BIB.supprimes.delete(p.id); garderPlan(p); }
   return p; }
 /* LE PLAN QUE DEVIENT UN CONTRAT CHARGÉ (08-interface, `chargerContrat`) : un plan nommé (`planId` : l'exemple, un plan
@@ -231,7 +232,7 @@ async function chargerBibliotheque() { const [I, P] = await Promise.all([toutLir
   BIB.plans.forEach(p => { if (!BIB.installs.has(p.install)) { p.install = installARanger().id; garderPlan(p); } });
   assurerExemple(false);
   if (BIB.aAdopter && verite().length && (!app.planId || !BIB.plans.has(app.planId))) {
-    if (app.nom === NOM_EXEMPLE) { assurerExemple(true); app.planId = ID_EXEMPLE; }
+    if (nomEstExemple(app.nom)) { app.nom = NOM_EXEMPLE; assurerExemple(true); app.planId = ID_EXEMPLE; }
     else app.planId = creerPlan(installARanger().id, app.nom || 'Plan sans nom', verite(), { contrat: false }).id;
     sauver(); }
   BIB.aAdopter = false; BIB.pret = true; synchroniserBibliotheque(); if (bibliothequeOuverte()) { rendreBibliotheque({ arrivee: true }); poser(); } }
@@ -271,7 +272,7 @@ async function ouvrirPlan(id, apres) { const p = BIB.plans.get(id); if (!p) retu
   sauverMaintenant(); const o = await lireBiblio('contrats', id);
   if (!o && id === ID_EXEMPLE) { ouvrirExemple(true); return; }
   if (!o && p.source === 'base' && p.contrat) { const L = await liaisonsDuContrat(p.contrat, p.fwdBase);
-    if (!L || !L.length) { dire(guillemets(nomAffiche(p.nom)) + ' vient de la base des contrats déjà faits, qui n’est plus dans ce navigateur : redéposez-la.', true); return; }
+    if (!L || !L.length) { dire(guillemets(nomAffiche(p.nom)) + ' vient de la base des plans déjà faits, qui n’est plus dans ce navigateur : redéposez-la.', true); return; }
     chargerContrat(L, 'ouverture de ' + p.nom, p.nom, { planId: id }); app.hist = []; synchroniserHistorique(); if (apres) aller(apres); return; }
   if (!o || !o.liaisons) { dire(guillemets(nomAffiche(p.nom)) + ' n’a plus ses liaisons dans ce navigateur.', true); return; }
   // un retest corrigé déposé, ouvert pour la première fois (même un autre jour) : ce que garde sa feuille « VOLTA » — les
@@ -398,7 +399,7 @@ async function ajouterPlans(fichiers, installId) { fichiers = [...(fichiers || [
   if (faits.length === 1) dire(guillemets(nomAffiche(p.nom)) + ' ajouté à ' + guillemets(ins.nom) + ' : ' + plurielLie(p.n, 'liaison') + ', ' + plurielLie(p.folios, 'folio') + ' — un clic l’ouvre.' + vu);
   else if (faits.length) dire(pluriel(faits.length, 'plan') + ' ajoutés à ' + guillemets(ins.nom) + ' — un clic en ouvre un.' + vu); }
 
-/* ---- la base des contrats déjà faits dans la bibliothèque ------------------------------------------------------------ */
+/* ---- la base des plans déjà faits dans la bibliothèque ------------------------------------------------------------ */
 /* Une base qui dit l'installation de chaque ligne crée chaque installation (ou la retrouve, par son nom) avec ses plans : un par
    harness, un par dessin quand la base n'a pas de harness. Redéposée, elle remplace les plans qu'elle avait créés (sauf
    celui qui est sur la table). Rend { installs, nouvelles, plans }, ou null quand la base ne dit pas d'installation. */
@@ -453,13 +454,13 @@ function harnessDeLaBase() { const B = baseDeReferences(); if (!B) return [];
   return B.meta.contrats.filter(c => c.h !== '—').map(c => ({ h: c.h, appareil: c.appareil, retest: c.retest, dessins: c.fwds.length, n: c.n, range: ranges.has(c.h) })).sort((a, b) => triNaturel(a.h, b.h)); }
 const aRanger = () => harnessDeLaBase().filter(x => !x.range && x.h !== '—');
 function ouvrirRanger() { const xs = aRanger(), H = harnessDeLaBase(); if (!H.length) return;
-  BIB.ranger = { coches: new Set((xs.length ? xs : H).map(x => x.h)), par: 'harness', vers: '', nom: (app.references && app.references.nom ? nomAffiche(app.references.nom) : 'Contrats déjà faits') };
+  BIB.ranger = { coches: new Set((xs.length ? xs : H).map(x => x.h)), par: 'harness', vers: '', nom: (app.references && app.references.nom ? nomAffiche(app.references.nom) : 'Plans déjà faits') };
   if (BIB.vue !== 'racine') montrerBibliotheque('racine'); else rendreBibliotheque();
   setTimeout(() => { const r = document.querySelector('#bibliotheque .bi-ranger'); if (r && r.scrollIntoView) r.scrollIntoView({ block: 'nearest' }); }, 0); }
 /* Ranger : chaque harness coché devient un plan (ou ses dessins, un plan chacun) de l'installation choisie, ou d'une neuve —
    des plans qui lisent la base quand on les ouvre, comme ceux que range une colonne d'installation. */
 function rangerOk() { const R = BIB.ranger, B = baseDeReferences(); if (!R || !B || !R.coches.size) return;
-  let ins = R.vers ? BIB.installs.get(R.vers) : null; if (!ins) ins = installNommee(R.nom) || creerInstall(R.nom || 'Contrats déjà faits', { ecp: installDeLEcp(ecpDuNom(R.nom)) ? '' : ecpDuNom(R.nom) });
+  let ins = R.vers ? BIB.installs.get(R.vers) : null; if (!ins) ins = installNommee(R.nom) || creerInstall(R.nom || 'Plans déjà faits', { ecp: installDeLEcp(ecpDuNom(R.nom)) ? '' : ecpDuNom(R.nom) });
   const t = Date.now(), lot = [];
   [...R.coches].sort(triNaturel).forEach(h => { const c = contratDeLaBase(B, h); if (!c) return;
     (R.par === 'fwd' && c.fwds.length > 1 ? c.fwds : [null]).forEach(f => { const p = planDeContrat(ins, c, app.references.nom || '', t, f); BIB.nouveaux.add(p.id); lot.push(p); }); });
@@ -472,7 +473,7 @@ const chercheBiHtml = (ph, large) => `<label class="bi-cherche${large ? ' bi-che
 // …et, un contrat de la base, par ce que ses lignes portent (la recherche dans tout : un part number, un câble)
 const planCorrespondNom = (p, t) => !t || [p.nom, p.appareil, p.retest, ...(p.harness || []), ...(p.fwds || [])].some(x => cleTexte(x).includes(t));
 const planCorrespond = (p, t) => planCorrespondNom(p, t) || !!(p.contrat && contratsTrouves() && contratsTrouves().has(p.contrat));
-// une installation, par son ECP, son nom, le nom de l'un de ses plans (ce que ses contrats portent se dit à part : « Dans les contrats déjà faits »)
+// une installation, par son ECP, son nom, le nom de l'un de ses plans (ce que ses contrats portent se dit à part : « Dans les plans déjà faits »)
 const installCorrespond = (i, t) => !t || cleTexte(i.nom).includes(t) || (i.ecp && i.ecp.includes(t.replace(/^ecp\s*/, '').replace(/\s/g, ''))) || plansDeInstall(i.id).some(p => planCorrespondNom(p, t));
 /* L'écran entier : la tête (son titre, ses comptes, la recherche, l'action), puis le contenu, qui se refait seul quand on
    cherche (`rendreContenuBibliotheque`) — le champ garde le clavier. Une installation a, à sa gauche, toutes les autres. */
@@ -535,7 +536,7 @@ const aUnEcp = i => !i.demo && i.id !== ID_A_RANGER;
 /* LA RACINE : ses comptes, la recherche, « Nouvelle installation » ; le plan resté sur la table ; la base à ranger ; le
    rangement (ECP, nom, récentes) ; les cartes ; les plans qui répondent à la recherche ; l'Exemple, discret. Rien encore :
    l'accueil (`videHtml`) porte seul le titre, au milieu de la table. */
-// l'accueil : rien encore — ni installation, ni base des contrats déjà faits (une base sans installation se cherche déjà)
+// l'accueil : rien encore — ni installation, ni base des plans déjà faits (une base sans installation se cherche déjà)
 const accueil = () => BIB.vue === 'racine' && !installsVraies().length && !BIB.q && !baseDeReferences() && !(BIB.edition && BIB.edition.quoi === 'nouvelle');
 const pasGardeHtml = () => BIB.garde ? '' : '<span class="bi-pas-garde">pas gardée dans ce navigateur</span>';
 function teteRacineHtml() { const V = installsVraies(), nP = plansVrais().length, B = baseDeReferences(); if (accueil()) return '';
@@ -582,7 +583,7 @@ function reprendreHtml() { if (!planSurLaTable()) return ''; const p = BIB.plans
    dock ») — au centre optique de la table : la pile de feuilles, « Ouvrez votre installation » en affiche (v74 : le mot
    du lecteur, plus « retest »), une phrase, les deux gestes (« Ouvrir une installation… » clair, ses deux touches Ctrl O ;
    « Nouvelle installation » au verre), une ligne pour le dépôt (la fenêtre entière le reçoit) ; en bas, le DOCK. Plus
-   d'encadré pointillé ni de « Pour essayer » : l'Exemple et la base des contrats déjà faits sont deux tuiles du dock (la
+   d'encadré pointillé ni de « Pour essayer » : l'Exemple et la base des plans déjà faits sont deux tuiles du dock (la
    phrase de la base, dans sa bulle). */
 /* (v79, le lecteur : « pas moderne, peut-être trop de bleu, peut-être les lettres anciennes, c'est pas waouh ») : un
    SCHÉMA VIVANT, dessiné au trait clair sur le graphite — un disjoncteur, une barrette qui distribue, deux relais, une
@@ -664,16 +665,16 @@ function videHtml(demo) { return `<section class="bi-vide bi-accueil"><div class
   // (v81, le lecteur : « ouvrir, nouvelle, pour commencer : pas assez classe, pas assez dynamique, pas assez waouh ») : un
   // geste principal, grand, cerné d'un courant de cuivre qui tourne ; le second à côté, en verre ; dessous, sans titre,
   // ce qu'on reprend ou découvre — tout entre l'un après l'autre
-  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir"><span class="bi-g-ico">${icoBi('depot')}</span><span class="bi-g-t"><b>Ouvrir une installation…</b><small>ou glissez votre Excel n’importe où</small></span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
+  + `<div class="bi-vide-gestes"><button class="bi-btn bi-btn-ouvrir" data-bi="ouvrir"><span class="bi-g-ico">${icoBi('depot')}</span><span class="bi-g-t"><b>Ouvrir un fichier…</b><small>Excel, PDF ou Visio — ou glissez-le n’importe où</small></span><kbd class="bi-touches-k"><span>Ctrl</span><i>+</i><span>O</span></kbd></button><button class="bi-btn bi-btn-2" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>`
   + `${dockHtml(demo)}</div></section>`; }
 /* LE DOCK : deux tuiles de verre sous les deux gestes, de la même largeur qu'eux — « Reprendre » le plan resté sur la table
-   (s'il y en a un), sinon l'Exemple ; la base des contrats déjà faits. Une tuile : son image (une vignette, une icône), son
+   (s'il y en a un), sinon l'Exemple ; la base des plans déjà faits. Une tuile : son image (une vignette, une icône), son
    nom, ce qu'elle fait. Sur l'accueil, le plan resté sur la table ne peut être que l'Exemple (un fichier ouvert va dans
    « À ranger », et la bibliothèque n'est plus vide) : « Reprendre » le remplace — deux tuiles pour le même plan, c'était
    une de trop. */
-const BULLE_BASE = 'Un seul Excel qui porte tous vos contrats (Harness rempli) : chaque installation se crée avec ses contrats, même à 300 000 lignes.';
+const BULLE_BASE = 'Un seul Excel qui porte tous vos plans (Harness rempli) : chaque installation se crée avec ses plans, même à 300 000 lignes.';
 function dockHtml(demo) { const rep = planSurLaTable() ? tuileReprendreHtml() : '', ex = demo && !(rep && app.planId === ID_EXEMPLE) ? tuileExempleHtml(demo) : '';
-  const base = `<button class="bi-tuile" data-bi="base" aria-describedby="bi-bulle-base"><span class="bi-tuile-ico">${icoBi('base')}</span><span class="bi-tuile-t"><b>Base des contrats</b><small>déposer les contrats déjà faits</small></span><span class="bulle bi-bulle-haut" id="bi-bulle-base" aria-hidden="true">${esc(BULLE_BASE)}</span></button>`;
+  const base = `<button class="bi-tuile" data-bi="base" aria-describedby="bi-bulle-base"><span class="bi-tuile-ico">${icoBi('base')}</span><span class="bi-tuile-t"><b>Base des plans</b><small>déposer les plans déjà faits</small></span><span class="bulle bi-bulle-haut" id="bi-bulle-base" aria-hidden="true">${esc(BULLE_BASE)}</span></button>`;
   return `<nav class="bi-dock" aria-label="Pour commencer autrement">${rep}${rep ? '<hr>' : ''}${ex}${ex ? '<hr>' : ''}${base}</nav>`; }
 function tuileReprendreHtml() { return `<button class="bi-tuile bi-tuile-reprendre" id="bi-reprendre" data-bi="reprendre">${folioMini('bi-tuile-vi')}<span class="bi-tuile-t"><b>Reprendre</b><small>${esc(nomAffiche(app.nom))}</small></span><kbd>Échap</kbd></button>`; }
 // l'Exemple, une tuile du dock : sa carte ouvre son plan d'un clic (la même `.bi-carte.bi-demo` que sur la bibliothèque pleine)
@@ -804,7 +805,7 @@ function lignePlanHtml(p, avecInstall) { const i = BIB.installs.get(p.install), 
    une ligne (« Plus tard » la fait taire pour cette base) et, sur demande, les range : on coche, on choisit l'installation. */
 function bandeauBaseHtml() { const R = app.references, xs = R ? aRanger() : []; if (!xs.length || BIB.ranger || BIB.q) return '';
   const pref = preferencesBiblio(); if (pref.baseTue && pref.baseTue === (R.nom || '') + '|' + (R.t || 0)) return '';
-  return `<div class="bi-bandeau">${icoBi('base')}<span>La base des contrats déjà faits${R.nom ? ' (<b>' + esc(R.nom) + '</b>)' : ''} compte ${esc(pluriel(xs.length, 'harness'))} ${xs.length > 1 ? 'qui ne sont rangés' : 'qui n’est rangé'} dans aucune installation.</span><button class="bi-btn bi-btn-2" data-bi="ranger">${xs.length > 1 ? 'Les ranger…' : 'Le ranger…'}</button><button class="bi-lien-table" data-bi="ranger-tais">Plus tard</button></div>`; }
+  return `<div class="bi-bandeau">${icoBi('base')}<span>La base des plans déjà faits${R.nom ? ' (<b>' + esc(R.nom) + '</b>)' : ''} compte ${esc(pluriel(xs.length, 'harness'))} ${xs.length > 1 ? 'qui ne sont rangés' : 'qui n’est rangé'} dans aucune installation.</span><button class="bi-btn bi-btn-2" data-bi="ranger">${xs.length > 1 ? 'Les ranger…' : 'Le ranger…'}</button><button class="bi-lien-table" data-bi="ranger-tais">Plus tard</button></div>`; }
 function rangerHtml() { const R = BIB.ranger; if (!R) return ''; const H = harnessDeLaBase(), I = installsTriees().filter(i => !i.demo), n = R.coches.size;
   return `<section class="bi-feuille bi-ranger" aria-label="Ranger la base dans la bibliothèque"><div class="bi-ranger-tete"><h2>Ranger la base dans la bibliothèque</h2><p>Chaque harness coché devient un plan de l’installation choisie — ou un plan par dessin (FWD).</p></div>`
     + `<ul class="bi-ranger-liste">${H.map(x => `<li><label><input type="checkbox" data-ranger-h="${escA(x.h)}"${R.coches.has(x.h) ? ' checked' : ''}><b class="id">${esc(x.h)}</b><span>${esc(lies([x.appareil, x.retest, plurielLie(x.dessins, 'dessin'), plurielLie(x.n, 'liaison')]))}</span>${x.range ? '<em>déjà rangé</em>' : ''}</label></li>`).join('')}</ul>`
@@ -839,7 +840,7 @@ function ligneTrouveeHtml(B, g, R) { const brute = ligneBruteDeLaBase(B, g), f =
   const reste = [[7, 'type'], [8, 'câble'], [5, 'PN'], [12, 'PN'], [6, ''], [13, ''], [14, 'dessin']].filter(([i]) => f[i] && (ch.has(CHAMPS_BASE[i]) || i === 7 || i === 8)).map(([i]) => `<span class="${i === 8 || i === 5 || i === 12 || i === 14 ? 'id' : ''}">${m(i, esc(f[i]))}</span>`);
   return `<li><button class="bi-tl" data-bi="contrat" data-h="${escA(f[0])}" data-g="${g}">${bout(3, 4)}<span class="bi-tl-fl" aria-hidden="true">→</span>${bout(10, 11)}<span class="bi-tl-reste">${reste.join('<i aria-hidden="true">·</i>')}</span></button></li>`; }
 function trouvesHtml() { const T = BIB.trouve, B = baseDeReferences(); if (!T || !B || T.q !== BIB.q.trim() && !T.R) return '';
-  const tete = (compte, sous) => `<div class="bi-trouve-tete"><h2 class="bi-sous">Dans les contrats déjà faits${compte ? `<span>${compte}</span>` : ''}</h2>${sous ? `<p class="bi-trouve-sous">${sous}</p>` : ''}`;
+  const tete = (compte, sous) => `<div class="bi-trouve-tete"><h2 class="bi-sous">Dans les plans déjà faits${compte ? `<span>${compte}</span>` : ''}</h2>${sous ? `<p class="bi-trouve-sous">${sous}</p>` : ''}`;
   if (!T.R) return `<section class="bi-trouve en-cours">${tete('', esc('Recherche dans ' + milliers(B.meta.n) + ' lignes…'))}</div></section>`;
   const R = T.R, C = B.meta.contrats;
   if (!R.n) return `<section class="bi-trouve">${tete('', '')}</div><p class="bi-rien">Aucune des ${esc(milliers(B.meta.n))} lignes de la base ne porte ${esc(guillemets(R.q))}.</p></section>`;
@@ -850,7 +851,7 @@ function trouvesHtml() { const T = BIB.trouve, B = baseDeReferences(); if (!T ||
       + `<span class="bi-tc-nom"><b>${esc(c.h)}</b><span>${esc(ou)}</span></span><span class="bi-tc-n">${esc(plurielLie(x.n, 'ligne'))}</span><span class="bi-tc-ouvrir">Ouvrir${icoBi('ouvrir')}</span></button>`
       + `<ul class="bi-tc-lignes">${x.lignes.map(g => ligneTrouveeHtml(B, g, R)).join('')}${x.n > x.lignes.length ? `<li class="bi-tc-plus">+${INSECABLE}${esc(autres(x.n - x.lignes.length, 'ligne'))}</li>` : ''}</ul></article>`; };
   const sous = lies([T.genres.length ? T.genres.slice(0, 2).join(', ') : '', filtre ? plurielLie(L.length, 'contrat') + ' sur ' + milliers(R.contrats.length) : plurielLie(R.contrats.length, 'contrat'), R.borne ? 'la borne exactement' : R.exact ? 'la case entière' : '', T.ms + INSECABLE + 'ms']);
-  return `<section class="bi-trouve${T.enCours ? ' en-cours' : ''}">${tete(milliers(R.n) + ' ligne' + (R.n > 1 ? 's' : ''), esc(sous))}<button class="bi-btn bi-btn-2 bi-trouve-lot" data-bi="lot-trouves">Convertir ${L.length > 1 ? 'ces ' + milliers(L.length) + ' contrats' : 'ce contrat'}…</button></div>`
+  return `<section class="bi-trouve${T.enCours ? ' en-cours' : ''}">${tete(milliers(R.n) + ' ligne' + (R.n > 1 ? 's' : ''), esc(sous))}<button class="bi-btn bi-btn-2 bi-trouve-lot" data-bi="lot-trouves">Convertir ${L.length > 1 ? 'ces ' + milliers(L.length) + ' plans' : 'ce plan'}…</button></div>`
     + `<div class="bi-feuille bi-trouves">${filtresTrouveHtml(R, C)}${montres.map(carte).join('')}</div>${L.length > MAX ? `<p class="bi-rien">… et ${esc(autres(L.length - MAX, 'contrat'))} : précisez la recherche (un part number entier, « 300XC1:B5 », « "W-012" »).</p>` : ''}</section>`; }
 /* Les filtres de ce que la base porte : une puce par installation, par appareil, par année du retest (les six plus
    fréquentes de chaque, une famille n'en montre que si elle en a deux au moins) ; une puce pressée filtre, pressée encore
@@ -894,11 +895,11 @@ function elementDuLot(k) { if (k.startsWith('c:')) { const h = k.slice(2), p = p
 function lotHtml() { const L = BIB.lot; if (!L) return ''; const n = L.ids.size, E = L.encours, pdf = pdfDisponible();
   if (E) return `<div class="bi-lot en-cours" role="status" aria-live="polite"><div class="bi-lot-barre" role="progressbar" aria-valuemin="0" aria-valuemax="${E.n}" aria-valuenow="${E.k}"><i style="width:${partDuLot(E)}%"></i></div>`
     + `<span class="bi-lot-n">Conversion : <b>${E.k}${INSECABLE}/${INSECABLE}${E.n}</b></span><span class="bi-lot-nom id">${esc(E.nom)}</span><small class="bi-lot-mot">${esc(E.mot || '')}</small><span class="espace"></span><button class="bi-lien-lot" data-bi="lot-arreter">Arrêter</button></div>`;
-  return `<div class="bi-lot" role="region" aria-label="Convertir en lot"><span class="bi-lot-n"><b>${n}</b>${INSECABLE}${n > 1 ? 'contrats choisis' : 'contrat choisi'}</span>`
+  return `<div class="bi-lot" role="region" aria-label="Convertir en lot"><span class="bi-lot-n"><b>${n}</b>${INSECABLE}${n > 1 ? 'plans choisis' : 'plan choisi'}</span>`
     + `<label class="bi-lot-o"><input type="checkbox" data-lot-o="excel"${L.excel ? ' checked' : ''}><span>Excel corrigé</span></label>`
     + `<label class="bi-lot-o${pdf ? '' : ' eteint'}"><input type="checkbox" data-lot-o="pdf"${L.pdf && pdf ? ' checked' : ''}${pdf ? '' : ' disabled'}><span>Dossier PDF <small>${pdf ? 'tous les folios' : 'pas encore là'}</small></span></label>`
-    + `<span class="bi-lot-seg" role="group" aria-label="Ce qui sort"><button data-bi="lot-zip" data-zip="1" aria-pressed="${L.zip}">Un zip</button><button data-bi="lot-zip" data-zip="0" aria-pressed="${!L.zip}">Un par contrat</button></span>`
-    + `<span class="espace"></span><button class="bi-lien-lot" data-bi="lot-annuler">Annuler</button><button class="bi-btn" data-bi="lot-convertir"${n && (L.excel || (L.pdf && pdf)) ? '' : ' disabled'}>${icoBi('depot')}<span>Convertir${n ? ' ' + (n > 1 ? milliers(n) + ' contrats' : 'le contrat') : ''}</span></button></div>`; }
+    + `<span class="bi-lot-seg" role="group" aria-label="Ce qui sort"><button data-bi="lot-zip" data-zip="1" aria-pressed="${L.zip}">Un zip</button><button data-bi="lot-zip" data-zip="0" aria-pressed="${!L.zip}">Un par plan</button></span>`
+    + `<span class="espace"></span><button class="bi-lien-lot" data-bi="lot-annuler">Annuler</button><button class="bi-btn" data-bi="lot-convertir"${n && (L.excel || (L.pdf && pdf)) ? '' : ' disabled'}>${icoBi('depot')}<span>Convertir${n ? ' ' + (n > 1 ? milliers(n) + ' plans' : 'le plan') : ''}</span></button></div>`; }
 function rendreLot() { const el = $('bi-lot'); if (!el) return; el.innerHTML = lotHtml(); el.hidden = !BIB.lot; }
 const partDuLot = E => Math.round(100 * (Math.max(0, E.k - 1) + (E.part || 0)) / Math.max(1, E.n));
 // le dossier PDF d'un contrat avance (ses folios se placent) : la barre et son mot, sur place — le bouton « Arrêter » reste
@@ -927,7 +928,7 @@ async function convertirLeLot() { const L = BIB.lot; if (!L || L.encours || !L.i
       catch (_) { if (!E.arret) sansPdf.push(x.nom); } }
     if (x.plan && sortis.length) { x.plan.exporte = Date.now(); garderPlan(x.plan); }
     if (L.zip) fichiers.push(...sortis); else sortis.forEach(([n, d]) => telecharger(new Blob([d], { type: /\.pdf$/.test(n) ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), n)); }
-  const arrete = E.arret, ins = BIB.vue === 'install' && BIB.installs.get(BIB.install), nomZip = nomAscii((ins ? ins.nom : 'contrats-deja-faits') + '-' + els.length + '-contrats') + '.zip';
+  const arrete = E.arret, ins = BIB.vue === 'install' && BIB.installs.get(BIB.install), nomZip = nomAscii((ins ? ins.nom : 'plans-deja-faits') + '-' + els.length + '-plans') + '.zip';
   if (L.zip && fichiers.length) telecharger(zipSimple(fichiers), nomZip);
   BIB.lot = null; rendreBibliotheque();
   const fait = lies([nx ? nx + INSECABLE + (nx > 1 ? 'Excel corrigés' : 'Excel corrigé') : '', np ? np + INSECABLE + (np > 1 ? 'dossiers PDF' : 'dossier PDF') : '']), ms = Math.round(performance.now() - t0);

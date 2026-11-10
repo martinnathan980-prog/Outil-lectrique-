@@ -270,9 +270,9 @@ const tant = []; for (let k = 0; k < 36; k++) tant.push(X.liaison({ de: '800XC1'
 const FT = X.avecBarrettesAPoser(tant, 0), VT = [...new Set(FT.filter(l => l.aPoser).map(l => l.aPoser))][0], RT = FT.filter(l => X.estRaccordAPoser(l));
 ok('trente-six câbles sur une borne, qu’aucune zone ne loge : la barrette garde ses numéros (1 pour le câble à créer), et le moteur la retrouve',
   X.lettresDeBarretteAPoser(VT, vtDe(FT, VT)) === null && RT.length === 1 && RT[0].borneVers === '1' && !X.sansBarrettesAPoser(FT).some(l => l.de === VT || l.vers === VT), VT + ' · ' + RT.map(bout).join());
-// posée au contrat (08-interface, `poserBarrette` : `liaison({ ...l, de, vers })`) : le câble créé garde sa marque, les bornes leurs lettres
+// posée au plan (08-interface, `poserBarrette` : `liaison({ ...l, de, vers })`) : le câble créé garde sa marque, les bornes leurs lettres
 const pose = V1.map(l => X.liaison({ ...l, de: l.de === 'VT1' ? '102VT9' : l.de, vers: l.vers === 'VT1' ? '102VT9' : l.vers })), cree = pose.find(l => l.aCreer);
-ok('posée au contrat sous 102VT9, elle garde ses lettres (102VT9:51H) et le câble créé sa marque : une barrette en modules, que VOLTA vérifie sans rien changer',
+ok('posée au plan sous 102VT9, elle garde ses lettres (102VT9:51H) et le câble créé sa marque : une barrette en modules, que VOLTA vérifie sans rien changer',
   cree && bout(cree) === '102CB1:2→102VT9:51H' && !X.estRaccordAPoser(cree) && X.bornesLettrees(X.besoinsDeBarrette('102VT9', pose))
   && (Q => Q.fils.map(x => x.borne + '=' + x.contact.lettre).sort().join() === '51H=H,51J=J,51K=K' && !Q.verdicts.length)(X.remplirModules(X.besoinsDeBarrette('102VT9', pose), NE, '')));
 // les prises de l'exemple : leurs bornes sont les lettres de leur face — (passe 87) 412VC3B garde A…G, ses câbles vers 411VC3A

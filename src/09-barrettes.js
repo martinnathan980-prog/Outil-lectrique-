@@ -1569,7 +1569,7 @@ function simulerBornier(Q, norme, hyp) {
   return { hyp: H, facteur, declassement, chute, iContact, rContact, famille: F, lignes, compte, regime, retour: H.retour === 'fil' ? 'fil' : 'structure', fils: filsDuBornier(Q), sansNorme: !F && !(norme && norme.fils.length),
            conducteur: H.chuteConducteur === 'fixe' ? 'fixe' : 'estimee' };
 }
-const COLONNES_SUIVI = [['contrat', 'Contrat'], ['repere', 'Repère'], ['nature', 'Nature'], ['reference', 'Référence retenue'], ['fichier', 'Référence du fichier'],
+const COLONNES_SUIVI = [['contrat', 'Plan'], ['repere', 'Repère'], ['nature', 'Nature'], ['reference', 'Référence retenue'], ['fichier', 'Référence du fichier'],
   ['nBornes', 'Bornes utilisées'], ['bornes', 'Bornes'], ['shunts', 'Shunts'], ['jauge', 'Jauge'], ['fils', 'Fils'], ['routes', 'Routes'], ['plans', 'Folios']];
 function csvDuSuivi(lignes) {
   const cell = v => { const t = Array.isArray(v) ? v.join(' ') : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
@@ -1577,7 +1577,7 @@ function csvDuSuivi(lignes) {
 }
 
 /* ---- les modules de jonction (ASNE 0599, NSA937901) ------------------------
-   Une barrette du contrat se pose en MODULES DE JONCTION : un module est un
+   Une barrette du plan se pose en MODULES DE JONCTION : un module est un
    bloc de contacts lettrés, et des GROUPES de contacts reliés (shuntés) dans
    le module — la VARIANTE, ou le code d'arrangement (E0599 A101 : dix-huit
    paires ; NSA937901 20-04 : un groupe de 4 et un de 6 ; M12-08 : deux
@@ -2064,7 +2064,7 @@ function modulesPossibles(besoins, norme, numero, choix) { if (!bornesLettrees(b
    nomment celles d'une barrette — le module, puis la lettre du contact (« 51H ») — et comme sa fiche les dessine. Le module
    est le premier du rail : 51, comme vos fichiers les numérotent. Chaque câble prend le contact que le remplissage lui
    donne (`remplirModules` : le plus petit module qui loge le groupe, chaque câble sur le plus petit contact libre qui admet
-   sa gauge, le câble à créer d'abord). Le plan, la fiche, la recherche et, la barrette posée au contrat, l'installation
+   sa gauge, le câble à créer d'abord). Le plan, la fiche, la recherche et, la barrette posée au plan, l'installation
    corrigée disent alors la même chose. `L` : les liaisons de la barrette `nom`, ses bornes encore numérotées (1 : le câble
    à créer, puis une par câble ; les shunts). Rend Map(borne numérotée → « 51H »), ou null — sans module de barrette dans
    la norme, ou quand aucun groupe ne loge ses câbles (trop de câbles pour une zone, une gauge qu'aucun contact n'admet) :
@@ -2169,7 +2169,7 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
       [[true, 'partie mobile'], [false, 'partie fixe']].forEach(([am, partie]) => { const fs = p.fils.filter(f => !!f.amont === am); if (fs.length < 2) return;
         verdicts.push({ niveau: 'attention', texte: `contact ${c.lettre} : ${fs.length} câbles côté ${partie} (${fs.map(f => (f.type || 'câble') + ' vers ' + f.vers + (f.borne ? ':' + f.borne : '')).join(', ')}) — un contact ne reçoit qu’un câble de chaque partie`, bornes: [p.borne] }); }); });
     // les contacts shuntés d'un module retenu à la main relient des bornes qui ne le sont peut-être pas
-    if (m.groupes.some(g => g.contacts.length > 1)) verdicts.push({ niveau: 'attention', texte: `l'arrangement ${m.variante} relie des contacts entre eux (module shunté) : à n'employer que si le contrat le veut`, bornes: [] }); }
+    if (m.groupes.some(g => g.contacts.length > 1)) verdicts.push({ niveau: 'attention', texte: `l'arrangement ${m.variante} relie des contacts entre eux (module shunté) : à n'employer que si le plan le veut`, bornes: [] }); }
   else if (points.length) {
     // le COUPABLE (audit v72 : six bornes accusées pour un seul câble de 12 AWG parmi des 20 et 22) : l'arrangement le plus
     // proche — celui qui loge le plus de bornes — et ce qu'il laisse ; une minorité de bornes s'y nomme, câble par câble

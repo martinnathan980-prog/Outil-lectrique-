@@ -1,7 +1,7 @@
 /* ===========================================================================
    08 ter — LES MODULES DE JONCTION ET LES INSERTS, tels qu'on les pose
    ---------------------------------------------------------------------------
-   Une barrette du contrat se pose en modules de jonction de la norme ASNE
+   Une barrette du plan se pose en modules de jonction de la norme ASNE
    0599 ou de la NSA937901 — les deux que l'outil propose pour une barrette :
    celle du part number du fichier, sinon la mieux taillée ; l'une ou l'autre
    d'un clic sur la fiche. Le remplissage est AUTOMATIQUE (`remplirModules`,

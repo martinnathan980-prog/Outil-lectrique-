@@ -617,7 +617,7 @@ function ecrireCharge(nom, f, quoi) { const avant = chargeDe(nom), c = JSON.pars
 const barrettes = () => memo('barr', () => reperes().filter(r => r.genre === 'barrette'));
 function infoBarrette(r) { return memo('bar|' + r.k, () => { if (r.aPoser) { const I = infoRepere(r); return { Q: I.Q, cables: I.cables }; }
   const P = planDuRepere(r.nom); return { Q: P.barrette ? P.barrette.plan : null, main: P.barrette ? P.barrette.main : '', cables: infoRepere(r).cables }; }); }
-/* Le prochain repère libre d'une barrette à poser : la suite de la barrette du contrat la plus proche de l'équipement
+/* Le prochain repère libre d'une barrette à poser : la suite de la barrette du plan la plus proche de l'équipement
    qu'elle dédouble (102CB1 → 667VT21 → 667VT22), sinon le numéro de cet équipement (102VT1). */
 function prochainRepereVT(r) { const pris = new Set(reperesDe(verite())), sur = /^ajoutée par VOLTA sur (\S+?):/.exec(r.sous || ''), q0 = sur ? lireRepere(sur[1]) : null, n0 = q0 && q0.num ? +q0.num : 0;
   const vts = [...pris].filter(x => estBarrette(x) && !VT_A_POSER.test(x)).map(lireRepere).filter(q => q && q.num && /^\d+$/.test(q.suffixe));
@@ -1322,9 +1322,9 @@ function amenerLigne(k) { const V = RECAP.virtuel; if (!V) return; const i = V.m
    d'où. */
 // (v86) les liaisons et les équipements viennent de votre fichier : le vide dit d'où ils viendront, pas « écrivez-les ici »
 const VIDES = { liaisons: ['Les liaisons de votre fichier viendront ici', 'Déposez votre fichier sur la table : VOLTA en lit chaque ligne.'], equipements: ['Les équipements de votre fichier viendront ici', 'Chaque repère de vos liaisons qui n’est ni un disjoncteur, ni une barrette, ni une prise.'],
-  disjoncteurs: ['Les disjoncteurs viendront ici', 'Un repère au code CB : son calibre, son verdict et son profil de charge se lisent ici.'], barrettes: ['Les barrettes viendront ici', 'Celles du contrat (code VT), et celles que VOLTA ajoute quand plusieurs câbles partagent une borne.'],
+  disjoncteurs: ['Les disjoncteurs viendront ici', 'Un repère au code CB : son calibre, son verdict et son profil de charge se lisent ici.'], barrettes: ['Les barrettes viendront ici', 'Celles du plan (code VT), et celles que VOLTA ajoute quand plusieurs câbles partagent une borne.'],
   prises: ['Les prises de coupure viendront ici', 'Un repère au code VC : son arrangement et ses contacts se lisent ici.'], cables: ['Les types de câble viendront ici', 'Un câble compte dès que sa liaison a un « de » et un « vers ».'],
-  raccords: ['Les raccords viendront ici', 'Un raccord se choisit pour chaque connecteur d’équipement.'], problemes: ['Rien à reprendre', 'Chaque câble, chaque calibre, chaque contact est vérifié.'], normes: ['Les normes viendront ici', 'Elles jugent le contrat dès qu’il a des liaisons.'] };
+  raccords: ['Les raccords viendront ici', 'Un raccord se choisit pour chaque connecteur d’équipement.'], problemes: ['Rien à reprendre', 'Chaque câble, chaque calibre, chaque contact est vérifié.'], normes: ['Les normes viendront ici', 'Elles jugent le plan dès qu’il a des liaisons.'] };
 const ICO_VIDE = { loupe: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/>', folio: '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 9h16M9 9v10"/>', ok: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   table: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 10h17M3.5 14.5h17M9.5 10v9"/>' };
 const icoVide = (k, cls) => `<span class="rc-vide-ico${cls ? ' ' + cls : ''}"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICO_VIDE[k]}</svg></span>`;
@@ -1339,7 +1339,7 @@ function videRecap(O, nTous) { const b = app.base, cherche = b.filtre.trim(), pu
         : bloc(icoVide('folio'), `Rien sur ${esc(cherche)} dans cet onglet`, 'Le bloc choisi sur le plan filtre chaque onglet sur lui.', '<button class="btn papier" id="ba-effacer">Voir tout l’onglet</button>'); }
     if (cherche || puces) return bloc(icoVide('loupe'), cherche && !b.filtreAuto ? `Rien ne correspond à «${INSECABLE}${esc(cherche)}${INSECABLE}»` : 'Rien qui corresponde',
       cherche && puces ? 'La recherche et ' + (puces > 1 ? 'les filtres pressés' : 'le filtre pressé') + ' se cumulent.' : puces ? (puces > 1 ? 'Les filtres pressés se cumulent : ôtez-en un pour élargir.' : 'Ôtez-le pour revoir tout l’onglet.') : 'La recherche lit chaque colonne de l’onglet, même celles qu’on ne montre pas.', `<button class="btn papier" id="ba-effacer">${cherche && puces ? 'Effacer la recherche et les filtres' : cherche ? 'Effacer la recherche' : 'Ôter les filtres'}</button>`);
-    return bloc(icoVide('folio'), 'Rien sur ce folio', 'Le folio ' + esc(app.plan) + ' n’a aucune ligne de cet onglet.', '<button class="btn papier" data-portee-tout="1">Voir tout le contrat</button>'); }
+    return bloc(icoVide('folio'), 'Rien sur ce folio', 'Le folio ' + esc(app.plan) + ' n’a aucune ligne de cet onglet.', '<button class="btn papier" data-portee-tout="1">Voir tout le plan</button>'); }
   const [titre, phrase] = VIDES[b.onglet] || ['Rien à montrer', ''];
   return bloc(b.onglet === 'problemes' ? icoVide('ok', 'ok') : icoVide('table'), titre, phrase, O.ajout && O.ajouter ? `<button class="btn papier" data-ajouter="1">${ICONE_PLUS}${esc(O.ajout)}</button>` : ''); }
 const ICONE_PLUS = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';

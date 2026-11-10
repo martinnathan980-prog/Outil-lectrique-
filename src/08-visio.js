@@ -201,7 +201,7 @@ function dessinPourVisio(plan) { const L = liaisonsDe(plan); if (!L.length) retu
   return { plan, folio, fwd: fwd || plan, nom: /^\d+$/.test(plan) ? 'Folio ' + plan : plan, dessin: { comps, fils, bbox: d.bbox } }; }
 async function docVisio() { const P = plans(), liste = P.length ? P : ['*'], c = app.contrat.cartouche || {}, V = verite();
   for (let k = 0; k < liste.length; k++) await placementPourVisio(liste[k], k + 1, liste.length);
-  return { titre: c.titre || app.nom || 'Contrat de câblage', auteur: c.auteur || '', date: c.date || '', indice: c.indice || '', echelle: c.echelle || '', harness: (V.find(l => l.harness) || {}).harness || '',
+  return { titre: c.titre || app.nom || 'Plan de câblage', auteur: c.auteur || '', date: c.date || '', indice: c.indice || '', echelle: c.echelle || '', harness: (V.find(l => l.harness) || {}).harness || '',
     folios: liste.map(dessinPourVisio).filter(Boolean) }; }
 function octetsVisio(doc) { const F = ecrireSchemaVisio(doc), z = {}; Object.keys(F).forEach(k => { z[k] = fflate.strToU8(F[k]); }); return fflate.zipSync(z, { level: 6 }); }
 let exportVisioEnCours = false;

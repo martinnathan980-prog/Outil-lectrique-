@@ -63,7 +63,7 @@ const ACC = 'connecteur d’accouplement', FOURNI = 'fourni avec l’équipement
     // connecteur : une cosse, sans accouplement — la LPA le compte à part, avec les disjoncteurs)
     const suivi = {}; suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || '').filter(x => x.nature === 'connecteur' && !estDisjoncteur(x.repere.split(' ')[0])).forEach(x => { suivi[x.repere] = x.reference || ''; });
     // le dossier PDF : le texte de ses pages LPA (les chaînes des opérateurs Tj)
-    let pdf = ''; try { pdf = pagesNomenclaturePdf('Contrat d’exemple').map(p => p.ops()).join('\n'); } catch (e) { pdf = 'ERREUR ' + e.message; }
+    let pdf = ''; try { pdf = pagesNomenclaturePdf('Plan d’exemple').map(p => p.ops()).join('\n'); } catch (e) { pdf = 'ERREUR ' + e.message; }
     // l'étanchéité dite (340AB1 A étanche) : ses obturateurs sont dus — la fiche et la LPA le disent ensemble ; puis on rend
     await surLeFolio('2'); const avant = app.contrat.raccords.get('340AB1|A'); app.contrat.raccords.set('340AB1|A', { ...(avant || {}), etanche: true });
     const gE = (bloc('340AB1') || []).find(g => g.titre === 'Connecteur A'), NE = nomenclatureDuContrat();
@@ -157,9 +157,9 @@ const ACC = 'connecteur d’accouplement', FOURNI = 'fourni avec l’équipement
   ok('chaque ligne du Suivi dit la référence que commande l’onglet Pièces (l’accouplement, les modules, la prise) — barrettes ajoutées par VOLTA comprises', !suiviFaux.length && nG(/^connecteur/) === 58 && nG(/^barrette$/) === 4 && nG(/^barrette ajoutée/) === 3 && nG(/^prise/) === 5,
     suiviFaux.slice(0, 4).join(' · ') || N.suivi.length + ' lignes : ' + nG(/^connecteur/) + ' connecteurs, ' + nG(/^barrette$/) + ' barrettes, ' + nG(/^barrette ajoutée/) + ' ajoutées, ' + nG(/^prise/) + ' prises');
   const C6 = R.classeur;
-  ok('l’entrée du menu Exporter fabrique le classeur de la LPA : deux feuilles, « LPA » et « Suivi », une ligne par pièce posée, sans numéro de câble', !!C6 && C6.feuilles.join('|') === 'LPA|Suivi' && C6.suivi.length === N.suivi.length + 1 && C6.suivi[0].join('|') === 'Contrat|Repère|Nature|Référence posée|Votre fichier|Bornes utilisées|Bornes|Shunts|Câbles|Routes|Folios',
+  ok('l’entrée du menu Exporter fabrique le classeur de la LPA : deux feuilles, « LPA » et « Suivi », une ligne par pièce posée, sans numéro de câble', !!C6 && C6.feuilles.join('|') === 'LPA|Suivi' && C6.suivi.length === N.suivi.length + 1 && C6.suivi[0].join('|') === 'Plan|Repère|Nature|Référence posée|Votre fichier|Bornes utilisées|Bornes|Shunts|Câbles|Routes|Folios',
     C6 ? C6.feuilles.join(' · ') + ' · ' + (C6.suivi.length - 1) + ' lignes de Suivi' : 'aucun classeur : ' + R.pris.join(', '));
-  ok('le Suivi en CSV sort encore (son onglet, l’ancien nom de fichier), avec les mêmes lignes', !!R.csvSuivi && /suivi\.csv$/.test(R.csvSuivi.nom) && R.csvSuivi.lignes.length === N.suivi.length + 1 && /^Contrat;Repère;Nature;Référence posée/.test(R.csvSuivi.lignes[0]),
+  ok('le Suivi en CSV sort encore (son onglet, l’ancien nom de fichier), avec les mêmes lignes', !!R.csvSuivi && /suivi\.csv$/.test(R.csvSuivi.nom) && R.csvSuivi.lignes.length === N.suivi.length + 1 && /^Plan;Repère;Nature;Référence posée/.test(R.csvSuivi.lignes[0]),
     R.csvSuivi ? R.csvSuivi.nom + ' · ' + (R.csvSuivi.lignes.length - 1) + ' lignes' : 'aucun CSV');
 
   titre('7. LES CÂBLES : LA LIGNE « LE CÂBLE » DE CHAQUE FICHE');

@@ -133,7 +133,7 @@ function titre(t) { console.log('\n' + t); }
      pastille, sur le fil : il ne compte pas. */
   titre('4. L’EXEMPLE, FOLIO PAR FOLIO — rien ne s’écrit sur rien');
   const oeil = await page.evaluate(() => {
-    chargerContrat(contratExemple(), 'exemple', 'Contrat d’exemple');
+    chargerContrat(contratExemple(), 'exemple', 'Plan d’exemple');
     const out = { folios: [], muets: 0, fils: 0, chev: [], barres: [], nus: [] };
     for (const plan of plansDe(app.contrat.liaisons)) { allerAuPlan(plan); const D = app.dessin;
       const T = []; document.querySelectorAll('#scene text').forEach(t => { const cls = t.getAttribute('class') || '';
@@ -167,7 +167,7 @@ function titre(t) { console.log('\n' + t); }
   titre('5. LE DISJONCTEUR SUR LE FOLIO — sa forme, aux ports d’un équipement');
   const dj = { folios: 0, cbs: 0, formes: 0, repli: [], geometrie: [], chev: [], barres: [], calibres: [] };
   const noterDj = (nom, r) => { dj.folios++; dj.cbs += r.cbs; dj.formes += r.formes; ['repli', 'geometrie', 'chev', 'barres', 'calibres'].forEach(k => r[k].forEach(x => dj[k].push(nom + ' : ' + x))); };
-  noterDj('exemple 1', await page.evaluate(src => { chargerContrat(contratExemple(), 'exemple', 'Contrat d’exemple'); allerAuPlan('1'); return eval('(' + src + ')')(); }, disjoncteursDansLaPage.toString()));
+  noterDj('exemple 1', await page.evaluate(src => { chargerContrat(contratExemple(), 'exemple', 'Plan d’exemple'); allerAuPlan('1'); return eval('(' + src + ')')(); }, disjoncteursDansLaPage.toString()));
   for (const profil of ['sans', 'minimal', 'serie', 'piquages', 'barretteLongue']) for (let g = 1; g <= 3; g++) {
     const L = await page.evaluate(genererDansLaPage, [g * 7919, profil]);
     noterDj(profil + ' #' + g, await page.evaluate(([L, src]) => { chargerContrat(L.map(l => liaison(l)), 'corpus', 'corpus'); return eval('(' + src + ')')(); }, [L, disjoncteursDansLaPage.toString()])); }
@@ -176,7 +176,7 @@ function titre(t) { console.log('\n' + t); }
   ok('aucun texte d’un disjoncteur n’en chevauche un autre', dj.chev.length === 0, dj.chev.length ? dj.chev.slice(0, 4).join(' | ') : 'aucun');
   ok('aucun texte d’un disjoncteur n’est barré par un fil', dj.barres.length === 0, dj.barres.length ? dj.barres.slice(0, 4).join(' | ') : 'aucun');
   ok('le calibre s’écrit quand on le sait (« 10 A » : le part number de 102CB1), rien quand ni le part number ni un choix ne le disent', dj.calibres[0] === 'exemple 1 : 10 A' && dj.calibres.slice(1).every(x => / : $/.test(x)), dj.calibres.slice(0, 3).join(' | '));
-  const exportDj = await page.evaluate(() => { chargerContrat(contratExemple(), 'exemple', 'Contrat d’exemple'); allerAuPlan('1'); const S = svgDuFolio(), doc = new DOMParser().parseFromString(S.txt, 'image/svg+xml'), g = doc.querySelector('.comp[data-name="102CB1"]');
+  const exportDj = await page.evaluate(() => { chargerContrat(contratExemple(), 'exemple', 'Plan d’exemple'); allerAuPlan('1'); const S = svgDuFolio(), doc = new DOMParser().parseFromString(S.txt, 'image/svg+xml'), g = doc.querySelector('.comp[data-name="102CB1"]');
     return { xml: !doc.querySelector('parsererror'), style: /\.cb-arc[,{]/.test(S.txt) && /\.cb-cal\{/.test(S.txt), arc: !!(g && g.querySelector('.cb-arc')), cal: g && g.querySelector('.cb-cal') ? g.querySelector('.cb-cal').textContent : '' }; });
   ok('le SVG enregistré porte le symbole et son style, et se relit en XML', exportDj.xml && exportDj.style && exportDj.arc && exportDj.cal === '10 A', JSON.stringify(exportDj));
 

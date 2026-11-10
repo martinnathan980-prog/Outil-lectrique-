@@ -17,7 +17,7 @@ const NORM = t => String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g
 /* Les colonnes du retest, et les noms sous lesquels on les accepte. Cette
    table sert aussi à lire la base de retest (09) : un seul vocabulaire.
    L'INSTALLATION (telle antenne, tel cockpit) range les plans dans la
-   bibliothèque (08-bibliotheque) : la base des contrats déjà faits qui la
+   bibliothèque (08-bibliotheque) : la base des plans déjà faits qui la
    porte crée chaque installation avec ses plans ; son ECP (cinq chiffres),
    quand une colonne le dit, la numérote. */
 /* (v84) les mêmes colonnes écrites en français (« Équipement 1 », « Borne 1 », « Longueur (mm) ») ou à l'anglaise

@@ -282,12 +282,12 @@ function exporterNomenclature(N) { N = N || nomenclatureDuContrat();
 /* (passe 87) LE SUIVI, une ligne par pièce posée — pour son CSV et pour sa feuille du classeur : le contrat (on rassemble
    les suivis d'un contrat à l'autre), le repère, ce qu'on y pose et sa référence (celle que la LPA commande), celle de
    votre fichier, les bornes, les câbles (combien : ils n'ont plus de numéro), les routes, les folios. */
-const ENTETES_SUIVI = ['Contrat', 'Repère', 'Nature', 'Référence posée', 'Votre fichier', 'Bornes utilisées', 'Bornes', 'Shunts', 'Câbles', 'Routes', 'Folios'];
+const ENTETES_SUIVI = ['Plan', 'Repère', 'Nature', 'Référence posée', 'Votre fichier', 'Bornes utilisées', 'Bornes', 'Shunts', 'Câbles', 'Routes', 'Folios'];
 function lignesSuivi(N) { const contrat = (app.nom || 'contrat').replace(/\.[^.]+$/, '');
   return (N.suivi || []).map(x => [contrat, x.repere, x.nature + (x.note ? ' — inconnu : ' + x.note : ''), x.reference, x.fichier, x.bornes.length, x.bornes.join(' '), x.shunts || 0, x.cables, x.routes.join(' '), x.plans.join(' ')]); }
 const celluleCsvLPA = v => { const t = typeof v === 'number' ? nombre(v) : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
 function exporterSuiviLPA(N) { N = N || nomenclatureDuContrat(); const L = lignesSuivi(N), nom = (typeof nomContrat === 'function' ? nomContrat() : 'contrat') + '-suivi.csv';
-  if (!L.length) { dire('Rien à suivre : ni barrette, ni prise, ni connecteur dans ce contrat.'); return; }
+  if (!L.length) { dire('Rien à suivre : ni barrette, ni prise, ni connecteur dans ce plan.'); return; }
   telecharger(new Blob(['﻿' + [ENTETES_SUIVI.join(';'), ...L.map(l => l.map(celluleCsvLPA).join(';'))].join('\n')], { type: 'text/csv;charset=utf-8' }), nom);
   dire('Suivi enregistré : ' + nom + ' — ' + pluriel(L.length, 'ligne') + ', les références de la LPA.'); }
 /* Le classeur Excel (SheetJS, embarqué dans la page) : la LPA et son Suivi, une feuille chacun — l'en-tête filtrable, les

@@ -113,7 +113,7 @@ ok('bornes dans l’ordre (module, contact), fils et folios listés', l667.borne
 const SAnc = X.suiviDuContrat(LA, X.bibleDeLOutil(), 'exemple');
 ok('la barrette de blindage est dite telle (669VT32) ; 668VT3, qui distribue surtout, est une barrette', SAnc.find(l => l.repere === '669VT32').nature === 'barrette de blindage' && l668.nature === 'barrette', l668.nature);
 const texteSuivi = X.csvDuSuivi(S);
-ok('le CSV a un en-tête et une ligne par chose', texteSuivi.split('\n').length === S.length + 1 && /^Contrat;Repère;Nature;Référence retenue/.test(texteSuivi));
+ok('le CSV a un en-tête et une ligne par chose', texteSuivi.split('\n').length === S.length + 1 && /^Plan;Repère;Nature;Référence retenue/.test(texteSuivi));
 ok('les masses ne sont pas suivies', !S.some(l => /G$/.test(l.repere.split(' ')[0]) && l.nature !== 'connecteur' && /^\d+G$/.test(l.repere)));
 
 console.log('\n7. LA BARRETTE PHYSIQUE');

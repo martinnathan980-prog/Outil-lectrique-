@@ -21,7 +21,7 @@
        touche aux fichiers embarqués ; la norme active = l'embarquée, moins les lignes supprimées, fusionnée avec les
        apports (localStorage). Chaque changement est repris aussitôt par les fiches, le plan et le contrôle.
      · LA BIBLE DES BARRETTES (`ficheBible`, venue de 08) : les références, chacune en petit et, dépliée sous sa ligne,
-       en grand ; la base des contrats déjà faits (08 sexies) ; et avec elle la persistance de la bible, de la norme et
+       en grand ; la base des plans déjà faits (08 sexies) ; et avec elle la persistance de la bible, de la norme et
        des hypothèses. Normes et Bible sont deux onglets d'un même document : même largeur, même gabarit (`.nm`).
    =========================================================================== */
 'use strict';
@@ -114,14 +114,14 @@ const VUES_NORMES = {
 };
 const vueDe = v => VUES_NORMES[v] || { table: v, titre: TITRES_NORME[v], garde: null, defaut: null };
 const DOMAINES_NORMES = [
-  { id: 'barrettes', titre: 'Barrettes et modules de jonction', sens: 'Une barrette du contrat se pose en modules ASNE 0599 ou NSA937901 : chaque potentiel prend un groupe de contacts reliés, chaque câble un contact qui admet sa gauge.', vues: ['modules:barrette', 'tailles:barrette', 'familles:barrette', 'accessoires:barrette'] },
+  { id: 'barrettes', titre: 'Barrettes et modules de jonction', sens: 'Une barrette du plan se pose en modules ASNE 0599 ou NSA937901 : chaque potentiel prend un groupe de contacts reliés, chaque câble un contact qui admet sa gauge.', vues: ['modules:barrette', 'tailles:barrette', 'familles:barrette', 'accessoires:barrette'] },
   { id: 'prises', titre: 'Prises de coupure et connecteurs', sens: 'Un connecteur d’équipement ou une prise de coupure reçoit un arrangement (EN 4165, EN 2997, EN 3645, EN 3646, ASNE 0059) : chaque borne est le contact de même numéro ou de même rang.', vues: ['modules:connecteur', 'tailles:connecteur', 'familles:connecteur'] },
   { id: 'contacts', titre: 'Contacts à sertir', sens: 'Sur chaque câble d’un connecteur ou d’une barrette, le contact à sertir et son accessoire (tables SEE, relues par R1 ; les broches EN 3155-016 des barrettes) ; par taille, la résistance d’une paire et le courant par fût et par gauge ; ce qui entoure le contact : le joint arrière, l’outillage, les obturateurs, les parties de l’EN 3155.', vues: ['contacts', 'resistancesContacts', 'courantsContacts', 'joints', 'outillages', 'obturateurs', 'partiesEN3155'] },
   { id: 'cables', titre: 'Câbles et conducteurs', sens: 'Le type de chaque câble de votre fichier (la base des câbles), le conducteur de sa famille, et ce qu’une gauge admet (EN 2853).', vues: ['cables', 'cablesFamilles', 'fils'] },
   { id: 'chute', titre: 'Chute, réseau et déclassement', sens: 'Ce que le réseau admet de chute en ligne, et ce qui réduit l’intensité admissible d’un câble (faisceau, altitude).', vues: ['reseau', 'declassements'] },
   { id: 'disjoncteurs', titre: 'Disjoncteurs', sens: 'Les courbes de disjonction qui jugent un profil de charge, ce qu’un câble supporte avant que le disjoncteur s’ouvre (la protection par gauge, la courbe de dommage), les familles, ce qu’elles garantissent de tenir et leur chute propre.', vues: ['disjoncteurs', 'protections', 'dommages', 'disjoncteursFamilles', 'calibrations', 'chutesDisjoncteurs'] },
   { id: 'raccords', titre: 'Raccords, gaines, colliers, manchons', sens: 'Ce qui englobe un connecteur, par le tutoriel du lecteur corrigé par R3 : le toron (le facteur TE selon le nombre de câbles), la taille et la classe du boîtier, le raccord EN 3660 (sa désignation construite, sa masse) ou la cheminée de l’EN 4165, le code d’entrée (la plage de toron de la norme), la chambre, la bande, la gaine, le manchon.', vues: ['raccords', 'torons', 'entrees', 'chambres', 'massesRaccords', 'classes', 'manchons', 'gaines', 'colliers', 'filetages', 'accessoires:connecteur'] },
-  { id: 'contrats', titre: 'Contrats déjà faits', sens: 'La base des harness déjà câblés (une installation de plusieurs harness) : « Déjà fait » sur chaque fiche, la comparaison, le FWD dessiné. Elle se dépose dans « Vos fichiers » (menu ⋮ → Contrats déjà faits…) et se cherche depuis la bible.', vues: [] }
+  { id: 'contrats', titre: 'Plans déjà faits', sens: 'La base des harness déjà câblés (une installation de plusieurs harness) : « Déjà fait » sur chaque fiche, la comparaison, le FWD dessiné. Elle se dépose dans « Vos fichiers » (menu ⋮ → Plans déjà faits…) et se cherche depuis la bible.', vues: [] }
 ];
 /* Pour chaque table : d'où elle vient, à quoi elle sert dans l'outil, qui la lit, comment une ligne se choisit. */
 const FICHES_TABLES = {
@@ -226,7 +226,7 @@ const nmTitre = (sur, titre, nav) => `<div class="fiche-tete${nav ? ' avec-ongle
 const croixDuDoc = () => typeof CROIX_DOC !== 'undefined' ? CROIX_DOC : '<button class="rond fermer" id="fi-fermer" aria-label="Fermer (Échap)" data-bulle="Fermer · Échap"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
 function clavierAuDoc() { if (typeof prendreLeClavierDuDoc === 'function') { prendreLeClavierDuDoc(); return; }
   const c = $('fiche-corps'), t = c && (c.querySelector('[data-clavier]') || c.querySelector('.fiche-tete .titre')); if (!t) return; if (!t.hasAttribute('tabindex') && !/^(BUTTON|INPUT|A)$/.test(t.tagName)) t.tabIndex = -1; try { t.focus({ preventScroll: true }); } catch (_) { t.focus(); } }
-/* Le passage d'un document à l'autre — les normes, la bible (et les contrats déjà faits) : deux ONGLETS d'un même document
+/* Le passage d'un document à l'autre — les normes, la bible (et les plans déjà faits) : deux ONGLETS d'un même document
    (DESIGN §4 : ce qui change de page est un onglet souligné ; le segment est pour les modes d'une même vue) ; ← → passent
    de l'un à l'autre. */
 // (v86, F4) l'onglet de la bible dit tout ce qu'elle porte : les modules de barrette, mais aussi ceux des connecteurs et des prises
@@ -541,7 +541,7 @@ const importHtmlOuColler = () => NORMES.import.coller && !NORMES.import.blocs.le
 
 /* ---- la bible des barrettes (venue de 08) ------------------------------------------------- */
 /* La bible des barrettes : d'où elle vient, ce qu'elle contient, et comment en mettre une autre ; puis la norme en
-   deux lignes (la page des normes dit le reste), et les contrats déjà faits. */
+   deux lignes (la page des normes dit le reste), et les plans déjà faits. */
 const COLONNES_BIBLE_TEXTE = '<b>Référence</b> et <b>Bornes</b> au minimum, puis Famille, Nature, Gauge min, Gauge max, Intensité, Blindage, Note';
 const COLONNES_NORME_TEXTE = 'une table <b>Familles</b> (Famille, Pas, Gauge min, Gauge max, Intensité, Résistance, Fils par côté, Ordre, Paquets, Réservés, Masse), une table <b>Fils</b> (Type, Gauge, Section, Résistance, Intensité), <b>Déclassement</b> (Condition, Facteur), <b>Réseau</b> (Tension, Chute max), <b>Contacts</b> (Norme, Sexe, Taille, Type de fil, Gauge, Contact, Accessoire), <b>Câbles</b> (Câble, Famille, Gauge, Brins, Blindage, Nature, Masse, Liaisons, Résistance, Diamètre, Section), <b>Gaines</b> (Famille, Référence, Dint, Dext, Masse), <b>Colliers</b> (Référence, Diamètre min, Diamètre max)';
 /* `ref` : la référence à montrer en grand, DÉPLIÉE SOUS SA LIGNE — celle qu'on a cliquée dans la table, ou celle qu'une
@@ -583,9 +583,9 @@ function ficheBible(ref, ancre) { const B = app.bible || [], nom = app.bibleNom,
       + (q && !vus.length ? `<p class="nm-vide">Rien dans la bible pour « ${esc(q)} »${filtre ? ' (avec la puce pressée)' : ''}.</p>` : '') : '<p class="note">Aucune référence.</p>')
     + `<p class="note">Un Excel ou un CSV dont une ligne d’en-têtes nomme ${COLONNES_BIBLE_TEXTE}. La gauge s’écrit en AWG : «\u00a0min\u00a0» est la plus fine acceptée. Une bible se dépose aussi directement sur la table.</p>`
     + resumeNormeHtml() + ficheReferences() + '</div>';
-  // le pied : importer une bible, pleine ; le reste (une norme, les contrats déjà faits, revenir à l'exemple) dans « ··· »
+  // le pied : importer une bible, pleine ; le reste (une norme, les plans déjà faits, revenir à l'exemple) dans « ··· »
   const pied = `<span class="bi-compte">${filtre ? esc(milliers(B.filter(garde).length)) + ' sur ' : ''}${esc(pluriel(n, 'référence'))}</span>` + '<span class="espace"></span>'
-    + menuDoc('bi-plus', 'Autres gestes de la bible', [['no-importer', 'Importer une norme', 'un Excel ou un CSV aux en-têtes de VOLTA'], ['re-importer', 'Déposer les contrats déjà faits', 'un Excel de plusieurs harness, la colonne Harness remplie'],
+    + menuDoc('bi-plus', 'Autres gestes de la bible', [['no-importer', 'Importer une norme', 'un Excel ou un CSV aux en-têtes de VOLTA'], ['re-importer', 'Déposer les plans déjà faits', 'un Excel de plusieurs harness, la colonne Harness remplie'],
       null, nom ? ['bi-exemple', 'Revenir à la bible d’exemple', 'celle de VOLTA, à la place de ' + nom] : false, app.normeNom ? ['no-embarquee', 'Revenir à la norme embarquée', 'oublier ce qui a été importé ou modifié'] : false,
       null, ['bi-comprendre', 'Comment VOLTA réfléchit', 'la chaîne d’un connecteur : référence, famille, face, contact', ' data-comprendre="connecteur"']])
     + `<button class="btn cuivre" id="bi-importer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>Importer une bible</button>`

@@ -70,7 +70,7 @@ function remettreLesCopies(l) { const V = verite(), i = V.indexOf(l), n = l && l
   const av = { ...l.avant }; delete av.copies; if (Object.keys(av).length) l.avant = av; else delete l.avant;
   V.splice(i + 1, 0, ...Array.from({ length: n }, copie)); apresEdition(); return true; }
 /* LUI DONNER SON REPÈRE (G2 : un seul verbe, partout) : la barrette ajoutée reçoit le repère proposé — celui du
-   récapitulatif et de « À reprendre » (`prochainRepereVT`, la suite de la barrette du contrat la plus proche), ou celui que
+   récapitulatif et de « À reprendre » (`prochainRepereVT`, la suite de la barrette du plan la plus proche), ou celui que
    vous écrivez — ; le message dit lequel (« VT2 devient 667VT3 ») et offre « Défaire ». Rend le repère donné, ou ''. */
 function donnerSonRepere(vt, plan, repere) { const r = (typeof reperes === 'function' ? reperes() : []).find(x => x.aPoser && x.nom === vt && (!plan || !x.plan || x.plan === plan));
   if (r && r.plan && r.plan !== app.plan && plans().includes(r.plan)) allerAuPlan(r.plan);

@@ -221,7 +221,7 @@ function baseEssaiDansLaPage() {
     const ctx = await nav.newContext(grand); let page = await ouvrirPage(ctx);
     let e = await etat(page);
     // le premier lancement montre la BIBLIOTHÈQUE, plus l'exemple ni une page qui explique : vide, deux
-    // façons de commencer (une installation neuve, la base des contrats déjà faits) ; l'Exemple, discret, en dernier
+    // façons de commencer (une installation neuve, la base des plans déjà faits) ; l'Exemple, discret, en dernier
     const A0 = await page.evaluate(() => ({ biblio: BIB.vue === 'racine' && !$('bibliotheque').hidden, vide: !!document.querySelector('#bibliotheque .bi-vide'), demo: !!document.querySelector('#bibliotheque .bi-carte.bi-demo'),
       gestes: ['nouvelle', 'base'].filter(k => !document.querySelector(`#bibliotheque .bi-vide [data-bi="${k}"]`)), titre: document.title }));
     ok(e.n === 0 && !e.insp && A0.biblio && A0.vide && A0.demo && !A0.gestes.length && A0.titre === 'Volta', 'le premier lancement montre la bibliothèque, pas l’exemple : vide, deux gestes pour commencer : « Nouvelle installation », « Déposer la base », l’Exemple discret en dernier', JSON.stringify(A0));
@@ -230,10 +230,10 @@ function baseEssaiDansLaPage() {
     await capture(page, 'A-0-premier-lancement');
     // l'exemple, à la demande : d'un seul clic sur sa carte (audit v72, P2-2) ; le fil de la barre du haut le dit ; la marque ramène à la bibliothèque
     await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps');
-    await page.waitForFunction(() => app.nom === 'Contrat d’exemple' && !!app.dessin); await page.waitForTimeout(300);
-    ok(await page.evaluate(() => $('vide').hidden && $('bibliotheque').hidden && $('en-install').textContent === 'Exemple' && $('en-plan').textContent === 'Contrat d’exemple'), 'l’exemple ouvert de sa carte : le fil de la barre du haut dit « Exemple / Contrat d’exemple »');
+    await page.waitForFunction(() => app.nom === 'Plan d’exemple' && !!app.dessin); await page.waitForTimeout(300);
+    ok(await page.evaluate(() => $('vide').hidden && $('bibliotheque').hidden && $('en-install').textContent === 'Exemple' && $('en-plan').textContent === 'Plan d’exemple'), 'l’exemple ouvert de sa carte : le fil de la barre du haut dit « Exemple / Plan d’exemple »');
     await page.click('#en-biblio'); await page.waitForTimeout(300);
-    ok(await page.evaluate(() => BIB.vue === 'racine' && !!$('bi-reprendre') && /Contrat d’exemple/.test($('bi-reprendre').textContent)), 'la marque ramène à la bibliothèque : « Reprendre » l’exemple, resté sur la table');
+    ok(await page.evaluate(() => BIB.vue === 'racine' && !!$('bi-reprendre') && /Plan d’exemple/.test($('bi-reprendre').textContent)), 'la marque ramène à la bibliothèque : « Reprendre » l’exemple, resté sur la table');
     await capture(page, 'A-1-bibliotheque');
     // le retest : une installation neuve, « Ajouter un plan », le fichier, un clic sur sa ligne
     const O = await ouvrirDepuisBibliotheque(page, X.neuf, 'Antenne VHF'), tOuvrir = O.t; const tPlacement = await derniere(page, 'placement');
@@ -310,7 +310,7 @@ function baseEssaiDansLaPage() {
     await ctx.close(); });
 
   /* ================================================================ B. JE PARS D'UN CONTRAT DÉJÀ FAIT ====== */
-  await parcours('B. Je pars d’un contrat déjà fait — la base, « Déjà fait », le FWD à trois échelles, reprendre, revérifier, Ctrl+Z, les « ? »', async () => {
+  await parcours('B. Je pars d’un plan déjà fait — la base, « Déjà fait », le FWD à trois échelles, reprendre, revérifier, Ctrl+Z, les « ? »', async () => {
     const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx);
     await page.evaluate(baseEssaiDansLaPage); await page.waitForTimeout(300);
     const tOuvrir = await ouvrirParBouton(page, 'menu', X.neuf); mesure('ouvrir l’installation proche (neuf.xlsx) avec une base de 4 machines', tOuvrir, SEUIL_FOLIO);
@@ -380,7 +380,7 @@ function baseEssaiDansLaPage() {
   /* ================================================================ C. LE CONTRÔLE D'UN CONTRAT ============== */
   await parcours('C. Le contrôle d’un contrat — l’en-tête, l’index « à reprendre », trois corrections, une hypothèse, un choix de fiche', async () => {
     const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx, true); await page.waitForTimeout(300);
-    let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Contrat d’exemple' && /^5 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : « 5 problèmes · n à voir » (W-012 et W-015 dépassés par la charge, le contact 23 du DR24 W-015 sous son permanent, 300XC1 B sans arrangement ; le 10 A de 102CB1, qui touche la courbe — un problème aussi, v77 ; le compte des « à voir » suit les règles du contrôle)', e.enEtat);
+    let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Plan d’exemple' && /^5 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : « 5 problèmes · n à voir » (W-012 et W-015 dépassés par la charge, le contact 23 du DR24 W-015 sous son permanent, 300XC1 B sans arrangement ; le 10 A de 102CB1, qui touche la courbe — un problème aussi, v77 ; le compte des « à voir » suit les règles du contrôle)', e.enEtat);
     let t0 = Date.now(); await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); mesure('le bouton des repères → l’index « à reprendre »', Date.now() - t0, SEUIL_GESTE);
     const items = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .co-item')].map(b => { const x = CONTROLE.items[+b.dataset.k]; return { k: +b.dataset.k, nom: x.nom, plan: x.plan, tableau: x.tableau != null, texte: x.texte }; }));
     // (v72, l'audit du parcours P1-5 : les points se rangent par genre — une ligne par niveau, genre et repère)
@@ -513,7 +513,7 @@ function baseEssaiDansLaPage() {
       return app.fiche && app.fiche.mode === 'nomenclature' && Math.abs(f.top - h.bottom) <= 2 && Math.abs(f.bottom - r.top) <= 2; }), 'la nomenclature s’ouvre en page, entre la barre du haut et le rail');
     await tous(['#no-csv', '#fi-fermer'], 'dans la nomenclature : Enregistrer en CSV et fermer'); await capture(page, 'D-6-nomenclature'); await page.click('#fi-fermer'); await page.waitForTimeout(300);
     // C au téléphone : l'exemple, l'index, une ligne → folio et fiche, le 15 A d'un doigt
-    await ligneDuMenu(page, 'exemple'); await page.waitForFunction(() => app.nom === 'Contrat d’exemple'); await page.waitForTimeout(400);
+    await ligneDuMenu(page, 'exemple'); await page.waitForFunction(() => app.nom === 'Plan d’exemple'); await page.waitForTimeout(400);
     await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item'));
     ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .co-item').length === lignesDuControle().length && document.activeElement !== $('ix-q')), 'le bouton des repères ouvre l’index : les lignes à reprendre, par genre, sans voler le clavier');
     await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);   // « à reprendre » se déplie d'un toucher
@@ -542,7 +542,7 @@ function baseEssaiDansLaPage() {
     const n0 = (await etat(page)).n;
     // un retest vide (les en-têtes, aucune ligne)
     await deposerParEntree(page, X.vide); let T = await toast(page), e = await etat(page);
-    ok(T.erreur && /aucune liaison/.test(T.texte) && e.n === n0 && e.nom === 'Contrat d’exemple', 'une installation vide : le message le dit, le contrat ouvert reste', T.texte);
+    ok(T.erreur && /aucune liaison/.test(T.texte) && e.n === n0 && e.nom === 'Plan d’exemple', 'une installation vide : le message le dit, le contrat ouvert reste', T.texte);
     // une seule ligne
     await deposerParEntree(page, X.uneLigne); await page.waitForFunction(() => app.nom === 'une-ligne.csv'); e = await etat(page);
     ok(e.n === 1 && e.folios <= 1 && await page.evaluate(() => !!app.dessin && app.dessin.fils.length === 1 && $('fo-part').hidden && /^1\sliaison · 2\srepères$/.test($('ctx-txt').textContent)), 'une seule ligne : un fil dessiné, pas de barre de folios, « 1 liaison · 2 repères »', e.enSous);
@@ -568,10 +568,10 @@ function baseEssaiDansLaPage() {
       'gênant', '02-lecture.js `texteDuFichier` : lire chaque feuille qui porte les en-têtes de l’installation et les enchaîner (le harness distingue déjà les machines), ou dire « 2 feuilles, seule « H-A » est lue »');
     // un fichier à deux harness (une feuille) : la base, et pas de contrat
     const nAvant = (await etat(page)).n; await deposerParEntree(page, X.deuxHarness); await page.waitForTimeout(600); e = await etat(page); T = await toast(page);
-    ok(await page.evaluate(() => app.references && app.references.index.harnais.size === 2) && e.n === nAvant && /contrats déjà faits/.test(T.texte), 'deux harness dans une feuille : gardés comme contrats déjà faits, le contrat ouvert ne change pas, le message le dit', T.texte);
+    ok(await page.evaluate(() => app.references && app.references.index.harnais.size === 2) && e.n === nAvant && /plans déjà faits/.test(T.texte), 'deux harness dans une feuille : gardés comme plans déjà faits, le contrat ouvert ne change pas, le message le dit', T.texte);
     frottement(!/harnesss/.test(T.texte), 'le message écrit « 2 harnesss »', 'un mot qui finit déjà par un s en reçoit un autre au pluriel', 'détail', '08-interface.js `pluriel` : pas de s après un mot en s ou x (harness, cheminées déjà au pluriel…)');
     frottement(await page.evaluate(() => !!document.querySelector('[data-harness], #choix-harness, .ch-harness')), 'un fichier à plusieurs harness ne propose pas d’en ouvrir un comme contrat', 'le technicien qui ouvre son extrait de base pour « scanner le plan » d’une machine n’a pas le choix : tout part dans la base, rien ne s’ouvre',
-      'gênant', '08-interface.js `ouvrirFichier` : quand r.harnais.length > 1, proposer (une petite fiche) « n harness : lequel ouvrir ? » avec « garder tous comme contrats déjà faits » — et toujours garder la base');
+      'gênant', '08-interface.js `ouvrirFichier` : quand r.harnais.length > 1, proposer (une petite fiche) « n harness : lequel ouvrir ? » avec « garder tous comme plans déjà faits » — et toujours garder la base');
     await page.evaluate(() => adopterReferences([], ''));
     // un dépôt par glisser-déposer, comme depuis l'explorateur
     await deposer(page, X.uneLigne); await page.waitForFunction(() => app.nom === 'une-ligne.csv'); ok(await page.evaluate(() => window.__depotVu === true && app.nom === 'une-ligne.csv'), 'glisser un fichier sur la fenêtre : la cible de dépôt s’allume, le fichier s’ouvre');

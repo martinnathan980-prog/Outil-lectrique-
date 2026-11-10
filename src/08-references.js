@@ -202,7 +202,7 @@ function carteLecture() { let c = $('lecture-base'); if (c) return c; c = docume
     else if (k === 'bibliotheque') { BASE.fini = null; montrerLecture(); fermerFiche(); montrerBibliotheque('racine'); }
     else if (k === 'chercher') { BASE.fini = null; montrerLecture(); fermerFiche(); montrerBibliotheque('racine'); setTimeout(() => { const q = $('bi-q'); if (q) q.focus(); }, 50); } });
   return c; }
-const MOTS_ETAPES = { ouvre: 'Le fichier arrive', mots: 'Les mots du classeur', lignes: 'Les lignes', range: 'Le rangement par contrat' };
+const MOTS_ETAPES = { ouvre: 'Le fichier arrive', mots: 'Les mots du classeur', lignes: 'Les lignes', range: 'Le rangement par plan' };
 function montrerLecture() { if (typeof document === 'undefined') return; const L = BASE.lecture, K = BASE.construction, F = BASE.fini, G = BASE.garde;
   // l'index seul (au lancement, la base relue) ne se montre pas ici : « Vos fichiers » et la bible le disent
   if (!L && !F && !G) { const c = $('lecture-base'); if (c) c.hidden = true; return; }
@@ -217,7 +217,7 @@ function montrerLecture() { if (typeof document === 'undefined') return; const L
   else if (F) { titre = guillemets(F.nom) + ' est lue';
     detail = lies([nombreLie(F.n, 'liaison'), nombreLie(F.contrats, 'contrat'), F.installs ? nombreLie(F.installs, 'installation') : '', 'en ' + secondesLues(F.ms)]);
     gestes = '<button class="btn papier" data-lb="chercher">Chercher dans la base</button><button class="btn cuivre" data-lb="bibliotheque">Voir la bibliothèque</button><button class="lb-x" data-lb="fermer" aria-label="Fermer la carte">' + ico('fermer') + '<span class="bulle" aria-hidden="true">Fermer la carte</span></button>'; }
-  else titre = 'Contrats déjà faits';
+  else titre = 'Plans déjà faits';
   // ce qui continue derrière : l'écriture sur le PC, l'index « Déjà fait »
   const suite = [G ? 'Gardée sur ce PC : morceau ' + G.k + ' / ' + G.n : '', K ? '« Déjà fait » s’indexe : ' + pc(K.total ? K.fait / K.total : 0) + ' %' : ''].filter(Boolean);
   c.hidden = false; c.classList.toggle('fini', !L && !!F);
@@ -310,7 +310,7 @@ function choixDeRepereHtml(c, corrDe, F) { const r = REF.corrOuverte, m = r && c
     + `<button class="fi-chip cp-cand cp-corr-nouveau" data-vers="" aria-pressed="${actuel === ''}" data-bulle="${escA(r + ' n’existe pas chez nous : ses lignes manquent')}">nouveau chez nous</button>`
     + (memeCode.length && memeCode.length < nos.length ? `<button class="fi-chip" id="cp-corr-tous" aria-pressed="${REF.corrTous}">tous les repères</button>` : '')
     + (choisi ? '<button class="fi-chip" id="cp-corr-defaire">revenir à la proposition de VOLTA</button>' : '') + '</div></div>'; }
-function ficheComparaison(c) { const I = indexReferences(), h = I && I.harnais.get(c.harness); if (!h) return fiTete({ nom: c.nom, sous: 'référence introuvable' }) + '<p class="fi-note">La base des contrats faits n’est plus là.</p>';
+function ficheComparaison(c) { const I = indexReferences(), h = I && I.harnais.get(c.harness); if (!h) return fiTete({ nom: c.nom, sous: 'référence introuvable' }) + '<p class="fi-note">La base des plans déjà faits n’est plus là.</p>';
   const D = dessinDeComparaison(c), portee = D ? REF.portee : 'equipement', cle = cleComparaison(c, portee), mots = { identique: 'Pareil', differe: 'Diffère', manque: 'Manque chez nous', enplus: 'En plus chez nous' };
   const F = fixesPour(c.harness), E = differentiel(verite(), c.nom, h.liaisons, c.repere, F), CD = D ? comparaisonDe(c.harness, D.fwd, c.repere, c.nom, 'dessin') : null, C = portee === 'equipement' ? null : comparaisonDe(c.harness, D.fwd, c.repere, c.nom, portee, REF.pas);
   const corrDe = portee === 'equipement' ? E.correspondance : C.correspondance;
@@ -394,7 +394,7 @@ const icoFwd = k => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${I
    une fois). */
 function assurerFwd() { if ($('fwd')) return; const d = document.createElement('div'); d.id = 'fwd'; d.className = 'fwd'; d.hidden = true; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-labelledby', 'fw-titre');
   d.innerHTML = `<div class="fw-boite"><header class="fw-tete"><div class="min0"><div class="sur" id="fw-sur"></div><h2 class="titre" id="fw-titre"></h2></div>`
-    + `<div class="fw-outils"><button class="fi-bouton" id="fw-comparer" hidden data-bulle="La comparaison de ce dessin entier avec notre contrat">${icoFwd('comparer')}<span>Comparer</span></button><button class="fi-bouton" id="fw-ajuster" data-bulle="Ajuster le dessin à l’écran (0)">${icoFwd('ajuster')}<span>Ajuster</span></button><button class="fi-bouton" id="fw-svg" data-bulle="Enregistrer ce dessin en SVG">${icoFwd('enregistrer')}<span>SVG</span></button></div>`
+    + `<div class="fw-outils"><button class="fi-bouton" id="fw-comparer" hidden data-bulle="La comparaison de ce dessin entier avec notre plan">${icoFwd('comparer')}<span>Comparer</span></button><button class="fi-bouton" id="fw-ajuster" data-bulle="Ajuster le dessin à l’écran (0)">${icoFwd('ajuster')}<span>Ajuster</span></button><button class="fi-bouton" id="fw-svg" data-bulle="Enregistrer ce dessin en SVG">${icoFwd('enregistrer')}<span>SVG</span></button></div>`
     + `<button class="fi-x" id="fw-fermer" aria-label="Fermer le dessin (Échap)">${ico('fermer')}<span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button></header>`
     + `<div class="fw-corps"><div class="fw-scene" id="fw-scene" data-bulle="Molette pour zoomer, glisser pour déplacer"></div><aside class="fw-colonne" id="fw-colonne" aria-label="Ce que le dessin contient"></aside></div></div>`;
   document.body.appendChild(d); lierFwd(); lierBulles(d); }
@@ -464,7 +464,7 @@ function colonneFwd() { const D = FWD.D, C = FWD.cmp, R = resumeDessin(D), des =
   const chiffres = `<div class="fw-chiffres"><span><b>${R.equipements}</b> équipement${R.equipements > 1 ? 's' : ''}</span><span><b>${R.fils}</b> câble${R.fils > 1 ? 's' : ''}</span>${R.pontages ? `<span><b>${R.pontages}</b> pontage${R.pontages > 1 ? 's' : ''}</span>` : ''}${R.masses ? `<span><b>${R.masses}</b> masse${R.masses > 1 ? 's' : ''}</span>` : ''}</div>`
     + `<p class="fw-natures">${esc(R.natures.map(([n, k]) => k + ' ' + plurielNature(n === 'équipement' && R.natures.length > 1 ? 'autre équipement' : n, k)).join(', '))}${R.masses ? ' · ' + esc([...D.masses.keys()].sort(triNaturel).join(', ')) : ''}</p>`;
   const bilan = C ? `<div class="fw-bilan"><span class="fw-pastille chez"><b>${C.chezNous}</b> chez nous</span>${C.manquent.length ? `<span class="fw-pastille manque"><b>${C.manquent.length}</b> manque${C.manquent.length > 1 ? 'nt' : ''}</span>` : ''}${C.proposes.length ? `<span class="fw-pastille propose"><b>${C.proposes.length}</b> à confirmer</span>` : ''}${C.compte.differe ? `<span class="fw-pastille differe"><b>${C.compte.differe}</b> câble${C.compte.differe > 1 ? 's' : ''} diffère${C.compte.differe > 1 ? 'nt' : ''}</span>` : ''}${C.compte.manque ? `<span class="fw-pastille fil-manque"><b>${C.compte.manque}</b> câble${C.compte.manque > 1 ? 's' : ''} manque${C.compte.manque > 1 ? 'nt' : ''}</span>` : ''}${C.compte.enplus ? `<span class="fw-pastille enplus"><b>${C.compte.enplus}</b> en plus chez nous</span>` : ''}</div>`
-    + `<ul class="fw-legende">${FWD.repere ? '<li><i class="cible"></i>comparé</li>' : ''}<li><i class="chez"></i>chez nous</li><li><i class="propose"></i>proposé, à confirmer</li><li><i class="manque"></i>manque chez nous</li><li><i class="fil-manque"></i>câble qui manque</li><li><i class="fil-differe"></i>câble qui diffère</li></ul>` : '<p class="fw-natures">Aucun contrat ouvert : rien à comparer, le dessin se lit tel quel.</p>';
+    + `<ul class="fw-legende">${FWD.repere ? '<li><i class="cible"></i>comparé</li>' : ''}<li><i class="chez"></i>chez nous</li><li><i class="propose"></i>proposé, à confirmer</li><li><i class="manque"></i>manque chez nous</li><li><i class="fil-manque"></i>câble qui manque</li><li><i class="fil-differe"></i>câble qui diffère</li></ul>` : '<p class="fw-natures">Aucun plan ouvert : rien à comparer, le dessin se lit tel quel.</p>';
   const cherche = `<div class="fw-cherche">${ico('loupe')}<input id="fw-q" value="${escA(FWD.q)}" placeholder="Un repère, une nature, un part number" aria-label="Chercher dans le dessin" autocomplete="off" spellcheck="false"></div>`;
   $('fw-colonne').innerHTML = `<div class="fw-resume">${chiffres}${bilan}</div>${cherche}<ul class="fw-liste" id="fw-liste">${listeFwdHtml(parRep, des)}</ul>`;
   const q = $('fw-q'); q.addEventListener('input', () => { FWD.q = q.value; $('fw-liste').innerHTML = listeFwdHtml(parRep, des); }); }
@@ -522,21 +522,21 @@ function proposerDejaFait() { const jeton = BASE.jeton, nom = app.nom; setTimeou
   const c = contratsLesPlusProches()[0]; if (!c || c.taux < 0.2) return;
   direAvecGeste(`Déjà fait à ${Math.round(c.taux * 100)}${INSECABLE}% : ${c.harness}${c.appareil ? ' (' + c.appareil + (c.retest ? ', retest du ' + c.retest : '') + ')' : ''}.`, 'Comparer', () => { REF.choisi = c.harness; ficheDejaFaitContrat(); }); }, 1200); }
 function ficheDejaFaitContrat() { const R = app.references, I = indexReferences(), V = verite(), K = BASE.construction;
-  let corps = tete('Contrats déjà faits', 'Comparer au déjà-fait'), pied = '';
+  let corps = tete('Plans déjà faits', 'Comparer au déjà-fait'), pied = '';
   // (v79) sans base : à quoi ça sert, ce qu'il faut, le geste — plus une phrase seule sur une page vide
-  if (!R) corps += `<section class="cc-vide"><h3 class="cc-vide-t">Retrouver ce qu’on a déjà fait</h3><p>Déposez une fois le grand fichier de vos contrats déjà faits : VOLTA y cherche, pour le plan ouvert, les contrats les plus proches — les mêmes repères, les mêmes part numbers — et montre ce qui diffère, ligne à ligne.</p>`
-    + `<ul class="cc-vide-l"><li><b>Un seul Excel</b>, une ligne par liaison, aux colonnes d’un retest</li><li><b>Harness</b> rempli : il dit à quel contrat chaque ligne appartient</li><li>Il reste <b>sur ce PC</b> : rien ne sort</li></ul>`
-    + `<button type="button" class="btn cuivre" id="cc-deposer">Déposer la base des contrats…</button></section>`;
-  else if (!V.length) corps += '<p class="note">Aucun plan ouvert : ouvrez une installation, puis comparez-le au déjà-fait.</p>';
+  if (!R) corps += `<section class="cc-vide"><h3 class="cc-vide-t">Retrouver ce qu’on a déjà fait</h3><p>Déposez une fois le grand fichier de vos plans déjà faits : VOLTA y cherche, pour le plan ouvert, les plans les plus proches — les mêmes repères, les mêmes part numbers — et montre ce qui diffère, ligne à ligne.</p>`
+    + `<ul class="cc-vide-l"><li><b>Un seul Excel</b>, une ligne par liaison, aux colonnes d’un retest</li><li><b>Harness</b> rempli : il dit à quel plan chaque ligne appartient</li><li>Il reste <b>sur ce PC</b> : rien ne sort</li></ul>`
+    + `<button type="button" class="btn cuivre" id="cc-deposer">Déposer la base des plans…</button></section>`;
+  else if (!V.length) corps += '<p class="note">Aucun plan ouvert : ouvrez un fichier ou un plan de la bibliothèque, puis comparez-le au déjà-fait.</p>';
   else if (!I) corps += `<p class="note">La base s’indexe${K && K.total ? ' (' + Math.round(100 * K.fait / K.total) + ' %)' : ''} : la comparaison sera prête dans un instant.</p>`;
   else { const cs = contratsLesPlusProches(); if (!REF.choisi || !cs.some(c => c.harness === REF.choisi)) REF.choisi = cs.length ? cs[0].harness : '';
-    if (!cs.length) corps += `<p class="note">Aucun contrat de la base ne partage un repère ou un part number avec ${esc(guillemets(app.nom || 'le plan'))}.</p>`;
+    if (!cs.length) corps += `<p class="note">Aucun plan de la base ne partage un repère ou un part number avec ${esc(guillemets(app.nom || 'le plan'))}.</p>`;
     else { const C = comparaisonAuContrat(REF.choisi), H = I.harnais.get(REF.choisi); corps += ccCandidatsHtml(cs) + (C ? ccDetailHtml(C, H) : '');
       pied = `<button class="btn papier" id="cc-ouvrir">Ouvrir ${esc(REF.choisi)}</button><span class="espace"></span>${C && C.dessins.some(d => d.fwd[0] !== '\u0001') ? `<span class="cc-pied-note">${esc(plurielLie(C.dessins.filter(d => d.fwd[0] !== '\u0001').length, 'dessin'))} : « Dessin » sur chacun</span>` : ''}`; } }
   ouvrirFiche({ mode: 'deja-contrat', large: true }, corps, pied); lierDejaFaitContrat(); }
 // les plus proches : un bouton chacun, son taux, ses mots ; celui qu'on regarde est pressé
 function ccCandidatsHtml(cs) { const B = baseDeReferences();
-  return `<p class="cc-lead">Les contrats déjà faits les plus proches de <b>${esc(nomAffiche(app.nom || 'ce plan'))}</b>. Le pourcentage : la part de leurs lignes que vous avez aussi — mêmes bouts, mêmes bornes, même type de câble.</p><div class="cc-cands" role="group" aria-label="Les plus proches">`
+  return `<p class="cc-lead">Les plans déjà faits les plus proches de <b>${esc(nomAffiche(app.nom || 'ce plan'))}</b>. Le pourcentage : la part de leurs lignes que vous avez aussi — mêmes bouts, mêmes bornes, même type de câble.</p><div class="cc-cands" role="group" aria-label="Les plus proches">`
     + cs.map(c => { const k = B && contratDeLaBase(B, c.harness), niv = c.taux >= 0.8 ? 'ok' : c.taux >= 0.4 ? 'att' : 'ko';
       return `<button class="cc-cand" data-h="${escA(c.harness)}" aria-pressed="${c.harness === REF.choisi}"><b class="cc-taux ${niv}">${Math.round(c.taux * 100)}${INSECABLE}%</b><span class="cc-cand-t"><span class="id">${esc(c.harness)}</span><small>${esc(lies([k && k.install, c.appareil, c.retest ? 'installation du ' + c.retest : '', plurielLie(c.lignes, 'ligne'), c.parZone ? 'une autre zone' : '']))}</small></span></button>`; }).join('') + '</div>'; }
 function ccDetailHtml(C, H) { const K = C.compte, ETATS = [['manque', 'manque chez nous', 'manquent chez nous'], ['differe', 'diffère', 'diffèrent'], ['identique', 'pareille', 'pareilles'], ['enplus', 'en plus chez nous', 'en plus chez nous']].filter(([e]) => K[e]);
@@ -564,12 +564,12 @@ function lierDejaFaitContrat() { const c = $('fiche-corps');
 
 /* ---- LA BIBLE : la base par harness et par dessin, une recherche ---------------------------------------------- */
 function ficheReferences() { const R = app.references, I = indexReferences(), M = R && R.base ? R.base.meta : null, K = BASE.construction;
-  const etat = !R || !M ? '<div class="bible-etat"><span><b>Aucun contrat déjà fait</b> : la base se dépose dans ⋮ → Vos fichiers → Contrats déjà faits (un Excel aux colonnes d’un retest, Harness rempli) ; elle se garde dans ce navigateur, rien ne part sur le réseau.</span></div>'
-    : `<div class="bible-etat"><span><b>${esc(R.nom || 'Contrats déjà faits')}</b>${SEP_POINT}${plurielLie(M.harnais, 'harness')}${SEP_POINT}${plurielLie(M.dessins, 'dessin')}${SEP_POINT}${plurielLie(M.n, 'liaison')}${SEP_POINT}gardés dans ce navigateur${I ? '' : `${SEP_POINT}« Déjà fait » s’indexe${K && K.total ? ' (' + Math.round(100 * K.fait / K.total) + INSECABLE + '%)' : ''}`}</span></div>`;
-  return `<h3 class="sous-titre">Les contrats déjà faits</h3>${etat}` + (I ? `<div id="rf-base">${rfBaseHtml()}</div>` : '')
+  const etat = !R || !M ? '<div class="bible-etat"><span><b>Aucun plan déjà fait</b> : la base se dépose dans ⋮ → Vos fichiers → Plans déjà faits (un Excel aux colonnes d’un retest, Harness rempli) ; elle se garde dans ce navigateur, rien ne part sur le réseau.</span></div>'
+    : `<div class="bible-etat"><span><b>${esc(R.nom || 'Plans déjà faits')}</b>${SEP_POINT}${plurielLie(M.harnais, 'harness')}${SEP_POINT}${plurielLie(M.dessins, 'dessin')}${SEP_POINT}${plurielLie(M.n, 'liaison')}${SEP_POINT}gardés dans ce navigateur${I ? '' : `${SEP_POINT}« Déjà fait » s’indexe${K && K.total ? ' (' + Math.round(100 * K.fait / K.total) + INSECABLE + '%)' : ''}`}</span></div>`;
+  return `<h3 class="sous-titre">Les plans déjà faits</h3>${etat}` + (I ? `<div id="rf-base">${rfBaseHtml()}</div>` : '')
     + '<p class="note">Pour un équipement du contrat, sa fiche dit les trois machines les plus proches (même part number, sinon même code), le taux de lignes communes, et le dessin (FWD) où il apparaît ; la comparaison — l’équipement, son voisinage, le dessin entier — montre ce qu’elles ont en plus, ce qui diffère, et reprend ce qu’on coche ; « Dessin » ouvre le FWD dessiné par VOLTA. « La solution du PH n’est pas forcément la bonne » : ce qui est repris passe les mêmes contrôles que le reste.</p>'; }
 function rfBaseHtml() { const I = indexReferences(); if (!I) return ''; const Q = chercherReferences(I, REF.q, 80), t = s => `<div class="sur rf-sur">${s}</div>`;
-  const cherche = `<div class="filtre rf-cherche">${ico('loupe')}<input id="rf-q" value="${escA(REF.q)}" placeholder="Chercher un harness, un dessin (FWD), un appareil, un repère" aria-label="Chercher dans les contrats déjà faits" autocomplete="off" spellcheck="false"></div>`;
+  const cherche = `<div class="filtre rf-cherche">${ico('loupe')}<input id="rf-q" value="${escA(REF.q)}" placeholder="Chercher un harness, un dessin (FWD), un appareil, un repère" aria-label="Chercher dans les plans déjà faits" autocomplete="off" spellcheck="false"></div>`;
   // le nom d'un dessin est le bouton qui l'ouvre ; une table large défile de côté (`.norme-defile`, comme la norme)
   const voir = (h, fwd, rep) => `<button class="rf-voir" data-h="${escA(h)}" data-fwd="${escA(fwd)}"${rep ? ` data-rep="${escA(rep)}"` : ''} data-bulle="${escA('Voir le dessin ' + fwd + ' de ' + h + (rep ? ', ' + rep + ' en évidence' : ''))}">${ico('voir')}<span>${esc(fwd)}</span></button>`;
   // une colonne de chiffres (ou de dates) se range à droite, son en-tête avec elle : `droite('Fils')`

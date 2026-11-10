@@ -474,7 +474,7 @@ const FICHIER = P.fichierDemande();
   await page.click('#ba-equip .ix-tete #fi-prec'); await page.waitForTimeout(500);
   ok(await page.evaluate(() => app.cible && app.cible.nom === '103RL1'), '‹ depuis l’index rouvre 103RL1');
   ok(await page.evaluate(() => { app.hist = []; app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; app.cible = null; fermerInspecteur(); redessiner(); return $('folios').hidden && !$('vide').hidden; }), 'le plan vide : plus de barre de zoom ni de folios');
-  await page.evaluate(() => { chargerContrat(contratExemple(), 'contrat d’exemple', 'Contrat d’exemple'); app.contrat.charges = chargesExemple(); synchroniser(); });
+  await page.evaluate(() => { chargerContrat(contratExemple(), 'plan d’exemple', 'Plan d’exemple'); app.contrat.charges = chargesExemple(); synchroniser(); });
   ok(await page.evaluate(() => !$('folios').hidden), 'l’exemple rechargé : la barre du bas revient');
   { // (un bloc : ses noms ne croisent pas ceux d’au-dessus)
   console.log('\nv73 — le cadran qu’on tourne, le même patron pour tous les choix, la règle des bulles, le clavier');

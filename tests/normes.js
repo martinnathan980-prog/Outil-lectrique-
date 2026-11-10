@@ -109,7 +109,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
 
   console.log('\nla page des normes');
   await page.evaluate(() => ficheNormes()); await page.waitForTimeout(500);
-  okp(await page.evaluate(() => app.fiche && app.fiche.mode === 'normes') && await q('.nm-dom') === 8 && await q('.nm-table[data-vue]') === 36 && await q('.nm-table.nm-contrats') === 1, 'huit domaines, trente-six vues des trente-deux tables (Dommage des fils a la sienne, sous Disjoncteurs ; modules, tailles, familles et accessoires coupés entre barrettes et connecteurs ; les sept tables d’octobre 2026 : toron, chambres, masses des raccords, joints, outillages, obturateurs, parties de l’EN 3155), la carte des contrats déjà faits', (await q('.nm-dom')) + ' domaines · ' + (await q('.nm-table[data-vue]')) + ' vues');
+  okp(await page.evaluate(() => app.fiche && app.fiche.mode === 'normes') && await q('.nm-dom') === 8 && await q('.nm-table[data-vue]') === 36 && await q('.nm-table.nm-contrats') === 1, 'huit domaines, trente-six vues des trente-deux tables (Dommage des fils a la sienne, sous Disjoncteurs ; modules, tailles, familles et accessoires coupés entre barrettes et connecteurs ; les sept tables d’octobre 2026 : toron, chambres, masses des raccords, joints, outillages, obturateurs, parties de l’EN 3155), la carte des plans déjà faits', (await q('.nm-dom')) + ' domaines · ' + (await q('.nm-table[data-vue]')) + ' vues');
   okp(await page.evaluate(() => { const t = document.querySelector('.nm-dom .nm-table[data-vue="dommages"]'), dom = t && t.closest('.nm-dom');
     return !!t && /Disjoncteurs/.test(dom.textContent) && /s’abîmer/.test(FICHES_TABLES.dommages.sert) && /prorata I \/ In/.test(FICHES_TABLES.chutesDisjoncteurs.sert) && !/la compter dans la chute en ligne quand/.test(FICHES_TABLES.chutesDisjoncteurs.manque || '')
       && /GARANTISSENT/.test(FICHES_TABLES.calibrations.sert) && !/personne encore/.test(FICHES_TABLES.calibrations.lue); }),
@@ -202,7 +202,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   await page.click('#fiche #no-embarquee'); await page.waitForTimeout(500);
   okp(await page.evaluate(() => app.normeNom === '' && !app.norme.contacts.some(c => c.accessoire === 'ESSAI-ACC') && !app.norme.colliers.some(c => c.reference === 'ESSAI-COL-2') && !localStorage.getItem('atelier.normes.v2')), '« Revenir à la norme embarquée » oublie tout, et le navigateur aussi');
   await page.click('#fiche [data-nm-vue="bible"]'); await page.waitForTimeout(500);
-  okp(await page.evaluate(() => app.fiche && app.fiche.mode === 'bible' && !!document.querySelector('#fiche-corps table.bible') && /contrats déjà faits/i.test(document.querySelector('#fiche-corps').textContent)), 'la bible des barrettes s’ouvre depuis la page, avec les contrats déjà faits');
+  okp(await page.evaluate(() => app.fiche && app.fiche.mode === 'bible' && !!document.querySelector('#fiche-corps table.bible') && /plans déjà faits/i.test(document.querySelector('#fiche-corps').textContent)), 'la bible des barrettes s’ouvre depuis la page, avec les plans déjà faits');
   await page.click('#fiche #bi-normes'); await page.waitForTimeout(500);
   okp(await page.evaluate(() => app.fiche && app.fiche.mode === 'normes'), '« Voir les normes » depuis la bible ramène à la page');
   await page.evaluate(() => ficheNormes({ table: 'familles:barrette', filtre: 'E0599' })); await page.waitForTimeout(400);

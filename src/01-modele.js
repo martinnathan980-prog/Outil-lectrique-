@@ -143,7 +143,7 @@ function liaison(o) {
   // ce que le fichier portait là où on l'a corrigé (`changerLiaison`, `poserChamp`) : un plan rouvert le garde, et le
   // retest corrigé (08-export) commente encore ses cases changées
   if (o.avant && typeof o.avant === 'object') l.avant = { ...o.avant };
-  // (v86) le câble que VOLTA crée pour une barrette (`aCreer`, plus bas) le reste une fois la barrette posée au contrat :
+  // (v86) le câble que VOLTA crée pour une barrette (`aCreer`, plus bas) le reste une fois la barrette posée au plan :
   // ses bornes ne disent plus « 1 » (« 51H »), sa marque le dit — ce que VOLTA ajoute se retrouve (08-journal)
   if (o.aCreer === true) l.aCreer = true;
   return l;
@@ -252,7 +252,7 @@ function nouveauContrat() {
     charges: new Map(),                // repère d'un disjoncteur -> { calibre, dem: { i, t }, trans: { i, t }, perm: { i } } (A, s)
     raccords: new Map(),               // « repère|connecteur » (ou « repère|fiche », « repère|embase » d'une prise) -> { blindage, etanche, orientation, gaine, surblindage, materiau }
     provisoires: new Map(),            // « repère␁borne » dédoublée -> numéro de sa barrette à poser (VTn) : un nom provisoire qui tient (`avecBarrettesAPoser`)
-    cartouche: { titre: 'Contrat de câblage', auteur: '', indice: 'A',
+    cartouche: { titre: 'Plan de câblage', auteur: '', indice: 'A',
                  date: new Date().toISOString().slice(0, 10), echelle: '—' }
   };
 }

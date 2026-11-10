@@ -92,7 +92,7 @@ async function lancerAutotest(o) { if (AUTOTEST.enCours) return; o = Object.assi
       try { fermerFiche(true); } catch (_) { } } };
   try {
     // 1. CE QUI VAUT POUR TOUT LE PLAN D'ABORD (arrêté tôt, l'essentiel est vu) : le contrôle, en entier
-    if (!fini()) { montrerAT('le contrôle', 0, 1, ''); await etape('contrôle', 'le contrôle du contrat', () => { controleDuContrat(); }); }
+    if (!fini()) { montrerAT('le contrôle', 0, 1, ''); await etape('contrôle', 'le contrôle du plan', () => { controleDuContrat(); }); }
     // 2. LE RÉCAPITULATIF : chaque onglet, en page, sur tout le plan
     if (!fini() && typeof ouvrirBase === 'function') { const ks = (typeof ONGLETS !== 'undefined' ? ONGLETS.map(([k]) => k) : []);
       await etape('récapitulatif', 'récapitulatif · ouverture', () => { ouvrirBase('page'); app.base.portee = 'tout'; });

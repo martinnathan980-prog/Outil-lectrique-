@@ -22,7 +22,7 @@
        un plan d'une installation à l'autre, supprimer (la confirmation dans la
        page, jamais une boîte du navigateur ; « Rétablir ») ;
      · la recherche, l'Exemple (et `atelier.exemple()`) ;
-     · la base des contrats déjà faits : avec une colonne Install, elle crée
+     · la base des plans déjà faits : avec une colonne Install, elle crée
        chaque installation et ses plans ; sans, elle propose de les ranger ;
      · un fichier glissé sur la bibliothèque devient un plan ;
      · la mémoire : rechargée, la bibliothèque est là, le plan resté sur la
@@ -235,8 +235,8 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   await page.evaluate(() => montrerBibliotheque()); await page.evaluate(() => atelier.exemple()); await page.waitForTimeout(200);
   ok(await page.evaluate(() => BIB.vue === 'plan' && app.planId === 'exemple' && !app.hist.length && verite().length === 209), '`atelier.exemple()` ouvre l’exemple directement, sans historique — même depuis la bibliothèque');
 
-  /* ---- la base des contrats déjà faits remplit la bibliothèque ------------------------------------------------- */
-  console.log('\nla base des contrats déjà faits');
+  /* ---- la base des plans déjà faits remplit la bibliothèque ------------------------------------------------- */
+  console.log('\nla base des plans déjà faits');
   const base = await fabriquer(['1', '2', '5', '6'], { 1: 'H-R1', 2: 'H-R2', 5: 'H-C1', 6: 'H-C1' }, { 1: 'Radar météo', 2: 'Radar météo', 5: 'Cockpit', 6: 'Cockpit' });
   await page.setInputFiles('#fichier-base', fichier('base-installs.csv', base)); await page.waitForFunction(() => !!app.references); await page.waitForTimeout(400);
   const B1 = await page.evaluate(() => ({ radar: (() => { const i = [...BIB.installs.values()].find(x => x.nom === 'Radar météo'); return i ? plansDeInstall(i.id).map(p => p.nom).join() : null; })(), cockpit: (() => { const i = [...BIB.installs.values()].find(x => x.nom === 'Cockpit'); return i ? plansDeInstall(i.id).map(p => p.nom + ':' + p.folios).join() : null; })(),

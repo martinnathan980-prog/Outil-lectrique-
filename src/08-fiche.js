@@ -326,7 +326,7 @@ function enTete(o) {
   return `<header class="fi-entete">${symbole(o.type, o.coul, o.etat)}<div class="fi-ident"><div class="fi-nom-ligne">${nom}</div>${o.genre || desH || ident ? `<div class="fi-genre">${o.genre ? `<span class="fi-genre-mot">${o.genre}</span>` : ''}${sep1}${ident}${sep2}${desH}</div>` : ''}</div></header>`; }
 // les tuiles d'un câble, une bande sous les problèmes (l'audit : « la barre des problèmes passe sous les tuiles ; ailleurs, elle suit l'en-tête »)
 const tuilesHtml = ts => { const xs = (ts || []).filter(Boolean); return xs.length ? `<div class="fi-tuiles">${xs.join('')}</div>` : ''; };
-/* L'ancienne tête (la comparaison des contrats déjà faits s'en sert encore, quand sa référence a disparu). */
+/* L'ancienne tête (la comparaison des plans déjà faits s'en sert encore, quand sa référence a disparu). */
 const fiTete = o => `<header class="fi-tete"><div class="min0"><div class="fi-nom">${esc(o.nom)}</div></div></header><div class="fi-ligne">${o.sous ? `<span class="fi-sous">${o.sous}</span>` : ''}</div>`;
 
 /* LA BARRE DES PROBLÈMES, juste sous l'en-tête : repliée, elle dit combien (« 3 problèmes · 7 à voir ») ; dépliée, une
@@ -1030,12 +1030,12 @@ function noteSupposes(nDj, nL, n, H) { const combien = k => n > 1 ? ' pour ' + (
   const inconnu = nDj ? `<b>${esc('Courant inconnu')}</b>${esc(combien(nDj) + ' (aucun disjoncteur en amont dans votre fichier)')}` : '';
   return [xs.length ? xs.join(' · ') + ` <span class="fi-note-hyp">— ${motHypothese.replace('>hypothèse<', '>hypothèses<')}</span>` : '', inconnu].filter(Boolean).join(' · '); }
 
-/* « DÉJÀ FAIT » : les machines proches dans la base des contrats déjà faits. Elle se tait tant qu'aucune base n'est
+/* « DÉJÀ FAIT » : les machines proches dans la base des plans déjà faits. Elle se tait tant qu'aucune base n'est
    chargée (le parcours v72 : « du bruit à chaque clic » — le rappel vit dans « Vos fichiers »). */
 function sectionDejaFait(nom) { const I = indexReferences();
   if (!I) return null;
   const h = dejaFaitHtml(nom), n = (h.match(/class="fi-cand /g) || []).length;
-  if (!h) return { cle: 'dejafait', vide: 'aucun contrat déjà fait ne porte ce repère, ce part number ni ce code', badge: { t: '0', etat: '' } };
+  if (!h) return { cle: 'dejafait', vide: 'aucun plan déjà fait ne porte ce repère, ce part number ni ce code', badge: { t: '0', etat: '' } };
   return { cle: 'dejafait', resume: `${pluriel(n, 'machine')} proche${s_(n)} dans la base`, badge: { t: String(n), etat: '' }, contenu: h }; }
 
 /* ---- LE PART NUMBER D'UN CONNECTEUR, d'un geste pour toutes ses liaisons ----------------------------------------- */
@@ -1174,7 +1174,7 @@ function problemesEquipement(nom, cav, b, vt, dj) { const probs = [];
       else if (v.niveau === 'attention' && !/^contact \S+ : \d+ (fils|câbles)/.test(v.texte)) probs.push({ niveau: 'att', texte: c.nom + ' · ' + v.texte, section: 'connecteur', connecteur: c.nom }); }); });
   const parBorne = connecteurParBorne(nom, liaisonsDeRepere(nom));
   [...b.parBorne].filter(([, fs]) => fs.length > 1).forEach(([bo, fs]) => { const g = parBorne.get(String(bo));
-    probs.push({ niveau: 'att', texte: `${majuscule(nombreEnMots(fs.length))} câbles arrivent sur la borne ${bo} — Une borne n’en reçoit qu’un : ${vt.has(String(bo)) ? 'VOLTA ajoute une barrette (' + vt.get(String(bo)) + ') qui les relie, à poser au contrat' : 'il faut une barrette pour les relier'}`, section: dj ? 'fils' : 'connecteur', connecteur: !dj && g ? g.nom : undefined }); });
+    probs.push({ niveau: 'att', texte: `${majuscule(nombreEnMots(fs.length))} câbles arrivent sur la borne ${bo} — Une borne n’en reçoit qu’un : ${vt.has(String(bo)) ? 'VOLTA ajoute une barrette (' + vt.get(String(bo)) + ') qui les relie, à poser au plan' : 'il faut une barrette pour les relier'}`, section: dj ? 'fils' : 'connecteur', connecteur: !dj && g ? g.nom : undefined }); });
   // (v87, le lecteur, Q1) les consommations à écrire passent en tête, avec leur geste (« Écrire la consommation de 104LP1 »)
   if (dj) controleDisjonction(nom).forEach(x => { const p = { niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: sectionDj(x.texte), ...(x.gestes ? { gestes: x.gestes } : {}), ...(x.genre ? { genre: x.genre } : {}) };
     if (x.genre === 'consommation') probs.splice(probs.filter(q => q.genre === 'consommation').length, 0, p); else probs.push(p); });
@@ -1359,7 +1359,7 @@ function sectionConso(nom) { if (!nom || estDisjoncteur(nom) || estMasse(nom)) r
   const djs = disjoncteursDe(nom), ecrit = phaseEcrite(c);
   const qui = djs.length ? djs.map(d => { const s = (chargeEcrite(d) && phaseEcrite(chargeEcrite(d))), cal = calibreDe(d);
       return `<button type="button" class="fi-lien" data-choisir-bloc="${escA(d)}">${esc(d)}</button>${cal ? ' · ' + esc(amperes(cal)) : ''}${s ? ' <em>(son profil est écrit sur sa fiche : il passe devant)</em>' : ''}`; }).join(', ')
-    : '<em>aucun disjoncteur ne l’alimente dans ce contrat</em>';
+    : '<em>aucun disjoncteur ne l’alimente dans ce plan</em>';
   const contenu = champs([ligneChamp('Permanent', champ('perm', v('perm', 'i'), 'Courant permanent, en ampères', 'A')),
       ligneChamp('Démarrage', champ('dem', v('dem', 'i'), 'Courant de démarrage, en ampères', 'A') + '<span class="fi-conso-mot">pendant</span>' + champ('demt', v('dem', 't'), 'Durée du démarrage, en secondes', 's')),
       ligneChamp('Alimenté par', qui)])
@@ -1643,7 +1643,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const plusieurs = Q.modules.length > 1, refs = plusieurs ? `<span class="fi-modules">${Q.modules.map((M, k) => `<span class="fi-mod"><i>${esc(Q.lettres ? M.numero : String(k + 1))}</i>${ident(M.reference)}</span>`).join('')}</span>` : '';
   // le rail (le lecteur : « la bonne référence du rail, celui qui porte tous les modules ») : la table Accessoires de la norme
   const BP = aPoser ? null : barretteParente(nom), porteRail = !!(BP && BP.porteur === nom), R = BP && BP.rails[0] ? { ...BP.rails[0], sous: (BP.freres.length > 1 ? 'barrette ' + BP.parent + ', ' : '') + BP.rails[0].sous } : null, railH = R ? `<span class="fi-rail" data-bulle="${escA([R.role, R.equivalent ? 'équivalent ' + R.equivalent : '', sansLiens(R.source)].filter(Boolean).join(' — '))}">${ident(R.reference)}</span>${repereConfiance(R.ligne, 'Vos tables')}${aide('rail', { rail: R })}` : '';
-  const tete = aPoser && !M0 ? '<p class="fi-note">Le module se choisit quand la barrette est posée au contrat.</p>' : champs([
+  const tete = aPoser && !M0 ? '<p class="fi-note">Le module se choisit quand la barrette est posée au plan.</p>' : champs([
     ligneChamp(plusieurs ? 'Modules' : 'Module', (plusieurs ? refs : moduleV) + aide('module', { plan: Q }), { changer: plusieurs && !aPoser ? boutonChanger('bar|' + nom, 'Les assemblages de la norme', 'Changer') : '', sous: ecart, liste: galerie, cls: 'fc-norme' }),
     R ? ligneChamp('Rail', railH, { sous: R.sous ? `<span>${esc(R.sous)}</span>` : '' }) : '']);
   /* les CONTACTS : une broche par câble — la lettre du contact du module dans le rond, la borne du retest en petit à côté */
@@ -1661,7 +1661,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const contacts = nf ? tableContacts(xsC, { premiere: 'Contact' }) + (Q.fils.some(x => x.sertir) ? legendeConfiance() : '') + (sansTable ? `<p class="fi-note">La table des contacts de la ${esc(famNom)} manque : <button type="button" class="fi-lien" data-action="normes">l’envoyer</button>.</p>` : '') : '<p class="fi-note">Aucun câble.</p>';
   const fils = filsDuRepere(nom); probs.push(...problemesDesFils(fils));
   /* (v86, l'audit G2 : « Retenir » ici, « Lui donner son repère » dans À régler, « Poser » dans le récapitulatif) UN verbe,
-     « Lui donner son repère », et UN repère proposé, le même partout : la suite de la barrette du contrat la plus proche
+     « Lui donner son repère », et UN repère proposé, le même partout : la suite de la barrette du plan la plus proche
      (`prochainRepereVT`, celui du récapitulatif et de « À reprendre »). Il s'écrit autrement, si vous le voulez. */
   const propose = aPoser ? (typeof prochainRepereVT === 'function' && sur ? prochainRepereVT({ sous: 'ajoutée par VOLTA sur ' + sur }) : repereLibre(raccord ? raccord.de : '', 'VT')) : '';
   const poser = aPoser ? `<div class="fi-poser"><span class="fi-poser-t">VOLTA propose</span><span class="fi-poser-g">${saisie('id="vt-repere"', propose, { mono: true, label: 'Le repère à lui donner — VOLTA propose ' + propose + ', il s’écrit autrement si vous le voulez', court: true })}`
@@ -1722,7 +1722,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
       if (M.ecart && M.fichier) return { html: `${num} : ${ref}, le plus petit qui convient. Votre fichier dit <b class="id">${esc(M.fichier)}</b> : ${esc(M.ecart.raison)}.`, source: 'calcul', etat: 'att' };
       return { html: `${num} : ${ref}, le plus petit qui convient.`, source: 'calcul' }; })];
   const etapesB = [
-    aPoser ? { html: `VOLTA l’a ajoutée${sur ? ` sur <b class="id">${esc(sur)}</b>` : ''} : plusieurs câbles y partent de la même borne, la barrette les relie. Elle entre au contrat quand elle a son vrai repère.`, source: 'calcul', etat: 'att' } : null,
+    aPoser ? { html: `VOLTA l’a ajoutée${sur ? ` sur <b class="id">${esc(sur)}</b>` : ''} : plusieurs câbles y partent de la même borne, la barrette les relie. Elle entre au plan quand elle a son vrai repère.`, source: 'calcul', etat: 'att' } : null,
     ...(etapesM || [nf ? { html: `Votre fichier y relie <b>${esc(pluriel(nf, 'câble'))}</b>, en <b>${esc(pluriel(Q.potentiels, 'groupe'))}</b> : les câbles d’une même borne, ou de bornes pontées, sont reliés entre eux.`, source: 'fichier' } : null,
     famNom ? { html: `Norme <b>${esc(famNom)}</b> : dans un module, les contacts d’un même groupe sont reliés ; chaque groupe de câbles prend un groupe de contacts.`, source: 'norme' } : null,
     M0 ? { html: plusieurs ? `<b class="id">${esc(Q.reference)}</b> : un seul module ne loge pas ces ${esc(pluriel(Q.potentiels, 'groupe'))}.` : `Module <b class="id">${esc(Q.reference)}</b> : ${main || Q.main ? 'choisi ici, à la main' : Q.nomme ? 'celui de votre fichier : il loge tous les groupes, chaque câble dans un contact qui admet sa gauge' : 'le plus petit qui loge ces ' + esc(pluriel(Q.potentiels, 'groupe')) + ', chaque câble dans un contact qui admet sa gauge'}.`, source: main || Q.main ? 'main' : Q.nomme ? 'fichier' : 'calcul' }
@@ -2083,7 +2083,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const fautes = neuf ? [] : ['de', 'vers'].map(k => coupableAuBout(l, l[k])).filter(Boolean);
   const probs = [];
   if (!l.type) probs.push({ niveau: 'att', texte: 'type de câble inconnu : la gauge ne se vérifie pas', section: '' });
-  if (neuf) probs.push({ niveau: 'att', texte: 'Nouveau câble — VOLTA l’ajoute avec la barrette ' + l.aPoser + ' ; il entre au contrat quand elle a son vrai repère', section: '' });
+  if (neuf) probs.push({ niveau: 'att', texte: 'Nouveau câble — VOLTA l’ajoute avec la barrette ' + l.aPoser + ' ; il entre au plan quand elle a son vrai repère', section: '' });
   [st.de, st.vers].forEach((s, k) => { if (s && s.ko) probs.push({ niveau: 'ko', texte: 'aucun contact n’accepte ce câble côté ' + (k ? l.vers : l.de), section: 'trajet' }); });
   // le plan d'un connecteur ne le loge pas : c'est ce câble qui l'en empêche (l'audit : « W-370 est vert »)
   fautes.forEach(y => probs.push({ niveau: 'ko', texte: `${y.rep}${y.connecteur ? ' · connecteur ' + y.connecteur : ''} : aucun arrangement ne loge ce ${l.type || 'câble'} sur la borne ${y.borne} (${y.mot})`, section: 'trajet' }));
@@ -2241,7 +2241,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const lgMot = L != null ? nombre(arrondi(L, 2)) + ' m' : neuf ? '' : nombre(H.longueur) + ' m supposés';
   const cheminG = cheminVue({ de: l.de, borneDe: l.borneDe, vers: l.vers, borneVers: l.borneVers, via: passe.map(t => t.split(' · ')[0]).join(', '), couleur: coul,
     type: l.type || 'sans type', legende: lgMot, sousDe: sousB('de'), sousVers: sousB('vers') }, largeurVue());
-  const etapesF = neuf ? [{ html: `VOLTA le crée quand <b class="id">${esc(l.aPoser)}</b> est posée au contrat : il prend alors sa place dans votre fichier.`, source: 'calcul', etat: 'att' }] : [
+  const etapesF = neuf ? [{ html: `VOLTA le crée quand <b class="id">${esc(l.aPoser)}</b> est posée au plan : il prend alors sa place dans votre fichier.`, source: 'calcul', etat: 'att' }] : [
     l.type ? { html: `Type <b class="id">${esc(l.type)}</b>${jauge != null ? `, gauge ${esc(String(jauge))} AWG` : ''} : ${cab ? 'la base des câbles le connaît' + (brins ? ' — ' + esc(brins) : '') : 'hors de la base des câbles'}.`, source: 'fichier', etat: cab ? '' : 'att' }
       : { html: 'Votre fichier ne donne pas son type : la gauge ne se vérifie pas.', source: 'fichier', etat: 'att' },
     // (v84, l'agent « câbles ») trois cas : côté source du disjoncteur, il l'alimente et n'est pas sous sa protection ; sans
