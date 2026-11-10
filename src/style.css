@@ -1388,8 +1388,13 @@ body.insp-epingle #inspecteur .carte-bords [data-bord="w"]{left:-8px}
 
 
 /* ─── LE VIVANT DE LA BARRE DU HAUT (v78, gardé) : un filet de cuivre qui court sous elle, très lentement, d'un bord à
-   l'autre — une lueur, pas une barre de chargement ─── */
-#entete::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;pointer-events:none;
-  background:linear-gradient(90deg,transparent 0%,transparent 25%,color-mix(in srgb,var(--chrome-cuivre) 42%,transparent) 50%,transparent 75%,transparent 100%);background-size:200% 100%;animation:chrome-filet 46s ease-in-out infinite alternate}
-@keyframes chrome-filet{from{background-position:100% 0}to{background-position:0 0}}
+   l'autre — une lueur, pas une barre de chargement.
+   (10 novembre 2026, la batterie « vitesse » : au repos, VOLTA brûlait un tiers d'un cœur — ce filet, seul, repeignait la
+   barre soixante fois par seconde, sans fin.) Il GLISSE désormais (une translation : rien à repeindre), et il s'arrête
+   quand la table s'endort (`body.au-repos`, 08-table) : au repos, plus rien ne tourne. ─── */
+#entete::after{content:"";position:absolute;left:0;bottom:-1px;width:200%;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent 0%,transparent 25%,color-mix(in srgb,var(--chrome-cuivre) 42%,transparent) 50%,transparent 75%,transparent 100%);
+  transform:translateX(-50%);will-change:transform;animation:chrome-filet 46s steps(184,end) infinite alternate}   /* (quatre pas par seconde : la lueur est si large et si lente que l'œil ne voit pas les pas — et l'écran ne se recompose plus soixante fois par seconde) */
+@keyframes chrome-filet{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+body.au-repos #entete::after{animation-play-state:paused}
 @media (prefers-reduced-motion:reduce){#entete::after{animation:none;background-position:50% 0}}

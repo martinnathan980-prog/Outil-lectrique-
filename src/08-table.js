@@ -63,7 +63,7 @@ const tableOccupee = () => !!((typeof BIB !== 'undefined' && BIB.lot && BIB.lot.
    temps avance d'autant — sauf pendant un geste ou sous une feuille. Endormie, la minuterie s'arrête : plus rien ne tourne. */
 function deriver() { const T = TABLE, n = performance.now(), dt = Math.min(.25, (n - T.derniere) / 1000); T.derniere = n;
   if (document.hidden) { arreterDerive(); return; }
-  if (T.cible && n - T.main > T.veilleApres) { T.cible = 0; T.el.classList.add('dort'); reposerAccueil(true); }
+  if (T.cible && n - T.main > T.veilleApres) { T.cible = 0; T.el.classList.add('dort'); document.body.classList.add('au-repos'); reposerAccueil(true); }   // (`au-repos` : le filet de la barre du haut s'arrête aussi — style.css)
   T.vitesse += (T.cible - T.vitesse) * Math.min(1, dt * 2.2);
   if (!T.cible && T.vitesse < .002) { T.vitesse = 0; arreterDerive(); return; }
   if (T.enGeste || tableCouverte() || tableOccupee()) return;
@@ -85,7 +85,7 @@ function fonduTable() { const t = $('table'), f = t && t.querySelector('.ta-fond
   v.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); }
 /* On est là (la souris, le clavier, la molette) : la dérive s'éveille, ou reste éveillée 90 s de plus. */
 function eveillerTable() { const T = TABLE; if (!T.el || mouvementReduit() || document.hidden) return; T.main = performance.now();
-  if (!T.cible) { T.cible = 1; T.el.classList.remove('dort'); reposerAccueil(false); }
+  if (!T.cible) { T.cible = 1; T.el.classList.remove('dort'); document.body.classList.remove('au-repos'); reposerAccueil(false); }
   if (!T.minuterie) { T.derniere = performance.now(); T.minuterie = setInterval(deriver, Math.round(1000 / T.hz)); }
   if (!T.courantT) planifierCourant(); }
 

@@ -1418,10 +1418,15 @@ body.insp-epingle #inspecteur .carte-bords [data-bord="w"]{left:-8px}
 
 
 /* ─── LE VIVANT DE LA BARRE DU HAUT (v78, gardé) : un filet de cuivre qui court sous elle, très lentement, d'un bord à
-   l'autre — une lueur, pas une barre de chargement ─── */
-#entete::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;pointer-events:none;
-  background:linear-gradient(90deg,transparent 0%,transparent 25%,color-mix(in srgb,var(--chrome-cuivre) 42%,transparent) 50%,transparent 75%,transparent 100%);background-size:200% 100%;animation:chrome-filet 46s ease-in-out infinite alternate}
-@keyframes chrome-filet{from{background-position:100% 0}to{background-position:0 0}}
+   l'autre — une lueur, pas une barre de chargement.
+   (10 novembre 2026, la batterie « vitesse » : au repos, VOLTA brûlait un tiers d'un cœur — ce filet, seul, repeignait la
+   barre soixante fois par seconde, sans fin.) Il GLISSE désormais (une translation : rien à repeindre), et il s'arrête
+   quand la table s'endort (`body.au-repos`, 08-table) : au repos, plus rien ne tourne. ─── */
+#entete::after{content:"";position:absolute;left:0;bottom:-1px;width:200%;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent 0%,transparent 25%,color-mix(in srgb,var(--chrome-cuivre) 42%,transparent) 50%,transparent 75%,transparent 100%);
+  transform:translateX(-50%);will-change:transform;animation:chrome-filet 46s steps(184,end) infinite alternate}   /* (quatre pas par seconde : la lueur est si large et si lente que l'œil ne voit pas les pas — et l'écran ne se recompose plus soixante fois par seconde) */
+@keyframes chrome-filet{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+body.au-repos #entete::after{animation-play-state:paused}
 @media (prefers-reduced-motion:reduce){#entete::after{animation:none;background-position:50% 0}}
 
 /* ───────── style-bibliotheque.css ───────── */
@@ -42318,7 +42323,7 @@ const tableOccupee = () => !!((typeof BIB !== 'undefined' && BIB.lot && BIB.lot.
    temps avance d'autant — sauf pendant un geste ou sous une feuille. Endormie, la minuterie s'arrête : plus rien ne tourne. */
 function deriver() { const T = TABLE, n = performance.now(), dt = Math.min(.25, (n - T.derniere) / 1000); T.derniere = n;
   if (document.hidden) { arreterDerive(); return; }
-  if (T.cible && n - T.main > T.veilleApres) { T.cible = 0; T.el.classList.add('dort'); reposerAccueil(true); }
+  if (T.cible && n - T.main > T.veilleApres) { T.cible = 0; T.el.classList.add('dort'); document.body.classList.add('au-repos'); reposerAccueil(true); }   // (`au-repos` : le filet de la barre du haut s'arrête aussi — style.css)
   T.vitesse += (T.cible - T.vitesse) * Math.min(1, dt * 2.2);
   if (!T.cible && T.vitesse < .002) { T.vitesse = 0; arreterDerive(); return; }
   if (T.enGeste || tableCouverte() || tableOccupee()) return;
@@ -42340,7 +42345,7 @@ function fonduTable() { const t = $('table'), f = t && t.querySelector('.ta-fond
   v.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); }
 /* On est là (la souris, le clavier, la molette) : la dérive s'éveille, ou reste éveillée 90 s de plus. */
 function eveillerTable() { const T = TABLE; if (!T.el || mouvementReduit() || document.hidden) return; T.main = performance.now();
-  if (!T.cible) { T.cible = 1; T.el.classList.remove('dort'); reposerAccueil(false); }
+  if (!T.cible) { T.cible = 1; T.el.classList.remove('dort'); document.body.classList.remove('au-repos'); reposerAccueil(false); }
   if (!T.minuterie) { T.derniere = performance.now(); T.minuterie = setInterval(deriver, Math.round(1000 / T.hz)); }
   if (!T.courantT) planifierCourant(); }
 
