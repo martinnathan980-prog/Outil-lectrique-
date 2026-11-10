@@ -1142,12 +1142,16 @@ function lierDisjonction(nom, conteneur) {
     // (v82, le lecteur : « l'essentiel ne change pas en continu quand je change démarrage, transition, permanent ») : le
     // profil s'écrit pendant la frappe (un souffle après la dernière touche) — l'essentiel, la courbe, les câbles suivent ;
     // une seule entrée d'historique par saisie, prise à la première touche
-    const vif = () => { const c = lire(), avant = parts()[0]; if (PROFIL_VIF.nom !== nom) { histPush('profil de charge de ' + nom); PROFIL_VIF.nom = nom; } poserCharge(nom, c); apresEdition(); apres(avant, true); };
+    const vif = () => { const c = lire(), avant = parts()[0]; if (PROFIL_VIF.nom !== nom) { histPush('profil de charge de ' + nom); PROFIL_VIF.nom = nom; } poserCharge(nom, c); apresEdition(); apres(avant, true); if (!dansUnChamp()) PROFIL_VIF.nom = ''; };
     // (v86) chaque touche montre tout de suite ce qu'elle change (`profilVif` : les points sur la courbe, la conclusion, les
     // calibres) ; le contrat s'écrit un souffle après la dernière
     QA('.dj-etats input').forEach(el => {
       el.oninput = () => { cancelAnimationFrame(PROFIL_VIF.image); PROFIL_VIF.image = requestAnimationFrame(profilVif); clearTimeout(PROFIL_VIF.minuteur); PROFIL_VIF.minuteur = setTimeout(vif, 360); };
-      el.onchange = () => { if (PROFIL_VIF.refait) return; clearTimeout(PROFIL_VIF.minuteur); if (PROFIL_VIF.nom === nom) { const avant = parts()[0]; poserCharge(nom, lire()); apresEdition(); apres(avant, dansUnChamp()); PROFIL_VIF.nom = ''; } else ecrire('profil de charge de ' + nom, lire()); }; });
+      el.onchange = () => { if (PROFIL_VIF.refait) return; clearTimeout(PROFIL_VIF.minuteur); if (PROFIL_VIF.nom === nom) { const avant = parts()[0]; poserCharge(nom, lire()); apresEdition(); apres(avant, dansUnChamp()); PROFIL_VIF.nom = ''; } else ecrire('profil de charge de ' + nom, lire()); };
+      /* (10 novembre 2026) LA SAISIE FINIT QUAND LE CHAMP EST QUITTÉ, même sans « change » : un champ refait autour du curseur
+         (le calibre a changé, la fiche s'est refaite entière) ne dit plus « change » en sortant — la saisie restait ouverte, et la
+         suivante n'avait plus son entrée d'historique (Ctrl+Z : « Rien à défaire », ou deux saisies défaites d'un coup). */
+      el.addEventListener('blur', () => { if (!PROFIL_VIF.refait) PROFIL_VIF.nom = ''; }); });
     // « + État » : un état de plus — ou, quand le démarrage, la transition ou le permanent ont été supprimés, une petite
     // liste (08-fiche, `[data-changer]`) qui les rend ; × supprime un état, quel qu'il soit
     const ajouter = k => { const c = lire(); if (k && k !== 'plus') c[k] = { i: null, t: null }; else c.plus.push({ nom: 'État ' + (c.plus.length + 3), i: null, t: null }); FI.liste = ''; ecrire((k && k !== 'plus' ? NOMS_PHASES[k] + ' rendu' : 'un état de plus') + ' sur ' + nom, c); };

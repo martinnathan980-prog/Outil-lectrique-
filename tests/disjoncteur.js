@@ -129,7 +129,9 @@ function symboleCasParCasDansLaPage() {
     const arcs = [...g.querySelectorAll('.cb-arc')].map(e => { const b = e.getBBox(), m = /^M([\d.\-]+) ([\d.\-]+) A[\d.\-]+ [\d.\-]+ 0 0 [01] ([\d.\-]+) ([\d.\-]+)$/.exec(e.getAttribute('d')); return { x0: b.x, x1: b.x + b.width, y0: b.y, y1: b.y + b.height, de: m && [+m[1], +m[2]], a: m && [+m[3], +m[4]] }; });
     const textes = [...g.querySelectorAll('text')].map(t => { const b = t.getBBox(); return { t: t.textContent, cls: t.getAttribute('class'), x0: b.x, y0: b.y, x1: b.x + b.width, y1: b.y + b.height }; });
     const X0 = c.lw - CONN_W, X1 = c.w - c.rw + CONN_W, dedans = textes.every(t => t.x0 >= X0 - 0.5 && t.x1 <= X1 + 0.5 && t.y0 >= -0.5 && t.y1 <= c.h + 0.5);
-    let chev = 0; for (let i = 0; i < textes.length; i++) for (let j = i + 1; j < textes.length; j++) { const a = textes[i], b = textes[j]; if (a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) chev++; }
+    // (la boîte d'un texte est sa ligne entière, montante et descendante comprises : deux lignes qui se suivent s'y recouvrent d'une
+    // unité sans que les lettres se touchent — on tolère 1,5 unité, comme tests/controle.js)
+    let chev = 0; for (let i = 0; i < textes.length; i++) for (let j = i + 1; j < textes.length; j++) { const a = textes[i], b = textes[j]; if (a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 + 1.5 && a.y0 < b.y1 - 1.5) chev++; }
     return { boite: !!g.querySelector('rect.body'), bornes, arcs, bouton: g.querySelectorAll('.cb-bouton').length, lien: g.querySelectorAll('.cb-lien').length, droites: g.querySelectorAll('line.lead').length, coudes: g.querySelectorAll('path.lead').length,
       cal: (g.querySelector('.cb-cal') || {}).textContent || '', rep: (g.querySelector('.rep-big') || {}).textContent || '', dedans, chev, textes: textes.map(t => t.t) }; };
   const R = {
@@ -148,98 +150,92 @@ function symboleCasParCasDansLaPage() {
   R.poles = { lettres: poles('A1', 'A2', 'B1', 'B2', 'C1', 'C2'), nombres: poles('1', '2', '3', '4', '5', '6'), lt: poles('L1', 'T1', 'L2', 'T2'), ligne: poles('LINE', 'LOAD'), trois: poles('1', '2', '3') };
   return R; }
 const FICHIER = P.fichierDemande();
+/* L'ÉCRAN (réécrit le 10 novembre 2026 pour le disjoncteur d'aujourd'hui — la charte : « un disjoncteur, c'est mathématique :
+   valide ou pas valide, point » ; « le calibre écrit vient du fichier » ; « le disjoncteur se lit vivant »). Les anciens
+   contrôles (le cadran, « À la main », la marge de 10 %, « touche la courbe ») jugeaient un écran qui n'existe plus. */
 (async () => {
   console.log('\nL’ÉCRAN');
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
   const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); page.setDefaultTimeout(120000);
   const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exempleSansCalibreAuto());   // (v74 : la carte de décision, l'hypothèse « Volta écrit le calibre » décochée — la règle v74 a son bloc, à la fin) l’outil s’ouvre sur la bibliothèque (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
-  const ouvrir = async () => { await page.evaluate(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500); };
-  await ouvrir();
-  // LE FOLIO : 102CB1 a sa forme, pas la boîte d'un équipement — aux ports d'un équipement, choisi à l'encre (« Graphite »)
-  const folioCb = () => page.evaluate(() => { const c = app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag'), g = document.querySelector('#scene .comp[data-name="102CB1"]'), t = cls => [...g.querySelectorAll('text.' + cls)].map(e => e.textContent);
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple()); await page.waitForTimeout(600);
+  const net = s => String(s || '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
+  const choisir = async () => { await page.evaluate(() => { if (typeof fermerFiche === 'function') fermerFiche(true); allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500); };
+  // la fiche en grand, sur l'onglet Calibre
+  const calibre = async () => { await choisir(); if (!await page.evaluate(() => document.body.classList.contains('insp-grand'))) { await page.click('#fi-tout-voir'); await page.waitForTimeout(600); } await page.click('#nv-o-calibre'); await page.waitForTimeout(600); };
+  await choisir();
+  // LE FOLIO : 102CB1 a sa forme, pas la boîte d'un équipement — aux ports d'un équipement, choisi à l'encre
+  const folioCb = () => page.evaluate(() => { const c = app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag'), g = document.querySelector('#scene .comp[data-name="102CB1"]'), t = cls => [...g.querySelectorAll('text.' + cls)].map(e => e.textContent.replace(/ /g, ' '));
     const ports = [...(c.rangs.L || []).map(p => [0, p.y - c.y]), ...(c.rangs.R || []).map(p => [c.w, p.y - c.y])];
     const bouts = [...g.querySelectorAll('.lead')].map(l => l.tagName === 'line' ? [+l.getAttribute('x1'), +l.getAttribute('y1')] : (m => [+m[1], +m[2]])(/^M([\d.\-]+) ([\d.\-]+)/.exec(l.getAttribute('d'))));
-    const sel = g.querySelector('.selbox');
+    const sel = g.querySelector('.selbox'), rvb = sel ? (getComputedStyle(sel).stroke.match(/\d+/g) || []).map(Number) : [];
     return { boite: !!g.querySelector('rect.body'), conn: !!g.querySelector('.conn'), bornes: g.querySelectorAll('.cb-borne').length, arcs: g.querySelectorAll('.cb-arc').length, bouton: g.querySelectorAll('.cb-bouton').length, rep: t('rep-big'), cal: t('cb-cal'),
-      ports: bouts.length === ports.length && ports.every(p => bouts.some(b => Math.abs(b[0] - p[0]) < 0.06 && Math.abs(b[1] - p[1]) < 0.06)), largeur: c.w, sel: sel ? getComputedStyle(sel).stroke : '' }; });
+      ports: bouts.length === ports.length && ports.every(p => bouts.some(b => Math.abs(b[0] - p[0]) < 0.06 && Math.abs(b[1] - p[1]) < 0.06)), largeur: c.w, encre: rvb.length >= 3 && Math.max(...rvb.slice(0, 3)) < 70 && Math.max(...rvb.slice(0, 3)) - Math.min(...rvb.slice(0, 3)) < 12 }; });
   const F1 = await folioCb();
-  ok(!F1.boite && !F1.conn && F1.bornes === 2 && F1.arcs === 1 && F1.bouton === 1 && F1.rep.join() === '102CB1' && F1.cal.join() === '15 A' && F1.ports && F1.largeur === 144 && F1.sel === 'rgb(29, 29, 31)',
-    'le folio : 102CB1 n’est plus une boîte (ni corps, ni pièce de connecteur « A ») mais deux bornes, l’arc et le bouton en T, son repère et « 15 A » (l’automatique : le plus petit calibre qui passe — l’installation porte un 10 A) ; chaque amenée part d’un port d’équipement (x = 0 ou 144, à la hauteur de sa borne) ; choisi, il est encadré à l’encre', JSON.stringify(F1));
-  // LA FICHE : ses sections à elle, dans l'ordre commun ; le meilleur calibre, la courbe et le profil ouverts d'office
-  const F = '#ba-equip ';
-  const voir = async sel => { await page.evaluate(s => { const e = document.querySelector(s); if (e) e.scrollIntoView({ block: 'center' }); }, sel); await page.waitForTimeout(120); const b = await page.locator(sel).first().boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
-  const ouvrirSec = cle => page.evaluate(k => { const d = document.querySelector(`#ba-equip details.fs[data-section="${k}"]`); if (d && !d.open) d.querySelector('summary').click(); }, cle);
-  const tip = () => page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'); return t && !t.hidden ? t.textContent : ''; });
-  // v73 (le designer : « le cadran, le héros, est replié dessous ») : « Calibre » s'ouvre D'OFFICE, les autres restent pliées ; son
-  // résumé dit ce que porte le retest et ce que l'outil propose, tant que ce n'est pas écrit (l'ergonome : « est-il à 10 ou à 15 ? »)
-  ok(await page.evaluate(() => { const ds = [...document.querySelectorAll('#ba-equip details.fs')], d = ds.find(x => x.dataset.section === 'disjoncteur'), f = ds.find(x => x.dataset.section === 'fils');
-    const r = d.querySelector('.fs-resume'), s = r.querySelector('.dj-resume-sous');
-    return ds.length === 2 && !d.open && !f.open && r.querySelector('.dj-resume').textContent === '10A' && r.querySelector('.dj-resume-mot.ko').textContent === 'touche la courbe' && !!s && /^installation\s*15\sA proposé · MS3320$/.test(s.textContent.replace(/\s+/g, ' ').trim()) && !d.querySelector('.fs-badge'); }),
-    'v77 — la fiche s’ouvre TOUT PLIÉ (le lecteur : « c’est à moi de les déplier ») — le résumé de « Calibre » : « 10 A touche la courbe » en ROUGE (toucher, c’est ne pas passer) · installation → 15 A proposé · MS3320, sans pastille');
-  await ouvrirSec('disjoncteur'); await ouvrirSec('fils'); await page.waitForTimeout(250);
-  ok(await page.evaluate(() => { const d = document.querySelector('#ba-equip details.fs[data-section="disjoncteur"]'), parts = [...document.querySelectorAll('#ba-equip .fi-dj[data-disj="102CB1"]')];
-    return !!d && d.open && parts.every(x => d.contains(x)) && parts.map(x => x.dataset.part).join() === 'calibre,courbe,profil' && [...document.querySelectorAll('#ba-equip details.fs')].map(x => x.dataset.section).join() === 'disjoncteur,fils' && d.querySelector('.fs-titre').textContent === 'Calibre'
-      && document.querySelector('#ba-equip details.fs[data-section="fils"]').open && !!document.querySelector('#ba-equip details.fs[data-section="fils"] .dj-fils') && !d.querySelector('.fs-badge') && !document.querySelector('#ba-equip .dj-legende, #ba-equip .dj-fantome'); }),
-    'la section « Calibre » réunit le calibre, la courbe et le profil ; ses câbles dans la section commune « Câbles »');
-  // LE CALIBRE, en grand : l'automatique, PROPOSÉ (pas encore écrit) ; sa ligne de verdict dit le mot (passe) et pourquoi ; la clé du cadran en trois mots
-  ok(await page.evaluate(() => { const h = document.querySelector('#ba-equip .dj-heros'), g = document.querySelector('#ba-equip .dj-grossir'), auto = document.getElementById('dj-retenir'), cs = getComputedStyle(h.querySelector('.dj-h-cal')), us = getComputedStyle(h.querySelector('.dj-h-u')), v = document.querySelector('#ba-equip .dj-verdict-l');
-    return h.classList.contains('ok') && h.classList.contains('propose') && h.querySelector('.dj-h-cal').textContent === '15A' && us.fontFamily === cs.fontFamily && us.fontSize === cs.fontSize && !h.querySelector('.dj-verdict-pastille, .dj-h-ko') && !h.querySelector('p')
-      && !!v && /^Le minimum : 15\sA/.test(v.textContent.replace(/\s+/g, ' ').trim()) && /pas encore écrit dans votre fichier/.test(v.textContent)
-      && auto.textContent.trim() === 'Automatique' && auto.getAttribute('aria-pressed') === 'true' && /Le plus petit MS3320 qui ne disjoncte pas sous vos 5\sA permanents et vos pointes, avec 10\s% de marge, à 125\s°C\s?; le 10\sA serait trop juste en pointe\./.test(auto.dataset.bulle) && !auto.title
-      && !!auto.closest('.dj-choix') && auto.nextElementSibling && auto.nextElementSibling.matches('.dj-seg.dj-main[data-changer="dj|102CB1"]') && /^À la main/.test(auto.nextElementSibling.textContent.trim())
-      && ['passe', 'ne passe pas', 'celui de votre fichier'].join() === [...document.querySelectorAll('#ba-equip .dj-cle > span')].map(x => x.textContent.trim()).join() && !h.contains(document.querySelector('#ba-equip .dj-cle'))
-      && calibreDe('102CB1') === 15 && pnDuRepere('102CB1') === 'MS3320-10' && disjonctionDe('102CB1').origine === 'ideal'
-      && /^3 câbles à grossir avec le 15\sA$/.test(g.querySelector('.dj-g-titre').textContent.replace(/\s+/g, ' ').trim()) && /Changer les câbles/.test(document.getElementById('dj-fils-changer').textContent); }),
-    'le calibre en grand : 15 A, l’AUTOMATIQUE, proposé — v77 : sa ligne dit « Le minimum : 15 A » (le lecteur : « simple, efficace »), proposé, pas encore écrit dans votre fichier ; « Automatique » pressé (le pourquoi dans sa bulle) · « À la main ▾ » ; la clé du cadran en DEUX couleurs (passe, ne passe pas) et celui de votre fichier ; « 3 câbles à grossir avec le 15 A »');
-  // v73 — LE CADRAN SE TOURNE : chaque cran est un bouton de 28 px au moins, son verdict dans sa classe et sa bulle chiffrée ; tous les calibres de la gamme
-  ok(await page.evaluate(() => { const cs = [...document.querySelectorAll('#ba-equip .dj-cadran .dj-cran')], d = disjonctionDe('102CB1'), k = c => cs.find(b => b.dataset.cal === String(c));
-    return cs.length === d.gamme.length && cs.every(b => b.tagName === 'BUTTON' && b.getBoundingClientRect().width >= 28 && b.getBoundingClientRect().height >= 28 && /^[\d,]+$/.test(b.textContent.trim()) && /^[\d,]+\sA — (passe|touche la courbe|déclenche)/.test(b.dataset.bulle))
-      && k(10).classList.contains('juste') && k(10).classList.contains('retest') && k(15).classList.contains('passe') && k(15).classList.contains('retenu') && k(15).getAttribute('aria-pressed') === 'true' && k(5).classList.contains('declenche')
-      && cs.filter(b => b.getAttribute('aria-pressed') === 'true').length === 1 && /^5\sA — déclenche : démarrage et transition, 9,31\sA pendant 2,1\smin/.test(k(5).dataset.bulle) && /^10\sA — touche la courbe : ses pointes consomment/.test(k(10).dataset.bulle); }),
-    'le cadran : un BOUTON par calibre de la gamme (28 px au moins), son mot (passe, touche la courbe, déclenche — v77) et sa bulle chiffrée, la phrase du moteur (le domaine C, `pourquoiDuCalibre` : « 5 A — déclenche : démarrage et transition, 9,31 A pendant 2,1 min ») ; le 15 pressé, le 10 de l’installation « juste » (test v72 remplacé : le cadran n’avait que des chiffres)');
-  ok(await page.evaluate(() => CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /l’installation porte un 10\sA \(MS3320-10\), qui touche la courbe : VOLTA retient le 15\sA \(MS3320-15\)/.test(x.texte))),
-    'v77 — le contrôle dit que l’installation porte un 10 A qui TOUCHE LA COURBE — un problème, en rouge (le lecteur : « si ça touche, c’est rouge ») — et que l’outil retient le 15 A (MS3320-15)', await page.evaluate(() => CONTROLE.items.filter(x => x.nom === '102CB1').map(x => x.niveau + ' ' + x.texte).join(' | ')));
-  ok(await page.evaluate(() => { const li = [...document.querySelectorAll('#ba-equip .dj-grossir .dj-g-ligne')], t = li.map(x => x.textContent), R = li.map(x => [...x.children].map(c => c.getBoundingClientRect()));
-    const chev = R.some(cs => cs.some((a, i) => cs.some((b, j) => j > i && a.width && b.width && a.left < b.right - 0.5 && a.right > b.left + 0.5 && a.top < b.bottom - 0.5 && a.bottom > b.top + 0.5)));
-    return li.length === 3 && /W-011/.test(t[0]) && /DR16/.test(t[0]) && /DR12/.test(t[0]) && !/g\/m/.test(t.join()) && /W-015/.test(t[2]) && /contact 23\s*12/.test(t[2]) && li.every(x => x.dataset.i) && !chev && !document.querySelector('#ba-equip .dj-g-num.manque'); }),
-    'les câbles à grossir, TOUJOURS visibles et sans rien qui se chevauche : W-011 DR16 → DR12, W-012, W-015 DR24 → DR12 (le contact 23 passe en 12) ; chacun mène au câble');
-  ok(await page.evaluate(() => !document.querySelector('#ba-equip .dj-chip, #ba-equip [data-pn="*"]')), 'ni la rangée des calibres ni le part number, d’office');
-  await page.click(F + '[data-changer="dj|102CB1"]'); await page.waitForTimeout(400);
-  // v73 — « À la main » propose TOUTE la gamme (le lecteur : « il ne peut choisir que les calibres au-dessus ») : chacun son mot, tous cliquables
-  ok(await page.evaluate(() => { const d = disjonctionDe('102CB1'), chips = [...document.querySelectorAll('#ba-equip .dj-chips .dj-chip')], mot = c => c.classList.contains('passe') ? 'passe' : c.classList.contains('juste') ? 'juste' : c.classList.contains('declenche') ? 'declenche' : '';
-    return chips.length === d.gamme.length && chips.map(c => +c.dataset.cal).join() === d.gamme.map(g => g.calibre).join() && chips.every(c => c.tagName === 'BUTTON' && !c.disabled && mot(c) === cleDuVerdict(d.gamme.find(g => g.calibre === +c.dataset.cal)))
-      && chips.filter(c => c.getAttribute('aria-pressed') === 'true').map(c => c.dataset.cal).join() === '15' && chips.filter(c => c.classList.contains('ideal')).map(c => c.dataset.cal).join() === '15' && chips.some(c => +c.dataset.cal < 10 && c.classList.contains('declenche'))
-      && /^Tout le catalogue MS3320 \(13\)$/.test(document.querySelector('#ba-equip [data-dj-catalogue]').textContent.trim()) && !document.querySelector('#ba-equip .dj-heros [data-dj-geste="rendre"], #ba-equip .dj-heros .orig, #ba-equip .fs-auto'); }),
-    '« À la main » : TOUTE la gamme MS3320 (1 à 20 A), chacun son mot — déclenche, juste, passe —, tous cliquables, le 15 pressé et étoilé ; « Tout le catalogue MS3320 (13) » au pied (test v72 remplacé : seulement ceux qui passent)');
-  await page.click(F + '[data-changer="dj|102CB1"]'); await page.waitForTimeout(300);
-  // la suite juge le 10 A du retest, retenu à la main (le récapitulatif, l'API) : un calibre JUSTE se dit, en ambre, avec sa raison
-  await page.evaluate(() => retenirCalibre('102CB1', 10)); await page.waitForTimeout(600); await ouvrir();
-  ok(await page.evaluate(() => { const h = document.querySelector('#ba-equip .dj-heros'), a = document.getElementById('dj-retenir'), v = document.querySelector('#ba-equip .dj-verdict-l');
-    return h.classList.contains('ko') && h.querySelector('.dj-h-cal').textContent === '10A' && /^10\sA\s*touche la courbe\s*avec 10\s% de marge/.test(v.textContent.replace(/\s+/g, ' ').trim()) && /^Automatique \(15\sA\)$/.test(a.textContent.trim()) && a.getAttribute('aria-pressed') !== 'true' && (app.contrat.charges.get('102CB1') || {}).calibre === 10; }),
-    'le 10 A de l’installation retenu à la main : ROUGE (v77), « 10 A touche la courbe — avec 10 % de marge… » sur la ligne du verdict ; « Automatique (15 A) » ramène au choix de l’outil (test v72 mis à jour : « ne passe pas », rouge)');
-  await page.click(F + '[data-changer="dj|102CB1"]'); await page.waitForTimeout(300);
+  ok(!F1.boite && !F1.conn && F1.bornes === 2 && F1.arcs === 1 && F1.bouton === 1 && F1.rep.join() === '102CB1' && F1.cal.join() === '10 A' && F1.ports && F1.largeur === 144 && F1.encre,
+    'le folio : 102CB1 n’est pas une boîte (ni corps, ni pièce de connecteur) mais deux bornes, l’arc et le bouton en T, son repère et « 10 A » (celui de votre fichier : le plus petit qui ne disjoncte pas) ; chaque amenée part d’un port d’équipement (x = 0 ou 144, à la hauteur de sa borne) ; choisi, il est encadré à l’encre', JSON.stringify(F1));
 
-  // LA COURBE, comme une fiche de constructeur : les quatre courbes de l'Excel, toujours ; le verdict dans le dessin ; dessinée à sa largeur
-  ok(await page.evaluate(() => { const fig = document.querySelector('#ba-equip .dj-graphe'), svg = fig.querySelector('svg'), t = [...svg.querySelectorAll('text')].map(x => x.textContent.replace(/\u00a0/g, ' ')), cs = [...svg.querySelectorAll('.dj-courbe')], mots = s => [...svg.querySelectorAll(s)].map(x => x.textContent.replace(/\u00a0/g, ' '));
+  // LA CARTE : le genre se reconnaît (silhouette, « Disjoncteur »), la frise des calibres, trois chiffres — sans défiler
+  const K = await page.evaluate(() => { const f = document.getElementById('ba-equip'), t = s => { const e = f.querySelector(s); return e ? e.textContent.replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim() : null; }, I = document.getElementById('inspecteur');
+    return { genre: t('.nc-genre-mot'), rep: t('.nc-rep-t'), pn: t('.nc-meta-v .id'), silhouette: !!f.querySelector('.nc-sceau svg.silhouette.sl-disjoncteur'),
+      frise: [...f.querySelectorAll('.dj-frise .vu-c')].map(x => ({ c: x.querySelector('b').textContent.replace(/\s*A\s*$/, '').trim(), k: ['oui', 'non', 'hors'].find(k => x.classList.contains(k)), ret: x.classList.contains('ret'), mot: x.querySelector(':scope > small').textContent.trim(), bulle: (x.dataset.bulle || '').replace(/[  ]/g, ' ') })),
+      legende: [...f.querySelectorAll('.dj-frise .vu-legende > span')].map(x => x.textContent.trim()), chiffres: [...f.querySelectorAll('.nc-chiffres .nc-chiffre')].map(x => x.querySelector('.nc-k').textContent.trim() + ' ' + x.querySelector('.nc-v').textContent.replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim()),
+      defile: [f, f.querySelector('.nc')].map(e => e.scrollHeight - e.clientHeight), bas: Math.round(I.getBoundingClientRect().bottom), h: innerHeight }; });
+  ok(K.genre === 'Disjoncteur' && K.rep === '102CB1' && K.pn === 'MS3320-10' && K.silhouette, 'la carte : la silhouette du disjoncteur, « Disjoncteur », 102CB1, sa référence MS3320-10', JSON.stringify([K.genre, K.rep, K.pn, K.silhouette]));
+  ok(K.frise.map(x => x.c + ':' + x.k).join(' ') === '1:non 3:non 5:non 7,5:non 10:oui 15:oui 20:oui 25:hors' && K.frise.filter(x => x.ret).map(x => x.c + ' ' + x.mot).join() === '10 retenu'
+    && K.frise.filter(x => x.k !== 'hors').every(x => new RegExp('^' + x.c + ' A : il ' + (x.k === 'oui' ? 'ne disjoncte pas' : 'disjoncte') + '\\.').test(x.bulle) && /il tire [\d,]+ A/.test(x.bulle)) && /^Pas de MS3320 en 25 A/.test(K.frise[7].bulle)
+    && K.legende.join() === 'ne disjoncte pas,disjoncte,pas en MS3320',
+    'la frise des calibres : 1 à 7,5 A disjonctent, 10, 15 et 20 A ne disjonctent pas, le 10 « retenu » (le plus petit qui ne disjoncte pas) ; chaque bulle s’explique en ampères (« il tire… ») ; le 25 A n’existe pas en MS3320 ; la légende en trois mots', K.frise.map(x => x.c + ':' + x.k).join(' ') + ' | ' + K.legende.join());
+  ok(K.chiffres.join(' · ').replace(/(\d)A/g, '$1 A') === 'Calibre 10 A · Permanent 5 A · Démarrage 9,31 A', 'trois chiffres clés : le calibre, le permanent, le démarrage — en ampères', K.chiffres.join(' · '));
+  ok(K.defile.every(d => d <= 1) && K.bas <= K.h, 'la carte tient sans défiler, sa hauteur suit son contenu', JSON.stringify([K.defile, K.bas, K.h]));
+
+  // LE CALIBRE, en grand : des onglets égaux, L'essentiel d'abord ; « Calibre » : la gamme, le profil, la conclusion, la courbe
+  await page.click('#fi-tout-voir'); await page.waitForTimeout(600);
+  const O = await page.evaluate(() => { const os = [...document.querySelectorAll('#ba-equip .nv-onglet')].filter(o => o.getBoundingClientRect().width > 0); return { noms: os.map(o => o.id.replace('nv-o-', '')), l: os.map(o => Math.round(o.getBoundingClientRect().width)), choisi: (os.find(o => o.getAttribute('aria-selected') === 'true') || {}).id, grand: document.body.classList.contains('insp-grand') }; });
+  ok(O.grand && O.choisi === 'nv-o-essentiel' && O.noms.includes('calibre') && Math.max(...O.l) - Math.min(...O.l) <= 1, '« Tout voir » : la fiche en grand s’ouvre sur L’essentiel ; ses onglets (dont « Calibre ») ont tous la même largeur', JSON.stringify(O));
+  await page.click('#nv-o-calibre'); await page.waitForTimeout(600);
+  const G = await page.evaluate(() => { const p = document.getElementById('nv-p-calibre'), n = s => String(s || '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim(), d = disjonctionDe('102CB1');
+    const cals = [...p.querySelectorAll('.vu-cal')].map(x => ({ cal: x.dataset.cal, k: ['oui', 'non', 'hors'].find(k => x.classList.contains(k)), on: x.classList.contains('on'), mot: n(x.querySelector(':scope > small').textContent), bulle: n(x.dataset.bulle) }));
+    const g = c => d.gamme.find(x => String(x.calibre) === c), pg = p.querySelector('.dj-pc-g').getBoundingClientRect(), pd = p.querySelector('.dj-pc-d').getBoundingClientRect(), co = p.querySelector('.dj-concl');
+    return { titre: n(p.querySelector('.vu-bloc-cal .vu-titre').textContent), cals, moteur: cals.filter(x => x.cal).every(x => g(x.cal) && (x.k === 'oui') === !!g(x.cal).valide), petit: Math.min(...d.gamme.filter(x => x.valide && x.catalogue).map(x => x.calibre)), retenu: d.calibre,
+      concl: { ok: co.classList.contains('ok'), t: n(co.querySelector('.dj-concl-t').textContent), d: n(co.querySelector('.dj-concl-d').textContent), bulle: n(co.querySelector('.dj-concl-d').dataset.bulle) },
+      cote: pg.right <= pd.left + 2 && Math.abs(pg.top - pd.top) < 40, entete: [...p.querySelectorAll('.dj-entete > span')].map(x => n(x.textContent)).filter(Boolean), etats: [...p.querySelectorAll('.dj-etat')].map(e => n(e.querySelector('.dj-nom').textContent) + (e.querySelector('.dj-x') ? ' ×' : '') + (e.querySelector('.dj-inf') ? ' ∞' : '')),
+      champs: [...p.querySelectorAll('.dj-champ input')].map(i => i.dataset.dj + '.' + i.dataset.q + '=' + i.value), plus: n((p.querySelector('#dj-plus') || {}).textContent),
+      texte: n(p.innerText) + ' ' + [...p.querySelectorAll('[data-bulle]')].map(x => n(x.dataset.bulle)).join(' '), main: !!p.querySelector('.dj-main, #dj-retenir, .dj-cadran, .dj-heros') }; });
+  ok(G.titre === 'Le calibre celui de votre fichier : il ne disjoncte pas' && G.cals.map(x => (x.cal || '—') + ':' + x.k).join(' ') === '1:non 3:non 5:non 7.5:non 10:oui 15:oui 20:oui —:hors' && G.cals.filter(x => x.on).map(x => x.cal + ' ' + x.mot).join() === '10 fichier' && G.moteur && G.petit === 10 && G.retenu === 10,
+    '« Le calibre — celui de votre fichier : il ne disjoncte pas » ; la gamme MS3320 de 1 à 20 A, chaque calibre du côté que dit le moteur ; le retenu est le plus petit qui ne disjoncte pas (10 A), marqué « fichier »', G.titre + ' | ' + G.cals.map(x => (x.cal || '—') + ':' + x.k).join(' '));
+  const b75 = (G.cals.find(x => x.cal === '7.5') || {}).bulle, b10 = (G.cals.find(x => x.cal === '10') || {}).bulle;
+  ok(/^7,5 A : il disjoncte\. Au démarrage et en transition, il tire 9,31 A pendant 2,1 min ; sur 2,1 min, un 7,5 A disjoncte dès 7,24 A : il disjoncte\.$/.test(b75) && /^10 A : il ne disjoncte pas\. Au démarrage et en transition, il tire 9,31 A pendant 2,1 min ; sur 2,1 min, un 10 A ne disjoncte qu’au-delà de 9,66 A : il ne disjoncte pas\. C’est le calibre retenu\.$/.test(b10),
+    'chaque calibre s’explique en ampères : ce qu’il tire, pendant combien de temps, le seuil où ce calibre disjoncte sur cette durée (7,5 A : dès 7,24 A sur 2,1 min ; 10 A : au-delà de 9,66 A)', b75 + ' | ' + b10);
+  ok(G.concl.ok && G.concl.t === '10 A : il ne disjoncte pas.' && G.concl.d === 'Au démarrage et en transition, il tire 9,31 A pendant 2,1 min ; ce calibre ne disjoncte qu’au-delà de 9,66 A sur cette durée.' && /courbe 125 °C/.test(G.concl.bulle),
+    'la conclusion d’abord, en ampères : « 10 A : il ne disjoncte pas. » — ce qu’il tire, pendant combien de temps, le seuil ; d’où vient le seuil (la courbe 125 °C) au survol', JSON.stringify(G.concl));
+  ok(!/\bmarges?\b|10 %|trop juste|\btouche|réserve|\btient\b|\bpasse\b|déclenche\b/i.test(G.texte) && !G.main,
+    'valide ou pas valide, point : ni marge, ni « 10 % », ni « trop juste », ni « touche la courbe », ni « tient », ni « passe » dans l’onglet (textes et bulles) ; plus de cadran ni de « À la main »', (G.texte.match(/.{0,30}(\bmarges?\b|10 %|trop juste|\btouche|réserve|\btient\b|\bpasse\b|déclenche\b).{0,30}/i) || [''])[0]);
+  ok(G.entete.join() === 'État,Courant A,Durée s' && G.etats.join() === 'Démarrage ×,Transition ×,Permanent × ∞' && G.champs.join() === 'dem.i=9,31,dem.t=5,trans.i=9,31,trans.t=120,perm.i=5' && G.plus === 'Ajouter un état' && G.cote,
+    'le profil de charge en TABLEAU (état, courant, durée sur une ligne) : démarrage, transition, puis le permanent (pour toujours, sans durée), cinq champs, chaque état son ×, « Ajouter un état » ; il s’écrit à côté de la courbe', JSON.stringify([G.entete, G.etats, G.champs, G.plus, G.cote]));
+
+  const F = '#ba-equip ';
+  const voir = async sel => { await page.evaluate(s => { const e = document.querySelector(s); if (e) e.scrollIntoView({ block: 'center' }); }, sel); await page.waitForTimeout(150); const b = await page.locator(sel).first().boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
+  const tip = () => page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'); return t && !t.hidden ? t.textContent.replace(/[  ]/g, ' ') : ''; });
+  // LA COURBE, comme une fiche de constructeur : les quatre courbes de vos tables, toujours ; dessinée à sa largeur
+  const C1 = await page.evaluate(() => { const fig = document.querySelector('#ba-equip .dj-graphe'), svg = fig.querySelector('svg'), t = [...svg.querySelectorAll('text')].map(x => x.textContent.replace(/ /g, ' ')), cs = [...svg.querySelectorAll('.dj-courbe')], mots = s => [...svg.querySelectorAll(s)].map(x => x.textContent.replace(/ /g, ' '));
     const R = svg.querySelector('.dj-cadre').getBoundingClientRect(), dehors = [...svg.querySelectorAll('line, path')].filter(p => !p.closest('.dj-prof, .dj-vise') && !p.closest('[clip-path]') && !p.matches('.dj-tic-in')).filter(p => { const r = p.getBoundingClientRect(); return r.width + r.height > 0 && (r.top < R.top - 1 || r.bottom > R.bottom + 1 || r.left < R.left - 1 || r.right > R.right + 1); });
-    return fig.classList.contains('ilot-clair') && Math.abs(+svg.getAttribute('width') - fig.clientWidth) <= 1 && Math.abs(svg.getBoundingClientRect().width - fig.clientWidth) <= 1 && cs.length === 4 && cs.map(x => x.classList.contains('bord') ? 'b' : 'm').join('') === 'bmmb'
-      && !svg.querySelector('.dj-bord, .dj-voisin, .dj-dommage, .dj-tic-nom, text.dj-calibre') && !!svg.querySelector('.dj-bande') && !!svg.querySelector('.dj-fond.sur') && !!svg.querySelector('.dj-fond.declenche') && ['125 °C', '23 °C', '−55 °C'].every(m => mots('text.dj-t').includes(m))
-      && mots('text.dj-zone.sur').join() === 'ne déclenche pas' && mots('text.dj-zone.declenche').join() === 'déclenche' && !dehors.length
-      && svg.querySelectorAll('.dj-pt').length === 2 && [...svg.querySelectorAll('.dj-escalier')].map(x => x.getAttribute('class').replace('dj-escalier', '').trim()).join() === 'serre,ok'
-      && ['0,1', '1', '10', '0,01 s', '0,1 s', '1 s', '10 s', '100 s', '1 000 s', '10 000 s', 'Temps de déclenchement', 'Multiples du courant nominal (In)'].every(m => t.includes(m)) && !t.some(m => /\d\s?k?A$/.test(m) || /W-015/.test(m))
-      && t.includes('permanent') && t.some(x => /^démarrage et/.test(x)) && getComputedStyle(fig).backgroundColor === 'rgb(255, 255, 255)' && getComputedStyle(fig).borderTopWidth === '0px'
-      && [...svg.querySelectorAll('.dj-filet.fin')].reduce((n, p) => n + p.getAttribute('d').split('M').length - 1, 0) >= 6 * 8 + 3 * 8; }),
-    'le graphique sur papier, à la largeur de l’inspecteur : les QUATRE courbes de l’Excel, chaque température nommée au-dessus de sa sortie du cadre — et plus aucun trait hors du cadre (le lecteur : « des traits noirs qui sortent du cadre ») ; l’abscisse en MULTIPLES DE In (0,1 · 1 · 10…, « Multiples du courant nominal (In) ») et plus aucun ampère ; plus de limite de dommage du câble (« le pointillé W-015 DR24, on ne sait pas à quoi il sert ») ; trois fonds nommés ; le profil en escalier, la marche du démarrage AMBRE (elle touche la courbe : juste — les trois mots, v73 : test mis à jour, elle était rouge), celle du permanent verte');
-  // chaque fond nommé de son côté : « ne déclenche pas » tout entier à gauche de la courbe la plus rapide, « déclenche » à droite de la plus lente
+    return { clair: fig.classList.contains('ilot-clair'), largeur: Math.abs(svg.getBoundingClientRect().width - fig.clientWidth) <= 1, courbes: cs.map(x => x.classList.contains('bord') ? 'b' : 'm').join(''),
+      vieux: !!svg.querySelector('.dj-bord, .dj-voisin, .dj-dommage, .dj-tic-nom, text.dj-calibre'), fonds: !!svg.querySelector('.dj-bande') && !!svg.querySelector('.dj-fond.sur') && !!svg.querySelector('.dj-fond.declenche'), temp: ['125 °C', '23 °C', '−55 °C'].every(m => mots('text.dj-t').includes(m)),
+      zones: mots('text.dj-zone.sur').join() + ' / ' + mots('text.dj-zone.declenche').join(), dehors: dehors.length, points: svg.querySelectorAll('.dj-pt').length, escalier: [...svg.querySelectorAll('.dj-escalier')].map(x => x.getAttribute('class').replace('dj-escalier', '').trim()).join(),
+      grad: ['0,1', '1', '10', '0,01 s', '0,1 s', '1 s', '10 s', '100 s', '1 000 s', '10 000 s', 'Temps de déclenchement', 'Multiples du courant nominal (In)'].every(m => t.includes(m)), ampere: t.some(m => /\d\s?k?A$/.test(m)), noms: t.includes('permanent') && t.some(x => /^démarrage et/.test(x)),
+      papier: getComputedStyle(fig).backgroundColor, filets: [...svg.querySelectorAll('.dj-filet.fin')].reduce((n, p) => n + p.getAttribute('d').split('M').length - 1, 0) }; });
+  ok(C1.clair && C1.largeur && C1.courbes === 'bmmb' && !C1.vieux && C1.fonds && C1.temp && C1.zones === 'ne disjoncte pas / disjoncte' && !C1.dehors && C1.points === 2 && C1.escalier === 'ok,ok' && C1.grad && !C1.ampere && C1.noms && C1.papier === 'rgb(255, 255, 255)' && C1.filets >= 6 * 8 + 3 * 8,
+    'le graphique sur papier blanc, à sa largeur : les QUATRE courbes de vos tables, chaque température nommée, aucun trait hors du cadre ; l’abscisse en MULTIPLES DE In, aucun ampère ; deux zones nommées — « ne disjoncte pas », « disjoncte » — ; le profil en escalier, ses deux marches du bon côté', JSON.stringify(C1));
+  // chaque zone nommée de son côté : « ne disjoncte pas » tout entier à gauche de la courbe la plus rapide, « disjoncte » à droite de la plus lente
   ok(await page.evaluate(() => { const svg = document.querySelector('#ba-equip .dj-graphe svg'), cs = [...svg.querySelectorAll('.dj-courbe')], dx = +svg.querySelector('.dj-cal').dataset.glisse;
     // en unités du dessin : les courbes sont dessinées au calibre 1 A, décalées de log10(calibre) décades (`data-glisse`)
     const xs = (p, y0, y1) => { const out = [], L = p.getTotalLength(); for (let s = 0; s <= L; s += 1) { const q = p.getPointAtLength(s); if (q.y >= y0 && q.y <= y1) out.push(q.x + dx); } return out; };
     const cote = (sel, p, gauche) => { const b = svg.querySelector(sel).getBBox(), x = xs(p, b.y, b.y + b.height); return !!x.length && (gauche ? b.x + b.width < Math.min(...x) : b.x > Math.max(...x)); };
-    return cote('text.dj-zone.sur', cs[0], true) && cote('text.dj-zone.declenche', cs[cs.length - 1], false); }), 'chaque fond nommé de son côté : « ne déclenche pas » à gauche de la courbe la plus rapide, « déclenche » à droite de la plus lente');
+    return cote('text.dj-zone.sur', cs[0], true) && cote('text.dj-zone.declenche', cs[cs.length - 1], false); }), 'chaque zone nommée de son côté : « ne disjoncte pas » à gauche de la courbe la plus rapide, « disjoncte » à droite de la plus lente');
   // plus de bascules : la vue passée à `grapheSvg` ne choisit plus rien (une vue d'hier rend le même dessin)
   ok(await page.evaluate(() => { const d = disjonctionDe('102CB1'), net = s => s.replace(/dj-clip-\d+/g, ''); return Object.isFrozen(DJ_VUE) && net(grapheSvg(d, { comparer: true, temperatures: false }, 400)) === net(grapheSvg(d, DJ_VUE, 400)) && !/dj-voisin/.test(grapheSvg(d, { comparer: true }, 400)); }),
-    'plus rien à basculer : une vue d’hier (« comparer », « une seule bande ») rend le même dessin — les quatre températures, aucun calibre voisin');
+    'rien à basculer : une vue d’hier (« comparer », « une seule bande ») rend le même dessin — les quatre températures, aucun calibre voisin');
   const lisse = () => page.evaluate(() => { const svg = document.querySelector('#ba-equip .dj-graphe svg'), cadre = svg.querySelector('.dj-cadre'), T = +cadre.getAttribute('y'), Bas = T + +cadre.getAttribute('height');
     return [...svg.querySelectorAll('.dj-courbe')].map(p => { const L = p.getTotalLength(), pts = []; for (let s = 0; s <= L; s += 2) { const q = p.getPointAtLength(s); if (q.y > T + 1 && q.y < Bas - 1) pts.push(q); }
       // tous les 2 pixels, de combien la direction tourne (`tour`) ; une CASSURE est un tour qu'aucun voisin ne prépare (le tour d'un pas,
@@ -251,8 +247,8 @@ const FICHIER = P.fichierDemande();
       for (let k = 1; k < pts.length; k++) recul = Math.max(recul, pts[k - 1].x - pts[k].x, pts[k - 1].y - pts[k].y);
       return { tour, cassure, recul, inflexions, n: pts.length }; }); });
   const L1 = await lisse();
-  ok(L1.length === 4 && L1.every(x => x.n > 60 && x.tour < 8 && x.cassure < 1 && x.recul < 0.05 && x.inflexions === 0), 'les quatre courbes sont LISSES, MONOTONES et CONVEXES : tous les 2 pixels la direction tourne peu à peu (moins de 8°), jamais d’un coup (aucune cassure de plus de 1° : la spline est C², ses Bézier exacts), toujours du même côté (aucune inflexion), et la courbe ne revient jamais en arrière',
-    L1.map(x => x.tour.toFixed(1) + '° / ' + x.cassure.toFixed(2) + '° / ' + x.inflexions + ' / ' + x.recul.toFixed(2)).join(' · '));
+  ok(L1.length === 4 && L1.every(x => x.n > 60 && x.tour < 8 && x.cassure < 1 && x.recul < 0.05 && x.inflexions === 0), 'les quatre courbes sont LISSES, MONOTONES et CONVEXES : tous les 2 pixels la direction tourne peu à peu (moins de 8°), jamais d’un coup (aucune cassure de plus de 1°), toujours du même côté (aucune inflexion), et la courbe ne revient jamais en arrière',
+    L1.map(x => x.n + ' pts ' + x.tour.toFixed(1) + '° / ' + x.cassure.toFixed(2) + '° / ' + x.inflexions + ' / ' + x.recul.toFixed(2)).join(' · '));
   // le lissage, sur toutes les familles de courbes de la norme : près des points lus, monotone et convexe, près du moteur qui juge
   const LZ = await page.evaluate(() => { const vu = new Set(), out = [];
     ['ETA483', '2TC', '6TC', '7274', 'EN2495', '5TC', '3TC', '9TC'].forEach(f => courbesDeDisjonction(app.norme, f).forEach(c => { if (vu.has(c)) return; vu.add(c); const F = courbeLisse(c), P = c.points;
@@ -260,110 +256,84 @@ const FICHIER = P.fichierDemande();
       for (let u = F.u0; u < F.u1 - 0.02; u += 0.01) { mono = Math.max(mono, F.der(u)); conv = Math.min(conv, F.der(u + 0.01) - F.der(u)); }
       out.push({ nom: c.famille + ' ' + c.nom, n: c.brut.length, temps: F.ecart.temps, multiple: F.ecart.multiple, convexe: F.convexe, moteur, mono, conv }); })); return out; });
   ok(LZ.length >= 20 && LZ.every(x => x.convexe && x.temps <= 0.05 + 1e-9 && x.multiple <= 0.02 && x.mono <= 1e-6 && x.conv >= -1e-6),
-    'chaque courbe de la norme (vingt-quatre, huit familles) est une spline de lissage monotone et convexe qui ne passe plus par les points lus mais les résume : à 5 % au plus EN TEMPS de chacun là où elle penche, à 2 % EN MULTIPLE sur l’asymptote (là, le courant se lit)',
+    'chaque courbe de la norme (huit familles) est une spline de lissage monotone et convexe qui résume les points lus : à 5 % au plus EN TEMPS de chacun là où elle penche, à 2 % EN MULTIPLE sur l’asymptote (là, le courant se lit)',
     'pire : ' + ['temps', 'multiple'].map(k => { const x = LZ.slice().sort((a, b) => b[k] - a[k])[0]; return k + ' ' + (x[k] * 100).toFixed(1) + ' % (' + x.nom + ')'; }).join(', '));
-  ok(LZ.filter(x => x.n >= 10 && !/partielle/.test(x.nom)).every(x => x.moteur < 0.04) && LZ.every(x => x.moteur < 0.075), 'le dessin lisse sans trahir le moteur (qui juge sur les points lus, en log-log entre deux) : à moins de 4 % en multiple de 10 ms au point le plus long, 7,5 % sur une courbe partielle (7274 à 71 °C : cinq points lus au coude, le reste déduit)',
+  ok(LZ.filter(x => x.n >= 10 && !/partielle/.test(x.nom)).every(x => x.moteur < 0.04) && LZ.every(x => x.moteur < 0.075), 'le dessin lisse sans trahir le moteur (qui juge sur les points lus, en log-log entre deux) : à moins de 4 % en multiple, 7,5 % sur une courbe partielle',
     LZ.slice().sort((a, b) => b.moteur - a.moteur).slice(0, 3).map(x => x.nom + ' ' + (x.moteur * 100).toFixed(1) + ' %').join(' · '));
   ok(await page.evaluate(() => { const svg = document.querySelector('#ba-equip .dj-graphe svg'), R = svg.getBoundingClientRect(), bs = [...svg.querySelectorAll('text')].map(t => t.getBoundingClientRect()).filter(b => b.width > 0);
     let chev = 0; for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++) { const a = bs[i], b = bs[j]; if (a.left < b.right - 0.5 && a.right > b.left + 0.5 && a.top < b.bottom - 0.5 && a.bottom > b.top + 0.5) chev++; }
     return chev === 0 && bs.every(b => b.left >= R.left - 0.5 && b.right <= R.right + 0.5 && b.top >= R.top - 0.5 && b.bottom <= R.bottom + 0.5); }), 'aucune étiquette n’en chevauche une autre, toutes restent dans le dessin');
-  // survoler un point : une bulle courte (la barre de navigation collée de la fiche : le point d'abord sous les yeux)
-  let c = await voir(F + '.dj-pt[data-k="dem"] .dj-point'); await page.mouse.move(c.x, c.y); await page.waitForTimeout(200);
-  let tx = await tip(); ok(/9,31\sA · 2,1\smin/.test(tx) && /démarrage et transition — le 10\sA tient 36,3\smin à 125\s°C/.test(tx) && /touche la courbe · 6\s% du temps consommé/.test(tx) && !/juste/.test(tx) && await page.evaluate(() => !!document.querySelector('#ba-equip .dj-tip-v.ko') && !document.querySelector('#ba-equip .dj-tip-l')),
-    'survoler le démarrage : une bulle courte — 9,31 A pendant 2,1 min, le 10 A tient 36,3 min à 125 °C, « touche la courbe » en ROUGE (v77 : plus de « juste » ni d’ambre) (6 % du temps de déclenchement consommé)', tx);
+
+  // SURVOLER : une bulle courte, en ampères — ce qu'il tire, le seuil où le calibre disjoncte sur cette durée
+  let c = await voir(F + '.dj-pt[data-k="dem"] .dj-point'); await page.mouse.move(c.x, c.y); await page.waitForTimeout(250);
+  let tx = await tip(); ok(/9,31 A · 2,1 min/.test(tx) && /démarrage et transition — le 10 A à 125 °C/.test(tx) && /ne disjoncte pas — sur 2,1 min, il ne disjoncte qu’au-delà de 9,66 A/.test(tx) && !/juste|touche|marge|tient/.test(tx) && await page.evaluate(() => !!document.querySelector('#ba-equip .dj-tip-v.ok')),
+    'survoler le démarrage : 9,31 A pendant 2,1 min, le 10 A à 125 °C « ne disjoncte pas — sur 2,1 min, il ne disjoncte qu’au-delà de 9,66 A »', tx);
   ok(await page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'), f = t.closest('.dj-graphe').getBoundingClientRect(), r = t.getBoundingClientRect(); return r.left >= f.left && r.right <= f.right + 1 && r.top >= f.top && r.bottom <= f.bottom + 1; }), 'la bulle reste dans la figure');
-  c = await voir(F + '.dj-pt[data-k="perm"] .dj-point'); await page.mouse.move(c.x, c.y); await page.waitForTimeout(200); tx = await tip();
-  ok(/5\sA · toujours/.test(tx) && /le 10\sA garantit 8\sA à 125\s°C/.test(tx) && /passe\s:\sne déclenche jamais/.test(tx) && await page.evaluate(() => document.querySelectorAll('#ba-equip .dj-tip > div').length === 2), 'le permanent : une bulle courte (un titre, une ligne, un verdict) — 5 A pour toujours, le MS3320-10 ne GARANTIT que 8 A à 125 °C (0,80 In, MS3320N table VII), il ne déclenche jamais', tx);
-  const g = await page.locator(F + '.dj-graphe svg').boundingBox(); await page.mouse.move(g.x + g.width * 0.86, g.y + g.height * 0.35); await page.waitForTimeout(200); tx = await tip();
-  ok(/^[\d,]+\sIn · [\d,]+\s(ms|s|min)/.test(tx) && /soit [\d,]+\sA — le 10\sA y tient [\d,]+\s(ms|s) à 125\s°C/.test(tx) && await page.evaluate(() => !document.querySelector('#ba-equip .dj-vise').hidden), 'ailleurs, le réticule lit le multiple de In d’abord, la durée, puis le courant et ce que le 10 A y tient', tx);
+  c = await voir(F + '.dj-pt[data-k="perm"] .dj-point'); await page.mouse.move(c.x, c.y); await page.waitForTimeout(250); tx = await tip();
+  ok(/5 A · toujours/.test(tx) && /permanent — le 10 A à 125 °C/.test(tx) && /ne disjoncte pas — en permanence, il ne disjoncte qu’au-delà de 8 A/.test(tx), 'le permanent : 5 A pour toujours ; « en permanence, il ne disjoncte qu’au-delà de 8 A »', tx);
+  const g = await page.locator(F + '.dj-graphe svg').boundingBox(); await page.mouse.move(g.x + g.width * 0.86, g.y + g.height * 0.35); await page.waitForTimeout(250); tx = await tip();
+  ok(/^[\d,]+ In · [\d,]+ (ms|s|min)/.test(tx) && /soit [\d,]+ A — le 10 A y disjoncte au bout de [\d,]+ (ms|s|min)/.test(tx) && await page.evaluate(() => !document.querySelector('#ba-equip .dj-vise').hidden), 'ailleurs, le réticule lit le multiple de In d’abord, la durée, puis le courant et au bout de combien de temps le 10 A y disjoncte', tx);
   await page.mouse.move(5, 5); await page.waitForTimeout(150);
-  // glisser le point du permanent vers la droite : le courant monte, le contrat s'écrit, Ctrl+Z le rend
-  c = await voir(F + '.dj-pt[data-k="perm"] .dj-point'); await page.mouse.move(c.x, c.y); await page.mouse.down(); await page.mouse.move(c.x + 20, c.y, { steps: 4 }); await page.waitForTimeout(100);
-  ok(await page.evaluate(() => document.querySelector('#ba-equip .dj-graphe svg').classList.contains('tient') && !document.querySelector('#ba-equip .dj-tip').hidden), 'pendant le glisser, le graphique tient le point et la bulle suit');
-  await page.mouse.move(c.x + 28, c.y, { steps: 4 }); await page.waitForTimeout(100);
-  ok(await page.evaluate(() => document.querySelector('#ba-equip .dj-pt[data-k="perm"]').classList.contains('ko')), 'glissé à droite de ce que le 10 A garantit, le point passe au rouge, en direct');
+  // GLISSER le point du permanent vers la droite : le courant monte, le champ suit en direct, le profil s'écrit, Ctrl+Z le rend
+  c = await voir(F + '.dj-pt[data-k="perm"] .dj-point'); await page.mouse.move(c.x, c.y); await page.mouse.down(); await page.mouse.move(c.x + 20, c.y, { steps: 4 }); await page.waitForTimeout(150);
+  const GL = await page.evaluate(() => ({ tient: document.querySelector('#ba-equip .dj-graphe svg').classList.contains('tient'), bulle: !document.querySelector('#ba-equip .dj-tip').hidden, champ: document.querySelector('#nv-p-calibre input[data-dj="perm"][data-q="i"]').value }));
+  ok(GL.tient && GL.bulle && parseFloat(GL.champ.replace(',', '.')) > 5, 'pendant le glisser, le graphique tient le point, la bulle suit, et le champ du permanent bouge en direct', JSON.stringify(GL));
   await page.mouse.up(); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => { const c = app.contrat.charges.get('102CB1'); return c.perm.i > 8 && c.perm.i < 12 && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /permanent/.test(x.texte)) && document.querySelector('#ba-equip .dj-heros').classList.contains('ko'); }), 'lâché : le permanent est écrit au contrat, le contrôle le relève, le calibre reste rouge (« ne passe pas »)', 'perm ' + await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i));
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+  const lache = await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i);
+  ok(lache > 5 && lache < 12, 'lâché : le permanent est écrit au profil de charge', 'perm ' + lache);
+  await page.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
   ok(await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i === 5), 'Ctrl+Z rend le profil de l’exemple');
-  await ouvrir();
-  // « Automatique (15 A) » : le choix rendu à l'outil — le 15 A, le part number du retest intact ; le folio l'écrit, la bande glisse
-  const tx10 = await page.evaluate(() => +document.querySelector('#ba-equip .dj-cal').dataset.glisse), nHist = await page.evaluate(() => app.hist.length);
-  await page.click('#dj-retenir'); await page.waitForTimeout(60);
-  const pendant = await page.evaluate(() => { const g = document.querySelector('#ba-equip .dj-cal'); return { tx: +g.dataset.glisse, mat: getComputedStyle(g).transform, duree: getComputedStyle(g).transitionDuration }; });
-  await page.waitForTimeout(700);
-  const mx = s => { const r = /matrix\(([^)]+)\)/.exec(s); return r ? +r[1].split(',')[4] : NaN; };
-  ok(pendant.tx > tx10 && parseFloat(pendant.duree) > 0 && mx(pendant.mat) < pendant.tx - 1, '« Automatique » retient le 15 A : la bande glisse du 10 au 15 (en transition, pas d’un coup)', JSON.stringify({ tx10, pendant }));
-  ok(await page.evaluate(n => { const h = document.querySelector('#ba-equip .dj-heros');
-    return app.hist.length === n + 1 && pnDuRepere('102CB1') === 'MS3320-10' && verite().every(l => !(l.avant && ('pnDe' in l.avant || 'pnVers' in l.avant))) && calibreDe('102CB1') === 15
-      && !(app.contrat.charges.get('102CB1') || {}).calibre && h.querySelector('.dj-h-cal').textContent === '15A' && h.classList.contains('ok') && !h.querySelector('.dj-verdict-pastille')
-      && document.getElementById('dj-retenir').getAttribute('aria-pressed') === 'true' && /3 câbles à grossir/.test(document.querySelector('#ba-equip .dj-grossir').textContent) ; }, nHist),
-    '« Automatique (15 A) » : une entrée d’historique ; plus de calibre à la main, le part number de l’installation intact ; le 15 A en grand, en vert ; le bouton reste, étoilé et pressé ; les câbles à grossir restent dits');
-  ok((await folioCb()).cal.join() === '15 A', 'le folio écrit « 15 A » à côté du symbole');
-  ok(await page.evaluate(() => CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'att' && /W-011 \(DR16\) : 11,7 A admis en continu \(× 0,6\) < calibre 15 A — pas protégé en surcharge/.test(x.texte)) && CONTROLE.items.filter(x => x.nom === '102CB1').every(x => !/W-012 \(DR20\) : pas protégé en surcharge brève/.test(x.texte))),
-    'le contrôle dit que le DR16 n’est pas protégé en surcharge par un 15 A (11,7 A admis en continu, le point FAA) ; un fil déjà en problème n’a pas en plus l’avertissement de surcharge brève');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600); await ouvrir();
-  ok((await folioCb()).cal.join() === '10 A' && await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10' && (app.contrat.charges.get('102CB1') || {}).calibre === 10 && verite().every(l => !(l.avant && ('pnDe' in l.avant || 'pnVers' in l.avant)))), 'Ctrl+Z rend le 10 A à la main, MS3320-10 sans trace, et « 10 A » au folio');
-  // un calibre à la main par sa puce (« Autre calibre »), « Automatique » rend le choix de l'outil
-  await page.click(F + '[data-changer="dj|102CB1"]'); await page.waitForTimeout(300); await page.click(F + '.dj-chip[data-cal="20"]'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-20' && calibreDe('102CB1') === 20 && /^Automatique \(15\sA\)$/.test(document.getElementById('dj-retenir').textContent.trim()) && document.getElementById('dj-retenir').getAttribute('aria-pressed') !== 'true' && document.querySelector('#ba-equip .dj-heros').classList.contains('ok')),
-    'la puce 20 A le retient à la main (MS3320-20) : il passe (vert) ; « Automatique (15 A) », à l’encre, ramène au choix de l’outil');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700); await ouvrir();
-  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10' && calibreDe('102CB1') === 10 && !!document.getElementById('dj-retenir') && verite().every(l => !(l.avant && ('pnDe' in l.avant || 'pnVers' in l.avant)))), 'Ctrl+Z rend le part number du fichier (et le 10 A retenu à la main)');
-  // « Changer les câbles » : chacun passe à la gauge proposée, une seule entrée d'historique
-  const nH = await page.evaluate(() => app.hist.length); await page.click('#dj-fils-changer'); await page.waitForTimeout(800);
-  ok(await page.evaluate(n => { const t = c => (verite().find(l => l.cable === c) || {}).type; return app.hist.length === n + 1 && t('W-011') === 'DR16' && ['W-012', 'W-015'].every(c => t(c) === 'DR16') && (verite().find(l => l.cable === 'W-015').avant || {}).type === 'DR24'
-      && !CONTROLE.items.some(x => x.nom === '102CB1' && /W-01[25]/.test(x.texte)) && !document.getElementById('dj-fils-changer') && !document.querySelector('#ba-equip .dj-grossir'); }, nH),
-    '« Changer les câbles » sous le 10 A retenu : W-012 et W-015 passent en DR16 — ce que DEMANDE LE CALIBRE RETENU (v73 : la ligne suit le calibre ; test mis à jour, elle grossissait pour le 15 A en DR12), W-011 garde son DR16 ; une seule entrée d’historique ; le contrôle n’a plus rien à dire d’eux, la ligne des câbles à grossir s’en va');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700); await ouvrir();
-  ok(await page.evaluate(() => ['DR16', 'DR20', 'DR24'].join() === ['W-011', 'W-012', 'W-015'].map(c => verite().find(l => l.cable === c).type).join()), 'Ctrl+Z rend les trois câbles de l’installation');
-  // LE PROFIL DE CHARGE (v3) : démarrage, transition, permanent, dans cet ordre ; écrire sans perdre la main
-  ok(await page.evaluate(() => { const E = [...document.querySelectorAll('#ba-equip .dj-etat')]; return E.map(e => e.dataset.k).join() === 'dem,trans,perm' && E[2].querySelector('.dj-verdict.ok') && E[0].querySelector('.dj-verdict.serre') && E[1].querySelector('.dj-verdict.serre') && !document.querySelector('#ba-equip .dj-verdict.ko') && E[2].querySelector('.dj-inf') && !E[2].querySelector('[data-q="t"]') && document.querySelectorAll('#ba-equip .dj-champ input').length === 5 && !!document.getElementById('dj-plus') && !document.querySelector('#ba-equip .dj-part.dj-profil p') && document.querySelectorAll('#ba-equip .dj-etat .dj-x').length === 3; }),
-    'le profil : le démarrage et la transition (pastilles AMBRE : leur point touche la courbe, juste — v73, test mis à jour), puis le permanent (pour toujours, sans durée, pastille verte), cinq champs, chaque état son ×, « + État », aucune phrase dessous');
-  await page.click(F + '[data-dj="perm"][data-q="i"]'); await page.fill(F + '[data-dj="perm"][data-q="i"]', '9,5'); await page.keyboard.press('Shift+Tab'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => { const a = document.activeElement; return app.contrat.charges.get('102CB1').perm.i === 9.5 && a && a.dataset.dj === 'trans' && a.dataset.q === 't' && !!document.querySelector('#ba-equip .dj-etat[data-k="perm"] .dj-verdict.ko') && document.querySelector('#ba-equip .dj-heros').classList.contains('ko')
-      && /^10\sA\s*déclenche\s*il ne garantit que 8\sA en permanence/.test(document.querySelector('#ba-equip .dj-verdict-l').textContent.replace(/\s+/g, ' ').trim()) && !!document.querySelector('#ba-equip .dj-pt.ko[data-k="perm"]') && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /15 A/.test(x.texte)); }),
-    '9,5 A en permanence, puis Maj+Tab : écrit au contrat, la main reste dans le champ d’avant, et tout se refait en place — la pastille et le point du permanent au rouge, le 10 A aussi (sa ligne de verdict : « 10 A déclenche — il ne garantit que 8 A en permanence… » ; v73, test mis à jour), le contrôle aussi');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700); await ouvrir();
-  await page.click('#dj-plus'); await page.waitForTimeout(500); await page.fill(F + '.dj-etat[data-k="plus0"] [data-q="i"]', '12'); await page.fill(F + '.dj-etat[data-k="plus0"] [data-q="t"]', '30'); await page.press(F + '.dj-etat[data-k="plus0"] [data-q="t"]', 'Enter'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => { const e = document.querySelector('#ba-equip .dj-etat[data-k="plus0"]'); return !!e && e.querySelector('.dj-verdict.ko') && e.querySelector('input.dj-nom').value === 'État 3' && document.querySelectorAll('#ba-equip .dj-pt').length === 3 && document.querySelector('#ba-equip .dj-pt[data-k="plus0"].ko'); }), 'un état de plus (12 A, 30 s) : sa ligne a une pastille rouge, son point aussi');
-  c = await voir(F + '.dj-pt[data-k="plus0"] .dj-point'); await page.mouse.move(c.x, c.y); await page.waitForTimeout(200); tx = await tip();
-  ok(/12\sA · 30\ss/.test(tx) && /État 3 — le 10\sA tient 7,3\ss à 125\s°C/.test(tx) && /déclenche à 125\s°C, 23\s°C min · 416\s% du temps consommé/.test(tx), 'sa bulle : un état EN SERVICE trouve le bilame chaud (MS3320N table VII, ÷ 1,42 ici) : le 10 A tient 7,3 s à 125 °C, il déclenche (416 % du temps consommé)', tx);
-  await page.mouse.move(5, 5); await page.click(F + '.dj-x[data-x="plus0"]'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.contrat.charges.get('102CB1').plus.length === 0 && document.querySelectorAll('#ba-equip .dj-pt').length === 2), 'retiré');
-  // SES FILS (la section commune « Fils ») : une ligne compacte chacun — l'intensité au pire contre ce qu'il admet, la chute en ligne ; le pourquoi dans la bulle
-  await ouvrirSec('fils'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => { const li = [...document.querySelectorAll('#ba-equip .dj-fils .fi-ia')], f = c => li.find(x => x.querySelector('.cb-num-ed input').value === c), w = x => parseFloat(x.querySelector('.cb-i .fi-barre i').style.width), v = x => x.querySelector('.cb-i-v').textContent.replace(/\s+/g, ' ');
-    return li.length === 3 && !document.querySelector('#ba-equip .dj-fils table, #ba-equip .dj-pal, #ba-equip .dj-fils .cb-anneau') && f('W-011').querySelector('.cb-i.ok') && Math.abs(w(f('W-011')) - 79.6) < 0.5 && v(f('W-011')) === '9,31 / 11,7 A' && /9,31\sA sur 11,7\sA admis pendant 2,1\smin/.test(f('W-011').dataset.bulle)
-      && f('W-015').classList.contains('ko') && f('W-015').querySelector('.cb-i.ko') && w(f('W-015')) === 100 && v(f('W-015')) === '9,31 / 3,9 A' && /Trop fin pour démarrage et transition/.test(f('W-015').dataset.bulle) && /trop fin pour démarrage et transition/.test(f('W-015').querySelector('.cb-pourquoi').textContent) && f('W-012').classList.contains('ko')
-      && !document.querySelector('#ba-equip .cb-vers, #ba-equip .fs-auto') && f('W-012').querySelector('input.cb-fam').value === 'DR' && f('W-012').querySelector('select.cb-jg').value === '20' && !!f('W-012').querySelector('.cb-lg.supp') && /supposée/.test(f('W-012').querySelector('.cb-lg input').getAttribute('aria-label')) && !/hyp\./.test(f('W-012').textContent)
-      && li[0].classList.contains('ko') && li[1].classList.contains('ko') && /3 câbles · 2 en défaut/.test(document.querySelector('#ba-equip details.fs[data-section="fils"] .fs-resume').textContent); }),
-    'ses câbles en LIGNES d’un tableau, ceux en défaut en tête (l’audit : « des cartes de 90 px ») : l’intensité, une barre fine et sa valeur — W-011 (DR16) « 9,31 / 11,7 A » (80 %, vert) ; W-015 (DR24) « 9,31 / 3,9 A » (rouge, la barre pleine ; « trop fin pour démarrage et transition » dessous, le détail dans sa bulle) — son numéro, son type (DR) et sa gauge (20), qui s’écrivent chacun à part ; plus de « vers 103RL1 » ; sa longueur en italique, supposée');
-  // LA CHUTE EN LIGNE : sur la ligne de chaque fil, la plus longue de ses chemins ; le détail (le pourcentage, la part du disjoncteur) dans la bulle
-  ok(await page.evaluate(() => { const li = [...document.querySelectorAll('#ba-equip .dj-fils .fi-ia')], f = c => li.find(x => x.querySelector('.cb-num-ed input').value === c), u = c => f(c).querySelector('.fi-u');
-    // (v74, lot F — le lecteur : « l'italique, c'est compliqué » : la valeur sur des longueurs supposées n'est plus en italique, la note
-    // sous le tableau le dit une fois ; contrôle v73 mis à jour : `fontStyle === 'italic'` devient `!== 'italic'`)
-    return /^4,63\sV$/.test(u('W-015').textContent) && u('W-015').classList.contains('ko') && u('W-015').classList.contains('supp') && getComputedStyle(u('W-015')).fontStyle !== 'italic' && /vers 395SW1:1 : 4,63\sV \(16,5 %\)/.test(f('W-015').dataset.bulle) && /dont 0,2 V dans le disjoncteur/.test(f('W-015').dataset.bulle)
-      && /^1,34\sV$/.test(u('W-012').textContent) && /vers 103RL1/.test(f('W-012').dataset.bulle) && /^0,68\sV$/.test(u('W-011').textContent) && /vers 101BT1/.test(f('W-011').dataset.bulle); }),
-    'la chute en ligne, sur la ligne de chaque câble — celle du calibre RETENU (ici le 10 A à la main) : W-015 4,63 V vers 395SW1 (rouge, la couleur de sa mesure ; des longueurs supposées, dites sous le tableau — plus en italique, v74 ; 16,5 %, « dont 0,2 V dans le disjoncteur » — votre table, « Du max » du 10 A, comptée entière — dans sa bulle), W-012 1,34 V vers 103RL1, W-011 0,68 V vers 101BT1');
-  // UNE vérité (l'audit : « 1,29 V ambre ici, 1,34 V vert là ») : la fiche de W-012 lit la même chute que cette ligne
-  const u012 = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .dj-fils .fi-ia')].find(x => x.querySelector('.cb-num-ed input').value === 'W-012').querySelector('.fi-u').textContent);
-  await page.evaluate(() => choisirFil(app.dessin.fils.find(w => w.cable === 'W-012'))); await page.waitForTimeout(500);
-  const v012 = await page.evaluate(() => { const v = [...document.querySelectorAll('#ba-equip .fi-mes')].find(m => /Chute/.test(m.textContent)).querySelector('.fi-mes-v b'); return v ? v.textContent : ''; });
-  ok(u012 === v012 && /^1,34\sV$/.test(v012), 'la fiche de W-012 dit la même chute que la ligne de 102CB1 (1,34 V sous le 10 A retenu)', u012 + ' · ' + v012);
-  await ouvrir();
-  // LE DÉTAIL DU CALCUL n'est plus une section (le lecteur : « on s'en fout ») : ni tableau, ni section « détail »
-  ok(await page.evaluate(() => !document.querySelector('#ba-equip details.fs[data-section="detail"], #ba-equip details.fs[data-section="chute"], #ba-equip .dj-table')), 'plus de « Détail du calcul » ni de « Chute » à part, plus aucun tableau');
-  // les hypothèses R2 : sans marge, le meilleur redevient le 10 A, avec deux fils en DR16 (R2 § 3.4)
-  await page.evaluate(() => { rendreCalibre('102CB1'); app.simu.marge = 0; apresHypotheses(); }); await page.waitForTimeout(500); await ouvrir();
-  ok(await page.evaluate(() => { const m = meilleurCalibre('102CB1'), h = document.querySelector('#ba-equip .dj-heros'), a = document.getElementById('dj-retenir'); return m.calibre === 10 && calibreDe('102CB1') === 10 && a.getAttribute('aria-pressed') === 'true' && h.classList.contains('ok') && /2 câbles à grossir/.test(document.querySelector('#ba-equip .dj-grossir').textContent) && /sans marge/.test(a.dataset.bulle); }),
-    'la marge de courant à 0 (fiche des hypothèses) : l’automatique devient le 10 A (« Automatique », pressé ; il passe), et deux câbles à grossir (W-012, W-015 en DR16) — la bulle du bouton dit « sans marge »');
-  await page.evaluate(() => { app.simu.marge = 10; apresHypotheses(); }); await page.waitForTimeout(400);
-  // le calibre du folio suit l'historique : retenir le 20 à la main, Ctrl+Z rend l'automatique
-  await ouvrir(); const auto = (await folioCb()).cal.join(); await page.evaluate(() => retenirCalibre('102CB1', 20)); await page.waitForTimeout(700); const avecVingt = (await folioCb()).cal.join();
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
-  const defait = await folioCb();
-  ok(auto === '15 A' && avecVingt === '20 A' && defait.cal.join() === '15 A' && !defait.boite && await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10'), 'l’automatique écrit « 15 A » sur le folio ; retenir le 20 y écrit « 20 A », Ctrl+Z y rend « 15 A » (et MS3320-10 dans l’installation)', auto + ' → ' + avecVingt + ' → ' + defait.cal.join());
+
+  // LE DISJONCTEUR VIVANT : écrire un courant, la conclusion et la courbe bougent en direct ; le calibre retenu suit le profil
+  console.log('\nLE CALIBRE SUIT LE PROFIL');
+  await calibre();
+  const champ = (k, q) => page.locator(`#nv-p-calibre input[data-dj="${k}"][data-q="${q}"]`);
+  await champ('perm', 'i').fill('9,5'); await page.waitForTimeout(500);
+  const V1 = await page.evaluate(() => ({ concl: document.querySelector('#ba-equip .dj-concl').innerText.replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim(), ok: document.querySelector('#ba-equip .dj-concl').classList.contains('ok') }));
+  ok(V1.ok && /^15 A : il ne disjoncte pas\. ?En permanence, il tire 9,5 A ; ce calibre ne disjoncte qu’au-delà de 12 A\.$/.test(V1.concl), 'écrire 9,5 A en permanence : EN DIRECT, avant même de quitter le champ, la conclusion passe au 15 A — « En permanence, il tire 9,5 A ; ce calibre ne disjoncte qu’au-delà de 12 A »', V1.concl);
+  await page.keyboard.press('Shift+Tab'); await page.waitForTimeout(900);
+  const V2 = await page.evaluate(() => { const n = s => String(s || '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim(), p = document.getElementById('nv-p-calibre');
+    return { foyer: document.activeElement && (document.activeElement.dataset.dj + '.' + document.activeElement.dataset.q), perm: app.contrat.charges.get('102CB1').perm.i, titre: n(p.querySelector('.vu-bloc-cal .vu-titre').textContent),
+      cals: [...p.querySelectorAll('.vu-cal')].filter(x => x.dataset.cal).map(x => x.dataset.cal + ':' + ['oui', 'non'].find(k => x.classList.contains(k)) + (x.classList.contains('on') ? ':retenu' : '') + (x.classList.contains('fichier') ? ':fichier' : '')).join(' '),
+      cal: calibreDe('102CB1'), pn: pnDuRepere('102CB1'), volta: pnDeVolta('102CB1'), folio: [...document.querySelectorAll('#scene .comp[data-name="102CB1"] text.cb-cal')].map(e => e.textContent.replace(/ /g, ' ')).join(),
+      types: (disjonctionDe('102CB1').contexte.fils || []).filter(f => f.l).map(f => { const i = intensiteDuFil(f.l); return (i && i.commande ? 'c:' : 'p:') + f.l.type; }).sort().join(), rouge: CONTROLE.items.filter(x => x.nom === '102CB1' && x.niveau === 'ko').length, cables: CONTROLE.items.filter(x => x.nom === '102CB1' && /moins que les 15 A du calibre/.test(x.texte.replace(/[  ]/g, ' '))).length }; });
+  ok(V2.foyer === 'trans.t' && V2.perm === 9.5 && V2.titre === 'Le calibre le plus petit qui ne disjoncte pas' && V2.cals === '1:non 3:non 5:non 7.5:non 10:non:fichier 15:oui:retenu 20:oui' && V2.cal === 15 && V2.folio === '15 A',
+    'Maj+Tab : écrit au profil, la main reste dans le champ d’avant ; le 10 A de votre fichier disjoncte (toujours marqué « fichier »), VOLTA retient le plus petit qui ne disjoncte pas — 15 A —, et le folio l’écrit', JSON.stringify(V2));
+  ok(V2.cables >= 1 && /^(c:DR24,?)+(p:DR12,?)+$/.test(V2.types), 'le calibre que VOLTA écrit à la place de celui qui disjoncte grossit avec lui les câbles de puissance qu’il ne protégerait plus (DR12) — jamais un fil de commande (ils restent en DR24, jugés contre le 15 A : « … moins que les 15 A du calibre »)', V2.types + ' · ' + V2.cables + ' fil(s) de commande à voir, ' + V2.rouge + ' problème(s) en rouge, part number ' + V2.pn);
+  await page.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
+  const V3 = await page.evaluate(() => ({ perm: app.contrat.charges.get('102CB1').perm.i, cal: calibreDe('102CB1'), pn: pnDuRepere('102CB1'), folio: [...document.querySelectorAll('#scene .comp[data-name="102CB1"] text.cb-cal')].map(e => e.textContent.replace(/ /g, ' ')).join() }));
+  ok(V3.perm === 5 && V3.cal === 10 && V3.pn === 'MS3320-10' && V3.folio === '10 A', 'Ctrl+Z : le permanent revient à 5 A, le calibre à 10 A (MS3320-10), le folio aussi', JSON.stringify(V3));
+  /* (10 novembre 2026, un défaut trouvé par cette batterie) après une saisie qui change le calibre — la fiche se refait autour du
+     champ, qui ne dit plus « change » en sortant —, la saisie suivante gardait l'ancienne ouverte : pas d'entrée d'historique,
+     « Rien à défaire ». Chaque saisie a la sienne : le contrôle « deux Ctrl+Z », plus bas, le tient. */
+
+  /* LE SEUL GESTE QUI ÉCRIT UN CALIBRE : la proposition justifiée de VOLTA (la charte, v86 : « le calibre écrit vient du fichier ;
+     pas de Manuel sur le calibre ; seule la proposition justifiée de VOLTA — Retenir le 7,5 A — écrit, dans l'Excel corrigé »). */
+  console.log('\nLA PROPOSITION DE VOLTA : « Retenir le 7,5 A »');
+  await calibre();
+  for (const k of ['dem', 'trans']) { await champ(k, 'i').fill('5'); await champ(k, 'i').press('Tab'); await page.waitForTimeout(600); }
+  const commande = () => page.evaluate(() => verite().filter(l => { const i = intensiteDuFil(l); return i && i.commande && [l.de, l.vers].some(r => ['395SW1', '103RL1'].includes(r)); }).map(l => l.type).join());
+  const etat = () => page.evaluate(() => { const n = s => String(s || '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim(), p = document.getElementById('nv-p-calibre'), pr = document.querySelector('#ba-equip .dj-prop'), t = document.getElementById('toast');
+    return { titre: p ? n(p.querySelector('.vu-bloc-cal .vu-titre').textContent) : '', prop: pr ? n(pr.querySelector('button').textContent) : '', dit: pr ? n(pr.textContent) : '', bulle: pr ? n(pr.querySelector('button').dataset.bulle) : '',
+      cals: p ? [...p.querySelectorAll('.vu-cal')].filter(x => x.dataset.cal).map(x => x.dataset.cal + ':' + ['oui', 'non'].find(k => x.classList.contains(k)) + (x.classList.contains('on') ? ':retenu' : '') + (x.classList.contains('fichier') ? ':fichier' : '')).join(' ') : '',
+      cal: calibreDe('102CB1'), pn: pnDuRepere('102CB1'), volta: pnDeVolta('102CB1'), folio: [...document.querySelectorAll('#scene .comp[data-name="102CB1"] text.cb-cal')].map(e => e.textContent.replace(/ /g, ' ')).join(),
+      suffirait: CONTROLE.items.some(x => x.nom === '102CB1' && /un 7,5 A suffirait/.test(x.texte.replace(/[  ]/g, ' '))), toast: t ? n(t.innerText) : '', defaire: !!(t && [...t.querySelectorAll('button')].some(b => /Défaire/.test(b.textContent))),
+      main: !!document.querySelector('#ba-equip .dj-main, #ba-equip #dj-retenir') || /À la main|\bManuel\b/.test(p ? p.innerText : '') }; });
+  const cmd0 = await commande(), P1 = await etat();
+  ok(P1.cal === 10 && P1.pn === 'MS3320-10' && P1.folio === '10 A' && P1.titre === 'Le calibre celui de votre fichier : il ne disjoncte pas' && /^Retenir le 7,5 A/.test(P1.prop) && /Le plus petit qui ne disjoncte pas — En permanence, il tire 5 A ; un 7,5 A ne disjoncte qu’au-delà de 6 A : il ne disjoncte pas\. Il ira dans l’Excel corrigé\./.test(P1.dit) && /Excel corrigé : MS3320-7-1\/2/.test(P1.bulle) && /Défaire/.test(P1.bulle) && P1.suffirait && !P1.main,
+    'un profil plus léger (5 A partout) : le 10 A de votre fichier ne disjoncte pas, VOLTA le garde — et propose « Retenir le 7,5 A », justifié en ampères (« il tire 5 A ; un 7,5 A ne disjoncte qu’au-delà de 6 A »), « il ira dans l’Excel corrigé » ; le contrôle dit « un 7,5 A suffirait » ; aucun « À la main » ni « Manuel » sur le calibre', JSON.stringify(P1));
+  await page.click('#ba-equip .dj-prop button'); await page.waitForTimeout(900);
+  const P2 = await etat(), cmd1 = await commande();
+  ok(P2.cal === 7.5 && P2.pn === 'MS3320-7-1/2' && P2.volta && P2.folio === '7,5 A' && /7\.5:oui:retenu 10:oui:fichier/.test(P2.cals) && !P2.prop && /102CB1 : 7,5 A \(MS3320-7-1\/2\).* — il ira dans l’Excel corrigé\./.test(P2.toast) && P2.defaire,
+    'le geste : 7,5 A retenu (MS3320-7-1/2, écrit par VOLTA), le folio le dit, le 10 A reste marqué « fichier » ; le message dit « il ira dans l’Excel corrigé » et propose « Défaire »', JSON.stringify(P2));
+  ok(cmd0 === cmd1 && /^DR24(,DR24)*$/.test(cmd0), 'les fils de commande ne sont jamais grossis par ce geste (la charte : jamais « Passer en DR16 » sur un fil de commande)', cmd0 + ' → ' + cmd1);
+  await page.evaluate(() => { const b = [...document.querySelectorAll('#toast button')].find(x => /Défaire/.test(x.textContent)); if (b) b.click(); }); await page.waitForTimeout(800);
+  const P3 = await etat();
+  ok(P3.cal === 10 && P3.pn === 'MS3320-10' && !P3.volta && P3.folio === '10 A', '« Défaire » rend le 10 A de votre fichier (MS3320-10), le folio aussi', JSON.stringify([P3.cal, P3.pn, P3.volta, P3.folio]));
+  await page.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); });
+  await page.keyboard.press('Control+z'); await page.waitForTimeout(500); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
+  const P4 = await page.evaluate(() => { const c = app.contrat.charges.get('102CB1'); return { dem: c.dem.i, trans: c.trans.i, cal: calibreDe('102CB1') }; });
+  ok(P4.dem === 9.31 && P4.trans === 9.31 && P4.cal === 10, 'deux Ctrl+Z rendent le profil de l’exemple (9,31 A au démarrage et en transition)', JSON.stringify(P4));
 
   console.log('\nLE SYMBOLE, CAS PAR CAS');
   const C = await page.evaluate(symboleCasParCasDansLaPage);
@@ -386,23 +356,15 @@ const FICHIER = P.fichierDemande();
   ok(sym.every(([, r]) => r.dedans && r.chev === 0 && r.rep), 'les textes (repère, calibre, numéros de borne) restent dans le corps réservé au bloc et ne se chevauchent pas', sym.filter(([, r]) => !r.dedans || r.chev).map(([k, r]) => k + ' ' + r.textes.join('/')).join(' | '));
   ok(C.poles.lettres === 'A1/A2 B1/B2 C1/C2' && C.poles.nombres === '1/2 3/4 5/6' && C.poles.lt === 'L1/T1 L2/T2' && C.poles.ligne === 'LINE/LOAD' && C.poles.trois === '1/2 3',
     'les pôles : A1/A2 par la lettre, 1/2 3/4 5/6 deux à deux, L1/T1 par le chiffre, LINE/LOAD ensemble, 1 2 3 → 1/2 et 3 seul', JSON.stringify(C.poles));
-  /* v74 — LA RÈGLE DU LECTEUR : « dès que ça touche la courbe, on ne prend pas ; tu mets directement le calibre qui marche ;
-     on garde automatique / manuel et la possibilité de revenir » — et la consommation de chaque équipement, écrite à la
-     main, fait le profil du disjoncteur qui l'alimente. */
-  console.log('\nLA RÈGLE v74 : le calibre qui passe, écrit dès l’ouverture ; la consommation des équipements');
-  const V74 = await page.evaluate(() => { fermerFiche(true); atelier.exemple(); const d = disjonctionDe('102CB1'), r = {};
-    r.ouvert = { pn: pnDuRepere('102CB1'), cal: d.calibre, origine: d.origine, carte: !!carteDecision('102CB1', d, 0), w011: verite().find(x => x.cable === 'W-011').type, volta: pnDeVolta('102CB1') };
-    retenirCalibre('102CB1', 10); r.main = { pn: pnDuRepere('102CB1'), cal: calibreDe('102CB1'), origine: disjonctionDe('102CB1').origine };
-    rendreCalibre('102CB1'); r.auto = { pn: pnDuRepere('102CB1'), cal: calibreDe('102CB1') };
+  /* LA CONSOMMATION DES ÉQUIPEMENTS FAIT LE PROFIL (la règle v74, toujours vraie) : sans profil écrit sur le disjoncteur, ce que
+     consomme chaque équipement qu'il alimente, écrit à la main, fait son profil de charge. */
+  console.log('\nLA CONSOMMATION DES ÉQUIPEMENTS FAIT LE PROFIL');
+  const V74 = await page.evaluate(() => { fermerFiche(true); atelier.exemple(); const r = {};
     app.contrat.charges.delete('102CB1'); ecrireConso('103RL1', 'perm', '2'); ecrireConso('103RL1', 'dem', '9'); ecrireConso('103RL1', 'demt', '3');
     const p = chargeDe('102CB1'); r.conso = { somme: (p && p.somme || []).join(), perm: p && p.perm && p.perm.i, dem: p && p.dem && p.dem.i + '/' + p.dem.t, cal: calibreDe('102CB1'), pn: pnDuRepere('102CB1'), djs: disjoncteursDe('103RL1').join() };
     return r; });
-  ok(V74.ouvert.pn === 'MS3320-15' && V74.ouvert.cal === 15 && V74.ouvert.origine !== 'main' && !V74.ouvert.carte && V74.ouvert.w011 === 'DR12' && V74.ouvert.volta,
-    'à l’ouverture, le 10 A qui touche la courbe est remplacé : MS3320-15 écrit (case « Volta »), W-011 grossi en DR12, plus de carte de décision', JSON.stringify(V74.ouvert));
-  ok(V74.main.pn === 'MS3320-10' && V74.main.cal === 10 && V74.main.origine === 'main' && V74.auto.pn === 'MS3320-15' && V74.auto.cal === 15,
-    '« À la main » garde le 10 A (le choix du lecteur) ; « Automatique » réécrit le 15 A', JSON.stringify([V74.main, V74.auto]));
   ok(V74.conso.somme === '103RL1' && V74.conso.perm === 2 && V74.conso.dem === '9/3' && V74.conso.djs === '102CB1' && V74.conso.cal === 10 && V74.conso.pn === 'MS3320-10',
-    'la consommation de 103RL1 (2 A, 9 A pendant 3 s) fait le profil de 102CB1 : le 10 A du fichier passe désormais, il revient', JSON.stringify(V74.conso));
+    'la consommation de 103RL1 (2 A, 9 A pendant 3 s) fait le profil de 102CB1 ; le 10 A de votre fichier ne disjoncte pas, il reste', JSON.stringify(V74.conso));
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   await nav.close();
   console.log('\n' + (echecs ? echecs + ' échec(s) sur ' + total : total + ' / ' + total + ' contrôles passés — tout est vert'));

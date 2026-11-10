@@ -3023,11 +3023,13 @@ const REFAIRE = { hist: null, pile: [] }, HISTOIRE = { recit: '' };
 function pileRefaire() { if (REFAIRE.hist !== app.hist) { REFAIRE.hist = app.hist; REFAIRE.pile = []; } return REFAIRE.pile; }
 const borner = (xs, n) => { while (xs.length > n) xs.shift(); };
 function histPush(quoi, retouche) { app.hist.push(photo(quoi, retouche)); borner(app.hist, 40); pileRefaire().length = 0; HISTOIRE.t = Date.now(); synchroniserHistorique(); }
+// (10 novembre 2026) défaire ou refaire ferme la saisie en cours d'un profil de charge : la saisie suivante prend sa propre photo
+const finDeSaisieDuProfil = () => { if (typeof PROFIL_VIF !== 'undefined') { clearTimeout(PROFIL_VIF.minuteur); PROFIL_VIF.nom = ''; } };
 // défaire : la photo du dessus revient ; ce qu'on quitte part sur la pile à refaire. Rend le nom du geste défait.
-function annuler() { const p = app.hist.pop(); if (!p) return null; const ici = photo(p.quoi, p.retouche), pile = pileRefaire(); pile.push(ici); borner(pile, 40);
+function annuler() { finDeSaisieDuProfil(); const p = app.hist.pop(); if (!p) return null; const ici = photo(p.quoi, p.retouche), pile = pileRefaire(); pile.push(ici); borner(pile, 40);
   poserPhoto(p); HISTOIRE.recit = recitDuGeste(ici, p, p, 'revient'); return p.quoi; }
 // refaire : la photo du dessus de la pile à refaire revient ; ce qu'on quitte retourne sur l'historique
-function refaire() { const pile = pileRefaire(), p = pile.pop(); if (!p) return null; const ici = photo(p.quoi, p.retouche); app.hist.push(ici); borner(app.hist, 40);
+function refaire() { finDeSaisieDuProfil(); const pile = pileRefaire(), p = pile.pop(); if (!p) return null; const ici = photo(p.quoi, p.retouche); app.hist.push(ici); borner(app.hist, 40);
   poserPhoto(p); HISTOIRE.recit = recitDuGeste(ici, p, p, 'passe'); return p.quoi; }
 function poserPhoto(p) { const plan = app.plan;
   // un autre plan était sur la table : ce qu'on vient d'y faire se garde d'abord, puis il revient
