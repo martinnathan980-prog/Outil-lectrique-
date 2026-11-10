@@ -196,6 +196,11 @@ s'écrit ici, le jour même.
 - **L'amélioration continue** : une passe complète tous les 3 jours (AMELIORATION.md) — un regard neuf qui regarde tout ;
   le sûr se corrige seul, le goût et les fonctions se décident à deux.
 - Carte blanche : proposer, dire non quand une demande va contre l'expérience (avec mieux à la place).
+- **Chaque crédit compte** (10 novembre 2026, le lecteur : « chaque token doit être ultra efficient, utilisé pour vraiment
+  avancer ») : on ne fait que l'essentiel. **Plus de batteries longues en cours de route** — on ne repasse pas ce qui était
+  vert ; seulement le contrôle rapide de ce qu'on touche (quelques secondes) et un regard sur l'écran changé. Les batteries
+  complètes et la relecture de tous les écrans se font **une fois, à la toute fin**, avant `main`. La passe automatique
+  « tous les 3 jours » est en pause jusqu'à nouvel ordre.
 - **Répondre court** dans la conversation (v82, le lecteur : « trop à lire ») : les points importants seulement, ce
   qu'il doit savoir ; le détail seulement s'il le demande.
 - Livrer avec la skill **`livrer-volta`** : le fichier `.html` envoyé directement (pas de ZIP) et un compte rendu en
