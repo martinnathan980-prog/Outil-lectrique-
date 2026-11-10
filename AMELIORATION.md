@@ -164,3 +164,11 @@ plusieurs, modifier le câblage dans VOLTA (le retest reste la source).
   prises, Suivi) ; les teintes froides des groupes, le pointillé de la carte, le câble dit par ses deux bouts ; l'IA
   interne (réglage, test, file d'attente) ; la lecture des documents de 63 / 68 / 45 % à 100 / 100 / 94 %. Reste : les
   scans (OCR ou IA), les tableaux des PDF, l'écran de vérification B, les batteries de l'interface à valider.
+- **10 novembre 2026 — v88** (carte blanche après l'état des lieux) : **plus aucun courant supposé** (sans consommation
+  écrite, le courant et la chute sont inconnus ; jamais de gauge plus fine proposée sans courant connu) ; **Tout
+  sauvegarder / tout restaurer** (un fichier `.volta`, sans les réglages de l'IA interne) ; le **menu rangé** (Réglages,
+  Aide, la version visible ; plus de « Plus ») ; les mots **Installation › Plan › Folio** ; **la Revue** (un point à la
+  fois, touche V, proposée à l'ouverture) ; l'accueil dit Excel, PDF ou Visio. Vérifié : charge, fumée, œil (clair et
+  sombre, 1440 et 1920), moteur 9 / 9, pièges 11 / 11, IA 53 / 53. Reste : les batteries de l'interface (elles parlent
+  encore de l'ancien menu et des anciens mots), « Ce qu'il consomme » en champ simple, les tableaux pleine page ; puis
+  **comparer deux indices** (v89), les scans par l'IA interne, l'écran de vérification B.
