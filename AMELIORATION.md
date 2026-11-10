@@ -232,3 +232,16 @@ plusieurs, modifier le câblage dans VOLTA (le retest reste la source).
   n'en porte aucun de ces familles : à voir sur un vrai fichier).
 - **Reste** : lire les vrais documents (essai du lecteur) ; « nos folios à nous » (planches) ; le classeur de données ; la
   passe complète des tests, puis `main`.
+
+### 10 novembre 2026 — v96, on consolide (le lecteur : « l'outil devient tellement gros que je suis perdu dedans »)
+
+- **Fait** : `tests/fonctions.js` (27 contrôles) rejoue les fonctions v90 à v95 ; la carte du code est dans la charte.
+- **Batteries ciblées** (ce que v90–v95 touchait) : moteur 10 sur 10 ; fiche, documents, bibliothèque, chrome, interface,
+  fonctions vertes. Cinq attentes étaient à mettre à jour (trois lignes de plus au menu, le mot « Fiche d'atelier » sur
+  une prise, les raccourcis du cadran retirés en v89) ; un vrai petit défaut trouvé et corrigé : la bulle du « Plan
+  vivant » dépassait les 160 signes.
+- **Pas repassé** : les 17 autres batteries d'écran (zones non touchées) et l'œil sur tous les écrans — à la toute fin.
+- **Plus rien d'utile à faire sans le lecteur** : les vrais documents, « nos folios à nous » et le classeur l'attendent ;
+  le rangement des 52 feuilles de style est une dette réelle, à faire après son retour, batteries vertes.
+- **À son retour, d'abord** : un CAS DE RÉFÉRENCE — un petit plan réel dont il connaît les réponses à la main (calibre,
+  chute, gauge) — rejoué par VOLTA puis gardé en batterie ; pas de nouvelle fonction avant.

@@ -194,8 +194,8 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
   /* ---- 7. la feuille des raccourcis ---- */
   { const page = await ouvrir();
     await page.keyboard.press('?'); await page.waitForTimeout(500);
-    const K = await page.evaluate(() => { const t = $('raccourcis').innerText; return { refaire: /Refaire/.test(t) && /Ctrl\s*Y/.test(t), palette: /Ctrl\s*K/.test(t), fiche: /Dans une fiche/.test(t) && /cadran/.test(t), bulle: !!$('rk-fermer').querySelector('.bulle'), entre: $('raccourcis').querySelector('.rk-feuille').classList.contains('entre-v') }; });
-    ok('la feuille dit refaire (Ctrl+Y, Ctrl+Maj+Z), la palette (Ctrl+K), les touches de la fiche et du cadran ; elle se pose par la règle d’entrée commune', K.refaire && K.palette && K.fiche && K.bulle && K.entre, JSON.stringify(K));
+    const K = await page.evaluate(() => { const t = $('raccourcis').innerText; return { refaire: /Refaire/.test(t) && /Ctrl\s*Y/.test(t), palette: /Ctrl\s*K/.test(t), fiche: /Dans une fiche/.test(t), bulle: !!$('rk-fermer').querySelector('.bulle'), entre: $('raccourcis').querySelector('.rk-feuille').classList.contains('entre-v') }; });
+    ok('la feuille dit refaire (Ctrl+Y, Ctrl+Maj+Z), la palette (Ctrl+K), les touches de la fiche (v89 : plus celles du cadran, qui n’existe plus) ; elle se pose par la règle d’entrée commune', K.refaire && K.palette && K.fiche && K.bulle && K.entre, JSON.stringify(K));
     const ici = []; for (let i = 0; i < 6; i++) { await page.keyboard.press(i % 2 ? 'Shift+Tab' : 'Tab'); ici.push(await page.evaluate(() => !!document.activeElement.closest('.rk-feuille'))); }
     await page.evaluate(() => document.activeElement.blur()); await page.keyboard.press('Tab'); ici.push(await page.evaluate(() => !!document.activeElement.closest('.rk-feuille')));
     ok('Tab ne sort plus de la feuille (d’où que parte le clavier)', ici.every(Boolean), ici.join(' '));
