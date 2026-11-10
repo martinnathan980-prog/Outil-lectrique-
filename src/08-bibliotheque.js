@@ -370,6 +370,8 @@ async function plansDuFichier(f) { const nom = f.name || 'le fichier', L = await
    se lit ailleurs (08-references). Sans installation sous les yeux, « À ranger » ne se crée qu'au premier plan fait — un
    dépôt qui ne donne rien ne laisse pas d'installation vide (audit v72, parcours P2-10). */
 async function ajouterPlans(fichiers, installId) { fichiers = [...(fichiers || [])].filter(Boolean); if (!fichiers.length) return;
+  // (v88) une sauvegarde d'ensemble déposée sur la bibliothèque : son écran, prêt à restaurer — pas un plan
+  { const sv = typeof estSauvegarde === 'function' ? fichiers.find(estSauvegarde) : null; if (sv) { recevoirSauvegarde(sv); return; } }
   const pdfs = typeof estPdf === 'function' ? fichiers.filter(estPdf) : []; if (pdfs.length) { fichiers = fichiers.filter(f => !pdfs.includes(f)); if (typeof ouvrirPdf === 'function') ouvrirPdf(pdfs[0]); }
   const visios = typeof estVisio === 'function' ? fichiers.filter(f => estVisio(f) || estVisioAncien(f)) : [];
   if (visios.length) { fichiers = fichiers.filter(f => !visios.includes(f)); if (!pdfs.length && typeof ouvrirVisio === 'function') ouvrirVisio(visios[0]); }

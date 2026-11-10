@@ -1,0 +1,31 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA SAUVEGARDE D'ENSEMBLE (08-sauvegarde, v88) — ⋮ › Réglages › Sauvegarde.
+   Le document parle la langue des Hypothèses et de l'IA interne : la coquille commune, des cartes titrées (`.hy-groupe`,
+   `.hy-titre`), les jetons de la fiche. Deux cartes : ce que ce navigateur garde (et « Tout sauvegarder »), restaurer.
+   Le cuivre porte le geste ; l'ambre ne dit qu'une sauvegarde ancienne ou jamais faite ; le rouge, une erreur.
+   ═══════════════════════════════════════════════════════════════════════ */
+#fiche .sv-chapeau{margin-bottom:16px}
+.sv-liste{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.sv-liste li{position:relative;padding:9px 0 9px 18px;border-top:1px solid var(--s-line);font:400 var(--f-13)/1.45 var(--sans);color:var(--t-1)}
+.sv-liste li:first-child{border-top:0;padding-top:2px}
+.sv-liste li::before{content:"";position:absolute;left:2px;top:calc(9px + .62em);width:5px;height:5px;border-radius:50%;background:var(--nv-cuivre);opacity:.7}
+.sv-liste li:first-child::before{top:calc(2px + .62em)}
+.sv-liste b{font-weight:600}
+.sv-quand{margin:14px 0 0;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.sv-quand.jamais{color:var(--warn)}
+.sv-dit{margin:0 0 4px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+.sv-gestes{display:flex;align-items:center;gap:14px;margin-top:16px}
+.sv-gestes .btn[disabled]{opacity:.6;cursor:default}
+/* le fichier choisi : ce qu'il porte, ce qu'il remplace — rien ne change avant « Restaurer » */
+.sv-recu{margin-top:14px;padding:14px 16px 16px;border:1px solid var(--s-line-2);border-left:3px solid var(--nv-cuivre);border-radius:var(--r-carte,10px);background:var(--s-surface)}
+.sv-recu-t{display:flex;align-items:baseline;gap:10px;margin:0;font:500 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.sv-recu-t b{min-width:0;overflow-wrap:anywhere;font:600 var(--f-13)/1.4 var(--mono)}
+.sv-recu-t span{flex:none;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.sv-recu-q{margin:2px 0 10px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.sv-recu-a{margin:12px 0 0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-1)}
+.sv-recu-a b{font-weight:600}
+.sv-erreur{margin:12px 0 0;padding:10px 12px;border-radius:var(--r-btn);background:color-mix(in srgb,var(--ko) 9%,transparent);font:400 var(--f-13)/1.45 var(--sans);color:var(--ko)}
+#fiche .sv-ia{margin-top:14px}
+.sv-etat.att{color:var(--warn)}
+/* le mot sous la ligne du menu : ambre quand la sauvegarde est ancienne ou jamais faite */
+#mn-sauvegarde.att{color:var(--warn)}

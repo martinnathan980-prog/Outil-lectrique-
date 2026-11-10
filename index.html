@@ -8869,6 +8869,12 @@ body.cherche .recherche{background:var(--s-surface);border-color:var(--chrome-cu
 #entete,#rail,#folios{transition:background-color var(--d-lent) var(--courbe),color var(--d-lent) var(--courbe),box-shadow var(--d-lent) var(--courbe),border-color var(--d-lent) var(--courbe)}
 @media (prefers-reduced-motion:reduce){ #entete,#rail,#folios{transition:none} }
 
+/* (v88, le lecteur : « le menu Plus, il faut du coup changer ») les sous-menus Réglages et Aide : leurs groupes disent leur
+   nom, comme ceux d'Exporter — la même capitale de rubrique, au cuivre ; en pied d'Aide, la version de VOLTA, discrète */
+:is(#mp-reglages,#mp-aide) .menu-bloc::before{content:attr(aria-label);display:block;padding:8px 10px 4px;font:600 var(--f-11)/1.2 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--chrome-cuivre)}
+.menu-version{margin:6px 0 2px;padding:8px 10px 2px;border-top:1px solid var(--voile-2);font:500 var(--f-11)/1.3 var(--mono);letter-spacing:.04em;color:var(--t-3);text-align:left}
+.menu-version:empty{display:none}
+
 /* ───────── style-z-carte.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
    LA CARTE ET LA TÊTE DU GRAND, v86 — 08-niveaux (`enteteFiche`), 08-vues (`silhouetteVue`), 08-carte (`eveillerSceau`,
@@ -10054,6 +10060,39 @@ svg.vu-face text.pris{fill:#fff}
    concerne pas » */
 @media (prefers-reduced-motion:reduce){ .chip::after,.chip:is(.fo-attente,.fo-dessin)::after{transition:none} }
 
+/* ───────── style-z-sauvegarde.css ───────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA SAUVEGARDE D'ENSEMBLE (08-sauvegarde, v88) — ⋮ › Réglages › Sauvegarde.
+   Le document parle la langue des Hypothèses et de l'IA interne : la coquille commune, des cartes titrées (`.hy-groupe`,
+   `.hy-titre`), les jetons de la fiche. Deux cartes : ce que ce navigateur garde (et « Tout sauvegarder »), restaurer.
+   Le cuivre porte le geste ; l'ambre ne dit qu'une sauvegarde ancienne ou jamais faite ; le rouge, une erreur.
+   ═══════════════════════════════════════════════════════════════════════ */
+#fiche .sv-chapeau{margin-bottom:16px}
+.sv-liste{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.sv-liste li{position:relative;padding:9px 0 9px 18px;border-top:1px solid var(--s-line);font:400 var(--f-13)/1.45 var(--sans);color:var(--t-1)}
+.sv-liste li:first-child{border-top:0;padding-top:2px}
+.sv-liste li::before{content:"";position:absolute;left:2px;top:calc(9px + .62em);width:5px;height:5px;border-radius:50%;background:var(--nv-cuivre);opacity:.7}
+.sv-liste li:first-child::before{top:calc(2px + .62em)}
+.sv-liste b{font-weight:600}
+.sv-quand{margin:14px 0 0;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.sv-quand.jamais{color:var(--warn)}
+.sv-dit{margin:0 0 4px;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+.sv-gestes{display:flex;align-items:center;gap:14px;margin-top:16px}
+.sv-gestes .btn[disabled]{opacity:.6;cursor:default}
+/* le fichier choisi : ce qu'il porte, ce qu'il remplace — rien ne change avant « Restaurer » */
+.sv-recu{margin-top:14px;padding:14px 16px 16px;border:1px solid var(--s-line-2);border-left:3px solid var(--nv-cuivre);border-radius:var(--r-carte,10px);background:var(--s-surface)}
+.sv-recu-t{display:flex;align-items:baseline;gap:10px;margin:0;font:500 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.sv-recu-t b{min-width:0;overflow-wrap:anywhere;font:600 var(--f-13)/1.4 var(--mono)}
+.sv-recu-t span{flex:none;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.sv-recu-q{margin:2px 0 10px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.sv-recu-a{margin:12px 0 0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-1)}
+.sv-recu-a b{font-weight:600}
+.sv-erreur{margin:12px 0 0;padding:10px 12px;border-radius:var(--r-btn);background:color-mix(in srgb,var(--ko) 9%,transparent);font:400 var(--f-13)/1.45 var(--sans);color:var(--ko)}
+#fiche .sv-ia{margin-top:14px}
+.sv-etat.att{color:var(--warn)}
+/* le mot sous la ligne du menu : ambre quand la sauvegarde est ancienne ou jamais faite */
+#mn-sauvegarde.att{color:var(--warn)}
+
 </style>
 </head>
 <body>
@@ -10110,15 +10149,15 @@ svg.vu-face text.pris{fill:#fff}
           <!-- LE MENU tient en peu de lignes (le lecteur : « il y a tellement de choses qu'on n'en utilise que 10-20 % »).
                En tête, ce qui est ouvert et son enregistrement : à lire, pas à presser. Puis l'essentiel — la bibliothèque
                (l'entrée principale : les installations et leurs plans), ouvrir une installation, vos fichiers (où l'on dépose AUSSI la
-               base des contrats déjà faits), le récapitulatif, la nomenclature —, et deux sous-menus qui s'ouvrent EN PLACE
-               (le menu ne s'élargit jamais) : Exporter, Plus. Chaque ligne porte sa bulle courte (data-aide), lue à gauche du
+               base des plans déjà faits), le récapitulatif, la LPA —, et trois sous-menus qui s'ouvrent EN PLACE
+               (le menu ne s'élargit jamais) : Exporter, Réglages, Aide. Chaque ligne porte sa bulle courte (data-aide), lue à gauche du
                menu, au survol ou au clavier (08-menu, `lierBullesDuMenu`). Au clavier : ↑ ↓, Entrée, → ouvre un sous-menu,
                ← ou Échap y revient (08-interface, `lierMenu`). -->
           <div class="menu-panneau" id="mp-principal" role="none">
             <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
             <div class="menu-bloc" role="group" aria-label="Les plans">
               <button role="menuitem" data-act="bibliotheque" class="menu-2l" data-aide="Vos installations et leurs plans : on choisit l’installation, puis le plan à ouvrir. Tout reste dans ce navigateur."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span class="menu-l">Bibliothèque<small id="mn-biblio">installations · plans</small></span></button>
-              <button role="menuitem" data-act="ouvrir" data-aide="Un Excel ou un CSV d’installation, une ligne par câble (Device1, Pin1, Device2, Pin2 au moins) : il devient un plan. Ctrl+Z revient en arrière."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 18v-6M9.5 14.5 12 12l2.5 2.5"/></svg><span class="menu-l">Ouvrir une installation…</span><span class="raccourci">Ctrl+O</span></button>
+              <button role="menuitem" data-act="ouvrir" data-aide="Votre retest en Excel ou en CSV, un schéma en PDF, un schéma Visio : VOLTA reconnaît ce qu’on lui donne et en fait un plan. Ctrl+Z revient en arrière."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 18v-6M9.5 14.5 12 12l2.5 2.5"/></svg><span class="menu-l">Ouvrir un fichier…</span><span class="raccourci">Ctrl+O</span></button>
               <button role="menuitem" data-act="fichiers" class="menu-2l" data-aide="Où déposer chaque fichier : vos installations (des plans), la base des contrats déjà faits (un seul Excel, Harness rempli), la bible, les normes."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg><span class="menu-l">Vos fichiers<small>installations · base · bible · normes</small></span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Lire et sortir">
@@ -10129,8 +10168,9 @@ svg.vu-face text.pris{fill:#fff}
               <button role="menuitem" data-act="dejafait" data-aide="Les contrats de la base les plus proches du plan ouvert : ce qui est pareil, ce qui diffère, dessin par dessin."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M6 9h2M6 13h2M16 9h2M16 13h2"/></svg><span class="menu-l">Comparer au déjà-fait</span></button>
               <button role="menuitem" data-sous="exporter" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-exporter" data-aide="D’abord l’Excel corrigé : ce que vous renvoyez. Puis le folio (SVG, PNG, A3) et le plan entier (PDF, Visio, suivi, LPA)."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg><span class="menu-l">Exporter<small id="mn-exporter" hidden></small></span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
             </div>
-            <div class="menu-bloc" role="group" aria-label="Le reste">
-              <button role="menuitem" data-sous="plus" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-plus" data-aide="Coller des lignes, l’exemple, un schéma en PDF ou en Visio, la bible, les normes, les hypothèses, le cartouche, comment VOLTA réfléchit, les raccourcis."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu-l">Plus</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+            <div class="menu-bloc" role="group" aria-label="Régler et comprendre">
+              <button role="menuitem" data-sous="reglages" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-reglages" data-aide="Les hypothèses, les normes et la bible, le cartouche ; l’IA interne ; la sauvegarde de tout votre travail."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="menu-l">Réglages</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+              <button role="menuitem" data-sous="aide" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-aide" data-aide="Comment VOLTA réfléchit, les raccourcis, l’exemple ; le carnet et le bilan pour améliorer VOLTA ; sa version."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6"/><circle cx="12" cy="16.9" r=".6"/></svg><span class="menu-l">Aide</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
             </div>
           </div>
           <!-- EXPORTER : d'abord LE RETEST CORRIGÉ — le livrable, ce que le lecteur renvoie (08-export) —, seul dans son
@@ -10154,34 +10194,43 @@ svg.vu-face text.pris{fill:#fff}
               <button role="menuitem" data-act="nomenclaturecsv" data-aide="La LPA du plan entier — contacts, obturateurs, modules, connecteurs, câbles —, en CSV, sans l’ouvrir."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">LPA en CSV</span></button>
             </div>
           </div>
-          <!-- PLUS : sans fichier (coller, l'exemple), ce qui juge (la bible, les normes, les hypothèses), le cartouche. Plus
-               de « Tout effacer » : on range, on renomme, on supprime un plan dans la bibliothèque -->
-          <div class="menu-panneau" id="mp-plus" role="group" aria-label="Plus" hidden>
-            <button role="menuitem" class="menu-retour" data-retour><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span class="menu-l">Plus</span></button>
-            <div class="menu-bloc" role="group" aria-label="Sans fichier">
-              <button role="menuitem" data-act="coller" data-aide="Sans fichier : quelques lignes copiées d’Excel, une par câble. Un aperçu, puis ajouter au plan ou le remplacer."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"/></svg><span class="menu-l">Coller des lignes…</span></button>
-              <button role="menuitem" data-act="exemple" data-aide="Le plan de démonstration, tel qu’il est livré. Le vôtre reste dans la bibliothèque : Ctrl+Z le rend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 7 12 17.5 18.5 7"/><circle cx="5.5" cy="5.6" r="1.9"/><circle cx="18.5" cy="5.6" r="1.9"/></svg><span class="menu-l">Ouvrir l’exemple</span></button>
-              <!-- un PDF de schéma : la visionneuse, puis le retest que VOLTA en lit (08-pdf, qui pose le geste de cette ligne) -->
-              <button role="menuitem" data-act="pdf" data-aide="Un schéma en PDF, exporté ou scanné : VOLTA le montre, lit ses liaisons (bornes, repères, cartouche) et en fait un plan à relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/><circle cx="8.8" cy="15.5" r="1.3"/><circle cx="15.2" cy="12" r="1.3"/><path d="M10 15.5h2.5v-3.5h1.5"/></svg><span class="menu-l">Lire un PDF de schéma…</span></button>
-              <!-- « Lire un schéma Visio… » se pose ici, après le PDF (08-visio, `entreeDuMenu`) -->
-              <!-- L'IA INTERNE du lecteur (08-ia), après les lectures qu'elle aide : son réglage, « Tester la connexion », ce qu'elle lit
-                   en fond ; le mot dessous dit son état (« prête », « à régler », « coupée », « lit en fond : 12 sur 300 ») -->
-              <button role="menuitem" class="menu-2l" data-act="ia" data-aide="L’IA interne de votre entreprise, que VOLTA appelle quand il ne comprend pas seul un document : son adresse, son modèle, sa clé, et le test de la connexion."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4.5c.6 3.7 2.3 5.4 6 6-3.7.6-5.4 2.3-6 6-.6-3.7-2.3-5.4-6-6 3.7-.6 5.4-2.3 6-6z"/><path d="M18.5 3v3.6M16.7 4.8h3.6"/></svg><span class="menu-l">IA interne<small id="mn-ia">pour lire vos documents</small></span></button>
-            </div>
+          <!-- (v88, le lecteur : « le menu Plus, il faut du coup changer ») PLUS DE « PLUS » FOURRE-TOUT : deux sous-menus qui disent ce
+               qu'on y trouve. RÉGLAGES : ce qui juge (les hypothèses, les normes et la bible, le cartouche) et vos données (l'IA
+               interne, la sauvegarde d'ensemble, 08-sauvegarde). AIDE : prendre en main, améliorer VOLTA, et la version. -->
+          <div class="menu-panneau" id="mp-reglages" role="group" aria-label="Réglages" hidden>
+            <button role="menuitem" class="menu-retour" data-retour><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span class="menu-l">Réglages</span></button>
             <div class="menu-bloc" role="group" aria-label="Ce qui juge">
-              <button role="menuitem" class="menu-2l" data-act="bible" data-aide="Les références que VOLTA choisit pour chaque barrette, connecteur et prise. On peut importer la vôtre."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/></svg><span class="menu-l">La bible<small>barrettes, connecteurs, prises</small></span></button>
-              <button role="menuitem" data-act="normes" data-aide="Les tables qui jugent chaque câble : câbles, contacts, raccords, disjoncteurs, chute. On y cherche, on corrige une ligne."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h9M4 20h6"/><path d="m15 18 2 2 4-4"/></svg><span class="menu-l">Normes</span></button>
-              <button role="menuitem" data-act="hypotheses" data-aide="Ce que votre fichier ne dit pas : 5 m par câble sans longueur, 2 A sans disjoncteur, 28 V… Les changer refait les calculs."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="menu-l">Hypothèses</span></button>
+              <button role="menuitem" data-act="hypotheses" data-aide="Ce que votre fichier ne dit pas : 5 m par câble sans longueur, 28 V, 95 °C… Les changer refait les calculs."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="menu-l">Hypothèses</span></button>
+              <button role="menuitem" class="menu-2l" data-act="normes" data-aide="Les tables qui jugent chaque câble (câbles, contacts, raccords, disjoncteurs, chute) et la bible : les références de chaque barrette, connecteur et prise. On y cherche, on corrige, on importe les vôtres."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h9M4 20h6"/><path d="m15 18 2 2 4-4"/></svg><span class="menu-l">Normes et bible<small>les tables · les références</small></span></button>
               <button role="menuitem" data-act="cartouche" data-aide="Le titre, le dessinateur, la date et l’indice, écrits en bas à droite de chaque folio."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M10 14h11M10 14v6M15.5 14v6"/></svg><span class="menu-l">Cartouche…</span></button>
             </div>
+            <div class="menu-bloc" role="group" aria-label="Vos données">
+              <button role="menuitem" class="menu-2l" data-act="ia" data-aide="L’IA interne de votre entreprise, que VOLTA appelle quand il ne comprend pas seul un document : son adresse, son modèle, sa clé, et le test de la connexion."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4.5c.6 3.7 2.3 5.4 6 6-3.7.6-5.4 2.3-6 6-.6-3.7-2.3-5.4-6-6 3.7-.6 5.4-2.3 6-6z"/><path d="M18.5 3v3.6M16.7 4.8h3.6"/></svg><span class="menu-l">IA interne<small id="mn-ia">pour lire vos documents</small></span></button>
+              <button role="menuitem" class="menu-2l" data-act="sauvegarde" data-aide="Tout ce que ce navigateur garde — vos installations, leurs plans, vos normes — dans un fichier à ranger où vous voulez ; et le chemin inverse, restaurer."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg><span class="menu-l">Sauvegarde<small id="mn-sauvegarde">jamais faite</small></span></button>
+            </div>
+          </div>
+          <div class="menu-panneau" id="mp-aide" role="group" aria-label="Aide" hidden>
+            <button role="menuitem" class="menu-retour" data-retour><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span class="menu-l">Aide</span></button>
             <div class="menu-bloc" role="group" aria-label="Prendre en main">
               <button role="menuitem" data-act="comprendre" data-aide="Une page, six images : d’où viennent les pièces, comment VOLTA choisit un contact, un calibre, ce que disent les routes et « manque », comment tout vérifier."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6"/><circle cx="12" cy="16.9" r=".6"/></svg><span class="menu-l">Comment VOLTA réfléchit</span></button>
               <button role="menuitem" data-act="raccourcis" data-aide="Les touches de VOLTA sur une feuille : chercher, les problèmes un par un, le récapitulatif, défaire…"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1M8 14h8"/></svg><span class="menu-l">Raccourcis clavier</span><span class="raccourci">?</span></button>
+              <button role="menuitem" data-act="exemple" data-aide="Le plan de démonstration, tel qu’il est livré. Le vôtre reste dans la bibliothèque : Ctrl+Z le rend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 7 12 17.5 18.5 7"/><circle cx="5.5" cy="5.6" r="1.9"/><circle cx="18.5" cy="5.6" r="1.9"/></svg><span class="menu-l">Ouvrir l’exemple</span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Améliorer VOLTA">
               <button role="menuitem" data-act="carnet" data-aide="Une petite barre pour noter une hésitation pendant le travail. La note se garde sur ce PC avec l’écran où vous étiez, et part avec le bilan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M9.5 8H15M9.5 12H15M9.5 16h3"/></svg><span class="menu-l">Carnet de séance</span><span class="raccourci">C</span></button>
               <button role="menuitem" data-act="autotest" data-aide="VOLTA ouvre seul chaque folio, fiche, onglet et export du plan, chronomètre et note chaque erreur, sans un nom du plan. Le résultat part avec le bilan."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/><path d="M3 4h18v16H3z" opacity=".35"/></svg><span class="menu-l">Autotest du plan</span></button>
               <button role="menuitem" data-act="bilan" data-aide="Ce que VOLTA a lu et jugé de ce plan, en chiffres, sans un repère ni un part number : à copier dans la conversation pour améliorer VOLTA."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="menu-l">Bilan anonyme</span></button>
+            </div>
+            <p class="menu-version" id="menu-version"></p>
+          </div>
+          <!-- HORS DU MENU, À PORTÉE DE LA RECHERCHE (« / », Ctrl+K lit ces lignes) : ce qu'« Ouvrir un fichier… » fait déjà seul
+               (un PDF, un Visio — 08-visio y pose sa ligne), coller des lignes (aussi dans « Vos fichiers »), la bible (un onglet
+               de « Normes et bible »). Pas un panneau : rien ne le montre. -->
+          <div id="mp-plus" hidden>
+            <div class="menu-bloc" role="group" aria-label="Par la recherche">
+              <button role="menuitem" data-act="coller" data-aide="Sans fichier : quelques lignes copiées d’Excel, une par câble. Un aperçu, puis ajouter au plan ou le remplacer."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"/></svg><span class="menu-l">Coller des lignes…</span></button>
+              <button role="menuitem" data-act="pdf" data-aide="Un schéma en PDF, exporté ou scanné : VOLTA le montre, lit ses liaisons (bornes, repères, cartouche) et en fait un plan à relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/><circle cx="8.8" cy="15.5" r="1.3"/><circle cx="15.2" cy="12" r="1.3"/><path d="M10 15.5h2.5v-3.5h1.5"/></svg><span class="menu-l">Lire un PDF de schéma…</span></button>
+              <button role="menuitem" class="menu-2l" data-act="bible" data-aide="Les références que VOLTA choisit pour chaque barrette, connecteur et prise. On peut importer la vôtre."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/></svg><span class="menu-l">La bible<small>barrettes, connecteurs, prises</small></span></button>
             </div>
           </div>
         </div>
@@ -10367,7 +10416,7 @@ svg.vu-face text.pris{fill:#fff}
   <!-- Le dépôt d'un fichier : toute la fenêtre devient la cible (hors de la planche, qui est un contexte d'empilement). -->
   <div id="depot" class="depot" aria-hidden="true"><div>Déposer le fichier</div></div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls,.pdf,.vsdx,.vsdm" hidden>
+  <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls,.pdf,.vsdx,.vsdm,.volta" hidden>
   <input type="file" id="fichier-bible" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
   <!-- la base des contrats déjà faits et une norme, depuis la bibliothèque et « Vos fichiers » (08-fichiers) ; des retests,
        plusieurs à la fois, qui deviennent des plans (08-bibliotheque) -->
@@ -22734,6 +22783,8 @@ async function plansDuFichier(f) { const nom = f.name || 'le fichier', L = await
    se lit ailleurs (08-references). Sans installation sous les yeux, « À ranger » ne se crée qu'au premier plan fait — un
    dépôt qui ne donne rien ne laisse pas d'installation vide (audit v72, parcours P2-10). */
 async function ajouterPlans(fichiers, installId) { fichiers = [...(fichiers || [])].filter(Boolean); if (!fichiers.length) return;
+  // (v88) une sauvegarde d'ensemble déposée sur la bibliothèque : son écran, prêt à restaurer — pas un plan
+  { const sv = typeof estSauvegarde === 'function' ? fichiers.find(estSauvegarde) : null; if (sv) { recevoirSauvegarde(sv); return; } }
   const pdfs = typeof estPdf === 'function' ? fichiers.filter(estPdf) : []; if (pdfs.length) { fichiers = fichiers.filter(f => !pdfs.includes(f)); if (typeof ouvrirPdf === 'function') ouvrirPdf(pdfs[0]); }
   const visios = typeof estVisio === 'function' ? fichiers.filter(f => estVisio(f) || estVisioAncien(f)) : [];
   if (visios.length) { fichiers = fichiers.filter(f => !visios.includes(f)); if (!pdfs.length && typeof ouvrirVisio === 'function') ouvrirVisio(visios[0]); }
@@ -30011,6 +30062,7 @@ async function rangerAilleurs(L, nom, fichier) { const b = lireBible(L.texte);
    installations), et l'on demande lequel ouvrir ; une bible ou une norme vont à leur place ; un tableau sans les en-têtes du
    retest attend « Charger » ; le reste est une erreur dite dans la carte du retest. */
 async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichier.name || 'le fichier';
+  if (typeof estSauvegarde === 'function' && estSauvegarde(fichier)) { recevoirSauvegarde(fichier); return; }   // (v88) une sauvegarde d'ensemble : son écran, prêt à restaurer (08-sauvegarde)
   if (estPdf(fichier)) { ouvrirPdf(fichier); return; }   // un PDF de schéma : la visionneuse, puis le retest qu'on en lit (08-pdf)
   if (estVisio(fichier) || estVisioAncien(fichier)) { ouvrirVisio(fichier); return; }   // un schéma Visio (.vsdx) : sa relecture (08-visio)
   if (await routerBaseSEE(fichier)) return;   // l'Excel des vues de SEE (EED_View…) : il se résume, il ne s'ouvre pas comme un retest (08-see)
@@ -33369,17 +33421,19 @@ const PALETTE = { el: null, sel: 0, lignes: [], avant: null, actions: null, frap
 const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx installation corrigee retest modifications envoyer livrable', svg: 'image vectorielle dessin',
   png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge calibres preferes', normes: 'tables sources', bible: 'barrettes connecteurs prises modules references',
   nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
-  bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
+  bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel pdf visio vsdx schema', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
   raccourcis: 'clavier touches aide', suivi: 'lpa excel classeur suivi fabrication barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft',
   // (v86) l'historique du plan entier (08-journal)
   historique: 'historique journal changements modifications defaire annuler qui quand avant apres change',
   // l'IA interne du lecteur : son réglage et le test de la connexion (08-ia)
-  ia: 'ia intelligence artificielle interne connexion tester cle api adresse modele serveur reseau lire documents scans images' };
+  ia: 'ia intelligence artificielle interne connexion tester cle api adresse modele serveur reseau lire documents scans images',
+  // (v88) la sauvegarde d'ensemble (08-sauvegarde) ; « Ouvrir un fichier… » prend aussi un PDF, un Visio
+  sauvegarde: 'sauvegarder sauvegarde restaurer restauration copie tout garder fichier volta backup poste navigateur', pdf: 'pdf schema scan lire', comprendre: 'aide comprendre expliquer calcul' };
 const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);
     const l = b.querySelector('.menu-l'), mot = (l ? [...l.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('') : b.textContent).trim();
-    const sous = l && l.querySelector('small') ? l.querySelector('small').textContent.trim() : '', p = b.closest('.menu-panneau'), ou = p && p.id === 'mp-exporter' ? 'Exporter' : p && p.id === 'mp-plus' ? 'Plus' : '';
+    const sous = l && l.querySelector('small') ? l.querySelector('small').textContent.trim() : '', p = b.closest('.menu-panneau'), ou = p ? ({ 'mp-exporter': 'Exporter', 'mp-reglages': 'Réglages', 'mp-aide': 'Aide' })[p.id] || '' : '';
     const r = b.querySelector('.raccourci'), ico = b.querySelector('svg.ico:not(.menu-chevron)');
     xs.push({ act, mot, des: sous, ou, touche: r ? r.textContent.trim() : '', ico: ico ? ico.innerHTML : '', mots: MOTS_DES_ACTIONS[act] || '', eteint: !!b.disabled, faire: () => MENU.actions[act]() }); });
   // les icônes des gestes du plan : celles de leurs boutons (le rail, la barre du bas), lues sur eux
@@ -34384,7 +34438,10 @@ function refaireEtDire() { garderFiche(); const q = refaire(); if (!q) { dire('R
 /* ---- le menu ⋮ : peu de lignes ; Exporter et Plus s'ouvrent EN PLACE (page.html) -----------------------------------
    `montrerPanneau(nom)` : '' le menu, sinon un sous-menu, qui prend sa place (le menu garde sa largeur). Le clavier va à la
    première ligne du panneau montré — au retour, à la ligne qui avait ouvert le sous-menu. */
-function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); montrerPanneau(''); }
+function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); montrerPanneau('');
+  // (v88) ce que le menu dit de lui-même à chaque ouverture : quand on a sauvegardé (08-sauvegarde), la version de VOLTA (Aide)
+  if (typeof rendreMenuSauvegarde === 'function') rendreMenuSauvegarde();
+  const v = $('menu-version'); if (v && !v.textContent && typeof BILAN !== 'undefined') v.textContent = 'VOLTA ' + BILAN.version; }
 /* fermé, le menu revient à son panneau principal : il se rouvrira sur lui, le clavier sur sa première ligne. Il est fermé
    TOUT DE SUITE (le clavier, les tests, le geste qu'on vient de choisir n'attendent pas) ; ce qui s'efface en 120 ms est son
    DOUBLE, une image sans identifiants ni clavier (`.menu-part`, style.css) — sauf sous le mouvement réduit. */
@@ -40182,6 +40239,200 @@ function lierReferencesUneFois() { if (REF.lie || typeof document === 'undefined
     if (e.key === '0' || e.key === 'f') ajusterFwd(); else if (e.key === '+' || e.key === '=') zoomerFwd(1.25); else if (e.key === '-') zoomerFwd(1 / 1.25);
     e.stopPropagation(); }, true); }
 lierReferencesUneFois();
+
+/* ───────── 08-sauvegarde.js ───────── */
+
+/* ===========================================================================
+   08 — LA SAUVEGARDE D'ENSEMBLE (v88)
+
+   Le lecteur, à l'état des lieux du 9 novembre 2026 : « Ton travail n'a aucune sauvegarde d'ensemble : faut le faire. »
+   Tout ce que VOLTA garde vit dans le navigateur — les installations et leurs plans (ce qu'on y a réglé, déplacé,
+   écrit), la base des plans déjà faits, les normes et la bible importées, les hypothèses, le carnet. Un navigateur
+   vidé, un poste changé : tout partait.
+
+       ⋮ › Réglages › Sauvegarde
+
+   · « Tout sauvegarder » fabrique UN fichier (`VOLTA-sauvegarde-2026-11-10.volta` : du JSON compressé), que le lecteur
+     range où il veut. Rien ne part nulle part : le fichier s'enregistre comme un export.
+   · « Restaurer » relit ce fichier, dit ce qu'il porte et ce qu'il remplace, et — après un oui — remet le navigateur
+     dans cet état, puis recharge VOLTA.
+
+   CE QUI N'Y EST JAMAIS : les réglages de l'IA interne (son adresse, son modèle, sa clé) et sa file d'attente — la
+   charte : « jamais dans un export ». Une restauration ne les touche pas non plus.
+
+   Le fichier : { format, version, quand, volta, resume, bases: { nom: { version, magasins: { nom: { keyPath,
+   autoIncrement, cles, valeurs } } } }, local: { clé: texte } }. Les valeurs que le JSON ne sait pas dire (une date, un
+   tableau d'octets, une Map…) sont emballées ({ $v: 'date', v }) et déballées au retour.
+   =========================================================================== */
+const SAUVEGARDE = { format: 'volta-sauvegarde', version: 1, cle: 'volta.sauvegarde.quand', bases: ['volta-bibliotheque', 'atelier-schema', 'volta-base', 'volta-see'],
+  recu: null, travail: '', erreur: '', lie: false };
+// les clés du navigateur que la sauvegarde emporte : celles de VOLTA — jamais celles de l'IA interne, ni sa propre date
+const cleSauvee = k => /^(volta[.-]|atelier[.-])/.test(k) && !/^volta\.ia\./.test(k) && k !== SAUVEGARDE.cle;
+
+/* ---- emballer, déballer : ce que le JSON ne sait pas dire ---------------------------------------------------------- */
+const b64DeOctets = u => { let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+const octetsDeB64 = t => { const s = atob(t), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; };
+// `blobs` reçoit les fichiers rencontrés (leur contenu se lit après, il est asynchrone)
+function emballer(v, blobs) {
+  if (v == null || typeof v === 'string' || typeof v === 'boolean') return v === undefined ? { $v: 'indefini' } : v;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : { $v: 'nombre', v: String(v) };
+  if (typeof v === 'bigint') return { $v: 'grand', v: String(v) };
+  if (v instanceof Date) return { $v: 'date', v: v.getTime() };
+  if (typeof Blob !== 'undefined' && v instanceof Blob) { const o = { $v: 'fichier', t: v.type, n: v.name || '', v: '' }; blobs.push({ o, blob: v }); return o; }
+  if (v instanceof ArrayBuffer) return { $v: 'octets', v: b64DeOctets(new Uint8Array(v)) };
+  if (ArrayBuffer.isView(v)) return { $v: 'vue', c: v.constructor.name, v: b64DeOctets(new Uint8Array(v.buffer, v.byteOffset, v.byteLength)) };
+  if (v instanceof Map) return { $v: 'map', v: [...v].map(([k, x]) => [emballer(k, blobs), emballer(x, blobs)]) };
+  if (v instanceof Set) return { $v: 'set', v: [...v].map(x => emballer(x, blobs)) };
+  if (Array.isArray(v)) return v.map(x => emballer(x, blobs));
+  if (typeof v === 'object') { const o = {}; for (const k of Object.keys(v)) o[k] = emballer(v[k], blobs); return Object.prototype.hasOwnProperty.call(o, '$v') ? { $v: 'objet', v: o } : o; }
+  return null; }   // une fonction, un symbole : rien à garder
+const VUES_OCTETS = { Int8Array, Uint8Array, Uint8ClampedArray, Int16Array, Uint16Array, Int32Array, Uint32Array, Float32Array, Float64Array };
+function deballer(v) {
+  if (v == null || typeof v !== 'object') return v;
+  if (Array.isArray(v)) return v.map(deballer);
+  if (typeof v.$v === 'string') { const x = v.v;
+    switch (v.$v) {
+      case 'indefini': return undefined; case 'nombre': return Number(x); case 'grand': return BigInt(x); case 'date': return new Date(x);
+      case 'octets': return octetsDeB64(x).buffer;
+      case 'vue': { const u = octetsDeB64(x), C = VUES_OCTETS[v.c] || Uint8Array; return C === Uint8Array ? u : new C(u.buffer, 0, Math.floor(u.byteLength / C.BYTES_PER_ELEMENT)); }
+      case 'fichier': return new Blob([octetsDeB64(x)], { type: v.t || '' });
+      case 'map': return new Map(x.map(([k, y]) => [deballer(k), deballer(y)])); case 'set': return new Set(x.map(deballer));
+      case 'objet': { const o = {}; for (const k of Object.keys(x)) o[k] = deballer(x[k]); return o; } } }
+  const o = {}; for (const k of Object.keys(v)) o[k] = deballer(v[k]); return o; }
+
+/* ---- lire et écrire une base du navigateur ------------------------------------------------------------------------- */
+// tout le contenu d'une base, ou null quand elle n'existe pas (on ne la laisse pas vide derrière soi)
+function lireBaseDuNavigateur(nom) { return new Promise((ok, ko) => { let neuve = false, r;
+  try { r = indexedDB.open(nom); } catch (e) { ko(e); return; }
+  r.onupgradeneeded = () => { neuve = true; }; r.onerror = () => ko(r.error); r.onblocked = () => ko(new Error('base occupée par un autre onglet'));
+  r.onsuccess = () => { const db = r.result;
+    if (neuve) { db.close(); const d = indexedDB.deleteDatabase(nom); d.onsuccess = d.onerror = d.onblocked = () => ok(null); return; }
+    const noms = [...db.objectStoreNames], out = { version: db.version, magasins: {} }; if (!noms.length) { db.close(); ok(out); return; }
+    const tx = db.transaction(noms, 'readonly');
+    noms.forEach(m => { const s = tx.objectStore(m), M = out.magasins[m] = { keyPath: s.keyPath, autoIncrement: s.autoIncrement, cles: [], valeurs: [] };
+      s.getAllKeys().onsuccess = e => { M.cles = e.target.result; }; s.getAll().onsuccess = e => { M.valeurs = e.target.result; }; });
+    tx.oncomplete = () => { db.close(); ok(out); }; tx.onerror = tx.onabort = () => { db.close(); ko(tx.error || new Error('lecture interrompue')); }; }; }); }
+/* Remettre une base : ses magasins vidés, puis remplis. Une base que ce navigateur n'a pas encore se crée à la version 1
+   avec les magasins du fichier — VOLTA, en l'ouvrant à sa version, y ajoute ce qui manquerait (ses propres créations
+   vérifient d'abord). Un magasin du fichier que la base d'ici n'a pas est laissé (rien n'en lirait). */
+function ecrireBaseDuNavigateur(nom, B) { return new Promise((ok, ko) => { let r; const M = B.magasins || {};
+  try { r = indexedDB.open(nom); } catch (e) { ko(e); return; }
+  r.onupgradeneeded = () => { const db = r.result; Object.keys(M).forEach(m => { if (db.objectStoreNames.contains(m)) return; const o = {}; if (M[m].keyPath != null) o.keyPath = M[m].keyPath; if (M[m].autoIncrement) o.autoIncrement = true; db.createObjectStore(m, o); }); };
+  r.onerror = () => ko(r.error); r.onblocked = () => ko(new Error('base occupée par un autre onglet'));
+  r.onsuccess = () => { const db = r.result, noms = Object.keys(M).filter(m => db.objectStoreNames.contains(m)); if (!noms.length) { db.close(); ok(0); return; }
+    const tx = db.transaction(noms, 'readwrite'); let n = 0;
+    noms.forEach(m => { const s = tx.objectStore(m), cles = M[m].cles || [], valeurs = M[m].valeurs || []; s.clear();
+      valeurs.forEach((v, i) => { if (s.keyPath != null) s.put(v); else s.put(v, cles[i]); n++; }); });
+    tx.oncomplete = () => { db.close(); ok(n); }; tx.onerror = tx.onabort = () => { db.close(); ko(tx.error || new Error('écriture interrompue')); }; }; }); }
+
+/* ---- fabriquer la sauvegarde, la relire ---------------------------------------------------------------------------- */
+// ce que ce navigateur garde, en chiffres : pour l'écran, et pour le fichier (ce qu'il dira avant d'être restauré)
+function resumeDuNavigateur() { let E = {}; try { E = etatsDesFichiers(); } catch (_) { E = {}; }
+  const nI = typeof installsVraies === 'function' ? installsVraies().length : 0, nP = typeof plansVrais === 'function' ? plansVrais().length : 0;
+  const B = app.references, M = B && B.base ? B.base.meta : null;
+  let mod = 0; try { mod = typeof tableModifiee === 'function' ? TABLES_NORME.filter(tableModifiee).length : 0; } catch (_) { mod = 0; }
+  return { installations: nI, plans: nP, base: M ? { nom: B.nom || '', liaisons: M.n || 0 } : null, bible: app.bibleNom || '', normes: mod, dit: E }; }
+async function fabriquerSauvegarde() { const bases = {}, blobs = [];
+  // ce qui attend d'être écrit l'est d'abord (le plan sur la table s'enregistre avec un petit retard)
+  try { if (typeof ecrireContrat === 'function') ecrireContrat(); } catch (_) { }
+  await new Promise(r => setTimeout(r, 350));
+  for (const nom of SAUVEGARDE.bases) { let B = null; try { B = await lireBaseDuNavigateur(nom); } catch (_) { B = null; } if (!B) continue;
+    Object.values(B.magasins).forEach(M => { M.cles = emballer(M.cles, blobs); M.valeurs = emballer(M.valeurs, blobs); }); bases[nom] = B; }
+  await Promise.all(blobs.map(async x => { x.o.v = b64DeOctets(new Uint8Array(await x.blob.arrayBuffer())); }));
+  const local = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (cleSauvee(k)) local[k] = localStorage.getItem(k); } } catch (_) { }
+  const R = resumeDuNavigateur(); delete R.dit;
+  return { format: SAUVEGARDE.format, version: SAUVEGARDE.version, quand: Date.now(), volta: typeof BILAN !== 'undefined' ? BILAN.version : '', resume: R, bases, local }; }
+// le fichier : du JSON compressé (fflate, embarqué pour Visio) — tel quel si la compression n'est pas là
+function octetsDeSauvegarde(S) { const texte = new TextEncoder().encode(JSON.stringify(S));
+  try { if (typeof fflate !== 'undefined' && fflate.gzipSync) return fflate.gzipSync(texte, { level: 6 }); } catch (_) { }
+  return texte; }
+function sauvegardeDesOctets(u) { let texte;
+  if (u.length > 2 && u[0] === 0x1f && u[1] === 0x8b) { if (typeof fflate === 'undefined' || !fflate.gunzipSync) throw new Error('compression'); texte = new TextDecoder().decode(fflate.gunzipSync(u)); }
+  else texte = new TextDecoder().decode(u);
+  const S = JSON.parse(texte); if (!S || S.format !== SAUVEGARDE.format || typeof S.bases !== 'object') throw new Error('format');
+  if (S.version > SAUVEGARDE.version) throw new Error('version'); return S; }
+const nomDeSauvegarde = t => { const d = new Date(t), p = n => String(n).padStart(2, '0'); return `VOLTA-sauvegarde-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.volta`; };
+const quandSauvee = () => { try { return +localStorage.getItem(SAUVEGARDE.cle) || 0; } catch (_) { return 0; } };
+
+async function toutSauvegarder() { if (SAUVEGARDE.travail) return; SAUVEGARDE.travail = 'sauve'; SAUVEGARDE.erreur = ''; rendreSauvegarde();
+  try { const S = await fabriquerSauvegarde(), u = octetsDeSauvegarde(S), nom = nomDeSauvegarde(S.quand);
+    telecharger(new Blob([u], { type: 'application/octet-stream' }), nom);
+    try { localStorage.setItem(SAUVEGARDE.cle, String(S.quand)); } catch (_) { }
+    dire(`Sauvegarde enregistrée : ${nom} — ${poidsDit(u.length)}. Rangez-la où vous voulez.`); }
+  catch (e) { SAUVEGARDE.erreur = 'La sauvegarde n’a pas pu se faire : ' + (e && e.message ? e.message : 'erreur inconnue') + '.'; }
+  SAUVEGARDE.travail = ''; rendreSauvegarde(); if (typeof rendreMenuSauvegarde === 'function') rendreMenuSauvegarde(); }
+const poidsDit = n => n > 1048576 ? nombre(Math.round(n / 104857.6) / 10) + ' Mo' : Math.max(1, Math.round(n / 1024)) + ' Ko';
+
+// un fichier choisi : on le lit, on dit ce qu'il porte — rien n'est remplacé avant « Restaurer »
+async function lireSauvegardeChoisie(f) { SAUVEGARDE.recu = null; SAUVEGARDE.erreur = '';
+  try { const S = sauvegardeDesOctets(new Uint8Array(await f.arrayBuffer())); SAUVEGARDE.recu = { S, nom: f.name, poids: f.size }; }
+  catch (e) { const m = e && e.message;
+    SAUVEGARDE.erreur = m === 'version' ? `${f.name} vient d’une version plus récente de VOLTA : ouvrez-la avec cette version.` : `${f.name} n’est pas une sauvegarde de VOLTA (un fichier .volta fait par « Tout sauvegarder »).`; }
+  rendreSauvegarde(); }
+async function restaurerLaSauvegarde() { const R = SAUVEGARDE.recu; if (!R || SAUVEGARDE.travail) return; SAUVEGARDE.travail = 'restaure'; SAUVEGARDE.erreur = ''; rendreSauvegarde();
+  try { const S = R.S;
+    // les connexions ouvertes par VOLTA n'empêchent pas d'écrire ; on écrit base par base
+    for (const nom of Object.keys(S.bases || {})) { if (!SAUVEGARDE.bases.includes(nom)) continue;
+      const B = S.bases[nom], M = {}; Object.keys(B.magasins || {}).forEach(m => { const x = B.magasins[m]; M[m] = { keyPath: x.keyPath, autoIncrement: x.autoIncrement, cles: deballer(x.cles), valeurs: deballer(x.valeurs) }; });
+      await ecrireBaseDuNavigateur(nom, { version: B.version, magasins: M }); }
+    // une base que ce navigateur a et que la sauvegarde n'a pas : vidée (l'état du fichier, tout l'état)
+    for (const nom of SAUVEGARDE.bases) { if (S.bases[nom]) continue; let B = null; try { B = await lireBaseDuNavigateur(nom); } catch (_) { B = null; }
+      if (B && Object.keys(B.magasins).length) await ecrireBaseDuNavigateur(nom, { magasins: Object.fromEntries(Object.keys(B.magasins).map(m => [m, { cles: [], valeurs: [] }])) }); }
+    try { const aOter = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (cleSauvee(k)) aOter.push(k); }
+      aOter.forEach(k => localStorage.removeItem(k)); Object.keys(S.local || {}).forEach(k => { if (cleSauvee(k)) localStorage.setItem(k, S.local[k]); });
+      localStorage.setItem(SAUVEGARDE.cle, String(S.quand || Date.now())); } catch (_) { }
+    // VOLTA repart de ce qu'il vient d'écrire : rien de ce qui est en mémoire ne doit se réécrire par-dessus
+    SAUVEGARDE.travail = 'recharge'; rendreSauvegarde(); window.onbeforeunload = null; setTimeout(() => location.reload(), 500); }
+  catch (e) { SAUVEGARDE.travail = ''; SAUVEGARDE.erreur = 'La restauration s’est arrêtée : ' + (e && e.message ? e.message : 'erreur inconnue') + '. Fermez les autres onglets de VOLTA, puis recommencez.'; rendreSauvegarde(); } }
+
+/* ---- l'écran : ⋮ › Réglages › Sauvegarde ---------------------------------------------------------------------------- */
+const ficheSauvegardeOuverte = () => !!(app.fiche && app.fiche.mode === 'sauvegarde' && $('fiche') && !$('fiche').hidden);
+const quandSauveDit = t => { if (!t) return ''; const x = new Date(t), h = x.getHours() + ' h ' + String(x.getMinutes()).padStart(2, '0'), j = Math.floor((Date.now() - t) / 86400000);
+  const jour = new Date().toDateString() === x.toDateString() ? 'aujourd’hui' : 'le ' + x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: x.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+  return jour + ' à ' + h + (j >= 2 ? ` — il y a ${j} jours` : ''); };
+// ce qu'un état (ce navigateur, ou un fichier) contient, en une liste courte — rien pour ce qu'il n'a pas
+function lignesDuResume(R) { const xs = [];
+  if (R.installations || R.plans) xs.push(`<b>${esc(pluriel(R.installations || 0, 'installation'))}</b> · ${esc(pluriel(R.plans || 0, 'plan'))}`);
+  if (R.base) xs.push(`La base des plans déjà faits${R.base.liaisons ? ` · ${esc(pluriel(R.base.liaisons, 'liaison'))}` : ''}`);
+  if (R.bible) xs.push(`Votre bible · ${esc(R.bible)}`);
+  if (R.normes) xs.push(`Vos normes · ${esc(pluriel(R.normes, 'table'))} modifiée${R.normes > 1 ? 's' : ''}`);
+  xs.push('Vos hypothèses, vos réglages d’affichage, votre carnet');
+  return `<ul class="sv-liste">${xs.map(x => `<li>${x}</li>`).join('')}</ul>`; }
+function corpsSauvegarde() { const R = resumeDuNavigateur(), t = quandSauvee(), W = SAUVEGARDE.travail, X = SAUVEGARDE.recu, vide = !R.installations && !R.plans && !R.base && !R.bible && !R.normes;
+  const erreur = SAUVEGARDE.erreur ? `<p class="sv-erreur" role="alert">${esc(SAUVEGARDE.erreur)}</p>` : '';
+  const recu = X ? `<div class="sv-recu" id="sv-recu"><p class="sv-recu-t"><b>${esc(X.nom)}</b><span>${esc(poidsDit(X.poids))}</span></p>`
+      + `<p class="sv-recu-q">${esc('Sauvegarde ' + quandSauveDit(X.S.quand).replace(/^le /, 'du ').replace(/^aujourd’hui/, 'd’aujourd’hui').replace(/ — .*$/, ''))}${X.S.volta ? ' · VOLTA ' + esc(X.S.volta) : ''}</p>${lignesDuResume(X.S.resume || {})}`
+      + `<p class="sv-recu-a">${vide ? 'Ce navigateur ne garde encore rien : la restauration y pose tout ce que porte ce fichier.' : '<b>Restaurer remplace tout ce que ce navigateur garde aujourd’hui</b> par ce que porte ce fichier. Sauvegardez d’abord si vous voulez le retrouver.'}</p>`
+      + `<div class="sv-gestes"><button type="button" class="btn cuivre" id="sv-restaurer"${W ? ' disabled' : ''}>${W === 'restaure' ? 'Restauration…' : W === 'recharge' ? 'VOLTA redémarre…' : 'Restaurer'}</button><button type="button" class="btn lien" id="sv-annuler"${W ? ' disabled' : ''}>Annuler</button></div></div>` : '';
+  return tete('Réglages', 'Sauvegarde')
+    + '<p class="note sv-chapeau">Votre travail vit dans ce navigateur. Un fichier de sauvegarde le met à l’abri : il s’enregistre sur votre poste, comme un export, et ne part nulle part.</p>'
+    + `<section class="hy-groupe sv-bloc" aria-labelledby="sv-t-ici"><h3 class="hy-titre" id="sv-t-ici">Ce que ce navigateur garde</h3>${lignesDuResume(R)}`
+    + `<p class="sv-quand${t ? '' : ' jamais'}" id="sv-quand">${t ? 'Dernière sauvegarde : ' + esc(quandSauveDit(t)) + '.' : 'Pas encore de sauvegarde.'}</p>`
+    + `<div class="sv-gestes"><button type="button" class="btn cuivre" id="sv-sauver"${W ? ' disabled' : ''}>${W === 'sauve' ? 'Sauvegarde en cours…' : 'Tout sauvegarder'}</button></div></section>`
+    + `<section class="hy-groupe sv-bloc" aria-labelledby="sv-t-retour"><h3 class="hy-titre" id="sv-t-retour">Restaurer</h3>`
+    + '<p class="sv-dit">Un fichier de sauvegarde remet VOLTA dans l’état où il était — sur ce poste, ou sur un autre.</p>'
+    + (X ? recu : `<div class="sv-gestes"><button type="button" class="btn papier" id="sv-choisir"${W ? ' disabled' : ''}>Choisir une sauvegarde…</button></div>`) + erreur
+    + '<input type="file" id="sv-fichier" accept=".volta,.json,.gz" hidden></section>'
+    + '<p class="note sv-ia">Les réglages de l’IA interne (son adresse, son modèle, sa clé) ne sont jamais dans une sauvegarde, et une restauration n’y touche pas.</p>'; }
+const piedSauvegarde = () => { const t = quandSauvee(), j = t ? Math.floor((Date.now() - t) / 86400000) : -1;
+  return `<span class="hy-etat sv-etat ${!t || j >= 14 ? 'regle att' : 'ok'}">${!t ? 'Jamais sauvegardé' : j >= 14 ? `Sauvegardé il y a ${j} jours` : 'Sauvegardé ' + esc(quandSauveDit(t).replace(/ — .*$/, ''))}</span>`; };
+function ficheSauvegarde() { const deja = ficheSauvegardeOuverte(), y = deja ? $('fiche-corps').scrollTop : 0;
+  ouvrirFiche({ mode: 'sauvegarde', large: true }, corpsSauvegarde(), piedSauvegarde()); lierFicheSauvegarde(); if (deja) $('fiche-corps').scrollTop = y; }
+function rendreSauvegarde() { if (ficheSauvegardeOuverte()) ficheSauvegarde(); }
+function lierFicheSauvegarde() { if (SAUVEGARDE.lie) return; SAUVEGARDE.lie = true; const c = $('fiche-corps');
+  c.addEventListener('click', e => { if (!ficheSauvegardeOuverte()) return; const b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'sv-sauver') toutSauvegarder();
+    else if (b.id === 'sv-choisir') { const f = $('sv-fichier'); if (f) { f.value = ''; f.click(); } }
+    else if (b.id === 'sv-restaurer') restaurerLaSauvegarde();
+    else if (b.id === 'sv-annuler') { SAUVEGARDE.recu = null; SAUVEGARDE.erreur = ''; rendreSauvegarde(); } });
+  c.addEventListener('change', e => { if (!ficheSauvegardeOuverte() || e.target.id !== 'sv-fichier') return; const f = e.target.files && e.target.files[0]; if (f) lireSauvegardeChoisie(f); }); }
+// le mot sous la ligne du menu : quand a-t-on sauvegardé
+function rendreMenuSauvegarde() { const el = document.getElementById('mn-sauvegarde'); if (!el) return; const t = quandSauvee(), j = t ? Math.floor((Date.now() - t) / 86400000) : -1;
+  el.textContent = !t ? 'jamais faite' : j < 1 ? 'faite aujourd’hui' : j === 1 ? 'faite hier' : 'il y a ' + j + ' jours'; el.classList.toggle('att', !t || j >= 14); }
+// un fichier .volta glissé n'importe où ou ouvert par « Ouvrir » : l'écran de la sauvegarde, prêt à restaurer
+const estSauvegarde = f => !!f && /\.volta$/i.test(f.name || '');
+function recevoirSauvegarde(f) { ficheSauvegarde(); return lireSauvegardeChoisie(f); }
+MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.sauvegarde = () => ficheSauvegarde();
 
 /* ───────── 08-sections.js ───────── */
 /* ===========================================================================

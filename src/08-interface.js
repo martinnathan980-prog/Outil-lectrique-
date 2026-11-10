@@ -2303,17 +2303,19 @@ const PALETTE = { el: null, sel: 0, lignes: [], avant: null, actions: null, frap
 const MOTS_DES_ACTIONS = { dossierpdf: 'pdf dossier imprimer tous folios garde', retestcorrige: 'excel xlsx installation corrigee retest modifications envoyer livrable', svg: 'image vectorielle dessin',
   png: 'image capture', imprimer: 'papier a3 imprimante', hypotheses: 'hypo reglages simulation ambiante longueur marge calibres preferes', normes: 'tables sources', bible: 'barrettes connecteurs prises modules references',
   nomenclature: 'lpa nomenclature bom pieces commander liste magasin approvisionnement', nomenclaturecsv: 'lpa nomenclature bom csv pieces commander', recapitulatif: 'tableau liaisons tableaux recap', fichiers: 'base installations retests contrats deposer',
-  bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
+  bibliotheque: 'accueil installations plans', ouvrir: 'fichier importer charger installation retest excel pdf visio vsdx schema', coller: 'presse-papiers coller', exemple: 'demo demonstration', cartouche: 'titre auteur date indice',
   raccourcis: 'clavier touches aide', suivi: 'lpa excel classeur suivi fabrication barrettes prises connecteurs', dejafait: 'comparer base deja fait', visio: 'vsdx microsoft',
   // (v86) l'historique du plan entier (08-journal)
   historique: 'historique journal changements modifications defaire annuler qui quand avant apres change',
   // l'IA interne du lecteur : son réglage et le test de la connexion (08-ia)
-  ia: 'ia intelligence artificielle interne connexion tester cle api adresse modele serveur reseau lire documents scans images' };
+  ia: 'ia intelligence artificielle interne connexion tester cle api adresse modele serveur reseau lire documents scans images',
+  // (v88) la sauvegarde d'ensemble (08-sauvegarde) ; « Ouvrir un fichier… » prend aussi un PDF, un Visio
+  sauvegarde: 'sauvegarder sauvegarde restaurer restauration copie tout garder fichier volta backup poste navigateur', pdf: 'pdf schema scan lire', comprendre: 'aide comprendre expliquer calcul' };
 const ACTIONS_D_ABORD = ['retestcorrige', 'dossierpdf', 'recapitulatif', 'index', 'suivant', 'historique', 'hypotheses', 'nomenclature', 'raccourcis', 'comprendre'];
 function actionsDeLaPalette() { const xs = [], vu = new Set();
   document.querySelectorAll('#menu [role="menuitem"][data-act]').forEach(b => { const act = b.dataset.act; if (vu.has(act) || !MENU.actions[act] || b.hidden) return; vu.add(act);
     const l = b.querySelector('.menu-l'), mot = (l ? [...l.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('') : b.textContent).trim();
-    const sous = l && l.querySelector('small') ? l.querySelector('small').textContent.trim() : '', p = b.closest('.menu-panneau'), ou = p && p.id === 'mp-exporter' ? 'Exporter' : p && p.id === 'mp-plus' ? 'Plus' : '';
+    const sous = l && l.querySelector('small') ? l.querySelector('small').textContent.trim() : '', p = b.closest('.menu-panneau'), ou = p ? ({ 'mp-exporter': 'Exporter', 'mp-reglages': 'Réglages', 'mp-aide': 'Aide' })[p.id] || '' : '';
     const r = b.querySelector('.raccourci'), ico = b.querySelector('svg.ico:not(.menu-chevron)');
     xs.push({ act, mot, des: sous, ou, touche: r ? r.textContent.trim() : '', ico: ico ? ico.innerHTML : '', mots: MOTS_DES_ACTIONS[act] || '', eteint: !!b.disabled, faire: () => MENU.actions[act]() }); });
   // les icônes des gestes du plan : celles de leurs boutons (le rail, la barre du bas), lues sur eux
@@ -3318,7 +3320,10 @@ function refaireEtDire() { garderFiche(); const q = refaire(); if (!q) { dire('R
 /* ---- le menu ⋮ : peu de lignes ; Exporter et Plus s'ouvrent EN PLACE (page.html) -----------------------------------
    `montrerPanneau(nom)` : '' le menu, sinon un sous-menu, qui prend sa place (le menu garde sa largeur). Le clavier va à la
    première ligne du panneau montré — au retour, à la ligne qui avait ouvert le sous-menu. */
-function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); montrerPanneau(''); }
+function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); montrerPanneau('');
+  // (v88) ce que le menu dit de lui-même à chaque ouverture : quand on a sauvegardé (08-sauvegarde), la version de VOLTA (Aide)
+  if (typeof rendreMenuSauvegarde === 'function') rendreMenuSauvegarde();
+  const v = $('menu-version'); if (v && !v.textContent && typeof BILAN !== 'undefined') v.textContent = 'VOLTA ' + BILAN.version; }
 /* fermé, le menu revient à son panneau principal : il se rouvrira sur lui, le clavier sur sa première ligne. Il est fermé
    TOUT DE SUITE (le clavier, les tests, le geste qu'on vient de choisir n'attendent pas) ; ce qui s'efface en 120 ms est son
    DOUBLE, une image sans identifiants ni clavier (`.menu-part`, style.css) — sauf sous le mouvement réduit. */
