@@ -1,0 +1,33 @@
+/* ── LA VUE D'ENSEMBLE D'UNE INSTALLATION (08-vue-ensemble, v93) : une feuille au-dessus de la liste des plans — les chiffres,
+   la carte des plans (un trait entre ceux qui partagent des équipements), la liste de ces équipements ── */
+.bi-ensemble{margin:0 0 18px;padding:22px 26px 22px}
+.en-attente,.en-dit{margin:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+.en-dit{margin-top:10px}
+.en-tete{display:flex;align-items:baseline;gap:26px;flex-wrap:wrap}
+.en-tete h2{margin:0;font:600 var(--f-16,16px)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+.en-chiffres{display:flex;flex-wrap:wrap;gap:6px 26px;margin:0}
+.en-chiffre{display:inline-flex;align-items:baseline;gap:7px;font:400 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
+.en-chiffre b{font:600 var(--f-16,16px)/1.2 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
+.en-fermer{margin-left:auto;align-self:center}
+.en-carte{display:block;width:100%;max-width:960px;height:auto;margin:14px auto 4px}
+.en-trait{stroke:var(--bi-cu,#c98a4b);stroke-linecap:round;opacity:.75}
+.en-compte rect{fill:var(--s-surface);stroke:var(--bi-cu,#c98a4b);stroke-width:1}
+.en-compte text{font:600 11px var(--mono);fill:var(--t-1)}
+.en-noeud{cursor:pointer;outline:none}
+.en-noeud rect{fill:var(--s-surface);stroke:var(--t-2);stroke-width:1.2;transition:stroke .15s,stroke-width .15s}
+.en-noeud:is(:hover,:focus-visible) rect{stroke:var(--bi-cu,#c98a4b);stroke-width:2}
+.en-noeud.non-lu rect{stroke-dasharray:5 4;stroke:var(--t-3)}
+.en-noeud.seul rect{stroke:var(--t-3)}
+.en-nom{font:600 13px var(--sans);fill:var(--t-1)}
+.en-sous{font:400 11px var(--sans);fill:var(--t-2)}
+.en-communs{margin-top:16px}
+.en-communs h3{margin:0 0 8px;font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.en-communs ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--s-line-2)}
+.en-communs li{display:grid;grid-template-columns:150px 150px minmax(0,1fr);align-items:baseline;gap:14px;padding:8px 2px;border-bottom:1px solid var(--s-line-2)}
+.en-communs li b{font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1)}
+.en-communs li small{font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.en-communs li span{display:flex;flex-wrap:wrap;gap:6px 8px}
+.en-plan{all:unset;cursor:pointer;padding:2px 9px;border:1px solid var(--s-line-2);border-radius:999px;font:500 var(--f-12)/1.5 var(--sans);color:var(--t-1)}
+.en-plan:hover{border-color:var(--bi-cu,#c98a4b)}
+.en-plan:focus-visible{outline:2px solid var(--bi-cu,#c98a4b);outline-offset:2px}
+.en-suite{margin:8px 0 0;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}

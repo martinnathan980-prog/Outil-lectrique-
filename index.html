@@ -10184,6 +10184,41 @@ svg.vu-face text.pris{fill:#fff}
 }
 @media print{body.atelier #inspecteur .nv-poignee::before,body.atelier #inspecteur .nv-poignee::after{display:none!important}}
 
+/* ───────── style-zz-ensemble.css ───────── */
+/* ── LA VUE D'ENSEMBLE D'UNE INSTALLATION (08-vue-ensemble, v93) : une feuille au-dessus de la liste des plans — les chiffres,
+   la carte des plans (un trait entre ceux qui partagent des équipements), la liste de ces équipements ── */
+.bi-ensemble{margin:0 0 18px;padding:22px 26px 22px}
+.en-attente,.en-dit{margin:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-2)}
+.en-dit{margin-top:10px}
+.en-tete{display:flex;align-items:baseline;gap:26px;flex-wrap:wrap}
+.en-tete h2{margin:0;font:600 var(--f-16,16px)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1)}
+.en-chiffres{display:flex;flex-wrap:wrap;gap:6px 26px;margin:0}
+.en-chiffre{display:inline-flex;align-items:baseline;gap:7px;font:400 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
+.en-chiffre b{font:600 var(--f-16,16px)/1.2 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
+.en-fermer{margin-left:auto;align-self:center}
+.en-carte{display:block;width:100%;max-width:960px;height:auto;margin:14px auto 4px}
+.en-trait{stroke:var(--bi-cu,#c98a4b);stroke-linecap:round;opacity:.75}
+.en-compte rect{fill:var(--s-surface);stroke:var(--bi-cu,#c98a4b);stroke-width:1}
+.en-compte text{font:600 11px var(--mono);fill:var(--t-1)}
+.en-noeud{cursor:pointer;outline:none}
+.en-noeud rect{fill:var(--s-surface);stroke:var(--t-2);stroke-width:1.2;transition:stroke .15s,stroke-width .15s}
+.en-noeud:is(:hover,:focus-visible) rect{stroke:var(--bi-cu,#c98a4b);stroke-width:2}
+.en-noeud.non-lu rect{stroke-dasharray:5 4;stroke:var(--t-3)}
+.en-noeud.seul rect{stroke:var(--t-3)}
+.en-nom{font:600 13px var(--sans);fill:var(--t-1)}
+.en-sous{font:400 11px var(--sans);fill:var(--t-2)}
+.en-communs{margin-top:16px}
+.en-communs h3{margin:0 0 8px;font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.en-communs ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--s-line-2)}
+.en-communs li{display:grid;grid-template-columns:150px 150px minmax(0,1fr);align-items:baseline;gap:14px;padding:8px 2px;border-bottom:1px solid var(--s-line-2)}
+.en-communs li b{font:600 var(--f-13)/1.3 var(--mono);color:var(--t-1)}
+.en-communs li small{font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.en-communs li span{display:flex;flex-wrap:wrap;gap:6px 8px}
+.en-plan{all:unset;cursor:pointer;padding:2px 9px;border:1px solid var(--s-line-2);border-radius:999px;font:500 var(--f-12)/1.5 var(--sans);color:var(--t-1)}
+.en-plan:hover{border-color:var(--bi-cu,#c98a4b)}
+.en-plan:focus-visible{outline:2px solid var(--bi-cu,#c98a4b);outline-offset:2px}
+.en-suite{margin:8px 0 0;font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+
 /* ───────── style-zz-ergonome.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
    LES CORRECTIONS DE L'ERGONOME (10 novembre 2026) — ce que la batterie « ux » (tests/ux.js) mesure : un texte à 4,5:1, une
@@ -23513,7 +23548,7 @@ function teteInstallHtml() { const i = BIB.installs.get(BIB.install), P = plansD
         + `<h1 class="bi-titre"><button class="bi-titre-nom" data-bi="renommer" data-quoi="install" data-id="${escA(i.id)}" data-champ="nom" data-bulle="${i.demo ? '' : 'Renommer'}"${i.demo ? ' disabled' : ''}>${esc(i.nom)}</button></h1>`)
     // (vide, la zone de dépôt le montre : pas de « aucun plan » ; modifiée le jour même de sa création, elle ne le redit pas)
     + `<p class="bi-compte">${esc(lies([i.demo ? 'démonstration' : '', P.length ? nPlans(P.length) : '', 'créée ' + leJour(i.cree), mod && (P.length || leJour(mod) !== leJour(i.cree)) ? 'modifiée ' + quand(mod) : '']))}</p></div>`
-    + `<div class="bi-outils">${P.length > 6 ? chercheBiHtml(baseDeReferences() ? 'Un plan, un part number, un câble…' : 'Chercher un plan, un harness, un dessin') : ''}${P.length && !i.demo ? `<button class="bi-btn bi-btn-2" id="bi-convertir" data-bi="lot" aria-pressed="${!!BIB.lot}">${icoBi('depot')}<span>Convertir…</span></button>` : ''}${i.demo ? '' : `<button class="bi-btn" id="bi-ajouter" data-bi="choisir">${icoBi('plus')}<span>Ajouter un plan</span></button>`}`
+    + `<div class="bi-outils">${P.length > 6 ? chercheBiHtml(baseDeReferences() ? 'Un plan, un part number, un câble…' : 'Chercher un plan, un harness, un dessin') : ''}${P.length > 1 ? `<button class="bi-btn bi-btn-2" id="bi-ensemble" data-bi="ensemble" aria-pressed="${typeof ensembleOuverte === 'function' && ensembleOuverte(i.id)}">${icoBi('plan')}<span>Vue d’ensemble</span></button>` : ''}${P.length && !i.demo ? `<button class="bi-btn bi-btn-2" id="bi-convertir" data-bi="lot" aria-pressed="${!!BIB.lot}">${icoBi('depot')}<span>Convertir…</span></button>` : ''}${i.demo ? '' : `<button class="bi-btn" id="bi-ajouter" data-bi="choisir">${icoBi('plus')}<span>Ajouter un plan</span></button>`}`
     + `<span class="bi-pop-ancre${BIB.pop && BIB.pop.id === i.id ? ' bi-pop-ouvert' : ''}"><button class="bi-plus bi-plus-tete" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu">${icoBi('points')}<span class="bulle" aria-hidden="true">${i.demo ? 'Retirer l’exemple' : 'Renommer, supprimer l’installation'}</span></button>${popHtml('install', i)}</span></div></header>`
     + (BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id ? `<div class="bi-feuille bi-confirme-tete">${confirmeInstallHtml(i, P)}</div>` : ''); }
 function installHtml() { const i = BIB.installs.get(BIB.install); if (!i) return ''; const t = cleTexte(BIB.q), P = plansDeInstall(i.id), montres = P.filter(p => planCorrespond(p, t));
@@ -23523,7 +23558,7 @@ function installHtml() { const i = BIB.installs.get(BIB.install); if (!i) return
       + '<small>Excel ou CSV, une ligne par câble : <span class="id">Device1</span> · <span class="id">Pin1</span> · <span class="id">Device2</span> · <span class="id">Pin2</span> au moins. Chaque fichier devient un plan.</small></button>';
   const ajouts = BIB.ajouts.map(a => `<li class="bi-plan bi-ajout ${a.etat}"><span class="bi-ajout-ico" aria-hidden="true"></span><span class="bi-ajout-t">${a.etat === 'lecture' ? 'Lecture de ' + esc(guillemets(a.nom)) + '…' : esc(a.texte)}</span>${a.etat === 'ko' ? `${a.lu ? `<button class="bi-lien" data-bi="deviner" data-a="${escA(a.id)}">Deviner ses colonnes</button>` : ''}<button class="bi-oublier" data-bi="oublier-ajout" data-a="${escA(a.id)}" aria-label="Effacer ce message">${icoBi('fermer')}</button>` : ''}</li>`).join('');
   if (!P.length && !ajouts) return `<div class="bi-feuille bi-feuille-vide">${zone}</div>`;
-  return `<div class="bi-feuille" data-depot="plans">${ajouts ? `<ul class="bi-plans bi-ajouts">${ajouts}</ul>` : ''}${montres.length ? listePlansHtml(montres, false) : t ? `<p class="bi-rien bi-rien-feuille">Aucun plan ne répond à ${esc(guillemets(BIB.q))}.</p>` : ''}${zone}</div>`; }
+  return (typeof ensembleHtml === 'function' ? ensembleHtml(i) : '') + `<div class="bi-feuille" data-depot="plans">${ajouts ? `<ul class="bi-plans bi-ajouts">${ajouts}</ul>` : ''}${montres.length ? listePlansHtml(montres, false) : t ? `<p class="bi-rien bi-rien-feuille">Aucun plan ne répond à ${esc(guillemets(BIB.q))}.</p>` : ''}${zone}</div>`; }
 /* La liste des plans : l'en-tête des colonnes, puis une ligne par plan — sa feuille, son nom (« sur la table », « nouveau »)
    et dessous ce qu'il est (un contrat de la base : son appareil, la date de son retest, ses dessins ; un fichier : ses
    harness et ses dessins), ses folios, ses liaisons, CE QU'IL RESTE À FAIRE (le compte du contrôle, gardé à chaque
@@ -23763,6 +23798,7 @@ function lierBibliotheque() { if (BIB.lie) return; BIB.lie = true; const el = $(
       plan: () => { BIB.pop = null; if (BIB.lot && !BIB.lot.encours && b.classList.contains('bi-plan-ouvrir')) { basculerLot(id); return; } ouvrirPlan(id); }, reprendre: () => montrerLePlan(),
       exemple: () => ouvrirPlan(ID_EXEMPLE), ouvrir: () => $('fichier').click(),
       contrat: () => ouvrirContratTrouve(b.dataset.h, b.dataset.g),
+      ensemble: () => { if (typeof basculerEnsemble === 'function') basculerEnsemble(BIB.install); },   // (v93) la vue d'ensemble de l'installation (08-vue-ensemble)
       lot: () => { if (BIB.lot) { if (!BIB.lot.encours) { BIB.lot = null; rendreBibliotheque(); } } else commencerLot(); },
       // tous les plans que la feuille montre (une installation, ou ceux que la recherche a trouvés)
       'lot-tous': () => { const L = BIB.lot; if (!L || L.encours) return; const P = [...el.querySelectorAll('#bi-contenu .bi-plan[data-plan]')].map(li => li.dataset.plan).filter(id => id !== ID_EXEMPLE), tous = P.every(id => L.ids.has(id)); P.forEach(id => tous ? L.ids.delete(id) : L.ids.add(id)); rendreContenuBibliotheque(); rendreLot(); },
@@ -23848,7 +23884,7 @@ function noterExportDuPlan(nom) { const p = BIB.plans.get(app.planId); if (!p ||
      dans les notes tapées à la main.
    =========================================================================== */
 
-const BILAN = { version: 'v92', erreurs: [], lecture: null, cle: 'volta.carnet' };
+const BILAN = { version: 'v93', erreurs: [], lecture: null, cle: 'volta.carnet' };
 
 /* LES ERREURS DE LA PAGE, gardées depuis l'ouverture (douze au plus, chacune avec son compte) : le bilan les dit, masquées
    comme le reste — c'est souvent là que se cache ce qui casse sur un vrai fichier. */
@@ -43232,6 +43268,62 @@ function entrerVivant() { lierVivant(); if (VIVANT.actif) return; VIVANT.actif =
 function quitterVivant() { if (!VIVANT.actif) return; VIVANT.actif = false; VIVANT.ouverts.clear(); VIVANT.coupes.clear(); VIVANT.E = null; peindreVivant(); rendreBandeauVivant(); }
 
 MENU = (typeof MENU !== 'undefined' && MENU) || { actions: {} }; MENU.actions.vivant = surLePlan(() => (VIVANT.actif ? quitterVivant() : entrerVivant()));
+
+/* ───────── 08-vue-ensemble.js ───────── */
+/* ===========================================================================
+   08 — LA VUE D'ENSEMBLE D'UNE INSTALLATION (v93) : ses plans, et ce qu'ils partagent.
+
+   Le lecteur : « Vue d'ensemble, génial. » Dans la bibliothèque, sur une installation de deux plans ou plus, « Vue
+   d'ensemble » lit tous ses plans (ceux que ce navigateur garde) et montre : les chiffres de l'installation (plans,
+   liaisons, équipements, ceux qui paraissent sur plusieurs plans) ; une CARTE — chaque plan, relié à ceux avec qui il
+   partage des équipements, le compte sur le trait ; la liste de ces équipements communs, chacun avec ses plans.
+   Un clic sur un plan de la carte l'ouvre. Rien n'est écrit : c'est une lecture.
+
+   VOLTA ne dit que ce que les fichiers portent : un même repère sur deux plans. Il n'en déduit pas un câblage.
+   =========================================================================== */
+const ENSEMBLE = { id: '', etat: '', D: null, max: 60 };
+function ensembleOuverte(id) { return ENSEMBLE.id === id; }
+
+async function calculerEnsemble(installId) { const P = plansDeInstall(installId), lus = [];
+  for (const p of P) { let L = null;
+    try { if (p.id === app.planId && planSurLaTable()) L = verite();
+      else { const o = await lireBiblio('contrats', p.id); L = (o && (o.source || o.liaisons)) || null; if (!L && p.source === 'base' && p.contrat && typeof liaisonsDuContrat === 'function') L = await liaisonsDuContrat(p.contrat, p.fwdBase); } } catch (_) { L = null; }
+    if (!L || !L.length) { lus.push({ p, lu: false }); continue; }
+    const reps = new Set(reperesDe(L.filter(l => l.de && l.vers)).filter(r => !estMasse(r) && !VT_A_POSER.test(r)));
+    lus.push({ p, lu: true, n: L.length, reps }); }
+  const ou = new Map(); lus.forEach((x, k) => { if (x.lu) x.reps.forEach(r => (ou.get(r) || ou.set(r, []).get(r)).push(k)); });
+  const communs = [...ou].filter(([, ks]) => ks.length > 1).sort(([a, x], [b, y]) => y.length - x.length || triNaturel(a, b));
+  const liens = new Map(); communs.forEach(([, ks]) => { for (let a = 0; a < ks.length; a++) for (let b = a + 1; b < ks.length; b++) { const k = ks[a] + '-' + ks[b]; liens.set(k, (liens.get(k) || 0) + 1); } });
+  return { lus, communs, liens: [...liens].map(([k, n]) => { const [a, b] = k.split('-').map(Number); return { a, b, n }; }), liaisons: lus.reduce((s, x) => s + (x.n || 0), 0), equipements: ou.size }; }
+
+/* La carte : les plans sur un ovale, un trait entre deux plans qui partagent des équipements (son épaisseur suit le
+   compte, écrit dessus). Un seul sens de lecture : le premier plan en haut, les autres dans l'ordre de la liste. */
+function carteEnsembleSvg(D) { const n = D.lus.length; if (n < 2 || n > 14) return '';
+  const W = 960, H = n <= 2 ? 150 : n <= 4 ? 300 : 400, bw = 184, bh = 54, Rx = W / 2 - bw / 2 - 24, Ry = H / 2 - bh / 2 - 16;
+  const pos = D.lus.map((_, k) => { const a = -Math.PI / 2 + (n === 2 ? Math.PI / 2 : 0) + k * 2 * Math.PI / n; return { x: W / 2 + Rx * Math.cos(a), y: H / 2 + Ry * Math.sin(a) }; });
+  const max = Math.max(1, ...D.liens.map(l => l.n)), court = t => t.length > 24 ? t.slice(0, 23) + '…' : t;
+  const traits = D.liens.map(l => { const A = pos[l.a], B = pos[l.b], mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2, ep = (1.2 + 3.3 * l.n / max).toFixed(1), w = 14 + String(l.n).length * 7;
+    return `<line class="en-trait" x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}" stroke-width="${ep}"/><g class="en-compte"><rect x="${(mx - w / 2).toFixed(1)}" y="${(my - 10).toFixed(1)}" width="${w}" height="20" rx="10"/><text x="${mx.toFixed(1)}" y="${(my + 4).toFixed(1)}" text-anchor="middle">${l.n}</text></g>`; }).join('');
+  const noeuds = D.lus.map((x, k) => { const c = pos[k], nom = nomAffiche(x.p.nom), seul = x.lu && !D.liens.some(l => l.a === k || l.b === k);
+    return `<g class="en-noeud${x.lu ? '' : ' non-lu'}${seul ? ' seul' : ''}" data-bi="plan" data-id="${escA(x.p.id)}" tabindex="0" role="button" aria-label="${escA('Ouvrir ' + nom)}"><title>${esc(nom)}</title><rect x="${(c.x - bw / 2).toFixed(1)}" y="${(c.y - bh / 2).toFixed(1)}" width="${bw}" height="${bh}" rx="12"/>`
+      + `<text class="en-nom" x="${c.x.toFixed(1)}" y="${(c.y - 3).toFixed(1)}" text-anchor="middle">${esc(court(nom))}</text><text class="en-sous" x="${c.x.toFixed(1)}" y="${(c.y + 15).toFixed(1)}" text-anchor="middle">${x.lu ? esc(pluriel(x.n, 'liaison') + ' · ' + pluriel(x.reps.size, 'équipement')) : 'à rouvrir pour le lire'}</text></g>`; }).join('');
+  return `<svg class="en-carte" viewBox="0 0 ${W} ${H}" role="img" aria-label="Les plans de l’installation et les équipements qu’ils partagent">${traits}${noeuds}</svg>`; }
+function ensembleHtml(i) { if (!i || ENSEMBLE.id !== i.id) return '';
+  if (ENSEMBLE.etat !== 'pret' || !ENSEMBLE.D) return '<div class="bi-feuille bi-ensemble"><p class="en-attente">VOLTA lit les plans de l’installation…</p></div>';
+  const D = ENSEMBLE.D, lus = D.lus.filter(x => x.lu), nomDe = k => nomAffiche(D.lus[k].p.nom), vus = D.communs.slice(0, ENSEMBLE.max), reste = D.communs.length - vus.length;
+  const chiffre = (n, mot) => `<span class="en-chiffre"><b>${n}</b>${esc(mot)}</span>`;
+  const chiffres = chiffre(D.lus.length, D.lus.length > 1 ? 'plans' : 'plan') + chiffre(D.liaisons, D.liaisons > 1 ? 'liaisons' : 'liaison') + chiffre(D.equipements, D.equipements > 1 ? 'équipements' : 'équipement') + (D.communs.length ? chiffre(D.communs.length, D.communs.length > 1 ? 'sur plusieurs plans' : 'sur plusieurs plans') : '');
+  const nonLus = D.lus.length - lus.length;
+  const communs = D.communs.length ? `<div class="en-communs"><h3>Les équipements que les plans partagent</h3><ul>${vus.map(([r, ks]) => `<li><b>${esc(r)}</b><small>${esc(majuscule(natureDe(r)))}</small><span>${ks.map(k => `<button type="button" class="en-plan" data-bi="plan" data-id="${escA(D.lus[k].p.id)}">${esc(nomDe(k))}</button>`).join('')}</span></li>`).join('')}</ul>${reste > 0 ? `<p class="en-suite">… et ${esc(pluriel(reste, 'autre'))}.</p>` : ''}</div>`
+    : (lus.length > 1 ? '<p class="en-dit">Ces plans ne partagent aucun équipement : aucun repère ne paraît sur deux d’entre eux.</p>' : '');
+  return `<div class="bi-feuille bi-ensemble"><div class="en-tete"><h2>Vue d’ensemble</h2><p class="en-chiffres">${chiffres}</p><button type="button" class="bi-oublier en-fermer" data-bi="ensemble" aria-label="Fermer la vue d’ensemble">${icoBi('fermer')}</button></div>`
+    + (nonLus ? `<p class="en-dit">${esc(pluriel(nonLus, 'plan'))} ${nonLus > 1 ? 'n’ont' : 'n’a'} pas ses liaisons dans ce navigateur : ${nonLus > 1 ? 'ils ne sont pas comptés' : 'il n’est pas compté'}.</p>` : '')
+    + carteEnsembleSvg(D) + communs + '</div>'; }
+async function basculerEnsemble(id) { if (!id) return; if (ENSEMBLE.id === id) { ENSEMBLE.id = ''; ENSEMBLE.D = null; ENSEMBLE.etat = ''; rendreBibliotheque(); return; }
+  ENSEMBLE.id = id; ENSEMBLE.etat = 'lecture'; ENSEMBLE.D = null; rendreBibliotheque();
+  let D = null; try { D = await calculerEnsemble(id); } catch (_) { D = null; }
+  if (ENSEMBLE.id !== id) return; if (!D) { ENSEMBLE.id = ''; ENSEMBLE.etat = ''; dire('VOLTA n’a pas pu lire les plans de cette installation.', true); rendreBibliotheque(); return; }
+  ENSEMBLE.D = D; ENSEMBLE.etat = 'pret'; rendreBibliotheque(); }
 
 /* ───────── 08-vues.js ───────── */
 /* ===========================================================================

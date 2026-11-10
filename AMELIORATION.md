@@ -200,3 +200,20 @@ plusieurs, modifier le câblage dans VOLTA (le retest reste la source).
 - **À faire à la toute fin** : les 22 batteries navigateur, l'œil sur tous les écrans, puis `main`.
 - **À voir avec le lecteur** : montrer aussi les changements sur le plan (les liaisons ajoutées allumées) ; un fichier à
   plusieurs harness prend celui du plan ; une barrette posée par VOLTA absente du nouveau fichier est reproposée.
+
+### 10 novembre 2026 — v91 à v93, les idées du lecteur (« on continue toutes les fonctions »)
+
+- **v91 — Bilan électrique** (⋮ › Bilan électrique, `08-sources.js`) : les disjoncteurs sous leur source, calibre, ce qu'ils
+  tirent, ce qu'ils alimentent ; une consommation non écrite reste inconnue, nommée, et un clic mène à l'équipement.
+- **v91 — Fiche d'atelier** (onglet Pièces › « Fiche d'atelier », `08-papier-atelier.js`) : L'essentiel et Pièces de l'objet
+  imprimés sur une A4, en clair, avec le plan, l'indice et la date. Ce que dit l'écran, rien de réécrit.
+- **v92 — Plan vivant** (⋮ › Plan vivant, `08-vivant.js`) : tout fermé au départ ; un clic ouvre un disjoncteur, un relais,
+  un interrupteur, ou coupe un câble ; ce qui n'est plus alimenté se voit et se dit sur tout le plan. Rien n'est écrit.
+- **v93 — Vue d'ensemble d'une installation** (bibliothèque › une installation de 2 plans ou plus, `08-vue-ensemble.js`) :
+  les chiffres, la carte des plans reliés par les équipements qu'ils partagent, la liste de ces équipements.
+- **Vérifié seulement** : chaque écran regardé une fois sur l'exemple (1440, clair ou sombre), le trajet joué à la sonde.
+  Aucune batterie longue (charte : à la toute fin).
+- **Reste** : lire les vrais documents (scans par l'IA interne, tableaux des PDF) — attend un essai du lecteur sur son
+  poste ; « nos folios à nous » (planches) ; le classeur de données ; la passe complète des tests, puis `main`.
+- **À voir avec le lecteur** : plan vivant — partir « tout fermé » (le pire cas) ou « relais au repos » ? ; fiche d'atelier —
+  faut-il l'outil de sertissage sur la feuille ? ; bilan — un export Excel ?
