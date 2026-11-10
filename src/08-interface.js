@@ -3419,12 +3419,13 @@ function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
     // l'inverse (la croix, seule, garde le clavier)
     document.addEventListener('keydown', e => { if (e.key !== 'Tab' || !raccourcisOuverts()) return; const xs = [...el.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.offsetParent); if (!xs.length) return;
       const i = xs.indexOf(document.activeElement), j = i < 0 ? (e.shiftKey ? xs.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + xs.length) % xs.length; e.preventDefault(); e.stopPropagation(); xs[j].focus(); }, true); }
-  RACCOURCIS.avant = document.activeElement; el.hidden = false;
+  // (10 novembre 2026) ouverte par le menu, elle rend le clavier au ⋮ en se fermant — comme tous les documents (l'entrée du menu, cachée, ne peut plus le recevoir)
+  RACCOURCIS.avant = (a => a && a.closest && a.closest('#menu') ? $('btnMenu') : a)(document.activeElement); el.hidden = false;
   // elle se pose comme tout ce qui paraît (la règle d'entrée commune, style.css) — le voile, lui, est déjà là
   const f = el.querySelector('.rk-feuille'); f.classList.remove('entre-v'); void f.offsetWidth; f.classList.add('entre-v');
   // le clavier sur la feuille (Tab mène à la croix), sans l'anneau d'un bouton pressé
   f.tabIndex = -1; try { f.focus({ preventScroll: true }); } catch (_) { f.focus(); } }
-function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a.focus && a.isConnected) try { rendreLeClavier(a); } catch (_) { } }
+function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a !== document.body && a.focus && a.isConnected && a.getClientRects().length) try { rendreLeClavier(a); } catch (_) { } }
 function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
 /* ---- TAB NE SE PERD JAMAIS (v86, l'audit F7 : « le clavier sort de la fiche ; le focus finit sur body, sans anneau — sur

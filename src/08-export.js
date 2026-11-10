@@ -67,10 +67,15 @@ function modificationsDe(l) { if (!l.avant) return [];
    est « proposition de VOLTA acceptée » tant qu'elle porte encore cette valeur ; réécrite à la main, elle redevient « à
    la main ». Un part number de disjoncteur qui porte le calibre que l'outil retient (la carte de décision) l'est aussi. */
 const ORIGINE_VOLTA = 'volta:', ORIGINES_MOTS = { main: 'à la main', volta: 'proposition de VOLTA acceptée' };
+/* (10 novembre 2026) LA MARQUE SE POSE PENDANT LE GESTE, pas après : le geste redessine tout avant de rendre la main, et ce
+   premier rendu lisait encore « celui de votre fichier » sur un calibre que VOLTA venait d'écrire (le récapitulatif, juste après
+   « Retenir le 7,5 A »). `poserChamp` (08-disjoncteurs) marque donc la case dès qu'il l'écrit ; la passe d'après reste, pour
+   ce qui s'écrirait autrement. */
+const ORIGINE_EN_COURS = { volta: 0 };
 function avecOrigineVolta(faire) { const avant = new Map(); verite().forEach(l => avant.set(l, COLONNES_RETEST.map(([, ch]) => l[ch])));
-  const r = faire(); let n = 0;
+  let r; ORIGINE_EN_COURS.volta++; try { r = faire(); } finally { ORIGINE_EN_COURS.volta--; } let n = 0;
   verite().forEach(l => { const a = avant.get(l); if (!a || !l.avant) return;
-    COLONNES_RETEST.forEach(([, ch], k) => { if (a[k] === l[ch] || !(ch in l.avant)) return; l.avant = { ...l.avant, [ORIGINE_VOLTA + ch]: l[ch] == null ? null : l[ch] }; n++; }); });
+    COLONNES_RETEST.forEach(([, ch], k) => { if (a[k] === l[ch] || !(ch in l.avant)) return; n++; if (l.avant[ORIGINE_VOLTA + ch] === (l[ch] == null ? null : l[ch])) return; l.avant = { ...l.avant, [ORIGINE_VOLTA + ch]: l[ch] == null ? null : l[ch] }; }); });
   if (n && typeof sauver === 'function') sauver();
   return r; }
 function origineDeCase(l, ch, ouvert) { const v = l.avant && l.avant[ORIGINE_VOLTA + ch];

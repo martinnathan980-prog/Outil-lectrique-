@@ -541,7 +541,10 @@ function verdictDuCalibre(d) { if (!d.calibre) return { n: '', mot: '' };
   const v = verdictTrois(d) || (!d.valide ? MOTS_TROIS.declenche : d.serre ? MOTS_TROIS.juste : MOTS_TROIS.passe);
   let pq = null; try { pq = typeof pourquoiDuCalibre === 'function' ? pourquoiDuCalibre(app.norme, d, d.calibre) : null; } catch (_) { pq = null; }
   const motPoint = p => p.ok === false ? 'disjoncte' : 'ne disjoncte pas';
-  const etats = d.points.filter(p => p.ok != null).map(p => `${majuscule(p.nom || 'état')} ${amperes(p.i)}${p.t === Infinity ? ' en permanent' : ' pendant ' + secondes(p.t)} : ${motPoint(p)}`).join('\n');
+  // (10 novembre 2026) « Permanent 5 A en permanent » se répétait, et trois états de même courant se lisaient « démarrage et
+  // transition et permanent » : le nom, deux-points, ce qu'il tire, puis le verdict
+  const enListe = s => { const xs = String(s).split(' et '); return xs.length > 2 ? xs.slice(0, -1).join(', ') + ' et ' + xs[xs.length - 1] : String(s); };
+  const etats = d.points.filter(p => p.ok != null).map(p => `${majuscule(enListe(p.nom || 'état'))} : ${amperes(p.i)}${p.t === Infinity ? (/permanent/i.test(p.nom || '') ? '' : ' en permanence') : ' pendant ' + secondes(p.t)} — ${motPoint(p)}`).join('\n');
   return { n: v.etat, mot: v.mot, bulle: [pq ? majuscule(pq.phrase) + '.' : v.bulle, etats].filter(Boolean).join('\n') }; }
 /* Le calibre que l'INSTALLATION écrit (son part number, celui du fichier quand on l'a changé ici) : à côté du retenu, barré
    quand VOLTA en retient un autre (l'ingénieur v73 : « le 10 A du retest est invisible ici, alors que la fiche l'écrit
@@ -567,7 +570,7 @@ const COLONNES_DISJ = [COL_REPERE,
         + `${main ? orig('main', 'Retenu à la main par une version d’avant : la proposition de VOLTA le rend') + (p ? '' : rond('calibre', D.rendu)) : propose ? '<i class="rc-o rc-propose" data-bulle="VOLTA le retient ; votre fichier garde le sien tant que vous n’acceptez pas la proposition — elle part alors dans l’Excel corrigé">proposé</i>' : ''}${geste}</span>`; },
     tri: r => infoDisj(r.nom).d.calibre || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibre ? amperes(d.calibre) : ''; } },
   { k: 'retest', t: 'Votre fichier', cls: 'rc-c-mesure', html: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; if (!c) return rien; const autre = d.calibre && c !== d.calibre;
-      return `<span class="rc-mesure rc-retest${autre ? ' autre' : ''}" data-bulle="${escA('Votre fichier porte ' + (pnDuRepere(r.nom) || 'son part number') + (autre ? ', un ' + amperes(c) + ' : VOLTA retient le ' + amperes(d.calibre) + ' (la fiche dit pourquoi, en ampères)' : ''))}">${autre ? chiffre(`<s class="rc-n">${fmt(c, 2)}</s>`, 'A') : chiffre(`<b class="rc-n">${fmt(c, 2)}</b>`, 'A')}</span>`; },
+      return `<span class="rc-mesure rc-retest${autre ? ' autre' : ''}" data-bulle="${escA('Votre fichier porte ' + ((autre && typeof origineDuCalibre === 'function' && origineDuCalibre(r.nom, d).pnRetest) || pnDuRepere(r.nom) || 'son part number') + (autre ? ', un ' + amperes(c) + ' : VOLTA retient le ' + amperes(d.calibre) + ' (la fiche dit pourquoi, en ampères)' : ''))}">${autre ? chiffre(`<s class="rc-n">${fmt(c, 2)}</s>`, 'A') : chiffre(`<b class="rc-n">${fmt(c, 2)}</b>`, 'A')}</span>`; },
     // le calibre du fichier ne se répète pas quand c'est celui que VOLTA retient : la colonne paraît dès qu'il en conteste un
     tri: r => calibreDuRetest(r) || 0, texte: r => { const c = calibreDuRetest(r); return c ? amperes(c) : ''; }, vide: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; return !c || !d.calibre || c === d.calibre; } },
   { k: 'verdict', t: 'Verdict', cls: 'rc-c-etat', html: r => { const v = verdictDuCalibre(infoDisj(r.nom).d); return etatHtml(v.n, v.mot, v.bulle); }, tri: r => rangEtat(verdictDuCalibre(infoDisj(r.nom).d).n), texte: r => verdictDuCalibre(infoDisj(r.nom).d).mot },

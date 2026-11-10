@@ -145,7 +145,7 @@ function ecranAnonyme() { try {
 /* LA BARRE DU CARNET : elle naît au-dessus du plan, en bas au milieu ; Entrée garde (Maj+Entrée va à la ligne), Échap
    ferme et rend le clavier d'où il venait. L'écran est lu à l'ouverture (là où l'hésitation est née). */
 const CARNET = { ouvreur: null, ou: '' };
-function ouvrirCarnet() { let el = $('carnet'); if (typeof fermerMenu === 'function') fermerMenu();
+function ouvrirCarnet() { let el = $('carnet'); const avant = document.activeElement, duMenu = !!(avant && avant.closest && avant.closest('#menu')); if (typeof fermerMenu === 'function') fermerMenu();
   if (!el) { el = document.createElement('div'); el.id = 'carnet'; el.className = 'carnet'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-labelledby', 'cn-titre');
     el.innerHTML = `<div class="cn-tete"><b id="cn-titre">Carnet de séance</b><span class="cn-ou" id="cn-ou"></span><button type="button" class="fi-x cn-x" id="cn-fermer" aria-label="Fermer le carnet (Échap)" data-bulle="Fermer · Échap">${ico('fermer')}</button></div>`
       + `<textarea id="cn-texte" rows="2" spellcheck="true" aria-label="La note" placeholder="Une hésitation, un chiffre qui étonne, une idée…"></textarea>`
@@ -155,7 +155,8 @@ function ouvrirCarnet() { let el = $('carnet'); if (typeof fermerMenu === 'funct
     $('cn-texte').addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermerCarnet(); }
       else if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); garderNote(); } });
     el.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermerCarnet(); } }); }
-  if (el.hidden) { const a = document.activeElement; CARNET.ouvreur = a && a !== document.body && !el.contains(a) ? a : null; CARNET.ou = ecranAnonyme(); }
+  // (10 novembre 2026) ouvert par le menu, il rend le clavier au ⋮ en se fermant — comme tous les documents
+  if (el.hidden) { const a = duMenu ? $('btnMenu') : avant; CARNET.ouvreur = a && a !== document.body && !el.contains(a) ? a : null; CARNET.ou = ecranAnonyme(); }
   $('cn-ou').textContent = CARNET.ou; compterCarnet(); el.hidden = false; el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre');
   const t = $('cn-texte'); try { t.focus({ preventScroll: true }); } catch (_) { t.focus(); } }
 function compterCarnet() { const n = lireCarnet().length, c = $('cn-compte'); if (c) c.textContent = n ? pl(n, 'note') + ' dans le carnet' : ''; }

@@ -333,7 +333,9 @@ function contactsDeLaGauge(jauge, besoin) { if (jauge == null) return null; let 
    entrée d'historique : l'appelant en pose une pour tout le lot. Revenu à la valeur du fichier, la trace s'efface. */
 function poserChamp(l, champ, valeur) { if (!(l.avant && champ in l.avant)) l.avant = { ...(l.avant || {}), [champ]: l[champ] == null ? null : l[champ] };
   if (valeur == null || valeur === '') delete l[champ]; else l[champ] = valeur;
-  if (l.avant[champ] === (l[champ] == null ? null : l[champ])) { const av = { ...l.avant }; delete av[champ]; if (Object.keys(av).length) l.avant = av; else delete l.avant; } }
+  if (l.avant[champ] === (l[champ] == null ? null : l[champ])) { const av = { ...l.avant }; delete av[champ]; if (Object.keys(av).length) l.avant = av; else delete l.avant; }
+  // (10 novembre 2026) dans un geste de VOLTA, la case porte sa marque tout de suite (08-export, `avecOrigineVolta`) : le rendu que le geste lance la lit déjà
+  else if (typeof ORIGINE_EN_COURS !== 'undefined' && ORIGINE_EN_COURS.volta) l.avant = { ...l.avant, [ORIGINE_VOLTA + champ]: l[champ] == null ? null : l[champ] }; }
 /* Le profil de charge, écrit au contrat sans perdre ce qui n'est pas lui (le calibre écrit) ; vide, il s'efface — sauf
    s'il garde un état supprimé (`null` à la place du démarrage, de la transition ou du permanent : l'état n'est plus là). */
 function poserCharge(nom, c) { if (c && 'somme' in c) { c = { ...c }; delete c.somme; } const vide = !(c.calibre > 0) && !['dem', 'trans', 'perm'].some(k => (c[k] && c[k].i != null) || c[k] === null) && !(c.plus && c.plus.length);

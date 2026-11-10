@@ -1,47 +1,24 @@
 /* ===========================================================================
-   FICHE — ce qu'on voit quand on clique un bloc ou un câble (08 bis, 08-sections, 08 ter), la fiche v4.
-       NODE_PATH=/opt/node22/lib/node_modules node tests/fiche.js [--fichier=chemin]
+   FICHE — ce qu'on voit quand on clique un bloc ou un câble : la CARTE (la synthèse), puis la fiche EN GRAND (« Tout voir »).
+       NODE_PATH=$(npm root -g) node tests/fiche.js [--fichier=chemin]
+   (réécrite le 10 novembre 2026 d'après la charte : l'ancienne jugeait la fiche v4 — sections repliées, « nom en clair »,
+   carte de décision, « À la main » —, qui n'existe plus.)
 
-   Sur l'exemple embarqué, chaque fiche a le MÊME squelette, et l'ingénieur
-   ne s'y perd pas :
-     · LA BARRE en tête (‹ ›, × ; le repère s'y écrit quand l'en-tête passe
-       dessous), puis l'EN-TÊTE (le symbole, le repère et son crayon ; dessous
-       la ligne d'IDENTITÉ — « Connecteur · EN4165-2M · 3 connecteurs ·
-       folio 3 » — et la désignation qu'on tape), puis LES PROBLÈMES, repliés
-       juste dessous (« Problèmes · 1 problème — B · aucun arrangement… »),
-       qui se déplient EN PLACE (une ligne par point, la section qui le
-       démontre ; un clic l'ouvre et l'allume), puis PEU DE SECTIONS dans
-       l'ordre fixe, en fiche technique (Calibre, Connecteur, De → vers,
-       Câbles ; « Déjà fait » seulement quand une base est chargée) ;
-     · un équipement : les connecteurs en bulles (le fautif marqué), la
-       référence, l'arrangement en puce (un clic montre la face ; son « ? »),
-       les contacts (Borne · Contact · Gauge ✓/✗ · Câble), chaque valeur des
-       tables avec son repère d'origine (vérifié par deux sources · vos
-       tables · à confirmer) ; un connecteur qu'aucun arrangement ne loge
-       nomme sa borne fautive, le câble coupable, et le geste qui répare ; le
-       Raccord dans la même section ; une barrette : le module, la GALERIE
-       des assemblages, la face vivante ; une prise : UNE face, l'autre d'un
-       clic, les paires ; une masse : ses câbles ; un câble : ses tuiles (le
-       type et la longueur s'y écrivent), son chemin, l'intensité et la chute
-       — la même chute que dans la fiche de son disjoncteur ;
-     · le disjoncteur : la CARTE DE DÉCISION quand le retest ne passe pas
-       (« Passer en 15 A et grossir les 3 câbles » : un geste ; « Garder le
-       10 A… » : ce qu'il faudrait) ; la section « Calibre » — le calibre
-       retenu en grand, « Automatique » · « À la main » ; le profil où chaque
-       état se supprime et revient ;
-     · LES CÂBLES d'une fiche : un tableau dense — le type, la longueur
-       s'écrivent DANS la ligne ; au-delà de douze câbles, la bande des
-       marges ;
-     · supprimer ne demande plus rien : c'est fait, « Rétablir » (Ctrl+Z) ;
-     · LE « ? » : une bulle, une seule à la fois, au clavier aussi ;
-     · TOUT se change sur place, « main » et « ↺ » ; Ctrl+Z défait chaque
-       geste et la fiche reste ouverte ; écrire dans le profil d'un
-       disjoncteur refait la fiche en place, la main dans le champ ;
-     · ouvrir une fiche depuis une fiche EMPILE : ‹ (Alt+←) revient à la même
-       place, › repart ; un bout de câble ouvre l'équipement sur son
-       connecteur, le contact allumé ; le plan ne bouge pas si l'objet est en
-       vue ; les hypothèses de la simulation depuis la pastille « supposée » ;
-       l'index.
+   Sur le plan d'exemple, pour chaque genre (disjoncteur, connecteur, relais, barrette du fichier, barrette ajoutée par
+   VOLTA, prise de coupure, masse, câble au courant connu, câble au courant inconnu) :
+     · LA CARTE : le genre se reconnaît (la silhouette, le mot), le repère, deux ou trois chiffres clés, les points à régler
+       en une seule section compacte, « Tout voir » ; elle tient sans défiler et se tire par ses huit bords ; aucune
+       saisie qui doublerait votre fichier ;
+     · EN GRAND : des onglets de même largeur dont le nom dit ce qu'on y trouve (« Pièces », pas « Fabrication »),
+       L'essentiel d'abord — aussi quand la fiche s'ouvre sur un autre objet ; des sections titrées, jamais une colonne
+       pleine de tirets ; la fenêtre agrandie garde ses huit bords ;
+     · MODIFIER, trois sortes bien séparées : ce qui vient de votre fichier se lit sans saisie ; les choix de VOLTA en
+       Automatique / Manuel ; l'information se lit ;
+     · LES MOTS : VOLTA en capitales, gauge, folio, « partie mobile / partie fixe », « disjoncte / ne disjoncte pas » ;
+       aucun numéro de câble ;
+     · LA VÉRITÉ : un courant connu s'explique, un courant inconnu se dit inconnu et demande la consommation ; la
+       proposition de VOLTA (« Passer en DR16 ») ne propose jamais une gauge plus fine, se chiffre (« +39 g ») et se défait ;
+     · le « ? » : une bulle, une seule à la fois ; Échap la ferme, pas la fiche.
    Rend 1 au premier échec.
    =========================================================================== */
 const { chromium } = require('playwright');
@@ -50,588 +27,123 @@ const FICHIER = P.fichierDemande();
 
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
-  const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); page.setDefaultTimeout(300000);   // (un geste refait tout le calcul : sous une machine chargée, plus de deux minutes — mesuré aussi avant v72)
+  const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); page.setDefaultTimeout(300000);
   const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-  let ko = 0; const ok = (c, nom, detail) => { if (!c) ko++; console.log('  ' + (c ? 'ok ' : 'KO ') + ' ' + nom + (detail ? '   ' + detail : '')); };
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exempleSansCalibreAuto());   // l’outil s’ouvre sur la bibliothèque (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
-  const bloc = (plan, nom) => page.evaluate(([plan, nom]) => { allerAuPlan(plan); const c = app.dessin.comps.find(k => k.name === nom && (k.kind !== 'tag' || estMasse(nom))); if (c) choisirBloc(c); else choisirBarretteAPoser(barretteAPoser(nom)); }, [plan, nom]);
-  const q = (sel, fn) => page.evaluate(([sel, fn]) => { const xs = [...document.querySelectorAll('#ba-equip ' + sel)]; return new Function('xs', 'return (' + fn + ')(xs)')(xs); }, [sel, fn || 'xs => xs.length']);
-  const texte = sel => page.evaluate(sel => { const e = document.querySelector('#ba-equip ' + sel); return e ? e.textContent.replace(/\s+/g, ' ').trim() : null; }, sel);
-  const sections = () => q('details.fs', 'xs => xs.map(d => d.dataset.section + (d.open ? "+" : "")).join(" ")');
-  // le mot de contexte sous le repère (« À poser · sur 102CB1:2 », « Masse », « Câble ») — sans son « ? » ; rien pour un équipement
-  const genre = () => page.evaluate(() => { const g = document.querySelector('#ba-equip .fi-genre-mot'); if (!g) return ''; const c = g.cloneNode(true); c.querySelectorAll('.fi-q, input').forEach(x => x.remove()); return c.textContent.replace(/\s+/g, ' ').trim(); });
-  // les tuiles d'un câble : l'étiquette, la valeur (celle du champ, sinon ce qu'il propose), l'état
-  const tuiles = () => q('.fi-tuile', 'xs => xs.map(t => { const v = t.querySelector(".fi-tuile-v"), i = v.querySelector("input, select"); return t.querySelector(".fi-tuile-k").textContent + "=" + (i ? (i.value || i.placeholder) + [...v.childNodes].filter(n => n !== i && !(n.contains && n.contains(i))).map(n => n.textContent).join("") : v.textContent).replace(/\\s+/g, " ").trim() + (t.classList.contains("ko") ? "!" : t.classList.contains("att") ? "?" : ""); }).join(" | ")');
-  const sec = s => `details.fs[data-section="${s}"]`;
-  // la face est à plat : rien de ce qui faisait le relief, et toujours un corps
-  const faceAPlat = async ou => { const n = await q(ou + ' .mj .mj-flanc, ' + ou + ' .mj .mj-ombre, ' + ou + ' .mj .mj-fut'), c = await q(ou + ' .mj .mj-corps'); return n === 0 && c > 0; };
-  const vue = () => page.evaluate(() => JSON.stringify(app.vue));
+  let ko = 0, total = 0; const ok = (c, nom, detail) => { total++; if (!c) ko++; console.log('  ' + (c ? 'ok ' : 'KO ') + ' ' + nom + (detail && !c ? '   ← ' + String(detail).slice(0, 900) : '')); };
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple()); await page.waitForTimeout(700);
+  const ev = (f, a) => page.evaluate(f, a), pause = ms => page.waitForTimeout(ms);
+  // choisir un objet : un bloc du plan, une barrette ajoutée (« vt:VT1 »), un câble (« fil:W-011 », l'identifiant interne de l'exemple — jamais montré)
+  const choisir = async (plan, nom) => { await ev(([plan, nom]) => { if (typeof fermerInspecteur === 'function') fermerInspecteur(); allerAuPlan(plan);
+    if (/^fil:/.test(nom)) choisirFil(app.dessin.fils.find(w => w.cable === nom.slice(4))); else if (/^vt:/.test(nom)) choisirBarretteAPoser(barretteAPoser(nom.slice(3))); else choisirBloc(app.dessin.comps.find(k => k.name === nom)); }, [plan, nom]); await pause(600); };
+  const grand = async () => { if (!await ev(() => document.body.classList.contains('insp-grand'))) { await page.click('#fi-tout-voir'); await pause(650); } };
+  const onglet = async o => { await page.click('#nv-o-' + o); await pause(450); };
+  const lireCarte = () => ev(() => { const f = document.getElementById('ba-equip'), n = s => String(s || '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim(), t = s => { const e = f.querySelector(s); return e ? n(e.textContent) : ''; }, I = $('inspecteur').getBoundingClientRect();
+    return { genre: t('.nc-genre-mot'), rep: t('.nc-rep-t'), meta: [...f.querySelectorAll('.nc-meta-v')].map(x => n(x.textContent)).join(' · '), silhouette: ((f.querySelector('.nc-sceau svg') || { getAttribute: () => '' }).getAttribute('class') || '').replace('silhouette', '').trim(),
+      chiffres: [...f.querySelectorAll('.nc-chiffre')].map(x => n(x.querySelector('.nc-k').textContent) + ' : ' + n(x.querySelector('.nc-v').textContent)), taches: f.querySelectorAll('.nc-tache').length, sectionsTaches: f.querySelectorAll('.nc-taches').length, tete: t('.nc-pbs-g'),
+      gestes: [...f.querySelectorAll('.nc-tache button')].map(b => n(b.textContent)).filter(Boolean), autres: t('.nc-autres'), champs: [...f.querySelectorAll('input, textarea, select')].map(i => i.id), defile: f.scrollHeight - f.clientHeight, dedans: I.bottom <= innerHeight + 1 && I.top >= 0,
+      bords: document.querySelectorAll('.carte-bords [data-bord]').length, toutVoir: t('#fi-tout-voir'), texte: n(f.innerText) }; });
+  const lireGrand = () => ev(() => { const n = s => String(s || '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim(), os = [...document.querySelectorAll('#ba-equip .nv-onglet')].filter(o => o.getBoundingClientRect().width > 0);
+    return { grand: document.body.classList.contains('insp-grand'), onglets: os.map(o => o.id.replace('nv-o-', '')), noms: os.map(o => n((o.querySelector('b, .nv-o-t') || o.firstChild || o).textContent)), l: os.map(o => Math.round(o.getBoundingClientRect().width)), choisi: ((os.find(o => o.getAttribute('aria-selected') === 'true') || {}).id || '').replace('nv-o-', ''), bords: document.querySelectorAll('.carte-bords [data-bord]').length }; });
+  const lirePanneau = o => ev(o => { const Pn = document.getElementById('nv-p-' + o), n = s => String(s || '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim(); if (!Pn) return null;
+    const colonnesDeTirets = [...Pn.querySelectorAll('table')].flatMap(T => { const rs = [...T.querySelectorAll('tbody tr')].filter(r => r.children.length > 1), nc = rs.length ? rs[0].children.length : 0, out = []; for (let k = 0; k < nc; k++) if (rs.length > 1 && rs.every(r => r.children[k] && /^[—–-]$/.test(r.children[k].textContent.trim()))) out.push(n((T.querySelectorAll('thead th')[k] || {}).textContent || 'colonne ' + k)); return out; });
+    return { titres: [...Pn.querySelectorAll('.vu-titre, .nv-somm-t, h3, h4')].map(x => n(x.textContent)), sectionsSansTitre: [...Pn.querySelectorAll('section.vu-bloc')].filter(s => !s.querySelector('.vu-titre')).length, texte: n(Pn.innerText), dessins: Pn.querySelectorAll('svg:not(.ico)').length, tables: Pn.querySelectorAll('table').length, colonnesDeTirets }; }, o);
 
-  console.log('\nun équipement à trois connecteurs (300XC1, folio 3) : le squelette');
-  await bloc('3', '300XC1'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => { const xs = [...document.querySelector('#ba-equip').children].slice(0, 4).map(e => e.className.split(' ')[0]); return xs.join() === 'fi-nav,fi-entete,fi-alerte,fs'; }), 'la barre, l’en-tête, les problèmes, puis les sections');
-  ok(await q('.fi-ariane, .fi-maillon') === 0 && await q('#fi-prec:disabled, #fi-suiv:disabled') === 2 && await q('.fi-nav #in-fermer') === 1, 'plus de fil d’Ariane : ‹ › (éteints : rien avant, rien après) et ×');
-  ok(await page.evaluate(() => { const id = document.querySelector('#ba-equip .fi-ident'); return $('eq-rep').value === '300XC1' && !!$('fi-crayon') && !!document.querySelector('#ba-equip .fi-symbole svg') && !$('eq-nature') && !document.querySelector('#ba-equip .fi-entete select, #ba-equip .fi-genre-mot') && !!$('eq-des') && $('eq-des').placeholder === 'Désignation'
-    && id.firstElementChild.classList.contains('fi-nom-ligne') && id.lastElementChild.classList.contains('fi-genre'); }), 'l’en-tête (le lecteur : « pas de liste déroulante, personne ne s’en servira ; le repère élec en priorité ») : le symbole, le REPÈRE d’abord et son crayon, dessous la désignation — un texte qu’on tape — ; ni type ni liste');
-  ok(await texte('.fi-identite') === 'Connecteur · EN4165-2M · 3 connecteurs · folio 3', 'sous le repère, la ligne d’IDENTITÉ (l’audit : « on ne sait pas ce qu’on regarde ») : ce que c’est, sa référence, combien de connecteurs, son folio', await texte('.fi-identite'));
-  ok(await q('.fi-tuile, .fi-tuiles') === 0, 'plus de tuiles sous l’en-tête (le lecteur : « dégage »)');
-  ok(await sections() === 'connecteur fils conso' && await q(sec('identite') + ', ' + sec('raccord') + ', ' + sec('dejafait')) === 0, 'Connecteur (le raccord dedans : « c’est le même »), Câbles — tous PLIÉS d’office (le lecteur : « toutes les sections doivent être pliées : c’est beaucoup plus propre ») ; « Déjà fait » se tait sans base chargée', await sections());
-  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip details.fs[data-section="connecteur"] > summary'); return !!s.querySelector('.fs-titre') && !!s.querySelector('.fs-resume') && !s.querySelector('.fs-ico') && getComputedStyle(s.querySelector('.fs-titre')).fontSize === '13px'; }), 'chaque section, une ligne de FICHE TECHNIQUE : son titre (13 px), ce qu’elle dit en une ligne, sans icône');
-  // la suite lit le contenu des sections : on les ouvre, comme l'ingénieur (ce qu'il ouvre se retient, par type d'objet)
-  await page.evaluate(() => { ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, k !== 'dejafait'))); document.querySelectorAll('#ba-equip details.fs').forEach(d => { d.open = d.dataset.section !== 'dejafait'; }); rendreFiche(); }); await page.waitForTimeout(300);
-  ok(await sections() === 'connecteur+ fils+ conso+', 'ouvertes, elles le restent (la mémoire des sections) : Connecteur et Câbles', await sections());
-  // (v77 : chaque fiche s'ouvre toute pliée, sa mémoire est la sienne — le lecteur : « c'est à moi de les déplier ») : la suite
-  // lit le contenu des sections de chaque fiche qu'elle ouvre ; elle les déplie, comme l'ingénieur, à chaque fiche rendue
-  await page.evaluate(() => { const box = $('ba-equip'), tout = () => box.querySelectorAll('details.fs').forEach(d => { if (d.dataset.section !== 'dejafait' && !d.open) { d.open = true; if (d.dataset.type) retenirSection(d.dataset.type, d.dataset.section, true); } });
-    window.__deplier = new MutationObserver(tout); window.__deplier.observe(box, { childList: true }); });
-  ok(await texte(sec('fils') + ' .fs-titre') === 'Câbles' && /^23 câbles/.test(await texte(sec('fils') + ' .fs-resume')), '« Câbles », plus « Fils » (le lecteur : « dis câble, c’est plus propre »)', await texte(sec('fils') + ' .fs-resume'));
-  ok(await page.evaluate(() => { const b = document.querySelector('#ba-equip details.fi-alerte'); return !!b && !b.open && b.classList.contains('ko'); }) && /^1 problème$/.test(await texte('.fi-pb-n')) && /^— B · aucun arrangement/.test(await texte('.fi-pb-1')) && await texte('.fi-pb-k') === 'Problèmes' && await q(sec('connecteur') + ' .fs-badge') === 0 && await q(sec('connecteur') + ' .ct-bulle.ko[data-connecteur="B"]') === 1,
-    'les problèmes, repliés sous l’en-tête, la première ligne de la fiche technique (l’audit : « la barre rose ne dit pas lequel ») : « Problèmes · 1 problème — B · aucun arrangement… » ; sur la ligne « Connecteur », la bulle B, rouge, le dit — plus de « 1 » rouge qui le répète (le technicien v73 ; test mis à jour : la pastille le comptait)', await texte('.fi-pb'));
-  const yAvant = await page.evaluate(() => $('ba-equip').scrollTop);
-  await page.click('#fi-pb'); await page.waitForTimeout(300);
-  ok(await page.evaluate(y => { const b = document.querySelector('#ba-equip details.fi-alerte'), l = b.querySelectorAll('.fi-pb-l'); return b.open && l.length === 1 && /aucun arrangement/.test(l[0].textContent) && /Connecteur B/.test(l[0].querySelector('.fi-pb-s').textContent) && $('ba-equip').scrollTop === y; }, yAvant), 'un clic les déplie EN PLACE (la fiche ne descend pas) : une ligne, la section qui le démontre en petit (« Connecteur B »)');
-  await page.click('#ba-equip .fi-pb-l'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="connecteur"]'); return d.open && d.classList.contains('fs-allume'); }), 'un clic sur la ligne ouvre la section qui le démontre, et l’allume');
-  await page.click('#fi-pb'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => !document.querySelector('#ba-equip details.fi-alerte').open), 'et la barre se replie');
-  ok(await q(sec('connecteur') + ' summary .ct-bulle') === 0 && /3 connecteurs : A, B, C/.test(await texte(sec('connecteur') + ' summary')) && await q(sec('connecteur') + ' .ct-choix .ct-bulles .ct-bulle') === 3 && await q('.ct-bulle[aria-pressed="true"]', 'xs => xs[0].dataset.connecteur') === 'B' && await q('.ct-bulle.ko', 'xs => xs.map(x => x.dataset.connecteur).join()') === 'B' && await texte(sec('connecteur') + ' .fs-titre') === 'Connecteur', 'une BULLE par connecteur — A · B · C (le lecteur : « comme une bulle ; on appuie, ça passe de l’un à l’autre ») ; la fiche s’ouvre sur B, le fautif, en rouge — v77 : les bulles DANS la section (« Le connecteur montré »), le titre dit « 3 connecteurs : A, B, C » (le lecteur : « je n’arrive pas à ouvrir un connecteur et le fermer » — un clic sur une bulle du titre choisissait au lieu de replier)');
-  ok(/Aucun ne loge B5/.test(await texte(sec('connecteur') + ' [data-panneau="B"]')) && await q(sec('connecteur') + ' [data-sexe="300XC1|B"]') === 2 && await q(sec('connecteur') + ' [data-panneau="B"] [data-hab="300XC1|B"]') === 1, 'B, qu’aucun arrangement ne loge, NOMME sa borne fautive (« Aucun ne loge B5 », plus « ces bornes ») et laisse changer le sexe des contacts ; son raccord est DANS la section, sous ses contacts');
-  // le coupable, dit par le moteur (09-barrettes, `remplirContacts` : bornes, coupables, le plus proche) ; le geste qui répare
-  ok(await page.evaluate(() => { const p = document.querySelector('#ba-equip [data-panneau="B"]'), f = p.querySelector('.fi-fautifs'), r = p.querySelector('.fi-reparer[data-reparer]'), t = p.querySelector('.fi-contacts'), c = t && t.querySelector('.ct-ligne.coupable');
-    return !!f && /B5\s?: W-370 \(DR12\), trop gros pour le contact 5 du 12-20, le plus proche/.test(f.textContent.replace(/\s+/g, ' ')) && !!r && r.textContent.trim() === 'W-370 en DR18' && r.dataset.type === 'DR18'
-      && t.classList.contains('ct-sans') && !!c && /B5/.test(c.textContent) && /trop gros/.test(c.textContent) && /Les contacts à sertir viendront avec l’arrangement/.test(p.textContent); }),
-    'sous « Arrangement », le COUPABLE (l’audit : « on ne sait pas quel câble ») : « B5 : W-370 (DR12), trop gros pour le contact 5 du 12-20, le plus proche » et le geste « W-370 en DR18 » ; dans la table, la ligne de B5 marquée ; sans arrangement, pas de colonne « contact » (ils viendront avec lui)');
-  const nRep = await page.evaluate(() => app.hist.length);
-  await page.click('#ba-equip [data-panneau="B"] .fi-reparer'); await page.waitForTimeout(800);
-  ok(await page.evaluate(n => verite().find(l => l.cable === 'W-370').type === 'DR18' && app.hist.length === n + 1 && app.cible && app.cible.nom === '300XC1' && !CONTROLE.items.some(x => x.nom === '300XC1' && /aucun arrangement/.test(x.texte)), nRep),
-    '« W-370 en DR18 » : un clic, une entrée d’historique — B se loge, le problème s’en va, la fiche reste sur 300XC1');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => verite().find(l => l.cable === 'W-370').type === 'DR12' && !!document.querySelector('#ba-equip [data-panneau="B"] .fi-reparer')), 'Ctrl+Z rend le DR12 de l’installation, et le geste revient');
-  await page.click('#ba-equip .ct-bulles [data-connecteur="A"]'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => document.querySelector('#ba-equip details[data-section="connecteur"]').open && document.querySelector('#ba-equip .ct-bulle[aria-pressed="true"]').dataset.connecteur === 'A'), 'un clic sur la bulle A montre A — la section reste ouverte');
-  ok(await q('[data-panneau="A"] .fc-k', 'xs => xs.map(x => x.textContent).join()') === 'Référence,Arrangement' && !/part number|compléter les normes|Norme/.test(await texte(sec('connecteur') + ' [data-panneau="A"]')), 'le connecteur A : sa RÉFÉRENCE, puis l’arrangement — plus de « part number », plus de « Norme » ni de « compléter les normes »');
-  ok(await page.evaluate(() => { const r = [...document.querySelectorAll('#ba-equip [data-panneau="A"] .fc')].find(x => x.querySelector('.fc-k').textContent === 'Arrangement'), b = r && r.querySelector('.fi-norme-puce[data-face]'), ref = [...document.querySelectorAll('#ba-equip [data-panneau="A"] .fc')].find(x => x.querySelector('.fc-k').textContent === 'Référence');
-    return !!b && /EN4165-002-12-20/.test(b.textContent) && !r.querySelector('.orig') && !!r.querySelector('[data-changer="arr|300XC1|A"]') && !r.querySelector('.fs-auto') && !!r.querySelector('.fi-q[data-q="arrangement"]')
-      && !r.querySelector('.fi-fam') && ref.querySelector('.fi-pn [data-pn="A"]').value === 'EN4165-2M'; }) && await q('[data-panneau="A"] .fi-face') === 1
-      && /EN 4165-002/.test(await texte('[data-panneau="A"] .fi-norme-ligne')) && /11\spris/.test(await texte('[data-panneau="A"] .mj-legende')) && /1\slibre/.test(await texte('[data-panneau="A"] .mj-legende')) && await q('[data-panneau="A"] .fi-norme-ligne [data-bible]') === 1,
-    'la référence de A (EN4165-2M, modifiable) ; l’arrangement en puce (EN4165-002-12-20), son « ? », « Changer » à sa droite, aucune pastille ; la FACE montrée d’office, sa légende (v77 : 11 pris, 1 libre — plein, creux) et, dessous, ce que dit la norme : EN 4165-002, la bible');
-  await page.click('#ba-equip [data-panneau="A"] .fi-norme-puce[data-face]'); await page.waitForTimeout(400);
-  ok(await q('[data-panneau="A"] .fi-face') === 0, 'un clic sur la puce replie la face');
-  await page.click('#ba-equip [data-panneau="A"] .fi-norme-puce[data-face]'); await page.waitForTimeout(400);
-  ok(await faceAPlat('[data-panneau="A"]') && await q('[data-panneau="A"] .mj-module.corps-module .mj-cle') === 1, 'un autre la rend : la face du module EN 4165, à plat, un module carré et son détrompeur');
-  ok(await q('[data-panneau="A"] .mj-contact.plein') === 11 && await q('[data-panneau="A"] .mj-contact') === 12 && await q('[data-panneau="A"] .fi-contacts .fi-fil[data-i]') === 11, 'onze contacts pleins sur douze ; onze lignes de contact');
-  ok(await q('[data-panneau="A"] .fi-contacts .ct-legende > span', 'xs => xs.map(x => x.firstChild ? x.firstChild.textContent : "").join()') === 'Borne,Contact à sertir,Gauge,Câble' &&await q('[data-panneau="A"] .fi-contacts .ct-legende .fi-q', 'xs => xs.map(x => x.dataset.q).join()') === 'contact,gauge'
-    && await page.evaluate(() => { const li = document.querySelector('#ba-equip [data-panneau="A"] .fi-contacts .fi-fil[data-i]'), l2 = li.nextElementSibling;
-      return li.querySelector('.ct-pin b').textContent === 'A1' && li.querySelector('.fi-sertir').textContent === 'EN3155-003F2020' && l2.querySelector('.fi-sertir').textContent === 'EN3155-003F2020' && l2.querySelector('.fi-sertir').classList.contains('meme') && !/″/.test(document.querySelector('#ba-equip [data-panneau="A"] .fi-contacts').textContent)
-        && /^24AWG$/.test(li.querySelector('.fi-jg').textContent) && !!li.querySelector('.fi-jg.ok svg') && li.querySelector('.fi-cab-n').textContent === 'W-320' && !/381RL1/.test(li.textContent); }),
-    'les contacts, une table au cordeau (Borne · Contact à sertir · Gauge · Câble) : la borne, le contact de la table en clair (le même qu’au-dessus plus pâle — plus de « ″ »), la gauge et son ✓ vert, le câble ; plus « vers »');
-  // d'où vient chaque valeur des tables : un repère discret, sa bulle nomme les sources (ou pourquoi c'est à confirmer) ; la légende une fois
-  ok(await page.evaluate(() => { const p = document.querySelector('#ba-equip [data-panneau="A"]'), m = p.querySelector('.fi-contacts .ct-sertir .fi-conf'), L = p.querySelector('.fi-conf-legende'), n = m && [...m.classList].find(c => c.length === 1);
-    const tous = [...document.querySelectorAll('#ba-equip details[data-section="connecteur"] .fi-conf:not(.fi-conf-legende .fi-conf)')];
-    return !!m && /^[vlc]$/.test(n) && m.dataset.bulle.length > 12 && (n !== 'v' || /^Vérifié par (deux|trois|quatre|\d+) sources : \S/.test(m.dataset.bulle)) && (n !== 'c' || /^À confirmer/.test(m.dataset.bulle)) && m.getAttribute('role') === 'img' && !!m.getAttribute('aria-label')
-      && !!L && ['vérifié par deux sources', 'vos tables', 'à confirmer'].every(w => L.textContent.includes(w)) && tous.length >= 3 && tous.every(x => x.dataset.bulle); }),
-    'chaque valeur des tables dit d’où elle vient (le lecteur : « tout est correct ? les contacts, tyrap… ? tout ? ») : un repère de 7 px — vérifié par deux sources (la bulle les nomme), vos tables, à confirmer (et pourquoi) — la légende sous la table');
+  const OBJETS = [
+    { plan: '1', nom: '102CB1', genre: 'Disjoncteur', sil: 'sl-disjoncteur', onglets: ['essentiel', 'calibre', 'cables'] },
+    { plan: '3', nom: '300XC1', genre: 'Connecteur', sil: 'sl-equipement', onglets: ['essentiel', 'cables', 'fabrication', 'reglages'] },
+    { plan: '1', nom: '103RL1', genre: 'Relais', sil: 'sl-equipement', onglets: ['essentiel', 'cables', 'fabrication', 'reglages'] },
+    { plan: '2', nom: '667VT2', genre: 'Barrette de jonction', sil: 'sl-barrette', onglets: ['essentiel', 'cables', 'fabrication', 'reglages', 'modifs'] },
+    { plan: '1', nom: 'vt:VT1', rep: 'VT1', genre: 'Barrette de jonction', sil: 'sl-barrette', onglets: ['essentiel', 'cables', 'fabrication', 'reglages', 'modifs'], champs: ['vt-repere'] },
+    { plan: '2', nom: '408VC1A', genre: 'Prise de coupure', sil: 'sl-prise', onglets: ['essentiel', 'cables', 'fabrication', 'reglages'] },
+    { plan: '1', nom: '901G', genre: 'Masse', sil: 'sl-masse', onglets: ['essentiel', 'cables'] },
+    { plan: '1', nom: 'fil:W-011', rep: 'DR16', genre: 'Câble', sil: 'sl-fil', onglets: ['essentiel', 'fabrication', 'reglages'] },
+    { plan: '1', nom: 'fil:W-012', rep: 'DR20', genre: 'Câble', sil: 'sl-fil', onglets: ['essentiel', 'fabrication', 'reglages'] }];
+  const NOMS = { essentiel: 'L’essentiel', calibre: 'Calibre', cables: 'Câbles', fabrication: 'Pièces', reglages: 'Modifier', modifs: 'Historique' };
+  // les mots que la charte bannit de l'écran (l'outil, jauge, planche, tient, Volta en minuscules, fiche / embase, un numéro de câble, le contrat, le harness)
+  const BANNIS = /\bl[’']outil\b|\bjauges?\b|\bplanches?\b|\btient\b|\bVolta\b|\bembase\b|\bfiche \/|W-\d{3}|\bcontrat\b|\bharness\b|\bretest\b|trop juste|\bnom en clair\b/;
+  const R = {}, fautes = (f) => OBJETS.filter(o => !f(R[o.nom], o)).map(o => o.rep || o.nom);
+  console.log('\nLA CARTE ET LA FICHE EN GRAND, GENRE PAR GENRE');
+  for (const o of OBJETS) { await choisir(o.plan, o.nom); const carte = await lireCarte(); await grand(); const G = await lireGrand(), panneaux = {};
+    for (const k of G.onglets) { await onglet(k); panneaux[k] = await lirePanneau(k); }
+    R[o.nom] = { carte, G, panneaux }; await ev(() => fermerInspecteur()); await pause(250); }
+  const det = f => JSON.stringify(OBJETS.map(o => [o.rep || o.nom, f(R[o.nom])]));
+  ok(!fautes((r, o) => r.carte.genre === o.genre && r.carte.rep === (o.rep || o.nom) && r.carte.silhouette === o.sil).length, 'chaque genre se reconnaît d’un coup d’œil : la silhouette de l’objet, sa nature en un mot (Disjoncteur, Connecteur, Relais, Barrette de jonction, Prise de coupure, Masse, Câble), son repère — un câble se dit par son type', det(r => [r.carte.genre, r.carte.rep, r.carte.silhouette]));
+  ok(!fautes(r => r.carte.defile <= 1 && r.carte.dedans && r.carte.bords === 8 && r.carte.toutVoir === 'Tout voir').length, 'la carte tient sans défiler, dans la fenêtre ; elle se tire par ses huit bords ; « Tout voir » ouvre la fiche entière', det(r => [r.carte.defile, r.carte.dedans, r.carte.bords, r.carte.toutVoir]));
+  ok(!fautes((r, o) => r.carte.champs.join() === (o.champs || []).join()).length, 'aucune saisie sur la carte qui doublerait votre fichier (pas de « nom en clair ») — seule la barrette ajoutée par VOLTA attend son vrai repère', det(r => r.carte.champs));
+  ok(!fautes(r => r.carte.chiffres.length >= 1 && r.carte.chiffres.length <= 3 && r.carte.chiffres.every(c => !/: [—–-]?$/.test(c))).length, 'un à trois chiffres clés, chacun avec sa valeur (jamais un tiret)', det(r => r.carte.chiffres));
+  ok(!fautes(r => r.carte.sectionsTaches <= 1 && r.carte.taches <= 2 && (!r.carte.taches || /^À (régler|voir) ?\d+$/.test(r.carte.tete))).length, 'les points d’un objet ne s’empilent pas : une seule section compacte (« À régler N »), deux lignes au plus, le reste derrière « et N autres »', det(r => [r.carte.sectionsTaches, r.carte.taches, r.carte.tete, r.carte.autres]));
+  ok(!fautes((r, o) => r.G.grand && r.G.onglets.join() === o.onglets.join() && r.G.choisi === 'essentiel' && Math.max(...r.G.l) - Math.min(...r.G.l) <= 1 && r.G.bords === 8).length, 'en grand : L’essentiel d’abord ; tous les onglets d’une barre ont la même largeur ; la fenêtre agrandie garde ses huit bords', det(r => [r.G.onglets.join(), r.G.choisi, r.G.l.join(), r.G.bords]));
+  ok(!fautes(r => r.G.onglets.every((k, i) => r.G.noms[i].startsWith(NOMS[k]))).length && !Object.values(R).some(r => r.G.noms.some(x => /Fabrication/.test(x))), 'le nom des onglets dit ce qu’on y trouve : L’essentiel, Calibre, Câbles, Pièces (pas « Fabrication »), Modifier, Historique', det(r => r.G.noms));
+  ok(!fautes(r => Object.entries(r.panneaux).every(([k, p]) => p && p.texte.length > 20 && !p.sectionsSansTitre && (p.titres.length || p.tables || k === 'modifs'))).length, 'les sections se voient toujours : chaque onglet a du contenu, chaque section son titre', det(r => Object.entries(r.panneaux).map(([k, p]) => k + ':' + (p ? p.titres.length + '/' + p.sectionsSansTitre + '/' + p.tables : 'absent'))));
+  ok(!fautes(r => Object.values(r.panneaux).every(p => !p.colonnesDeTirets.length)).length, 'jamais une colonne pleine de tirets dans un tableau', det(r => Object.entries(r.panneaux).filter(([, p]) => p.colonnesDeTirets.length).map(([k, p]) => k + ':' + p.colonnesDeTirets.join())));
+  const motsBannis = OBJETS.flatMap(o => [['carte', R[o.nom].carte.texte], ...Object.entries(R[o.nom].panneaux).map(([k, p]) => [k, p.texte])].map(([k, t]) => { const m = t.match(new RegExp('.{0,40}(' + BANNIS.source + ').{0,40}')); return m ? (o.rep || o.nom) + ' › ' + k + ' : « ' + m[0] + ' »' : ''; }).filter(Boolean));
+  ok(!motsBannis.length, 'les mots : VOLTA en capitales, gauge, folio, « votre fichier », « partie mobile / partie fixe » — ni « l’outil », ni « jauge », ni « planche », ni « tient », ni « contrat », ni « harness », ni « fiche / embase », ni numéro de câble', motsBannis.slice(0, 6).join(' | '));
 
-  console.log('\ntout se change sur place : l’arrangement, le part number, le contact');
-  await page.click('#ba-equip [data-changer="arr|300XC1|A"]'); await page.waitForTimeout(300);
-  ok(await q('[data-volet="arr|300XC1|A"] .cand') >= 2 && await q('[data-volet="arr|300XC1|A"] .cand[aria-pressed="true"]') === 1 && await page.evaluate(() => { const v = document.querySelector('#ba-equip [data-volet="arr|300XC1|A"]'), r = v.closest('.fc'); return !!r && r.querySelector('.fc-k').textContent === 'Arrangement'; }), '« Changer » ouvre la liste SOUS la valeur : « Automatique » en tête, pressé, puis les arrangements qui logent ces bornes');
-  await page.click('#ba-equip [data-volet="arr|300XC1|A"] .cand:not([aria-pressed="true"])'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => { const d = app.contrat.designations.get('300XC1|A'), r = [...document.querySelectorAll('#ba-equip [data-panneau="A"] .fc')].find(x => x.querySelector('.fc-k').textContent === 'Arrangement'); return !!d && r.textContent.includes(d) && !r.querySelector('.orig-main, .fs-auto') && !document.querySelector('#ba-equip [data-volet]') && app.cible.type === 'bloc'; }), 'un autre arrangement retenu : ni pastille « main » ni ↺ (« le bouton revenir en arrière, ça sert à rien »), la liste refermée');
-  await page.click('#ba-equip [data-changer="arr|300XC1|A"]'); await page.waitForTimeout(300);
-  ok(await q('[data-volet="arr|300XC1|A"] .cand-auto[aria-pressed="false"]') === 1, 'rouverte, la liste a « Automatique » en tête, qui n’est plus pressé');
-  await page.click('#ba-equip [data-volet="arr|300XC1|A"] .cand-auto'); await page.waitForTimeout(600);
-  ok(await page.evaluate(() => !app.contrat.designations.get('300XC1|A') && /EN4165-002-12-20/.test(document.querySelector('#ba-equip [data-panneau="A"] .fi-norme-puce').textContent)), '« Automatique » rend le calcul');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => !!app.contrat.designations.get('300XC1|A') && app.cible && app.cible.nom === '300XC1' && !$('inspecteur').hidden && !!document.querySelector('#ba-equip details[data-section="connecteur"]')), 'Ctrl+Z défait le retour à l’automatique — et la fiche reste ouverte sur 300XC1');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => !app.contrat.designations.get('300XC1|A') && app.cible && app.cible.nom === '300XC1'), 'Ctrl+Z encore : l’arrangement automatique, la fiche toujours là');
-  const pnAvant = await page.evaluate(() => verite().filter(l => (l.de === '300XC1' && /^A/.test(l.borneDe)) || (l.vers === '300XC1' && /^A/.test(l.borneVers))).length);
-  await page.fill('#ba-equip [data-panneau="A"] [data-pn="A"]', 'EN4165-3M'); await page.press('#ba-equip [data-panneau="A"] [data-pn="A"]', 'Enter'); await page.waitForTimeout(800);
-  ok(await page.evaluate(n => { const L = verite().flatMap(l => [l.de === '300XC1' && /^A/.test(l.borneDe) ? l.pnDe : null, l.vers === '300XC1' && /^A/.test(l.borneVers) ? l.pnVers : null]).filter(x => x !== null);
-    const r = document.querySelector('#ba-equip [data-panneau="A"] .fi-pn'); return L.length === n && L.every(p => p === 'EN4165-3M') && !r.querySelector('.orig-main, .fs-auto'); }, pnAvant),
-    'la référence de A, écrite une fois : les ' + pnAvant + ' liaisons du connecteur suivent — ni pastille ni ↺');
-  ok(await page.evaluate(() => app.hist[app.hist.length - 1].quoi === 'référence de 300XC1 A'), 'un seul geste dans l’historique');
-  await page.fill('#ba-equip [data-panneau="A"] [data-pn="A"]', 'EN4165-2M'); await page.press('#ba-equip [data-panneau="A"] [data-pn="A"]', 'Enter'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => verite().filter(l => l.de === '300XC1' && /^A/.test(l.borneDe)).every(l => l.pnDe === 'EN4165-2M' && origineChamp(l, 'pnDe') !== 'main')), 'retapée (« si on veut, on retapera »), la référence du fichier revient à toutes les liaisons');
-  // le contact à sertir : une liste sous la ligne, les contacts de la table qui acceptent ce câble
-  await page.click('#ba-equip [data-panneau="A"] .fi-contacts .fi-fil[data-i] .fi-sertir'); await page.waitForTimeout(400);
-  const ct = await page.evaluate(() => { const v = document.querySelector('#ba-equip .fi-choix-ligne [data-volet^="sertir:"]'); return v ? [...v.querySelectorAll('[data-sertir-ref], .fi-chip-auto')].map(b => (b.dataset.v || 'Automatique') + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')) : null; });
-  ok(!!ct && ct.length >= 2 && ct[0] === 'Automatique*', 'le contact d’une ligne : un clic ouvre, sous elle, « Automatique » (celui de la table, pressé) puis les contacts de la table qui acceptent ce câble', (ct || []).join(' '));
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-  ok(await page.evaluate(() => !document.querySelector('#ba-equip .fi-choix') && !$('inspecteur').hidden && app.cible && app.cible.nom === '300XC1'), 'Échap ferme la liste, pas la fiche');
+  console.log('\nMODIFIER : TROIS SORTES BIEN SÉPARÉES');
+  const lireModifier = () => ev(() => { const Pn = document.getElementById('nv-p-reglages'), n = s => String(s || '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim(), S = k => Pn.querySelector('section.nv-mod.' + k);
+    const sorte = k => { const s = S(k); if (!s) return null; return { titre: n((s.querySelector('.nv-somm-t') || s.querySelector('h4') || {}).textContent), chapeau: n(s.innerText).slice(0, 110), lignes: s.querySelectorAll('.nv-somm-i').length, saisies: s.querySelectorAll('input, select, textarea').length, boutons: [...s.querySelectorAll('button.btn')].map(b => n(b.textContent)), am: [...s.querySelectorAll('.nv-am-b')].map(b => b.dataset.am + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')).join(' '), sources: [...s.querySelectorAll('.vu-src')].map(x => n(x.textContent)), texte: n(s.innerText) }; };
+    return { ordre: [...Pn.querySelectorAll('section.nv-mod')].map(s => ['fichier', 'choix', 'info'].find(k => s.classList.contains(k))).join(), fichier: sorte('fichier'), choix: sorte('choix'), info: sorte('info') }; });
+  const M = {};
+  for (const nom of ['300XC1', '667VT2', 'vt:VT1', '408VC1A', 'fil:W-011', 'fil:W-012']) { const o = OBJETS.find(x => x.nom === nom); await choisir(o.plan, o.nom); await grand(); await onglet('reglages'); M[nom] = await lireModifier(); await ev(() => fermerInspecteur()); await pause(200); }
+  const detM = f => JSON.stringify(Object.entries(M).map(([k, m]) => [k, f(m)]));
+  ok(Object.values(M).every(m => ['fichier,choix,info', 'choix,info', 'fichier,info'].includes(m.ordre)), 'l’ordre ne change jamais : « Dans votre fichier », puis « Choix de VOLTA », puis « Information » (une sorte absente ne laisse pas de bloc vide)', detM(m => m.ordre));
+  ok(Object.values(M).filter(m => m.fichier).every(m => m.fichier.titre === 'Dans votre fichier' && /VOLTA le lit tel quel ; pour le changer, changez votre fichier\./.test(m.fichier.chapeau) && !m.fichier.saisies && m.fichier.lignes >= 1 && m.fichier.boutons.every(b => /^Passer en DR\d+$/.test(b))),
+    'ce qui vient de votre fichier se lit sans saisie (« VOLTA le lit tel quel ; pour le changer, changez votre fichier ») : aucun champ ; le seul bouton possible est la proposition justifiée de VOLTA (« Passer en DR16 »)', detM(m => m.fichier && [m.fichier.titre, m.fichier.saisies, m.fichier.boutons]));
+  ok(Object.values(M).filter(m => m.choix).every(m => m.choix.titre === 'Choix de VOLTA' && /VOLTA choisit et dit pourquoi ; en Manuel, vous prenez le vôtre\./.test(m.choix.chapeau) && /auto\*? manuel\*?/.test(m.choix.am) && (m.choix.am.match(/\*/g) || []).length === m.choix.am.split(' ').length / 2),
+    'les choix de VOLTA se règlent en Automatique / Manuel, bien visibles : chaque réglage a ses deux boutons, un seul pressé', detM(m => m.choix && [m.choix.titre, m.choix.am]));
+  ok(Object.values(M).every(m => m.info && m.info.titre === 'Information' && /Calculé par VOLTA : cela se lit, cela ne se règle pas\./.test(m.info.chapeau) && !m.info.saisies && !m.info.boutons.length && !m.info.am), 'l’information se lit, sans geste (« Calculé par VOLTA : cela se lit, cela ne se règle pas »)', detM(m => m.info && [m.info.titre, m.info.saisies, m.info.boutons, m.info.am]));
+  ok(/Ses deux bouts Qui va où : VOLTA ne le change jamais\. 101BT1:1 → 102CB1:1 votre fichier/.test(M['fil:W-011'].fichier.texte) && !M['fil:W-011'].choix, 'un câble : son type, sa longueur, ses deux bouts (« Qui va où : VOLTA ne le change jamais »), sa route viennent de votre fichier ; rien à régler dessus', M['fil:W-011'].fichier.texte.slice(0, 400));
+  ok(!M['vt:VT1'].fichier && /Le module Le plus petit qui loge tous les groupes\./.test(M['vt:VT1'].choix.texte) && /calcul de VOLTA/.test(M['vt:VT1'].choix.texte), 'une barrette ajoutée par VOLTA n’a rien « dans votre fichier » : son module est un choix de VOLTA (« le plus petit qui loge tous les groupes », calcul de VOLTA)', JSON.stringify(M['vt:VT1']).slice(0, 400));
 
-  console.log('\nles câbles d’une fiche : le type, la longueur, le contact s’écrivent DANS la carte (300XC1)');
-  const ligneCab = c => `#ba-equip ${sec('fils')} .fi-ia[data-i="${c}"]`;
-  const k320 = await page.evaluate(() => String(verite().findIndex(l => l.cable === 'W-320')));
-  ok(await page.evaluate(k => { const li = document.querySelector(`#ba-equip details[data-section="fils"] .fi-ia[data-i="${k}"]`); if (!li) return false;
-    const n = li.querySelector('[data-cable][data-champ="cable"]'), f = li.querySelector('[data-cable][data-champ="famille"]'), j = li.querySelector('select[data-cable][data-champ="jauge"]'), L = li.querySelector('[data-cable][data-champ="longueur"]');
-    return n.value === 'W-320' && f.value === 'DR' && f.getAttribute('list') === 'fi-familles' && j.value === '24' && [...j.options].some(o => o.value === '20') && !!f.closest('.cb-type-ed') && !!j.closest('.cb-type-ed') && L.value === '' && L.placeholder === '5' && !!L.closest('.cb-lg.supp') && /supposée/.test(L.getAttribute('aria-label'))
-      && !li.querySelector('.cb-vers, .fs-auto, .cb-tete, .cb-anneau') && !!li.querySelector('.cb-ouvrir[data-ouvrir-cable]') && !!document.getElementById('fi-familles') && li.getBoundingClientRect().height < 100 && !!li.querySelector('.cb-sous .cb-lg') && /Chute/.test(li.querySelector('.cb-sous').textContent) && /supposée/.test(li.querySelector('.cb-sous').textContent); }, k320),
-    'la LIGNE de W-320 : son NUMÉRO, son TYPE (DR, la liste des familles de la base) et sa GAUGE (24), chacun à part ; « › » ouvre sa fiche ; v77 (le lecteur : « la chute et la longueur, trop serré ») sur DEUX étages — dessous, en clair, « Chute … sur 2 V » et « Longueur … m · supposée »',
-    await page.evaluate(k => { const li = document.querySelector(`#ba-equip details[data-section="fils"] .fi-ia[data-i="${k}"]`); if (!li) return 'pas de ligne'; const g = s => li.querySelector(s); const n = g('[data-cable][data-champ="cable"]'), f = g('[data-cable][data-champ="famille"]'), j = g('select[data-cable][data-champ="jauge"]'), L = g('[data-cable][data-champ="longueur"]');
-      return JSON.stringify({ n: n && n.value, f: f && f.value, fl: f && f.getAttribute('list'), j: j && j.value, te: !!(f && f.closest('.cb-type-ed')), je: !!(j && j.closest('.cb-type-ed')), L: L && [L.value, L.placeholder, !!L.closest('.cb-lg.supp')], o: !!g('.cb-ouvrir[data-ouvrir-cable]'), h: Math.round(li.getBoundingClientRect().height), x: !!g('.cb-vers, .fs-auto, .cb-tete, .cb-anneau'), dl: !!document.getElementById('fi-familles') }); }, k320));
-  ok(await q(sec('fils') + ' .cb-entete .fi-q', 'xs => xs.map(x => x.dataset.q).join()') === 'intensite' && await q(sec('fils') + ' .cb-carte .cb-sous-k .fi-q') === 1 && await q(sec('fils') + ' .cb-carte', 'xs => xs.every(x => x.querySelector(".cb-i .fi-barre") && /^[\\d,]+ \\/ [\\d,]+ A$/.test(x.querySelector(".cb-i-v").textContent) && /^[\\d,]+\\sV$/.test(x.querySelector(".fi-u").textContent))')
-    && await q(sec('fils') + ' .cb-entete > span', 'xs => xs.map(x => { const c = x.cloneNode(true); c.querySelectorAll(".fi-q").forEach(b => b.remove()); return c.textContent.trim(); }).join("|")') === '|Câble|Intensité|',
-    'en tête des colonnes, une fois : Câble · Intensité (son « ? ») — v77 : la chute et la longueur à l’étage du dessous de chaque ligne, le « ? » de la chute une fois ; chaque ligne, une barre fine et « 2 / 3,9 A », la chute en volts',
-    await q(sec('fils') + ' .cb-entete > span', 'xs => xs.map(x => x.textContent.trim()).join("|")') + ' · ' + await q(sec('fils') + ' .cb-carte', 'xs => xs.filter(x => !(x.querySelector(".cb-i .fi-barre") && /^[\\d,]+ \\/ [\\d,]+ A$/.test(x.querySelector(".cb-i-v").textContent) && /^[\\d,]+\\sV$/.test(x.querySelector(".fi-u").textContent))).map(x => x.querySelector(".cb-i-v").textContent + "|" + x.querySelector(".fi-u").textContent).join(" ; ")'));
-  ok(await q(sec('fils') + ' .cb-bande .cb-bande-l') >= 1 && /^Intensité/.test(await texte(sec('fils') + ' .cb-bande .cb-bande-l')) && await q(sec('fils') + ' .cb-bande .cb-piste i') === 23 && await page.evaluate(() => { const b = document.querySelector('#ba-equip details[data-section="fils"] .cb-bande'); return b.nextElementSibling.classList.contains('cb-liste'); }),
-    'au-delà de douze câbles, la BANDE DES MARGES au-dessus du tableau : chaque câble un trait à sa part de l’admis, le plus chargé nommé', await texte(sec('fils') + ' .cb-bande'));
-  await page.selectOption(ligneCab(k320) + ' select[data-champ="jauge"]', '20'); await page.waitForTimeout(800);
-  ok(await page.evaluate(k => { const l = verite()[+k], li = document.querySelector(`#ba-equip details[data-section="fils"] .fi-ia[data-i="${k}"]`);
-    return l.type === 'DR20' && l.avant && l.avant.type === 'DR24' && !!li && li.querySelector('select[data-champ="jauge"]').value === '20' && li.querySelector('[data-champ="famille"]').value === 'DR' && !li.querySelector('.fs-auto, .orig-main') && app.cible.nom === '300XC1'; }, k320),
-    'la gauge choisie dans la carte (20) : le câble devient un DR20 — sans pastille ni ↺ — la fiche reste sur 300XC1');
-  await page.fill(ligneCab(k320) + ' [data-champ="famille"]', 'drb'); await page.press(ligneCab(k320) + ' [data-champ="famille"]', 'Enter'); await page.waitForTimeout(800);
-  ok(await page.evaluate(k => verite()[+k].type === 'DRB20', k320), 'le type écrit à part (« drb ») garde la gauge : DRB20');
-  await page.selectOption(ligneCab(k320) + ' select[data-champ="jauge"]', '24'); await page.waitForTimeout(500); await page.fill(ligneCab(k320) + ' [data-champ="famille"]', 'DR'); await page.press(ligneCab(k320) + ' [data-champ="famille"]', 'Enter'); await page.waitForTimeout(800);
-  ok(await page.evaluate(k => verite()[+k].type === 'DR24' && origineChamp(verite()[+k], 'type') !== 'main', k320), 'retapés, le type et la gauge du fichier reviennent (DR24)');
-  await page.fill(ligneCab(k320) + ' [data-champ="cable"]', ''); await page.press(ligneCab(k320) + ' [data-champ="cable"]', 'Enter'); await page.waitForTimeout(800);
-  ok(await page.evaluate(k => { const li = document.querySelector(`#ba-equip details[data-section="fils"] .fi-ia[data-i="${k}"]`); return !verite()[+k].cable && !!li && !li.querySelector('.cb-num-ed') && /^vers \S+/.test((li.querySelector('.cb-vers') || {}).textContent || '') && li.querySelector('[data-champ="famille"]').value === 'DR'; }, k320),
-    'v77 — un câble sans numéro (le lecteur : « il n’y a plus de numéro, il faut mettre le type ») : la ligne dit son type, et son autre bout en petit (« vers … ») pour le distinguer');
-  await page.evaluate(() => document.activeElement && document.activeElement.blur()); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(k => verite()[+k].cable === 'W-320', k320), 'Ctrl+Z rend son numéro');
-  await page.fill(ligneCab(k320) + ' [data-champ="longueur"]', '7,5'); await page.press(ligneCab(k320) + ' [data-champ="longueur"]', 'Enter'); await page.waitForTimeout(800);
-  ok(await page.evaluate(k => verite()[+k].longueur === 7.5 && !document.querySelector(`#ba-equip details[data-section="fils"] .fi-ia[data-i="${k}"] .fs-auto`), k320), 'la longueur écrite dans la carte (7,5 m)');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(k => verite()[+k].longueur == null && app.cible && app.cible.nom === '300XC1', k320), 'Ctrl+Z rend l’hypothèse, la fiche reste ouverte');
-  ok(await q(sec('fils') + ' .fi-ct-puce') === 0, 'le contact au bout ne charge plus la ligne : il se change dans la fiche du câble (un clic sur « › »)');
+  console.log('\nGENRE PAR GENRE : L’ESSENTIEL');
+  const E = n => R[n].panneaux.essentiel, C = n => R[n].carte;
+  ok(/^Ce qu’il relie 23 câbles · 3 connecteurs/.test(E('300XC1').titres[0]) && E('300XC1').dessins >= 1 && !E('300XC1').tables && C('300XC1').chiffres.join(' | ') === 'Connecteurs : A · B · C | Contacts : 17/ 24 | Câbles : 23· 1 à régler',
+    'un équipement montre son brochage DESSINÉ (« Ce qu’il relie 23 câbles · 3 connecteurs »), jamais un tableau ; sa carte : ses connecteurs, ses contacts pris, ses câbles', JSON.stringify([E('300XC1').titres, E('300XC1').dessins, E('300XC1').tables, C('300XC1').chiffres]));
+  ok(/^La barrette 2 modules sur un rail/.test(E('667VT2').titres[0]) && /51 E0599-1B201Z 52 E0599-1B202Z/.test(E('667VT2').texte) && /^Ce qu’elle relie 7 câbles · 4 groupes/.test(E('667VT2').titres[1]) && /51A DR24/.test(E('667VT2').texte) && /52A DR22/.test(E('667VT2').texte) && E('667VT2').dessins >= 2,
+    'une barrette, c’est plusieurs modules : dessinée entière (« 2 modules sur un rail », 51 et 52, chacun sa référence) ; une borne se dit module + lettre (51A, 52A) ; ses groupes', JSON.stringify(E('667VT2').titres) + ' ' + E('667VT2').texte.slice(0, 200));
+  ok(/ajoutée par VOLTA sur 102CB1:2/.test(C('vt:VT1').meta) && /51H DR20 102CB1 2 51J DR20 103RL1 A1 51K DR24 395SW1 1/.test(E('vt:VT1').texte) && /VOLTA l’a ajoutée sur 102CB1:2 : plusieurs câbles y partent de la même borne/.test(E('vt:VT1').texte) && /par VOLTA/.test(R['vt:VT1'].panneaux.modifs.texte),
+    'la barrette que VOLTA ajoute est marquée comme ajoutée (« ajoutée par VOLTA sur 102CB1:2 »), ses bornes ont le nom de sa face (51H, 51J, 51K), elle dit pourquoi, et l’Historique la retrouve', C('vt:VT1').meta + ' | ' + E('vt:VT1').texte.slice(0, 260));
+  const prise = Object.values(R['408VC1A'].panneaux).map(p => p.texte).join(' ') + ' ' + C('408VC1A').texte;
+  ok(/Partie mobile : mâle/.test(C('408VC1A').chiffres.join(' | ')) && /^Ce qui la traverse 1 contact/.test(E('408VC1A').titres[0]) && /^La face EN3646-002-08-3A/.test(E('408VC1A').titres[1]) && /Partie mobile EN3646-002-08-3A ce qui arrive/.test(R['408VC1A'].panneaux.fabrication.texte) && /Partie fixe ce qui repart/.test(R['408VC1A'].panneaux.fabrication.texte) && !/embase|\bfiche\b(?! ›)/i.test(prise.replace(/sa fiche|la fiche/gi, '')),
+    'la prise de coupure : « ce qui la traverse », sa face, « partie mobile » et « partie fixe » dans tous les textes — jamais « fiche / embase »', C('408VC1A').chiffres.join(' | ') + ' | ' + JSON.stringify(E('408VC1A').titres));
+  ok(/^Ce qui y revient 3 câbles/.test(E('901G').titres[0]) && /DR16 101BT1 borne 2 80 ?% 9,31 A sur 11,7 A/.test(R['901G'].panneaux.cables.texte) && /DR24 103RL1 borne X2 inconnu sur 3,9 A inconnue/.test(R['901G'].panneaux.cables.texte),
+    'la masse : « ce qui y revient » ; un câble de masse porte le courant de sa charge (9,31 A sur 11,7 A, côté batterie) — et quand la consommation n’est pas écrite, courant et chute se disent inconnus', R['901G'].panneaux.cables.texte.slice(0, 420));
 
-  console.log('\nle raccord, à la vraie souris (351PM1, EN 2997)');
-  await bloc('3', '351PM1'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip details[data-section="connecteur"]'), g = s && s.querySelector('.fi-groupe-raccord'), h = g && g.querySelector('[data-hab="351PM1|A"]'); return !!h && s.open && /^Raccord/.test(g.querySelector('.fs-st').textContent) && [...h.querySelectorAll('.fi-piece')].length >= 1 && !!h.querySelector('.fi-piece-r .fi-q') && /toron Ø/.test(h.querySelector('.fi-hab-mots').textContent) && !document.querySelector('#ba-equip details[data-section="raccord"]'); }),
-    'le Raccord de 351PM1, DANS la section du connecteur (le lecteur : « le raccord, je l’aurais mis avec le connecteur ») : une ligne par pièce (son rôle et son « ? », sa référence), le toron en petit');
-  await page.click('#ba-equip [data-changer="rac|351PM1|A"]'); await page.waitForTimeout(300);
-  await page.click('#ba-equip [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => { const r = app.contrat.raccords.get('351PM1|A'), b = document.querySelector('#ba-equip [data-raccord][data-champ="blindage"][aria-pressed="true"]'), h = document.querySelector('#ba-equip [data-hab="351PM1|A"]'), rac = h.querySelector('[data-role="raccord"]');
-    return !!r && r.blindage === 'GND' && b && b.dataset.v === 'GND' && !!rac && /durci/i.test(rac.textContent + ' ' + (rac.dataset.bulle || '')) && !!h.querySelector('[data-role="bande"] .fi-q[data-q="bande"]') && document.activeElement === b; }), '« sur le corps » (dans « Options ») : écrit au contrat, la fiche refaite (un raccord durci, une ligne band-it et son « ? »), la puce pressée garde le focus, la liste reste ouverte');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
-  ok(await page.evaluate(() => !app.contrat.raccords.get('351PM1|A') && app.cible && app.cible.nom === '351PM1' && document.querySelector('#ba-equip details[data-section="connecteur"]').open && !document.querySelector('#ba-equip [data-role="bande"]')), 'Ctrl+Z défait le choix ; la fiche reste ouverte, plus de band-it');
+  console.log('\nLA VÉRITÉ : COURANT CONNU, COURANT INCONNU');
+  ok(C('fil:W-011').chiffres.join(' | ') === 'Courant : 9,31A | Chute : 0,94V | Longueur : ≈5m' && /9,31 A sur 11,7 A admis Le plus fort : démarrage et transition pendant 2,1 min\. En continu : 5 A sur 11,7 A\./.test(E('fil:W-011').texte) && /Côté source de 102CB1 · 10 A : il l’alimente, il n’est pas sous sa protection\./.test(E('fil:W-011').texte) && /Longueur supposée : 5 m — votre fichier ne la donne pas/.test(E('fil:W-011').texte),
+    'un courant connu s’explique : 9,31 A sur 11,7 A admis, le plus fort (démarrage et transition, 2,1 min), le continu (5 A) ; côté source, le câble n’est pas sous la protection du disjoncteur qu’il nourrit ; la longueur supposée se dit supposée', C('fil:W-011').chiffres.join(' | ') + ' ‖ ' + E('fil:W-011').texte.slice(0, 500));
+  ok(/^Courant : inconnu/.test(C('fil:W-012').chiffres[0]) && !C('fil:W-012').chiffres.some(c => /^Chute/.test(c)) && C('fil:W-012').gestes.includes('Passer en DR16') && C('fil:W-012').gestes.includes('Écrire la consommation de 104LP1') && /Courant inconnu/.test(E('fil:W-012').texte) && !/\b2 A\b/.test(E('fil:W-012').texte),
+    'un courant inconnu se dit inconnu — aucun courant inventé, aucune chute — et la carte demande la consommation (« Écrire la consommation de 104LP1 ») ; la protection, elle, se juge toujours (« Passer en DR16 »)', C('fil:W-012').chiffres.join(' | ') + ' ‖ ' + C('fil:W-012').gestes.join(' · ') + ' ‖ ' + E('fil:W-012').texte.slice(0, 300));
+  const prop = M['fil:W-012'].fichier.texte, mp = /PROPOSITION DE VOLTA DR(\d+) \((\d+) AWG\) : le plus fin que protège le 10 A de 102CB1\. \+(\d+) g sur 5 m supposés Elle ira dans l’Excel corrigé, votre nouveau fichier\. Passer en DR\1/i.exec(prop);
+  ok(!!mp && +mp[1] < 20 && +mp[3] > 0, 'la proposition de VOLTA montre sa plus-value : « DR16 (16 AWG) : le plus fin que protège le 10 A de 102CB1 », ce qu’elle coûte (« +39 g sur 5 m supposés »), où elle va (« l’Excel corrigé, votre nouveau fichier ») ; jamais une gauge plus fine que celle du fichier', prop.slice(0, 420));
+  // le geste, puis Défaire : la fiche reste ouverte
+  await choisir('1', 'fil:W-012'); await grand(); await onglet('reglages');
+  await page.click('#nv-p-reglages section.nv-mod.fichier button.btn'); await pause(900);
+  const G1 = await ev(() => { const l = verite().find(x => x.cable === 'W-012'), t = $('toast'); return { type: l.type, fiche: !$('inspecteur').hidden, cle: ($('ba-equip') || { dataset: {} }).dataset.cle, message: t ? t.innerText.replace(/\s+/g, ' ') : '', defaire: !!(t && [...t.querySelectorAll('button')].some(b => /Défaire/.test(b.textContent))), volta: !!(l.avant && l.avant['volta:type'] === 'DR16') }; });
+  ok(G1.type === 'DR16' && G1.fiche && /^fil#/.test(G1.cle) && G1.defaire && G1.volta, '« Passer en DR16 » : le câble passe en DR16 (marqué « proposition de VOLTA acceptée »), sa fiche reste ouverte, le message propose « Défaire »', JSON.stringify(G1));
+  await ev(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }); await page.keyboard.press('Control+z'); await pause(800);
+  const G2 = await ev(() => ({ type: verite().find(x => x.cable === 'W-012').type, fiche: !$('inspecteur').hidden, cle: ($('ba-equip') || { dataset: {} }).dataset.cle }));
+  ok(G2.type === 'DR20' && G2.fiche && /^fil#/.test(G2.cle), 'Ctrl+Z rend le DR20 de votre fichier, et la fiche reste ouverte', JSON.stringify(G2));
 
-  console.log('\nne jamais perdre l’ingénieur : la pile, la barre, le plan qui ne bouge pas');
-  await bloc('3', '300XC1'); await page.waitForTimeout(400); await page.click('#ba-equip .ct-bulles [data-connecteur="A"]'); await page.waitForTimeout(300);
-  // (passe 87) la pile est une histoire : les fiches ouvertes plus haut y sont encore ; on compte à partir de 300XC1
-  const p0 = await page.evaluate(() => app.insp.pos);
-  await page.evaluate(() => { $('ba-equip').scrollTop = 320; $('ba-equip').dispatchEvent(new Event('scroll')); }); await page.waitForTimeout(250);
-  // (le repère y entre en fondu : on attend la fin du fondu plutôt qu'un temps fixe — avant v72 aussi, 250 ms ne suffisaient pas toujours)
-  await page.waitForFunction(() => { const n = document.querySelector('#ba-equip .fi-nav-nom'); return !!n && getComputedStyle(n).opacity === '1'; }, null, { timeout: 3000 }).catch(() => {}); const v0 = await vue();
-  ok(await page.evaluate(() => $('ba-equip').classList.contains('defile') && getComputedStyle(document.querySelector('#ba-equip .fi-nav-nom')).opacity === '1' && document.querySelector('#ba-equip .fi-nav-nom').textContent === '300XC1'), 'l’en-tête passé sous la barre : le repère s’y écrit en petit');
-  await page.evaluate(() => { const li = document.querySelector('#ba-equip [data-panneau="A"] .fi-contacts .fi-fil[data-i]'); li.scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(100);
-  const haut0 = await page.evaluate(() => $('ba-equip').scrollTop);
-  await page.click('#ba-equip [data-panneau="A"] .fi-contacts .fi-fil[data-i] .fi-ct'); await page.waitForTimeout(600);
-  ok(await page.evaluate(p0 => app.cible.type === 'fil' && app.cible.l.cable === 'W-320' && app.insp.pile.length === p0 + 2 && app.insp.pos === p0 + 1, p0), 'un clic sur une ligne de contact ouvre la fiche de son câble, et l’empile');
-  ok(await q('#fi-prec:not(:disabled)') === 1 && /300XC1/.test(await page.evaluate(() => $('fi-prec').getAttribute('aria-label'))) && /300XC1/.test(await page.evaluate(() => $('fi-prec').dataset.bulle)) && !(await page.evaluate(() => $('fi-prec').title)), '‹ s’allume : « Revenir à 300XC1 » (dans sa bulle, plus dans un title)', await page.evaluate(() => $('fi-prec').dataset.bulle));
-  // le chemin du câble : chaque bout, son contact en puce ; un clic l'ouvre
-  ok(await page.evaluate(() => { const o = document.querySelector('#ba-equip ol.fi-chemin'); return !!o && o.querySelectorAll('li.fi-etape.fi-bout').length === 2 && !!o.querySelector('[data-bout="de"]') && !!o.querySelector('[data-bout="vers"]') && !!o.querySelector('.fi-bout-puce'); }), 'la fiche de W-320 : son CHEMIN, un bout par ligne sur le trait de sa route, le contact de chaque bout en puce');
-  await page.click('#ba-equip .fi-bout-puce'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .fi-choix [data-sertir-ref], #ba-equip .fi-choix .fi-chip-auto').length >= 1 && app.cible.type === 'fil'), 'un clic sur la puce ouvre les contacts que la table accepte pour ce câble');
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-  ok(await vue() === v0, 'W-320 était en vue : le plan n’a pas bougé');
-  await page.keyboard.press('Alt+ArrowLeft'); await page.waitForTimeout(600);
-  ok(await page.evaluate(h => app.cible.type === 'bloc' && app.cible.nom === '300XC1' && Math.abs($('ba-equip').scrollTop - h.h) < 2 && document.querySelector('#ba-equip .ct-bulles [aria-pressed="true"]').dataset.connecteur === 'A' && app.insp.pos === h.p0, { h: haut0, p0 }), 'Alt+← revient à 300XC1, au même défilement, sur le même connecteur');
-  await page.keyboard.press('Alt+ArrowRight'); await page.waitForTimeout(600);
-  ok(await page.evaluate(() => app.cible.type === 'fil' && app.cible.l.cable === 'W-320'), 'Alt+→ repart vers W-320');
-  ok(await sections() === 'trajet+ fils+', 'la fiche d’un câble : de → vers, l’intensité et la chute (plus d’Identité : les tuiles la portent)', await sections());
-  await page.click('#ba-equip [data-bout="vers"]'); await page.waitForTimeout(700);
-  ok(await page.evaluate(p0 => app.cible.nom === '381RL1' && document.querySelector('#ba-equip details[data-section="connecteur"]').open && !!document.querySelector('#ba-equip details[data-section="connecteur"] .fi-fil.vise') && /W-320/.test(document.querySelector('#ba-equip .fi-fil.vise.arrivee').dataset.bulle) && app.insp.pile.length === p0 + 3, p0),
-    'la carte « Vers » ouvre 381RL1, son connecteur ouvert, la ligne de W-320 allumée — empilé');
-  await page.click('#fi-prec'); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => app.cible.type === 'fil' && app.cible.l.cable === 'W-320'), '‹ ramène à W-320');
-  await page.click('#ba-equip [data-bout="de"]'); await page.waitForTimeout(500);
-  ok(await page.evaluate(p0 => app.cible.nom === '300XC1' && app.insp.pile.length === p0 + 3 && app.insp.pos === p0 + 2, p0), 'la carte « De » ouvre 300XC1 (et empile)');
-  // (passe 87, le lecteur : « Alt+← ramène la fiche d'avant, d'où qu'elle vienne ») le plan : un clic dessus EMPILE aussi
-  await page.evaluate(() => choisirBloc(app.dessin.comps.find(k => k.name === '351PM1' && k.kind !== 'tag'))); await page.waitForTimeout(400);
-  ok(await page.evaluate(p0 => app.insp.pile.length === p0 + 4 && app.insp.pile[p0 + 3].nom === '351PM1' && app.insp.pos === p0 + 3, p0), 'un clic sur le plan empile aussi : une vraie histoire');
-  await page.keyboard.press('Alt+ArrowLeft'); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => app.cible && app.cible.nom === '300XC1'), 'Alt+← après un clic sur le plan : la fiche d’avant (300XC1)');
-  await page.keyboard.press('Alt+ArrowRight'); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => app.cible && app.cible.nom === '351PM1'), 'Alt+→ la refait (351PM1)');
-  // survoler une ligne allume son câble sur le plan
-  await page.locator('#ba-equip ' + sec('fils') + ' .fi-ia[data-i] .cb-i').first().hover(); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => !!document.querySelector('#scene.focus .cab.hl') && !!document.querySelector('#ba-equip .fi-ia.vise')), 'survoler une ligne allume son câble sur le plan');
-  ok(await page.evaluate(() => { const b = document.querySelector('.fi-bulle'); return !!b && !b.hidden && /admis/.test(b.textContent); }), 'et sa bulle dit d’où viennent ses chiffres (ce qu’il admet)', await page.evaluate(() => (document.querySelector('.fi-bulle') || {}).textContent));
-  await page.mouse.move(5, 5);
-
-  console.log('\nune barrette (668VT31, folio 3) : la face vivante, la galerie de la norme');
-  await bloc('3', '668VT31'); await page.waitForTimeout(400);
-  ok(await q('.fi-tuile') === 0 && await q('.fi-alerte') === 0 && !(await genre()), 'plus de tuiles ni de type sous le repère ; rien à reprendre, pas de barre des problèmes', await genre());
-  ok(await sections() === 'connecteur+ fils+' && /^Module/.test(await texte(sec('connecteur') + ' .fs-titre')), 'le module ouvert, ses contacts dedans ; pas de raccord (sans objet)', await sections());
-  ok(/^Barrette de jonction · E0599-1B207Z · 12 câbles · folio 3$/.test(await texte('.fi-identite')) && /^Modifications\s*1 changement par rapport à votre fichier, écrit par Volta$/.test(await texte('#fi-ecarts summary')) && await page.evaluate(() => !document.querySelector('#ba-equip #fi-ecarts').open),
-    'son identité (« Barrette de jonction · E0599-1B207Z · 12 câbles · folio 3 ») ; v77 — « MODIFICATIONS » (le lecteur : « installation, ça ne va pas ; par rapport à quoi ? ») replié sous l’en-tête : « 1 changement par rapport à votre fichier, écrit par Volta » (le module)', await texte('.fi-identite') + ' · ' + await texte('#fi-ecarts summary'));
-  await page.click('#ba-equip #fi-ecarts summary'); await page.waitForTimeout(250);
-  ok(await page.evaluate(() => { const e = document.querySelector('#ba-equip #fi-ecarts'), l = e.querySelector('.fi-ec-l.volta'); return e.open && !!l && /E0599-1A101Z/.test(l.querySelector('s').textContent) && /E0599-1B207Z/.test(l.querySelector('.fi-ec-v b').textContent) && /depuis l’ouverture de votre fichier/.test(e.textContent) && /partent dans l’installation corrigée/.test(e.textContent) && /^Module de 668VT31$|^Référence de 668VT31$/.test(l.querySelector('.fi-ec-q').textContent.trim()); }),
-    'déplié : par rapport à quoi (votre fichier, depuis son ouverture) et à quoi ça sert (l’installation corrigée) ; une ligne par changement, en mots (« Référence de 668VT31 ») — ce que portait l’installation barré, ce que Volta retient', await page.evaluate(() => document.querySelector('#ba-equip #fi-ecarts .fi-ec-q').textContent));
-  await page.click('#ba-equip #fi-ecarts summary'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => { const r = [...document.querySelectorAll('#ba-equip details[data-section="connecteur"] .fc')], m = r.find(x => x.querySelector('.fc-k').textContent === 'Module');
-    const rail = r.find(x => x.querySelector('.fc-k').textContent === 'Rail');
-    return r.length === 2 && !!m && /E0599-1B207Z/.test(m.querySelector('[data-changer="bar|668VT31"]').textContent) && !!m.querySelector('.fi-q[data-q="module"]') && !!rail && /^001751 101 00$/.test(rail.querySelector('.fi-rail').textContent) && /1\smodule · 18\smm/.test(rail.textContent) && !!rail.querySelector('.fi-q[data-q="rail"]') && !/potentiel|Norme/i.test(document.querySelector('#ba-equip details[data-section="connecteur"]').textContent); }),
-    'le module (E0599-1B207Z en puce, son « ? ») et le RAIL qui le porte (001751 101 00 : un module, 18 mm ; son « ? ») — plus de ligne Norme, plus de « potentiel » nulle part');
-  ok(await faceAPlat('') && await q('.mj-module.corps-rectangle') === 1 && await q('.mj-contact.plein') === 12 && await q('.mj-contact') === 18 && await q('.mj-plaque.prise') === 4, 'la face ASNE 0599 : à plat, rectangulaire, douze contacts pleins sur dix-huit, quatre plaques teintées');
-  ok(/l’installation dit E0599-1A101Z/.test(await texte(sec('connecteur'))) && await q('[data-garder="E0599-1A101Z"]') === 1, 'l’écart avec l’installation se dit, en petit, et l’on peut garder l’installation');
-  ok(await q(sec('connecteur') + ' .fi-groupe, ' + sec('connecteur') + ' .ct-groupe') === 0 && await q(sec('connecteur') + ' .fi-contacts .fi-fil[data-i]') === 12 && await q(sec('connecteur') + ' .fi-contacts .ct-pin', 'xs => xs.every(x => /^[A-Z]$/.test(x.querySelector("b").textContent) && /^borne \\d+$/.test(x.querySelector("small").textContent))'), 'les contacts, douze lignes, toutes montrées : la lettre du module dans le rond, la borne en petit dessous — plus de « H1 J2 K3 » ni de groupes par potentiel');
-  await page.evaluate(() => document.querySelector('#ba-equip .fi-face').scrollIntoView({ block: 'center' })); await page.waitForTimeout(150);   // la face, sous les yeux d'abord
-  const contactA = await page.locator('#ba-equip .fi-face .mj-contact.plein[data-lettre="A"] .mj-bague').boundingBox();
-  await page.mouse.move(contactA.x + contactA.width / 2, contactA.y + contactA.height / 2); await page.waitForTimeout(350);
-  ok(await page.evaluate(() => { const g = document.querySelector('#ba-equip .fi-face .mj-contact[data-lettre="A"]'), k = g.dataset.i, li = document.querySelector(`#ba-equip .fi-contacts .fi-fil[data-i="${k}"]`); return g.classList.contains('vise') && li && li.classList.contains('vise') && !!document.querySelector('#scene.focus .cab.hl'); }), 'survoler le contact A de la face allume sa ligne dans la fiche et son câble sur le plan');
-  await page.mouse.click(contactA.x + contactA.width / 2, contactA.y + contactA.height / 2); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => { const g = document.querySelector('#ba-equip .fi-face .mj-contact[data-lettre="A"]'), li = document.querySelector(`#ba-equip .fi-contacts .fi-fil[data-i="${g.dataset.i}"]`); return g.classList.contains('choisi') && li.classList.contains('choisi') && FI.choisi === g.dataset.i && app.cible.nom === '668VT31'; }), 'un clic le CHOISIT : le contact et sa ligne restent marqués (la fiche reste sur la barrette)');
-  await page.mouse.move(5, 5);
-  await page.click('#ba-equip [data-changer="bar|668VT31"]'); await page.waitForTimeout(400);
-  const gal = await page.evaluate(() => { const v = document.querySelector('#ba-equip [data-volet="bar|668VT31"]'); if (!v) return null; const cs = [...v.querySelectorAll('.fi-galerie .cand-g')];
-    return { n: cs.length, dessins: cs.filter(c => c.querySelector('svg.mj .mj-contact.plein')).length, retenue: cs.filter(c => c.getAttribute('aria-pressed') === 'true').map(c => c.dataset.ref).join(), etoile: cs.findIndex(c => c.querySelector('.cand-etoile')), libres: cs.every(c => /\d+\slibres?/.test(c.textContent)), onglets: v.querySelectorAll('[data-gal-famille]').length, sous: !!v.closest('.fc') && v.closest('.fc').querySelector('.fc-k').textContent === 'Module' }; });
-  ok(!!gal && gal.n >= 2 && gal.dessins === gal.n && gal.retenue === 'E0599-1B207Z' && gal.etoile === 0 && gal.libres && gal.onglets === 2 && gal.sous, 'un clic sur le module ouvre, SOUS lui, la galerie des assemblages : chaque variante dessinée avec ses contacts pris, ce qu’elle laisse de libre, la retenue marquée, la mieux taillée étoilée ; un onglet par norme', JSON.stringify(gal));
-  const autre = await page.evaluate(() => { const c = [...document.querySelectorAll('#ba-equip .fi-galerie .cand-g')].find(x => x.getAttribute('aria-pressed') !== 'true'); return c ? c.dataset.ref : null; });
-  await page.click(`#ba-equip .fi-galerie .cand-g[data-ref="${autre}"]`); await page.waitForTimeout(700);
-  ok(await page.evaluate(r => app.contrat.designations.get('668VT31') === r && !document.querySelector('#ba-equip details[data-section="connecteur"] .orig-main, #ba-equip details[data-section="connecteur"] .fs-auto') && !document.querySelector('#ba-equip [data-volet="bar|668VT31"]'), autre), 'un clic sur une autre variante la retient à la main (' + autre + ') : ni pastille ni ↺, la galerie se referme');
-  await page.click('#ba-equip [data-changer="bar|668VT31"]'); await page.waitForTimeout(300);
-  await page.click('#ba-equip .fi-gal-auto'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => !app.contrat.designations.get('668VT31') && /E0599-1B207Z/.test(document.querySelector('#ba-equip details[data-section="connecteur"] .fc').textContent)), '« Automatique », dans la galerie, rend le choix de l’outil');
-  await page.keyboard.press('Control+z'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => !app.contrat.designations.get('668VT31') && app.cible && app.cible.nom === '668VT31'), 'deux Ctrl+Z : rien n’a bougé, la fiche toujours là');
-
-  console.log('\nun disjoncteur (102CB1, folio 1) : la section « Calibre »');
-  await bloc('1', '102CB1'); await page.waitForTimeout(400);
-  ok(/^4 problèmes · \d+ à voir$/.test(await texte('.fi-pb-n')) && await q('.fi-pbs .fi-pb-l') === await page.evaluate(() => { const n = document.querySelector('#ba-equip .fi-pb-n').textContent.match(/\d+/g).map(Number); return n[0] + n[1]; }), 'la barre dit les problèmes (quatre : le 10 A de l’installation qui TOUCHE LA COURBE — v77, un problème en rouge —, W-012 et W-015 dépassés par la charge, le contact 23 du DR24 sous son permanent) et les points à voir ; dépliée, elle les liste tous', await texte('.fi-pb-n'));
-  ok(await texte('.fi-identite') === 'Disjoncteur · MS3320-10 · folio 1', 'son identité : « Disjoncteur · MS3320-10 · folio 1 »', await texte('.fi-identite'));
-  // LA CARTE DE DÉCISION (le parcours : « le 10 A du retest déclenche — et maintenant ? ») : ce qui cloche, le geste qui répare tout, ce qu'il faudrait pour garder le retest
-  ok(await page.evaluate(() => { const c = document.querySelector('#ba-equip .fi-decision'), t = c && c.textContent.replace(/\s+/g, ' ');
-    return !!c && c.classList.contains('ko') && c.nextElementSibling.id === 'fi-pbs' && c.querySelector('.fi-decision-t').textContent.trim() === 'Le 10 A de l’installation touche la courbe' && /Au démarrage, 9,31 A pendant 2,1 min touchent la courbe du MS3320-10\./.test(t) && /Le plus petit qui passe : 15 A\./.test(t)
-      && [...c.querySelectorAll('.fi-decision-cables li[data-i]')].map(li => li.textContent.replace(/\s+/g, '')).join() === 'W-011DR16DR12,W-012DR20DR12,W-015DR24DR12' && $('dj-decider').textContent.trim() === 'Passer en 15 A et grossir les 3 câbles'
-      && c.querySelector('[data-changer="garder|102CB1"]').textContent.trim() === 'Garder le 10 A…' && c.querySelector('[data-dj-cables]').textContent.trim() === 'Les 3 câbles' && !c.querySelector('[data-ouvrir-pbs]'); }),
-    'la CARTE DE DÉCISION en tête, compacte, en ROUGE (v77) : « Le 10 A de l’installation touche la courbe », pourquoi (au démarrage, 9,31 A pendant 2,1 min), le plus petit qui passe (15 A) ; « Passer en 15 A et grossir les 3 câbles », « Les 3 câbles » (repliés), « Garder le 10 A… » (test v72 mis à jour : « touche la courbe » en rouge, « et N autres points »)');
-  ok(/^— W-012/.test(await texte('.fi-pb-1')), 'la ligne des problèmes ne répète pas la carte : son premier point est W-012', await texte('.fi-pb-1'));
-  await page.click('#ba-equip [data-changer="garder|102CB1"]'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => { const v = document.querySelector('#ba-equip [data-volet="garder|102CB1"]'); return !!v && /Pour que le 10 A passe, il faudrait des pointes plus courtes/.test(v.textContent.replace(/\s+/g, ' ')) && !!v.querySelector('[data-dj-geste="retenir"][data-cal="10"]'); }),
-    '« Garder le 10 A… » dit ce qu’il faudrait pour qu’il passe (des pointes plus courtes) et laisse le retenir quand même');
-  await page.click('#ba-equip [data-changer="garder|102CB1"]'); await page.waitForTimeout(300);
-  const nD = await page.evaluate(() => app.hist.length);
-  await page.click('#dj-decider'); await page.waitForTimeout(900);
-  ok(await page.evaluate(n => { const t = c => verite().find(l => l.cable === c).type, e = document.querySelector('#ba-equip #fi-ecarts');
-    return app.hist.length === n + 1 && pnDuRepere('102CB1') === 'MS3320-15' && ['W-011', 'W-012', 'W-015'].every(c => t(c) === 'DR12') && calibreDe('102CB1') === 15 && $('dj-retenir').getAttribute('aria-pressed') === 'true' && !document.querySelector('#ba-equip .fi-decision')
-      && !!e && /Modifications\s*4 changements par rapport à votre fichier/.test(e.querySelector('summary').textContent) && [...e.querySelectorAll('.fi-ec-q')].some(x => /^\S.* de 102CB1$/.test(x.textContent.replace(/\s+/g, ' ').trim()) && /PN1|PN2/.test(x.dataset.bulle || '')) && app.cible.nom === '102CB1'; }, nD),
-    '« Passer en 15 A et grossir les 3 câbles » : UN geste, une entrée d’historique — MS3320-15 dans l’installation, W-011, W-012 et W-015 en DR12 ; « Automatique » reste pressé, la carte s’en va ; « Modifications · 4 changements par rapport à votre fichier » le dit, en mots (v77 : « Référence de 102CB1 », la colonne PN1 dans la bulle)', await texte('#fi-ecarts summary') + ' · ' + await page.evaluate(() => [...document.querySelectorAll('#ba-equip #fi-ecarts .fi-ec-q')].map(x => x.textContent.trim()).join(' | ')));
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10' && verite().find(l => l.cable === 'W-015').type === 'DR24' && !!document.querySelector('#ba-equip .fi-decision') && app.cible.nom === '102CB1'), 'Ctrl+Z rend l’installation — et la carte');
-  // « contact taille 23 (3 A, par la gauge) » (le lecteur : pourquoi ?) : le problème dit « supposé », sa glose dit pourquoi
-  ok(await page.evaluate(() => { const l = [...document.querySelectorAll('#ba-equip .fi-pbs .fi-pb-l')].find(x => /W-015/.test(x.textContent) && /contact taille 23/.test(x.textContent)); return !!l && /contact taille 23 supposé \(3 A\)/.test(l.querySelector('.fi-pb-t').textContent.replace(/\s+/g, ' ')) && !/par la gauge/.test(l.textContent)
-      && /Le plan ne dit pas quel contact est serti au bout de W-015 : Volta prend le plus petit qui admet un 24 AWG — la taille 23, 3 A —, par prudence\./.test(l.querySelector('.fi-pb-g').textContent.replace(/\s+/g, ' ')); }),
-    '« contact taille 23 supposé (3 A) », et pourquoi, dessous : le plan ne dit pas quel contact est serti au bout de W-015 ; Volta prend le plus petit qui admet un 24 AWG, par prudence');
-  ok(await sections() === 'disjoncteur+ fils+' && await texte(sec('disjoncteur') + ' .fs-titre') === 'Calibre' && await q(sec('disjoncteur') + ' .fi-dj[data-disj="102CB1"]') === 3 && await q('.dj-fils .fi-ia[data-i]') === 3 && await q('.fi-tuile') === 0, '« Calibre » (plus « Disjoncteur » : on le sait) — ses trois groupes : le calibre, la courbe, le profil · Câbles ; plus de tuiles', await sections());
-  ok(await page.evaluate(() => { const h = document.querySelector('#ba-equip .dj-heros');
-    return h.querySelector('.dj-h-cal').textContent === '15A' && h.classList.contains('ok') && !h.querySelector('.dj-verdict-pastille') && !/installation|meilleur|passe/i.test(h.textContent) && !!h.querySelector('.fi-q[data-q="calibre"]')
-      && $('dj-retenir').textContent.trim() === 'Automatique' && $('dj-retenir').getAttribute('aria-pressed') === 'true' && !document.querySelector('#ba-equip .dj-chip') && !document.querySelector('#ba-equip [data-pn="*"], #ba-equip .dj-bascule'); }),
-    'l’AUTOMATIQUE d’abord : le 15 A en grand, en vert, sans pastille ; « Automatique » pressé ; ni la rangée des calibres, ni le part number, ni les bascules de la courbe');
-  await page.click('#ba-equip [data-changer="dj|102CB1"]'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => { const d = disjonctionDe('102CB1'), cs = [...document.querySelectorAll('#ba-equip [data-volet="dj|102CB1"] .dj-chip')]; return cs.length === d.gamme.length && cs.some(c => c.classList.contains('declenche')) && cs.some(c => c.classList.contains('juste')) && cs.filter(c => c.getAttribute('aria-pressed') === 'true').map(c => c.dataset.cal).join() === '15' && cs.filter(c => c.classList.contains('ideal')).map(c => c.dataset.cal).join() === '15'; }),
-    '« À la main » ouvre TOUTE la gamme (déclenche, juste, passe) : le retenu pressé et étoilé (test v72 mis à jour : seulement ceux qui passent)');
-  await page.click('#ba-equip .dj-chip[data-cal="20"]'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => { const h = document.querySelector('#ba-equip .dj-heros'); return pnDuRepere('102CB1') === 'MS3320-20' && h.querySelector('.dj-h-cal').textContent === '20A' && h.classList.contains('ok') && /Automatique \(15\sA\)/.test($('dj-retenir').textContent) && $('dj-retenir').getAttribute('aria-pressed') !== 'true' && !!document.querySelector('#ba-equip [data-volet="dj|102CB1"] .dj-chip[data-cal="20"][aria-pressed="true"]'); }),
-    'le 20 A retenu à la main (le part number suit : MS3320-20) : il passe ; « Automatique (15 A) » pour revenir au meilleur ; la gamme RESTE ouverte, le 20 pressé — on essaie, on compare (test v72 mis à jour : elle se refermait)');
-  await page.click('#dj-retenir'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => { const h = document.querySelector('#ba-equip .dj-heros'); return calibreDe('102CB1') === 15 && pnDuRepere('102CB1') === 'MS3320-10' && h.querySelector('.dj-h-cal').textContent === '15A' && document.getElementById('dj-retenir').getAttribute('aria-pressed') === 'true' && h.classList.contains('ok'); }),
-    '« Automatique » : le 15 A, le choix de l’outil, en vert (le part number de l’installation revient) ; le bouton, étoilé, dit qu’il est retenu');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(500); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10' && app.cible && app.cible.nom === '102CB1'), 'deux Ctrl+Z : le MS3320-10 de l’installation, la fiche toujours là');
-  // écrire dans le profil refait la fiche EN PLACE : la main reste dans le champ suivant, le calibre suit
-  ok(await q(sec('disjoncteur') + ' .dj-etat', 'xs => xs.map(x => x.dataset.k).join()') === 'dem,trans,perm' && await q(sec('disjoncteur') + ' .dj-x', 'xs => xs.map(x => x.dataset.x).join()') === 'dem,trans,perm'
-    && /Courant\s*A/.test(await texte('.dj-entete')) && /Durée\s*s/.test(await texte('.dj-entete')) && await q('.dj-champ i') === 0, 'le profil dans l’ordre : démarrage, transition, permanent — chacun son ×, les unités dans l’en-tête (A, s), pas dans les cases');
-  await page.click('#ba-equip [data-dj="dem"][data-q="i"]'); await page.fill('#ba-equip [data-dj="dem"][data-q="i"]', '60'); await page.keyboard.press('Tab'); await page.waitForTimeout(900);
-  ok(await page.evaluate(() => { const a = document.activeElement; return app.contrat.charges.get('102CB1').dem.i === 60 && !!a && a.dataset.dj === 'dem' && a.dataset.q === 't' && a.closest('#ba-equip') && document.querySelector('#ba-equip .dj-heros').classList.contains('ko') && !!document.querySelector('#ba-equip .dj-etat[data-k="dem"] .dj-verdict.ko'); }),
-    '60 A au démarrage, puis Tab : écrit au contrat, la main reste dans le champ suivant (sa durée), et la fiche suit en place — plus aucun calibre ne passe : rouge, la pastille du démarrage aussi');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.contrat.charges.get('102CB1').dem.i === 9.31 && app.cible && app.cible.nom === '102CB1'), 'Ctrl+Z rend le profil de l’exemple, la fiche toujours là');
-  await page.click('#ba-equip .dj-x[data-x="trans"]'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => app.contrat.charges.get('102CB1').trans === null && document.querySelectorAll('#ba-equip .dj-etat').length === 2 && !document.querySelector('#ba-equip .dj-etat[data-k="trans"]') && !!$('dj-plus').dataset.changer), '× sur la transition : elle s’en va (supprimée, pas vidée) ; « + État » saura la rendre');
-  await page.click('#dj-plus'); await page.waitForTimeout(400);
-  ok(await q('[data-volet="djplus|102CB1"] [data-dj-ajout]', 'xs => xs.map(x => x.dataset.djAjout).join()') === 'trans,plus', '« + État » propose de rendre la transition, ou un autre état');
-  await page.click('#ba-equip [data-dj-ajout="trans"]'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => { const c = app.contrat.charges.get('102CB1'); return c.trans && c.trans.i == null && !!document.querySelector('#ba-equip .dj-etat[data-k="trans"]'); }), 'la transition revient, à remplir');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(500); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.contrat.charges.get('102CB1').trans.i === 9.31), 'deux Ctrl+Z : la transition de l’exemple');
-
-  console.log('\nle « ? » : comment l’outil choisit');
-  await page.click('#ba-equip .fi-q[data-q="calibre"]'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => { const b = document.querySelector('#ba-equip .fi-q[data-q="calibre"]'), u = $('fi-q-bulle'); return !!u && !u.hidden && b.getAttribute('aria-expanded') === 'true' && b.getAttribute('aria-describedby') === 'fi-q-bulle' && u.querySelector('b').textContent.length > 3 && u.querySelector('.q-phrase').textContent.length > 20 && u.querySelectorAll('.q-c').length >= 2 && u.querySelector('[data-q-corps="comment"]').hidden && u.querySelector('[data-q-corps="sources"]').hidden; }), 'un clic sur le « ? » du calibre ouvre sa bulle, courte : un titre, UNE phrase, des pastilles de couleur (le permanent, la marge, la température) ; « Comment » et « D’où ça vient » repliés');
-  await page.click('#fi-q-bulle [data-q-volet="comment"]'); await page.waitForTimeout(250);
-  ok(await page.evaluate(() => { const u = $('fi-q-bulle'), c = u.querySelector('[data-q-corps="comment"]'); return !c.hidden && c.querySelectorAll('.q-etapes li').length >= 3 && u.querySelector('[data-q-volet="comment"]').getAttribute('aria-expanded') === 'true' && !u.hidden; }), 'un clic sur « Comment » déplie la règle en étapes numérotées — la bulle reste ouverte');
-  await page.click('#ba-equip .fi-q[data-q="profil"]'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => document.querySelector('#ba-equip .fi-q[data-q="calibre"]').getAttribute('aria-expanded') === 'false' && document.querySelector('#ba-equip .fi-q[data-q="profil"]').getAttribute('aria-expanded') === 'true' && document.querySelectorAll('.fi-q-bulle:not([hidden])').length === 1), 'un autre « ? » : une seule bulle à la fois');
-  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => $('fi-q-bulle').hidden && document.activeElement && document.activeElement.dataset.q === 'profil' && !$('inspecteur').hidden), 'Échap ferme la bulle et rend le clavier au « ? » — la fiche reste ouverte');
-  await page.keyboard.press('Enter'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => !$('fi-q-bulle').hidden), 'au clavier : Entrée la rouvre');
-  await page.mouse.click(700, 500); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => $('fi-q-bulle').hidden), 'un clic ailleurs la ferme');
-  await bloc('1', '102CB1'); await page.waitForTimeout(300);
-
-  console.log('\nune barrette à poser (VT1, folio 1)');
-  await bloc('1', 'VT1'); await page.waitForTimeout(400);
-  ok(await genre() === 'Ajoutée par Volta · sur 102CB1:2' && /^2 problèmes · 1 point à voir$/.test(await texte('.fi-pb-n')) &&await q(sec('fils') + ' .fs-badge.ko') === 1 && await page.evaluate(() => { const p = document.querySelector('#ba-equip .fi-poser'); return !!p && p.previousElementSibling.id === 'fi-pbs' && $('vt-repere').value === '102VT1' && !!$('vt-poser'); }),
-    'à poser sur 102CB1:2 (dans l’en-tête) ; un point à voir (le repère provisoire) et deux problèmes (W-012 et W-015, trop fins sous 102CB1, comptés dans « Câbles ») ; sous les problèmes, « poser au contrat sous 102VT1 »', await genre() + ' · ' + await texte('.fi-pb-n'));
-  ok(await faceAPlat('') && await q('.mj-module.corps-ovale') === 1 && await q('.mj-shunt-cadre') === 3 && await q('.mj-shunt-cadre.prise') === 1 && await q(sec('connecteur') + ' .fi-contacts .fi-fil') === 3 && await q(sec('connecteur') + ' .fi-contacts .fi-fil.neuf') === 1, 'la face NSA937901, trois lignes de contact dont le câble à créer');
-
-  console.log('\nune prise de coupure (412VC3B, folio 5) : une seule face');
-  await bloc('5', '412VC3B'); await page.waitForTimeout(400);
-  ok(!(await genre()) && await q('.fi-tuile') === 0 && await q('[data-pn]') === 0 && /^Connecteur/.test(await texte(sec('connecteur') + ' .fs-titre')) && await sections() === 'connecteur+ fils+', 'ni type, ni tuiles, ni part number ; Connecteur (le raccord dedans), Câbles', await sections());
-  ok(await page.evaluate(() => { const r = document.querySelector('#ba-equip details[data-section="connecteur"] .fc'); return r.querySelector('.fc-k').textContent === 'Référence' && /EN3646-002-12-08/.test(r.textContent) && !!r.querySelector('.fi-q[data-q="prise"]') && !/contacts ·/.test(r.textContent); }), 'sa référence : l’arrangement EN3646-002-12-08 et son « ? » — plus de « 7 contacts · fiche femelle » dessous (le lecteur : « on s’en fiche »)');
-  ok(await q('.fi-faces .fi-face') === 1 && await q('.fi-faces[data-face-montree="fiche"]') === 1 && await q('.mj-module.corps-circulaire') === 1 && await q('.fi-face .mj-contact.plein') === 7 && /Fiche · ce qui arrive/.test(await texte('.fi-face-tete')), 'UNE face (le lecteur : « les deux font doublon ») : la fiche, ce qui arrive, sept contacts pleins');
-  await page.click('#ba-equip [data-voir-face="embase"]'); await page.waitForTimeout(400);
-  ok(await q('.fi-faces .fi-face') === 1 && await q('.fi-faces[data-face-montree="embase"]') === 1 && /Embase · ce qui repart/.test(await texte('.fi-face-tete')) && await q('[data-voir-face="fiche"]') === 1, '« voir l’embase » : l’autre face, d’un clic ; « voir la fiche » pour revenir');
-  ok(await q('.fi-paire') === 7 && await q('.fi-cote[data-i]') === 14 && await q(sec('connecteur') + ' .fi-groupe-raccord [data-hab]') === 2 && await q('.fi-paire .fi-jg.ok') === 14 && await q('.fi-paire .ct-pin b') === 7, 'sept paires, chacune sa broche (la lettre dans un rond), le contact de la table et la gauge ✓ de chaque côté ; le raccord, un bloc par moitié, dans la même section');
-
-  console.log('\nune masse (901G, folio 1)');
-  await bloc('1', '901G'); await page.waitForTimeout(400);
-  ok(await genre() === 'Masse' && await q('.fi-tuile') === 0 && await sections() === 'fils+' && await texte(sec('fils') + ' .fs-titre') === '3 câbles' && await q(sec('connecteur')) === 0, 'une masse : ni tuiles, ni identité, ni connecteur — une seule carte, « 3 câbles »', await sections() + ' · ' + await texte(sec('fils') + ' .fs-titre'));
-  ok(await q('.fi-masse .fi-fil[data-i]', 'xs => xs.map(x => x.querySelector(".fi-num").textContent + " " + x.querySelector(".fi-dest").textContent.trim() + " " + x.querySelector(".fi-jg").textContent).join(" | ")') === 'W-016 104LP1:2 22 AWG | W-017 103RL1:X2 24 AWG | W-018 101BT1:2 16 AWG', 'ses câbles : le numéro, d’où il vient, la gauge', await q('.fi-masse .fi-fil[data-i]', 'xs => xs.map(x => x.textContent).join(" | ")'));
-  await page.click('#ba-equip .fi-masse .fi-fil[data-i] .fi-num'); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => app.cible.type === 'fil' && app.cible.l.cable === 'W-016' && app.insp.pile[app.insp.pos - 1].nom === '901G'), 'un clic ouvre la fiche du câble (en empilant)');
-
-  console.log('\nun câble (W-012, folio 1) : ses tuiles s’écrivent');
-  await page.evaluate(() => { allerAuPlan('1'); choisirFil(app.dessin.fils.find(w => w.cable === 'W-012')); }); await page.waitForTimeout(400);
-  ok(await genre() === 'Câble' && /^Type=DR \| Gauge=20 \| Longueur=5m$/.test(await tuiles()) && await q('#fil-num') === 1 && await q('.fi-tuile [data-edit]', 'xs => xs.map(x => x.dataset.edit).join()') === 'famille,jauge,longueur' && await q(sec('trajet') + ' [data-edit="route"]') === 1
-    && await q('.fi-tuile', 'xs => { const w = xs.map(x => Math.round(x.getBoundingClientRect().width)); return Math.max(...w) - Math.min(...w) <= 1; }') && await q('.fi-tuile-s', 'xs => xs.map(x => x.textContent.replace(/\\s+/g, " ").trim()).join("|")') === 'vérifié|AWG · 0,6 mm²|'
-    && await q('.fi-tuile-s', 'xs => xs.every(x => x.scrollWidth <= x.clientWidth + 1)'),
-    'v74, lot F (test v73 mis à jour : quatre tuiles, « supposée » et l’intensité dedans) — l’en-tête « Câble W-012 » et ses TROIS tuiles, de même largeur : le type (DR, « vérifié » dans la base) et la gauge (20) s’y écrivent chacun à part, la longueur aussi (vide : la valeur supposée en gris) ; l’intensité n’est plus une tuile — elle se lit dans sa section, une seule place ; rien n’y est coupé', await genre() + ' · ' + await tuiles() + ' · ' + await q('.fi-tuile-s', 'xs => xs.map(x => x.textContent.trim()).join("|")'));
-  ok(await texte('.fi-identite') === 'DR20 · PUISSANCE · folio 1', 'son identité : « Câble · DR20 · PUISSANCE · folio 1 »', await texte('.fi-identite'));
-  // v74, lot F (le lecteur : « “Tous tiennent”, l'italique, l'hypothèse 5 m : compliqué ; intensité et chute, pas présenté de façon fluide »)
-  const mesures = () => page.evaluate(() => [...document.querySelectorAll('#ba-equip details[data-section="fils"] .fi-mes')].map(m => { const k = m.querySelector('.fi-mes-k').cloneNode(true); k.querySelectorAll('.fi-q').forEach(x => x.remove()); return k; }).map((k, i) => [k, document.querySelectorAll('#ba-equip details[data-section="fils"] .fi-mes')[i]]).map(([k, m]) => k.textContent.replace(/\s+/g, ' ').trim() + ' = ' + m.querySelector('.fi-mes-v').textContent.replace(/\s+/g, ' ').trim() + ' :: ' + (m.querySelector('.fi-mes-d') || { textContent: '' }).textContent.replace(/\s+/g, ' ').trim()).join(' || '));
-  ok(await q('.fi-hyp-l') === 1 && /^Longueur supposée : 5 m, à écrire dans l’installation/.test((await texte('.fi-hyp-l > span')).replace(/\s/g, ' ')) && await q('.fi-hyp-l .fi-hyp[data-hyp]') === 1 && await q('.fi-tuile .fi-hyp, .fi-tuile .orig-hyp') === 0 && await q('.fi-tuile', 'xs => xs.filter(x => /supposée/.test(x.textContent)).length') === 0,
-    'v74 — l’hypothèse de la longueur dite UNE fois, en clair, sous les tuiles : « Longueur supposée : 5 m, à écrire dans l’installation », et son lien aux hypothèses (test v73 remplacé : « supposée » sur la valeur)', await texte('.fi-hyp-l'));
-  ok(await page.evaluate(() => document.querySelector('#ba-equip details[data-section="fils"]').open) && await q(sec('fils') + ' .fi-mes .fi-barre') === 2 && await q(sec('fils') + ' .fi-mes .fi-q', 'xs => xs.map(x => x.dataset.q).join()') === 'intensite,chute'
-    && /^Intensité = 9,31 A sur 6,9 A admis :: Au pire, démarrage et transition pendant 2,1 min\. En continu : 5 A sur 6,9 A\. Le courant vient de 102CB1 · 10 A( ⚠)?\.$/.test((await mesures()).replace(/\s/g, ' ').split(' || ')[0]) && /^Chute = \S+ V sur 2 V admis :: De 102CB1 jusqu’à 103RL1:A1, tout le chemin ; ce câble en fait/.test((await mesures()).replace(/\s/g, ' ').split(' || ')[1])
-    && /^9,31 A sur 6,9 A · chute \S+ V sur 2 V$/.test((await texte(sec('fils') + ' .fs-resume')).replace(/\s/g, ' ')),
-    'v74 — « Intensité et chute » OUVERTE d’office, chaque mesure une phrase : « 9,31 A sur 6,9 A admis », la barre, puis en clair « Au pire, démarrage et transition pendant 2,1 min. En continu : 5 A sur 6,9 A. Le courant vient de 102CB1 · 10 A » ; la chute « sur 2 V admis », de 102CB1 jusqu’à 103RL1:A1 ; le résumé plié dit les deux valeurs (test v73 remplacé : « / 6,9 A pointe »)', await mesures());
-  ok(await page.evaluate(() => [...document.querySelectorAll('#ba-equip *')].filter(e => e.checkVisibility && e.checkVisibility() && [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())).every(e => getComputedStyle(e).fontStyle !== 'italic')),
-    'v74 — plus rien en italique dans la fiche du câble (le lecteur : « l’italique, c’est compliqué »)', await page.evaluate(() => [...document.querySelectorAll('#ba-equip *')].filter(e => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && getComputedStyle(e).fontStyle === 'italic').map(e => e.className + ':' + e.textContent.slice(0, 20)).join(' | ')));
-  ok(!/hors normes|Sans part number/i.test(await texte(sec('trajet'))), 'les bouts ne disent rien de ce qu’on ne sait pas (plus de « contact hors normes »)', await texte(sec('trajet')));
-  // la chute de la fiche : la valeur seule (la pointe, en petit à côté, se lit à part)
-  // (v74 : « 1,29 V sur 2 V admis » — la valeur, « sur », l'admis ; la pointe se lit dans la phrase dessous)
-  const chute = () => page.evaluate(() => { const v = [...document.querySelectorAll('#ba-equip .fi-mes')].find(m => /Chute/.test(m.textContent)).querySelector('.fi-mes-v').cloneNode(true); v.querySelectorAll('em').forEach(e => e.remove()); return v.textContent.replace(/\s+/g, ' ').trim(); });
-  // UNE vérité (l'audit : « 1,29 V ambre dans la fiche de 102CB1, 1,34 V vert dans celle de W-012 ») : la fiche du câble lit la même chute en ligne que la liste de son disjoncteur
-  const dj012 = await page.evaluate(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); const li = [...document.querySelectorAll('#ba-equip .dj-fils .fi-ia')].find(x => (x.querySelector('.cb-num-ed input') || {}).value === 'W-012'); return li ? li.querySelector('.fi-u').textContent + '|' + li.querySelector('.fi-u').className : ''; });
-  await page.evaluate(() => { allerAuPlan('1'); choisirFil(app.dessin.fils.find(w => w.cable === 'W-012')); }); await page.waitForTimeout(400);
-  ok(dj012.split('|')[0] === (await chute()).replace(/\ssur\s.*$/, '') && /^1,29\sV$/.test(dj012.split('|')[0]) && await page.evaluate(() => { const m = [...document.querySelectorAll('#ba-equip .fi-mes')].find(m => /Chute/.test(m.textContent)), p = m.querySelector('.fi-mes-d .fi-mes-pointe'); return m.classList.contains('ok') && !!p && /En pointe : 2,28 V à 9,31 A, plus que les 2 V admis/.test(p.textContent.replace(/\s+/g, ' ')) && p.classList.contains('ko') && getComputedStyle(m.querySelector('.fi-mes-v b')).fontStyle !== 'italic'; }),
-    'la même chute, partout : 1,29 V dans la fiche de 102CB1 et dans celle de W-012 (le 15 A retenu, sa chute propre) ; la pointe dite en clair dessous, de la couleur de sa mesure (« En pointe : 2,28 V à 9,31 A, plus que les 2 V admis », rouge) — v74 : plus d’italique (test v73 mis à jour)', dj012 + ' · ' + await chute());
-  // le plus fin qui tient (le parcours : « le plus fin qui tient : 16 AWG, en un clic »)
-  ok(await page.evaluate(() => { const c = document.querySelector('#ba-equip .fi-cause'), b = c && c.querySelector('.fi-reparer[data-reparer]'), t = c && c.textContent.replace(/\s+/g, ' '); return !!b && c.classList.contains('ko') && /102CB1 : le 10 A de l’installation touche la courbe, et il protège W-012\. Volta propose 15 A, ce qui demande DR12 ici\./.test(t) && c.querySelector('[data-tout-regler="102CB1"]').textContent.replace(/\s+/g, ' ').trim() === 'Tout régler : 102CB1 en 15 A et 3 câbles en DR12' && b.textContent.replace(/\s+/g, ' ').trim() === 'Seulement W-012 : DR16' && b.dataset.type === 'DR16' && !document.querySelector('#ba-equip details[data-section="fils"] .fi-reparer-l'); }),
-    'v73 — LA CAUSE en tête de la fiche du câble (le technicien, n° 1 : « un câble ne passe pas au vert tant que son disjoncteur est rouge ») — v77, en rouge : « 102CB1 : le 10 A de l’installation touche la courbe, et il protège W-012. Volta propose 15 A, ce qui demande DR12 ici. » ; « Tout régler : 102CB1 en 15 A et 3 câbles en DR12 », « Seulement W-012 : DR16 » — le plus fin que protège le 10 A DU RETEST, pas le 15 A qui n’est pas écrit (test v72 remplacé : « Le plus fin qui suit le 15 A : DR12 »)', await page.evaluate(() => { const c = document.querySelector('#ba-equip .fi-cause'), b = c && c.querySelector('.fi-reparer[data-reparer]'); const t = c ? c.textContent.replace(/\s+/g, ' ') : ''; return JSON.stringify({ re: /102CB1 : le 10 A de l’installation est juste, et il protège W-012\. Volta propose 15 A, ce qui demande DR12 ici\./.test(t), t: t.slice(0, 120), tout: c && c.querySelector('[data-tout-regler="102CB1"]').textContent.replace(/\s+/g, ' ').trim(), c: !!c, att: !!c && c.classList.contains('att'), b: b && b.textContent, type: b && b.dataset.type, rep: !!document.querySelector('#ba-equip details[data-section="fils"] .fi-reparer-l') }); }));
-  const nF = await page.evaluate(() => app.hist.length); await page.click('#ba-equip .fi-reparer[data-reparer]'); await page.waitForTimeout(800);
-  ok(await page.evaluate(n => app.cible.type === 'fil' && app.cible.l.type === 'DR16' && app.hist.length === n + 1 && !!document.querySelector('#ba-equip .fi-cause') && document.querySelector('#ba-equip .fi-symbole').dataset.etat !== 'ok' && document.querySelector('#ba-equip .fi-cause').classList.contains('ko'), nF), 'un clic sur « Seulement W-012 » : W-012 passe en DR16 (une entrée d’historique), la fiche reste sur lui — pas au vert : la CAUSE reste en tête, en ROUGE (v77) — son disjoncteur, qui touche la courbe');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => verite().find(l => l.cable === 'W-012').type === 'DR20' && app.cible && app.cible.type === 'fil'), 'Ctrl+Z rend le DR20');
-  const du0 = await chute();
-  await page.fill('#ba-equip [data-edit="longueur"]', '7,5'); await page.press('#ba-equip [data-edit="longueur"]', 'Enter'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => app.cible.l.longueur === 7.5 && !document.querySelector('#ba-equip .fi-tuile .orig-main, #ba-equip .fs-auto') && !document.querySelector('#ba-equip .fi-hyp-l')) && (await chute()) !== du0,
-    'la longueur écrite dans sa tuile (7,5 m) : plus « Longueur supposée », la chute se refait — ni pastille ni ↺', du0 + ' → ' + await chute());
-  await page.fill('#ba-equip [data-edit="longueur"]', ''); await page.press('#ba-equip [data-edit="longueur"]', 'Enter'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.cible.l.longueur == null && !!document.querySelector('#ba-equip .fi-hyp-l')), 'vidée, la longueur redevient l’hypothèse (« Longueur supposée : 5 m », sous les tuiles)');
-  await page.fill('#fil-num', 'W-012B'); await page.press('#fil-num', 'Enter'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => verite().some(l => l.cable === 'W-012B') && $('fil-num').value === 'W-012B'), 'le numéro se change dans l’en-tête');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => verite().some(l => l.cable === 'W-012') && app.cible && app.cible.type === 'fil' && app.cible.l.cable === 'W-012' && !$('inspecteur').hidden), 'Ctrl+Z rend W-012, et la fiche reste ouverte sur lui');
-
-  // les hypothèses de la simulation : la pastille « supposée » de la fiche mène à leur fiche ; une tension changée rejuge la chute admise
-  console.log('\nles hypothèses de la simulation, depuis la fiche du câble');
-  // la chute admise : la règle du lecteur (octobre 2026), 2 V en continu et en monophasé, 4 V en triphasé — avant, la table Réseau (1 V sous 28 V)
-  // (v74 : le lien « Hypothèses » est dans la ligne « Longueur supposée », sous les tuiles ; la chute se lit « … sur 2 V admis » — tests v73 mis à jour)
-  ok(await q('.fi-hyp[data-hyp]') >= 1 && /\ssur\s2\sV admis$/.test(await chute()), 'la fiche de W-012 a le lien aux hypothèses, et 2 V admis (la règle du lecteur)', await chute());
-  await page.click('#ba-equip .fi-hyp-l .fi-hyp'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => app.fiche && app.fiche.mode === 'hypotheses' && !!document.querySelector('#fiche-corps #si-U') && document.querySelectorAll('#fiche-corps .hy-groupe').length >= 4
-    && $('si-Cm').value === '2' && $('si-Ct').value === '4' && $('si-Cm').placeholder === 'table Réseau'), 'le lien (dans la ligne « Longueur supposée ») ouvre la fiche des hypothèses ; la chute admise y est : 2 V (continu et monophasé), 4 V (triphasé), la table Réseau si on la vide');
-  await page.fill('#fiche-corps #si-U', '115'); await page.press('#fiche-corps #si-U', 'Enter'); await page.waitForTimeout(500);
-  await page.click('#fi-fermer'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => !$('inspecteur').hidden && app.cible && app.cible.type === 'fil') && /\ssur\s2\sV admis$/.test(await chute()) && (await chute()).replace(/\sadmis$/, '').endsWith(await page.evaluate(() => volts(chuteAdmiseDeLaSimu(app.simu)))), 'fermer la fiche des hypothèses rend celle de W-012, rejugée : sous 115 V, la règle du lecteur admet toujours 2 V (elle ne dépend pas de la tension) — la fiche lit le seuil que le moteur rend', await chute());
-  // vider la chute admise : la table Réseau reprend (la règle d’un câble se lit au contrôle, qui passe les hypothèses)
-  await page.evaluate(() => ficheHypotheses()); await page.waitForTimeout(300); await page.fill('#fiche-corps #si-Cm', ''); await page.dispatchEvent('#fiche-corps #si-Cm', 'change'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => app.simu.chuteMono === null && chuteAdmise(app.norme, 28, 'continu', app.simu).regle === 'table' && chuteAdmise(app.norme, 28, 'continu', app.simu).chuteMax === 1 && $('si-Cm').value === ''), 'vidée, la chute admise rend la parole à la table Réseau (1 V sous 28 V) ; « Revenir aux valeurs de l’outil » la rend');
-  await page.evaluate(() => ficheHypotheses()); await page.waitForTimeout(300); await page.click('#hy-defaut'); await page.waitForTimeout(400); await page.click('#fi-fermer'); await page.waitForTimeout(400);
-
-  console.log('\nl’en-tête d’un repère : le repère, le nom qu’on tape (103RL1)');
-  await bloc('1', '103RL1'); await page.waitForTimeout(400);
-  ok(!(await genre()) && await q('#eq-nature, #eq-emp, [data-zone], ' + sec('identite')) === 0, 'ni type ni liste sous le repère (le type se lit toujours dans le code : natureDe dit « relais »), ni zone ni emplacement', await page.evaluate(() => natureDe('103RL1')));
-  await page.fill('#eq-des', 'relais de puissance'); await page.press('#eq-des', 'Enter'); await page.waitForTimeout(600);
-  ok(await page.evaluate(() => app.contrat.designations.get('103RL1') === 'relais de puissance' && $('eq-des').value === 'relais de puissance'), 'le nom s’écrit sous le repère, en texte libre');
-  await page.fill('#eq-rep', '105RL1'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(900);
-  ok(await page.evaluate(() => app.cible.nom === '105RL1' && verite().some(l => l.de === '105RL1' || l.vers === '105RL1') && app.contrat.designations.get('105RL1') === 'relais de puissance' && $('eq-rep').value === '105RL1'), 'le repère renommé dans l’en-tête : 105RL1, chaque câble suit, le nom aussi');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => app.cible && app.cible.nom === '103RL1' && verite().some(l => l.vers === '103RL1') && !$('inspecteur').hidden), 'Ctrl+Z rend 103RL1, la fiche reprend son nom');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => !app.contrat.designations.get('103RL1')), 'Ctrl+Z encore : plus de nom');
-  // supprimer ne demande plus rien (plus de confirm()) : c'est fait, « Rétablir » dans le message, Ctrl+Z aussi
-  let dialogue = 0; page.on('dialog', d => { dialogue++; d.dismiss().catch(() => {}); });
-  await page.click('#fi-menu'); await page.waitForTimeout(250); await page.click('#eq-del'); await page.waitForTimeout(800);
-  ok(!dialogue && await page.evaluate(() => { const t = $('toast'), b = t.querySelector('.toast-voir'); return !verite().some(l => l.de === '103RL1' || l.vers === '103RL1') && t.classList.contains('on') && /103RL1 supprimé/.test(t.textContent) && !!b && b.textContent === 'Rétablir'; }),
-    'supprimer 103RL1 (le « ⋯ ») : aucune boîte du navigateur — c’est fait, et le message offre « Rétablir »', await page.evaluate(() => $('toast').textContent));
-  await page.click('#toast .toast-voir'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => verite().some(l => l.vers === '103RL1') && app.cible && app.cible.nom === '103RL1' && !$('inspecteur').hidden), '« Rétablir » : 103RL1 revient, sa fiche rouverte');
-  // la mesure : une fiche se rend vite
-  const t = await page.evaluate(() => { const t0 = performance.now(); for (let k = 0; k < 5; k++) { $('ba-equip').dataset.cle = ''; rendreFiche(); } return (performance.now() - t0) / 5; });
-  ok(t < 200, 'la fiche de 103RL1 se refait en moins de 200 ms', Math.round(t) + ' ms');
-
-  console.log('\nl’index');
-  await page.keyboard.press('Escape'); await page.keyboard.press('r'); await page.waitForTimeout(400);
-  ok(await q('.ix-controle .fi-etat.ko') === 1 && await q('.ix-groupe') >= 5 && await q('.ix-item[data-nom]') > 50, 'l’index : « à reprendre » en tête, les groupes, les repères');
-  ok(/^Repères\d+$/.test(await texte('.ix-tete h2')) && await q('.ix-tete .fi-sous') === 0, 'le titre porte le compte une fois (« Repères 67 »)', await texte('.ix-tete h2'));
-  ok(await q('.ix-tete #fi-prec') === 1, 'l’index a ‹ : la fiche qu’on y a laissée');
-  await page.click('#ba-equip .ix-tete #fi-prec'); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => app.cible && app.cible.nom === '103RL1'), '‹ depuis l’index rouvre 103RL1');
-  ok(await page.evaluate(() => { app.hist = []; app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; app.cible = null; fermerInspecteur(); redessiner(); return $('folios').hidden && !$('vide').hidden; }), 'le plan vide : plus de barre de zoom ni de folios');
-  await page.evaluate(() => { chargerContrat(contratExemple(), 'plan d’exemple', 'Plan d’exemple'); app.contrat.charges = chargesExemple(); synchroniser(); });
-  ok(await page.evaluate(() => !$('folios').hidden), 'l’exemple rechargé : la barre du bas revient');
-  { // (un bloc : ses noms ne croisent pas ceux d’au-dessus)
-  console.log('\nv73 — le cadran qu’on tourne, le même patron pour tous les choix, la règle des bulles, le clavier');
-  // LE CADRAN : un cran se clique, même celui qui ne passe pas — rouge partout, avec sa raison ; il ne bouge pas sous la souris
-  await bloc('1', '102CB1'); await page.waitForTimeout(500);
-  const cran = c => '#ba-equip .dj-cran[data-cal="' + c + '"]';
-  await page.evaluate(s => document.querySelector(s).scrollIntoView({ block: 'center' }), cran(5)); await page.waitForTimeout(200);
-  const h0 = await page.evaluate(s => document.querySelector(s).getBoundingClientRect().top, cran(5)), b5 = await page.locator(cran(5)).boundingBox(), nC = await page.evaluate(() => app.hist.length);
-  await page.mouse.move(b5.x + b5.width / 2, b5.y + b5.height / 2); await page.mouse.down(); await page.mouse.up(); await page.waitForTimeout(1300);
-  ok(await page.evaluate(([s, h0, n]) => { const h = document.querySelector('#ba-equip .dj-heros'), v = document.querySelector('#ba-equip .dj-verdict-l'), b = document.querySelector(s);
-    return calibreDe('102CB1') === 5 && app.hist.length === n + 1 && h.classList.contains('ko') && /^5\sA\s*déclenche/.test(v.textContent.replace(/\s+/g, ' ').trim()) && b.getAttribute('aria-pressed') === 'true' && Math.abs(b.getBoundingClientRect().top - h0) <= 2
-      && /5\sA — déclenche/.test(document.querySelector('#ba-equip .dj-cran[data-cal="5"]').dataset.bulle) && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko'); }, [cran(5), h0, nC]),
-    'un clic sur le cran 5 (qui DÉCLENCHE) le retient : le héros passe au rouge, la ligne du verdict dit « 5 A déclenche » et pourquoi, le contrôle le relève — et le cran n’a pas bougé sous la souris (la fiche s’ancre sur ce qu’on clique)');
-  await page.mouse.move(5, 5); await page.keyboard.press('Control+z'); await page.waitForTimeout(800); await bloc('1', '102CB1'); await page.waitForTimeout(500);
-  // AU CLAVIER : ← → en aperçu (rien n'est écrit), Échap revient au retenu sans fermer la carte, Entrée retient — le clavier reste sur le cran
-  await page.evaluate(s => { const b = document.querySelector(s); b.scrollIntoView({ block: 'center' }); b.focus(); }, cran(15)); await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(500);
-  const ap = await page.evaluate(() => ({ a: document.activeElement && document.activeElement.dataset.cal, cal: calibreDe('102CB1'), apercu: document.querySelector('#ba-equip .dj-heros').classList.contains('apercu'), v: document.querySelector('#ba-equip .dj-verdict-l').textContent.replace(/\s+/g, ' ').trim(), plan: app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag').x }));
-  await page.keyboard.press('Escape'); await page.waitForTimeout(500);
-  const ec = await page.evaluate(() => ({ ouverte: !$('inspecteur').hidden, apercu: document.querySelector('#ba-equip .dj-heros').classList.contains('apercu'), a: document.activeElement && document.activeElement.dataset.cal }));
-  ok(ap.a === '10' && ap.cal === 15 && ap.apercu && /^10\sA\s*touche la courbe/.test(ap.v) && /Aperçu|Entrée/.test(ap.v) && ec.ouverte && !ec.apercu && ec.a === '15', '← : l’index va au 10 en APERÇU (« 10 A touche la courbe… Entrée le retient »), rien n’est écrit, le bloc ne bouge pas sur le plan ; Échap revient au 15 sans fermer la carte, le clavier sur le cran retenu', JSON.stringify({ ap, ec }));
-  await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300); await page.keyboard.press('Enter'); await page.waitForTimeout(900);
-  ok(await page.evaluate(() => calibreDe('102CB1') === 20 && pnDuRepere('102CB1') === 'MS3320-20' && document.activeElement && document.activeElement.matches('.dj-cran[data-cal="20"]')), '→ puis Entrée retient le 20 A (MS3320-20) ; le clavier reste sur son cran');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(800); await bloc('1', '102CB1'); await page.waitForTimeout(500);
-  // « TOUT LE CATALOGUE MS3320 (13) » : les calibres hors des « préférés » des hypothèses, et le dit ; ils se retiennent aussi
-  await page.click('#ba-equip [data-changer="dj|102CB1"]'); await page.waitForTimeout(400); await page.click('#ba-equip [data-dj-catalogue]'); await page.waitForTimeout(500);
-  const cat = await page.evaluate(() => { const cs = [...document.querySelectorAll('#ba-equip .dj-chips .dj-chip')], h = cs.filter(c => c.classList.contains('hors')); return { n: cs.length, hors: h.map(c => c.dataset.cal), bulle: h[0] ? h[0].dataset.bulle : '' }; });
-  ok(cat.n === 13 && cat.hors.length === 6 && /calibres préférés|préférés/.test(cat.bulle), '« Tout le catalogue MS3320 (13) » : les 13 calibres, les 6 hors des préférés marqués et dits dans leur bulle', JSON.stringify(cat));
-  await page.click('#ba-equip .dj-chip.hors[data-cal="' + cat.hors[0] + '"]'); await page.waitForTimeout(800);
-  ok(await page.evaluate(c => calibreDe('102CB1') === +c, cat.hors[0]), 'un calibre hors des préférés se retient d’un clic (' + cat.hors[0] + ' A)');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
-  await page.evaluate(() => { FI.catalogue = {}; FI.liste = ''; }); await bloc('1', '102CB1'); await page.waitForTimeout(500);
-  // LA RÈGLE DES BULLES : après un vrai mouvement (400 ms), éteinte au clic, jamais sur ce que le clic vient d'ouvrir ; au clavier, tout de suite
-  const bulle = () => page.evaluate(() => { const b = document.getElementById('fi-bulle'); return b && !b.hidden ? b.textContent : ''; });
-  const m = await page.locator('#ba-equip .dj-main').boundingBox(); await page.mouse.move(m.x - 20, m.y - 20); await page.mouse.move(m.x + m.width / 2, m.y + m.height / 2, { steps: 4 });
-  await page.waitForTimeout(150); const tot = await bulle(); await page.waitForTimeout(450); const vueB = await bulle();
-  await page.mouse.down(); await page.mouse.up(); await page.waitForTimeout(900); const apres = await bulle();
-  ok(!tot && /Toute la gamme/.test(vueB) && !apres && await q('.dj-chips .dj-chip') === 7, 'la bulle d’« À la main » attend 400 ms après un vrai mouvement ; le clic l’éteint, et elle ne revient pas sur la gamme qu’il vient d’ouvrir (souris immobile)', JSON.stringify({ tot, vueB, apres }));
-  await page.mouse.move(5, 5); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-  await page.focus('#fi-epingle'); await page.keyboard.press('Tab'); await page.waitForTimeout(120);
-  ok(await page.evaluate(() => document.activeElement && document.activeElement.id === 'in-fermer') && /Fermer/.test(await bulle()), 'au clavier, la bulle de × paraît tout de suite (« Fermer — Échap »)', await bulle());
-  // LE CLAVIER DE LA CARTE : ouverte d'un clic sur le plan, elle le prend ; Échap la ferme et le rend
-  await page.evaluate(() => { deselectionner(); fermerInspecteur(); }); await page.waitForTimeout(300);
-  const pc = await page.evaluate(() => { allerAuPlan('1'); const k = app.dessin.comps.find(k => k.name === '103RL1'), r = $('planche').getBoundingClientRect(); return { x: r.left + app.vue.tx + (k.x + k.w / 2) * app.vue.s, y: r.top + app.vue.ty + (k.y + k.h / 2) * app.vue.s }; });
-  await page.mouse.click(pc.x, pc.y); await page.waitForTimeout(700);
-  const dedans = await page.evaluate(() => !!document.activeElement && $('inspecteur').contains(document.activeElement));
-  await page.keyboard.press('Tab'); await page.waitForTimeout(100); const tab = await page.evaluate(() => $('inspecteur').contains(document.activeElement));
-  await page.keyboard.press('Escape'); await page.waitForTimeout(500);
-  ok(dedans && tab && await page.evaluate(() => $('inspecteur').hidden && !$('inspecteur').contains(document.activeElement)), 'la carte ouverte d’un clic prend le clavier, Tab commence dans la carte ; Échap la ferme et rend le clavier', JSON.stringify({ dedans, tab }));
-  // LE MÊME PATRON : la galerie d'une barrette montre TOUTE la norme — ceux qui logent d'abord, les autres avec leur raison, tous cliquables
-  await bloc('3', '668VT31'); await page.waitForTimeout(500);
-  await page.evaluate(() => { const d = document.querySelector('#ba-equip details.fs[data-section="connecteur"]'); if (d && !d.open) d.querySelector('summary').click(); }); await page.waitForTimeout(300);
-  await page.click('#ba-equip [data-changer="bar|668VT31"]'); await page.waitForTimeout(600);
-  const gal = await page.evaluate(() => { const ls = [...document.querySelectorAll('#ba-equip .cand-l')], cs = document.querySelectorAll('#ba-equip .cand-g').length; return { cartes: cs, lignes: ls.length, n: (document.querySelector('#ba-equip .fi-gal-n') || {}).textContent, l0: ls[0] ? ls[0].textContent.replace(/\s+/g, ' ') : '', ko: ls.filter(l => l.classList.contains('ko')).length, ref: (ls.find(l => l.classList.contains('ko')) || { dataset: {} }).dataset.ref }; });
-  ok(gal.cartes === 2 && gal.cartes + gal.lignes === 29 && /^2 sur 29 logent ces 4 potentiels d’un seul module$/.test(gal.n) && /loge \d \/ 4/.test(gal.l0) && gal.ko > 0, 'la galerie de 668VT31 : les 2 modules ASNE 0599 qui logent, dessinés, puis les 27 autres, du plus proche au plus loin — chacun « loge n / 4 » et sa raison (l’ingénieur, point 7 : « 2 modules sur 29 »)', JSON.stringify(gal));
-  await page.click('#ba-equip .cand-l[data-ref="' + gal.ref + '"]'); await page.waitForTimeout(900);
-  ok(await page.evaluate(r => app.contrat.designations.get('668VT31') === r && !!document.querySelector('#ba-equip .fi-norme-gal.main.ko') && CONTROLE.items.concat([]).length >= 0 && [...document.querySelectorAll('#ba-equip .fi-pb-l')].some(x => x.classList.contains('ko')), gal.ref), 'un module qui ne loge pas se retient quand même : forcé, marqué « main » et rouge, les problèmes le disent (' + gal.ref + ')');
-  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
-  // l'arrangement : « Changer » ne disparaît jamais (300XC1 B, qu'aucun arrangement ne loge), et la liste est toute la norme
-  await bloc('3', '300XC1'); await page.waitForTimeout(500); await page.evaluate(() => { FI.connecteur['300XC1'] = 'B'; rendreFiche(); }); await page.waitForTimeout(400);
-  await page.evaluate(() => { const d = document.querySelector('#ba-equip details.fs[data-section="connecteur"]'); if (d && !d.open) d.querySelector('summary').click(); }); await page.waitForTimeout(300);
-  ok(await q('.fc-changer[data-changer="arr|300XC1|B"]') === 1, '300XC1 B, qu’aucun arrangement ne loge : « Changer » est là (il avait disparu)');
-  await page.click('#ba-equip .fc-changer[data-changer="arr|300XC1|B"]'); await page.waitForTimeout(500);
-  const arr = await page.evaluate(() => { const ls = [...document.querySelectorAll('#ba-equip .cand-l')]; return { n: ls.length, l0: ls[0] ? ls[0].textContent.replace(/\s+/g, ' ') : '', filtre: !!document.querySelector('#ba-equip [data-volet="arr|300XC1|B"] [data-filtre-liste]') }; });
-  ok(arr.n >= 25 && /^✕\s*\S+?\s*loge 5 \/ 6/.test(arr.l0) && /B5 : DR12 trop gros pour un #\d+/.test(arr.l0) && arr.filtre, 'sa liste : TOUTE l’EN 4165-002, du plus proche (« loge 5 / 6 — B5 : DR12 trop gros pour un #16 ») au plus loin, un filtre au-delà de huit', JSON.stringify(arr));
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-  // le contact à sertir : « Automatique » une fois, puis les contacts de la taille, chacun ✓ / ✕
-  await page.evaluate(() => { FI.connecteur['300XC1'] = 'A'; FI.liste = ''; rendreFiche(); }); await page.waitForTimeout(400);
-  await page.evaluate(() => { const b = document.querySelector('#ba-equip .ct-ref[data-sertir]'); b.scrollIntoView({ block: 'center' }); b.click(); }); await page.waitForTimeout(500);
-  const ct = await page.evaluate(() => { const auto = document.querySelector('#ba-equip .fi-chip-auto i'), cs = [...document.querySelectorAll('#ba-equip .ct-chip')]; return { auto: auto ? auto.textContent : '', refs: cs.map(c => c.dataset.v), marques: cs.map(c => c.querySelector('.ct-chip-m').textContent).join('') }; });
-  ok(!!ct.auto && !ct.refs.includes(ct.auto) && ct.refs.length >= 3 && /^[✓✕]+$/.test(ct.marques), 'le contact à sertir : « Automatique » une seule fois (sa référence ne se répète pas dessous), puis les autres contacts de la taille, chacun ✓ ou ✕ de gauge', JSON.stringify(ct));
-  await page.keyboard.press('Escape'); await page.evaluate(() => { FI.liste = ''; }); await page.waitForTimeout(200);
-  }
-
-  /* ---- v74, LOT F — les fiches : la prise rangée et recommandée, le contact ouvert, le récit de la référence, le pourquoi
-     d'un « manque », le câble simplifié (ses contrôles sont plus haut, « un câble (W-012) ») ---------------------------- */
-  {
-  console.log('\nv74 — la prise de coupure rangée (412VC3B) : le pourquoi, une norme à la fois, les recommandés');
-  await bloc('5', '412VC3B'); await page.waitForTimeout(500);
-  await page.evaluate(() => ouvrirSection($('ba-equip'), 'connecteur', false, true)); await page.waitForTimeout(300);
-  ok(await page.evaluate(() => { const r = document.querySelector('#ba-equip details[data-section="connecteur"] .fc'), s = r.querySelector('.fc-sous'); return /La référence de l’installation, EN3646A61208FN, nomme cet arrangement \(12-08\) de l’EN 3646-002\./.test(s.textContent.replace(/\s/g, ' ')) && !!s.querySelector('.pr-recit[data-changer="recit|412VC3B"]'); }) && /^Prise de coupure · EN3646A61208FN · folio 5$/.test((await texte('.fi-identite')).replace(/\s/g, ' ')),
-    'sous la référence, POURQUOI elle (« la référence de l’installation, EN3646A61208FN, nomme cet arrangement (12-08) de l’EN 3646-002 ») et « D’où elle vient » (v77) ; l’identité dit la référence de l’installation, une fois', await texte('.fi-identite'));
-  ok(/Partie mobile · ce qui arrive|Partie fixe · ce qui repart/.test(await texte('.fi-face-tete')) &&/^Partie mobile en douilles \(femelles\), partie fixe en broches \(mâles\) : la référence ne le dit pas/.test((await texte('.pr-sexe')).replace(/\s/g, ' ')),
-    'la partie mobile et la partie fixe nommées (les mots du lecteur, v83) ; le sexe et son pourquoi en une ligne (« la référence ne le dit pas : Volta met d’office des douilles côté partie mobile »)', await texte('.pr-sexe'));
-  await page.click('#ba-equip [data-changer="cou|412VC3B"]'); await page.waitForTimeout(600);
-  const pr = await page.evaluate(() => { const v = document.querySelector('#ba-equip [data-volet="cou|412VC3B"]'), cs = [...v.querySelectorAll('.cand-r')];
-    return { tete: v.querySelector('.pr-tete').textContent.replace(/\s+/g, ' ').trim(), puces: v.querySelectorAll('[data-norme-prise].fi-chip').length, n: cs.length, cartes: cs.map(c => (c.dataset.ref.replace('EN3646-002-', '') + (c.getAttribute('aria-pressed') === 'true' ? '*' : '') + ' ' + c.querySelector('.pr-c-r').textContent.trim() + ' / ' + c.querySelector('.pr-c-ct').textContent.trim()).replace(/\s+/g, ' ')),
-      faces: cs.every(c => !!c.querySelector('.cand-face svg .mj-module')), plis: [...v.querySelectorAll('.pr-pli > summary')].map(s => s.textContent.replace(/\s+/g, ' ').trim()), normes: [...v.querySelectorAll('.pr-norme [data-norme-prise]')].map(b => b.dataset.normePrise).join() }; });
-  ok(/^Norme\s*EN 3646-002\s*celle de la référence de l’installation, EN3646A61208FN$/.test(pr.tete) && pr.puces === 0 && pr.n === 4 && pr.faces && /^12-08\* Celui de l’installation : sa référence le nomme · 1 contact libre \(un obturateur\) \/ Fiche · douilles\s?EN3155-019F2020\s?× 7\s?Embase · broches\s?EN3155-018M2020\s?× 7$/.test(pr.cartes[0].replace(/\s/g, ' ')) && /^12-10 Même boîtier \(taille 12\) : le même raccord · les mêmes contacts à sertir/.test(pr.cartes[1]),
-    '« Changer », RANGÉ : la norme en tête, UNE seule (plus de rangée EN 2997 · EN 3646 · …) ; quatre RECOMMANDÉS dessinés — le 12-08 retenu (« sa référence le nomme »), puis le 12-10 (« même boîtier : le même raccord · les mêmes contacts ») —, chacun avec ses contacts admissibles côté fiche et côté embase', JSON.stringify(pr.cartes.slice(0, 2)));
-  ok(pr.plis.length === 3 && /^Ceux qui logent aussi, moins proches\s*\d+$/.test(pr.plis[0]) && /^Ceux qui ne logent pas ces câbles — et pourquoi\s*\d+$/.test(pr.plis[1]) && /^Les autres normes — et pourquoi pas elles\s*4$/.test(pr.plis[2]) && pr.normes === 'ASNE0059,EN2997,EN3645,EN4165',
-    'les autres REPLIÉS, chacun avec sa raison : ceux qui logent aussi (moins proches), ceux qui ne logent pas (et pourquoi), les quatre autres normes (et pourquoi Volta n’en change pas d’office)', JSON.stringify(pr.plis) + ' ' + pr.normes);
-  await page.evaluate(() => { const d = document.querySelectorAll('#ba-equip .pr-pli')[2]; d.open = true; }); await page.waitForTimeout(200);
-  ok(/changer de norme change toute la prise — le boîtier, le raccord, les contacts\. Volta ne le fait jamais d’office\./.test(await page.evaluate(() => document.querySelectorAll('#ba-equip .pr-pli')[2].querySelector('.pr-pq').textContent)), 'pourquoi pas une autre norme : « la référence de l’installation est une EN 3646-002 : changer de norme change toute la prise — le boîtier, le raccord, les contacts »');
-  const hp = await page.evaluate(() => app.hist.length);
-  await page.click('#ba-equip .cand-r[data-ref="EN3646-002-12-10"]'); await page.waitForTimeout(800);
-  ok(await page.evaluate(n => app.contrat.designations.get('412VC3B') === 'EN3646-002-12-10' && planDeCoupure('412VC3B').plan.reference === 'EN3646-002-12-10' && app.hist.length === n + 1 && /Choisi ici, à la main/.test(document.querySelector('#ba-equip details[data-section="connecteur"] .fc-sous').textContent), hp), 'un recommandé se retient d’un clic (le 12-10, une entrée d’historique) ; le pourquoi dit « choisi ici, à la main »');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-  await page.evaluate(() => { allerAuPlan('5'); choisirBloc(app.dessin.comps.find(k => k.name === '412VC3B' && k.kind !== 'tag')); }); await page.waitForTimeout(400);
-  await page.evaluate(() => ouvrirSection($('ba-equip'), 'connecteur', false, true)); await page.waitForTimeout(300);
-  await page.click('#ba-equip .pr-recit'); await page.waitForTimeout(500);
-  const rc = await page.evaluate(() => { const v = document.querySelector('#ba-equip [data-volet="recit|412VC3B"]'); return v ? { k: [...v.querySelectorAll('.rf-dl dt')].map(x => x.textContent.trim()), t: v.textContent.replace(/\s+/g, ' '), schema: !!v.querySelector('.rf-schema svg.mj'), bible: !!v.querySelector('[data-bible]') } : null; });
-  ok(!!rc && rc.k.join() === 'Vient de,Sa base,Pourquoi,Base SEE' && /Lue dans le fichier d’installation/.test(rc.t) && /Les tables de Volta/.test(rc.t) && /norme EN 3646-002/.test(rc.t) && /Elle commence par « EN3646 », comme toutes les références de l’EN 3646-002/.test(rc.t) && /Aucune n’est gardée sur ce PC/.test(rc.t) && rc.schema && rc.bible && !/voisines/.test(rc.t),
-    '« D’où elle vient » (v77, le lecteur : « pourquoi cette norme… plus simple ; de quelle base ; je clique, je vois son schéma ») : une carte d’identité — d’où elle vient, sa base (les tables de Volta) et sa norme, pourquoi en une phrase, la base SEE — et SON SCHÉMA, la bible au pied ; plus de voisines', rc ? rc.k.join(' | ') : 'pas de carte');
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-  // le contact d'une prise : un clic sur une gauge de la paire ouvre le contact de CE côté
-  await page.evaluate(() => { const b = document.querySelectorAll('#ba-equip .fi-paire button.fi-jg[data-ct]')[1]; b.scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(150);
-  await page.click('#ba-equip .fi-paire button.fi-jg[data-ct] >> nth=1'); await page.waitForTimeout(500);
-  const cp = await page.evaluate(() => { const c = document.querySelector('#ba-equip .fi-paires .ct-carte'); return c ? { dt: [...c.querySelectorAll('dt')].map(x => x.textContent).join(','), t: c.textContent.replace(/\s+/g, ' ') } : null; });
-  ok(!!cp && cp.dt === 'Ce qu’il est,Sa norme,Sa table,Sa source,Ce câble,Sa place,Outillage' && /EN3155-018M2020/.test(cp.t) && /EN 3155-018 — contact mâle/.test(cp.t) && /pas celle du connecteur \(EN 3646-002\)/.test(cp.t) && /côté embase/.test(cp.t) && /✓ admis/.test(cp.t) && await page.evaluate(() => app.cible.type === 'bloc'),
-    'une PRISE : un clic sur la gauge d’un côté ouvre SON contact (l’embase : EN3155-018M2020) — sa norme (l’EN 3155-018, pas celle du connecteur), sa table et sa ligne, sa source, ce câble contre la taille, sa place, l’outillage ; la fiche reste sur la prise', cp ? cp.dt : 'pas de carte');
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-
-  console.log('\nv74 — la gauge d’une barrette ou d’un connecteur ouvre le contact (668VT31, 300XC1)');
-  await bloc('3', '668VT31'); await page.waitForTimeout(500); await page.evaluate(() => ouvrirSection($('ba-equip'), 'connecteur', false, true)); await page.waitForTimeout(300);
-  // (un vrai clic : le clavier reste dans la carte, Échap referme le contact)
-  await page.evaluate(() => { const b = document.querySelector('#ba-equip .fi-contacts button.fi-jg[data-ct]'); b.scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(150);
-  await page.click('#ba-equip .fi-contacts button.fi-jg[data-ct]'); await page.waitForTimeout(500);
-  const cb = await page.evaluate(() => { const c = document.querySelector('#ba-equip .fi-contacts .fi-choix-ligne .ct-carte'); return c ? c.textContent.replace(/\s+/g, ' ') : ''; });
-  ok(/Le contact\s*EN3155-016M2018/.test(cb) && /EN 3155-016 — contact mâle/.test(cb) && /pas celle du connecteur \(ASNE 0599\)/.test(cb) && /Sa ligne : ASNE 0599 · taille 20 · mâle/.test(cb) && /Vérifié/.test(cb) && /de l’arrangement B207/.test(cb) && await page.evaluate(() => app.cible.nom === '668VT31'),
-    'une BARRETTE : un clic sur la gauge ouvre le contact sous sa ligne — EN3155-016M2018, sa norme (EN 3155-016), sa ligne de table (ASNE 0599 · taille 20 · mâle), sa source, sa place dans le B207', cb.slice(0, 200));
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-  ok(await page.evaluate(() => !document.querySelector('#ba-equip .ct-carte') && !$('inspecteur').hidden), 'Échap referme le contact, pas la fiche');
-  await bloc('3', '300XC1'); await page.waitForTimeout(500); await page.evaluate(() => { FI.connecteur['300XC1'] = 'A'; FI.liste = ''; rendreFiche(); ouvrirSection($('ba-equip'), 'connecteur', false, true); }); await page.waitForTimeout(400);
-  await page.evaluate(() => { const b = document.querySelector('#ba-equip [data-panneau="A"] .fi-contacts button.fi-jg[data-sertir]'); b.scrollIntoView({ block: 'center' }); b.click(); }); await page.waitForTimeout(500);
-  const cc = await page.evaluate(() => { const v = document.querySelector('#ba-equip .fi-choix-ligne [data-volet^="sertir:"]'); return v ? { carte: v.classList.contains('ct-carte'), t: v.textContent.replace(/\s+/g, ' '), puces: v.querySelectorAll('[data-sertir-ref], .fi-chip-auto').length, trace: !!v.querySelector('[data-trace]') } : null; });
-  ok(!!cc && cc.carte && /Le contact\s*EN3155-003F2020/.test(cc.t) && /EN 3155-003/.test(cc.t) && cc.puces >= 2 && cc.trace, 'un CONNECTEUR : la gauge ouvre le contact (sa norme, sa table, sa source) et, dessous, les autres contacts de la taille pour en changer ; « Toute la chaîne du connecteur » y mène', cc ? cc.t.slice(0, 160) : 'pas de carte');
-  await page.click('#ba-equip .ct-carte [data-trace]'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => document.querySelector('#ba-equip details.fi-trace').open), '« Toute la chaîne du connecteur » déplie « D’où vient chaque pièce »');
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-
-  console.log('\nv77 — la référence d’un connecteur : « D’où elle vient » (300XC1 A, 550SW3)');
-  await page.click('#ba-equip [data-changer="recit|300XC1|A"]'); await page.waitForTimeout(500);
-  const r3 = await page.evaluate(() => { const v = document.querySelector('#ba-equip [data-volet="recit|300XC1|A"]'); return v ? v.textContent.replace(/\s+/g, ' ') : ''; });
-  ok(/Vient de\s*Lue dans le fichier d’installation/.test(r3) && /Les tables de Volta \(les normes embarquées\) : norme EN 4165-002/.test(r3) && /Elle commence par « EN4165 »/.test(r3) && /Son schéma · arrangement/.test(r3) && await page.evaluate(() => /de votre fichier.*norme EN 4165-002.*tables de Volta/.test((document.querySelector('#ba-equip [data-panneau="A"] .rf-orig') || document.querySelector('#ba-equip .rf-orig') || {}).textContent || '')), 'v77 — sous la référence, d’où elle vient en trois mots (de votre fichier · norme EN 4165-002 · tables de Volta) ; « D’où elle vient » : la carte d’identité et le schéma de l’arrangement', r3.slice(0, 200));
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-  await bloc('5', '550SW3'); await page.waitForTimeout(500); await page.evaluate(() => ouvrirSection($('ba-equip'), 'connecteur', false, true)); await page.waitForTimeout(300);
-  await page.click('#ba-equip [data-changer="recit|550SW3|A"]'); await page.waitForTimeout(500);
-  const r5 = await page.evaluate(() => { const v = document.querySelector('#ba-equip [data-volet="recit|550SW3|A"]'); return v ? v.textContent.replace(/\s+/g, ' ') : ''; });
-  ok(/Sa base\s*aucune/.test(r5) && /ne commence comme « NSA937802-03 »/.test(r5) && /Les plus proches/.test(r5) && /NSA 937901 \(une barrette, pas un connecteur\)/.test(r5) && /Vérifier la référence dans le fichier d’installation/.test(r5), 'une référence qu’aucune famille ne nomme (550SW3, NSA937802-03) : la carte le dit (sa base : aucune), nomme les plus proches (NSA 937901 : une barrette, pas un connecteur) et ce qu’on peut faire', r5.slice(0, 200));
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-
-  console.log('\nv74 — le raccord qui « manque » dit pourquoi (101BT1, reprise de blindage sur le corps)');
-  await bloc('1', '101BT1'); await page.waitForTimeout(400);
-  await page.evaluate(() => { histPush('essai : blindage'); app.contrat.raccords.set('101BT1|A', { blindage: 'GND' }); apresEdition(); }); await page.waitForTimeout(600);
-  await page.evaluate(() => ouvrirSection($('ba-equip'), 'connecteur', false, true)); await page.waitForTimeout(300);
-  const mq = await page.evaluate(() => { const p = [...document.querySelectorAll('#ba-equip .fi-piece.ko')].find(x => x.dataset.role === 'raccord'); return p ? { st: p.querySelector('.fi-piece-st').textContent, pq: (p.querySelector('.fi-piece-pq') || { textContent: '' }).textContent.replace(/\s+/g, ' ') } : null; });
-  ok(!!mq && mq.st === 'manque' && /^Pourquoi : Aucune ligne de la table des raccords pour ce connecteur : sa référence \(MS3470L14-5P\) n’est d’aucune famille que Volta connaît ; une base SEE gardée sur ce PC \(Vos fichiers\) la donnerait peut-être\.$/.test(mq.pq.replace(/\s/g, ' ')),
-    'jamais un « manque » muet : sous le raccord, « Pourquoi : aucune ligne de la table des raccords pour ce connecteur : sa référence (MS3470L14-5P) n’est d’aucune famille que Volta connaît ; une base SEE gardée sur ce PC la donnerait peut-être »', mq ? mq.pq : 'pas de pièce en manque');
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
-
-  console.log('\nv74 — les câbles d’une fiche : plus de « tous tiennent » ni d’italique (101BT1)');
-  await bloc('1', '101BT1'); await page.waitForTimeout(400);
-  ok(/^2 câbles · aucun problème · le plus chargé, W-011, porte \d+ % de ce qu’il admet$/.test((await texte(sec('fils') + ' .fs-resume')).replace(/\s/g, ' ')) && /^Longueur supposée : 5 m pour les deux câbles, à écrire dans l’installation/.test((await texte(sec('fils') + ' .cb-note')).replace(/\s/g, ' '))
-    && await page.evaluate(() => [...document.querySelectorAll('#ba-equip details[data-section="fils"] .cb-carte *')].every(e => getComputedStyle(e).fontStyle !== 'italic')),
-    'le résumé dit « aucun problème · le plus chargé, W-011, porte 44 % de ce qu’il admet » (plus de « tous tiennent ») ; ce qui est supposé, dit une fois en clair (« Longueur supposée : 5 m pour les deux câbles, à écrire dans l’installation ») ; plus d’italique dans le tableau', (await texte(sec('fils') + ' .fs-resume')) + ' · ' + (await texte(sec('fils') + ' .cb-note')));
-  }
+  console.log('\nD’UNE FICHE À L’AUTRE ; LE « ? »');
+  await choisir('3', '300XC1'); await grand(); await onglet('cables');
+  await ev(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '103RL1')); }); await pause(700);
+  const A1 = await lireGrand(), A1c = await ev(() => ($('ba-equip') || { dataset: {} }).dataset.cle);
+  ok(A1c === 'bloc|103RL1' && A1.grand && A1.choisi === 'essentiel', 'une fiche qui s’ouvre sur un autre objet commence à L’essentiel (pas sur l’onglet de l’objet d’avant)', JSON.stringify([A1c, A1.choisi]));
+  await choisir('1', 'fil:W-011'); await grand();
+  await page.click('#nv-p-essentiel [data-choisir-bloc="102CB1"]'); await pause(800);
+  const A2 = await lireGrand(), A2c = await ev(() => ($('ba-equip') || { dataset: {} }).dataset.cle);
+  ok(A2c === 'bloc|102CB1' && A2.choisi === 'calibre', 'depuis la fiche d’un câble, « 102CB1 · 10 A » mène à son disjoncteur, droit sur son profil de charge et sa courbe (l’onglet Calibre : le lien le dit au survol)', JSON.stringify([A2c, A2.choisi]));
+  await choisir('1', 'fil:W-011'); await grand();
+  const bulle = () => ev(() => { const vus = [...document.querySelectorAll('.fi-q-bulle')].filter(x => !x.hidden && x.getBoundingClientRect().width > 0), b = vus[0]; return { n: vus.length, tete: b ? b.querySelector('.q-tete b').textContent.replace(/[  ]/g, ' ') : '', comprendre: !!(b && b.querySelector('[data-comprendre]')), dedans: !b || (r => r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 && r.bottom <= innerHeight + 1)(b.getBoundingClientRect()) }; });
+  await page.click('#ba-equip .fi-q[data-q="intensite"]'); await pause(300); const Q1 = await bulle();
+  await page.click('#ba-equip .fi-q[data-q="chute"]'); await pause(300); const Q2 = await bulle();
+  await page.keyboard.press('Escape'); await pause(300); const Q3 = await bulle(), Q3f = await ev(() => !$('inspecteur').hidden && document.body.classList.contains('insp-grand'));
+  ok(Q1.n === 1 && Q1.tete === 'L’intensité admise' && Q1.comprendre && Q1.dedans && Q2.n === 1 && Q2.tete === 'La chute de tension' && Q2.dedans && Q3.n === 0 && Q3f,
+    'le « ? » : une bulle, une seule à la fois (« L’intensité admise », puis « La chute de tension »), dans la fenêtre, avec « Comprendre → » ; Échap ferme la bulle, pas la fiche', JSON.stringify([Q1, Q2, Q3, Q3f]));
+  await page.keyboard.press('Escape'); await pause(400);
+  ok(await ev(() => !document.body.classList.contains('insp-grand')), 'Échap, ensuite, quitte la fiche en grand');
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
-  console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
-  await nav.close(); process.exit(ko ? 1 : 0);
-})();
+  await nav.close();
+  console.log('\n' + (ko ? ko + ' échec(s) sur ' + total : total + ' / ' + total + ' contrôles passés — tout est vert'));
+  process.exit(ko ? 1 : 0); })();

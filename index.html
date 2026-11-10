@@ -23706,7 +23706,7 @@ function ecranAnonyme() { try {
 /* LA BARRE DU CARNET : elle naît au-dessus du plan, en bas au milieu ; Entrée garde (Maj+Entrée va à la ligne), Échap
    ferme et rend le clavier d'où il venait. L'écran est lu à l'ouverture (là où l'hésitation est née). */
 const CARNET = { ouvreur: null, ou: '' };
-function ouvrirCarnet() { let el = $('carnet'); if (typeof fermerMenu === 'function') fermerMenu();
+function ouvrirCarnet() { let el = $('carnet'); const avant = document.activeElement, duMenu = !!(avant && avant.closest && avant.closest('#menu')); if (typeof fermerMenu === 'function') fermerMenu();
   if (!el) { el = document.createElement('div'); el.id = 'carnet'; el.className = 'carnet'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-labelledby', 'cn-titre');
     el.innerHTML = `<div class="cn-tete"><b id="cn-titre">Carnet de séance</b><span class="cn-ou" id="cn-ou"></span><button type="button" class="fi-x cn-x" id="cn-fermer" aria-label="Fermer le carnet (Échap)" data-bulle="Fermer · Échap">${ico('fermer')}</button></div>`
       + `<textarea id="cn-texte" rows="2" spellcheck="true" aria-label="La note" placeholder="Une hésitation, un chiffre qui étonne, une idée…"></textarea>`
@@ -23716,7 +23716,8 @@ function ouvrirCarnet() { let el = $('carnet'); if (typeof fermerMenu === 'funct
     $('cn-texte').addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermerCarnet(); }
       else if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); garderNote(); } });
     el.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermerCarnet(); } }); }
-  if (el.hidden) { const a = document.activeElement; CARNET.ouvreur = a && a !== document.body && !el.contains(a) ? a : null; CARNET.ou = ecranAnonyme(); }
+  // (10 novembre 2026) ouvert par le menu, il rend le clavier au ⋮ en se fermant — comme tous les documents
+  if (el.hidden) { const a = duMenu ? $('btnMenu') : avant; CARNET.ouvreur = a && a !== document.body && !el.contains(a) ? a : null; CARNET.ou = ecranAnonyme(); }
   $('cn-ou').textContent = CARNET.ou; compterCarnet(); el.hidden = false; el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre');
   const t = $('cn-texte'); try { t.focus({ preventScroll: true }); } catch (_) { t.focus(); } }
 function compterCarnet() { const n = lireCarnet().length, c = $('cn-compte'); if (c) c.textContent = n ? pl(n, 'note') + ' dans le carnet' : ''; }
@@ -25804,7 +25805,9 @@ function contactsDeLaGauge(jauge, besoin) { if (jauge == null) return null; let 
    entrée d'historique : l'appelant en pose une pour tout le lot. Revenu à la valeur du fichier, la trace s'efface. */
 function poserChamp(l, champ, valeur) { if (!(l.avant && champ in l.avant)) l.avant = { ...(l.avant || {}), [champ]: l[champ] == null ? null : l[champ] };
   if (valeur == null || valeur === '') delete l[champ]; else l[champ] = valeur;
-  if (l.avant[champ] === (l[champ] == null ? null : l[champ])) { const av = { ...l.avant }; delete av[champ]; if (Object.keys(av).length) l.avant = av; else delete l.avant; } }
+  if (l.avant[champ] === (l[champ] == null ? null : l[champ])) { const av = { ...l.avant }; delete av[champ]; if (Object.keys(av).length) l.avant = av; else delete l.avant; }
+  // (10 novembre 2026) dans un geste de VOLTA, la case porte sa marque tout de suite (08-export, `avecOrigineVolta`) : le rendu que le geste lance la lit déjà
+  else if (typeof ORIGINE_EN_COURS !== 'undefined' && ORIGINE_EN_COURS.volta) l.avant = { ...l.avant, [ORIGINE_VOLTA + champ]: l[champ] == null ? null : l[champ] }; }
 /* Le profil de charge, écrit au contrat sans perdre ce qui n'est pas lui (le calibre écrit) ; vide, il s'efface — sauf
    s'il garde un état supprimé (`null` à la place du démarrage, de la transition ou du permanent : l'état n'est plus là). */
 function poserCharge(nom, c) { if (c && 'somme' in c) { c = { ...c }; delete c.somme; } const vide = !(c.calibre > 0) && !['dem', 'trans', 'perm'].some(k => (c[k] && c[k].i != null) || c[k] === null) && !(c.plus && c.plus.length);
@@ -26943,10 +26946,15 @@ function modificationsDe(l) { if (!l.avant) return [];
    est « proposition de VOLTA acceptée » tant qu'elle porte encore cette valeur ; réécrite à la main, elle redevient « à
    la main ». Un part number de disjoncteur qui porte le calibre que l'outil retient (la carte de décision) l'est aussi. */
 const ORIGINE_VOLTA = 'volta:', ORIGINES_MOTS = { main: 'à la main', volta: 'proposition de VOLTA acceptée' };
+/* (10 novembre 2026) LA MARQUE SE POSE PENDANT LE GESTE, pas après : le geste redessine tout avant de rendre la main, et ce
+   premier rendu lisait encore « celui de votre fichier » sur un calibre que VOLTA venait d'écrire (le récapitulatif, juste après
+   « Retenir le 7,5 A »). `poserChamp` (08-disjoncteurs) marque donc la case dès qu'il l'écrit ; la passe d'après reste, pour
+   ce qui s'écrirait autrement. */
+const ORIGINE_EN_COURS = { volta: 0 };
 function avecOrigineVolta(faire) { const avant = new Map(); verite().forEach(l => avant.set(l, COLONNES_RETEST.map(([, ch]) => l[ch])));
-  const r = faire(); let n = 0;
+  let r; ORIGINE_EN_COURS.volta++; try { r = faire(); } finally { ORIGINE_EN_COURS.volta--; } let n = 0;
   verite().forEach(l => { const a = avant.get(l); if (!a || !l.avant) return;
-    COLONNES_RETEST.forEach(([, ch], k) => { if (a[k] === l[ch] || !(ch in l.avant)) return; l.avant = { ...l.avant, [ORIGINE_VOLTA + ch]: l[ch] == null ? null : l[ch] }; n++; }); });
+    COLONNES_RETEST.forEach(([, ch], k) => { if (a[k] === l[ch] || !(ch in l.avant)) return; n++; if (l.avant[ORIGINE_VOLTA + ch] === (l[ch] == null ? null : l[ch])) return; l.avant = { ...l.avant, [ORIGINE_VOLTA + ch]: l[ch] == null ? null : l[ch] }; }); });
   if (n && typeof sauver === 'function') sauver();
   return r; }
 function origineDeCase(l, ch, ouvert) { const v = l.avant && l.avant[ORIGINE_VOLTA + ch];
@@ -34632,12 +34640,13 @@ function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
     // l'inverse (la croix, seule, garde le clavier)
     document.addEventListener('keydown', e => { if (e.key !== 'Tab' || !raccourcisOuverts()) return; const xs = [...el.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.offsetParent); if (!xs.length) return;
       const i = xs.indexOf(document.activeElement), j = i < 0 ? (e.shiftKey ? xs.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + xs.length) % xs.length; e.preventDefault(); e.stopPropagation(); xs[j].focus(); }, true); }
-  RACCOURCIS.avant = document.activeElement; el.hidden = false;
+  // (10 novembre 2026) ouverte par le menu, elle rend le clavier au ⋮ en se fermant — comme tous les documents (l'entrée du menu, cachée, ne peut plus le recevoir)
+  RACCOURCIS.avant = (a => a && a.closest && a.closest('#menu') ? $('btnMenu') : a)(document.activeElement); el.hidden = false;
   // elle se pose comme tout ce qui paraît (la règle d'entrée commune, style.css) — le voile, lui, est déjà là
   const f = el.querySelector('.rk-feuille'); f.classList.remove('entre-v'); void f.offsetWidth; f.classList.add('entre-v');
   // le clavier sur la feuille (Tab mène à la croix), sans l'anneau d'un bouton pressé
   f.tabIndex = -1; try { f.focus({ preventScroll: true }); } catch (_) { f.focus(); } }
-function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a.focus && a.isConnected) try { rendreLeClavier(a); } catch (_) { } }
+function fermerRaccourcis() { const el = $('raccourcis'); if (!el || el.hidden) return; el.hidden = true; const a = RACCOURCIS.avant; RACCOURCIS.avant = null; if (a && a !== document.body && a.focus && a.isConnected && a.getClientRects().length) try { rendreLeClavier(a); } catch (_) { } }
 function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
 /* ---- TAB NE SE PERD JAMAIS (v86, l'audit F7 : « le clavier sort de la fiche ; le focus finit sur body, sans anneau — sur
@@ -38585,7 +38594,10 @@ function verdictDuCalibre(d) { if (!d.calibre) return { n: '', mot: '' };
   const v = verdictTrois(d) || (!d.valide ? MOTS_TROIS.declenche : d.serre ? MOTS_TROIS.juste : MOTS_TROIS.passe);
   let pq = null; try { pq = typeof pourquoiDuCalibre === 'function' ? pourquoiDuCalibre(app.norme, d, d.calibre) : null; } catch (_) { pq = null; }
   const motPoint = p => p.ok === false ? 'disjoncte' : 'ne disjoncte pas';
-  const etats = d.points.filter(p => p.ok != null).map(p => `${majuscule(p.nom || 'état')} ${amperes(p.i)}${p.t === Infinity ? ' en permanent' : ' pendant ' + secondes(p.t)} : ${motPoint(p)}`).join('\n');
+  // (10 novembre 2026) « Permanent 5 A en permanent » se répétait, et trois états de même courant se lisaient « démarrage et
+  // transition et permanent » : le nom, deux-points, ce qu'il tire, puis le verdict
+  const enListe = s => { const xs = String(s).split(' et '); return xs.length > 2 ? xs.slice(0, -1).join(', ') + ' et ' + xs[xs.length - 1] : String(s); };
+  const etats = d.points.filter(p => p.ok != null).map(p => `${majuscule(enListe(p.nom || 'état'))} : ${amperes(p.i)}${p.t === Infinity ? (/permanent/i.test(p.nom || '') ? '' : ' en permanence') : ' pendant ' + secondes(p.t)} — ${motPoint(p)}`).join('\n');
   return { n: v.etat, mot: v.mot, bulle: [pq ? majuscule(pq.phrase) + '.' : v.bulle, etats].filter(Boolean).join('\n') }; }
 /* Le calibre que l'INSTALLATION écrit (son part number, celui du fichier quand on l'a changé ici) : à côté du retenu, barré
    quand VOLTA en retient un autre (l'ingénieur v73 : « le 10 A du retest est invisible ici, alors que la fiche l'écrit
@@ -38611,7 +38623,7 @@ const COLONNES_DISJ = [COL_REPERE,
         + `${main ? orig('main', 'Retenu à la main par une version d’avant : la proposition de VOLTA le rend') + (p ? '' : rond('calibre', D.rendu)) : propose ? '<i class="rc-o rc-propose" data-bulle="VOLTA le retient ; votre fichier garde le sien tant que vous n’acceptez pas la proposition — elle part alors dans l’Excel corrigé">proposé</i>' : ''}${geste}</span>`; },
     tri: r => infoDisj(r.nom).d.calibre || 0, texte: r => { const d = infoDisj(r.nom).d; return d.calibre ? amperes(d.calibre) : ''; } },
   { k: 'retest', t: 'Votre fichier', cls: 'rc-c-mesure', html: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; if (!c) return rien; const autre = d.calibre && c !== d.calibre;
-      return `<span class="rc-mesure rc-retest${autre ? ' autre' : ''}" data-bulle="${escA('Votre fichier porte ' + (pnDuRepere(r.nom) || 'son part number') + (autre ? ', un ' + amperes(c) + ' : VOLTA retient le ' + amperes(d.calibre) + ' (la fiche dit pourquoi, en ampères)' : ''))}">${autre ? chiffre(`<s class="rc-n">${fmt(c, 2)}</s>`, 'A') : chiffre(`<b class="rc-n">${fmt(c, 2)}</b>`, 'A')}</span>`; },
+      return `<span class="rc-mesure rc-retest${autre ? ' autre' : ''}" data-bulle="${escA('Votre fichier porte ' + ((autre && typeof origineDuCalibre === 'function' && origineDuCalibre(r.nom, d).pnRetest) || pnDuRepere(r.nom) || 'son part number') + (autre ? ', un ' + amperes(c) + ' : VOLTA retient le ' + amperes(d.calibre) + ' (la fiche dit pourquoi, en ampères)' : ''))}">${autre ? chiffre(`<s class="rc-n">${fmt(c, 2)}</s>`, 'A') : chiffre(`<b class="rc-n">${fmt(c, 2)}</b>`, 'A')}</span>`; },
     // le calibre du fichier ne se répète pas quand c'est celui que VOLTA retient : la colonne paraît dès qu'il en conteste un
     tri: r => calibreDuRetest(r) || 0, texte: r => { const c = calibreDuRetest(r); return c ? amperes(c) : ''; }, vide: r => { const c = calibreDuRetest(r), d = infoDisj(r.nom).d; return !c || !d.calibre || c === d.calibre; } },
   { k: 'verdict', t: 'Verdict', cls: 'rc-c-etat', html: r => { const v = verdictDuCalibre(infoDisj(r.nom).d); return etatHtml(v.n, v.mot, v.bulle); }, tri: r => rangEtat(verdictDuCalibre(infoDisj(r.nom).d).n), texte: r => verdictDuCalibre(infoDisj(r.nom).d).mot },
