@@ -214,3 +214,33 @@ s'écrit ici, le jour même.
   `style-bibliotheque.css`, `08-table.js`, `style-table.css`.
 - Les batteries : `tests/toutes.js` (`moteur`, `navigateur`), les fichiers piégés `tests/pieges.js`, les écrans
   `tests/ecran/` (`charge`, `fumee`, `captures`, `oeil`). Avec Playwright : `NODE_PATH=$(npm root -g)`.
+
+## La carte du code (pour ne pas tout redécouvrir à chaque séance)
+
+- **Taille** (v95) : 54 modules, environ 4 Mo de code (l'équivalent de 100 000 lignes), 52 feuilles de style, 53 batteries.
+  Personne ne le tient en tête : on s'y repère par cette carte, par les batteries, et en cherchant (`grep`) — jamais de mémoire.
+- **Deux étages.** Le MOTEUR (`01` à `07`, `09-*`) calcule sans écran et se teste sans navigateur : modèle (`01`), lecture
+  (`02`), graphe, placement, routage, dessin, folios ; barrettes et bible (`09-barrettes`), chute et chemins du courant
+  (`09-chute` : `cheminsDepuis`, `branchesDepuis`, `estSource`), disjoncteurs, raccords, PDF, Visio, indices
+  (`09-indices`). L'INTERFACE (`08-*`, `10-demarrage`) montre : tout y est dans une seule portée, les modules se chargent
+  dans l'ordre alphabétique — **un module qui touche `MENU` ou `surLePlan` doit venir après `08-interface`** (son nom
+  commence par une lettre après « i »).
+- **L'état** : `app` (le plan sur la table : `app.contrat` = liaisons, charges, sexes, raccords, cartouche ; `app.retouches`
+  = les positions ; `app.source` quand le plan est découpé en folios). `verite()` = les liaisons du fichier ;
+  `liaisonsDuPlan()` = celles du folio affiché ; `sourceDe(l)` ramène l'une à l'autre. `histPush(quoi)` avant tout geste
+  annulable ; `redessiner()` après.
+- **Ajouter un document** (le modèle : `08-sauvegarde.js`, `08-sources.js`) : `ouvrirFiche({ mode, large }, corps, pied)`
+  avec `tete(sur, titre)` ; un écouteur sur `$('fiche-corps')` ; une ligne dans `src/page.html` (`data-act`) et
+  `MENU.actions.xxx = surLePlan(...)` ; ses mots-clés dans la table de la palette (`08-interface`, près de `sauvegarde:`).
+- **Agir sur le plan dessiné** : les câbles sont des `path.cab[data-i]` (indices dans `liaisonsDuPlan()`), les blocs des
+  `g.comp[data-name]` ; tout se repeint par `peindre()` → `peindreEtats()`, où s'accrochent le plan vivant et les marques
+  d'indice. Les clics du plan passent par des `pointerdown/up` sur `#planche` (les intercepter en capture).
+- **Imprimer** : `#printroot` reçoit le folio (`imprimer`) ; la fiche d'atelier imprime `#inspecteur` lui-même
+  (`body.atelier`, `style-zz-atelier.css`).
+- **Les styles** s'empilent dans l'ordre alphabétique (`style.css`, puis `style-*.css` ; les derniers gagnent : `style-zz-*`).
+  C'est une dette : des retouches posées sur des retouches. À ranger un jour, batteries vertes d'abord.
+- **Essayer vite** (quelques secondes, sans batterie) : `tests/ecran/commun.js` (`ouvrir`, `exemple`, `montrer`, `grand`,
+  `onglet`) dans une sonde jetable ; `tests/ecran/charge.js` dit si la page se charge sans erreur ;
+  `tests/fonctions.js` rejoue les fonctions de novembre 2026.
+- **Ce qui prouve quoi** : une batterie verte prouve que VOLTA fait ce que la batterie attend — pas que la règle est la
+  bonne. Seuls le lecteur et ses vrais fichiers le disent. Quand une fonction n'a été vue que sur l'exemple, on l'écrit.
