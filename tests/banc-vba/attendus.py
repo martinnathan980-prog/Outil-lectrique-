@@ -648,40 +648,48 @@ def panne_classeur():
 def batterie():
     """INTENTION : la batterie d'essais du bouton 3 (BatterieSEE, réglage Batterie = O). SEE caché refuse CreateObject au
     bureau : la batterie écrit et dessine avec les objets que SEE rend et ceux d'un folio dessiné à la main (la graine).
-    Avec la graine : elle pose sur le folio vide un symbole, un texte, un trait et un rectangle de la graine, trace un fil
-    par une collection de points faite sans CreateObject, recopie un folio, enregistre deux fois, referme SEE et lâche
-    tout. Sans folio : « PAS DE GRAINE », dit dans la feuille et dans le bloc. SEE qui tombe à un essai (462) : la
-    batterie s'arrête, le dit, et note à côté du projet l'essai à sauter (et celui d'avant) ; au second clic, ils sont
-    sautés et les autres sont faits."""
-    def dans_(ou, *morceaux):
-        return (lambda t: partie(t, ou), lambda s: all(m in s for m in morceaux))
-    def cas(libelle, ou, *morceaux):
-        extraire, test = dans_(ou, *morceaux)
-        return (libelle, extraire, test)
+    Avec la graine : elle change un texte et un repère, pose sur le folio vide un symbole, un texte, un trait et un
+    rectangle de la graine, met le trait posé entre deux points, trace un fil par une collection de points faite sans
+    CreateObject, recopie un folio, enregistre deux fois, referme SEE et lâche tout. Sans folio : « PAS DE GRAINE », dit
+    dans la feuille et dans le bloc, sans renvoyer à la partie 4. SEE qui « tombe » à un essai (462 : il était déjà
+    parti avant l'appel) : la batterie s'arrête, le dit, note à côté du projet l'essai d'AVANT à sauter et l'essai en
+    cours comme suspect (« ? ») ; la même panne encore : l'essai suspect, refait, fait retomber SEE : il est noté à
+    sauter pour de bon ; au dernier clic, les deux sont sautés et les autres sont faits. Un enregistrement n'est jamais
+    noté à sauter pour une chute venue d'ailleurs."""
+    def cas(libelle, ou, *morceaux, sans=()):
+        return (libelle, lambda t: partie(t, ou), lambda s: bool(s) and all(m in s for m in morceaux) and not any(m in s for m in sans))
+    ECRITS = 'D01, D02, D05, D06, D08, D10, D11, D12, D22, D30, D31, D32'
     return [
         cas('graine : la batterie est faite, les écritures acceptées sont dites dans le bloc', 'graine',
-            'Résultat = BATTERIE FAITE (', "SEE a ACCEPTÉ d'écrire : D01, D06, D08, D10, D12, D22, D30, D31, D32"),
+            'Résultat = BATTERIE FAITE (', "SEE a ACCEPTÉ d'écrire : " + ECRITS),
         cas('graine : un symbole, un texte, un trait et un rectangle de la graine posés ; un fil tracé ; un folio recopié deux fois',
             'graine', 'AddSymbol 1 ; AddGraphicObject 3 ; AddWireConnection 1 ; AddSheet 2 ;'),
         cas('graine : enregistré deux fois (avant et après les fils et les blocs), SEE refermé, tout lâché', 'graine',
             'Save 2 ; CloseProject 1 ; Quit 1 ; gApp lâché oui'),
         cas('graine : les points et la collection de points faits sans CreateObject (B01, B02, B04 : OK)', 'graine',
             '[B01 OK][B02 OK]', '[B04 OK]'),
-        cas('graine : le haut de la feuille Batterie dit les écritures, les changements relus et l\'enregistrement', 'graine',
-            'Écritures/SEE a ACCEPTÉ : D01, D06, D08, D10, D12, D22, D30, D31, D32', 'Effet relu/CHANGEMENT relu pour : D01, D04, D06, D22, D30, D31',
+        cas('graine : le haut de la feuille Batterie dit les écritures, les changements RELUS (un état illisible n\'en est pas un) et l\'enregistrement',
+            'graine', 'Écritures/SEE a ACCEPTÉ : ' + ECRITS, 'Effet relu/CHANGEMENT relu pour : D01, D04, D06, D08, D10, D12, D22, D30, D31',
             'Enregistré/oui (Project.Save)'),
+        cas('graine : une écriture acceptée le reste quand l\'objet n\'a pas de méthode Update (D02, D05, D11 : OK)', 'graine',
+            '[D02 OK]', '[D05 OK]', '[D10 OK][D11 OK]'),
         cas('graine : le bloc demande les photos de Batterie et de Sonde_Folio EN ENTIER, puis la partie 4 du mode d\'emploi', 'graine',
             'onglet « Batterie » et prends-le en photo EN ENTIER', 'onglet « Sonde_Folio » et prends-le en photo EN ENTIER', 'la partie 4'),
         cas('graine : aucun essai n\'est resté « en cours », aucun n\'est à sauter', 'graine', 'en cours [] ; à sauter absent'),
-        cas('sans graine : « PAS DE GRAINE » dit en haut de la feuille et dans le bloc (la partie 2 du mode d\'emploi), rien écrit dans SEE',
-            'sans graine', 'ATTENTION/PAS DE GRAINE', '[A03 PAS DE GRAINE]', 'PAS DE GRAINE : aucun folio du projet d\'essai n\'a de symbole. Fais la partie 2',
-            'AddSymbol 0 ; AddGraphicObject 0 ; AddWireConnection 0 ; AddSheet 0'),
-        cas('panne : SEE tombe à D22 : dit en haut de la feuille et dans le bloc, la batterie s\'arrête là', 'panne',
-            'SEE EST TOMBÉ/à l\'essai D22', 'SEE est tombé (ou a été arrêté) à l\'essai D22', '[D22 462 (800A01CE)] ;'),
-        cas('panne : ce qui était fait avant est enregistré (S01), l\'essai fautif et celui d\'avant sont notés à côté du projet', 'panne',
-            'Save 1 ;', '[S01 OK]', 'en cours [] ; à sauter [D20,D22]'),
-        cas('second clic : les deux essais notés sont sautés, les autres sont faits, jusqu\'à l\'enregistrement', 'second clic',
-            '[D20 SAUTÉ][D22 SAUTÉ][D23', '[S02 OK]', 'Essais sautés/D20,D22', 'AddWireConnection 0 ;', 'Save 2 ;'),
+        cas('sans graine : « PAS DE GRAINE » dit en haut de la feuille et dans le bloc (la partie 2 du mode d\'emploi, pas la partie 4), rien écrit dans SEE',
+            'sans graine', 'ATTENTION/PAS DE GRAINE', '[A03 PAS DE GRAINE]', 'Résultat = BATTERIE SANS GRAINE (',
+            'PAS DE GRAINE : aucun folio du projet d\'essai n\'a de symbole. Fais la partie 2',
+            'AddSymbol 0 ; AddGraphicObject 0 ; AddWireConnection 0 ; AddSheet 0', sans=('la partie 4',)),
+        cas('panne : SEE tombe à D22 : dit en haut de la feuille et dans le bloc (« BATTERIE INTERROMPUE », pas la partie 4), la batterie s\'arrête là',
+            'panne', 'SEE EST TOMBÉ/à l\'essai D22', 'Résultat = BATTERIE INTERROMPUE : SEE est tombé à l\'essai D22 (',
+            'SEE est tombé (ou a été arrêté) à l\'essai D22', '[D22 462 (800A01CE)] ;', 'Si SEE retombe au même essai, reclique encore une fois',
+            sans=('la partie 4',)),
+        cas('panne : ce qui était fait avant est enregistré (S01) ; l\'essai d\'avant est noté à sauter, l\'essai en cours suspect (« ? »)',
+            'panne', 'Save 1 ;', '[S01 OK]', 'en cours [] ; à sauter [D20,D22?]', 'À sauter ensuite/D20, D22? (avec « ? »'),
+        cas('panne encore : l\'essai d\'avant est sauté ; l\'essai suspect, refait, fait retomber SEE : il est noté à sauter pour de bon',
+            'panne encore', '[S01 OK][D20 SAUTÉ][D22 462 (800A01CE)] ;', 'à sauter [D20,D22?,D22]', 'Essais sautés/D20 (', 'À sauter ensuite/D22//'),
+        cas('dernier clic : les deux essais notés sont sautés, les autres sont faits, jusqu\'à l\'enregistrement', 'dernier clic',
+            '[D20 SAUTÉ][D22 SAUTÉ][D23', '[S02 OK]', 'Essais sautés/D20, D22 (', 'AddWireConnection 0 ;', 'Save 2 ;', 'Résultat = BATTERIE FAITE ('),
     ]
 
 def ligne_wd(dossier):

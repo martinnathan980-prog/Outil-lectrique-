@@ -1484,9 +1484,11 @@ End Function
 ' ---------------------------------------------------------------------------- la batterie d'essais du bouton 3
 ' BatterieSEE (réglage Batterie = O) : SEE caché refuse CreateObject au bureau ; la batterie écrit et dessine avec les
 ' objets que SEE rend et ceux d'un folio dessiné à la main (la graine). Le faux SEE reçoit une graine (le folio « 01 » :
-' deux symboles, un texte, un trait, un rectangle) et un folio vide (« 02 »). Quatre passages : la graine ; aucun folio
-' (« PAS DE GRAINE ») ; SEE qui « tombe » à AddWireConnection (462 : la batterie s'arrête, le dit, et note l'essai à
-' sauter à côté du projet) ; puis un second clic (les essais notés sont sautés, les autres faits).
+' deux symboles, un texte, un trait, un rectangle) et un folio vide (« 02 »). Cinq passages : la graine ; aucun folio
+' (« PAS DE GRAINE ») ; SEE qui « tombe » à AddWireConnection (462, « déjà parti » : la batterie s'arrête, le dit, note
+' à côté du projet l'essai d'AVANT à sauter et l'essai en cours comme suspect) ; la même panne encore (l'essai suspect
+' refait fait retomber SEE : il est noté à sauter pour de bon) ; un dernier clic sans panne (les essais notés sont
+' sautés, les autres faits).
 
 ' Le projet d'essai du faux SEE : la graine et le folio vide, ou aucun folio.
 Private Sub PreparerBatterie(ByVal v4 As Boolean, ByVal forme As Long, ByVal projet As String, ByVal graine As Boolean)
@@ -1576,8 +1578,12 @@ Public Function BancBatterie(ByVal v4 As Boolean, ByVal forme As Long, ByVal pro
     EssaiSansFenetre
     r = r & " | panne : " & BilanBatterie(projet)
     PreparerBatterie v4, forme, projet, True
+    gPanneFil = True
     EssaiSansFenetre
-    r = r & " | second clic : " & BilanBatterie(projet)
+    r = r & " | panne encore : " & BilanBatterie(projet)
+    PreparerBatterie v4, forme, projet, True
+    EssaiSansFenetre
+    r = r & " | dernier clic : " & BilanBatterie(projet)
     BancBatterie = r
     Exit Function
 E:

@@ -62,10 +62,8 @@ PARTIE 2 : DESSINER LA GRAINE À LA MAIN DANS SEE (10 minutes)
    - 1 texte libre : BONJOUR ;
    - 1 trait libre et 1 rectangle libre (les outils de dessin).
 3. Crée un 2e folio et laisse-le VIDE : Excel essaiera d'y dessiner.
-4. Si tu sais le faire (sinon saute ce point) : sélectionne ton dessin
-   et enregistre-le comme BLOC, sous le nom PILOTE.
-5. Prends une photo du folio dessiné.
-6. Enregistre. Puis menu File, puis Exit. Attends 30 secondes.
+4. Prends une photo du folio dessiné.
+5. Enregistre. Puis menu File, puis Exit. Attends 30 secondes.
 
 PARTIE 3 : LE BOUTON 3, LA BATTERIE AUTOMATIQUE (5 à 10 minutes)
 1. Dans Excel, en bas, clique sur l'onglet « Accueil ». Descends avec
@@ -88,7 +86,9 @@ PARTIE 3 : LE BOUTON 3, LA BATTERIE AUTOMATIQUE (5 à 10 minutes)
    c. l'onglet « Sonde_Folio » EN ENTIER, de la même façon.
 5. Si le message dit « SEE est tombé » (ou si tu as dû arrêter SEE) :
    reclique sur le bouton 3 (le point 1). Il saute l'essai fautif et
-   fait les autres. Refais les photos a et b.
+   fait les autres. Refais les photos a et b. Si SEE retombe au même
+   essai : reclique encore une fois, il sera sauté.
+   S'il dit de ne pas recliquer : passe à la partie 5.
    S'il dit « PAS DE GRAINE » : refais la partie 2, puis le bouton 3.
 
 PARTIE 4 : REGARDER DANS SEE CE QU'EXCEL A FAIT (5 minutes)

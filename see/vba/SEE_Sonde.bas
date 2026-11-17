@@ -1399,6 +1399,16 @@ Public Function FolioDuProjet(ByVal prj As Object, ByVal nom As String) As Objec
     Next o
 End Function
 
+' La valeur d'une propriété d'un folio, telle quelle, sauf « dessiné par », « conçu par » et « vérifié par » : ils peuvent
+' porter un nom de personne, et la feuille est photographiée. Seule leur longueur est dite, sauf si la valeur est vide,
+' illisible, ou écrite par le pilote (« PILOTE ... »).
+Private Function ValeurSansNom(ByVal nom As String, ByVal valeur As String) As String
+    ValeurSansNom = valeur
+    If nom <> "DrawnBy" And nom <> "DesignedBy" And nom <> "VerifiedBy" Then Exit Function
+    If Len(valeur) = 0 Or Left$(valeur, 4) = "#ERR" Or Left$(valeur, 6) = "PILOTE" Then Exit Function
+    ValeurSansNom = "(" & Len(valeur) & " caractère(s), non montré)"
+End Function
+
 Private Sub DecrireFolio(ByVal sh As Object)
     Dim o As Variant, n As Long, t As Variant, tb As Object, nomFolio As String
     nomFolio = LireProp(sh, "Name")
@@ -1412,7 +1422,7 @@ Private Sub DecrireFolio(ByVal sh As Object)
     Dim nomProp As Variant
     For Each nomProp In Array("Name", "Type", "SheetOrder", "CreationMethod", "ProcessName", "DrawnBy", "DesignedBy", _
             "VerifiedBy", "CreationDate", "ScaleForTitleBlock", "RotationForTitleBlock", "Step", "Modified")
-        Ecrire Array(CStr(nomProp), LireProp(sh, CStr(nomProp)))
+        Ecrire Array(CStr(nomProp), ValeurSansNom(CStr(nomProp), LireProp(sh, CStr(nomProp))))
     Next nomProp
     Set tb = SEE_CartoucheDuFolio(sh)
     If tb Is Nothing Then
