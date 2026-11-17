@@ -28,8 +28,8 @@ CE QUI EST ACQUIS (tes photos du 2, du 3 et du 5 novembre)
   le BOUTON 3 qui compte.
 
 
-CETTE FOIS : LA JOURNÉE DE TESTS (tout seul au bureau, 1 h environ)
--------------------------------------------------------------------
+CETTE FOIS : LA JOURNÉE DE TESTS (tout seul au bureau, 1 h 30 environ)
+----------------------------------------------------------------------
 But : trouver par quel chemin Excel fait dessiner SEE. Excel ne sait
 pas créer un objet à partir de rien dans ton SEE : il essaie donc de
 RECOPIER et de MODIFIER un petit dessin que tu fais à la main (la
@@ -47,10 +47,10 @@ PARTIE 1 : INSTALLER (2 minutes)
    (Barres jaunes en haut d'Excel : l'étape C, points 3 et 4.)
 3. Dans Excel, appuie ensemble sur Alt + F8, clique sur « EssaiWD »,
    puis sur « Exécuter ». Attends le message, clique sur OK, puis
-   prends en photo le haut de la feuille « Essai_WD ».
-   (Il écrit les fichiers d'essai de la partie 5. S'il affiche une
-   erreur : prends-la en photo, clique sur « Fin » ou sur OK, et
-   continue : le reste marche sans lui.)
+   prends en photo la feuille « Essai_WD » EN ENTIER (en descendant).
+   (Il écrit les fichiers d'essai de la liste de fils. S'il affiche
+   une erreur : prends-la en photo, clique sur « Fin » ou sur OK, et
+   continue : seule la partie 5 a besoin de lui.)
 
 PARTIE 2 : DESSINER LA GRAINE À LA MAIN DANS SEE (10 minutes)
 1. Ouvre SEE, puis ton projet d'essai (TEST_…).
@@ -68,28 +68,41 @@ PARTIE 2 : DESSINER LA GRAINE À LA MAIN DANS SEE (10 minutes)
 PARTIE 3 : LE BOUTON 3, LA BATTERIE AUTOMATIQUE (5 à 10 minutes)
 1. Dans Excel, en bas, clique sur l'onglet « Accueil ». Descends avec
    la molette et clique sur le gros bouton orange « 3. SEE FERMÉ ».
-2. Comme les autres fois : choisis ton projet d'essai (TEST_…, pas un
-   fichier « avant-pilote »), « Ouvrir », OK, puis ton Username et ton
-   mot de passe SEE (Excel ne le garde nulle part).
+2. Comme les autres fois : va dans le dossier « Robot » de ton Bureau,
+   choisis ton projet d'essai (TEST_…, pas un fichier
+   « avant-pilote »), « Ouvrir », OK à la question, puis ton Username
+   et ton mot de passe SEE (Excel ne le garde nulle part).
    Si Excel affiche « Erreur de compilation » : prends l'écran en
    photo, clique sur OK, ferme la fenêtre de code par sa croix, et
    passe à la partie 5 (elle marche sans le bouton 3).
-3. Attends le message de fin sans toucher à rien : 2 à 5 minutes.
-   Si Excel reste bloqué plus de 5 minutes, ou dit qu'il attend
-   « qu'une autre application termine une action OLE » : fais « SI
-   EXCEL RESTE BLOQUÉ », plus bas (arrête SEE, PAS Excel). Excel
-   finit alors son message : continue au point 4, puis au point 5.
+3. Attends le message de fin : 2 à 5 minutes. Ne touche à rien, sauf
+   si SEE affiche un message : prends-le en photo, puis clique sur OK
+   s'il n'a que ce bouton, sinon sur Annuler (ou Non).
+   En bas à gauche d'Excel, tu vois le numéro de l'essai en cours
+   (A18, D06…) : tant qu'il change, Excel travaille. S'il ne change
+   plus depuis 5 minutes, ou si Excel dit qu'il attend « qu'une autre
+   application termine une action OLE » : fais « SI EXCEL RESTE
+   BLOQUÉ », plus bas (arrête SEE, PAS Excel). Excel finit alors son
+   message : continue au point 4, puis au point 5.
 4. Clique sur OK, puis prends les photos, dans cet ordre :
    a. la partie jaune de la feuille Resultat_Test ;
    b. l'onglet « Batterie » EN ENTIER : plusieurs photos, en
       descendant jusqu'à la dernière ligne ;
-   c. l'onglet « Sonde_Folio » EN ENTIER, de la même façon.
-5. Si le message dit « SEE est tombé » (ou si tu as dû arrêter SEE) :
-   reclique sur le bouton 3 (le point 1). Il saute l'essai fautif et
-   fait les autres. Refais les photos a et b. Si SEE retombe au même
-   essai : reclique encore une fois, il sera sauté.
-   S'il dit de ne pas recliquer : passe à la partie 5.
-   S'il dit « PAS DE GRAINE » : refais la partie 2, puis le bouton 3.
+   c. si la ligne « Et maintenant » le demande : l'onglet
+      « Sonde_Folio » EN ENTIER. Il est large : après les photos en
+      descendant, reviens en haut, va vers la droite (la barre du
+      bas) et recommence, jusqu'à la dernière colonne.
+5. Relis la partie jaune de Resultat_Test, et fais ce qu'elle dit :
+   - sous « 4. SEE créé », « Connexion à SEE » doit dire OUI. Si elle
+     dit REFUSÉE ou « pas essayée » : reclique sur le bouton 3 et
+     retape ton Username et ton mot de passe (une seule fois) ;
+   - sa dernière ligne, « Et maintenant », dit « SEE est tombé » (ou
+     tu as dû arrêter SEE) : reclique sur le bouton 3 (le point 1).
+     Il saute l'essai fautif et fait les autres. Refais les photos.
+     Trois fois au plus ; si elle dit de ne pas recliquer, n'insiste
+     pas : passe à la partie 4 ;
+   - elle dit « PAS DE GRAINE » : refais la partie 2, puis le
+     bouton 3, une seule fois.
 
 PARTIE 4 : REGARDER DANS SEE CE QU'EXCEL A FAIT (5 minutes)
 1. Ouvre SEE, puis ton projet d'essai.
@@ -102,37 +115,47 @@ PARTIE 4 : REGARDER DANS SEE CE QU'EXCEL A FAIT (5 minutes)
 5. Ouvre chaque folio en plus, et ceux du groupe BATTERIE : photo.
 
 PARTIE 5 : LA LISTE DE FILS PAR LES MENUS DE SEE (20 minutes)
-Les fichiers Essai-WD-….xml sont dans le dossier « Kit-SEE », à côté
-de Pilote-SEE.xlsm (sinon dans le dossier de ton projet d'essai).
-1. SEE ouvert sur ton projet d'essai. D'abord le fichier simple :
-   menu File, puis Import, puis Wire List ; clique sur
-   Essai-WD-3.10.xml, puis sur « Open ». SEE doit dire « successful ».
-2. Menu Insert, puis From Wiring list : la fenêtre « Component
+1. Dans Excel, refais Alt + F8, « EssaiWD », « Exécuter ». Cette
+   fois, il écrit les fichiers Essai-WD-….xml dans le dossier de ton
+   projet d'essai, là où la fenêtre de SEE s'ouvre (son message dit le
+   dossier). Clique sur OK : pas de nouvelle photo.
+   (S'il ne se relance pas : les fichiers de la partie 1 sont dans le
+   dossier « Kit-SEE », à côté de Pilote-SEE.xlsm.)
+2. Dans SEE : ton projet d'essai ouvert, avec le 2e folio à l'écran.
+3. LE PLUS IMPORTANT, pour toute cette partie : dès qu'un composant
+   paraît dans la fenêtre « Component Insertion », ne clique PAS sur
+   Cancel. Prends la photo, clique sur le composant, valide (OK ou
+   Insert) et pose-le sur le 2e folio. Prends le folio en photo.
+4. D'abord le fichier simple : menu File, puis Import, puis Wire
+   List ; clique sur Essai-WD-3.10.xml, puis sur « Open ». SEE doit
+   dire « successful ».
+5. Menu Insert, puis From Wiring list : la fenêtre « Component
    Insertion » s'ouvre. Clique sur son onglet « Cables » et prends-le
-   en photo (je ne l'ai jamais vu). Puis Cancel.
-3. Puis, pour chaque fichier Essai-WD-T01… à T10…, dans l'ordre :
+   en photo (je ne l'ai jamais vu). Aucun composant : Cancel.
+6. Puis, pour chaque fichier Essai-WD-T01… à T10…, dans l'ordre :
    a. File > Import > Wire List, le fichier, « Open » ;
    b. Insert > From Wiring list ;
    c. note dans « MES RÉPONSES » (plus bas) : le message de SEE ; si
       la fenêtre s'ouvre ; l'onglet qui montre quelque chose ;
-   d. si un onglet montre un composant : photo, puis Cancel.
+   d. un onglet montre un composant : fais le point 3. Sinon : Cancel.
    Si la fenêtre ne s'ouvre plus du tout : réimporte Essai-WD-3.10.xml
-   (le point 1), puis passe au fichier suivant.
+   (le point 4), puis passe au fichier suivant.
    N'importe pas un fichier marqué REFUSÉ dans la feuille Essai_WD.
-4. LE PLUS IMPORTANT : dès qu'un composant paraît dans la fenêtre,
-   clique dessus, valide (OK ou Insert) et pose-le sur le 2e folio.
-   Prends le folio en photo.
-5. Menu Process : prends en photo le menu ouvert. S'il a une ligne
+   Un fichier T manque : écris « pas de fichier » et passe au suivant.
+7. Menu Process : prends en photo le menu ouvert. S'il a une ligne
    « Cabling » : clique dessus, prends en photo ce qui s'ouvre, puis
    Cancel si tu ne sais pas quoi répondre.
 
 PARTIE 6 : LE CLAVIER (5 minutes)
 Si rien d'autre ne marche, Excel pourra « taper au clavier » dans SEE
-à ta place. Pour le savoir, dans SEE, sur le 2e folio, SANS la souris :
-1. Lance ta commande pour tracer un fil. Les flèches du clavier
-   déplacent-elles le curseur ? La touche Entrée pose-t-elle un point ?
-2. Lance la pose d'un symbole. Peut-on taper X et Y au clavier ?
-   Prends en photo le bas de l'écran pendant la pose.
+à ta place. Pour le savoir, dans SEE, sur le 2e folio :
+1. Lance ta commande pour tracer un fil (au clavier si tu connais le
+   raccourci, sinon à la souris). Puis lâche la souris : les flèches
+   du clavier déplacent-elles le curseur ? La touche Entrée
+   pose-t-elle un point ?
+2. Lance la pose d'un symbole, puis lâche la souris. Peut-on taper X
+   et Y au clavier ? Prends en photo le bas de l'écran pendant la
+   pose.
 3. Appuie ensemble sur Alt + F11 : que se passe-t-il ? (rien, ou une
    fenêtre : photo)
 
@@ -145,9 +168,11 @@ s'ouvre ? / quel onglet montre quelque chose ?
    T06 : ................    T07 : ...............
    T08 : ................    T09 : ...............
    T10 : ................
-Partie 5, point 4 : un composant posé sur le folio ? ...............
-Partie 6 : les flèches ? ......  Entrée ? ......
-           X et Y au clavier ? ......  Alt + F11 ? ......
+Partie 5, point 3 : un composant posé sur le folio ? Avec quel
+fichier ? ...............
+Partie 6 : commande lancée au clavier ? ......  les flèches ? ......
+           Entrée ? ......  X et Y au clavier ? ......
+           Alt + F11 ? ......
 Puis envoie-moi tout (l'étape F).
 
 
@@ -359,8 +384,10 @@ Excel te le dit (« SEE tourne encore, caché »), ou Excel reste bloqué.
 4. Clique sur « Fin de tâche ».
 5. Ne termine PAS Excel, même s'il est marqué « Ne répond pas » : la
    partie jaune serait perdue.
-6. Tu ne trouves pas SEE : enregistre et ferme Excel, puis redémarre
-   l'ordinateur.
+6. Tu ne trouves pas SEE : si Excel répond encore, enregistre et
+   ferme-le ; sinon prends l'écran en photo. Puis redémarre
+   l'ordinateur, rouvre Pilote-SEE.xlsm et reclique sur le bouton 3 :
+   il saute l'essai qui a bloqué.
 
 
 SI ÇA BLOQUE
@@ -402,8 +429,11 @@ LES PHOTOS À PRENDRE
 - Après la batterie (cette fois) : la partie jaune de la feuille
   Resultat_Test, puis les feuilles Batterie et Sonde_Folio EN ENTIER
   (plusieurs photos chacune, en descendant) ; puis, dans SEE, l'arbre
-  du projet et chaque folio ; puis les fenêtres de la partie 5 (File >
-  Import > Wire List, « Component Insertion ») et tes réponses.
+  du projet et chaque folio ; puis la feuille Essai_WD EN ENTIER, la
+  fenêtre « Component Insertion », le folio après la pose, le menu
+  Process, le bas de l'écran de la partie 6, et tes réponses.
+  Pas de photo de la fenêtre où tu choisis un fichier : elle montre
+  le nom de tes dossiers.
 - Tout message d'erreur ou de refus, tel quel, même un message de
   Windows (par exemple « Sécurité Windows »).
 Si une photo coupe le texte : prends la première photo, fais descendre

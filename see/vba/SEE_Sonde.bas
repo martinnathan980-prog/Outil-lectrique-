@@ -1242,6 +1242,9 @@ End Function
 Private Sub AjusterColonnes()
     mFeuille.Columns.AutoFit
     If mFeuille.Name = "Sonde_Symboles" Then mFeuille.Columns(1).ColumnWidth = 13
+    ' (Sonde_Folio aussi : ses titres de section, en colonne A, prendraient la largeur de l'écran, et une photo ne
+    ' montrerait pas les colonnes Famille et Forme)
+    If mFeuille.Name = "Sonde_Folio" Then mFeuille.Columns(1).ColumnWidth = 24
 End Sub
 
 ' Les familles d'un environnement, SEE (eSEEFamily = 1) puis utilisateur (2),

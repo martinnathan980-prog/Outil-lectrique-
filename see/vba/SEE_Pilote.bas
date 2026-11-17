@@ -102,7 +102,7 @@ Private mDiagOK As Long
 Private mDiagKO As Long
 ' la batterie d'essais du bouton 3 (BatterieSEE)
 Private Const BAT_TETE As Long = 11 ' la ligne d'en-tête du tableau de la feuille Batterie (le résumé est au-dessus)
-Private Const BAT_VERSION As String = "6b" ' dite en haut de la feuille Batterie : les photos disent quelle batterie a tourné
+Private Const BAT_VERSION As String = "6c" ' dite en haut de la feuille Batterie : les photos disent quelle batterie a tourné
 Private Const BAT_SAUTE As String = "Batterie-essais-a-sauter.txt"
 Private Const BAT_ENCOURS As String = "Batterie-essai-en-cours.txt"
 Private mBatWs As Object        ' la feuille Batterie
@@ -4914,7 +4914,7 @@ Private Sub BatSerieA()
     If elts.Count >= 2 Then Set mBatSym2 = elts.Item(2)
     s = ""
     For i = 1 To elts.Count
-        If i <= 6 Then s = s & IIf(i > 1, " | ", "") & BatSymbole(elts.Item(i))
+        If i <= 12 Then s = s & IIf(i > 1, " | ", "") & BatSymbole(elts.Item(i))
     Next i
     BatLigne "A07", "les symboles de la graine", elts.Count & " symbole(s)", s
     ' ses textes, ses traits, ses rectangles
