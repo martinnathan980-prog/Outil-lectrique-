@@ -643,18 +643,21 @@ sortie en dernier) et de la bibliothèque de types de V5R2.
   `View.InsertSymbol`, `GetMouseClickPosition`, `GetMousePointsCollection`,
   `Project.LockProject`.
 - Avant chaque essai risqué, son numéro est écrit dans
-  `Batterie-essai-en-cours.txt`, à côté du projet. Si SEE tombe ou bloque
-  Excel, la batterie suivante saute l'essai fautif
-  (`Batterie-essais-a-sauter.txt`) : l'essai en cours si SEE est tombé
-  pendant l'appel (800706BE) ; sinon (462, 800706BA : SEE était déjà parti)
-  l'essai d'avant, et l'essai en cours devient « suspect » (noté avec « ? »,
-  refait une fois, sauté pour de bon s'il fait retomber SEE). Un
-  enregistrement (S01, S02, S03) n'est jamais sauté pour une chute venue
-  d'ailleurs.
+  `Batterie-essai-en-cours.txt`, à côté du projet. SEE est sondé après
+  chaque essai (sa version se lit-elle encore ?) : une chute est ainsi mise
+  sur l'essai qui l'a causée, et la batterie suivante le saute
+  (`Batterie-essais-a-sauter.txt`). Si SEE était déjà parti avant l'appel
+  (462, 800706BA : tombé entre deux essais), c'est l'essai d'avant qui est
+  sauté, et l'essai en cours devient « suspect » (noté avec « ? », refait
+  une fois, sauté pour de bon s'il voit encore SEE tomber). Un
+  enregistrement (S01, S02, S03) n'est sauté que si SEE est tombé pendant
+  lui.
 - Version 6b (après relecture) : l'état d'un folio compte les textes, les
   traits et les rectangles par leurs types 1, 2 et 4 (le type -1 n'est pas
   établi) ; un état illisible n'est ni un changement ni son absence (« ON NE
-  SAIT PAS ») ; `Update` est noté à part de l'écriture qui le précède ;
+  SAIT PAS ») ; une lecture qui ne rend rien sans erreur compte pour zéro ;
+  l'absence de méthode `Update` (438) ne fait pas refuser l'écriture qui la
+  précède, tout autre refus d'`Update` si ;
   `Block.SaveBlock` n'est pas appelé (les blocs de l'environnement sont
   communs aux vrais projets) ; « dessiné par », « conçu par » et « vérifié
   par » ne sont pas montrés (ils peuvent porter un nom de personne) ; la

@@ -113,7 +113,7 @@ Private mBatEcrits As String    ' les essais d'écriture que SEE a acceptés
 Private mBatVus As String       ' les essais d'écriture dont l'effet est relu (l'état a changé)
 Private mBatMort As Boolean     ' SEE ne répond plus : la batterie s'arrête
 Private mBatTombe As String     ' l'essai où SEE est tombé
-Private mBatCodeMort As Long    ' le code de la chute (800706BE : SEE est tombé PENDANT l'appel ; les autres : il était déjà parti)
+Private mBatPendant As Boolean  ' SEE est tombé PENDANT l'essai mBatTombe (Faux : il était déjà parti avant l'appel)
 Private mBatAjoute As String    ' ce que cette batterie ajoute aux essais à sauter
 Private mBatSautes As String    ' les essais sautés par cette batterie
 Private mBatCourant As String   ' le dernier essai risqué commencé (BatPermis)
@@ -4353,7 +4353,7 @@ Private Sub BatterieSEE(ByVal prj As Object, ByVal chemin As String)
     mBatVus = ""
     mBatMort = False
     mBatTombe = ""
-    mBatCodeMort = 0
+    mBatPendant = False
     mBatAjoute = ""
     mBatSautes = ""
     mBatCourant = ""
@@ -4402,13 +4402,13 @@ Private Sub BatterieSEE(ByVal prj As Object, ByVal chemin As String)
     If Not mBatMort Then BatSerieD2
     If Not mBatMort Then BatSauver "S02"
     If Not mBatMort Then BatSerieC
-    ' SEE est tombé : quoi sauter au prochain clic ?
-    '  - tombé PENDANT l'appel (800706BE) : l'essai en cours ;
-    '  - déjà parti avant l'appel (462, 800706BA...) : l'essai d'AVANT (son résultat est déjà dans la feuille), et
-    '    l'essai en cours devient « suspect » (noté avec « ? » : il sera refait une fois ; s'il fait retomber SEE,
-    '    c'est lui, et il est sauté pour de bon). Jamais un enregistrement pour une chute venue d'ailleurs (BatASauter).
+    ' SEE est tombé : quoi sauter au prochain clic ? SEE est sondé après chaque essai (BatNote) : le plus souvent la
+    ' chute est donc vue PENDANT l'essai qui l'a causée, et c'est lui qui est sauté. Sinon (SEE était déjà parti avant
+    ' l'appel : tombé entre deux essais) : l'essai d'AVANT est sauté (son résultat est déjà dans la feuille ; jamais un
+    ' enregistrement : BatASauter), et l'essai en cours devient « suspect » (noté avec « ? » : il sera refait une
+    ' fois ; s'il voit encore SEE tomber, il est sauté pour de bon).
     If mBatMort And Len(mBatCourant) > 0 Then
-        pendant = (mBatCodeMort = &H800706BE)
+        pendant = mBatPendant
         suspect = (InStr(1, "," & Replace(mBatSaute, " ", "") & ",", "," & mBatCourant & "?,", vbTextCompare) > 0)
         If pendant Or suspect Then
             mBatAjoute = BatASauter(mBatAjoute, mBatCourant, True)
@@ -4459,12 +4459,11 @@ Private Function BatListe(ByVal liste As String, ByVal code As String) As String
     End If
 End Function
 
-' Vrai si SEE n'est plus là : un code de Windows qui le dit, ou, après une autre erreur, la version de SEE devenue
-' illisible (une lecture qui a toujours marché au bureau).
+' Vrai si SEE n'est plus là : un code de Windows qui le dit, sinon (appel réussi, ou autre erreur) la version de SEE
+' devenue illisible (une lecture qui a toujours marché au bureau).
 Private Function BatSEEParti(ByVal numErr As Long) As Boolean
     On Error Resume Next
     BatSEEParti = False
-    If numErr = 0 Then Exit Function
     If numErr = 462 Or numErr = &H800706BA Or numErr = &H800706BE Or numErr = &H80010108 Or numErr = &H80010007 Then
         BatSEEParti = True
     Else
@@ -4472,14 +4471,14 @@ Private Function BatSEEParti(ByVal numErr As Long) As Boolean
     End If
 End Function
 
-' Vrai si l'état d'un folio (BatEtat) a été lu en entier : aucun compte illisible (-1) ni absent (-2).
+' Vrai si l'état d'un folio (BatEtat) a été lu en entier : aucun compte illisible (-1).
 Private Function BatLisible(ByVal etat As String) As Boolean
     BatLisible = (Left$(etat, 1) = "S") And (InStr(1, etat, "-", vbBinaryCompare) = 0)
 End Function
 
 ' Update d'un objet, noté À PART de l'écriture qui le précède : une écriture que SEE a acceptée reste acceptée si
-' l'objet n'a pas de méthode Update. Rend le texte à ajouter au détail de la ligne ; si SEE n'est plus là, ne et de
-' prennent le code de la chute.
+' l'objet n'a PAS de méthode Update (438). Tout autre refus d'Update est le résultat de l'essai : ne et de prennent
+' son code. Rend le texte à ajouter au détail de la ligne.
 Private Function BatMaj(ByVal o As Object, ByRef ne As Long, ByRef de As String) As String
     Dim n As Long, d As String
     BatMaj = ""
@@ -4492,10 +4491,13 @@ Private Function BatMaj(ByVal o As Object, ByRef ne As Long, ByRef de As String)
     If n = 0 Then
         BatMaj = " ; Update : OK"
     Else
-        BatMaj = " ; Update REFUSÉ : " & CodeDeWindows(n) & " " & Left$(Trim$(d), 60)
-        If n = 462 Or n = &H800706BA Or n = &H800706BE Or n = &H80010108 Or n = &H80010007 Then
+        ' 438 (423 dans LibreOffice) : l'objet n'a pas de méthode Update ; tout autre code est un refus de SEE
+        If n = 438 Or n = 423 Then
+            BatMaj = " ; pas de méthode Update (" & n & ")"
+        Else
+            BatMaj = " ; Update REFUSÉ"
             ne = n
-            de = d
+            de = "Update : " & d
         End If
     End If
 End Function
@@ -4538,8 +4540,8 @@ End Sub
 
 ' Un essai : OK si numErr = 0, sinon le code et la phrase de SEE. Un essai
 ' d'ÉCRITURE que SEE accepte est retenu (mBatEcrits) ; si SEE n'est plus là
-' (BatSEEParti), la batterie s'arrête : mBatMort, l'essai (mBatTombe) et le
-' code de la chute (mBatCodeMort).
+' (BatSEEParti, sondé après chaque essai), la batterie s'arrête : mBatMort,
+' l'essai (mBatTombe), et si SEE est tombé pendant lui (mBatPendant).
 Private Sub BatNote(ByVal code As String, ByVal essai As String, ByVal numErr As Long, ByVal descErr As String, ByVal detail As String, _
         Optional ByVal ecriture As Boolean = False)
     On Error Resume Next
@@ -4550,13 +4552,16 @@ Private Sub BatNote(ByVal code As String, ByVal essai As String, ByVal numErr As
     Else
         BatLigne code, essai, CodeDeWindows(numErr), Left$(Trim$(descErr), 100) & IIf(Len(detail) > 0, " ; " & detail, "")
         mBatKO = mBatKO + 1
-        ' SEE est-il encore là ? Seule la PREMIÈRE chute est retenue : les essais qui suivent ne la renomment pas
-        If Not mBatMort Then
-            If BatSEEParti(numErr) Then
-                mBatMort = True
-                mBatTombe = code
-                mBatCodeMort = numErr
-            End If
+    End If
+    ' SEE est-il encore là ? Il est sondé après CHAQUE essai, réussi ou non : une chute est ainsi mise sur l'essai qui
+    ' l'a causée. Seule la PREMIÈRE chute est retenue : les essais qui suivent ne la renomment pas.
+    If Not mBatMort Then
+        If BatSEEParti(numErr) Then
+            mBatMort = True
+            mBatTombe = code
+            ' « déjà parti avant l'appel » (462, 800706BA, 80010108, 80010007), ou tombé PENDANT cet essai (tout le reste)
+            mBatPendant = Not (numErr = 462 Or numErr = &H800706BA Or numErr = &H80010108 Or numErr = &H80010007)
+            If numErr = 0 Then BatLigne code, "SEE ne répond plus après cet essai", "SEE TOMBÉ", "l'appel a rendu la main, mais la version de SEE ne se lit plus"
         End If
     End If
 End Sub
@@ -4673,16 +4678,44 @@ Private Function BatPt(ByVal p As Object) As String
     End If
 End Function
 
-' L'état d'un folio : S symboles, G textes + traits + rectangles, C segments de connexion (-1 : illisible ; -2 : rien rendu).
+' L'état d'un folio : S symboles, G textes + traits + rectangles, C segments de connexion (-1 : la lecture a échoué).
 Private Function BatEtat(ByVal sh As Object) As String
+    Dim e0 As Long, c As Object, s As String
     On Error Resume Next
     If sh Is Nothing Then
         BatEtat = "pas de folio"
         Exit Function
     End If
-    ' (les objets graphiques par les trois types que la sonde lit déjà : 1 les textes, 2 les traits, 4 les rectangles)
-    BatEtat = "S" & BatNb(SEE_SymbolesDuFolio(sh)) & " G" & BatNb(SEE_GraphiquesDuFolio(sh, 1)) & "+" & BatNb(SEE_GraphiquesDuFolio(sh, 2)) & _
-        "+" & BatNb(SEE_GraphiquesDuFolio(sh, 4)) & " C" & BatNb(SEE_SegmentsDuFolio(sh))
+    ' (les objets graphiques par les trois types que la sonde lit déjà : 1 les textes, 2 les traits, 4 les rectangles ;
+    ' une lecture qui ne rend rien SANS erreur compte pour zéro : seule une erreur rend le compte illisible, BatCompte)
+    e0 = gNbErreurs
+    Set c = SEE_SymbolesDuFolio(sh)
+    s = "S" & BatCompte(c, e0)
+    e0 = gNbErreurs
+    Set c = SEE_GraphiquesDuFolio(sh, 1)
+    s = s & " G" & BatCompte(c, e0)
+    e0 = gNbErreurs
+    Set c = SEE_GraphiquesDuFolio(sh, 2)
+    s = s & "+" & BatCompte(c, e0)
+    e0 = gNbErreurs
+    Set c = SEE_GraphiquesDuFolio(sh, 4)
+    s = s & "+" & BatCompte(c, e0)
+    e0 = gNbErreurs
+    Set c = SEE_SegmentsDuFolio(sh)
+    BatEtat = s & " C" & BatCompte(c, e0)
+End Function
+
+' Le nombre d'éléments qu'une lecture de SEE a rendus : rien de rendu SANS erreur compte pour 0 (un folio vide) ; -1 si
+' la lecture a levé une erreur depuis erreursAvant (elle est au journal), ou si le compte ne se lit pas.
+Private Function BatCompte(ByVal c As Object, ByVal erreursAvant As Long) As Long
+    On Error Resume Next
+    If gNbErreurs > erreursAvant Then
+        BatCompte = -1
+    ElseIf c Is Nothing Then
+        BatCompte = 0
+    Else
+        BatCompte = NombreDe(c)
+    End If
 End Function
 
 ' Ce qu'un essai d'écriture a changé : « avant -> après » ; VU seulement si les deux états ont été lus et diffèrent.
@@ -4821,11 +4854,13 @@ Private Sub BatSerieA()
     de = Err.Description
     lus = (ne = 0)
     Set folios = ElementsDe(c)
+    If NombreDe(c) <> folios.Count Then lus = False
     ' (-2 : un folio dont les symboles sont illisibles, -1, reste préférable à aucun folio)
     nMax = -2
     For i = 1 To folios.Count
         Set sh = folios.Item(i)
         n = NombreDe(SEE_SymbolesDuFolio(sh))
+        If n < 0 Then lus = False
         s = s & IIf(i > 1, ", ", "") & "« " & LireProp(sh, "Name") & " » : " & n & " symbole(s)"
         If n > nMax Then
             nMax = n
@@ -5193,7 +5228,13 @@ Private Sub BatSerieB()
     mBatColl.Add mBatP1
     ne = Err.Number
     de = Err.Description
-    mBatColl.Add mBatP2
+    If ne = 0 Then
+        Err.Clear
+        mBatColl.Add mBatP2
+        ne = Err.Number
+        de = Err.Description
+        If ne <> 0 Then de = "2e Add : " & de
+    End If
     BatNote "B04", "mettre les deux points dans la collection (Collection.Add)", ne, de, _
         "Count = " & BatNb(mBatColl) & IIf(BatNb(mBatColl) = 2, " : la collection de points est PRÊTE", "")
     If BatNb(mBatColl) <> 2 Then Set mBatColl = Nothing
