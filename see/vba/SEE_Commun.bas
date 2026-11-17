@@ -321,6 +321,10 @@ Private Function ReglagesParDefaut() As Variant
     r.Add Array("Simulation", "O", "O : RIEN n'est écrit dans SEE, le journal dit ce qui serait fait. Passe à N seulement après un essai relu.")
     r.Add Array("FolioEssai", "ESSAI_PILOTE", "Nom du folio créé par EssaiDessin et EssaiSymboles.")
     r.Add Array("SondeFolio", "", "Nom du folio lu par SondeFolio. Vide = le folio de la vue active.")
+    r.Add Array("Batterie", "O", _
+        "Bouton 3 : O (le défaut) : après avoir ouvert le projet d'essai, Excel fait la batterie d'essais (feuille Batterie) : il essaie d'écrire et de dessiner sans CreateObject, avec les objets d'un folio dessiné à la main. N : l'ancien essai de dessin.")
+    r.Add Array("DiagnosticComplet", "N", _
+        "Bouton 3 : O : refaire aussi l'ancien diagnostic (feuille Diagnostic). N (le défaut) : non.")
     r.Add Array("Journal", "DETAIL", "DETAIL : chaque appel COM est journalisé ; NORMAL : étapes, erreurs et bilans seulement (pour les 800 folios).")
     ReglagesParDefaut = CollectionEnTableau(r)
 End Function

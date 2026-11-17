@@ -470,3 +470,10 @@ Public Sub Quit()
     gWinProcessus = gWinProcessusApresQuit
 End Sub
 '''
+
+# --- la batterie du bouton 3 : SEE « tombe » à AddWireConnection (462, serveur absent) quand gPanneFil est vrai
+# (BancR.PreparerBatterie le remet à Faux)
+rep('FauxSEE', 'Public gRelectureRatee As Boolean\n', 'Public gRelectureRatee As Boolean\nPublic gPanneFil As Boolean\n')
+rep('FauxFolio', 'Public Sub AddWireConnection(ByVal pts As Object, ByVal typ As String, ByRef tg As Object, ByRef cab As Object, Optional ByRef fil As Variant)\n',
+    'Public Sub AddWireConnection(ByVal pts As Object, ByVal typ As String, ByRef tg As Object, ByRef cab As Object, Optional ByRef fil As Variant)\n'
+    '    If gPanneFil Then Err.Raise 462, , "serveur absent (panne simulée)"\n')

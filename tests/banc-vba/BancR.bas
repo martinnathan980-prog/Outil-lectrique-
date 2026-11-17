@@ -1071,6 +1071,8 @@ Private Sub PreparerBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal proj
     FixerReglage "PasAPas", "O"
     ' (la petite sonde de création ajouterait des appels de CreateObject : ses passages la remettent à O)
     FixerReglage "SondeCreation", "N"
+    ' (la batterie d'essais du bouton 3 a son scénario à elle : ces passages éprouvent l'essai de dessin)
+    FixerReglage "Batterie", "N"
     RegistreSEE "SEE_Faux.exe"
     gWinNomExe = "SEE_Faux.exe"
     CreableFaux AUTO_V4
@@ -1477,4 +1479,107 @@ Public Function BancExporterWD(ByVal chemin As String, ByVal variante As String,
     Exit Function
 E:
     BancExporterWD = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
+End Function
+
+' ---------------------------------------------------------------------------- la batterie d'essais du bouton 3
+' BatterieSEE (réglage Batterie = O) : SEE caché refuse CreateObject au bureau ; la batterie écrit et dessine avec les
+' objets que SEE rend et ceux d'un folio dessiné à la main (la graine). Le faux SEE reçoit une graine (le folio « 01 » :
+' deux symboles, un texte, un trait, un rectangle) et un folio vide (« 02 »). Quatre passages : la graine ; aucun folio
+' (« PAS DE GRAINE ») ; SEE qui « tombe » à AddWireConnection (462 : la batterie s'arrête, le dit, et note l'essai à
+' sauter à côté du projet) ; puis un second clic (les essais notés sont sautés, les autres faits).
+
+' Le projet d'essai du faux SEE : la graine et le folio vide, ou aucun folio.
+Private Sub PreparerBatterie(ByVal v4 As Boolean, ByVal forme As Long, ByVal projet As String, ByVal graine As Boolean)
+    Dim sh As Object, sym As Object, g As Object, tg As Object, fo As Object, i As Long
+    PreparerBouton3 v4, forme, projet
+    gPanneFil = False
+    FixerReglage "Batterie", "O"
+    FixerReglage "Projet", ""
+    gWinFichier = projet
+    If Not graine Then Exit Sub
+    Set sh = NouveauFaux(9)
+    sh.Rename "01"
+    gFolios.Add sh
+    For i = 1 To 2
+        Set sym = NouveauFaux(0)
+        Set fo = New FauxForme
+        fo.Name = "0001"
+        sym.SetShape fo
+        sym.SetPosition Pt(100 * i, 80)
+        sym.Lier "EQ" & i
+        Set tg = NouveauFaux(4)
+        sh.AddSymbol sym, tg
+    Next i
+    Set g = NouveauFaux(7)
+    sh.AddGraphicObject g
+    Set g = NouveauFaux(11)
+    sh.AddGraphicObject g
+    Set g = NouveauFaux(17)
+    sh.AddGraphicObject g
+    Set sh = NouveauFaux(9)
+    sh.Rename "02"
+    gFolios.Add sh
+    ' (la trace repart de zéro : seuls les appels du bouton 3 sont comptés)
+    Set gTrace = New Collection
+End Sub
+
+' Les lignes de la feuille Batterie : « [numéro résultat] », dans l'ordre (les lignes de même numéro se suivent).
+Public Function LignesBatterie() As String
+    Dim ws As Object, i As Long, s As String
+    If Not FeuilleExiste("Batterie") Then
+        LignesBatterie = "(feuille Batterie absente)"
+        Exit Function
+    End If
+    Set ws = ThisWorkbook.Worksheets("Batterie")
+    For i = 12 To 200
+        If Len(CStr(ws.Cells(i, 1).Value)) = 0 Then Exit For
+        s = s & "[" & CStr(ws.Cells(i, 1).Value) & " " & CStr(ws.Cells(i, 3).Value) & "]"
+    Next i
+    LignesBatterie = s
+End Function
+
+' Un des deux petits fichiers de la batterie, à côté du projet (« absent » s'il n'y est pas).
+Private Function MarqueBatterie(ByVal projet As String, ByVal nom As String) As String
+    Dim f As String, h As Integer, s As String
+    f = Left(projet, InStrRev(projet, "/")) & nom
+    If Len(Dir(f)) = 0 Then
+        MarqueBatterie = "absent"
+        Exit Function
+    End If
+    h = FreeFile
+    Open f For Input As #h
+    If Not EOF(h) Then Line Input #h, s
+    Close #h
+    MarqueBatterie = "[" & s & "]"
+End Function
+
+Private Function BilanBatterie(ByVal projet As String) As String
+    BilanBatterie = "AddSymbol " & Compter("AddSymbol") & " ; AddGraphicObject " & Compter("AddGraphicObject|") & " ; AddWireConnection " & _
+        Compter("AddWireConnection") & " ; AddSheet " & Compter("AddSheet") & " ; Save " & Compter("Save") & " ; CloseProject " & _
+        Compter("CloseProject") & " ; Quit " & Compter("Quit") & " ; gApp lâché " & IIf(gApp Is Nothing, "oui", "non") & _
+        " ; en cours " & MarqueBatterie(projet, "Batterie-essai-en-cours.txt") & " ; à sauter " & _
+        MarqueBatterie(projet, "Batterie-essais-a-sauter.txt") & " ; haut = " & HautDeFeuille("Batterie", 8) & _
+        " ; lignes = " & LignesBatterie() & " ; " & ResultatTest()
+End Function
+
+Public Function BancBatterie(ByVal v4 As Boolean, ByVal forme As Long, ByVal projet As String) As String
+    Dim r As String
+    On Error GoTo E
+    PreparerBatterie v4, forme, projet, True
+    EssaiSansFenetre
+    r = "graine : " & BilanBatterie(projet)
+    PreparerBatterie v4, forme, projet, False
+    EssaiSansFenetre
+    r = r & " | sans graine : " & BilanBatterie(projet)
+    PreparerBatterie v4, forme, projet, True
+    gPanneFil = True
+    EssaiSansFenetre
+    r = r & " | panne : " & BilanBatterie(projet)
+    PreparerBatterie v4, forme, projet, True
+    EssaiSansFenetre
+    r = r & " | second clic : " & BilanBatterie(projet)
+    BancBatterie = r
+    Exit Function
+E:
+    BancBatterie = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
 End Function

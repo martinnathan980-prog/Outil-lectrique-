@@ -602,3 +602,46 @@ Family) ; barrette = Busbar ou TerminalBlock (Bar BUS) ; épissure = Splice
 (Splices Family) ; traversée étanche = Pressure Seal ; transformateur =
 Current Transformer (TI Family). Les renvois de folio (Renvois Family) ne
 sont pas des appareils de la liste de fils.
+
+## 17 novembre 2026 : la batterie d'essais du bouton 3 (v6)
+
+SEE caché (coclasse SeeAutomation V4R3) refuse `CreateObject` pour tous les
+types (80100000). La batterie (`BatterieSEE`, module SEE_Pilote ; réglage
+`Batterie`, `O` par défaut) essaie donc d'écrire et de dessiner SANS
+`CreateObject`, avec les objets que SEE rend lui-même et ceux d'un folio
+dessiné à la main (la « graine »). Rien de ce qui suit n'est encore vérifié
+au bureau : les signatures viennent du SDK de greffons de V4R3 (paramètres de
+sortie en dernier) et de la bibliothèque de types de V5R2.
+
+- Objets fabriqués sans `CreateObject` : un point par `Symbol.GetPosition(p1,
+  p2)` ou `TitleBlock.GetPrimaryCoordinates(p)` (au bureau : rend un point),
+  puis `Point.X`, `Point.Y` ; une collection vide par
+  `Project.GetSymbolsByTag(repère absent, coll)`, puis `Collection.Add`.
+- Série A (lire) : `Project.GetAllSheets`, `GetCableCollection`,
+  `GetConnectorCollection`, `GetTextsCollection`, `GetSymbolsByTag` ;
+  `Project.Process.WireNumbering.GetFromToXML(texte)` ;
+  `Project.ExportJSON(dossier, nom, 0, 0)` ; `Environment.BlockPath`,
+  `GetBlockCollection(1, 2, 27, 28)` ; `Sheet.GetView` ;
+  `SeeAutomation.Protection.GetErrorDescription(code, langue, texte)`.
+- Série D (écrire, dessiner) : `Sheet.DrawnBy` ; `Text.Value`, `Text.Move` ;
+  `Symbol.SetPosition` ; `Tag.SetManual` et `Symbol.ChangeTag` ;
+  `Sheet.AddSymbol(symbole de la graine, repère)` ;
+  `Sheet.AddGraphicObject(texte, trait, rectangle de la graine)`, puis
+  `Line.SetStartPoint`, `SetEndPoint` ;
+  `Sheet.AddConnectionSegment(segment, P1, P2, type)` ;
+  `Sheet.AddWireConnection(points, type, repère, câble, fil)` ;
+  `AddCableWireByWire`, `AddCableOnPath` ; `Sheet.CreateBlock(P1, P2, point,
+  paramètres, bloc)`, `Block.SaveBlock`, `Sheet.InsertBlock(bloc, paramètres,
+  paramètres utilisateur, point)` ; `Group.AddSheet(folio existant)`.
+- Série C (fichiers) : l'aller-retour `ExtractData(t, f)` puis
+  `ImportData(t, f)` ; `Project.ImportWireList` ;
+  `WireNumbering.UpdateWireList(XML ou chemin, journal)` ;
+  `WireNumbering.Update(liste de - vers, journal)` ; `Cabling.Update`.
+- Jamais appelés (ils attendent la souris ou verrouillent le projet) :
+  `View.InsertSymbol`, `GetMouseClickPosition`, `GetMousePointsCollection`,
+  `Project.LockProject`.
+- Avant chaque essai risqué, son numéro est écrit dans
+  `Batterie-essai-en-cours.txt`, à côté du projet ; si SEE tombe ou bloque
+  Excel, la batterie suivante saute cet essai (`Batterie-essais-a-sauter.txt`).
+- Le manuel V4R2 dit que créer une macro dans SEE demande le module « VBA
+  Developer » (l'éditeur est grisé au bureau) : on n'y touche pas.

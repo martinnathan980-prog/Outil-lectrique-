@@ -645,6 +645,45 @@ def panne_classeur():
             ('bouton 3 : « ARRÊT IMPRÉVU » dit, gSansDialogue inchangé (Vrai), rien créé', lambda t: partie(t, 'bouton 3'),
              lambda s: re.search(r'arrêt imprévu dit [1-9]', s) is not None and 'gSansDialogue Vrai' in s and 'new: 0' in s)]
 
+def batterie():
+    """INTENTION : la batterie d'essais du bouton 3 (BatterieSEE, réglage Batterie = O). SEE caché refuse CreateObject au
+    bureau : la batterie écrit et dessine avec les objets que SEE rend et ceux d'un folio dessiné à la main (la graine).
+    Avec la graine : elle pose sur le folio vide un symbole, un texte, un trait et un rectangle de la graine, trace un fil
+    par une collection de points faite sans CreateObject, recopie un folio, enregistre deux fois, referme SEE et lâche
+    tout. Sans folio : « PAS DE GRAINE », dit dans la feuille et dans le bloc. SEE qui tombe à un essai (462) : la
+    batterie s'arrête, le dit, et note à côté du projet l'essai à sauter (et celui d'avant) ; au second clic, ils sont
+    sautés et les autres sont faits."""
+    def dans_(ou, *morceaux):
+        return (lambda t: partie(t, ou), lambda s: all(m in s for m in morceaux))
+    def cas(libelle, ou, *morceaux):
+        extraire, test = dans_(ou, *morceaux)
+        return (libelle, extraire, test)
+    return [
+        cas('graine : la batterie est faite, les écritures acceptées sont dites dans le bloc', 'graine',
+            'Résultat = BATTERIE FAITE (', "SEE a ACCEPTÉ d'écrire : D01, D06, D08, D10, D12, D22, D30, D31, D32"),
+        cas('graine : un symbole, un texte, un trait et un rectangle de la graine posés ; un fil tracé ; un folio recopié deux fois',
+            'graine', 'AddSymbol 1 ; AddGraphicObject 3 ; AddWireConnection 1 ; AddSheet 2 ;'),
+        cas('graine : enregistré deux fois (avant et après les fils et les blocs), SEE refermé, tout lâché', 'graine',
+            'Save 2 ; CloseProject 1 ; Quit 1 ; gApp lâché oui'),
+        cas('graine : les points et la collection de points faits sans CreateObject (B01, B02, B04 : OK)', 'graine',
+            '[B01 OK][B02 OK]', '[B04 OK]'),
+        cas('graine : le haut de la feuille Batterie dit les écritures, les changements relus et l\'enregistrement', 'graine',
+            'Écritures/SEE a ACCEPTÉ : D01, D06, D08, D10, D12, D22, D30, D31, D32', 'Effet relu/CHANGEMENT relu pour : D01, D04, D06, D22, D30, D31',
+            'Enregistré/oui (Project.Save)'),
+        cas('graine : le bloc demande les photos de Batterie et de Sonde_Folio EN ENTIER, puis la partie 4 du mode d\'emploi', 'graine',
+            'onglet « Batterie » et prends-le en photo EN ENTIER', 'onglet « Sonde_Folio » et prends-le en photo EN ENTIER', 'la partie 4'),
+        cas('graine : aucun essai n\'est resté « en cours », aucun n\'est à sauter', 'graine', 'en cours [] ; à sauter absent'),
+        cas('sans graine : « PAS DE GRAINE » dit en haut de la feuille et dans le bloc (la partie 2 du mode d\'emploi), rien écrit dans SEE',
+            'sans graine', 'ATTENTION/PAS DE GRAINE', '[A03 PAS DE GRAINE]', 'PAS DE GRAINE : aucun folio du projet d\'essai n\'a de symbole. Fais la partie 2',
+            'AddSymbol 0 ; AddGraphicObject 0 ; AddWireConnection 0 ; AddSheet 0'),
+        cas('panne : SEE tombe à D22 : dit en haut de la feuille et dans le bloc, la batterie s\'arrête là', 'panne',
+            'SEE EST TOMBÉ/à l\'essai D22', 'SEE est tombé (ou a été arrêté) à l\'essai D22', '[D22 462 (800A01CE)] ;'),
+        cas('panne : ce qui était fait avant est enregistré (S01), l\'essai fautif et celui d\'avant sont notés à côté du projet', 'panne',
+            'Save 1 ;', '[S01 OK]', 'en cours [] ; à sauter [D20,D22]'),
+        cas('second clic : les deux essais notés sont sautés, les autres sont faits, jusqu\'à l\'enregistrement', 'second clic',
+            '[D20 SAUTÉ][D22 SAUTÉ][D23', '[S02 OK]', 'Essais sautés/D20,D22', 'AddWireConnection 0 ;', 'Save 2 ;'),
+    ]
+
 def ligne_wd(dossier):
     """La ligne de verifier_wd.py pour un dossier WD-… (relecture.py les joint par « || », après le résultat)."""
     def f(t):
@@ -796,6 +835,7 @@ ATTENDUS = {
     'connexion V4': connexion(),                            # idem, API V4
     'bouton 3 V4': bouton3('V4', 1),                        # INTENTION (EssaiSansFenetre ; V4 : le CreateObject du bureau, type, projet, objet en sortie)
     'bouton 3 V5': bouton3('V5', 2),                        # idem, V5 et l'objet rendu
+    'batterie V4': batterie(),                              # INTENTION (BatterieSEE : écrire et dessiner sans CreateObject)
     'arret Windows': arret_windows(),                       # INTENTION (EX3 : Windows arrête la macro sur une fonction déclarée)
     'panne classeur': panne_classeur(),                     # INTENTION (SU4, EX6 : gSansDialogue remis sur une erreur)
     'exporter WD': exporter_wd(),                           # INTENTION, et des comptes RELEVÉS (ExporterWD, la liste de fils XML)

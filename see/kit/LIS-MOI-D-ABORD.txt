@@ -10,11 +10,11 @@ Tu ne m'envoies que des PHOTOS de l'écran (ton téléphone, c'est très bien).
 CE QUI EST ACQUIS (tes photos du 2, du 3 et du 5 novembre)
 ----------------------------------------------------------
 - Le 5 novembre : SEE refuse de créer quoi que ce soit quand Excel le
-  lui demande, même avec le bouton 3. Les boutons ne dessineront donc
-  pas tes plans : on arrête cette voie.
+  lui demande, même avec le bouton 3. Cette fois, Excel s'y prend
+  autrement : il RECOPIE et MODIFIE ce que tu as dessiné à la main.
 - Le 5 novembre aussi : SEE sait IMPORTER une liste de fils. Le fichier
   d'essai d'Excel est passé (« Import of wire list to project is
-  successful »). C'est la voie de cette fois.
+  successful »). C'est l'autre voie de cette fois (la partie 5).
 - Avant, Windows vérifie chaque fichier avec le même schéma que SEE :
   un fichier que Windows REFUSE, SEE le refuse aussi (« XML file is not
   correct »). Excel écrit maintenant les borniers et les masses avec
@@ -28,45 +28,127 @@ CE QUI EST ACQUIS (tes photos du 2, du 3 et du 5 novembre)
   le BOUTON 3 qui compte.
 
 
-CETTE FOIS : LA LISTE DE FILS (ExporterWD, 15 minutes)
-------------------------------------------------------
-Excel écrit, pour chaque plan du paquet, une liste de fils que SEE sait
-importer. Il ne touche pas à SEE. Il te faut le paquet que l'Atelier a
-écrit (menu « Exporter pour SEE »), dans un dossier à toi (le Bureau).
-1. Ferme Excel s'il est ouvert. Sors le NOUVEAU kit du zip, comme la
-   dernière fois (l'étape A, plus bas). Si Windows demande de remplacer
-   les fichiers : clique sur « Remplacer les fichiers dans la
-   destination ». Puis ouvre le Pilote-SEE.xlsm du dossier « Kit-SEE » :
-   un ancien Pilote-SEE.xlsm n'a pas ExporterWD.
+CETTE FOIS : LA JOURNÉE DE TESTS (tout seul au bureau, 1 h environ)
+-------------------------------------------------------------------
+But : trouver par quel chemin Excel fait dessiner SEE. Excel ne sait
+pas créer un objet à partir de rien dans ton SEE : il essaie donc de
+RECOPIER et de MODIFIER un petit dessin que tu fais à la main (la
+« graine »), par une quarantaine de chemins différents.
+Fais les parties dans l'ordre. Une partie bloque : prends l'écran en
+photo et passe à la suivante. Tout se passe dans ton projet d'essai
+(TEST_…), jamais dans un vrai projet.
+
+PARTIE 1 : INSTALLER (2 minutes)
+1. Ferme Excel s'il est ouvert. Sors le NOUVEAU kit du zip (l'étape A,
+   plus bas). Si Windows demande de remplacer les fichiers : clique sur
+   « Remplacer les fichiers dans la destination ».
+2. Ouvre le Pilote-SEE.xlsm du dossier « Kit-SEE » : un ancien
+   Pilote-SEE.xlsm n'a pas la batterie de tests.
    (Barres jaunes en haut d'Excel : l'étape C, points 3 et 4.)
-2. Dans Excel, appuie ensemble sur Alt + F8.
-3. Dans la liste, clique sur « ExporterWD », puis sur « Exécuter ».
-4. Une fenêtre « Choisis le paquet SEE de l'Atelier » s'ouvre : clique
-   sur ton paquet (un fichier .xlsx), puis sur « Ouvrir ».
-5. Attends le message (quelques secondes ; une minute ou plus pour
-   beaucoup de plans), puis clique sur OK.
-6. Prends une photo du haut de la feuille « Export_WD » : la partie
-   jaune et les premières lignes du tableau. S'il y a des lignes
-   « erreur », prends-les aussi, avec leurs lignes « (suite) ».
-7. Ouvre SEE, puis ton projet d'essai (son nom commence par TEST_…).
-   Jamais un vrai projet.
-8. Dans SEE : menu File, puis Import, puis Wire List. Va dans le
-   dossier « WD-… » qui est à côté de ton paquet (son nom est sur la
-   photo), clique sur le fichier que dit le message (par exemple
-   WD-1.xml), puis sur « Open ». N'importe jamais un fichier marqué
-   REFUSÉ dans la feuille Export_WD.
-9. Prends en photo le message de SEE.
-10. Dans SEE : menu Insert, puis From Wiring list. Une fenêtre
-   « Component Insertion » s'ouvre : prends-la en photo (ses onglets
-   Equipment, Connective Equipment, Cables). Si tu ne sais pas quoi y
-   choisir : clique sur Cancel. Si elle ne s'ouvre pas : prends l'écran
-   de SEE en photo, c'est une réponse aussi.
-11. Si SEE a dit « successful » au point 9 : importe de la même façon
-   le fichier suivant de la feuille Export_WD (par exemple WD-2.xml),
-   prends en photo le message de SEE, puis refais le point 10. Je
-   verrai si SEE garde les composants du premier fichier, ou s'il les
-   remplace. N'importe pas d'autre fichier pour l'instant.
-12. Envoie-moi les photos (l'étape F).
+3. Dans Excel, appuie ensemble sur Alt + F8, clique sur « EssaiWD »,
+   puis sur « Exécuter ». Attends le message, clique sur OK, puis
+   prends en photo le haut de la feuille « Essai_WD ».
+   (Il écrit les fichiers d'essai de la partie 5. S'il affiche une
+   erreur : prends-la en photo, clique sur « Fin » ou sur OK, et
+   continue : le reste marche sans lui.)
+
+PARTIE 2 : DESSINER LA GRAINE À LA MAIN DANS SEE (10 minutes)
+1. Ouvre SEE, puis ton projet d'essai (TEST_…).
+2. Dans le premier folio, dessine comme d'habitude, avec tes User
+   Families :
+   - 2 équipements (black box), chacun avec 1 connecteur ;
+   - 2 fils entre les deux connecteurs ;
+   - 1 masse ;
+   - 1 texte libre : BONJOUR ;
+   - 1 trait libre et 1 rectangle libre (les outils de dessin).
+3. Crée un 2e folio et laisse-le VIDE : Excel essaiera d'y dessiner.
+4. Si tu sais le faire (sinon saute ce point) : sélectionne ton dessin
+   et enregistre-le comme BLOC, sous le nom PILOTE.
+5. Prends une photo du folio dessiné.
+6. Enregistre. Puis menu File, puis Exit. Attends 30 secondes.
+
+PARTIE 3 : LE BOUTON 3, LA BATTERIE AUTOMATIQUE (5 à 10 minutes)
+1. Dans Excel, en bas, clique sur l'onglet « Accueil ». Descends avec
+   la molette et clique sur le gros bouton orange « 3. SEE FERMÉ ».
+2. Comme les autres fois : choisis ton projet d'essai (TEST_…, pas un
+   fichier « avant-pilote »), « Ouvrir », OK, puis ton Username et ton
+   mot de passe SEE (Excel ne le garde nulle part).
+   Si Excel affiche « Erreur de compilation » : prends l'écran en
+   photo, clique sur OK, ferme la fenêtre de code par sa croix, et
+   passe à la partie 5 (elle marche sans le bouton 3).
+3. Attends le message de fin sans toucher à rien : 2 à 5 minutes.
+   Si Excel reste bloqué plus de 5 minutes, ou dit qu'il attend
+   « qu'une autre application termine une action OLE » : fais « SI
+   EXCEL RESTE BLOQUÉ », plus bas (arrête SEE, PAS Excel). Excel
+   finit alors son message : continue au point 4, puis au point 5.
+4. Clique sur OK, puis prends les photos, dans cet ordre :
+   a. la partie jaune de la feuille Resultat_Test ;
+   b. l'onglet « Batterie » EN ENTIER : plusieurs photos, en
+      descendant jusqu'à la dernière ligne ;
+   c. l'onglet « Sonde_Folio » EN ENTIER, de la même façon.
+5. Si le message dit « SEE est tombé » (ou si tu as dû arrêter SEE) :
+   reclique sur le bouton 3 (le point 1). Il saute l'essai fautif et
+   fait les autres. Refais les photos a et b.
+   S'il dit « PAS DE GRAINE » : refais la partie 2, puis le bouton 3.
+
+PARTIE 4 : REGARDER DANS SEE CE QU'EXCEL A FAIT (5 minutes)
+1. Ouvre SEE, puis ton projet d'essai.
+2. Prends en photo l'arbre du projet, à gauche : y a-t-il un folio en
+   plus ? un groupe « BATTERIE » ?
+3. Ouvre le folio dessiné : photo. Le texte BONJOUR est-il devenu
+   « PILOTE … » ? Un symbole ou le trait ont-ils bougé ? Un repère
+   a-t-il changé (ZZ…) ?
+4. Ouvre le 2e folio (le vide) : photo, même s'il est resté vide.
+5. Ouvre chaque folio en plus, et ceux du groupe BATTERIE : photo.
+
+PARTIE 5 : LA LISTE DE FILS PAR LES MENUS DE SEE (20 minutes)
+Les fichiers Essai-WD-….xml sont dans le dossier « Kit-SEE », à côté
+de Pilote-SEE.xlsm (sinon dans le dossier de ton projet d'essai).
+1. SEE ouvert sur ton projet d'essai. D'abord le fichier simple :
+   menu File, puis Import, puis Wire List ; clique sur
+   Essai-WD-3.10.xml, puis sur « Open ». SEE doit dire « successful ».
+2. Menu Insert, puis From Wiring list : la fenêtre « Component
+   Insertion » s'ouvre. Clique sur son onglet « Cables » et prends-le
+   en photo (je ne l'ai jamais vu). Puis Cancel.
+3. Puis, pour chaque fichier Essai-WD-T01… à T10…, dans l'ordre :
+   a. File > Import > Wire List, le fichier, « Open » ;
+   b. Insert > From Wiring list ;
+   c. note dans « MES RÉPONSES » (plus bas) : le message de SEE ; si
+      la fenêtre s'ouvre ; l'onglet qui montre quelque chose ;
+   d. si un onglet montre un composant : photo, puis Cancel.
+   Si la fenêtre ne s'ouvre plus du tout : réimporte Essai-WD-3.10.xml
+   (le point 1), puis passe au fichier suivant.
+   N'importe pas un fichier marqué REFUSÉ dans la feuille Essai_WD.
+4. LE PLUS IMPORTANT : dès qu'un composant paraît dans la fenêtre,
+   clique dessus, valide (OK ou Insert) et pose-le sur le 2e folio.
+   Prends le folio en photo.
+5. Menu Process : prends en photo le menu ouvert. S'il a une ligne
+   « Cabling » : clique dessus, prends en photo ce qui s'ouvre, puis
+   Cancel si tu ne sais pas quoi répondre.
+
+PARTIE 6 : LE CLAVIER (5 minutes)
+Si rien d'autre ne marche, Excel pourra « taper au clavier » dans SEE
+à ta place. Pour le savoir, dans SEE, sur le 2e folio, SANS la souris :
+1. Lance ta commande pour tracer un fil. Les flèches du clavier
+   déplacent-elles le curseur ? La touche Entrée pose-t-elle un point ?
+2. Lance la pose d'un symbole. Peut-on taper X et Y au clavier ?
+   Prends en photo le bas de l'écran pendant la pose.
+3. Appuie ensemble sur Alt + F11 : que se passe-t-il ? (rien, ou une
+   fenêtre : photo)
+
+MES RÉPONSES (à recopier dans ton message, avec les photos)
+Partie 5, pour chaque fichier : le message de SEE / la fenêtre
+s'ouvre ? / quel onglet montre quelque chose ?
+   3.10 : ...............    T01 : ...............
+   T02 : ................    T03 : ...............
+   T04 : ................    T05 : ...............
+   T06 : ................    T07 : ...............
+   T08 : ................    T09 : ...............
+   T10 : ................
+Partie 5, point 4 : un composant posé sur le folio ? ...............
+Partie 6 : les flèches ? ......  Entrée ? ......
+           X et Y au clavier ? ......  Alt + F11 ? ......
+Puis envoie-moi tout (l'étape F).
 
 
 POUR MÉMOIRE : TOUTES LES ÉTAPES DU DÉBUT
@@ -290,7 +372,7 @@ Une barre ROUGE « Microsoft a bloqué l'exécution des macros » :
 4. En bas, coche « Débloquer ».
 5. Clique sur OK.
 6. Rouvre le fichier et reprends là où tu en étais (cette fois :
-   « CETTE FOIS », point 2).
+   « CETTE FOIS », partie 1, point 2).
 
 Le bouton ne fait rien :
 1. Regarde en haut : s'il reste une barre jaune, clique sur son bouton
@@ -317,9 +399,11 @@ LES PHOTOS À PRENDRE
   le haut de la feuille Sonde_Folio si le message le demande (leurs
   onglets sont en bas d'Excel), puis, si le message le demande, l'écran
   de SEE avec le folio « ESSAI_PILOTE » (ouvert par toi).
-- Après ExporterWD (cette fois) : le haut de la feuille Export_WD, puis,
-  dans SEE, le message de chaque import (File > Import > Wire List) et
-  la fenêtre « Component Insertion » après chacun.
+- Après la batterie (cette fois) : la partie jaune de la feuille
+  Resultat_Test, puis les feuilles Batterie et Sonde_Folio EN ENTIER
+  (plusieurs photos chacune, en descendant) ; puis, dans SEE, l'arbre
+  du projet et chaque folio ; puis les fenêtres de la partie 5 (File >
+  Import > Wire List, « Component Insertion ») et tes réponses.
 - Tout message d'erreur ou de refus, tel quel, même un message de
   Windows (par exemple « Sécurité Windows »).
 Si une photo coupe le texte : prends la première photo, fais descendre

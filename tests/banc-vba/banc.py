@@ -26,6 +26,12 @@ def module(nom):
         a='Private Const RACINES_IGE As String = "C:\\Program Files (x86)\\IGE+XAO|C:\\Program Files\\IGE+XAO"\n'
         assert t.count(a)==1, 'SEE_WD : RACINES_IGE introuvable : adapter banc.py'
         t=t.replace(a, f'Private Const RACINES_IGE As String = "{IGE}"\n').replace('\\', '/')
+    # SEE_Pilote, la batterie du bouton 3 : ses fichiers (essai en cours, essais à sauter, le dossier Batterie_…) sont à
+    # côté du projet ; sous Linux la barre inverse ferait partie du nom : dans la batterie seulement, elle devient « / »
+    if nom=='SEE_Pilote':
+        i=t.find('Private Sub BatterieSEE')
+        assert i>0, 'SEE_Pilote : BatterieSEE introuvable : adapter banc.py'
+        t=t[:i]+t[i:].replace('"\\"', '"/"').replace('"\\', '"/').replace('\\"', '/"')
     # LibreOffice ne sait pas « obj.Item(k) = v » sur une classe Basic : le banc écrit obj.Assigner k, v
     t=re.sub(r'(\b[\w]+(?:\([\w]+\))?)\.Item\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\) = (.+)$', r'\1.Assigner \2, \3', t, flags=re.M)
     return 'Option VBASupport 1\n'+t

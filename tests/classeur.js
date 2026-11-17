@@ -33,9 +33,9 @@
        quoi faire si Excel reste bloqué ; en tête, ce qui est acquis et « cette
        fois : seulement le bouton 3 », pas à pas, avec ses photos (la partie
        jaune, le haut de Sonde_Symboles, SEE rouvert sur ESSAI_PILOTE) ; et la
-       liste de fils pas à pas (Alt+F8, ExporterWD, le paquet, la photo
-       d'Export_WD, puis dans SEE : File > Import > Wire List, Insert > From
-       Wiring list) ;
+       journée de tests pas à pas (EssaiWD, la graine dessinée à la main, le
+       bouton 3 et sa batterie, regarder dans SEE, puis File > Import > Wire
+       List, Insert > From Wiring list, et le clavier) ;
      · le REFUS : sans la macro du bouton (ou avec un .bas que le classeur ne
        lit pas), classeur.js et kit.js lèvent une exception, sortent avec le
        code 1 et n'écrivent rien, sauf --sans-bouton ; essayé sur des copies
@@ -321,9 +321,9 @@ function controler(parties) {
   verif('l\'Accueil dit, avant l\'étape 1, que sur ce poste il faut sauter les étapes 1 et 2 (« ton SEE n\'ouvre qu\'une porte à Excel, celle du bouton 3 »), comme le mode d\'emploi',
     /^Sur ce poste, saute les étapes 1 et 2 : ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3/.test(cellule(4)) && /bouton 3 \(orange/.test(cellule(4)),
     cellule(4).slice(0, 60));
-  // le 5 novembre 2026 : l'Accueil dit, en tête, ce que dit le mode d'emploi pour cette fois (Alt+F8, ExporterWD)
-  verif('l\'Accueil, en tête : cette fois, Alt+F8 puis ExporterWD, comme « CETTE FOIS » du mode d\'emploi ; toujours le projet d\'essai',
-    /^Cette fois : Alt\+F8, puis ExporterWD \(mode d'emploi, « CETTE FOIS »\)/.test(cellule(3)) && /projet d'essai, jamais un vrai projet/.test(cellule(3)), cellule(3).slice(0, 60));
+  // le 17 novembre 2026 : l'Accueil dit, en tête, ce que dit le mode d'emploi pour cette fois (la journée de tests)
+  verif('l\'Accueil, en tête : cette fois, la journée de tests (la graine, puis le bouton 3), comme « CETTE FOIS » du mode d\'emploi ; toujours le projet d\'essai',
+    /^Cette fois : la journée de tests \(mode d'emploi, « CETTE FOIS »\) : la graine dessinée à la main, puis le bouton 3/.test(cellule(3)) && /projet d'essai, jamais un vrai projet/.test(cellule(3)), cellule(3).slice(0, 60));
   // TE2 de la v4 : l'étape 3 cite toutes les photos que le bouton 3 peut demander
   verif('l\'Accueil, étape 3 : les photos du message de fin, Sonde_Symboles comprise (Resultat_Test, Sonde_Symboles, Sonde_Folio, SEE)',
     /\(Resultat_Test, Sonde_Symboles, Sonde_Folio, SEE\)/.test(etapes[2]), etapes[2].slice(-60));
@@ -540,8 +540,8 @@ try { const k = K.kit({ dossierVba: AVEC }), z = lireZip(k.zip), ref = C.classeu
   // « cette fois : la liste de fils » pas à pas, du nouveau kit à la photo de Component Insertion ; le bouton 3 reste,
   // pour mémoire, pas à pas
   const tete = t.slice(0, t.indexOf('ÉTAPE A'));
-  ok('LIS-MOI-D-ABORD.txt, en tête (avant l\'étape A) : ce qui est acquis, le 5 novembre compris (SEE ne crée rien quand Excel le lui demande ; il IMPORTE une liste de fils : « successful » ; Windows vérifie avec le même schéma que SEE), puis « CETTE FOIS : LA LISTE DE FILS (ExporterWD » ; « POUR MÉMOIRE » ensuite, avec « LE BOUTON 3 PAS À PAS » : File > Exit, 30 secondes, le bouton orange 3, le projet dans « Robot » (pas un « avant-pilote »), OK, attendre sans toucher ; les photos : la partie jaune de Resultat_Test, le haut de Sonde_Symboles, puis SEE rouvert sur ESSAI_PILOTE ; les secours (Excel bloqué, SEE caché)',
-    t.indexOf('ÉTAPE A') > 0 && /CE QUI EST ACQUIS \(tes photos du 2, du 3 et du 5 novembre\)[\s\S]*Le 5 novembre : SEE refuse de créer quoi que ce soit[\s\S]*SEE sait IMPORTER une liste de fils[\s\S]*successful[\s\S]*même schéma que SEE[\s\S]*Le projet s'ouvre tout seul[\s\S]*Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3[\s\S]*BOUTON 3 qui compte[\s\S]*CETTE FOIS : LA LISTE DE FILS \(ExporterWD[\s\S]*POUR MÉMOIRE[\s\S]*LE BOUTON 3 PAS À PAS \(seulement si je te le demande\)[\s\S]*File, puis Exit[\s\S]*Attends 30 secondes[\s\S]*onglet « Accueil »[\s\S]*bouton orange « 3\. SEE FERMÉ »[\s\S]*Choisis ton projet d'ESSAI[\s\S]*dossier « Robot »[\s\S]*« avant-pilote »[\s\S]*clique sur OK[\s\S]*sans toucher à rien[\s\S]*SI EXCEL RESTE BLOQUÉ[\s\S]*partie jaune de la feuille Resultat_Test[\s\S]*« Sonde_Symboles »[\s\S]*photo du haut de cette feuille[\s\S]*« ESSAI_PILOTE »[\s\S]*SI SEE TOURNE CACHÉ/.test(tete)
+  ok('LIS-MOI-D-ABORD.txt, en tête (avant l\'étape A) : ce qui est acquis, le 5 novembre compris (SEE ne crée rien quand Excel le lui demande ; il IMPORTE une liste de fils : « successful » ; Windows vérifie avec le même schéma que SEE), puis « CETTE FOIS : LA JOURNÉE DE TESTS » ; « POUR MÉMOIRE » ensuite, avec « LE BOUTON 3 PAS À PAS » : File > Exit, 30 secondes, le bouton orange 3, le projet dans « Robot » (pas un « avant-pilote »), OK, attendre sans toucher ; les photos : la partie jaune de Resultat_Test, le haut de Sonde_Symboles, puis SEE rouvert sur ESSAI_PILOTE ; les secours (Excel bloqué, SEE caché)',
+    t.indexOf('ÉTAPE A') > 0 && /CE QUI EST ACQUIS \(tes photos du 2, du 3 et du 5 novembre\)[\s\S]*Le 5 novembre : SEE refuse de créer quoi que ce soit[\s\S]*SEE sait IMPORTER une liste de fils[\s\S]*successful[\s\S]*même schéma que SEE[\s\S]*Le projet s'ouvre tout seul[\s\S]*Ton SEE n'ouvre qu'une porte à Excel, celle du bouton 3[\s\S]*BOUTON 3 qui compte[\s\S]*CETTE FOIS : LA JOURNÉE DE TESTS[\s\S]*POUR MÉMOIRE[\s\S]*LE BOUTON 3 PAS À PAS \(seulement si je te le demande\)[\s\S]*File, puis Exit[\s\S]*Attends 30 secondes[\s\S]*onglet « Accueil »[\s\S]*bouton orange « 3\. SEE FERMÉ »[\s\S]*Choisis ton projet d'ESSAI[\s\S]*dossier « Robot »[\s\S]*« avant-pilote »[\s\S]*clique sur OK[\s\S]*sans toucher à rien[\s\S]*SI EXCEL RESTE BLOQUÉ[\s\S]*partie jaune de la feuille Resultat_Test[\s\S]*« Sonde_Symboles »[\s\S]*photo du haut de cette feuille[\s\S]*« ESSAI_PILOTE »[\s\S]*SI SEE TOURNE CACHÉ/.test(tete)
       && t.split('CETTE FOIS : ').length === 2 && !/CETTE FOIS : SEULEMENT LE BOUTON 3/.test(t) && !/Compte 20 minutes/.test(t));
   ok('LIS-MOI-D-ABORD.txt, « LES PHOTOS À PRENDRE » : après le bouton 3, la partie jaune, PUIS le haut de Sonde_Symboles, puis SEE avec ESSAI_PILOTE, chacune si le message le demande',
     /Après le bouton 3 : la partie jaune de la feuille Resultat_Test, puis\s+le haut de la feuille Sonde_Symboles si le message le demande[\s\S]*si le message le demande[\s\S]*si le message le demande, l'écran\s+de SEE avec le folio « ESSAI_PILOTE »/.test(t.slice(t.indexOf('LES PHOTOS À PRENDRE')))
@@ -549,11 +549,11 @@ try { const k = K.kit({ dossierVba: AVEC }), z = lireZip(k.zip), ref = C.classeu
   // TE1, TE5 de la v4 : « cette fois », SEE n'est rouvert que si le message le demande, et la ligne « Et maintenant » se suit
   // (recliquer sur le bouton 3 : la photo d'abord, puis le point 4) ; le secours de la barre rouge ramène à « cette fois »
   const bouton3 = t.slice(t.indexOf('LE BOUTON 3 PAS À PAS'), t.indexOf('ÉTAPE A'));
-  ok('LIS-MOI-D-ABORD.txt, « LE BOUTON 3 PAS À PAS » : SEE rouvert sur ESSAI_PILOTE seulement si le message le demande ; recliquer sur le bouton 3 si « Et maintenant » le dit (la photo a d\'abord, puis le point 4) ; la barre rouge ramène à « CETTE FOIS », point 2 (Alt + F8), pas à l\'étape C',
+  ok('LIS-MOI-D-ABORD.txt, « LE BOUTON 3 PAS À PAS » : SEE rouvert sur ESSAI_PILOTE seulement si le message le demande ; recliquer sur le bouton 3 si « Et maintenant » le dit (la photo a d\'abord, puis le point 4) ; la barre rouge ramène à « CETTE FOIS », partie 1, point 2, pas à l\'étape C ; EssaiWD par Alt + F8 à la partie 1',
     t.indexOf('LE BOUTON 3 PAS À PAS') > t.indexOf('POUR MÉMOIRE') && /d\. si le message le demande \(« Ouvre SEE, ouvre ton projet\s+d'essai\.\.\. »\) : ouvre SEE/.test(bouton3) && !/puis ouvre SEE, ouvre ton projet d'essai/.test(bouton3)
       && /e\. si la ligne « Et maintenant » te dit de recliquer sur le\s+bouton 3 : prends d'abord la photo a, puis fais ce que dit cette\s+ligne, dans l'ordre\. Pour recliquer, reprends au point 4\./.test(bouton3)
-      && /Rouvre le fichier et reprends là où tu en étais \(cette fois :\s+« CETTE FOIS », point 2\)/.test(t) && !/Rouvre le fichier et reprends l'étape C/.test(t)
-      && /\n2\. Dans Excel, appuie ensemble sur Alt \+ F8\./.test(t.slice(t.indexOf('CETTE FOIS : LA LISTE DE FILS'), t.indexOf('POUR MÉMOIRE'))));
+      && /Rouvre le fichier et reprends là où tu en étais \(cette fois :\s+« CETTE FOIS », partie 1, point 2\)/.test(t) && !/Rouvre le fichier et reprends l'étape C/.test(t)
+      && /\n3\. Dans Excel, appuie ensemble sur Alt \+ F8, clique sur « EssaiWD »,/.test(t.slice(t.indexOf('CETTE FOIS : LA JOURNÉE DE TESTS'), t.indexOf('POUR MÉMOIRE'))));
   ok('LIS-MOI-D-ABORD.txt : « SI EXCEL RESTE BLOQUÉ » (action OLE : attendre 2 minutes, Ctrl + Maj + Échap, SEE, Fin de tâche)',
     /SI EXCEL RESTE BLOQUÉ[\s\S]*action OLE[\s\S]*2 minutes[\s\S]*Ctrl \+ Maj \+ Échap[\s\S]*SEE[\s\S]*Fin de tâche/.test(t));
   // la relecture de la v3 (TE1 à TE10, EX5, SU6)
@@ -576,14 +576,17 @@ try { const k = K.kit({ dossierVba: AVEC }), z = lireZip(k.zip), ref = C.classeu
   const bloque = t.slice(t.indexOf('SI ÇA BLOQUE'));
   ok('LIS-MOI-D-ABORD.txt, « Le bouton ne fait rien » : d\'abord la barre jaune qui reste (Activer la modification ou le contenu), puis Alt+F8 et les trois macros',
     /Le bouton ne fait rien[\s\S]*barre jaune[\s\S]*Activer la modification[\s\S]*Activer le contenu[\s\S]*Alt\+F8[\s\S]*TesterSEE[\s\S]*EssaiDessinReel[\s\S]*EssaiSansFenetre/.test(bloque));
-  // la liste de fils (5 novembre 2026), CETTE FOIS : le NOUVEAU kit, ExporterWD par Alt+F8, le paquet, la photo d'Export_WD,
-  // puis dans SEE, sur le projet d'essai, un fichier, puis le suivant (s'ajoute-t-il au premier ?)
-  const wd = etape('CETTE FOIS : LA LISTE DE FILS (ExporterWD', 'POUR MÉMOIRE');
-  ok('LIS-MOI-D-ABORD.txt, « CETTE FOIS : LA LISTE DE FILS (ExporterWD) », pas à pas : le NOUVEAU kit (l\'étape A) et SON Pilote-SEE.xlsm (un ancien n\'a pas ExporterWD), Alt + F8, ExporterWD, Exécuter, le paquet de l\'Atelier, Ouvrir, OK, la photo d\'Export_WD (ses lignes « erreur » et « (suite) »), puis SEE sur le projet d\'essai TEST_… : File > Import > Wire List, le dossier « WD-… », le fichier du message, Open, jamais un fichier REFUSÉ, la photo du message, Insert > From Wiring list, puis le fichier suivant (garde-t-il les composants du premier ?), l\'étape F',
-    t.indexOf('CETTE FOIS : LA LISTE DE FILS') > t.indexOf('CE QUI EST ACQUIS') && t.indexOf('CETTE FOIS : LA LISTE DE FILS') < t.indexOf('POUR MÉMOIRE')
-      && /1\. Ferme Excel s'il est ouvert\. Sors le NOUVEAU kit du zip[\s\S]*l'étape A[\s\S]*Pilote-SEE\.xlsm du dossier « Kit-SEE » :\s+un ancien Pilote-SEE\.xlsm n'a pas ExporterWD/.test(wd)
-      && /Alt \+ F8[\s\S]*« ExporterWD »[\s\S]*Exécuter[\s\S]*paquet[\s\S]*Ouvrir[\s\S]*clique sur OK[\s\S]*photo du haut de la feuille « Export_WD »[\s\S]*« erreur »[\s\S]*« \(suite\) »[\s\S]*projet d'essai \(son nom commence par TEST_…\)[\s\S]*Jamais un vrai projet[\s\S]*menu File, puis Import, puis Wire List[\s\S]*dossier « WD-… »[\s\S]*WD-1\.xml[\s\S]*« Open »[\s\S]*N'importe jamais un fichier marqué\s+REFUSÉ[\s\S]*photo le message de SEE[\s\S]*menu Insert, puis From Wiring list[\s\S]*« Component Insertion »[\s\S]*fichier suivant[\s\S]*WD-2\.xml[\s\S]*garde les composants du premier fichier[\s\S]*l'étape F/.test(wd)
-      && /Après ExporterWD \(cette fois\) : le haut de la feuille Export_WD[\s\S]*File > Import > Wire List[\s\S]*« Component Insertion »/.test(t.slice(t.indexOf('LES PHOTOS À PRENDRE'))));
+  // la journée de tests (17 novembre 2026), CETTE FOIS : six parties, du NOUVEAU kit aux réponses à renvoyer
+  const jt = etape('CETTE FOIS : LA JOURNÉE DE TESTS', 'POUR MÉMOIRE');
+  ok('LIS-MOI-D-ABORD.txt, « CETTE FOIS : LA JOURNÉE DE TESTS », six parties : installer (le NOUVEAU kit, EssaiWD par Alt + F8) ; la graine dessinée à la main (2 équipements, 2 fils, 1 masse, 1 texte, 1 trait, 1 rectangle, un 2e folio VIDE, File > Exit) ; le bouton 3 (bloqué : arrêter SEE, PAS Excel ; les photos : la partie jaune, Batterie et Sonde_Folio EN ENTIER ; SEE tombé : recliquer) ; regarder dans SEE ; la liste de fils par les menus (Essai-WD-3.10.xml, l\'onglet Cables, T01 à T10, poser un composant, Process) ; le clavier ; « MES RÉPONSES », l\'étape F',
+    t.indexOf('CETTE FOIS : LA JOURNÉE DE TESTS') > t.indexOf('CE QUI EST ACQUIS') && t.indexOf('CETTE FOIS : LA JOURNÉE DE TESTS') < t.indexOf('POUR MÉMOIRE')
+      && /PARTIE 1 : INSTALLER[\s\S]*Sors le NOUVEAU kit du zip[\s\S]*l'étape A[\s\S]*Pilote-SEE\.xlsm du dossier « Kit-SEE » : un ancien\s+Pilote-SEE\.xlsm n'a pas la batterie de tests[\s\S]*Alt \+ F8, clique sur « EssaiWD »,\s+puis sur « Exécuter »/.test(jt)
+      && /PARTIE 2 : DESSINER LA GRAINE[\s\S]*projet d'essai \(TEST_…\)[\s\S]*2 équipements[\s\S]*2 fils[\s\S]*1 masse[\s\S]*1 texte libre : BONJOUR[\s\S]*1 trait libre et 1 rectangle libre[\s\S]*2e folio et laisse-le VIDE[\s\S]*File, puis Exit[\s\S]*30 secondes/.test(jt)
+      && /PARTIE 3 : LE BOUTON 3[\s\S]*bouton orange « 3\. SEE FERMÉ »[\s\S]*« avant-pilote »[\s\S]*sans toucher à rien[\s\S]*« SI\s+EXCEL RESTE BLOQUÉ »[\s\S]*arrête SEE, PAS Excel[\s\S]*partie jaune de la feuille Resultat_Test[\s\S]*« Batterie » EN ENTIER[\s\S]*« Sonde_Folio » EN ENTIER[\s\S]*« SEE est tombé »[\s\S]*reclique sur le bouton 3[\s\S]*« PAS DE GRAINE »/.test(jt)
+      && /PARTIE 4 : REGARDER DANS SEE[\s\S]*arbre du projet[\s\S]*« BATTERIE »[\s\S]*2e folio \(le vide\)/.test(jt)
+      && /PARTIE 5 : LA LISTE DE FILS[\s\S]*File, puis Import, puis Wire List[\s\S]*Essai-WD-3\.10\.xml[\s\S]*« Open »[\s\S]*« successful »[\s\S]*Insert, puis From Wiring list[\s\S]*« Component\s+Insertion »[\s\S]*« Cables »[\s\S]*T01[\s\S]*T10[\s\S]*LE PLUS IMPORTANT[\s\S]*pose-le sur le 2e folio[\s\S]*Menu Process/.test(jt)
+      && /PARTIE 6 : LE CLAVIER[\s\S]*flèches[\s\S]*Entrée[\s\S]*Alt \+ F11[\s\S]*MES RÉPONSES[\s\S]*l'étape F/.test(jt)
+      && /Après la batterie \(cette fois\) : la partie jaune de la feuille\s+Resultat_Test, puis les feuilles Batterie et Sonde_Folio EN ENTIER[\s\S]*File >\s+Import > Wire List, « Component Insertion »/.test(t.slice(t.indexOf('LES PHOTOS À PRENDRE'))));
   ok('le kit porte les cinq modules standard du classeur, SEE_Windows et SEE_WD compris', ref.modules.filter(m => !m.document).map(m => m.nom).join(',') === 'SEE_Commun,SEE_Sonde,SEE_Pilote,SEE_Windows,SEE_WD'
     && egaux([...z[0].octets], [...ref.octets]), ref.modules.map(m => m.nom).join(', ')); }
 catch (e) { ok('le kit s\'écrit', false, e.message); }

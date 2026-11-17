@@ -208,6 +208,12 @@ après la sonde. La liste qui fait foi est dans la feuille ; en résumé :
   dans le classeur : il est demandé à chaque fois et oublié aussitôt),
   `SondeCreation` (`O` par défaut : si SEE refuse de créer le folio, le
   bouton 3 essaie quelques autres objets en mémoire et dit ses réponses),
+  `Batterie` (`O` par défaut : le bouton 3, une fois le projet d'essai
+  ouvert, fait la batterie d'essais de la feuille Batterie : il essaie
+  d'écrire et de dessiner sans `CreateObject`, avec les objets d'un folio
+  dessiné à la main ; `N` : l'ancien essai de dessin), `DiagnosticComplet`
+  (`N` par défaut ; `O` : le bouton 3 refait aussi l'ancien diagnostic de
+  la feuille Diagnostic),
   `VersionAPI` (`auto`, `V5`, `V4`), `Projet` (chemin du projet, vide = celui
   ouvert dans SEE ; le bouton 3 y note le projet d'essai choisi), `MotDePasse`.
 - **Où écrire** : `Groupe` (vide = le groupe principal), `TypeFolio` (9 =

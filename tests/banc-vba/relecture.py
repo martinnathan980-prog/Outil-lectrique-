@@ -23,7 +23,10 @@ def materiel(paquet):
 ESSAI = os.path.join(TRAVAIL, 'robot')
 def projet_essai():
     os.makedirs(ESSAI, exist_ok=True)
-    for f in os.listdir(ESSAI): os.remove(os.path.join(ESSAI, f))
+    for f in os.listdir(ESSAI):
+        # (la batterie du bouton 3 y écrit aussi un dossier Batterie_… par passage)
+        if os.path.isdir(os.path.join(ESSAI, f)): shutil.rmtree(os.path.join(ESSAI, f))
+        else: os.remove(os.path.join(ESSAI, f))
     p = os.path.join(ESSAI, 'TEST_SEE.seeprj')
     with open(p, 'wb') as f: f.write(b'faux projet SEE du banc\n')
     return p
@@ -113,6 +116,9 @@ SCEN = [
     # gAutoForme = 1), V5 et l'objet rendu (gAutoForme = 2) ; projet_essai() pose un faux projet dans le dossier de travail
     ('bouton 3 V4', lambda d: lancer(d, 'BancR.BancBouton3', (True, 1, projet_essai())), lambda: dossier_essai()),
     ('bouton 3 V5', lambda d: lancer(d, 'BancR.BancBouton3', (False, 2, projet_essai())), lambda: dossier_essai()),
+    # la batterie d'essais du bouton 3 (réglage Batterie = O) : une graine dans le faux SEE, aucun folio, SEE qui tombe
+    # à un essai, puis un second clic qui saute cet essai
+    ('batterie V4', lambda d: lancer(d, 'BancR.BancBatterie', (True, 1, projet_essai())), lambda: dossier_essai()),
     # Windows arrête TesterSEE au premier appel d'une fonction déclarée (GetActiveObject) : le bloc PROVISOIRE reste
     ('arret Windows', lambda d: (sans_texte(d, 'BancR.BancArret'), lancer(d, 'BancR.ApresArret', ())), None),
     # InitialiserClasseur qui lève une erreur : gSansDialogue reprend sa valeur

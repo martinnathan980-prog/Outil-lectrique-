@@ -100,6 +100,44 @@ Private mDiagWs As Object       ' le diagnostic complet du bouton 3 : la feuille
 Private mDiagLigne As Long
 Private mDiagOK As Long
 Private mDiagKO As Long
+' la batterie d'essais du bouton 3 (BatterieSEE)
+Private Const BAT_TETE As Long = 11 ' la ligne d'en-tête du tableau de la feuille Batterie (le résumé est au-dessus)
+Private Const BAT_SAUTE As String = "Batterie-essais-a-sauter.txt"
+Private Const BAT_ENCOURS As String = "Batterie-essai-en-cours.txt"
+Private mBatWs As Object        ' la feuille Batterie
+Private mBatLigne As Long
+Private mBatOK As Long
+Private mBatKO As Long
+Private mBatEcrits As String    ' les essais d'écriture que SEE a acceptés
+Private mBatVus As String       ' les essais d'écriture dont l'effet est relu (l'état a changé)
+Private mBatMort As Boolean     ' SEE ne répond plus : la batterie s'arrête
+Private mBatTombe As String     ' l'essai où SEE est tombé
+Private mBatCourant As String   ' le dernier essai risqué commencé (BatPermis)
+Private mBatAvant As String     ' celui d'avant (SEE peut tomber juste après un essai, et l'erreur ne paraître qu'au suivant)
+Private mBatSaute As String     ' les essais à sauter (SEE y était tombé ou bloqué)
+Private mBatRacine As String    ' le dossier du projet d'essai (avec sa barre finale)
+Private mBatDossier As String   ' le dossier des fichiers de la batterie, à côté du projet
+Private mBatFaite As Boolean    ' la batterie a tourné (le bloc de fin en parle)
+Private mBatSauve As Boolean    ' Project.Save a marché
+Private mBatSansGraine As Boolean ' aucun folio du projet n'a de symbole
+Private mBatTypeFil As String   ' SignalType du premier segment de la graine
+Private mBatTypeCable As String ' Type du premier câble du projet
+Private mBatFamCable As String  ' Family du premier câble du projet
+Private mBatFromTo As String    ' la liste « de - vers » lue (GetFromToXML)
+Private mBatNoms As String      ' les noms lus dans les méthodes XML de l'environnement (types de câbles), séparés par |
+Private mBatPrj As Object
+Private mBatEnv As Object
+Private mBatGraine As Object    ' le folio dessiné à la main (le plus de symboles)
+Private mBatCible As Object     ' un autre folio (le plus vide), sinon la graine
+Private mBatSym1 As Object
+Private mBatSym2 As Object
+Private mBatTexte As Object
+Private mBatSeg As Object
+Private mBatP1 As Object
+Private mBatP2 As Object
+Private mBatP3 As Object
+Private mBatColl As Object      ' une collection de SEE qui tient P1 et P2
+Private mBatBloc As Object      ' un bloc de l'environnement
 
 ' trois folios de suite non créés : l'échec est systématique, le lot s'arrête
 Private Const ECHECS_MAX As Long = 3
@@ -312,6 +350,7 @@ Public Sub EssaiSansFenetre()
     mFormesRelevees = False
     mConnecte3 = False
     Set mEnvProjet3 = Nothing
+    mBatFaite = False
     mMessageFin = ""
     mConsigne3 = ""
     For i = 1 To 9
@@ -350,8 +389,14 @@ Public Sub EssaiSansFenetre()
     If prj Is Nothing Then GoTo Fermer
     ' 5 bis. le projet protégé ? l'environnement attaché au projet (OpenEnvironmentForProject), avant de créer
     PreparerProjet3 prj, chemin
-    ' 5 ter. le diagnostic complet, niveau par niveau (feuille Diagnostic)
-    DiagnosticComplet prj, chemin
+    ' 5 ter. l'ancien diagnostic complet (feuille Diagnostic), seulement si le réglage le demande
+    If ReglageOui("DiagnosticComplet", "N") Then DiagnosticComplet prj, chemin
+    ' 6 à 8. la batterie d'essais (feuille Batterie) : écrire et dessiner sans CreateObject, puis Project.Save ;
+    ' elle remplace l'ancien essai de dessin (réglage Batterie = N pour le refaire)
+    If ReglageOui("Batterie", "O") Then
+        BatterieSEE prj, chemin
+        GoTo Fermer
+    End If
     ' 6. le dessin
     DessinerSansFenetre prj, nomFolio
     ' 7. l'enregistrement
@@ -1639,12 +1684,19 @@ Private Sub FinirBouton3(ByVal copie As String, ByVal nomFolio As String, ByVal 
     ' les formes de l'album relevées : leurs familles et leurs noms se lisent en haut de Sonde_Symboles
     If mFormesRelevees Then consigne = consigne & vbLf & "Puis, en bas d'Excel, clique sur l'onglet « Sonde_Symboles » et prends une photo de son haut."
     ' le folio relu : l'origine, le sens de y et l'échelle se lisent sur Sonde_Folio
-    If mFolioRelu Then consigne = consigne & vbLf & "Puis, en bas d'Excel, clique sur l'onglet « Sonde_Folio » et prends une photo de son haut."
+    If mBatFaite Then consigne = consigne & vbLf & "Puis, en bas d'Excel, clique sur l'onglet « Batterie » et prends-le en photo EN ENTIER " & _
+        "(plusieurs photos, en descendant jusqu'à la dernière ligne)."
+    If mFolioRelu Then consigne = consigne & vbLf & "Puis, en bas d'Excel, clique sur l'onglet « Sonde_Folio » et prends" & _
+        IIf(mBatFaite, "-le en photo EN ENTIER (en descendant).", " une photo de son haut.")
     If Len(imprevu) > 0 Then consigne = consigne & vbLf & "Puis, en bas d'Excel, clique sur l'onglet « Journal » et prends une photo de son haut."
     ' d'abord ce qui ne va pas (un SEE caché qui tourne encore s'arrête AVANT de rouvrir SEE)
     If Len(mConsigne3) > 0 Then consigne = consigne & vbLf & mConsigne3
     If Len(imprevu) > 0 Then
         resultat = "ARRÊT IMPRÉVU (" & imprevu & ")"
+    ElseIf mBatFaite Then
+        resultat = "BATTERIE FAITE (" & (mBatOK + mBatKO) & " essais) ; " & _
+            IIf(Len(mBatEcrits) > 0, "SEE a ACCEPTÉ d'écrire : " & mBatEcrits, "SEE n'a accepté AUCUNE écriture")
+        consigne = consigne & vbLf & "Puis fais la suite du LIS-MOI : la partie 4 (regarder dans SEE ce qu'Excel a fait)."
     ElseIf Left$(mEtapes3(7), 3) = "oui" Then
         resultat = "DESSINÉ ET ENREGISTRÉ dans ton projet d'essai"
         consigne = consigne & vbLf & "Ouvre SEE, ouvre ton projet d'essai, double-clic sur le folio " & nomFolio & ", et prends une photo."
@@ -1963,6 +2015,7 @@ Private Sub LacherObjetsSEE()
     Set mMaterielsCon = NouveauDicoExact()
     Set mConnecteursRepris = NouveauDicoExact()
     Set mListeFolios = Nothing
+    BatLacher
 End Sub
 
 ' Le groupe du réglage Groupe (sous-groupe du groupe principal, créé s'il
@@ -4249,4 +4302,1477 @@ Private Sub GraphTexte(ByVal texte As String, ByVal x As Double, ByVal y As Doub
         AppelRate "Text.SetPosition (après AddGraphicObject)"
     End If
     On Error GoTo 0
+End Sub
+
+' ============================================================================
+'  LA BATTERIE D'ESSAIS (bouton 3, v6). SEE caché refuse CreateObject
+'  (80100000, au bureau, pour tous les types) : la batterie essaie donc
+'  d'écrire et de dessiner SANS CreateObject, avec les objets que SEE rend
+'  lui-même : un point par GetPrimaryCoordinates, une collection vide par
+'  GetSymbolsByTag, et les symboles, les textes et les segments d'un folio
+'  dessiné à la main (la GRAINE). Une ligne par essai dans la feuille
+'  Batterie (numéro, essai, OK ou le code de SEE, détail), le résumé en haut.
+'  Séries : A lire ; B fabriquer des points et des collections ; D écrire et
+'  dessiner (l'état du folio est relu avant et après chaque essai) ; puis
+'  Project.Save ; C les voies par fichier, en dernier.
+'  Avant chaque essai risqué, son numéro est noté dans un petit fichier à
+'  côté du projet : si SEE tombe ou bloque Excel, la batterie suivante saute
+'  cet essai et fait les autres.
+'  Tout se passe dans le projet d'ESSAI (TEST_...). Aucune erreur n'en sort.
+' ============================================================================
+Private Sub BatterieSEE(ByVal prj As Object, ByVal chemin As String)
+    Dim forme As String, refus As String, envOuvert As Boolean, s As String, p As Long
+    If gSimulation Then Exit Sub
+    On Error Resume Next
+    Contexte "Bouton 3", "batterie"
+    EnCours3 6
+    mBatFaite = True
+    mBatOK = 0
+    mBatKO = 0
+    mBatEcrits = ""
+    mBatVus = ""
+    mBatMort = False
+    mBatTombe = ""
+    mBatCourant = ""
+    mBatAvant = ""
+    mBatTypeFil = ""
+    mBatTypeCable = ""
+    mBatFamCable = ""
+    mBatFromTo = ""
+    mBatNoms = ""
+    mBatSauve = False
+    mBatSansGraine = False
+    Set mBatWs = FeuilleCreee("Batterie", True)
+    mBatLigne = BAT_TETE
+    EcrireLigne mBatWs, BAT_TETE, Array("N°", "Essai", "Résultat", "Détail")
+    mBatWs.Rows(BAT_TETE).Font.Bold = True
+    Set mBatPrj = prj
+    ' le dossier du projet, et celui des fichiers de la batterie (à côté du projet)
+    mBatRacine = ""
+    mBatDossier = ""
+    p = InStrRev(chemin, "\")
+    If p > 0 Then
+        mBatRacine = Left$(chemin, p)
+        mBatDossier = mBatRacine & "Batterie_" & Format$(Now, "yyyymmdd_hhnnss")
+        MkDir mBatDossier
+    End If
+    ' un essai resté « en cours » a fait tomber ou bloqué SEE la dernière fois : il est sauté cette fois
+    mBatSaute = BatLireMarque(BAT_SAUTE)
+    s = BatLireMarque(BAT_ENCOURS)
+    If Len(s) > 0 Then
+        mBatSaute = mBatSaute & IIf(Len(mBatSaute) > 0, ",", "") & s
+        BatEcrireMarque BAT_SAUTE, mBatSaute
+        BatEcrireMarque BAT_ENCOURS, ""
+    End If
+    ' l'environnement du projet (celui du relevé des formes)
+    If Not mEnvProjet3 Is Nothing Then
+        Set mBatEnv = mEnvProjet3
+    ElseIf Len(mNomEnv3) > 0 And Left$(mNomEnv3, 4) <> "#ERR" Then
+        Set mBatEnv = SEE_OuvrirEnvironnementAutomation(mNomEnv3, forme, refus)
+        envOuvert = Not mBatEnv Is Nothing
+    End If
+    BatSerieA
+    If Not mBatMort Then BatSerieB
+    If Not mBatMort Then BatSerieD
+    ' (enregistré une première fois avant les essais de fils et de blocs, les plus risqués)
+    If Not mBatMort Then BatSauver "S01"
+    If Not mBatMort Then BatSerieD2
+    If Not mBatMort Then BatSauver "S02"
+    If Not mBatMort Then BatSerieC
+    ' SEE est tombé : l'essai en cours est à sauter la prochaine fois, et celui d'avant aussi (SEE peut tomber juste
+    ' après un essai, l'erreur ne paraissant qu'au suivant ; le résultat de l'essai d'avant est déjà dans la feuille)
+    If mBatMort Then
+        s = mBatCourant
+        If Len(mBatAvant) > 0 Then s = mBatAvant & IIf(Len(s) > 0, ",", "") & s
+        If Len(s) > 0 Then
+            mBatSaute = mBatSaute & IIf(Len(mBatSaute) > 0, ",", "") & s
+            BatEcrireMarque BAT_SAUTE, mBatSaute
+        End If
+    End If
+    BatEcrireMarque BAT_ENCOURS, ""
+    If envOuvert And Not mBatMort Then
+        Err.Clear
+        gApp.CloseEnvironment mBatEnv
+    End If
+    BatLacher
+    BatBilan
+    On Error GoTo 0
+End Sub
+
+' Les objets de SEE gardés par la batterie, lâchés (SEE ne s'arrête pas tant qu'Excel en tient un).
+Private Sub BatLacher()
+    Set mBatPrj = Nothing
+    Set mBatEnv = Nothing
+    Set mBatGraine = Nothing
+    Set mBatCible = Nothing
+    Set mBatSym1 = Nothing
+    Set mBatSym2 = Nothing
+    Set mBatTexte = Nothing
+    Set mBatSeg = Nothing
+    Set mBatP1 = Nothing
+    Set mBatP2 = Nothing
+    Set mBatP3 = Nothing
+    Set mBatColl = Nothing
+    Set mBatBloc = Nothing
+End Sub
+
+' Une ligne de la feuille Batterie (et du journal).
+Private Sub BatLigne(ByVal code As String, ByVal essai As String, ByVal resultat As String, ByVal detail As String)
+    On Error Resume Next
+    mBatLigne = mBatLigne + 1
+    EcrireLigne mBatWs, mBatLigne, Array(code, essai, resultat, MasquerChemins(detail))
+    Journal "Batterie", code, essai, resultat & " ; " & detail
+End Sub
+
+' Un essai : OK si numErr = 0, sinon le code et la phrase de SEE. Un essai
+' d'ÉCRITURE que SEE accepte est retenu (mBatEcrits) ; un code qui dit que
+' SEE n'est plus là arrête la batterie (mBatMort).
+Private Sub BatNote(ByVal code As String, ByVal essai As String, ByVal numErr As Long, ByVal descErr As String, ByVal detail As String, _
+        Optional ByVal ecriture As Boolean = False)
+    On Error Resume Next
+    If numErr = 0 Then
+        BatLigne code, essai, "OK", detail
+        mBatOK = mBatOK + 1
+        If ecriture Then mBatEcrits = mBatEcrits & IIf(Len(mBatEcrits) > 0, ", ", "") & code
+    Else
+        BatLigne code, essai, CodeDeWindows(numErr), Left$(Trim$(descErr), 100) & IIf(Len(detail) > 0, " ; " & detail, "")
+        mBatKO = mBatKO + 1
+        ' SEE est-il encore là ? Les codes de Windows qui disent que non ; sinon une lecture qui a toujours marché
+        If numErr = 462 Or numErr = &H800706BA Or numErr = &H800706BE Or numErr = &H80010108 Or numErr = &H80010007 Then
+            mBatMort = True
+        ElseIf Left$(LireProp(gApp, "ApplicationVersion"), 4) = "#ERR" Then
+            mBatMort = True
+        End If
+        If mBatMort Then mBatTombe = code
+    End If
+End Sub
+
+' Un essai d'écriture dont l'effet est VU à la relecture (l'état du folio a changé, ou la valeur relue est la nouvelle).
+Private Sub BatVu(ByVal code As String)
+    mBatVus = mBatVus & IIf(Len(mBatVus) > 0, ", ", "") & code
+End Sub
+
+' Avant un essai risqué. Rend Faux si l'essai est à sauter (SEE est tombé, ou
+' l'essai est dans la liste des essais à sauter) ; sinon note son numéro dans
+' le fichier « en cours », à côté du projet (il y reste si SEE tombe ou si
+' Excel est arrêté de force).
+Private Function BatPermis(ByVal code As String) As Boolean
+    On Error Resume Next
+    BatPermis = False
+    If mBatMort Then Exit Function
+    If InStr(1, "," & Replace(mBatSaute, " ", "") & ",", "," & code & ",", vbTextCompare) > 0 Then
+        BatLigne code, "(essai sauté)", "SAUTÉ", "SEE était tombé ou bloqué à cet essai la dernière fois ; les autres essais sont faits"
+        Exit Function
+    End If
+    mBatAvant = mBatCourant
+    mBatCourant = code
+    BatEcrireMarque BAT_ENCOURS, code
+    Application.StatusBar = "Pilote SEE, bouton 3 : batterie, essai " & code & " (attends, ne touche à rien)"
+    BatPermis = True
+End Function
+
+' Un petit fichier d'une ligne, à côté du projet (les essais à sauter, l'essai en cours).
+Private Sub BatEcrireMarque(ByVal nom As String, ByVal texte As String)
+    Dim h As Integer
+    On Error Resume Next
+    If Len(mBatRacine) = 0 Then Exit Sub
+    h = FreeFile
+    Open mBatRacine & nom For Output As #h
+    Print #h, texte
+    Close #h
+End Sub
+
+Private Function BatLireMarque(ByVal nom As String) As String
+    Dim h As Integer, s As String
+    On Error Resume Next
+    BatLireMarque = ""
+    If Len(mBatRacine) = 0 Then Exit Function
+    If Len(Dir$(mBatRacine & nom)) = 0 Then Exit Function
+    h = FreeFile
+    Open mBatRacine & nom For Input As #h
+    Line Input #h, s
+    Close #h
+    BatLireMarque = Trim$(s)
+End Function
+
+' Plusieurs propriétés d'un objet, lues, en une ligne.
+Private Sub BatLue(ByVal code As String, ByVal quoi As String, ByVal obj As Object, ByVal props As Variant)
+    Dim p As Variant, s As String, t As String, nbErr As Long
+    On Error Resume Next
+    If obj Is Nothing Then
+        BatLigne code, quoi, "pas d'objet", ""
+        mBatKO = mBatKO + 1
+        Exit Sub
+    End If
+    For Each p In props
+        t = LirePropOuMethode(obj, CStr(p))
+        If Left$(t, 4) = "#ERR" Then nbErr = nbErr + 1
+        s = s & IIf(Len(s) > 0, " ; ", "") & CStr(p) & " = " & Left$(t, 70)
+    Next p
+    If nbErr = 0 Then
+        BatLigne code, quoi & " (" & TypeName(obj) & ")", "OK", s
+        mBatOK = mBatOK + 1
+    Else
+        BatLigne code, quoi & " (" & TypeName(obj) & ")", nbErr & " illisible(s)", s
+        mBatKO = mBatKO + 1
+    End If
+End Sub
+
+' Un objet rendu par SEE, en clair : son type, et son nom s'il en a un.
+Private Function BatObj(ByVal o As Object) As String
+    Dim s As String
+    On Error Resume Next
+    If o Is Nothing Then
+        BatObj = "rien rendu"
+        Exit Function
+    End If
+    s = LireProp(o, "Name")
+    If Left$(s, 4) = "#ERR" Then
+        BatObj = TypeName(o)
+    Else
+        BatObj = TypeName(o) & " « " & s & " »"
+    End If
+End Function
+
+' Le nombre d'éléments d'une collection rendue par SEE (-2 : rien rendu ; -1 : illisible).
+Private Function BatNb(ByVal c As Object) As Long
+    On Error Resume Next
+    If c Is Nothing Then
+        BatNb = -2
+    Else
+        BatNb = NombreDe(c)
+    End If
+End Function
+
+' Un point de SEE, en clair.
+Private Function BatPt(ByVal p As Object) As String
+    Dim x As Double, y As Double
+    On Error Resume Next
+    If p Is Nothing Then
+        BatPt = "(pas de point)"
+    ElseIf LirePointXY(p, x, y) Then
+        BatPt = "(" & NombreTexte(x) & " ; " & NombreTexte(y) & ")"
+    Else
+        BatPt = "(point illisible)"
+    End If
+End Function
+
+' L'état d'un folio en trois nombres : S symboles, G objets graphiques, C segments de connexion.
+Private Function BatEtat(ByVal sh As Object) As String
+    On Error Resume Next
+    If sh Is Nothing Then
+        BatEtat = "pas de folio"
+        Exit Function
+    End If
+    BatEtat = "S" & BatNb(SEE_SymbolesDuFolio(sh)) & " G" & BatNb(SEE_GraphiquesDuFolio(sh, -1)) & " C" & BatNb(SEE_SegmentsDuFolio(sh))
+End Function
+
+' Ce qu'un essai d'écriture a changé : « avant -> après », et VU si l'état a changé.
+Private Function BatEffet(ByVal code As String, ByVal avant As String, ByVal apres As String) As String
+    On Error Resume Next
+    If avant <> apres Then
+        BatVu code
+        BatEffet = "CHANGÉ : " & avant & " -> " & apres
+    Else
+        BatEffet = "rien de changé (" & avant & ")"
+    End If
+End Function
+
+' Un symbole en clair : son repère, sa forme (famille et nom), sa position.
+Private Function BatSymbole(ByVal sym As Object) As String
+    Dim tg As Object, fo As Object, fa As Object, x1 As Double, y1 As Double, x2 As Double, y2 As Double, a As Boolean, s As String
+    On Error Resume Next
+    If sym Is Nothing Then
+        BatSymbole = "(pas de symbole)"
+        Exit Function
+    End If
+    Set tg = SEE_RepereDe(sym)
+    Set fo = SEE_FormeDuSymbole(sym)
+    Set fa = SEE_FamilleDeForme(fo)
+    s = "repère « " & LireProp(tg, "DisplayTag") & " », forme « " & LireProp(fo, "Name") & " », famille « " & LireProp(fa, "Name") & " »"
+    If SEE_PositionDe(sym, x1, y1, x2, y2, a) Then s = s & ", en (" & NombreTexte(x1) & " ; " & NombreTexte(y1) & ")"
+    BatSymbole = s
+End Function
+
+' La valeur d'un texte de SEE (Values : un texte, un tableau ou une collection, selon la version).
+Private Function BatValeurTexte(ByVal txt As Object) As String
+    Dim v As Variant, o As Variant, s As String, i As Long
+    On Error Resume Next
+    BatValeurTexte = ""
+    If txt Is Nothing Then Exit Function
+    If Not LirePropValeur(txt, "Values", v) Then
+        Set v = ObjetProp(txt, "Values")
+    End If
+    If IsObject(v) Then
+        For Each o In ElementsDe(v)
+            s = s & IIf(Len(s) > 0, " | ", "") & LireProp(o, "Value")
+        Next o
+    ElseIf IsArray(v) Then
+        For i = LBound(v) To UBound(v)
+            s = s & IIf(Len(s) > 0, " | ", "") & EnTexte(v(i))
+        Next i
+    Else
+        s = EnTexte(v)
+    End If
+    BatValeurTexte = s
+End Function
+
+' Les fichiers d'un dossier, en clair : leur nombre, et les noms et tailles des premiers.
+Private Function BatFichiers(ByVal dossier As String, ByVal maxi As Long) As String
+    Dim f As String, n As Long, s As String
+    On Error Resume Next
+    If Len(dossier) = 0 Then
+        BatFichiers = "pas de dossier"
+        Exit Function
+    End If
+    If Right$(dossier, 1) = "\" Then dossier = Left$(dossier, Len(dossier) - 1)
+    If Len(Dir$(dossier, vbDirectory)) = 0 Then
+        BatFichiers = "dossier introuvable"
+        Exit Function
+    End If
+    f = Dir$(dossier & "\*")
+    Do While Len(f) > 0 And n < 5000
+        n = n + 1
+        If n <= maxi Then s = s & IIf(n > 1, ", ", "") & f & " (" & FileLen(dossier & "\" & f) & " o)"
+        ' (vidé d'abord : si Dir échouait, la boucle ne doit pas tourner sans fin sur le même nom)
+        f = ""
+        f = Dir$()
+    Loop
+    BatFichiers = IIf(n >= 5000, "5000 fichiers ou plus", n & " fichier(s)") & IIf(n > 0, " : " & s & IIf(n > maxi, ", ...", ""), "")
+End Function
+
+' Le début d'un texte rendu par SEE, sur une ligne.
+Private Function BatDebut(ByVal s As String, ByVal n As Long) As String
+    On Error Resume Next
+    BatDebut = Len(s) & " caractère(s)" & IIf(Len(s) > 0, " : " & Left$(Replace(Replace(s, vbCr, " "), vbLf, " "), n), "")
+End Function
+
+' La position d'un objet de SEE, en clair.
+Private Function BatPosition(ByVal obj As Object) As String
+    Dim x1 As Double, y1 As Double, x2 As Double, y2 As Double, sec As Boolean
+    On Error Resume Next
+    If obj Is Nothing Then
+        BatPosition = "(pas d'objet)"
+    ElseIf SEE_PositionDe(obj, x1, y1, x2, y2, sec) Then
+        BatPosition = "(" & NombreTexte(x1) & " ; " & NombreTexte(y1) & ")" & IIf(sec, " (" & NombreTexte(x2) & " ; " & NombreTexte(y2) & ")", "")
+    Else
+        BatPosition = "(position illisible)"
+    End If
+End Function
+
+' Le dernier élément d'une collection de SEE (Nothing si elle est vide ou illisible).
+Private Function BatDernier(ByVal c As Object) As Object
+    Dim elts As Collection
+    On Error Resume Next
+    Set BatDernier = Nothing
+    Set elts = ElementsDe(c)
+    If elts.Count > 0 Then Set BatDernier = elts.Item(elts.Count)
+End Function
+
+' --- Série A : LIRE (rien n'est changé dans SEE). Elle choisit la GRAINE (le
+' folio qui a le plus de symboles : celui que le technicien a dessiné à la
+' main) et la CIBLE (un autre folio, le plus vide ; à défaut la graine), et
+' garde deux symboles, un texte et un segment de la graine pour la suite.
+Private Sub BatSerieA()
+    Dim c As Object, folios As Collection, sh As Object, i As Long, n As Long, nMax As Long, nMin As Long, iGraine As Long, iCible As Long
+    Dim s As String, ne As Long, de As String, x As Object, y As Object, tb As Object, elts As Collection, t As Variant, lang As Object
+    Dim v As Variant
+    On Error Resume Next
+    BatLue "A01", "le projet", mBatPrj, Array("Name", "EnvironmentName", "IsReadOnly", "IsModified")
+    ' les folios : la graine est celui qui a le plus de symboles
+    Set c = Nothing
+    Err.Clear
+    mBatPrj.GetAllSheets c
+    ne = Err.Number
+    de = Err.Description
+    Set folios = ElementsDe(c)
+    ' (-2 : un folio dont les symboles sont illisibles, -1, reste préférable à aucun folio)
+    nMax = -2
+    For i = 1 To folios.Count
+        Set sh = folios.Item(i)
+        n = NombreDe(SEE_SymbolesDuFolio(sh))
+        s = s & IIf(i > 1, ", ", "") & "« " & LireProp(sh, "Name") & " » : " & n & " symbole(s)"
+        If n > nMax Then
+            nMax = n
+            iGraine = i
+        End If
+    Next i
+    BatNote "A02", "les folios du projet (GetAllSheets)", ne, de, folios.Count & " folio(s) ; " & Left$(s, 600)
+    If iGraine > 0 Then Set mBatGraine = folios.Item(iGraine)
+    ' la cible : un AUTRE folio, celui qui a le moins de symboles (le dernier à égalité)
+    nMin = 1000000
+    For i = 1 To folios.Count
+        If i <> iGraine Then
+            Set sh = folios.Item(i)
+            n = NombreDe(SEE_SymbolesDuFolio(sh))
+            If n <= nMin Then
+                nMin = n
+                iCible = i
+            End If
+        End If
+    Next i
+    If iCible > 0 Then
+        Set mBatCible = folios.Item(iCible)
+    Else
+        Set mBatCible = mBatGraine
+    End If
+    mBatSansGraine = (nMax <= 0)
+    BatLigne "A03", "la GRAINE (le folio dessiné à la main)", IIf(mBatSansGraine, "PAS DE GRAINE", "OK"), _
+        IIf(mBatGraine Is Nothing, "aucun folio", "« " & LireProp(mBatGraine, "Name") & " » : " & BatEtat(mBatGraine)) & _
+        IIf(mBatSansGraine, " ; AUCUN symbole dans le projet : dessine la graine (partie 2 du LIS-MOI), puis reclique sur le bouton 3", "")
+    BatLigne "A04", "la CIBLE (le folio où Excel essaie de dessiner)", IIf(iCible > 0, "OK", "la graine"), _
+        IIf(mBatCible Is Nothing, "aucun folio", "« " & LireProp(mBatCible, "Name") & " » : " & BatEtat(mBatCible)) & _
+        IIf(iCible > 0, "", " ; pas d'autre folio : crée un 2e folio vide pour la prochaine fois")
+    If mBatGraine Is Nothing Then Exit Sub
+    BatLue "A05", "la graine", mBatGraine, Array("Name", "Type", "SheetOrder", "CreationMethod", "DrawnBy", "DesignedBy", "Step")
+    Set tb = SEE_CartoucheDuFolio(mBatGraine)
+    BatLue "A06", "le cartouche de la graine", tb, Array("Name", "Width", "Height", "WorkingWidth", "WorkingHeight")
+    ' les symboles de la graine : les deux premiers sont gardés
+    Set elts = ElementsDe(SEE_SymbolesDuFolio(mBatGraine))
+    If elts.Count >= 1 Then Set mBatSym1 = elts.Item(1)
+    If elts.Count >= 2 Then Set mBatSym2 = elts.Item(2)
+    s = ""
+    For i = 1 To elts.Count
+        If i <= 6 Then s = s & IIf(i > 1, " | ", "") & BatSymbole(elts.Item(i))
+    Next i
+    BatLigne "A07", "les symboles de la graine", elts.Count & " symbole(s)", s
+    ' ses textes, ses traits, ses rectangles
+    Set elts = ElementsDe(SEE_GraphiquesDuFolio(mBatGraine, 1))
+    If elts.Count >= 1 Then Set mBatTexte = elts.Item(1)
+    BatLigne "A08", "les textes libres de la graine", elts.Count & " texte(s)", _
+        IIf(mBatTexte Is Nothing, "aucun : écris un texte libre sur la graine pour la prochaine fois", "le premier : « " & Left$(BatValeurTexte(mBatTexte), 80) & " »")
+    BatLigne "A09", "les traits et les rectangles libres de la graine", NombreDe(SEE_GraphiquesDuFolio(mBatGraine, 2)) & " trait(s)", _
+        NombreDe(SEE_GraphiquesDuFolio(mBatGraine, 4)) & " rectangle(s) ; tous les objets graphiques : " & NombreDe(SEE_GraphiquesDuFolio(mBatGraine, -1))
+    ' ses segments de connexion (les fils dessinés)
+    Set elts = ElementsDe(SEE_SegmentsDuFolio(mBatGraine))
+    If elts.Count >= 1 Then Set mBatSeg = elts.Item(1)
+    s = ""
+    If Not mBatSeg Is Nothing Then
+        mBatTypeFil = LireProp(mBatSeg, "SignalType")
+        s = "le premier : SignalType « " & mBatTypeFil & " », LineStyle « " & LireProp(mBatSeg, "LineStyle") & " »"
+        If Left$(mBatTypeFil, 4) = "#ERR" Then mBatTypeFil = ""
+        Set x = Nothing
+        mBatSeg.GetStrandCollection x
+        s = s & ", fils du segment : " & BatNb(x)
+    End If
+    BatLigne "A10", "les segments de connexion de la graine (les fils dessinés)", elts.Count & " segment(s)", s
+    ' les câbles et les fils du projet
+    Set c = Nothing
+    Err.Clear
+    mBatPrj.GetCableCollection c
+    ne = Err.Number
+    de = Err.Description
+    BatNote "A11", "les câbles et les fils du projet (GetCableCollection)", ne, de, BatNb(c) & " élément(s)"
+    If BatNb(c) > 0 Then
+        Set x = ElementsDe(c).Item(1)
+        BatLue "A12", "le premier câble", x, Array("Type", "Family", "Gauge", "Length", "SegregationCode")
+        mBatTypeCable = LireProp(x, "Type")
+        If Left$(mBatTypeCable, 4) = "#ERR" Then mBatTypeCable = ""
+        mBatFamCable = LireProp(x, "Family")
+        If Left$(mBatFamCable, 4) = "#ERR" Then mBatFamCable = ""
+    End If
+    Set c = Nothing
+    Err.Clear
+    mBatPrj.GetConnectorCollection c
+    ne = Err.Number
+    de = Err.Description
+    BatNote "A13", "les connecteurs du projet (GetConnectorCollection)", ne, de, DiagColl(c)
+    Set c = Nothing
+    Err.Clear
+    mBatPrj.GetTextsCollection c
+    ne = Err.Number
+    de = Err.Description
+    BatNote "A14", "les textes du projet (GetTextsCollection)", ne, de, BatNb(c) & " élément(s)"
+    If Not mBatSym1 Is Nothing Then
+        s = LireProp(SEE_RepereDe(mBatSym1), "Tag")
+        Set c = Nothing
+        Err.Clear
+        mBatPrj.GetSymbolsByTag s, c
+        ne = Err.Number
+        de = Err.Description
+        BatNote "A15", "retrouver un symbole par son repère « " & s & " » (GetSymbolsByTag)", ne, de, BatNb(c) & " élément(s)"
+    End If
+    ' les traitements du projet
+    Set x = ObjetProp(mBatPrj, "Process")
+    Set y = ObjetProp(x, "WireNumbering")
+    BatLigne "A16", "les traitements du projet (Project.Process)", IIf(x Is Nothing, "illisible", "OK"), "Process : " & BatObj(x) & _
+        " ; WireNumbering : " & BatObj(y) & " ; Cabling : " & BatObj(ObjetProp(x, "Cabling")) & " ; Tools : " & _
+        BatObj(ObjetProp(mBatPrj, "Tools")) & " ; Control : " & BatObj(ObjetProp(mBatPrj, "Control"))
+    If Not y Is Nothing Then
+        If BatPermis("A17") Then
+            s = ""
+            Err.Clear
+            y.GetFromToXML s
+            ne = Err.Number
+            de = Err.Description
+            mBatFromTo = s
+            BatNote "A17", "la liste « de - vers » des fils en XML (WireNumbering.GetFromToXML)", ne, de, BatDebut(s, 300)
+            If Len(s) > 0 And Len(mBatDossier) > 0 Then EcrireFichierTexte mBatDossier & "\FromTo.xml", s
+        End If
+    End If
+    If Len(mBatDossier) > 0 Then
+        If BatPermis("A18") Then
+            Err.Clear
+            mBatPrj.ExportJSON mBatDossier, "export", 0, 0
+            ne = Err.Number
+            de = Err.Description
+            BatNote "A18", "le projet en fichiers JSON (Project.ExportJSON)", ne, de, BatFichiers(mBatDossier, 8)
+        End If
+    End If
+    ' l'environnement : ses blocs (des fichiers, et par l'API)
+    BatLue "A19", "l'environnement", mBatEnv, Array("Name", "Version", "Standard", "Unit")
+    If Not mBatEnv Is Nothing Then
+        s = LireProp(mBatEnv, "BlockPath")
+        BatLigne "A20", "le dossier des blocs de l'environnement (BlockPath)", IIf(Left$(s, 4) = "#ERR", "illisible", "OK"), s & " ; " & BatFichiers(s, 12)
+        For Each t In Array(1, 2, 27, 28)
+            Set c = Nothing
+            Err.Clear
+            mBatEnv.GetBlockCollection CLng(t), c
+            ne = Err.Number
+            de = Err.Description
+            BatNote "A21", "les blocs de l'environnement, type " & CStr(t) & " (GetBlockCollection)", ne, de, DiagColl(c)
+            If mBatBloc Is Nothing And BatNb(c) > 0 Then Set mBatBloc = ElementsDe(c).Item(1)
+        Next t
+        ' les méthodes de l'environnement (30 : les types de câbles ; 29 : le câblage) : leurs noms servent aux essais de fils
+        If BatPermis("A25") Then
+            For Each t In Array(30, 29)
+                v = Empty
+                s = ""
+                If SEE_MethodesXML(mBatEnv, CLng(t), v) Then s = BatTexteXml(v)
+                BatNomsXml s
+                BatLigne "A25", "les méthodes de l'environnement, type " & CStr(t) & " (GetMethodsXML)", IIf(Len(s) > 0, "OK", "rien"), BatDebut(s, 250)
+                If Len(s) > 0 And Len(mBatDossier) > 0 Then EcrireFichierTexte mBatDossier & "\methodes" & CStr(t) & ".xml", s
+            Next t
+            BatLigne "A25", "les noms lus dans ces méthodes (essayés comme types de fil)", IIf(Len(mBatNoms) > 0, "OK", "aucun"), _
+                Left$(Replace(mBatNoms, "|", ", "), 600)
+        End If
+    End If
+    ' la vue de la graine
+    Set x = Nothing
+    Err.Clear
+    mBatGraine.GetView x
+    ne = Err.Number
+    de = Err.Description
+    BatNote "A22", "la vue de la graine (Sheet.GetView)", ne, de, BatObj(x) & IIf(x Is Nothing, "", " ; IsActive = " & LireProp(x, "IsActive") & " ; Type = " & LireProp(x, "Type"))
+    ' ce que SEE dit lui-même de ses codes de refus
+    Set x = ObjetProp(gApp, "Protection")
+    Set lang = Nothing
+    mBatPrj.GetActiveLanguage lang
+    If x Is Nothing Then
+        BatLigne "A23", "SeeAutomation.Protection", "illisible", ""
+    Else
+        For Each t In Array(&H80100000, &H80100004, 1)
+            s = ""
+            Err.Clear
+            x.GetErrorDescription CLng(t), lang, s
+            ne = Err.Number
+            de = Err.Description
+            BatNote "A23", "ce que SEE dit du code " & CodeDeWindows(CLng(t)) & " (Protection.GetErrorDescription)", ne, de, _
+                "« " & Left$(s, 200) & " » ; langue : " & BatObj(lang)
+        Next t
+    End If
+    ' la graine relue en entier dans la feuille Sonde_Folio : ses symboles (forme, famille, repère, position), ses fils, ses textes
+    If Not mBatSansGraine Then
+        If BatPermis("A24") Then
+            RelireFolio mBatGraine
+            mFolioRelu = True
+            Contexte "Bouton 3", "batterie"
+            BatLigne "A24", "la graine relue en entier", "fait", "feuille Sonde_Folio : prends-la en photo en entier"
+        End If
+    End If
+End Sub
+
+' --- Série B : FABRIQUER, sans CreateObject, les trois points et la
+' collection dont les essais de dessin ont besoin.
+Private Sub BatSerieB()
+    Dim tb As Object, c As Object, ne As Long, de As String, x1 As Double, y1 As Double, x2 As Double, y2 As Double, sec As Boolean
+    Dim q As Object, xa As Double, ya As Double, xb As Double, yb As Double, ok As Boolean, s As String, i As Long
+    If gSimulation Then Exit Sub
+    On Error Resume Next
+    Set mBatP1 = Nothing
+    Set mBatP2 = Nothing
+    Set mBatP3 = Nothing
+    ' B01 : trois points par la position d'un symbole de la graine (chaque appel rend ses points)
+    If Not mBatSym1 Is Nothing Then
+        Err.Clear
+        mBatSym1.GetPosition mBatP1, q
+        ne = Err.Number
+        de = Err.Description
+        Set q = Nothing
+        mBatSym1.GetPosition mBatP2, q
+        Set q = Nothing
+        mBatSym1.GetPosition mBatP3, q
+        BatNote "B01", "trois points SANS CreateObject, par la position d'un symbole (Symbol.GetPosition)", ne, de, _
+            BatPt(mBatP1) & " " & BatPt(mBatP2) & " " & BatPt(mBatP3)
+    End If
+    ' à défaut : par le cartouche (au bureau, le 5 novembre : GetPrimaryCoordinates rend un point)
+    If mBatP1 Is Nothing Or mBatP2 Is Nothing Or mBatP3 Is Nothing Then
+        Set tb = SEE_CartoucheDuFolio(mBatGraine)
+        If tb Is Nothing Then Set tb = SEE_CartoucheDuFolio(mBatCible)
+        If tb Is Nothing And Not mBatEnv Is Nothing Then
+            Set c = SEE_Cartouches(mBatEnv, False)
+            If BatNb(c) > 0 Then Set tb = ElementsDe(c).Item(1)
+        End If
+        If tb Is Nothing Then
+            BatLigne "B01", "des points par le cartouche", "pas fait", "aucun cartouche lisible"
+        Else
+            Set mBatP1 = Nothing
+            Set mBatP2 = Nothing
+            Set mBatP3 = Nothing
+            Err.Clear
+            tb.GetPrimaryCoordinates mBatP1
+            ne = Err.Number
+            de = Err.Description
+            tb.GetPrimaryCoordinates mBatP2
+            tb.GetPrimaryCoordinates mBatP3
+            BatNote "B01", "trois points SANS CreateObject, par le cartouche « " & LireProp(tb, "Name") & " » (GetPrimaryCoordinates)", ne, de, _
+                BatPt(mBatP1) & " " & BatPt(mBatP2) & " " & BatPt(mBatP3)
+        End If
+    End If
+    If mBatP1 Is Nothing Or mBatP2 Is Nothing Then Exit Sub
+    ' où dessiner : aux positions des deux premiers symboles de la graine (des endroits sûrs de la feuille) ; à défaut, près du premier point
+    ok = False
+    If Not mBatSym1 Is Nothing And Not mBatSym2 Is Nothing Then
+        If SEE_PositionDe(mBatSym1, xa, ya, x2, y2, sec) Then ok = SEE_PositionDe(mBatSym2, xb, yb, x2, y2, sec)
+    End If
+    If Not ok Then
+        If LirePointXY(mBatP1, x1, y1) Then
+            xa = x1 + 40
+            ya = y1 + 25
+            xb = x1 + 140
+            yb = y1 + 25
+            ok = True
+        End If
+    End If
+    If Not ok Then
+        BatLigne "B02", "écrire X et Y des points", "pas fait", "aucune position lisible"
+        Exit Sub
+    End If
+    If Abs(xa - xb) < 1 And Abs(ya - yb) < 1 Then xb = xa + 50
+    ' B02 : écrire X et Y, et voir si les points sont indépendants
+    Err.Clear
+    mBatP1.X = xa
+    ne = Err.Number
+    de = Err.Description
+    mBatP1.Y = ya
+    mBatP2.X = xb
+    mBatP2.Y = yb
+    If Not mBatP3 Is Nothing Then
+        mBatP3.X = (xa + xb) / 2
+        mBatP3.Y = (ya + yb) / 2 + 20
+    End If
+    s = "P1 " & BatPt(mBatP1) & " ; P2 " & BatPt(mBatP2) & " ; P3 " & BatPt(mBatP3)
+    If LirePointXY(mBatP1, x1, y1) Then
+        If Abs(x1 - xa) < 0.01 And Abs(y1 - ya) < 0.01 Then
+            s = s & " ; points INDÉPENDANTS"
+        Else
+            s = s & " ; points LIÉS (P1 a bougé avec les autres : SEE ne rend qu'un seul point)"
+        End If
+    End If
+    BatNote "B02", "écrire X et Y des points (Point.X, Point.Y)", ne, de, s
+    ' B03 : une collection vide SANS CreateObject : celle d'une recherche qui ne trouve rien, sinon celle d'un folio vide
+    Set mBatColl = Nothing
+    For i = 1 To 7
+        Set c = Nothing
+        Err.Clear
+        Select Case i
+            Case 1
+                mBatPrj.GetSymbolsByTag "ZZ_PILOTE_AUCUN", c
+                s = "Project.GetSymbolsByTag(un repère qui n'existe pas)"
+            Case 2
+                mBatPrj.GetCablesByTag "ZZ_PILOTE_AUCUN", c
+                s = "Project.GetCablesByTag(un repère qui n'existe pas)"
+            Case 3
+                mBatPrj.GetConnectorsByTag "ZZ_PILOTE_AUCUN", c
+                s = "Project.GetConnectorsByTag(un repère qui n'existe pas)"
+            Case 4
+                mBatPrj.GetTerminalStripsByTag "ZZ_PILOTE_AUCUN", c
+                s = "Project.GetTerminalStripsByTag(un repère qui n'existe pas)"
+            Case 5
+                mBatCible.GetSymbolCollection c
+                s = "les symboles de la cible (Sheet.GetSymbolCollection)"
+            Case 6
+                mBatCible.GetConnectionSegmentCollection c
+                s = "les segments de la cible (Sheet.GetConnectionSegmentCollection)"
+            Case Else
+                mBatCible.GetGraphicObjectCollection 4, c
+                s = "les rectangles de la cible (Sheet.GetGraphicObjectCollection)"
+        End Select
+        ne = Err.Number
+        de = Err.Description
+        BatNote "B03", "une collection vide SANS CreateObject : " & s, ne, de, BatObj(c) & " ; Count = " & BatNb(c)
+        If BatNb(c) = 0 Then
+            Set mBatColl = c
+            Exit For
+        End If
+    Next i
+    If mBatColl Is Nothing Then Exit Sub
+    If BatNb(mBatColl) <> 0 Then
+        BatLigne "B04", "mettre les points dans la collection", "pas fait", "la collection n'est pas vide (Count = " & BatNb(mBatColl) & ")"
+        Set mBatColl = Nothing
+        Exit Sub
+    End If
+    ' B04 : les deux points dans la collection
+    Err.Clear
+    mBatColl.Add mBatP1
+    ne = Err.Number
+    de = Err.Description
+    mBatColl.Add mBatP2
+    BatNote "B04", "mettre les deux points dans la collection (Collection.Add)", ne, de, _
+        "Count = " & BatNb(mBatColl) & IIf(BatNb(mBatColl) = 2, " : la collection de points est PRÊTE", "")
+    If BatNb(mBatColl) <> 2 Then Set mBatColl = Nothing
+End Sub
+
+' Un point de plus, SANS CreateObject (par la position d'un symbole de la graine, sinon par le cartouche), mis en (x ; y).
+Private Function BatNouveauPoint(ByVal x As Double, ByVal y As Double) As Object
+    Dim p As Object, q As Object, tb As Object
+    On Error Resume Next
+    Set BatNouveauPoint = Nothing
+    If Not mBatSym1 Is Nothing Then mBatSym1.GetPosition p, q
+    If p Is Nothing Then
+        Set tb = SEE_CartoucheDuFolio(mBatGraine)
+        If Not tb Is Nothing Then tb.GetPrimaryCoordinates p
+    End If
+    If p Is Nothing Then Exit Function
+    p.X = x
+    p.Y = y
+    Set BatNouveauPoint = p
+End Function
+
+' Les types de connexion à essayer, chacun une fois : rien, ceux lus sur la graine (SignalType du segment, Type et
+' Family du câble), les quatre premiers noms lus dans les méthodes de l'environnement, puis des noms courants.
+Private Function BatTypes() As Collection
+    Dim r As Collection, v As Variant, n As Long
+    On Error Resume Next
+    Set r = New Collection
+    For Each v In Array("", mBatTypeFil, mBatTypeCable, mBatFamCable)
+        BatAjouterType r, CStr(v)
+    Next v
+    For Each v In Split(mBatNoms, "|")
+        If n < 4 And Len(CStr(v)) > 0 Then
+            n = n + 1
+            BatAjouterType r, CStr(v)
+        End If
+    Next v
+    For Each v In Array("Wires", "Wire", "Fils")
+        BatAjouterType r, CStr(v)
+    Next v
+    Set BatTypes = r
+End Function
+
+Private Sub BatAjouterType(ByVal r As Collection, ByVal nom As String)
+    Dim e As Variant
+    On Error Resume Next
+    For Each e In r
+        If CStr(e) = nom Then Exit Sub
+    Next e
+    r.Add nom
+End Sub
+
+' Le texte d'un XML rendu par SEE (un texte, ou un objet qui a une propriété xml).
+Private Function BatTexteXml(ByVal v As Variant) As String
+    Dim s As String
+    On Error Resume Next
+    BatTexteXml = ""
+    If IsObject(v) Then
+        If v Is Nothing Then Exit Function
+        s = LireProp(v, "xml")
+        If Left$(s, 4) = "#ERR" Then s = ""
+        BatTexteXml = s
+    ElseIf VarType(v) = vbString Then
+        BatTexteXml = CStr(v)
+    End If
+End Function
+
+' Les valeurs des attributs Name="..." d'un XML, ajoutées une fois chacune à mBatNoms (40 caractères au plus chacune).
+Private Sub BatNomsXml(ByVal xml As String)
+    Dim p As Long, q As Long, s As String, n As Long
+    On Error Resume Next
+    p = InStr(1, xml, "Name=" & Chr$(34), vbTextCompare)
+    Do While p > 0 And n < 300
+        n = n + 1
+        q = InStr(p + 6, xml, Chr$(34), vbBinaryCompare)
+        If q = 0 Then Exit Do
+        s = Mid$(xml, p + 6, q - p - 6)
+        If Len(s) > 0 And Len(s) <= 40 And InStr(1, s, "|", vbBinaryCompare) = 0 Then
+            If InStr(1, "|" & mBatNoms & "|", "|" & s & "|", vbTextCompare) = 0 Then mBatNoms = mBatNoms & IIf(Len(mBatNoms) > 0, "|", "") & s
+        End If
+        p = 0
+        p = InStr(q + 1, xml, "Name=" & Chr$(34), vbTextCompare)
+    Loop
+End Sub
+
+' Poser un bloc sur la cible, en P1 : d'abord sans paramètres (rien), puis avec ceux que le bloc rend lui-même.
+Private Sub BatPoserBloc(ByVal code As String, ByVal blk As Object, ByVal quoi As String)
+    Dim rien As Object, x As Object, avant As String, ne As Long, de As String, vpl As Variant
+    If gSimulation Then Exit Sub
+    On Error Resume Next
+    Set rien = Nothing
+    Set x = Nothing
+    avant = BatEtat(mBatCible)
+    Err.Clear
+    mBatCible.InsertBlock blk, rien, x, mBatP1
+    ne = Err.Number
+    de = Err.Description
+    BatNote code, "poser " & quoi & " sur la cible, sans paramètres (Sheet.InsertBlock)", ne, de, _
+        "cible : " & BatEffet(code, avant, BatEtat(mBatCible)), True
+    If ne = 0 Or mBatMort Then Exit Sub
+    vpl = Empty
+    Err.Clear
+    blk.GetParameterList vpl
+    ne = Err.Number
+    de = Err.Description
+    BatNote code, "les paramètres de ce bloc (Block.GetParameterList)", ne, de, "rendu : " & DiagValeur(vpl)
+    If ne <> 0 Or IsEmpty(vpl) Or mBatMort Then Exit Sub
+    Set x = Nothing
+    avant = BatEtat(mBatCible)
+    Err.Clear
+    mBatCible.InsertBlock blk, vpl, x, mBatP1
+    ne = Err.Number
+    de = Err.Description
+    BatNote code, "poser " & quoi & " sur la cible, avec ses paramètres (Sheet.InsertBlock)", ne, de, _
+        "cible : " & BatEffet(code, avant, BatEtat(mBatCible)), True
+End Sub
+
+' Le nombre de folios du projet (-2 : rien rendu ; -1 : illisible).
+Private Function BatNbFolios() As Long
+    Dim c As Object
+    On Error Resume Next
+    mBatPrj.GetAllSheets c
+    BatNbFolios = BatNb(c)
+End Function
+
+' --- Série D : ÉCRIRE et DESSINER dans le projet d'essai, sans CreateObject :
+' changer ce qui existe (une propriété du folio, un texte, la position et le
+' repère d'un symbole), puis poser sur la cible des objets de la graine.
+' Chaque essai relit l'état avant et après.
+Private Sub BatSerieD()
+    Dim ne As Long, de As String, s As String, avant As String, apres As String, avantG As String, tg As Object
+    Dim x As Object, q1 As Object, q2 As Object, x1 As Double, y1 As Double, x2 As Double, y2 As Double, c As Object, refuse As Boolean
+    If gSimulation Then Exit Sub
+    On Error Resume Next
+    If mBatGraine Is Nothing Then Exit Sub
+    ' D01 : une propriété du folio
+    If BatPermis("D01") Then
+        avant = LireProp(mBatGraine, "DrawnBy")
+        s = "PILOTE " & Format$(Now, "hhnnss")
+        Err.Clear
+        mBatGraine.DrawnBy = s
+        ne = Err.Number
+        de = Err.Description
+        If ne = 0 Then
+            Err.Clear
+            mBatGraine.Update
+            ne = Err.Number
+            de = Err.Description
+        End If
+        apres = LireProp(mBatGraine, "DrawnBy")
+        If apres = s Then BatVu "D01"
+        BatNote "D01", "écrire « dessiné par » sur la graine (Sheet.DrawnBy, Update)", ne, de, _
+            "avant « " & avant & " », écrit « " & s & " », relu « " & apres & " »", True
+    End If
+    ' D02, D03 : un texte de la graine
+    If mBatTexte Is Nothing Then
+        BatLigne "D02", "changer un texte de la graine", "pas fait", "pas de texte libre sur la graine"
+    Else
+        If BatPermis("D02") Then
+            avant = BatValeurTexte(mBatTexte)
+            s = "PILOTE " & Format$(Now, "hh:nn:ss")
+            Err.Clear
+            mBatTexte.Value = s
+            ne = Err.Number
+            de = Err.Description
+            If ne = 0 Then
+                Err.Clear
+                mBatTexte.Update
+                ne = Err.Number
+                de = Err.Description
+            End If
+            apres = BatValeurTexte(mBatTexte)
+            If InStr(1, apres, s, vbBinaryCompare) > 0 Then BatVu "D02"
+            BatNote "D02", "changer la valeur d'un texte de la graine (Text.Value, Update)", ne, de, _
+                "avant « " & Left$(avant, 60) & " », écrit « " & s & " », relu « " & Left$(apres, 60) & " »", True
+        End If
+        If BatPermis("D03") Then
+            avant = BatPosition(mBatTexte)
+            Err.Clear
+            mBatTexte.Move 5, 5
+            ne = Err.Number
+            de = Err.Description
+            If ne = 0 Then
+                Err.Clear
+                mBatTexte.Update
+                ne = Err.Number
+                de = Err.Description
+            End If
+            BatNote "D03", "déplacer ce texte de 5 ; 5 (Text.Move, Update)", ne, de, BatEffet("D03", avant, BatPosition(mBatTexte)), True
+        End If
+    End If
+    ' D04, D05 : le 2e symbole de la graine (le 1er sert aux points et à la pose)
+    If mBatSym2 Is Nothing Then
+        BatLigne "D04", "déplacer un symbole de la graine", "pas fait", "la graine a moins de deux symboles"
+    Else
+        If BatPermis("D04") Then
+            avant = BatPosition(mBatSym2)
+            Set q1 = Nothing
+            Set q2 = Nothing
+            Err.Clear
+            mBatSym2.GetPosition q1, q2
+            ne = Err.Number
+            de = Err.Description
+            If ne = 0 And Not q1 Is Nothing Then
+                If LirePointXY(q1, x1, y1) Then q1.X = x1 + 10
+                If Not q2 Is Nothing Then
+                    If LirePointXY(q2, x2, y2) Then q2.X = x2 + 10
+                End If
+                Err.Clear
+                mBatSym2.SetPosition q1, q2
+                ne = Err.Number
+                de = Err.Description
+                If ne = 0 Then
+                    Err.Clear
+                    mBatSym2.Update
+                    ne = Err.Number
+                    de = Err.Description
+                End If
+            End If
+            BatNote "D04", "déplacer un symbole de la graine de 10 vers la droite (Symbol.SetPosition, Update)", ne, de, _
+                BatEffet("D04", avant, BatPosition(mBatSym2)), True
+        End If
+        If BatPermis("D05") Then
+            Set tg = SEE_RepereDe(mBatSym2)
+            avant = LireProp(tg, "DisplayTag")
+            s = "ZZ" & Format$(Now, "nnss")
+            If tg Is Nothing Then
+                BatLigne "D05", "changer le repère d'un symbole", "pas fait", "repère illisible"
+            Else
+                Err.Clear
+                tg.SetManual mBatSym2, s, "", 0
+                ne = Err.Number
+                de = Err.Description
+                If ne = 0 Then
+                    Err.Clear
+                    mBatSym2.ChangeTag tg
+                    ne = Err.Number
+                    de = Err.Description
+                End If
+                If ne = 0 Then
+                    Err.Clear
+                    mBatSym2.Update
+                    ne = Err.Number
+                    de = Err.Description
+                End If
+                apres = LireProp(SEE_RepereDe(mBatSym2), "DisplayTag")
+                If apres <> avant Then BatVu "D05"
+                BatNote "D05", "changer le repère d'un symbole de la graine (Tag.SetManual, Symbol.ChangeTag, Update)", ne, de, _
+                    "avant « " & avant & " », demandé « " & s & " », relu « " & apres & " »", True
+            End If
+        End If
+    End If
+    If mBatCible Is Nothing Or mBatMort Then Exit Sub
+    ' D06, D07 : poser sur la cible un symbole de la graine
+    If mBatSym1 Is Nothing Then
+        BatLigne "D06", "poser un symbole sur la cible", "pas fait", "pas de symbole sur la graine"
+    Else
+        refuse = True
+        If BatPermis("D06") Then
+            avant = BatEtat(mBatCible)
+            avantG = BatEtat(mBatGraine)
+            Set tg = Nothing
+            Err.Clear
+            mBatCible.AddSymbol mBatSym1, tg
+            ne = Err.Number
+            de = Err.Description
+            refuse = (ne <> 0)
+            BatNote "D06", "poser sur la cible un symbole de la graine, repère laissé à SEE (Sheet.AddSymbol)", ne, de, _
+                "cible : " & BatEffet("D06", avant, BatEtat(mBatCible)) & " ; graine : " & avantG & " -> " & BatEtat(mBatGraine), True
+        End If
+        If refuse Then
+            If BatPermis("D07") Then
+                avant = BatEtat(mBatCible)
+                avantG = BatEtat(mBatGraine)
+                Set tg = SEE_RepereDe(mBatSym1)
+                Err.Clear
+                mBatCible.AddSymbol mBatSym1, tg
+                ne = Err.Number
+                de = Err.Description
+                BatNote "D07", "le même, avec le repère du symbole (Sheet.AddSymbol)", ne, de, _
+                    "cible : " & BatEffet("D07", avant, BatEtat(mBatCible)) & " ; graine : " & avantG & " -> " & BatEtat(mBatGraine), True
+            End If
+        End If
+    End If
+    If mBatMort Then Exit Sub
+    ' D08 : poser sur la cible un texte de la graine
+    If Not mBatTexte Is Nothing Then
+        If BatPermis("D08") Then
+            avant = BatEtat(mBatCible)
+            avantG = BatEtat(mBatGraine)
+            Err.Clear
+            mBatCible.AddGraphicObject mBatTexte
+            ne = Err.Number
+            de = Err.Description
+            BatNote "D08", "poser sur la cible un texte de la graine (Sheet.AddGraphicObject)", ne, de, _
+                "cible : " & BatEffet("D08", avant, BatEtat(mBatCible)) & " ; graine : " & avantG & " -> " & BatEtat(mBatGraine), True
+        End If
+    End If
+    If mBatMort Then Exit Sub
+    ' D09 : un trait de la graine, déplacé sur place, puis posé sur la cible et mis entre P1 et P2
+    Set x = Nothing
+    Set c = SEE_GraphiquesDuFolio(mBatGraine, 2)
+    If BatNb(c) > 0 Then Set x = ElementsDe(c).Item(1)
+    If x Is Nothing Then
+        BatLigne "D09", "poser un trait sur la cible", "pas fait", "pas de trait libre sur la graine : trace un trait libre sur la graine pour la prochaine fois"
+    Else
+        If BatPermis("D09") Then
+            avant = BatPosition(x)
+            Err.Clear
+            x.Move 5, 5
+            ne = Err.Number
+            de = Err.Description
+            If ne = 0 Then
+                Err.Clear
+                x.Update
+                ne = Err.Number
+                de = Err.Description
+            End If
+            BatNote "D09", "déplacer un trait de la graine de 5 ; 5 (Line.Move, Update)", ne, de, BatEffet("D09", avant, BatPosition(x)), True
+        End If
+        If BatPermis("D10") Then
+            avant = BatEtat(mBatCible)
+            Err.Clear
+            mBatCible.AddGraphicObject x
+            ne = Err.Number
+            de = Err.Description
+            apres = BatEtat(mBatCible)
+            BatNote "D10", "poser sur la cible un trait de la graine (Sheet.AddGraphicObject)", ne, de, "cible : " & BatEffet("D10", avant, apres), True
+            ' le trait posé (le dernier trait de la cible), mis entre P1 et P2
+            If ne = 0 And avant <> apres And Not mBatP1 Is Nothing And Not mBatP2 Is Nothing Then
+                Set q1 = BatDernier(SEE_GraphiquesDuFolio(mBatCible, 2))
+                If Not q1 Is Nothing Then
+                    avant = BatPosition(q1)
+                    Err.Clear
+                    q1.SetStartPoint mBatP1
+                    ne = Err.Number
+                    de = Err.Description
+                    q1.SetEndPoint mBatP2
+                    q1.Update
+                    BatNote "D11", "mettre ce trait entre P1 et P2 (Line.SetStartPoint, SetEndPoint, Update)", ne, de, _
+                        BatEffet("D11", avant, BatPosition(q1)), True
+                End If
+            End If
+        End If
+    End If
+    If mBatMort Then Exit Sub
+    ' D12 : poser sur la cible un rectangle de la graine
+    Set x = Nothing
+    Set c = SEE_GraphiquesDuFolio(mBatGraine, 4)
+    If BatNb(c) > 0 Then Set x = ElementsDe(c).Item(1)
+    If Not x Is Nothing Then
+        If BatPermis("D12") Then
+            avant = BatEtat(mBatCible)
+            Err.Clear
+            mBatCible.AddGraphicObject x
+            ne = Err.Number
+            de = Err.Description
+            BatNote "D12", "poser sur la cible un rectangle de la graine (Sheet.AddGraphicObject)", ne, de, _
+                "cible : " & BatEffet("D12", avant, BatEtat(mBatCible)), True
+        End If
+    End If
+End Sub
+
+' --- Série D, suite : les FILS (segment de connexion, fil par une collection
+' de points, câble), les BLOCS (pris sur la graine, ou de l'environnement,
+' posés sur la cible) et la recopie d'un FOLIO.
+Private Sub BatSerieD2()
+    Dim ne As Long, de As String, avant As String, apres As String, tg As Object, cb As Object, st As Object, t As Variant
+    Dim x As Object, q1 As Object, q2 As Object, x1 As Double, y1 As Double, x2 As Double, y2 As Double
+    Dim rien As Object, g As Object, sg As Object, c As Object, blk As Object, n As Long, nb As Long, n2 As Long
+    If gSimulation Then Exit Sub
+    On Error Resume Next
+    If mBatCible Is Nothing Then Exit Sub
+    If mBatP1 Is Nothing Or mBatP2 Is Nothing Then
+        BatLigne "D20", "les fils et les blocs", "pas fait", "pas de points (série B)"
+    Else
+        ' D20 : un segment de connexion entre P1 et P2 (le segment : rien, SEE le crée ?)
+        If BatPermis("D20") Then
+            For Each t In BatTypes()
+                Set x = Nothing
+                avant = BatEtat(mBatCible)
+                Err.Clear
+                mBatCible.AddConnectionSegment x, mBatP1, mBatP2, CStr(t)
+                ne = Err.Number
+                de = Err.Description
+                BatNote "D20", "un fil entre P1 et P2 : AddConnectionSegment(rien, P1, P2, « " & CStr(t) & " »)", ne, de, _
+                    "rendu : " & BatObj(x) & " ; cible : " & BatEffet("D20", avant, BatEtat(mBatCible)), True
+                If ne = 0 Or mBatMort Then Exit For
+            Next t
+        End If
+        ' D21 : le même, avec le segment de la graine
+        If Not mBatSeg Is Nothing Then
+            If BatPermis("D21") Then
+                Set x = mBatSeg
+                avant = BatEtat(mBatCible)
+                Err.Clear
+                mBatCible.AddConnectionSegment x, mBatP1, mBatP2, mBatTypeFil
+                ne = Err.Number
+                de = Err.Description
+                BatNote "D21", "le même, avec un segment de la graine : AddConnectionSegment(segment, P1, P2, « " & mBatTypeFil & " »)", ne, de, _
+                    "cible : " & BatEffet("D21", avant, BatEtat(mBatCible)), True
+            End If
+        End If
+        If mBatColl Is Nothing Then
+            BatLigne "D22", "un fil par une collection de points", "pas fait", "pas de collection de points (série B)"
+        Else
+            ' D22 : un fil par la collection de points
+            If BatPermis("D22") Then
+                For Each t In BatTypes()
+                    Set tg = Nothing
+                    Set cb = Nothing
+                    Set st = Nothing
+                    avant = BatEtat(mBatCible)
+                    Err.Clear
+                    mBatCible.AddWireConnection mBatColl, CStr(t), tg, cb, st
+                    ne = Err.Number
+                    de = Err.Description
+                    BatNote "D22", "un fil par la collection de points : AddWireConnection(points, « " & CStr(t) & " »)", ne, de, _
+                        "câble : " & BatObj(cb) & " ; fil : " & BatObj(st) & " ; cible : " & BatEffet("D22", avant, BatEtat(mBatCible)), True
+                    If ne = 0 Or mBatMort Then Exit For
+                Next t
+            End If
+            ' D23 : un câble fil à fil
+            If BatPermis("D23") Then
+                Set tg = Nothing
+                Set cb = Nothing
+                avant = BatEtat(mBatCible)
+                Err.Clear
+                mBatCible.AddCableWireByWire mBatColl, 0, mBatFamCable, mBatTypeCable, tg, cb
+                ne = Err.Number
+                de = Err.Description
+                BatNote "D23", "un câble fil à fil : AddCableWireByWire(points, 0, « " & mBatFamCable & " », « " & mBatTypeCable & " »)", ne, de, _
+                    "câble : " & BatObj(cb) & " ; cible : " & BatEffet("D23", avant, BatEtat(mBatCible)), True
+            End If
+        End If
+        ' D24 : un câble sur un chemin
+        If BatPermis("D24") Then
+            Set tg = Nothing
+            Set cb = Nothing
+            avant = BatEtat(mBatCible)
+            Err.Clear
+            mBatCible.AddCableOnPath mBatP1, mBatP2, tg, cb
+            ne = Err.Number
+            de = Err.Description
+            BatNote "D24", "un câble de P1 à P2 : AddCableOnPath(P1, P2, rien)", ne, de, _
+                "câble : " & BatObj(cb) & " ; cible : " & BatEffet("D24", avant, BatEtat(mBatCible)), True
+        End If
+        ' D25 à D27 : un bloc pris sur la graine (le rectangle autour de P1 et P2), écrit dans un fichier, posé sur la cible
+        If Not mBatGraine Is Nothing Then
+            If BatPermis("D25") Then
+                If LirePointXY(mBatP1, x1, y1) Then
+                    If LirePointXY(mBatP2, x2, y2) Then
+                        Set q1 = BatNouveauPoint(IIf(x1 < x2, x1, x2) - 30, IIf(y1 < y2, y1, y2) - 30)
+                        Set q2 = BatNouveauPoint(IIf(x1 > x2, x1, x2) + 30, IIf(y1 > y2, y1, y2) + 30)
+                    End If
+                End If
+                Set blk = Nothing
+                Set rien = Nothing
+                Err.Clear
+                mBatGraine.CreateBlock q1, q2, mBatP1, rien, blk
+                ne = Err.Number
+                de = Err.Description
+                BatNote "D25", "prendre un bloc sur la graine, de " & BatPt(q1) & " à " & BatPt(q2) & " (Sheet.CreateBlock)", ne, de, _
+                    "rendu : " & BatObj(blk), True
+            End If
+            If Not blk Is Nothing Then
+                If Len(mBatDossier) > 0 Then
+                    If BatPermis("D26") Then
+                        Err.Clear
+                        blk.SaveBlock mBatDossier & "\bloc_graine"
+                        ne = Err.Number
+                        de = Err.Description
+                        BatNote "D26", "écrire ce bloc dans un fichier (Block.SaveBlock)", ne, de, BatFichiers(mBatDossier, 8), True
+                    End If
+                End If
+                If BatPermis("D27") Then BatPoserBloc "D27", blk, "ce bloc"
+            End If
+        End If
+        ' D28 : un bloc de l'environnement, posé sur la cible
+        If mBatMort Then Exit Sub
+        If mBatBloc Is Nothing Then
+            BatLigne "D28", "poser un bloc de l'environnement", "pas fait", "aucun bloc rendu par l'environnement (ligne A21)"
+        Else
+            If BatPermis("D28") Then BatPoserBloc "D28", mBatBloc, "le bloc « " & LireProp(mBatBloc, "Name") & " » de l'environnement"
+        End If
+    End If
+    If mBatMort Then Exit Sub
+    ' D30, D31 : recopier un folio (la cible) : dans son groupe, puis dans un sous-groupe « BATTERIE »
+    Set g = Nothing
+    mBatCible.GetGroup g
+    If g Is Nothing Then mBatPrj.GetMainGroup g
+    If g Is Nothing Then
+        BatLigne "D30", "recopier un folio", "pas fait", "groupe illisible"
+        Exit Sub
+    End If
+    If BatPermis("D30") Then
+        n = BatNbFolios()
+        Set x = mBatCible
+        Err.Clear
+        g.AddSheet x
+        ne = Err.Number
+        de = Err.Description
+        nb = BatNbFolios()
+        If nb <> n Then BatVu "D30"
+        BatNote "D30", "recopier le folio cible dans son groupe (Group.AddSheet)", ne, de, "folios du projet : " & n & " -> " & nb, True
+    End If
+    If BatPermis("D31") Then
+        Set sg = Nothing
+        g.GetSubGroupByName "BATTERIE", sg
+        If sg Is Nothing Then g.CreateSubGroup "BATTERIE", sg
+        If sg Is Nothing Then
+            BatLigne "D31", "mettre le folio cible dans un sous-groupe", "pas fait", "sous-groupe « BATTERIE » ni trouvé ni créé"
+        Else
+            Set c = Nothing
+            sg.GetSheetCollection c
+            n2 = BatNb(c)
+            n = BatNbFolios()
+            Set x = mBatCible
+            Err.Clear
+            sg.AddSheet x
+            ne = Err.Number
+            de = Err.Description
+            nb = BatNbFolios()
+            Set c = Nothing
+            sg.GetSheetCollection c
+            If nb <> n Or BatNb(c) <> n2 Then BatVu "D31"
+            BatNote "D31", "mettre le folio cible dans le sous-groupe « BATTERIE » (Group.AddSheet)", ne, de, _
+                "folios du projet : " & n & " -> " & nb & " ; folios du sous-groupe : " & n2 & " -> " & BatNb(c), True
+        End If
+    End If
+    If mBatMort Then Exit Sub
+    ' D32, en dernier (le format du folio peut changer) : mettre sur la cible un cartouche de l'environnement
+    If Not mBatEnv Is Nothing Then
+        Set x = BatDernier(SEE_Cartouches(mBatEnv, False))
+        If Not x Is Nothing Then
+            If BatPermis("D32") Then
+                avant = LireProp(SEE_CartoucheDuFolio(mBatCible), "Name")
+                Err.Clear
+                mBatCible.SetTitleBlock x
+                ne = Err.Number
+                de = Err.Description
+                If ne = 0 Then
+                    Err.Clear
+                    mBatCible.Update
+                    ne = Err.Number
+                    de = Err.Description
+                End If
+                apres = LireProp(SEE_CartoucheDuFolio(mBatCible), "Name")
+                If apres <> avant Then BatVu "D32"
+                BatNote "D32", "mettre sur la cible le cartouche « " & LireProp(x, "Name") & " » de l'environnement (Sheet.SetTitleBlock, Update)", ne, de, _
+                    "avant « " & avant & " », relu « " & apres & " »", True
+            End If
+        End If
+    End If
+End Sub
+
+' Project.Save, toujours essayé (au bureau, rien n'avait jamais été dessiné : Save n'a jamais été appelé) : après les
+' essais qui changent l'existant (S01), après les fils et les blocs (S02), et après une liste de fils entrée (S03).
+Private Sub BatSauver(ByVal code As String)
+    Dim ne As Long, de As String
+    If gSimulation Then Exit Sub
+    On Error Resume Next
+    mBatSauve = False
+    If Not BatPermis(code) Then Exit Sub
+    Err.Clear
+    mBatPrj.Save
+    ne = Err.Number
+    de = Err.Description
+    mBatSauve = (ne = 0)
+    BatNote code, "enregistrer le projet d'essai (Project.Save)", ne, de, "IsModified après : " & LirePropOuMethode(mBatPrj, "IsModified")
+End Sub
+
+' Le fichier d'essai simple d'EssaiWD (celui que SEE importe par ses menus), à côté du projet, sinon à côté du classeur.
+Private Function BatFichierWD() As String
+    Dim d As Variant, f As String, m As Variant
+    On Error Resume Next
+    BatFichierWD = ""
+    For Each m In Array("Essai-WD-3.10.xml", "Essai-WD-3*.xml")
+        For Each d In Array(mBatRacine, ThisWorkbook.Path & "\")
+            If Len(CStr(d)) > 1 Then
+                f = Dir$(CStr(d) & CStr(m))
+                If Len(f) > 0 Then
+                    BatFichierWD = CStr(d) & f
+                    Exit Function
+                End If
+            End If
+        Next d
+    Next m
+End Function
+
+' Le texte d'un fichier (sans accent : la marque de tête UTF-8 est retirée).
+Private Function BatTexteFichier(ByVal f As String) As String
+    Dim h As Integer, b As String, n As Long
+    On Error Resume Next
+    BatTexteFichier = ""
+    If Len(Dir$(f)) = 0 Then Exit Function
+    n = FileLen(f)
+    If n <= 0 Or n > 2000000 Then Exit Function
+    h = FreeFile
+    Open f For Binary Access Read As #h
+    b = String$(n, " ")
+    Get #h, 1, b
+    Close #h
+    If Left$(b, 3) = Chr$(239) & Chr$(187) & Chr$(191) Then b = Mid$(b, 4)
+    BatTexteFichier = b
+End Function
+
+' --- Série C : les voies par FICHIER, en dernier (après Save : ce qui a été
+' dessiné ne peut plus être perdu). CreateObject pour mémoire ; l'aller-retour
+' ExtractData -> ImportData du même fichier ; la liste de fils XML d'EssaiWD
+' (celle que SEE importe par File > Import > Wire List), sans fenêtre.
+Private Sub BatSerieC()
+    Dim ne As Long, de As String, v As Variant, f As String, t As Long, x As Object, c As Object, wn As Object, cab As Object, lg As String
+    Dim xml As String, vx As Variant, importe As Boolean, sans As String, ecrit As Boolean
+    If gSimulation Then Exit Sub
+    On Error Resume Next
+    If BatPermis("C01") Then
+        Set x = Nothing
+        Set c = mBatPrj
+        Err.Clear
+        gApp.CreateObject OBJ_POINT, c, x
+        ne = Err.Number
+        de = Err.Description
+        Set c = Nothing
+        BatNote "C01", "pour mémoire : SeeAutomation.CreateObject(12 point, projet)", ne, de, "rendu : " & BatObj(x)
+    End If
+    If Len(mBatDossier) > 0 Then
+        If BatPermis("C02") Then
+            For t = 1 To 12
+                f = mBatDossier & "\donnees" & t & ".mdb"
+                v = Empty
+                Err.Clear
+                v = mBatPrj.ExtractData(t, f)
+                ne = Err.Number
+                de = Err.Description
+                ' (calculé d'abord : sous On Error Resume Next, une condition qui lève une erreur ferait entrer dans le bloc)
+                ecrit = False
+                ecrit = (Len(Dir$(f)) > 0)
+                If ecrit Then
+                    BatNote "C02", "ExtractData(" & t & ") : SEE écrit ses données dans un fichier", ne, de, DiagFichier(f)
+                    v = Empty
+                    Err.Clear
+                    v = mBatPrj.ImportData(t, f)
+                    ne = Err.Number
+                    de = Err.Description
+                    BatNote "C03", "ImportData(" & t & ") : SEE relit ce fichier, non modifié", ne, de, "rendu : " & DiagValeur(v), True
+                Else
+                    sans = sans & IIf(Len(sans) > 0, ", ", "") & t & " (" & CodeDeWindows(ne) & ")"
+                End If
+                If mBatMort Then Exit For
+            Next t
+            If Len(sans) > 0 Then BatLigne "C02", "ExtractData : les types qui n'écrivent pas de fichier", "pas de fichier", sans
+        End If
+    End If
+    If mBatMort Then Exit Sub
+    ' la liste de fils XML, sans fenêtre
+    Set wn = ObjetProp(ObjetProp(mBatPrj, "Process"), "WireNumbering")
+    f = BatFichierWD()
+    If Len(f) = 0 Then
+        BatLigne "C04", "importer une liste de fils sans fenêtre", "pas fait", _
+            "aucun fichier Essai-WD-3*.xml à côté du projet ni du classeur : fais d'abord EssaiWD (partie 1, point 3 du LIS-MOI), puis reclique sur le bouton 3"
+    Else
+        If BatPermis("C04") Then
+            vx = f
+            Err.Clear
+            mBatPrj.ImportWireList vx, False, False
+            ne = Err.Number
+            de = Err.Description
+            If ne = 0 Then importe = True
+            BatNote "C04", "importer « " & NomDeFichier(f) & " » sans fenêtre (Project.ImportWireList)", ne, de, "", True
+        End If
+        If Not wn Is Nothing Then
+            xml = BatTexteFichier(f)
+            If BatPermis("C05") Then
+                lg = ""
+                Err.Clear
+                wn.UpdateWireList xml, lg
+                ne = Err.Number
+                de = Err.Description
+                If ne = 0 Then importe = True
+                BatNote "C05", "la même liste par son TEXTE (WireNumbering.UpdateWireList)", ne, de, "journal de SEE : " & BatDebut(lg, 200), True
+            End If
+            If BatPermis("C06") Then
+                lg = ""
+                Err.Clear
+                wn.UpdateWireList f, lg
+                ne = Err.Number
+                de = Err.Description
+                If ne = 0 Then importe = True
+                BatNote "C06", "la même liste par son CHEMIN (WireNumbering.UpdateWireList)", ne, de, "journal de SEE : " & BatDebut(lg, 200), True
+            End If
+        End If
+    End If
+    ' la liste « de - vers » lue à la série A, renvoyée telle quelle
+    If Not wn Is Nothing And Len(mBatFromTo) > 0 Then
+        If BatPermis("C07") Then
+            lg = ""
+            Err.Clear
+            wn.Update mBatFromTo, lg
+            ne = Err.Number
+            de = Err.Description
+            BatNote "C07", "renvoyer à SEE sa liste « de - vers », non modifiée (WireNumbering.Update)", ne, de, "journal de SEE : " & BatDebut(lg, 200), True
+        End If
+    End If
+    ' le câblage, seulement si une liste de fils est entrée
+    If importe Then
+        Set cab = ObjetProp(ObjetProp(mBatPrj, "Process"), "Cabling")
+        If Not cab Is Nothing Then
+            If BatPermis("C08") Then
+                Err.Clear
+                cab.Update
+                ne = Err.Number
+                de = Err.Description
+                BatNote "C08", "le câblage du projet, la liste de fils étant entrée (Process.Cabling.Update)", ne, de, "", True
+            End If
+        End If
+        BatSauver "S03"
+    End If
+End Sub
+
+' Le résumé : en haut de la feuille Batterie (la partie jaune), et dans le bloc du bouton 3 (étapes 6 à 8).
+Private Sub BatBilan()
+    Dim l As Long, s As String
+    On Error Resume Next
+    l = 0
+    LigneResultat mBatWs, l, "BATTERIE", "Bouton 3 du " & Format$(Now, "yyyy-mm-dd hh:mm") & _
+        ". Prends en photo TOUTE cette feuille, du haut jusqu'à la dernière ligne (plusieurs photos en descendant)."
+    LigneResultat mBatWs, l, "Essais", (mBatOK + mBatKO) & " essais : " & mBatOK & " OK, " & mBatKO & " refusés ou illisibles"
+    LigneResultat mBatWs, l, "Écritures", IIf(Len(mBatEcrits) > 0, "SEE a ACCEPTÉ : " & mBatEcrits, "SEE n'a accepté AUCUNE écriture")
+    LigneResultat mBatWs, l, "Effet relu", IIf(Len(mBatVus) > 0, "CHANGEMENT relu pour : " & mBatVus, "aucun changement relu")
+    LigneResultat mBatWs, l, "Enregistré", IIf(mBatSauve, "oui (Project.Save)", "NON (lignes S01, S02)")
+    If mBatSansGraine Then
+        LigneResultat mBatWs, l, "ATTENTION", "PAS DE GRAINE : aucun folio du projet n'a de symbole. Fais la partie 2 du LIS-MOI (dessiner la graine), puis reclique sur le bouton 3."
+        mConsigne3 = "PAS DE GRAINE : aucun folio du projet d'essai n'a de symbole. Fais la partie 2 du LIS-MOI (dessiner la graine à la main), puis reclique sur " & _
+            Bouton3Ici() & "." & IIf(Len(mConsigne3) > 0, vbLf & mConsigne3, "")
+    End If
+    If mBatMort Then
+        LigneResultat mBatWs, l, "SEE EST TOMBÉ", "à l'essai " & mBatTombe & ". Prends les photos, puis reclique sur le bouton 3 : la batterie sautera cet essai (et celui d'avant) et fera les autres."
+        mConsigne3 = "SEE est tombé (ou a été arrêté) à l'essai " & mBatTombe & " : prends les photos, puis reclique sur " & Bouton3Ici() & _
+            " : la batterie sautera cet essai (et celui d'avant) et fera les autres." & IIf(Len(mConsigne3) > 0, vbLf & mConsigne3, "")
+    End If
+    If Len(mBatSaute) > 0 Then LigneResultat mBatWs, l, "Essais sautés", mBatSaute & " (SEE y était tombé ou bloqué)"
+    mBatWs.Range(mBatWs.Cells(1, 1), mBatWs.Cells(l, 4)).Interior.Color = RGB(255, 242, 204)
+    mBatWs.Columns(1).ColumnWidth = 11
+    mBatWs.Columns(2).ColumnWidth = 62
+    mBatWs.Columns(3).ColumnWidth = 13
+    mBatWs.Columns(4).ColumnWidth = 95
+    mBatWs.Columns(2).WrapText = True
+    mBatWs.Columns(4).WrapText = True
+    mBatWs.Rows.VerticalAlignment = -4160
+    s = "BATTERIE : " & (mBatOK + mBatKO) & " essais, " & mBatOK & " OK (feuille Batterie)" & vbLf & _
+        IIf(Len(mBatEcrits) > 0, "écritures ACCEPTÉES par SEE : " & mBatEcrits, "SEE n'a accepté AUCUNE écriture") & vbLf & _
+        IIf(Len(mBatVus) > 0, "CHANGEMENT relu pour : " & mBatVus, "aucun changement relu")
+    If mBatMort Then s = s & vbLf & "SEE EST TOMBÉ à l'essai " & mBatTombe
+    If mBatSansGraine Then s = s & vbLf & "PAS DE GRAINE (aucun symbole dans le projet)"
+    NoterEtape3 6, s
+    NoterEtape3 7, IIf(mBatSauve, "oui (Project.Save)", "NON (lignes S01, S02 de la feuille Batterie)")
+    NoterEtape3 8, "pas refait (déjà relevé le 3 novembre : 117 familles)"
 End Sub
